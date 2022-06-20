@@ -1416,6 +1416,7 @@ export class RangeSelection implements BaseSelection {
             target = sibling;
           } else {
             if ($isElementNode(sibling) && !sibling.canInsertAfter(target)) {
+              // @ts-ignore The clone method does exist on the constructor.
               const prevParentClone = prevParent.constructor.clone(prevParent);
               if (!$isElementNode(prevParentClone)) {
                 invariant(
@@ -1678,6 +1679,10 @@ export class RangeSelection implements BaseSelection {
     }
 
     const domSelection = getDOMSelection();
+
+    if (!domSelection) {
+      return;
+    }
     // We use the DOM selection.modify API here to "tell" us what the selection
     // will be. We then use it to update the Lexical selection accordingly. This
     // is much more reliable than waiting for a beforeinput and using the ranges
@@ -2529,7 +2534,7 @@ export function updateDOMSelection(
   editor: LexicalEditor,
   domSelection: Selection,
   tags: Set<string>,
-  rootElement: HTMLElement,
+  rootElement: HTMLElement | null,
 ): void {
   const anchorDOMNode = domSelection.anchorNode;
   const focusDOMNode = domSelection.focusNode;
@@ -2613,7 +2618,10 @@ export function updateDOMSelection(
     !(domSelection.type === 'Range' && isCollapsed)
   ) {
     // If the root element does not have focus, ensure it has focus
-    if (activeElement === null || !rootElement.contains(activeElement)) {
+    if (
+      rootElement !== null &&
+      (activeElement === null || !rootElement.contains(activeElement))
+    ) {
       rootElement.focus({
         preventScroll: true,
       });
@@ -2637,7 +2645,11 @@ export function updateDOMSelection(
       nextFocusOffset,
     );
 
-    if (nextSelection.isCollapsed() && rootElement === activeElement) {
+    if (
+      nextSelection.isCollapsed() &&
+      rootElement !== null &&
+      rootElement === activeElement
+    ) {
       scrollIntoViewIfNeeded(editor, anchor, rootElement, tags);
     }
 

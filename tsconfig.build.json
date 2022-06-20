@@ -4,7 +4,7 @@
     "declaration": true,
     "emitDeclarationOnly": true,
     "declarationDir": "./.ts-temp",
-    "strict": false
+    "strict": true
   },
   "exclude": [
     "**/__tests__/**",

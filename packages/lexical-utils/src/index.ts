@@ -31,7 +31,7 @@ export type DFSNode = Readonly<{
 
 export function addClassNamesToElement(
   element: HTMLElement,
-  ...classNames: Array<string | boolean | null | undefined>
+  ...classNames: Array<typeof undefined | boolean | null | string>
 ): void {
   classNames.forEach((className) => {
     if (typeof className === 'string') {
@@ -42,7 +42,7 @@ export function addClassNamesToElement(
 
 export function removeClassNamesFromElement(
   element: HTMLElement,
-  ...classNames: Array<string | boolean | null | undefined>
+  ...classNames: Array<typeof undefined | boolean | null | string>
 ): void {
   classNames.forEach((className) => {
     if (typeof className === 'string') {
@@ -106,8 +106,8 @@ function $getDepth(node: LexicalNode): number {
 export function $getNearestNodeOfType<T extends ElementNode>(
   node: LexicalNode,
   klass: Klass<T>,
-): T | LexicalNode {
-  let parent: T | LexicalNode = node;
+) {
+  let parent: ElementNode | LexicalNode | null = node;
 
   while (parent != null) {
     if (parent instanceof klass) {
@@ -291,7 +291,6 @@ function unstable_internalCreateNodeFromParse(
   // We set the parsedKey to undefined before calling clone() so that
   // we get a new random key assigned.
   parsedNode.__key = undefined;
-  // @ts-expect-error TODO Replace Class utility type with InstanceType
   const node = NodeKlass.clone(parsedNode);
   parsedNode.__key = parsedKey;
   const key = node.__key;

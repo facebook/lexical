@@ -8,4 +8,8 @@
 
 import {LexicalNode} from 'lexical';
 
-export type Klass<T extends LexicalNode> = new (...args: unknown[]) => T;
+import {SerializedLexicalNode} from 'lexical';
+
+export type Klass<T extends LexicalNode> = {
+  new (...args: any[]): T;
+} & Omit<LexicalNode, 'constructor'>;

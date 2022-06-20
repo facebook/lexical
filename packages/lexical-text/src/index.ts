@@ -252,13 +252,13 @@ export function $canShowPlaceholderCurry(
 
 export type EntityMatch = {end: number; start: number};
 
-export function registerLexicalTextEntity<N extends TextNode>(
+export function registerLexicalTextEntity<T extends TextNode>(
   editor: LexicalEditor,
   getMatch: (text: string) => null | EntityMatch,
-  targetNode: Klass<N>,
-  createNode: (textNode: TextNode) => N,
+  targetNode: Klass<T>,
+  createNode: (textNode: TextNode) => T,
 ): Array<() => void> {
-  const isTargetNode = (node: LexicalNode | null | undefined): node is N => {
+  const isTargetNode = (node: LexicalNode | null | undefined): node is T => {
     return node instanceof targetNode;
   };
 
@@ -382,7 +382,7 @@ export function registerLexicalTextEntity<N extends TextNode>(
     }
   };
 
-  const reverseNodeTransform = (node: N) => {
+  const reverseNodeTransform = (node: T) => {
     const text = node.getTextContent();
     const match = getMatch(text);
 
@@ -422,7 +422,7 @@ export function registerLexicalTextEntity<N extends TextNode>(
     TextNode,
     textNodeTransform,
   );
-  const removeReverseNodeTransform = editor.registerNodeTransform<N>(
+  const removeReverseNodeTransform = editor.registerNodeTransform<T>(
     targetNode,
     reverseNodeTransform,
   );

@@ -52,7 +52,7 @@ export class TableRowNode extends GridRowNode {
     return $createTableRowNode(serializedNode.height);
   }
 
-  constructor(height?: number | undefined, key?: NodeKey) {
+  constructor(height?: number, key?: NodeKey) {
     super(key);
     this.__height = height;
   }

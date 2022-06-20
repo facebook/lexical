@@ -40,7 +40,7 @@ export type SerializedTableCellNode = Spread<
   {
     headerState: TableCellHeaderState;
     type: 'tablecell';
-    width: number | undefined;
+    width?: number;
   },
   SerializedGridCellNode
 >;
@@ -79,7 +79,7 @@ export class TableCellNode extends GridCellNode {
     return $createTableCellNode(
       serializedNode.headerState,
       serializedNode.colSpan,
-      serializedNode.width,
+      serializedNode.width || undefined,
     );
   }
 

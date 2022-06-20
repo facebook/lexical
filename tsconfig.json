@@ -6,7 +6,7 @@
     "moduleResolution": "node",
     "downlevelIteration": true,
     "noEmit": true,
-    "strict": false,
+    "strict": true,
     "baseUrl": ".",
     "typeRoots": ["node_modules/@types", "libdefs/globals"],
     "skipLibCheck": true,

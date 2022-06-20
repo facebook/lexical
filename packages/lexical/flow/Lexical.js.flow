@@ -196,6 +196,7 @@ type TextNodeThemeClasses = {
   superscript?: EditorThemeClassName,
 };
 export type EditorThemeClasses = {
+  characterLimit?: EditorThemeClassName,
   ltr?: EditorThemeClassName,
   rtl?: EditorThemeClassName,
   text?: TextNodeThemeClasses,

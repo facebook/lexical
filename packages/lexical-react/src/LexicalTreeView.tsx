@@ -11,6 +11,7 @@ import type {
   ElementNode,
   GridSelection,
   LexicalEditor,
+  LexicalNode,
   NodeSelection,
   RangeSelection,
 } from 'lexical';
@@ -36,7 +37,7 @@ const NON_SINGLE_WIDTH_CHARS_REGEX = new RegExp(
   Object.keys(NON_SINGLE_WIDTH_CHARS_REPLACEMENT).join('|'),
   'g',
 );
-const SYMBOLS = Object.freeze({
+const SYMBOLS: Record<string, string> = Object.freeze({
   ancestorHasNextSibling: '|',
   ancestorIsLastChild: ' ',
   hasNextSibling: '├',
@@ -60,7 +61,9 @@ export function TreeView({
   timeTravelPanelSliderClassName: string;
   viewClassName: string;
 }): JSX.Element {
-  const [timeStampedEditorStates, setTimeStampedEditorStates] = useState([]);
+  const [timeStampedEditorStates, setTimeStampedEditorStates] = useState<
+    Array<[number, EditorState]>
+  >([]);
   const [content, setContent] = useState<string>('');
   const [timeTravelEnabled, setTimeTravelEnabled] = useState(false);
   const playingIndexRef = useRef(0);
@@ -89,7 +92,7 @@ export function TreeView({
 
   useEffect(() => {
     if (isPlaying) {
-      let timeoutId;
+      let timeoutId: NodeJS.Timeout;
 
       const play = () => {
         const currentIndex = playingIndexRef.current;
@@ -246,7 +249,7 @@ function generateContent(editorState: EditorState): string {
   const selectionString = editorState.read(() => {
     const selection = $getSelection();
 
-    visitTree($getRoot(), (node, indent) => {
+    visitTree($getRoot(), (node: LexicalNode, indent: Array<string>) => {
       const nodeKey = node.getKey();
       const nodeKeyDisplay = `(${nodeKey})`;
       const typeDisplay = node.getType() || '';
@@ -281,7 +284,11 @@ function generateContent(editorState: EditorState): string {
   return res + '\n selection' + selectionString;
 }
 
-function visitTree(currentNode: ElementNode, visitor, indent = []) {
+function visitTree(
+  currentNode: ElementNode,
+  visitor: (node: LexicalNode, indentArr: Array<string>) => void,
+  indent: Array<string> = [],
+) {
   const childNodes = currentNode.getChildren();
   const childNodesLength = childNodes.length;
 
@@ -309,14 +316,14 @@ function visitTree(currentNode: ElementNode, visitor, indent = []) {
   });
 }
 
-function normalize(text) {
+function normalize(text: string) {
   return Object.entries(NON_SINGLE_WIDTH_CHARS_REPLACEMENT).reduce(
     (acc, [key, value]) => acc.replace(new RegExp(key, 'g'), String(value)),
     text,
   );
 }
 
-function printNode(node) {
+function printNode(node: LexicalNode) {
   if ($isTextNode(node)) {
     const text = node.getTextContent(true);
     const title = text.length === 0 ? '(empty)' : `"${normalize(text)}"`;
@@ -331,27 +338,31 @@ function printNode(node) {
 }
 
 const FORMAT_PREDICATES = [
-  (node) => node.hasFormat('bold') && 'Bold',
-  (node) => node.hasFormat('code') && 'Code',
-  (node) => node.hasFormat('italic') && 'Italic',
-  (node) => node.hasFormat('strikethrough') && 'Strikethrough',
-  (node) => node.hasFormat('subscript') && 'Subscript',
-  (node) => node.hasFormat('superscript') && 'Superscript',
-  (node) => node.hasFormat('underline') && 'Underline',
+  (node: LexicalNode | RangeSelection) => node.hasFormat('bold') && 'Bold',
+  (node: LexicalNode | RangeSelection) => node.hasFormat('code') && 'Code',
+  (node: LexicalNode | RangeSelection) => node.hasFormat('italic') && 'Italic',
+  (node: LexicalNode | RangeSelection) =>
+    node.hasFormat('strikethrough') && 'Strikethrough',
+  (node: LexicalNode | RangeSelection) =>
+    node.hasFormat('subscript') && 'Subscript',
+  (node: LexicalNode | RangeSelection) =>
+    node.hasFormat('superscript') && 'Superscript',
+  (node: LexicalNode | RangeSelection) =>
+    node.hasFormat('underline') && 'Underline',
 ];
 
 const DETAIL_PREDICATES = [
-  (node) => node.isDirectionless() && 'Directionless',
-  (node) => node.isUnmergeable() && 'Unmergeable',
+  (node: LexicalNode) => node.isDirectionless() && 'Directionless',
+  (node: LexicalNode) => node.isUnmergeable() && 'Unmergeable',
 ];
 
 const MODE_PREDICATES = [
-  (node) => node.isToken() && 'Token',
-  (node) => node.isSegmented() && 'Segmented',
-  (node) => node.isInert() && 'Inert',
+  (node: LexicalNode) => node.isToken() && 'Token',
+  (node: LexicalNode) => node.isSegmented() && 'Segmented',
+  (node: LexicalNode) => node.isInert() && 'Inert',
 ];
 
-function printAllProperties(node) {
+function printAllProperties(node: LexicalNode) {
   return [
     printFormatProperties(node),
     printDetailProperties(node),
@@ -361,7 +372,7 @@ function printAllProperties(node) {
     .join(', ');
 }
 
-function printDetailProperties(nodeOrSelection) {
+function printDetailProperties(nodeOrSelection: LexicalNode) {
   let str = DETAIL_PREDICATES.map((predicate) => predicate(nodeOrSelection))
     .filter(Boolean)
     .join(', ')
@@ -374,7 +385,7 @@ function printDetailProperties(nodeOrSelection) {
   return str;
 }
 
-function printModeProperties(nodeOrSelection) {
+function printModeProperties(nodeOrSelection: LexicalNode) {
   let str = MODE_PREDICATES.map((predicate) => predicate(nodeOrSelection))
     .filter(Boolean)
     .join(', ')
@@ -387,7 +398,7 @@ function printModeProperties(nodeOrSelection) {
   return str;
 }
 
-function printFormatProperties(nodeOrSelection) {
+function printFormatProperties(nodeOrSelection: LexicalNode | RangeSelection) {
   let str = FORMAT_PREDICATES.map((predicate) => predicate(nodeOrSelection))
     .filter(Boolean)
     .join(', ')
@@ -407,6 +418,13 @@ function printSelectedCharsLine({
   nodeKeyDisplay,
   selection,
   typeDisplay,
+}: {
+  indent: Array<string>;
+  isSelected: boolean;
+  node: LexicalNode;
+  nodeKeyDisplay: string;
+  selection: GridSelection | NodeSelection | RangeSelection | null;
+  typeDisplay: string;
 }) {
   // No selection or node is not selected.
   if (
@@ -462,7 +480,10 @@ function printSelectedCharsLine({
   );
 }
 
-function $getSelectionStartEnd(node, selection): [number, number] {
+function $getSelectionStartEnd(
+  node: LexicalNode,
+  selection: RangeSelection | GridSelection,
+): [number, number] {
   const anchor = selection.anchor;
   const focus = selection.focus;
   const textContent = node.getTextContent(true);

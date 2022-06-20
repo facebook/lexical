@@ -29,16 +29,18 @@ export function createHeadlessEditor(editorConfig?: {
   const editor = createEditor(editorConfig);
   editor._headless = true;
 
-  [
+  const unsupportedMethods = [
     'registerDecoratorListener',
     'registerRootListener',
-    'registerMutationListeners',
+    'registerMutationListener',
     'getRootElement',
     'setRootElement',
     'getElementByKey',
     'focus',
     'blur',
-  ].forEach((method) => {
+  ] as const;
+
+  unsupportedMethods.forEach((method: typeof unsupportedMethods[number]) => {
     editor[method] = () => {
       throw new Error(`${method} is not supported in headless mode`);
     };

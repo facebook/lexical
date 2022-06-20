@@ -7,6 +7,7 @@
  */
 
 import type {Cell} from './LexicalTableSelection';
+import type {HTMLTableElementWithWithTableSelectionState} from './LexicalTableSelectionHelpers';
 import type {LexicalCommand} from 'lexical';
 
 import {createCommand} from 'lexical';
@@ -69,6 +70,7 @@ export {
   Cell,
   getCellFromTarget,
   getTableSelectionFromTableElement,
+  HTMLTableElementWithWithTableSelectionState,
   TableCellHeaderStates,
   TableCellNode,
   TableNode,

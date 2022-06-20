@@ -6,7 +6,11 @@
  *
  */
 
-import type {InsertTableCommandPayload, TableSelection} from '@lexical/table';
+import type {
+  HTMLTableElementWithWithTableSelectionState,
+  InsertTableCommandPayload,
+  TableSelection,
+} from '@lexical/table';
 import type {ElementNode, NodeKey} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
@@ -29,7 +33,7 @@ import {
 import {useEffect} from 'react';
 import invariant from 'shared/invariant';
 
-export function TablePlugin(): JSX.Element {
+export function TablePlugin(): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
@@ -94,7 +98,9 @@ export function TablePlugin(): JSX.Element {
       for (const [nodeKey, mutation] of nodeMutations) {
         if (mutation === 'created') {
           editor.update(() => {
-            const tableElement = editor.getElementByKey(nodeKey);
+            const tableElement = editor.getElementByKey(
+              nodeKey,
+            ) as HTMLTableElementWithWithTableSelectionState;
             const tableNode = $getNodeByKey<TableNode>(nodeKey);
 
             if (tableElement && tableNode) {

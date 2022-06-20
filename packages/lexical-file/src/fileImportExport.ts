@@ -6,7 +6,7 @@
  *
  */
 
-import type {LexicalEditor} from 'lexical';
+import type {EditorState, LexicalEditor} from 'lexical';
 
 import {CLEAR_HISTORY_COMMAND, VERSION} from 'lexical';
 
@@ -25,19 +25,31 @@ function readTextFileFromSystem(callback: (text: string) => void) {
   const input = document.createElement('input');
   input.type = 'file';
   input.accept = '.lexical';
-  input.addEventListener('change', (event: InputEvent) => {
+  input.addEventListener('change', (event: Event) => {
     const target = event.target as HTMLInputElement;
-    const file = target.files[0];
-    const reader = new FileReader();
-    reader.readAsText(file, 'UTF-8');
 
-    reader.onload = (readerEvent) => {
-      const content = readerEvent.target.result;
-      callback(content as string);
-    };
+    if (target.files) {
+      const file = target.files[0];
+      const reader = new FileReader();
+      reader.readAsText(file, 'UTF-8');
+
+      reader.onload = (readerEvent) => {
+        if (readerEvent.target) {
+          const content = readerEvent.target.result;
+          callback(content as string);
+        }
+      };
+    }
   });
   input.click();
 }
+
+type DocumentJSON = {
+  editorState: EditorState;
+  lastSaved: number;
+  source: string | 'Lexical';
+  version: typeof VERSION;
+};
 
 export function exportFile(
   editor: LexicalEditor,
@@ -48,7 +60,7 @@ export function exportFile(
 ) {
   const now = new Date();
   const editorState = editor.getEditorState();
-  const documentJSON = {
+  const documentJSON: DocumentJSON = {
     editorState: editorState,
     lastSaved: now.getTime(),
     source: config.source || 'Lexical',
@@ -59,7 +71,7 @@ export function exportFile(
 }
 
 // Adapted from https://stackoverflow.com/a/19328891/2013580
-function exportBlob(data, fileName: string) {
+function exportBlob(data: DocumentJSON, fileName: string) {
   const a = document.createElement('a');
   const body = document.body;
 

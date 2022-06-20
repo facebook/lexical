@@ -52,7 +52,7 @@ export function $wrapSelectionInMarkNode(
     }
     const isFirstNode = i === 0;
     const isLastNode = i === nodesLength - 1;
-    let targetNode: LexicalNode;
+    let targetNode: LexicalNode | null = null;
 
     if ($isTextNode(node)) {
       const textContentSize = node.getTextContentSize();
@@ -72,7 +72,7 @@ export function $wrapSelectionInMarkNode(
     } else if ($isElementNode(node) && node.isInline()) {
       targetNode = node;
     }
-    if (targetNode !== undefined) {
+    if (targetNode !== null) {
       if (targetNode && targetNode.is(currentNodeParent)) {
         continue;
       }
@@ -97,7 +97,7 @@ export function $getMarkIDs(
   node: TextNode,
   offset: number,
 ): null | Array<string> {
-  let currentNode: LexicalNode = node;
+  let currentNode: LexicalNode | null = node;
   while (currentNode !== null) {
     if ($isMarkNode(currentNode)) {
       return currentNode.getIDs();

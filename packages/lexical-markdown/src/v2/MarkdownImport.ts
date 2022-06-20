@@ -155,7 +155,7 @@ function importTextFormatTransformers(
   if (match[0] === textContent) {
     currentNode = textNode;
   } else {
-    const startIndex = match.index;
+    const startIndex = match.index || 0;
     const endIndex = startIndex + match[0].length;
 
     if (startIndex === 0) {
@@ -209,7 +209,7 @@ function importTextMatchTransformers(
         continue;
       }
 
-      const startIndex = match.index;
+      const startIndex = match.index || 0;
       const endIndex = startIndex + match[0].length;
       let replaceNode;
 
@@ -256,7 +256,7 @@ function findOutermostMatch(
 
       // For non-intraword transformers checking if it's within a word
       // or surrounded with space/punctuation/newline
-      const {index} = fullMatch;
+      const {index = 0} = fullMatch;
       const beforeChar = textContent[index - 1];
       const afterChar = textContent[index + fullMatch[0].length];
 
@@ -275,8 +275,8 @@ function findOutermostMatch(
 function createTextFormatTransformersIndex(
   textTransformers: Array<TextFormatTransformer>,
 ): TextFormatTransformersIndex {
-  const transformersByTag = {};
-  const fullMatchRegExpByTag = {};
+  const transformersByTag: Record<string, TextFormatTransformer> = {};
+  const fullMatchRegExpByTag: Record<string, RegExp> = {};
   const openTagsRegExp = [];
 
   for (const transformer of textTransformers) {

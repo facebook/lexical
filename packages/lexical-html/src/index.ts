@@ -32,7 +32,7 @@ export function $generateNodesFromDOM(
   editor: LexicalEditor,
   dom: Document,
 ): Array<LexicalNode> {
-  let lexicalNodes = [];
+  let lexicalNodes: Array<LexicalNode> = [];
   const elements: Array<Node> = dom.body ? Array.from(dom.body.childNodes) : [];
   const elementsLength = elements.length;
 
@@ -67,7 +67,9 @@ export function $generateHtmlFromNodes(
 
   for (let i = 0; i < topLevelChildren.length; i++) {
     const topLevelNode = topLevelChildren[i];
-    $appendNodesToHTML(editor, selection, topLevelNode, container);
+    if (selection) {
+      $appendNodesToHTML(editor, selection, topLevelNode, container);
+    }
   }
 
   return container.innerHTML;
@@ -75,7 +77,7 @@ export function $generateHtmlFromNodes(
 
 function $appendNodesToHTML(
   editor: LexicalEditor,
-  selection: RangeSelection | NodeSelection | GridSelection | null,
+  selection: RangeSelection | NodeSelection | GridSelection,
   currentNode: LexicalNode,
   parentElement: HTMLElement | DocumentFragment,
 ): boolean {
@@ -141,18 +143,17 @@ function getConversionFunction(
   let currentConversion: DOMConversion | null = null;
 
   if (cachedConversions !== undefined) {
-    cachedConversions.forEach((cachedConversion) => {
+    for (const cachedConversion of cachedConversions) {
       const domConversion = cachedConversion(domNode);
 
-      if (domConversion !== null) {
-        if (
-          currentConversion === null ||
-          currentConversion.priority < domConversion.priority
-        ) {
-          currentConversion = domConversion;
-        }
+      if (
+        domConversion !== null &&
+        (currentConversion === null ||
+          currentConversion.priority < domConversion.priority)
+      ) {
+        currentConversion = domConversion;
       }
-    });
+    }
   }
 
   return currentConversion !== null ? currentConversion.conversion : null;

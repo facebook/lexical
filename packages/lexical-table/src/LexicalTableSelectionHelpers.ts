@@ -17,6 +17,7 @@ import type {
   TextFormatType,
 } from 'lexical';
 
+import {TableCellNode} from '@lexical/table';
 import {$findMatchingParent} from '@lexical/utils';
 import {
   $createRangeSelection,
@@ -49,7 +50,7 @@ const LEXICAL_ELEMENT_KEY = '__lexicalTableSelection';
 
 export function applyTableHandlers(
   tableNode: TableNode,
-  tableElement: HTMLElement,
+  tableElement: HTMLTableElementWithWithTableSelectionState,
   editor: LexicalEditor,
 ): TableSelection {
   const rootElement = editor.getRootElement();
@@ -874,21 +875,24 @@ export function applyTableHandlers(
   return tableSelection;
 }
 
+export type HTMLTableElementWithWithTableSelectionState = HTMLTableElement &
+  Record<typeof LEXICAL_ELEMENT_KEY, TableSelection>;
+
 export function attachTableSelectionToTableElement(
-  tableElement: HTMLElement,
+  tableElement: HTMLTableElementWithWithTableSelectionState,
   tableSelection: TableSelection,
 ) {
   tableElement[LEXICAL_ELEMENT_KEY] = tableSelection;
 }
 
 export function getTableSelectionFromTableElement(
-  tableElement: HTMLElement,
-): TableSelection {
+  tableElement: HTMLTableElementWithWithTableSelectionState,
+): TableSelection | null {
   return tableElement[LEXICAL_ELEMENT_KEY];
 }
 
 export function getCellFromTarget(node: Node): Cell | null {
-  let currentNode = node;
+  let currentNode: ParentNode | Node | null = node;
 
   while (currentNode != null) {
     const nodeName = currentNode.nodeName;
@@ -984,7 +988,7 @@ export function $updateDOMForSelection(
   grid: Grid,
   selection: GridSelection | RangeSelection | null,
 ): Array<Cell> {
-  const highlightedCells = [];
+  const highlightedCells: Array<Cell> = [];
   const selectedCellNodes = new Set(selection ? selection.getNodes() : []);
   $forEachGridCell(grid, (cell, lexicalNode) => {
     const elem = cell.elem;
@@ -1188,7 +1192,7 @@ function $isSelectionInTable(
   return false;
 }
 
-function selectTableCellNode(tableCell) {
+function selectTableCellNode(tableCell: TableCellNode) {
   const possibleParagraph = tableCell
     .getChildren()
     .find((n) => $isParagraphNode(n));

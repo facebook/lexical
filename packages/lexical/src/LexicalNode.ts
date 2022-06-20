@@ -133,8 +133,8 @@ export type DOMConversionFn = (
 
 export type DOMChildConversion = (
   lexicalNode: LexicalNode,
-  parentLexicalNode: LexicalNode | null,
-) => LexicalNode | null | void;
+  parentLexicalNode: LexicalNode | null | undefined,
+) => LexicalNode | null | undefined;
 
 export type DOMConversionMap = Record<
   NodeName,

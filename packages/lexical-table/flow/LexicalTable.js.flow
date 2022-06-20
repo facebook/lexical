@@ -218,7 +218,6 @@ declare export class TableSelection {
   currentX: number;
   currentY: number;
   listenersToRemove: Set<() => void>;
-  domListeners: Set<() => void>;
   grid: Grid;
   isHighlightingCells: boolean;
   isMouseDown: boolean;

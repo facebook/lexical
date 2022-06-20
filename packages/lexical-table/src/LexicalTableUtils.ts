@@ -180,7 +180,9 @@ export function $insertTableRow(
 
         let headerState = TableCellHeaderStates.NO_STATUS;
         const width =
-          (above && above.getWidth()) || (below && below.getWidth()) || null;
+          (above && above.getWidth()) ||
+          (below && below.getWidth()) ||
+          undefined;
 
         if (
           (above && above.hasHeaderState(TableCellHeaderStates.COLUMN)) ||

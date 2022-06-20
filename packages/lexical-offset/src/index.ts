@@ -539,7 +539,7 @@ function $createOffsetChild(
 export function $createOffsetView(
   editor: LexicalEditor,
   blockOffsetSize = 1,
-  editorState?: EditorState,
+  editorState?: EditorState | null,
 ): OffsetView {
   const targetEditorState =
     editorState || editor._pendingEditorState || editor._editorState;

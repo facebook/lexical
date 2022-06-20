@@ -555,17 +555,18 @@ function getPatternMatchResultsWithRegEx(
   const patternMatchResults: PatternMatchResults = {
     regExCaptureGroups: [],
   };
-  const regExMatches = textToSearch.match(regEx);
+  const regExMatches: RegExpMatchArray | null = textToSearch.match(regEx);
 
   if (
-    regExMatches !== null &&
+    regExMatches &&
     regExMatches.length > 0 &&
     (matchMustAppearAtStartOfString === false || regExMatches.index === 0) &&
-    (matchMustAppearAtEndOfString === false ||
-      regExMatches.index + regExMatches[0].length === textToSearch.length)
+    (matchMustAppearAtEndOfString === false || regExMatches.index
+      ? regExMatches.index
+      : 0 + regExMatches[0].length === textToSearch.length)
   ) {
     const captureGroupsCount = regExMatches.length;
-    let runningLength = regExMatches.index;
+    let runningLength = regExMatches.index || 0;
 
     for (
       let captureGroupIndex = 0;
@@ -1211,8 +1212,8 @@ function createSelectionWithCaptureGroups(
 }
 
 function removeTextByCaptureGroups(
-  anchorCaptureGroupIndex,
-  focusCaptureGroupIndex,
+  anchorCaptureGroupIndex: number,
+  focusCaptureGroupIndex: number,
   scanningContext: ScanningContext,
   parentElementNode: ElementNode,
 ) {
@@ -1382,7 +1383,7 @@ type BlockExport = (
   exportChildren: (node: ElementNode) => string,
 ) => string | null;
 
-function createHeadingExport(level): BlockExport {
+function createHeadingExport(level: number): BlockExport {
   return (node, exportChildren) => {
     return $isHeadingNode(node) && node.getTag() === 'h' + level
       ? '#'.repeat(level) + ' ' + exportChildren(node)
@@ -1390,7 +1391,10 @@ function createHeadingExport(level): BlockExport {
   };
 }
 
-function listExport(node, exportChildren) {
+function listExport(
+  node: LexicalNode,
+  exportChildren: (_node: ElementNode) => string,
+) {
   return $isListNode(node) ? processNestedLists(node, exportChildren, 0) : null;
 }
 
@@ -1401,7 +1405,7 @@ function processNestedLists(
   listNode: ListNode,
   exportChildren: (node: ElementNode) => string,
   depth: number,
-) {
+): string {
   const output = [];
   const children = listNode.getChildren();
   let index = 0;
@@ -1432,11 +1436,14 @@ function processNestedLists(
   return output.join('\n');
 }
 
-function blockQuoteExport(node, exportChildren) {
+function blockQuoteExport(
+  node: LexicalNode,
+  exportChildren: (_node: ElementNode) => string,
+) {
   return $isQuoteNode(node) ? '> ' + exportChildren(node) : null;
 }
 
-function codeBlockExport(node, exportChildren) {
+function codeBlockExport(node: LexicalNode) {
   if (!$isCodeNode(node)) {
     return null;
   }

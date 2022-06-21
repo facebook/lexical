@@ -2534,7 +2534,7 @@ export function updateDOMSelection(
   editor: LexicalEditor,
   domSelection: Selection,
   tags: Set<string>,
-  rootElement: HTMLElement | null,
+  rootElement: HTMLElement,
 ): void {
   const anchorDOMNode = domSelection.anchorNode;
   const focusDOMNode = domSelection.focusNode;

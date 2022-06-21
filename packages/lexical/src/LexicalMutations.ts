@@ -91,7 +91,7 @@ function handleTextMutation(
   }
 
   const text = target.nodeValue;
-  if (text) {
+  if (text !== null) {
     $updateTextNodeFromDOMContent(node, text, anchorOffset, focusOffset, false);
   }
 }

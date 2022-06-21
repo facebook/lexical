@@ -7,6 +7,7 @@
  */
 'use strict';
 
+// open port to send/receive messages from background.js
 // eslint-disable-next-line no-undef
 let port = chrome.runtime.connect();
 

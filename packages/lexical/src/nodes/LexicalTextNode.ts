@@ -210,11 +210,15 @@ function setTextContent(
     dom.textContent = text;
   } else {
     const nodeValue = firstChild.nodeValue;
-    if (nodeValue && nodeValue !== text)
+    if (nodeValue !== text) {
       if (isComposing || IS_FIREFOX) {
         // We also use the diff composed text for general text in FF to avoid
+        // We also use the diff composed text for general text in FF to avoid
         // the spellcheck red line from flickering.
-        const [index, remove, insert] = diffComposedText(nodeValue, text);
+        const [index, remove, insert] = diffComposedText(
+          nodeValue as string,
+          text,
+        );
         if (remove !== 0) {
           // @ts-expect-error
           firstChild.deleteData(index, remove);
@@ -224,6 +228,7 @@ function setTextContent(
       } else {
         firstChild.nodeValue = text;
       }
+    }
   }
 }
 

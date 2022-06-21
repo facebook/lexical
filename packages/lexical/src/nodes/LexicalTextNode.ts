@@ -451,7 +451,7 @@ export class TextNode extends LexicalNode {
         conversion: convertTextFormatElement,
         priority: 0,
       }),
-      span: (node: Node) => ({
+      span: (node: HTMLSpanElement) => ({
         conversion: convertSpanElement,
         priority: 0,
       }),

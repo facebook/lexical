@@ -138,7 +138,7 @@ export type DOMChildConversion = (
 
 export type DOMConversionMap = Record<
   NodeName,
-  (node: Node) => DOMConversion | null
+  <T extends HTMLElement>(node: T) => DOMConversion | null
 >;
 type NodeName = string;
 

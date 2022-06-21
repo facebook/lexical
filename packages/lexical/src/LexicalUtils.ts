@@ -7,6 +7,7 @@
  */
 
 import type {
+  EditorThemeClasses,
   IntentionallyMarkedAsDirtyElement,
   LexicalCommand,
   MutatedNodes,
@@ -121,7 +122,7 @@ export function isSelectionWithinEditor(
       rootElement.contains(focusDOM) &&
       // Ignore if selection is within nested editor
       anchorDOM !== null &&
-      isSelectionCapturedInDecoratorInput(anchorDOM) &&
+      isSelectionCapturedInDecoratorInput(anchorDOM as Node) &&
       getNearestEditorFromDOMNode(anchorDOM) === editor
     );
   } catch (error) {
@@ -233,7 +234,7 @@ function internalMarkParentElementsAsDirty(
   nodeMap: NodeMap,
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
 ): void {
-  let nextParentKey = parentKey;
+  let nextParentKey: string | null = parentKey;
   while (nextParentKey !== null) {
     if (dirtyElements.has(nextParentKey)) {
       return;
@@ -338,7 +339,8 @@ export function getNodeFromDOMNode(
   editorState?: EditorState,
 ): LexicalNode | null {
   const editor = getActiveEditor();
-  const key = dom['__lexicalKey_' + editor._key];
+  // @ts-ignore We intentionally add this to the Node.
+  const key = dom[`__lexicalKey_${editor._key}`];
   if (key !== undefined) {
     return $getNodeByKey(key, editorState);
   }
@@ -349,7 +351,7 @@ export function $getNearestNodeFromDOMNode(
   startingDOM: Node,
   editorState?: EditorState,
 ): LexicalNode | null {
-  let dom = startingDOM;
+  let dom: Node | null = startingDOM;
   while (dom != null) {
     const node = getNodeFromDOMNode(dom, editorState);
     if (node !== null) {
@@ -369,7 +371,7 @@ export function cloneDecorators(
   return pendingDecorators;
 }
 
-export function getEditorStateTextContent(editorState): string {
+export function getEditorStateTextContent(editorState: EditorState): string {
   return editorState.read(() => $getRoot().getTextContent());
 }
 
@@ -457,9 +459,10 @@ function getNodeKeyFromDOM(
   dom: Node,
   editor: LexicalEditor,
 ): NodeKey | null {
-  let node = dom;
+  let node: Node | null = dom;
   while (node != null) {
-    const key: NodeKey = node['__lexicalKey_' + editor._key];
+    // @ts-ignore We intentionally add this to the Node.
+    const key: NodeKey = node[`__lexicalKey_${editor._key}`];
     if (key !== undefined) {
       return key;
     }
@@ -476,7 +479,7 @@ export function getEditorsToPropagate(
   editor: LexicalEditor,
 ): Array<LexicalEditor> {
   const editorsToPropagate = [];
-  let currentEditor = editor;
+  let currentEditor: LexicalEditor | null = editor;
   while (currentEditor !== null) {
     editorsToPropagate.push(currentEditor);
     currentEditor = currentEditor._parentEditor;
@@ -516,13 +519,15 @@ export function $updateSelectedTextFromDOM(
         focusOffset = offset;
       }
 
-      $updateTextNodeFromDOMContent(
-        node,
-        textContent,
-        anchorOffset,
-        focusOffset,
-        isCompositionEnd,
-      );
+      if (textContent) {
+        $updateTextNodeFromDOMContent(
+          node,
+          textContent,
+          anchorOffset,
+          focusOffset,
+          isCompositionEnd,
+        );
+      }
     }
   }
 }
@@ -824,6 +829,8 @@ export function isCopy(
   if (keyCode === 67) {
     return IS_APPLE ? metaKey : ctrlKey;
   }
+
+  return false;
 }
 
 export function isCut(
@@ -838,6 +845,8 @@ export function isCut(
   if (keyCode === 88) {
     return IS_APPLE ? metaKey : ctrlKey;
   }
+
+  return false;
 }
 
 function isArrowLeft(keyCode: number): boolean {
@@ -952,8 +961,8 @@ export function isDelete(keyCode: number): boolean {
   return keyCode === 46;
 }
 
-export function getCachedClassNameArray<T>(
-  classNamesTheme: T,
+export function getCachedClassNameArray(
+  classNamesTheme: EditorThemeClasses,
   classNameThemeType: string,
 ): Array<string> {
   const classNames = classNamesTheme[classNameThemeType];
@@ -997,10 +1006,11 @@ export function setMutatedNode(
   }
 }
 
-export function $nodesOfType<T extends LexicalNode>(klass: Klass<T>): Array<T> {
+export function $nodesOfType<T extends LexicalNode>(
+  klass: Klass<T>,
+): Array<LexicalNode> {
   const editorState = getActiveEditorState();
   const readOnly = editorState._readOnly;
-  // @ts-expect-error TODO Replace Class utility type with InstanceType
   const klassType = klass.getType();
   const nodes = editorState._nodeMap;
   const nodesOfType = [];

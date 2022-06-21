@@ -196,6 +196,7 @@ type TextNodeThemeClasses = {
   superscript?: EditorThemeClassName,
 };
 export type EditorThemeClasses = {
+  characterLimit?: EditorThemeClassName,
   ltr?: EditorThemeClassName,
   rtl?: EditorThemeClassName,
   text?: TextNodeThemeClasses,
@@ -302,7 +303,7 @@ export type DOMChildConversion = (
   parentLexicalNode: ?LexicalNode | null,
 ) => LexicalNode | null | void;
 export type DOMConversionMap = {
-  [NodeName]: (node: Node) => DOMConversion | null,
+  [NodeName]: <T: HTMLElement>(node: T) => DOMConversion | null,
 };
 type NodeName = string;
 export type DOMConversionOutput = {

@@ -335,7 +335,7 @@ interface BaseSerializedNode {
   version: number;
 }
 
-function exportNodeToJSON(node: LexicalNode): BaseSerializedNode {
+function exportNodeToJSON<T extends LexicalNode>(node: T): BaseSerializedNode {
   const serializedNode = node.exportJSON();
   const nodeClass = node.constructor;
 

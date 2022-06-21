@@ -185,7 +185,7 @@ function setListThemeClassNames(
   const listTheme = editorThemeClasses.list;
 
   if (listTheme !== undefined) {
-    const listLevelsClassNames = listTheme[node.__tag + 'Depth'] || [];
+    const listLevelsClassNames = listTheme[`${node.__tag}Depth`] || [];
     const listDepth = $getListDepth(node) - 1;
     const normalizedListDepth = listDepth % listLevelsClassNames.length;
     const listLevelClassName = listLevelsClassNames[normalizedListDepth];
@@ -244,7 +244,7 @@ function convertListNode(domNode: Node): DOMConversionOutput {
   return {node};
 }
 
-const TAG_TO_LIST_TYPE: Readonly<Record<ListNodeTagType, ListType>> = {
+const TAG_TO_LIST_TYPE: Record<string, ListType> = {
   ol: 'number',
   ul: 'bullet',
 };

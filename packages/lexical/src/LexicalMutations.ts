@@ -44,7 +44,7 @@ export function getIsProcesssingMutations(): boolean {
   return isProcessingMutations;
 }
 
-function updateTimeStamp(event) {
+function updateTimeStamp(event: Event) {
   lastTextEntryTimeStamp = event.timeStamp;
 }
 
@@ -62,7 +62,8 @@ function isManagedLineBreak(
   return (
     // @ts-expect-error: internal field
     target.__lexicalLineBreak === dom ||
-    dom['__lexicalKey_' + editor._key] !== undefined
+    // @ts-ignore We intentionally add this to the Node.
+    dom[`__lexicalKey_${editor._key}`] !== undefined
   );
 }
 
@@ -90,7 +91,9 @@ function handleTextMutation(
   }
 
   const text = target.nodeValue;
-  $updateTextNodeFromDOMContent(node, text, anchorOffset, focusOffset, false);
+  if (text) {
+    $updateTextNodeFromDOMContent(node, text, anchorOffset, focusOffset, false);
+  }
 }
 
 function shouldUpdateTextNodeFromMutation(

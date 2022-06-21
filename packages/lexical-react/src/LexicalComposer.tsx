@@ -22,8 +22,8 @@ import {
 } from 'lexical';
 import {useMemo} from 'react';
 import * as React from 'react';
+import {Klass} from 'shared/types';
 import useLayoutEffect from 'shared/useLayoutEffect';
-import {Class} from 'utility-types';
 
 const HISTORY_MERGE_OPTIONS = {tag: 'history-merge'};
 
@@ -38,7 +38,7 @@ type Props = {
   initialConfig: Readonly<{
     editor__DEPRECATED?: LexicalEditor | null;
     namespace: string;
-    nodes?: ReadonlyArray<Class<LexicalNode>>;
+    nodes?: ReadonlyArray<Klass<LexicalNode>>;
     onError: (error: Error, editor: LexicalEditor) => void;
     readOnly?: boolean;
     theme?: EditorThemeClasses;

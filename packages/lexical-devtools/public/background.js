@@ -14,9 +14,9 @@ function connected(port) {
   ports[port.sender.tab.id] = port;
 
   port.onMessage.addListener(function (message) {
-    // console.log(message.editorState);
+    port.postMessage({editorState: message.editorState});
   });
 }
 
 // eslint-disable-next-line no-undef
-browser.runtime.onConnect.addListener(connected);
+chrome.runtime.onConnect.addListener(connected);

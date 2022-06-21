@@ -7,8 +7,13 @@
  */
 'use strict';
 
+// open port to send/receive messages from background.js
 // eslint-disable-next-line no-undef
-let port = browser.runtime.connect({name: 'lexical-devtools'});
+let port = chrome.runtime.connect({name: 'lexical-devtools'});
+
+port.onMessage.addListener(function (message) {
+  // send message.editorState to app in main.tsx/App.tsx
+});
 
 // listen for messages from the page script in devtools.js
 window.addEventListener('message', (event) => {
@@ -19,6 +24,6 @@ window.addEventListener('message', (event) => {
 
   // dispatch editorState to background.js
   if (event.data.type && event.data.type === 'FROM_PAGE') {
-    port.postMessage({editorState: event.data.editorState});
+    port.postMessage({editorState: event.data.editorState._nodeMap}); // placeholder, sending _nodeMap for now because Chrome & Edge auto-serialize postMessages. so, sending the whole editorState throws a JSON serialization error
   }
 });

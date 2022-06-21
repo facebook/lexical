@@ -17,7 +17,7 @@ chrome.devtools.panels.create('Lexical', 'favicon-32x32.png', '../index.html');
 //   https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Content_scripts
 //   https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/devtools/inspectedWindow/eval
 // eslint-disable-next-line no-undef
-browser.devtools.inspectedWindow
+chrome.devtools.inspectedWindow
   // run editor.registerUpdateListener to subscribe to changes in editorState.
   // after the initial registration, editorState changes are sent to the background script via the page script from content.js, a safer form of communication
   .eval(

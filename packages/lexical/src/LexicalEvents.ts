@@ -649,6 +649,18 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
         isFirefoxEndingComposition = false;
       }
       dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, data);
+      const textLength = data.length;
+
+      // Another hack for FF, as it's possible that the IME is still
+      // open, even though compositionend has already fired (sigh).
+      if (
+        IS_FIREFOX &&
+        textLength > 1 &&
+        event.inputType === 'insertCompositionText' &&
+        !editor.isComposing()
+      ) {
+        selection.anchor.offset -= textLength;
+      }
 
       // This ensures consistency on Android.
       if (!IS_SAFARI && !IS_IOS && editor.isComposing()) {

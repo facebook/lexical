@@ -397,7 +397,7 @@ export class LexicalEditor {
   _compositionKey: null | NodeKey;
   _deferred: Array<() => void>;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
-  _updates: Array<[() => void, EditorUpdateOptions]>;
+  _updates: Array<[() => void, EditorUpdateOptions | undefined]>;
   _updating: boolean;
   _listeners: Listeners;
   _commands: Commands;

@@ -756,7 +756,8 @@ export class RangeSelection implements BaseSelection {
       (firstNode.isSegmented() ||
         firstNode.isToken() ||
         !firstNode.canInsertTextAfter() ||
-        !firstNodeParent.canInsertTextAfter())
+        (!firstNodeParent.canInsertTextAfter() &&
+          firstNode.getNextSibling() === null))
     ) {
       let nextSibling = firstNode.getNextSibling<TextNode>();
       if (
@@ -783,7 +784,8 @@ export class RangeSelection implements BaseSelection {
       (firstNode.isSegmented() ||
         firstNode.isToken() ||
         !firstNode.canInsertTextBefore() ||
-        !firstNodeParent.canInsertTextBefore())
+        (!firstNodeParent.canInsertTextBefore() &&
+          firstNode.getPreviousSibling() === null))
     ) {
       let prevSibling = firstNode.getPreviousSibling<TextNode>();
       if (

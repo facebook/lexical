@@ -16,7 +16,7 @@ import {useDecorators} from './shared/useDecorators';
 import {usePlainTextSetup} from './shared/usePlainTextSetup';
 
 const deprecatedInitialEditorStateWarning = warnOnlyOnce(
-  'initialEditorState on PlainTextPlugin is deprecated and will be removed soon. Use LexicalComposer initialEditorState instead.',
+  '`initialEditorState` on `PlainTextPlugin` is deprecated and will be removed soon. Use the `initialConfig.editorState` prop on the `LexicalComposer` instead.',
 );
 
 export function PlainTextPlugin({

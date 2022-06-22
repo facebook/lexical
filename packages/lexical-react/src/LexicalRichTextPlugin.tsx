@@ -16,7 +16,7 @@ import {useDecorators} from './shared/useDecorators';
 import {useRichTextSetup} from './shared/useRichTextSetup';
 
 const deprecatedInitialEditorStateWarning = warnOnlyOnce(
-  'initialEditorState on RichTextPlugin is deprecated and will be removed soon. Use LexicalComposer initialEditorState instead.',
+  '`initialEditorState` on `RichTextPlugin` is deprecated and will be removed soon. Use the `initialConfig.editorState` prop on the `LexicalComposer` instead.',
 );
 
 export function RichTextPlugin({

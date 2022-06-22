@@ -8,7 +8,7 @@
 
 import './ColorPicker.css';
 
-import {useEffect, useMemo, useRef, useState} from 'react';
+import {ReactNode, useEffect, useMemo, useRef, useState} from 'react';
 import * as React from 'react';
 
 import DropDown from './DropDown';
@@ -19,8 +19,8 @@ interface ColorPickerProps {
   buttonClassName: string;
   buttonIconClassName?: string;
   buttonLabel?: string;
-  color?: string;
-  children?: JSX.Element;
+  color: string;
+  children?: ReactNode;
   onChange?: (color: string) => void;
   title?: string;
 }
@@ -100,7 +100,7 @@ export default function ColorPicker({
 
   useEffect(() => {
     // Check if the dropdown is actually active
-    if (innerDivRef.current !== null) {
+    if (innerDivRef.current !== null && onChange) {
       onChange(selfColor.hex);
       setInputColor(selfColor.hex);
     }
@@ -269,14 +269,15 @@ export function toHex(value: string): string {
 }
 
 function hex2rgb(hex: string): RGB {
-  const rbgArr = hex
-    .replace(
-      /^#?([a-f\d])([a-f\d])([a-f\d])$/i,
-      (m, r, g, b) => '#' + r + r + g + g + b + b,
-    )
-    .substring(1)
-    .match(/.{2}/g)
-    .map((x) => parseInt(x, 16));
+  const rbgArr = (
+    hex
+      .replace(
+        /^#?([a-f\d])([a-f\d])([a-f\d])$/i,
+        (m, r, g, b) => '#' + r + r + g + g + b + b,
+      )
+      .substring(1)
+      .match(/.{2}/g) || []
+  ).map((x) => parseInt(x, 16));
 
   return {
     b: rbgArr[2],

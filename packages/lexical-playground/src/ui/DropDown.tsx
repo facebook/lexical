@@ -6,7 +6,14 @@
  *
  */
 
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {
+  ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import * as React from 'react';
 import {createPortal} from 'react-dom';
 
@@ -133,7 +140,7 @@ export default function DropDown({
   buttonClassName: string;
   buttonIconClassName?: string;
   buttonLabel?: string;
-  children: JSX.Element | string | (JSX.Element | string)[];
+  children: ReactNode;
   stopCloseOnClickSelf?: boolean;
 }): JSX.Element {
   const dropDownRef = useRef<HTMLDivElement>(null);

@@ -122,7 +122,7 @@ function App(): JSX.Element {
       : prepopulatedRichText,
     namespace: 'Playground',
     nodes: [...PlaygroundNodes],
-    onError: (error) => {
+    onError: (error: Error) => {
       throw error;
     },
     theme: PlaygroundEditorTheme,
@@ -141,8 +141,8 @@ function App(): JSX.Element {
             <Editor />
           </div>
           <Settings />
-          {isDevPlayground && <TestRecorderPlugin />}
-          {measureTypingPerf && <TypingPerfPlugin />}
+          {isDevPlayground ? <TestRecorderPlugin /> : null}
+          {measureTypingPerf ? <TypingPerfPlugin /> : null}
         </SharedAutocompleteContext>
       </SharedHistoryContext>
     </LexicalComposer>

@@ -28,7 +28,7 @@ export type SerializedAutocompleteNode = Spread<
   SerializedLexicalNode
 >;
 
-export class AutocompleteNode extends DecoratorNode<JSX.Element> {
+export class AutocompleteNode extends DecoratorNode<JSX.Element | null> {
   // TODO add comment
   __uuid: string;
 
@@ -73,7 +73,7 @@ export class AutocompleteNode extends DecoratorNode<JSX.Element> {
     return document.createElement('span');
   }
 
-  decorate(): JSX.Element {
+  decorate(): JSX.Element | null {
     if (this.__uuid !== UUID) {
       return null;
     }

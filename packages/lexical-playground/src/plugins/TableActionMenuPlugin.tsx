@@ -37,7 +37,7 @@ import {createPortal} from 'react-dom';
 type TableCellActionMenuProps = Readonly<{
   contextRef: {current: null | HTMLElement};
   onClose: () => void;
-  setIsMenuOpen: (boolean) => void;
+  setIsMenuOpen: (isOpen: boolean) => void;
   tableCellNode: TableCellNode;
 }>;
 
@@ -48,7 +48,7 @@ function TableActionMenu({
   contextRef,
 }: TableCellActionMenuProps) {
   const [editor] = useLexicalComposerContext();
-  const dropDownRef = useRef<HTMLDivElement>();
+  const dropDownRef = useRef<HTMLDivElement | null>(null);
   const [tableCellNode, updateTableCellNode] = useState(_tableCellNode);
   const [selectionCounts, updateSelectionCounts] = useState({
     columns: 1,
@@ -103,12 +103,12 @@ function TableActionMenu({
   }, [contextRef, dropDownRef]);
 
   useEffect(() => {
-    function handleClickOutside(event) {
+    function handleClickOutside(event: MouseEvent) {
       if (
         dropDownRef.current != null &&
         contextRef.current != null &&
-        !dropDownRef.current.contains(event.target) &&
-        !contextRef.current.contains(event.target)
+        !dropDownRef.current.contains(event.target as Node) &&
+        !contextRef.current.contains(event.target as Node)
       ) {
         setIsMenuOpen(false);
       }
@@ -132,7 +132,9 @@ function TableActionMenu({
         }
 
         const tableSelection = getTableSelectionFromTableElement(tableElement);
-        tableSelection.clearHighlight();
+        if (tableSelection !== null) {
+          tableSelection.clearHighlight();
+        }
 
         tableNode.markDirty();
         updateTableCellNode(tableCellNode.getLatest());
@@ -143,7 +145,7 @@ function TableActionMenu({
   }, [editor, tableCellNode]);
 
   const insertTableRowAtSelection = useCallback(
-    (shouldInsertAfter) => {
+    (shouldInsertAfter: boolean) => {
       editor.update(() => {
         const selection = $getSelection();
 
@@ -179,7 +181,7 @@ function TableActionMenu({
   );
 
   const insertTableColumnAtSelection = useCallback(
-    (shouldInsertAfter) => {
+    (shouldInsertAfter: boolean) => {
       editor.update(() => {
         const selection = $getSelection();
 
@@ -427,6 +429,7 @@ function TableCellActionMenuContainer(): JSX.Element {
     if (
       $isRangeSelection(selection) &&
       rootElement !== null &&
+      nativeSelection !== null &&
       rootElement.contains(nativeSelection.anchorNode)
     ) {
       const tableCellNodeFromSelection = $getTableCellNodeFromLexicalNode(
@@ -462,7 +465,7 @@ function TableCellActionMenuContainer(): JSX.Element {
   });
 
   useEffect(() => {
-    const menuButtonDOM = menuButtonRef.current;
+    const menuButtonDOM = menuButtonRef.current as HTMLButtonElement | null;
 
     if (menuButtonDOM != null && tableCellNode != null) {
       const tableCellNodeDOM = editor.getElementByKey(tableCellNode.getKey());

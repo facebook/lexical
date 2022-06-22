@@ -44,10 +44,15 @@ type TweetComponentProps = Readonly<{
   tweetID: string;
 }>;
 
-function convertTweetElement(domNode: HTMLElement): null | DOMConversionOutput {
+function convertTweetElement(
+  domNode: HTMLDivElement,
+): DOMConversionOutput | null {
   const id = domNode.getAttribute('data-lexical-tweet-id');
-  const node = $createTweetNode(id);
-  return {node};
+  if (id) {
+    const node = $createTweetNode(id);
+    return {node};
+  }
+  return null;
 }
 
 function TweetComponent({
@@ -91,7 +96,9 @@ function TweetComponent({
         script.async = true;
         document.body?.appendChild(script);
         script.onload = createTweet;
-        script.onerror = onError;
+        if (onError) {
+          script.onerror = onError as OnErrorEventHandler;
+        }
       } else {
         createTweet();
       }
@@ -151,9 +158,9 @@ export class TweetNode extends DecoratorBlockNode {
     };
   }
 
-  static importDOM(): DOMConversionMap | null {
+  static importDOM(): DOMConversionMap<HTMLDivElement> | null {
     return {
-      div: (domNode: HTMLElement) => {
+      div: (domNode: HTMLDivElement) => {
         if (!domNode.hasAttribute('data-lexical-tweet-id')) {
           return null;
         }
@@ -171,7 +178,7 @@ export class TweetNode extends DecoratorBlockNode {
     return {element};
   }
 
-  constructor(id: string, format?: ElementFormatType | null, key?: NodeKey) {
+  constructor(id: string, format?: ElementFormatType, key?: NodeKey) {
     super(format, key);
     this.__id = id;
   }

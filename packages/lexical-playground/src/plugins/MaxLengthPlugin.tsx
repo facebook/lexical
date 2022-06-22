@@ -9,14 +9,14 @@
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {trimTextContentFromAnchor} from '@lexical/selection';
 import {$restoreEditorState} from '@lexical/utils';
-import {$getSelection, $isRangeSelection, RootNode} from 'lexical';
+import {$getSelection, $isRangeSelection, EditorState, RootNode} from 'lexical';
 import {useEffect} from 'react';
 
 export function MaxLengthPlugin({maxLength}: {maxLength: number}): null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
-    let lastRestoredEditorState = null;
+    let lastRestoredEditorState: EditorState | null = null;
 
     return editor.registerNodeTransform(RootNode, (rootNode: RootNode) => {
       const selection = $getSelection();

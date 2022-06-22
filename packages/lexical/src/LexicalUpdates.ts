@@ -416,7 +416,7 @@ function handleDEVOnlyPendingUpdateGuarantees(
 
 export function commitPendingUpdates(editor: LexicalEditor): void {
   const pendingEditorState = editor._pendingEditorState;
-  const rootElement = editor._rootElement as HTMLElement;
+  const rootElement = editor._rootElement;
   const headless = editor._headless;
 
   if ((rootElement === null && !headless) || pendingEditorState === null) {

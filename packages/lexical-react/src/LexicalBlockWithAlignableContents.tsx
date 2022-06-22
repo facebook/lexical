@@ -28,10 +28,10 @@ import {
   KEY_DELETE_COMMAND,
 } from 'lexical';
 import * as React from 'react';
-import {useCallback, useEffect, useRef} from 'react';
+import {ReactNode, useCallback, useEffect, useRef} from 'react';
 
 type Props = Readonly<{
-  children: JSX.Element | string | (JSX.Element | string)[];
+  children: ReactNode;
   format: ElementFormatType | null | undefined;
   nodeKey: NodeKey;
   className: Readonly<{

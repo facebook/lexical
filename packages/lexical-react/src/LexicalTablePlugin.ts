@@ -115,7 +115,7 @@ export function TablePlugin(): JSX.Element | null {
         } else if (mutation === 'destroyed') {
           const tableSelection = tableSelections.get(nodeKey);
 
-          if (tableSelection) {
+          if (tableSelection !== undefined) {
             tableSelection.removeListeners();
             tableSelections.delete(nodeKey);
           }

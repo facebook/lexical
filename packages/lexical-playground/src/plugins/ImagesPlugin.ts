@@ -38,7 +38,7 @@ export type InsertImagePayload = Readonly<ImagePayload>;
 
 export const INSERT_IMAGE_COMMAND: LexicalCommand<InsertImagePayload> =
   createCommand();
-export default function ImagesPlugin(): JSX.Element {
+export default function ImagesPlugin(): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
@@ -150,7 +150,9 @@ function onDrop(event: DragEvent, editor: LexicalEditor): boolean {
     const range = getDragSelection(event);
     node.remove();
     const rangeSelection = $createRangeSelection();
-    rangeSelection.applyDOMRange(range);
+    if (range !== null && range !== undefined) {
+      rangeSelection.applyDOMRange(range);
+    }
     $setSelection(rangeSelection);
     editor.dispatchCommand(INSERT_IMAGE_COMMAND, data);
   }
@@ -198,12 +200,12 @@ function canDropImage(event: DragEvent): boolean {
   );
 }
 
-function getDragSelection(event: DragEvent): Range {
+function getDragSelection(event: DragEvent): Range | null | undefined {
   let range;
   const domSelection = getSelection();
   if (document.caretRangeFromPoint) {
     range = document.caretRangeFromPoint(event.clientX, event.clientY);
-  } else if (event.rangeParent) {
+  } else if (event.rangeParent && domSelection !== null) {
     domSelection.collapse(event.rangeParent, event.rangeOffset || 0);
     range = domSelection.getRangeAt(0);
   } else {

@@ -15,7 +15,7 @@ import {
   LexicalComposerContext,
 } from '@lexical/react/LexicalComposerContext';
 import * as React from 'react';
-import {useContext, useMemo} from 'react';
+import {ReactNode, useContext, useMemo} from 'react';
 import invariant from 'shared/invariant';
 
 export function LexicalNestedComposer({
@@ -23,7 +23,7 @@ export function LexicalNestedComposer({
   children,
   initialTheme,
 }: {
-  children: JSX.Element | string | (JSX.Element | string)[];
+  children: ReactNode;
   initialEditor: LexicalEditor;
   initialTheme?: EditorThemeClasses;
 }): JSX.Element {

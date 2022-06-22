@@ -8,9 +8,12 @@
 
 import type {
   EditorConfig,
+  GridSelection,
   LexicalEditor,
   LexicalNode,
   NodeKey,
+  NodeSelection,
+  RangeSelection,
   SerializedEditor,
   SerializedLexicalNode,
   Spread,
@@ -104,7 +107,7 @@ function LazyImage({
   useSuspenseImage(src);
   return (
     <img
-      className={className}
+      className={className || undefined}
       src={src}
       alt={altText}
       ref={imageRef}
@@ -146,7 +149,9 @@ function ImageComponent({
   const {yjsDocMap} = useCollaborationContext();
   const [editor] = useLexicalComposerContext();
   const isCollab = yjsDocMap.get('main') !== undefined;
-  const [selection, setSelection] = useState(null);
+  const [selection, setSelection] = useState<
+    RangeSelection | NodeSelection | GridSelection | null
+  >(null);
 
   const onDelete = useCallback(
     (payload: KeyboardEvent) => {
@@ -219,7 +224,10 @@ function ImageComponent({
     });
   };
 
-  const onResizeEnd = (nextWidth, nextHeight) => {
+  const onResizeEnd = (
+    nextWidth: 'inherit' | number,
+    nextHeight: 'inherit' | number,
+  ) => {
     // Delay hiding the resize bars for click case
     setTimeout(() => {
       setIsResizing(false);

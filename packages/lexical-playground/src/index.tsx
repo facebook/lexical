@@ -15,7 +15,7 @@ import {createRoot} from 'react-dom/client';
 import App from './App';
 
 // Handle runtime errors
-const showErrorOverlay = (err) => {
+const showErrorOverlay = (err: Event) => {
   const ErrorOverlay = customElements.get('vite-error-overlay');
   if (!ErrorOverlay) {
     return;
@@ -32,7 +32,7 @@ window.addEventListener('unhandledrejection', ({reason}) =>
   showErrorOverlay(reason),
 );
 
-createRoot(document.getElementById('root')).render(
+createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <App />
   </React.StrictMode>,

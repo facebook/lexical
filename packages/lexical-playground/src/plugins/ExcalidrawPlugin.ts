@@ -19,7 +19,7 @@ import {useEffect} from 'react';
 import {$createExcalidrawNode, ExcalidrawNode} from '../nodes/ExcalidrawNode';
 
 export const INSERT_EXCALIDRAW_COMMAND: LexicalCommand<void> = createCommand();
-export default function ExcalidrawPlugin(): JSX.Element {
+export default function ExcalidrawPlugin(): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   useEffect(() => {
     if (!editor.hasNodes([ExcalidrawNode])) {

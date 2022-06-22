@@ -544,7 +544,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
         editor,
         domSelection,
         tags,
-        rootElement,
+        rootElement as HTMLElement,
       );
     } finally {
       activeEditor = previousActiveEditor;

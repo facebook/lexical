@@ -519,7 +519,7 @@ export function $updateSelectedTextFromDOM(
         focusOffset = offset;
       }
 
-      if (textContent) {
+      if (textContent !== null) {
         $updateTextNodeFromDOMContent(
           node,
           textContent,

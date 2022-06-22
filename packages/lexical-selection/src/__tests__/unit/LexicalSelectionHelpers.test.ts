@@ -2398,6 +2398,77 @@ describe('LexicalSelectionHelpers tests', () => {
           '<p dir="ltr"><span data-lexical-text="true">Existing text...foo</span></p>',
         );
       });
+
+      test('a paragraph with a child text and a child italic text and a child text', async () => {
+        const editor = createTestEditor();
+
+        const element = document.createElement('div');
+
+        editor.setRootElement(element);
+
+        await editor.update(() => {
+          const root = $getRoot();
+
+          const paragraph = $createParagraphNode();
+          const text = $createTextNode('AE');
+
+          paragraph.append(text);
+          root.append(paragraph);
+
+          setAnchorPoint({
+            key: text.getKey(),
+            offset: 1,
+            type: 'text',
+          });
+
+          setFocusPoint({
+            key: text.getKey(),
+            offset: 1,
+            type: 'text',
+          });
+
+          const insertedParagraph = $createParagraphNode();
+          const insertedTextB = $createTextNode('B');
+          const insertedTextC = $createTextNode('C');
+          const insertedTextD = $createTextNode('D');
+
+          insertedTextC.toggleFormat('italic');
+
+          insertedParagraph.append(insertedTextB, insertedTextC, insertedTextD);
+
+          const selection = $getSelection();
+
+          if (!$isRangeSelection(selection)) {
+            return;
+          }
+
+          selection.insertNodes([insertedParagraph]);
+
+          expect(selection.anchor).toEqual(
+            expect.objectContaining({
+              key: paragraph
+                .getChildAtIndex(paragraph.getChildrenSize() - 2)
+                .getKey(),
+              offset: 1,
+              type: 'text',
+            }),
+          );
+
+          expect(selection.focus).toEqual(
+            expect.objectContaining({
+              key: paragraph
+                .getChildAtIndex(paragraph.getChildrenSize() - 2)
+                .getKey(),
+              offset: 1,
+              type: 'text',
+            }),
+          );
+        });
+
+        expect(element.innerHTML).toBe(
+          '<p dir="ltr"><span data-lexical-text="true">AB</span><em data-lexical-text="true">C</em><span data-lexical-text="true">DE</span></p>',
+        );
+      });
     });
   });
 });

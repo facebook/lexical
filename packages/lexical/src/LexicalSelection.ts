@@ -1227,7 +1227,7 @@ export class RangeSelection implements BaseSelection {
 
     const firstNode = nodes[0];
     let didReplaceOrMerge = false;
-    let lastNodeInserted = null;
+    let lastNode = null;
 
     // Time to insert the nodes!
     for (let i = 0; i < nodes.length; i++) {
@@ -1292,16 +1292,15 @@ export class RangeSelection implements BaseSelection {
             const childrenLength = children.length;
             if ($isElementNode(target)) {
               for (let s = 0; s < childrenLength; s++) {
-                lastNodeInserted = children[s];
-                target.append(lastNodeInserted);
+                target.append(children[s]);
               }
             } else {
               for (let s = childrenLength - 1; s >= 0; s--) {
-                lastNodeInserted = children[s];
-                target.insertAfter(lastNodeInserted);
+                target.insertAfter(children[s]);
               }
               target = target.getParentOrThrow();
             }
+            lastNode = children[childrenLength - 1];
             element.remove();
             didReplaceOrMerge = true;
             if (element.is(node)) {
@@ -1327,7 +1326,7 @@ export class RangeSelection implements BaseSelection {
       }
       didReplaceOrMerge = false;
       if ($isElementNode(target) && !target.isInline()) {
-        lastNodeInserted = node;
+        lastNode = node;
         if ($isDecoratorNode(node) && node.isTopLevel()) {
           target = target.insertAfter(node);
         } else if (!$isElementNode(node)) {
@@ -1360,7 +1359,7 @@ export class RangeSelection implements BaseSelection {
         ($isDecoratorNode(target) && target.isTopLevel()) ||
         $isLineBreakNode(target)
       ) {
-        lastNodeInserted = node;
+        lastNode = node;
         target = target.insertAfter(node);
       } else {
         target = node.getParentOrThrow();
@@ -1388,8 +1387,8 @@ export class RangeSelection implements BaseSelection {
     if ($isElementNode(target)) {
       // If the last node to be inserted was a text node,
       // then we should attempt to move selection to that.
-      const lastChild = $isTextNode(lastNodeInserted)
-        ? lastNodeInserted
+      const lastChild = $isTextNode(lastNode)
+        ? lastNode
         : target.getLastDescendant();
       if (!selectStart) {
         // Handle moving selection to end for elements

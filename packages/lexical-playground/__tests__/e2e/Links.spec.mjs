@@ -741,6 +741,189 @@ test.describe('Links', () => {
     });
   });
 
+  test(`It can insert text inside a link after a formatted text node`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    const linkText = 'This is the bold link';
+    await page.keyboard.type(linkText);
+
+    // Select all characters
+    await selectCharacters(page, 'left', linkText.length);
+
+    // Make it a link
+    await click(page, '.link');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://">
+            <span data-lexical-text="true">${linkText}</span>
+          </a>
+        </p>
+      `,
+    );
+    // Move caret to end of link
+    await page.keyboard.press('ArrowRight');
+
+    // Move caret to end of 'bold'
+    await moveLeft(page, ' link'.length);
+
+    // Select the word 'bold'
+    await selectCharacters(page, 'left', 'bold'.length);
+
+    await toggleBold(page);
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://">
+            <span data-lexical-text="true">This is the</span>
+            <strong
+              class="PlaygroundEditorTheme__textBold"
+              data-lexical-text="true">
+              bold
+            </strong>
+            <span data-lexical-text="true">link</span>
+          </a>
+        </p>
+      `,
+    );
+
+    // Move caret to after 'bold'
+    await page.keyboard.press('ArrowRight');
+
+    // Change word to 'boldest'
+    await page.keyboard.type('est');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://">
+            <span data-lexical-text="true">This is the</span>
+            <strong
+              class="PlaygroundEditorTheme__textBold"
+              data-lexical-text="true">
+              boldest
+            </strong>
+            <span data-lexical-text="true">link</span>
+          </a>
+        </p>
+      `,
+    );
+  });
+
+  test(`It can insert text inside a link before a formatted text node`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    const linkText = 'This is a bold link';
+    await page.keyboard.type(linkText);
+
+    // Select all characters
+    await selectCharacters(page, 'left', linkText.length);
+
+    // Make it a link
+    await click(page, '.link');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://">
+            <span data-lexical-text="true">${linkText}</span>
+          </a>
+        </p>
+      `,
+    );
+
+    // Move caret to end of link
+    await page.keyboard.press('ArrowRight');
+
+    // Move caret to end of 'bold'
+    await moveLeft(page, ' link'.length);
+
+    // Select the word 'bold'
+    await selectCharacters(page, 'left', 'bold'.length);
+
+    await toggleBold(page);
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://">
+            <span data-lexical-text="true">This is a</span>
+            <strong
+              class="PlaygroundEditorTheme__textBold"
+              data-lexical-text="true">
+              bold
+            </strong>
+            <span data-lexical-text="true">link</span>
+          </a>
+        </p>
+      `,
+    );
+
+    // Move caret to the start of the word 'bold'
+    await page.keyboard.press('ArrowLeft');
+
+    await selectCharacters(page, 'left', 'a '.length);
+
+    // Replace 'a ' with 'the '
+    await page.keyboard.type('the ');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://">
+            <span data-lexical-text="true">This is the</span>
+            <strong
+              class="PlaygroundEditorTheme__textBold"
+              data-lexical-text="true">
+              bold
+            </strong>
+            <span data-lexical-text="true">link</span>
+          </a>
+        </p>
+      `,
+    );
+  });
+
   test(`Does nothing if the selection is collapsed at the end of a text node.`, async ({
     page,
   }) => {

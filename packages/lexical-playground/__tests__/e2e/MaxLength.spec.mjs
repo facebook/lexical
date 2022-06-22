@@ -71,6 +71,7 @@ test.describe('MaxLength', () => {
   });
 
   test(`can restrict emojis on boundaries`, async ({page}) => {
+    await focusEditor(page);
     await pasteFromClipboard(page, {
       'text/plain': 'lorem ipsum dolor sit amet, consectetur adipiscing elit',
     });

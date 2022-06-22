@@ -63,7 +63,7 @@ import {
   SELECTION_CHANGE_COMMAND,
   UNDO_COMMAND,
 } from '.';
-import {KEY_MODIFIER_COMMAND} from './LexicalCommands';
+import {MOUSE_OVER_COMMAND, MOUSE_LEAVE_COMMAND, KEY_MODIFIER_COMMAND} from './LexicalCommands';
 import {
   COMPOSITION_START_CHAR,
   DOM_TEXT_TYPE,
@@ -130,6 +130,8 @@ const rootElementEvents: RootElementEvents = [
   ['compositionend', onCompositionEnd],
   ['input', onInput],
   ['click', onClick],
+  ['mouseover', onMouseOver],
+  ['mouseleave', onMouseLeave],
   ['cut', PASS_THROUGH_COMMAND],
   ['copy', PASS_THROUGH_COMMAND],
   ['dragstart', PASS_THROUGH_COMMAND],
@@ -324,6 +326,12 @@ function onClick(event: MouseEvent, editor: LexicalEditor): void {
   });
 }
 
+function onMouseOver(event: MouseEvent, editor: LexicalEditor): void {
+  dispatchCommand(editor, MOUSE_OVER_COMMAND, event);
+}
+function onMouseLeave(event: MouseEvent, editor: LexicalEditor): void {
+  dispatchCommand(editor, MOUSE_LEAVE_COMMAND, event);
+}
 function $applyTargetRange(selection: RangeSelection, event: InputEvent): void {
   if (event.getTargetRanges) {
     const targetRange = event.getTargetRanges()[0];

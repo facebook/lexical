@@ -53,6 +53,7 @@ import TwitterPlugin from './plugins/TwitterPlugin';
 import YouTubePlugin from './plugins/YouTubePlugin';
 import ContentEditable from './ui/ContentEditable';
 import Placeholder from './ui/Placeholder';
+import ShowKeyPlugin from "./plugins/ShowKeyPlugin";
 
 const skipCollaborationInit =
   // @ts-ignore
@@ -117,6 +118,7 @@ export default function Editor(): JSX.Element {
               // TODO Collab support until 0.4
               initialEditorState={isCollab ? null : undefined}
             />
+            <ShowKeyPlugin />
             <MarkdownShortcutPlugin />
             <CodeHighlightPlugin />
             <ListPlugin />

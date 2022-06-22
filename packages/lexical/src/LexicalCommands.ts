@@ -14,6 +14,8 @@ export function createCommand<T>(): LexicalCommand<T> {
 
 export const SELECTION_CHANGE_COMMAND: LexicalCommand<void> = createCommand();
 export const CLICK_COMMAND: LexicalCommand<MouseEvent> = createCommand();
+export const MOUSE_OVER_COMMAND: LexicalCommand<MouseEvent> = createCommand();
+export const MOUSE_LEAVE_COMMAND: LexicalCommand<MouseEvent> = createCommand();
 export const DELETE_CHARACTER_COMMAND: LexicalCommand<boolean> =
   createCommand();
 export const INSERT_LINE_BREAK_COMMAND: LexicalCommand<boolean> =

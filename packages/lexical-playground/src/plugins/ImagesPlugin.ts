@@ -149,9 +149,6 @@ function onDrop(event: DragEvent, editor: LexicalEditor): boolean {
   if (canDropImage(event)) {
     const range = getDragSelection(event);
     node.remove();
-    const domSelection = getSelection();
-    domSelection.removeAllRanges();
-    domSelection.addRange(range);
     const rangeSelection = $createRangeSelection();
     rangeSelection.applyDOMRange(range);
     $setSelection(rangeSelection);

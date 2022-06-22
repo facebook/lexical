@@ -47,7 +47,9 @@ For React it could be something following:
 const initialEditorState = await loadContent();
 const editorStateRef = useRef();
 
-<LexicalComposer initialEditorState={initialEditorState}>
+<LexicalComposer initialConfig={{
+  editorState: initialEditorState
+}}>
   <LexicalRichTextPlugin />
   <LexicalOnChangePlugin onChange={editorState => editorStateRef.current = editorState} />
   <Button label="Save" onPress={() => {
@@ -58,7 +60,7 @@ const editorStateRef = useRef();
 </LexicalComposer>
 ```
 
-Note that Lexical uses `initialEditorState` only once (when it's being initialized) and passing different value later
+Note that Lexical uses `initialConfig.editorState` only once (when it's being initialized) and passing different value later
 won't be reflected in editor. See "Update state" below for proper ways of updating editor state.
 
 ## Updating state

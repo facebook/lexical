@@ -557,13 +557,19 @@ test.describe('History', () => {
     await redo(page);
     await assertHTML(page, step1HTML);
   });
+});
 
+test.use({launchOptions: {slowMo: 50}});
+test.describe('History - IME', () => {
+  test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   test('Can undo composed Hirigana via IME after composition ends (#2479)', async ({
     page,
     browserName,
+    isCollab,
+    isPlainText,
   }) => {
     // We don't yet support FF.
-    test.skip(browserName === 'firefox');
+    test.skip(isCollab || isPlainText || browserName === 'firefox');
 
     await focusEditor(page);
     await enableCompositionKeyEvents(page);
@@ -602,13 +608,15 @@ test.describe('History', () => {
 
     await undo(page);
 
+    const WHITESPACE_TOKEN = ' ';
+
     await assertHTML(
       page,
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr">
-          <span data-lexical-text="true">すし</span>
+          <span data-lexical-text="true">すし${WHITESPACE_TOKEN}</span>
         </p>
       `,
     );

@@ -175,7 +175,9 @@ function $createNodesFromDOM(
 
   let currentLexicalNode = null;
   const transformFunction = getConversionFunction(node, editor);
-  const transformOutput = transformFunction ? transformFunction(node) : null;
+  const transformOutput = transformFunction
+    ? transformFunction(node as HTMLElement)
+    : null;
   let postTransform = null;
 
   if (transformOutput !== null) {

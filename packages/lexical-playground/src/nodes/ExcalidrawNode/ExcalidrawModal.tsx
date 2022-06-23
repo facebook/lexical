@@ -57,8 +57,7 @@ export default function ExcalidrawModal({
   onHide,
   onDelete,
 }: Props): ReactPortal | null {
-  const excalidrawRef = useRef(null);
-  const excaliDrawModelRef = useRef(null);
+  const excaliDrawModelRef = useRef<HTMLDivElement | null>(null);
   const [discardModalOpen, setDiscardModalOpen] = useState(false);
   const [elements, setElements] =
     useState<ReadonlyArray<ExcalidrawElementFragment>>(initialElements);
@@ -70,12 +69,12 @@ export default function ExcalidrawModal({
   }, []);
 
   useEffect(() => {
-    let modalOverlayElement = null;
+    let modalOverlayElement: HTMLElement | null = null;
     const clickOutsideHandler = (event: MouseEvent) => {
       const target = event.target;
       if (
         excaliDrawModelRef.current !== null &&
-        !excaliDrawModelRef.current.contains(target) &&
+        !excaliDrawModelRef.current.contains(target as Node) &&
         closeOnClickOutside
       ) {
         onDelete();
@@ -143,15 +142,11 @@ export default function ExcalidrawModal({
     );
   }
 
-  useEffect(() => {
-    excalidrawRef?.current?.updateScene({elements: initialElements});
-  }, [initialElements]);
-
   if (isShown === false) {
     return null;
   }
 
-  const onChange = (els) => {
+  const onChange = (els: ReadonlyArray<ExcalidrawElementFragment>) => {
     setElements(els);
   };
 

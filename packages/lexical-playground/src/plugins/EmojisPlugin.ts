@@ -51,7 +51,7 @@ function findAndTransformEmoji(node: TextNode): null | TextNode {
 }
 
 function textNodeTransform(node: TextNode): void {
-  let targetNode = node;
+  let targetNode: TextNode | null = node;
 
   while (targetNode !== null) {
     if (!targetNode.isSimpleText()) {
@@ -72,7 +72,7 @@ function useEmojis(editor: LexicalEditor): void {
   }, [editor]);
 }
 
-export default function EmojisPlugin(): JSX.Element {
+export default function EmojisPlugin(): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   useEmojis(editor);
   return null;

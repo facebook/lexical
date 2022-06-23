@@ -36,7 +36,7 @@ export default function ImageResizer({
   maxWidth?: number;
   onResizeEnd: (width: 'inherit' | number, height: 'inherit' | number) => void;
   onResizeStart: () => void;
-  setShowCaption: (boolean) => void;
+  setShowCaption: (show: boolean) => void;
   showCaption: boolean;
 }): JSX.Element {
   const buttonRef = useRef(null);

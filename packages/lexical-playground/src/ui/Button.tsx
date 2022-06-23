@@ -9,6 +9,7 @@
 import './Button.css';
 
 import * as React from 'react';
+import {ReactNode} from 'react';
 
 import joinClasses from '../utils/join-classes';
 
@@ -22,7 +23,7 @@ export default function Button({
   title,
 }: {
   'data-test-id'?: string;
-  children: JSX.Element | string | (JSX.Element | string)[];
+  children: ReactNode;
   className?: string;
   disabled?: boolean;
   onClick: () => void;

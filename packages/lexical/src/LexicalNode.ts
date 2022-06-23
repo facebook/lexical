@@ -121,24 +121,24 @@ export function $getNodeByKeyOrThrow<N extends LexicalNode>(key: NodeKey): N {
   return node;
 }
 
-export type DOMConversion = {
-  conversion: DOMConversionFn;
+export type DOMConversion<T extends HTMLElement = HTMLElement> = {
+  conversion: DOMConversionFn<T>;
   priority: 0 | 1 | 2 | 3 | 4;
 };
 
-export type DOMConversionFn = (
-  element: Node,
+export type DOMConversionFn<T extends HTMLElement = HTMLElement> = (
+  element: T,
   parent?: Node,
-) => DOMConversionOutput;
+) => DOMConversionOutput | null;
 
 export type DOMChildConversion = (
   lexicalNode: LexicalNode,
   parentLexicalNode: LexicalNode | null | undefined,
 ) => LexicalNode | null | undefined;
 
-export type DOMConversionMap = Record<
+export type DOMConversionMap<T extends HTMLElement = HTMLElement> = Record<
   NodeName,
-  <T extends HTMLElement>(node: T) => DOMConversion | null
+  (node: T) => DOMConversion<T> | null
 >;
 type NodeName = string;
 

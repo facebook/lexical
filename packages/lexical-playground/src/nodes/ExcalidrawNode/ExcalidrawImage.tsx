@@ -54,7 +54,7 @@ type Props = {
 
 // exportToSvg has fonts from excalidraw.com
 // We don't want them to be used in open source
-const removeStyleFromSvg_HACK = (svg) => {
+const removeStyleFromSvg_HACK = (svg: SVGElement) => {
   const styleTag = svg?.firstElementChild?.firstElementChild;
 
   // Generated SVG is getting double-sized by height and width attributes
@@ -81,11 +81,15 @@ export default function ExcalidrawImage({
   appState = null,
   rootClassName = null,
 }: Props): JSX.Element {
-  const [Svg, setSvg] = useState<Element | null>(null);
+  const [Svg, setSvg] = useState<SVGElement | null>(null);
 
   useEffect(() => {
     const setContent = async () => {
-      const svg: Element = await exportToSvg({
+      if (appState === null) {
+        return;
+      }
+
+      const svg: SVGElement = await exportToSvg({
         appState,
         elements,
         files: null,

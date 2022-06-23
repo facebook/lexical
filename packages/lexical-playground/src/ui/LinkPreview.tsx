@@ -9,10 +9,17 @@
 import './LinkPreview.css';
 
 import * as React from 'react';
-import {Suspense} from 'react';
+import {CSSProperties, Suspense} from 'react';
+
+type Preview = {
+  title: string;
+  description: string;
+  img: string;
+  domain: string;
+} | null;
 
 // Cached responses or running request promises
-const PREVIEW_CACHE = {};
+const PREVIEW_CACHE: Record<string, Promise<Preview> | {preview: Preview}> = {};
 
 const URL_MATCHER =
   /((https?:\/\/(www\.)?)|(www\.))[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)/;
@@ -49,7 +56,7 @@ function LinkPreviewContent({
   url,
 }: Readonly<{
   url: string;
-}>): JSX.Element {
+}>): JSX.Element | null {
   const {preview} = useSuspenseRequest(url);
   if (preview === null) {
     return null;
@@ -78,12 +85,15 @@ function LinkPreviewContent({
   );
 }
 
-function Glimmer(props): JSX.Element {
+function Glimmer(props: {style: CSSProperties; index: number}): JSX.Element {
   return (
     <div
       className="LinkPreview__glimmer"
       {...props}
-      style={{animationDelay: (props.index || 0) * 300, ...(props.style || {})}}
+      style={{
+        animationDelay: String((props.index || 0) * 300),
+        ...(props.style || {}),
+      }}
     />
   );
 }

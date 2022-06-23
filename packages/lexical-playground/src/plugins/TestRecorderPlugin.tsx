@@ -6,7 +6,12 @@
  *
  */
 
-import type {LexicalEditor} from 'lexical';
+import type {
+  GridSelection,
+  LexicalEditor,
+  NodeSelection,
+  RangeSelection,
+} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
@@ -46,8 +51,8 @@ const download = (filename: string, text: string | null) => {
   document.body?.removeChild(a);
 };
 
-const formatStep = (step) => {
-  const formatOneStep = (name, value) => {
+const formatStep = (step: Step) => {
+  const formatOneStep = (name: string, value: Step['value']) => {
     switch (name) {
       case 'click': {
         return `      await page.mouse.click(${value.x}, ${value.y});`;
@@ -99,7 +104,7 @@ export function isSelectAll(event: KeyboardEvent): boolean {
 }
 
 // stolen from LexicalSelection-test
-function sanitizeSelection(selection) {
+function sanitizeSelection(selection: Selection) {
   const {anchorNode, focusNode} = selection;
   let {anchorOffset, focusOffset} = selection;
   if (anchorOffset !== 0) {
@@ -111,15 +116,17 @@ function sanitizeSelection(selection) {
   return {anchorNode, anchorOffset, focusNode, focusOffset};
 }
 
-function getPathFromNodeToEditor(node: Node, rootElement) {
-  let currentNode = node;
+function getPathFromNodeToEditor(node: Node, rootElement: HTMLElement | null) {
+  let currentNode: Node | null | undefined = node;
   const path = [];
   while (currentNode !== rootElement) {
-    path.unshift(
-      Array.from(currentNode?.parentNode?.childNodes ?? []).indexOf(
-        currentNode as ChildNode,
-      ),
-    );
+    if (currentNode !== null && currentNode !== undefined) {
+      path.unshift(
+        Array.from(currentNode?.parentNode?.childNodes ?? []).indexOf(
+          currentNode as ChildNode,
+        ),
+      );
+    }
     currentNode = currentNode?.parentNode;
   }
   return path;
@@ -137,21 +144,26 @@ const keyPresses = new Set([
 ]);
 
 type Step = {
-  value: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  value: any;
   count: number;
   name: string;
 };
 
 type Steps = Step[];
 
-function useTestRecorder(editor: LexicalEditor): [JSX.Element, JSX.Element] {
+function useTestRecorder(
+  editor: LexicalEditor,
+): [JSX.Element, JSX.Element | null] {
   const [steps, setSteps] = useState<Steps>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [, setCurrentInnerHTML] = useState('');
   const [templatedTest, setTemplatedTest] = useState('');
-  const previousSelectionRef = useRef(null);
+  const previousSelectionRef = useRef<
+    RangeSelection | GridSelection | NodeSelection | null
+  >(null);
   const skipNextSelectionChangeRef = useRef(false);
-  const preRef = useRef(null);
+  const preRef = useRef<HTMLPreElement>(null);
 
   const getCurrentEditor = useCallback(() => {
     return editor;
@@ -188,6 +200,8 @@ import {
   repeat,
 } from '../utils';
 import {selectAll} from '../keyboardShortcuts';
+import { RangeSelection } from 'lexical';
+import { NodeSelection } from 'lexical';
 
 describe('Test case', () => {
   initializeE2E((e2e) => {
@@ -204,7 +218,7 @@ ${steps.map(formatStep).join(`\n`)}
   // just a wrapper around inserting new actions so that we can
   // coalesce some actions like insertText/moveNativeSelection
   const pushStep = useCallback(
-    (name, value) => {
+    (name: string, value: Step['value']) => {
       setSteps((currentSteps) => {
         // trying to group steps
         const currentIndex = steps.length - 1;
@@ -287,7 +301,10 @@ ${steps.map(formatStep).join(`\n`)}
 
   useEffect(() => {
     if (steps) {
-      setTemplatedTest(generateTestContent());
+      const testContent = generateTestContent();
+      if (testContent !== null) {
+        setTemplatedTest(testContent);
+      }
       if (preRef.current) {
         preRef.current.scrollTo(0, preRef.current.scrollHeight);
       }
@@ -311,8 +328,9 @@ ${steps.map(formatStep).join(`\n`)}
           ) {
             const browserSelection = window.getSelection();
             if (
-              browserSelection.anchorNode == null ||
-              browserSelection.focusNode == null
+              browserSelection &&
+              (browserSelection.anchorNode == null ||
+                browserSelection.focusNode == null)
             ) {
               return;
             }
@@ -320,7 +338,10 @@ ${steps.map(formatStep).join(`\n`)}
           previousSelectionRef.current = currentSelection;
         }
         skipNextSelectionChangeRef.current = false;
-        setTemplatedTest(generateTestContent());
+        const testContent = generateTestContent();
+        if (testContent !== null) {
+          setTemplatedTest(testContent);
+        }
       },
     );
     return removeUpdateListener;
@@ -342,7 +363,7 @@ ${steps.map(formatStep).join(`\n`)}
 
   // clear editor and start recording
   const toggleEditorSelection = useCallback(
-    (currentEditor) => {
+    (currentEditor: LexicalEditor) => {
       if (!isRecording) {
         currentEditor.update(() => {
           const root = $getRoot();
@@ -364,6 +385,7 @@ ${steps.map(formatStep).join(`\n`)}
     }
     const browserSelection = window.getSelection();
     if (
+      browserSelection === null ||
       browserSelection.anchorNode == null ||
       browserSelection.focusNode == null
     ) {
@@ -371,14 +393,15 @@ ${steps.map(formatStep).join(`\n`)}
     }
     const {anchorNode, anchorOffset, focusNode, focusOffset} =
       sanitizeSelection(browserSelection);
-    const anchorPath = getPathFromNodeToEditor(
-      anchorNode,
-      getCurrentEditor().getRootElement(),
-    );
-    const focusPath = getPathFromNodeToEditor(
-      focusNode,
-      getCurrentEditor().getRootElement(),
-    );
+    const rootElement = getCurrentEditor().getRootElement();
+    let anchorPath;
+    if (anchorNode !== null) {
+      anchorPath = getPathFromNodeToEditor(anchorNode, rootElement);
+    }
+    let focusPath;
+    if (focusNode !== null) {
+      focusPath = getPathFromNodeToEditor(focusNode, rootElement);
+    }
     pushStep('snapshot', {
       anchorNode,
       anchorOffset,

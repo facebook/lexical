@@ -77,7 +77,7 @@ function AddCommentBox({
   editor: LexicalEditor;
   onAddComment: () => void;
 }): JSX.Element {
-  const boxRef = useRef(null);
+  const boxRef = useRef<HTMLDivElement>(null);
 
   const updatePosition = useCallback(() => {
     const boxElem = boxRef.current;
@@ -135,7 +135,7 @@ function EditorRefPlugin({
 function EscapeHandlerPlugin({
   onEscape,
 }: {
-  onEscape: (KeyboardEvent) => boolean;
+  onEscape: (e: KeyboardEvent) => boolean;
 }): null {
   const [editor] = useLexicalComposerContext();
 
@@ -164,13 +164,13 @@ function PlainTextEditor({
   className?: string;
   editorRef?: {current: null | LexicalEditor};
   onChange: (editorState: EditorState, editor: LexicalEditor) => void;
-  onEscape: (KeyboardEvent) => boolean;
+  onEscape: (e: KeyboardEvent) => boolean;
   placeholder?: string;
 }) {
   const initialConfig = {
     namespace: 'Commenting',
     nodes: [],
-    onError: (error) => {
+    onError: (error: Error) => {
       throw error;
     },
     theme: CommentEditorTheme,
@@ -194,7 +194,10 @@ function PlainTextEditor({
   );
 }
 
-function useOnChange(setContent, setCanSubmit) {
+function useOnChange(
+  setContent: (text: string) => void,
+  setCanSubmit: (canSubmit: boolean) => void,
+) {
   return useCallback(
     (editorState: EditorState, _editor: LexicalEditor) => {
       editorState.read(() => {
@@ -220,7 +223,7 @@ function CommentInputBox({
 }) {
   const [content, setContent] = useState('');
   const [canSubmit, setCanSubmit] = useState(false);
-  const boxRef = useRef(null);
+  const boxRef = useRef<HTMLDivElement>(null);
   const selectionState = useMemo(
     () => ({
       container: document.createElement('div'),
@@ -256,12 +259,13 @@ function CommentInputBox({
           boxElem.style.left = `${correctedLeft}px`;
           boxElem.style.top = `${bottom + 20}px`;
           const selectionRectsLength = selectionRects.length;
-          const {elements, container} = selectionState;
+          const {container} = selectionState;
+          const elements: Array<HTMLSpanElement> = selectionState.elements;
           const elementsLength = elements.length;
 
           for (let i = 0; i < selectionRectsLength; i++) {
             const selectionRect = selectionRects[i];
-            let elem = elements[i];
+            let elem: HTMLSpanElement = elements[i];
             if (elem === undefined) {
               elem = document.createElement('span');
               elements[i] = elem;
@@ -365,7 +369,7 @@ function CommentsComposer({
 }) {
   const [content, setContent] = useState('');
   const [canSubmit, setCanSubmit] = useState(false);
-  const editorRef = useRef(null);
+  const editorRef = useRef<LexicalEditor>(null);
   const author = useCollabAuthorName();
 
   const onChange = useOnChange(setContent, setCanSubmit);
@@ -375,7 +379,7 @@ function CommentsComposer({
       submitAddComment(createComment(content, author), false, thread);
       const editor = editorRef.current;
       if (editor !== null) {
-        editor.dispatchCommand(CLEAR_EDITOR_COMMAND);
+        editor.dispatchCommand(CLEAR_EDITOR_COMMAND, undefined);
       }
     }
   };
@@ -553,7 +557,7 @@ function CommentsPanelList({
       {comments.map((commentOrThread) => {
         const id = commentOrThread.id;
         if (commentOrThread.type === 'thread') {
-          const handleClickThread = (event) => {
+          const handleClickThread = () => {
             const markNodeKeys = markNodeMap.get(id);
             if (
               markNodeKeys !== undefined &&
@@ -644,8 +648,8 @@ function CommentsPanel({
     thread?: Thread,
   ) => void;
 }): JSX.Element {
-  const footerRef = useRef(null);
-  const listRef = useRef(null);
+  const footerRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
   const isEmpty = comments.length === 0;
 
   useLayoutEffect(() => {
@@ -713,7 +717,7 @@ export default function CommentPlugin({
   const markNodeMap = useMemo<Map<string, Set<NodeKey>>>(() => {
     return new Map();
   }, []);
-  const [activeAnchorKey, setActiveAnchorKey] = useState(null);
+  const [activeAnchorKey, setActiveAnchorKey] = useState<NodeKey | null>();
   const [activeIDs, setActiveIDs] = useState<Array<string>>([]);
   const [showCommentInput, setShowCommentInput] = useState(false);
   const [showComments, setShowComments] = useState(false);
@@ -797,7 +801,7 @@ export default function CommentPlugin({
   );
 
   useEffect(() => {
-    const changedElems = [];
+    const changedElems: Array<HTMLElement> = [];
     for (let i = 0; i < activeIDs.length; i++) {
       const id = activeIDs[i];
       const keys = markNodeMap.get(id);
@@ -842,7 +846,7 @@ export default function CommentPlugin({
         editor.getEditorState().read(() => {
           for (const [key, mutation] of mutations) {
             const node: null | MarkNode = $getNodeByKey(key);
-            let ids = [];
+            let ids: NodeKey[] = [];
 
             if (mutation === 'destroyed') {
               ids = markNodeKeysToIDs.get(key) || [];
@@ -916,7 +920,9 @@ export default function CommentPlugin({
         INSERT_INLINE_COMMAND,
         () => {
           const domSelection = window.getSelection();
-          domSelection.removeAllRanges();
+          if (domSelection !== null) {
+            domSelection.removeAllRanges();
+          }
           setShowCommentInput(true);
           return true;
         },
@@ -941,6 +947,7 @@ export default function CommentPlugin({
           document.body,
         )}
       {activeAnchorKey !== null &&
+        activeAnchorKey !== undefined &&
         !showCommentInput &&
         createPortal(
           <AddCommentBox

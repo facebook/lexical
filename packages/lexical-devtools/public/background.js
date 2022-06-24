@@ -7,16 +7,27 @@
  */
 'use strict';
 
-let ports = [];
+// Create messaging connection to send editorState updates to Lexical DevTools App.
+let ports = {}; // Each tab will have a separate messaging port for the devTools app & the inspectedWindow's content script, eg. { tabId: { reactPort, contentScriptPort } }
 
-// listener for messages from content scripts
-function connected(port) {
-  ports[port.sender.tab.id] = port;
-
-  port.onMessage.addListener(function (message) {
-    port.postMessage({editorState: message.editorState});
-  });
-}
-
+// The Lexical DevTools React UI sends a message to initialize the port.
 // eslint-disable-next-line no-undef
-chrome.runtime.onConnect.addListener(connected);
+chrome.runtime.onConnect.addListener(function (port) {
+  port.onMessage.addListener(function (message) {
+    if (message.name === 'init' && message.type === 'FROM_APP') {
+      ports[message.tabId].react = port;
+      return;
+    }
+
+    if (message.name === 'init' && message.type === 'FROM_CONTENT') {
+      ports[port.sender.tab.id] = {};
+      ports[port.sender.tab.id].content = port;
+      return;
+    }
+
+    if (message.name === 'editor-update') {
+      const tabId = port.sender.tab.id;
+      ports[tabId].react.postMessage({editorState: message.editorState});
+    }
+  });
+});

@@ -7,23 +7,26 @@
  */
 'use strict';
 
-// open port to send/receive messages from background.js
 // eslint-disable-next-line no-undef
-let port = chrome.runtime.connect({name: 'lexical-devtools'});
+let port = chrome.runtime.connect();
 
-port.onMessage.addListener(function (message) {
-  // send message.editorState to app in main.tsx/App.tsx
+port.postMessage({
+  name: 'init',
+  type: 'FROM_CONTENT',
 });
 
-// listen for messages from the page script in devtools.js
-window.addEventListener('message', (event) => {
-  // security workaround, see: https://developer.chrome.com/docs/extensions/mv3/content_scripts/#host-page-communication
+// Listen to editorState updates from the inspected page, via the registerUpdateListener injected by devtools.js
+window.addEventListener('message', function (event) {
   if (event.source !== window) {
+    // Security check: https://developer.chrome.com/docs/extensions/mv3/content_scripts/#host-page-communication
     return;
   }
 
-  // dispatch editorState to background.js
   if (event.data.type && event.data.type === 'FROM_PAGE') {
-    port.postMessage({editorState: event.data.editorState._nodeMap}); // placeholder, sending _nodeMap for now because Chrome & Edge auto-serialize postMessages. so, sending the whole editorState throws a JSON serialization error
+    port.postMessage({
+      editorState: event.data.editorState._nodeMap, // placeholder, sending _nodeMap for now because Chrome & Edge auto-serialize postMessages. sending the whole editorState throws a JSON serialization error due to its 'circular' JSON structure
+      name: 'editor-update',
+      type: 'FROM_CONTENT',
+    });
   }
 });

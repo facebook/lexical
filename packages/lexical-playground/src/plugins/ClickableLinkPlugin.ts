@@ -107,16 +107,13 @@ function getLinkDomNode(
   editor: LexicalEditor,
 ): HTMLAnchorElement | null {
   return editor.getEditorState().read(() => {
-    // $FlowExpectedError[incompatible-cast]
     const domNode = event.target as Node;
 
     if (isLinkDomNode(domNode)) {
-      // $FlowExpectedError[incompatible-cast]
       return domNode as HTMLAnchorElement;
     }
 
     if (domNode.parentNode && isLinkDomNode(domNode.parentNode)) {
-      // $FlowExpectedError[incompatible-cast]
       return domNode.parentNode as HTMLAnchorElement;
     }
 

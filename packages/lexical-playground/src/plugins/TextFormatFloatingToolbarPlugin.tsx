@@ -270,9 +270,8 @@ function useTextFormatFloatingToolbar(
 
   const updatePopup = useCallback(() => {
     editor.getEditorState().read(() => {
-      const isComposition = editor._compositionKey !== null;
       // Should not to pop up the floating toolbar when using IME input
-      if (isComposition) {
+      if (editor.isComposing()) {
         return;
       }
       const selection = $getSelection();

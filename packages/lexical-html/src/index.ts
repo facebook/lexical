@@ -67,7 +67,7 @@ export function $generateHtmlFromNodes(
 
   for (let i = 0; i < topLevelChildren.length; i++) {
     const topLevelNode = topLevelChildren[i];
-    if (selection) {
+    if (selection !== undefined) {
       $appendNodesToHTML(editor, selection, topLevelNode, container);
     }
   }
@@ -77,7 +77,7 @@ export function $generateHtmlFromNodes(
 
 function $appendNodesToHTML(
   editor: LexicalEditor,
-  selection: RangeSelection | NodeSelection | GridSelection,
+  selection: RangeSelection | NodeSelection | GridSelection | null,
   currentNode: LexicalNode,
   parentElement: HTMLElement | DocumentFragment,
 ): boolean {

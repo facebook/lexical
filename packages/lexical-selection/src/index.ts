@@ -18,6 +18,7 @@ import type {
   TextNode,
 } from 'lexical';
 
+import {$isCodeHighlightNode} from '@lexical/code';
 import {
   $createTextNode,
   $getDecoratorNode,
@@ -981,7 +982,10 @@ export function trimTextContentFromAnchor(
         .getEditorState()
         .read(() => {
           const prevNode = $getNodeByKey(key);
-          if ($isTextNode(prevNode) && prevNode.isSimpleText()) {
+          if (
+            ($isTextNode(prevNode) && prevNode.isSimpleText()) ||
+            $isCodeHighlightNode(prevNode)
+          ) {
             return prevNode.getTextContent();
           }
           return null;

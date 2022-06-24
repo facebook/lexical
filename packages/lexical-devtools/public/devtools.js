@@ -8,18 +8,17 @@
 
 'use strict';
 
+// Create the panel which appears within the browser's DevTools, loading the Lexical DevTools App within index.html.
 // eslint-disable-next-line no-undef
 chrome.devtools.panels.create('Lexical', 'favicon-32x32.png', '../index.html');
 
-// devtools.inspectedWindow.eval() takes a script in the form of a string.
-// browser extension content scripts don't have access to registerUpdateListener, so we use devtools.inspectedWindow.eval() instead.
-// for more details:
+// Use devtools.inspectedWindow.eval() to get editorState updates. For more info on security concerns:
 //   https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Content_scripts
 //   https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/devtools/inspectedWindow/eval
 // eslint-disable-next-line no-undef
 chrome.devtools.inspectedWindow
-  // run editor.registerUpdateListener to subscribe to changes in editorState.
-  // after the initial registration, editorState changes are sent to the background script via the page script from content.js, a safer form of communication
+  // Attach a registerUpdateListener within the window to subscribe to changes in editorState.
+  // After the initial registration, all editorState updates are done via browser.runtime.onConnect & window.postMessage
   .eval(
     `
     const editor = document.querySelectorAll('div[data-lexical-editor]')[0]

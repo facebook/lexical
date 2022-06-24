@@ -1145,6 +1145,8 @@ export class RangeSelection implements BaseSelection {
         }
       }
 
+      this.format = firstNextFormat | lastNextFormat;
+
       // deal with all the nodes in between
       for (let i = 1; i < lastIndex; i++) {
         const selectedNode = selectedNodes[i];

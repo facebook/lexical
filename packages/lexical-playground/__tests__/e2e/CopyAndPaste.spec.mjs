@@ -1887,4 +1887,31 @@ test.describe('CopyAndPaste', () => {
       `,
     );
   });
+
+  test('Copy + paste multi-line plain text into rich text produces separate paragraphs', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type('# Hello ');
+    await pasteFromClipboard(page, {
+      'text/plain': 'world\nAnd text below',
+    });
+    await assertHTML(
+      page,
+      html`
+        <h1
+          class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Hello world</span>
+        </h1>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">And text below</span>
+        </p>
+      `,
+    );
+  });
 });

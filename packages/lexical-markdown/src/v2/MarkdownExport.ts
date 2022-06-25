@@ -46,7 +46,7 @@ export function createMarkdownExport(
       }
     }
 
-    return output.join('\n');
+    return output.join('\n\n');
   };
 }
 

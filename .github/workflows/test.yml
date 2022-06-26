@@ -188,8 +188,9 @@ jobs:
       - run: npm ci
       - name: Download browsers
         run: npx playwright install
-      #- run: dir D:\a\_temp && FOR /R D:\a\_temp %G IN *.* do (more %G) && npm -v && npm run test-e2e-ci-windows:${{ matrix.browser }}
+      - run: dir D:\a\_temp && npm -v && npm run test-e2e-ci-windows:${{ matrix.browser }}
       - name: whatever
+        if: failure()
         run: |
           Get-ChildItem "D:\a\_temp" -Filter *.ps1 |
           Foreach-Object {

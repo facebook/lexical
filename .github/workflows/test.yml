@@ -196,7 +196,7 @@ jobs:
           name: Test Results
           path: |
             test-results/
-            C:\npm\cache\_logs\
+            **\npm\cache\_logs\**\*
           retention-days: 7
 
   e2e-collab-mac:

@@ -46,6 +46,8 @@
     "test-e2e-collab-prod:chromium": "cross-env E2E_BROWSER=chromium E2E_PORT=4000 E2E_EDITOR_MODE=rich-text-with-collab playwright test --project=\"chromium\"",
     "test-e2e-ci:chromium": "cross-env E2E_PORT=4000 start-server-and-test prepare-ci 4000 test-e2e:chromium",
     "test-e2e-ci-windows:chromium": "dir",
+    "test-e2e-ci-windows:firefox": "dir",
+    "test-e2e-ci-windows:webkit": "dir",
     "test-e2e-ci:firefox": "cross-env E2E_PORT=4000 start-server-and-test prepare-ci 4000 test-e2e:firefox",
     "test-e2e-ci:webkit": "cross-env E2E_PORT=4000 start-server-and-test prepare-ci 4000 test-e2e:webkit",
     "test-e2e-collab-ci:chromium": "cross-env E2E_PORT=4000 start-server-and-test prepare-ci-collab 4000 test-e2e-collab:chromium",

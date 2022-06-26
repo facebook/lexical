@@ -197,6 +197,7 @@ jobs:
           path: |
             test-results/
             ~/.npm/_logs
+            ~\.npm\_logs
           retention-days: 7
 
   e2e-collab-mac:

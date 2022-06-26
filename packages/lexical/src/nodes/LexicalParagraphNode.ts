@@ -65,7 +65,7 @@ export class ParagraphNode extends ElementNode {
     const {element} = super.exportDOM(editor);
 
     if (element) {
-      if (this.getChildrenSize() === 0) {
+      if (this.isEmpty()) {
         element.append(document.createElement('br'));
       }
     }

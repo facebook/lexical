@@ -188,7 +188,7 @@ jobs:
       - run: npm ci
       - name: Download browsers
         run: npx playwright install
-      - run: npm run test-e2e-ci:${{ matrix.browser }}
+      - run: dir && npm run test-e2e-ci:${{ matrix.browser }}
       - name: Upload Artifacts
         if: failure()
         uses: actions/upload-artifact@v3

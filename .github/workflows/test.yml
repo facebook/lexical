@@ -188,7 +188,7 @@ jobs:
       - run: npm ci
       - name: Download browsers
         run: npx playwright install
-      - run: dir D:\a\_temp && npm -v && npm run hello:${{ matrix.browser }}
+      - run: dir D:\a\_temp && npm -v && npm run hello${{ matrix.browser }}
       - name: whatever
         if: failure()
         run: |

@@ -29,18 +29,18 @@ export function useCanShowPlaceholder(editor: LexicalEditor): boolean {
   );
 
   useLayoutEffect(() => {
-    function update() {
+    function resetCanShowPlaceholder() {
       const currentCanShowPlaceholder =
         canShowPlaceholderFromCurrentEditorState(editor);
       setCanShowPlaceholder(currentCanShowPlaceholder);
     }
-    update();
+    resetCanShowPlaceholder();
     return mergeRegister(
       editor.registerUpdateListener(() => {
-        update();
+        resetCanShowPlaceholder();
       }),
       editor.registerReadOnlyListener(() => {
-        update();
+        resetCanShowPlaceholder();
       }),
     );
   }, [editor]);

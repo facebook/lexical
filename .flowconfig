@@ -66,6 +66,7 @@ module.name_mapper='^@lexical/react/useLexicalTextEntity' -> '<PROJECT_ROOT>/pac
 # Composer Plugins
 module.name_mapper='^@lexical/react/LexicalPlainTextPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalPlainTextPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalRichTextPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalRichTextPlugin.js.flow'
+module.name_mapper='^@lexical/react/LexicalShortcutMenuPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalShortcutMenuPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalHistoryPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalHistoryPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalOnChangePlugin' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalOnChangePlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalHashtagPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalHashtagPlugin.js.flow'

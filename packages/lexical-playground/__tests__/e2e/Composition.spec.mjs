@@ -438,7 +438,7 @@ test.describe('Composition', () => {
       await enableCompositionKeyEvents(page);
 
       await page.keyboard.type('Luke');
-      await waitForSelector(page, '#mentions-typeahead ul li');
+      await waitForSelector(page, '#typeahead-menu ul li');
       await page.keyboard.press('Enter');
 
       await waitForSelector(page, '.mention');
@@ -492,7 +492,7 @@ test.describe('Composition', () => {
       await enableCompositionKeyEvents(page);
 
       await page.keyboard.type('Luke');
-      await waitForSelector(page, '#mentions-typeahead ul li');
+      await waitForSelector(page, '#typeahead-menu ul li');
       await page.keyboard.press('Enter');
 
       await waitForSelector(page, '.mention');

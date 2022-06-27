@@ -42,6 +42,7 @@ import ListMaxIndentLevelPlugin from './plugins/ListMaxIndentLevelPlugin';
 import MarkdownShortcutPlugin from './plugins/MarkdownShortcutPlugin';
 import {MaxLengthPlugin} from './plugins/MaxLengthPlugin';
 import MentionsPlugin from './plugins/MentionsPlugin';
+import PlaygroundSlashShortcutMenuPlugin from './plugins/PlaygroundSlashShortcutMenuPlugin';
 import PollPlugin from './plugins/PollPlugin';
 import SpeechToTextPlugin from './plugins/SpeechToTextPlugin';
 import TabFocusPlugin from './plugins/TabFocusPlugin';
@@ -91,6 +92,7 @@ export default function Editor(): JSX.Element {
         {isMaxLength && <MaxLengthPlugin maxLength={30} />}
         <AutoFocusPlugin />
         <ClearEditorPlugin />
+        <PlaygroundSlashShortcutMenuPlugin />
         <MentionsPlugin />
         <EmojisPlugin />
         <HashtagPlugin />

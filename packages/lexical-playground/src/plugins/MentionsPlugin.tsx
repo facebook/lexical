@@ -621,7 +621,7 @@ function MentionsTypeahead({
       div.style.top = `${top + height + 2}px`;
       div.style.left = `${left - 14}px`;
       div.style.display = 'block';
-      rootElement.setAttribute('aria-controls', 'mentions-typeahead');
+      rootElement.setAttribute('aria-controls', 'typeahead-menu');
 
       return () => {
         div.style.display = 'none';
@@ -767,7 +767,7 @@ function MentionsTypeahead({
   return (
     <div
       aria-label="Suggested mentions"
-      id="mentions-typeahead"
+      id="typeahead-menu"
       ref={divRef}
       role="listbox">
       <ul>

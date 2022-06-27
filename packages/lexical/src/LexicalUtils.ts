@@ -611,6 +611,16 @@ export function $updateTextNodeFromDOMContent(
   }
 }
 
+function $siblingDoesNotAcceptText(
+  sibling: LexicalNode | null,
+  method: 'canInsertTextAfter' | 'canInsertTextBefore',
+): boolean {
+  return (
+    ($isTextNode(sibling) || ($isElementNode(sibling) && sibling.isInline())) &&
+    !sibling[method]()
+  );
+}
+
 function $shouldInsertTextAfterOrBeforeTextNode(
   selection: RangeSelection,
   node: TextNode,
@@ -626,10 +636,19 @@ function $shouldInsertTextAfterOrBeforeTextNode(
   const isToken = node.isToken();
   const shouldInsertTextBefore =
     offset === 0 &&
-    (!node.canInsertTextBefore() || !parent.canInsertTextBefore() || isToken);
+    (!node.canInsertTextBefore() ||
+      !parent.canInsertTextBefore() ||
+      isToken ||
+      $siblingDoesNotAcceptText(
+        node.getPreviousSibling(),
+        'canInsertTextAfter',
+      ));
   const shouldInsertTextAfter =
     node.getTextContentSize() === offset &&
-    (!node.canInsertTextBefore() || !parent.canInsertTextBefore() || isToken);
+    (!node.canInsertTextBefore() ||
+      !parent.canInsertTextBefore() ||
+      isToken ||
+      $siblingDoesNotAcceptText(node.getNextSibling(), 'canInsertTextBefore'));
   return shouldInsertTextBefore || shouldInsertTextAfter;
 }
 

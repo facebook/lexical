@@ -1138,9 +1138,8 @@ export class RangeSelection implements BaseSelection {
         // console.info(startOffset, firstNode);
         if (startOffset !== 0) {
           // debugger;
-          let x;
           // the entire first node isn't selected, so split it
-          [x, firstNode as TextNode] = firstNode.splitText(startOffset);
+          [, firstNode as TextNode] = firstNode.splitText(startOffset);
 
           startOffset = 0;
         }

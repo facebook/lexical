@@ -645,10 +645,7 @@ function $shouldInsertTextAfterOrBeforeTextNode(
       ));
   const shouldInsertTextAfter =
     node.getTextContentSize() === offset &&
-    (!node.canInsertTextBefore() ||
-      !parent.canInsertTextBefore() ||
-      isToken ||
-      $siblingDoesNotAcceptText(node.getNextSibling(), 'canInsertTextBefore'));
+    (!node.canInsertTextBefore() || !parent.canInsertTextBefore() || isToken);
   return shouldInsertTextBefore || shouldInsertTextAfter;
 }
 

@@ -1043,9 +1043,8 @@ export class RangeSelection implements BaseSelection {
   formatText(formatType: TextFormatType): void {
     // TODO I wonder if this methods use selection.extract() instead?
     const selectedNodes = this.getNodes();
-    const selectedTextNodes = [];
-    for (let i = 0; i < selectedNodes.length; i += 1) {
-      const selectedNode = selectedNodes[i];
+    const selectedTextNodes: Array<TextNode> = [];
+    for (const selectedNode of selectedNodes) {
       if ($isTextNode(selectedNode)) {
         selectedTextNodes.push(selectedNode);
       }
@@ -1073,28 +1072,12 @@ export class RangeSelection implements BaseSelection {
     const endOffset = isBefore ? focusOffset : anchorOffset;
     let startOffset = isBefore ? anchorOffset : focusOffset;
 
-    // // This is the case where the user only selected the very end of the
-    // // first node so we don't want to include it in the formatting change.
-    // if (startOffset === firstNode.getTextContentSize()) {
-    //   let nextSibling = firstNode.getNextSibling();
-
-    //   if ($isElementNode(nextSibling) && nextSibling.isInline()) {
-    //     nextSibling = nextSibling.getFirstChild();
-    //   }
-
-    //   if ($isTextNode(nextSibling)) {
-    //     // we basically make the second node the firstNode, changing offsets accordingly
-    //     startOffset = 0;
-    //     firstNode = nextSibling;
-    //     firstNodeTextLength = nextSibling.getTextContent().length;
-    //     firstNextFormat = nextSibling.getFormatFlags(formatType, null);
-    //   }
-    // }
+    // This is the case where the user only selected the very end of the
+    // first node so we don't want to include it in the formatting change.
     if (
       startOffset === firstNode.getTextContentSize() &&
       selectedTextNodes.length > 1
     ) {
-      // debugger;
       const nextNode = selectedTextNodes[1];
       startOffset = 0;
       firstIndex = 1;
@@ -1102,7 +1085,6 @@ export class RangeSelection implements BaseSelection {
       firstNodeTextLength = nextNode.getTextContentSize();
       firstNextFormat = nextNode.getFormatFlags(formatType, null);
     }
-    // check if there's something to format
 
     // This is the case where we only selected a single node
     if (firstNode.is(lastNode)) {
@@ -1135,15 +1117,11 @@ export class RangeSelection implements BaseSelection {
       // multiple nodes selected.
     } else {
       if ($isTextNode(firstNode) && startOffset !== firstNodeTextLength) {
-        // console.info(startOffset, firstNode);
         if (startOffset !== 0) {
-          // debugger;
           // the entire first node isn't selected, so split it
           [, firstNode as TextNode] = firstNode.splitText(startOffset);
-
           startOffset = 0;
         }
-        // console.info('2', firstNode);
         firstNode.setFormat(firstNextFormat);
       }
       let lastNextFormat = firstNextFormat;
@@ -1165,7 +1143,7 @@ export class RangeSelection implements BaseSelection {
 
       this.format = firstNextFormat | lastNextFormat;
 
-      // deal with all the nodes in between HERE
+      // deal with all the nodes in between
       for (let i = firstIndex + 1; i < lastIndex; i++) {
         const selectedNode = selectedTextNodes[i];
         const selectedNodeKey = selectedNode.__key;

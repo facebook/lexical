@@ -1116,6 +1116,8 @@ export class RangeSelection implements BaseSelection {
       }
       // multiple nodes selected.
     } else {
+      // Note: startOffset !== firstNodeTextLength should only occur within rare programatic
+      // update functions; transforms normalization ensure there's no empty text nodes.
       if ($isTextNode(firstNode) && startOffset !== firstNodeTextLength) {
         if (startOffset !== 0) {
           // the entire first node isn't selected, so split it

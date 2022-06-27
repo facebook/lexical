@@ -611,13 +611,13 @@ export function $updateTextNodeFromDOMContent(
   }
 }
 
-function $siblingDoesNotAcceptText(
-  sibling: LexicalNode | null,
-  method: 'canInsertTextAfter' | 'canInsertTextBefore',
-): boolean {
+function $previousSiblingDoesNotAcceptText(node: TextNode): boolean {
+  const previousSibling = node.getPreviousSibling();
+
   return (
-    ($isTextNode(sibling) || ($isElementNode(sibling) && sibling.isInline())) &&
-    !sibling[method]()
+    ($isTextNode(previousSibling) ||
+      ($isElementNode(previousSibling) && previousSibling.isInline())) &&
+    !previousSibling.canInsertTextAfter()
   );
 }
 
@@ -639,10 +639,7 @@ function $shouldInsertTextAfterOrBeforeTextNode(
     (!node.canInsertTextBefore() ||
       !parent.canInsertTextBefore() ||
       isToken ||
-      $siblingDoesNotAcceptText(
-        node.getPreviousSibling(),
-        'canInsertTextAfter',
-      ));
+      $previousSiblingDoesNotAcceptText(node));
   const shouldInsertTextAfter =
     node.getTextContentSize() === offset &&
     (!node.canInsertTextBefore() || !parent.canInsertTextBefore() || isToken);

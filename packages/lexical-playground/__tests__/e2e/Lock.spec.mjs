@@ -19,17 +19,16 @@ test.describe('Lock', () => {
     isPlainText,
     isCollab,
   }) => {
-    if (isCollab) {
-      return;
-    }
+    const placeholder = `Enter some ${isPlainText ? 'plain' : 'rich'} text...`;
+    const pageOrFrame = isCollab ? page.frame('left') : page;
     await focusEditor(page);
-    expect(await page.innerHTML('.editor-container')).toContain(
-      `Enter some rich text...`,
+    expect(await pageOrFrame.innerHTML('.editor-container')).toContain(
+      placeholder,
     );
 
     await click(page, '.action-button.lock');
-    expect(await page.innerHTML('.editor-container')).not.toContain(
-      `Enter some rich text...`,
+    expect(await pageOrFrame.innerHTML('.editor-container')).not.toContain(
+      placeholder,
     );
   });
 });

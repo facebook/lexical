@@ -242,6 +242,7 @@ function runTextFormatTransformers(
       openNodeText.slice(0, openTagStartIndex) +
         openNodeText.slice(openTagStartIndex + tagLength),
     );
+    const selection = $getSelection();
     const nextSelection = $createRangeSelection();
     $setSelection(nextSelection);
     // Adjust offset based on deleted chars
@@ -269,6 +270,10 @@ function runTextFormatTransformers(
       if (nextSelection.hasFormat(format)) {
         nextSelection.toggleFormat(format);
       }
+    }
+
+    if ($isRangeSelection(selection)) {
+      nextSelection.format = selection.format;
     }
 
     return true;

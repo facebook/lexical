@@ -20,6 +20,8 @@ import {
   assertHTML,
   assertSelection,
   click,
+  evaluate,
+  expect,
   focusEditor,
   html,
   initialize,
@@ -913,5 +915,43 @@ test.describe('TextFormatting', () => {
         </p>
       `,
     );
+  });
+
+  test(`The active state of the button in the toolbar should to be displayed correctly`, async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type('A');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('B');
+    await selectCharacters(page, 'left', 3);
+    await toggleBold(page);
+    await toggleItalic(page);
+
+    const isButtonActiveStatusDisplayedCorrectly = await evaluate(page, () => {
+      const isFloatingToolbarBoldButtonActive = !!document.querySelector(
+        '.floating-text-format-popup .popup-item.active i.format.bold',
+      );
+      const isFloatingToolbarItalicButtonActive = !!document.querySelector(
+        '.floating-text-format-popup .popup-item.active i.format.italic',
+      );
+      const isToolbarBoldButtonActive = !!document.querySelector(
+        '.toolbar .toolbar-item.active i.format.bold',
+      );
+      const isToolbarItalicButtonActive = !!document.querySelector(
+        '.toolbar .toolbar-item.active i.format.italic',
+      );
+
+      return (
+        isFloatingToolbarBoldButtonActive &&
+        isFloatingToolbarItalicButtonActive &&
+        isToolbarBoldButtonActive &&
+        isToolbarItalicButtonActive
+      );
+    });
+
+    expect(isButtonActiveStatusDisplayedCorrectly).toBe(true);
   });
 });

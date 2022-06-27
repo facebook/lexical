@@ -25,7 +25,9 @@ import {
   focusEditor,
   html,
   initialize,
+  insertSampleImage,
   repeat,
+  SAMPLE_IMAGE_URL,
   selectOption,
   test,
   waitForSelector,
@@ -866,7 +868,7 @@ test.describe('TextFormatting', () => {
     });
   });
 
-  test(`Regression test #2439: can format backwards when at first text node boundary`, async ({
+  test(`Regression #2439: can format backwards when at first text node boundary`, async ({
     page,
     isPlainText,
   }) => {
@@ -953,5 +955,97 @@ test.describe('TextFormatting', () => {
     });
 
     expect(isButtonActiveStatusDisplayedCorrectly).toBe(true);
+  });
+
+  test('Regression #2523: can toggle format when selecting a TextNode edge followed by a non TextNode; ', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+
+    await page.keyboard.type('A');
+    await insertSampleImage(page);
+    await page.keyboard.type('BC');
+
+    await moveLeft(page, 1);
+    await selectCharacters(page, 'left', 2);
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">A</span>
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true">
+            <div draggable="false">
+              <img
+                alt="Yellow flower in tilt shift lens"
+                draggable="false"
+                src="${SAMPLE_IMAGE_URL}"
+                style="height: inherit; max-width: 500px; width: inherit" />
+            </div>
+          </span>
+          <span data-lexical-text="true">BC</span>
+        </p>
+      `,
+    );
+    await toggleBold(page);
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">A</span>
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true">
+            <div draggable="false">
+              <img
+                alt="Yellow flower in tilt shift lens"
+                draggable="false"
+                src="${SAMPLE_IMAGE_URL}"
+                style="height: inherit; max-width: 500px; width: inherit" />
+            </div>
+          </span>
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            B
+          </strong>
+          <span data-lexical-text="true">C</span>
+        </p>
+      `,
+    );
+    await toggleBold(page);
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">A</span>
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true">
+            <div draggable="false">
+              <img
+                alt="Yellow flower in tilt shift lens"
+                draggable="false"
+                src="${SAMPLE_IMAGE_URL}"
+                style="height: inherit; max-width: 500px; width: inherit" />
+            </div>
+          </span>
+          <span data-lexical-text="true">BC</span>
+        </p>
+      `,
+    );
   });
 });

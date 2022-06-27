@@ -23,6 +23,10 @@ export const IS_COLLAB =
 const IS_RICH_TEXT = process.env.E2E_EDITOR_MODE !== 'plain-text';
 const IS_PLAIN_TEXT = process.env.E2E_EDITOR_MODE === 'plain-text';
 export const LEGACY_EVENTS = process.env.E2E_EVENTS_MODE === 'legacy-events';
+export const SAMPLE_IMAGE_URL =
+  E2E_PORT === 3000
+    ? '/src/images/yellow-flower.jpg'
+    : '/assets/yellow-flower.bf6d0400.jpg';
 
 export async function initialize({
   page,

@@ -9,6 +9,7 @@
 import type {
   EditorThemeClasses,
   IntentionallyMarkedAsDirtyElement,
+  Klass,
   LexicalCommand,
   MutatedNodes,
   MutationListeners,
@@ -26,7 +27,6 @@ import type {
 } from './LexicalSelection';
 import type {RootNode} from './nodes/LexicalRootNode';
 import type {TextFormatType, TextNode} from './nodes/LexicalTextNode';
-import type {Klass} from 'shared/types';
 
 import {IS_APPLE, IS_IOS, IS_SAFARI} from 'shared/environment';
 import getDOMSelection from 'shared/getDOMSelection';

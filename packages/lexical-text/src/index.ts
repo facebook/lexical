@@ -6,8 +6,13 @@
  *
  */
 
-import type {ElementNode, LexicalEditor, LexicalNode, RootNode} from 'lexical';
-import type {Klass} from 'shared/types';
+import type {
+  ElementNode,
+  Klass,
+  LexicalEditor,
+  LexicalNode,
+  RootNode,
+} from 'lexical';
 
 import {
   $createTextNode,

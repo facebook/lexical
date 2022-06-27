@@ -6,8 +6,7 @@
  *
  */
 
-import type {LexicalNode} from 'lexical';
-import type {Klass} from 'shared/types';
+import type {Klass, LexicalNode} from 'lexical';
 
 import {CodeHighlightNode, CodeNode} from '@lexical/code';
 import {HashtagNode} from '@lexical/hashtag';

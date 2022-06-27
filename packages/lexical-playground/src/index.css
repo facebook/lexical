@@ -240,6 +240,8 @@ pre::-webkit-scrollbar-thumb {
 }
 
 #mentions-typeahead ul li {
+  display: flex;
+  align-items: center;
   padding: 10px 15px;
   margin: 0;
   min-width: 180px;
@@ -247,6 +249,16 @@ pre::-webkit-scrollbar-thumb {
   outline: none;
   cursor: pointer;
   border-radius: 8px;
+}
+
+#mentions-typeahead ul li .icon {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  user-select: none;
+  margin-right: 12px;
+  line-height: 16px;
+  background-size: contain;
 }
 
 #mentions-typeahead ul li.selected {

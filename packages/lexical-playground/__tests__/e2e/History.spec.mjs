@@ -580,7 +580,13 @@ test.describe('History - IME', () => {
     await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
     await page.keyboard.imeSetComposition('すし', 2, 2);
     await page.keyboard.insertText('すし');
+
+    await sleep(1050); // default merge interval is 1000, add 50ms as overhead due to CI latency.
+
     await page.keyboard.type(' ');
+
+    await sleep(1050);
+
     await page.keyboard.imeSetComposition('m', 1, 1);
     await page.keyboard.imeSetComposition('も', 1, 1);
     await page.keyboard.imeSetComposition('もj', 2, 2);

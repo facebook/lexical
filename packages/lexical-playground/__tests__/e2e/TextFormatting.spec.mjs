@@ -27,6 +27,7 @@ import {
   initialize,
   insertSampleImage,
   repeat,
+  SAMPLE_IMAGE_URL,
   selectOption,
   test,
   waitForSelector,
@@ -985,7 +986,7 @@ test.describe('TextFormatting', () => {
               <img
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
-                src="/src/images/yellow-flower.jpg"
+                src="${SAMPLE_IMAGE_URL}"
                 style="height: inherit; max-width: 500px; width: inherit" />
             </div>
           </span>
@@ -1009,7 +1010,7 @@ test.describe('TextFormatting', () => {
               <img
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
-                src="/src/images/yellow-flower.jpg"
+                src="${SAMPLE_IMAGE_URL}"
                 style="height: inherit; max-width: 500px; width: inherit" />
             </div>
           </span>
@@ -1038,7 +1039,7 @@ test.describe('TextFormatting', () => {
               <img
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
-                src="/src/images/yellow-flower.jpg"
+                src="${SAMPLE_IMAGE_URL}"
                 style="height: inherit; max-width: 500px; width: inherit" />
             </div>
           </span>

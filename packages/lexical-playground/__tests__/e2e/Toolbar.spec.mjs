@@ -10,22 +10,17 @@ import {selectAll} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   click,
-  E2E_PORT,
   evaluate,
   focus,
   focusEditor,
   html,
   initialize,
   insertSampleImage,
+  SAMPLE_IMAGE_URL,
   selectFromAlignDropdown,
   selectFromInsertDropdown,
   test,
 } from '../utils/index.mjs';
-
-const IMAGE_URL =
-  E2E_PORT === 3000
-    ? '/src/images/yellow-flower.jpg'
-    : '/assets/yellow-flower.bf6d0400.jpg';
 
 test.describe('Toolbar', () => {
   test.beforeEach(({isCollab, page}) =>
@@ -51,7 +46,7 @@ test.describe('Toolbar', () => {
               <img
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
-                src="${IMAGE_URL}" />
+                src="${SAMPLE_IMAGE_URL}" />
             </div>
             <div>
               <div
@@ -224,7 +219,7 @@ test.describe('Toolbar', () => {
                 alt="Yellow flower in tilt shift lens"
                 class="focused"
                 draggable="false"
-                src="${IMAGE_URL}"
+                src="${SAMPLE_IMAGE_URL}"
                 style="height: inherit; max-width: 500px; width: inherit" />
             </div>
             <button class="image-caption-button">Add Caption</button>
@@ -258,7 +253,7 @@ test.describe('Toolbar', () => {
                 alt="Yellow flower in tilt shift lens"
                 class="focused"
                 draggable="false"
-                src="${IMAGE_URL}"
+                src="${SAMPLE_IMAGE_URL}"
                 style="height: inherit; max-width: 500px; width: inherit" />
             </div>
             <button class="image-caption-button">Add Caption</button>

@@ -8,7 +8,7 @@
 'use strict';
 
 // Create messaging connection to send editorState updates to Lexical DevTools App.
-let ports = {}; // Each tab will have a separate messaging port for the devTools app & the inspectedWindow's content script, eg. { tabId: { reactPort, contentScriptPort } }
+const ports = {}; // Each tab will have a separate messaging port for the devTools app & the inspectedWindow's content script, eg. { tabId: { reactPort, contentScriptPort } }
 
 // The Lexical DevTools React UI sends a message to initialize the port.
 // eslint-disable-next-line no-undef

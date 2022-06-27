@@ -10,7 +10,11 @@
 
 // Create the panel which appears within the browser's DevTools, loading the Lexical DevTools App within index.html.
 // eslint-disable-next-line no-undef
-chrome.devtools.panels.create('Lexical', 'favicon-32x32.png', '../index.html');
+chrome.devtools.panels.create(
+  'Lexical',
+  'favicon-32x32.png',
+  '../panel/index.html',
+);
 
 // Use devtools.inspectedWindow.eval() to get editorState updates. For more info on security concerns:
 //   https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Content_scripts

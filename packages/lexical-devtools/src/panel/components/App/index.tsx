@@ -6,12 +6,12 @@
  *
  */
 
-import './App.css';
+import './index.css';
 
 import * as React from 'react';
 import {useEffect, useRef, useState} from 'react';
 
-import logo from './images/lexical-white.png';
+import logo from '../../../images/lexical-white.png';
 
 function App(): JSX.Element {
   const [count, setCount] = useState<number>(0);

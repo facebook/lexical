@@ -8,7 +8,7 @@
 'use strict';
 
 // eslint-disable-next-line no-undef
-let port = chrome.runtime.connect();
+const port = chrome.runtime.connect();
 
 port.postMessage({
   name: 'init',

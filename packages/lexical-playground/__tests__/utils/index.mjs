@@ -26,7 +26,7 @@ export const LEGACY_EVENTS = process.env.E2E_EVENTS_MODE === 'legacy-events';
 export const SAMPLE_IMAGE_URL =
   E2E_PORT === 3000
     ? '/src/images/yellow-flower.jpg'
-    : '/assets/yellow-flower.bf6d0400.jpg';
+    : '/assets/yellow-flower.a2a7c7a2.jpg';
 
 export async function initialize({
   page,

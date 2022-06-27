@@ -21,8 +21,5 @@
     "type": "git",
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/lexical-utils"
-  },
-  "devDependencies": {
-    "utility-types": "^3.10.0"
   }
 }

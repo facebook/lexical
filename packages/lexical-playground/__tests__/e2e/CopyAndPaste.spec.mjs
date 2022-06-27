@@ -1406,6 +1406,212 @@ test.describe('CopyAndPaste', () => {
     );
   });
 
+  test('HTML Copy + paste (Nested List - directly nested ul)', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    const clipboard = {
+      'text/html': '<ul><ul><li>Hello</li></ul><li>world!</li></ul>',
+    };
+
+    await pasteFromClipboard(page, clipboard);
+
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            value="1"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem">
+            <ul class="PlaygroundEditorTheme__ul">
+              <li
+                value="1"
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">Hello</span>
+              </li>
+            </ul>
+          </li>
+          <li
+            value="1"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">world!</span>
+          </li>
+        </ul>
+      `,
+    );
+
+    await assertSelection(page, {
+      anchorOffset: 6,
+      anchorPath: [0, 1, 0, 0],
+      focusOffset: 6,
+      focusPath: [0, 1, 0, 0],
+    });
+
+    await selectFromAlignDropdown(page, '.indent');
+
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            value="1"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem">
+            <ul class="PlaygroundEditorTheme__ul">
+              <li
+                value="1"
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">Hello</span>
+              </li>
+              <li
+                value="2"
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">world!</span>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      `,
+    );
+
+    await page.keyboard.press('ArrowUp');
+
+    await selectFromAlignDropdown(page, '.outdent');
+
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            value="1"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">Hello</span>
+          </li>
+          <li
+            value="2"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem">
+            <ul class="PlaygroundEditorTheme__ul">
+              <li
+                value="1"
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">world!</span>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      `,
+    );
+  });
+
+  test('HTML Copy + paste (Nested List - li with non-list content plus ul child)', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    const clipboard = {
+      'text/html': '<ul><li>Hello<ul><li>world!</li></ul></li></ul>',
+    };
+
+    await pasteFromClipboard(page, clipboard);
+
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            value="1"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">Hello</span>
+          </li>
+          <li
+            value="2"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem">
+            <ul class="PlaygroundEditorTheme__ul">
+              <li
+                value="1"
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">world!</span>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      `,
+    );
+
+    await assertSelection(page, {
+      anchorOffset: 6,
+      anchorPath: [0, 1, 0, 0, 0, 0],
+      focusOffset: 6,
+      focusPath: [0, 1, 0, 0, 0, 0],
+    });
+
+    await selectFromAlignDropdown(page, '.outdent');
+
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            value="1"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">Hello</span>
+          </li>
+          <li
+            value="2"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">world!</span>
+          </li>
+        </ul>
+      `,
+    );
+
+    await page.keyboard.press('ArrowUp');
+
+    await selectFromAlignDropdown(page, '.indent');
+
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            value="1"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem">
+            <ul class="PlaygroundEditorTheme__ul">
+              <li
+                value="1"
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">Hello</span>
+              </li>
+            </ul>
+          </li>
+          <li
+            value="1"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">world!</span>
+          </li>
+        </ul>
+      `,
+    );
+  });
+
   test('HTML Copy + paste (Table - Google Docs)', async ({
     page,
     isPlainText,
@@ -1785,11 +1991,11 @@ test.describe('CopyAndPaste', () => {
     await pasteFromClipboard(page, {
       'text/html': `
         <p>Hello
-        
+
         </p>
-        
+
         <p>World</p>
-        
+
       `,
     });
 

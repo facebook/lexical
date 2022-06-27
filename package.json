@@ -80,6 +80,7 @@
     "debug-test-e2e-plain-legacy-webkit": "cross-env E2E_BROWSER=webkit E2E_EDITOR_MODE=plain-text E2E_EVENTS_MODE=legacy-events playwright test --debug --project=\"webkit\"",
     "debug-test-unit": "node --inspect-brk node_modules/.bin/jest --runInBand --collectCoverage=false",
     "lint": "eslint ./",
+    "lint:fix": "eslint --fix ./",
     "prettier": "prettier --list-different .",
     "ci-check": "npm-run-all --parallel tsc flow prettier lint",
     "prettier:fix": "prettier --write .",

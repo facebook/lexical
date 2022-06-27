@@ -5,8 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import type {Excalidraw, Modal} from '@lexical/excalidraw';
 import type {LexicalCommand} from 'lexical';
 
+import {
+  $createExcalidrawNode,
+  ExcalidrawImage,
+  ExcalidrawNode,
+} from '@lexical/excalidraw';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $getSelection,
@@ -16,10 +22,16 @@ import {
 } from 'lexical';
 import {useEffect} from 'react';
 
-import {$createExcalidrawNode, ExcalidrawNode} from '../nodes/ExcalidrawNode';
-
 export const INSERT_EXCALIDRAW_COMMAND: LexicalCommand<void> = createCommand();
-export default function ExcalidrawPlugin(): JSX.Element | null {
+export function ExcalidrawPlugin({
+  modal,
+  excalidraw,
+  excalidrawImage,
+}: {
+  modal: Modal;
+  excalidraw: Excalidraw;
+  excalidrawImage: ExcalidrawImage;
+}): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   useEffect(() => {
     if (!editor.hasNodes([ExcalidrawNode])) {
@@ -34,7 +46,11 @@ export default function ExcalidrawPlugin(): JSX.Element | null {
         const selection = $getSelection();
 
         if ($isRangeSelection(selection)) {
-          const excalidrawNode = $createExcalidrawNode();
+          const excalidrawNode = $createExcalidrawNode(
+            excalidraw,
+            excalidrawImage,
+            modal,
+          );
           selection.insertNodes([excalidrawNode]);
         }
 
@@ -42,7 +58,9 @@ export default function ExcalidrawPlugin(): JSX.Element | null {
       },
       COMMAND_PRIORITY_EDITOR,
     );
-  }, [editor]);
+  }, [editor, excalidraw, excalidrawImage, modal]);
 
   return null;
 }
+
+export {ExcalidrawNode};

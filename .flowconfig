@@ -39,6 +39,7 @@ module.name_mapper='^@lexical/link' -> '<PROJECT_ROOT>/packages/lexical-link/flo
 module.name_mapper='^@lexical/overflow' -> '<PROJECT_ROOT>/packages/lexical-overflow/flow/LexicalOverflow.js.flow'
 module.name_mapper='^@lexical/markdown' -> '<PROJECT_ROOT>/packages/lexical-markdown/flow/LexicalMarkdown.js.flow'
 module.name_mapper='^@lexical/mark' -> '<PROJECT_ROOT>/packages/lexical-mark/flow/LexicalMark.js.flow'
+module.name_mapper='^@lexical/excalidraw' -> '<PROJECT_ROOT>/packages/lexical-excalidraw/flow/LexicalExcalidraw.js.flow'
 
 module.name_mapper='^@lexical/react/DEPRECATED_useLexicalEditor' -> '<PROJECT_ROOT>/packages/lexical-react/flow/DEPRECATED_useLexicalEditor.js.flow'
 module.name_mapper='^@lexical/react/DEPRECATED_useLexicalRichText' -> '<PROJECT_ROOT>/packages/lexical-react/flow/DEPRECATED_useLexicalRichText.js.flow'
@@ -81,6 +82,7 @@ module.name_mapper='^@lexical/react/LexicalAutoLinkPlugin' -> '<PROJECT_ROOT>/pa
 module.name_mapper='^@lexical/react/LexicalListPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalListPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalCheckListPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalCheckListPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalAutoScrollPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalAutoScrollPlugin.js.flow'
+module.name_mapper='^@lexical/react/LexicalExcalidrawPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/lexical-excalidraw/flow/LexicalExcalidraw.js.flow'
 
 module.name_mapper='^@lexical/dragon/LexicalDragon' -> '<PROJECT_ROOT>/packages/lexical-dragon/flow/LexicalDragon.js.flow'
 module.name_mapper='^@lexical/history/LexicalHistory' -> '<PROJECT_ROOT>/packages/lexical-history/flow/LexicalHistory.js.flow'

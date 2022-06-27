@@ -104,8 +104,16 @@ const moduleResolution = [
     replacement: path.resolve('../lexical-yjs/src/index.ts'),
   },
   {
+    find: '@lexical/excalidraw',
+    replacement: path.resolve('../lexical-excalidraw/src/index.tsx'),
+  },
+  {
     find: 'shared',
     replacement: path.resolve('../shared/src'),
+  },
+  {
+    find: 'shared-ts',
+    replacement: path.resolve('../shared-ts/src'),
   },
 ];
 // Lexical React
@@ -137,6 +145,7 @@ const moduleResolution = [
   'LexicalAutoLinkPlugin',
   'LexicalOnChangePlugin',
   'LexicalAutoScrollPlugin',
+  'LexicalExcalidrawPlugin',
 ].forEach((module) => {
   let resolvedPath = path.resolve(`../lexical-react/src/${module}.ts`);
 
@@ -152,7 +161,7 @@ const moduleResolution = [
       replacement: resolvedPath,
     });
   }
-}); 
+});
 
 // https://vitejs.dev/config/
 export default defineConfig({

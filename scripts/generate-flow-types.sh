@@ -16,6 +16,7 @@ for package in  'lexical' \
                 'lexical-dragon' \
                 'lexical-overflow' \
                 'lexical-link' \
+                'lexical-excalidraw' \
                 'lexical-text' \
                 'lexical-markdown' \
                 'lexical-mark'

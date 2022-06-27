@@ -48,6 +48,7 @@ const wwwMappings = {
   '@lexical/clipboard': 'LexicalClipboard',
   '@lexical/code': 'LexicalCode',
   '@lexical/dragon': 'LexicalDragon',
+  '@lexical/excalidraw': 'LexicalExcalidraw',
   '@lexical/file': 'LexicalFile',
   '@lexical/hashtag': 'LexicalHashtag',
   '@lexical/headless': 'LexicalHeadless',
@@ -116,6 +117,7 @@ const externals = [
   '@lexical/code',
   '@lexical/yjs',
   '@lexical/plain-text',
+  '@lexical/excalidraw',
   '@lexical/rich-text',
   '@lexical/mark',
   '@lexical/dragon',
@@ -175,6 +177,10 @@ async function build(name, inputFile, outputPath, outputFile, isProd) {
     plugins: [
       alias({
         entries: [
+          {
+            find: 'shared-ts',
+            replacement: path.resolve('packages/shared-ts/src'),
+          },
           {find: 'shared', replacement: path.resolve('packages/shared/src')},
         ],
       }),
@@ -520,6 +526,17 @@ const packages = [
     outputPath: './packages/lexical-html/dist/',
     packageName: 'lexical-html',
     sourcePath: './packages/lexical-html/src/',
+  },
+  {
+    modules: [
+      {
+        outputFileName: 'LexicalExcalidraw',
+        sourceFileName: 'index.tsx',
+      },
+    ],
+    name: 'Lexical Excalidraw',
+    outputPath: './packages/lexical-excalidraw/dist/',
+    sourcePath: './packages/lexical-excalidraw/src/',
   },
   {
     modules: [

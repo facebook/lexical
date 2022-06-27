@@ -12,8 +12,11 @@ import {
   NonDeleted,
 } from '@excalidraw/excalidraw/types/element/types';
 import {AppState} from '@excalidraw/excalidraw/types/types';
+import {LexicalEditor} from 'lexical';
 import * as React from 'react';
-import {useEffect, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
+
+import ImageResizer from './ImageResizer';
 
 type ImageType = 'svg' | 'canvas';
 
@@ -35,10 +38,6 @@ type Props = {
    */
   height?: number | null;
   /**
-   * The ref object to be used to render the image
-   */
-  imageContainerRef: {current: null | HTMLDivElement};
-  /**
    * The type of image to be rendered
    */
   imageType?: ImageType;
@@ -50,6 +49,13 @@ type Props = {
    * The width of the image to be rendered
    */
   width?: number | null;
+
+  buttonRef: {current: null | HTMLButtonElement};
+  isSelected: boolean;
+  isResizing: boolean;
+  onResizeStart: () => void;
+  onResizeEnd: () => void;
+  editor: LexicalEditor;
 };
 
 // exportToSvg has fonts from excalidraw.com
@@ -77,11 +83,17 @@ const removeStyleFromSvg_HACK = (svg: SVGElement) => {
  */
 export default function ExcalidrawImage({
   elements,
-  imageContainerRef,
+  buttonRef,
+  isSelected,
+  isResizing,
+  onResizeStart,
+  onResizeEnd,
+  editor,
   appState = null,
   rootClassName = null,
 }: Props): JSX.Element {
-  const [Svg, setSvg] = useState<SVGElement | null>(null);
+  const [Svg, setSvg] = useState<Element | null>(null);
+  const imageContainerRef = useRef<HTMLImageElement | null>(null);
 
   useEffect(() => {
     const setContent = async () => {
@@ -106,10 +118,24 @@ export default function ExcalidrawImage({
   }, [elements, appState]);
 
   return (
-    <div
-      ref={imageContainerRef}
-      className={rootClassName ?? ''}
-      dangerouslySetInnerHTML={{__html: Svg?.outerHTML ?? ''}}
-    />
+    <button
+      ref={buttonRef}
+      className={`excalidraw-button ${isSelected ? 'selected' : ''}`}>
+      <div
+        ref={imageContainerRef}
+        className={rootClassName ?? ''}
+        dangerouslySetInnerHTML={{__html: Svg?.outerHTML ?? ''}}
+      />
+      {(isSelected || isResizing) && (
+        <ImageResizer
+          showCaption={true}
+          setShowCaption={() => null}
+          imageRef={imageContainerRef}
+          editor={editor}
+          onResizeStart={onResizeStart}
+          onResizeEnd={onResizeEnd}
+        />
+      )}
+    </button>
   );
 }

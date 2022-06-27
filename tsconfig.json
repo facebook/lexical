@@ -33,7 +33,7 @@
       "@lexical/overflow": ["./packages/lexical-overflow/src/"],
       "@lexical/markdown": ["./packages/lexical-markdown/src/"],
       "@lexical/mark": ["./packages/lexical-mark/src/"],
-
+      "@lexical/excalidraw": ["./packages/lexical-excalidraw/src"],
       "@lexical/react/DEPRECATED_useLexicalEditor": [
         "./packages/lexical-react/src/DEPRECATED_useLexicalEditor.ts"
       ],
@@ -150,6 +150,7 @@
       "@lexical/react/LexicalAutoScrollPlugin": [
         "./packages/lexical-react/src/LexicalAutoScrollPlugin.ts"
       ],
+      "@lexical/react/LexicalExcalidrawPlugin": ["packages/lexical-react/LexicalExcalidraw.d.ts"],
 
       "@lexical/dragon/LexicalDragon": ["./packages/lexical-dragon/src/"],
       "@lexical/history/LexicalHistory": ["./packages/lexical-history/src/"],

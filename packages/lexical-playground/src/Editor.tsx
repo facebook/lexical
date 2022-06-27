@@ -6,12 +6,14 @@
  *
  */
 
+import Excalidraw from '@excalidraw/excalidraw';
 import {AutoFocusPlugin} from '@lexical/react/LexicalAutoFocusPlugin';
 import {AutoScrollPlugin} from '@lexical/react/LexicalAutoScrollPlugin';
 import {CharacterLimitPlugin} from '@lexical/react/LexicalCharacterLimitPlugin';
 import {CheckListPlugin} from '@lexical/react/LexicalCheckListPlugin';
 import {ClearEditorPlugin} from '@lexical/react/LexicalClearEditorPlugin';
 import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
+import {ExcalidrawPlugin} from '@lexical/react/LexicalExcalidrawPlugin';
 import {HashtagPlugin} from '@lexical/react/LexicalHashtagPlugin';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {LinkPlugin} from '@lexical/react/LexicalLinkPlugin';
@@ -33,7 +35,6 @@ import CodeHighlightPlugin from './plugins/CodeHighlightPlugin';
 import CommentPlugin from './plugins/CommentPlugin';
 import EmojisPlugin from './plugins/EmojisPlugin';
 import EquationsPlugin from './plugins/EquationsPlugin';
-import ExcalidrawPlugin from './plugins/ExcalidrawPlugin';
 import HorizontalRulePlugin from './plugins/HorizontalRulePlugin';
 import ImagesPlugin from './plugins/ImagesPlugin';
 import KeywordsPlugin from './plugins/KeywordsPlugin';
@@ -52,6 +53,8 @@ import TreeViewPlugin from './plugins/TreeViewPlugin';
 import TwitterPlugin from './plugins/TwitterPlugin';
 import YouTubePlugin from './plugins/YouTubePlugin';
 import ContentEditable from './ui/ContentEditable';
+import ExcalidrawImage from './ui/ExcalidrawImage';
+import Modal from './ui/Modal';
 import Placeholder from './ui/Placeholder';
 
 const skipCollaborationInit =
@@ -134,7 +137,11 @@ export default function Editor(): JSX.Element {
             <HorizontalRulePlugin />
             <TextFormatFloatingToolbarPlugin />
             <EquationsPlugin />
-            <ExcalidrawPlugin />
+            <ExcalidrawPlugin
+              excalidrawImage={ExcalidrawImage}
+              modal={Modal}
+              excalidraw={Excalidraw}
+            />
             <TabFocusPlugin />
           </>
         ) : (

@@ -1,0 +1,29 @@
+{
+    "name": "@lexical/excalidraw",
+    "description": "This package contains the Excalidraw feature to enable diagrams in Lexical.",
+    "keywords": [
+      "lexical",
+      "editor",
+      "rich-text",
+      "excalidraw",
+      "diagram"
+    ],
+    "license": "MIT",
+    "version": "0.2.7",
+    "main": "LexicalExcalidraw.js",
+    "peerDependencies": {
+      "lexical": "0.2.7"
+    },
+    "dependencies": {
+      "@lexical/utils": "0.2.7",
+      "prismjs": "^1.27.0"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/facebook/lexical",
+      "directory": "packages/lexical-excalidraw"
+    },
+    "devDependencies": {
+      "@types/prismjs": "^1.26.0"
+    }
+  }

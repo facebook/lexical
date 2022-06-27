@@ -1,0 +1,48 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict
+ */
+
+import type {
+  DOMConversionMap,
+  EditorConfig,
+  LexicalNode,
+  NodeKey,
+  RangeSelection,
+  LexicalCommand,
+} from 'lexical';
+import {addClassNamesToElement} from '@lexical/utils';
+import {$isElementNode, ElementNode} from 'lexical';
+declare export class ExcalidrawNode extends ElementNode {
+  __data: string;
+  static getType(): string;
+  static clone(node: ExcalidrawNode): ExcalidrawNode;
+  constructor(data: string, key?: NodeKey): void;
+  createDOM(config: EditorConfig): HTMLElement;
+  updateDOM(
+    prevNode: ExcalidrawNode,
+    dom: HTMLElement,
+    config: EditorConfig,
+  ): boolean;
+  static importDOM(): DOMConversionMap | null;
+  getData(): string;
+  setData(data: string): void;
+  insertNewAfter(selection: RangeSelection): null | ElementNode;
+  canInsertTextBefore(): false;
+  canInsertTextAfter(): false;
+  canBeEmpty(): false;
+  isInline(): true;
+}
+declare export function $createExcalidrawNode(
+  modalComponent: JSX.Element,
+): ExcalidrawNode;
+declare export function $isExcalidrawNode(
+  node: ?LexicalNode,
+): boolean %checks(node instanceof ExcalidrawNode);
+
+declare export var INSERT_EXCALIDRAW_COMMAND: LexicalCommand<string | null>;
+declare export default function LexicalExcalidrawPlugin(): React$Node;

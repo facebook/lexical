@@ -6,21 +6,38 @@
  *
  */
 
-import './ExcalidrawModal.css';
-
-import Excalidraw from '@excalidraw/excalidraw';
 import * as React from 'react';
 import {ReactPortal, useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
-
-import Button from '../../ui/Button';
-import Modal from '../../ui/Modal';
 
 export type ExcalidrawElementFragment = {
   isDeleted?: boolean;
 };
 
-type Props = {
+export type Modal = ({
+  onClose,
+  children,
+  title,
+  closeOnClickOutside,
+}: {
+  children: JSX.Element | string | (JSX.Element | string)[];
+  closeOnClickOutside?: boolean;
+  onClose: () => void;
+  title: string;
+}) => JSX.Element;
+
+export type Excalidraw = ({
+  onChange,
+  initialData,
+}: {
+  onChange: (els: ReadonlyArray<ExcalidrawElementFragment>) => void;
+  initialData: {
+    appState: {isLoading: boolean};
+    elements: ReadonlyArray<ExcalidrawElementFragment>;
+  };
+}) => JSX.Element;
+
+type ModalProps = {
   closeOnClickOutside?: boolean;
   /**
    * The initial set of elements to draw into the scene
@@ -42,7 +59,81 @@ type Props = {
    * Callback when the save button is clicked
    */
   onSave: (elements: ReadonlyArray<ExcalidrawElementFragment>) => void;
+
+  /**
+   * Modal component to be used for modals
+   */
+  Modal: Modal;
+  Excalidraw: Excalidraw;
 };
+
+const ExcalidrawModalOverlayStyles = {
+  alignItems: 'center',
+  backgroundColor: 'rgba(40, 40, 40, 0.6)',
+  bottom: '0px',
+  display: 'flex',
+  flexDirection: 'column',
+  flexGrow: '0px',
+  flexShrink: '1px',
+  left: '0px',
+  position: 'fixed',
+  right: '0px',
+  top: '0px',
+  zIndex: '100',
+} as const;
+
+const ExcalidrawModalActions = {
+  position: 'absolute',
+  right: '5px',
+  textAlign: 'end',
+  top: '5px',
+  zIndex: '1',
+} as const;
+
+const ExcalidrawModalActionButton = {
+  backgroundColor: '#fff',
+  border: '0',
+  borderRadius: '5px',
+  color: '#222',
+  cursor: 'pointer',
+  display: 'inline-block',
+  marginLeft: '5px',
+  padding: '8px 12px',
+  position: 'relative',
+} as const;
+
+const ExcalidrawModalDiscardActionButton = {
+  ...ExcalidrawModalActionButton,
+  backgroundColor: '#eee',
+};
+
+const ExcalidrawModalRow = {
+  borderRadius: '8px',
+  boxShadow:
+    '0 12px 28px 0 rgba(0, 0, 0, 0.2), 0 2px 4px 0 rgba(0, 0, 0, 0.1), inset 0 0 0 1px rgba(255, 255, 255, 0.5)',
+  height: '70vh',
+  padding: '40px 5px 5px',
+  position: 'relative',
+  width: '70vw',
+} as const;
+
+const ExcalidrawModalModal = {
+  alignItems: 'center',
+  backgroundColor: '#eee',
+  borderRadius: '8px',
+  display: 'flex',
+  justifyContent: 'center',
+  left: '0',
+  position: 'relative',
+  top: '50px',
+  width: 'auto',
+  zIndex: '10',
+} as const;
+
+const ExcalidrawModalDiscardModal = {
+  marginTop: '60px',
+  textAlign: 'center',
+} as const;
 
 /**
  * @explorer-desc
@@ -56,8 +147,10 @@ export default function ExcalidrawModal({
   isShown = false,
   onHide,
   onDelete,
-}: Props): ReactPortal | null {
-  const excaliDrawModelRef = useRef<HTMLDivElement | null>(null);
+  Modal: ModalEl,
+  Excalidraw: ExcalidrawEl,
+}: ModalProps): ReactPortal | null {
+  const excaliDrawModelRef = useRef(null);
   const [discardModalOpen, setDiscardModalOpen] = useState(false);
   const [elements, setElements] =
     useState<ReadonlyArray<ExcalidrawElementFragment>>(initialElements);
@@ -114,31 +207,33 @@ export default function ExcalidrawModal({
     }
   };
 
-  function ShowDiscardDialog(): JSX.Element {
+  function ShowDiscardDialog(): React.ReactElement {
     return (
-      <Modal
+      <ModalEl
         title="Discard"
         onClose={() => {
           setDiscardModalOpen(false);
         }}
         closeOnClickOutside={true}>
         Are you sure you want to discard the changes?
-        <div className="ExcalidrawModal__discardModal">
-          <Button
+        <div style={ExcalidrawModalDiscardModal}>
+          <button
+            style={ExcalidrawModalDiscardActionButton}
             onClick={() => {
               setDiscardModalOpen(false);
               onHide();
             }}>
             Discard
-          </Button>{' '}
-          <Button
+          </button>{' '}
+          <button
+            style={ExcalidrawModalDiscardActionButton}
             onClick={() => {
               setDiscardModalOpen(false);
             }}>
             Cancel
-          </Button>
+          </button>
         </div>
-      </Modal>
+      </ModalEl>
     );
   }
 
@@ -150,32 +245,29 @@ export default function ExcalidrawModal({
     setElements(els);
   };
 
-  // This is a hacky work-around for Excalidraw + Vite.
-  // In DEV, Vite pulls this in fine, in prod it doesn't. It seems
-  // like a module resolution issue with ESM vs CJS?
-  const _Excalidraw =
-    Excalidraw.$$typeof != null ? Excalidraw : Excalidraw.default;
-
   return createPortal(
-    <div className="ExcalidrawModal__overlay" role="dialog">
-      <div
-        className="ExcalidrawModal__modal"
-        ref={excaliDrawModelRef}
-        tabIndex={-1}>
-        <div className="ExcalidrawModal__row">
+    <div style={ExcalidrawModalOverlayStyles} role="dialog">
+      <div style={ExcalidrawModalModal} ref={excaliDrawModelRef} tabIndex={-1}>
+        <div style={ExcalidrawModalRow}>
           {discardModalOpen && <ShowDiscardDialog />}
-          <_Excalidraw
+          <ExcalidrawEl
             onChange={onChange}
             initialData={{
               appState: {isLoading: false},
               elements: initialElements,
             }}
           />
-          <div className="ExcalidrawModal__actions">
-            <button className="action-button" onClick={discard}>
+          <div style={ExcalidrawModalActions}>
+            <button
+              className="action-button"
+              style={ExcalidrawModalActionButton}
+              onClick={discard}>
               Discard
             </button>
-            <button className="action-button" onClick={save}>
+            <button
+              className="action-button"
+              style={ExcalidrawModalActionButton}
+              onClick={save}>
               Save
             </button>
           </div>

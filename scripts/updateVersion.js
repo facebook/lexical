@@ -14,6 +14,7 @@ const packages = {
   '@lexical/clipboard': 'lexical-clipboard',
   '@lexical/code': 'lexical-code',
   '@lexical/dragon': 'lexical-dragon',
+  '@lexical/excalidraw': 'lexical-excalidraw',
   '@lexical/file': 'lexical-file',
   '@lexical/hashtag': 'lexical-hashtag',
   '@lexical/headless': 'lexical-headless',

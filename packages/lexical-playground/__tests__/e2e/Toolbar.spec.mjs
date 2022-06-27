@@ -222,15 +222,17 @@ test.describe('Toolbar', () => {
                 src="${SAMPLE_IMAGE_URL}"
                 style="height: inherit; max-width: 500px; width: inherit" />
             </div>
-            <button class="image-caption-button">Add Caption</button>
-            <div class="image-resizer image-resizer-n"></div>
-            <div class="image-resizer image-resizer-ne"></div>
-            <div class="image-resizer image-resizer-e"></div>
-            <div class="image-resizer image-resizer-se"></div>
-            <div class="image-resizer image-resizer-s"></div>
-            <div class="image-resizer image-resizer-sw"></div>
-            <div class="image-resizer image-resizer-w"></div>
-            <div class="image-resizer image-resizer-nw"></div>
+            <div>
+              <button class="image-caption-button">Add Caption</button>
+              <div class="image-resizer image-resizer-n"></div>
+              <div class="image-resizer image-resizer-ne"></div>
+              <div class="image-resizer image-resizer-e"></div>
+              <div class="image-resizer image-resizer-se"></div>
+              <div class="image-resizer image-resizer-s"></div>
+              <div class="image-resizer image-resizer-sw"></div>
+              <div class="image-resizer image-resizer-w"></div>
+              <div class="image-resizer image-resizer-nw"></div>
+            </div>
           </span>
           <br />
         </p>
@@ -256,15 +258,17 @@ test.describe('Toolbar', () => {
                 src="${SAMPLE_IMAGE_URL}"
                 style="height: inherit; max-width: 500px; width: inherit" />
             </div>
-            <button class="image-caption-button">Add Caption</button>
-            <div class="image-resizer image-resizer-n"></div>
-            <div class="image-resizer image-resizer-ne"></div>
-            <div class="image-resizer image-resizer-e"></div>
-            <div class="image-resizer image-resizer-se"></div>
-            <div class="image-resizer image-resizer-s"></div>
-            <div class="image-resizer image-resizer-sw"></div>
-            <div class="image-resizer image-resizer-w"></div>
-            <div class="image-resizer image-resizer-nw"></div>
+            <div>
+              <button class="image-caption-button">Add Caption</button>
+              <div class="image-resizer image-resizer-n"></div>
+              <div class="image-resizer image-resizer-ne"></div>
+              <div class="image-resizer image-resizer-e"></div>
+              <div class="image-resizer image-resizer-se"></div>
+              <div class="image-resizer image-resizer-s"></div>
+              <div class="image-resizer image-resizer-sw"></div>
+              <div class="image-resizer image-resizer-w"></div>
+              <div class="image-resizer image-resizer-nw"></div>
+            </div>
           </span>
           <br />
         </p>

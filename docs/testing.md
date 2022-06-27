@@ -26,7 +26,7 @@ To run E2E tests use:
 
 ```
 npm run start &
-npm run test-e2e:chromium # or :firefox, :webkit
+npm run test-e2e-chromium # or -firefox, -webkit
 ```
 
 E2E tests can be found in [this directory](/packages/lexical-playground/__tests__)

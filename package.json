@@ -52,7 +52,7 @@
     "test-e2e-collab-ci-webkit": "cross-env E2E_PORT=4000 start-server-and-test prepare-ci-collab 4000 test-e2e-collab-webkit",
     "test-e2e-prod-ci-chromium": "cross-env E2E_PORT=4000 start-server-and-test prepare-ci-prod 4000 test-e2e-prod-chromium",
     "test-e2e-collab-prod-ci-chromium": "cross-env E2E_PORT=4000 start-server-and-test prepare-ci-collab-prod 4000 test-e2e-collab-prod-chromium",
-    "run-all": "npm-run-all debug-test-e2e:*",
+    "run-all": "npm-run-all debug-test-e2e-*",
     "debug-test-e2e": "cross-env playwright test --debug",
     "debug-test-e2e-chromium": "cross-env E2E_BROWSER=chromium playwright test --debug --project=\"chromium\"",
     "debug-test-e2e-prod-chromium": "cross-env E2E_BROWSER=chromium E2E_PORT=4173 playwright test --debug --project=\"chromium\"",

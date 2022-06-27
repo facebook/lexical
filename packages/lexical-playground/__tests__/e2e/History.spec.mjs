@@ -559,7 +559,6 @@ test.describe('History', () => {
   });
 });
 
-test.use({launchOptions: {slowMo: 50}});
 test.describe('History - IME', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   test('Can undo composed Hirigana via IME after composition ends (#2479)', async ({
@@ -567,6 +566,7 @@ test.describe('History - IME', () => {
     browserName,
     isCollab,
     isPlainText,
+    legacyEvents,
   }) => {
     // We don't yet support FF.
     test.skip(isCollab || isPlainText || browserName === 'firefox');
@@ -647,28 +647,59 @@ test.describe('History - IME', () => {
       `,
     );
 
-    await assertSelection(page, {
-      anchorOffset: 2,
-      anchorPath: [0, 0, 0],
-      focusOffset: 2,
-      focusPath: [0, 0, 0],
-    });
+    if (browserName === 'webkit' && !legacyEvents) {
+      await assertSelection(page, {
+        anchorOffset: 3,
+        anchorPath: [0, 0, 0],
+        focusOffset: 3,
+        focusPath: [0, 0, 0],
+      });
+    } else {
+      await assertSelection(page, {
+        anchorOffset: 2,
+        anchorPath: [0, 0, 0],
+        focusOffset: 2,
+        focusPath: [0, 0, 0],
+      });
+    }
 
     await undo(page);
 
-    await assertHTML(
-      page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-      `,
-    );
+    if (browserName === 'webkit' && !legacyEvents) {
+      await assertHTML(
+        page,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">すし</span>
+          </p>
+        `,
+      );
+    } else {
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        `,
+      );
+    }
 
-    await assertSelection(page, {
-      anchorOffset: 0,
-      anchorPath: [0],
-      focusOffset: 0,
-      focusPath: [0],
-    });
+    if (browserName === 'webkit' && !legacyEvents) {
+      await assertSelection(page, {
+        anchorOffset: 2,
+        anchorPath: [0, 0, 0],
+        focusOffset: 2,
+        focusPath: [0, 0, 0],
+      });
+    } else {
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [0],
+        focusOffset: 0,
+        focusPath: [0],
+      });
+    }
 
     await redo(page);
 
@@ -683,11 +714,20 @@ test.describe('History - IME', () => {
       `,
     );
 
-    await assertSelection(page, {
-      anchorOffset: 2,
-      anchorPath: [0, 0, 0],
-      focusOffset: 2,
-      focusPath: [0, 0, 0],
-    });
+    if (browserName === 'webkit' && !legacyEvents) {
+      await assertSelection(page, {
+        anchorOffset: 3,
+        anchorPath: [0, 0, 0],
+        focusOffset: 3,
+        focusPath: [0, 0, 0],
+      });
+    } else {
+      await assertSelection(page, {
+        anchorOffset: 2,
+        anchorPath: [0, 0, 0],
+        focusOffset: 2,
+        focusPath: [0, 0, 0],
+      });
+    }
   });
 });

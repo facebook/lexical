@@ -28,6 +28,7 @@ import {
 } from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$isDecoratorBlockNode} from '@lexical/react/LexicalDecoratorBlockNode';
+import {INSERT_EXCALIDRAW_COMMAND} from '@lexical/react/LexicalExcalidrawPlugin';
 import {INSERT_HORIZONTAL_RULE_COMMAND} from '@lexical/react/LexicalHorizontalRuleNode';
 import {
   $createHeadingNode,
@@ -88,7 +89,6 @@ import KatexEquationAlterer from '../ui/KatexEquationAlterer';
 import LinkPreview from '../ui/LinkPreview';
 import TextInput from '../ui/TextInput';
 import {INSERT_EQUATION_COMMAND} from './EquationsPlugin';
-import {INSERT_EXCALIDRAW_COMMAND} from './ExcalidrawPlugin';
 import {INSERT_IMAGE_COMMAND} from './ImagesPlugin';
 import {INSERT_POLL_COMMAND} from './PollPlugin';
 import {INSERT_TWEET_COMMAND} from './TwitterPlugin';

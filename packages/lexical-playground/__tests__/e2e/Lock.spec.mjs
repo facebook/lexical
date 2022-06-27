@@ -19,7 +19,9 @@ test.describe('Lock', () => {
     isPlainText,
     isCollab,
   }) => {
-    const placeholder = `Enter some ${isPlainText ? 'plain' : 'rich'} text...`;
+    const placeholder = `Enter some ${
+      isCollab ? 'collaborative rich' : isPlainText ? 'plain' : 'rich'
+    } text...`;
     const pageOrFrame = isCollab ? page.frame('left') : page;
     await focusEditor(page);
     expect(await pageOrFrame.innerHTML('.editor-container')).toContain(

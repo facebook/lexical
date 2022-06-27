@@ -6,11 +6,17 @@
  *
  */
 
-import {moveLeft, moveToLineBeginning} from '../keyboardShortcuts/index.mjs';
+import {
+  moveLeft,
+  moveToLineBeginning,
+  selectCharacters,
+} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
   enableCompositionKeyEvents,
+  evaluate,
+  expect,
   focusEditor,
   html,
   initialize,
@@ -665,6 +671,40 @@ test.describe('Composition', () => {
         focusOffset: 0,
         focusPath: [0, 0, 0],
       });
+    });
+
+    test('Floating toolbar should not be displayed when using IME', async ({
+      page,
+      browserName,
+      isPlainText,
+    }) => {
+      test.skip(isPlainText);
+      // We don't yet support FF.
+      test.skip(browserName === 'firefox');
+
+      await focusEditor(page);
+      await enableCompositionKeyEvents(page);
+
+      await page.keyboard.imeSetComposition('ｓ', 0, 1);
+      await page.keyboard.imeSetComposition('す', 0, 1);
+      await page.keyboard.imeSetComposition('すｓ', 0, 2);
+      await page.keyboard.imeSetComposition('すｓｈ', 0, 3);
+      await page.keyboard.imeSetComposition('すｓｈ', 0, 4);
+
+      const isFloatingToolbarDisplayedWhenUseIME = await evaluate(page, () => {
+        return !!document.querySelector('.floating-text-format-popup');
+      });
+
+      expect(isFloatingToolbarDisplayedWhenUseIME).toEqual(false);
+
+      await page.keyboard.insertText('すｓｈ');
+      await selectCharacters(page, 'left', 3);
+
+      const isFloatingToolbarDisplayed = await evaluate(page, () => {
+        return !!document.querySelector('.floating-text-format-popup');
+      });
+
+      expect(isFloatingToolbarDisplayed).toEqual(true);
     });
   });
 });

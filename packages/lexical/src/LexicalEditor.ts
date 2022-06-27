@@ -171,7 +171,13 @@ export const COMMAND_PRIORITY_HIGH = 3;
 export const COMMAND_PRIORITY_CRITICAL = 4;
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export type LexicalCommand<T = never> = Readonly<Record<string, unknown>>;
+export type LexicalCommand<T = never> = Readonly<{
+  /**
+   * Capture the type of the payload this command expects. This ensures that `dispatchCommand` and `registerCommand` can
+   * correctly enforce and infer the payload later on
+   */
+  _payloadType?: T;
+}>;
 type Commands = Map<
   LexicalCommand<unknown>,
   Array<Set<CommandListener<unknown>>>

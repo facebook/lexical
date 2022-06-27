@@ -37,8 +37,5 @@
     "type": "git",
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/lexical-react"
-  },
-  "devDependencies": {
-    "utility-types": "^3.10.0"
   }
 }

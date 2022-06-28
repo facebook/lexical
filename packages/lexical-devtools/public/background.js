@@ -13,7 +13,7 @@ let ports = {}; // Each tab will have a separate messaging port for the devTools
 // The Lexical DevTools React UI sends a message to initialize the port.
 // eslint-disable-next-line no-undef
 chrome.runtime.onConnect.addListener(function (port) {
-  port.onMessage.addListener(function (message) {
+  port.onMessage.addListener((message) => {
     if (message.name === 'init' && message.type === 'FROM_APP') {
       ports[message.tabId].react = port;
       return;

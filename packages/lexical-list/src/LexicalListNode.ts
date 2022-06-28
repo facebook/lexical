@@ -25,8 +25,8 @@ import {
   SerializedElementNode,
 } from 'lexical';
 
-import {$createListItemNode, $isListItemNode} from '.';
-import {$getListDepth} from './utils';
+import {$createListItemNode, $isListItemNode, ListItemNode} from '.';
+import {$getListDepth, wrapInListItem} from './utils';
 
 export type SerializedListNode = Spread<
   {
@@ -231,6 +231,29 @@ function setListThemeClassNames(
   }
 }
 
+/*
+ * This function normalizes the children of a ListNode after the conversion from HTML,
+ * ensuring that they are all ListItemNodes and contain either a single nested ListNode
+ * or some other inline content.
+ */
+function normalizeChildren(nodes: Array<LexicalNode>): Array<ListItemNode> {
+  const normalizedListItems: Array<ListItemNode> = [];
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+    if ($isListItemNode(node)) {
+      normalizedListItems.push(node);
+      node.getChildren().forEach((child) => {
+        if ($isListNode(child)) {
+          normalizedListItems.push(wrapInListItem(child));
+        }
+      });
+    } else {
+      normalizedListItems.push(wrapInListItem(node));
+    }
+  }
+  return normalizedListItems;
+}
+
 function convertListNode(domNode: Node): DOMConversionOutput {
   const nodeName = domNode.nodeName.toLowerCase();
   let node = null;
@@ -241,7 +264,10 @@ function convertListNode(domNode: Node): DOMConversionOutput {
     node = $createListNode('bullet');
   }
 
-  return {node};
+  return {
+    after: normalizeChildren,
+    node,
+  };
 }
 
 const TAG_TO_LIST_TYPE: Record<string, ListType> = {

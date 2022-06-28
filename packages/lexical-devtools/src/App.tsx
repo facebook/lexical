@@ -17,23 +17,25 @@ function App(): JSX.Element {
   const [count, setCount] = useState<number>(0);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [editorState, setEditorState] = useState<object>({});
-  const port = useRef();
+  const port = useRef<object>({});
 
   useEffect(() => {
     // create and initialize the messaging port to receive editorState updates
-    port.current = chrome.runtime.connect();
+    port.current = window.chrome.runtime.connect();
     port.current.postMessage({
       name: 'init',
       tabId: chrome.devtools.inspectedWindow.tabId,
       type: 'FROM_APP',
     });
-  }, []);
+  }, [port]);
 
   useEffect(() => {
-    port.current.onMessage.addListener((message) => {
-      setCount(count + 1);
-      setEditorState(message.editorState);
-    });
+    port.current.onMessage.addListener(
+      (message: {editorState: React.SetStateAction<object>}) => {
+        setCount(count + 1);
+        setEditorState(message.editorState);
+      },
+    );
   });
 
   return (

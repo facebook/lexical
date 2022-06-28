@@ -23,6 +23,7 @@ import {
 export type Comment = {
   author: string;
   content: string;
+  deleted: boolean;
   id: string;
   timeStamp: number;
   type: 'comment';
@@ -30,6 +31,7 @@ export type Comment = {
 
 export type Thread = {
   comments: Array<Comment>;
+  deleted: boolean;
   id: string;
   quote: string;
   type: 'thread';
@@ -53,6 +55,7 @@ export function createComment(
   return {
     author,
     content,
+    deleted: false,
     id: id === undefined ? createUID() : id,
     timeStamp: timeStamp === undefined ? performance.now() : timeStamp,
     type: 'comment',
@@ -66,6 +69,7 @@ export function createThread(
 ): Thread {
   return {
     comments,
+    deleted: false,
     id: id === undefined ? createUID() : id,
     quote,
     type: 'thread',
@@ -75,6 +79,7 @@ export function createThread(
 function cloneThread(thread: Thread): Thread {
   return {
     comments: Array.from(thread.comments),
+    deleted: false,
     id: thread.id,
     quote: thread.quote,
     type: 'thread',
@@ -164,7 +169,7 @@ export class CommentStore {
         const nextComment = nextComments[i];
         if (nextComment.type === 'thread' && nextComment.id === thread.id) {
           const newThread = cloneThread(nextComment);
-          nextComments.splice(i, 1, newThread);
+          nextComments[i].deleted = true;
           const threadComments = newThread.comments;
           if (threadComments.length === 1) {
             const threadIndex = nextComments.indexOf(newThread);
@@ -173,7 +178,7 @@ export class CommentStore {
                 sharedCommentsArray.delete(threadIndex);
               });
             }
-            nextComments.splice(threadIndex, 1);
+            nextComments[threadIndex].deleted = true;
           } else {
             const index = threadComments.indexOf(commentOrThread as Comment);
             if (this.isCollaborative() && sharedCommentsArray !== null) {
@@ -184,7 +189,7 @@ export class CommentStore {
                 parentSharedArray.delete(index);
               });
             }
-            threadComments.splice(index, 1);
+            threadComments[index].deleted = true;
           }
           break;
         }
@@ -196,7 +201,7 @@ export class CommentStore {
           sharedCommentsArray.delete(index);
         });
       }
-      nextComments.splice(index, 1);
+      nextComments[index].deleted = true;
     }
     this._comments = nextComments;
     triggerOnChange(this);

@@ -308,6 +308,13 @@ i.send {
   color: #444;
 }
 
+.CommentPlugin_CommentsPanel_List_Deleted {
+  color: #444;
+  padding-bottom: 5px;
+  vertical-align: top;
+  font-style: italic;
+}
+
 .CommentPlugin_CommentsPanel_List_Details {
   color: #444;
   padding-bottom: 5px;

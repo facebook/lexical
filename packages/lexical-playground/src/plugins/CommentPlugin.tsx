@@ -482,30 +482,48 @@ function CommentsPanelListComment({
 
   return (
     <li className="CommentPlugin_CommentsPanel_List_Comment">
-      <div className="CommentPlugin_CommentsPanel_List_Details">
-        <span className="CommentPlugin_CommentsPanel_List_Comment_Author">
-          {comment.author}
-        </span>
-        <span className="CommentPlugin_CommentsPanel_List_Comment_Time">
-          · {seconds > -10 ? 'Just now' : rtf.format(minutes, 'minute')}
-        </span>
-      </div>
-      <p>{comment.content}</p>
-      <Button
-        onClick={() => {
-          showModal('Delete Comment', (onClose) => (
-            <ShowDeleteCommentDialog
-              comment={comment}
-              deleteComment={deleteComment}
-              thread={thread}
-              onClose={onClose}
-            />
-          ));
-        }}
-        className="CommentPlugin_CommentsPanel_List_DeleteButton">
-        <i className="delete" />
-      </Button>
-      {modal}
+      {comment.deleted === true ? (
+        <>
+          <div className="CommentPlugin_CommentsPanel_List_Details">
+            <span className="CommentPlugin_CommentsPanel_List_Comment_Author">
+              {comment.author}
+            </span>
+            <span className="CommentPlugin_CommentsPanel_List_Comment_Time">
+              · {seconds > -10 ? 'Just now' : rtf.format(minutes, 'minute')}
+            </span>
+          </div>
+          <p className="CommentPlugin_CommentsPanel_List_Deleted">
+            Comment deleted.
+          </p>
+        </>
+      ) : (
+        <>
+          <div className="CommentPlugin_CommentsPanel_List_Details">
+            <span className="CommentPlugin_CommentsPanel_List_Comment_Author">
+              {comment.author}
+            </span>
+            <span className="CommentPlugin_CommentsPanel_List_Comment_Time">
+              · {seconds > -10 ? 'Just now' : rtf.format(minutes, 'minute')}
+            </span>
+          </div>
+          <p>{comment.content}</p>
+          <Button
+            onClick={() => {
+              showModal('Delete Comment', (onClose) => (
+                <ShowDeleteCommentDialog
+                  comment={comment}
+                  deleteComment={deleteComment}
+                  thread={thread}
+                  onClose={onClose}
+                />
+              ));
+            }}
+            className="CommentPlugin_CommentsPanel_List_DeleteButton">
+            <i className="delete" />
+          </Button>
+          {modal}
+        </>
+      )}
     </li>
   );
 }

@@ -7,7 +7,6 @@
  */
 
 import {
-  deleteBackward,
   moveLeft,
   moveRight,
   moveToLineBeginning,
@@ -1015,71 +1014,6 @@ test.describe('Links', () => {
             <span data-lexical-text="true">An Awesome Website</span>
           </a>
           <span data-lexical-text="true">!</span>
-        </p>
-      `,
-    );
-  });
-
-  test(`Can delete text up to a link and then add text after`, async ({
-    page,
-  }) => {
-    await focusEditor(page);
-    await page.keyboard.type('This is an Awesome Website right?');
-    await moveLeft(page, ' right?'.length);
-
-    await assertHTML(
-      page,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">
-            This is an Awesome Website right?
-          </span>
-        </p>
-      `,
-    );
-
-    await selectCharacters(page, 'left', 'Awesome Website'.length);
-    await click(page, '.link');
-    await assertHTML(
-      page,
-      `
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">This is an</span>
-          <a
-            href="https://"
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr">
-            <span data-lexical-text="true">Awesome Website</span>
-          </a>
-          <span data-lexical-text="true"> right?</span>
-        </p>
-      `,
-    );
-
-    await page.keyboard.press('ArrowRight');
-    await page.keyboard.press('ArrowRight');
-    await deleteBackward(page);
-
-    await page.keyboard.type(', ');
-
-    await assertHTML(
-      page,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">This is an</span>
-          <a
-            href="https://"
-            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
-            dir="ltr">
-            <span data-lexical-text="true">Awesome Website</span>
-          </a>
-          <span data-lexical-text="true">, right?</span>
         </p>
       `,
     );

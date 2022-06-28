@@ -611,16 +611,6 @@ export function $updateTextNodeFromDOMContent(
   }
 }
 
-function $previousSiblingDoesNotAcceptText(node: TextNode): boolean {
-  const previousSibling = node.getPreviousSibling();
-
-  return (
-    ($isTextNode(previousSibling) ||
-      ($isElementNode(previousSibling) && previousSibling.isInline())) &&
-    !previousSibling.canInsertTextAfter()
-  );
-}
-
 function $shouldInsertTextAfterOrBeforeTextNode(
   selection: RangeSelection,
   node: TextNode,
@@ -636,10 +626,7 @@ function $shouldInsertTextAfterOrBeforeTextNode(
   const isToken = node.isToken();
   const shouldInsertTextBefore =
     offset === 0 &&
-    (!node.canInsertTextBefore() ||
-      !parent.canInsertTextBefore() ||
-      isToken ||
-      $previousSiblingDoesNotAcceptText(node));
+    (!node.canInsertTextBefore() || !parent.canInsertTextBefore() || isToken);
   const shouldInsertTextAfter =
     node.getTextContentSize() === offset &&
     (!node.canInsertTextBefore() || !parent.canInsertTextBefore() || isToken);

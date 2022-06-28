@@ -6,6 +6,7 @@
  *
  */
 
+export type {CommandPayloadType} from './LexicalCommands';
 export type {
   CommandListenerPriority,
   EditorConfig,

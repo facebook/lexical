@@ -8,6 +8,10 @@
 
 import type {ElementFormatType, LexicalCommand, TextFormatType} from 'lexical';
 
+export type CommandPayloadType<C> = C extends LexicalCommand<infer R>
+  ? R
+  : never;
+
 export function createCommand<T>(): LexicalCommand<T> {
   return {};
 }
@@ -22,7 +26,8 @@ export const INSERT_PARAGRAPH_COMMAND: LexicalCommand<void> = createCommand();
 export const CONTROLLED_TEXT_INSERTION_COMMAND: LexicalCommand<
   InputEvent | string
 > = createCommand();
-export const PASTE_COMMAND: LexicalCommand<ClipboardEvent> = createCommand();
+export const PASTE_COMMAND: LexicalCommand<ClipboardEvent | InputEvent> =
+  createCommand();
 export const REMOVE_TEXT_COMMAND: LexicalCommand<void> = createCommand();
 export const DELETE_WORD_COMMAND: LexicalCommand<boolean> = createCommand();
 export const DELETE_LINE_COMMAND: LexicalCommand<boolean> = createCommand();
@@ -58,8 +63,10 @@ export const FORMAT_ELEMENT_COMMAND: LexicalCommand<ElementFormatType> =
 export const DRAGSTART_COMMAND: LexicalCommand<DragEvent> = createCommand();
 export const DRAGOVER_COMMAND: LexicalCommand<DragEvent> = createCommand();
 export const DRAGEND_COMMAND: LexicalCommand<DragEvent> = createCommand();
-export const COPY_COMMAND: LexicalCommand<ClipboardEvent> = createCommand();
-export const CUT_COMMAND: LexicalCommand<ClipboardEvent> = createCommand();
+export const COPY_COMMAND: LexicalCommand<ClipboardEvent | KeyboardEvent> =
+  createCommand();
+export const CUT_COMMAND: LexicalCommand<ClipboardEvent | KeyboardEvent> =
+  createCommand();
 export const CLEAR_EDITOR_COMMAND: LexicalCommand<void> = createCommand();
 export const CLEAR_HISTORY_COMMAND: LexicalCommand<void> = createCommand();
 export const CAN_REDO_COMMAND: LexicalCommand<boolean> = createCommand();

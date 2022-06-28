@@ -5,10 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
+import Excalidraw from '@excalidraw/excalidraw';
 import {$createLinkNode} from '@lexical/link';
 import {$createListItemNode, $createListNode} from '@lexical/list';
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
+import {
+  ExcalidrawNode,
+  SerializedExcalidrawNode,
+} from '@lexical/react/LexicalExcalidrawPlugin';
 import {$createHeadingNode, $createQuoteNode} from '@lexical/rich-text';
 import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
 import * as React from 'react';
@@ -24,10 +28,38 @@ import TestRecorderPlugin from './plugins/TestRecorderPlugin';
 import TypingPerfPlugin from './plugins/TypingPerfPlugin';
 import Settings from './Settings';
 import PlaygroundEditorTheme from './themes/PlaygroundEditorTheme';
+import ExcalidrawImage from './ui/ExcalidrawImage';
+import Modal from './ui/Modal';
 
 console.warn(
   'If you are profiling the playground app, please ensure you turn off the debug view. You can disable it by pressing on the settings control in the bottom-left of your screen and toggling the debug view setting.',
 );
+
+export class PlaygroundExcalidrawNode extends ExcalidrawNode {
+  __getModal() {
+    return Modal;
+  }
+
+  __getExcalidraw() {
+    return Excalidraw;
+  }
+
+  __getExcalidrawImage() {
+    return ExcalidrawImage;
+  }
+
+  static clone(node: PlaygroundExcalidrawNode): PlaygroundExcalidrawNode {
+    return new PlaygroundExcalidrawNode(node.__data, node.__key);
+  }
+
+  static getType(): string {
+    return 'excalidraw';
+  }
+
+  static importJSON(serializedNode: SerializedExcalidrawNode): ExcalidrawNode {
+    return new PlaygroundExcalidrawNode(serializedNode.data);
+  }
+}
 
 function prepopulatedRichText() {
   const root = $getRoot();
@@ -121,7 +153,7 @@ function App(): JSX.Element {
       ? undefined
       : prepopulatedRichText,
     namespace: 'Playground',
-    nodes: [...PlaygroundNodes],
+    nodes: [...PlaygroundNodes, PlaygroundExcalidrawNode],
     onError: (error: Error) => {
       throw error;
     },

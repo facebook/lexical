@@ -33,6 +33,15 @@ export type ExcalidrawElementFragment = {
   isDeleted?: boolean;
 };
 
+export type SerializedExcalidrawNode = Spread<
+  {
+    data: string;
+    type: 'excalidraw';
+    version: 1;
+  },
+  SerializedLexicalNode
+>;
+
 export type Excalidraw = ({
   onChange,
   initialData,
@@ -83,8 +92,4 @@ export declare class AutoExcalidrawNode extends ExcalidrawNode {
 
 export const INSERT_EXCALIDRAW_COMMAND: LexicalCommand<void>;
 
-export function ExcalidrawPlugin({
-  modal: Modal,
-  excalidraw: Excalidraw,
-  excalidrawImage: ExcalidrawImage,
-}): JSX.Element;
+export function ExcalidrawPlugin({excalidrawNode: ExcalidrawNode}): JSX.Element;

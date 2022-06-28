@@ -257,43 +257,34 @@ export type SerializedExcalidrawNode = Spread<
   SerializedLexicalNode
 >;
 
-function convertExcalidrawElement(
-  domNode: HTMLElement,
-): DOMConversionOutput | null {
-  const excalidrawData = domNode.getAttribute('data-lexical-excalidraw-json');
-  if (excalidrawData) {
-    const node = $createExcalidrawNode();
-    node.__data = excalidrawData;
-    return {
-      node,
-    };
-  }
-  return null;
-}
-
 export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
   __data: string;
-  __modal: Modal;
-  __excalidraw: Excalidraw;
-  __excalidrawImage: ExcalidrawImage;
+
+  __getModal(): Modal {
+    throw new Error('__getModal is not implemented for ExcalidrawNode');
+  }
+
+  __getExcalidraw(): Excalidraw {
+    throw new Error('__getExcalidraw is not implemented for ExcalidrawNode');
+  }
+
+  __getExcalidrawImage(): ExcalidrawImage {
+    throw new Error(
+      ' __getExcalidrawImage is not implemented for ExcalidrawNode',
+    );
+  }
 
   static getType(): string {
     return 'excalidraw';
   }
 
   static clone(node: ExcalidrawNode): ExcalidrawNode {
-    return new ExcalidrawNode(
-      node.__excalidraw,
-      node.__excalidrawImage,
-      node.__modal,
-      node.__data,
-      node.__key,
-    );
+    return new ExcalidrawNode(node.__data, node.__key);
   }
 
-  // static importJSON(serializedNode: SerializedExcalidrawNode): ExcalidrawNode {
-  //   return new ExcalidrawNode(serializedNode.data);
-  // }
+  static importJSON(serializedNode: SerializedExcalidrawNode): ExcalidrawNode {
+    return new ExcalidrawNode(serializedNode.data);
+  }
 
   exportJSON(): SerializedExcalidrawNode {
     return {
@@ -303,18 +294,9 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
     };
   }
 
-  constructor(
-    excalidrawComponent,
-    excalidrawImageComponent,
-    modalComponent,
-    data = '[]',
-    key?: NodeKey,
-  ) {
+  constructor(data = '[]', key?: NodeKey) {
     super(key);
     this.__data = data;
-    this.__modal = modalComponent;
-    this.__excalidraw = excalidrawComponent;
-    this.__excalidrawImage = excalidrawImageComponent;
   }
 
   // View
@@ -339,7 +321,21 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
           return null;
         }
         return {
-          conversion: convertExcalidrawElement,
+          conversion: function (
+            domEl: HTMLElement,
+          ): DOMConversionOutput | null {
+            const excalidrawData = domEl.getAttribute(
+              'data-lexical-excalidraw-json',
+            );
+            if (excalidrawData) {
+              const node = this.constructor();
+              node.__data = excalidrawData;
+              return {
+                node,
+              };
+            }
+            return null;
+          },
           priority: 1,
         };
       },
@@ -367,9 +363,9 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
   decorate(editor: LexicalEditor): JSX.Element {
     return (
       <ExcalidrawComponent
-        ExcalidrawImage={this.__excalidrawImage}
-        excalidraw={this.__excalidraw}
-        modal={this.__modal}
+        ExcalidrawImage={this.__getExcalidrawImage()}
+        excalidraw={this.__getExcalidraw()}
+        modal={this.__getModal()}
         nodeKey={this.getKey()}
         data={this.__data}
       />
@@ -378,15 +374,9 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
 }
 
 export function $createExcalidrawNode(
-  excalidrawComponent: Excalidraw,
-  excalidrawImageComponent: ExcalidrawImage,
-  modalComponent: Modal,
+  excalidrawNode: typeof ExcalidrawNode,
 ): ExcalidrawNode {
-  return new ExcalidrawNode(
-    excalidrawComponent,
-    excalidrawImageComponent,
-    modalComponent,
-  );
+  return new excalidrawNode();
 }
 
 export function $isExcalidrawNode(

@@ -6,7 +6,6 @@
  *
  */
 
-import Excalidraw from '@excalidraw/excalidraw';
 import {AutoFocusPlugin} from '@lexical/react/LexicalAutoFocusPlugin';
 import {AutoScrollPlugin} from '@lexical/react/LexicalAutoScrollPlugin';
 import {CharacterLimitPlugin} from '@lexical/react/LexicalCharacterLimitPlugin';
@@ -24,6 +23,7 @@ import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
 import * as React from 'react';
 import {useRef} from 'react';
 
+import {PlaygroundExcalidrawNode} from './App';
 import {createWebsocketProvider} from './collaboration';
 import {useSettings} from './context/SettingsContext';
 import {useSharedHistoryContext} from './context/SharedHistoryContext';
@@ -53,8 +53,6 @@ import TreeViewPlugin from './plugins/TreeViewPlugin';
 import TwitterPlugin from './plugins/TwitterPlugin';
 import YouTubePlugin from './plugins/YouTubePlugin';
 import ContentEditable from './ui/ContentEditable';
-import ExcalidrawImage from './ui/ExcalidrawImage';
-import Modal from './ui/Modal';
 import Placeholder from './ui/Placeholder';
 
 const skipCollaborationInit =
@@ -137,11 +135,7 @@ export default function Editor(): JSX.Element {
             <HorizontalRulePlugin />
             <TextFormatFloatingToolbarPlugin />
             <EquationsPlugin />
-            <ExcalidrawPlugin
-              excalidrawImage={ExcalidrawImage}
-              modal={Modal}
-              excalidraw={Excalidraw}
-            />
+            <ExcalidrawPlugin excalidrawNode={PlaygroundExcalidrawNode} />
             <TabFocusPlugin />
           </>
         ) : (

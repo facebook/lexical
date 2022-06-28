@@ -14,7 +14,6 @@ import {AutoLinkNode, LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
 import {MarkNode} from '@lexical/mark';
 import {OverflowNode} from '@lexical/overflow';
-import {ExcalidrawNode} from '@lexical/react/LexicalExcalidrawPlugin';
 import {HorizontalRuleNode} from '@lexical/react/LexicalHorizontalRuleNode';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
@@ -50,7 +49,6 @@ const PlaygroundNodes: Array<Klass<LexicalNode>> = [
   ImageNode,
   MentionNode,
   EmojiNode,
-  ExcalidrawNode,
   EquationNode,
   AutocompleteNode,
   TypeaheadNode,

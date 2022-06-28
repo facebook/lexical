@@ -13,23 +13,13 @@ import type {
   TextMatchTransformer,
   Transformer,
 } from '@lexical/markdown';
-import type {LexicalNode, RootNode, TextNode} from 'lexical';
+import type {RootNode, TextNode} from 'lexical';
 
 import {$createCodeNode} from '@lexical/code';
-import {$isListItemNode, $isListNode} from '@lexical/list';
-import {$isQuoteNode} from '@lexical/rich-text';
-import {$findMatchingParent} from '@lexical/utils';
-import {
-  $createLineBreakNode,
-  $createParagraphNode,
-  $createTextNode,
-  $getRoot,
-  $isParagraphNode,
-} from 'lexical';
+import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
 
 import {PUNCTUATION_OR_SPACE, transformersByType} from './utils';
 
-const MARKDOWN_EMPTY_LINE_REG_EXP = /^\s{0,3}$/;
 const CODE_BLOCK_REG_EXP = /^```(\w{1,10})?\s?$/;
 type TextFormatTransformersIndex = Readonly<{
   fullMatchRegExpByTag: Readonly<Record<string, RegExp>>;
@@ -73,18 +63,6 @@ export function createMarkdownImport(
       );
     }
 
-    // Removing empty paragraphs as md does not really
-    // allow empty lines and uses them as dilimiter
-    const children = root.getChildren();
-    for (const child of children) {
-      if (
-        $isParagraphNode(child) &&
-        MARKDOWN_EMPTY_LINE_REG_EXP.test(child.getTextContent())
-      ) {
-        child.remove();
-      }
-    }
-
     root.selectEnd();
   };
 }
@@ -96,8 +74,7 @@ function importBlocks(
   textFormatTransformersIndex: TextFormatTransformersIndex,
   textMatchTransformers: Array<TextMatchTransformer>,
 ) {
-  const lineTextTrimmed = lineText.trim();
-  const textNode = $createTextNode(lineTextTrimmed);
+  const textNode = $createTextNode(lineText);
   const elementNode = $createParagraphNode();
   elementNode.append(textNode);
   rootNode.append(elementNode);
@@ -117,37 +94,6 @@ function importBlocks(
     textFormatTransformersIndex,
     textMatchTransformers,
   );
-
-  // If no transformer found and we left with original paragraph node
-  // can check if its content can be appended to the previous node
-  // if it's a paragraph, quote or list
-  if (elementNode.isAttached() && lineTextTrimmed.length > 0) {
-    const previousNode = elementNode.getPreviousSibling();
-    if (
-      $isParagraphNode(previousNode) ||
-      $isQuoteNode(previousNode) ||
-      $isListNode(previousNode)
-    ) {
-      let targetNode: LexicalNode | null = previousNode;
-
-      if ($isListNode(previousNode)) {
-        const lastDescendant = previousNode.getLastDescendant();
-        if (lastDescendant == null) {
-          targetNode = null;
-        } else {
-          targetNode = $findMatchingParent(lastDescendant, $isListItemNode);
-        }
-      }
-
-      if (targetNode != null && targetNode.getTextContentSize() > 0) {
-        targetNode.splice(targetNode.getChildrenSize(), 0, [
-          $createLineBreakNode(),
-          ...elementNode.getChildren(),
-        ]);
-        elementNode.remove();
-      }
-    }
-  }
 }
 
 function importCodeBlock(

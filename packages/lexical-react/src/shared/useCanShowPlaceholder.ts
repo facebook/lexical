@@ -9,40 +9,29 @@
 import type {LexicalEditor} from 'lexical';
 
 import {$canShowPlaceholderCurry} from '@lexical/text';
-import {mergeRegister} from '@lexical/utils';
 import {useState} from 'react';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
-function canShowPlaceholderFromCurrentEditorState(
-  editor: LexicalEditor,
-): boolean {
-  const currentCanShowPlaceholder = editor
-    .getEditorState()
-    .read($canShowPlaceholderCurry(editor.isComposing(), editor.isReadOnly()));
-
-  return currentCanShowPlaceholder;
-}
-
 export function useCanShowPlaceholder(editor: LexicalEditor): boolean {
-  const [canShowPlaceholder, setCanShowPlaceholder] = useState(() =>
-    canShowPlaceholderFromCurrentEditorState(editor),
+  const [canShowPlaceholder, setCanShowPlaceholder] = useState(
+    editor
+      .getEditorState()
+      .read($canShowPlaceholderCurry(editor.isComposing())),
   );
 
   useLayoutEffect(() => {
-    function resetCanShowPlaceholder() {
-      const currentCanShowPlaceholder =
-        canShowPlaceholderFromCurrentEditorState(editor);
+    let currentCanShowPlaceholder = editor
+      .getEditorState()
+      .read($canShowPlaceholderCurry(editor.isComposing()));
+    setCanShowPlaceholder(currentCanShowPlaceholder);
+    return editor.registerUpdateListener(({editorState}) => {
+      const isComposing = editor.isComposing();
+      currentCanShowPlaceholder = editorState.read(
+        $canShowPlaceholderCurry(isComposing),
+      );
+
       setCanShowPlaceholder(currentCanShowPlaceholder);
-    }
-    resetCanShowPlaceholder();
-    return mergeRegister(
-      editor.registerUpdateListener(() => {
-        resetCanShowPlaceholder();
-      }),
-      editor.registerReadOnlyListener(() => {
-        resetCanShowPlaceholder();
-      }),
-    );
+    });
   }, [editor]);
 
   return canShowPlaceholder;

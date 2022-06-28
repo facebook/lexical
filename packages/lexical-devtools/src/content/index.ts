@@ -5,9 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-'use strict';
-
-// eslint-disable-next-line no-undef
 const port = chrome.runtime.connect();
 
 port.postMessage({

@@ -11,8 +11,8 @@ export default defineConfig({
     outDir: 'build',
     rollupOptions: {
       input: {
-        background: resolve(root, 'background', 'index.js'),
-        content: resolve(root, 'content', 'index.js'),
+        background: resolve(root, 'background', 'index.ts'),
+        content: resolve(root, 'content', 'index.ts'),
         devtools: resolve(root, 'devtools', 'index.html'),
         panel: resolve(root, 'panel', 'index.html'),
         popup: resolve(root, 'popup', 'index.html')

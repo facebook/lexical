@@ -95,7 +95,6 @@ export function $insertDataTransferForRichText(
   selection: RangeSelection | GridSelection,
   editor: LexicalEditor,
 ): void {
-  const htmlString = dataTransfer.getData('text/html');
   const lexicalString = dataTransfer.getData('application/x-lexical-editor');
 
   if (lexicalString) {
@@ -112,6 +111,7 @@ export function $insertDataTransferForRichText(
     } catch {}
   }
 
+  const htmlString = dataTransfer.getData('text/html');
   if (htmlString) {
     try {
       const parser = new DOMParser();
@@ -125,7 +125,24 @@ export function $insertDataTransferForRichText(
     } catch {}
   }
 
-  $insertDataTransferForPlainText(dataTransfer, selection);
+  // Multi-line plain text in rich text mode pasted as separate paragrahs
+  // instead of single paragraph with linebreaks.
+  const text = dataTransfer.getData('text/plain');
+  if (text != null) {
+    if ($isRangeSelection(selection)) {
+      const lines = text.split(/\r?\n/);
+      const linesLength = lines.length;
+
+      for (let i = 0; i < linesLength; i++) {
+        selection.insertText(lines[i]);
+        if (i < linesLength - 1) {
+          selection.insertParagraph();
+        }
+      }
+    } else {
+      selection.insertRawText(text);
+    }
+  }
 }
 
 function $insertGeneratedNodes(

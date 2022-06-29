@@ -1,3 +1,64 @@
+## 0.3.6 (June 29, 2022)
+
+lexical & @lexical/ packages:
+- fix(lexical): Text with underline format is stripped out on paste (#2555) 子瞻 Luci
+- Trigger readonly listener only when value has changed (#2550) Maksim Horbachevsky
+- fix(lexical): deselecting a decorator node by clicking (#2554) 子瞻 Luci
+- Remove wordwrap for tree view (#2551) John Flockton
+- add docs for headless package (#2539) Acy Watson
+- Normalize list children (#2509) Acy Watson
+- Add ability to set format and detail by string type (#2547) John Flockton
+- Pasting multi-line plain text into rich-text mode produces separate paragraphs (#2507) Maksim Horbachevsky
+- Revert "Revert "fix: insert text after delete next to inline node (#2530)" (#2544)" (#2549) Gerard Rovira
+- Revert "fix: insert text after delete next to inline node (#2530)" (#2544) Gerard Rovira
+- fix: insert text after delete next to inline node (#2530) Patrik Åkerstrand
+- Fix IME bug in `lexical-history` (#2501) John Flockton
+- Export Klass from Lexical root (#2533) John Flockton
+- Hide placeholder when readonly (#2511) Gerard Rovira
+- remove utility types from all packages (#2529) John Flockton
+- Improve markdown newline export/import (#2519) Maksim Horbachevsky
+- Revisit formatText node selection (#2524) Gerard Rovira
+- Fix $generateHtmlFromNodes to output whole editor contents if selection is null (#2504) yicrotkd
+- Remove unnecessary comments (#2505) John Flockton
+- fix(lexical): "selection.format" is not set correctly (#2502) 子瞻 Luci
+- Fixed getStyleObjectFromRawCSS function to work with unformatted css (#2515) Karam Qaoud
+- Fix image copy+paste (#2517) Dominic Gannaway
+- Migrate to TS strict mode 6/n  (#2496) John Flockton
+- fix(lexical): caret at wrong place when paste (#2465) 子瞻 Luci
+- Fix infinite recursion in insertText in RangeSelection (#2490) Patrik Åkerstrand
+- Update error message and docs (#2492) John Flockton
+- Migrate to TS strict mode 5/n (#2488) John Flockton
+- Fix composition bugs affecting intern (#2487) John Flockton
+- Fix FF issue with composition (#2486) Dominic Gannaway
+- Migrate to TS strict mode 3/n  (#2482) John Flockton
+- Fix Flow rewrite imports script (#2477) John Flockton
+- Migrate to TS strict mode 2/n (#2469) John Flockton
+- Inserting inline elements (#2474) Maksim Horbachevsky
+- Fix component/plugin names in get started section (#2472) Aleš Menzel
+- Revert "add e2e tests for MaxLength plugin (#2466)" (#2467) Gerard Rovira
+- add e2e tests for MaxLength plugin (#2466) Adithya Vardhan
+- Fix can format backwards when at first text node boundary (#2445) Gerard Rovira
+- Fix button--outline hover color dark mode (#2462) M. Zakiyuddin Munziri
+- Migrate to TS strict mode 1/n (#2458) John Flockton
+- renamed character styles popup plugin (#2456) Strek
+
+Playground:
+- Flower size (#2527) Gerard Rovira
+- fix(lexical-playground): Resizing is not consistent on mobile (#2518) 子瞻 Luci
+- fix(lexical-playground): Floating toolbar displayed on composition (#2506) 子瞻 Luci
+- chore(lexical-playground): remove redundant code (#2497) 子瞻 Luci
+
+Docs:
+- add docs for headless package (#2539) Acy Watson
+- tiny typo fix (#2514) Hadi El-Yakhni
+
+Infra:
+- Update e2e test docs and run-all script (#2522) yicrotkd
+- Fix Windows CI Runs (#2513) Acy Watson
+- Deploy Lexical prod build to Vercel (#2476) Gerard Rovira
+- CI check against prod bundle (#2460) Gerard Rovira
+- shared PKG to cleanup (#2463) Gerard Rovira
+
 ## 0.3.5 (June 16, 2022)
 
 - Fix bad warnOnlyOnce minification (#2448)

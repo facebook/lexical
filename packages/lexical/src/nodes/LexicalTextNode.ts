@@ -830,11 +830,13 @@ function convertSpanElement(domNode: Node): DOMConversionOutput {
   const span = domNode as HTMLSpanElement;
   // Google Docs uses span tags + font-weight for bold text
   const hasBoldFontWeight = span.style.fontWeight === '700';
-  // Google Docs uses span tags + text-decoration for strikethrough text
+  // Google Docs uses span tags + text-decoration: line-through for strikethrough text
   const hasLinethroughTextDecoration =
     span.style.textDecoration === 'line-through';
   // Google Docs uses span tags + font-style for italic text
   const hasItalicFontStyle = span.style.fontStyle === 'italic';
+  // Google Docs uses span tags + text-decoration: underline for underline text
+  const hasUnderlineTextDecoration = span.style.textDecoration === 'underline';
 
   return {
     forChild: (lexicalNode) => {
@@ -846,6 +848,9 @@ function convertSpanElement(domNode: Node): DOMConversionOutput {
       }
       if ($isTextNode(lexicalNode) && hasItalicFontStyle) {
         lexicalNode.toggleFormat('italic');
+      }
+      if ($isTextNode(lexicalNode) && hasUnderlineTextDecoration) {
+        lexicalNode.toggleFormat('underline');
       }
 
       return lexicalNode;

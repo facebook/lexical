@@ -21,7 +21,9 @@ function App(): JSX.Element {
 
   useEffect(() => {
     // create and initialize the messaging port to receive editorState updates
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (port.current as any) = window.chrome.runtime.connect();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (port.current as any).postMessage({
       name: 'init',
       tabId: chrome.devtools.inspectedWindow.tabId,
@@ -30,6 +32,7 @@ function App(): JSX.Element {
   }, [port]);
 
   useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (port.current as any).onMessage.addListener(
       (message: {editorState: React.SetStateAction<object>}) => {
         setCount(count + 1);

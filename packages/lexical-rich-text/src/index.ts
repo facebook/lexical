@@ -380,7 +380,7 @@ function onPasteForRichText(
   editor.update(() => {
     const selection = $getSelection();
     const clipboardData =
-      event instanceof ClipboardEvent ? event.clipboardData : null;
+      event instanceof InputEvent ? null : event.clipboardData;
     if (
       clipboardData != null &&
       ($isRangeSelection(selection) || $isGridSelection(selection))
@@ -398,7 +398,7 @@ function onCopyForRichText(
   const selection = $getSelection();
   if (selection !== null) {
     const clipboardData =
-      event instanceof ClipboardEvent ? event.clipboardData : null;
+      event instanceof KeyboardEvent ? null : event.clipboardData;
     const htmlString = $getHtmlContent(editor);
     const lexicalString = $getLexicalContent(editor);
 

@@ -362,9 +362,11 @@ export class CommentStore {
                           map.get('timeStamp'),
                         );
                   this._withLocalTransaction(() => {
-                    if (parentThread !== undefined && parentThread !== false) {
-                      this.addComment(commentOrThread, parentThread, offset);
-                    }
+                    this.addComment(
+                      commentOrThread,
+                      parentThread as Thread,
+                      offset,
+                    );
                   });
                 });
               } else if (typeof retain === 'number') {
@@ -376,9 +378,7 @@ export class CommentStore {
                       ? this._comments[offset]
                       : parentThread.comments[offset];
                   this._withLocalTransaction(() => {
-                    if (parentThread !== undefined && parentThread !== false) {
-                      this.deleteComment(commentOrThread, parentThread);
-                    }
+                    this.deleteComment(commentOrThread, parentThread as Thread);
                   });
                   offset++;
                 }

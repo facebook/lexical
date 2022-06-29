@@ -5,15 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
-'use strict';
-
 // Create the panel which appears within the browser's DevTools, loading the Lexical DevTools App within index.html.
 // eslint-disable-next-line no-undef
 chrome.devtools.panels.create(
   'Lexical',
-  'favicon-32x32.png',
-  '../panel/index.html',
+  '/../../favicon-32x32.png',
+  '/src/panel/index.html',
 );
 
 // Use devtools.inspectedWindow.eval() to get editorState updates. For more info on security concerns:

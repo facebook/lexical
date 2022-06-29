@@ -90,9 +90,8 @@
     "prepare-release": "npm run build-release && node ./scripts/npm/prepare-release.js",
     "prepare": "husky install",
     "prepare-www": "node scripts/www/rewriteImports.js",
-    "changelog": "func() { git log --oneline ${1}...HEAD --pretty=format:\"- %s %an\"; }; func",
-    "update-version": "node ./scripts/updateVersion",
-    "release": "npm run prepare-release && node ./scripts/npm/release.js"
+    "release": "npm run prepare-release && node ./scripts/npm/release.js",
+    "update-version": "node ./scripts/updateVersion"
   },
   "devDependencies": {
     "@ampproject/rollup-plugin-closure-compiler": "^0.27.0",

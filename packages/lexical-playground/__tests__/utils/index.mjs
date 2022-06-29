@@ -720,26 +720,8 @@ export async function dragImage(page, selector, position = 'middle') {
   );
 }
 
-export async function moveToStart(page) {
-  if (IS_MAC) {
-    await page.keyboard.down('Meta');
-    await page.keyboard.press('ArrowLeft');
-    await page.keyboard.up('Meta');
-  } else {
-    await page.keyboard.down('Control');
-    await page.keyboard.press('ArrowLeft');
-    await page.keyboard.up('Control');
-  }
-}
-
-export async function moveToEnd(page) {
-  if (IS_MAC) {
-    await page.keyboard.down('Meta');
-    await page.keyboard.press('ArrowRight');
-    await page.keyboard.up('Meta');
-  } else {
-    await page.keyboard.down('Control');
-    await page.keyboard.press('ArrowRight');
-    await page.keyboard.up('Control');
-  }
+export async function mouseMoveTo(page, selector) {
+  const p = IS_COLLAB ? await page.frame('left') : page;
+  const {x, width, y, height} = await p.locator(selector).boundingBox();
+  await page.mouse.move(x + width / 2, y + height / 2);
 }

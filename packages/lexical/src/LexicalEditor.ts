@@ -791,8 +791,10 @@ export class LexicalEditor {
   }
 
   setReadOnly(readOnly: boolean): void {
-    this._readOnly = readOnly;
-    triggerListeners('readonly', this, true, readOnly);
+    if (this._readOnly !== readOnly) {
+      this._readOnly = readOnly;
+      triggerListeners('readonly', this, true, readOnly);
+    }
   }
 
   toJSON(): SerializedEditor {

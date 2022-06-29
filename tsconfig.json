@@ -150,7 +150,9 @@
       "@lexical/react/LexicalAutoScrollPlugin": [
         "./packages/lexical-react/src/LexicalAutoScrollPlugin.ts"
       ],
-      "@lexical/react/LexicalExcalidrawPlugin": ["packages/lexical-react/LexicalExcalidraw.d.ts"],
+      "@lexical/react/LexicalExcalidrawPlugin": [
+        "packages/lexical-react/LexicalExcalidraw.d.ts"
+      ],
 
       "@lexical/dragon/LexicalDragon": ["./packages/lexical-dragon/src/"],
       "@lexical/history/LexicalHistory": ["./packages/lexical-history/src/"],

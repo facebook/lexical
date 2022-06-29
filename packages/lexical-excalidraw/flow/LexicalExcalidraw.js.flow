@@ -14,6 +14,7 @@ import type {
   NodeKey,
   RangeSelection,
   LexicalCommand,
+  LexicalEditor,
 } from 'lexical';
 import {addClassNamesToElement} from '@lexical/utils';
 import {$isElementNode, ElementNode} from 'lexical';
@@ -43,7 +44,8 @@ export type ExcalidrawImageProps = {
   /**
    * Configures the export setting for SVG/Canvas
    */
-  appState?: Partial<Omit<AppState, 'offsetTop' | 'offsetLeft'>> | null,
+  // $FlowFixMe: based on Excalidraw type definition
+  appState?: any | null,
   /**
    * The css class applied to image to be rendered
    */
@@ -51,6 +53,7 @@ export type ExcalidrawImageProps = {
   /**
    * The Excalidraw elements to be rendered as an image
    */
+  // $FlowFixMe: based on Excalidraw type definition
   elements: NonDeleted<ExcalidrawElement>[],
   /**
    * The height of the image to be rendered
@@ -77,12 +80,10 @@ export type ExcalidrawImageProps = {
   editor: LexicalEditor,
 };
 
-export type ExcalidrawImage = (props: ExcalidrawImageProps) => JSX.Element;
+export type ExcalidrawImage = (props: ExcalidrawImageProps) => React$Node;
 
 declare export function $createExcalidrawNode(
-  excalidrawComponent: Excalidraw,
-  excalidrawImage: ExcalidrawImage,
-  modalComponent: Modal,
+  nodeElement: typeof ExcalidrawNode,
 ): ExcalidrawNode;
 declare export function $isExcalidrawNode(
   node: ?LexicalNode,

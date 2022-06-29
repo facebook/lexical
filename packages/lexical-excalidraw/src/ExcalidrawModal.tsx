@@ -150,7 +150,7 @@ export default function ExcalidrawModal({
   Modal: ModalEl,
   Excalidraw: ExcalidrawEl,
 }: ModalProps): ReactPortal | null {
-  const excaliDrawModelRef = useRef(null);
+  const excaliDrawModelRef = useRef<HTMLDivElement>(null);
   const [discardModalOpen, setDiscardModalOpen] = useState(false);
   const [elements, setElements] =
     useState<ReadonlyArray<ExcalidrawElementFragment>>(initialElements);

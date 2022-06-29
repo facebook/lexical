@@ -6,6 +6,6 @@
  *
  */
 
-const getSelection = (): Selection => window.getSelection();
+const getSelection = (): Selection | null => window.getSelection();
 
 export default getSelection;

@@ -90,8 +90,20 @@
 .PollNode__optionCheckboxChecked {
   border: 1px solid rgb(61, 135, 245);
   background-color: rgb(61, 135, 245);
-  background-position: 3px 3px;
-  background-repeat: no-repeat;
+}
+.PollNode__optionCheckboxChecked:after {
+  content: '';
+  cursor: pointer;
+  border-color: #fff;
+  border-style: solid;
+  position: absolute;
+  display: block;
+  top: 4px;
+  width: 5px;
+  left: 8px;
+  height: 9px;
+  transform: rotate(45deg);
+  border-width: 0 2px 2px 0;
 }
 .PollNode__optionCheckbox {
   border: 0px;

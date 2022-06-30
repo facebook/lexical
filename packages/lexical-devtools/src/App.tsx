@@ -26,7 +26,7 @@ function App(): JSX.Element {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (port.current as any).postMessage({
       name: 'init',
-      tabId: chrome.devtools.inspectedWindow.tabId,
+      tabId: window.chrome.devtools.inspectedWindow.tabId,
       type: 'FROM_APP',
     });
   }, [port]);

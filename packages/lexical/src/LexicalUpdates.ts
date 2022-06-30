@@ -598,16 +598,16 @@ function triggerMutationListeners(
   pendingEditorState: EditorState,
   mutatedNodes: MutatedNodes,
 ): void {
-  const listeners = editor._listeners.mutation;
-  listeners.forEach((klass, listener) => {
+  const listeners = Array.from(editor._listeners.mutation);
+  const listenersLength = listeners.length;
+
+  for (let i = 0; i < listenersLength; i++) {
+    const [listener, klass] = listeners[i];
     const mutatedNodesByType = mutatedNodes.get(klass);
-
-    if (mutatedNodesByType === undefined) {
-      return;
+    if (mutatedNodesByType !== undefined) {
+      listener(mutatedNodesByType);
     }
-
-    listener(mutatedNodesByType);
-  });
+  }
 }
 
 export function triggerListeners(
@@ -652,11 +652,14 @@ export function triggerCommandListeners<P>(
       const listenerInPriorityOrder = commandListeners.get(type);
 
       if (listenerInPriorityOrder !== undefined) {
-        const listeners = listenerInPriorityOrder[i];
+        const listenersSet = listenerInPriorityOrder[i];
 
-        if (listeners !== undefined) {
-          for (const listener of listeners) {
-            if (listener(payload, editor) === true) {
+        if (listenersSet !== undefined) {
+          const listeners = Array.from(listenersSet);
+          const listenersLength = listeners.length;
+
+          for (let j = 0; j < listenersLength; j++) {
+            if (listeners[j](payload, editor) === true) {
               return true;
             }
           }

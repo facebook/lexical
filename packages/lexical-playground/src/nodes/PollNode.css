@@ -115,6 +115,7 @@
   cursor: pointer;
 }
 .PollNode__optionDelete {
+  position: relative;
   display: flex;
   width: 28px;
   height: 28px;
@@ -127,6 +128,23 @@
   cursor: pointer;
   border-radius: 5px;
   opacity: 0.3;
+}
+.PollNode__optionDelete:before,
+.PollNode__optionDelete:after {
+  position: absolute;
+  display: block;
+  content: '';
+  background-color: #999;
+  width: 2px;
+  height: 15px;
+  top: 6px;
+  left: 13px;
+}
+.PollNode__optionDelete:before {
+  transform: rotate(-45deg);
+}
+.PollNode__optionDelete:after {
+  transform: rotate(45deg);
 }
 .PollNode__optionDelete:hover {
   opacity: 1;

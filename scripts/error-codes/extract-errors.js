@@ -11,10 +11,29 @@
 const parser = require('@babel/parser');
 const fs = require('fs');
 const path = require('path');
+const childProcess = require('child_process');
 const traverse = require('@babel/traverse').default;
 const evalToString = require('./evalToString');
 const invertObject = require('./invertObject');
 
+const errorMapFilePath = 'scripts/error-codes/codes.json';
+const docusaurusFolderPath = 'packages/lexical-website-new/src/pages/error';
+const docusaurusTemplate = `/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+/* @generated */
+
+import ErrorCodePage from '@site/src/components/ErrorCodePage';
+import React from 'react';
+
+export default function ErrorCode() {
+  return <ErrorCodePage errorCode={%errorCode%} errorDescription={%errorDescription%} />;
+}
+`;
 const plugins = [
   'classProperties',
   'jsx',
@@ -32,14 +51,7 @@ const babylonOptions = {
   sourceType: 'module',
 };
 
-module.exports = function (opts) {
-  if (!opts || !('errorMapFilePath' in opts)) {
-    throw new Error(
-      'Missing options. Ensure you pass an object with `errorMapFilePath`.',
-    );
-  }
-
-  const errorMapFilePath = opts.errorMapFilePath;
+module.exports = function () {
   let existingErrorMap;
   try {
     // Using `fs.readFileSync` instead of `require` here, because `require()`
@@ -94,7 +106,7 @@ module.exports = function (opts) {
     existingErrorMap[errorMsgLiteral] = '' + currentID++;
   }
 
-  function flush(cb) {
+  function flushJson() {
     fs.writeFileSync(
       errorMapFilePath,
       JSON.stringify(invertObject(existingErrorMap), null, 2) + '\n',
@@ -102,8 +114,38 @@ module.exports = function (opts) {
     );
   }
 
+  function flushDocusaurus() {
+    if (fs.existsSync(docusaurusFolderPath)) {
+      fs.rmSync(docusaurusFolderPath, {recursive: true});
+    }
+    fs.mkdirSync(docusaurusFolderPath);
+    fs.writeFileSync(
+      path.join(docusaurusFolderPath, 'index.js'),
+      docusaurusTemplate
+        .replace(/%errorCode%/, 'undefined')
+        .replace(/%errorDescription%/, 'undefined'),
+      'utf-8',
+    );
+    for (const [errorDescription, errorCode] of Object.entries(
+      existingErrorMap,
+    )) {
+      fs.mkdirSync(path.join(docusaurusFolderPath, errorCode));
+      fs.writeFileSync(
+        path.join(docusaurusFolderPath, errorCode, 'index.js'),
+        docusaurusTemplate
+          .replace(/%errorCode%/, JSON.stringify(errorCode))
+          .replace(/%errorDescription%/, JSON.stringify(errorDescription)),
+        'utf-8',
+      );
+    }
+    childProcess.execSync(
+      `node node_modules/prettier/bin-prettier.js --write ${docusaurusFolderPath}`,
+    );
+  }
+
   return function extractErrors(source) {
     transform(source);
-    flush();
+    flushJson();
+    flushDocusaurus();
   };
 };

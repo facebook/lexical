@@ -130,11 +130,7 @@ const externals = [
   ...Object.values(wwwMappings),
 ];
 
-const errorCodeOpts = {
-  errorMapFilePath: 'scripts/error-codes/codes.json',
-};
-
-const findAndRecordErrorCodes = extractErrorCodes(errorCodeOpts);
+const findAndRecordErrorCodes = extractErrorCodes();
 
 const strictWWWMappings = {};
 

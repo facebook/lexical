@@ -14,8 +14,8 @@
 
 function formatProdErrorMessage(code) {
   throw Error(
-    `Minified Lexical error #${code}; see codes.json for the full message or ` +
-      'use the non-minified dev environment for full errors and additional ' +
+    `Minified Lexical error #${code}; visit https://lexical.dev/error/${code} for the full message ` +
+      'or use the non-minified dev environment for full errors and additional ' +
       'helpful warnings.',
   );
 }

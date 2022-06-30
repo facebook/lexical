@@ -236,10 +236,26 @@
   border-radius: 2px;
 }
 .PlaygroundEditorTheme__listItemUnchecked:before {
-  background-image: url(/src/images/icons/square.svg);
+  border: 1px solid #999;
 }
 .PlaygroundEditorTheme__listItemChecked:before {
-  background-image: url(/src/images/icons/square-check.svg);
+  border: 1px solid rgb(61,135,245);
+  background-color: #3d87f5;
+  background-repeat: no-repeat;
+}
+.PlaygroundEditorTheme__listItemChecked:after {
+  content: '';
+  cursor: pointer;
+  border-color: #fff;
+  border-style: solid;
+  position: absolute;
+  display: block;
+  top: 5px;
+  width: 5px;
+  left: 6px;
+  height: 9px;
+  transform: rotate(45deg);
+  border-width: 0 2px 2px 0;
 }
 .PlaygroundEditorTheme__nestedListItem {
   list-style-type: none;

@@ -932,7 +932,7 @@ export default function CommentPlugin({
   }, [editor, markNodeMap]);
 
   const onAddComment = () => {
-    editor.dispatchCommand(INSERT_INLINE_COMMAND, null);
+    editor.dispatchCommand(INSERT_INLINE_COMMAND, undefined);
   };
 
   return (

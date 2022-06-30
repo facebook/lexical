@@ -8,10 +8,6 @@
 
 import type {ElementFormatType, LexicalCommand, TextFormatType} from 'lexical';
 
-export type CommandPayloadType<C> = C extends LexicalCommand<infer R>
-  ? R
-  : never;
-
 export function createCommand<T>(): LexicalCommand<T> {
   return {};
 }

@@ -6,9 +6,9 @@
  *
  */
 
-export type {CommandPayloadType} from './LexicalCommands';
 export type {
   CommandListenerPriority,
+  CommandPayloadType,
   EditorConfig,
   EditorThemeClasses,
   IntentionallyMarkedAsDirtyElement,

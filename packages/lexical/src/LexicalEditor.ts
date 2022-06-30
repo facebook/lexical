@@ -170,14 +170,12 @@ export const COMMAND_PRIORITY_NORMAL = 2;
 export const COMMAND_PRIORITY_HIGH = 3;
 export const COMMAND_PRIORITY_CRITICAL = 4;
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export type LexicalCommand<T = never> = Readonly<{
-  /**
-   * Capture the type of the payload this command expects. This ensures that `dispatchCommand` and `registerCommand` can
-   * correctly enforce and infer the payload later on
-   */
-  _payloadType?: T;
-}>;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-interface
+export interface LexicalCommand<TPayload> {}
+export type CommandPayloadType<C> = C extends LexicalCommand<infer R>
+  ? R
+  : never;
+
 type Commands = Map<
   LexicalCommand<unknown>,
   Array<Set<CommandListener<unknown>>>
@@ -640,7 +638,10 @@ export class LexicalEditor {
     return true;
   }
 
-  dispatchCommand<P>(type: LexicalCommand<P>, payload: P): boolean {
+  dispatchCommand<
+    TCommand extends LexicalCommand<unknown>,
+    TPayload extends CommandPayloadType<TCommand>,
+  >(type: TCommand, payload: TPayload): boolean {
     return dispatchCommand(this, type, payload);
   }
 

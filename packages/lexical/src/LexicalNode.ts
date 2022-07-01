@@ -148,6 +148,8 @@ export type DOMConversionOutput = {
   node: LexicalNode | null;
 };
 
+export type DOMExportFn = (editor: LexicalEditor) => DOMExportOutput
+
 export type DOMExportOutput = {
   after?: (
     generatedElement: HTMLElement | null | undefined,

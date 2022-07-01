@@ -15,7 +15,7 @@ import type {
   SerializedTextNode,
 } from 'lexical';
 
-import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
+import {$generateHtmlFromNodes, $generateNodesFromDOM, DOMExportMap} from '@lexical/html';
 import {$createListNode, $isListItemNode} from '@lexical/list';
 import {
   $addNodeStyle,
@@ -44,7 +44,7 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
-export function $getHtmlContent(editor: LexicalEditor): string | null {
+export function $getHtmlContent(editor: LexicalEditor, exportFns?: DOMExportMap): string | null {
   const selection = $getSelection();
 
   if (selection == null) {
@@ -59,7 +59,14 @@ export function $getHtmlContent(editor: LexicalEditor): string | null {
     return null;
   }
 
-  return $generateHtmlFromNodes(editor, selection);
+  let config;
+  if (exportFns !== undefined) {
+    config = {
+      exportOverrides: exportFns
+    }
+  }
+
+  return $generateHtmlFromNodes(editor, selection, config);
 }
 
 export function $getLexicalContent(editor: LexicalEditor): string | null {

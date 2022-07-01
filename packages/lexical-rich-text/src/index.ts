@@ -393,7 +393,14 @@ function onCopyForRichText(event: ClipboardEvent, editor: LexicalEditor): void {
   const selection = $getSelection();
   if (selection !== null) {
     const clipboardData = event.clipboardData;
-    const htmlString = $getHtmlContent(editor);
+    // Users shouldn't have to rewrite this command in order to override a node's HTML export.
+    // Using the global (editor) config allows them to control the behavior here but also maintain
+    let htmlExportFns;
+    const editorExportConfig = editor._exports;
+    if (editorExportConfig !== null && editorExportConfig.html !== undefined) {
+      htmlExportFns = editorExportConfig.html.exportFns;
+    }
+    const htmlString = $getHtmlContent(editor, htmlExportFns);
     const lexicalString = $getLexicalContent(editor);
 
     if (clipboardData != null) {

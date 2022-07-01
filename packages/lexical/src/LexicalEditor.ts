@@ -7,7 +7,7 @@
  */
 
 import type {EditorState, SerializedEditorState} from './LexicalEditorState';
-import type {DOMConversion, LexicalNode, NodeKey} from './LexicalNode';
+import type {DOMConversion, DOMExportFn, LexicalNode, NodeKey} from './LexicalNode';
 
 import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
@@ -114,6 +114,12 @@ export type EditorConfig = {
   namespace: string;
   theme: EditorThemeClasses;
 };
+
+type ExportConfig = {
+  html?: {
+    exportFns: {[key: string]: DOMExportFn}
+  }
+}
 
 export type RegisteredNodes = Map<string, RegisteredNode>;
 
@@ -287,6 +293,7 @@ export function createEditor(editorConfig?: {
   parentEditor?: LexicalEditor;
   readOnly?: boolean;
   theme?: EditorThemeClasses;
+  exports?: ExportConfig;
 }): LexicalEditor {
   const config = editorConfig || {};
   const activeEditor = internalGetActiveEditor();
@@ -383,6 +390,7 @@ export function createEditor(editorConfig?: {
     onError ? onError : console.error,
     initializeConversionCache(registeredNodes),
     isReadOnly,
+    exports || null
   );
 
   if (initialEditorState !== undefined) {
@@ -419,6 +427,7 @@ export class LexicalEditor {
   _key: string;
   _onError: ErrorHandler;
   _htmlConversions: DOMConversionCache;
+  _exports: ExportConfig | null;
   _readOnly: boolean;
 
   constructor(
@@ -429,6 +438,7 @@ export class LexicalEditor {
     onError: ErrorHandler,
     htmlConversions: DOMConversionCache,
     readOnly: boolean,
+    exports: ExportConfig | null
   ) {
     this._parentEditor = parentEditor;
     // The root element associated with this editor
@@ -476,6 +486,7 @@ export class LexicalEditor {
 
     this._onError = onError;
     this._htmlConversions = htmlConversions;
+    this._exports = exports;
     this._readOnly = false;
     this._headless = false;
   }

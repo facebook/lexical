@@ -26,6 +26,7 @@ export type {
   DOMConversionFn,
   DOMConversionMap,
   DOMConversionOutput,
+  DOMExportFn,
   DOMExportOutput,
   LexicalNode,
   NodeKey,

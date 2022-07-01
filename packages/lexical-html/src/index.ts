@@ -10,6 +10,8 @@ import type {
   DOMChildConversion,
   DOMConversion,
   DOMConversionFn,
+  DOMExportFn,
+  DOMExportOutput,
   GridSelection,
   LexicalEditor,
   LexicalNode,
@@ -22,6 +24,14 @@ import {
   $sliceSelectedTextNodeContent,
 } from '@lexical/selection';
 import {$getRoot, $isElementNode, $isTextNode} from 'lexical';
+
+export type DOMExportMap = {[key: string]: DOMExportFn}
+
+type DOMExportConfig = {
+  exportOverrides?: DOMExportMap
+}
+
+let domExportConfig: DOMExportConfig | null = null;
 
 /**
  * How you parse your html string to get a document is left up to you. In the browser you can use the native
@@ -54,6 +64,7 @@ export function $generateNodesFromDOM(
 export function $generateHtmlFromNodes(
   editor: LexicalEditor,
   selection?: RangeSelection | NodeSelection | GridSelection | null,
+  config?: DOMExportConfig | null
 ): string {
   if (document == null || window == null) {
     throw new Error(
@@ -64,7 +75,9 @@ export function $generateHtmlFromNodes(
   const container = document.createElement('div');
   const root = $getRoot();
   const topLevelChildren = root.getChildren();
-
+  if (config !== undefined) {
+    domExportConfig = config;
+  }
   for (let i = 0; i < topLevelChildren.length; i++) {
     const topLevelNode = topLevelChildren[i];
     if (selection !== undefined) {
@@ -90,7 +103,11 @@ function $appendNodesToHTML(
       ? $sliceSelectedTextNodeContent(selection, clone)
       : clone;
   const children = $isElementNode(clone) ? clone.getChildren() : [];
-  const {element, after} = clone.exportDOM(editor);
+  let exportDOM = clone.exportDOM;
+  if (domExportConfig !== null && domExportConfig.exportOverrides !== undefined) {
+    exportDOM = domExportConfig.exportOverrides[clone.getType()] || clone.exportDOM;
+  }
+  const {element, after} = exportDOM(editor);
 
   if (!element) {
     return false;

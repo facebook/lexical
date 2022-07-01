@@ -7,6 +7,7 @@
  */
 
 import {
+  hitBackspace,
   moveToLineBeginning,
   moveToLineEnd,
   selectCharacters,
@@ -17,7 +18,6 @@ import {
   focusEditor,
   html,
   initialize,
-  repeat,
   test,
 } from '../utils/index.mjs';
 
@@ -469,7 +469,7 @@ test.describe('Emoticons', () => {
     await page.keyboard.press('Backspace');
     await moveToLineEnd(page);
 
-    await repeat(22, async () => await page.keyboard.press('Backspace'));
+    await hitBackspace(page, 22);
     await assertHTML(
       page,
       html`

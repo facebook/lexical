@@ -7,6 +7,7 @@
  */
 
 import {
+  hitBackspace,
   moveLeft,
   moveToLineBeginning,
   selectCharacters,
@@ -22,7 +23,6 @@ import {
   initialize,
   keyDownCtrlOrMeta,
   keyUpCtrlOrMeta,
-  repeat,
   test,
   waitForSelector,
 } from '../utils/index.mjs';
@@ -371,10 +371,7 @@ test.describe('Composition', () => {
         focusPath: [0, 1, 0],
       });
 
-      await repeat(6, async () => {
-        await page.keyboard.press('Backspace');
-      });
-
+      await hitBackspace(page, 6);
       await assertHTML(
         page,
         html`

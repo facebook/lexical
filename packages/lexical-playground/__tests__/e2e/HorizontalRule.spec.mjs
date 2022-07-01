@@ -7,6 +7,7 @@
  */
 
 import {
+  hitBackspace,
   moveLeft,
   moveToLineBeginning,
   selectAll,
@@ -19,7 +20,6 @@ import {
   html,
   initialize,
   pasteFromClipboard,
-  repeat,
   selectFromInsertDropdown,
   test,
   waitForSelector,
@@ -142,9 +142,7 @@ test.describe('HorizontalRule', () => {
       });
     }
 
-    await repeat(10, async () => {
-      await page.keyboard.press('Backspace');
-    });
+    await hitBackspace(page, 10);
 
     await assertHTML(
       page,

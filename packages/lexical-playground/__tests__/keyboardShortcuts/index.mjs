@@ -171,6 +171,15 @@ export async function moveRight(page, numCharacters = 1, delayMs) {
   }
 }
 
+export async function hitBackspace(page, numCharacters = 1, delayMs) {
+  for (let i = 0; i < numCharacters; i++) {
+    if (delayMs !== undefined) {
+      await sleep(delayMs);
+    }
+    await page.keyboard.press('Backspace');
+  }
+}
+
 export async function selectCharacters(page, direction, numCharacters = 1) {
   const moveFunction = direction === 'left' ? moveLeft : moveRight;
   await page.keyboard.down('Shift');

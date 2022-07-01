@@ -533,8 +533,13 @@ export class TextNode extends LexicalNode {
   }
 
   toggleFormat(type: TextFormatType): this {
+    let format = this.getFormat();
     const formatFlag = TEXT_TYPE_TO_FORMAT[type];
-    return this.setFormat(this.getFormat() ^ formatFlag);
+    if (type === 'subscript' || type === 'superscript') {
+      // remove subscript/superscript flags if any
+      format &= 0b0011111;
+    }
+    return this.setFormat(format ^ formatFlag);
   }
 
   toggleDirectionless(): this {

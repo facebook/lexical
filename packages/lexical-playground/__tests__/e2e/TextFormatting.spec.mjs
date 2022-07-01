@@ -11,6 +11,7 @@ import {
   moveRight,
   moveToLineBeginning,
   moveToLineEnd,
+  selectAll,
   selectCharacters,
   toggleBold,
   toggleItalic,
@@ -27,6 +28,7 @@ import {
   initialize,
   insertSampleImage,
   SAMPLE_IMAGE_URL,
+  selectFromAdditionalStylesDropdown,
   test,
 } from '../utils/index.mjs';
 
@@ -863,6 +865,93 @@ test.describe('TextFormatting', () => {
       focusOffset: 3,
       focusPath: [0, 0, 0],
     });
+  });
+
+  test(`Can toggle alternate formatting in subscript/superscript`, async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type('Olympic Rings: OOOOO');
+
+    await page.keyboard.down('Shift');
+    await moveLeft(page, 5);
+    await page.keyboard.up('Shift');
+    await selectFromAdditionalStylesDropdown(page, '.superscript');
+
+    // OOOOO
+    await moveToLineEnd(page);
+    await moveLeft(page, 4);
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.up('Shift');
+    await selectFromAdditionalStylesDropdown(page, '.subscript');
+
+    await moveRight(page, 2);
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.up('Shift');
+    await selectFromAdditionalStylesDropdown(page, '.subscript');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Olympic Rings:</span>
+          <sup data-lexical-text="true">
+            <span class="PlaygroundEditorTheme__textSuperscript">O</span>
+          </sup>
+          <sub data-lexical-text="true">
+            <span class="PlaygroundEditorTheme__textSubscript">O</span>
+          </sub>
+          <sup data-lexical-text="true">
+            <span class="PlaygroundEditorTheme__textSuperscript">O</span>
+          </sup>
+          <sub data-lexical-text="true">
+            <span class="PlaygroundEditorTheme__textSubscript">O</span>
+          </sub>
+          <sup data-lexical-text="true">
+            <span class="PlaygroundEditorTheme__textSuperscript">O</span>
+          </sup>
+        </p>
+      `,
+    );
+
+    // Toggle once more
+    await selectAll(page);
+    await selectFromAdditionalStylesDropdown(page, '.superscript');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <sup data-lexical-text="true">
+            <span class="PlaygroundEditorTheme__textSuperscript">
+              Olympic Rings: OOOOO
+            </span>
+          </sup>
+        </p>
+      `,
+    );
+
+    await selectAll(page);
+    await selectFromAdditionalStylesDropdown(page, '.superscript');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Olympic Rings: OOOOO</span>
+        </p>
+      `,
+    );
   });
 
   test(`Regression #2439: can format backwards when at first text node boundary`, async ({

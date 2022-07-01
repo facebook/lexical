@@ -193,6 +193,16 @@ export function toggleTextFormatType(
     return format ^ activeFormat;
   }
   if (alignWithFormat === null || alignWithFormat & activeFormat) {
+    // If type to be toggled is subscript/superscript
+    // remove the alternate type before adding it.
+    if (type === 'subscript' || type === 'superscript') {
+      const altFormat =
+        TEXT_TYPE_TO_FORMAT[type === 'subscript' ? 'superscript' : 'subscript'];
+      const isAltFlagPresent = format & altFormat;
+      if (isAltFlagPresent) {
+        format ^= altFormat;
+      }
+    }
     // Add the state flag.
     return format | activeFormat;
   }

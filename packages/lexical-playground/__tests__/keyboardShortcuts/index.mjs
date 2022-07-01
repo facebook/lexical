@@ -227,13 +227,7 @@ export async function moveToEnd(page) {
 }
 
 export async function paste(page) {
-  if (IS_MAC) {
-    await page.keyboard.down('Meta');
-    await page.keyboard.press('v');
-    await page.keyboard.up('Meta');
-  } else {
-    await page.keyboard.down('Control');
-    await page.keyboard.press('v');
-    await page.keyboard.up('Control');
-  }
+  await keyDownCtrlOrMeta(page);
+  await page.keyboard.press('KeyV');
+  await keyUpCtrlOrMeta(page);
 }

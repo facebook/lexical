@@ -18,6 +18,7 @@ import {
   assertHTML,
   assertSelection,
   click,
+  evaluate,
   focusEditor,
   html,
   initialize,
@@ -25,6 +26,7 @@ import {
   pasteFromClipboard,
   selectOption,
   test,
+  waitForSelector,
 } from '../utils/index.mjs';
 
 async function toggleCodeBlock(page) {
@@ -1100,28 +1102,28 @@ test.describe('CodeBlock', () => {
     await page.pause();
   });
 
-  test.describe('Allow playwright read and write clipboard', () => {
-    test.use({permissions: ['clipboard-read', 'clipboard-write']});
-    test('Can copy code, when click `Copy` button', async ({
-      page,
-      isPlainText,
-    }) => {
-      test.skip(isPlainText);
-      await focusEditor(page);
-      await page.keyboard.type('``` ');
-      await page.keyboard.press('Space');
-      await page.keyboard.type(`const a = 'Hello'`);
-      await page.keyboard.press('Enter');
-      await page.keyboard.press('Space');
-      await page.keyboard.press('Space');
-      await page.keyboard.type(`const b = 'World'`);
-      await page.keyboard.press('Enter');
-      await page.keyboard.press('Backspace');
-      await page.keyboard.press('Backspace');
+  test('Can copy code, when click `Copy` button', async ({
+    page,
+    context,
+    isPlainText,
+    browserName,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type('``` ');
+    await page.keyboard.press('Space');
+    await page.keyboard.type(`const a = 'Hello'`);
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Space');
+    await page.keyboard.press('Space');
+    await page.keyboard.type(`const b = 'World'`);
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Backspace');
+    await page.keyboard.press('Backspace');
 
-      await assertHTML(
-        page,
-        `
+    await assertHTML(
+      page,
+      `
         <code
           class=\"PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr\"
           dir=\"ltr\"
@@ -1157,14 +1159,39 @@ test.describe('CodeBlock', () => {
           <span data-lexical-text=\"true\"></span>
         </code>
       `,
-      );
+    );
 
-      await mouseMoveTo(page, 'code.PlaygroundEditorTheme__code');
+    await mouseMoveTo(page, 'code.PlaygroundEditorTheme__code');
+
+    if (browserName === 'chromium') {
+      await context.grantPermissions(['clipboard-write']);
       await click(page, 'button[aria-label=copy]');
       await paste(page);
-      await assertHTML(
-        page,
-        `
+      await context.clearPermissions();
+    } else {
+      await waitForSelector(page, 'button[aria-label=copy]');
+
+      const copiedText = await evaluate(page, () => {
+        let text = null;
+
+        navigator.clipboard._writeText = navigator.clipboard.writeText;
+        navigator.clipboard.writeText = function (data) {
+          text = data;
+          this._writeText(data);
+        };
+        document.querySelector('button[aria-label=copy]').click();
+
+        return text;
+      });
+
+      await pasteFromClipboard(page, {
+        'text/plain': copiedText,
+      });
+    }
+
+    await assertHTML(
+      page,
+      `
           <code
           class=\"PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr\"
           dir=\"ltr\"
@@ -1226,7 +1253,6 @@ test.describe('CodeBlock', () => {
           <span data-lexical-text=\"true\"></span>
         </code>
       `,
-      );
-    });
+    );
   });
 });

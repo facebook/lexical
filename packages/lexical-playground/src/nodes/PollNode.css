@@ -102,6 +102,7 @@
   width: 5px;
   left: 8px;
   height: 9px;
+  margin: 0;
   transform: rotate(45deg);
   border-width: 0 2px 2px 0;
 }

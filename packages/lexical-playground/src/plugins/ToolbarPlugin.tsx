@@ -8,76 +8,78 @@
 
 import type {InsertImagePayload} from './ImagesPlugin';
 import type {
-    GridSelection,
-    LexicalEditor,
-    NodeSelection,
-    RangeSelection,
+  GridSelection,
+  LexicalEditor,
+  NodeSelection,
+  RangeSelection,
 } from 'lexical';
 
 import './ToolbarPlugin.css';
 
+import {GiphyFetch} from '@giphy/js-fetch-api';
+import {Grid} from '@giphy/react-components';
 import {$createCodeNode, $isCodeNode} from '@lexical/code';
 import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {
-    $isListNode,
-    INSERT_CHECK_LIST_COMMAND,
-    INSERT_ORDERED_LIST_COMMAND,
-    INSERT_UNORDERED_LIST_COMMAND,
-    ListNode,
-    REMOVE_LIST_COMMAND,
+  $isListNode,
+  INSERT_CHECK_LIST_COMMAND,
+  INSERT_ORDERED_LIST_COMMAND,
+  INSERT_UNORDERED_LIST_COMMAND,
+  ListNode,
+  REMOVE_LIST_COMMAND,
 } from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$isDecoratorBlockNode} from '@lexical/react/LexicalDecoratorBlockNode';
 import {INSERT_HORIZONTAL_RULE_COMMAND} from '@lexical/react/LexicalHorizontalRuleNode';
 import {
-    $createHeadingNode,
-    $createQuoteNode,
-    $isHeadingNode,
-    HeadingTagType,
+  $createHeadingNode,
+  $createQuoteNode,
+  $isHeadingNode,
+  HeadingTagType,
 } from '@lexical/rich-text';
 import {
-    $getSelectionStyleValueForProperty,
-    $isAtNodeEnd,
-    $isParentElementRTL,
-    $patchStyleText,
-    $selectAll,
-    $wrapLeafNodesInElements,
+  $getSelectionStyleValueForProperty,
+  $isAtNodeEnd,
+  $isParentElementRTL,
+  $patchStyleText,
+  $selectAll,
+  $wrapLeafNodesInElements,
 } from '@lexical/selection';
 import {INSERT_TABLE_COMMAND} from '@lexical/table';
 import {
-    $getNearestBlockElementAncestorOrThrow,
-    $getNearestNodeOfType,
-    mergeRegister,
+  $getNearestBlockElementAncestorOrThrow,
+  $getNearestNodeOfType,
+  mergeRegister,
 } from '@lexical/utils';
 import {
-    $createParagraphNode,
-    $getNodeByKey,
-    $getRoot,
-    $getSelection,
-    $isRangeSelection,
-    $isTextNode,
-    CAN_REDO_COMMAND,
-    CAN_UNDO_COMMAND,
-    COMMAND_PRIORITY_CRITICAL,
-    COMMAND_PRIORITY_LOW,
-    ElementNode,
-    FORMAT_ELEMENT_COMMAND,
-    FORMAT_TEXT_COMMAND,
-    INDENT_CONTENT_COMMAND,
-    NodeKey,
-    OUTDENT_CONTENT_COMMAND,
-    REDO_COMMAND,
-    SELECTION_CHANGE_COMMAND,
-    TextNode,
-    UNDO_COMMAND,
+  $createParagraphNode,
+  $getNodeByKey,
+  $getRoot,
+  $getSelection,
+  $isRangeSelection,
+  $isTextNode,
+  CAN_REDO_COMMAND,
+  CAN_UNDO_COMMAND,
+  COMMAND_PRIORITY_CRITICAL,
+  COMMAND_PRIORITY_LOW,
+  ElementNode,
+  FORMAT_ELEMENT_COMMAND,
+  FORMAT_TEXT_COMMAND,
+  INDENT_CONTENT_COMMAND,
+  NodeKey,
+  OUTDENT_CONTENT_COMMAND,
+  REDO_COMMAND,
+  SELECTION_CHANGE_COMMAND,
+  TextNode,
+  UNDO_COMMAND,
 } from 'lexical';
 import * as React from 'react';
 import {ChangeEvent, useCallback, useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
+import useDebounce from 'react-use/lib/useDebounce';
 import {IS_APPLE} from 'shared/environment';
 
 import useModal from '../hooks/useModal';
-import catTypingGif from '../images/cat-typing.gif';
 import yellowFlowerImage from '../images/yellow-flower.jpg';
 import {$createStickyNode} from '../nodes/StickyNode';
 import Button from '../ui/Button';
@@ -133,6 +135,8 @@ const CODE_LANGUAGE_MAP = {
   python: 'py',
   text: 'plain',
 };
+
+const SEARCH_DEBOUNCE = 500;
 
 function getSelectedNode(selection: RangeSelection): TextNode | ElementNode {
   const anchor = selection.anchor;
@@ -471,26 +475,44 @@ function InsertGifDialog({
   activeEditor: LexicalEditor;
   onClose: () => void;
 }): JSX.Element {
-  const GIPHY_API_KEY = 'gslE624Ax1m7LThTdDztLGZpci6XhfIL';
+  const giphyFetch = new GiphyFetch('gslE624Ax1m7LThTdDztLGZpci6XhfIL');
+  const [debouncedInput, setDebouncedInput] = useState<string>('');
+  const [term, setTerm] = useState('');
+  useDebounce(() => setTerm(debouncedInput), SEARCH_DEBOUNCE, [debouncedInput]);
+  const fetchGifs = (offset: number) => {
+    return giphyFetch.search(term, {limit: 10, offset});
+  };
+  const NoResults = <div className="no-results">No Results for {term}</div>;
+
   const onSelect = (payload: InsertImagePayload) => {
     activeEditor.dispatchCommand(INSERT_IMAGE_COMMAND, payload);
     onClose();
   };
 
   return (
-    <ReactGiphySearchbox
-      apiKey={GIPHY_API_KEY}
-      onSelect={(item) =>
-        onSelect({
-          altText: item.title,
-          src: item.embed_url,
-        })
-      }
-      masonryConfig={[
-        {columns: 2, gutter: 5, imageWidth: 110},
-        {columns: 3, gutter: 5, imageWidth: 120, mq: '700px'},
-      ]}
-    />
+    <>
+      <TextInput
+        label="Search Gifs"
+        placeholder="type to search"
+        onChange={(value) => setDebouncedInput(value)}
+        value={debouncedInput}
+      />
+      <Grid
+        onGifClick={(gif, e) => {
+          e.preventDefault();
+          onSelect({
+            altText: gif.title,
+            src: gif.images.original.url,
+          });
+        }}
+        key={term}
+        columns={4}
+        gutter={6}
+        noResultsMessage={term && NoResults}
+        width={400}
+        fetchGifs={fetchGifs}
+      />
+    </>
   );
 }
 
@@ -1288,14 +1310,14 @@ export default function ToolbarPlugin(): JSX.Element {
               <span className="text">Image</span>
             </DropDownItem>
             <DropDownItem
-            onClick={() => {
-            showModal('Insert Gif', (onClose) => (
-            <InsertGifDialog
-            activeEditor={activeEditor}
-            onClose={onClose}
-            />
-            ));
-            }}
+              onClick={() => {
+                showModal('Insert Gif', (onClose) => (
+                  <InsertGifDialog
+                    activeEditor={activeEditor}
+                    onClose={onClose}
+                  />
+                ));
+              }}
               className="item">
               <i className="icon gif" />
               <span className="text">GIF</span>

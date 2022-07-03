@@ -40,7 +40,7 @@ const config = {
     video: 'on-first-retry',
   },
   webServer: {
-    command: 'npm run dev -- -- --port 4000',
+    command: 'npm run start-test-server',
     port: 4000,
     reuseExistingServer: true,
     timeout: 120 * 1000,

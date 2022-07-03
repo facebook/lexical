@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@lexical/utils": "0.3.6",
+    "@lexical/list": "0.3.6",
     "@lexical/selection": "0.3.6",
     "@lexical/html": "0.3.6"
   },

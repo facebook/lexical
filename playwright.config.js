@@ -39,5 +39,13 @@ const config = {
     //trace: 'retain-on-failure',
     video: 'on-first-retry',
   },
+  webServer: IS_CI
+    ? {
+        command: 'npm run start-test-server',
+        port: 4000,
+        reuseExistingServer: true,
+        timeout: 120 * 1000,
+      }
+    : undefined,
 };
 module.exports = config;

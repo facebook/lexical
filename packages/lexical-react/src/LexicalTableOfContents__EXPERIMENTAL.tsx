@@ -8,7 +8,7 @@
 
 import type {NodeKey, NodeMutation} from 'lexical';
 
-import {$isHeadingNode, HeadingNode} from '@lexical/rich-text';
+import {$isHeadingNode, HeadingNode, HeadingTagType} from '@lexical/rich-text';
 import {$getNodeByKey, $getRoot, TextNode} from 'lexical';
 import {useEffect, useState} from 'react';
 
@@ -17,25 +17,29 @@ import {useLexicalComposerContext} from './LexicalComposerContext';
 function $insertHeadingIntoTableOfContents(
   prevHeading: HeadingNode | null,
   newHeading: HeadingNode | null,
-  currentTableOfContents: Array<[NodeKey, string, string]>,
-): Array<[NodeKey, string, string]> {
-  if (!newHeading) {
+  currentTableOfContents: Array<
+    [key: NodeKey, text: string, tag: HeadingTagType]
+  >,
+): Array<[key: NodeKey, text: string, tag: HeadingTagType]> {
+  if (newHeading === null) {
     return currentTableOfContents;
   }
-  const newNode: [NodeKey, string, string] = [
+  const newEntry: [key: NodeKey, text: string, tag: HeadingTagType] = [
     newHeading.getKey(),
     newHeading.getTextContent(),
     newHeading.getTag(),
   ];
-  let newTableOfContents: Array<[NodeKey, string, string]> = [];
-  if (!prevHeading) {
-    newTableOfContents = [newNode, ...currentTableOfContents];
+  let newTableOfContents: Array<
+    [key: NodeKey, text: string, tag: HeadingTagType]
+  > = [];
+  if (prevHeading === null) {
+    newTableOfContents = [newEntry, ...currentTableOfContents];
   } else {
     for (let i = 0; i < currentTableOfContents.length; i++) {
       const key = currentTableOfContents[i][0];
       newTableOfContents.push(currentTableOfContents[i]);
       if (key === prevHeading.getKey() && key !== newHeading.getKey()) {
-        newTableOfContents.push(newNode);
+        newTableOfContents.push(newEntry);
       }
     }
   }
@@ -44,8 +48,10 @@ function $insertHeadingIntoTableOfContents(
 
 function $deleteHeadingFromTableOfContents(
   key: NodeKey,
-  currentTableOfContents: Array<[NodeKey, string, string]>,
-): Array<[NodeKey, string, string]> {
+  currentTableOfContents: Array<
+    [key: NodeKey, text: string, tag: HeadingTagType]
+  >,
+): Array<[key: NodeKey, text: string, tag: HeadingTagType]> {
   const newTableOfContents = [];
   for (const heading of currentTableOfContents) {
     if (heading[0] !== key) {
@@ -57,10 +63,14 @@ function $deleteHeadingFromTableOfContents(
 
 function $updateHeadingInTableOfContents(
   heading: HeadingNode,
-  currentTableOfContents: Array<[NodeKey, string, string]>,
-): Array<[NodeKey, string, string]> {
+  currentTableOfContents: Array<
+    [key: NodeKey, text: string, tag: HeadingTagType]
+  >,
+): Array<[key: NodeKey, text: string, tag: HeadingTagType]> {
   const newTextContent = heading.getTextContent();
-  const newTableOfContents: Array<[NodeKey, string, string]> = [];
+  const newTableOfContents: Array<
+    [key: NodeKey, text: string, tag: HeadingTagType]
+  > = [];
   for (const oldHeading of currentTableOfContents) {
     if (oldHeading[0] === heading.getKey()) {
       newTableOfContents.push([
@@ -85,12 +95,14 @@ export default function LexicalTableOfContentsPlugin({
   children,
 }: Props): JSX.Element {
   const [tableOfContents, setTableOfContents] = useState<
-    Array<[NodeKey, string, string]>
+    Array<[key: NodeKey, text: string, tag: HeadingTagType]>
   >([]);
   const [editor] = useLexicalComposerContext();
   useEffect(() => {
     // Set table of contents initial state
-    let currentTableOfContents: Array<[NodeKey, string, string]> = [];
+    let currentTableOfContents: Array<
+      [key: NodeKey, text: string, tag: HeadingTagType]
+    > = [];
     editor.getEditorState().read(() => {
       const root = $getRoot();
       const rootChildren = root.getChildren();
@@ -114,7 +126,7 @@ export default function LexicalTableOfContentsPlugin({
           for (const [nodeKey, mutation] of mutatedNodes) {
             if (mutation === 'created') {
               const newHeading = $getNodeByKey<HeadingNode>(nodeKey);
-              if (newHeading) {
+              if (newHeading !== null) {
                 let prevHeading = newHeading.getPreviousSibling();
                 while (prevHeading && !$isHeadingNode(prevHeading)) {
                   prevHeading = prevHeading.getPreviousSibling();
@@ -146,8 +158,8 @@ export default function LexicalTableOfContentsPlugin({
           for (const [nodeKey, mutation] of mutatedNodes) {
             if (mutation === 'updated') {
               const currNode = $getNodeByKey(nodeKey);
-              if (currNode) {
-                const parentNode = currNode.getParent();
+              if (currNode !== null) {
+                const parentNode = currNode.getTopParentOrThrow();
                 if ($isHeadingNode(parentNode)) {
                   currentTableOfContents = $updateHeadingInTableOfContents(
                     parentNode,

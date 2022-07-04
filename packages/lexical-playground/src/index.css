@@ -1637,4 +1637,5 @@ button.item.dropdown-item-active i {
 .editor-and-table-of-contents {
   display: flex;
   flex-direction: row;
+  justify-content: space-between;
 }

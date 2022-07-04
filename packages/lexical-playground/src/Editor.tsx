@@ -12,7 +12,6 @@ import {CharacterLimitPlugin} from '@lexical/react/LexicalCharacterLimitPlugin';
 import {CheckListPlugin} from '@lexical/react/LexicalCheckListPlugin';
 import {ClearEditorPlugin} from '@lexical/react/LexicalClearEditorPlugin';
 import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {HashtagPlugin} from '@lexical/react/LexicalHashtagPlugin';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {LinkPlugin} from '@lexical/react/LexicalLinkPlugin';
@@ -21,13 +20,13 @@ import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import LexicalTableOfContents__EXPERIMENTAL from '@lexical/react/LexicalTableOfContents__EXPERIMENTAL';
 import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
-import {NodeKey} from 'packages/lexical/src';
 import * as React from 'react';
-import {useRef, useState} from 'react';
+import {useRef} from 'react';
 
 import {createWebsocketProvider} from './collaboration';
 import {useSettings} from './context/SettingsContext';
 import {useSharedHistoryContext} from './context/SharedHistoryContext';
+import TableOfContentsList from './nodes/TableOfContentsList';
 import ActionsPlugin from './plugins/ActionsPlugin';
 import AutocompletePlugin from './plugins/AutocompletePlugin';
 import AutoLinkPlugin from './plugins/AutoLinkPlugin';
@@ -172,45 +171,5 @@ export default function Editor(): JSX.Element {
         </LexicalTableOfContents__EXPERIMENTAL>
       </div>
     </>
-  );
-}
-
-function TableOfContentsList({
-  tableOfContents,
-}: {
-  tableOfContents: Array<[NodeKey, string, string]>;
-}) {
-  const [selectedKey, setSelectedKey] = useState('');
-  const [editor] = useLexicalComposerContext();
-  function scrollToNode(key: string) {
-    editor.getEditorState().read(() => {
-      const domElement = editor.getElementByKey(key);
-      if (domElement) {
-        domElement.scrollIntoView();
-        setSelectedKey(key);
-      }
-    });
-  }
-  function indent(tagName: string) {
-    if (tagName === 'h2') {
-      return 'heading2';
-    } else if (tagName === 'h3') {
-      return 'heading3';
-    }
-  }
-  return (
-    <ul className="remove-ul-style">
-      {tableOfContents.map(([key, text, tag]) => (
-        <div
-          className={selectedKey === key ? 'selectedHeading' : 'heading'}
-          key={key}
-          onClick={() => scrollToNode(key)}
-          role="button"
-          tabIndex={0}>
-          <div className={selectedKey === key ? 'circle' : 'bar'} />
-          <li className={indent(tag)}>{text}</li>
-        </div>
-      ))}
-    </ul>
   );
 }

@@ -159,7 +159,7 @@ export default function LexicalTableOfContentsPlugin({
             if (mutation === 'updated') {
               const currNode = $getNodeByKey(nodeKey);
               if (currNode !== null) {
-                const parentNode = currNode.getTopParentOrThrow();
+                const parentNode = currNode.getParentOrThrow();
                 if ($isHeadingNode(parentNode)) {
                   currentTableOfContents = $updateHeadingInTableOfContents(
                     parentNode,

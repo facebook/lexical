@@ -18,7 +18,7 @@
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/lexical-html"
   },
-  "devDependencies": {
+  "dependencies": {
     "@lexical/selection": "^0.3.6"
   }
 }

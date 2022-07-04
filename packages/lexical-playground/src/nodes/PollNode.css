@@ -100,7 +100,7 @@
   display: block;
   top: 4px;
   width: 5px;
-  left: 8px;
+  start: 8px;
   height: 9px;
   margin: 0;
   transform: rotate(45deg);

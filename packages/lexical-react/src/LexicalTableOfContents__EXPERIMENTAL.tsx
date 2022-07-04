@@ -8,8 +8,8 @@
 
 import type {NodeKey, NodeMutation} from 'lexical';
 
+import {$isHeadingNode, HeadingNode} from '@lexical/rich-text';
 import {$getNodeByKey, $getRoot, TextNode} from 'lexical';
-import {$isHeadingNode, HeadingNode} from 'packages/lexical-rich-text/src';
 import {useEffect, useState} from 'react';
 
 import {useLexicalComposerContext} from './LexicalComposerContext';
@@ -81,7 +81,9 @@ type Props = {
   ) => JSX.Element;
 };
 
-export function LexicalTableOfContentsPlugin({children}: Props): JSX.Element {
+export default function LexicalTableOfContentsPlugin({
+  children,
+}: Props): JSX.Element {
   const [tableOfContents, setTableOfContents] = useState<
     Array<[NodeKey, string, string]>
   >([]);

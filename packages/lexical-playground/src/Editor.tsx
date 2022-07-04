@@ -12,15 +12,18 @@ import {CharacterLimitPlugin} from '@lexical/react/LexicalCharacterLimitPlugin';
 import {CheckListPlugin} from '@lexical/react/LexicalCheckListPlugin';
 import {ClearEditorPlugin} from '@lexical/react/LexicalClearEditorPlugin';
 import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {HashtagPlugin} from '@lexical/react/LexicalHashtagPlugin';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {LinkPlugin} from '@lexical/react/LexicalLinkPlugin';
 import {ListPlugin} from '@lexical/react/LexicalListPlugin';
 import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
+import LexicalTableOfContents__EXPERIMENTAL from '@lexical/react/LexicalTableOfContents__EXPERIMENTAL';
 import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
+import {NodeKey} from 'packages/lexical/src';
 import * as React from 'react';
-import {useRef} from 'react';
+import {useRef, useState} from 'react';
 
 import {createWebsocketProvider} from './collaboration';
 import {useSettings} from './context/SettingsContext';
@@ -82,81 +85,132 @@ export default function Editor(): JSX.Element {
 
   return (
     <>
-      {isRichText && <ToolbarPlugin />}
-      <div
-        className={`editor-container ${showTreeView ? 'tree-view' : ''} ${
-          !isRichText ? 'plain-text' : ''
-        }`}
-        ref={scrollRef}>
-        {isMaxLength && <MaxLengthPlugin maxLength={30} />}
-        <AutoFocusPlugin />
-        <ClearEditorPlugin />
-        <MentionsPlugin />
-        <EmojisPlugin />
-        <HashtagPlugin />
-        <KeywordsPlugin />
-        <SpeechToTextPlugin />
-        <AutoLinkPlugin />
-        <AutoScrollPlugin scrollRef={scrollRef} />
-        <CommentPlugin
-          providerFactory={isCollab ? createWebsocketProvider : undefined}
-        />
-        {isRichText ? (
-          <>
-            {isCollab ? (
-              <CollaborationPlugin
-                id="main"
-                providerFactory={createWebsocketProvider}
-                shouldBootstrap={!skipCollaborationInit}
-              />
+      <div className="editor-and-table-of-contents">
+        <div>
+          {isRichText && <ToolbarPlugin />}
+          <div
+            className={`editor-container ${showTreeView ? 'tree-view' : ''} ${
+              !isRichText ? 'plain-text' : ''
+            }`}
+            ref={scrollRef}>
+            {isMaxLength && <MaxLengthPlugin maxLength={30} />}
+            <AutoFocusPlugin />
+            <ClearEditorPlugin />
+            <MentionsPlugin />
+            <EmojisPlugin />
+            <HashtagPlugin />
+            <KeywordsPlugin />
+            <SpeechToTextPlugin />
+            <AutoLinkPlugin />
+            <AutoScrollPlugin scrollRef={scrollRef} />
+            <CommentPlugin
+              providerFactory={isCollab ? createWebsocketProvider : undefined}
+            />
+            {isRichText ? (
+              <>
+                {isCollab ? (
+                  <CollaborationPlugin
+                    id="main"
+                    providerFactory={createWebsocketProvider}
+                    shouldBootstrap={!skipCollaborationInit}
+                  />
+                ) : (
+                  <HistoryPlugin externalHistoryState={historyState} />
+                )}
+                <RichTextPlugin
+                  contentEditable={<ContentEditable />}
+                  placeholder={placeholder}
+                  // TODO Collab support until 0.4
+                  initialEditorState={isCollab ? null : undefined}
+                />
+                <MarkdownShortcutPlugin />
+                <CodeActionMenuPlugin />
+                <CodeHighlightPlugin />
+                <ListPlugin />
+                <CheckListPlugin />
+                <ListMaxIndentLevelPlugin maxDepth={7} />
+                <TablePlugin />
+                <TableCellActionMenuPlugin />
+                <TableCellResizer />
+                <ImagesPlugin />
+                <LinkPlugin />
+                <PollPlugin />
+                <TwitterPlugin />
+                <YouTubePlugin />
+                <ClickableLinkPlugin />
+                <HorizontalRulePlugin />
+                <TextFormatFloatingToolbarPlugin />
+                <EquationsPlugin />
+                <ExcalidrawPlugin />
+                <TabFocusPlugin />
+              </>
             ) : (
-              <HistoryPlugin externalHistoryState={historyState} />
+              <>
+                <PlainTextPlugin
+                  contentEditable={<ContentEditable />}
+                  placeholder={placeholder}
+                  // TODO Collab support until 0.4
+                  initialEditorState={isCollab ? null : undefined}
+                />
+                <HistoryPlugin externalHistoryState={historyState} />
+              </>
             )}
-            <RichTextPlugin
-              contentEditable={<ContentEditable />}
-              placeholder={placeholder}
-              // TODO Collab support until 0.4
-              initialEditorState={isCollab ? null : undefined}
-            />
-            <MarkdownShortcutPlugin />
-            <CodeActionMenuPlugin />
-            <CodeHighlightPlugin />
-            <ListPlugin />
-            <CheckListPlugin />
-            <ListMaxIndentLevelPlugin maxDepth={7} />
-            <TablePlugin />
-            <TableCellActionMenuPlugin />
-            <TableCellResizer />
-            <ImagesPlugin />
-            <LinkPlugin />
-            <PollPlugin />
-            <TwitterPlugin />
-            <YouTubePlugin />
-            <ClickableLinkPlugin />
-            <HorizontalRulePlugin />
-            <TextFormatFloatingToolbarPlugin />
-            <EquationsPlugin />
-            <ExcalidrawPlugin />
-            <TabFocusPlugin />
-          </>
-        ) : (
-          <>
-            <PlainTextPlugin
-              contentEditable={<ContentEditable />}
-              placeholder={placeholder}
-              // TODO Collab support until 0.4
-              initialEditorState={isCollab ? null : undefined}
-            />
-            <HistoryPlugin externalHistoryState={historyState} />
-          </>
-        )}
-        {(isCharLimit || isCharLimitUtf8) && (
-          <CharacterLimitPlugin charset={isCharLimit ? 'UTF-16' : 'UTF-8'} />
-        )}
-        {isAutocomplete && <AutocompletePlugin />}
-        <ActionsPlugin isRichText={isRichText} />
+            {(isCharLimit || isCharLimitUtf8) && (
+              <CharacterLimitPlugin
+                charset={isCharLimit ? 'UTF-16' : 'UTF-8'}
+              />
+            )}
+            {isAutocomplete && <AutocompletePlugin />}
+            <ActionsPlugin isRichText={isRichText} />
+          </div>
+          {showTreeView && <TreeViewPlugin />}
+        </div>
+        <LexicalTableOfContents__EXPERIMENTAL>
+          {(tableOfContents) => {
+            return <TableOfContentsList tableOfContents={tableOfContents} />;
+          }}
+        </LexicalTableOfContents__EXPERIMENTAL>
       </div>
-      {showTreeView && <TreeViewPlugin />}
     </>
+  );
+}
+
+function TableOfContentsList({
+  tableOfContents,
+}: {
+  tableOfContents: Array<[NodeKey, string, string]>;
+}) {
+  const [selectedKey, setSelectedKey] = useState('');
+  const [editor] = useLexicalComposerContext();
+  function scrollToNode(key: string) {
+    editor.getEditorState().read(() => {
+      const domElement = editor.getElementByKey(key);
+      if (domElement) {
+        domElement.scrollIntoView();
+        setSelectedKey(key);
+      }
+    });
+  }
+  function indent(tagName: string) {
+    if (tagName === 'h2') {
+      return 'heading2';
+    } else if (tagName === 'h3') {
+      return 'heading3';
+    }
+  }
+  return (
+    <ul className="remove-ul-style">
+      {tableOfContents.map(([key, text, tag]) => (
+        <div
+          className={selectedKey === key ? 'selectedHeading' : 'heading'}
+          key={key}
+          onClick={() => scrollToNode(key)}
+          role="button"
+          tabIndex={0}>
+          <div className={selectedKey === key ? 'circle' : 'bar'} />
+          <li className={indent(tag)}>{text}</li>
+        </div>
+      ))}
+    </ul>
   );
 }

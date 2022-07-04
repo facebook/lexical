@@ -61,6 +61,10 @@ export type EditorSetOptions = {
   tag?: string;
 };
 
+export type EditorFocusOptions = {
+  defaultSelection?: 'rootStart' | 'rootEnd';
+};
+
 export type EditorThemeClasses = {
   characterLimit?: EditorThemeClassName;
   code?: EditorThemeClassName;
@@ -740,7 +744,7 @@ export class LexicalEditor {
     updateEditor(this, updateFn, options);
   }
 
-  focus(callbackFn?: () => void): void {
+  focus(callbackFn?: () => void, options: EditorFocusOptions = {}): void {
     const rootElement = this._rootElement;
 
     if (rootElement !== null) {
@@ -756,7 +760,11 @@ export class LexicalEditor {
             // Marking the selection dirty will force the selection back to it
             selection.dirty = true;
           } else if (root.getChildrenSize() !== 0) {
-            root.selectEnd();
+            if (options.defaultSelection === 'rootStart') {
+              root.selectStart();
+            } else {
+              root.selectEnd();
+            }
           }
         },
         {

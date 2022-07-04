@@ -87,7 +87,7 @@ function $updateHeadingInTableOfContents(
 
 type Props = {
   children: (
-    values: Array<[key: NodeKey, text: string, tag: string]>,
+    values: Array<[key: NodeKey, text: string, tag: HeadingTagType]>,
   ) => JSX.Element;
 };
 

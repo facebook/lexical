@@ -53,6 +53,7 @@ import {
   $isTextNode,
   COMMAND_PRIORITY_LOW,
   ElementNode,
+  CODE_BLOCK_COMMAND,
   INDENT_CONTENT_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
@@ -61,6 +62,8 @@ import {
   OUTDENT_CONTENT_COMMAND,
   TextNode,
 } from 'lexical';
+
+import {$wrapLeafNodesInElements} from '@lexical/selection';
 
 const DEFAULT_CODE_LANGUAGE = 'javascript';
 
@@ -1168,6 +1171,25 @@ export function registerCodeHighlighting(editor: LexicalEditor): () => void {
     editor.registerCommand(
       MOVE_TO_START,
       (payload: KeyboardEvent): boolean => handleMoveTo(MOVE_TO_START, payload),
+      COMMAND_PRIORITY_LOW,
+    ),
+    editor.registerCommand(
+      CODE_BLOCK_COMMAND,
+      (): boolean => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          if (selection.isCollapsed()) {
+            $wrapLeafNodesInElements(selection, () => $createCodeNode());
+          } else {
+            const textContent = selection.getTextContent();
+            const codeNode = $createCodeNode();
+            selection.insertNodes([codeNode]);
+            selection.insertRawText(textContent);
+          }
+          return true;
+        }
+        return false;
+      },
       COMMAND_PRIORITY_LOW,
     ),
   );

@@ -696,6 +696,15 @@ export function isBold(
   return keyCode === 66 && !altKey && controlOrMeta(metaKey, ctrlKey);
 }
 
+export function isCodeBlock(
+  keyCode: number,
+  altKey: boolean,
+  metaKey: boolean,
+  ctrlKey: boolean,
+): boolean {
+  return keyCode === 67 && altKey && !controlOrMeta(metaKey, ctrlKey);
+}
+
 export function isItalic(
   keyCode: number,
   altKey: boolean,
@@ -714,12 +723,30 @@ export function isUnderline(
   return keyCode === 85 && !altKey && controlOrMeta(metaKey, ctrlKey);
 }
 
+export function isQuote(
+  keyCode: number,
+  altKey: boolean,
+  metaKey: boolean,
+  ctrlKey: boolean,
+): boolean {
+  return keyCode === 81 && !altKey && controlOrMeta(metaKey, ctrlKey);
+}
+
 export function isParagraph(keyCode: number, shiftKey: boolean): boolean {
   return isReturn(keyCode) && !shiftKey;
 }
 
 export function isLineBreak(keyCode: number, shiftKey: boolean): boolean {
   return isReturn(keyCode) && shiftKey;
+}
+
+export function isLink(
+  keyCode: number,
+  altKey: boolean,
+  metaKey: boolean,
+  ctrlKey: boolean,
+): boolean {
+  return keyCode === 75 && !altKey && controlOrMeta(metaKey, ctrlKey);
 }
 
 // Inserts a new line after the selection

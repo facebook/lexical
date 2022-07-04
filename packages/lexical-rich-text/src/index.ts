@@ -26,9 +26,11 @@ import {
   $getLexicalContent,
   $insertDataTransferForRichText,
 } from '@lexical/clipboard';
+import {TOGGLE_LINK_COMMAND, toggleLink} from '@lexical/link';
 import {
   $moveCharacter,
   $shouldOverrideDefaultCharacterSelection,
+  $wrapLeafNodesInElements,
 } from '@lexical/selection';
 import {
   $getNearestBlockElementAncestorOrThrow,
@@ -70,6 +72,7 @@ import {
   KEY_TAB_COMMAND,
   OUTDENT_CONTENT_COMMAND,
   PASTE_COMMAND,
+  QUOTE_COMMAND,
   REMOVE_TEXT_COMMAND,
 } from 'lexical';
 import {CAN_USE_BEFORE_INPUT, IS_IOS, IS_SAFARI} from 'shared/environment';
@@ -778,6 +781,27 @@ export function registerRichText(
           return false;
         }
         editor.blur();
+        return true;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerCommand(
+      QUOTE_COMMAND,
+      () => {
+        const selection = $getSelection();
+
+        if ($isRangeSelection(selection)) {
+          $wrapLeafNodesInElements(selection, () => $createQuoteNode());
+          return true;
+        }
+        return false;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerCommand<string>(
+      TOGGLE_LINK_COMMAND,
+      (url) => {
+        toggleLink(url);
         return true;
       },
       COMMAND_PRIORITY_EDITOR,

@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import {FROM_PAGE} from '../modules';
+
 // Create the panel which appears within the browser's DevTools, loading the Lexical DevTools App within index.html.
 // eslint-disable-next-line no-undef
 chrome.devtools.panels.create(
@@ -29,7 +31,7 @@ chrome.devtools.inspectedWindow
       window.postMessage(
         {
           editorState,
-          type: 'FROM_PAGE',
+          type: '${FROM_PAGE}',
         },
         '*',
       );

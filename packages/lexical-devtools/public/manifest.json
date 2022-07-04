@@ -13,7 +13,7 @@
     "48": "favicon-32x32.png"
   },
   "background": {
-    "scripts": ["src/background/index.js"]
+    "page": "src/background/index.html"
   },
   "content_scripts": [
     {

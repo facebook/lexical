@@ -5,8 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-(async () => {
-  const src = chrome.runtime.getURL('./content.ts');
-  const contentScript = await import(src);
-  contentScript();
-})();
+
+const FROM_APP = 'FROM_APP';
+const FROM_CONTENT = 'FROM_CONTENT';
+const FROM_PAGE = 'FROM_PAGE';
+
+export {FROM_APP, FROM_CONTENT, FROM_PAGE};

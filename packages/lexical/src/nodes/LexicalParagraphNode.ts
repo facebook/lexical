@@ -64,10 +64,8 @@ export class ParagraphNode extends ElementNode {
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const {element} = super.exportDOM(editor);
 
-    if (element) {
-      if (this.getTextContentSize() === 0) {
-        element.append(document.createElement('br'));
-      }
+    if (element && this.isEmpty()) {
+      element.append(document.createElement('br'));
     }
 
     return {

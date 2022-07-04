@@ -273,7 +273,6 @@ type InternalSerializedNode = {
 export function $parseSerializedNode(
   serializedNode: SerializedLexicalNode,
 ): LexicalNode {
-  // $FlowFixMe: intentional cast to our internal type
   const internalSerializedNode: InternalSerializedNode = serializedNode;
   return $parseSerializedNodeImpl(
     internalSerializedNode,

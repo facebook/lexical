@@ -12,7 +12,6 @@ import {
   assertSelection,
   click,
   dragImage,
-  E2E_PORT,
   focusEditor,
   html,
   initialize,
@@ -20,14 +19,10 @@ import {
   insertUploadImage,
   insertUrlImage,
   IS_WINDOWS,
+  SAMPLE_IMAGE_URL,
   test,
   waitForSelector,
 } from '../utils/index.mjs';
-
-const IMAGE_URL =
-  E2E_PORT === 3000
-    ? '/src/images/yellow-flower.jpg'
-    : '/assets/yellow-flower.bf6d0400.jpg';
 
 test.describe('Images', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
@@ -53,7 +48,7 @@ test.describe('Images', () => {
             data-lexical-decorator="true">
             <div draggable="false">
               <img
-                src="${IMAGE_URL}"
+                src="${SAMPLE_IMAGE_URL}"
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
                 style="height: inherit; max-width: 500px; width: inherit;" />
@@ -118,21 +113,23 @@ test.describe('Images', () => {
               data-lexical-decorator="true">
               <div draggable="true">
                 <img
-                  src="${IMAGE_URL}"
+                  src="${SAMPLE_IMAGE_URL}"
                   alt="Yellow flower in tilt shift lens"
                   draggable="false"
                   style="height: inherit; max-width: 500px; width: inherit;"
                   class="focused" />
               </div>
-              <button class="image-caption-button">Add Caption</button>
-              <div class="image-resizer image-resizer-n"></div>
-              <div class="image-resizer image-resizer-ne"></div>
-              <div class="image-resizer image-resizer-e"></div>
-              <div class="image-resizer image-resizer-se"></div>
-              <div class="image-resizer image-resizer-s"></div>
-              <div class="image-resizer image-resizer-sw"></div>
-              <div class="image-resizer image-resizer-w"></div>
-              <div class="image-resizer image-resizer-nw"></div>
+              <div>
+                <button class="image-caption-button">Add Caption</button>
+                <div class="image-resizer image-resizer-n"></div>
+                <div class="image-resizer image-resizer-ne"></div>
+                <div class="image-resizer image-resizer-e"></div>
+                <div class="image-resizer image-resizer-se"></div>
+                <div class="image-resizer image-resizer-s"></div>
+                <div class="image-resizer image-resizer-sw"></div>
+                <div class="image-resizer image-resizer-w"></div>
+                <div class="image-resizer image-resizer-nw"></div>
+              </div>
             </span>
             <br />
           </p>
@@ -168,7 +165,7 @@ test.describe('Images', () => {
             data-lexical-decorator="true">
             <div draggable="false">
               <img
-                src="${IMAGE_URL}"
+                src="${SAMPLE_IMAGE_URL}"
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
                 style="height: inherit; max-width: 500px; width: inherit;" />
@@ -228,7 +225,7 @@ test.describe('Images', () => {
             data-lexical-decorator="true">
             <div draggable="false">
               <img
-                src="${IMAGE_URL}"
+                src="${SAMPLE_IMAGE_URL}"
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
                 style="height: inherit; max-width: 500px; width: inherit;" />
@@ -240,7 +237,7 @@ test.describe('Images', () => {
             data-lexical-decorator="true">
             <div draggable="false">
               <img
-                src="${IMAGE_URL}"
+                src="${SAMPLE_IMAGE_URL}"
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
                 style="height: inherit; max-width: 500px; width: inherit;" />
@@ -268,7 +265,7 @@ test.describe('Images', () => {
             data-lexical-decorator="true">
             <div draggable="false">
               <img
-                src="${IMAGE_URL}"
+                src="${SAMPLE_IMAGE_URL}"
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
                 style="height: inherit; max-width: 500px; width: inherit;" />
@@ -319,7 +316,7 @@ test.describe('Images', () => {
             data-lexical-decorator="true">
             <div draggable="false">
               <img
-                src="${IMAGE_URL}"
+                src="${SAMPLE_IMAGE_URL}"
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
                 style="height: inherit; max-width: 500px; width: inherit;" />
@@ -331,7 +328,7 @@ test.describe('Images', () => {
             data-lexical-decorator="true">
             <div draggable="false">
               <img
-                src="${IMAGE_URL}"
+                src="${SAMPLE_IMAGE_URL}"
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
                 style="height: inherit; max-width: 500px; width: inherit;" />
@@ -361,7 +358,7 @@ test.describe('Images', () => {
             data-lexical-decorator="true">
             <div draggable="false">
               <img
-                src="${IMAGE_URL}"
+                src="${SAMPLE_IMAGE_URL}"
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
                 style="height: inherit; max-width: 500px; width: inherit;" />
@@ -477,7 +474,7 @@ test.describe('Images', () => {
                 <img
                   alt="Yellow flower in tilt shift lens"
                   draggable="false"
-                  src="${IMAGE_URL}"
+                  src="${SAMPLE_IMAGE_URL}"
                   style="height: inherit; max-width: 500px; width: inherit" />
               </div>
             </span>
@@ -513,7 +510,7 @@ test.describe('Images', () => {
                 <img
                   alt="Yellow flower in tilt shift lens"
                   draggable="false"
-                  src="${IMAGE_URL}"
+                  src="${SAMPLE_IMAGE_URL}"
                   style="height: inherit; max-width: 500px; width: inherit" />
               </div>
             </span>
@@ -561,7 +558,7 @@ test.describe('Images', () => {
               <img
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
-                src="${IMAGE_URL}"
+                src="${SAMPLE_IMAGE_URL}"
                 style="height: inherit; max-width: 500px; width: inherit" />
             </div>
           </span>

@@ -9,22 +9,30 @@
 const ports = {}; // Each tab will have a separate messaging port for the devTools app & the inspectedWindow's content script, eg. { tabId: { reactPort, contentScriptPort } }
 
 // The Lexical DevTools React UI sends a message to initialize the port.
-chrome.runtime.onConnect.addListener(function (port) {
-  port.onMessage.addListener((message) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+chrome.runtime.onConnect.addListener(function (port: any) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  port.onMessage.addListener((message: any) => {
     if (message.name === 'init' && message.type === 'FROM_APP') {
-      ports[message.tabId].react = port;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (ports as any)[message.tabId].react = port;
       return;
     }
 
     if (message.name === 'init' && message.type === 'FROM_CONTENT') {
-      ports[port.sender.tab.id] = {};
-      ports[port.sender.tab.id].content = port;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (ports as any)[port.sender.tab.id] = {};
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (ports as any)[port.sender.tab.id].content = port;
       return;
     }
 
     if (message.name === 'editor-update') {
       const tabId = port.sender.tab.id;
-      ports[tabId].react.postMessage({editorState: message.editorState});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (ports as any)[tabId].react.postMessage({
+        editorState: message.editorState,
+      });
     }
   });
 });

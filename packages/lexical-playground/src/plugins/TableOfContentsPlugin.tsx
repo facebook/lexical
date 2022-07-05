@@ -73,7 +73,7 @@ function TableOfContentsList({
         <div
           className={selectedKey === key ? 'selectedHeading' : 'heading'}
           key={key}
-          onClick={() => scrollToNode(key, false)}
+          onClick={() => scrollToNode(key)}
           role="button"
           tabIndex={0}>
           <div className={selectedKey === key ? 'circle' : 'bar'} />

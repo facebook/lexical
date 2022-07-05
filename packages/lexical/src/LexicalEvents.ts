@@ -11,7 +11,6 @@ import type {NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextNode} from './nodes/LexicalTextNode';
 
-import {TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {
   CAN_USE_BEFORE_INPUT,
   IS_FIREFOX,
@@ -64,6 +63,7 @@ import {
   REDO_COMMAND,
   REMOVE_TEXT_COMMAND,
   SELECTION_CHANGE_COMMAND,
+  TOGGLE_LINK_COMMAND,
   UNDO_COMMAND,
 } from '.';
 import {KEY_MODIFIER_COMMAND} from './LexicalCommands';

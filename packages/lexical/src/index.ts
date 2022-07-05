@@ -99,6 +99,7 @@ export {
   REDO_COMMAND,
   REMOVE_TEXT_COMMAND,
   SELECTION_CHANGE_COMMAND,
+  TOGGLE_LINK_COMMAND,
   UNDO_COMMAND,
 } from './LexicalCommands';
 export {

@@ -26,7 +26,7 @@ import {
   $getLexicalContent,
   $insertDataTransferForRichText,
 } from '@lexical/clipboard';
-import {TOGGLE_LINK_COMMAND, toggleLink} from '@lexical/link';
+import {toggleLink} from '@lexical/link';
 import {
   $moveCharacter,
   $shouldOverrideDefaultCharacterSelection,
@@ -74,6 +74,7 @@ import {
   PASTE_COMMAND,
   QUOTE_COMMAND,
   REMOVE_TEXT_COMMAND,
+  TOGGLE_LINK_COMMAND,
 } from 'lexical';
 import {CAN_USE_BEFORE_INPUT, IS_IOS, IS_SAFARI} from 'shared/environment';
 

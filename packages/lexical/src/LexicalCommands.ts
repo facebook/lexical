@@ -70,3 +70,5 @@ export const BLUR_COMMAND: LexicalCommand<FocusEvent> = createCommand();
 export const KEY_MODIFIER_COMMAND: LexicalCommand<KeyboardEvent> =
   createCommand();
 export const QUOTE_COMMAND: LexicalCommand<KeyboardEvent> = createCommand();
+export const TOGGLE_LINK_COMMAND: LexicalCommand<KeyboardEvent> =
+  createCommand();

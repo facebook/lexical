@@ -135,6 +135,7 @@ const rootElementEvents: RootElementEvents = [
   ['copy', PASS_THROUGH_COMMAND],
   ['dragstart', PASS_THROUGH_COMMAND],
   ['dragover', PASS_THROUGH_COMMAND],
+  ['dragend', PASS_THROUGH_COMMAND],
   ['paste', PASS_THROUGH_COMMAND],
   ['focus', PASS_THROUGH_COMMAND],
   ['blur', PASS_THROUGH_COMMAND],

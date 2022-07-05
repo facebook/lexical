@@ -12,7 +12,6 @@ import * as React from 'react';
 import {useEffect, useRef, useState} from 'react';
 
 import logo from '../../../images/lexical-white.png';
-import {FROM_APP} from '../../../modules';
 
 function App(): JSX.Element {
   const [count, setCount] = useState<number>(0);

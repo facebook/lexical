@@ -171,7 +171,7 @@ export async function moveRight(page, numCharacters = 1, delayMs) {
   }
 }
 
-export async function hitBackspace(page, numCharacters = 1, delayMs) {
+export async function pressBackspace(page, numCharacters = 1, delayMs) {
   for (let i = 0; i < numCharacters; i++) {
     if (delayMs !== undefined) {
       await sleep(delayMs);

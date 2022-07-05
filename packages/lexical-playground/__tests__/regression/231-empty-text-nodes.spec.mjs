@@ -7,9 +7,9 @@
  */
 
 import {
-  hitBackspace,
   moveLeft,
   moveRight,
+  pressBackspace,
 } from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
@@ -33,7 +33,7 @@ test.describe('Regression test #231', () => {
     await page.keyboard.type('a');
     await page.keyboard.press('Backspace');
     await moveRight(page, 5);
-    await hitBackspace(page, 5);
+    await pressBackspace(page, 5);
     await assertHTML(
       page,
       html`

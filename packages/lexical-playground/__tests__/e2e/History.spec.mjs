@@ -7,8 +7,8 @@
  */
 
 import {
-  hitBackspace,
   moveLeft,
+  pressBackspace,
   redo,
   toggleBold,
   undo,
@@ -396,7 +396,7 @@ test.describe('History', () => {
       });
     }
 
-    await hitBackspace(page, 4);
+    await pressBackspace(page, 4);
 
     if (isRichText) {
       await assertHTML(

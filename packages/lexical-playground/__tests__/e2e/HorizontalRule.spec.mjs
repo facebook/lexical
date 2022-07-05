@@ -7,9 +7,9 @@
  */
 
 import {
-  hitBackspace,
   moveLeft,
   moveToLineBeginning,
+  pressBackspace,
   selectAll,
 } from '../keyboardShortcuts/index.mjs';
 import {
@@ -142,7 +142,7 @@ test.describe('HorizontalRule', () => {
       });
     }
 
-    await hitBackspace(page, 10);
+    await pressBackspace(page, 10);
 
     await assertHTML(
       page,

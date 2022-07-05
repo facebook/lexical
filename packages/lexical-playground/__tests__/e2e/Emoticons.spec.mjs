@@ -7,9 +7,9 @@
  */
 
 import {
-  hitBackspace,
   moveToLineBeginning,
   moveToLineEnd,
+  pressBackspace,
   selectCharacters,
 } from '../keyboardShortcuts/index.mjs';
 import {
@@ -469,7 +469,7 @@ test.describe('Emoticons', () => {
     await page.keyboard.press('Backspace');
     await moveToLineEnd(page);
 
-    await hitBackspace(page, 22);
+    await pressBackspace(page, 22);
     await assertHTML(
       page,
       html`

@@ -7,9 +7,9 @@
  */
 
 import {
-  hitBackspace,
   moveLeft,
   moveToLineBeginning,
+  pressBackspace,
   selectCharacters,
 } from '../keyboardShortcuts/index.mjs';
 import {
@@ -371,7 +371,7 @@ test.describe('Composition', () => {
         focusPath: [0, 1, 0],
       });
 
-      await hitBackspace(page, 6);
+      await pressBackspace(page, 6);
       await assertHTML(
         page,
         html`

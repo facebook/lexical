@@ -28,6 +28,7 @@ export default function Settings(): JSX.Element {
       showTreeView,
       showNestedEditorTreeView,
       disableBeforeInput,
+      isTableOfContents,
     },
   } = useSettings();
   const [showSettings, setShowSettings] = useState(false);
@@ -123,6 +124,13 @@ export default function Settings(): JSX.Element {
             }}
             checked={disableBeforeInput}
             text="Legacy Events"
+          />
+          <Switch
+            onClick={() => {
+              setOption('isTableOfContents', !isTableOfContents);
+            }}
+            checked={isTableOfContents}
+            text="Table Of Contents"
           />
         </div>
       ) : null}

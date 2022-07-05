@@ -17,7 +17,8 @@ export type SettingName =
   | 'isAutocomplete'
   | 'showTreeView'
   | 'showNestedEditorTreeView'
-  | 'emptyEditor';
+  | 'emptyEditor'
+  | 'isTableOfContents';
 
 export type Settings = Record<SettingName, boolean>;
 
@@ -35,6 +36,7 @@ export const DEFAULT_SETTINGS: Settings = {
   isCollab: false,
   isMaxLength: false,
   isRichText: true,
+  isTableOfContents: true,
   measureTypingPerf: false,
   showNestedEditorTreeView: false,
   showTreeView: true,

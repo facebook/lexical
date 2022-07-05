@@ -71,6 +71,7 @@ export default function Editor(): JSX.Element {
       isCharLimitUtf8,
       isRichText,
       showTreeView,
+      isTableOfContents,
     },
   } = useSettings();
   const text = isCollab
@@ -160,9 +161,7 @@ export default function Editor(): JSX.Element {
         </div>
         {showTreeView && <TreeViewPlugin />}
       </div>
-      <div>
-        <TableOfContentsPlugin />
-      </div>
+      {isTableOfContents ? <TableOfContentsPlugin /> : <></>}
     </div>
   );
 }

@@ -6,7 +6,13 @@
  *
  */
 
-import {moveLeft, redo, toggleBold, undo} from '../keyboardShortcuts/index.mjs';
+import {
+  moveLeft,
+  pressBackspace,
+  redo,
+  toggleBold,
+  undo,
+} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
@@ -14,7 +20,6 @@ import {
   focusEditor,
   html,
   initialize,
-  repeat,
   sleep,
   test,
 } from '../utils/index.mjs';
@@ -391,9 +396,7 @@ test.describe('History', () => {
       });
     }
 
-    await repeat(4, async () => {
-      await page.keyboard.press('Backspace');
-    });
+    await pressBackspace(page, 4);
 
     if (isRichText) {
       await assertHTML(

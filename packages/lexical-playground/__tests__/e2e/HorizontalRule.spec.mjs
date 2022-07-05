@@ -9,6 +9,7 @@
 import {
   moveLeft,
   moveToLineBeginning,
+  pressBackspace,
   selectAll,
 } from '../keyboardShortcuts/index.mjs';
 import {
@@ -19,7 +20,6 @@ import {
   html,
   initialize,
   pasteFromClipboard,
-  repeat,
   selectFromInsertDropdown,
   test,
   waitForSelector,
@@ -142,9 +142,7 @@ test.describe('HorizontalRule', () => {
       });
     }
 
-    await repeat(10, async () => {
-      await page.keyboard.press('Backspace');
-    });
+    await pressBackspace(page, 10);
 
     await assertHTML(
       page,

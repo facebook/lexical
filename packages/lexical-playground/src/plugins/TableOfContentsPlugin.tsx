@@ -5,23 +5,56 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import '../ui/TableOfContentsStyle.css';
+
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import LexicalTableOfContents__EXPERIMENTAL from '@lexical/react/LexicalTableOfContents__EXPERIMENTAL';
 import {NodeKey} from 'packages/lexical/src';
 import {HeadingTagType} from 'packages/lexical-rich-text/src';
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
 import * as React from 'react';
 
-export default function TableOfContentsList({
+function TableOfContentsList({
   tableOfContents,
 }: {
   tableOfContents: Array<[key: NodeKey, text: string, tag: HeadingTagType]>;
 }): JSX.Element {
   const [selectedKey, setSelectedKey] = useState('');
   const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting === true) {
+            setSelectedKey(entry.target.id);
+          }
+        });
+      },
+      {threshold: 1.0},
+    );
+
+    tableOfContents.map((entry) => {
+      const headingNode = editor.getElementByKey(entry[0]);
+      if (headingNode !== null) {
+        headingNode.id = entry[0];
+        observer.observe(headingNode);
+      }
+    });
+
+    return () => {
+      tableOfContents.map((entry) => {
+        const element = document.getElementById(entry[0]);
+        if (element !== null) {
+          observer.unobserve(element);
+        }
+      });
+    };
+  });
   function scrollToNode(key: NodeKey) {
     editor.getEditorState().read(() => {
       const domElement = editor.getElementByKey(key);
-      if (domElement) {
+      if (domElement !== null) {
         domElement.scrollIntoView();
         setSelectedKey(key);
       }
@@ -40,7 +73,7 @@ export default function TableOfContentsList({
         <div
           className={selectedKey === key ? 'selectedHeading' : 'heading'}
           key={key}
-          onClick={() => scrollToNode(key)}
+          onClick={() => scrollToNode(key, false)}
           role="button"
           tabIndex={0}>
           <div className={selectedKey === key ? 'circle' : 'bar'} />
@@ -48,5 +81,15 @@ export default function TableOfContentsList({
         </div>
       ))}
     </ul>
+  );
+}
+
+export default function TableOfContentsPlugin() {
+  return (
+    <LexicalTableOfContents__EXPERIMENTAL>
+      {(tableOfContents) => {
+        return <TableOfContentsList tableOfContents={tableOfContents} />;
+      }}
+    </LexicalTableOfContents__EXPERIMENTAL>
   );
 }

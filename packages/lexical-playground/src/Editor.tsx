@@ -18,7 +18,6 @@ import {LinkPlugin} from '@lexical/react/LexicalLinkPlugin';
 import {ListPlugin} from '@lexical/react/LexicalListPlugin';
 import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
-import LexicalTableOfContents__EXPERIMENTAL from '@lexical/react/LexicalTableOfContents__EXPERIMENTAL';
 import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
 import * as React from 'react';
 import {useRef} from 'react';
@@ -26,7 +25,6 @@ import {useRef} from 'react';
 import {createWebsocketProvider} from './collaboration';
 import {useSettings} from './context/SettingsContext';
 import {useSharedHistoryContext} from './context/SharedHistoryContext';
-import TableOfContentsList from './nodes/TableOfContentsList';
 import ActionsPlugin from './plugins/ActionsPlugin';
 import AutocompletePlugin from './plugins/AutocompletePlugin';
 import AutoLinkPlugin from './plugins/AutoLinkPlugin';
@@ -49,6 +47,7 @@ import SpeechToTextPlugin from './plugins/SpeechToTextPlugin';
 import TabFocusPlugin from './plugins/TabFocusPlugin';
 import TableCellActionMenuPlugin from './plugins/TableActionMenuPlugin';
 import TableCellResizer from './plugins/TableCellResizer';
+import TableOfContentsPlugin from './plugins/TableOfContentsPlugin';
 import TextFormatFloatingToolbarPlugin from './plugins/TextFormatFloatingToolbarPlugin';
 import ToolbarPlugin from './plugins/ToolbarPlugin';
 import TreeViewPlugin from './plugins/TreeViewPlugin';
@@ -83,93 +82,87 @@ export default function Editor(): JSX.Element {
   const scrollRef = useRef(null);
 
   return (
-    <>
-      <div className="editor-and-table-of-contents">
-        <div>
-          {isRichText && <ToolbarPlugin />}
-          <div
-            className={`editor-container ${showTreeView ? 'tree-view' : ''} ${
-              !isRichText ? 'plain-text' : ''
-            }`}
-            ref={scrollRef}>
-            {isMaxLength && <MaxLengthPlugin maxLength={30} />}
-            <AutoFocusPlugin />
-            <ClearEditorPlugin />
-            <MentionsPlugin />
-            <EmojisPlugin />
-            <HashtagPlugin />
-            <KeywordsPlugin />
-            <SpeechToTextPlugin />
-            <AutoLinkPlugin />
-            <AutoScrollPlugin scrollRef={scrollRef} />
-            <CommentPlugin
-              providerFactory={isCollab ? createWebsocketProvider : undefined}
-            />
-            {isRichText ? (
-              <>
-                {isCollab ? (
-                  <CollaborationPlugin
-                    id="main"
-                    providerFactory={createWebsocketProvider}
-                    shouldBootstrap={!skipCollaborationInit}
-                  />
-                ) : (
-                  <HistoryPlugin externalHistoryState={historyState} />
-                )}
-                <RichTextPlugin
-                  contentEditable={<ContentEditable />}
-                  placeholder={placeholder}
-                  // TODO Collab support until 0.4
-                  initialEditorState={isCollab ? null : undefined}
+    <div className="editor-and-table-of-contents">
+      <div>
+        {isRichText && <ToolbarPlugin />}
+        <div
+          className={`editor-container ${showTreeView ? 'tree-view' : ''} ${
+            !isRichText ? 'plain-text' : ''
+          }`}
+          ref={scrollRef}>
+          {isMaxLength && <MaxLengthPlugin maxLength={30} />}
+          <AutoFocusPlugin />
+          <ClearEditorPlugin />
+          <MentionsPlugin />
+          <EmojisPlugin />
+          <HashtagPlugin />
+          <KeywordsPlugin />
+          <SpeechToTextPlugin />
+          <AutoLinkPlugin />
+          <AutoScrollPlugin scrollRef={scrollRef} />
+          <CommentPlugin
+            providerFactory={isCollab ? createWebsocketProvider : undefined}
+          />
+          {isRichText ? (
+            <>
+              {isCollab ? (
+                <CollaborationPlugin
+                  id="main"
+                  providerFactory={createWebsocketProvider}
+                  shouldBootstrap={!skipCollaborationInit}
                 />
-                <MarkdownShortcutPlugin />
-                <CodeActionMenuPlugin />
-                <CodeHighlightPlugin />
-                <ListPlugin />
-                <CheckListPlugin />
-                <ListMaxIndentLevelPlugin maxDepth={7} />
-                <TablePlugin />
-                <TableCellActionMenuPlugin />
-                <TableCellResizer />
-                <ImagesPlugin />
-                <LinkPlugin />
-                <PollPlugin />
-                <TwitterPlugin />
-                <YouTubePlugin />
-                <ClickableLinkPlugin />
-                <HorizontalRulePlugin />
-                <TextFormatFloatingToolbarPlugin />
-                <EquationsPlugin />
-                <ExcalidrawPlugin />
-                <TabFocusPlugin />
-              </>
-            ) : (
-              <>
-                <PlainTextPlugin
-                  contentEditable={<ContentEditable />}
-                  placeholder={placeholder}
-                  // TODO Collab support until 0.4
-                  initialEditorState={isCollab ? null : undefined}
-                />
+              ) : (
                 <HistoryPlugin externalHistoryState={historyState} />
-              </>
-            )}
-            {(isCharLimit || isCharLimitUtf8) && (
-              <CharacterLimitPlugin
-                charset={isCharLimit ? 'UTF-16' : 'UTF-8'}
+              )}
+              <RichTextPlugin
+                contentEditable={<ContentEditable />}
+                placeholder={placeholder}
+                // TODO Collab support until 0.4
+                initialEditorState={isCollab ? null : undefined}
               />
-            )}
-            {isAutocomplete && <AutocompletePlugin />}
-            <ActionsPlugin isRichText={isRichText} />
-          </div>
-          {showTreeView && <TreeViewPlugin />}
+              <MarkdownShortcutPlugin />
+              <CodeActionMenuPlugin />
+              <CodeHighlightPlugin />
+              <ListPlugin />
+              <CheckListPlugin />
+              <ListMaxIndentLevelPlugin maxDepth={7} />
+              <TablePlugin />
+              <TableCellActionMenuPlugin />
+              <TableCellResizer />
+              <ImagesPlugin />
+              <LinkPlugin />
+              <PollPlugin />
+              <TwitterPlugin />
+              <YouTubePlugin />
+              <ClickableLinkPlugin />
+              <HorizontalRulePlugin />
+              <TextFormatFloatingToolbarPlugin />
+              <EquationsPlugin />
+              <ExcalidrawPlugin />
+              <TabFocusPlugin />
+            </>
+          ) : (
+            <>
+              <PlainTextPlugin
+                contentEditable={<ContentEditable />}
+                placeholder={placeholder}
+                // TODO Collab support until 0.4
+                initialEditorState={isCollab ? null : undefined}
+              />
+              <HistoryPlugin externalHistoryState={historyState} />
+            </>
+          )}
+          {(isCharLimit || isCharLimitUtf8) && (
+            <CharacterLimitPlugin charset={isCharLimit ? 'UTF-16' : 'UTF-8'} />
+          )}
+          {isAutocomplete && <AutocompletePlugin />}
+          <ActionsPlugin isRichText={isRichText} />
         </div>
-        <LexicalTableOfContents__EXPERIMENTAL>
-          {(tableOfContents) => {
-            return <TableOfContentsList tableOfContents={tableOfContents} />;
-          }}
-        </LexicalTableOfContents__EXPERIMENTAL>
+        {showTreeView && <TreeViewPlugin />}
       </div>
-    </>
+      <div>
+        <TableOfContentsPlugin />
+      </div>
+    </div>
   );
 }

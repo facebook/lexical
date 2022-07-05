@@ -7,8 +7,11 @@
  * @flow strict
  */
 
+import type {HeadingTagType} from '../../lexical-rich-text/flow/LexicalRichText';
 import type {NodeKey} from '../../lexical/flow/Lexical';
 
 declare export function LexicalTableOfContentsPlugin(
-  children: (tableOfContents: Array<[NodeKey, string, string]>) => React$Node,
+  children: (
+    tableOfContents: Array<[NodeKey, string, HeadingTagType]>,
+  ) => React$Node,
 ): React$Node;

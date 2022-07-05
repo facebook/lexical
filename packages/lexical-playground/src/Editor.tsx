@@ -29,6 +29,7 @@ import ActionsPlugin from './plugins/ActionsPlugin';
 import AutocompletePlugin from './plugins/AutocompletePlugin';
 import AutoLinkPlugin from './plugins/AutoLinkPlugin';
 import ClickableLinkPlugin from './plugins/ClickableLinkPlugin';
+import CodeActionMenuPlugin from './plugins/CodeActionMenuPlugin';
 import CodeHighlightPlugin from './plugins/CodeHighlightPlugin';
 import CommentPlugin from './plugins/CommentPlugin';
 import EmojisPlugin from './plugins/EmojisPlugin';
@@ -118,6 +119,7 @@ export default function Editor(): JSX.Element {
               initialEditorState={isCollab ? null : undefined}
             />
             <MarkdownShortcutPlugin />
+            <CodeActionMenuPlugin />
             <CodeHighlightPlugin />
             <ListPlugin />
             <CheckListPlugin />

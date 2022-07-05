@@ -95,7 +95,7 @@ function getChangeType(
 ): ChangeType {
   if (
     prevEditorState === null ||
-    (dirtyLeavesSet.size === 0 && dirtyElementsSet.size === 0)
+    (dirtyLeavesSet.size === 0 && dirtyElementsSet.size === 0 && !isComposing)
   ) {
     return OTHER;
   }

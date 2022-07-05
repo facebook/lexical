@@ -316,7 +316,7 @@ editor.registerUpdateListener(({editorState}) => {
 
 3. Start local server and run tests
    - `npm run start`
-   - `npm run test-e2e:chromium` to run only chromium e2e tests
+   - `npm run test-e2e-chromium` to run only chromium e2e tests
      - The server needs to be running for the e2e tests
 
 `npm run start` will start both the dev server and collab server. If you don't need collab, use `npm run dev` to start just the dev server.
@@ -373,12 +373,12 @@ Lexical engineers are checking this regularly.
 ## Running tests
 
 - `npm run test-unit` runs only unit tests.
-- `npm run test-e2e:chromium` runs only chromium e2e tests.
-- `npm run debug-test-e2e:chromium` runs only chromium e2e tests in head mode for debugging.
-- `npm run test-e2e:firefox` runs only firefox e2e tests.
-- `npm run debug-test-e2e:firefox` runs only firefox e2e tests in head mode for debugging.
-- `npm run test-e2e:webkit` runs only webkit e2e tests.
-- `npm run debug-test-e2e:webkit` runs only webkit e2e tests in head mode for debugging.
+- `npm run test-e2e-chromium` runs only chromium e2e tests.
+- `npm run debug-test-e2e-chromium` runs only chromium e2e tests in head mode for debugging.
+- `npm run test-e2e-firefox` runs only firefox e2e tests.
+- `npm run debug-test-e2e-firefox` runs only firefox e2e tests in head mode for debugging.
+- `npm run test-e2e-webkit` runs only webkit e2e tests.
+- `npm run debug-test-e2e-webkit` runs only webkit e2e tests in head mode for debugging.
 
 ### License
 

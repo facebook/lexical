@@ -8,7 +8,6 @@
 
 import type {EditorState, SerializedEditorState} from './LexicalEditorState';
 import type {DOMConversion, LexicalNode, NodeKey} from './LexicalNode';
-import type {Klass} from 'shared/types';
 
 import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
@@ -33,6 +32,11 @@ import {RootNode} from './nodes/LexicalRootNode';
 
 export type Spread<T1, T2> = Omit<T2, keyof T1> & T1;
 
+export type Klass<T extends LexicalNode> = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  new (...args: any[]): T;
+} & Omit<LexicalNode, 'constructor'>;
+
 export type EditorThemeClassName = string;
 
 export type TextNodeThemeClasses = {
@@ -55,6 +59,10 @@ export type EditorUpdateOptions = {
 
 export type EditorSetOptions = {
   tag?: string;
+};
+
+export type EditorFocusOptions = {
+  defaultSelection?: 'rootStart' | 'rootEnd';
 };
 
 export type EditorThemeClasses = {
@@ -736,7 +744,7 @@ export class LexicalEditor {
     updateEditor(this, updateFn, options);
   }
 
-  focus(callbackFn?: () => void): void {
+  focus(callbackFn?: () => void, options: EditorFocusOptions = {}): void {
     const rootElement = this._rootElement;
 
     if (rootElement !== null) {
@@ -752,7 +760,11 @@ export class LexicalEditor {
             // Marking the selection dirty will force the selection back to it
             selection.dirty = true;
           } else if (root.getChildrenSize() !== 0) {
-            root.selectEnd();
+            if (options.defaultSelection === 'rootStart') {
+              root.selectStart();
+            } else {
+              root.selectEnd();
+            }
           }
         },
         {
@@ -787,8 +799,10 @@ export class LexicalEditor {
   }
 
   setReadOnly(readOnly: boolean): void {
-    this._readOnly = readOnly;
-    triggerListeners('readonly', this, true, readOnly);
+    if (this._readOnly !== readOnly) {
+      this._readOnly = readOnly;
+      triggerListeners('readonly', this, true, readOnly);
+    }
   }
 
   toJSON(): SerializedEditor {

@@ -68,7 +68,7 @@
   "66": "Expected node %s to have a parent.",
   "67": "Expected node %s to have a top parent element.",
   "68": "getNodesBetween: ancestor is null",
-  "69": "Lexical node does not exist in active edtior state. Avoid using the same node references between nested closures from editor.read/editor.update.",
+  "69": "Lexical node does not exist in active editor state. Avoid using the same node references between nested closures from editor.read/editor.update.",
   "70": "createDOM: base method not extended",
   "71": "updateDOM: base method not extended",
   "72": "exportJSON: base method not extended",

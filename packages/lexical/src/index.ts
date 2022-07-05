@@ -11,6 +11,7 @@ export type {
   EditorConfig,
   EditorThemeClasses,
   IntentionallyMarkedAsDirtyElement,
+  Klass,
   LexicalCommand,
   LexicalEditor,
   NodeMutation,

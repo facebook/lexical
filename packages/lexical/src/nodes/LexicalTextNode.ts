@@ -25,6 +25,7 @@ import invariant from 'shared/invariant';
 
 import {
   COMPOSITION_SUFFIX,
+  DETAIL_TYPE_TO_DETAIL,
   IS_BOLD,
   IS_CODE,
   IS_DIRECTIONLESS,
@@ -77,6 +78,8 @@ export type TextFormatType =
   | 'code'
   | 'subscript'
   | 'superscript';
+
+export type TextDetailType = 'directionless' | 'unmergable';
 
 export type TextModeType = 'normal' | 'token' | 'segmented' | 'inert';
 
@@ -500,17 +503,21 @@ export class TextNode extends LexicalNode {
     return;
   }
 
-  setFormat(format: number): this {
+  // TODO 0.4 This should just be a `string`.
+  setFormat(format: TextFormatType | number): this {
     errorOnReadOnly();
     const self = this.getWritable();
-    self.__format = format;
+    self.__format =
+      typeof format === 'string' ? TEXT_TYPE_TO_FORMAT[format] : format;
     return self;
   }
 
-  setDetail(detail: number): this {
+  // TODO 0.4 This should just be a `string`.
+  setDetail(detail: TextDetailType | number): this {
     errorOnReadOnly();
     const self = this.getWritable();
-    self.__detail = detail;
+    self.__detail =
+      typeof detail === 'string' ? DETAIL_TYPE_TO_DETAIL[detail] : detail;
     return self;
   }
 
@@ -823,11 +830,13 @@ function convertSpanElement(domNode: Node): DOMConversionOutput {
   const span = domNode as HTMLSpanElement;
   // Google Docs uses span tags + font-weight for bold text
   const hasBoldFontWeight = span.style.fontWeight === '700';
-  // Google Docs uses span tags + text-decoration for strikethrough text
+  // Google Docs uses span tags + text-decoration: line-through for strikethrough text
   const hasLinethroughTextDecoration =
     span.style.textDecoration === 'line-through';
   // Google Docs uses span tags + font-style for italic text
   const hasItalicFontStyle = span.style.fontStyle === 'italic';
+  // Google Docs uses span tags + text-decoration: underline for underline text
+  const hasUnderlineTextDecoration = span.style.textDecoration === 'underline';
 
   return {
     forChild: (lexicalNode) => {
@@ -839,6 +848,9 @@ function convertSpanElement(domNode: Node): DOMConversionOutput {
       }
       if ($isTextNode(lexicalNode) && hasItalicFontStyle) {
         lexicalNode.toggleFormat('italic');
+      }
+      if ($isTextNode(lexicalNode) && hasUnderlineTextDecoration) {
+        lexicalNode.toggleFormat('underline');
       }
 
       return lexicalNode;

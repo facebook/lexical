@@ -1043,10 +1043,17 @@ export class RangeSelection implements BaseSelection {
   formatText(formatType: TextFormatType): void {
     // TODO I wonder if this methods use selection.extract() instead?
     const selectedNodes = this.getNodes();
-    const selectedNodesLength = selectedNodes.length;
-    const lastIndex = selectedNodesLength - 1;
-    let firstNode = selectedNodes[0];
-    let lastNode = selectedNodes[lastIndex];
+    const selectedTextNodes: Array<TextNode> = [];
+    for (const selectedNode of selectedNodes) {
+      if ($isTextNode(selectedNode)) {
+        selectedTextNodes.push(selectedNode);
+      }
+    }
+    const selectedTextNodesLength = selectedTextNodes.length;
+    let firstIndex = 0;
+    const lastIndex = selectedTextNodesLength - 1;
+    let firstNode = selectedTextNodes[0];
+    let lastNode = selectedTextNodes[lastIndex];
 
     if (this.isCollapsed()) {
       this.toggleFormat(formatType);
@@ -1058,36 +1065,25 @@ export class RangeSelection implements BaseSelection {
     const focus = this.focus;
     const anchorOffset = anchor.offset;
     const focusOffset = focus.offset;
-    let firstNextFormat = 0;
+    let firstNextFormat = firstNode.getFormatFlags(formatType, null);
     let firstNodeTextLength = firstNode.getTextContent().length;
 
-    for (let i = 0; i < selectedNodes.length; i++) {
-      const selectedNode = selectedNodes[i];
-      if ($isTextNode(selectedNode)) {
-        firstNextFormat = selectedNode.getFormatFlags(formatType, null);
-        break;
-      }
-    }
     const isBefore = anchor.isBefore(focus);
     const endOffset = isBefore ? focusOffset : anchorOffset;
     let startOffset = isBefore ? anchorOffset : focusOffset;
 
     // This is the case where the user only selected the very end of the
     // first node so we don't want to include it in the formatting change.
-    if (startOffset === firstNode.getTextContentSize()) {
-      let nextSibling = firstNode.getNextSibling();
-
-      if ($isElementNode(nextSibling) && nextSibling.isInline()) {
-        nextSibling = nextSibling.getFirstChild();
-      }
-
-      if ($isTextNode(nextSibling)) {
-        // we basically make the second node the firstNode, changing offsets accordingly
-        startOffset = 0;
-        firstNode = nextSibling;
-        firstNodeTextLength = nextSibling.getTextContent().length;
-        firstNextFormat = nextSibling.getFormatFlags(formatType, null);
-      }
+    if (
+      startOffset === firstNode.getTextContentSize() &&
+      selectedTextNodes.length > 1
+    ) {
+      const nextNode = selectedTextNodes[1];
+      startOffset = 0;
+      firstIndex = 1;
+      firstNode = nextNode;
+      firstNodeTextLength = nextNode.getTextContentSize();
+      firstNextFormat = nextNode.getFormatFlags(formatType, null);
     }
 
     // This is the case where we only selected a single node
@@ -1120,7 +1116,9 @@ export class RangeSelection implements BaseSelection {
       }
       // multiple nodes selected.
     } else {
-      if ($isTextNode(firstNode)) {
+      // Note: startOffset !== firstNodeTextLength should only occur within rare programatic
+      // update functions; transforms normalization ensure there's no empty text nodes.
+      if ($isTextNode(firstNode) && startOffset !== firstNodeTextLength) {
         if (startOffset !== 0) {
           // the entire first node isn't selected, so split it
           [, firstNode as TextNode] = firstNode.splitText(startOffset);
@@ -1145,9 +1143,11 @@ export class RangeSelection implements BaseSelection {
         }
       }
 
+      this.format = firstNextFormat | lastNextFormat;
+
       // deal with all the nodes in between
-      for (let i = 1; i < lastIndex; i++) {
-        const selectedNode = selectedNodes[i];
+      for (let i = firstIndex + 1; i < lastIndex; i++) {
+        const selectedNode = selectedTextNodes[i];
         const selectedNodeKey = selectedNode.__key;
         if (
           $isTextNode(selectedNode) &&

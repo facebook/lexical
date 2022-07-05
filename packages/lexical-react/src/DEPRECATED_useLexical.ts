@@ -9,10 +9,10 @@
 import type {
   EditorState,
   EditorThemeClasses,
+  Klass,
   LexicalEditor,
   LexicalNode,
 } from 'lexical';
-import type {Klass} from 'shared/types';
 
 import {createEditor} from 'lexical';
 import {useMemo} from 'react';

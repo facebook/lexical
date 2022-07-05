@@ -765,9 +765,14 @@ const TYPED_MARKDOWN_HTML = html`
 const IMPORTED_MARKDOWN = `# Markdown Import
 ### Formatting
 This is *italic*, _italic_, **bold**, __bold__, ~~strikethrough~~ text
-This is *__~~bold italic strikethrough~~__* text, ___~~this one too~~___
+
+This is *__~~bold italic strikethrough~~__* text,
+___~~this one too~~___
+
 It ~~___works [with links](https://lexical.io)___~~ too
+
 Links [with underscores](https://lexical.io/tag_here_and__here__and___here___too)
+
 *Nested **stars tags** are handled too*
 ### Headings
 # h1 Heading
@@ -780,13 +785,19 @@ Links [with underscores](https://lexical.io/tag_here_and__here__and___here___too
 ---
 ### Blockquotes
 > Blockquotes text goes here
+> And second
+line after
+
+> Standalone again
+
 ### Unordered lists
 - Create a list with \`+\`, \`-\`, or \`*\`
     - Lists can be indented with 2 spaces
         - Very easy
 ### Ordered lists
 1. Oredered lists started with numbers as \`1.\`
-    1. And can be nested as well
+    1. And can be nested
+    and multiline as well
 
 31. Have any starting number
 ### Inline code
@@ -842,6 +853,7 @@ const IMPORTED_MARKDOWN_HTML = html`
       bold italic strikethrough
     </strong>
     <span data-lexical-text="true">text,</span>
+    <br />
     <strong
       class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__textStrikethrough"
       data-lexical-text="true">
@@ -932,6 +944,15 @@ const IMPORTED_MARKDOWN_HTML = html`
     class="PlaygroundEditorTheme__quote PlaygroundEditorTheme__ltr"
     dir="ltr">
     <span data-lexical-text="true">Blockquotes text goes here</span>
+    <br />
+    <span data-lexical-text="true">And second</span>
+    <br />
+    <span data-lexical-text="true">line after</span>
+  </blockquote>
+  <blockquote
+    class="PlaygroundEditorTheme__quote PlaygroundEditorTheme__ltr"
+    dir="ltr">
+    <span data-lexical-text="true">Standalone again</span>
   </blockquote>
   <h3 class="PlaygroundEditorTheme__h3 PlaygroundEditorTheme__ltr" dir="ltr">
     <span data-lexical-text="true">Unordered lists</span>
@@ -1004,12 +1025,13 @@ const IMPORTED_MARKDOWN_HTML = html`
           value="1"
           class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
           dir="ltr">
-          <span data-lexical-text="true">And can be nested as well</span>
+          <span data-lexical-text="true">And can be nested</span>
+          <br />
+          <span data-lexical-text="true">and multiline as well</span>
         </li>
       </ol>
     </li>
   </ol>
-  <p class="PlaygroundEditorTheme__paragraph"><br /></p>
   <ol start="31" class="PlaygroundEditorTheme__ol1">
     <li
       value="31"

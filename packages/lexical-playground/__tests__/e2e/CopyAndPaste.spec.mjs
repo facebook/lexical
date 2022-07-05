@@ -1406,6 +1406,212 @@ test.describe('CopyAndPaste', () => {
     );
   });
 
+  test('HTML Copy + paste (Nested List - directly nested ul)', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    const clipboard = {
+      'text/html': '<ul><ul><li>Hello</li></ul><li>world!</li></ul>',
+    };
+
+    await pasteFromClipboard(page, clipboard);
+
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            value="1"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem">
+            <ul class="PlaygroundEditorTheme__ul">
+              <li
+                value="1"
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">Hello</span>
+              </li>
+            </ul>
+          </li>
+          <li
+            value="1"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">world!</span>
+          </li>
+        </ul>
+      `,
+    );
+
+    await assertSelection(page, {
+      anchorOffset: 6,
+      anchorPath: [0, 1, 0, 0],
+      focusOffset: 6,
+      focusPath: [0, 1, 0, 0],
+    });
+
+    await selectFromAlignDropdown(page, '.indent');
+
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            value="1"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem">
+            <ul class="PlaygroundEditorTheme__ul">
+              <li
+                value="1"
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">Hello</span>
+              </li>
+              <li
+                value="2"
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">world!</span>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      `,
+    );
+
+    await page.keyboard.press('ArrowUp');
+
+    await selectFromAlignDropdown(page, '.outdent');
+
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            value="1"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">Hello</span>
+          </li>
+          <li
+            value="2"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem">
+            <ul class="PlaygroundEditorTheme__ul">
+              <li
+                value="1"
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">world!</span>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      `,
+    );
+  });
+
+  test('HTML Copy + paste (Nested List - li with non-list content plus ul child)', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    const clipboard = {
+      'text/html': '<ul><li>Hello<ul><li>world!</li></ul></li></ul>',
+    };
+
+    await pasteFromClipboard(page, clipboard);
+
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            value="1"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">Hello</span>
+          </li>
+          <li
+            value="2"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem">
+            <ul class="PlaygroundEditorTheme__ul">
+              <li
+                value="1"
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">world!</span>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      `,
+    );
+
+    await assertSelection(page, {
+      anchorOffset: 6,
+      anchorPath: [0, 1, 0, 0, 0, 0],
+      focusOffset: 6,
+      focusPath: [0, 1, 0, 0, 0, 0],
+    });
+
+    await selectFromAlignDropdown(page, '.outdent');
+
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            value="1"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">Hello</span>
+          </li>
+          <li
+            value="2"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">world!</span>
+          </li>
+        </ul>
+      `,
+    );
+
+    await page.keyboard.press('ArrowUp');
+
+    await selectFromAlignDropdown(page, '.indent');
+
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            value="1"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem">
+            <ul class="PlaygroundEditorTheme__ul">
+              <li
+                value="1"
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">Hello</span>
+              </li>
+            </ul>
+          </li>
+          <li
+            value="1"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">world!</span>
+          </li>
+        </ul>
+      `,
+    );
+  });
+
   test('HTML Copy + paste (Table - Google Docs)', async ({
     page,
     isPlainText,
@@ -1785,11 +1991,11 @@ test.describe('CopyAndPaste', () => {
     await pasteFromClipboard(page, {
       'text/html': `
         <p>Hello
-        
+
         </p>
-        
+
         <p>World</p>
-        
+
       `,
     });
 
@@ -1883,6 +2089,92 @@ test.describe('CopyAndPaste', () => {
             dir="ltr">
             <span data-lexical-text="true">in</span>
           </a>
+        </p>
+      `,
+    );
+  });
+
+  test('Copy + paste multi-line plain text into rich text produces separate paragraphs', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type('# Hello ');
+    await pasteFromClipboard(page, {
+      'text/plain': 'world\nAnd text below',
+    });
+    await assertHTML(
+      page,
+      html`
+        <h1
+          class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Hello world</span>
+        </h1>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">And text below</span>
+        </p>
+      `,
+    );
+  });
+
+  test('Paste content copied from google doc that contains bold italic underline formatting', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    const htmlFromGoogle = `<meta charset='utf-8'><meta charset="utf-8"><b style="font-weight:normal;" id="docs-internal-guid-d6ac4fde-7fff-3941-b4d9-3903abcccdcb"><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:700;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Bold</span></p><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:400;font-style:italic;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Italic</span></p><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">underline</span></p><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:700;font-style:italic;font-variant:normal;text-decoration:underline;-webkit-text-decoration-skip:none;text-decoration-skip-ink:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Bold Italic Underline</span></p></b><br class="Apple-interchange-newline">`;
+    const clipboardData = {
+      'text/html': htmlFromGoogle,
+    };
+    await pasteFromClipboard(page, clipboardData);
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            Bold
+          </strong>
+        </p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <em
+            class="PlaygroundEditorTheme__textItalic"
+            data-lexical-text="true">
+            Italic
+          </em>
+        </p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span
+            class="PlaygroundEditorTheme__textUnderline"
+            data-lexical-text="true">
+            underline
+          </span>
+        </p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <strong
+            class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic
+          PlaygroundEditorTheme__textUnderline"
+            data-lexical-text="true">
+            Bold Italic Underline
+          </strong>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph">
+          <br />
+          <br />
         </p>
       `,
     );

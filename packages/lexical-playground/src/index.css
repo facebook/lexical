@@ -1393,14 +1393,6 @@ button.action-button:disabled {
   background-size: contain;
 }
 
-.PollNode__optionCheckboxChecked {
-  background-image: url(images/icons/check-lg.svg);
-}
-
-.PollNode__optionDelete {
-  background-image: url(images/icons/x-lg.svg);
-}
-
 .floating-text-format-popup {
   display: flex;
   margin-bottom: 1px;

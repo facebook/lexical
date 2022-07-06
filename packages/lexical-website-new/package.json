@@ -1,5 +1,5 @@
 {
-  "name": "lexical-website-new",
+  "name": "@lexical/website",
   "version": "0.0.0",
   "private": true,
   "scripts": {

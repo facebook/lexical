@@ -9,21 +9,19 @@
     "diagram"
   ],
   "license": "MIT",
-  "version": "0.2.7",
+  "version": "0.3.6",
   "main": "LexicalExcalidraw.js",
   "peerDependencies": {
-    "lexical": "0.2.7"
+    "lexical": "0.3.6"
   },
   "dependencies": {
-    "@lexical/utils": "0.2.7",
-    "prismjs": "^1.27.0"
+    "@lexical/react": "0.3.6",
+    "@lexical/utils": "0.3.6",
+    "@excalidraw/excalidraw": "0.11.0"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/lexical-excalidraw"
-  },
-  "devDependencies": {
-    "@types/prismjs": "^1.26.0"
   }
 }

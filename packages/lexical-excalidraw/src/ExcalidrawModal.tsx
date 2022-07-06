@@ -173,16 +173,17 @@ export default function ExcalidrawModal({
         onDelete();
       }
     };
-    if (excaliDrawModelRef.current !== null) {
-      modalOverlayElement = excaliDrawModelRef.current?.parentElement;
+    const currentExcaliDrawModel = excaliDrawModelRef.current;
+    if (currentExcaliDrawModel !== null) {
+      modalOverlayElement = currentExcaliDrawModel.parentElement;
       if (modalOverlayElement !== null) {
-        modalOverlayElement?.addEventListener('click', clickOutsideHandler);
+        modalOverlayElement.addEventListener('click', clickOutsideHandler);
       }
     }
 
     return () => {
       if (modalOverlayElement !== null) {
-        modalOverlayElement?.removeEventListener('click', clickOutsideHandler);
+        modalOverlayElement.removeEventListener('click', clickOutsideHandler);
       }
     };
   }, [closeOnClickOutside, onDelete]);

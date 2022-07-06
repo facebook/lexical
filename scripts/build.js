@@ -536,6 +536,7 @@ const packages = [
     ],
     name: 'Lexical Excalidraw',
     outputPath: './packages/lexical-excalidraw/dist/',
+    packageName: 'lexical-excalidraw',
     sourcePath: './packages/lexical-excalidraw/src/',
   },
   {

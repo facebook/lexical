@@ -451,6 +451,10 @@ export class TextNode extends LexicalNode {
         conversion: convertBringAttentionToElement,
         priority: 0,
       }),
+      code: (node: Node) => ({
+        conversion: convertTextFormatElement,
+        priority: 0,
+      }),
       em: (node: Node) => ({
         conversion: convertTextFormatElement,
         priority: 0,
@@ -915,6 +919,7 @@ function convertTextDOMNode(domNode: Node): DOMConversionOutput {
   return {node: $createTextNode(textContent)};
 }
 const nodeNameToTextFormat: Record<string, TextFormatType> = {
+  code: 'code',
   em: 'italic',
   i: 'italic',
   strong: 'bold',

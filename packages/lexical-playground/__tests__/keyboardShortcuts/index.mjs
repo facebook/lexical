@@ -171,6 +171,15 @@ export async function moveRight(page, numCharacters = 1, delayMs) {
   }
 }
 
+export async function pressBackspace(page, numCharacters = 1, delayMs) {
+  for (let i = 0; i < numCharacters; i++) {
+    if (delayMs !== undefined) {
+      await sleep(delayMs);
+    }
+    await page.keyboard.press('Backspace');
+  }
+}
+
 export async function selectCharacters(page, direction, numCharacters = 1) {
   const moveFunction = direction === 'left' ? moveLeft : moveRight;
   await page.keyboard.down('Shift');
@@ -200,4 +209,34 @@ export async function pressShiftEnter(page) {
   await page.keyboard.down('Shift');
   await page.keyboard.press('Enter');
   await page.keyboard.up('Shift');
+}
+
+export async function moveToStart(page) {
+  if (IS_MAC) {
+    await page.keyboard.down('Meta');
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.up('Meta');
+  } else {
+    await page.keyboard.down('Control');
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.up('Control');
+  }
+}
+
+export async function moveToEnd(page) {
+  if (IS_MAC) {
+    await page.keyboard.down('Meta');
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.up('Meta');
+  } else {
+    await page.keyboard.down('Control');
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.up('Control');
+  }
+}
+
+export async function paste(page) {
+  await keyDownCtrlOrMeta(page);
+  await page.keyboard.press('KeyV');
+  await keyUpCtrlOrMeta(page);
 }

@@ -440,6 +440,14 @@ i.gif {
   background-image: url(images/icons/filetype-gif.svg);
 }
 
+i.copy {
+  background-image: url(images/icons/copy.svg);
+}
+
+i.success {
+  background-image: url(images/icons/success.svg);
+}
+
 .link-editor .button.active,
 .toolbar .button.active {
   background-color: rgb(223, 232, 250);
@@ -1383,14 +1391,6 @@ button.action-button:disabled {
   width: 12px;
   height: 12px;
   background-size: contain;
-}
-
-.PollNode__optionCheckboxChecked {
-  background-image: url(images/icons/check-lg.svg);
-}
-
-.PollNode__optionDelete {
-  background-image: url(images/icons/x-lg.svg);
 }
 
 .floating-text-format-popup {

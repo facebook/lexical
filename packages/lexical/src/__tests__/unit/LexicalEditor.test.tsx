@@ -29,6 +29,7 @@ import {
   $setCompositionKey,
   $setSelection,
   COMMAND_PRIORITY_EDITOR,
+  COMMAND_PRIORITY_LOW,
   createCommand,
   ElementNode,
   LexicalEditor,
@@ -2065,6 +2066,13 @@ describe('LexicalEditor tests', () => {
 
   it('does not add new listeners while triggering existing', async () => {
     const updateListener = jest.fn();
+    const mutationListener = jest.fn();
+    const nodeTransformListener = jest.fn();
+    const textContentListener = jest.fn();
+    const readOnlyListener = jest.fn();
+    const commandListener = jest.fn();
+    const TEST_COMMAND = createCommand();
+
     init();
 
     editor.registerUpdateListener(() => {
@@ -2075,10 +2083,63 @@ describe('LexicalEditor tests', () => {
       });
     });
 
-    await update(() => {
-      $getRoot().getFirstChild().replace($createParagraphNode());
+    editor.registerMutationListener(TextNode, (map) => {
+      mutationListener();
+      editor.registerMutationListener(TextNode, () => {
+        mutationListener();
+      });
     });
 
+    editor.registerNodeTransform(ParagraphNode, () => {
+      nodeTransformListener();
+      editor.registerNodeTransform(ParagraphNode, () => {
+        nodeTransformListener();
+      });
+    });
+
+    editor.registerReadOnlyListener(() => {
+      readOnlyListener();
+      editor.registerReadOnlyListener(() => {
+        readOnlyListener();
+      });
+    });
+
+    editor.registerTextContentListener(() => {
+      textContentListener();
+      editor.registerTextContentListener(() => {
+        textContentListener();
+      });
+    });
+
+    editor.registerCommand(
+      TEST_COMMAND,
+      (): boolean => {
+        commandListener();
+        editor.registerCommand(
+          TEST_COMMAND,
+          commandListener,
+          COMMAND_PRIORITY_LOW,
+        );
+        return false;
+      },
+      COMMAND_PRIORITY_LOW,
+    );
+
+    await update(() => {
+      $getRoot().append(
+        $createParagraphNode().append($createTextNode('Hello world')),
+      );
+    });
+
+    editor.dispatchCommand(TEST_COMMAND, false);
+
+    editor.setReadOnly(true);
+
     expect(updateListener).toHaveBeenCalledTimes(1);
+    expect(readOnlyListener).toHaveBeenCalledTimes(1);
+    expect(commandListener).toHaveBeenCalledTimes(1);
+    expect(textContentListener).toHaveBeenCalledTimes(1);
+    expect(nodeTransformListener).toHaveBeenCalledTimes(1);
+    expect(mutationListener).toHaveBeenCalledTimes(1);
   });
 });

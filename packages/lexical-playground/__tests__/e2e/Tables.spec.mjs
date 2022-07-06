@@ -6,7 +6,7 @@
  *
  */
 
-import {selectAll} from '../keyboardShortcuts/index.mjs';
+import {moveRight, selectAll} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   click,
@@ -18,7 +18,6 @@ import {
   insertTable,
   IS_COLLAB,
   pasteFromClipboard,
-  repeat,
   selectCellsFromTableCords,
   selectFromAdditionalStylesDropdown,
   test,
@@ -1579,9 +1578,7 @@ test.describe('Tables', () => {
     await page.keyboard.press('ArrowLeft');
     await page.keyboard.down('Shift');
 
-    await repeat(3, async () => {
-      await page.keyboard.press('ArrowRight');
-    });
+    await moveRight(page, 3);
 
     // Selection of cells is not synced in collab, but we still want to
     // ensure this doesn't break collab too.

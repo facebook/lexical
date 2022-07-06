@@ -90,8 +90,21 @@
 .PollNode__optionCheckboxChecked {
   border: 1px solid rgb(61, 135, 245);
   background-color: rgb(61, 135, 245);
-  background-position: 3px 3px;
-  background-repeat: no-repeat;
+}
+.PollNode__optionCheckboxChecked:after {
+  content: '';
+  cursor: pointer;
+  border-color: #fff;
+  border-style: solid;
+  position: absolute;
+  display: block;
+  top: 4px;
+  width: 5px;
+  left: 8px;
+  height: 9px;
+  margin: 0;
+  transform: rotate(45deg);
+  border-width: 0 2px 2px 0;
 }
 .PollNode__optionCheckbox {
   border: 0px;
@@ -103,6 +116,7 @@
   cursor: pointer;
 }
 .PollNode__optionDelete {
+  position: relative;
   display: flex;
   width: 28px;
   height: 28px;
@@ -115,6 +129,23 @@
   cursor: pointer;
   border-radius: 5px;
   opacity: 0.3;
+}
+.PollNode__optionDelete:before,
+.PollNode__optionDelete:after {
+  position: absolute;
+  display: block;
+  content: '';
+  background-color: #999;
+  width: 2px;
+  height: 15px;
+  top: 6px;
+  start: 13px;
+}
+.PollNode__optionDelete:before {
+  transform: rotate(-45deg);
+}
+.PollNode__optionDelete:after {
+  transform: rotate(45deg);
 }
 .PollNode__optionDelete:hover {
   opacity: 1;

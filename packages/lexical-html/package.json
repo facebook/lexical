@@ -17,5 +17,8 @@
     "type": "git",
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/lexical-html"
+  },
+  "dependencies": {
+    "@lexical/selection": "^0.3.6"
   }
 }

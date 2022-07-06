@@ -80,37 +80,35 @@ function exportChildren(
   const children = node.getChildren();
 
   mainLoop: for (const child of children) {
+    for (const transformer of textMatchTransformers) {
+      const result = transformer.export(
+        child,
+        (parentNode) =>
+          exportChildren(
+            parentNode,
+            textTransformersIndex,
+            textMatchTransformers,
+          ),
+        (textNode, textContent) =>
+          exportTextFormat(textNode, textContent, textTransformersIndex),
+      );
+
+      if (result != null) {
+        output.push(result);
+        continue mainLoop;
+      }
+    }
+
     if ($isLineBreakNode(child)) {
       output.push('\n');
     } else if ($isTextNode(child)) {
       output.push(
         exportTextFormat(child, child.getTextContent(), textTransformersIndex),
       );
-    } else {
-      for (const transformer of textMatchTransformers) {
-        const result = transformer.export(
-          child,
-          (parentNode) =>
-            exportChildren(
-              parentNode,
-              textTransformersIndex,
-              textMatchTransformers,
-            ),
-          (textNode, textContent) =>
-            exportTextFormat(textNode, textContent, textTransformersIndex),
-        );
-
-        if (result != null) {
-          output.push(result);
-          continue mainLoop;
-        }
-      }
-
-      if ($isElementNode(child)) {
-        output.push(
-          exportChildren(child, textTransformersIndex, textMatchTransformers),
-        );
-      }
+    } else if ($isElementNode(child)) {
+      output.push(
+        exportChildren(child, textTransformersIndex, textMatchTransformers),
+      );
     }
   }
 

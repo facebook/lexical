@@ -6,14 +6,17 @@
  *
  */
 
-import {moveLeft, moveRight} from '../keyboardShortcuts/index.mjs';
+import {
+  moveLeft,
+  moveRight,
+  pressBackspace,
+} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
   focusEditor,
   html,
   initialize,
-  repeat,
   test,
   waitForSelector,
 } from '../utils/index.mjs';
@@ -30,9 +33,7 @@ test.describe('Regression test #231', () => {
     await page.keyboard.type('a');
     await page.keyboard.press('Backspace');
     await moveRight(page, 5);
-    await repeat(5, async () => {
-      await page.keyboard.press('Backspace');
-    });
+    await pressBackspace(page, 5);
     await assertHTML(
       page,
       html`

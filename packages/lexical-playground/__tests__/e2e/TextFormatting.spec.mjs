@@ -26,7 +26,6 @@ import {
   html,
   initialize,
   insertSampleImage,
-  repeat,
   SAMPLE_IMAGE_URL,
   selectOption,
   test,
@@ -876,15 +875,15 @@ test.describe('TextFormatting', () => {
     await focusEditor(page);
     await page.keyboard.type('123456');
 
-    await repeat(3, async () => await page.keyboard.press('ArrowLeft'));
+    await moveLeft(page, 3);
     await page.keyboard.down('Shift');
-    await repeat(3, async () => await page.keyboard.press('ArrowLeft'));
+    await moveLeft(page, 3);
     await page.keyboard.up('Shift');
     await toggleBold(page);
 
     await moveToLineEnd(page);
     await page.keyboard.down('Shift');
-    await repeat(4, async () => await page.keyboard.press('ArrowLeft'));
+    await moveLeft(page, 4);
     await page.keyboard.up('Shift');
     await toggleBold(page);
 

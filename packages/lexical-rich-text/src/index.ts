@@ -412,7 +412,9 @@ function onCopyForRichText(event: ClipboardEvent, editor: LexicalEditor): void {
         // So we optimize by only putting in HTML.
         const data = [
           new ClipboardItem({
-            'text/html': new Blob([htmlString], {type: 'text/html'}),
+            'text/html': new Blob([htmlString as BlobPart], {
+              type: 'text/html',
+            }),
           }),
         ];
         clipboard.write(data);

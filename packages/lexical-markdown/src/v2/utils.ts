@@ -17,7 +17,7 @@ export function indexBy<T>(
   list: Array<T>,
   callback: (arg0: T) => string,
 ): Readonly<Record<string, Array<T>>> {
-  const index = {};
+  const index: Record<string, Array<T>> = {};
 
   for (const item of list) {
     const key = callback(item);

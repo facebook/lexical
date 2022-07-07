@@ -57,9 +57,8 @@ function ExcalidrawComponent({
   const [isResizing, setIsResizing] = useState<boolean>(false);
 
   const onDelete = useCallback(
-    (payload) => {
+    (event: KeyboardEvent) => {
       if (isSelected && $isNodeSelection($getSelection())) {
-        const event: KeyboardEvent = payload;
         event.preventDefault();
         editor.update(() => {
           const node = $getNodeByKey(nodeKey);
@@ -153,7 +152,7 @@ function ExcalidrawComponent({
     setIsResizing(true);
   };
 
-  const onResizeEnd = (nextWidth, nextHeight) => {
+  const onResizeEnd = () => {
     // Delay hiding the resize bars for click case
     setTimeout(() => {
       setIsResizing(false);
@@ -212,7 +211,9 @@ export type SerializedExcalidrawNode = Spread<
   SerializedLexicalNode
 >;
 
-function convertExcalidrawElement(domNode: HTMLElement): DOMConversionOutput {
+function convertExcalidrawElement(
+  domNode: HTMLElement,
+): DOMConversionOutput | null {
   const excalidrawData = domNode.getAttribute('data-lexical-excalidraw-json');
   if (excalidrawData) {
     const node = $createExcalidrawNode();
@@ -267,9 +268,9 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
     return false;
   }
 
-  static importDOM(): DOMConversionMap | null {
+  static importDOM(): DOMConversionMap<HTMLSpanElement> | null {
     return {
-      span: (domNode: HTMLElement) => {
+      span: (domNode: HTMLSpanElement) => {
         if (!domNode.hasAttribute('data-lexical-excalidraw-json')) {
           return null;
         }
@@ -285,7 +286,10 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
     const element = document.createElement('span');
     const content = editor.getElementByKey(this.getKey());
     if (content !== null) {
-      element.innerHTML = content.querySelector('svg').outerHTML;
+      const svg = content.querySelector('svg');
+      if (svg !== null) {
+        element.innerHTML = svg.outerHTML;
+      }
     }
     element.setAttribute('data-lexical-excalidraw-json', this.__data);
     return {element};

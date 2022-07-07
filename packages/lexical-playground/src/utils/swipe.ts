@@ -17,7 +17,7 @@ type ElementValues = {
 
 const elements = new WeakMap<HTMLElement, ElementValues>();
 
-function readTouch(e: TouchEvent): [number, number] {
+function readTouch(e: TouchEvent): [number, number] | null {
   const touch = e.changedTouches[0];
   if (touch === undefined) {
     return null;
@@ -30,16 +30,23 @@ function addListener(element: HTMLElement, cb: Listener): () => void {
   if (elementValues === undefined) {
     const listeners = new Set<Listener>();
     const handleTouchstart = (e: TouchEvent) => {
-      elementValues.start = readTouch(e);
+      if (elementValues !== undefined) {
+        elementValues.start = readTouch(e);
+      }
     };
     const handleTouchend = (e: TouchEvent) => {
+      if (elementValues === undefined) {
+        return;
+      }
       const start = elementValues.start;
       if (start === null) {
         return;
       }
       const end = readTouch(e);
       for (const listener of listeners) {
-        listener([end[0] - start[0], end[1] - start[1]], e);
+        if (end !== null) {
+          listener([end[0] - start[0], end[1] - start[1]], e);
+        }
       }
     };
     element.addEventListener('touchstart', handleTouchstart);
@@ -59,6 +66,9 @@ function addListener(element: HTMLElement, cb: Listener): () => void {
 
 function deleteListener(element: HTMLElement, cb: Listener): void {
   const elementValues = elements.get(element);
+  if (elementValues === undefined) {
+    return;
+  }
   const listeners = elementValues.listeners;
   listeners.delete(cb);
   if (listeners.size === 0) {
@@ -68,7 +78,10 @@ function deleteListener(element: HTMLElement, cb: Listener): void {
   }
 }
 
-export function addSwipeLeftListener(element, cb) {
+export function addSwipeLeftListener(
+  element: HTMLElement,
+  cb: (_force: number, e: TouchEvent) => void,
+) {
   return addListener(element, (force, e) => {
     const [x, y] = force;
     if (x < 0 && -x > Math.abs(y)) {
@@ -77,7 +90,10 @@ export function addSwipeLeftListener(element, cb) {
   });
 }
 
-export function addSwipeRightListener(element, cb) {
+export function addSwipeRightListener(
+  element: HTMLElement,
+  cb: (_force: number, e: TouchEvent) => void,
+) {
   return addListener(element, (force, e) => {
     const [x, y] = force;
     if (x > 0 && x > Math.abs(y)) {
@@ -86,7 +102,10 @@ export function addSwipeRightListener(element, cb) {
   });
 }
 
-export function addSwipeUpListener(element, cb) {
+export function addSwipeUpListener(
+  element: HTMLElement,
+  cb: (_force: number, e: TouchEvent) => void,
+) {
   return addListener(element, (force, e) => {
     const [x, y] = force;
     if (y < 0 && -y > Math.abs(x)) {
@@ -95,7 +114,10 @@ export function addSwipeUpListener(element, cb) {
   });
 }
 
-export function addSwipeDownListener(element, cb) {
+export function addSwipeDownListener(
+  element: HTMLElement,
+  cb: (_force: number, e: TouchEvent) => void,
+) {
   return addListener(element, (force, e) => {
     const [x, y] = force;
     if (y > 0 && y > Math.abs(x)) {

@@ -86,8 +86,8 @@ function $getParentAvoidingExcludedElements(
 
 function $copyLeafNodeBranchToRoot(
   leaf: LexicalNode,
-  startingOffset: number,
-  endingOffset: number,
+  startingOffset: number | undefined,
+  endingOffset: number | undefined,
   isLeftSide: boolean,
   range: Array<NodeKey>,
   nodeMap: Map<NodeKey, LexicalNode>,
@@ -232,8 +232,9 @@ function $cloneContentsImpl(
     const lastNode = nodes[nodesLength - 1];
     const isBefore = anchor.isBefore(focus);
     const nodeMap = new Map();
-    const range = [];
+    const range: Array<NodeKey> = [];
     const isOnlyText = $isTextNode(firstNode) && nodesLength === 1;
+
     // Do first node to root
     $copyLeafNodeBranchToRoot(
       firstNode,
@@ -304,7 +305,7 @@ export function getStyleObjectFromCSS(
 }
 
 function getStyleObjectFromRawCSS(css: string): Record<string, string> {
-  const styleObject = {};
+  const styleObject: Record<string, string> = {};
   const styles = css.split(';').slice(0, -1);
 
   for (const style of styles) {
@@ -569,11 +570,11 @@ export function $selectAll(selection: RangeSelection): void {
 }
 
 function $removeParentEmptyElements(startingNode: ElementNode): void {
-  let node = startingNode;
+  let node: ElementNode | null = startingNode;
 
   while (node !== null && !$isRootNode(node)) {
     const latest = node.getLatest();
-    const parentNode = node.getParent<ElementNode>();
+    const parentNode: ElementNode | null = node.getParent<ElementNode>();
 
     if (latest.__children.length === 0) {
       node.remove(true);
@@ -808,8 +809,8 @@ export function createDOMRange(
   const anchorKey = anchorNode.getKey();
   const focusKey = focusNode.getKey();
   const range = document.createRange();
-  let anchorDOM = editor.getElementByKey(anchorKey) as Node;
-  let focusDOM = editor.getElementByKey(focusKey) as Node;
+  let anchorDOM: Node | Text | null = editor.getElementByKey(anchorKey);
+  let focusDOM: Node | Text | null = editor.getElementByKey(focusKey);
   let anchorOffset = _anchorOffset;
   let focusOffset = _focusOffset;
 
@@ -931,11 +932,11 @@ export function trimTextContentFromAnchor(
   }
 
   while (remaining > 0 && currentNode !== null) {
-    let nextNode = currentNode.getPreviousSibling();
+    let nextNode: LexicalNode | null = currentNode.getPreviousSibling();
     let additionalElementWhitespace = 0;
     if (nextNode === null) {
-      let parent = currentNode.getParentOrThrow();
-      let parentSibling = parent.getPreviousSibling();
+      let parent: LexicalNode | null = currentNode.getParentOrThrow();
+      let parentSibling: LexicalNode | null = parent.getPreviousSibling();
 
       while (parentSibling === null) {
         parent = parent.getParent();
@@ -968,7 +969,7 @@ export function trimTextContentFromAnchor(
     if (!$isTextNode(currentNode) || remaining >= textNodeSize) {
       const parent = currentNode.getParent();
       currentNode.remove();
-      if (parent.getChildrenSize() === 0) {
+      if (parent != null && parent.getChildrenSize() === 0) {
         parent.remove();
       }
       remaining -= textNodeSize + additionalElementWhitespace;

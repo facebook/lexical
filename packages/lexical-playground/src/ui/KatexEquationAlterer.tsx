@@ -16,7 +16,7 @@ import KatexRenderer from './KatexRenderer';
 
 type Props = {
   initialEquation?: string;
-  onConfirm: (string, boolean) => void;
+  onConfirm: (equation: string, inline: boolean) => void;
 };
 
 export default function KatexEquationAlterer({

@@ -42,7 +42,7 @@ export function addClassNamesToElement(
 
 export function removeClassNamesFromElement(
   element: HTMLElement,
-  ...classNames: Array<string>
+  ...classNames: Array<typeof undefined | boolean | null | string>
 ): void {
   classNames.forEach((className) => {
     if (typeof className === 'string') {
@@ -59,7 +59,7 @@ export function $dfs(
   const start = (startingNode || $getRoot()).getLatest();
   const end =
     endingNode || ($isElementNode(start) ? start.getLastDescendant() : start);
-  let node = start;
+  let node: LexicalNode | null = start;
   let depth = $getDepth(node);
 
   while (node !== null && !node.is(end)) {
@@ -93,10 +93,10 @@ export function $dfs(
 }
 
 function $getDepth(node: LexicalNode): number {
-  let node_ = node;
+  let innerNode: LexicalNode | null = node;
   let depth = 0;
 
-  while ((node_ = node_.getParent()) !== null) {
+  while ((innerNode = innerNode.getParent()) !== null) {
     depth++;
   }
 
@@ -106,8 +106,8 @@ function $getDepth(node: LexicalNode): number {
 export function $getNearestNodeOfType<T extends ElementNode>(
   node: LexicalNode,
   klass: Klass<T>,
-): T | LexicalNode {
-  let parent: T | LexicalNode = node;
+) {
+  let parent: ElementNode | LexicalNode | null = node;
 
   while (parent != null) {
     if (parent instanceof klass) {
@@ -150,7 +150,7 @@ export function $findMatchingParent(
   startingNode: LexicalNode,
   findFn: (node: LexicalNode) => boolean,
 ): LexicalNode | null {
-  let curr = startingNode;
+  let curr: ElementNode | LexicalNode | null = startingNode;
 
   while (curr !== $getRoot() && curr != null) {
     if (findFn(curr)) {
@@ -194,7 +194,7 @@ export function registerNestedElementResolver<N extends ElementNode>(
       }
     }
 
-    let parentNode = node;
+    let parentNode: N | null = node;
     let childNode = node;
 
     while (parentNode !== null) {
@@ -291,7 +291,6 @@ function unstable_internalCreateNodeFromParse(
   // We set the parsedKey to undefined before calling clone() so that
   // we get a new random key assigned.
   parsedNode.__key = undefined;
-  // @ts-expect-error TODO Replace Class utility type with InstanceType
   const node = NodeKlass.clone(parsedNode);
   parsedNode.__key = parsedKey;
   const key = node.__key;
@@ -398,7 +397,11 @@ export function $restoreEditorState(
   const FULL_RECONCILE = 2;
   const nodeMap = new Map(editorState._nodeMap);
   const activeEditorState = editor._pendingEditorState;
-  activeEditorState._nodeMap = nodeMap;
+
+  if (activeEditorState) {
+    activeEditorState._nodeMap = nodeMap;
+  }
+
   editor._dirtyType = FULL_RECONCILE;
   const selection = editorState._selection;
   $setSelection(selection === null ? null : selection.clone());

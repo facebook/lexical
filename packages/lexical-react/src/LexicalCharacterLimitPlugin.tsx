@@ -13,7 +13,7 @@ import {useMemo, useState} from 'react';
 import {useCharacterLimit} from './shared/useCharacterLimit';
 
 const CHARACTER_LIMIT = 5;
-let textEncoderInstance = null;
+let textEncoderInstance: null | TextEncoder = null;
 
 function textEncoder(): null | TextEncoder {
   if (window.TextEncoder === undefined) {
@@ -51,7 +51,7 @@ export function CharacterLimitPlugin({
   const characterLimitProps = useMemo(
     () => ({
       remainingCharacters: setRemainingCharacters,
-      strlen: (text) => {
+      strlen: (text: string) => {
         if (charset === 'UTF-8') {
           return utf8Length(text);
         } else if (charset === 'UTF-16') {

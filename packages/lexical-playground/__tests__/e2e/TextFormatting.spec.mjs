@@ -10,6 +10,7 @@ import {
   moveLeft,
   moveRight,
   moveToLineBeginning,
+  moveToLineEnd,
   selectCharacters,
   toggleBold,
   toggleItalic,
@@ -22,6 +23,7 @@ import {
   focusEditor,
   html,
   initialize,
+  repeat,
   selectOption,
   test,
   waitForSelector,
@@ -860,5 +862,56 @@ test.describe('TextFormatting', () => {
       focusOffset: 3,
       focusPath: [0, 0, 0],
     });
+  });
+
+  test(`Regression test #2439: can format backwards when at first text node boundary`, async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type('123456');
+
+    await repeat(3, async () => await page.keyboard.press('ArrowLeft'));
+    await page.keyboard.down('Shift');
+    await repeat(3, async () => await page.keyboard.press('ArrowLeft'));
+    await page.keyboard.up('Shift');
+    await toggleBold(page);
+
+    await moveToLineEnd(page);
+    await page.keyboard.down('Shift');
+    await repeat(4, async () => await page.keyboard.press('ArrowLeft'));
+    await page.keyboard.up('Shift');
+    await toggleBold(page);
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            12
+          </strong>
+          <span data-lexical-text="true">3456</span>
+        </p>
+      `,
+    );
+
+    // Toggle once more
+    await toggleBold(page);
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            123456
+          </strong>
+        </p>
+      `,
+    );
   });
 });

@@ -42,7 +42,19 @@ import StickyEditorTheme from '../themes/StickyEditorTheme';
 import ContentEditable from '../ui/ContentEditable';
 import Placeholder from '../ui/Placeholder';
 
-function positionSticky(stickyElem: HTMLElement, positioning): void {
+type Positioning = {
+  isDragging: boolean;
+  offsetX: number;
+  offsetY: number;
+  rootElementRect: null | ClientRect;
+  x: number;
+  y: number;
+};
+
+function positionSticky(
+  stickyElem: HTMLElement,
+  positioning: Positioning,
+): void {
   const style = stickyElem.style;
   const rootElementRect = positioning.rootElementRect;
   const rectLeft = rootElementRect !== null ? rootElementRect.left : 0;
@@ -66,14 +78,7 @@ function StickyComponent({
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
   const stickyContainerRef = useRef<null | HTMLDivElement>(null);
-  const positioningRef = useRef<{
-    isDragging: boolean;
-    offsetX: number;
-    offsetY: number;
-    rootElementRect: null | ClientRect;
-    x: number;
-    y: number;
-  }>({
+  const positioningRef = useRef<Positioning>({
     isDragging: false,
     offsetX: 0,
     offsetY: 0,

@@ -15,7 +15,7 @@ type BaseEquationEditorProps = {
   equation: string;
   inline: boolean;
   inputRef: {current: null | HTMLInputElement | HTMLTextAreaElement};
-  setEquation: (string) => void;
+  setEquation: (equation: string) => void;
 };
 
 export default function EquationEditor({
@@ -24,8 +24,8 @@ export default function EquationEditor({
   inline,
   inputRef,
 }: BaseEquationEditorProps): JSX.Element {
-  const onChange = (event) => {
-    setEquation(event.target.value);
+  const onChange = (event: ChangeEvent) => {
+    setEquation((event.target as HTMLInputElement).value);
   };
 
   const props = {

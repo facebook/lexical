@@ -28,6 +28,7 @@ import {
 } from 'lexical';
 import * as React from 'react';
 import {
+  MouseEventHandler,
   ReactPortal,
   useCallback,
   useEffect,
@@ -224,57 +225,58 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
   );
 
   const toggleResize = useCallback(
-    (direction) => (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-
-      if (!activeCell) {
-        throw new Error('TableCellResizer: Expected active cell.');
-      }
-
-      if (draggingDirection === direction && mouseStartPosRef.current) {
-        const {x, y} = mouseStartPosRef.current;
+    (direction: MouseDraggingDirection): MouseEventHandler<HTMLDivElement> =>
+      (event) => {
+        event.preventDefault();
+        event.stopPropagation();
 
         if (!activeCell) {
-          return;
+          throw new Error('TableCellResizer: Expected active cell.');
         }
 
-        const {height, width} = activeCell.elem.getBoundingClientRect();
+        if (draggingDirection === direction && mouseStartPosRef.current) {
+          const {x, y} = mouseStartPosRef.current;
 
-        if (isHeightChanging(direction)) {
-          const heightChange = Math.abs(event.clientY - y);
+          if (activeCell === null) {
+            return;
+          }
 
-          const isShrinking = direction === 'bottom' && y > event.clientY;
+          const {height, width} = activeCell.elem.getBoundingClientRect();
 
-          updateRowHeight(
-            Math.max(
-              isShrinking ? height - heightChange : heightChange + height,
-              MIN_ROW_HEIGHT,
-            ),
-          );
+          if (isHeightChanging(direction)) {
+            const heightChange = Math.abs(event.clientY - y);
+
+            const isShrinking = direction === 'bottom' && y > event.clientY;
+
+            updateRowHeight(
+              Math.max(
+                isShrinking ? height - heightChange : heightChange + height,
+                MIN_ROW_HEIGHT,
+              ),
+            );
+          } else {
+            const widthChange = Math.abs(event.clientX - x);
+
+            const isShrinking = direction === 'right' && x > event.clientX;
+
+            updateColumnWidth(
+              Math.max(
+                isShrinking ? width - widthChange : widthChange + width,
+                MIN_COLUMN_WIDTH,
+              ),
+            );
+          }
+
+          resetState();
         } else {
-          const widthChange = Math.abs(event.clientX - x);
-
-          const isShrinking = direction === 'right' && x > event.clientX;
-
-          updateColumnWidth(
-            Math.max(
-              isShrinking ? width - widthChange : widthChange + width,
-              MIN_COLUMN_WIDTH,
-            ),
-          );
+          mouseStartPosRef.current = {
+            x: event.clientX,
+            y: event.clientY,
+          };
+          updateMouseCurrentPos(mouseStartPosRef.current);
+          updateDraggingDirection(direction);
         }
-
-        resetState();
-      } else {
-        mouseStartPosRef.current = {
-          x: event.clientX,
-          y: event.clientY,
-        };
-        updateMouseCurrentPos(mouseStartPosRef.current);
-        updateDraggingDirection(direction);
-      }
-    },
+      },
     [
       activeCell,
       draggingDirection,
@@ -353,13 +355,13 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
         <>
           <div
             className="TableCellResizer__resizer TableCellResizer__ui"
-            style={resizerStyles.right}
+            style={resizerStyles.right || undefined}
             onMouseDown={toggleResize('right')}
             onMouseUp={toggleResize('right')}
           />
           <div
             className="TableCellResizer__resizer TableCellResizer__ui"
-            style={resizerStyles.bottom}
+            style={resizerStyles.bottom || undefined}
             onMouseDown={toggleResize('bottom')}
             onMouseUp={toggleResize('bottom')}
           />

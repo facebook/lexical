@@ -91,7 +91,7 @@ export class YouTubeNode extends DecoratorBlockNode {
     };
   }
 
-  constructor(id: string, format?: ElementFormatType | null, key?: NodeKey) {
+  constructor(id: string, format?: ElementFormatType, key?: NodeKey) {
     super(format, key);
     this.__id = id;
   }

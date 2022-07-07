@@ -10,9 +10,11 @@ import type {
   DOMConversionMap,
   DOMConversionOutput,
   EditorConfig,
+  GridSelection,
   LexicalCommand,
   LexicalNode,
   NodeKey,
+  NodeSelection,
   RangeSelection,
   SerializedElementNode,
 } from 'lexical';
@@ -21,6 +23,7 @@ import {addClassNamesToElement} from '@lexical/utils';
 import {
   $getSelection,
   $isElementNode,
+  $isRangeSelection,
   $setSelection,
   createCommand,
   ElementNode,
@@ -133,12 +136,31 @@ export class LinkNode extends ElementNode {
   isInline(): true {
     return true;
   }
+
+  extractWithChild(
+    child: LexicalNode,
+    selection: RangeSelection | NodeSelection | GridSelection,
+    destination: 'clone' | 'html',
+  ): boolean {
+    if (!$isRangeSelection(selection)) {
+      return false;
+    }
+
+    const anchorNode = selection.anchor.getNode();
+    const focusNode = selection.focus.getNode();
+
+    return (
+      this.isParentOf(anchorNode) &&
+      this.isParentOf(focusNode) &&
+      selection.getTextContent().length > 0
+    );
+  }
 }
 
 function convertAnchorElement(domNode: Node): DOMConversionOutput {
   let node = null;
   if (domNode instanceof HTMLAnchorElement) {
-    node = $createLinkNode(domNode.getAttribute('href'));
+    node = $createLinkNode(domNode.getAttribute('href') || '');
   }
   return {node};
 }
@@ -267,8 +289,8 @@ export function toggleLink(url: null | string): void {
         }
       }
 
-      let prevParent = null;
-      let linkNode = null;
+      let prevParent: ElementNode | LinkNode | null = null;
+      let linkNode: LinkNode | null = null;
 
       nodes.forEach((node) => {
         const parent = node.getParent();

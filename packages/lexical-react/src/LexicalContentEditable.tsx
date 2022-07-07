@@ -90,17 +90,17 @@ export function ContentEditable({
       aria-owns={isReadOnly ? null : ariaOwneeID}
       aria-required={ariaRequired}
       autoCapitalize={
-        autoCapitalize !== undefined ? String(autoCapitalize) : null
+        autoCapitalize !== undefined ? String(autoCapitalize) : undefined
       }
       // @ts-ignore This is a valid attribute
       autoComplete={autoComplete}
-      autoCorrect={autoCorrect !== undefined ? String(autoCorrect) : null}
+      autoCorrect={autoCorrect !== undefined ? String(autoCorrect) : undefined}
       className={className}
       contentEditable={!isReadOnly}
       data-testid={testid}
       id={id}
       ref={ref}
-      role={isReadOnly ? null : role}
+      role={isReadOnly ? undefined : role}
       spellCheck={spellCheck}
       style={style}
       tabIndex={tabIndex}

@@ -6,7 +6,7 @@ sidebar_position: 3
 
 ## Types of selection
 
-Lexical's selection is part of the `EditorState`. This means that for every update, or change to the the editor, the
+Lexical's selection is part of the `EditorState`. This means that for every update, or change to the editor, the
 selection always remains consistent with that of the `EditorState`'s node tree.
 
 In Lexical, there are four types of selection possible:

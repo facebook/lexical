@@ -22,9 +22,9 @@ editor.update(() => {
 
 It can also be used for initializing editor's state from markdown string. Here's an example with react `<RichTextPlugin>`
 ```jsx
-<LexicalComposer initialEditorState={() => {
-    $convertFromMarkdownString(markdown, TRANSFORMERS);
-  }}>
+<LexicalComposer initialConfig={{
+  editorState: () => $convertFromMarkdownString(markdown, TRANSFORMERS)
+}}>
   <RichTextPlugin />
 </LexicalComposer>
 ```

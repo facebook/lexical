@@ -97,7 +97,7 @@ The return value of `importDOM` is a map of the lower case (DOM) [Node.nodeName]
 
 ```js
 export type DOMConversionMap = {
-  [NodeName]: (node: Node) => DOMConversion | null,
+  [NodeName]: <T: HTMLElement>(node: T) => DOMConversion | null,
 };
 
 export type DOMConversion = {

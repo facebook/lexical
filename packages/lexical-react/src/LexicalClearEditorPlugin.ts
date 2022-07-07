@@ -20,7 +20,7 @@ type Props = Readonly<{
   onClear?: () => void;
 }>;
 
-export function ClearEditorPlugin({onClear}: Props): JSX.Element {
+export function ClearEditorPlugin({onClear}: Props): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
 
   useLayoutEffect(() => {

@@ -12,6 +12,7 @@ import type {
   LexicalNode,
   NodeSelection,
   RangeSelection,
+  SerializedTextNode,
 } from 'lexical';
 
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
@@ -334,7 +335,7 @@ interface BaseSerializedNode {
   version: number;
 }
 
-function exportNodeToJSON(node: LexicalNode): BaseSerializedNode {
+function exportNodeToJSON<T extends LexicalNode>(node: T): BaseSerializedNode {
   const serializedNode = node.exportJSON();
   const nodeClass = node.constructor;
 
@@ -367,7 +368,7 @@ function $appendNodesToJSON(
   editor: LexicalEditor,
   selection: RangeSelection | NodeSelection | GridSelection | null,
   currentNode: LexicalNode,
-  targetArray: Array<BaseSerializedNode>,
+  targetArray: Array<BaseSerializedNode> = [],
 ): boolean {
   let shouldInclude = selection != null ? currentNode.isSelected() : true;
   const shouldExclude =
@@ -388,8 +389,7 @@ function $appendNodesToJSON(
   // We need a way to create a clone of a Node in memory with it's own key, but
   // until then this hack will work for the selected text extract use case.
   if ($isTextNode(clone)) {
-    // @ts-ignore
-    serializedNode.text = clone.__text;
+    (serializedNode as SerializedTextNode).text = clone.__text;
   }
 
   for (let i = 0; i < children.length; i++) {
@@ -423,14 +423,16 @@ function $appendNodesToJSON(
   return shouldInclude;
 }
 
-export function $generateJSONFromSelectedNodes<SerializedNode>(
+export function $generateJSONFromSelectedNodes<
+  SerializedNode extends BaseSerializedNode,
+>(
   editor: LexicalEditor,
   selection: RangeSelection | NodeSelection | GridSelection | null,
 ): {
   namespace: string;
   nodes: Array<SerializedNode>;
 } {
-  const nodes = [];
+  const nodes: Array<SerializedNode> = [];
   const root = $getRoot();
   const topLevelChildren = root.getChildren();
   for (let i = 0; i < topLevelChildren.length; i++) {

@@ -240,13 +240,14 @@ export class CollabElementNode {
 
     const key = lexicalNode.__key;
     const prevLexicalChildrenKeys = lexicalNode.__children;
-    const nextLexicalChildrenKeys = [];
+    const nextLexicalChildrenKeys: Array<NodeKey> = [];
     const lexicalChildrenKeysLength = prevLexicalChildrenKeys.length;
     const collabChildren = this._children;
     const collabChildrenLength = collabChildren.length;
     const collabNodeMap = binding.collabNodeMap;
     const visitedKeys = new Set();
     let collabKeys;
+
     // Assign the new children key array that we're about to mutate
     let writableLexicalNode;
 
@@ -425,8 +426,8 @@ export class CollabElementNode {
     const prevEndIndex = prevChildren.length - 1;
     const nextEndIndex = nextChildren.length - 1;
     const collabNodeMap = binding.collabNodeMap;
-    let prevChildrenSet: Set<NodeKey>;
-    let nextChildrenSet: Set<NodeKey>;
+    let prevChildrenSet: Set<NodeKey> | undefined;
+    let nextChildrenSet: Set<NodeKey> | undefined;
     let prevIndex = 0;
     let nextIndex = 0;
 
@@ -644,7 +645,7 @@ export class CollabElementNode {
 
 function lazilyCloneElementNode(
   lexicalNode: ElementNode,
-  writableLexicalNode: ElementNode,
+  writableLexicalNode: ElementNode | undefined,
   nextLexicalChildrenKeys: Array<NodeKey>,
 ): ElementNode {
   if (writableLexicalNode === undefined) {

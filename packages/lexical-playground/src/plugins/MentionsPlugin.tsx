@@ -21,7 +21,14 @@ import {
   KEY_ESCAPE_COMMAND,
   KEY_TAB_COMMAND,
 } from 'lexical';
-import {startTransition, useCallback, useEffect, useRef, useState} from 'react';
+import {
+  ReactPortal,
+  startTransition,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import * as React from 'react';
 import {createPortal} from 'react-dom';
 import useLayoutEffect from 'shared/useLayoutEffect';
@@ -532,7 +539,7 @@ const dummyLookupService = {
   },
 };
 
-function useMentionLookupService(mentionString) {
+function useMentionLookupService(mentionString: string) {
   const [results, setResults] = useState<Array<string> | null>(null);
 
   useEffect(() => {
@@ -599,8 +606,8 @@ function MentionsTypeahead({
   close: () => void;
   editor: LexicalEditor;
   resolution: Resolution;
-}): JSX.Element {
-  const divRef = useRef(null);
+}): JSX.Element | null {
+  const divRef = useRef<HTMLDivElement>(null);
   const match = resolution.match;
   const results = useMentionLookupService(match.matchingString);
   const [selectedIndex, setSelectedIndex] = useState<null | number>(null);
@@ -635,7 +642,7 @@ function MentionsTypeahead({
   }, [close, match, editor, results, selectedIndex]);
 
   const updateSelectedIndex = useCallback(
-    (index) => {
+    (index: number) => {
       const rootElem = editor.getRootElement();
       if (rootElem !== null) {
         rootElem.setAttribute(
@@ -785,8 +792,8 @@ function MentionsTypeahead({
 }
 
 function checkForCapitalizedNameMentions(
-  text,
-  minMatchLength,
+  text: string,
+  minMatchLength: number,
 ): MentionMatch | null {
   const match = CapitalizedNameMentionsRegex.exec(text);
   if (match !== null) {
@@ -806,7 +813,10 @@ function checkForCapitalizedNameMentions(
   return null;
 }
 
-function checkForAtSignMentions(text, minMatchLength): MentionMatch | null {
+function checkForAtSignMentions(
+  text: string,
+  minMatchLength: number,
+): MentionMatch | null {
   let match = AtSignMentionsRegex.exec(text);
 
   if (match === null) {
@@ -829,7 +839,7 @@ function checkForAtSignMentions(text, minMatchLength): MentionMatch | null {
   return null;
 }
 
-function getPossibleMentionMatch(text): MentionMatch | null {
+function getPossibleMentionMatch(text: string): MentionMatch | null {
   const match = checkForAtSignMentions(text, 1);
   return match === null ? checkForCapitalizedNameMentions(text, 3) : match;
 }
@@ -859,8 +869,10 @@ function tryToPositionRange(match: MentionMatch, range: Range): boolean {
   const startOffset = match.leadOffset;
   const endOffset = domSelection.anchorOffset;
   try {
-    range.setStart(anchorNode, startOffset);
-    range.setEnd(anchorNode, endOffset);
+    if (anchorNode) {
+      range.setStart(anchorNode, startOffset);
+      range.setEnd(anchorNode, endOffset);
+    }
   } catch (error) {
     return false;
   }
@@ -976,7 +988,7 @@ function isSelectionOnEntityBoundary(
   });
 }
 
-function useMentions(editor: LexicalEditor): JSX.Element {
+function useMentions(editor: LexicalEditor): ReactPortal | null {
   const [resolution, setResolution] = useState<Resolution | null>(null);
 
   useEffect(() => {
@@ -987,7 +999,7 @@ function useMentions(editor: LexicalEditor): JSX.Element {
 
   useEffect(() => {
     let activeRange: Range | null = document.createRange();
-    let previousText = null;
+    let previousText: string | null = null;
 
     const updateListener = () => {
       const range = activeRange;
@@ -1044,7 +1056,7 @@ function useMentions(editor: LexicalEditor): JSX.Element {
       );
 }
 
-export default function MentionsPlugin(): JSX.Element {
+export default function MentionsPlugin(): ReactPortal | null {
   const [editor] = useLexicalComposerContext();
   return useMentions(editor);
 }

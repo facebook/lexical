@@ -16,7 +16,7 @@ import {useDecorators} from './shared/useDecorators';
 import {usePlainTextSetup} from './shared/usePlainTextSetup';
 
 const deprecatedInitialEditorStateWarning = warnOnlyOnce(
-  'initialEditorState on PlainTextPlugin is deprecated and will be removed soon. Use LexicalComposer initialEditorState instead.',
+  '`initialEditorState` on `PlainTextPlugin` is deprecated and will be removed soon. Use the `initialConfig.editorState` prop on the `LexicalComposer` instead.',
 );
 
 export function PlainTextPlugin({
@@ -29,7 +29,11 @@ export function PlainTextPlugin({
   initialEditorState?: InitialEditorStateType;
   placeholder: JSX.Element | string;
 }): JSX.Element {
-  if (__DEV__ && initialEditorState !== undefined) {
+  if (
+    __DEV__ &&
+    deprecatedInitialEditorStateWarning &&
+    initialEditorState !== undefined
+  ) {
     deprecatedInitialEditorStateWarning();
   }
   const [editor] = useLexicalComposerContext();

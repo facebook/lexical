@@ -11,7 +11,7 @@ import {useEffect} from 'react';
 
 import {StickyNode} from '../nodes/StickyNode';
 
-export default function StickyPlugin(): JSX.Element {
+export default function StickyPlugin(): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   useEffect(() => {
     if (!editor.hasNodes([StickyNode])) {

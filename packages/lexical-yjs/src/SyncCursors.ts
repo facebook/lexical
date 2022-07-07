@@ -88,7 +88,7 @@ function createRelativePosition(
 function createAbsolutePosition(
   relativePosition: RelativePosition,
   binding: Binding,
-): AbsolutePosition {
+): AbsolutePosition | null {
   return createAbsolutePositionFromRelativePosition(
     relativePosition,
     binding.doc,

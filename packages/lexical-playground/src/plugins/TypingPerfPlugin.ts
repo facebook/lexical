@@ -29,13 +29,13 @@ const validInputTypes = new Set([
   'deleteSoftLineForward',
 ]);
 
-export default function TypingPerfPlugin(): JSX.Element {
+export default function TypingPerfPlugin(): JSX.Element | null {
   const report = useReport();
   useEffect(() => {
     let start = 0;
-    let timerId = null;
-    let keyPressTimerId = null;
-    let log = [];
+    let timerId: NodeJS.Timeout | null;
+    let keyPressTimerId: number | null;
+    let log: Array<DOMHighResTimeStamp> = [];
     let invalidatingEvent = false;
 
     const measureEventEnd = function logKeyPress() {
@@ -73,7 +73,7 @@ export default function TypingPerfPlugin(): JSX.Element {
       start = performance.now();
     };
 
-    const beforeInputHandler = function beforeInputHandler(event) {
+    const beforeInputHandler = function beforeInputHandler(event: InputEvent) {
       if (!validInputTypes.has(event.inputType) || invalidatingEvent) {
         invalidatingEvent = false;
         return;
@@ -82,7 +82,7 @@ export default function TypingPerfPlugin(): JSX.Element {
       measureEventStart();
     };
 
-    const keyDownHandler = function keyDownHandler(event) {
+    const keyDownHandler = function keyDownHandler(event: KeyboardEvent) {
       const keyCode = event.keyCode;
 
       if (keyCode === 8 || keyCode === 13) {

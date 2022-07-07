@@ -83,7 +83,7 @@ function useQuery(): (searchText: string) => SearchPromise {
   }, []);
 }
 
-export default function AutocompletePlugin(): JSX.Element {
+export default function AutocompletePlugin(): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   const [, setSuggestion] = useSharedAutocompleteContext();
   const query = useQuery();
@@ -94,7 +94,10 @@ export default function AutocompletePlugin(): JSX.Element {
     let lastSuggestion: null | string = null;
     let searchPromise: null | SearchPromise = null;
     function $clearSuggestion() {
-      const autocompleteNode = $getNodeByKey(autocompleteNodeKey);
+      const autocompleteNode =
+        autocompleteNodeKey !== null
+          ? $getNodeByKey(autocompleteNodeKey)
+          : null;
       if (autocompleteNode !== null && autocompleteNode.isAttached()) {
         autocompleteNode.remove();
         autocompleteNodeKey = null;
@@ -160,9 +163,11 @@ export default function AutocompletePlugin(): JSX.Element {
         $clearSuggestion();
         searchPromise = query(match);
         searchPromise.promise
-          .then((newSuggestion) =>
-            updateAsyncSuggestion(searchPromise, newSuggestion),
-          )
+          .then((newSuggestion) => {
+            if (searchPromise !== null) {
+              updateAsyncSuggestion(searchPromise, newSuggestion);
+            }
+          })
           .catch((e) => {
             console.error(e);
           });
@@ -170,7 +175,7 @@ export default function AutocompletePlugin(): JSX.Element {
       });
     }
     function $handleAutocompleteIntent(): boolean {
-      if (lastSuggestion === null) {
+      if (lastSuggestion === null || autocompleteNodeKey === null) {
         return false;
       }
       const autocompleteNode = $getNodeByKey(autocompleteNodeKey);
@@ -202,6 +207,9 @@ export default function AutocompletePlugin(): JSX.Element {
         $clearSuggestion();
       });
     }
+
+    const rootElem = editor.getRootElement();
+
     return mergeRegister(
       editor.registerNodeTransform(
         AutocompleteNode,
@@ -218,7 +226,9 @@ export default function AutocompletePlugin(): JSX.Element {
         $handleKeypressCommand,
         COMMAND_PRIORITY_LOW,
       ),
-      addSwipeRightListener(editor.getRootElement(), handleSwipeRight),
+      ...(rootElem !== null
+        ? [addSwipeRightListener(rootElem, handleSwipeRight)]
+        : []),
       unmountSuggestion,
     );
   }, [editor, query, setSuggestion]);

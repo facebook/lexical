@@ -92,7 +92,7 @@ export function syncYjsChangesToLexical(
   const currentEditorState = editor._editorState;
   editor.update(
     () => {
-      const pendingEditorState: EditorState = editor._pendingEditorState;
+      const pendingEditorState: EditorState | null = editor._pendingEditorState;
 
       for (let i = 0; i < events.length; i++) {
         const event = events[i];
@@ -210,7 +210,9 @@ function handleNormalizationMergeConflicts(
 
   for (let i = 0; i < mergedNodes.length; i++) {
     const [collabNode, text] = mergedNodes[i];
-    collabNode._text = text;
+    if (collabNode instanceof CollabTextNode && typeof text === 'string') {
+      collabNode._text = text;
+    }
   }
 }
 

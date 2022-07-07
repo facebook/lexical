@@ -7,7 +7,12 @@
  */
 
 import type {InsertImagePayload} from './ImagesPlugin';
-import type {LexicalEditor, RangeSelection} from 'lexical';
+import type {
+  GridSelection,
+  LexicalEditor,
+  NodeSelection,
+  RangeSelection,
+} from 'lexical';
 
 import './ToolbarPlugin.css';
 
@@ -28,6 +33,7 @@ import {
   $createHeadingNode,
   $createQuoteNode,
   $isHeadingNode,
+  HeadingTagType,
 } from '@lexical/rich-text';
 import {
   $getSelectionStyleValueForProperty,
@@ -58,6 +64,7 @@ import {
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
   INDENT_CONTENT_COMMAND,
+  NodeKey,
   OUTDENT_CONTENT_COMMAND,
   REDO_COMMAND,
   SELECTION_CHANGE_COMMAND,
@@ -65,7 +72,7 @@ import {
   UNDO_COMMAND,
 } from 'lexical';
 import * as React from 'react';
-import {useCallback, useEffect, useRef, useState} from 'react';
+import {ChangeEvent, useCallback, useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 import {IS_APPLE} from 'shared/environment';
 
@@ -86,21 +93,6 @@ import {INSERT_IMAGE_COMMAND} from './ImagesPlugin';
 import {INSERT_POLL_COMMAND} from './PollPlugin';
 import {INSERT_TWEET_COMMAND} from './TwitterPlugin';
 import {INSERT_YOUTUBE_COMMAND} from './YouTubePlugin';
-
-const supportedBlockTypes = new Set([
-  'paragraph',
-  'quote',
-  'code',
-  'h1',
-  'h2',
-  'h3',
-  'h4',
-  'h5',
-  'h6',
-  'bullet',
-  'number',
-  'check',
-]);
 
 const blockTypeToBlockName = {
   bullet: 'Bulleted List',
@@ -160,7 +152,7 @@ function getSelectedNode(selection: RangeSelection): TextNode | ElementNode {
 
 function positionEditorElement(
   editor: HTMLElement,
-  rect: ClientRect,
+  rect: ClientRect | null,
   rootElement: HTMLElement,
 ): void {
   if (rect === null) {
@@ -184,10 +176,12 @@ function positionEditorElement(
 
 function FloatingLinkEditor({editor}: {editor: LexicalEditor}): JSX.Element {
   const editorRef = useRef<HTMLDivElement | null>(null);
-  const inputRef = useRef(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [linkUrl, setLinkUrl] = useState('');
   const [isEditMode, setEditMode] = useState(false);
-  const [lastSelection, setLastSelection] = useState(null);
+  const [lastSelection, setLastSelection] = useState<
+    RangeSelection | GridSelection | NodeSelection | null
+  >(null);
 
   const updateLinkEditor = useCallback(() => {
     const selection = $getSelection();
@@ -213,6 +207,7 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): JSX.Element {
     const rootElement = editor.getRootElement();
     if (
       selection !== null &&
+      nativeSelection !== null &&
       !nativeSelection.isCollapsed &&
       rootElement !== null &&
       rootElement.contains(nativeSelection.anchorNode)
@@ -232,7 +227,9 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): JSX.Element {
       positionEditorElement(editorElem, rect, rootElement);
       setLastSelection(selection);
     } else if (!activeElement || activeElement.className !== 'link-input') {
-      positionEditorElement(editorElem, null, rootElement);
+      if (rootElement !== null) {
+        positionEditorElement(editorElem, null, rootElement);
+      }
       setLastSelection(null);
       setEditMode(false);
       setLinkUrl('');
@@ -381,7 +378,7 @@ function InsertImageUploadedDialogBody({
 
   const isDisabled = src === '';
 
-  const loadImage = (files: FileList) => {
+  const loadImage = (files: FileList | null) => {
     const reader = new FileReader();
     reader.onload = function () {
       if (typeof reader.result === 'string') {
@@ -389,7 +386,9 @@ function InsertImageUploadedDialogBody({
       }
       return '';
     };
-    reader.readAsDataURL(files[0]);
+    if (files !== null) {
+      reader.readAsDataURL(files[0]);
+    }
   };
 
   return (
@@ -632,7 +631,7 @@ function BlockFormatDropDown({
   editor,
   blockType,
 }: {
-  blockType: string;
+  blockType: keyof typeof blockTypeToBlockName;
   editor: LexicalEditor;
 }): JSX.Element {
   const formatParagraph = () => {
@@ -647,7 +646,7 @@ function BlockFormatDropDown({
     }
   };
 
-  const formatHeading = (headingSize) => {
+  const formatHeading = (headingSize: HeadingTagType) => {
     if (blockType !== headingSize) {
       editor.update(() => {
         const selection = $getSelection();
@@ -708,7 +707,6 @@ function BlockFormatDropDown({
           } else {
             const textContent = selection.getTextContent();
             const codeNode = $createCodeNode();
-            selection.removeText();
             selection.insertNodes([codeNode]);
             selection.insertRawText(textContent);
           }
@@ -792,7 +790,7 @@ function Select({
   value,
 }: {
   className: string;
-  onChange: (event: {target: {value: string}}) => void;
+  onChange: (e: ChangeEvent) => void;
   options: [string, string][];
   value: string;
 }): JSX.Element {
@@ -810,8 +808,11 @@ function Select({
 export default function ToolbarPlugin(): JSX.Element {
   const [editor] = useLexicalComposerContext();
   const [activeEditor, setActiveEditor] = useState(editor);
-  const [blockType, setBlockType] = useState('paragraph');
-  const [selectedElementKey, setSelectedElementKey] = useState(null);
+  const [blockType, setBlockType] =
+    useState<keyof typeof blockTypeToBlockName>('paragraph');
+  const [selectedElementKey, setSelectedElementKey] = useState<NodeKey | null>(
+    null,
+  );
   const [fontSize, setFontSize] = useState<string>('15px');
   const [fontColor, setFontColor] = useState<string>('#000');
   const [bgColor, setBgColor] = useState<string>('#fff');
@@ -875,9 +876,12 @@ export default function ToolbarPlugin(): JSX.Element {
           const type = $isHeadingNode(element)
             ? element.getTag()
             : element.getType();
-          setBlockType(type);
+          if (type in blockTypeToBlockName) {
+            setBlockType(type as keyof typeof blockTypeToBlockName);
+          }
           if ($isCodeNode(element)) {
-            const language = element.getLanguage();
+            const language =
+              element.getLanguage() as keyof typeof CODE_LANGUAGE_MAP;
             setCodeLanguage(
               language ? CODE_LANGUAGE_MAP[language] || language : '',
             );
@@ -975,8 +979,8 @@ export default function ToolbarPlugin(): JSX.Element {
   }, [activeEditor]);
 
   const onFontSizeSelect = useCallback(
-    (e) => {
-      applyStyleText({'font-size': e.target.value});
+    (e: ChangeEvent) => {
+      applyStyleText({'font-size': (e.target as HTMLSelectElement).value});
     },
     [applyStyleText],
   );
@@ -996,8 +1000,8 @@ export default function ToolbarPlugin(): JSX.Element {
   );
 
   const onFontFamilySelect = useCallback(
-    (e) => {
-      applyStyleText({'font-family': e.target.value});
+    (e: ChangeEvent) => {
+      applyStyleText({'font-family': (e.target as HTMLSelectElement).value});
     },
     [applyStyleText],
   );
@@ -1011,12 +1015,12 @@ export default function ToolbarPlugin(): JSX.Element {
   }, [editor, isLink]);
 
   const onCodeLanguageSelect = useCallback(
-    (e) => {
+    (e: ChangeEvent) => {
       activeEditor.update(() => {
         if (selectedElementKey !== null) {
           const node = $getNodeByKey(selectedElementKey);
           if ($isCodeNode(node)) {
-            node.setLanguage(e.target.value);
+            node.setLanguage((e.target as HTMLSelectElement).value);
           }
         }
       });
@@ -1050,7 +1054,7 @@ export default function ToolbarPlugin(): JSX.Element {
         <i className="format redo" />
       </button>
       <Divider />
-      {supportedBlockTypes.has(blockType) && activeEditor === editor && (
+      {blockType in blockTypeToBlockName && activeEditor === editor && (
         <>
           <BlockFormatDropDown blockType={blockType} editor={editor} />
           <Divider />

@@ -22,7 +22,7 @@ import {$createPollNode, PollNode} from '../nodes/PollNode';
 
 export const INSERT_POLL_COMMAND: LexicalCommand<string> = createCommand();
 
-export default function PollPlugin(): JSX.Element {
+export default function PollPlugin(): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   useEffect(() => {
     if (!editor.hasNodes([PollNode])) {

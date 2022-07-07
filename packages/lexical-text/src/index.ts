@@ -6,8 +6,13 @@
  *
  */
 
-import type {ElementNode, LexicalEditor, LexicalNode, RootNode} from 'lexical';
-import type {Klass} from 'shared/types';
+import type {
+  ElementNode,
+  Klass,
+  LexicalEditor,
+  LexicalNode,
+  RootNode,
+} from 'lexical';
 
 import {
   $createTextNode,
@@ -203,8 +208,12 @@ export function $rootTextContent(): string {
   return root.getTextContent();
 }
 
-export function $canShowPlaceholder(isComposing: boolean): boolean {
-  if (!$isRootTextContentEmpty(isComposing, false)) {
+export function $canShowPlaceholder(
+  isComposing: boolean,
+  // TODO 0.4 make mandatory
+  isReadOnly = false,
+): boolean {
+  if (isReadOnly || !$isRootTextContentEmpty(isComposing, false)) {
     return false;
   }
 
@@ -246,8 +255,10 @@ export function $canShowPlaceholder(isComposing: boolean): boolean {
 
 export function $canShowPlaceholderCurry(
   isEditorComposing: boolean,
+  // TODO 0.4 make mandatory
+  isReadOnly = false,
 ): () => boolean {
-  return () => $canShowPlaceholder(isEditorComposing);
+  return () => $canShowPlaceholder(isEditorComposing, isReadOnly);
 }
 
 export type EntityMatch = {end: number; start: number};

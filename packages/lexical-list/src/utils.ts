@@ -10,7 +10,13 @@ import type {LexicalNode} from 'lexical';
 
 import invariant from 'shared/invariant';
 
-import {$isListItemNode, $isListNode, ListItemNode, ListNode} from './';
+import {
+  $createListItemNode,
+  $isListItemNode,
+  $isListNode,
+  ListItemNode,
+  ListNode,
+} from './';
 
 export function $getListDepth(listNode: ListNode): number {
   let depth = 1;
@@ -163,4 +169,9 @@ export function $removeHighestEmptyListParent(
   }
 
   emptyListPtr.remove();
+}
+
+export function wrapInListItem(node: LexicalNode): ListItemNode {
+  const listItemWrapper = $createListItemNode();
+  return listItemWrapper.append(node);
 }

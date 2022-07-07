@@ -25,6 +25,7 @@ import invariant from 'shared/invariant';
 
 import {
   COMPOSITION_SUFFIX,
+  DETAIL_TYPE_TO_DETAIL,
   IS_BOLD,
   IS_CODE,
   IS_DIRECTIONLESS,
@@ -77,6 +78,8 @@ export type TextFormatType =
   | 'code'
   | 'subscript'
   | 'superscript';
+
+export type TextDetailType = 'directionless' | 'unmergable';
 
 export type TextModeType = 'normal' | 'token' | 'segmented' | 'inert';
 
@@ -500,17 +503,21 @@ export class TextNode extends LexicalNode {
     return;
   }
 
-  setFormat(format: number): this {
+  // TODO 0.4 This should just be a `string`.
+  setFormat(format: TextFormatType | number): this {
     errorOnReadOnly();
     const self = this.getWritable();
-    self.__format = format;
+    self.__format =
+      typeof format === 'string' ? TEXT_TYPE_TO_FORMAT[format] : format;
     return self;
   }
 
-  setDetail(detail: number): this {
+  // TODO 0.4 This should just be a `string`.
+  setDetail(detail: TextDetailType | number): this {
     errorOnReadOnly();
     const self = this.getWritable();
-    self.__detail = detail;
+    self.__detail =
+      typeof detail === 'string' ? DETAIL_TYPE_TO_DETAIL[detail] : detail;
     return self;
   }
 
@@ -823,22 +830,56 @@ function convertSpanElement(domNode: Node): DOMConversionOutput {
   const span = domNode as HTMLSpanElement;
   // Google Docs uses span tags + font-weight for bold text
   const hasBoldFontWeight = span.style.fontWeight === '700';
-  // Google Docs uses span tags + text-decoration for strikethrough text
+  // Google Docs uses span tags + text-decoration: line-through for strikethrough text
   const hasLinethroughTextDecoration =
     span.style.textDecoration === 'line-through';
   // Google Docs uses span tags + font-style for italic text
   const hasItalicFontStyle = span.style.fontStyle === 'italic';
+  // Google Docs uses span tags + text-decoration: underline for underline text
+  const hasUnderlineTextDecoration = span.style.textDecoration === 'underline';
+  // Google Docs uses span tags + vertical-align to specify subscript and superscript
+  const verticalAlign = span.style.verticalAlign;
+  // Google Docs uses span tags + color, background-color for coloring
+  const backgroundColor = span.style.backgroundColor;
+  const textColor = span.style.color;
+
+  //TODO: font-size and coloring of subscript & superscript
 
   return {
     forChild: (lexicalNode) => {
-      if ($isTextNode(lexicalNode) && hasBoldFontWeight) {
+      if (!$isTextNode(lexicalNode)) {
+        return lexicalNode;
+      }
+      if (hasBoldFontWeight) {
         lexicalNode.toggleFormat('bold');
       }
-      if ($isTextNode(lexicalNode) && hasLinethroughTextDecoration) {
+      if (hasLinethroughTextDecoration) {
         lexicalNode.toggleFormat('strikethrough');
       }
-      if ($isTextNode(lexicalNode) && hasItalicFontStyle) {
+      if (hasItalicFontStyle) {
         lexicalNode.toggleFormat('italic');
+      }
+      if (hasUnderlineTextDecoration) {
+        lexicalNode.toggleFormat('underline');
+      }
+      if (verticalAlign === 'sub') {
+        lexicalNode.toggleFormat('subscript');
+      }
+      if (verticalAlign === 'super') {
+        lexicalNode.toggleFormat('superscript');
+      }
+
+      let cssString = '';
+
+      if (textColor && textColor !== 'rgb(0, 0, 0)') {
+        cssString += `color: ${textColor};`;
+      }
+      if (backgroundColor && backgroundColor !== 'transparent') {
+        cssString += `background-color: ${backgroundColor};`;
+      }
+
+      if (cssString !== '') {
+        lexicalNode.setStyle(cssString);
       }
 
       return lexicalNode;

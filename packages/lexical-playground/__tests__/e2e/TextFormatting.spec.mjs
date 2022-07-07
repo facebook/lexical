@@ -20,10 +20,13 @@ import {
   assertHTML,
   assertSelection,
   click,
+  evaluate,
+  expect,
   focusEditor,
   html,
   initialize,
-  repeat,
+  insertSampleImage,
+  SAMPLE_IMAGE_URL,
   selectOption,
   test,
   waitForSelector,
@@ -864,7 +867,7 @@ test.describe('TextFormatting', () => {
     });
   });
 
-  test(`Regression test #2439: can format backwards when at first text node boundary`, async ({
+  test(`Regression #2439: can format backwards when at first text node boundary`, async ({
     page,
     isPlainText,
   }) => {
@@ -872,15 +875,15 @@ test.describe('TextFormatting', () => {
     await focusEditor(page);
     await page.keyboard.type('123456');
 
-    await repeat(3, async () => await page.keyboard.press('ArrowLeft'));
+    await moveLeft(page, 3);
     await page.keyboard.down('Shift');
-    await repeat(3, async () => await page.keyboard.press('ArrowLeft'));
+    await moveLeft(page, 3);
     await page.keyboard.up('Shift');
     await toggleBold(page);
 
     await moveToLineEnd(page);
     await page.keyboard.down('Shift');
-    await repeat(4, async () => await page.keyboard.press('ArrowLeft'));
+    await moveLeft(page, 4);
     await page.keyboard.up('Shift');
     await toggleBold(page);
 
@@ -910,6 +913,136 @@ test.describe('TextFormatting', () => {
             data-lexical-text="true">
             123456
           </strong>
+        </p>
+      `,
+    );
+  });
+
+  test(`The active state of the button in the toolbar should to be displayed correctly`, async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type('A');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('B');
+    await selectCharacters(page, 'left', 3);
+    await toggleBold(page);
+    await toggleItalic(page);
+
+    const isButtonActiveStatusDisplayedCorrectly = await evaluate(page, () => {
+      const isFloatingToolbarBoldButtonActive = !!document.querySelector(
+        '.floating-text-format-popup .popup-item.active i.format.bold',
+      );
+      const isFloatingToolbarItalicButtonActive = !!document.querySelector(
+        '.floating-text-format-popup .popup-item.active i.format.italic',
+      );
+      const isToolbarBoldButtonActive = !!document.querySelector(
+        '.toolbar .toolbar-item.active i.format.bold',
+      );
+      const isToolbarItalicButtonActive = !!document.querySelector(
+        '.toolbar .toolbar-item.active i.format.italic',
+      );
+
+      return (
+        isFloatingToolbarBoldButtonActive &&
+        isFloatingToolbarItalicButtonActive &&
+        isToolbarBoldButtonActive &&
+        isToolbarItalicButtonActive
+      );
+    });
+
+    expect(isButtonActiveStatusDisplayedCorrectly).toBe(true);
+  });
+
+  test('Regression #2523: can toggle format when selecting a TextNode edge followed by a non TextNode; ', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+
+    await page.keyboard.type('A');
+    await insertSampleImage(page);
+    await page.keyboard.type('BC');
+
+    await moveLeft(page, 1);
+    await selectCharacters(page, 'left', 2);
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">A</span>
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true">
+            <div draggable="false">
+              <img
+                alt="Yellow flower in tilt shift lens"
+                draggable="false"
+                src="${SAMPLE_IMAGE_URL}"
+                style="height: inherit; max-width: 500px; width: inherit" />
+            </div>
+          </span>
+          <span data-lexical-text="true">BC</span>
+        </p>
+      `,
+    );
+    await toggleBold(page);
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">A</span>
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true">
+            <div draggable="false">
+              <img
+                alt="Yellow flower in tilt shift lens"
+                draggable="false"
+                src="${SAMPLE_IMAGE_URL}"
+                style="height: inherit; max-width: 500px; width: inherit" />
+            </div>
+          </span>
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            B
+          </strong>
+          <span data-lexical-text="true">C</span>
+        </p>
+      `,
+    );
+    await toggleBold(page);
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">A</span>
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true">
+            <div draggable="false">
+              <img
+                alt="Yellow flower in tilt shift lens"
+                draggable="false"
+                src="${SAMPLE_IMAGE_URL}"
+                style="height: inherit; max-width: 500px; width: inherit" />
+            </div>
+          </span>
+          <span data-lexical-text="true">BC</span>
         </p>
       `,
     );

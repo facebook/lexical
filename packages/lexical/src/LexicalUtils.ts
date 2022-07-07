@@ -9,6 +9,7 @@
 import type {
   EditorThemeClasses,
   IntentionallyMarkedAsDirtyElement,
+  Klass,
   LexicalCommand,
   MutatedNodes,
   MutationListeners,
@@ -26,7 +27,6 @@ import type {
 } from './LexicalSelection';
 import type {RootNode} from './nodes/LexicalRootNode';
 import type {TextFormatType, TextNode} from './nodes/LexicalTextNode';
-import type {Klass} from 'shared/types';
 
 import {IS_APPLE, IS_IOS, IS_SAFARI} from 'shared/environment';
 import getDOMSelection from 'shared/getDOMSelection';
@@ -611,6 +611,16 @@ export function $updateTextNodeFromDOMContent(
   }
 }
 
+function $previousSiblingDoesNotAcceptText(node: TextNode): boolean {
+  const previousSibling = node.getPreviousSibling();
+
+  return (
+    ($isTextNode(previousSibling) ||
+      ($isElementNode(previousSibling) && previousSibling.isInline())) &&
+    !previousSibling.canInsertTextAfter()
+  );
+}
+
 function $shouldInsertTextAfterOrBeforeTextNode(
   selection: RangeSelection,
   node: TextNode,
@@ -626,7 +636,10 @@ function $shouldInsertTextAfterOrBeforeTextNode(
   const isToken = node.isToken();
   const shouldInsertTextBefore =
     offset === 0 &&
-    (!node.canInsertTextBefore() || !parent.canInsertTextBefore() || isToken);
+    (!node.canInsertTextBefore() ||
+      !parent.canInsertTextBefore() ||
+      isToken ||
+      $previousSiblingDoesNotAcceptText(node));
   const shouldInsertTextAfter =
     node.getTextContentSize() === offset &&
     (!node.canInsertTextBefore() || !parent.canInsertTextBefore() || isToken);

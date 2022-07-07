@@ -7,7 +7,11 @@
  */
 
 import type {ElementFormatType} from './nodes/LexicalElementNode';
-import type {TextFormatType, TextModeType} from './nodes/LexicalTextNode';
+import type {
+  TextDetailType,
+  TextFormatType,
+  TextModeType,
+} from './nodes/LexicalTextNode';
 
 import {IS_FIREFOX, IS_IOS, IS_SAFARI} from 'shared/environment';
 
@@ -78,6 +82,11 @@ export const TEXT_TYPE_TO_FORMAT: Record<TextFormatType | string, number> = {
   subscript: IS_SUBSCRIPT,
   superscript: IS_SUPERSCRIPT,
   underline: IS_UNDERLINE,
+};
+
+export const DETAIL_TYPE_TO_DETAIL: Record<TextDetailType | string, number> = {
+  directionless: IS_DIRECTIONLESS,
+  unmergeable: IS_UNMERGEABLE,
 };
 
 export const ELEMENT_TYPE_TO_FORMAT: Record<

@@ -66,6 +66,7 @@ import {
 import {KEY_MODIFIER_COMMAND} from './LexicalCommands';
 import {
   COMPOSITION_START_CHAR,
+  DOM_ELEMENT_TYPE,
   DOM_TEXT_TYPE,
   DOUBLE_LINE_BREAK,
 } from './LexicalConstants';
@@ -134,6 +135,7 @@ const rootElementEvents: RootElementEvents = [
   ['copy', PASS_THROUGH_COMMAND],
   ['dragstart', PASS_THROUGH_COMMAND],
   ['dragover', PASS_THROUGH_COMMAND],
+  ['dragend', PASS_THROUGH_COMMAND],
   ['paste', PASS_THROUGH_COMMAND],
   ['focus', PASS_THROUGH_COMMAND],
   ['blur', PASS_THROUGH_COMMAND],
@@ -310,7 +312,10 @@ function onClick(event: MouseEvent, editor: LexicalEditor): void {
       const domAnchor = domSelection.anchorNode;
       // If the user is attempting to click selection back onto text, then
       // we should attempt create a range selection.
-      if (domAnchor !== null && domAnchor.nodeType === DOM_TEXT_TYPE) {
+      // When we click on an empty paragraph node or the end of a paragraph that ends
+      // with an image/poll, the nodeType will be ELEMENT_NODE
+      const allowedNodeType = [DOM_ELEMENT_TYPE, DOM_TEXT_TYPE];
+      if (domAnchor !== null && allowedNodeType.includes(domAnchor.nodeType)) {
         const newSelection = internalCreateRangeSelection(
           lastSelection,
           domSelection,

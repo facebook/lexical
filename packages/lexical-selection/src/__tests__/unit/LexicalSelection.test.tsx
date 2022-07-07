@@ -13,6 +13,10 @@ import {ContentEditable} from '@lexical/react/src/LexicalContentEditable';
 import {HistoryPlugin} from '@lexical/react/src/LexicalHistoryPlugin';
 import {RichTextPlugin} from '@lexical/react/src/LexicalRichTextPlugin';
 import {
+  $addNodeStyle,
+  $getSelectionStyleValueForProperty,
+} from '@lexical/selection';
+import {
   $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
@@ -22,6 +26,7 @@ import {
   $isRangeSelection,
   ParagraphNode,
 } from 'lexical';
+import {$createRangeSelection, $setSelection} from 'lexical/src';
 import {
   $createTestDecoratorNode,
   $createTestElementNode,
@@ -1558,6 +1563,52 @@ describe('LexicalSelection tests', () => {
           expect(selection.anchor.getNode().__type).toBe('paragraph');
           expect(selection.focus.getNode().__type).toBe('paragraph');
         });
+      });
+    });
+  });
+
+  describe('Testing that $getStyleObjectFromRawCSS handles unformatted css text ', () => {
+    test('', async () => {
+      const testEditor = createTestEditor();
+      const element = document.createElement('div');
+      testEditor.setRootElement(element);
+
+      await testEditor.update(() => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const textNode = $createTextNode('Hello, World!');
+        textNode.setStyle('   color    :   red   ;top     : 50px');
+        $addNodeStyle(textNode);
+        paragraph.append(textNode);
+        root.append(paragraph);
+
+        const selection = $createRangeSelection();
+        $setSelection(selection);
+        selection.insertParagraph();
+        setAnchorPoint({
+          key: textNode.getKey(),
+          offset: 0,
+          type: 'text',
+        });
+
+        setFocusPoint({
+          key: textNode.getKey(),
+          offset: 10,
+          type: 'text',
+        });
+
+        const cssColorValue = $getSelectionStyleValueForProperty(
+          selection,
+          'color',
+          '',
+        );
+        expect(cssColorValue).toBe('red');
+        const cssTopValue = $getSelectionStyleValueForProperty(
+          selection,
+          'top',
+          '',
+        );
+        expect(cssTopValue).toBe('50px');
       });
     });
   });

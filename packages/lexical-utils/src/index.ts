@@ -9,11 +9,11 @@
 import type {
   EditorState,
   ElementNode,
+  Klass,
   LexicalEditor,
   LexicalNode,
   NodeKey,
 } from 'lexical';
-import type {Klass} from 'shared/types';
 
 import {
   $getRoot,

@@ -9,7 +9,7 @@
 /* eslint-disable no-constant-condition */
 import type {EditorConfig, LexicalEditor} from './LexicalEditor';
 import type {RangeSelection} from './LexicalSelection';
-import type {Klass} from 'shared/types';
+import type {Klass} from 'lexical';
 
 import invariant from 'shared/invariant';
 
@@ -527,7 +527,7 @@ export class LexicalNode {
     if (latest === null) {
       invariant(
         false,
-        'Lexical node does not exist in active edtior state. Avoid using the same node references between nested closures from editor.read/editor.update.',
+        'Lexical node does not exist in active editor state. Avoid using the same node references between nested closures from editor.read/editor.update.',
       );
     }
     return latest;

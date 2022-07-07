@@ -169,7 +169,7 @@ declare export class LexicalEditor {
     updateFn?: () => void,
   ): EditorState;
   update(updateFn: () => void, options?: EditorUpdateOptions): boolean;
-  focus(callbackFn?: () => void): void;
+  focus(callbackFn?: () => void, options?: EditorFocusOptions): void;
   blur(): void;
   isReadOnly(): boolean;
   setReadOnly(readOnly: boolean): void;
@@ -179,6 +179,9 @@ type EditorUpdateOptions = {
   onUpdate?: () => void,
   tag?: string,
   skipTransforms?: true,
+};
+type EditorFocusOptions = {
+  defaultSelection?: 'rootStart' | 'rootEnd',
 };
 type EditorSetOptions = {
   tag?: string,

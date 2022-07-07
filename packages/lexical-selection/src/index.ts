@@ -306,11 +306,13 @@ export function getStyleObjectFromCSS(
 
 function getStyleObjectFromRawCSS(css: string): Record<string, string> {
   const styleObject: Record<string, string> = {};
-  const styles = css.split(';').slice(0, -1);
+  const styles = css.split(';');
 
   for (const style of styles) {
-    const patch = style.split(': ');
-    styleObject[patch[0]] = patch[1];
+    if (style !== '') {
+      const patch = style.split(':');
+      styleObject[patch[0].trim()] = patch[1].trim();
+    }
   }
 
   return styleObject;

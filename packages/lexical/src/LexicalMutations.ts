@@ -127,7 +127,7 @@ export function $flushMutations(
       const selection = $getSelection() || getLastSelection(editor);
       const badDOMTargets = new Map();
       const rootElement = editor.getRootElement();
-      // We use the current edtior state, as that reflects what is
+      // We use the current editor state, as that reflects what is
       // actually "on screen".
       const currentEditorState = editor._editorState;
       let shouldRevertSelection = false;

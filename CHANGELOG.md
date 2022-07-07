@@ -1,3 +1,27 @@
+## 0.3.7 (July 6, 2022)
+
+Lots of bug fixes and polish. Notably, the full text of minifed Lexical error codes can now be accessed via the [Lexical website](https://lexical.dev/docs/error?code=2).
+
+- Update Browser Extension's Vite Config (#2540) Will
+- fix: import color and vertical align info from html string (#2571) Adithya Vardhan
+- Update PollNode.css (#2602) VelociRaptor
+- Update package names (#2599) Acy Watson
+- Ensure to call existing listeners only (not newly added ones) (#2573) Maksim Horbachevsky
+- Added dragend to list of rootElementEvents (#2598) stuartrobinson3007
+- Reverse MarkdownExport loop order to take TextMatchTransformers into account first (#2582) Lukas
+- Fetch Lexical State Tree in DevTools App (#2510) Will
+- chore: use keyboard shortcuts (#2580) Adithya Vardhan
+- fix prettier Gerard Rovira
+- Replace background images with pseudo classes to display checkboxes in playground (#2567) VelociRaptor
+- Customize default focus position (#2591) Gerard Rovira
+- Add missing dependencies (#2585) John Flockton
+- Website error codes - lexical.dev/error/<code> (#2574) Gerard Rovira
+- Use Vite server for E2E tests in CI (Fix windows CI failures) (#2584) Acy Watson
+- feat(lexical-playground): copy button for @lexical/code (#2396) 子瞻 Luci
+- fix: commenting issue after ts migration (#2558) Adithya Vardhan
+- npm run changelog (#2561) Gerard Rovira
+- fix: typo edtior to editor (#2560) Florent DUVEAU
+
 ## 0.3.6 (June 29, 2022)
 
 lexical & @lexical/ packages:
@@ -95,7 +119,7 @@ Playground
 
 ## 0.3.2 (June 6, 2022)
 
-- added typing for ListItemNode.setChecked, export ListNodeTagType (#2335) 
+- added typing for ListItemNode.setChecked, export ListNodeTagType (#2335)
 - Fix copy + paste in plain text (#2342)
 - Remove process.env (#2338)
 
@@ -195,13 +219,13 @@ Playground
 - Add TextMarks to TextNode (#1912)
 - Fix various collab bugs with lists (#1984)
 - Fix cached getTextContent() to reflect new lines (#1993)
-- Fix equation node handling on Android (#1968) 
+- Fix equation node handling on Android (#1968)
 - Fix formatting on embeds (#1963)
 - Improve multi element indentation - added ElementNode.canIndent (#1982)
 - Fix bugs around pressing the enter key in Safari (#1943)
 - Fix delete empty lines on tables (#1905)
 - Fix copy-paste format loss (#1913)
-- Fix memory leak with EditorContext (#1767) 
+- Fix memory leak with EditorContext (#1767)
 - Fix various selection issues on node boundaries (#1917)
 - Fix some .js.flow and d.ts types
 

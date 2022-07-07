@@ -8,14 +8,14 @@
     "utils"
   ],
   "license": "MIT",
-  "version": "0.3.6",
+  "version": "0.3.7",
   "main": "LexicalUtils.js",
   "peerDependencies": {
-    "lexical": "0.3.6"
+    "lexical": "0.3.7"
   },
   "dependencies": {
-    "@lexical/list": "0.3.6",
-    "@lexical/table": "0.3.6"
+    "@lexical/list": "0.3.7",
+    "@lexical/table": "0.3.7"
   },
   "repository": {
     "type": "git",

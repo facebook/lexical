@@ -1004,6 +1004,40 @@ test.describe('CodeBlock', () => {
       name: 'GitHub / Gist',
       pastedHTML: `<meta charset='utf-8'><table class="highlight tab-size js-file-line-container js-code-nav-container js-tagsearch-file" data-tab-size="8" data-paste-markdown-skip="" data-tagsearch-lang="JavaScript" data-tagsearch-path="example.js" style="box-sizing: border-box; border-spacing: 0px; border-collapse: collapse; tab-size: 8; color: rgb(36, 41, 47); font-family: -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, Helvetica, Arial, sans-serif, &quot;Apple Color Emoji&quot;, &quot;Segoe UI Emoji&quot;; font-size: 14px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: start; text-transform: none; white-space: normal; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; background-color: rgb(255, 255, 255); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial;"><tbody style="box-sizing: border-box;"><tr style="box-sizing: border-box;"><td id="file-example-js-LC1" class="blob-code blob-code-inner js-file-line" style="box-sizing: border-box; padding: 0px 10px; position: relative; line-height: 20px; vertical-align: top; overflow: visible; font-family: ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;, monospace; font-size: 12px; color: var(--color-fg-default); overflow-wrap: normal; white-space: pre;"><span class="pl-k" style="box-sizing: border-box; color: var(--color-prettylights-syntax-keyword);">function</span> <span class="pl-en" style="box-sizing: border-box; color: var(--color-prettylights-syntax-entity);">run</span><span class="pl-kos" style="box-sizing: border-box;">(</span><span class="pl-kos" style="box-sizing: border-box;">)</span> <span class="pl-kos" style="box-sizing: border-box;">{</span></td></tr><tr style="box-sizing: border-box; background-color: transparent;"><td id="file-example-js-L2" class="blob-num js-line-number js-code-nav-line-number" data-line-number="2" style="box-sizing: border-box; padding: 0px 10px; width: 50px; min-width: 50px; font-family: ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;, monospace; font-size: 12px; line-height: 20px; color: var(--color-fg-subtle); text-align: right; white-space: nowrap; vertical-align: top; cursor: pointer; user-select: none;"></td><td id="file-example-js-LC2" class="blob-code blob-code-inner js-file-line" style="box-sizing: border-box; padding: 0px 10px; position: relative; line-height: 20px; vertical-align: top; overflow: visible; font-family: ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;, monospace; font-size: 12px; color: var(--color-fg-default); overflow-wrap: normal; white-space: pre;">  <span class="pl-k" style="box-sizing: border-box; color: var(--color-prettylights-syntax-keyword);">return</span> <span class="pl-kos" style="box-sizing: border-box;">[</span><span class="pl-c1" style="box-sizing: border-box; color: var(--color-prettylights-syntax-constant);">null</span><span class="pl-kos" style="box-sizing: border-box;">,</span> <span class="pl-c1" style="box-sizing: border-box; color: var(--color-prettylights-syntax-constant);">undefined</span><span class="pl-kos" style="box-sizing: border-box;">,</span> <span class="pl-c1" style="box-sizing: border-box; color: var(--color-prettylights-syntax-constant);">2</span><span class="pl-kos" style="box-sizing: border-box;">,</span> <span class="pl-s" style="box-sizing: border-box; color: var(--color-prettylights-syntax-string);">""</span><span class="pl-kos" style="box-sizing: border-box;">]</span><span class="pl-kos" style="box-sizing: border-box;">;</span></td></tr><tr style="box-sizing: border-box;"><td id="file-example-js-L3" class="blob-num js-line-number js-code-nav-line-number" data-line-number="3" style="box-sizing: border-box; padding: 0px 10px; width: 50px; min-width: 50px; font-family: ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;, monospace; font-size: 12px; line-height: 20px; color: var(--color-fg-subtle); text-align: right; white-space: nowrap; vertical-align: top; cursor: pointer; user-select: none;"></td><td id="file-example-js-LC3" class="blob-code blob-code-inner js-file-line" style="box-sizing: border-box; padding: 0px 10px; position: relative; line-height: 20px; vertical-align: top; overflow: visible; font-family: ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;, monospace; font-size: 12px; color: var(--color-fg-default); overflow-wrap: normal; white-space: pre;"><span class="pl-kos" style="box-sizing: border-box;">}</span></td></tr></tbody></table>`,
     },
+    {
+      expectedHTML: html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <code data-lexical-text="true">
+            <span class="PlaygroundEditorTheme__textCode">12</span>
+          </code>
+        </p>
+      `,
+      name: 'Single line <code>',
+      pastedHTML: `<meta charset='utf-8'><code>12</code>`,
+    },
+    {
+      expectedHTML: html`
+        <code
+          class="PlaygroundEditorTheme__code"
+          spellcheck="false"
+          data-gutter="12"
+          data-highlight-language="javascript">
+          <span
+            class="PlaygroundEditorTheme__tokenProperty"
+            data-lexical-text="true">
+            1
+          </span>
+          <br />
+          <span
+            class="PlaygroundEditorTheme__tokenProperty"
+            data-lexical-text="true">
+            2
+          </span>
+        </code>
+      `,
+      name: 'Multiline <code>',
+      pastedHTML: `<meta charset='utf-8'><code>1\n2</code>`,
+    },
   ];
 
   CODE_PASTING_TESTS.forEach((testCase, i) => {

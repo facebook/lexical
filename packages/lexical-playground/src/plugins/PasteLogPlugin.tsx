@@ -9,7 +9,7 @@
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {COMMAND_PRIORITY_NORMAL, PASTE_COMMAND} from 'lexical';
 import * as React from 'react';
-import {useEffect,useState} from 'react';
+import {useEffect, useState} from 'react';
 
 export default function PasteLogPlugin(): JSX.Element {
   const [editor] = useLexicalComposerContext();

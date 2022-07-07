@@ -40,7 +40,7 @@ export function transformersByType(transformers: Array<Transformer>): Readonly<{
   const byType = indexBy(transformers, (t) => t.type);
 
   return {
-    element: byType.element as Array<ElementTransformer>,
+    element: (byType.element || []) as Array<ElementTransformer>,
     textFormat: (byType['text-format'] || []) as Array<TextFormatTransformer>,
     textMatch: (byType['text-match'] || []) as Array<TextMatchTransformer>,
   };

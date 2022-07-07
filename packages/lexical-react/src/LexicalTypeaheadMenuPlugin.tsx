@@ -19,10 +19,9 @@ import {
   KEY_ESCAPE_COMMAND,
   KEY_TAB_COMMAND,
   LexicalEditor,
-  LexicalNode,
   RangeSelection,
+  TextNode,
 } from 'lexical';
-import {Klass} from 'packages/shared/types';
 import {
   MutableRefObject,
   ReactPortal,
@@ -30,121 +29,49 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import * as React from 'react';
-import {createPortal} from 'react-dom';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
-type QueryMatch = {
+export type QueryMatch = {
   leadOffset: number;
   matchingString: string;
   replaceableString: string;
 };
 
-type Resolution = {
+export type Resolution = {
   match: QueryMatch;
   range: Range;
 };
 
-const PUNCTUATION =
+export const PUNCTUATION =
   '\\.,\\+\\*\\?\\$\\@\\|#{}\\(\\)\\^\\-\\[\\]\\\\/!%\'"~=<>_:;';
-const NAME = '\\b[A-Z][^\\s' + PUNCTUATION + ']';
-
-const DocumentSlashRegex = {
-  NAME,
-  PUNCTUATION,
-};
-
-const PUNC = DocumentSlashRegex.PUNCTUATION;
-
-const TRIGGERS = ['/'].join('');
-
-const VALID_CHARS = '[^' + TRIGGERS + PUNC + '\\s]';
-
-const LENGTH_LIMIT = 75;
-
-const SlashPickerRegex = new RegExp(
-  '(^|\\s|\\()(' +
-    '[' +
-    TRIGGERS +
-    ']' +
-    '((?:' +
-    VALID_CHARS +
-    '){0,' +
-    LENGTH_LIMIT +
-    '})' +
-    ')$',
-);
 
 export class TypeaheadOption {
-  // What shows up in the editor
-  title: string;
-  // A short description of what this option does.
-  description: string;
-  // To differentiate this option
   key: string;
-  // Icon for display
-  icon?: JSX.Element;
   ref?: MutableRefObject<HTMLElement | null>;
-  // For extra searching.
-  keywords?: Array<string>;
-  // To make sure the editor has the node registered.
-  nodeKlass?: Klass<LexicalNode>;
-  // TBD
-  keyboardShortcut?: string;
-  // What happens when you select this option?
-  onSelect: (matchingString: string) => void;
 
-  constructor(
-    title: string,
-    options: {
-      icon?: JSX.Element;
-      keywords?: Array<string>;
-      nodeKlass?: Klass<LexicalNode>;
-      keyboardShortcut?: string;
-      onSelect: (matchingString: string) => void;
-    },
-  ) {
-    this.title = title;
-    this.key = (Math.random() + 1).toString(36).substring(7);
-    this.keywords = options.keywords;
-    this.icon = options.icon;
-    this.nodeKlass = options.nodeKlass;
-    this.keyboardShortcut = options.keyboardShortcut;
-    this.onSelect = options.onSelect;
+  constructor(key: string) {
+    this.key = key;
     this.ref = {current: null};
   }
 
   setRefElement = (element: HTMLElement | null) => {
-    this.ref.current = element;
-  };
-
-  isMatch = (query: string) => {
-    const queryRegex = new RegExp(query, 'gi');
-    return query == null || queryRegex.exec(this.title) || this.keywords != null
-      ? this.keywords.some((keyword) => {
-          queryRegex.lastIndex = 0;
-          return queryRegex.exec(keyword);
-        })
-      : false;
+    this.ref = {current: element};
   };
 }
 
-export declare type OptionResolverFn = (
-  matchingString: string | null,
-) => Array<TypeaheadOption>;
-
-declare type MenuRenderFn = (
-  anchorElement: HTMLDivElement | null,
-  filteredOptions: Array<TypeaheadOption>,
+declare type MenuRenderFn<TOption extends TypeaheadOption> = (
+  anchorElement: HTMLElement | null,
   itemProps: {
-    isSelected: (index: number) => boolean;
-    applyCurrentSelected: () => void;
-    setSelectedIndex: (index: number) => void;
+    selectedIndex: number | null;
+    selectOptionAndCleanUp: (option: TOption) => void;
+    setHighlightedIndex: (index: number) => void;
   },
   matchingString: string,
-) => ReactPortal | JSX.Element;
+) => ReactPortal | JSX.Element | null;
 
 const scrollIntoViewIfNeeded = (target: HTMLElement) => {
   const container = document.getElementById('typeahead-menu');
@@ -159,27 +86,6 @@ const scrollIntoViewIfNeeded = (target: HTMLElement) => {
   }
 };
 
-function checkForSlashMatch(text, minMatchLength): QueryMatch | null {
-  const match = SlashPickerRegex.exec(text);
-  if (match !== null) {
-    const maybeLeadingWhitespace = match[1];
-    const matchingString = match[3];
-    if (matchingString.length >= minMatchLength) {
-      return {
-        leadOffset: match.index + maybeLeadingWhitespace.length,
-        matchingString,
-        replaceableString: match[2],
-      };
-    }
-  }
-  return null;
-}
-
-function getPossibleMatch(text): QueryMatch | null {
-  const match = checkForSlashMatch(text, 0);
-  return match;
-}
-
 function getTextUpToAnchor(selection: RangeSelection): string | null {
   const anchor = selection.anchor;
   if (anchor.type !== 'text') {
@@ -193,7 +99,7 @@ function getTextUpToAnchor(selection: RangeSelection): string | null {
   return anchorNode.getTextContent().slice(0, anchorOffset);
 }
 
-function tryToPositionRange(leadOffset, range: Range): boolean {
+function tryToPositionRange(leadOffset: number, range: Range): boolean {
   const domSelection = window.getSelection();
   if (domSelection === null || !domSelection.isCollapsed) {
     return false;
@@ -201,6 +107,11 @@ function tryToPositionRange(leadOffset, range: Range): boolean {
   const anchorNode = domSelection.anchorNode;
   const startOffset = leadOffset;
   const endOffset = domSelection.anchorOffset;
+
+  if (anchorNode == null || endOffset == null) {
+    return false;
+  }
+
   try {
     range.setStart(anchorNode, startOffset);
     range.setEnd(anchorNode, endOffset);
@@ -233,23 +144,25 @@ function getFullMatchOffset(
   offset: number,
 ): number {
   let triggerOffset = offset;
-  for (let ii = triggerOffset; ii <= entryText.length; ii++) {
-    if (documentText.substr(-ii) === entryText.substr(0, ii)) {
-      triggerOffset = ii;
+  for (let i = triggerOffset; i <= entryText.length; i++) {
+    if (documentText.substr(-i) === entryText.substr(0, i)) {
+      triggerOffset = i;
     }
   }
-
   return triggerOffset;
 }
 
 /**
- * From a Typeahead Search Result, replace plain text from search offset
+ * Split Lexica TextNode and return a new TextNode only containing matched text.
+ * Common use cases include: removing the node, replacing with a new node.
  */
-async function removeSearchQueryFromText(
+async function splitNodeContainingQuery(
   editor: LexicalEditor,
   match: QueryMatch,
-): Promise<void> {
-  return editor.update(() => {
+): Promise<TextNode> {
+  let textNodeContainingQuery: TextNode;
+
+  await editor.update(() => {
     const selection = $getSelection();
     if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
       return;
@@ -274,16 +187,18 @@ async function removeSearchQueryFromText(
     if (startOffset < 0) {
       return;
     }
-
-    let nodeToReplace;
+    let newNode;
     if (startOffset === 0) {
-      [nodeToReplace] = anchorNode.splitText(selectionOffset);
+      [newNode] = anchorNode.splitText(selectionOffset);
     } else {
-      [, nodeToReplace] = anchorNode.splitText(startOffset, selectionOffset);
+      [, newNode] = anchorNode.splitText(startOffset, selectionOffset);
     }
 
-    nodeToReplace.remove();
+    textNodeContainingQuery = newNode;
   });
+
+  // @ts-ignore
+  return textNodeContainingQuery;
 }
 
 function isSelectionOnEntityBoundary(
@@ -305,76 +220,88 @@ function isSelectionOnEntityBoundary(
   });
 }
 
-export type TypeaheadOptions = Array<TypeaheadOption>;
-
-function ShortcutTypeahead({
+function ShortcutTypeahead<TOption extends TypeaheadOption>({
   close,
   editor,
   resolution,
   options,
   menuRenderFn,
+  onSelectOption,
 }: {
   close: () => void;
   editor: LexicalEditor;
   resolution: Resolution;
-  options: Array<TypeaheadOption>;
-  menuRenderFn: MenuRenderFn;
+  options: Array<TOption>;
+  menuRenderFn: MenuRenderFn<TOption>;
+  onSelectOption: (
+    option: TOption,
+    textNodeContainingQuery: TextNode,
+    closeMenu: () => void,
+    matchingString: string,
+  ) => void;
 }): JSX.Element | null {
-  const [anchorElement, setAnchorElement] = useState(null);
-  const [selectedIndex, setSelectedIndex] = useState<null | number>(null);
+  const [selectedIndex, setHighlightedIndex] = useState<null | number>(null);
+  const anchorElementRef = useRef<HTMLElement>(document.createElement('div'));
 
   useEffect(() => {
-    setSelectedIndex(0);
+    setHighlightedIndex(0);
   }, [resolution.match.matchingString]);
 
   useEffect(() => {
-    const rootElement = editor.getRootElement();
-    const containerDiv = document.createElement('div');
-    containerDiv.setAttribute('aria-label', 'Typeahead menu');
-    containerDiv.setAttribute('id', 'typeahead-menu');
-    containerDiv.setAttribute('role', 'listbox');
-    if (rootElement !== null) {
-      const range = resolution.range;
-      const {left, top, height} = range.getBoundingClientRect();
-      containerDiv.style.top = `${top + height}px`;
-      containerDiv.style.left = `${left}px`;
-      containerDiv.style.display = 'block';
-      containerDiv.style.position = 'absolute';
-
-      rootElement.setAttribute('aria-controls', 'typeahead-menu');
-      document.body.append(containerDiv);
-      setAnchorElement(containerDiv);
-      return () => {
-        containerDiv.remove();
-        setAnchorElement(null);
-        rootElement.removeAttribute('aria-controls');
-      };
+    function positionMenu() {
+      const rootElement = editor.getRootElement();
+      const containerDiv = anchorElementRef.current;
+      containerDiv.setAttribute('aria-label', 'Typeahead menu');
+      containerDiv.setAttribute('id', 'typeahead-menu');
+      containerDiv.setAttribute('role', 'listbox');
+      if (rootElement !== null) {
+        const range = resolution.range;
+        const {left, top, height} = range.getBoundingClientRect();
+        containerDiv.style.top = `${top + height + window.pageYOffset}px`;
+        containerDiv.style.left = `${left + window.pageXOffset}px`;
+        containerDiv.style.display = 'block';
+        containerDiv.style.position = 'absolute';
+        if (!containerDiv.isConnected) {
+          rootElement.setAttribute('aria-controls', 'typeahead-menu');
+          document.body.append(containerDiv);
+        }
+        anchorElementRef.current = containerDiv;
+      }
     }
+    positionMenu();
+    window.addEventListener('resize', positionMenu);
+    return () => {
+      window.removeEventListener('resize', positionMenu);
+    };
   }, [editor, resolution, options]);
 
-  const applyCurrentSelected = useCallback(() => {
-    if (options === null || selectedIndex === null) {
-      return;
-    }
-    const selectedEntry = options[selectedIndex];
-
-    close();
-
-    editor.update(async () => {
-      await removeSearchQueryFromText(editor, resolution.match);
-      selectedEntry.onSelect(resolution.match.matchingString);
-    });
-  }, [close, editor, resolution.match, options, selectedIndex]);
+  const selectOptionAndCleanUp = useCallback(
+    (selectedEntry: TOption) => {
+      editor.update(async () => {
+        const textNodeContainingQuery = await splitNodeContainingQuery(
+          editor,
+          resolution.match,
+        );
+        onSelectOption(
+          selectedEntry,
+          textNodeContainingQuery,
+          close,
+          resolution.match.matchingString,
+        );
+      });
+    },
+    [close, editor, resolution.match, onSelectOption],
+  );
 
   const updateSelectedIndex = useCallback(
-    (index) => {
+    (index: number) => {
       const rootElem = editor.getRootElement();
       if (rootElem !== null) {
         rootElem.setAttribute(
           'aria-activedescendant',
           'typeahead-item-' + index,
         );
-        setSelectedIndex(index);
+        setHighlightedIndex(index);
       }
     },
     [editor],
@@ -391,7 +318,7 @@ function ShortcutTypeahead({
 
   useLayoutEffect(() => {
     if (options === null) {
-      setSelectedIndex(null);
+      setHighlightedIndex(null);
     } else if (selectedIndex === null) {
       updateSelectedIndex(0);
     }
@@ -408,7 +335,7 @@ function ShortcutTypeahead({
               selectedIndex !== options.length - 1 ? selectedIndex + 1 : 0;
             updateSelectedIndex(newSelectedIndex);
             const option = options[newSelectedIndex];
-            if (option.ref.current) {
+            if (option.ref != null && option.ref.current) {
               scrollIntoViewIfNeeded(option.ref.current);
             }
             event.preventDefault();
@@ -427,7 +354,7 @@ function ShortcutTypeahead({
               selectedIndex !== 0 ? selectedIndex - 1 : options.length - 1;
             updateSelectedIndex(newSelectedIndex);
             const option = options[newSelectedIndex];
-            if (option.ref.current) {
+            if (option.ref != null && option.ref.current) {
               scrollIntoViewIfNeeded(option.ref.current);
             }
             event.preventDefault();
@@ -460,7 +387,7 @@ function ShortcutTypeahead({
           }
           event.preventDefault();
           event.stopImmediatePropagation();
-          applyCurrentSelected();
+          selectOptionAndCleanUp(options[selectedIndex]);
           return true;
         },
         COMMAND_PRIORITY_LOW,
@@ -475,14 +402,14 @@ function ShortcutTypeahead({
             event.preventDefault();
             event.stopImmediatePropagation();
           }
-          applyCurrentSelected();
+          selectOptionAndCleanUp(options[selectedIndex]);
           return true;
         },
         COMMAND_PRIORITY_LOW,
       ),
     );
   }, [
-    applyCurrentSelected,
+    selectOptionAndCleanUp,
     close,
     editor,
     options,
@@ -492,81 +419,127 @@ function ShortcutTypeahead({
 
   const listItemProps = useMemo(
     () => ({
-      applyCurrentSelected,
-      isSelected: (index: number) => index === selectedIndex,
-      setSelectedIndex,
+      selectOptionAndCleanUp,
+      selectedIndex,
+      setHighlightedIndex,
     }),
-    [applyCurrentSelected, selectedIndex],
+    [selectOptionAndCleanUp, selectedIndex],
   );
 
-  return resolution != null && options != null
-    ? menuRenderFn(
-        anchorElement,
-        options,
-        listItemProps,
-        resolution.match.matchingString,
-      )
-    : null;
+  return menuRenderFn(
+    anchorElementRef.current,
+    listItemProps,
+    resolution.match.matchingString,
+  );
 }
 
-function useSlashShortcutMenu(
-  editor: LexicalEditor,
-  getOptions: OptionResolverFn,
-  menuRenderFn: MenuRenderFn,
-): JSX.Element {
-  const [resolution, setResolution] = useState<Resolution | null>(null);
-
-  const options = useMemo(
-    () =>
-      getOptions(resolution != null ? resolution.match.matchingString : null),
-    [getOptions, resolution],
-  );
-
-  useEffect(() => {
-    options.forEach((option) => {
-      if (!editor.hasNodes([option.nodeKlass])) {
-        throw new Error(
-          `SlashShortcutMenuPlugin: ${option.nodeKlass.name} not registered on editor`,
-        );
+export function useBasicTypeaheadTriggerMatch(
+  trigger: string,
+  {minLength = 1, maxLength = 75}: {minLength?: number; maxLength?: number},
+): MatchResolverFn {
+  return useCallback(
+    (text: string) => {
+      const validChars = '[^' + trigger + PUNCTUATION + '\\s]';
+      const TypeaheadTriggerRegex = new RegExp(
+        '(^|\\s|\\()(' +
+          '[' +
+          trigger +
+          ']' +
+          '((?:' +
+          validChars +
+          '){0,' +
+          maxLength +
+          '})' +
+          ')$',
+      );
+      const match = TypeaheadTriggerRegex.exec(text);
+      if (match !== null) {
+        const maybeLeadingWhitespace = match[1];
+        const matchingString = match[3];
+        if (matchingString.length >= minLength) {
+          return {
+            leadOffset: match.index + maybeLeadingWhitespace.length,
+            matchingString,
+            replaceableString: match[2],
+          };
+        }
       }
-    });
-  }, [editor, options]);
+      return null;
+    },
+    [maxLength, minLength, trigger],
+  );
+}
+
+type TypeaheadMenuPluginArgs<TOption extends TypeaheadOption> = {
+  onQueryChange: (matchingString: string | null) => void;
+  onSelectOption: (
+    option: TOption,
+    textNodeContainingQuery: TextNode,
+    closeMenu: () => void,
+    matchingString: string,
+  ) => void;
+  options: Array<TOption>;
+  menuRenderFn: MenuRenderFn<TOption>;
+  matchResolverFn: MatchResolverFn;
+};
+
+type MatchResolverFn = (text: string) => QueryMatch | null;
+
+export default function LexicalTypeaheadMenuPlugin<
+  TOption extends TypeaheadOption,
+>({
+  options,
+  onQueryChange,
+  onSelectOption,
+  menuRenderFn,
+  matchResolverFn,
+}: TypeaheadMenuPluginArgs<TOption>): JSX.Element | null {
+  const [editor] = useLexicalComposerContext();
+
+  const [resolution, setResolution] = useState<Resolution | null>(null);
 
   useEffect(() => {
     let activeRange: Range | null = document.createRange();
-    let previousText = null;
+    let previousText: string | null = null;
 
     const updateListener = () => {
-      const range = activeRange;
-      const text = getQueryTextForSearch(editor);
-      if (text === previousText || range === null) {
-        startTransition(() => setResolution(null));
-        return;
-      }
-      previousText = text;
+      editor.getEditorState().read(() => {
+        const range = activeRange;
+        const selection = $getSelection();
+        const text = getQueryTextForSearch(editor);
 
-      if (text === null) {
-        startTransition(() => setResolution(null));
-        return;
-      }
-      const match = getPossibleMatch(text);
-
-      if (
-        match !== null &&
-        !isSelectionOnEntityBoundary(editor, match.leadOffset)
-      ) {
-        const isRangePositioned = tryToPositionRange(match.leadOffset, range);
-        if (isRangePositioned !== null) {
-          startTransition(() =>
-            setResolution({
-              match,
-              range,
-            }),
-          );
+        if (
+          !$isRangeSelection(selection) ||
+          !selection.isCollapsed() ||
+          text === previousText ||
+          text === null ||
+          range === null
+        ) {
+          startTransition(() => setResolution(null));
           return;
         }
-      }
-      startTransition(() => setResolution(null));
+        previousText = text;
+
+        const match = matchResolverFn(text);
+        onQueryChange(match ? match.matchingString : null);
+
+        if (
+          match !== null &&
+          !isSelectionOnEntityBoundary(editor, match.leadOffset)
+        ) {
+          const isRangePositioned = tryToPositionRange(match.leadOffset, range);
+          if (isRangePositioned !== null) {
+            startTransition(() =>
+              setResolution({
+                match,
+                range,
+              }),
+            );
+            return;
+          }
+        }
+        startTransition(() => setResolution(null));
+      });
     };
 
     const removeUpdateListener = editor.registerUpdateListener(updateListener);
@@ -575,33 +548,20 @@ function useSlashShortcutMenu(
       activeRange = null;
       removeUpdateListener();
     };
-  }, [editor, resolution]);
+  }, [editor, matchResolverFn, onQueryChange, resolution]);
 
   const closeTypeahead = useCallback(() => {
     setResolution(null);
   }, []);
 
-  return resolution === null || editor === null
-    ? null
-    : createPortal(
-        <ShortcutTypeahead
-          close={closeTypeahead}
-          resolution={resolution}
-          editor={editor}
-          options={options}
-          menuRenderFn={menuRenderFn}
-        />,
-        document.body,
-      );
-}
-
-export default function LexicalSlashShortcutMenuPlugin({
-  getOptions,
-  menuRenderFn,
-}: {
-  getOptions: OptionResolverFn;
-  menuRenderFn: MenuRenderFn;
-}): JSX.Element {
-  const [editor] = useLexicalComposerContext();
-  return useSlashShortcutMenu(editor, getOptions, menuRenderFn);
+  return resolution === null || editor === null ? null : (
+    <ShortcutTypeahead
+      close={closeTypeahead}
+      resolution={resolution}
+      editor={editor}
+      options={options}
+      menuRenderFn={menuRenderFn}
+      onSelectOption={onSelectOption}
+    />
+  );
 }

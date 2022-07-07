@@ -105,8 +105,8 @@
       "@lexical/react/LexicalRichTextPlugin": [
         "./packages/lexical-react/src/LexicalRichTextPlugin.tsx"
       ],
-      "@lexical/react/LexicalShortcutMenuPlugin": [
-        "packages/lexical-react/src/LexicalSlashShortcutMenuPlugin.tsx"
+      "@lexical/react/LexicalTypeaheadMenuPlugin": [
+        "packages/lexical-react/src/LexicalTypeaheadMenuPlugin.tsx"
       ],
       "@lexical/react/LexicalHistoryPlugin": [
         "./packages/lexical-react/src/LexicalHistoryPlugin.ts"

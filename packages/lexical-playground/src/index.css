@@ -505,6 +505,10 @@ i.diagram-2 {
   background-image: url(images/icons/diagram-2.svg);
 }
 
+i.user {
+  background-image: url(images/icons/user.svg);
+}
+
 i.equation {
   background-image: url(images/icons/plus-slash-minus.svg);
 }

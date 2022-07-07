@@ -32,6 +32,7 @@ import ClickableLinkPlugin from './plugins/ClickableLinkPlugin';
 import CodeActionMenuPlugin from './plugins/CodeActionMenuPlugin';
 import CodeHighlightPlugin from './plugins/CodeHighlightPlugin';
 import CommentPlugin from './plugins/CommentPlugin';
+import ComponentPickerPlugin from './plugins/ComponentPickerPlugin';
 import EmojisPlugin from './plugins/EmojisPlugin';
 import EquationsPlugin from './plugins/EquationsPlugin';
 import ExcalidrawPlugin from './plugins/ExcalidrawPlugin';
@@ -42,7 +43,6 @@ import ListMaxIndentLevelPlugin from './plugins/ListMaxIndentLevelPlugin';
 import MarkdownShortcutPlugin from './plugins/MarkdownShortcutPlugin';
 import {MaxLengthPlugin} from './plugins/MaxLengthPlugin';
 import MentionsPlugin from './plugins/MentionsPlugin';
-import PlaygroundSlashShortcutMenuPlugin from './plugins/PlaygroundSlashShortcutMenuPlugin';
 import PollPlugin from './plugins/PollPlugin';
 import SpeechToTextPlugin from './plugins/SpeechToTextPlugin';
 import TabFocusPlugin from './plugins/TabFocusPlugin';
@@ -92,7 +92,7 @@ export default function Editor(): JSX.Element {
         {isMaxLength && <MaxLengthPlugin maxLength={30} />}
         <AutoFocusPlugin />
         <ClearEditorPlugin />
-        <PlaygroundSlashShortcutMenuPlugin />
+        <ComponentPickerPlugin />
         <MentionsPlugin />
         <EmojisPlugin />
         <HashtagPlugin />

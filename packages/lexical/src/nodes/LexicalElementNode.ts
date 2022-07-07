@@ -462,7 +462,7 @@ export class ElementNode extends LexicalNode {
     $setNodeKey(afterNode, undefined);
 
     // add the node right after the node we are splitting
-    writableParent.splice(thisIndex + 1, 0, [afterNode]);
+    beforeNodeWritable.insertAfter(afterNode);
 
     // remove elements after a split point and save them to the variable
     const nodesToMove = beforeNodeWritable.splice(
@@ -472,7 +472,7 @@ export class ElementNode extends LexicalNode {
     );
     afterNode.append(...nodesToMove);
 
-    return [beforeNodeWritable, splitChild, afterNode];
+    return [beforeNode, splitChild, afterNode];
   }
   // JSON serialization
   exportJSON(): SerializedElementNode {

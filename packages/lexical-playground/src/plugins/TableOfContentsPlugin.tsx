@@ -51,7 +51,7 @@ function TableOfContentsList({
         }
       });
     };
-  });
+  }, [editor, tableOfContents]);
   function scrollToNode(key: NodeKey) {
     editor.getEditorState().read(() => {
       const domElement = editor.getElementByKey(key);

@@ -166,7 +166,7 @@ export default function ComponentPickerMenuPlugin(): JSX.Element {
     const baseOptions = [
       new ComponentPickerOption('Paragraph', {
         icon: <i className="icon paragraph" />,
-        keywords: ['normal', 'p', 'text'],
+        keywords: ['normal', 'paragraph', 'p', 'text'],
         onSelect: () =>
           editor.update(() => {
             const selection = $getSelection();

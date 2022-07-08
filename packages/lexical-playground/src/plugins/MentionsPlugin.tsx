@@ -10,6 +10,7 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import LexicalTypeaheadMenuPlugin, {
   QueryMatch,
   TypeaheadOption,
+  useBasicTypeaheadTriggerMatch,
 } from '@lexical/react/LexicalTypeaheadMenuPlugin';
 import {TextNode} from 'lexical';
 import {useCallback, useEffect, useMemo, useState} from 'react';
@@ -637,6 +638,10 @@ export default function NewMentionsPlugin(): JSX.Element | null {
 
   const results = useMentionLookupService(queryString);
 
+  const checkForSlashTriggerMatch = useBasicTypeaheadTriggerMatch('/', {
+    minLength: 0,
+  });
+
   const options = useMemo(
     () =>
       results
@@ -653,7 +658,6 @@ export default function NewMentionsPlugin(): JSX.Element | null {
       selectedOption: MentionTypeaheadOption,
       nodeToReplace: TextNode,
       closeMenu: () => void,
-      matchingString: string,
     ) => {
       editor.update(() => {
         const mentionNode = $createMentionNode(selectedOption.name);
@@ -665,11 +669,20 @@ export default function NewMentionsPlugin(): JSX.Element | null {
     [editor],
   );
 
+  const checkForMentionMatch = useCallback(
+    (text: string) => {
+      const mentionMatch = getPossibleQueryMatch(text);
+      const slashMatch = checkForSlashTriggerMatch(text);
+      return !slashMatch && mentionMatch ? mentionMatch : null;
+    },
+    [checkForSlashTriggerMatch],
+  );
+
   return (
     <LexicalTypeaheadMenuPlugin<MentionTypeaheadOption>
       onQueryChange={setQueryString}
       onSelectOption={onSelectOption}
-      matchResolverFn={getPossibleQueryMatch}
+      matchResolverFn={checkForMentionMatch}
       options={options}
       menuRenderFn={(
         anchorElement,

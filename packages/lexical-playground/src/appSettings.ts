@@ -36,7 +36,7 @@ export const DEFAULT_SETTINGS: Settings = {
   isCollab: false,
   isMaxLength: false,
   isRichText: true,
-  isTableOfContents: true,
+  isTableOfContents: false,
   measureTypingPerf: false,
   showNestedEditorTreeView: false,
   showTreeView: true,

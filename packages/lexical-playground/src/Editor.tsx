@@ -161,7 +161,7 @@ export default function Editor(): JSX.Element {
         </div>
         {showTreeView && <TreeViewPlugin />}
       </div>
-      {isTableOfContents && <TableOfContentsPlugin />}
+      <div id="toc">{isTableOfContents && <TableOfContentsPlugin />}</div>
     </div>
   );
 }

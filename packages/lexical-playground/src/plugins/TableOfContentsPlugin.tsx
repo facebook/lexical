@@ -11,6 +11,7 @@ import type {LexicalEditor, NodeKey} from 'lexical';
 import '../ui/TableOfContentsStyle.css';
 
 import LexicalTableOfContents__EXPERIMENTAL from '@lexical/react/LexicalTableOfContents__EXPERIMENTAL';
+import {$getNearestNodeFromDOMNode} from 'lexical';
 import {useEffect, useState} from 'react';
 import * as React from 'react';
 
@@ -21,24 +22,28 @@ function TableOfContentsList({
   tableOfContents: Array<[key: NodeKey, text: string, tag: HeadingTagType]>;
   editor: LexicalEditor;
 }): JSX.Element {
-  const [selectedKey, setSelectedKey] = useState('');
+  const [selectedKey, setSelectedKey] = useState(tableOfContents[0][0]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting === true) {
-            setSelectedKey(entry.target.id);
+            editor.update(() => {
+              const node = $getNearestNodeFromDOMNode(entry.target);
+              if (node !== null) {
+                setSelectedKey(node.getKey());
+              }
+            });
           }
         });
       },
-      {threshold: 1.0},
+      {rootMargin: '0px -10px 0px 0px'},
     );
 
     tableOfContents.map((entry) => {
       const headingNode = editor.getElementByKey(entry[0]);
       if (headingNode !== null) {
-        headingNode.id = entry[0];
         observer.observe(headingNode);
       }
     });
@@ -51,7 +56,7 @@ function TableOfContentsList({
         }
       });
     };
-  });
+  }, [editor, tableOfContents]);
   function scrollToNode(key: NodeKey) {
     editor.getEditorState().read(() => {
       const domElement = editor.getElementByKey(key);
@@ -78,7 +83,9 @@ function TableOfContentsList({
           role="button"
           tabIndex={0}>
           <div className={selectedKey === key ? 'circle' : 'bar'} />
-          <li className={indent(tag)}>{text}</li>
+          <li className={indent(tag)}>
+            {('' + text).length > 30 ? text.substring(0, 27) + '...' : text}
+          </li>
         </div>
       ))}
     </ul>

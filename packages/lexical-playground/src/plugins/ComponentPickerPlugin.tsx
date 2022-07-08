@@ -250,7 +250,7 @@ export default function ComponentPickerMenuPlugin(): JSX.Element {
       }),
       new ComponentPickerOption('Divider', {
         icon: <i className="icon horizontal-rule" />,
-        keywords: ['horizantal rule', 'divider', 'hr'],
+        keywords: ['horizontal rule', 'divider', 'hr'],
         onSelect: () =>
           editor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND, undefined),
       }),

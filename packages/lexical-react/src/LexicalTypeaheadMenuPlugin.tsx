@@ -485,9 +485,7 @@ type TypeaheadMenuPluginArgs<TOption extends TypeaheadOption> = {
 
 type MatchResolverFn = (text: string) => QueryMatch | null;
 
-export default function LexicalTypeaheadMenuPlugin<
-  TOption extends TypeaheadOption,
->({
+export function LexicalTypeaheadMenuPlugin<TOption extends TypeaheadOption>({
   options,
   onQueryChange,
   onSelectOption,

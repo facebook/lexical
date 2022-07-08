@@ -7,7 +7,8 @@
  */
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import LexicalTypeaheadMenuPlugin, {
+import {
+  LexicalTypeaheadMenuPlugin,
   QueryMatch,
   TypeaheadOption,
   useBasicTypeaheadTriggerMatch,

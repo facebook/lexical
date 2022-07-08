@@ -14,7 +14,8 @@ import {
 } from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {INSERT_HORIZONTAL_RULE_COMMAND} from '@lexical/react/LexicalHorizontalRuleNode';
-import LexicalTypeaheadMenuPlugin, {
+import {
+  LexicalTypeaheadMenuPlugin,
   TypeaheadOption,
   useBasicTypeaheadTriggerMatch,
 } from '@lexical/react/src/LexicalTypeaheadMenuPlugin';

@@ -197,12 +197,22 @@ pre::-webkit-scrollbar-thumb {
   bottom: 20px;
 }
 
+#paste-log-button {
+  position: fixed;
+  left: 120px;
+  bottom: 20px;
+}
+
 #options-button::after {
   background-image: url(images/icons/gear.svg);
 }
 
 #test-recorder-button::after {
   background-image: url(images/icons/journal-code.svg);
+}
+
+#paste-log-button::after {
+  background-image: url(images/icons/clipboard.svg);
 }
 
 #test-recorder-button-snapshot {

@@ -6,18 +6,18 @@
  *
  */
 
-import './App.css';
+import './index.css';
 
 import * as React from 'react';
 import {useEffect, useRef, useState} from 'react';
 
-import logo from './images/lexical-white.png';
+import logo from '../../../images/lexical-white.png';
 
 function App(): JSX.Element {
   const [count, setCount] = useState<number>(0);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [editorState, setEditorState] = useState<object>({});
-  const port = useRef();
+  const port = useRef<object>({});
 
   useEffect(() => {
     // create and initialize the messaging port to receive editorState updates

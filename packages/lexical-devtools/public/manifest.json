@@ -3,9 +3,9 @@
   "description": "Developer Tools for Lexical",
   "version": "0.0",
   "manifest_version": 2,
-  "devtools_page": "devtools.html",
+  "devtools_page": "src/devtools/index.html",
   "browser_action": {
-    "default_popup": "popup.html",
+    "default_popup": "src/popup/index.html",
     "default_title": "Lexical Developer Tools"
   },
   "icons": {
@@ -13,12 +13,12 @@
     "48": "favicon-32x32.png"
   },
   "background": {
-    "scripts": ["background.js"]
+    "scripts": ["src/background/index.js"]
   },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content.js"]
+      "js": ["src/content/index.js"]
     }
   ],
   "permissions": ["activeTab"]

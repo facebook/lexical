@@ -7,8 +7,8 @@
  * @flow strict
  */
 
-import type {HeadingTagType} from '../../lexical-rich-text/flow/LexicalRichText';
-import type {NodeKey} from '../../lexical/flow/Lexical';
+import type {HeadingTagType} from '@lexical/rich-text';
+import type {NodeKey} from 'lexical';
 
 declare export function LexicalTableOfContentsPlugin(
   children: (

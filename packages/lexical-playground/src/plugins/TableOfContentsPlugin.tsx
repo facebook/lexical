@@ -5,22 +5,23 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import type {HeadingTagType} from '@lexical/rich-text';
+import type {LexicalEditor, NodeKey} from 'lexical';
+
 import '../ui/TableOfContentsStyle.css';
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import LexicalTableOfContents__EXPERIMENTAL from '@lexical/react/LexicalTableOfContents__EXPERIMENTAL';
-import {NodeKey} from 'packages/lexical/src';
-import {HeadingTagType} from 'packages/lexical-rich-text/src';
 import {useEffect, useState} from 'react';
 import * as React from 'react';
 
 function TableOfContentsList({
   tableOfContents,
+  editor,
 }: {
   tableOfContents: Array<[key: NodeKey, text: string, tag: HeadingTagType]>;
+  editor: LexicalEditor;
 }): JSX.Element {
   const [selectedKey, setSelectedKey] = useState('');
-  const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -87,8 +88,13 @@ function TableOfContentsList({
 export default function TableOfContentsPlugin() {
   return (
     <LexicalTableOfContents__EXPERIMENTAL>
-      {(tableOfContents) => {
-        return <TableOfContentsList tableOfContents={tableOfContents} />;
+      {(tableOfContents, editor) => {
+        return (
+          <TableOfContentsList
+            tableOfContents={tableOfContents}
+            editor={editor}
+          />
+        );
       }}
     </LexicalTableOfContents__EXPERIMENTAL>
   );

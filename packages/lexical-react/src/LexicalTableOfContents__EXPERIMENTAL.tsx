@@ -6,13 +6,12 @@
  *
  */
 
-import type {NodeKey, NodeMutation} from 'lexical';
+import type {LexicalEditor, NodeKey, NodeMutation} from 'lexical';
 
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$isHeadingNode, HeadingNode, HeadingTagType} from '@lexical/rich-text';
 import {$getNodeByKey, $getRoot, TextNode} from 'lexical';
 import {useEffect, useState} from 'react';
-
-import {useLexicalComposerContext} from './LexicalComposerContext';
 
 function $insertHeadingIntoTableOfContents(
   prevHeading: HeadingNode | null,
@@ -88,6 +87,7 @@ function $updateHeadingInTableOfContents(
 type Props = {
   children: (
     values: Array<[key: NodeKey, text: string, tag: HeadingTagType]>,
+    editor: LexicalEditor,
   ) => JSX.Element;
 };
 
@@ -180,5 +180,5 @@ export default function LexicalTableOfContentsPlugin({
     };
   }, [editor]);
 
-  return children(tableOfContents);
+  return children(tableOfContents, editor);
 }

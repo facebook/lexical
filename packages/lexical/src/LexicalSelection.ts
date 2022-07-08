@@ -1051,7 +1051,9 @@ export class RangeSelection implements BaseSelection {
     }
     const selectedTextNodesLength = selectedTextNodes.length;
 
-    if (!selectedTextNodesLength) return;
+    if (selectedTextNodesLength === 0) {
+      return;
+    }
 
     let firstIndex = 0;
     const lastIndex = selectedTextNodesLength - 1;

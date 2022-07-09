@@ -160,10 +160,6 @@
     }
   },
   "dependencies": {
-    "@giphy/js-fetch-api": "^4.2.2",
-    "@giphy/js-types": "^4.2.1",
-    "@giphy/react-components": "^5.10.1",
-    "@types/katex": "^0.14.0",
-    "react-use": "^17.4.0"
+    "@types/katex": "^0.14.0"
   }
 }

@@ -1197,6 +1197,7 @@ button.action-button:disabled {
   cursor: pointer;
   vertical-align: middle;
   flex-shrink: 0;
+  align-items: center;
 }
 
 .toolbar button.toolbar-item:disabled {
@@ -1212,7 +1213,6 @@ button.action-button:disabled {
   display: inline-block;
   height: 18px;
   width: 18px;
-  margin-top: 2px;
   vertical-align: -0.25em;
   display: flex;
   opacity: 0.6;

@@ -13,6 +13,7 @@ import type {TextNode} from './nodes/LexicalTextNode';
 
 import {
   CAN_USE_BEFORE_INPUT,
+  IS_ANDROID,
   IS_FIREFOX,
   IS_IOS,
   IS_SAFARI,
@@ -384,7 +385,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
     // TODO: evaluate if this is Android only. It doesn't always seem
     // to have any real impact, so could probably be refactored or removed
     // for an alternative approach.
-    if (composedText) {
+    if (IS_ANDROID && composedText) {
       updateEditor(editor, () => {
         const selection = $getSelection();
 

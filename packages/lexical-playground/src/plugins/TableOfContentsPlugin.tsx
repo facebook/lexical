@@ -10,11 +10,10 @@ import type {NodeKey} from 'lexical';
 
 import '../ui/TableOfContentsStyle.css';
 
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import LexicalTableOfContents__EXPERIMENTAL from '@lexical/react/LexicalTableOfContents__EXPERIMENTAL';
-import {useEffect, useRef, useState} from 'react';
+import {useRef, useState} from 'react';
 import * as React from 'react';
-
-import {useLexicalComposerContext} from '../../../lexical-react/src/LexicalComposerContext';
 
 function TableOfContentsList({
   tableOfContents,
@@ -25,11 +24,6 @@ function TableOfContentsList({
   const selectedIndex = useRef(0);
   const [editor] = useLexicalComposerContext();
   let timerId: ReturnType<typeof setTimeout>;
-  useEffect(() => {
-    if (tableOfContents.length !== 0 && selectedKey === '') {
-      scrollToNode(tableOfContents[0][0], 0);
-    }
-  });
 
   function scrollToNode(key: NodeKey, currIndex: number) {
     editor.getEditorState().read(() => {
@@ -56,15 +50,20 @@ function TableOfContentsList({
     timerId = setTimeout(func, delay);
   }
 
-  function isElementOnScreen(element: HTMLElement) {
+  function isElementOnScreen(element: HTMLElement): {
+    isOnScreen: boolean;
+    top: number;
+    bottom: number;
+  } {
     const rect = element.getBoundingClientRect();
-    return (
+    const isOnScreen =
       rect.top >= 0 &&
       rect.left >= 0 &&
       rect.bottom <=
         (window.innerHeight || document.documentElement.clientHeight) &&
-      rect.right <= (window.innerWidth || document.documentElement.clientWidth)
-    );
+      rect.right <= (window.innerWidth || document.documentElement.clientWidth);
+
+    return {bottom: rect.bottom, isOnScreen: isOnScreen, top: rect.top};
   }
   function scrollCallback() {
     const st = window.pageYOffset || document.documentElement.scrollTop;
@@ -75,11 +74,17 @@ function TableOfContentsList({
           tableOfContents[selectedIndex.current][0],
         );
         if (currHeading !== null) {
-          const elementOnScreen = isElementOnScreen(currHeading);
-          if (elementOnScreen === false) {
-            const nextKey = tableOfContents[selectedIndex.current + 1][0];
-            selectedIndex.current++;
-            setSelectedKey(nextKey);
+          const {isOnScreen, bottom} = isElementOnScreen(currHeading);
+          if (isOnScreen === false) {
+            //check whether the element is not visible on the screen but exists down below
+            if (
+              bottom <=
+              (window.innerHeight || document.documentElement.clientHeight)
+            ) {
+              const nextKey = tableOfContents[selectedIndex.current + 1][0];
+              selectedIndex.current++;
+              setSelectedKey(nextKey);
+            }
           }
         }
       }
@@ -87,17 +92,20 @@ function TableOfContentsList({
       // scrolling down
       if (
         selectedIndex.current > 0 &&
-        selectedIndex.current < tableOfContents.length - 1
+        selectedIndex.current < tableOfContents.length
       ) {
         const prevHeading = editor.getElementByKey(
           tableOfContents[selectedIndex.current - 1][0],
         );
         if (prevHeading !== null) {
-          const elementOnScreen = isElementOnScreen(prevHeading);
-          if (elementOnScreen === true) {
-            const prevKey = tableOfContents[selectedIndex.current - 1][0];
-            setSelectedKey(prevKey);
-            selectedIndex.current--;
+          const {isOnScreen, top} = isElementOnScreen(prevHeading);
+          if (isOnScreen === true) {
+            //check whether the element exists above
+            if (top >= 0) {
+              const prevKey = tableOfContents[selectedIndex.current - 1][0];
+              setSelectedKey(prevKey);
+              selectedIndex.current--;
+            }
           }
         }
       }

@@ -21,7 +21,11 @@ window.addEventListener('message', function (event) {
     return;
   }
 
-  if (event.data.type && event.data.type === 'FROM_PAGE') {
+  if (
+    event.data.type &&
+    event.data.type === 'FROM_PAGE' &&
+    event.data.name === 'editor-update'
+  ) {
     const nodeMap = IS_FIREFOX
       ? event.data.editorState._nodeMap
       : Object.fromEntries(event.data.editorState._nodeMap); // workaround, for some reason Object.fromEntries fails without console.error in Firefox

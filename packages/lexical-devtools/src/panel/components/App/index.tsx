@@ -35,7 +35,7 @@ function App(): JSX.Element {
   useEffect(() => {
     if (port.current !== null) {
       port.current.onMessage.addListener(
-        (message: {editorState: EditorState}) => {
+        (message: {editorState: {nodeMap: NodeMap}}) => {
           setCount(count + 1);
           setIsLoading(false);
           // workaround for Firefox, message.editorState.nodeMap is either a vanilla object or a Map structure

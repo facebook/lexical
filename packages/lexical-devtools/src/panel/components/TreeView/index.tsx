@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {EditorState} from 'lexical';
+import type {NodeMap} from 'lexical';
 
 import './index.css';
 
@@ -15,10 +15,10 @@ import Node from '../Node';
 
 function TreeView({
   viewClassName,
-  editorState,
+  nodeMap,
 }: {
   viewClassName: string;
-  editorState: EditorState;
+  nodeMap: NodeMap;
 }): JSX.Element {
   const depthFirstSearch = (node) => {
     const {
@@ -33,7 +33,7 @@ function TreeView({
 
     if (Object.prototype.hasOwnProperty.call(node, '__children')) {
       node.__children.forEach((childKey) => {
-        const child = editorState.get(childKey);
+        const child = nodeMap[childKey];
         children.push(depthFirstSearch(child));
       });
     }
@@ -42,14 +42,14 @@ function TreeView({
     return branch;
   };
 
-  const generateTree = (nodeMap) => {
-    const root = depthFirstSearch(nodeMap.get('root'));
+  const generateTree = (map) => {
+    const root = depthFirstSearch(map.root);
     return <Node {...root} />;
   };
 
   return (
     <div className={viewClassName}>
-      <ul>{generateTree(editorState)}</ul>
+      <ul>{generateTree(nodeMap)}</ul>
     </div>
   );
 }

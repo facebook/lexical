@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+const IS_FIREFOX = navigator.userAgent.indexOf('Firefox') >= 0;
+
 const port = chrome.runtime.connect();
 
 port.postMessage({
@@ -20,8 +22,11 @@ window.addEventListener('message', function (event) {
   }
 
   if (event.data.type && event.data.type === 'FROM_PAGE') {
+    const nodeMap = IS_FIREFOX
+      ? event.data.editorState._nodeMap
+      : Object.fromEntries(event.data.editorState._nodeMap); // workaround, for some reason Object.fromEntries fails without console.error in Firefox
     port.postMessage({
-      editorState: event.data.editorState._nodeMap, // placeholder, sending _nodeMap for now because Chrome & Edge auto-serialize postMessages. sending the whole editorState throws a JSON serialization error due to its 'circular' JSON structure
+      editorState: {nodeMap},
       name: 'editor-update',
       type: 'FROM_CONTENT',
     });

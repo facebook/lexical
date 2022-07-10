@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {EditorState} from 'lexical';
+import type {NodeMap} from 'lexical';
 
 import './index.css';
 
@@ -18,7 +18,7 @@ import TreeView from '../TreeView';
 function App(): JSX.Element {
   const [count, setCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [editorState, setEditorState] = useState<EditorState | null>(null);
+  const [nodeMap, setNodeMap] = useState<NodeMap | Record<string, never>>({});
   const port = useRef<chrome.runtime.Port | null>(null);
 
   useEffect(() => {
@@ -38,7 +38,12 @@ function App(): JSX.Element {
         (message: {editorState: EditorState}) => {
           setCount(count + 1);
           setIsLoading(false);
-          setEditorState(message.editorState);
+          // workaround for Firefox, message.editorState.nodeMap is either a vanilla object or a Map structure
+          const newNodeMap =
+            message.editorState.nodeMap instanceof Map
+              ? Object.fromEntries(message.editorState.nodeMap) // we need object dot notation to work TreeView, so we convert Map to Object
+              : message.editorState.nodeMap;
+          setNodeMap(newNodeMap);
         },
       );
     }
@@ -56,7 +61,7 @@ function App(): JSX.Element {
           </div>
         </>
       ) : (
-        <TreeView viewClassName="tree-view-output" editorState={editorState} />
+        <TreeView viewClassName="tree-view-output" nodeMap={nodeMap} />
       )}
     </div>
   );

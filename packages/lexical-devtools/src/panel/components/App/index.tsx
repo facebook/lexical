@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import type {EditorState} from 'lexical';
 
 import './index.css';
 
@@ -12,11 +13,12 @@ import {EditorState} from 'lexical';
 import * as React from 'react';
 import {useEffect, useRef, useState} from 'react';
 
-import logo from '../../../images/lexical-white.png';
+import TreeView from '../TreeView';
 
 function App(): JSX.Element {
   const [count, setCount] = useState<number>(0);
-  const [, setEditorState] = useState<EditorState | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [editorState, setEditorState] = useState<EditorState | null>(null);
   const port = useRef<chrome.runtime.Port | null>(null);
 
   useEffect(() => {
@@ -35,6 +37,7 @@ function App(): JSX.Element {
       port.current.onMessage.addListener(
         (message: {editorState: EditorState}) => {
           setCount(count + 1);
+          setIsLoading(false);
           setEditorState(message.editorState);
         },
       );
@@ -44,12 +47,17 @@ function App(): JSX.Element {
   return (
     <div className="App">
       <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
         <p>Lexical Developer Tools</p>
-        <p>
-          <code>editorState</code> updates: {count}
-        </p>
       </header>
+      {isLoading ? (
+        <>
+          <div className="loading-view">
+            <p>Loading...</p>
+          </div>
+        </>
+      ) : (
+        <TreeView viewClassName="tree-view-output" editorState={editorState} />
+      )}
     </div>
   );
 }

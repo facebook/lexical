@@ -9,7 +9,6 @@ import type {NodeMap} from 'lexical';
 
 import './index.css';
 
-import {EditorState} from 'lexical';
 import * as React from 'react';
 import {useEffect, useRef, useState} from 'react';
 

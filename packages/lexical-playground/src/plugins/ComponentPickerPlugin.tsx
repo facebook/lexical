@@ -141,6 +141,7 @@ export default function ComponentPickerMenuPlugin(): JSX.Element {
           icon: <i className="icon table" />,
           keywords: ['table'],
           onSelect: () =>
+            // @ts-ignore Correct types, but since they're dynamic TS doesn't like it.
             editor.dispatchCommand(INSERT_TABLE_COMMAND, {columns, rows}),
         }),
       );
@@ -154,6 +155,7 @@ export default function ComponentPickerMenuPlugin(): JSX.Element {
               icon: <i className="icon table" />,
               keywords: ['table'],
               onSelect: () =>
+                // @ts-ignore Correct types, but since they're dynamic TS doesn't like it.
                 editor.dispatchCommand(INSERT_TABLE_COMMAND, {columns, rows}),
             }),
         ),
@@ -186,7 +188,7 @@ export default function ComponentPickerMenuPlugin(): JSX.Element {
                 const selection = $getSelection();
                 if ($isRangeSelection(selection)) {
                   $wrapLeafNodesInElements(selection, () =>
-                    // @ts-ignore
+                    // @ts-ignore Correct types, but since they're dynamic TS doesn't like it.
                     $createHeadingNode(`h${n}`),
                   );
                 }
@@ -308,6 +310,7 @@ export default function ComponentPickerMenuPlugin(): JSX.Element {
             icon: <i className={`icon ${alignment}-align`} />,
             keywords: ['align', 'justify', alignment],
             onSelect: () =>
+              // @ts-ignore Correct types, but since they're dynamic TS doesn't like it.
               editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, alignment),
           }),
       ),

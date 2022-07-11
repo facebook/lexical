@@ -56,11 +56,12 @@ export class TypeaheadOption {
   constructor(key: string) {
     this.key = key;
     this.ref = {current: null};
+    this.setRefElement = this.setRefElement.bind(this);
   }
 
-  setRefElement = (element: HTMLElement | null) => {
+  setRefElement(element: HTMLElement | null) {
     this.ref = {current: element};
-  };
+  }
 }
 
 declare type MenuRenderFn<TOption extends TypeaheadOption> = (

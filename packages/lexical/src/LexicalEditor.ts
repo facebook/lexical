@@ -171,7 +171,30 @@ export const COMMAND_PRIORITY_HIGH = 3;
 export const COMMAND_PRIORITY_CRITICAL = 4;
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export type LexicalCommand<T = never> = Readonly<Record<string, unknown>>;
+export type LexicalCommand<TPayload> = Record<string, never>;
+/**
+ * Type helper for extracting the payload type from a command.
+ *
+ * @example
+ * ```ts
+ * const MY_COMMAND = createCommand<SomeType>();
+ *
+ * // ...
+ *
+ * editor.registerCommand(MY_COMMAND, payload => {
+ *   // Type of `payload` is inferred here. But lets say we want to extract a function to delegate to
+ *   handleMyCommand(editor, payload);
+ *   return true;
+ * });
+ *
+ * function handleMyCommand(editor: LexicalEditor, payload: CommandPayloadType<typeof MY_COMMAND>) {
+ *   // `payload` is of type `SomeType`, extracted from the command.
+ * }
+ * ```
+ */
+export type CommandPayloadType<TCommand extends LexicalCommand<unknown>> =
+  TCommand extends LexicalCommand<infer TPayload> ? TPayload : never;
+
 type Commands = Map<
   LexicalCommand<unknown>,
   Array<Set<CommandListener<unknown>>>
@@ -634,7 +657,10 @@ export class LexicalEditor {
     return true;
   }
 
-  dispatchCommand<P>(type: LexicalCommand<P>, payload: P): boolean {
+  dispatchCommand<
+    TCommand extends LexicalCommand<unknown>,
+    TPayload extends CommandPayloadType<TCommand>,
+  >(type: TCommand, payload: TPayload): boolean {
     return dispatchCommand(this, type, payload);
   }
 

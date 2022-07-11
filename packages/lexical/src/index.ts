@@ -8,6 +8,7 @@
 
 export type {
   CommandListenerPriority,
+  CommandPayloadType,
   EditorConfig,
   EditorThemeClasses,
   IntentionallyMarkedAsDirtyElement,

@@ -1160,24 +1160,22 @@ export function registerCodeHighlighting(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand(
       KEY_ARROW_UP_COMMAND,
-      (payload: KeyboardEvent): boolean =>
-        handleShiftLines(KEY_ARROW_UP_COMMAND, payload),
+      (payload): boolean => handleShiftLines(KEY_ARROW_UP_COMMAND, payload),
       COMMAND_PRIORITY_LOW,
     ),
     editor.registerCommand(
       KEY_ARROW_DOWN_COMMAND,
-      (payload: KeyboardEvent): boolean =>
-        handleShiftLines(KEY_ARROW_DOWN_COMMAND, payload),
+      (payload): boolean => handleShiftLines(KEY_ARROW_DOWN_COMMAND, payload),
       COMMAND_PRIORITY_LOW,
     ),
     editor.registerCommand(
       MOVE_TO_END,
-      (payload: KeyboardEvent): boolean => handleMoveTo(MOVE_TO_END, payload),
+      (payload): boolean => handleMoveTo(MOVE_TO_END, payload),
       COMMAND_PRIORITY_LOW,
     ),
     editor.registerCommand(
       MOVE_TO_START,
-      (payload: KeyboardEvent): boolean => handleMoveTo(MOVE_TO_START, payload),
+      (payload): boolean => handleMoveTo(MOVE_TO_START, payload),
       COMMAND_PRIORITY_LOW,
     ),
   );

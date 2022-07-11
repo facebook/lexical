@@ -8,6 +8,7 @@
 
 import './index.css';
 
+import {EditorState} from 'lexical';
 import * as React from 'react';
 import {useEffect, useRef, useState} from 'react';
 
@@ -15,16 +16,14 @@ import logo from '../../../images/lexical-white.png';
 
 function App(): JSX.Element {
   const [count, setCount] = useState<number>(0);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [editorState, setEditorState] = useState<object>({});
-  const port = useRef<object>({});
+  const [, setEditorState] = useState<EditorState | null>(null);
+  const port = useRef<chrome.runtime.Port | null>(null);
 
   useEffect(() => {
     // create and initialize the messaging port to receive editorState updates
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (port.current as any) = window.chrome.runtime.connect();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (port.current as any).postMessage({
+    port.current = window.chrome.runtime.connect();
+
+    port.current.postMessage({
       name: 'init',
       tabId: window.chrome.devtools.inspectedWindow.tabId,
       type: 'FROM_APP',
@@ -32,13 +31,14 @@ function App(): JSX.Element {
   }, [port]);
 
   useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (port.current as any).onMessage.addListener(
-      (message: {editorState: React.SetStateAction<object>}) => {
-        setCount(count + 1);
-        setEditorState(message.editorState);
-      },
-    );
+    if (port.current !== null) {
+      port.current.onMessage.addListener(
+        (message: {editorState: EditorState}) => {
+          setCount(count + 1);
+          setEditorState(message.editorState);
+        },
+      );
+    }
   });
 
   return (

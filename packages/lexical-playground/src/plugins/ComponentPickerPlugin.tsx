@@ -355,7 +355,7 @@ export default function ComponentPickerMenuPlugin(): JSX.Element {
       <LexicalTypeaheadMenuPlugin<ComponentPickerOption>
         onQueryChange={setQueryString}
         onSelectOption={onSelectOption}
-        matchResolverFn={checkForTriggerMatch}
+        triggerFn={checkForTriggerMatch}
         options={options}
         menuRenderFn={(
           anchorElement,

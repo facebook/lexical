@@ -430,7 +430,7 @@ function ShortcutTypeahead<TOption extends TypeaheadOption>({
 export function useBasicTypeaheadTriggerMatch(
   trigger: string,
   {minLength = 1, maxLength = 75}: {minLength?: number; maxLength?: number},
-): MatchResolverFn {
+): TriggerFn {
   return useCallback(
     (text: string) => {
       const validChars = '[^' + trigger + PUNCTUATION + '\\s]';
@@ -474,17 +474,17 @@ type TypeaheadMenuPluginArgs<TOption extends TypeaheadOption> = {
   ) => void;
   options: Array<TOption>;
   menuRenderFn: MenuRenderFn<TOption>;
-  matchResolverFn: MatchResolverFn;
+  triggerFn: TriggerFn;
 };
 
-type MatchResolverFn = (text: string) => QueryMatch | null;
+type TriggerFn = (text: string) => QueryMatch | null;
 
 export function LexicalTypeaheadMenuPlugin<TOption extends TypeaheadOption>({
   options,
   onQueryChange,
   onSelectOption,
   menuRenderFn,
-  matchResolverFn,
+  triggerFn,
 }: TypeaheadMenuPluginArgs<TOption>): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
 
@@ -512,7 +512,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends TypeaheadOption>({
         }
         previousText = text;
 
-        const match = matchResolverFn(text);
+        const match = triggerFn(text);
         onQueryChange(match ? match.matchingString : null);
 
         if (
@@ -540,7 +540,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends TypeaheadOption>({
       activeRange = null;
       removeUpdateListener();
     };
-  }, [editor, matchResolverFn, onQueryChange, resolution]);
+  }, [editor, triggerFn, onQueryChange, resolution]);
 
   const closeTypeahead = useCallback(() => {
     setResolution(null);

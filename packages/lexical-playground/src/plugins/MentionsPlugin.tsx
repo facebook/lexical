@@ -657,12 +657,14 @@ export default function NewMentionsPlugin(): JSX.Element | null {
   const onSelectOption = useCallback(
     (
       selectedOption: MentionTypeaheadOption,
-      nodeToReplace: TextNode,
+      nodeToReplace: TextNode | null,
       closeMenu: () => void,
     ) => {
       editor.update(() => {
         const mentionNode = $createMentionNode(selectedOption.name);
-        nodeToReplace.replace(mentionNode);
+        if (nodeToReplace) {
+          nodeToReplace.replace(mentionNode);
+        }
         mentionNode.select();
         closeMenu();
       });

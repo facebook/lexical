@@ -334,12 +334,14 @@ export default function ComponentPickerMenuPlugin(): JSX.Element {
   const onSelectOption = useCallback(
     (
       selectedOption: ComponentPickerOption,
-      nodeToRemove: TextNode,
+      nodeToRemove: TextNode | null,
       closeMenu: () => void,
       matchingString: string,
     ) => {
       editor.update(() => {
-        nodeToRemove.remove();
+        if (nodeToRemove) {
+          nodeToRemove.remove();
+        }
         selectedOption.onSelect(matchingString);
         closeMenu();
       });

@@ -156,49 +156,42 @@ function getFullMatchOffset(
  * Split Lexica TextNode and return a new TextNode only containing matched text.
  * Common use cases include: removing the node, replacing with a new node.
  */
-async function splitNodeContainingQuery(
+function splitNodeContainingQuery(
   editor: LexicalEditor,
   match: QueryMatch,
-): Promise<TextNode> {
-  let textNodeContainingQuery: TextNode;
+): TextNode | null {
+  const selection = $getSelection();
+  if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+    return null;
+  }
+  const anchor = selection.anchor;
+  if (anchor.type !== 'text') {
+    return null;
+  }
+  const anchorNode = anchor.getNode();
+  if (!anchorNode.isSimpleText()) {
+    return null;
+  }
+  const selectionOffset = anchor.offset;
+  const textContent = anchorNode.getTextContent().slice(0, selectionOffset);
+  const characterOffset = match.replaceableString.length;
+  const queryOffset = getFullMatchOffset(
+    textContent,
+    match.matchingString,
+    characterOffset,
+  );
+  const startOffset = selectionOffset - queryOffset;
+  if (startOffset < 0) {
+    return null;
+  }
+  let newNode;
+  if (startOffset === 0) {
+    [newNode] = anchorNode.splitText(selectionOffset);
+  } else {
+    [, newNode] = anchorNode.splitText(startOffset, selectionOffset);
+  }
 
-  await editor.update(() => {
-    const selection = $getSelection();
-    if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
-      return;
-    }
-    const anchor = selection.anchor;
-    if (anchor.type !== 'text') {
-      return;
-    }
-    const anchorNode = anchor.getNode();
-    if (!anchorNode.isSimpleText()) {
-      return;
-    }
-    const selectionOffset = anchor.offset;
-    const textContent = anchorNode.getTextContent().slice(0, selectionOffset);
-    const characterOffset = match.replaceableString.length;
-    const queryOffset = getFullMatchOffset(
-      textContent,
-      match.matchingString,
-      characterOffset,
-    );
-    const startOffset = selectionOffset - queryOffset;
-    if (startOffset < 0) {
-      return;
-    }
-    let newNode;
-    if (startOffset === 0) {
-      [newNode] = anchorNode.splitText(selectionOffset);
-    } else {
-      [, newNode] = anchorNode.splitText(startOffset, selectionOffset);
-    }
-
-    textNodeContainingQuery = newNode;
-  });
-
-  // @ts-ignore
-  return textNodeContainingQuery;
+  return newNode;
 }
 
 function isSelectionOnEntityBoundary(
@@ -235,7 +228,7 @@ function ShortcutTypeahead<TOption extends TypeaheadOption>({
   menuRenderFn: MenuRenderFn<TOption>;
   onSelectOption: (
     option: TOption,
-    textNodeContainingQuery: TextNode,
+    textNodeContainingQuery: TextNode | null,
     closeMenu: () => void,
     matchingString: string,
   ) => void;
@@ -276,12 +269,13 @@ function ShortcutTypeahead<TOption extends TypeaheadOption>({
   }, [editor, resolution, options]);
 
   const selectOptionAndCleanUp = useCallback(
-    (selectedEntry: TOption) => {
-      editor.update(async () => {
-        const textNodeContainingQuery = await splitNodeContainingQuery(
+    async (selectedEntry: TOption) => {
+      editor.update(() => {
+        const textNodeContainingQuery = splitNodeContainingQuery(
           editor,
           resolution.match,
         );
+
         onSelectOption(
           selectedEntry,
           textNodeContainingQuery,
@@ -474,7 +468,7 @@ type TypeaheadMenuPluginArgs<TOption extends TypeaheadOption> = {
   onQueryChange: (matchingString: string | null) => void;
   onSelectOption: (
     option: TOption,
-    textNodeContainingQuery: TextNode,
+    textNodeContainingQuery: TextNode | null,
     closeMenu: () => void,
     matchingString: string,
   ) => void;

@@ -18,7 +18,7 @@ export type SettingName =
   | 'showTreeView'
   | 'showNestedEditorTreeView'
   | 'emptyEditor'
-  | 'isTableOfContents';
+  | 'showTableOfContents';
 
 export type Settings = Record<SettingName, boolean>;
 
@@ -36,8 +36,8 @@ export const DEFAULT_SETTINGS: Settings = {
   isCollab: false,
   isMaxLength: false,
   isRichText: true,
-  isTableOfContents: false,
   measureTypingPerf: false,
   showNestedEditorTreeView: false,
+  showTableOfContents: false,
   showTreeView: true,
 };

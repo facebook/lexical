@@ -6,21 +6,23 @@
  *
  */
 
-import type {
+import {
+  $createParagraphNode,
+  $getRoot,
+  $getSelection,
+  $isElementNode,
+  $isGridSelection,
+  $isNodeSelection,
+  $isRangeSelection,
+  $isTextNode,
+  $setSelection,
+  createEditor,
   EditorState,
   ElementNode,
   Klass,
   LexicalEditor,
   LexicalNode,
   NodeKey,
-} from 'lexical';
-
-import {
-  $getRoot,
-  $isElementNode,
-  $isTextNode,
-  $setSelection,
-  createEditor,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -405,4 +407,22 @@ export function $restoreEditorState(
   editor._dirtyType = FULL_RECONCILE;
   const selection = editorState._selection;
   $setSelection(selection === null ? null : selection.clone());
+}
+
+export function $insertBlockNode<T extends LexicalNode>(node: T): T {
+  const selection = $getSelection();
+  if ($isRangeSelection(selection)) {
+    const focusNode = selection.focus.getNode();
+    focusNode.getTopLevelElementOrThrow().insertAfter(node);
+  } else if ($isNodeSelection(selection) || $isGridSelection(selection)) {
+    const nodes = selection.getNodes();
+    nodes[nodes.length - 1].getTopLevelElementOrThrow().insertAfter(node);
+  } else {
+    const root = $getRoot();
+    root.append(node);
+  }
+  const paragraphNode = $createParagraphNode();
+  node.insertAfter(paragraphNode);
+  paragraphNode.select();
+  return node.getLatest();
 }

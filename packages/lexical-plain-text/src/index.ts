@@ -6,7 +6,7 @@
  *
  */
 
-import type {EditorState, LexicalEditor} from 'lexical';
+import type {CommandPayloadType, EditorState, LexicalEditor} from 'lexical';
 
 import {
   $getHtmlContent,
@@ -64,12 +64,13 @@ const updateOptions: {
 } = options;
 
 function onCopyForPlainText(
-  event: ClipboardEvent,
+  event: CommandPayloadType<typeof COPY_COMMAND>,
   editor: LexicalEditor,
 ): void {
   event.preventDefault();
   editor.update(() => {
-    const clipboardData = event.clipboardData;
+    const clipboardData =
+      event instanceof KeyboardEvent ? null : event.clipboardData;
     const selection = $getSelection();
 
     if (selection !== null) {
@@ -87,13 +88,14 @@ function onCopyForPlainText(
 }
 
 function onPasteForPlainText(
-  event: ClipboardEvent,
+  event: CommandPayloadType<typeof PASTE_COMMAND>,
   editor: LexicalEditor,
 ): void {
   event.preventDefault();
   editor.update(() => {
     const selection = $getSelection();
-    const clipboardData = event.clipboardData;
+    const clipboardData =
+      event instanceof InputEvent ? null : event.clipboardData;
 
     if (clipboardData != null && $isRangeSelection(selection)) {
       $insertDataTransferForPlainText(clipboardData, selection);
@@ -101,7 +103,10 @@ function onPasteForPlainText(
   });
 }
 
-function onCutForPlainText(event: ClipboardEvent, editor: LexicalEditor): void {
+function onCutForPlainText(
+  event: CommandPayloadType<typeof CUT_COMMAND>,
+  editor: LexicalEditor,
+): void {
   onCopyForPlainText(event, editor);
   editor.update(() => {
     const selection = $getSelection();
@@ -378,7 +383,7 @@ export function registerPlainText(
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<ClipboardEvent>(
+    editor.registerCommand(
       COPY_COMMAND,
       (event) => {
         const selection = $getSelection();
@@ -392,7 +397,7 @@ export function registerPlainText(
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<ClipboardEvent>(
+    editor.registerCommand(
       CUT_COMMAND,
       (event) => {
         const selection = $getSelection();
@@ -406,7 +411,7 @@ export function registerPlainText(
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<ClipboardEvent>(
+    editor.registerCommand(
       PASTE_COMMAND,
       (event) => {
         const selection = $getSelection();

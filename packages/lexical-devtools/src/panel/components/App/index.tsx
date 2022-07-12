@@ -54,11 +54,9 @@ function App(): JSX.Element {
         <p>Lexical Developer Tools</p>
       </header>
       {isLoading ? (
-        <>
-          <div className="loading-view">
-            <p>Loading...</p>
-          </div>
-        </>
+        <div className="loading-view">
+          <p>Loading...</p>
+        </div>
       ) : (
         <TreeView viewClassName="tree-view-output" nodeMap={nodeMap} />
       )}

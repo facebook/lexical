@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {NodeMap} from 'lexical';
+import type {NodeKey, NodeMap} from 'lexical';
 
 import './index.css';
 
@@ -29,7 +29,7 @@ function TreeView({
     } = node;
     const branch = {cachedText, lexicalKey, text, type};
 
-    const children = [];
+    const children: Array<NodeKey> = [];
 
     if (Object.prototype.hasOwnProperty.call(node, '__children')) {
       node.__children.forEach((childKey) => {

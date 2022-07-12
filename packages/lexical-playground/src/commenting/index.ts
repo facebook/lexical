@@ -171,8 +171,7 @@ export class CommentStore {
   deleteCommentOrThread(
     commentOrThread: Comment | Thread,
     thread?: Thread,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ): any {
+  ): {markedComment: Comment; index: number} | null {
     const nextComments = Array.from(this._comments);
     // The YJS types explicitly use `any` as well.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -213,7 +212,7 @@ export class CommentStore {
 
     if (commentOrThread.type === 'comment') {
       return {
-        index: commentIndex,
+        index: commentIndex as number,
         markedComment: markDeleted(commentOrThread as Comment),
       };
     }

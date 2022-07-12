@@ -778,10 +778,12 @@ export default function CommentPlugin({
   const deleteCommentOrThread = useCallback(
     (comment: Comment | Thread, thread?: Thread) => {
       if (comment.type === 'comment') {
-        const {markedComment, index} = commentStore.deleteCommentOrThread(
+        const deletionInfo = commentStore.deleteCommentOrThread(
           comment,
           thread,
         );
+        if (!deletionInfo) return;
+        const {markedComment, index} = deletionInfo;
         commentStore.addComment(markedComment, thread, index);
       } else {
         commentStore.deleteCommentOrThread(comment);

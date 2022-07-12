@@ -13,7 +13,6 @@ import type {TextNode} from './nodes/LexicalTextNode';
 
 import {
   CAN_USE_BEFORE_INPUT,
-  IS_ANDROID,
   IS_FIREFOX,
   IS_IOS,
   IS_SAFARI,
@@ -375,52 +374,6 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
   ) {
     return;
   } else if (inputType === 'insertCompositionText') {
-    // This logic handles insertion of text between different
-    // format text types. We have to detect a change in type
-    // during composition and see if the previous text contains
-    // part of the composed text to work out the actual text that
-    // we need to insert.
-    const composedText = event.data;
-
-    // TODO: evaluate if this is Android only. It doesn't always seem
-    // to have any real impact, so could probably be refactored or removed
-    // for an alternative approach.
-    if (IS_ANDROID && composedText) {
-      updateEditor(editor, () => {
-        const selection = $getSelection();
-
-        if ($isRangeSelection(selection)) {
-          const anchor = selection.anchor;
-          const node = anchor.getNode();
-          const prevNode = node.getPreviousSibling();
-
-          if (
-            anchor.offset === 0 &&
-            $isTextNode(node) &&
-            $isTextNode(prevNode) &&
-            node.getTextContent() === COMPOSITION_START_CHAR &&
-            prevNode.getFormat() !== selection.format
-          ) {
-            const prevTextContent = prevNode.getTextContent();
-
-            if (composedText.indexOf(prevTextContent) === 0) {
-              const insertedText = composedText.slice(prevTextContent.length);
-              dispatchCommand(
-                editor,
-                CONTROLLED_TEXT_INSERTION_COMMAND,
-                insertedText,
-              );
-              setTimeout(() => {
-                updateEditor(editor, () => {
-                  node.select();
-                });
-              }, ANDROID_COMPOSITION_LATENCY);
-            }
-          }
-        }
-      });
-    }
-
     return;
   }
 

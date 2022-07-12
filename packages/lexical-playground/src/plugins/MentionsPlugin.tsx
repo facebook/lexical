@@ -691,7 +691,7 @@ export default function NewMentionsPlugin(): JSX.Element | null {
         anchorElement,
         {selectedIndex, selectOptionAndCleanUp, setHighlightedIndex},
       ) =>
-        anchorElement
+        anchorElement && results.length
           ? ReactDOM.createPortal(
               <ul>
                 {options.map((option, i: number) => (

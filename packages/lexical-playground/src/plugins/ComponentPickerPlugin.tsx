@@ -364,7 +364,7 @@ export default function ComponentPickerMenuPlugin(): JSX.Element {
           anchorElement,
           {selectedIndex, selectOptionAndCleanUp, setHighlightedIndex},
         ) =>
-          anchorElement
+          anchorElement && options.length
             ? ReactDOM.createPortal(
                 <ul>
                   {options.map((option, i: number) => (

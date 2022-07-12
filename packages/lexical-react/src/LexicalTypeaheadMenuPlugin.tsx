@@ -377,7 +377,11 @@ function ShortcutTypeahead<TOption extends TypeaheadOption>({
         KEY_TAB_COMMAND,
         (payload) => {
           const event = payload;
-          if (options === null || selectedIndex === null) {
+          if (
+            options === null ||
+            selectedIndex === null ||
+            options[selectedIndex] == null
+          ) {
             return false;
           }
           event.preventDefault();
@@ -390,7 +394,11 @@ function ShortcutTypeahead<TOption extends TypeaheadOption>({
       editor.registerCommand(
         KEY_ENTER_COMMAND,
         (event: KeyboardEvent | null) => {
-          if (options === null || selectedIndex === null) {
+          if (
+            options === null ||
+            selectedIndex === null ||
+            options[selectedIndex] == null
+          ) {
             return false;
           }
           if (event !== null) {

@@ -6,45 +6,19 @@
  *
  */
 
-import type {LexicalEditor, RangeSelection} from 'lexical';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {mergeRegister} from '@lexical/utils';
 import {
-  $getSelection,
-  $isRangeSelection,
-  $isTextNode,
-  COMMAND_PRIORITY_LOW,
-  KEY_ARROW_DOWN_COMMAND,
-  KEY_ARROW_UP_COMMAND,
-  KEY_ENTER_COMMAND,
-  KEY_ESCAPE_COMMAND,
-  KEY_TAB_COMMAND,
-} from 'lexical';
-import {
-  ReactPortal,
-  startTransition,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+  LexicalTypeaheadMenuPlugin,
+  QueryMatch,
+  TypeaheadOption,
+  useBasicTypeaheadTriggerMatch,
+} from '@lexical/react/LexicalTypeaheadMenuPlugin';
+import {TextNode} from 'lexical';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 import * as React from 'react';
-import {createPortal} from 'react-dom';
-import useLayoutEffect from 'shared/useLayoutEffect';
+import * as ReactDOM from 'react-dom';
 
-import {$createMentionNode, MentionNode} from '../nodes/MentionNode';
-
-type MentionMatch = {
-  leadOffset: number;
-  matchingString: string;
-  replaceableString: string;
-};
-
-type Resolution = {
-  match: MentionMatch;
-  range: Range;
-};
+import {$createMentionNode} from '../nodes/MentionNode';
 
 const PUNCTUATION =
   '\\.,\\+\\*\\?\\$\\@\\|#{}\\(\\)\\^\\-\\[\\]\\\\/!%\'"~=<>_:;';
@@ -61,7 +35,7 @@ const CapitalizedNameMentionsRegex = new RegExp(
 
 const PUNC = DocumentMentionsRegex.PUNCTUATION;
 
-const TRIGGERS = ['@', '\\uff20'].join('');
+const TRIGGERS = ['@'].join('');
 
 // Chars we expect to see in a mention (non-space, non-punctuation).
 const VALID_CHARS = '[^' + TRIGGERS + PUNC + '\\s]';
@@ -522,28 +496,26 @@ const dummyMentionsData = [
 ];
 
 const dummyLookupService = {
-  search(
-    string: string,
-    callback: (results: Array<string> | null) => void,
-  ): void {
+  search(string: string, callback: (results: Array<string>) => void): void {
     setTimeout(() => {
       const results = dummyMentionsData.filter((mention) =>
         mention.toLowerCase().includes(string.toLowerCase()),
       );
-      if (results.length === 0) {
-        callback(null);
-      } else {
-        callback(results);
-      }
+      callback(results);
     }, 500);
   },
 };
 
-function useMentionLookupService(mentionString: string) {
-  const [results, setResults] = useState<Array<string> | null>(null);
+function useMentionLookupService(mentionString: string | null) {
+  const [results, setResults] = useState<Array<string>>([]);
 
   useEffect(() => {
     const cachedResults = mentionsCache.get(mentionString);
+
+    if (mentionString == null) {
+      setResults([]);
+      return;
+    }
 
     if (cachedResults === null) {
       return;
@@ -562,239 +534,10 @@ function useMentionLookupService(mentionString: string) {
   return results;
 }
 
-function MentionsTypeaheadItem({
-  index,
-  isSelected,
-  onClick,
-  onMouseEnter,
-  result,
-}: {
-  index: number;
-  isSelected: boolean;
-  onClick: () => void;
-  onMouseEnter: () => void;
-  result: string;
-}) {
-  const liRef = useRef(null);
-
-  let className = 'item';
-  if (isSelected) {
-    className += ' selected';
-  }
-
-  return (
-    <li
-      key={result}
-      tabIndex={-1}
-      className={className}
-      ref={liRef}
-      role="option"
-      aria-selected={isSelected}
-      id={'typeahead-item-' + index}
-      onMouseEnter={onMouseEnter}
-      onClick={onClick}>
-      {result}
-    </li>
-  );
-}
-
-function MentionsTypeahead({
-  close,
-  editor,
-  resolution,
-}: {
-  close: () => void;
-  editor: LexicalEditor;
-  resolution: Resolution;
-}): JSX.Element | null {
-  const divRef = useRef<HTMLDivElement>(null);
-  const match = resolution.match;
-  const results = useMentionLookupService(match.matchingString);
-  const [selectedIndex, setSelectedIndex] = useState<null | number>(null);
-
-  useEffect(() => {
-    const div = divRef.current;
-    const rootElement = editor.getRootElement();
-    if (results !== null && div !== null && rootElement !== null) {
-      const range = resolution.range;
-      const {left, top, height} = range.getBoundingClientRect();
-      div.style.top = `${top + height + 2}px`;
-      div.style.left = `${left - 14}px`;
-      div.style.display = 'block';
-      rootElement.setAttribute('aria-controls', 'mentions-typeahead');
-
-      return () => {
-        div.style.display = 'none';
-        rootElement.removeAttribute('aria-controls');
-      };
-    }
-  }, [editor, resolution, results]);
-
-  const applyCurrentSelected = useCallback(() => {
-    if (results === null || selectedIndex === null) {
-      return;
-    }
-    const selectedEntry = results[selectedIndex];
-
-    close();
-
-    createMentionNodeFromSearchResult(editor, selectedEntry, match);
-  }, [close, match, editor, results, selectedIndex]);
-
-  const updateSelectedIndex = useCallback(
-    (index: number) => {
-      const rootElem = editor.getRootElement();
-      if (rootElem !== null) {
-        rootElem.setAttribute(
-          'aria-activedescendant',
-          'typeahead-item-' + index,
-        );
-        setSelectedIndex(index);
-      }
-    },
-    [editor],
-  );
-
-  useEffect(() => {
-    return () => {
-      const rootElem = editor.getRootElement();
-      if (rootElem !== null) {
-        rootElem.removeAttribute('aria-activedescendant');
-      }
-    };
-  }, [editor]);
-
-  useLayoutEffect(() => {
-    if (results === null) {
-      setSelectedIndex(null);
-    } else if (selectedIndex === null) {
-      updateSelectedIndex(0);
-    }
-  }, [results, selectedIndex, updateSelectedIndex]);
-
-  useEffect(() => {
-    return mergeRegister(
-      editor.registerCommand<KeyboardEvent>(
-        KEY_ARROW_DOWN_COMMAND,
-        (payload) => {
-          const event = payload;
-          if (results !== null && selectedIndex !== null) {
-            if (
-              selectedIndex < SUGGESTION_LIST_LENGTH_LIMIT - 1 &&
-              selectedIndex !== results.length - 1
-            ) {
-              updateSelectedIndex(selectedIndex + 1);
-            }
-            event.preventDefault();
-            event.stopImmediatePropagation();
-          }
-          return true;
-        },
-        COMMAND_PRIORITY_LOW,
-      ),
-      editor.registerCommand<KeyboardEvent>(
-        KEY_ARROW_UP_COMMAND,
-        (payload) => {
-          const event = payload;
-          if (results !== null && selectedIndex !== null) {
-            if (selectedIndex !== 0) {
-              updateSelectedIndex(selectedIndex - 1);
-            }
-            event.preventDefault();
-            event.stopImmediatePropagation();
-          }
-          return true;
-        },
-        COMMAND_PRIORITY_LOW,
-      ),
-      editor.registerCommand<KeyboardEvent>(
-        KEY_ESCAPE_COMMAND,
-        (payload) => {
-          const event = payload;
-          if (results === null || selectedIndex === null) {
-            return false;
-          }
-          event.preventDefault();
-          event.stopImmediatePropagation();
-          close();
-          return true;
-        },
-        COMMAND_PRIORITY_LOW,
-      ),
-      editor.registerCommand<KeyboardEvent>(
-        KEY_TAB_COMMAND,
-        (payload) => {
-          const event = payload;
-          if (results === null || selectedIndex === null) {
-            return false;
-          }
-          event.preventDefault();
-          event.stopImmediatePropagation();
-          applyCurrentSelected();
-          return true;
-        },
-        COMMAND_PRIORITY_LOW,
-      ),
-      editor.registerCommand(
-        KEY_ENTER_COMMAND,
-        (event: KeyboardEvent | null) => {
-          if (results === null || selectedIndex === null) {
-            return false;
-          }
-          if (event !== null) {
-            event.preventDefault();
-            event.stopImmediatePropagation();
-          }
-          applyCurrentSelected();
-          return true;
-        },
-        COMMAND_PRIORITY_LOW,
-      ),
-    );
-  }, [
-    applyCurrentSelected,
-    close,
-    editor,
-    results,
-    selectedIndex,
-    updateSelectedIndex,
-  ]);
-
-  if (results === null) {
-    return null;
-  }
-
-  return (
-    <div
-      aria-label="Suggested mentions"
-      id="mentions-typeahead"
-      ref={divRef}
-      role="listbox">
-      <ul>
-        {results.slice(0, SUGGESTION_LIST_LENGTH_LIMIT).map((result, i) => (
-          <MentionsTypeaheadItem
-            index={i}
-            isSelected={i === selectedIndex}
-            onClick={() => {
-              setSelectedIndex(i);
-              applyCurrentSelected();
-            }}
-            onMouseEnter={() => {
-              setSelectedIndex(i);
-            }}
-            key={result}
-            result={result}
-          />
-        ))}
-      </ul>
-    </div>
-  );
-}
-
 function checkForCapitalizedNameMentions(
   text: string,
   minMatchLength: number,
-): MentionMatch | null {
+): QueryMatch | null {
   const match = CapitalizedNameMentionsRegex.exec(text);
   if (match !== null) {
     // The strategy ignores leading whitespace but we need to know it's
@@ -816,7 +559,7 @@ function checkForCapitalizedNameMentions(
 function checkForAtSignMentions(
   text: string,
   minMatchLength: number,
-): MentionMatch | null {
+): QueryMatch | null {
   let match = AtSignMentionsRegex.exec(text);
 
   if (match === null) {
@@ -839,224 +582,138 @@ function checkForAtSignMentions(
   return null;
 }
 
-function getPossibleMentionMatch(text: string): MentionMatch | null {
+function getPossibleQueryMatch(text: string): QueryMatch | null {
   const match = checkForAtSignMentions(text, 1);
   return match === null ? checkForCapitalizedNameMentions(text, 3) : match;
 }
 
-function getTextUpToAnchor(selection: RangeSelection): string | null {
-  const anchor = selection.anchor;
-  if (anchor.type !== 'text') {
-    return null;
+class MentionTypeaheadOption extends TypeaheadOption {
+  name: string;
+  picture: JSX.Element;
+
+  constructor(name: string, picture: JSX.Element) {
+    super(name);
+    this.name = name;
+    this.picture = picture;
   }
-  const anchorNode = anchor.getNode();
-  // We should not be attempting to extract mentions out of nodes
-  // that are already being used for other core things. This is
-  // especially true for token nodes, which can't be mutated at all.
-  if (!anchorNode.isSimpleText()) {
-    return null;
+}
+
+function MentionsTypeaheadMenuItem({
+  index,
+  isSelected,
+  onClick,
+  onMouseEnter,
+  option,
+}: {
+  index: number;
+  isSelected: boolean;
+  onClick: () => void;
+  onMouseEnter: () => void;
+  option: MentionTypeaheadOption;
+}) {
+  let className = 'item';
+  if (isSelected) {
+    className += ' selected';
   }
-  const anchorOffset = anchor.offset;
-  return anchorNode.getTextContent().slice(0, anchorOffset);
+  return (
+    <li
+      key={option.key}
+      tabIndex={-1}
+      className={className}
+      ref={option.setRefElement}
+      role="option"
+      aria-selected={isSelected}
+      id={'typeahead-item-' + index}
+      onMouseEnter={onMouseEnter}
+      onClick={onClick}>
+      {option.picture}
+      <span className="text">{option.name}</span>
+    </li>
+  );
 }
 
-function tryToPositionRange(match: MentionMatch, range: Range): boolean {
-  const domSelection = window.getSelection();
-  if (domSelection === null || !domSelection.isCollapsed) {
-    return false;
-  }
-  const anchorNode = domSelection.anchorNode;
-  const startOffset = match.leadOffset;
-  const endOffset = domSelection.anchorOffset;
-  try {
-    if (anchorNode) {
-      range.setStart(anchorNode, startOffset);
-      range.setEnd(anchorNode, endOffset);
-    }
-  } catch (error) {
-    return false;
-  }
-
-  return true;
-}
-
-function getMentionsTextToSearch(editor: LexicalEditor): string | null {
-  let text = null;
-  editor.getEditorState().read(() => {
-    const selection = $getSelection();
-    if (!$isRangeSelection(selection)) {
-      return;
-    }
-    text = getTextUpToAnchor(selection);
-  });
-  return text;
-}
-
-/**
- * Walk backwards along user input and forward through entity title to try
- * and replace more of the user's text with entity.
- *
- * E.g. User types "Hello Sarah Smit" and we match "Smit" to "Sarah Smith".
- * Replacing just the match would give us "Hello Sarah Sarah Smith".
- * Instead we find the string "Sarah Smit" and replace all of it.
- */
-function getMentionOffset(
-  documentText: string,
-  entryText: string,
-  offset: number,
-): number {
-  let triggerOffset = offset;
-  for (let ii = triggerOffset; ii <= entryText.length; ii++) {
-    if (documentText.substr(-ii) === entryText.substr(0, ii)) {
-      triggerOffset = ii;
-    }
-  }
-
-  return triggerOffset;
-}
-
-/**
- * From a Typeahead Search Result, replace plain text from search offset and
- * render a newly created MentionNode.
- */
-function createMentionNodeFromSearchResult(
-  editor: LexicalEditor,
-  entryText: string,
-  match: MentionMatch,
-): void {
-  editor.update(() => {
-    const selection = $getSelection();
-    if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
-      return;
-    }
-    const anchor = selection.anchor;
-    if (anchor.type !== 'text') {
-      return;
-    }
-    const anchorNode = anchor.getNode();
-    // We should not be attempting to extract mentions out of nodes
-    // that are already being used for other core things. This is
-    // especially true for token nodes, which can't be mutated at all.
-    if (!anchorNode.isSimpleText()) {
-      return;
-    }
-    const selectionOffset = anchor.offset;
-    const textContent = anchorNode.getTextContent().slice(0, selectionOffset);
-    const characterOffset = match.replaceableString.length;
-
-    // Given a known offset for the mention match, look backward in the
-    // text to see if there's a longer match to replace.
-    const mentionOffset = getMentionOffset(
-      textContent,
-      entryText,
-      characterOffset,
-    );
-    const startOffset = selectionOffset - mentionOffset;
-    if (startOffset < 0) {
-      return;
-    }
-
-    let nodeToReplace;
-    if (startOffset === 0) {
-      [nodeToReplace] = anchorNode.splitText(selectionOffset);
-    } else {
-      [, nodeToReplace] = anchorNode.splitText(startOffset, selectionOffset);
-    }
-
-    const mentionNode = $createMentionNode(entryText);
-    nodeToReplace.replace(mentionNode);
-    mentionNode.select();
-  });
-}
-
-function isSelectionOnEntityBoundary(
-  editor: LexicalEditor,
-  offset: number,
-): boolean {
-  if (offset !== 0) {
-    return false;
-  }
-  return editor.getEditorState().read(() => {
-    const selection = $getSelection();
-    if ($isRangeSelection(selection)) {
-      const anchor = selection.anchor;
-      const anchorNode = anchor.getNode();
-      const prevSibling = anchorNode.getPreviousSibling();
-      return $isTextNode(prevSibling) && prevSibling.isTextEntity();
-    }
-    return false;
-  });
-}
-
-function useMentions(editor: LexicalEditor): ReactPortal | null {
-  const [resolution, setResolution] = useState<Resolution | null>(null);
-
-  useEffect(() => {
-    if (!editor.hasNodes([MentionNode])) {
-      throw new Error('MentionsPlugin: MentionNode not registered on editor');
-    }
-  }, [editor]);
-
-  useEffect(() => {
-    let activeRange: Range | null = document.createRange();
-    let previousText: string | null = null;
-
-    const updateListener = () => {
-      const range = activeRange;
-      const text = getMentionsTextToSearch(editor);
-
-      if (text === previousText || range === null) {
-        return;
-      }
-      previousText = text;
-
-      if (text === null) {
-        return;
-      }
-      const match = getPossibleMentionMatch(text);
-      if (
-        match !== null &&
-        !isSelectionOnEntityBoundary(editor, match.leadOffset)
-      ) {
-        const isRangePositioned = tryToPositionRange(match, range);
-        if (isRangePositioned !== null) {
-          startTransition(() =>
-            setResolution({
-              match,
-              range,
-            }),
-          );
-          return;
-        }
-      }
-      startTransition(() => setResolution(null));
-    };
-
-    const removeUpdateListener = editor.registerUpdateListener(updateListener);
-
-    return () => {
-      activeRange = null;
-      removeUpdateListener();
-    };
-  }, [editor]);
-
-  const closeTypeahead = useCallback(() => {
-    setResolution(null);
-  }, []);
-
-  return resolution === null || editor === null
-    ? null
-    : createPortal(
-        <MentionsTypeahead
-          close={closeTypeahead}
-          resolution={resolution}
-          editor={editor}
-        />,
-        document.body,
-      );
-}
-
-export default function MentionsPlugin(): ReactPortal | null {
+export default function NewMentionsPlugin(): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
-  return useMentions(editor);
+
+  const [queryString, setQueryString] = useState<string | null>(null);
+
+  const results = useMentionLookupService(queryString);
+
+  const checkForSlashTriggerMatch = useBasicTypeaheadTriggerMatch('/', {
+    minLength: 0,
+  });
+
+  const options = useMemo(
+    () =>
+      results
+        .map(
+          (result) =>
+            new MentionTypeaheadOption(result, <i className="icon user" />),
+        )
+        .slice(0, SUGGESTION_LIST_LENGTH_LIMIT),
+    [results],
+  );
+
+  const onSelectOption = useCallback(
+    (
+      selectedOption: MentionTypeaheadOption,
+      nodeToReplace: TextNode | null,
+      closeMenu: () => void,
+    ) => {
+      editor.update(() => {
+        const mentionNode = $createMentionNode(selectedOption.name);
+        if (nodeToReplace) {
+          nodeToReplace.replace(mentionNode);
+        }
+        mentionNode.select();
+        closeMenu();
+      });
+    },
+    [editor],
+  );
+
+  const checkForMentionMatch = useCallback(
+    (text: string) => {
+      const mentionMatch = getPossibleQueryMatch(text);
+      const slashMatch = checkForSlashTriggerMatch(text);
+      return !slashMatch && mentionMatch ? mentionMatch : null;
+    },
+    [checkForSlashTriggerMatch],
+  );
+
+  return (
+    <LexicalTypeaheadMenuPlugin<MentionTypeaheadOption>
+      onQueryChange={setQueryString}
+      onSelectOption={onSelectOption}
+      triggerFn={checkForMentionMatch}
+      options={options}
+      menuRenderFn={(
+        anchorElement,
+        {selectedIndex, selectOptionAndCleanUp, setHighlightedIndex},
+      ) =>
+        anchorElement && results.length
+          ? ReactDOM.createPortal(
+              <ul>
+                {options.map((option, i: number) => (
+                  <MentionsTypeaheadMenuItem
+                    index={i}
+                    isSelected={selectedIndex === i}
+                    onClick={() => {
+                      setHighlightedIndex(i);
+                      selectOptionAndCleanUp(option);
+                    }}
+                    onMouseEnter={() => {
+                      setHighlightedIndex(i);
+                    }}
+                    key={option.key}
+                    option={option}
+                  />
+                ))}
+              </ul>,
+              anchorElement,
+            )
+          : null
+      }
+    />
+  );
 }

@@ -242,8 +242,9 @@ function ShortcutTypeahead<TOption extends TypeaheadOption>({
   }, [resolution.match.matchingString]);
 
   useEffect(() => {
+    const rootElement = editor.getRootElement();
+
     function positionMenu() {
-      const rootElement = editor.getRootElement();
       const containerDiv = anchorElementRef.current;
       containerDiv.setAttribute('aria-label', 'Typeahead menu');
       containerDiv.setAttribute('id', 'typeahead-menu');
@@ -256,16 +257,19 @@ function ShortcutTypeahead<TOption extends TypeaheadOption>({
         containerDiv.style.display = 'block';
         containerDiv.style.position = 'absolute';
         if (!containerDiv.isConnected) {
-          rootElement.setAttribute('aria-controls', 'typeahead-menu');
           document.body.append(containerDiv);
         }
         anchorElementRef.current = containerDiv;
+        rootElement.setAttribute('aria-controls', 'typeahead-menu');
       }
     }
     positionMenu();
     window.addEventListener('resize', positionMenu);
     return () => {
       window.removeEventListener('resize', positionMenu);
+      if (rootElement !== null) {
+        rootElement.removeAttribute('aria-controls');
+      }
     };
   }, [editor, resolution, options]);
 

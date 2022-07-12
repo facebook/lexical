@@ -63,3 +63,5 @@ declare export function $restoreEditorState(
   editor: LexicalEditor,
   editorState: EditorState,
 ): void;
+
+declare export function $insertBlockNode<T: LexicalNode>(node: T): T;

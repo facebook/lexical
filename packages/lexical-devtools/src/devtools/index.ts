@@ -25,30 +25,37 @@ function handleShown() {
     // After the initial registration, all editorState updates are done via browser.runtime.onConnect & window.postMessage
     .eval(
       `
-    const editor = document.querySelectorAll('div[data-lexical-editor]')[0]
-      .__lexicalEditor;
-
-    const initialEditorState = editor.getEditorState();
-
-    window.postMessage(
-      {
-        editorState: initialEditorState,
-        name: 'editor-update',
-        type: 'FROM_PAGE',
-      },
-      '*',
-    );
-
-    editor.registerUpdateListener(({editorState}) => {
+      const editor = document.querySelectorAll('div[data-lexical-editor]')[0]
+        .__lexicalEditor;
+      
+      const initialEditorState = editor.getEditorState();
+      
+      // custom JSON serialization
+      // existing editorState.toJSON() does not contain Lexical ._key property
+      const serializeEditorState = (editorState) => {
+        const nodeMap = Object.fromEntries(editorState._nodeMap);
+        return {nodeMap};
+      };
+      
       window.postMessage(
         {
-          editorState,
+          editorState: serializeEditorState(initialEditorState),
           name: 'editor-update',
           type: 'FROM_PAGE',
         },
         '*',
       );
-    });
-  `,
+      
+      editor.registerUpdateListener(({editorState}) => {
+        window.postMessage(
+          {
+            editorState: serializeEditorState(editorState),
+            name: 'editor-update',
+            type: 'FROM_PAGE',
+          },
+          '*',
+        );
+      });
+    `,
     ); // to do: add error handling eg. .then(handleError)
 }

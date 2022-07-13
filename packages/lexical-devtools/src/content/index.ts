@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-const IS_FIREFOX = navigator.userAgent.indexOf('Firefox') >= 0;
-
 const port = chrome.runtime.connect();
 
 port.postMessage({
@@ -26,11 +24,8 @@ window.addEventListener('message', function (event) {
     event.data.type === 'FROM_PAGE' &&
     event.data.name === 'editor-update'
   ) {
-    const nodeMap = IS_FIREFOX
-      ? event.data.editorState._nodeMap
-      : Object.fromEntries(event.data.editorState._nodeMap); // workaround, for some reason Object.fromEntries fails without console.error in Firefox
     port.postMessage({
-      editorState: {nodeMap},
+      editorState: event.data.editorState,
       name: 'editor-update',
       type: 'FROM_CONTENT',
     });

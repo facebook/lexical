@@ -37,11 +37,7 @@ function App(): JSX.Element {
         (message: {editorState: {nodeMap: NodeMap}}) => {
           setCount(count + 1);
           setIsLoading(false);
-          // workaround for Firefox, message.editorState.nodeMap is either a vanilla object or a Map structure
-          const newNodeMap =
-            message.editorState.nodeMap instanceof Map
-              ? Object.fromEntries(message.editorState.nodeMap) // we need object dot notation to work TreeView, so we convert Map to Object
-              : message.editorState.nodeMap;
+          const newNodeMap = message.editorState.nodeMap;
           setNodeMap(newNodeMap);
         },
       );

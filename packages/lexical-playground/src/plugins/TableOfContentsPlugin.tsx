@@ -12,7 +12,7 @@ import '../ui/TableOfContentsStyle.css';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import LexicalTableOfContents__EXPERIMENTAL from '@lexical/react/LexicalTableOfContents__EXPERIMENTAL';
-import {useRef, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import * as React from 'react';
 
 function TableOfContentsList({
@@ -23,7 +23,6 @@ function TableOfContentsList({
   const [selectedKey, setSelectedKey] = useState('');
   const selectedIndex = useRef(0);
   const [editor] = useLexicalComposerContext();
-  let timerId: ReturnType<typeof setTimeout>;
 
   function scrollToNode(key: NodeKey, currIndex: number) {
     editor.getEditorState().read(() => {
@@ -44,11 +43,6 @@ function TableOfContentsList({
     }
   }
   let lastScrollTop = 0;
-
-  function debounceFunction(func: () => void, delay: number) {
-    clearTimeout(timerId);
-    timerId = setTimeout(func, delay);
-  }
 
   function isElementOnScreen(element: HTMLElement): {
     isOnScreen: boolean;
@@ -112,10 +106,21 @@ function TableOfContentsList({
     }
     lastScrollTop = st <= 0 ? 0 : st;
   }
-  function onScroll(): void {
-    debounceFunction(scrollCallback, 10);
-  }
-  document.addEventListener('scroll', onScroll);
+  useEffect(() => {
+    let timerId: ReturnType<typeof setTimeout>;
+
+    function debounceFunction(func: () => void, delay: number) {
+      clearTimeout(timerId);
+      timerId = setTimeout(func, delay);
+    }
+
+    function onScroll(): void {
+      debounceFunction(scrollCallback, 10);
+    }
+
+    document.addEventListener('scroll', onScroll);
+    return () => document.removeEventListener('scroll', onScroll);
+  });
 
   return (
     <ul className="remove-ul-style">

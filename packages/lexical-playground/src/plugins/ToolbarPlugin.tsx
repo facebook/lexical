@@ -7,12 +7,6 @@
  */
 
 import type {InsertImagePayload} from './ImagesPlugin';
-import type {
-  GridSelection,
-  LexicalEditor,
-  NodeSelection,
-  RangeSelection,
-} from 'lexical';
 
 import './ToolbarPlugin.css';
 
@@ -63,9 +57,13 @@ import {
   ElementNode,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
+  GridSelection,
   INDENT_CONTENT_COMMAND,
+  LexicalEditor,
   NodeKey,
+  NodeSelection,
   OUTDENT_CONTENT_COMMAND,
+  RangeSelection,
   REDO_COMMAND,
   SELECTION_CHANGE_COMMAND,
   TextNode,
@@ -78,6 +76,7 @@ import {IS_APPLE} from 'shared/environment';
 
 import useModal from '../hooks/useModal';
 import catTypingGif from '../images/cat-typing.gif';
+import landscapeImage from '../images/landscape.jpg';
 import yellowFlowerImage from '../images/yellow-flower.jpg';
 import {$createStickyNode} from '../nodes/StickyNode';
 import Button from '../ui/Button';
@@ -426,6 +425,19 @@ export function InsertImageDialog({
   onClose: () => void;
 }): JSX.Element {
   const [mode, setMode] = useState<null | 'url' | 'file'>(null);
+  const hasModifier = useRef(false);
+
+  useEffect(() => {
+    hasModifier.current = false;
+    const handler = (e: KeyboardEvent) => {
+      // debugger;
+      hasModifier.current = e.altKey;
+    };
+    document.addEventListener('keydown', handler);
+    return () => {
+      document.removeEventListener('keydown', handler);
+    };
+  }, [activeEditor]);
 
   const onClick = (payload: InsertImagePayload) => {
     activeEditor.dispatchCommand(INSERT_IMAGE_COMMAND, payload);
@@ -439,10 +451,18 @@ export function InsertImageDialog({
           <Button
             data-test-id="image-modal-option-sample"
             onClick={() =>
-              onClick({
-                altText: 'Yellow flower in tilt shift lens',
-                src: yellowFlowerImage,
-              })
+              onClick(
+                hasModifier.current
+                  ? {
+                      altText:
+                        'Daylight fir trees forest glacier green high ice landscape',
+                      src: landscapeImage,
+                    }
+                  : {
+                      altText: 'Yellow flower in tilt shift lens',
+                      src: yellowFlowerImage,
+                    },
+              )
             }>
             Sample
           </Button>

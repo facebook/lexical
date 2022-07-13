@@ -204,14 +204,6 @@ i.comments {
   overflow: hidden;
 }
 
-.CommentPlugin_CommentsPanel_Footer {
-  border-top: 1px solid #eee;
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-}
-
 .CommentPlugin_CommentsPanel_Editor {
   position: relative;
   border: 1px solid #ccc;

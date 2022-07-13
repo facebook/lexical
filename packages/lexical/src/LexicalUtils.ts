@@ -1176,3 +1176,13 @@ export function $addUpdateTag(tag: string): void {
   const editor = getActiveEditor();
   editor._updateTags.add(tag);
 }
+
+export function $wrapNodeInElement(
+  node: LexicalNode,
+  createElementNode: () => ElementNode,
+): ElementNode {
+  const elementNode = createElementNode();
+  elementNode.replace(node);
+  elementNode.append(node);
+  return elementNode;
+}

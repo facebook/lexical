@@ -15,6 +15,30 @@ import LexicalTableOfContents__EXPERIMENTAL from '@lexical/react/LexicalTableOfC
 import {useEffect, useRef, useState} from 'react';
 import * as React from 'react';
 
+function indent(tagName: HeadingTagType) {
+  if (tagName === 'h2') {
+    return 'heading2';
+  } else if (tagName === 'h3') {
+    return 'heading3';
+  }
+}
+
+function isElementOnScreen(element: HTMLElement): {
+  isOnScreen: boolean;
+  top: number;
+  bottom: number;
+} {
+  const rect = element.getBoundingClientRect();
+  const isOnScreen =
+    rect.top >= 0 &&
+    rect.left >= 0 &&
+    rect.bottom <=
+      (window.innerHeight || document.documentElement.clientHeight) &&
+    rect.right <= (window.innerWidth || document.documentElement.clientWidth);
+
+  return {bottom: rect.bottom, isOnScreen: isOnScreen, top: rect.top};
+}
+
 function TableOfContentsList({
   tableOfContents,
 }: {
@@ -23,6 +47,7 @@ function TableOfContentsList({
   const [selectedKey, setSelectedKey] = useState('');
   const selectedIndex = useRef(0);
   const [editor] = useLexicalComposerContext();
+  let lastScrollTop = 0;
 
   function scrollToNode(key: NodeKey, currIndex: number) {
     editor.getEditorState().read(() => {
@@ -35,30 +60,6 @@ function TableOfContentsList({
     });
   }
 
-  function indent(tagName: HeadingTagType) {
-    if (tagName === 'h2') {
-      return 'heading2';
-    } else if (tagName === 'h3') {
-      return 'heading3';
-    }
-  }
-  let lastScrollTop = 0;
-
-  function isElementOnScreen(element: HTMLElement): {
-    isOnScreen: boolean;
-    top: number;
-    bottom: number;
-  } {
-    const rect = element.getBoundingClientRect();
-    const isOnScreen =
-      rect.top >= 0 &&
-      rect.left >= 0 &&
-      rect.bottom <=
-        (window.innerHeight || document.documentElement.clientHeight) &&
-      rect.right <= (window.innerWidth || document.documentElement.clientWidth);
-
-    return {bottom: rect.bottom, isOnScreen: isOnScreen, top: rect.top};
-  }
   function scrollCallback() {
     const st = window.pageYOffset || document.documentElement.scrollTop;
     //scrolling up

@@ -1182,7 +1182,7 @@ export function $wrapNodeInElement(
   createElementNode: () => ElementNode,
 ): ElementNode {
   const elementNode = createElementNode();
-  elementNode.replace(node);
+  node.replace(elementNode);
   elementNode.append(node);
   return elementNode;
 }

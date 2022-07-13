@@ -406,23 +406,6 @@ function CommentsComposer({
   );
 }
 
-function CommentsPanelFooter({
-  footerRef,
-  submitAddComment,
-}: {
-  footerRef: {current: null | HTMLDivElement};
-  submitAddComment: (
-    commentOrThread: Comment | Thread,
-    isInlineComment: boolean,
-  ) => void;
-}) {
-  return (
-    <div className="CommentPlugin_CommentsPanel_Footer" ref={footerRef}>
-      <CommentsComposer submitAddComment={submitAddComment} />
-    </div>
-  );
-}
-
 function ShowDeleteCommentOrThreadDialog({
   commentOrThread,
   deleteCommentOrThread,
@@ -682,30 +665,8 @@ function CommentsPanel({
     thread?: Thread,
   ) => void;
 }): JSX.Element {
-  const footerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const isEmpty = comments.length === 0;
-
-  useLayoutEffect(() => {
-    const footerElem = footerRef.current;
-    if (footerElem !== null) {
-      const updateSize = () => {
-        const listElem = listRef.current;
-        if (listElem !== null) {
-          const rect = footerElem.getBoundingClientRect();
-          listElem.style.height = window.innerHeight - rect.height - 133 + 'px';
-        }
-      };
-      const resizeObserver = new ResizeObserver(updateSize);
-      resizeObserver.observe(footerElem);
-      window.addEventListener('resize', updateSize);
-
-      return () => {
-        window.removeEventListener('resize', updateSize);
-        resizeObserver.disconnect();
-      };
-    }
-  }, [isEmpty]);
 
   return (
     <div className="CommentPlugin_CommentsPanel">
@@ -722,10 +683,6 @@ function CommentsPanel({
           markNodeMap={markNodeMap}
         />
       )}
-      <CommentsPanelFooter
-        submitAddComment={submitAddComment}
-        footerRef={footerRef}
-      />
     </div>
   );
 }

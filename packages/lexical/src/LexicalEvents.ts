@@ -69,6 +69,7 @@ import {
   DOM_ELEMENT_TYPE,
   DOM_TEXT_TYPE,
   DOUBLE_LINE_BREAK,
+  IS_ALL_FORMATTING,
 } from './LexicalConstants';
 import {internalCreateRangeSelection, RangeSelection} from './LexicalSelection';
 import {updateEditor} from './LexicalUpdates';
@@ -255,17 +256,14 @@ function onSelectionChange(
           }
         }
       } else {
-        const focus = selection.focus;
-        const focusNode = focus.getNode();
-        let combinedFormat = 0;
+        let combinedFormat = IS_ALL_FORMATTING;
 
-        if (anchor.type === 'text') {
-          combinedFormat |= anchorNode.getFormat();
-        }
-
-        if (focus.type === 'text' && !anchorNode.is(focusNode)) {
-          combinedFormat |= focusNode.getFormat();
-        }
+        const nodes = selection.getNodes();
+        nodes.forEach((node) => {
+          if ($isTextNode(node)) {
+            combinedFormat &= node.getFormat();
+          }
+        });
 
         selection.format = combinedFormat;
       }

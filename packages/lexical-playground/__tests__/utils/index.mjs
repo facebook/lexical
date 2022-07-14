@@ -28,7 +28,9 @@ export const SAMPLE_IMAGE_URL =
     ? '/src/images/yellow-flower.jpg'
     : '/assets/yellow-flower.a2a7c7a2.jpg';
 export const SAMPLE_LANDSCAPE_IMAGE_URL =
-  E2E_PORT === 3000 ? '/src/images/landscape.jpg' : '/assets/landscape.idk.jpg';
+  E2E_PORT === 3000
+    ? '/src/images/landscape.jpg'
+    : '/assets/landscape.21352c66.jpg';
 
 export async function initialize({
   page,

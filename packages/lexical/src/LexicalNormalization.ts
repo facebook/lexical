@@ -7,6 +7,7 @@
  */
 
 import type {RangeSelection, TextNode} from '.';
+import type {PointType} from './LexicalSelection';
 
 import {$isElementNode, $isTextNode} from '.';
 import {getActiveEditor} from './LexicalUpdates';
@@ -86,63 +87,38 @@ export function $normalizeTextNode(textNode: TextNode): void {
 }
 
 export function $normalizeSelection(selection: RangeSelection): RangeSelection {
-  const anchor = selection.anchor;
-  while (anchor.type === 'element') {
-    const node = anchor.getNode();
-    const offset = anchor.offset;
-    let nextNode;
-    let nextOffsetAtEnd;
-    if (offset === node.getChildrenSize()) {
-      nextNode = node.getChildAtIndex(offset - 1);
-      nextOffsetAtEnd = true;
-    } else {
-      nextNode = node.getChildAtIndex(offset);
-      nextOffsetAtEnd = false;
-    }
-    if ($isTextNode(nextNode)) {
-      anchor.set(
-        nextNode.__key,
-        nextOffsetAtEnd ? nextNode.getTextContentSize() : 0,
-        'text',
-      );
-      break;
-    } else if (!$isElementNode(nextNode)) {
-      break;
-    }
-    anchor.set(
-      nextNode.__key,
-      nextOffsetAtEnd ? nextNode.getChildrenSize() : 0,
-      'element',
-    );
-  }
-  const focus = selection.focus;
-  while (focus.type === 'element') {
-    const node = focus.getNode();
-    const offset = focus.offset;
-    let nextNode;
-    let nextOffsetAtEnd;
-    if (offset === node.getChildrenSize()) {
-      nextNode = node.getChildAtIndex(offset - 1);
-      nextOffsetAtEnd = true;
-    } else {
-      nextNode = node.getChildAtIndex(offset);
-      nextOffsetAtEnd = false;
-    }
-    if ($isTextNode(nextNode)) {
-      focus.set(
-        nextNode.__key,
-        nextOffsetAtEnd ? nextNode.getTextContentSize() : 0,
-        'text',
-      );
-      break;
-    } else if (!$isElementNode(nextNode)) {
-      break;
-    }
-    focus.set(
-      nextNode.__key,
-      nextOffsetAtEnd ? nextNode.getChildrenSize() : 0,
-      'element',
-    );
-  }
+  $normalizePoint(selection.anchor);
+  $normalizePoint(selection.focus);
   return selection;
+}
+
+function $normalizePoint(point: PointType): void {
+  while (point.type === 'element') {
+    const node = point.getNode();
+    const offset = point.offset;
+    let nextNode;
+    let nextOffsetAtEnd;
+    if (offset === node.getChildrenSize()) {
+      nextNode = node.getChildAtIndex(offset - 1);
+      nextOffsetAtEnd = true;
+    } else {
+      nextNode = node.getChildAtIndex(offset);
+      nextOffsetAtEnd = false;
+    }
+    if ($isTextNode(nextNode)) {
+      point.set(
+        nextNode.__key,
+        nextOffsetAtEnd ? nextNode.getTextContentSize() : 0,
+        'text',
+      );
+      break;
+    } else if (!$isElementNode(nextNode)) {
+      break;
+    }
+    point.set(
+      nextNode.__key,
+      nextOffsetAtEnd ? nextNode.getChildrenSize() : 0,
+      'element',
+    );
+  }
 }

@@ -613,4 +613,50 @@ describe('LexicalElementNode tests', () => {
       });
     });
   });
+
+  describe('splitNode', () => {
+    let block;
+
+    beforeEach(async () => {
+      await update(() => {
+        block = $getRoot().getFirstChildOrThrow();
+      });
+    });
+
+    const BASE_SPLITS: Array<{
+      expectedBlockText: string;
+      expectedNodeText: string;
+      index: number;
+      name: string;
+    }> = [
+      {
+        expectedBlockText: '',
+        expectedNodeText: 'Foo',
+        index: 0,
+        name: 'Split at beginning',
+      },
+      {
+        expectedBlockText: 'Foo',
+        expectedNodeText: 'Bar',
+        index: 1,
+        name: 'Split in middle',
+      },
+      {
+        expectedBlockText: 'FooBar',
+        expectedNodeText: 'Baz',
+        index: 2,
+        name: 'Split at end',
+      },
+    ];
+
+    BASE_SPLITS.forEach((testCase) => {
+      it(`Plain text: ${testCase.name}`, async () => {
+        await update(() => {
+          const split = block.splitNode(testCase.index);
+          expect(block.getTextContent()).toEqual(testCase.expectedBlockText);
+          expect(split[1].getTextContent()).toEqual(testCase.expectedNodeText);
+        });
+      });
+    });
+  });
 });

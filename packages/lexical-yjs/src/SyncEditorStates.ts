@@ -6,11 +6,7 @@
  *
  */
 
-import type {
-  EditorState,
-  IntentionallyMarkedAsDirtyElement,
-  NodeKey,
-} from 'lexical';
+import type {EditorState, NodeKey} from 'lexical';
 
 import {$createOffsetView} from '@lexical/offset';
 import {
@@ -39,6 +35,8 @@ import {
   getOrInitCollabNodeFromSharedType,
   syncWithTransaction,
 } from './Utils';
+
+export type IntentionallyMarkedAsDirtyElement = boolean;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function syncEvent(binding: Binding, event: any): void {

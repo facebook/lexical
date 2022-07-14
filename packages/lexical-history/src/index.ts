@@ -9,7 +9,6 @@
 import type {
   EditorState,
   GridSelection,
-  IntentionallyMarkedAsDirtyElement,
   LexicalEditor,
   LexicalNode,
   NodeKey,
@@ -54,6 +53,8 @@ export type HistoryState = {
   redoStack: Array<HistoryStateEntry>;
   undoStack: Array<HistoryStateEntry>;
 };
+
+type IntentionallyMarkedAsDirtyElement = boolean;
 
 function getDirtyNodes(
   editorState: EditorState,

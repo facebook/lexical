@@ -7,12 +7,7 @@
  */
 
 import type {Binding} from '.';
-import type {
-  ElementNode,
-  IntentionallyMarkedAsDirtyElement,
-  NodeKey,
-  NodeMap,
-} from 'lexical';
+import type {ElementNode, NodeKey, NodeMap} from 'lexical';
 import type {AbstractType, XmlElement, XmlText} from 'yjs';
 
 import {
@@ -26,6 +21,7 @@ import {YMap} from 'yjs/dist/src/internals';
 import {CollabDecoratorNode} from './CollabDecoratorNode';
 import {CollabLineBreakNode} from './CollabLineBreakNode';
 import {CollabTextNode} from './CollabTextNode';
+import {IntentionallyMarkedAsDirtyElement} from './SyncEditorStates';
 import {
   $createCollabNodeFromLexicalNode,
   $getNodeByKeyOrThrow,

@@ -11,7 +11,6 @@ export type {
   CommandPayloadType,
   EditorConfig,
   EditorThemeClasses,
-  IntentionallyMarkedAsDirtyElement,
   Klass,
   LexicalCommand,
   LexicalEditor,

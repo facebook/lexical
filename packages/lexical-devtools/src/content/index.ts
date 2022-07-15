@@ -19,9 +19,13 @@ window.addEventListener('message', function (event) {
     return;
   }
 
-  if (event.data.type && event.data.type === 'FROM_PAGE') {
+  if (
+    event.data.type &&
+    event.data.type === 'FROM_PAGE' &&
+    event.data.name === 'editor-update'
+  ) {
     port.postMessage({
-      editorState: event.data.editorState._nodeMap, // placeholder, sending _nodeMap for now because Chrome & Edge auto-serialize postMessages. sending the whole editorState throws a JSON serialization error due to its 'circular' JSON structure
+      editorState: event.data.editorState,
       name: 'editor-update',
       type: 'FROM_CONTENT',
     });

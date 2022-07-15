@@ -116,6 +116,11 @@ export class YouTubeNode extends DecoratorBlockNode {
     );
   }
 
+  getTextContent(): string {
+    // This is called when we attempt to convert this DecoratorNode into a TextNode, such as when we convert a range selection into a CodeBlock.
+    return `https://www.youtube.com/watch?v=${this.__id}`;
+  }
+
   isTopLevel(): true {
     return true;
   }

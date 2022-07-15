@@ -187,6 +187,11 @@ export class TweetNode extends DecoratorBlockNode {
     return this.__id;
   }
 
+  getTextContent(): string {
+    // This is called when we attempt to convert this DecoratorNode into a TextNode, such as when we convert a range selection into a CodeBlock.
+    return `https://twitter.com/i/web/status/${this.__id}`;
+  }
+
   decorate(editor: LexicalEditor, config: EditorConfig): JSX.Element {
     const embedBlockTheme = config.theme.embedBlock || {};
     const className = {

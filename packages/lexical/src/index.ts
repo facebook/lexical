@@ -62,7 +62,6 @@ export {
   CLEAR_EDITOR_COMMAND,
   CLEAR_HISTORY_COMMAND,
   CLICK_COMMAND,
-  CODE_BLOCK_COMMAND,
   CONTROLLED_TEXT_INSERTION_COMMAND,
   COPY_COMMAND,
   createCommand,
@@ -95,11 +94,9 @@ export {
   MOVE_TO_START,
   OUTDENT_CONTENT_COMMAND,
   PASTE_COMMAND,
-  QUOTE_COMMAND,
   REDO_COMMAND,
   REMOVE_TEXT_COMMAND,
   SELECTION_CHANGE_COMMAND,
-  TOGGLE_LINK_COMMAND,
   UNDO_COMMAND,
 } from './LexicalCommands';
 export {
@@ -131,6 +128,7 @@ export {
   $nodesOfType,
   $setCompositionKey,
   $setSelection,
+  controlOrMeta,
 } from './LexicalUtils';
 export {VERSION} from './LexicalVersion';
 export {$isDecoratorNode, DecoratorNode} from './nodes/LexicalDecoratorNode';

@@ -25,6 +25,7 @@ import {
   $isElementNode,
   $isRangeSelection,
   $setSelection,
+  controlOrMeta,
   createCommand,
   ElementNode,
   Spread,
@@ -235,6 +236,17 @@ export function $isAutoLinkNode(
 ): node is AutoLinkNode {
   return node instanceof AutoLinkNode;
 }
+
+export function isLink(
+  keyCode: number,
+  altKey: boolean,
+  metaKey: boolean,
+  ctrlKey: boolean,
+): boolean {
+  return keyCode === 75 && !altKey && controlOrMeta(metaKey, ctrlKey);
+}
+
+export const LINK_COMMAND: LexicalCommand<KeyboardEvent> = createCommand();
 
 export const TOGGLE_LINK_COMMAND: LexicalCommand<string | null> =
   createCommand();

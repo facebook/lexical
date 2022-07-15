@@ -31,7 +31,6 @@ import {
   $setCompositionKey,
   BLUR_COMMAND,
   CLICK_COMMAND,
-  CODE_BLOCK_COMMAND,
   CONTROLLED_TEXT_INSERTION_COMMAND,
   COPY_COMMAND,
   CUT_COMMAND,
@@ -59,11 +58,9 @@ import {
   MOVE_TO_END,
   MOVE_TO_START,
   PASTE_COMMAND,
-  QUOTE_COMMAND,
   REDO_COMMAND,
   REMOVE_TEXT_COMMAND,
   SELECTION_CHANGE_COMMAND,
-  TOGGLE_LINK_COMMAND,
   UNDO_COMMAND,
 } from '.';
 import {KEY_MODIFIER_COMMAND} from './LexicalCommands';
@@ -89,7 +86,6 @@ import {
   getNearestEditorFromDOMNode,
   isBackspace,
   isBold,
-  isCodeBlock,
   isCopy,
   isCut,
   isDelete,
@@ -103,7 +99,6 @@ import {
   isFirefoxClipboardEvents,
   isItalic,
   isLineBreak,
-  isLink,
   isModifier,
   isMoveBackward,
   isMoveDown,
@@ -113,7 +108,6 @@ import {
   isMoveUp,
   isOpenLineBreak,
   isParagraph,
-  isQuote,
   isRedo,
   isSelectionWithinEditor,
   isSpace,
@@ -861,12 +855,6 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
   } else if (isBold(keyCode, altKey, metaKey, ctrlKey)) {
     event.preventDefault();
     dispatchCommand(editor, FORMAT_TEXT_COMMAND, 'bold');
-  } else if (isCodeBlock(keyCode, altKey, metaKey, ctrlKey)) {
-    event.preventDefault();
-    dispatchCommand(editor, CODE_BLOCK_COMMAND, undefined);
-  } else if (isLink(keyCode, altKey, metaKey, ctrlKey)) {
-    event.preventDefault();
-    dispatchCommand(editor, TOGGLE_LINK_COMMAND, 'https://');
   } else if (isUnderline(keyCode, altKey, metaKey, ctrlKey)) {
     event.preventDefault();
     dispatchCommand(editor, FORMAT_TEXT_COMMAND, 'underline');
@@ -881,9 +869,6 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
   } else if (isRedo(keyCode, shiftKey, metaKey, ctrlKey)) {
     event.preventDefault();
     dispatchCommand(editor, REDO_COMMAND, undefined);
-  } else if (isQuote(keyCode, altKey, metaKey, ctrlKey)) {
-    event.preventDefault();
-    dispatchCommand(editor, QUOTE_COMMAND, undefined);
   } else {
     const prevSelection = editor._editorState._selection;
     if ($isNodeSelection(prevSelection)) {

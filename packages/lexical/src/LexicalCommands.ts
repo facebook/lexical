@@ -63,12 +63,7 @@ export const CLEAR_EDITOR_COMMAND: LexicalCommand<void> = createCommand();
 export const CLEAR_HISTORY_COMMAND: LexicalCommand<void> = createCommand();
 export const CAN_REDO_COMMAND: LexicalCommand<boolean> = createCommand();
 export const CAN_UNDO_COMMAND: LexicalCommand<boolean> = createCommand();
-export const CODE_BLOCK_COMMAND: LexicalCommand<KeyboardEvent> =
-  createCommand();
 export const FOCUS_COMMAND: LexicalCommand<FocusEvent> = createCommand();
 export const BLUR_COMMAND: LexicalCommand<FocusEvent> = createCommand();
 export const KEY_MODIFIER_COMMAND: LexicalCommand<KeyboardEvent> =
-  createCommand();
-export const QUOTE_COMMAND: LexicalCommand<KeyboardEvent> = createCommand();
-export const TOGGLE_LINK_COMMAND: LexicalCommand<KeyboardEvent> =
   createCommand();

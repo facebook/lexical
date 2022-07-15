@@ -26,11 +26,10 @@ import {
   $getLexicalContent,
   $insertDataTransferForRichText,
 } from '@lexical/clipboard';
-import {toggleLink} from '@lexical/link';
+import {isLink,LINK_COMMAND, toggleLink} from '@lexical/link';
 import {
   $moveCharacter,
   $shouldOverrideDefaultCharacterSelection,
-  $wrapLeafNodesInElements,
 } from '@lexical/selection';
 import {
   $getNearestBlockElementAncestorOrThrow,
@@ -72,9 +71,7 @@ import {
   KEY_TAB_COMMAND,
   OUTDENT_CONTENT_COMMAND,
   PASTE_COMMAND,
-  QUOTE_COMMAND,
   REMOVE_TEXT_COMMAND,
-  TOGGLE_LINK_COMMAND,
 } from 'lexical';
 import {CAN_USE_BEFORE_INPUT, IS_IOS, IS_SAFARI} from 'shared/environment';
 
@@ -786,21 +783,8 @@ export function registerRichText(
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand(
-      QUOTE_COMMAND,
-      () => {
-        const selection = $getSelection();
-
-        if ($isRangeSelection(selection)) {
-          $wrapLeafNodesInElements(selection, () => $createQuoteNode());
-          return true;
-        }
-        return false;
-      },
-      COMMAND_PRIORITY_EDITOR,
-    ),
-    editor.registerCommand<string>(
-      TOGGLE_LINK_COMMAND,
+    editor.registerCommand<string | null>(
+      LINK_COMMAND,
       (url) => {
         toggleLink(url);
         return true;
@@ -861,5 +845,19 @@ export function registerRichText(
     ),
   );
   initializeEditor(editor, initialEditorState);
-  return removeListener;
+
+  const rootElement = editor.getRootElement();
+  const handleKeyDown = (event: KeyboardEvent) => {
+    const {keyCode, altKey, metaKey, ctrlKey} = event;
+    if (isLink(keyCode, altKey, metaKey, ctrlKey)) {
+      event.preventDefault();
+      event.stopPropagation();
+      editor.dispatchCommand(LINK_COMMAND, '');
+    }
+  };
+  rootElement?.addEventListener('keydown', handleKeyDown);
+  return () => {
+    removeListener();
+    rootElement?.removeEventListener('keydown', handleKeyDown);
+  };
 }

@@ -5,26 +5,27 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import {DevToolsNode} from 'packages/lexical-devtools/types';
 import * as React from 'react';
 
-function Node({
+function TreeNode({
   lexicalKey,
-  text,
-  type,
+  __text,
+  __type,
   children,
 }: {
-  children: Array<object>;
+  children: Array<DevToolsNode>;
   lexicalKey: string;
-  text: string;
-  type: string;
+  __text?: string;
+  __type: string;
 }): JSX.Element {
   return (
     <li key={lexicalKey}>
-      ({lexicalKey}) {type} {text ? '"' + text + '"' : ''}
+      ({lexicalKey}) {__type} {__text ? '"' + __text + '"' : ''}
       {children.length > 0 ? (
         <ul>
           {children.map((child) => (
-            <Node {...child} />
+            <TreeNode {...child} />
           ))}
         </ul>
       ) : (
@@ -34,4 +35,4 @@ function Node({
   );
 }
 
-export default Node;
+export default TreeNode;

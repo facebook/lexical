@@ -5,46 +5,36 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {NodeKey, NodeMap} from 'lexical';
-
 import './index.css';
 
+import {DevToolsNode, DevToolsTree} from 'packages/lexical-devtools/types';
 import * as React from 'react';
 
-import Node from '../Node';
+import TreeNode from '../TreeNode';
 
 function TreeView({
   viewClassName,
   nodeMap,
 }: {
   viewClassName: string;
-  nodeMap: NodeMap;
+  nodeMap: DevToolsTree;
 }): JSX.Element {
-  const depthFirstSearch = (node) => {
-    const {
-      __cachedText: cachedText,
-      __key: lexicalKey,
-      __text: text,
-      __type: type,
-    } = node;
-    const branch = {cachedText, lexicalKey, text, type};
-
-    const children: Array<NodeKey> = [];
+  const depthFirstSearch = (node: DevToolsNode): DevToolsNode => {
+    const children: Array<DevToolsNode> = [];
 
     if (Object.prototype.hasOwnProperty.call(node, '__children')) {
-      node.__children.forEach((childKey) => {
+      node.__children.forEach((childKey: string) => {
         const child = nodeMap[childKey];
         children.push(depthFirstSearch(child));
       });
     }
 
-    branch.children = children;
-    return branch;
+    return {...node, __type: node.__type, children, lexicalKey: node.__key};
   };
 
-  const generateTree = (map) => {
+  const generateTree = (map: DevToolsTree): JSX.Element => {
     const root = depthFirstSearch(map.root);
-    return <Node {...root} />;
+    return <TreeNode {...root} />;
   };
 
   return (

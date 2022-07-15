@@ -5,10 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {NodeMap} from 'lexical';
-
 import './index.css';
 
+import {DevToolsTree} from 'packages/lexical-devtools/types';
 import * as React from 'react';
 import {useEffect, useRef, useState} from 'react';
 
@@ -17,13 +16,16 @@ import TreeView from '../TreeView';
 function App(): JSX.Element {
   const [count, setCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [nodeMap, setNodeMap] = useState<NodeMap | Record<string, never>>({});
+  const [nodeMap, setNodeMap] = useState<DevToolsTree | Record<string, never>>(
+    {},
+  );
   const port = useRef<chrome.runtime.Port | null>(null);
 
   useEffect(() => {
     // create and initialize the messaging port to receive editorState updates
     port.current = window.chrome.runtime.connect();
 
+    // post init message to background JS so tabId will be registered
     port.current.postMessage({
       name: 'init',
       tabId: window.chrome.devtools.inspectedWindow.tabId,
@@ -33,8 +35,9 @@ function App(): JSX.Element {
 
   useEffect(() => {
     if (port.current !== null) {
+      // message listener for editorState updates from inspectedWindow
       port.current.onMessage.addListener(
-        (message: {editorState: {nodeMap: NodeMap}}) => {
+        (message: {editorState: {nodeMap: DevToolsTree}}) => {
           setCount(count + 1);
           setIsLoading(false);
           const newNodeMap = message.editorState.nodeMap;

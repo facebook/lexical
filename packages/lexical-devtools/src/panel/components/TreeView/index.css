@@ -3,8 +3,8 @@
   background: #222;
   color: #fff;
   margin: 0;
-  padding: 10px;
-  font-size: 12px;
+  padding: 1em;
+  font-size: 1em;
   overflow: auto;
   text-align: left;
   -moz-osx-font-smoothing: grayscale;
@@ -13,5 +13,5 @@
 
 .tree-view-output ul li {
   font-family: monospace;
-  padding-left: 5px;
+  padding-left: 0.5em;
 }

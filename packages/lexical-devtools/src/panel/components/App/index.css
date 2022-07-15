@@ -9,12 +9,12 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: 2em;
   color: white;
 }
 
 .loading-view {
   background: #222;
   color: #fff;
-  font-size: 36px;
+  font-size: 3em;
 }

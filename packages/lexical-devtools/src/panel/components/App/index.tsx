@@ -16,9 +16,7 @@ import TreeView from '../TreeView';
 function App(): JSX.Element {
   const [count, setCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [nodeMap, setNodeMap] = useState<DevToolsTree | Record<string, never>>(
-    {},
-  );
+  const [nodeMap, setNodeMap] = useState<DevToolsTree>({});
   const port = useRef<chrome.runtime.Port | null>(null);
 
   useEffect(() => {

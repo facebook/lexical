@@ -451,6 +451,10 @@ export class TextNode extends LexicalNode {
         conversion: convertBringAttentionToElement,
         priority: 0,
       }),
+      code: (node: Node) => ({
+        conversion: convertTextFormatElement,
+        priority: 0,
+      }),
       em: (node: Node) => ({
         conversion: convertTextFormatElement,
         priority: 0,
@@ -837,20 +841,49 @@ function convertSpanElement(domNode: Node): DOMConversionOutput {
   const hasItalicFontStyle = span.style.fontStyle === 'italic';
   // Google Docs uses span tags + text-decoration: underline for underline text
   const hasUnderlineTextDecoration = span.style.textDecoration === 'underline';
+  // Google Docs uses span tags + vertical-align to specify subscript and superscript
+  const verticalAlign = span.style.verticalAlign;
+  // Google Docs uses span tags + color, background-color for coloring
+  const backgroundColor = span.style.backgroundColor;
+  const textColor = span.style.color;
+
+  //TODO: font-size and coloring of subscript & superscript
 
   return {
     forChild: (lexicalNode) => {
-      if ($isTextNode(lexicalNode) && hasBoldFontWeight) {
+      if (!$isTextNode(lexicalNode)) {
+        return lexicalNode;
+      }
+      if (hasBoldFontWeight) {
         lexicalNode.toggleFormat('bold');
       }
-      if ($isTextNode(lexicalNode) && hasLinethroughTextDecoration) {
+      if (hasLinethroughTextDecoration) {
         lexicalNode.toggleFormat('strikethrough');
       }
-      if ($isTextNode(lexicalNode) && hasItalicFontStyle) {
+      if (hasItalicFontStyle) {
         lexicalNode.toggleFormat('italic');
       }
-      if ($isTextNode(lexicalNode) && hasUnderlineTextDecoration) {
+      if (hasUnderlineTextDecoration) {
         lexicalNode.toggleFormat('underline');
+      }
+      if (verticalAlign === 'sub') {
+        lexicalNode.toggleFormat('subscript');
+      }
+      if (verticalAlign === 'super') {
+        lexicalNode.toggleFormat('superscript');
+      }
+
+      let cssString = '';
+
+      if (textColor && textColor !== 'rgb(0, 0, 0)') {
+        cssString += `color: ${textColor};`;
+      }
+      if (backgroundColor && backgroundColor !== 'transparent') {
+        cssString += `background-color: ${backgroundColor};`;
+      }
+
+      if (cssString !== '') {
+        lexicalNode.setStyle(cssString);
       }
 
       return lexicalNode;
@@ -886,6 +919,7 @@ function convertTextDOMNode(domNode: Node): DOMConversionOutput {
   return {node: $createTextNode(textContent)};
 }
 const nodeNameToTextFormat: Record<string, TextFormatType> = {
+  code: 'code',
   em: 'italic',
   i: 'italic',
   strong: 'bold',

@@ -265,10 +265,20 @@ export class CodeNode extends ElementNode {
 
   static importDOM(): DOMConversionMap | null {
     return {
-      code: (node: Node) => ({
-        conversion: convertPreElement,
-        priority: 0,
-      }),
+      // Typically <pre> is used for code blocks, and <code> for inline code styles
+      // but if it's a multi line <code> we'll create a block. Pass through to
+      // inline format handled by TextNode otherwise
+      code: (node: Node) => {
+        const isMultiLine =
+          node.textContent != null && /\r?\n/.test(node.textContent);
+
+        return isMultiLine
+          ? {
+              conversion: convertPreElement,
+              priority: 1,
+            }
+          : null;
+      },
       div: (node: Node) => ({
         conversion: convertDivElement,
         priority: 1,
@@ -1150,24 +1160,22 @@ export function registerCodeHighlighting(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand(
       KEY_ARROW_UP_COMMAND,
-      (payload: KeyboardEvent): boolean =>
-        handleShiftLines(KEY_ARROW_UP_COMMAND, payload),
+      (payload): boolean => handleShiftLines(KEY_ARROW_UP_COMMAND, payload),
       COMMAND_PRIORITY_LOW,
     ),
     editor.registerCommand(
       KEY_ARROW_DOWN_COMMAND,
-      (payload: KeyboardEvent): boolean =>
-        handleShiftLines(KEY_ARROW_DOWN_COMMAND, payload),
+      (payload): boolean => handleShiftLines(KEY_ARROW_DOWN_COMMAND, payload),
       COMMAND_PRIORITY_LOW,
     ),
     editor.registerCommand(
       MOVE_TO_END,
-      (payload: KeyboardEvent): boolean => handleMoveTo(MOVE_TO_END, payload),
+      (payload): boolean => handleMoveTo(MOVE_TO_END, payload),
       COMMAND_PRIORITY_LOW,
     ),
     editor.registerCommand(
       MOVE_TO_START,
-      (payload: KeyboardEvent): boolean => handleMoveTo(MOVE_TO_START, payload),
+      (payload): boolean => handleMoveTo(MOVE_TO_START, payload),
       COMMAND_PRIORITY_LOW,
     ),
   );

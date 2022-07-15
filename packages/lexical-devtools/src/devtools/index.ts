@@ -5,17 +5,16 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
-'use strict';
-
 // Create the panel which appears within the browser's DevTools, loading the Lexical DevTools App within index.html.
-// eslint-disable-next-line no-undef
-chrome.devtools.panels.create('Lexical', 'favicon-32x32.png', '../index.html');
+chrome.devtools.panels.create(
+  'Lexical',
+  '/../../favicon-32x32.png',
+  '/src/panel/index.html',
+);
 
 // Use devtools.inspectedWindow.eval() to get editorState updates. For more info on security concerns:
 //   https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Content_scripts
 //   https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/devtools/inspectedWindow/eval
-// eslint-disable-next-line no-undef
 chrome.devtools.inspectedWindow
   // Attach a registerUpdateListener within the window to subscribe to changes in editorState.
   // After the initial registration, all editorState updates are done via browser.runtime.onConnect & window.postMessage

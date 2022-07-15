@@ -19,6 +19,7 @@ import {
   pasteFromClipboard,
   pressToggleBold,
   pressToggleUnderline,
+  SAMPLE_IMAGE_URL,
   test,
 } from '../utils/index.mjs';
 
@@ -600,6 +601,36 @@ test.describe('Markdown', () => {
             *
           </span>
         </code>
+      `,
+    );
+  });
+
+  test('can import single decorator node (#2604)', async ({page}) => {
+    await focusEditor(page);
+    await page.keyboard.type(
+      '```markdown ![Yellow flower in tilt shift lens](' +
+        SAMPLE_IMAGE_URL +
+        ')',
+    );
+    await click(page, '.action-button .markdown');
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true">
+            <div draggable="false">
+              <img
+                src="${SAMPLE_IMAGE_URL}"
+                alt="Yellow flower in tilt shift lens"
+                draggable="false"
+                style="height: inherit; max-width: 800px; width: inherit" />
+            </div>
+          </span>
+          <br />
+        </p>
       `,
     );
   });

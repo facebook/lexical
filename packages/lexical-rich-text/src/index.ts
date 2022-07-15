@@ -7,6 +7,7 @@
  */
 
 import type {
+  CommandPayloadType,
   DOMConversionMap,
   DOMConversionOutput,
   EditorConfig,
@@ -373,13 +374,14 @@ function initializeEditor(
 }
 
 function onPasteForRichText(
-  event: ClipboardEvent,
+  event: CommandPayloadType<typeof PASTE_COMMAND>,
   editor: LexicalEditor,
 ): void {
   event.preventDefault();
   editor.update(() => {
     const selection = $getSelection();
-    const clipboardData = event.clipboardData;
+    const clipboardData =
+      event instanceof InputEvent ? null : event.clipboardData;
     if (
       clipboardData != null &&
       ($isRangeSelection(selection) || $isGridSelection(selection))
@@ -389,11 +391,15 @@ function onPasteForRichText(
   });
 }
 
-function onCopyForRichText(event: ClipboardEvent, editor: LexicalEditor): void {
+function onCopyForRichText(
+  event: CommandPayloadType<typeof COPY_COMMAND>,
+  editor: LexicalEditor,
+): void {
   event.preventDefault();
   const selection = $getSelection();
   if (selection !== null) {
-    const clipboardData = event.clipboardData;
+    const clipboardData =
+      event instanceof KeyboardEvent ? null : event.clipboardData;
     const htmlString = $getHtmlContent(editor);
     const lexicalString = $getLexicalContent(editor);
 
@@ -424,7 +430,10 @@ function onCopyForRichText(event: ClipboardEvent, editor: LexicalEditor): void {
   }
 }
 
-function onCutForRichText(event: ClipboardEvent, editor: LexicalEditor): void {
+function onCutForRichText(
+  event: CommandPayloadType<typeof CUT_COMMAND>,
+  editor: LexicalEditor,
+): void {
   onCopyForRichText(event, editor);
   const selection = $getSelection();
   if ($isRangeSelection(selection)) {
@@ -519,7 +528,7 @@ export function registerRichText(
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<InputEvent | string>(
+    editor.registerCommand(
       CONTROLLED_TEXT_INSERTION_COMMAND,
       (eventOrText) => {
         const selection = $getSelection();
@@ -815,7 +824,7 @@ export function registerRichText(
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<ClipboardEvent>(
+    editor.registerCommand(
       COPY_COMMAND,
       (event) => {
         onCopyForRichText(event, editor);
@@ -823,7 +832,7 @@ export function registerRichText(
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<ClipboardEvent>(
+    editor.registerCommand(
       CUT_COMMAND,
       (event) => {
         onCutForRichText(event, editor);
@@ -831,7 +840,7 @@ export function registerRichText(
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<ClipboardEvent>(
+    editor.registerCommand(
       PASTE_COMMAND,
       (event) => {
         const selection = $getSelection();

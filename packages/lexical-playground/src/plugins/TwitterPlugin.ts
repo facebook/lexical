@@ -7,17 +7,8 @@
  */
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {
-  $createParagraphNode,
-  $getRoot,
-  $getSelection,
-  $isGridSelection,
-  $isNodeSelection,
-  $isRangeSelection,
-  COMMAND_PRIORITY_EDITOR,
-  createCommand,
-  LexicalCommand,
-} from 'lexical';
+import {$insertBlockNode} from '@lexical/utils';
+import {COMMAND_PRIORITY_EDITOR, createCommand, LexicalCommand} from 'lexical';
 import {useEffect} from 'react';
 
 import {$createTweetNode, TweetNode} from '../nodes/TweetNode';
@@ -35,23 +26,8 @@ export default function TwitterPlugin(): JSX.Element | null {
     return editor.registerCommand<string>(
       INSERT_TWEET_COMMAND,
       (payload) => {
-        const selection = $getSelection();
         const tweetNode = $createTweetNode(payload);
-        if ($isRangeSelection(selection)) {
-          const focusNode = selection.focus.getNode();
-          focusNode.getTopLevelElementOrThrow().insertAfter(tweetNode);
-        } else if ($isNodeSelection(selection) || $isGridSelection(selection)) {
-          const nodes = selection.getNodes();
-          nodes[nodes.length - 1]
-            .getTopLevelElementOrThrow()
-            .insertAfter(tweetNode);
-        } else {
-          const root = $getRoot();
-          root.append(tweetNode);
-        }
-        const paragraphNode = $createParagraphNode();
-        tweetNode.insertAfter(paragraphNode);
-        paragraphNode.select();
+        $insertBlockNode(tweetNode);
 
         return true;
       },

@@ -89,7 +89,7 @@ function TextFormatFloatingToolbar({
   }, [editor, isLink]);
 
   const insertComment = () => {
-    editor.dispatchCommand(INSERT_INLINE_COMMAND, null);
+    editor.dispatchCommand(INSERT_INLINE_COMMAND, undefined);
   };
 
   const updateTextFormatFloatingToolbar = useCallback(() => {

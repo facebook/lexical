@@ -374,52 +374,6 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
   ) {
     return;
   } else if (inputType === 'insertCompositionText') {
-    // This logic handles insertion of text between different
-    // format text types. We have to detect a change in type
-    // during composition and see if the previous text contains
-    // part of the composed text to work out the actual text that
-    // we need to insert.
-    const composedText = event.data;
-
-    // TODO: evaluate if this is Android only. It doesn't always seem
-    // to have any real impact, so could probably be refactored or removed
-    // for an alternative approach.
-    if (composedText) {
-      updateEditor(editor, () => {
-        const selection = $getSelection();
-
-        if ($isRangeSelection(selection)) {
-          const anchor = selection.anchor;
-          const node = anchor.getNode();
-          const prevNode = node.getPreviousSibling();
-
-          if (
-            anchor.offset === 0 &&
-            $isTextNode(node) &&
-            $isTextNode(prevNode) &&
-            node.getTextContent() === COMPOSITION_START_CHAR &&
-            prevNode.getFormat() !== selection.format
-          ) {
-            const prevTextContent = prevNode.getTextContent();
-
-            if (composedText.indexOf(prevTextContent) === 0) {
-              const insertedText = composedText.slice(prevTextContent.length);
-              dispatchCommand(
-                editor,
-                CONTROLLED_TEXT_INSERTION_COMMAND,
-                insertedText,
-              );
-              setTimeout(() => {
-                updateEditor(editor, () => {
-                  node.select();
-                });
-              }, ANDROID_COMPOSITION_LATENCY);
-            }
-          }
-        }
-      });
-    }
-
     return;
   }
 
@@ -487,7 +441,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
     if (inputType === 'insertText') {
       if (data === '\n') {
         event.preventDefault();
-        dispatchCommand(editor, INSERT_LINE_BREAK_COMMAND, undefined);
+        dispatchCommand(editor, INSERT_LINE_BREAK_COMMAND, false);
       } else if (data === DOUBLE_LINE_BREAK) {
         event.preventDefault();
         dispatchCommand(editor, INSERT_PARAGRAPH_COMMAND, undefined);
@@ -530,7 +484,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
       case 'insertLineBreak': {
         // Used for Android
         $setCompositionKey(null);
-        dispatchCommand(editor, INSERT_LINE_BREAK_COMMAND, undefined);
+        dispatchCommand(editor, INSERT_LINE_BREAK_COMMAND, false);
         break;
       }
 
@@ -542,7 +496,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
         // So instead, we need to infer it from the keyboard event.
         if (isInsertLineBreak) {
           isInsertLineBreak = false;
-          dispatchCommand(editor, INSERT_LINE_BREAK_COMMAND, undefined);
+          dispatchCommand(editor, INSERT_LINE_BREAK_COMMAND, false);
         } else {
           dispatchCommand(editor, INSERT_PARAGRAPH_COMMAND, undefined);
         }
@@ -972,31 +926,67 @@ export function addRootElementEvents(
             if (!editor.isReadOnly()) {
               switch (eventName) {
                 case 'cut':
-                  return dispatchCommand(editor, CUT_COMMAND, event);
+                  return dispatchCommand(
+                    editor,
+                    CUT_COMMAND,
+                    event as ClipboardEvent,
+                  );
 
                 case 'copy':
-                  return dispatchCommand(editor, COPY_COMMAND, event);
+                  return dispatchCommand(
+                    editor,
+                    COPY_COMMAND,
+                    event as ClipboardEvent,
+                  );
 
                 case 'paste':
-                  return dispatchCommand(editor, PASTE_COMMAND, event);
+                  return dispatchCommand(
+                    editor,
+                    PASTE_COMMAND,
+                    event as ClipboardEvent,
+                  );
 
                 case 'dragstart':
-                  return dispatchCommand(editor, DRAGSTART_COMMAND, event);
+                  return dispatchCommand(
+                    editor,
+                    DRAGSTART_COMMAND,
+                    event as DragEvent,
+                  );
 
                 case 'dragover':
-                  return dispatchCommand(editor, DRAGOVER_COMMAND, event);
+                  return dispatchCommand(
+                    editor,
+                    DRAGOVER_COMMAND,
+                    event as DragEvent,
+                  );
 
                 case 'dragend':
-                  return dispatchCommand(editor, DRAGEND_COMMAND, event);
+                  return dispatchCommand(
+                    editor,
+                    DRAGEND_COMMAND,
+                    event as DragEvent,
+                  );
 
                 case 'focus':
-                  return dispatchCommand(editor, FOCUS_COMMAND, event);
+                  return dispatchCommand(
+                    editor,
+                    FOCUS_COMMAND,
+                    event as FocusEvent,
+                  );
 
                 case 'blur':
-                  return dispatchCommand(editor, BLUR_COMMAND, event);
+                  return dispatchCommand(
+                    editor,
+                    BLUR_COMMAND,
+                    event as FocusEvent,
+                  );
 
                 case 'drop':
-                  return dispatchCommand(editor, DROP_COMMAND, event);
+                  return dispatchCommand(
+                    editor,
+                    DROP_COMMAND,
+                    event as DragEvent,
+                  );
               }
             }
           };

@@ -14,10 +14,17 @@ import {useEffect, useRef, useState} from 'react';
 import TreeView from '../TreeView';
 
 function App(): JSX.Element {
-  const [count, setCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [nodeMap, setNodeMap] = useState<DevToolsTree>({});
   const port = useRef<chrome.runtime.Port | null>(null);
+
+  const updateEditorState = (message: {
+    editorState: {nodeMap: DevToolsTree};
+  }) => {
+    setIsLoading(false);
+    const newNodeMap = message.editorState.nodeMap;
+    setNodeMap(newNodeMap);
+  };
 
   useEffect(() => {
     // create and initialize the messaging port to receive editorState updates
@@ -29,20 +36,22 @@ function App(): JSX.Element {
       tabId: window.chrome.devtools.inspectedWindow.tabId,
       type: 'FROM_APP',
     });
+
+    return () => {
+      if (port.current) port.current.disconnect();
+      port.current = null;
+    };
   }, [port]);
 
   useEffect(() => {
     if (port.current !== null) {
       // message listener for editorState updates from inspectedWindow
-      port.current.onMessage.addListener(
-        (message: {editorState: {nodeMap: DevToolsTree}}) => {
-          setCount(count + 1);
-          setIsLoading(false);
-          const newNodeMap = message.editorState.nodeMap;
-          setNodeMap(newNodeMap);
-        },
-      );
+      port.current.onMessage.addListener(updateEditorState);
     }
+
+    return () => {
+      port.current?.onMessage.removeListener(updateEditorState);
+    };
   });
 
   return (

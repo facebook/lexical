@@ -259,11 +259,16 @@ function onSelectionChange(
         let combinedFormat = IS_ALL_FORMATTING;
 
         const nodes = selection.getNodes();
-        nodes.forEach((node) => {
+        const nodesLength = nodes.length;
+        for (let i = 0; i < nodesLength; i++) {
+          const node = nodes[i];
           if ($isTextNode(node)) {
             combinedFormat &= node.getFormat();
+            if (combinedFormat === 0) {
+              break;
+            }
           }
-        });
+        }
 
         selection.format = combinedFormat;
       }

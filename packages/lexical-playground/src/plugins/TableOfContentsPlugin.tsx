@@ -127,7 +127,7 @@ function TableOfContentsList({
 
     document.addEventListener('scroll', onScroll);
     return () => document.removeEventListener('scroll', onScroll);
-  });
+  }, []);
 
   return (
     <ul className="remove-ul-style">

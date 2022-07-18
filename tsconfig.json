@@ -123,6 +123,9 @@
       "@lexical/react/LexicalAutoFocusPlugin": [
         "./packages/lexical-react/src/LexicalAutoFocusPlugin.ts"
       ],
+      "@lexical/react/LexicalTableOfContents__EXPERIMENTAL": [
+        "./packages/lexical-react/src/LexicalTableOfContents__EXPERIMENTAL.tsx"
+      ],
       "@lexical/react/LexicalAutoFormatterPlugin": [
         "./packages/lexical-react/src/LexicalAutoFormatterPlugin.ts"
       ],

@@ -55,7 +55,7 @@
   border-radius: 10px;
 }
 
-#toc {
+.toc {
   border-radius: 4px;
   box-sizing: border-box;
   display: flex;

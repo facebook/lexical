@@ -55,65 +55,64 @@ function TableOfContentsList({
     return elementYPosition > 9;
   }
 
-  function scrollCallback() {
-    if (
-      tableOfContents.length !== 0 &&
-      selectedIndex.current < tableOfContents.length - 1
-    ) {
-      let currentHeading = editor.getElementByKey(
-        tableOfContents[selectedIndex.current][0],
-      );
-      if (currentHeading !== null) {
-        if (isHeadingBelowTheTopOfThePage(currentHeading)) {
-          //On natural scroll, user is scrolling up
-          while (
-            currentHeading !== null &&
-            isHeadingBelowTheTopOfThePage(currentHeading) &&
-            selectedIndex.current > 0
-          ) {
-            const prevHeading = editor.getElementByKey(
-              tableOfContents[selectedIndex.current - 1][0],
-            );
-            if (
-              prevHeading !== null &&
-              (isHeadingAboveViewport(prevHeading) ||
-                isHeadingBelowTheTopOfThePage(prevHeading))
-            ) {
-              selectedIndex.current--;
-            }
-            currentHeading = prevHeading;
-          }
-          const prevHeadingKey = tableOfContents[selectedIndex.current][0];
-          setSelectedKey(prevHeadingKey);
-        } else if (isHeadingAboveViewport(currentHeading)) {
-          //On natural scroll, user is scrolling down
-          while (
-            currentHeading !== null &&
-            isHeadingAboveViewport(currentHeading) &&
-            selectedIndex.current < tableOfContents.length - 1
-          ) {
-            const nextHeading = editor.getElementByKey(
-              tableOfContents[selectedIndex.current + 1][0],
-            );
-            if (
-              nextHeading !== null &&
-              (isHeadingAtTheTopOfThePage(nextHeading) ||
-                isHeadingAboveViewport(nextHeading))
-            ) {
-              selectedIndex.current++;
-            }
-            currentHeading = nextHeading;
-          }
-          const nextHeadingKey = tableOfContents[selectedIndex.current][0];
-          setSelectedKey(nextHeadingKey);
-        }
-      }
-    } else {
-      selectedIndex.current = 0;
-    }
-  }
-
   useEffect(() => {
+    function scrollCallback() {
+      if (
+        tableOfContents.length !== 0 &&
+        selectedIndex.current < tableOfContents.length - 1
+      ) {
+        let currentHeading = editor.getElementByKey(
+          tableOfContents[selectedIndex.current][0],
+        );
+        if (currentHeading !== null) {
+          if (isHeadingBelowTheTopOfThePage(currentHeading)) {
+            //On natural scroll, user is scrolling up
+            while (
+              currentHeading !== null &&
+              isHeadingBelowTheTopOfThePage(currentHeading) &&
+              selectedIndex.current > 0
+            ) {
+              const prevHeading = editor.getElementByKey(
+                tableOfContents[selectedIndex.current - 1][0],
+              );
+              if (
+                prevHeading !== null &&
+                (isHeadingAboveViewport(prevHeading) ||
+                  isHeadingBelowTheTopOfThePage(prevHeading))
+              ) {
+                selectedIndex.current--;
+              }
+              currentHeading = prevHeading;
+            }
+            const prevHeadingKey = tableOfContents[selectedIndex.current][0];
+            setSelectedKey(prevHeadingKey);
+          } else if (isHeadingAboveViewport(currentHeading)) {
+            //On natural scroll, user is scrolling down
+            while (
+              currentHeading !== null &&
+              isHeadingAboveViewport(currentHeading) &&
+              selectedIndex.current < tableOfContents.length - 1
+            ) {
+              const nextHeading = editor.getElementByKey(
+                tableOfContents[selectedIndex.current + 1][0],
+              );
+              if (
+                nextHeading !== null &&
+                (isHeadingAtTheTopOfThePage(nextHeading) ||
+                  isHeadingAboveViewport(nextHeading))
+              ) {
+                selectedIndex.current++;
+              }
+              currentHeading = nextHeading;
+            }
+            const nextHeadingKey = tableOfContents[selectedIndex.current][0];
+            setSelectedKey(nextHeadingKey);
+          }
+        }
+      } else {
+        selectedIndex.current = 0;
+      }
+    }
     let timerId: ReturnType<typeof setTimeout>;
 
     function debounceFunction(func: () => void, delay: number) {
@@ -127,7 +126,7 @@ function TableOfContentsList({
 
     document.addEventListener('scroll', onScroll);
     return () => document.removeEventListener('scroll', onScroll);
-  }, [tableOfContents]);
+  }, [tableOfContents, editor]);
 
   return (
     <ul className="remove-ul-style">

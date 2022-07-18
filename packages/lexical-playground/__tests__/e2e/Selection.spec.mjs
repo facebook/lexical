@@ -60,7 +60,7 @@ test.describe('Selection', () => {
         (_parentSelector) => {
           return (
             document
-              .querySelector(`${_parentSelector} > .tree-view-output pre`)
+              .querySelector(`${_parentSelector} .tree-view-output pre`)
               .__lexicalEditor.getEditorState()._selection !== null
           );
         },

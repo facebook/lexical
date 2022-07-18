@@ -28,7 +28,7 @@ export default function Settings(): JSX.Element {
       showTreeView,
       showNestedEditorTreeView,
       disableBeforeInput,
-      isTableOfContents,
+      showTableOfContents,
     },
   } = useSettings();
   const [showSettings, setShowSettings] = useState(false);
@@ -127,9 +127,9 @@ export default function Settings(): JSX.Element {
           />
           <Switch
             onClick={() => {
-              setOption('isTableOfContents', !isTableOfContents);
+              setOption('showTableOfContents', !showTableOfContents);
             }}
-            checked={isTableOfContents}
+            checked={showTableOfContents}
             text="Table Of Contents"
           />
         </div>

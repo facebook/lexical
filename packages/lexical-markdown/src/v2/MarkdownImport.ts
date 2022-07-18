@@ -25,6 +25,7 @@ import {
   $createTextNode,
   $getRoot,
   $isParagraphNode,
+  $isTextNode,
 } from 'lexical';
 
 import {PUNCTUATION_OR_SPACE, transformersByType} from './utils';
@@ -77,16 +78,27 @@ export function createMarkdownImport(
     // allow empty lines and uses them as dilimiter
     const children = root.getChildren();
     for (const child of children) {
-      if (
-        $isParagraphNode(child) &&
-        MARKDOWN_EMPTY_LINE_REG_EXP.test(child.getTextContent())
-      ) {
+      if (isEmptyParagraph(child)) {
         child.remove();
       }
     }
 
     root.selectEnd();
   };
+}
+
+function isEmptyParagraph(node: LexicalNode): boolean {
+  if (!$isParagraphNode(node)) {
+    return false;
+  }
+
+  const firstChild = node.getFirstChild();
+  return (
+    firstChild == null ||
+    (node.getChildrenSize() === 1 &&
+      $isTextNode(firstChild) &&
+      MARKDOWN_EMPTY_LINE_REG_EXP.test(firstChild.getTextContent()))
+  );
 }
 
 function importBlocks(
@@ -201,7 +213,7 @@ function importTextFormatTransformers(
     return;
   }
 
-  let currentNode, remainderNode;
+  let currentNode, remainderNode, leadingNode;
 
   // If matching full content there's no need to run splitText and can reuse existing textNode
   // to update its content and apply format. E.g. for **_Hello_** string after applying bold
@@ -215,7 +227,10 @@ function importTextFormatTransformers(
     if (startIndex === 0) {
       [currentNode, remainderNode] = textNode.splitText(endIndex);
     } else {
-      [, currentNode, remainderNode] = textNode.splitText(startIndex, endIndex);
+      [leadingNode, currentNode, remainderNode] = textNode.splitText(
+        startIndex,
+        endIndex,
+      );
     }
   }
 
@@ -239,7 +254,15 @@ function importTextFormatTransformers(
     );
   }
 
-  // Run over remaining text if any
+  // Run over leading/remaining text if any
+  if (leadingNode) {
+    importTextFormatTransformers(
+      leadingNode,
+      textFormatTransformersIndex,
+      textMatchTransformers,
+    );
+  }
+
   if (remainderNode) {
     importTextFormatTransformers(
       remainderNode,

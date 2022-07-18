@@ -24,7 +24,7 @@ test.describe('Regression test #379', () => {
   }) => {
     await focusEditor(page);
     await page.keyboard.type('Luke');
-    await waitForSelector(page, '#mentions-typeahead ul li');
+    await waitForSelector(page, '#typeahead-menu ul li');
     await page.keyboard.press('Enter');
     await assertHTML(
       page,

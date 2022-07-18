@@ -12,8 +12,16 @@ import '../ui/TableOfContentsStyle.css';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import LexicalTableOfContents__EXPERIMENTAL from '@lexical/react/LexicalTableOfContents__EXPERIMENTAL';
-import {useRef, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import * as React from 'react';
+
+function indent(tagName: HeadingTagType) {
+  if (tagName === 'h2') {
+    return 'heading2';
+  } else if (tagName === 'h3') {
+    return 'heading3';
+  }
+}
 
 function TableOfContentsList({
   tableOfContents,
@@ -23,7 +31,6 @@ function TableOfContentsList({
   const [selectedKey, setSelectedKey] = useState('');
   const selectedIndex = useRef(0);
   const [editor] = useLexicalComposerContext();
-  let timerId: ReturnType<typeof setTimeout>;
 
   function scrollToNode(key: NodeKey, currIndex: number) {
     editor.getEditorState().read(() => {
@@ -34,19 +41,6 @@ function TableOfContentsList({
         selectedIndex.current = currIndex;
       }
     });
-  }
-
-  function indent(tagName: HeadingTagType) {
-    if (tagName === 'h2') {
-      return 'heading2';
-    } else if (tagName === 'h3') {
-      return 'heading3';
-    }
-  }
-
-  function debounceFunction(func: () => void, delay: number) {
-    clearTimeout(timerId);
-    timerId = setTimeout(func, delay);
   }
   function isElementAtTheTopOfThePage(element: HTMLElement): boolean {
     const elementYPosition = element?.getClientRects()[0].y;
@@ -98,10 +92,21 @@ function TableOfContentsList({
       }
     }
   }
-  function onScroll(): void {
-    debounceFunction(scrollCallback, 10);
-  }
-  document.addEventListener('scroll', onScroll);
+  useEffect(() => {
+    let timerId: ReturnType<typeof setTimeout>;
+
+    function debounceFunction(func: () => void, delay: number) {
+      clearTimeout(timerId);
+      timerId = setTimeout(func, delay);
+    }
+
+    function onScroll(): void {
+      debounceFunction(scrollCallback, 10);
+    }
+
+    document.addEventListener('scroll', onScroll);
+    return () => document.removeEventListener('scroll', onScroll);
+  });
 
   return (
     <ul className="remove-ul-style">

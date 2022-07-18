@@ -5,51 +5,67 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import './index.css';
 
-import {EditorState} from 'lexical';
+import {DevToolsTree} from 'packages/lexical-devtools/types';
 import * as React from 'react';
 import {useEffect, useRef, useState} from 'react';
 
-import logo from '../../../images/lexical-white.png';
+import TreeView from '../TreeView';
 
 function App(): JSX.Element {
-  const [count, setCount] = useState<number>(0);
-  const [, setEditorState] = useState<EditorState | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [nodeMap, setNodeMap] = useState<DevToolsTree>({});
   const port = useRef<chrome.runtime.Port | null>(null);
+
+  const updateEditorState = (message: {
+    editorState: {nodeMap: DevToolsTree};
+  }) => {
+    setIsLoading(false);
+    const newNodeMap = message.editorState.nodeMap;
+    setNodeMap(newNodeMap);
+  };
 
   useEffect(() => {
     // create and initialize the messaging port to receive editorState updates
     port.current = window.chrome.runtime.connect();
 
+    // post init message to background JS so tabId will be registered
     port.current.postMessage({
       name: 'init',
       tabId: window.chrome.devtools.inspectedWindow.tabId,
       type: 'FROM_APP',
     });
+
+    return () => {
+      if (port.current) port.current.disconnect();
+      port.current = null;
+    };
   }, [port]);
 
   useEffect(() => {
     if (port.current !== null) {
-      port.current.onMessage.addListener(
-        (message: {editorState: EditorState}) => {
-          setCount(count + 1);
-          setEditorState(message.editorState);
-        },
-      );
+      // message listener for editorState updates from inspectedWindow
+      port.current.onMessage.addListener(updateEditorState);
     }
+
+    return () => {
+      port.current?.onMessage.removeListener(updateEditorState);
+    };
   });
 
   return (
     <div className="App">
       <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
         <p>Lexical Developer Tools</p>
-        <p>
-          <code>editorState</code> updates: {count}
-        </p>
       </header>
+      {isLoading ? (
+        <div className="loading-view">
+          <p>Loading...</p>
+        </div>
+      ) : (
+        <TreeView viewClassName="tree-view-output" nodeMap={nodeMap} />
+      )}
     </div>
   );
 }

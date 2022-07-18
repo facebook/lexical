@@ -16,13 +16,15 @@ const tabsToPorts: Record<
 // The Lexical DevTools React UI sends a message to initialize the port.
 chrome.runtime.onConnect.addListener((port: chrome.runtime.Port) => {
   port.onMessage.addListener((message) => {
-    if (!port.sender || !port.sender.tab) {
-      return;
-    }
+    let tabId;
 
-    const tabId = port.sender.tab.id;
-
-    if (!tabId) {
+    if (port.sender && port.sender.tab) {
+      tabId = port.sender.tab.id;
+    } else if (message.tabId) {
+      // in the DevTools React App, port.sender is undefined within FROM_APP messages
+      // instead tabId is sent within message payload
+      tabId = message.tabId;
+    } else {
       return;
     }
 

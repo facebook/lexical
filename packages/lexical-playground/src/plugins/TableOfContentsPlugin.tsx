@@ -42,15 +42,15 @@ function TableOfContentsList({
       }
     });
   }
-  function isElementAtTheTopOfThePage(element: HTMLElement): boolean {
+  function isHeadingAtTheTopOfThePage(element: HTMLElement): boolean {
     const elementYPosition = element?.getClientRects()[0].y;
     return elementYPosition > 0.26 && elementYPosition < 9;
   }
-  function isElementAboveViewport(element: HTMLElement): boolean {
+  function isHeadingAboveViewport(element: HTMLElement): boolean {
     const elementYPosition = element?.getClientRects()[0].y;
     return elementYPosition <= 0;
   }
-  function isElementBelowTheTopOfThePage(element: HTMLElement): boolean {
+  function isHeadingBelowTheTopOfThePage(element: HTMLElement): boolean {
     const elementYPosition = element?.getClientRects()[0].y;
     return elementYPosition > 9;
   }
@@ -64,11 +64,11 @@ function TableOfContentsList({
         tableOfContents[selectedIndex.current][0],
       );
       if (currentHeading !== null) {
-        if (isElementBelowTheTopOfThePage(currentHeading)) {
+        if (isHeadingBelowTheTopOfThePage(currentHeading)) {
           //On natural scroll, user is scrolling up
           while (
             currentHeading !== null &&
-            isElementBelowTheTopOfThePage(currentHeading) &&
+            isHeadingBelowTheTopOfThePage(currentHeading) &&
             selectedIndex.current > 0
           ) {
             const prevHeading = editor.getElementByKey(
@@ -76,8 +76,8 @@ function TableOfContentsList({
             );
             if (
               prevHeading !== null &&
-              (isElementAboveViewport(prevHeading) ||
-                isElementBelowTheTopOfThePage(prevHeading))
+              (isHeadingAboveViewport(prevHeading) ||
+                isHeadingBelowTheTopOfThePage(prevHeading))
             ) {
               selectedIndex.current--;
             }
@@ -85,11 +85,11 @@ function TableOfContentsList({
           }
           const prevHeadingKey = tableOfContents[selectedIndex.current][0];
           setSelectedKey(prevHeadingKey);
-        } else if (isElementAboveViewport(currentHeading)) {
+        } else if (isHeadingAboveViewport(currentHeading)) {
           //On natural scroll, user is scrolling down
           while (
             currentHeading !== null &&
-            isElementAboveViewport(currentHeading) &&
+            isHeadingAboveViewport(currentHeading) &&
             selectedIndex.current < tableOfContents.length - 1
           ) {
             const nextHeading = editor.getElementByKey(
@@ -97,8 +97,8 @@ function TableOfContentsList({
             );
             if (
               nextHeading !== null &&
-              (isElementAtTheTopOfThePage(nextHeading) ||
-                isElementAboveViewport(nextHeading))
+              (isHeadingAtTheTopOfThePage(nextHeading) ||
+                isHeadingAboveViewport(nextHeading))
             ) {
               selectedIndex.current++;
             }

@@ -6,11 +6,18 @@
  *
  */
 
-import {selectAll} from '../keyboardShortcuts/index.mjs';
+import {
+  selectAll,
+  selectCharacters,
+  toggleBold,
+  toggleItalic,
+  toggleUnderline,
+} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   click,
   evaluate,
+  expect,
   focus,
   focusEditor,
   html,
@@ -274,5 +281,28 @@ test.describe('Toolbar', () => {
         </p>
       `,
     );
+  });
+
+  test('When we select three textNodes with different formatting at the same time, the selection formatting should show no formatting at all', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await focusEditor(page);
+
+    await toggleBold(page);
+    await page.keyboard.type('A ');
+    await toggleBold(page);
+    await toggleItalic(page);
+    await page.keyboard.type('B ');
+    await toggleItalic(page);
+    await toggleUnderline(page);
+    await page.keyboard.type('C');
+    await selectCharacters(page, 'left', 5);
+
+    const actives = await page.$$('div.toolbar button.toolbar-item.active');
+    await page.pause();
+    expect(actives.length).toEqual(0);
   });
 });

@@ -61,30 +61,27 @@ function TableOfContentsList({
         tableOfContents[selectedIndex.current][0],
       );
       if (currentHeading !== null) {
-        if (currentHeading !== null && isElementAboveViewPort(currentHeading)) {
+        if (isElementAboveViewPort(currentHeading)) {
           while (
             currentHeading !== null &&
             isElementAboveViewPort(currentHeading) &&
             selectedIndex.current < tableOfContents.length - 1
           ) {
-            if (isElementBelowPageTop(currentHeading)) {
+            const nextHeading = editor.getElementByKey(
+              tableOfContents[selectedIndex.current + 1][0],
+            );
+            if (
+              nextHeading !== null &&
+              (isElementAtTheTopOfThePage(nextHeading) ||
+                isElementAboveViewPort(nextHeading))
+            ) {
+              const nextHeadingKey =
+                tableOfContents[++selectedIndex.current][0];
+              setSelectedKey(nextHeadingKey);
+              currentHeading = nextHeading;
               break;
             } else {
-              const nextHeading = editor.getElementByKey(
-                tableOfContents[selectedIndex.current + 1][0],
-              );
-              if (
-                nextHeading !== null &&
-                (isElementAtTheTopOfThePage(nextHeading) ||
-                  isElementAboveViewPort(nextHeading))
-              ) {
-                const nextHeadingKey =
-                  tableOfContents[++selectedIndex.current][0];
-                setSelectedKey(nextHeadingKey);
-                currentHeading = nextHeading;
-              } else {
-                break;
-              }
+              currentHeading = nextHeading;
             }
           }
         } else if (isElementBelowPageTop(currentHeading)) {
@@ -113,6 +110,7 @@ function TableOfContentsList({
       }
     }
   }
+
   useEffect(() => {
     let timerId: ReturnType<typeof setTimeout>;
 

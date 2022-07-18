@@ -140,7 +140,7 @@ function TableOfContentsList({
           tabIndex={0}>
           <div className={selectedKey === key ? 'circle' : 'bar'} />
           <li className={indent(tag)}>
-            {('' + text).length > 30 ? text.substring(0, 27) + '...' : text}
+            {('' + text).length > 27 ? text.substring(0, 27) + '...' : text}
           </li>
         </div>
       ))}

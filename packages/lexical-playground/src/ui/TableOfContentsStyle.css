@@ -51,8 +51,8 @@
   max-height: 290px;
   overflow: scroll;
   padding: 10px;
-  background-color: #f5f6f7;
   border-radius: 10px;
+  overflow-x: hidden;
 }
 
 .toc {

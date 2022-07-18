@@ -157,6 +157,7 @@ export function useYjsCollaboration(
       provider.off('reload', onProviderDocReload);
       awareness.off('update', onAwarenessUpdate);
       root.getSharedType().unobserveDeep(onYjsTreeChanges);
+      docMap.delete(id);
       removeListener();
     };
   }, [

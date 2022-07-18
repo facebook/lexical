@@ -56,36 +56,15 @@ function TableOfContentsList({
   }
 
   function scrollCallback() {
-    if (tableOfContents.length !== 0) {
+    if (
+      tableOfContents.length !== 0 &&
+      selectedIndex.current < tableOfContents.length - 1
+    ) {
       let currentHeading = editor.getElementByKey(
         tableOfContents[selectedIndex.current][0],
       );
       if (currentHeading !== null) {
-        if (isElementAboveViewport(currentHeading)) {
-          //On natural scroll, user is scrolling down
-          while (
-            currentHeading !== null &&
-            isElementAboveViewport(currentHeading) &&
-            selectedIndex.current < tableOfContents.length - 1
-          ) {
-            const nextHeading = editor.getElementByKey(
-              tableOfContents[selectedIndex.current + 1][0],
-            );
-            if (
-              nextHeading !== null &&
-              (isElementAtTheTopOfThePage(nextHeading) ||
-                isElementAboveViewport(nextHeading))
-            ) {
-              const nextHeadingKey =
-                tableOfContents[++selectedIndex.current][0];
-              setSelectedKey(nextHeadingKey);
-              currentHeading = nextHeading;
-              break;
-            } else {
-              currentHeading = nextHeading;
-            }
-          }
-        } else if (isElementBelowTheTopOfThePage(currentHeading)) {
+        if (isElementBelowTheTopOfThePage(currentHeading)) {
           //On natural scroll, user is scrolling up
           while (
             currentHeading !== null &&
@@ -98,18 +77,39 @@ function TableOfContentsList({
             if (
               prevHeading !== null &&
               (isElementAtTheTopOfThePage(prevHeading) ||
-                isElementAboveViewport(prevHeading))
+                isElementBelowTheTopOfThePage(prevHeading))
             ) {
-              const prevHeadingKey =
-                tableOfContents[--selectedIndex.current][0];
-              setSelectedKey(prevHeadingKey);
-              break;
-            } else {
-              currentHeading = prevHeading;
+              selectedIndex.current--;
             }
+            currentHeading = prevHeading;
           }
+          const prevHeadingKey = tableOfContents[selectedIndex.current][0];
+          setSelectedKey(prevHeadingKey);
+        } else if (isElementAboveViewport(currentHeading)) {
+          //On natural scroll, user is scrolling down
+          while (
+            currentHeading !== null &&
+            isElementAboveViewport(currentHeading) &&
+            selectedIndex.current < tableOfContents.length - 1
+          ) {
+            const nextHeading = editor.getElementByKey(
+              tableOfContents[selectedIndex.current][0],
+            );
+            if (
+              nextHeading !== null &&
+              (isElementAtTheTopOfThePage(nextHeading) ||
+                isElementAboveViewport(nextHeading))
+            ) {
+              selectedIndex.current++;
+            }
+            currentHeading = nextHeading;
+          }
+          const nextHeadingKey = tableOfContents[selectedIndex.current][0];
+          setSelectedKey(nextHeadingKey);
         }
       }
+    } else {
+      selectedIndex.current = 0;
     }
   }
 

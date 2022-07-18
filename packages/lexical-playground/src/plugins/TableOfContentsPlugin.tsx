@@ -23,22 +23,6 @@ function indent(tagName: HeadingTagType) {
   }
 }
 
-function isElementOnScreen(element: HTMLElement): {
-  isOnScreen: boolean;
-  top: number;
-  bottom: number;
-} {
-  const rect = element.getBoundingClientRect();
-  const isOnScreen =
-    rect.top >= 0 &&
-    rect.left >= 0 &&
-    rect.bottom <=
-      (window.innerHeight || document.documentElement.clientHeight) &&
-    rect.right <= (window.innerWidth || document.documentElement.clientWidth);
-
-  return {bottom: rect.bottom, isOnScreen: isOnScreen, top: rect.top};
-}
-
 function TableOfContentsList({
   tableOfContents,
 }: {
@@ -47,7 +31,6 @@ function TableOfContentsList({
   const [selectedKey, setSelectedKey] = useState('');
   const selectedIndex = useRef(0);
   const [editor] = useLexicalComposerContext();
-  let lastScrollTop = 0;
 
   function scrollToNode(key: NodeKey, currIndex: number) {
     editor.getEditorState().read(() => {
@@ -59,54 +42,77 @@ function TableOfContentsList({
       }
     });
   }
+  function isElementAtTheTopOfThePage(element: HTMLElement): boolean {
+    const elementYPosition = element?.getClientRects()[0].y;
+    return elementYPosition > 0.26 && elementYPosition < 9;
+  }
+  function isElementAboveViewport(element: HTMLElement): boolean {
+    const elementYPosition = element?.getClientRects()[0].y;
+    return elementYPosition <= 0;
+  }
+  function isElementBelowTheTopOfThePage(element: HTMLElement): boolean {
+    const elementYPosition = element?.getClientRects()[0].y;
+    return elementYPosition > 9;
+  }
 
   function scrollCallback() {
-    const st = window.pageYOffset || document.documentElement.scrollTop;
-    //scrolling up
-    if (st > lastScrollTop) {
-      if (selectedIndex.current < tableOfContents.length - 1) {
-        const currHeading = editor.getElementByKey(
-          tableOfContents[selectedIndex.current][0],
-        );
-        if (currHeading !== null) {
-          const {isOnScreen, bottom} = isElementOnScreen(currHeading);
-          if (isOnScreen === false) {
-            //check whether the element is not visible on the screen but exists down below
+    if (tableOfContents.length !== 0) {
+      let currentHeading = editor.getElementByKey(
+        tableOfContents[selectedIndex.current][0],
+      );
+      if (currentHeading !== null) {
+        if (isElementAboveViewport(currentHeading)) {
+          //On natural scroll, user is scrolling down
+          while (
+            currentHeading !== null &&
+            isElementAboveViewport(currentHeading) &&
+            selectedIndex.current < tableOfContents.length - 1
+          ) {
+            const nextHeading = editor.getElementByKey(
+              tableOfContents[selectedIndex.current + 1][0],
+            );
             if (
-              bottom <=
-              (window.innerHeight || document.documentElement.clientHeight)
+              nextHeading !== null &&
+              (isElementAtTheTopOfThePage(nextHeading) ||
+                isElementAboveViewport(nextHeading))
             ) {
-              const nextKey = tableOfContents[selectedIndex.current + 1][0];
-              selectedIndex.current++;
-              setSelectedKey(nextKey);
+              const nextHeadingKey =
+                tableOfContents[++selectedIndex.current][0];
+              setSelectedKey(nextHeadingKey);
+              currentHeading = nextHeading;
+              break;
+            } else {
+              currentHeading = nextHeading;
             }
           }
-        }
-      }
-    } else {
-      // scrolling down
-      if (
-        selectedIndex.current > 0 &&
-        selectedIndex.current < tableOfContents.length
-      ) {
-        const prevHeading = editor.getElementByKey(
-          tableOfContents[selectedIndex.current - 1][0],
-        );
-        if (prevHeading !== null) {
-          const {isOnScreen, top} = isElementOnScreen(prevHeading);
-          if (isOnScreen === true) {
-            //check whether the element exists above
-            if (top >= 0) {
-              const prevKey = tableOfContents[selectedIndex.current - 1][0];
-              setSelectedKey(prevKey);
-              selectedIndex.current--;
+        } else if (isElementBelowTheTopOfThePage(currentHeading)) {
+          //On natural scroll, user is scrolling up
+          while (
+            currentHeading !== null &&
+            isElementBelowTheTopOfThePage(currentHeading) &&
+            selectedIndex.current > 0
+          ) {
+            const prevHeading = editor.getElementByKey(
+              tableOfContents[selectedIndex.current - 1][0],
+            );
+            if (
+              prevHeading !== null &&
+              (isElementAtTheTopOfThePage(prevHeading) ||
+                isElementAboveViewport(prevHeading))
+            ) {
+              const prevHeadingKey =
+                tableOfContents[--selectedIndex.current][0];
+              setSelectedKey(prevHeadingKey);
+              break;
+            } else {
+              currentHeading = prevHeading;
             }
           }
         }
       }
     }
-    lastScrollTop = st <= 0 ? 0 : st;
   }
+
   useEffect(() => {
     let timerId: ReturnType<typeof setTimeout>;
 
@@ -134,7 +140,7 @@ function TableOfContentsList({
           tabIndex={0}>
           <div className={selectedKey === key ? 'circle' : 'bar'} />
           <li className={indent(tag)}>
-            {('' + text).length > 30 ? text.substring(0, 27) + '...' : text}
+            {('' + text).length > 27 ? text.substring(0, 27) + '...' : text}
           </li>
         </div>
       ))}

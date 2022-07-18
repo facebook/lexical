@@ -134,7 +134,7 @@ test.describe('Clear All Formatting', () => {
 
     await page.keyboard.type('Luke');
 
-    await waitForSelector(page, '#mentions-typeahead ul li');
+    await waitForSelector(page, '#typeahead-menu ul li');
     await assertHTML(
       page,
       html`

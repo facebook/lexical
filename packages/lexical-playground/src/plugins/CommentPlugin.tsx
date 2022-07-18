@@ -406,33 +406,16 @@ function CommentsComposer({
   );
 }
 
-function CommentsPanelFooter({
-  footerRef,
-  submitAddComment,
-}: {
-  footerRef: {current: null | HTMLDivElement};
-  submitAddComment: (
-    commentOrThread: Comment | Thread,
-    isInlineComment: boolean,
-  ) => void;
-}) {
-  return (
-    <div className="CommentPlugin_CommentsPanel_Footer" ref={footerRef}>
-      <CommentsComposer submitAddComment={submitAddComment} />
-    </div>
-  );
-}
-
-function ShowDeleteCommentDialog({
-  comment,
-  deleteComment,
+function ShowDeleteCommentOrThreadDialog({
+  commentOrThread,
+  deleteCommentOrThread,
   onClose,
-  thread,
+  thread = undefined,
 }: {
-  comment: Comment;
+  commentOrThread: Comment | Thread;
 
-  deleteComment: (
-    commentOrThread: Comment,
+  deleteCommentOrThread: (
+    comment: Comment | Thread,
     // eslint-disable-next-line no-shadow
     thread?: Thread,
   ) => void;
@@ -441,11 +424,11 @@ function ShowDeleteCommentDialog({
 }): JSX.Element {
   return (
     <>
-      Are you sure you want to delete this comment?
+      Are you sure you want to delete this {commentOrThread.type}?
       <div className="Modal__content">
         <Button
           onClick={() => {
-            deleteComment(comment, thread);
+            deleteCommentOrThread(commentOrThread, thread);
             onClose();
           }}>
           Delete
@@ -469,7 +452,7 @@ function CommentsPanelListComment({
 }: {
   comment: Comment;
   deleteComment: (
-    commentOrThread: Comment,
+    commentOrThread: Comment | Thread,
     // eslint-disable-next-line no-shadow
     thread?: Thread,
   ) => void;
@@ -490,22 +473,31 @@ function CommentsPanelListComment({
           · {seconds > -10 ? 'Just now' : rtf.format(minutes, 'minute')}
         </span>
       </div>
-      <p>{comment.content}</p>
-      <Button
-        onClick={() => {
-          showModal('Delete Comment', (onClose) => (
-            <ShowDeleteCommentDialog
-              comment={comment}
-              deleteComment={deleteComment}
-              thread={thread}
-              onClose={onClose}
-            />
-          ));
-        }}
-        className="CommentPlugin_CommentsPanel_List_DeleteButton">
-        <i className="delete" />
-      </Button>
-      {modal}
+      <p
+        className={
+          comment.deleted ? 'CommentPlugin_CommentsPanel_DeletedComment' : ''
+        }>
+        {comment.content}
+      </p>
+      {!comment.deleted && (
+        <>
+          <Button
+            onClick={() => {
+              showModal('Delete Comment', (onClose) => (
+                <ShowDeleteCommentOrThreadDialog
+                  commentOrThread={comment}
+                  deleteCommentOrThread={deleteComment}
+                  thread={thread}
+                  onClose={onClose}
+                />
+              ));
+            }}
+            className="CommentPlugin_CommentsPanel_List_DeleteButton">
+            <i className="delete" />
+          </Button>
+          {modal}
+        </>
+      )}
     </li>
   );
 }
@@ -513,14 +505,17 @@ function CommentsPanelListComment({
 function CommentsPanelList({
   activeIDs,
   comments,
-  deleteComment,
+  deleteCommentOrThread,
   listRef,
   submitAddComment,
   markNodeMap,
 }: {
   activeIDs: Array<string>;
   comments: Comments;
-  deleteComment: (commentOrThread: Comment, thread?: Thread) => void;
+  deleteCommentOrThread: (
+    commentOrThread: Comment | Thread,
+    thread?: Thread,
+  ) => void;
   listRef: {current: null | HTMLUListElement};
   markNodeMap: Map<string, Set<NodeKey>>;
   submitAddComment: (
@@ -531,6 +526,7 @@ function CommentsPanelList({
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
   const [counter, setCounter] = useState(0);
+  const [modal, showModal] = useModal();
   const rtf = useMemo(
     () =>
       new Intl.RelativeTimeFormat('en', {
@@ -594,15 +590,33 @@ function CommentsPanelList({
               className={`CommentPlugin_CommentsPanel_List_Thread ${
                 markNodeMap.has(id) ? 'interactive' : ''
               } ${activeIDs.indexOf(id) === -1 ? '' : 'active'}`}>
-              <blockquote className="CommentPlugin_CommentsPanel_List_Thread_Quote">
-                `{'> '}`<span>{commentOrThread.quote}</span>
-              </blockquote>
+              <div className="CommentPlugin_CommentsPanel_List_Thread_QuoteBox">
+                <blockquote className="CommentPlugin_CommentsPanel_List_Thread_Quote">
+                  {'> '}
+                  <span>{commentOrThread.quote}</span>
+                </blockquote>
+                {/* INTRODUCE DELETE THREAD HERE*/}
+                <Button
+                  onClick={() => {
+                    showModal('Delete Thread', (onClose) => (
+                      <ShowDeleteCommentOrThreadDialog
+                        commentOrThread={commentOrThread}
+                        deleteCommentOrThread={deleteCommentOrThread}
+                        onClose={onClose}
+                      />
+                    ));
+                  }}
+                  className="CommentPlugin_CommentsPanel_List_DeleteButton">
+                  <i className="delete" />
+                </Button>
+                {modal}
+              </div>
               <ul className="CommentPlugin_CommentsPanel_List_Thread_Comments">
                 {commentOrThread.comments.map((comment) => (
                   <CommentsPanelListComment
                     key={comment.id}
                     comment={comment}
-                    deleteComment={deleteComment}
+                    deleteComment={deleteCommentOrThread}
                     thread={commentOrThread}
                     rtf={rtf}
                   />
@@ -622,7 +636,7 @@ function CommentsPanelList({
           <CommentsPanelListComment
             key={id}
             comment={commentOrThread}
-            deleteComment={deleteComment}
+            deleteComment={deleteCommentOrThread}
             rtf={rtf}
           />
         );
@@ -633,14 +647,17 @@ function CommentsPanelList({
 
 function CommentsPanel({
   activeIDs,
-  deleteComment,
+  deleteCommentOrThread,
   comments,
   submitAddComment,
   markNodeMap,
 }: {
   activeIDs: Array<string>;
   comments: Comments;
-  deleteComment: (commentOrThread: Comment, thread?: Thread) => void;
+  deleteCommentOrThread: (
+    commentOrThread: Comment | Thread,
+    thread?: Thread,
+  ) => void;
   markNodeMap: Map<string, Set<NodeKey>>;
   submitAddComment: (
     commentOrThread: Comment | Thread,
@@ -648,30 +665,8 @@ function CommentsPanel({
     thread?: Thread,
   ) => void;
 }): JSX.Element {
-  const footerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const isEmpty = comments.length === 0;
-
-  useLayoutEffect(() => {
-    const footerElem = footerRef.current;
-    if (footerElem !== null) {
-      const updateSize = () => {
-        const listElem = listRef.current;
-        if (listElem !== null) {
-          const rect = footerElem.getBoundingClientRect();
-          listElem.style.height = window.innerHeight - rect.height - 133 + 'px';
-        }
-      };
-      const resizeObserver = new ResizeObserver(updateSize);
-      resizeObserver.observe(footerElem);
-      window.addEventListener('resize', updateSize);
-
-      return () => {
-        window.removeEventListener('resize', updateSize);
-        resizeObserver.disconnect();
-      };
-    }
-  }, [isEmpty]);
 
   return (
     <div className="CommentPlugin_CommentsPanel">
@@ -682,16 +677,12 @@ function CommentsPanel({
         <CommentsPanelList
           activeIDs={activeIDs}
           comments={comments}
-          deleteComment={deleteComment}
+          deleteCommentOrThread={deleteCommentOrThread}
           listRef={listRef}
           submitAddComment={submitAddComment}
           markNodeMap={markNodeMap}
         />
       )}
-      <CommentsPanelFooter
-        submitAddComment={submitAddComment}
-        footerRef={footerRef}
-      />
     </div>
   );
 }
@@ -741,27 +732,37 @@ export default function CommentPlugin({
     setShowCommentInput(false);
   }, [editor]);
 
-  const deleteComment = useCallback(
-    (comment: Comment, thread?: Thread) => {
-      commentStore.deleteComment(comment, thread);
-      // Remove ids from associated marks
-      const id = thread !== undefined ? thread.id : comment.id;
-      const markNodeKeys = markNodeMap.get(id);
-      if (markNodeKeys !== undefined) {
-        // Do async to avoid causing a React infinite loop
-        setTimeout(() => {
-          editor.update(() => {
-            for (const key of markNodeKeys) {
-              const node: null | MarkNode = $getNodeByKey(key);
-              if ($isMarkNode(node)) {
-                node.deleteID(id);
-                if (node.getIDs().length === 0) {
-                  $unwrapMarkNode(node);
+  const deleteCommentOrThread = useCallback(
+    (comment: Comment | Thread, thread?: Thread) => {
+      if (comment.type === 'comment') {
+        const deletionInfo = commentStore.deleteCommentOrThread(
+          comment,
+          thread,
+        );
+        if (!deletionInfo) return;
+        const {markedComment, index} = deletionInfo;
+        commentStore.addComment(markedComment, thread, index);
+      } else {
+        commentStore.deleteCommentOrThread(comment);
+        // Remove ids from associated marks
+        const id = thread !== undefined ? thread.id : comment.id;
+        const markNodeKeys = markNodeMap.get(id);
+        if (markNodeKeys !== undefined) {
+          // Do async to avoid causing a React infinite loop
+          setTimeout(() => {
+            editor.update(() => {
+              for (const key of markNodeKeys) {
+                const node: null | MarkNode = $getNodeByKey(key);
+                if ($isMarkNode(node)) {
+                  node.deleteID(id);
+                  if (node.getIDs().length === 0) {
+                    $unwrapMarkNode(node);
+                  }
                 }
               }
-            }
+            });
           });
-        });
+        }
       }
     },
     [commentStore, editor, markNodeMap],
@@ -973,7 +974,7 @@ export default function CommentPlugin({
           <CommentsPanel
             comments={comments}
             submitAddComment={submitAddComment}
-            deleteComment={deleteComment}
+            deleteCommentOrThread={deleteCommentOrThread}
             activeIDs={activeIDs}
             markNodeMap={markNodeMap}
           />,

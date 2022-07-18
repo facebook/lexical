@@ -12,8 +12,32 @@ import '../ui/TableOfContentsStyle.css';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import LexicalTableOfContents__EXPERIMENTAL from '@lexical/react/LexicalTableOfContents__EXPERIMENTAL';
-import {useRef, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import * as React from 'react';
+
+function indent(tagName: HeadingTagType) {
+  if (tagName === 'h2') {
+    return 'heading2';
+  } else if (tagName === 'h3') {
+    return 'heading3';
+  }
+}
+
+function isElementOnScreen(element: HTMLElement): {
+  isOnScreen: boolean;
+  top: number;
+  bottom: number;
+} {
+  const rect = element.getBoundingClientRect();
+  const isOnScreen =
+    rect.top >= 0 &&
+    rect.left >= 0 &&
+    rect.bottom <=
+      (window.innerHeight || document.documentElement.clientHeight) &&
+    rect.right <= (window.innerWidth || document.documentElement.clientWidth);
+
+  return {bottom: rect.bottom, isOnScreen: isOnScreen, top: rect.top};
+}
 
 function TableOfContentsList({
   tableOfContents,
@@ -23,7 +47,7 @@ function TableOfContentsList({
   const [selectedKey, setSelectedKey] = useState('');
   const selectedIndex = useRef(0);
   const [editor] = useLexicalComposerContext();
-  let timerId: ReturnType<typeof setTimeout>;
+  let lastScrollTop = 0;
 
   function scrollToNode(key: NodeKey, currIndex: number) {
     editor.getEditorState().read(() => {
@@ -36,35 +60,6 @@ function TableOfContentsList({
     });
   }
 
-  function indent(tagName: HeadingTagType) {
-    if (tagName === 'h2') {
-      return 'heading2';
-    } else if (tagName === 'h3') {
-      return 'heading3';
-    }
-  }
-  let lastScrollTop = 0;
-
-  function debounceFunction(func: () => void, delay: number) {
-    clearTimeout(timerId);
-    timerId = setTimeout(func, delay);
-  }
-
-  function isElementOnScreen(element: HTMLElement): {
-    isOnScreen: boolean;
-    top: number;
-    bottom: number;
-  } {
-    const rect = element.getBoundingClientRect();
-    const isOnScreen =
-      rect.top >= 0 &&
-      rect.left >= 0 &&
-      rect.bottom <=
-        (window.innerHeight || document.documentElement.clientHeight) &&
-      rect.right <= (window.innerWidth || document.documentElement.clientWidth);
-
-    return {bottom: rect.bottom, isOnScreen: isOnScreen, top: rect.top};
-  }
   function scrollCallback() {
     const st = window.pageYOffset || document.documentElement.scrollTop;
     //scrolling up
@@ -112,10 +107,21 @@ function TableOfContentsList({
     }
     lastScrollTop = st <= 0 ? 0 : st;
   }
-  function onScroll(): void {
-    debounceFunction(scrollCallback, 10);
-  }
-  document.addEventListener('scroll', onScroll);
+  useEffect(() => {
+    let timerId: ReturnType<typeof setTimeout>;
+
+    function debounceFunction(func: () => void, delay: number) {
+      clearTimeout(timerId);
+      timerId = setTimeout(func, delay);
+    }
+
+    function onScroll(): void {
+      debounceFunction(scrollCallback, 10);
+    }
+
+    document.addEventListener('scroll', onScroll);
+    return () => document.removeEventListener('scroll', onScroll);
+  });
 
   return (
     <ul className="remove-ul-style">

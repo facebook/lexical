@@ -204,14 +204,6 @@ i.comments {
   overflow: hidden;
 }
 
-.CommentPlugin_CommentsPanel_Footer {
-  border-top: 1px solid #eee;
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-}
-
 .CommentPlugin_CommentsPanel_Editor {
   position: relative;
   border: 1px solid #ccc;
@@ -353,11 +345,14 @@ i.send {
   cursor: inherit;
 }
 
-.CommentPlugin_CommentsPanel_List_Thread_Quote {
+.CommentPlugin_CommentsPanel_List_Thread_QuoteBox {
   padding-top: 10px;
-  margin: 0px 10px 0 10px;
   color: #ccc;
   display: block;
+}
+
+.CommentPlugin_CommentsPanel_List_Thread_Quote {
+  margin: 0px 10px 0 10px;
 }
 
 .CommentPlugin_CommentsPanel_List_Thread_Quote span {
@@ -408,7 +403,10 @@ i.send {
   opacity: 0;
 }
 
+.CommentPlugin_CommentsPanel_DeletedComment,
 .CommentPlugin_CommentsPanel_List_Comment:hover
+  .CommentPlugin_CommentsPanel_List_DeleteButton,
+.CommentPlugin_CommentsPanel_List_Thread_QuoteBox:hover
   .CommentPlugin_CommentsPanel_List_DeleteButton {
   opacity: 0.5;
 }

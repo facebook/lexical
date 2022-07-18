@@ -76,7 +76,7 @@ function TableOfContentsList({
             );
             if (
               prevHeading !== null &&
-              (isElementAtTheTopOfThePage(prevHeading) ||
+              (isElementAboveViewport(prevHeading) ||
                 isElementBelowTheTopOfThePage(prevHeading))
             ) {
               selectedIndex.current--;
@@ -93,7 +93,7 @@ function TableOfContentsList({
             selectedIndex.current < tableOfContents.length - 1
           ) {
             const nextHeading = editor.getElementByKey(
-              tableOfContents[selectedIndex.current][0],
+              tableOfContents[selectedIndex.current + 1][0],
             );
             if (
               nextHeading !== null &&

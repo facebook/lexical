@@ -113,10 +113,7 @@ export default function ActionsPlugin({
       {SUPPORT_SPEECH_RECOGNITION && (
         <button
           onClick={() => {
-            editor.dispatchCommand<boolean>(
-              SPEECH_TO_TEXT_COMMAND,
-              !isSpeechToText,
-            );
+            editor.dispatchCommand(SPEECH_TO_TEXT_COMMAND, !isSpeechToText);
             setIsSpeechToText(!isSpeechToText);
           }}
           className={
@@ -210,7 +207,7 @@ function ShowClearDialog({
       <div className="Modal__content">
         <Button
           onClick={() => {
-            editor.dispatchCommand<void>(CLEAR_EDITOR_COMMAND, undefined);
+            editor.dispatchCommand(CLEAR_EDITOR_COMMAND, undefined);
             editor.focus();
             onClose();
           }}>

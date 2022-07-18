@@ -7,6 +7,7 @@
  */
 
 import type {
+  CommandPayloadType,
   EditorThemeClasses,
   IntentionallyMarkedAsDirtyElement,
   Klass,
@@ -1098,11 +1099,10 @@ export function isFirefoxClipboardEvents(): boolean {
   );
 }
 
-export function dispatchCommand<P>(
-  editor: LexicalEditor,
-  type: LexicalCommand<P>,
-  payload: P,
-): boolean {
+export function dispatchCommand<
+  TCommand extends LexicalCommand<unknown>,
+  TPayload extends CommandPayloadType<TCommand>,
+>(editor: LexicalEditor, type: TCommand, payload: TPayload): boolean {
   return triggerCommandListeners(editor, type, payload);
 }
 

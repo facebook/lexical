@@ -28,9 +28,6 @@ import {useCallback, useEffect, useRef, useState} from 'react';
 
 const WIDGET_SCRIPT_URL = 'https://platform.twitter.com/widgets.js';
 
-const getHasScriptCached = () =>
-  document.querySelector(`script[src="${WIDGET_SCRIPT_URL}"]`);
-
 type TweetComponentProps = Readonly<{
   className: Readonly<{
     base: string;
@@ -55,6 +52,8 @@ function convertTweetElement(
   return null;
 }
 
+let isTwitterScriptLoading = true;
+
 function TweetComponent({
   className,
   format,
@@ -67,14 +66,15 @@ function TweetComponent({
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   const previousTweetIDRef = useRef<string>('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isTweetLoading, setIsTweetLoading] = useState(false);
 
   const createTweet = useCallback(async () => {
     try {
       // @ts-expect-error Twitter is attached to the window.
       await window.twttr.widgets.createTweet(tweetID, containerRef.current);
 
-      setIsLoading(false);
+      setIsTweetLoading(false);
+      isTwitterScriptLoading = false;
 
       if (onLoad) {
         onLoad();
@@ -88,9 +88,9 @@ function TweetComponent({
 
   useEffect(() => {
     if (tweetID !== previousTweetIDRef.current) {
-      setIsLoading(true);
+      setIsTweetLoading(true);
 
-      if (!getHasScriptCached()) {
+      if (isTwitterScriptLoading) {
         const script = document.createElement('script');
         script.src = WIDGET_SCRIPT_URL;
         script.async = true;
@@ -114,7 +114,7 @@ function TweetComponent({
       className={className}
       format={format}
       nodeKey={nodeKey}>
-      {isLoading ? loadingComponent : null}
+      {isTweetLoading ? loadingComponent : null}
       <div
         style={{display: 'inline-block', width: '550px'}}
         ref={containerRef}

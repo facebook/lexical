@@ -46,11 +46,11 @@ function TableOfContentsList({
     const elementYPosition = element?.getClientRects()[0].y;
     return elementYPosition > 0.26 && elementYPosition < 9;
   }
-  function isElementAboveViewPort(element: HTMLElement): boolean {
+  function isElementAboveViewport(element: HTMLElement): boolean {
     const elementYPosition = element?.getClientRects()[0].y;
     return elementYPosition <= 0;
   }
-  function isElementBelowPageTop(element: HTMLElement): boolean {
+  function isElementBelowTheTopOfThePage(element: HTMLElement): boolean {
     const elementYPosition = element?.getClientRects()[0].y;
     return elementYPosition > 9;
   }
@@ -61,10 +61,11 @@ function TableOfContentsList({
         tableOfContents[selectedIndex.current][0],
       );
       if (currentHeading !== null) {
-        if (isElementAboveViewPort(currentHeading)) {
+        if (isElementAboveViewport(currentHeading)) {
+          //On natural scroll, user is scrolling down
           while (
             currentHeading !== null &&
-            isElementAboveViewPort(currentHeading) &&
+            isElementAboveViewport(currentHeading) &&
             selectedIndex.current < tableOfContents.length - 1
           ) {
             const nextHeading = editor.getElementByKey(
@@ -73,7 +74,7 @@ function TableOfContentsList({
             if (
               nextHeading !== null &&
               (isElementAtTheTopOfThePage(nextHeading) ||
-                isElementAboveViewPort(nextHeading))
+                isElementAboveViewport(nextHeading))
             ) {
               const nextHeadingKey =
                 tableOfContents[++selectedIndex.current][0];
@@ -84,10 +85,11 @@ function TableOfContentsList({
               currentHeading = nextHeading;
             }
           }
-        } else if (isElementBelowPageTop(currentHeading)) {
+        } else if (isElementBelowTheTopOfThePage(currentHeading)) {
+          //On natural scroll, user is scrolling up
           while (
             currentHeading !== null &&
-            isElementBelowPageTop(currentHeading) &&
+            isElementBelowTheTopOfThePage(currentHeading) &&
             selectedIndex.current > 0
           ) {
             const prevHeading = editor.getElementByKey(
@@ -96,7 +98,7 @@ function TableOfContentsList({
             if (
               prevHeading !== null &&
               (isElementAtTheTopOfThePage(prevHeading) ||
-                isElementAboveViewPort(prevHeading))
+                isElementAboveViewport(prevHeading))
             ) {
               const prevHeadingKey =
                 tableOfContents[--selectedIndex.current][0];

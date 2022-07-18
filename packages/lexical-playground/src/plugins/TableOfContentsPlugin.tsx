@@ -57,35 +57,56 @@ function TableOfContentsList({
 
   function scrollCallback() {
     if (tableOfContents.length !== 0) {
-      const currentHeading = editor.getElementByKey(
+      let currentHeading = editor.getElementByKey(
         tableOfContents[selectedIndex.current][0],
       );
       if (currentHeading !== null) {
-        if (isElementAboveViewPort(currentHeading)) {
-          //check if the next element is at the top of the page
-          if (selectedIndex.current < tableOfContents.length - 1) {
-            const nextHeading = editor.getElementByKey(
-              tableOfContents[selectedIndex.current + 1][0],
-            );
-            if (
-              nextHeading !== null &&
-              isElementAtTheTopOfThePage(nextHeading)
-            ) {
-              const nextHeadingKey =
-                tableOfContents[++selectedIndex.current][0];
-              setSelectedKey(nextHeadingKey);
+        if (currentHeading !== null && isElementAboveViewPort(currentHeading)) {
+          while (
+            currentHeading !== null &&
+            isElementAboveViewPort(currentHeading) &&
+            selectedIndex.current < tableOfContents.length - 1
+          ) {
+            if (isElementBelowPageTop(currentHeading)) {
+              break;
+            } else {
+              const nextHeading = editor.getElementByKey(
+                tableOfContents[selectedIndex.current + 1][0],
+              );
+              if (
+                nextHeading !== null &&
+                (isElementAtTheTopOfThePage(nextHeading) ||
+                  isElementAboveViewPort(nextHeading))
+              ) {
+                const nextHeadingKey =
+                  tableOfContents[++selectedIndex.current][0];
+                setSelectedKey(nextHeadingKey);
+                currentHeading = nextHeading;
+              } else {
+                break;
+              }
             }
           }
         } else if (isElementBelowPageTop(currentHeading)) {
-          //Select the heading above it if there is one
-          if (selectedIndex.current > 0) {
+          while (
+            currentHeading !== null &&
+            isElementBelowPageTop(currentHeading) &&
+            selectedIndex.current > 0
+          ) {
             const prevHeading = editor.getElementByKey(
               tableOfContents[selectedIndex.current - 1][0],
             );
-            if (prevHeading !== null) {
-              const nextHeadingKey =
+            if (
+              prevHeading !== null &&
+              (isElementAtTheTopOfThePage(prevHeading) ||
+                isElementAboveViewPort(prevHeading))
+            ) {
+              const prevHeadingKey =
                 tableOfContents[--selectedIndex.current][0];
-              setSelectedKey(nextHeadingKey);
+              setSelectedKey(prevHeadingKey);
+              break;
+            } else {
+              currentHeading = prevHeading;
             }
           }
         }

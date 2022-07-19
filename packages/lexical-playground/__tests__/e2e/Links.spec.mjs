@@ -1326,7 +1326,7 @@ test.describe('Links', () => {
     await focusEditor(page);
     await page.keyboard.type('Hello world');
 
-    await moveLeft(page, 5);
+    await selectCharacters(page, 'left', 5);
 
     await click(page, '.link');
 

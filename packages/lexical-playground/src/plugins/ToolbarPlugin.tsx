@@ -16,7 +16,12 @@ import type {
 
 import './ToolbarPlugin.css';
 
-import {$createCodeNode, $isCodeNode} from '@lexical/code';
+import {
+  $createCodeNode,
+  $isCodeNode,
+  CODE_LANGUAGE_FRIENDLY_NAME_MAP,
+  CODE_LANGUAGE_MAP,
+} from '@lexical/code';
 import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {
   $isListNode,
@@ -109,30 +114,19 @@ const blockTypeToBlockName = {
   quote: 'Quote',
 };
 
-const CODE_LANGUAGE_OPTIONS: [string, string][] = [
-  ['', '- Select language -'],
-  ['c', 'C'],
-  ['clike', 'C-like'],
-  ['css', 'CSS'],
-  ['html', 'HTML'],
-  ['js', 'JavaScript'],
-  ['markdown', 'Markdown'],
-  ['objc', 'Objective-C'],
-  ['plain', 'Plain Text'],
-  ['py', 'Python'],
-  ['rust', 'Rust'],
-  ['sql', 'SQL'],
-  ['swift', 'Swift'],
-  ['xml', 'XML'],
-];
+function getCodeLanguageOptions(): [string, string][] {
+  const options: [string, string][] = [['', '- Select language -']];
 
-const CODE_LANGUAGE_MAP = {
-  javascript: 'js',
-  md: 'markdown',
-  plaintext: 'plain',
-  python: 'py',
-  text: 'plain',
-};
+  for (const [lang, friendlyName] of Object.entries(
+    CODE_LANGUAGE_FRIENDLY_NAME_MAP,
+  )) {
+    options.push([lang, friendlyName]);
+  }
+
+  return options;
+}
+
+const CODE_LANGUAGE_OPTIONS = getCodeLanguageOptions();
 
 function getSelectedNode(selection: RangeSelection): TextNode | ElementNode {
   const anchor = selection.anchor;

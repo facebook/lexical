@@ -26,7 +26,7 @@ const MATCHERS = [
       index: match.index,
       length: fullMatch.length,
       text: fullMatch,
-      url: fullMatch.startsWith('http') ? fullMatch : `http://${fullMatch}`,
+      url: fullMatch.startsWith('http') ? fullMatch : `https://${fullMatch}`,
     };
   },
   (text: string) => {

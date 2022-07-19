@@ -430,7 +430,6 @@ export function InsertImageDialog({
   useEffect(() => {
     hasModifier.current = false;
     const handler = (e: KeyboardEvent) => {
-      // debugger;
       hasModifier.current = e.altKey;
     };
     document.addEventListener('keydown', handler);

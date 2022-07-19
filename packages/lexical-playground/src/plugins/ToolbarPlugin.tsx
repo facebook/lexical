@@ -51,6 +51,7 @@ import {
 } from '@lexical/utils';
 import {
   $createParagraphNode,
+  $createTextNode,
   $getNodeByKey,
   $getRoot,
   $getSelection,
@@ -80,6 +81,8 @@ import useModal from '../hooks/useModal';
 import catTypingGif from '../images/cat-typing.gif';
 import yellowFlowerImage from '../images/yellow-flower.jpg';
 import {$createStickyNode} from '../nodes/StickyNode';
+import {$isTweetNode} from '../nodes/TweetNode';
+import {$isYouTubeNode} from '../nodes/YouTubeNode';
 import Button from '../ui/Button';
 import ColorPicker from '../ui/ColorPicker';
 import DropDown, {DropDownItem} from '../ui/DropDown';
@@ -705,6 +708,23 @@ function BlockFormatDropDown({
           if (selection.isCollapsed()) {
             $wrapLeafNodesInElements(selection, () => $createCodeNode());
           } else {
+            selection.getNodes().forEach((node) => {
+              // Explicity set fallback text content for some decorators nodes.
+              if ($isTweetNode(node)) {
+                node.replace(
+                  $createTextNode(
+                    `https://twitter.com/i/web/status/${node.getId()}`,
+                  ),
+                );
+              } else if ($isYouTubeNode(node)) {
+                node.replace(
+                  $createTextNode(
+                    `https://www.youtube.com/watch?v=${node.getId()}`,
+                  ),
+                );
+              }
+            });
+
             const textContent = selection.getTextContent();
             const codeNode = $createCodeNode();
             selection.insertNodes([codeNode]);

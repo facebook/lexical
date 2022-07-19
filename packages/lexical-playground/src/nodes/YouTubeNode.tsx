@@ -100,6 +100,10 @@ export class YouTubeNode extends DecoratorBlockNode {
     return false;
   }
 
+  getId(): string {
+    return this.__id;
+  }
+
   decorate(_editor: LexicalEditor, config: EditorConfig): JSX.Element {
     const embedBlockTheme = config.theme.embedBlock || {};
     const className = {
@@ -114,11 +118,6 @@ export class YouTubeNode extends DecoratorBlockNode {
         videoID={this.__id}
       />
     );
-  }
-
-  getTextContent(): string {
-    // This is called when we attempt to convert this DecoratorNode into a TextNode, such as when we convert a range selection into a CodeBlock.
-    return `https://www.youtube.com/watch?v=${this.__id}`;
   }
 
   isTopLevel(): true {

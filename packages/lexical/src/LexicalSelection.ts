@@ -1596,7 +1596,7 @@ export class RangeSelection implements BaseSelection {
     if (selectedNodesLength === 0) {
       return [];
     } else if (selectedNodesLength === 1) {
-      if ($isTextNode(firstNode)) {
+      if ($isTextNode(firstNode) && !this.isCollapsed()) {
         const startOffset =
           anchorOffset > focusOffset ? focusOffset : anchorOffset;
         const endOffset =

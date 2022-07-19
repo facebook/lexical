@@ -268,6 +268,9 @@ export function toggleLink(url: null | string): void {
       });
     } else {
       // Add or merge LinkNodes
+      if ($isRangeSelection(sel) && sel.isCollapsed()) {
+        return;
+      }
       if (nodes.length === 1) {
         const firstNode = nodes[0];
 

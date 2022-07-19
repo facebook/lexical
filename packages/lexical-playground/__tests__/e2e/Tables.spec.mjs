@@ -19,7 +19,7 @@ import {
   insertTable,
   IS_COLLAB,
   pasteFromClipboard,
-  SAMPLE_LANDSCAPE_IMAGE_URL,
+  SAMPLE_IMAGE_URL,
   selectCellsFromTableCords,
   selectFromAdditionalStylesDropdown,
   test,
@@ -1977,7 +1977,7 @@ test.describe('Tables', () => {
                     <img
                       alt="Yellow flower in tilt shift lens"
                       draggable="false"
-                      src="${SAMPLE_LANDSCAPE_IMAGE_URL}"
+                      src="${SAMPLE_IMAGE_URL}"
                       style="height: inherit; max-width: 500px; width: inherit" />
                   </div>
                 </span>

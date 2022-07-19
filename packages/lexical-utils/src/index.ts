@@ -119,7 +119,7 @@ export function $getNearestNodeOfType<T extends ElementNode>(
     parent = parent.getParent();
   }
 
-  return parent;
+  return null;
 }
 
 export function $getNearestBlockElementAncestorOrThrow(

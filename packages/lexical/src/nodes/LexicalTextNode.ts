@@ -843,11 +843,6 @@ function convertSpanElement(domNode: Node): DOMConversionOutput {
   const hasUnderlineTextDecoration = span.style.textDecoration === 'underline';
   // Google Docs uses span tags + vertical-align to specify subscript and superscript
   const verticalAlign = span.style.verticalAlign;
-  // Google Docs uses span tags + color, background-color for coloring
-  const backgroundColor = span.style.backgroundColor;
-  const textColor = span.style.color;
-
-  //TODO: font-size and coloring of subscript & superscript
 
   return {
     forChild: (lexicalNode) => {
@@ -871,19 +866,6 @@ function convertSpanElement(domNode: Node): DOMConversionOutput {
       }
       if (verticalAlign === 'super') {
         lexicalNode.toggleFormat('superscript');
-      }
-
-      let cssString = '';
-
-      if (textColor && textColor !== 'rgb(0, 0, 0)') {
-        cssString += `color: ${textColor};`;
-      }
-      if (backgroundColor && backgroundColor !== 'transparent') {
-        cssString += `background-color: ${backgroundColor};`;
-      }
-
-      if (cssString !== '') {
-        lexicalNode.setStyle(cssString);
       }
 
       return lexicalNode;

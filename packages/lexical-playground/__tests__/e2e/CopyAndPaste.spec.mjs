@@ -2179,44 +2179,6 @@ test.describe('CopyAndPaste', () => {
     );
   });
 
-  test('HTML Copy + paste text with background and text color', async ({
-    page,
-    isPlainText,
-  }) => {
-    test.skip(isPlainText);
-    await focusEditor(page);
-    const clipboardData = {
-      'text/html':
-        '<span style="font-size:11pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Lorem </span><span style="font-size:11pt;font-family:Arial;color:#000000;background-color:#00ff00;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">ipsum</span><span style="font-size:11pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;"> ~</span><span style="font-size:11pt;font-family:Arial;color:#4a86e8;background-color:#ffe599;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">color</span><span style="font-size:11pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">~ sit </span><span style="font-size:11pt;font-family:Arial;color:#ff0000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">amet</span></b>',
-    };
-    await pasteFromClipboard(page, clipboardData);
-    await assertHTML(
-      page,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">Lorem</span>
-          <span
-            style="background-color: rgb(0, 255, 0);"
-            data-lexical-text="true">
-            ipsum
-          </span>
-          <span data-lexical-text="true">~</span>
-          <span
-            style="color: rgb(74, 134, 232); background-color: rgb(255, 229, 153);"
-            data-lexical-text="true">
-            color
-          </span>
-          <span data-lexical-text="true">~ sit</span>
-          <span style="color: rgb(255, 0, 0);" data-lexical-text="true">
-            amet
-          </span>
-        </p>
-      `,
-    );
-  });
-
   test('HTML Copy + paste text with subscript and superscript', async ({
     page,
     isPlainText,

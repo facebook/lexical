@@ -19,27 +19,37 @@ function TreeView({
   viewClassName: string;
   nodeMap: DevToolsTree;
 }): JSX.Element {
-  const depthFirstSearch = (node: DevToolsNode): DevToolsNode => {
+  // takes flat JSON structure, nests child comments inside parents
+  const depthFirstSearch = (
+    node: DevToolsNode,
+    nestingLevel: number,
+  ): DevToolsNode => {
     const children: Array<DevToolsNode> = [];
 
     if (Object.prototype.hasOwnProperty.call(node, '__children')) {
       node.__children.forEach((childKey: string) => {
         const child = nodeMap[childKey];
-        children.push(depthFirstSearch(child));
+        children.push(depthFirstSearch(child, nestingLevel + 1)); // recursive call
       });
     }
 
-    return {...node, __type: node.__type, children, lexicalKey: node.__key};
+    return {
+      ...node,
+      __type: node.__type,
+      children,
+      lexicalKey: node.__key,
+      nestingLevel,
+    };
   };
 
   const generateTree = (map: DevToolsTree): JSX.Element => {
-    const root = depthFirstSearch(map.root);
+    const root = depthFirstSearch(map.root, 0);
     return <TreeNode {...root} />;
   };
 
   return (
     <div className={viewClassName}>
-      <ul>{generateTree(nodeMap)}</ul>
+      <pre>{generateTree(nodeMap)}</pre>
     </div>
   );
 }

@@ -7,31 +7,40 @@
  */
 import {DevToolsNode} from 'packages/lexical-devtools/types';
 import * as React from 'react';
+import {Fragment} from 'react';
 
 function TreeNode({
-  lexicalKey,
   __text,
   __type,
   children,
-}: {
-  children: Array<DevToolsNode>;
-  lexicalKey: string;
-  __text?: string;
-  __type: string;
-}): JSX.Element {
+  nestingLevel,
+  lexicalKey,
+}: DevToolsNode): JSX.Element {
+  const indentation = '  '.repeat(nestingLevel);
+  const marker = children.length > 0 ? '▼ ' : '  ';
+  const nodeString = ` (${lexicalKey}) ${__type} ${
+    // ▶ right unicode
+    __text ? '"' + __text + '"' : ''
+  }`;
+  const childNodes =
+    children.length > 0 ? (
+      <Fragment>
+        {children.map((child) => (
+          <TreeNode {...child} />
+        ))}
+      </Fragment>
+    ) : (
+      ''
+    );
+
   return (
-    <li key={lexicalKey}>
-      ({lexicalKey}) {__type} {__text ? '"' + __text + '"' : ''}
-      {children.length > 0 ? (
-        <ul>
-          {children.map((child) => (
-            <TreeNode {...child} />
-          ))}
-        </ul>
-      ) : (
-        ''
-      )}
-    </li>
+    <Fragment key={lexicalKey}>
+      {indentation}
+      {marker}
+      {nodeString}
+      {'\n'}
+      {childNodes}
+    </Fragment>
   );
 }
 

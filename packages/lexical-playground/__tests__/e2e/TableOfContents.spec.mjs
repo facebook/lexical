@@ -6,15 +6,6 @@
  *
  */
 
-// Testing:
-// A: Inserting headings adds them to the table of contents
-// B: Scrolling in the page upates the selected class of the table of contents.
-
-// import {
-//   deleteNextWord,
-//   moveLeft,
-//   moveToEditorBeginning,
-// } from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   focusEditor,

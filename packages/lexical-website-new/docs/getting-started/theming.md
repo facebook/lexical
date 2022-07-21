@@ -4,7 +4,7 @@ sidebar_position: 3
 
 # Theming
 
-Lexical tries to make theming straight-forward, by proving a way of passing a customizable theming object that maps CSS class names to the editor on creation. Here's an example of a plain-text theme:
+Lexical tries to make theming straight-forward, by providing a way of passing a customizable theming object that maps CSS class names to the editor on creation. Here's an example of a plain-text theme:
 
 ```js
 const exampleTheme = {

@@ -1571,10 +1571,12 @@ describe('LexicalSelection tests', () => {
   describe('Selection correctly resolves to a sibling ElementNode when a selected node child is removed', () => {
     test('', async () => {
       await ReactTestUtils.act(async () => {
+        let paragraphNodeKey;
         await editor.update(() => {
           const root = $getRoot();
 
           const paragraphNode = $createParagraphNode();
+          paragraphNodeKey = paragraphNode.__key;
           const listNode = $createListNode('number');
           const listItemNode1 = $createListItemNode();
           const textNode1 = $createTextNode('foo');
@@ -1594,8 +1596,8 @@ describe('LexicalSelection tests', () => {
         });
         await editor.getEditorState().read(() => {
           const selection = $assertRangeSelection($getSelection());
-          expect(selection.anchor.getNode().__key).toBe('2');
-          expect(selection.focus.getNode().__key).toBe('2');
+          expect(selection.anchor.key).toBe(paragraphNodeKey);
+          expect(selection.focus.key).toBe(paragraphNodeKey);
         });
       });
     });

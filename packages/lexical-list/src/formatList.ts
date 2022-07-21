@@ -238,6 +238,14 @@ export function removeList(editor: LexicalEditor): void {
             insertionPoint.insertAfter(paragraph);
             insertionPoint = paragraph;
 
+            if (listItemNode.__key === selection.anchor.key) {
+              selection.anchor.set(paragraph.getKey(), 0, 'element');
+            }
+
+            if (listItemNode.__key === selection.focus.key) {
+              selection.focus.set(paragraph.getKey(), 0, 'element');
+            }
+
             listItemNode.remove();
           }
         });

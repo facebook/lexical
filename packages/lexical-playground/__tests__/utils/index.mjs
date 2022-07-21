@@ -36,6 +36,7 @@ export async function initialize({
   isCharLimitUtf8,
   isMaxLength,
   showNestedEditorTreeView,
+  showTableOfContents,
 }) {
   const appSettings = {};
   appSettings.isRichText = IS_RICH_TEXT;
@@ -47,6 +48,9 @@ export async function initialize({
   }
   if (showNestedEditorTreeView === undefined) {
     appSettings.showNestedEditorTreeView = true;
+  }
+  if (showTableOfContents === undefined) {
+    appSettings.showTableOfContents = true;
   }
   appSettings.isAutocomplete = !!isAutocomplete;
   appSettings.isCharLimit = !!isCharLimit;
@@ -383,6 +387,16 @@ export async function getHTML(page, selector = 'div[contenteditable="true"]') {
   await pageOrFrame.waitForSelector(selector);
   const element = await pageOrFrame.$(selector);
   return element.innerHTML();
+}
+
+export async function getElement(
+  page,
+  selector = 'div[contenteditable="true"]',
+) {
+  const pageOrFrame = IS_COLLAB ? await page.frame('left') : page;
+  await pageOrFrame.waitForSelector(selector);
+  const element = await pageOrFrame.$(selector);
+  return element;
 }
 
 export async function getEditorElement(page, parentSelector = '.editor-shell') {

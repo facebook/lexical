@@ -129,7 +129,7 @@ function TableOfContentsList({
   }, [tableOfContents, editor]);
 
   return (
-    <ul className="remove-ul-style">
+    <ul className="table-of-contents">
       {tableOfContents.map(([key, text, tag], index) => (
         <div
           className={selectedKey === key ? 'selectedHeading' : 'heading'}

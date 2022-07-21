@@ -2474,7 +2474,7 @@ describe('LexicalSelectionHelpers tests', () => {
 });
 
 describe('extract', () => {
-  test('', async () => {
+  test('Should return the selected node when collapsed on a TextNode', async () => {
     const editor = createTestEditor();
 
     const element = document.createElement('div');
@@ -2504,7 +2504,7 @@ describe('extract', () => {
 
       const selection = $getSelection();
 
-      expect(selection.extract()).toEqual([]);
+      expect(selection.extract()).toEqual([text]);
     });
   });
 });

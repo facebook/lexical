@@ -8,7 +8,7 @@
 
 import './CodeActionMenuPlugin.css';
 
-import {$isCodeNode, CodeNode} from '@lexical/code';
+import {$isCodeNode, CodeNode, getLanguageFriendlyName} from '@lexical/code';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $getNearestNodeFromDOMNode,
@@ -149,11 +149,13 @@ function CodeActionMenuContainer(): JSX.Element {
     });
   }
 
+  const codeFriendlyName = getLanguageFriendlyName(lang);
+
   return (
     <>
       {isShown ? (
         <div className="code-action-menu-container" style={{...position}}>
-          <div className="code-highlight-language">{lang}</div>
+          <div className="code-highlight-language">{codeFriendlyName}</div>
           <button className="menu-item" onClick={handleClick} aria-label="copy">
             {isCopyCompleted ? (
               <i className="format success" />

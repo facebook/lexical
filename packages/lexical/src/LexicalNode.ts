@@ -49,6 +49,7 @@ export function removeNode(
   preserveEmptyParent?: boolean,
 ): void {
   errorOnReadOnly();
+  debugger;
   const key = nodeToRemove.__key;
   const parent = nodeToRemove.getParent();
   if (parent === null) {

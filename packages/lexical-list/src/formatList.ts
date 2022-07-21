@@ -201,6 +201,7 @@ function createListOrMerge(node: ElementNode, listType: ListType): ListNode {
 
 export function removeList(editor: LexicalEditor): void {
   editor.update(() => {
+    debugger;
     const selection = $getSelection();
 
     if ($isRangeSelection(selection)) {
@@ -224,15 +225,16 @@ export function removeList(editor: LexicalEditor): void {
         }
       }
 
-      listNodes.forEach((listNode) => {
+      for (const listNode of listNodes) {
         let insertionPoint: ListNode | ParagraphNode = listNode;
 
         const listItems = $getAllListItems(listNode);
 
-        listItems.forEach((listItemNode) => {
+        for (const listItemNode of listItems) {
           if (listItemNode != null) {
             const paragraph = $createParagraphNode();
 
+            debugger;
             append(paragraph, listItemNode.getChildren());
 
             insertionPoint.insertAfter(paragraph);
@@ -240,10 +242,9 @@ export function removeList(editor: LexicalEditor): void {
 
             listItemNode.remove();
           }
-        });
-
+        }
         listNode.remove();
-      });
+      }
     }
   });
 }

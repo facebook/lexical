@@ -213,11 +213,11 @@ function isSelectionOnEntityBoundary(
   });
 }
 
-function startTransition (callback: () => void) {
+function startTransition(callback: () => void) {
   if (React.startTransition) {
-    React.startTransition(callback)
+    React.startTransition(callback);
   } else {
-    callback()
+    callback();
   }
 }
 

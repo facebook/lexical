@@ -238,6 +238,20 @@ export function removeList(editor: LexicalEditor): void {
             insertionPoint.insertAfter(paragraph);
             insertionPoint = paragraph;
 
+            // When the anchor and focus fall on the textNode
+            // we don't have to change the selection because the textNode will be appended to
+            // the newly generated paragraph.
+            // When selection is in empty nested list item, selection is actually on the listItemNode.
+            // When the corresponding listItemNode is deleted and replaced by the newly generated paragraph
+            // we should manually set the selection's focus and anchor to the newly generated paragraph.
+            if (listItemNode.__key === selection.anchor.key) {
+              selection.anchor.set(paragraph.getKey(), 0, 'element');
+            }
+
+            if (listItemNode.__key === selection.focus.key) {
+              selection.focus.set(paragraph.getKey(), 0, 'element');
+            }
+
             listItemNode.remove();
           }
         });

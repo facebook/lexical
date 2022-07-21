@@ -21,6 +21,7 @@ import {
 } from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
+  assertSelection,
   clearEditor,
   click,
   copyToClipboard,
@@ -1461,5 +1462,78 @@ test.describe('Nested List', () => {
         </ul>
       `,
     );
+  });
+
+  test('remove list breaks when selection in empty nested list item', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type('Hello World');
+    await page.keyboard.press('Enter');
+    await toggleBulletList(page);
+    await page.keyboard.press('Tab');
+    await toggleBulletList(page);
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Hello World</span>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+    await page.pause();
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [1],
+      focusOffset: 0,
+      focusPath: [1],
+    });
+  });
+
+  test('remove list breaks when selection in empty nested list item 2', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type('Hello World');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('a');
+    await toggleBulletList(page);
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('b');
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Tab');
+    await toggleBulletList(page);
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Hello World</span>
+        </p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">a</span>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">b</span>
+        </p>
+      `,
+    );
+    await page.pause();
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [2],
+      focusOffset: 0,
+      focusPath: [2],
+    });
   });
 });

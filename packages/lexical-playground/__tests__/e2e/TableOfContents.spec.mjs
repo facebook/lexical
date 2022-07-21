@@ -20,7 +20,7 @@ import {
   focusEditor,
   html,
   initialize,
-  //   repeat,
+  repeat,
   selectFromFormatDropdown,
   test,
   //   waitForSelector,
@@ -28,7 +28,9 @@ import {
 
 test.describe('Hashtags', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
-  test(`Can handle a single hashtag`, async ({page}) => {
+  test(`Adding headigns to editor adds them to table of contents`, async ({
+    page,
+  }) => {
     await focusEditor(page);
     await selectFromFormatDropdown(page, '.h1');
     await page.keyboard.type('Hello');
@@ -46,6 +48,37 @@ test.describe('Hashtags', () => {
             #yolo
           </span>
         </p>
+      `,
+    );
+  });
+  test(`Scrolling through headigns in the editor makes them scroll inside the table of contents`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await selectFromFormatDropdown(page, '.h1');
+    await page.keyboard.type('Hello');
+
+    await repeat(700, () => {
+      page.keyboard.type('\n');
+    });
+    await selectFromFormatDropdown(page, '.h1');
+    await page.keyboard.type(' World');
+
+    // HTML of ToC
+    await assertHTML(
+      page,
+      html`
+        <p></p>
+      `,
+    );
+
+    window.scrollTo(0, 500);
+
+    // Selected class of ToC changes
+    await assertHTML(
+      page,
+      html`
+        <p></p>
       `,
     );
   });

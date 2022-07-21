@@ -25,7 +25,6 @@ import {
 import {
   MutableRefObject,
   ReactPortal,
-  startTransition,
   useCallback,
   useEffect,
   useMemo,
@@ -212,6 +211,14 @@ function isSelectionOnEntityBoundary(
     }
     return false;
   });
+}
+
+function startTransition(callback: () => void) {
+  if (React.startTransition) {
+    React.startTransition(callback);
+  } else {
+    callback();
+  }
 }
 
 function ShortcutTypeahead<TOption extends TypeaheadOption>({

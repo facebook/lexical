@@ -1,3 +1,40 @@
+## 0.3.8 (July 20, 2022)
+
+Lots of bug fixes.
+
+Introduces TypeaheadPlugin and associated primitives, which consolidate the implementation of all such functionality (mentions and component picker) and create a base to build similar typeahead functionality from.
+
+Introduces TableOfContents plugin for easier navigation of long-form documents. Available in the playground in the settings menu (bottom-left corner).
+
+Introduces a "clipboard viewer" functionality in the local dev environment. When active, it shows the clipboard content the last time the paste event was fired with the editor focused.
+
+- Remove default styling imports on HTML paste (#2663) Acy Watson
+- fix(lexical-playground): code lang display (#2658) 子瞻 Luci
+- chore(lexical-playground): remove files that should not be submitted (#2662) 子瞻 Luci
+- Selection.extract fix (#2620) Acy Watson
+- Specify the return type of getNearestNodeOfType. (#2651) hiraoka
+- Autolink default protocol (#2654) Gerard Rovira
+- fix(doc): RichTextPlugin placeholder (#2655) unvalley
+- fix(lexical): calculate range selection formatting (#2643) 子瞻 Luci
+- Add TableOfContentsPlugin (#2634) Karam Qaoud
+- Port ASCII State Tree to Browser Extension (#2625) Will
+- Fix markdown text matchers during md import (#2644) Maksim Horbachevsky
+- fix(lexical): Japanese IME issue (#2623) 子瞻 Luci
+- Remove comment box from footer (#2639) John Flockton
+- Delete doc from ydocMap on unmount. Fixes init on re-mount (#2637) Maksim Horbachevsky
+- feat: new way to delete comments and threads (#2570) Adithya Vardhan
+- Lexical Typeaheads (#2534) Tyler Bainbridge
+- Add $insertBlockNode (#2633) Gerard Rovira
+- Add seperate flag for if script had loaded (#2628) John Flockton
+- Fix Chrome types in Lexical DevTools (#2627) John Flockton
+- Capture the expected payload type in commands (#2537) Patrik Åkerstrand
+- fix unit test warning (#2618) Acy Watson
+- fix(lexical-playground): fix toolbar-item button style bug in safari (#2621) 子瞻 Luci
+- add docs (#2611) Acy Watson
+- Add default value for undefined case in markdown transformers (#2453) Noah Cook
+- Add PasteLog Plugin (#2609) Acy Watson
+- Fix pasting inline code blocks (#2607) Maksim Horbachevsky
+
 ## 0.3.7 (July 6, 2022)
 
 Lots of bug fixes and polish. Notably, the full text of minifed Lexical error codes can now be accessed via the [Lexical website](https://lexical.dev/docs/error?code=2).

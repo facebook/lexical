@@ -8,13 +8,13 @@
     "list"
   ],
   "license": "MIT",
-  "version": "0.3.7",
+  "version": "0.3.8",
   "main": "LexicalList.js",
   "peerDependencies": {
-    "lexical": "0.3.7"
+    "lexical": "0.3.8"
   },
   "dependencies": {
-    "@lexical/utils": "0.3.7"
+    "@lexical/utils": "0.3.8"
   },
   "repository": {
     "type": "git",

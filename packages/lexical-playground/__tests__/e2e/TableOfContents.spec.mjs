@@ -18,9 +18,9 @@
 import {
   assertHTML,
   focusEditor,
+  getElement,
   html,
   initialize,
-  repeat,
   selectFromFormatDropdown,
   test,
   //   waitForSelector,
@@ -36,49 +36,19 @@ test.describe('Hashtags', () => {
     await page.keyboard.type('Hello');
     await page.keyboard.type('\n');
     await selectFromFormatDropdown(page, '.h1');
-    await page.keyboard.type(' World');
-
+    await page.keyboard.type('World!');
+    const tableOfContents = await getElement(page, 'ul.table-of-contents');
     await assertHTML(
-      page,
+      tableOfContents,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
-            #yolo
-          </span>
-        </p>
-      `,
-    );
-  });
-  test(`Scrolling through headigns in the editor makes them scroll inside the table of contents`, async ({
-    page,
-  }) => {
-    await focusEditor(page);
-    await selectFromFormatDropdown(page, '.h1');
-    await page.keyboard.type('Hello');
-
-    await repeat(700, () => {
-      page.keyboard.type('\n');
-    });
-    await selectFromFormatDropdown(page, '.h1');
-    await page.keyboard.type(' World');
-
-    // HTML of ToC
-    await assertHTML(
-      page,
-      html`
-        <p></p>
-      `,
-    );
-
-    window.scrollTo(0, 500);
-
-    // Selected class of ToC changes
-    await assertHTML(
-      page,
-      html`
-        <p></p>
+        <div class="heading" role="button" tabindex="0">
+          <div class="bar"></div>
+          <li>Hello</li>
+        </div>
+        <div class="heading" role="button" tabindex="0">
+          <div class="bar"></div>
+          <li>World!</li>
+        </div>
       `,
     );
   });

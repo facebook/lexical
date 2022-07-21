@@ -393,15 +393,6 @@ export async function getElement(
   page,
   selector = 'div[contenteditable="true"]',
 ) {
-  const pageOrFrame = IS_COLLAB ? await page.frame('left') : page;
-  await pageOrFrame.waitForSelector(selector);
-  const element = await pageOrFrame.$(selector);
-  return element;
-}
-
-export async function getEditorElement(page, parentSelector = '.editor-shell') {
-  const selector = `${parentSelector} div[contenteditable="true"]`;
-
   if (IS_COLLAB) {
     const leftFrame = await page.frame('left');
     await leftFrame.waitForSelector(selector);
@@ -410,6 +401,11 @@ export async function getEditorElement(page, parentSelector = '.editor-shell') {
     await page.waitForSelector(selector);
     return page.$(selector);
   }
+}
+
+export async function getEditorElement(page, parentSelector = '.editor-shell') {
+  const selector = `${parentSelector} div[contenteditable="true"]`;
+  return getElement(selector);
 }
 
 export async function waitForSelector(page, selector, options) {

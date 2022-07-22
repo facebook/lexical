@@ -12,8 +12,9 @@ export interface DevToolsTree {
 export interface DevToolsNode {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [x: string]: any;
-  children: Array<DevToolsNode>;
   __text?: string;
   __type: string;
+  children: Array<DevToolsNode>;
+  depth: number;
   lexicalKey: string;
 }

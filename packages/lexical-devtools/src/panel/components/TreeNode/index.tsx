@@ -9,7 +9,7 @@ import './index.css';
 
 import {DevToolsNode} from 'packages/lexical-devtools/types';
 import * as React from 'react';
-import {Fragment, useState} from 'react';
+import {useState} from 'react';
 
 import Chevron from '../Chevron';
 
@@ -31,11 +31,11 @@ function TreeNode({
   }`;
   const childNodes =
     children.length > 0 ? (
-      <Fragment>
+      <>
         {children.map((child) => (
           <TreeNode {...child} />
         ))}
-      </Fragment>
+      </>
     ) : (
       ''
     );
@@ -43,12 +43,9 @@ function TreeNode({
   return (
     <div className="tree-node" key={lexicalKey}>
       {children.length > 0 ? (
-        <Chevron
-          handleClick={handleChevronClick}
-          icon={isExpanded ? '▼' : '▶'}
-        />
+        <Chevron handleClick={handleChevronClick} isExpanded={isExpanded} />
       ) : (
-        <button className="indentation">▶</button>
+        <button className="indentation">&#9654;</button>
       )}
       {nodeString}
       {<br />}

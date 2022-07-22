@@ -10,15 +10,15 @@ import './index.css';
 import * as React from 'react';
 
 function Chevron({
-  icon,
   handleClick,
+  isExpanded,
 }: {
-  icon: string;
   handleClick: React.MouseEventHandler;
+  isExpanded: boolean;
 }): JSX.Element {
   return (
     <button className="chevron-button" onClick={handleClick}>
-      {icon}
+      {isExpanded ? <>&#x25BC;</> : <>&#9654;</>}
     </button>
   );
 }

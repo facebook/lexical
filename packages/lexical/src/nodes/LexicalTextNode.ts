@@ -55,6 +55,7 @@ import {
   $getCompositionKey,
   $setCompositionKey,
   getCachedClassNameArray,
+  hasFeature,
   internalMarkSiblingsAsDirty,
   toggleTextFormatType,
 } from '../LexicalUtils';
@@ -513,6 +514,13 @@ export class TextNode extends LexicalNode {
     const self = this.getWritable();
     self.__format =
       typeof format === 'string' ? TEXT_TYPE_TO_FORMAT[format] : format;
+    if (
+      (self.__format & TEXT_TYPE_TO_FORMAT.strikethrough) !== 0 &&
+      !hasFeature(this.constructor, 'strikethrough')
+    ) {
+      console.warn(`LexicalTextNode feature disabled: strikethrough`);
+      self.__format ^= IS_STRIKETHROUGH;
+    }
     return self;
   }
 

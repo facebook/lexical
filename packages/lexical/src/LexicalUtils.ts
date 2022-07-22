@@ -1176,3 +1176,15 @@ export function $addUpdateTag(tag: string): void {
   const editor = getActiveEditor();
   editor._updateTags.add(tag);
 }
+
+export function hasFeature<T extends LexicalNode>(
+  klass: Klass<T>,
+  feature: string,
+): boolean {
+  // Maybe?
+  // const klass = this.constructor();
+  errorOnReadOnly();
+  const editor = getActiveEditor();
+  const features = editor._nodes.get(klass.getType()).features;
+  return features === null || features.includes(feature);
+}

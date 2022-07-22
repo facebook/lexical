@@ -6,8 +6,6 @@
  *
  */
 
-import type {Klass, LexicalNode} from 'lexical';
-
 import {CodeHighlightNode, CodeNode} from '@lexical/code';
 import {HashtagNode} from '@lexical/hashtag';
 import {AutoLinkNode, LinkNode} from '@lexical/link';
@@ -17,6 +15,13 @@ import {OverflowNode} from '@lexical/overflow';
 import {HorizontalRuleNode} from '@lexical/react/LexicalHorizontalRuleNode';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
+import {
+  Klass,
+  LexicalNode,
+  NodeRegistration,
+  nodeRegistration,
+  TextNode,
+} from 'lexical';
 
 import {AutocompleteNode} from './AutocompleteNode';
 import {EmojiNode} from './EmojiNode';
@@ -31,7 +36,14 @@ import {TweetNode} from './TweetNode';
 import {TypeaheadNode} from './TypeaheadNode';
 import {YouTubeNode} from './YouTubeNode';
 
-const PlaygroundNodes: Array<Klass<LexicalNode>> = [
+const PlaygroundNodes: Array<Klass<LexicalNode> | NodeRegistration> = [
+  nodeRegistration(TextNode, {
+    features: [],
+  }),
+  // nodeRegistration(TextNode, {
+  //   features: ['strikethrough'],
+  // }),
+  // TextNode,
   HeadingNode,
   ListNode,
   ListItemNode,

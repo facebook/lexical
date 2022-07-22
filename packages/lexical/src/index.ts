@@ -16,6 +16,7 @@ export type {
   LexicalCommand,
   LexicalEditor,
   NodeMutation,
+  NodeRegistration,
   ReadOnlyListener,
   SerializedEditor,
   Spread,
@@ -107,6 +108,7 @@ export {
   COMMAND_PRIORITY_LOW,
   COMMAND_PRIORITY_NORMAL,
   createEditor,
+  nodeRegistration,
 } from './LexicalEditor';
 export type {EventHandler} from './LexicalEvents';
 export {

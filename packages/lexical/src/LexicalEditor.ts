@@ -124,6 +124,7 @@ export type RegisteredNodes = Map<string, RegisteredNode>;
 export type RegisteredNode = {
   klass: Klass<LexicalNode>;
   transforms: Set<Transform<LexicalNode>>;
+  features: null | Array<string>;
 };
 
 export type Transform<T extends LexicalNode> = (node: T) => void;
@@ -305,11 +306,36 @@ function initializeConversionCache(nodes: RegisteredNodes): DOMConversionCache {
   return conversionCache;
 }
 
+export class NodeRegistration {
+  _klass: Klass<LexicalNode>;
+  _config: {
+    features: Array<string>;
+  };
+  constructor(
+    klass: Klass<LexicalNode>,
+    config: {
+      features: Array<string>;
+    },
+  ) {
+    this._klass = klass;
+    this._config = config;
+  }
+}
+
+export function nodeRegistration(
+  klass: Klass<LexicalNode>,
+  config: {
+    features: Array<string>;
+  },
+) {
+  return new NodeRegistration(klass, config);
+}
+
 export function createEditor(editorConfig?: {
   disableEvents?: boolean;
   editorState?: EditorState;
   namespace?: string;
-  nodes?: ReadonlyArray<Klass<LexicalNode>>;
+  nodes?: ReadonlyArray<Klass<LexicalNode> | NodeRegistration>;
   onError?: ErrorHandler;
   parentEditor?: LexicalEditor;
   readOnly?: boolean;
@@ -328,7 +354,8 @@ export function createEditor(editorConfig?: {
   const initialEditorState = config.editorState;
   const nodes = [
     RootNode,
-    TextNode,
+    // find a better place
+    // TextNode,
     LineBreakNode,
     ParagraphNode,
     ...(config.nodes || []),
@@ -342,7 +369,16 @@ export function createEditor(editorConfig?: {
   } else {
     registeredNodes = new Map();
     for (let i = 0; i < nodes.length; i++) {
-      const klass = nodes[i];
+      const klassOrNodeRegistration = nodes[i];
+      let klass: Klass<LexicalNode>;
+      let nodeFeatures;
+      if (klassOrNodeRegistration instanceof NodeRegistration) {
+        klass = klassOrNodeRegistration._klass;
+        nodeFeatures = klassOrNodeRegistration._config.features;
+      } else {
+        klass = klassOrNodeRegistration;
+        nodeFeatures = null;
+      }
       // Ensure custom nodes implement required methods.
       if (__DEV__) {
         const name = klass.name;
@@ -392,6 +428,7 @@ export function createEditor(editorConfig?: {
       }
       const type = klass.getType();
       registeredNodes.set(type, {
+        features: nodeFeatures,
         klass,
         transforms: new Set(),
       });

@@ -158,7 +158,7 @@ export class LinkNode extends ElementNode {
   insertNewAfter(selection: RangeSelection): null | ElementNode {
     const element = this.getParentOrThrow().insertNewAfter(selection);
     if ($isElementNode(element)) {
-      const linkNode = $createLinkNode(this.__url);
+      const linkNode = $createLinkNode(this.__url, this.__target, this.__rel);
       element.append(linkNode);
       return linkNode;
     }
@@ -338,7 +338,7 @@ export function toggleLink(
         const firstNode = nodes[0];
 
         // if the first node is a LinkNode or if its
-        // parent is a LinkNode, we update the URL.
+        // parent is a LinkNode, we update the URL, target and rel.
         if ($isLinkNode(firstNode)) {
           firstNode.setURL(url);
           firstNode.setTarget(target);

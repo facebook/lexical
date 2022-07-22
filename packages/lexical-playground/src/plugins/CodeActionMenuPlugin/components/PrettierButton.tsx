@@ -92,7 +92,7 @@ export function PrettierButton({lang, editor, getCodeDOMNode}: Props) {
   }
 
   return canBePrettier(lang) ? (
-    <button className="menu-item" onClick={handleClick} aria-label="copy">
+    <button className="menu-item" onClick={handleClick} aria-label="prettier">
       <i className="format prettier" />
     </button>
   ) : null;

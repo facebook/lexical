@@ -525,6 +525,10 @@ i.success {
   background-image: url(images/icons/success.svg);
 }
 
+i.prettier {
+  background-image: url(images/icons/prettier.svg);
+}
+
 .link-editor .button.active,
 .toolbar .button.active {
   background-color: rgb(223, 232, 250);

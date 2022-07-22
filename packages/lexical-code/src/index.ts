@@ -23,5 +23,6 @@ export {
   getFirstCodeHighlightNodeOfLine,
   getLanguageFriendlyName,
   getLastCodeHighlightNodeOfLine,
+  normalizeCodeLang,
 } from './CodeHighlightNode';
 export {$createCodeNode, $isCodeNode, CodeNode} from './CodeNode';

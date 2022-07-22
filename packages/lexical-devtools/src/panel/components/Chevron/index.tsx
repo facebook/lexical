@@ -9,18 +9,18 @@ import './index.css';
 
 import * as React from 'react';
 
-function Marker({
+function Chevron({
   icon,
   handleClick,
 }: {
   icon: string;
-  handleClick: (event: Event) => void;
+  handleClick: React.MouseEventHandler;
 }): JSX.Element {
   return (
-    <button className="marker-button" onClick={handleClick}>
+    <button className="chevron-button" onClick={handleClick}>
       {icon}
     </button>
   );
 }
 
-export default Marker;
+export default Chevron;

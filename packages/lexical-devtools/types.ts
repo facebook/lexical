@@ -15,6 +15,6 @@ export interface DevToolsNode {
   __text?: string;
   __type: string;
   children: Array<DevToolsNode>;
-  nestingLevel: number;
+  depth: number;
   lexicalKey: string;
 }

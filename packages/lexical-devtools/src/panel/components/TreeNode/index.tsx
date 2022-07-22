@@ -11,18 +11,18 @@ import {DevToolsNode} from 'packages/lexical-devtools/types';
 import * as React from 'react';
 import {Fragment, useState} from 'react';
 
-import Marker from '../Marker';
+import Chevron from '../Chevron';
 
 function TreeNode({
   __text,
   __type,
   children,
-  nestingLevel,
+  depth,
   lexicalKey,
 }: DevToolsNode): JSX.Element {
   const [isExpanded, setIsExpanded] = useState(true);
 
-  const handleMarkerClick = () => {
+  const handleChevronClick = () => {
     setIsExpanded(!isExpanded);
   };
 
@@ -43,7 +43,10 @@ function TreeNode({
   return (
     <div className="tree-node" key={lexicalKey}>
       {children.length > 0 ? (
-        <Marker handleClick={handleMarkerClick} icon={isExpanded ? '▼' : '▶'} />
+        <Chevron
+          handleClick={handleChevronClick}
+          icon={isExpanded ? '▼' : '▶'}
+        />
       ) : (
         <button className="indentation">▶</button>
       )}

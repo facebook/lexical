@@ -22,14 +22,14 @@ function TreeView({
   // takes flat JSON structure, nests child comments inside parents
   const depthFirstSearch = (
     node: DevToolsNode,
-    nestingLevel: number,
+    depth: number,
   ): DevToolsNode => {
     const children: Array<DevToolsNode> = [];
 
     if (Object.prototype.hasOwnProperty.call(node, '__children')) {
       node.__children.forEach((childKey: string) => {
         const child = nodeMap[childKey];
-        children.push(depthFirstSearch(child, nestingLevel + 1)); // recursive call
+        children.push(depthFirstSearch(child, depth + 1)); // recursive call
       });
     }
 
@@ -37,8 +37,8 @@ function TreeView({
       ...node,
       __type: node.__type,
       children,
+      depth,
       lexicalKey: node.__key,
-      nestingLevel,
     };
   };
 

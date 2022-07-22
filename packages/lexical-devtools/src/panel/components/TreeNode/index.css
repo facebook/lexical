@@ -1,0 +1,13 @@
+.indentation {
+  color: #222;
+  /* user-select: none; */
+}
+
+.tree-node {
+  /* padding-left: 1em; */
+  width: 100%;
+}
+
+.tree-node-wrapper {
+  width: 100%;
+}

@@ -47,11 +47,7 @@ function TreeView({
     return <TreeNode {...root} />;
   };
 
-  return (
-    <div className={viewClassName}>
-      <pre>{generateTree(nodeMap)}</pre>
-    </div>
-  );
+  return <div className={viewClassName}>{generateTree(nodeMap)}</div>;
 }
 
 export default TreeView;

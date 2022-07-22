@@ -5,9 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import './index.css';
+
 import {DevToolsNode} from 'packages/lexical-devtools/types';
 import * as React from 'react';
-import {Fragment} from 'react';
+import {Fragment, useState} from 'react';
+
+import Marker from '../Marker';
 
 function TreeNode({
   __text,
@@ -16,10 +20,13 @@ function TreeNode({
   nestingLevel,
   lexicalKey,
 }: DevToolsNode): JSX.Element {
-  const indentation = '  '.repeat(nestingLevel);
-  const marker = children.length > 0 ? '▼ ' : '  ';
+  const [isExpanded, setIsExpanded] = useState(true);
+
+  const handleMarkerClick = () => {
+    setIsExpanded(!isExpanded);
+  };
+
   const nodeString = ` (${lexicalKey}) ${__type} ${
-    // ▶ right unicode
     __text ? '"' + __text + '"' : ''
   }`;
   const childNodes =
@@ -34,13 +41,19 @@ function TreeNode({
     );
 
   return (
-    <Fragment key={lexicalKey}>
-      {indentation}
-      {marker}
+    <div className="tree-node" key={lexicalKey}>
+      {children.length > 0 ? (
+        <Marker
+          handleClick={handleMarkerClick}
+          icon={isExpanded ? '▼ ' : '▶'}
+        />
+      ) : (
+        ''
+      )}
       {nodeString}
-      {'\n'}
-      {childNodes}
-    </Fragment>
+      {<br />}
+      {isExpanded ? childNodes : ''}
+    </div>
   );
 }
 

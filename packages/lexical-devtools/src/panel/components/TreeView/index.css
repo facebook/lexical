@@ -5,13 +5,9 @@
   margin: 0;
   padding: 1em;
   font-size: 1em;
-  overflow: auto;
+  overflow-x: scroll;
   text-align: left;
   -moz-osx-font-smoothing: grayscale;
   font-weight: 400;
-}
-
-.tree-view-output ul li {
-  font-family: monospace;
-  padding-left: 0.5em;
+  --indentation-size: 1em;
 }

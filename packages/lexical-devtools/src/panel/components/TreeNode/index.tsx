@@ -5,33 +5,52 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import './index.css';
+
 import {DevToolsNode} from 'packages/lexical-devtools/types';
 import * as React from 'react';
+import {useState} from 'react';
+
+import Chevron from '../Chevron';
 
 function TreeNode({
-  lexicalKey,
   __text,
   __type,
   children,
-}: {
-  children: Array<DevToolsNode>;
-  lexicalKey: string;
-  __text?: string;
-  __type: string;
-}): JSX.Element {
+  depth,
+  lexicalKey,
+}: DevToolsNode): JSX.Element {
+  const [isExpanded, setIsExpanded] = useState(true);
+
+  const handleChevronClick = () => {
+    setIsExpanded(!isExpanded);
+  };
+
+  const nodeString = ` (${lexicalKey}) ${__type} ${
+    __text ? '"' + __text + '"' : ''
+  }`;
+  const childNodes =
+    children.length > 0 ? (
+      <>
+        {children.map((child) => (
+          <TreeNode {...child} />
+        ))}
+      </>
+    ) : (
+      ''
+    );
+
   return (
-    <li key={lexicalKey}>
-      ({lexicalKey}) {__type} {__text ? '"' + __text + '"' : ''}
+    <div className="tree-node" key={lexicalKey}>
       {children.length > 0 ? (
-        <ul>
-          {children.map((child) => (
-            <TreeNode {...child} />
-          ))}
-        </ul>
+        <Chevron handleClick={handleChevronClick} isExpanded={isExpanded} />
       ) : (
-        ''
+        <button className="indentation">&#9654;</button>
       )}
-    </li>
+      {nodeString}
+      {<br />}
+      {isExpanded ? childNodes : ''}
+    </div>
   );
 }
 

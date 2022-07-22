@@ -515,7 +515,7 @@ export function InsertPollDialog({
   );
 }
 
-const VALID_TWITTER_URL = /twitter.com\/[0-9a-zA-Z]{1,20}\/status\/([0-9]*)/g;
+const VALID_TWITTER_URL = /twitter.com\/\w{1,20}\/status\/([0-9]*)/g;
 
 export function InsertTweetDialog({
   activeEditor,

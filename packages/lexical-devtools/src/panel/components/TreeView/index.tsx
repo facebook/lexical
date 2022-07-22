@@ -21,15 +21,16 @@ function TreeView({
 }): JSX.Element {
   // takes flat JSON structure, nests child comments inside parents
   const depthFirstSearch = (
-    node: DevToolsNode,
-    depth: number,
+    map: DevToolsTree = nodeMap,
+    nodeKey = 'root',
+    depth = 0,
   ): DevToolsNode => {
+    const node = map[nodeKey];
     const children: Array<DevToolsNode> = [];
 
     if (Object.prototype.hasOwnProperty.call(node, '__children')) {
       node.__children.forEach((childKey: string) => {
-        const child = nodeMap[childKey];
-        children.push(depthFirstSearch(child, depth + 1)); // recursive call
+        children.push(depthFirstSearch(map, childKey, depth + 1));
       });
     }
 
@@ -43,7 +44,7 @@ function TreeView({
   };
 
   const generateTree = (map: DevToolsTree): JSX.Element => {
-    const root = depthFirstSearch(map.root, 0);
+    const root = depthFirstSearch(nodeMap, 'root', 0);
     return <TreeNode {...root} />;
   };
 

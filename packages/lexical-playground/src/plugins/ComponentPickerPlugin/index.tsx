@@ -18,7 +18,7 @@ import {
   LexicalTypeaheadMenuPlugin,
   TypeaheadOption,
   useBasicTypeaheadTriggerMatch,
-} from '@lexical/react/src/LexicalTypeaheadMenuPlugin';
+} from '@lexical/react/LexicalTypeaheadMenuPlugin';
 import {$createHeadingNode, $createQuoteNode} from '@lexical/rich-text';
 import {$wrapLeafNodesInElements} from '@lexical/selection';
 import {INSERT_TABLE_COMMAND} from '@lexical/table';

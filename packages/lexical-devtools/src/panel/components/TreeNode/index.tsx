@@ -43,12 +43,9 @@ function TreeNode({
   return (
     <div className="tree-node" key={lexicalKey}>
       {children.length > 0 ? (
-        <Marker
-          handleClick={handleMarkerClick}
-          icon={isExpanded ? '▼ ' : '▶'}
-        />
+        <Marker handleClick={handleMarkerClick} icon={isExpanded ? '▼' : '▶'} />
       ) : (
-        ''
+        <button className="indentation">▶</button>
       )}
       {nodeString}
       {<br />}

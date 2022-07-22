@@ -34,6 +34,8 @@ export type SerializedLinkNode = Spread<
   {
     type: 'link';
     url: string;
+    target?: string;
+    rel?: string;
     version: 1;
   },
   SerializedElementNode
@@ -41,23 +43,33 @@ export type SerializedLinkNode = Spread<
 
 export class LinkNode extends ElementNode {
   __url: string;
+  __target?: string;
+  __rel?: string;
 
   static getType(): string {
     return 'link';
   }
 
   static clone(node: LinkNode): LinkNode {
-    return new LinkNode(node.__url, node.__key);
+    return new LinkNode(node.__url, node.__target, node.__rel, node.__key);
   }
 
-  constructor(url: string, key?: NodeKey) {
+  constructor(url: string, target?: string, rel?: string, key?: NodeKey) {
     super(key);
     this.__url = url;
+    this.__target = target;
+    this.__rel = rel;
   }
 
   createDOM(config: EditorConfig): HTMLAnchorElement {
     const element = document.createElement('a');
     element.href = this.__url;
+    if (this.__target) {
+      element.target = this.__target;
+    }
+    if (this.__rel) {
+      element.rel = this.__rel;
+    }
     addClassNamesToElement(element, config.theme.link);
     return element;
   }
@@ -68,8 +80,16 @@ export class LinkNode extends ElementNode {
     config: EditorConfig,
   ): boolean {
     const url = this.__url;
+    const target = this.__target;
+    const rel = this.__rel;
     if (url !== prevNode.__url) {
       anchor.href = url;
+    }
+    if (target && target !== prevNode.__target) {
+      anchor.target = target;
+    }
+    if (rel && rel !== prevNode.__rel) {
+      anchor.rel = rel;
     }
     return false;
   }
@@ -86,7 +106,11 @@ export class LinkNode extends ElementNode {
   static importJSON(
     serializedNode: SerializedLinkNode | SerializedAutoLinkNode,
   ): LinkNode {
-    const node = $createLinkNode(serializedNode.url);
+    const node = $createLinkNode(
+      serializedNode.url,
+      serializedNode.target,
+      serializedNode.rel,
+    );
     node.setFormat(serializedNode.format);
     node.setIndent(serializedNode.indent);
     node.setDirection(serializedNode.direction);
@@ -96,6 +120,8 @@ export class LinkNode extends ElementNode {
   exportJSON(): SerializedLinkNode | SerializedAutoLinkNode {
     return {
       ...super.exportJSON(),
+      rel: this.getRel(),
+      target: this.getTarget(),
       type: 'link',
       url: this.getURL(),
       version: 1,
@@ -109,6 +135,24 @@ export class LinkNode extends ElementNode {
   setURL(url: string): void {
     const writable = this.getWritable();
     writable.__url = url;
+  }
+
+  getTarget(): string | undefined {
+    return this.getLatest().__target;
+  }
+
+  setTarget(target: string | undefined): void {
+    const writable = this.getWritable();
+    writable.__target = target;
+  }
+
+  getRel(): string | undefined {
+    return this.getLatest().__rel;
+  }
+
+  setRel(rel: string | undefined): void {
+    const writable = this.getWritable();
+    writable.__rel = rel;
   }
 
   insertNewAfter(selection: RangeSelection): null | ElementNode {
@@ -160,13 +204,21 @@ export class LinkNode extends ElementNode {
 function convertAnchorElement(domNode: Node): DOMConversionOutput {
   let node = null;
   if (domNode instanceof HTMLAnchorElement) {
-    node = $createLinkNode(domNode.getAttribute('href') || '');
+    node = $createLinkNode(
+      domNode.getAttribute('href') || '',
+      domNode.getAttribute('target') || undefined,
+      domNode.getAttribute('rel') || undefined,
+    );
   }
   return {node};
 }
 
-export function $createLinkNode(url: string): LinkNode {
-  return new LinkNode(url);
+export function $createLinkNode(
+  url: string,
+  target?: string,
+  rel?: string,
+): LinkNode {
+  return new LinkNode(url, target, rel);
 }
 
 export function $isLinkNode(
@@ -236,10 +288,21 @@ export function $isAutoLinkNode(
   return node instanceof AutoLinkNode;
 }
 
-export const TOGGLE_LINK_COMMAND: LexicalCommand<string | null> =
-  createCommand();
+export const TOGGLE_LINK_COMMAND: LexicalCommand<
+  | string
+  | {
+      url: string;
+      target?: string;
+      rel?: string;
+    }
+  | null
+> = createCommand();
 
-export function toggleLink(url: null | string): void {
+export function toggleLink(
+  url: null | string,
+  target?: string,
+  rel?: string,
+): void {
   const selection = $getSelection();
 
   if (selection !== null) {
@@ -278,6 +341,8 @@ export function toggleLink(url: null | string): void {
         // parent is a LinkNode, we update the URL.
         if ($isLinkNode(firstNode)) {
           firstNode.setURL(url);
+          firstNode.setTarget(target);
+          firstNode.setRel(rel);
           return;
         } else {
           const parent = firstNode.getParent();
@@ -287,6 +352,8 @@ export function toggleLink(url: null | string): void {
             // so that other nodes in the same parent
             // aren't handled separately below.
             parent.setURL(url);
+            parent.setTarget(target);
+            parent.setRel(rel);
             return;
           }
         }
@@ -309,12 +376,14 @@ export function toggleLink(url: null | string): void {
         if ($isLinkNode(parent)) {
           linkNode = parent;
           parent.setURL(url);
+          parent.setTarget(target);
+          parent.setRel(rel);
           return;
         }
 
         if (!parent.is(prevParent)) {
           prevParent = parent;
-          linkNode = $createLinkNode(url);
+          linkNode = $createLinkNode(url, target, rel);
 
           if ($isLinkNode(parent)) {
             if (node.getPreviousSibling() === null) {

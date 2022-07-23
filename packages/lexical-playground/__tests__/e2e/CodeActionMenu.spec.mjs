@@ -11,6 +11,7 @@ import {
   assertHTML,
   click,
   evaluate,
+  expect,
   focusEditor,
   initialize,
   mouseMoveTo,
@@ -172,6 +173,131 @@ test.describe('CodeActionMenu', () => {
           <span data-lexical-text=\"true\"></span>
         </code>
       `,
+    );
+  });
+
+  test('In the case of syntactically correct code, when the `prettier` button is clicked, the code needs to be properly formatted', async ({
+    page,
+    isCollab,
+    isPlainText,
+  }) => {
+    test.skip(isCollab);
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type('``` ');
+    await page.keyboard.press('Space');
+    await page.keyboard.type(`const  luci  =  'Hello World'`);
+
+    await assertHTML(
+      page,
+      `
+        <code
+          class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+          dir="ltr"
+          spellcheck="false"
+          data-gutter="1"
+          data-highlight-language="javascript">
+          <span data-lexical-text="true"></span>
+          <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
+            const
+          </span>
+          <span data-lexical-text="true">luci</span>
+          <span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">
+            =
+          </span>
+          <span data-lexical-text="true"></span>
+          <span class="PlaygroundEditorTheme__tokenSelector" data-lexical-text="true">
+            'Hello World'
+          </span>
+        </code>
+      `,
+    );
+
+    await mouseMoveTo(page, 'code.PlaygroundEditorTheme__code');
+    await click(page, 'button[aria-label=prettier]');
+
+    await assertHTML(
+      page,
+      `
+        <code
+        class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+        dir="ltr"
+        spellcheck="false"
+        data-gutter="12"
+        data-highlight-language="javascript">
+          <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
+            const
+          </span>
+          <span data-lexical-text="true">luci</span>
+          <span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">
+            =
+          </span>
+          <span data-lexical-text="true"></span>
+          <span class="PlaygroundEditorTheme__tokenSelector" data-lexical-text="true">
+            "Hello World"
+          </span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true">
+            ;
+          </span>
+          <br />
+          <br />
+        </code>
+      `,
+    );
+  });
+
+  test('If the code syntax is incorrect, an error message should be displayed', async ({
+    page,
+    isCollab,
+    isPlainText,
+  }) => {
+    test.skip(isCollab);
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type('``` ');
+    await page.keyboard.press('Space');
+    await page.keyboard.type(`cons  luci  =  'Hello World'`);
+
+    await assertHTML(
+      page,
+      `
+        <code
+          class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+          dir="ltr"
+          spellcheck="false"
+          data-gutter="1"
+          data-highlight-language="javascript">
+          <span data-lexical-text="true">cons luci</span>
+          <span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">
+            =
+          </span>
+          <span data-lexical-text="true"></span>
+          <span class="PlaygroundEditorTheme__tokenSelector" data-lexical-text="true">
+            'Hello World'
+          </span>
+        </code>
+      `,
+    );
+
+    await mouseMoveTo(page, 'code.PlaygroundEditorTheme__code');
+    await click(page, 'button[aria-label=prettier]');
+
+    expect(await page.$('i.format.prettier-error')).toBeTruthy();
+
+    const errorTips = await page.$('pre.code-error-tips');
+
+    expect(errorTips).toBeTruthy();
+
+    const tips = await evaluate(page, () => {
+      return document.querySelector('pre.code-error-tips').innerText;
+    });
+
+    expect(tips).toBe(
+      'Missing semicolon. (1:6)\n' +
+        "> 1 |  cons  luci  =  'Hello World'\n" +
+        '    |      ^',
     );
   });
 });

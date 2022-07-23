@@ -33,9 +33,9 @@ declare export class LinkNode extends ElementNode {
   getURL(): string;
   setURL(url: string): void;
   getTarget(): string | typeof undefined;
-  setTarget(url: string): void;
+  setTarget(target: string): void;
   getRel(): string | typeof undefined;
-  setRel(url: string): void;
+  setRel(rel: string): void;
   insertNewAfter(selection: RangeSelection): null | ElementNode;
   canInsertTextBefore(): false;
   canInsertTextAfter(): false;

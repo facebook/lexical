@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import './index.css';
+
 import {$isCodeNode} from '@lexical/code';
 import {$getNearestNodeFromDOMNode, LexicalEditor} from 'lexical';
 import {Options} from 'prettier';
@@ -14,6 +16,7 @@ import * as markdownParser from 'prettier/parser-markdown';
 import * as cssParser from 'prettier/parser-postcss';
 import {format} from 'prettier/standalone';
 import * as React from 'react';
+import {useState} from 'react';
 
 interface Props {
   lang: string;
@@ -58,6 +61,9 @@ function getPrettierOptions(lang: string): Options {
 }
 
 export function PrettierButton({lang, editor, getCodeDOMNode}: Props) {
+  const [syntaxError, setSyntaxError] = useState<string>('');
+  const [tipsVisible, setTipsVisible] = useState<boolean>(false);
+
   async function handleClick(): Promise<void> {
     const codeDOMNode = getCodeDOMNode();
 
@@ -78,22 +84,51 @@ export function PrettierButton({lang, editor, getCodeDOMNode}: Props) {
           parsed = format(content, options);
         } catch (error: unknown) {
           if (error instanceof Error) {
-            // TODO: If there is a syntax error, the user should be given some indication of the error.
-            console.error(error.message);
+            setSyntaxError(error.message);
+            setTipsVisible(true);
           } else {
             console.error('Unexpected error: ', error);
           }
         }
-
-        const selection = codeNode.select(0);
-        selection.insertText(parsed);
+        if (parsed !== '') {
+          const selection = codeNode.select(0);
+          selection.insertText(parsed);
+          setSyntaxError('');
+          setTipsVisible(false);
+        }
       }
     });
   }
 
-  return canBePrettier(lang) ? (
-    <button className="menu-item" onClick={handleClick} aria-label="prettier">
-      <i className="format prettier" />
-    </button>
-  ) : null;
+  function handleMouseEnter() {
+    if (syntaxError !== '') {
+      setTipsVisible(true);
+    }
+  }
+
+  function handleMouseLeave() {
+    if (syntaxError !== '') {
+      setTipsVisible(false);
+    }
+  }
+
+  return (
+    <div className="prettier-wrapper">
+      <button
+        className="menu-item"
+        onClick={handleClick}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        aria-label="prettier">
+        {syntaxError ? (
+          <i className="format prettier-error" />
+        ) : (
+          <i className="format prettier" />
+        )}
+      </button>
+      {tipsVisible ? (
+        <pre className="code-error-tips">{syntaxError}</pre>
+      ) : null}
+    </div>
+  );
 }

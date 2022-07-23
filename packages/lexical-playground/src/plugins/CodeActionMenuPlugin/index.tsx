@@ -134,6 +134,7 @@ function CodeActionMenuContainer(): JSX.Element {
       {isShown ? (
         <div className="code-action-menu-container" style={{...position}}>
           <div className="code-highlight-language">{codeFriendlyName}</div>
+          <CopyButton editor={editor} getCodeDOMNode={getCodeDOMNode} />
           {canBePrettier(normalizedLang) ? (
             <PrettierButton
               editor={editor}
@@ -141,7 +142,6 @@ function CodeActionMenuContainer(): JSX.Element {
               lang={normalizedLang}
             />
           ) : null}
-          <CopyButton editor={editor} getCodeDOMNode={getCodeDOMNode} />
         </div>
       ) : null}
     </>

@@ -15,7 +15,7 @@ import {
 import * as React from 'react';
 import {useState} from 'react';
 
-import {useDebounce} from '../utils';
+import {useDebounce} from '../../utils';
 
 interface Props {
   editor: LexicalEditor;

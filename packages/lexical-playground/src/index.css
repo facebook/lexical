@@ -529,6 +529,10 @@ i.prettier {
   background-image: url(images/icons/prettier.svg);
 }
 
+i.prettier-error {
+  background-image: url(images/icons/prettier-error.svg);
+}
+
 .link-editor .button.active,
 .toolbar .button.active {
   background-color: rgb(223, 232, 250);

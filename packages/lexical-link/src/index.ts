@@ -243,14 +243,15 @@ export class AutoLinkNode extends LinkNode {
   }
 
   static clone(node: AutoLinkNode): AutoLinkNode {
-    return new AutoLinkNode(node.__url, node.__key);
+    return new AutoLinkNode(node.__url, node.__target, node.__rel, node.__key);
   }
 
   static importJSON(serializedNode: SerializedAutoLinkNode): AutoLinkNode {
-    const node = $createAutoLinkNode(serializedNode.url);
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
+    const {url, target, rel, format, indent, direction} = serializedNode;
+    const node = $createAutoLinkNode(url, target, rel);
+    node.setFormat(format);
+    node.setIndent(indent);
+    node.setDirection(direction);
     return node;
   }
 
@@ -270,7 +271,11 @@ export class AutoLinkNode extends LinkNode {
   insertNewAfter(selection: RangeSelection): null | ElementNode {
     const element = this.getParentOrThrow().insertNewAfter(selection);
     if ($isElementNode(element)) {
-      const linkNode = $createAutoLinkNode(this.__url);
+      const linkNode = $createAutoLinkNode(
+        this.__url,
+        this.__target,
+        this.__rel,
+      );
       element.append(linkNode);
       return linkNode;
     }
@@ -278,8 +283,12 @@ export class AutoLinkNode extends LinkNode {
   }
 }
 
-export function $createAutoLinkNode(url: string): AutoLinkNode {
-  return new AutoLinkNode(url);
+export function $createAutoLinkNode(
+  url: string,
+  target?: string,
+  rel?: string,
+): AutoLinkNode {
+  return new AutoLinkNode(url, target, rel);
 }
 
 export function $isAutoLinkNode(

@@ -19,10 +19,15 @@ import {$isElementNode, ElementNode} from 'lexical';
 declare export class LinkNode extends ElementNode {
   __url: string;
   __target?: string;
-  __rel?: string;
+  __relationship?: string;
   static getType(): string;
   static clone(node: LinkNode): LinkNode;
-  constructor(url: string, target?: string, rel?: string, key?: NodeKey): void;
+  constructor(
+    url: string,
+    target?: string,
+    relationship?: string,
+    key?: NodeKey,
+  ): void;
   createDOM(config: EditorConfig): HTMLElement;
   updateDOM(
     prevNode: LinkNode,
@@ -34,8 +39,8 @@ declare export class LinkNode extends ElementNode {
   setURL(url: string): void;
   getTarget(): string | typeof undefined;
   setTarget(target: string): void;
-  getRel(): string | typeof undefined;
-  setRel(rel: string): void;
+  getRelationship(): string | typeof undefined;
+  setRelationship(relationship: string): void;
   insertNewAfter(selection: RangeSelection): null | ElementNode;
   canInsertTextBefore(): false;
   canInsertTextAfter(): false;
@@ -45,7 +50,7 @@ declare export class LinkNode extends ElementNode {
 declare export function $createLinkNode(
   url: string,
   target?: string,
-  rel?: string,
+  relationship?: string,
 ): LinkNode;
 declare export function $isLinkNode(
   node: ?LexicalNode,
@@ -66,12 +71,12 @@ declare export var TOGGLE_LINK_COMMAND: LexicalCommand<
   | {
       url: string,
       target?: string,
-      rel?: string,
+      relationship?: string,
     }
   | null,
 >;
 declare export function toggleLink(
   url: null | string,
   target?: string,
-  rel?: string,
+  relationship?: string,
 ): void;

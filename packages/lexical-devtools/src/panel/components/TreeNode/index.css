@@ -1,0 +1,18 @@
+.indentation {
+  background: #222;
+  border: none;
+  color: #222;
+  margin: 0;
+  padding: 0;
+  text-decoration: none;
+  user-select: none;
+}
+
+.tree-node {
+  padding-left: 1em;
+  width: 100%;
+}
+
+.tree-node-wrapper {
+  width: 100%;
+}

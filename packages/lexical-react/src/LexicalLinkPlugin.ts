@@ -27,8 +27,8 @@ export function LinkPlugin(): null {
         if (typeof payload === 'string' || payload === null) {
           toggleLink(payload);
         } else {
-          const {url, target, rel} = payload;
-          toggleLink(url, target, rel);
+          const {url, target, relationship} = payload;
+          toggleLink(url, target, relationship);
         }
         return true;
       },

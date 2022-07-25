@@ -66,10 +66,10 @@ function TableOfContentsList({
           while (
             currentHeading !== null &&
             isElementAboveViewport(currentHeading) &&
-            selectedIndex.current >= 0
+            selectedIndex.current < tableOfContents.length - 1
           ) {
             const nextHeading = editor.getElementByKey(
-              tableOfContents[selectedIndex.current + 1][0],
+              tableOfContents[++selectedIndex.current][0],
             );
             if (
               nextHeading !== null &&
@@ -77,8 +77,7 @@ function TableOfContentsList({
             ) {
               break;
             } else {
-              const nextHeadingKey =
-                tableOfContents[++selectedIndex.current][0];
+              const nextHeadingKey = tableOfContents[selectedIndex.current][0];
               setSelectedKey(nextHeadingKey);
               currentHeading = nextHeading;
             }
@@ -91,22 +90,18 @@ function TableOfContentsList({
             selectedIndex.current > 0
           ) {
             const prevHeading = editor.getElementByKey(
-              tableOfContents[selectedIndex.current - 1][0],
+              tableOfContents[--selectedIndex.current][0],
             );
+            const prevHeadingKey = tableOfContents[selectedIndex.current][0];
+            setSelectedKey(prevHeadingKey);
             if (
               prevHeading !== null &&
               isElementBelowTheTopOfThePage(currentHeading) &&
               (isElementAboveViewport(prevHeading) ||
                 isElementAtTheTopOfThePage(prevHeading))
             ) {
-              const prevHeadingKey =
-                tableOfContents[--selectedIndex.current][0];
-              setSelectedKey(prevHeadingKey);
               break;
             } else {
-              const prevHeadingKey =
-                tableOfContents[--selectedIndex.current][0];
-              setSelectedKey(prevHeadingKey);
               currentHeading = prevHeading;
             }
           }

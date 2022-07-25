@@ -239,5 +239,5 @@ declare export class TableSelection {
 declare export var INSERT_TABLE_COMMAND: LexicalCommand<{
   rows: string,
   columns: string,
-  includeHeaders?: string,
+  includeHeaders?: boolean,
 }>;

@@ -13,13 +13,6 @@ const common = {
 };
 
 module.exports = {
-  collectCoverage: true,
-  collectCoverageFrom: [
-    '<rootDir>/packages/lexical/src/core/**/*.ts',
-    '<rootDir>/packages/lexical/src/extensions/**/*.ts',
-    '<rootDir>/packages/lexical-react/src/**/*.ts',
-  ],
-  coverageReporters: ['json', 'text'],
   projects: [
     {
       ...common,

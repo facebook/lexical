@@ -6,18 +6,26 @@
  *
  *
  */
-
-.ContentEditable__root {
-  min-height: 150px;
+.editor-scroller {
+  min-height: 360px;
+  height: 360px;
   border: 0;
   resize: none;
   cursor: text;
+  display: block;
+  position: relative;
+  outline: 0;
+  overflow: auto;
+  resize: vertical;
+}
+
+.ContentEditable__root {
+  border: 0;
   font-size: 15px;
   display: block;
   position: relative;
   tab-size: 1;
   outline: 0;
   padding: 10px;
-  overflow: auto;
-  resize: vertical;
+  height: calc(100% - 20px);
 }

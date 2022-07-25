@@ -164,7 +164,11 @@ export default function Editor(): JSX.Element {
         {isAutocomplete && <AutocompletePlugin />}
         <ActionsPlugin isRichText={isRichText} />
         <div>{showTableOfContents && <TableOfContentsPlugin />}</div>
+        <div className="toc">
+          {showTableOfContents && <TableOfContentsPlugin />}
+        </div>
       </div>
+      <ActionsPlugin isRichText={isRichText} />
       {showTreeView && <TreeViewPlugin />}
     </>
   );

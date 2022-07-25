@@ -1736,6 +1736,32 @@ export class RangeSelection implements BaseSelection {
         if ($isElementNode(nextSibling) && !nextSibling.canExtractContents()) {
           return;
         }
+
+        if (
+          anchorNode.getNextSibling() === null &&
+          $isElementNode(nextSibling) &&
+          nextSibling.collapseAtStart(this)
+        ) {
+          return;
+        }
+      }
+
+      if (isBackward && anchor.offset === 0) {
+        let element;
+        if (
+          anchor.type === 'text' &&
+          anchorNode.getPreviousSibling() === null
+        ) {
+          element = anchorNode.getParentOrThrow();
+        }
+
+        if (anchor.type === 'element') {
+          element = anchorNode;
+        }
+
+        if (element && element.collapseAtStart(this)) {
+          return;
+        }
       }
       this.modify('extend', isBackward, 'character');
 
@@ -1767,15 +1793,6 @@ export class RangeSelection implements BaseSelection {
           }
         }
         $updateCaretSelectionForUnicodeCharacter(this, isBackward);
-      } else if (isBackward && anchor.offset === 0) {
-        // Special handling around rich text nodes
-        const element =
-          anchor.type === 'element'
-            ? anchor.getNode()
-            : anchor.getNode().getParentOrThrow();
-        if (element.collapseAtStart(this)) {
-          return;
-        }
       }
     }
     this.removeText();

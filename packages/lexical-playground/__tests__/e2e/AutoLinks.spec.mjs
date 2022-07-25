@@ -47,7 +47,7 @@ test.describe('Auto Links', () => {
             </span>
           </a>
           <span data-lexical-text="true">and</span>
-          <a href="www.example.com" dir="ltr">
+          <a href="https://www.example.com" dir="ltr">
             <span data-lexical-text="true">www.example.com</span>
           </a>
         </p>
@@ -146,7 +146,7 @@ test.describe('Auto Links', () => {
             </span>
           </a>
           <span data-lexical-text="true">and</span>
-          <a href="www.example.com" dir="ltr">
+          <a href="https://www.example.com" dir="ltr">
             <span data-lexical-text="true">www.example.com</span>
           </a>
         </p>

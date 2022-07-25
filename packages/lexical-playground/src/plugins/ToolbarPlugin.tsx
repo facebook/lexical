@@ -16,7 +16,12 @@ import type {
 
 import './ToolbarPlugin.css';
 
-import {$createCodeNode, $isCodeNode} from '@lexical/code';
+import {
+  $createCodeNode,
+  $isCodeNode,
+  CODE_LANGUAGE_FRIENDLY_NAME_MAP,
+  CODE_LANGUAGE_MAP,
+} from '@lexical/code';
 import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {
   $isListNode,
@@ -51,6 +56,7 @@ import {
 } from '@lexical/utils';
 import {
   $createParagraphNode,
+  $createTextNode,
   $getNodeByKey,
   $getRoot,
   $getSelection,
@@ -80,6 +86,8 @@ import useModal from '../hooks/useModal';
 import catTypingGif from '../images/cat-typing.gif';
 import yellowFlowerImage from '../images/yellow-flower.jpg';
 import {$createStickyNode} from '../nodes/StickyNode';
+import {$isTweetNode} from '../nodes/TweetNode';
+import {$isYouTubeNode} from '../nodes/YouTubeNode';
 import Button from '../ui/Button';
 import ColorPicker from '../ui/ColorPicker';
 import DropDown, {DropDownItem} from '../ui/DropDown';
@@ -109,30 +117,19 @@ const blockTypeToBlockName = {
   quote: 'Quote',
 };
 
-const CODE_LANGUAGE_OPTIONS: [string, string][] = [
-  ['', '- Select language -'],
-  ['c', 'C'],
-  ['clike', 'C-like'],
-  ['css', 'CSS'],
-  ['html', 'HTML'],
-  ['js', 'JavaScript'],
-  ['markdown', 'Markdown'],
-  ['objc', 'Objective-C'],
-  ['plain', 'Plain Text'],
-  ['py', 'Python'],
-  ['rust', 'Rust'],
-  ['sql', 'SQL'],
-  ['swift', 'Swift'],
-  ['xml', 'XML'],
-];
+function getCodeLanguageOptions(): [string, string][] {
+  const options: [string, string][] = [['', '- Select language -']];
 
-const CODE_LANGUAGE_MAP = {
-  javascript: 'js',
-  md: 'markdown',
-  plaintext: 'plain',
-  python: 'py',
-  text: 'plain',
-};
+  for (const [lang, friendlyName] of Object.entries(
+    CODE_LANGUAGE_FRIENDLY_NAME_MAP,
+  )) {
+    options.push([lang, friendlyName]);
+  }
+
+  return options;
+}
+
+const CODE_LANGUAGE_OPTIONS = getCodeLanguageOptions();
 
 function getSelectedNode(selection: RangeSelection): TextNode | ElementNode {
   const anchor = selection.anchor;
@@ -705,6 +702,23 @@ function BlockFormatDropDown({
           if (selection.isCollapsed()) {
             $wrapLeafNodesInElements(selection, () => $createCodeNode());
           } else {
+            selection.getNodes().forEach((node) => {
+              // Explicity set fallback text content for some decorators nodes.
+              if ($isTweetNode(node)) {
+                node.replace(
+                  $createTextNode(
+                    `https://twitter.com/i/web/status/${node.getId()}`,
+                  ),
+                );
+              } else if ($isYouTubeNode(node)) {
+                node.replace(
+                  $createTextNode(
+                    `https://www.youtube.com/watch?v=${node.getId()}`,
+                  ),
+                );
+              }
+            });
+
             const textContent = selection.getTextContent();
             const codeNode = $createCodeNode();
             selection.insertNodes([codeNode]);

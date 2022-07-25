@@ -136,7 +136,7 @@ describe('LexicalLinkNode tests', () => {
     test('LinkNode.createDOM()', async () => {
       const {editor} = testEnv;
 
-      editor.update(() => {
+      await editor.update(() => {
         const linkNode = new LinkNode('https://example.com/foo');
 
         expect(linkNode.createDOM(editorConfig).outerHTML).toBe(
@@ -154,7 +154,7 @@ describe('LexicalLinkNode tests', () => {
     test('LinkNode.createDOM() with target and rel', async () => {
       const {editor} = testEnv;
 
-      editor.update(() => {
+      await editor.update(() => {
         const linkNode = new LinkNode(
           'https://example.com/foo',
           '_blank',

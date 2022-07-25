@@ -37,6 +37,7 @@ import ComponentPickerPlugin from './plugins/ComponentPickerPlugin';
 import EmojisPlugin from './plugins/EmojisPlugin';
 import EquationsPlugin from './plugins/EquationsPlugin';
 import ExcalidrawPlugin from './plugins/ExcalidrawPlugin';
+import FigmaPlugin from './plugins/FigmaPlugin';
 import HorizontalRulePlugin from './plugins/HorizontalRulePlugin';
 import ImagesPlugin from './plugins/ImagesPlugin';
 import KeywordsPlugin from './plugins/KeywordsPlugin';
@@ -138,6 +139,7 @@ export default function Editor(): JSX.Element {
             <PollPlugin />
             <TwitterPlugin />
             <YouTubePlugin />
+            <FigmaPlugin />
             <ClickableLinkPlugin />
             <HorizontalRulePlugin />
             <TextFormatFloatingToolbarPlugin />

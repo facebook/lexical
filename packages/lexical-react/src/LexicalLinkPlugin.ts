@@ -21,10 +21,15 @@ export function LinkPlugin(): null {
   }, [editor]);
 
   useEffect(() => {
-    return editor.registerCommand<string | null>(
+    return editor.registerCommand(
       TOGGLE_LINK_COMMAND,
-      (url) => {
-        toggleLink(url);
+      (payload) => {
+        if (typeof payload === 'string' || payload === null) {
+          toggleLink(payload);
+        } else {
+          const {url, target, relationship} = payload;
+          toggleLink(url, target, relationship);
+        }
         return true;
       },
       COMMAND_PRIORITY_EDITOR,

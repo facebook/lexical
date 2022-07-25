@@ -66,22 +66,20 @@ function TableOfContentsList({
           while (
             currentHeading !== null &&
             isElementAboveViewport(currentHeading) &&
-            selectedIndex.current < tableOfContents.length - 1
+            selectedIndex.current >= 0
           ) {
             const nextHeading = editor.getElementByKey(
               tableOfContents[selectedIndex.current + 1][0],
             );
             if (
               nextHeading !== null &&
-              (isElementAtTheTopOfThePage(nextHeading) ||
-                isElementAboveViewport(nextHeading))
+              isElementBelowTheTopOfThePage(nextHeading)
             ) {
+              break;
+            } else {
               const nextHeadingKey =
                 tableOfContents[++selectedIndex.current][0];
               setSelectedKey(nextHeadingKey);
-              currentHeading = nextHeading;
-              break;
-            } else {
               currentHeading = nextHeading;
             }
           }
@@ -97,14 +95,18 @@ function TableOfContentsList({
             );
             if (
               prevHeading !== null &&
-              (isElementAtTheTopOfThePage(prevHeading) ||
-                isElementAboveViewport(prevHeading))
+              isElementBelowTheTopOfThePage(currentHeading) &&
+              (isElementAboveViewport(prevHeading) ||
+                isElementAtTheTopOfThePage(prevHeading))
             ) {
               const prevHeadingKey =
                 tableOfContents[--selectedIndex.current][0];
               setSelectedKey(prevHeadingKey);
               break;
             } else {
+              const prevHeadingKey =
+                tableOfContents[--selectedIndex.current][0];
+              setSelectedKey(prevHeadingKey);
               currentHeading = prevHeading;
             }
           }

@@ -12,6 +12,7 @@ import {
   getElement,
   html,
   initialize,
+  repeat,
   selectFromFormatDropdown,
   test,
   //   waitForSelector,
@@ -39,6 +40,52 @@ test.describe('Hashtags', () => {
         <div class="heading" role="button" tabindex="0">
           <div class="bar"></div>
           <li>World!</li>
+        </div>
+      `,
+    );
+  });
+  test(`Scrolling through headigns in the editor makes them scroll inside the table of contents`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await selectFromFormatDropdown(page, '.h1');
+    await page.keyboard.type('Hello');
+
+    await repeat(20, () => {
+      page.keyboard.type('\n');
+    });
+    await selectFromFormatDropdown(page, '.h2');
+    await page.keyboard.type(' World');
+    await repeat(200, () => {
+      page.keyboard.type('\n');
+    });
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    const tableOfContents = await getElement(page, 'ul.table-of-contents');
+    await assertHTML(
+      tableOfContents,
+      html`
+        <div class="heading" role="button" tabindex="0">
+          <div class="bar"></div>
+          <li>Hello</li>
+        </div>
+        <div class="selectedHeading" role="button" tabindex="0">
+          <div class="circle"></div>
+          <li class="heading2">World</li>
+        </div>
+      `,
+    );
+
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await assertHTML(
+      tableOfContents,
+      html`
+        <div class="selectedHeading" role="button" tabindex="0">
+          <div class="circle"></div>
+          <li>Hello</li>
+        </div>
+        <div class="heading" role="button" tabindex="0">
+          <div class="bar"></div>
+          <li class="heading2">World</li>
         </div>
       `,
     );

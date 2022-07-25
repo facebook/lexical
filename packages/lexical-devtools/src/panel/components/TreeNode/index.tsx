@@ -21,9 +21,18 @@ function TreeNode({
   lexicalKey,
 }: DevToolsNode): JSX.Element {
   const [isExpanded, setIsExpanded] = useState(true);
+  const [isHovered, setIsHovered] = useState(false);
 
   const handleChevronClick = () => {
     setIsExpanded(!isExpanded);
+  };
+
+  const handleMouseEnter: React.MouseEventHandler = (event) => {
+    setIsHovered(true);
+  };
+
+  const handleMouseLeave: React.MouseEventHandler = (event) => {
+    setIsHovered(false);
   };
 
   const nodeString = ` (${lexicalKey}) ${__type} ${
@@ -40,15 +49,24 @@ function TreeNode({
       ''
     );
 
+  const hoverClassName = isHovered ? ' hover' : '';
+  const treeNodeClassName = 'tree-node' + hoverClassName;
+  const leftIndent = depth * 1.2 + 'em';
+
   return (
-    <div className="tree-node" key={lexicalKey}>
-      {children.length > 0 ? (
-        <Chevron handleClick={handleChevronClick} isExpanded={isExpanded} />
-      ) : (
-        <button className="indentation">&#9654;</button>
-      )}
-      {nodeString}
-      {<br />}
+    <div className="tree-node-wrapper" key={lexicalKey}>
+      <div
+        className={treeNodeClassName}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        style={{paddingLeft: leftIndent}}>
+        {children.length > 0 ? (
+          <Chevron handleClick={handleChevronClick} isExpanded={isExpanded} />
+        ) : (
+          <span style={{width: '1.2em'}}>&nbsp;</span> // <button className="indentation">&#9654;</button>
+        )}
+        {nodeString}
+      </div>
       {isExpanded ? childNodes : ''}
     </div>
   );

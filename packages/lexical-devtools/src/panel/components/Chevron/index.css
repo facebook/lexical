@@ -7,3 +7,8 @@
   padding: 0;
   text-decoration: none;
 }
+
+.hover > .chevron-button {
+  background: #77b6ff;
+  color: #222;
+}

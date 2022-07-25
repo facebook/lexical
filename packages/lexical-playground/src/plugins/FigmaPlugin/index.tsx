@@ -11,7 +11,7 @@ import {$insertBlockNode} from '@lexical/utils';
 import {COMMAND_PRIORITY_EDITOR, createCommand, LexicalCommand} from 'lexical';
 import {useEffect} from 'react';
 
-import {$createFigmaNode, FigmaNode} from '../nodes/FigmaNode';
+import {$createFigmaNode, FigmaNode} from '../../nodes/FigmaNode';
 
 export const INSERT_FIGMA_COMMAND: LexicalCommand<string> = createCommand();
 

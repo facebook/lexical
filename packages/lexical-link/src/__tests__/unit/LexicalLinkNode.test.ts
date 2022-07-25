@@ -235,6 +235,36 @@ describe('LexicalLinkNode tests', () => {
       });
     });
 
+    test('LinkNode.updateDOM() with undefined target and undefined rel', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        const linkNode = new LinkNode(
+          'https://example.com/foo',
+          '_blank',
+          'noopener noreferrer',
+        );
+
+        const domElement = linkNode.createDOM(editorConfig);
+
+        expect(linkNode.createDOM(editorConfig).outerHTML).toBe(
+          '<a href="https://example.com/foo" target="_blank" rel="noopener noreferrer" class="my-link-class"></a>',
+        );
+
+        const newLinkNode = new LinkNode('https://example.com/bar');
+        const result = newLinkNode.updateDOM(
+          linkNode,
+          domElement,
+          editorConfig,
+        );
+
+        expect(result).toBe(false);
+        expect(domElement.outerHTML).toBe(
+          '<a href="https://example.com/bar" class="my-link-class"></a>',
+        );
+      });
+    });
+
     test('LinkNode.canInsertTextBefore()', async () => {
       const {editor} = testEnv;
 

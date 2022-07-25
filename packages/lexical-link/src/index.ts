@@ -95,11 +95,21 @@ export class LinkNode extends ElementNode {
     if (url !== prevNode.__url) {
       anchor.href = url;
     }
-    if (target && target !== prevNode.__target) {
-      anchor.target = target;
+
+    if (target !== prevNode.__target) {
+      if (target) {
+        anchor.target = target;
+      } else {
+        anchor.removeAttribute('target');
+      }
     }
-    if (relationship && relationship !== prevNode.__relationship) {
-      anchor.rel = relationship;
+
+    if (relationship !== prevNode.__relationship) {
+      if (relationship) {
+        anchor.rel = relationship;
+      } else {
+        anchor.removeAttribute('rel');
+      }
     }
     return false;
   }

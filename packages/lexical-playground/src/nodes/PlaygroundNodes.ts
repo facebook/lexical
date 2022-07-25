@@ -19,6 +19,7 @@ import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
 
 import {AutocompleteNode} from './AutocompleteNode';
+import {ConfigTreeNode} from './ConfigTreeNode';
 import {EmojiNode} from './EmojiNode';
 import {EquationNode} from './EquationNode';
 import {ExcalidrawNode} from './ExcalidrawNode';
@@ -59,6 +60,7 @@ const PlaygroundNodes: Array<Klass<LexicalNode>> = [
   TweetNode,
   YouTubeNode,
   MarkNode,
+  ConfigTreeNode,
 ];
 
 export default PlaygroundNodes;

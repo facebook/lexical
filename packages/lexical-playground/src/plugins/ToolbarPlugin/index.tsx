@@ -95,6 +95,7 @@ import FileInput from '../../ui/FileInput.jsx';
 import KatexEquationAlterer from '../../ui/KatexEquationAlterer';
 import LinkPreview from '../../ui/LinkPreview';
 import TextInput from '../../ui/TextInput';
+import {INSERT_CONFIG_TREE_COMMAND} from '../ConfigTreePlugin';
 import {INSERT_EQUATION_COMMAND} from '../EquationsPlugin';
 import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawPlugin';
 import {INSERT_IMAGE_COMMAND} from '../ImagesPlugin';
@@ -546,6 +547,35 @@ export function InsertTweetDialog({
         <Button disabled={isDisabled} onClick={onClick}>
           Confirm
         </Button>
+      </div>
+    </>
+  );
+}
+
+export function InsertConfigTreeDialog({
+  activeEditor,
+  onClose,
+}: {
+  activeEditor: LexicalEditor;
+  onClose: () => void;
+}): JSX.Element {
+  const [itfName, setItfName] = useState<string>('');
+
+  const onClick = () => {
+    activeEditor.dispatchCommand(INSERT_CONFIG_TREE_COMMAND, itfName);
+    onClose();
+  };
+
+  return (
+    <>
+      <TextInput
+        label="Interface or class name"
+        placeholder="IEntSchemaOrPatternConfig"
+        onChange={setItfName}
+        value={itfName}
+      />
+      <div className="ToolbarPlugin_dialogActions">
+        <Button onClick={onClick}>Confirm</Button>
       </div>
     </>
   );
@@ -1334,6 +1364,19 @@ export default function ToolbarPlugin(): JSX.Element {
               className="item">
               <i className="icon tweet" />
               <span className="text">Tweet</span>
+            </DropDownItem>
+            <DropDownItem
+              onClick={() => {
+                showModal('Insert Config Tree', (onClose) => (
+                  <InsertConfigTreeDialog
+                    activeEditor={activeEditor}
+                    onClose={onClose}
+                  />
+                ));
+              }}
+              className="item">
+              <i className="icon diagram-2" />
+              <span className="text">Config Tree</span>
             </DropDownItem>
             <DropDownItem
               onClick={() => {

@@ -38,6 +38,7 @@ import catTypingGif from '../../images/cat-typing.gif';
 import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawPlugin';
 import {INSERT_IMAGE_COMMAND} from '../ImagesPlugin';
 import {
+  InsertConfigTreeDialog,
   InsertEquationDialog,
   InsertImageDialog,
   InsertPollDialog,
@@ -277,6 +278,14 @@ export default function ComponentPickerMenuPlugin(): JSX.Element {
         onSelect: () =>
           showModal('Insert Tweet', (onClose) => (
             <InsertTweetDialog activeEditor={editor} onClose={onClose} />
+          )),
+      }),
+      new ComponentPickerOption('ConfigTree', {
+        icon: <i className='="icon tree' />,
+        keywords: ['config', 'tree', 'embed'],
+        onSelect: () =>
+          showModal('Insert Config tree', (onClose) => (
+            <InsertConfigTreeDialog activeEditor={editor} onClose={onClose} />
           )),
       }),
       new ComponentPickerOption('Equation', {

@@ -336,7 +336,7 @@ function ShortcutTypeahead<TOption extends TypeaheadOption>({
         KEY_ARROW_DOWN_COMMAND,
         (payload) => {
           const event = payload;
-          if (options !== null && selectedIndex !== null) {
+          if (options !== null && options.length && selectedIndex !== null) {
             const newSelectedIndex =
               selectedIndex !== options.length - 1 ? selectedIndex + 1 : 0;
             updateSelectedIndex(newSelectedIndex);
@@ -355,7 +355,7 @@ function ShortcutTypeahead<TOption extends TypeaheadOption>({
         KEY_ARROW_UP_COMMAND,
         (payload) => {
           const event = payload;
-          if (options !== null && selectedIndex !== null) {
+          if (options !== null && options.length && selectedIndex !== null) {
             const newSelectedIndex =
               selectedIndex !== 0 ? selectedIndex - 1 : options.length - 1;
             updateSelectedIndex(newSelectedIndex);

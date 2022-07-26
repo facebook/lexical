@@ -12,10 +12,14 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
 export function OnChangePlugin({
+  // TODO 0.4 flip to true
+  ignoreHistoryMergeTagChange = false,
   ignoreInitialChange = true,
   ignoreSelectionChange = false,
   onChange,
 }: {
+  ignoreHistoryMergeTagChange?: boolean;
+  // TODO 0.4 remove
   ignoreInitialChange?: boolean;
   ignoreSelectionChange?: boolean;
   onChange: (editorState: EditorState, editor: LexicalEditor) => void;
@@ -25,11 +29,12 @@ export function OnChangePlugin({
   useLayoutEffect(() => {
     if (onChange) {
       return editor.registerUpdateListener(
-        ({editorState, dirtyElements, dirtyLeaves, prevEditorState}) => {
+        ({editorState, dirtyElements, dirtyLeaves, prevEditorState, tags}) => {
           if (
-            ignoreSelectionChange &&
-            dirtyElements.size === 0 &&
-            dirtyLeaves.size === 0
+            (ignoreSelectionChange &&
+              dirtyElements.size === 0 &&
+              dirtyLeaves.size === 0) ||
+            (ignoreHistoryMergeTagChange && tags.has('history-merge'))
           ) {
             return;
           }
@@ -42,7 +47,13 @@ export function OnChangePlugin({
         },
       );
     }
-  }, [editor, ignoreInitialChange, ignoreSelectionChange, onChange]);
+  }, [
+    editor,
+    ignoreHistoryMergeTagChange,
+    ignoreInitialChange,
+    ignoreSelectionChange,
+    onChange,
+  ]);
 
   return null;
 }

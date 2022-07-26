@@ -369,7 +369,7 @@ export function registerMarkdownShortcuts(
   return editor.registerUpdateListener(
     ({tags, dirtyLeaves, editorState, prevEditorState}) => {
       // Ignore updates from undo/redo (as changes already calculated)
-      if (tags.has('historic')) {
+      if (tags.has('history-undo') || tags.has('history-redo')) {
         return;
       }
 

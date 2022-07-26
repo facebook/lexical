@@ -239,7 +239,7 @@ function createMergeActionGetter(
 
     // If applying changes from history stack there's no need
     // to run history logic again, as history entries already calculated
-    if (tags.has('historic')) {
+    if (tags.has('history-undo') || tags.has('history-redo')) {
       prevChangeType = OTHER;
       prevChangeTime = changeTime;
       return DISCARD_HISTORY_CANDIDATE;
@@ -334,7 +334,7 @@ function redo(editor: LexicalEditor, historyState: HistoryState): void {
 
     if (historyStateEntry) {
       historyStateEntry.editor.setEditorState(historyStateEntry.editorState, {
-        tag: 'historic',
+        tag: 'history-redo',
       });
     }
   }
@@ -364,7 +364,7 @@ function undo(editor: LexicalEditor, historyState: HistoryState): void {
       historyStateEntry.editor.setEditorState(
         historyStateEntry.editorState.clone(historyStateEntry.undoSelection),
         {
-          tag: 'historic',
+          tag: 'history-undo',
         },
       );
     }

@@ -101,7 +101,6 @@ import {EmbedConfigs} from '../AutoEmbedPlugin';
 import {INSERT_EQUATION_COMMAND} from '../EquationsPlugin';
 import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawPlugin';
 import {INSERT_IMAGE_COMMAND} from '../ImagesPlugin';
-import {INSERT_EMBED_COMMAND} from '../LexicalAutoEmbedPlugin';
 import {INSERT_POLL_COMMAND} from '../PollPlugin';
 
 const blockTypeToBlockName = {

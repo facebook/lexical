@@ -27,7 +27,6 @@ export type Props = Readonly<{
   autoCorrect?: boolean;
   className?: string;
   id?: string;
-  readOnly?: boolean;
   role?: string;
   spellCheck?: boolean;
   style?: CSSProperties;

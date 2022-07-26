@@ -14,12 +14,11 @@ import {
   initialize,
   repeat,
   selectFromFormatDropdown,
-  // sleep,
+  sleep,
   test,
-  //   waitForSelector,
 } from '../utils/index.mjs';
 
-test.describe('Hashtags', () => {
+test.describe('Table of Contents', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   test(`Adding headigns to editor adds them to table of contents`, async ({
     page,
@@ -57,10 +56,11 @@ test.describe('Hashtags', () => {
     });
     await selectFromFormatDropdown(page, '.h2');
     await page.keyboard.type(' World');
-    await repeat(200, () => {
+    await repeat(400, () => {
       page.keyboard.type('\n');
     });
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await sleep(50);
     const tableOfContents = await getElement(page, 'ul.table-of-contents');
     await assertHTML(
       tableOfContents,
@@ -75,19 +75,36 @@ test.describe('Hashtags', () => {
         </div>
       `,
     );
-    // await page.evaluate(() => window.scrollTo(0, 0));
-    // await assertHTML(
-    //   tableOfContents,
-    //   html`
-    //     <div class="selectedHeading" role="button" tabindex="0">
-    //       <div class="circle"></div>
-    //       <li>Hello</li>
-    //     </div>
-    //     <div class="heading" role="button" tabindex="0">
-    //       <div class="bar"></div>
-    //       <li class="heading2">World</li>
-    //     </div>
-    //   `,
-    // );
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await sleep(50);
+    await assertHTML(
+      tableOfContents,
+      html`
+        <div class="selectedHeading" role="button" tabindex="0">
+          <div class="circle"></div>
+          <li>Hello</li>
+        </div>
+        <div class="heading" role="button" tabindex="0">
+          <div class="bar"></div>
+          <li class="heading2">World</li>
+        </div>
+      `,
+    );
+
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await sleep(50);
+    await assertHTML(
+      tableOfContents,
+      html`
+        <div class="heading" role="button" tabindex="0">
+          <div class="bar"></div>
+          <li>Hello</li>
+        </div>
+        <div class="selectedHeading" role="button" tabindex="0">
+          <div class="circle"></div>
+          <li class="heading2">World</li>
+        </div>
+      `,
+    );
   });
 });

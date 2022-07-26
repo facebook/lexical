@@ -10,6 +10,7 @@
 import type {EditorState, LexicalEditor} from 'lexical';
 
 declare export function OnChangePlugin({
+  ignoreHistoryMergeTagChange?: boolean,
   ignoreInitialChange?: boolean,
   ignoreSelectionChange?: boolean,
   onChange: (editorState: EditorState, editor: LexicalEditor) => void,

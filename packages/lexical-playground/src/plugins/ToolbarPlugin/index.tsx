@@ -31,6 +31,7 @@ import {
   ListNode,
   REMOVE_LIST_COMMAND,
 } from '@lexical/list';
+import {INSERT_EMBED_COMMAND} from '@lexical/react/LexicalAutoEmbedPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$isDecoratorBlockNode} from '@lexical/react/LexicalDecoratorBlockNode';
 import {INSERT_HORIZONTAL_RULE_COMMAND} from '@lexical/react/LexicalHorizontalRuleNode';
@@ -99,7 +100,6 @@ import {EmbedConfigs} from '../AutoEmbedPlugin';
 import {INSERT_EQUATION_COMMAND} from '../EquationsPlugin';
 import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawPlugin';
 import {INSERT_IMAGE_COMMAND} from '../ImagesPlugin';
-import {INSERT_EMBED_COMMAND} from '../LexicalAutoEmbedPlugin';
 import {INSERT_POLL_COMMAND} from '../PollPlugin';
 
 const blockTypeToBlockName = {

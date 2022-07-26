@@ -8,12 +8,6 @@
 
 import type {LexicalEditor} from 'lexical';
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {useState} from 'react';
-import * as React from 'react';
-
-import useModal from '../../hooks/useModal';
-import Button from '../../ui/Button';
 import {
   AutoEmbedOption,
   EmbedConfig,
@@ -21,7 +15,13 @@ import {
   EmbedMenuProps,
   LexicalAutoEmbedPlugin,
   URL_MATCHER,
-} from '../LexicalAutoEmbedPlugin';
+} from '@lexical/react/LexicalAutoEmbedPlugin';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useState} from 'react';
+import * as React from 'react';
+
+import useModal from '../../hooks/useModal';
+import Button from '../../ui/Button';
 import {INSERT_TWEET_COMMAND} from '../TwitterPlugin';
 import {INSERT_YOUTUBE_COMMAND} from '../YouTubePlugin';
 

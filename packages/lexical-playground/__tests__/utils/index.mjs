@@ -36,6 +36,7 @@ export async function initialize({
   isCharLimitUtf8,
   isMaxLength,
   showNestedEditorTreeView,
+  showTableOfContents,
 }) {
   const appSettings = {};
   appSettings.isRichText = IS_RICH_TEXT;
@@ -47,6 +48,9 @@ export async function initialize({
   }
   if (showNestedEditorTreeView === undefined) {
     appSettings.showNestedEditorTreeView = true;
+  }
+  if (showTableOfContents === undefined) {
+    appSettings.showTableOfContents = true;
   }
   appSettings.isAutocomplete = !!isAutocomplete;
   appSettings.isCharLimit = !!isCharLimit;
@@ -385,9 +389,10 @@ export async function getHTML(page, selector = 'div[contenteditable="true"]') {
   return element.innerHTML();
 }
 
-export async function getEditorElement(page, parentSelector = '.editor-shell') {
-  const selector = `${parentSelector} div[contenteditable="true"]`;
-
+export async function getElement(
+  page,
+  selector = 'div[contenteditable="true"]',
+) {
   if (IS_COLLAB) {
     const leftFrame = await page.frame('left');
     await leftFrame.waitForSelector(selector);
@@ -396,6 +401,11 @@ export async function getEditorElement(page, parentSelector = '.editor-shell') {
     await page.waitForSelector(selector);
     return page.$(selector);
   }
+}
+
+export async function getEditorElement(page, parentSelector = '.editor-shell') {
+  const selector = `${parentSelector} div[contenteditable="true"]`;
+  return getElement(selector);
 }
 
 export async function waitForSelector(page, selector, options) {

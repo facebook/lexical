@@ -223,7 +223,7 @@ function startTransition(callback: () => void) {
   }
 }
 
-function PopoverMenu<TOption extends TypeaheadOption>({
+function LexicalPopoverMenu<TOption extends TypeaheadOption>({
   close,
   editor,
   resolution,
@@ -564,7 +564,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends TypeaheadOption>({
   }, []);
 
   return resolution === null || editor === null ? null : (
-    <PopoverMenu
+    <LexicalPopoverMenu
       close={closeTypeahead}
       resolution={resolution}
       editor={editor}
@@ -625,7 +625,7 @@ export function LexicalNodeMenuPlugin<TOption extends TypeaheadOption>({
   }, [editor, nodeKey, resolution]);
 
   return resolution === null || editor === null ? null : (
-    <PopoverMenu
+    <LexicalPopoverMenu
       close={onClose}
       resolution={resolution}
       editor={editor}

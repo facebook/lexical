@@ -166,10 +166,6 @@ function ExcalidrawComponent({
         initialElements={elements}
         isShown={isModalOpen}
         onDelete={deleteNode}
-        onHide={() => {
-          editor.setReadOnly(false);
-          setModalOpen(false);
-        }}
         onSave={(newData) => {
           editor.setReadOnly(false);
           setData(newData);

@@ -10,7 +10,7 @@ import './ExcalidrawModal.css';
 
 import Excalidraw from '@excalidraw/excalidraw';
 import * as React from 'react';
-import {ReactPortal, useEffect, useRef, useState} from 'react';
+import {ReactPortal, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 
 import Button from '../../ui/Button';
@@ -35,10 +35,6 @@ type Props = {
    */
   onDelete: () => void;
   /**
-   * Handle modal closing
-   */
-  onHide: () => void;
-  /**
    * Callback when the save button is clicked
    */
   onSave: (elements: ReadonlyArray<ExcalidrawElementFragment>) => void;
@@ -54,10 +50,10 @@ export default function ExcalidrawModal({
   onSave,
   initialElements,
   isShown = false,
-  onHide,
   onDelete,
 }: Props): ReactPortal | null {
   const excaliDrawModelRef = useRef<HTMLDivElement | null>(null);
+
   const [discardModalOpen, setDiscardModalOpen] = useState(false);
   const [elements, setElements] =
     useState<ReadonlyArray<ExcalidrawElementFragment>>(initialElements);
@@ -70,6 +66,7 @@ export default function ExcalidrawModal({
 
   useEffect(() => {
     let modalOverlayElement: HTMLElement | null = null;
+
     const clickOutsideHandler = (event: MouseEvent) => {
       const target = event.target;
       if (
@@ -80,6 +77,7 @@ export default function ExcalidrawModal({
         onDelete();
       }
     };
+
     if (excaliDrawModelRef.current !== null) {
       modalOverlayElement = excaliDrawModelRef.current?.parentElement;
       if (modalOverlayElement !== null) {
@@ -94,6 +92,24 @@ export default function ExcalidrawModal({
     };
   }, [closeOnClickOutside, onDelete]);
 
+  useLayoutEffect(() => {
+    const currentModalRef = excaliDrawModelRef.current;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      onDelete();
+    };
+
+    if (currentModalRef !== null) {
+      currentModalRef.addEventListener('keydown', onKeyDown);
+    }
+
+    return () => {
+      if (currentModalRef !== null) {
+        currentModalRef.removeEventListener('keydown', onKeyDown);
+      }
+    };
+  }, [elements, onDelete]);
+
   const save = () => {
     if (elements.filter((el) => !el.isDeleted).length > 0) {
       onSave(elements);
@@ -101,7 +117,6 @@ export default function ExcalidrawModal({
       // delete node if the scene is clear
       onDelete();
     }
-    onHide();
   };
 
   const discard = () => {
@@ -127,7 +142,7 @@ export default function ExcalidrawModal({
           <Button
             onClick={() => {
               setDiscardModalOpen(false);
-              onHide();
+              onDelete();
             }}>
             Discard
           </Button>{' '}

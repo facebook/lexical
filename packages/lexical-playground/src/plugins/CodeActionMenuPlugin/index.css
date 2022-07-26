@@ -6,6 +6,7 @@
   display: flex;
   align-items: center;
   flex-direction: row;
+  user-select: none;
 }
 
 .code-action-menu-container .code-highlight-language {

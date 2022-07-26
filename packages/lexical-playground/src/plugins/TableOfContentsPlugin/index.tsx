@@ -57,34 +57,15 @@ function TableOfContentsList({
 
   useEffect(() => {
     function scrollCallback() {
-      if (tableOfContents.length !== 0) {
+      if (
+        tableOfContents.length !== 0 &&
+        selectedIndex.current < tableOfContents.length - 1
+      ) {
         let currentHeading = editor.getElementByKey(
           tableOfContents[selectedIndex.current][0],
         );
         if (currentHeading !== null) {
-          if (isHeadingAboveViewport(currentHeading)) {
-            //On natural scroll, user is scrolling down
-            while (
-              currentHeading !== null &&
-              isHeadingAboveViewport(currentHeading) &&
-              selectedIndex.current < tableOfContents.length - 1
-            ) {
-              const nextHeading = editor.getElementByKey(
-                tableOfContents[++selectedIndex.current][0],
-              );
-              if (
-                nextHeading !== null &&
-                isHeadingBelowTheTopOfThePage(nextHeading)
-              ) {
-                break;
-              } else {
-                const nextHeadingKey =
-                  tableOfContents[selectedIndex.current][0];
-                setSelectedKey(nextHeadingKey);
-                currentHeading = nextHeading;
-              }
-            }
-          } else if (isHeadingBelowTheTopOfThePage(currentHeading)) {
+          if (isHeadingBelowTheTopOfThePage(currentHeading)) {
             //On natural scroll, user is scrolling up
             while (
               currentHeading !== null &&
@@ -92,23 +73,44 @@ function TableOfContentsList({
               selectedIndex.current > 0
             ) {
               const prevHeading = editor.getElementByKey(
-                tableOfContents[--selectedIndex.current][0],
+                tableOfContents[selectedIndex.current - 1][0],
               );
-              const prevHeadingKey = tableOfContents[selectedIndex.current][0];
-              setSelectedKey(prevHeadingKey);
               if (
                 prevHeading !== null &&
-                isHeadingBelowTheTopOfThePage(currentHeading) &&
                 (isHeadingAboveViewport(prevHeading) ||
-                  isHeadingAtTheTopOfThePage(prevHeading))
+                  isHeadingBelowTheTopOfThePage(prevHeading))
               ) {
-                break;
-              } else {
-                currentHeading = prevHeading;
+                selectedIndex.current--;
               }
+              currentHeading = prevHeading;
             }
+            const prevHeadingKey = tableOfContents[selectedIndex.current][0];
+            setSelectedKey(prevHeadingKey);
+          } else if (isHeadingAboveViewport(currentHeading)) {
+            //On natural scroll, user is scrolling down
+            while (
+              currentHeading !== null &&
+              isHeadingAboveViewport(currentHeading) &&
+              selectedIndex.current < tableOfContents.length - 1
+            ) {
+              const nextHeading = editor.getElementByKey(
+                tableOfContents[selectedIndex.current + 1][0],
+              );
+              if (
+                nextHeading !== null &&
+                (isHeadingAtTheTopOfThePage(nextHeading) ||
+                  isHeadingAboveViewport(nextHeading))
+              ) {
+                selectedIndex.current++;
+              }
+              currentHeading = nextHeading;
+            }
+            const nextHeadingKey = tableOfContents[selectedIndex.current][0];
+            setSelectedKey(nextHeadingKey);
           }
         }
+      } else {
+        selectedIndex.current = 0;
       }
     }
     let timerId: ReturnType<typeof setTimeout>;
@@ -127,7 +129,7 @@ function TableOfContentsList({
   }, [tableOfContents, editor]);
 
   return (
-    <ul className="table-of-contents">
+    <ul className="remove-ul-style">
       {tableOfContents.map(([key, text, tag], index) => (
         <div
           className={selectedKey === key ? 'selectedHeading' : 'heading'}

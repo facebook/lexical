@@ -417,6 +417,7 @@ function onPasteForRichText(
       clipboardData != null &&
       ($isRangeSelection(selection) || $isGridSelection(selection))
     ) {
+      editor._updateTags.add('paste');
       $insertDataTransferForRichText(clipboardData, selection, editor);
     }
   });

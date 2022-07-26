@@ -98,6 +98,7 @@ function onPasteForPlainText(
       event instanceof InputEvent ? null : event.clipboardData;
 
     if (clipboardData != null && $isRangeSelection(selection)) {
+      editor._updateTags.add('paste');
       $insertDataTransferForPlainText(clipboardData, selection);
     }
   });

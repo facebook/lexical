@@ -28,6 +28,7 @@ import {
 } from 'lexical';
 import {$createRangeSelection, $setSelection} from 'lexical/src';
 import {
+  $assertRangeSelection,
   $createTestDecoratorNode,
   $createTestElementNode,
   createTestEditor,
@@ -1567,48 +1568,37 @@ describe('LexicalSelection tests', () => {
     });
   });
 
-  describe('Testing that $getStyleObjectFromRawCSS handles unformatted css text ', () => {
+  describe('Selection correctly resolves to a sibling ElementNode when a selected node child is removed', () => {
     test('', async () => {
-      const testEditor = createTestEditor();
-      const element = document.createElement('div');
-      testEditor.setRootElement(element);
+      await ReactTestUtils.act(async () => {
+        let paragraphNodeKey;
+        await editor.update(() => {
+          const root = $getRoot();
 
-      await testEditor.update(() => {
-        const root = $getRoot();
-        const paragraph = $createParagraphNode();
-        const textNode = $createTextNode('Hello, World!');
-        textNode.setStyle('   color    :   red   ;top     : 50px');
-        $addNodeStyle(textNode);
-        paragraph.append(textNode);
-        root.append(paragraph);
+          const paragraphNode = $createParagraphNode();
+          paragraphNodeKey = paragraphNode.__key;
+          const listNode = $createListNode('number');
+          const listItemNode1 = $createListItemNode();
+          const textNode1 = $createTextNode('foo');
+          const listItemNode2 = $createListItemNode();
+          const listNode2 = $createListNode('number');
+          const listItemNode2x1 = $createListItemNode();
 
-        const selection = $createRangeSelection();
-        $setSelection(selection);
-        selection.insertParagraph();
-        setAnchorPoint({
-          key: textNode.getKey(),
-          offset: 0,
-          type: 'text',
+          listNode.append(listItemNode1, listItemNode2);
+          listItemNode1.append(textNode1);
+          listItemNode2.append(listNode2);
+          listNode2.append(listItemNode2x1);
+          root.append(paragraphNode, listNode);
+
+          listItemNode2.select();
+
+          listNode.remove();
         });
-
-        setFocusPoint({
-          key: textNode.getKey(),
-          offset: 10,
-          type: 'text',
+        await editor.getEditorState().read(() => {
+          const selection = $assertRangeSelection($getSelection());
+          expect(selection.anchor.key).toBe(paragraphNodeKey);
+          expect(selection.focus.key).toBe(paragraphNodeKey);
         });
-
-        const cssColorValue = $getSelectionStyleValueForProperty(
-          selection,
-          'color',
-          '',
-        );
-        expect(cssColorValue).toBe('red');
-        const cssTopValue = $getSelectionStyleValueForProperty(
-          selection,
-          'top',
-          '',
-        );
-        expect(cssTopValue).toBe('50px');
       });
     });
   });
@@ -2015,6 +2005,52 @@ describe('LexicalSelection tests', () => {
           expect(selection.focus.key).toBe(key);
           expect(selection.focus.offset).toBe(offset);
         });
+      });
+    });
+  });
+
+  describe('Testing that $getStyleObjectFromRawCSS handles unformatted css text ', () => {
+    test('', async () => {
+      const testEditor = createTestEditor();
+      const element = document.createElement('div');
+      testEditor.setRootElement(element);
+
+      await testEditor.update(() => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const textNode = $createTextNode('Hello, World!');
+        textNode.setStyle('   color    :   red   ;top     : 50px');
+        $addNodeStyle(textNode);
+        paragraph.append(textNode);
+        root.append(paragraph);
+
+        const selection = $createRangeSelection();
+        $setSelection(selection);
+        selection.insertParagraph();
+        setAnchorPoint({
+          key: textNode.getKey(),
+          offset: 0,
+          type: 'text',
+        });
+
+        setFocusPoint({
+          key: textNode.getKey(),
+          offset: 10,
+          type: 'text',
+        });
+
+        const cssColorValue = $getSelectionStyleValueForProperty(
+          selection,
+          'color',
+          '',
+        );
+        expect(cssColorValue).toBe('red');
+        const cssTopValue = $getSelectionStyleValueForProperty(
+          selection,
+          'top',
+          '',
+        );
+        expect(cssTopValue).toBe('50px');
       });
     });
   });

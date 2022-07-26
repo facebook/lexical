@@ -10,6 +10,7 @@ import type {
   EditorState,
   EditorThemeClasses,
   LexicalEditor,
+  RangeSelection,
   SerializedElementNode,
   SerializedLexicalNode,
   SerializedTextNode,
@@ -24,7 +25,13 @@ import {OverflowNode} from '@lexical/overflow';
 import {LexicalComposer} from '@lexical/react/src/LexicalComposer';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
-import {createEditor, DecoratorNode, ElementNode, TextNode} from 'lexical';
+import {
+  $isRangeSelection,
+  createEditor,
+  DecoratorNode,
+  ElementNode,
+  TextNode,
+} from 'lexical';
 import * as React from 'react';
 import {createRef} from 'react';
 import {createRoot} from 'react-dom/client';
@@ -400,4 +407,11 @@ export function createTestEditor(
     nodes: DEFAULT_NODES.concat(customNodes),
   });
   return editor;
+}
+
+export function $assertRangeSelection(selection): RangeSelection {
+  if (!$isRangeSelection(selection)) {
+    throw new Error(`Expected RangeSelection, got ${selection}`);
+  }
+  return selection;
 }

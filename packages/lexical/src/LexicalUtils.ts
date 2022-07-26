@@ -1176,3 +1176,37 @@ export function $addUpdateTag(tag: string): void {
   const editor = getActiveEditor();
   editor._updateTags.add(tag);
 }
+
+export function $maybeMoveChildrenSelectionToParent(
+  parentNode: LexicalNode,
+  offset = 0,
+): RangeSelection | NodeSelection | GridSelection | null {
+  if (offset !== 0) {
+    invariant(false, 'TODO');
+  }
+  const selection = $getSelection();
+  if (!$isRangeSelection(selection) || !$isElementNode(parentNode)) {
+    return selection;
+  }
+  const {anchor, focus} = selection;
+  const anchorNode = anchor.getNode();
+  const focusNode = focus.getNode();
+  if ($hasAncestor(anchorNode, parentNode)) {
+    anchor.set(parentNode.__key, 0, 'element');
+  }
+  if ($hasAncestor(focusNode, parentNode)) {
+    focus.set(parentNode.__key, 0, 'element');
+  }
+  return selection;
+}
+
+function $hasAncestor(child: LexicalNode, targetNode: LexicalNode): boolean {
+  let parent = child.getParent();
+  while (parent !== null) {
+    if (parent.is(targetNode)) {
+      return true;
+    }
+    parent = parent.getParent();
+  }
+  return false;
+}

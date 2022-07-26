@@ -29,6 +29,7 @@ import {
 import {
   $getCompositionKey,
   $getNodeByKey,
+  $maybeMoveChildrenSelectionToParent,
   $setCompositionKey,
   $setNodeKey,
   internalMarkNodeAsDirty,
@@ -54,7 +55,7 @@ export function removeNode(
   if (parent === null) {
     return;
   }
-  const selection = $getSelection();
+  const selection = $maybeMoveChildrenSelectionToParent(nodeToRemove);
   let selectionMoved = false;
   if ($isRangeSelection(selection) && restoreSelection) {
     const anchor = selection.anchor;

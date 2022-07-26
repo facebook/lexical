@@ -17,7 +17,9 @@ function TreeNode({
   __text,
   __type,
   children,
+  deHighlightDOMNode,
   depth,
+  highlightDOMNode,
   lexicalKey,
 }: DevToolsNode): JSX.Element {
   const [isExpanded, setIsExpanded] = useState(true);
@@ -29,10 +31,12 @@ function TreeNode({
 
   const handleMouseEnter: React.MouseEventHandler = (event) => {
     setIsHovered(true);
+    highlightDOMNode(lexicalKey);
   };
 
   const handleMouseLeave: React.MouseEventHandler = (event) => {
     setIsHovered(false);
+    deHighlightDOMNode(lexicalKey);
   };
 
   const nodeString = ` (${lexicalKey}) ${__type} ${

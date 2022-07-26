@@ -15,6 +15,8 @@ export interface DevToolsNode {
   __text?: string;
   __type: string;
   children: Array<DevToolsNode>;
+  deHighlightDOMNode: (lexicalKey: string) => void;
   depth: number;
+  highlightDOMNode: (lexicalKey: string) => void;
   lexicalKey: string;
 }

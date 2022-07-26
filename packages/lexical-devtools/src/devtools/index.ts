@@ -16,6 +16,26 @@ chrome.devtools.panels.create(
   },
 );
 
+// const port = chrome.runtime.connect();
+
+// port.postMessage({
+//   name: 'init',
+//   tabId: chrome.devtools.inspectedWindow.tabId,
+//   type: 'FROM_DEVTOOLS',
+// });
+
+chrome.runtime.onConnect.addListener((port) => {
+  port.onMessage.addListener((message) => {
+    if (message.name === 'highlight') {
+      // console.log(`highlight: ${message.lexicalKey}`);
+    }
+
+    if (message.name === 'dehighlight') {
+      // console.log(`dehighlight: ${message.lexicalKey}`);
+    }
+  });
+});
+
 function handleShown() {
   // Use devtools.inspectedWindow.eval() to get editorState updates. For more info on security concerns:
   //   https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Content_scripts

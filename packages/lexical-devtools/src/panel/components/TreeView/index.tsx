@@ -13,9 +13,13 @@ import * as React from 'react';
 import TreeNode from '../TreeNode';
 
 function TreeView({
+  deHighlightDOMNode,
+  highlightDOMNode,
   viewClassName,
   nodeMap,
 }: {
+  deHighlightDOMNode: (lexicalKey: string) => void;
+  highlightDOMNode: (lexicalKey: string) => void;
   viewClassName: string;
   nodeMap: DevToolsTree;
 }): JSX.Element {
@@ -38,7 +42,9 @@ function TreeView({
       ...node,
       __type: node.__type,
       children,
+      deHighlightDOMNode,
       depth,
+      highlightDOMNode,
       lexicalKey: node.__key,
     };
   };

@@ -72,8 +72,12 @@ export const CODE_LANGUAGE_MAP: Record<string, string> = {
   text: 'plain',
 };
 
+export function normalizeCodeLang(lang: string) {
+  return CODE_LANGUAGE_MAP[lang] || lang;
+}
+
 export function getLanguageFriendlyName(lang: string) {
-  const _lang = CODE_LANGUAGE_MAP[lang] || lang;
+  const _lang = normalizeCodeLang(lang);
   return CODE_LANGUAGE_FRIENDLY_NAME_MAP[_lang] || _lang;
 }
 

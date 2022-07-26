@@ -8,17 +8,21 @@
 
 import './index.css';
 
-import {$isCodeNode, CodeNode, getLanguageFriendlyName} from '@lexical/code';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
-  $getNearestNodeFromDOMNode,
-  $getSelection,
-  $setSelection,
-} from 'lexical';
-import {debounce} from 'lodash-es';
-import {useEffect, useMemo, useRef, useState} from 'react';
+  $isCodeNode,
+  CodeNode,
+  getLanguageFriendlyName,
+  normalizeCodeLang,
+} from '@lexical/code';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {$getNearestNodeFromDOMNode} from 'lexical';
+import {useEffect, useRef, useState} from 'react';
 import * as React from 'react';
 import {createPortal} from 'react-dom';
+
+import {CopyButton} from './components/CopyButton';
+import {canBePrettier, PrettierButton} from './components/PrettierButton';
+import {useDebounce} from './utils';
 
 const CODE_PADDING = 8;
 
@@ -34,7 +38,6 @@ function CodeActionMenuContainer(): JSX.Element {
   const [isShown, setShown] = useState<boolean>(false);
   const [shouldListenMouseMove, setShouldListenMouseMove] =
     useState<boolean>(false);
-  const [isCopyCompleted, setCopyCompleted] = useState<boolean>(false);
   const [position, setPosition] = useState<Position>({
     right: '0',
     top: '0',
@@ -42,9 +45,9 @@ function CodeActionMenuContainer(): JSX.Element {
   const codeSetRef = useRef<Set<string>>(new Set());
   const codeDOMNodeRef = useRef<HTMLElement | null>(null);
 
-  const removeSuccessIcon = useDebounce(() => {
-    setCopyCompleted(false);
-  }, 1000);
+  function getCodeDOMNode(): HTMLElement | null {
+    return codeDOMNodeRef.current;
+  }
 
   const debouncedOnMouseMove = useDebounce(
     (event: MouseEvent) => {
@@ -123,32 +126,7 @@ function CodeActionMenuContainer(): JSX.Element {
       }
     });
   });
-
-  async function handleClick(): Promise<void> {
-    const codeDOMNode = codeDOMNodeRef.current;
-    if (!codeDOMNode) {
-      return;
-    }
-
-    editor.update(async () => {
-      const codeNode = $getNearestNodeFromDOMNode(codeDOMNode);
-
-      if ($isCodeNode(codeNode)) {
-        const text = codeNode.getTextContent();
-        const selection = $getSelection();
-        $setSelection(selection);
-
-        try {
-          await navigator.clipboard.writeText(text);
-          setCopyCompleted(true);
-          removeSuccessIcon();
-        } catch (err) {
-          console.error('Failed to copy: ', err);
-        }
-      }
-    });
-  }
-
+  const normalizedLang = normalizeCodeLang(lang);
   const codeFriendlyName = getLanguageFriendlyName(lang);
 
   return (
@@ -156,39 +134,17 @@ function CodeActionMenuContainer(): JSX.Element {
       {isShown ? (
         <div className="code-action-menu-container" style={{...position}}>
           <div className="code-highlight-language">{codeFriendlyName}</div>
-          <button className="menu-item" onClick={handleClick} aria-label="copy">
-            {isCopyCompleted ? (
-              <i className="format success" />
-            ) : (
-              <i className="format copy" />
-            )}
-          </button>
+          <CopyButton editor={editor} getCodeDOMNode={getCodeDOMNode} />
+          {canBePrettier(normalizedLang) ? (
+            <PrettierButton
+              editor={editor}
+              getCodeDOMNode={getCodeDOMNode}
+              lang={normalizedLang}
+            />
+          ) : null}
         </div>
       ) : null}
     </>
-  );
-}
-
-function useDebounce<T extends (...args: never[]) => void>(
-  fn: T,
-  ms: number,
-  maxWait?: number,
-) {
-  const funcRef = useRef<T | null>(null);
-  funcRef.current = fn;
-
-  return useMemo(
-    () =>
-      debounce(
-        (...args: Parameters<T>) => {
-          if (funcRef.current) {
-            funcRef.current(...args);
-          }
-        },
-        ms,
-        {maxWait},
-      ),
-    [ms, maxWait],
   );
 }
 

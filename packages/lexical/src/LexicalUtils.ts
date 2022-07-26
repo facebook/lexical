@@ -1191,16 +1191,16 @@ export function $maybeMoveChildrenSelectionToParent(
   const {anchor, focus} = selection;
   const anchorNode = anchor.getNode();
   const focusNode = focus.getNode();
-  if ($hasParent(anchorNode, parentNode)) {
+  if ($hasAncestor(anchorNode, parentNode)) {
     anchor.set(parentNode.__key, 0, 'element');
   }
-  if ($hasParent(focusNode, parentNode)) {
+  if ($hasAncestor(focusNode, parentNode)) {
     focus.set(parentNode.__key, 0, 'element');
   }
   return selection;
 }
 
-function $hasParent(child: LexicalNode, targetNode: LexicalNode): boolean {
+function $hasAncestor(child: LexicalNode, targetNode: LexicalNode): boolean {
   let parent = child.getParent();
   while (parent !== null) {
     if (parent.is(targetNode)) {

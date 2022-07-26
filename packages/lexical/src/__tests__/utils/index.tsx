@@ -410,10 +410,8 @@ export function createTestEditor(
 }
 
 export function $assertRangeSelection(selection): RangeSelection {
-  expect($isRangeSelection(selection)).toBeTruthy();
-  if ($isRangeSelection(selection)) {
-    return selection;
-  } else {
-    throw new Error('??');
+  if (!$isRangeSelection(selection)) {
+    throw new Error(`Expected RangeSelection, got ${selection}`);
   }
+  return selection;
 }

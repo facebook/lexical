@@ -29,7 +29,7 @@ test.describe('Table of Contents', () => {
     await page.keyboard.type('\n');
     await selectFromFormatDropdown(page, '.h1');
     await page.keyboard.type('World!');
-    const tableOfContents = await getElement(page, 'ul .table-of-contents');
+    const tableOfContents = await getElement(page, 'ul.table-of-contents');
     await assertHTML(
       tableOfContents,
       html`
@@ -61,7 +61,7 @@ test.describe('Table of Contents', () => {
     });
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     await sleep(50);
-    const tableOfContents = await getElement(page, 'ul .table-of-contents');
+    const tableOfContents = await getElement(page, 'ul.table-of-contents');
     await assertHTML(
       tableOfContents,
       html`

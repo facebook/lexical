@@ -405,7 +405,7 @@ export async function getElement(
 
 export async function getEditorElement(page, parentSelector = '.editor-shell') {
   const selector = `${parentSelector} div[contenteditable="true"]`;
-  return getElement(selector);
+  return getElement(page, selector);
 }
 
 export async function waitForSelector(page, selector, options) {

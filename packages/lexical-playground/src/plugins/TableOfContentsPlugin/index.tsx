@@ -150,7 +150,7 @@ function TableOfContentsList({
                 onClick={() => scrollToNode(key, index)}
                 role="button"
                 tabIndex={0}>
-                {text}
+                {('' + text).length > 27 ? text.substring(0, 27) + '...' : text}
               </div>
             );
           } else {

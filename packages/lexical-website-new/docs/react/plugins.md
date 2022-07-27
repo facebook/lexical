@@ -135,3 +135,19 @@ Adds `clearEditor` command support to clear editor's content
 ### `LexicalMarkdownShortcutPlugin`
 
 Adds markdown shortcut support: headings, lists, code blocks, quotes, links and inline styles (bold, italic, strikethrough)
+
+### `TableOfContentsPlugin`
+This plugin allows you to navigate to certain sections of the page by clicking on headings that exist inside these sections. Once you load the plugin, it automatically collects and injects the headings of the page inside the table of contents, then it listens to any deletions or modifications to those headings and updates the table of contents. Additionally, it's able to track any newly added headings and inserts them in the table of contents once they are created. This plugin also supports lazy loading - so you can defer adding the plugin until when the user needs it.
+```jsx
+<TableOfContentsPlugin />
+```
+You can alternatively leverage the use of `LexicalTableOfContents__EXPERIMENTAL` API, which provides you with all the functioanlity that `TableOfContentsPlugin` provides, but without any styling. 
+In order to use `LexicalTableOfContents__EXPERIMENTAL`, you need to pass a callback function in its children. This callback function gives you access to the up-to-date data of the table of contents. You can access this data through a single parameter for the callback which comes in the form of an array of arrays `[[headingKey, headingTextContent, headingTag], [], [], ...]`
+`headingKey`: Unique key that identifies the heading.`headingTextContent`: A string of the exact text of the heading.`headingTag`: A string that reads either 'h1', 'h2', or 'h3'.
+```jsx
+<LexicalTableOfContents__EXPERIMENTAL> 
+  {(tableOfContentsArray) => {    
+    return <MyCustomTableOfContetsPlugin tableOfContents={tableOfContentsArray} />;
+  }}
+</LexicalTableOfContents__EXPERIMENTAL>
+```

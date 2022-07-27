@@ -68,7 +68,7 @@
   border-radius: 50%;
   height: 8px;
   width: 8px;
-  margin-bottom: 10px;
+  margin-bottom: 13px;
 }
 
 .bar,
@@ -82,7 +82,7 @@
 }
 .circles {
   z-index: 10;
-  margin-top: 15px;
+  margin-top: 13px;
 }
 
 .bar {
@@ -100,6 +100,6 @@
   height: 4px;
   width: 4px;
   display: flex;
-  margin-bottom: 8px;
+  margin-bottom: 13px;
   justify-content: space-around;
 }

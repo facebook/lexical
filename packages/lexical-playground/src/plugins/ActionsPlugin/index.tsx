@@ -42,7 +42,7 @@ export default function ActionsPlugin({
   isRichText: boolean;
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
-  const [isReadOnly, setIsReadyOnly] = useState(() => editor.isReadOnly());
+  const [isReadOnly, setIsReadOnly] = useState(() => editor.isReadOnly());
   const [isSpeechToText, setIsSpeechToText] = useState(false);
   const [connected, setConnected] = useState(false);
   const [isEditorEmpty, setIsEditorEmpty] = useState(true);
@@ -53,7 +53,7 @@ export default function ActionsPlugin({
   useEffect(() => {
     return mergeRegister(
       editor.registerReadOnlyListener((readOnly) => {
-        setIsReadyOnly(readOnly);
+        setIsReadOnly(readOnly);
       }),
       editor.registerCommand<boolean>(
         CONNECTED_COMMAND,

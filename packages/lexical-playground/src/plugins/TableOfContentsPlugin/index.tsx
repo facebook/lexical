@@ -129,21 +129,54 @@ function TableOfContentsList({
   }, [tableOfContents, editor]);
 
   return (
-    <ul className="remove-ul-style">
-      {tableOfContents.map(([key, text, tag], index) => (
-        <div
-          className={selectedKey === key ? 'selectedHeading' : 'heading'}
-          key={key}
-          onClick={() => scrollToNode(key, index)}
-          role="button"
-          tabIndex={0}>
-          <div className={selectedKey === key ? 'circle' : 'bar'} />
-          <li className={indent(tag)}>
-            {('' + text).length > 27 ? text.substring(0, 27) + '...' : text}
-          </li>
+    <div className="table-of-contents">
+      <div className="barAndCircles">
+        <div className="bar" />
+        <div className="circles">
+          {tableOfContents.map(([key]) => {
+            return (
+              <div className={selectedKey === key ? 'circle' : 'holder'} />
+            );
+          })}
         </div>
-      ))}
-    </ul>
+      </div>
+      <ul className="headings">
+        {tableOfContents.map(([key, text, tag], index) => {
+          if (index === 0) {
+            return (
+              <div
+                className="firstHeading"
+                key={key}
+                onClick={() => scrollToNode(key, index)}
+                role="button"
+                tabIndex={0}>
+                {text}
+              </div>
+            );
+          } else {
+            return (
+              <div
+                key={key}
+                onClick={() => scrollToNode(key, index)}
+                role="button"
+                className={indent(tag)}
+                tabIndex={0}>
+                <li
+                  className={
+                    selectedKey === key
+                      ? 'selectedHeading normalHeading'
+                      : 'normalHeading'
+                  }>
+                  {('' + text).length > 27
+                    ? text.substring(0, 27) + '...'
+                    : text}
+                </li>
+              </div>
+            );
+          }
+        })}
+      </ul>
+    </div>
   );
 }
 

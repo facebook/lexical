@@ -84,6 +84,7 @@ export default function Editor(): JSX.Element {
     : 'Enter some plain text...';
   const placeholder = <Placeholder>{text}</Placeholder>;
   const scrollRef = useRef(null);
+  const editorRef = useRef<HTMLDivElement>(null);
 
   return (
     <>
@@ -120,13 +121,13 @@ export default function Editor(): JSX.Element {
               <HistoryPlugin externalHistoryState={historyState} />
             )}
             <RichTextPlugin
-              contentEditable={<ContentEditable />}
+              contentEditable={<ContentEditable editorRef={editorRef} />}
               placeholder={placeholder}
               // TODO Collab support until 0.4
               initialEditorState={isCollab ? null : undefined}
             />
             <MarkdownShortcutPlugin />
-            <CodeActionMenuPlugin />
+            <CodeActionMenuPlugin editorRef={editorRef} />
             <CodeHighlightPlugin />
             <ListPlugin />
             <CheckListPlugin />

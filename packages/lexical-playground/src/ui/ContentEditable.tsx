@@ -10,15 +10,18 @@ import './ContentEditable.css';
 
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import * as React from 'react';
+import {MutableRefObject} from 'react';
 
 export default function LexicalContentEditable({
   className,
+  editorRef,
 }: {
   className?: string;
+  editorRef?: MutableRefObject<HTMLDivElement | null>;
 }): JSX.Element {
   return (
     <div className="editor-scroller">
-      <div className="editor">
+      <div className="editor" ref={editorRef}>
         <ContentEditable className={className || 'ContentEditable__root'} />
       </div>
     </div>

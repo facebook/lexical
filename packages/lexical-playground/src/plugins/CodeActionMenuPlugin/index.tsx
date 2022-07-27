@@ -16,7 +16,7 @@ import {
 } from '@lexical/code';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$getNearestNodeFromDOMNode} from 'lexical';
-import {useEffect, useRef, useState} from 'react';
+import {MutableRefObject, useEffect, useRef, useState} from 'react';
 import * as React from 'react';
 import {createPortal} from 'react-dom';
 
@@ -31,7 +31,11 @@ interface Position {
   right: string;
 }
 
-function CodeActionMenuContainer(): JSX.Element {
+function CodeActionMenuContainer({
+  editorRef,
+}: {
+  editorRef: MutableRefObject<HTMLDivElement>;
+}): JSX.Element {
   const [editor] = useLexicalComposerContext();
 
   const [lang, setLang] = useState('');
@@ -77,14 +81,15 @@ function CodeActionMenuContainer(): JSX.Element {
       });
 
       if (codeNode) {
+        const editorElem = editorRef.current;
+        const {y: editorElemY, right: editorElemRight} =
+          editorElem.getBoundingClientRect();
         const {y, right} = codeDOMNode.getBoundingClientRect();
         setLang(_lang);
         setShown(true);
         setPosition({
-          right: `${
-            window.innerWidth - right + CODE_PADDING - window.pageXOffset
-          }px`,
-          top: `${y + window.pageYOffset}px`,
+          right: `${editorElemRight - right + CODE_PADDING}px`,
+          top: `${y - editorElemY}px`,
         });
       }
     },
@@ -169,6 +174,19 @@ function getMouseInfo(event: MouseEvent): {
   }
 }
 
-export default function CodeActionMenuPlugin(): React.ReactPortal {
-  return createPortal(<CodeActionMenuContainer />, document.body);
+export default function CodeActionMenuPlugin({
+  editorRef,
+}: {
+  editorRef: MutableRefObject<HTMLDivElement | null>;
+}): React.ReactPortal | null {
+  if (editorRef.current === null) {
+    return null;
+  }
+
+  return createPortal(
+    <CodeActionMenuContainer
+      editorRef={editorRef as MutableRefObject<HTMLDivElement>}
+    />,
+    editorRef.current,
+  );
 }

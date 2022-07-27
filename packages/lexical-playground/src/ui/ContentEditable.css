@@ -19,6 +19,11 @@
   resize: vertical;
 }
 
+.editor {
+  height: 100%;
+  position: relative;
+}
+
 .ContentEditable__root {
   border: 0;
   font-size: 15px;

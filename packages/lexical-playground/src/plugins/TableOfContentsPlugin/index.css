@@ -64,13 +64,6 @@
   padding: 0;
 }
 
-.holder {
-  border-radius: 50%;
-  height: 8px;
-  width: 8px;
-  margin-bottom: 13px;
-}
-
 .bar,
 .circles {
   height: 100%;
@@ -82,13 +75,18 @@
 }
 .circles {
   z-index: 10;
-  margin-top: 13px;
+  text-align: justify;
+  -ms-text-justify: distribute-all-lines;
+  text-justify: distribute-all-lines;
+  /* just for demo */
+  min-width: 12px;
 }
 
 .bar {
   background-color: #ccd0d5;
   margin: 0 5px;
   width: 2px;
+  height: 100%;
   border-radius: 1px;
 }
 
@@ -100,6 +98,11 @@
   height: 4px;
   width: 4px;
   display: flex;
-  margin-bottom: 13px;
   justify-content: space-around;
+}
+
+.holder {
+  border-radius: 50%;
+  height: 8px;
+  width: 8px;
 }

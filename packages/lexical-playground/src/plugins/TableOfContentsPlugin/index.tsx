@@ -133,10 +133,14 @@ function TableOfContentsList({
       <div className="barAndCircles">
         <div className="bar" />
         <div className="circles">
-          {tableOfContents.map(([key]) => {
-            return (
-              <div className={selectedKey === key ? 'circle' : 'holder'} />
-            );
+          {tableOfContents.map(([key], index) => {
+            if (index === 0) {
+              return <div className="holder" />;
+            } else {
+              return (
+                <div className={selectedKey === key ? 'circle' : 'holder'} />
+              );
+            }
           })}
         </div>
       </div>
@@ -144,13 +148,18 @@ function TableOfContentsList({
         {tableOfContents.map(([key, text, tag], index) => {
           if (index === 0) {
             return (
-              <div
-                className="firstHeading"
-                key={key}
-                onClick={() => scrollToNode(key, index)}
-                role="button"
-                tabIndex={0}>
-                {('' + text).length > 27 ? text.substring(0, 27) + '...' : text}
+              <div>
+                <div
+                  className="firstHeading"
+                  key={key}
+                  onClick={() => scrollToNode(key, index)}
+                  role="button"
+                  tabIndex={0}>
+                  {('' + text).length > 27
+                    ? text.substring(0, 27) + '...'
+                    : text}
+                </div>
+                {/* <br /> */}
               </div>
             );
           } else {

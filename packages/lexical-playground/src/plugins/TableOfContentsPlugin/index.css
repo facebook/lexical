@@ -15,7 +15,8 @@
   background-color: #3578e5;
   height: 4px;
   width: 4px;
-  left: -3px;
+  left: 0px;
+  margin-top: 5px;
   background-color: #3578e5;
   border: solid 4px white;
   border-radius: 50%;
@@ -100,17 +101,6 @@
   width: 2px;
   height: 100%;
   border-radius: 1px;
-}
-
-.circle {
-  height: 100%;
-  background-color: #3578e5;
-  border: solid 4px white;
-  border-radius: 50%;
-  height: 4px;
-  width: 4px;
-  display: flex;
-  justify-content: space-around;
 }
 
 .holder {

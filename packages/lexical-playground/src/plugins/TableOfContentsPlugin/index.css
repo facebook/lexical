@@ -78,6 +78,7 @@
   text-align: justify;
   -ms-text-justify: distribute-all-lines;
   text-justify: distribute-all-lines;
+  margin-top: 45px;
   /* just for demo */
   min-width: 12px;
 }

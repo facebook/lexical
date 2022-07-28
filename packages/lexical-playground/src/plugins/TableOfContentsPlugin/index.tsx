@@ -130,9 +130,6 @@ function TableOfContentsList({
 
   return (
     <div className="table-of-contents">
-      <div className="barAndCircles">
-        <div className="bar" />
-      </div>
       <ul className="headings">
         {tableOfContents.map(([key, text, tag], index) => {
           if (index === 0) {

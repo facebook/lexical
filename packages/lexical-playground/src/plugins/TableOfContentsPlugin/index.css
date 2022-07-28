@@ -12,7 +12,6 @@
 .selectedHeading::before {
   content: ' ';
   position: absolute;
-  background-color: #3578e5;
   height: 4px;
   width: 4px;
   left: 0px;
@@ -38,7 +37,6 @@
   max-height: 290px;
   overflow: scroll;
   padding: 10px;
-  border-radius: 10px;
   overflow-x: hidden;
   display: flex;
   flex-direction: row;
@@ -46,7 +44,6 @@
 }
 
 .toc {
-  border-radius: 4px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -76,35 +73,13 @@
   padding: 0;
 }
 
-.bar,
-.circles {
-  height: 100%;
+.headings::before {
+  content: ' ';
   position: absolute;
-  width: 4px;
-  top: 0;
-  left: 0;
-  margin-right: 8px;
-}
-.circles {
-  z-index: 10;
-  text-align: justify;
-  -ms-text-justify: distribute-all-lines;
-  text-justify: distribute-all-lines;
-  margin-top: 45px;
-  /* just for demo */
-  min-width: 12px;
-}
-
-.bar {
-  background-color: #ccd0d5;
-  margin: 0 5px;
-  width: 2px;
   height: 100%;
-  border-radius: 1px;
-}
-
-.holder {
-  border-radius: 50%;
-  height: 8px;
-  width: 8px;
+  width: 4px;
+  left: 4px;
+  margin-top: 5px;
+  background-color: #ccd0d5;
+  border-radius: 2px;
 }

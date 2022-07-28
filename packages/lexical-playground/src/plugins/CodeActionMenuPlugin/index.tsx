@@ -16,7 +16,7 @@ import {
 } from '@lexical/code';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$getNearestNodeFromDOMNode} from 'lexical';
-import {MutableRefObject, useEffect, useRef, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import * as React from 'react';
 import {createPortal} from 'react-dom';
 
@@ -32,9 +32,9 @@ interface Position {
 }
 
 function CodeActionMenuContainer({
-  editorRef,
+  editorElem,
 }: {
-  editorRef: MutableRefObject<HTMLDivElement>;
+  editorElem: HTMLDivElement;
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
 
@@ -56,7 +56,6 @@ function CodeActionMenuContainer({
   const debouncedOnMouseMove = useDebounce(
     (event: MouseEvent) => {
       const {codeDOMNode, isOutside} = getMouseInfo(event);
-
       if (isOutside) {
         setShown(false);
         return;
@@ -81,7 +80,6 @@ function CodeActionMenuContainer({
       });
 
       if (codeNode) {
-        const editorElem = editorRef.current;
         const {y: editorElemY, right: editorElemRight} =
           editorElem.getBoundingClientRect();
         const {y, right} = codeDOMNode.getBoundingClientRect();
@@ -112,7 +110,7 @@ function CodeActionMenuContainer({
   }, [shouldListenMouseMove, debouncedOnMouseMove]);
 
   editor.registerMutationListener(CodeNode, (mutations) => {
-    editor.update(() => {
+    editor.getEditorState().read(() => {
       for (const [key, type] of mutations) {
         switch (type) {
           case 'created':
@@ -175,18 +173,12 @@ function getMouseInfo(event: MouseEvent): {
 }
 
 export default function CodeActionMenuPlugin({
-  editorRef,
+  editorElem,
 }: {
-  editorRef: MutableRefObject<HTMLDivElement | null>;
+  editorElem: HTMLDivElement;
 }): React.ReactPortal | null {
-  if (editorRef.current === null) {
-    return null;
-  }
-
   return createPortal(
-    <CodeActionMenuContainer
-      editorRef={editorRef as MutableRefObject<HTMLDivElement>}
-    />,
-    editorRef.current,
+    <CodeActionMenuContainer editorElem={editorElem} />,
+    editorElem,
   );
 }

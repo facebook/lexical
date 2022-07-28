@@ -20,7 +20,7 @@ import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
 import * as React from 'react';
-import {useRef} from 'react';
+import {useRef, useState} from 'react';
 
 import {createWebsocketProvider} from './collaboration';
 import {useSettings} from './context/SettingsContext';
@@ -84,7 +84,13 @@ export default function Editor(): JSX.Element {
     : 'Enter some plain text...';
   const placeholder = <Placeholder>{text}</Placeholder>;
   const scrollRef = useRef(null);
-  const editorRef = useRef<HTMLDivElement>(null);
+  const [editorElem, setEditorElem] = useState<HTMLDivElement | null>(null);
+
+  const onRef = (_editorElem: HTMLDivElement) => {
+    if (_editorElem !== null) {
+      setEditorElem(_editorElem);
+    }
+  };
 
   return (
     <>
@@ -121,13 +127,13 @@ export default function Editor(): JSX.Element {
               <HistoryPlugin externalHistoryState={historyState} />
             )}
             <RichTextPlugin
-              contentEditable={<ContentEditable editorRef={editorRef} />}
+              contentEditable={<ContentEditable onRef={onRef} />}
               placeholder={placeholder}
               // TODO Collab support until 0.4
               initialEditorState={isCollab ? null : undefined}
             />
             <MarkdownShortcutPlugin />
-            <CodeActionMenuPlugin editorRef={editorRef} />
+            {editorElem && <CodeActionMenuPlugin editorElem={editorElem} />}
             <CodeHighlightPlugin />
             <ListPlugin />
             <CheckListPlugin />
@@ -163,7 +169,6 @@ export default function Editor(): JSX.Element {
           <CharacterLimitPlugin charset={isCharLimit ? 'UTF-16' : 'UTF-8'} />
         )}
         {isAutocomplete && <AutocompletePlugin />}
-        <ActionsPlugin isRichText={isRichText} />
         <div>{showTableOfContents && <TableOfContentsPlugin />}</div>
         <div className="toc">
           {showTableOfContents && <TableOfContentsPlugin />}

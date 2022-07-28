@@ -132,17 +132,6 @@ function TableOfContentsList({
     <div className="table-of-contents">
       <div className="barAndCircles">
         <div className="bar" />
-        <div className="circles">
-          {tableOfContents.map(([key], index) => {
-            if (index === 0) {
-              return <div className="holder" />;
-            } else {
-              return (
-                <div className={selectedKey === key ? 'circle' : 'holder'} />
-              );
-            }
-          })}
-        </div>
       </div>
       <ul className="headings">
         {tableOfContents.map(([key, text, tag], index) => {

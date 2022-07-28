@@ -253,38 +253,36 @@ export class HeadingNode extends ElementNode {
         conversion: convertHeadingElement,
         priority: 0,
       }),
-      p: (node: Node) => ({
-        conversion: (domNode: Node) => {
-          // domNode is a <p> since we matched it by nodeName
-          const p = domNode as HTMLParagraphElement;
-          const firstChild = p.firstChild;
-          if (firstChild && firstChild.nodeName.toLowerCase() === 'span') {
-            const span = firstChild as HTMLSpanElement;
-            if (span.style.fontSize === '26pt') {
-              return {
-                node: $createHeadingNode('h1'),
-              };
-            }
+      p: (node: Node) => {
+        // domNode is a <p> since we matched it by nodeName
+        const paragraph = node as HTMLParagraphElement;
+        const firstChild = paragraph.firstChild;
+        if (
+          firstChild !== null &&
+          firstChild.nodeName.toLowerCase() === 'span'
+        ) {
+          const span = firstChild as HTMLParagraphElement;
+          if (span.style.fontSize === '26pt') {
+            return {
+              conversion: () => ({node: null}),
+              priority: 3,
+            };
           }
-          return {node: null};
-        },
-        priority: 2,
-      }),
+        }
+        return null;
+      },
       span: () => ({
         conversion: (domNode: Node) => {
           // domNode is a <span> since we matched it by nodeName
-          let node = null;
           const span = domNode as HTMLSpanElement;
-          const parent = domNode.parentNode;
           if (span.style.fontSize === '26pt') {
-            node =
-              parent && parent.nodeName.toLowerCase() === 'p'
-                ? null
-                : $createHeadingNode('h1');
+            return {
+              node: $createHeadingNode('h1'),
+            };
           }
-          return {node};
+          return {node: null};
         },
-        priority: 4,
+        priority: 3,
       }),
     };
   }

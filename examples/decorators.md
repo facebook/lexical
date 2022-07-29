@@ -4,7 +4,7 @@ Decorator node is a way to embed non-text components into the editor. It can be 
 
 Here's an example of how you can create a decorator node for embedding a video:
 
-```js
+```ts
 export class VideoNode extends DecoratorNode {
   __url: string;
 
@@ -36,7 +36,7 @@ export class VideoNode extends DecoratorNode {
     writable.__url = url;
   }
 
-  decorate(editor: LexicalEditor): React$Node {
+  decorate(editor: LexicalEditor): ReactNode {
     return <VideoPlayer url={this.__url} />;
   }
 }
@@ -58,13 +58,13 @@ As any other custom Lexical node, decorator nodes need to be registered _before_
 </LexicalComposer>
 ```
 
-```js
+```ts
 // Create a custom command with a typed payload.
 type CommandPayload = string;
 export const INSERT_VIDEO_COMMAND: LexicalCommand<CommandPayload> =
   createCommand();
 
-function VideoPlugin(): React$Node {
+function VideoPlugin(): ReactNode {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
@@ -98,10 +98,10 @@ function VideoPlugin(): React$Node {
 
 Then assuming we have a some UE insert a video into the editor:
 
-```js
+```ts
 import {INSERT_VIDEO_COMMAND} from 'VideoPlugin';
 
-function ToolbarVideoButton(): React$Node {
+function ToolbarVideoButton(): ReactNode {
   const [editor] = useLexicalComposerContext();
   const insertVideo = url => {
       // Executing command defined in a plugin

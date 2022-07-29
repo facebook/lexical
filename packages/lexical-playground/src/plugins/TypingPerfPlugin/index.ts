@@ -33,7 +33,7 @@ export default function TypingPerfPlugin(): JSX.Element | null {
   const report = useReport();
   useEffect(() => {
     let start = 0;
-    let timerId: NodeJS.Timeout | null;
+    let timerId: number | null;
     let keyPressTimerId: number | null;
     let log: Array<DOMHighResTimeStamp> = [];
     let invalidatingEvent = false;
@@ -61,7 +61,7 @@ export default function TypingPerfPlugin(): JSX.Element | null {
       // inconsistencies between the sequencing of rAF in different browsers.
       keyPressTimerId = window.setTimeout(measureEventEnd, 0);
       // Schedule a timer to report the results.
-      timerId = setTimeout(() => {
+      timerId = window.setTimeout(() => {
         const total = log.reduce((a, b) => a + b, 0);
         const reportedText =
           'Typing Perf: ' + Math.round((total / log.length) * 100) / 100 + 'ms';

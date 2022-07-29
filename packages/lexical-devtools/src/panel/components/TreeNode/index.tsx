@@ -64,10 +64,11 @@ function TreeNode({
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         style={{paddingLeft: leftIndent}}>
+        <span style={{width: '1.2em'}}>&nbsp;</span>
         {children.length > 0 ? (
           <Chevron handleClick={handleChevronClick} isExpanded={isExpanded} />
         ) : (
-          <span style={{width: '1.2em'}}>&nbsp;</span> // <button className="indentation">&#9654;</button>
+          <span style={{width: '1.2em'}}>&nbsp;</span>
         )}
         {nodeString}
       </div>

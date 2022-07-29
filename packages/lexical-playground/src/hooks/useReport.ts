@@ -31,11 +31,11 @@ const getElement = (): HTMLElement => {
   return element;
 };
 
-export default function useReport(): (arg0: string) => NodeJS.Timeout {
-  const timer = useRef<NodeJS.Timeout | null>(null);
+export default function useReport(): (arg0: string) => number {
+  const timer = useRef<number | null>(null);
   const cleanup = useCallback(() => {
     if (timer !== null) {
-      clearTimeout(timer.current as NodeJS.Timeout);
+      clearTimeout(timer.current as number);
     }
 
     if (document.body) {
@@ -52,9 +52,9 @@ export default function useReport(): (arg0: string) => NodeJS.Timeout {
       // eslint-disable-next-line no-console
       console.log(content);
       const element = getElement();
-      clearTimeout(timer.current as NodeJS.Timeout);
+      clearTimeout(timer.current as number);
       element.innerHTML = content;
-      timer.current = setTimeout(cleanup, 1000);
+      timer.current = window.setTimeout(cleanup, 1000);
       return timer.current;
     },
     [cleanup],

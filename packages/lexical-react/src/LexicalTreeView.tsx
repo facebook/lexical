@@ -92,7 +92,7 @@ export function TreeView({
 
   useEffect(() => {
     if (isPlaying) {
-      let timeoutId: NodeJS.Timeout;
+      let timeoutId: number;
 
       const play = () => {
         const currentIndex = playingIndexRef.current;
@@ -105,7 +105,7 @@ export function TreeView({
         const currentTime = timeStampedEditorStates[currentIndex][0];
         const nextTime = timeStampedEditorStates[currentIndex + 1][0];
         const timeDiff = nextTime - currentTime;
-        timeoutId = setTimeout(() => {
+        timeoutId = window.setTimeout(() => {
           playingIndexRef.current++;
           const index = playingIndexRef.current;
           const input = inputRef.current;

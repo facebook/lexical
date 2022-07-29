@@ -18,3 +18,7 @@
   width: 100%;
   white-space: nowrap;
 }
+
+.tree-node-wrapper:first-child {
+  width: 100vw; /* if root TreeNode is collapsed, width must take up viewport for maximum hover styling */
+}

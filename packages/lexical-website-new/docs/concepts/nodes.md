@@ -240,8 +240,8 @@ export function $isColoredNode(node: ?LexicalNode): boolean {
 
 ### Extending `DecoratorNode`
 
-```js
-export class VideoNode extends DecoratorNode<React$Node> {
+```ts
+export class VideoNode extends DecoratorNode<ReactNode> {
   __id: string;
 
   static getType(): string {
@@ -265,7 +265,7 @@ export class VideoNode extends DecoratorNode<React$Node> {
     return false;
   }
 
-  decorate(): React$Node {
+  decorate(): ReactNode {
     return <VideoPlayer videoID={this.__id} />;
   }
 }

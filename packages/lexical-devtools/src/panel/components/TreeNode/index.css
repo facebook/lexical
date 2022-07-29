@@ -15,10 +15,10 @@
 
 .tree-node-wrapper {
   cursor: pointer;
-  width: 100%;
   white-space: nowrap;
+  width: 100%;
 }
 
 .tree-node-wrapper:first-child {
-  width: 100vw; /* if root TreeNode is collapsed, width must take up viewport for maximum hover styling */
+  width: 100vw;
 }

@@ -10,5 +10,5 @@
   -moz-osx-font-smoothing: grayscale;
   font-weight: 400;
   --indentation-size: 1em;
-  inline-size: max-content;
+  width: max-content;
 }

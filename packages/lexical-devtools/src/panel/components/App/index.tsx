@@ -42,7 +42,6 @@ function App(): JSX.Element {
   const deHighlightDOMNode = useCallback(
     (lexicalKey: string) => {
       port.current?.postMessage({
-        lexicalKey,
         name: 'dehighlight',
         tabId: window.chrome.devtools.inspectedWindow.tabId,
         type: 'FROM_APP',

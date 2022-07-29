@@ -257,33 +257,27 @@ export class HeadingNode extends ElementNode {
         // domNode is a <p> since we matched it by nodeName
         const paragraph = node as HTMLParagraphElement;
         const firstChild = paragraph.firstChild;
-        if (
-          firstChild !== null &&
-          firstChild.nodeName.toLowerCase() === 'span'
-        ) {
-          const span = firstChild as HTMLParagraphElement;
-          if (span.style.fontSize === '26pt') {
-            return {
-              conversion: () => ({node: null}),
-              priority: 3,
-            };
-          }
+        if (firstChild !== null && isGoogleDocsTitle(firstChild)) {
+          return {
+            conversion: () => ({node: null}),
+            priority: 3,
+          };
         }
         return null;
       },
-      span: () => ({
-        conversion: (domNode: Node) => {
-          // domNode is a <span> since we matched it by nodeName
-          const span = domNode as HTMLSpanElement;
-          if (span.style.fontSize === '26pt') {
-            return {
-              node: $createHeadingNode('h1'),
-            };
-          }
-          return {node: null};
-        },
-        priority: 3,
-      }),
+      span: (node: Node) => {
+        if (isGoogleDocsTitle(node)) {
+          return {
+            conversion: (domNode: Node) => {
+              return {
+                node: $createHeadingNode('h1'),
+              };
+            },
+            priority: 3,
+          };
+        }
+        return null;
+      },
     };
   }
 
@@ -325,6 +319,13 @@ export class HeadingNode extends ElementNode {
   extractWithChild(): boolean {
     return true;
   }
+}
+
+function isGoogleDocsTitle(domNode: Node): boolean {
+  if (domNode.nodeName.toLowerCase() === 'span') {
+    return (domNode as HTMLSpanElement).style.fontSize === '26pt';
+  }
+  return false;
 }
 
 function convertHeadingElement(domNode: Node): DOMConversionOutput {

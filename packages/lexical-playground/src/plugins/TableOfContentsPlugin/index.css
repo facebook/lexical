@@ -10,12 +10,11 @@
   color: #3578e5;
 }
 .selectedHeading::before {
-  content: ' ';
-  position: absolute;
+  content: '';
+  position: sticky;
+  display: inline-block;
   height: 4px;
   width: 4px;
-  left: 0px;
-  margin-top: 5px;
   background-color: #3578e5;
   border: solid 4px white;
   border-radius: 50%;
@@ -35,7 +34,6 @@
   font-family: 'Lato', sans-serif;
   position: fixed;
   max-height: 290px;
-  overflow: scroll;
   padding: 10px;
   overflow-x: hidden;
   display: flex;
@@ -53,7 +51,6 @@
   position: absolute;
   width: 290px;
   max-height: 290px;
-  overflow: scroll;
   overflow-x: hidden;
   z-index: 2;
   top: 0;
@@ -71,6 +68,8 @@
   margin-top: 0;
   margin-left: 10px;
   padding: 0;
+  overflow: scroll;
+  width: 100%;
 }
 
 .headings::before {

@@ -44,7 +44,7 @@ function TableOfContentsList({
   }
   function isHeadingAtTheTopOfThePage(element: HTMLElement): boolean {
     const elementYPosition = element?.getClientRects()[0].y;
-    return elementYPosition > 0.26 && elementYPosition < 9;
+    return elementYPosition >= 0.26 && elementYPosition <= 9;
   }
   function isHeadingAboveViewport(element: HTMLElement): boolean {
     const elementYPosition = element?.getClientRects()[0].y;
@@ -158,9 +158,9 @@ function TableOfContentsList({
                 tabIndex={0}>
                 <li
                   className={
-                    selectedKey === key
-                      ? 'selectedHeading normalHeading'
-                      : 'normalHeading'
+                    'normalHeading' +
+                    ' ' +
+                    (selectedKey === key ? 'selectedHeading ' : '')
                   }>
                   {('' + text).length > 27
                     ? text.substring(0, 27) + '...'

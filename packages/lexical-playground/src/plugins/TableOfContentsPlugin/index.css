@@ -43,7 +43,7 @@
   justify-content: flex-start;
 }
 
-.toc {
+.table-of-contents-container {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;

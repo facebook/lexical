@@ -159,7 +159,7 @@ export default function Editor(): JSX.Element {
         )}
         {isAutocomplete && <AutocompletePlugin />}
         <ActionsPlugin isRichText={isRichText} />
-        <div className="toc">
+        <div className="table-of-contents-container">
           {showTableOfContents && <TableOfContentsPlugin />}
         </div>
       </div>

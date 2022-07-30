@@ -629,6 +629,9 @@ function $shouldInsertTextAfterOrBeforeTextNode(
   if (node.isSegmented()) {
     return true;
   }
+  if (node.isComposing()) {
+    return false;
+  }
   if (!selection.isCollapsed()) {
     return false;
   }

@@ -489,7 +489,7 @@ export class LexicalEditor {
     // React node decorators for portals
     this._decorators = {};
     this._pendingDecorators = null;
-    // Used to optimize reconcilation
+    // Used to optimize reconciliation
     this._dirtyType = NO_DIRTY_NODES;
     this._cloneNotNeeded = new Set();
     this._dirtyLeaves = new Set();

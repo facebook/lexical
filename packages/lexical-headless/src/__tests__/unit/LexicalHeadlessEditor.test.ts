@@ -2,7 +2,7 @@
  * @jest-environment node
  */
 
-// Jest environment should be at the very top of the file. Overridding environment for this test
+// Jest environment should be at the very top of the file. overriding environment for this test
 // to ensure that headless editor works within node environment
 // https://jestjs.io/docs/configuration#testenvironment-string
 

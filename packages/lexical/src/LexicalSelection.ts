@@ -1105,8 +1105,8 @@ export class RangeSelection implements BaseSelection {
           firstNode.setFormat(firstNextFormat);
           firstNode.select(startOffset, endOffset);
         } else {
-          // ndoe is partially selected, so split it into two nodes
-          // adnd style the selected one.
+          // node is partially selected, so split it into two nodes
+          // add style the selected one.
           const splitNodes = firstNode.splitText(startOffset, endOffset);
           const replacement = startOffset === 0 ? splitNodes[0] : splitNodes[1];
           replacement.setFormat(firstNextFormat);
@@ -1116,7 +1116,7 @@ export class RangeSelection implements BaseSelection {
       }
       // multiple nodes selected.
     } else {
-      // Note: startOffset !== firstNodeTextLength should only occur within rare programatic
+      // Note: startOffset !== firstNodeTextLength should only occur within rare programmatic
       // update functions; transforms normalization ensure there's no empty text nodes.
       if ($isTextNode(firstNode) && startOffset !== firstNodeTextLength) {
         if (startOffset !== 0) {
@@ -1234,7 +1234,7 @@ export class RangeSelection implements BaseSelection {
       const node = nodes[i];
       if ($isElementNode(node) && !node.isInline()) {
         // -----
-        // Heuristics for the replacment or merging of elements
+        // Heuristics for the replacement or merging of elements
         // -----
 
         // If we have an incoming element node as the first node, then we'll need

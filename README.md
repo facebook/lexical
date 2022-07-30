@@ -17,7 +17,7 @@
 
 **⚠️ Lexical is currently in early development and APIs and packages are likely to change quite often.**
 
-Lexical is an extensible JavaScript web text-editor framework with an emphasis on reliability, accessibility and performance. Lexical aims to provide a best-in-class developer experience, so you can easily prototype and build features with confidence. Combined with a highly extensible architecture, Lexical allows developers to create unique text editing experiences that scale in size and functionality.
+Lexical is an extensible JavaScript web text-editor framework with an emphasis on reliability, accessibility, and performance. Lexical aims to provide a best-in-class developer experience, so you can easily prototype and build features with confidence. Combined with a highly extensible architecture, Lexical allows developers to create unique text editing experiences that scale in size and functionality.
 
 For documentation and more information about Lexical, be sure to [visit the Lexical website](https://lexical.dev).
 
@@ -29,6 +29,8 @@ Here are some examples of what you can do with Lexical:
 
 
 ---
+
+**Overview:**
 
 - [Getting started with React](#getting-started-with-react)
 
@@ -366,7 +368,7 @@ Note: Lexical does not support Internet Explorer or legacy versions of Edge.
 
 ## Support
 
-If you have any questions about Lexical, would like to discuss a bug report, or have questions about new integrations, feel free to add yourself to [our Discord server](https://discord.gg/KmG4wQnnD9).
+If you have any questions about Lexical, would like to discuss a bug report, or have questions about new integrations, feel free to join us at [our Discord server](https://discord.gg/KmG4wQnnD9).
 
 Lexical engineers are checking this regularly.
 

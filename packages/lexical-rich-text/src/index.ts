@@ -748,7 +748,7 @@ export function registerRichText(
           // If we have beforeinput, then we can avoid blocking
           // the default behavior. This ensures that the iOS can
           // intercept that we're actually inserting a paragraph,
-          // and autocomplete, autocapitialize etc work as intended.
+          // and autocomplete, autocapitalize etc work as intended.
           // This can also cause a strange performance issue in
           // Safari, where there is a noticeable pause due to
           // preventing the key down of enter.

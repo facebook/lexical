@@ -170,7 +170,7 @@ function $normalizeAllDirtyTextNodes(
  * 2. We transform elements. If element transforms generate additional dirty nodes we repeat step 1.
  * If element transforms only generate additional dirty elements we only repeat step 2.
  *
- * Note that to keep track of newly dirty nodes and subtress we leverage the editor._dirtyNodes and
+ * Note that to keep track of newly dirty nodes and subtrees we leverage the editor._dirtyNodes and
  * editor._subtrees which we reset in every loop.
  */
 function $applyAllTransforms(
@@ -423,7 +423,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   }
 
   // ======
-  // Reconcilation has started.
+  // Reconciliation has started.
   // ======
 
   const currentEditorState = editor._editorState;
@@ -443,7 +443,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
     activeEditor = editor;
     activeEditorState = pendingEditorState;
     isReadOnlyMode = false;
-    // We don't want updates to sync block the reconcilation.
+    // We don't want updates to sync block the reconciliation.
     editor._updating = true;
     try {
       const dirtyType = editor._dirtyType;
@@ -521,7 +521,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   $garbageCollectDetachedDecorators(editor, pendingEditorState);
 
   // ======
-  // Reconcilation has finished. Now update selection and trigger listeners.
+  // Reconciliation has finished. Now update selection and trigger listeners.
   // ======
 
   const domSelection = headless ? null : getDOMSelection();

@@ -287,7 +287,7 @@ function isLastChildLineBreakOrDecorator(
   return $isLineBreakNode(node) || $isDecoratorNode(node);
 }
 
-// If we end an element with a LinkBreakNode, then we need to add an additonal <br>
+// If we end an element with a LinkBreakNode, then we need to add an additional <br>
 function reconcileElementTerminatingLineBreak(
   prevChildren: null | Array<NodeKey>,
   nextChildren: Array<NodeKey>,

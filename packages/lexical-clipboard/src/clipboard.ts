@@ -125,7 +125,7 @@ export function $insertDataTransferForRichText(
     } catch {}
   }
 
-  // Multi-line plain text in rich text mode pasted as separate paragrahs
+  // Multi-line plain text in rich text mode pasted as separate paragraphs
   // instead of single paragraph with linebreaks.
   const text = dataTransfer.getData('text/plain');
   if (text != null) {

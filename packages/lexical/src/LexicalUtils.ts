@@ -579,7 +579,7 @@ export function $updateTextNodeFromDOMContent(
         $isTokenOrInert(node) ||
         ($getCompositionKey() !== null && !isComposing) ||
         // Check if character was added at the start, and we need
-        // to clear this input from occuring as that action wasn't
+        // to clear this input from occurring as that action wasn't
         // permitted.
         (parent !== null &&
           $isRangeSelection(prevSelection) &&

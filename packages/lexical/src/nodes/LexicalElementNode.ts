@@ -332,7 +332,7 @@ export class ElementNode extends LexicalNode {
       const nodeToInsert = nodesToInsert[i];
       const writableNodeToInsert = nodeToInsert.getWritable();
       if (nodeToInsert.__key === writableSelfKey) {
-        invariant(false, 'append: attemtping to append self');
+        invariant(false, 'append: attempting to append self');
       }
       removeFromParent(writableNodeToInsert);
       // Set child parent to self

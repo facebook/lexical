@@ -19,7 +19,7 @@ Lexical's core concerns itself with four main concerns:
 
 - Updates: the act of making changes to editor state
 - Node Transforms: the process of acting on ongoing updates
-- Reconcilation: the process of patching the DOM with the latest editor state
+- Reconciliation: the process of patching the DOM with the latest editor state
 - Listening/Commands: the process of reacting to changes that occur internally
 
 Additionally, Lexical uses DOM mutation observers to ensure that any outside changes to

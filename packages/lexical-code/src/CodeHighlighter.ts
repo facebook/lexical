@@ -221,7 +221,7 @@ function updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
 // will not affect code block content itself.
 //
 // Using extra flag (`isHighlighting`) since both CodeNode and CodeHighlightNode
-// trasnforms might be called at the same time (e.g. new CodeHighlight node inserted) and
+// transforms might be called at the same time (e.g. new CodeHighlight node inserted) and
 // in both cases we'll rerun whole reformatting over CodeNode, which is redundant.
 // Especially when pasting code into CodeBlock.
 let isHighlighting = false;

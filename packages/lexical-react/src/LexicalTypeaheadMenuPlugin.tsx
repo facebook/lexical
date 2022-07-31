@@ -153,7 +153,7 @@ function getFullMatchOffset(
 }
 
 /**
- * Split Lexica TextNode and return a new TextNode only containing matched text.
+ * Split Lexical TextNode and return a new TextNode only containing matched text.
  * Common use cases include: removing the node, replacing with a new node.
  */
 function splitNodeContainingQuery(

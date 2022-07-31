@@ -558,7 +558,7 @@ describe('LexicalEditor tests', () => {
     removeListener();
   });
 
-  it('transforms only run on nodes that were explictly marked as dirty', async () => {
+  it('transforms only run on nodes that were explicitly marked as dirty', async () => {
     init();
 
     let executeParagraphNodeTransform = () => {

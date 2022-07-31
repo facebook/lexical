@@ -23,7 +23,7 @@ describe('Collaboration', () => {
     container = null;
   });
 
-  async function exepctCorrectInitialContent(client1, client2) {
+  async function expectCorrectInitialContent(client1, client2) {
     // Should be empty, as client has not yet updated
     expect(client1.getHTML()).toEqual('');
     expect(client1.getHTML()).toEqual(client2.getHTML());
@@ -45,7 +45,7 @@ describe('Collaboration', () => {
     client1.start(container);
     client2.start(container);
 
-    await exepctCorrectInitialContent(client1, client2);
+    await expectCorrectInitialContent(client1, client2);
 
     // Insert a text node on client 1
     await waitForReact(() => {
@@ -100,7 +100,7 @@ describe('Collaboration', () => {
     client1.start(container);
     client2.start(container);
 
-    await exepctCorrectInitialContent(client1, client2);
+    await expectCorrectInitialContent(client1, client2);
 
     client1.disconnect();
 
@@ -206,7 +206,7 @@ describe('Collaboration', () => {
     client1.start(container);
     client2.start(container);
 
-    await exepctCorrectInitialContent(client1, client2);
+    await expectCorrectInitialContent(client1, client2);
 
     // Insert some a text node on client 1
     await waitForReact(() => {
@@ -268,7 +268,7 @@ describe('Collaboration', () => {
     // TODO we can probably handle these conflicts better. We could keep around
     // a "fallback" {Map} when we remove text without any adjacent text nodes. This
     // would require big changes in `CollabElementNode.splice` and also need adjustments
-    // in `CollabElementNode.applyChildrenYjsDelta` to handle the existance of these
+    // in `CollabElementNode.applyChildrenYjsDelta` to handle the existence of these
     // fallback maps. For now though, if a user clears all text nodes from an element
     // and another user inserts some text into the same element at the same time, the
     // deletion will take precedence on conflicts.

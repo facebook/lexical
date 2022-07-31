@@ -63,7 +63,7 @@ function exportChildren(node: ElementNode): string {
       // Add text styles only if link has single text node inside. If it's more
       // then one we either ignore it and have single <a> to cover whole link,
       // or process them, but then have link cut into multiple <a>.
-      // For now chosing the first option.
+      // For now choosing the first option.
       if (child.getChildrenSize() === 1 && $isTextNode(firstChild)) {
         output.push(exportTextNode(firstChild, linkContent, child));
       } else {

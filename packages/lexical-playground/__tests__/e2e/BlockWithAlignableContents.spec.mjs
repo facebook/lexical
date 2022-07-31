@@ -12,12 +12,14 @@ import {
   focusEditor,
   html,
   initialize,
+  insertIFrameEmbed,
   insertYouTubeEmbed,
   selectFromAlignDropdown,
   test,
 } from '../utils/index.mjs';
 
-const TEST_URL = 'https://www.youtube.com/embed/jNQXAC9IVRw';
+const TEST_IFRAME_URL = 'https://www.google.com/webhp?igu=1';
+const TEST_YOUTUBE_URL = 'https://www.youtube.com/embed/jNQXAC9IVRw';
 test.describe('BlockWithAlignableContents', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
 
@@ -38,7 +40,8 @@ test.describe('BlockWithAlignableContents', () => {
         </p>
       `,
     );
-    await insertYouTubeEmbed(page, TEST_URL);
+    await insertIFrameEmbed(page, TEST_IFRAME_URL);
+    await insertYouTubeEmbed(page, TEST_YOUTUBE_URL);
     await assertHTML(
       page,
       html`
@@ -50,11 +53,22 @@ test.describe('BlockWithAlignableContents', () => {
         <div contenteditable="false" data-lexical-decorator="true">
           <div class="PlaygroundEditorTheme__embedBlock">
             <iframe
+              width="90%"
+              height="300"
+              src="${TEST_IFRAME_URL}"
+              frameborder="0"
+              title="Embedded IFrame"></iframe>
+          </div>
+        </div>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <div contenteditable="false" data-lexical-decorator="true">
+          <div class="PlaygroundEditorTheme__embedBlock">
+            <iframe
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowfullscreen=""
               frameborder="0"
               height="315"
-              src="${TEST_URL}"
+              src="${TEST_YOUTUBE_URL}"
               title="YouTube video"
               width="560"></iframe>
           </div>
@@ -71,7 +85,8 @@ test.describe('BlockWithAlignableContents', () => {
     test.skip(isPlainText);
     await focusEditor(page);
     await page.keyboard.type('Hello world');
-    await insertYouTubeEmbed(page, TEST_URL);
+    await insertIFrameEmbed(page, TEST_IFRAME_URL);
+    await insertYouTubeEmbed(page, TEST_YOUTUBE_URL);
     await assertHTML(
       page,
       html`
@@ -83,11 +98,22 @@ test.describe('BlockWithAlignableContents', () => {
         <div contenteditable="false" data-lexical-decorator="true">
           <div class="PlaygroundEditorTheme__embedBlock">
             <iframe
+              width="90%"
+              height="300"
+              src="${TEST_IFRAME_URL}"
+              frameborder="0"
+              title="Embedded IFrame"></iframe>
+          </div>
+        </div>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <div contenteditable="false" data-lexical-decorator="true">
+          <div class="PlaygroundEditorTheme__embedBlock">
+            <iframe
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowfullscreen=""
               frameborder="0"
               height="315"
-              src="${TEST_URL}"
+              src="${TEST_YOUTUBE_URL}"
               title="YouTube video"
               width="560"></iframe>
           </div>
@@ -109,13 +135,28 @@ test.describe('BlockWithAlignableContents', () => {
         <div contenteditable="false" data-lexical-decorator="true">
           <div
             class="PlaygroundEditorTheme__embedBlock PlaygroundEditorTheme__embedBlockFocus"
+            style="text-align: center;">
+            <iframe
+              width="90%"
+              height="300"
+              src="${TEST_IFRAME_URL}"
+              frameborder="0"
+              title="Embedded IFrame"></iframe>
+          </div>
+        </div>
+        <p class="PlaygroundEditorTheme__paragraph" style="text-align: center;">
+          <br />
+        </p>
+        <div contenteditable="false" data-lexical-decorator="true">
+          <div
+            class="PlaygroundEditorTheme__embedBlock PlaygroundEditorTheme__embedBlockFocus"
             style="text-align: center">
             <iframe
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowfullscreen=""
               frameborder="0"
               height="315"
-              src="${TEST_URL}"
+              src="${TEST_YOUTUBE_URL}"
               title="YouTube video"
               width="560"></iframe>
           </div>

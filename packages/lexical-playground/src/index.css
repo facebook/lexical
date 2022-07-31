@@ -432,6 +432,10 @@ i.horizontal-rule {
   background-image: url(images/icons/bg-color.svg);
 }
 
+i.iframe {
+  background-image: url(images/icons/iframe.svg);
+}
+
 i.image {
   background-image: url(images/icons/file-image.svg);
 }

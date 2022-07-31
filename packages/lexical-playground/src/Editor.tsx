@@ -39,6 +39,7 @@ import EquationsPlugin from './plugins/EquationsPlugin';
 import ExcalidrawPlugin from './plugins/ExcalidrawPlugin';
 import FigmaPlugin from './plugins/FigmaPlugin';
 import HorizontalRulePlugin from './plugins/HorizontalRulePlugin';
+import IFramePlugin from './plugins/IFramePlugin';
 import ImagesPlugin from './plugins/ImagesPlugin';
 import KeywordsPlugin from './plugins/KeywordsPlugin';
 import ListMaxIndentLevelPlugin from './plugins/ListMaxIndentLevelPlugin';
@@ -134,6 +135,7 @@ export default function Editor(): JSX.Element {
             <TablePlugin />
             <TableCellActionMenuPlugin />
             <TableCellResizer />
+            <IFramePlugin />
             <ImagesPlugin />
             <LinkPlugin />
             <PollPlugin />

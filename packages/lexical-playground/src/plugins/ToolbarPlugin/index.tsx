@@ -87,6 +87,7 @@ import {IS_APPLE} from 'shared/environment';
 import useModal from '../../hooks/useModal';
 import catTypingGif from '../../images/cat-typing.gif';
 import yellowFlowerImage from '../../images/yellow-flower.jpg';
+import {$isIFrameNode} from '../../nodes/IFrameNode';
 import {$createStickyNode} from '../../nodes/StickyNode';
 import {$isTweetNode} from '../../nodes/TweetNode';
 import {$isYouTubeNode} from '../../nodes/YouTubeNode';
@@ -100,6 +101,7 @@ import TextInput from '../../ui/TextInput';
 import {EmbedConfigs} from '../AutoEmbedPlugin';
 import {INSERT_EQUATION_COMMAND} from '../EquationsPlugin';
 import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawPlugin';
+import {INSERT_IFRAME_COMMAND} from '../IFramePlugin';
 import {INSERT_IMAGE_COMMAND} from '../ImagesPlugin';
 import {INSERT_POLL_COMMAND} from '../PollPlugin';
 
@@ -348,6 +350,48 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): JSX.Element {
         </>
       )}
     </div>
+  );
+}
+
+const IFRAME_URL_PARSER =
+  /[(http(s)?)://(www.)?a-zA-Z0-9@:%._+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_+.~#?&//=]*)/;
+
+function InsertIFrameDialog({
+  activeEditor,
+  onClose,
+}: {
+  activeEditor: LexicalEditor;
+  onClose: () => void;
+}): JSX.Element {
+  const [url, setURL] = useState('');
+
+  const onClick = () => {
+    if (IFRAME_URL_PARSER.test(url)) {
+      activeEditor.dispatchCommand(INSERT_IFRAME_COMMAND, url);
+    }
+    onClose();
+  };
+
+  const isDisabled = url === '' || !IFRAME_URL_PARSER.test(url);
+
+  return (
+    <>
+      <TextInput
+        data-test-id="iframe-embed-modal-url"
+        label="IFrame URL"
+        placeholder="i.e. https://www.google.com/webhp?igu=1"
+        onChange={setURL}
+        value={url}
+      />
+      <div className="ToolbarPlugin__dialogActions">
+        <Button
+          data-test-id="iframe-embed-modal-submit-btn"
+          disabled={isDisabled}
+          onClick={onClick}>
+          Confirm
+        </Button>
+      </div>
+    </>
   );
 }
 
@@ -654,6 +698,8 @@ function BlockFormatDropDown({
                     `https://www.youtube.com/watch?v=${node.getId()}`,
                   ),
                 );
+              } else if ($isIFrameNode(node)) {
+                node.replace($createTextNode(node.getURL()));
               }
             });
 
@@ -1193,6 +1239,19 @@ export default function ToolbarPlugin(): JSX.Element {
               className="item">
               <i className="icon horizontal-rule" />
               <span className="text">Horizontal Rule</span>
+            </DropDownItem>
+            <DropDownItem
+              onClick={() => {
+                showModal('Insert IFrame', (onClose) => (
+                  <InsertIFrameDialog
+                    activeEditor={activeEditor}
+                    onClose={onClose}
+                  />
+                ));
+              }}
+              className="item">
+              <i className="icon iframe" />
+              <span className="text">IFrame</span>
             </DropDownItem>
             <DropDownItem
               onClick={() => {

@@ -460,6 +460,13 @@ export async function clearEditor(page) {
   await page.keyboard.press('Backspace');
 }
 
+export async function insertIFrameEmbed(page, url) {
+  await selectFromInsertDropdown(page, '.iframe');
+  await focus(page, 'input[data-test-id="iframe-embed-modal-url"]');
+  await page.keyboard.type(url);
+  await click(page, 'button[data-test-id="iframe-embed-modal-submit-btn"]');
+}
+
 export async function insertSampleImage(page) {
   await selectFromInsertDropdown(page, '.image');
   await click(page, 'button[data-test-id="image-modal-option-sample"]');

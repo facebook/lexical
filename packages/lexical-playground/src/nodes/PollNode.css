@@ -139,7 +139,7 @@
   width: 2px;
   height: 15px;
   top: 6px;
-  start: 13px;
+  left: 13px;
 }
 .PollNode__optionDelete:before {
   transform: rotate(-45deg);

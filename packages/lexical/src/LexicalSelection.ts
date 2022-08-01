@@ -1050,6 +1050,14 @@ export class RangeSelection implements BaseSelection {
       }
     }
     const selectedTextNodesLength = selectedTextNodes.length;
+
+    if (selectedTextNodesLength === 0) {
+      this.toggleFormat(formatType);
+      // When changing format, we should stop composition
+      $setCompositionKey(null);
+      return;
+    }
+
     let firstIndex = 0;
     const lastIndex = selectedTextNodesLength - 1;
     let firstNode = selectedTextNodes[0];

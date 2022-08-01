@@ -187,7 +187,6 @@ function onSelectionChange(
     focusNode: focusDOM,
     focusOffset,
   } = domSelection;
-
   if (isSelectionChangeFromDOMUpdate) {
     isSelectionChangeFromDOMUpdate = false;
 

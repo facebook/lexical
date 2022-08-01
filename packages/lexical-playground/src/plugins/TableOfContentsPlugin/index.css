@@ -10,18 +10,19 @@
   color: #3578e5;
   position: relative;
 }
-.selectedHeading::before {
+
+.xselectedHeading::before {
   content: ' ';
-  /* position: absolute;
+  position: absolute;
   display: inline-block;
-  top: 0px;
-  left: -31px;
+  left: -36px;
+  top: 4px;
   z-index: 10;
   height: 4px;
   width: 4px;
   background-color: #3578e5;
   border: solid 4px white;
-  border-radius: 50%; */
+  border-radius: 50%;
 }
 
 .normalHeading {
@@ -65,8 +66,12 @@
   position: absolute;
   height: 100%;
   width: 4px;
-  left: 4px;
   margin-top: 5px;
   background-color: #ccd0d5;
   border-radius: 2px;
+}
+
+.heading-wrapper {
+  margin-left: 32px;
+  position: relative;
 }

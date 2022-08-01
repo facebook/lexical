@@ -134,7 +134,7 @@ function TableOfContentsList({
         {tableOfContents.map(([key, text, tag], index) => {
           if (index === 0) {
             return (
-              <div>
+              <div className="heading-wrapper">
                 <div
                   className="firstHeading"
                   key={key}
@@ -151,21 +151,26 @@ function TableOfContentsList({
           } else {
             return (
               <div
-                key={key}
-                onClick={() => scrollToNode(key, index)}
-                role="button"
-                className={indent(tag)}
-                tabIndex={0}>
-                <li
-                  className={
-                    'normalHeading' +
-                    ' ' +
-                    (selectedKey === key ? 'selectedHeading ' : '')
-                  }>
-                  {('' + text).length > 27
-                    ? text.substring(0, 27) + '...'
-                    : text}
-                </li>
+                className={`heading-wrapper ${
+                  selectedKey === key ? 'xselectedHeading ' : ''
+                }`}>
+                <div
+                  key={key}
+                  onClick={() => scrollToNode(key, index)}
+                  role="button"
+                  className={indent(tag)}
+                  tabIndex={0}>
+                  <li
+                    className={
+                      'normalHeading' +
+                      ' ' +
+                      (selectedKey === key ? 'selectedHeading ' : '')
+                    }>
+                    {('' + text).length > 27
+                      ? text.substring(0, 27) + '...'
+                      : text}
+                  </li>
+                </div>
               </div>
             );
           }

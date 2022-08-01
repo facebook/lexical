@@ -31,11 +31,13 @@ const getElement = (): HTMLElement => {
   return element;
 };
 
-export default function useReport(): (arg0: string) => NodeJS.Timeout {
-  const timer = useRef<NodeJS.Timeout | null>(null);
+export default function useReport(): (
+  arg0: string,
+) => ReturnType<typeof setTimeout> {
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cleanup = useCallback(() => {
     if (timer !== null) {
-      clearTimeout(timer.current as NodeJS.Timeout);
+      clearTimeout(timer.current as ReturnType<typeof setTimeout>);
     }
 
     if (document.body) {
@@ -52,7 +54,7 @@ export default function useReport(): (arg0: string) => NodeJS.Timeout {
       // eslint-disable-next-line no-console
       console.log(content);
       const element = getElement();
-      clearTimeout(timer.current as NodeJS.Timeout);
+      clearTimeout(timer.current as ReturnType<typeof setTimeout>);
       element.innerHTML = content;
       timer.current = setTimeout(cleanup, 1000);
       return timer.current;

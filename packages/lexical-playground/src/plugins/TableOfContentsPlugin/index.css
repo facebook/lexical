@@ -15,7 +15,7 @@
   content: ' ';
   position: absolute;
   display: inline-block;
-  left: -36px;
+  left: -30px;
   top: 4px;
   z-index: 10;
   height: 4px;
@@ -66,6 +66,7 @@
   position: absolute;
   height: 100%;
   width: 4px;
+  right: 240px;
   margin-top: 5px;
   background-color: #ccd0d5;
   border-radius: 2px;

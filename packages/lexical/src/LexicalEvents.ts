@@ -307,11 +307,7 @@ function onClick(event: MouseEvent, editor: LexicalEditor): void {
         domSelection.removeAllRanges();
         selection.dirty = true;
       }
-    } else if (
-      domSelection &&
-      $isNodeSelection(selection) &&
-      domSelection.isCollapsed
-    ) {
+    } else if (domSelection && $isNodeSelection(selection)) {
       const domAnchor = domSelection.anchorNode;
       // If the user is attempting to click selection back onto text, then
       // we should attempt create a range selection.

@@ -25,7 +25,7 @@ import {
   $setSelection,
 } from 'lexical';
 
-import {TRANSFORMERS} from '..';
+import {TRANSFORMERS} from '.';
 import {indexBy, PUNCTUATION_OR_SPACE, transformersByType} from './utils';
 
 function runElementTransformers(

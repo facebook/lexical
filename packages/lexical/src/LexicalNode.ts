@@ -294,7 +294,7 @@ export class LexicalNode {
       const parent: ElementNode | this | null = node.getParent();
       if (
         $isRootNode(parent) &&
-        ($isElementNode(node) || $isDecoratorNode(node))
+        ($isElementNode(node) || ($isDecoratorNode(node) && node.isTopLevel()))
       ) {
         return node;
       }

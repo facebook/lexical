@@ -33,7 +33,6 @@ import {
 import {errorOnReadOnly, getActiveEditor} from '../LexicalUpdates';
 import {
   $getNodeByKey,
-  $setNodeKey,
   internalMarkNodeAsDirty,
   removeFromParent,
 } from '../LexicalUtils';
@@ -436,43 +435,6 @@ export class ElementNode extends LexicalNode {
     }
 
     return removedNodes;
-  }
-  splitNode(index: number): [ElementNode, LexicalNode, ElementNode] {
-    errorOnReadOnly();
-    const self = this.getLatest();
-    const splitChild = self.getChildAtIndex(index);
-    if (splitChild == null) {
-      invariant(false, 'cannot split node, the child is out of bound');
-    }
-
-    const childrenLength = self.getChildrenSize();
-    const writableParent = self.getParentOrThrow().getWritable();
-    const children = writableParent.__children;
-    const thisIndex = children.indexOf(self.__key);
-    if (thisIndex === -1) {
-      invariant(false, 'Node is not a child of its parent');
-    }
-
-    const beforeNode = self;
-    const beforeNodeWritable = beforeNode.getWritable();
-
-    // create a node of the same type
-    // @ts-expect-error
-    const afterNode = self.constructor.clone(self);
-    $setNodeKey(afterNode, undefined);
-
-    // add the node right after the node we are splitting
-    beforeNodeWritable.insertAfter(afterNode);
-
-    // remove elements after a split point and save them to the variable
-    const nodesToMove = beforeNodeWritable.splice(
-      index,
-      childrenLength - index,
-      [],
-    );
-    afterNode.append(...nodesToMove);
-
-    return [beforeNode, splitChild, afterNode];
   }
   // JSON serialization
   exportJSON(): SerializedElementNode {

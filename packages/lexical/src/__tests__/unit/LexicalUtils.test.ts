@@ -18,6 +18,7 @@ import {
   isSelectionWithinEditor,
   resetRandomKey,
   scheduleMicroTask,
+  splitNode,
 } from '../../LexicalUtils';
 import {
   $createParagraphNode,
@@ -164,6 +165,60 @@ describe('LexicalUtils tests', () => {
       expect(getTextDirection(`\uFDFD`)).toBe('rtl');
       expect(getTextDirection(`\uFE70`)).toBe('rtl');
       expect(getTextDirection(`\uFEFC`)).toBe('rtl');
+    });
+
+    test('splitNode()', async () => {
+      let paragraph;
+      const {editor} = testEnv;
+
+      const BASE_SPLITS: Array<{
+        expectedBlockText: string;
+        expectedNodeText: string;
+        index: number;
+        name: string;
+      }> = [
+        {
+          expectedBlockText: '',
+          expectedNodeText: 'Foo',
+          index: 0,
+          name: 'Split at beginning',
+        },
+        {
+          expectedBlockText: 'Foo',
+          expectedNodeText: 'Bar',
+          index: 1,
+          name: 'Split in middle',
+        },
+        {
+          expectedBlockText: 'FooBar',
+          expectedNodeText: 'Baz',
+          index: 2,
+          name: 'Split at end',
+        },
+      ];
+
+      await editor.update(() => {
+        paragraph = $createParagraphNode();
+        const text = $createTextNode('Foo');
+        const text2 = $createTextNode('Bar');
+        // Prevent text nodes from combining.
+        text2.setMode('segmented');
+        const text3 = $createTextNode('Baz');
+        // Some operations require a selection to exist, hence
+        // we make a selection in the setup code.
+        text.select(0, 0);
+        paragraph.append(text, text2, text3);
+        $getRoot().append(paragraph);
+      });
+      BASE_SPLITS.forEach(async (testCase) => {
+        await editor.update(() => {
+          const split = splitNode(paragraph, testCase.index);
+          expect(paragraph.getTextContent()).toEqual(
+            testCase.expectedBlockText,
+          );
+          expect(split[1].getTextContent()).toEqual(testCase.expectedNodeText);
+        });
+      });
     });
 
     test('isTokenOrInertOrSegmented()', async () => {

@@ -700,7 +700,6 @@ declare export class ElementNode extends LexicalNode {
   select(_anchorOffset?: number, _focusOffset?: number): RangeSelection;
   selectStart(): RangeSelection;
   selectEnd(): RangeSelection;
-  splitNode(index: number): [ElementNode, LexicalNode, ElementNode];
   clear(): this;
   append(...nodesToAppend: Array<LexicalNode>): this;
   setDirection(direction: 'ltr' | 'rtl' | null): this;

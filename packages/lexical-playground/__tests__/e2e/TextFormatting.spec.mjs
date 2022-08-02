@@ -27,9 +27,7 @@ import {
   initialize,
   insertSampleImage,
   SAMPLE_IMAGE_URL,
-  selectOption,
   test,
-  waitForSelector,
 } from '../utils/index.mjs';
 
 test.describe('TextFormatting', () => {
@@ -446,8 +444,8 @@ test.describe('TextFormatting', () => {
       focusPath: [0, 0, 0],
     });
 
-    await waitForSelector(page, '.font-size');
-    await selectOption(page, '.font-size', {value: '10px'});
+    await click(page, '.font-size');
+    await click(page, 'button:has-text("10px")');
 
     await assertHTML(
       page,
@@ -489,8 +487,8 @@ test.describe('TextFormatting', () => {
       focusPath: [0, 0, 0],
     });
 
-    await waitForSelector(page, '.font-size');
-    await selectOption(page, '.font-size', {value: '10px'});
+    await click(page, '.font-size');
+    await click(page, 'button:has-text("10px")');
 
     await assertHTML(
       page,
@@ -512,8 +510,8 @@ test.describe('TextFormatting', () => {
       focusPath: [0, 1, 0],
     });
 
-    await waitForSelector(page, '.font-family');
-    await selectOption(page, '.font-family', {value: 'Georgia'});
+    await click(page, '.font-family');
+    await click(page, 'button:has-text("Georgia")');
 
     await assertHTML(
       page,
@@ -539,8 +537,8 @@ test.describe('TextFormatting', () => {
       focusPath: [0, 1, 0],
     });
 
-    await waitForSelector(page, '.font-size');
-    await selectOption(page, '.font-size', {value: '20px'});
+    await click(page, '.font-size');
+    await click(page, 'button:has-text("20px")');
 
     await assertHTML(
       page,

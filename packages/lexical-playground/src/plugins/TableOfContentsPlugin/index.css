@@ -1,17 +1,17 @@
-.heading2 {
+.table-of-contents .heading2 {
   margin-left: 10px;
 }
 
-.heading3 {
+.table-of-contents .heading3 {
   margin-left: 20px;
 }
 
-.selectedHeading {
+.selected-heading {
   color: #3578e5;
   position: relative;
 }
 
-.xselectedHeading::before {
+.selected-heading-wrapper::before {
   content: ' ';
   position: absolute;
   display: inline-block;
@@ -25,7 +25,7 @@
   border-radius: 50%;
 }
 
-.normalHeading {
+.normal-heading {
   cursor: pointer;
   line-height: 20px;
   font-size: 16px;
@@ -45,7 +45,7 @@
   height: 300px;
 }
 
-.firstHeading {
+.first-heading {
   color: black;
   font-weight: bold;
   cursor: pointer;
@@ -72,7 +72,7 @@
   border-radius: 2px;
 }
 
-.heading-wrapper {
+.normal-heading-wrapper {
   margin-left: 32px;
   position: relative;
 }

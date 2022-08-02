@@ -290,6 +290,7 @@ const allMarkdownCriteriaForTextNodes: MarkdownCriteriaArray = [
   markdownStrikethrough,
   markdownLink,
 ];
+
 const allMarkdownCriteriaForParagraphs: MarkdownCriteriaArray = [
   markdownHeader1,
   markdownHeader2,
@@ -316,8 +317,7 @@ export function getAllMarkdownCriteriaForTextNodes(): MarkdownCriteriaArray {
 
 type Block = (
   node: LexicalNode,
-  // eslint-disable-next-line no-shadow
-  exportChildren: (node: ElementNode) => string,
+  exportChildren: (elementNode: ElementNode) => string,
 ) => string | null;
 
 function createHeadingExport(level: number): Block {

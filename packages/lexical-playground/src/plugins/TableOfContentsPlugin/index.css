@@ -1,74 +1,78 @@
-.bar {
-  background-color: #ccd0d5;
-  height: 20px;
-  margin: 0 4px;
+.table-of-contents .heading2 {
+  margin-left: 10px;
+}
+
+.table-of-contents .heading3 {
+  margin-left: 20px;
+}
+
+.selected-heading {
+  color: #3578e5;
+  position: relative;
+}
+
+.selected-heading-wrapper::before {
+  content: ' ';
+  position: absolute;
+  display: inline-block;
+  left: -30px;
+  top: 4px;
+  z-index: 10;
+  height: 4px;
   width: 4px;
-}
-
-.circle {
   background-color: #3578e5;
-  border: solid 3px #f5f6f7;
+  border: solid 4px white;
   border-radius: 50%;
-  height: 8px;
-  width: 8px;
 }
 
-.heading {
-  align-items: center;
-  color: 'black';
+.normal-heading {
   cursor: pointer;
+  line-height: 20px;
+  font-size: 16px;
+}
+
+.table-of-contents {
+  color: #65676b;
+  position: fixed;
+  top: 200px;
+  right: 100px;
+  padding: 10px;
+  width: 250px;
   display: flex;
   flex-direction: row;
-  font-family: Helvetica, Arial, sans-serif;
-  font-size: 15px;
-  line-height: 18px;
+  justify-content: flex-start;
+  z-index: 1;
+  height: 300px;
 }
 
-.heading2 {
-  padding-left: 10px;
-}
-
-.heading3 {
-  padding-left: 20px;
-}
-
-.selectedHeading {
-  align-items: center;
-  color: #3578e5;
+.first-heading {
+  color: black;
+  font-weight: bold;
   cursor: pointer;
-  display: flex;
-  font-family: Helvetica, Arial, sans-serif;
-  font-size: 15px;
 }
 
-.remove-ul-style {
+.headings {
   list-style: none;
-  padding: 0%;
-  margin-top: 10px;
-  width: 270px;
-  font-family: 'Lato', sans-serif;
-  position: fixed;
-  max-height: 290px;
+  margin-top: 0;
+  margin-left: 10px;
+  padding: 0;
   overflow: scroll;
-  padding: 10px;
-  border-radius: 10px;
-  overflow-x: hidden;
+  width: 100%;
+  height: 220px;
 }
 
-.toc {
-  border-radius: 4px;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  margin-top: 45px;
-  min-height: 0;
-  pointer-events: auto;
+.headings::before {
+  content: ' ';
   position: absolute;
-  width: 290px;
-  max-height: 290px;
-  overflow: scroll;
-  overflow-x: hidden;
-  z-index: 2;
-  top: 0;
-  right: 0;
+  height: 220px;
+  width: 4px;
+  right: 240px;
+  margin-top: 5px;
+  background-color: #ccd0d5;
+  border-radius: 2px;
+}
+
+.normal-heading-wrapper {
+  margin-left: 32px;
+  position: relative;
 }

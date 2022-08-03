@@ -44,7 +44,7 @@ function TableOfContentsList({
   }
   function isHeadingAtTheTopOfThePage(element: HTMLElement): boolean {
     const elementYPosition = element?.getClientRects()[0].y;
-    return elementYPosition > 0.26 && elementYPosition < 9;
+    return elementYPosition >= 0.26 && elementYPosition <= 9;
   }
   function isHeadingAboveViewport(element: HTMLElement): boolean {
     const elementYPosition = element?.getClientRects()[0].y;
@@ -129,21 +129,53 @@ function TableOfContentsList({
   }, [tableOfContents, editor]);
 
   return (
-    <ul className="remove-ul-style">
-      {tableOfContents.map(([key, text, tag], index) => (
-        <div
-          className={selectedKey === key ? 'selectedHeading' : 'heading'}
-          key={key}
-          onClick={() => scrollToNode(key, index)}
-          role="button"
-          tabIndex={0}>
-          <div className={selectedKey === key ? 'circle' : 'bar'} />
-          <li className={indent(tag)}>
-            {('' + text).length > 27 ? text.substring(0, 27) + '...' : text}
-          </li>
-        </div>
-      ))}
-    </ul>
+    <div className="table-of-contents">
+      <ul className="headings">
+        {tableOfContents.map(([key, text, tag], index) => {
+          if (index === 0) {
+            return (
+              <div className="normal-heading-wrapper">
+                <div
+                  className="first-heading"
+                  key={key}
+                  onClick={() => scrollToNode(key, index)}
+                  role="button"
+                  tabIndex={0}>
+                  {('' + text).length > 20
+                    ? text.substring(0, 20) + '...'
+                    : text}
+                </div>
+                <br />
+              </div>
+            );
+          } else {
+            return (
+              <div
+                className={`normal-heading-wrapper ${
+                  selectedKey === key ? 'selected-heading-wrapper' : ''
+                }`}>
+                <div
+                  key={key}
+                  onClick={() => scrollToNode(key, index)}
+                  role="button"
+                  className={indent(tag)}
+                  tabIndex={0}>
+                  <li
+                    className={`normal-heading ${
+                      selectedKey === key ? 'selected-heading' : ''
+                    }
+                    `}>
+                    {('' + text).length > 27
+                      ? text.substring(0, 27) + '...'
+                      : text}
+                  </li>
+                </div>
+              </div>
+            );
+          }
+        })}
+      </ul>
+    </div>
   );
 }
 

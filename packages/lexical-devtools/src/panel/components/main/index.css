@@ -1,3 +1,7 @@
+:root {
+  --monospace-character-width: 1.2em;
+}
+
 body {
   margin: 0;
   font-family: monospace;

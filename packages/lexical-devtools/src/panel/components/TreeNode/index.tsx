@@ -17,13 +17,24 @@ function TreeNode({
   __text,
   __type,
   children,
+  deHighlightDOMNode,
   depth,
+  highlightDOMNode,
   lexicalKey,
+  monospaceWidth,
 }: DevToolsNode): JSX.Element {
   const [isExpanded, setIsExpanded] = useState(true);
 
   const handleChevronClick = () => {
     setIsExpanded(!isExpanded);
+  };
+
+  const handleMouseEnter: React.MouseEventHandler = (event) => {
+    highlightDOMNode(lexicalKey);
+  };
+
+  const handleMouseLeave: React.MouseEventHandler = (event) => {
+    deHighlightDOMNode(lexicalKey);
   };
 
   const nodeString = ` (${lexicalKey}) ${__type} ${
@@ -40,15 +51,25 @@ function TreeNode({
       ''
     );
 
+  const leftIndent = depth * parseFloat(monospaceWidth) + 'em';
+
   return (
-    <div className="tree-node" key={lexicalKey}>
-      {children.length > 0 ? (
-        <Chevron handleClick={handleChevronClick} isExpanded={isExpanded} />
-      ) : (
-        <button className="indentation">&#9654;</button>
-      )}
-      {nodeString}
-      {<br />}
+    <div className="tree-node-wrapper" key={lexicalKey}>
+      <div
+        className="tree-node"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        style={{paddingLeft: leftIndent}}>
+        <span style={{width: 'var(--monospace-character-width)'}}>&nbsp;</span>
+        {children.length > 0 ? (
+          <Chevron handleClick={handleChevronClick} isExpanded={isExpanded} />
+        ) : (
+          <span style={{width: 'var(--monospace-character-width)'}}>
+            &nbsp;
+          </span>
+        )}
+        {nodeString}
+      </div>
       {isExpanded ? childNodes : ''}
     </div>
   );

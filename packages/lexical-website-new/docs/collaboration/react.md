@@ -22,6 +22,7 @@ function Editor() {
       <PlainTextPlugin
         contentEditable={<ContentEditable />}
         placeholder={<div>Enter some text...</div>}
+        initialEditorState={null}
       />
       <CollaborationPlugin
         id="yjs-plugin"

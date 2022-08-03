@@ -5,6 +5,22 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import {IS_FIREFOX} from 'shared/environment';
+
+// const CAN_USE_DOM =
+//   typeof window !== 'undefined' &&
+//   typeof window.document !== 'undefined' &&
+//   typeof window.document.createElement !== 'undefined';
+// const IS_FIREFOX =
+//   CAN_USE_DOM && /^(?!.*Seamonkey)(?=.*Firefox).*/i.test(navigator.userAgent);
+
+// for security reasons, content scripts cannot read Lexical's changes to the DOM
+// in order to access the editorState, we inject this script directly into the page
+const script = document.createElement('script');
+script.src = chrome.runtime.getURL('inject.js');
+document.documentElement.appendChild(script);
+if (script.parentNode) script.parentNode.removeChild(script);
+
 const port = chrome.runtime.connect();
 
 port.postMessage({
@@ -29,5 +45,36 @@ window.addEventListener('message', function (event) {
       name: 'editor-update',
       type: 'FROM_CONTENT',
     });
+  }
+});
+
+document.addEventListener('editorStateUpdate', function (e) {
+  port.postMessage({
+    editorState: e.detail.editorState,
+    name: 'editor-update',
+    type: 'FROM_CONTENT',
+  });
+});
+
+port.onMessage.addListener((message) => {
+  if (message.name === 'highlight') {
+    const data = {lexicalKey: message.lexicalKey};
+    const detail = IS_FIREFOX
+      ? // eslint-disable-next-line no-undef
+        cloneInto(data, document.defaultView) // see https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Sharing_objects_with_page_scripts#cloneinto
+      : data;
+    document.dispatchEvent(
+      new CustomEvent('highlight', {
+        detail,
+      }),
+    );
+  }
+
+  if (message.name === 'dehighlight') {
+    document.dispatchEvent(new CustomEvent('dehighlight'));
+  }
+
+  if (message.name === 'loadEditorState') {
+    document.dispatchEvent(new CustomEvent('loadEditorState'));
   }
 });

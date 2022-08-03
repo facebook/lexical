@@ -23,19 +23,16 @@ function TreeNode({
   lexicalKey,
 }: DevToolsNode): JSX.Element {
   const [isExpanded, setIsExpanded] = useState(true);
-  const [isHovered, setIsHovered] = useState(false);
 
   const handleChevronClick = () => {
     setIsExpanded(!isExpanded);
   };
 
   const handleMouseEnter: React.MouseEventHandler = (event) => {
-    setIsHovered(true);
     highlightDOMNode(lexicalKey);
   };
 
   const handleMouseLeave: React.MouseEventHandler = (event) => {
-    setIsHovered(false);
     deHighlightDOMNode(lexicalKey);
   };
 
@@ -53,14 +50,12 @@ function TreeNode({
       ''
     );
 
-  const hoverClassName = isHovered ? ' hover' : '';
-  const treeNodeClassName = 'tree-node' + hoverClassName;
   const leftIndent = depth * 1.2 + 'em';
 
   return (
     <div className="tree-node-wrapper" key={lexicalKey}>
       <div
-        className={treeNodeClassName}
+        className="tree-node"
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         style={{paddingLeft: leftIndent}}>

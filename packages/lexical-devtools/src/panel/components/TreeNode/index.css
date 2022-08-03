@@ -1,8 +1,3 @@
-.hover {
-  background: #77b6ff;
-  color: #222;
-}
-
 .indentation {
   background: #222;
   border: none;
@@ -11,6 +6,11 @@
   padding: 0;
   text-decoration: none;
   user-select: none;
+}
+
+.tree-node:hover {
+  background: #77b6ff;
+  color: #222;
 }
 
 .tree-node-wrapper {

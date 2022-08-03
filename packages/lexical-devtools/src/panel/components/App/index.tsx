@@ -9,7 +9,7 @@ import './index.css';
 
 import {DevToolsTree} from 'packages/lexical-devtools/types';
 import * as React from 'react';
-import {useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 
 import TreeView from '../TreeView';
 
@@ -25,6 +25,30 @@ function App(): JSX.Element {
     const newNodeMap = message.editorState.nodeMap;
     setNodeMap(newNodeMap);
   };
+
+  // highlight & dehighlight the corresponding DOM nodes onHover of DevTools nodes
+  const highlightDOMNode = useCallback(
+    (lexicalKey: string) => {
+      port.current?.postMessage({
+        lexicalKey,
+        name: 'highlight',
+        tabId: window.chrome.devtools.inspectedWindow.tabId,
+        type: 'FROM_APP',
+      });
+    },
+    [port],
+  );
+
+  const deHighlightDOMNode = useCallback(
+    (lexicalKey: string) => {
+      port.current?.postMessage({
+        name: 'dehighlight',
+        tabId: window.chrome.devtools.inspectedWindow.tabId,
+        type: 'FROM_APP',
+      });
+    },
+    [port],
+  );
 
   useEffect(() => {
     // create and initialize the messaging port to receive editorState updates
@@ -64,7 +88,12 @@ function App(): JSX.Element {
           <p>Loading...</p>
         </div>
       ) : (
-        <TreeView viewClassName="tree-view-output" nodeMap={nodeMap} />
+        <TreeView
+          deHighlightDOMNode={deHighlightDOMNode}
+          highlightDOMNode={highlightDOMNode}
+          viewClassName="tree-view-output"
+          nodeMap={nodeMap}
+        />
       )}
     </div>
   );

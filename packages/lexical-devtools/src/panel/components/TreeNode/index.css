@@ -8,11 +8,17 @@
   user-select: none;
 }
 
-.tree-node {
-  padding-left: 1em;
-  width: 100%;
+.tree-node:hover {
+  background: #77b6ff;
+  color: #222;
 }
 
 .tree-node-wrapper {
+  cursor: pointer;
+  white-space: nowrap;
   width: 100%;
+}
+
+.tree-node-wrapper:first-child {
+  width: 100vw;
 }

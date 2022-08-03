@@ -333,7 +333,7 @@ function redo(editor: LexicalEditor, historyState: HistoryState): void {
 
     if (historyStateEntry) {
       historyStateEntry.editor.setEditorState(historyStateEntry.editorState, {
-        tag: 'history-redo',
+        tag: 'historic',
       });
     }
   }

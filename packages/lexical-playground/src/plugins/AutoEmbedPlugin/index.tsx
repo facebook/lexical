@@ -153,7 +153,7 @@ function AutoEmbedMenu({
 }: EmbedMenuProps) {
   return (
     <ul>
-      {options.map((option, i: number) => (
+      {options.map((option: AutoEmbedOption, i: number) => (
         <AutoEmbedMenuItem
           index={i}
           isSelected={selectedItemIndex === i}

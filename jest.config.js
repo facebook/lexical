@@ -49,7 +49,7 @@ module.exports = {
         '^@lexical/react/DEPRECATED_useLexicalRichText$':
           '<rootDir>/packages/lexical-react/src/DEPRECATED_useLexicalRichText.ts',
         '^@lexical/react/LexicalAutoEmbedPlugin$':
-          '<rootDir>/packages/lexical-react/src/LexicalAutoEmbedPlugin.ts',
+          '<rootDir>/packages/lexical-react/src/LexicalAutoEmbedPlugin.tsx',
         '^@lexical/react/LexicalAutoLinkPlugin$':
           '<rootDir>/packages/lexical-react/src/LexicalAutoLinkPlugin.ts',
         '^@lexical/react/LexicalAutoScrollPlugin$':

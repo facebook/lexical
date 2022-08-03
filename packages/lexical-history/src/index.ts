@@ -238,7 +238,7 @@ function createMergeActionGetter(
 
     // If applying changes from history stack there's no need
     // to run history logic again, as history entries already calculated
-    if (tags.has('history-undo') || tags.has('history-redo')) {
+    if (tags.has('historic')) {
       prevChangeType = OTHER;
       prevChangeTime = changeTime;
       return DISCARD_HISTORY_CANDIDATE;

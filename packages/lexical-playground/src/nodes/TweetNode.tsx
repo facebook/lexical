@@ -94,8 +94,8 @@ function TweetComponent({
         const script = document.createElement('script');
         script.src = WIDGET_SCRIPT_URL;
         script.async = true;
-        script.onload = createTweet;
         document.body?.appendChild(script);
+        script.onload = createTweet;
         if (onError) {
           script.onerror = onError as OnErrorEventHandler;
         }

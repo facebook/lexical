@@ -21,6 +21,7 @@ function TreeNode({
   depth,
   highlightDOMNode,
   lexicalKey,
+  monospaceWidth,
 }: DevToolsNode): JSX.Element {
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -50,7 +51,7 @@ function TreeNode({
       ''
     );
 
-  const leftIndent = depth * 1.2 + 'em';
+  const leftIndent = depth * parseFloat(monospaceWidth) + 'em';
 
   return (
     <div className="tree-node-wrapper" key={lexicalKey}>
@@ -59,11 +60,13 @@ function TreeNode({
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         style={{paddingLeft: leftIndent}}>
-        <span style={{width: '1.2em'}}>&nbsp;</span>
+        <span style={{width: 'var(--monospace-character-width)'}}>&nbsp;</span>
         {children.length > 0 ? (
           <Chevron handleClick={handleChevronClick} isExpanded={isExpanded} />
         ) : (
-          <span style={{width: '1.2em'}}>&nbsp;</span>
+          <span style={{width: 'var(--monospace-character-width)'}}>
+            &nbsp;
+          </span>
         )}
         {nodeString}
       </div>

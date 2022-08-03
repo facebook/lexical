@@ -23,6 +23,11 @@ function TreeView({
   viewClassName: string;
   nodeMap: DevToolsTree;
 }): JSX.Element {
+  // read CSS variable from the DOM in order to pass it to TreeNode
+  const monospaceWidth = getComputedStyle(
+    document.documentElement,
+  ).getPropertyValue('--monospace-character-width');
+
   // takes flat JSON structure, nests child comments inside parents
   const depthFirstSearch = (
     map: DevToolsTree = nodeMap,
@@ -46,6 +51,7 @@ function TreeView({
       depth,
       highlightDOMNode,
       lexicalKey: node.__key,
+      monospaceWidth,
     };
   };
 

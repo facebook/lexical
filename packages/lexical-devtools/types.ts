@@ -19,4 +19,5 @@ export interface DevToolsNode {
   depth: number;
   highlightDOMNode: (lexicalKey: string) => void;
   lexicalKey: string;
+  monospaceWidth: string;
 }

@@ -363,7 +363,7 @@ function undo(editor: LexicalEditor, historyState: HistoryState): void {
       historyStateEntry.editor.setEditorState(
         historyStateEntry.editorState.clone(historyStateEntry.undoSelection),
         {
-          tag: 'history-undo',
+          tag: 'historic',
         },
       );
     }

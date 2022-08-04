@@ -21,6 +21,7 @@ import {
   $isCodeNode,
   CODE_LANGUAGE_FRIENDLY_NAME_MAP,
   CODE_LANGUAGE_MAP,
+  getLanguageFriendlyName,
 } from '@lexical/code';
 import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {
@@ -78,7 +79,7 @@ import {
   UNDO_COMMAND,
 } from 'lexical';
 import * as React from 'react';
-import {ChangeEvent, useCallback, useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 import {IS_APPLE} from 'shared/environment';
 
@@ -118,7 +119,7 @@ const blockTypeToBlockName = {
 };
 
 function getCodeLanguageOptions(): [string, string][] {
-  const options: [string, string][] = [['', '- Select language -']];
+  const options: [string, string][] = [];
 
   for (const [lang, friendlyName] of Object.entries(
     CODE_LANGUAGE_FRIENDLY_NAME_MAP,
@@ -820,28 +821,6 @@ function Divider(): JSX.Element {
   return <div className="divider" />;
 }
 
-function Select({
-  onChange,
-  className,
-  options,
-  value,
-}: {
-  className: string;
-  onChange: (e: ChangeEvent) => void;
-  options: [string, string][];
-  value: string;
-}): JSX.Element {
-  return (
-    <select className={className} onChange={onChange} value={value}>
-      {options.map(([option, text]) => (
-        <option key={option} value={option}>
-          {text}
-        </option>
-      ))}
-    </select>
-  );
-}
-
 function FontDropDown({
   editor,
   value,
@@ -1085,12 +1064,12 @@ export default function ToolbarPlugin(): JSX.Element {
   }, [editor, isLink]);
 
   const onCodeLanguageSelect = useCallback(
-    (e: ChangeEvent) => {
+    (value: string) => {
       activeEditor.update(() => {
         if (selectedElementKey !== null) {
           const node = $getNodeByKey(selectedElementKey);
           if ($isCodeNode(node)) {
-            node.setLanguage((e.target as HTMLSelectElement).value);
+            node.setLanguage(value);
           }
         }
       });
@@ -1132,13 +1111,23 @@ export default function ToolbarPlugin(): JSX.Element {
       )}
       {blockType === 'code' ? (
         <>
-          <Select
-            className="toolbar-item code-language"
-            onChange={onCodeLanguageSelect}
-            options={CODE_LANGUAGE_OPTIONS}
-            value={codeLanguage}
-          />
-          <i className="chevron-down inside" />
+          <DropDown
+            buttonClassName="toolbar-item code-language"
+            buttonLabel={getLanguageFriendlyName(codeLanguage)}
+            buttonAriaLabel="Select language">
+            {CODE_LANGUAGE_OPTIONS.map(([value, name]) => {
+              return (
+                <DropDownItem
+                  className={`item ${dropDownActiveClass(
+                    value === codeLanguage,
+                  )}`}
+                  onClick={() => onCodeLanguageSelect(value)}
+                  key={value}>
+                  <span className="text">{name}</span>
+                </DropDownItem>
+              );
+            })}
+          </DropDown>
         </>
       ) : (
         <>

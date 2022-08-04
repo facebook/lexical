@@ -773,6 +773,9 @@ i.prettier-error {
   .font-size .dropdown-button-text {
     display: flex !important;
   }
+  .code-language .dropdown-button-text {
+    display: flex !important;
+  }
 }
 
 .icon.paragraph {
@@ -1280,6 +1283,7 @@ button.action-button:disabled {
   vertical-align: middle;
   flex-shrink: 0;
   align-items: center;
+  justify-content: space-between;
 }
 
 .toolbar button.toolbar-item:disabled {
@@ -1321,7 +1325,7 @@ button.action-button:disabled {
   max-width: 40px;
 }
 
-.toolbar select.code-language {
+.toolbar .code-language {
   width: 150px;
 }
 

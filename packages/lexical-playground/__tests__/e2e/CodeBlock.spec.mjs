@@ -21,7 +21,6 @@ import {
   html,
   initialize,
   pasteFromClipboard,
-  selectOption,
   test,
 } from '../utils/index.mjs';
 
@@ -267,7 +266,8 @@ test.describe('CodeBlock', () => {
           </code>
         `,
       );
-      await selectOption(page, '.code-language', {value: 'sql'});
+      await click(page, '.toolbar-item.code-language');
+      await click(page, 'button:has-text("SQL")');
       await assertHTML(
         page,
         html`

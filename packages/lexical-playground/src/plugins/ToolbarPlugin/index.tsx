@@ -865,6 +865,11 @@ function FontDropDown({
     [editor, style],
   );
 
+  const buttonAriaLabel =
+    style === 'font-family'
+      ? 'Formatting options for font family'
+      : 'Formatting options for font size';
+
   return (
     <DropDown
       buttonClassName={'toolbar-item ' + style}
@@ -872,7 +877,7 @@ function FontDropDown({
       buttonIconClassName={
         style === 'font-family' ? 'icon block-type font-family' : ''
       }
-      buttonAriaLabel="Formatting options for font family">
+      buttonAriaLabel={buttonAriaLabel}>
       {(style === 'font-family' ? FONT_FAMILY_OPTIONS : FONT_SIZE_OPTIONS).map(
         ([option, text]) => (
           <DropDownItem

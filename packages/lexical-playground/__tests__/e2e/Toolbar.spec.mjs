@@ -302,7 +302,19 @@ test.describe('Toolbar', () => {
     await selectCharacters(page, 'left', 5);
 
     const actives = await page.$$('div.toolbar button.toolbar-item.active');
-    await page.pause();
+    expect(actives.length).toEqual(0);
+  });
+
+  test('Selecting empty paragraphs has empty selection format', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await focusEditor(page);
+    await page.keyboard.press('Enter');
+    await selectAll(page);
+    const actives = await page.$$('div.toolbar button.toolbar-item.active');
     expect(actives.length).toEqual(0);
   });
 });

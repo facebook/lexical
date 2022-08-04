@@ -256,12 +256,14 @@ function onSelectionChange(
         }
       } else {
         let combinedFormat = IS_ALL_FORMATTING;
+        let hasTextNodes = false;
 
         const nodes = selection.getNodes();
         const nodesLength = nodes.length;
         for (let i = 0; i < nodesLength; i++) {
           const node = nodes[i];
           if ($isTextNode(node)) {
+            hasTextNodes = true;
             combinedFormat &= node.getFormat();
             if (combinedFormat === 0) {
               break;
@@ -269,7 +271,7 @@ function onSelectionChange(
           }
         }
 
-        selection.format = combinedFormat;
+        selection.format = hasTextNodes ? combinedFormat : 0;
       }
     }
 

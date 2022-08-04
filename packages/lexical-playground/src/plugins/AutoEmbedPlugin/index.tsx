@@ -196,13 +196,17 @@ export function AutoEmbedDialog({
           className="Input__input"
           placeholder={embedConfig.exampleUrl}
           value={text}
+          data-test-id={`${embedConfig.type}-embed-modal-url`}
           onChange={(e) => {
             setText(e.target.value);
           }}
         />
       </div>
       <div className="ToolbarPlugin__dialogActions">
-        <Button disabled={!embedResult} onClick={onClick}>
+        <Button
+          disabled={!embedResult}
+          onClick={onClick}
+          data-test-id={`${embedConfig.type}-embed-modal-submit-btn`}>
           Embed
         </Button>
       </div>

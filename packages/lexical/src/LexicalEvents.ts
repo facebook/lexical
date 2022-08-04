@@ -625,7 +625,7 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
         $setCompositionKey(null);
       }
     } else {
-      $updateSelectedTextFromDOM(editor, false);
+      $updateSelectedTextFromDOM(false);
 
       // onInput always fires after onCompositionEnd for FF.
       if (isFirefoxEndingComposition) {
@@ -721,7 +721,7 @@ function onCompositionEndImpl(editor: LexicalEditor, data?: string): void {
     }
   }
 
-  $updateSelectedTextFromDOM(editor, true, data);
+  $updateSelectedTextFromDOM(true, data);
 }
 
 function onCompositionEnd(
@@ -752,17 +752,17 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
 
   const {keyCode, shiftKey, ctrlKey, metaKey, altKey} = event;
 
-  if (isMoveForward(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
+  if (isMoveForward(keyCode, ctrlKey, altKey, metaKey)) {
     dispatchCommand(editor, KEY_ARROW_RIGHT_COMMAND, event);
   } else if (isMoveToEnd(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
     dispatchCommand(editor, MOVE_TO_END, event);
-  } else if (isMoveBackward(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
+  } else if (isMoveBackward(keyCode, ctrlKey, altKey, metaKey)) {
     dispatchCommand(editor, KEY_ARROW_LEFT_COMMAND, event);
   } else if (isMoveToStart(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
     dispatchCommand(editor, MOVE_TO_START, event);
-  } else if (isMoveUp(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
+  } else if (isMoveUp(keyCode, ctrlKey, metaKey)) {
     dispatchCommand(editor, KEY_ARROW_UP_COMMAND, event);
-  } else if (isMoveDown(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
+  } else if (isMoveDown(keyCode, ctrlKey, metaKey)) {
     dispatchCommand(editor, KEY_ARROW_DOWN_COMMAND, event);
   } else if (isLineBreak(keyCode, shiftKey)) {
     isInsertLineBreak = true;

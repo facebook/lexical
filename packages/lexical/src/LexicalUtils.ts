@@ -496,7 +496,6 @@ export function createUID(): string {
 }
 
 export function $updateSelectedTextFromDOM(
-  editor: LexicalEditor,
   isCompositionEnd: boolean,
   data?: string,
 ): void {
@@ -882,7 +881,6 @@ function isArrowDown(keyCode: number): boolean {
 export function isMoveBackward(
   keyCode: number,
   ctrlKey: boolean,
-  shiftKey: boolean,
   altKey: boolean,
   metaKey: boolean,
 ): boolean {
@@ -902,7 +900,6 @@ export function isMoveToStart(
 export function isMoveForward(
   keyCode: number,
   ctrlKey: boolean,
-  shiftKey: boolean,
   altKey: boolean,
   metaKey: boolean,
 ): boolean {
@@ -922,8 +919,6 @@ export function isMoveToEnd(
 export function isMoveUp(
   keyCode: number,
   ctrlKey: boolean,
-  shiftKey: boolean,
-  altKey: boolean,
   metaKey: boolean,
 ): boolean {
   return isArrowUp(keyCode) && !ctrlKey && !metaKey;
@@ -932,8 +927,6 @@ export function isMoveUp(
 export function isMoveDown(
   keyCode: number,
   ctrlKey: boolean,
-  shiftKey: boolean,
-  altKey: boolean,
   metaKey: boolean,
 ): boolean {
   return isArrowDown(keyCode) && !ctrlKey && !metaKey;

@@ -438,7 +438,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
     const anchorNode = anchor.getNode();
     const focusNode = focus.getNode();
 
-    if (inputType === 'insertText') {
+    if (inputType === 'insertText' || inputType === 'insertTranspose') {
       if (data === '\n') {
         event.preventDefault();
         dispatchCommand(editor, INSERT_LINE_BREAK_COMMAND, false);

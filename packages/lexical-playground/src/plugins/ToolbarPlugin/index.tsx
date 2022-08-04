@@ -1114,7 +1114,7 @@ export default function ToolbarPlugin(): JSX.Element {
           <DropDown
             buttonClassName="toolbar-item code-language"
             buttonLabel={getLanguageFriendlyName(codeLanguage)}
-            buttonAriaLabel="- Select language -">
+            buttonAriaLabel="Select language">
             {CODE_LANGUAGE_OPTIONS.map(([value, name]) => {
               return (
                 <DropDownItem

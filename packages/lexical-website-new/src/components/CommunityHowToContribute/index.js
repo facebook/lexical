@@ -25,7 +25,7 @@ export default function CommunityHowToContribute() {
           <Translate
             id="pages.community.howTo.beforeParticipating"
             description="Phrase before paragraph listing documents and policies to read before contributing">
-            Before participating in React's communities, please read our
+            Before participating in Lexical's communities, please read our
           </Translate>{' '}
           <Link to="https://github.com/facebook/lexical/blob/main/CODE_OF_CONDUCT.md">
             <Translate

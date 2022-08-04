@@ -47,6 +47,7 @@ import {
   $patchStyleText,
   $selectAll,
   $wrapLeafNodesInElements,
+  getStyleObjectFromRawCSS,
 } from '@lexical/selection';
 import {INSERT_TABLE_COMMAND} from '@lexical/table';
 import {
@@ -56,12 +57,14 @@ import {
 } from '@lexical/utils';
 import {
   $createParagraphNode,
+  $createRangeSelection,
   $createTextNode,
   $getNodeByKey,
   $getRoot,
   $getSelection,
   $isRangeSelection,
   $isTextNode,
+  $setSelection,
   CAN_REDO_COMMAND,
   CAN_UNDO_COMMAND,
   COMMAND_PRIORITY_CRITICAL,
@@ -74,6 +77,7 @@ import {
   OUTDENT_CONTENT_COMMAND,
   REDO_COMMAND,
   SELECTION_CHANGE_COMMAND,
+  TextFormatType,
   TextNode,
   UNDO_COMMAND,
 } from 'lexical';
@@ -152,6 +156,16 @@ const FONT_SIZE_OPTIONS: [string, string][] = [
   ['18px', '18px'],
   ['19px', '19px'],
   ['20px', '20px'],
+];
+
+const TEXT_FORMATS: TextFormatType[] = [
+  'bold',
+  'italic',
+  'underline',
+  'code',
+  'strikethrough',
+  'subscript',
+  'superscript',
 ];
 
 function getSelectedNode(selection: RangeSelection): TextNode | ElementNode {
@@ -902,12 +916,16 @@ export default function ToolbarPlugin(): JSX.Element {
   const [bgColor, setBgColor] = useState<string>('#fff');
   const [fontFamily, setFontFamily] = useState<string>('Arial');
   const [isLink, setIsLink] = useState(false);
+  const [isDropper, setIsDropper] = useState(false);
   const [isBold, setIsBold] = useState(false);
   const [isItalic, setIsItalic] = useState(false);
   const [isUnderline, setIsUnderline] = useState(false);
   const [isStrikethrough, setIsStrikethrough] = useState(false);
   const [isSubscript, setIsSubscript] = useState(false);
   const [isSuperscript, setIsSuperscript] = useState(false);
+  const [dropperSelection, setDropperSelection] = useState(
+    $createRangeSelection(),
+  );
   const [isCode, setIsCode] = useState(false);
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
@@ -999,11 +1017,30 @@ export default function ToolbarPlugin(): JSX.Element {
       (_payload, newEditor) => {
         updateToolbar();
         setActiveEditor(newEditor);
+        if (isDropper) {
+          newEditor.update(() => {
+            const newSelection = $getSelection();
+            const node = newSelection?.getNodes()[0];
+            $setSelection(dropperSelection);
+            setIsDropper(false);
+            setDropperSelection($createRangeSelection());
+            if ($isTextNode(node)) {
+              $patchStyleText(
+                dropperSelection,
+                getStyleObjectFromRawCSS(node.getStyle()),
+              );
+              TEXT_FORMATS.forEach((format) => {
+                if (node.hasFormat(format))
+                  newEditor.dispatchCommand(FORMAT_TEXT_COMMAND, format);
+              });
+            }
+          });
+        }
         return false;
       },
       COMMAND_PRIORITY_CRITICAL,
     );
-  }, [editor, updateToolbar]);
+  }, [activeEditor, dropperSelection, editor, isDropper, updateToolbar]);
 
   useEffect(() => {
     return mergeRegister(
@@ -1075,6 +1112,20 @@ export default function ToolbarPlugin(): JSX.Element {
     },
     [applyStyleText],
   );
+
+  const onDropperSelect = useCallback(() => {
+    if (!isDropper) {
+      activeEditor.update(() => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          setDropperSelection(selection);
+        }
+      });
+    } else {
+      setDropperSelection($createRangeSelection());
+    }
+    setIsDropper(!isDropper);
+  }, [activeEditor, isDropper]);
 
   const insertLink = useCallback(() => {
     if (!isLink) {
@@ -1149,6 +1200,13 @@ export default function ToolbarPlugin(): JSX.Element {
           />
           <FontDropDown style={'font-size'} value={fontSize} editor={editor} />
           <Divider />
+          <button
+            onClick={onDropperSelect}
+            className={'toolbar-item spaced ' + (isDropper ? 'active' : '')}
+            aria-label="Copy Styles"
+            title="Copy Styles">
+            <i className="format dropper" />
+          </button>
           <button
             onClick={() => {
               activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold');

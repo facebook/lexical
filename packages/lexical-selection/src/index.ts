@@ -304,7 +304,7 @@ export function getStyleObjectFromCSS(
   return cssToStyles.get(css) || null;
 }
 
-function getStyleObjectFromRawCSS(css: string): Record<string, string> {
+export function getStyleObjectFromRawCSS(css: string): Record<string, string> {
   const styleObject: Record<string, string> = {};
   const styles = css.split(';');
 

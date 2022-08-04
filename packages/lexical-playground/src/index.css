@@ -388,6 +388,10 @@ i.code {
   background-image: url(images/icons/code.svg);
 }
 
+i.dropper {
+  background-image: url(images/icons/dropper.svg);
+}
+
 i.underline {
   background-image: url(images/icons/type-underline.svg);
 }

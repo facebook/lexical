@@ -155,7 +155,9 @@ export default function Editor(): JSX.Element {
             <FigmaPlugin />
             <ClickableLinkPlugin />
             <HorizontalRulePlugin />
-            <TextFormatFloatingToolbarPlugin />
+            {editorElem && (
+              <TextFormatFloatingToolbarPlugin editorElem={editorElem} />
+            )}
             <EquationsPlugin />
             <ExcalidrawPlugin />
             <TabFocusPlugin />

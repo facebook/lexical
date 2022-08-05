@@ -29,36 +29,44 @@ import {createPortal} from 'react-dom';
 
 import {INSERT_INLINE_COMMAND} from '../CommentPlugin';
 
+const POPUP_VERTICAL_GAP = 10;
+const POPUP_HORIZONTAL_OFFSET = 5;
+
 function setPopupPosition(
-  editor: HTMLElement,
-  rect: ClientRect,
-  rootElementRect: ClientRect,
+  rangeRect: ClientRect,
+  popupElem: HTMLElement,
+  editorElem: HTMLElement,
 ): void {
-  let top = rect.top - 8 + window.pageYOffset;
-  let left =
-    rect.left + 340 + window.pageXOffset - editor.offsetWidth + rect.width;
-  if (left + editor.offsetWidth > rootElementRect.right) {
-    left = rect.right - editor.offsetWidth;
-    top = rect.top - 50 + window.pageYOffset;
+  const scrollerElem = editorElem.parentElement;
+  if (!scrollerElem) {
+    return;
   }
-  if (left < 0) {
-    left = rect.left;
-    top = rect.bottom + 20;
+  const popupRect = popupElem.getBoundingClientRect();
+  const editorElementRect = editorElem.getBoundingClientRect();
+  const editorScrollerRect = scrollerElem.getBoundingClientRect();
+
+  let top = rangeRect.top - popupRect.height - POPUP_VERTICAL_GAP;
+  let left = rangeRect.left - POPUP_HORIZONTAL_OFFSET;
+
+  if (top < editorScrollerRect.top) {
+    top += popupRect.height + rangeRect.height + POPUP_VERTICAL_GAP * 2;
   }
-  if (rect.width >= rootElementRect.width - 25) {
-    left = rect.left;
-    top = rect.top - 50 + window.pageYOffset;
+
+  if (left + popupRect.width > editorScrollerRect.right) {
+    left = editorScrollerRect.right - popupRect.width - POPUP_HORIZONTAL_OFFSET;
   }
-  if (top < rootElementRect.top) {
-    top = rect.bottom + 20;
-  }
-  editor.style.opacity = '1';
-  editor.style.top = `${top}px`;
-  editor.style.left = `${left}px`;
+
+  top -= editorElementRect.top;
+  left -= editorElementRect.left;
+
+  popupElem.style.opacity = '1';
+  popupElem.style.top = `${top}px`;
+  popupElem.style.left = `${left}px`;
 }
 
 function TextFormatFloatingToolbar({
   editor,
+  editorElem,
   isLink,
   isBold,
   isItalic,
@@ -69,6 +77,7 @@ function TextFormatFloatingToolbar({
   isSuperscript,
 }: {
   editor: LexicalEditor;
+  editorElem: HTMLDivElement;
   isBold: boolean;
   isCode: boolean;
   isItalic: boolean;
@@ -111,7 +120,7 @@ function TextFormatFloatingToolbar({
       rootElement.contains(nativeSelection.anchorNode)
     ) {
       const domRange = nativeSelection.getRangeAt(0);
-      const rootElementRect = rootElement.getBoundingClientRect();
+
       let rect;
 
       if (nativeSelection.anchorNode === rootElement) {
@@ -124,9 +133,9 @@ function TextFormatFloatingToolbar({
         rect = domRange.getBoundingClientRect();
       }
 
-      setPopupPosition(popupCharStylesEditorElem, rect, rootElementRect);
+      setPopupPosition(rect, popupCharStylesEditorElem, editorElem);
     }
-  }, [editor]);
+  }, [editor, editorElem]);
 
   useEffect(() => {
     const onResize = () => {
@@ -257,6 +266,7 @@ function getSelectedNode(selection: RangeSelection): TextNode | ElementNode {
 
 function useTextFormatFloatingToolbar(
   editor: LexicalEditor,
+  editorElem: HTMLDivElement,
 ): JSX.Element | null {
   const [isText, setIsText] = useState(false);
   const [isLink, setIsLink] = useState(false);
@@ -342,6 +352,7 @@ function useTextFormatFloatingToolbar(
   return createPortal(
     <TextFormatFloatingToolbar
       editor={editor}
+      editorElem={editorElem}
       isLink={isLink}
       isBold={isBold}
       isItalic={isItalic}
@@ -351,11 +362,15 @@ function useTextFormatFloatingToolbar(
       isUnderline={isUnderline}
       isCode={isCode}
     />,
-    document.body,
+    editorElem,
   );
 }
 
-export default function TextFormatFloatingToolbarPlugin(): JSX.Element | null {
+export default function TextFormatFloatingToolbarPlugin({
+  editorElem,
+}: {
+  editorElem: HTMLDivElement;
+}): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
-  return useTextFormatFloatingToolbar(editor);
+  return useTextFormatFloatingToolbar(editor, editorElem);
 }

@@ -452,6 +452,49 @@ export function useBasicTypeaheadTriggerMatch(
   );
 }
 
+function useAnchorElementRef<TOption extends TypeaheadOption>(
+  resolution: Resolution | null,
+  options: Array<TOption>,
+): MutableRef<HTMLElement> {
+  const [editor] = useLexicalComposerContext();
+  const anchorElementRef = useRef<HTMLElement>(document.createElement('div'));
+  
+  useEffect(() => {
+    const rootElement = editor.getRootElement();
+    function positionMenu() {
+      const containerDiv = anchorElementRef.current;
+      containerDiv.setAttribute('aria-label', 'Typeahead menu');
+      containerDiv.setAttribute('id', 'typeahead-menu');
+      containerDiv.setAttribute('role', 'listbox');
+      if (rootElement !== null && resolution !== null) {
+        const {left, top, height, width} = resolution.getRect();
+        containerDiv.style.top = `${top + height + window.pageYOffset}px`;
+        containerDiv.style.left = `${left + width + window.pageXOffset}px`;
+        containerDiv.style.display = 'block';
+        containerDiv.style.position = 'absolute';
+        if (!containerDiv.isConnected) {
+          document.body.append(containerDiv);
+        }
+        anchorElementRef.current = containerDiv;
+        rootElement.setAttribute('aria-controls', 'typeahead-menu');
+      }
+    }
+
+    if (resolution !== null) {
+      positionMenu();
+      window.addEventListener('resize', positionMenu);
+      return () => {
+        window.removeEventListener('resize', positionMenu);
+        if (rootElement !== null) {
+          rootElement.removeAttribute('aria-controls');
+        }
+      };
+    }
+  }, [editor, resolution, options]);
+  
+  return anchorElementRef;
+}
+
 type TypeaheadMenuPluginArgs<TOption extends TypeaheadOption> = {
   onQueryChange: (matchingString: string | null) => void;
   onSelectOption: (
@@ -476,7 +519,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends TypeaheadOption>({
 }: TypeaheadMenuPluginArgs<TOption>): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   const [resolution, setResolution] = useState<Resolution | null>(null);
-  const anchorElementRef = useRef<HTMLElement>(document.createElement('div'));
+  const anchorElementRef = useAnchorElementRef(resolution, options);
 
   useEffect(() => {
     let activeRange: Range | null = document.createRange();
@@ -529,43 +572,6 @@ export function LexicalTypeaheadMenuPlugin<TOption extends TypeaheadOption>({
       removeUpdateListener();
     };
   }, [editor, triggerFn, onQueryChange, resolution]);
-  
-  
-  useEffect(() => {
-  }, [editor, resolution, options]);
-
-  useEffect(() => {
-    const rootElement = editor.getRootElement();
-    function positionMenu() {
-      const containerDiv = anchorElementRef.current;
-      containerDiv.setAttribute('aria-label', 'Typeahead menu');
-      containerDiv.setAttribute('id', 'typeahead-menu');
-      containerDiv.setAttribute('role', 'listbox');
-      if (rootElement !== null && resolution !== null) {
-        const {left, top, height, width} = resolution.getRect();
-        containerDiv.style.top = `${top + height + window.pageYOffset}px`;
-        containerDiv.style.left = `${left + width + window.pageXOffset}px`;
-        containerDiv.style.display = 'block';
-        containerDiv.style.position = 'absolute';
-        if (!containerDiv.isConnected) {
-          document.body.append(containerDiv);
-        }
-        anchorElementRef.current = containerDiv;
-        rootElement.setAttribute('aria-controls', 'typeahead-menu');
-      }
-    }
-
-    if (resolution !== null) {
-      positionMenu();
-      window.addEventListener('resize', positionMenu);
-      return () => {
-        window.removeEventListener('resize', positionMenu);
-        if (rootElement !== null) {
-          rootElement.removeAttribute('aria-controls');
-        }
-      };
-    }
-  }, [editor, resolution, options, anchorElementRef]);
 
   const closeTypeahead = useCallback(() => {
     setResolution(null);
@@ -607,6 +613,7 @@ export function LexicalNodeMenuPlugin<TOption extends TypeaheadOption>({
   const [editor] = useLexicalComposerContext();
 
   const [resolution, setResolution] = useState<Resolution | null>(null);
+  const anchorElementRef = useAnchorElementRef(resolution, options);
 
   useEffect(() => {
     if (nodeKey && resolution == null) {
@@ -629,7 +636,7 @@ export function LexicalNodeMenuPlugin<TOption extends TypeaheadOption>({
         }
       });
     } else if (nodeKey == null && resolution != null) {
-      startTransition(() => setResolution(null));
+      setResolution(null);
     }
   }, [editor, nodeKey, resolution]);
 
@@ -638,6 +645,7 @@ export function LexicalNodeMenuPlugin<TOption extends TypeaheadOption>({
       close={onClose}
       resolution={resolution}
       editor={editor}
+      anchorElement={anchorElementRef.current}
       options={options}
       menuRenderFn={menuRenderFn}
       onSelectOption={onSelectOption}

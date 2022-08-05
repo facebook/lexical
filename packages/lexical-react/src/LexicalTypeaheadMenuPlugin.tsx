@@ -529,7 +529,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends TypeaheadOption>({
           text === null ||
           range === null
         ) {
-          startTransition(() => setResolution(null));
+          setResolution(null);
           return;
         }
         previousText = text;
@@ -552,7 +552,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends TypeaheadOption>({
             return;
           }
         }
-        startTransition(() => setResolution(null));
+        setResolution(null);
       });
     };
 

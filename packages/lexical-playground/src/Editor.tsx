@@ -127,7 +127,13 @@ export default function Editor(): JSX.Element {
               <HistoryPlugin externalHistoryState={historyState} />
             )}
             <RichTextPlugin
-              contentEditable={<ContentEditable onRef={onRef} />}
+              contentEditable={
+                <div className="editor-scroller">
+                  <div className="editor" ref={onRef}>
+                    <ContentEditable />
+                  </div>
+                </div>
+              }
               placeholder={placeholder}
               // TODO Collab support until 0.4
               initialEditorState={isCollab ? null : undefined}

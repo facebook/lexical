@@ -13,16 +13,8 @@ import * as React from 'react';
 
 export default function LexicalContentEditable({
   className,
-  onRef,
 }: {
   className?: string;
-  onRef?: (element: HTMLDivElement) => void;
 }): JSX.Element {
-  return (
-    <div className="editor-scroller">
-      <div className="editor" ref={onRef}>
-        <ContentEditable className={className || 'ContentEditable__root'} />
-      </div>
-    </div>
-  );
+  return <ContentEditable className={className || 'ContentEditable__root'} />;
 }

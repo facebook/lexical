@@ -156,7 +156,10 @@ export type RootListener = (
 
 export type TextContentListener = (text: string) => void;
 
-export type MutationListener = (nodes: Map<NodeKey, NodeMutation>) => void;
+export type MutationListener = (
+  nodes: Map<NodeKey, NodeMutation>,
+  payload: {updateTags: Set<string>; dirtyLeaves: Set<string>},
+) => void;
 
 export type CommandListener<P> = (payload: P, editor: LexicalEditor) => boolean;
 

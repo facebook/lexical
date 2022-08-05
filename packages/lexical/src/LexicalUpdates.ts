@@ -557,6 +557,8 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
       currentEditorState,
       pendingEditorState,
       mutatedNodes,
+      tags,
+      dirtyLeaves,
     );
   }
 
@@ -597,6 +599,8 @@ function triggerMutationListeners(
   currentEditorState: EditorState,
   pendingEditorState: EditorState,
   mutatedNodes: MutatedNodes,
+  updateTags: Set<string>,
+  dirtyLeaves: Set<string>,
 ): void {
   const listeners = Array.from(editor._listeners.mutation);
   const listenersLength = listeners.length;
@@ -605,7 +609,10 @@ function triggerMutationListeners(
     const [listener, klass] = listeners[i];
     const mutatedNodesByType = mutatedNodes.get(klass);
     if (mutatedNodesByType !== undefined) {
-      listener(mutatedNodesByType);
+      listener(mutatedNodesByType, {
+        dirtyLeaves,
+        updateTags,
+      });
     }
   }
 }

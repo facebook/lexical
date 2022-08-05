@@ -147,6 +147,9 @@
       "@lexical/react/LexicalAutoLinkPlugin": [
         "./packages/lexical-react/src/LexicalAutoLinkPlugin.ts"
       ],
+      "@lexical/react/LexicalAutoEmbedPlugin": [
+        "./packages/lexical-react/src/LexicalAutoEmbedPlugin.tsx"
+      ],
       "@lexical/react/LexicalListPlugin": [
         "./packages/lexical-react/src/LexicalListPlugin.ts"
       ],

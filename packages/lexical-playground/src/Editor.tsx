@@ -27,6 +27,7 @@ import {useSettings} from './context/SettingsContext';
 import {useSharedHistoryContext} from './context/SharedHistoryContext';
 import ActionsPlugin from './plugins/ActionsPlugin';
 import AutocompletePlugin from './plugins/AutocompletePlugin';
+import AutoEmbedPlugin from './plugins/AutoEmbedPlugin';
 import AutoLinkPlugin from './plugins/AutoLinkPlugin';
 import ClickableLinkPlugin from './plugins/ClickableLinkPlugin';
 import CodeActionMenuPlugin from './plugins/CodeActionMenuPlugin';
@@ -95,6 +96,7 @@ export default function Editor(): JSX.Element {
         <AutoFocusPlugin />
         <ClearEditorPlugin />
         <ComponentPickerPlugin />
+        <AutoEmbedPlugin />
         <MentionsPlugin />
         <EmojisPlugin />
         <HashtagPlugin />

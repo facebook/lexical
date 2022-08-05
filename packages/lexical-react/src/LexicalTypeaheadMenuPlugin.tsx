@@ -458,7 +458,7 @@ function useAnchorElementRef<TOption extends TypeaheadOption>(
 ): MutableRefObject<HTMLElement> {
   const [editor] = useLexicalComposerContext();
   const anchorElementRef = useRef<HTMLElement>(document.createElement('div'));
-  
+
   useEffect(() => {
     const rootElement = editor.getRootElement();
     function positionMenu() {
@@ -491,7 +491,7 @@ function useAnchorElementRef<TOption extends TypeaheadOption>(
       };
     }
   }, [editor, resolution, options]);
-  
+
   return anchorElementRef;
 }
 

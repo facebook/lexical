@@ -259,7 +259,7 @@ export function convertToSegmentedNode() {
   };
 }
 
-export function insertParagraph(text) {
+export function insertParagraph() {
   return {
     type: 'insert_paragraph',
   };

@@ -224,6 +224,7 @@ function startTransition(callback: () => void) {
 function ShortcutTypeahead<TOption extends TypeaheadOption>({
   close,
   editor,
+  anchorElementRef,
   resolution,
   options,
   menuRenderFn,
@@ -231,6 +232,7 @@ function ShortcutTypeahead<TOption extends TypeaheadOption>({
 }: {
   close: () => void;
   editor: LexicalEditor;
+  anchorElementRef: MutableRefObject<HTMLElement>;
   resolution: Resolution;
   options: Array<TOption>;
   menuRenderFn: MenuRenderFn<TOption>;
@@ -242,7 +244,6 @@ function ShortcutTypeahead<TOption extends TypeaheadOption>({
   ) => void;
 }): JSX.Element | null {
   const [selectedIndex, setHighlightedIndex] = useState<null | number>(null);
-  const anchorElementRef = useRef<HTMLElement>(document.createElement('div'));
 
   useEffect(() => {
     setHighlightedIndex(0);
@@ -507,8 +508,9 @@ export function LexicalTypeaheadMenuPlugin<TOption extends TypeaheadOption>({
   triggerFn,
 }: TypeaheadMenuPluginArgs<TOption>): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
-
+  
   const [resolution, setResolution] = useState<Resolution | null>(null);
+  const anchorElementRef = useRef<HTMLElement>(document.createElement('div'));
 
   useEffect(() => {
     let activeRange: Range | null = document.createRange();
@@ -571,6 +573,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends TypeaheadOption>({
       close={closeTypeahead}
       resolution={resolution}
       editor={editor}
+      anchorElementRef={anchorElementRef}
       options={options}
       menuRenderFn={menuRenderFn}
       onSelectOption={onSelectOption}

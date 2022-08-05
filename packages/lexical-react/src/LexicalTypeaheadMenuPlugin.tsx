@@ -455,7 +455,7 @@ export function useBasicTypeaheadTriggerMatch(
 function useAnchorElementRef<TOption extends TypeaheadOption>(
   resolution: Resolution | null,
   options: Array<TOption>,
-): MutableRef<HTMLElement> {
+): MutableRefObject<HTMLElement> {
   const [editor] = useLexicalComposerContext();
   const anchorElementRef = useRef<HTMLElement>(document.createElement('div'));
   

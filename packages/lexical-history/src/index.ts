@@ -206,7 +206,8 @@ function isTextNodeUnchanged(
       prevNode.__mode === nextNode.__mode &&
       prevNode.__detail === nextNode.__detail &&
       prevNode.__style === nextNode.__style &&
-      prevNode.__format === nextNode.__format
+      prevNode.__format === nextNode.__format &&
+      prevNode.__parent === nextNode.__parent
     );
   }
   return false;

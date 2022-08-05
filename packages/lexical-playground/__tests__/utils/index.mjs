@@ -496,9 +496,12 @@ export async function insertUploadImage(page, files, altText) {
 
 export async function insertYouTubeEmbed(page, url) {
   await selectFromInsertDropdown(page, '.youtube');
-  await focus(page, 'input[data-test-id="youtube-embed-modal-url"]');
+  await focus(page, 'input[data-test-id="youtube-video-embed-modal-url"]');
   await page.keyboard.type(url);
-  await click(page, 'button[data-test-id="youtube-embed-modal-submit-btn"]');
+  await click(
+    page,
+    'button[data-test-id="youtube-video-embed-modal-submit-btn"]',
+  );
 }
 
 export async function insertImageCaption(page, caption) {

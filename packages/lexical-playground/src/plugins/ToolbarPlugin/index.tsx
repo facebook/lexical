@@ -32,6 +32,7 @@ import {
   ListNode,
   REMOVE_LIST_COMMAND,
 } from '@lexical/list';
+import {INSERT_EMBED_COMMAND} from '@lexical/react/LexicalAutoEmbedPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$isDecoratorBlockNode} from '@lexical/react/LexicalDecoratorBlockNode';
 import {INSERT_HORIZONTAL_RULE_COMMAND} from '@lexical/react/LexicalHorizontalRuleNode';
@@ -96,12 +97,11 @@ import FileInput from '../../ui/FileInput.jsx';
 import KatexEquationAlterer from '../../ui/KatexEquationAlterer';
 import LinkPreview from '../../ui/LinkPreview';
 import TextInput from '../../ui/TextInput';
+import {EmbedConfigs} from '../AutoEmbedPlugin';
 import {INSERT_EQUATION_COMMAND} from '../EquationsPlugin';
 import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawPlugin';
 import {INSERT_IMAGE_COMMAND} from '../ImagesPlugin';
 import {INSERT_POLL_COMMAND} from '../PollPlugin';
-import {INSERT_TWEET_COMMAND} from '../TwitterPlugin';
-import {INSERT_YOUTUBE_COMMAND} from '../YouTubePlugin';
 
 const blockTypeToBlockName = {
   bullet: 'Bulleted List',
@@ -532,92 +532,6 @@ export function InsertPollDialog({
       <TextInput label="Question" onChange={setQuestion} value={question} />
       <div className="ToolbarPlugin__dialogActions">
         <Button disabled={question.trim() === ''} onClick={onClick}>
-          Confirm
-        </Button>
-      </div>
-    </>
-  );
-}
-
-const VALID_TWITTER_URL = /twitter.com\/\w{1,20}\/status\/([0-9]*)/g;
-
-export function InsertTweetDialog({
-  activeEditor,
-  onClose,
-}: {
-  activeEditor: LexicalEditor;
-  onClose: () => void;
-}): JSX.Element {
-  const [text, setText] = useState('');
-
-  const onClick = () => {
-    const tweetID = text.split('status/')?.[1]?.split('?')?.[0];
-    activeEditor.dispatchCommand(INSERT_TWEET_COMMAND, tweetID);
-    onClose();
-  };
-
-  const isDisabled = text === '' || !text.match(VALID_TWITTER_URL);
-
-  return (
-    <>
-      <TextInput
-        label="Tweet URL"
-        placeholder="i.e. https://twitter.com/jack/status/20"
-        onChange={setText}
-        value={text}
-      />
-      <div className="ToolbarPlugin__dialogActions">
-        <Button disabled={isDisabled} onClick={onClick}>
-          Confirm
-        </Button>
-      </div>
-    </>
-  );
-}
-
-// Taken from https://stackoverflow.com/a/9102270
-const YOUTUBE_ID_PARSER =
-  /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-
-const parseYouTubeVideoID = (url: string) => {
-  const urlMatches = url.match(YOUTUBE_ID_PARSER);
-
-  return urlMatches?.[2].length === 11 ? urlMatches[2] : null;
-};
-
-function InsertYouTubeDialog({
-  activeEditor,
-  onClose,
-}: {
-  activeEditor: LexicalEditor;
-  onClose: () => void;
-}): JSX.Element {
-  const [text, setText] = useState('');
-
-  const onClick = () => {
-    const videoID = parseYouTubeVideoID(text);
-    if (videoID) {
-      activeEditor.dispatchCommand(INSERT_YOUTUBE_COMMAND, videoID);
-    }
-    onClose();
-  };
-
-  const isDisabled = text === '' || !parseYouTubeVideoID(text);
-
-  return (
-    <>
-      <TextInput
-        data-test-id="youtube-embed-modal-url"
-        label="YouTube URL"
-        placeholder="i.e. https://www.youtube.com/watch?v=jNQXAC9IVRw"
-        onChange={setText}
-        value={text}
-      />
-      <div className="ToolbarPlugin__dialogActions">
-        <Button
-          data-test-id="youtube-embed-modal-submit-btn"
-          disabled={isDisabled}
-          onClick={onClick}>
           Confirm
         </Button>
       </div>
@@ -1341,32 +1255,7 @@ export default function ToolbarPlugin(): JSX.Element {
               <i className="icon poll" />
               <span className="text">Poll</span>
             </DropDownItem>
-            <DropDownItem
-              onClick={() => {
-                showModal('Insert Tweet', (onClose) => (
-                  <InsertTweetDialog
-                    activeEditor={activeEditor}
-                    onClose={onClose}
-                  />
-                ));
-              }}
-              className="item">
-              <i className="icon tweet" />
-              <span className="text">Tweet</span>
-            </DropDownItem>
-            <DropDownItem
-              onClick={() => {
-                showModal('Insert YouTube Video', (onClose) => (
-                  <InsertYouTubeDialog
-                    activeEditor={activeEditor}
-                    onClose={onClose}
-                  />
-                ));
-              }}
-              className="item">
-              <i className="icon youtube" />
-              <span className="text">YouTube Video</span>
-            </DropDownItem>
+
             <DropDownItem
               onClick={() => {
                 showModal('Insert Equation', (onClose) => (
@@ -1392,6 +1281,20 @@ export default function ToolbarPlugin(): JSX.Element {
               <i className="icon sticky" />
               <span className="text">Sticky Note</span>
             </DropDownItem>
+            {EmbedConfigs.map((embedConfig) => (
+              <DropDownItem
+                key={embedConfig.type}
+                onClick={() => {
+                  activeEditor.dispatchCommand(
+                    INSERT_EMBED_COMMAND,
+                    embedConfig.type,
+                  );
+                }}
+                className="item">
+                {embedConfig.icon}
+                <span className="text">{embedConfig.contentName}</span>
+              </DropDownItem>
+            ))}
           </DropDown>
         </>
       )}

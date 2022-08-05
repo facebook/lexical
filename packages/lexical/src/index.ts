@@ -14,6 +14,7 @@ export type {
   Klass,
   LexicalCommand,
   LexicalEditor,
+  MutationListener,
   NodeMutation,
   ReadOnlyListener,
   SerializedEditor,

@@ -137,6 +137,7 @@ const moduleResolution = [
   'LexicalAutoFocusPlugin',
   "LexicalTableOfContents__EXPERIMENTAL",
   'LexicalAutoLinkPlugin',
+  'LexicalAutoEmbedPlugin',
   'LexicalOnChangePlugin',
   'LexicalAutoScrollPlugin',
 ].forEach((module) => {

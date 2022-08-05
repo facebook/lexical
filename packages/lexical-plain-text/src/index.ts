@@ -92,15 +92,20 @@ function onPasteForPlainText(
   editor: LexicalEditor,
 ): void {
   event.preventDefault();
-  editor.update(() => {
-    const selection = $getSelection();
-    const clipboardData =
-      event instanceof InputEvent ? null : event.clipboardData;
+  editor.update(
+    () => {
+      const selection = $getSelection();
+      const clipboardData =
+        event instanceof InputEvent ? null : event.clipboardData;
 
-    if (clipboardData != null && $isRangeSelection(selection)) {
-      $insertDataTransferForPlainText(clipboardData, selection);
-    }
-  });
+      if (clipboardData != null && $isRangeSelection(selection)) {
+        $insertDataTransferForPlainText(clipboardData, selection);
+      }
+    },
+    {
+      tag: 'paste',
+    },
+  );
 }
 
 function onCutForPlainText(

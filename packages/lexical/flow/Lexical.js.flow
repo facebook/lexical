@@ -78,7 +78,10 @@ type RootListener = (
 ) => void;
 type TextContentListener = (text: string) => void;
 type ErrorHandler = (error: Error) => void;
-type MutationListener = (nodes: Map<NodeKey, NodeMutation>) => void;
+export type MutationListener = (
+  nodes: Map<NodeKey, NodeMutation>,
+  {updateTags: Set<string>, dirtyLeaves: Set<string>},
+) => void;
 export type ReadOnlyListener = (readOnly: boolean) => void;
 type Listeners = {
   decorator: Set<DecoratorListener>,

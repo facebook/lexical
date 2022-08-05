@@ -116,11 +116,8 @@ export function $insertDataTransferForRichText(
     try {
       const parser = new DOMParser();
       const dom = parser.parseFromString(htmlString, 'text/html');
-      return $insertGeneratedNodes(
-        editor,
-        $generateNodesFromDOM(editor, dom),
-        selection,
-      );
+      const nodes = $generateNodesFromDOM(editor, dom);
+      return $insertGeneratedNodes(editor, nodes, selection);
       // eslint-disable-next-line no-empty
     } catch {}
   }

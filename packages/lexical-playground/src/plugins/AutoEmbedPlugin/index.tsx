@@ -22,6 +22,7 @@ import * as React from 'react';
 
 import useModal from '../../hooks/useModal';
 import Button from '../../ui/Button';
+import {INSERT_FIGMA_COMMAND} from '../FigmaPlugin';
 import {INSERT_TWEET_COMMAND} from '../TwitterPlugin';
 import {INSERT_YOUTUBE_COMMAND} from '../YouTubePlugin';
 
@@ -110,6 +111,45 @@ export const TwitterEmbedConfig: PlaygroundEmbedConfig = {
 
   type: 'tweet',
 };
+
+export const FigmaEmbedConfig: PlaygroundEmbedConfig = {
+  contentName: 'Figma Document',
+
+  exampleUrl: 'https://www.figma.com/file/LKQ4FJ4bTnCSjedbRpk931/Sample-File',
+
+  icon: <i className="icon figma" />,
+
+  insertNode: (editor: LexicalEditor, result: EmbedMatchResult) => {
+    editor.dispatchCommand(INSERT_FIGMA_COMMAND, result.id);
+  },
+
+  keywords: ['figma', 'figma.com', 'mock-up'],
+
+  // Determine if a given URL is a match and return url data.
+  parseUrl: (text: string) => {
+    const match =
+      /https:\/\/([\w.-]+\.)?figma.com\/(file|proto)\/([0-9a-zA-Z]{22,128})(?:\/.*)?$/.exec(
+        text,
+      );
+
+    if (match != null) {
+      return {
+        id: match[3],
+        url: match[0],
+      };
+    }
+
+    return null;
+  },
+
+  type: 'figma',
+};
+
+export const EmbedConfigs = [
+  TwitterEmbedConfig,
+  YoutubeEmbedConfig,
+  FigmaEmbedConfig,
+];
 
 function AutoEmbedMenuItem({
   index,
@@ -213,8 +253,6 @@ export function AutoEmbedDialog({
     </div>
   );
 }
-
-export const EmbedConfigs = [TwitterEmbedConfig, YoutubeEmbedConfig];
 
 export default function AutoEmbedPlugin(): JSX.Element {
   const [modal, showModal] = useModal();

@@ -533,35 +533,37 @@ export function LexicalTypeaheadMenuPlugin<TOption extends TypeaheadOption>({
   }, [editor, triggerFn, onQueryChange, resolution]);
 
   useEffect(() => {
-    const rootElement = editor.getRootElement();
+    if (resolution !== null) {
+      const rootElement = editor.getRootElement();
 
-    function positionMenu() {
-      const containerDiv = anchorElementRef.current;
-      containerDiv.setAttribute('aria-label', 'Typeahead menu');
-      containerDiv.setAttribute('id', 'typeahead-menu');
-      containerDiv.setAttribute('role', 'listbox');
-      if (rootElement !== null) {
-        const range = resolution.range;
-        const {left, top, height} = range.getBoundingClientRect();
-        containerDiv.style.top = `${top + height + window.pageYOffset}px`;
-        containerDiv.style.left = `${left + window.pageXOffset}px`;
-        containerDiv.style.display = 'block';
-        containerDiv.style.position = 'absolute';
-        if (!containerDiv.isConnected) {
-          document.body.append(containerDiv);
+      function positionMenu() {
+        const containerDiv = anchorElementRef.current;
+        containerDiv.setAttribute('aria-label', 'Typeahead menu');
+        containerDiv.setAttribute('id', 'typeahead-menu');
+        containerDiv.setAttribute('role', 'listbox');
+        if (rootElement !== null && resolution !== null) {
+          const range = resolution.range;
+          const {left, top, height} = range.getBoundingClientRect();
+          containerDiv.style.top = `${top + height + window.pageYOffset}px`;
+          containerDiv.style.left = `${left + window.pageXOffset}px`;
+          containerDiv.style.display = 'block';
+          containerDiv.style.position = 'absolute';
+          if (!containerDiv.isConnected) {
+            document.body.append(containerDiv);
+          }
+          anchorElementRef.current = containerDiv;
+          rootElement.setAttribute('aria-controls', 'typeahead-menu');
         }
-        anchorElementRef.current = containerDiv;
-        rootElement.setAttribute('aria-controls', 'typeahead-menu');
       }
+      positionMenu();
+      window.addEventListener('resize', positionMenu);
+      return () => {
+        window.removeEventListener('resize', positionMenu);
+        if (rootElement !== null) {
+          rootElement.removeAttribute('aria-controls');
+        }
+      };
     }
-    positionMenu();
-    window.addEventListener('resize', positionMenu);
-    return () => {
-      window.removeEventListener('resize', positionMenu);
-      if (rootElement !== null) {
-        rootElement.removeAttribute('aria-controls');
-      }
-    };
   }, [editor, resolution, options, anchorElementRef]);
 
   const closeTypeahead = useCallback(() => {

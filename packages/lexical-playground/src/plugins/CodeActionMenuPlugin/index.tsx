@@ -32,9 +32,9 @@ interface Position {
 }
 
 function CodeActionMenuContainer({
-  editorElem,
+  anchorElem,
 }: {
-  editorElem: HTMLDivElement;
+  anchorElem: HTMLDivElement;
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
 
@@ -81,7 +81,7 @@ function CodeActionMenuContainer({
 
       if (codeNode) {
         const {y: editorElemY, right: editorElemRight} =
-          editorElem.getBoundingClientRect();
+          anchorElem.getBoundingClientRect();
         const {y, right} = codeDOMNode.getBoundingClientRect();
         setLang(_lang);
         setShown(true);
@@ -173,12 +173,12 @@ function getMouseInfo(event: MouseEvent): {
 }
 
 export default function CodeActionMenuPlugin({
-  editorElem,
+  anchorElem,
 }: {
-  editorElem: HTMLDivElement;
+  anchorElem: HTMLDivElement;
 }): React.ReactPortal | null {
   return createPortal(
-    <CodeActionMenuContainer editorElem={editorElem} />,
-    editorElem,
+    <CodeActionMenuContainer anchorElem={anchorElem} />,
+    anchorElem,
   );
 }

@@ -35,14 +35,14 @@ const POPUP_HORIZONTAL_OFFSET = 5;
 function setPopupPosition(
   rangeRect: ClientRect,
   popupElem: HTMLElement,
-  editorElem: HTMLElement,
+  anchorElem: HTMLElement,
 ): void {
-  const scrollerElem = editorElem.parentElement;
+  const scrollerElem = anchorElem.parentElement;
   if (!scrollerElem) {
     return;
   }
   const popupRect = popupElem.getBoundingClientRect();
-  const editorElementRect = editorElem.getBoundingClientRect();
+  const anchorElementRect = anchorElem.getBoundingClientRect();
   const editorScrollerRect = scrollerElem.getBoundingClientRect();
 
   let top = rangeRect.top - popupRect.height - POPUP_VERTICAL_GAP;
@@ -56,8 +56,8 @@ function setPopupPosition(
     left = editorScrollerRect.right - popupRect.width - POPUP_HORIZONTAL_OFFSET;
   }
 
-  top -= editorElementRect.top;
-  left -= editorElementRect.left;
+  top -= anchorElementRect.top;
+  left -= anchorElementRect.left;
 
   popupElem.style.opacity = '1';
   popupElem.style.top = `${top}px`;
@@ -66,7 +66,7 @@ function setPopupPosition(
 
 function TextFormatFloatingToolbar({
   editor,
-  editorElem,
+  anchorElem,
   isLink,
   isBold,
   isItalic,
@@ -77,7 +77,7 @@ function TextFormatFloatingToolbar({
   isSuperscript,
 }: {
   editor: LexicalEditor;
-  editorElem: HTMLDivElement;
+  anchorElem: HTMLDivElement;
   isBold: boolean;
   isCode: boolean;
   isItalic: boolean;
@@ -133,9 +133,9 @@ function TextFormatFloatingToolbar({
         rect = domRange.getBoundingClientRect();
       }
 
-      setPopupPosition(rect, popupCharStylesEditorElem, editorElem);
+      setPopupPosition(rect, popupCharStylesEditorElem, anchorElem);
     }
-  }, [editor, editorElem]);
+  }, [editor, anchorElem]);
 
   useEffect(() => {
     const onResize = () => {
@@ -266,7 +266,7 @@ function getSelectedNode(selection: RangeSelection): TextNode | ElementNode {
 
 function useTextFormatFloatingToolbar(
   editor: LexicalEditor,
-  editorElem: HTMLDivElement,
+  anchorElem: HTMLDivElement,
 ): JSX.Element | null {
   const [isText, setIsText] = useState(false);
   const [isLink, setIsLink] = useState(false);
@@ -352,7 +352,7 @@ function useTextFormatFloatingToolbar(
   return createPortal(
     <TextFormatFloatingToolbar
       editor={editor}
-      editorElem={editorElem}
+      anchorElem={anchorElem}
       isLink={isLink}
       isBold={isBold}
       isItalic={isItalic}
@@ -362,15 +362,15 @@ function useTextFormatFloatingToolbar(
       isUnderline={isUnderline}
       isCode={isCode}
     />,
-    editorElem,
+    anchorElem,
   );
 }
 
 export default function TextFormatFloatingToolbarPlugin({
-  editorElem,
+  anchorElem,
 }: {
-  editorElem: HTMLDivElement;
+  anchorElem: HTMLDivElement;
 }): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
-  return useTextFormatFloatingToolbar(editor, editorElem);
+  return useTextFormatFloatingToolbar(editor, anchorElem);
 }

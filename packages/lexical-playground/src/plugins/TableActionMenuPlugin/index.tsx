@@ -403,9 +403,9 @@ function TableActionMenu({
 }
 
 function TableCellActionMenuContainer({
-  editorElem,
+  anchorElem,
 }: {
-  editorElem: HTMLDivElement;
+  anchorElem: HTMLDivElement;
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
 
@@ -477,15 +477,15 @@ function TableCellActionMenuContainer({
       if (tableCellNodeDOM != null) {
         const tableCellRect = tableCellNodeDOM.getBoundingClientRect();
         const menuRect = menuButtonDOM.getBoundingClientRect();
-        const editorRect = editorElem.getBoundingClientRect();
+        const anchorRect = anchorElem.getBoundingClientRect();
 
         menuButtonDOM.style.opacity = '1';
 
         menuButtonDOM.style.left = `${
-          tableCellRect.right - menuRect.width - 10 - editorRect.left
+          tableCellRect.right - menuRect.width - 10 - anchorRect.left
         }px`;
 
-        menuButtonDOM.style.top = `${tableCellRect.top - editorRect.top + 4}px`;
+        menuButtonDOM.style.top = `${tableCellRect.top - anchorRect.top + 4}px`;
       } else {
         menuButtonDOM.style.opacity = '0';
       }
@@ -530,12 +530,12 @@ function TableCellActionMenuContainer({
 }
 
 export default function TableActionMenuPlugin({
-  editorElem,
+  anchorElem,
 }: {
-  editorElem: HTMLDivElement;
+  anchorElem: HTMLDivElement;
 }): ReactPortal {
   return createPortal(
-    <TableCellActionMenuContainer editorElem={editorElem} />,
-    editorElem,
+    <TableCellActionMenuContainer anchorElem={anchorElem} />,
+    anchorElem,
   );
 }

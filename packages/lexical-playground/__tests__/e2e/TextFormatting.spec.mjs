@@ -183,9 +183,9 @@ test.describe('TextFormatting', () => {
       `,
     );
     await assertSelection(page, {
-      anchorOffset: 0,
+      anchorOffset: 5,
       anchorPath: [0, 1, 0],
-      focusOffset: 5,
+      focusOffset: 0,
       focusPath: [0, 1, 0],
     });
 
@@ -201,9 +201,9 @@ test.describe('TextFormatting', () => {
       `,
     );
     await assertSelection(page, {
-      anchorOffset: 6,
+      anchorOffset: 11,
       anchorPath: [0, 0, 0],
-      focusOffset: 11,
+      focusOffset: 6,
       focusPath: [0, 0, 0],
     });
   });
@@ -289,9 +289,9 @@ test.describe('TextFormatting', () => {
       `,
     );
     await assertSelection(page, {
-      anchorOffset: 0,
+      anchorOffset: 5,
       anchorPath: [0, 1, 0],
-      focusOffset: 5,
+      focusOffset: 0,
       focusPath: [0, 1, 0],
     });
 
@@ -307,9 +307,9 @@ test.describe('TextFormatting', () => {
       `,
     );
     await assertSelection(page, {
-      anchorOffset: 6,
+      anchorOffset: 11,
       anchorPath: [0, 0, 0],
-      focusOffset: 11,
+      focusOffset: 6,
       focusPath: [0, 0, 0],
     });
   });
@@ -349,9 +349,9 @@ test.describe('TextFormatting', () => {
       `,
     );
     await assertSelection(page, {
-      anchorOffset: 0,
+      anchorOffset: 5,
       anchorPath: [0, 1, 0],
-      focusOffset: 5,
+      focusOffset: 0,
       focusPath: [0, 1, 0],
     });
 
@@ -367,9 +367,9 @@ test.describe('TextFormatting', () => {
       `,
     );
     await assertSelection(page, {
-      anchorOffset: 6,
+      anchorOffset: 11,
       anchorPath: [0, 0, 0],
-      focusOffset: 11,
+      focusOffset: 6,
       focusPath: [0, 0, 0],
     });
 
@@ -394,9 +394,9 @@ test.describe('TextFormatting', () => {
       `,
     );
     await assertSelection(page, {
-      anchorOffset: 0,
+      anchorOffset: 5,
       anchorPath: [0, 1, 0],
-      focusOffset: 5,
+      focusOffset: 0,
       focusPath: [0, 1, 0],
     });
 
@@ -419,9 +419,9 @@ test.describe('TextFormatting', () => {
       `,
     );
     await assertSelection(page, {
-      anchorOffset: 0,
+      anchorOffset: 5,
       anchorPath: [0, 1, 0],
-      focusOffset: 5,
+      focusOffset: 0,
       focusPath: [0, 1, 0],
     });
   });
@@ -601,9 +601,9 @@ test.describe('TextFormatting', () => {
       `,
     );
     await assertSelection(page, {
-      anchorOffset: 0,
+      anchorOffset: 5,
       anchorPath: [0, 1, 0],
-      focusOffset: 5,
+      focusOffset: 0,
       focusPath: [0, 1, 0],
     });
 
@@ -736,21 +736,12 @@ test.describe('TextFormatting', () => {
       `,
     );
 
-    if (browserName === 'webkit') {
-      await assertSelection(page, {
-        anchorOffset: 0,
-        anchorPath: [0, 1, 0],
-        focusOffset: 5,
-        focusPath: [0, 1, 0],
-      });
-    } else {
-      await assertSelection(page, {
-        anchorOffset: 6,
-        anchorPath: [0, 0, 0],
-        focusOffset: 5,
-        focusPath: [0, 1, 0],
-      });
-    }
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [0, 1, 0],
+      focusOffset: 5,
+      focusPath: [0, 1, 0],
+    });
 
     await toggleItalic(page);
     await assertHTML(

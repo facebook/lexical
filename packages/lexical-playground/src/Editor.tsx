@@ -139,13 +139,11 @@ export default function Editor(): JSX.Element {
               initialEditorState={isCollab ? null : undefined}
             />
             <MarkdownShortcutPlugin />
-            {editorElem && <CodeActionMenuPlugin editorElem={editorElem} />}
             <CodeHighlightPlugin />
             <ListPlugin />
             <CheckListPlugin />
             <ListMaxIndentLevelPlugin maxDepth={7} />
             <TablePlugin />
-            <TableCellActionMenuPlugin />
             <TableCellResizer />
             <ImagesPlugin />
             <LinkPlugin />
@@ -155,12 +153,16 @@ export default function Editor(): JSX.Element {
             <FigmaPlugin />
             <ClickableLinkPlugin />
             <HorizontalRulePlugin />
-            {editorElem && (
-              <TextFormatFloatingToolbarPlugin editorElem={editorElem} />
-            )}
             <EquationsPlugin />
             <ExcalidrawPlugin />
             <TabFocusPlugin />
+            {editorElem && (
+              <>
+                <CodeActionMenuPlugin editorElem={editorElem} />
+                <TextFormatFloatingToolbarPlugin editorElem={editorElem} />
+                <TableCellActionMenuPlugin editorElem={editorElem} />
+              </>
+            )}
           </>
         ) : (
           <>

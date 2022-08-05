@@ -440,6 +440,10 @@ i.table {
   background-image: url(images/icons/table.svg);
 }
 
+i.close {
+  background-image: url(images/icons/close.svg);
+}
+
 i.poll {
   background-image: url(images/icons/card-checklist.svg);
 }

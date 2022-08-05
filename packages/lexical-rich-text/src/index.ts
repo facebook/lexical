@@ -409,17 +409,22 @@ function onPasteForRichText(
   editor: LexicalEditor,
 ): void {
   event.preventDefault();
-  editor.update(() => {
-    const selection = $getSelection();
-    const clipboardData =
-      event instanceof InputEvent ? null : event.clipboardData;
-    if (
-      clipboardData != null &&
-      ($isRangeSelection(selection) || $isGridSelection(selection))
-    ) {
-      $insertDataTransferForRichText(clipboardData, selection, editor);
-    }
-  });
+  editor.update(
+    () => {
+      const selection = $getSelection();
+      const clipboardData =
+        event instanceof InputEvent ? null : event.clipboardData;
+      if (
+        clipboardData != null &&
+        ($isRangeSelection(selection) || $isGridSelection(selection))
+      ) {
+        $insertDataTransferForRichText(clipboardData, selection, editor);
+      }
+    },
+    {
+      tag: 'paste',
+    },
+  );
 }
 
 function onCopyForRichText(

@@ -675,10 +675,10 @@ export default function NewMentionsPlugin(): JSX.Element | null {
   const checkForMentionMatch = useCallback(
     (text: string) => {
       const mentionMatch = getPossibleQueryMatch(text);
-      const slashMatch = checkForSlashTriggerMatch(text);
+      const slashMatch = checkForSlashTriggerMatch(text, editor);
       return !slashMatch && mentionMatch ? mentionMatch : null;
     },
-    [checkForSlashTriggerMatch],
+    [checkForSlashTriggerMatch, editor],
   );
 
   return (

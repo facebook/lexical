@@ -12,6 +12,7 @@ import {
   INSERT_ORDERED_LIST_COMMAND,
   INSERT_UNORDERED_LIST_COMMAND,
 } from '@lexical/list';
+import {INSERT_EMBED_COMMAND} from '@lexical/react/LexicalAutoEmbedPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {INSERT_HORIZONTAL_RULE_COMMAND} from '@lexical/react/LexicalHorizontalRuleNode';
 import {
@@ -35,6 +36,7 @@ import * as ReactDOM from 'react-dom';
 
 import useModal from '../../hooks/useModal';
 import catTypingGif from '../../images/cat-typing.gif';
+import {EmbedConfigs} from '../AutoEmbedPlugin';
 import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawPlugin';
 import {INSERT_IMAGE_COMMAND} from '../ImagesPlugin';
 import {
@@ -42,7 +44,6 @@ import {
   InsertImageDialog,
   InsertPollDialog,
   InsertTableDialog,
-  InsertTweetDialog,
 } from '../ToolbarPlugin';
 
 class ComponentPickerOption extends TypeaheadOption {
@@ -271,14 +272,15 @@ export default function ComponentPickerMenuPlugin(): JSX.Element {
             <InsertPollDialog activeEditor={editor} onClose={onClose} />
           )),
       }),
-      new ComponentPickerOption('Tweet', {
-        icon: <i className="icon tweet" />,
-        keywords: ['twitter', 'embed', 'tweet'],
-        onSelect: () =>
-          showModal('Insert Tweet', (onClose) => (
-            <InsertTweetDialog activeEditor={editor} onClose={onClose} />
-          )),
-      }),
+      ...EmbedConfigs.map(
+        (embedConfig) =>
+          new ComponentPickerOption(`Embed ${embedConfig.contentName}`, {
+            icon: embedConfig.icon,
+            keywords: [...embedConfig.keywords, 'embed'],
+            onSelect: () =>
+              editor.dispatchCommand(INSERT_EMBED_COMMAND, embedConfig.type),
+          }),
+      ),
       new ComponentPickerOption('Equation', {
         icon: <i className="icon equation" />,
         keywords: ['equation', 'latex', 'math'],
@@ -322,12 +324,11 @@ export default function ComponentPickerMenuPlugin(): JSX.Element {
       ? [
           ...dynamicOptions,
           ...baseOptions.filter((option) => {
-            const queryRegex = new RegExp(queryString, 'gi');
-            return queryRegex.exec(option.title) || option.keywords != null
-              ? option.keywords.some((keyword) => {
-                  queryRegex.lastIndex = 0;
-                  return queryRegex.exec(keyword);
-                })
+            return new RegExp(queryString, 'gi').exec(option.title) ||
+              option.keywords != null
+              ? option.keywords.some((keyword) =>
+                  new RegExp(queryString, 'gi').exec(keyword),
+                )
               : false;
           }),
         ]

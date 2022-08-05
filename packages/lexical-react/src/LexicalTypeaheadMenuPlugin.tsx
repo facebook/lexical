@@ -279,7 +279,7 @@ function ShortcutTypeahead<TOption extends TypeaheadOption>({
         rootElement.removeAttribute('aria-controls');
       }
     };
-  }, [editor, resolution, options]);
+  }, [editor, resolution, options, anchorElementRef]);
 
   const selectOptionAndCleanUp = useCallback(
     async (selectedEntry: TOption) => {

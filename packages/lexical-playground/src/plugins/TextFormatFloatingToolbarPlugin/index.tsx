@@ -77,7 +77,7 @@ function TextFormatFloatingToolbar({
   isSuperscript,
 }: {
   editor: LexicalEditor;
-  anchorElem: HTMLDivElement;
+  anchorElem: HTMLElement;
   isBold: boolean;
   isCode: boolean;
   isItalic: boolean;
@@ -266,7 +266,7 @@ function getSelectedNode(selection: RangeSelection): TextNode | ElementNode {
 
 function useTextFormatFloatingToolbar(
   editor: LexicalEditor,
-  anchorElem: HTMLDivElement,
+  anchorElem: HTMLElement,
 ): JSX.Element | null {
   const [isText, setIsText] = useState(false);
   const [isLink, setIsLink] = useState(false);
@@ -367,9 +367,9 @@ function useTextFormatFloatingToolbar(
 }
 
 export default function TextFormatFloatingToolbarPlugin({
-  anchorElem,
+  anchorElem = document.body,
 }: {
-  anchorElem: HTMLDivElement;
+  anchorElem: HTMLElement;
 }): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   return useTextFormatFloatingToolbar(editor, anchorElem);

@@ -405,7 +405,7 @@ function TableActionMenu({
 function TableCellActionMenuContainer({
   anchorElem,
 }: {
-  anchorElem: HTMLDivElement;
+  anchorElem: HTMLElement;
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
 
@@ -530,9 +530,9 @@ function TableCellActionMenuContainer({
 }
 
 export default function TableActionMenuPlugin({
-  anchorElem,
+  anchorElem = document.body,
 }: {
-  anchorElem: HTMLDivElement;
+  anchorElem?: HTMLElement;
 }): ReactPortal {
   return createPortal(
     <TableCellActionMenuContainer anchorElem={anchorElem} />,

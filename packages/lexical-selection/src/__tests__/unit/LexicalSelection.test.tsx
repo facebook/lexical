@@ -471,6 +471,62 @@ describe('LexicalSelection tests', () => {
         '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">' +
         '<p class="editor-paragraph"><br></p>' +
         '<p class="editor-paragraph" dir="ltr">' +
+        '<strong class="editor-text-bold" data-lexical-text="true">Hello</strong>' +
+        '</p>' +
+        '<p class="editor-paragraph" dir="ltr">' +
+        '<strong class="editor-text-bold" data-lexical-text="true">world</strong>' +
+        '</p>' +
+        '<p class="editor-paragraph"><br></p>' +
+        '</div>',
+      expectedSelection: {
+        anchorOffset: 0,
+        anchorPath: [0],
+        focusOffset: 0,
+        focusPath: [3],
+      },
+      inputs: [
+        insertParagraph(),
+        insertText('Hello'),
+        insertParagraph(),
+        insertText('world'),
+        insertParagraph(),
+        moveNativeSelection([0], 0, [3], 0),
+        formatBold(),
+      ],
+      name: 'Format multiline text selection that starts and ends on element and retain selection',
+    },
+    {
+      expectedHTML:
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">' +
+        '<p class="editor-paragraph" dir="ltr">' +
+        '<span data-lexical-text="true">He</span>' +
+        '<strong class="editor-text-bold" data-lexical-text="true">llo</strong>' +
+        '</p>' +
+        '<p class="editor-paragraph" dir="ltr">' +
+        '<strong class="editor-text-bold" data-lexical-text="true">wo</strong>' +
+        '<span data-lexical-text="true">rld</span>' +
+        '</p>' +
+        '</div>',
+      expectedSelection: {
+        anchorOffset: 0,
+        anchorPath: [0, 1, 0],
+        focusOffset: 2,
+        focusPath: [1, 0, 0],
+      },
+      inputs: [
+        insertText('Hello'),
+        insertParagraph(),
+        insertText('world'),
+        moveNativeSelection([0, 0, 0], 2, [1, 0, 0], 2),
+        formatBold(),
+      ],
+      name: 'Format multiline text selection that starts and ends within text',
+    },
+    {
+      expectedHTML:
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">' +
+        '<p class="editor-paragraph"><br></p>' +
+        '<p class="editor-paragraph" dir="ltr">' +
         '<span data-lexical-text="true">Hello </span>' +
         '<strong class="editor-text-bold" data-lexical-text="true">world</strong>' +
         '</p>' +

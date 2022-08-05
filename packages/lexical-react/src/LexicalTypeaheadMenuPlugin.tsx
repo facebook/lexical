@@ -508,7 +508,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends TypeaheadOption>({
   triggerFn,
 }: TypeaheadMenuPluginArgs<TOption>): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
-  
+
   const [resolution, setResolution] = useState<Resolution | null>(null);
   const anchorElementRef = useRef<HTMLElement>(document.createElement('div'));
 

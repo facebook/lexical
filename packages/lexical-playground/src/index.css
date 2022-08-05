@@ -444,6 +444,10 @@ i.close {
   background-image: url(images/icons/close.svg);
 }
 
+i.figma {
+  background-image: url(images/icons/figma.svg);
+}
+
 i.poll {
   background-image: url(images/icons/card-checklist.svg);
 }

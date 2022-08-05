@@ -33,11 +33,25 @@ Both the `anchor` and `focus` points refer to an object that represents a specif
 
 ### `NodeSelection`
 
-> TODO
+NodeSelection represents a selection of multiple arbitrary nodes. For example, three images selected at the same time.
+
+- `getNodes()` returns an array containing the selected LexicalNodes 
 
 ### `GridSelection`
 
-> TODO
+GridSelection represents a grid-like selection like tables. It stores the key of the parent node where the selection takes place and the start and end points.
+`GridSelection` consists of three main properties:
+
+- `gridKey` representing the parent node key where the selection takes place
+- `anchor` representing a `GridSelection` point
+- `focus` reprensenting a `GridSelection` point
+
+For example, a table where you select row = 1 col = 1 to row 2 col = 2 could be stored as follows:
+- `gridKey = 2` table key
+- `anchor = 4` table cell (key may vary)
+- `focus = 10` table cell (key may vary)
+
+Note that `anchor` and `focus` points work the same way as `RangeSelection`.
 
 ### `null`
 

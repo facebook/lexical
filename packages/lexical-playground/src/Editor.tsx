@@ -38,6 +38,7 @@ import EmojisPlugin from './plugins/EmojisPlugin';
 import EquationsPlugin from './plugins/EquationsPlugin';
 import ExcalidrawPlugin from './plugins/ExcalidrawPlugin';
 import FigmaPlugin from './plugins/FigmaPlugin';
+import FloatingLinkEditorPlugin from './plugins/FloatingLinkEditorPlugin';
 import FloatingTextFormatToolbarPlugin from './plugins/FloatingTextFormatToolbarPlugin';
 import HorizontalRulePlugin from './plugins/HorizontalRulePlugin';
 import ImagesPlugin from './plugins/ImagesPlugin';
@@ -161,6 +162,7 @@ export default function Editor(): JSX.Element {
               <>
                 <CodeActionMenuPlugin anchorElem={floatingAnchorElem} />
                 <TableCellActionMenuPlugin anchorElem={floatingAnchorElem} />
+                <FloatingLinkEditorPlugin anchorElem={floatingAnchorElem} />
                 <FloatingTextFormatToolbarPlugin
                   anchorElem={floatingAnchorElem}
                 />

@@ -9,24 +9,22 @@
 import {$isCodeHighlightNode} from '@lexical/code';
 import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$isAtNodeEnd} from '@lexical/selection';
 import {mergeRegister} from '@lexical/utils';
 import {
   $getSelection,
   $isRangeSelection,
   $isTextNode,
   COMMAND_PRIORITY_LOW,
-  ElementNode,
   FORMAT_TEXT_COMMAND,
   LexicalEditor,
-  RangeSelection,
   SELECTION_CHANGE_COMMAND,
-  TextNode,
 } from 'lexical';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import * as React from 'react';
 import {createPortal} from 'react-dom';
 
+import {getDOMRangeRect} from '../../utils/getDOMRangeRect';
+import {getSelectedNode} from '../../utils/getSelectedNode';
 import {INSERT_INLINE_COMMAND} from '../CommentPlugin';
 
 const POPUP_VERTICAL_GAP = 10;
@@ -119,19 +117,7 @@ function TextFormatFloatingToolbar({
       rootElement !== null &&
       rootElement.contains(nativeSelection.anchorNode)
     ) {
-      const domRange = nativeSelection.getRangeAt(0);
-
-      let rect;
-
-      if (nativeSelection.anchorNode === rootElement) {
-        let inner = rootElement;
-        while (inner.firstElementChild != null) {
-          inner = inner.firstElementChild as HTMLElement;
-        }
-        rect = inner.getBoundingClientRect();
-      } else {
-        rect = domRange.getBoundingClientRect();
-      }
+      const rect = getDOMRangeRect(nativeSelection, rootElement);
 
       setPopupPosition(rect, popupCharStylesEditorElem, anchorElem);
     }
@@ -248,23 +234,7 @@ function TextFormatFloatingToolbar({
   );
 }
 
-function getSelectedNode(selection: RangeSelection): TextNode | ElementNode {
-  const anchor = selection.anchor;
-  const focus = selection.focus;
-  const anchorNode = selection.anchor.getNode();
-  const focusNode = selection.focus.getNode();
-  if (anchorNode === focusNode) {
-    return anchorNode;
-  }
-  const isBackward = selection.isBackward();
-  if (isBackward) {
-    return $isAtNodeEnd(focus) ? anchorNode : focusNode;
-  } else {
-    return $isAtNodeEnd(anchor) ? focusNode : anchorNode;
-  }
-}
-
-function useTextFormatFloatingToolbar(
+function useFloatingTextFormatToolbar(
   editor: LexicalEditor,
   anchorElem: HTMLElement,
 ): JSX.Element | null {
@@ -372,5 +342,5 @@ export default function FloatingTextFormatToolbarPlugin({
   anchorElem: HTMLElement;
 }): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
-  return useTextFormatFloatingToolbar(editor, anchorElem);
+  return useFloatingTextFormatToolbar(editor, anchorElem);
 }

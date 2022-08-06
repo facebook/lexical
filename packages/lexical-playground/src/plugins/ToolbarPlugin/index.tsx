@@ -7,12 +7,7 @@
  */
 
 import type {InsertImagePayload} from '../ImagesPlugin';
-import type {
-  GridSelection,
-  LexicalEditor,
-  NodeSelection,
-  RangeSelection,
-} from 'lexical';
+import type {LexicalEditor} from 'lexical';
 
 import './index.css';
 
@@ -44,7 +39,6 @@ import {
 } from '@lexical/rich-text';
 import {
   $getSelectionStyleValueForProperty,
-  $isAtNodeEnd,
   $isParentElementRTL,
   $patchStyleText,
   $selectAll,
@@ -67,8 +61,6 @@ import {
   CAN_REDO_COMMAND,
   CAN_UNDO_COMMAND,
   COMMAND_PRIORITY_CRITICAL,
-  COMMAND_PRIORITY_LOW,
-  ElementNode,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
   INDENT_CONTENT_COMMAND,
@@ -76,12 +68,10 @@ import {
   OUTDENT_CONTENT_COMMAND,
   REDO_COMMAND,
   SELECTION_CHANGE_COMMAND,
-  TextNode,
   UNDO_COMMAND,
 } from 'lexical';
 import * as React from 'react';
-import {useCallback, useEffect, useRef, useState} from 'react';
-import {createPortal} from 'react-dom';
+import {useCallback, useEffect, useState} from 'react';
 import {IS_APPLE} from 'shared/environment';
 
 import useModal from '../../hooks/useModal';
@@ -95,8 +85,8 @@ import ColorPicker from '../../ui/ColorPicker';
 import DropDown, {DropDownItem} from '../../ui/DropDown';
 import FileInput from '../../ui/FileInput';
 import KatexEquationAlterer from '../../ui/KatexEquationAlterer';
-import LinkPreview from '../../ui/LinkPreview';
 import TextInput from '../../ui/TextInput';
+import {getSelectedNode} from '../../utils/getSelectedNode';
 import {EmbedConfigs} from '../AutoEmbedPlugin';
 import {INSERT_EQUATION_COMMAND} from '../EquationsPlugin';
 import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawPlugin';
@@ -1105,11 +1095,6 @@ export default function ToolbarPlugin(): JSX.Element {
             title="Insert link">
             <i className="format link" />
           </button>
-          {isLink &&
-            createPortal(
-              <FloatingLinkEditor editor={activeEditor} />,
-              document.body,
-            )}
           <ColorPicker
             buttonClassName="toolbar-item color-picker"
             buttonAriaLabel="Formatting text color"

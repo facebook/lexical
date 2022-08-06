@@ -6,24 +6,6 @@
  *
  *
  */
-.editor-scroller {
-  min-height: 360px;
-  height: 360px;
-  border: 0;
-  resize: none;
-  cursor: text;
-  display: block;
-  position: relative;
-  outline: 0;
-  overflow: auto;
-  resize: vertical;
-}
-
-.editor {
-  height: 100%;
-  position: relative;
-}
-
 .ContentEditable__root {
   border: 0;
   font-size: 15px;

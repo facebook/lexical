@@ -73,6 +73,24 @@ header h1 {
   border-top-right-radius: 10px;
 }
 
+.editor-scroller {
+  min-height: 150px;
+  height: 360px;
+  border: 0;
+  resize: none;
+  cursor: text;
+  display: block;
+  position: relative;
+  outline: 0;
+  overflow: auto;
+  resize: vertical;
+}
+
+.editor {
+  height: 100%;
+  position: relative;
+}
+
 .test-recorder-output {
   margin: 20px auto 20px auto;
   width: 100%;

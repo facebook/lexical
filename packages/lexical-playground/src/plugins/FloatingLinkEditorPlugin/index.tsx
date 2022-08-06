@@ -26,32 +26,15 @@ import {createPortal} from 'react-dom';
 import LinkPreview from '../../ui/LinkPreview';
 import {getDOMRangeRect} from '../../utils/getDOMRangeRect';
 import {getSelectedNode} from '../../utils/getSelectedNode';
+import {setFloatingElemPosition} from '../../utils/setFloatingElemPosition';
 
-function positionEditorElement(
-  editor: HTMLElement,
-  rect: ClientRect | null,
-  rootElement: HTMLElement,
-): void {
-  if (rect === null) {
-    editor.style.opacity = '0';
-    editor.style.top = '-1000px';
-    editor.style.left = '-1000px';
-  } else {
-    editor.style.opacity = '1';
-    editor.style.top = `${rect.top + rect.height + window.pageYOffset + 10}px`;
-    const left = rect.left - editor.offsetWidth / 2 + rect.width / 2;
-    const rootElementRect = rootElement.getBoundingClientRect();
-    if (rootElementRect.left > left) {
-      editor.style.left = `${rect.left + window.pageXOffset}px`;
-    } else if (left + editor.offsetWidth > rootElementRect.right) {
-      editor.style.left = `${
-        rect.right + window.pageXOffset - editor.offsetWidth
-      }px`;
-    }
-  }
-}
-
-function FloatingLinkEditor({editor}: {editor: LexicalEditor}): JSX.Element {
+function FloatingLinkEditor({
+  editor,
+  anchorElem,
+}: {
+  editor: LexicalEditor;
+  anchorElem: HTMLElement;
+}): JSX.Element {
   const editorRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [linkUrl, setLinkUrl] = useState('');
@@ -89,13 +72,12 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): JSX.Element {
       rootElement !== null &&
       rootElement.contains(nativeSelection.anchorNode)
     ) {
-      const rect = getDOMRangeRect(nativeSelection, rootElement);
-
-      positionEditorElement(editorElem, rect, rootElement);
+      const rangRect = getDOMRangeRect(nativeSelection, rootElement);
+      setFloatingElemPosition(rangRect, editorElem, anchorElem);
       setLastSelection(selection);
     } else if (!activeElement || activeElement.className !== 'link-input') {
       if (rootElement !== null) {
-        positionEditorElement(editorElem, null, rootElement);
+        setFloatingElemPosition(null, editorElem, anchorElem);
       }
       setLastSelection(null);
       setEditMode(false);
@@ -103,7 +85,7 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): JSX.Element {
     }
 
     return true;
-  }, [editor]);
+  }, [anchorElem, editor]);
 
   useEffect(() => {
     const onResize = () => {
@@ -230,7 +212,10 @@ function useFloatingLinkEditorToolbar(
   }, [editor, updateToolbar]);
 
   return isLink
-    ? createPortal(<FloatingLinkEditor editor={activeEditor} />, document.body)
+    ? createPortal(
+        <FloatingLinkEditor editor={activeEditor} anchorElem={anchorElem} />,
+        anchorElem,
+      )
     : null;
 }
 

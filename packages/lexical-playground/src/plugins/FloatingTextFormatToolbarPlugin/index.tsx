@@ -25,42 +25,8 @@ import {createPortal} from 'react-dom';
 
 import {getDOMRangeRect} from '../../utils/getDOMRangeRect';
 import {getSelectedNode} from '../../utils/getSelectedNode';
+import {setFloatingElemPosition} from '../../utils/setFloatingElemPosition';
 import {INSERT_INLINE_COMMAND} from '../CommentPlugin';
-
-const POPUP_VERTICAL_GAP = 10;
-const POPUP_HORIZONTAL_OFFSET = 5;
-
-function setPopupPosition(
-  rangeRect: ClientRect,
-  popupElem: HTMLElement,
-  anchorElem: HTMLElement,
-): void {
-  const scrollerElem = anchorElem.parentElement;
-  if (!scrollerElem) {
-    return;
-  }
-  const popupRect = popupElem.getBoundingClientRect();
-  const anchorElementRect = anchorElem.getBoundingClientRect();
-  const editorScrollerRect = scrollerElem.getBoundingClientRect();
-
-  let top = rangeRect.top - popupRect.height - POPUP_VERTICAL_GAP;
-  let left = rangeRect.left - POPUP_HORIZONTAL_OFFSET;
-
-  if (top < editorScrollerRect.top) {
-    top += popupRect.height + rangeRect.height + POPUP_VERTICAL_GAP * 2;
-  }
-
-  if (left + popupRect.width > editorScrollerRect.right) {
-    left = editorScrollerRect.right - popupRect.width - POPUP_HORIZONTAL_OFFSET;
-  }
-
-  top -= anchorElementRect.top;
-  left -= anchorElementRect.left;
-
-  popupElem.style.opacity = '1';
-  popupElem.style.top = `${top}px`;
-  popupElem.style.left = `${left}px`;
-}
 
 function TextFormatFloatingToolbar({
   editor,
@@ -117,9 +83,9 @@ function TextFormatFloatingToolbar({
       rootElement !== null &&
       rootElement.contains(nativeSelection.anchorNode)
     ) {
-      const rect = getDOMRangeRect(nativeSelection, rootElement);
+      const rangeRect = getDOMRangeRect(nativeSelection, rootElement);
 
-      setPopupPosition(rect, popupCharStylesEditorElem, anchorElem);
+      setFloatingElemPosition(rangeRect, popupCharStylesEditorElem, anchorElem);
     }
   }, [editor, anchorElem]);
 

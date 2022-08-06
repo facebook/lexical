@@ -328,7 +328,6 @@ pre::-webkit-scrollbar-thumb {
   z-index: 10;
   top: -10000px;
   left: -10000px;
-  margin-top: -6px;
   max-width: 400px;
   width: 100%;
   opacity: 0;

@@ -22,5 +22,5 @@
     }
   ],
   "permissions": ["activeTab"],
-  "web_accessible_resources": ["inject.js"]
+  "web_accessible_resources": ["src/inject/index.js"]
 }

@@ -18,7 +18,7 @@ declare global {
 // for security reasons, content scripts cannot read Lexical's changes to the DOM
 // in order to access the editorState, we inject this script directly into the page
 const script = document.createElement('script');
-script.src = chrome.runtime.getURL('./index/inject.js');
+script.src = chrome.runtime.getURL('src/inject/index.js');
 document.documentElement.appendChild(script);
 if (script.parentNode) script.parentNode.removeChild(script);
 

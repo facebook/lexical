@@ -41,13 +41,6 @@ export interface Provider {
   off(type: 'reload', cb: (doc: Doc) => void): void;
 }
 
-type CollaborationContextType = {
-  clientID: number,
-  color: string,
-  name: string,
-  yjsDocMap: Map<string, Doc>,
-};
-
 export type ProviderFactory = (
   id: string,
   yjsDocMap: Map<string, Doc>,
@@ -59,5 +52,3 @@ declare export function CollaborationPlugin(arg0: {
   shouldBootstrap: boolean,
   username?: string,
 }): React$Node;
-declare export var CollaborationContext: React$Context<CollaborationContextType>;
-declare export function useCollaborationContext(): CollaborationContextType;

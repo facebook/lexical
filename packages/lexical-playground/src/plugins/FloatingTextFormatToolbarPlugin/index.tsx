@@ -6,6 +6,8 @@
  *
  */
 
+import './index.css';
+
 import {$isCodeHighlightNode} from '@lexical/code';
 import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
@@ -90,17 +92,26 @@ function TextFormatFloatingToolbar({
   }, [editor, anchorElem]);
 
   useEffect(() => {
-    const onResize = () => {
+    const scrollerElem = anchorElem.parentElement;
+
+    const update = () => {
       editor.getEditorState().read(() => {
         updateTextFormatFloatingToolbar();
       });
     };
-    window.addEventListener('resize', onResize);
+
+    window.addEventListener('resize', update);
+    if (scrollerElem) {
+      scrollerElem.addEventListener('scroll', update);
+    }
 
     return () => {
-      window.removeEventListener('resize', onResize);
+      window.removeEventListener('resize', update);
+      if (scrollerElem) {
+        scrollerElem.removeEventListener('scroll', update);
+      }
     };
-  }, [editor, updateTextFormatFloatingToolbar]);
+  }, [editor, updateTextFormatFloatingToolbar, anchorElem]);
 
   useEffect(() => {
     editor.getEditorState().read(() => {

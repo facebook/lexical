@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import './index.css';
+
 import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {mergeRegister} from '@lexical/utils';
@@ -88,17 +90,26 @@ function FloatingLinkEditor({
   }, [anchorElem, editor]);
 
   useEffect(() => {
-    const onResize = () => {
+    const scrollerElem = anchorElem.parentElement;
+
+    const update = () => {
       editor.getEditorState().read(() => {
         updateLinkEditor();
       });
     };
-    window.addEventListener('resize', onResize);
+
+    window.addEventListener('resize', update);
+    if (scrollerElem) {
+      scrollerElem.addEventListener('scroll', update);
+    }
 
     return () => {
-      window.removeEventListener('resize', onResize);
+      window.removeEventListener('resize', update);
+      if (scrollerElem) {
+        scrollerElem.removeEventListener('scroll', update);
+      }
     };
-  }, [editor, updateLinkEditor]);
+  }, [editor, updateLinkEditor, anchorElem]);
 
   useEffect(() => {
     return mergeRegister(

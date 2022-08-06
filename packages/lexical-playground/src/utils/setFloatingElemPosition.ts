@@ -9,7 +9,7 @@ const VERTICAL_GAP = 10;
 const HORIZONTAL_OFFSET = 5;
 
 export function setFloatingElemPosition(
-  rangeRect: ClientRect | null,
+  targetRect: ClientRect | null,
   floatingElem: HTMLElement,
   anchorElem: HTMLElement,
   verticalGap: number = VERTICAL_GAP,
@@ -17,7 +17,7 @@ export function setFloatingElemPosition(
 ): void {
   const scrollerElem = anchorElem.parentElement;
 
-  if (rangeRect === null || !scrollerElem) {
+  if (targetRect === null || !scrollerElem) {
     floatingElem.style.opacity = '0';
     floatingElem.style.top = '-10000px';
     floatingElem.style.left = '-10000px';
@@ -29,11 +29,11 @@ export function setFloatingElemPosition(
   const anchorElementRect = anchorElem.getBoundingClientRect();
   const editorScrollerRect = scrollerElem.getBoundingClientRect();
 
-  let top = rangeRect.top - floatingElemRect.height - verticalGap;
-  let left = rangeRect.left - horizontalOffset;
+  let top = targetRect.top - floatingElemRect.height - verticalGap;
+  let left = targetRect.left - horizontalOffset;
 
   if (top < editorScrollerRect.top) {
-    top += floatingElemRect.height + rangeRect.height + verticalGap * 2;
+    top += floatingElemRect.height + targetRect.height + verticalGap * 2;
   }
 
   if (left + floatingElemRect.width > editorScrollerRect.right) {

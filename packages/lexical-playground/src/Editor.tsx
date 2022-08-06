@@ -38,6 +38,7 @@ import EmojisPlugin from './plugins/EmojisPlugin';
 import EquationsPlugin from './plugins/EquationsPlugin';
 import ExcalidrawPlugin from './plugins/ExcalidrawPlugin';
 import FigmaPlugin from './plugins/FigmaPlugin';
+import FloatingTextFormatToolbarPlugin from './plugins/FloatingTextFormatToolbarPlugin';
 import HorizontalRulePlugin from './plugins/HorizontalRulePlugin';
 import ImagesPlugin from './plugins/ImagesPlugin';
 import KeywordsPlugin from './plugins/KeywordsPlugin';
@@ -51,7 +52,6 @@ import TabFocusPlugin from './plugins/TabFocusPlugin';
 import TableCellActionMenuPlugin from './plugins/TableActionMenuPlugin';
 import TableCellResizer from './plugins/TableCellResizer';
 import TableOfContentsPlugin from './plugins/TableOfContentsPlugin';
-import TextFormatFloatingToolbarPlugin from './plugins/TextFormatFloatingToolbarPlugin';
 import ToolbarPlugin from './plugins/ToolbarPlugin';
 import TreeViewPlugin from './plugins/TreeViewPlugin';
 import TwitterPlugin from './plugins/TwitterPlugin';
@@ -160,10 +160,10 @@ export default function Editor(): JSX.Element {
             {floatingAnchorElem && (
               <>
                 <CodeActionMenuPlugin anchorElem={floatingAnchorElem} />
-                <TextFormatFloatingToolbarPlugin
+                <TableCellActionMenuPlugin anchorElem={floatingAnchorElem} />
+                <FloatingTextFormatToolbarPlugin
                   anchorElem={floatingAnchorElem}
                 />
-                <TableCellActionMenuPlugin anchorElem={floatingAnchorElem} />
               </>
             )}
           </>

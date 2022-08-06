@@ -84,13 +84,12 @@ export default function Editor(): JSX.Element {
     : 'Enter some plain text...';
   const placeholder = <Placeholder>{text}</Placeholder>;
   const scrollRef = useRef(null);
-  const [popupAnchorElem, setPopupAnchorElem] = useState<HTMLDivElement | null>(
-    null,
-  );
+  const [floatingAnchorElem, setFloatingAnchorElem] =
+    useState<HTMLDivElement | null>(null);
 
-  const onRef = (_popupAnchorElem: HTMLDivElement) => {
-    if (_popupAnchorElem !== null) {
-      setPopupAnchorElem(_popupAnchorElem);
+  const onRef = (_floatingAnchorElem: HTMLDivElement) => {
+    if (_floatingAnchorElem !== null) {
+      setFloatingAnchorElem(_floatingAnchorElem);
     }
   };
 
@@ -158,11 +157,13 @@ export default function Editor(): JSX.Element {
             <EquationsPlugin />
             <ExcalidrawPlugin />
             <TabFocusPlugin />
-            {popupAnchorElem && (
+            {floatingAnchorElem && (
               <>
-                <CodeActionMenuPlugin anchorElem={popupAnchorElem} />
-                <TextFormatFloatingToolbarPlugin anchorElem={popupAnchorElem} />
-                <TableCellActionMenuPlugin anchorElem={popupAnchorElem} />
+                <CodeActionMenuPlugin anchorElem={floatingAnchorElem} />
+                <TextFormatFloatingToolbarPlugin
+                  anchorElem={floatingAnchorElem}
+                />
+                <TableCellActionMenuPlugin anchorElem={floatingAnchorElem} />
               </>
             )}
           </>

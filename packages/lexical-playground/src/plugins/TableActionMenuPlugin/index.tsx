@@ -490,7 +490,7 @@ function TableCellActionMenuContainer({
         menuButtonDOM.style.opacity = '0';
       }
     }
-  }, [menuButtonRef, tableCellNode, editor]);
+  }, [menuButtonRef, tableCellNode, editor, anchorElem]);
 
   const prevTableCellDOM = useRef(tableCellNode);
 

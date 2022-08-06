@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import type {CloneInto} from '../../types';
+
 import {IS_FIREFOX} from 'shared/environment';
 
 declare global {
@@ -60,7 +62,7 @@ port.onMessage.addListener((message) => {
     const data = {lexicalKey: message.lexicalKey};
     const detail = IS_FIREFOX
       ? // eslint-disable-next-line no-undef
-        cloneInto(data, document.defaultView) // see https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Sharing_objects_with_page_scripts#cloneinto
+        (cloneInto(data, document.defaultView) as CloneInto) // see https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Sharing_objects_with_page_scripts#cloneinto
       : data;
     document.dispatchEvent(
       new CustomEvent('highlight', {

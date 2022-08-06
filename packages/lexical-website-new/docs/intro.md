@@ -6,18 +6,18 @@ sidebar_position: 1
 
 > Note: Lexical is currently in early development and APIs and packages are likely to change quite often.
 
-Lexical is an extensible JavaScript web text-editor framework with an emphasis on reliability, accessibility and performance. Lexical aims to provide a best-in-class developer experience, so you can easily prototype and build features with confidence. Combined with a highly extensible architecture, Lexical allows developers to create unique text editing experiences that scale in size and functionality.
+Lexical is an extensible JavaScript web text-editor framework with an emphasis on reliability, accessibility, and performance. Lexical aims to provide a best-in-class developer experience, so you can easily prototype and build features with confidence. Combined with a highly extensible architecture, Lexical allows developers to create unique text editing experiences that scale in size and functionality.
 
 Lexical works by attaching itself to a `contentEditable` element and from there you can work with Lexical's declarative APIs to make
 things happen without needing to worry about specific edge-cases around the DOM. In fact, you rarely need to interact with the DOM at all in
 most cases (unless you build your own custom nodes).
 
 The core package of Lexical is only 22kb in file size (min+gzip) and you only ever pay the cost for what you need. So Lexical can grow with
-your surface and the requirements. Furthermore, in frameworks that support lazy-loading, you can defer Lexical plugins till when the user actually interacts with the editor itself – which can greatly help improve performance.
+your surface and the requirements. Furthermore, in frameworks that support lazy-loading, you can defer Lexical plugins until the user actually interacts with the editor itself – which can greatly help improve performance.
 
 ## What can be built with Lexical?
 
-Lexical makes it possible to easily create complex text editing experiences that otherwise would be very complex with the built-in browser tooling. We built Lexical to enable developers to move-fast and create different types text experiences that scale to specific requirements. Here are some (but not all) examples of what you can do with Lexical:
+Lexical makes it possible to easily create complex text editing experiences that otherwise would be very complex with the built-in browser tooling. We built Lexical to enable developers to move-fast and create different types of text experiences that scale to specific requirements. Here are some (but not all) examples of what you can do with Lexical:
 
 - Simple plain-text editors that have more requirements than a `<textarea>`, such as requiring features like mentions, custom emojis, links and hashtags.
 - More complex rich-text editors that can be used to post content on blogs, social media, messaging applications.
@@ -48,9 +48,9 @@ An Editor State is the underlying data model that represents what you want to sh
 
 Editor States are immutable once created, and in order to create one, you must do so via `editor.update(() => {...})`. However, you
 can also "hook" into an existing update using node transforms or command handlers – which are invoked as part of an existing update
-workflow to preventing cascading/water-falling of updates. You can retrieve the current editor state using `editor.getEditorState()`.
+workflow to prevent cascading/water-falling of updates. You can retrieve the current editor state using `editor.getEditorState()`.
 
-Editor States are also fully serializable to JSON and can easily be serialized back into to editor using `editor.parseEditorState()`.
+Editor States are also fully serializable to JSON and can easily be serialized back into the editor using `editor.parseEditorState()`.
 
 ### Editor Updates
 
@@ -58,7 +58,7 @@ When you want to change something in an Editor State, you must do it via an upda
 to the update call is important. It's a place where you have full "lexical" context of the active editor state, and it exposes
 access to the underlying Editor State's node tree. We promote using `$` prefixed functions in this context, as it signifies a place
 where they can be used exclusively. Attempting to use them outside of an update will trigger a runtime error with an appropriate error.
-For those familiar with React Hooks, you can think of these has having a similar functionality (except `$` functions can be used in any order).
+For those familiar with React Hooks, you can think of these as having a similar functionality (except `$` functions can be used in any order).
 
 ### DOM Reconciler
 

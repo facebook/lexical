@@ -5,7 +5,7 @@
 <p align="center">
   <img alt="GitHub Workflow Status" src="https://img.shields.io/github/workflow/status/facebook/lexical/Lexical%20Tests">
   <a href="https://www.npmjs.com/package/lexical">
-    <img alt="Visit the NPM page" src="https://img.shields.io/npm/v/lexical"> 
+    <img alt="Visit the NPM page" src="https://img.shields.io/npm/v/lexical">
   </a>
   <a href="https://discord.gg/KmG4wQnnD9">
     <img alt="Add yourself to our Discord" src="https://img.shields.io/discord/953974421008293909">
@@ -35,7 +35,7 @@ Here are some examples of what you can do with Lexical:
 - [Getting started with React](#getting-started-with-react)
 
 - [Lexical is a framework](#lexical-is-a-framework)
-  
+
 - [Working with Lexical](#working-with-lexical)
 
 - [Contributing to Lexical](#contributing-to-lexical)
@@ -146,9 +146,9 @@ An Editor State is the underlying data model that represents what you want to sh
 
 Editor States are immutable once created, and in order to create one, you must do so via `editor.update(() => {...})`. However, you
 can also "hook" into an existing update using node transforms or command handlers – which are invoked as part of an existing update
-workflow to preventing cascading/waterfalling of updates. You can retrieve the current editor state using `editor.getEditorState()`.
+workflow to prevent cascading/waterfalling of updates. You can retrieve the current editor state using `editor.getEditorState()`.
 
-Editor States are also fully serializable to JSON and can easily be serialized back into to editor using `editor.parseEditorState()`.
+Editor States are also fully serializable to JSON and can easily be serialized back into the editor using `editor.parseEditorState()`.
 
 ### Editor Updates
 
@@ -156,7 +156,7 @@ When you want to change something in an Editor State, you must do it via an upda
 to the update call is important. It's a place where you have full "lexical" context of the active editor state, and it exposes
 access to the underlying Editor State's node tree. We promote using `$` prefixed functions in this context, as it signifies a place
 where they can be used exclusively. Attempting to use them outside of an update will trigger a runtime error with an appropriate error.
-For those familiar with React Hooks, you can think of these has having a similar functionality (except `$` functions can be used in any order).
+For those familiar with React Hooks, you can think of these as having a similar functionality (except `$` functions can be used in any order).
 
 ### DOM Reconciler
 

@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import {LexicalEditor} from 'lexical';
+
 export interface DevToolsTree {
   [key: string]: DevToolsNode;
 }
@@ -20,4 +22,11 @@ export interface DevToolsNode {
   highlightDOMNode: (lexicalKey: string) => void;
   lexicalKey: string;
   monospaceWidth: string;
+}
+
+export type LexicalKey = `__lexicalKey_${string}`;
+
+export interface LexicalHTMLElement extends HTMLElement {
+  [key: LexicalKey]: string;
+  __lexicalEditor: LexicalEditor;
 }

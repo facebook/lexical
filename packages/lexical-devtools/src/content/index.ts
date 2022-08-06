@@ -7,17 +7,16 @@
  */
 import {IS_FIREFOX} from 'shared/environment';
 
-// const CAN_USE_DOM =
-//   typeof window !== 'undefined' &&
-//   typeof window.document !== 'undefined' &&
-//   typeof window.document.createElement !== 'undefined';
-// const IS_FIREFOX =
-//   CAN_USE_DOM && /^(?!.*Seamonkey)(?=.*Firefox).*/i.test(navigator.userAgent);
+declare global {
+  interface DocumentEventMap {
+    editorStateUpdate: CustomEvent;
+  }
+}
 
 // for security reasons, content scripts cannot read Lexical's changes to the DOM
 // in order to access the editorState, we inject this script directly into the page
 const script = document.createElement('script');
-script.src = chrome.runtime.getURL('inject.js');
+script.src = chrome.runtime.getURL('./index/inject.js');
 document.documentElement.appendChild(script);
 if (script.parentNode) script.parentNode.removeChild(script);
 

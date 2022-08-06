@@ -25,6 +25,7 @@ export default defineConfig({
         background: resolve(root, 'background', 'index.ts'),
         content: resolve(root, 'content', 'index.ts'),
         devtools: resolve(root, 'devtools', 'index.html'),
+        inject: resolve(root, 'inject', 'index.ts'),
         panel: resolve(root, 'panel', 'index.html'),
         popup: resolve(root, 'popup', 'index.html')
       },

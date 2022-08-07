@@ -38,6 +38,8 @@ export function CollaborationPlugin({
 
   const {yjsDocMap, name, color} = collabContext;
 
+  collabContext.isCollabActive = true;
+
   const [editor] = useLexicalComposerContext();
 
   const provider = useMemo(

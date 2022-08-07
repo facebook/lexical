@@ -13,6 +13,7 @@ import {createContext, useContext} from 'react';
 type CollaborationContextType = {
   clientID: number;
   color: string;
+  isCollabActive: boolean;
   name: string;
   yjsDocMap: Map<string, Doc>;
 };
@@ -41,6 +42,7 @@ export const CollaborationContext: React.Context<CollaborationContextType> =
   createContext({
     clientID: 0,
     color: randomEntry[1],
+    isCollabActive: false,
     name: randomEntry[0],
     yjsDocMap: new Map(),
   });

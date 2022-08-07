@@ -157,9 +157,7 @@ export function useYjsCollaboration(
       provider.off('reload', onProviderDocReload);
       awareness.off('update', onAwarenessUpdate);
       root.getSharedType().unobserveDeep(onYjsTreeChanges);
-      if (id !== 'main') {
-        docMap.delete(id);
-      }
+      docMap.delete(id);
       removeListener();
     };
   }, [

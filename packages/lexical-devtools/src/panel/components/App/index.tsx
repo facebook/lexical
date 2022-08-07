@@ -11,6 +11,7 @@ import {DevToolsTree} from 'packages/lexical-devtools/types';
 import * as React from 'react';
 import {useCallback, useEffect, useRef, useState} from 'react';
 
+import InspectedElementView from '../InspectedElementView';
 import TreeView from '../TreeView';
 
 function App(): JSX.Element {
@@ -88,12 +89,15 @@ function App(): JSX.Element {
           <p>Loading...</p>
         </div>
       ) : (
-        <TreeView
-          deHighlightDOMNode={deHighlightDOMNode}
-          highlightDOMNode={highlightDOMNode}
-          viewClassName="tree-view-output"
-          nodeMap={nodeMap}
-        />
+        <>
+          <TreeView
+            deHighlightDOMNode={deHighlightDOMNode}
+            highlightDOMNode={highlightDOMNode}
+            viewClassName="tree-view-output"
+            nodeMap={nodeMap}
+          />
+          <InspectedElementView />
+        </>
       )}
     </div>
   );

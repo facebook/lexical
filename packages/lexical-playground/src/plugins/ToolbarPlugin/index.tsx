@@ -1016,7 +1016,7 @@ export default function ToolbarPlugin(): JSX.Element {
         onClick={() => {
           activeEditor.dispatchCommand(REDO_COMMAND, undefined);
         }}
-        title={IS_APPLE ? 'Redo (⌘Y)' : 'Undo (Ctrl+Y)'}
+        title={IS_APPLE ? 'Redo (⌘Y)' : 'Redo (Ctrl+Y)'}
         className="toolbar-item"
         aria-label="Redo">
         <i className="format redo" />

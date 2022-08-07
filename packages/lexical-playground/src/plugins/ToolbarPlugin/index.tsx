@@ -93,7 +93,7 @@ import {$isYouTubeNode} from '../../nodes/YouTubeNode';
 import Button from '../../ui/Button';
 import ColorPicker from '../../ui/ColorPicker';
 import DropDown, {DropDownItem} from '../../ui/DropDown';
-import FileInput from '../../ui/FileInput.jsx';
+import FileInput from '../../ui/FileInput';
 import KatexEquationAlterer from '../../ui/KatexEquationAlterer';
 import LinkPreview from '../../ui/LinkPreview';
 import TextInput from '../../ui/TextInput';

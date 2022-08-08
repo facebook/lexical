@@ -228,7 +228,7 @@ function useAutoLink(
     if (!editor.hasNodes([AutoLinkNode])) {
       invariant(
         false,
-        'LexicalAutoLinkPlugin: AutoLinkNode, TableCellNode or TableRowNode not registered on editor',
+        'LexicalAutoLinkPlugin: AutoLinkNode not registered on editor',
       );
     }
 

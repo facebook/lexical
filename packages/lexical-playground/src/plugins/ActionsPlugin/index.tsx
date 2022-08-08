@@ -14,7 +14,7 @@ import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
 } from '@lexical/markdown';
-import {useCollaborationContext} from '@lexical/react/LexicalCollaborationPlugin';
+import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {mergeRegister} from '@lexical/utils';
 import {CONNECTED_COMMAND, TOGGLE_CONNECT_COMMAND} from '@lexical/yjs';

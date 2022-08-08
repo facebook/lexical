@@ -127,6 +127,7 @@ const moduleResolution = [
   'LexicalPlainTextPlugin',
   'LexicalRichTextPlugin',
   'LexicalClearEditorPlugin',
+  'LexicalCollaborationContext',
   'LexicalCollaborationPlugin',
   'LexicalHistoryPlugin',
   'LexicalTypeaheadMenuPlugin',

@@ -56,6 +56,8 @@ module.exports = {
           '<rootDir>/packages/lexical-react/src/LexicalAutoScrollPlugin.ts',
         '^@lexical/react/LexicalCheckListPlugin$':
           '<rootDir>/packages/lexical-react/src/LexicalCheckListPlugin.ts',
+        '^@lexical/react/LexicalCollaborationContext$':
+          '<rootDir>/packages/lexical-react/src/LexicalCollaborationContext.ts',
         '^@lexical/react/LexicalCollaborationPlugin$':
           '<rootDir>/packages/lexical-react/src/LexicalCollaborationPlugin.ts',
         '^@lexical/react/LexicalComposerContext$':

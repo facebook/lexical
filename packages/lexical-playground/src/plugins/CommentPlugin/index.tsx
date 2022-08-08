@@ -26,7 +26,7 @@ import {
 } from '@lexical/mark';
 import {AutoFocusPlugin} from '@lexical/react/LexicalAutoFocusPlugin';
 import {ClearEditorPlugin} from '@lexical/react/LexicalClearEditorPlugin';
-import {useCollaborationContext} from '@lexical/react/LexicalCollaborationPlugin';
+import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';

@@ -127,6 +127,7 @@ const moduleResolution = [
   'LexicalPlainTextPlugin',
   'LexicalRichTextPlugin',
   'LexicalClearEditorPlugin',
+  'LexicalCollaborationContext',
   'LexicalCollaborationPlugin',
   'LexicalHistoryPlugin',
   'LexicalTypeaheadMenuPlugin',
@@ -155,7 +156,7 @@ const moduleResolution = [
       replacement: resolvedPath,
     });
   }
-}); 
+});
 
 // https://vitejs.dev/config/
 export default defineConfig({

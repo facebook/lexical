@@ -9,7 +9,7 @@
 import type {LexicalComposerContextType} from '@lexical/react/LexicalComposerContext';
 import type {EditorThemeClasses, LexicalEditor} from 'lexical';
 
-import {useCollaborationContext} from '@lexical/react/LexicalCollaborationPlugin';
+import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {
   createLexicalComposerContext,
   LexicalComposerContext,

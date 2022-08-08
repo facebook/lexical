@@ -30,7 +30,7 @@ class TestNode extends LexicalNode {
     return document.createElement('div');
   }
 
-  importJSON() {
+  static importJSON() {
     return new TestNode();
   }
 

@@ -579,7 +579,7 @@ async function buildTSDeclarationFiles(packageName, outputPath) {
 }
 
 async function moveTSDeclarationFilesIntoDist(packageName, outputPath) {
-  await exec(`cp -R ./.ts-temp/${packageName}/src/ ${outputPath}`);
+  await fs.copy(`./.ts-temp/${packageName}/src`, outputPath);
 }
 
 function buildForkModule(outputPath, outputFileName) {

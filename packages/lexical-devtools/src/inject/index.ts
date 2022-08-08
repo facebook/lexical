@@ -81,7 +81,7 @@ const findDOMNode = (
   for (let i = 0; i < node.childNodes.length; i++) {
     const child = node.childNodes[i] as LexicalHTMLElement;
     const childResults = findDOMNode(child, targetKey);
-    if (childResults) return child;
+    if (childResults) return childResults;
   }
 
   return null;

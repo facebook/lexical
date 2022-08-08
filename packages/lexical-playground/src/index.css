@@ -765,6 +765,8 @@ i.prettier-error {
   margin-right: 12px;
   line-height: 16px;
   background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .dropdown .divider {

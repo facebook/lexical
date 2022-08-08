@@ -280,6 +280,7 @@ i.send {
   position: absolute;
   top: 45px;
   overflow-y: auto;
+  height: calc(100% - 45px);
 }
 
 .CommentPlugin_CommentsPanel_List_Comment {

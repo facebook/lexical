@@ -109,7 +109,7 @@ function runTextMatchTransformers(
       [, replaceNode] = anchorNode.splitText(startIndex, endIndex);
     }
 
-    replaceNode.selectNext();
+    replaceNode.selectNext(0, 0);
     transformer.replace(replaceNode, match);
     return true;
   }

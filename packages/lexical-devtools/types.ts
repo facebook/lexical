@@ -17,9 +17,10 @@ export interface DevToolsNode {
   __text?: string;
   __type: string;
   children: Array<DevToolsNode>;
-  deHighlightDOMNode: (lexicalKey: string) => void;
+  deHighlightDOMNode: NodeHoverHandler;
   depth: number;
-  highlightDOMNode: (lexicalKey: string) => void;
+  handleNodeClick: NodeClickHandler;
+  highlightDOMNode: NodeHoverHandler;
   lexicalKey: string;
   monospaceWidth: string;
 }
@@ -30,6 +31,12 @@ export interface LexicalHTMLElement extends HTMLElement {
   [key: LexicalKey]: string;
   __lexicalEditor: LexicalEditor;
 }
+
+export type NodeClickHandler = (props: NodeProps) => void;
+
+export type NodeHoverHandler = (lexicalKey: string) => void;
+
+export type NodeProps = Record<string, string | number>;
 
 export type CloneInto = (
   arg: {lexicalKey: string},

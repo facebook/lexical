@@ -7,7 +7,7 @@
  */
 import './index.css';
 
-import {DevToolsTree} from 'packages/lexical-devtools/types';
+import {DevToolsTree, NodeProps} from 'packages/lexical-devtools/types';
 import * as React from 'react';
 import {useCallback, useEffect, useRef, useState} from 'react';
 
@@ -17,6 +17,7 @@ import TreeView from '../TreeView';
 function App(): JSX.Element {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [nodeMap, setNodeMap] = useState<DevToolsTree>({});
+  const [selectedNode, setSelectedNode] = useState<NodeProps | null>(null);
   const port = useRef<chrome.runtime.Port | null>(null);
 
   const updateEditorState = (message: {
@@ -25,6 +26,10 @@ function App(): JSX.Element {
     setIsLoading(false);
     const newNodeMap = message.editorState.nodeMap;
     setNodeMap(newNodeMap);
+  };
+
+  const handleNodeClick = (nodeProps: NodeProps) => {
+    setSelectedNode(nodeProps);
   };
 
   // highlight & dehighlight the corresponding DOM nodes onHover of DevTools nodes
@@ -92,11 +97,12 @@ function App(): JSX.Element {
         <>
           <TreeView
             deHighlightDOMNode={deHighlightDOMNode}
+            handleNodeClick={handleNodeClick}
             highlightDOMNode={highlightDOMNode}
             viewClassName="tree-view-output"
             nodeMap={nodeMap}
           />
-          <InspectedElementView />
+          <InspectedElementView nodeProps={selectedNode} />
         </>
       )}
     </div>

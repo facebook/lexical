@@ -7,14 +7,23 @@
  */
 import './index.css';
 
+import {NodeProps} from 'packages/lexical-devtools/types';
 import * as React from 'react';
 
-function InspectedElementView(): JSX.Element {
-  return (
-    <div className="inspected-element-view">
-      THIS IS THE INSPECTED ELEMENT VIEW
-    </div>
-  );
+function InspectedElementView({
+  nodeProps,
+}: {
+  nodeProps: NodeProps | null;
+}): JSX.Element {
+  const props = [];
+
+  if (nodeProps) {
+    for (const key in nodeProps) {
+      props.push(`${key}: ${nodeProps[key]}`);
+    }
+  }
+
+  return <div className="inspected-element-view">{props}</div>;
 }
 
 export default InspectedElementView;

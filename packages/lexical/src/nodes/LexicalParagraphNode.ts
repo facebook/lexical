@@ -13,7 +13,10 @@ import type {
   DOMExportOutput,
   LexicalNode,
 } from '../LexicalNode';
-import type {SerializedElementNode} from './LexicalElementNode';
+import type {
+  ElementFormatType,
+  SerializedElementNode,
+} from './LexicalElementNode';
 import type {Spread} from 'lexical';
 
 import {getCachedClassNameArray} from '../LexicalUtils';
@@ -66,6 +69,25 @@ export class ParagraphNode extends ElementNode {
 
     if (element && this.isEmpty()) {
       element.append(document.createElement('br'));
+    }
+
+    const format = this.getFormatType();
+    if (element && format) {
+      element.style.cssText += 'text-align: ' + format;
+    }
+
+    const direction = this.getDirection();
+    if (element && direction) {
+      element.setAttribute('dir', direction);
+
+      const ltrClassName = editor._config.theme.ltr;
+      const rtlClassName = editor._config.theme.rtl;
+
+      if (direction === 'ltr' && ltrClassName) {
+        element.classList.add(ltrClassName);
+      } else if (direction === 'rtl' && rtlClassName) {
+        element.classList.add(rtlClassName);
+      }
     }
 
     return {
@@ -124,8 +146,20 @@ export class ParagraphNode extends ElementNode {
   }
 }
 
-function convertParagraphElement(): DOMConversionOutput {
-  return {node: $createParagraphNode()};
+function convertParagraphElement(domNode: Node): DOMConversionOutput {
+  const p = domNode as HTMLElement;
+  const node = $createParagraphNode();
+  const textAlign = p.style.textAlign;
+  const direction = p.getAttribute('dir');
+  if (textAlign) {
+    node.setFormat(p.style.textAlign as ElementFormatType);
+  }
+  // TODO: This currently doesn't work as it gets over-ridden by dynamic
+  // evaluation of text content during reconciliation.
+  if (direction === 'rtl' || direction === 'ltr') {
+    node.setDirection(direction);
+  }
+  return {node};
 }
 
 export function $createParagraphNode(): ParagraphNode {

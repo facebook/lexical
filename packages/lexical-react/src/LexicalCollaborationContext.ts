@@ -38,14 +38,13 @@ const entries = [
 ];
 
 const randomEntry = entries[Math.floor(Math.random() * entries.length)];
-export const CollaborationContext: React.Context<CollaborationContextType> =
-  createContext({
-    clientID: 0,
-    color: randomEntry[1],
-    isCollabActive: false,
-    name: randomEntry[0],
-    yjsDocMap: new Map(),
-  });
+export const CollaborationContext = createContext<CollaborationContextType>({
+  clientID: 0,
+  color: randomEntry[1],
+  isCollabActive: false,
+  name: randomEntry[0],
+  yjsDocMap: new Map(),
+});
 
 export function useCollaborationContext(
   username?: string,

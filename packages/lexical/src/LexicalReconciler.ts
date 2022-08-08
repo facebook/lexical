@@ -790,7 +790,8 @@ function getPrevElementByKeyOrThrow(key: NodeKey): HTMLElement {
   if (element === undefined) {
     invariant(
       false,
-      'Reconciliation: could not find DOM element for node key "${key}"',
+      'Reconciliation: could not find DOM element for node key %s',
+      key,
     );
   }
 

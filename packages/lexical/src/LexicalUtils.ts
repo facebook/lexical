@@ -93,10 +93,6 @@ export function getRegisteredNodeOrThrow(
 
 export const isArray = Array.isArray;
 
-export function isTextNode(node: Node): node is Text {
-  return node.nodeType === DOM_TEXT_TYPE;
-}
-
 export const scheduleMicroTask: (fn: () => void) => void =
   typeof queueMicrotask === 'function'
     ? queueMicrotask
@@ -169,10 +165,14 @@ export function $isTokenOrInert(node: TextNode): boolean {
   return node.isToken() || node.isInert();
 }
 
+function isDOMNodeLexicalTextNode(node: Node): node is Text {
+  return node.nodeType === DOM_TEXT_TYPE;
+}
+
 export function getDOMTextNode(element: Node | null): Text | null {
   let node = element;
   while (node != null) {
-    if (isTextNode(node)) {
+    if (isDOMNodeLexicalTextNode(node)) {
       return node;
     }
     node = node.firstChild;
@@ -1117,7 +1117,8 @@ export function getElementByKeyOrThrow(
   if (element === undefined) {
     invariant(
       false,
-      'Reconciliation: could not find DOM element for node key "${key}"',
+      'Reconciliation: could not find DOM element for node key %s',
+      key,
     );
   }
 

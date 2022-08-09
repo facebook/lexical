@@ -31,7 +31,7 @@ export interface LexicalHTMLElement extends HTMLElement {
   __lexicalEditor: LexicalEditor;
 }
 
-export type cloneInto = (
-  arg: {data: {lexicalKey: string}},
-  arg2: WindowProxy,
+export type CloneInto = (
+  arg: {lexicalKey: string},
+  arg2: Window,
 ) => {data: {lexicalKey: string}};

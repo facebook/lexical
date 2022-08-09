@@ -8,12 +8,6 @@
 import {EditorState} from 'lexical';
 import {LexicalHTMLElement, LexicalKey} from 'packages/lexical-devtools/types';
 
-declare global {
-  interface DocumentEventMap {
-    highlight: CustomEvent;
-  }
-}
-
 let editorDOMNode: LexicalHTMLElement | null, editorKey: string | null;
 
 // the existing editorState.toJSON() does not contain lexicalKeys

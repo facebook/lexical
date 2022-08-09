@@ -12,6 +12,7 @@ import {IS_FIREFOX} from 'shared/environment';
 declare global {
   interface DocumentEventMap {
     editorStateUpdate: CustomEvent;
+    highlight: CustomEvent;
   }
 }
 
@@ -57,13 +58,24 @@ document.addEventListener('editorStateUpdate', function (e) {
   });
 });
 
+function getCloneInto(): CloneInto | null {
+  // @ts-ignore
+  if (typeof globalThis.cloneInto === 'function') {
+    // @ts-ignore
+    return globalThis.cloneInto;
+  }
+  return null;
+}
+
+const cloneInto = getCloneInto();
+
 port.onMessage.addListener((message) => {
   if (message.name === 'highlight') {
-    const data = {lexicalKey: message.lexicalKey};
-    const detail = IS_FIREFOX
-      ? // eslint-disable-next-line no-undef
-        (cloneInto(data, document.defaultView) as CloneInto) // see https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Sharing_objects_with_page_scripts#cloneinto
-      : data;
+    const data = {lexicalKey: message.lexicalKey as string};
+    const detail =
+      IS_FIREFOX && cloneInto && document && document.defaultView
+        ? cloneInto(data, document.defaultView)
+        : data;
     document.dispatchEvent(
       new CustomEvent('highlight', {
         detail,

@@ -45,6 +45,7 @@ const closureOptions = {
 };
 
 const wwwMappings = {
+  '@lexical/TableOfContentsPlugin': 'TableOfContentsPlugin',
   '@lexical/clipboard': 'LexicalClipboard',
   '@lexical/code': 'LexicalCode',
   '@lexical/dragon': 'LexicalDragon',

@@ -20,7 +20,7 @@
 }
 
 .loading-view {
-  background: #222;
+  background: var(--main-dark-gray);
   color: #fff;
   font-size: 3em;
 }

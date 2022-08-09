@@ -1,7 +1,7 @@
 .indentation {
-  background: #222;
+  background: var(--main-dark-gray);
   border: none;
-  color: #222;
+  color: var(--main-dark-gray);
   margin: 0;
   padding: 0;
   text-decoration: none;
@@ -9,8 +9,8 @@
 }
 
 .tree-node:hover {
-  background: #77b6ff;
-  color: #222;
+  background: var(--main-blue);
+  color: var(--main-dark-gray);
 }
 
 .tree-node-wrapper {

@@ -1,5 +1,5 @@
 .tree-view-output {
-  background: #222;
+  background: var(--main-dark-gray);
   color: #fff;
   font-size: 1.2em;
   font-weight: 400;

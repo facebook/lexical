@@ -9,8 +9,10 @@
 import {moveLeft, redo, undo} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
+  assertSelection,
   clearEditor,
   click,
+  E2E_BROWSER,
   focusEditor,
   getHTML,
   html,
@@ -633,6 +635,51 @@ test.describe('Markdown', () => {
         </p>
       `,
     );
+  });
+
+  test('can adjust selection after text match transformer', async ({page}) => {
+    await focusEditor(page);
+    await page.keyboard.type('Hello  world');
+    await moveLeft(page, 6);
+    await page.keyboard.type('[link](https://lexical.dev)');
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Hello</span>
+          <a
+            href="https://lexical.dev"
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">link</span>
+          </a>
+          <span data-lexical-text="true">world</span>
+        </p>
+      `,
+    );
+    // Selection starts after newly created link element
+
+    if (E2E_BROWSER === 'webkit') {
+      // TODO: safari keeps dom selection on newly inserted link although Lexical's selection
+      // is correctly adjusted to start on [ world] text node. #updateDomSelection calls
+      // selection.setBaseAndExtent correctly, but safari does not seem to sync dom selection
+      // to newly passed values of anchor/focus/offset
+      await assertSelection(page, {
+        anchorOffset: 4,
+        anchorPath: [0, 1, 0, 0],
+        focusOffset: 4,
+        focusPath: [0, 1, 0, 0],
+      });
+    } else {
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [0, 2, 0],
+        focusOffset: 0,
+        focusPath: [0, 2, 0],
+      });
+    }
   });
 });
 

@@ -7,7 +7,7 @@
  */
 import './index.css';
 
-import {DevToolsNode} from 'packages/lexical-devtools/types';
+import {DevToolsNode, NodeProps} from 'packages/lexical-devtools/types';
 import * as React from 'react';
 import {useState} from 'react';
 
@@ -40,7 +40,9 @@ function TreeNode({
   };
 
   const handleClick: React.MouseEventHandler = () => {
-    handleNodeClick(rest);
+    const nodeProps: NodeProps = {__type, ...rest};
+    if (__text) nodeProps.__text = __text;
+    handleNodeClick(nodeProps);
   };
 
   const nodeString = ` (${lexicalKey}) ${__type} ${

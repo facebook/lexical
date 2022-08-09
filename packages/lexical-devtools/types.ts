@@ -36,7 +36,10 @@ export type NodeClickHandler = (props: NodeProps) => void;
 
 export type NodeHoverHandler = (lexicalKey: string) => void;
 
-export type NodeProps = Record<string, string | number>;
+export type NodeProps = Record<
+  string,
+  string | number | Array<string | number>
+>;
 
 export type CloneInto = (
   arg: {lexicalKey: string},

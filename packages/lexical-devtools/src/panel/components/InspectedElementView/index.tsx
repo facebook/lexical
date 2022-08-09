@@ -10,20 +10,27 @@ import './index.css';
 import {NodeProps} from 'packages/lexical-devtools/types';
 import * as React from 'react';
 
+import InspectedElementProp from '../InspectedElementProp';
+
 function InspectedElementView({
   nodeProps,
 }: {
   nodeProps: NodeProps | null;
 }): JSX.Element {
-  const props = [];
+  const propsDisplay = [];
 
   if (nodeProps) {
-    for (const key in nodeProps) {
-      props.push(`${key}: ${nodeProps[key]}`);
+    for (const propName in nodeProps) {
+      propsDisplay.push(
+        <InspectedElementProp
+          propName={propName}
+          property={nodeProps[propName]}
+        />,
+      );
     }
   }
 
-  return <div className="inspected-element-view">{props}</div>;
+  return <div className="inspected-element-view">{propsDisplay}</div>;
 }
 
 export default InspectedElementView;

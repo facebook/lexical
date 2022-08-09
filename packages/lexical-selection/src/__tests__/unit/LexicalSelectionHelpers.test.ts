@@ -20,9 +20,11 @@ import {
   TextNode,
 } from 'lexical';
 import {
+  $createTestDecoratorNode,
   $createTestElementNode,
   $createTestExcludeFromCopyElementNode,
   createTestEditor,
+  TestDecoratorNode,
 } from 'lexical/src/__tests__/utils';
 
 import {setAnchorPoint, setFocusPoint} from '../utils';
@@ -2506,5 +2508,40 @@ describe('extract', () => {
 
       expect(selection.extract()).toEqual([text]);
     });
+  });
+});
+
+describe('insertNodes', () => {
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('can insert element next to top level decorator node', async () => {
+    const editor = createTestEditor();
+    const element = document.createElement('div');
+    editor.setRootElement(element);
+
+    jest.spyOn(TestDecoratorNode.prototype, 'isTopLevel').mockReturnValue(true);
+
+    await editor.update(() => {
+      $getRoot().append(
+        $createParagraphNode(),
+        $createTestDecoratorNode(),
+        $createParagraphNode().append($createTextNode('Text after')),
+      );
+    });
+
+    await editor.update(() => {
+      const selection = $getRoot().getFirstChild().select();
+      selection.insertNodes([
+        $createParagraphNode().append($createTextNode('Text before')),
+      ]);
+    });
+
+    expect(element.innerHTML).toBe(
+      '<p dir="ltr"><span data-lexical-text="true">Text before</span></p>' +
+        '<span data-lexical-decorator="true" contenteditable="false"></span>' +
+        '<p dir="ltr"><span data-lexical-text="true">Text after</span></p>',
+    );
   });
 });

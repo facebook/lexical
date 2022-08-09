@@ -1404,7 +1404,11 @@ export class RangeSelection implements BaseSelection {
         for (let i = siblings.length - 1; i >= 0; i--) {
           const sibling = siblings[i];
           const prevParent = sibling.getParentOrThrow();
-          if ($isElementNode(target) && !$isBlockElementNode(sibling)) {
+          if (
+            $isElementNode(target) &&
+            !$isBlockElementNode(sibling) &&
+            !($isDecoratorNode(sibling) && sibling.isTopLevel())
+          ) {
             if (originalTarget === target) {
               target.append(sibling);
             } else {

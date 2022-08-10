@@ -76,6 +76,18 @@ test.describe('MaxLength', () => {
       'text/plain': 'lorem ipsum dolor sit amet, consectetur adipiscing elit',
     });
     await page.keyboard.press('Backspace');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">lorem ipsum dolor sit amet, c</span>
+        </p>
+      `,
+    );
+
     await page.keyboard.type('💏');
 
     await assertHTML(

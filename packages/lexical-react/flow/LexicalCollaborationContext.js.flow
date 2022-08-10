@@ -12,6 +12,7 @@ import type {Doc} from 'yjs';
 type CollaborationContextType = {
   clientID: number,
   color: string,
+  isCollabActive: boolean,
   name: string,
   yjsDocMap: Map<string, Doc>,
 };

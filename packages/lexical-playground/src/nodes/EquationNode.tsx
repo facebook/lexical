@@ -62,6 +62,12 @@ function EquationComponent({
   );
 
   useEffect(() => {
+    if (!showEquationEditor && equationValue !== equation) {
+      setEquationValue(equation);
+    }
+  }, [showEquationEditor, equation, equationValue]);
+
+  useEffect(() => {
     if (showEquationEditor) {
       return mergeRegister(
         editor.registerCommand(

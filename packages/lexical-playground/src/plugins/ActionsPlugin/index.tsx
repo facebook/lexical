@@ -47,8 +47,7 @@ export default function ActionsPlugin({
   const [connected, setConnected] = useState(false);
   const [isEditorEmpty, setIsEditorEmpty] = useState(true);
   const [modal, showModal] = useModal();
-  const {yjsDocMap} = useCollaborationContext();
-  const isCollab = yjsDocMap.get('main') !== undefined;
+  const {isCollabActive} = useCollaborationContext();
 
   useEffect(() => {
     return mergeRegister(
@@ -174,7 +173,7 @@ export default function ActionsPlugin({
         aria-label="Convert from markdown">
         <i className="markdown" />
       </button>
-      {isCollab && (
+      {isCollabActive && (
         <button
           className="action-button connect"
           onClick={() => {

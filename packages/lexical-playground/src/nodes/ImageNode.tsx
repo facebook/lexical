@@ -156,9 +156,8 @@ function ImageComponent({
   const [isSelected, setSelected, clearSelection] =
     useLexicalNodeSelection(nodeKey);
   const [isResizing, setIsResizing] = useState<boolean>(false);
-  const {yjsDocMap} = useCollaborationContext();
+  const {isCollabActive} = useCollaborationContext();
   const [editor] = useLexicalComposerContext();
-  const isCollab = yjsDocMap.get('main') !== undefined;
   const [selection, setSelection] = useState<
     RangeSelection | NodeSelection | GridSelection | null
   >(null);
@@ -288,7 +287,7 @@ function ImageComponent({
               <EmojisPlugin />
               <HashtagPlugin />
               <KeywordsPlugin />
-              {isCollab ? (
+              {isCollabActive ? (
                 <CollaborationPlugin
                   id={caption.getKey()}
                   providerFactory={createWebsocketProvider}

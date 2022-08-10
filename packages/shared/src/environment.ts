@@ -6,13 +6,22 @@
  *
  */
 
+declare global {
+  interface Document {
+    documentMode?: unknown;
+  }
+
+  interface Window {
+    MSStream?: unknown;
+  }
+}
+
 export const CAN_USE_DOM: boolean =
   typeof window !== 'undefined' &&
   typeof window.document !== 'undefined' &&
   typeof window.document.createElement !== 'undefined';
 
 const documentMode =
-  // @ts-ignore
   CAN_USE_DOM && 'documentMode' in document ? document.documentMode : null;
 
 export const IS_APPLE: boolean =
@@ -32,7 +41,6 @@ export const IS_SAFARI: boolean =
 export const IS_IOS: boolean =
   CAN_USE_DOM &&
   /iPad|iPhone|iPod/.test(navigator.userAgent) &&
-  // @ts-ignore
   !window.MSStream;
 
 // Keep these in case we need to use them in the future.

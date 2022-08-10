@@ -14,7 +14,7 @@ Editor states have two phases:
 
 - During an update they can be thought of as "mutable". See "Updating state" below to
   mutate an editor state.
-- After an update, the editor state is then locked and deemed immutable from there one. This
+- After an update, the editor state is then locked and deemed immutable from there on. This
   editor state can therefore be thought of as a "snapshot".
 
 Editor states contain two core things:

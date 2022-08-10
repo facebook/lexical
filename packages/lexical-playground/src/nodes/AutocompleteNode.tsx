@@ -19,6 +19,14 @@ import * as React from 'react';
 import {useSharedAutocompleteContext} from '../context/SharedAutocompleteContext';
 import {uuid as UUID} from '../plugins/AutocompletePlugin';
 
+declare global {
+  interface Navigator {
+    userAgentData?: {
+      mobile: boolean;
+    };
+  }
+}
+
 export type SerializedAutocompleteNode = Spread<
   {
     type: 'autocomplete';
@@ -87,7 +95,6 @@ export function $createAutocompleteNode(uuid: string): AutocompleteNode {
 
 function AutocompleteComponent(): JSX.Element {
   const [suggestion] = useSharedAutocompleteContext();
-  // @ts-ignore Experimental property
   const userAgentData = window.navigator.userAgentData;
   const isMobile =
     userAgentData !== undefined

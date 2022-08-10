@@ -7,6 +7,7 @@
  */
 import './index.css';
 
+import {NodeProperty} from 'packages/lexical-devtools/types';
 import * as React from 'react';
 
 function InspectedElementProp({
@@ -14,7 +15,7 @@ function InspectedElementProp({
   property,
 }: {
   propName: string;
-  property: string | number | boolean | Array<string>;
+  property: NodeProperty;
 }): JSX.Element {
   let propDisplay = property;
 

@@ -7,7 +7,7 @@
  */
 import './index.css';
 
-import {NodeProps} from 'packages/lexical-devtools/types';
+import {NodeProperties} from 'packages/lexical-devtools/types';
 import * as React from 'react';
 
 import InspectedElementProp from '../InspectedElementProp';
@@ -15,7 +15,7 @@ import InspectedElementProp from '../InspectedElementProp';
 function InspectedElementView({
   nodeProps,
 }: {
-  nodeProps: NodeProps | null;
+  nodeProps: NodeProperties | null;
 }): JSX.Element {
   const propsDisplay = [];
 

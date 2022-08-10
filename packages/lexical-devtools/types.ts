@@ -32,14 +32,13 @@ export interface LexicalHTMLElement extends HTMLElement {
   __lexicalEditor: LexicalEditor;
 }
 
-export type NodeClickHandler = (props: NodeProps) => void;
+export type NodeClickHandler = (props: NodeProperties) => void;
 
 export type NodeHoverHandler = (lexicalKey: string) => void;
 
-export type NodeProps = Record<
-  string,
-  string | number | Array<string | number>
->;
+export type NodeProperties = Record<string, NodeProperty>;
+
+export type NodeProperty = string | number | boolean | Array<string | number>;
 
 export type CloneInto = (
   arg: {lexicalKey: string},

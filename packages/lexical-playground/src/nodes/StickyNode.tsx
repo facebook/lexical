@@ -84,8 +84,7 @@ function StickyComponent({
     x: 0,
     y: 0,
   });
-  const {yjsDocMap} = useCollaborationContext();
-  const isCollab = yjsDocMap.get('main') !== undefined;
+  const {isCollabActive} = useCollaborationContext();
 
   useEffect(() => {
     const position = positioningRef.current;
@@ -250,7 +249,7 @@ function StickyComponent({
         <LexicalNestedComposer
           initialEditor={caption}
           initialTheme={StickyEditorTheme}>
-          {isCollab ? (
+          {isCollabActive ? (
             <CollaborationPlugin
               id={caption.getKey()}
               providerFactory={createWebsocketProvider}

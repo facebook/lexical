@@ -20,10 +20,12 @@ import {ContentEditable} from '../../LexicalContentEditable';
 import {RichTextPlugin} from '../../LexicalRichTextPlugin';
 
 function Editor({doc, provider, setEditor}) {
-  const {yjsDocMap} = useCollaborationContext();
+  const context = useCollaborationContext();
 
   const [editor] = useLexicalComposerContext();
 
+  const {yjsDocMap} = context;
+  context.isCollabActive = true;
   yjsDocMap.set('main', doc);
 
   setEditor(editor);

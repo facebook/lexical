@@ -2150,7 +2150,7 @@ describe('LexicalSelection tests', () => {
         const root = $getRoot();
         const paragraph = $createParagraphNode();
         const textNode = $createTextNode('Hello, World!');
-        textNode.setStyle('   color    :   red   ;top     : 50px');
+        textNode.setStyle('   font-family  : Arial  ;  color    :   red   ;top     : 50px');
         $addNodeStyle(textNode);
         paragraph.append(textNode);
         root.append(paragraph);
@@ -2170,12 +2170,20 @@ describe('LexicalSelection tests', () => {
           type: 'text',
         });
 
+        const cssFontFamilyValue = $getSelectionStyleValueForProperty(
+          selection,
+          'font-family',
+          '',
+        );
+        expect(cssFontFamilyValue).toBe('Arial');
+        
         const cssColorValue = $getSelectionStyleValueForProperty(
           selection,
           'color',
           '',
         );
         expect(cssColorValue).toBe('red');
+
         const cssTopValue = $getSelectionStyleValueForProperty(
           selection,
           'top',
@@ -2196,7 +2204,7 @@ describe('LexicalSelection tests', () => {
         const root = $getRoot();
         const paragraph = $createParagraphNode();
         const textNode = $createTextNode('Hello, World!');
-        textNode.setStyle('font-family: prefix:Arial; color: white');
+        textNode.setStyle('font-family: double:prefix:Arial; color: color:white; font-size: 30px');
         $addNodeStyle(textNode);
         paragraph.append(textNode);
         root.append(paragraph);
@@ -2216,18 +2224,26 @@ describe('LexicalSelection tests', () => {
           type: 'text',
         });
 
-        const cssColorValue = $getSelectionStyleValueForProperty(
+        const cssFontFamilyValue = $getSelectionStyleValueForProperty(
           selection,
           'font-family',
           '',
         );
-        expect(cssColorValue).toBe('prefix:Arial');
-        const cssTopValue = $getSelectionStyleValueForProperty(
+        expect(cssFontFamilyValue).toBe('double:prefix:Arial');
+
+        const cssColorValue = $getSelectionStyleValueForProperty(
           selection,
           'color',
           '',
         );
-        expect(cssTopValue).toBe('white');
+        expect(cssColorValue).toBe('color:white');
+
+        const cssFontSizeValue = $getSelectionStyleValueForProperty(
+          selection,
+          'font-size',
+          '',
+        );
+        expect(cssFontSizeValue).toBe('30px');
       });
     });
   });

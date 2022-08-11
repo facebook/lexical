@@ -28,10 +28,6 @@ function App(): JSX.Element {
     setNodeMap(newNodeMap);
   };
 
-  const handleNodeClick = (nodeProps: NodeProperties) => {
-    setSelectedNode(nodeProps);
-  };
-
   // highlight & dehighlight the corresponding DOM nodes onHover of DevTools nodes
   const highlightDOMNode = useCallback(
     (lexicalKey: string) => {
@@ -97,7 +93,7 @@ function App(): JSX.Element {
         <>
           <TreeView
             deHighlightDOMNode={deHighlightDOMNode}
-            handleNodeClick={handleNodeClick}
+            handleNodeClick={setSelectedNode}
             highlightDOMNode={highlightDOMNode}
             viewClassName="tree-view-output"
             nodeMap={nodeMap}

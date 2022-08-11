@@ -41,7 +41,9 @@ function TreeNode({
 
   const handleClick: React.MouseEventHandler = () => {
     const nodeProps: NodeProperties = {__type, ...rest};
-    if (__text) nodeProps.__text = __text;
+    if (__text) {
+      nodeProps.__text = __text;
+    }
     handleNodeClick(nodeProps);
   };
 

@@ -10,7 +10,7 @@ import './index.css';
 import {NodeProperty} from 'packages/lexical-devtools/types';
 import * as React from 'react';
 
-function InspectedElementProp({
+function InspectedElementRow({
   propName,
   property,
 }: {
@@ -29,12 +29,11 @@ function InspectedElementProp({
   }
 
   return (
-    <>
+    <div>
       <span className="inspected-element-property-name">{propName}:</span>{' '}
       <span className="inspected-element-property">{propDisplay}</span>
-      <br />
-    </>
+    </div>
   );
 }
 
-export default InspectedElementProp;
+export default InspectedElementRow;

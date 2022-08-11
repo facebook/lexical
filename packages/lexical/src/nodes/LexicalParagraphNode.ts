@@ -150,14 +150,8 @@ function convertParagraphElement(domNode: Node): DOMConversionOutput {
   const p = domNode as HTMLElement;
   const node = $createParagraphNode();
   const textAlign = p.style.textAlign;
-  const direction = p.getAttribute('dir');
   if (textAlign) {
     node.setFormat(p.style.textAlign as ElementFormatType);
-  }
-  // TODO: This currently doesn't work as it gets over-ridden by dynamic
-  // evaluation of text content during reconciliation.
-  if (direction === 'rtl' || direction === 'ltr') {
-    node.setDirection(direction);
   }
   return {node};
 }

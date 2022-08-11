@@ -2185,4 +2185,50 @@ describe('LexicalSelection tests', () => {
       });
     });
   });
+
+  describe('Testing that getStyleObjectFromRawCSS handles values with colons', () => {
+    test('', async () => {
+      const testEditor = createTestEditor();
+      const element = document.createElement('div');
+      testEditor.setRootElement(element);
+
+      await testEditor.update(() => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const textNode = $createTextNode('Hello, World!');
+        textNode.setStyle('font-family: prefix:Arial; color: white');
+        $addNodeStyle(textNode);
+        paragraph.append(textNode);
+        root.append(paragraph);
+
+        const selection = $createRangeSelection();
+        $setSelection(selection);
+        selection.insertParagraph();
+        setAnchorPoint({
+          key: textNode.getKey(),
+          offset: 0,
+          type: 'text',
+        });
+
+        setFocusPoint({
+          key: textNode.getKey(),
+          offset: 10,
+          type: 'text',
+        });
+
+        const cssColorValue = $getSelectionStyleValueForProperty(
+          selection,
+          'font-family',
+          '',
+        );
+        expect(cssColorValue).toBe('prefix:Arial');
+        const cssTopValue = $getSelectionStyleValueForProperty(
+          selection,
+          'color',
+          '',
+        );
+        expect(cssTopValue).toBe('white');
+      });
+    });
+  });
 });

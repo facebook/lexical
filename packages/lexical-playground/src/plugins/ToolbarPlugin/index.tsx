@@ -229,7 +229,6 @@ function FloatingLinkEditor({editor}: {editor: LexicalEditor}): JSX.Element {
     if (
       selection !== null &&
       nativeSelection !== null &&
-      !nativeSelection.isCollapsed &&
       rootElement !== null &&
       rootElement.contains(nativeSelection.anchorNode)
     ) {

@@ -19,7 +19,7 @@ import {$isElementNode, ElementNode} from 'lexical';
 declare export class LinkNode extends ElementNode {
   __url: string;
   __target: null | string;
-  __relationship: null | string;
+  __rel: null | string;
   static getType(): string;
   static clone(node: LinkNode): LinkNode;
   constructor(
@@ -42,7 +42,7 @@ declare export class LinkNode extends ElementNode {
   getTarget(): null | string;
   setTarget(target: null | string): void;
   getRel(): null | string;
-  setRel(relationship: null | string): void;
+  setRel(rel: null | string): void;
   insertNewAfter(selection: RangeSelection): null | ElementNode;
   canInsertTextBefore(): false;
   canInsertTextAfter(): false;
@@ -75,12 +75,12 @@ declare export var TOGGLE_LINK_COMMAND: LexicalCommand<
   | {
       url: string,
       target?: null | string,
-      relationship?: null | string,
+      rel?: null | string,
     }
   | null,
 >;
 declare export function toggleLink(
   url: null | string,
   target?: null | string,
-  relationship?: null | string,
+  rel?: null | string,
 ): void;

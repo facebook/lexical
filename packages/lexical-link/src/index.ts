@@ -24,7 +24,6 @@ import {
   $getSelection,
   $isElementNode,
   $isRangeSelection,
-  $setSelection,
   createCommand,
   ElementNode,
   Spread,
@@ -349,129 +348,124 @@ export function toggleLink(
   const {target, rel} = attributes;
   const selection = $getSelection();
 
-  if (selection !== null) {
-    $setSelection(selection);
+  if (!$isRangeSelection(selection)) {
+    return;
   }
+  const nodes = selection.extract();
 
-  const sel = $getSelection();
+  if (url === null) {
+    // Remove LinkNodes
+    nodes.forEach((node) => {
+      const parent = node.getParent();
 
-  if (sel !== null) {
-    const nodes = sel.extract();
+      if ($isLinkNode(parent)) {
+        const children = parent.getChildren();
 
-    if (url === null) {
-      // Remove LinkNodes
-      nodes.forEach((node) => {
-        const parent = node.getParent();
-
-        if ($isLinkNode(parent)) {
-          const children = parent.getChildren();
-
-          for (let i = 0; i < children.length; i++) {
-            parent.insertBefore(children[i]);
-          }
-
-          parent.remove();
+        for (let i = 0; i < children.length; i++) {
+          parent.insertBefore(children[i]);
         }
-      });
-    } else {
-      // Add or merge LinkNodes
-      if ($isRangeSelection(sel) && sel.isCollapsed()) {
+
+        parent.remove();
+      }
+    });
+  } else {
+    // Add or merge LinkNodes
+    if (nodes.length === 1) {
+      const firstNode = nodes[0];
+      // if the first node is a LinkNode or if its
+      // parent is a LinkNode, we update the URL, target and rel.
+      const linkNode = $isLinkNode(firstNode)
+        ? firstNode
+        : $getLinkAncestor(firstNode);
+      if (linkNode !== null) {
+        linkNode.setURL(url);
+        if (target !== undefined) {
+          linkNode.setTarget(target);
+        }
+        if (rel !== undefined) {
+          linkNode.setRel(rel);
+        }
         return;
       }
-      if (nodes.length === 1) {
-        const firstNode = nodes[0];
+    }
 
-        // if the first node is a LinkNode or if its
-        // parent is a LinkNode, we update the URL, target and rel.
-        if ($isLinkNode(firstNode)) {
-          firstNode.setURL(url);
-          if (target !== undefined) {
-            firstNode.setTarget(target);
+    let prevParent: ElementNode | LinkNode | null = null;
+    let linkNode: LinkNode | null = null;
+
+    nodes.forEach((node) => {
+      const parent = node.getParent();
+
+      if (
+        parent === linkNode ||
+        parent === null ||
+        ($isElementNode(node) && !node.isInline())
+      ) {
+        return;
+      }
+
+      if ($isLinkNode(parent)) {
+        linkNode = parent;
+        parent.setURL(url);
+        if (target !== undefined) {
+          parent.setTarget(target);
+        }
+        if (rel !== undefined) {
+          parent.setRel(rel);
+        }
+        return;
+      }
+
+      if (!parent.is(prevParent)) {
+        prevParent = parent;
+        linkNode = $createLinkNode(url, {rel, target});
+
+        if ($isLinkNode(parent)) {
+          if (node.getPreviousSibling() === null) {
+            parent.insertBefore(linkNode);
+          } else {
+            parent.insertAfter(linkNode);
           }
-          if (rel !== undefined) {
-            firstNode.setRel(rel);
-          }
-          return;
         } else {
-          const parent = firstNode.getParent();
-
-          if ($isLinkNode(parent)) {
-            // set parent to be the current linkNode
-            // so that other nodes in the same parent
-            // aren't handled separately below.
-            parent.setURL(url);
-            if (target !== undefined) {
-              parent.setTarget(target);
-            }
-            if (rel !== undefined) {
-              parent.setRel(rel);
-            }
-            return;
-          }
+          node.insertBefore(linkNode);
         }
       }
 
-      let prevParent: ElementNode | LinkNode | null = null;
-      let linkNode: LinkNode | null = null;
-
-      nodes.forEach((node) => {
-        const parent = node.getParent();
-
-        if (
-          parent === linkNode ||
-          parent === null ||
-          ($isElementNode(node) && !node.isInline())
-        ) {
+      if ($isLinkNode(node)) {
+        if (node.is(linkNode)) {
           return;
         }
-
-        if ($isLinkNode(parent)) {
-          linkNode = parent;
-          parent.setURL(url);
-          if (target !== undefined) {
-            parent.setTarget(target);
-          }
-          if (rel !== undefined) {
-            parent.setRel(rel);
-          }
-          return;
-        }
-
-        if (!parent.is(prevParent)) {
-          prevParent = parent;
-          linkNode = $createLinkNode(url, {rel, target});
-
-          if ($isLinkNode(parent)) {
-            if (node.getPreviousSibling() === null) {
-              parent.insertBefore(linkNode);
-            } else {
-              parent.insertAfter(linkNode);
-            }
-          } else {
-            node.insertBefore(linkNode);
-          }
-        }
-
-        if ($isLinkNode(node)) {
-          if (node.is(linkNode)) {
-            return;
-          }
-          if (linkNode !== null) {
-            const children = node.getChildren();
-
-            for (let i = 0; i < children.length; i++) {
-              linkNode.append(children[i]);
-            }
-          }
-
-          node.remove();
-          return;
-        }
-
         if (linkNode !== null) {
-          linkNode.append(node);
+          const children = node.getChildren();
+
+          for (let i = 0; i < children.length; i++) {
+            linkNode.append(children[i]);
+          }
         }
-      });
-    }
+
+        node.remove();
+        return;
+      }
+
+      if (linkNode !== null) {
+        linkNode.append(node);
+      }
+    });
   }
+}
+
+function $getLinkAncestor(node: LexicalNode): null | LexicalNode {
+  return $getAncestor(node, (ancestor) => $isLinkNode(ancestor));
+}
+
+function $getAncestor(
+  node: LexicalNode,
+  predicate: (ancestor: LexicalNode) => boolean,
+): null | LexicalNode {
+  let parent: null | LexicalNode = node;
+  while (
+    parent !== null &&
+    (parent = parent.getParent()) !== null &&
+    !predicate(parent)
+  );
+  return parent;
 }

@@ -20,6 +20,9 @@ import {
   initialize,
   insertImageCaption,
   insertSampleImage,
+  IS_MAC,
+  keyDownCtrlOrMeta,
+  keyUpCtrlOrMeta,
   selectFromFormatDropdown,
   sleep,
   test,
@@ -132,6 +135,67 @@ test.describe('Selection', () => {
             <span data-lexical-text="true">Line2</span>
           </code>
         </p>
+      `,
+    );
+  });
+
+  test('can delete text by line with CMD+delete', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText || !IS_MAC);
+    await focusEditor(page);
+    await page.keyboard.type('One');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Two');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Three');
+
+    const deleteLine = async () => {
+      await keyDownCtrlOrMeta(page);
+      await page.keyboard.press('Backspace');
+      await keyUpCtrlOrMeta(page);
+    };
+
+    const lines = [
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">One</span>
+        </p>
+      `,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Two</span>
+        </p>
+      `,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Three</span>
+        </p>
+      `,
+    ];
+
+    await deleteLine();
+    await assertHTML(page, lines.slice(0, 3).join(''));
+    await deleteLine();
+    await assertHTML(page, lines.slice(0, 2).join(''));
+    await deleteLine();
+    await assertHTML(page, lines.slice(0, 1).join(''));
+    await deleteLine();
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
       `,
     );
   });

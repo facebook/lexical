@@ -10,8 +10,7 @@ import './index.css';
 import {
   DevToolsNode,
   DevToolsTree,
-  NodeClickHandler,
-  NodeHoverHandler,
+  NodeProperties,
 } from 'packages/lexical-devtools/types';
 import * as React from 'react';
 
@@ -24,9 +23,9 @@ function TreeView({
   viewClassName,
   nodeMap,
 }: {
-  deHighlightDOMNode: NodeHoverHandler;
-  handleNodeClick: NodeClickHandler;
-  highlightDOMNode: NodeHoverHandler;
+  deHighlightDOMNode: (lexicalKey: string) => void;
+  handleNodeClick: (props: NodeProperties) => void;
+  highlightDOMNode: (lexicalKey: string) => void;
   viewClassName: string;
   nodeMap: DevToolsTree;
 }): JSX.Element {

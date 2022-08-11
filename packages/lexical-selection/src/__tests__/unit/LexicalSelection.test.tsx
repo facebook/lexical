@@ -2150,7 +2150,9 @@ describe('LexicalSelection tests', () => {
         const root = $getRoot();
         const paragraph = $createParagraphNode();
         const textNode = $createTextNode('Hello, World!');
-        textNode.setStyle('   font-family  : Arial  ;  color    :   red   ;top     : 50px');
+        textNode.setStyle(
+          '   font-family  : Arial  ;  color    :   red   ;top     : 50px',
+        );
         $addNodeStyle(textNode);
         paragraph.append(textNode);
         root.append(paragraph);
@@ -2176,7 +2178,7 @@ describe('LexicalSelection tests', () => {
           '',
         );
         expect(cssFontFamilyValue).toBe('Arial');
-        
+
         const cssColorValue = $getSelectionStyleValueForProperty(
           selection,
           'color',
@@ -2204,7 +2206,9 @@ describe('LexicalSelection tests', () => {
         const root = $getRoot();
         const paragraph = $createParagraphNode();
         const textNode = $createTextNode('Hello, World!');
-        textNode.setStyle('font-family: double:prefix:Arial; color: color:white; font-size: 30px');
+        textNode.setStyle(
+          'font-family: double:prefix:Arial; color: color:white; font-size: 30px',
+        );
         $addNodeStyle(textNode);
         paragraph.append(textNode);
         root.append(paragraph);

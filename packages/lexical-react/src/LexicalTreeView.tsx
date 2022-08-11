@@ -16,6 +16,7 @@ import type {
   RangeSelection,
 } from 'lexical';
 
+import {$isLinkNode, LinkNode} from '@lexical/link';
 import {$isMarkNode} from '@lexical/mark';
 import {
   $getRoot,
@@ -326,18 +327,27 @@ function normalize(text: string) {
   );
 }
 
+// TODO Pass via props to allow customizability
 function printNode(node: LexicalNode) {
   if ($isTextNode(node)) {
     const text = node.getTextContent(true);
     const title = text.length === 0 ? '(empty)' : `"${normalize(text)}"`;
-    const properties = printAllProperties(node);
+    const properties = printAllTextNodeProperties(node);
     return [title, properties.length !== 0 ? `{ ${properties} }` : null]
       .filter(Boolean)
       .join(' ')
       .trim();
+  } else if ($isLinkNode(node)) {
+    const link = node.getURL();
+    const title = link.length === 0 ? '(empty)' : `"${normalize(link)}"`;
+    const properties = printAllLinkNodeProperties(node);
+    return [title, properties.length !== 0 ? `{ ${properties} }` : null]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+  } else {
+    return '';
   }
-
-  return '';
 }
 
 const FORMAT_PREDICATES = [
@@ -365,12 +375,18 @@ const MODE_PREDICATES = [
   (node: LexicalNode) => node.isInert() && 'Inert',
 ];
 
-function printAllProperties(node: LexicalNode) {
+function printAllTextNodeProperties(node: LexicalNode) {
   return [
     printFormatProperties(node),
     printDetailProperties(node),
     printModeProperties(node),
   ]
+    .filter(Boolean)
+    .join(', ');
+}
+
+function printAllLinkNodeProperties(node: LinkNode) {
+  return [printTargetProperties(node), printRelationshipProperties(node)]
     .filter(Boolean)
     .join(', ');
 }
@@ -411,6 +427,24 @@ function printFormatProperties(nodeOrSelection: LexicalNode | RangeSelection) {
     str = 'format: ' + str;
   }
 
+  return str;
+}
+
+function printTargetProperties(node: LinkNode) {
+  let str = node.getTarget();
+  // TODO Fix nullish on LinkNode
+  if (str != null) {
+    str = 'target: ' + str;
+  }
+  return str;
+}
+
+function printRelationshipProperties(node: LinkNode) {
+  let str = node.getRelationship();
+  // TODO Fix nullish on LinkNode
+  if (str != null) {
+    str = 'relationship: ' + str;
+  }
   return str;
 }
 

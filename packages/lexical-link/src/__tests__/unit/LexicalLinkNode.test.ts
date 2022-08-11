@@ -105,7 +105,7 @@ describe('LexicalLinkNode tests', () => {
       });
     });
 
-    test('LinkNode.getRelationship()', async () => {
+    test('LinkNode.getRel()', async () => {
       const {editor} = testEnv;
 
       await editor.update(() => {
@@ -114,11 +114,11 @@ describe('LexicalLinkNode tests', () => {
           target: '_blank',
         });
 
-        expect(linkNode.getRelationship()).toBe('noopener noreferrer');
+        expect(linkNode.getRel()).toBe('noopener noreferrer');
       });
     });
 
-    test('LinkNode.setRelationship()', async () => {
+    test('LinkNode.setRel()', async () => {
       const {editor} = testEnv;
 
       await editor.update(() => {
@@ -127,11 +127,11 @@ describe('LexicalLinkNode tests', () => {
           target: '_blank',
         });
 
-        expect(linkNode.getRelationship()).toBe('noopener');
+        expect(linkNode.getRel()).toBe('noopener');
 
-        linkNode.setRelationship('noopener noreferrer');
+        linkNode.setRel('noopener noreferrer');
 
-        expect(linkNode.getRelationship()).toBe('noopener noreferrer');
+        expect(linkNode.getRel()).toBe('noopener noreferrer');
       });
     });
 
@@ -316,7 +316,7 @@ describe('LexicalLinkNode tests', () => {
         expect(linkNode.__parent).toEqual(createdLinkNode.__parent);
         expect(linkNode.__url).toEqual(createdLinkNode.__url);
         expect(linkNode.__target).toEqual(createdLinkNode.__target);
-        expect(linkNode.__relationship).toEqual(createdLinkNode.__relationship);
+        expect(linkNode.__rel).toEqual(createdLinkNode.__rel);
         expect(linkNode.__key).not.toEqual(createdLinkNode.__key);
       });
     });

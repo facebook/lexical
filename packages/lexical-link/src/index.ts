@@ -141,7 +141,7 @@ export class LinkNode extends ElementNode {
   exportJSON(): SerializedLinkNode | SerializedAutoLinkNode {
     return {
       ...super.exportJSON(),
-      rel: this.getRelationship(),
+      rel: this.getRel(),
       target: this.getTarget(),
       type: 'link',
       url: this.getURL(),
@@ -167,11 +167,11 @@ export class LinkNode extends ElementNode {
     writable.__target = target;
   }
 
-  getRelationship(): null | string {
+  getRel(): null | string {
     return this.getLatest().__rel;
   }
 
-  setRelationship(rel: null | string): void {
+  setRel(rel: null | string): void {
     const writable = this.getWritable();
     writable.__rel = rel;
   }
@@ -346,7 +346,7 @@ export function toggleLink(
     rel?: null | string;
   } = {},
 ): void {
-  const {target = null, rel = null} = attributes;
+  const {target, rel} = attributes;
   const selection = $getSelection();
 
   if (selection !== null) {
@@ -385,8 +385,12 @@ export function toggleLink(
         // parent is a LinkNode, we update the URL, target and rel.
         if ($isLinkNode(firstNode)) {
           firstNode.setURL(url);
-          firstNode.setTarget(target);
-          firstNode.setRelationship(rel);
+          if (target !== undefined) {
+            firstNode.setTarget(target);
+          }
+          if (rel !== undefined) {
+            firstNode.setRel(rel);
+          }
           return;
         } else {
           const parent = firstNode.getParent();
@@ -396,8 +400,12 @@ export function toggleLink(
             // so that other nodes in the same parent
             // aren't handled separately below.
             parent.setURL(url);
-            parent.setTarget(target);
-            parent.setRelationship(rel);
+            if (target !== undefined) {
+              parent.setTarget(target);
+            }
+            if (rel !== undefined) {
+              parent.setRel(rel);
+            }
             return;
           }
         }
@@ -420,8 +428,12 @@ export function toggleLink(
         if ($isLinkNode(parent)) {
           linkNode = parent;
           parent.setURL(url);
-          parent.setTarget(target);
-          parent.setRelationship(rel);
+          if (target !== undefined) {
+            parent.setTarget(target);
+          }
+          if (rel !== undefined) {
+            parent.setRel(rel);
+          }
           return;
         }
 

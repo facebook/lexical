@@ -386,7 +386,7 @@ function printAllTextNodeProperties(node: LexicalNode) {
 }
 
 function printAllLinkNodeProperties(node: LinkNode) {
-  return [printTargetProperties(node), printRelationshipProperties(node)]
+  return [printTargetProperties(node), printRelProperties(node)]
     .filter(Boolean)
     .join(', ');
 }
@@ -439,11 +439,11 @@ function printTargetProperties(node: LinkNode) {
   return str;
 }
 
-function printRelationshipProperties(node: LinkNode) {
-  let str = node.getRelationship();
+function printRelProperties(node: LinkNode) {
+  let str = node.getRel();
   // TODO Fix nullish on LinkNode
   if (str != null) {
-    str = 'relationship: ' + str;
+    str = 'rel: ' + str;
   }
   return str;
 }

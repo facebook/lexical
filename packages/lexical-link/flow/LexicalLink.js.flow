@@ -18,14 +18,16 @@ import {addClassNamesToElement} from '@lexical/utils';
 import {$isElementNode, ElementNode} from 'lexical';
 declare export class LinkNode extends ElementNode {
   __url: string;
-  __target?: string;
-  __relationship?: string;
+  __target: null | string;
+  __rel: null | string;
   static getType(): string;
   static clone(node: LinkNode): LinkNode;
   constructor(
     url: string,
-    target?: string,
-    relationship?: string,
+    attributes?: {
+      rel?: null | string,
+      target?: null | string,
+    },
     key?: NodeKey,
   ): void;
   createDOM(config: EditorConfig): HTMLElement;
@@ -37,10 +39,10 @@ declare export class LinkNode extends ElementNode {
   static importDOM(): DOMConversionMap | null;
   getURL(): string;
   setURL(url: string): void;
-  getTarget(): string | typeof undefined;
-  setTarget(target: string): void;
-  getRelationship(): string | typeof undefined;
-  setRelationship(relationship: string): void;
+  getTarget(): null | string;
+  setTarget(target: null | string): void;
+  getRel(): null | string;
+  setRel(rel: null | string): void;
   insertNewAfter(selection: RangeSelection): null | ElementNode;
   canInsertTextBefore(): false;
   canInsertTextAfter(): false;
@@ -49,8 +51,10 @@ declare export class LinkNode extends ElementNode {
 }
 declare export function $createLinkNode(
   url: string,
-  target?: string,
-  relationship?: string,
+  attributes?: {
+    rel?: null | string,
+    target?: null | string,
+  },
 ): LinkNode;
 declare export function $isLinkNode(
   node: ?LexicalNode,
@@ -70,13 +74,13 @@ declare export var TOGGLE_LINK_COMMAND: LexicalCommand<
   | string
   | {
       url: string,
-      target?: string,
-      relationship?: string,
+      target?: null | string,
+      rel?: null | string,
     }
   | null,
 >;
 declare export function toggleLink(
   url: null | string,
-  target?: string,
-  relationship?: string,
+  target?: null | string,
+  rel?: null | string,
 ): void;

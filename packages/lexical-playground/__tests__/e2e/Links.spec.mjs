@@ -27,7 +27,6 @@ import {
   keyDownCtrlOrMeta,
   keyUpCtrlOrMeta,
   test,
-  waitForSelector,
 } from '../utils/index.mjs';
 
 test.beforeEach(({isPlainText}) => {
@@ -79,13 +78,7 @@ test.describe('Links', () => {
     });
 
     await selectAll(page);
-
-    // set url
-    await waitForSelector(page, '.link-input');
-    await click(page, '.link-edit');
-    await focus(page, '.link-input');
-    await page.keyboard.type('facebook.com');
-    await page.keyboard.press('Enter');
+    await setURL(page, 'facebook.com');
 
     await assertHTML(
       page,
@@ -221,11 +214,7 @@ test.describe('Links', () => {
       `,
     );
 
-    // set url
-    await click(page, '.link-edit');
-    await focus(page, '.link-input');
-    await page.keyboard.type('facebook.com');
-    await page.keyboard.press('Enter');
+    await setURL(page, 'facebook.com');
 
     await assertHTML(
       page,
@@ -343,11 +332,7 @@ test.describe('Links', () => {
       `,
     );
 
-    // set url
-    await click(page, '.link-edit');
-    await focus(page, '.link-input');
-    await page.keyboard.type('facebook.com');
-    await page.keyboard.press('Enter');
+    await setURL(page, 'facebook.com');
 
     await assertHTML(
       page,
@@ -925,43 +910,42 @@ test.describe('Links', () => {
     );
   });
 
-  test(`Does nothing if the selection is collapsed at the end of a text node.`, async ({
-    page,
-  }) => {
+  test('Can edit link with collapsed selection', async ({page}) => {
     await focusEditor(page);
-    await page.keyboard.type('Hello');
+    await page.keyboard.type('A link');
+    await selectAll(page);
 
-    await assertHTML(
-      page,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">Hello</span>
-        </p>
-      `,
-    );
-
-    // link
     await click(page, '.link');
+    await assertHTML(
+      page,
+      `<p
+    class=\"PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr\"
+    dir=\"ltr\">
+    <a
+      class=\"PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr\"
+      dir=\"ltr\"
+      href=\"https://\">
+      <span data-lexical-text=\"true\">A link</span>
+    </a>
+  </p>`,
+    );
+
+    await moveToLineBeginning(page);
+    await setURL(page, 'facebook.com');
 
     await assertHTML(
       page,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">Hello</span>
-        </p>
-      `,
+      `<p
+    class=\"PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr\"
+    dir=\"ltr\">
+    <a
+      class=\"PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr\"
+      dir=\"ltr\"
+      href=\"https://facebook.com\">
+      <span data-lexical-text=\"true\">A link</span>
+    </a>
+  </p>`,
     );
-
-    await assertSelection(page, {
-      anchorOffset: 5,
-      anchorPath: [0, 0, 0],
-      focusOffset: 5,
-      focusPath: [0, 0, 0],
-    });
   });
 
   test(`Can type text before and after`, async ({page}) => {
@@ -1141,11 +1125,7 @@ test.describe('Links', () => {
       });
     }
 
-    // set url
-    await click(page, '.link-edit');
-    await focus(page, '.link-input');
-    await page.keyboard.type('facebook.com');
-    await page.keyboard.press('Enter');
+    await setURL(page, 'facebook.com');
 
     await assertHTML(
       page,
@@ -1258,11 +1238,7 @@ test.describe('Links', () => {
       });
     }
 
-    // set url
-    await click(page, '.link-edit');
-    await focus(page, '.link-input');
-    await page.keyboard.type('facebook.com');
-    await page.keyboard.press('Enter');
+    await setURL(page, 'facebook.com');
 
     await assertHTML(
       page,
@@ -1537,3 +1513,10 @@ test.describe('Links', () => {
     );
   });
 });
+
+async function setURL(page, url) {
+  await click(page, '.link-edit');
+  await focus(page, '.link-input');
+  await page.keyboard.type(url);
+  await page.keyboard.press('Enter');
+}

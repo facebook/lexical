@@ -1,3 +1,81 @@
+## 0.3.9 (August 11, 2022)
+
+Most notably:
+- Added playground Figma embed and AutoEmbed plugin
+- LinkNode target and rel support
+- Many bugfixes
+
+Commits:
+- No nullish LinkNode props (#2818) Gerard Rovira
+- Fix collapsed selection on links (#2817) Gerard Rovira
+- prevent button from submitting forms (#2811) Gerard Delmàs
+- Fixed flow return type for TableOfContents plugin (#2802) Karam Qaoud
+- Update editor-state.md (#2808) William Cary
+- Fix nested editors in collab (#2781) Dominic Gannaway
+- chore: add some declare global (#2804) 子瞻 Luci
+- Fix selection adjustment after text match transformer (#2795) Maksim Horbachevsky
+- Inject DevTools Script in Browser Extension (#2778) Will
+- Fix inserting nodes next to top level decorators (#2796) Maksim Horbachevsky
+- chore(auto-link-plugin): fix invariant message for node registration check (#2790) Eric Charles
+- Fixing comments list scrolling issue (#2789) Ebad
+- Fix internal build error (#2787) John Flockton
+- fix: dropdown icon css (#2786) Adithya Vardhan
+- chore: Move useCollaborationContext to dedicated file (#2777) Thomas Sauques
+- chore(lexical-playground): typos, improved build (#2780) Yaroslav Kiliba
+- make importJSON static in test node (#2784) Acy Watson
+- fix(lexical): ts expect error (#2776) 子瞻 Luci
+- Fix documentation typos (#2774) Lyle Denman
+- fix: Single anchor element per LexicalTypeaheadMenuPlugin instance (#2768) Thomas Sauques
+- Node/GridSelection docs (#2773) Gerard Rovira
+- Add Figma Embed to Playground (#2705) Tyler Bainbridge
+- Selection#formatText to retain selection and handle all text nodes (#2770) Maksim Horbachevsky
+- Fixed scrolling bar view (#2772) Karam Qaoud
+- Add LexicalAutoEmbedPlugin and (Playground)AutoEmbedPlugin. (#2704) Tyler Bainbridge
+- Bug: Undo command after creating a Quote removes text after Quote element (https://github.com/facebook/lexical/issues/2750) (#2767) Alexandru Pavaloi
+- Handle insertTranspose for beforeinput event (#2764) Maksim Horbachevsky
+- Fix selection format for empty paragraphs (#2759) Maksim Horbachevsky
+- Remove unused keys from evens and utils (#2763) John Flockton
+- chore: fix aria-label typo (#2762) 子瞻 Luci
+- feat: Replace select with dropdown for code (#2761) 子瞻 Luci
+- Fix typo in community page (#2760) Joshua Chen
+- Add initial editor state for collab example (#2749) Maksim Horbachevsky
+- Table of contents style improvements (#2743) Karam Qaoud
+- Highlight DOM Nodes onHover of Lexical DevTools Node (#2728) Will
+- Tighten check on top level decorator nodes (#2746) John Flockton
+- Remove unused markdown functions (#2747) John Flockton
+- feat: Replace select with dropdown for font size and font family (#2441) Adithya Vardhan
+- fix: Verify if there are text nodes before continue (#2616) Nahuel Veron
+- Convert pasted Google Docs Title text into a Heading (#2729) Acy Watson
+- Remove isCollapsed from selection onClick (#2727) John Flockton
+- fix: cross button css in poll node (#2742) Adithya Vardhan
+- fix: getTopLevelElement for decoratorNode (#2741) Adithya Vardhan
+- fix: `timeoutId` type (#2735) Shanmughapriyan S
+- fix: some typo (#2737) 子瞻 Luci
+- docs: readme improvements (#2734) GJunior
+- Bug: typo in Documentation. It should be ReactNode instead of React (https://github.com/facebook/lexical/issues/2731) (#2732) Alexandru Pavaloi
+- Added table of contents documentation (#2720) Karam Qaoud
+- Fix: Minor Typo on Lexical Playground ActionsPlugin (#2717) Yamil García Hernández
+- Excalidraw fixes (#2711) John Flockton
+- Resolve selection for orphan selected children (#2677) Gerard Rovira
+- feat(lexical-playground): prettier code (#2688) 子瞻 Luci
+- Revert "Add E2E test for TableOfContentsPlugin (#2675)" (#2708) Gerard Rovira
+- Add E2E test for TableOfContentsPlugin (#2675) Karam Qaoud
+- OnChangePlugin ignoreInitialChange -> ignoreHistoryMergeTagChange (#2706) Gerard Rovira
+- feat: Link node with target and rel (#2687) Andriy Chemerynskiy
+- fix: check if options are empty (#2701) Adithya Vardhan
+- Remove coverage reports (#2699) John Flockton
+- Make includeHeaders a boolean (#2697) alinamusuroi
+- fix(playground): fix rendering Exclidraw (#2694) Bryan
+- Collapse and Expand DevTools Tree Nodes (#2679) Will
+- fix(lexical-playground): LexicalTypeaheadMenuPlugin import (#2689) Elvin Dzhavadov
+- Fix VALID_TWITTER_URL to allow underscores. (#2690) hiraoka
+- fix: path to icons (#2683) Adithya Vardhan
+- Fixed typo (#2678) SalvadorLekan
+- Separate `@lexical/code` into more atomic modules (#2673) John Flockton
+- fix(lexical-list): remove list breaks if selection in empty (#2672) 子瞻 Luci
+- Conditionally utilize `startTransition` if it's present (#2676) Jack Hanford
+- chore(lexical-playground): make directory clear (#2674) 子瞻 Luci
+
 ## 0.3.8 (July 20, 2022)
 
 Lots of bug fixes.

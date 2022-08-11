@@ -1786,7 +1786,17 @@ export class RangeSelection implements BaseSelection {
 
   deleteLine(isBackward: boolean): void {
     if (this.isCollapsed()) {
-      this.modify('extend', isBackward, 'lineboundary');
+      if (this.anchor.type === 'text') {
+        this.modify('extend', isBackward, 'lineboundary');
+      }
+
+      // If selection is extended to cover text edge then extend it one character more
+      // to delete its parent element. Otherwise text content will be deleted but empty
+      // parent node will remain
+      const endPoint = isBackward ? this.focus : this.anchor;
+      if (endPoint.offset === 0) {
+        this.modify('extend', isBackward, 'character');
+      }
     }
     this.removeText();
   }

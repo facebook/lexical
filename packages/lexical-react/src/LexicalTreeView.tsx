@@ -154,7 +154,8 @@ export function TreeView({
               setTimeTravelEnabled(true);
             }
           }}
-          className={timeTravelButtonClassName}>
+          className={timeTravelButtonClassName}
+          type="button">
           Time Travel
         </button>
       )}
@@ -165,7 +166,8 @@ export function TreeView({
             className={timeTravelPanelButtonClassName}
             onClick={() => {
               setIsPlaying(!isPlaying);
-            }}>
+            }}
+            type="button">
             {isPlaying ? 'Pause' : 'Play'}
           </button>
           <input
@@ -204,7 +206,8 @@ export function TreeView({
                 setTimeTravelEnabled(false);
                 setIsPlaying(false);
               }
-            }}>
+            }}
+            type="button">
             Exit
           </button>
         </div>

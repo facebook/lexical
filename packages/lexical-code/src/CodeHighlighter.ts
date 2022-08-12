@@ -41,16 +41,17 @@ import {
   OUTDENT_CONTENT_COMMAND,
   TextNode,
 } from 'lexical';
+
 import {
   $createCodeHighlightNode,
   $isCodeHighlightNode,
-  $isCodeNode,
   CodeHighlightNode,
-  CodeNode,
   DEFAULT_CODE_LANGUAGE,
   getFirstCodeHighlightNodeOfLine,
   getLastCodeHighlightNodeOfLine,
-} from '@lexical/code';
+} from './CodeHighlightNode';
+
+import {$isCodeNode, CodeNode} from './CodeNode';
 
 function isSpaceOrTabChar(char: string): boolean {
   return char === ' ' || char === '\t';

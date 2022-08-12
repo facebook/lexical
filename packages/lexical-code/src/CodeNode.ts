@@ -18,6 +18,7 @@ import type {
   SerializedElementNode,
   Spread,
 } from 'lexical';
+import type {CodeHighlightNode} from '@lexical/code';
 
 import 'prismjs/components/prism-clike';
 import 'prismjs/components/prism-javascript';
@@ -41,9 +42,8 @@ import {
 } from 'lexical';
 import {
   $createCodeHighlightNode,
-  CodeHighlightNode,
   getFirstCodeHighlightNodeOfLine,
-} from '@lexical/code';
+} from './CodeHighlightNode';
 import * as Prism from 'prismjs';
 
 type SerializedCodeNode = Spread<

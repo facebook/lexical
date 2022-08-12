@@ -1,3 +1,7 @@
+## 0.3.11 (August 12, 2022)
+
+- fix more code imports (#2828) Acy Watson
+
 ## 0.3.10 (August 12, 2022)
 
 - Fix Code imports (#2826) Gerard Rovira

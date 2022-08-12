@@ -1124,7 +1124,7 @@ export function splitNode(
   );
   afterNode.append(...nodesToMove);
 
-  return [beforeNode, splitChild, afterNode];
+  return [beforeNodeWritable, splitChild, afterNode];
 }
 
 export function isFirefoxClipboardEvents(): boolean {

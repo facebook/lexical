@@ -6,6 +6,8 @@
  *
  */
 
+import {$createListItemNode, $createListNode} from '@lexical/list';
+
 import {
   $getNodeByKey,
   $getRoot,
@@ -26,6 +28,32 @@ import {
 } from '../../nodes/LexicalParagraphNode';
 import {$createTextNode, TextNode} from '../../nodes/LexicalTextNode';
 import {initializeUnitTest} from '../utils';
+
+const BASE_SPLITS: Array<{
+  expectedElementText: string;
+  expectedSplitChildText: string;
+  index: number;
+  name: string;
+}> = [
+  {
+    expectedElementText: '',
+    expectedSplitChildText: 'Foo',
+    index: 0,
+    name: 'Split at beginning',
+  },
+  {
+    expectedElementText: 'Foo',
+    expectedSplitChildText: 'Bar',
+    index: 1,
+    name: 'Split in middle',
+  },
+  {
+    expectedElementText: 'Foo\n\nBar',
+    expectedSplitChildText: 'Baz',
+    index: 2,
+    name: 'Split at end',
+  },
+];
 
 describe('LexicalUtils tests', () => {
   initializeUnitTest((testEnv) => {
@@ -167,56 +195,25 @@ describe('LexicalUtils tests', () => {
       expect(getTextDirection(`\uFEFC`)).toBe('rtl');
     });
 
-    test('splitNode()', async () => {
-      let paragraph;
-      const {editor} = testEnv;
-
-      const BASE_SPLITS: Array<{
-        expectedBlockText: string;
-        expectedNodeText: string;
-        index: number;
-        name: string;
-      }> = [
-        {
-          expectedBlockText: '',
-          expectedNodeText: 'Foo',
-          index: 0,
-          name: 'Split at beginning',
-        },
-        {
-          expectedBlockText: 'Foo',
-          expectedNodeText: 'Bar',
-          index: 1,
-          name: 'Split in middle',
-        },
-        {
-          expectedBlockText: 'FooBar',
-          expectedNodeText: 'Baz',
-          index: 2,
-          name: 'Split at end',
-        },
-      ];
-
-      await editor.update(() => {
-        paragraph = $createParagraphNode();
-        const text = $createTextNode('Foo');
-        const text2 = $createTextNode('Bar');
-        // Prevent text nodes from combining.
-        text2.setMode('segmented');
-        const text3 = $createTextNode('Baz');
-        // Some operations require a selection to exist, hence
-        // we make a selection in the setup code.
-        text.select(0, 0);
-        paragraph.append(text, text2, text3);
-        $getRoot().append(paragraph);
-      });
-      BASE_SPLITS.forEach(async (testCase) => {
+    BASE_SPLITS.forEach((testCase) => {
+      test('splitNode(): ' + testCase.name, async () => {
+        let list;
+        const {editor} = testEnv;
         await editor.update(() => {
-          const split = splitNode(paragraph, testCase.index);
-          expect(paragraph.getTextContent()).toEqual(
-            testCase.expectedBlockText,
+          list = $createListNode('bullet');
+          list.append(
+            $createListItemNode().append($createTextNode(`Foo`)),
+            $createListItemNode().append($createTextNode(`Bar`)),
+            $createListItemNode().append($createTextNode(`Baz`)),
           );
-          expect(split[1].getTextContent()).toEqual(testCase.expectedNodeText);
+          $getRoot().append(list);
+          const split = splitNode(list, testCase.index);
+          expect(split[0].getTextContent()).toEqual(
+            testCase.expectedElementText,
+          );
+          expect(split[1].getTextContent()).toEqual(
+            testCase.expectedSplitChildText,
+          );
         });
       });
     });

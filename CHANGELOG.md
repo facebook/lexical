@@ -1,3 +1,8 @@
+## 0.3.10 (August 12, 2022)
+
+- Fix Code imports (#2826) Gerard Rovira
+- Fix selection#deleteLine (#2813) Maksim Horbachevsky
+
 ## 0.3.9 (August 11, 2022)
 
 Most notably:

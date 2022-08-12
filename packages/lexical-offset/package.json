@@ -8,10 +8,10 @@
     "offset"
   ],
   "license": "MIT",
-  "version": "0.3.9",
+  "version": "0.3.10",
   "main": "LexicalOffset.js",
   "peerDependencies": {
-    "lexical": "0.3.9"
+    "lexical": "0.3.10"
   },
   "repository": {
     "type": "git",

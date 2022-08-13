@@ -310,8 +310,8 @@ function getStyleObjectFromRawCSS(css: string): Record<string, string> {
 
   for (const style of styles) {
     if (style !== '') {
-      const patch = style.split(':');
-      styleObject[patch[0].trim()] = patch[1].trim();
+      const [key, value] = style.split(/:([^]+)/); // split on first colon
+      styleObject[key.trim()] = value.trim();
     }
   }
 

@@ -2150,7 +2150,9 @@ describe('LexicalSelection tests', () => {
         const root = $getRoot();
         const paragraph = $createParagraphNode();
         const textNode = $createTextNode('Hello, World!');
-        textNode.setStyle('   color    :   red   ;top     : 50px');
+        textNode.setStyle(
+          '   font-family  : Arial  ;  color    :   red   ;top     : 50px',
+        );
         $addNodeStyle(textNode);
         paragraph.append(textNode);
         root.append(paragraph);
@@ -2170,18 +2172,82 @@ describe('LexicalSelection tests', () => {
           type: 'text',
         });
 
+        const cssFontFamilyValue = $getSelectionStyleValueForProperty(
+          selection,
+          'font-family',
+          '',
+        );
+        expect(cssFontFamilyValue).toBe('Arial');
+
         const cssColorValue = $getSelectionStyleValueForProperty(
           selection,
           'color',
           '',
         );
         expect(cssColorValue).toBe('red');
+
         const cssTopValue = $getSelectionStyleValueForProperty(
           selection,
           'top',
           '',
         );
         expect(cssTopValue).toBe('50px');
+      });
+    });
+  });
+
+  describe('Testing that getStyleObjectFromRawCSS handles values with colons', () => {
+    test('', async () => {
+      const testEditor = createTestEditor();
+      const element = document.createElement('div');
+      testEditor.setRootElement(element);
+
+      await testEditor.update(() => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const textNode = $createTextNode('Hello, World!');
+        textNode.setStyle(
+          'font-family: double:prefix:Arial; color: color:white; font-size: 30px',
+        );
+        $addNodeStyle(textNode);
+        paragraph.append(textNode);
+        root.append(paragraph);
+
+        const selection = $createRangeSelection();
+        $setSelection(selection);
+        selection.insertParagraph();
+        setAnchorPoint({
+          key: textNode.getKey(),
+          offset: 0,
+          type: 'text',
+        });
+
+        setFocusPoint({
+          key: textNode.getKey(),
+          offset: 10,
+          type: 'text',
+        });
+
+        const cssFontFamilyValue = $getSelectionStyleValueForProperty(
+          selection,
+          'font-family',
+          '',
+        );
+        expect(cssFontFamilyValue).toBe('double:prefix:Arial');
+
+        const cssColorValue = $getSelectionStyleValueForProperty(
+          selection,
+          'color',
+          '',
+        );
+        expect(cssColorValue).toBe('color:white');
+
+        const cssFontSizeValue = $getSelectionStyleValueForProperty(
+          selection,
+          'font-size',
+          '',
+        );
+        expect(cssFontSizeValue).toBe('30px');
       });
     });
   });

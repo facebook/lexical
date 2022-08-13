@@ -7,7 +7,7 @@
  */
 import './index.css';
 
-import {DevToolsNode} from 'packages/lexical-devtools/types';
+import {DevToolsNode, NodeProperties} from 'packages/lexical-devtools/types';
 import * as React from 'react';
 import {useState} from 'react';
 
@@ -19,9 +19,11 @@ function TreeNode({
   children,
   deHighlightDOMNode,
   depth,
+  handleNodeClick,
   highlightDOMNode,
   lexicalKey,
   monospaceWidth,
+  ...rest
 }: DevToolsNode): JSX.Element {
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -29,12 +31,20 @@ function TreeNode({
     setIsExpanded(!isExpanded);
   };
 
-  const handleMouseEnter: React.MouseEventHandler = (event) => {
+  const handleMouseEnter: React.MouseEventHandler = () => {
     highlightDOMNode(lexicalKey);
   };
 
-  const handleMouseLeave: React.MouseEventHandler = (event) => {
+  const handleMouseLeave: React.MouseEventHandler = () => {
     deHighlightDOMNode(lexicalKey);
+  };
+
+  const handleClick: React.MouseEventHandler = () => {
+    const nodeProps: NodeProperties = {__type, ...rest};
+    if (__text) {
+      nodeProps.__text = __text;
+    }
+    handleNodeClick(nodeProps);
   };
 
   const nodeString = ` (${lexicalKey}) ${__type} ${
@@ -57,9 +67,12 @@ function TreeNode({
     <div className="tree-node-wrapper" key={lexicalKey}>
       <div
         className="tree-node"
+        onClick={handleClick}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        style={{paddingLeft: leftIndent}}>
+        role="menuitem"
+        style={{paddingLeft: leftIndent}}
+        tabIndex={0}>
         <span style={{width: 'var(--monospace-character-width)'}}>&nbsp;</span>
         {children.length > 0 ? (
           <Chevron handleClick={handleChevronClick} isExpanded={isExpanded} />

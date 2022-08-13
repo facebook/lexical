@@ -1,13 +1,13 @@
 .tree-view-output {
-  line-height: 1.1;
-  background: #222;
+  background: var(--main-dark-gray);
   color: #fff;
+  font-size: 1.2em;
+  font-weight: 400;
+  grid-area: tree-view;
+  line-height: 1.1;
   margin: 0;
   padding: 1em 0;
-  font-size: 1.2em;
   overflow: auto;
   text-align: left;
   -moz-osx-font-smoothing: grayscale;
-  font-weight: 400;
-  width: max-content;
 }

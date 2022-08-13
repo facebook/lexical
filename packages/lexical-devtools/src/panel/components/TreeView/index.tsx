@@ -7,18 +7,24 @@
  */
 import './index.css';
 
-import {DevToolsNode, DevToolsTree} from 'packages/lexical-devtools/types';
+import {
+  DevToolsNode,
+  DevToolsTree,
+  NodeProperties,
+} from 'packages/lexical-devtools/types';
 import * as React from 'react';
 
 import TreeNode from '../TreeNode';
 
 function TreeView({
   deHighlightDOMNode,
+  handleNodeClick,
   highlightDOMNode,
   viewClassName,
   nodeMap,
 }: {
   deHighlightDOMNode: (lexicalKey: string) => void;
+  handleNodeClick: (props: NodeProperties) => void;
   highlightDOMNode: (lexicalKey: string) => void;
   viewClassName: string;
   nodeMap: DevToolsTree;
@@ -49,6 +55,7 @@ function TreeView({
       children,
       deHighlightDOMNode,
       depth,
+      handleNodeClick,
       highlightDOMNode,
       lexicalKey: node.__key,
       monospaceWidth,

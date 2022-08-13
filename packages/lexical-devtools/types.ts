@@ -19,6 +19,7 @@ export interface DevToolsNode {
   children: Array<DevToolsNode>;
   deHighlightDOMNode: (lexicalKey: string) => void;
   depth: number;
+  handleNodeClick: (props: NodeProperties) => void;
   highlightDOMNode: (lexicalKey: string) => void;
   lexicalKey: string;
   monospaceWidth: string;
@@ -30,6 +31,10 @@ export interface LexicalHTMLElement extends HTMLElement {
   [key: LexicalKey]: string;
   __lexicalEditor: LexicalEditor;
 }
+
+export type NodeProperties = Record<string, NodeProperty>;
+
+export type NodeProperty = string | number | boolean | Array<string | number>;
 
 export type CloneInto = (
   arg: {lexicalKey: string},

@@ -1,5 +1,5 @@
 .chevron-button {
-  background: #222;
+  background: var(--main-dark-gray);
   border: none;
   color: #fff;
   cursor: pointer;
@@ -9,6 +9,6 @@
 }
 
 .tree-node:hover > .chevron-button {
-  background: #77b6ff;
-  color: #222;
+  background: var(--main-blue);
+  color: var(--main-dark-gray);
 }

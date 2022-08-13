@@ -1,11 +1,13 @@
 :root {
   --monospace-character-width: 1.2em;
+  --main-blue: #77b6ff;
+  --main-dark-gray: #222;
 }
 
 body {
   margin: 0;
   font-family: monospace;
-  background: #222;
+  background: var(--main-dark-gray);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

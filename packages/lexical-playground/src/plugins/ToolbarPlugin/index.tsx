@@ -87,6 +87,7 @@ import {IS_APPLE} from 'shared/environment';
 import useModal from '../../hooks/useModal';
 import catTypingGif from '../../images/cat-typing.gif';
 import yellowFlowerImage from '../../images/yellow-flower.jpg';
+import {$isFigmaNode} from '../../nodes/FigmaNode';
 import {$createStickyNode} from '../../nodes/StickyNode';
 import {$isTweetNode} from '../../nodes/TweetNode';
 import {$isYouTubeNode} from '../../nodes/YouTubeNode';
@@ -652,6 +653,10 @@ function BlockFormatDropDown({
                   $createTextNode(
                     `https://www.youtube.com/watch?v=${node.getId()}`,
                   ),
+                );
+              } else if ($isFigmaNode(node)) {
+                node.replace(
+                  $createTextNode(`https://www.figma.com/file/${node.getId()}`),
                 );
               }
             });

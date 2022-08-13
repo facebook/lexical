@@ -98,6 +98,10 @@ export class FigmaNode extends DecoratorBlockNode {
     return false;
   }
 
+  getId(): string {
+    return this.__id;
+  }
+
   decorate(_editor: LexicalEditor, config: EditorConfig): JSX.Element {
     const embedBlockTheme = config.theme.embedBlock || {};
     const className = {

@@ -26,7 +26,6 @@ import * as React from 'react';
 import {createPortal} from 'react-dom';
 
 import LinkPreview from '../../ui/LinkPreview';
-import {getDOMRangeRect} from '../../utils/getDOMRangeRect';
 import {getSelectedNode} from '../../utils/getSelectedNode';
 import {setFloatingElemPosition} from '../../utils/setFloatingElemPosition';
 
@@ -70,12 +69,22 @@ function FloatingLinkEditor({
     if (
       selection !== null &&
       nativeSelection !== null &&
-      !nativeSelection.isCollapsed &&
       rootElement !== null &&
       rootElement.contains(nativeSelection.anchorNode)
     ) {
-      const rangRect = getDOMRangeRect(nativeSelection, rootElement);
-      setFloatingElemPosition(rangRect, editorElem, anchorElem);
+      const domRange = nativeSelection.getRangeAt(0);
+      let rect;
+      if (nativeSelection.anchorNode === rootElement) {
+        let inner = rootElement;
+        while (inner.firstElementChild != null) {
+          inner = inner.firstElementChild as HTMLElement;
+        }
+        rect = inner.getBoundingClientRect();
+      } else {
+        rect = domRange.getBoundingClientRect();
+      }
+
+      setFloatingElemPosition(rect, editorElem, anchorElem);
       setLastSelection(selection);
     } else if (!activeElement || activeElement.className !== 'link-input') {
       if (rootElement !== null) {
@@ -99,17 +108,19 @@ function FloatingLinkEditor({
     };
 
     window.addEventListener('resize', update);
+
     if (scrollerElem) {
       scrollerElem.addEventListener('scroll', update);
     }
 
     return () => {
       window.removeEventListener('resize', update);
+
       if (scrollerElem) {
         scrollerElem.removeEventListener('scroll', update);
       }
     };
-  }, [editor, updateLinkEditor, anchorElem]);
+  }, [anchorElem.parentElement, editor, updateLinkEditor]);
 
   useEffect(() => {
     return mergeRegister(

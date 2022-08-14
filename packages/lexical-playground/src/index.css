@@ -937,7 +937,6 @@ i.prettier-error {
 .editor-shell .editor-image img.focused {
   outline: 2px solid rgb(60, 132, 244);
   user-select: none;
-  cursor: move;
   cursor: grab;
 }
 

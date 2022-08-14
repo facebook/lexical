@@ -27,6 +27,9 @@
   },
   "devDependencies": {
     "buffer": "^6.0.3",
+    "docusaurus-plugin-typedoc": "^0.17.5",
+    "typedoc": "^0.23.10",
+    "typedoc-plugin-markdown": "^3.13.4",
     "webpack": "^5.70.0"
   },
   "browserslist": {

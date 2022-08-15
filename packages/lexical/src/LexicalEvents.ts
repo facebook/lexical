@@ -209,6 +209,7 @@ function onSelectionChange(
   updateEditor(editor, () => {
     // Non-active editor don't need any extra logic for selection, it only needs update
     // to reconcile selection (set it to null) to ensure that only one editor has non-null selection.
+
     if (!isActive) {
       $setSelection(null);
       return;

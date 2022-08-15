@@ -201,5 +201,8 @@
     "**/npm/**",
     "**/node_modules/**",
     "./packages/playwright-core/**"
-  ]
+  ],
+  "typedocOptions": {
+    "logLevel": "Verbose"
+  }
 }

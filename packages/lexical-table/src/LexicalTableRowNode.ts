@@ -28,7 +28,9 @@ export type SerializedTableRowNode = Spread<
   SerializedElementNode
 >;
 
+/** @noInheritDoc */
 export class TableRowNode extends GridRowNode {
+  /** @internal */
   __height?: number;
 
   static getType(): 'tablerow' {

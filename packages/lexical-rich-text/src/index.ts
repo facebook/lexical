@@ -5,6 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
 
 import type {
   CommandPayloadType,
@@ -110,6 +117,7 @@ const updateOptions: {
   tag?: string;
 } = options;
 
+/** @noInheritDoc */
 export class QuoteNode extends ElementNode {
   static getType(): string {
     return 'quote';
@@ -189,7 +197,9 @@ export function $isQuoteNode(
 
 export type HeadingTagType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 
+/** @noInheritDoc */
 export class HeadingNode extends ElementNode {
+  /** @internal */
   __tag: HeadingTagType;
 
   static getType(): string {

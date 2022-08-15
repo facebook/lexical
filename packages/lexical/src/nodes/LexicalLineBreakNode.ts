@@ -23,6 +23,7 @@ export type SerializedLineBreakNode = Spread<
   SerializedLexicalNode
 >;
 
+/** @noInheritDoc */
 export class LineBreakNode extends LexicalNode {
   static getType(): string {
     return 'linebreak';

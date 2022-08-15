@@ -43,9 +43,13 @@ export type ListType = 'number' | 'bullet' | 'check';
 
 export type ListNodeTagType = 'ul' | 'ol';
 
+/** @noInheritDoc */
 export class ListNode extends ElementNode {
+  /** @internal */
   __tag: ListNodeTagType;
+  /** @internal */
   __start: number;
+  /** @internal */
   __listType: ListType;
 
   static getType(): string {

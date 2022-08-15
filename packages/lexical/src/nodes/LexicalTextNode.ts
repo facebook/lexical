@@ -253,6 +253,7 @@ function createTextInnerDOM(
   }
 }
 
+/** @noInheritDoc */
 export class TextNode extends LexicalNode {
   __text: string;
   __format: number;

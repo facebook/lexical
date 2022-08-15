@@ -23,13 +23,12 @@
     "prism-react-renderer": "^1.2.1",
     "react": "^18.0.0-alpha-64931821a-20210808",
     "react-dom": "^18.0.0-alpha-64931821a-20210808",
-    "remark-import-partial": "0.0.2"
+    "remark-import-partial": "0.0.2",
+    "docusaurus-plugin-typedoc": "^0.17.5",
+    "typedoc-plugin-markdown": "^3.13.4"
   },
   "devDependencies": {
     "buffer": "^6.0.3",
-    "docusaurus-plugin-typedoc": "^0.17.5",
-    "typedoc": "^0.23.10",
-    "typedoc-plugin-markdown": "^3.13.4",
     "webpack": "^5.70.0"
   },
   "browserslist": {

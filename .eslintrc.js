@@ -62,7 +62,11 @@ module.exports = {
         '@typescript-eslint/ban-ts-comment': OFF,
         '@typescript-eslint/no-this-alias': OFF,
         '@typescript-eslint/no-unused-vars': [ERROR, {args: 'none'}],
-        'header/header': [2, 'scripts/www/headerTemplate.js'],
+        'header/header': [
+          2,
+          'block',
+          'Copyright (c) Meta Platforms, Inc. and affiliates.',
+        ],
       },
     },
   ],

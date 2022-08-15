@@ -1,10 +1,4 @@
-/**
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- *
- */
+/*Copyright (c) Meta Platforms, Inc. and affiliates.*/
 
 'use strict';
 
@@ -116,7 +110,11 @@ module.exports = {
 
     'flowtype/sort-keys': ERROR,
 
-    'header/header': [2, 'scripts/www/headerTemplate.js'],
+    'header/header': [
+      2,
+      'block',
+      'Copyright (c) Meta Platforms, Inc. and affiliates.',
+    ],
 
     // (This helps configure simple-import-sort) Make sure all imports are at the top of the file
     'import/first': ERROR,

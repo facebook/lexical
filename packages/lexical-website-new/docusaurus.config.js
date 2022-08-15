@@ -54,9 +54,8 @@ const config = {
           '../lexical-yjs/src/index.ts',
         ],
         excludeInternal: true,
-        plugin: ['typedoc-plugin-no-inherit'],
+        plugin: ['./src/plugins/lexical-typedoc-plugin-no-inherit'],
         sidebar: {
-          fullNames: false,
           position: 5,
         },
         tsconfig: '../../tsconfig.json',

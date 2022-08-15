@@ -402,7 +402,11 @@ function TableActionMenu({
   );
 }
 
-function TableCellActionMenuContainer(): JSX.Element {
+function TableCellActionMenuContainer({
+  anchorElem,
+}: {
+  anchorElem: HTMLElement;
+}): JSX.Element {
   const [editor] = useLexicalComposerContext();
 
   const menuButtonRef = useRef(null);
@@ -473,25 +477,20 @@ function TableCellActionMenuContainer(): JSX.Element {
       if (tableCellNodeDOM != null) {
         const tableCellRect = tableCellNodeDOM.getBoundingClientRect();
         const menuRect = menuButtonDOM.getBoundingClientRect();
+        const anchorRect = anchorElem.getBoundingClientRect();
 
         menuButtonDOM.style.opacity = '1';
 
         menuButtonDOM.style.left = `${
-          tableCellRect.left +
-          window.pageXOffset -
-          menuRect.width +
-          tableCellRect.width -
-          10
+          tableCellRect.right - menuRect.width - 10 - anchorRect.left
         }px`;
 
-        menuButtonDOM.style.top = `${
-          tableCellRect.top + window.pageYOffset + 5
-        }px`;
+        menuButtonDOM.style.top = `${tableCellRect.top - anchorRect.top + 4}px`;
       } else {
         menuButtonDOM.style.opacity = '0';
       }
     }
-  }, [menuButtonRef, tableCellNode, editor]);
+  }, [menuButtonRef, tableCellNode, editor, anchorElem]);
 
   const prevTableCellDOM = useRef(tableCellNode);
 
@@ -530,6 +529,13 @@ function TableCellActionMenuContainer(): JSX.Element {
   );
 }
 
-export default function TableActionMenuPlugin(): ReactPortal {
-  return createPortal(<TableCellActionMenuContainer />, document.body);
+export default function TableActionMenuPlugin({
+  anchorElem = document.body,
+}: {
+  anchorElem?: HTMLElement;
+}): ReactPortal {
+  return createPortal(
+    <TableCellActionMenuContainer anchorElem={anchorElem} />,
+    anchorElem,
+  );
 }

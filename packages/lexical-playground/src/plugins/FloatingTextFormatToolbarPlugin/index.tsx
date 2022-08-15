@@ -6,59 +6,33 @@
  *
  */
 
+import './index.css';
+
 import {$isCodeHighlightNode} from '@lexical/code';
 import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$isAtNodeEnd} from '@lexical/selection';
 import {mergeRegister} from '@lexical/utils';
 import {
   $getSelection,
   $isRangeSelection,
   $isTextNode,
   COMMAND_PRIORITY_LOW,
-  ElementNode,
   FORMAT_TEXT_COMMAND,
   LexicalEditor,
-  RangeSelection,
   SELECTION_CHANGE_COMMAND,
-  TextNode,
 } from 'lexical';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import * as React from 'react';
 import {createPortal} from 'react-dom';
 
+import {getDOMRangeRect} from '../../utils/getDOMRangeRect';
+import {getSelectedNode} from '../../utils/getSelectedNode';
+import {setFloatingElemPosition} from '../../utils/setFloatingElemPosition';
 import {INSERT_INLINE_COMMAND} from '../CommentPlugin';
-
-function setPopupPosition(
-  editor: HTMLElement,
-  rect: ClientRect,
-  rootElementRect: ClientRect,
-): void {
-  let top = rect.top - 8 + window.pageYOffset;
-  let left =
-    rect.left + 340 + window.pageXOffset - editor.offsetWidth + rect.width;
-  if (left + editor.offsetWidth > rootElementRect.right) {
-    left = rect.right - editor.offsetWidth;
-    top = rect.top - 50 + window.pageYOffset;
-  }
-  if (left < 0) {
-    left = rect.left;
-    top = rect.bottom + 20;
-  }
-  if (rect.width >= rootElementRect.width - 25) {
-    left = rect.left;
-    top = rect.top - 50 + window.pageYOffset;
-  }
-  if (top < rootElementRect.top) {
-    top = rect.bottom + 20;
-  }
-  editor.style.opacity = '1';
-  editor.style.top = `${top}px`;
-  editor.style.left = `${left}px`;
-}
 
 function TextFormatFloatingToolbar({
   editor,
+  anchorElem,
   isLink,
   isBold,
   isItalic,
@@ -69,6 +43,7 @@ function TextFormatFloatingToolbar({
   isSuperscript,
 }: {
   editor: LexicalEditor;
+  anchorElem: HTMLElement;
   isBold: boolean;
   isCode: boolean;
   isItalic: boolean;
@@ -110,36 +85,33 @@ function TextFormatFloatingToolbar({
       rootElement !== null &&
       rootElement.contains(nativeSelection.anchorNode)
     ) {
-      const domRange = nativeSelection.getRangeAt(0);
-      const rootElementRect = rootElement.getBoundingClientRect();
-      let rect;
+      const rangeRect = getDOMRangeRect(nativeSelection, rootElement);
 
-      if (nativeSelection.anchorNode === rootElement) {
-        let inner = rootElement;
-        while (inner.firstElementChild != null) {
-          inner = inner.firstElementChild as HTMLElement;
-        }
-        rect = inner.getBoundingClientRect();
-      } else {
-        rect = domRange.getBoundingClientRect();
-      }
-
-      setPopupPosition(popupCharStylesEditorElem, rect, rootElementRect);
+      setFloatingElemPosition(rangeRect, popupCharStylesEditorElem, anchorElem);
     }
-  }, [editor]);
+  }, [editor, anchorElem]);
 
   useEffect(() => {
-    const onResize = () => {
+    const scrollerElem = anchorElem.parentElement;
+
+    const update = () => {
       editor.getEditorState().read(() => {
         updateTextFormatFloatingToolbar();
       });
     };
-    window.addEventListener('resize', onResize);
+
+    window.addEventListener('resize', update);
+    if (scrollerElem) {
+      scrollerElem.addEventListener('scroll', update);
+    }
 
     return () => {
-      window.removeEventListener('resize', onResize);
+      window.removeEventListener('resize', update);
+      if (scrollerElem) {
+        scrollerElem.removeEventListener('scroll', update);
+      }
     };
-  }, [editor, updateTextFormatFloatingToolbar]);
+  }, [editor, updateTextFormatFloatingToolbar, anchorElem]);
 
   useEffect(() => {
     editor.getEditorState().read(() => {
@@ -239,24 +211,9 @@ function TextFormatFloatingToolbar({
   );
 }
 
-function getSelectedNode(selection: RangeSelection): TextNode | ElementNode {
-  const anchor = selection.anchor;
-  const focus = selection.focus;
-  const anchorNode = selection.anchor.getNode();
-  const focusNode = selection.focus.getNode();
-  if (anchorNode === focusNode) {
-    return anchorNode;
-  }
-  const isBackward = selection.isBackward();
-  if (isBackward) {
-    return $isAtNodeEnd(focus) ? anchorNode : focusNode;
-  } else {
-    return $isAtNodeEnd(anchor) ? focusNode : anchorNode;
-  }
-}
-
-function useTextFormatFloatingToolbar(
+function useFloatingTextFormatToolbar(
   editor: LexicalEditor,
+  anchorElem: HTMLElement,
 ): JSX.Element | null {
   const [isText, setIsText] = useState(false);
   const [isLink, setIsLink] = useState(false);
@@ -342,6 +299,7 @@ function useTextFormatFloatingToolbar(
   return createPortal(
     <TextFormatFloatingToolbar
       editor={editor}
+      anchorElem={anchorElem}
       isLink={isLink}
       isBold={isBold}
       isItalic={isItalic}
@@ -351,11 +309,15 @@ function useTextFormatFloatingToolbar(
       isUnderline={isUnderline}
       isCode={isCode}
     />,
-    document.body,
+    anchorElem,
   );
 }
 
-export default function TextFormatFloatingToolbarPlugin(): JSX.Element | null {
+export default function FloatingTextFormatToolbarPlugin({
+  anchorElem = document.body,
+}: {
+  anchorElem: HTMLElement;
+}): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
-  return useTextFormatFloatingToolbar(editor);
+  return useFloatingTextFormatToolbar(editor, anchorElem);
 }

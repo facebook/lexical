@@ -25,7 +25,7 @@ Of these nodes, three of them are exposed from the `lexical` package, making the
 ### [`RootNode`](https://github.com/facebook/lexical/blob/main/packages/lexical/src/nodes/LexicalRootNode.ts)
 
 There is only ever a single `RootNode` in an `EditorState` and it is always at the top and it represents the
-`contenteditable` itself. This means that the `RootNode` does not have a parent or siblings and also.
+`contenteditable` itself. This means that the `RootNode` does not have a parent or siblings.
 
 - To get the text content of the entire editor, you should use `rootNode.getTextContent()`.
 - To avoid selection issues, Lexical forbids insertion of text nodes directly into a `RootNode`.

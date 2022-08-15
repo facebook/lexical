@@ -100,6 +100,10 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
         if ($isRootNode(anchorNodeParent)) {
           anchorNode.replace(list);
           const listItem = $createListItemNode();
+          if ($isElementNode(anchorNode)) {
+            listItem.setFormat(anchorNode.getFormatType());
+            listItem.setIndent(anchorNode.getIndent());
+          }
           list.append(listItem);
         } else if ($isListItemNode(anchorNode)) {
           const parent = anchorNode.getParentOrThrow();
@@ -168,6 +172,8 @@ function createListOrMerge(node: ElementNode, listType: ListType): ListNode {
   const previousSibling = node.getPreviousSibling();
   const nextSibling = node.getNextSibling();
   const listItem = $createListItemNode();
+  listItem.setFormat(node.getFormatType());
+  listItem.setIndent(node.getIndent());
   append(listItem, node.getChildren());
 
   if (

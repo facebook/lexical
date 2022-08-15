@@ -31,7 +31,11 @@ interface Position {
   right: string;
 }
 
-function CodeActionMenuContainer(): JSX.Element {
+function CodeActionMenuContainer({
+  anchorElem,
+}: {
+  anchorElem: HTMLElement;
+}): JSX.Element {
   const [editor] = useLexicalComposerContext();
 
   const [lang, setLang] = useState('');
@@ -52,7 +56,6 @@ function CodeActionMenuContainer(): JSX.Element {
   const debouncedOnMouseMove = useDebounce(
     (event: MouseEvent) => {
       const {codeDOMNode, isOutside} = getMouseInfo(event);
-
       if (isOutside) {
         setShown(false);
         return;
@@ -77,14 +80,14 @@ function CodeActionMenuContainer(): JSX.Element {
       });
 
       if (codeNode) {
+        const {y: editorElemY, right: editorElemRight} =
+          anchorElem.getBoundingClientRect();
         const {y, right} = codeDOMNode.getBoundingClientRect();
         setLang(_lang);
         setShown(true);
         setPosition({
-          right: `${
-            window.innerWidth - right + CODE_PADDING - window.pageXOffset
-          }px`,
-          top: `${y + window.pageYOffset}px`,
+          right: `${editorElemRight - right + CODE_PADDING}px`,
+          top: `${y - editorElemY}px`,
         });
       }
     },
@@ -107,7 +110,7 @@ function CodeActionMenuContainer(): JSX.Element {
   }, [shouldListenMouseMove, debouncedOnMouseMove]);
 
   editor.registerMutationListener(CodeNode, (mutations) => {
-    editor.update(() => {
+    editor.getEditorState().read(() => {
       for (const [key, type] of mutations) {
         switch (type) {
           case 'created':
@@ -169,6 +172,13 @@ function getMouseInfo(event: MouseEvent): {
   }
 }
 
-export default function CodeActionMenuPlugin(): React.ReactPortal {
-  return createPortal(<CodeActionMenuContainer />, document.body);
+export default function CodeActionMenuPlugin({
+  anchorElem = document.body,
+}: {
+  anchorElem?: HTMLElement;
+}): React.ReactPortal | null {
+  return createPortal(
+    <CodeActionMenuContainer anchorElem={anchorElem} />,
+    anchorElem,
+  );
 }

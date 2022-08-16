@@ -6,7 +6,7 @@
  *
  */
 
-import type {Spread} from 'lexical';
+import {$isTextNode, Spread} from 'lexical';
 
 import {
   addClassNamesToElement,
@@ -240,6 +240,7 @@ function normalizeChildren(nodes: Array<LexicalNode>): Array<ListItemNode> {
   const normalizedListItems: Array<ListItemNode> = [];
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
+    console.log(node);
     if ($isListItemNode(node)) {
       normalizedListItems.push(node);
       node.getChildren().forEach((child) => {
@@ -247,7 +248,7 @@ function normalizeChildren(nodes: Array<LexicalNode>): Array<ListItemNode> {
           normalizedListItems.push(wrapInListItem(child));
         }
       });
-    } else {
+    } else if (!$isTextNode(node) || node.getTextContent().trim()) {
       normalizedListItems.push(wrapInListItem(node));
     }
   }

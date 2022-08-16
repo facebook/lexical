@@ -240,7 +240,6 @@ function normalizeChildren(nodes: Array<LexicalNode>): Array<ListItemNode> {
   const normalizedListItems: Array<ListItemNode> = [];
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
-    console.log(node);
     if ($isListItemNode(node)) {
       normalizedListItems.push(node);
       node.getChildren().forEach((child) => {

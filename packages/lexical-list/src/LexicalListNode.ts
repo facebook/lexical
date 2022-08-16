@@ -247,7 +247,7 @@ function normalizeChildren(nodes: Array<LexicalNode>): Array<ListItemNode> {
           normalizedListItems.push(wrapInListItem(child));
         }
       });
-    } else if (!$isTextNode(node) || node.getTextContent().trim()) {
+    } else if (!$isTextNode(node) || node.getTextContent().trim() !== '') {
       normalizedListItems.push(wrapInListItem(node));
     }
   }

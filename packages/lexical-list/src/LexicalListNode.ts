@@ -6,14 +6,13 @@
  *
  */
 
-import {$isTextNode, Spread} from 'lexical';
-
 import {
   addClassNamesToElement,
   removeClassNamesFromElement,
 } from '@lexical/utils';
 import {
   $createTextNode,
+  $isTextNode,
   DOMConversionMap,
   DOMConversionOutput,
   EditorConfig,
@@ -23,6 +22,7 @@ import {
   LexicalNode,
   NodeKey,
   SerializedElementNode,
+  Spread,
 } from 'lexical';
 
 import {$createListItemNode, $isListItemNode, ListItemNode} from '.';

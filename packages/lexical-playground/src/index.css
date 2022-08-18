@@ -48,7 +48,7 @@ header h1 {
 .editor-shell {
   margin: 20px auto;
   border-radius: 2px;
-  max-width: 1000px;
+  max-width: 1100px;
   color: #000;
   position: relative;
   line-height: 20px;
@@ -753,7 +753,7 @@ i.prettier-error {
   height: 1px;
 }
 
-@media screen and (max-width: 1000px) {
+@media screen and (max-width: 1100px) {
   .dropdown-button-text {
     display: none !important;
   }

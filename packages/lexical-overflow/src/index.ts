@@ -1,3 +1,4 @@
+/** @module @lexical/overflow */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *

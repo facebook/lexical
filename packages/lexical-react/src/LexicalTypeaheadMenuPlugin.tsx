@@ -612,7 +612,7 @@ export function LexicalNodeMenuPlugin<TOption extends TypeaheadOption>({
   const [editor] = useLexicalComposerContext();
 
   const [resolution, setResolution] = useState<Resolution | null>(null);
-  const anchorElementRef = useAnchorElementRef(resolution, options);
+  const anchorElementRef = useAnchorElementRef(resolution);
 
   useEffect(() => {
     if (nodeKey && resolution == null) {

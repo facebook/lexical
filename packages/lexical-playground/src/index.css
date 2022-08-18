@@ -914,6 +914,12 @@ i.prettier-error {
 .editor-shell .editor-image img.focused {
   outline: 2px solid rgb(60, 132, 244);
   user-select: none;
+  cursor: move;
+  cursor: grab;
+}
+
+.editor-shell .editor-image img.focused:active {
+  cursor: grabbing;
 }
 
 .editor-shell .editor-image .image-caption-container .tree-view-output {

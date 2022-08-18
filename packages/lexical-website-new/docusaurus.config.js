@@ -73,8 +73,8 @@ const config = {
         },
         docs: {
           editUrl: `${GITHUB_REPO_URL}/tree/main/packages/lexical-website-new/`,
+          path: 'docs',
           remarkPlugins: [importPlugin],
-          // TODO: Update when directory finalized
           sidebarPath: require.resolve('./sidebars.js'),
         },
         theme: {
@@ -171,7 +171,14 @@ const config = {
             docId: 'intro',
             label: 'Docs',
             position: 'left',
-            type: 'doc',
+            sidebarId: 'docs',
+            type: 'docSidebar',
+          },
+          {
+            label: 'API',
+            position: 'left',
+            sidebarId: 'api',
+            type: 'docSidebar',
           },
           {label: 'Community', position: 'left', to: '/community'},
           {

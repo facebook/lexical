@@ -590,7 +590,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
 
 function onInput(event: InputEvent, editor: LexicalEditor): void {
   // We don't want the onInput to bubble, in the case of nested editors.
-  event.stopPropagation();
+  //event.stopPropagation();
   updateEditor(editor, () => {
     const selection = $getSelection();
     const data = event.data;

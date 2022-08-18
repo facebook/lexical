@@ -92,7 +92,9 @@ export const getCodeLanguages = (): Array<string> =>
     )
     .sort();
 
+/** @noInheritDoc */
 export class CodeHighlightNode extends TextNode {
+  /** @internal */
   __highlightType: string | null | undefined;
 
   constructor(

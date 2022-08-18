@@ -26,7 +26,42 @@ const config = {
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
   organizationName: 'facebook',
-  plugins: ['./plugins/webpack-buffer'],
+  plugins: [
+    './plugins/webpack-buffer',
+    [
+      'docusaurus-plugin-typedoc',
+      {
+        entryPoints: [
+          '../lexical/src/index.ts',
+          '../lexical-clipboard/src/index.ts',
+          '../lexical-code/src/index.ts',
+          '../lexical-dragon/src/index.ts',
+          '../lexical-file/src/index.ts',
+          '../lexical-hashtag/src/index.ts',
+          '../lexical-headless/src/index.ts',
+          '../lexical-history/src/index.ts',
+          '../lexical-html/src/index.ts',
+          '../lexical-link/src/index.ts',
+          '../lexical-list/src/index.ts',
+          '../lexical-mark/src/index.ts',
+          '../lexical-markdown/src/index.ts',
+          '../lexical-offset/src/index.ts',
+          '../lexical-overflow/src/index.ts',
+          '../lexical-selection/src/index.ts',
+          '../lexical-table/src/index.ts',
+          '../lexical-text/src/index.ts',
+          '../lexical-utils/src/index.ts',
+          '../lexical-yjs/src/index.ts',
+        ],
+        excludeInternal: true,
+        plugin: ['./src/plugins/lexical-typedoc-plugin-no-inherit'],
+        sidebar: {
+          position: 5,
+        },
+        tsconfig: '../../tsconfig.json',
+      },
+    ],
+  ],
   presets: [
     [
       'classic',
@@ -38,8 +73,8 @@ const config = {
         },
         docs: {
           editUrl: `${GITHUB_REPO_URL}/tree/main/packages/lexical-website-new/`,
+          path: 'docs',
           remarkPlugins: [importPlugin],
-          // TODO: Update when directory finalized
           sidebarPath: require.resolve('./sidebars.js'),
         },
         theme: {
@@ -136,7 +171,14 @@ const config = {
             docId: 'intro',
             label: 'Docs',
             position: 'left',
-            type: 'doc',
+            sidebarId: 'docs',
+            type: 'docSidebar',
+          },
+          {
+            label: 'API',
+            position: 'left',
+            sidebarId: 'api',
+            type: 'docSidebar',
           },
           {label: 'Community', position: 'left', to: '/community'},
           {

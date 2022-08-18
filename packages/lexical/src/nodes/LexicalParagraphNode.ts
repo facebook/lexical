@@ -28,6 +28,7 @@ export type SerializedParagraphNode = Spread<
   SerializedElementNode
 >;
 
+/** @noInheritDoc */
 export class ParagraphNode extends ElementNode {
   static getType(): string {
     return 'paragraph';

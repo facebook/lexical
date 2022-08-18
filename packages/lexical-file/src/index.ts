@@ -1,3 +1,4 @@
+/** @module @lexical/file */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *

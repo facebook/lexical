@@ -22,7 +22,9 @@ export type SerializedGridCellNode = Spread<
   SerializedElementNode
 >;
 
+/** @noInheritDoc */
 export class GridCellNode extends ElementNode {
+  /** @internal */
   __colSpan: number;
 
   constructor(colSpan: number, key?: NodeKey) {

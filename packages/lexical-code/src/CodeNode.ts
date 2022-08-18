@@ -66,7 +66,9 @@ const mapToPrismLanguage = (
 
 const LANGUAGE_DATA_ATTRIBUTE = 'data-highlight-language';
 
+/** @noInheritDoc */
 export class CodeNode extends ElementNode {
+  /** @internal */
   __language: string | null | undefined;
 
   static getType(): string {

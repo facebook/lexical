@@ -1,3 +1,4 @@
+/** @module @lexical/mark */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *

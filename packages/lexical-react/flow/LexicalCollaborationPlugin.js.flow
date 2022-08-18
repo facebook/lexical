@@ -7,23 +7,8 @@
  * @flow strict
  */
 
+import type {ProviderAwareness} from '@lexical/yjs';
 import type {Doc, RelativePosition} from 'yjs';
-
-export type UserState = {
-  anchorPos: null | RelativePosition,
-  focusPos: null | RelativePosition,
-  name: string,
-  color: string,
-  focusing: boolean,
-};
-
-export type ProviderAwareness = {
-  getLocalState: () => UserState | null,
-  setLocalState: (UserState) => void,
-  getStates: () => Map<number, UserState>,
-  on: (type: 'update', cb: () => void) => void,
-  off: (type: 'update', cb: () => void) => void,
-};
 
 export interface Provider {
   connect(): void | Promise<void>;

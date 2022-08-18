@@ -1,7 +1,9 @@
 :root {
+  --highlight-dark-gray: #282c34;
   --monospace-character-width: 1.2em;
   --main-blue: #77b6ff;
   --main-dark-gray: #222;
+  --main-white: #fff;
 }
 
 body {

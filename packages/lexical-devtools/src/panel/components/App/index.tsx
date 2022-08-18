@@ -7,25 +7,33 @@
  */
 import './index.css';
 
-import {DevToolsTree, NodeProperties} from 'packages/lexical-devtools/types';
+import {
+  DevToolsSelection,
+  DevToolsTree,
+  NodeProperties,
+} from 'packages/lexical-devtools/types';
 import * as React from 'react';
 import {useCallback, useEffect, useRef, useState} from 'react';
 
 import InspectedElementView from '../InspectedElementView';
+import SelectionView from '../SelectionView';
+import TimeTravelView from '../TimeTravelView';
 import TreeView from '../TreeView';
 
 function App(): JSX.Element {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [nodeMap, setNodeMap] = useState<DevToolsTree>({});
+  const [selection, setSelection] = useState<DevToolsSelection | null>(null);
   const [selectedNode, setSelectedNode] = useState<NodeProperties | null>(null);
   const port = useRef<chrome.runtime.Port | null>(null);
 
   const updateEditorState = (message: {
-    editorState: {nodeMap: DevToolsTree};
+    editorState: {nodeMap: DevToolsTree; selection: DevToolsSelection};
   }) => {
     setIsLoading(false);
     const newNodeMap = message.editorState.nodeMap;
     setNodeMap(newNodeMap);
+    setSelection(message.editorState.selection);
   };
 
   // highlight & dehighlight the corresponding DOM nodes onHover of DevTools nodes
@@ -81,16 +89,14 @@ function App(): JSX.Element {
   });
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <p>Lexical Developer Tools</p>
-      </header>
+    <>
       {isLoading ? (
         <div className="loading-view">
           <p>Loading...</p>
         </div>
       ) : (
-        <>
+        <div className="App">
+          <SelectionView selection={selection} />
           <TreeView
             deHighlightDOMNode={deHighlightDOMNode}
             handleNodeClick={setSelectedNode}
@@ -99,9 +105,10 @@ function App(): JSX.Element {
             nodeMap={nodeMap}
           />
           <InspectedElementView nodeProps={selectedNode} />
-        </>
+          <TimeTravelView />
+        </div>
       )}
-    </div>
+    </>
   );
 }
 

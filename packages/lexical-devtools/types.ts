@@ -5,7 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {GridSelection, LexicalEditor, RangeSelection} from 'lexical';
+import {
+  GridSelection,
+  LexicalEditor,
+  NodeSelection,
+  RangeSelection,
+} from 'lexical';
 import {
   ElementPointType,
   TextPointType,
@@ -28,6 +33,11 @@ export interface DevToolsNode {
   lexicalKey: string;
   monospaceWidth: string;
 }
+
+export type DevToolsSelection =
+  | GridSelectionJSON
+  | NodeSelection
+  | RangeSelectionJSON;
 
 // the anchor property as PointType includes a _selection property
 // when anchor is present on a selection object, it creates circularity

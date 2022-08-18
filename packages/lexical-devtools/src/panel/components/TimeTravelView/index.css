@@ -1,0 +1,10 @@
+.time-travel-view {
+  background: var(--main-dark-gray);
+  border: 1px solid var(--highlight-dark-gray);
+  color: var(--main-white);
+  grid-area: time-travel;
+  padding: 1em 2em;
+  position: sticky;
+  text-align: left;
+  top: 0em;
+}

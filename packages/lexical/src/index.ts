@@ -1,3 +1,4 @@
+/** @module lexical */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *

@@ -71,6 +71,13 @@ module.exports = {
         'header/header': [2, 'scripts/www/headerTemplate.js'],
       },
     },
+    {
+      // don't lint headers in entrypoint files so we can add TypeDoc module comments
+      files: ['packages/**/src/index.ts'],
+      rules: {
+        'header/header': OFF,
+      },
+    },
   ],
 
   parser: 'babel-eslint',

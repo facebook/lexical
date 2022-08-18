@@ -167,9 +167,12 @@ export type NodeKey = string;
 export class LexicalNode {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [x: string]: any;
+  /** @internal */
   __type: string;
-  // @ts-ignore We set the key in the constructor.
+  /** @internal */
+  //@ts-ignore We set the key in the constructor.
   __key: string;
+  /** @internal */
   __parent: null | NodeKey;
 
   // Flow doesn't support abstract classes unfortunately, so we can't _force_

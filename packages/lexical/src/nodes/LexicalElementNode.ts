@@ -49,10 +49,15 @@ export type SerializedElementNode = Spread<
 
 export type ElementFormatType = 'left' | 'center' | 'right' | 'justify' | '';
 
+/** @noInheritDoc */
 export class ElementNode extends LexicalNode {
+  /** @internal */
   __children: Array<NodeKey>;
+  /** @internal */
   __format: number;
+  /** @internal */
   __indent: number;
+  /** @internal */
   __dir: 'ltr' | 'rtl' | null;
 
   constructor(key?: NodeKey) {

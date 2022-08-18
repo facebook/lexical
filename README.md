@@ -3,15 +3,15 @@
 </h1>
 
 <p align="center">
-  <img alt="GitHub Workflow Status" src="https://img.shields.io/github/workflow/status/facebook/lexical/Lexical%20Tests">
+  <img alt="GitHub Workflow Status" src="https://img.shields.io/github/workflow/status/facebook/lexical/Lexical%20Tests"/>
   <a href="https://www.npmjs.com/package/lexical">
-    <img alt="Visit the NPM page" src="https://img.shields.io/npm/v/lexical">
+    <img alt="Visit the NPM page" src="https://img.shields.io/npm/v/lexical"/>
   </a>
   <a href="https://discord.gg/KmG4wQnnD9">
-    <img alt="Add yourself to our Discord" src="https://img.shields.io/discord/953974421008293909">
+    <img alt="Add yourself to our Discord" src="https://img.shields.io/discord/953974421008293909"/>
   </a>
   <a href="https://twitter.com/intent/follow?screen_name=lexicaljs">
-    <img alt="Follow us on Twitter" src="https://img.shields.io/twitter/follow/lexicaljs?style=social">
+    <img alt="Follow us on Twitter" src="https://img.shields.io/twitter/follow/lexicaljs?style=social"/>
   </a>
 </p>
 
@@ -384,4 +384,4 @@ Lexical engineers are checking this regularly.
 
 ### License
 
-Lexical is [MIT licensed](./LICENSE).
+Lexical is [MIT licensed](https://github.com/facebook/lexical/blob/main/LICENSE).

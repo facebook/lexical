@@ -1,3 +1,4 @@
+/** @module @lexical/link */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -40,9 +41,13 @@ export type SerializedLinkNode = Spread<
   SerializedElementNode
 >;
 
+/** @noInheritDoc */
 export class LinkNode extends ElementNode {
+  /** @internal */
   __url: string;
+  /** @internal */
   __target: null | string;
+  /** @internal */
   __rel: null | string;
 
   static getType(): string {

@@ -45,8 +45,11 @@ export type SerializedTableCellNode = Spread<
   SerializedGridCellNode
 >;
 
+/** @noInheritDoc */
 export class TableCellNode extends GridCellNode {
+  /** @internal */
   __headerState: TableCellHeaderState;
+  /** @internal */
   __width?: number;
 
   static getType(): 'tablecell' {

@@ -32,7 +32,9 @@ export type SerializedMarkNode = Spread<
   SerializedElementNode
 >;
 
+/** @noInheritDoc */
 export class MarkNode extends ElementNode {
+  /** @internal */
   __ids: Array<string>;
 
   static getType(): string {

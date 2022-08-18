@@ -1,3 +1,4 @@
+/** @module @lexical/overflow */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -25,6 +26,7 @@ export type SerializedOverflowNode = Spread<
   SerializedElementNode
 >;
 
+/** @noInheritDoc */
 export class OverflowNode extends ElementNode {
   static getType(): string {
     return 'overflow';

@@ -19,7 +19,9 @@ import {$isElementNode, ElementNode} from './LexicalElementNode';
 
 export type SerializedRootNode = SerializedElementNode;
 
+/** @noInheritDoc */
 export class RootNode extends ElementNode {
+  /** @internal */
   __cachedText: null | string;
 
   static getType(): string {

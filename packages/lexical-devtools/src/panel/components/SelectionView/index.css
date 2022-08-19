@@ -3,10 +3,11 @@
   border: 1px solid var(--highlight-dark-gray);
   color: var(--main-white);
   grid-area: selection;
+  height: var(--top-row-height);
   left: 0em;
   padding: 1em 2em;
   position: fixed;
   text-align: left;
   top: 0em;
-  width: 100%;
+  width: calc(100vw - var(--right-column-width));
 }

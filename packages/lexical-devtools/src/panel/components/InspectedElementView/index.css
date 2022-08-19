@@ -9,11 +9,11 @@
   border: 1px solid var(--highlight-dark-gray);
   color: var(--main-white);
   grid-area: inspected-element;
-  height: 100%;
-  left: calc(100vw - 24em);
+  height: calc(100vh - var(--top-row-height));
+  left: calc(100vw - var(--right-column-width));
   overflow: auto;
   position: fixed;
   text-align: left;
-  top: 3.5em;
-  width: 24em;
+  top: var(--top-row-height);
+  width: var(--right-column-width);
 }

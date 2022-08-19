@@ -1,11 +1,19 @@
+.inspected-element-container {
+  padding: 1em 2em;
+  overflow: scroll;
+}
+
 .inspected-element-view {
   align-self: start;
-  border: 1px solid #282c34;
-  color: #fff;
+  background: var(--main-dark-gray);
+  border: 1px solid var(--highlight-dark-gray);
+  color: var(--main-white);
   grid-area: inspected-element;
-  height: 100vh;
-  padding: 1em 2em;
-  position: sticky;
+  height: 100%;
+  left: calc(100vw - 24em);
+  overflow: auto;
+  position: fixed;
   text-align: left;
-  top: 0em;
+  top: 3.5em;
+  width: 24em;
 }

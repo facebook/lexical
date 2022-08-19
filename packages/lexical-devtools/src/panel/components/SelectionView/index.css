@@ -3,8 +3,10 @@
   border: 1px solid var(--highlight-dark-gray);
   color: var(--main-white);
   grid-area: selection;
+  left: 0em;
   padding: 1em 2em;
-  position: sticky;
+  position: fixed;
   text-align: left;
   top: 0em;
+  width: 100%;
 }

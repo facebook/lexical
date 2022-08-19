@@ -673,8 +673,8 @@ export function $shouldPreventDefaultAndInsertText(
     anchorKey !== focus.key ||
     // If we're working with a non-text node.
     !$isTextNode(anchorNode) ||
-    // If we are replacing a range with a single character, and not composing.
-    (textLength < 2 &&
+    // If we are replacing a range with a single character or grapheme, and not composing.
+    ((textLength < 2 || doesContainGrapheme(text)) &&
       anchor.offset !== focus.offset &&
       !anchorNode.isComposing()) ||
     // Any non standard text node.

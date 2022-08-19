@@ -1252,7 +1252,8 @@ test.describe('Nested List', () => {
     await page.keyboard.press('Enter');
     await page.keyboard.type('b');
     await page.keyboard.press('Enter');
-    await page.keyboard.press('Tab');
+    await click(page, '.toolbar-item.alignment');
+    await click(page, 'button:has-text("Indent")');
     await page.keyboard.type('c');
     await assertHTML(
       page,
@@ -1390,10 +1391,12 @@ test.describe('Nested List', () => {
     await page.keyboard.press('Enter');
     await page.keyboard.type('b');
     await page.keyboard.press('Enter');
-    await page.keyboard.press('Tab');
+    await click(page, '.toolbar-item.alignment');
+    await click(page, 'button:has-text("Indent")');
     await page.keyboard.type('c');
     await page.keyboard.press('Enter');
-    await page.keyboard.press('Tab');
+    await click(page, '.toolbar-item.alignment');
+    await click(page, 'button:has-text("Indent")');
     await page.keyboard.type('d');
     await page.keyboard.press('Enter');
     await page.keyboard.type('e');
@@ -1471,7 +1474,8 @@ test.describe('Nested List', () => {
     await page.keyboard.type('Hello World');
     await page.keyboard.press('Enter');
     await toggleBulletList(page);
-    await page.keyboard.press('Tab');
+    await click(page, '.toolbar-item.alignment');
+    await click(page, 'button:has-text("Indent")');
     await toggleBulletList(page);
     await assertHTML(
       page,
@@ -1505,7 +1509,8 @@ test.describe('Nested List', () => {
     await page.keyboard.type('b');
     await page.keyboard.press('ArrowUp');
     await page.keyboard.press('Enter');
-    await page.keyboard.press('Tab');
+    await click(page, '.toolbar-item.alignment');
+    await click(page, 'button:has-text("Indent")');
     await toggleBulletList(page);
     await assertHTML(
       page,

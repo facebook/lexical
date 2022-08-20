@@ -37,7 +37,6 @@
   font-weight: 400;
   margin: 0;
   margin-bottom: 12px;
-  padding: 0;
 }
 .PlaygroundEditorTheme__h2 {
   font-size: 15px;
@@ -45,14 +44,12 @@
   font-weight: 700;
   margin: 0;
   margin-top: 10px;
-  padding: 0;
   text-transform: uppercase;
 }
 .PlaygroundEditorTheme__h3 {
   font-size: 12px;
   margin: 0;
   margin-top: 10px;
-  padding: 0;
   text-transform: uppercase;
 }
 .PlaygroundEditorTheme__textBold {

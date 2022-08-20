@@ -15,10 +15,7 @@
 }
 .PlaygroundEditorTheme__paragraph {
   margin: 0;
-  margin-bottom: 8px;
-}
-.PlaygroundEditorTheme__paragraph:last-child {
-  margin-bottom: 0;
+  position: relative;
 }
 .PlaygroundEditorTheme__quote {
   margin: 0;
@@ -36,20 +33,17 @@
   color: rgb(5, 5, 5);
   font-weight: 400;
   margin: 0;
-  margin-bottom: 12px;
 }
 .PlaygroundEditorTheme__h2 {
   font-size: 15px;
   color: rgb(101, 103, 107);
   font-weight: 700;
   margin: 0;
-  margin-top: 10px;
   text-transform: uppercase;
 }
 .PlaygroundEditorTheme__h3 {
   font-size: 12px;
   margin: 0;
-  margin-top: 10px;
   text-transform: uppercase;
 }
 .PlaygroundEditorTheme__textBold {

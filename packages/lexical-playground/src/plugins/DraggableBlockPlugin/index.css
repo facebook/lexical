@@ -16,3 +16,13 @@
 .draggable-block-menu:active {
   cursor: grabbing;
 }
+
+.draggable-block-target-line {
+  pointer-events: none;
+  background: deepskyblue;
+  height: 4px;
+  position: absolute;
+  left: -10000px;
+  top: -10000px;
+  opacity: 0;
+}

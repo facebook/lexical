@@ -23,10 +23,11 @@ import {createPortal} from 'react-dom';
 import {ImageNode} from '../../nodes/ImageNode';
 import {isHTMLElement} from '../../utils/guard';
 
+const SPACE = 4;
+const TARGET_LINE_HALF_HEIGHT = 2;
+const DRAGGABLE_BLOCK_ELEMENT_PADDING = 24;
 const DRAGGABLE_BLOCK_CLASSNAME = 'draggable-block';
 const DRAGGABLE_BLOCK_MENU_CLASSNAME = 'draggable-block-menu';
-const DRAGGABLE_BLOCK_ELEMENT_PADDING = 24;
-const SPACE = 4;
 
 function getDraggableBlockElement(element: HTMLElement): HTMLElement | null {
   return element.closest(`.${DRAGGABLE_BLOCK_CLASSNAME}`);
@@ -52,7 +53,10 @@ function setMenuPosition(
   const floatingElemRect = floatingElem.getBoundingClientRect();
   const anchorElementRect = anchorElem.getBoundingClientRect();
 
-  const top = targetRect.top - anchorElementRect.top;
+  const top =
+    targetRect.top +
+    (targetRect.height - floatingElemRect.height) / 2 -
+    anchorElementRect.top;
   const left =
     targetRect.left +
     DRAGGABLE_BLOCK_ELEMENT_PADDING -
@@ -80,11 +84,41 @@ function setDragImage(
   });
 }
 
+function setTargetLine(
+  targetLineElem: HTMLElement,
+  targetBlockElem: HTMLElement,
+  mouseY: number,
+  anchorElem: HTMLElement,
+) {
+  const {top, left, width, height} = targetBlockElem.getBoundingClientRect();
+  const {paddingLeft, paddingRight} = window.getComputedStyle(targetBlockElem);
+  const {top: anchorTop, left: anchorLeft} = anchorElem.getBoundingClientRect();
+  const targetPaddingLeft = parseInt(paddingLeft, 10);
+  const targetPaddingRight = parseInt(paddingRight, 10);
+
+  let lineTop = top;
+  // At the bottom of the target
+  if (mouseY - top > height / 2) {
+    lineTop += height;
+  }
+  targetLineElem.style.top = `${
+    lineTop - anchorTop - TARGET_LINE_HALF_HEIGHT
+  }px`;
+  targetLineElem.style.left = `${
+    left - anchorLeft + targetPaddingLeft - SPACE
+  }px`;
+  targetLineElem.style.width = `${
+    width - targetPaddingLeft - targetPaddingRight + SPACE * 2
+  }px`;
+  targetLineElem.style.opacity = '.5';
+}
+
 function useDraggableBlockMenu(
   editor: LexicalEditor,
   anchorElem: HTMLElement,
 ): JSX.Element | null {
-  const menuRef = useRef<HTMLDivElement | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const targetLineRef = useRef<HTMLDivElement>(null);
   const [draggableBlockElem, setDraggableBlockElem] =
     useState<HTMLElement | null>(null);
 
@@ -149,14 +183,18 @@ function useDraggableBlockMenu(
   }
 
   function onDragover(event: DragEvent): boolean {
-    // console.log('onDragover', event)
-    const target = event.target;
+    const {pageY, target} = event;
     if (!isHTMLElement(target)) {
       return false;
     }
-    // const blockElement = getDraggableBlockElement(target);
+    const targetBlockElem = getDraggableBlockElement(target);
+    const targetLineElem = targetLineRef.current;
+    if (targetBlockElem === null || targetLineElem === null) {
+      return false;
+    }
+    setTargetLine(targetLineElem, targetBlockElem, pageY, anchorElem);
     // console.log('blockElement', blockElement)
-    return false;
+    return true;
   }
 
   function onDrop(event: DragEvent, _editor: LexicalEditor): boolean {
@@ -165,12 +203,15 @@ function useDraggableBlockMenu(
   }
 
   return createPortal(
-    <div
-      className="draggable-block-menu"
-      ref={menuRef}
-      draggable={true}
-      onDragStart={onDragStart}
-    />,
+    <>
+      <div
+        className="draggable-block-menu"
+        ref={menuRef}
+        draggable={true}
+        onDragStart={onDragStart}
+      />
+      <div className="draggable-block-target-line" ref={targetLineRef} />
+    </>,
     anchorElem,
   );
 }

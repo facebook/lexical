@@ -1355,13 +1355,18 @@ export class RangeSelection implements BaseSelection {
       } else if (
         !$isElementNode(node) ||
         ($isElementNode(node) && node.isInline()) ||
-        ($isDecoratorNode(target) && target.isTopLevel()) ||
-        $isLineBreakNode(target)
+        ($isDecoratorNode(target) && target.isTopLevel())
       ) {
         lastNode = node;
         target = target.insertAfter(node);
       } else {
-        target = node.getParentOrThrow();
+        const nextTarget: ElementNode = target.getParentOrThrow();
+        // if we're inserting an Element after a LineBreak, we want to move the target to the parent
+        // and remove the LineBreak so we don't have empty space.
+        if ($isLineBreakNode(target)) {
+          target.remove();
+        }
+        target = nextTarget;
         // Re-try again with the target being the parent
         i--;
         continue;

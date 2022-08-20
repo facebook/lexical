@@ -315,7 +315,7 @@
   list-style-position: inside;
 }
 .PlaygroundEditorTheme__listItem {
-  margin: 8px 32px;
+  margin: 0 32px;
 }
 .PlaygroundEditorTheme__listItemChecked,
 .PlaygroundEditorTheme__listItemUnchecked {

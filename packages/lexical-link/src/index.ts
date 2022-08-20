@@ -79,7 +79,7 @@ export class LinkNode extends ElementNode {
 
   createDOM(config: EditorConfig): HTMLAnchorElement {
     const element = document.createElement('a');
-    element.href = this.__url;
+    element.href = sanitizeUrl(this.__url);
     if (this.__target !== null) {
       element.target = this.__target;
     }
@@ -95,7 +95,7 @@ export class LinkNode extends ElementNode {
     anchor: HTMLAnchorElement,
     config: EditorConfig,
   ): boolean {
-    const url = this.__url;
+    const url = sanitizeUrl(this.__url);
     const target = this.__target;
     const rel = this.__rel;
     if (url !== prevNode.__url) {
@@ -227,6 +227,60 @@ export class LinkNode extends ElementNode {
       selection.getTextContent().length > 0
     );
   }
+}
+
+// default allowed protocols are an array containing
+// all common link protocols, except for 'javascript' and 'data'
+function sanitizeUrl(
+  url: string,
+  allowedProtocols: string[] = [
+    'http',
+    'https',
+    'ftp',
+    'ftps',
+    'mailto',
+    'news',
+    'irc',
+    'irc6',
+    'ircs',
+    'gopher',
+    'nntp',
+    'feed',
+    'telnet',
+    'mms',
+    'rtsp',
+    'sms',
+    'svn',
+    'tel',
+    'fax',
+    'xmpp',
+    'webcal',
+    'urn',
+  ],
+): string {
+  let protocols = '';
+  for (const protocol of allowedProtocols) {
+    protocols += `${protocol}|`;
+  }
+
+  const SAFE_URL_PATTERN = new RegExp(
+    '^(?:(?:' + protocols + '):|[^&:/?#]*(?:[/?#]|$))',
+    'gi',
+  );
+  if (url.match(SAFE_URL_PATTERN)) {
+    return url;
+  }
+
+  let sanitizedUrl = url;
+  const urlSchemeRegex = /^([^:]+):/gm;
+  let notAllowedProtocols = sanitizedUrl.match(urlSchemeRegex);
+
+  while (notAllowedProtocols) {
+    sanitizedUrl = sanitizedUrl.replace(notAllowedProtocols[0], '');
+    notAllowedProtocols = sanitizedUrl.match(urlSchemeRegex);
+  }
+
+  return sanitizedUrl;
 }
 
 function convertAnchorElement(domNode: Node): DOMConversionOutput {

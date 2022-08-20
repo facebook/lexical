@@ -118,35 +118,31 @@ import {
 } from './LexicalUtils';
 
 type RootElementRemoveHandles = Array<() => void>;
-type RootElementEvents = Array<
-  [
-    string,
-    Record<string, unknown> | ((event: Event, editor: LexicalEditor) => void),
-  ]
->;
-const PASS_THROUGH_COMMAND = Object.freeze({});
+type RootElementEventHandler = (event: Event, editor: LexicalEditor) => void;
+type RootElementEvents = Array<[string, RootElementEventHandler]>;
+
 const ANDROID_COMPOSITION_LATENCY = 30;
 const rootElementEvents: RootElementEvents = [
-  ['keydown', onKeyDown],
-  ['compositionstart', onCompositionStart],
-  ['compositionend', onCompositionEnd],
-  ['input', onInput],
-  ['click', onClick],
-  ['cut', PASS_THROUGH_COMMAND],
-  ['copy', PASS_THROUGH_COMMAND],
-  ['dragstart', PASS_THROUGH_COMMAND],
-  ['dragover', PASS_THROUGH_COMMAND],
-  ['dragend', PASS_THROUGH_COMMAND],
-  ['paste', PASS_THROUGH_COMMAND],
-  ['focus', PASS_THROUGH_COMMAND],
-  ['blur', PASS_THROUGH_COMMAND],
-  ['drop', PASS_THROUGH_COMMAND],
+  ['keydown', onKeyDown as RootElementEventHandler],
+  ['compositionstart', onCompositionStart as RootElementEventHandler],
+  ['compositionend', onCompositionEnd as RootElementEventHandler],
+  ['input', onInput as RootElementEventHandler],
+  ['click', onClick as RootElementEventHandler],
+  ['cut', onClipboardEvent],
+  ['copy', onClipboardEvent],
+  ['paste', onClipboardEvent],
+  ['dragstart', onDragEvent],
+  ['dragover', onDragEvent],
+  ['dragend', onDragEvent],
+  ['drop', onDragEvent],
+  ['focus', onFocusEvent],
+  ['blur', onFocusEvent],
 ];
 
 if (CAN_USE_BEFORE_INPUT) {
   rootElementEvents.push([
     'beforeinput',
-    (event, editor) => onBeforeInput(event as InputEvent, editor),
+    onBeforeInput as RootElementEventHandler,
   ]);
 }
 
@@ -174,6 +170,45 @@ function shouldSkipSelectionChange(
     offset !== 0 &&
     offset !== domNode.nodeValue.length
   );
+}
+
+function onClipboardEvent(event: Event, editor: LexicalEditor) {
+  switch (event.type) {
+    case 'cut':
+      return dispatchCommand(editor, CUT_COMMAND, event as ClipboardEvent);
+
+    case 'copy':
+      return dispatchCommand(editor, COPY_COMMAND, event as ClipboardEvent);
+
+    case 'paste':
+      return dispatchCommand(editor, PASTE_COMMAND, event as ClipboardEvent);
+  }
+}
+
+function onDragEvent(event: Event, editor: LexicalEditor) {
+  switch (event.type) {
+    case 'dragstart':
+      return dispatchCommand(editor, DRAGSTART_COMMAND, event as DragEvent);
+
+    case 'dragover':
+      return dispatchCommand(editor, DRAGOVER_COMMAND, event as DragEvent);
+
+    case 'dragend':
+      return dispatchCommand(editor, DRAGEND_COMMAND, event as DragEvent);
+
+    case 'drop':
+      return dispatchCommand(editor, DROP_COMMAND, event as DragEvent);
+  }
+}
+
+function onFocusEvent(event: Event, editor: LexicalEditor) {
+  switch (event.type) {
+    case 'focus':
+      return dispatchCommand(editor, FOCUS_COMMAND, event as FocusEvent);
+
+    case 'blur':
+      return dispatchCommand(editor, BLUR_COMMAND, event as FocusEvent);
+  }
 }
 
 function onSelectionChange(
@@ -915,81 +950,12 @@ export function addRootElementEvents(
 
   for (let i = 0; i < rootElementEvents.length; i++) {
     const [eventName, onEvent] = rootElementEvents[i];
-    const eventHandler =
-      typeof onEvent === 'function'
-        ? (event: Event) => {
-            if (!editor.isReadOnly()) {
-              onEvent(event, editor);
-            }
-          }
-        : (event: Event) => {
-            if (!editor.isReadOnly()) {
-              switch (eventName) {
-                case 'cut':
-                  return dispatchCommand(
-                    editor,
-                    CUT_COMMAND,
-                    event as ClipboardEvent,
-                  );
+    const eventHandler = (event: Event) => {
+      if (!editor.isReadOnly()) {
+        onEvent(event, editor);
+      }
+    };
 
-                case 'copy':
-                  return dispatchCommand(
-                    editor,
-                    COPY_COMMAND,
-                    event as ClipboardEvent,
-                  );
-
-                case 'paste':
-                  return dispatchCommand(
-                    editor,
-                    PASTE_COMMAND,
-                    event as ClipboardEvent,
-                  );
-
-                case 'dragstart':
-                  return dispatchCommand(
-                    editor,
-                    DRAGSTART_COMMAND,
-                    event as DragEvent,
-                  );
-
-                case 'dragover':
-                  return dispatchCommand(
-                    editor,
-                    DRAGOVER_COMMAND,
-                    event as DragEvent,
-                  );
-
-                case 'dragend':
-                  return dispatchCommand(
-                    editor,
-                    DRAGEND_COMMAND,
-                    event as DragEvent,
-                  );
-
-                case 'focus':
-                  return dispatchCommand(
-                    editor,
-                    FOCUS_COMMAND,
-                    event as FocusEvent,
-                  );
-
-                case 'blur':
-                  return dispatchCommand(
-                    editor,
-                    BLUR_COMMAND,
-                    event as FocusEvent,
-                  );
-
-                case 'drop':
-                  return dispatchCommand(
-                    editor,
-                    DROP_COMMAND,
-                    event as DragEvent,
-                  );
-              }
-            }
-          };
     rootElement.addEventListener(eventName, eventHandler);
     removeHandles.push(() => {
       rootElement.removeEventListener(eventName, eventHandler);

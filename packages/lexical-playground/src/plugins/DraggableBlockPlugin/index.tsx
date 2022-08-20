@@ -9,18 +9,11 @@ import './index.css';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {mergeRegister} from '@lexical/utils';
-import {
-  COMMAND_PRIORITY_HIGH,
-  COMMAND_PRIORITY_LOW,
-  DRAGOVER_COMMAND,
-  DROP_COMMAND,
-  LexicalEditor,
-} from 'lexical';
+import {COMMAND_PRIORITY_LOW, DRAGOVER_COMMAND, LexicalEditor} from 'lexical';
 import * as React from 'react';
 import {DragEvent as ReactDragEvent, useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 
-import {ImageNode} from '../../nodes/ImageNode';
 import {isHTMLElement} from '../../utils/guard';
 
 const SPACE = 4;
@@ -28,6 +21,7 @@ const TARGET_LINE_HALF_HEIGHT = 2;
 const DRAGGABLE_BLOCK_ELEMENT_PADDING = 24;
 const DRAGGABLE_BLOCK_CLASSNAME = 'draggable-block';
 const DRAGGABLE_BLOCK_MENU_CLASSNAME = 'draggable-block-menu';
+const DRAG_DATA_FORMAT = 'application/x-lexical-draggable-block';
 
 function getDraggableBlockElement(element: HTMLElement): HTMLElement | null {
   return element.closest(`.${DRAGGABLE_BLOCK_CLASSNAME}`);
@@ -112,6 +106,12 @@ function setTargetLine(
   targetLineElem.style.opacity = '.4';
 }
 
+function hideTargetLine(targetLineElem: HTMLElement | null) {
+  if (targetLineElem) {
+    targetLineElem.style.opacity = '0';
+  }
+}
+
 function useDraggableBlockMenu(
   editor: LexicalEditor,
   anchorElem: HTMLElement,
@@ -142,7 +142,7 @@ function useDraggableBlockMenu(
     return () => {
       window.removeEventListener('mousemove', onMouseMove);
     };
-  }, []);
+  }, [anchorElem]);
 
   useEffect(() => {
     if (menuRef.current) {
@@ -151,8 +151,21 @@ function useDraggableBlockMenu(
   }, [anchorElem, draggableBlockElem]);
 
   useEffect(() => {
-    if (!editor.hasNodes([ImageNode])) {
-      throw new Error('ImagesPlugin: ImageNode not registered on editor');
+    function onDragover(event: DragEvent): boolean {
+      const {pageY, target} = event;
+      if (!isHTMLElement(target)) {
+        return false;
+      }
+      const targetBlockElem = getDraggableBlockElement(target);
+      const targetLineElem = targetLineRef.current;
+      if (targetBlockElem === null || targetLineElem === null) {
+        return false;
+      }
+      setTargetLine(targetLineElem, targetBlockElem, pageY, anchorElem);
+      // console.log('blockElement', blockElement)
+      // Prevent default event to be able to trigger onDrop events
+      event.preventDefault();
+      return true;
     }
 
     return mergeRegister(
@@ -163,15 +176,8 @@ function useDraggableBlockMenu(
         },
         COMMAND_PRIORITY_LOW,
       ),
-      editor.registerCommand(
-        DROP_COMMAND,
-        (event) => {
-          return onDrop(event, editor);
-        },
-        COMMAND_PRIORITY_HIGH,
-      ),
     );
-  }, [editor]);
+  }, [anchorElem, editor]);
 
   function onDragStart(event: ReactDragEvent<HTMLDivElement>): void {
     const dataTransfer = event.dataTransfer;
@@ -179,26 +185,11 @@ function useDraggableBlockMenu(
       return;
     }
     setDragImage(dataTransfer, draggableBlockElem);
+    dataTransfer.setData(DRAG_DATA_FORMAT, '1');
   }
 
-  function onDragover(event: DragEvent): boolean {
-    const {pageY, target} = event;
-    if (!isHTMLElement(target)) {
-      return false;
-    }
-    const targetBlockElem = getDraggableBlockElement(target);
-    const targetLineElem = targetLineRef.current;
-    if (targetBlockElem === null || targetLineElem === null) {
-      return false;
-    }
-    setTargetLine(targetLineElem, targetBlockElem, pageY, anchorElem);
-    // console.log('blockElement', blockElement)
-    return true;
-  }
-
-  function onDrop(event: DragEvent, _editor: LexicalEditor): boolean {
-    // console.log('onDrop', event, _editor)
-    return false;
+  function onDragEnd(): void {
+    hideTargetLine(targetLineRef.current);
   }
 
   return createPortal(
@@ -207,7 +198,8 @@ function useDraggableBlockMenu(
         className="icon draggable-block-menu"
         ref={menuRef}
         draggable={true}
-        onDragStart={onDragStart}>
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}>
         <div className="icon" />
       </div>
       <div className="draggable-block-target-line" ref={targetLineRef} />

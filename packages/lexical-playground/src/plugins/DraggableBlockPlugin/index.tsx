@@ -61,7 +61,6 @@ function setMenuPosition(
     targetRect.left +
     DRAGGABLE_BLOCK_ELEMENT_PADDING -
     floatingElemRect.width -
-    SPACE -
     anchorElementRect.left;
 
   floatingElem.style.opacity = '1';
@@ -110,7 +109,7 @@ function setTargetLine(
   targetLineElem.style.width = `${
     width - targetPaddingLeft - targetPaddingRight + SPACE * 2
   }px`;
-  targetLineElem.style.opacity = '.5';
+  targetLineElem.style.opacity = '.4';
 }
 
 function useDraggableBlockMenu(
@@ -205,11 +204,12 @@ function useDraggableBlockMenu(
   return createPortal(
     <>
       <div
-        className="draggable-block-menu"
+        className="icon draggable-block-menu"
         ref={menuRef}
         draggable={true}
-        onDragStart={onDragStart}
-      />
+        onDragStart={onDragStart}>
+        <div className="icon" />
+      </div>
       <div className="draggable-block-target-line" ref={targetLineRef} />
     </>,
     anchorElem,

@@ -1,20 +1,31 @@
 .draggable-block {
-  padding-left: 24px;
-  padding-right: 24px;
+  padding-left: 28px;
+  padding-right: 28px;
 }
 
 .draggable-block-menu {
-  border: 1px solid red;
-  width: 16px;
-  height: 16px;
+  padding: 2px 1px;
   cursor: grab;
   position: absolute;
   left: -10000px;
   top: -10000px;
+
+  border-radius: 4px;
+}
+
+.draggable-block-menu .icon {
+  width: 16px;
+  height: 16px;
+  opacity: 0.3;
+  background-image: url(../../images/icons/draggable-block-menu.svg);
 }
 
 .draggable-block-menu:active {
   cursor: grabbing;
+}
+
+.draggable-block-menu:hover {
+  background-color: #efefef;
 }
 
 .draggable-block-target-line {

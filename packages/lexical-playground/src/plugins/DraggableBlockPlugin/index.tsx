@@ -9,7 +9,15 @@ import './index.css';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {mergeRegister} from '@lexical/utils';
-import {COMMAND_PRIORITY_LOW, DRAGOVER_COMMAND, LexicalEditor} from 'lexical';
+import {
+  $getNearestNodeFromDOMNode,
+  $getNodeByKey,
+  COMMAND_PRIORITY_HIGH,
+  COMMAND_PRIORITY_LOW,
+  DRAGOVER_COMMAND,
+  DROP_COMMAND,
+  LexicalEditor,
+} from 'lexical';
 import * as React from 'react';
 import {DragEvent as ReactDragEvent, useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
@@ -21,9 +29,9 @@ const TARGET_LINE_HALF_HEIGHT = 2;
 const DRAGGABLE_BLOCK_ELEMENT_PADDING = 24;
 const DRAGGABLE_BLOCK_CLASSNAME = 'draggable-block';
 const DRAGGABLE_BLOCK_MENU_CLASSNAME = 'draggable-block-menu';
-const DRAG_DATA_FORMAT = 'application/x-lexical-draggable-block';
+const DRAG_DATA_FORMAT = 'application/x-lexical-drag-block';
 
-function getDraggableBlockElement(element: HTMLElement): HTMLElement | null {
+function $getBlockElement(element: HTMLElement): HTMLElement | null {
   return element.closest(`.${DRAGGABLE_BLOCK_CLASSNAME}`);
 }
 
@@ -133,7 +141,7 @@ function useDraggableBlockMenu(
         return;
       }
 
-      const _draggableBlockElem = getDraggableBlockElement(target);
+      const _draggableBlockElem = $getBlockElement(target);
       setDraggableBlockElem(_draggableBlockElem);
     }
 
@@ -156,15 +164,47 @@ function useDraggableBlockMenu(
       if (!isHTMLElement(target)) {
         return false;
       }
-      const targetBlockElem = getDraggableBlockElement(target);
+      const targetBlockElem = $getBlockElement(target);
       const targetLineElem = targetLineRef.current;
       if (targetBlockElem === null || targetLineElem === null) {
         return false;
       }
       setTargetLine(targetLineElem, targetBlockElem, pageY, anchorElem);
-      // console.log('blockElement', blockElement)
       // Prevent default event to be able to trigger onDrop events
       event.preventDefault();
+      return true;
+    }
+
+    function onDrop(event: DragEvent): boolean {
+      const {target, dataTransfer, pageY} = event;
+      const dragData = dataTransfer?.getData(DRAG_DATA_FORMAT) || '';
+      const draggedNode = $getNodeByKey(dragData);
+      if (!draggedNode) {
+        return false;
+      }
+      if (!isHTMLElement(target)) {
+        return false;
+      }
+      const targetBlockElem = $getBlockElement(target);
+      if (!targetBlockElem) {
+        return false;
+      }
+      const targetNode = $getNearestNodeFromDOMNode(targetBlockElem);
+      if (!targetNode) {
+        return false;
+      }
+      if (targetNode === draggedNode) {
+        return true;
+      }
+      const {top, height} = targetBlockElem.getBoundingClientRect();
+      const shouldInsertAfter = pageY - top > height / 2;
+      if (shouldInsertAfter) {
+        targetNode.insertAfter(draggedNode);
+      } else {
+        targetNode.insertBefore(draggedNode);
+      }
+      setDraggableBlockElem(null);
+
       return true;
     }
 
@@ -176,6 +216,13 @@ function useDraggableBlockMenu(
         },
         COMMAND_PRIORITY_LOW,
       ),
+      editor.registerCommand(
+        DROP_COMMAND,
+        (event) => {
+          return onDrop(event);
+        },
+        COMMAND_PRIORITY_HIGH,
+      ),
     );
   }, [anchorElem, editor]);
 
@@ -185,7 +232,14 @@ function useDraggableBlockMenu(
       return;
     }
     setDragImage(dataTransfer, draggableBlockElem);
-    dataTransfer.setData(DRAG_DATA_FORMAT, '1');
+    let nodeKey = '';
+    editor.update(() => {
+      const node = $getNearestNodeFromDOMNode(draggableBlockElem);
+      if (node) {
+        nodeKey = node.getKey();
+      }
+    });
+    dataTransfer.setData(DRAG_DATA_FORMAT, nodeKey);
   }
 
   function onDragEnd(): void {

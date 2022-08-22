@@ -413,7 +413,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
           }
         } else {
           event.preventDefault();
-          dispatchCommand(editor, DELETE_CHARACTER_COMMAND, false);
+          dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);
         }
         return;
       }

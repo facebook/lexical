@@ -74,8 +74,12 @@ const sidebars = {
       type: 'category',
     },
     {
-      items: ['react/plugins'],
+      items: ['react/plugins', 'react/create_plugin'],
       label: 'React',
+      link: {
+        id: 'react/index',
+        type: 'doc',
+      },
       type: 'category',
     },
     {

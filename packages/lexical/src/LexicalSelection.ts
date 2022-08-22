@@ -2267,21 +2267,21 @@ export function internalCreateSelection(
   const lastSelection = currentEditorState._selection;
   const domSelection = getDOMSelection();
 
+  if ($isGridSelection(lastSelection)) {
+    return lastSelection.clone();
+  }
   const rangeSelection = internalCreateRangeSelection(
     lastSelection,
     domSelection,
     editor,
   );
-  if (rangeSelection !== null) {
-    return rangeSelection;
-  } else if (
-    $isNodeSelection(lastSelection) ||
-    $isGridSelection(lastSelection)
-  ) {
+  // If the user is attempting to click selection back onto text, then
+  // we should attempt create a range selection.
+  if (rangeSelection === null && $isNodeSelection(lastSelection)) {
     return lastSelection.clone();
   }
 
-  return null;
+  return rangeSelection;
 }
 
 export function internalCreateRangeSelection(

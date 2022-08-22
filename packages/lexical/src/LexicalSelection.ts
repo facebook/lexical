@@ -2267,11 +2267,21 @@ export function internalCreateSelection(
   const lastSelection = currentEditorState._selection;
   const domSelection = getDOMSelection();
 
-  if ($isNodeSelection(lastSelection) || $isGridSelection(lastSelection)) {
+  const rangeSelection = internalCreateRangeSelection(
+    lastSelection,
+    domSelection,
+    editor,
+  );
+  if (rangeSelection !== null) {
+    return rangeSelection;
+  } else if (
+    $isNodeSelection(lastSelection) ||
+    $isGridSelection(lastSelection)
+  ) {
     return lastSelection.clone();
   }
 
-  return internalCreateRangeSelection(lastSelection, domSelection, editor);
+  return null;
 }
 
 export function internalCreateRangeSelection(

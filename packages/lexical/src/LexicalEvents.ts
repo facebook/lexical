@@ -308,22 +308,6 @@ function onClick(event: MouseEvent, editor: LexicalEditor): void {
         selection.dirty = true;
       }
     }
-    //  else if (domSelection && $isNodeSelection(selection)) {
-    //   const domAnchor = domSelection.anchorNode;
-    //   // If the user is attempting to click selection back onto text, then
-    //   // we should attempt create a range selection.
-    //   // When we click on an empty paragraph node or the end of a paragraph that ends
-    //   // with an image/poll, the nodeType will be ELEMENT_NODE
-    //   const allowedNodeType = [DOM_ELEMENT_TYPE, DOM_TEXT_TYPE];
-    //   if (domAnchor !== null && allowedNodeType.includes(domAnchor.nodeType)) {
-    //     const newSelection = internalCreateRangeSelection(
-    //       lastSelection,
-    //       domSelection,
-    //       editor,
-    //     );
-    //     $setSelection(newSelection);
-    //   }
-    // }
 
     dispatchCommand(editor, CLICK_COMMAND, event);
   });

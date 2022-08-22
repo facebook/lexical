@@ -59,6 +59,7 @@ const config = {
           position: 5,
         },
         tsconfig: '../../tsconfig.json',
+        watch: process.env.TYPEDOC_WATCH === 'true',
       },
     ],
   ],

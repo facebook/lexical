@@ -26,7 +26,7 @@ import {isHTMLElement} from '../../utils/guard';
 
 const SPACE = 4;
 const TARGET_LINE_HALF_HEIGHT = 2;
-const DRAGGABLE_BLOCK_ELEMENT_PADDING = 24;
+const DRAGGABLE_BLOCK_ELEMENT_PADDING = 28;
 const DRAGGABLE_BLOCK_CLASSNAME = 'PlaygroundEditorTheme__block';
 const DRAGGABLE_BLOCK_MENU_CLASSNAME = 'draggable-block-menu';
 const DRAG_DATA_FORMAT = 'application/x-lexical-drag-block';
@@ -52,12 +52,13 @@ function setMenuPosition(
   }
 
   const targetRect = targetElem.getBoundingClientRect();
+  const targetStyle = window.getComputedStyle(targetElem);
   const floatingElemRect = floatingElem.getBoundingClientRect();
   const anchorElementRect = anchorElem.getBoundingClientRect();
 
   const top =
     targetRect.top +
-    (targetRect.height - floatingElemRect.height) / 2 -
+    (parseInt(targetStyle.lineHeight, 10) - floatingElemRect.height) / 2 -
     anchorElementRect.top;
   const left =
     targetRect.left +

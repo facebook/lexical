@@ -125,16 +125,15 @@ test.describe('Selection', () => {
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr">
           <span data-lexical-text="true">Line1</span>
-          <br />
-          <code
-            class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
-            spellcheck="false"
-            dir="ltr"
-            data-highlight-language="javascript"
-            data-gutter="1">
-            <span data-lexical-text="true">Line2</span>
-          </code>
         </p>
+        <code
+          class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+          spellcheck="false"
+          dir="ltr"
+          data-highlight-language="javascript"
+          data-gutter="1">
+          <span data-lexical-text="true">Line2</span>
+        </code>
       `,
     );
   });

@@ -259,10 +259,13 @@ function createMergeActionGetter(
         currentHistoryEntry === null || currentHistoryEntry.editor === editor;
       const shouldPushHistory = tags.has('history-push');
       const shouldMergeHistory =
-        !shouldPushHistory && isSameEditor && tags.has('history-merge');
+        !shouldPushHistory && tags.has('history-merge');
 
       if (shouldMergeHistory) {
-        return HISTORY_MERGE;
+        if (isSameEditor) {
+          return HISTORY_MERGE;
+        }
+        return DISCARD_HISTORY_CANDIDATE;
       }
 
       if (prevEditorState === null) {

@@ -58,6 +58,7 @@ import {
   getElementByKeyOrThrow,
   getNodeFromDOM,
   getTextNodeOffset,
+  isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
   scrollIntoViewIfNeeded,
   toggleTextFormatType,
@@ -2277,8 +2278,44 @@ export function internalCreateSelection(
   );
   // If the user is attempting to click selection back onto text, then
   // we should attempt create a range selection.
-  if (rangeSelection === null && $isNodeSelection(lastSelection)) {
-    return lastSelection.clone();
+  // if (
+  //   (rangeSelection === null ||
+  //     (domSelection !== null &&
+  //       isSelectionCapturedInDecoratorInput(
+  //         domSelection.anchorNode as Node,
+  //       ))) &&
+  //   $isNodeSelection(lastSelection)
+  // ) {
+  //   return lastSelection.clone();
+  // }
+  if ($isNodeSelection(lastSelection)) {
+    if (
+      domSelection === null ||
+      (domSelection.focusNode === null && domSelection.anchorNode === null)
+    ) {
+      return lastSelection.clone();
+    }
+    if (
+      domSelection.anchorNode === domSelection.focusNode &&
+      domSelection.anchorOffset === domSelection.focusOffset
+    ) {
+      const node = domSelection.anchorNode;
+      if (node !== null && node.children !== undefined) {
+        const resolvedNode = Array.from(node.children)[
+          domSelection.anchorOffset
+        ];
+        if (isSelectionCapturedInDecoratorInput(resolvedNode)) {
+          return lastSelection.clone();
+        }
+      }
+    }
+    // if (domSelection !== null) {
+    //   const anchorDOM = domSelection.anchorNode as Node;
+    //   if (isSelectionCapturedInDecoratorInput(anchorDOM)) {
+    //     console.info('here');
+    //     return lastSelection.clone();
+    //   }
+    // }
   }
 
   return rangeSelection;

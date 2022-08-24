@@ -46,6 +46,7 @@ import {
   $isGridSelection,
   $isNodeSelection,
   $isRangeSelection,
+  $isRootNode,
   $isTextNode,
   CLICK_COMMAND,
   COMMAND_PRIORITY_EDITOR,
@@ -807,9 +808,11 @@ export function registerRichText(
         }
         event.preventDefault();
         const {anchor} = selection;
-        if (selection.isCollapsed() && anchor.offset === 0) {
+        const anchorNode = anchor.getNode();
+
+        if (selection.isCollapsed() && anchor.offset === 0 && !$isRootNode(anchorNode)) {
           const element = $getNearestBlockElementAncestorOrThrow(
-            anchor.getNode(),
+            anchorNode,
           );
           if (element.getIndent() > 0) {
             return editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);

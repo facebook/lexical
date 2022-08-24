@@ -92,7 +92,7 @@ function HorizontalRuleComponent({nodeKey}: {nodeKey: NodeKey}) {
     );
   }, [clearSelection, editor, isSelected, onDelete, setSelected]);
 
-  return <hr ref={hrRef} className={isSelected ? 'selected' : ''} />;
+  return <hr ref={hrRef} className={isSelected ? 'selected' : undefined} />;
 }
 
 export class HorizontalRuleNode extends DecoratorNode<JSX.Element> {

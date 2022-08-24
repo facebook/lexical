@@ -67,6 +67,7 @@ test.describe('Images', () => {
 
     await focusEditor(page);
     await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('ArrowLeft');
     await assertSelection(page, {
       anchorOffset: 0,
       anchorPath: [0],
@@ -75,6 +76,7 @@ test.describe('Images', () => {
     });
 
     await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowRight');
     await assertSelection(page, {
       anchorOffset: 1,
       anchorPath: [0],
@@ -82,6 +84,7 @@ test.describe('Images', () => {
       focusPath: [0],
     });
 
+    await page.keyboard.press('ArrowRight');
     await page.keyboard.press('ArrowRight');
     await page.keyboard.press('Backspace');
 

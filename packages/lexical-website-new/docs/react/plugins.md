@@ -6,6 +6,14 @@ sidebar_position: 1
 
 React-based plugins are using Lexical editor instance from `<LexicalComposer>` context:
 
+```js
+import {LexicalComposer} from '@lexical/react/LexicalComposer';
+import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
+import {ContentEditable} from '@lexical/react/LexicalContentEditable';
+import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
+import {OnChangePlugin} from '@lexical/react/LexicalOnChangePlugin';
+```
+
 ```jsx
 <LexicalComposer initialConfig={initialConfig}>
   <PlainTextPlugin

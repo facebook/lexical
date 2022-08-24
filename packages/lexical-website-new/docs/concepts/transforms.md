@@ -92,9 +92,9 @@ Transforms are very specific to a type of node. This applies to both the declara
 
 ```js
 // Won't trigger
-editor.addTransform(ParagraphNode, ..)
+editor.registerNodeTransform(ParagraphNode, ..)
 // Will trigger as TextNode was marked dirty
-editor.addTransform(TextNode, ..)
+editor.registerNodeTransform(TextNode, ..)
 editor.update(() => {
   const textNode = $getNodeByKey('3');
   textNode.setTextContent('foo');
@@ -107,7 +107,7 @@ You remove a node, its parent is marked dirty, also the node's immediate sibling
 You move a node via `replace`, rules 2 and 1 are applied.
 
 ```js
-editor.addTransform(ParagraphNode, paragraph => {
+editor.registerNodeTransform(ParagraphNode, paragraph => {
  // Triggers
 });
 editor.update(() => {

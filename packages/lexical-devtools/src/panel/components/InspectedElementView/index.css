@@ -4,11 +4,9 @@
 }
 
 .inspected-element-view {
-  align-self: start;
   background: var(--main-dark-gray);
   border: 1px solid var(--highlight-dark-gray);
   color: var(--main-white);
-  grid-area: inspected-element;
   height: calc(100vh - var(--top-row-height));
   left: calc(100vw - var(--right-column-width));
   overflow: auto;

@@ -1,10 +1,8 @@
 .tree-view-output {
   background: var(--main-dark-gray);
-  /* border: 1px solid var(--highlight-dark-gray); */
   color: var(--main-white);
   font-size: 1.2em;
   font-weight: 400;
-  grid-area: tree-view;
   height: calc(100vh - var(--top-row-height));
   line-height: 1.1;
   margin: 0;

@@ -1,10 +1,11 @@
 .time-travel-view {
+  align-items: center;
   background: var(--main-dark-gray);
   border: 1px solid var(--highlight-dark-gray);
+  display: flex;
   color: var(--main-white);
-  grid-area: time-travel;
+  height: var(--top-row-height);
   left: calc(100vw - var(--right-column-width));
-  padding: 1em 2em;
   position: fixed;
   text-align: left;
   top: 0em;

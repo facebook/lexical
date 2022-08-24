@@ -1,11 +1,15 @@
+.selection-container {
+  text-align: left;
+}
+
 .selection-view {
+  align-items: center;
   background: var(--main-dark-gray);
   border: 1px solid var(--highlight-dark-gray);
   color: var(--main-white);
-  grid-area: selection;
+  display: flex;
   height: var(--top-row-height);
   left: 0em;
-  padding: 1em 2em;
   position: fixed;
   text-align: left;
   top: 0em;

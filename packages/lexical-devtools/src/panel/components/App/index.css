@@ -1,10 +1,4 @@
 .App {
-  display: grid;
-  grid-template-columns: calc(100vw - 24em) 24em;
-  grid-template-rows: 3.5em auto;
-  grid-template-areas:
-    'selection time-travel'
-    'tree-view inspected-element';
   text-align: center;
 }
 

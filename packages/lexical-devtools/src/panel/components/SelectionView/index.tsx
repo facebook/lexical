@@ -11,7 +11,11 @@ import {DevToolsSelection} from 'packages/lexical-devtools/types';
 import * as React from 'react';
 
 function SelectionView({selection}: {selection: DevToolsSelection | null}) {
-  return <div className="selection-view">selection view</div>;
+  return (
+    <div className="selection-view">
+      <div className="selection-container">selection view</div>
+    </div>
+  );
 }
 
 export default SelectionView;

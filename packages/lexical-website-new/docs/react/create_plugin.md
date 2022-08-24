@@ -14,7 +14,7 @@ Lexical's React plugin interface is simple - just create a React component and a
  </LexicalComposer>
 ```
 
-If the Plugin introduces new nodes. they have to be registered in `initialConfig.nodes`:
+If the Plugin introduces new nodes, they have to be registered in `initialConfig.nodes`:
 
 ```js
 const initialConfig = {

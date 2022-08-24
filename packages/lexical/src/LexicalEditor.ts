@@ -798,14 +798,15 @@ export class LexicalEditor {
         },
         {
           onUpdate: () => {
-            rootElement.removeAttribute('autocapitalize');
-
             if (callbackFn) {
               callbackFn();
             }
           },
         },
       );
+      setTimeout(() => {
+        rootElement.removeAttribute('autocapitalize');
+      }, 10)
     }
   }
 

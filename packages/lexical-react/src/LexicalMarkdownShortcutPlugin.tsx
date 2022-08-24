@@ -36,7 +36,7 @@ const HR: ElementTransformer = {
   },
   type: 'element',
 };
-const DEFAULT_TRANSFORMERS = [HR, ...TRANSFORMERS];
+export const DEFAULT_TRANSFORMERS = [HR, ...TRANSFORMERS];
 
 export function MarkdownShortcutPlugin({
   transformers = DEFAULT_TRANSFORMERS,

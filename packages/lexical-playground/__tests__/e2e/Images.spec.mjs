@@ -120,7 +120,7 @@ test.describe('Images', () => {
                   alt="Yellow flower in tilt shift lens"
                   draggable="false"
                   style="height: inherit; max-width: 500px; width: inherit;"
-                  class="focused" />
+                  class="focused draggable" />
               </div>
               <div>
                 <button class="image-caption-button">Add Caption</button>
@@ -216,7 +216,7 @@ test.describe('Images', () => {
     await insertSampleImage(page);
 
     await focusEditor(page);
-    await moveLeft(page, 2);
+    await moveLeft(page, 4);
 
     await assertHTML(
       page,
@@ -304,7 +304,7 @@ test.describe('Images', () => {
     await insertSampleImage(page);
 
     await focusEditor(page);
-    await moveLeft(page, 2);
+    await moveLeft(page, 4);
 
     await assertHTML(
       page,

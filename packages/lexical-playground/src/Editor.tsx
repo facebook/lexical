@@ -189,7 +189,7 @@ export default function Editor(): JSX.Element {
           {showTableOfContents && <TableOfContentsPlugin />}
         </div>
       </div>
-      <ActionsPlugin isRichText={isRichText} />
+      <ActionsPlugin isRichText={isRichText} showTreeView={showTreeView} />
       {showTreeView && <TreeViewPlugin />}
     </>
   );

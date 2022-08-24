@@ -38,8 +38,10 @@ import {
 
 export default function ActionsPlugin({
   isRichText,
+  showTreeView,
 }: {
   isRichText: boolean;
+  showTreeView: boolean;
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
   const [isReadOnly, setIsReadOnly] = useState(() => editor.isReadOnly());
@@ -108,7 +110,7 @@ export default function ActionsPlugin({
   }, [editor]);
 
   return (
-    <div className="actions">
+    <div className={`actions ${showTreeView ? 'tree-view' : ''}`}>
       {SUPPORT_SPEECH_RECOGNITION && (
         <button
           onClick={() => {

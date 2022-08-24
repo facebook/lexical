@@ -2300,10 +2300,13 @@ export function internalCreateSelection(
       domSelection.anchorOffset === domSelection.focusOffset
     ) {
       const node = domSelection.anchorNode;
+      // @ts-ignore
       if (node !== null && node.children !== undefined) {
+        // @ts-ignore
         const resolvedNode = Array.from(node.children)[
           domSelection.anchorOffset
         ];
+        // @ts-ignore
         if (isSelectionCapturedInDecoratorInput(resolvedNode)) {
           return lastSelection.clone();
         }

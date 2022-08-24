@@ -910,16 +910,19 @@ i.prettier-error {
 
 .editor-shell .editor-image img {
   max-width: 100%;
+  cursor: default;
 }
 
 .editor-shell .editor-image img.focused {
   outline: 2px solid rgb(60, 132, 244);
   user-select: none;
-  cursor: move;
+}
+
+.editor-shell .editor-image img.focused.draggable {
   cursor: grab;
 }
 
-.editor-shell .editor-image img.focused:active {
+.editor-shell .editor-image img.focused.draggable:active {
   cursor: grabbing;
 }
 

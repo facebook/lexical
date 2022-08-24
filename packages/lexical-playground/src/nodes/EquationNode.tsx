@@ -18,6 +18,8 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {mergeRegister} from '@lexical/utils';
 import {
   $getNodeByKey,
+  $getSelection,
+  $isNodeSelection,
   COMMAND_PRIORITY_HIGH,
   DecoratorNode,
   KEY_ESCAPE_COMMAND,
@@ -96,8 +98,22 @@ function EquationComponent({
           COMMAND_PRIORITY_HIGH,
         ),
       );
+    } else {
+      return editor.registerUpdateListener(({editorState}) => {
+        const isSelected = editorState.read(() => {
+          const selection = $getSelection();
+          return (
+            $isNodeSelection(selection) &&
+            selection.has(nodeKey) &&
+            selection.getNodes().length === 1
+          );
+        });
+        if (isSelected) {
+          setShowEquationEditor(true);
+        }
+      });
     }
-  }, [editor, onHide, showEquationEditor]);
+  }, [editor, nodeKey, onHide, showEquationEditor]);
 
   return (
     <>

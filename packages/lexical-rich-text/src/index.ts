@@ -63,8 +63,10 @@ import {
   INDENT_CONTENT_COMMAND,
   INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
+  KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
+  KEY_ARROW_UP_COMMAND,
   KEY_BACKSPACE_COMMAND,
   KEY_DELETE_COMMAND,
   KEY_ENTER_COMMAND,
@@ -706,14 +708,58 @@ export function registerRichText(
       COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand<KeyboardEvent>(
+      KEY_ARROW_UP_COMMAND,
+      (event) => {
+        const selection = $getSelection();
+        if ($isNodeSelection(selection)) {
+          // If selection is on a node, let's try and move selection
+          // back to being a range selection.
+          const nodes = selection.getNodes();
+          if (nodes.length > 0) {
+            nodes[0].selectPrevious();
+            return true;
+          }
+        }
+        return false;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerCommand<KeyboardEvent>(
+      KEY_ARROW_DOWN_COMMAND,
+      (event) => {
+        const selection = $getSelection();
+        if ($isNodeSelection(selection)) {
+          // If selection is on a node, let's try and move selection
+          // back to being a range selection.
+          const nodes = selection.getNodes();
+          if (nodes.length > 0) {
+            nodes[0].selectNext(0, 0);
+            return true;
+          }
+        }
+        return false;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerCommand<KeyboardEvent>(
       KEY_ARROW_LEFT_COMMAND,
       (event) => {
         const selection = $getSelection();
+        if ($isNodeSelection(selection)) {
+          // If selection is on a node, let's try and move selection
+          // back to being a range selection.
+          const nodes = selection.getNodes();
+          if (nodes.length > 0) {
+            event.preventDefault();
+            nodes[0].selectPrevious();
+            return true;
+          }
+        }
         if (!$isRangeSelection(selection)) {
           return false;
         }
-        const isHoldingShift = event.shiftKey;
         if ($shouldOverrideDefaultCharacterSelection(selection, true)) {
+          const isHoldingShift = event.shiftKey;
           event.preventDefault();
           $moveCharacter(selection, isHoldingShift, true);
           return true;
@@ -726,6 +772,16 @@ export function registerRichText(
       KEY_ARROW_RIGHT_COMMAND,
       (event) => {
         const selection = $getSelection();
+        if ($isNodeSelection(selection)) {
+          // If selection is on a node, let's try and move selection
+          // back to being a range selection.
+          const nodes = selection.getNodes();
+          if (nodes.length > 0) {
+            event.preventDefault();
+            nodes[0].selectNext(0, 0);
+            return true;
+          }
+        }
         if (!$isRangeSelection(selection)) {
           return false;
         }

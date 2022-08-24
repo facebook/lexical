@@ -9,7 +9,7 @@
 import type {LexicalEditor} from 'lexical';
 
 import {TOGGLE_CONNECT_COMMAND} from '@lexical/yjs';
-import {COMMAND_PRIORITY_EDITOR} from 'lexical';
+import {COMMAND_PRIORITY_LOW} from 'lexical';
 import {useEffect, useState} from 'react';
 import {WebsocketProvider} from 'y-websocket';
 import {
@@ -316,9 +316,9 @@ export class CommentStore {
           }
         }
 
-        return true;
+        return false;
       },
-      COMMAND_PRIORITY_EDITOR,
+      COMMAND_PRIORITY_LOW,
     );
 
     const onSharedCommentChanges = (

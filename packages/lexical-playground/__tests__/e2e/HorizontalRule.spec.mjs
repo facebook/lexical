@@ -70,6 +70,7 @@ test.describe('HorizontalRule', () => {
     });
 
     await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowRight');
 
     await assertSelection(page, {
       anchorOffset: 0,
@@ -78,6 +79,7 @@ test.describe('HorizontalRule', () => {
       focusPath: [2],
     });
 
+    await page.keyboard.press('ArrowLeft');
     await page.keyboard.press('ArrowLeft');
 
     await assertSelection(page, {
@@ -89,6 +91,7 @@ test.describe('HorizontalRule', () => {
 
     await page.keyboard.type('Some text');
 
+    await page.keyboard.press('ArrowRight');
     await page.keyboard.press('ArrowRight');
 
     await assertSelection(page, {
@@ -123,6 +126,8 @@ test.describe('HorizontalRule', () => {
     );
 
     await moveToLineBeginning(page);
+
+    await page.keyboard.press('ArrowLeft');
 
     await page.keyboard.press('ArrowLeft');
 

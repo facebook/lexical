@@ -67,6 +67,7 @@ test.describe('Images', () => {
 
     await focusEditor(page);
     await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('ArrowLeft');
     await assertSelection(page, {
       anchorOffset: 0,
       anchorPath: [0],
@@ -75,6 +76,7 @@ test.describe('Images', () => {
     });
 
     await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowRight');
     await assertSelection(page, {
       anchorOffset: 1,
       anchorPath: [0],
@@ -82,6 +84,7 @@ test.describe('Images', () => {
       focusPath: [0],
     });
 
+    await page.keyboard.press('ArrowRight');
     await page.keyboard.press('ArrowRight');
     await page.keyboard.press('Backspace');
 
@@ -117,7 +120,7 @@ test.describe('Images', () => {
                   alt="Yellow flower in tilt shift lens"
                   draggable="false"
                   style="height: inherit; max-width: 500px; width: inherit;"
-                  class="focused" />
+                  class="focused draggable" />
               </div>
               <div>
                 <button class="image-caption-button">Add Caption</button>
@@ -183,6 +186,8 @@ test.describe('Images', () => {
     });
 
     await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('ArrowLeft');
+
     await page.keyboard.press('Delete');
 
     await assertHTML(
@@ -213,7 +218,7 @@ test.describe('Images', () => {
     await insertSampleImage(page);
 
     await focusEditor(page);
-    await moveLeft(page, 2);
+    await moveLeft(page, 4);
 
     await assertHTML(
       page,
@@ -301,7 +306,7 @@ test.describe('Images', () => {
     await insertSampleImage(page);
 
     await focusEditor(page);
-    await moveLeft(page, 2);
+    await moveLeft(page, 4);
 
     await assertHTML(
       page,

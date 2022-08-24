@@ -52,6 +52,7 @@ function ExcalidrawComponent({
   );
   const imageContainerRef = useRef<HTMLImageElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const captionButtonRef = useRef<HTMLButtonElement | null>(null);
   const [isSelected, setSelected, clearSelection] =
     useLexicalNodeSelection(nodeKey);
   const [isResizing, setIsResizing] = useState<boolean>(false);
@@ -184,6 +185,7 @@ function ExcalidrawComponent({
           />
           {(isSelected || isResizing) && (
             <ImageResizer
+              buttonRef={captionButtonRef}
               showCaption={true}
               setShowCaption={() => null}
               imageRef={imageContainerRef}

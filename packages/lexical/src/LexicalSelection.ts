@@ -29,6 +29,7 @@ import {
   $isLineBreakNode,
   $isRootNode,
   $isTextNode,
+  $setSelection,
   DecoratorNode,
   GridCellNode,
   GridNode,
@@ -1652,6 +1653,14 @@ export class RangeSelection implements BaseSelection {
     // Handle the selection movement around decorators.
     const possibleNode = $getDecoratorNode(focus, isBackward);
     if ($isDecoratorNode(possibleNode) && !possibleNode.isIsolated()) {
+      // Make it possible to move selection from range selection to
+      // node selection on the node.
+      if (collapse) {
+        const nodeSelection = $createNodeSelection();
+        nodeSelection.add(possibleNode.__key);
+        $setSelection(nodeSelection);
+        return;
+      }
       const sibling = isBackward
         ? possibleNode.getPreviousSibling()
         : possibleNode.getNextSibling();

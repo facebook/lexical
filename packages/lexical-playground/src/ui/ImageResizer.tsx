@@ -25,6 +25,7 @@ const Direction = {
 export default function ImageResizer({
   onResizeStart,
   onResizeEnd,
+  buttonRef,
   imageRef,
   maxWidth,
   editor,
@@ -32,6 +33,7 @@ export default function ImageResizer({
   setShowCaption,
 }: {
   editor: LexicalEditor;
+  buttonRef: {current: null | HTMLButtonElement};
   imageRef: {current: null | HTMLElement};
   maxWidth?: number;
   onResizeEnd: (width: 'inherit' | number, height: 'inherit' | number) => void;
@@ -39,7 +41,6 @@ export default function ImageResizer({
   setShowCaption: (show: boolean) => void;
   showCaption: boolean;
 }): JSX.Element {
-  const buttonRef = useRef(null);
   const controlWrapperRef = useRef<HTMLDivElement>(null);
   const userSelect = useRef({
     priority: '',

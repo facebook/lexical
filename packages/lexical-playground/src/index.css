@@ -910,16 +910,19 @@ i.prettier-error {
 
 .editor-shell .editor-image img {
   max-width: 100%;
+  cursor: default;
 }
 
 .editor-shell .editor-image img.focused {
   outline: 2px solid rgb(60, 132, 244);
   user-select: none;
-  cursor: move;
+}
+
+.editor-shell .editor-image img.focused.draggable {
   cursor: grab;
 }
 
-.editor-shell .editor-image img.focused:active {
+.editor-shell .editor-image img.focused.draggable:active {
   cursor: grabbing;
 }
 
@@ -1532,4 +1535,24 @@ button.item.dropdown-item-active {
 
 button.item.dropdown-item-active i {
   opacity: 1;
+}
+
+hr {
+  padding: 2px 2px;
+  border: none;
+  margin: 1em 0;
+  cursor: pointer;
+}
+
+hr:after {
+  content: '';
+  display: block;
+  height: 2px;
+  background-color: #ccc;
+  line-height: 2px;
+}
+
+hr.selected {
+  outline: 2px solid rgb(60, 132, 244);
+  user-select: none;
 }

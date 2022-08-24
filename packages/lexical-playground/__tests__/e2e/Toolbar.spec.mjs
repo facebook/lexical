@@ -224,7 +224,7 @@ test.describe('Toolbar', () => {
             <div draggable="true">
               <img
                 alt="Yellow flower in tilt shift lens"
-                class="focused"
+                class="focused draggable"
                 draggable="false"
                 src="${SAMPLE_IMAGE_URL}"
                 style="height: inherit; max-width: 500px; width: inherit" />
@@ -260,7 +260,7 @@ test.describe('Toolbar', () => {
             <div draggable="true">
               <img
                 alt="Yellow flower in tilt shift lens"
-                class="focused"
+                class="focused draggable"
                 draggable="false"
                 src="${SAMPLE_IMAGE_URL}"
                 style="height: inherit; max-width: 500px; width: inherit" />

@@ -14,6 +14,21 @@ Lexical's React plugin interface is simple - just create a React component and a
  </LexicalComposer>
 ```
 
+If the Plugin introduces new nodes, they have to be registered in `initialConfig.nodes`:
+
+```js
+const initialConfig = {
+  namespace: "MyEditor",
+  nodes: [MyLexicalNode],
+};
+```
+
+```jsx
+ <LexicalComposer initialConfig={initialConfig}>
+    <MyLexicalPlugin>
+ </LexicalComposer>
+```
+
 LexicalComposer provides access to the underlying LexicalEditor instance via React Context:
 
 ```jsx
@@ -35,7 +50,7 @@ export default function TwitterPlugin(): JSX.Element | null {
 
   useEffect(() => {
     if (!editor.hasNodes([TweetNode])) {
-      throw new Error('TwitterPlugin: TweetNode not registered on editor');
+      throw new Error('TwitterPlugin: TweetNode not registered on editor (initialConfig.nodes)');
     }
 
     return editor.registerCommand<string>(

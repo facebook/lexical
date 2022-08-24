@@ -799,13 +799,17 @@ export class LexicalEditor {
         {
           onUpdate: () => {
             rootElement.removeAttribute('autocapitalize');
-
             if (callbackFn) {
               callbackFn();
             }
           },
         },
       );
+      // In the case where onUpdate doesn't fire (due to the focus update not
+      // occuring).
+      if (this._pendingEditorState === null) {
+        rootElement.removeAttribute('autocapitalize');
+      }
     }
   }
 

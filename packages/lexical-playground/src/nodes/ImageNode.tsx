@@ -24,6 +24,7 @@ import type {
 
 import './ImageNode.css';
 
+import {AutoFocusPlugin} from '@lexical/react/LexicalAutoFocusPlugin';
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
@@ -36,15 +37,20 @@ import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
 import {mergeRegister} from '@lexical/utils';
 import {
+  $createNodeSelection,
   $getNodeByKey,
   $getSelection,
   $isNodeSelection,
+  $setSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
   createEditor,
   DecoratorNode,
   KEY_BACKSPACE_COMMAND,
   KEY_DELETE_COMMAND,
+  KEY_ENTER_COMMAND,
+  KEY_ESCAPE_COMMAND,
+  SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import * as React from 'react';
 import {Suspense, useCallback, useEffect, useRef, useState} from 'react';
@@ -152,7 +158,8 @@ function ImageComponent({
   src: string;
   width: 'inherit' | number;
 }): JSX.Element {
-  const ref = useRef(null);
+  const imageRef = useRef(null);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
   const [isSelected, setSelected, clearSelection] =
     useLexicalNodeSelection(nodeKey);
   const [isResizing, setIsResizing] = useState<boolean>(false);
@@ -161,6 +168,7 @@ function ImageComponent({
   const [selection, setSelection] = useState<
     RangeSelection | NodeSelection | GridSelection | null
   >(null);
+  const activeEditorRef = useRef<LexicalEditor | null>(null);
 
   const onDelete = useCallback(
     (payload: KeyboardEvent) => {
@@ -178,11 +186,61 @@ function ImageComponent({
     [isSelected, nodeKey, setSelected],
   );
 
+  const onEnter = useCallback(
+    (event: KeyboardEvent) => {
+      const latestSelection = $getSelection();
+      const buttonElem = buttonRef.current;
+      if (
+        isSelected &&
+        $isNodeSelection(latestSelection) &&
+        latestSelection.getNodes().length === 1
+      ) {
+        if (showCaption) {
+          // Move focus into nested editor
+          $setSelection(null);
+          event.preventDefault();
+          caption.focus();
+          return true;
+        } else if (
+          buttonElem !== null &&
+          buttonElem !== document.activeElement
+        ) {
+          event.preventDefault();
+          buttonElem.focus();
+          return true;
+        }
+      }
+      return false;
+    },
+    [caption, isSelected, showCaption],
+  );
+
+  const onEscape = useCallback(() => {
+    if (activeEditorRef.current === caption) {
+      $setSelection(null);
+      editor.update(() => {
+        const nodeSelection = $createNodeSelection();
+        nodeSelection.add(nodeKey);
+        $setSelection(nodeSelection);
+      });
+      return true;
+    }
+    return false;
+  }, [caption, editor, nodeKey]);
+
   useEffect(() => {
     return mergeRegister(
       editor.registerUpdateListener(({editorState}) => {
         setSelection(editorState.read(() => $getSelection()));
       }),
+      editor.registerCommand(
+        SELECTION_CHANGE_COMMAND,
+        (_, activeEditor) => {
+          activeEditorRef.current = activeEditor;
+          return false;
+        },
+        COMMAND_PRIORITY_LOW,
+      ),
       editor.registerCommand<MouseEvent>(
         CLICK_COMMAND,
         (payload) => {
@@ -191,7 +249,7 @@ function ImageComponent({
           if (isResizing) {
             return true;
           }
-          if (event.target === ref.current) {
+          if (event.target === imageRef.current) {
             if (!event.shiftKey) {
               clearSelection();
             }
@@ -213,6 +271,12 @@ function ImageComponent({
         onDelete,
         COMMAND_PRIORITY_LOW,
       ),
+      editor.registerCommand(KEY_ENTER_COMMAND, onEnter, COMMAND_PRIORITY_LOW),
+      editor.registerCommand(
+        KEY_ESCAPE_COMMAND,
+        onEscape,
+        COMMAND_PRIORITY_LOW,
+      ),
     );
   }, [
     clearSelection,
@@ -221,6 +285,8 @@ function ImageComponent({
     isSelected,
     nodeKey,
     onDelete,
+    onEnter,
+    onEscape,
     setSelected,
   ]);
 
@@ -260,17 +326,21 @@ function ImageComponent({
   } = useSettings();
 
   const draggable = isSelected && $isNodeSelection(selection);
-  const isFocused = $isNodeSelection(selection) && (isSelected || isResizing);
+  const isFocused = isSelected || isResizing;
 
   return (
     <Suspense fallback={null}>
       <>
         <div draggable={draggable}>
           <LazyImage
-            className={isFocused ? 'focused' : null}
+            className={
+              isFocused
+                ? `focused ${$isNodeSelection(selection) ? 'draggable' : ''}`
+                : null
+            }
             src={src}
             altText={altText}
-            imageRef={ref}
+            imageRef={imageRef}
             width={width}
             height={height}
             maxWidth={maxWidth}
@@ -279,6 +349,7 @@ function ImageComponent({
         {showCaption && (
           <div className="image-caption-container">
             <LexicalNestedComposer initialEditor={caption}>
+              <AutoFocusPlugin />
               <MentionsPlugin />
               <TablePlugin />
               <TableCellActionMenuPlugin />
@@ -306,18 +377,19 @@ function ImageComponent({
                   </Placeholder>
                 }
                 // TODO Remove after it's inherited from the parent (LexicalComposer)
-                initialEditorState={null}
+                initialEditorState={isCollabActive ? null : undefined}
               />
               {showNestedEditorTreeView === true ? <TreeViewPlugin /> : null}
             </LexicalNestedComposer>
           </div>
         )}
-        {resizable && isFocused && (
+        {resizable && $isNodeSelection(selection) && isFocused && (
           <ImageResizer
             showCaption={showCaption}
             setShowCaption={setShowCaption}
             editor={editor}
-            imageRef={ref}
+            buttonRef={buttonRef}
+            imageRef={imageRef}
             maxWidth={maxWidth}
             onResizeStart={onResizeStart}
             onResizeEnd={onResizeEnd}

@@ -1545,7 +1545,7 @@ hr {
 }
 
 hr:after {
-  content: "";
+  content: '';
   display: block;
   height: 2px;
   background-color: #ccc;
@@ -1554,5 +1554,5 @@ hr:after {
 
 hr.selected {
   outline: 2px solid rgb(60, 132, 244);
-  user-select: none; 
+  user-select: none;
 }

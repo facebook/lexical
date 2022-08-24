@@ -810,10 +810,12 @@ export function registerRichText(
         const {anchor} = selection;
         const anchorNode = anchor.getNode();
 
-        if (selection.isCollapsed() && anchor.offset === 0 && !$isRootNode(anchorNode)) {
-          const element = $getNearestBlockElementAncestorOrThrow(
-            anchorNode,
-          );
+        if (
+          selection.isCollapsed() &&
+          anchor.offset === 0 &&
+          !$isRootNode(anchorNode)
+        ) {
+          const element = $getNearestBlockElementAncestorOrThrow(anchorNode);
           if (element.getIndent() > 0) {
             return editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
           }

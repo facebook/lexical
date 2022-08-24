@@ -186,6 +186,8 @@ test.describe('Images', () => {
     });
 
     await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('ArrowLeft');
+    
     await page.keyboard.press('Delete');
 
     await assertHTML(

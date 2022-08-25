@@ -310,7 +310,10 @@ function updateAndRetainSelection(
   updateFn: () => boolean,
 ): void {
   const selection = $getSelection();
-  if (!$isRangeSelection(selection) || !selection.anchor) {
+  // If it's not range selection (or null selection) there's no need to change it,
+  // but we can still run highlighting logic
+  if (!$isRangeSelection(selection)) {
+    updateFn();
     return;
   }
 

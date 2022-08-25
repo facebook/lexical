@@ -147,6 +147,7 @@ export {
   $createParagraphNode,
   $isParagraphNode,
   ParagraphNode,
+  SerializedParagraphNode
 } from './nodes/LexicalParagraphNode';
 export {$isRootNode, RootNode} from './nodes/LexicalRootNode';
 export {$createTextNode, $isTextNode, TextNode} from './nodes/LexicalTextNode';

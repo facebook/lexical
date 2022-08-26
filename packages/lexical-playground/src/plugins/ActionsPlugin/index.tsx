@@ -183,7 +183,6 @@ export default function ActionsPlugin({
         aria-label="Import editor state from JSON">
         <i className="import" />
       </button>
-
       <button
         className="action-button export"
         onClick={() =>

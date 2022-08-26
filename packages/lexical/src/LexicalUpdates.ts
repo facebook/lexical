@@ -645,9 +645,12 @@ export function triggerCommandListeners<P>(
 ): boolean {
   if (editor._updating === false || activeEditor !== editor) {
     let returnVal = false;
-    editor.update(() => {
-      returnVal = triggerCommandListeners(editor, type, payload);
-    });
+    editor.update(
+      () => {
+        returnVal = triggerCommandListeners(editor, type, payload);
+      },
+      {tag: 'ignore-read-only'},
+    );
     return returnVal;
   }
 
@@ -907,6 +910,11 @@ export function updateEditor(
   updateFn: () => void,
   options?: EditorUpdateOptions,
 ): void {
+  const ignoreReadOnly =
+    options &&
+    (options.tag === 'collaboration' || options.tag === 'ignore-read-only');
+  const canUpdate = !editor._readOnly || ignoreReadOnly;
+  invariant(canUpdate, 'Cannot update in readOnly mode.');
   if (editor._updating) {
     editor._updates.push([updateFn, options]);
   } else {

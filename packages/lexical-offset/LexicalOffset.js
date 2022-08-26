@@ -6,4 +6,6 @@
  *
  */
 
-module.exports = require('./dist/LexicalSelection.js');
+'use strict';
+
+module.exports = require('./dist/LexicalOffset.js');

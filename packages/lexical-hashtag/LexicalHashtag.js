@@ -6,4 +6,6 @@
  *
  */
 
-module.exports = require('./dist/LexicalClipboard.js');
+'use strict';
+
+module.exports = require('./dist/LexicalHashtag.js');

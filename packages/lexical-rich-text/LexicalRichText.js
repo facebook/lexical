@@ -6,4 +6,6 @@
  *
  */
 
-module.exports = require('./dist/LexicalOverflow.js');
+'use strict';
+
+module.exports = require('./dist/LexicalRichText.js');

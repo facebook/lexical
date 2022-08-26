@@ -128,6 +128,7 @@ const PASS_THROUGH_COMMAND = Object.freeze({});
 const ANDROID_COMPOSITION_LATENCY = 30;
 const rootElementEvents: RootElementEvents = [
   ['keydown', onKeyDown],
+  ['mousedown', onMouseDown],
   ['compositionstart', onCompositionStart],
   ['compositionend', onCompositionEnd],
   ['input', onInput],
@@ -154,6 +155,7 @@ let lastKeyDownTimeStamp = 0;
 let lastKeyCode = 0;
 let rootElementsRegistered = 0;
 let isSelectionChangeFromDOMUpdate = false;
+let isSelectionChangeFromMouseDown = false;
 let isInsertLineBreak = false;
 let isFirefoxEndingComposition = false;
 let collapsedSelectionFormat: [number, number, NodeKey, number] = [
@@ -308,25 +310,14 @@ function onClick(event: MouseEvent, editor: LexicalEditor): void {
         domSelection.removeAllRanges();
         selection.dirty = true;
       }
-    } else if (domSelection && $isNodeSelection(selection)) {
-      const domAnchor = domSelection.anchorNode;
-      // If the user is attempting to click selection back onto text, then
-      // we should attempt create a range selection.
-      // When we click on an empty paragraph node or the end of a paragraph that ends
-      // with an image/poll, the nodeType will be ELEMENT_NODE
-      const allowedNodeType = [DOM_ELEMENT_TYPE, DOM_TEXT_TYPE];
-      if (domAnchor !== null && allowedNodeType.includes(domAnchor.nodeType)) {
-        const newSelection = internalCreateRangeSelection(
-          lastSelection,
-          domSelection,
-          editor,
-        );
-        $setSelection(newSelection);
-      }
     }
 
     dispatchCommand(editor, CLICK_COMMAND, event);
   });
+}
+
+function onMouseDown(_event: MouseEvent, _editor: LexicalEditor) {
+  isSelectionChangeFromMouseDown = true;
 }
 
 function $applyTargetRange(selection: RangeSelection, event: InputEvent): void {
@@ -861,15 +852,38 @@ function getRootElementRemoveHandles(
 const activeNestedEditorsMap: Map<string, LexicalEditor> = new Map();
 
 function onDocumentSelectionChange(event: Event): void {
-  const selection = getDOMSelection();
-  if (!selection) {
+  const domSelection = getDOMSelection();
+  if (domSelection === null) {
+    return;
+  }
+  const nextActiveEditor = getNearestEditorFromDOMNode(domSelection.anchorNode);
+  if (nextActiveEditor === null) {
     return;
   }
 
-  const nextActiveEditor = getNearestEditorFromDOMNode(selection.anchorNode);
-
-  if (nextActiveEditor === null) {
-    return;
+  if (isSelectionChangeFromMouseDown) {
+    isSelectionChangeFromMouseDown = false;
+    updateEditor(nextActiveEditor, () => {
+      const lastSelection = $getPreviousSelection();
+      const domAnchorNode = domSelection.anchorNode;
+      if (domAnchorNode === null) {
+        return;
+      }
+      const nodeType = domAnchorNode.nodeType;
+      // If the user is attempting to click selection back onto text, then
+      // we should attempt create a range selection.
+      // When we click on an empty paragraph node or the end of a paragraph that ends
+      // with an image/poll, the nodeType will be ELEMENT_NODE
+      if (nodeType !== DOM_ELEMENT_TYPE && nodeType !== DOM_TEXT_TYPE) {
+        return;
+      }
+      const newSelection = internalCreateRangeSelection(
+        lastSelection,
+        domSelection,
+        nextActiveEditor,
+      );
+      $setSelection(newSelection);
+    });
   }
 
   // When editor receives selection change event, we're checking if
@@ -882,10 +896,10 @@ function onDocumentSelectionChange(event: Event): void {
   const prevActiveEditor = activeNestedEditor || rootEditor;
 
   if (prevActiveEditor !== nextActiveEditor) {
-    onSelectionChange(selection, prevActiveEditor, false);
+    onSelectionChange(domSelection, prevActiveEditor, false);
   }
 
-  onSelectionChange(selection, nextActiveEditor, true);
+  onSelectionChange(domSelection, nextActiveEditor, true);
 
   // If newly selected editor is nested, then add it to the map, clean map otherwise
   if (nextActiveEditor !== rootEditor) {

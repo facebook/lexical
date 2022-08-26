@@ -36,6 +36,38 @@ import {
   SUPPORT_SPEECH_RECOGNITION,
 } from '../SpeechToTextPlugin';
 
+async function sendEditorState(editor: LexicalEditor): Promise<void> {
+  const stringifiedEditorState = JSON.stringify(editor.getEditorState());
+  try {
+    await fetch('http://localhost:1235/setEditorState', {
+      body: stringifiedEditorState,
+      headers: {
+        Accept: 'application/json',
+        'Content-type': 'application/json',
+      },
+      method: 'POST',
+    });
+  } catch {
+    // NO-OP
+  }
+}
+
+async function validateEditorState(editor: LexicalEditor): Promise<void> {
+  const stringifiedEditorState = JSON.stringify(editor.getEditorState());
+  try {
+    await fetch('http://localhost:1235/validateEditorState', {
+      body: stringifiedEditorState,
+      headers: {
+        Accept: 'application/json',
+        'Content-type': 'application/json',
+      },
+      method: 'POST',
+    });
+  } catch {
+    // NO-OP
+  }
+}
+
 export default function ActionsPlugin({
   isRichText,
 }: {
@@ -67,7 +99,12 @@ export default function ActionsPlugin({
   }, [editor]);
 
   useEffect(() => {
-    return editor.registerUpdateListener(() => {
+    return editor.registerUpdateListener(({dirtyElements}) => {
+      // If we are in read only mode, send the editor state
+      // to server and ask for validation if possible.
+      if (isReadOnly && dirtyElements.size > 0) {
+        validateEditorState(editor);
+      }
       editor.getEditorState().read(() => {
         const root = $getRoot();
         const children = root.getChildren();
@@ -84,7 +121,7 @@ export default function ActionsPlugin({
         }
       });
     });
-  }, [editor]);
+  }, [editor, isReadOnly]);
 
   const handleMarkdownToggle = useCallback(() => {
     editor.update(() => {
@@ -133,6 +170,7 @@ export default function ActionsPlugin({
         aria-label="Import editor state from JSON">
         <i className="import" />
       </button>
+
       <button
         className="action-button export"
         onClick={() =>
@@ -160,6 +198,10 @@ export default function ActionsPlugin({
       <button
         className={`action-button ${isReadOnly ? 'unlock' : 'lock'}`}
         onClick={() => {
+          // Send latest editor state to commenting validation server
+          if (!isReadOnly) {
+            sendEditorState(editor);
+          }
           editor.setReadOnly(!editor.isReadOnly());
         }}
         title="Read-Only Mode"

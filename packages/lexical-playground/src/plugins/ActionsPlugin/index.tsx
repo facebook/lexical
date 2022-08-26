@@ -54,8 +54,9 @@ async function sendEditorState(editor: LexicalEditor): Promise<void> {
 
 async function validateEditorState(editor: LexicalEditor): Promise<void> {
   const stringifiedEditorState = JSON.stringify(editor.getEditorState());
+  let response = null;
   try {
-    await fetch('http://localhost:1235/validateEditorState', {
+    response = await fetch('http://localhost:1235/validateEditorState', {
       body: stringifiedEditorState,
       headers: {
         Accept: 'application/json',
@@ -65,6 +66,11 @@ async function validateEditorState(editor: LexicalEditor): Promise<void> {
     });
   } catch {
     // NO-OP
+  }
+  if (response !== null && response.status === 403) {
+    throw new Error(
+      'Editor state validation failed! Server did not accept changes.',
+    );
   }
 }
 
@@ -99,28 +105,35 @@ export default function ActionsPlugin({
   }, [editor]);
 
   useEffect(() => {
-    return editor.registerUpdateListener(({dirtyElements}) => {
-      // If we are in read only mode, send the editor state
-      // to server and ask for validation if possible.
-      if (isReadOnly && dirtyElements.size > 0) {
-        validateEditorState(editor);
-      }
-      editor.getEditorState().read(() => {
-        const root = $getRoot();
-        const children = root.getChildren();
-
-        if (children.length > 1) {
-          setIsEditorEmpty(false);
-        } else {
-          if ($isParagraphNode(children[0])) {
-            const paragraphChildren = children[0].getChildren();
-            setIsEditorEmpty(paragraphChildren.length === 0);
-          } else {
-            setIsEditorEmpty(false);
-          }
+    return editor.registerUpdateListener(
+      ({dirtyElements, prevEditorState, tags}) => {
+        // If we are in read only mode, send the editor state
+        // to server and ask for validation if possible.
+        if (
+          isReadOnly &&
+          dirtyElements.size > 0 &&
+          !tags.has('historic') &&
+          !tags.has('collaboration')
+        ) {
+          validateEditorState(editor);
         }
-      });
-    });
+        editor.getEditorState().read(() => {
+          const root = $getRoot();
+          const children = root.getChildren();
+
+          if (children.length > 1) {
+            setIsEditorEmpty(false);
+          } else {
+            if ($isParagraphNode(children[0])) {
+              const paragraphChildren = children[0].getChildren();
+              setIsEditorEmpty(paragraphChildren.length === 0);
+            } else {
+              setIsEditorEmpty(false);
+            }
+          }
+        });
+      },
+    );
   }, [editor, isReadOnly]);
 
   const handleMarkdownToggle = useCallback(() => {

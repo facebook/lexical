@@ -27,6 +27,7 @@ import {createPortal} from 'react-dom';
 
 import LinkPreview from '../../ui/LinkPreview';
 import {getSelectedNode} from '../../utils/getSelectedNode';
+import {sanitizeUrl} from '../../utils/sanitizeUrl';
 import {setFloatingElemPosition} from '../../utils/setFloatingElemPosition';
 
 function FloatingLinkEditor({
@@ -99,22 +100,6 @@ function FloatingLinkEditor({
     return true;
   }, [anchorElem, editor]);
 
-  const sanitizeUrl = (url: string): string => {
-    /** A pattern that matches safe  URLs. */
-    const SAFE_URL_PATTERN =
-      /^(?:(?:https?|mailto|ftp|tel|file|sms):|[^&:/?#]*(?:[/?#]|$))/gi;
-
-    /** A pattern that matches safe data URLs. */
-    const DATA_URL_PATTERN =
-      /^data:(?:image\/(?:bmp|gif|jpeg|jpg|png|tiff|webp)|video\/(?:mpeg|mp4|ogg|webm)|audio\/(?:mp3|oga|ogg|opus));base64,[a-z0-9+/]+=*$/i;
-
-    url = String(url).trim();
-
-    if (url.match(SAFE_URL_PATTERN) || url.match(DATA_URL_PATTERN)) return url;
-
-    return `https://`;
-  };
-
   useEffect(() => {
     const scrollerElem = anchorElem.parentElement;
 
@@ -178,14 +163,17 @@ function FloatingLinkEditor({
           className="link-input"
           value={linkUrl}
           onChange={(event) => {
-            setLinkUrl(sanitizeUrl(event.target.value));
+            setLinkUrl(event.target.value);
           }}
           onKeyDown={(event) => {
             if (event.key === 'Enter') {
               event.preventDefault();
               if (lastSelection !== null) {
                 if (linkUrl !== '') {
-                  editor.dispatchCommand(TOGGLE_LINK_COMMAND, linkUrl);
+                  editor.dispatchCommand(
+                    TOGGLE_LINK_COMMAND,
+                    sanitizeUrl(linkUrl),
+                  );
                 }
                 setEditMode(false);
               }

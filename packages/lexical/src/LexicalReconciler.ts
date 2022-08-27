@@ -584,9 +584,6 @@ function reconcileNode(
       if (decorator !== null) {
         reconcileDecorator(key, decorator);
       }
-
-      subTreeTextContent += text;
-      editorTextContent += text;
     } else if ($isTextNode(nextNode) && !nextNode.isDirectionless()) {
       // Handle text content, for LTR, LTR cases.
       subTreeDirectionedTextContent += text;

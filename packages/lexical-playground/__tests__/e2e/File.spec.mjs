@@ -16,6 +16,7 @@ import {
   insertUploadImage,
   sleep,
   test,
+  waitForSelector,
 } from '../utils/index.mjs';
 
 test.use({acceptDownloads: true});
@@ -38,6 +39,8 @@ test.describe('File', () => {
     await insertUploadImage(page, [
       'packages/lexical-playground/src/images/yellow-flower-small.jpg',
     ]);
+
+    await waitForSelector(page, '.editor-image img');
 
     const expectedHtml = html`
       <p

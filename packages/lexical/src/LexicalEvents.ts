@@ -918,72 +918,76 @@ export function addRootElementEvents(
     const eventHandler =
       typeof onEvent === 'function'
         ? (event: Event) => {
-            onEvent(event, editor);
+            if (!editor.isReadOnly()) {
+              onEvent(event, editor);
+            }
           }
         : (event: Event) => {
-            switch (eventName) {
-              case 'cut':
-                return dispatchCommand(
-                  editor,
-                  CUT_COMMAND,
-                  event as ClipboardEvent,
-                );
+            if (!editor.isReadOnly()) {
+              switch (eventName) {
+                case 'cut':
+                  return dispatchCommand(
+                    editor,
+                    CUT_COMMAND,
+                    event as ClipboardEvent,
+                  );
 
-              case 'copy':
-                return dispatchCommand(
-                  editor,
-                  COPY_COMMAND,
-                  event as ClipboardEvent,
-                );
+                case 'copy':
+                  return dispatchCommand(
+                    editor,
+                    COPY_COMMAND,
+                    event as ClipboardEvent,
+                  );
 
-              case 'paste':
-                return dispatchCommand(
-                  editor,
-                  PASTE_COMMAND,
-                  event as ClipboardEvent,
-                );
+                case 'paste':
+                  return dispatchCommand(
+                    editor,
+                    PASTE_COMMAND,
+                    event as ClipboardEvent,
+                  );
 
-              case 'dragstart':
-                return dispatchCommand(
-                  editor,
-                  DRAGSTART_COMMAND,
-                  event as DragEvent,
-                );
+                case 'dragstart':
+                  return dispatchCommand(
+                    editor,
+                    DRAGSTART_COMMAND,
+                    event as DragEvent,
+                  );
 
-              case 'dragover':
-                return dispatchCommand(
-                  editor,
-                  DRAGOVER_COMMAND,
-                  event as DragEvent,
-                );
+                case 'dragover':
+                  return dispatchCommand(
+                    editor,
+                    DRAGOVER_COMMAND,
+                    event as DragEvent,
+                  );
 
-              case 'dragend':
-                return dispatchCommand(
-                  editor,
-                  DRAGEND_COMMAND,
-                  event as DragEvent,
-                );
+                case 'dragend':
+                  return dispatchCommand(
+                    editor,
+                    DRAGEND_COMMAND,
+                    event as DragEvent,
+                  );
 
-              case 'focus':
-                return dispatchCommand(
-                  editor,
-                  FOCUS_COMMAND,
-                  event as FocusEvent,
-                );
+                case 'focus':
+                  return dispatchCommand(
+                    editor,
+                    FOCUS_COMMAND,
+                    event as FocusEvent,
+                  );
 
-              case 'blur':
-                return dispatchCommand(
-                  editor,
-                  BLUR_COMMAND,
-                  event as FocusEvent,
-                );
+                case 'blur':
+                  return dispatchCommand(
+                    editor,
+                    BLUR_COMMAND,
+                    event as FocusEvent,
+                  );
 
-              case 'drop':
-                return dispatchCommand(
-                  editor,
-                  DROP_COMMAND,
-                  event as DragEvent,
-                );
+                case 'drop':
+                  return dispatchCommand(
+                    editor,
+                    DROP_COMMAND,
+                    event as DragEvent,
+                  );
+              }
             }
           };
     rootElement.addEventListener(eventName, eventHandler);

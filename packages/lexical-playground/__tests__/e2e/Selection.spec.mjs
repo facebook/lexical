@@ -8,10 +8,12 @@
 
 import {
   moveToLineBeginning,
+  moveToPrevWord,
   pressShiftEnter,
 } from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
+  assertSelection,
   click,
   evaluate,
   expect,
@@ -23,6 +25,7 @@ import {
   IS_MAC,
   keyDownCtrlOrMeta,
   keyUpCtrlOrMeta,
+  pasteFromClipboard,
   selectFromFormatDropdown,
   sleep,
   test,
@@ -197,5 +200,25 @@ test.describe('Selection', () => {
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
       `,
     );
+  });
+
+  test('Can insert inline element withing text and put selection after it', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type('Hello world');
+    await moveToPrevWord(page);
+    await pasteFromClipboard(page, {
+      'text/html': `<a href="https://test.com">link</a>`,
+    });
+    await sleep(3000);
+    await assertSelection(page, {
+      anchorOffset: 4,
+      anchorPath: [0, 1, 0, 0],
+      focusOffset: 4,
+      focusPath: [0, 1, 0, 0],
+    });
   });
 });

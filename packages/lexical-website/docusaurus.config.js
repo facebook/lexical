@@ -69,11 +69,11 @@ const config = {
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         blog: {
-          editUrl: `${GITHUB_REPO_URL}/tree/main/packages/lexical-website-new/blog/`,
+          editUrl: `${GITHUB_REPO_URL}/tree/main/packages/lexical-website/blog/`,
           showReadingTime: true, // TODO: Update when directory finalized
         },
         docs: {
-          editUrl: `${GITHUB_REPO_URL}/tree/main/packages/lexical-website-new/`,
+          editUrl: `${GITHUB_REPO_URL}/tree/main/packages/lexical-website/`,
           path: 'docs',
           remarkPlugins: [importPlugin],
           sidebarPath: require.resolve('./sidebars.js'),

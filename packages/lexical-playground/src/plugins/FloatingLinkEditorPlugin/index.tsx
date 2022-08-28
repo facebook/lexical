@@ -27,6 +27,7 @@ import {createPortal} from 'react-dom';
 
 import LinkPreview from '../../ui/LinkPreview';
 import {getSelectedNode} from '../../utils/getSelectedNode';
+import {sanitizeUrl} from '../../utils/sanitizeUrl';
 import {setFloatingElemPosition} from '../../utils/setFloatingElemPosition';
 
 function FloatingLinkEditor({
@@ -169,7 +170,10 @@ function FloatingLinkEditor({
               event.preventDefault();
               if (lastSelection !== null) {
                 if (linkUrl !== '') {
-                  editor.dispatchCommand(TOGGLE_LINK_COMMAND, linkUrl);
+                  editor.dispatchCommand(
+                    TOGGLE_LINK_COMMAND,
+                    sanitizeUrl(linkUrl),
+                  );
                 }
                 setEditMode(false);
               }

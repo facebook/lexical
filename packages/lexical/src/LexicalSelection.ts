@@ -1394,6 +1394,8 @@ export class RangeSelection implements BaseSelection {
       // then we should attempt to move selection to that.
       const lastChild = $isTextNode(lastNode)
         ? lastNode
+        : $isElementNode(lastNode) && lastNode.isInline()
+        ? lastNode.getLastDescendant()
         : target.getLastDescendant();
       if (!selectStart) {
         // Handle moving selection to end for elements

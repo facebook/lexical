@@ -65,7 +65,7 @@ export class TypeaheadOption {
   }
 }
 
-declare type MenuRenderFn<TOption extends TypeaheadOption> = (
+export type MenuRenderFn<TOption extends TypeaheadOption> = (
   anchorElement: HTMLElement | null,
   itemProps: {
     selectedIndex: number | null;
@@ -494,7 +494,7 @@ function useAnchorElementRef(
   return anchorElementRef;
 }
 
-type TypeaheadMenuPluginArgs<TOption extends TypeaheadOption> = {
+export type TypeaheadMenuPluginArgs<TOption extends TypeaheadOption> = {
   onQueryChange: (matchingString: string | null) => void;
   onSelectOption: (
     option: TOption,
@@ -507,7 +507,10 @@ type TypeaheadMenuPluginArgs<TOption extends TypeaheadOption> = {
   triggerFn: TriggerFn;
 };
 
-type TriggerFn = (text: string, editor: LexicalEditor) => QueryMatch | null;
+export type TriggerFn = (
+  text: string,
+  editor: LexicalEditor,
+) => QueryMatch | null;
 
 export function LexicalTypeaheadMenuPlugin<TOption extends TypeaheadOption>({
   options,

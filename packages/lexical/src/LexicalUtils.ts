@@ -101,7 +101,12 @@ export const scheduleMicroTask: (fn: () => void) => void =
         Promise.resolve().then(fn);
       };
 
-function isSelectionCapturedInDecoratorInput(anchorDOM: Node): boolean {
+export function $isSelectionCapturedInDecorator(node: Node): boolean {
+  return $isDecoratorNode($getNearestNodeFromDOMNode(node));
+}
+
+// TODO change to $ function
+export function isSelectionCapturedInDecoratorInput(anchorDOM: Node): boolean {
   const activeElement = document.activeElement;
   const nodeName = activeElement !== null ? activeElement.nodeName : null;
   return (

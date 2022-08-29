@@ -62,6 +62,21 @@ export async function initialize({
   // which affects CMD+ArrowRight/Left navigation
   page.setViewportSize({height: 1000, width: isCollab ? 2000 : 1000});
   await page.goto(url);
+
+  await exposeLexicalEditor(page);
+}
+
+async function exposeLexicalEditor(page) {
+  let leftFrame = page;
+  if (IS_COLLAB) {
+    leftFrame = await page.frame('left');
+  }
+  await leftFrame.waitForSelector('.tree-view-output pre');
+  await leftFrame.evaluate(() => {
+    window.lexicalEditor = document.querySelector(
+      '.tree-view-output pre',
+    ).__lexicalEditor;
+  });
 }
 
 export const test = base.extend({
@@ -380,8 +395,7 @@ export async function focusEditor(page, parentSelector = '.editor-shell') {
 
 export async function getHTML(page, selector = 'div[contenteditable="true"]') {
   const pageOrFrame = IS_COLLAB ? await page.frame('left') : page;
-  await pageOrFrame.waitForSelector(selector);
-  const element = await pageOrFrame.$(selector);
+  const element = await pageOrFrame.locator(selector);
   return element.innerHTML();
 }
 
@@ -390,11 +404,9 @@ export async function getEditorElement(page, parentSelector = '.editor-shell') {
 
   if (IS_COLLAB) {
     const leftFrame = await page.frame('left');
-    await leftFrame.waitForSelector(selector);
-    return leftFrame.$(selector);
+    return leftFrame.locator(selector);
   } else {
-    await page.waitForSelector(selector);
-    return page.$(selector);
+    return page.locator(selector);
   }
 }
 
@@ -405,6 +417,15 @@ export async function waitForSelector(page, selector, options) {
   } else {
     await page.waitForSelector(selector, options);
   }
+}
+
+export async function selectorBoundingBox(page, selector) {
+  let leftFrame = page;
+  if (IS_COLLAB) {
+    leftFrame = await page.frame('left');
+  }
+  const node = await leftFrame.locator(selector);
+  return await node.boundingBox();
 }
 
 export async function click(page, selector, options) {
@@ -514,41 +535,56 @@ export async function insertImageCaption(page, caption) {
   await page.keyboard.type(caption);
 }
 
+export async function mouseMoveToSelector(page, selector) {
+  const {x, width, y, height} = await selectorBoundingBox(page, selector);
+  await page.mouse.move(x + width / 2, y + height / 2);
+}
+
 export async function dragMouse(
   page,
-  firstBoundingBox,
-  secondBoundingBox,
-  position = 'middle',
+  fromBoundingBox,
+  toBoundingBox,
+  positionStart = 'middle',
+  positionEnd = 'middle',
 ) {
-  await page.mouse.move(
-    firstBoundingBox.x + firstBoundingBox.width / 2,
-    firstBoundingBox.y + firstBoundingBox.height / 2,
-  );
+  let fromX = fromBoundingBox.x;
+  let fromY = fromBoundingBox.y;
+  if (positionStart === 'middle') {
+    fromX += fromBoundingBox.width / 2;
+    fromY += fromBoundingBox.height / 2;
+  } else if (positionStart === 'end') {
+    fromX += fromBoundingBox.width;
+    fromY += fromBoundingBox.height;
+  }
+  await page.mouse.move(fromX, fromY);
   await page.mouse.down();
 
-  let targetX = secondBoundingBox.x;
-  let targetY = secondBoundingBox.y;
-
-  switch (position) {
-    case 'start':
-      break;
-
-    case 'middle':
-      targetX += secondBoundingBox.width / 2;
-      targetY += secondBoundingBox.height / 2;
-      break;
-
-    case 'end':
-      targetX += secondBoundingBox.width;
-      targetY += secondBoundingBox.height;
-      break;
-
-    default:
-      break;
+  let toX = toBoundingBox.x;
+  let toY = toBoundingBox.y;
+  if (positionEnd === 'middle') {
+    toX += toBoundingBox.width / 2;
+    toY += toBoundingBox.height / 2;
+  } else if (positionEnd === 'end') {
+    toX += toBoundingBox.width;
+    toY += toBoundingBox.height;
   }
-
-  await page.mouse.move(targetX, targetY);
+  await page.mouse.move(toX, toY);
   await page.mouse.up();
+}
+
+export async function dragImage(
+  page,
+  toSelector,
+  positionStart = 'middle',
+  positionEnd = 'middle',
+) {
+  await dragMouse(
+    page,
+    await selectorBoundingBox(page, '.editor-image img'),
+    await selectorBoundingBox(page, toSelector),
+    positionStart,
+    positionEnd,
+  );
 }
 
 export function prettifyHTML(string, {ignoreClasses, ignoreInlineStyles} = {}) {
@@ -636,20 +672,18 @@ export async function insertTable(page) {
 }
 
 export async function selectCellsFromTableCords(page, firstCords, secondCords) {
-  let p = page;
-
+  let leftFrame = page;
   if (IS_COLLAB) {
     await focusEditor(page);
-    p = await page.frame('left');
+    leftFrame = await page.frame('left');
   }
 
-  const firstRowFirstColumnCellBoundingBox = await p.locator(
+  const firstRowFirstColumnCellBoundingBox = await leftFrame.locator(
     `table:first-of-type > tr:nth-child(${firstCords.y + 1}) > th:nth-child(${
       firstCords.x + 1
     })`,
   );
-
-  const secondRowSecondCellBoundingBox = await p.locator(
+  const secondRowSecondCellBoundingBox = await leftFrame.locator(
     `table:first-of-type > tr:nth-child(${secondCords.y + 1}) > td:nth-child(${
       secondCords.x + 1
     })`,
@@ -701,30 +735,4 @@ export async function pressToggleUnderline(page) {
   await keyDownCtrlOrMeta(page);
   await page.keyboard.press('u');
   await keyUpCtrlOrMeta(page);
-}
-
-export async function dragImage(page, selector, position = 'middle') {
-  let p = page;
-
-  if (IS_COLLAB) {
-    await focusEditor(page);
-    p = await page.frame('left');
-  }
-
-  const imageBoundingBox = await p.locator('.editor-image img');
-
-  const targetBoundingBox = await p.locator(selector);
-
-  await dragMouse(
-    page,
-    await imageBoundingBox.boundingBox(),
-    await targetBoundingBox.boundingBox(),
-    position,
-  );
-}
-
-export async function mouseMoveTo(page, selector) {
-  const p = IS_COLLAB ? await page.frame('left') : page;
-  const {x, width, y, height} = await p.locator(selector).boundingBox();
-  await page.mouse.move(x + width / 2, y + height / 2);
 }

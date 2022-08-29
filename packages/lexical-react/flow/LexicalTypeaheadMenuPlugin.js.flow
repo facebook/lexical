@@ -7,9 +7,7 @@
  * @flow strict
  */
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {mergeRegister} from '@lexical/utils';
-import type {LexicalEditor, NodeKey, RangeSelection, TextNode} from 'lexical';
+import type {LexicalEditor, NodeKey, TextNode} from 'lexical';
 import * as React from 'react';
 
 export type QueryMatch = {

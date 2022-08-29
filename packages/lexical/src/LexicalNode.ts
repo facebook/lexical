@@ -637,7 +637,6 @@ export class LexicalNode {
   // Setters and mutators
 
   remove(preserveEmptyParent?: boolean): void {
-    errorOnReadOnly();
     removeNode(this, true, preserveEmptyParent);
   }
 
@@ -728,7 +727,6 @@ export class LexicalNode {
   }
 
   insertBefore(nodeToInsert: LexicalNode): LexicalNode {
-    errorOnReadOnly();
     const writableSelf = this.getWritable();
     const writableNodeToInsert = nodeToInsert.getWritable();
     removeFromParent(writableNodeToInsert);

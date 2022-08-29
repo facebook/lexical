@@ -292,30 +292,25 @@ export class ElementNode extends LexicalNode {
     return this.select();
   }
   clear(): this {
-    errorOnReadOnly();
     const writableSelf = this.getWritable();
     const children = this.getChildren();
     children.forEach((child) => child.remove());
     return writableSelf;
   }
   append(...nodesToAppend: LexicalNode[]): this {
-    errorOnReadOnly();
     return this.splice(this.getChildrenSize(), 0, nodesToAppend);
   }
   setDirection(direction: 'ltr' | 'rtl' | null): this {
-    errorOnReadOnly();
     const self = this.getWritable();
     self.__dir = direction;
     return self;
   }
   setFormat(type: ElementFormatType): this {
-    errorOnReadOnly();
     const self = this.getWritable();
     self.__format = type !== '' ? ELEMENT_TYPE_TO_FORMAT[type] : 0;
     return this;
   }
   setIndent(indentLevel: number): this {
-    errorOnReadOnly();
     const self = this.getWritable();
     self.__indent = indentLevel;
     return this;
@@ -325,7 +320,6 @@ export class ElementNode extends LexicalNode {
     deleteCount: number,
     nodesToInsert: Array<LexicalNode>,
   ): this {
-    errorOnReadOnly();
     const writableSelf = this.getWritable();
     const writableSelfKey = writableSelf.__key;
     const writableSelfChildren = writableSelf.__children;

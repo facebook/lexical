@@ -9,16 +9,10 @@
 
 import type {LexicalNode, MutationListener} from 'lexical';
 
-import {$isLinkNode, AutoLinkNode, LinkNode} from '@lexical/link';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {
-  LexicalNodeMenuPlugin,
-  TypeaheadOption,
-} from '@lexical/react/LexicalTypeaheadMenuPlugin';
-import {mergeRegister} from '@lexical/utils';
+import {TypeaheadOption} from '@lexical/react/LexicalTypeaheadMenuPlugin';
 import type {LexicalCommand, LexicalEditor, NodeKey, TextNode} from 'lexical';
 import * as React from 'react';
-import {$getNodeByKey, COMMAND_PRIORITY_EDITOR, createCommand} from 'lexical';
+import {createCommand} from 'lexical';
 
 export type EmbedMatchResult = {
   url: string,

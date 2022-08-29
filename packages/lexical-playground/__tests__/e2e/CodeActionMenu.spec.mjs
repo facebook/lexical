@@ -14,7 +14,7 @@ import {
   expect,
   focusEditor,
   initialize,
-  mouseMoveTo,
+  mouseMoveToSelector,
   pasteFromClipboard,
   test,
   waitForSelector,
@@ -81,7 +81,7 @@ test.describe('CodeActionMenu', () => {
       `,
     );
 
-    await mouseMoveTo(page, 'code.PlaygroundEditorTheme__code');
+    await mouseMoveToSelector(page, 'code.PlaygroundEditorTheme__code');
 
     if (browserName === 'chromium') {
       await context.grantPermissions(['clipboard-write']);
@@ -213,7 +213,7 @@ test.describe('CodeActionMenu', () => {
       `,
     );
 
-    await mouseMoveTo(page, 'code.PlaygroundEditorTheme__code');
+    await mouseMoveToSelector(page, 'code.PlaygroundEditorTheme__code');
     await click(page, 'button[aria-label=prettier]');
 
     await assertHTML(
@@ -281,7 +281,7 @@ test.describe('CodeActionMenu', () => {
       `,
     );
 
-    await mouseMoveTo(page, 'code.PlaygroundEditorTheme__code');
+    await mouseMoveToSelector(page, 'code.PlaygroundEditorTheme__code');
     await click(page, 'button[aria-label=prettier]');
 
     expect(await page.$('i.format.prettier-error')).toBeTruthy();

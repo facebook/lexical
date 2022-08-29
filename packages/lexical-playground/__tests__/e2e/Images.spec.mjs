@@ -6,12 +6,16 @@
  *
  */
 
+import {expect} from '@playwright/test';
+
 import {moveLeft} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
   click,
   dragImage,
+  dragMouse,
+  evaluate,
   focusEditor,
   html,
   initialize,
@@ -20,6 +24,7 @@ import {
   insertUrlImage,
   IS_WINDOWS,
   SAMPLE_IMAGE_URL,
+  selectorBoundingBox,
   test,
   waitForSelector,
 } from '../utils/index.mjs';
@@ -455,7 +460,7 @@ test.describe('Images', () => {
     // but when running the playwright test, we can't get the correct values from `event.rangeParent` and `event.rangeOffset`,
     // so for now we can only test the case of dragging the image to the end of the text
     if (browserName === 'firefox') {
-      await dragImage(page, 'span[data-lexical-text="true"]', 'end');
+      await dragImage(page, 'span[data-lexical-text="true"]', 'middle', 'end');
 
       await waitForSelector(page, '.editor-image img');
 
@@ -541,6 +546,7 @@ test.describe('Images', () => {
     await page.keyboard.press('Enter');
 
     await insertSampleImage(page);
+    await page.pause();
 
     await dragImage(page, 'span[data-lexical-text="true"]');
 
@@ -571,5 +577,33 @@ test.describe('Images', () => {
         </p>
       `,
     );
+  });
+
+  test('Select image, then select text - EditorState._selection updates with mousedown #2901', async ({
+    page,
+    isPlainText,
+    browserName,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    await page.keyboard.type('HelloWorld');
+    await page.keyboard.press('Enter');
+    await insertSampleImage(page);
+    await click(page, '.editor-image img');
+
+    const textBoundingBox = await selectorBoundingBox(
+      page,
+      'span[data-lexical-text="true"]',
+    );
+    await dragMouse(page, textBoundingBox, textBoundingBox, 'start', 'middle');
+
+    const lexicalSelection = await evaluate(page, (editor) => {
+      return window.lexicalEditor._editorState._selection;
+    });
+    expect(lexicalSelection.anchor).toBeTruthy();
+    expect(lexicalSelection.focus).toBeTruthy();
   });
 });

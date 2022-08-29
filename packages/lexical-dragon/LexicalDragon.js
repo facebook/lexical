@@ -6,4 +6,6 @@
  *
  */
 
-module.exports = require('./dist/LexicalCode.js');
+'use strict';
+
+module.exports = require('./dist/LexicalDragon.js');

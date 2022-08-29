@@ -215,18 +215,28 @@ function ImageComponent({
     [caption, isSelected, showCaption],
   );
 
-  const onEscape = useCallback(() => {
-    if (activeEditorRef.current === caption) {
-      $setSelection(null);
-      editor.update(() => {
-        const nodeSelection = $createNodeSelection();
-        nodeSelection.add(nodeKey);
-        $setSelection(nodeSelection);
-      });
-      return true;
-    }
-    return false;
-  }, [caption, editor, nodeKey]);
+  const onEscape = useCallback(
+    (event: KeyboardEvent) => {
+      if (
+        activeEditorRef.current === caption ||
+        buttonRef.current === event.target
+      ) {
+        $setSelection(null);
+        editor.update(() => {
+          const nodeSelection = $createNodeSelection();
+          nodeSelection.add(nodeKey);
+          const parentRootElement = editor.getRootElement();
+          if (parentRootElement !== null) {
+            parentRootElement.focus();
+          }
+          $setSelection(nodeSelection);
+        });
+        return true;
+      }
+      return false;
+    },
+    [caption, editor, nodeKey],
+  );
 
   useEffect(() => {
     return mergeRegister(

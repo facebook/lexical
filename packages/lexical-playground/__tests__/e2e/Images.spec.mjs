@@ -600,9 +600,10 @@ test.describe('Images', () => {
     );
     await dragMouse(page, textBoundingBox, textBoundingBox, 'start', 'middle');
 
-    const selectionTypeOf = await evaluate(page, (editor) => {
-      return window.lexicalEditor._editorState._selection.constructor.name;
+    const lexicalSelection = await evaluate(page, (editor) => {
+      return window.lexicalEditor._editorState._selection;
     });
-    expect(selectionTypeOf).toBe('RangeSelection');
+    expect(lexicalSelection.anchor).toBeTruthy();
+    expect(lexicalSelection.focus).toBeTruthy();
   });
 });

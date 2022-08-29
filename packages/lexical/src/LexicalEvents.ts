@@ -76,6 +76,7 @@ import {updateEditor} from './LexicalUpdates';
 import {
   $flushMutations,
   $getNodeByKey,
+  $isSelectionCapturedInDecorator,
   $isTokenOrInert,
   $setSelection,
   $shouldPreventDefaultAndInsertText,
@@ -316,8 +317,18 @@ function onClick(event: MouseEvent, editor: LexicalEditor): void {
   });
 }
 
-function onMouseDown(_event: MouseEvent, _editor: LexicalEditor) {
-  isSelectionChangeFromMouseDown = true;
+function onMouseDown(event: MouseEvent, editor: LexicalEditor) {
+  // TODO implement text drag & drop
+  const target = event.target;
+  if (target instanceof Node) {
+    updateEditor(editor, () => {
+      // Drag & drop should not recompute selection until mouse up; otherwise the initially
+      // selected content is lost.
+      if (!$isSelectionCapturedInDecorator(target)) {
+        isSelectionChangeFromMouseDown = true;
+      }
+    });
+  }
 }
 
 function $applyTargetRange(selection: RangeSelection, event: InputEvent): void {

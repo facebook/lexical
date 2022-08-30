@@ -43,7 +43,11 @@ import {
   $isTextNode,
 } from 'lexical';
 
-import {$createEquationNode, $isEquationNode, EquationNode} from '../../nodes/EquationNode';
+import {
+  $createEquationNode,
+  $isEquationNode,
+  EquationNode,
+} from '../../nodes/EquationNode';
 import {$createImageNode, $isImageNode, ImageNode} from '../../nodes/ImageNode';
 import {$createTweetNode, $isTweetNode, TweetNode} from '../../nodes/TweetNode';
 

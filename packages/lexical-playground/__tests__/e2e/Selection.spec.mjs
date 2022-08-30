@@ -202,7 +202,7 @@ test.describe('Selection', () => {
     );
   });
 
-  test('Can insert inline element withing text and put selection after it', async ({
+  test('Can insert inline element within text and put selection after it', async ({
     page,
     isPlainText,
   }) => {

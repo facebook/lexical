@@ -42,7 +42,7 @@ export type Transformer =
   | TextMatchTransformer;
 
 export type ElementTransformer = {
-  dependencies?: Array<Klass<LexicalNode>>;
+  dependencies: Array<Klass<LexicalNode>>;
   export: (
     node: LexicalNode,
     // eslint-disable-next-line no-shadow
@@ -66,7 +66,7 @@ export type TextFormatTransformer = Readonly<{
 }>;
 
 export type TextMatchTransformer = Readonly<{
-  dependencies?: Array<Klass<LexicalNode>>;
+  dependencies: Array<Klass<LexicalNode>>;
   export: (
     node: LexicalNode,
     // eslint-disable-next-line no-shadow

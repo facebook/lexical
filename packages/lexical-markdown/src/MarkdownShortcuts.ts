@@ -24,6 +24,7 @@ import {
   $isTextNode,
   $setSelection,
 } from 'lexical';
+import invariant from 'shared/invariant';
 
 import {TRANSFORMERS} from '.';
 import {indexBy, PUNCTUATION_OR_SPACE, transformersByType} from './utils';
@@ -332,6 +333,19 @@ export function registerMarkdownShortcuts(
     byType.textMatch,
     ({trigger}) => trigger,
   );
+
+  for (const transformer of transformers) {
+    const type = transformer.type;
+    if (type === 'element' || type === 'text-match') {
+      const dependencies = transformer.dependencies;
+      if (!editor.hasNodes(dependencies)) {
+        invariant(
+          false,
+          'MarkdownShortcuts: missing dependency for transformer. Ensure node dependency is included in editor initial config.',
+        );
+      }
+    }
+  }
 
   const transform = (
     parentNode: ElementNode,

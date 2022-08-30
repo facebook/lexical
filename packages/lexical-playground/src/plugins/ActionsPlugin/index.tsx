@@ -80,7 +80,7 @@ export default function ActionsPlugin({
   isRichText: boolean;
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
-  const [isReadOnly, setIsReadOnly] = useState(() => editor.isReadOnly());
+  const [isEditable, setIsEditable] = useState(() => editor.isEditable());
   const [isSpeechToText, setIsSpeechToText] = useState(false);
   const [connected, setConnected] = useState(false);
   const [isEditorEmpty, setIsEditorEmpty] = useState(true);
@@ -89,8 +89,8 @@ export default function ActionsPlugin({
 
   useEffect(() => {
     return mergeRegister(
-      editor.registerReadOnlyListener((readOnly) => {
-        setIsReadOnly(readOnly);
+      editor.registerEditableListener((editable) => {
+        setIsEditable(editable);
       }),
       editor.registerCommand<boolean>(
         CONNECTED_COMMAND,
@@ -110,7 +110,7 @@ export default function ActionsPlugin({
         // If we are in read only mode, send the editor state
         // to server and ask for validation if possible.
         if (
-          isReadOnly &&
+          !isEditable &&
           dirtyElements.size > 0 &&
           !tags.has('historic') &&
           !tags.has('collaboration')
@@ -134,7 +134,7 @@ export default function ActionsPlugin({
         });
       },
     );
-  }, [editor, isReadOnly]);
+  }, [editor, isEditable]);
 
   const handleMarkdownToggle = useCallback(() => {
     editor.update(() => {
@@ -208,17 +208,17 @@ export default function ActionsPlugin({
         <i className="clear" />
       </button>
       <button
-        className={`action-button ${isReadOnly ? 'unlock' : 'lock'}`}
+        className={`action-button ${!isEditable ? 'unlock' : 'lock'}`}
         onClick={() => {
           // Send latest editor state to commenting validation server
-          if (!isReadOnly) {
+          if (isEditable) {
             sendEditorState(editor);
           }
-          editor.setReadOnly(!editor.isReadOnly());
+          editor.setEditable(!editor.isEditable());
         }}
         title="Read-Only Mode"
-        aria-label={`${isReadOnly ? 'Unlock' : 'Lock'} read-only mode`}>
-        <i className={isReadOnly ? 'unlock' : 'lock'} />
+        aria-label={`${!isEditable ? 'Unlock' : 'Lock'} read-only mode`}>
+        <i className={!isEditable ? 'unlock' : 'lock'} />
       </button>
       <button
         className="action-button"

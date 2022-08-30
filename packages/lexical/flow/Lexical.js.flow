@@ -836,6 +836,8 @@ type InternalSerializedNode = {
   version: number,
 };
 
+declare export function $getEditor(): LexicalEditor;
+
 declare export function $parseSerializedNode(
   serializedNode: InternalSerializedNode,
 ): LexicalNode;

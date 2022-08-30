@@ -6,23 +6,33 @@
  *
  */
 
-import type {ListNode, ListType} from '@lexical/list';
+import type {ListType} from '@lexical/list';
 import type {HeadingTagType} from '@lexical/rich-text';
-import type {ElementNode, LexicalNode, TextFormatType, TextNode} from 'lexical';
+import type {
+  ElementNode,
+  Klass,
+  LexicalNode,
+  TextFormatType,
+  TextNode,
+} from 'lexical';
 
-import {$createCodeNode, $isCodeNode} from '@lexical/code';
-import {$createLinkNode, $isLinkNode} from '@lexical/link';
+import {$createCodeNode, $isCodeNode, CodeNode} from '@lexical/code';
+import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
 import {
   $createListItemNode,
   $createListNode,
   $isListItemNode,
   $isListNode,
+  ListItemNode,
+  ListNode,
 } from '@lexical/list';
 import {
   $createHeadingNode,
   $createQuoteNode,
   $isHeadingNode,
   $isQuoteNode,
+  HeadingNode,
+  QuoteNode,
 } from '@lexical/rich-text';
 import {$createLineBreakNode, $createTextNode, $isTextNode} from 'lexical';
 
@@ -32,6 +42,7 @@ export type Transformer =
   | TextMatchTransformer;
 
 export type ElementTransformer = {
+  dependencies: Array<Klass<LexicalNode>>;
   export: (
     node: LexicalNode,
     // eslint-disable-next-line no-shadow
@@ -55,6 +66,7 @@ export type TextFormatTransformer = Readonly<{
 }>;
 
 export type TextMatchTransformer = Readonly<{
+  dependencies: Array<Klass<LexicalNode>>;
   export: (
     node: LexicalNode,
     // eslint-disable-next-line no-shadow
@@ -144,6 +156,7 @@ const listExport = (
 };
 
 export const HEADING: ElementTransformer = {
+  dependencies: [HeadingNode],
   export: (node, exportChildren) => {
     if (!$isHeadingNode(node)) {
       return null;
@@ -160,6 +173,7 @@ export const HEADING: ElementTransformer = {
 };
 
 export const QUOTE: ElementTransformer = {
+  dependencies: [QuoteNode],
   export: (node, exportChildren) => {
     if (!$isQuoteNode(node)) {
       return null;
@@ -196,6 +210,7 @@ export const QUOTE: ElementTransformer = {
 };
 
 export const CODE: ElementTransformer = {
+  dependencies: [CodeNode],
   export: (node: LexicalNode) => {
     if (!$isCodeNode(node)) {
       return null;
@@ -217,6 +232,7 @@ export const CODE: ElementTransformer = {
 };
 
 export const UNORDERED_LIST: ElementTransformer = {
+  dependencies: [ListNode, ListItemNode],
   export: (node, exportChildren) => {
     return $isListNode(node) ? listExport(node, exportChildren, 0) : null;
   },
@@ -226,6 +242,7 @@ export const UNORDERED_LIST: ElementTransformer = {
 };
 
 export const CHECK_LIST: ElementTransformer = {
+  dependencies: [ListNode, ListItemNode],
   export: (node, exportChildren) => {
     return $isListNode(node) ? listExport(node, exportChildren, 0) : null;
   },
@@ -235,6 +252,7 @@ export const CHECK_LIST: ElementTransformer = {
 };
 
 export const ORDERED_LIST: ElementTransformer = {
+  dependencies: [ListNode, ListItemNode],
   export: (node, exportChildren) => {
     return $isListNode(node) ? listExport(node, exportChildren, 0) : null;
   },
@@ -299,6 +317,7 @@ export const ITALIC_UNDERSCORE: TextFormatTransformer = {
 // - code should go first as it prevents any transformations inside
 // - then longer tags match (e.g. ** or __ should go before * or _)
 export const LINK: TextMatchTransformer = {
+  dependencies: [LinkNode],
   export: (node, exportChildren, exportFormat) => {
     if (!$isLinkNode(node)) {
       return null;

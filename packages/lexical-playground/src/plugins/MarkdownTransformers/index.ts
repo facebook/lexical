@@ -22,6 +22,7 @@ import {
 import {
   $createHorizontalRuleNode,
   $isHorizontalRuleNode,
+  HorizontalRuleNode,
 } from '@lexical/react/LexicalHorizontalRuleNode';
 import {
   $createTableCellNode,
@@ -32,6 +33,7 @@ import {
   TableCellHeaderStates,
   TableCellNode,
   TableNode,
+  TableRowNode,
 } from '@lexical/table';
 import {
   $createParagraphNode,
@@ -41,11 +43,16 @@ import {
   $isTextNode,
 } from 'lexical';
 
-import {$createEquationNode, $isEquationNode} from '../../nodes/EquationNode';
-import {$createImageNode, $isImageNode} from '../../nodes/ImageNode';
-import {$createTweetNode, $isTweetNode} from '../../nodes/TweetNode';
+import {
+  $createEquationNode,
+  $isEquationNode,
+  EquationNode,
+} from '../../nodes/EquationNode';
+import {$createImageNode, $isImageNode, ImageNode} from '../../nodes/ImageNode';
+import {$createTweetNode, $isTweetNode, TweetNode} from '../../nodes/TweetNode';
 
 export const HR: ElementTransformer = {
+  dependencies: [HorizontalRuleNode],
   export: (node: LexicalNode) => {
     return $isHorizontalRuleNode(node) ? '***' : null;
   },
@@ -66,6 +73,7 @@ export const HR: ElementTransformer = {
 };
 
 export const IMAGE: TextMatchTransformer = {
+  dependencies: [ImageNode],
   export: (node, exportChildren, exportFormat) => {
     if (!$isImageNode(node)) {
       return null;
@@ -89,6 +97,7 @@ export const IMAGE: TextMatchTransformer = {
 };
 
 export const EQUATION: TextMatchTransformer = {
+  dependencies: [EquationNode],
   export: (node, exportChildren, exportFormat) => {
     if (!$isEquationNode(node)) {
       return null;
@@ -108,6 +117,7 @@ export const EQUATION: TextMatchTransformer = {
 };
 
 export const TWEET: ElementTransformer = {
+  dependencies: [TweetNode],
   export: (node) => {
     if (!$isTweetNode(node)) {
       return null;
@@ -128,6 +138,7 @@ export const TWEET: ElementTransformer = {
 const TABLE_ROW_REG_EXP = /^(?:\|)(.+)(?:\|)\s?$/;
 
 export const TABLE: ElementTransformer = {
+  dependencies: [TableNode, TableRowNode, TableCellNode],
   export: (
     node: LexicalNode,
     exportChildren: (elementNode: ElementNode) => string,

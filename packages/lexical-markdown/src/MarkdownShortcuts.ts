@@ -17,6 +17,7 @@ import type {ElementNode, LexicalEditor, TextNode} from 'lexical';
 import {$isCodeNode} from '@lexical/code';
 import {
   $createRangeSelection,
+  $getEditor,
   $getSelection,
   $isLineBreakNode,
   $isRangeSelection,
@@ -54,8 +55,14 @@ function runElementTransformers(
   if (textContent[anchorOffset - 1] !== ' ') {
     return false;
   }
+  const editor = $getEditor();
 
-  for (const {regExp, replace} of elementTransformers) {
+  for (const {dependencies, regExp, replace} of elementTransformers) {
+    if (dependencies !== undefined) {
+      if (!editor.hasNodes(dependencies)) {
+        continue;
+      }
+    }
     const match = textContent.match(regExp);
 
     if (match && match[0].length === anchorOffset) {
@@ -86,6 +93,8 @@ function runTextMatchTransformers(
     return false;
   }
 
+  const editor = $getEditor();
+
   // If typing in the middle of content, remove the tail to do
   // reg exp match up to a string end (caret position)
   if (anchorOffset < textContent.length) {
@@ -93,6 +102,12 @@ function runTextMatchTransformers(
   }
 
   for (const transformer of transformers) {
+    const dependencies = transformer.dependencies;
+    if (dependencies !== undefined) {
+      if (!editor.hasNodes(dependencies)) {
+        continue;
+      }
+    }
     const match = textContent.match(transformer.regExp);
 
     if (match === null) {

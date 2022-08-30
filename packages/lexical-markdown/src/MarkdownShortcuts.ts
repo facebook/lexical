@@ -17,7 +17,6 @@ import type {ElementNode, LexicalEditor, TextNode} from 'lexical';
 import {$isCodeNode} from '@lexical/code';
 import {
   $createRangeSelection,
-  $getEditor,
   $getSelection,
   $isLineBreakNode,
   $isRangeSelection,
@@ -25,6 +24,7 @@ import {
   $isTextNode,
   $setSelection,
 } from 'lexical';
+import invariant from 'shared/invariant';
 
 import {TRANSFORMERS} from '.';
 import {indexBy, PUNCTUATION_OR_SPACE, transformersByType} from './utils';
@@ -55,14 +55,8 @@ function runElementTransformers(
   if (textContent[anchorOffset - 1] !== ' ') {
     return false;
   }
-  const editor = $getEditor();
 
-  for (const {dependencies, regExp, replace} of elementTransformers) {
-    if (dependencies !== undefined) {
-      if (!editor.hasNodes(dependencies)) {
-        continue;
-      }
-    }
+  for (const {regExp, replace} of elementTransformers) {
     const match = textContent.match(regExp);
 
     if (match && match[0].length === anchorOffset) {
@@ -93,8 +87,6 @@ function runTextMatchTransformers(
     return false;
   }
 
-  const editor = $getEditor();
-
   // If typing in the middle of content, remove the tail to do
   // reg exp match up to a string end (caret position)
   if (anchorOffset < textContent.length) {
@@ -102,12 +94,6 @@ function runTextMatchTransformers(
   }
 
   for (const transformer of transformers) {
-    const dependencies = transformer.dependencies;
-    if (dependencies !== undefined) {
-      if (!editor.hasNodes(dependencies)) {
-        continue;
-      }
-    }
     const match = textContent.match(transformer.regExp);
 
     if (match === null) {
@@ -347,6 +333,19 @@ export function registerMarkdownShortcuts(
     byType.textMatch,
     ({trigger}) => trigger,
   );
+
+  for (const transformer of transformers) {
+    const type = transformer.type;
+    if (type === 'element' || type === 'text-match') {
+      const dependencies = transformer.dependencies;
+      if (!editor.hasNodes(dependencies)) {
+        invariant(
+          false,
+          'MarkdownShortcuts: missing dependency for transformer. Ensure node dependency is included in editor initial config.',
+        );
+      }
+    }
+  }
 
   const transform = (
     parentNode: ElementNode,

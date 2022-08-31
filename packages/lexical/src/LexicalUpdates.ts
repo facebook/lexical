@@ -492,15 +492,16 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
     }
   }
 
-  pendingEditorState._readOnly = true;
-
-  if (__DEV__) {
-    handleDEVOnlyPendingUpdateGuarantees(pendingEditorState);
-    if ($isRangeSelection(pendingSelection)) {
-      Object.freeze(pendingSelection.anchor);
-      Object.freeze(pendingSelection.focus);
+  if (!pendingEditorState._readOnly) {
+    pendingEditorState._readOnly = true;
+    if (__DEV__) {
+      handleDEVOnlyPendingUpdateGuarantees(pendingEditorState);
+      if ($isRangeSelection(pendingSelection)) {
+        Object.freeze(pendingSelection.anchor);
+        Object.freeze(pendingSelection.focus);
+      }
+      Object.freeze(pendingSelection);
     }
-    Object.freeze(pendingSelection);
   }
 
   const dirtyLeaves = editor._dirtyLeaves;

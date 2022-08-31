@@ -122,7 +122,6 @@ export {
   $isRangeSelection,
 } from './LexicalSelection';
 export {
-  getActiveEditor as $getEditor,
   $parseSerializedNode,
 } from './LexicalUpdates';
 export {

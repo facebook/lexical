@@ -7,7 +7,8 @@
  *
  */
 
-import type {ListType} from './LexicalListNode';
+import type {SerializedListItemNode} from './LexicalListItemNode';
+import type {ListType, SerializedListNode} from './LexicalListNode';
 import type {LexicalCommand} from 'lexical';
 
 import {createCommand} from 'lexical';
@@ -23,9 +24,8 @@ import {
   $createListItemNode,
   $isListItemNode,
   ListItemNode,
-  SerializedListItemNode
 } from './LexicalListItemNode';
-import {$createListNode, $isListNode, ListNode, SerializedListNode} from './LexicalListNode';
+import {$createListNode, $isListNode, ListNode} from './LexicalListNode';
 import {$getListDepth} from './utils';
 
 export {
@@ -43,7 +43,7 @@ export {
   outdentList,
   removeList,
   SerializedListItemNode,
-  SerializedListNode
+  SerializedListNode,
 };
 
 export const INSERT_UNORDERED_LIST_COMMAND: LexicalCommand<void> =

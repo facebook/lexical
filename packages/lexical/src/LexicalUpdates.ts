@@ -493,6 +493,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   }
 
   if (!pendingEditorState._readOnly) {
+    pendingEditorState._readOnly = true;
     if (__DEV__) {
       handleDEVOnlyPendingUpdateGuarantees(pendingEditorState);
       if ($isRangeSelection(pendingSelection)) {
@@ -501,7 +502,6 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
       }
       Object.freeze(pendingSelection);
     }
-    pendingEditorState._readOnly = true;
   }
 
   const dirtyLeaves = editor._dirtyLeaves;

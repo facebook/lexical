@@ -31,6 +31,7 @@ import {
   $getNearestNodeFromDOMNode,
   $updateTextNodeFromDOMContent,
   getNodeFromDOMNode,
+  getWindow,
   internalGetRoot,
   isFirefoxClipboardEvents,
 } from './LexicalUtils';
@@ -50,7 +51,7 @@ function updateTimeStamp(event: Event) {
 
 function initTextEntryListener(): void {
   if (lastTextEntryTimeStamp === 0) {
-    window.addEventListener('textInput', updateTimeStamp, true);
+    getWindow().addEventListener('textInput', updateTimeStamp, true);
   }
 }
 

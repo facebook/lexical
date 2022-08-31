@@ -1092,7 +1092,7 @@ export function $getDecoratorNode(
 }
 
 export function isFirefoxClipboardEvents(): boolean {
-  const event = window.event;
+  const event = getWindow().event;
   const inputType = event && (event as InputEvent).inputType;
   return (
     inputType === 'insertFromPaste' ||
@@ -1148,7 +1148,7 @@ export function scrollIntoViewIfNeeded(
   if (element !== null) {
     const rect = element.getBoundingClientRect();
 
-    if (rect.bottom > window.innerHeight) {
+    if (rect.bottom > getWindow().innerHeight) {
       element.scrollIntoView(false);
     } else if (rect.top < 0) {
       element.scrollIntoView();
@@ -1211,4 +1211,18 @@ function $hasAncestor(child: LexicalNode, targetNode: LexicalNode): boolean {
     parent = parent.getParent();
   }
   return false;
+}
+
+export function getDefaultView(domElem: HTMLElement): Window | null {
+  const ownerDoc = domElem.ownerDocument;
+  return (ownerDoc && ownerDoc.defaultView) || null;
+}
+
+export function getWindow(): Window {
+  const editor = getActiveEditor();
+  const windowObj = editor._window;
+  if (windowObj === null) {
+    invariant(false, 'window object not found');
+  }
+  return windowObj;
 }

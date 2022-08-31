@@ -24,7 +24,12 @@ import {
   triggerListeners,
   updateEditor,
 } from './LexicalUpdates';
-import {createUID, dispatchCommand, markAllNodesAsDirty} from './LexicalUtils';
+import {
+  createUID,
+  dispatchCommand,
+  getDefaultView,
+  markAllNodesAsDirty,
+} from './LexicalUtils';
 import {DecoratorNode} from './nodes/LexicalDecoratorNode';
 import {LineBreakNode} from './nodes/LexicalLineBreakNode';
 import {ParagraphNode} from './nodes/LexicalParagraphNode';
@@ -450,6 +455,7 @@ export class LexicalEditor {
   _onError: ErrorHandler;
   _htmlConversions: DOMConversionCache;
   _readOnly: boolean;
+  _window: null | Window;
 
   constructor(
     editorState: EditorState,
@@ -508,6 +514,7 @@ export class LexicalEditor {
     this._htmlConversions = htmlConversions;
     this._readOnly = false;
     this._headless = false;
+    this._window = null;
   }
 
   isComposing(): boolean {
@@ -695,11 +702,13 @@ export class LexicalEditor {
       }
 
       if (nextRootElement !== null) {
+        const windowObj = getDefaultView(nextRootElement);
         const style = nextRootElement.style;
         style.userSelect = 'text';
         style.whiteSpace = 'pre-wrap';
         style.wordBreak = 'break-word';
         nextRootElement.setAttribute('data-lexical-editor', 'true');
+        this._window = windowObj;
         this._dirtyType = FULL_RECONCILE;
         initMutationObserver(this);
 
@@ -711,6 +720,8 @@ export class LexicalEditor {
         if (!this._config.disableEvents) {
           addRootElementEvents(nextRootElement, this);
         }
+      } else {
+        this._window = null;
       }
 
       triggerListeners('root', this, false, nextRootElement, prevRootElement);

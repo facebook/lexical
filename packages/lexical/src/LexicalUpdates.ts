@@ -91,6 +91,10 @@ export function getActiveEditorState(): EditorState {
   return activeEditorState;
 }
 
+export function internalGetActiveEditor(): null | LexicalEditor {
+  return activeEditor;
+}
+
 export function getActiveEditor(): LexicalEditor {
   if (activeEditor === null) {
     invariant(
@@ -912,8 +916,4 @@ export function updateEditor(
   } else {
     beginUpdate(editor, updateFn, options);
   }
-}
-
-export function internalGetActiveEditor(): null | LexicalEditor {
-  return activeEditor;
 }

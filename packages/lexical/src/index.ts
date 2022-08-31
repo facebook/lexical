@@ -18,11 +18,13 @@ export type {
   LexicalEditor,
   MutationListener,
   NodeMutation,
+  Proxies,
   ReadOnlyListener,
   SerializedEditor,
   Spread,
 } from './LexicalEditor';
 export type {EditorState, SerializedEditorState} from './LexicalEditorState';
+export type {EventHandler} from './LexicalEvents';
 export type {
   DOMChildConversion,
   DOMConversion,
@@ -110,7 +112,7 @@ export {
   COMMAND_PRIORITY_NORMAL,
   createEditor,
 } from './LexicalEditor';
-export type {EventHandler} from './LexicalEvents';
+export {$withNodeProxy} from './LexicalProxy';
 export {
   $createGridSelection,
   $createNodeSelection,

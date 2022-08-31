@@ -10,7 +10,12 @@ import {$createLinkNode} from '@lexical/link';
 import {$createListItemNode, $createListNode} from '@lexical/list';
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
 import {$createHeadingNode, $createQuoteNode} from '@lexical/rich-text';
-import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  TextNode,
+} from 'lexical';
 import * as React from 'react';
 
 import {isDevPlayground} from './appSettings';
@@ -19,6 +24,7 @@ import {SharedAutocompleteContext} from './context/SharedAutocompleteContext';
 import {SharedHistoryContext} from './context/SharedHistoryContext';
 import Editor from './Editor';
 import logo from './images/logo.svg';
+import {$createACTextNode} from './nodes/ACTextNode';
 import PlaygroundNodes from './nodes/PlaygroundNodes';
 import PasteLogPlugin from './plugins/PasteLogPlugin';
 import TestRecorderPlugin from './plugins/TestRecorderPlugin';
@@ -126,10 +132,25 @@ function App(): JSX.Element {
     onError: (error: Error) => {
       throw error;
     },
+    proxies: new Map([
+      // TODO make this an array instead of Map (better typing)
+      [
+        TextNode,
+        (textNode: TextNode) => {
+          const node = $createACTextNode(textNode.__text);
+          node.setFormat(textNode.format);
+          node.setDetail(textNode.detail);
+          node.setMode(textNode.mode);
+          node.setStyle(textNode.style);
+          return node;
+        },
+      ],
+    ]),
     theme: PlaygroundEditorTheme,
   };
 
   return (
+    // @ts-ignore for now
     <LexicalComposer initialConfig={initialConfig}>
       <SharedHistoryContext>
         <SharedAutocompleteContext>

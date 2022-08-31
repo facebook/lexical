@@ -7,7 +7,7 @@
  */
 
 import type {LexicalComposerContextType} from '@lexical/react/LexicalComposerContext';
-import type {Klass} from 'lexical';
+import type {Klass, Proxies} from 'lexical';
 
 import {
   createLexicalComposerContext,
@@ -39,6 +39,7 @@ type Props = {
     editor__DEPRECATED?: LexicalEditor | null;
     namespace: string;
     nodes?: ReadonlyArray<Klass<LexicalNode>>;
+    proxies?: Proxies;
     onError: (error: Error, editor: LexicalEditor) => void;
     readOnly?: boolean;
     theme?: EditorThemeClasses;
@@ -55,6 +56,7 @@ export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
         editor__DEPRECATED: initialEditor,
         nodes,
         onError,
+        proxies,
         editorState: initialEditorState,
       } = initialConfig;
 
@@ -70,6 +72,7 @@ export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
           namespace,
           nodes,
           onError: (error) => onError(error, newEditor),
+          proxies,
           readOnly: true,
           theme,
         });

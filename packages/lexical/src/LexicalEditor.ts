@@ -129,9 +129,13 @@ export type RegisteredNodes = Map<string, RegisteredNode>;
 export type RegisteredNode = {
   klass: Klass<LexicalNode>;
   transforms: Set<Transform<LexicalNode>>;
+  proxy: null | Proxy;
 };
 
 export type Transform<T extends LexicalNode> = (node: T) => void;
+
+export type Proxy = () => LexicalNode;
+export type Proxies = Map<Klass<LexicalNode>, Proxy>;
 
 export type ErrorHandler = (error: Error) => void;
 
@@ -318,6 +322,7 @@ export function createEditor(editorConfig?: {
   editorState?: EditorState;
   namespace?: string;
   nodes?: ReadonlyArray<Klass<LexicalNode>>;
+  proxies?: Proxies;
   onError?: ErrorHandler;
   parentEditor?: LexicalEditor;
   readOnly?: boolean;
@@ -341,6 +346,8 @@ export function createEditor(editorConfig?: {
     ParagraphNode,
     ...(config.nodes || []),
   ];
+  const nodesLength = nodes.length;
+  const proxies = config.proxies;
   const onError = config.onError;
   const isReadOnly = config.readOnly || false;
   let registeredNodes;
@@ -349,7 +356,7 @@ export function createEditor(editorConfig?: {
     registeredNodes = activeEditor._nodes;
   } else {
     registeredNodes = new Map();
-    for (let i = 0; i < nodes.length; i++) {
+    for (let i = 0; i < nodesLength; i++) {
       const klass = nodes[i];
       // Ensure custom nodes implement required methods.
       if (__DEV__) {
@@ -399,8 +406,16 @@ export function createEditor(editorConfig?: {
         }
       }
       const type = klass.getType();
+      let proxy: null | Proxy = null;
+      if (proxies !== undefined) {
+        const proxyValue = proxies.get(klass);
+        if (proxyValue !== undefined) {
+          proxy = proxyValue;
+        }
+      }
       registeredNodes.set(type, {
         klass,
+        proxy,
         transforms: new Set(),
       });
     }

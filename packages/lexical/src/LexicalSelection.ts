@@ -62,6 +62,7 @@ import {
   scrollIntoViewIfNeeded,
   toggleTextFormatType,
 } from './LexicalUtils';
+import {$withNodeProxy} from './LexicalProxy';
 
 export type TextPointType = {
   _selection: RangeSelection | GridSelection;
@@ -211,7 +212,7 @@ function $transferStartingElementPointToTextPoint(
 ) {
   const element = start.getNode();
   const placementNode = element.getChildAtIndex(start.offset);
-  const textNode = $createTextNode();
+  const textNode = $withNodeProxy(() => $createTextNode());
   const target = $isRootNode(element)
     ? $createParagraphNode().append(textNode)
     : textNode;
@@ -846,7 +847,7 @@ export class RangeSelection implements BaseSelection {
         if (firstNode.getTextContent() === '') {
           firstNode.setFormat(format);
         } else {
-          const textNode = $createTextNode(text);
+          const textNode = $withNodeProxy(() => $createTextNode(text));
           textNode.setFormat(format);
           textNode.select();
           if (startOffset === 0) {

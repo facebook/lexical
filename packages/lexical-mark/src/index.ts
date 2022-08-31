@@ -7,11 +7,12 @@
  *
  */
 
+import type {SerializedMarkNode} from './MarkNode';
 import type {LexicalNode, RangeSelection, TextNode} from 'lexical';
 
 import {$isElementNode, $isTextNode} from 'lexical';
 
-import {$createMarkNode, $isMarkNode, MarkNode, SerializedMarkNode} from './MarkNode';
+import {$createMarkNode, $isMarkNode, MarkNode} from './MarkNode';
 
 export function $unwrapMarkNode(node: MarkNode): void {
   const children = node.getChildren();

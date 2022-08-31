@@ -2281,6 +2281,10 @@ export function internalCreateRangeSelection(
   domSelection: Selection | null,
   editor: LexicalEditor,
 ): null | RangeSelection {
+  const windowObj = editor._window;
+  if (windowObj === null) {
+    return null;
+  }
   // When we create a selection, we try to use the previous
   // selection where possible, unless an actual user selection
   // change has occurred. When we do need to create a new selection
@@ -2295,7 +2299,7 @@ export function internalCreateRangeSelection(
   // reconciliation unless there are dirty nodes that need
   // reconciling.
 
-  const windowEvent = window.event;
+  const windowEvent = windowObj.event;
   const eventType = windowEvent ? windowEvent.type : undefined;
   const isSelectionChange = eventType === 'selectionchange';
   const useDOMSelection =

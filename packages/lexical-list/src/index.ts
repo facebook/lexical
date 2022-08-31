@@ -23,8 +23,9 @@ import {
   $createListItemNode,
   $isListItemNode,
   ListItemNode,
+  SerializedListItemNode
 } from './LexicalListItemNode';
-import {$createListNode, $isListNode, ListNode} from './LexicalListNode';
+import {$createListNode, $isListNode, ListNode, SerializedListNode} from './LexicalListNode';
 import {$getListDepth} from './utils';
 
 export {
@@ -41,6 +42,8 @@ export {
   ListType,
   outdentList,
   removeList,
+  SerializedListItemNode,
+  SerializedListNode
 };
 
 export const INSERT_UNORDERED_LIST_COMMAND: LexicalCommand<void> =

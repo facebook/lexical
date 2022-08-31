@@ -14,5 +14,5 @@
   tab-size: 1;
   outline: 0;
   padding: 10px;
-  height: calc(100% - 20px);
+  min-height: calc(100% - 20px);
 }

@@ -120,10 +120,7 @@ export {
   $isNodeSelection,
   $isRangeSelection,
 } from './LexicalSelection';
-export {
-  getActiveEditor as $getEditor,
-  $parseSerializedNode,
-} from './LexicalUpdates';
+export {$parseSerializedNode} from './LexicalUpdates';
 export {
   $getDecoratorNode,
   $getNearestNodeFromDOMNode,

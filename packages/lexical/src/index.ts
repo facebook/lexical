@@ -140,17 +140,17 @@ export {$isElementNode, ElementNode} from './nodes/LexicalElementNode';
 export {$isGridCellNode, GridCellNode} from './nodes/LexicalGridCellNode';
 export {$isGridNode, GridNode} from './nodes/LexicalGridNode';
 export {$isGridRowNode, GridRowNode} from './nodes/LexicalGridRowNode';
+export type {SerializedLineBreakNode} from './nodes/LexicalLineBreakNode';
 export {
   $createLineBreakNode,
   $isLineBreakNode,
   LineBreakNode,
-  SerializedLineBreakNode
 } from './nodes/LexicalLineBreakNode';
+export type {SerializedParagraphNode} from './nodes/LexicalParagraphNode';
 export {
   $createParagraphNode,
   $isParagraphNode,
   ParagraphNode,
-  SerializedParagraphNode
 } from './nodes/LexicalParagraphNode';
 export {$isRootNode, RootNode} from './nodes/LexicalRootNode';
 export {$createTextNode, $isTextNode, TextNode} from './nodes/LexicalTextNode';

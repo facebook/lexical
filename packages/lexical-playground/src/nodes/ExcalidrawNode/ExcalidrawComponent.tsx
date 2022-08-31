@@ -38,7 +38,7 @@ export default function ExcalidrawComponent({
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
   const [isModalOpen, setModalOpen] = useState<boolean>(
-    data === '[]' && !editor.isReadOnly(),
+    data === '[]' && editor.isEditable(),
   );
   const imageContainerRef = useRef<HTMLImageElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
@@ -67,9 +67,9 @@ export default function ExcalidrawComponent({
   // Set editor to readOnly if excalidraw is open to prevent unwanted changes
   useEffect(() => {
     if (isModalOpen) {
-      editor.setReadOnly(true);
+      editor.setEditable(false);
     } else {
-      editor.setReadOnly(false);
+      editor.setEditable(true);
     }
   }, [isModalOpen, editor]);
 
@@ -124,7 +124,7 @@ export default function ExcalidrawComponent({
   }, [editor, nodeKey]);
 
   const setData = (newData: ReadonlyArray<ExcalidrawElementFragment>) => {
-    if (editor.isReadOnly()) {
+    if (!editor.isEditable()) {
       return;
     }
     return editor.update(() => {
@@ -158,7 +158,7 @@ export default function ExcalidrawComponent({
         isShown={isModalOpen}
         onDelete={deleteNode}
         onSave={(newData) => {
-          editor.setReadOnly(false);
+          editor.setEditable(true);
           setData(newData);
           setModalOpen(false);
         }}

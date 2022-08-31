@@ -23,6 +23,7 @@ import {
   pressToggleUnderline,
   SAMPLE_IMAGE_URL,
   test,
+  waitForSelector,
 } from '../utils/index.mjs';
 
 async function assertMarkdownImportExport(
@@ -615,6 +616,7 @@ test.describe('Markdown', () => {
         ')',
     );
     await click(page, '.action-button .markdown');
+    await waitForSelector(page, '.editor-image img');
     await assertHTML(
       page,
       html`

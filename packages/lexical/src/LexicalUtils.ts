@@ -143,12 +143,11 @@ export function getNearestEditorFromDOMNode(
   while (currentNode != null) {
     // @ts-expect-error: internal field
     const editor: LexicalEditor = currentNode.__lexicalEditor;
-    if (editor != null && !editor.isReadOnly()) {
+    if (editor != null) {
       return editor;
     }
     currentNode = currentNode.parentNode;
   }
-
   return null;
 }
 

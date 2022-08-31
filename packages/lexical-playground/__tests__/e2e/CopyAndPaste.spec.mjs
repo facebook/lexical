@@ -1629,28 +1629,7 @@ test.describe('CopyAndPaste', () => {
 
     await assertHTML(
       page,
-      html`
-        <ul class="PlaygroundEditorTheme__ul">
-          <li
-            value="1"
-            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-            dir="ltr">
-            <span data-lexical-text="true">Hello</span>
-          </li>
-          <li
-            value="2"
-            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem">
-            <ul class="PlaygroundEditorTheme__ul">
-              <li
-                value="1"
-                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-                dir="ltr">
-                <span data-lexical-text="true">world!</span>
-              </li>
-            </ul>
-          </li>
-        </ul>
-      `,
+      `<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello</span></li> <li value="2" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"><ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">world!</span></li></ul></li></ul>`,
     );
 
     await assertSelection(page, {
@@ -1688,28 +1667,7 @@ test.describe('CopyAndPaste', () => {
 
     await assertHTML(
       page,
-      html`
-        <ul class="PlaygroundEditorTheme__ul">
-          <li
-            value="1"
-            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem">
-            <ul class="PlaygroundEditorTheme__ul">
-              <li
-                value="1"
-                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-                dir="ltr">
-                <span data-lexical-text="true">Hello</span>
-              </li>
-            </ul>
-          </li>
-          <li
-            value="1"
-            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-            dir="ltr">
-            <span data-lexical-text="true">world!</span>
-          </li>
-        </ul>
-      `,
+      html`<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"><ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello</span></li></ul></li> <li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">world!</span></li></ul>`,
     );
   });
 

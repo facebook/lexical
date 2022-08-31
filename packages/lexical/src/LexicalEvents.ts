@@ -86,6 +86,7 @@ import {
   getDOMTextNode,
   getEditorsToPropagate,
   getNearestEditorFromDOMNode,
+  getWindow,
   isBackspace,
   isBold,
   isCopy,
@@ -237,7 +238,7 @@ function onSelectionChange(
         // If we have marked a collapsed selection format, and we're
         // within the given time range – then attempt to use that format
         // instead of getting the format from the anchor node.
-        const windowEvent = window.event;
+        const windowEvent = getWindow(editor).event;
         const currentTimeStamp = windowEvent
           ? windowEvent.timeStamp
           : performance.now();
@@ -372,7 +373,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
     // user has dom.event.clipboardevents.enabled disabled in
     // about:config. In that case, we need to process the
     // pasted content in the DOM mutation phase.
-    (IS_FIREFOX && isFirefoxClipboardEvents())
+    (IS_FIREFOX && isFirefoxClipboardEvents(editor))
   ) {
     return;
   } else if (inputType === 'insertCompositionText') {

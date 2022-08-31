@@ -510,7 +510,6 @@ export class TextNode extends LexicalNode {
 
   // TODO 0.4 This should just be a `string`.
   setFormat(format: TextFormatType | number): this {
-    errorOnReadOnly();
     const self = this.getWritable();
     self.__format =
       typeof format === 'string' ? TEXT_TYPE_TO_FORMAT[format] : format;
@@ -519,7 +518,6 @@ export class TextNode extends LexicalNode {
 
   // TODO 0.4 This should just be a `string`.
   setDetail(detail: TextDetailType | number): this {
-    errorOnReadOnly();
     const self = this.getWritable();
     self.__detail =
       typeof detail === 'string' ? DETAIL_TYPE_TO_DETAIL[detail] : detail;
@@ -527,7 +525,6 @@ export class TextNode extends LexicalNode {
   }
 
   setStyle(style: string): this {
-    errorOnReadOnly();
     const self = this.getWritable();
     self.__style = style;
     return self;
@@ -539,21 +536,18 @@ export class TextNode extends LexicalNode {
   }
 
   toggleDirectionless(): this {
-    errorOnReadOnly();
     const self = this.getWritable();
     self.__detail ^= IS_DIRECTIONLESS;
     return self;
   }
 
   toggleUnmergeable(): this {
-    errorOnReadOnly();
     const self = this.getWritable();
     self.__detail ^= IS_UNMERGEABLE;
     return self;
   }
 
   setMode(type: TextModeType): this {
-    errorOnReadOnly();
     const mode = TEXT_MODE_TO_TYPE[type];
     const self = this.getWritable();
     self.__mode = mode;
@@ -561,7 +555,6 @@ export class TextNode extends LexicalNode {
   }
 
   setTextContent(text: string): this {
-    errorOnReadOnly();
     const writableSelf = this.getWritable();
     writableSelf.__text = text;
     return writableSelf;
@@ -614,7 +607,6 @@ export class TextNode extends LexicalNode {
     newText: string,
     moveSelection?: boolean,
   ): TextNode {
-    errorOnReadOnly();
     const writableSelf = this.getWritable();
     const text = writableSelf.__text;
     const handledTextLength = newText.length;

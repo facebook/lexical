@@ -36,6 +36,44 @@ import {
   SUPPORT_SPEECH_RECOGNITION,
 } from '../SpeechToTextPlugin';
 
+async function sendEditorState(editor: LexicalEditor): Promise<void> {
+  const stringifiedEditorState = JSON.stringify(editor.getEditorState());
+  try {
+    await fetch('http://localhost:1235/setEditorState', {
+      body: stringifiedEditorState,
+      headers: {
+        Accept: 'application/json',
+        'Content-type': 'application/json',
+      },
+      method: 'POST',
+    });
+  } catch {
+    // NO-OP
+  }
+}
+
+async function validateEditorState(editor: LexicalEditor): Promise<void> {
+  const stringifiedEditorState = JSON.stringify(editor.getEditorState());
+  let response = null;
+  try {
+    response = await fetch('http://localhost:1235/validateEditorState', {
+      body: stringifiedEditorState,
+      headers: {
+        Accept: 'application/json',
+        'Content-type': 'application/json',
+      },
+      method: 'POST',
+    });
+  } catch {
+    // NO-OP
+  }
+  if (response !== null && response.status === 403) {
+    throw new Error(
+      'Editor state validation failed! Server did not accept changes.',
+    );
+  }
+}
+
 export default function ActionsPlugin({
   isRichText,
 }: {
@@ -67,24 +105,36 @@ export default function ActionsPlugin({
   }, [editor]);
 
   useEffect(() => {
-    return editor.registerUpdateListener(() => {
-      editor.getEditorState().read(() => {
-        const root = $getRoot();
-        const children = root.getChildren();
-
-        if (children.length > 1) {
-          setIsEditorEmpty(false);
-        } else {
-          if ($isParagraphNode(children[0])) {
-            const paragraphChildren = children[0].getChildren();
-            setIsEditorEmpty(paragraphChildren.length === 0);
-          } else {
-            setIsEditorEmpty(false);
-          }
+    return editor.registerUpdateListener(
+      ({dirtyElements, prevEditorState, tags}) => {
+        // If we are in read only mode, send the editor state
+        // to server and ask for validation if possible.
+        if (
+          isReadOnly &&
+          dirtyElements.size > 0 &&
+          !tags.has('historic') &&
+          !tags.has('collaboration')
+        ) {
+          validateEditorState(editor);
         }
-      });
-    });
-  }, [editor]);
+        editor.getEditorState().read(() => {
+          const root = $getRoot();
+          const children = root.getChildren();
+
+          if (children.length > 1) {
+            setIsEditorEmpty(false);
+          } else {
+            if ($isParagraphNode(children[0])) {
+              const paragraphChildren = children[0].getChildren();
+              setIsEditorEmpty(paragraphChildren.length === 0);
+            } else {
+              setIsEditorEmpty(false);
+            }
+          }
+        });
+      },
+    );
+  }, [editor, isReadOnly]);
 
   const handleMarkdownToggle = useCallback(() => {
     editor.update(() => {
@@ -160,6 +210,10 @@ export default function ActionsPlugin({
       <button
         className={`action-button ${isReadOnly ? 'unlock' : 'lock'}`}
         onClick={() => {
+          // Send latest editor state to commenting validation server
+          if (!isReadOnly) {
+            sendEditorState(editor);
+          }
           editor.setReadOnly(!editor.isReadOnly());
         }}
         title="Read-Only Mode"

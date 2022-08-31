@@ -204,5 +204,9 @@
   ],
   "typedocOptions": {
     "logLevel": "Verbose"
+  },
+  "ts-node": {
+    "require": ["tsconfig-paths/register"],
+    "transpileOnly": true
   }
 }

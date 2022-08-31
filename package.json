@@ -29,6 +29,7 @@
     "tsc": "tsc",
     "tsc-watch": "tsc -w",
     "collab": "cross-env HOST=localhost PORT=1234 npx y-websocket-server",
+    "validation": "npx ts-node --cwdMode packages/lexical-playground/src/server/validation.ts",
     "test-unit": "jest --selectProjects unit --testPathPattern",
     "test-unit-watch": "npm run test-unit -- --watch --coverage=''",
     "test-e2e-chromium": "cross-env E2E_BROWSER=chromium playwright test --project=\"chromium\"",
@@ -151,6 +152,7 @@
     "rollup": "^2.75.5",
     "tmp": "^0.2.1",
     "ts-jest": "^28.0.2",
+    "ts-node": "^10.9.1",
     "typedoc": "^0.23.10",
     "typescript": "^4.6.4",
     "uuid": "^8.3.2"

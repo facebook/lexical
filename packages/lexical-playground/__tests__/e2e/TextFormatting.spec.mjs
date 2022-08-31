@@ -28,6 +28,7 @@ import {
   insertSampleImage,
   SAMPLE_IMAGE_URL,
   test,
+  waitForSelector,
 } from '../utils/index.mjs';
 
 test.describe('TextFormatting', () => {
@@ -961,6 +962,7 @@ test.describe('TextFormatting', () => {
     await selectCharacters(page, 'left', 2);
 
     if (!isCollab) {
+      await waitForSelector(page, '.editor-image img');
       await assertHTML(
         page,
         html`

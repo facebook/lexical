@@ -82,7 +82,7 @@ export type MutationListener = (
   nodes: Map<NodeKey, NodeMutation>,
   {updateTags: Set<string>, dirtyLeaves: Set<string>},
 ) => void;
-export type ReadOnlyListener = (readOnly: boolean) => void;
+export type EditableListener = (editable: boolean) => void;
 type Listeners = {
   decorator: Set<DecoratorListener>,
   mutation: MutationListeners,
@@ -135,7 +135,7 @@ declare export class LexicalEditor {
   _updateTags: Set<string>;
   _observer: null | MutationObserver;
   _key: string;
-  _readOnly: boolean;
+  _editable: boolean;
   _headless: boolean;
   isComposing(): boolean;
   registerUpdateListener(listener: UpdateListener): () => void;
@@ -147,7 +147,7 @@ declare export class LexicalEditor {
     listener: CommandListener<P>,
     priority: CommandListenerPriority,
   ): () => void;
-  registerReadOnlyListener(listener: ReadOnlyListener): () => void;
+  registerEditableListener(listener: EditableListener): () => void;
   registerMutationListener(
     klass: Class<LexicalNode>,
     listener: MutationListener,
@@ -174,8 +174,8 @@ declare export class LexicalEditor {
   update(updateFn: () => void, options?: EditorUpdateOptions): boolean;
   focus(callbackFn?: () => void, options?: EditorFocusOptions): void;
   blur(): void;
-  isReadOnly(): boolean;
-  setReadOnly(readOnly: boolean): void;
+  isEditable(): boolean;
+  setEditable(editable: boolean): void;
   toJSON(): SerializedEditor;
 }
 type EditorUpdateOptions = {
@@ -268,7 +268,7 @@ declare export function createEditor(editorConfig?: {
   nodes?: $ReadOnlyArray<Class<LexicalNode>>,
   onError: (error: Error) => void,
   disableEvents?: boolean,
-  readOnly?: boolean,
+  editable?: boolean,
 }): LexicalEditor;
 
 /**

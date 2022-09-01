@@ -58,8 +58,7 @@ export function ContentEditable({
   testid,
 }: Props): JSX.Element {
   const [editor] = useLexicalComposerContext();
-
-  const [isReadOnly, setReadOnly] = useState(true);
+  const [isEditable, setEditable] = useState(true);
 
   const ref = useCallback(
     (rootElement: null | HTMLElement) => {
@@ -69,25 +68,25 @@ export function ContentEditable({
   );
 
   useLayoutEffect(() => {
-    setReadOnly(editor.isReadOnly());
-    return editor.registerReadOnlyListener((currentIsReadOnly) => {
-      setReadOnly(currentIsReadOnly);
+    setEditable(editor.isEditable());
+    return editor.registerEditableListener((currentIsEditable) => {
+      setEditable(currentIsEditable);
     });
   }, [editor]);
 
   return (
     <div
-      aria-activedescendant={isReadOnly ? null : ariaActiveDescendantID}
-      aria-autocomplete={isReadOnly ? null : ariaAutoComplete}
-      aria-controls={isReadOnly ? null : ariaControls}
+      aria-activedescendant={!isEditable ? null : ariaActiveDescendantID}
+      aria-autocomplete={!isEditable ? null : ariaAutoComplete}
+      aria-controls={!isEditable ? null : ariaControls}
       aria-describedby={ariaDescribedBy}
       aria-expanded={
-        isReadOnly ? null : role === 'combobox' ? !!ariaExpanded : null
+        !isEditable ? null : role === 'combobox' ? !!ariaExpanded : null
       }
       aria-label={ariaLabel}
       aria-labelledby={ariaLabelledBy}
       aria-multiline={ariaMultiline}
-      aria-owns={isReadOnly ? null : ariaOwneeID}
+      aria-owns={!isEditable ? null : ariaOwneeID}
       aria-required={ariaRequired}
       autoCapitalize={
         autoCapitalize !== undefined ? String(autoCapitalize) : undefined
@@ -96,11 +95,11 @@ export function ContentEditable({
       autoComplete={autoComplete}
       autoCorrect={autoCorrect !== undefined ? String(autoCorrect) : undefined}
       className={className}
-      contentEditable={!isReadOnly}
+      contentEditable={isEditable}
       data-testid={testid}
       id={id}
       ref={ref}
-      role={isReadOnly ? undefined : role}
+      role={!isEditable ? undefined : role}
       spellCheck={spellCheck}
       style={style}
       tabIndex={tabIndex}

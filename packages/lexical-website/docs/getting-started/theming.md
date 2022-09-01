@@ -71,7 +71,7 @@ const editor = createEditor({
 });
 ```
 
-Many of the Lexical's core nodes also accept theming properies. Here's a more comprehensive theming object:
+Many of the Lexical's core nodes also accept theming properties. Here's a more comprehensive theming object:
 
 ```js
 const exampleTheme = {

@@ -22,7 +22,6 @@ import {
 } from '@lexical/react/LexicalTypeaheadMenuPlugin';
 import {$createHeadingNode, $createQuoteNode} from '@lexical/rich-text';
 import {$wrapLeafNodesInElements} from '@lexical/selection';
-import {INSERT_TABLE_COMMAND} from '@lexical/table';
 import {
   $createParagraphNode,
   $getSelection,
@@ -39,6 +38,7 @@ import catTypingGif from '../../images/cat-typing.gif';
 import {EmbedConfigs} from '../AutoEmbedPlugin';
 import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawPlugin';
 import {INSERT_IMAGE_COMMAND} from '../ImagesPlugin';
+import {INSERT_TABLE_COMMAND} from '../TablePlugin';
 import {
   InsertEquationDialog,
   InsertImageDialog,

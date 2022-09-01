@@ -28,11 +28,13 @@ export function LexicalNestedComposer({
   children,
   initialNodes,
   initialTheme,
+  skipCollabChecks,
 }: {
   children: ReactNode;
   initialEditor: LexicalEditor;
   initialTheme?: EditorThemeClasses;
   initialNodes?: ReadonlyArray<Klass<LexicalNode>>;
+  skipCollabChecks?: true;
 }): JSX.Element {
   const wasCollabPreviouslyReadyRef = useRef(false);
   const parentContext = useContext(LexicalComposerContext);
@@ -91,6 +93,7 @@ export function LexicalNestedComposer({
   // until the collaboration subdocument is ready.
   const {isCollabActive, yjsDocMap} = useCollaborationContext();
   const isCollabReady =
+    skipCollabChecks ||
     wasCollabPreviouslyReadyRef.current ||
     yjsDocMap.has(initialEditor.getKey());
 

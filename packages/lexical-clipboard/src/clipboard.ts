@@ -142,7 +142,7 @@ export function $insertDataTransferForRichText(
   }
 }
 
-function $insertGeneratedNodes(
+export function $insertGeneratedNodes(
   editor: LexicalEditor,
   nodes: Array<LexicalNode>,
   selection: RangeSelection | GridSelection,
@@ -343,7 +343,7 @@ function $mergeGridNodesStrategy(
   }
 }
 
-interface BaseSerializedNode {
+export interface BaseSerializedNode {
   children?: Array<BaseSerializedNode>;
   type: string;
   version: number;
@@ -387,14 +387,19 @@ function $appendNodesToJSON(
   let shouldInclude = selection != null ? currentNode.isSelected() : true;
   const shouldExclude =
     $isElementNode(currentNode) && currentNode.excludeFromCopy('html');
-  let clone = $cloneWithProperties<LexicalNode>(currentNode);
-  clone =
-    $isTextNode(clone) && selection != null
-      ? $sliceSelectedTextNodeContent(selection, clone)
-      : clone;
-  const children = $isElementNode(clone) ? clone.getChildren() : [];
+  let target = currentNode;
 
-  const serializedNode = exportNodeToJSON(clone);
+  if (selection !== null) {
+    let clone = $cloneWithProperties<LexicalNode>(currentNode);
+    clone =
+      $isTextNode(clone) && selection != null
+        ? $sliceSelectedTextNodeContent(selection, clone)
+        : clone;
+    target = clone;
+  }
+  const children = $isElementNode(target) ? target.getChildren() : [];
+
+  const serializedNode = exportNodeToJSON(target);
 
   // TODO: TextNode calls getTextContent() (NOT node.__text) within it's exportJSON method
   // which uses getLatest() to get the text from the original node with the same key.
@@ -402,8 +407,8 @@ function $appendNodesToJSON(
   // same node as far as the LexicalEditor is concerned since it shares a key.
   // We need a way to create a clone of a Node in memory with it's own key, but
   // until then this hack will work for the selected text extract use case.
-  if ($isTextNode(clone)) {
-    (serializedNode as SerializedTextNode).text = clone.__text;
+  if ($isTextNode(target)) {
+    (serializedNode as SerializedTextNode).text = target.__text;
   }
 
   for (let i = 0; i < children.length; i++) {

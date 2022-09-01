@@ -797,7 +797,7 @@ function errorOnTypeKlassMismatch(
   if (registeredNode === undefined) {
     invariant(
       false,
-      'Create node: Attempted to create node %s that was not previously registered on the editor. You can use register your custom nodes.',
+      'Create node: Attempted to create node %s that was not configured to be used on the editor.',
       klass.name,
     );
   }

@@ -12,7 +12,7 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   LexicalNodeMenuPlugin,
   TypeaheadOption,
-} from '@lexical/react/src/LexicalTypeaheadMenuPlugin';
+} from '@lexical/react/LexicalTypeaheadMenuPlugin';
 import {mergeRegister} from '@lexical/utils';
 import {
   $getNodeByKey,

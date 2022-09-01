@@ -18,7 +18,7 @@ function canShowPlaceholderFromCurrentEditorState(
 ): boolean {
   const currentCanShowPlaceholder = editor
     .getEditorState()
-    .read($canShowPlaceholderCurry(editor.isComposing(), editor.isReadOnly()));
+    .read($canShowPlaceholderCurry(editor.isComposing(), editor.isEditable()));
 
   return currentCanShowPlaceholder;
 }
@@ -39,7 +39,7 @@ export function useCanShowPlaceholder(editor: LexicalEditor): boolean {
       editor.registerUpdateListener(() => {
         resetCanShowPlaceholder();
       }),
-      editor.registerReadOnlyListener(() => {
+      editor.registerEditableListener(() => {
         resetCanShowPlaceholder();
       }),
     );

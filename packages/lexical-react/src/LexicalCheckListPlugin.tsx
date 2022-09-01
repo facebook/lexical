@@ -82,7 +82,7 @@ export function CheckListPlugin(): null {
         (event) => {
           const activeItem = getActiveCheckListItem();
 
-          if (activeItem != null && !editor.isReadOnly()) {
+          if (activeItem != null && editor.isEditable()) {
             editor.update(() => {
               const listItemNode = $getNearestNodeFromDOMNode(activeItem);
 
@@ -200,7 +200,7 @@ function handleClick(event: Event) {
     const domNode = event.target as HTMLElement;
     const editor = findEditor(domNode);
 
-    if (editor != null && !editor.isReadOnly()) {
+    if (editor != null && editor.isEditable()) {
       editor.update(() => {
         if (event.target) {
           const node = $getNearestNodeFromDOMNode(domNode);

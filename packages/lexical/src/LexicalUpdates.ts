@@ -530,7 +530,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   // Attempt to update the DOM selection, including focusing of the root element,
   // and scroll into view if needed.
   if (
-    !editor._readOnly &&
+    editor._editable &&
     // domSelection will be null in headless
     domSelection !== null &&
     (needsUpdate || pendingSelection === null || pendingSelection.dirty)
@@ -619,7 +619,7 @@ function triggerMutationListeners(
 }
 
 export function triggerListeners(
-  type: 'update' | 'root' | 'decorator' | 'textcontent' | 'readonly',
+  type: 'update' | 'root' | 'decorator' | 'textcontent' | 'editable',
   editor: LexicalEditor,
   isCurrentlyEnqueuingUpdates: boolean,
   ...payload: unknown[]

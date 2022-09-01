@@ -98,21 +98,21 @@ const removeMutationListener = editor.registerMutationListener(
 removeMutationListener();
 ```
 
-## `registerReadOnlyListener`
+## `registerEditableListener`
 
-Get notified when the editor's read only mode has changed. The editor's read only mode can be changed
-via `editor.setReadOnly(boolean)`.
+Get notified when the editor's mode has changed. The editor's mode can be changed
+via `editor.setEditable(boolean)`.
 
 ```js
-const removeReadOnlyListener = editor.registerReadOnlyListener(
-  (readOnly) => {
-    // The editor's read only mode is passed in!
-    console.log(readOnly);
+const removeEditableListener = editor.registerEditableListener(
+  (editable) => {
+    // The editor's mode is passed in!
+    console.log(editable);
   },
 );
 
 // Do not forget to unregister the listener when no longer needed!
-removeReadOnlyListener();
+removeEditableListener();
 ```
 
 ## `registerDecoratorListener`

@@ -944,12 +944,12 @@ export function addRootElementEvents(
     const eventHandler =
       typeof onEvent === 'function'
         ? (event: Event) => {
-            if (!editor.isReadOnly()) {
+            if (editor.isEditable()) {
               onEvent(event, editor);
             }
           }
         : (event: Event) => {
-            if (!editor.isReadOnly()) {
+            if (editor.isEditable()) {
               switch (eventName) {
                 case 'cut':
                   return dispatchCommand(

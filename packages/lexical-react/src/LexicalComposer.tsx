@@ -40,7 +40,7 @@ type Props = {
     namespace: string;
     nodes?: ReadonlyArray<Klass<LexicalNode>>;
     onError: (error: Error, editor: LexicalEditor) => void;
-    readOnly?: boolean;
+    editable?: boolean;
     theme?: EditorThemeClasses;
     editorState?: InitialEditorStateType;
   }>;
@@ -67,10 +67,10 @@ export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
 
       if (editor === null) {
         const newEditor = createEditor({
+          editable: false,
           namespace,
           nodes,
           onError: (error) => onError(error, newEditor),
-          readOnly: true,
           theme,
         });
         initializeEditor(newEditor, initialEditorState);
@@ -87,9 +87,9 @@ export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
   );
 
   useLayoutEffect(() => {
-    const isReadOnly = initialConfig.readOnly;
+    const isEditable = initialConfig.editable;
     const [editor] = composerContext;
-    editor.setReadOnly(isReadOnly || false);
+    editor.setEditable(isEditable || true);
 
     // We only do this for init
     // eslint-disable-next-line react-hooks/exhaustive-deps

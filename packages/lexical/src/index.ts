@@ -10,6 +10,7 @@
 export type {
   CommandListenerPriority,
   CommandPayloadType,
+  EditableListener,
   EditorConfig,
   EditorThemeClasses,
   Klass,
@@ -17,7 +18,6 @@ export type {
   LexicalEditor,
   MutationListener,
   NodeMutation,
-  ReadOnlyListener,
   SerializedEditor,
   Spread,
 } from './LexicalEditor';

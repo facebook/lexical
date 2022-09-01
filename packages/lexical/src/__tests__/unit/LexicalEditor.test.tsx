@@ -2047,21 +2047,21 @@ describe('LexicalEditor tests', () => {
     expect(tableRowMutation2[0].get(tableRowKey)).toBe('updated');
   });
 
-  it('readonly listener', () => {
+  it('editable listener', () => {
     init();
 
-    const readOnlyFn = jest.fn();
-    editor.registerReadOnlyListener(readOnlyFn);
+    const editableFn = jest.fn();
+    editor.registerEditableListener(editableFn);
 
-    expect(editor.isReadOnly()).toBe(false);
+    expect(editor.isEditable()).toBe(true);
 
-    editor.setReadOnly(true);
+    editor.setEditable(false);
 
-    expect(editor.isReadOnly()).toBe(true);
+    expect(editor.isEditable()).toBe(false);
 
-    editor.setReadOnly(false);
+    editor.setEditable(true);
 
-    expect(readOnlyFn.mock.calls).toEqual([[true], [false]]);
+    expect(editableFn.mock.calls).toEqual([[false], [true]]);
   });
 
   it('does not add new listeners while triggering existing', async () => {
@@ -2069,7 +2069,7 @@ describe('LexicalEditor tests', () => {
     const mutationListener = jest.fn();
     const nodeTransformListener = jest.fn();
     const textContentListener = jest.fn();
-    const readOnlyListener = jest.fn();
+    const editableListener = jest.fn();
     const commandListener = jest.fn();
     const TEST_COMMAND = createCommand();
 
@@ -2097,10 +2097,10 @@ describe('LexicalEditor tests', () => {
       });
     });
 
-    editor.registerReadOnlyListener(() => {
-      readOnlyListener();
-      editor.registerReadOnlyListener(() => {
-        readOnlyListener();
+    editor.registerEditableListener(() => {
+      editableListener();
+      editor.registerEditableListener(() => {
+        editableListener();
       });
     });
 
@@ -2133,10 +2133,10 @@ describe('LexicalEditor tests', () => {
 
     editor.dispatchCommand(TEST_COMMAND, false);
 
-    editor.setReadOnly(true);
+    editor.setEditable(false);
 
     expect(updateListener).toHaveBeenCalledTimes(1);
-    expect(readOnlyListener).toHaveBeenCalledTimes(1);
+    expect(editableListener).toHaveBeenCalledTimes(1);
     expect(commandListener).toHaveBeenCalledTimes(1);
     expect(textContentListener).toHaveBeenCalledTimes(1);
     expect(nodeTransformListener).toHaveBeenCalledTimes(1);

@@ -782,7 +782,7 @@ function beginUpdate(
   let pendingEditorState = editor._pendingEditorState;
   let editorStateWasCloned = false;
 
-  if (pendingEditorState === null) {
+  if (pendingEditorState === null || pendingEditorState._readOnly) {
     pendingEditorState = editor._pendingEditorState =
       cloneEditorState(currentEditorState);
     editorStateWasCloned = true;

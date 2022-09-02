@@ -438,9 +438,9 @@ function onCopyForRichText(
   event: CommandPayloadType<typeof COPY_COMMAND>,
   editor: LexicalEditor,
 ): void {
-  event.preventDefault();
   const selection = $getSelection();
   if (selection !== null) {
+    event.preventDefault();
     const clipboardData =
       event instanceof KeyboardEvent ? null : event.clipboardData;
     const htmlString = $getHtmlContent(editor);

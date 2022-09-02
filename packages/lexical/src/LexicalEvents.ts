@@ -748,9 +748,12 @@ function onCompositionEnd(
 }
 
 function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
+  if (hasStoppedLexicalPropagation(event)) {
+    return;
+  }
+  stopLexicalPropagation(event);
   lastKeyDownTimeStamp = event.timeStamp;
   lastKeyCode = event.keyCode;
-
   if (editor.isComposing()) {
     return;
   }
@@ -919,6 +922,19 @@ function onDocumentSelectionChange(event: Event): void {
   } else if (activeNestedEditor) {
     activeNestedEditorsMap.delete(rootEditorKey);
   }
+}
+
+function stopLexicalPropagation(event: Event): void {
+  // We attach a special property to ensure the same event doesn't re-fire
+  // for parent editors.
+  // @ts-ignore
+  event._lexicalHandled = true;
+}
+
+function hasStoppedLexicalPropagation(event: Event): boolean {
+  // @ts-ignore
+  const stopped = event._lexicalHandled === true;
+  return stopped;
 }
 
 export type EventHandler = (event: Event, editor: LexicalEditor) => void;

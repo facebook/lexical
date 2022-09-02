@@ -751,6 +751,7 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
   if (hasStoppedLexicalPropagation(event)) {
     return;
   }
+  stopLexicalPropagation(event);
   lastKeyDownTimeStamp = event.timeStamp;
   lastKeyCode = event.keyCode;
   if (editor.isComposing()) {
@@ -933,7 +934,6 @@ function stopLexicalPropagation(event: Event): void {
 function hasStoppedLexicalPropagation(event: Event): boolean {
   // @ts-ignore
   const stopped = event._lexicalHandled === true;
-  stopLexicalPropagation(event);
   return stopped;
 }
 

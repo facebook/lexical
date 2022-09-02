@@ -753,7 +753,6 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
   }
   lastKeyDownTimeStamp = event.timeStamp;
   lastKeyCode = event.keyCode;
-  
   if (editor.isComposing()) {
     return;
   }

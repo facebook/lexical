@@ -508,7 +508,7 @@ export class TextNode extends LexicalNode {
     return;
   }
 
-  // TODO 0.4 This should just be a `string`.
+  // TODO 0.5 This should just be a `string`.
   setFormat(format: TextFormatType | number): this {
     const self = this.getWritable();
     self.__format =
@@ -516,7 +516,7 @@ export class TextNode extends LexicalNode {
     return self;
   }
 
-  // TODO 0.4 This should just be a `string`.
+  // TODO 0.5 This should just be a `string`.
   setDetail(detail: TextDetailType | number): this {
     const self = this.getWritable();
     self.__detail =

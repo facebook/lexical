@@ -21,7 +21,7 @@ import {
   RangeSelection,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
-import {useCallback, useEffect, useRef, useState} from 'react';
+import {Dispatch, useCallback, useEffect, useRef, useState} from 'react';
 import * as React from 'react';
 import {createPortal} from 'react-dom';
 
@@ -32,9 +32,11 @@ import {setFloatingElemPosition} from '../../utils/setFloatingElemPosition';
 
 function FloatingLinkEditor({
   editor,
+  setIsLink,
   anchorElem,
 }: {
   editor: LexicalEditor;
+  setIsLink: Dispatch<boolean>;
   anchorElem: HTMLElement;
 }): JSX.Element {
   const editorRef = useRef<HTMLDivElement | null>(null);
@@ -149,6 +151,25 @@ function FloatingLinkEditor({
     });
   }, [editor, updateLinkEditor]);
 
+  const closeLinkPopup = useCallback(
+    (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !isEditMode) {
+        setIsLink(false);
+      } else if (event.key === 'Escape' && isEditMode) {
+        setEditMode(false);
+      }
+    },
+    [isEditMode, setIsLink],
+  );
+
+  useEffect(() => {
+    window.addEventListener('keydown', closeLinkPopup);
+
+    return () => {
+      window.removeEventListener('keydown', closeLinkPopup);
+    };
+  }, [closeLinkPopup]);
+
   useEffect(() => {
     if (isEditMode && inputRef.current) {
       inputRef.current.focus();
@@ -177,10 +198,11 @@ function FloatingLinkEditor({
                 }
                 setEditMode(false);
               }
-            } else if (event.key === 'Escape') {
-              event.preventDefault();
-              setEditMode(false);
             }
+            // else if (event.key === 'Escape') {
+            //   event.preventDefault();
+            //   setEditMode(false);
+            // }
           }}
         />
       ) : (
@@ -240,7 +262,11 @@ function useFloatingLinkEditorToolbar(
 
   return isLink
     ? createPortal(
-        <FloatingLinkEditor editor={activeEditor} anchorElem={anchorElem} />,
+        <FloatingLinkEditor
+          editor={activeEditor}
+          anchorElem={anchorElem}
+          setIsLink={setIsLink}
+        />,
         anchorElem,
       )
     : null;

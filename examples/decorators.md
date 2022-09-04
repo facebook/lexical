@@ -62,7 +62,7 @@ As any other custom Lexical node, decorator nodes need to be registered _before_
 // Create a custom command with a typed payload.
 type CommandPayload = string;
 export const INSERT_VIDEO_COMMAND: LexicalCommand<CommandPayload> =
-  createCommand();
+  createCommand('INSERT_VIDEO_COMMAND');
 
 function VideoPlugin(): ReactNode {
   const [editor] = useLexicalComposerContext();

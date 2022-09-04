@@ -13,7 +13,9 @@ import {useEffect} from 'react';
 
 import {$createTweetNode, TweetNode} from '../../nodes/TweetNode';
 
-export const INSERT_TWEET_COMMAND: LexicalCommand<string> = createCommand();
+export const INSERT_TWEET_COMMAND: LexicalCommand<string> = createCommand(
+  'INSERT_TWEET_COMMAND',
+);
 
 export default function TwitterPlugin(): JSX.Element | null {
   const [editor] = useLexicalComposerContext();

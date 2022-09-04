@@ -22,8 +22,11 @@ export type UserState = {
   focusPos: null | RelativePosition;
   name: string;
 };
-export const CONNECTED_COMMAND: LexicalCommand<boolean> = createCommand();
-export const TOGGLE_CONNECT_COMMAND: LexicalCommand<boolean> = createCommand();
+export const CONNECTED_COMMAND: LexicalCommand<boolean> =
+  createCommand('CONNECTED_COMMAND');
+export const TOGGLE_CONNECT_COMMAND: LexicalCommand<boolean> = createCommand(
+  'TOGGLE_CONNECT_COMMAND',
+);
 export type ProviderAwareness = {
   getLocalState: () => UserState | null;
   getStates: () => Map<number, UserState>;

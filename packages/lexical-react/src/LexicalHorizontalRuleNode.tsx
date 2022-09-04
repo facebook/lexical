@@ -39,7 +39,7 @@ export type SerializedHorizontalRuleNode = SerializedLexicalNode & {
 };
 
 export const INSERT_HORIZONTAL_RULE_COMMAND: LexicalCommand<void> =
-  createCommand();
+  createCommand('INSERT_HORIZONTAL_RULE_COMMAND');
 
 function HorizontalRuleComponent({nodeKey}: {nodeKey: NodeKey}) {
   const [editor] = useLexicalComposerContext();

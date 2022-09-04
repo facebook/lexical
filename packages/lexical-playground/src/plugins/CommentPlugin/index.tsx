@@ -66,7 +66,9 @@ import Button from '../../ui/Button';
 import ContentEditable from '../../ui/ContentEditable';
 import Placeholder from '../../ui/Placeholder';
 
-export const INSERT_INLINE_COMMAND: LexicalCommand<void> = createCommand();
+export const INSERT_INLINE_COMMAND: LexicalCommand<void> = createCommand(
+  'INSERT_INLINE_COMMAND',
+);
 
 function AddCommentBox({
   anchorKey,

@@ -31,7 +31,7 @@ type CommandPayload = {
 };
 
 export const INSERT_EQUATION_COMMAND: LexicalCommand<CommandPayload> =
-  createCommand();
+  createCommand('INSERT_EQUATION_COMMAND');
 
 export function InsertEquationDialog({
   activeEditor,

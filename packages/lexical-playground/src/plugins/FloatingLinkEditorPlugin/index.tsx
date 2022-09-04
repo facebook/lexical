@@ -199,10 +199,6 @@ function FloatingLinkEditor({
                 setEditMode(false);
               }
             }
-            // else if (event.key === 'Escape') {
-            //   event.preventDefault();
-            //   setEditMode(false);
-            // }
           }}
         />
       ) : (

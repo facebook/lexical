@@ -12,14 +12,14 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
 export function OnChangePlugin({
-  // TODO 0.4 flip to true
+  // TODO 0.5 flip to true
   ignoreHistoryMergeTagChange = false,
   ignoreInitialChange = true,
   ignoreSelectionChange = false,
   onChange,
 }: {
   ignoreHistoryMergeTagChange?: boolean;
-  // TODO 0.4 remove
+  // TODO 0.5 remove
   ignoreInitialChange?: boolean;
   ignoreSelectionChange?: boolean;
   onChange: (editorState: EditorState, editor: LexicalEditor) => void;

@@ -688,7 +688,7 @@ export class LexicalEditor {
     command: TCommand,
     payload: CommandPayloadType<TCommand>,
   ): boolean {
-    return dispatchCommand(this, type, payload);
+    return dispatchCommand(this, command, payload);
   }
 
   getDecorators<T>(): Record<NodeKey, T> {

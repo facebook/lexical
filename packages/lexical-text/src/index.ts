@@ -211,7 +211,7 @@ export function $rootTextContent(): string {
 
 export function $canShowPlaceholder(
   isComposing: boolean,
-  // TODO 0.4 make mandatory
+  // TODO 0.5 make mandatory
   isEditable = true,
 ): boolean {
   if (!isEditable || !$isRootTextContentEmpty(isComposing, false)) {
@@ -256,7 +256,7 @@ export function $canShowPlaceholder(
 
 export function $canShowPlaceholderCurry(
   isEditorComposing: boolean,
-  // TODO 0.4 make mandatory
+  // TODO 0.5 make mandatory
   isEditable = true,
 ): () => boolean {
   return () => $canShowPlaceholder(isEditorComposing, isEditable);

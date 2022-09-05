@@ -15,11 +15,11 @@ const {exec} = require('child-process-promise');
 const {LEXICAL_PKG, DEFAULT_PKGS} = require('./packages');
 const argv = require('minimist')(process.argv.slice(2));
 
-const nonInteractive = argv.nonInteractive;
-const distTag = argv.distTag || 'latest';
-const validDistTags = new Set('next', 'latest');
-if (!validDistTags.has(distTag)) {
-  console.error(`Invalid dist tag ${distTag}`);
+const nonInteractive = argv['non-interactive'];
+const increment = argv.increment;
+const validIncrements = new Set('minor', 'patch', 'prerelease');
+if (!validIncrements.has(increment)) {
+  console.error(`Invalid increment: ${increment}`);
   process.exit(1);
 }
 
@@ -34,6 +34,7 @@ async function publish() {
     );
     await waitForInput();
   }
+  const distTag = increment === 'prerelease' ? 'next' : 'latest';
   for (let i = 0; i < pkgs.length; i++) {
     const pkg = pkgs[i];
     await exec(

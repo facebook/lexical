@@ -24,6 +24,8 @@ jobs:
         env:
           INCREMENT: ${{ inputs.increment }}
       - run: npm run update-version -- --deps-only
-      - run: npm run release
+      - run: npm run prepare-release
+      - run: node ./scripts/npm/release.js --non-interactive --increment $INCREMENT
         env:
+          INCREMENT: ${{ inputs.increment }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

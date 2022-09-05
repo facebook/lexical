@@ -9,6 +9,7 @@
 'use strict';
 
 const fs = require('fs-extra');
+const argv = require('minimist')(process.argv.slice(2));
 
 const packages = {
   '@lexical/clipboard': 'lexical-clipboard',
@@ -38,18 +39,18 @@ const packages = {
   shared: 'shared',
 };
 
+const depsOnly = argv['deps-only'];
+
 function updateVersion() {
-  const version = getVersionFromFile();
-  // update monorepo package.json version
+  // get version from monorepo package.json version
   const basePackageJSON = fs.readJsonSync(`./package.json`);
-  basePackageJSON.version = version;
-  fs.writeJsonSync(`./package.json`, basePackageJSON, {
-    spaces: 2,
-  });
+  const version = basePackageJSON.version;
   // update individual packages
   Object.values(packages).forEach((pkg) => {
     const packageJSON = fs.readJsonSync(`./packages/${pkg}/package.json`);
-    packageJSON.version = version;
+    if (!depsOnly) {
+      packageJSON.version = version;
+    }
     updateDependencies(packageJSON, version);
     fs.writeJsonSync(`./packages/${pkg}/package.json`, packageJSON, {
       spaces: 2,
@@ -73,16 +74,6 @@ function updateDependencies(packageJSON, version) {
       }
     });
   }
-}
-
-function getVersionFromFile() {
-  const fileContent = fs.readFileSync(
-    './packages/lexical/src/LexicalVersion.ts',
-    'utf8',
-  );
-  const regex = /VERSION = '(\d{1,3}\.\d{1,3}\.\d{1,3})'/;
-  const version = regex.exec(fileContent)[1];
-  return version;
 }
 
 updateVersion();

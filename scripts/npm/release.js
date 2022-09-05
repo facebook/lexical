@@ -13,21 +13,32 @@
 const readline = require('readline');
 const {exec} = require('child-process-promise');
 const {LEXICAL_PKG, DEFAULT_PKGS} = require('./packages');
+const argv = require('minimist')(process.argv.slice(2));
+
+const nonInteractive = argv.nonInteractive;
+const distTag = argv.distTag || 'latest';
+const validDistTags = new Set('next', 'latest');
+if (!validDistTags.has(distTag)) {
+  console.error(`Invalid dist tag ${distTag}`);
+  process.exit(1);
+}
 
 async function publish() {
   const pkgs = [LEXICAL_PKG, ...DEFAULT_PKGS];
+  if (!nonInteractive) {
+    console.info(
+      `You're about to publish:
+    ${pkgs.join('\n')}
 
-  console.info(
-    `You're about to publish:
-${pkgs.join('\n')}
-
-Type "publish" to confirm.`,
-  );
-  await waitForInput();
-
+    Type "publish" to confirm.`,
+    );
+    await waitForInput();
+  }
   for (let i = 0; i < pkgs.length; i++) {
     const pkg = pkgs[i];
-    await exec(`cd ./packages/${pkg}/npm && npm publish --access public`);
+    await exec(
+      `cd ./packages/${pkg}/npm && npm publish --access public --tag ${distTag}`,
+    );
   }
 }
 

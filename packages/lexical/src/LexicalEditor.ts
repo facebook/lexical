@@ -342,7 +342,7 @@ export function createEditor(editorConfig?: {
     ...(config.nodes || []),
   ];
   const onError = config.onError;
-  const isEditable = config.editable || true;
+  const isEditable = config.editable !== undefined ? config.editable : true;
   let registeredNodes;
 
   if (editorConfig === undefined && activeEditor !== null) {

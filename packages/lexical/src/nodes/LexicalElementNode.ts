@@ -493,12 +493,7 @@ export class ElementNode extends LexicalNode {
   }
   extractWithChild(
     child: LexicalNode,
-    selection:
-      | RangeSelection
-      | NodeSelection
-      | GridSelection
-      | null
-      | undefined,
+    selection: RangeSelection | NodeSelection | GridSelection | null,
     destination: 'clone' | 'html',
   ): boolean {
     return false;

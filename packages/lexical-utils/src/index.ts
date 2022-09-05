@@ -277,10 +277,7 @@ function unstable_internalCreateNodeFromParse(
         const nestedEditor = createEditor({
           namespace: parsedEditorState.namespace,
         });
-        const parentNodes = (nestedEditor._nodes = new Map(editor._nodes));
-        for (const [, entry] of parentNodes) {
-          entry.transforms.clear();
-        }
+        nestedEditor._nodes = editor._nodes;
         nestedEditor._parentEditor = editor._parentEditor;
         nestedEditor._pendingEditorState =
           unstable_convertLegacyJSONEditorState(

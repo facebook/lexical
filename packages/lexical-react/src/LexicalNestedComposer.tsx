@@ -7,7 +7,12 @@
  */
 
 import type {LexicalComposerContextType} from '@lexical/react/LexicalComposerContext';
-import type {EditorThemeClasses, Klass, LexicalEditor, LexicalNode} from 'lexical';
+import type {
+  EditorThemeClasses,
+  Klass,
+  LexicalEditor,
+  LexicalNode,
+} from 'lexical';
 
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {
@@ -54,7 +59,9 @@ export function LexicalNestedComposer({
       initialEditor._parentEditor = parentEditor;
 
       if (!initialNodes) {
-        const parentNodes = (initialEditor._nodes = new Map(parentEditor._nodes));
+        const parentNodes = (initialEditor._nodes = new Map(
+          parentEditor._nodes,
+        ));
         for (const [type, entry] of parentNodes) {
           initialEditor._nodes.set(type, {
             klass: entry.klass,

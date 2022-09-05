@@ -1,3 +1,9 @@
+## 0.3.11 (September 5, 2022)
+
+- Fix breaking bug for `isEditable` mode in editor initialization (#2945) Tim Laubert
+- Fix Safari selection highlighting bug (#2943) John Flockton
+- Fix Android backspace bug (#2940) Dominic Gannaway
+
 ## 0.4.0 (September 3, 2022)
 
 ### Breaking Changes

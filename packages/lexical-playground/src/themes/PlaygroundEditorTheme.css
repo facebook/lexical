@@ -16,7 +16,6 @@
 .PlaygroundEditorTheme__paragraph {
   margin: 0;
   margin-bottom: 8px;
-  position: relative;
 }
 .PlaygroundEditorTheme__paragraph:last-child {
   margin-bottom: 0;

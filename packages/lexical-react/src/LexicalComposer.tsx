@@ -89,7 +89,7 @@ export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
   useLayoutEffect(() => {
     const isEditable = initialConfig.editable;
     const [editor] = composerContext;
-    editor.setEditable(isEditable || true);
+    editor.setEditable(isEditable !== undefined ? isEditable : true);
 
     // We only do this for init
     // eslint-disable-next-line react-hooks/exhaustive-deps

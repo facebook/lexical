@@ -13,4 +13,5 @@ declare export function LexicalNestedComposer({
   children: React$Node,
   initialEditor: LexicalEditor,
   initialTheme?: EditorThemeClasses,
+  initialNodes?: $ReadOnlyArray<Class<LexicalNode>>,
 }): React$Node;

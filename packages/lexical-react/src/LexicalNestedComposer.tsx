@@ -50,7 +50,10 @@ export function LexicalNestedComposer({
       }
 
       initialEditor._parentEditor = parentEditor;
-      initialEditor._nodes = parentEditor._nodes;
+      const parentNodes = (initialEditor._nodes = new Map(parentEditor._nodes));
+      for (const [, entry] of parentNodes) {
+        entry.transforms.clear();
+      }
       initialEditor._config.namespace = parentEditor._config.namespace;
 
       return [initialEditor, context];

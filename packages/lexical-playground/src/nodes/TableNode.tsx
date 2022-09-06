@@ -39,6 +39,7 @@ export type Row = {
 export type Rows = Array<Row>;
 
 export const cellHTMLCache: Map<string, string> = new Map();
+export const cellTextContentCache: Map<string, string> = new Map();
 
 const emptyEditorJSON =
   '{"root":{"children":[{"children":[],"direction":null,"format":"","indent":0,"type":"paragraph","version":1}],"direction":null,"format":"","indent":0,"type":"root","version":1}}';

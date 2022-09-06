@@ -116,6 +116,7 @@ export type EditorThemeClasses = {
   tableCellEditing?: EditorThemeClassName;
   tableCellHeader?: EditorThemeClassName;
   tableCellResizer?: EditorThemeClassName;
+  tableCellSortedIndicator?: EditorThemeClassName;
   tableResizeRuler?: EditorThemeClassName;
   tableRow?: EditorThemeClassName;
   tableSelected?: EditorThemeClassName;

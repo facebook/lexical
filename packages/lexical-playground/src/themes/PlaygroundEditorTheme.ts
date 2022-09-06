@@ -94,6 +94,7 @@ const theme: EditorThemeClasses = {
   tableCellPrimarySelected: 'PlaygroundEditorTheme__tableCellPrimarySelected',
   tableCellResizer: 'PlaygroundEditorTheme__tableCellResizer',
   tableCellSelected: 'PlaygroundEditorTheme__tableCellSelected',
+  tableCellSortedIndicator: 'PlaygroundEditorTheme__tableCellSortedIndicator',
   tableResizeRuler: 'PlaygroundEditorTheme__tableCellResizeRuler',
   tableSelected: 'PlaygroundEditorTheme__tableSelected',
   text: {

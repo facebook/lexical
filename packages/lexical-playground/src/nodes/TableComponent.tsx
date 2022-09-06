@@ -64,6 +64,7 @@ import {
   $isTableNode,
   Cell,
   cellHTMLCache,
+  cellTextContentCache,
   createRow,
   createUID,
   exportTableCellsToHTML,
@@ -71,6 +72,8 @@ import {
   Rows,
   TableNode,
 } from './TableNode';
+
+type SortOptions = {type: 'ascending' | 'descending'; x: number};
 
 const NO_CELLS: [] = [];
 
@@ -104,7 +107,9 @@ function generateHTMLFromJSON(
   let html = cellHTMLCache.get(editorStateJSON);
   if (html === undefined) {
     html = editorState.read(() => $generateHtmlFromNodes(cellEditor, null));
+    const textContent = editorState.read(() => $getRoot().getTextContent());
     cellHTMLCache.set(editorStateJSON, html);
+    cellTextContentCache.set(editorStateJSON, textContent);
   }
   return html;
 }
@@ -337,6 +342,8 @@ function TableActionMenu({
   updateCellsByID,
   onClose,
   updateTableNode,
+  setSortingOptions,
+  sortingOptions,
 }: {
   cell: Cell;
   menuElem: HTMLElement;
@@ -345,6 +352,8 @@ function TableActionMenu({
   updateTableNode: (fn2: (tableNode: TableNode) => void) => void;
   cellCoordMap: Map<string, [number, number]>;
   rows: Rows;
+  setSortingOptions: (options: null | SortOptions) => void;
+  sortingOptions: null | SortOptions;
 }) {
   const dropDownRef = useRef<null | HTMLDivElement>(null);
 
@@ -371,6 +380,12 @@ function TableActionMenu({
     window.addEventListener('click', handleClickOutside);
     return () => window.removeEventListener('click', handleClickOutside);
   }, [onClose]);
+  const coords = cellCoordMap.get(cell.id);
+
+  if (coords === undefined) {
+    return null;
+  }
+  const [x, y] = coords;
 
   return (
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions
@@ -394,12 +409,6 @@ function TableActionMenu({
         onClick={() => {
           updateTableNode((tableNode) => {
             $addUpdateTag('history-push');
-            const coords = cellCoordMap.get(cell.id);
-            if (coords === undefined) {
-              return;
-            }
-            $addUpdateTag('history-push');
-            const [x, y] = coords;
             tableNode.updateCellType(
               x,
               y,
@@ -425,17 +434,50 @@ function TableActionMenu({
         <span className="text">Clear cell</span>
       </button>
       <hr />
+      {cell.type === 'header' && y === 0 && (
+        <>
+          {sortingOptions !== null && sortingOptions.x === x && (
+            <button
+              className="item"
+              onClick={() => {
+                setSortingOptions(null);
+                onClose();
+              }}>
+              <span className="text">Remove sorting</span>
+            </button>
+          )}
+          {(sortingOptions === null ||
+            sortingOptions.x !== x ||
+            sortingOptions.type === 'descending') && (
+            <button
+              className="item"
+              onClick={() => {
+                setSortingOptions({type: 'ascending', x});
+                onClose();
+              }}>
+              <span className="text">Sort ascending</span>
+            </button>
+          )}
+          {(sortingOptions === null ||
+            sortingOptions.x !== x ||
+            sortingOptions.type === 'ascending') && (
+            <button
+              className="item"
+              onClick={() => {
+                setSortingOptions({type: 'descending', x});
+                onClose();
+              }}>
+              <span className="text">Sort descending</span>
+            </button>
+          )}
+          <hr />
+        </>
+      )}
       <button
         className="item"
         onClick={() => {
           updateTableNode((tableNode) => {
             $addUpdateTag('history-push');
-            const coords = cellCoordMap.get(cell.id);
-            if (coords === undefined) {
-              return;
-            }
-            $addUpdateTag('history-push');
-            const [, y] = coords;
             tableNode.insertRowAt(y);
           });
           onClose();
@@ -447,12 +489,6 @@ function TableActionMenu({
         onClick={() => {
           updateTableNode((tableNode) => {
             $addUpdateTag('history-push');
-            const coords = cellCoordMap.get(cell.id);
-            if (coords === undefined) {
-              return;
-            }
-            $addUpdateTag('history-push');
-            const [, y] = coords;
             tableNode.insertRowAt(y + 1);
           });
           onClose();
@@ -465,12 +501,6 @@ function TableActionMenu({
         onClick={() => {
           updateTableNode((tableNode) => {
             $addUpdateTag('history-push');
-            const coords = cellCoordMap.get(cell.id);
-            if (coords === undefined) {
-              return;
-            }
-            $addUpdateTag('history-push');
-            const [x] = coords;
             tableNode.insertColumnAt(x);
           });
           onClose();
@@ -482,12 +512,6 @@ function TableActionMenu({
         onClick={() => {
           updateTableNode((tableNode) => {
             $addUpdateTag('history-push');
-            const coords = cellCoordMap.get(cell.id);
-            if (coords === undefined) {
-              return;
-            }
-            $addUpdateTag('history-push');
-            const [x] = coords;
             tableNode.insertColumnAt(x + 1);
           });
           onClose();
@@ -501,12 +525,6 @@ function TableActionMenu({
           onClick={() => {
             updateTableNode((tableNode) => {
               $addUpdateTag('history-push');
-              const coords = cellCoordMap.get(cell.id);
-              if (coords === undefined) {
-                return;
-              }
-              $addUpdateTag('history-push');
-              const [x] = coords;
               tableNode.deleteColumnAt(x);
             });
             onClose();
@@ -520,12 +538,6 @@ function TableActionMenu({
           onClick={() => {
             updateTableNode((tableNode) => {
               $addUpdateTag('history-push');
-              const coords = cellCoordMap.get(cell.id);
-              if (coords === undefined) {
-                return;
-              }
-              $addUpdateTag('history-push');
-              const [, y] = coords;
               tableNode.deleteRowAt(y);
             });
             onClose();
@@ -560,6 +572,8 @@ function TableCell({
   updateCellsByID,
   updateTableNode,
   rows,
+  setSortingOptions,
+  sortingOptions,
 }: {
   cell: Cell;
   isEditing: boolean;
@@ -571,6 +585,8 @@ function TableCell({
   updateTableNode: (fn2: (tableNode: TableNode) => void) => void;
   cellCoordMap: Map<string, [number, number]>;
   rows: Rows;
+  setSortingOptions: (options: null | SortOptions) => void;
+  sortingOptions: null | SortOptions;
 }) {
   const [showMenu, setShowMenu] = useState(false);
   const menuRootRef = useRef(null);
@@ -579,6 +595,12 @@ function TableCell({
   const CellComponent = isHeader ? 'th' : 'td';
   const cellWidth = cell.width;
   const menuElem = menuRootRef.current;
+  const coords = cellCoordMap.get(cell.id);
+  const isSorted =
+    sortingOptions !== null &&
+    coords !== undefined &&
+    coords[0] === sortingOptions.x &&
+    coords[1] === 0;
 
   useEffect(() => {
     if (isEditing || !isPrimarySelected) {
@@ -640,16 +662,19 @@ function TableCell({
             updateTableNode={updateTableNode}
             cellCoordMap={cellCoordMap}
             rows={rows}
+            setSortingOptions={setSortingOptions}
+            sortingOptions={sortingOptions}
           />,
           document.body,
         )}
+      {isSorted && <div className={theme.tableCellSortedIndicator} />}
     </CellComponent>
   );
 }
 
 export default function TableComponent({
   nodeKey,
-  rows,
+  rows: rawRows,
   theme,
 }: {
   nodeKey: NodeKey;
@@ -662,6 +687,9 @@ export default function TableComponent({
     point: 0,
     size: 0,
   });
+  const [sortingOptions, setSortingOptions] = useState<null | SortOptions>(
+    null,
+  );
   const addRowsRef = useRef(null);
   const lastCellIDRef = useRef<string | null>(null);
   const tableResizerRulerRef = useRef<null | HTMLDivElement>(null);
@@ -676,8 +704,8 @@ export default function TableComponent({
   const cellCoordMap = useMemo(() => {
     const map = new Map();
 
-    for (let y = 0; y < rows.length; y++) {
-      const row = rows[y];
+    for (let y = 0; y < rawRows.length; y++) {
+      const row = rawRows[y];
       const cells = row.cells;
       for (let x = 0; x < cells.length; x++) {
         const cell = cells[x];
@@ -685,7 +713,26 @@ export default function TableComponent({
       }
     }
     return map;
-  }, [rows]);
+  }, [rawRows]);
+  const rows = useMemo(() => {
+    if (sortingOptions === null) {
+      return rawRows;
+    }
+    const _rows = rawRows.slice(1);
+    _rows.sort((a, b) => {
+      const aCells = a.cells;
+      const bCells = b.cells;
+      const x = sortingOptions.x;
+      const aContent = cellTextContentCache.get(aCells[x].json) || '';
+      const bContent = cellTextContentCache.get(bCells[x].json) || '';
+      if (sortingOptions.type === 'ascending') {
+        return aContent.localeCompare(bContent);
+      }
+      return bContent.localeCompare(aContent);
+    });
+    _rows.unshift(rawRows[0]);
+    return _rows;
+  }, [rawRows, sortingOptions]);
   const [primarySelectedCellID, setPrimarySelectedCellID] = useState<
     null | string
   >(null);
@@ -1691,11 +1738,13 @@ export default function TableComponent({
                     isSelected={selectedCellSet.has(id)}
                     isPrimarySelected={primarySelectedCellID === id}
                     isEditing={isEditing}
+                    sortingOptions={sortingOptions}
                     cellEditor={cellEditor}
                     updateCellsByID={updateCellsByID}
                     updateTableNode={updateTableNode}
                     cellCoordMap={cellCoordMap}
                     rows={rows}
+                    setSortingOptions={setSortingOptions}
                   />
                 );
               })}

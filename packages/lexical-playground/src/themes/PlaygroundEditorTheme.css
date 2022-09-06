@@ -145,6 +145,16 @@
   cursor: default;
   outline: none;
 }
+.PlaygroundEditorTheme__tableCellSortedIndicator {
+  display: block;
+  opacity: 0.5;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background-color: #999;
+}
 .PlaygroundEditorTheme__tableCellResizer {
   position: absolute;
   right: -4px;

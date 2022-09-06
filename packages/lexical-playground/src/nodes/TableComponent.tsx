@@ -725,6 +725,9 @@ export default function TableComponent({
       const x = sortingOptions.x;
       const aContent = cellTextContentCache.get(aCells[x].json) || '';
       const bContent = cellTextContentCache.get(bCells[x].json) || '';
+      if (aContent === '' || bContent === '') {
+        return 1;
+      }
       if (sortingOptions.type === 'ascending') {
         return aContent.localeCompare(bContent);
       }

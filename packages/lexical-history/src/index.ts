@@ -313,6 +313,9 @@ function createMergeActionGetter(
 }
 
 function redo(editor: LexicalEditor, historyState: HistoryState): void {
+  // historyState is a record of the history that should be restored, while the
+  // incoming editor instance is the object to which it should be applied
+
   const redoStack = historyState.redoStack;
   const undoStack = historyState.undoStack;
 
@@ -333,7 +336,7 @@ function redo(editor: LexicalEditor, historyState: HistoryState): void {
     historyState.current = historyStateEntry || null;
 
     if (historyStateEntry) {
-      historyStateEntry.editor.setEditorState(historyStateEntry.editorState, {
+      editor.setEditorState(historyStateEntry.editorState, {
         tag: 'historic',
       });
     }
@@ -341,11 +344,13 @@ function redo(editor: LexicalEditor, historyState: HistoryState): void {
 }
 
 function undo(editor: LexicalEditor, historyState: HistoryState): void {
+  // historyState is a record of the history that should be restored, while the
+  // incoming editor instance is the object to which it should be applied
+
   const redoStack = historyState.redoStack;
   const undoStack = historyState.undoStack;
-  const undoStackLength = undoStack.length;
 
-  if (undoStackLength !== 0) {
+  if (undoStack.length !== 0) {
     const current = historyState.current;
     const historyStateEntry = undoStack.pop();
 
@@ -361,7 +366,7 @@ function undo(editor: LexicalEditor, historyState: HistoryState): void {
     historyState.current = historyStateEntry || null;
 
     if (historyStateEntry) {
-      historyStateEntry.editor.setEditorState(
+      editor.setEditorState(
         historyStateEntry.editorState.clone(historyStateEntry.undoSelection),
         {
           tag: 'historic',

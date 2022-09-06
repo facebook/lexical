@@ -100,7 +100,6 @@ function LazyImage({
         width,
       }}
       draggable="false"
-      tabIndex={-1}
     />
   );
 }
@@ -139,17 +138,6 @@ export default function ImageComponent({
     RangeSelection | NodeSelection | GridSelection | null
   >(null);
   const activeEditorRef = useRef<LexicalEditor | null>(null);
-
-  useEffect(() => {
-    const imageElem = imageRef.current;
-    if (
-      isSelected &&
-      document.activeElement === document.body &&
-      imageElem !== null
-    ) {
-      imageElem.focus();
-    }
-  }, [isSelected]);
 
   const onDelete = useCallback(
     (payload: KeyboardEvent) => {

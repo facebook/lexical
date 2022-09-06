@@ -10,7 +10,6 @@ import type {LexicalCommand, LexicalEditor} from 'lexical';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {mergeRegister} from '@lexical/utils';
 import {
-  $createNodeSelection,
   $createRangeSelection,
   $getSelection,
   $isNodeSelection,
@@ -62,9 +61,6 @@ export default function ImagesPlugin({
             }
             const imageNode = $createImageNode({captionsEnabled, ...payload});
             selection.insertNodes([imageNode]);
-            const nodeSelection = $createNodeSelection();
-            nodeSelection.add(imageNode.getKey());
-            $setSelection(nodeSelection);
           }
           return true;
         },

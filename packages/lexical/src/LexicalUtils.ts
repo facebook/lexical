@@ -62,6 +62,7 @@ import {
   errorOnReadOnly,
   getActiveEditor,
   getActiveEditorState,
+  isCurrentlyReadOnlyMode,
   triggerCommandListeners,
   updateEditor,
 } from './LexicalUpdates';
@@ -326,6 +327,9 @@ export function $setCompositionKey(compositionKey: null | NodeKey): void {
 }
 
 export function $getCompositionKey(): null | NodeKey {
+  if (isCurrentlyReadOnlyMode()) {
+    return null;
+  }
   const editor = getActiveEditor();
   return editor._compositionKey;
 }

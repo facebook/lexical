@@ -420,7 +420,9 @@ function onPasteForRichText(
     () => {
       const selection = $getSelection();
       const clipboardData =
-        event instanceof InputEvent ? null : event.clipboardData;
+        event instanceof InputEvent || event instanceof KeyboardEvent
+          ? null
+          : event.clipboardData;
       if (
         clipboardData != null &&
         ($isRangeSelection(selection) || $isGridSelection(selection))
@@ -732,10 +734,7 @@ export function registerRichText(
       KEY_ARROW_DOWN_COMMAND,
       (event) => {
         const selection = $getSelection();
-        if (
-          $isNodeSelection(selection) &&
-          !isTargetWithinDecorator(event.target as HTMLElement)
-        ) {
+        if ($isNodeSelection(selection)) {
           // If selection is on a node, let's try and move selection
           // back to being a range selection.
           const nodes = selection.getNodes();
@@ -752,10 +751,7 @@ export function registerRichText(
       KEY_ARROW_LEFT_COMMAND,
       (event) => {
         const selection = $getSelection();
-        if (
-          $isNodeSelection(selection) &&
-          !isTargetWithinDecorator(event.target as HTMLElement)
-        ) {
+        if ($isNodeSelection(selection)) {
           // If selection is on a node, let's try and move selection
           // back to being a range selection.
           const nodes = selection.getNodes();

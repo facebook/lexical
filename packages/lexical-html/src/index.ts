@@ -85,13 +85,18 @@ function $appendNodesToHTML(
   let shouldInclude = selection != null ? currentNode.isSelected() : true;
   const shouldExclude =
     $isElementNode(currentNode) && currentNode.excludeFromCopy('html');
-  let clone = $cloneWithProperties<LexicalNode>(currentNode);
-  clone =
-    $isTextNode(clone) && selection != null
-      ? $sliceSelectedTextNodeContent(selection, clone)
-      : clone;
-  const children = $isElementNode(clone) ? clone.getChildren() : [];
-  const {element, after} = clone.exportDOM(editor);
+  let target = currentNode;
+
+  if (selection !== null) {
+    let clone = $cloneWithProperties<LexicalNode>(currentNode);
+    clone =
+      $isTextNode(clone) && selection != null
+        ? $sliceSelectedTextNodeContent(selection, clone)
+        : clone;
+    target = clone;
+  }
+  const children = $isElementNode(target) ? target.getChildren() : [];
+  const {element, after} = target.exportDOM(editor);
 
   if (!element) {
     return false;
@@ -123,7 +128,7 @@ function $appendNodesToHTML(
     parentElement.append(element);
 
     if (after) {
-      const newElement = after.call(clone, element);
+      const newElement = after.call(target, element);
       if (newElement) element.replaceWith(newElement);
     }
   } else {

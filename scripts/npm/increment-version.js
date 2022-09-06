@@ -24,7 +24,8 @@ const packages = [LEXICAL_PKG, ...DEFAULT_PKGS, SHARED_PKG];
 
 async function incrementVersion(increment) {
   const preId = increment === 'prerelease' ? '--preid next' : '';
-  const workspaces = packages.map((pkg) => `-w packages/${pkg}`).join(' ');
+  //const workspaces = packages.map((pkg) => `-w packages/${pkg}`).join(' ');
+  const workspaces = '';
   const command = `npm version ${increment} --include-workspace-root true ${preId} ${workspaces}`;
   await exec(command);
 }

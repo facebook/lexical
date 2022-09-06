@@ -52,7 +52,7 @@ export class TableNode extends GridNode {
     return {
       table: (_node: Node) => ({
         conversion: convertTableElement,
-        priority: 0,
+        priority: 1,
       }),
     };
   }

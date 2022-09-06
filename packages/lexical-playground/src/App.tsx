@@ -21,6 +21,7 @@ import Editor from './Editor';
 import logo from './images/logo.svg';
 import PlaygroundNodes from './nodes/PlaygroundNodes';
 import PasteLogPlugin from './plugins/PasteLogPlugin';
+import {TableContext} from './plugins/TablePlugin';
 import TestRecorderPlugin from './plugins/TestRecorderPlugin';
 import TypingPerfPlugin from './plugins/TypingPerfPlugin';
 import Settings from './Settings';
@@ -132,20 +133,22 @@ function App(): JSX.Element {
   return (
     <LexicalComposer initialConfig={initialConfig}>
       <SharedHistoryContext>
-        <SharedAutocompleteContext>
-          <header>
-            <a href="https://lexical.dev" target="_blank" rel="noopener">
-              <img src={logo} alt="Lexical Logo" />
-            </a>
-          </header>
-          <div className="editor-shell">
-            <Editor />
-          </div>
-          <Settings />
-          {isDevPlayground ? <PasteLogPlugin /> : null}
-          {isDevPlayground ? <TestRecorderPlugin /> : null}
-          {measureTypingPerf ? <TypingPerfPlugin /> : null}
-        </SharedAutocompleteContext>
+        <TableContext>
+          <SharedAutocompleteContext>
+            <header>
+              <a href="https://lexical.dev" target="_blank" rel="noopener">
+                <img src={logo} alt="Lexical Logo" />
+              </a>
+            </header>
+            <div className="editor-shell">
+              <Editor />
+            </div>
+            <Settings />
+            {isDevPlayground ? <PasteLogPlugin /> : null}
+            {isDevPlayground ? <TestRecorderPlugin /> : null}
+            {measureTypingPerf ? <TypingPerfPlugin /> : null}
+          </SharedAutocompleteContext>
+        </TableContext>
       </SharedHistoryContext>
     </LexicalComposer>
   );

@@ -8,15 +8,21 @@
  */
 
 import {
+  $generateJSONFromSelectedNodes,
+  $generateNodesFromSerializedNodes,
   $getHtmlContent,
   $getLexicalContent,
   $insertDataTransferForPlainText,
   $insertDataTransferForRichText,
+  $insertGeneratedNodes,
 } from './clipboard';
 
 export {
+  $generateJSONFromSelectedNodes,
+  $generateNodesFromSerializedNodes,
   $getHtmlContent,
   $getLexicalContent,
   $insertDataTransferForPlainText,
   $insertDataTransferForRichText,
+  $insertGeneratedNodes,
 };

@@ -106,9 +106,20 @@ export type EditorThemeClasses = {
   root?: EditorThemeClassName;
   rtl?: EditorThemeClassName;
   table?: EditorThemeClassName;
+  tableAddColumns?: EditorThemeClassName;
+  tableAddRows?: EditorThemeClassName;
+  tableCellActionButton?: EditorThemeClassName;
+  tableCellActionButtonContainer?: EditorThemeClassName;
+  tableCellPrimarySelected?: EditorThemeClassName;
+  tableCellSelected?: EditorThemeClassName;
   tableCell?: EditorThemeClassName;
+  tableCellEditing?: EditorThemeClassName;
   tableCellHeader?: EditorThemeClassName;
+  tableCellResizer?: EditorThemeClassName;
+  tableCellSortedIndicator?: EditorThemeClassName;
+  tableResizeRuler?: EditorThemeClassName;
   tableRow?: EditorThemeClassName;
+  tableSelected?: EditorThemeClassName;
   text?: TextNodeThemeClasses;
   embedBlock?: {
     base?: EditorThemeClassName;

@@ -138,6 +138,7 @@ export const TWEET: ElementTransformer = {
 const TABLE_ROW_REG_EXP = /^(?:\|)(.+)(?:\|)\s?$/;
 
 export const TABLE: ElementTransformer = {
+  // TODO: refactor transformer for new TableNode
   dependencies: [TableNode, TableRowNode, TableCellNode],
   export: (
     node: LexicalNode,

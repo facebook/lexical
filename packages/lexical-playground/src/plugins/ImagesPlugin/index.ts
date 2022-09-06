@@ -38,7 +38,11 @@ export type InsertImagePayload = Readonly<ImagePayload>;
 
 export const INSERT_IMAGE_COMMAND: LexicalCommand<InsertImagePayload> =
   createCommand();
-export default function ImagesPlugin(): JSX.Element | null {
+export default function ImagesPlugin({
+  captionsEnabled,
+}: {
+  captionsEnabled?: boolean;
+}): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
@@ -55,7 +59,7 @@ export default function ImagesPlugin(): JSX.Element | null {
             if ($isRootNode(selection.anchor.getNode())) {
               selection.insertParagraph();
             }
-            const imageNode = $createImageNode(payload);
+            const imageNode = $createImageNode({captionsEnabled, ...payload});
             selection.insertNodes([imageNode]);
           }
           return true;
@@ -84,7 +88,7 @@ export default function ImagesPlugin(): JSX.Element | null {
         COMMAND_PRIORITY_HIGH,
       ),
     );
-  }, [editor]);
+  }, [captionsEnabled, editor]);
 
   return null;
 }

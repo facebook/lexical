@@ -122,6 +122,7 @@ export {
 } from './LexicalSelection';
 export {$parseSerializedNode} from './LexicalUpdates';
 export {
+  $addUpdateTag,
   $getDecoratorNode,
   $getNearestNodeFromDOMNode,
   $getNodeByKey,

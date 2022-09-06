@@ -182,6 +182,7 @@ export default function ExcalidrawComponent({
               editor={editor}
               onResizeStart={onResizeStart}
               onResizeEnd={onResizeEnd}
+              captionsEnabled={true}
             />
           )}
         </button>

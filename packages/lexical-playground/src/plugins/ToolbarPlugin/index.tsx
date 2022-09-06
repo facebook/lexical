@@ -90,6 +90,7 @@ import {INSERT_EQUATION_COMMAND} from '../EquationsPlugin';
 import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawPlugin';
 import {INSERT_IMAGE_COMMAND} from '../ImagesPlugin';
 import {INSERT_POLL_COMMAND} from '../PollPlugin';
+import {INSERT_TABLE_COMMAND as INSERT_NEW_TABLE_COMMAND} from '../TablePlugin';
 
 const blockTypeToBlockName = {
   bullet: 'Bulleted List',
@@ -289,6 +290,34 @@ export function InsertTableDialog({
 
   const onClick = () => {
     activeEditor.dispatchCommand(INSERT_TABLE_COMMAND, {columns, rows});
+    onClose();
+  };
+
+  return (
+    <>
+      <TextInput label="No of rows" onChange={setRows} value={rows} />
+      <TextInput label="No of columns" onChange={setColumns} value={columns} />
+      <div
+        className="ToolbarPlugin__dialogActions"
+        data-test-id="table-model-confirm-insert">
+        <Button onClick={onClick}>Confirm</Button>
+      </div>
+    </>
+  );
+}
+
+export function InsertNewTableDialog({
+  activeEditor,
+  onClose,
+}: {
+  activeEditor: LexicalEditor;
+  onClose: () => void;
+}): JSX.Element {
+  const [rows, setRows] = useState('5');
+  const [columns, setColumns] = useState('5');
+
+  const onClick = () => {
+    activeEditor.dispatchCommand(INSERT_NEW_TABLE_COMMAND, {columns, rows});
     onClose();
   };
 
@@ -1011,6 +1040,19 @@ export default function ToolbarPlugin(): JSX.Element {
               className="item">
               <i className="icon table" />
               <span className="text">Table</span>
+            </DropDownItem>
+            <DropDownItem
+              onClick={() => {
+                showModal('Insert Table', (onClose) => (
+                  <InsertNewTableDialog
+                    activeEditor={activeEditor}
+                    onClose={onClose}
+                  />
+                ));
+              }}
+              className="item">
+              <i className="icon table" />
+              <span className="text">Table (Experimental)</span>
             </DropDownItem>
             <DropDownItem
               onClick={() => {

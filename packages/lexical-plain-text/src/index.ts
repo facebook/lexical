@@ -95,7 +95,9 @@ function onPasteForPlainText(
     () => {
       const selection = $getSelection();
       const clipboardData =
-        event instanceof InputEvent ? null : event.clipboardData;
+        event instanceof InputEvent || event instanceof KeyboardEvent
+          ? null
+          : event.clipboardData;
 
       if (clipboardData != null && $isRangeSelection(selection)) {
         $insertDataTransferForPlainText(clipboardData, selection);

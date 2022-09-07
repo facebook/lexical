@@ -8,9 +8,9 @@ on:
         default: 'prerelease'
         type: choice
         options:
-        - prerelease
-        - patch
-        - minor
+          - prerelease
+          - patch
+          - minor
 jobs:
   release:
     runs-on: ubuntu-latest

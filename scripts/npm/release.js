@@ -16,10 +16,10 @@ const {LEXICAL_PKG, DEFAULT_PKGS} = require('./packages');
 const argv = require('minimist')(process.argv.slice(2));
 
 const nonInteractive = argv['non-interactive'];
-const increment = argv.increment;
-const validIncrements = new Set('minor', 'patch', 'prerelease');
-if (!validIncrements.has(increment)) {
-  console.error(`Invalid increment: ${increment}`);
+const channel = argv.channel;
+const validChannels = new Set('next', 'latest');
+if (!validChannels.has(channel)) {
+  console.error(`Invalid release channel: ${channel}`);
   process.exit(1);
 }
 
@@ -34,11 +34,11 @@ async function publish() {
     );
     await waitForInput();
   }
-  const distTag = increment === 'prerelease' ? 'next' : 'latest';
+
   for (let i = 0; i < pkgs.length; i++) {
     const pkg = pkgs[i];
     await exec(
-      `cd ./packages/${pkg}/npm && npm publish --access public --tag ${distTag}`,
+      `cd ./packages/${pkg}/npm && npm publish --access public --tag ${channel}`,
     );
   }
 }

@@ -1,15 +1,8 @@
-name: Publish Package to npmjs
-on: workflow_dispatch
-  inputs:
-    increment:
-        description: 'Version Increment'
-        required: true
-        default: 'prerelease'
-        type: choice
-        options:
-        - prerelease
-        - patch
-        - minor
+name: Publish to NPM
+on:
+  push:
+    branches:
+      - next
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -20,12 +13,7 @@ jobs:
         with:
           node-version: '16.x'
           registry-url: 'https://registry.npmjs.org'
-      - run: npm run increment-version -- --i $INCREMENT
-        env:
-          INCREMENT: ${{ inputs.increment }}
-      - run: npm run update-version -- --deps-only
       - run: npm run prepare-release
-      - run: node ./scripts/npm/release.js --non-interactive --increment $INCREMENT
+      - run: node ./scripts/npm/release.js --non-interactive --channel $GITHUB_REF_NAME
         env:
-          INCREMENT: ${{ inputs.increment }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

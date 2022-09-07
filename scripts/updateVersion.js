@@ -9,7 +9,6 @@
 'use strict';
 
 const fs = require('fs-extra');
-const argv = require('minimist')(process.argv.slice(2));
 
 const packages = {
   '@lexical/clipboard': 'lexical-clipboard',
@@ -39,8 +38,6 @@ const packages = {
   shared: 'shared',
 };
 
-const depsOnly = argv['deps-only'];
-
 function updateVersion() {
   // get version from monorepo package.json version
   const basePackageJSON = fs.readJsonSync(`./package.json`);
@@ -48,9 +45,7 @@ function updateVersion() {
   // update individual packages
   Object.values(packages).forEach((pkg) => {
     const packageJSON = fs.readJsonSync(`./packages/${pkg}/package.json`);
-    if (!depsOnly) {
-      packageJSON.version = version;
-    }
+    packageJSON.version = version;
     updateDependencies(packageJSON, version);
     fs.writeJsonSync(`./packages/${pkg}/package.json`, packageJSON, {
       spaces: 2,

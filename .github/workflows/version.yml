@@ -2,14 +2,14 @@ name: Create New Release Branch
 on: workflow_dispatch
   inputs:
     increment:
-        description: 'Version Increment'
-        required: true
-        default: 'prerelease'
-        type: choice
-        options:
-          - prerelease
-          - patch
-          - minor
+      description: 'Version Increment'
+      required: true
+      default: 'prerelease'
+      type: choice
+      options:
+      - prerelease
+      - patch
+      - minor
 jobs:
   release:
     runs-on: ubuntu-latest

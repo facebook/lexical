@@ -133,8 +133,9 @@ function handleLinkCreation(
         );
       }
 
+      let nodeFormat = node.__format;
       const linkNode = $createAutoLinkNode(match.url);
-      linkNode.append($createTextNode(match.text));
+      linkNode.append($createTextNode(match.text).setFormat(nodeFormat));
       middleNode.replace(linkNode);
       onChange(match.url, null);
     }

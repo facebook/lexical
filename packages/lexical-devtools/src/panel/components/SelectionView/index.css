@@ -1,5 +1,10 @@
 .selection-container {
+  padding-left: var(--monospace-character-width);
   text-align: left;
+}
+
+.selection-property-name {
+  color: var(--main-blue);
 }
 
 .selection-view {

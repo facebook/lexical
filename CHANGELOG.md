@@ -1,4 +1,4 @@
-## 0.3.11 (September 5, 2022)
+## 0.4.1 (September 5, 2022)
 
 - Fix breaking bug for `isEditable` mode in editor initialization (#2945) Tim Laubert
 - Fix Safari selection highlighting bug (#2943) John Flockton

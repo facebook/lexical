@@ -60,4 +60,31 @@ has moved to another editor on the page. This can also happen when trying to sel
 
 ## Working with selection
 
-> TODO
+This section lists a few use cases around selection usage.
+
+### Get the current node
+
+If nothing is selected, how can I get the node where the cursor is at?
+
+```js
+const selection = $getSelection();
+if (selection.isCollapsed()) { // Nothing is selected.
+  // Get the anchor of the selection (works also with focus).
+  const anchorNode = selection.anchor.getNode();
+  console.log('This is the node where the cursor is at', anchorNode);
+}
+```
+
+### Set a node to be selected
+
+How can I explicitly set the selection to a node, so the user sees the node selected in its editor?
+
+```js
+// Let's assume you have a nodeKey.
+const node = $getNodeByKey(nodeKey);
+const nodeSelection = $createNodeSelection();
+nodeSelection.add(node.__key);
+$setSelection(nodeSelection);
+```
+
+> TODO More case to cover.

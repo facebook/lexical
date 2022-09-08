@@ -523,7 +523,9 @@ export class LexicalEditor {
 
     this._onError = onError;
     this._htmlConversions = htmlConversions;
-    this._editable = editable;
+    // We don't actually make use of the `editable` argument above.
+    // Doing so, causes e2e tests around the lock to fail.
+    this._editable = true;
     this._headless = false;
     this._window = null;
   }

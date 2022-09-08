@@ -2,7 +2,7 @@
 sidebar_position: 8
 ---
 
-# Read Model / Edit Mode
+# Read Mode / Edit Mode
 
 Lexical supports two modes:
 

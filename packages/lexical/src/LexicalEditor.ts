@@ -523,7 +523,7 @@ export class LexicalEditor {
 
     this._onError = onError;
     this._htmlConversions = htmlConversions;
-    this._editable = true;
+    this._editable = editable;
     this._headless = false;
     this._window = null;
   }

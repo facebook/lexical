@@ -13,11 +13,7 @@ import type {
   NodeKey,
   SerializedLexicalNode,
 } from '../LexicalNode';
-import type {
-  GridSelection,
-  NodeSelection,
-  RangeSelection,
-} from '../LexicalSelection';
+import type {RangeSelection} from '../LexicalSelection';
 import type {Spread} from 'lexical';
 
 import {IS_FIREFOX} from 'shared/environment';
@@ -498,14 +494,6 @@ export class TextNode extends LexicalNode {
       type: 'text',
       version: 1,
     };
-  }
-
-  // Mutators
-  selectionTransform(
-    prevSelection: null | RangeSelection | NodeSelection | GridSelection,
-    nextSelection: RangeSelection,
-  ): void {
-    return;
   }
 
   // TODO 0.5 This should just be a `string`.

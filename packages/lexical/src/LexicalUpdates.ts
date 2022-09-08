@@ -40,7 +40,6 @@ import {reconcileRoot} from './LexicalReconciler';
 import {
   $isNodeSelection,
   $isRangeSelection,
-  applySelectionTransforms,
   internalCreateSelection,
   updateDOMSelection,
 } from './LexicalSelection';
@@ -805,7 +804,6 @@ function beginUpdate(
     const startingCompositionKey = editor._compositionKey;
     updateFn();
     skipTransforms = processNestedUpdates(editor, skipTransforms);
-    applySelectionTransforms(pendingEditorState, editor);
 
     if (editor._dirtyType !== NO_DIRTY_NODES) {
       if (skipTransforms) {

@@ -589,10 +589,6 @@ declare export class TextNode extends LexicalNode {
     dom: HTMLElement,
     config: EditorConfig,
   ): boolean;
-  selectionTransform(
-    prevSelection: null | RangeSelection | NodeSelection | GridSelection,
-    nextSelection: RangeSelection,
-  ): void;
   setFormat(format: number): this;
   setStyle(style: string): this;
   toggleFormat(type: TextFormatType): TextNode;

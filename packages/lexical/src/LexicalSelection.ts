@@ -7,7 +7,6 @@
  */
 
 import type {LexicalEditor} from './LexicalEditor';
-import type {EditorState} from './LexicalEditorState';
 import type {LexicalNode, NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextFormatType} from './nodes/LexicalTextNode';
@@ -2475,31 +2474,6 @@ function $updateSelectionResolveTextNodes(selection: RangeSelection): void {
         newOffset = child.getTextContentSize();
       }
       focus.set(child.__key, newOffset, 'text');
-    }
-  }
-}
-
-export function applySelectionTransforms(
-  nextEditorState: EditorState,
-  editor: LexicalEditor,
-): void {
-  const prevEditorState = editor.getEditorState();
-  const prevSelection = prevEditorState._selection;
-  const nextSelection = nextEditorState._selection;
-  if ($isRangeSelection(nextSelection)) {
-    const anchor = nextSelection.anchor;
-    const focus = nextSelection.focus;
-    let anchorNode;
-
-    if (anchor.type === 'text') {
-      anchorNode = anchor.getNode();
-      anchorNode.selectionTransform(prevSelection, nextSelection);
-    }
-    if (focus.type === 'text') {
-      const focusNode = focus.getNode();
-      if (anchorNode !== focusNode) {
-        focusNode.selectionTransform(prevSelection, nextSelection);
-      }
     }
   }
 }

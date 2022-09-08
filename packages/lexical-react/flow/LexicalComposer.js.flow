@@ -14,7 +14,7 @@ import type {InitialEditorStateType as InitialEditorStateRichTextType} from '@le
 type Props = {
   initialConfig: $ReadOnly<{
     editor__DEPRECATED?: LexicalEditor | null,
-    readOnly?: boolean,
+    editable?: boolean,
     namespace: string,
     nodes?: $ReadOnlyArray<Class<LexicalNode>>,
     theme?: EditorThemeClasses,

@@ -27,6 +27,7 @@ import {
   $isParagraphNode,
   $isTextNode,
 } from 'lexical';
+import {IS_IOS, IS_SAFARI} from 'shared/environment';
 
 import {PUNCTUATION_OR_SPACE, transformersByType} from './utils';
 
@@ -355,22 +356,36 @@ function createTextFormatTransformersIndex(
   const transformersByTag: Record<string, TextFormatTransformer> = {};
   const fullMatchRegExpByTag: Record<string, RegExp> = {};
   const openTagsRegExp = [];
+  const escapeRegExp = `(?<![\\\\])`;
 
   for (const transformer of textTransformers) {
     const {tag} = transformer;
     transformersByTag[tag] = transformer;
     const tagRegExp = tag.replace(/(\*|\^)/g, '\\$1');
     openTagsRegExp.push(tagRegExp);
-    fullMatchRegExpByTag[tag] = new RegExp(
-      `(${tagRegExp})(?![${tagRegExp}\\s])(.*?[^${tagRegExp}\\s])${tagRegExp}(?!${tagRegExp})`,
-    );
+
+    if (IS_SAFARI || IS_IOS) {
+      fullMatchRegExpByTag[tag] = new RegExp(
+        `(${tagRegExp})(?![${tagRegExp}\\s])(.*?[^${tagRegExp}\\s])${tagRegExp}(?!${tagRegExp})`,
+      );
+    } else {
+      fullMatchRegExpByTag[tag] = new RegExp(
+        `(?<![\\\\${tagRegExp}])(${tagRegExp})((\\\\${tagRegExp})?.*?[^${tagRegExp}\\s](\\\\${tagRegExp})?)((?<!\\\\)|(?<=\\\\\\\\))(${tagRegExp})(?![\\\\${tagRegExp}])`,
+      );
+    }
   }
 
   return {
     // Reg exp to find open tag + content + close tag
     fullMatchRegExpByTag,
     // Reg exp to find opening tags
-    openTagsRegExp: new RegExp('(' + openTagsRegExp.join('|') + ')', 'g'),
+    openTagsRegExp: new RegExp(
+      (IS_SAFARI || IS_IOS ? '' : `${escapeRegExp}`) +
+        '(' +
+        openTagsRegExp.join('|') +
+        ')',
+      'g',
+    ),
     transformersByTag,
   };
 }

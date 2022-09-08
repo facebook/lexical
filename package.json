@@ -91,7 +91,9 @@
     "prepare": "husky install",
     "prepare-www": "node scripts/www/rewriteImports.js",
     "changelog": "func() { git log --oneline ${1}...HEAD --pretty=format:\"- %s %an\"; }; func",
+    "increment-version": "node ./scripts/npm/increment-version",
     "update-version": "node ./scripts/updateVersion",
+    "postversion": "git checkout -b $npm_package_version && git branch -u origin $npm_package_version && npm install && npm run update-version && git add -A && git commit --amend --no-edit",
     "release": "npm run prepare-release && node ./scripts/npm/release.js"
   },
   "devDependencies": {

@@ -24,22 +24,22 @@ import {
 } from '@lexical/selection';
 import {$findMatchingParent} from '@lexical/utils';
 import {
-  $createGridSelection,
   $createParagraphNode,
   $getRoot,
   $getSelection,
   $isDecoratorNode,
   $isElementNode,
-  $isGridCellNode,
-  $isGridNode,
-  $isGridRowNode,
-  $isGridSelection,
   $isLineBreakNode,
   $isRangeSelection,
   $isTextNode,
   $parseSerializedNode,
   $setSelection,
-  GridNode,
+  DEPRECATED_$createGridSelection,
+  DEPRECATED_$isGridCellNode,
+  DEPRECATED_$isGridNode,
+  DEPRECATED_$isGridRowNode,
+  DEPRECATED_$isGridSelection,
+  DEPRECATED_GridNode,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import invariant from 'shared/invariant';
@@ -148,15 +148,19 @@ export function $insertGeneratedNodes(
   selection: RangeSelection | GridSelection,
 ) {
   const isSelectionInsideOfGrid =
-    $isGridSelection(selection) ||
+    DEPRECATED_$isGridSelection(selection) ||
     ($findMatchingParent(selection.anchor.getNode(), (n) =>
-      $isGridCellNode(n),
+      DEPRECATED_$isGridCellNode(n),
     ) !== null &&
       $findMatchingParent(selection.focus.getNode(), (n) =>
-        $isGridCellNode(n),
+        DEPRECATED_$isGridCellNode(n),
       ) !== null);
 
-  if (isSelectionInsideOfGrid && nodes.length === 1 && $isGridNode(nodes[0])) {
+  if (
+    isSelectionInsideOfGrid &&
+    nodes.length === 1 &&
+    DEPRECATED_$isGridNode(nodes[0])
+  ) {
     $mergeGridNodesStrategy(nodes, selection, false, editor);
     return;
   }
@@ -216,11 +220,11 @@ function $basicInsertStrategy(
 
   if ($isRangeSelection(selection)) {
     selection.insertNodes(topLevelBlocks);
-  } else if ($isGridSelection(selection)) {
+  } else if (DEPRECATED_$isGridSelection(selection)) {
     // If there's an active grid selection and a non grid is pasted, add to the anchor.
     const anchorCell = selection.anchor.getNode();
 
-    if (!$isGridCellNode(anchorCell)) {
+    if (!DEPRECATED_$isGridCellNode(anchorCell)) {
       invariant(false, 'Expected Grid Cell in Grid Selection');
     }
 
@@ -234,28 +238,30 @@ function $mergeGridNodesStrategy(
   isFromLexical: boolean,
   editor: LexicalEditor,
 ) {
-  if (nodes.length !== 1 || !$isGridNode(nodes[0])) {
+  if (nodes.length !== 1 || !DEPRECATED_$isGridNode(nodes[0])) {
     invariant(false, '$mergeGridNodesStrategy: Expected Grid insertion.');
   }
 
   const newGrid = nodes[0];
   const newGridRows = newGrid.getChildren();
   const newColumnCount = newGrid
-    .getFirstChildOrThrow<GridNode>()
+    .getFirstChildOrThrow<DEPRECATED_GridNode>()
     .getChildrenSize();
   const newRowCount = newGrid.getChildrenSize();
   const gridCellNode = $findMatchingParent(selection.anchor.getNode(), (n) =>
-    $isGridCellNode(n),
+    DEPRECATED_$isGridCellNode(n),
   );
   const gridRowNode =
-    gridCellNode && $findMatchingParent(gridCellNode, (n) => $isGridRowNode(n));
+    gridCellNode &&
+    $findMatchingParent(gridCellNode, (n) => DEPRECATED_$isGridRowNode(n));
   const gridNode =
-    gridRowNode && $findMatchingParent(gridRowNode, (n) => $isGridNode(n));
+    gridRowNode &&
+    $findMatchingParent(gridRowNode, (n) => DEPRECATED_$isGridNode(n));
 
   if (
-    !$isGridCellNode(gridCellNode) ||
-    !$isGridRowNode(gridRowNode) ||
-    !$isGridNode(gridNode)
+    !DEPRECATED_$isGridCellNode(gridCellNode) ||
+    !DEPRECATED_$isGridRowNode(gridRowNode) ||
+    !DEPRECATED_$isGridNode(gridNode)
   ) {
     invariant(
       false,
@@ -285,13 +291,13 @@ function $mergeGridNodesStrategy(
   for (let r = fromY; r <= toY; r++) {
     const currentGridRowNode = gridRowNodes[r];
 
-    if (!$isGridRowNode(currentGridRowNode)) {
+    if (!DEPRECATED_$isGridRowNode(currentGridRowNode)) {
       invariant(false, 'getNodes: expected to find GridRowNode');
     }
 
     const newGridRowNode = newGridRows[newRowIdx];
 
-    if (!$isGridRowNode(newGridRowNode)) {
+    if (!DEPRECATED_$isGridRowNode(newGridRowNode)) {
       invariant(false, 'getNodes: expected to find GridRowNode');
     }
 
@@ -302,13 +308,13 @@ function $mergeGridNodesStrategy(
     for (let c = fromX; c <= toX; c++) {
       const currentGridCellNode = gridCellNodes[c];
 
-      if (!$isGridCellNode(currentGridCellNode)) {
+      if (!DEPRECATED_$isGridCellNode(currentGridCellNode)) {
         invariant(false, 'getNodes: expected to find GridCellNode');
       }
 
       const newGridCellNode = newGridCellNodes[newColumnIdx];
 
-      if (!$isGridCellNode(newGridCellNode)) {
+      if (!DEPRECATED_$isGridCellNode(newGridCellNode)) {
         invariant(false, 'getNodes: expected to find GridCellNode');
       }
 
@@ -336,7 +342,7 @@ function $mergeGridNodesStrategy(
   }
 
   if (newAnchorCellKey && newFocusCellKey) {
-    const newGridSelection = $createGridSelection();
+    const newGridSelection = DEPRECATED_$createGridSelection();
     newGridSelection.set(gridNode.getKey(), newAnchorCellKey, newFocusCellKey);
     $setSelection(newGridSelection);
     editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);

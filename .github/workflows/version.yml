@@ -1,0 +1,27 @@
+name: Create New Release Branch
+on:
+  workflow_dispatch:
+    inputs:
+      increment:
+        description: 'Version Increment'
+        required: true
+        default: 'prerelease'
+        type: choice
+        options:
+          - prerelease
+          - patch
+          - minor
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      # Setup .npmrc file to publish to npm
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '16.x'
+          registry-url: 'https://registry.npmjs.org'
+      - run: npm run increment-version -- --i $INCREMENT
+        env:
+          INCREMENT: ${{ inputs.increment }}
+      - run: git push --follow-tags

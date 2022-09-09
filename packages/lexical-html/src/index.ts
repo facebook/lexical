@@ -172,6 +172,7 @@ function $createNodesFromDOM(
   editor: LexicalEditor,
   forChildMap: Map<string, DOMChildConversion> = new Map(),
   parentLexicalNode?: LexicalNode | null | undefined,
+  preformatted = false,
 ): Array<LexicalNode> {
   let lexicalNodes: Array<LexicalNode> = [];
 
@@ -182,7 +183,7 @@ function $createNodesFromDOM(
   let currentLexicalNode = null;
   const transformFunction = getConversionFunction(node, editor);
   const transformOutput = transformFunction
-    ? transformFunction(node as HTMLElement)
+    ? transformFunction(node as HTMLElement, undefined, preformatted)
     : null;
   let postTransform = null;
 
@@ -224,6 +225,8 @@ function $createNodesFromDOM(
         editor,
         new Map(forChildMap),
         currentLexicalNode,
+        preformatted ||
+          (transformOutput && transformOutput.preformatted) === true,
       ),
     );
   }

@@ -882,14 +882,17 @@ function convertBringAttentionToElement(domNode: Node): DOMConversionOutput {
     node: null,
   };
 }
-function convertTextDOMNode(domNode: Node): DOMConversionOutput {
-  const {parentElement} = domNode;
-  const textContent = domNode.textContent || '';
-  const textContentTrim = textContent.trim();
-  const isPre =
-    parentElement != null && parentElement.tagName.toLowerCase() === 'pre';
-  if (!isPre && textContentTrim.length === 0 && textContent.includes('\n')) {
-    return {node: null};
+function convertTextDOMNode(
+  domNode: Node,
+  _parent?: Node,
+  preformatted?: boolean,
+): DOMConversionOutput {
+  let textContent = domNode.textContent || '';
+  if (!preformatted) {
+    textContent = textContent.replace(/\r?\n/gm, ' ');
+    if (textContent.trim().length === 0) {
+      return {node: null};
+    }
   }
   return {node: $createTextNode(textContent)};
 }

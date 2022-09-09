@@ -15,6 +15,13 @@ import {OnChangePlugin} from '@lexical/react/LexicalOnChangePlugin';
 ```
 
 ```jsx
+const initialConfig = {
+  namespace: 'MyEditor', 
+  theme,
+  nodes: [], // Any custom nodes that plugins might use
+  onError,
+};
+
 <LexicalComposer initialConfig={initialConfig}>
   <PlainTextPlugin
     contentEditable={<ContentEditable />}
@@ -25,6 +32,8 @@ import {OnChangePlugin} from '@lexical/react/LexicalOnChangePlugin';
   ...
 </LexicalComposer>
 ```
+
+> Note: Many plugins might require you to register the node. You can do this by passing the node to the `nodes` property of your initial editor configuration.
 
 ### `LexicalPlainTextPlugin`
 

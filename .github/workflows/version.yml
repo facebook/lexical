@@ -28,4 +28,4 @@ jobs:
       - run: npm run increment-version -- --i $INCREMENT
         env:
           INCREMENT: ${{ inputs.increment }}
-      - run: git push --follow-tags
+      - run: git push -u git@github.com:facebook/lexical.git --follow-tags

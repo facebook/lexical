@@ -23,6 +23,9 @@ jobs:
         with:
           node-version: '16.x'
           registry-url: 'https://registry.npmjs.org'
+      - run: |
+          git config user.name "Lexical GitHub Actions Bot"
+          git config user.email "<>"
       - run: npm install
       - run: npm run increment-version -- --i $INCREMENT
         env:

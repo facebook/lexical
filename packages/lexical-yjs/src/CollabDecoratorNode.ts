@@ -12,6 +12,7 @@ import type {DecoratorNode, NodeKey, NodeMap} from 'lexical';
 import type {XmlElement} from 'yjs';
 
 import {$getNodeByKey, $isDecoratorNode} from 'lexical';
+import invariant from 'shared/invariant';
 
 import {syncPropertiesFromLexical, syncPropertiesFromYjs} from './Utils';
 
@@ -86,11 +87,10 @@ export class CollabDecoratorNode {
     keysChanged: null | Set<string>,
   ): void {
     const lexicalNode = this.getNode();
-
-    if (lexicalNode === null) {
-      throw new Error('Should never happen');
-    }
-
+    invariant(
+      lexicalNode !== null,
+      'syncPropertiesFromYjs: cound not find decorator node',
+    );
     const xmlElem = this._xmlElem;
     syncPropertiesFromYjs(binding, xmlElem, lexicalNode, keysChanged);
   }

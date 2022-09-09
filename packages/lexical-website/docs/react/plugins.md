@@ -18,7 +18,6 @@ import {OnChangePlugin} from '@lexical/react/LexicalOnChangePlugin';
 const initialConfig = {
   namespace: 'MyEditor', 
   theme,
-  nodes: [], // Any custom nodes that plugins might use
   onError,
 };
 
@@ -33,7 +32,16 @@ const initialConfig = {
 </LexicalComposer>
 ```
 
-> Note: Many plugins might require you to register the node. You can do this by passing the node to the `nodes` property of your initial editor configuration.
+> Note: Many plugins might require you to register the one or many Lexical nodes in order for the plugin to work. You can do this by passing a reference to the node to the `nodes` array in your initial editor configuration.
+
+```jsx
+const initialConfig = {
+  namespace: 'MyEditor', 
+  theme,
+  nodes: [ListNode, ListItemNode], // Pass the references to the nodes here
+  onError,
+};
+```
 
 ### `LexicalPlainTextPlugin`
 

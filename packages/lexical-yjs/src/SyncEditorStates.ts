@@ -18,6 +18,7 @@ import {
   $isTextNode,
   $setSelection,
 } from 'lexical';
+import invariant from 'shared/invariant';
 import {WebsocketProvider} from 'y-websocket';
 import {Text as YText, YEvent, YMapEvent, YTextEvent, YXmlEvent} from 'yjs';
 
@@ -77,7 +78,7 @@ function syncEvent(binding: Binding, event: any): void {
       collabNode.syncPropertiesFromYjs(binding, attributesChanged);
     }
   } else {
-    throw new Error('Should never happen');
+    invariant(false, 'Expected text, element, or decorator event');
   }
 }
 

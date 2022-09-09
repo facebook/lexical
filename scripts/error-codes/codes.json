@@ -78,5 +78,21 @@
   "76": "append: attempting to append self",
   "77": "LexicalAutoLinkPlugin: AutoLinkNode not registered on editor",
   "78": "window object not found",
-  "79": "MarkdownShortcuts: missing dependency for transformer. Ensure node dependency is included in editor initial config."
+  "79": "MarkdownShortcuts: missing dependency for transformer. Ensure node dependency is included in editor initial config.",
+  "80": "Create node: Attempted to create node %s that was not configured to be used on the editor.",
+  "81": "createBinding: doc is null or undefined",
+  "82": "Expected text, element, or decorator event",
+  "83": "syncPropertiesFromYjs: cound not find decorator node",
+  "84": "syncPropertiesAndTextFromYjs: cound not find decorator node",
+  "85": "could not find node by key",
+  "86": "Expected text, element, decorator, or linebreak node",
+  "87": "Expected shared type to include type attribute",
+  "88": "Node %s is not registered",
+  "89": "Expected parent to be a collab element node",
+  "90": "getOffset: cound not find collab element node",
+  "91": "syncPropertiesFromYjs: cound not find element node",
+  "92": "syncChildrenFromYjs: cound not find element node",
+  "93": "syncChildrenFromYjs: expected text, element, decorator, or linebreak collab node",
+  "94": "splice: could not find collab element node",
+  "95": "splice: expected offset to be greater than zero"
 }

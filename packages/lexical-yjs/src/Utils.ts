@@ -24,6 +24,7 @@ import {
   createEditor,
   NodeKey,
 } from 'lexical';
+import invariant from 'shared/invariant';
 import {Doc, Map as YMap, XmlElement, XmlText} from 'yjs';
 
 import {
@@ -76,11 +77,7 @@ export function getIndexOfYjsNode(
 
 export function $getNodeByKeyOrThrow(key: NodeKey): LexicalNode {
   const node = $getNodeByKey(key);
-
-  if (node === null) {
-    throw new Error('Should never happen');
-  }
-
+  invariant(node !== null, 'could not find node by key');
   return node;
 }
 
@@ -120,7 +117,7 @@ export function $createCollabNodeFromLexicalNode(
     collabNode = $createCollabDecoratorNode(xmlElem, parent, nodeType);
     collabNode.syncPropertiesFromLexical(binding, lexicalNode, null);
   } else {
-    throw new Error('Should never happen');
+    invariant(false, 'Expected text, element, decorator, or linebreak node');
   }
 
   collabNode._key = lexicalNode.__key;
@@ -134,11 +131,7 @@ function getNodeTypeFromSharedType(
     sharedType instanceof YMap
       ? sharedType.get('__type')
       : sharedType.getAttribute('__type');
-
-  if (type == null) {
-    throw new Error('Should never happen');
-  }
-
+  invariant(type != null, 'Expected shared type to include type attribute');
   return type;
 }
 
@@ -158,10 +151,7 @@ export function getOrInitCollabNodeFromSharedType(
     const registeredNodes = binding.editor._nodes;
     const type = getNodeTypeFromSharedType(sharedType);
     const nodeInfo = registeredNodes.get(type);
-
-    if (nodeInfo === undefined) {
-      throw new Error('Should never happen');
-    }
+    invariant(nodeInfo !== undefined, 'Node %s is not registered', type);
 
     const sharedParent = sharedType.parent;
     const targetParent =
@@ -172,21 +162,17 @@ export function getOrInitCollabNodeFromSharedType(
           )
         : parent || null;
 
-    if (!(targetParent instanceof CollabElementNode)) {
-      throw new Error('Should never happen');
-    }
+    invariant(
+      targetParent instanceof CollabElementNode,
+      'Expected parent to be a collab element node',
+    );
 
     if (sharedType instanceof XmlText) {
       return $createCollabElementNode(sharedType, targetParent, type);
     } else if (sharedType instanceof YMap) {
-      if (targetParent === null) {
-        throw new Error('Should never happen');
-      }
-
       if (type === 'linebreak') {
         return $createCollabLineBreakNode(sharedType, targetParent);
       }
-
       return $createCollabTextNode(sharedType, '', targetParent, type);
     } else if (sharedType instanceof XmlElement) {
       return $createCollabDecoratorNode(sharedType, targetParent, type);
@@ -208,11 +194,7 @@ export function createLexicalNodeFromCollabNode(
   const type = collabNode.getType();
   const registeredNodes = binding.editor._nodes;
   const nodeInfo = registeredNodes.get(type);
-
-  if (nodeInfo === undefined) {
-    throw new Error('createLexicalNode failed');
-  }
-
+  invariant(nodeInfo !== undefined, 'Node %s is not registered', type);
   const lexicalNode:
     | DecoratorNode<unknown>
     | TextNode

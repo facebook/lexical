@@ -290,12 +290,13 @@ export function $isCodeNode(
 }
 
 function convertPreElement(domNode: Node): DOMConversionOutput {
-  return {node: $createCodeNode()};
+  return {node: $createCodeNode(), preformatted: true};
 }
 
 function convertDivElement(domNode: Node): DOMConversionOutput {
   // domNode is a <div> since we matched it by nodeName
   const div = domNode as HTMLDivElement;
+  const isCode = isCodeElement(div);
   return {
     after: (childLexicalNodes) => {
       const domParent = domNode.parentNode;
@@ -304,12 +305,13 @@ function convertDivElement(domNode: Node): DOMConversionOutput {
       }
       return childLexicalNodes;
     },
-    node: isCodeElement(div) ? $createCodeNode() : null,
+    node: isCode ? $createCodeNode() : null,
+    preformatted: isCode,
   };
 }
 
 function convertTableElement(): DOMConversionOutput {
-  return {node: $createCodeNode()};
+  return {node: $createCodeNode(), preformatted: true};
 }
 
 function convertCodeNoop(): DOMConversionOutput {

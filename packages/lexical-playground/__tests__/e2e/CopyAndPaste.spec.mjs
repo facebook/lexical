@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import {expect} from '@playwright/test';
 
 import {
   moveLeft,
@@ -1985,36 +1986,26 @@ test.describe('CopyAndPaste', () => {
   test('HTML Copy + paste multi line html with extra newlines', async ({
     page,
     isPlainText,
+    isCollab,
   }) => {
-    test.skip(isPlainText);
+    test.skip(isPlainText || isCollab);
 
     await focusEditor(page);
     await pasteFromClipboard(page, {
-      'text/html': `
-        <p>Hello
-
-        </p>
-
-        <p>World</p>
-
-      `,
+      'text/html':
+        '<p>Hello\n</p>\n\n<p>\n\nWorld\n\n</p>\n\n<p>Hello\n\n   World   \n\nThere\n\n</p>',
     });
 
-    await assertHTML(
-      page,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">Hello</span>
-        </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">World</span>
-        </p>
-      `,
-    );
+    const paragraphs = page.locator('div[contenteditable="true"] > p');
+    await expect(paragraphs).toHaveCount(3);
+
+    // Explicitly checking inner text, since regular assertHTML will prettify it and strip all
+    // extra newlines, which makes this test less acurate
+    await expect(paragraphs.nth(0)).toHaveText('Hello', {useInnerText: true});
+    await expect(paragraphs.nth(1)).toHaveText('World', {useInnerText: true});
+    await expect(paragraphs.nth(2)).toHaveText('Hello   World   There', {
+      useInnerText: true,
+    });
   });
 
   test('HTML Copy + paste in front of or after a link', async ({

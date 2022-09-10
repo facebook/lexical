@@ -18,6 +18,7 @@ jobs:
       - uses: actions/checkout@v3
         with:
           ssh-key: ${{ secrets.SSH_KEY }}
+          fetch-depth: 0
       # Setup .npmrc file to publish to npm
       - uses: actions/setup-node@v3
         with:
@@ -30,4 +31,5 @@ jobs:
       - run: npm run increment-version -- --i $INCREMENT
         env:
           INCREMENT: ${{ inputs.increment }}
+      - run: git merge
       - run: git push -u git@github.com:facebook/lexical.git --follow-tags

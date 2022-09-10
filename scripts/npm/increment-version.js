@@ -22,7 +22,7 @@ if (!validIncrements.has(increment)) {
 async function incrementVersion(increment) {
   const preId = increment === 'prerelease' ? '--preid next' : '';
   const workspaces = '';
-  const command = `npm version ${increment} --include-workspace-root true ${preId} ${workspaces}`;
+  const command = `npm --no-git-tag-version version ${increment} --include-workspace-root true ${preId} ${workspaces}`;
   await exec(command);
 }
 

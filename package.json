@@ -93,7 +93,7 @@
     "changelog": "func() { git log --oneline ${1}...HEAD --pretty=format:\"- %s %an\"; }; func",
     "increment-version": "node ./scripts/npm/increment-version",
     "update-version": "node ./scripts/updateVersion",
-    "postversion": "git checkout -b $npm_package_version && npm install && npm run update-version && git add -A && git commit --amend --no-edit",
+    "postversion": "git checkout -b $npm_package_version && npm install && npm run update-version && git add -A && git commit -m v${npm_package_version}",
     "release": "npm run prepare-release && node ./scripts/npm/release.js"
   },
   "devDependencies": {

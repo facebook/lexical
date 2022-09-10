@@ -236,6 +236,7 @@ export default function StickyComponent({
         </button>
         <LexicalNestedComposer
           initialEditor={caption}
+          initialNodes={[]}
           initialTheme={StickyEditorTheme}>
           {isCollabActive ? (
             <CollaborationPlugin

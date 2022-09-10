@@ -77,7 +77,7 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
     super(key);
     this.__x = x;
     this.__y = y;
-    this.__caption = caption || createEditor();
+    this.__caption = caption || createEditor({});
     this.__color = color;
   }
 

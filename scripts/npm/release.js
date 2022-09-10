@@ -39,7 +39,7 @@ async function publish() {
   for (let i = 0; i < pkgs.length; i++) {
     const pkg = pkgs[i];
     console.info(`Publishing ${pkg}...`);
-    if (!dryRun) {
+    if (dryRun === undefined || dryRun === 0) {
       await exec(
         `cd ./packages/${pkg}/npm && npm publish --access public --tag ${channel}`,
       );

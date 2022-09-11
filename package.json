@@ -90,7 +90,7 @@
     "prepare-release": "npm run build-release && node ./scripts/npm/prepare-release.js",
     "prepare": "husky install",
     "prepare-www": "node scripts/www/rewriteImports.js",
-    "changelog": "func() { git log --oneline ${1}...HEAD --pretty=format:\"- %s %an\"; }; func",
+    "changelog": "func() { git --no-pager log --oneline ${1}...HEAD --pretty=format:\"- %s %an\"; }; func",
     "increment-version": "node ./scripts/npm/increment-version",
     "update-version": "node ./scripts/updateVersion",
     "postversion": "git checkout -b $npm_package_version && npm install && npm run update-version && git add -A && git commit -m v${npm_package_version} && git tag -a v${npm_package_version} -m v${npm_package_version}",

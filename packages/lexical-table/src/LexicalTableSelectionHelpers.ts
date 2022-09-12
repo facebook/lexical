@@ -10,6 +10,7 @@ import type {TableNode} from './LexicalTableNode';
 import type {Cell, Cells, Grid} from './LexicalTableSelection';
 import type {
   GridSelection,
+  LexicalCommand,
   LexicalEditor,
   LexicalNode,
   NodeSelection,
@@ -20,7 +21,9 @@ import type {
 import {TableCellNode} from '@lexical/table';
 import {$findMatchingParent} from '@lexical/utils';
 import {
+  $createParagraphNode,
   $createRangeSelection,
+  $createTextNode,
   $getNearestNodeFromDOMNode,
   $getPreviousSelection,
   $getSelection,
@@ -31,6 +34,8 @@ import {
   COMMAND_PRIORITY_CRITICAL,
   CONTROLLED_TEXT_INSERTION_COMMAND,
   DELETE_CHARACTER_COMMAND,
+  DELETE_LINE_COMMAND,
+  DELETE_WORD_COMMAND,
   DEPRECATED_$isGridSelection,
   FOCUS_COMMAND,
   FORMAT_TEXT_COMMAND,
@@ -39,6 +44,7 @@ import {
   KEY_ARROW_RIGHT_COMMAND,
   KEY_ARROW_UP_COMMAND,
   KEY_BACKSPACE_COMMAND,
+  KEY_DELETE_COMMAND,
   KEY_TAB_COMMAND,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
@@ -597,83 +603,117 @@ export function applyTableHandlers(
     ),
   );
 
-  tableSelection.listenersToRemove.add(
-    editor.registerCommand(
-      DELETE_CHARACTER_COMMAND,
-      () => {
-        const selection = $getSelection();
+  const deleteTextHandler = (command: LexicalCommand<boolean>) => () => {
+    const selection = $getSelection();
 
-        if (!$isSelectionInTable(selection, tableNode)) {
-          return false;
-        }
+    if (!$isSelectionInTable(selection, tableNode)) {
+      return false;
+    }
 
-        if (DEPRECATED_$isGridSelection(selection)) {
-          tableSelection.clearText();
+    if (DEPRECATED_$isGridSelection(selection)) {
+      tableSelection.clearText();
 
-          return true;
-        } else if ($isRangeSelection(selection)) {
-          const tableCellNode = $findMatchingParent(
-            selection.anchor.getNode(),
-            (n) => $isTableCellNode(n),
-          );
+      return true;
+    } else if ($isRangeSelection(selection)) {
+      const tableCellNode = $findMatchingParent(
+        selection.anchor.getNode(),
+        (n) => $isTableCellNode(n),
+      );
 
-          if (!$isTableCellNode(tableCellNode)) {
-            return false;
-          }
-
-          const paragraphNode = $findMatchingParent(
-            selection.anchor.getNode(),
-            (n) => $isParagraphNode(n),
-          );
-
-          if (!$isParagraphNode(paragraphNode)) {
-            return false;
-          }
-
-          if (
-            selection.isCollapsed() &&
-            selection.anchor.offset === 0 &&
-            paragraphNode.getPreviousSiblings().length === 0
-          ) {
-            return true;
-          }
-        }
-
+      if (!$isTableCellNode(tableCellNode)) {
         return false;
-      },
+      }
+
+      const paragraphNode = $findMatchingParent(
+        selection.anchor.getNode(),
+        (n) => $isParagraphNode(n),
+      );
+
+      if (!$isParagraphNode(paragraphNode)) {
+        return false;
+      }
+
+      if (
+        command === DELETE_LINE_COMMAND &&
+        paragraphNode.getPreviousSiblings().length === 0
+      ) {
+        const newParagraphNode = $createParagraphNode();
+        const textNode = $createTextNode();
+        newParagraphNode.append(textNode);
+        tableCellNode.append(newParagraphNode);
+        tableCellNode.getChildren().forEach((child) => {
+          if (child !== newParagraphNode) {
+            child.remove();
+          }
+        });
+        return true;
+      }
+
+      if (
+        (command === DELETE_CHARACTER_COMMAND ||
+          command === DELETE_WORD_COMMAND) &&
+        selection.isCollapsed() &&
+        selection.anchor.offset === 0 &&
+        paragraphNode.getPreviousSiblings().length === 0
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+  };
+
+  [DELETE_WORD_COMMAND, DELETE_LINE_COMMAND, DELETE_CHARACTER_COMMAND].forEach(
+    (command) => {
+      tableSelection.listenersToRemove.add(
+        editor.registerCommand(
+          command,
+          deleteTextHandler(command),
+          COMMAND_PRIORITY_CRITICAL,
+        ),
+      );
+    },
+  );
+
+  const deleteCellHandler = (event: KeyboardEvent): boolean => {
+    const selection = $getSelection();
+
+    if (!$isSelectionInTable(selection, tableNode)) {
+      return false;
+    }
+
+    if ($DEPRECATED_$isGridSelection(selection)) {
+      event.preventDefault();
+      event.stopPropagation();
+      tableSelection.clearText();
+
+      return true;
+    } else if ($isRangeSelection(selection)) {
+      const tableCellNode = $findMatchingParent(
+        selection.anchor.getNode(),
+        (n) => $isTableCellNode(n),
+      );
+
+      if (!$isTableCellNode(tableCellNode)) {
+        return false;
+      }
+    }
+
+    return false;
+  };
+
+  tableSelection.listenersToRemove.add(
+    editor.registerCommand<KeyboardEvent>(
+      KEY_BACKSPACE_COMMAND,
+      deleteCellHandler,
       COMMAND_PRIORITY_CRITICAL,
     ),
   );
 
   tableSelection.listenersToRemove.add(
     editor.registerCommand<KeyboardEvent>(
-      KEY_BACKSPACE_COMMAND,
-      (event) => {
-        const selection = $getSelection();
-
-        if (!$isSelectionInTable(selection, tableNode)) {
-          return false;
-        }
-
-        if (DEPRECATED_$isGridSelection(selection)) {
-          event.preventDefault();
-          event.stopPropagation();
-          tableSelection.clearText();
-
-          return true;
-        } else if ($isRangeSelection(selection)) {
-          const tableCellNode = $findMatchingParent(
-            selection.anchor.getNode(),
-            (n) => $isTableCellNode(n),
-          );
-
-          if (!$isTableCellNode(tableCellNode)) {
-            return false;
-          }
-        }
-
-        return false;
-      },
+      KEY_DELETE_COMMAND,
+      deleteCellHandler,
       COMMAND_PRIORITY_CRITICAL,
     ),
   );

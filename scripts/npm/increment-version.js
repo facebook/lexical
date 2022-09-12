@@ -24,22 +24,6 @@ async function incrementVersion(increment) {
   const workspaces = '';
   const command = `npm --no-git-tag-version version ${increment} --include-workspace-root true ${preId} ${workspaces}`;
   await exec(command);
-  if (increment !== 'prelease') {
-    const date = (await exec(`git show --format=%as | head -1`)).stdout.trim();
-    const header = `## v${process.env.npm_package_version} (${date})`;
-    const previousReleaseHash = (
-      await exec(`git log -n 1 origin/latest --pretty=format:"%H"`)
-    ).stdout.trim();
-    const tmpFilePath = './changelog-tmp';
-    await exec(`echo "${header}\n\n" >> ${tmpFilePath}`);
-    await exec(
-      `git --no-pager log --oneline ${previousReleaseHash}...HEAD --pretty=format:\"- %s %an\" >> ${tmpFilePath}`,
-    );
-    await exec(
-      `cat ./CHANGELOG.md >> ${tmpFilePath} && mv ${tmpFilePath} ./CHANGELOG.md`,
-    );
-    await exec(`git commit --amend --no-edit`);
-  }
 }
 
 incrementVersion(increment);

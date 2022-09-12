@@ -199,11 +199,14 @@ function TableActionMenu({
             $getTableColumnIndexFromTableCellNode(tableCellNode);
         }
 
+        const grid = $getElementGridForTableNode(editor, tableNode);
+
         $insertTableColumn(
           tableNode,
           tableColumnIndex,
           shouldInsertAfter,
           selectionCounts.columns,
+          grid,
         );
 
         clearTableSelection();

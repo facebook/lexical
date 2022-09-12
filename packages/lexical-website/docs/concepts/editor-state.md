@@ -28,7 +28,14 @@ to deserialize stringified editor states.
 Here's an example of how you can initialize editor with some state and then persist it:
 
 ```js
-// Create editor with initial state (e.g. loaded from backend)
+// Get editor initial state (e.g. loaded from backend)
+const loadContent = async () => {
+  // 'empty' editor
+  const value = '{"root":{"children":[{"children":[],"direction":null,"format":"","indent":0,"type":"paragraph","version":1}],"direction":null,"format":"","indent":0,"type":"root","version":1}}';
+
+  return value;
+}
+
 const initialEditorState = await loadContent();
 const editor = createEditor(...);
 registerRichText(editor, initialEditorState);

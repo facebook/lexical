@@ -22,7 +22,7 @@ async function updateChangelog() {
   ).stdout.trim();
   const changelogContent = (
     await exec(
-      `git --no-pager log --oneline ${previousReleaseHash}...HEAD --pretty=format:\"- %s %an\"`,
+      `git --no-pager log --oneline ${previousReleaseHash}...HEAD~1 --pretty=format:\"- %s %an\"`,
     )
   ).stdout.trim();
   const tmpFilePath = './changelog-tmp';

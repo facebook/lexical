@@ -575,7 +575,7 @@ export function $selectAll(selection: RangeSelection): void {
 function $removeParentEmptyElements(startingNode: ElementNode): void {
   let node: ElementNode | null = startingNode;
 
-  while (node !== null && !$isRootNode(node)) {
+  while (node !== null && !$isRootNode(node) && node.__type === 'tablecell') {
     const latest = node.getLatest();
     const parentNode: ElementNode | null = node.getParent<ElementNode>();
 
@@ -592,6 +592,7 @@ export function $wrapLeafNodesInElements(
   createElement: () => ElementNode,
   wrappingElement?: ElementNode,
 ): void {
+  debugger;
   const nodes = selection.getNodes();
   const nodesLength = nodes.length;
   const anchor = selection.anchor;
@@ -640,13 +641,14 @@ export function $wrapLeafNodesInElements(
     const prevSibling = target.getPreviousSibling<ElementNode>();
 
     if (prevSibling !== null) {
-      target = prevSibling;
+      break;
+      // target = prevSibling;
       break;
     }
 
     target = target.getParentOrThrow();
 
-    if ($isRootNode(target)) {
+    if ($isRootNode(target) || target.__type === 'tablecell') {
       break;
     }
   }
@@ -714,7 +716,7 @@ export function $wrapLeafNodesInElements(
 
   // If our target is the root, let's see if we can re-adjust
   // so that the target is the first child instead.
-  if ($isRootNode(target)) {
+  if ($isRootNode(target) || target.__type === 'tablecell') {
     const firstChild = target.getFirstChild();
 
     if ($isElementNode(firstChild)) {
@@ -727,6 +729,7 @@ export function $wrapLeafNodesInElements(
       } else {
         for (let i = 0; i < elements.length; i++) {
           const element = elements[i];
+          console.info(target);
           target.append(element);
         }
       }
@@ -760,6 +763,7 @@ export function $wrapLeafNodesInElements(
   ) {
     $setSelection(prevSelection.clone());
   } else {
+    $setSelection(null);
     selection.dirty = true;
   }
 }

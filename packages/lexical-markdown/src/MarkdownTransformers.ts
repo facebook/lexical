@@ -8,7 +8,8 @@
 
 import type {ListType} from '@lexical/list';
 import type {HeadingTagType} from '@lexical/rich-text';
-import type {
+import {
+  $isParagraphNode,
   ElementNode,
   Klass,
   LexicalNode,
@@ -81,13 +82,15 @@ export type TextMatchTransformer = Readonly<{
   type: 'text-match';
 }>;
 
-const replaceWithBlock = (
+const createBlockNode = (
   createNode: (match: Array<string>) => ElementNode,
 ): ElementTransformer['replace'] => {
   return (parentNode, children, match) => {
     const node = createNode(match);
     node.append(...children);
-    parentNode.replace(node);
+    if ($isParagraphNode(parentNode)) {
+      parentNode.replace(node);
+    }
     node.select(0, 0);
   };
 };
@@ -165,7 +168,7 @@ export const HEADING: ElementTransformer = {
     return '#'.repeat(level) + ' ' + exportChildren(node);
   },
   regExp: /^(#{1,6})\s/,
-  replace: replaceWithBlock((match) => {
+  replace: createBlockNode((match) => {
     const tag = ('h' + match[1].length) as HeadingTagType;
     return $createHeadingNode(tag);
   }),
@@ -225,7 +228,7 @@ export const CODE: ElementTransformer = {
     );
   },
   regExp: /^```(\w{1,10})?\s/,
-  replace: replaceWithBlock((match) => {
+  replace: createBlockNode((match) => {
     return $createCodeNode(match ? match[1] : undefined);
   }),
   type: 'element',

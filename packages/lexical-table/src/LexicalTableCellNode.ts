@@ -23,7 +23,7 @@ import {
   $createParagraphNode,
   $isElementNode,
   $isLineBreakNode,
-  GridCellNode,
+  DEPRECATED_GridCellNode,
 } from 'lexical';
 
 export const TableCellHeaderStates = {
@@ -46,7 +46,7 @@ export type SerializedTableCellNode = Spread<
 >;
 
 /** @noInheritDoc */
-export class TableCellNode extends GridCellNode {
+export class TableCellNode extends DEPRECATED_GridCellNode {
   /** @internal */
   __headerState: TableCellHeaderState;
   /** @internal */

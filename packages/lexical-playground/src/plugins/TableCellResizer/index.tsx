@@ -22,8 +22,8 @@ import {
 import {
   $getNearestNodeFromDOMNode,
   $getSelection,
-  $isGridSelection,
   COMMAND_PRIORITY_HIGH,
+  DEPRECATED_$isGridSelection,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import * as React from 'react';
@@ -67,7 +67,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
       SELECTION_CHANGE_COMMAND,
       (payload) => {
         const selection = $getSelection();
-        const isGridSelection = $isGridSelection(selection);
+        const isGridSelection = DEPRECATED_$isGridSelection(selection);
 
         if (isSelectingGrid !== isGridSelection) {
           updateIsSelectingGrid(isGridSelection);

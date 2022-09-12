@@ -27,7 +27,7 @@ async function updateChangelog() {
   ).stdout.trim();
   const tmpFilePath = './changelog-tmp';
   await exec(`echo "${header}\n" >> ${tmpFilePath}`);
-  await exec(`echo "${changelogContent}\n >> ${tmpFilePath}`);
+  await exec(`echo "${changelogContent}\n" >> ${tmpFilePath}`);
   await exec(
     `cat ./CHANGELOG.md >> ${tmpFilePath} && mv ${tmpFilePath} ./CHANGELOG.md`,
   );

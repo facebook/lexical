@@ -15,6 +15,6 @@ jobs:
           node-version: '16.x'
           registry-url: 'https://registry.npmjs.org'
       - run: npm run prepare-release
-        #- run: node ./scripts/npm/release.js --non-interactive --channel $GITHUB_REF_NAME
+      - run: node ./scripts/npm/release.js --non-interactive --dry-run=${{ secrets.RELEASE_DRY_RUN }} --channel $GITHUB_REF_NAME
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

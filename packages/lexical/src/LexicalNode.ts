@@ -55,6 +55,8 @@ export function removeNode(
   restoreSelection: boolean,
   preserveEmptyParent?: boolean,
 ): void {
+  console.info('removeNode', nodeToRemove);
+  debugger;
   errorOnReadOnly();
   const key = nodeToRemove.__key;
   const parent = nodeToRemove.getParent();

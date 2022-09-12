@@ -7,7 +7,9 @@
  *
  */
 
-import type {
+import {
+  $hasAncestor,
+  $isTopLevel,
   ElementNode,
   GridSelection,
   LexicalEditor,
@@ -575,7 +577,8 @@ export function $selectAll(selection: RangeSelection): void {
 function $removeParentEmptyElements(startingNode: ElementNode): void {
   let node: ElementNode | null = startingNode;
 
-  while (node !== null && !$isRootNode(node) && node.__type === 'tablecell') {
+  while (node !== null && !$isTopLevel(node)) {
+    console.info(node);
     const latest = node.getLatest();
     const parentNode: ElementNode | null = node.getParent<ElementNode>();
 
@@ -587,12 +590,13 @@ function $removeParentEmptyElements(startingNode: ElementNode): void {
   }
 }
 
+// TODO 0.6 Rename to $wrapDescendantNodesInElements
+// Determine eligibility
 export function $wrapLeafNodesInElements(
   selection: RangeSelection,
   createElement: () => ElementNode,
-  wrappingElement?: ElementNode,
+  wrappingElement: null | ElementNode = null,
 ): void {
-  debugger;
   const nodes = selection.getNodes();
   const nodesLength = nodes.length;
   const anchor = selection.anchor;
@@ -622,6 +626,58 @@ export function $wrapLeafNodesInElements(
     return;
   }
 
+  let topLevelNode = null;
+  let descendants: LexicalNode[] = [];
+  for (let i = 0; i < nodesLength; i++) {
+    const node = nodes[i];
+    if ($isTopLevel(node)) {
+      $wrapLeafNodesInElementsImpl(
+        selection,
+        descendants,
+        descendants.length,
+        createElement,
+        wrappingElement,
+      );
+      descendants = [];
+      topLevelNode = node;
+    } else if (
+      topLevelNode === null ||
+      (topLevelNode !== null && $hasAncestor(node, topLevelNode))
+    ) {
+      descendants.push(node);
+    } else {
+      $wrapLeafNodesInElementsImpl(
+        selection,
+        descendants,
+        descendants.length,
+        createElement,
+        wrappingElement,
+      );
+      descendants = [node];
+    }
+  }
+  $wrapLeafNodesInElementsImpl(
+    selection,
+    descendants,
+    descendants.length,
+    createElement,
+    wrappingElement,
+  );
+}
+
+export function $wrapLeafNodesInElementsImpl(
+  selection: RangeSelection,
+  nodes: LexicalNode[],
+  nodesLength: number,
+  createElement: () => ElementNode,
+  wrappingElement: null | ElementNode = null,
+): void {
+  debugger;
+
+  if (nodes.length === 0) {
+    return;
+  }
+
   const firstNode = nodes[0];
   const elementMapping: Map<NodeKey, ElementNode> = new Map();
   const elements = [];
@@ -637,18 +693,27 @@ export function $wrapLeafNodesInElements(
     target = target.getParentOrThrow();
   }
 
+  let targetIsPrevSibling = false;
   while (target !== null) {
     const prevSibling = target.getPreviousSibling<ElementNode>();
 
     if (prevSibling !== null) {
-      break;
-      // target = prevSibling;
+      // if ($isTopLevel(prevSibling) && !$isRootNode(prevSibling)) {
+      //   target = prevSibling.getParentOrThrow();
+      // } else {
+      target = prevSibling;
+      targetIsPrevSibling = true;
+      // }
       break;
     }
+    // if (prevSibling !== null) {
+    //   target = prevSibling;
+    //   break;
+    // }
 
     target = target.getParentOrThrow();
 
-    if ($isRootNode(target) || target.__type === 'tablecell') {
+    if ($isTopLevel(target)) {
       break;
     }
   }
@@ -703,43 +768,53 @@ export function $wrapLeafNodesInElements(
       targetElement.setFormat(node.getFormatType());
       targetElement.setIndent(node.getIndent());
       elements.push(targetElement);
-      node.remove();
+      node.remove(true);
     }
   }
 
-  if (wrappingElement) {
+  if (wrappingElement !== null) {
     for (let i = 0; i < elements.length; i++) {
       const element = elements[i];
       wrappingElement.append(element);
     }
   }
 
-  // If our target is the root, let's see if we can re-adjust
+  // If our target is top level, let's see if we can re-adjust
   // so that the target is the first child instead.
-  if ($isRootNode(target) || target.__type === 'tablecell') {
-    const firstChild = target.getFirstChild();
-
-    if ($isElementNode(firstChild)) {
-      target = firstChild;
-    }
-
-    if (firstChild === null) {
-      if (wrappingElement) {
-        target.append(wrappingElement);
+  if ($isTopLevel(target)) {
+    if (targetIsPrevSibling) {
+      if (wrappingElement !== null) {
+        target.insertAfter(wrappingElement);
       } else {
-        for (let i = 0; i < elements.length; i++) {
+        for (let i = elements.length - 1; i >= 0; i--) {
           const element = elements[i];
-          console.info(target);
-          target.append(element);
+          target.insertAfter(element);
         }
       }
     } else {
-      if (wrappingElement) {
-        firstChild.insertBefore(wrappingElement);
+      const firstChild = target.getFirstChild();
+
+      if ($isElementNode(firstChild)) {
+        target = firstChild;
+      }
+
+      if (firstChild === null) {
+        if (wrappingElement) {
+          target.append(wrappingElement);
+        } else {
+          for (let i = 0; i < elements.length; i++) {
+            const element = elements[i];
+            target.append(element);
+          }
+        }
       } else {
-        for (let i = 0; i < elements.length; i++) {
-          const element = elements[i];
-          firstChild.insertBefore(element);
+        if (wrappingElement !== null) {
+          firstChild.insertBefore(wrappingElement);
+        } else {
+          for (let i = 0; i < elements.length; i++) {
+            const element = elements[i];
+            firstChild.insertBefore(element);
+          }
         }
       }
     }
@@ -763,7 +838,6 @@ export function $wrapLeafNodesInElements(
   ) {
     $setSelection(prevSelection.clone());
   } else {
-    $setSelection(null);
     selection.dirty = true;
   }
 }

@@ -18,17 +18,6 @@ declare export function $findTextIntersectionFromCharacters(
   node: TextNode,
   offset: number,
 };
-declare export function $joinTextNodesInElementNode(
-  elementNode: ElementNode,
-  separator: string,
-  stopAt: TextNodeWithOffset,
-): string;
-declare export function $findNodeWithOffsetFromJoinedText(
-  offsetInJoinedText: number,
-  joinedTextLength: number,
-  separatorLength: number,
-  elementNode: ElementNode,
-): ?TextNodeWithOffset;
 declare export function $isRootTextContentEmpty(
   isEditorComposing: boolean,
   trim?: boolean,

@@ -10,7 +10,7 @@
 import type {HeadingTagType} from '@lexical/rich-text';
 import type {NodeKey} from 'lexical';
 
-declare export function LexicalTableOfContentsPlugin({
+declare export default function LexicalTableOfContentsPlugin({
   children: (
     tableOfContents: Array<[NodeKey, string, HeadingTagType]>,
   ) => React$Node,

@@ -74,7 +74,7 @@ glob('packages/**/flow/*.flow', options, function (error1, files) {
           /from '@lexical\/react\/DEPRECATED_useLexicalHistory'/g,
           "from 'DEPRECATED_useLexicalHistory'",
         )
-        .replace(/from '@lexical\/react\/'/g, "from 'Lexical")
+        .replace(/from '@lexical\/react\/Lexical/g, "from 'Lexical")
         .replace(/from '@lexical\/utils\/'/g, "from 'LexicalUtils")
         .replace(/from '@lexical\/clipboard\'/g, "from 'LexicalClipboard'")
         .replace(/from '@lexical\/code\'/g, "from 'LexicalCode'")

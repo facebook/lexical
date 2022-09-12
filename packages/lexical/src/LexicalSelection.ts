@@ -549,7 +549,6 @@ export class RangeSelection implements BaseSelection {
     const focus = this.focus;
     let firstNode = anchor.getNode();
     let lastNode = focus.getNode();
-    console.info(anchor, focus, firstNode, lastNode, $isElementNode(firstNode));
 
     if ($isElementNode(firstNode)) {
       const firstNodeDescendant = firstNode.getDescendantByIndex<ElementNode>(

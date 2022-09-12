@@ -26,12 +26,12 @@ import {
   $getPreviousSelection,
   $isDecoratorNode,
   $isElementNode,
-  $isGridSelection,
   $isLeafNode,
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
   $setSelection,
+  DEPRECATED_$isGridSelection,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -281,7 +281,7 @@ function $cloneContentsImpl(
       nodeMap: Array.from(nodeMap.entries()),
       range,
     };
-  } else if ($isGridSelection(selection)) {
+  } else if (DEPRECATED_$isGridSelection(selection)) {
     const nodeMap = selection.getNodes().map<[NodeKey, LexicalNode]>((node) => {
       const nodeKey = node.getKey();
 
@@ -1045,7 +1045,7 @@ export function $sliceSelectedTextNodeContent(
     textNode.isSelected() &&
     !textNode.isSegmented() &&
     !textNode.isToken() &&
-    ($isRangeSelection(selection) || $isGridSelection(selection))
+    ($isRangeSelection(selection) || DEPRECATED_$isGridSelection(selection))
   ) {
     const anchorNode = selection.anchor.getNode();
     const focusNode = selection.focus.getNode();

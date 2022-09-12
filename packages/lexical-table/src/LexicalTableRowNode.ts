@@ -10,10 +10,10 @@ import type {Spread} from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
 import {
+  DEPRECATED_GridRowNode,
   DOMConversionMap,
   DOMConversionOutput,
   EditorConfig,
-  GridRowNode,
   LexicalNode,
   NodeKey,
   SerializedElementNode,
@@ -29,7 +29,7 @@ export type SerializedTableRowNode = Spread<
 >;
 
 /** @noInheritDoc */
-export class TableRowNode extends GridRowNode {
+export class TableRowNode extends DEPRECATED_GridRowNode {
   /** @internal */
   __height?: number;
 

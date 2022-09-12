@@ -25,13 +25,13 @@ import {
   $getPreviousSelection,
   $getSelection,
   $isElementNode,
-  $isGridSelection,
   $isParagraphNode,
   $isRangeSelection,
   $setSelection,
   COMMAND_PRIORITY_CRITICAL,
   CONTROLLED_TEXT_INSERTION_COMMAND,
   DELETE_CHARACTER_COMMAND,
+  DEPRECATED_$isGridSelection,
   FOCUS_COMMAND,
   FORMAT_TEXT_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
@@ -158,7 +158,7 @@ export function applyTableHandlers(
       const selection = $getSelection();
 
       if (
-        $isGridSelection(selection) &&
+        DEPRECATED_$isGridSelection(selection) &&
         selection.gridKey === tableSelection.tableNodeKey &&
         rootElement.contains(event.target as Node)
       ) {
@@ -257,7 +257,7 @@ export function applyTableHandlers(
               );
             }
           }
-        } else if ($isGridSelection(selection) && event.shiftKey) {
+        } else if (DEPRECATED_$isGridSelection(selection) && event.shiftKey) {
           const tableCellNode = selection.focus.getNode();
 
           if (!$isTableCellNode(tableCellNode)) {
@@ -362,7 +362,7 @@ export function applyTableHandlers(
               );
             }
           }
-        } else if ($isGridSelection(selection) && event.shiftKey) {
+        } else if (DEPRECATED_$isGridSelection(selection) && event.shiftKey) {
           const tableCellNode = selection.focus.getNode();
 
           if (!$isTableCellNode(tableCellNode)) {
@@ -462,7 +462,7 @@ export function applyTableHandlers(
               );
             }
           }
-        } else if ($isGridSelection(selection) && event.shiftKey) {
+        } else if (DEPRECATED_$isGridSelection(selection) && event.shiftKey) {
           const tableCellNode = selection.focus.getNode();
 
           if (!$isTableCellNode(tableCellNode)) {
@@ -566,7 +566,7 @@ export function applyTableHandlers(
               );
             }
           }
-        } else if ($isGridSelection(selection) && event.shiftKey) {
+        } else if (DEPRECATED_$isGridSelection(selection) && event.shiftKey) {
           const tableCellNode = selection.focus.getNode();
 
           if (!$isTableCellNode(tableCellNode)) {
@@ -607,7 +607,7 @@ export function applyTableHandlers(
           return false;
         }
 
-        if ($isGridSelection(selection)) {
+        if (DEPRECATED_$isGridSelection(selection)) {
           tableSelection.clearText();
 
           return true;
@@ -655,7 +655,7 @@ export function applyTableHandlers(
           return false;
         }
 
-        if ($isGridSelection(selection)) {
+        if (DEPRECATED_$isGridSelection(selection)) {
           event.preventDefault();
           event.stopPropagation();
           tableSelection.clearText();
@@ -688,7 +688,7 @@ export function applyTableHandlers(
           return false;
         }
 
-        if ($isGridSelection(selection)) {
+        if (DEPRECATED_$isGridSelection(selection)) {
           tableSelection.formatCells(payload);
 
           return true;
@@ -719,7 +719,7 @@ export function applyTableHandlers(
           return false;
         }
 
-        if ($isGridSelection(selection)) {
+        if (DEPRECATED_$isGridSelection(selection)) {
           tableSelection.clearHighlight();
 
           return false;
@@ -804,11 +804,12 @@ export function applyTableHandlers(
 
         if (
           selection !== prevSelection &&
-          ($isGridSelection(selection) || $isGridSelection(prevSelection)) &&
+          (DEPRECATED_$isGridSelection(selection) ||
+            DEPRECATED_$isGridSelection(prevSelection)) &&
           tableSelection.gridSelection !== selection
         ) {
           tableSelection.updateTableGridSelection(
-            $isGridSelection(selection) && tableNode.isSelected()
+            DEPRECATED_$isGridSelection(selection) && tableNode.isSelected()
               ? selection
               : null,
           );
@@ -1182,7 +1183,7 @@ function $isSelectionInTable(
   selection: null | GridSelection | RangeSelection | NodeSelection,
   tableNode: TableNode,
 ): boolean {
-  if ($isRangeSelection(selection) || $isGridSelection(selection)) {
+  if ($isRangeSelection(selection) || DEPRECATED_$isGridSelection(selection)) {
     const isAnchorInside = tableNode.isParentOf(selection.anchor.getNode());
     const isFocusInside = tableNode.isParentOf(selection.focus.getNode());
 

@@ -17,7 +17,6 @@ import {
   TableRowNode,
 } from '@lexical/table';
 import {
-  $createGridSelection,
   $createLineBreakNode,
   $createNodeSelection,
   $createParagraphNode,
@@ -31,6 +30,7 @@ import {
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_LOW,
   createCommand,
+  DEPRECATED_$createGridSelection,
   ElementNode,
   LexicalEditor,
   NodeKey,
@@ -1217,7 +1217,7 @@ describe('LexicalEditor tests', () => {
         await update(() => {
           const paragraph = $createParagraphNode();
           originalText = $createTextNode('Hello world');
-          const selection = $createGridSelection();
+          const selection = DEPRECATED_$createGridSelection();
           selection.set(
             originalText.getKey(),
             originalText.getKey(),

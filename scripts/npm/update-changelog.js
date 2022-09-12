@@ -14,7 +14,7 @@ const {exec} = require('child-process-promise');
 
 const isPrerelease = process.env.npm_package_version.indexOf('-') !== -1;
 
-if (!isPrerelease) {
+async function updateChangelog() {
   const date = (await exec(`git show --format=%as | head -1`)).stdout.trim();
   const header = `## v${process.env.npm_package_version} (${date})`;
   const previousReleaseHash = (
@@ -29,4 +29,8 @@ if (!isPrerelease) {
     `cat ./CHANGELOG.md >> ${tmpFilePath} && mv ${tmpFilePath} ./CHANGELOG.md`,
   );
   await exec(`git commit --amend --no-edit`);
+}
+
+if (!isPrerelease) {
+  updateChangelog();
 }

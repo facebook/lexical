@@ -10,6 +10,8 @@
 
 'use strict';
 
+const {exec} = require('child-process-promise');
+
 const isPrerelease = process.env.npm_package_version.indexOf('-') !== -1;
 
 if (!isPrerelease) {

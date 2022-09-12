@@ -582,6 +582,7 @@ export async function dragMouse(
     toX += toBoundingBox.width;
     toY += toBoundingBox.height;
   }
+
   await page.mouse.move(toX, toY);
   await page.mouse.up();
 }
@@ -692,24 +693,24 @@ export async function selectCellsFromTableCords(page, firstCords, secondCords) {
     leftFrame = await page.frame('left');
   }
 
-  const firstRowFirstColumnCellBoundingBox = await leftFrame.locator(
+  const firstRowFirstColumnCell = await leftFrame.locator(
     `table:first-of-type > tr:nth-child(${firstCords.y + 1}) > th:nth-child(${
       firstCords.x + 1
     })`,
   );
-  const secondRowSecondCellBoundingBox = await leftFrame.locator(
+  const secondRowSecondCell = await leftFrame.locator(
     `table:first-of-type > tr:nth-child(${secondCords.y + 1}) > td:nth-child(${
       secondCords.x + 1
     })`,
   );
 
   // Focus on inside the iFrame or the boundingBox() below returns null.
-  await firstRowFirstColumnCellBoundingBox.click();
+  await firstRowFirstColumnCell.click();
 
   await dragMouse(
     page,
-    await firstRowFirstColumnCellBoundingBox.boundingBox(),
-    await secondRowSecondCellBoundingBox.boundingBox(),
+    await firstRowFirstColumnCell.boundingBox(),
+    await secondRowSecondCell.boundingBox(),
   );
 }
 

@@ -10,6 +10,7 @@ import type {TableNode} from './LexicalTableNode';
 import type {Cell, Cells, Grid} from './LexicalTableSelection';
 import type {
   GridSelection,
+  LexicalCommand,
   LexicalEditor,
   LexicalNode,
   NodeSelection,
@@ -20,7 +21,9 @@ import type {
 import {TableCellNode} from '@lexical/table';
 import {$findMatchingParent} from '@lexical/utils';
 import {
+  $createParagraphNode,
   $createRangeSelection,
+  $createTextNode,
   $getNearestNodeFromDOMNode,
   $getPreviousSelection,
   $getSelection,
@@ -31,6 +34,8 @@ import {
   COMMAND_PRIORITY_CRITICAL,
   CONTROLLED_TEXT_INSERTION_COMMAND,
   DELETE_CHARACTER_COMMAND,
+  DELETE_LINE_COMMAND,
+  DELETE_WORD_COMMAND,
   DEPRECATED_$isGridSelection,
   FOCUS_COMMAND,
   FORMAT_TEXT_COMMAND,
@@ -39,6 +44,7 @@ import {
   KEY_ARROW_RIGHT_COMMAND,
   KEY_ARROW_UP_COMMAND,
   KEY_BACKSPACE_COMMAND,
+  KEY_DELETE_COMMAND,
   KEY_TAB_COMMAND,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
@@ -85,6 +91,8 @@ export function applyTableHandlers(
       if (event.button !== 0) {
         return;
       }
+
+      isMouseDown = true;
 
       const cell = getCellFromTarget(event.target as Node);
 
@@ -597,83 +605,155 @@ export function applyTableHandlers(
     ),
   );
 
-  tableSelection.listenersToRemove.add(
-    editor.registerCommand(
-      DELETE_CHARACTER_COMMAND,
-      () => {
-        const selection = $getSelection();
+  const deleteTextHandler = (command: LexicalCommand<boolean>) => () => {
+    const selection = $getSelection();
 
-        if (!$isSelectionInTable(selection, tableNode)) {
-          return false;
-        }
+    if (!$isSelectionInTable(selection, tableNode)) {
+      return false;
+    }
 
-        if (DEPRECATED_$isGridSelection(selection)) {
-          tableSelection.clearText();
+    if (DEPRECATED_$isGridSelection(selection)) {
+      tableSelection.clearText();
 
-          return true;
-        } else if ($isRangeSelection(selection)) {
-          const tableCellNode = $findMatchingParent(
-            selection.anchor.getNode(),
-            (n) => $isTableCellNode(n),
-          );
+      return true;
+    } else if ($isRangeSelection(selection)) {
+      const tableCellNode = $findMatchingParent(
+        selection.anchor.getNode(),
+        (n) => $isTableCellNode(n),
+      );
 
-          if (!$isTableCellNode(tableCellNode)) {
-            return false;
-          }
-
-          const paragraphNode = $findMatchingParent(
-            selection.anchor.getNode(),
-            (n) => $isParagraphNode(n),
-          );
-
-          if (!$isParagraphNode(paragraphNode)) {
-            return false;
-          }
-
-          if (
-            selection.isCollapsed() &&
-            selection.anchor.offset === 0 &&
-            paragraphNode.getPreviousSiblings().length === 0
-          ) {
-            return true;
-          }
-        }
-
+      if (!$isTableCellNode(tableCellNode)) {
         return false;
-      },
+      }
+
+      const anchorNode = selection.anchor.getNode();
+      const focusNode = selection.focus.getNode();
+      const isAnchorInside = tableNode.isParentOf(anchorNode);
+      const isFocusInside = tableNode.isParentOf(focusNode);
+
+      const containsPartialTable =
+        (isAnchorInside && !isFocusInside) ||
+        (isFocusInside && !isAnchorInside);
+
+      if (containsPartialTable) {
+        tableSelection.clearText();
+        return true;
+      }
+
+      const parentElementNode = $findMatchingParent(
+        selection.anchor.getNode(),
+        (n) => $isElementNode(n) && $isTableCellNode(n.getParent()),
+      );
+
+      const nearestElementNode = $findMatchingParent(
+        selection.anchor.getNode(),
+        (n) => $isElementNode(n),
+      );
+
+      if (
+        !$isElementNode(parentElementNode) ||
+        !$isElementNode(nearestElementNode)
+      ) {
+        return false;
+      }
+
+      const clearCell = () => {
+        const newParagraphNode = $createParagraphNode();
+        const textNode = $createTextNode();
+        newParagraphNode.append(textNode);
+        tableCellNode.append(newParagraphNode);
+        tableCellNode.getChildren().forEach((child) => {
+          if (child !== newParagraphNode) {
+            child.remove();
+          }
+        });
+      };
+
+      if (
+        command === DELETE_LINE_COMMAND &&
+        parentElementNode.getPreviousSibling() === null
+      ) {
+        clearCell();
+        return true;
+      }
+
+      if (
+        command === DELETE_CHARACTER_COMMAND ||
+        command === DELETE_WORD_COMMAND
+      ) {
+        if (
+          selection.isCollapsed() &&
+          selection.anchor.offset === 0 &&
+          parentElementNode === nearestElementNode &&
+          parentElementNode.getPreviousSibling() === null
+        ) {
+          return true;
+        }
+
+        if (
+          !$isParagraphNode(parentElementNode) &&
+          parentElementNode.getTextContentSize() === 0
+        ) {
+          clearCell();
+          return true;
+        }
+      }
+    }
+
+    return false;
+  };
+
+  [DELETE_WORD_COMMAND, DELETE_LINE_COMMAND, DELETE_CHARACTER_COMMAND].forEach(
+    (command) => {
+      tableSelection.listenersToRemove.add(
+        editor.registerCommand(
+          command,
+          deleteTextHandler(command),
+          COMMAND_PRIORITY_CRITICAL,
+        ),
+      );
+    },
+  );
+
+  const deleteCellHandler = (event: KeyboardEvent): boolean => {
+    const selection = $getSelection();
+
+    if (!$isSelectionInTable(selection, tableNode)) {
+      return false;
+    }
+
+    if (DEPRECATED_$isGridSelection(selection)) {
+      event.preventDefault();
+      event.stopPropagation();
+      tableSelection.clearText();
+
+      return true;
+    } else if ($isRangeSelection(selection)) {
+      const tableCellNode = $findMatchingParent(
+        selection.anchor.getNode(),
+        (n) => $isTableCellNode(n),
+      );
+
+      if (!$isTableCellNode(tableCellNode)) {
+        return false;
+      }
+    }
+
+    return false;
+  };
+
+  tableSelection.listenersToRemove.add(
+    editor.registerCommand<KeyboardEvent>(
+      KEY_BACKSPACE_COMMAND,
+      deleteCellHandler,
       COMMAND_PRIORITY_CRITICAL,
     ),
   );
 
   tableSelection.listenersToRemove.add(
     editor.registerCommand<KeyboardEvent>(
-      KEY_BACKSPACE_COMMAND,
-      (event) => {
-        const selection = $getSelection();
-
-        if (!$isSelectionInTable(selection, tableNode)) {
-          return false;
-        }
-
-        if (DEPRECATED_$isGridSelection(selection)) {
-          event.preventDefault();
-          event.stopPropagation();
-          tableSelection.clearText();
-
-          return true;
-        } else if ($isRangeSelection(selection)) {
-          const tableCellNode = $findMatchingParent(
-            selection.anchor.getNode(),
-            (n) => $isTableCellNode(n),
-          );
-
-          if (!$isTableCellNode(tableCellNode)) {
-            return false;
-          }
-        }
-
-        return false;
-      },
+      KEY_DELETE_COMMAND,
+      deleteCellHandler,
       COMMAND_PRIORITY_CRITICAL,
     ),
   );
@@ -803,6 +883,45 @@ export function applyTableHandlers(
         const prevSelection = $getPreviousSelection();
 
         if (
+          selection &&
+          $isRangeSelection(selection) &&
+          !selection.isCollapsed()
+        ) {
+          const anchorNode = selection.anchor.getNode();
+          const focusNode = selection.focus.getNode();
+          const isAnchorInside = tableNode.isParentOf(anchorNode);
+          const isFocusInside = tableNode.isParentOf(focusNode);
+
+          const containsPartialTable =
+            (isAnchorInside && !isFocusInside) ||
+            (isFocusInside && !isAnchorInside);
+
+          if (containsPartialTable) {
+            const isBackward = selection.isBackward();
+            const modifiedSelection = $createRangeSelection();
+            const tableKey = tableNode.getKey();
+
+            modifiedSelection.anchor.set(
+              selection.anchor.key,
+              selection.anchor.offset,
+              selection.anchor.type,
+            );
+
+            modifiedSelection.focus.set(
+              tableKey,
+              isBackward ? 0 : tableNode.getChildrenSize(),
+              'element',
+            );
+
+            isRangeSelectionHijacked = true;
+            $setSelection(modifiedSelection);
+            $addHighlightStyleToTable(tableSelection);
+
+            return true;
+          }
+        }
+
+        if (
           selection !== prevSelection &&
           (DEPRECATED_$isGridSelection(selection) ||
             DEPRECATED_$isGridSelection(prevSelection)) &&
@@ -813,45 +932,7 @@ export function applyTableHandlers(
               ? selection
               : null,
           );
-
           return false;
-        }
-
-        if (
-          selection &&
-          $isRangeSelection(selection) &&
-          !selection.isCollapsed()
-        ) {
-          const anchorNode = selection.anchor.getNode();
-          const focusNode = selection.focus.getNode();
-          const isAnchorInside = tableNode.isParentOf(anchorNode);
-          const isFocusInside = tableNode.isParentOf(focusNode);
-          const containsPartialTable =
-            (isAnchorInside && !isFocusInside) ||
-            (isFocusInside && !isAnchorInside);
-
-          if (containsPartialTable) {
-            const isBackward = selection.isBackward();
-            const modifiedSelection = $createRangeSelection();
-            const tableIndex = tableNode.getIndexWithinParent();
-            const parentKey = tableNode.getParentOrThrow().getKey();
-            modifiedSelection.anchor.set(
-              selection.anchor.key,
-              selection.anchor.offset,
-              selection.anchor.type,
-            );
-            // Set selection to before or after table on the root node.
-            modifiedSelection.focus.set(
-              parentKey,
-              isBackward ? tableIndex - 1 : tableIndex + 1,
-              'element',
-            );
-            isRangeSelectionHijacked = true;
-            $setSelection(modifiedSelection);
-            $addHighlightStyleToTable(tableSelection);
-
-            return true;
-          }
         }
 
         if (

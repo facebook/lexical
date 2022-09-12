@@ -19,8 +19,10 @@ import {
   $createTextNode,
   $getNearestNodeFromDOMNode,
   $getNodeByKey,
+  $getRoot,
   $getSelection,
   $isElementNode,
+  $isRangeSelection,
   $setSelection,
   DEPRECATED_$createGridSelection,
   DEPRECATED_$isGridSelection,
@@ -247,7 +249,6 @@ export class TableSelection {
           domSelection.setBaseAndExtent(anchorElement, 0, focusElement, 0);
         }
       }
-
       $updateDOMForSelection(this.grid, this.gridSelection);
     } else {
       this.clearHighlight();
@@ -271,6 +272,7 @@ export class TableSelection {
       const cellX = cell.x;
       const cellY = cell.y;
       this.focusCell = cell;
+
       const domSelection = getDOMSelection();
 
       if (this.anchorCell !== null) {
@@ -303,7 +305,10 @@ export class TableSelection {
         ) {
           const focusNodeKey = focusTableCellNode.getKey();
 
-          this.gridSelection = DEPRECATED_$createGridSelection();
+          this.gridSelection =
+            this.gridSelection != null
+              ? this.gridSelection.clone()
+              : DEPRECATED_$createGridSelection();
 
           this.focusCellNodeKey = focusNodeKey;
           this.gridSelection.set(
@@ -314,9 +319,9 @@ export class TableSelection {
 
           $setSelection(this.gridSelection);
 
-          this.editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
-
           $updateDOMForSelection(this.grid, this.gridSelection);
+
+          this.editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
         }
       }
     });
@@ -327,10 +332,20 @@ export class TableSelection {
       this.anchorCell = cell;
       this.startX = cell.x;
       this.startY = cell.y;
+      // This weird bit of code is required otherwise playwright mouse.up()
+      // causes the editor loses focus which breaks the Table selection tests.
+      // There must be something happening in onDocumentSelectionChange that
+      // prevents this but it might be out of the scope of this PR.
       const domSelection = getDOMSelection();
-      if (domSelection) {
-        domSelection.setBaseAndExtent(cell.elem, 0, cell.elem, 0);
+      if (domSelection && domSelection.anchorNode && domSelection.focusNode) {
+        domSelection.setBaseAndExtent(
+          domSelection.anchorNode,
+          domSelection.anchorOffset,
+          domSelection.focusNode,
+          domSelection.focusOffset,
+        );
       }
+
       const anchorTableCellNode = $getNearestNodeFromDOMNode(cell.elem);
 
       if ($isTableCellNode(anchorTableCellNode)) {
@@ -378,8 +393,11 @@ export class TableSelection {
 
       const selection = $getSelection();
 
-      if (!DEPRECATED_$isGridSelection(selection)) {
-        invariant(false, 'Expected grid selection');
+      if (
+        !DEPRECATED_$isGridSelection(selection) &&
+        !$isRangeSelection(selection)
+      ) {
+        invariant(false, 'Expected valid selection');
       }
 
       const selectedNodes = selection.getNodes().filter($isTableCellNode);
@@ -388,7 +406,8 @@ export class TableSelection {
         tableNode.selectPrevious();
         // Delete entire table
         tableNode.remove();
-        this.clearHighlight();
+        const rootNode = $getRoot();
+        rootNode.selectStart();
         return;
       }
 

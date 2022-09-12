@@ -601,6 +601,7 @@ export function $wrapLeafNodesInElements(
   const nodesLength = nodes.length;
   const anchor = selection.anchor;
 
+  console.info(nodes, anchor.type);
   if (
     nodesLength === 0 ||
     (nodesLength === 1 &&
@@ -688,6 +689,7 @@ export function $wrapLeafNodesInElementsImpl(
   let target = $isElementNode(firstNode)
     ? firstNode
     : firstNode.getParentOrThrow();
+  console.info('target', target);
 
   if (target.isInline()) {
     target = target.getParentOrThrow();
@@ -717,6 +719,7 @@ export function $wrapLeafNodesInElementsImpl(
       break;
     }
   }
+  console.info('new target', target);
 
   const emptyElements = new Set();
 
@@ -730,6 +733,7 @@ export function $wrapLeafNodesInElementsImpl(
   }
 
   const movedLeafNodes: Set<NodeKey> = new Set();
+  console.info('nodes', nodes);
 
   // Move out all leaf nodes into our elements array.
   // If we find a top level empty element, also move make
@@ -768,6 +772,7 @@ export function $wrapLeafNodesInElementsImpl(
       targetElement.setFormat(node.getFormatType());
       targetElement.setIndent(node.getIndent());
       elements.push(targetElement);
+      console.info('remove', node);
       node.remove(true);
     }
   }
@@ -793,6 +798,7 @@ export function $wrapLeafNodesInElementsImpl(
       }
     } else {
       const firstChild = target.getFirstChild();
+      console.info('first child', firstChild, 'or target', target);
 
       if ($isElementNode(firstChild)) {
         target = firstChild;

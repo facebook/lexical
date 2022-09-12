@@ -96,6 +96,7 @@ export function applyTableHandlers(
 
       if (cell !== null) {
         tableSelection.setAnchorCellForSelection(cell);
+
         document.addEventListener(
           'mouseup',
           () => {
@@ -112,6 +113,7 @@ export function applyTableHandlers(
 
   // This is adjusting the focus of the selection.
   tableElement.addEventListener('mousemove', (event: MouseEvent) => {
+    // console.log({isRangeSelectionHijacked});
     if (isRangeSelectionHijacked) {
       event.preventDefault();
       event.stopPropagation();
@@ -127,8 +129,8 @@ export function applyTableHandlers(
 
         if (
           isMouseDown &&
-          (tableSelection.startX !== cellX ||
-            tableSelection.startY !== cellY ||
+          ((tableSelection.startX !== -1 && tableSelection.startX !== cellX) ||
+            (tableSelection.startY !== -1 && tableSelection.startY !== cellY) ||
             tableSelection.isHighlightingCells)
         ) {
           event.preventDefault();
@@ -624,19 +626,38 @@ export function applyTableHandlers(
         return false;
       }
 
-      const paragraphNode = $findMatchingParent(
+      const anchorNode = selection.anchor.getNode();
+      const focusNode = selection.focus.getNode();
+      const isAnchorInside = tableNode.isParentOf(anchorNode);
+      const isFocusInside = tableNode.isParentOf(focusNode);
+
+      const containsPartialTable =
+        (isAnchorInside && !isFocusInside) ||
+        (isFocusInside && !isAnchorInside);
+
+      if (containsPartialTable) {
+        tableSelection.clearText();
+        return true;
+      }
+
+      const parentElementNode = $findMatchingParent(
         selection.anchor.getNode(),
-        (n) => $isParagraphNode(n),
+        (n) => $isElementNode(n) && $isTableCellNode(n.getParent()),
       );
 
-      if (!$isParagraphNode(paragraphNode)) {
+      const nearestElementNode = $findMatchingParent(
+        selection.anchor.getNode(),
+        (n) => $isElementNode(n),
+      );
+
+      if (
+        !$isElementNode(parentElementNode) ||
+        !$isElementNode(nearestElementNode)
+      ) {
         return false;
       }
 
-      if (
-        command === DELETE_LINE_COMMAND &&
-        paragraphNode.getPreviousSiblings().length === 0
-      ) {
+      const clearCell = () => {
         const newParagraphNode = $createParagraphNode();
         const textNode = $createTextNode();
         newParagraphNode.append(textNode);
@@ -646,17 +667,36 @@ export function applyTableHandlers(
             child.remove();
           }
         });
+      };
+
+      if (
+        command === DELETE_LINE_COMMAND &&
+        parentElementNode.getPreviousSiblings().length === 0
+      ) {
+        clearCell();
         return true;
       }
 
       if (
-        (command === DELETE_CHARACTER_COMMAND ||
-          command === DELETE_WORD_COMMAND) &&
-        selection.isCollapsed() &&
-        selection.anchor.offset === 0 &&
-        paragraphNode.getPreviousSiblings().length === 0
+        command === DELETE_CHARACTER_COMMAND ||
+        command === DELETE_WORD_COMMAND
       ) {
-        return true;
+        if (
+          selection.isCollapsed() &&
+          selection.anchor.offset === 0 &&
+          parentElementNode === nearestElementNode &&
+          nearestElementNode.getPreviousSiblings().length === 0
+        ) {
+          return true;
+        }
+
+        if (
+          !$isParagraphNode(parentElementNode) &&
+          parentElementNode.getTextContentSize() === 0
+        ) {
+          clearCell();
+          return true;
+        }
       }
     }
 
@@ -866,6 +906,7 @@ export function applyTableHandlers(
           const focusNode = selection.focus.getNode();
           const isAnchorInside = tableNode.isParentOf(anchorNode);
           const isFocusInside = tableNode.isParentOf(focusNode);
+
           const containsPartialTable =
             (isAnchorInside && !isFocusInside) ||
             (isFocusInside && !isAnchorInside);

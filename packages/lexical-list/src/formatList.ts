@@ -97,7 +97,11 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
       if ($isSelectingEmptyListItem(anchorNode, nodes)) {
         const list = $createListNode(listType);
 
-        if ($isRootNode(anchorNodeParent)) {
+        if (
+          $isRootNode(anchorNodeParent) ||
+          ($isElementNode(anchorNodeParent) &&
+            anchorNodeParent.isRequiredParent())
+        ) {
           anchorNode.replace(list);
           const listItem = $createListItemNode();
           if ($isElementNode(anchorNode)) {
@@ -144,7 +148,12 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
               } else {
                 const nextParent = parent.getParent();
 
-                if ($isRootNode(nextParent) && !handled.has(parentKey)) {
+                if (
+                  ($isRootNode(nextParent) ||
+                    ($isElementNode(nextParent) &&
+                      nextParent.isRequiredParent())) &&
+                  !handled.has(parentKey)
+                ) {
                   handled.add(parentKey);
                   createListOrMerge(parent, listType);
                   break;

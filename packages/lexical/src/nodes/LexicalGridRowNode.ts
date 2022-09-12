@@ -10,7 +10,11 @@ import type {LexicalNode} from '../LexicalNode';
 
 import {ElementNode} from './LexicalElementNode';
 
-export class DEPRECATED_GridRowNode extends ElementNode {}
+export class DEPRECATED_GridRowNode extends ElementNode {
+  isRequiredParent(): boolean {
+    return true;
+  }
+}
 
 export function DEPRECATED_$isGridRowNode(
   node: LexicalNode | null | undefined,

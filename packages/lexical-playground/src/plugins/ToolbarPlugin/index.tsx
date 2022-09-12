@@ -7,7 +7,7 @@
  */
 
 import type {InsertImagePayload} from '../ImagesPlugin';
-import type {LexicalEditor} from 'lexical';
+import type {LexicalEditor, NodeKey} from 'lexical';
 
 import './index.css';
 
@@ -46,6 +46,7 @@ import {
 } from '@lexical/selection';
 import {INSERT_TABLE_COMMAND} from '@lexical/table';
 import {
+  $findMatchingParent,
   $getNearestBlockElementAncestorOrThrow,
   $getNearestNodeOfType,
   mergeRegister,
@@ -55,6 +56,7 @@ import {
   $getNodeByKey,
   $getRoot,
   $getSelection,
+  $isElementNode,
   $isRangeSelection,
   $isTextNode,
   CAN_REDO_COMMAND,
@@ -63,7 +65,6 @@ import {
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
   INDENT_CONTENT_COMMAND,
-  NodeKey,
   OUTDENT_CONTENT_COMMAND,
   REDO_COMMAND,
   SELECTION_CHANGE_COMMAND,
@@ -621,10 +622,15 @@ export default function ToolbarPlugin(): JSX.Element {
     const selection = $getSelection();
     if ($isRangeSelection(selection)) {
       const anchorNode = selection.anchor.getNode();
-      const element =
+      let element =
         anchorNode.getKey() === 'root'
           ? anchorNode
-          : anchorNode.getTopLevelElementOrThrow();
+          : $findMatchingParent(anchorNode, $isElementNode);
+
+      if (element === null) {
+        element = anchorNode.getTopLevelElementOrThrow();
+      }
+
       const elementKey = element.getKey();
       const elementDOM = activeEditor.getElementByKey(elementKey);
 

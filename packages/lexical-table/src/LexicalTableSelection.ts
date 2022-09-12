@@ -327,10 +327,6 @@ export class TableSelection {
       this.anchorCell = cell;
       this.startX = cell.x;
       this.startY = cell.y;
-      const domSelection = getDOMSelection();
-      if (domSelection) {
-        domSelection.setBaseAndExtent(cell.elem, 0, cell.elem, 0);
-      }
       const anchorTableCellNode = $getNearestNodeFromDOMNode(cell.elem);
 
       if ($isTableCellNode(anchorTableCellNode)) {

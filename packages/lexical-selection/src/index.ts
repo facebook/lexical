@@ -8,8 +8,20 @@
  */
 
 import {
+  $createTextNode,
+  $getDecoratorNode,
+  $getNodeByKey,
+  $getPreviousSelection,
   $hasAncestor,
+  $isDecoratorNode,
+  $isElementNode,
+  $isLeafNode,
+  $isRangeSelection,
+  $isRootNode,
+  $isTextNode,
   $isTopLevel,
+  $setSelection,
+  DEPRECATED_$isGridSelection,
   ElementNode,
   GridSelection,
   LexicalEditor,
@@ -19,21 +31,6 @@ import {
   Point,
   RangeSelection,
   TextNode,
-} from 'lexical';
-
-import {
-  $createTextNode,
-  $getDecoratorNode,
-  $getNodeByKey,
-  $getPreviousSelection,
-  $isDecoratorNode,
-  $isElementNode,
-  $isLeafNode,
-  $isRangeSelection,
-  $isRootNode,
-  $isTextNode,
-  $setSelection,
-  DEPRECATED_$isGridSelection,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -578,7 +575,6 @@ function $removeParentEmptyElements(startingNode: ElementNode): void {
   let node: ElementNode | null = startingNode;
 
   while (node !== null && !$isTopLevel(node)) {
-    console.info(node);
     const latest = node.getLatest();
     const parentNode: ElementNode | null = node.getParent<ElementNode>();
 
@@ -591,7 +587,6 @@ function $removeParentEmptyElements(startingNode: ElementNode): void {
 }
 
 // TODO 0.6 Rename to $wrapDescendantNodesInElements
-// Determine eligibility
 export function $wrapLeafNodesInElements(
   selection: RangeSelection,
   createElement: () => ElementNode,
@@ -601,7 +596,6 @@ export function $wrapLeafNodesInElements(
   const nodesLength = nodes.length;
   const anchor = selection.anchor;
 
-  console.info(nodes, anchor.type);
   if (
     nodesLength === 0 ||
     (nodesLength === 1 &&
@@ -631,6 +625,10 @@ export function $wrapLeafNodesInElements(
   let descendants: LexicalNode[] = [];
   for (let i = 0; i < nodesLength; i++) {
     const node = nodes[i];
+    // Determine whether wrapping has to be broken down into multiple chunks. This can happen if the
+    // user selected multiple top-level nodes that have to be treated separately as if they are
+    // their own branch. I.e. you don't want to wrap a whole table, but rather the contents of each
+    // of each of the cell nodes.
     if ($isTopLevel(node)) {
       $wrapLeafNodesInElementsImpl(
         selection,
@@ -673,8 +671,6 @@ export function $wrapLeafNodesInElementsImpl(
   createElement: () => ElementNode,
   wrappingElement: null | ElementNode = null,
 ): void {
-  debugger;
-
   if (nodes.length === 0) {
     return;
   }
@@ -689,7 +685,6 @@ export function $wrapLeafNodesInElementsImpl(
   let target = $isElementNode(firstNode)
     ? firstNode
     : firstNode.getParentOrThrow();
-  console.info('target', target);
 
   if (target.isInline()) {
     target = target.getParentOrThrow();
@@ -700,18 +695,10 @@ export function $wrapLeafNodesInElementsImpl(
     const prevSibling = target.getPreviousSibling<ElementNode>();
 
     if (prevSibling !== null) {
-      // if ($isTopLevel(prevSibling) && !$isRootNode(prevSibling)) {
-      //   target = prevSibling.getParentOrThrow();
-      // } else {
       target = prevSibling;
       targetIsPrevSibling = true;
-      // }
       break;
     }
-    // if (prevSibling !== null) {
-    //   target = prevSibling;
-    //   break;
-    // }
 
     target = target.getParentOrThrow();
 
@@ -719,7 +706,6 @@ export function $wrapLeafNodesInElementsImpl(
       break;
     }
   }
-  console.info('new target', target);
 
   const emptyElements = new Set();
 
@@ -733,7 +719,6 @@ export function $wrapLeafNodesInElementsImpl(
   }
 
   const movedLeafNodes: Set<NodeKey> = new Set();
-  console.info('nodes', nodes);
 
   // Move out all leaf nodes into our elements array.
   // If we find a top level empty element, also move make
@@ -772,7 +757,6 @@ export function $wrapLeafNodesInElementsImpl(
       targetElement.setFormat(node.getFormatType());
       targetElement.setIndent(node.getIndent());
       elements.push(targetElement);
-      console.info('remove', node);
       node.remove(true);
     }
   }
@@ -798,7 +782,6 @@ export function $wrapLeafNodesInElementsImpl(
       }
     } else {
       const firstChild = target.getFirstChild();
-      console.info('first child', firstChild, 'or target', target);
 
       if ($isElementNode(firstChild)) {
         target = firstChild;

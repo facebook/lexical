@@ -812,7 +812,10 @@ declare export function $isTopLevel(
   node: LexicalNode,
 ): boolean %checks(node instanceof ElementNode ||
   node instanceof DecoratorNode);
-
+declare export function $hasAncestor(
+  child: LexicalNode,
+  targetNode: LexicalNode,
+): boolean;
 /**
  * LexicalVersion
  */

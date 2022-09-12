@@ -20,11 +20,14 @@ async function updateChangelog() {
   const previousReleaseHash = (
     await exec(`git log -n 1 origin/latest --pretty=format:"%H"`)
   ).stdout.trim();
+  const changelogContent = (
+    await exec(
+      `git --no-pager log --oneline ${previousReleaseHash}...HEAD --pretty=format:\"- %s %an\"`,
+    )
+  ).stdout.trim();
   const tmpFilePath = './changelog-tmp';
-  await exec(`echo "${header}\n\n" >> ${tmpFilePath}`);
-  await exec(
-    `git --no-pager log --oneline ${previousReleaseHash}...HEAD --pretty=format:\"- %s %an\" >> ${tmpFilePath}`,
-  );
+  await exec(`echo "${header}\n" >> ${tmpFilePath}`);
+  await exec(`echo "${changelogContent}\n >> ${tmpFilePath}`);
   await exec(
     `cat ./CHANGELOG.md >> ${tmpFilePath} && mv ${tmpFilePath} ./CHANGELOG.md`,
   );

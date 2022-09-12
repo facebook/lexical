@@ -25,11 +25,13 @@ import {
   TableCellNode,
 } from '@lexical/table';
 import {
+  $getRoot,
   $getSelection,
   $isRangeSelection,
   $setSelection,
   DEPRECATED_$isGridSelection,
 } from 'lexical';
+import {$createRangeSelection} from 'lexical/src';
 import * as React from 'react';
 import {ReactPortal, useCallback, useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
@@ -140,7 +142,11 @@ function TableActionMenu({
         updateTableCellNode(tableCellNode.getLatest());
       }
 
-      $setSelection(null);
+      const rootNode = $getRoot();
+      const selection = $createRangeSelection();
+      selection.anchor.set(rootNode.__key, 0, 'element');
+      selection.focus.set(rootNode.__key, 0, 'element');
+      $setSelection(selection);
     });
   }, [editor, tableCellNode]);
 

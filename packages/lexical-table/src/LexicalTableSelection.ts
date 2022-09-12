@@ -19,8 +19,10 @@ import {
   $createTextNode,
   $getNearestNodeFromDOMNode,
   $getNodeByKey,
+  $getRoot,
   $getSelection,
   $isElementNode,
+  $isRangeSelection,
   $setSelection,
   DEPRECATED_$createGridSelection,
   DEPRECATED_$isGridSelection,
@@ -374,8 +376,11 @@ export class TableSelection {
 
       const selection = $getSelection();
 
-      if (!DEPRECATED_$isGridSelection(selection)) {
-        invariant(false, 'Expected grid selection');
+      if (
+        !DEPRECATED_$isGridSelection(selection) &&
+        !$isRangeSelection(selection)
+      ) {
+        invariant(false, 'Expected valid selection');
       }
 
       const selectedNodes = selection.getNodes().filter($isTableCellNode);
@@ -384,7 +389,11 @@ export class TableSelection {
         tableNode.selectPrevious();
         // Delete entire table
         tableNode.remove();
-        this.clearHighlight();
+        const rootNode = $getRoot();
+        const newSelection = $createRangeSelection();
+        newSelection.anchor.set(rootNode.__key, 0, 'element');
+        newSelection.focus.set(rootNode.__key, 0, 'element');
+        $setSelection(newSelection);
         return;
       }
 

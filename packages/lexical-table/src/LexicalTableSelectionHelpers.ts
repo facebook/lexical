@@ -722,7 +722,7 @@ export function applyTableHandlers(
       return false;
     }
 
-    if ($DEPRECATED_$isGridSelection(selection)) {
+    if (DEPRECATED_$isGridSelection(selection)) {
       event.preventDefault();
       event.stopPropagation();
       tableSelection.clearText();

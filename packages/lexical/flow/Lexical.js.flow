@@ -425,29 +425,17 @@ declare export function DEPRECATED_$isGridSelection(
 declare export class NodeSelection implements BaseSelection {
   _nodes: Set<NodeKey>;
   dirty: boolean;
-
   constructor(objects: Set<NodeKey>): void;
-
   is(selection: null | RangeSelection | NodeSelection | GridSelection): boolean;
-
   add(key: NodeKey): void;
-
   delete(key: NodeKey): void;
-
   clear(): void;
-
   has(key: NodeKey): boolean;
-
   clone(): NodeSelection;
-
   extract(): Array<LexicalNode>;
-
   insertRawText(): void;
-
   insertText(): void;
-
   getNodes(): Array<LexicalNode>;
-
   getTextContent(): string;
 }
 
@@ -722,6 +710,7 @@ declare export class ElementNode extends LexicalNode {
   canInsertTextBefore(): boolean;
   canInsertTextAfter(): boolean;
   isInline(): boolean;
+  isTopLevel(): boolean;
   canSelectionRemove(): boolean;
   splice(
     start: number,
@@ -794,6 +783,7 @@ declare export function DEPRECATED_$isGridCellNode(
 /**
  * LexicalUtils
  */
+export type EventHandler = (event: Event, editor: LexicalEditor) => void;
 declare export function $hasUpdateTag(tag: string): boolean;
 declare export function $addUpdateTag(tag: string): void;
 declare export function $getNearestNodeFromDOMNode(
@@ -818,8 +808,14 @@ declare export function $getDecoratorNode(
   isBackward: boolean,
 ): null | LexicalNode;
 declare export function generateRandomKey(): string;
-export type EventHandler = (event: Event, editor: LexicalEditor) => void;
-
+declare export function $isTopLevel(
+  node: LexicalNode,
+): boolean %checks(node instanceof ElementNode ||
+  node instanceof DecoratorNode);
+declare export function $hasAncestor(
+  child: LexicalNode,
+  targetNode: LexicalNode,
+): boolean;
 /**
  * LexicalVersion
  */

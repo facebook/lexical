@@ -525,6 +525,10 @@ export async function insertYouTubeEmbed(page, url) {
   );
 }
 
+export async function insertHorizontalRule(page) {
+  await selectFromInsertDropdown(page, '.horizontal-rule');
+}
+
 export async function insertImageCaption(page, caption) {
   await click(page, '.editor-image img');
   await click(page, '.image-caption-button');

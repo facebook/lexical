@@ -508,7 +508,6 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   const dirtyElements = editor._dirtyElements;
   const normalizedNodes = editor._normalizedNodes;
   const tags = editor._updateTags;
-  const pendingDecorators = editor._pendingDecorators;
   const deferred = editor._deferred;
 
   if (needsUpdate) {
@@ -563,6 +562,10 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
     );
   }
 
+  /**
+   * Capture pendingDecorators after garbage collecting detached decorators
+   */
+  const pendingDecorators = editor._pendingDecorators;
   if (pendingDecorators !== null) {
     editor._decorators = pendingDecorators;
     editor._pendingDecorators = null;

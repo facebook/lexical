@@ -13,13 +13,7 @@ import type {Klass} from 'lexical';
 
 import invariant from 'shared/invariant';
 
-import {
-  $isDecoratorNode,
-  $isElementNode,
-  $isRootNode,
-  $isTextNode,
-  ElementNode,
-} from '.';
+import {$isElementNode, $isRootNode, $isTextNode, ElementNode} from '.';
 import {
   $getSelection,
   $isRangeSelection,
@@ -297,10 +291,7 @@ export class LexicalNode {
     let node: ElementNode | this | null = this;
     while (node !== null) {
       const parent: ElementNode | this | null = node.getParent();
-      if (
-        $isRootNode(parent) &&
-        ($isElementNode(node) || ($isDecoratorNode(node) && node.isTopLevel()))
-      ) {
+      if ($isRootNode(parent)) {
         return node;
       }
       node = parent;

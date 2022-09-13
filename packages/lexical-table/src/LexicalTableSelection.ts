@@ -278,7 +278,7 @@ export class TableSelection {
       if (this.anchorCell !== null) {
         // Collapse the selection
         if (domSelection) {
-          domSelection.setBaseAndExtent(this.anchorCell.elem, 0, cell.elem, 0);
+          // domSelection.setBaseAndExtent(this.anchorCell.elem, 0, cell.elem, 0);
         }
       }
 
@@ -325,10 +325,11 @@ export class TableSelection {
   }
 
   setAnchorCellForSelection(cell: Cell) {
+    this.anchorCell = cell;
+    this.startX = cell.x;
+    this.startY = cell.y;
+
     this.editor.update(() => {
-      this.anchorCell = cell;
-      this.startX = cell.x;
-      this.startY = cell.y;
       const anchorTableCellNode = $getNearestNodeFromDOMNode(cell.elem);
 
       if ($isTableCellNode(anchorTableCellNode)) {

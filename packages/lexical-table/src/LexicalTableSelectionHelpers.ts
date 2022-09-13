@@ -96,6 +96,10 @@ export function applyTableHandlers(
 
       if (cell !== null) {
         tableSelection.setAnchorCellForSelection(cell);
+        console.log('selecting...', {
+          startX: tableSelection.startX,
+          startY: tableSelection.startY,
+        });
 
         document.addEventListener(
           'mouseup',

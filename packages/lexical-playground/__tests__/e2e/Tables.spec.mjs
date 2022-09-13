@@ -379,7 +379,7 @@ test.describe('Tables', () => {
     );
   });
 
-  test(`Can select cells using Table selection`, async ({
+  test.only(`Can select cells using Table selection`, async ({
     page,
     isPlainText,
   }) => {

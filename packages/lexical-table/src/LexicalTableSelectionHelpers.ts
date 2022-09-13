@@ -113,7 +113,6 @@ export function applyTableHandlers(
 
   // This is adjusting the focus of the selection.
   tableElement.addEventListener('mousemove', (event: MouseEvent) => {
-    // console.log({isRangeSelectionHijacked});
     if (isRangeSelectionHijacked) {
       event.preventDefault();
       event.stopPropagation();
@@ -671,7 +670,7 @@ export function applyTableHandlers(
 
       if (
         command === DELETE_LINE_COMMAND &&
-        parentElementNode.getPreviousSibling() !== null
+        parentElementNode.getPreviousSibling() === null
       ) {
         clearCell();
         return true;
@@ -685,7 +684,7 @@ export function applyTableHandlers(
           selection.isCollapsed() &&
           selection.anchor.offset === 0 &&
           parentElementNode === nearestElementNode &&
-          nearestElementNode.getPreviousSibling() !== null
+          parentElementNode.getPreviousSibling() === null
         ) {
           return true;
         }

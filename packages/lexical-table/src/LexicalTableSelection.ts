@@ -390,10 +390,7 @@ export class TableSelection {
         // Delete entire table
         tableNode.remove();
         const rootNode = $getRoot();
-        const newSelection = $createRangeSelection();
-        newSelection.anchor.set(rootNode.__key, 0, 'element');
-        newSelection.focus.set(rootNode.__key, 0, 'element');
-        $setSelection(newSelection);
+        rootNode.selectStart();
         return;
       }
 

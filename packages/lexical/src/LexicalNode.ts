@@ -29,6 +29,7 @@ import {
 import {
   $getCompositionKey,
   $getNodeByKey,
+  $isRootOrShadowRoot,
   $maybeMoveChildrenSelectionToParent,
   $setCompositionKey,
   $setNodeKey,
@@ -291,7 +292,7 @@ export class LexicalNode {
     let node: ElementNode | this | null = this;
     while (node !== null) {
       const parent: ElementNode | this | null = node.getParent();
-      if ($isRootNode(parent)) {
+      if (parent !== null && $isRootOrShadowRoot(parent)) {
         return node;
       }
       node = parent;

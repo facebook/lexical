@@ -231,7 +231,10 @@ function onSelectionChange(
 
       if (selection.isCollapsed()) {
         // Badly interpreted range selection when collapsed - #1482
-        if (domSelection.type === 'Range') {
+        if (
+          domSelection.type === 'Range' &&
+          domSelection.anchorNode === domSelection.focusNode
+        ) {
           selection.dirty = true;
         }
 

@@ -99,8 +99,7 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
 
         if (
           $isRootNode(anchorNodeParent) ||
-          ($isElementNode(anchorNodeParent) &&
-            anchorNodeParent.isRequiredParent())
+          ($isElementNode(anchorNodeParent) && anchorNodeParent.isTopLevel())
         ) {
           anchorNode.replace(list);
           const listItem = $createListItemNode();
@@ -150,8 +149,7 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
 
                 if (
                   ($isRootNode(nextParent) ||
-                    ($isElementNode(nextParent) &&
-                      nextParent.isRequiredParent())) &&
+                    ($isElementNode(nextParent) && nextParent.isTopLevel())) &&
                   !handled.has(parentKey)
                 ) {
                   handled.add(parentKey);

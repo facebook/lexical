@@ -38,9 +38,6 @@ export class DEPRECATED_GridCellNode extends ElementNode {
       colSpan: this.__colSpan,
     };
   }
-  isRequiredParent(): boolean {
-    return true;
-  }
 }
 
 export function DEPRECATED_$isGridCellNode(

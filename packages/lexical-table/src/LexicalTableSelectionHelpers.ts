@@ -671,7 +671,7 @@ export function applyTableHandlers(
 
       if (
         command === DELETE_LINE_COMMAND &&
-        parentElementNode.getPreviousSiblings().length === 0
+        parentElementNode.getPreviousSibling() !== null
       ) {
         clearCell();
         return true;
@@ -685,7 +685,7 @@ export function applyTableHandlers(
           selection.isCollapsed() &&
           selection.anchor.offset === 0 &&
           parentElementNode === nearestElementNode &&
-          nearestElementNode.getPreviousSiblings().length === 0
+          nearestElementNode.getPreviousSibling() !== null
         ) {
           return true;
         }

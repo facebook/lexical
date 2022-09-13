@@ -761,8 +761,6 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
 
   const {keyCode, shiftKey, ctrlKey, metaKey, altKey} = event;
 
-  // debugger;
-
   if (isMoveForward(keyCode, ctrlKey, altKey, metaKey)) {
     dispatchCommand(editor, KEY_ARROW_RIGHT_COMMAND, event);
   } else if (isMoveToEnd(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {

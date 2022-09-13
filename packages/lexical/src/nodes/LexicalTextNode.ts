@@ -888,7 +888,7 @@ function convertTextDOMNode(
   preformatted?: boolean,
 ): DOMConversionOutput {
   let textContent = domNode.textContent || '';
-  if (!preformatted) {
+  if (!preformatted && /\n/.test(textContent)) {
     textContent = textContent.replace(/\r?\n/gm, ' ');
     if (textContent.trim().length === 0) {
       return {node: null};

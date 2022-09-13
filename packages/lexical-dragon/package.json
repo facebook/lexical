@@ -9,10 +9,10 @@
     "accessibility"
   ],
   "license": "MIT",
-  "version": "0.4.1",
+  "version": "0.4.2-next.0",
   "main": "LexicalDragon.js",
   "peerDependencies": {
-    "lexical": "0.4.1"
+    "lexical": "0.4.2-next.0"
   },
   "repository": {
     "type": "git",

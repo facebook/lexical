@@ -123,6 +123,10 @@ export class TableNode extends DEPRECATED_GridNode {
     return false;
   }
 
+  isTopLevel(): boolean {
+    return true;
+  }
+
   getCordsFromCellNode(
     tableCellNode: TableCellNode,
     grid: Grid,

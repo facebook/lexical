@@ -198,6 +198,10 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
     );
   }
 
+  isTopLevel(): boolean {
+    return true;
+  }
+
   collapseAtStart(): true {
     return true;
   }

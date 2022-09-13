@@ -1205,7 +1205,10 @@ export function $maybeMoveChildrenSelectionToParent(
   return selection;
 }
 
-function $hasAncestor(child: LexicalNode, targetNode: LexicalNode): boolean {
+export function $hasAncestor(
+  child: LexicalNode,
+  targetNode: LexicalNode,
+): boolean {
   let parent = child.getParent();
   while (parent !== null) {
     if (parent.is(targetNode)) {
@@ -1227,4 +1230,11 @@ export function getWindow(editor: LexicalEditor): Window {
     invariant(false, 'window object not found');
   }
   return windowObj;
+}
+
+export function $isTopLevel(node: LexicalNode): boolean {
+  return (
+    ($isElementNode(node) && node.isTopLevel()) ||
+    ($isDecoratorNode(node) && node.isTopLevel())
+  );
 }

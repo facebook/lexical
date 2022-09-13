@@ -480,6 +480,9 @@ export class ElementNode extends LexicalNode {
   isInline(): boolean {
     return false;
   }
+  isTopLevel(): boolean {
+    return false;
+  }
   canMergeWith(node: ElementNode): boolean {
     return false;
   }

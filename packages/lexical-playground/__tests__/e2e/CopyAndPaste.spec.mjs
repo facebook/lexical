@@ -1993,17 +1993,20 @@ test.describe('CopyAndPaste', () => {
     await focusEditor(page);
     await pasteFromClipboard(page, {
       'text/html':
-        '<p>Hello\n</p>\n\n<p>\n\nWorld\n\n</p>\n\n<p>Hello\n\n   World   \n\nThere\n\n</p>',
+        '<p>Hello\n</p>\n\n<p>\n\nWorld\n\n</p>\n\n<p>Hello\n\n   World   \n\n!\n\n</p><p>Hello <b>World</b> <i>!</i></p>',
     });
 
     const paragraphs = page.locator('div[contenteditable="true"] > p');
-    await expect(paragraphs).toHaveCount(3);
+    await expect(paragraphs).toHaveCount(4);
 
     // Explicitly checking inner text, since regular assertHTML will prettify it and strip all
     // extra newlines, which makes this test less acurate
     await expect(paragraphs.nth(0)).toHaveText('Hello', {useInnerText: true});
     await expect(paragraphs.nth(1)).toHaveText('World', {useInnerText: true});
-    await expect(paragraphs.nth(2)).toHaveText('Hello   World   There', {
+    await expect(paragraphs.nth(2)).toHaveText('Hello   World   !', {
+      useInnerText: true,
+    });
+    await expect(paragraphs.nth(3)).toHaveText('Hello World !', {
       useInnerText: true,
     });
   });

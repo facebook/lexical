@@ -1232,9 +1232,13 @@ export function getWindow(editor: LexicalEditor): Window {
   return windowObj;
 }
 
-export function $isTopLevel(node: LexicalNode): boolean {
+export function $isInlineElementOrDecoratorNode(node: LexicalNode): boolean {
   return (
-    ($isElementNode(node) && node.isTopLevel()) ||
-    ($isDecoratorNode(node) && node.isTopLevel())
+    ($isElementNode(node) && node.isInline()) ||
+    ($isDecoratorNode(node) && node.isInline())
   );
+}
+
+export function $isRootOrShadowRoot(node: LexicalNode): boolean {
+  return $isRootNode(node) || ($isElementNode(node) && node.isShadowRoot());
 }

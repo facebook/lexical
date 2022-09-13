@@ -18,8 +18,8 @@ import {
   $isLeafNode,
   $isRangeSelection,
   $isRootNode,
+  $isRootOrShadowRoot,
   $isTextNode,
-  $isTopLevel,
   $setSelection,
   DEPRECATED_$isGridSelection,
   ElementNode,
@@ -574,7 +574,7 @@ export function $selectAll(selection: RangeSelection): void {
 function $removeParentEmptyElements(startingNode: ElementNode): void {
   let node: ElementNode | null = startingNode;
 
-  while (node !== null && !$isTopLevel(node)) {
+  while (node !== null && !$isRootOrShadowRoot(node)) {
     const latest = node.getLatest();
     const parentNode: ElementNode | null = node.getParent<ElementNode>();
 
@@ -626,10 +626,10 @@ export function $wrapLeafNodesInElements(
   for (let i = 0; i < nodesLength; i++) {
     const node = nodes[i];
     // Determine whether wrapping has to be broken down into multiple chunks. This can happen if the
-    // user selected multiple top-level nodes that have to be treated separately as if they are
+    // user selected multiple Root-like nodes that have to be treated separately as if they are
     // their own branch. I.e. you don't want to wrap a whole table, but rather the contents of each
     // of each of the cell nodes.
-    if ($isTopLevel(node)) {
+    if ($isRootOrShadowRoot(node)) {
       $wrapLeafNodesInElementsImpl(
         selection,
         descendants,
@@ -702,7 +702,7 @@ export function $wrapLeafNodesInElementsImpl(
 
     target = target.getParentOrThrow();
 
-    if ($isTopLevel(target)) {
+    if ($isRootOrShadowRoot(target)) {
       break;
     }
   }
@@ -768,9 +768,9 @@ export function $wrapLeafNodesInElementsImpl(
     }
   }
 
-  // If our target is top level, let's see if we can re-adjust
+  // If our target is Root-like, let's see if we can re-adjust
   // so that the target is the first child instead.
-  if ($isTopLevel(target)) {
+  if ($isRootOrShadowRoot(target)) {
     if (targetIsPrevSibling) {
       if (wrappingElement !== null) {
         target.insertAfter(wrappingElement);

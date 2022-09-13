@@ -8,14 +8,6 @@
 
 import type {ListType} from '@lexical/list';
 import type {HeadingTagType} from '@lexical/rich-text';
-import {
-  $isParagraphNode,
-  ElementNode,
-  Klass,
-  LexicalNode,
-  TextFormatType,
-  TextNode,
-} from 'lexical';
 
 import {$createCodeNode, $isCodeNode, CodeNode} from '@lexical/code';
 import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
@@ -35,7 +27,17 @@ import {
   HeadingNode,
   QuoteNode,
 } from '@lexical/rich-text';
-import {$createLineBreakNode, $createTextNode, $isTextNode} from 'lexical';
+import {
+  $createLineBreakNode,
+  $createTextNode,
+  $isParagraphNode,
+  $isTextNode,
+  ElementNode,
+  Klass,
+  LexicalNode,
+  TextFormatType,
+  TextNode,
+} from 'lexical';
 
 export type Transformer =
   | ElementTransformer

@@ -252,7 +252,7 @@ function LexicalPopoverMenu<TOption extends TypeaheadOption>({
   }, [resolution.match.matchingString]);
 
   const selectOptionAndCleanUp = useCallback(
-    async (selectedEntry: TOption) => {
+    (selectedEntry: TOption) => {
       editor.update(() => {
         const textNodeContainingQuery = splitNodeContainingQuery(
           editor,

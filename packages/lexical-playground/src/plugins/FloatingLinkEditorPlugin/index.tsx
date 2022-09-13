@@ -14,8 +14,10 @@ import {
   $getSelection,
   $isRangeSelection,
   COMMAND_PRIORITY_CRITICAL,
+  COMMAND_PRIORITY_HIGH,
   COMMAND_PRIORITY_LOW,
   GridSelection,
+  KEY_ESCAPE_COMMAND,
   LexicalEditor,
   NodeSelection,
   RangeSelection,
@@ -32,10 +34,12 @@ import {setFloatingElemPosition} from '../../utils/setFloatingElemPosition';
 
 function FloatingLinkEditor({
   editor,
+  isLink,
   setIsLink,
   anchorElem,
 }: {
   editor: LexicalEditor;
+  isLink: boolean;
   setIsLink: Dispatch<boolean>;
   anchorElem: HTMLElement;
 }): JSX.Element {
@@ -142,33 +146,25 @@ function FloatingLinkEditor({
         },
         COMMAND_PRIORITY_LOW,
       ),
+      editor.registerCommand(
+        KEY_ESCAPE_COMMAND,
+        () => {
+          if (isLink) {
+            setIsLink(false);
+            return true;
+          }
+          return false;
+        },
+        COMMAND_PRIORITY_HIGH,
+      ),
     );
-  }, [editor, updateLinkEditor]);
+  }, [editor, updateLinkEditor, setIsLink, isLink]);
 
   useEffect(() => {
     editor.getEditorState().read(() => {
       updateLinkEditor();
     });
   }, [editor, updateLinkEditor]);
-
-  const closeLinkPopup = useCallback(
-    (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !isEditMode) {
-        setIsLink(false);
-      } else if (event.key === 'Escape' && isEditMode) {
-        setEditMode(false);
-      }
-    },
-    [isEditMode, setIsLink],
-  );
-
-  useEffect(() => {
-    window.addEventListener('keydown', closeLinkPopup);
-
-    return () => {
-      window.removeEventListener('keydown', closeLinkPopup);
-    };
-  }, [closeLinkPopup]);
 
   useEffect(() => {
     if (isEditMode && inputRef.current) {
@@ -187,7 +183,7 @@ function FloatingLinkEditor({
             setLinkUrl(event.target.value);
           }}
           onKeyDown={(event) => {
-            if (event.key === 'Enter') {
+            if (event.key === 'Enter' || event.key === 'Escape') {
               event.preventDefault();
               if (lastSelection !== null) {
                 if (linkUrl !== '') {
@@ -260,6 +256,7 @@ function useFloatingLinkEditorToolbar(
     ? createPortal(
         <FloatingLinkEditor
           editor={activeEditor}
+          isLink={isLink}
           anchorElem={anchorElem}
           setIsLink={setIsLink}
         />,

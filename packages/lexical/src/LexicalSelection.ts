@@ -22,17 +22,17 @@ import {
   $createTextNode,
   $isDecoratorNode,
   $isElementNode,
-  $isGridCellNode,
-  $isGridNode,
-  $isGridRowNode,
   $isLeafNode,
   $isLineBreakNode,
   $isRootNode,
   $isTextNode,
   $setSelection,
   DecoratorNode,
-  GridCellNode,
-  GridNode,
+  DEPRECATED_$isGridCellNode,
+  DEPRECATED_$isGridNode,
+  DEPRECATED_$isGridRowNode,
+  DEPRECATED_GridCellNode,
+  DEPRECATED_GridNode,
   TextNode,
 } from '.';
 import {DOM_ELEMENT_TYPE, TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
@@ -369,7 +369,7 @@ export class GridSelection implements BaseSelection {
   is(
     selection: null | RangeSelection | NodeSelection | GridSelection,
   ): boolean {
-    if (!$isGridSelection(selection)) {
+    if (!DEPRECATED_$isGridSelection(selection)) {
       return false;
     }
     return this.gridKey === selection.gridKey && this.anchor.is(this.focus);
@@ -448,8 +448,8 @@ export class GridSelection implements BaseSelection {
     const nodesSet = new Set<LexicalNode>();
     const {fromX, fromY, toX, toY} = this.getShape();
 
-    const gridNode = $getNodeByKey<GridNode>(this.gridKey);
-    if (!$isGridNode(gridNode)) {
+    const gridNode = $getNodeByKey<DEPRECATED_GridNode>(this.gridKey);
+    if (!DEPRECATED_$isGridNode(gridNode)) {
       invariant(false, 'getNodes: expected to find GridNode');
     }
     nodesSet.add(gridNode);
@@ -459,13 +459,13 @@ export class GridSelection implements BaseSelection {
       const gridRowNode = gridRowNodes[r];
       nodesSet.add(gridRowNode);
 
-      if (!$isGridRowNode(gridRowNode)) {
+      if (!DEPRECATED_$isGridRowNode(gridRowNode)) {
         invariant(false, 'getNodes: expected to find GridRowNode');
       }
-      const gridCellNodes = gridRowNode.getChildren<GridCellNode>();
+      const gridCellNodes = gridRowNode.getChildren<DEPRECATED_GridCellNode>();
       for (let c = fromX; c <= toX; c++) {
         const gridCellNode = gridCellNodes[c];
-        if (!$isGridCellNode(gridCellNode)) {
+        if (!DEPRECATED_$isGridCellNode(gridCellNode)) {
           invariant(false, 'getNodes: expected to find GridCellNode');
         }
         nodesSet.add(gridCellNode);
@@ -498,7 +498,7 @@ export class GridSelection implements BaseSelection {
   }
 }
 
-export function $isGridSelection(x: unknown): x is GridSelection {
+export function DEPRECATED_$isGridSelection(x: unknown): x is GridSelection {
   return x instanceof GridSelection;
 }
 
@@ -2256,7 +2256,7 @@ export function $createNodeSelection(): NodeSelection {
   return new NodeSelection(new Set());
 }
 
-export function $createGridSelection(): GridSelection {
+export function DEPRECATED_$createGridSelection(): GridSelection {
   const anchor = $createPoint('root', 0, 'element');
   const focus = $createPoint('root', 0, 'element');
   return new GridSelection('root', anchor, focus);
@@ -2269,7 +2269,10 @@ export function internalCreateSelection(
   const lastSelection = currentEditorState._selection;
   const domSelection = getDOMSelection();
 
-  if ($isNodeSelection(lastSelection) || $isGridSelection(lastSelection)) {
+  if (
+    $isNodeSelection(lastSelection) ||
+    DEPRECATED_$isGridSelection(lastSelection)
+  ) {
     return lastSelection.clone();
   }
 

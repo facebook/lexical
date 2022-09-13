@@ -399,6 +399,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
         // Used for handling backspace in Android.
         if (
           isPossiblyAndroidKeyPress(event.timeStamp) &&
+          editor.isComposing() &&
           selection.anchor.key === selection.focus.key
         ) {
           $setCompositionKey(null);

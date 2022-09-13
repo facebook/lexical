@@ -58,7 +58,7 @@ export function ContentEditable({
   testid,
 }: Props): JSX.Element {
   const [editor] = useLexicalComposerContext();
-  const [isEditable, setEditable] = useState(true);
+  const [isEditable, setEditable] = useState(false);
 
   const ref = useCallback(
     (rootElement: null | HTMLElement) => {

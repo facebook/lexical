@@ -43,7 +43,6 @@ import {
   $getRoot,
   $getSelection,
   $isDecoratorNode,
-  $isGridSelection,
   $isNodeSelection,
   $isRangeSelection,
   $isRootNode,
@@ -56,6 +55,7 @@ import {
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
+  DEPRECATED_$isGridSelection,
   DRAGSTART_COMMAND,
   DROP_COMMAND,
   ElementNode,
@@ -420,10 +420,12 @@ function onPasteForRichText(
     () => {
       const selection = $getSelection();
       const clipboardData =
-        event instanceof InputEvent ? null : event.clipboardData;
+        event instanceof InputEvent || event instanceof KeyboardEvent
+          ? null
+          : event.clipboardData;
       if (
         clipboardData != null &&
-        ($isRangeSelection(selection) || $isGridSelection(selection))
+        ($isRangeSelection(selection) || DEPRECATED_$isGridSelection(selection))
       ) {
         $insertDataTransferForRichText(clipboardData, selection, editor);
       }
@@ -579,11 +581,14 @@ export function registerRichText(
         if (typeof eventOrText === 'string') {
           if ($isRangeSelection(selection)) {
             selection.insertText(eventOrText);
-          } else if ($isGridSelection(selection)) {
+          } else if (DEPRECATED_$isGridSelection(selection)) {
             // TODO: Insert into the first cell & clear selection.
           }
         } else {
-          if (!$isRangeSelection(selection) && !$isGridSelection(selection)) {
+          if (
+            !$isRangeSelection(selection) &&
+            !DEPRECATED_$isGridSelection(selection)
+          ) {
             return false;
           }
 
@@ -732,10 +737,7 @@ export function registerRichText(
       KEY_ARROW_DOWN_COMMAND,
       (event) => {
         const selection = $getSelection();
-        if (
-          $isNodeSelection(selection) &&
-          !isTargetWithinDecorator(event.target as HTMLElement)
-        ) {
+        if ($isNodeSelection(selection)) {
           // If selection is on a node, let's try and move selection
           // back to being a range selection.
           const nodes = selection.getNodes();
@@ -752,10 +754,7 @@ export function registerRichText(
       KEY_ARROW_LEFT_COMMAND,
       (event) => {
         const selection = $getSelection();
-        if (
-          $isNodeSelection(selection) &&
-          !isTargetWithinDecorator(event.target as HTMLElement)
-        ) {
+        if ($isNodeSelection(selection)) {
           // If selection is on a node, let's try and move selection
           // back to being a range selection.
           const nodes = selection.getNodes();
@@ -949,7 +948,10 @@ export function registerRichText(
       PASTE_COMMAND,
       (event) => {
         const selection = $getSelection();
-        if ($isRangeSelection(selection) || $isGridSelection(selection)) {
+        if (
+          $isRangeSelection(selection) ||
+          DEPRECATED_$isGridSelection(selection)
+        ) {
           onPasteForRichText(event, editor);
           return true;
         }

@@ -234,8 +234,12 @@ async function build(name, inputFile, outputPath, outputFile, isProd) {
       isProd && compiler(closureOptions),
       {
         renderChunk(source) {
-          return `${getComment()}
-${source}`;
+          // Assets pipeline might use "export" word in the beginning of the line
+          // as a dependency, avoiding it with empty comment in front
+          const patchedSource = isWWW
+            ? source.replace(/^(export(?!s))/gm, '/**/$1')
+            : source;
+          return `${getComment()}\n${patchedSource}`;
         },
       },
     ],

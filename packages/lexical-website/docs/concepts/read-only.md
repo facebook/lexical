@@ -2,7 +2,7 @@
 sidebar_position: 8
 ---
 
-# Read Model / Edit Mode
+# Read Mode / Edit Mode
 
 Lexical supports two modes:
 
@@ -44,7 +44,7 @@ editor.setEditable(true);
 In order to find the current mode of the editor you can use:
 
 ```js
-const readOnly = editor.isEditable(); // Returns true or false
+const isEditable = editor.isEditable(); // Returns true or false
 ```
 
 You can also get notified when the editor's read only mode has changed:

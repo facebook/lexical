@@ -106,9 +106,20 @@ export type EditorThemeClasses = {
   root?: EditorThemeClassName;
   rtl?: EditorThemeClassName;
   table?: EditorThemeClassName;
+  tableAddColumns?: EditorThemeClassName;
+  tableAddRows?: EditorThemeClassName;
+  tableCellActionButton?: EditorThemeClassName;
+  tableCellActionButtonContainer?: EditorThemeClassName;
+  tableCellPrimarySelected?: EditorThemeClassName;
+  tableCellSelected?: EditorThemeClassName;
   tableCell?: EditorThemeClassName;
+  tableCellEditing?: EditorThemeClassName;
   tableCellHeader?: EditorThemeClassName;
+  tableCellResizer?: EditorThemeClassName;
+  tableCellSortedIndicator?: EditorThemeClassName;
+  tableResizeRuler?: EditorThemeClassName;
   tableRow?: EditorThemeClassName;
+  tableSelected?: EditorThemeClassName;
   text?: TextNodeThemeClasses;
   embedBlock?: {
     base?: EditorThemeClassName;
@@ -342,7 +353,7 @@ export function createEditor(editorConfig?: {
     ...(config.nodes || []),
   ];
   const onError = config.onError;
-  const isEditable = config.editable || true;
+  const isEditable = config.editable !== undefined ? config.editable : true;
   let registeredNodes;
 
   if (editorConfig === undefined && activeEditor !== null) {
@@ -512,6 +523,8 @@ export class LexicalEditor {
 
     this._onError = onError;
     this._htmlConversions = htmlConversions;
+    // We don't actually make use of the `editable` argument above.
+    // Doing so, causes e2e tests around the lock to fail.
     this._editable = true;
     this._headless = false;
     this._window = null;

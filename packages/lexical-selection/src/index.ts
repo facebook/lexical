@@ -7,7 +7,21 @@
  *
  */
 
-import type {
+import {
+  $createTextNode,
+  $getDecoratorNode,
+  $getNodeByKey,
+  $getPreviousSelection,
+  $hasAncestor,
+  $isDecoratorNode,
+  $isElementNode,
+  $isLeafNode,
+  $isRangeSelection,
+  $isRootNode,
+  $isTextNode,
+  $isTopLevel,
+  $setSelection,
+  DEPRECATED_$isGridSelection,
   ElementNode,
   GridSelection,
   LexicalEditor,
@@ -17,21 +31,6 @@ import type {
   Point,
   RangeSelection,
   TextNode,
-} from 'lexical';
-
-import {
-  $createTextNode,
-  $getDecoratorNode,
-  $getNodeByKey,
-  $getPreviousSelection,
-  $isDecoratorNode,
-  $isElementNode,
-  $isGridSelection,
-  $isLeafNode,
-  $isRangeSelection,
-  $isRootNode,
-  $isTextNode,
-  $setSelection,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -281,7 +280,7 @@ function $cloneContentsImpl(
       nodeMap: Array.from(nodeMap.entries()),
       range,
     };
-  } else if ($isGridSelection(selection)) {
+  } else if (DEPRECATED_$isGridSelection(selection)) {
     const nodeMap = selection.getNodes().map<[NodeKey, LexicalNode]>((node) => {
       const nodeKey = node.getKey();
 
@@ -575,7 +574,7 @@ export function $selectAll(selection: RangeSelection): void {
 function $removeParentEmptyElements(startingNode: ElementNode): void {
   let node: ElementNode | null = startingNode;
 
-  while (node !== null && !$isRootNode(node)) {
+  while (node !== null && !$isTopLevel(node)) {
     const latest = node.getLatest();
     const parentNode: ElementNode | null = node.getParent<ElementNode>();
 
@@ -587,10 +586,11 @@ function $removeParentEmptyElements(startingNode: ElementNode): void {
   }
 }
 
+// TODO 0.6 Rename to $wrapDescendantNodesInElements
 export function $wrapLeafNodesInElements(
   selection: RangeSelection,
   createElement: () => ElementNode,
-  wrappingElement?: ElementNode,
+  wrappingElement: null | ElementNode = null,
 ): void {
   const nodes = selection.getNodes();
   const nodesLength = nodes.length;
@@ -621,6 +621,60 @@ export function $wrapLeafNodesInElements(
     return;
   }
 
+  let topLevelNode = null;
+  let descendants: LexicalNode[] = [];
+  for (let i = 0; i < nodesLength; i++) {
+    const node = nodes[i];
+    // Determine whether wrapping has to be broken down into multiple chunks. This can happen if the
+    // user selected multiple top-level nodes that have to be treated separately as if they are
+    // their own branch. I.e. you don't want to wrap a whole table, but rather the contents of each
+    // of each of the cell nodes.
+    if ($isTopLevel(node)) {
+      $wrapLeafNodesInElementsImpl(
+        selection,
+        descendants,
+        descendants.length,
+        createElement,
+        wrappingElement,
+      );
+      descendants = [];
+      topLevelNode = node;
+    } else if (
+      topLevelNode === null ||
+      (topLevelNode !== null && $hasAncestor(node, topLevelNode))
+    ) {
+      descendants.push(node);
+    } else {
+      $wrapLeafNodesInElementsImpl(
+        selection,
+        descendants,
+        descendants.length,
+        createElement,
+        wrappingElement,
+      );
+      descendants = [node];
+    }
+  }
+  $wrapLeafNodesInElementsImpl(
+    selection,
+    descendants,
+    descendants.length,
+    createElement,
+    wrappingElement,
+  );
+}
+
+export function $wrapLeafNodesInElementsImpl(
+  selection: RangeSelection,
+  nodes: LexicalNode[],
+  nodesLength: number,
+  createElement: () => ElementNode,
+  wrappingElement: null | ElementNode = null,
+): void {
+  if (nodes.length === 0) {
+    return;
+  }
+
   const firstNode = nodes[0];
   const elementMapping: Map<NodeKey, ElementNode> = new Map();
   const elements = [];
@@ -636,17 +690,19 @@ export function $wrapLeafNodesInElements(
     target = target.getParentOrThrow();
   }
 
+  let targetIsPrevSibling = false;
   while (target !== null) {
     const prevSibling = target.getPreviousSibling<ElementNode>();
 
     if (prevSibling !== null) {
       target = prevSibling;
+      targetIsPrevSibling = true;
       break;
     }
 
     target = target.getParentOrThrow();
 
-    if ($isRootNode(target)) {
+    if ($isTopLevel(target)) {
       break;
     }
   }
@@ -701,42 +757,53 @@ export function $wrapLeafNodesInElements(
       targetElement.setFormat(node.getFormatType());
       targetElement.setIndent(node.getIndent());
       elements.push(targetElement);
-      node.remove();
+      node.remove(true);
     }
   }
 
-  if (wrappingElement) {
+  if (wrappingElement !== null) {
     for (let i = 0; i < elements.length; i++) {
       const element = elements[i];
       wrappingElement.append(element);
     }
   }
 
-  // If our target is the root, let's see if we can re-adjust
+  // If our target is top level, let's see if we can re-adjust
   // so that the target is the first child instead.
-  if ($isRootNode(target)) {
-    const firstChild = target.getFirstChild();
-
-    if ($isElementNode(firstChild)) {
-      target = firstChild;
-    }
-
-    if (firstChild === null) {
-      if (wrappingElement) {
-        target.append(wrappingElement);
+  if ($isTopLevel(target)) {
+    if (targetIsPrevSibling) {
+      if (wrappingElement !== null) {
+        target.insertAfter(wrappingElement);
       } else {
-        for (let i = 0; i < elements.length; i++) {
+        for (let i = elements.length - 1; i >= 0; i--) {
           const element = elements[i];
-          target.append(element);
+          target.insertAfter(element);
         }
       }
     } else {
-      if (wrappingElement) {
-        firstChild.insertBefore(wrappingElement);
+      const firstChild = target.getFirstChild();
+
+      if ($isElementNode(firstChild)) {
+        target = firstChild;
+      }
+
+      if (firstChild === null) {
+        if (wrappingElement) {
+          target.append(wrappingElement);
+        } else {
+          for (let i = 0; i < elements.length; i++) {
+            const element = elements[i];
+            target.append(element);
+          }
+        }
       } else {
-        for (let i = 0; i < elements.length; i++) {
-          const element = elements[i];
-          firstChild.insertBefore(element);
+        if (wrappingElement !== null) {
+          firstChild.insertBefore(wrappingElement);
+        } else {
+          for (let i = 0; i < elements.length; i++) {
+            const element = elements[i];
+            firstChild.insertBefore(element);
+          }
         }
       }
     }
@@ -1045,7 +1112,7 @@ export function $sliceSelectedTextNodeContent(
     textNode.isSelected() &&
     !textNode.isSegmented() &&
     !textNode.isToken() &&
-    ($isRangeSelection(selection) || $isGridSelection(selection))
+    ($isRangeSelection(selection) || DEPRECATED_$isGridSelection(selection))
   ) {
     const anchorNode = selection.anchor.getNode();
     const focusNode = selection.focus.getNode();

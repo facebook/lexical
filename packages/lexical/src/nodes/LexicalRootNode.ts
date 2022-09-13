@@ -37,6 +37,10 @@ export class RootNode extends ElementNode {
     this.__cachedText = null;
   }
 
+  isTopLevel(): boolean {
+    return true;
+  }
+
   getTopLevelElementOrThrow(): never {
     invariant(
       false,

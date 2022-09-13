@@ -291,9 +291,16 @@ function useFloatingTextFormatToolbar(
   }, [updatePopup]);
 
   useEffect(() => {
-    return editor.registerUpdateListener(() => {
-      updatePopup();
-    });
+    return mergeRegister(
+      editor.registerUpdateListener(() => {
+        updatePopup();
+      }),
+      editor.registerRootListener(() => {
+        if (editor.getRootElement() === null) {
+          setIsText(false);
+        }
+      }),
+    );
   }, [editor, updatePopup]);
 
   if (!isText || isLink) {
@@ -320,7 +327,7 @@ function useFloatingTextFormatToolbar(
 export default function FloatingTextFormatToolbarPlugin({
   anchorElem = document.body,
 }: {
-  anchorElem: HTMLElement;
+  anchorElem?: HTMLElement;
 }): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   return useFloatingTextFormatToolbar(editor, anchorElem);

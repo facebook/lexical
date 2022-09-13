@@ -22,9 +22,9 @@ import {
   $getRoot,
   $getSelection,
   $isElementNode,
-  $isGridSelection,
   $isRangeSelection,
   $isTextNode,
+  DEPRECATED_$isGridSelection,
 } from 'lexical';
 import * as React from 'react';
 import {useEffect, useRef, useState} from 'react';
@@ -280,7 +280,7 @@ function generateContent(editorState: EditorState): string {
       ? ': null'
       : $isRangeSelection(selection)
       ? printRangeSelection(selection)
-      : $isGridSelection(selection)
+      : DEPRECATED_$isGridSelection(selection)
       ? printGridSelection(selection)
       : printObjectSelection(selection);
   });

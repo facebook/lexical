@@ -12,7 +12,7 @@ import './PlaygroundEditorTheme.css';
 
 const theme: EditorThemeClasses = {
   characterLimit: 'PlaygroundEditorTheme__characterLimit',
-  code: 'PlaygroundEditorTheme__code PlaygroundEditorTheme__block',
+  code: 'PlaygroundEditorTheme__code',
   codeHighlight: {
     atrule: 'PlaygroundEditorTheme__tokenAttr',
     attr: 'PlaygroundEditorTheme__tokenAttr',
@@ -51,12 +51,12 @@ const theme: EditorThemeClasses = {
   },
   hashtag: 'PlaygroundEditorTheme__hashtag',
   heading: {
-    h1: 'PlaygroundEditorTheme__h1 PlaygroundEditorTheme__block',
-    h2: 'PlaygroundEditorTheme__h2 PlaygroundEditorTheme__block',
-    h3: 'PlaygroundEditorTheme__h3 PlaygroundEditorTheme__block',
-    h4: 'PlaygroundEditorTheme__h4 PlaygroundEditorTheme__block',
-    h5: 'PlaygroundEditorTheme__h5 PlaygroundEditorTheme__block',
-    h6: 'PlaygroundEditorTheme__h6 PlaygroundEditorTheme__block',
+    h1: 'PlaygroundEditorTheme__h1',
+    h2: 'PlaygroundEditorTheme__h2',
+    h3: 'PlaygroundEditorTheme__h3',
+    h4: 'PlaygroundEditorTheme__h4',
+    h5: 'PlaygroundEditorTheme__h5',
+    h6: 'PlaygroundEditorTheme__h6',
   },
   image: 'editor-image',
   link: 'PlaygroundEditorTheme__link',
@@ -79,7 +79,7 @@ const theme: EditorThemeClasses = {
   ltr: 'PlaygroundEditorTheme__ltr',
   mark: 'PlaygroundEditorTheme__mark',
   markOverlap: 'PlaygroundEditorTheme__markOverlap',
-  paragraph: 'PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__block',
+  paragraph: 'PlaygroundEditorTheme__paragraph',
   quote: 'PlaygroundEditorTheme__quote',
   rtl: 'PlaygroundEditorTheme__rtl',
   table: 'PlaygroundEditorTheme__table',

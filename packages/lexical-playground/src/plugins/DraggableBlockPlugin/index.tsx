@@ -18,21 +18,45 @@ import {
   DROP_COMMAND,
   LexicalEditor,
 } from 'lexical';
+import {getElementByKeyOrThrow} from 'lexical/src/LexicalUtils';
 import * as React from 'react';
 import {DragEvent as ReactDragEvent, useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 
 import {isHTMLElement} from '../../utils/guard';
+import {Point} from '../../utils/point';
+import {Rect} from '../../utils/rect';
 
 const SPACE = 4;
 const TARGET_LINE_HALF_HEIGHT = 2;
-const DRAGGABLE_BLOCK_ELEMENT_PADDING = 28;
-const DRAGGABLE_BLOCK_CLASSNAME = 'PlaygroundEditorTheme__block';
 const DRAGGABLE_BLOCK_MENU_CLASSNAME = 'draggable-block-menu';
 const DRAG_DATA_FORMAT = 'application/x-lexical-drag-block';
 
-function $getBlockElement(element: HTMLElement): HTMLElement | null {
-  return element.closest(`.${DRAGGABLE_BLOCK_CLASSNAME}`);
+function getBlockElement(
+  anchorElem: HTMLElement,
+  editor: LexicalEditor,
+  event: MouseEvent,
+): HTMLElement | null {
+  const anchorElementRect = anchorElem.getBoundingClientRect();
+  const root = editor.getEditorState()._nodeMap.get('root');
+  const blockKeys = root ? root.__children : [];
+
+  let blockElem = null;
+
+  editor.getEditorState().read(() => {
+    for (const key of blockKeys) {
+      const elem = getElementByKeyOrThrow(editor, key);
+      const point = new Point(event.x, event.y);
+      const domRect = Rect.fromDOM(elem);
+      const rect = domRect.generateNewRect({left: anchorElementRect.left});
+      if (rect.contains(point)) {
+        blockElem = elem;
+        break;
+      }
+    }
+  });
+
+  return blockElem;
 }
 
 function isOnMenu(element: HTMLElement): boolean {
@@ -60,11 +84,8 @@ function setMenuPosition(
     targetRect.top +
     (parseInt(targetStyle.lineHeight, 10) - floatingElemRect.height) / 2 -
     anchorElementRect.top;
-  const left =
-    targetRect.left +
-    DRAGGABLE_BLOCK_ELEMENT_PADDING -
-    floatingElemRect.width -
-    anchorElementRect.left;
+
+  const left = anchorElementRect.left - floatingElemRect.width + SPACE;
 
   floatingElem.style.opacity = '1';
   floatingElem.style.top = `${top}px`;
@@ -142,7 +163,8 @@ function useDraggableBlockMenu(
         return;
       }
 
-      const _draggableBlockElem = $getBlockElement(target);
+      const _draggableBlockElem = getBlockElement(anchorElem, editor, event);
+
       setDraggableBlockElem(_draggableBlockElem);
     }
 
@@ -151,7 +173,7 @@ function useDraggableBlockMenu(
     return () => {
       window.removeEventListener('mousemove', onMouseMove);
     };
-  }, [anchorElem]);
+  }, [anchorElem, editor]);
 
   useEffect(() => {
     if (menuRef.current) {
@@ -165,7 +187,7 @@ function useDraggableBlockMenu(
       if (!isHTMLElement(target)) {
         return false;
       }
-      const targetBlockElem = $getBlockElement(target);
+      const targetBlockElem = getBlockElement(anchorElem, editor, event);
       const targetLineElem = targetLineRef.current;
       if (targetBlockElem === null || targetLineElem === null) {
         return false;
@@ -186,7 +208,7 @@ function useDraggableBlockMenu(
       if (!isHTMLElement(target)) {
         return false;
       }
-      const targetBlockElem = $getBlockElement(target);
+      const targetBlockElem = getBlockElement(anchorElem, editor, event);
       if (!targetBlockElem) {
         return false;
       }

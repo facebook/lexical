@@ -117,7 +117,6 @@ export {
   $getPreviousSelection,
   $getSelection,
   $insertNodes,
-  $isGridSelection,
   $isNodeSelection,
   $isRangeSelection,
   DEPRECATED_$createGridSelection,
@@ -137,7 +136,6 @@ export {
   $nodesOfType,
   $setCompositionKey,
   $setSelection,
-  $wrapNodeInElement,
 } from './LexicalUtils';
 export {VERSION} from './LexicalVersion';
 export {$isDecoratorNode, DecoratorNode} from './nodes/LexicalDecoratorNode';

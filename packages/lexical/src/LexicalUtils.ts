@@ -1238,13 +1238,3 @@ export function $isInlineElementOrDecoratorNode(node: LexicalNode): boolean {
 export function $isRootOrShadowRoot(node: LexicalNode): boolean {
   return $isRootNode(node) || ($isElementNode(node) && node.isShadowRoot());
 }
-
-export function $wrapNodeInElement(
-  node: LexicalNode,
-  createElementNode: () => ElementNode,
-): ElementNode {
-  const elementNode = createElementNode();
-  node.replace(elementNode);
-  elementNode.append(node);
-  return elementNode;
-}

@@ -430,3 +430,13 @@ export function $insertNodeToNearestRoot<T extends LexicalNode>(node: T): T {
   paragraphNode.select();
   return node.getLatest();
 }
+
+export function $wrapNodeInElement(
+  node: LexicalNode,
+  createElementNode: () => ElementNode,
+): ElementNode {
+  const elementNode = createElementNode();
+  node.replace(elementNode);
+  elementNode.append(node);
+  return elementNode;
+}

@@ -532,6 +532,10 @@ declare export function $getPreviousSelection():
   | RangeSelection
   | NodeSelection
   | GridSelection;
+declare export function $insertNodes(
+  nodes: Array<LexicalNode>,
+  selectStart?: boolean,
+): boolean;
 
 /**
  * LexicalTextNode
@@ -815,6 +819,7 @@ declare export function $hasAncestor(
   child: LexicalNode,
   targetNode: LexicalNode,
 ): boolean;
+
 /**
  * LexicalVersion
  */

@@ -6,9 +6,10 @@
  *
  */
 
-import type {TextNode} from '.';
+import type {RangeSelection, TextNode} from '.';
+import type {PointType} from './LexicalSelection';
 
-import {$isTextNode} from '.';
+import {$isElementNode, $isTextNode} from '.';
 import {getActiveEditor} from './LexicalUpdates';
 
 function $canSimpleTextNodesBeMerged(
@@ -82,5 +83,42 @@ export function $normalizeTextNode(textNode: TextNode): void {
     } else {
       break;
     }
+  }
+}
+
+export function $normalizeSelection(selection: RangeSelection): RangeSelection {
+  $normalizePoint(selection.anchor);
+  $normalizePoint(selection.focus);
+  return selection;
+}
+
+function $normalizePoint(point: PointType): void {
+  while (point.type === 'element') {
+    const node = point.getNode();
+    const offset = point.offset;
+    let nextNode;
+    let nextOffsetAtEnd;
+    if (offset === node.getChildrenSize()) {
+      nextNode = node.getChildAtIndex(offset - 1);
+      nextOffsetAtEnd = true;
+    } else {
+      nextNode = node.getChildAtIndex(offset);
+      nextOffsetAtEnd = false;
+    }
+    if ($isTextNode(nextNode)) {
+      point.set(
+        nextNode.__key,
+        nextOffsetAtEnd ? nextNode.getTextContentSize() : 0,
+        'text',
+      );
+      break;
+    } else if (!$isElementNode(nextNode)) {
+      break;
+    }
+    point.set(
+      nextNode.__key,
+      nextOffsetAtEnd ? nextNode.getChildrenSize() : 0,
+      'element',
+    );
   }
 }

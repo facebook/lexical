@@ -244,6 +244,7 @@ export default function ComponentPickerMenuPlugin(): JSX.Element {
               if (selection.isCollapsed()) {
                 $wrapLeafNodesInElements(selection, () => $createCodeNode());
               } else {
+                // Will this ever happen?
                 const textContent = selection.getTextContent();
                 const codeNode = $createCodeNode();
                 selection.insertNodes([codeNode]);

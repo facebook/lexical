@@ -56,8 +56,7 @@ editor.update(() => {
   $getRoot().select();
 
   // Insert them at a selection.
-  const selection = $getSelection();
-  selection.insertNodes(nodes);
+  $insertNodes(nodes);
 });
 ```
 

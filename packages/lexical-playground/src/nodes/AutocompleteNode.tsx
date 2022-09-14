@@ -19,6 +19,14 @@ import * as React from 'react';
 import {useSharedAutocompleteContext} from '../context/SharedAutocompleteContext';
 import {uuid as UUID} from '../plugins/AutocompletePlugin';
 
+declare global {
+  interface Navigator {
+    userAgentData?: {
+      mobile: boolean;
+    };
+  }
+}
+
 export type SerializedAutocompleteNode = Spread<
   {
     type: 'autocomplete';
@@ -28,7 +36,7 @@ export type SerializedAutocompleteNode = Spread<
   SerializedLexicalNode
 >;
 
-export class AutocompleteNode extends DecoratorNode<JSX.Element> {
+export class AutocompleteNode extends DecoratorNode<JSX.Element | null> {
   // TODO add comment
   __uuid: string;
 
@@ -73,7 +81,7 @@ export class AutocompleteNode extends DecoratorNode<JSX.Element> {
     return document.createElement('span');
   }
 
-  decorate(): JSX.Element {
+  decorate(): JSX.Element | null {
     if (this.__uuid !== UUID) {
       return null;
     }
@@ -87,7 +95,6 @@ export function $createAutocompleteNode(uuid: string): AutocompleteNode {
 
 function AutocompleteComponent(): JSX.Element {
   const [suggestion] = useSharedAutocompleteContext();
-  // @ts-ignore Experimental property
   const userAgentData = window.navigator.userAgentData;
   const isMobile =
     userAgentData !== undefined

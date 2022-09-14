@@ -6,7 +6,7 @@
     "moduleResolution": "node",
     "downlevelIteration": true,
     "noEmit": true,
-    "strict": false,
+    "strict": true,
     "baseUrl": ".",
     "typeRoots": ["node_modules/@types", "libdefs/globals"],
     "skipLibCheck": true,
@@ -105,6 +105,9 @@
       "@lexical/react/LexicalRichTextPlugin": [
         "./packages/lexical-react/src/LexicalRichTextPlugin.tsx"
       ],
+      "@lexical/react/LexicalTypeaheadMenuPlugin": [
+        "packages/lexical-react/src/LexicalTypeaheadMenuPlugin.tsx"
+      ],
       "@lexical/react/LexicalHistoryPlugin": [
         "./packages/lexical-react/src/LexicalHistoryPlugin.ts"
       ],
@@ -120,6 +123,9 @@
       "@lexical/react/LexicalAutoFocusPlugin": [
         "./packages/lexical-react/src/LexicalAutoFocusPlugin.ts"
       ],
+      "@lexical/react/LexicalTableOfContents__EXPERIMENTAL": [
+        "./packages/lexical-react/src/LexicalTableOfContents__EXPERIMENTAL.tsx"
+      ],
       "@lexical/react/LexicalAutoFormatterPlugin": [
         "./packages/lexical-react/src/LexicalAutoFormatterPlugin.ts"
       ],
@@ -128,6 +134,9 @@
       ],
       "@lexical/react/LexicalClearEditorPlugin": [
         "./packages/lexical-react/src/LexicalClearEditorPlugin.ts"
+      ],
+      "@lexical/react/LexicalCollaborationContext": [
+        "./packages/lexical-react/src/LexicalCollaborationContext.ts"
       ],
       "@lexical/react/LexicalCollaborationPlugin": [
         "./packages/lexical-react/src/LexicalCollaborationPlugin.ts"
@@ -140,6 +149,9 @@
       ],
       "@lexical/react/LexicalAutoLinkPlugin": [
         "./packages/lexical-react/src/LexicalAutoLinkPlugin.ts"
+      ],
+      "@lexical/react/LexicalAutoEmbedPlugin": [
+        "./packages/lexical-react/src/LexicalAutoEmbedPlugin.tsx"
       ],
       "@lexical/react/LexicalListPlugin": [
         "./packages/lexical-react/src/LexicalListPlugin.ts"
@@ -177,15 +189,24 @@
         "packages/shared/src/simpleDiffWithCursor.ts"
       ],
       "shared/invariant": ["./packages/shared/src/invariant.ts"],
+      "shared/warnOnlyOnce": ["./packages/shared/src/warnOnlyOnce.ts"],
       "shared/environment": ["./packages/shared/src/environment.ts"],
       "shared/useLayoutEffect": ["./packages/shared/src/useLayoutEffect.ts"]
     }
   },
   "include": ["./libdefs", "./packages"],
   "exclude": [
+    "**/__tests__/**",
     "**/dist/**",
     "**/npm/**",
     "**/node_modules/**",
     "./packages/playwright-core/**"
-  ]
+  ],
+  "typedocOptions": {
+    "logLevel": "Verbose"
+  },
+  "ts-node": {
+    "require": ["tsconfig-paths/register"],
+    "transpileOnly": true
+  }
 }

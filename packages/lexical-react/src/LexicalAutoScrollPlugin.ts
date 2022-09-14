@@ -16,7 +16,7 @@ type Props = Readonly<{
   };
 }>;
 
-export function AutoScrollPlugin({scrollRef}: Props): JSX.Element {
+export function AutoScrollPlugin({scrollRef}: Props): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
 
   useLayoutEffect(() => {

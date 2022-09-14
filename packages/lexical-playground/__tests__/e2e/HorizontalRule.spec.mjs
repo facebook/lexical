@@ -9,6 +9,7 @@
 import {
   moveLeft,
   moveToLineBeginning,
+  pressBackspace,
   selectAll,
 } from '../keyboardShortcuts/index.mjs';
 import {
@@ -19,7 +20,6 @@ import {
   html,
   initialize,
   pasteFromClipboard,
-  repeat,
   selectFromInsertDropdown,
   test,
   waitForSelector,
@@ -70,6 +70,7 @@ test.describe('HorizontalRule', () => {
     });
 
     await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowRight');
 
     await assertSelection(page, {
       anchorOffset: 0,
@@ -78,6 +79,7 @@ test.describe('HorizontalRule', () => {
       focusPath: [2],
     });
 
+    await page.keyboard.press('ArrowLeft');
     await page.keyboard.press('ArrowLeft');
 
     await assertSelection(page, {
@@ -89,6 +91,7 @@ test.describe('HorizontalRule', () => {
 
     await page.keyboard.type('Some text');
 
+    await page.keyboard.press('ArrowRight');
     await page.keyboard.press('ArrowRight');
 
     await assertSelection(page, {
@@ -126,6 +129,8 @@ test.describe('HorizontalRule', () => {
 
     await page.keyboard.press('ArrowLeft');
 
+    await page.keyboard.press('ArrowLeft');
+
     if (browserName === 'webkit') {
       await assertSelection(page, {
         anchorOffset: 9,
@@ -142,9 +147,7 @@ test.describe('HorizontalRule', () => {
       });
     }
 
-    await repeat(10, async () => {
-      await page.keyboard.press('Backspace');
-    });
+    await pressBackspace(page, 10);
 
     await assertHTML(
       page,

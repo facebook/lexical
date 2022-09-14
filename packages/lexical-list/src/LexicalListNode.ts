@@ -4,7 +4,6 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- *
  */
 
 import type {Spread} from 'lexical';
@@ -26,8 +25,8 @@ import {
   SerializedElementNode,
 } from 'lexical';
 
-import {$createListItemNode, $isListItemNode} from '.';
-import {$getListDepth} from './utils';
+import {$createListItemNode, $isListItemNode, ListItemNode} from '.';
+import {$getListDepth, wrapInListItem} from './utils';
 
 export type SerializedListNode = Spread<
   {
@@ -44,9 +43,13 @@ export type ListType = 'number' | 'bullet' | 'check';
 
 export type ListNodeTagType = 'ul' | 'ol';
 
+/** @noInheritDoc */
 export class ListNode extends ElementNode {
+  /** @internal */
   __tag: ListNodeTagType;
+  /** @internal */
   __start: number;
+  /** @internal */
   __listType: ListType;
 
   static getType(): string {
@@ -137,6 +140,7 @@ export class ListNode extends ElementNode {
       start: this.getStart(),
       tag: this.getTag(),
       type: 'list',
+      version: 1,
     };
   }
 
@@ -185,7 +189,7 @@ function setListThemeClassNames(
   const listTheme = editorThemeClasses.list;
 
   if (listTheme !== undefined) {
-    const listLevelsClassNames = listTheme[node.__tag + 'Depth'] || [];
+    const listLevelsClassNames = listTheme[`${node.__tag}Depth`] || [];
     const listDepth = $getListDepth(node) - 1;
     const normalizedListDepth = listDepth % listLevelsClassNames.length;
     const listLevelClassName = listLevelsClassNames[normalizedListDepth];
@@ -231,6 +235,29 @@ function setListThemeClassNames(
   }
 }
 
+/*
+ * This function normalizes the children of a ListNode after the conversion from HTML,
+ * ensuring that they are all ListItemNodes and contain either a single nested ListNode
+ * or some other inline content.
+ */
+function normalizeChildren(nodes: Array<LexicalNode>): Array<ListItemNode> {
+  const normalizedListItems: Array<ListItemNode> = [];
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+    if ($isListItemNode(node)) {
+      normalizedListItems.push(node);
+      node.getChildren().forEach((child) => {
+        if ($isListNode(child)) {
+          normalizedListItems.push(wrapInListItem(child));
+        }
+      });
+    } else {
+      normalizedListItems.push(wrapInListItem(node));
+    }
+  }
+  return normalizedListItems;
+}
+
 function convertListNode(domNode: Node): DOMConversionOutput {
   const nodeName = domNode.nodeName.toLowerCase();
   let node = null;
@@ -241,10 +268,13 @@ function convertListNode(domNode: Node): DOMConversionOutput {
     node = $createListNode('bullet');
   }
 
-  return {node};
+  return {
+    after: normalizeChildren,
+    node,
+  };
 }
 
-const TAG_TO_LIST_TYPE: Readonly<Record<ListNodeTagType, ListType>> = {
+const TAG_TO_LIST_TYPE: Record<string, ListType> = {
   ol: 'number',
   ul: 'bullet',
 };

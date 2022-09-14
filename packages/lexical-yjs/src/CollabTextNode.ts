@@ -17,6 +17,7 @@ import {
   $isRangeSelection,
   $isTextNode,
 } from 'lexical';
+import invariant from 'shared/invariant';
 import simpleDiffWithCursor from 'shared/simpleDiffWithCursor';
 
 import {syncPropertiesFromLexical, syncPropertiesFromYjs} from './Utils';
@@ -144,10 +145,10 @@ export class CollabTextNode {
     keysChanged: null | Set<string>,
   ): void {
     const lexicalNode = this.getNode();
-
-    if (lexicalNode === null) {
-      throw new Error('Should never happen');
-    }
+    invariant(
+      lexicalNode !== null,
+      'syncPropertiesAndTextFromYjs: cound not find decorator node',
+    );
 
     syncPropertiesFromYjs(binding, this._map, lexicalNode, keysChanged);
 

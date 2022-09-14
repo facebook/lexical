@@ -49,10 +49,15 @@ export type SerializedElementNode = Spread<
 
 export type ElementFormatType = 'left' | 'center' | 'right' | 'justify' | '';
 
+/** @noInheritDoc */
 export class ElementNode extends LexicalNode {
+  /** @internal */
   __children: Array<NodeKey>;
+  /** @internal */
   __format: number;
+  /** @internal */
   __indent: number;
+  /** @internal */
   __dir: 'ltr' | 'rtl' | null;
 
   constructor(key?: NodeKey) {
@@ -78,9 +83,9 @@ export class ElementNode extends LexicalNode {
   getChildren<T extends LexicalNode>(): Array<T> {
     const self = this.getLatest();
     const children = self.__children;
-    const childrenNodes = [];
+    const childrenNodes: Array<T> = [];
     for (let i = 0; i < children.length; i++) {
-      const childNode = $getNodeByKey(children[i]);
+      const childNode = $getNodeByKey<T>(children[i]);
       if (childNode !== null) {
         childrenNodes.push(childNode);
       }
@@ -226,8 +231,11 @@ export class ElementNode extends LexicalNode {
     return self.__dir;
   }
   hasFormat(type: ElementFormatType): boolean {
-    const formatFlag = ELEMENT_TYPE_TO_FORMAT[type];
-    return (this.getFormat() & formatFlag) !== 0;
+    if (type !== '') {
+      const formatFlag = ELEMENT_TYPE_TO_FORMAT[type];
+      return (this.getFormat() & formatFlag) !== 0;
+    }
+    return false;
   }
 
   // Mutators
@@ -284,30 +292,25 @@ export class ElementNode extends LexicalNode {
     return this.select();
   }
   clear(): this {
-    errorOnReadOnly();
     const writableSelf = this.getWritable();
     const children = this.getChildren();
     children.forEach((child) => child.remove());
     return writableSelf;
   }
   append(...nodesToAppend: LexicalNode[]): this {
-    errorOnReadOnly();
     return this.splice(this.getChildrenSize(), 0, nodesToAppend);
   }
   setDirection(direction: 'ltr' | 'rtl' | null): this {
-    errorOnReadOnly();
     const self = this.getWritable();
     self.__dir = direction;
     return self;
   }
   setFormat(type: ElementFormatType): this {
-    errorOnReadOnly();
     const self = this.getWritable();
-    self.__format = ELEMENT_TYPE_TO_FORMAT[type] || 0;
+    self.__format = type !== '' ? ELEMENT_TYPE_TO_FORMAT[type] : 0;
     return this;
   }
   setIndent(indentLevel: number): this {
-    errorOnReadOnly();
     const self = this.getWritable();
     self.__indent = indentLevel;
     return this;
@@ -317,7 +320,6 @@ export class ElementNode extends LexicalNode {
     deleteCount: number,
     nodesToInsert: Array<LexicalNode>,
   ): this {
-    errorOnReadOnly();
     const writableSelf = this.getWritable();
     const writableSelfKey = writableSelf.__key;
     const writableSelfChildren = writableSelf.__children;
@@ -329,7 +331,7 @@ export class ElementNode extends LexicalNode {
       const nodeToInsert = nodesToInsert[i];
       const writableNodeToInsert = nodeToInsert.getWritable();
       if (nodeToInsert.__key === writableSelfKey) {
-        invariant(false, 'append: attemtping to append self');
+        invariant(false, 'append: attempting to append self');
       }
       removeFromParent(writableNodeToInsert);
       // Set child parent to self
@@ -349,7 +351,7 @@ export class ElementNode extends LexicalNode {
     }
 
     // Remove defined range of children
-    let nodesToRemoveKeys;
+    let nodesToRemoveKeys: Array<NodeKey>;
 
     // Using faster push when only appending nodes
     if (start === writableSelfChildren.length) {
@@ -373,7 +375,7 @@ export class ElementNode extends LexicalNode {
         const nodesToRemoveKeySet = new Set(nodesToRemoveKeys);
         const nodesToInsertKeySet = new Set(nodesToInsertKeys);
         const isPointRemoved = (point: PointType): boolean => {
-          let node = point.getNode();
+          let node: ElementNode | TextNode | null = point.getNode();
           while (node) {
             const nodeKey = node.__key;
             if (
@@ -478,12 +480,15 @@ export class ElementNode extends LexicalNode {
   isInline(): boolean {
     return false;
   }
+  isTopLevel(): boolean {
+    return false;
+  }
   canMergeWith(node: ElementNode): boolean {
     return false;
   }
   extractWithChild(
     child: LexicalNode,
-    selection: RangeSelection | NodeSelection | GridSelection,
+    selection: RangeSelection | NodeSelection | GridSelection | null,
     destination: 'clone' | 'html',
   ): boolean {
     return false;

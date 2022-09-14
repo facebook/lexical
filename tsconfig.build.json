@@ -3,7 +3,8 @@
     "noEmit": false,
     "declaration": true,
     "emitDeclarationOnly": true,
-    "declarationDir": "./.ts-temp"
+    "declarationDir": "./.ts-temp",
+    "strict": true
   },
   "exclude": [
     "**/__tests__/**",

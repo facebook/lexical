@@ -1,0 +1,50 @@
+{
+  "name": "@lexical/website",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "docusaurus": "docusaurus",
+    "start": " TYPEDOC_WATCH=true docusaurus start",
+    "build": "docusaurus build",
+    "swizzle": "docusaurus swizzle",
+    "deploy": "docusaurus deploy",
+    "clear": "docusaurus clear",
+    "serve": "docusaurus serve",
+    "write-translations": "docusaurus write-translations",
+    "write-heading-ids": "docusaurus write-heading-ids"
+  },
+  "dependencies": {
+    "@docusaurus/core": "^2.0.1",
+    "@docusaurus/preset-classic": "^2.0.1",
+    "@docusaurus/theme-search-algolia": "^2.0.1",
+    "@mdx-js/react": "^1.6.21",
+    "@radix-ui/react-tabs": "^0.1.5",
+    "clsx": "^1.1.1",
+    "prism-react-renderer": "^1.2.1",
+    "react": "^18.0.0-alpha-64931821a-20210808",
+    "react-dom": "^18.0.0-alpha-64931821a-20210808",
+    "remark-import-partial": "0.0.2",
+    "docusaurus-plugin-typedoc": "^0.17.5",
+    "typedoc-plugin-markdown": "^3.13.4"
+  },
+  "devDependencies": {
+    "buffer": "^6.0.3",
+    "webpack": "^5.70.0"
+  },
+  "browserslist": {
+    "production": [
+      ">0.5%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "overrides": {
+    "react": "^18.0.0-alpha-64931821a-20210808",
+    "react-dom": "^18.0.0-alpha-64931821a-20210808"
+  }
+}

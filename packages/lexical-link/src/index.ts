@@ -1,61 +1,91 @@
+/** @module @lexical/link */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
-
  */
 
 import type {
   DOMConversionMap,
   DOMConversionOutput,
   EditorConfig,
+  GridSelection,
   LexicalCommand,
   LexicalNode,
   NodeKey,
+  NodeSelection,
   RangeSelection,
   SerializedElementNode,
 } from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
-import {Spread} from 'globals';
 import {
   $getSelection,
   $isElementNode,
-  $setSelection,
+  $isRangeSelection,
   createCommand,
   ElementNode,
+  Spread,
 } from 'lexical';
 
 export type SerializedLinkNode = Spread<
   {
     type: 'link';
     url: string;
+    target?: null | string;
+    rel?: null | string;
     version: 1;
   },
   SerializedElementNode
 >;
 
+/** @noInheritDoc */
 export class LinkNode extends ElementNode {
+  /** @internal */
   __url: string;
+  /** @internal */
+  __target: null | string;
+  /** @internal */
+  __rel: null | string;
 
   static getType(): string {
     return 'link';
   }
 
   static clone(node: LinkNode): LinkNode {
-    return new LinkNode(node.__url, node.__key);
+    return new LinkNode(
+      node.__url,
+      {rel: node.__rel, target: node.__target},
+      node.__key,
+    );
   }
 
-  constructor(url: string, key?: NodeKey) {
+  constructor(
+    url: string,
+    attributes: {
+      target?: null | string;
+      rel?: null | string;
+    } = {},
+    key?: NodeKey,
+  ) {
     super(key);
+    const {target = null, rel = null} = attributes;
     this.__url = url;
+    this.__target = target;
+    this.__rel = rel;
   }
 
   createDOM(config: EditorConfig): HTMLAnchorElement {
     const element = document.createElement('a');
     element.href = this.__url;
+    if (this.__target !== null) {
+      element.target = this.__target;
+    }
+    if (this.__rel !== null) {
+      element.rel = this.__rel;
+    }
     addClassNamesToElement(element, config.theme.link);
     return element;
   }
@@ -66,8 +96,26 @@ export class LinkNode extends ElementNode {
     config: EditorConfig,
   ): boolean {
     const url = this.__url;
+    const target = this.__target;
+    const rel = this.__rel;
     if (url !== prevNode.__url) {
       anchor.href = url;
+    }
+
+    if (target !== prevNode.__target) {
+      if (target) {
+        anchor.target = target;
+      } else {
+        anchor.removeAttribute('target');
+      }
+    }
+
+    if (rel !== prevNode.__rel) {
+      if (rel) {
+        anchor.rel = rel;
+      } else {
+        anchor.removeAttribute('rel');
+      }
     }
     return false;
   }
@@ -81,19 +129,27 @@ export class LinkNode extends ElementNode {
     };
   }
 
-  static importJSON(serializedNode: SerializedLinkNode): LinkNode {
-    const node = $createLinkNode(serializedNode.url);
+  static importJSON(
+    serializedNode: SerializedLinkNode | SerializedAutoLinkNode,
+  ): LinkNode {
+    const node = $createLinkNode(serializedNode.url, {
+      rel: serializedNode.rel,
+      target: serializedNode.target,
+    });
     node.setFormat(serializedNode.format);
     node.setIndent(serializedNode.indent);
     node.setDirection(serializedNode.direction);
     return node;
   }
 
-  exportJSON(): SerializedLinkNode {
+  exportJSON(): SerializedLinkNode | SerializedAutoLinkNode {
     return {
       ...super.exportJSON(),
+      rel: this.getRel(),
+      target: this.getTarget(),
       type: 'link',
       url: this.getURL(),
+      version: 1,
     };
   }
 
@@ -106,10 +162,31 @@ export class LinkNode extends ElementNode {
     writable.__url = url;
   }
 
+  getTarget(): null | string {
+    return this.getLatest().__target;
+  }
+
+  setTarget(target: null | string): void {
+    const writable = this.getWritable();
+    writable.__target = target;
+  }
+
+  getRel(): null | string {
+    return this.getLatest().__rel;
+  }
+
+  setRel(rel: null | string): void {
+    const writable = this.getWritable();
+    writable.__rel = rel;
+  }
+
   insertNewAfter(selection: RangeSelection): null | ElementNode {
     const element = this.getParentOrThrow().insertNewAfter(selection);
     if ($isElementNode(element)) {
-      const linkNode = $createLinkNode(this.__url);
+      const linkNode = $createLinkNode(this.__url, {
+        rel: this.__rel,
+        target: this.__target,
+      });
       element.append(linkNode);
       return linkNode;
     }
@@ -131,18 +208,46 @@ export class LinkNode extends ElementNode {
   isInline(): true {
     return true;
   }
+
+  extractWithChild(
+    child: LexicalNode,
+    selection: RangeSelection | NodeSelection | GridSelection,
+    destination: 'clone' | 'html',
+  ): boolean {
+    if (!$isRangeSelection(selection)) {
+      return false;
+    }
+
+    const anchorNode = selection.anchor.getNode();
+    const focusNode = selection.focus.getNode();
+
+    return (
+      this.isParentOf(anchorNode) &&
+      this.isParentOf(focusNode) &&
+      selection.getTextContent().length > 0
+    );
+  }
 }
 
 function convertAnchorElement(domNode: Node): DOMConversionOutput {
   let node = null;
   if (domNode instanceof HTMLAnchorElement) {
-    node = $createLinkNode(domNode.getAttribute('href'));
+    node = $createLinkNode(domNode.getAttribute('href') || '', {
+      rel: domNode.getAttribute('rel'),
+      target: domNode.getAttribute('target'),
+    });
   }
   return {node};
 }
 
-export function $createLinkNode(url: string): LinkNode {
-  return new LinkNode(url);
+export function $createLinkNode(
+  url: string,
+  attributes?: {
+    target?: null | string;
+    rel?: null | string;
+  },
+): LinkNode {
+  return new LinkNode(url, attributes);
 }
 
 export function $isLinkNode(
@@ -167,13 +272,18 @@ export class AutoLinkNode extends LinkNode {
   }
 
   static clone(node: AutoLinkNode): AutoLinkNode {
-    return new AutoLinkNode(node.__url, node.__key);
+    return new AutoLinkNode(
+      node.__url,
+      {rel: node.__rel, target: node.__target},
+      node.__key,
+    );
   }
 
-  static importJSON(
-    serializedNode: SerializedLinkNode | SerializedAutoLinkNode,
-  ): AutoLinkNode {
-    const node = $createAutoLinkNode(serializedNode.url);
+  static importJSON(serializedNode: SerializedAutoLinkNode): AutoLinkNode {
+    const node = $createAutoLinkNode(serializedNode.url, {
+      rel: serializedNode.rel,
+      target: serializedNode.target,
+    });
     node.setFormat(serializedNode.format);
     node.setIndent(serializedNode.indent);
     node.setDirection(serializedNode.direction);
@@ -189,13 +299,17 @@ export class AutoLinkNode extends LinkNode {
     return {
       ...super.exportJSON(),
       type: 'autolink',
+      version: 1,
     };
   }
 
   insertNewAfter(selection: RangeSelection): null | ElementNode {
     const element = this.getParentOrThrow().insertNewAfter(selection);
     if ($isElementNode(element)) {
-      const linkNode = $createAutoLinkNode(this.__url);
+      const linkNode = $createAutoLinkNode(this.__url, {
+        rel: this._rel,
+        target: this.__target,
+      });
       element.append(linkNode);
       return linkNode;
     }
@@ -203,8 +317,14 @@ export class AutoLinkNode extends LinkNode {
   }
 }
 
-export function $createAutoLinkNode(url: string): AutoLinkNode {
-  return new AutoLinkNode(url);
+export function $createAutoLinkNode(
+  url: string,
+  attributes?: {
+    target?: null | string;
+    rel?: null | string;
+  },
+): AutoLinkNode {
+  return new AutoLinkNode(url, attributes);
 }
 
 export function $isAutoLinkNode(
@@ -213,114 +333,144 @@ export function $isAutoLinkNode(
   return node instanceof AutoLinkNode;
 }
 
-export const TOGGLE_LINK_COMMAND: LexicalCommand<string | null> =
-  createCommand();
+export const TOGGLE_LINK_COMMAND: LexicalCommand<
+  | string
+  | {
+      url: string;
+      target?: string;
+      rel?: string;
+    }
+  | null
+> = createCommand();
 
-export function toggleLink(url: null | string): void {
+export function toggleLink(
+  url: null | string,
+  attributes: {
+    target?: null | string;
+    rel?: null | string;
+  } = {},
+): void {
+  const {target, rel} = attributes;
   const selection = $getSelection();
 
-  if (selection !== null) {
-    $setSelection(selection);
+  if (!$isRangeSelection(selection)) {
+    return;
   }
+  const nodes = selection.extract();
 
-  const sel = $getSelection();
+  if (url === null) {
+    // Remove LinkNodes
+    nodes.forEach((node) => {
+      const parent = node.getParent();
 
-  if (sel !== null) {
-    const nodes = sel.extract();
+      if ($isLinkNode(parent)) {
+        const children = parent.getChildren();
 
-    if (url === null) {
-      // Remove LinkNodes
-      nodes.forEach((node) => {
-        const parent = node.getParent();
+        for (let i = 0; i < children.length; i++) {
+          parent.insertBefore(children[i]);
+        }
+
+        parent.remove();
+      }
+    });
+  } else {
+    // Add or merge LinkNodes
+    if (nodes.length === 1) {
+      const firstNode = nodes[0];
+      // if the first node is a LinkNode or if its
+      // parent is a LinkNode, we update the URL, target and rel.
+      const linkNode = $isLinkNode(firstNode)
+        ? firstNode
+        : $getLinkAncestor(firstNode);
+      if (linkNode !== null) {
+        linkNode.setURL(url);
+        if (target !== undefined) {
+          linkNode.setTarget(target);
+        }
+        if (rel !== undefined) {
+          linkNode.setRel(rel);
+        }
+        return;
+      }
+    }
+
+    let prevParent: ElementNode | LinkNode | null = null;
+    let linkNode: LinkNode | null = null;
+
+    nodes.forEach((node) => {
+      const parent = node.getParent();
+
+      if (
+        parent === linkNode ||
+        parent === null ||
+        ($isElementNode(node) && !node.isInline())
+      ) {
+        return;
+      }
+
+      if ($isLinkNode(parent)) {
+        linkNode = parent;
+        parent.setURL(url);
+        if (target !== undefined) {
+          parent.setTarget(target);
+        }
+        if (rel !== undefined) {
+          parent.setRel(rel);
+        }
+        return;
+      }
+
+      if (!parent.is(prevParent)) {
+        prevParent = parent;
+        linkNode = $createLinkNode(url, {rel, target});
 
         if ($isLinkNode(parent)) {
-          const children = parent.getChildren();
-
-          for (let i = 0; i < children.length; i++) {
-            parent.insertBefore(children[i]);
+          if (node.getPreviousSibling() === null) {
+            parent.insertBefore(linkNode);
+          } else {
+            parent.insertAfter(linkNode);
           }
-
-          parent.remove();
-        }
-      });
-    } else {
-      // Add or merge LinkNodes
-      if (nodes.length === 1) {
-        const firstNode = nodes[0];
-
-        // if the first node is a LinkNode or if its
-        // parent is a LinkNode, we update the URL.
-        if ($isLinkNode(firstNode)) {
-          firstNode.setURL(url);
-          return;
         } else {
-          const parent = firstNode.getParent();
-
-          if ($isLinkNode(parent)) {
-            // set parent to be the current linkNode
-            // so that other nodes in the same parent
-            // aren't handled separately below.
-            parent.setURL(url);
-            return;
-          }
+          node.insertBefore(linkNode);
         }
       }
 
-      let prevParent = null;
-      let linkNode = null;
-
-      nodes.forEach((node) => {
-        const parent = node.getParent();
-
-        if (
-          parent === linkNode ||
-          parent === null ||
-          ($isElementNode(node) && !node.isInline())
-        ) {
+      if ($isLinkNode(node)) {
+        if (node.is(linkNode)) {
           return;
         }
-
-        if ($isLinkNode(parent)) {
-          linkNode = parent;
-          parent.setURL(url);
-          return;
-        }
-
-        if (!parent.is(prevParent)) {
-          prevParent = parent;
-          linkNode = $createLinkNode(url);
-
-          if ($isLinkNode(parent)) {
-            if (node.getPreviousSibling() === null) {
-              parent.insertBefore(linkNode);
-            } else {
-              parent.insertAfter(linkNode);
-            }
-          } else {
-            node.insertBefore(linkNode);
-          }
-        }
-
-        if ($isLinkNode(node)) {
-          if (node.is(linkNode)) {
-            return;
-          }
-          if (linkNode !== null) {
-            const children = node.getChildren();
-
-            for (let i = 0; i < children.length; i++) {
-              linkNode.append(children[i]);
-            }
-          }
-
-          node.remove();
-          return;
-        }
-
         if (linkNode !== null) {
-          linkNode.append(node);
+          const children = node.getChildren();
+
+          for (let i = 0; i < children.length; i++) {
+            linkNode.append(children[i]);
+          }
         }
-      });
-    }
+
+        node.remove();
+        return;
+      }
+
+      if (linkNode !== null) {
+        linkNode.append(node);
+      }
+    });
   }
+}
+
+function $getLinkAncestor(node: LexicalNode): null | LexicalNode {
+  return $getAncestor(node, (ancestor) => $isLinkNode(ancestor));
+}
+
+function $getAncestor(
+  node: LexicalNode,
+  predicate: (ancestor: LexicalNode) => boolean,
+): null | LexicalNode {
+  let parent: null | LexicalNode = node;
+  while (
+    parent !== null &&
+    (parent = parent.getParent()) !== null &&
+    !predicate(parent)
+  );
+  return parent;
 }

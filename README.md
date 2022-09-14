@@ -3,21 +3,21 @@
 </h1>
 
 <p align="center">
-  <img alt="GitHub Workflow Status" src="https://img.shields.io/github/workflow/status/facebook/lexical/Lexical%20Tests">
+  <img alt="GitHub Workflow Status" src="https://img.shields.io/github/workflow/status/facebook/lexical/Lexical%20Tests"/>
   <a href="https://www.npmjs.com/package/lexical">
-    <img alt="Visit the NPM page" src="https://img.shields.io/npm/v/lexical"> 
+    <img alt="Visit the NPM page" src="https://img.shields.io/npm/v/lexical"/>
   </a>
   <a href="https://discord.gg/KmG4wQnnD9">
-    <img alt="Add yourself to our Discord" src="https://img.shields.io/discord/953974421008293909">
+    <img alt="Add yourself to our Discord" src="https://img.shields.io/discord/953974421008293909"/>
   </a>
   <a href="https://twitter.com/intent/follow?screen_name=lexicaljs">
-    <img alt="Follow us on Twitter" src="https://img.shields.io/twitter/follow/lexicaljs?style=social">
+    <img alt="Follow us on Twitter" src="https://img.shields.io/twitter/follow/lexicaljs?style=social"/>
   </a>
 </p>
 
 **⚠️ Lexical is currently in early development and APIs and packages are likely to change quite often.**
 
-Lexical is an extensible JavaScript web text-editor framework with an emphasis on reliability, accessibility and performance. Lexical aims to provide a best-in-class developer experience, so you can easily prototype and build features with confidence. Combined with a highly extensible architecture, Lexical allows developers to create unique text editing experiences that scale in size and functionality.
+Lexical is an extensible JavaScript web text-editor framework with an emphasis on reliability, accessibility, and performance. Lexical aims to provide a best-in-class developer experience, so you can easily prototype and build features with confidence. Combined with a highly extensible architecture, Lexical allows developers to create unique text editing experiences that scale in size and functionality.
 
 For documentation and more information about Lexical, be sure to [visit the Lexical website](https://lexical.dev).
 
@@ -30,10 +30,12 @@ Here are some examples of what you can do with Lexical:
 
 ---
 
+**Overview:**
+
 - [Getting started with React](#getting-started-with-react)
 
 - [Lexical is a framework](#lexical-is-a-framework)
-  
+
 - [Working with Lexical](#working-with-lexical)
 
 - [Contributing to Lexical](#contributing-to-lexical)
@@ -65,7 +67,7 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 
 const theme = {
   // Theme styling goes here
-  ...
+  // ...
 }
 
 // When the editor changes, you can get notified via the
@@ -111,11 +113,11 @@ function Editor() {
 
   return (
     <LexicalComposer initialConfig={initialConfig}>
-      <LexicalPlainTextPlugin
-        contentEditable={<LexicalContentEditable />}
+      <PlainTextPlugin
+        contentEditable={<ContentEditable />}
         placeholder={<div>Enter some text...</div>}
       />
-      <LexicalOnChangePlugin onChange={onChange} />
+      <OnChangePlugin onChange={onChange} />
       <HistoryPlugin />
       <MyCustomAutoFocusPlugin />
     </LexicalComposer>
@@ -144,9 +146,9 @@ An Editor State is the underlying data model that represents what you want to sh
 
 Editor States are immutable once created, and in order to create one, you must do so via `editor.update(() => {...})`. However, you
 can also "hook" into an existing update using node transforms or command handlers – which are invoked as part of an existing update
-workflow to preventing cascading/waterfalling of updates. You can retrieve the current editor state using `editor.getEditorState()`.
+workflow to prevent cascading/waterfalling of updates. You can retrieve the current editor state using `editor.getEditorState()`.
 
-Editor States are also fully serializable to JSON and can easily be serialized back into to editor using `editor.parseEditorState()`.
+Editor States are also fully serializable to JSON and can easily be serialized back into the editor using `editor.parseEditorState()`.
 
 ### Editor Updates
 
@@ -154,7 +156,7 @@ When you want to change something in an Editor State, you must do it via an upda
 to the update call is important. It's a place where you have full "lexical" context of the active editor state, and it exposes
 access to the underlying Editor State's node tree. We promote using `$` prefixed functions in this context, as it signifies a place
 where they can be used exclusively. Attempting to use them outside of an update will trigger a runtime error with an appropriate error.
-For those familiar with React Hooks, you can think of these has having a similar functionality (except `$` functions can be used in any order).
+For those familiar with React Hooks, you can think of these as having a similar functionality (except `$` functions can be used in any order).
 
 ### DOM Reconciler
 
@@ -316,7 +318,7 @@ editor.registerUpdateListener(({editorState}) => {
 
 3. Start local server and run tests
    - `npm run start`
-   - `npm run test-e2e:chromium` to run only chromium e2e tests
+   - `npm run test-e2e-chromium` to run only chromium e2e tests
      - The server needs to be running for the e2e tests
 
 `npm run start` will start both the dev server and collab server. If you don't need collab, use `npm run dev` to start just the dev server.
@@ -366,20 +368,20 @@ Note: Lexical does not support Internet Explorer or legacy versions of Edge.
 
 ## Support
 
-If you have any questions about Lexical, would like to discuss a bug report, or have questions about new integrations, feel free to add yourself to [our Discord server](https://discord.gg/KmG4wQnnD9).
+If you have any questions about Lexical, would like to discuss a bug report, or have questions about new integrations, feel free to join us at [our Discord server](https://discord.gg/KmG4wQnnD9).
 
 Lexical engineers are checking this regularly.
 
 ## Running tests
 
 - `npm run test-unit` runs only unit tests.
-- `npm run test-e2e:chromium` runs only chromium e2e tests.
-- `npm run debug-test-e2e:chromium` runs only chromium e2e tests in head mode for debugging.
-- `npm run test-e2e:firefox` runs only firefox e2e tests.
-- `npm run debug-test-e2e:firefox` runs only firefox e2e tests in head mode for debugging.
-- `npm run test-e2e:webkit` runs only webkit e2e tests.
-- `npm run debug-test-e2e:webkit` runs only webkit e2e tests in head mode for debugging.
+- `npm run test-e2e-chromium` runs only chromium e2e tests.
+- `npm run debug-test-e2e-chromium` runs only chromium e2e tests in head mode for debugging.
+- `npm run test-e2e-firefox` runs only firefox e2e tests.
+- `npm run debug-test-e2e-firefox` runs only firefox e2e tests in head mode for debugging.
+- `npm run test-e2e-webkit` runs only webkit e2e tests.
+- `npm run debug-test-e2e-webkit` runs only webkit e2e tests in head mode for debugging.
 
 ### License
 
-Lexical is [MIT licensed](./LICENSE).
+Lexical is [MIT licensed](https://github.com/facebook/lexical/blob/main/LICENSE).

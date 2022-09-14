@@ -17,7 +17,6 @@ import {
   TableRowNode,
 } from '@lexical/table';
 import {
-  $createGridSelection,
   $createLineBreakNode,
   $createNodeSelection,
   $createParagraphNode,
@@ -29,7 +28,9 @@ import {
   $setCompositionKey,
   $setSelection,
   COMMAND_PRIORITY_EDITOR,
+  COMMAND_PRIORITY_LOW,
   createCommand,
+  DEPRECATED_$createGridSelection,
   ElementNode,
   LexicalEditor,
   NodeKey,
@@ -557,7 +558,7 @@ describe('LexicalEditor tests', () => {
     removeListener();
   });
 
-  it('transforms only run on nodes that were explictly marked as dirty', async () => {
+  it('transforms only run on nodes that were explicitly marked as dirty', async () => {
     init();
 
     let executeParagraphNodeTransform = () => {
@@ -1216,7 +1217,7 @@ describe('LexicalEditor tests', () => {
         await update(() => {
           const paragraph = $createParagraphNode();
           originalText = $createTextNode('Hello world');
-          const selection = $createGridSelection();
+          const selection = DEPRECATED_$createGridSelection();
           selection.set(
             originalText.getKey(),
             originalText.getKey(),
@@ -2046,25 +2047,32 @@ describe('LexicalEditor tests', () => {
     expect(tableRowMutation2[0].get(tableRowKey)).toBe('updated');
   });
 
-  it('readonly listener', () => {
+  it('editable listener', () => {
     init();
 
-    const readOnlyFn = jest.fn();
-    editor.registerReadOnlyListener(readOnlyFn);
+    const editableFn = jest.fn();
+    editor.registerEditableListener(editableFn);
 
-    expect(editor.isReadOnly()).toBe(false);
+    expect(editor.isEditable()).toBe(true);
 
-    editor.setReadOnly(true);
+    editor.setEditable(false);
 
-    expect(editor.isReadOnly()).toBe(true);
+    expect(editor.isEditable()).toBe(false);
 
-    editor.setReadOnly(false);
+    editor.setEditable(true);
 
-    expect(readOnlyFn.mock.calls).toEqual([[true], [false]]);
+    expect(editableFn.mock.calls).toEqual([[false], [true]]);
   });
 
   it('does not add new listeners while triggering existing', async () => {
     const updateListener = jest.fn();
+    const mutationListener = jest.fn();
+    const nodeTransformListener = jest.fn();
+    const textContentListener = jest.fn();
+    const editableListener = jest.fn();
+    const commandListener = jest.fn();
+    const TEST_COMMAND = createCommand();
+
     init();
 
     editor.registerUpdateListener(() => {
@@ -2075,10 +2083,63 @@ describe('LexicalEditor tests', () => {
       });
     });
 
-    await update(() => {
-      $getRoot().getFirstChild().replace($createParagraphNode());
+    editor.registerMutationListener(TextNode, (map) => {
+      mutationListener();
+      editor.registerMutationListener(TextNode, () => {
+        mutationListener();
+      });
     });
 
+    editor.registerNodeTransform(ParagraphNode, () => {
+      nodeTransformListener();
+      editor.registerNodeTransform(ParagraphNode, () => {
+        nodeTransformListener();
+      });
+    });
+
+    editor.registerEditableListener(() => {
+      editableListener();
+      editor.registerEditableListener(() => {
+        editableListener();
+      });
+    });
+
+    editor.registerTextContentListener(() => {
+      textContentListener();
+      editor.registerTextContentListener(() => {
+        textContentListener();
+      });
+    });
+
+    editor.registerCommand(
+      TEST_COMMAND,
+      (): boolean => {
+        commandListener();
+        editor.registerCommand(
+          TEST_COMMAND,
+          commandListener,
+          COMMAND_PRIORITY_LOW,
+        );
+        return false;
+      },
+      COMMAND_PRIORITY_LOW,
+    );
+
+    await update(() => {
+      $getRoot().append(
+        $createParagraphNode().append($createTextNode('Hello world')),
+      );
+    });
+
+    editor.dispatchCommand(TEST_COMMAND, false);
+
+    editor.setEditable(false);
+
     expect(updateListener).toHaveBeenCalledTimes(1);
+    expect(editableListener).toHaveBeenCalledTimes(1);
+    expect(commandListener).toHaveBeenCalledTimes(1);
+    expect(textContentListener).toHaveBeenCalledTimes(1);
+    expect(nodeTransformListener).toHaveBeenCalledTimes(1);
+    expect(mutationListener).toHaveBeenCalledTimes(1);
   });
 });

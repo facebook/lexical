@@ -100,6 +100,10 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
         if ($isRootNode(anchorNodeParent)) {
           anchorNode.replace(list);
           const listItem = $createListItemNode();
+          if ($isElementNode(anchorNode)) {
+            listItem.setFormat(anchorNode.getFormatType());
+            listItem.setIndent(anchorNode.getIndent());
+          }
           list.append(listItem);
         } else if ($isListItemNode(anchorNode)) {
           const parent = anchorNode.getParentOrThrow();
@@ -168,6 +172,8 @@ function createListOrMerge(node: ElementNode, listType: ListType): ListNode {
   const previousSibling = node.getPreviousSibling();
   const nextSibling = node.getNextSibling();
   const listItem = $createListItemNode();
+  listItem.setFormat(node.getFormatType());
+  listItem.setIndent(node.getIndent());
   append(listItem, node.getChildren());
 
   if (
@@ -224,33 +230,43 @@ export function removeList(editor: LexicalEditor): void {
         }
       }
 
-      listNodes.forEach((listNode) => {
+      for (const listNode of listNodes) {
         let insertionPoint: ListNode | ParagraphNode = listNode;
 
         const listItems = $getAllListItems(listNode);
 
-        listItems.forEach((listItemNode) => {
-          if (listItemNode != null) {
-            const paragraph = $createParagraphNode();
+        for (const listItemNode of listItems) {
+          const paragraph = $createParagraphNode();
 
-            append(paragraph, listItemNode.getChildren());
+          append(paragraph, listItemNode.getChildren());
 
-            insertionPoint.insertAfter(paragraph);
-            insertionPoint = paragraph;
+          insertionPoint.insertAfter(paragraph);
+          insertionPoint = paragraph;
 
-            listItemNode.remove();
+          // When the anchor and focus fall on the textNode
+          // we don't have to change the selection because the textNode will be appended to
+          // the newly generated paragraph.
+          // When selection is in empty nested list item, selection is actually on the listItemNode.
+          // When the corresponding listItemNode is deleted and replaced by the newly generated paragraph
+          // we should manually set the selection's focus and anchor to the newly generated paragraph.
+          if (listItemNode.__key === selection.anchor.key) {
+            selection.anchor.set(paragraph.getKey(), 0, 'element');
           }
-        });
+          if (listItemNode.__key === selection.focus.key) {
+            selection.focus.set(paragraph.getKey(), 0, 'element');
+          }
 
+          listItemNode.remove();
+        }
         listNode.remove();
-      });
+      }
     }
   });
 }
 
 export function updateChildrenListItemValue(
   list: ListNode,
-  children?: Array<LexicalNode>,
+  children?: Array<ListItemNode>,
 ): void {
   (children || list.getChildren()).forEach((child: ListItemNode) => {
     const prevValue = child.getValue();
@@ -272,8 +288,12 @@ export function $handleIndent(listItemNodes: Array<ListItemNode>): void {
     }
 
     const parent = listItemNode.getParent();
-    const nextSibling = listItemNode.getNextSibling<ListItemNode>();
-    const previousSibling = listItemNode.getPreviousSibling<ListItemNode>();
+
+    // We can cast both of the below `isNestedListNode` only returns a boolean type instead of a user-defined type guards
+    const nextSibling =
+      listItemNode.getNextSibling<ListItemNode>() as ListItemNode;
+    const previousSibling =
+      listItemNode.getPreviousSibling<ListItemNode>() as ListItemNode;
     // if there are nested lists on either side, merge them all together.
 
     if (isNestedListNode(nextSibling) && isNestedListNode(previousSibling)) {
@@ -337,6 +357,7 @@ export function $handleIndent(listItemNodes: Array<ListItemNode>): void {
 
 export function $handleOutdent(listItemNodes: Array<ListItemNode>): void {
   // go through each node and decide where to move it.
+
   listItemNodes.forEach((listItemNode) => {
     if (isNestedListNode(listItemNode)) {
       return;
@@ -404,7 +425,7 @@ function maybeIndentOrOutdent(direction: 'indent' | 'outdent'): void {
     return;
   }
   const selectedNodes = selection.getNodes();
-  let listItemNodes = [];
+  let listItemNodes: Array<ListItemNode> = [];
 
   if (selectedNodes.length === 0) {
     selectedNodes.push(selection.anchor.getNode());

@@ -29,6 +29,14 @@ class TestNode extends LexicalNode {
   createDOM() {
     return document.createElement('div');
   }
+
+  static importJSON() {
+    return new TestNode();
+  }
+
+  exportJSON() {
+    return {type: 'test', version: 1};
+  }
 }
 
 // This is a hack to bypass the node type validation on LexicalNode. We never want to create

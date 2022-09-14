@@ -11,18 +11,20 @@ import type {
   ElementNode,
   GridSelection,
   LexicalEditor,
+  LexicalNode,
   NodeSelection,
   RangeSelection,
 } from 'lexical';
 
+import {$isLinkNode, LinkNode} from '@lexical/link';
 import {$isMarkNode} from '@lexical/mark';
 import {
   $getRoot,
   $getSelection,
   $isElementNode,
-  $isGridSelection,
   $isRangeSelection,
   $isTextNode,
+  DEPRECATED_$isGridSelection,
 } from 'lexical';
 import * as React from 'react';
 import {useEffect, useRef, useState} from 'react';
@@ -36,7 +38,7 @@ const NON_SINGLE_WIDTH_CHARS_REGEX = new RegExp(
   Object.keys(NON_SINGLE_WIDTH_CHARS_REPLACEMENT).join('|'),
   'g',
 );
-const SYMBOLS = Object.freeze({
+const SYMBOLS: Record<string, string> = Object.freeze({
   ancestorHasNextSibling: '|',
   ancestorIsLastChild: ' ',
   hasNextSibling: '├',
@@ -60,7 +62,9 @@ export function TreeView({
   timeTravelPanelSliderClassName: string;
   viewClassName: string;
 }): JSX.Element {
-  const [timeStampedEditorStates, setTimeStampedEditorStates] = useState([]);
+  const [timeStampedEditorStates, setTimeStampedEditorStates] = useState<
+    Array<[number, EditorState]>
+  >([]);
   const [content, setContent] = useState<string>('');
   const [timeTravelEnabled, setTimeTravelEnabled] = useState(false);
   const playingIndexRef = useRef(0);
@@ -89,7 +93,7 @@ export function TreeView({
 
   useEffect(() => {
     if (isPlaying) {
-      let timeoutId;
+      let timeoutId: ReturnType<typeof setTimeout>;
 
       const play = () => {
         const currentIndex = playingIndexRef.current;
@@ -119,7 +123,7 @@ export function TreeView({
       play();
 
       return () => {
-        window.clearTimeout(timeoutId);
+        clearTimeout(timeoutId);
       };
     }
   }, [timeStampedEditorStates, isPlaying, editor, totalEditorStates]);
@@ -151,7 +155,8 @@ export function TreeView({
               setTimeTravelEnabled(true);
             }
           }}
-          className={timeTravelButtonClassName}>
+          className={timeTravelButtonClassName}
+          type="button">
           Time Travel
         </button>
       )}
@@ -162,7 +167,8 @@ export function TreeView({
             className={timeTravelPanelButtonClassName}
             onClick={() => {
               setIsPlaying(!isPlaying);
-            }}>
+            }}
+            type="button">
             {isPlaying ? 'Pause' : 'Play'}
           </button>
           <input
@@ -201,7 +207,8 @@ export function TreeView({
                 setTimeTravelEnabled(false);
                 setIsPlaying(false);
               }
-            }}>
+            }}
+            type="button">
             Exit
           </button>
         </div>
@@ -246,7 +253,7 @@ function generateContent(editorState: EditorState): string {
   const selectionString = editorState.read(() => {
     const selection = $getSelection();
 
-    visitTree($getRoot(), (node, indent) => {
+    visitTree($getRoot(), (node: LexicalNode, indent: Array<string>) => {
       const nodeKey = node.getKey();
       const nodeKeyDisplay = `(${nodeKey})`;
       const typeDisplay = node.getType() || '';
@@ -273,7 +280,7 @@ function generateContent(editorState: EditorState): string {
       ? ': null'
       : $isRangeSelection(selection)
       ? printRangeSelection(selection)
-      : $isGridSelection(selection)
+      : DEPRECATED_$isGridSelection(selection)
       ? printGridSelection(selection)
       : printObjectSelection(selection);
   });
@@ -281,7 +288,11 @@ function generateContent(editorState: EditorState): string {
   return res + '\n selection' + selectionString;
 }
 
-function visitTree(currentNode: ElementNode, visitor, indent = []) {
+function visitTree(
+  currentNode: ElementNode,
+  visitor: (node: LexicalNode, indentArr: Array<string>) => void,
+  indent: Array<string> = [],
+) {
   const childNodes = currentNode.getChildren();
   const childNodesLength = childNodes.length;
 
@@ -309,40 +320,53 @@ function visitTree(currentNode: ElementNode, visitor, indent = []) {
   });
 }
 
-function normalize(text) {
+function normalize(text: string) {
   return Object.entries(NON_SINGLE_WIDTH_CHARS_REPLACEMENT).reduce(
     (acc, [key, value]) => acc.replace(new RegExp(key, 'g'), String(value)),
     text,
   );
 }
 
-function printNode(node) {
+// TODO Pass via props to allow customizability
+function printNode(node: LexicalNode) {
   if ($isTextNode(node)) {
     const text = node.getTextContent();
     const title = text.length === 0 ? '(empty)' : `"${normalize(text)}"`;
-    const properties = printAllProperties(node);
+    const properties = printAllTextNodeProperties(node);
     return [title, properties.length !== 0 ? `{ ${properties} }` : null]
       .filter(Boolean)
       .join(' ')
       .trim();
+  } else if ($isLinkNode(node)) {
+    const link = node.getURL();
+    const title = link.length === 0 ? '(empty)' : `"${normalize(link)}"`;
+    const properties = printAllLinkNodeProperties(node);
+    return [title, properties.length !== 0 ? `{ ${properties} }` : null]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+  } else {
+    return '';
   }
-
-  return '';
 }
 
 const FORMAT_PREDICATES = [
-  (node) => node.hasFormat('bold') && 'Bold',
-  (node) => node.hasFormat('code') && 'Code',
-  (node) => node.hasFormat('italic') && 'Italic',
-  (node) => node.hasFormat('strikethrough') && 'Strikethrough',
-  (node) => node.hasFormat('subscript') && 'Subscript',
-  (node) => node.hasFormat('superscript') && 'Superscript',
-  (node) => node.hasFormat('underline') && 'Underline',
+  (node: LexicalNode | RangeSelection) => node.hasFormat('bold') && 'Bold',
+  (node: LexicalNode | RangeSelection) => node.hasFormat('code') && 'Code',
+  (node: LexicalNode | RangeSelection) => node.hasFormat('italic') && 'Italic',
+  (node: LexicalNode | RangeSelection) =>
+    node.hasFormat('strikethrough') && 'Strikethrough',
+  (node: LexicalNode | RangeSelection) =>
+    node.hasFormat('subscript') && 'Subscript',
+  (node: LexicalNode | RangeSelection) =>
+    node.hasFormat('superscript') && 'Superscript',
+  (node: LexicalNode | RangeSelection) =>
+    node.hasFormat('underline') && 'Underline',
 ];
 
 const DETAIL_PREDICATES = [
-  (node) => node.isDirectionless() && 'Directionless',
-  (node) => node.isUnmergeable() && 'Unmergeable',
+  (node: LexicalNode) => node.isDirectionless() && 'Directionless',
+  (node: LexicalNode) => node.isUnmergeable() && 'Unmergeable',
 ];
 
 const MODE_PREDICATES = [
@@ -350,7 +374,7 @@ const MODE_PREDICATES = [
   (node) => node.isSegmented() && 'Segmented',
 ];
 
-function printAllProperties(node) {
+function printAllTextNodeProperties(node: LexicalNode) {
   return [
     printFormatProperties(node),
     printDetailProperties(node),
@@ -360,7 +384,13 @@ function printAllProperties(node) {
     .join(', ');
 }
 
-function printDetailProperties(nodeOrSelection) {
+function printAllLinkNodeProperties(node: LinkNode) {
+  return [printTargetProperties(node), printRelProperties(node)]
+    .filter(Boolean)
+    .join(', ');
+}
+
+function printDetailProperties(nodeOrSelection: LexicalNode) {
   let str = DETAIL_PREDICATES.map((predicate) => predicate(nodeOrSelection))
     .filter(Boolean)
     .join(', ')
@@ -373,7 +403,7 @@ function printDetailProperties(nodeOrSelection) {
   return str;
 }
 
-function printModeProperties(nodeOrSelection) {
+function printModeProperties(nodeOrSelection: LexicalNode) {
   let str = MODE_PREDICATES.map((predicate) => predicate(nodeOrSelection))
     .filter(Boolean)
     .join(', ')
@@ -386,7 +416,7 @@ function printModeProperties(nodeOrSelection) {
   return str;
 }
 
-function printFormatProperties(nodeOrSelection) {
+function printFormatProperties(nodeOrSelection: LexicalNode | RangeSelection) {
   let str = FORMAT_PREDICATES.map((predicate) => predicate(nodeOrSelection))
     .filter(Boolean)
     .join(', ')
@@ -399,6 +429,24 @@ function printFormatProperties(nodeOrSelection) {
   return str;
 }
 
+function printTargetProperties(node: LinkNode) {
+  let str = node.getTarget();
+  // TODO Fix nullish on LinkNode
+  if (str != null) {
+    str = 'target: ' + str;
+  }
+  return str;
+}
+
+function printRelProperties(node: LinkNode) {
+  let str = node.getRel();
+  // TODO Fix nullish on LinkNode
+  if (str != null) {
+    str = 'rel: ' + str;
+  }
+  return str;
+}
+
 function printSelectedCharsLine({
   indent,
   isSelected,
@@ -406,6 +454,13 @@ function printSelectedCharsLine({
   nodeKeyDisplay,
   selection,
   typeDisplay,
+}: {
+  indent: Array<string>;
+  isSelected: boolean;
+  node: LexicalNode;
+  nodeKeyDisplay: string;
+  selection: GridSelection | NodeSelection | RangeSelection | null;
+  typeDisplay: string;
 }) {
   // No selection or node is not selected.
   if (
@@ -461,7 +516,10 @@ function printSelectedCharsLine({
   );
 }
 
-function $getSelectionStartEnd(node, selection): [number, number] {
+function $getSelectionStartEnd(
+  node: LexicalNode,
+  selection: RangeSelection | GridSelection,
+): [number, number] {
   const anchor = selection.anchor;
   const focus = selection.focus;
   const textContent = node.getTextContent();

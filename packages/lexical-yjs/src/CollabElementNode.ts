@@ -21,6 +21,7 @@ import {
   $isElementNode,
   $isTextNode,
 } from 'lexical';
+import invariant from 'shared/invariant';
 import {YMap} from 'yjs/dist/src/internals';
 
 import {CollabDecoratorNode} from './CollabDecoratorNode';
@@ -97,10 +98,10 @@ export class CollabElementNode {
 
   getOffset(): number {
     const collabElementNode = this._parent;
-
-    if (collabElementNode === null) {
-      throw new Error('Should never happen');
-    }
+    invariant(
+      collabElementNode !== null,
+      'getOffset: cound not find collab element node',
+    );
 
     return collabElementNode.getChildOffset(this);
   }
@@ -110,12 +111,10 @@ export class CollabElementNode {
     keysChanged: null | Set<string>,
   ): void {
     const lexicalNode = this.getNode();
-
-    if (lexicalNode === null) {
-      this.getNode();
-      throw new Error('Should never happen');
-    }
-
+    invariant(
+      lexicalNode !== null,
+      'syncPropertiesFromYjs: cound not find element node',
+    );
     syncPropertiesFromYjs(binding, this._xmlText, lexicalNode, keysChanged);
   }
 
@@ -232,21 +231,21 @@ export class CollabElementNode {
   syncChildrenFromYjs(binding: Binding): void {
     // Now diff the children of the collab node with that of our existing Lexical node.
     const lexicalNode = this.getNode();
-
-    if (lexicalNode === null) {
-      this.getNode();
-      throw new Error('Should never happen');
-    }
+    invariant(
+      lexicalNode !== null,
+      'syncChildrenFromYjs: cound not find element node',
+    );
 
     const key = lexicalNode.__key;
     const prevLexicalChildrenKeys = lexicalNode.__children;
-    const nextLexicalChildrenKeys = [];
+    const nextLexicalChildrenKeys: Array<NodeKey> = [];
     const lexicalChildrenKeysLength = prevLexicalChildrenKeys.length;
     const collabChildren = this._children;
     const collabChildrenLength = collabChildren.length;
     const collabNodeMap = binding.collabNodeMap;
     const visitedKeys = new Set();
     let collabKeys;
+
     // Assign the new children key array that we're about to mutate
     let writableLexicalNode;
 
@@ -284,7 +283,10 @@ export class CollabElementNode {
           } else if (childCollabNode instanceof CollabDecoratorNode) {
             childCollabNode.syncPropertiesFromYjs(binding, null);
           } else if (!(childCollabNode instanceof CollabLineBreakNode)) {
-            throw new Error('Should never happen');
+            invariant(
+              false,
+              'syncChildrenFromYjs: expected text, element, decorator, or linebreak collab node',
+            );
           }
         }
 
@@ -425,8 +427,8 @@ export class CollabElementNode {
     const prevEndIndex = prevChildren.length - 1;
     const nextEndIndex = nextChildren.length - 1;
     const collabNodeMap = binding.collabNodeMap;
-    let prevChildrenSet: Set<NodeKey>;
-    let nextChildrenSet: Set<NodeKey>;
+    let prevChildrenSet: Set<NodeKey> | undefined;
+    let nextChildrenSet: Set<NodeKey> | undefined;
     let prevIndex = 0;
     let nextIndex = 0;
 
@@ -553,20 +555,16 @@ export class CollabElementNode {
     const child = children[index];
 
     if (child === undefined) {
-      if (collabNode !== undefined) {
-        this.append(collabNode);
-      } else {
-        throw new Error('Should never happen');
-      }
-
+      invariant(
+        collabNode !== undefined,
+        'splice: could not find collab element node',
+      );
+      this.append(collabNode);
       return;
     }
 
     const offset = child.getOffset();
-
-    if (offset === -1) {
-      throw new Error('Should never happen');
-    }
+    invariant(offset !== -1, 'splice: expected offset to be greater than zero');
 
     const xmlText = this._xmlText;
 
@@ -644,7 +642,7 @@ export class CollabElementNode {
 
 function lazilyCloneElementNode(
   lexicalNode: ElementNode,
-  writableLexicalNode: ElementNode,
+  writableLexicalNode: ElementNode | undefined,
   nextLexicalChildrenKeys: Array<NodeKey>,
 ): ElementNode {
   if (writableLexicalNode === undefined) {

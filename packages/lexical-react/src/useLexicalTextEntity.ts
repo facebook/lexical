@@ -7,18 +7,17 @@
  */
 
 import type {EntityMatch} from '@lexical/text';
-import type {TextNode} from 'lexical';
+import type {Klass, TextNode} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {registerLexicalTextEntity} from '@lexical/text';
 import {mergeRegister} from '@lexical/utils';
 import {useEffect} from 'react';
-import {Class} from 'utility-types';
 
-export function useLexicalTextEntity<N extends TextNode>(
+export function useLexicalTextEntity<T extends TextNode>(
   getMatch: (text: string) => null | EntityMatch,
-  targetNode: Class<N>,
-  createNode: (textNode: TextNode) => N,
+  targetNode: Klass<T>,
+  createNode: (textNode: TextNode) => T,
 ): void {
   const [editor] = useLexicalComposerContext();
 

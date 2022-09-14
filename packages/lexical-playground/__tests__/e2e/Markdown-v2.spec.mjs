@@ -9,8 +9,10 @@
 import {moveLeft, redo, undo} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
+  assertSelection,
   clearEditor,
   click,
+  E2E_BROWSER,
   focusEditor,
   getHTML,
   html,
@@ -19,7 +21,9 @@ import {
   pasteFromClipboard,
   pressToggleBold,
   pressToggleUnderline,
+  SAMPLE_IMAGE_URL,
   test,
+  waitForSelector,
 } from '../utils/index.mjs';
 
 async function assertMarkdownImportExport(
@@ -35,7 +39,7 @@ async function assertMarkdownImportExport(
   await page.keyboard.type('```markdown ');
   await page.keyboard.type(textToImport);
   await click(page, '.action-button .markdown');
-  await assertHTML(page, expectedHTML, {ignoreClasses});
+  await assertHTML(page, expectedHTML, undefined, {ignoreClasses});
 
   // Cycle through import-export to verify it produces the same result
   await click(page, '.action-button .markdown');
@@ -340,7 +344,7 @@ test.describe('Markdown', () => {
     }) => {
       await focusEditor(page);
       await page.keyboard.type(testCase.text);
-      await assertHTML(page, testCase.html, {ignoreClasses: true});
+      await assertHTML(page, testCase.html, undefined, {ignoreClasses: true});
 
       if (!isCollab) {
         const escapedText = testCase.text.replace('>', '&gt;');
@@ -348,10 +352,11 @@ test.describe('Markdown', () => {
         await assertHTML(
           page,
           `<p><span data-lexical-text="true">${escapedText}</span></p>`,
+          undefined,
           {ignoreClasses: true},
         );
         await redo(page);
-        await assertHTML(page, testCase.html, {ignoreClasses: true});
+        await assertHTML(page, testCase.html, undefined, {ignoreClasses: true});
       }
     });
   });
@@ -365,7 +370,7 @@ test.describe('Markdown', () => {
       await page.keyboard.type(testCase.text, {
         delay: LEGACY_EVENTS ? 50 : 0,
       });
-      await assertHTML(page, testCase.html, {ignoreClasses: false});
+      await assertHTML(page, testCase.html, undefined, {ignoreClasses: false});
       await assertMarkdownImportExport(page, testCase.text, testCase.html);
     });
   });
@@ -376,7 +381,7 @@ test.describe('Markdown', () => {
       await page.keyboard.type(testCase.text, {
         delay: LEGACY_EVENTS ? 50 : 0,
       });
-      await assertHTML(page, testCase.html, {ignoreClasses: false});
+      await assertHTML(page, testCase.html, undefined, {ignoreClasses: false});
       await assertMarkdownImportExport(page, testCase.text, testCase.html);
     });
   });
@@ -602,6 +607,82 @@ test.describe('Markdown', () => {
       `,
     );
   });
+
+  test('can import single decorator node (#2604)', async ({page}) => {
+    await focusEditor(page);
+    await page.keyboard.type(
+      '```markdown ![Yellow flower in tilt shift lens](' +
+        SAMPLE_IMAGE_URL +
+        ')',
+    );
+    await click(page, '.action-button .markdown');
+    await waitForSelector(page, '.editor-image img');
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true">
+            <div draggable="false">
+              <img
+                src="${SAMPLE_IMAGE_URL}"
+                alt="Yellow flower in tilt shift lens"
+                draggable="false"
+                style="height: inherit; max-width: 800px; width: inherit" />
+            </div>
+          </span>
+          <br />
+        </p>
+      `,
+    );
+  });
+
+  test('can adjust selection after text match transformer', async ({page}) => {
+    await focusEditor(page);
+    await page.keyboard.type('Hello  world');
+    await moveLeft(page, 6);
+    await page.keyboard.type('[link](https://lexical.dev)');
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Hello</span>
+          <a
+            href="https://lexical.dev"
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">link</span>
+          </a>
+          <span data-lexical-text="true">world</span>
+        </p>
+      `,
+    );
+    // Selection starts after newly created link element
+
+    if (E2E_BROWSER === 'webkit') {
+      // TODO: safari keeps dom selection on newly inserted link although Lexical's selection
+      // is correctly adjusted to start on [ world] text node. #updateDomSelection calls
+      // selection.setBaseAndExtent correctly, but safari does not seem to sync dom selection
+      // to newly passed values of anchor/focus/offset
+      await assertSelection(page, {
+        anchorOffset: 4,
+        anchorPath: [0, 1, 0, 0],
+        focusOffset: 4,
+        focusPath: [0, 1, 0, 0],
+      });
+    } else {
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [0, 2, 0],
+        focusOffset: 0,
+        focusPath: [0, 2, 0],
+      });
+    }
+  });
 });
 
 const TYPED_MARKDOWN = `# Markdown Shortcuts
@@ -764,9 +845,14 @@ const TYPED_MARKDOWN_HTML = html`
 const IMPORTED_MARKDOWN = `# Markdown Import
 ### Formatting
 This is *italic*, _italic_, **bold**, __bold__, ~~strikethrough~~ text
-This is *__~~bold italic strikethrough~~__* text, ___~~this one too~~___
+
+This is *__~~bold italic strikethrough~~__* text,
+___~~this one too~~___
+
 It ~~___works [with links](https://lexical.io)___~~ too
+
 Links [with underscores](https://lexical.io/tag_here_and__here__and___here___too)
+
 *Nested **stars tags** are handled too*
 ### Headings
 # h1 Heading
@@ -779,13 +865,19 @@ Links [with underscores](https://lexical.io/tag_here_and__here__and___here___too
 ---
 ### Blockquotes
 > Blockquotes text goes here
+> And second
+line after
+
+> Standalone again
+
 ### Unordered lists
 - Create a list with \`+\`, \`-\`, or \`*\`
     - Lists can be indented with 2 spaces
         - Very easy
 ### Ordered lists
 1. Oredered lists started with numbers as \`1.\`
-    1. And can be nested as well
+    1. And can be nested
+    and multiline as well
 
 31. Have any starting number
 ### Inline code
@@ -841,6 +933,7 @@ const IMPORTED_MARKDOWN_HTML = html`
       bold italic strikethrough
     </strong>
     <span data-lexical-text="true">text,</span>
+    <br />
     <strong
       class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__textStrikethrough"
       data-lexical-text="true">
@@ -931,6 +1024,15 @@ const IMPORTED_MARKDOWN_HTML = html`
     class="PlaygroundEditorTheme__quote PlaygroundEditorTheme__ltr"
     dir="ltr">
     <span data-lexical-text="true">Blockquotes text goes here</span>
+    <br />
+    <span data-lexical-text="true">And second</span>
+    <br />
+    <span data-lexical-text="true">line after</span>
+  </blockquote>
+  <blockquote
+    class="PlaygroundEditorTheme__quote PlaygroundEditorTheme__ltr"
+    dir="ltr">
+    <span data-lexical-text="true">Standalone again</span>
   </blockquote>
   <h3 class="PlaygroundEditorTheme__h3 PlaygroundEditorTheme__ltr" dir="ltr">
     <span data-lexical-text="true">Unordered lists</span>
@@ -1003,12 +1105,13 @@ const IMPORTED_MARKDOWN_HTML = html`
           value="1"
           class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
           dir="ltr">
-          <span data-lexical-text="true">And can be nested as well</span>
+          <span data-lexical-text="true">And can be nested</span>
+          <br />
+          <span data-lexical-text="true">and multiline as well</span>
         </li>
       </ol>
     </li>
   </ol>
-  <p class="PlaygroundEditorTheme__paragraph"><br /></p>
   <ol start="31" class="PlaygroundEditorTheme__ol1">
     <li
       value="31"

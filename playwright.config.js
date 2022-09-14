@@ -1,3 +1,11 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
 'use strict';
 const {devices} = require('@playwright/test');
 
@@ -31,5 +39,13 @@ const config = {
     //trace: 'retain-on-failure',
     video: 'on-first-retry',
   },
+  webServer: IS_CI
+    ? {
+        command: 'npm run start-test-server',
+        port: 4000,
+        reuseExistingServer: true,
+        timeout: 120 * 1000,
+      }
+    : undefined,
 };
 module.exports = config;

@@ -28,11 +28,19 @@ export type SerializedMentionNode = Spread<
   SerializedTextNode
 >;
 
-function convertMentionElement(domNode: HTMLElement): DOMConversionOutput {
-  const node = $createMentionNode(domNode.textContent);
-  return {
-    node,
-  };
+function convertMentionElement(
+  domNode: HTMLElement,
+): DOMConversionOutput | null {
+  const textContent = domNode.textContent;
+
+  if (textContent !== null) {
+    const node = $createMentionNode(textContent);
+    return {
+      node,
+    };
+  }
+
+  return null;
 }
 
 const mentionStyle = 'background-color: rgba(24, 119, 232, 0.2)';

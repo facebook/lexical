@@ -12,6 +12,7 @@ import type {
   LexicalEditor,
   NodeSelection,
   RangeSelection,
+  LexicalNode,
 } from 'lexical';
 
 /*
@@ -32,7 +33,31 @@ declare export function $getLexicalContent(
  * Plain Text
  */
 
+/*
+ * Export as JSON
+ */
+
 declare export function $insertDataTransferForPlainText(
   dataTransfer: DataTransfer,
   selection: RangeSelection,
 ): void;
+
+interface BaseSerializedNode {
+  children?: Array<BaseSerializedNode>;
+  type: string;
+  version: number;
+}
+
+declare export function $generateJSONFromSelectedNodes<
+  SerializedNode: BaseSerializedNode,
+>(
+  editor: LexicalEditor,
+  selection: RangeSelection | NodeSelection | GridSelection | null,
+): {
+  namespace: string,
+  nodes: Array<SerializedNode>,
+};
+
+declare export function $generateNodesFromSerializedNodes(
+  serializedNodes: Array<BaseSerializedNode>,
+): Array<LexicalNode>;

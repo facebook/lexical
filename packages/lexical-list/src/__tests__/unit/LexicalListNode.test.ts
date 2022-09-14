@@ -313,12 +313,12 @@ describe('LexicalListNode tests', () => {
           __key: '1',
           __start: 1,
           __tag: 'ol',
-        } as ListNode);
+        } as unknown as ListNode);
         const ulNode = ListNode.clone({
           __key: '1',
           __start: 1,
           __tag: 'ul',
-        } as ListNode);
+        } as unknown as ListNode);
         expect(olNode.__listType).toBe('number');
         expect(ulNode.__listType).toBe('bullet');
       });

@@ -1,3 +1,4 @@
+/** @module @lexical/html */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -32,7 +33,7 @@ export function $generateNodesFromDOM(
   editor: LexicalEditor,
   dom: Document,
 ): Array<LexicalNode> {
-  let lexicalNodes = [];
+  let lexicalNodes: Array<LexicalNode> = [];
   const elements: Array<Node> = dom.body ? Array.from(dom.body.childNodes) : [];
   const elementsLength = elements.length;
 
@@ -67,7 +68,9 @@ export function $generateHtmlFromNodes(
 
   for (let i = 0; i < topLevelChildren.length; i++) {
     const topLevelNode = topLevelChildren[i];
-    $appendNodesToHTML(editor, selection, topLevelNode, container);
+    if (selection !== undefined) {
+      $appendNodesToHTML(editor, selection, topLevelNode, container);
+    }
   }
 
   return container.innerHTML;
@@ -82,13 +85,18 @@ function $appendNodesToHTML(
   let shouldInclude = selection != null ? currentNode.isSelected() : true;
   const shouldExclude =
     $isElementNode(currentNode) && currentNode.excludeFromCopy('html');
-  let clone = $cloneWithProperties<LexicalNode>(currentNode);
-  clone =
-    $isTextNode(clone) && selection != null
-      ? $sliceSelectedTextNodeContent(selection, clone)
-      : clone;
-  const children = $isElementNode(clone) ? clone.getChildren() : [];
-  const {element, after} = clone.exportDOM(editor);
+  let target = currentNode;
+
+  if (selection !== null) {
+    let clone = $cloneWithProperties<LexicalNode>(currentNode);
+    clone =
+      $isTextNode(clone) && selection != null
+        ? $sliceSelectedTextNodeContent(selection, clone)
+        : clone;
+    target = clone;
+  }
+  const children = $isElementNode(target) ? target.getChildren() : [];
+  const {element, after} = target.exportDOM(editor);
 
   if (!element) {
     return false;
@@ -120,7 +128,7 @@ function $appendNodesToHTML(
     parentElement.append(element);
 
     if (after) {
-      const newElement = after.call(clone, element);
+      const newElement = after.call(target, element);
       if (newElement) element.replaceWith(newElement);
     }
   } else {
@@ -141,18 +149,17 @@ function getConversionFunction(
   let currentConversion: DOMConversion | null = null;
 
   if (cachedConversions !== undefined) {
-    cachedConversions.forEach((cachedConversion) => {
+    for (const cachedConversion of cachedConversions) {
       const domConversion = cachedConversion(domNode);
 
-      if (domConversion !== null) {
-        if (
-          currentConversion === null ||
-          currentConversion.priority < domConversion.priority
-        ) {
-          currentConversion = domConversion;
-        }
+      if (
+        domConversion !== null &&
+        (currentConversion === null ||
+          currentConversion.priority < domConversion.priority)
+      ) {
+        currentConversion = domConversion;
       }
-    });
+    }
   }
 
   return currentConversion !== null ? currentConversion.conversion : null;
@@ -165,6 +172,7 @@ function $createNodesFromDOM(
   editor: LexicalEditor,
   forChildMap: Map<string, DOMChildConversion> = new Map(),
   parentLexicalNode?: LexicalNode | null | undefined,
+  preformatted = false,
 ): Array<LexicalNode> {
   let lexicalNodes: Array<LexicalNode> = [];
 
@@ -174,7 +182,9 @@ function $createNodesFromDOM(
 
   let currentLexicalNode = null;
   const transformFunction = getConversionFunction(node, editor);
-  const transformOutput = transformFunction ? transformFunction(node) : null;
+  const transformOutput = transformFunction
+    ? transformFunction(node as HTMLElement, undefined, preformatted)
+    : null;
   let postTransform = null;
 
   if (transformOutput !== null) {
@@ -215,6 +225,8 @@ function $createNodesFromDOM(
         editor,
         new Map(forChildMap),
         currentLexicalNode,
+        preformatted ||
+          (transformOutput && transformOutput.preformatted) === true,
       ),
     );
   }

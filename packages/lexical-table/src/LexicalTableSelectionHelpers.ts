@@ -17,6 +17,7 @@ import type {
   TextFormatType,
 } from 'lexical';
 
+import {TableCellNode} from '@lexical/table';
 import {$findMatchingParent} from '@lexical/utils';
 import {
   $createRangeSelection,
@@ -24,13 +25,13 @@ import {
   $getPreviousSelection,
   $getSelection,
   $isElementNode,
-  $isGridSelection,
   $isParagraphNode,
   $isRangeSelection,
   $setSelection,
   COMMAND_PRIORITY_CRITICAL,
   CONTROLLED_TEXT_INSERTION_COMMAND,
   DELETE_CHARACTER_COMMAND,
+  DEPRECATED_$isGridSelection,
   FOCUS_COMMAND,
   FORMAT_TEXT_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
@@ -49,7 +50,7 @@ const LEXICAL_ELEMENT_KEY = '__lexicalTableSelection';
 
 export function applyTableHandlers(
   tableNode: TableNode,
-  tableElement: HTMLElement,
+  tableElement: HTMLTableElementWithWithTableSelectionState,
   editor: LexicalEditor,
 ): TableSelection {
   const rootElement = editor.getRootElement();
@@ -157,7 +158,7 @@ export function applyTableHandlers(
       const selection = $getSelection();
 
       if (
-        $isGridSelection(selection) &&
+        DEPRECATED_$isGridSelection(selection) &&
         selection.gridKey === tableSelection.tableNodeKey &&
         rootElement.contains(event.target as Node)
       ) {
@@ -256,7 +257,7 @@ export function applyTableHandlers(
               );
             }
           }
-        } else if ($isGridSelection(selection) && event.shiftKey) {
+        } else if (DEPRECATED_$isGridSelection(selection) && event.shiftKey) {
           const tableCellNode = selection.focus.getNode();
 
           if (!$isTableCellNode(tableCellNode)) {
@@ -361,7 +362,7 @@ export function applyTableHandlers(
               );
             }
           }
-        } else if ($isGridSelection(selection) && event.shiftKey) {
+        } else if (DEPRECATED_$isGridSelection(selection) && event.shiftKey) {
           const tableCellNode = selection.focus.getNode();
 
           if (!$isTableCellNode(tableCellNode)) {
@@ -461,7 +462,7 @@ export function applyTableHandlers(
               );
             }
           }
-        } else if ($isGridSelection(selection) && event.shiftKey) {
+        } else if (DEPRECATED_$isGridSelection(selection) && event.shiftKey) {
           const tableCellNode = selection.focus.getNode();
 
           if (!$isTableCellNode(tableCellNode)) {
@@ -565,7 +566,7 @@ export function applyTableHandlers(
               );
             }
           }
-        } else if ($isGridSelection(selection) && event.shiftKey) {
+        } else if (DEPRECATED_$isGridSelection(selection) && event.shiftKey) {
           const tableCellNode = selection.focus.getNode();
 
           if (!$isTableCellNode(tableCellNode)) {
@@ -606,7 +607,7 @@ export function applyTableHandlers(
           return false;
         }
 
-        if ($isGridSelection(selection)) {
+        if (DEPRECATED_$isGridSelection(selection)) {
           tableSelection.clearText();
 
           return true;
@@ -654,7 +655,7 @@ export function applyTableHandlers(
           return false;
         }
 
-        if ($isGridSelection(selection)) {
+        if (DEPRECATED_$isGridSelection(selection)) {
           event.preventDefault();
           event.stopPropagation();
           tableSelection.clearText();
@@ -687,7 +688,7 @@ export function applyTableHandlers(
           return false;
         }
 
-        if ($isGridSelection(selection)) {
+        if (DEPRECATED_$isGridSelection(selection)) {
           tableSelection.formatCells(payload);
 
           return true;
@@ -718,7 +719,7 @@ export function applyTableHandlers(
           return false;
         }
 
-        if ($isGridSelection(selection)) {
+        if (DEPRECATED_$isGridSelection(selection)) {
           tableSelection.clearHighlight();
 
           return false;
@@ -803,11 +804,12 @@ export function applyTableHandlers(
 
         if (
           selection !== prevSelection &&
-          ($isGridSelection(selection) || $isGridSelection(prevSelection)) &&
+          (DEPRECATED_$isGridSelection(selection) ||
+            DEPRECATED_$isGridSelection(prevSelection)) &&
           tableSelection.gridSelection !== selection
         ) {
           tableSelection.updateTableGridSelection(
-            $isGridSelection(selection) && tableNode.isSelected()
+            DEPRECATED_$isGridSelection(selection) && tableNode.isSelected()
               ? selection
               : null,
           );
@@ -874,21 +876,24 @@ export function applyTableHandlers(
   return tableSelection;
 }
 
+export type HTMLTableElementWithWithTableSelectionState = HTMLTableElement &
+  Record<typeof LEXICAL_ELEMENT_KEY, TableSelection>;
+
 export function attachTableSelectionToTableElement(
-  tableElement: HTMLElement,
+  tableElement: HTMLTableElementWithWithTableSelectionState,
   tableSelection: TableSelection,
 ) {
   tableElement[LEXICAL_ELEMENT_KEY] = tableSelection;
 }
 
 export function getTableSelectionFromTableElement(
-  tableElement: HTMLElement,
-): TableSelection {
+  tableElement: HTMLTableElementWithWithTableSelectionState,
+): TableSelection | null {
   return tableElement[LEXICAL_ELEMENT_KEY];
 }
 
 export function getCellFromTarget(node: Node): Cell | null {
-  let currentNode = node;
+  let currentNode: ParentNode | Node | null = node;
 
   while (currentNode != null) {
     const nodeName = currentNode.nodeName;
@@ -984,7 +989,7 @@ export function $updateDOMForSelection(
   grid: Grid,
   selection: GridSelection | RangeSelection | null,
 ): Array<Cell> {
-  const highlightedCells = [];
+  const highlightedCells: Array<Cell> = [];
   const selectedCellNodes = new Set(selection ? selection.getNodes() : []);
   $forEachGridCell(grid, (cell, lexicalNode) => {
     const elem = cell.elem;
@@ -1178,7 +1183,7 @@ function $isSelectionInTable(
   selection: null | GridSelection | RangeSelection | NodeSelection,
   tableNode: TableNode,
 ): boolean {
-  if ($isRangeSelection(selection) || $isGridSelection(selection)) {
+  if ($isRangeSelection(selection) || DEPRECATED_$isGridSelection(selection)) {
     const isAnchorInside = tableNode.isParentOf(selection.anchor.getNode());
     const isFocusInside = tableNode.isParentOf(selection.focus.getNode());
 
@@ -1188,7 +1193,7 @@ function $isSelectionInTable(
   return false;
 }
 
-function selectTableCellNode(tableCell) {
+function selectTableCellNode(tableCell: TableCellNode) {
   const possibleParagraph = tableCell
     .getChildren()
     .find((n) => $isParagraphNode(n));

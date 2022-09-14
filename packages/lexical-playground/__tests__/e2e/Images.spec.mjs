@@ -6,13 +6,16 @@
  *
  */
 
+import {expect} from '@playwright/test';
+
 import {moveLeft} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
   click,
   dragImage,
-  E2E_PORT,
+  dragMouse,
+  evaluate,
   focusEditor,
   html,
   initialize,
@@ -20,14 +23,11 @@ import {
   insertUploadImage,
   insertUrlImage,
   IS_WINDOWS,
+  SAMPLE_IMAGE_URL,
+  selectorBoundingBox,
   test,
   waitForSelector,
 } from '../utils/index.mjs';
-
-const IMAGE_URL =
-  E2E_PORT === 3000
-    ? '/src/images/yellow-flower.jpg'
-    : '/assets/yellow-flower.bf6d0400.jpg';
 
 test.describe('Images', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
@@ -53,7 +53,7 @@ test.describe('Images', () => {
             data-lexical-decorator="true">
             <div draggable="false">
               <img
-                src="${IMAGE_URL}"
+                src="${SAMPLE_IMAGE_URL}"
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
                 style="height: inherit; max-width: 500px; width: inherit;" />
@@ -72,6 +72,7 @@ test.describe('Images', () => {
 
     await focusEditor(page);
     await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('ArrowLeft');
     await assertSelection(page, {
       anchorOffset: 0,
       anchorPath: [0],
@@ -80,6 +81,7 @@ test.describe('Images', () => {
     });
 
     await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowRight');
     await assertSelection(page, {
       anchorOffset: 1,
       anchorPath: [0],
@@ -87,6 +89,7 @@ test.describe('Images', () => {
       focusPath: [0],
     });
 
+    await page.keyboard.press('ArrowRight');
     await page.keyboard.press('ArrowRight');
     await page.keyboard.press('Backspace');
 
@@ -118,21 +121,23 @@ test.describe('Images', () => {
               data-lexical-decorator="true">
               <div draggable="true">
                 <img
-                  src="${IMAGE_URL}"
+                  src="${SAMPLE_IMAGE_URL}"
                   alt="Yellow flower in tilt shift lens"
                   draggable="false"
                   style="height: inherit; max-width: 500px; width: inherit;"
-                  class="focused" />
+                  class="focused draggable" />
               </div>
-              <button class="image-caption-button">Add Caption</button>
-              <div class="image-resizer image-resizer-n"></div>
-              <div class="image-resizer image-resizer-ne"></div>
-              <div class="image-resizer image-resizer-e"></div>
-              <div class="image-resizer image-resizer-se"></div>
-              <div class="image-resizer image-resizer-s"></div>
-              <div class="image-resizer image-resizer-sw"></div>
-              <div class="image-resizer image-resizer-w"></div>
-              <div class="image-resizer image-resizer-nw"></div>
+              <div>
+                <button class="image-caption-button">Add Caption</button>
+                <div class="image-resizer image-resizer-n"></div>
+                <div class="image-resizer image-resizer-ne"></div>
+                <div class="image-resizer image-resizer-e"></div>
+                <div class="image-resizer image-resizer-se"></div>
+                <div class="image-resizer image-resizer-s"></div>
+                <div class="image-resizer image-resizer-sw"></div>
+                <div class="image-resizer image-resizer-w"></div>
+                <div class="image-resizer image-resizer-nw"></div>
+              </div>
             </span>
             <br />
           </p>
@@ -168,7 +173,7 @@ test.describe('Images', () => {
             data-lexical-decorator="true">
             <div draggable="false">
               <img
-                src="${IMAGE_URL}"
+                src="${SAMPLE_IMAGE_URL}"
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
                 style="height: inherit; max-width: 500px; width: inherit;" />
@@ -186,6 +191,8 @@ test.describe('Images', () => {
     });
 
     await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('ArrowLeft');
+
     await page.keyboard.press('Delete');
 
     await assertHTML(
@@ -216,7 +223,7 @@ test.describe('Images', () => {
     await insertSampleImage(page);
 
     await focusEditor(page);
-    await moveLeft(page, 2);
+    await moveLeft(page, 4);
 
     await assertHTML(
       page,
@@ -228,7 +235,7 @@ test.describe('Images', () => {
             data-lexical-decorator="true">
             <div draggable="false">
               <img
-                src="${IMAGE_URL}"
+                src="${SAMPLE_IMAGE_URL}"
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
                 style="height: inherit; max-width: 500px; width: inherit;" />
@@ -240,7 +247,7 @@ test.describe('Images', () => {
             data-lexical-decorator="true">
             <div draggable="false">
               <img
-                src="${IMAGE_URL}"
+                src="${SAMPLE_IMAGE_URL}"
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
                 style="height: inherit; max-width: 500px; width: inherit;" />
@@ -268,7 +275,7 @@ test.describe('Images', () => {
             data-lexical-decorator="true">
             <div draggable="false">
               <img
-                src="${IMAGE_URL}"
+                src="${SAMPLE_IMAGE_URL}"
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
                 style="height: inherit; max-width: 500px; width: inherit;" />
@@ -304,7 +311,7 @@ test.describe('Images', () => {
     await insertSampleImage(page);
 
     await focusEditor(page);
-    await moveLeft(page, 2);
+    await moveLeft(page, 4);
 
     await assertHTML(
       page,
@@ -319,7 +326,7 @@ test.describe('Images', () => {
             data-lexical-decorator="true">
             <div draggable="false">
               <img
-                src="${IMAGE_URL}"
+                src="${SAMPLE_IMAGE_URL}"
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
                 style="height: inherit; max-width: 500px; width: inherit;" />
@@ -331,7 +338,7 @@ test.describe('Images', () => {
             data-lexical-decorator="true">
             <div draggable="false">
               <img
-                src="${IMAGE_URL}"
+                src="${SAMPLE_IMAGE_URL}"
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
                 style="height: inherit; max-width: 500px; width: inherit;" />
@@ -361,7 +368,7 @@ test.describe('Images', () => {
             data-lexical-decorator="true">
             <div draggable="false">
               <img
-                src="${IMAGE_URL}"
+                src="${SAMPLE_IMAGE_URL}"
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
                 style="height: inherit; max-width: 500px; width: inherit;" />
@@ -453,7 +460,7 @@ test.describe('Images', () => {
     // but when running the playwright test, we can't get the correct values from `event.rangeParent` and `event.rangeOffset`,
     // so for now we can only test the case of dragging the image to the end of the text
     if (browserName === 'firefox') {
-      await dragImage(page, 'span[data-lexical-text="true"]', 'end');
+      await dragImage(page, 'span[data-lexical-text="true"]', 'middle', 'end');
 
       await waitForSelector(page, '.editor-image img');
 
@@ -477,7 +484,7 @@ test.describe('Images', () => {
                 <img
                   alt="Yellow flower in tilt shift lens"
                   draggable="false"
-                  src="${IMAGE_URL}"
+                  src="${SAMPLE_IMAGE_URL}"
                   style="height: inherit; max-width: 500px; width: inherit" />
               </div>
             </span>
@@ -513,7 +520,7 @@ test.describe('Images', () => {
                 <img
                   alt="Yellow flower in tilt shift lens"
                   draggable="false"
-                  src="${IMAGE_URL}"
+                  src="${SAMPLE_IMAGE_URL}"
                   style="height: inherit; max-width: 500px; width: inherit" />
               </div>
             </span>
@@ -539,6 +546,7 @@ test.describe('Images', () => {
     await page.keyboard.press('Enter');
 
     await insertSampleImage(page);
+    await page.pause();
 
     await dragImage(page, 'span[data-lexical-text="true"]');
 
@@ -561,7 +569,7 @@ test.describe('Images', () => {
               <img
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
-                src="${IMAGE_URL}"
+                src="${SAMPLE_IMAGE_URL}"
                 style="height: inherit; max-width: 500px; width: inherit" />
             </div>
           </span>
@@ -569,5 +577,33 @@ test.describe('Images', () => {
         </p>
       `,
     );
+  });
+
+  test('Select image, then select text - EditorState._selection updates with mousedown #2901', async ({
+    page,
+    isPlainText,
+    browserName,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    await page.keyboard.type('HelloWorld');
+    await page.keyboard.press('Enter');
+    await insertSampleImage(page);
+    await click(page, '.editor-image img');
+
+    const textBoundingBox = await selectorBoundingBox(
+      page,
+      'span[data-lexical-text="true"]',
+    );
+    await dragMouse(page, textBoundingBox, textBoundingBox, 'start', 'middle');
+
+    const lexicalSelection = await evaluate(page, (editor) => {
+      return window.lexicalEditor._editorState._selection;
+    });
+    expect(lexicalSelection.anchor).toBeTruthy();
+    expect(lexicalSelection.focus).toBeTruthy();
   });
 });

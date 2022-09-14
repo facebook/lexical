@@ -11,7 +11,6 @@ import type {DOMConversion, LexicalNode, NodeKey} from './LexicalNode';
 
 import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
-import {Class} from 'utility-types';
 
 import {$getRoot, $getSelection, TextNode} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
@@ -25,13 +24,23 @@ import {
   triggerListeners,
   updateEditor,
 } from './LexicalUpdates';
-import {createUID, dispatchCommand, markAllNodesAsDirty} from './LexicalUtils';
+import {
+  createUID,
+  dispatchCommand,
+  getDefaultView,
+  markAllNodesAsDirty,
+} from './LexicalUtils';
 import {DecoratorNode} from './nodes/LexicalDecoratorNode';
 import {LineBreakNode} from './nodes/LexicalLineBreakNode';
 import {ParagraphNode} from './nodes/LexicalParagraphNode';
 import {RootNode} from './nodes/LexicalRootNode';
 
-export type Spread<T1, T2> = {[K in Exclude<keyof T1, keyof T2>]: T1[K]} & T2;
+export type Spread<T1, T2> = Omit<T2, keyof T1> & T1;
+
+export type Klass<T extends LexicalNode> = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  new (...args: any[]): T;
+} & Omit<LexicalNode, 'constructor'>;
 
 export type EditorThemeClassName = string;
 
@@ -57,7 +66,12 @@ export type EditorSetOptions = {
   tag?: string;
 };
 
+export type EditorFocusOptions = {
+  defaultSelection?: 'rootStart' | 'rootEnd';
+};
+
 export type EditorThemeClasses = {
+  characterLimit?: EditorThemeClassName;
   code?: EditorThemeClassName;
   codeHighlight?: Record<string, EditorThemeClassName>;
   hashtag?: EditorThemeClassName;
@@ -92,23 +106,27 @@ export type EditorThemeClasses = {
   root?: EditorThemeClassName;
   rtl?: EditorThemeClassName;
   table?: EditorThemeClassName;
+  tableAddColumns?: EditorThemeClassName;
+  tableAddRows?: EditorThemeClassName;
+  tableCellActionButton?: EditorThemeClassName;
+  tableCellActionButtonContainer?: EditorThemeClassName;
+  tableCellPrimarySelected?: EditorThemeClassName;
+  tableCellSelected?: EditorThemeClassName;
   tableCell?: EditorThemeClassName;
+  tableCellEditing?: EditorThemeClassName;
   tableCellHeader?: EditorThemeClassName;
+  tableCellResizer?: EditorThemeClassName;
+  tableCellSortedIndicator?: EditorThemeClassName;
+  tableResizeRuler?: EditorThemeClassName;
   tableRow?: EditorThemeClassName;
+  tableSelected?: EditorThemeClassName;
   text?: TextNodeThemeClasses;
-  // Handle other generic values
-  [key: string]:
-    | EditorThemeClassName
-    | TextNodeThemeClasses
-    | {
-        [key: string]:
-          | Array<EditorThemeClassName>
-          | EditorThemeClassName
-          | TextNodeThemeClasses
-          | {
-              [key: string]: EditorThemeClassName;
-            };
-      };
+  embedBlock?: {
+    base?: EditorThemeClassName;
+    focus?: EditorThemeClassName;
+  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;
 };
 
 export type EditorConfig = {
@@ -120,17 +138,17 @@ export type EditorConfig = {
 export type RegisteredNodes = Map<string, RegisteredNode>;
 
 export type RegisteredNode = {
-  klass: Class<LexicalNode>;
+  klass: Klass<LexicalNode>;
   transforms: Set<Transform<LexicalNode>>;
 };
 
-export type Transform<T> = (node: T) => void;
+export type Transform<T extends LexicalNode> = (node: T) => void;
 
 export type ErrorHandler = (error: Error) => void;
 
-export type MutationListeners = Map<MutationListener, Class<LexicalNode>>;
+export type MutationListeners = Map<MutationListener, Klass<LexicalNode>>;
 
-export type MutatedNodes = Map<Class<LexicalNode>, Map<NodeKey, NodeMutation>>;
+export type MutatedNodes = Map<Klass<LexicalNode>, Map<NodeKey, NodeMutation>>;
 
 export type NodeMutation = 'created' | 'updated' | 'destroyed';
 
@@ -143,7 +161,7 @@ export type UpdateListener = (arg0: {
   tags: Set<string>;
 }) => void;
 
-export type DecoratorListener<T = unknown> = (
+export type DecoratorListener<T = never> = (
   decorator: Record<NodeKey, T>,
 ) => void;
 
@@ -154,11 +172,14 @@ export type RootListener = (
 
 export type TextContentListener = (text: string) => void;
 
-export type MutationListener = (nodes: Map<NodeKey, NodeMutation>) => void;
+export type MutationListener = (
+  nodes: Map<NodeKey, NodeMutation>,
+  payload: {updateTags: Set<string>; dirtyLeaves: Set<string>},
+) => void;
 
 export type CommandListener<P> = (payload: P, editor: LexicalEditor) => boolean;
 
-export type ReadOnlyListener = (readOnly: boolean) => void;
+export type EditableListener = (editable: boolean) => void;
 
 export type CommandListenerPriority = 0 | 1 | 2 | 3 | 4;
 
@@ -169,7 +190,30 @@ export const COMMAND_PRIORITY_HIGH = 3;
 export const COMMAND_PRIORITY_CRITICAL = 4;
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export type LexicalCommand<T> = Readonly<Record<string, unknown>>;
+export type LexicalCommand<TPayload> = Record<string, never>;
+/**
+ * Type helper for extracting the payload type from a command.
+ *
+ * @example
+ * ```ts
+ * const MY_COMMAND = createCommand<SomeType>();
+ *
+ * // ...
+ *
+ * editor.registerCommand(MY_COMMAND, payload => {
+ *   // Type of `payload` is inferred here. But lets say we want to extract a function to delegate to
+ *   handleMyCommand(editor, payload);
+ *   return true;
+ * });
+ *
+ * function handleMyCommand(editor: LexicalEditor, payload: CommandPayloadType<typeof MY_COMMAND>) {
+ *   // `payload` is of type `SomeType`, extracted from the command.
+ * }
+ * ```
+ */
+export type CommandPayloadType<TCommand extends LexicalCommand<unknown>> =
+  TCommand extends LexicalCommand<infer TPayload> ? TPayload : never;
+
 type Commands = Map<
   LexicalCommand<unknown>,
   Array<Set<CommandListener<unknown>>>
@@ -177,7 +221,7 @@ type Commands = Map<
 type Listeners = {
   decorator: Set<DecoratorListener>;
   mutation: MutationListeners;
-  readonly: Set<ReadOnlyListener>;
+  editable: Set<EditableListener>;
   root: Set<RootListener>;
   textcontent: Set<TextContentListener>;
   update: Set<UpdateListener>;
@@ -185,7 +229,7 @@ type Listeners = {
 
 export type Listener =
   | DecoratorListener
-  | ReadOnlyListener
+  | EditableListener
   | MutationListener
   | RootListener
   | TextContentListener
@@ -197,7 +241,7 @@ export type ListenerType =
   | 'decorator'
   | 'textcontent'
   | 'mutation'
-  | 'readonly';
+  | 'editable';
 
 export type TransformerType = 'text' | 'decorator' | 'element' | 'root';
 
@@ -253,10 +297,8 @@ function initializeConversionCache(nodes: RegisteredNodes): DOMConversionCache {
   const handledConversions = new Set();
   nodes.forEach((node) => {
     const importDOM =
-      // @ts-expect-error TODO Replace Class utility type with InstanceType
       node.klass.importDOM != null
-        ? // @ts-expect-error TODO Replace Class utility type with InstanceType
-          node.klass.importDOM.bind(node.klass)
+        ? node.klass.importDOM.bind(node.klass)
         : null;
 
     if (importDOM == null || handledConversions.has(importDOM)) {
@@ -286,10 +328,10 @@ export function createEditor(editorConfig?: {
   disableEvents?: boolean;
   editorState?: EditorState;
   namespace?: string;
-  nodes?: ReadonlyArray<Class<LexicalNode>>;
+  nodes?: ReadonlyArray<Klass<LexicalNode>>;
   onError?: ErrorHandler;
   parentEditor?: LexicalEditor;
-  readOnly?: boolean;
+  editable?: boolean;
   theme?: EditorThemeClasses;
 }): LexicalEditor {
   const config = editorConfig || {};
@@ -311,7 +353,7 @@ export function createEditor(editorConfig?: {
     ...(config.nodes || []),
   ];
   const onError = config.onError;
-  const isReadOnly = config.readOnly || false;
+  const isEditable = config.editable !== undefined ? config.editable : true;
   let registeredNodes;
 
   if (editorConfig === undefined && activeEditor !== null) {
@@ -345,7 +387,7 @@ export function createEditor(editorConfig?: {
             // eslint-disable-next-line no-prototype-builtins
             if (!proto.hasOwnProperty('decorate')) {
               console.warn(
-                `${this.constructor.name} must implement "decorate" method`,
+                `${proto.constructor.name} must implement "decorate" method`,
               );
             }
           }
@@ -367,7 +409,6 @@ export function createEditor(editorConfig?: {
           }
         }
       }
-      // @ts-expect-error TODO Replace Class utility type with InstanceType
       const type = klass.getType();
       registeredNodes.set(type, {
         klass,
@@ -385,9 +426,9 @@ export function createEditor(editorConfig?: {
       namespace,
       theme,
     },
-    onError,
+    onError ? onError : console.error,
     initializeConversionCache(registeredNodes),
-    isReadOnly,
+    isEditable,
   );
 
   if (initialEditorState !== undefined) {
@@ -406,7 +447,7 @@ export class LexicalEditor {
   _compositionKey: null | NodeKey;
   _deferred: Array<() => void>;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
-  _updates: Array<[() => void, EditorUpdateOptions]>;
+  _updates: Array<[() => void, EditorUpdateOptions | undefined]>;
   _updating: boolean;
   _listeners: Listeners;
   _commands: Commands;
@@ -424,7 +465,8 @@ export class LexicalEditor {
   _key: string;
   _onError: ErrorHandler;
   _htmlConversions: DOMConversionCache;
-  _readOnly: boolean;
+  _window: null | Window;
+  _editable: boolean;
 
   constructor(
     editorState: EditorState,
@@ -433,7 +475,7 @@ export class LexicalEditor {
     config: EditorConfig,
     onError: ErrorHandler,
     htmlConversions: DOMConversionCache,
-    readOnly: boolean,
+    editable: boolean,
   ) {
     this._parentEditor = parentEditor;
     // The root element associated with this editor
@@ -452,8 +494,8 @@ export class LexicalEditor {
     // Listeners
     this._listeners = {
       decorator: new Set(),
+      editable: new Set(),
       mutation: new Map(),
-      readonly: new Set(),
       root: new Set(),
       textcontent: new Set(),
       update: new Set(),
@@ -467,7 +509,7 @@ export class LexicalEditor {
     // React node decorators for portals
     this._decorators = {};
     this._pendingDecorators = null;
-    // Used to optimize reconcilation
+    // Used to optimize reconciliation
     this._dirtyType = NO_DIRTY_NODES;
     this._cloneNotNeeded = new Set();
     this._dirtyLeaves = new Set();
@@ -481,8 +523,11 @@ export class LexicalEditor {
 
     this._onError = onError;
     this._htmlConversions = htmlConversions;
-    this._readOnly = false;
+    // We don't actually make use of the `editable` argument above.
+    // Doing so, causes e2e tests around the lock to fail.
+    this._editable = true;
     this._headless = false;
+    this._window = null;
   }
 
   isComposing(): boolean {
@@ -497,8 +542,8 @@ export class LexicalEditor {
     };
   }
 
-  registerReadOnlyListener(listener: ReadOnlyListener): () => void {
-    const listenerSetOrMap = this._listeners.readonly;
+  registerEditableListener(listener: EditableListener): () => void {
+    const listenerSetOrMap = this._listeners.editable;
     listenerSetOrMap.add(listener);
     return () => {
       listenerSetOrMap.delete(listener);
@@ -563,9 +608,9 @@ export class LexicalEditor {
     }
 
     const listeners = listenersInPriorityOrder[priority];
-    listeners.add(listener);
+    listeners.add(listener as CommandListener<unknown>);
     return () => {
-      listeners.delete(listener);
+      listeners.delete(listener as CommandListener<unknown>);
 
       if (
         listenersInPriorityOrder.every(
@@ -578,10 +623,9 @@ export class LexicalEditor {
   }
 
   registerMutationListener(
-    klass: Class<LexicalNode>,
+    klass: Klass<LexicalNode>,
     listener: MutationListener,
   ): () => void {
-    // @ts-expect-error TODO Replace Class utility type with InstanceType
     const registeredNode = this._nodes.get(klass.getType());
 
     if (registeredNode === undefined) {
@@ -600,10 +644,9 @@ export class LexicalEditor {
   }
 
   registerNodeTransform<T extends LexicalNode>(
-    klass: Class<T>,
+    klass: Klass<T>,
     listener: Transform<T>,
   ): () => void {
-    // @ts-expect-error TODO Replace Class utility type with InstanceType
     const type = klass.getType();
 
     const registeredNode = this._nodes.get(type);
@@ -617,19 +660,16 @@ export class LexicalEditor {
     }
 
     const transforms = registeredNode.transforms;
-    transforms.add(listener);
+    transforms.add(listener as Transform<LexicalNode>);
     markAllNodesAsDirty(this, type);
     return () => {
-      transforms.delete(listener);
+      transforms.delete(listener as Transform<LexicalNode>);
     };
   }
 
-  hasNodes<T extends {new (...args: unknown[]): LexicalNode}>(
-    nodes: Array<T>,
-  ): boolean {
+  hasNodes<T extends Klass<LexicalNode>>(nodes: Array<T>): boolean {
     for (let i = 0; i < nodes.length; i++) {
       const klass = nodes[i];
-      // @ts-expect-error
       const type = klass.getType();
 
       if (!this._nodes.has(type)) {
@@ -640,7 +680,10 @@ export class LexicalEditor {
     return true;
   }
 
-  dispatchCommand<P>(type: LexicalCommand<P>, payload: P): boolean {
+  dispatchCommand<
+    TCommand extends LexicalCommand<unknown>,
+    TPayload extends CommandPayloadType<TCommand>,
+  >(type: TCommand, payload: TPayload): boolean {
     return dispatchCommand(this, type, payload);
   }
 
@@ -672,11 +715,13 @@ export class LexicalEditor {
       }
 
       if (nextRootElement !== null) {
+        const windowObj = getDefaultView(nextRootElement);
         const style = nextRootElement.style;
         style.userSelect = 'text';
         style.whiteSpace = 'pre-wrap';
         style.wordBreak = 'break-word';
         nextRootElement.setAttribute('data-lexical-editor', 'true');
+        this._window = windowObj;
         this._dirtyType = FULL_RECONCILE;
         initMutationObserver(this);
 
@@ -688,6 +733,8 @@ export class LexicalEditor {
         if (!this._config.disableEvents) {
           addRootElementEvents(nextRootElement, this);
         }
+      } else {
+        this._window = null;
       }
 
       triggerListeners('root', this, false, nextRootElement, prevRootElement);
@@ -750,7 +797,7 @@ export class LexicalEditor {
     updateEditor(this, updateFn, options);
   }
 
-  focus(callbackFn?: () => void): void {
+  focus(callbackFn?: () => void, options: EditorFocusOptions = {}): void {
     const rootElement = this._rootElement;
 
     if (rootElement !== null) {
@@ -766,19 +813,27 @@ export class LexicalEditor {
             // Marking the selection dirty will force the selection back to it
             selection.dirty = true;
           } else if (root.getChildrenSize() !== 0) {
-            root.selectEnd();
+            if (options.defaultSelection === 'rootStart') {
+              root.selectStart();
+            } else {
+              root.selectEnd();
+            }
           }
         },
         {
           onUpdate: () => {
             rootElement.removeAttribute('autocapitalize');
-
             if (callbackFn) {
               callbackFn();
             }
           },
         },
       );
+      // In the case where onUpdate doesn't fire (due to the focus update not
+      // occuring).
+      if (this._pendingEditorState === null) {
+        rootElement.removeAttribute('autocapitalize');
+      }
     }
   }
 
@@ -796,13 +851,15 @@ export class LexicalEditor {
     }
   }
 
-  isReadOnly(): boolean {
-    return this._readOnly;
+  isEditable(): boolean {
+    return this._editable;
   }
 
-  setReadOnly(readOnly: boolean): void {
-    this._readOnly = readOnly;
-    triggerListeners('readonly', this, true, readOnly);
+  setEditable(editable: boolean): void {
+    if (this._editable !== editable) {
+      this._editable = editable;
+      triggerListeners('editable', this, true, editable);
+    }
   }
 
   toJSON(): SerializedEditor {

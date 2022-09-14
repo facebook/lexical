@@ -3,6 +3,7 @@
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
+ *
  */
 
 import {LinkNode, TOGGLE_LINK_COMMAND, toggleLink} from '@lexical/link';
@@ -20,10 +21,15 @@ export function LinkPlugin(): null {
   }, [editor]);
 
   useEffect(() => {
-    return editor.registerCommand<string | null>(
+    return editor.registerCommand(
       TOGGLE_LINK_COMMAND,
-      (url) => {
-        toggleLink(url);
+      (payload) => {
+        if (typeof payload === 'string' || payload === null) {
+          toggleLink(payload);
+        } else {
+          const {url, target, rel} = payload;
+          toggleLink(url, {rel, target});
+        }
         return true;
       },
       COMMAND_PRIORITY_EDITOR,

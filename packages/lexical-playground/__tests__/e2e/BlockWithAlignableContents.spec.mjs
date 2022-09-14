@@ -48,7 +48,7 @@ test.describe('BlockWithAlignableContents', () => {
           <span data-lexical-text="true">Hello world</span>
         </p>
         <div contenteditable="false" data-lexical-decorator="true">
-          <div class="embed-block">
+          <div class="PlaygroundEditorTheme__embedBlock">
             <iframe
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowfullscreen=""
@@ -81,7 +81,7 @@ test.describe('BlockWithAlignableContents', () => {
           <span data-lexical-text="true">Hello world</span>
         </p>
         <div contenteditable="false" data-lexical-decorator="true">
-          <div class="embed-block">
+          <div class="PlaygroundEditorTheme__embedBlock">
             <iframe
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowfullscreen=""
@@ -107,7 +107,9 @@ test.describe('BlockWithAlignableContents', () => {
           <span data-lexical-text="true">Hello world</span>
         </p>
         <div contenteditable="false" data-lexical-decorator="true">
-          <div class="embed-block focused" style="text-align: center">
+          <div
+            class="PlaygroundEditorTheme__embedBlock PlaygroundEditorTheme__embedBlockFocus"
+            style="text-align: center">
             <iframe
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowfullscreen=""
@@ -122,6 +124,7 @@ test.describe('BlockWithAlignableContents', () => {
           <br />
         </p>
       `,
+      undefined,
       {ignoreClasses: true},
     );
   });

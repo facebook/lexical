@@ -3,6 +3,7 @@
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
+ *
  */
 
 'use strict';
@@ -233,8 +234,12 @@ async function build(name, inputFile, outputPath, outputFile, isProd) {
       isProd && compiler(closureOptions),
       {
         renderChunk(source) {
-          return `${getComment()}
-${source}`;
+          // Assets pipeline might use "export" word in the beginning of the line
+          // as a dependency, avoiding it with empty comment in front
+          const patchedSource = isWWW
+            ? source.replace(/^(export(?!s))/gm, '/**/$1')
+            : source;
+          return `${getComment()}\n${patchedSource}`;
         },
       },
     ],
@@ -578,7 +583,7 @@ async function buildTSDeclarationFiles(packageName, outputPath) {
 }
 
 async function moveTSDeclarationFilesIntoDist(packageName, outputPath) {
-  await exec(`cp -R ./.ts-temp/${packageName}/src/ ${outputPath}`);
+  await fs.copy(`./.ts-temp/${packageName}/src`, outputPath);
 }
 
 function buildForkModule(outputPath, outputFileName) {
@@ -596,7 +601,7 @@ function buildForkModule(outputPath, outputFileName) {
 }
 
 async function buildAll() {
-  if (isRelease || isProduction) {
+  if (!isWWW && (isRelease || isProduction)) {
     await buildTSDeclarationFiles();
   }
 
@@ -633,7 +638,7 @@ async function buildAll() {
       }
     }
 
-    if (isRelease || isProduction) {
+    if (!isWWW && (isRelease || isProduction)) {
       await moveTSDeclarationFilesIntoDist(packageName, outputPath);
     }
   }

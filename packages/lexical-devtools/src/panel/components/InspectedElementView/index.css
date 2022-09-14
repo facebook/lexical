@@ -1,0 +1,11 @@
+.inspected-element-view {
+  align-self: start;
+  border: 1px solid #282c34;
+  color: #fff;
+  grid-area: inspected-element;
+  height: 100vh;
+  padding: 1em 2em;
+  position: sticky;
+  text-align: left;
+  top: 0em;
+}

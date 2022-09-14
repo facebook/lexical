@@ -1,3 +1,4 @@
+/** @module @lexical/history */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -95,7 +96,7 @@ function getChangeType(
 ): ChangeType {
   if (
     prevEditorState === null ||
-    (dirtyLeavesSet.size === 0 && dirtyElementsSet.size === 0)
+    (dirtyLeavesSet.size === 0 && dirtyElementsSet.size === 0 && !isComposing)
   ) {
     return OTHER;
   }
@@ -206,7 +207,8 @@ function isTextNodeUnchanged(
       prevNode.__mode === nextNode.__mode &&
       prevNode.__detail === nextNode.__detail &&
       prevNode.__style === nextNode.__style &&
-      prevNode.__format === nextNode.__format
+      prevNode.__format === nextNode.__format &&
+      prevNode.__parent === nextNode.__parent
     );
   }
   return false;
@@ -253,9 +255,11 @@ function createMergeActionGetter(
     );
 
     const mergeAction = (() => {
+      const isSameEditor =
+        currentHistoryEntry === null || currentHistoryEntry.editor === editor;
       const shouldPushHistory = tags.has('history-push');
       const shouldMergeHistory =
-        !shouldPushHistory && tags.has('history-merge');
+        !shouldPushHistory && isSameEditor && tags.has('history-merge');
 
       if (shouldMergeHistory) {
         return HISTORY_MERGE;
@@ -276,9 +280,6 @@ function createMergeActionGetter(
 
         return DISCARD_HISTORY_CANDIDATE;
       }
-
-      const isSameEditor =
-        currentHistoryEntry === null || currentHistoryEntry.editor === editor;
 
       if (
         shouldPushHistory === false &&
@@ -319,7 +320,8 @@ function redo(editor: LexicalEditor, historyState: HistoryState): void {
     const current = historyState.current;
 
     if (current !== null) {
-      pushAndDispatch(undoStack, current, editor, CAN_UNDO_COMMAND);
+      undoStack.push(current);
+      editor.dispatchCommand(CAN_UNDO_COMMAND, true);
     }
 
     const historyStateEntry = redoStack.pop();
@@ -348,7 +350,8 @@ function undo(editor: LexicalEditor, historyState: HistoryState): void {
     const historyStateEntry = undoStack.pop();
 
     if (current !== null) {
-      pushAndDispatch(redoStack, current, editor, CAN_REDO_COMMAND);
+      redoStack.push(current);
+      editor.dispatchCommand(CAN_REDO_COMMAND, true);
     }
 
     if (undoStack.length === 0) {
@@ -368,29 +371,10 @@ function undo(editor: LexicalEditor, historyState: HistoryState): void {
   }
 }
 
-function clearHistory(historyState: HistoryState, editor: LexicalEditor) {
-  if (historyState.undoStack.length > 0) {
-    historyState.undoStack = [];
-    editor.dispatchCommand(CAN_UNDO_COMMAND, false);
-  }
-  if (historyState.redoStack.length > 0) {
-    historyState.redoStack = [];
-    editor.dispatchCommand(CAN_REDO_COMMAND, false);
-  }
+function clearHistory(historyState: HistoryState) {
+  historyState.undoStack = [];
+  historyState.redoStack = [];
   historyState.current = null;
-}
-
-function pushAndDispatch(
-  stack: Array<HistoryStateEntry>,
-  entry: HistoryStateEntry,
-  editor: LexicalEditor,
-  command: typeof REDO_COMMAND | typeof UNDO_COMMAND,
-) {
-  const wasEmpty = !stack.length;
-  stack.push(entry);
-  if (wasEmpty) {
-    editor.dispatchCommand(command, true);
-  }
 }
 
 export function registerHistory(
@@ -437,11 +421,11 @@ export function registerHistory(
       }
 
       if (current !== null) {
-        const historyEntry = {
+        undoStack.push({
           ...current,
           undoSelection: prevEditorState.read($getSelection),
-        };
-        pushAndDispatch(undoStack, historyEntry, editor, CAN_UNDO_COMMAND);
+        });
+        editor.dispatchCommand(CAN_UNDO_COMMAND, true);
       }
     } else if (mergeAction === DISCARD_HISTORY_CANDIDATE) {
       return;
@@ -474,7 +458,7 @@ export function registerHistory(
     editor.registerCommand(
       CLEAR_EDITOR_COMMAND,
       () => {
-        clearHistory(historyState, editor);
+        clearHistory(historyState);
         return false;
       },
       COMMAND_PRIORITY_EDITOR,
@@ -482,7 +466,7 @@ export function registerHistory(
     editor.registerCommand(
       CLEAR_HISTORY_COMMAND,
       () => {
-        clearHistory(historyState, editor);
+        clearHistory(historyState);
         return true;
       },
       COMMAND_PRIORITY_EDITOR,

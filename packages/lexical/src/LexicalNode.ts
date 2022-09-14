@@ -1,4 +1,3 @@
-/* eslint-disable no-constant-condition */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -7,13 +6,20 @@
  *
  */
 
+/* eslint-disable no-constant-condition */
 import type {EditorConfig, LexicalEditor} from './LexicalEditor';
 import type {RangeSelection} from './LexicalSelection';
+import type {Klass} from 'lexical';
 
 import invariant from 'shared/invariant';
-import {Class} from 'utility-types';
 
-import {$isElementNode, $isRootNode, $isTextNode, ElementNode} from '.';
+import {
+  $isDecoratorNode,
+  $isElementNode,
+  $isRootNode,
+  $isTextNode,
+  ElementNode,
+} from '.';
 import {
   $getSelection,
   $isRangeSelection,
@@ -29,6 +35,7 @@ import {
 import {
   $getCompositionKey,
   $getNodeByKey,
+  $maybeMoveChildrenSelectionToParent,
   $setCompositionKey,
   $setNodeKey,
   internalMarkNodeAsDirty,
@@ -54,7 +61,7 @@ export function removeNode(
   if (parent === null) {
     return;
   }
-  const selection = $getSelection();
+  const selection = $maybeMoveChildrenSelectionToParent(nodeToRemove);
   let selectionMoved = false;
   if ($isRangeSelection(selection) && restoreSelection) {
     const anchor = selection.anchor;
@@ -121,24 +128,25 @@ export function $getNodeByKeyOrThrow<N extends LexicalNode>(key: NodeKey): N {
   return node;
 }
 
-export type DOMConversion = {
-  conversion: DOMConversionFn;
+export type DOMConversion<T extends HTMLElement = HTMLElement> = {
+  conversion: DOMConversionFn<T>;
   priority: 0 | 1 | 2 | 3 | 4;
 };
 
-export type DOMConversionFn = (
-  element: Node,
+export type DOMConversionFn<T extends HTMLElement = HTMLElement> = (
+  element: T,
   parent?: Node,
-) => DOMConversionOutput;
+  preformatted?: boolean,
+) => DOMConversionOutput | null;
 
 export type DOMChildConversion = (
   lexicalNode: LexicalNode,
-  parentLexicalNode: LexicalNode | null,
-) => LexicalNode | null | void;
+  parentLexicalNode: LexicalNode | null | undefined,
+) => LexicalNode | null | undefined;
 
-export type DOMConversionMap = Record<
+export type DOMConversionMap<T extends HTMLElement = HTMLElement> = Record<
   NodeName,
-  (node: Node) => DOMConversion | null
+  (node: T) => DOMConversion<T> | null
 >;
 type NodeName = string;
 
@@ -146,6 +154,7 @@ export type DOMConversionOutput = {
   after?: (childLexicalNodes: Array<LexicalNode>) => Array<LexicalNode>;
   forChild?: DOMChildConversion;
   node: LexicalNode | null;
+  preformatted?: boolean;
 };
 
 export type DOMExportOutput = {
@@ -160,8 +169,12 @@ export type NodeKey = string;
 export class LexicalNode {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [x: string]: any;
+  /** @internal */
   __type: string;
-  __key: NodeKey;
+  /** @internal */
+  //@ts-ignore We set the key in the constructor.
+  __key: string;
+  /** @internal */
   __parent: null | NodeKey;
 
   // Flow doesn't support abstract classes unfortunately, so we can't _force_
@@ -209,12 +222,13 @@ export class LexicalNode {
   }
 
   isAttached(): boolean {
-    let nodeKey = this.__key;
+    let nodeKey: string | null = this.__key;
     while (nodeKey !== null) {
       if (nodeKey === 'root') {
         return true;
       }
-      const node = $getNodeByKey(nodeKey);
+
+      const node: LexicalNode | null = $getNodeByKey(nodeKey);
 
       if (node === null) {
         break;
@@ -280,10 +294,13 @@ export class LexicalNode {
   }
 
   getTopLevelElement(): ElementNode | this | null {
-    let node: ElementNode | this = this;
+    let node: ElementNode | this | null = this;
     while (node !== null) {
-      const parent = node.getParent();
-      if ($isRootNode(parent) && $isElementNode(node)) {
+      const parent: ElementNode | this | null = node.getParent();
+      if (
+        $isRootNode(parent) &&
+        ($isElementNode(node) || ($isDecoratorNode(node) && node.isTopLevel()))
+      ) {
         return node;
       }
       node = parent;
@@ -303,8 +320,8 @@ export class LexicalNode {
     return parent;
   }
 
-  getParents<T extends ElementNode>(): Array<T> {
-    const parents = [];
+  getParents(): Array<ElementNode> {
+    const parents: Array<ElementNode> = [];
     let node = this.getParent();
     while (node !== null) {
       parents.push(node);
@@ -377,10 +394,9 @@ export class LexicalNode {
   getCommonAncestor<T extends ElementNode = ElementNode>(
     node: LexicalNode,
   ): T | null {
-    const a = this.getParents<T>();
+    const a = this.getParents();
     const b = node.getParents();
     if ($isElementNode(this)) {
-      // @ts-expect-error
       a.unshift(this);
     }
     if ($isElementNode(node)) {
@@ -420,7 +436,7 @@ export class LexicalNode {
     let indexB = 0;
     let node: this | ElementNode | LexicalNode = this;
     while (true) {
-      const parent = node.getParentOrThrow();
+      const parent: ElementNode = node.getParentOrThrow();
       if (parent === commonAncestor) {
         indexA = parent.__children.indexOf(node.__key);
         break;
@@ -429,7 +445,7 @@ export class LexicalNode {
     }
     node = targetNode;
     while (true) {
-      const parent = node.getParentOrThrow();
+      const parent: ElementNode = node.getParentOrThrow();
       if (parent === commonAncestor) {
         indexB = parent.__children.indexOf(node.__key);
         break;
@@ -444,7 +460,7 @@ export class LexicalNode {
     if (key === targetNode.__key) {
       return false;
     }
-    let node = targetNode;
+    let node: ElementNode | LexicalNode | null = targetNode;
     while (node !== null) {
       if (node.__key === key) {
         return true;
@@ -492,7 +508,7 @@ export class LexicalNode {
         break;
       }
       let parentSibling = null;
-      let ancestor = parent;
+      let ancestor: ElementNode | null = parent;
       do {
         if (ancestor === null) {
           invariant(false, 'getNodesBetween: ancestor is null');
@@ -526,7 +542,7 @@ export class LexicalNode {
     if (latest === null) {
       invariant(
         false,
-        'Lexical node does not exist in active edtior state. Avoid using the same node references between nested closures from editor.read/editor.update.',
+        'Lexical node does not exist in active editor state. Avoid using the same node references between nested closures from editor.read/editor.update.',
       );
     }
     return latest;
@@ -617,7 +633,6 @@ export class LexicalNode {
   // Setters and mutators
 
   remove(preserveEmptyParent?: boolean): void {
-    errorOnReadOnly();
     removeNode(this, true, preserveEmptyParent);
   }
 
@@ -708,7 +723,6 @@ export class LexicalNode {
   }
 
   insertBefore(nodeToInsert: LexicalNode): LexicalNode {
-    errorOnReadOnly();
     const writableSelf = this.getWritable();
     const writableNodeToInsert = nodeToInsert.getWritable();
     removeFromParent(writableNodeToInsert);
@@ -772,14 +786,14 @@ export class LexicalNode {
 
 function errorOnTypeKlassMismatch(
   type: string,
-  klass: Class<LexicalNode>,
+  klass: Klass<LexicalNode>,
 ): void {
   const registeredNode = getActiveEditor()._nodes.get(type);
   // Common error - split in its own invariant
   if (registeredNode === undefined) {
     invariant(
       false,
-      'Create node: Attempted to create node %s that was not previously registered on the editor. You can use register your custom nodes.',
+      'Create node: Attempted to create node %s that was not configured to be used on the editor.',
       klass.name,
     );
   }

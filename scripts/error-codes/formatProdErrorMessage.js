@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+
 'use strict';
 
 // Do not require this module directly! Use normal `invariant` calls with
@@ -13,7 +14,7 @@
 
 function formatProdErrorMessage(code) {
   throw Error(
-    `Minified Lexical error #${code}; see codes.json for the full message or ` +
+    `Minified Lexical error #${code}; visit https://lexical.dev/docs/error?code=${code} for the full message or ` +
       'use the non-minified dev environment for full errors and additional ' +
       'helpful warnings.',
   );

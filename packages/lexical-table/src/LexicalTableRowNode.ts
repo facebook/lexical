@@ -10,10 +10,10 @@ import type {Spread} from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
 import {
+  DEPRECATED_GridRowNode,
   DOMConversionMap,
   DOMConversionOutput,
   EditorConfig,
-  GridRowNode,
   LexicalNode,
   NodeKey,
   SerializedElementNode,
@@ -28,8 +28,10 @@ export type SerializedTableRowNode = Spread<
   SerializedElementNode
 >;
 
-export class TableRowNode extends GridRowNode {
-  __height: number;
+/** @noInheritDoc */
+export class TableRowNode extends DEPRECATED_GridRowNode {
+  /** @internal */
+  __height?: number;
 
   static getType(): 'tablerow' {
     return 'tablerow';
@@ -77,13 +79,17 @@ export class TableRowNode extends GridRowNode {
     return element;
   }
 
-  setHeight(height: number): number {
+  isTopLevel(): boolean {
+    return true;
+  }
+
+  setHeight(height: number): number | null | undefined {
     const self = this.getWritable();
     self.__height = height;
     return this.__height;
   }
 
-  getHeight(): number {
+  getHeight(): number | null | undefined {
     return this.getLatest().__height;
   }
 

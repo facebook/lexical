@@ -1,3 +1,4 @@
+/** @module @lexical/headless */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -9,18 +10,18 @@
 import type {
   EditorState,
   EditorThemeClasses,
+  Klass,
   LexicalEditor,
   LexicalNode,
 } from 'lexical';
 
 import {createEditor} from 'lexical';
-import {Class} from 'utility-types';
 
 export function createHeadlessEditor(editorConfig?: {
   disableEvents?: boolean;
   editorState?: EditorState;
   namespace: string;
-  nodes?: ReadonlyArray<Class<LexicalNode>>;
+  nodes?: ReadonlyArray<Klass<LexicalNode>>;
   onError: (error: Error) => void;
   parentEditor?: LexicalEditor;
   readOnly?: boolean;
@@ -29,16 +30,18 @@ export function createHeadlessEditor(editorConfig?: {
   const editor = createEditor(editorConfig);
   editor._headless = true;
 
-  [
+  const unsupportedMethods = [
     'registerDecoratorListener',
     'registerRootListener',
-    'registerMutationListeners',
+    'registerMutationListener',
     'getRootElement',
     'setRootElement',
     'getElementByKey',
     'focus',
     'blur',
-  ].forEach((method) => {
+  ] as const;
+
+  unsupportedMethods.forEach((method: typeof unsupportedMethods[number]) => {
     editor[method] = () => {
       throw new Error(`${method} is not supported in headless mode`);
     };

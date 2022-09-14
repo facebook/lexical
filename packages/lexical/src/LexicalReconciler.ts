@@ -52,7 +52,7 @@ let activeEditorNodes: RegisteredNodes;
 let treatAllNodesAsDirty = false;
 let activeEditorStateReadOnly = false;
 let activeMutationListeners: MutationListeners;
-let activeTextDirection = null;
+let activeTextDirection: 'ltr' | 'rtl' | null = null;
 let activeDirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>;
 let activeDirtyLeaves: Set<NodeKey>;
 let activePrevNodeMap: NodeMap;
@@ -188,7 +188,7 @@ function createNode(
     const text = node.getTextContent();
 
     if ($isDecoratorNode(node)) {
-      const decorator = node.decorate(activeEditor);
+      const decorator = node.decorate(activeEditor, activeEditorConfig);
 
       if (decorator !== null) {
         reconcileDecorator(key, decorator);
@@ -278,7 +278,7 @@ function isLastChildLineBreakOrDecorator(
   return $isLineBreakNode(node) || $isDecoratorNode(node);
 }
 
-// If we end an element with a LinkBreakNode, then we need to add an additonal <br>
+// If we end an element with a LinkBreakNode, then we need to add an additional <br>
 function reconcileElementTerminatingLineBreak(
   prevChildren: null | Array<NodeKey>,
   nextChildren: Array<NodeKey>,
@@ -341,11 +341,10 @@ function reconcileBlockDirection(element: ElementNode, dom: HTMLElement): void {
       if (previousDirectionTheme !== undefined) {
         if (typeof previousDirectionTheme === 'string') {
           const classNamesArr = previousDirectionTheme.split(' ');
-          // @ts-expect-error: intentional
           previousDirectionTheme = theme[previousDirection] = classNamesArr;
         }
 
-        // @ts-expect-error: intentional
+        // @ts-ignore: intentional
         classList.remove(...previousDirectionTheme);
       }
 
@@ -364,7 +363,9 @@ function reconcileBlockDirection(element: ElementNode, dom: HTMLElement): void {
             nextDirectionTheme = theme[direction] = classNamesArr;
           }
 
-          classList.add(...nextDirectionTheme);
+          if (nextDirectionTheme !== undefined) {
+            classList.add(...nextDirectionTheme);
+          }
         }
 
         // Update direction
@@ -569,14 +570,11 @@ function reconcileNode(
     const text = nextNode.getTextContent();
 
     if ($isDecoratorNode(nextNode)) {
-      const decorator = nextNode.decorate(activeEditor);
+      const decorator = nextNode.decorate(activeEditor, activeEditorConfig);
 
       if (decorator !== null) {
         reconcileDecorator(key, decorator);
       }
-
-      subTreeTextContent += text;
-      editorTextContent += text;
     } else if ($isTextNode(nextNode) && !nextNode.isDirectionless()) {
       // Handle text content, for LTR, LTR cases.
       subTreeDirectionedTextContent += text;
@@ -637,8 +635,8 @@ function reconcileNodeChildren(
 ): void {
   const prevEndIndex = prevChildrenLength - 1;
   const nextEndIndex = nextChildrenLength - 1;
-  let prevChildrenSet: Set<NodeKey>;
-  let nextChildrenSet: Set<NodeKey>;
+  let prevChildrenSet: Set<NodeKey> | undefined;
+  let nextChildrenSet: Set<NodeKey> | undefined;
   let siblingDOM: null | Node = getFirstChild(dom);
   let prevIndex = 0;
   let nextIndex = 0;
@@ -741,14 +739,23 @@ export function reconcileRoot(
   // so instead we make it seem that these values are always set.
   // We also want to make sure we clear them down, otherwise we
   // can leak memory.
+  // @ts-ignore
   activeEditor = undefined;
+  // @ts-ignore
   activeEditorNodes = undefined;
+  // @ts-ignore
   activeDirtyElements = undefined;
+  // @ts-ignore
   activeDirtyLeaves = undefined;
+  // @ts-ignore
   activePrevNodeMap = undefined;
+  // @ts-ignore
   activeNextNodeMap = undefined;
+  // @ts-ignore
   activeEditorConfig = undefined;
+  // @ts-ignore
   activePrevKeyToDOMMap = undefined;
+  // @ts-ignore
   mutatedNodes = undefined;
 
   return currentMutatedNodes;
@@ -760,6 +767,7 @@ export function storeDOMWithKey(
   editor: LexicalEditor,
 ): void {
   const keyToDOMMap = editor._keyToDOMMap;
+  // @ts-ignore We intentionally add this to the Node.
   dom['__lexicalKey_' + editor._key] = key;
   keyToDOMMap.set(key, dom);
 }
@@ -770,7 +778,8 @@ function getPrevElementByKeyOrThrow(key: NodeKey): HTMLElement {
   if (element === undefined) {
     invariant(
       false,
-      'Reconciliation: could not find DOM element for node key "${key}"',
+      'Reconciliation: could not find DOM element for node key %s',
+      key,
     );
   }
 

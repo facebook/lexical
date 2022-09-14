@@ -22,6 +22,7 @@ import {
   $isTextNode,
   $setSelection,
 } from 'lexical';
+import invariant from 'shared/invariant';
 import {WebsocketProvider} from 'y-websocket';
 import {Text as YText, YEvent, YMapEvent, YTextEvent, YXmlEvent} from 'yjs';
 
@@ -79,7 +80,7 @@ function syncEvent(binding: Binding, event: any): void {
       collabNode.syncPropertiesFromYjs(binding, attributesChanged);
     }
   } else {
-    throw new Error('Should never happen');
+    invariant(false, 'Expected text, element, or decorator event');
   }
 }
 
@@ -92,7 +93,7 @@ export function syncYjsChangesToLexical(
   const currentEditorState = editor._editorState;
   editor.update(
     () => {
-      const pendingEditorState: EditorState = editor._pendingEditorState;
+      const pendingEditorState: EditorState | null = editor._pendingEditorState;
 
       for (let i = 0; i < events.length; i++) {
         const event = events[i];
@@ -173,7 +174,7 @@ function handleNormalizationMergeConflicts(
   binding: Binding,
   normalizedNodes: Set<NodeKey>,
 ): void {
-  // We handle the merge opperations here
+  // We handle the merge operations here
   const normalizedNodesKeys = Array.from(normalizedNodes);
   const collabNodeMap = binding.collabNodeMap;
   const mergedNodes = [];
@@ -210,7 +211,9 @@ function handleNormalizationMergeConflicts(
 
   for (let i = 0; i < mergedNodes.length; i++) {
     const [collabNode, text] = mergedNodes[i];
-    collabNode._text = text;
+    if (collabNode instanceof CollabTextNode && typeof text === 'string') {
+      collabNode._text = text;
+    }
   }
 }
 
@@ -228,7 +231,7 @@ export function syncLexicalUpdateToYjs(
     currEditorState.read(() => {
       // We check if the update has come from a origin where the origin
       // was the collaboration binding previously. This can help us
-      // prevent unecessarily re-diffing and possible re-applying
+      // prevent unnecessarily re-diffing and possible re-applying
       // the same change editor state again. For example, if a user
       // types a character and we get it, we don't want to then insert
       // the same character again. The exception to this heuristic is

@@ -170,7 +170,7 @@ function $normalizeAllDirtyTextNodes(
  * 2. We transform elements. If element transforms generate additional dirty nodes we repeat step 1.
  * If element transforms only generate additional dirty elements we only repeat step 2.
  *
- * Note that to keep track of newly dirty nodes and subtress we leverage the editor._dirtyNodes and
+ * Note that to keep track of newly dirty nodes and subtrees we leverage the editor._dirtyNodes and
  * editor._subtrees which we reset in every loop.
  */
 function $applyAllTransforms(
@@ -273,7 +273,6 @@ type InternalSerializedNode = {
 export function $parseSerializedNode(
   serializedNode: SerializedLexicalNode,
 ): LexicalNode {
-  // $FlowFixMe: intentional cast to our internal type
   const internalSerializedNode: InternalSerializedNode = serializedNode;
   return $parseSerializedNodeImpl(
     internalSerializedNode,
@@ -296,7 +295,6 @@ function $parseSerializedNodeImpl<
 
   const nodeClass = registeredNode.klass;
 
-  // @ts-expect-error TODO Replace Class utility type with InstanceType
   if (serializedNode.type !== nodeClass.getType()) {
     invariant(
       false,
@@ -305,7 +303,6 @@ function $parseSerializedNodeImpl<
     );
   }
 
-  // @ts-expect-error TODO Replace Class utility type with InstanceType
   const node = nodeClass.importJSON(serializedNode);
   const children = serializedNode.children;
 
@@ -426,7 +423,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   }
 
   // ======
-  // Reconcilation has started.
+  // Reconciliation has started.
   // ======
 
   const currentEditorState = editor._editorState;
@@ -446,7 +443,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
     activeEditor = editor;
     activeEditorState = pendingEditorState;
     isReadOnlyMode = false;
-    // We don't want updates to sync block the reconcilation.
+    // We don't want updates to sync block the reconciliation.
     editor._updating = true;
     try {
       const dirtyType = editor._dirtyType;
@@ -464,7 +461,9 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
       );
     } catch (error) {
       // Report errors
-      editor._onError(error);
+      if (error instanceof Error) {
+        editor._onError(error);
+      }
 
       // Reset editor and restore incoming editor state to the DOM
       if (!isAttemptingToRecoverFromReconcilerError) {
@@ -481,7 +480,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
 
       return;
     } finally {
-      observer.observe(rootElement, {
+      observer.observe(rootElement as Node, {
         characterData: true,
         childList: true,
         subtree: true,
@@ -493,22 +492,22 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
     }
   }
 
-  pendingEditorState._readOnly = true;
-
-  if (__DEV__) {
-    handleDEVOnlyPendingUpdateGuarantees(pendingEditorState);
-    if ($isRangeSelection(pendingSelection)) {
-      Object.freeze(pendingSelection.anchor);
-      Object.freeze(pendingSelection.focus);
+  if (!pendingEditorState._readOnly) {
+    pendingEditorState._readOnly = true;
+    if (__DEV__) {
+      handleDEVOnlyPendingUpdateGuarantees(pendingEditorState);
+      if ($isRangeSelection(pendingSelection)) {
+        Object.freeze(pendingSelection.anchor);
+        Object.freeze(pendingSelection.focus);
+      }
+      Object.freeze(pendingSelection);
     }
-    Object.freeze(pendingSelection);
   }
 
   const dirtyLeaves = editor._dirtyLeaves;
   const dirtyElements = editor._dirtyElements;
   const normalizedNodes = editor._normalizedNodes;
   const tags = editor._updateTags;
-  const pendingDecorators = editor._pendingDecorators;
   const deferred = editor._deferred;
 
   if (needsUpdate) {
@@ -522,7 +521,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   $garbageCollectDetachedDecorators(editor, pendingEditorState);
 
   // ======
-  // Reconcilation has finished. Now update selection and trigger listeners.
+  // Reconciliation has finished. Now update selection and trigger listeners.
   // ======
 
   const domSelection = headless ? null : getDOMSelection();
@@ -530,7 +529,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   // Attempt to update the DOM selection, including focusing of the root element,
   // and scroll into view if needed.
   if (
-    !editor._readOnly &&
+    editor._editable &&
     // domSelection will be null in headless
     domSelection !== null &&
     (needsUpdate || pendingSelection === null || pendingSelection.dirty)
@@ -544,7 +543,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
         editor,
         domSelection,
         tags,
-        rootElement,
+        rootElement as HTMLElement,
       );
     } finally {
       activeEditor = previousActiveEditor;
@@ -558,9 +557,15 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
       currentEditorState,
       pendingEditorState,
       mutatedNodes,
+      tags,
+      dirtyLeaves,
     );
   }
 
+  /**
+   * Capture pendingDecorators after garbage collecting detached decorators
+   */
+  const pendingDecorators = editor._pendingDecorators;
   if (pendingDecorators !== null) {
     editor._decorators = pendingDecorators;
     editor._pendingDecorators = null;
@@ -598,21 +603,26 @@ function triggerMutationListeners(
   currentEditorState: EditorState,
   pendingEditorState: EditorState,
   mutatedNodes: MutatedNodes,
+  updateTags: Set<string>,
+  dirtyLeaves: Set<string>,
 ): void {
-  const listeners = editor._listeners.mutation;
-  listeners.forEach((klass, listener) => {
+  const listeners = Array.from(editor._listeners.mutation);
+  const listenersLength = listeners.length;
+
+  for (let i = 0; i < listenersLength; i++) {
+    const [listener, klass] = listeners[i];
     const mutatedNodesByType = mutatedNodes.get(klass);
-
-    if (mutatedNodesByType === undefined) {
-      return;
+    if (mutatedNodesByType !== undefined) {
+      listener(mutatedNodesByType, {
+        dirtyLeaves,
+        updateTags,
+      });
     }
-
-    listener(mutatedNodesByType);
-  });
+  }
 }
 
 export function triggerListeners(
-  type: 'update' | 'root' | 'decorator' | 'textcontent' | 'readonly',
+  type: 'update' | 'root' | 'decorator' | 'textcontent' | 'editable',
   editor: LexicalEditor,
   isCurrentlyEnqueuingUpdates: boolean,
   ...payload: unknown[]
@@ -623,6 +633,7 @@ export function triggerListeners(
   try {
     const listeners = Array.from<Listener>(editor._listeners[type]);
     for (let i = 0; i < listeners.length; i++) {
+      // @ts-ignore
       listeners[i].apply(null, payload);
     }
   } finally {
@@ -652,11 +663,14 @@ export function triggerCommandListeners<P>(
       const listenerInPriorityOrder = commandListeners.get(type);
 
       if (listenerInPriorityOrder !== undefined) {
-        const listeners = listenerInPriorityOrder[i];
+        const listenersSet = listenerInPriorityOrder[i];
 
-        if (listeners !== undefined) {
-          for (const listener of listeners) {
-            if (listener(payload, editor) === true) {
+        if (listenersSet !== undefined) {
+          const listeners = Array.from(listenersSet);
+          const listenersLength = listeners.length;
+
+          for (let j = 0; j < listenersLength; j++) {
+            if (listeners[j](payload, editor) === true) {
               return true;
             }
           }
@@ -672,8 +686,11 @@ function triggerEnqueuedUpdates(editor: LexicalEditor): void {
   const queuedUpdates = editor._updates;
 
   if (queuedUpdates.length !== 0) {
-    const [updateFn, options] = queuedUpdates.shift();
-    beginUpdate(editor, updateFn, options);
+    const queuedUpdate = queuedUpdates.shift();
+    if (queuedUpdate) {
+      const [updateFn, options] = queuedUpdate;
+      beginUpdate(editor, updateFn, options);
+    }
   }
 }
 
@@ -708,28 +725,32 @@ function processNestedUpdates(
   // to handle each update as we go until the updates array is
   // empty.
   while (queuedUpdates.length !== 0) {
-    const [nextUpdateFn, options] = queuedUpdates.shift();
-    let onUpdate;
-    let tag;
+    const queuedUpdate = queuedUpdates.shift();
+    if (queuedUpdate) {
+      const [nextUpdateFn, options] = queuedUpdate;
 
-    if (options !== undefined) {
-      onUpdate = options.onUpdate;
-      tag = options.tag;
+      let onUpdate;
+      let tag;
 
-      if (options.skipTransforms) {
-        skipTransforms = true;
+      if (options !== undefined) {
+        onUpdate = options.onUpdate;
+        tag = options.tag;
+
+        if (options.skipTransforms) {
+          skipTransforms = true;
+        }
+
+        if (onUpdate) {
+          editor._deferred.push(onUpdate);
+        }
+
+        if (tag) {
+          editor._updateTags.add(tag);
+        }
       }
 
-      if (onUpdate) {
-        editor._deferred.push(onUpdate);
-      }
-
-      if (tag) {
-        editor._updateTags.add(tag);
-      }
+      nextUpdateFn();
     }
-
-    nextUpdateFn();
   }
 
   return skipTransforms;
@@ -753,7 +774,7 @@ function beginUpdate(
       updateTags.add(tag);
     }
 
-    skipTransforms = options.skipTransforms;
+    skipTransforms = options.skipTransforms || false;
   }
 
   if (onUpdate) {
@@ -764,7 +785,7 @@ function beginUpdate(
   let pendingEditorState = editor._pendingEditorState;
   let editorStateWasCloned = false;
 
-  if (pendingEditorState === null) {
+  if (pendingEditorState === null || pendingEditorState._readOnly) {
     pendingEditorState = editor._pendingEditorState =
       cloneEditorState(currentEditorState);
     editorStateWasCloned = true;
@@ -836,7 +857,9 @@ function beginUpdate(
     }
   } catch (error) {
     // Report errors
-    editor._onError(error);
+    if (error instanceof Error) {
+      editor._onError(error);
+    }
 
     // Restore existing editor state to the DOM
     editor._pendingEditorState = currentEditorState;

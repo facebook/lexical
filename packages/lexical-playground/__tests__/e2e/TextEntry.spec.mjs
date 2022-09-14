@@ -21,7 +21,6 @@ import {
   initialize,
   keyDownCtrlOrAlt,
   keyUpCtrlOrAlt,
-  repeat,
   test,
 } from '../utils/index.mjs';
 
@@ -119,6 +118,7 @@ test.describe('TextEntry', () => {
           <strong data-lexical-text="true">world</strong>
         </p>
       `,
+      undefined,
       {ignoreClasses: true},
     );
     await assertSelection(page, {
@@ -312,7 +312,7 @@ test.describe('TextEntry', () => {
       `,
     );
 
-    await repeat(7, async () => await page.keyboard.down('ArrowLeft'));
+    await moveLeft(page, 7);
 
     await assertSelection(page, {
       anchorOffset: 6,

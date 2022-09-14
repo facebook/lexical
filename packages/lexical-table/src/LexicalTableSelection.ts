@@ -14,7 +14,6 @@ import type {
 } from 'lexical';
 
 import {
-  $createGridSelection,
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
@@ -22,8 +21,9 @@ import {
   $getNodeByKey,
   $getSelection,
   $isElementNode,
-  $isGridSelection,
   $setSelection,
+  DEPRECATED_$createGridSelection,
+  DEPRECATED_$isGridSelection,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import {CAN_USE_DOM} from 'shared/canUseDOM';
@@ -81,7 +81,6 @@ export class TableSelection {
   currentX: number;
   currentY: number;
   listenersToRemove: Set<() => void>;
-  domListeners: Set<() => void>;
   grid: Grid;
   isHighlightingCells: boolean;
   startX: number;
@@ -244,7 +243,9 @@ export class TableSelection {
 
       if (anchorElement && focusElement) {
         const domSelection = getDOMSelection();
-        domSelection.setBaseAndExtent(anchorElement, 0, focusElement, 0);
+        if (domSelection) {
+          domSelection.setBaseAndExtent(anchorElement, 0, focusElement, 0);
+        }
       }
 
       $updateDOMForSelection(this.grid, this.gridSelection);
@@ -274,7 +275,9 @@ export class TableSelection {
 
       if (this.anchorCell !== null) {
         // Collapse the selection
-        domSelection.setBaseAndExtent(this.anchorCell.elem, 0, cell.elem, 0);
+        if (domSelection) {
+          domSelection.setBaseAndExtent(this.anchorCell.elem, 0, cell.elem, 0);
+        }
       }
 
       if (
@@ -300,7 +303,7 @@ export class TableSelection {
         ) {
           const focusNodeKey = focusTableCellNode.getKey();
 
-          this.gridSelection = $createGridSelection();
+          this.gridSelection = DEPRECATED_$createGridSelection();
 
           this.focusCellNodeKey = focusNodeKey;
           this.gridSelection.set(
@@ -325,12 +328,14 @@ export class TableSelection {
       this.startX = cell.x;
       this.startY = cell.y;
       const domSelection = getDOMSelection();
-      domSelection.setBaseAndExtent(cell.elem, 0, cell.elem, 0);
+      if (domSelection) {
+        domSelection.setBaseAndExtent(cell.elem, 0, cell.elem, 0);
+      }
       const anchorTableCellNode = $getNearestNodeFromDOMNode(cell.elem);
 
       if ($isTableCellNode(anchorTableCellNode)) {
         const anchorNodeKey = anchorTableCellNode.getKey();
-        this.gridSelection = $createGridSelection();
+        this.gridSelection = DEPRECATED_$createGridSelection();
         this.anchorCellNodeKey = anchorNodeKey;
       }
     });
@@ -340,7 +345,7 @@ export class TableSelection {
     this.editor.update(() => {
       const selection = $getSelection();
 
-      if (!$isGridSelection(selection)) {
+      if (!DEPRECATED_$isGridSelection(selection)) {
         invariant(false, 'Expected grid selection');
       }
 
@@ -373,7 +378,7 @@ export class TableSelection {
 
       const selection = $getSelection();
 
-      if (!$isGridSelection(selection)) {
+      if (!DEPRECATED_$isGridSelection(selection)) {
         invariant(false, 'Expected grid selection');
       }
 

@@ -9,10 +9,15 @@
 import {InitialEditorStateType} from '@lexical/plain-text';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import * as React from 'react';
+import warnOnlyOnce from 'shared/warnOnlyOnce';
 
 import {useCanShowPlaceholder} from './shared/useCanShowPlaceholder';
 import {useDecorators} from './shared/useDecorators';
 import {usePlainTextSetup} from './shared/usePlainTextSetup';
+
+const deprecatedInitialEditorStateWarning = warnOnlyOnce(
+  '`initialEditorState` on `PlainTextPlugin` is deprecated and will be removed soon. Use the `initialConfig.editorState` prop on the `LexicalComposer` instead.',
+);
 
 export function PlainTextPlugin({
   contentEditable,
@@ -20,14 +25,21 @@ export function PlainTextPlugin({
   initialEditorState,
 }: {
   contentEditable: JSX.Element;
+  // TODO Remove in 0.4
   initialEditorState?: InitialEditorStateType;
   placeholder: JSX.Element | string;
 }): JSX.Element {
+  if (
+    __DEV__ &&
+    deprecatedInitialEditorStateWarning &&
+    initialEditorState !== undefined
+  ) {
+    deprecatedInitialEditorStateWarning();
+  }
   const [editor] = useLexicalComposerContext();
-
   const showPlaceholder = useCanShowPlaceholder(editor);
-  usePlainTextSetup(editor, initialEditorState);
   const decorators = useDecorators(editor);
+  usePlainTextSetup(editor, initialEditorState);
 
   return (
     <>

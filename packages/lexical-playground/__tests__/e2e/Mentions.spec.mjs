@@ -8,6 +8,7 @@
 
 import {
   deleteNextWord,
+  moveLeft,
   moveToEditorBeginning,
 } from '../keyboardShortcuts/index.mjs';
 import {
@@ -17,7 +18,6 @@ import {
   html,
   initialize,
   IS_WINDOWS,
-  repeat,
   test,
   waitForSelector,
 } from '../utils/index.mjs';
@@ -35,7 +35,7 @@ test.describe('Mentions', () => {
       focusPath: [0, 0, 0],
     });
 
-    await waitForSelector(page, '#mentions-typeahead ul li');
+    await waitForSelector(page, '#typeahead-menu ul li');
     await assertHTML(
       page,
       html`
@@ -107,7 +107,7 @@ test.describe('Mentions', () => {
       focusPath: [0, 0, 0],
     });
 
-    await waitForSelector(page, '#mentions-typeahead ul li');
+    await waitForSelector(page, '#typeahead-menu ul li');
     await assertHTML(
       page,
       html`
@@ -198,7 +198,7 @@ test.describe('Mentions', () => {
       focusPath: [0, 0, 0],
     });
 
-    await waitForSelector(page, '#mentions-typeahead ul li');
+    await waitForSelector(page, '#typeahead-menu ul li');
     await assertHTML(
       page,
       html`
@@ -233,9 +233,7 @@ test.describe('Mentions', () => {
 
     await waitForSelector(page, '.mention');
 
-    await repeat(10, async () => {
-      await page.keyboard.press('ArrowLeft');
-    });
+    await moveLeft(page, 10);
 
     await assertSelection(page, {
       anchorOffset: 4,
@@ -272,7 +270,7 @@ test.describe('Mentions', () => {
       focusPath: [0, 0, 0],
     });
 
-    await waitForSelector(page, '#mentions-typeahead ul li');
+    await waitForSelector(page, '#typeahead-menu ul li');
     await assertHTML(
       page,
       html`
@@ -307,9 +305,7 @@ test.describe('Mentions', () => {
 
     await waitForSelector(page, '.mention');
 
-    await repeat(10, async () => {
-      await page.keyboard.press('ArrowLeft');
-    });
+    await moveLeft(page, 10);
 
     await assertSelection(page, {
       anchorOffset: 4,
@@ -346,7 +342,7 @@ test.describe('Mentions', () => {
       focusPath: [0, 0, 0],
     });
 
-    await waitForSelector(page, '#mentions-typeahead ul li');
+    await waitForSelector(page, '#typeahead-menu ul li');
     await assertHTML(
       page,
       html`
@@ -441,7 +437,7 @@ test.describe('Mentions', () => {
 
     await page.keyboard.type('Luke');
 
-    await waitForSelector(page, '#mentions-typeahead ul li');
+    await waitForSelector(page, '#typeahead-menu ul li');
     await assertHTML(
       page,
       html`
@@ -517,7 +513,7 @@ test.describe('Mentions', () => {
       focusPath: [0, 0, 0],
     });
 
-    await waitForSelector(page, '#mentions-typeahead ul li');
+    await waitForSelector(page, '#typeahead-menu ul li');
     await page.keyboard.press('Enter');
 
     await waitForSelector(page, '.mention');
@@ -526,7 +522,7 @@ test.describe('Mentions', () => {
 
     await page.keyboard.type('Luke');
 
-    await waitForSelector(page, '#mentions-typeahead ul li');
+    await waitForSelector(page, '#typeahead-menu ul li');
     await page.keyboard.press('Enter');
 
     await waitForSelector(page, '.mention:nth-child(1)');
@@ -535,7 +531,7 @@ test.describe('Mentions', () => {
 
     await page.keyboard.type('Luke');
 
-    await waitForSelector(page, '#mentions-typeahead ul li');
+    await waitForSelector(page, '#typeahead-menu ul li');
     await page.keyboard.press('Enter');
 
     await waitForSelector(page, '.mention:nth-child(3)');
@@ -544,7 +540,7 @@ test.describe('Mentions', () => {
 
     await page.keyboard.type('Luke');
 
-    await waitForSelector(page, '#mentions-typeahead ul li');
+    await waitForSelector(page, '#typeahead-menu ul li');
     await page.keyboard.press('Enter');
 
     await waitForSelector(page, '.mention:nth-child(5)');
@@ -826,7 +822,7 @@ test.describe('Mentions', () => {
       focusPath: [0, 0, 0],
     });
 
-    await waitForSelector(page, '#mentions-typeahead ul li');
+    await waitForSelector(page, '#typeahead-menu ul li');
     await page.keyboard.press('Enter');
 
     await waitForSelector(page, '.mention');
@@ -856,9 +852,7 @@ test.describe('Mentions', () => {
       focusPath: [0, 1, 0],
     });
 
-    await repeat(4, async () => {
-      await page.keyboard.press('ArrowLeft');
-    });
+    await moveLeft(page, 4);
 
     await assertSelection(page, {
       anchorOffset: 4,
@@ -868,9 +862,7 @@ test.describe('Mentions', () => {
     });
 
     await page.keyboard.down('Shift');
-    await repeat(18, async () => {
-      await page.keyboard.press('ArrowLeft');
-    });
+    await moveLeft(page, 18);
     await page.keyboard.up('Shift');
 
     await assertSelection(page, {

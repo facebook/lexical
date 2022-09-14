@@ -8,7 +8,7 @@
 
 import type {Binding} from '@lexical/yjs';
 import type {LexicalEditor} from 'lexical';
-import type {Doc} from 'yjs';
+import type {Doc, Transaction, YEvent} from 'yjs';
 
 import {mergeRegister} from '@lexical/utils';
 import {
@@ -92,7 +92,12 @@ export function useYjsCollaboration(
       syncCursorPositions(binding, provider);
     };
 
-    const onYjsTreeChanges = (events, transaction) => {
+    const onYjsTreeChanges = (
+      // The below `any` type is taken directly from the vendor types for YJS.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      events: Array<YEvent<any>>,
+      transaction: Transaction,
+    ) => {
       if (transaction.origin !== binding) {
         syncYjsChangesToLexical(binding, provider, events);
       }
@@ -105,7 +110,7 @@ export function useYjsCollaboration(
       document.activeElement === editor.getRootElement(),
     );
 
-    const onProviderDocReload = (ydoc) => {
+    const onProviderDocReload = (ydoc: Doc) => {
       clearEditorSkipCollab(editor, binding);
       setDoc(ydoc);
       docMap.set(id, ydoc);
@@ -116,6 +121,7 @@ export function useYjsCollaboration(
     provider.on('status', onStatus);
     provider.on('sync', onSync);
     awareness.on('update', onAwarenessUpdate);
+    // This updates the local editor state when we recieve updates from other clients
     root.getSharedType().observeDeep(onYjsTreeChanges);
     const removeListener = editor.registerUpdateListener(
       ({
@@ -152,6 +158,7 @@ export function useYjsCollaboration(
       provider.off('reload', onProviderDocReload);
       awareness.off('update', onAwarenessUpdate);
       root.getSharedType().unobserveDeep(onYjsTreeChanges);
+      docMap.delete(id);
       removeListener();
     };
   }, [
@@ -167,7 +174,7 @@ export function useYjsCollaboration(
     shouldBootstrap,
   ]);
   const cursorsContainer = useMemo(() => {
-    const ref = (element) => {
+    const ref = (element: null | HTMLElement) => {
       binding.cursorsContainer = element;
     };
 

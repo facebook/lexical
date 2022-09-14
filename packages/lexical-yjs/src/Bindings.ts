@@ -14,6 +14,7 @@ import type {Cursor} from './SyncCursors';
 import type {LexicalEditor, NodeKey} from 'lexical';
 import type {Doc} from 'yjs';
 
+import invariant from 'shared/invariant';
 import {WebsocketProvider} from 'y-websocket';
 import {XmlText} from 'yjs';
 
@@ -46,10 +47,10 @@ export function createBinding(
   doc: Doc | null | undefined,
   docMap: Map<string, Doc>,
 ): Binding {
-  if (doc === undefined || doc === null) {
-    throw new Error('Should never happen');
-  }
-
+  invariant(
+    doc !== undefined && doc !== null,
+    'createBinding: doc is null or undefined',
+  );
   const rootXmlText = doc.get('root', XmlText) as XmlText;
   const root: CollabElementNode = $createCollabElementNode(
     rootXmlText,

@@ -4,12 +4,12 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
  */
 
 import {
   moveToEditorBeginning,
   moveToLineBeginning,
+  pressBackspace,
 } from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
@@ -106,7 +106,7 @@ function testSuite(charset) {
       `,
     );
 
-    await repeat(3, async () => await page.keyboard.press('Backspace'));
+    await pressBackspace(page, 3);
     await assertHTML(
       page,
       html`
@@ -161,7 +161,7 @@ function testSuite(charset) {
       );
     }
 
-    await repeat(3, async () => await page.keyboard.press('Backspace'));
+    await pressBackspace(page, 3);
     await assertHTML(
       page,
       html`
@@ -309,7 +309,7 @@ function testSuite(charset) {
       '<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem"><span data-lexical-text="true">1234</span></li><li value="2" class="PlaygroundEditorTheme__listItem"><span data-lexical-text="true">5</span><span class="PlaygroundEditorTheme__characterLimit"><span data-lexical-text="true">6</span></span></li><li value="3" class="PlaygroundEditorTheme__listItem"><span class="PlaygroundEditorTheme__characterLimit"><span data-lexical-text="true">7</span></span></li></ul>',
     );
 
-    await repeat(3, async () => await page.keyboard.press('Backspace'));
+    await pressBackspace(page, 3);
     await assertHTML(
       page,
       '<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem"><span data-lexical-text="true">1234</span></li><li value="2" class="PlaygroundEditorTheme__listItem"><span data-lexical-text="true">5</span></li></ul>',

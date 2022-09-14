@@ -3,6 +3,7 @@
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
+ *
  */
 
 'use strict';
@@ -73,7 +74,7 @@ glob('packages/**/flow/*.flow', options, function (error1, files) {
           /from '@lexical\/react\/DEPRECATED_useLexicalHistory'/g,
           "from 'DEPRECATED_useLexicalHistory'",
         )
-        .replace(/from '@lexical\/react\/'/g, "from 'Lexical")
+        .replace(/from '@lexical\/react\/Lexical/g, "from 'Lexical")
         .replace(/from '@lexical\/utils\/'/g, "from 'LexicalUtils")
         .replace(/from '@lexical\/clipboard\'/g, "from 'LexicalClipboard'")
         .replace(/from '@lexical\/code\'/g, "from 'LexicalCode'")
@@ -87,8 +88,8 @@ glob('packages/**/flow/*.flow', options, function (error1, files) {
         .replace(/from '@lexical\/headless\'/g, "from 'LexicalHeadless'")
         .replace(/from '@lexical\/offset\'/g, "from 'LexicalOffset'")
         .replace(/from '@lexical\/overflow\'/g, "from 'LexicalOverflow'")
-        .replace(/from '@lexical\/plain\'/g, "from': 'LexicalPlainText'")
-        .replace(/from '@lexical\/rich\'/g, "from': 'LexicalRichText'")
+        .replace(/from '@lexical\/plain-text\'/g, "from 'LexicalPlainText'")
+        .replace(/from '@lexical\/rich-text\'/g, "from 'LexicalRichText'")
         .replace(/from '@lexical\/selection\'/g, "from 'LexicalSelection'")
         .replace(/from '@lexical\/table\'/g, "from 'LexicalTable'")
         .replace(/from '@lexical\/text\'/g, "from 'LexicalText'")

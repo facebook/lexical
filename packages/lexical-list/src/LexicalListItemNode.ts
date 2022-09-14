@@ -44,16 +44,20 @@ import {
 
 export type SerializedListItemNode = Spread<
   {
-    checked: boolean;
+    checked: boolean | undefined;
     type: 'listitem';
     value: number;
     version: 1;
   },
   SerializedElementNode
 >;
+
+/** @noInheritDoc */
 export class ListItemNode extends ElementNode {
+  /** @internal */
   __value: number;
-  __checked: boolean;
+  /** @internal */
+  __checked?: boolean;
 
   static getType(): string {
     return 'listitem';
@@ -125,6 +129,7 @@ export class ListItemNode extends ElementNode {
       checked: this.getChecked(),
       type: 'listitem',
       value: this.getValue(),
+      version: 1,
     };
   }
 
@@ -306,13 +311,13 @@ export class ListItemNode extends ElementNode {
     self.__value = value;
   }
 
-  getChecked(): boolean {
+  getChecked(): boolean | undefined {
     const self = this.getLatest();
 
     return self.__checked;
   }
 
-  setChecked(checked: boolean): void {
+  setChecked(checked?: boolean): void {
     const self = this.getWritable();
     self.__checked = checked;
   }
@@ -364,7 +369,7 @@ export class ListItemNode extends ElementNode {
       const parent = this.getParentOrThrow();
 
       if ($isListNode(parent)) {
-        const siblings = this.getNextSiblings();
+        const siblings = this.getNextSiblings<ListItemNode>();
         updateChildrenListItemValue(parent, siblings);
       }
     }

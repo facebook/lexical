@@ -6,7 +6,6 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- * @flow strict
  */
 
 'use strict';
@@ -36,8 +35,10 @@ const DEFAULT_PKGS = [
   'lexical-markdown',
   'lexical-mark',
 ];
+const SHARED_PKG = 'shared';
 
 module.exports = {
   DEFAULT_PKGS,
   LEXICAL_PKG,
+  SHARED_PKG,
 };

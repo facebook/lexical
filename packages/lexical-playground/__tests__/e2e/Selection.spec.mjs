@@ -7,13 +7,26 @@
  */
 
 import {
+  moveToLineBeginning,
+  moveToPrevWord,
+  pressShiftEnter,
+} from '../keyboardShortcuts/index.mjs';
+import {
+  assertHTML,
+  assertSelection,
   click,
   evaluate,
   expect,
   focusEditor,
+  html,
   initialize,
   insertImageCaption,
   insertSampleImage,
+  IS_MAC,
+  keyDownCtrlOrMeta,
+  keyUpCtrlOrMeta,
+  pasteFromClipboard,
+  selectFromFormatDropdown,
   sleep,
   test,
 } from '../utils/index.mjs';
@@ -93,5 +106,119 @@ test.describe('Selection', () => {
     await focusEditor(page, '.image-caption-container');
     expect(await hasSelection('.image-caption-container')).toBe(true);
     expect(await hasSelection('.editor-shell')).toBe(false);
+  });
+
+  test('can wrap post-linebreak nodes into new element', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type('Line1');
+    await pressShiftEnter(page);
+    await page.keyboard.type('Line2');
+    await page.keyboard.down('Shift');
+    await moveToLineBeginning(page);
+    await page.keyboard.up('Shift');
+    await selectFromFormatDropdown(page, '.code');
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Line1</span>
+        </p>
+        <code
+          class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+          spellcheck="false"
+          dir="ltr"
+          data-highlight-language="javascript"
+          data-gutter="1">
+          <span data-lexical-text="true">Line2</span>
+        </code>
+      `,
+    );
+  });
+
+  test('can delete text by line with CMD+delete', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText || !IS_MAC);
+    await focusEditor(page);
+    await page.keyboard.type('One');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Two');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Three');
+
+    const deleteLine = async () => {
+      await keyDownCtrlOrMeta(page);
+      await page.keyboard.press('Backspace');
+      await keyUpCtrlOrMeta(page);
+    };
+
+    const lines = [
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">One</span>
+        </p>
+      `,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Two</span>
+        </p>
+      `,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Three</span>
+        </p>
+      `,
+    ];
+
+    await deleteLine();
+    await assertHTML(page, lines.slice(0, 3).join(''));
+    await deleteLine();
+    await assertHTML(page, lines.slice(0, 2).join(''));
+    await deleteLine();
+    await assertHTML(page, lines.slice(0, 1).join(''));
+    await deleteLine();
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+  });
+
+  test('Can insert inline element within text and put selection after it', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type('Hello world');
+    await moveToPrevWord(page);
+    await pasteFromClipboard(page, {
+      'text/html': `<a href="https://test.com">link</a>`,
+    });
+    await sleep(3000);
+    await assertSelection(page, {
+      anchorOffset: 4,
+      anchorPath: [0, 1, 0, 0],
+      focusOffset: 4,
+      focusPath: [0, 1, 0, 0],
+    });
   });
 });

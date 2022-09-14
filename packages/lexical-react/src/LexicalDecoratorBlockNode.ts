@@ -18,17 +18,17 @@ import {DecoratorNode} from 'lexical';
 
 export type SerializedDecoratorBlockNode = Spread<
   {
-    format: ElementFormatType | '';
+    format: ElementFormatType;
   },
   SerializedLexicalNode
 >;
 
 export class DecoratorBlockNode extends DecoratorNode<JSX.Element> {
-  __format: ElementFormatType | null | undefined;
+  __format: ElementFormatType;
 
   constructor(format?: ElementFormatType, key?: NodeKey) {
     super(key);
-    this.__format = format;
+    this.__format = format || '';
   }
 
   exportJSON(): SerializedDecoratorBlockNode {

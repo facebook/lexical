@@ -1,3 +1,4 @@
+/** @module @lexical/plain-text */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -6,7 +7,7 @@
  *
  */
 
-import type {EditorState, LexicalEditor} from 'lexical';
+import type {CommandPayloadType, EditorState, LexicalEditor} from 'lexical';
 
 import {
   $getHtmlContent,
@@ -64,44 +65,54 @@ const updateOptions: {
 } = options;
 
 function onCopyForPlainText(
-  event: ClipboardEvent,
+  event: CommandPayloadType<typeof COPY_COMMAND>,
   editor: LexicalEditor,
 ): void {
-  event.preventDefault();
   editor.update(() => {
-    const clipboardData = event.clipboardData;
+    const clipboardData =
+      event instanceof KeyboardEvent ? null : event.clipboardData;
     const selection = $getSelection();
 
-    if (selection !== null) {
-      if (clipboardData != null) {
-        const htmlString = $getHtmlContent(editor);
+    if (selection !== null && clipboardData != null) {
+      event.preventDefault();
+      const htmlString = $getHtmlContent(editor);
 
-        if (htmlString !== null) {
-          clipboardData.setData('text/html', htmlString);
-        }
-
-        clipboardData.setData('text/plain', selection.getTextContent());
+      if (htmlString !== null) {
+        clipboardData.setData('text/html', htmlString);
       }
+
+      clipboardData.setData('text/plain', selection.getTextContent());
     }
   });
 }
 
 function onPasteForPlainText(
-  event: ClipboardEvent,
+  event: CommandPayloadType<typeof PASTE_COMMAND>,
   editor: LexicalEditor,
 ): void {
   event.preventDefault();
-  editor.update(() => {
-    const selection = $getSelection();
-    const clipboardData = event.clipboardData;
+  editor.update(
+    () => {
+      const selection = $getSelection();
+      const clipboardData =
+        event instanceof InputEvent || event instanceof KeyboardEvent
+          ? null
+          : event.clipboardData;
 
-    if (clipboardData != null && $isRangeSelection(selection)) {
-      $insertDataTransferForPlainText(clipboardData, selection);
-    }
-  });
+      if (clipboardData != null && $isRangeSelection(selection)) {
+        $insertDataTransferForPlainText(clipboardData, selection);
+      }
+    },
+    {
+      tag: 'paste',
+    },
+  );
 }
 
-function onCutForPlainText(event: ClipboardEvent, editor: LexicalEditor): void {
+function onCutForPlainText(
+  event: CommandPayloadType<typeof CUT_COMMAND>,
+  editor: LexicalEditor,
+): void {
   onCopyForPlainText(event, editor);
   editor.update(() => {
     const selection = $getSelection();
@@ -363,7 +374,7 @@ export function registerPlainText(
           // If we have beforeinput, then we can avoid blocking
           // the default behavior. This ensures that the iOS can
           // intercept that we're actually inserting a paragraph,
-          // and autocomplete, autocapitialize etc work as intended.
+          // and autocomplete, autocapitalize etc work as intended.
           // This can also cause a strange performance issue in
           // Safari, where there is a noticeable pause due to
           // preventing the key down of enter.
@@ -378,7 +389,7 @@ export function registerPlainText(
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<ClipboardEvent>(
+    editor.registerCommand(
       COPY_COMMAND,
       (event) => {
         const selection = $getSelection();
@@ -392,7 +403,7 @@ export function registerPlainText(
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<ClipboardEvent>(
+    editor.registerCommand(
       CUT_COMMAND,
       (event) => {
         const selection = $getSelection();
@@ -406,7 +417,7 @@ export function registerPlainText(
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<ClipboardEvent>(
+    editor.registerCommand(
       PASTE_COMMAND,
       (event) => {
         const selection = $getSelection();

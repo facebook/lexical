@@ -25,21 +25,29 @@ const Direction = {
 export default function ImageResizer({
   onResizeStart,
   onResizeEnd,
+  buttonRef,
   imageRef,
   maxWidth,
   editor,
   showCaption,
   setShowCaption,
+  captionsEnabled,
 }: {
   editor: LexicalEditor;
+  buttonRef: {current: null | HTMLButtonElement};
   imageRef: {current: null | HTMLElement};
   maxWidth?: number;
   onResizeEnd: (width: 'inherit' | number, height: 'inherit' | number) => void;
   onResizeStart: () => void;
-  setShowCaption: (boolean) => void;
+  setShowCaption: (show: boolean) => void;
   showCaption: boolean;
+  captionsEnabled: boolean;
 }): JSX.Element {
-  const buttonRef = useRef(null);
+  const controlWrapperRef = useRef<HTMLDivElement>(null);
+  const userSelect = useRef({
+    priority: '',
+    value: 'default',
+  });
   const positioningRef = useRef<{
     currentHeight: 'inherit' | number;
     currentWidth: 'inherit' | number;
@@ -98,6 +106,17 @@ export default function ImageResizer({
         `${cursorDir}-resize`,
         'important',
       );
+      userSelect.current.value = document.body.style.getPropertyValue(
+        '-webkit-user-select',
+      );
+      userSelect.current.priority = document.body.style.getPropertyPriority(
+        '-webkit-user-select',
+      );
+      document.body.style.setProperty(
+        '-webkit-user-select',
+        `none`,
+        'important',
+      );
     }
   };
 
@@ -107,6 +126,11 @@ export default function ImageResizer({
     }
     if (document.body !== null) {
       document.body.style.setProperty('cursor', 'default');
+      document.body.style.setProperty(
+        '-webkit-user-select',
+        userSelect.current.value,
+        userSelect.current.priority,
+      );
     }
   };
 
@@ -115,7 +139,9 @@ export default function ImageResizer({
     direction: number,
   ) => {
     const image = imageRef.current;
-    if (image !== null) {
+    const controlWrapper = controlWrapperRef.current;
+
+    if (image !== null && controlWrapper !== null) {
       const {width, height} = image.getBoundingClientRect();
       const positioning = positioningRef.current;
       positioning.startWidth = width;
@@ -131,6 +157,7 @@ export default function ImageResizer({
       setStartCursor(direction);
       onResizeStart();
 
+      controlWrapper.classList.add('image-control-wrapper--resizing');
       image.style.height = `${height}px`;
       image.style.width = `${width}px`;
 
@@ -194,7 +221,8 @@ export default function ImageResizer({
   const handlePointerUp = () => {
     const image = imageRef.current;
     const positioning = positioningRef.current;
-    if (image !== null && positioning.isResizing) {
+    const controlWrapper = controlWrapperRef.current;
+    if (image !== null && controlWrapper !== null && positioning.isResizing) {
       const width = positioning.currentWidth;
       const height = positioning.currentHeight;
       positioning.startWidth = 0;
@@ -206,6 +234,8 @@ export default function ImageResizer({
       positioning.currentHeight = 0;
       positioning.isResizing = false;
 
+      controlWrapper.classList.remove('image-control-wrapper--resizing');
+
       setEndCursor();
       onResizeEnd(width, height);
 
@@ -214,8 +244,8 @@ export default function ImageResizer({
     }
   };
   return (
-    <>
-      {!showCaption && (
+    <div ref={controlWrapperRef}>
+      {!showCaption && captionsEnabled && (
         <button
           className="image-caption-button"
           ref={buttonRef}
@@ -273,6 +303,6 @@ export default function ImageResizer({
           handlePointerDown(event, Direction.north | Direction.west);
         }}
       />
-    </>
+    </div>
   );
 }

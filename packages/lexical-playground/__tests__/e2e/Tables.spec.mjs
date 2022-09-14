@@ -6,7 +6,7 @@
  *
  */
 
-import {selectAll} from '../keyboardShortcuts/index.mjs';
+import {moveRight, selectAll} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   click,
@@ -18,7 +18,6 @@ import {
   insertTable,
   IS_COLLAB,
   pasteFromClipboard,
-  repeat,
   selectCellsFromTableCords,
   selectFromAdditionalStylesDropdown,
   test,
@@ -149,6 +148,7 @@ test.describe('Tables', () => {
         </table>
         <p><br /></p>
       `,
+      undefined,
       {ignoreClasses: true},
     );
   });
@@ -256,6 +256,7 @@ test.describe('Tables', () => {
         </table>
         <p><br /></p>
       `,
+      undefined,
       {ignoreClasses: true},
     );
   });
@@ -373,6 +374,7 @@ test.describe('Tables', () => {
         </table>
         <p><br /></p>
       `,
+      undefined,
       {ignoreClasses: true},
     );
   });
@@ -498,7 +500,98 @@ test.describe('Tables', () => {
         </table>
         <p><br /></p>
       `,
-      {ignoreClasses: true, ignoreSecondFrame: true},
+      html`
+        <p><br /></p>
+        <table>
+          <tr>
+            <th>
+              <p dir="ltr"><span data-lexical-text="true">a</span></p>
+            </th>
+            <th>
+              <p dir="ltr"><span data-lexical-text="true">bb</span></p>
+            </th>
+            <th>
+              <p dir="ltr"><span data-lexical-text="true">cc</span></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th>
+              <p dir="ltr"><span data-lexical-text="true">d</span></p>
+            </th>
+            <td>
+              <p dir="ltr"><span data-lexical-text="true">e</span></p>
+            </td>
+            <td>
+              <p dir="ltr"><span data-lexical-text="true">f</span></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p><br /></p>
+      `,
+      {ignoreClasses: true},
     );
 
     // Check that the highlight styles are applied.
@@ -611,7 +704,98 @@ test.describe('Tables', () => {
         </table>
         <p><br /></p>
       `,
-      {ignoreClasses: true, ignoreSecondFrame: true},
+      html`
+        <p><br /></p>
+        <table>
+          <tr>
+            <th>
+              <p dir="ltr"><span data-lexical-text="true">a</span></p>
+            </th>
+            <th>
+              <p dir="ltr"><span data-lexical-text="true">bb</span></p>
+            </th>
+            <th>
+              <p dir="ltr"><span data-lexical-text="true">cc</span></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th>
+              <p dir="ltr"><span data-lexical-text="true">d</span></p>
+            </th>
+            <td>
+              <p dir="ltr"><span data-lexical-text="true">e</span></p>
+            </td>
+            <td>
+              <p dir="ltr"><span data-lexical-text="true">f</span></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p><br /></p>
+      `,
+      {ignoreClasses: true},
     );
   });
 
@@ -754,7 +938,98 @@ test.describe('Tables', () => {
         </table>
         <p><br /></p>
       `,
-      {ignoreClasses: true, ignoreSecondFrame: true},
+      html`
+        <p><br /></p>
+        <table>
+          <tr>
+            <th>
+              <p dir="ltr"><span data-lexical-text="true">a</span></p>
+            </th>
+            <th>
+              <p dir="ltr"><span data-lexical-text="true">bb</span></p>
+            </th>
+            <th>
+              <p dir="ltr"><span data-lexical-text="true">cc</span></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th>
+              <p dir="ltr"><span data-lexical-text="true">d</span></p>
+            </th>
+            <td>
+              <p dir="ltr"><span data-lexical-text="true">e</span></p>
+            </td>
+            <td>
+              <p dir="ltr"><span data-lexical-text="true">f</span></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p><br /></p>
+      `,
+      {ignoreClasses: true},
     );
   });
 
@@ -881,7 +1156,98 @@ test.describe('Tables', () => {
         </table>
         <p><br /></p>
       `,
-      {ignoreClasses: true, ignoreSecondFrame: true},
+      html`
+        <p><br /></p>
+        <table>
+          <tr>
+            <th>
+              <p dir="ltr"><strong data-lexical-text="true">a</strong></p>
+            </th>
+            <th>
+              <p dir="ltr"><strong data-lexical-text="true">bb</strong></p>
+            </th>
+            <th>
+              <p dir="ltr"><span data-lexical-text="true">cc</span></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th>
+              <p dir="ltr"><strong data-lexical-text="true">d</strong></p>
+            </th>
+            <td>
+              <p dir="ltr"><strong data-lexical-text="true">e</strong></p>
+            </td>
+            <td>
+              <p dir="ltr"><span data-lexical-text="true">f</span></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p><br /></p>
+      `,
+      {ignoreClasses: true},
     );
   });
 
@@ -1069,7 +1435,8 @@ test.describe('Tables', () => {
         </table>
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
       `,
-      {ignoreClasses: true, ignoreSecondFrame: true},
+      undefined,
+      {ignoreClasses: true},
     );
   });
 
@@ -1182,6 +1549,7 @@ test.describe('Tables', () => {
         </table>
         <p><br /></p>
       `,
+      undefined,
       {ignoreClasses: true},
     );
   });
@@ -1210,9 +1578,7 @@ test.describe('Tables', () => {
     await page.keyboard.press('ArrowLeft');
     await page.keyboard.down('Shift');
 
-    await repeat(3, async () => {
-      await page.keyboard.press('ArrowRight');
-    });
+    await moveRight(page, 3);
 
     // Selection of cells is not synced in collab, but we still want to
     // ensure this doesn't break collab too.
@@ -1364,6 +1730,7 @@ test.describe('Tables', () => {
           </table>
           <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         `,
+        undefined,
         {ignoreClasses: true},
       );
     }
@@ -1533,6 +1900,7 @@ test.describe('Tables', () => {
           </table>
           <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         `,
+        undefined,
         {ignoreClasses: true},
       );
     }

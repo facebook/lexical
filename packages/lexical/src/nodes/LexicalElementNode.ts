@@ -480,6 +480,10 @@ export class ElementNode extends LexicalNode {
   isInline(): boolean {
     return false;
   }
+  // A shadow root is a Node that behaves like RootNode. The shadow root (and RootNode) mark the
+  // end of the hiercharchy, most implementations should treat it as there's nothing (upwards)
+  // beyond this point. For example, node.getTopElement(), when performed inside a TableCellNode
+  // will return the immediate first child underneath TableCellNode instead of RootNode.
   isShadowRoot(): boolean {
     return false;
   }

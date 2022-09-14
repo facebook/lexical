@@ -52,8 +52,7 @@ import {
   $getDecoratorNode,
   $getNodeByKey,
   $getRoot,
-  $isTokenOrInert,
-  $isTokenOrInertOrSegmented,
+  $isTokenOrSegmented,
   $setCompositionKey,
   doesContainGrapheme,
   getDOMTextNode,
@@ -792,10 +791,7 @@ export class RangeSelection implements BaseSelection {
           firstNode.getNextSibling() === null))
     ) {
       let nextSibling = firstNode.getNextSibling<TextNode>();
-      if (
-        !$isTextNode(nextSibling) ||
-        $isTokenOrInertOrSegmented(nextSibling)
-      ) {
+      if (!$isTextNode(nextSibling) || $isTokenOrSegmented(nextSibling)) {
         nextSibling = $createTextNode();
         nextSibling.setFormat(format);
         if (!firstNodeParent.canInsertTextAfter()) {
@@ -820,10 +816,7 @@ export class RangeSelection implements BaseSelection {
           firstNode.getPreviousSibling() === null))
     ) {
       let prevSibling = firstNode.getPreviousSibling<TextNode>();
-      if (
-        !$isTextNode(prevSibling) ||
-        $isTokenOrInertOrSegmented(prevSibling)
-      ) {
+      if (!$isTextNode(prevSibling) || $isTokenOrSegmented(prevSibling)) {
         prevSibling = $createTextNode();
         prevSibling.setFormat(format);
         if (!firstNodeParent.canInsertTextBefore()) {
@@ -865,7 +858,7 @@ export class RangeSelection implements BaseSelection {
     }
 
     if (selectedNodesLength === 1) {
-      if ($isTokenOrInert(firstNode)) {
+      if (firstNode.isToken()) {
         const textNode = $createTextNode(text);
         textNode.select();
         firstNode.replace(textNode);
@@ -945,7 +938,7 @@ export class RangeSelection implements BaseSelection {
       ) {
         if (
           $isTextNode(lastNode) &&
-          !$isTokenOrInert(lastNode) &&
+          !lastNode.isToken() &&
           endOffset !== lastNode.getTextContentSize()
         ) {
           if (lastNode.isSegmented()) {
@@ -1035,7 +1028,7 @@ export class RangeSelection implements BaseSelection {
 
       // Ensure we do splicing after moving of nodes, as splicing
       // can have side-effects (in the case of hashtags).
-      if (!$isTokenOrInert(firstNode)) {
+      if (!firstNode.isToken()) {
         firstNode = firstNode.spliceText(
           startOffset,
           firstNodeTextLength - startOffset,
@@ -1240,8 +1233,8 @@ export class RangeSelection implements BaseSelection {
         siblings.push(anchorNode);
       } else if (anchorOffset === textContentLength) {
         target = anchorNode;
-      } else if ($isTokenOrInert(anchorNode)) {
-        // Do nothing if we're inside a token/inert node
+      } else if (anchorNode.isToken()) {
+        // Do nothing if we're inside a token node
         return false;
       } else {
         // If we started with a range selected grab the danglingText after the
@@ -1358,7 +1351,7 @@ export class RangeSelection implements BaseSelection {
       didReplaceOrMerge = false;
       if ($isElementNode(target) && !target.isInline()) {
         lastNode = node;
-        if ($isDecoratorNode(node) && node.isTopLevel()) {
+        if ($isDecoratorNode(node) && !node.isInline()) {
           target = target.insertAfter(node);
         } else if (!$isElementNode(node)) {
           const firstChild = target.getFirstChild();
@@ -1387,7 +1380,7 @@ export class RangeSelection implements BaseSelection {
       } else if (
         !$isElementNode(node) ||
         ($isElementNode(node) && node.isInline()) ||
-        ($isDecoratorNode(target) && target.isTopLevel())
+        ($isDecoratorNode(target) && !target.isInline())
       ) {
         lastNode = node;
         target = target.insertAfter(node);
@@ -1446,7 +1439,7 @@ export class RangeSelection implements BaseSelection {
           if (
             $isElementNode(target) &&
             !$isBlockElementNode(sibling) &&
-            !($isDecoratorNode(sibling) && sibling.isTopLevel())
+            !($isDecoratorNode(sibling) && !sibling.isInline())
           ) {
             if (originalTarget === target) {
               target.append(sibling);
@@ -2113,7 +2106,7 @@ function resolveSelectionPointOnBoundary(
         point.offset = prevSibling.getChildrenSize();
         // @ts-expect-error: intentional
         point.type = 'element';
-      } else if ($isTextNode(prevSibling) && !prevSibling.isInert()) {
+      } else if ($isTextNode(prevSibling)) {
         point.key = prevSibling.__key;
         point.offset = prevSibling.getTextContent().length;
       }

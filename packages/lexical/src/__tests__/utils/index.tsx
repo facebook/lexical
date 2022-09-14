@@ -332,10 +332,6 @@ export class TestDecoratorNode extends DecoratorNode<JSX.Element> {
     return false;
   }
 
-  isTopLevel() {
-    return false;
-  }
-
   decorate() {
     return <Decorator text={'Hello world'} />;
   }

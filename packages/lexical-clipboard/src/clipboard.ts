@@ -199,7 +199,7 @@ function $basicInsertStrategy(
     }
 
     if (
-      ($isDecoratorNode(node) && !node.isTopLevel()) ||
+      ($isDecoratorNode(node) && node.isInline()) ||
       ($isElementNode(node) && node.isInline()) ||
       $isTextNode(node) ||
       $isLineBreakNode(node)

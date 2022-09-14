@@ -112,16 +112,16 @@ export class ElementNode extends LexicalNode {
     const parent = self.getParentOrThrow();
     return parent.getLastChild() === self;
   }
-  getAllTextNodes(includeInert?: boolean): Array<TextNode> {
+  getAllTextNodes(): Array<TextNode> {
     const textNodes = [];
     const self = this.getLatest();
     const children = self.__children;
     for (let i = 0; i < children.length; i++) {
       const childNode = $getNodeByKey<LexicalNode>(children[i]);
-      if ($isTextNode(childNode) && (includeInert || !childNode.isInert())) {
+      if ($isTextNode(childNode)) {
         textNodes.push(childNode);
       } else if ($isElementNode(childNode)) {
-        const subChildrenNodes = childNode.getAllTextNodes(includeInert);
+        const subChildrenNodes = childNode.getAllTextNodes();
         textNodes.push(...subChildrenNodes);
       }
     }
@@ -209,13 +209,13 @@ export class ElementNode extends LexicalNode {
     }
     return $getNodeByKey(key);
   }
-  getTextContent(includeInert?: boolean, includeDirectionless?: false): string {
+  getTextContent(): string {
     let textContent = '';
     const children = this.getChildren();
     const childrenLength = children.length;
     for (let i = 0; i < childrenLength; i++) {
       const child = children[i];
-      textContent += child.getTextContent(includeInert, includeDirectionless);
+      textContent += child.getTextContent();
       if (
         $isElementNode(child) &&
         i !== childrenLength - 1 &&
@@ -480,7 +480,11 @@ export class ElementNode extends LexicalNode {
   isInline(): boolean {
     return false;
   }
-  isTopLevel(): boolean {
+  // A shadow root is a Node that behaves like RootNode. The shadow root (and RootNode) mark the
+  // end of the hiercharchy, most implementations should treat it as there's nothing (upwards)
+  // beyond this point. For example, node.getTopElement(), when performed inside a TableCellNode
+  // will return the immediate first child underneath TableCellNode instead of RootNode.
+  isShadowRoot(): boolean {
     return false;
   }
   canMergeWith(node: ElementNode): boolean {

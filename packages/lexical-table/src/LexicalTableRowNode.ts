@@ -79,7 +79,7 @@ export class TableRowNode extends DEPRECATED_GridRowNode {
     return element;
   }
 
-  isTopLevel(): boolean {
+  isShadowRoot(): boolean {
     return true;
   }
 

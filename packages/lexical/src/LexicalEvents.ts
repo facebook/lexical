@@ -77,7 +77,6 @@ import {
   $flushMutations,
   $getNodeByKey,
   $isSelectionCapturedInDecorator,
-  $isTokenOrInert,
   $setSelection,
   $shouldPreventDefaultAndInsertText,
   $updateSelectedTextFromDOM,
@@ -231,7 +230,10 @@ function onSelectionChange(
 
       if (selection.isCollapsed()) {
         // Badly interpreted range selection when collapsed - #1482
-        if (domSelection.type === 'Range') {
+        if (
+          domSelection.type === 'Range' &&
+          domSelection.anchorNode === domSelection.focusNode
+        ) {
           selection.dirty = true;
         }
 
@@ -350,8 +352,8 @@ function $canRemoveText(
     anchorNode !== focusNode ||
     $isElementNode(anchorNode) ||
     $isElementNode(focusNode) ||
-    !$isTokenOrInert(anchorNode) ||
-    !$isTokenOrInert(focusNode)
+    !anchorNode.isToken() ||
+    !focusNode.isToken()
   );
 }
 

@@ -69,6 +69,8 @@ export type SerializedTextNode = Spread<
   SerializedLexicalNode
 >;
 
+export type TextDetailType = 'directionless' | 'unmergable';
+
 export type TextFormatType =
   | 'bold'
   | 'underline'

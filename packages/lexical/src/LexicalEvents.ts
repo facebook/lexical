@@ -76,6 +76,7 @@ import {updateEditor} from './LexicalUpdates';
 import {
   $flushMutations,
   $getNodeByKey,
+  $isSelectionCapturedInDecorator,
   $setSelection,
   $shouldPreventDefaultAndInsertText,
   $updateSelectedTextFromDOM,

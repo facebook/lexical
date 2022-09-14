@@ -370,8 +370,8 @@ const DETAIL_PREDICATES = [
 ];
 
 const MODE_PREDICATES = [
-  (node) => node.isToken() && 'Token',
-  (node) => node.isSegmented() && 'Segmented',
+  (node: LexicalNode) => node.isToken() && 'Token',
+  (node: LexicalNode) => node.isSegmented() && 'Segmented',
 ];
 
 function printAllTextNodeProperties(node: LexicalNode) {

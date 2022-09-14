@@ -21,7 +21,6 @@ import {ExcalidrawNode} from './ExcalidrawNode';
 import {ImageNode} from './ImageNode';
 import {KeywordNode} from './KeywordNode';
 import {MentionNode} from './MentionNode';
-import {TypeaheadNode} from './TypeaheadNode';
 
 const PlaygroundNodes: Array<Klass<LexicalNode>> = [
   HeadingNode,
@@ -39,7 +38,6 @@ const PlaygroundNodes: Array<Klass<LexicalNode>> = [
   ExcalidrawNode,
   EquationNode,
   AutocompleteNode,
-  TypeaheadNode,
   KeywordNode,
 ];
 

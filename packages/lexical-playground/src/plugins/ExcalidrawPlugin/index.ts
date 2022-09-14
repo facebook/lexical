@@ -6,6 +6,7 @@
  *
  */
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {$wrapNodeInElement} from '@lexical/utils';
 import {
   $createParagraphNode,
   $insertNodes,
@@ -14,7 +15,6 @@ import {
   createCommand,
   LexicalCommand,
 } from 'lexical';
-import {$wrapNodeInElement} from 'packages/lexical-utils/src';
 import {useEffect} from 'react';
 
 import {

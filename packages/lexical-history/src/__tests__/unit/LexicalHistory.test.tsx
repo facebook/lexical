@@ -11,7 +11,7 @@ import {ContentEditable} from '@lexical/react/src/LexicalContentEditable';
 import {HistoryPlugin} from '@lexical/react/src/LexicalHistoryPlugin';
 import {RichTextPlugin} from '@lexical/react/src/LexicalRichTextPlugin';
 import {$createQuoteNode} from '@lexical/rich-text/src';
-import {$wrapLeafNodesInElements} from '@lexical/selection/src';
+import {$wrapNodes} from '@lexical/selection/src';
 import {
   $createRangeSelection,
   LexicalEditor,
@@ -103,7 +103,7 @@ describe('LexicalHistory tests', () => {
         selection.focus.set(firstTextNode.getKey(), 3, 'text');
 
         $setSelection(selection);
-        $wrapLeafNodesInElements(selection, () => $createQuoteNode());
+        $wrapNodes(selection, () => $createQuoteNode());
       });
     });
 

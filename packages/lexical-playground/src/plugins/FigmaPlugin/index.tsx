@@ -7,7 +7,7 @@
  */
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$insertNodeToTopLevel} from '@lexical/utils';
+import {$insertNodeToNearestRoot} from '@lexical/utils';
 import {COMMAND_PRIORITY_EDITOR, createCommand, LexicalCommand} from 'lexical';
 import {useEffect} from 'react';
 
@@ -27,7 +27,7 @@ export default function FigmaPlugin(): JSX.Element | null {
       INSERT_FIGMA_COMMAND,
       (payload) => {
         const figmaNode = $createFigmaNode(payload);
-        $insertNodeToTopLevel(figmaNode);
+        $insertNodeToNearestRoot(figmaNode);
         return true;
       },
       COMMAND_PRIORITY_EDITOR,

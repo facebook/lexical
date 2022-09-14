@@ -255,7 +255,7 @@ export function InsertImageDialog({
             onClick={() =>
               onClick({
                 altText: 'Yellow flower in tilt shift lens',
-                src: yellowFlowerImage,
+                src: `${window.location.href}${yellowFlowerImage}`,
               })
             }>
             Sample

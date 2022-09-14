@@ -15,6 +15,7 @@ import {
   focusEditor,
   html,
   initialize,
+  insertHorizontalRule,
   insertTable,
   IS_COLLAB,
   pasteFromClipboard,
@@ -1904,5 +1905,118 @@ test.describe('Tables', () => {
         {ignoreClasses: true},
       );
     }
+  });
+
+  test(`Horizontal rule inside cell`, async ({page, isPlainText}) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+
+    await insertTable(page);
+    await page.keyboard.type('123');
+    await insertHorizontalRule(page);
+
+    await assertHTML(
+      page,
+      html`
+        <p><br /></p>
+        <table>
+          <tr>
+            <th>
+              <p><span data-lexical-text="true">123</span></p>
+              <div
+                contenteditable="false"
+                style="display: contents"
+                data-lexical-decorator="true">
+                <hr />
+              </div>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p><br /></p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
   });
 });

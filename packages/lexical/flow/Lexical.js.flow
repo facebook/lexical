@@ -710,7 +710,7 @@ declare export class ElementNode extends LexicalNode {
   canInsertTextBefore(): boolean;
   canInsertTextAfter(): boolean;
   isInline(): boolean;
-  isTopLevel(): boolean;
+  isShadowRoot(): boolean;
   canSelectionRemove(): boolean;
   splice(
     start: number,
@@ -731,7 +731,7 @@ declare export class DecoratorNode<X> extends LexicalNode {
   constructor(key?: NodeKey): void;
   decorate(editor: LexicalEditor, config: EditorConfig): X;
   isIsolated(): boolean;
-  isTopLevel(): boolean;
+  isInline(): boolean;
 }
 declare export function $isDecoratorNode(
   node: ?LexicalNode,
@@ -808,10 +808,13 @@ declare export function $getDecoratorNode(
   isBackward: boolean,
 ): null | LexicalNode;
 declare export function generateRandomKey(): string;
-declare export function $isTopLevel(
+declare export function $isInlineElementOrDecoratorNode(
   node: LexicalNode,
 ): boolean %checks(node instanceof ElementNode ||
   node instanceof DecoratorNode);
+declare export function $isRootOrShadowRoot(
+  node: LexicalNode,
+): boolean %checks(node instanceof RootNode || node instanceof ElementNode);
 declare export function $hasAncestor(
   child: LexicalNode,
   targetNode: LexicalNode,

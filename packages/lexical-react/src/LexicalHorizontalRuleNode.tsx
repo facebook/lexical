@@ -127,8 +127,8 @@ export class HorizontalRuleNode extends DecoratorNode<JSX.Element> {
     return '\n';
   }
 
-  isTopLevel(): true {
-    return true;
+  isInline(): false {
+    return false;
   }
 
   updateDOM(): false {

@@ -162,12 +162,8 @@ export function getTextDirection(text: string): 'ltr' | 'rtl' | null {
   return null;
 }
 
-export function $isTokenOrInertOrSegmented(node: TextNode): boolean {
-  return $isTokenOrInert(node) || node.isSegmented();
-}
-
-export function $isTokenOrInert(node: TextNode): boolean {
-  return node.isToken() || node.isInert();
+export function $isTokenOrSegmented(node: TextNode): boolean {
+  return node.isToken() || node.isSegmented();
 }
 
 function isDOMNodeLexicalTextNode(node: Node): node is Text {
@@ -586,7 +582,7 @@ export function $updateTextNodeFromDOMContent(
       const prevSelection = $getPreviousSelection();
 
       if (
-        $isTokenOrInert(node) ||
+        node.isToken() ||
         ($getCompositionKey() !== null && !isComposing) ||
         // Check if character was added at the start, and we need
         // to clear this input from occurring as that action wasn't
@@ -686,7 +682,7 @@ export function $shouldPreventDefaultAndInsertText(
       anchor.offset !== focus.offset &&
       !anchorNode.isComposing()) ||
     // Any non standard text node.
-    $isTokenOrInertOrSegmented(anchorNode) ||
+    $isTokenOrSegmented(anchorNode) ||
     // If the text length is more than a single character and we're either
     // dealing with this in "beforeinput" or where the node has already recently
     // been changed (thus is dirty).

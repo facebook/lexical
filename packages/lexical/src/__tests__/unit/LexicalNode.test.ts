@@ -571,22 +571,6 @@ describe('LexicalNode tests', () => {
         expect(() => textNode.isSegmented()).toThrow();
       });
 
-      test('LexicalNode.isInert()', async () => {
-        const {editor} = testEnv;
-        let inertTextNode;
-
-        await editor.update(() => {
-          inertTextNode = new TextNode('inert').setMode('inert');
-          paragraphNode.append(inertTextNode);
-        });
-
-        await editor.getEditorState().read(() => {
-          expect(textNode.isInert(textNode)).toBe(false);
-          expect(inertTextNode.isInert()).toBe(true);
-        });
-        expect(() => textNode.isInert()).toThrow();
-      });
-
       test('LexicalNode.isDirectionless()', async () => {
         const {editor} = testEnv;
         let directionlessTextNode;
@@ -660,7 +644,6 @@ describe('LexicalNode tests', () => {
 
         await editor.getEditorState().read(() => {
           expect(textNode.getTextContentSize()).toBe('foo'.length);
-          // TODO: more tests with inert and directionless children
         });
         expect(() => textNode.getTextContentSize()).toThrow();
       });
@@ -790,23 +773,6 @@ describe('LexicalNode tests', () => {
         );
       });
 
-      test('LexicalNode.replace(): inert', async () => {
-        const {editor} = testEnv;
-
-        expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">foo</span></p></div>',
-        );
-
-        await editor.update(() => {
-          const barTextNode = new TextNode('bar').setMode('inert');
-          textNode.replace(barTextNode);
-        });
-
-        expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p><span data-lexical-text="true" style="pointer-events: none; user-select: none;">bar</span></p></div>',
-        );
-      });
-
       test('LexicalNode.replace(): segmented', async () => {
         const {editor} = testEnv;
 
@@ -899,23 +865,6 @@ describe('LexicalNode tests', () => {
 
         expect(testEnv.outerHTML).toBe(
           '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">foo</span><span data-lexical-text="true">bar</span></p></div>',
-        );
-      });
-
-      test('LexicalNode.insertAfter(): inert', async () => {
-        const {editor} = testEnv;
-
-        expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">foo</span></p></div>',
-        );
-
-        await editor.update(() => {
-          const barTextNode = new TextNode('bar').setMode('inert');
-          textNode.insertAfter(barTextNode);
-        });
-
-        expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">foo</span><span data-lexical-text="true" style="pointer-events: none; user-select: none;">bar</span></p></div>',
         );
       });
 
@@ -1085,23 +1034,6 @@ describe('LexicalNode tests', () => {
 
         expect(testEnv.outerHTML).toBe(
           '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">bar</span><span data-lexical-text="true">foo</span></p></div>',
-        );
-      });
-
-      test('LexicalNode.insertBefore(): inert', async () => {
-        const {editor} = testEnv;
-
-        expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">foo</span></p></div>',
-        );
-
-        await editor.update(() => {
-          const barTextNode = new TextNode('bar').setMode('inert');
-          textNode.insertBefore(barTextNode);
-        });
-
-        expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true" style="pointer-events: none; user-select: none;">bar</span><span data-lexical-text="true">foo</span></p></div>',
         );
       });
 

@@ -44,20 +44,17 @@ export class RootNode extends ElementNode {
     );
   }
 
-  getTextContent(includeInert?: boolean, includeDirectionless?: false): string {
+  getTextContent(): string {
     const cachedText = this.__cachedText;
     if (
       isCurrentlyReadOnlyMode() ||
       getActiveEditor()._dirtyType === NO_DIRTY_NODES
     ) {
-      if (
-        cachedText !== null &&
-        (!includeInert || includeDirectionless !== false)
-      ) {
+      if (cachedText !== null) {
         return cachedText;
       }
     }
-    return super.getTextContent(includeInert, includeDirectionless);
+    return super.getTextContent();
   }
 
   remove(): never {

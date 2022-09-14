@@ -6,16 +6,17 @@
  *
  */
 
-import type {LexicalCommand} from 'lexical';
-
 import 'katex/dist/katex.css';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {$wrapNodeInElement} from '@lexical/utils';
 import {
-  $getSelection,
-  $isRangeSelection,
+  $createParagraphNode,
+  $insertNodes,
+  $isRootOrShadowRoot,
   COMMAND_PRIORITY_EDITOR,
   createCommand,
+  LexicalCommand,
 } from 'lexical';
 import {useEffect} from 'react';
 
@@ -43,11 +44,11 @@ export default function EquationsPlugin(): JSX.Element | null {
       INSERT_EQUATION_COMMAND,
       (payload) => {
         const {equation, inline} = payload;
-        const selection = $getSelection();
+        const equationNode = $createEquationNode(equation, inline);
 
-        if ($isRangeSelection(selection)) {
-          const equationNode = $createEquationNode(equation, inline);
-          selection.insertNodes([equationNode]);
+        $insertNodes([equationNode]);
+        if ($isRootOrShadowRoot(equationNode.getParentOrThrow())) {
+          $wrapNodeInElement(equationNode, $createParagraphNode).selectEnd();
         }
 
         return true;

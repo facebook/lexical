@@ -5,15 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {LexicalCommand, LexicalEditor} from 'lexical';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {mergeRegister} from '@lexical/utils';
+import {$wrapNodeInElement, mergeRegister} from '@lexical/utils';
 import {
+  $createParagraphNode,
   $createRangeSelection,
   $getSelection,
+  $insertNodes,
   $isNodeSelection,
-  $isRangeSelection,
   $isRootNode,
   $setSelection,
   COMMAND_PRIORITY_EDITOR,
@@ -23,6 +22,8 @@ import {
   DRAGOVER_COMMAND,
   DRAGSTART_COMMAND,
   DROP_COMMAND,
+  LexicalCommand,
+  LexicalEditor,
 } from 'lexical';
 import {useEffect} from 'react';
 import getSelection from 'shared/getDOMSelection';
@@ -54,14 +55,12 @@ export default function ImagesPlugin({
       editor.registerCommand<InsertImagePayload>(
         INSERT_IMAGE_COMMAND,
         (payload) => {
-          const selection = $getSelection();
-          if ($isRangeSelection(selection)) {
-            if ($isRootNode(selection.anchor.getNode())) {
-              selection.insertParagraph();
-            }
-            const imageNode = $createImageNode({captionsEnabled, ...payload});
-            selection.insertNodes([imageNode]);
+          const imageNode = $createImageNode(payload);
+          $insertNodes([imageNode]);
+          if ($isRootNode(imageNode.getParentOrThrow())) {
+            $wrapNodeInElement(imageNode, $createParagraphNode).selectEnd();
           }
+
           return true;
         },
         COMMAND_PRIORITY_EDITOR,

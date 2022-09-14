@@ -115,6 +115,7 @@ export {
   $createRangeSelection,
   $getPreviousSelection,
   $getSelection,
+  $insertNodes,
   $isNodeSelection,
   $isRangeSelection,
   DEPRECATED_$createGridSelection,

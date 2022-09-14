@@ -70,11 +70,12 @@ import {
   UNDO_COMMAND,
 } from 'lexical';
 import * as React from 'react';
-import {useCallback, useEffect, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {IS_APPLE} from 'shared/environment';
 
 import useModal from '../../hooks/useModal';
 import catTypingGif from '../../images/cat-typing.gif';
+import landscapeImage from '../../images/landscape.jpg';
 import yellowFlowerImage from '../../images/yellow-flower.jpg';
 import {$createStickyNode} from '../../nodes/StickyNode';
 import Button from '../../ui/Button';
@@ -240,6 +241,18 @@ export function InsertImageDialog({
   onClose: () => void;
 }): JSX.Element {
   const [mode, setMode] = useState<null | 'url' | 'file'>(null);
+  const hasModifier = useRef(false);
+
+  useEffect(() => {
+    hasModifier.current = false;
+    const handler = (e: KeyboardEvent) => {
+      hasModifier.current = e.altKey;
+    };
+    document.addEventListener('keydown', handler);
+    return () => {
+      document.removeEventListener('keydown', handler);
+    };
+  }, [activeEditor]);
 
   const onClick = (payload: InsertImagePayload) => {
     activeEditor.dispatchCommand(INSERT_IMAGE_COMMAND, payload);
@@ -253,10 +266,18 @@ export function InsertImageDialog({
           <Button
             data-test-id="image-modal-option-sample"
             onClick={() =>
-              onClick({
-                altText: 'Yellow flower in tilt shift lens',
-                src: yellowFlowerImage,
-              })
+              onClick(
+                hasModifier.current
+                  ? {
+                      altText:
+                        'Daylight fir trees forest glacier green high ice landscape',
+                      src: landscapeImage,
+                    }
+                  : {
+                      altText: 'Yellow flower in tilt shift lens',
+                      src: yellowFlowerImage,
+                    },
+              )
             }>
             Sample
           </Button>

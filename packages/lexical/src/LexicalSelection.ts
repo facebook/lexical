@@ -41,6 +41,7 @@ import {
   markSelectionChangeFromDOMUpdate,
 } from './LexicalEvents';
 import {getIsProcesssingMutations} from './LexicalMutations';
+import {$normalizeSelection} from './LexicalNormalization';
 import {
   getActiveEditor,
   getActiveEditorState,
@@ -50,6 +51,7 @@ import {
   $getCompositionKey,
   $getDecoratorNode,
   $getNodeByKey,
+  $getRoot,
   $isTokenOrSegmented,
   $setCompositionKey,
   doesContainGrapheme,
@@ -308,6 +310,27 @@ export class NodeSelection implements BaseSelection {
     // Do nothing?
   }
 
+  insertNodes(nodes: Array<LexicalNode>, selectStart?: boolean): boolean {
+    const selectedNodes = this.getNodes();
+    const selectedNodesLength = selectedNodes.length;
+    const lastSelectedNode = selectedNodes[selectedNodesLength - 1];
+    let selectionAtEnd: RangeSelection;
+    // Insert nodes
+    if ($isTextNode(lastSelectedNode)) {
+      selectionAtEnd = lastSelectedNode.select();
+    } else {
+      const index = lastSelectedNode.getIndexWithinParent() + 1;
+      selectionAtEnd = lastSelectedNode.getParentOrThrow().select(index, index);
+    }
+    selectionAtEnd.insertNodes(nodes, selectStart);
+    // Remove selected nodes
+    for (let i = 0; i < selectedNodesLength; i++) {
+      selectedNodes[i].remove();
+    }
+
+    return true;
+  }
+
   getNodes(): Array<LexicalNode> {
     const cachedNodes = this._cachedNodes;
     if (cachedNodes !== null) {
@@ -408,6 +431,14 @@ export class GridSelection implements BaseSelection {
 
   insertText(): void {
     // Do nothing?
+  }
+
+  insertNodes(nodes: Array<LexicalNode>, selectStart?: boolean): boolean {
+    const focusNode = this.focus.getNode();
+    const selection = $normalizeSelection(
+      focusNode.select(0, focusNode.getChildrenSize()),
+    );
+    return selection.insertNodes(nodes, selectStart);
   }
 
   getShape(): GridSelectionShape {
@@ -2689,4 +2720,15 @@ export function updateDOMSelection(
     // occur with FF and there's no good reason as to why it
     // should happen.
   }
+}
+
+export function $insertNodes(
+  nodes: Array<LexicalNode>,
+  selectStart?: boolean,
+): boolean {
+  let selection = $getSelection();
+  if (selection === null) {
+    selection = $getRoot().selectEnd();
+  }
+  return selection.insertNodes(nodes, selectStart);
 }

@@ -166,8 +166,6 @@ describe('LexicalElementNode tests', () => {
         $getRoot().append(block);
       });
     });
-
-    // TODO: Add tests where there are nested inert nodes.
   });
 
   describe('getFirstChild()', () => {
@@ -232,23 +230,21 @@ describe('LexicalElementNode tests', () => {
         text.select(0, 0);
         const text2 = $createTextNode('Bar');
         const text3 = $createTextNode('Baz');
-        text3.setMode('inert');
+        text3.setMode('token');
         const text4 = $createTextNode('Qux');
         block.append(text, innerBlock, text4);
         innerBlock.append(text2, text3);
 
-        expect(block.getTextContent()).toEqual('FooBar\n\nQux');
-        expect(block.getTextContent(true)).toEqual('FooBarBaz\n\nQux');
+        expect(block.getTextContent()).toEqual('FooBarBaz\n\nQux');
 
         const innerInnerBlock = $createTestElementNode();
         const text5 = $createTextNode('More');
-        text5.setMode('inert');
+        text5.setMode('token');
         const text6 = $createTextNode('Stuff');
         innerInnerBlock.append(text5, text6);
         innerBlock.append(innerInnerBlock);
 
-        expect(block.getTextContent()).toEqual('FooBarStuff\n\nQux');
-        expect(block.getTextContent(true)).toEqual('FooBarBazMoreStuff\n\nQux');
+        expect(block.getTextContent()).toEqual('FooBarBazMoreStuff\n\nQux');
 
         $getRoot().append(block);
       });

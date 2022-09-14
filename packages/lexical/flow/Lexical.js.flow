@@ -357,11 +357,8 @@ declare export class LexicalNode {
   getLatest<T: LexicalNode>(this: T): T;
   // $FlowFixMe
   getWritable<T: LexicalNode>(this: T): T;
-  getTextContent(includeInert?: boolean, includeDirectionless?: false): string;
-  getTextContentSize(
-    includeInert?: boolean,
-    includeDirectionless?: false,
-  ): number;
+  getTextContent(includeDirectionless?: boolean): string;
+  getTextContentSize(includeDirectionless?: boolean): number;
   createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement;
   updateDOM(
     // $FlowFixMe
@@ -548,7 +545,7 @@ export type TextFormatType =
   | 'code'
   | 'subscript'
   | 'superscript';
-type TextModeType = 'normal' | 'token' | 'segmented' | 'inert';
+type TextModeType = 'normal' | 'token' | 'segmented';
 
 declare export class TextNode extends LexicalNode {
   __text: string;
@@ -564,12 +561,11 @@ declare export class TextNode extends LexicalNode {
   isComposing(): boolean;
   isToken(): boolean;
   isSegmented(): boolean;
-  isInert(): boolean;
   isDirectionless(): boolean;
   isUnmergeable(): boolean;
   hasFormat(type: TextFormatType): boolean;
   isSimpleText(): boolean;
-  getTextContent(includeInert?: boolean, includeDirectionless?: false): string;
+  getTextContent(): string;
   getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number;
   createDOM(config: EditorConfig): HTMLElement;
   updateDOM(
@@ -641,7 +637,7 @@ declare export class RootNode extends ElementNode {
   static getType(): string;
   static clone(): RootNode;
   constructor(): void;
-  getTextContent(includeInert?: boolean, includeDirectionless?: false): string;
+  getTextContent(): string;
   select(): RangeSelection;
   remove(): void;
   replace<N: LexicalNode>(node: N): N;
@@ -674,7 +670,7 @@ declare export class ElementNode extends LexicalNode {
   getChildrenSize(): number;
   isEmpty(): boolean;
   isDirty(): boolean;
-  getAllTextNodes(includeInert?: boolean): Array<TextNode>;
+  getAllTextNodes(): Array<TextNode>;
   getFirstDescendant<T: LexicalNode>(): null | T;
   getLastDescendant<T: LexicalNode>(): null | T;
   getDescendantByIndex<T: LexicalNode>(index: number): null | T;
@@ -682,7 +678,7 @@ declare export class ElementNode extends LexicalNode {
   getFirstChildOrThrow<T: LexicalNode>(): T;
   getLastChild<T: LexicalNode>(): null | T;
   getChildAtIndex<T: LexicalNode>(index: number): null | T;
-  getTextContent(includeInert?: boolean, includeDirectionless?: false): string;
+  getTextContent(): string;
   getDirection(): 'ltr' | 'rtl' | null;
   hasFormat(type: ElementFormatType): boolean;
   select(_anchorOffset?: number, _focusOffset?: number): RangeSelection;

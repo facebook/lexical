@@ -583,18 +583,12 @@ export class LexicalNode {
     return mutableNode;
   }
 
-  getTextContent(
-    _includeInert?: boolean,
-    _includeDirectionless?: false,
-  ): string {
+  getTextContent(): string {
     return '';
   }
 
-  getTextContentSize(
-    includeInert?: boolean,
-    includeDirectionless?: false,
-  ): number {
-    return this.getTextContent(includeInert, includeDirectionless).length;
+  getTextContentSize(): number {
+    return this.getTextContent().length;
   }
 
   // View

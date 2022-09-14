@@ -99,7 +99,7 @@ export function $createCollabNodeFromLexicalNode(
     collabNode.syncPropertiesFromLexical(binding, lexicalNode, null);
     collabNode.syncChildrenFromLexical(binding, lexicalNode, null, null, null);
   } else if ($isTextNode(lexicalNode)) {
-    // TODO create a token text node for token, segmented or inert nodes.
+    // TODO create a token text node for token, segmented nodes.
     const map = new YMap();
     collabNode = $createCollabTextNode(
       map,

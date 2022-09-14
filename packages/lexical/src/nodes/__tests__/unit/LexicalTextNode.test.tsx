@@ -142,8 +142,6 @@ describe('LexicalTextNode tests', () => {
         nodeKey = textNode.getKey();
 
         expect(textNode.getTextContent()).toBe('Text');
-
-        expect(textNode.getTextContent(true)).toBe('Text');
         expect(textNode.__text).toBe('Text');
 
         $getRoot().getFirstChild<ElementNode>().append(textNode);
@@ -162,29 +160,6 @@ describe('LexicalTextNode tests', () => {
         $getNodeByKey(nodeKey).markDirty();
       });
       expect(getEditorStateTextContent(editor.getEditorState())).toBe('Text');
-    });
-
-    test('inert nodes', async () => {
-      let nodeKey;
-
-      await update(() => {
-        const textNode = $createTextNode('Inert text').setMode('inert');
-        nodeKey = textNode.getKey();
-
-        expect(textNode.getTextContent()).toBe('');
-
-        expect(textNode.getTextContent(true)).toBe('Inert text');
-        expect(textNode.__text).toBe('Inert text');
-        $getRoot().getFirstChild<ElementNode>().append(textNode);
-      });
-      expect(getEditorStateTextContent(editor.getEditorState())).toBe('');
-
-      // Make sure that the editor content is still empty after further reconciliations
-      await update(() => {
-        $getNodeByKey(nodeKey).markDirty();
-      });
-
-      expect(getEditorStateTextContent(editor.getEditorState())).toBe('');
     });
 
     test('prepend node', async () => {
@@ -214,16 +189,6 @@ describe('LexicalTextNode tests', () => {
         textNode.setTextContent('My newer text node');
 
         expect(textNode.getTextContent()).toBe('My newer text node');
-      });
-    });
-
-    test('inert nodes', async () => {
-      await update(() => {
-        const textNode = $createTextNode('My inert text node');
-        textNode.setMode('inert');
-
-        expect(textNode.getTextContent()).toBe('');
-        expect(textNode.getTextContent(true)).toBe('My inert text node');
       });
     });
   });

@@ -62,13 +62,9 @@ import {
   COMMAND_PRIORITY_CRITICAL,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
-  GridSelection,
   INDENT_CONTENT_COMMAND,
-  LexicalEditor,
   NodeKey,
-  NodeSelection,
   OUTDENT_CONTENT_COMMAND,
-  RangeSelection,
   REDO_COMMAND,
   SELECTION_CHANGE_COMMAND,
   UNDO_COMMAND,
@@ -79,7 +75,6 @@ import {IS_APPLE} from 'shared/environment';
 
 import useModal from '../../hooks/useModal';
 import catTypingGif from '../../images/cat-typing.gif';
-import landscapeImage from '../images/landscape.jpg';
 import yellowFlowerImage from '../../images/yellow-flower.jpg';
 import {$createStickyNode} from '../../nodes/StickyNode';
 import Button from '../../ui/Button';
@@ -93,6 +88,7 @@ import {sanitizeUrl} from '../../utils/sanitizeUrl';
 import {EmbedConfigs} from '../AutoEmbedPlugin';
 import {INSERT_EQUATION_COMMAND} from '../EquationsPlugin';
 import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawPlugin';
+import landscapeImage from '../images/landscape.jpg';
 import {INSERT_IMAGE_COMMAND} from '../ImagesPlugin';
 import {INSERT_POLL_COMMAND} from '../PollPlugin';
 import {INSERT_TABLE_COMMAND as INSERT_NEW_TABLE_COMMAND} from '../TablePlugin';

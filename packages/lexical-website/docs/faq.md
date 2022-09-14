@@ -51,3 +51,13 @@ For those wanting to react to a text change and possibly block/alter the intent,
 transform. This also plays nicely with other sub-systems at play that might also be looking to do the same thing as you.
 
 For those who just want to know of the changes, this can be achieved using a text content listener or an editor update listener.
+
+## How do I clear the contents of the editor?
+
+You can go this by calling ```clear()``` on the RootNode in an update callback:
+
+```js
+editor.update(() => {
+  $getRoot.clear();
+})
+```

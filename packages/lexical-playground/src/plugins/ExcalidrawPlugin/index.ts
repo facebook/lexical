@@ -5,15 +5,16 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {LexicalCommand} from 'lexical';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
-  $getSelection,
-  $isRangeSelection,
+  $createParagraphNode,
+  $insertNodes,
+  $isRootOrShadowRoot,
   COMMAND_PRIORITY_EDITOR,
   createCommand,
+  LexicalCommand,
 } from 'lexical';
+import {$wrapNodeInElement} from 'packages/lexical-utils/src';
 import {useEffect} from 'react';
 
 import {
@@ -35,11 +36,11 @@ export default function ExcalidrawPlugin(): null {
     return editor.registerCommand(
       INSERT_EXCALIDRAW_COMMAND,
       () => {
-        const selection = $getSelection();
+        const excalidrawNode = $createExcalidrawNode();
 
-        if ($isRangeSelection(selection)) {
-          const excalidrawNode = $createExcalidrawNode();
-          selection.insertNodes([excalidrawNode]);
+        $insertNodes([excalidrawNode]);
+        if ($isRootOrShadowRoot(excalidrawNode.getParentOrThrow())) {
+          $wrapNodeInElement(excalidrawNode, $createParagraphNode).selectEnd();
         }
 
         return true;

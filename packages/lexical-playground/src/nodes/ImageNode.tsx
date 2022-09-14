@@ -114,7 +114,8 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
 
   exportDOM(): DOMExportOutput {
     const element = document.createElement('img');
-    element.setAttribute('src', this.__src);
+    // Add host to URL or it will get stripped from clipboard
+    element.setAttribute('src', window.location.href + this.__src);
     element.setAttribute('alt', this.__altText);
     return {element};
   }

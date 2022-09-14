@@ -29,14 +29,25 @@ chrome.runtime.onConnect.addListener((port: chrome.runtime.Port) => {
     }
 
     if (message.name === 'init' && message.type === 'FROM_APP') {
+      tabsToPorts[tabId] = tabsToPorts[tabId] ? tabsToPorts[tabId] : {};
       tabsToPorts[message.tabId].reactPort = port;
       return;
     }
 
     if (message.name === 'init' && message.type === 'FROM_CONTENT') {
-      tabsToPorts[tabId] = {};
+      tabsToPorts[tabId] = tabsToPorts[tabId] ? tabsToPorts[tabId] : {};
       tabsToPorts[tabId].contentScriptPort = port;
       return;
+    }
+
+    // initial editorState requested from devtools panel
+    if (message.name === 'init' && message.type === 'FROM_DEVTOOLS') {
+      const contentScriptPort = tabsToPorts[tabId].contentScriptPort;
+      if (contentScriptPort) {
+        contentScriptPort.postMessage({
+          name: 'loadEditorState',
+        });
+      }
     }
 
     if (message.name === 'editor-update') {
@@ -44,6 +55,16 @@ chrome.runtime.onConnect.addListener((port: chrome.runtime.Port) => {
       if (reactPort) {
         reactPort.postMessage({
           editorState: message.editorState,
+        });
+      }
+    }
+
+    if (message.name === 'highlight' || message.name === 'dehighlight') {
+      const contentScriptPort = tabsToPorts[tabId].contentScriptPort;
+      if (contentScriptPort) {
+        contentScriptPort.postMessage({
+          lexicalKey: message.lexicalKey ? message.lexicalKey : null,
+          name: message.name,
         });
       }
     }

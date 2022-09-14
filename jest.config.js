@@ -13,13 +13,6 @@ const common = {
 };
 
 module.exports = {
-  collectCoverage: true,
-  collectCoverageFrom: [
-    '<rootDir>/packages/lexical/src/core/**/*.ts',
-    '<rootDir>/packages/lexical/src/extensions/**/*.ts',
-    '<rootDir>/packages/lexical-react/src/**/*.ts',
-  ],
-  coverageReporters: ['json', 'text'],
   projects: [
     {
       ...common,
@@ -55,12 +48,16 @@ module.exports = {
           '<rootDir>/packages/lexical-plain-text/src/index.ts',
         '^@lexical/react/DEPRECATED_useLexicalRichText$':
           '<rootDir>/packages/lexical-react/src/DEPRECATED_useLexicalRichText.ts',
+        '^@lexical/react/LexicalAutoEmbedPlugin$':
+          '<rootDir>/packages/lexical-react/src/LexicalAutoEmbedPlugin.tsx',
         '^@lexical/react/LexicalAutoLinkPlugin$':
           '<rootDir>/packages/lexical-react/src/LexicalAutoLinkPlugin.ts',
         '^@lexical/react/LexicalAutoScrollPlugin$':
           '<rootDir>/packages/lexical-react/src/LexicalAutoScrollPlugin.ts',
         '^@lexical/react/LexicalCheckListPlugin$':
           '<rootDir>/packages/lexical-react/src/LexicalCheckListPlugin.ts',
+        '^@lexical/react/LexicalCollaborationContext$':
+          '<rootDir>/packages/lexical-react/src/LexicalCollaborationContext.ts',
         '^@lexical/react/LexicalCollaborationPlugin$':
           '<rootDir>/packages/lexical-react/src/LexicalCollaborationPlugin.ts',
         '^@lexical/react/LexicalComposerContext$':

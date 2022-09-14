@@ -22,7 +22,9 @@ export type SerializedGridCellNode = Spread<
   SerializedElementNode
 >;
 
-export class GridCellNode extends ElementNode {
+/** @noInheritDoc */
+export class DEPRECATED_GridCellNode extends ElementNode {
+  /** @internal */
   __colSpan: number;
 
   constructor(colSpan: number, key?: NodeKey) {
@@ -38,8 +40,8 @@ export class GridCellNode extends ElementNode {
   }
 }
 
-export function $isGridCellNode(
-  node: GridCellNode | LexicalNode | null | undefined,
-): node is GridCellNode {
-  return node instanceof GridCellNode;
+export function DEPRECATED_$isGridCellNode(
+  node: DEPRECATED_GridCellNode | LexicalNode | null | undefined,
+): node is DEPRECATED_GridCellNode {
+  return node instanceof DEPRECATED_GridCellNode;
 }

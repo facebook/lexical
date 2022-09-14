@@ -100,6 +100,17 @@ export class YouTubeNode extends DecoratorBlockNode {
     return false;
   }
 
+  getId(): string {
+    return this.__id;
+  }
+
+  getTextContent(
+    _includeInert?: boolean | undefined,
+    _includeDirectionless?: false | undefined,
+  ): string {
+    return `https://www.youtube.com/watch?v=${this.__id}`;
+  }
+
   decorate(_editor: LexicalEditor, config: EditorConfig): JSX.Element {
     const embedBlockTheme = config.theme.embedBlock || {};
     const className = {

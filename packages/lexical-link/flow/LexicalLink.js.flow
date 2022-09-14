@@ -18,9 +18,18 @@ import {addClassNamesToElement} from '@lexical/utils';
 import {$isElementNode, ElementNode} from 'lexical';
 declare export class LinkNode extends ElementNode {
   __url: string;
+  __target: null | string;
+  __rel: null | string;
   static getType(): string;
   static clone(node: LinkNode): LinkNode;
-  constructor(url: string, key?: NodeKey): void;
+  constructor(
+    url: string,
+    attributes?: {
+      rel?: null | string,
+      target?: null | string,
+    },
+    key?: NodeKey,
+  ): void;
   createDOM(config: EditorConfig): HTMLElement;
   updateDOM(
     prevNode: LinkNode,
@@ -30,13 +39,23 @@ declare export class LinkNode extends ElementNode {
   static importDOM(): DOMConversionMap | null;
   getURL(): string;
   setURL(url: string): void;
+  getTarget(): null | string;
+  setTarget(target: null | string): void;
+  getRel(): null | string;
+  setRel(rel: null | string): void;
   insertNewAfter(selection: RangeSelection): null | ElementNode;
   canInsertTextBefore(): false;
   canInsertTextAfter(): false;
   canBeEmpty(): false;
   isInline(): true;
 }
-declare export function $createLinkNode(url: string): LinkNode;
+declare export function $createLinkNode(
+  url: string,
+  attributes?: {
+    rel?: null | string,
+    target?: null | string,
+  },
+): LinkNode;
 declare export function $isLinkNode(
   node: ?LexicalNode,
 ): boolean %checks(node instanceof LinkNode);
@@ -51,5 +70,17 @@ declare export function $isAutoLinkNode(
   node: ?LexicalNode,
 ): boolean %checks(node instanceof AutoLinkNode);
 
-declare export var TOGGLE_LINK_COMMAND: LexicalCommand<string | null>;
-declare export function toggleLink(url: null | string): void;
+declare export var TOGGLE_LINK_COMMAND: LexicalCommand<
+  | string
+  | {
+      url: string,
+      target?: null | string,
+      rel?: null | string,
+    }
+  | null,
+>;
+declare export function toggleLink(
+  url: null | string,
+  target?: null | string,
+  rel?: null | string,
+): void;

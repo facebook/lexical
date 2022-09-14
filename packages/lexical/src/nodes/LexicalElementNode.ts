@@ -49,10 +49,15 @@ export type SerializedElementNode = Spread<
 
 export type ElementFormatType = 'left' | 'center' | 'right' | 'justify' | '';
 
+/** @noInheritDoc */
 export class ElementNode extends LexicalNode {
+  /** @internal */
   __children: Array<NodeKey>;
+  /** @internal */
   __format: number;
+  /** @internal */
   __indent: number;
+  /** @internal */
   __dir: 'ltr' | 'rtl' | null;
 
   constructor(key?: NodeKey) {
@@ -287,30 +292,25 @@ export class ElementNode extends LexicalNode {
     return this.select();
   }
   clear(): this {
-    errorOnReadOnly();
     const writableSelf = this.getWritable();
     const children = this.getChildren();
     children.forEach((child) => child.remove());
     return writableSelf;
   }
   append(...nodesToAppend: LexicalNode[]): this {
-    errorOnReadOnly();
     return this.splice(this.getChildrenSize(), 0, nodesToAppend);
   }
   setDirection(direction: 'ltr' | 'rtl' | null): this {
-    errorOnReadOnly();
     const self = this.getWritable();
     self.__dir = direction;
     return self;
   }
   setFormat(type: ElementFormatType): this {
-    errorOnReadOnly();
     const self = this.getWritable();
     self.__format = type !== '' ? ELEMENT_TYPE_TO_FORMAT[type] : 0;
     return this;
   }
   setIndent(indentLevel: number): this {
-    errorOnReadOnly();
     const self = this.getWritable();
     self.__indent = indentLevel;
     return this;
@@ -320,7 +320,6 @@ export class ElementNode extends LexicalNode {
     deleteCount: number,
     nodesToInsert: Array<LexicalNode>,
   ): this {
-    errorOnReadOnly();
     const writableSelf = this.getWritable();
     const writableSelfKey = writableSelf.__key;
     const writableSelfChildren = writableSelf.__children;
@@ -332,7 +331,7 @@ export class ElementNode extends LexicalNode {
       const nodeToInsert = nodesToInsert[i];
       const writableNodeToInsert = nodeToInsert.getWritable();
       if (nodeToInsert.__key === writableSelfKey) {
-        invariant(false, 'append: attemtping to append self');
+        invariant(false, 'append: attempting to append self');
       }
       removeFromParent(writableNodeToInsert);
       // Set child parent to self
@@ -479,6 +478,9 @@ export class ElementNode extends LexicalNode {
     return true;
   }
   isInline(): boolean {
+    return false;
+  }
+  isTopLevel(): boolean {
     return false;
   }
   canMergeWith(node: ElementNode): boolean {

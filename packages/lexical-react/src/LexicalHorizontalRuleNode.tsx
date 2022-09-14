@@ -6,10 +6,29 @@
  *
  */
 
-import type {LexicalCommand, LexicalNode, SerializedLexicalNode} from 'lexical';
+import type {
+  LexicalCommand,
+  LexicalNode,
+  NodeKey,
+  SerializedLexicalNode,
+} from 'lexical';
 
-import {createCommand, DecoratorNode} from 'lexical';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
+import {mergeRegister} from '@lexical/utils';
+import {
+  $getNodeByKey,
+  $getSelection,
+  $isNodeSelection,
+  CLICK_COMMAND,
+  COMMAND_PRIORITY_LOW,
+  createCommand,
+  DecoratorNode,
+  KEY_BACKSPACE_COMMAND,
+  KEY_DELETE_COMMAND,
+} from 'lexical';
 import * as React from 'react';
+import {useCallback, useEffect, useRef} from 'react';
 
 export type SerializedHorizontalRuleNode = SerializedLexicalNode & {
   type: 'horizontalrule';
@@ -19,8 +38,61 @@ export type SerializedHorizontalRuleNode = SerializedLexicalNode & {
 export const INSERT_HORIZONTAL_RULE_COMMAND: LexicalCommand<void> =
   createCommand();
 
-function HorizontalRuleComponent() {
-  return <hr />;
+function HorizontalRuleComponent({nodeKey}: {nodeKey: NodeKey}) {
+  const [editor] = useLexicalComposerContext();
+  const hrRef = useRef(null);
+  const [isSelected, setSelected, clearSelection] =
+    useLexicalNodeSelection(nodeKey);
+
+  const onDelete = useCallback(
+    (payload: KeyboardEvent) => {
+      if (isSelected && $isNodeSelection($getSelection())) {
+        const event: KeyboardEvent = payload;
+        event.preventDefault();
+        const node = $getNodeByKey(nodeKey);
+        if ($isHorizontalRuleNode(node)) {
+          node.remove();
+        }
+        setSelected(false);
+      }
+      return false;
+    },
+    [isSelected, nodeKey, setSelected],
+  );
+
+  useEffect(() => {
+    return mergeRegister(
+      editor.registerCommand(
+        CLICK_COMMAND,
+        (event: MouseEvent) => {
+          const hrElem = hrRef.current;
+
+          if (event.target === hrElem) {
+            if (!event.shiftKey) {
+              clearSelection();
+            }
+            setSelected(!isSelected);
+            return true;
+          }
+
+          return false;
+        },
+        COMMAND_PRIORITY_LOW,
+      ),
+      editor.registerCommand(
+        KEY_DELETE_COMMAND,
+        onDelete,
+        COMMAND_PRIORITY_LOW,
+      ),
+      editor.registerCommand(
+        KEY_BACKSPACE_COMMAND,
+        onDelete,
+        COMMAND_PRIORITY_LOW,
+      ),
+    );
+  }, [clearSelection, editor, isSelected, onDelete, setSelected]);
+
+  return <hr ref={hrRef} className={isSelected ? 'selected' : undefined} />;
 }
 
 export class HorizontalRuleNode extends DecoratorNode<JSX.Element> {
@@ -64,7 +136,7 @@ export class HorizontalRuleNode extends DecoratorNode<JSX.Element> {
   }
 
   decorate(): JSX.Element {
-    return <HorizontalRuleComponent />;
+    return <HorizontalRuleComponent nodeKey={this.__key} />;
   }
 }
 

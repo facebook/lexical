@@ -1,3 +1,4 @@
+/** @module @lexical/markdown */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -11,11 +12,11 @@ import type {
   TextFormatTransformer,
   TextMatchTransformer,
   Transformer,
-} from './v2/MarkdownTransformers';
+} from './MarkdownTransformers';
 
-import {createMarkdownExport} from './v2/MarkdownExport';
-import {createMarkdownImport} from './v2/MarkdownImport';
-import {registerMarkdownShortcuts} from './v2/MarkdownShortcuts';
+import {createMarkdownExport} from './MarkdownExport';
+import {createMarkdownImport} from './MarkdownImport';
+import {registerMarkdownShortcuts} from './MarkdownShortcuts';
 import {
   BOLD_ITALIC_STAR,
   BOLD_ITALIC_UNDERSCORE,
@@ -32,7 +33,7 @@ import {
   QUOTE,
   STRIKETHROUGH,
   UNORDERED_LIST,
-} from './v2/MarkdownTransformers';
+} from './MarkdownTransformers';
 
 const ELEMENT_TRANSFORMERS: Array<ElementTransformer> = [
   HEADING,

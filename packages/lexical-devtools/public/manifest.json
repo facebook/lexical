@@ -21,5 +21,6 @@
       "js": ["src/content/index.js"]
     }
   ],
-  "permissions": ["activeTab"]
+  "permissions": ["activeTab"],
+  "web_accessible_resources": ["src/inject/index.js"]
 }

@@ -14,6 +14,7 @@ import invariant from 'shared/invariant';
 
 import {LexicalNode} from '../LexicalNode';
 
+/** @noInheritDoc */
 export class DecoratorNode<T> extends LexicalNode {
   constructor(key?: NodeKey) {
     super(key);

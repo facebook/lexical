@@ -16,14 +16,15 @@ import type {
   RangeSelection,
 } from 'lexical';
 
+import {$isLinkNode, LinkNode} from '@lexical/link';
 import {$isMarkNode} from '@lexical/mark';
 import {
   $getRoot,
   $getSelection,
   $isElementNode,
-  $isGridSelection,
   $isRangeSelection,
   $isTextNode,
+  DEPRECATED_$isGridSelection,
 } from 'lexical';
 import * as React from 'react';
 import {useEffect, useRef, useState} from 'react';
@@ -92,7 +93,7 @@ export function TreeView({
 
   useEffect(() => {
     if (isPlaying) {
-      let timeoutId: NodeJS.Timeout;
+      let timeoutId: ReturnType<typeof setTimeout>;
 
       const play = () => {
         const currentIndex = playingIndexRef.current;
@@ -122,7 +123,7 @@ export function TreeView({
       play();
 
       return () => {
-        window.clearTimeout(timeoutId);
+        clearTimeout(timeoutId);
       };
     }
   }, [timeStampedEditorStates, isPlaying, editor, totalEditorStates]);
@@ -154,7 +155,8 @@ export function TreeView({
               setTimeTravelEnabled(true);
             }
           }}
-          className={timeTravelButtonClassName}>
+          className={timeTravelButtonClassName}
+          type="button">
           Time Travel
         </button>
       )}
@@ -165,7 +167,8 @@ export function TreeView({
             className={timeTravelPanelButtonClassName}
             onClick={() => {
               setIsPlaying(!isPlaying);
-            }}>
+            }}
+            type="button">
             {isPlaying ? 'Pause' : 'Play'}
           </button>
           <input
@@ -204,7 +207,8 @@ export function TreeView({
                 setTimeTravelEnabled(false);
                 setIsPlaying(false);
               }
-            }}>
+            }}
+            type="button">
             Exit
           </button>
         </div>
@@ -276,7 +280,7 @@ function generateContent(editorState: EditorState): string {
       ? ': null'
       : $isRangeSelection(selection)
       ? printRangeSelection(selection)
-      : $isGridSelection(selection)
+      : DEPRECATED_$isGridSelection(selection)
       ? printGridSelection(selection)
       : printObjectSelection(selection);
   });
@@ -323,18 +327,27 @@ function normalize(text: string) {
   );
 }
 
+// TODO Pass via props to allow customizability
 function printNode(node: LexicalNode) {
   if ($isTextNode(node)) {
     const text = node.getTextContent(true);
     const title = text.length === 0 ? '(empty)' : `"${normalize(text)}"`;
-    const properties = printAllProperties(node);
+    const properties = printAllTextNodeProperties(node);
     return [title, properties.length !== 0 ? `{ ${properties} }` : null]
       .filter(Boolean)
       .join(' ')
       .trim();
+  } else if ($isLinkNode(node)) {
+    const link = node.getURL();
+    const title = link.length === 0 ? '(empty)' : `"${normalize(link)}"`;
+    const properties = printAllLinkNodeProperties(node);
+    return [title, properties.length !== 0 ? `{ ${properties} }` : null]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+  } else {
+    return '';
   }
-
-  return '';
 }
 
 const FORMAT_PREDICATES = [
@@ -362,12 +375,18 @@ const MODE_PREDICATES = [
   (node: LexicalNode) => node.isInert() && 'Inert',
 ];
 
-function printAllProperties(node: LexicalNode) {
+function printAllTextNodeProperties(node: LexicalNode) {
   return [
     printFormatProperties(node),
     printDetailProperties(node),
     printModeProperties(node),
   ]
+    .filter(Boolean)
+    .join(', ');
+}
+
+function printAllLinkNodeProperties(node: LinkNode) {
+  return [printTargetProperties(node), printRelProperties(node)]
     .filter(Boolean)
     .join(', ');
 }
@@ -408,6 +427,24 @@ function printFormatProperties(nodeOrSelection: LexicalNode | RangeSelection) {
     str = 'format: ' + str;
   }
 
+  return str;
+}
+
+function printTargetProperties(node: LinkNode) {
+  let str = node.getTarget();
+  // TODO Fix nullish on LinkNode
+  if (str != null) {
+    str = 'target: ' + str;
+  }
+  return str;
+}
+
+function printRelProperties(node: LinkNode) {
+  let str = node.getRel();
+  // TODO Fix nullish on LinkNode
+  if (str != null) {
+    str = 'rel: ' + str;
+  }
   return str;
 }
 

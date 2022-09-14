@@ -16,6 +16,7 @@ import type {
 import {addClassNamesToElement} from '@lexical/utils';
 import {TextNode} from 'lexical';
 
+/** @noInheritDoc */
 export class HashtagNode extends TextNode {
   static getType(): string {
     return 'hashtag';

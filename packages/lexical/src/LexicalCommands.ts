@@ -22,8 +22,9 @@ export const INSERT_PARAGRAPH_COMMAND: LexicalCommand<void> = createCommand();
 export const CONTROLLED_TEXT_INSERTION_COMMAND: LexicalCommand<
   InputEvent | string
 > = createCommand();
-export const PASTE_COMMAND: LexicalCommand<ClipboardEvent | InputEvent> =
-  createCommand();
+export const PASTE_COMMAND: LexicalCommand<
+  ClipboardEvent | InputEvent | KeyboardEvent
+> = createCommand();
 export const REMOVE_TEXT_COMMAND: LexicalCommand<void> = createCommand();
 export const DELETE_WORD_COMMAND: LexicalCommand<boolean> = createCommand();
 export const DELETE_LINE_COMMAND: LexicalCommand<boolean> = createCommand();

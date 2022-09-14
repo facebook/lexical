@@ -39,6 +39,15 @@ export const IS_CODE = 1 << 4;
 export const IS_SUBSCRIPT = 1 << 5;
 export const IS_SUPERSCRIPT = 1 << 6;
 
+export const IS_ALL_FORMATTING =
+  IS_BOLD |
+  IS_ITALIC |
+  IS_STRIKETHROUGH |
+  IS_UNDERLINE |
+  IS_CODE |
+  IS_SUBSCRIPT |
+  IS_SUPERSCRIPT;
+
 // Text node details
 export const IS_DIRECTIONLESS = 1;
 export const IS_UNMERGEABLE = 1 << 1;

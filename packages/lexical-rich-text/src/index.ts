@@ -1,3 +1,4 @@
+/** @module @lexical/rich-text */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -42,9 +43,9 @@ import {
   $getRoot,
   $getSelection,
   $isDecoratorNode,
-  $isGridSelection,
   $isNodeSelection,
   $isRangeSelection,
+  $isRootNode,
   $isTextNode,
   CLICK_COMMAND,
   COMMAND_PRIORITY_EDITOR,
@@ -54,6 +55,7 @@ import {
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
+  DEPRECATED_$isGridSelection,
   DRAGSTART_COMMAND,
   DROP_COMMAND,
   ElementNode,
@@ -62,8 +64,10 @@ import {
   INDENT_CONTENT_COMMAND,
   INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
+  KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
+  KEY_ARROW_UP_COMMAND,
   KEY_BACKSPACE_COMMAND,
   KEY_DELETE_COMMAND,
   KEY_ENTER_COMMAND,
@@ -110,6 +114,7 @@ const updateOptions: {
   tag?: string;
 } = options;
 
+/** @noInheritDoc */
 export class QuoteNode extends ElementNode {
   static getType(): string {
     return 'quote';
@@ -189,7 +194,9 @@ export function $isQuoteNode(
 
 export type HeadingTagType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 
+/** @noInheritDoc */
 export class HeadingNode extends ElementNode {
+  /** @internal */
   __tag: HeadingTagType;
 
   static getType(): string {
@@ -253,6 +260,31 @@ export class HeadingNode extends ElementNode {
         conversion: convertHeadingElement,
         priority: 0,
       }),
+      p: (node: Node) => {
+        // domNode is a <p> since we matched it by nodeName
+        const paragraph = node as HTMLParagraphElement;
+        const firstChild = paragraph.firstChild;
+        if (firstChild !== null && isGoogleDocsTitle(firstChild)) {
+          return {
+            conversion: () => ({node: null}),
+            priority: 3,
+          };
+        }
+        return null;
+      },
+      span: (node: Node) => {
+        if (isGoogleDocsTitle(node)) {
+          return {
+            conversion: (domNode: Node) => {
+              return {
+                node: $createHeadingNode('h1'),
+              };
+            },
+            priority: 3,
+          };
+        }
+        return null;
+      },
     };
   }
 
@@ -294,6 +326,13 @@ export class HeadingNode extends ElementNode {
   extractWithChild(): boolean {
     return true;
   }
+}
+
+function isGoogleDocsTitle(domNode: Node): boolean {
+  if (domNode.nodeName.toLowerCase() === 'span') {
+    return (domNode as HTMLSpanElement).style.fontSize === '26pt';
+  }
+  return false;
 }
 
 function convertHeadingElement(domNode: Node): DOMConversionOutput {
@@ -377,26 +416,33 @@ function onPasteForRichText(
   editor: LexicalEditor,
 ): void {
   event.preventDefault();
-  editor.update(() => {
-    const selection = $getSelection();
-    const clipboardData =
-      event instanceof InputEvent ? null : event.clipboardData;
-    if (
-      clipboardData != null &&
-      ($isRangeSelection(selection) || $isGridSelection(selection))
-    ) {
-      $insertDataTransferForRichText(clipboardData, selection, editor);
-    }
-  });
+  editor.update(
+    () => {
+      const selection = $getSelection();
+      const clipboardData =
+        event instanceof InputEvent || event instanceof KeyboardEvent
+          ? null
+          : event.clipboardData;
+      if (
+        clipboardData != null &&
+        ($isRangeSelection(selection) || DEPRECATED_$isGridSelection(selection))
+      ) {
+        $insertDataTransferForRichText(clipboardData, selection, editor);
+      }
+    },
+    {
+      tag: 'paste',
+    },
+  );
 }
 
 function onCopyForRichText(
   event: CommandPayloadType<typeof COPY_COMMAND>,
   editor: LexicalEditor,
 ): void {
-  event.preventDefault();
   const selection = $getSelection();
   if (selection !== null) {
+    event.preventDefault();
     const clipboardData =
       event instanceof KeyboardEvent ? null : event.clipboardData;
     const htmlString = $getHtmlContent(editor);
@@ -535,11 +581,14 @@ export function registerRichText(
         if (typeof eventOrText === 'string') {
           if ($isRangeSelection(selection)) {
             selection.insertText(eventOrText);
-          } else if ($isGridSelection(selection)) {
+          } else if (DEPRECATED_$isGridSelection(selection)) {
             // TODO: Insert into the first cell & clear selection.
           }
         } else {
-          if (!$isRangeSelection(selection) && !$isGridSelection(selection)) {
+          if (
+            !$isRangeSelection(selection) &&
+            !DEPRECATED_$isGridSelection(selection)
+          ) {
             return false;
           }
 
@@ -665,14 +714,61 @@ export function registerRichText(
       COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand<KeyboardEvent>(
+      KEY_ARROW_UP_COMMAND,
+      (event) => {
+        const selection = $getSelection();
+        if (
+          $isNodeSelection(selection) &&
+          !isTargetWithinDecorator(event.target as HTMLElement)
+        ) {
+          // If selection is on a node, let's try and move selection
+          // back to being a range selection.
+          const nodes = selection.getNodes();
+          if (nodes.length > 0) {
+            nodes[0].selectPrevious();
+            return true;
+          }
+        }
+        return false;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerCommand<KeyboardEvent>(
+      KEY_ARROW_DOWN_COMMAND,
+      (event) => {
+        const selection = $getSelection();
+        if ($isNodeSelection(selection)) {
+          // If selection is on a node, let's try and move selection
+          // back to being a range selection.
+          const nodes = selection.getNodes();
+          if (nodes.length > 0) {
+            nodes[0].selectNext(0, 0);
+            return true;
+          }
+        }
+        return false;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerCommand<KeyboardEvent>(
       KEY_ARROW_LEFT_COMMAND,
       (event) => {
         const selection = $getSelection();
+        if ($isNodeSelection(selection)) {
+          // If selection is on a node, let's try and move selection
+          // back to being a range selection.
+          const nodes = selection.getNodes();
+          if (nodes.length > 0) {
+            event.preventDefault();
+            nodes[0].selectPrevious();
+            return true;
+          }
+        }
         if (!$isRangeSelection(selection)) {
           return false;
         }
-        const isHoldingShift = event.shiftKey;
         if ($shouldOverrideDefaultCharacterSelection(selection, true)) {
+          const isHoldingShift = event.shiftKey;
           event.preventDefault();
           $moveCharacter(selection, isHoldingShift, true);
           return true;
@@ -685,6 +781,19 @@ export function registerRichText(
       KEY_ARROW_RIGHT_COMMAND,
       (event) => {
         const selection = $getSelection();
+        if (
+          $isNodeSelection(selection) &&
+          !isTargetWithinDecorator(event.target as HTMLElement)
+        ) {
+          // If selection is on a node, let's try and move selection
+          // back to being a range selection.
+          const nodes = selection.getNodes();
+          if (nodes.length > 0) {
+            event.preventDefault();
+            nodes[0].selectNext(0, 0);
+            return true;
+          }
+        }
         if (!$isRangeSelection(selection)) {
           return false;
         }
@@ -710,10 +819,14 @@ export function registerRichText(
         }
         event.preventDefault();
         const {anchor} = selection;
-        if (selection.isCollapsed() && anchor.offset === 0) {
-          const element = $getNearestBlockElementAncestorOrThrow(
-            anchor.getNode(),
-          );
+        const anchorNode = anchor.getNode();
+
+        if (
+          selection.isCollapsed() &&
+          anchor.offset === 0 &&
+          !$isRootNode(anchorNode)
+        ) {
+          const element = $getNearestBlockElementAncestorOrThrow(anchorNode);
           if (element.getIndent() > 0) {
             return editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
           }
@@ -748,7 +861,7 @@ export function registerRichText(
           // If we have beforeinput, then we can avoid blocking
           // the default behavior. This ensures that the iOS can
           // intercept that we're actually inserting a paragraph,
-          // and autocomplete, autocapitialize etc work as intended.
+          // and autocomplete, autocapitalize etc work as intended.
           // This can also cause a strange performance issue in
           // Safari, where there is a noticeable pause due to
           // preventing the key down of enter.
@@ -835,7 +948,10 @@ export function registerRichText(
       PASTE_COMMAND,
       (event) => {
         const selection = $getSelection();
-        if ($isRangeSelection(selection) || $isGridSelection(selection)) {
+        if (
+          $isRangeSelection(selection) ||
+          DEPRECATED_$isGridSelection(selection)
+        ) {
           onPasteForRichText(event, editor);
           return true;
         }

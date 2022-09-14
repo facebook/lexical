@@ -51,8 +51,12 @@ export type SerializedListItemNode = Spread<
   },
   SerializedElementNode
 >;
+
+/** @noInheritDoc */
 export class ListItemNode extends ElementNode {
+  /** @internal */
   __value: number;
+  /** @internal */
   __checked?: boolean;
 
   static getType(): string {

@@ -21,6 +21,7 @@ export type Transformer =
   | TextMatchTransformer;
 
 export type ElementTransformer = {
+  dependencies: Array<Class<LexicalNode>>,
   export: (
     node: LexicalNode,
     traverseChildren: (node: ElementNode) => string,
@@ -43,6 +44,7 @@ export type TextFormatTransformer = $ReadOnly<{
 }>;
 
 export type TextMatchTransformer = $ReadOnly<{
+  dependencies: Array<Class<LexicalNode>>,
   export: (
     node: LexicalNode,
     exportChildren: (node: ElementNode) => string,

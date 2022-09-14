@@ -170,7 +170,7 @@ function $normalizeAllDirtyTextNodes(
  * 2. We transform elements. If element transforms generate additional dirty nodes we repeat step 1.
  * If element transforms only generate additional dirty elements we only repeat step 2.
  *
- * Note that to keep track of newly dirty nodes and subtress we leverage the editor._dirtyNodes and
+ * Note that to keep track of newly dirty nodes and subtrees we leverage the editor._dirtyNodes and
  * editor._subtrees which we reset in every loop.
  */
 function $applyAllTransforms(
@@ -423,7 +423,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   }
 
   // ======
-  // Reconcilation has started.
+  // Reconciliation has started.
   // ======
 
   const currentEditorState = editor._editorState;
@@ -443,7 +443,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
     activeEditor = editor;
     activeEditorState = pendingEditorState;
     isReadOnlyMode = false;
-    // We don't want updates to sync block the reconcilation.
+    // We don't want updates to sync block the reconciliation.
     editor._updating = true;
     try {
       const dirtyType = editor._dirtyType;
@@ -492,22 +492,22 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
     }
   }
 
-  pendingEditorState._readOnly = true;
-
-  if (__DEV__) {
-    handleDEVOnlyPendingUpdateGuarantees(pendingEditorState);
-    if ($isRangeSelection(pendingSelection)) {
-      Object.freeze(pendingSelection.anchor);
-      Object.freeze(pendingSelection.focus);
+  if (!pendingEditorState._readOnly) {
+    pendingEditorState._readOnly = true;
+    if (__DEV__) {
+      handleDEVOnlyPendingUpdateGuarantees(pendingEditorState);
+      if ($isRangeSelection(pendingSelection)) {
+        Object.freeze(pendingSelection.anchor);
+        Object.freeze(pendingSelection.focus);
+      }
+      Object.freeze(pendingSelection);
     }
-    Object.freeze(pendingSelection);
   }
 
   const dirtyLeaves = editor._dirtyLeaves;
   const dirtyElements = editor._dirtyElements;
   const normalizedNodes = editor._normalizedNodes;
   const tags = editor._updateTags;
-  const pendingDecorators = editor._pendingDecorators;
   const deferred = editor._deferred;
 
   if (needsUpdate) {
@@ -521,7 +521,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   $garbageCollectDetachedDecorators(editor, pendingEditorState);
 
   // ======
-  // Reconcilation has finished. Now update selection and trigger listeners.
+  // Reconciliation has finished. Now update selection and trigger listeners.
   // ======
 
   const domSelection = headless ? null : getDOMSelection();
@@ -529,7 +529,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   // Attempt to update the DOM selection, including focusing of the root element,
   // and scroll into view if needed.
   if (
-    !editor._readOnly &&
+    editor._editable &&
     // domSelection will be null in headless
     domSelection !== null &&
     (needsUpdate || pendingSelection === null || pendingSelection.dirty)
@@ -557,9 +557,15 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
       currentEditorState,
       pendingEditorState,
       mutatedNodes,
+      tags,
+      dirtyLeaves,
     );
   }
 
+  /**
+   * Capture pendingDecorators after garbage collecting detached decorators
+   */
+  const pendingDecorators = editor._pendingDecorators;
   if (pendingDecorators !== null) {
     editor._decorators = pendingDecorators;
     editor._pendingDecorators = null;
@@ -597,6 +603,8 @@ function triggerMutationListeners(
   currentEditorState: EditorState,
   pendingEditorState: EditorState,
   mutatedNodes: MutatedNodes,
+  updateTags: Set<string>,
+  dirtyLeaves: Set<string>,
 ): void {
   const listeners = Array.from(editor._listeners.mutation);
   const listenersLength = listeners.length;
@@ -605,13 +613,16 @@ function triggerMutationListeners(
     const [listener, klass] = listeners[i];
     const mutatedNodesByType = mutatedNodes.get(klass);
     if (mutatedNodesByType !== undefined) {
-      listener(mutatedNodesByType);
+      listener(mutatedNodesByType, {
+        dirtyLeaves,
+        updateTags,
+      });
     }
   }
 }
 
 export function triggerListeners(
-  type: 'update' | 'root' | 'decorator' | 'textcontent' | 'readonly',
+  type: 'update' | 'root' | 'decorator' | 'textcontent' | 'editable',
   editor: LexicalEditor,
   isCurrentlyEnqueuingUpdates: boolean,
   ...payload: unknown[]
@@ -774,7 +785,7 @@ function beginUpdate(
   let pendingEditorState = editor._pendingEditorState;
   let editorStateWasCloned = false;
 
-  if (pendingEditorState === null) {
+  if (pendingEditorState === null || pendingEditorState._readOnly) {
     pendingEditorState = editor._pendingEditorState =
       cloneEditorState(currentEditorState);
     editorStateWasCloned = true;

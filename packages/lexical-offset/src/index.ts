@@ -1,3 +1,4 @@
+/** @module @lexical/offset */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -314,18 +315,18 @@ function $getAdjustedOffsetFromDiff(
       offset,
       blockOffsetSize,
     );
-    let alreadyVisistedParentOfCurrentNode = false;
+    let alreadyVisitedParentOfCurrentNode = false;
 
     while (currentNode !== null) {
       if (!visited.has(currentNode.key)) {
-        alreadyVisistedParentOfCurrentNode = true;
+        alreadyVisitedParentOfCurrentNode = true;
         break;
       }
 
       currentNode = currentNode.parent;
     }
 
-    if (!alreadyVisistedParentOfCurrentNode) {
+    if (!alreadyVisitedParentOfCurrentNode) {
       while (currentNode !== null) {
         const key = currentNode.key;
 

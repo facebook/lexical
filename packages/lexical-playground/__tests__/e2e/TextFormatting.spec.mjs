@@ -27,7 +27,6 @@ import {
   initialize,
   insertSampleImage,
   SAMPLE_IMAGE_URL,
-  selectOption,
   test,
   waitForSelector,
 } from '../utils/index.mjs';
@@ -185,9 +184,9 @@ test.describe('TextFormatting', () => {
       `,
     );
     await assertSelection(page, {
-      anchorOffset: 0,
+      anchorOffset: 5,
       anchorPath: [0, 1, 0],
-      focusOffset: 5,
+      focusOffset: 0,
       focusPath: [0, 1, 0],
     });
 
@@ -203,9 +202,9 @@ test.describe('TextFormatting', () => {
       `,
     );
     await assertSelection(page, {
-      anchorOffset: 6,
+      anchorOffset: 11,
       anchorPath: [0, 0, 0],
-      focusOffset: 11,
+      focusOffset: 6,
       focusPath: [0, 0, 0],
     });
   });
@@ -291,9 +290,9 @@ test.describe('TextFormatting', () => {
       `,
     );
     await assertSelection(page, {
-      anchorOffset: 0,
+      anchorOffset: 5,
       anchorPath: [0, 1, 0],
-      focusOffset: 5,
+      focusOffset: 0,
       focusPath: [0, 1, 0],
     });
 
@@ -309,9 +308,9 @@ test.describe('TextFormatting', () => {
       `,
     );
     await assertSelection(page, {
-      anchorOffset: 6,
+      anchorOffset: 11,
       anchorPath: [0, 0, 0],
-      focusOffset: 11,
+      focusOffset: 6,
       focusPath: [0, 0, 0],
     });
   });
@@ -351,9 +350,9 @@ test.describe('TextFormatting', () => {
       `,
     );
     await assertSelection(page, {
-      anchorOffset: 0,
+      anchorOffset: 5,
       anchorPath: [0, 1, 0],
-      focusOffset: 5,
+      focusOffset: 0,
       focusPath: [0, 1, 0],
     });
 
@@ -369,9 +368,9 @@ test.describe('TextFormatting', () => {
       `,
     );
     await assertSelection(page, {
-      anchorOffset: 6,
+      anchorOffset: 11,
       anchorPath: [0, 0, 0],
-      focusOffset: 11,
+      focusOffset: 6,
       focusPath: [0, 0, 0],
     });
 
@@ -396,9 +395,9 @@ test.describe('TextFormatting', () => {
       `,
     );
     await assertSelection(page, {
-      anchorOffset: 0,
+      anchorOffset: 5,
       anchorPath: [0, 1, 0],
-      focusOffset: 5,
+      focusOffset: 0,
       focusPath: [0, 1, 0],
     });
 
@@ -421,9 +420,9 @@ test.describe('TextFormatting', () => {
       `,
     );
     await assertSelection(page, {
-      anchorOffset: 0,
+      anchorOffset: 5,
       anchorPath: [0, 1, 0],
-      focusOffset: 5,
+      focusOffset: 0,
       focusPath: [0, 1, 0],
     });
   });
@@ -446,8 +445,8 @@ test.describe('TextFormatting', () => {
       focusPath: [0, 0, 0],
     });
 
-    await waitForSelector(page, '.font-size');
-    await selectOption(page, '.font-size', {value: '10px'});
+    await click(page, '.font-size');
+    await click(page, 'button:has-text("10px")');
 
     await assertHTML(
       page,
@@ -489,8 +488,8 @@ test.describe('TextFormatting', () => {
       focusPath: [0, 0, 0],
     });
 
-    await waitForSelector(page, '.font-size');
-    await selectOption(page, '.font-size', {value: '10px'});
+    await click(page, '.font-size');
+    await click(page, 'button:has-text("10px")');
 
     await assertHTML(
       page,
@@ -512,8 +511,8 @@ test.describe('TextFormatting', () => {
       focusPath: [0, 1, 0],
     });
 
-    await waitForSelector(page, '.font-family');
-    await selectOption(page, '.font-family', {value: 'Georgia'});
+    await click(page, '.font-family');
+    await click(page, 'button:has-text("Georgia")');
 
     await assertHTML(
       page,
@@ -539,8 +538,8 @@ test.describe('TextFormatting', () => {
       focusPath: [0, 1, 0],
     });
 
-    await waitForSelector(page, '.font-size');
-    await selectOption(page, '.font-size', {value: '20px'});
+    await click(page, '.font-size');
+    await click(page, 'button:has-text("20px")');
 
     await assertHTML(
       page,
@@ -603,9 +602,9 @@ test.describe('TextFormatting', () => {
       `,
     );
     await assertSelection(page, {
-      anchorOffset: 0,
+      anchorOffset: 5,
       anchorPath: [0, 1, 0],
-      focusOffset: 5,
+      focusOffset: 0,
       focusPath: [0, 1, 0],
     });
 
@@ -738,21 +737,12 @@ test.describe('TextFormatting', () => {
       `,
     );
 
-    if (browserName === 'webkit') {
-      await assertSelection(page, {
-        anchorOffset: 0,
-        anchorPath: [0, 1, 0],
-        focusOffset: 5,
-        focusPath: [0, 1, 0],
-      });
-    } else {
-      await assertSelection(page, {
-        anchorOffset: 6,
-        anchorPath: [0, 0, 0],
-        focusOffset: 5,
-        focusPath: [0, 1, 0],
-      });
-    }
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [0, 1, 0],
+      focusOffset: 5,
+      focusPath: [0, 1, 0],
+    });
 
     await toggleItalic(page);
     await assertHTML(
@@ -958,6 +948,7 @@ test.describe('TextFormatting', () => {
 
   test('Regression #2523: can toggle format when selecting a TextNode edge followed by a non TextNode; ', async ({
     page,
+    isCollab,
     isPlainText,
   }) => {
     test.skip(isPlainText);
@@ -970,29 +961,33 @@ test.describe('TextFormatting', () => {
     await moveLeft(page, 1);
     await selectCharacters(page, 'left', 2);
 
-    await assertHTML(
-      page,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">A</span>
-          <span
-            class="editor-image"
-            contenteditable="false"
-            data-lexical-decorator="true">
-            <div draggable="false">
-              <img
-                alt="Yellow flower in tilt shift lens"
-                draggable="false"
-                src="${SAMPLE_IMAGE_URL}"
-                style="height: inherit; max-width: 500px; width: inherit" />
-            </div>
-          </span>
-          <span data-lexical-text="true">BC</span>
-        </p>
-      `,
-    );
+    if (!isCollab) {
+      await waitForSelector(page, '.editor-image img');
+      await assertHTML(
+        page,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">A</span>
+            <span
+              class="editor-image"
+              contenteditable="false"
+              data-lexical-decorator="true">
+              <div draggable="false">
+                <img
+                  alt="Yellow flower in tilt shift lens"
+                  class="focused"
+                  draggable="false"
+                  src="${SAMPLE_IMAGE_URL}"
+                  style="height: inherit; max-width: 500px; width: inherit" />
+              </div>
+            </span>
+            <span data-lexical-text="true">BC</span>
+          </p>
+        `,
+      );
+    }
     await toggleBold(page);
     await assertHTML(
       page,

@@ -6,12 +6,16 @@
  *
  */
 
+import {expect} from '@playwright/test';
+
 import {moveLeft} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
   click,
   dragImage,
+  dragMouse,
+  evaluate,
   focusEditor,
   html,
   initialize,
@@ -21,6 +25,7 @@ import {
   IS_WINDOWS,
   SAMPLE_IMAGE_URL,
   SAMPLE_LANDSCAPE_IMAGE_URL,
+  selectorBoundingBox,
   test,
   waitForSelector,
 } from '../utils/index.mjs';
@@ -68,6 +73,7 @@ test.describe('Images', () => {
 
     await focusEditor(page);
     await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('ArrowLeft');
     await assertSelection(page, {
       anchorOffset: 0,
       anchorPath: [0],
@@ -76,6 +82,7 @@ test.describe('Images', () => {
     });
 
     await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowRight');
     await assertSelection(page, {
       anchorOffset: 1,
       anchorPath: [0],
@@ -83,6 +90,7 @@ test.describe('Images', () => {
       focusPath: [0],
     });
 
+    await page.keyboard.press('ArrowRight');
     await page.keyboard.press('ArrowRight');
     await page.keyboard.press('Backspace');
 
@@ -118,7 +126,7 @@ test.describe('Images', () => {
                   alt="Yellow flower in tilt shift lens"
                   draggable="false"
                   style="height: inherit; max-width: 500px; width: inherit;"
-                  class="focused" />
+                  class="focused draggable" />
               </div>
               <div>
                 <button class="image-caption-button">Add Caption</button>
@@ -184,6 +192,8 @@ test.describe('Images', () => {
     });
 
     await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('ArrowLeft');
+
     await page.keyboard.press('Delete');
 
     await assertHTML(
@@ -214,7 +224,7 @@ test.describe('Images', () => {
     await insertSampleImage(page);
 
     await focusEditor(page);
-    await moveLeft(page, 2);
+    await moveLeft(page, 4);
 
     await assertHTML(
       page,
@@ -302,7 +312,7 @@ test.describe('Images', () => {
     await insertSampleImage(page);
 
     await focusEditor(page);
-    await moveLeft(page, 2);
+    await moveLeft(page, 4);
 
     await assertHTML(
       page,
@@ -451,7 +461,7 @@ test.describe('Images', () => {
     // but when running the playwright test, we can't get the correct values from `event.rangeParent` and `event.rangeOffset`,
     // so for now we can only test the case of dragging the image to the end of the text
     if (browserName === 'firefox') {
-      await dragImage(page, 'span[data-lexical-text="true"]', 'end');
+      await dragImage(page, 'span[data-lexical-text="true"]', 'middle', 'end');
 
       await waitForSelector(page, '.editor-image img');
 
@@ -537,6 +547,7 @@ test.describe('Images', () => {
     await page.keyboard.press('Enter');
 
     await insertSampleImage(page);
+    await page.pause();
 
     await dragImage(page, 'span[data-lexical-text="true"]');
 
@@ -567,6 +578,34 @@ test.describe('Images', () => {
         </p>
       `,
     );
+  });
+
+  test('Select image, then select text - EditorState._selection updates with mousedown #2901', async ({
+    page,
+    isPlainText,
+    browserName,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    await page.keyboard.type('HelloWorld');
+    await page.keyboard.press('Enter');
+    await insertSampleImage(page);
+    await click(page, '.editor-image img');
+
+    const textBoundingBox = await selectorBoundingBox(
+      page,
+      'span[data-lexical-text="true"]',
+    );
+    await dragMouse(page, textBoundingBox, textBoundingBox, 'start', 'middle');
+
+    const lexicalSelection = await evaluate(page, (editor) => {
+      return window.lexicalEditor._editorState._selection;
+    });
+    expect(lexicalSelection.anchor).toBeTruthy();
+    expect(lexicalSelection.focus).toBeTruthy();
   });
 
   test('Node selection: can select multiple image nodes and replace them with a new image', async ({

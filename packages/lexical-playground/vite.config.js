@@ -127,6 +127,7 @@ const moduleResolution = [
   'LexicalPlainTextPlugin',
   'LexicalRichTextPlugin',
   'LexicalClearEditorPlugin',
+  'LexicalCollaborationContext',
   'LexicalCollaborationPlugin',
   'LexicalHistoryPlugin',
   'LexicalTypeaheadMenuPlugin',
@@ -135,7 +136,9 @@ const moduleResolution = [
   'LexicalListPlugin',
   'LexicalCheckListPlugin',
   'LexicalAutoFocusPlugin',
+  "LexicalTableOfContents__EXPERIMENTAL",
   'LexicalAutoLinkPlugin',
+  'LexicalAutoEmbedPlugin',
   'LexicalOnChangePlugin',
   'LexicalAutoScrollPlugin',
 ].forEach((module) => {
@@ -153,7 +156,7 @@ const moduleResolution = [
       replacement: resolvedPath,
     });
   }
-}); 
+});
 
 // https://vitejs.dev/config/
 export default defineConfig({

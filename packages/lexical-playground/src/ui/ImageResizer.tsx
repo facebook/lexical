@@ -25,21 +25,24 @@ const Direction = {
 export default function ImageResizer({
   onResizeStart,
   onResizeEnd,
+  buttonRef,
   imageRef,
   maxWidth,
   editor,
   showCaption,
   setShowCaption,
+  captionsEnabled,
 }: {
   editor: LexicalEditor;
+  buttonRef: {current: null | HTMLButtonElement};
   imageRef: {current: null | HTMLElement};
   maxWidth?: number;
   onResizeEnd: (width: 'inherit' | number, height: 'inherit' | number) => void;
   onResizeStart: () => void;
   setShowCaption: (show: boolean) => void;
   showCaption: boolean;
+  captionsEnabled: boolean;
 }): JSX.Element {
-  const buttonRef = useRef(null);
   const controlWrapperRef = useRef<HTMLDivElement>(null);
   const userSelect = useRef({
     priority: '',
@@ -242,7 +245,7 @@ export default function ImageResizer({
   };
   return (
     <div ref={controlWrapperRef}>
-      {!showCaption && (
+      {!showCaption && captionsEnabled && (
         <button
           className="image-caption-button"
           ref={buttonRef}

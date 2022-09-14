@@ -31,6 +31,7 @@ import {
   $getNearestNodeFromDOMNode,
   $updateTextNodeFromDOMContent,
   getNodeFromDOMNode,
+  getWindow,
   internalGetRoot,
   isFirefoxClipboardEvents,
 } from './LexicalUtils';
@@ -48,9 +49,9 @@ function updateTimeStamp(event: Event) {
   lastTextEntryTimeStamp = event.timeStamp;
 }
 
-function initTextEntryListener(): void {
+function initTextEntryListener(editor: LexicalEditor): void {
   if (lastTextEntryTimeStamp === 0) {
-    window.addEventListener('textInput', updateTimeStamp, true);
+    getWindow(editor).addEventListener('textInput', updateTimeStamp, true);
   }
 }
 
@@ -292,7 +293,7 @@ export function $flushMutations(
           $setSelection(selection);
         }
 
-        if (IS_FIREFOX && isFirefoxClipboardEvents()) {
+        if (IS_FIREFOX && isFirefoxClipboardEvents(editor)) {
           selection.insertRawText(possibleTextForFirefoxPaste);
         }
       }
@@ -312,7 +313,7 @@ export function flushRootMutations(editor: LexicalEditor): void {
 }
 
 export function initMutationObserver(editor: LexicalEditor): void {
-  initTextEntryListener();
+  initTextEntryListener(editor);
   editor._observer = new MutationObserver(
     (mutations: Array<MutationRecord>, observer: MutationObserver) => {
       $flushMutations(editor, mutations, observer);

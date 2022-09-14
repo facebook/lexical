@@ -133,8 +133,9 @@ function handleLinkCreation(
         );
       }
 
+      const nodeFormat = node.__format;
       const linkNode = $createAutoLinkNode(match.url);
-      linkNode.append($createTextNode(match.text));
+      linkNode.append($createTextNode(match.text).setFormat(nodeFormat));
       middleNode.replace(linkNode);
       onChange(match.url, null);
     }
@@ -228,7 +229,7 @@ function useAutoLink(
     if (!editor.hasNodes([AutoLinkNode])) {
       invariant(
         false,
-        'LexicalAutoLinkPlugin: AutoLinkNode, TableCellNode or TableRowNode not registered on editor',
+        'LexicalAutoLinkPlugin: AutoLinkNode not registered on editor',
       );
     }
 

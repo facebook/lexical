@@ -14,10 +14,12 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $createHorizontalRuleNode,
   $isHorizontalRuleNode,
+  HorizontalRuleNode,
 } from '@lexical/react/LexicalHorizontalRuleNode';
 import {useEffect} from 'react';
 
 const HR: ElementTransformer = {
+  dependencies: [HorizontalRuleNode],
   export: (node: LexicalNode) => {
     return $isHorizontalRuleNode(node) ? '***' : null;
   },
@@ -36,7 +38,7 @@ const HR: ElementTransformer = {
   },
   type: 'element',
 };
-const DEFAULT_TRANSFORMERS = [HR, ...TRANSFORMERS];
+export const DEFAULT_TRANSFORMERS = [HR, ...TRANSFORMERS];
 
 export function MarkdownShortcutPlugin({
   transformers = DEFAULT_TRANSFORMERS,

@@ -77,10 +77,68 @@ describe('LexicalLinkNode tests', () => {
       });
     });
 
+    test('LinkNode.getTarget()', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        const linkNode = new LinkNode('https://example.com/foo', {
+          target: '_blank',
+        });
+
+        expect(linkNode.getTarget()).toBe('_blank');
+      });
+    });
+
+    test('LinkNode.setTarget()', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        const linkNode = new LinkNode('https://example.com/foo', {
+          target: '_blank',
+        });
+
+        expect(linkNode.getTarget()).toBe('_blank');
+
+        linkNode.setTarget('_self');
+
+        expect(linkNode.getTarget()).toBe('_self');
+      });
+    });
+
+    test('LinkNode.getRel()', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        const linkNode = new LinkNode('https://example.com/foo', {
+          rel: 'noopener noreferrer',
+          target: '_blank',
+        });
+
+        expect(linkNode.getRel()).toBe('noopener noreferrer');
+      });
+    });
+
+    test('LinkNode.setRel()', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        const linkNode = new LinkNode('https://example.com/foo', {
+          rel: 'noopener',
+          target: '_blank',
+        });
+
+        expect(linkNode.getRel()).toBe('noopener');
+
+        linkNode.setRel('noopener noreferrer');
+
+        expect(linkNode.getRel()).toBe('noopener noreferrer');
+      });
+    });
+
     test('LinkNode.createDOM()', async () => {
       const {editor} = testEnv;
 
-      editor.update(() => {
+      await editor.update(() => {
         const linkNode = new LinkNode('https://example.com/foo');
 
         expect(linkNode.createDOM(editorConfig).outerHTML).toBe(
@@ -95,6 +153,29 @@ describe('LexicalLinkNode tests', () => {
       });
     });
 
+    test('LinkNode.createDOM() with target and rel', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        const linkNode = new LinkNode('https://example.com/foo', {
+          rel: 'noopener noreferrer',
+          target: '_blank',
+        });
+
+        expect(linkNode.createDOM(editorConfig).outerHTML).toBe(
+          '<a href="https://example.com/foo" target="_blank" rel="noopener noreferrer" class="my-link-class"></a>',
+        );
+        expect(
+          linkNode.createDOM({
+            namespace: '',
+            theme: {},
+          }).outerHTML,
+        ).toBe(
+          '<a href="https://example.com/foo" target="_blank" rel="noopener noreferrer"></a>',
+        );
+      });
+    });
+
     test('LinkNode.updateDOM()', async () => {
       const {editor} = testEnv;
 
@@ -105,6 +186,67 @@ describe('LexicalLinkNode tests', () => {
 
         expect(linkNode.createDOM(editorConfig).outerHTML).toBe(
           '<a href="https://example.com/foo" class="my-link-class"></a>',
+        );
+
+        const newLinkNode = new LinkNode('https://example.com/bar');
+        const result = newLinkNode.updateDOM(
+          linkNode,
+          domElement,
+          editorConfig,
+        );
+
+        expect(result).toBe(false);
+        expect(domElement.outerHTML).toBe(
+          '<a href="https://example.com/bar" class="my-link-class"></a>',
+        );
+      });
+    });
+
+    test('LinkNode.updateDOM() with target and rel', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        const linkNode = new LinkNode('https://example.com/foo', {
+          rel: 'noopener noreferrer',
+          target: '_blank',
+        });
+
+        const domElement = linkNode.createDOM(editorConfig);
+
+        expect(linkNode.createDOM(editorConfig).outerHTML).toBe(
+          '<a href="https://example.com/foo" target="_blank" rel="noopener noreferrer" class="my-link-class"></a>',
+        );
+
+        const newLinkNode = new LinkNode('https://example.com/bar', {
+          rel: 'noopener',
+          target: '_self',
+        });
+        const result = newLinkNode.updateDOM(
+          linkNode,
+          domElement,
+          editorConfig,
+        );
+
+        expect(result).toBe(false);
+        expect(domElement.outerHTML).toBe(
+          '<a href="https://example.com/bar" target="_self" rel="noopener" class="my-link-class"></a>',
+        );
+      });
+    });
+
+    test('LinkNode.updateDOM() with undefined target and undefined rel', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        const linkNode = new LinkNode('https://example.com/foo', {
+          rel: 'noopener noreferrer',
+          target: '_blank',
+        });
+
+        const domElement = linkNode.createDOM(editorConfig);
+
+        expect(linkNode.createDOM(editorConfig).outerHTML).toBe(
+          '<a href="https://example.com/foo" target="_blank" rel="noopener noreferrer" class="my-link-class"></a>',
         );
 
         const newLinkNode = new LinkNode('https://example.com/bar');
@@ -152,6 +294,29 @@ describe('LexicalLinkNode tests', () => {
         expect(linkNode.__type).toEqual(createdLinkNode.__type);
         expect(linkNode.__parent).toEqual(createdLinkNode.__parent);
         expect(linkNode.__url).toEqual(createdLinkNode.__url);
+        expect(linkNode.__key).not.toEqual(createdLinkNode.__key);
+      });
+    });
+
+    test('$createLinkNode() with target and rel', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        const linkNode = new LinkNode('https://example.com/foo', {
+          rel: 'noopener noreferrer',
+          target: '_blank',
+        });
+
+        const createdLinkNode = $createLinkNode('https://example.com/foo', {
+          rel: 'noopener noreferrer',
+          target: '_blank',
+        });
+
+        expect(linkNode.__type).toEqual(createdLinkNode.__type);
+        expect(linkNode.__parent).toEqual(createdLinkNode.__parent);
+        expect(linkNode.__url).toEqual(createdLinkNode.__url);
+        expect(linkNode.__target).toEqual(createdLinkNode.__target);
+        expect(linkNode.__rel).toEqual(createdLinkNode.__rel);
         expect(linkNode.__key).not.toEqual(createdLinkNode.__key);
       });
     });

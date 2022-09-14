@@ -253,6 +253,7 @@ function createTextInnerDOM(
   }
 }
 
+/** @noInheritDoc */
 export class TextNode extends LexicalNode {
   __text: string;
   __format: number;
@@ -507,18 +508,16 @@ export class TextNode extends LexicalNode {
     return;
   }
 
-  // TODO 0.4 This should just be a `string`.
+  // TODO 0.5 This should just be a `string`.
   setFormat(format: TextFormatType | number): this {
-    errorOnReadOnly();
     const self = this.getWritable();
     self.__format =
       typeof format === 'string' ? TEXT_TYPE_TO_FORMAT[format] : format;
     return self;
   }
 
-  // TODO 0.4 This should just be a `string`.
+  // TODO 0.5 This should just be a `string`.
   setDetail(detail: TextDetailType | number): this {
-    errorOnReadOnly();
     const self = this.getWritable();
     self.__detail =
       typeof detail === 'string' ? DETAIL_TYPE_TO_DETAIL[detail] : detail;
@@ -526,7 +525,6 @@ export class TextNode extends LexicalNode {
   }
 
   setStyle(style: string): this {
-    errorOnReadOnly();
     const self = this.getWritable();
     self.__style = style;
     return self;
@@ -538,21 +536,18 @@ export class TextNode extends LexicalNode {
   }
 
   toggleDirectionless(): this {
-    errorOnReadOnly();
     const self = this.getWritable();
     self.__detail ^= IS_DIRECTIONLESS;
     return self;
   }
 
   toggleUnmergeable(): this {
-    errorOnReadOnly();
     const self = this.getWritable();
     self.__detail ^= IS_UNMERGEABLE;
     return self;
   }
 
   setMode(type: TextModeType): this {
-    errorOnReadOnly();
     const mode = TEXT_MODE_TO_TYPE[type];
     const self = this.getWritable();
     self.__mode = mode;
@@ -560,7 +555,6 @@ export class TextNode extends LexicalNode {
   }
 
   setTextContent(text: string): this {
-    errorOnReadOnly();
     const writableSelf = this.getWritable();
     writableSelf.__text = text;
     return writableSelf;
@@ -613,7 +607,6 @@ export class TextNode extends LexicalNode {
     newText: string,
     moveSelection?: boolean,
   ): TextNode {
-    errorOnReadOnly();
     const writableSelf = this.getWritable();
     const text = writableSelf.__text;
     const handledTextLength = newText.length;
@@ -843,11 +836,6 @@ function convertSpanElement(domNode: Node): DOMConversionOutput {
   const hasUnderlineTextDecoration = span.style.textDecoration === 'underline';
   // Google Docs uses span tags + vertical-align to specify subscript and superscript
   const verticalAlign = span.style.verticalAlign;
-  // Google Docs uses span tags + color, background-color for coloring
-  const backgroundColor = span.style.backgroundColor;
-  const textColor = span.style.color;
-
-  //TODO: font-size and coloring of subscript & superscript
 
   return {
     forChild: (lexicalNode) => {
@@ -873,19 +861,6 @@ function convertSpanElement(domNode: Node): DOMConversionOutput {
         lexicalNode.toggleFormat('superscript');
       }
 
-      let cssString = '';
-
-      if (textColor && textColor !== 'rgb(0, 0, 0)') {
-        cssString += `color: ${textColor};`;
-      }
-      if (backgroundColor && backgroundColor !== 'transparent') {
-        cssString += `background-color: ${backgroundColor};`;
-      }
-
-      if (cssString !== '') {
-        lexicalNode.setStyle(cssString);
-      }
-
       return lexicalNode;
     },
     node: null,
@@ -907,14 +882,17 @@ function convertBringAttentionToElement(domNode: Node): DOMConversionOutput {
     node: null,
   };
 }
-function convertTextDOMNode(domNode: Node): DOMConversionOutput {
-  const {parentElement} = domNode;
-  const textContent = domNode.textContent || '';
-  const textContentTrim = textContent.trim();
-  const isPre =
-    parentElement != null && parentElement.tagName.toLowerCase() === 'pre';
-  if (!isPre && textContentTrim.length === 0 && textContent.includes('\n')) {
-    return {node: null};
+function convertTextDOMNode(
+  domNode: Node,
+  _parent?: Node,
+  preformatted?: boolean,
+): DOMConversionOutput {
+  let textContent = domNode.textContent || '';
+  if (!preformatted && /\n/.test(textContent)) {
+    textContent = textContent.replace(/\r?\n/gm, ' ');
+    if (textContent.trim().length === 0) {
+      return {node: null};
+    }
   }
   return {node: $createTextNode(textContent)};
 }

@@ -22,16 +22,17 @@ import {
   $createTextNode,
   $isDecoratorNode,
   $isElementNode,
-  $isGridCellNode,
-  $isGridNode,
-  $isGridRowNode,
   $isLeafNode,
   $isLineBreakNode,
   $isRootNode,
   $isTextNode,
+  $setSelection,
   DecoratorNode,
-  GridCellNode,
-  GridNode,
+  DEPRECATED_$isGridCellNode,
+  DEPRECATED_$isGridNode,
+  DEPRECATED_$isGridRowNode,
+  DEPRECATED_GridCellNode,
+  DEPRECATED_GridNode,
   TextNode,
 } from '.';
 import {DOM_ELEMENT_TYPE, TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
@@ -391,7 +392,7 @@ export class GridSelection implements BaseSelection {
   is(
     selection: null | RangeSelection | NodeSelection | GridSelection,
   ): boolean {
-    if (!$isGridSelection(selection)) {
+    if (!DEPRECATED_$isGridSelection(selection)) {
       return false;
     }
     return this.gridKey === selection.gridKey && this.anchor.is(this.focus);
@@ -478,8 +479,8 @@ export class GridSelection implements BaseSelection {
     const nodesSet = new Set<LexicalNode>();
     const {fromX, fromY, toX, toY} = this.getShape();
 
-    const gridNode = $getNodeByKey<GridNode>(this.gridKey);
-    if (!$isGridNode(gridNode)) {
+    const gridNode = $getNodeByKey<DEPRECATED_GridNode>(this.gridKey);
+    if (!DEPRECATED_$isGridNode(gridNode)) {
       invariant(false, 'getNodes: expected to find GridNode');
     }
     nodesSet.add(gridNode);
@@ -489,13 +490,13 @@ export class GridSelection implements BaseSelection {
       const gridRowNode = gridRowNodes[r];
       nodesSet.add(gridRowNode);
 
-      if (!$isGridRowNode(gridRowNode)) {
+      if (!DEPRECATED_$isGridRowNode(gridRowNode)) {
         invariant(false, 'getNodes: expected to find GridRowNode');
       }
-      const gridCellNodes = gridRowNode.getChildren<GridCellNode>();
+      const gridCellNodes = gridRowNode.getChildren<DEPRECATED_GridCellNode>();
       for (let c = fromX; c <= toX; c++) {
         const gridCellNode = gridCellNodes[c];
-        if (!$isGridCellNode(gridCellNode)) {
+        if (!DEPRECATED_$isGridCellNode(gridCellNode)) {
           invariant(false, 'getNodes: expected to find GridCellNode');
         }
         nodesSet.add(gridCellNode);
@@ -528,7 +529,7 @@ export class GridSelection implements BaseSelection {
   }
 }
 
-export function $isGridSelection(x: unknown): x is GridSelection {
+export function DEPRECATED_$isGridSelection(x: unknown): x is GridSelection {
   return x instanceof GridSelection;
 }
 
@@ -1072,7 +1073,13 @@ export class RangeSelection implements BaseSelection {
   }
 
   formatText(formatType: TextFormatType): void {
-    // TODO I wonder if this methods use selection.extract() instead?
+    if (this.isCollapsed()) {
+      this.toggleFormat(formatType);
+      // When changing format, we should stop composition
+      $setCompositionKey(null);
+      return;
+    }
+
     const selectedNodes = this.getNodes();
     const selectedTextNodes: Array<TextNode> = [];
     for (const selectedNode of selectedNodes) {
@@ -1080,120 +1087,113 @@ export class RangeSelection implements BaseSelection {
         selectedTextNodes.push(selectedNode);
       }
     }
-    const selectedTextNodesLength = selectedTextNodes.length;
-    let firstIndex = 0;
-    const lastIndex = selectedTextNodesLength - 1;
-    let firstNode = selectedTextNodes[0];
-    let lastNode = selectedTextNodes[lastIndex];
 
-    if (this.isCollapsed()) {
+    const selectedTextNodesLength = selectedTextNodes.length;
+    if (selectedTextNodesLength === 0) {
       this.toggleFormat(formatType);
       // When changing format, we should stop composition
       $setCompositionKey(null);
       return;
     }
+
     const anchor = this.anchor;
     const focus = this.focus;
-    const anchorOffset = anchor.offset;
-    const focusOffset = focus.offset;
-    let firstNextFormat = firstNode.getFormatFlags(formatType, null);
-    let firstNodeTextLength = firstNode.getTextContent().length;
+    const isBackward = this.isBackward();
+    const startPoint = isBackward ? focus : anchor;
+    const endPoint = isBackward ? anchor : focus;
 
-    const isBefore = anchor.isBefore(focus);
-    const endOffset = isBefore ? focusOffset : anchorOffset;
-    let startOffset = isBefore ? anchorOffset : focusOffset;
+    let firstIndex = 0;
+    let firstNode = selectedTextNodes[0];
+    let startOffset = startPoint.type === 'element' ? 0 : startPoint.offset;
 
-    // This is the case where the user only selected the very end of the
-    // first node so we don't want to include it in the formatting change.
+    // In case selection started at the end of text node use next text node
     if (
-      startOffset === firstNode.getTextContentSize() &&
-      selectedTextNodes.length > 1
+      startPoint.type === 'text' &&
+      startOffset === firstNode.getTextContentSize()
     ) {
-      const nextNode = selectedTextNodes[1];
-      startOffset = 0;
       firstIndex = 1;
-      firstNode = nextNode;
-      firstNodeTextLength = nextNode.getTextContentSize();
-      firstNextFormat = nextNode.getFormatFlags(formatType, null);
+      firstNode = selectedTextNodes[1];
+      startOffset = 0;
     }
 
-    // This is the case where we only selected a single node
+    if (firstNode == null) {
+      return;
+    }
+
+    const firstNextFormat = firstNode.getFormatFlags(formatType, null);
+
+    const lastIndex = selectedTextNodesLength - 1;
+    let lastNode = selectedTextNodes[lastIndex];
+    const endOffset =
+      endPoint.type === 'text'
+        ? endPoint.offset
+        : lastNode.getTextContentSize();
+
+    // Single node selected
     if (firstNode.is(lastNode)) {
-      if ($isTextNode(firstNode)) {
-        if (anchor.type === 'element' && focus.type === 'element') {
-          firstNode.setFormat(firstNextFormat);
-          firstNode.select(startOffset, endOffset);
-          this.format = firstNextFormat;
-          return;
-        }
-
-        // No actual text is selected, so do nothing.
-        if (startOffset === endOffset) {
-          return;
-        }
-        // The entire node is selected, so just format it
-        if (startOffset === 0 && endOffset === firstNodeTextLength) {
-          firstNode.setFormat(firstNextFormat);
-          firstNode.select(startOffset, endOffset);
-        } else {
-          // ndoe is partially selected, so split it into two nodes
-          // adnd style the selected one.
-          const splitNodes = firstNode.splitText(startOffset, endOffset);
-          const replacement = startOffset === 0 ? splitNodes[0] : splitNodes[1];
-          replacement.setFormat(firstNextFormat);
-          replacement.select(0, endOffset - startOffset);
-        }
-        this.format = firstNextFormat;
+      // No actual text is selected, so do nothing.
+      if (startOffset === endOffset) {
+        return;
       }
-      // multiple nodes selected.
-    } else {
-      // Note: startOffset !== firstNodeTextLength should only occur within rare programatic
-      // update functions; transforms normalization ensure there's no empty text nodes.
-      if ($isTextNode(firstNode) && startOffset !== firstNodeTextLength) {
-        if (startOffset !== 0) {
-          // the entire first node isn't selected, so split it
-          [, firstNode as TextNode] = firstNode.splitText(startOffset);
-          startOffset = 0;
-        }
+      // The entire node is selected, so just format it
+      if (startOffset === 0 && endOffset === firstNode.getTextContentSize()) {
         firstNode.setFormat(firstNextFormat);
-      }
-      let lastNextFormat = firstNextFormat;
+      } else {
+        // Node is partially selected, so split it into two nodes
+        // add style the selected one.
+        const splitNodes = firstNode.splitText(startOffset, endOffset);
+        const replacement = startOffset === 0 ? splitNodes[0] : splitNodes[1];
+        replacement.setFormat(firstNextFormat);
 
-      if ($isTextNode(lastNode)) {
-        lastNextFormat = lastNode.getFormatFlags(formatType, firstNextFormat);
-        const lastNodeText = lastNode.getTextContent();
-        const lastNodeTextLength = lastNodeText.length;
-        // if the offset is 0, it means no actual characters are selected,
-        // so we skip formatting the last node altogether.
-        if (endOffset !== 0) {
-          // if the entire last node isn't selected, split it
-          if (endOffset !== lastNodeTextLength) {
-            [lastNode as TextNode] = lastNode.splitText(endOffset);
-          }
-          lastNode.setFormat(lastNextFormat);
+        // Update selection only if starts/ends on text node
+        if (startPoint.type === 'text') {
+          startPoint.set(replacement.__key, 0, 'text');
+        }
+        if (endPoint.type === 'text') {
+          endPoint.set(replacement.__key, endOffset - startOffset, 'text');
         }
       }
 
-      this.format = firstNextFormat | lastNextFormat;
+      this.format = firstNextFormat;
 
-      // deal with all the nodes in between
-      for (let i = firstIndex + 1; i < lastIndex; i++) {
-        const selectedNode = selectedTextNodes[i];
-        const selectedNodeKey = selectedNode.__key;
-        if (
-          $isTextNode(selectedNode) &&
-          selectedNodeKey !== firstNode.__key &&
-          selectedNodeKey !== lastNode.__key &&
-          !selectedNode.isToken()
-        ) {
-          const selectedNextFormat = selectedNode.getFormatFlags(
-            formatType,
-            lastNextFormat,
-          );
-          selectedNode.setFormat(selectedNextFormat);
-        }
+      return;
+    }
+    // Multiple nodes selected
+    // The entire first node isn't selected, so split it
+    if (startOffset !== 0) {
+      [, firstNode as TextNode] = firstNode.splitText(startOffset);
+      startOffset = 0;
+    }
+    firstNode.setFormat(firstNextFormat);
+
+    const lastNextFormat = lastNode.getFormatFlags(formatType, firstNextFormat);
+    // If the offset is 0, it means no actual characters are selected,
+    // so we skip formatting the last node altogether.
+    if (endOffset > 0) {
+      if (endOffset !== lastNode.getTextContentSize()) {
+        [lastNode as TextNode] = lastNode.splitText(endOffset);
+      }
+      lastNode.setFormat(lastNextFormat);
+    }
+
+    // Process all text nodes in between
+    for (let i = firstIndex + 1; i < lastIndex; i++) {
+      const textNode = selectedTextNodes[i];
+      if (!textNode.isToken()) {
+        const nextFormat = textNode.getFormatFlags(formatType, lastNextFormat);
+        textNode.setFormat(nextFormat);
       }
     }
+
+    // Update selection only if starts/ends on text node
+    if (startPoint.type === 'text') {
+      startPoint.set(firstNode.__key, startOffset, 'text');
+    }
+    if (endPoint.type === 'text') {
+      endPoint.set(lastNode.__key, endOffset, 'text');
+    }
+
+    this.format = firstNextFormat | lastNextFormat;
   }
 
   insertNodes(nodes: Array<LexicalNode>, selectStart?: boolean): boolean {
@@ -1265,7 +1265,7 @@ export class RangeSelection implements BaseSelection {
       const node = nodes[i];
       if ($isElementNode(node) && !node.isInline()) {
         // -----
-        // Heuristics for the replacment or merging of elements
+        // Heuristics for the replacement or merging of elements
         // -----
 
         // If we have an incoming element node as the first node, then we'll need
@@ -1387,13 +1387,18 @@ export class RangeSelection implements BaseSelection {
       } else if (
         !$isElementNode(node) ||
         ($isElementNode(node) && node.isInline()) ||
-        ($isDecoratorNode(target) && target.isTopLevel()) ||
-        $isLineBreakNode(target)
+        ($isDecoratorNode(target) && target.isTopLevel())
       ) {
         lastNode = node;
         target = target.insertAfter(node);
       } else {
-        target = node.getParentOrThrow();
+        const nextTarget: ElementNode = target.getParentOrThrow();
+        // if we're inserting an Element after a LineBreak, we want to move the target to the parent
+        // and remove the LineBreak so we don't have empty space.
+        if ($isLineBreakNode(target)) {
+          target.remove();
+        }
+        target = nextTarget;
         // Re-try again with the target being the parent
         i--;
         continue;
@@ -1420,6 +1425,8 @@ export class RangeSelection implements BaseSelection {
       // then we should attempt to move selection to that.
       const lastChild = $isTextNode(lastNode)
         ? lastNode
+        : $isElementNode(lastNode) && lastNode.isInline()
+        ? lastNode.getLastDescendant()
         : target.getLastDescendant();
       if (!selectStart) {
         // Handle moving selection to end for elements
@@ -1436,7 +1443,11 @@ export class RangeSelection implements BaseSelection {
         for (let i = siblings.length - 1; i >= 0; i--) {
           const sibling = siblings[i];
           const prevParent = sibling.getParentOrThrow();
-          if ($isElementNode(target) && !$isBlockElementNode(sibling)) {
+          if (
+            $isElementNode(target) &&
+            !$isBlockElementNode(sibling) &&
+            !($isDecoratorNode(sibling) && sibling.isTopLevel())
+          ) {
             if (originalTarget === target) {
               target.append(sibling);
             } else {
@@ -1627,7 +1638,7 @@ export class RangeSelection implements BaseSelection {
     if (selectedNodesLength === 0) {
       return [];
     } else if (selectedNodesLength === 1) {
-      if ($isTextNode(firstNode)) {
+      if ($isTextNode(firstNode) && !this.isCollapsed()) {
         const startOffset =
           anchorOffset > focusOffset ? focusOffset : anchorOffset;
         const endOffset =
@@ -1675,6 +1686,14 @@ export class RangeSelection implements BaseSelection {
     // Handle the selection movement around decorators.
     const possibleNode = $getDecoratorNode(focus, isBackward);
     if ($isDecoratorNode(possibleNode) && !possibleNode.isIsolated()) {
+      // Make it possible to move selection from range selection to
+      // node selection on the node.
+      if (collapse) {
+        const nodeSelection = $createNodeSelection();
+        nodeSelection.add(possibleNode.__key);
+        $setSelection(nodeSelection);
+        return;
+      }
       const sibling = isBackward
         ? possibleNode.getPreviousSibling()
         : possibleNode.getNextSibling();
@@ -1814,7 +1833,17 @@ export class RangeSelection implements BaseSelection {
 
   deleteLine(isBackward: boolean): void {
     if (this.isCollapsed()) {
-      this.modify('extend', isBackward, 'lineboundary');
+      if (this.anchor.type === 'text') {
+        this.modify('extend', isBackward, 'lineboundary');
+      }
+
+      // If selection is extended to cover text edge then extend it one character more
+      // to delete its parent element. Otherwise text content will be deleted but empty
+      // parent node will remain
+      const endPoint = isBackward ? this.focus : this.anchor;
+      if (endPoint.offset === 0) {
+        this.modify('extend', isBackward, 'character');
+      }
     }
     this.removeText();
   }
@@ -2258,7 +2287,7 @@ export function $createNodeSelection(): NodeSelection {
   return new NodeSelection(new Set());
 }
 
-export function $createGridSelection(): GridSelection {
+export function DEPRECATED_$createGridSelection(): GridSelection {
   const anchor = $createPoint('root', 0, 'element');
   const focus = $createPoint('root', 0, 'element');
   return new GridSelection('root', anchor, focus);
@@ -2271,7 +2300,10 @@ export function internalCreateSelection(
   const lastSelection = currentEditorState._selection;
   const domSelection = getDOMSelection();
 
-  if ($isNodeSelection(lastSelection) || $isGridSelection(lastSelection)) {
+  if (
+    $isNodeSelection(lastSelection) ||
+    DEPRECATED_$isGridSelection(lastSelection)
+  ) {
     return lastSelection.clone();
   }
 
@@ -2283,6 +2315,10 @@ export function internalCreateRangeSelection(
   domSelection: Selection | null,
   editor: LexicalEditor,
 ): null | RangeSelection {
+  const windowObj = editor._window;
+  if (windowObj === null) {
+    return null;
+  }
   // When we create a selection, we try to use the previous
   // selection where possible, unless an actual user selection
   // change has occurred. When we do need to create a new selection
@@ -2297,7 +2333,7 @@ export function internalCreateRangeSelection(
   // reconciliation unless there are dirty nodes that need
   // reconciling.
 
-  const windowEvent = window.event;
+  const windowEvent = windowObj.event;
   const eventType = windowEvent ? windowEvent.type : undefined;
   const isSelectionChange = eventType === 'selectionchange';
   const useDOMSelection =

@@ -24,7 +24,12 @@ import {
   triggerListeners,
   updateEditor,
 } from './LexicalUpdates';
-import {createUID, dispatchCommand, markAllNodesAsDirty} from './LexicalUtils';
+import {
+  createUID,
+  dispatchCommand,
+  getDefaultView,
+  markAllNodesAsDirty,
+} from './LexicalUtils';
 import {DecoratorNode} from './nodes/LexicalDecoratorNode';
 import {LineBreakNode} from './nodes/LexicalLineBreakNode';
 import {ParagraphNode} from './nodes/LexicalParagraphNode';
@@ -101,9 +106,20 @@ export type EditorThemeClasses = {
   root?: EditorThemeClassName;
   rtl?: EditorThemeClassName;
   table?: EditorThemeClassName;
+  tableAddColumns?: EditorThemeClassName;
+  tableAddRows?: EditorThemeClassName;
+  tableCellActionButton?: EditorThemeClassName;
+  tableCellActionButtonContainer?: EditorThemeClassName;
+  tableCellPrimarySelected?: EditorThemeClassName;
+  tableCellSelected?: EditorThemeClassName;
   tableCell?: EditorThemeClassName;
+  tableCellEditing?: EditorThemeClassName;
   tableCellHeader?: EditorThemeClassName;
+  tableCellResizer?: EditorThemeClassName;
+  tableCellSortedIndicator?: EditorThemeClassName;
+  tableResizeRuler?: EditorThemeClassName;
   tableRow?: EditorThemeClassName;
+  tableSelected?: EditorThemeClassName;
   text?: TextNodeThemeClasses;
   embedBlock?: {
     base?: EditorThemeClassName;
@@ -156,11 +172,14 @@ export type RootListener = (
 
 export type TextContentListener = (text: string) => void;
 
-export type MutationListener = (nodes: Map<NodeKey, NodeMutation>) => void;
+export type MutationListener = (
+  nodes: Map<NodeKey, NodeMutation>,
+  payload: {updateTags: Set<string>; dirtyLeaves: Set<string>},
+) => void;
 
 export type CommandListener<P> = (payload: P, editor: LexicalEditor) => boolean;
 
-export type ReadOnlyListener = (readOnly: boolean) => void;
+export type EditableListener = (editable: boolean) => void;
 
 export type CommandListenerPriority = 0 | 1 | 2 | 3 | 4;
 
@@ -202,7 +221,7 @@ type Commands = Map<
 type Listeners = {
   decorator: Set<DecoratorListener>;
   mutation: MutationListeners;
-  readonly: Set<ReadOnlyListener>;
+  editable: Set<EditableListener>;
   root: Set<RootListener>;
   textcontent: Set<TextContentListener>;
   update: Set<UpdateListener>;
@@ -210,7 +229,7 @@ type Listeners = {
 
 export type Listener =
   | DecoratorListener
-  | ReadOnlyListener
+  | EditableListener
   | MutationListener
   | RootListener
   | TextContentListener
@@ -222,7 +241,7 @@ export type ListenerType =
   | 'decorator'
   | 'textcontent'
   | 'mutation'
-  | 'readonly';
+  | 'editable';
 
 export type TransformerType = 'text' | 'decorator' | 'element' | 'root';
 
@@ -312,7 +331,7 @@ export function createEditor(editorConfig?: {
   nodes?: ReadonlyArray<Klass<LexicalNode>>;
   onError?: ErrorHandler;
   parentEditor?: LexicalEditor;
-  readOnly?: boolean;
+  editable?: boolean;
   theme?: EditorThemeClasses;
 }): LexicalEditor {
   const config = editorConfig || {};
@@ -334,7 +353,7 @@ export function createEditor(editorConfig?: {
     ...(config.nodes || []),
   ];
   const onError = config.onError;
-  const isReadOnly = config.readOnly || false;
+  const isEditable = config.editable !== undefined ? config.editable : true;
   let registeredNodes;
 
   if (editorConfig === undefined && activeEditor !== null) {
@@ -409,7 +428,7 @@ export function createEditor(editorConfig?: {
     },
     onError ? onError : console.error,
     initializeConversionCache(registeredNodes),
-    isReadOnly,
+    isEditable,
   );
 
   if (initialEditorState !== undefined) {
@@ -446,7 +465,8 @@ export class LexicalEditor {
   _key: string;
   _onError: ErrorHandler;
   _htmlConversions: DOMConversionCache;
-  _readOnly: boolean;
+  _window: null | Window;
+  _editable: boolean;
 
   constructor(
     editorState: EditorState,
@@ -455,7 +475,7 @@ export class LexicalEditor {
     config: EditorConfig,
     onError: ErrorHandler,
     htmlConversions: DOMConversionCache,
-    readOnly: boolean,
+    editable: boolean,
   ) {
     this._parentEditor = parentEditor;
     // The root element associated with this editor
@@ -474,8 +494,8 @@ export class LexicalEditor {
     // Listeners
     this._listeners = {
       decorator: new Set(),
+      editable: new Set(),
       mutation: new Map(),
-      readonly: new Set(),
       root: new Set(),
       textcontent: new Set(),
       update: new Set(),
@@ -489,7 +509,7 @@ export class LexicalEditor {
     // React node decorators for portals
     this._decorators = {};
     this._pendingDecorators = null;
-    // Used to optimize reconcilation
+    // Used to optimize reconciliation
     this._dirtyType = NO_DIRTY_NODES;
     this._cloneNotNeeded = new Set();
     this._dirtyLeaves = new Set();
@@ -503,8 +523,11 @@ export class LexicalEditor {
 
     this._onError = onError;
     this._htmlConversions = htmlConversions;
-    this._readOnly = false;
+    // We don't actually make use of the `editable` argument above.
+    // Doing so, causes e2e tests around the lock to fail.
+    this._editable = true;
     this._headless = false;
+    this._window = null;
   }
 
   isComposing(): boolean {
@@ -519,8 +542,8 @@ export class LexicalEditor {
     };
   }
 
-  registerReadOnlyListener(listener: ReadOnlyListener): () => void {
-    const listenerSetOrMap = this._listeners.readonly;
+  registerEditableListener(listener: EditableListener): () => void {
+    const listenerSetOrMap = this._listeners.editable;
     listenerSetOrMap.add(listener);
     return () => {
       listenerSetOrMap.delete(listener);
@@ -692,11 +715,13 @@ export class LexicalEditor {
       }
 
       if (nextRootElement !== null) {
+        const windowObj = getDefaultView(nextRootElement);
         const style = nextRootElement.style;
         style.userSelect = 'text';
         style.whiteSpace = 'pre-wrap';
         style.wordBreak = 'break-word';
         nextRootElement.setAttribute('data-lexical-editor', 'true');
+        this._window = windowObj;
         this._dirtyType = FULL_RECONCILE;
         initMutationObserver(this);
 
@@ -708,6 +733,8 @@ export class LexicalEditor {
         if (!this._config.disableEvents) {
           addRootElementEvents(nextRootElement, this);
         }
+      } else {
+        this._window = null;
       }
 
       triggerListeners('root', this, false, nextRootElement, prevRootElement);
@@ -796,13 +823,17 @@ export class LexicalEditor {
         {
           onUpdate: () => {
             rootElement.removeAttribute('autocapitalize');
-
             if (callbackFn) {
               callbackFn();
             }
           },
         },
       );
+      // In the case where onUpdate doesn't fire (due to the focus update not
+      // occuring).
+      if (this._pendingEditorState === null) {
+        rootElement.removeAttribute('autocapitalize');
+      }
     }
   }
 
@@ -820,14 +851,14 @@ export class LexicalEditor {
     }
   }
 
-  isReadOnly(): boolean {
-    return this._readOnly;
+  isEditable(): boolean {
+    return this._editable;
   }
 
-  setReadOnly(readOnly: boolean): void {
-    if (this._readOnly !== readOnly) {
-      this._readOnly = readOnly;
-      triggerListeners('readonly', this, true, readOnly);
+  setEditable(editable: boolean): void {
+    if (this._editable !== editable) {
+      this._editable = editable;
+      triggerListeners('editable', this, true, editable);
     }
   }
 

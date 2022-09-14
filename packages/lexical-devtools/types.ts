@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import {LexicalEditor} from 'lexical';
+
 export interface DevToolsTree {
   [key: string]: DevToolsNode;
 }
@@ -12,8 +14,29 @@ export interface DevToolsTree {
 export interface DevToolsNode {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [x: string]: any;
-  children: Array<DevToolsNode>;
   __text?: string;
   __type: string;
+  children: Array<DevToolsNode>;
+  deHighlightDOMNode: (lexicalKey: string) => void;
+  depth: number;
+  handleNodeClick: (props: NodeProperties) => void;
+  highlightDOMNode: (lexicalKey: string) => void;
   lexicalKey: string;
+  monospaceWidth: string;
 }
+
+export type LexicalKey = `__lexicalKey_${string}`;
+
+export interface LexicalHTMLElement extends HTMLElement {
+  [key: LexicalKey]: string;
+  __lexicalEditor: LexicalEditor;
+}
+
+export type NodeProperties = Record<string, NodeProperty>;
+
+export type NodeProperty = string | number | boolean | Array<string | number>;
+
+export type CloneInto = (
+  arg: {lexicalKey: string},
+  arg2: Window,
+) => {data: {lexicalKey: string}};

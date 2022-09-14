@@ -23,7 +23,7 @@ import {
   $createParagraphNode,
   $isElementNode,
   $isLineBreakNode,
-  GridCellNode,
+  DEPRECATED_GridCellNode,
 } from 'lexical';
 
 export const TableCellHeaderStates = {
@@ -45,8 +45,11 @@ export type SerializedTableCellNode = Spread<
   SerializedGridCellNode
 >;
 
-export class TableCellNode extends GridCellNode {
+/** @noInheritDoc */
+export class TableCellNode extends DEPRECATED_GridCellNode {
+  /** @internal */
   __headerState: TableCellHeaderState;
+  /** @internal */
   __width?: number;
 
   static getType(): 'tablecell' {
@@ -193,6 +196,10 @@ export class TableCellNode extends GridCellNode {
       prevNode.__headerState !== this.__headerState ||
       prevNode.__width !== this.__width
     );
+  }
+
+  isTopLevel(): boolean {
+    return true;
   }
 
   collapseAtStart(): true {

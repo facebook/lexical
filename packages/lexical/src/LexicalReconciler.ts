@@ -287,7 +287,7 @@ function isLastChildLineBreakOrDecorator(
   return $isLineBreakNode(node) || $isDecoratorNode(node);
 }
 
-// If we end an element with a LinkBreakNode, then we need to add an additonal <br>
+// If we end an element with a LinkBreakNode, then we need to add an additional <br>
 function reconcileElementTerminatingLineBreak(
   prevChildren: null | Array<NodeKey>,
   nextChildren: Array<NodeKey>,
@@ -584,9 +584,6 @@ function reconcileNode(
       if (decorator !== null) {
         reconcileDecorator(key, decorator);
       }
-
-      subTreeTextContent += text;
-      editorTextContent += text;
     } else if ($isTextNode(nextNode) && !nextNode.isDirectionless()) {
       // Handle text content, for LTR, LTR cases.
       subTreeDirectionedTextContent += text;
@@ -790,7 +787,8 @@ function getPrevElementByKeyOrThrow(key: NodeKey): HTMLElement {
   if (element === undefined) {
     invariant(
       false,
-      'Reconciliation: could not find DOM element for node key "${key}"',
+      'Reconciliation: could not find DOM element for node key %s',
+      key,
     );
   }
 

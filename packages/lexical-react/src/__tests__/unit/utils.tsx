@@ -13,19 +13,19 @@ import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'react-dom/test-utils';
 import * as Y from 'yjs';
 
-import {
-  CollaborationPlugin,
-  useCollaborationContext,
-} from '../../LexicalCollaborationPlugin';
+import {useCollaborationContext} from '../../LexicalCollaborationContext';
+import {CollaborationPlugin} from '../../LexicalCollaborationPlugin';
 import {LexicalComposer} from '../../LexicalComposer';
 import {ContentEditable} from '../../LexicalContentEditable';
 import {RichTextPlugin} from '../../LexicalRichTextPlugin';
 
 function Editor({doc, provider, setEditor}) {
-  const {yjsDocMap} = useCollaborationContext();
+  const context = useCollaborationContext();
 
   const [editor] = useLexicalComposerContext();
 
+  const {yjsDocMap} = context;
+  context.isCollabActive = true;
   yjsDocMap.set('main', doc);
 
   setEditor(editor);

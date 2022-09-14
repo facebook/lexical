@@ -1,3 +1,4 @@
+/** @module @lexical/history */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -206,7 +207,8 @@ function isTextNodeUnchanged(
       prevNode.__mode === nextNode.__mode &&
       prevNode.__detail === nextNode.__detail &&
       prevNode.__style === nextNode.__style &&
-      prevNode.__format === nextNode.__format
+      prevNode.__format === nextNode.__format &&
+      prevNode.__parent === nextNode.__parent
     );
   }
   return false;
@@ -253,9 +255,11 @@ function createMergeActionGetter(
     );
 
     const mergeAction = (() => {
+      const isSameEditor =
+        currentHistoryEntry === null || currentHistoryEntry.editor === editor;
       const shouldPushHistory = tags.has('history-push');
       const shouldMergeHistory =
-        !shouldPushHistory && tags.has('history-merge');
+        !shouldPushHistory && isSameEditor && tags.has('history-merge');
 
       if (shouldMergeHistory) {
         return HISTORY_MERGE;
@@ -276,9 +280,6 @@ function createMergeActionGetter(
 
         return DISCARD_HISTORY_CANDIDATE;
       }
-
-      const isSameEditor =
-        currentHistoryEntry === null || currentHistoryEntry.editor === editor;
 
       if (
         shouldPushHistory === false &&

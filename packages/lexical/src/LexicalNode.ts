@@ -13,7 +13,13 @@ import type {Klass} from 'lexical';
 
 import invariant from 'shared/invariant';
 
-import {$isElementNode, $isRootNode, $isTextNode, ElementNode} from '.';
+import {
+  $isDecoratorNode,
+  $isElementNode,
+  $isRootNode,
+  $isTextNode,
+  ElementNode,
+} from '.';
 import {
   $getSelection,
   $isRangeSelection,
@@ -29,6 +35,7 @@ import {
 import {
   $getCompositionKey,
   $getNodeByKey,
+  $maybeMoveChildrenSelectionToParent,
   $setCompositionKey,
   $setNodeKey,
   internalMarkNodeAsDirty,
@@ -54,7 +61,7 @@ export function removeNode(
   if (parent === null) {
     return;
   }
-  const selection = $getSelection();
+  const selection = $maybeMoveChildrenSelectionToParent(nodeToRemove);
   let selectionMoved = false;
   if ($isRangeSelection(selection) && restoreSelection) {
     const anchor = selection.anchor;
@@ -129,6 +136,7 @@ export type DOMConversion<T extends HTMLElement = HTMLElement> = {
 export type DOMConversionFn<T extends HTMLElement = HTMLElement> = (
   element: T,
   parent?: Node,
+  preformatted?: boolean,
 ) => DOMConversionOutput | null;
 
 export type DOMChildConversion = (
@@ -146,6 +154,7 @@ export type DOMConversionOutput = {
   after?: (childLexicalNodes: Array<LexicalNode>) => Array<LexicalNode>;
   forChild?: DOMChildConversion;
   node: LexicalNode | null;
+  preformatted?: boolean;
 };
 
 export type DOMExportOutput = {
@@ -160,9 +169,12 @@ export type NodeKey = string;
 export class LexicalNode {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [x: string]: any;
+  /** @internal */
   __type: string;
-  // @ts-ignore We set the key in the constructor.
+  /** @internal */
+  //@ts-ignore We set the key in the constructor.
   __key: string;
+  /** @internal */
   __parent: null | NodeKey;
 
   // Flow doesn't support abstract classes unfortunately, so we can't _force_
@@ -285,7 +297,10 @@ export class LexicalNode {
     let node: ElementNode | this | null = this;
     while (node !== null) {
       const parent: ElementNode | this | null = node.getParent();
-      if ($isRootNode(parent) && $isElementNode(node)) {
+      if (
+        $isRootNode(parent) &&
+        ($isElementNode(node) || ($isDecoratorNode(node) && node.isTopLevel()))
+      ) {
         return node;
       }
       node = parent;
@@ -624,7 +639,6 @@ export class LexicalNode {
   // Setters and mutators
 
   remove(preserveEmptyParent?: boolean): void {
-    errorOnReadOnly();
     removeNode(this, true, preserveEmptyParent);
   }
 
@@ -715,7 +729,6 @@ export class LexicalNode {
   }
 
   insertBefore(nodeToInsert: LexicalNode): LexicalNode {
-    errorOnReadOnly();
     const writableSelf = this.getWritable();
     const writableNodeToInsert = nodeToInsert.getWritable();
     removeFromParent(writableNodeToInsert);
@@ -786,7 +799,7 @@ function errorOnTypeKlassMismatch(
   if (registeredNode === undefined) {
     invariant(
       false,
-      'Create node: Attempted to create node %s that was not previously registered on the editor. You can use register your custom nodes.',
+      'Create node: Attempted to create node %s that was not configured to be used on the editor.',
       klass.name,
     );
   }

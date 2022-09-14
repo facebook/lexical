@@ -62,6 +62,7 @@ import {
   errorOnReadOnly,
   getActiveEditor,
   getActiveEditorState,
+  isCurrentlyReadOnlyMode,
   triggerCommandListeners,
   updateEditor,
 } from './LexicalUpdates';
@@ -101,7 +102,12 @@ export const scheduleMicroTask: (fn: () => void) => void =
         Promise.resolve().then(fn);
       };
 
-function isSelectionCapturedInDecoratorInput(anchorDOM: Node): boolean {
+export function $isSelectionCapturedInDecorator(node: Node): boolean {
+  return $isDecoratorNode($getNearestNodeFromDOMNode(node));
+}
+
+// TODO change to $ function
+export function isSelectionCapturedInDecoratorInput(anchorDOM: Node): boolean {
   const activeElement = document.activeElement;
   const nodeName = activeElement !== null ? activeElement.nodeName : null;
   return (
@@ -138,12 +144,11 @@ export function getNearestEditorFromDOMNode(
   while (currentNode != null) {
     // @ts-expect-error: internal field
     const editor: LexicalEditor = currentNode.__lexicalEditor;
-    if (editor != null && !editor.isReadOnly()) {
+    if (editor != null) {
       return editor;
     }
     currentNode = currentNode.parentNode;
   }
-
   return null;
 }
 
@@ -165,11 +170,14 @@ export function $isTokenOrInert(node: TextNode): boolean {
   return node.isToken() || node.isInert();
 }
 
+function isDOMNodeLexicalTextNode(node: Node): node is Text {
+  return node.nodeType === DOM_TEXT_TYPE;
+}
+
 export function getDOMTextNode(element: Node | null): Text | null {
   let node = element;
   while (node != null) {
-    if (node.nodeType === DOM_TEXT_TYPE) {
-      // @ts-expect-error: this is a Text
+    if (isDOMNodeLexicalTextNode(node)) {
       return node;
     }
     node = node.firstChild;
@@ -319,6 +327,9 @@ export function $setCompositionKey(compositionKey: null | NodeKey): void {
 }
 
 export function $getCompositionKey(): null | NodeKey {
+  if (isCurrentlyReadOnlyMode()) {
+    return null;
+  }
   const editor = getActiveEditor();
   return editor._compositionKey;
 }
@@ -496,7 +507,6 @@ export function createUID(): string {
 }
 
 export function $updateSelectedTextFromDOM(
-  editor: LexicalEditor,
   isCompositionEnd: boolean,
   data?: string,
 ): void {
@@ -579,7 +589,7 @@ export function $updateTextNodeFromDOMContent(
         $isTokenOrInert(node) ||
         ($getCompositionKey() !== null && !isComposing) ||
         // Check if character was added at the start, and we need
-        // to clear this input from occuring as that action wasn't
+        // to clear this input from occurring as that action wasn't
         // permitted.
         (parent !== null &&
           $isRangeSelection(prevSelection) &&
@@ -671,8 +681,8 @@ export function $shouldPreventDefaultAndInsertText(
     anchorKey !== focus.key ||
     // If we're working with a non-text node.
     !$isTextNode(anchorNode) ||
-    // If we are replacing a range with a single character, and not composing.
-    (textLength < 2 &&
+    // If we are replacing a range with a single character or grapheme, and not composing.
+    ((textLength < 2 || doesContainGrapheme(text)) &&
       anchor.offset !== focus.offset &&
       !anchorNode.isComposing()) ||
     // Any non standard text node.
@@ -882,7 +892,6 @@ function isArrowDown(keyCode: number): boolean {
 export function isMoveBackward(
   keyCode: number,
   ctrlKey: boolean,
-  shiftKey: boolean,
   altKey: boolean,
   metaKey: boolean,
 ): boolean {
@@ -902,7 +911,6 @@ export function isMoveToStart(
 export function isMoveForward(
   keyCode: number,
   ctrlKey: boolean,
-  shiftKey: boolean,
   altKey: boolean,
   metaKey: boolean,
 ): boolean {
@@ -922,8 +930,6 @@ export function isMoveToEnd(
 export function isMoveUp(
   keyCode: number,
   ctrlKey: boolean,
-  shiftKey: boolean,
-  altKey: boolean,
   metaKey: boolean,
 ): boolean {
   return isArrowUp(keyCode) && !ctrlKey && !metaKey;
@@ -932,8 +938,6 @@ export function isMoveUp(
 export function isMoveDown(
   keyCode: number,
   ctrlKey: boolean,
-  shiftKey: boolean,
-  altKey: boolean,
   metaKey: boolean,
 ): boolean {
   return isArrowDown(keyCode) && !ctrlKey && !metaKey;
@@ -1090,8 +1094,8 @@ export function $getDecoratorNode(
   return null;
 }
 
-export function isFirefoxClipboardEvents(): boolean {
-  const event = window.event;
+export function isFirefoxClipboardEvents(editor: LexicalEditor): boolean {
+  const event = getWindow(editor).event;
   const inputType = event && (event as InputEvent).inputType;
   return (
     inputType === 'insertFromPaste' ||
@@ -1121,7 +1125,8 @@ export function getElementByKeyOrThrow(
   if (element === undefined) {
     invariant(
       false,
-      'Reconciliation: could not find DOM element for node key "${key}"',
+      'Reconciliation: could not find DOM element for node key %s',
+      key,
     );
   }
 
@@ -1146,7 +1151,7 @@ export function scrollIntoViewIfNeeded(
   if (element !== null) {
     const rect = element.getBoundingClientRect();
 
-    if (rect.bottom > window.innerHeight) {
+    if (rect.bottom > getWindow(editor).innerHeight) {
       element.scrollIntoView(false);
     } else if (rect.top < 0) {
       element.scrollIntoView();
@@ -1175,6 +1180,63 @@ export function $addUpdateTag(tag: string): void {
   errorOnReadOnly();
   const editor = getActiveEditor();
   editor._updateTags.add(tag);
+}
+
+export function $maybeMoveChildrenSelectionToParent(
+  parentNode: LexicalNode,
+  offset = 0,
+): RangeSelection | NodeSelection | GridSelection | null {
+  if (offset !== 0) {
+    invariant(false, 'TODO');
+  }
+  const selection = $getSelection();
+  if (!$isRangeSelection(selection) || !$isElementNode(parentNode)) {
+    return selection;
+  }
+  const {anchor, focus} = selection;
+  const anchorNode = anchor.getNode();
+  const focusNode = focus.getNode();
+  if ($hasAncestor(anchorNode, parentNode)) {
+    anchor.set(parentNode.__key, 0, 'element');
+  }
+  if ($hasAncestor(focusNode, parentNode)) {
+    focus.set(parentNode.__key, 0, 'element');
+  }
+  return selection;
+}
+
+export function $hasAncestor(
+  child: LexicalNode,
+  targetNode: LexicalNode,
+): boolean {
+  let parent = child.getParent();
+  while (parent !== null) {
+    if (parent.is(targetNode)) {
+      return true;
+    }
+    parent = parent.getParent();
+  }
+  return false;
+}
+
+export function getDefaultView(domElem: HTMLElement): Window | null {
+  const ownerDoc = domElem.ownerDocument;
+  return (ownerDoc && ownerDoc.defaultView) || null;
+}
+
+export function getWindow(editor: LexicalEditor): Window {
+  const windowObj = editor._window;
+  if (windowObj === null) {
+    invariant(false, 'window object not found');
+  }
+  return windowObj;
+}
+
+export function $isTopLevel(node: LexicalNode): boolean {
+  return (
+    ($isElementNode(node) && node.isTopLevel()) ||
+    ($isDecoratorNode(node) && node.isTopLevel())
+  );
 }
 
 export function $wrapNodeInElement(

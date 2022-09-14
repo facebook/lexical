@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import {expect} from '@playwright/test';
 
 import {
   moveLeft,
@@ -18,6 +19,7 @@ import {
 import {
   assertHTML,
   assertSelection,
+  clearEditor,
   click,
   copyToClipboard,
   focus,
@@ -1984,36 +1986,29 @@ test.describe('CopyAndPaste', () => {
   test('HTML Copy + paste multi line html with extra newlines', async ({
     page,
     isPlainText,
+    isCollab,
   }) => {
-    test.skip(isPlainText);
+    test.skip(isPlainText || isCollab);
 
     await focusEditor(page);
     await pasteFromClipboard(page, {
-      'text/html': `
-        <p>Hello
-
-        </p>
-
-        <p>World</p>
-
-      `,
+      'text/html':
+        '<p>Hello\n</p>\n\n<p>\n\nWorld\n\n</p>\n\n<p>Hello\n\n   World   \n\n!\n\n</p><p>Hello <b>World</b> <i>!</i></p>',
     });
 
-    await assertHTML(
-      page,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">Hello</span>
-        </p>
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">World</span>
-        </p>
-      `,
-    );
+    const paragraphs = page.locator('div[contenteditable="true"] > p');
+    await expect(paragraphs).toHaveCount(4);
+
+    // Explicitly checking inner text, since regular assertHTML will prettify it and strip all
+    // extra newlines, which makes this test less acurate
+    await expect(paragraphs.nth(0)).toHaveText('Hello', {useInnerText: true});
+    await expect(paragraphs.nth(1)).toHaveText('World', {useInnerText: true});
+    await expect(paragraphs.nth(2)).toHaveText('Hello   World   !', {
+      useInnerText: true,
+    });
+    await expect(paragraphs.nth(3)).toHaveText('Hello World !', {
+      useInnerText: true,
+    });
   });
 
   test('HTML Copy + paste in front of or after a link', async ({
@@ -2179,44 +2174,6 @@ test.describe('CopyAndPaste', () => {
     );
   });
 
-  test('HTML Copy + paste text with background and text color', async ({
-    page,
-    isPlainText,
-  }) => {
-    test.skip(isPlainText);
-    await focusEditor(page);
-    const clipboardData = {
-      'text/html':
-        '<span style="font-size:11pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Lorem </span><span style="font-size:11pt;font-family:Arial;color:#000000;background-color:#00ff00;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">ipsum</span><span style="font-size:11pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;"> ~</span><span style="font-size:11pt;font-family:Arial;color:#4a86e8;background-color:#ffe599;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">color</span><span style="font-size:11pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">~ sit </span><span style="font-size:11pt;font-family:Arial;color:#ff0000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">amet</span></b>',
-    };
-    await pasteFromClipboard(page, clipboardData);
-    await assertHTML(
-      page,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">Lorem</span>
-          <span
-            style="background-color: rgb(0, 255, 0);"
-            data-lexical-text="true">
-            ipsum
-          </span>
-          <span data-lexical-text="true">~</span>
-          <span
-            style="color: rgb(74, 134, 232); background-color: rgb(255, 229, 153);"
-            data-lexical-text="true">
-            color
-          </span>
-          <span data-lexical-text="true">~ sit</span>
-          <span style="color: rgb(255, 0, 0);" data-lexical-text="true">
-            amet
-          </span>
-        </p>
-      `,
-    );
-  });
-
   test('HTML Copy + paste text with subscript and superscript', async ({
     page,
     isPlainText,
@@ -2244,6 +2201,53 @@ test.describe('CopyAndPaste', () => {
             </span>
           </sup>
         </p>
+      `,
+    );
+  });
+
+  test('HTML Copy + paste a Title from Google Docs', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    const clipboard = {
+      'text/html': `<meta charset='utf-8'><meta charset="utf-8"><b style="font-weight:normal;" id="docs-internal-guid-whatever"><span style="font-size:26pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">My document</span></b>`,
+    };
+
+    await pasteFromClipboard(page, clipboard);
+
+    await assertHTML(
+      page,
+      html`
+        <h1
+          class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">My document</span>
+        </h1>
+      `,
+    );
+
+    await clearEditor(page);
+    await focusEditor(page);
+
+    // These can sometimes be put onto the clipboard wrapped in a paragraph element
+    clipboard[
+      'text/html'
+    ] = `<meta charset='utf-8'><meta charset="utf-8"><b style="font-weight:normal;" id="docs-internal-guid-wjatever"><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:3pt;"><span style="font-size:26pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">My document</span></p></b>`;
+
+    await pasteFromClipboard(page, clipboard);
+
+    await assertHTML(
+      page,
+      html`
+        <h1
+          class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">My document</span>
+        </h1>
       `,
     );
   });

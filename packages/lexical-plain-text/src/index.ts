@@ -1,3 +1,4 @@
+/** @module @lexical/plain-text */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -67,22 +68,20 @@ function onCopyForPlainText(
   event: CommandPayloadType<typeof COPY_COMMAND>,
   editor: LexicalEditor,
 ): void {
-  event.preventDefault();
   editor.update(() => {
     const clipboardData =
       event instanceof KeyboardEvent ? null : event.clipboardData;
     const selection = $getSelection();
 
-    if (selection !== null) {
-      if (clipboardData != null) {
-        const htmlString = $getHtmlContent(editor);
+    if (selection !== null && clipboardData != null) {
+      event.preventDefault();
+      const htmlString = $getHtmlContent(editor);
 
-        if (htmlString !== null) {
-          clipboardData.setData('text/html', htmlString);
-        }
-
-        clipboardData.setData('text/plain', selection.getTextContent());
+      if (htmlString !== null) {
+        clipboardData.setData('text/html', htmlString);
       }
+
+      clipboardData.setData('text/plain', selection.getTextContent());
     }
   });
 }
@@ -92,15 +91,22 @@ function onPasteForPlainText(
   editor: LexicalEditor,
 ): void {
   event.preventDefault();
-  editor.update(() => {
-    const selection = $getSelection();
-    const clipboardData =
-      event instanceof InputEvent ? null : event.clipboardData;
+  editor.update(
+    () => {
+      const selection = $getSelection();
+      const clipboardData =
+        event instanceof InputEvent || event instanceof KeyboardEvent
+          ? null
+          : event.clipboardData;
 
-    if (clipboardData != null && $isRangeSelection(selection)) {
-      $insertDataTransferForPlainText(clipboardData, selection);
-    }
-  });
+      if (clipboardData != null && $isRangeSelection(selection)) {
+        $insertDataTransferForPlainText(clipboardData, selection);
+      }
+    },
+    {
+      tag: 'paste',
+    },
+  );
 }
 
 function onCutForPlainText(
@@ -368,7 +374,7 @@ export function registerPlainText(
           // If we have beforeinput, then we can avoid blocking
           // the default behavior. This ensures that the iOS can
           // intercept that we're actually inserting a paragraph,
-          // and autocomplete, autocapitialize etc work as intended.
+          // and autocomplete, autocapitalize etc work as intended.
           // This can also cause a strange performance issue in
           // Safari, where there is a noticeable pause due to
           // preventing the key down of enter.

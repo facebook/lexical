@@ -100,6 +100,10 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
         if ($isRootNode(anchorNodeParent)) {
           anchorNode.replace(list);
           const listItem = $createListItemNode();
+          if ($isElementNode(anchorNode)) {
+            listItem.setFormat(anchorNode.getFormatType());
+            listItem.setIndent(anchorNode.getIndent());
+          }
           list.append(listItem);
         } else if ($isListItemNode(anchorNode)) {
           const parent = anchorNode.getParentOrThrow();
@@ -168,6 +172,8 @@ function createListOrMerge(node: ElementNode, listType: ListType): ListNode {
   const previousSibling = node.getPreviousSibling();
   const nextSibling = node.getNextSibling();
   const listItem = $createListItemNode();
+  listItem.setFormat(node.getFormatType());
+  listItem.setIndent(node.getIndent());
   append(listItem, node.getChildren());
 
   if (
@@ -224,26 +230,36 @@ export function removeList(editor: LexicalEditor): void {
         }
       }
 
-      listNodes.forEach((listNode) => {
+      for (const listNode of listNodes) {
         let insertionPoint: ListNode | ParagraphNode = listNode;
 
         const listItems = $getAllListItems(listNode);
 
-        listItems.forEach((listItemNode) => {
-          if (listItemNode != null) {
-            const paragraph = $createParagraphNode();
+        for (const listItemNode of listItems) {
+          const paragraph = $createParagraphNode();
 
-            append(paragraph, listItemNode.getChildren());
+          append(paragraph, listItemNode.getChildren());
 
-            insertionPoint.insertAfter(paragraph);
-            insertionPoint = paragraph;
+          insertionPoint.insertAfter(paragraph);
+          insertionPoint = paragraph;
 
-            listItemNode.remove();
+          // When the anchor and focus fall on the textNode
+          // we don't have to change the selection because the textNode will be appended to
+          // the newly generated paragraph.
+          // When selection is in empty nested list item, selection is actually on the listItemNode.
+          // When the corresponding listItemNode is deleted and replaced by the newly generated paragraph
+          // we should manually set the selection's focus and anchor to the newly generated paragraph.
+          if (listItemNode.__key === selection.anchor.key) {
+            selection.anchor.set(paragraph.getKey(), 0, 'element');
           }
-        });
+          if (listItemNode.__key === selection.focus.key) {
+            selection.focus.set(paragraph.getKey(), 0, 'element');
+          }
 
+          listItemNode.remove();
+        }
         listNode.remove();
-      });
+      }
     }
   });
 }

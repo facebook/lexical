@@ -1,3 +1,4 @@
+/** @module @lexical/utils */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -11,12 +12,12 @@ import {
   $getRoot,
   $getSelection,
   $isElementNode,
-  $isGridSelection,
   $isNodeSelection,
   $isRangeSelection,
   $isTextNode,
   $setSelection,
   createEditor,
+  DEPRECATED_$isGridSelection,
   EditorState,
   ElementNode,
   Klass,
@@ -108,18 +109,18 @@ function $getDepth(node: LexicalNode): number {
 export function $getNearestNodeOfType<T extends ElementNode>(
   node: LexicalNode,
   klass: Klass<T>,
-) {
+): T | null {
   let parent: ElementNode | LexicalNode | null = node;
 
   while (parent != null) {
     if (parent instanceof klass) {
-      return parent;
+      return parent as T;
     }
 
     parent = parent.getParent();
   }
 
-  return parent;
+  return null;
 }
 
 export function $getNearestBlockElementAncestorOrThrow(
@@ -414,7 +415,10 @@ export function $insertBlockNode<T extends LexicalNode>(node: T): T {
   if ($isRangeSelection(selection)) {
     const focusNode = selection.focus.getNode();
     focusNode.getTopLevelElementOrThrow().insertAfter(node);
-  } else if ($isNodeSelection(selection) || $isGridSelection(selection)) {
+  } else if (
+    $isNodeSelection(selection) ||
+    DEPRECATED_$isGridSelection(selection)
+  ) {
     const nodes = selection.getNodes();
     nodes[nodes.length - 1].getTopLevelElementOrThrow().insertAfter(node);
   } else {

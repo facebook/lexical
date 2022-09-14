@@ -28,6 +28,7 @@ export type SerializedParagraphNode = Spread<
   SerializedElementNode
 >;
 
+/** @noInheritDoc */
 export class ParagraphNode extends ElementNode {
   static getType(): string {
     return 'paragraph';
@@ -66,6 +67,21 @@ export class ParagraphNode extends ElementNode {
 
     if (element && this.isEmpty()) {
       element.append(document.createElement('br'));
+    }
+    if (element) {
+      const formatType = this.getFormatType();
+      element.style.textAlign = formatType;
+
+      const direction = this.getDirection();
+      if (direction) {
+        element.dir = direction;
+      }
+      const indent = this.getIndent();
+      if (indent > 0) {
+        // padding-inline-start is not widely supported in email HTML, but
+        // Lexical Reconciler uses padding-inline-start. Using text-indent instead.
+        element.style.textIndent = `${indent * 20}px`;
+      }
     }
 
     return {

@@ -19,7 +19,9 @@ import {$isElementNode, ElementNode} from './LexicalElementNode';
 
 export type SerializedRootNode = SerializedElementNode;
 
+/** @noInheritDoc */
 export class RootNode extends ElementNode {
+  /** @internal */
   __cachedText: null | string;
 
   static getType(): string {
@@ -33,6 +35,10 @@ export class RootNode extends ElementNode {
   constructor() {
     super('root');
     this.__cachedText = null;
+  }
+
+  isTopLevel(): boolean {
+    return true;
   }
 
   getTopLevelElementOrThrow(): never {

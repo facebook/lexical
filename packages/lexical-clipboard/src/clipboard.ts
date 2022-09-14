@@ -24,22 +24,22 @@ import {
 } from '@lexical/selection';
 import {$findMatchingParent} from '@lexical/utils';
 import {
-  $createGridSelection,
   $createParagraphNode,
   $getRoot,
   $getSelection,
   $isDecoratorNode,
   $isElementNode,
-  $isGridCellNode,
-  $isGridNode,
-  $isGridRowNode,
-  $isGridSelection,
   $isLineBreakNode,
   $isRangeSelection,
   $isTextNode,
   $parseSerializedNode,
   $setSelection,
-  GridNode,
+  DEPRECATED_$createGridSelection,
+  DEPRECATED_$isGridCellNode,
+  DEPRECATED_$isGridNode,
+  DEPRECATED_$isGridRowNode,
+  DEPRECATED_$isGridSelection,
+  DEPRECATED_GridNode,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import invariant from 'shared/invariant';
@@ -116,16 +116,13 @@ export function $insertDataTransferForRichText(
     try {
       const parser = new DOMParser();
       const dom = parser.parseFromString(htmlString, 'text/html');
-      return $insertGeneratedNodes(
-        editor,
-        $generateNodesFromDOM(editor, dom),
-        selection,
-      );
+      const nodes = $generateNodesFromDOM(editor, dom);
+      return $insertGeneratedNodes(editor, nodes, selection);
       // eslint-disable-next-line no-empty
     } catch {}
   }
 
-  // Multi-line plain text in rich text mode pasted as separate paragrahs
+  // Multi-line plain text in rich text mode pasted as separate paragraphs
   // instead of single paragraph with linebreaks.
   const text = dataTransfer.getData('text/plain');
   if (text != null) {
@@ -145,21 +142,25 @@ export function $insertDataTransferForRichText(
   }
 }
 
-function $insertGeneratedNodes(
+export function $insertGeneratedNodes(
   editor: LexicalEditor,
   nodes: Array<LexicalNode>,
   selection: RangeSelection | GridSelection,
 ) {
   const isSelectionInsideOfGrid =
-    $isGridSelection(selection) ||
+    DEPRECATED_$isGridSelection(selection) ||
     ($findMatchingParent(selection.anchor.getNode(), (n) =>
-      $isGridCellNode(n),
+      DEPRECATED_$isGridCellNode(n),
     ) !== null &&
       $findMatchingParent(selection.focus.getNode(), (n) =>
-        $isGridCellNode(n),
+        DEPRECATED_$isGridCellNode(n),
       ) !== null);
 
-  if (isSelectionInsideOfGrid && nodes.length === 1 && $isGridNode(nodes[0])) {
+  if (
+    isSelectionInsideOfGrid &&
+    nodes.length === 1 &&
+    DEPRECATED_$isGridNode(nodes[0])
+  ) {
     $mergeGridNodesStrategy(nodes, selection, false, editor);
     return;
   }
@@ -219,11 +220,11 @@ function $basicInsertStrategy(
 
   if ($isRangeSelection(selection)) {
     selection.insertNodes(topLevelBlocks);
-  } else if ($isGridSelection(selection)) {
+  } else if (DEPRECATED_$isGridSelection(selection)) {
     // If there's an active grid selection and a non grid is pasted, add to the anchor.
     const anchorCell = selection.anchor.getNode();
 
-    if (!$isGridCellNode(anchorCell)) {
+    if (!DEPRECATED_$isGridCellNode(anchorCell)) {
       invariant(false, 'Expected Grid Cell in Grid Selection');
     }
 
@@ -237,28 +238,30 @@ function $mergeGridNodesStrategy(
   isFromLexical: boolean,
   editor: LexicalEditor,
 ) {
-  if (nodes.length !== 1 || !$isGridNode(nodes[0])) {
+  if (nodes.length !== 1 || !DEPRECATED_$isGridNode(nodes[0])) {
     invariant(false, '$mergeGridNodesStrategy: Expected Grid insertion.');
   }
 
   const newGrid = nodes[0];
   const newGridRows = newGrid.getChildren();
   const newColumnCount = newGrid
-    .getFirstChildOrThrow<GridNode>()
+    .getFirstChildOrThrow<DEPRECATED_GridNode>()
     .getChildrenSize();
   const newRowCount = newGrid.getChildrenSize();
   const gridCellNode = $findMatchingParent(selection.anchor.getNode(), (n) =>
-    $isGridCellNode(n),
+    DEPRECATED_$isGridCellNode(n),
   );
   const gridRowNode =
-    gridCellNode && $findMatchingParent(gridCellNode, (n) => $isGridRowNode(n));
+    gridCellNode &&
+    $findMatchingParent(gridCellNode, (n) => DEPRECATED_$isGridRowNode(n));
   const gridNode =
-    gridRowNode && $findMatchingParent(gridRowNode, (n) => $isGridNode(n));
+    gridRowNode &&
+    $findMatchingParent(gridRowNode, (n) => DEPRECATED_$isGridNode(n));
 
   if (
-    !$isGridCellNode(gridCellNode) ||
-    !$isGridRowNode(gridRowNode) ||
-    !$isGridNode(gridNode)
+    !DEPRECATED_$isGridCellNode(gridCellNode) ||
+    !DEPRECATED_$isGridRowNode(gridRowNode) ||
+    !DEPRECATED_$isGridNode(gridNode)
   ) {
     invariant(
       false,
@@ -288,13 +291,13 @@ function $mergeGridNodesStrategy(
   for (let r = fromY; r <= toY; r++) {
     const currentGridRowNode = gridRowNodes[r];
 
-    if (!$isGridRowNode(currentGridRowNode)) {
+    if (!DEPRECATED_$isGridRowNode(currentGridRowNode)) {
       invariant(false, 'getNodes: expected to find GridRowNode');
     }
 
     const newGridRowNode = newGridRows[newRowIdx];
 
-    if (!$isGridRowNode(newGridRowNode)) {
+    if (!DEPRECATED_$isGridRowNode(newGridRowNode)) {
       invariant(false, 'getNodes: expected to find GridRowNode');
     }
 
@@ -305,13 +308,13 @@ function $mergeGridNodesStrategy(
     for (let c = fromX; c <= toX; c++) {
       const currentGridCellNode = gridCellNodes[c];
 
-      if (!$isGridCellNode(currentGridCellNode)) {
+      if (!DEPRECATED_$isGridCellNode(currentGridCellNode)) {
         invariant(false, 'getNodes: expected to find GridCellNode');
       }
 
       const newGridCellNode = newGridCellNodes[newColumnIdx];
 
-      if (!$isGridCellNode(newGridCellNode)) {
+      if (!DEPRECATED_$isGridCellNode(newGridCellNode)) {
         invariant(false, 'getNodes: expected to find GridCellNode');
       }
 
@@ -339,14 +342,14 @@ function $mergeGridNodesStrategy(
   }
 
   if (newAnchorCellKey && newFocusCellKey) {
-    const newGridSelection = $createGridSelection();
+    const newGridSelection = DEPRECATED_$createGridSelection();
     newGridSelection.set(gridNode.getKey(), newAnchorCellKey, newFocusCellKey);
     $setSelection(newGridSelection);
     editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
   }
 }
 
-interface BaseSerializedNode {
+export interface BaseSerializedNode {
   children?: Array<BaseSerializedNode>;
   type: string;
   version: number;
@@ -390,14 +393,19 @@ function $appendNodesToJSON(
   let shouldInclude = selection != null ? currentNode.isSelected() : true;
   const shouldExclude =
     $isElementNode(currentNode) && currentNode.excludeFromCopy('html');
-  let clone = $cloneWithProperties<LexicalNode>(currentNode);
-  clone =
-    $isTextNode(clone) && selection != null
-      ? $sliceSelectedTextNodeContent(selection, clone)
-      : clone;
-  const children = $isElementNode(clone) ? clone.getChildren() : [];
+  let target = currentNode;
 
-  const serializedNode = exportNodeToJSON(clone);
+  if (selection !== null) {
+    let clone = $cloneWithProperties<LexicalNode>(currentNode);
+    clone =
+      $isTextNode(clone) && selection != null
+        ? $sliceSelectedTextNodeContent(selection, clone)
+        : clone;
+    target = clone;
+  }
+  const children = $isElementNode(target) ? target.getChildren() : [];
+
+  const serializedNode = exportNodeToJSON(target);
 
   // TODO: TextNode calls getTextContent() (NOT node.__text) within it's exportJSON method
   // which uses getLatest() to get the text from the original node with the same key.
@@ -405,8 +413,8 @@ function $appendNodesToJSON(
   // same node as far as the LexicalEditor is concerned since it shares a key.
   // We need a way to create a clone of a Node in memory with it's own key, but
   // until then this hack will work for the selected text extract use case.
-  if ($isTextNode(clone)) {
-    (serializedNode as SerializedTextNode).text = clone.__text;
+  if ($isTextNode(target)) {
+    (serializedNode as SerializedTextNode).text = target.__text;
   }
 
   for (let i = 0; i < children.length; i++) {

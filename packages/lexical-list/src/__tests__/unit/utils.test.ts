@@ -145,7 +145,7 @@ describe('Lexical List Utils tests', () => {
 
       await editor.update(() => {
         // Root
-        // |- ParagaphNode
+        // |- ParagraphNode
         //     |- ListNode
         //        |- ListItemNode
         //        |- ListItemNode
@@ -177,7 +177,7 @@ describe('Lexical List Utils tests', () => {
 
       await editor.update(() => {
         // Root
-        // |- ParagaphNode
+        // |- ParagraphNode
         //     |- ListNode
         //        |- ListItemNode
         //           |- ListNode

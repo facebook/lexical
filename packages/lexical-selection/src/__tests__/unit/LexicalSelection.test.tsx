@@ -12,10 +12,13 @@ import {useLexicalComposerContext} from '@lexical/react/src/LexicalComposerConte
 import {ContentEditable} from '@lexical/react/src/LexicalContentEditable';
 import {HistoryPlugin} from '@lexical/react/src/LexicalHistoryPlugin';
 import {RichTextPlugin} from '@lexical/react/src/LexicalRichTextPlugin';
+import {$createHeadingNode} from '@lexical/rich-text';
 import {
   $addNodeStyle,
   $getSelectionStyleValueForProperty,
+  $wrapLeafNodesInElements,
 } from '@lexical/selection';
+import {$createTableNodeWithDimensions} from '@lexical/table';
 import {
   $createLineBreakNode,
   $createParagraphNode,
@@ -28,6 +31,7 @@ import {
 } from 'lexical';
 import {$createRangeSelection, $setSelection} from 'lexical/src';
 import {
+  $assertRangeSelection,
   $createTestDecoratorNode,
   $createTestElementNode,
   createTestEditor,
@@ -49,6 +53,7 @@ import {
   formatStrikeThrough,
   formatUnderline,
   getNodeFromPath,
+  insertParagraph,
   insertSegmentedNode,
   insertText,
   insertTokenNode,
@@ -439,6 +444,136 @@ describe('LexicalSelection tests', () => {
         convertToSegmentedNode(),
       ],
       name: 'Convert text to a segmented node',
+    },
+    {
+      expectedHTML:
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">' +
+        '<p class="editor-paragraph"><br></p>' +
+        '<p class="editor-paragraph" dir="ltr">' +
+        '<strong class="editor-text-bold" data-lexical-text="true">Hello world</strong>' +
+        '</p>' +
+        '<p class="editor-paragraph"><br></p>' +
+        '</div>',
+      expectedSelection: {
+        anchorOffset: 0,
+        anchorPath: [0],
+        focusOffset: 0,
+        focusPath: [2],
+      },
+      inputs: [
+        insertParagraph(),
+        insertText('Hello world'),
+        insertParagraph(),
+        moveNativeSelection([0], 0, [2], 0),
+        formatBold(),
+      ],
+      name: 'Format selection that starts and ends on element and retain selection',
+    },
+    {
+      expectedHTML:
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">' +
+        '<p class="editor-paragraph"><br></p>' +
+        '<p class="editor-paragraph" dir="ltr">' +
+        '<strong class="editor-text-bold" data-lexical-text="true">Hello</strong>' +
+        '</p>' +
+        '<p class="editor-paragraph" dir="ltr">' +
+        '<strong class="editor-text-bold" data-lexical-text="true">world</strong>' +
+        '</p>' +
+        '<p class="editor-paragraph"><br></p>' +
+        '</div>',
+      expectedSelection: {
+        anchorOffset: 0,
+        anchorPath: [0],
+        focusOffset: 0,
+        focusPath: [3],
+      },
+      inputs: [
+        insertParagraph(),
+        insertText('Hello'),
+        insertParagraph(),
+        insertText('world'),
+        insertParagraph(),
+        moveNativeSelection([0], 0, [3], 0),
+        formatBold(),
+      ],
+      name: 'Format multiline text selection that starts and ends on element and retain selection',
+    },
+    {
+      expectedHTML:
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">' +
+        '<p class="editor-paragraph" dir="ltr">' +
+        '<span data-lexical-text="true">He</span>' +
+        '<strong class="editor-text-bold" data-lexical-text="true">llo</strong>' +
+        '</p>' +
+        '<p class="editor-paragraph" dir="ltr">' +
+        '<strong class="editor-text-bold" data-lexical-text="true">wo</strong>' +
+        '<span data-lexical-text="true">rld</span>' +
+        '</p>' +
+        '</div>',
+      expectedSelection: {
+        anchorOffset: 0,
+        anchorPath: [0, 1, 0],
+        focusOffset: 2,
+        focusPath: [1, 0, 0],
+      },
+      inputs: [
+        insertText('Hello'),
+        insertParagraph(),
+        insertText('world'),
+        moveNativeSelection([0, 0, 0], 2, [1, 0, 0], 2),
+        formatBold(),
+      ],
+      name: 'Format multiline text selection that starts and ends within text',
+    },
+    {
+      expectedHTML:
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">' +
+        '<p class="editor-paragraph"><br></p>' +
+        '<p class="editor-paragraph" dir="ltr">' +
+        '<span data-lexical-text="true">Hello </span>' +
+        '<strong class="editor-text-bold" data-lexical-text="true">world</strong>' +
+        '</p>' +
+        '<p class="editor-paragraph"><br></p>' +
+        '</div>',
+      expectedSelection: {
+        anchorOffset: 0,
+        anchorPath: [1, 1, 0],
+        focusOffset: 0,
+        focusPath: [2],
+      },
+      inputs: [
+        insertParagraph(),
+        insertText('Hello world'),
+        insertParagraph(),
+        moveNativeSelection([1, 0, 0], 6, [2], 0),
+        formatBold(),
+      ],
+      name: 'Format selection that starts on text and ends on element and retain selection',
+    },
+    {
+      expectedHTML:
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">' +
+        '<p class="editor-paragraph"><br></p>' +
+        '<p class="editor-paragraph" dir="ltr">' +
+        '<strong class="editor-text-bold" data-lexical-text="true">Hello</strong>' +
+        '<span data-lexical-text="true"> world</span>' +
+        '</p>' +
+        '<p class="editor-paragraph"><br></p>' +
+        '</div>',
+      expectedSelection: {
+        anchorOffset: 0,
+        anchorPath: [0],
+        focusOffset: 5,
+        focusPath: [1, 0, 0],
+      },
+      inputs: [
+        insertParagraph(),
+        insertText('Hello world'),
+        insertParagraph(),
+        moveNativeSelection([0], 0, [1, 0, 0], 5),
+        formatBold(),
+      ],
+      name: 'Format selection that starts on element and ends on text and retain selection',
     },
     // Tests need fixing:
     // ...GRAPHEME_SCENARIOS.flatMap(({description, grapheme}) => [
@@ -1567,48 +1702,37 @@ describe('LexicalSelection tests', () => {
     });
   });
 
-  describe('Testing that $getStyleObjectFromRawCSS handles unformatted css text ', () => {
+  describe('Selection correctly resolves to a sibling ElementNode when a selected node child is removed', () => {
     test('', async () => {
-      const testEditor = createTestEditor();
-      const element = document.createElement('div');
-      testEditor.setRootElement(element);
+      await ReactTestUtils.act(async () => {
+        let paragraphNodeKey;
+        await editor.update(() => {
+          const root = $getRoot();
 
-      await testEditor.update(() => {
-        const root = $getRoot();
-        const paragraph = $createParagraphNode();
-        const textNode = $createTextNode('Hello, World!');
-        textNode.setStyle('   color    :   red   ;top     : 50px');
-        $addNodeStyle(textNode);
-        paragraph.append(textNode);
-        root.append(paragraph);
+          const paragraphNode = $createParagraphNode();
+          paragraphNodeKey = paragraphNode.__key;
+          const listNode = $createListNode('number');
+          const listItemNode1 = $createListItemNode();
+          const textNode1 = $createTextNode('foo');
+          const listItemNode2 = $createListItemNode();
+          const listNode2 = $createListNode('number');
+          const listItemNode2x1 = $createListItemNode();
 
-        const selection = $createRangeSelection();
-        $setSelection(selection);
-        selection.insertParagraph();
-        setAnchorPoint({
-          key: textNode.getKey(),
-          offset: 0,
-          type: 'text',
+          listNode.append(listItemNode1, listItemNode2);
+          listItemNode1.append(textNode1);
+          listItemNode2.append(listNode2);
+          listNode2.append(listItemNode2x1);
+          root.append(paragraphNode, listNode);
+
+          listItemNode2.select();
+
+          listNode.remove();
         });
-
-        setFocusPoint({
-          key: textNode.getKey(),
-          offset: 10,
-          type: 'text',
+        await editor.getEditorState().read(() => {
+          const selection = $assertRangeSelection($getSelection());
+          expect(selection.anchor.key).toBe(paragraphNodeKey);
+          expect(selection.focus.key).toBe(paragraphNodeKey);
         });
-
-        const cssColorValue = $getSelectionStyleValueForProperty(
-          selection,
-          'color',
-          '',
-        );
-        expect(cssColorValue).toBe('red');
-        const cssTopValue = $getSelectionStyleValueForProperty(
-          selection,
-          'top',
-          '',
-        );
-        expect(cssTopValue).toBe('50px');
       });
     });
   });
@@ -2015,6 +2139,450 @@ describe('LexicalSelection tests', () => {
           expect(selection.focus.key).toBe(key);
           expect(selection.focus.offset).toBe(offset);
         });
+      });
+    });
+  });
+
+  describe('Testing that $getStyleObjectFromRawCSS handles unformatted css text ', () => {
+    test('', async () => {
+      const testEditor = createTestEditor();
+      const element = document.createElement('div');
+      testEditor.setRootElement(element);
+
+      await testEditor.update(() => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const textNode = $createTextNode('Hello, World!');
+        textNode.setStyle(
+          '   font-family  : Arial  ;  color    :   red   ;top     : 50px',
+        );
+        $addNodeStyle(textNode);
+        paragraph.append(textNode);
+        root.append(paragraph);
+
+        const selection = $createRangeSelection();
+        $setSelection(selection);
+        selection.insertParagraph();
+        setAnchorPoint({
+          key: textNode.getKey(),
+          offset: 0,
+          type: 'text',
+        });
+
+        setFocusPoint({
+          key: textNode.getKey(),
+          offset: 10,
+          type: 'text',
+        });
+
+        const cssFontFamilyValue = $getSelectionStyleValueForProperty(
+          selection,
+          'font-family',
+          '',
+        );
+        expect(cssFontFamilyValue).toBe('Arial');
+
+        const cssColorValue = $getSelectionStyleValueForProperty(
+          selection,
+          'color',
+          '',
+        );
+        expect(cssColorValue).toBe('red');
+
+        const cssTopValue = $getSelectionStyleValueForProperty(
+          selection,
+          'top',
+          '',
+        );
+        expect(cssTopValue).toBe('50px');
+      });
+    });
+  });
+
+  describe('Testing that getStyleObjectFromRawCSS handles values with colons', () => {
+    test('', async () => {
+      const testEditor = createTestEditor();
+      const element = document.createElement('div');
+      testEditor.setRootElement(element);
+
+      await testEditor.update(() => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const textNode = $createTextNode('Hello, World!');
+        textNode.setStyle(
+          'font-family: double:prefix:Arial; color: color:white; font-size: 30px',
+        );
+        $addNodeStyle(textNode);
+        paragraph.append(textNode);
+        root.append(paragraph);
+
+        const selection = $createRangeSelection();
+        $setSelection(selection);
+        selection.insertParagraph();
+        setAnchorPoint({
+          key: textNode.getKey(),
+          offset: 0,
+          type: 'text',
+        });
+
+        setFocusPoint({
+          key: textNode.getKey(),
+          offset: 10,
+          type: 'text',
+        });
+
+        const cssFontFamilyValue = $getSelectionStyleValueForProperty(
+          selection,
+          'font-family',
+          '',
+        );
+        expect(cssFontFamilyValue).toBe('double:prefix:Arial');
+
+        const cssColorValue = $getSelectionStyleValueForProperty(
+          selection,
+          'color',
+          '',
+        );
+        expect(cssColorValue).toBe('color:white');
+
+        const cssFontSizeValue = $getSelectionStyleValueForProperty(
+          selection,
+          'font-size',
+          '',
+        );
+        expect(cssFontSizeValue).toBe('30px');
+      });
+    });
+  });
+
+  describe('$wrapLeafNodesInElements', () => {
+    test('Collapsed selection in text', async () => {
+      const testEditor = createTestEditor();
+      const element = document.createElement('div');
+      testEditor.setRootElement(element);
+
+      await testEditor.update(() => {
+        const root = $getRoot();
+        const paragraph1 = $createParagraphNode();
+        const text1 = $createTextNode('text 1');
+        const paragraph2 = $createParagraphNode();
+        const text2 = $createTextNode('text 2');
+        root.append(paragraph1, paragraph2);
+        paragraph1.append(text1);
+        paragraph2.append(text2);
+
+        const selection = $createRangeSelection();
+        $setSelection(selection);
+        setAnchorPoint({
+          key: text1.__key,
+          offset: text1.length,
+          type: 'text',
+        });
+        setFocusPoint({
+          key: text1.__key,
+          offset: text1.length,
+          type: 'text',
+        });
+
+        $wrapLeafNodesInElements(selection, () => {
+          return $createHeadingNode('h1');
+        });
+
+        const rootChildren = root.getChildren();
+        expect(rootChildren[0].__type).toBe('heading');
+        expect(rootChildren[1].__type).toBe('paragraph');
+        expect(rootChildren.length).toBe(2);
+      });
+    });
+
+    test('Collapsed selection in element', async () => {
+      const testEditor = createTestEditor();
+      const element = document.createElement('div');
+      testEditor.setRootElement(element);
+
+      await testEditor.update(() => {
+        const root = $getRoot();
+        const paragraph1 = $createParagraphNode();
+        const paragraph2 = $createParagraphNode();
+        root.append(paragraph1, paragraph2);
+
+        const selection = $createRangeSelection();
+        $setSelection(selection);
+        setAnchorPoint({
+          key: 'root',
+          offset: 0,
+          type: 'element',
+        });
+        setFocusPoint({
+          key: 'root',
+          offset: 0,
+          type: 'element',
+        });
+
+        $wrapLeafNodesInElements(selection, () => {
+          return $createHeadingNode('h1');
+        });
+
+        const rootChildren = root.getChildren();
+        expect(rootChildren[0].__type).toBe('heading');
+        expect(rootChildren[1].__type).toBe('paragraph');
+        expect(rootChildren.length).toBe(2);
+      });
+    });
+
+    test('Two elements, same top-element', async () => {
+      const testEditor = createTestEditor();
+      const element = document.createElement('div');
+      testEditor.setRootElement(element);
+
+      await testEditor.update(() => {
+        const root = $getRoot();
+        const paragraph1 = $createParagraphNode();
+        const text1 = $createTextNode('text 1');
+        const paragraph2 = $createParagraphNode();
+        const text2 = $createTextNode('text 2');
+        root.append(paragraph1, paragraph2);
+        paragraph1.append(text1);
+        paragraph2.append(text2);
+
+        const selection = $createRangeSelection();
+        $setSelection(selection);
+        setAnchorPoint({
+          key: text1.__key,
+          offset: 0,
+          type: 'text',
+        });
+        setFocusPoint({
+          key: text2.__key,
+          offset: text1.length,
+          type: 'text',
+        });
+
+        $wrapLeafNodesInElements(selection, () => {
+          return $createHeadingNode('h1');
+        });
+
+        const rootChildren = root.getChildren();
+        expect(rootChildren[0].__type).toBe('heading');
+        expect(rootChildren[1].__type).toBe('heading');
+        expect(rootChildren.length).toBe(2);
+      });
+    });
+
+    test('Two empty elements, same top-element', async () => {
+      const testEditor = createTestEditor();
+      const element = document.createElement('div');
+      testEditor.setRootElement(element);
+
+      await testEditor.update(() => {
+        const root = $getRoot();
+        const paragraph1 = $createParagraphNode();
+        const paragraph2 = $createParagraphNode();
+        root.append(paragraph1, paragraph2);
+
+        const selection = $createRangeSelection();
+        $setSelection(selection);
+        setAnchorPoint({
+          key: paragraph1.__key,
+          offset: 0,
+          type: 'element',
+        });
+        setFocusPoint({
+          key: paragraph2.__key,
+          offset: 0,
+          type: 'element',
+        });
+
+        $wrapLeafNodesInElements(selection, () => {
+          return $createHeadingNode('h1');
+        });
+
+        const rootChildren = root.getChildren();
+        expect(rootChildren[0].__type).toBe('heading');
+        expect(rootChildren[1].__type).toBe('heading');
+        expect(rootChildren.length).toBe(2);
+      });
+    });
+
+    test('Two elements, same top-element', async () => {
+      const testEditor = createTestEditor();
+      const element = document.createElement('div');
+      testEditor.setRootElement(element);
+
+      await testEditor.update(() => {
+        const root = $getRoot();
+        const paragraph1 = $createParagraphNode();
+        const text1 = $createTextNode('text 1');
+        const paragraph2 = $createParagraphNode();
+        const text2 = $createTextNode('text 2');
+        root.append(paragraph1, paragraph2);
+        paragraph1.append(text1);
+        paragraph2.append(text2);
+
+        const selection = $createRangeSelection();
+        $setSelection(selection);
+        setAnchorPoint({
+          key: text1.__key,
+          offset: 0,
+          type: 'text',
+        });
+        setFocusPoint({
+          key: text2.__key,
+          offset: text1.length,
+          type: 'text',
+        });
+
+        $wrapLeafNodesInElements(selection, () => {
+          return $createHeadingNode('h1');
+        });
+
+        const rootChildren = root.getChildren();
+        expect(rootChildren[0].__type).toBe('heading');
+        expect(rootChildren[1].__type).toBe('heading');
+        expect(rootChildren.length).toBe(2);
+      });
+    });
+
+    test('Collapsed in element inside top-element', async () => {
+      const testEditor = createTestEditor();
+      const element = document.createElement('div');
+      testEditor.setRootElement(element);
+
+      await testEditor.update(() => {
+        const root = $getRoot();
+        const table = $createTableNodeWithDimensions(1, 1);
+        const row = table.getFirstChild();
+        const column = row.getFirstChild();
+        const paragraph = column.getFirstChild();
+        root.append(table);
+
+        const selection = $createRangeSelection();
+        $setSelection(selection);
+        setAnchorPoint({
+          key: paragraph.__key,
+          offset: 0,
+          type: 'element',
+        });
+        setFocusPoint({
+          key: paragraph.__key,
+          offset: 0,
+          type: 'element',
+        });
+
+        const columnChildrenPrev = column.getChildren();
+        expect(columnChildrenPrev[0].__type).toBe('paragraph');
+        $wrapLeafNodesInElements(selection, () => {
+          return $createHeadingNode('h1');
+        });
+
+        const columnChildrenAfter = column.getChildren();
+        expect(columnChildrenAfter[0].__type).toBe('heading');
+        expect(columnChildrenAfter.length).toBe(1);
+      });
+    });
+
+    test('Collapsed in text inside top-element', async () => {
+      const testEditor = createTestEditor();
+      const element = document.createElement('div');
+      testEditor.setRootElement(element);
+
+      await testEditor.update(() => {
+        const root = $getRoot();
+        const table = $createTableNodeWithDimensions(1, 1);
+        const row = table.getFirstChild();
+        const column = row.getFirstChild();
+        const paragraph = column.getFirstChild();
+        const text = $createTextNode('foo');
+        root.append(table);
+        paragraph.append(text);
+
+        const selectionz = $createRangeSelection();
+        $setSelection(selectionz);
+        setAnchorPoint({
+          key: text.__key,
+          offset: text.length,
+          type: 'text',
+        });
+        setFocusPoint({
+          key: text.__key,
+          offset: text.length,
+          type: 'text',
+        });
+        // @ts-ignore
+        const selection = $getSelection() as RangeSelection;
+
+        const columnChildrenPrev = column.getChildren();
+        expect(columnChildrenPrev[0].__type).toBe('paragraph');
+        $wrapLeafNodesInElements(selection, () => {
+          return $createHeadingNode('h1');
+        });
+
+        const columnChildrenAfter = column.getChildren();
+        expect(columnChildrenAfter[0].__type).toBe('heading');
+        expect(columnChildrenAfter.length).toBe(1);
+      });
+    });
+
+    test('Full editor selection with a mix of top-elements', async () => {
+      const testEditor = createTestEditor();
+      const element = document.createElement('div');
+      testEditor.setRootElement(element);
+
+      await testEditor.update(() => {
+        const root = $getRoot();
+
+        const paragraph1 = $createParagraphNode();
+        const paragraph2 = $createParagraphNode();
+        const text1 = $createTextNode();
+        const text2 = $createTextNode();
+        paragraph1.append(text1);
+        paragraph2.append(text2);
+        root.append(paragraph1, paragraph2);
+
+        const table = $createTableNodeWithDimensions(1, 2);
+        const row = table.getFirstChild();
+        const columns = row.getChildren();
+        root.append(table);
+
+        const column1 = columns[0];
+        const paragraph3 = $createParagraphNode();
+        const paragraph4 = $createParagraphNode();
+        const text3 = $createTextNode();
+        const text4 = $createTextNode();
+        paragraph1.append(text3);
+        paragraph2.append(text4);
+        column1.append(paragraph3, paragraph4);
+
+        const column2 = columns[1];
+        const paragraph5 = $createParagraphNode();
+        const paragraph6 = $createParagraphNode();
+        column2.append(paragraph5, paragraph6);
+
+        const paragraph7 = $createParagraphNode();
+        root.append(paragraph7);
+
+        const selectionz = $createRangeSelection();
+        $setSelection(selectionz);
+        setAnchorPoint({
+          key: paragraph1.__key,
+          offset: 0,
+          type: 'element',
+        });
+        setFocusPoint({
+          key: paragraph7.__key,
+          offset: 0,
+          type: 'element',
+        });
+        // @ts-ignore
+        const selection = $getSelection() as RangeSelection;
+
+        $wrapLeafNodesInElements(selection, () => {
+          return $createHeadingNode('h1');
+        });
+
+        expect(JSON.stringify(testEditor._pendingEditorState.toJSON())).toBe(
+          '{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"","type":"text","version":1},{"detail":0,"format":0,"mode":"normal","style":"","text":"","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"},{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"","type":"text","version":1},{"detail":0,"format":0,"mode":"normal","style":"","text":"","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"},{"children":[{"children":[{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"},{"children":[],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"},{"children":[],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"}],"direction":null,"format":"","indent":0,"type":"tablecell","version":1,"headerState":3},{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"},{"children":[],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"},{"children":[],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"}],"direction":null,"format":"","indent":0,"type":"tablecell","version":1,"headerState":1}],"direction":null,"format":"","indent":0,"type":"tablerow","version":1}],"direction":null,"format":"","indent":0,"type":"table","version":1},{"children":[],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"}],"direction":null,"format":"","indent":0,"type":"root","version":1}}',
+        );
       });
     });
   });

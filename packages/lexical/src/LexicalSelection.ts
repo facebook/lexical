@@ -1327,7 +1327,7 @@ export class RangeSelection implements BaseSelection {
       didReplaceOrMerge = false;
       if ($isElementNode(target) && !target.isInline()) {
         lastNode = node;
-        if ($isDecoratorNode(node) && node.isTopLevel()) {
+        if ($isDecoratorNode(node) && !node.isInline()) {
           target = target.insertAfter(node);
         } else if (!$isElementNode(node)) {
           const firstChild = target.getFirstChild();
@@ -1356,7 +1356,7 @@ export class RangeSelection implements BaseSelection {
       } else if (
         !$isElementNode(node) ||
         ($isElementNode(node) && node.isInline()) ||
-        ($isDecoratorNode(target) && target.isTopLevel())
+        ($isDecoratorNode(target) && !target.isInline())
       ) {
         lastNode = node;
         target = target.insertAfter(node);
@@ -1415,7 +1415,7 @@ export class RangeSelection implements BaseSelection {
           if (
             $isElementNode(target) &&
             !$isBlockElementNode(sibling) &&
-            !($isDecoratorNode(sibling) && sibling.isTopLevel())
+            !($isDecoratorNode(sibling) && !sibling.isInline())
           ) {
             if (originalTarget === target) {
               target.append(sibling);

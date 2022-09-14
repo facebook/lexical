@@ -211,8 +211,8 @@ export class TweetNode extends DecoratorBlockNode {
     );
   }
 
-  isTopLevel(): true {
-    return true;
+  isInline(): false {
+    return false;
   }
 }
 

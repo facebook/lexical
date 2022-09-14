@@ -28,8 +28,8 @@ export class DecoratorNode<T> extends LexicalNode {
     return false;
   }
 
-  isTopLevel(): boolean {
-    return false;
+  isInline(): boolean {
+    return true;
   }
 }
 

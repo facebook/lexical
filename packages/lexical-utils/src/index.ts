@@ -410,7 +410,7 @@ export function $restoreEditorState(
   $setSelection(selection === null ? null : selection.clone());
 }
 
-export function $insertBlockNode<T extends LexicalNode>(node: T): T {
+export function $insertNodeToNearestRoot<T extends LexicalNode>(node: T): T {
   const selection = $getSelection();
   if ($isRangeSelection(selection)) {
     const focusNode = selection.focus.getNode();

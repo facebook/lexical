@@ -59,7 +59,7 @@ export function BlockWithAlignableContents({
         editor.update(() => {
           const node = $getNodeByKey(nodeKey);
 
-          if ($isDecoratorNode(node) && node.isTopLevel()) {
+          if ($isDecoratorNode(node)) {
             node.remove();
           }
 

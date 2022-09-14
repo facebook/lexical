@@ -57,7 +57,7 @@ export default function TwitterPlugin(): JSX.Element | null {
       INSERT_TWEET_COMMAND,
       (payload) => {
         const tweetNode = $createTweetNode(payload);
-        $insertBlockNode(tweetNode);
+        $insertNodeToNearestRoot(tweetNode);
 
         return true;
       },

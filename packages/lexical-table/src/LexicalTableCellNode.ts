@@ -198,7 +198,7 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
     );
   }
 
-  isTopLevel(): boolean {
+  isShadowRoot(): boolean {
     return true;
   }
 

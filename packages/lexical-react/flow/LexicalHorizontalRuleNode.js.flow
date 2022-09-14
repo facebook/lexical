@@ -16,7 +16,6 @@ declare export class HorizontalRuleNode extends DecoratorNode<React$Node> {
   static clone(node: HorizontalRuleNode): HorizontalRuleNode;
   createDOM(): HTMLElement;
   getTextContent(): '\n';
-  isTopLevel(): true;
   updateDOM(): false;
   decorate(): React$Node;
 }

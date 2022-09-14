@@ -31,6 +31,7 @@ const SPACE = 4;
 const TARGET_LINE_HALF_HEIGHT = 2;
 const DRAGGABLE_BLOCK_MENU_CLASSNAME = 'draggable-block-menu';
 const DRAG_DATA_FORMAT = 'application/x-lexical-drag-block';
+const TEXT_BOX_HORIZONTAL_PADDING = 28;
 
 function getBlockElement(
   anchorElem: HTMLElement,
@@ -48,7 +49,15 @@ function getBlockElement(
       const elem = getElementByKeyOrThrow(editor, key);
       const point = new Point(event.x, event.y);
       const domRect = Rect.fromDOM(elem);
-      const rect = domRect.generateNewRect({left: anchorElementRect.left});
+      const {marginTop, marginBottom} = window.getComputedStyle(elem);
+
+      const rect = domRect.generateNewRect({
+        bottom: domRect.bottom + parseFloat(marginBottom),
+        left: anchorElementRect.left,
+        right: anchorElementRect.right,
+        top: domRect.top - parseFloat(marginTop),
+      });
+
       if (rect.contains(point)) {
         blockElem = elem;
         break;
@@ -85,7 +94,7 @@ function setMenuPosition(
     (parseInt(targetStyle.lineHeight, 10) - floatingElemRect.height) / 2 -
     anchorElementRect.top;
 
-  const left = anchorElementRect.left - floatingElemRect.width + SPACE;
+  const left = SPACE;
 
   floatingElem.style.opacity = '1';
   floatingElem.style.top = `${top}px`;
@@ -113,25 +122,25 @@ function setTargetLine(
   mouseY: number,
   anchorElem: HTMLElement,
 ) {
-  const {top, left, width, height} = targetBlockElem.getBoundingClientRect();
-  const {paddingLeft, paddingRight} = window.getComputedStyle(targetBlockElem);
-  const {top: anchorTop, left: anchorLeft} = anchorElem.getBoundingClientRect();
-  const targetPaddingLeft = parseInt(paddingLeft, 10);
-  const targetPaddingRight = parseInt(paddingRight, 10);
+  const targetStyle = window.getComputedStyle(targetBlockElem);
+  const {top, height} = targetBlockElem.getBoundingClientRect();
+  const {top: anchorTop, width: anchorWidth} =
+    anchorElem.getBoundingClientRect();
 
   let lineTop = top;
   // At the bottom of the target
   if (mouseY - top > height / 2) {
-    lineTop += height;
+    lineTop += height + parseFloat(targetStyle.marginBottom);
+  } else {
+    lineTop -= parseFloat(targetStyle.marginTop);
   }
+
   targetLineElem.style.top = `${
     lineTop - anchorTop - TARGET_LINE_HALF_HEIGHT
   }px`;
-  targetLineElem.style.left = `${
-    left - anchorLeft + targetPaddingLeft - SPACE
-  }px`;
+  targetLineElem.style.left = `${TEXT_BOX_HORIZONTAL_PADDING - SPACE}px`;
   targetLineElem.style.width = `${
-    width - targetPaddingLeft - targetPaddingRight + SPACE * 2
+    anchorWidth - (TEXT_BOX_HORIZONTAL_PADDING - SPACE) * 2
   }px`;
   targetLineElem.style.opacity = '.4';
 }

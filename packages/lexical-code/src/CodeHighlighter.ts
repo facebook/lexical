@@ -7,7 +7,12 @@
  */
 
 // eslint-disable-next-line simple-import-sort/imports
-import type {LexicalCommand, LexicalEditor, LexicalNode} from 'lexical';
+import type {
+  LexicalCommand,
+  LexicalEditor,
+  LexicalNode,
+  NodeKey,
+} from 'lexical';
 
 import * as Prism from 'prismjs';
 
@@ -236,20 +241,28 @@ function codeNodeTransform(node: CodeNode, editor: LexicalEditor) {
     node.setLanguage(DEFAULT_CODE_LANGUAGE);
   }
 
+  const nodeKey = node.getKey();
   // Using nested update call to pass `skipTransforms` since we don't want
   // each individual codehighlight node to be transformed again as it's already
   // in its final state
   editor.update(
     () => {
-      updateAndRetainSelection(node, () => {
-        const code = node.getTextContent();
+      updateAndRetainSelection(nodeKey, () => {
+        const currentNode = $getNodeByKey(nodeKey);
+        if (!$isCodeNode(currentNode) || !currentNode.isAttached()) {
+          return false;
+        }
+        const code = currentNode.getTextContent();
         const tokens = Prism.tokenize(
           code,
-          Prism.languages[node.getLanguage() || ''] ||
+          Prism.languages[currentNode.getLanguage() || ''] ||
             Prism.languages[DEFAULT_CODE_LANGUAGE],
         );
         const highlightNodes = getHighlightNodes(tokens);
-        const diffRange = getDiffRange(node.getChildren(), highlightNodes);
+        const diffRange = getDiffRange(
+          currentNode.getChildren(),
+          highlightNodes,
+        );
         const {from, to, nodesForReplacement} = diffRange;
         if (from !== to || nodesForReplacement.length) {
           node.splice(from, to - from, nodesForReplacement);
@@ -306,9 +319,13 @@ function getHighlightNodes(
 // Wrapping update function into selection retainer, that tries to keep cursor at the same
 // position as before.
 function updateAndRetainSelection(
-  node: CodeNode,
+  nodeKey: NodeKey,
   updateFn: () => boolean,
 ): void {
+  const node = $getNodeByKey(nodeKey);
+  if (!$isCodeNode(node) || !node.isAttached()) {
+    return;
+  }
   const selection = $getSelection();
   // If it's not range selection (or null selection) there's no need to change it,
   // but we can still run highlighting logic

@@ -13,7 +13,7 @@ import {
   $getSelection,
   $insertNodes,
   $isNodeSelection,
-  $isRootNode,
+  $isRootOrShadowRoot,
   $setSelection,
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_HIGH,
@@ -57,7 +57,7 @@ export default function ImagesPlugin({
         (payload) => {
           const imageNode = $createImageNode(payload);
           $insertNodes([imageNode]);
-          if ($isRootNode(imageNode.getParentOrThrow())) {
+          if ($isRootOrShadowRoot(imageNode.getParentOrThrow())) {
             $wrapNodeInElement(imageNode, $createParagraphNode).selectEnd();
           }
 

@@ -52,6 +52,7 @@ import {
   $getDecoratorNode,
   $getNodeByKey,
   $getRoot,
+  $isRootOrShadowRoot,
   $isTokenOrSegmented,
   $setCompositionKey,
   doesContainGrapheme,
@@ -1216,7 +1217,7 @@ export class RangeSelection implements BaseSelection {
     // Get all remaining text node siblings in this element so we can
     // append them after the last node we're inserting.
     const nextSiblings = anchorNode.getNextSiblings();
-    const topLevelElement = $isRootNode(anchorNode)
+    const topLevelElement = $isRootOrShadowRoot(anchorNode)
       ? null
       : anchorNode.getTopLevelElementOrThrow();
 
@@ -1341,7 +1342,7 @@ export class RangeSelection implements BaseSelection {
       } else if (
         didReplaceOrMerge &&
         !$isDecoratorNode(node) &&
-        $isRootNode(target.getParent<ElementNode>())
+        $isRootOrShadowRoot(target.getParent<ElementNode>())
       ) {
         invariant(
           false,
@@ -1365,7 +1366,7 @@ export class RangeSelection implements BaseSelection {
           if (!node.canBeEmpty() && node.isEmpty()) {
             continue;
           }
-          if ($isRootNode(target)) {
+          if ($isRootOrShadowRoot(target)) {
             const placementNode = target.getChildAtIndex(anchorOffset);
             if (placementNode !== null) {
               placementNode.insertBefore(node);
@@ -1521,7 +1522,7 @@ export class RangeSelection implements BaseSelection {
       }
     } else {
       currentElement = anchor.getNode();
-      if ($isRootNode(currentElement)) {
+      if ($isRootOrShadowRoot(currentElement)) {
         const paragraph = $createParagraphNode();
         const child = currentElement.getChildAtIndex(anchorOffset);
         paragraph.select();

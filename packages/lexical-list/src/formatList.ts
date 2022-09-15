@@ -6,14 +6,6 @@
  *
  */
 
-import type {
-  ElementNode,
-  LexicalEditor,
-  LexicalNode,
-  NodeKey,
-  ParagraphNode,
-} from 'lexical';
-
 import {$getNearestNodeOfType} from '@lexical/utils';
 import {
   $createParagraphNode,
@@ -22,7 +14,12 @@ import {
   $isLeafNode,
   $isParagraphNode,
   $isRangeSelection,
-  $isRootNode,
+  $isRootOrShadowRoot,
+  ElementNode,
+  LexicalEditor,
+  LexicalNode,
+  NodeKey,
+  ParagraphNode,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -97,7 +94,7 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
       if ($isSelectingEmptyListItem(anchorNode, nodes)) {
         const list = $createListNode(listType);
 
-        if ($isRootNode(anchorNodeParent)) {
+        if ($isRootOrShadowRoot(anchorNodeParent)) {
           anchorNode.replace(list);
           const listItem = $createListItemNode();
           if ($isElementNode(anchorNode)) {
@@ -144,7 +141,10 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
               } else {
                 const nextParent = parent.getParent();
 
-                if ($isRootNode(nextParent) && !handled.has(parentKey)) {
+                if (
+                  $isRootOrShadowRoot(nextParent) &&
+                  !handled.has(parentKey)
+                ) {
                   handled.add(parentKey);
                   createListOrMerge(parent, listType);
                   break;
@@ -484,7 +484,7 @@ export function $handleListInsertParagraph(): boolean {
 
   let replacementNode;
 
-  if ($isRootNode(grandparent)) {
+  if ($isRootOrShadowRoot(grandparent)) {
     replacementNode = $createParagraphNode();
     topListNode.insertAfter(replacementNode);
   } else if ($isListItemNode(grandparent)) {

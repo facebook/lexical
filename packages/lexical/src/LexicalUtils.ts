@@ -1235,6 +1235,6 @@ export function $isInlineElementOrDecoratorNode(node: LexicalNode): boolean {
   );
 }
 
-export function $isRootOrShadowRoot(node: LexicalNode): boolean {
+export function $isRootOrShadowRoot(node: null | LexicalNode): boolean {
   return $isRootNode(node) || ($isElementNode(node) && node.isShadowRoot());
 }

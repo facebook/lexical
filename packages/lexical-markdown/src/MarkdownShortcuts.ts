@@ -20,7 +20,7 @@ import {
   $getSelection,
   $isLineBreakNode,
   $isRangeSelection,
-  $isRootNode,
+  $isRootOrShadowRoot,
   $isTextNode,
   $setSelection,
 } from 'lexical';
@@ -38,7 +38,7 @@ function runElementTransformers(
   const grandParentNode = parentNode.getParent();
 
   if (
-    !$isRootNode(grandParentNode) ||
+    !$isRootOrShadowRoot(grandParentNode) ||
     parentNode.getFirstChild() !== anchorNode
   ) {
     return false;

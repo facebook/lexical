@@ -11,7 +11,7 @@ import {$wrapNodeInElement} from '@lexical/utils';
 import {
   $createParagraphNode,
   $insertNodes,
-  $isRootNode,
+  $isRootOrShadowRoot,
   COMMAND_PRIORITY_EDITOR,
   createCommand,
   LexicalCommand,
@@ -34,7 +34,7 @@ export default function PollPlugin(): JSX.Element | null {
       (payload) => {
         const pollNode = $createPollNode(payload);
         $insertNodes([pollNode]);
-        if ($isRootNode(pollNode.getParentOrThrow())) {
+        if ($isRootOrShadowRoot(pollNode.getParentOrThrow())) {
           $wrapNodeInElement(pollNode, $createParagraphNode).selectEnd();
         }
 

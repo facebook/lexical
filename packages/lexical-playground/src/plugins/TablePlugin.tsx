@@ -12,7 +12,7 @@ import {
   $createParagraphNode,
   $getSelection,
   $isRangeSelection,
-  $isRootNode,
+  $isRootOrShadowRoot,
   $setSelection,
   COMMAND_PRIORITY_EDITOR,
   createCommand,
@@ -124,7 +124,7 @@ export function TablePlugin({
             includeHeaders,
           );
 
-          if ($isRootNode(focusNode)) {
+          if ($isRootOrShadowRoot(focusNode)) {
             const target = focusNode.getChildAtIndex(focus.offset);
 
             if (target !== null) {

@@ -97,7 +97,7 @@ export function $selectAll(selection: RangeSelection): void;
 
 #### `$wrapNodes`
 
-Attempts to wrap all leaf nodes in the Selection in ElementNodes returned from createElement. If wrappingElement is provided, all of the wrapped leaves are appended to the wrappingElement. It attempts to append the resulting sub-tree to the nearest safe insertion target.
+Attempts to wrap all nodes in the Selection in ElementNodes returned from createElement. If wrappingElement is provided, all of the wrapped leaves are appended to the wrappingElement. It attempts to append the resulting sub-tree to the nearest safe insertion target.
 
 ```ts
 export function $wrapNodes(

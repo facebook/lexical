@@ -586,6 +586,16 @@ function $removeParentEmptyElements(startingNode: ElementNode): void {
   }
 }
 
+/**
+ * Attempts to wrap all nodes in the Selection in ElementNodes returned from createElement.
+ * If wrappingElement is provided, all of the wrapped leaves are appended to the wrappingElement.
+ * It attempts to append the resulting sub-tree to the nearest safe insertion target.
+ *
+ * @param selection
+ * @param createElement
+ * @param wrappingElement
+ * @returns
+ */
 export function $wrapNodes(
   selection: RangeSelection,
   createElement: () => ElementNode,

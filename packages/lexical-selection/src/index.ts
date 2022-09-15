@@ -298,10 +298,13 @@ function $cloneContentsImpl(
   invariant(false, 'TODO');
 }
 
-export function getStyleObjectFromCSS(
-  css: string,
-): Record<string, string> | null {
-  return cssToStyles.get(css) || null;
+export function getStyleObjectFromCSS(css: string): Record<string, string> {
+  let value = cssToStyles.get(css);
+  if (value === undefined) {
+    value = getStyleObjectFromRawCSS(css);
+    cssToStyles.set(css, value);
+  }
+  return value;
 }
 
 function getStyleObjectFromRawCSS(css: string): Record<string, string> {

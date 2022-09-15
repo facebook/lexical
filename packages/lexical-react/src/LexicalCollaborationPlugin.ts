@@ -14,6 +14,7 @@ import {useEffect, useMemo} from 'react';
 import {WebsocketProvider} from 'y-websocket';
 
 import {
+  CursorsContainerRef,
   useYjsCollaboration,
   useYjsFocusTracking,
   useYjsHistory,
@@ -24,6 +25,7 @@ export function CollaborationPlugin({
   providerFactory,
   shouldBootstrap,
   username,
+  cursorsContainerRef,
 }: {
   id: string;
   providerFactory: (
@@ -33,6 +35,7 @@ export function CollaborationPlugin({
   ) => WebsocketProvider;
   shouldBootstrap: boolean;
   username?: string;
+  cursorsContainerRef?: CursorsContainerRef;
 }): JSX.Element {
   const collabContext = useCollaborationContext(username);
 
@@ -65,6 +68,7 @@ export function CollaborationPlugin({
     name,
     color,
     shouldBootstrap,
+    cursorsContainerRef,
   );
 
   collabContext.clientID = binding.clientID;

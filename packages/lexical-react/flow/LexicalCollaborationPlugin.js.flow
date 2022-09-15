@@ -33,6 +33,7 @@ export type ProviderFactory = (
 
 declare export function CollaborationPlugin(arg0: {
   id: string,
+  cursorsContainerRef?: {current: HTMLElement | null},
   providerFactory: ProviderFactory,
   shouldBootstrap: boolean,
   username?: string,

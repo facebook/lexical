@@ -68,7 +68,7 @@ export function $generateHtmlFromNodes(
 
   for (let i = 0; i < topLevelChildren.length; i++) {
     const topLevelNode = topLevelChildren[i];
-    $appendNodesToHTML(editor, selection, topLevelNode, container);
+    $appendNodesToHTML(editor, topLevelNode, container, selection);
   }
 
   return container.innerHTML;
@@ -76,9 +76,9 @@ export function $generateHtmlFromNodes(
 
 function $appendNodesToHTML(
   editor: LexicalEditor,
-  selection: RangeSelection | NodeSelection | GridSelection | null | undefined,
   currentNode: LexicalNode,
   parentElement: HTMLElement | DocumentFragment,
+  selection: RangeSelection | NodeSelection | GridSelection | null = null,
 ): boolean {
   let shouldInclude = selection != null ? currentNode.isSelected() : true;
   const shouldExclude =
@@ -106,16 +106,15 @@ function $appendNodesToHTML(
     const childNode = children[i];
     const shouldIncludeChild = $appendNodesToHTML(
       editor,
-      selection,
       childNode,
       fragment,
+      selection,
     );
 
     if (
       !shouldInclude &&
       $isElementNode(currentNode) &&
       shouldIncludeChild &&
-      selection !== undefined &&
       currentNode.extractWithChild(childNode, selection, 'html')
     ) {
       shouldInclude = true;

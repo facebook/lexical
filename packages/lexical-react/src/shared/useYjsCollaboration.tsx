@@ -37,6 +37,8 @@ import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 import {WebsocketProvider} from 'y-websocket';
 
+export type CursorsContainerRef = React.MutableRefObject<HTMLElement | null>;
+
 export function useYjsCollaboration(
   editor: LexicalEditor,
   id: string,
@@ -45,6 +47,7 @@ export function useYjsCollaboration(
   name: string,
   color: string,
   shouldBootstrap: boolean,
+  cursorsContainerRef?: CursorsContainerRef,
 ): [JSX.Element, Binding] {
   const isReloadingDoc = useRef(false);
   const [doc, setDoc] = useState(docMap.get(id));
@@ -178,8 +181,11 @@ export function useYjsCollaboration(
       binding.cursorsContainer = element;
     };
 
-    return createPortal(<div ref={ref} />, document.body);
-  }, [binding]);
+    return createPortal(
+      <div ref={ref} />,
+      (cursorsContainerRef && cursorsContainerRef.current) || document.body,
+    );
+  }, [binding, cursorsContainerRef]);
 
   useEffect(() => {
     return editor.registerCommand(

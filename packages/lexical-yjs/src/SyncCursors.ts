@@ -183,6 +183,12 @@ function updateCursor(
     return;
   }
 
+  const cursorsContainerOffsetParent = cursorsContainer.offsetParent;
+  if (cursorsContainerOffsetParent === null) {
+    return;
+  }
+
+  const containerRect = cursorsContainerOffsetParent.getBoundingClientRect();
   const prevSelection = cursor.selection;
 
   if (nextSelection === null) {
@@ -237,7 +243,9 @@ function updateCursor(
       cursorsContainer.appendChild(selection);
     }
 
-    const style = `position:absolute;top:${selectionRect.top}px;left:${selectionRect.left}px;height:${selectionRect.height}px;width:${selectionRect.width}px;background-color:rgba(${color}, 0.3);pointer-events:none;z-index:5;`;
+    const top = selectionRect.top - containerRect.top;
+    const left = selectionRect.left - containerRect.left;
+    const style = `position:absolute;top:${top}px;left:${left}px;height:${selectionRect.height}px;width:${selectionRect.width}px;background-color:rgba(${color}, 0.3);pointer-events:none;z-index:5;`;
     selection.style.cssText = style;
 
     if (i === selectionRectsLength - 1) {

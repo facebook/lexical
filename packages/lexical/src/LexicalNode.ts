@@ -13,7 +13,7 @@ import type {Klass} from 'lexical';
 
 import invariant from 'shared/invariant';
 
-import {$isElementNode, $isRootNode, $isTextNode, ElementNode} from '.';
+import {$isElementNode, $isTextNode, ElementNode} from '.';
 import {
   $getSelection,
   $isRangeSelection,
@@ -99,14 +99,13 @@ export function removeNode(
   }
   if (
     !preserveEmptyParent &&
-    parent !== null &&
-    !$isRootNode(parent) &&
+    !$isRootOrShadowRoot(parent) &&
     !parent.canBeEmpty() &&
     parent.isEmpty()
   ) {
     removeNode(parent, restoreSelection);
   }
-  if (parent !== null && $isRootNode(parent) && parent.isEmpty()) {
+  if ($isRootOrShadowRoot(parent) && parent.isEmpty()) {
     parent.selectEnd();
   }
 }
@@ -292,7 +291,7 @@ export class LexicalNode {
     let node: ElementNode | this | null = this;
     while (node !== null) {
       const parent: ElementNode | this | null = node.getParent();
-      if (parent !== null && $isRootOrShadowRoot(parent)) {
+      if ($isRootOrShadowRoot(parent)) {
         return node;
       }
       node = parent;

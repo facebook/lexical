@@ -17,7 +17,7 @@ import type {Spread} from 'lexical';
 
 import invariant from 'shared/invariant';
 
-import {$isRootNode, $isTextNode, TextNode} from '../';
+import {$isTextNode, TextNode} from '../';
 import {
   DOUBLE_LINE_BREAK,
   ELEMENT_FORMAT_TO_TYPE,
@@ -33,6 +33,7 @@ import {
 import {errorOnReadOnly, getActiveEditor} from '../LexicalUpdates';
 import {
   $getNodeByKey,
+  $isRootOrShadowRoot,
   internalMarkNodeAsDirty,
   removeFromParent,
 } from '../LexicalUtils';
@@ -423,7 +424,7 @@ export class ElementNode extends LexicalNode {
         if (
           writableSelfChildren.length === 0 &&
           !this.canBeEmpty() &&
-          !$isRootNode(this)
+          !$isRootOrShadowRoot(this)
         ) {
           this.remove();
         }

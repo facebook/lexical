@@ -16,7 +16,7 @@ import {$createHeadingNode} from '@lexical/rich-text';
 import {
   $addNodeStyle,
   $getSelectionStyleValueForProperty,
-  $wrapLeafNodesInElements,
+  $wrapNodes,
 } from '@lexical/selection';
 import {$createTableNodeWithDimensions} from '@lexical/table';
 import {
@@ -2255,7 +2255,7 @@ describe('LexicalSelection tests', () => {
     });
   });
 
-  describe('$wrapLeafNodesInElements', () => {
+  describe('$wrapNodes', () => {
     test('Collapsed selection in text', async () => {
       const testEditor = createTestEditor();
       const element = document.createElement('div');
@@ -2284,7 +2284,7 @@ describe('LexicalSelection tests', () => {
           type: 'text',
         });
 
-        $wrapLeafNodesInElements(selection, () => {
+        $wrapNodes(selection, () => {
           return $createHeadingNode('h1');
         });
 
@@ -2319,7 +2319,7 @@ describe('LexicalSelection tests', () => {
           type: 'element',
         });
 
-        $wrapLeafNodesInElements(selection, () => {
+        $wrapNodes(selection, () => {
           return $createHeadingNode('h1');
         });
 
@@ -2358,7 +2358,7 @@ describe('LexicalSelection tests', () => {
           type: 'text',
         });
 
-        $wrapLeafNodesInElements(selection, () => {
+        $wrapNodes(selection, () => {
           return $createHeadingNode('h1');
         });
 
@@ -2393,7 +2393,7 @@ describe('LexicalSelection tests', () => {
           type: 'element',
         });
 
-        $wrapLeafNodesInElements(selection, () => {
+        $wrapNodes(selection, () => {
           return $createHeadingNode('h1');
         });
 
@@ -2432,7 +2432,7 @@ describe('LexicalSelection tests', () => {
           type: 'text',
         });
 
-        $wrapLeafNodesInElements(selection, () => {
+        $wrapNodes(selection, () => {
           return $createHeadingNode('h1');
         });
 
@@ -2471,7 +2471,7 @@ describe('LexicalSelection tests', () => {
 
         const columnChildrenPrev = column.getChildren();
         expect(columnChildrenPrev[0].__type).toBe('paragraph');
-        $wrapLeafNodesInElements(selection, () => {
+        $wrapNodes(selection, () => {
           return $createHeadingNode('h1');
         });
 
@@ -2513,7 +2513,7 @@ describe('LexicalSelection tests', () => {
 
         const columnChildrenPrev = column.getChildren();
         expect(columnChildrenPrev[0].__type).toBe('paragraph');
-        $wrapLeafNodesInElements(selection, () => {
+        $wrapNodes(selection, () => {
           return $createHeadingNode('h1');
         });
 
@@ -2576,7 +2576,7 @@ describe('LexicalSelection tests', () => {
         // @ts-ignore
         const selection = $getSelection() as RangeSelection;
 
-        $wrapLeafNodesInElements(selection, () => {
+        $wrapNodes(selection, () => {
           return $createHeadingNode('h1');
         });
 

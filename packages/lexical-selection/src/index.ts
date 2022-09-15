@@ -589,8 +589,17 @@ function $removeParentEmptyElements(startingNode: ElementNode): void {
   }
 }
 
-// TODO 0.6 Rename to $wrapDescendantNodesInElements
-export function $wrapLeafNodesInElements(
+/**
+ * Attempts to wrap all nodes in the Selection in ElementNodes returned from createElement.
+ * If wrappingElement is provided, all of the wrapped leaves are appended to the wrappingElement.
+ * It attempts to append the resulting sub-tree to the nearest safe insertion target.
+ *
+ * @param selection
+ * @param createElement
+ * @param wrappingElement
+ * @returns
+ */
+export function $wrapNodes(
   selection: RangeSelection,
   createElement: () => ElementNode,
   wrappingElement: null | ElementNode = null,
@@ -633,7 +642,7 @@ export function $wrapLeafNodesInElements(
     // their own branch. I.e. you don't want to wrap a whole table, but rather the contents of each
     // of each of the cell nodes.
     if ($isRootOrShadowRoot(node)) {
-      $wrapLeafNodesInElementsImpl(
+      $wrapNodesImpl(
         selection,
         descendants,
         descendants.length,
@@ -648,7 +657,7 @@ export function $wrapLeafNodesInElements(
     ) {
       descendants.push(node);
     } else {
-      $wrapLeafNodesInElementsImpl(
+      $wrapNodesImpl(
         selection,
         descendants,
         descendants.length,
@@ -658,7 +667,7 @@ export function $wrapLeafNodesInElements(
       descendants = [node];
     }
   }
-  $wrapLeafNodesInElementsImpl(
+  $wrapNodesImpl(
     selection,
     descendants,
     descendants.length,
@@ -667,7 +676,7 @@ export function $wrapLeafNodesInElements(
   );
 }
 
-export function $wrapLeafNodesInElementsImpl(
+export function $wrapNodesImpl(
   selection: RangeSelection,
   nodes: LexicalNode[],
   nodesLength: number,

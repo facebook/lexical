@@ -33,6 +33,23 @@ const DRAGGABLE_BLOCK_MENU_CLASSNAME = 'draggable-block-menu';
 const DRAG_DATA_FORMAT = 'application/x-lexical-drag-block';
 const TEXT_BOX_HORIZONTAL_PADDING = 28;
 
+const Downward = 1;
+const Upward = -1;
+const TBD = 0;
+
+let prevIndex = Infinity;
+
+function getCurrentIndex(keysLength: number): number {
+  if (keysLength === 0) {
+    return Infinity;
+  }
+  if (prevIndex >= 0 && prevIndex < keysLength) {
+    return prevIndex;
+  }
+
+  return Math.floor(keysLength / 2);
+}
+
 function getBlockElement(
   anchorElem: HTMLElement,
   editor: LexicalEditor,
@@ -45,7 +62,11 @@ function getBlockElement(
   let blockElem = null;
 
   editor.getEditorState().read(() => {
-    for (const key of blockKeys) {
+    let index = getCurrentIndex(blockKeys.length);
+    let direction = TBD;
+
+    while (index >= 0 && index < blockKeys.length) {
+      const key = blockKeys[index];
       const elem = getElementByKeyOrThrow(editor, key);
       const point = new Point(event.x, event.y);
       const domRect = Rect.fromDOM(elem);
@@ -58,10 +79,28 @@ function getBlockElement(
         top: domRect.top - parseFloat(marginTop),
       });
 
-      if (rect.contains(point)) {
+      const {
+        result,
+        reason: {isOnTopSide, isOnBottomSide},
+      } = rect.contains(point);
+
+      if (result) {
         blockElem = elem;
+        prevIndex = index;
         break;
       }
+
+      if (direction === TBD) {
+        if (isOnTopSide) {
+          direction = Upward;
+        } else if (isOnBottomSide) {
+          direction = Downward;
+        } else {
+          direction = Infinity;
+        }
+      }
+
+      index += direction;
     }
   });
 
@@ -154,7 +193,9 @@ function hideTargetLine(targetLineElem: HTMLElement | null) {
 function useDraggableBlockMenu(
   editor: LexicalEditor,
   anchorElem: HTMLElement,
-): JSX.Element | null {
+): JSX.Element {
+  const scrollerElem = anchorElem.parentElement;
+
   const menuRef = useRef<HTMLDivElement>(null);
   const targetLineRef = useRef<HTMLDivElement>(null);
   const [draggableBlockElem, setDraggableBlockElem] =
@@ -177,12 +218,18 @@ function useDraggableBlockMenu(
       setDraggableBlockElem(_draggableBlockElem);
     }
 
-    window.addEventListener('mousemove', onMouseMove);
+    function onMouseLeave() {
+      setDraggableBlockElem(null);
+    }
+
+    scrollerElem?.addEventListener('mousemove', onMouseMove);
+    scrollerElem?.addEventListener('mouseleave', onMouseLeave);
 
     return () => {
-      window.removeEventListener('mousemove', onMouseMove);
+      scrollerElem?.removeEventListener('mousemove', onMouseMove);
+      scrollerElem?.removeEventListener('mouseleave', onMouseLeave);
     };
-  }, [anchorElem, editor]);
+  }, [scrollerElem, anchorElem, editor]);
 
   useEffect(() => {
     if (menuRef.current) {
@@ -298,7 +345,7 @@ export default function DraggableBlockPlugin({
   anchorElem = document.body,
 }: {
   anchorElem?: HTMLElement;
-}): JSX.Element | null {
+}): JSX.Element {
   const [editor] = useLexicalComposerContext();
   return useDraggableBlockMenu(editor, anchorElem);
 }

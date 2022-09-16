@@ -7,6 +7,16 @@
  */
 import {isPoint, Point} from './point';
 
+type ContainsPointReturn = {
+  result: boolean;
+  reason: {
+    isOnTopSide: boolean;
+    isOnBottomSide: boolean;
+    isOnLeftSide: boolean;
+    isOnRightSide: boolean;
+  };
+};
+
 export class Rect {
   private readonly _left: number;
   private readonly _top: number;
@@ -59,18 +69,29 @@ export class Rect {
     );
   }
 
-  public contains({x, y}: Point): boolean;
+  public contains({x, y}: Point): ContainsPointReturn;
   public contains({top, left, bottom, right}: Rect): boolean;
-  public contains(target: Point | Rect): boolean {
+  public contains(target: Point | Rect): boolean | ContainsPointReturn {
     if (isPoint(target)) {
       const {x, y} = target;
 
-      return (
-        y >= this._top &&
-        y <= this._bottom &&
-        x >= this._left &&
-        x <= this._right
-      );
+      const isOnTopSide = y < this._top;
+      const isOnBottomSide = y > this._bottom;
+      const isOnLeftSide = x < this._left;
+      const isOnRightSide = x > this._right;
+
+      const result =
+        !isOnTopSide && !isOnBottomSide && !isOnLeftSide && !isOnRightSide;
+
+      return {
+        reason: {
+          isOnBottomSide,
+          isOnLeftSide,
+          isOnRightSide,
+          isOnTopSide,
+        },
+        result,
+      };
     } else {
       const {top, left, bottom, right} = target;
 

@@ -99,8 +99,7 @@ export function $rootTextContent(): string {
 
 export function $canShowPlaceholder(
   isComposing: boolean,
-  // TODO 0.5 make mandatory
-  isEditable = true,
+  isEditable: boolean,
 ): boolean {
   if (!isEditable || !$isRootTextContentEmpty(isComposing, false)) {
     return false;
@@ -144,8 +143,7 @@ export function $canShowPlaceholder(
 
 export function $canShowPlaceholderCurry(
   isEditorComposing: boolean,
-  // TODO 0.5 make mandatory
-  isEditable = true,
+  isEditable: boolean,
 ): () => boolean {
   return () => $canShowPlaceholder(isEditorComposing, isEditable);
 }

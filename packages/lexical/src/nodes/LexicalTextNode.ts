@@ -506,6 +506,7 @@ export class TextNode extends LexicalNode {
 
   // TODO 0.5 This should just be a `string`.
   setDetail(detail: TextDetailType | number): this {
+    //
     const self = this.getWritable();
     self.__detail =
       typeof detail === 'string' ? DETAIL_TYPE_TO_DETAIL[detail] : detail;

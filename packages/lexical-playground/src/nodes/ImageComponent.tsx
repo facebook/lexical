@@ -352,8 +352,6 @@ export default function ImageComponent({
                     Enter a caption...
                   </Placeholder>
                 }
-                // TODO Remove after it's inherited from the parent (LexicalComposer)
-                initialEditorState={isCollabActive ? null : undefined}
               />
               {showNestedEditorTreeView === true ? <TreeViewPlugin /> : null}
             </LexicalNestedComposer>

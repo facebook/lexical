@@ -9,17 +9,14 @@
 import type {LexicalEditor} from 'lexical';
 
 import {registerDragonSupport} from '@lexical/dragon';
-import {InitialEditorStateType, registerPlainText} from '@lexical/plain-text';
+import {registerPlainText} from '@lexical/plain-text';
 import {mergeRegister} from '@lexical/utils';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
-export function usePlainTextSetup(
-  editor: LexicalEditor,
-  initialEditorState?: InitialEditorStateType,
-): void {
+export function usePlainTextSetup(editor: LexicalEditor): void {
   useLayoutEffect(() => {
     return mergeRegister(
-      registerPlainText(editor, initialEditorState),
+      registerPlainText(editor),
       registerDragonSupport(editor),
     );
 

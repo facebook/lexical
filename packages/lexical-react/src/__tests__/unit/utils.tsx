@@ -39,7 +39,7 @@ function Editor({doc, provider, setEditor}) {
       />
       <RichTextPlugin
         contentEditable={<ContentEditable />}
-        placeholder={null}
+        placeholder={<></>}
       />
     </>
   );
@@ -160,6 +160,7 @@ class Client {
       reactRoot.render(
         <LexicalComposer
           initialConfig={{
+            editorState: null,
             namespace: '',
             onError: () => {
               throw Error();

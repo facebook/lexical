@@ -16,11 +16,6 @@ import type {
   LexicalEditor,
 } from 'lexical';
 import {ElementNode} from 'lexical';
-export type InitialEditorStateType =
-  | null
-  | string
-  | EditorState
-  | ((editor: LexicalEditor) => void);
 
 declare export class QuoteNode extends ElementNode {
   static getType(): string;
@@ -54,7 +49,4 @@ declare export function $createHeadingNode(
 declare export function $isHeadingNode(
   node: ?LexicalNode,
 ): boolean %checks(node instanceof HeadingNode);
-declare export function registerRichText(
-  editor: LexicalEditor,
-  initialEditorState?: InitialEditorStateType,
-): () => void;
+declare export function registerRichText(editor: LexicalEditor): () => void;

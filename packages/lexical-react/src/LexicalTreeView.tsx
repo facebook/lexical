@@ -54,6 +54,7 @@ export function TreeView({
   viewClassName,
   timeTravelPanelClassName,
   editor,
+  shouldShowNodeIds = $isMarkNode,
 }: {
   editor: LexicalEditor;
   timeTravelButtonClassName: string;
@@ -61,6 +62,7 @@ export function TreeView({
   timeTravelPanelClassName: string;
   timeTravelPanelSliderClassName: string;
   viewClassName: string;
+  shouldShowNodeIds: typeof $isMarkNode;
 }): JSX.Element {
   const [timeStampedEditorStates, setTimeStampedEditorStates] = useState<
     Array<[number, EditorState]>
@@ -73,10 +75,13 @@ export function TreeView({
   const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
-    setContent(generateContent(editor.getEditorState()));
+    setContent(generateContent(editor.getEditorState(), shouldShowNodeIds));
     return editor.registerUpdateListener(({editorState}) => {
       const compositionKey = editor._compositionKey;
-      const treeText = generateContent(editor.getEditorState());
+      const treeText = generateContent(
+        editor.getEditorState(),
+        shouldShowNodeIds,
+      );
       const compositionText =
         compositionKey !== null && `Composition key: ${compositionKey}`;
       setContent([treeText, compositionText].filter(Boolean).join('\n\n'));
@@ -247,7 +252,10 @@ function printGridSelection(selection: GridSelection): string {
   return `: grid\n  └ { grid: ${selection.gridKey}, anchorCell: ${selection.anchor.key}, focusCell: ${selection.focus.key} }`;
 }
 
-function generateContent(editorState: EditorState): string {
+function generateContent(
+  editorState: EditorState,
+  shouldShowNodeIds: typeof $isMarkNode,
+): string {
   let res = ' root\n';
 
   const selectionString = editorState.read(() => {
@@ -258,7 +266,7 @@ function generateContent(editorState: EditorState): string {
       const nodeKeyDisplay = `(${nodeKey})`;
       const typeDisplay = node.getType() || '';
       const isSelected = node.isSelected();
-      const idsDisplay = $isMarkNode(node)
+      const idsDisplay = shouldShowNodeIds(node)
         ? ` id: [ ${node.getIDs().join(', ')} ] `
         : '';
 

@@ -77,13 +77,16 @@ export function $wrapSelectionInMarkNode(
           ? splitNodes[1]
           : splitNodes[0];
     } else if ($isMarkNode(node)) {
-      // Case 2: the node is a mark node and we can ignore it, moving on to its
-      // children. Note that when we make a mark inside another mark, it may
-      // utlimately be unnested by a call to
+      // Case 2: the node is a mark node and we can ignore it as a target,
+      // moving on to its children. Note that when we make a mark inside
+      // another mark, it may utlimately be unnested by a call to
       // `registerNestedElementResolver<MarkNode>` somewhere else in the
       // codebase.
+
       continue;
     } else if ($isElementNode(node) && node.isInline()) {
+      // Case 3: inline element nodes can be added in their entirety to the new
+      // mark
       targetNode = node;
     }
 

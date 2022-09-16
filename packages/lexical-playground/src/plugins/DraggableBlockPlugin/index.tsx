@@ -50,23 +50,27 @@ function getCurrentIndex(keysLength: number): number {
   return Math.floor(keysLength / 2);
 }
 
+function getTopLevelNodeKeys(editor: LexicalEditor): string[] {
+  const root = editor.getEditorState()._nodeMap.get('root');
+  return root ? root.__children : [];
+}
+
 function getBlockElement(
   anchorElem: HTMLElement,
   editor: LexicalEditor,
   event: MouseEvent,
 ): HTMLElement | null {
   const anchorElementRect = anchorElem.getBoundingClientRect();
-  const root = editor.getEditorState()._nodeMap.get('root');
-  const blockKeys = root ? root.__children : [];
+  const topLevelNodeKeys = getTopLevelNodeKeys(editor);
 
-  let blockElem = null;
+  let blockElem: HTMLElement | null = null;
 
   editor.getEditorState().read(() => {
-    let index = getCurrentIndex(blockKeys.length);
+    let index = getCurrentIndex(topLevelNodeKeys.length);
     let direction = TBD;
 
-    while (index >= 0 && index < blockKeys.length) {
-      const key = blockKeys[index];
+    while (index >= 0 && index < topLevelNodeKeys.length) {
+      const key = topLevelNodeKeys[index];
       const elem = getElementByKeyOrThrow(editor, key);
       const point = new Point(event.x, event.y);
       const domRect = Rect.fromDOM(elem);
@@ -96,6 +100,7 @@ function getBlockElement(
         } else if (isOnBottomSide) {
           direction = Downward;
         } else {
+          // stop search block element
           direction = Infinity;
         }
       }

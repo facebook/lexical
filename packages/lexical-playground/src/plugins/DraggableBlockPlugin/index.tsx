@@ -35,7 +35,7 @@ const TEXT_BOX_HORIZONTAL_PADDING = 28;
 
 const Downward = 1;
 const Upward = -1;
-const TBD = 0;
+const Indeterminate = 0;
 
 let prevIndex = Infinity;
 
@@ -67,7 +67,7 @@ function getBlockElement(
 
   editor.getEditorState().read(() => {
     let index = getCurrentIndex(topLevelNodeKeys.length);
-    let direction = TBD;
+    let direction = Indeterminate;
 
     while (index >= 0 && index < topLevelNodeKeys.length) {
       const key = topLevelNodeKeys[index];
@@ -94,7 +94,7 @@ function getBlockElement(
         break;
       }
 
-      if (direction === TBD) {
+      if (direction === Indeterminate) {
         if (isOnTopSide) {
           direction = Upward;
         } else if (isOnBottomSide) {

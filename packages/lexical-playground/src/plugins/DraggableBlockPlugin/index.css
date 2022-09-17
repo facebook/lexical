@@ -1,11 +1,10 @@
 .draggable-block-menu {
+  border-radius: 4px;
   padding: 2px 1px;
   cursor: grab;
   position: absolute;
   left: -10000px;
   top: -10000px;
-
-  border-radius: 4px;
 }
 
 .draggable-block-menu .icon {

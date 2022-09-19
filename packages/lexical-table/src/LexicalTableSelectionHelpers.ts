@@ -92,15 +92,12 @@ export function applyTableHandlers(
         return;
       }
 
+      isMouseDown = true;
+
       const cell = getCellFromTarget(event.target as Node);
 
       if (cell !== null) {
         tableSelection.setAnchorCellForSelection(cell);
-        console.log('selecting...', {
-          startX: tableSelection.startX,
-          startY: tableSelection.startY,
-        });
-
         document.addEventListener(
           'mouseup',
           () => {
@@ -137,7 +134,6 @@ export function applyTableHandlers(
             tableSelection.isHighlightingCells)
         ) {
           event.preventDefault();
-          isMouseDown = true;
           tableSelection.adjustFocusCellForSelection(cell);
         }
       }
@@ -145,7 +141,7 @@ export function applyTableHandlers(
   });
 
   tableElement.addEventListener('mouseup', () => {
-    if (isMouseDown) {
+    if (isMouseDown && tableSelection.isHighlightingCells) {
       isMouseDown = false;
     }
   });
@@ -872,7 +868,7 @@ export function applyTableHandlers(
     editor.registerCommand(
       FOCUS_COMMAND,
       (payload) => {
-        return tableNode.isSelected();
+        return tableSelection.gridSelection != null || tableNode.isSelected();
       },
       COMMAND_PRIORITY_CRITICAL,
     ),

@@ -25,7 +25,7 @@ declare export function $cloneContents<T: LexicalNode>(
 declare export function $cloneWithProperties<T: LexicalNode>(node: T): T;
 declare export function getStyleObjectFromCSS(css: string): {
   [string]: string,
-} | null;
+};
 declare export function $patchStyleText(
   selection: RangeSelection | GridSelection,
   patch: {
@@ -50,7 +50,7 @@ declare export function $moveCharacter(
   isBackward: boolean,
 ): void;
 declare export function $selectAll(selection: RangeSelection): void;
-declare export function $wrapLeafNodesInElements(
+declare export function $wrapNodes(
   selection: RangeSelection,
   createElement: () => ElementNode,
   wrappingElement?: ElementNode,

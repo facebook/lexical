@@ -200,15 +200,6 @@ function createNode(
       if (!node.isDirectionless()) {
         subTreeDirectionedTextContent += text;
       }
-
-      if (node.isInert()) {
-        const domStyle = dom.style;
-        domStyle.pointerEvents = 'none';
-        domStyle.userSelect = 'none';
-        dom.contentEditable = 'false';
-        // To support Safari
-        domStyle.setProperty('-webkit-user-select', 'none');
-      }
     }
 
     subTreeTextContent += text;
@@ -287,7 +278,7 @@ function isLastChildLineBreakOrDecorator(
   return $isLineBreakNode(node) || $isDecoratorNode(node);
 }
 
-// If we end an element with a LinkBreakNode, then we need to add an additional <br>
+// If we end an element with a LineBreakNode, then we need to add an additional <br>
 function reconcileElementTerminatingLineBreak(
   prevChildren: null | Array<NodeKey>,
   nextChildren: Array<NodeKey>,

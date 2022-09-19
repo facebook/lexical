@@ -410,7 +410,7 @@ export function $restoreEditorState(
   $setSelection(selection === null ? null : selection.clone());
 }
 
-export function $insertBlockNode<T extends LexicalNode>(node: T): T {
+export function $insertNodeToNearestRoot<T extends LexicalNode>(node: T): T {
   const selection = $getSelection();
   if ($isRangeSelection(selection)) {
     const focusNode = selection.focus.getNode();
@@ -429,4 +429,14 @@ export function $insertBlockNode<T extends LexicalNode>(node: T): T {
   node.insertAfter(paragraphNode);
   paragraphNode.select();
   return node.getLatest();
+}
+
+export function $wrapNodeInElement(
+  node: LexicalNode,
+  createElementNode: () => ElementNode,
+): ElementNode {
+  const elementNode = createElementNode();
+  node.replace(elementNode);
+  elementNode.append(node);
+  return elementNode;
 }

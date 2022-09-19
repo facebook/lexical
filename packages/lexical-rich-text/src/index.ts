@@ -12,7 +12,6 @@ import type {
   DOMConversionMap,
   DOMConversionOutput,
   EditorConfig,
-  EditorState,
   ElementFormatType,
   LexicalEditor,
   LexicalNode,
@@ -40,7 +39,6 @@ import {
 import {
   $createParagraphNode,
   $getNearestNodeFromDOMNode,
-  $getRoot,
   $getSelection,
   $isDecoratorNode,
   $isNodeSelection,
@@ -79,13 +77,6 @@ import {
 } from 'lexical';
 import {CAN_USE_BEFORE_INPUT, IS_IOS, IS_SAFARI} from 'shared/environment';
 
-// TODO Remove in 0.4
-export type InitialEditorStateType =
-  | null
-  | string
-  | EditorState
-  | ((editor: LexicalEditor) => void);
-
 export type SerializedHeadingNode = Spread<
   {
     tag: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
@@ -102,17 +93,6 @@ export type SerializedQuoteNode = Spread<
   },
   SerializedElementNode
 >;
-
-// Convoluted logic to make this work with Flow. Order matters.
-const options = {tag: 'history-merge'};
-const setEditorOptions: {
-  tag?: string;
-} = options;
-const updateOptions: {
-  onUpdate?: () => void;
-  skipTransforms?: true;
-  tag?: string;
-} = options;
 
 /** @noInheritDoc */
 export class QuoteNode extends ElementNode {
@@ -366,51 +346,6 @@ export function $isHeadingNode(
   return node instanceof HeadingNode;
 }
 
-function initializeEditor(
-  editor: LexicalEditor,
-  initialEditorState?: InitialEditorStateType,
-): void {
-  if (initialEditorState === null) {
-    return;
-  } else if (initialEditorState === undefined) {
-    editor.update(() => {
-      const root = $getRoot();
-      if (root.isEmpty()) {
-        const paragraph = $createParagraphNode();
-        root.append(paragraph);
-        const activeElement = document.activeElement;
-        if (
-          $getSelection() !== null ||
-          (activeElement !== null && activeElement === editor.getRootElement())
-        ) {
-          paragraph.select();
-        }
-      }
-    }, updateOptions);
-  } else if (initialEditorState !== null) {
-    switch (typeof initialEditorState) {
-      case 'string': {
-        const parsedEditorState = editor.parseEditorState(initialEditorState);
-        editor.setEditorState(parsedEditorState, setEditorOptions);
-        break;
-      }
-      case 'object': {
-        editor.setEditorState(initialEditorState, setEditorOptions);
-        break;
-      }
-      case 'function': {
-        editor.update(() => {
-          const root = $getRoot();
-          if (root.isEmpty()) {
-            initialEditorState(editor);
-          }
-        }, updateOptions);
-        break;
-      }
-    }
-  }
-}
-
 function onPasteForRichText(
   event: CommandPayloadType<typeof PASTE_COMMAND>,
   editor: LexicalEditor,
@@ -520,10 +455,7 @@ function isTargetWithinDecorator(target: HTMLElement): boolean {
   return $isDecoratorNode(node);
 }
 
-export function registerRichText(
-  editor: LexicalEditor,
-  initialEditorState?: InitialEditorStateType,
-): () => void {
+export function registerRichText(editor: LexicalEditor): () => void {
   const removeListener = mergeRegister(
     editor.registerCommand(
       CLICK_COMMAND,
@@ -960,6 +892,5 @@ export function registerRichText(
       COMMAND_PRIORITY_EDITOR,
     ),
   );
-  initializeEditor(editor, initialEditorState);
   return removeListener;
 }

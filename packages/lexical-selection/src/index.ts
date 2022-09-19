@@ -18,8 +18,8 @@ import {
   $isLeafNode,
   $isRangeSelection,
   $isRootNode,
+  $isRootOrShadowRoot,
   $isTextNode,
-  $isTopLevel,
   $setSelection,
   DEPRECATED_$isGridSelection,
   ElementNode,
@@ -298,10 +298,13 @@ function $cloneContentsImpl(
   invariant(false, 'TODO');
 }
 
-export function getStyleObjectFromCSS(
-  css: string,
-): Record<string, string> | null {
-  return cssToStyles.get(css) || null;
+export function getStyleObjectFromCSS(css: string): Record<string, string> {
+  let value = cssToStyles.get(css);
+  if (value === undefined) {
+    value = getStyleObjectFromRawCSS(css);
+    cssToStyles.set(css, value);
+  }
+  return value;
 }
 
 function getStyleObjectFromRawCSS(css: string): Record<string, string> {
@@ -574,7 +577,7 @@ export function $selectAll(selection: RangeSelection): void {
 function $removeParentEmptyElements(startingNode: ElementNode): void {
   let node: ElementNode | null = startingNode;
 
-  while (node !== null && !$isTopLevel(node)) {
+  while (node !== null && !$isRootOrShadowRoot(node)) {
     const latest = node.getLatest();
     const parentNode: ElementNode | null = node.getParent<ElementNode>();
 
@@ -586,8 +589,17 @@ function $removeParentEmptyElements(startingNode: ElementNode): void {
   }
 }
 
-// TODO 0.6 Rename to $wrapDescendantNodesInElements
-export function $wrapLeafNodesInElements(
+/**
+ * Attempts to wrap all nodes in the Selection in ElementNodes returned from createElement.
+ * If wrappingElement is provided, all of the wrapped leaves are appended to the wrappingElement.
+ * It attempts to append the resulting sub-tree to the nearest safe insertion target.
+ *
+ * @param selection
+ * @param createElement
+ * @param wrappingElement
+ * @returns
+ */
+export function $wrapNodes(
   selection: RangeSelection,
   createElement: () => ElementNode,
   wrappingElement: null | ElementNode = null,
@@ -626,11 +638,11 @@ export function $wrapLeafNodesInElements(
   for (let i = 0; i < nodesLength; i++) {
     const node = nodes[i];
     // Determine whether wrapping has to be broken down into multiple chunks. This can happen if the
-    // user selected multiple top-level nodes that have to be treated separately as if they are
+    // user selected multiple Root-like nodes that have to be treated separately as if they are
     // their own branch. I.e. you don't want to wrap a whole table, but rather the contents of each
     // of each of the cell nodes.
-    if ($isTopLevel(node)) {
-      $wrapLeafNodesInElementsImpl(
+    if ($isRootOrShadowRoot(node)) {
+      $wrapNodesImpl(
         selection,
         descendants,
         descendants.length,
@@ -645,7 +657,7 @@ export function $wrapLeafNodesInElements(
     ) {
       descendants.push(node);
     } else {
-      $wrapLeafNodesInElementsImpl(
+      $wrapNodesImpl(
         selection,
         descendants,
         descendants.length,
@@ -655,7 +667,7 @@ export function $wrapLeafNodesInElements(
       descendants = [node];
     }
   }
-  $wrapLeafNodesInElementsImpl(
+  $wrapNodesImpl(
     selection,
     descendants,
     descendants.length,
@@ -664,7 +676,7 @@ export function $wrapLeafNodesInElements(
   );
 }
 
-export function $wrapLeafNodesInElementsImpl(
+export function $wrapNodesImpl(
   selection: RangeSelection,
   nodes: LexicalNode[],
   nodesLength: number,
@@ -702,7 +714,7 @@ export function $wrapLeafNodesInElementsImpl(
 
     target = target.getParentOrThrow();
 
-    if ($isTopLevel(target)) {
+    if ($isRootOrShadowRoot(target)) {
       break;
     }
   }
@@ -768,9 +780,9 @@ export function $wrapLeafNodesInElementsImpl(
     }
   }
 
-  // If our target is top level, let's see if we can re-adjust
+  // If our target is Root-like, let's see if we can re-adjust
   // so that the target is the first child instead.
-  if ($isTopLevel(target)) {
+  if ($isRootOrShadowRoot(target)) {
     if (targetIsPrevSibling) {
       if (wrappingElement !== null) {
         target.insertAfter(wrappingElement);

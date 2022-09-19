@@ -64,4 +64,9 @@ declare export function $restoreEditorState(
   editorState: EditorState,
 ): void;
 
-declare export function $insertBlockNode<T: LexicalNode>(node: T): T;
+declare export function $insertNodeToNearestRoot<T: LexicalNode>(node: T): T;
+
+declare export function $wrapNodeInElement(
+  node: LexicalNode,
+  createElementNode: () => ElementNode,
+): ElementNode;

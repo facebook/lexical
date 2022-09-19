@@ -30,7 +30,6 @@ import {
 import {
   $createLineBreakNode,
   $createTextNode,
-  $isParagraphNode,
   $isTextNode,
   ElementNode,
   Klass,
@@ -90,9 +89,7 @@ const createBlockNode = (
   return (parentNode, children, match) => {
     const node = createNode(match);
     node.append(...children);
-    if ($isParagraphNode(parentNode)) {
-      parentNode.replace(node);
-    }
+    parentNode.replace(node);
     node.select(0, 0);
   };
 };

@@ -27,6 +27,10 @@ export const SAMPLE_IMAGE_URL =
   E2E_PORT === 3000
     ? '/src/images/yellow-flower.jpg'
     : '/assets/yellow-flower.a2a7c7a2.jpg';
+export const SAMPLE_LANDSCAPE_IMAGE_URL =
+  E2E_PORT === 3000
+    ? '/src/images/landscape.jpg'
+    : '/assets/landscape.21352c66.jpg';
 
 export async function initialize({
   page,
@@ -481,9 +485,15 @@ export async function clearEditor(page) {
   await page.keyboard.press('Backspace');
 }
 
-export async function insertSampleImage(page) {
+export async function insertSampleImage(page, modifier) {
   await selectFromInsertDropdown(page, '.image');
+  if (modifier === 'alt') {
+    await page.keyboard.down('Alt');
+  }
   await click(page, 'button[data-test-id="image-modal-option-sample"]');
+  if (modifier === 'alt') {
+    await page.keyboard.up('Alt');
+  }
 }
 
 export async function insertUrlImage(page, url, altText) {
@@ -523,6 +533,10 @@ export async function insertYouTubeEmbed(page, url) {
     page,
     'button[data-test-id="youtube-video-embed-modal-submit-btn"]',
   );
+}
+
+export async function insertHorizontalRule(page) {
+  await selectFromInsertDropdown(page, '.horizontal-rule');
 }
 
 export async function insertImageCaption(page, caption) {

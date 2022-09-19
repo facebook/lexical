@@ -74,11 +74,7 @@ function VideoPlugin(): ReactNode {
       (payload) => {
         // Adding custom command that will be handled by this plugin
         editor.update(() => {
-          const selection = $getSelection();
-          if (selection !== null) {
-            const url: string = payload;
-            selection.insertNodes([$createVideoNode(url)]);
-          }
+          $insertNodes([$createVideoNode(url)]);
         });
 
         // Returning true indicates that command is handled and no further propagation is required

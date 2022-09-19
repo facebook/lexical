@@ -37,6 +37,10 @@ import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 import {WebsocketProvider} from 'y-websocket';
 
+import {InitialEditorStateType} from '../LexicalComposer';
+
+export type CursorsContainerRef = React.MutableRefObject<HTMLElement | null>;
+
 export function useYjsCollaboration(
   editor: LexicalEditor,
   id: string,
@@ -45,6 +49,8 @@ export function useYjsCollaboration(
   name: string,
   color: string,
   shouldBootstrap: boolean,
+  cursorsContainerRef?: CursorsContainerRef,
+  initialEditorState?: InitialEditorStateType,
 ): [JSX.Element, Binding] {
   const isReloadingDoc = useRef(false);
   const [doc, setDoc] = useState(docMap.get(id));
@@ -82,7 +88,7 @@ export function useYjsCollaboration(
         root._xmlText._length === 0 &&
         isReloadingDoc.current === false
       ) {
-        initializeEditor(editor);
+        initializeEditor(editor, initialEditorState);
       }
 
       isReloadingDoc.current = false;
@@ -169,6 +175,7 @@ export function useYjsCollaboration(
     docMap,
     editor,
     id,
+    initialEditorState,
     name,
     provider,
     shouldBootstrap,
@@ -178,8 +185,11 @@ export function useYjsCollaboration(
       binding.cursorsContainer = element;
     };
 
-    return createPortal(<div ref={ref} />, document.body);
-  }, [binding]);
+    return createPortal(
+      <div ref={ref} />,
+      (cursorsContainerRef && cursorsContainerRef.current) || document.body,
+    );
+  }, [binding, cursorsContainerRef]);
 
   useEffect(() => {
     return editor.registerCommand(
@@ -279,22 +289,52 @@ export function useYjsHistory(
   return clearHistory;
 }
 
-function initializeEditor(editor: LexicalEditor): void {
+function initializeEditor(
+  editor: LexicalEditor,
+  initialEditorState?: InitialEditorStateType,
+): void {
   editor.update(
     () => {
       const root = $getRoot();
-      const firstChild = root.getFirstChild();
 
-      if (firstChild === null) {
-        const paragraph = $createParagraphNode();
-        root.append(paragraph);
-        const activeElement = document.activeElement;
+      if (root.isEmpty()) {
+        if (initialEditorState) {
+          switch (typeof initialEditorState) {
+            case 'string': {
+              const parsedEditorState =
+                editor.parseEditorState(initialEditorState);
+              editor.setEditorState(parsedEditorState, {tag: 'history-merge'});
+              break;
+            }
+            case 'object': {
+              editor.setEditorState(initialEditorState, {tag: 'history-merge'});
+              break;
+            }
+            case 'function': {
+              editor.update(
+                () => {
+                  const root1 = $getRoot();
+                  if (root1.isEmpty()) {
+                    initialEditorState(editor);
+                  }
+                },
+                {tag: 'history-merge'},
+              );
+              break;
+            }
+          }
+        } else {
+          const paragraph = $createParagraphNode();
+          root.append(paragraph);
+          const {activeElement} = document;
 
-        if (
-          $getSelection() !== null ||
-          (activeElement !== null && activeElement === editor.getRootElement())
-        ) {
-          paragraph.select();
+          if (
+            $getSelection() !== null ||
+            (activeElement !== null &&
+              activeElement === editor.getRootElement())
+          ) {
+            paragraph.select();
+          }
         }
       }
     },

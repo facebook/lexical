@@ -14,5 +14,4 @@ import type {EditorState, LexicalEditor} from 'lexical';
 declare export function useLexicalPlainText(
   editor: LexicalEditor,
   externalHistoryState?: HistoryState,
-  initialEditorState?: null | string | EditorState | (() => void),
 ): void;

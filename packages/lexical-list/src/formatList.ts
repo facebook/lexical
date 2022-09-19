@@ -6,14 +6,6 @@
  *
  */
 
-import type {
-  ElementNode,
-  LexicalEditor,
-  LexicalNode,
-  NodeKey,
-  ParagraphNode,
-} from 'lexical';
-
 import {$getNearestNodeOfType} from '@lexical/utils';
 import {
   $createParagraphNode,
@@ -22,7 +14,12 @@ import {
   $isLeafNode,
   $isParagraphNode,
   $isRangeSelection,
-  $isRootNode,
+  $isRootOrShadowRoot,
+  ElementNode,
+  LexicalEditor,
+  LexicalNode,
+  NodeKey,
+  ParagraphNode,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -98,7 +95,7 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
         const list = $createListNode(listType);
 
         if (
-          $isRootNode(anchorNodeParent) ||
+          $isRootOrShadowRoot(anchorNodeParent) ||
           ($isElementNode(anchorNodeParent) && anchorNodeParent.isTopLevel())
         ) {
           anchorNode.replace(list);
@@ -148,7 +145,7 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
                 const nextParent = parent.getParent();
 
                 if (
-                  ($isRootNode(nextParent) ||
+                  ($isRootOrShadowRoot(nextParent) ||
                     ($isElementNode(nextParent) && nextParent.isTopLevel())) &&
                   !handled.has(parentKey)
                 ) {
@@ -491,7 +488,7 @@ export function $handleListInsertParagraph(): boolean {
 
   let replacementNode;
 
-  if ($isRootNode(grandparent)) {
+  if ($isRootOrShadowRoot(grandparent)) {
     replacementNode = $createParagraphNode();
     topListNode.insertAfter(replacementNode);
   } else if ($isListItemNode(grandparent)) {

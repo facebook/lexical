@@ -6,11 +6,11 @@
  *
  */
 
+import type {FORMAT_TYPE} from './LexicalConstants';
 import type {LexicalEditor} from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
 import type {LexicalNode, NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
-import type {TextFormatType} from './nodes/LexicalTextNode';
 
 import {IS_IOS, IS_SAFARI} from 'shared/environment';
 import getDOMSelection from 'shared/getDOMSelection';
@@ -209,7 +209,7 @@ export function $moveSelectionPointToEnd(
 function $transferStartingElementPointToTextPoint(
   start: ElementPointType,
   end: PointType,
-  format: number,
+  format: FORMAT_TYPE,
 ) {
   const element = start.getNode();
   const placementNode = element.getChildAtIndex(start.offset);
@@ -537,10 +537,10 @@ export class RangeSelection implements BaseSelection {
   anchor: PointType;
   focus: PointType;
   dirty: boolean;
-  format: number;
+  format: FORMAT_TYPE;
   _cachedNodes: null | Array<LexicalNode>;
 
-  constructor(anchor: PointType, focus: PointType, format: number) {
+  constructor(anchor: PointType, focus: PointType, format: FORMAT_TYPE) {
     this.anchor = anchor;
     this.focus = focus;
     this.dirty = false;
@@ -724,12 +724,12 @@ export class RangeSelection implements BaseSelection {
     return selection;
   }
 
-  toggleFormat(format: TextFormatType): void {
+  toggleFormat(format: FORMAT_TYPE): void {
     this.format = toggleTextFormatType(this.format, format, null);
     this.dirty = true;
   }
 
-  hasFormat(type: TextFormatType): boolean {
+  hasFormat(type: FORMAT_TYPE): boolean {
     const formatFlag = TEXT_TYPE_TO_FORMAT[type];
     return (this.format & formatFlag) !== 0;
   }
@@ -1066,7 +1066,7 @@ export class RangeSelection implements BaseSelection {
     this.insertText('');
   }
 
-  formatText(formatType: TextFormatType): void {
+  formatText(formatType: FORMAT_TYPE): void {
     if (this.isCollapsed()) {
       this.toggleFormat(formatType);
       // When changing format, we should stop composition
@@ -1187,7 +1187,7 @@ export class RangeSelection implements BaseSelection {
       endPoint.set(lastNode.__key, endOffset, 'text');
     }
 
-    this.format = firstNextFormat | lastNextFormat;
+    this.format = (firstNextFormat | lastNextFormat) as FORMAT_TYPE;
   }
 
   insertNodes(nodes: Array<LexicalNode>, selectStart?: boolean): boolean {

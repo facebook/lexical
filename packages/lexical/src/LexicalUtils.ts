@@ -6,6 +6,7 @@
  *
  */
 
+import type {FORMAT_TYPE} from './LexicalConstants';
 import type {
   CommandPayloadType,
   EditorThemeClasses,
@@ -27,7 +28,7 @@ import type {
   RangeSelection,
 } from './LexicalSelection';
 import type {RootNode} from './nodes/LexicalRootNode';
-import type {TextFormatType, TextNode} from './nodes/LexicalTextNode';
+import type {TextNode} from './nodes/LexicalTextNode';
 
 import {IS_APPLE, IS_IOS, IS_SAFARI} from 'shared/environment';
 import getDOMSelection from 'shared/getDOMSelection';
@@ -53,7 +54,6 @@ import {
   HAS_DIRTY_NODES,
   LTR_REGEX,
   RTL_REGEX,
-  TEXT_TYPE_TO_FORMAT,
 } from './LexicalConstants';
 import {LexicalEditor} from './LexicalEditor';
 import {flushRootMutations} from './LexicalMutations';
@@ -182,23 +182,22 @@ export function getDOMTextNode(element: Node | null): Text | null {
 }
 
 export function toggleTextFormatType(
-  format: number,
-  type: TextFormatType,
+  format: FORMAT_TYPE,
+  type: FORMAT_TYPE,
   alignWithFormat: null | number,
-): number {
-  const activeFormat = TEXT_TYPE_TO_FORMAT[type];
-  const isStateFlagPresent = format & activeFormat;
+): FORMAT_TYPE {
+  const isStateFlagPresent = format & type;
 
   if (
     isStateFlagPresent &&
-    (alignWithFormat === null || (alignWithFormat & activeFormat) === 0)
+    (alignWithFormat === null || (alignWithFormat & type) === 0)
   ) {
     // Remove the state flag.
-    return format ^ activeFormat;
+    return (format ^ type) as FORMAT_TYPE;
   }
-  if (alignWithFormat === null || alignWithFormat & activeFormat) {
+  if (alignWithFormat === null || alignWithFormat & type) {
     // Add the state flag.
-    return format | activeFormat;
+    return (format | type) as FORMAT_TYPE;
   }
   return format;
 }

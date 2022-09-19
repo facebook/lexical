@@ -7,11 +7,7 @@
  */
 
 import type {ElementFormatType} from './nodes/LexicalElementNode';
-import type {
-  TextDetailType,
-  TextFormatType,
-  TextModeType,
-} from './nodes/LexicalTextNode';
+import type {TextDetailType, TextModeType} from './nodes/LexicalTextNode';
 
 import {IS_FIREFOX, IS_IOS, IS_SAFARI} from 'shared/environment';
 
@@ -31,22 +27,39 @@ export const IS_SEGMENTED = 2;
 // IS_INERT = 3
 
 // Text node formatting
-export const IS_BOLD = 1;
-export const IS_ITALIC = 1 << 1;
-export const IS_STRIKETHROUGH = 1 << 2;
-export const IS_UNDERLINE = 1 << 3;
-export const IS_CODE = 1 << 4;
-export const IS_SUBSCRIPT = 1 << 5;
-export const IS_SUPERSCRIPT = 1 << 6;
+export type FORMAT_BOLD_TYPE = 1; // 1 << 0
+export type FORMAT_ITALIC_TYPE = 2; // 1 << 1
+export type FORMAT_STRIKETHROUGH_TYPE = 4; // 1 << 2
+export type FORMAT_UNDERLINE_TYPE = 8; // 1 << 3
+export type FORMAT_CODE_TYPE = 16; // 1 << 4
+export type FORMAT_SUBSCRIPT_TYPE = 32; // 1 << 5
+export type FORMAT_SUPERSCRIPT_TYPE = 64; // 1 << 6
+export type FORMAT_TYPE =
+  | 0
+  | FORMAT_BOLD_TYPE
+  | FORMAT_ITALIC_TYPE
+  | FORMAT_STRIKETHROUGH_TYPE
+  | FORMAT_UNDERLINE_TYPE
+  | FORMAT_CODE_TYPE
+  | FORMAT_SUBSCRIPT_TYPE
+  | FORMAT_SUPERSCRIPT_TYPE;
 
-export const IS_ALL_FORMATTING =
-  IS_BOLD |
-  IS_ITALIC |
-  IS_STRIKETHROUGH |
-  IS_UNDERLINE |
-  IS_CODE |
-  IS_SUBSCRIPT |
-  IS_SUPERSCRIPT;
+export const FORMAT_BOLD: FORMAT_BOLD_TYPE = 1;
+export const FORMAT_ITALIC: FORMAT_ITALIC_TYPE = 2;
+export const FORMAT_STRIKETHROUGH: FORMAT_STRIKETHROUGH_TYPE = 4;
+export const FORMAT_UNDERLINE: FORMAT_UNDERLINE_TYPE = 8;
+export const FORMAT_CODE: FORMAT_CODE_TYPE = 16;
+export const FORMAT_SUBSCRIPT: FORMAT_SUBSCRIPT_TYPE = 32;
+export const FORMAT_SUPERSCRIPT: FORMAT_SUPERSCRIPT_TYPE = 64;
+
+export const FORMAT_ALL =
+  FORMAT_BOLD |
+  FORMAT_ITALIC |
+  FORMAT_STRIKETHROUGH |
+  FORMAT_UNDERLINE |
+  FORMAT_CODE |
+  FORMAT_SUBSCRIPT |
+  FORMAT_SUPERSCRIPT;
 
 // Text node details
 export const IS_DIRECTIONLESS = 1;
@@ -84,14 +97,14 @@ export const RTL_REGEX = new RegExp('^[^' + LTR + ']*[' + RTL + ']');
 // eslint-disable-next-line no-misleading-character-class
 export const LTR_REGEX = new RegExp('^[^' + RTL + ']*[' + LTR + ']');
 
-export const TEXT_TYPE_TO_FORMAT: Record<TextFormatType | string, number> = {
-  bold: IS_BOLD,
-  code: IS_CODE,
-  italic: IS_ITALIC,
-  strikethrough: IS_STRIKETHROUGH,
-  subscript: IS_SUBSCRIPT,
-  superscript: IS_SUPERSCRIPT,
-  underline: IS_UNDERLINE,
+export const TEXT_TYPE_TO_FORMAT: Record<string, FORMAT_TYPE> = {
+  bold: FORMAT_BOLD,
+  code: FORMAT_CODE,
+  italic: FORMAT_ITALIC,
+  strikethrough: FORMAT_STRIKETHROUGH,
+  subscript: FORMAT_SUBSCRIPT,
+  superscript: FORMAT_SUPERSCRIPT,
+  underline: FORMAT_UNDERLINE,
 };
 
 export const DETAIL_TYPE_TO_DETAIL: Record<TextDetailType | string, number> = {

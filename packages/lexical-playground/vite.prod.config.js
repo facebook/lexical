@@ -13,6 +13,7 @@ import path from 'path';
 import fs from 'fs';
 import {replaceCodePlugin} from 'vite-plugin-replace';
 import babel from '@rollup/plugin-babel';
+import terser from 'terser';
 
 const moduleResolution = [
   {
@@ -183,5 +184,14 @@ export default defineConfig({
       },
     },
     commonjsOptions: {include: []},
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        arguments: true,
+        booleans_as_integers: true,
+        module: true,
+        toplevel: true,
+      }
+    },
   },
 });

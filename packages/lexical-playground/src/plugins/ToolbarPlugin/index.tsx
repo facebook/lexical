@@ -67,6 +67,13 @@ import {
   OUTDENT_CONTENT_COMMAND,
   REDO_COMMAND,
   SELECTION_CHANGE_COMMAND,
+  TEXT_FORMAT_BOLD,
+  TEXT_FORMAT_CODE,
+  TEXT_FORMAT_ITALIC,
+  TEXT_FORMAT_STRIKETHROUGH,
+  TEXT_FORMAT_SUBSCRIPT,
+  TEXT_FORMAT_SUPERSCRIPT,
+  TEXT_FORMAT_UNDERLINE,
   UNDO_COMMAND,
 } from 'lexical';
 import * as React from 'react';
@@ -648,13 +655,13 @@ export default function ToolbarPlugin(): JSX.Element {
       const elementDOM = activeEditor.getElementByKey(elementKey);
 
       // Update text format
-      setIsBold(selection.hasFormat('bold'));
-      setIsItalic(selection.hasFormat('italic'));
-      setIsUnderline(selection.hasFormat('underline'));
-      setIsStrikethrough(selection.hasFormat('strikethrough'));
-      setIsSubscript(selection.hasFormat('subscript'));
-      setIsSuperscript(selection.hasFormat('superscript'));
-      setIsCode(selection.hasFormat('code'));
+      setIsBold(selection.hasFormat(TEXT_FORMAT_BOLD));
+      setIsItalic(selection.hasFormat(TEXT_FORMAT_ITALIC));
+      setIsUnderline(selection.hasFormat(TEXT_FORMAT_UNDERLINE));
+      setIsStrikethrough(selection.hasFormat(TEXT_FORMAT_STRIKETHROUGH));
+      setIsSubscript(selection.hasFormat(TEXT_FORMAT_SUBSCRIPT));
+      setIsSuperscript(selection.hasFormat(TEXT_FORMAT_SUPERSCRIPT));
+      setIsCode(selection.hasFormat(TEXT_FORMAT_CODE));
       setIsRTL($isParentElementRTL(selection));
 
       // Update links
@@ -882,7 +889,10 @@ export default function ToolbarPlugin(): JSX.Element {
           <Divider />
           <button
             onClick={() => {
-              activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold');
+              activeEditor.dispatchCommand(
+                FORMAT_TEXT_COMMAND,
+                TEXT_FORMAT_BOLD,
+              );
             }}
             className={'toolbar-item spaced ' + (isBold ? 'active' : '')}
             title={IS_APPLE ? 'Bold (⌘B)' : 'Bold (Ctrl+B)'}
@@ -893,7 +903,10 @@ export default function ToolbarPlugin(): JSX.Element {
           </button>
           <button
             onClick={() => {
-              activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic');
+              activeEditor.dispatchCommand(
+                FORMAT_TEXT_COMMAND,
+                TEXT_FORMAT_ITALIC,
+              );
             }}
             className={'toolbar-item spaced ' + (isItalic ? 'active' : '')}
             title={IS_APPLE ? 'Italic (⌘I)' : 'Italic (Ctrl+I)'}
@@ -904,7 +917,10 @@ export default function ToolbarPlugin(): JSX.Element {
           </button>
           <button
             onClick={() => {
-              activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'underline');
+              activeEditor.dispatchCommand(
+                FORMAT_TEXT_COMMAND,
+                TEXT_FORMAT_UNDERLINE,
+              );
             }}
             className={'toolbar-item spaced ' + (isUnderline ? 'active' : '')}
             title={IS_APPLE ? 'Underline (⌘U)' : 'Underline (Ctrl+U)'}
@@ -915,7 +931,10 @@ export default function ToolbarPlugin(): JSX.Element {
           </button>
           <button
             onClick={() => {
-              activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'code');
+              activeEditor.dispatchCommand(
+                FORMAT_TEXT_COMMAND,
+                TEXT_FORMAT_CODE,
+              );
             }}
             className={'toolbar-item spaced ' + (isCode ? 'active' : '')}
             title="Insert code block"
@@ -954,7 +973,7 @@ export default function ToolbarPlugin(): JSX.Element {
               onClick={() => {
                 activeEditor.dispatchCommand(
                   FORMAT_TEXT_COMMAND,
-                  'strikethrough',
+                  TEXT_FORMAT_STRIKETHROUGH,
                 );
               }}
               className={'item ' + dropDownActiveClass(isStrikethrough)}
@@ -965,7 +984,10 @@ export default function ToolbarPlugin(): JSX.Element {
             </DropDownItem>
             <DropDownItem
               onClick={() => {
-                activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, 'subscript');
+                activeEditor.dispatchCommand(
+                  FORMAT_TEXT_COMMAND,
+                  TEXT_FORMAT_SUBSCRIPT,
+                );
               }}
               className={'item ' + dropDownActiveClass(isSubscript)}
               title="Subscript"
@@ -977,7 +999,7 @@ export default function ToolbarPlugin(): JSX.Element {
               onClick={() => {
                 activeEditor.dispatchCommand(
                   FORMAT_TEXT_COMMAND,
-                  'superscript',
+                  TEXT_FORMAT_UNDERLINE,
                 );
               }}
               className={'item ' + dropDownActiveClass(isSuperscript)}

@@ -10,7 +10,14 @@ import {$createLinkNode} from '@lexical/link';
 import {$createListItemNode, $createListNode} from '@lexical/list';
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
 import {$createHeadingNode, $createQuoteNode} from '@lexical/rich-text';
-import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  TEXT_FORMAT_BOLD,
+  TEXT_FORMAT_CODE,
+  TEXT_FORMAT_ITALIC,
+} from 'lexical';
 import * as React from 'react';
 
 import {isDevPlayground} from './appSettings';
@@ -48,12 +55,12 @@ function prepopulatedRichText() {
     const paragraph = $createParagraphNode();
     paragraph.append(
       $createTextNode('The playground is a demo environment built with '),
-      $createTextNode('@lexical/react').toggleFormat('code'),
+      $createTextNode('@lexical/react').toggleFormat(TEXT_FORMAT_CODE),
       $createTextNode('.'),
       $createTextNode(' Try typing in '),
-      $createTextNode('some text').toggleFormat('bold'),
+      $createTextNode('some text').toggleFormat(TEXT_FORMAT_BOLD),
       $createTextNode(' with '),
-      $createTextNode('different').toggleFormat('italic'),
+      $createTextNode('different').toggleFormat(TEXT_FORMAT_ITALIC),
       $createTextNode(' formats.'),
     );
     root.append(paragraph);

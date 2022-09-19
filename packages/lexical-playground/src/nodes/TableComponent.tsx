@@ -6,7 +6,7 @@
  *
  */
 
-import type {EditorState, RangeSelection, TextFormatType} from 'lexical';
+import type {EditorState, RangeSelection, TEXT_FORMAT_TYPE} from 'lexical';
 
 import {
   $generateJSONFromSelectedNodes,
@@ -1452,7 +1452,7 @@ export default function TableComponent({
         clearCellsCommand,
         COMMAND_PRIORITY_LOW,
       ),
-      editor.registerCommand<TextFormatType>(
+      editor.registerCommand<TEXT_FORMAT_TYPE>(
         FORMAT_TEXT_COMMAND,
         (payload) => {
           if (primarySelectedCellID !== null && !isEditing) {

@@ -20,6 +20,13 @@ import {
   FORMAT_TEXT_COMMAND,
   LexicalEditor,
   SELECTION_CHANGE_COMMAND,
+  TEXT_FORMAT_BOLD,
+  TEXT_FORMAT_CODE,
+  TEXT_FORMAT_ITALIC,
+  TEXT_FORMAT_STRIKETHROUGH,
+  TEXT_FORMAT_SUBSCRIPT,
+  TEXT_FORMAT_SUPERSCRIPT,
+  TEXT_FORMAT_UNDERLINE,
 } from 'lexical';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import * as React from 'react';
@@ -141,7 +148,7 @@ function TextFormatFloatingToolbar({
         <>
           <button
             onClick={() => {
-              editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold');
+              editor.dispatchCommand(FORMAT_TEXT_COMMAND, TEXT_FORMAT_BOLD);
             }}
             className={'popup-item spaced ' + (isBold ? 'active' : '')}
             aria-label="Format text as bold">
@@ -149,7 +156,7 @@ function TextFormatFloatingToolbar({
           </button>
           <button
             onClick={() => {
-              editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic');
+              editor.dispatchCommand(FORMAT_TEXT_COMMAND, TEXT_FORMAT_ITALIC);
             }}
             className={'popup-item spaced ' + (isItalic ? 'active' : '')}
             aria-label="Format text as italics">
@@ -157,7 +164,10 @@ function TextFormatFloatingToolbar({
           </button>
           <button
             onClick={() => {
-              editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'underline');
+              editor.dispatchCommand(
+                FORMAT_TEXT_COMMAND,
+                TEXT_FORMAT_UNDERLINE,
+              );
             }}
             className={'popup-item spaced ' + (isUnderline ? 'active' : '')}
             aria-label="Format text to underlined">
@@ -165,7 +175,10 @@ function TextFormatFloatingToolbar({
           </button>
           <button
             onClick={() => {
-              editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'strikethrough');
+              editor.dispatchCommand(
+                FORMAT_TEXT_COMMAND,
+                TEXT_FORMAT_STRIKETHROUGH,
+              );
             }}
             className={'popup-item spaced ' + (isStrikethrough ? 'active' : '')}
             aria-label="Format text with a strikethrough">
@@ -173,7 +186,10 @@ function TextFormatFloatingToolbar({
           </button>
           <button
             onClick={() => {
-              editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'subscript');
+              editor.dispatchCommand(
+                FORMAT_TEXT_COMMAND,
+                TEXT_FORMAT_SUBSCRIPT,
+              );
             }}
             className={'popup-item spaced ' + (isSubscript ? 'active' : '')}
             title="Subscript"
@@ -182,7 +198,10 @@ function TextFormatFloatingToolbar({
           </button>
           <button
             onClick={() => {
-              editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'superscript');
+              editor.dispatchCommand(
+                FORMAT_TEXT_COMMAND,
+                TEXT_FORMAT_SUPERSCRIPT,
+              );
             }}
             className={'popup-item spaced ' + (isSuperscript ? 'active' : '')}
             title="Superscript"
@@ -191,7 +210,7 @@ function TextFormatFloatingToolbar({
           </button>
           <button
             onClick={() => {
-              editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'code');
+              editor.dispatchCommand(FORMAT_TEXT_COMMAND, TEXT_FORMAT_CODE);
             }}
             className={'popup-item spaced ' + (isCode ? 'active' : '')}
             aria-label="Insert code block">
@@ -256,13 +275,13 @@ function useFloatingTextFormatToolbar(
       const node = getSelectedNode(selection);
 
       // Update text format
-      setIsBold(selection.hasFormat('bold'));
-      setIsItalic(selection.hasFormat('italic'));
-      setIsUnderline(selection.hasFormat('underline'));
-      setIsStrikethrough(selection.hasFormat('strikethrough'));
-      setIsSubscript(selection.hasFormat('subscript'));
-      setIsSuperscript(selection.hasFormat('superscript'));
-      setIsCode(selection.hasFormat('code'));
+      setIsBold(selection.hasFormat(TEXT_FORMAT_BOLD));
+      setIsItalic(selection.hasFormat(TEXT_FORMAT_ITALIC));
+      setIsUnderline(selection.hasFormat(TEXT_FORMAT_UNDERLINE));
+      setIsStrikethrough(selection.hasFormat(TEXT_FORMAT_STRIKETHROUGH));
+      setIsSubscript(selection.hasFormat(TEXT_FORMAT_SUBSCRIPT));
+      setIsSuperscript(selection.hasFormat(TEXT_FORMAT_SUPERSCRIPT));
+      setIsCode(selection.hasFormat(TEXT_FORMAT_CODE));
 
       // Update links
       const parent = node.getParent();

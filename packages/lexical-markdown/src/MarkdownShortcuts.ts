@@ -12,7 +12,6 @@ import type {
   TextMatchTransformer,
   Transformer,
 } from '@lexical/markdown';
-import type {ElementNode, LexicalEditor, TextNode} from 'lexical';
 
 import {$isCodeNode} from '@lexical/code';
 import {
@@ -23,6 +22,10 @@ import {
   $isRootOrShadowRoot,
   $isTextNode,
   $setSelection,
+  ElementNode,
+  LexicalEditor,
+  TEXT_FORMAT_CODE,
+  TextNode,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -413,7 +416,7 @@ export function registerMarkdownShortcuts(
 
       editor.update(() => {
         // Markdown is not available inside code
-        if (anchorNode.hasFormat('code')) {
+        if (anchorNode.hasFormat(TEXT_FORMAT_CODE)) {
           return;
         }
 

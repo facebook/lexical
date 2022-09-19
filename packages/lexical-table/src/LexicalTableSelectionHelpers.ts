@@ -14,7 +14,7 @@ import type {
   LexicalNode,
   NodeSelection,
   RangeSelection,
-  TextFormatType,
+  TEXT_FORMAT_TYPE,
 } from 'lexical';
 
 import {TableCellNode} from '@lexical/table';
@@ -679,7 +679,7 @@ export function applyTableHandlers(
   );
 
   tableSelection.listenersToRemove.add(
-    editor.registerCommand<TextFormatType>(
+    editor.registerCommand<TEXT_FORMAT_TYPE>(
       FORMAT_TEXT_COMMAND,
       (payload) => {
         const selection = $getSelection();

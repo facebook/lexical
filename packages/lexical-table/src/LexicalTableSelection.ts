@@ -10,7 +10,7 @@ import type {
   GridSelection,
   LexicalEditor,
   NodeKey,
-  TextFormatType,
+  TEXT_FORMAT_TYPE,
 } from 'lexical';
 
 import {
@@ -341,7 +341,7 @@ export class TableSelection {
     });
   }
 
-  formatCells(type: TextFormatType) {
+  formatCells(type: TEXT_FORMAT_TYPE) {
     this.editor.update(() => {
       const selection = $getSelection();
 

@@ -6,7 +6,7 @@
  *
  */
 
-import type {FORMAT_TYPE} from './LexicalConstants';
+import type {TEXT_FORMAT_TYPE} from './LexicalConstants';
 import type {LexicalEditor} from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
 import type {LexicalNode, NodeKey} from './LexicalNode';
@@ -35,7 +35,7 @@ import {
   DEPRECATED_GridNode,
   TextNode,
 } from '.';
-import {DOM_ELEMENT_TYPE, TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
+import {DOM_ELEMENT_TYPE} from './LexicalConstants';
 import {
   markCollapsedSelectionFormat,
   markSelectionChangeFromDOMUpdate,
@@ -209,7 +209,7 @@ export function $moveSelectionPointToEnd(
 function $transferStartingElementPointToTextPoint(
   start: ElementPointType,
   end: PointType,
-  format: FORMAT_TYPE,
+  format: number,
 ) {
   const element = start.getNode();
   const placementNode = element.getChildAtIndex(start.offset);
@@ -537,10 +537,10 @@ export class RangeSelection implements BaseSelection {
   anchor: PointType;
   focus: PointType;
   dirty: boolean;
-  format: FORMAT_TYPE;
+  format: number;
   _cachedNodes: null | Array<LexicalNode>;
 
-  constructor(anchor: PointType, focus: PointType, format: FORMAT_TYPE) {
+  constructor(anchor: PointType, focus: PointType, format: number) {
     this.anchor = anchor;
     this.focus = focus;
     this.dirty = false;
@@ -724,14 +724,13 @@ export class RangeSelection implements BaseSelection {
     return selection;
   }
 
-  toggleFormat(format: FORMAT_TYPE): void {
+  toggleFormat(format: TEXT_FORMAT_TYPE): void {
     this.format = toggleTextFormatType(this.format, format, null);
     this.dirty = true;
   }
 
-  hasFormat(type: FORMAT_TYPE): boolean {
-    const formatFlag = TEXT_TYPE_TO_FORMAT[type];
-    return (this.format & formatFlag) !== 0;
+  hasFormat(type: TEXT_FORMAT_TYPE): boolean {
+    return (this.format & type) !== 0;
   }
 
   insertRawText(text: string): void {
@@ -1066,7 +1065,7 @@ export class RangeSelection implements BaseSelection {
     this.insertText('');
   }
 
-  formatText(formatType: FORMAT_TYPE): void {
+  formatText(formatType: TEXT_FORMAT_TYPE): void {
     if (this.isCollapsed()) {
       this.toggleFormat(formatType);
       // When changing format, we should stop composition
@@ -1187,7 +1186,7 @@ export class RangeSelection implements BaseSelection {
       endPoint.set(lastNode.__key, endOffset, 'text');
     }
 
-    this.format = (firstNextFormat | lastNextFormat) as FORMAT_TYPE;
+    this.format = (firstNextFormat | lastNextFormat) as TEXT_FORMAT_TYPE;
   }
 
   insertNodes(nodes: Array<LexicalNode>, selectStart?: boolean): boolean {

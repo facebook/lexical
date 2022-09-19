@@ -12,7 +12,12 @@ import type {
   TextMatchTransformer,
   Transformer,
 } from '@lexical/markdown';
-import type {ElementNode, LexicalNode, TextFormatType, TextNode} from 'lexical';
+import type {
+  ElementNode,
+  LexicalNode,
+  TEXT_FORMAT_TYPE,
+  TextNode,
+} from 'lexical';
 
 import {$getRoot, $isElementNode, $isLineBreakNode, $isTextNode} from 'lexical';
 
@@ -204,7 +209,7 @@ function getTextSibling(node: TextNode, backward: boolean): TextNode | null {
 
 function hasFormat(
   node: LexicalNode | null | undefined,
-  format: TextFormatType,
+  format: TEXT_FORMAT_TYPE,
 ): boolean {
   return $isTextNode(node) && node.hasFormat(format);
 }

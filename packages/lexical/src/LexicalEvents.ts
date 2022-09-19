@@ -69,7 +69,11 @@ import {
   DOM_ELEMENT_TYPE,
   DOM_TEXT_TYPE,
   DOUBLE_LINE_BREAK,
-  IS_ALL_FORMATTING,
+  TEXT_FORMAT_ALL,
+  TEXT_FORMAT_BOLD,
+  TEXT_FORMAT_ITALIC,
+  TEXT_FORMAT_STRIKETHROUGH,
+  TEXT_FORMAT_UNDERLINE,
 } from './LexicalConstants';
 import {internalCreateRangeSelection, RangeSelection} from './LexicalSelection';
 import {updateEditor} from './LexicalUpdates';
@@ -254,14 +258,14 @@ function onSelectionChange(
         ) {
           selection.format = lastFormat;
         } else {
-          if (anchor.type === 'text') {
+          if ($isTextNode(anchorNode)) {
             selection.format = anchorNode.getFormat();
           } else if (anchor.type === 'element') {
             selection.format = 0;
           }
         }
       } else {
-        let combinedFormat = IS_ALL_FORMATTING;
+        let combinedFormat: number = TEXT_FORMAT_ALL;
         let hasTextNodes = false;
 
         const nodes = selection.getNodes();
@@ -559,22 +563,22 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
       }
 
       case 'formatStrikeThrough': {
-        dispatchCommand(editor, FORMAT_TEXT_COMMAND, 'strikethrough');
+        dispatchCommand(editor, FORMAT_TEXT_COMMAND, TEXT_FORMAT_STRIKETHROUGH);
         break;
       }
 
       case 'formatBold': {
-        dispatchCommand(editor, FORMAT_TEXT_COMMAND, 'bold');
+        dispatchCommand(editor, FORMAT_TEXT_COMMAND, TEXT_FORMAT_BOLD);
         break;
       }
 
       case 'formatItalic': {
-        dispatchCommand(editor, FORMAT_TEXT_COMMAND, 'italic');
+        dispatchCommand(editor, FORMAT_TEXT_COMMAND, TEXT_FORMAT_ITALIC);
         break;
       }
 
       case 'formatUnderline': {
-        dispatchCommand(editor, FORMAT_TEXT_COMMAND, 'underline');
+        dispatchCommand(editor, FORMAT_TEXT_COMMAND, TEXT_FORMAT_UNDERLINE);
         break;
       }
 
@@ -817,13 +821,13 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
     dispatchCommand(editor, DELETE_LINE_COMMAND, false);
   } else if (isBold(keyCode, altKey, metaKey, ctrlKey)) {
     event.preventDefault();
-    dispatchCommand(editor, FORMAT_TEXT_COMMAND, 'bold');
+    dispatchCommand(editor, FORMAT_TEXT_COMMAND, TEXT_FORMAT_BOLD);
   } else if (isUnderline(keyCode, altKey, metaKey, ctrlKey)) {
     event.preventDefault();
-    dispatchCommand(editor, FORMAT_TEXT_COMMAND, 'underline');
+    dispatchCommand(editor, FORMAT_TEXT_COMMAND, TEXT_FORMAT_UNDERLINE);
   } else if (isItalic(keyCode, altKey, metaKey, ctrlKey)) {
     event.preventDefault();
-    dispatchCommand(editor, FORMAT_TEXT_COMMAND, 'italic');
+    dispatchCommand(editor, FORMAT_TEXT_COMMAND, TEXT_FORMAT_ITALIC);
   } else if (isTab(keyCode, altKey, ctrlKey, metaKey)) {
     dispatchCommand(editor, KEY_TAB_COMMAND, event);
   } else if (isUndo(keyCode, shiftKey, metaKey, ctrlKey)) {

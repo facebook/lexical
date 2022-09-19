@@ -19,7 +19,7 @@ import type {
   ParagraphNode,
   SerializedElementNode,
   Spread,
-  TextFormatType,
+  TEXT_FORMAT_TYPE,
 } from 'lexical';
 
 import {
@@ -551,7 +551,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<TextFormatType>(
+    editor.registerCommand<TEXT_FORMAT_TYPE>(
       FORMAT_TEXT_COMMAND,
       (format) => {
         const selection = $getSelection();

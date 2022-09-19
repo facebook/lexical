@@ -6,7 +6,7 @@
  *
  */
 
-import type {FORMAT_TYPE} from './LexicalConstants';
+import type {TEXT_FORMAT_TYPE} from './LexicalConstants';
 import type {
   CommandPayloadType,
   EditorThemeClasses,
@@ -182,10 +182,10 @@ export function getDOMTextNode(element: Node | null): Text | null {
 }
 
 export function toggleTextFormatType(
-  format: FORMAT_TYPE,
-  type: FORMAT_TYPE,
+  format: number,
+  type: TEXT_FORMAT_TYPE,
   alignWithFormat: null | number,
-): FORMAT_TYPE {
+): number {
   const isStateFlagPresent = format & type;
 
   if (
@@ -193,11 +193,11 @@ export function toggleTextFormatType(
     (alignWithFormat === null || (alignWithFormat & type) === 0)
   ) {
     // Remove the state flag.
-    return (format ^ type) as FORMAT_TYPE;
+    return (format ^ type) as TEXT_FORMAT_TYPE;
   }
   if (alignWithFormat === null || alignWithFormat & type) {
     // Add the state flag.
-    return (format | type) as FORMAT_TYPE;
+    return (format | type) as TEXT_FORMAT_TYPE;
   }
   return format;
 }

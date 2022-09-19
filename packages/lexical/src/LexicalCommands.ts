@@ -6,7 +6,11 @@
  *
  */
 
-import type {ElementFormatType, LexicalCommand, TextFormatType} from 'lexical';
+import type {
+  ElementFormatType,
+  LexicalCommand,
+  TEXT_FORMAT_TYPE,
+} from 'lexical';
 
 export function createCommand<T>(): LexicalCommand<T> {
   return {};
@@ -28,7 +32,7 @@ export const PASTE_COMMAND: LexicalCommand<
 export const REMOVE_TEXT_COMMAND: LexicalCommand<void> = createCommand();
 export const DELETE_WORD_COMMAND: LexicalCommand<boolean> = createCommand();
 export const DELETE_LINE_COMMAND: LexicalCommand<boolean> = createCommand();
-export const FORMAT_TEXT_COMMAND: LexicalCommand<TextFormatType> =
+export const FORMAT_TEXT_COMMAND: LexicalCommand<TEXT_FORMAT_TYPE> =
   createCommand();
 export const UNDO_COMMAND: LexicalCommand<void> = createCommand();
 export const REDO_COMMAND: LexicalCommand<void> = createCommand();

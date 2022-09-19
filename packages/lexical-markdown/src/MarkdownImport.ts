@@ -13,7 +13,6 @@ import type {
   TextMatchTransformer,
   Transformer,
 } from '@lexical/markdown';
-import type {LexicalNode, RootNode, TextNode} from 'lexical';
 
 import {$createCodeNode} from '@lexical/code';
 import {$isListItemNode, $isListNode} from '@lexical/list';
@@ -26,6 +25,10 @@ import {
   $getRoot,
   $isParagraphNode,
   $isTextNode,
+  LexicalNode,
+  RootNode,
+  TEXT_FORMAT_CODE,
+  TextNode,
 } from 'lexical';
 import {IS_IOS, IS_SAFARI} from 'shared/environment';
 
@@ -247,7 +250,7 @@ function importTextFormatTransformers(
   }
 
   // Recursively run over inner text if it's not inline code
-  if (!currentNode.hasFormat('code')) {
+  if (!currentNode.hasFormat(TEXT_FORMAT_CODE)) {
     importTextFormatTransformers(
       currentNode,
       textFormatTransformersIndex,

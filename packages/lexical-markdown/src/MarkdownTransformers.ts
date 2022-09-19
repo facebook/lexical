@@ -34,7 +34,11 @@ import {
   ElementNode,
   Klass,
   LexicalNode,
-  TextFormatType,
+  TEXT_FORMAT_BOLD,
+  TEXT_FORMAT_CODE,
+  TEXT_FORMAT_ITALIC,
+  TEXT_FORMAT_STRIKETHROUGH,
+  TEXT_FORMAT_TYPE,
   TextNode,
 } from 'lexical';
 
@@ -61,7 +65,7 @@ export type ElementTransformer = {
 };
 
 export type TextFormatTransformer = Readonly<{
-  format: ReadonlyArray<TextFormatType>;
+  format: ReadonlyArray<TEXT_FORMAT_TYPE>;
   tag: string;
   intraword?: boolean;
   type: 'text-format';
@@ -264,51 +268,51 @@ export const ORDERED_LIST: ElementTransformer = {
 };
 
 export const INLINE_CODE: TextFormatTransformer = {
-  format: ['code'],
+  format: [TEXT_FORMAT_CODE],
   tag: '`',
   type: 'text-format',
 };
 
 export const BOLD_ITALIC_STAR: TextFormatTransformer = {
-  format: ['bold', 'italic'],
+  format: [TEXT_FORMAT_BOLD, TEXT_FORMAT_ITALIC],
   tag: '***',
   type: 'text-format',
 };
 
 export const BOLD_ITALIC_UNDERSCORE: TextFormatTransformer = {
-  format: ['bold', 'italic'],
+  format: [TEXT_FORMAT_BOLD, TEXT_FORMAT_ITALIC],
   intraword: false,
   tag: '___',
   type: 'text-format',
 };
 
 export const BOLD_STAR: TextFormatTransformer = {
-  format: ['bold'],
+  format: [TEXT_FORMAT_BOLD],
   tag: '**',
   type: 'text-format',
 };
 
 export const BOLD_UNDERSCORE: TextFormatTransformer = {
-  format: ['bold'],
+  format: [TEXT_FORMAT_BOLD],
   intraword: false,
   tag: '__',
   type: 'text-format',
 };
 
 export const STRIKETHROUGH: TextFormatTransformer = {
-  format: ['strikethrough'],
+  format: [TEXT_FORMAT_STRIKETHROUGH],
   tag: '~~',
   type: 'text-format',
 };
 
 export const ITALIC_STAR: TextFormatTransformer = {
-  format: ['italic'],
+  format: [TEXT_FORMAT_ITALIC],
   tag: '*',
   type: 'text-format',
 };
 
 export const ITALIC_UNDERSCORE: TextFormatTransformer = {
-  format: ['italic'],
+  format: [TEXT_FORMAT_ITALIC],
   intraword: false,
   tag: '_',
   type: 'text-format',

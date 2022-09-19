@@ -13,11 +13,20 @@ import type {
   TextMatchTransformer,
   Transformer,
 } from '@lexical/markdown';
-import type {ElementNode, LexicalNode, TextFormatType} from 'lexical';
 
 import {$isCodeNode} from '@lexical/code';
 import {$isListItemNode, $isListNode} from '@lexical/list';
 import {$isHeadingNode, $isQuoteNode} from '@lexical/rich-text';
+import {
+  ElementNode,
+  LexicalNode,
+  TEXT_FORMAT_BOLD,
+  TEXT_FORMAT_CODE,
+  TEXT_FORMAT_ITALIC,
+  TEXT_FORMAT_STRIKETHROUGH,
+  TEXT_FORMAT_TYPE,
+  TEXT_FORMAT_UNDERLINE,
+} from 'lexical';
 
 type MarkdownFormatKind =
   | 'noTransformation'
@@ -48,7 +57,7 @@ type MarkdownCriteria = Readonly<{
     node: LexicalNode,
     traverseChildren: (elementNode: ElementNode) => string,
   ) => string | null;
-  exportFormat?: TextFormatType;
+  exportFormat?: TEXT_FORMAT_TYPE;
   exportTag?: string;
   exportTagClose?: string;
   markdownFormatKind: MarkdownFormatKind | null | undefined;
@@ -175,7 +184,7 @@ const markdownHorizontalRuleUsingDashes: MarkdownCriteria = {
 
 const markdownInlineCode: MarkdownCriteria = {
   ...autoFormatBase,
-  exportFormat: 'code',
+  exportFormat: TEXT_FORMAT_CODE,
   exportTag: '`',
   markdownFormatKind: 'code',
   regEx: /(`)(\s*)([^`]*)(\s*)(`)()/,
@@ -184,7 +193,7 @@ const markdownInlineCode: MarkdownCriteria = {
 
 const markdownBold: MarkdownCriteria = {
   ...autoFormatBase,
-  exportFormat: 'bold',
+  exportFormat: TEXT_FORMAT_BOLD,
   exportTag: '**',
   markdownFormatKind: 'bold',
   regEx: /(\*\*)(\s*)([^**]*)(\s*)(\*\*)()/,
@@ -193,7 +202,7 @@ const markdownBold: MarkdownCriteria = {
 
 const markdownItalic: MarkdownCriteria = {
   ...autoFormatBase,
-  exportFormat: 'italic',
+  exportFormat: TEXT_FORMAT_ITALIC,
   exportTag: '*',
   markdownFormatKind: 'italic',
   regEx: /(\*)(\s*)([^*]*)(\s*)(\*)()/,
@@ -202,7 +211,7 @@ const markdownItalic: MarkdownCriteria = {
 
 const markdownBold2: MarkdownCriteria = {
   ...autoFormatBase,
-  exportFormat: 'bold',
+  exportFormat: TEXT_FORMAT_BOLD,
   exportTag: '_',
   markdownFormatKind: 'bold',
   regEx: /(__)(\s*)([^__]*)(\s*)(__)()/,
@@ -211,7 +220,7 @@ const markdownBold2: MarkdownCriteria = {
 
 const markdownItalic2: MarkdownCriteria = {
   ...autoFormatBase,
-  exportFormat: 'italic',
+  exportFormat: TEXT_FORMAT_ITALIC,
   exportTag: '_',
   markdownFormatKind: 'italic',
   regEx: /(_)()([^_]*)()(_)()/,
@@ -220,7 +229,7 @@ const markdownItalic2: MarkdownCriteria = {
 
 const fakeMarkdownUnderline: MarkdownCriteria = {
   ...autoFormatBase,
-  exportFormat: 'underline',
+  exportFormat: TEXT_FORMAT_UNDERLINE,
   exportTag: '<u>',
   exportTagClose: '</u>',
   markdownFormatKind: 'underline',
@@ -230,7 +239,7 @@ const fakeMarkdownUnderline: MarkdownCriteria = {
 
 const markdownStrikethrough: MarkdownCriteria = {
   ...autoFormatBase,
-  exportFormat: 'strikethrough',
+  exportFormat: TEXT_FORMAT_STRIKETHROUGH,
   exportTag: '~~',
   markdownFormatKind: 'strikethrough',
   regEx: /(~~)(\s*)([^~~]*)(\s*)(~~)()/,

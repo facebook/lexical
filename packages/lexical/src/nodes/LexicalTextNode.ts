@@ -6,7 +6,7 @@
  *
  */
 
-import type {FORMAT_TYPE} from '../LexicalConstants';
+import type {TEXT_FORMAT_TYPE} from '../LexicalConstants';
 import type {EditorConfig, TextNodeThemeClasses} from '../LexicalEditor';
 import type {
   DOMConversionMap,
@@ -27,17 +27,17 @@ import invariant from 'shared/invariant';
 import {
   COMPOSITION_SUFFIX,
   DETAIL_TYPE_TO_DETAIL,
-  FORMAT_BOLD,
-  FORMAT_CODE,
-  FORMAT_ITALIC,
-  FORMAT_STRIKETHROUGH,
-  FORMAT_SUBSCRIPT,
-  FORMAT_SUPERSCRIPT,
-  FORMAT_UNDERLINE,
   IS_DIRECTIONLESS,
   IS_SEGMENTED,
   IS_TOKEN,
   IS_UNMERGEABLE,
+  TEXT_FORMAT_BOLD,
+  TEXT_FORMAT_CODE,
+  TEXT_FORMAT_ITALIC,
+  TEXT_FORMAT_STRIKETHROUGH,
+  TEXT_FORMAT_SUBSCRIPT,
+  TEXT_FORMAT_SUPERSCRIPT,
+  TEXT_FORMAT_UNDERLINE,
   TEXT_MODE_TO_TYPE,
   TEXT_TYPE_TO_FORMAT,
   TEXT_TYPE_TO_MODE,
@@ -62,7 +62,7 @@ import {
 export type SerializedTextNode = Spread<
   {
     detail: number;
-    format: FORMAT_TYPE;
+    format: number;
     mode: TextModeType;
     style: string;
     text: string;
@@ -79,23 +79,23 @@ export type TextMark = {end: null | number; id: string; start: null | number};
 export type TextMarks = Array<TextMark>;
 
 function getElementOuterTag(node: TextNode, format: number): string | null {
-  if (format & FORMAT_CODE) {
+  if (format & TEXT_FORMAT_CODE) {
     return 'code';
   }
-  if (format & FORMAT_SUBSCRIPT) {
+  if (format & TEXT_FORMAT_SUBSCRIPT) {
     return 'sub';
   }
-  if (format & FORMAT_SUPERSCRIPT) {
+  if (format & TEXT_FORMAT_SUPERSCRIPT) {
     return 'sup';
   }
   return null;
 }
 
 function getElementInnerTag(node: TextNode, format: number): string {
-  if (format & FORMAT_BOLD) {
+  if (format & TEXT_FORMAT_BOLD) {
     return 'strong';
   }
-  if (format & FORMAT_ITALIC) {
+  if (format & TEXT_FORMAT_ITALIC) {
     return 'em';
   }
   return 'span';
@@ -125,9 +125,11 @@ function setTextThemeClassNames(
   );
   let hasUnderlineStrikethrough = false;
   const prevUnderlineStrikethrough =
-    prevFormat & FORMAT_UNDERLINE && prevFormat & FORMAT_STRIKETHROUGH;
+    prevFormat & TEXT_FORMAT_UNDERLINE &&
+    prevFormat & TEXT_FORMAT_STRIKETHROUGH;
   const nextUnderlineStrikethrough =
-    nextFormat & FORMAT_UNDERLINE && nextFormat & FORMAT_STRIKETHROUGH;
+    nextFormat & TEXT_FORMAT_UNDERLINE &&
+    nextFormat & TEXT_FORMAT_STRIKETHROUGH;
 
   if (classNames !== undefined) {
     if (nextUnderlineStrikethrough) {
@@ -247,7 +249,7 @@ function createTextInnerDOM(
 /** @noInheritDoc */
 export class TextNode extends LexicalNode {
   __text: string;
-  __format: FORMAT_TYPE;
+  __format: number;
   __style: string;
   __mode: 0 | 1 | 2 | 3;
   __detail: number;
@@ -269,7 +271,7 @@ export class TextNode extends LexicalNode {
     this.__detail = 0;
   }
 
-  getFormat(): FORMAT_TYPE {
+  getFormat(): number {
     const self = this.getLatest();
     return self.__format;
   }
@@ -313,7 +315,7 @@ export class TextNode extends LexicalNode {
     return (self.__detail & IS_UNMERGEABLE) !== 0;
   }
 
-  hasFormat(type: FORMAT_TYPE): boolean {
+  hasFormat(type: TEXT_FORMAT_TYPE): boolean {
     const formatFlag = TEXT_TYPE_TO_FORMAT[type];
     return (this.getFormat() & formatFlag) !== 0;
   }
@@ -328,9 +330,9 @@ export class TextNode extends LexicalNode {
   }
 
   getFormatFlags(
-    type: FORMAT_TYPE,
+    type: TEXT_FORMAT_TYPE,
     alignWithFormat: null | number,
-  ): FORMAT_TYPE {
+  ): number {
     const self = this.getLatest();
     const format = self.__format;
     return toggleTextFormatType(format, type, alignWithFormat);
@@ -491,7 +493,7 @@ export class TextNode extends LexicalNode {
     return;
   }
 
-  setFormat(format: FORMAT_TYPE): this {
+  setFormat(format: number): this {
     const self = this.getWritable();
     self.__format = format;
     return self;
@@ -511,8 +513,8 @@ export class TextNode extends LexicalNode {
     return self;
   }
 
-  toggleFormat(type: FORMAT_TYPE): this {
-    return this.setFormat((this.getFormat() ^ type) as FORMAT_TYPE);
+  toggleFormat(type: TEXT_FORMAT_TYPE): this {
+    return this.setFormat(this.getFormat() ^ type);
   }
 
   toggleDirectionless(): this {
@@ -823,22 +825,22 @@ function convertSpanElement(domNode: Node): DOMConversionOutput {
         return lexicalNode;
       }
       if (hasBoldFontWeight) {
-        lexicalNode.toggleFormat(FORMAT_BOLD);
+        lexicalNode.toggleFormat(TEXT_FORMAT_BOLD);
       }
       if (hasLinethroughTextDecoration) {
-        lexicalNode.toggleFormat(FORMAT_STRIKETHROUGH);
+        lexicalNode.toggleFormat(TEXT_FORMAT_STRIKETHROUGH);
       }
       if (hasItalicFontStyle) {
-        lexicalNode.toggleFormat(FORMAT_ITALIC);
+        lexicalNode.toggleFormat(TEXT_FORMAT_ITALIC);
       }
       if (hasUnderlineTextDecoration) {
-        lexicalNode.toggleFormat(FORMAT_UNDERLINE);
+        lexicalNode.toggleFormat(TEXT_FORMAT_UNDERLINE);
       }
       if (verticalAlign === 'sub') {
-        lexicalNode.toggleFormat(FORMAT_SUBSCRIPT);
+        lexicalNode.toggleFormat(TEXT_FORMAT_SUBSCRIPT);
       }
       if (verticalAlign === 'super') {
-        lexicalNode.toggleFormat(FORMAT_SUPERSCRIPT);
+        lexicalNode.toggleFormat(TEXT_FORMAT_SUPERSCRIPT);
       }
 
       return lexicalNode;
@@ -854,7 +856,7 @@ function convertBringAttentionToElement(domNode: Node): DOMConversionOutput {
   return {
     forChild: (lexicalNode) => {
       if ($isTextNode(lexicalNode) && !hasNormalFontWeight) {
-        lexicalNode.toggleFormat(FORMAT_BOLD);
+        lexicalNode.toggleFormat(TEXT_FORMAT_BOLD);
       }
 
       return lexicalNode;
@@ -876,12 +878,12 @@ function convertTextDOMNode(
   }
   return {node: $createTextNode(textContent)};
 }
-const nodeNameToFormat: Record<string, FORMAT_TYPE> = {
-  code: FORMAT_CODE,
-  em: FORMAT_ITALIC,
-  i: FORMAT_ITALIC,
-  strong: FORMAT_BOLD,
-  u: FORMAT_UNDERLINE,
+const nodeNameToFormat: Record<string, TEXT_FORMAT_TYPE> = {
+  code: TEXT_FORMAT_CODE,
+  em: TEXT_FORMAT_ITALIC,
+  i: TEXT_FORMAT_ITALIC,
+  strong: TEXT_FORMAT_BOLD,
+  u: TEXT_FORMAT_UNDERLINE,
 };
 function convertTextFormatElement(domNode: Node): DOMConversionOutput {
   const format = nodeNameToFormat[domNode.nodeName.toLowerCase()];

@@ -6,7 +6,12 @@
  *
  */
 
-import type {ElementNode, LexicalNode, TextFormatType, TextNode} from 'lexical';
+import type {
+  ElementNode,
+  LexicalNode,
+  TEXT_FORMAT_TYPE,
+  TextNode,
+} from 'lexical';
 
 import {$isLinkNode} from '@lexical/link';
 import {$getRoot, $isElementNode, $isLineBreakNode, $isTextNode} from 'lexical';
@@ -162,6 +167,9 @@ function getTextSibling(node: TextNode, backward: boolean): TextNode | null {
   return null;
 }
 
-function hasFormat(node: LexicalNode | null, format: TextFormatType): boolean {
+function hasFormat(
+  node: LexicalNode | null,
+  format: TEXT_FORMAT_TYPE,
+): boolean {
   return $isTextNode(node) && node.hasFormat(format);
 }

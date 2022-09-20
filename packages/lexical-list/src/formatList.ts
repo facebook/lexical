@@ -98,7 +98,7 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
           anchorNode.replace(list);
           const listItem = $createListItemNode();
           if ($isElementNode(anchorNode)) {
-            listItem.setFormat(anchorNode.getFormatType());
+            listItem.setFormat(anchorNode.getFormat());
             listItem.setIndent(anchorNode.getIndent());
           }
           list.append(listItem);
@@ -172,7 +172,7 @@ function createListOrMerge(node: ElementNode, listType: ListType): ListNode {
   const previousSibling = node.getPreviousSibling();
   const nextSibling = node.getNextSibling();
   const listItem = $createListItemNode();
-  listItem.setFormat(node.getFormatType());
+  listItem.setFormat(node.getFormat());
   listItem.setIndent(node.getIndent());
   append(listItem, node.getChildren());
 

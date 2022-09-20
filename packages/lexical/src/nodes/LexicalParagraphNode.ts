@@ -69,7 +69,7 @@ export class ParagraphNode extends ElementNode {
       element.append(document.createElement('br'));
     }
     if (element) {
-      const formatType = this.getFormatType();
+      const formatType = this.getFormat();
       element.style.textAlign = formatType;
 
       const direction = this.getDirection();

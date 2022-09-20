@@ -620,7 +620,7 @@ export function $wrapNodes(
         : anchor.getNode();
     const children = target.getChildren();
     let element = createElement();
-    element.setFormat(target.getFormatType());
+    element.setFormat(target.getFormat());
     element.setIndent(target.getIndent());
     children.forEach((child) => element.append(child));
 
@@ -752,7 +752,7 @@ export function $wrapNodesImpl(
 
       if (elementMapping.get(parentKey) === undefined) {
         const targetElement = createElement();
-        targetElement.setFormat(parent.getFormatType());
+        targetElement.setFormat(parent.getFormat());
         targetElement.setIndent(parent.getIndent());
         elements.push(targetElement);
         elementMapping.set(parentKey, targetElement);
@@ -766,7 +766,7 @@ export function $wrapNodesImpl(
       }
     } else if (emptyElements.has(node.getKey())) {
       const targetElement = createElement();
-      targetElement.setFormat(node.getFormatType());
+      targetElement.setFormat(node.getFormat());
       targetElement.setIndent(node.getIndent());
       elements.push(targetElement);
       node.remove(true);

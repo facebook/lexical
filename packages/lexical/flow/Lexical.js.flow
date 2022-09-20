@@ -661,12 +661,11 @@ declare export function $isRootNode(
 export type ElementFormatType = 'left' | 'center' | 'right' | 'justify' | '';
 declare export class ElementNode extends LexicalNode {
   __children: Array<NodeKey>;
-  __format: number;
+  __format: ElementFormatType;
   __indent: number;
   __dir: 'ltr' | 'rtl' | null;
   constructor(key?: NodeKey): void;
-  getFormat(): number;
-  getFormatType(): ElementFormatType;
+  getFormat(): ElementFormatType;
   getIndent(): number;
   getChildren<T: LexicalNode>(): Array<T>;
   getChildren<T: Array<LexicalNode>>(): T;
@@ -684,7 +683,6 @@ declare export class ElementNode extends LexicalNode {
   getChildAtIndex<T: LexicalNode>(index: number): null | T;
   getTextContent(): string;
   getDirection(): 'ltr' | 'rtl' | null;
-  hasFormat(type: ElementFormatType): boolean;
   select(_anchorOffset?: number, _focusOffset?: number): RangeSelection;
   selectStart(): RangeSelection;
   selectEnd(): RangeSelection;

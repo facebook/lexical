@@ -107,7 +107,7 @@ export class RootNode extends ElementNode {
     return {
       children: [],
       direction: this.getDirection(),
-      format: this.getFormatType(),
+      format: this.getFormat(),
       indent: this.getIndent(),
       type: 'root',
       version: 1,

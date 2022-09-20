@@ -22,7 +22,6 @@ import {
   $getRoot,
   $getSelection,
   $isElementNode,
-  $isRangeSelection,
   $setSelection,
   DEPRECATED_$createGridSelection,
   DEPRECATED_$isGridSelection,
@@ -200,10 +199,10 @@ export class TableSelection {
       this.focusCell = null;
       this.hasHijackedSelectionStyles = false;
 
-      $updateDOMForSelection(grid, null);
       $setSelection(null);
 
       this.editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+      $updateDOMForSelection(grid, null);
 
       this.enableHighlightStyle();
     });
@@ -319,9 +318,9 @@ export class TableSelection {
 
           $setSelection(this.gridSelection);
 
-          $updateDOMForSelection(this.grid, this.gridSelection);
-
           this.editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+
+          $updateDOMForSelection(this.grid, this.gridSelection);
         }
       }
     });
@@ -393,10 +392,7 @@ export class TableSelection {
 
       const selection = $getSelection();
 
-      if (
-        !DEPRECATED_$isGridSelection(selection) &&
-        !$isRangeSelection(selection)
-      ) {
+      if (!DEPRECATED_$isGridSelection(selection)) {
         invariant(false, 'Expected valid selection');
       }
 
@@ -425,11 +421,11 @@ export class TableSelection {
         }
       });
 
-      $updateDOMForSelection(this.grid, null);
-
       $setSelection(null);
 
       this.editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+
+      $updateDOMForSelection(this.grid, null);
     });
   }
 }

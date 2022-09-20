@@ -496,16 +496,13 @@ export class TextNode extends LexicalNode {
     return;
   }
 
-  // TODO 0.5 This should just be a `string`.
-  setFormat(format: TextFormatType | number): this {
+  setFormat(format: number): this {
     const self = this.getWritable();
-    self.__format =
-      typeof format === 'string' ? TEXT_TYPE_TO_FORMAT[format] : format;
+    self.__format = format;
     return self;
   }
 
-  // TODO 0.5 This should just be a `string`.
-  setDetail(detail: TextDetailType | number): this {
+  setDetail(detail: number): this {
     const self = this.getWritable();
     self.__detail =
       typeof detail === 'string' ? DETAIL_TYPE_TO_DETAIL[detail] : detail;

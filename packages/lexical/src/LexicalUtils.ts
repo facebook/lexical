@@ -628,6 +628,9 @@ function $previousSiblingDoesNotAcceptText(node: TextNode): boolean {
   );
 }
 
+// This function is connected to $shouldPreventDefaultAndInsertText and determines whether the
+// TextNode boundaries are writable or we should use the previous/next sibling instead. For example,
+// in the case of a LinkNode, boundaries are not writable.
 function $shouldInsertTextAfterOrBeforeTextNode(
   selection: RangeSelection,
   node: TextNode,
@@ -641,16 +644,20 @@ function $shouldInsertTextAfterOrBeforeTextNode(
   const offset = selection.anchor.offset;
   const parent = node.getParentOrThrow();
   const isToken = node.isToken();
-  const shouldInsertTextBefore =
-    offset === 0 &&
-    (!node.canInsertTextBefore() ||
+  if (offset === 0) {
+    return (
+      !node.canInsertTextBefore() ||
       !parent.canInsertTextBefore() ||
       isToken ||
-      $previousSiblingDoesNotAcceptText(node));
-  const shouldInsertTextAfter =
-    node.getTextContentSize() === offset &&
-    (!node.canInsertTextBefore() || !parent.canInsertTextBefore() || isToken);
-  return shouldInsertTextBefore || shouldInsertTextAfter;
+      $previousSiblingDoesNotAcceptText(node)
+    );
+  } else if (offset === node.getTextContentSize()) {
+    return (
+      !node.canInsertTextAfter() || !parent.canInsertTextAfter() || isToken
+    );
+  } else {
+    return false;
+  }
 }
 
 // This function is used to determine if Lexical should attempt to override
@@ -659,7 +666,6 @@ function $shouldInsertTextAfterOrBeforeTextNode(
 // work as intended between different browsers and across word, line and character
 // boundary/formats. It also is important for text replacement, node schemas and
 // composition mechanics.
-
 export function $shouldPreventDefaultAndInsertText(
   selection: RangeSelection,
   text: string,

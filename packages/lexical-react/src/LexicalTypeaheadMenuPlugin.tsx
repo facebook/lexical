@@ -467,9 +467,13 @@ function useAnchorElementRef(
       containerDiv.setAttribute('id', 'typeahead-menu');
       containerDiv.setAttribute('role', 'listbox');
       if (rootElement !== null && resolution !== null) {
-        const {left, top, height} = resolution.getRect();
+        const {left, top, width, height} = resolution.getRect();
         containerDiv.style.top = `${top + height + 5 + window.pageYOffset}px`;
-        containerDiv.style.left = `${left + window.pageXOffset}px`;
+        containerDiv.style.left = `${
+          left +
+          (resolution.position === 'start' ? 0 : width) +
+          window.pageXOffset
+        }px`;
         containerDiv.style.display = 'block';
         containerDiv.style.position = 'absolute';
         if (!containerDiv.isConnected) {

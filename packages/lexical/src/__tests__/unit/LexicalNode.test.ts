@@ -302,7 +302,7 @@ describe('LexicalNode tests', () => {
 
         await editor.update(() => {
           barTextNode = new TextNode('bar');
-          barTextNode.toggleUnmergeable();
+          barTextNode.toggleDetail('unmergeable');
           paragraphNode.append(barTextNode);
         });
 
@@ -324,9 +324,9 @@ describe('LexicalNode tests', () => {
 
         await editor.update(() => {
           barTextNode = new TextNode('bar');
-          barTextNode.toggleUnmergeable();
+          barTextNode.toggleDetail('unmergeable');
           bazTextNode = new TextNode('baz');
-          bazTextNode.toggleUnmergeable();
+          bazTextNode.toggleDetail('unmergeable');
           paragraphNode.append(barTextNode, bazTextNode);
         });
 
@@ -351,7 +351,7 @@ describe('LexicalNode tests', () => {
 
         await editor.update(() => {
           barTextNode = new TextNode('bar');
-          barTextNode.toggleUnmergeable();
+          barTextNode.toggleDetail('unmergeable');
           paragraphNode.append(barTextNode);
         });
 
@@ -373,9 +373,9 @@ describe('LexicalNode tests', () => {
 
         await editor.update(() => {
           barTextNode = new TextNode('bar');
-          barTextNode.toggleUnmergeable();
+          barTextNode.toggleDetail('unmergeable');
           bazTextNode = new TextNode('baz');
-          bazTextNode.toggleUnmergeable();
+          bazTextNode.toggleDetail('unmergeable');
           paragraphNode.append(barTextNode, bazTextNode);
         });
 
@@ -406,12 +406,12 @@ describe('LexicalNode tests', () => {
           const rootNode = $getRoot();
           barParagraphNode = new ParagraphNode();
           barTextNode = new TextNode('bar');
-          barTextNode.toggleUnmergeable();
+          barTextNode.toggleDetail('unmergeable');
           bazParagraphNode = new ParagraphNode();
           bazTextNode = new TextNode('baz');
-          bazTextNode.toggleUnmergeable();
+          bazTextNode.toggleDetail('unmergeable');
           quxTextNode = new TextNode('qux');
-          quxTextNode.toggleUnmergeable();
+          quxTextNode.toggleDetail('unmergeable');
           paragraphNode.append(quxTextNode);
           expect(barTextNode.getCommonAncestor(bazTextNode)).toBe(null);
           barParagraphNode.append(barTextNode);
@@ -447,9 +447,9 @@ describe('LexicalNode tests', () => {
 
         await editor.update(() => {
           barTextNode = new TextNode('bar');
-          barTextNode.toggleUnmergeable();
+          barTextNode.toggleDetail('unmergeable');
           bazTextNode = new TextNode('baz');
-          bazTextNode.toggleUnmergeable();
+          bazTextNode.toggleDetail('unmergeable');
           paragraphNode.append(barTextNode, bazTextNode);
         });
 
@@ -493,12 +493,12 @@ describe('LexicalNode tests', () => {
         await editor.update(() => {
           const rootNode = $getRoot();
           barTextNode = new TextNode('bar');
-          barTextNode.toggleUnmergeable();
+          barTextNode.toggleDetail('unmergeable');
           bazTextNode = new TextNode('baz');
-          bazTextNode.toggleUnmergeable();
+          bazTextNode.toggleDetail('unmergeable');
           newParagraphNode = new ParagraphNode();
           quxTextNode = new TextNode('qux');
-          quxTextNode.toggleUnmergeable();
+          quxTextNode.toggleDetail('unmergeable');
           rootNode.append(newParagraphNode);
           paragraphNode.append(barTextNode, bazTextNode);
           newParagraphNode.append(quxTextNode);
@@ -571,15 +571,15 @@ describe('LexicalNode tests', () => {
         expect(() => textNode.isSegmented()).toThrow();
       });
 
-      test('LexicalNode.isDirectionless()', async () => {
+      test('LexicalNode.hasDetail("directionless")', async () => {
         const {editor} = testEnv;
         let directionlessTextNode;
 
         await editor.update(() => {
-          directionlessTextNode = new TextNode(
+          directionlessTextNode = new TextNode('directionless').toggleDetail(
             'directionless',
-          ).toggleDirectionless();
-          directionlessTextNode.toggleUnmergeable();
+          );
+          directionlessTextNode.toggleDetail('unmergeable');
           paragraphNode.append(directionlessTextNode);
         });
 
@@ -588,10 +588,12 @@ describe('LexicalNode tests', () => {
         );
 
         await editor.getEditorState().read(() => {
-          expect(textNode.isDirectionless()).toBe(false);
-          expect(directionlessTextNode.isDirectionless()).toBe(true);
+          expect(textNode.hasDetail('directionless')).toBe(false);
+          expect(directionlessTextNode.hasDetail('directionless')).toBe(true);
         });
-        expect(() => directionlessTextNode.isDirectionless()).toThrow();
+        expect(() =>
+          directionlessTextNode.hasDetail('directionless'),
+        ).toThrow();
       });
 
       test('LexicalNode.getLatest()', async () => {
@@ -798,7 +800,7 @@ describe('LexicalNode tests', () => {
         );
 
         await editor.update(() => {
-          const barTextNode = new TextNode(`bar`).toggleDirectionless();
+          const barTextNode = new TextNode(`bar`).toggleDetail('directionless');
           textNode.replace(barTextNode);
         });
 
@@ -876,7 +878,7 @@ describe('LexicalNode tests', () => {
         );
 
         await editor.update(() => {
-          const barTextNode = new TextNode(`bar`).toggleDirectionless();
+          const barTextNode = new TextNode(`bar`).toggleDetail('directionless');
           textNode.insertAfter(barTextNode);
         });
 
@@ -929,11 +931,11 @@ describe('LexicalNode tests', () => {
           block2 = new ParagraphNode();
           block3 = new ParagraphNode();
           text1 = new TextNode('A');
-          text1.toggleUnmergeable();
+          text1.toggleDetail('unmergeable');
           text2 = new TextNode('B');
-          text2.toggleUnmergeable();
+          text2.toggleDetail('unmergeable');
           text3 = new TextNode('C');
-          text3.toggleUnmergeable();
+          text3.toggleDetail('unmergeable');
           block1.append(text1);
           block2.append(text2);
           block3.append(text3);
@@ -1045,7 +1047,7 @@ describe('LexicalNode tests', () => {
         );
 
         await editor.update(() => {
-          const barTextNode = new TextNode(`bar`).toggleDirectionless();
+          const barTextNode = new TextNode(`bar`).toggleDetail('directionless');
           textNode.insertBefore(barTextNode);
         });
 

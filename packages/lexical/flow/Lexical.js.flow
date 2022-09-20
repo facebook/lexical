@@ -550,6 +550,7 @@ export type TextFormatType =
   | 'subscript'
   | 'superscript';
 type TextModeType = 'normal' | 'token' | 'segmented';
+type TextDetailType = 'directionless' | 'unmergeable';
 
 declare export class TextNode extends LexicalNode {
   __text: string;
@@ -582,11 +583,11 @@ declare export class TextNode extends LexicalNode {
   setFormat(format: number): this;
   setStyle(style: string): this;
   toggleFormat(type: TextFormatType): TextNode;
-  toggleDirectionless(): this;
-  toggleUnmergeable(): this;
   setMode(type: TextModeType): this;
   setDetail(detail: number): this;
   getDetail(): number;
+  toggleDetail(detail: TextDetailType): this;
+  hasDetail(type: TextDetailType): boolean;
   getMode(): TextModeType;
   setTextContent(text: string): TextNode;
   select(_anchorOffset?: number, _focusOffset?: number): RangeSelection;

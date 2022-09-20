@@ -39,7 +39,7 @@ function createParagraphWithNodes(editor, nodes) {
     nodeMap.set(key, textNode);
 
     if (!mergeable) {
-      textNode.toggleUnmergeable();
+      textNode.toggleDetail('unmergeable');
     }
 
     paragraph.append(textNode);

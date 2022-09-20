@@ -105,7 +105,7 @@ describe('LexicalTextNode tests', () => {
     await update(() => {
       const paragraph = $createParagraphNode();
       const text = $createTextNode();
-      text.toggleUnmergeable();
+      text.toggleDetail('unmergeable');
       paragraph.append(text);
       $getRoot().append(paragraph);
     });
@@ -164,12 +164,12 @@ describe('LexicalTextNode tests', () => {
 
     test('prepend node', async () => {
       await update(() => {
-        const textNode = $createTextNode('World').toggleUnmergeable();
+        const textNode = $createTextNode('World').toggleDetail('unmergeable');
         $getRoot().getFirstChild<ElementNode>().append(textNode);
       });
 
       await update(() => {
-        const textNode = $createTextNode('Hello ').toggleUnmergeable();
+        const textNode = $createTextNode('Hello ').toggleDetail('unmergeable');
         const previousTextNode = $getRoot()
           .getFirstChild<ElementNode>()
           .getFirstChild();

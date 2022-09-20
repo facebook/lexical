@@ -113,7 +113,7 @@ export class MentionNode extends TextNode {
 
 export function $createMentionNode(mentionName: string): MentionNode {
   const mentionNode = new MentionNode(mentionName);
-  mentionNode.setMode('segmented').toggleDirectionless();
+  mentionNode.setMode('segmented').toggleDetail('directionless');
   return mentionNode;
 }
 

@@ -543,8 +543,8 @@ describe('LexicalEditor tests', () => {
       const paragraph = $createParagraphNode();
       root.append(paragraph);
       paragraph.append(
-        $createTextNode('Foo').toggleUnmergeable(),
-        $createTextNode('Bar').toggleUnmergeable(),
+        $createTextNode('Foo').toggleDetail('unmergeable'),
+        $createTextNode('Bar').toggleDetail('unmergeable'),
       );
     });
 
@@ -625,7 +625,7 @@ describe('LexicalEditor tests', () => {
         const textNodes = [];
 
         for (let i = 0; i < 6; i++) {
-          const node = $createTextNode(String(i)).toggleUnmergeable();
+          const node = $createTextNode(String(i)).toggleDetail('unmergeable');
           textNodes.push(node);
           textNodeKeys.push(node.getKey());
           textTransformCount[i] = 0;
@@ -693,7 +693,7 @@ describe('LexicalEditor tests', () => {
     it('on append', async () => {
       await editor.update(() => {
         const paragraph1 = $getRoot().getFirstChild<ParagraphNode>();
-        paragraph1.append($createTextNode('6').toggleUnmergeable());
+        paragraph1.append($createTextNode('6').toggleDetail('unmergeable'));
         textTransformCount.push(0);
       });
       expect(textTransformCount).toEqual([1, 1, 2, 1, 1, 1, 1]);
@@ -1374,7 +1374,9 @@ describe('LexicalEditor tests', () => {
 
           for (let i = 0; i < previous.length; i++) {
             const previousText = previous[i];
-            const textNode = new TextNode(previousText).toggleUnmergeable();
+            const textNode = new TextNode(previousText).toggleDetail(
+              'unmergeable',
+            );
             textNode.__parent = writableParagraph.__key;
 
             writableParagraph.__children.push(textNode.__key);
@@ -1414,7 +1416,7 @@ describe('LexicalEditor tests', () => {
 
             if (nextKey === undefined) {
               // New node; append to the end
-              textNode = new TextNode(nextText).toggleUnmergeable();
+              textNode = new TextNode(nextText).toggleDetail('unmergeable');
               textNode.__parent = writableParagraph.__key;
 
               expect($getNodeByKey(nextKey)).toBe(null);

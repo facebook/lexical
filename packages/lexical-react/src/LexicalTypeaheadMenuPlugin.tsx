@@ -44,6 +44,7 @@ export type QueryMatch = {
 
 export type Resolution = {
   match: QueryMatch;
+  position: 'start' | 'end';
   getRect: () => ClientRect;
 };
 
@@ -505,6 +506,7 @@ export type TypeaheadMenuPluginArgs<TOption extends TypeaheadOption> = {
   options: Array<TOption>;
   menuRenderFn: MenuRenderFn<TOption>;
   triggerFn: TriggerFn;
+  position?: 'start' | 'end';
 };
 
 export type TriggerFn = (
@@ -518,6 +520,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends TypeaheadOption>({
   onSelectOption,
   menuRenderFn,
   triggerFn,
+  position = 'start',
 }: TypeaheadMenuPluginArgs<TOption>): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   const [resolution, setResolution] = useState<Resolution | null>(null);
@@ -558,6 +561,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends TypeaheadOption>({
               setResolution({
                 getRect: () => range.getBoundingClientRect(),
                 match,
+                position,
               }),
             );
             return;
@@ -573,7 +577,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends TypeaheadOption>({
       activeRange = null;
       removeUpdateListener();
     };
-  }, [editor, triggerFn, onQueryChange, resolution]);
+  }, [editor, triggerFn, onQueryChange, resolution, position]);
 
   const closeTypeahead = useCallback(() => {
     setResolution(null);
@@ -602,12 +606,14 @@ type NodeMenuPluginArgs<TOption extends TypeaheadOption> = {
   options: Array<TOption>;
   nodeKey: NodeKey | null;
   onClose: () => void;
+  position?: 'start' | 'end';
   menuRenderFn: MenuRenderFn<TOption>;
 };
 
 export function LexicalNodeMenuPlugin<TOption extends TypeaheadOption>({
   options,
   nodeKey,
+  position = 'end',
   onClose,
   onSelectOption,
   menuRenderFn,
@@ -633,6 +639,7 @@ export function LexicalNodeMenuPlugin<TOption extends TypeaheadOption>({
                 matchingString: text,
                 replaceableString: text,
               },
+              position,
             }),
           );
         }
@@ -640,7 +647,7 @@ export function LexicalNodeMenuPlugin<TOption extends TypeaheadOption>({
     } else if (nodeKey == null && resolution != null) {
       setResolution(null);
     }
-  }, [editor, nodeKey, resolution]);
+  }, [editor, nodeKey, position, resolution]);
 
   return resolution === null || editor === null ? null : (
     <LexicalPopoverMenu

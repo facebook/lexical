@@ -237,6 +237,15 @@ export class TableSelection {
       this.gridSelection = selection;
       this.isHighlightingCells = true;
       this.disableHighlightStyle();
+      const anchorElement = this.editor.getElementByKey(selection.anchor.key);
+      const focusElement = this.editor.getElementByKey(selection.focus.key);
+
+      if (anchorElement && focusElement) {
+        const domSelection = getDOMSelection();
+        if (domSelection) {
+          domSelection.setBaseAndExtent(anchorElement, 0, focusElement, 0);
+        }
+      }
       $updateDOMForSelection(this.grid, this.gridSelection);
     } else {
       this.clearHighlight();
@@ -260,6 +269,15 @@ export class TableSelection {
       const cellX = cell.x;
       const cellY = cell.y;
       this.focusCell = cell;
+
+      const domSelection = getDOMSelection();
+
+      if (this.anchorCell !== null) {
+        // Collapse the selection
+        if (domSelection) {
+          domSelection.setBaseAndExtent(this.anchorCell.elem, 0, cell.elem, 0);
+        }
+      }
 
       if (
         !this.isHighlightingCells &&
@@ -305,24 +323,24 @@ export class TableSelection {
   }
 
   setAnchorCellForSelection(cell: Cell) {
-    // This weird bit of code is required otherwise playwright mouse.up()
-    // causes the editor loses focus which breaks the Table selection tests.
-    // There must be something happening in onDocumentSelectionChange that
-    // prevents this but it might be out of the scope of this PR.
-    const domSelection = getDOMSelection();
-    if (domSelection && domSelection.anchorNode && domSelection.focusNode) {
-      domSelection.setBaseAndExtent(
-        domSelection.anchorNode,
-        domSelection.anchorOffset,
-        domSelection.focusNode,
-        domSelection.focusOffset,
-      );
-    }
-
     this.editor.update(() => {
       this.anchorCell = cell;
       this.startX = cell.x;
       this.startY = cell.y;
+      // This weird bit of code is required otherwise playwright mouse.up()
+      // causes the editor loses focus which breaks the Table selection tests.
+      // There must be something happening in onDocumentSelectionChange that
+      // prevents this but it might be out of the scope of this PR.
+      const domSelection = getDOMSelection();
+      if (domSelection && domSelection.anchorNode && domSelection.focusNode) {
+        domSelection.setBaseAndExtent(
+          domSelection.anchorNode,
+          domSelection.anchorOffset,
+          domSelection.focusNode,
+          domSelection.focusOffset,
+        );
+      }
+
       const anchorTableCellNode = $getNearestNodeFromDOMNode(cell.elem);
 
       if ($isTableCellNode(anchorTableCellNode)) {

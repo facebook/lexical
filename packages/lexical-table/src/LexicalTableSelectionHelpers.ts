@@ -868,7 +868,7 @@ export function applyTableHandlers(
     editor.registerCommand(
       FOCUS_COMMAND,
       (payload) => {
-        return tableSelection.gridSelection != null || tableNode.isSelected();
+        return tableNode.isSelected();
       },
       COMMAND_PRIORITY_CRITICAL,
     ),

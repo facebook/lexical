@@ -7,9 +7,9 @@
  */
 import './index.css';
 
-import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
+import {$isAutoLinkNode, $isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {mergeRegister} from '@lexical/utils';
+import {$findMatchingParent, mergeRegister} from '@lexical/utils';
 import {
   $getSelection,
   $isRangeSelection,
@@ -217,8 +217,11 @@ function useFloatingLinkEditorToolbar(
     const selection = $getSelection();
     if ($isRangeSelection(selection)) {
       const node = getSelectedNode(selection);
-      const parent = node.getParent();
-      if ($isLinkNode(parent) || $isLinkNode(node)) {
+      const linkParent = $findMatchingParent(node, $isLinkNode);
+      const autoLinkParent = $findMatchingParent(node, $isAutoLinkNode);
+
+      // We don't want this menu to open for auto links.
+      if (linkParent != null && autoLinkParent == null) {
         setIsLink(true);
       } else {
         setIsLink(false);

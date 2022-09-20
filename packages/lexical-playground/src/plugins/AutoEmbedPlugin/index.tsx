@@ -179,7 +179,6 @@ function AutoEmbedMenuItem({
       id={'typeahead-item-' + index}
       onMouseEnter={onMouseEnter}
       onClick={onClick}>
-      {option.icon}
       <span className="text">{option.title}</span>
     </li>
   );

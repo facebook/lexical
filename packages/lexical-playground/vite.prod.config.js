@@ -186,9 +186,6 @@ export default defineConfig({
     minify: 'terser',
     terserOptions: {
       compress: {
-        arguments: true,
-        booleans_as_integers: true,
-        module: true,
         toplevel: true,
       }
     },

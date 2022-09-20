@@ -156,7 +156,7 @@ function $normalizeAllDirtyTextNodes(
       $isTextNode(node) &&
       node.isAttached() &&
       node.isSimpleText() &&
-      !node.isUnmergeable()
+      !node.hasDetail('unmergeable')
     ) {
       $normalizeTextNode(node);
     }
@@ -203,7 +203,7 @@ function $applyAllTransforms(
           $isTextNode(node) &&
           node.isAttached() &&
           node.isSimpleText() &&
-          !node.isUnmergeable()
+          !node.hasDetail('unmergeable')
         ) {
           $normalizeTextNode(node);
         }

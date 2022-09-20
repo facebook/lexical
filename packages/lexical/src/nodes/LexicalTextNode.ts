@@ -28,7 +28,6 @@ import {
   DETAIL_TYPE_TO_DETAIL,
   IS_BOLD,
   IS_CODE,
-  IS_DIRECTIONLESS,
   IS_ITALIC,
   IS_SEGMENTED,
   IS_STRIKETHROUGH,
@@ -36,7 +35,6 @@ import {
   IS_SUPERSCRIPT,
   IS_TOKEN,
   IS_UNDERLINE,
-  IS_UNMERGEABLE,
   TEXT_MODE_TO_TYPE,
   TEXT_TYPE_TO_FORMAT,
   TEXT_TYPE_TO_MODE,
@@ -69,7 +67,7 @@ export type SerializedTextNode = Spread<
   SerializedLexicalNode
 >;
 
-export type TextDetailType = 'directionless' | 'unmergable';
+export type TextDetailType = 'directionless' | 'unmergeable';
 
 export type TextFormatType =
   | 'bold'
@@ -311,19 +309,14 @@ export class TextNode extends LexicalNode {
     return self.__mode === IS_SEGMENTED;
   }
 
-  isDirectionless(): boolean {
-    const self = this.getLatest();
-    return (self.__detail & IS_DIRECTIONLESS) !== 0;
-  }
-
-  isUnmergeable(): boolean {
-    const self = this.getLatest();
-    return (self.__detail & IS_UNMERGEABLE) !== 0;
-  }
-
   hasFormat(type: TextFormatType): boolean {
     const formatFlag = TEXT_TYPE_TO_FORMAT[type];
     return (this.getFormat() & formatFlag) !== 0;
+  }
+
+  hasDetail(type: TextDetailType): boolean {
+    const detailFlag = DETAIL_TYPE_TO_DETAIL[type];
+    return (this.getDetail() & detailFlag) !== 0;
   }
 
   isSimpleText(): boolean {
@@ -504,8 +497,7 @@ export class TextNode extends LexicalNode {
 
   setDetail(detail: number): this {
     const self = this.getWritable();
-    self.__detail =
-      typeof detail === 'string' ? DETAIL_TYPE_TO_DETAIL[detail] : detail;
+    self.__detail = detail;
     return self;
   }
 
@@ -520,16 +512,9 @@ export class TextNode extends LexicalNode {
     return this.setFormat(this.getFormat() ^ formatFlag);
   }
 
-  toggleDirectionless(): this {
-    const self = this.getWritable();
-    self.__detail ^= IS_DIRECTIONLESS;
-    return self;
-  }
-
-  toggleUnmergeable(): this {
-    const self = this.getWritable();
-    self.__detail ^= IS_UNMERGEABLE;
-    return self;
+  toggleDetail(detail: TextDetailType): this {
+    const detailFlag = DETAIL_TYPE_TO_DETAIL[detail];
+    return this.setDetail(this.getDetail() ^ detailFlag);
   }
 
   setMode(type: TextModeType): this {

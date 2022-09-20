@@ -365,8 +365,8 @@ const FORMAT_PREDICATES = [
 ];
 
 const DETAIL_PREDICATES = [
-  (node: LexicalNode) => node.isDirectionless() && 'Directionless',
-  (node: LexicalNode) => node.isUnmergeable() && 'Unmergeable',
+  (node: LexicalNode) => node.hasDetail('directionless') && 'Directionless',
+  (node: LexicalNode) => node.hasDetail('unmergeable') && 'Unmergeable',
 ];
 
 const MODE_PREDICATES = [

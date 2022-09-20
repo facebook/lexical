@@ -197,7 +197,7 @@ function createNode(
       // Decorators are always non editable
       dom.contentEditable = 'false';
     } else if ($isTextNode(node)) {
-      if (!node.isDirectionless()) {
+      if (!node.hasDetail('directionless')) {
         subTreeDirectionedTextContent += text;
       }
     }
@@ -502,7 +502,7 @@ function reconcileNode(
     } else {
       const text = prevNode.getTextContent();
 
-      if ($isTextNode(prevNode) && !prevNode.isDirectionless()) {
+      if ($isTextNode(prevNode) && !prevNode.hasDetail('directionless')) {
         subTreeDirectionedTextContent += text;
       }
 
@@ -575,7 +575,7 @@ function reconcileNode(
       if (decorator !== null) {
         reconcileDecorator(key, decorator);
       }
-    } else if ($isTextNode(nextNode) && !nextNode.isDirectionless()) {
+    } else if ($isTextNode(nextNode) && !nextNode.hasDetail('directionless')) {
       // Handle text content, for LTR, LTR cases.
       subTreeDirectionedTextContent += text;
     }

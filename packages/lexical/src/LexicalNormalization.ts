@@ -42,7 +42,11 @@ function $mergeTextNodes(node1: TextNode, node2: TextNode): TextNode {
 export function $normalizeTextNode(textNode: TextNode): void {
   let node = textNode;
 
-  if (node.__text === '' && node.isSimpleText() && !node.isUnmergeable()) {
+  if (
+    node.__text === '' &&
+    node.isSimpleText() &&
+    !node.hasDetail('unmergeable')
+  ) {
     node.remove();
     return;
   }
@@ -54,7 +58,7 @@ export function $normalizeTextNode(textNode: TextNode): void {
     (previousNode = node.getPreviousSibling()) !== null &&
     $isTextNode(previousNode) &&
     previousNode.isSimpleText() &&
-    !previousNode.isUnmergeable()
+    !previousNode.hasDetail('unmergeable')
   ) {
     if (previousNode.__text === '') {
       previousNode.remove();
@@ -73,7 +77,7 @@ export function $normalizeTextNode(textNode: TextNode): void {
     (nextNode = node.getNextSibling()) !== null &&
     $isTextNode(nextNode) &&
     nextNode.isSimpleText() &&
-    !nextNode.isUnmergeable()
+    !nextNode.hasDetail('unmergeable')
   ) {
     if (nextNode.__text === '') {
       nextNode.remove();

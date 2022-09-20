@@ -565,8 +565,6 @@ declare export class TextNode extends LexicalNode {
   isComposing(): boolean;
   isToken(): boolean;
   isSegmented(): boolean;
-  isDirectionless(): boolean;
-  isUnmergeable(): boolean;
   hasFormat(type: TextFormatType): boolean;
   isSimpleText(): boolean;
   getTextContent(): string;

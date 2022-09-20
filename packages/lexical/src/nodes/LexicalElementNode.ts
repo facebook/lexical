@@ -18,11 +18,7 @@ import type {Spread} from 'lexical';
 import invariant from 'shared/invariant';
 
 import {$isTextNode, TextNode} from '../';
-import {
-  DOUBLE_LINE_BREAK,
-  ELEMENT_FORMAT_TO_TYPE,
-  ELEMENT_TYPE_TO_FORMAT,
-} from '../LexicalConstants';
+import {DOUBLE_LINE_BREAK} from '../LexicalConstants';
 import {LexicalNode} from '../LexicalNode';
 import {
   $getSelection,
@@ -55,7 +51,7 @@ export class ElementNode extends LexicalNode {
   /** @internal */
   __children: Array<NodeKey>;
   /** @internal */
-  __format: number;
+  __format: ElementFormatType;
   /** @internal */
   __indent: number;
   /** @internal */
@@ -64,23 +60,21 @@ export class ElementNode extends LexicalNode {
   constructor(key?: NodeKey) {
     super(key);
     this.__children = [];
-    this.__format = 0;
+    this.__format = '';
     this.__indent = 0;
     this.__dir = null;
   }
 
-  getFormat(): number {
+  getFormat(): ElementFormatType {
     const self = this.getLatest();
     return self.__format;
   }
-  getFormatType(): ElementFormatType {
-    const format = this.getFormat();
-    return ELEMENT_FORMAT_TO_TYPE[format] || '';
-  }
+
   getIndent(): number {
     const self = this.getLatest();
     return self.__indent;
   }
+
   getChildren<T extends LexicalNode>(): Array<T> {
     const self = this.getLatest();
     const children = self.__children;
@@ -93,26 +87,32 @@ export class ElementNode extends LexicalNode {
     }
     return childrenNodes;
   }
+
   getChildrenKeys(): Array<NodeKey> {
     return this.getLatest().__children;
   }
+
   getChildrenSize(): number {
     const self = this.getLatest();
     return self.__children.length;
   }
+
   isEmpty(): boolean {
     return this.getChildrenSize() === 0;
   }
+
   isDirty(): boolean {
     const editor = getActiveEditor();
     const dirtyElements = editor._dirtyElements;
     return dirtyElements !== null && dirtyElements.has(this.__key);
   }
+
   isLastChild(): boolean {
     const self = this.getLatest();
     const parent = self.getParentOrThrow();
     return parent.getLastChild() === self;
   }
+
   getAllTextNodes(): Array<TextNode> {
     const textNodes = [];
     const self = this.getLatest();
@@ -128,6 +128,7 @@ export class ElementNode extends LexicalNode {
     }
     return textNodes;
   }
+
   getFirstDescendant<T extends LexicalNode>(): null | T {
     let node = this.getFirstChild<T>();
     while (node !== null) {
@@ -142,6 +143,7 @@ export class ElementNode extends LexicalNode {
     }
     return node;
   }
+
   getLastDescendant<T extends LexicalNode>(): null | T {
     let node = this.getLastChild<T>();
     while (node !== null) {
@@ -156,6 +158,7 @@ export class ElementNode extends LexicalNode {
     }
     return node;
   }
+
   getDescendantByIndex<T extends LexicalNode>(index: number): null | T {
     const children = this.getChildren<T>();
     const childrenLength = children.length;
@@ -185,6 +188,7 @@ export class ElementNode extends LexicalNode {
     }
     return $getNodeByKey<T>(children[0]);
   }
+
   getFirstChildOrThrow<T extends LexicalNode>(): T {
     const firstChild = this.getFirstChild<T>();
     if (firstChild === null) {
@@ -192,6 +196,7 @@ export class ElementNode extends LexicalNode {
     }
     return firstChild;
   }
+
   getLastChild<T extends LexicalNode>(): null | T {
     const self = this.getLatest();
     const children = self.__children;
@@ -201,6 +206,7 @@ export class ElementNode extends LexicalNode {
     }
     return $getNodeByKey<T>(children[childrenLength - 1]);
   }
+
   getChildAtIndex<T extends LexicalNode>(index: number): null | T {
     const self = this.getLatest();
     const children = self.__children;
@@ -210,6 +216,7 @@ export class ElementNode extends LexicalNode {
     }
     return $getNodeByKey(key);
   }
+
   getTextContent(): string {
     let textContent = '';
     const children = this.getChildren();
@@ -227,16 +234,10 @@ export class ElementNode extends LexicalNode {
     }
     return textContent;
   }
+
   getDirection(): 'ltr' | 'rtl' | null {
     const self = this.getLatest();
     return self.__dir;
-  }
-  hasFormat(type: ElementFormatType): boolean {
-    if (type !== '') {
-      const formatFlag = ELEMENT_TYPE_TO_FORMAT[type];
-      return (this.getFormat() & formatFlag) !== 0;
-    }
-    return false;
   }
 
   // Mutators
@@ -270,6 +271,7 @@ export class ElementNode extends LexicalNode {
     }
     return selection;
   }
+
   selectStart(): RangeSelection {
     const firstNode = this.getFirstDescendant();
     if ($isElementNode(firstNode) || $isTextNode(firstNode)) {
@@ -281,6 +283,7 @@ export class ElementNode extends LexicalNode {
     }
     return this.select(0, 0);
   }
+
   selectEnd(): RangeSelection {
     const lastNode = this.getLastDescendant();
     if ($isElementNode(lastNode) || $isTextNode(lastNode)) {
@@ -292,30 +295,36 @@ export class ElementNode extends LexicalNode {
     }
     return this.select();
   }
+
   clear(): this {
     const writableSelf = this.getWritable();
     const children = this.getChildren();
     children.forEach((child) => child.remove());
     return writableSelf;
   }
+
   append(...nodesToAppend: LexicalNode[]): this {
     return this.splice(this.getChildrenSize(), 0, nodesToAppend);
   }
+
   setDirection(direction: 'ltr' | 'rtl' | null): this {
     const self = this.getWritable();
     self.__dir = direction;
     return self;
   }
-  setFormat(type: ElementFormatType): this {
+
+  setFormat(format: ElementFormatType): this {
     const self = this.getWritable();
-    self.__format = type !== '' ? ELEMENT_TYPE_TO_FORMAT[type] : 0;
+    self.__format = format;
     return this;
   }
+
   setIndent(indentLevel: number): this {
     const self = this.getWritable();
     self.__indent = indentLevel;
     return this;
   }
+
   splice(
     start: number,
     deleteCount: number,
@@ -433,54 +442,68 @@ export class ElementNode extends LexicalNode {
 
     return writableSelf;
   }
+
   // JSON serialization
   exportJSON(): SerializedElementNode {
     return {
       children: [],
       direction: this.getDirection(),
-      format: this.getFormatType(),
+      format: this.getFormat(),
       indent: this.getIndent(),
       type: 'element',
       version: 1,
     };
   }
+
   // These are intended to be extends for specific element heuristics.
   insertNewAfter(selection: RangeSelection): null | LexicalNode {
     return null;
   }
+
   canInsertTab(): boolean {
     return false;
   }
+
   canIndent(): boolean {
     return true;
   }
+
   collapseAtStart(selection: RangeSelection): boolean {
     return false;
   }
+
   excludeFromCopy(destination?: 'clone' | 'html'): boolean {
     return false;
   }
+
   canExtractContents(): boolean {
     return true;
   }
+
   canReplaceWith(replacement: LexicalNode): boolean {
     return true;
   }
+
   canInsertAfter(node: LexicalNode): boolean {
     return true;
   }
+
   canBeEmpty(): boolean {
     return true;
   }
+
   canInsertTextBefore(): boolean {
     return true;
   }
+
   canInsertTextAfter(): boolean {
     return true;
   }
+
   isInline(): boolean {
     return false;
   }
+
   // A shadow root is a Node that behaves like RootNode. The shadow root (and RootNode) mark the
   // end of the hiercharchy, most implementations should treat it as there's nothing (upwards)
   // beyond this point. For example, node.getTopElement(), when performed inside a TableCellNode
@@ -488,9 +511,11 @@ export class ElementNode extends LexicalNode {
   isShadowRoot(): boolean {
     return false;
   }
+
   canMergeWith(node: ElementNode): boolean {
     return false;
   }
+
   extractWithChild(
     child: LexicalNode,
     selection: RangeSelection | NodeSelection | GridSelection | null,

@@ -254,7 +254,7 @@ function onSelectionChange(
         ) {
           selection.format = lastFormat;
         } else {
-          if (anchor.type === 'text') {
+          if ($isTextNode(anchorNode)) {
             selection.format = anchorNode.getFormat();
           } else if (anchor.type === 'element') {
             selection.format = 0;
@@ -414,8 +414,10 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
           }, ANDROID_COMPOSITION_LATENCY);
           if ($isRangeSelection(selection)) {
             const anchorNode = selection.anchor.getNode();
-            anchorNode.markDirty();
-            selection.format = anchorNode.getFormat();
+            if ($isTextNode(anchorNode)) {
+              anchorNode.markDirty();
+              selection.format = anchorNode.getFormat();
+            }
           }
         } else {
           event.preventDefault();

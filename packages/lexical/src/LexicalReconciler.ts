@@ -15,7 +15,7 @@ import type {
   RegisteredNodes,
 } from './LexicalEditor';
 import type {NodeKey, NodeMap} from './LexicalNode';
-import type {ElementNode} from './nodes/LexicalElementNode';
+import type {ElementFormatType, ElementNode} from './nodes/LexicalElementNode';
 
 import invariant from 'shared/invariant';
 
@@ -26,14 +26,7 @@ import {
   $isRootNode,
   $isTextNode,
 } from '.';
-import {
-  DOUBLE_LINE_BREAK,
-  FULL_RECONCILE,
-  IS_ALIGN_CENTER,
-  IS_ALIGN_JUSTIFY,
-  IS_ALIGN_LEFT,
-  IS_ALIGN_RIGHT,
-} from './LexicalConstants';
+import {DOUBLE_LINE_BREAK, FULL_RECONCILE} from './LexicalConstants';
 import {EditorState} from './LexicalEditorState';
 import {
   $textContentRequiresDoubleLinebreakAtEnd,
@@ -118,19 +111,29 @@ function setElementIndent(dom: HTMLElement, indent: number): void {
   );
 }
 
-function setElementFormat(dom: HTMLElement, format: number): void {
+function setElementFormat(dom: HTMLElement, format: ElementFormatType): void {
   const domStyle = dom.style;
 
-  if (format === 0) {
-    setTextAlign(domStyle, '');
-  } else if (format === IS_ALIGN_LEFT) {
-    setTextAlign(domStyle, 'left');
-  } else if (format === IS_ALIGN_CENTER) {
-    setTextAlign(domStyle, 'center');
-  } else if (format === IS_ALIGN_RIGHT) {
-    setTextAlign(domStyle, 'right');
-  } else if (format === IS_ALIGN_JUSTIFY) {
-    setTextAlign(domStyle, 'justify');
+  switch (format) {
+    case '':
+      setTextAlign(domStyle, '');
+      break;
+    case 'left':
+      setTextAlign(domStyle, 'left');
+      break;
+    case 'center':
+      setTextAlign(domStyle, 'center');
+      break;
+    case 'right':
+      setTextAlign(domStyle, 'right');
+      break;
+    case 'justify':
+      setTextAlign(domStyle, 'justify');
+      break;
+    default: {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _exhaustive: never = format;
+    }
   }
 }
 
@@ -174,7 +177,7 @@ function createNode(
 
     const format = node.__format;
 
-    if (format !== 0) {
+    if (format !== '') {
       setElementFormat(dom, format);
     }
 

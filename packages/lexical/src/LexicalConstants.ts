@@ -6,7 +6,6 @@
  *
  */
 
-import type {ElementFormatType} from './nodes/LexicalElementNode';
 import type {
   TextDetailType,
   TextFormatType,
@@ -52,12 +51,6 @@ export const IS_ALL_FORMATTING =
 export const IS_DIRECTIONLESS = 1;
 export const IS_UNMERGEABLE = 1 << 1;
 
-// Element node formatting
-export const IS_ALIGN_LEFT = 1;
-export const IS_ALIGN_CENTER = 2;
-export const IS_ALIGN_RIGHT = 3;
-export const IS_ALIGN_JUSTIFY = 4;
-
 // Reconciliation
 export const NON_BREAKING_SPACE = '\u00A0';
 const ZERO_WIDTH_SPACE = '\u200b';
@@ -97,23 +90,6 @@ export const TEXT_TYPE_TO_FORMAT: Record<TextFormatType | string, number> = {
 export const DETAIL_TYPE_TO_DETAIL: Record<TextDetailType | string, number> = {
   directionless: IS_DIRECTIONLESS,
   unmergeable: IS_UNMERGEABLE,
-};
-
-export const ELEMENT_TYPE_TO_FORMAT: Record<
-  Exclude<ElementFormatType, ''>,
-  number
-> = {
-  center: IS_ALIGN_CENTER,
-  justify: IS_ALIGN_JUSTIFY,
-  left: IS_ALIGN_LEFT,
-  right: IS_ALIGN_RIGHT,
-};
-
-export const ELEMENT_FORMAT_TO_TYPE: Record<number, ElementFormatType> = {
-  [IS_ALIGN_CENTER]: 'center',
-  [IS_ALIGN_JUSTIFY]: 'justify',
-  [IS_ALIGN_LEFT]: 'left',
-  [IS_ALIGN_RIGHT]: 'right',
 };
 
 export const TEXT_MODE_TO_TYPE: Record<TextModeType, 0 | 1 | 2> = {

@@ -334,14 +334,19 @@ export class TableSelection {
       // causes the editor loses focus which breaks the Table selection tests.
       // There must be something happening in onDocumentSelectionChange that
       // prevents this but it might be out of the scope of this PR.
+      // const domSelection = getDOMSelection();
+      // if (domSelection && domSelection.anchorNode && domSelection.focusNode) {
+      //   domSelection.setBaseAndExtent(
+      //     domSelection.anchorNode,
+      //     domSelection.anchorOffset,
+      //     domSelection.focusNode,
+      //     domSelection.focusOffset,
+      //   );
+      // }
+
       const domSelection = getDOMSelection();
-      if (domSelection && domSelection.anchorNode && domSelection.focusNode) {
-        domSelection.setBaseAndExtent(
-          domSelection.anchorNode,
-          domSelection.anchorOffset,
-          domSelection.focusNode,
-          domSelection.focusOffset,
-        );
+      if (domSelection) {
+        domSelection.setBaseAndExtent(cell.elem, 0, cell.elem, 0);
       }
 
       const anchorTableCellNode = $getNearestNodeFromDOMNode(cell.elem);

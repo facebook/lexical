@@ -1186,7 +1186,7 @@ export class RangeSelection implements BaseSelection {
       endPoint.set(lastNode.__key, endOffset, 'text');
     }
 
-    this.format = (firstNextFormat | lastNextFormat) as TEXT_FORMAT_TYPE;
+    this.format = firstNextFormat | lastNextFormat;
   }
 
   insertNodes(nodes: Array<LexicalNode>, selectStart?: boolean): boolean {

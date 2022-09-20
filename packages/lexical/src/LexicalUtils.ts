@@ -193,11 +193,11 @@ export function toggleTextFormatType(
     (alignWithFormat === null || (alignWithFormat & type) === 0)
   ) {
     // Remove the state flag.
-    return (format ^ type) as TEXT_FORMAT_TYPE;
+    return format ^ type;
   }
   if (alignWithFormat === null || alignWithFormat & type) {
     // Add the state flag.
-    return (format | type) as TEXT_FORMAT_TYPE;
+    return format | type;
   }
   return format;
 }

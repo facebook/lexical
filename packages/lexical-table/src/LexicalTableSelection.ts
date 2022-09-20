@@ -235,7 +235,7 @@ export class TableSelection {
   }
 
   updateTableGridSelection(selection: GridSelection | null) {
-    if (selection != null) {
+    if (selection != null && selection.gridKey === this.tableNodeKey) {
       this.gridSelection = selection;
       this.isHighlightingCells = true;
       this.disableHighlightStyle();
@@ -249,7 +249,9 @@ export class TableSelection {
         }
       }
       $updateDOMForSelection(this.grid, this.gridSelection);
-    } else {
+    }
+
+    if (selection == null) {
       this.clearHighlight();
     }
   }

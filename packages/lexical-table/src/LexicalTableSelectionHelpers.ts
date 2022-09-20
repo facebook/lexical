@@ -925,11 +925,18 @@ export function applyTableHandlers(
             DEPRECATED_$isGridSelection(prevSelection)) &&
           tableSelection.gridSelection !== selection
         ) {
-          tableSelection.updateTableGridSelection(
-            DEPRECATED_$isGridSelection(selection) && tableNode.isSelected()
-              ? selection
-              : null,
-          );
+          if (
+            DEPRECATED_$isGridSelection(selection) &&
+            selection.gridKey === tableSelection.tableNodeKey
+          ) {
+            tableSelection.updateTableGridSelection(selection);
+          } else if (
+            !DEPRECATED_$isGridSelection(selection) &&
+            DEPRECATED_$isGridSelection(prevSelection) &&
+            prevSelection.gridKey === tableSelection.tableNodeKey
+          ) {
+            tableSelection.updateTableGridSelection(null);
+          }
           return false;
         }
 

@@ -26,6 +26,7 @@ import {
   $setSelection,
   DEPRECATED_$createGridSelection,
   DEPRECATED_$isGridSelection,
+  SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import {CAN_USE_DOM} from 'shared/canUseDOM';
 import getDOMSelection from 'shared/getDOMSelection';
@@ -202,6 +203,8 @@ export class TableSelection {
       $updateDOMForSelection(grid, null);
       $setSelection(null);
 
+      this.editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+
       this.enableHighlightStyle();
     });
   }
@@ -317,6 +320,8 @@ export class TableSelection {
           $setSelection(this.gridSelection);
 
           $updateDOMForSelection(this.grid, this.gridSelection);
+
+          this.editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
         }
       }
     });
@@ -373,6 +378,8 @@ export class TableSelection {
       });
 
       $setSelection(selection);
+
+      this.editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
     });
   }
 
@@ -421,6 +428,8 @@ export class TableSelection {
       $updateDOMForSelection(this.grid, null);
 
       $setSelection(null);
+
+      this.editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
     });
   }
 }

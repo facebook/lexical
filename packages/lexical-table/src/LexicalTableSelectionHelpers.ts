@@ -882,21 +882,6 @@ export function applyTableHandlers(
         const prevSelection = $getPreviousSelection();
 
         if (
-          selection !== prevSelection &&
-          (DEPRECATED_$isGridSelection(selection) ||
-            DEPRECATED_$isGridSelection(prevSelection)) &&
-          tableSelection.gridSelection !== selection
-        ) {
-          tableSelection.updateTableGridSelection(
-            DEPRECATED_$isGridSelection(selection) && tableNode.isSelected()
-              ? selection
-              : null,
-          );
-
-          return false;
-        }
-
-        if (
           selection &&
           $isRangeSelection(selection) &&
           !selection.isCollapsed()
@@ -913,25 +898,40 @@ export function applyTableHandlers(
           if (containsPartialTable) {
             const isBackward = selection.isBackward();
             const modifiedSelection = $createRangeSelection();
-            const tableIndex = tableNode.getIndexWithinParent();
-            const parentKey = tableNode.getParentOrThrow().getKey();
+            const tableKey = tableNode.getKey();
+
             modifiedSelection.anchor.set(
               selection.anchor.key,
               selection.anchor.offset,
               selection.anchor.type,
             );
-            // Set selection to before or after table on the root node.
+
             modifiedSelection.focus.set(
-              parentKey,
-              isBackward ? tableIndex - 1 : tableIndex + 1,
+              tableKey,
+              isBackward ? 0 : tableNode.getChildrenSize(),
               'element',
             );
+
             isRangeSelectionHijacked = true;
             $setSelection(modifiedSelection);
             $addHighlightStyleToTable(tableSelection);
 
             return true;
           }
+        }
+
+        if (
+          selection !== prevSelection &&
+          (DEPRECATED_$isGridSelection(selection) ||
+            DEPRECATED_$isGridSelection(prevSelection)) &&
+          tableSelection.gridSelection !== selection
+        ) {
+          tableSelection.updateTableGridSelection(
+            DEPRECATED_$isGridSelection(selection) && tableNode.isSelected()
+              ? selection
+              : null,
+          );
+          return false;
         }
 
         if (

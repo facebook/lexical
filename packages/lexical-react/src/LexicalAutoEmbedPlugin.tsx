@@ -58,18 +58,15 @@ export type EmbedMenuComponent = React.ComponentType<EmbedMenuProps>;
 
 export class AutoEmbedOption extends TypeaheadOption {
   title: string;
-  icon?: JSX.Element;
   onSelect: (targetNode: LexicalNode | null) => void;
   constructor(
     title: string,
     options: {
-      icon?: JSX.Element;
       onSelect: (targetNode: LexicalNode | null) => void;
     },
   ) {
     super(title);
     this.title = title;
-    this.icon = options.icon;
     this.onSelect = options.onSelect.bind(this);
   }
 }

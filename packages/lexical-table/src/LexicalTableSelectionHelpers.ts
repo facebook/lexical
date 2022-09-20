@@ -92,8 +92,6 @@ export function applyTableHandlers(
         return;
       }
 
-      isMouseDown = true;
-
       const cell = getCellFromTarget(event.target as Node);
 
       if (cell !== null) {

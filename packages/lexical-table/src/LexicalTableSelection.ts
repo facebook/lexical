@@ -304,10 +304,7 @@ export class TableSelection {
         ) {
           const focusNodeKey = focusTableCellNode.getKey();
 
-          this.gridSelection =
-            this.gridSelection != null
-              ? this.gridSelection.clone()
-              : DEPRECATED_$createGridSelection();
+          this.gridSelection = DEPRECATED_$createGridSelection();
 
           this.focusCellNodeKey = focusNodeKey;
           this.gridSelection.set(

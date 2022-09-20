@@ -570,7 +570,7 @@ export async function dragMouse(
     fromX += fromBoundingBox.width;
     fromY += fromBoundingBox.height;
   }
-  await page.mouse.move(fromX, fromY, {steps: 20});
+  await page.mouse.move(fromX, fromY);
   await page.mouse.down();
 
   let toX = toBoundingBox.x;
@@ -583,7 +583,7 @@ export async function dragMouse(
     toY += toBoundingBox.height;
   }
 
-  await page.mouse.move(toX, toY, {steps: 20});
+  await page.mouse.move(toX, toY);
   await page.mouse.up();
 }
 

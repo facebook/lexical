@@ -57,8 +57,8 @@ import {
   $getRoot,
   $getSelection,
   $isRangeSelection,
+  $isRootOrShadowRoot,
   $isTextNode,
-  $isTopLevel,
   CAN_REDO_COMMAND,
   CAN_UNDO_COMMAND,
   COMMAND_PRIORITY_CRITICAL,
@@ -646,7 +646,7 @@ export default function ToolbarPlugin(): JSX.Element {
           ? anchorNode
           : $findMatchingParent(anchorNode, (e) => {
               const parent = e.getParent();
-              return parent !== null && $isTopLevel(parent);
+              return parent !== null && $isRootOrShadowRoot(parent);
             });
 
       if (element === null) {

@@ -25,9 +25,9 @@ import {
   TableCellNode,
 } from '@lexical/table';
 import {
+  $getRoot,
   $getSelection,
   $isRangeSelection,
-  $setSelection,
   DEPRECATED_$isGridSelection,
 } from 'lexical';
 import * as React from 'react';
@@ -140,7 +140,8 @@ function TableActionMenu({
         updateTableCellNode(tableCellNode.getLatest());
       }
 
-      $setSelection(null);
+      const rootNode = $getRoot();
+      rootNode.selectStart();
     });
   }, [editor, tableCellNode]);
 

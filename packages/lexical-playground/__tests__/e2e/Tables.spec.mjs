@@ -2043,6 +2043,9 @@ test.describe('Tables', () => {
     await insertSampleImage(page);
     await page.keyboard.type(' <- it works!');
 
+    // Wait for Decorator to mount.
+    await page.waitForTimeout(3000);
+
     await assertHTML(
       page,
       html`

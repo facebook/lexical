@@ -95,17 +95,10 @@ export function applyTableHandlers(
       const cell = getCellFromTarget(event.target as Node);
 
       if (cell !== null) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
         tableSelection.setAnchorCellForSelection(cell);
-        document.addEventListener(
-          'mouseup',
-          () => {
-            isMouseDown = false;
-          },
-          {
-            capture: true,
-            once: true,
-          },
-        );
       }
     }, 0);
   });
@@ -136,12 +129,6 @@ export function applyTableHandlers(
           tableSelection.adjustFocusCellForSelection(cell);
         }
       }
-    }
-  });
-
-  tableElement.addEventListener('mouseup', () => {
-    if (isMouseDown) {
-      isMouseDown = false;
     }
   });
 
@@ -179,14 +166,27 @@ export function applyTableHandlers(
     window.removeEventListener('mousedown', mouseDownCallback),
   );
 
-  const mouseUpCallback = () => {
-    isMouseDown = false;
+  const mouseUpCallback = (event: MouseEvent) => {
+    if (isMouseDown) {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      isMouseDown = false;
+    }
   };
 
   window.addEventListener('mouseup', mouseUpCallback);
 
   tableSelection.listenersToRemove.add(() =>
     window.removeEventListener('mouseup', mouseUpCallback),
+  );
+
+  tableSelection.listenersToRemove.add(() =>
+    tableElement.addEventListener('mouseup', mouseUpCallback),
+  );
+
+  tableSelection.listenersToRemove.add(() =>
+    tableElement.removeEventListener('mouseup', mouseUpCallback),
   );
 
   tableSelection.listenersToRemove.add(
@@ -920,10 +920,12 @@ export function applyTableHandlers(
         }
 
         if (
-          selection !== prevSelection &&
+          selection &&
+          !selection.is(prevSelection) &&
           (DEPRECATED_$isGridSelection(selection) ||
             DEPRECATED_$isGridSelection(prevSelection)) &&
-          tableSelection.gridSelection !== selection
+          tableSelection.gridSelection &&
+          !tableSelection.gridSelection.is(prevSelection)
         ) {
           if (
             DEPRECATED_$isGridSelection(selection) &&

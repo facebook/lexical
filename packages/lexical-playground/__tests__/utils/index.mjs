@@ -560,6 +560,7 @@ export async function dragMouse(
   toBoundingBox,
   positionStart = 'middle',
   positionEnd = 'middle',
+  mouseUp = true,
 ) {
   let fromX = fromBoundingBox.x;
   let fromY = fromBoundingBox.y;
@@ -584,7 +585,10 @@ export async function dragMouse(
   }
 
   await page.mouse.move(toX, toY);
-  await page.mouse.up();
+
+  if (mouseUp) {
+    await page.mouse.up();
+  }
 }
 
 export async function dragImage(
@@ -705,7 +709,7 @@ export async function selectCellsFromTableCords(page, firstCords, secondCords) {
   );
 
   // Focus on inside the iFrame or the boundingBox() below returns null.
-  await firstRowFirstColumnCell.click();
+  await firstRowFirstColumnCell.click({clickCount: 2});
 
   await dragMouse(
     page,

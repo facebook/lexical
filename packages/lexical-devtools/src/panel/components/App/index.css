@@ -1,26 +1,9 @@
 .App {
-  display: grid;
-  grid-template-columns: auto 40em;
-  grid-template-areas:
-    'header header'
-    'tree-view inspected-element';
   text-align: center;
-}
-
-.App-header {
-  align-items: center;
-  background-color: #282c34;
-  color: white;
-  display: flex;
-  flex-direction: column;
-  font-family: monospace;
-  font-size: 2em;
-  grid-area: header;
-  justify-content: center;
 }
 
 .loading-view {
   background: var(--main-dark-gray);
-  color: #fff;
+  color: var(--main-white);
   font-size: 3em;
 }

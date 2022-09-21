@@ -1,0 +1,22 @@
+.selection-container {
+  padding-left: var(--monospace-character-width);
+  text-align: left;
+}
+
+.selection-property-name {
+  color: var(--main-blue);
+}
+
+.selection-view {
+  align-items: center;
+  background: var(--main-dark-gray);
+  border: 1px solid var(--highlight-dark-gray);
+  color: var(--main-white);
+  display: flex;
+  height: var(--top-row-height);
+  left: 0em;
+  position: fixed;
+  text-align: left;
+  top: 0em;
+  width: calc(100vw - var(--right-column-width));
+}

@@ -19,11 +19,13 @@ function InspectedElementView({
 }): JSX.Element {
   return (
     <div className="inspected-element-view">
-      {nodeProps
-        ? Object.entries(nodeProps).map(([key, value]) => (
-            <InspectedElementRow propName={key} property={value} />
-          ))
-        : ''}
+      <div className="inspected-element-container">
+        {nodeProps
+          ? Object.entries(nodeProps).map(([key, value]) => (
+              <InspectedElementRow propName={key} property={value} />
+            ))
+          : ''}
+      </div>
     </div>
   );
 }

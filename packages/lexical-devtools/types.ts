@@ -5,7 +5,16 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {LexicalEditor} from 'lexical';
+import {
+  GridSelection,
+  LexicalEditor,
+  NodeSelection,
+  RangeSelection,
+} from 'lexical';
+import {
+  ElementPointType,
+  TextPointType,
+} from 'packages/lexical/src/LexicalSelection';
 
 export interface DevToolsTree {
   [key: string]: DevToolsNode;
@@ -25,8 +34,39 @@ export interface DevToolsNode {
   monospaceWidth: string;
 }
 
+export type DevToolsSelection =
+  | GridSelectionJSON
+  | NodeSelection
+  | RangeSelectionJSON;
+
+// the anchor property as PointType includes a _selection property
+// when anchor is present on a selection object, it creates circularity
+// we have to remove this circularity in order to serialize the selection as JSON
+export type PointTypeJSON =
+  | (Omit<TextPointType, '_selection'> & {
+      [key: string]: unknown;
+    })
+  | (Omit<ElementPointType, '_selection'> & {
+      [key: string]: unknown;
+    });
+
+export interface GridSelectionJSON
+  extends Omit<GridSelection, 'anchor' | 'focus'> {
+  anchor: PointTypeJSON;
+  focus: PointTypeJSON;
+}
+
+export interface RangeSelectionJSON
+  extends Omit<RangeSelection, 'anchor' | 'focus'> {
+  anchor: PointTypeJSON;
+  focus: PointTypeJSON;
+}
+
 export type LexicalKey = `__lexicalKey_${string}`;
 
+// allow lookup of a Lexical HTML element's lexicalKey
+// lexicalKey is stored on the DOM node under key __lexicalKey_{editorKey}
+// where editorKey is a 5 letter string, dynamically generated with each editor instance
 export interface LexicalHTMLElement extends HTMLElement {
   [key: LexicalKey]: string;
   __lexicalEditor: LexicalEditor;

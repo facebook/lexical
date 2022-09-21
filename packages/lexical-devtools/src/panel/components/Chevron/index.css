@@ -1,7 +1,7 @@
 .chevron-button {
   background: var(--main-dark-gray);
   border: none;
-  color: #fff;
+  color: var(--main-white);
   cursor: pointer;
   margin: 0;
   padding: 0;

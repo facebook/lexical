@@ -1,7 +1,11 @@
 :root {
+  --highlight-dark-gray: #282c34;
   --monospace-character-width: 1.2em;
   --main-blue: #77b6ff;
   --main-dark-gray: #222;
+  --main-white: #fff;
+  --top-row-height: 3.5em;
+  --right-column-width: 24em;
 }
 
 body {

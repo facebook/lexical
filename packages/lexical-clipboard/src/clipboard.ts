@@ -42,6 +42,7 @@ import {
   DEPRECATED_GridNode,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
+import {IS_FIREFOX} from 'shared/environment';
 import invariant from 'shared/invariant';
 
 export function $getHtmlContent(editor: LexicalEditor): string | null {
@@ -490,4 +491,64 @@ export function $generateNodesFromSerializedNodes(
     nodes.push(node);
   }
   return nodes;
+}
+
+// API is very likely to change; ideally we provide hooks for custom selection and don't enforce
+// editor selection
+export function copyToClipboard__EXPERIMENTAL(
+  editor: LexicalEditor,
+  event: null | ClipboardEvent,
+): boolean {
+  console.info('copy');
+  const selection = $getSelection();
+  if (selection === null) {
+    return false;
+  }
+  let clipboardData = null;
+  if (event !== null) {
+    event.preventDefault();
+    clipboardData = event.clipboardData;
+  }
+  const htmlString = $getHtmlContent(editor);
+  const lexicalString = $getLexicalContent(editor);
+
+  if (clipboardData !== null) {
+    if (htmlString !== null) {
+      clipboardData.setData('text/html', htmlString);
+    }
+    if (lexicalString !== null) {
+      clipboardData.setData('application/x-lexical-editor', lexicalString);
+    }
+    const plainString = selection.getTextContent();
+    clipboardData.setData('text/plain', plainString);
+  } else if (IS_FIREFOX && ClipboardItem) {
+    const clipboard = navigator.clipboard;
+    if (clipboard != null) {
+      // Most browsers only support a single item in the clipboard at one time.
+      // So we optimize by only putting in HTML.
+      const data = [
+        new ClipboardItem({
+          'text/html': new Blob([htmlString as BlobPart], {
+            type: 'text/html',
+          }),
+        }),
+      ];
+      clipboard.write(data);
+    }
+  } else {
+    const rootElement = editor.getRootElement();
+    const domSelection = document.getSelection();
+    if (rootElement !== null && domSelection !== null) {
+      const element = document.createElement('span');
+      element.style.cssText = 'position: fixed; top: -1000px;';
+      element.append(document.createTextNode('#'));
+      rootElement.append(element);
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      domSelection.removeAllRanges();
+      domSelection.addRange(range);
+      document.execCommand('copy');
+    }
+  }
+  return true;
 }

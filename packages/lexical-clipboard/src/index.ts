@@ -7,16 +7,6 @@
  *
  */
 
-import {
-  $generateJSONFromSelectedNodes,
-  $generateNodesFromSerializedNodes,
-  $getHtmlContent,
-  $getLexicalContent,
-  $insertDataTransferForPlainText,
-  $insertDataTransferForRichText,
-  $insertGeneratedNodes,
-} from './clipboard';
-
 export {
   $generateJSONFromSelectedNodes,
   $generateNodesFromSerializedNodes,
@@ -25,4 +15,5 @@ export {
   $insertDataTransferForPlainText,
   $insertDataTransferForRichText,
   $insertGeneratedNodes,
-};
+  copyToClipboard__EXPERIMENTAL,
+} from './clipboard';

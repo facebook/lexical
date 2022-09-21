@@ -19,6 +19,7 @@ import {
   $createTextNode,
   $getNearestNodeFromDOMNode,
   $getNodeByKey,
+  $getRoot,
   $getSelection,
   $isElementNode,
   $setSelection,
@@ -234,22 +235,14 @@ export class TableSelection {
   }
 
   updateTableGridSelection(selection: GridSelection | null) {
-    if (selection != null) {
+    if (selection != null && selection.gridKey === this.tableNodeKey) {
       this.gridSelection = selection;
       this.isHighlightingCells = true;
       this.disableHighlightStyle();
-      const anchorElement = this.editor.getElementByKey(selection.anchor.key);
-      const focusElement = this.editor.getElementByKey(selection.focus.key);
-
-      if (anchorElement && focusElement) {
-        const domSelection = getDOMSelection();
-        if (domSelection) {
-          domSelection.setBaseAndExtent(anchorElement, 0, focusElement, 0);
-        }
-      }
-
       $updateDOMForSelection(this.grid, this.gridSelection);
-    } else {
+    }
+
+    if (selection == null) {
       this.clearHighlight();
     }
   }
@@ -271,12 +264,17 @@ export class TableSelection {
       const cellX = cell.x;
       const cellY = cell.y;
       this.focusCell = cell;
-      const domSelection = getDOMSelection();
 
       if (this.anchorCell !== null) {
+        const domSelection = getDOMSelection();
         // Collapse the selection
         if (domSelection) {
-          domSelection.setBaseAndExtent(this.anchorCell.elem, 0, cell.elem, 0);
+          domSelection.setBaseAndExtent(
+            this.anchorCell.elem,
+            0,
+            this.anchorCell.elem,
+            0,
+          );
         }
       }
 
@@ -324,13 +322,18 @@ export class TableSelection {
 
   setAnchorCellForSelection(cell: Cell) {
     this.editor.update(() => {
+      if (this.anchorCell === cell && this.isHighlightingCells) {
+        const domSelection = getDOMSelection();
+        // Collapse the selection
+        if (domSelection) {
+          domSelection.setBaseAndExtent(cell.elem, 0, cell.elem, 0);
+        }
+      }
+
       this.anchorCell = cell;
       this.startX = cell.x;
       this.startY = cell.y;
-      const domSelection = getDOMSelection();
-      if (domSelection) {
-        domSelection.setBaseAndExtent(cell.elem, 0, cell.elem, 0);
-      }
+
       const anchorTableCellNode = $getNearestNodeFromDOMNode(cell.elem);
 
       if ($isTableCellNode(anchorTableCellNode)) {
@@ -388,7 +391,8 @@ export class TableSelection {
         tableNode.selectPrevious();
         // Delete entire table
         tableNode.remove();
-        this.clearHighlight();
+        const rootNode = $getRoot();
+        rootNode.selectStart();
         return;
       }
 

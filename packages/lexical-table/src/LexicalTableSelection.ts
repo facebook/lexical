@@ -265,9 +265,8 @@ export class TableSelection {
       const cellY = cell.y;
       this.focusCell = cell;
 
-      const domSelection = getDOMSelection();
-
       if (this.anchorCell !== null) {
+        const domSelection = getDOMSelection();
         // Collapse the selection
         if (domSelection) {
           domSelection.setBaseAndExtent(
@@ -323,6 +322,14 @@ export class TableSelection {
 
   setAnchorCellForSelection(cell: Cell) {
     this.editor.update(() => {
+      if (this.anchorCell === cell && this.isHighlightingCells) {
+        const domSelection = getDOMSelection();
+        // Collapse the selection
+        if (domSelection) {
+          domSelection.setBaseAndExtent(cell.elem, 0, cell.elem, 0);
+        }
+      }
+
       this.anchorCell = cell;
       this.startX = cell.x;
       this.startY = cell.y;

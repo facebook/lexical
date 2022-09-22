@@ -13,7 +13,7 @@ import type {Klass} from 'lexical';
 
 import invariant from 'shared/invariant';
 
-import {$isElementNode, $isTextNode, ElementNode} from '.';
+import {$isElementNode, $isRootNode, $isTextNode, ElementNode} from '.';
 import {
   $getSelection,
   $isRangeSelection,
@@ -105,7 +105,7 @@ export function removeNode(
   ) {
     removeNode(parent, restoreSelection);
   }
-  if ($isRootOrShadowRoot(parent) && parent.isEmpty()) {
+  if ($isRootNode(parent) && parent.isEmpty()) {
     parent.selectEnd();
   }
 }

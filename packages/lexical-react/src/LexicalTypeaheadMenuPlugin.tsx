@@ -532,7 +532,6 @@ export function LexicalTypeaheadMenuPlugin<TOption extends TypeaheadOption>({
 
   useEffect(() => {
     let activeRange: Range | null = document.createRange();
-    let previousText: string | null = null;
 
     const updateListener = () => {
       editor.getEditorState().read(() => {
@@ -543,14 +542,12 @@ export function LexicalTypeaheadMenuPlugin<TOption extends TypeaheadOption>({
         if (
           !$isRangeSelection(selection) ||
           !selection.isCollapsed() ||
-          text === previousText ||
           text === null ||
           range === null
         ) {
           setResolution(null);
           return;
         }
-        previousText = text;
 
         const match = triggerFn(text, editor);
         onQueryChange(match ? match.matchingString : null);

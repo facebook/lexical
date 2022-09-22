@@ -201,6 +201,13 @@ export class ElementNode extends LexicalNode {
     }
     return $getNodeByKey<T>(children[childrenLength - 1]);
   }
+  getLastChildOrThrow<T extends LexicalNode>(): T {
+    const lastChild = this.getLastChild<T>();
+    if (lastChild === null) {
+      invariant(false, 'Expected node %s to have a last child.', this.__key);
+    }
+    return lastChild;
+  }
   getChildAtIndex<T extends LexicalNode>(index: number): null | T {
     const self = this.getLatest();
     const children = self.__children;

@@ -36,6 +36,7 @@ import {
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
+  DEPRECATED_$createGridSelection,
   DEPRECATED_$isGridSelection,
   FOCUS_COMMAND,
   FORMAT_TEXT_COMMAND,
@@ -629,11 +630,11 @@ export function applyTableHandlers(
       const isAnchorInside = tableNode.isParentOf(anchorNode);
       const isFocusInside = tableNode.isParentOf(focusNode);
 
-      const containsPartialTable =
+      const selectionContainsPartialTable =
         (isAnchorInside && !isFocusInside) ||
         (isFocusInside && !isAnchorInside);
 
-      if (containsPartialTable) {
+      if (selectionContainsPartialTable) {
         tableSelection.clearText();
         return true;
       }
@@ -890,11 +891,14 @@ export function applyTableHandlers(
           const isAnchorInside = tableNode.isParentOf(anchorNode);
           const isFocusInside = tableNode.isParentOf(focusNode);
 
-          const containsPartialTable =
+          const selectionContainsPartialTable =
             (isAnchorInside && !isFocusInside) ||
             (isFocusInside && !isAnchorInside);
 
-          if (containsPartialTable) {
+          const selectionIsInsideTable =
+            isAnchorInside && isFocusInside && !tableNode.isSelected();
+
+          if (selectionContainsPartialTable) {
             const isBackward = selection.isBackward();
             const modifiedSelection = $createRangeSelection();
             const tableKey = tableNode.getKey();
@@ -916,6 +920,35 @@ export function applyTableHandlers(
             $addHighlightStyleToTable(tableSelection);
 
             return true;
+          } else if (selectionIsInsideTable) {
+            const {grid} = tableSelection;
+
+            if (
+              selection.getNodes().filter($isTableCellNode).length ===
+              grid.rows * grid.columns
+            ) {
+              const gridSelection = DEPRECATED_$createGridSelection();
+              const tableKey = tableNode.getKey();
+
+              const firstCell = tableNode
+                .getFirstChildOrThrow()
+                .getFirstChild();
+
+              const lastCell = tableNode.getLastChildOrThrow().getLastChild();
+
+              if (firstCell != null && lastCell != null) {
+                gridSelection.set(
+                  tableKey,
+                  firstCell.getKey(),
+                  lastCell.getKey(),
+                );
+
+                $setSelection(gridSelection);
+                tableSelection.updateTableGridSelection(gridSelection);
+
+                return true;
+              }
+            }
           }
         }
 

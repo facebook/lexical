@@ -681,6 +681,7 @@ declare export class ElementNode extends LexicalNode {
   getFirstChild<T: LexicalNode>(): null | T;
   getFirstChildOrThrow<T: LexicalNode>(): T;
   getLastChild<T: LexicalNode>(): null | T;
+  getLastChildOrThrow<T: LexicalNode>(): T;
   getChildAtIndex<T: LexicalNode>(index: number): null | T;
   getTextContent(): string;
   getDirection(): 'ltr' | 'rtl' | null;

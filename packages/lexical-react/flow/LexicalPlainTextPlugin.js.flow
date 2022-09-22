@@ -17,6 +17,5 @@ type InitialEditorStateType =
 
 declare export function PlainTextPlugin({
   contentEditable: React$Node,
-  initialEditorState?: InitialEditorStateType,
   placeholder: React$Node,
 }): React$Node;

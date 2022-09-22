@@ -929,16 +929,12 @@ export function applyTableHandlers(
             ) {
               const gridSelection = DEPRECATED_$createGridSelection();
               const tableKey = tableNode.getKey();
-              const tableFirstDescendant = tableNode.getFirstDescendant();
-              const tableLastDescendant = tableNode.getLastDescendant();
 
-              const firstCell =
-                tableFirstDescendant &&
-                $findMatchingParent(tableFirstDescendant, $isTableCellNode);
+              const firstCell = tableNode
+                .getFirstChildOrThrow()
+                .getFirstChild();
 
-              const lastCell =
-                tableLastDescendant &&
-                $findMatchingParent(tableLastDescendant, $isTableCellNode);
+              const lastCell = tableNode.getLastChildOrThrow().getLastChild();
 
               if (firstCell != null && lastCell != null) {
                 gridSelection.set(

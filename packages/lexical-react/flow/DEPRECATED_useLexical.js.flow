@@ -18,7 +18,6 @@ import type {
 declare export function useLexical<EditorContext>(editorConfig?: {
   namespace?: string,
   onError: (error: Error) => void,
-  initialEditorState?: EditorState,
   theme?: EditorThemeClasses,
   context?: EditorContext,
   nodes?: Array<Class<LexicalNode>>,

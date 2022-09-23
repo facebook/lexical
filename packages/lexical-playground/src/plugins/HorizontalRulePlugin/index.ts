@@ -11,11 +11,8 @@ import {
   $createHorizontalRuleNode,
   INSERT_HORIZONTAL_RULE_COMMAND,
 } from '@lexical/react/LexicalHorizontalRuleNode';
-import {
-  $getSelection,
-  $isRangeSelection,
-  COMMAND_PRIORITY_EDITOR,
-} from 'lexical';
+import {$insertNodeToNearestRoot} from '@lexical/utils';
+import {COMMAND_PRIORITY_EDITOR} from 'lexical';
 import {useEffect} from 'react';
 
 export default function HorizontalRulePlugin(): null {
@@ -25,22 +22,8 @@ export default function HorizontalRulePlugin(): null {
     return editor.registerCommand(
       INSERT_HORIZONTAL_RULE_COMMAND,
       (type) => {
-        const selection = $getSelection();
-
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-
-        const focusNode = selection.focus.getNode();
-
-        if (focusNode !== null) {
-          const horizontalRuleNode = $createHorizontalRuleNode();
-          selection.insertParagraph();
-          selection.focus
-            .getNode()
-            .getTopLevelElementOrThrow()
-            .insertBefore(horizontalRuleNode);
-        }
+        const horizontalRuleNode = $createHorizontalRuleNode();
+        $insertNodeToNearestRoot(horizontalRuleNode);
 
         return true;
       },

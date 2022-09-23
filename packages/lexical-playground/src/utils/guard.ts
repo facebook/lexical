@@ -4,15 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- *
  */
-.ContentEditable__root {
-  border: 0;
-  font-size: 15px;
-  display: block;
-  position: relative;
-  tab-size: 1;
-  outline: 0;
-  padding: 8px 28px;
-  min-height: calc(100% - 16px);
+export function isHTMLElement(x: unknown): x is HTMLElement {
+  return x instanceof HTMLElement;
 }

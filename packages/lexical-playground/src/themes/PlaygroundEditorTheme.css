@@ -6,7 +6,6 @@
  *
  *
  */
-
 .PlaygroundEditorTheme__ltr {
   text-align: left;
 }
@@ -15,10 +14,7 @@
 }
 .PlaygroundEditorTheme__paragraph {
   margin: 0;
-  margin-bottom: 8px;
-}
-.PlaygroundEditorTheme__paragraph:last-child {
-  margin-bottom: 0;
+  position: relative;
 }
 .PlaygroundEditorTheme__quote {
   margin: 0;
@@ -36,23 +32,17 @@
   color: rgb(5, 5, 5);
   font-weight: 400;
   margin: 0;
-  margin-bottom: 12px;
-  padding: 0;
 }
 .PlaygroundEditorTheme__h2 {
   font-size: 15px;
   color: rgb(101, 103, 107);
   font-weight: 700;
   margin: 0;
-  margin-top: 10px;
-  padding: 0;
   text-transform: uppercase;
 }
 .PlaygroundEditorTheme__h3 {
   font-size: 12px;
   margin: 0;
-  margin-top: 10px;
-  padding: 0;
   text-transform: uppercase;
 }
 .PlaygroundEditorTheme__textBold {
@@ -324,7 +314,7 @@
   list-style-position: inside;
 }
 .PlaygroundEditorTheme__listItem {
-  margin: 8px 32px;
+  margin: 0 32px;
 }
 .PlaygroundEditorTheme__listItemChecked,
 .PlaygroundEditorTheme__listItemUnchecked {

@@ -467,6 +467,8 @@ export function registerHistory(
       CLEAR_HISTORY_COMMAND,
       () => {
         clearHistory(historyState);
+        editor.dispatchCommand(CAN_REDO_COMMAND, false);
+        editor.dispatchCommand(CAN_UNDO_COMMAND, false);
         return true;
       },
       COMMAND_PRIORITY_EDITOR,

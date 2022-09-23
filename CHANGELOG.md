@@ -1,3 +1,71 @@
+## v0.5.0 (2022-09-23)
+
+- feat(lexical-playground): draggable block (#2860) 子瞻 Luci
+- Dispatch CAN_{REDO,UNDO}_COMMAND after clearing history (#3056) Wilberto Morales
+- Fix Table Deletion (#3053) Tyler Bainbridge
+- Remove previousText check (#3052) Tyler Bainbridge
+- Improve table selection handling when there are no siblings (#3051) Tyler Bainbridge
+- Fix initialEditorState flow (#3048) Gerard Rovira
+- Add Selection View in DevTools (#2955) Will
+- Fix (Known) Table Bugs (#3000) Tyler Bainbridge
+- Revise Vite compression (#3036) Gerard Rovira
+- Fix composition text boundary for canInsertTextAfter (#3045) Gerard Rovira
+- Fix nested mark creation when wrapping forward selection (#3027) Ken Powers
+- Add position property to menus & disable floating link toolbar for autolink nodes (#3035) Tyler Bainbridge
+- Update collab docs (#3033) Maksim Horbachevsky
+- feat(lexical-react): add initialEditorState for LexicalCollaborationPlugin (#3011) Dragoș Străinu
+- [0.5] Remove deprecated initialEditorState from OnChangePlugin (#3031) Gerard Rovira
+- [0.5] Remove initialEditorState from  Plain/RichTextPlugin (#3032) Gerard Rovira
+- Make  -> isEditable mandatory (#3030) Gerard Rovira
+- Add optional cursors container prop for a better positioning in scrollable layouts (#3025) Maksim Horbachevsky
+- [0.5] Treat undefined selection the same as null in  (#2948) Acy Watson
+- [0.5]  ->  (#3020) Gerard Rovira
+- getStyleObjectFromCSS to compute when cache miss (#3024) Gerard Rovira
+- [0.5] Revise usage of root node vs shadow (#3022) Gerard Rovira
+- Fix code highlighter race condition on transform (#3014) Gerard Rovira
+- : Selection-agnostic node insertion with Grid/Node selection support (#2638) Gerard Rovira
+- add docs (#3019) Acy Watson
+- [0.5] Remove INERT mode (#2421) Gerard Rovira
+- [0.5] Correct definition of isTopLevel; introduce DecoratorNode->isInline, ElementNode->isShadowRoot (#3009) Gerard Rovira
+- Revert md changes from #3001 (#3015) Maksim Horbachevsky
+- add install step (#3008) Acy Watson
+- Revise RnageSelection dirty toggle (#3007) Dominic Gannaway
+- Trim content for newlines only (#3006) Maksim Horbachevsky
+- Fix  flow type (#3005) Gerard Rovira
+- Fix bad TypeaheadMenuPlugin prod build (#3003) Gerard Rovira
+- Capture pendingDecorators after garbage collecting detached decorators (#2999) Adrien Wald
+- ElementNode -> isTopLevel() (#3001) Gerard Rovira
+- Rm unused helpers from older markdown code (#2998) Maksim Horbachevsky
+- Add DEPRECATED prefix to Grid APIs (#2966) Dominic Gannaway
+- [Automated Releases] Add logging and dry run to release script (#2986) Acy Watson
+- Fix www exports (#2994) Maksim Horbachevsky
+- Fix WWW import rewrite for React (#2996) Gerard Rovira
+- Fix insert column header bug (#2995) Tyler Bainbridge
+- docs: loadContent clarification (#2989) ly3xqhl8g9
+- docs: Fix URL of rich-text and plain-text (#2985) kimulaco
+- Fixed exportDOM for paragraph node (#2981) Hafiz
+- remove ff merge from release (#2984) Acy Watson
+- fix versioning for ff merge (#2983) Acy Watson
+- merge from main Acy Watson
+- merge from main Acy Watson
+- add back config Acy Watson
+- add ssh key Acy Watson
+- push config (#2979) Acy Watson
+- Clean up redundant newlines during pasting (#2969) Maksim Horbachevsky
+- config (#2977) Acy Watson
+- Improve docs around the React plugins page (#2976) Dominic Gannaway
+- install (#2972) Acy Watson
+- Update collab errors, related cleanup (#2971) Maksim Horbachevsky
+- Automated releases (#2949) Acy Watson
+- Add empty comment in front of 'export' in a bundled file (#2970) Maksim Horbachevsky
+- Fix bugs with isEditable (#2967) Dominic Gannaway
+- allow escaped markdown within TextFormatTransformer (#2964) Christian Ratz
+- Fix link breaking when formatting on (#2954) Patrick McCullough
+- fix typo on read-mode / edit-mode page (#2962) Christian Ratz
+- fix (#2957) Acy Watson
+- Add table cell menu back (#2958) Tyler Bainbridge
+- fix (#2956) Acy Watson
+
 ## 0.4.1 (September 5, 2022)
 
 - Fix breaking bug for `isEditable` mode in editor initialization (#2945) Tim Laubert

@@ -43,7 +43,7 @@ In your CSS, you can then add something like:
 ```
 
 To apply it, you need to pass it to your editor instance. If you're using a framework like React, this is done by
-it as a property of the `initialConfig` to `<LexicalComposer>`, like shown:
+passing it as a property of the `initialConfig` to `<LexicalComposer>`, like shown:
 
 ```jsx
 import {LexicalComposer} from '@lexical/react/LexicalComposer';

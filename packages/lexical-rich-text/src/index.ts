@@ -111,9 +111,17 @@ export class QuoteNode extends ElementNode {
   // View
 
   createDOM(config: EditorConfig): HTMLElement {
+    const wrapper = document.createElement('div');
+    const input = document.createElement('input');
+    input.setAttribute('type', 'checkbox');
+    wrapper.appendChild(input);
+
     const element = document.createElement('blockquote');
+    element.setAttribute('data-gap', 'true');
     addClassNamesToElement(element, config.theme.quote);
-    return element;
+
+    wrapper.appendChild(element);
+    return wrapper;
   }
   updateDOM(prevNode: QuoteNode, dom: HTMLElement): boolean {
     return false;

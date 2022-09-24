@@ -64,8 +64,10 @@ function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
   const node = activePrevNodeMap.get(key);
 
   if (parentDOM !== null) {
+    const subDom =
+      parentDOM?.querySelector<HTMLElement>(':scope > [data-gap]') || parentDOM;
     const dom = getPrevElementByKeyOrThrow(key);
-    parentDOM.removeChild(dom);
+    subDom.removeChild(dom);
   }
 
   // This logic is really important, otherwise we will leak DOM nodes
@@ -206,17 +208,20 @@ function createNode(
     editorTextContent += text;
   }
 
-  if (parentDOM !== null) {
+  const subDom =
+    parentDOM?.querySelector<HTMLElement>(':scope > [data-gap]') || parentDOM;
+
+  if (subDom !== null) {
     if (insertDOM != null) {
-      parentDOM.insertBefore(dom, insertDOM);
+      subDom.insertBefore(dom, insertDOM);
     } else {
       // @ts-expect-error: internal field
-      const possibleLineBreak = parentDOM.__lexicalLineBreak;
+      const possibleLineBreak = subDom.__lexicalLineBreak;
 
       if (possibleLineBreak != null) {
-        parentDOM.insertBefore(dom, possibleLineBreak);
+        subDom.insertBefore(dom, possibleLineBreak);
       } else {
-        parentDOM.appendChild(dom);
+        subDom.appendChild(dom);
       }
     }
   }
@@ -409,17 +414,18 @@ function reconcileChildren(
   subTreeTextContent = '';
   const prevChildrenLength = prevChildren.length;
   const nextChildrenLength = nextChildren.length;
+  const subDom = dom.querySelector<HTMLElement>(':scope > [data-gap]') || dom;
 
   if (prevChildrenLength === 1 && nextChildrenLength === 1) {
     const prevChildKey = prevChildren[0];
     const nextChildKey = nextChildren[0];
 
     if (prevChildKey === nextChildKey) {
-      reconcileNode(prevChildKey, dom);
+      reconcileNode(prevChildKey, subDom);
     } else {
       const lastDOM = getPrevElementByKeyOrThrow(prevChildKey);
       const replacementDOM = createNode(nextChildKey, null, null);
-      dom.replaceChild(replacementDOM, lastDOM);
+      subDom.replaceChild(replacementDOM, lastDOM);
       destroyNode(prevChildKey, null);
     }
   } else if (prevChildrenLength === 0) {
@@ -429,18 +435,18 @@ function reconcileChildren(
   } else if (nextChildrenLength === 0) {
     if (prevChildrenLength !== 0) {
       // @ts-expect-error: internal field
-      const lexicalLineBreak = dom.__lexicalLineBreak;
+      const lexicalLineBreak = subDom.__lexicalLineBreak;
       const canUseFastPath = lexicalLineBreak == null;
       destroyChildren(
         prevChildren,
         0,
         prevChildrenLength - 1,
-        canUseFastPath ? null : dom,
+        canUseFastPath ? null : subDom,
       );
 
       if (canUseFastPath) {
         // Fast path for removing DOM nodes
-        dom.textContent = '';
+        subDom.textContent = '';
       }
     }
   } else {
@@ -641,12 +647,14 @@ function reconcileNodeChildren(
   let prevIndex = 0;
   let nextIndex = 0;
 
+  const subDom = dom.querySelector<HTMLElement>(':scope > [data-gap]') || dom;
+
   while (prevIndex <= prevEndIndex && nextIndex <= nextEndIndex) {
     const prevKey = prevChildren[prevIndex];
     const nextKey = nextChildren[nextIndex];
 
     if (prevKey === nextKey) {
-      siblingDOM = getNextSibling(reconcileNode(nextKey, dom));
+      siblingDOM = getNextSibling(reconcileNode(nextKey, subDom));
       prevIndex++;
       nextIndex++;
     } else {
@@ -664,7 +672,7 @@ function reconcileNodeChildren(
       if (!nextHasPrevKey) {
         // Remove prev
         siblingDOM = getNextSibling(getPrevElementByKeyOrThrow(prevKey));
-        destroyNode(prevKey, dom);
+        destroyNode(prevKey, subDom);
         prevIndex++;
       } else if (!prevHasNextKey) {
         // Create next
@@ -675,15 +683,15 @@ function reconcileNodeChildren(
         const childDOM = getElementByKeyOrThrow(activeEditor, nextKey);
 
         if (childDOM === siblingDOM) {
-          siblingDOM = getNextSibling(reconcileNode(nextKey, dom));
+          siblingDOM = getNextSibling(reconcileNode(nextKey, subDom));
         } else {
           if (siblingDOM != null) {
-            dom.insertBefore(childDOM, siblingDOM);
+            subDom.insertBefore(childDOM, siblingDOM);
           } else {
-            dom.appendChild(childDOM);
+            subDom.appendChild(childDOM);
           }
 
-          reconcileNode(nextKey, dom);
+          reconcileNode(nextKey, subDom);
         }
 
         prevIndex++;

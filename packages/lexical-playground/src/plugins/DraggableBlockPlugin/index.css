@@ -2,9 +2,11 @@
   border-radius: 4px;
   padding: 2px 1px;
   cursor: grab;
+  opacity: 0;
   position: absolute;
-  left: -10000px;
-  top: -10000px;
+  left: 0;
+  top: 0;
+  will-change: transform;
 }
 
 .draggable-block-menu .icon {
@@ -27,7 +29,8 @@
   background: deepskyblue;
   height: 4px;
   position: absolute;
-  left: -10000px;
-  top: -10000px;
+  left: 0;
+  top: 0;
   opacity: 0;
+  will-change: transform;
 }

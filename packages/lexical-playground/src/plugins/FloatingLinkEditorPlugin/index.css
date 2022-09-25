@@ -1,15 +1,16 @@
 .link-editor {
   position: absolute;
+  top: 0;
+  left: 0;
   z-index: 10;
   max-width: 400px;
   width: 100%;
   opacity: 0;
-  top: -10000px;
-  left: -10000px;
   background-color: #fff;
   box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
   border-radius: 8px;
   transition: opacity 0.5s;
+  will-change: transform;
 }
 
 .link-editor .button {

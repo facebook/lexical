@@ -58,6 +58,6 @@ You can go this by calling ```clear()``` on the RootNode in an update callback:
 
 ```js
 editor.update(() => {
-  $getRoot.clear();
+  $getRoot().clear();
 })
 ```

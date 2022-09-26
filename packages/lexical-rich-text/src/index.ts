@@ -112,9 +112,14 @@ export class QuoteNode extends ElementNode {
 
   createDOM(config: EditorConfig): HTMLElement {
     const wrapper = document.createElement('div');
+
+    const nonEditableContent = document.createElement('div');
+    nonEditableContent.setAttribute('contenteditable', 'false');
+
     const input = document.createElement('input');
     input.setAttribute('type', 'checkbox');
-    wrapper.appendChild(input);
+    nonEditableContent.appendChild(input);
+    wrapper.appendChild(nonEditableContent);
 
     const element = document.createElement('blockquote');
     element.setAttribute('data-gap', 'true');
@@ -123,6 +128,7 @@ export class QuoteNode extends ElementNode {
     wrapper.appendChild(element);
     return wrapper;
   }
+
   updateDOM(prevNode: QuoteNode, dom: HTMLElement): boolean {
     return false;
   }

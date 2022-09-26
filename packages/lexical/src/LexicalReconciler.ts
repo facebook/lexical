@@ -65,7 +65,9 @@ function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
 
   if (parentDOM !== null) {
     const subDom =
-      parentDOM?.querySelector<HTMLElement>(':scope > [data-gap]') || parentDOM;
+      (parentDOM &&
+        parentDOM.querySelector<HTMLElement>(':scope > [data-gap]')) ||
+      parentDOM;
     const dom = getPrevElementByKeyOrThrow(key);
     subDom.removeChild(dom);
   }
@@ -209,7 +211,9 @@ function createNode(
   }
 
   const subDom =
-    parentDOM?.querySelector<HTMLElement>(':scope > [data-gap]') || parentDOM;
+    (parentDOM &&
+      parentDOM.querySelector<HTMLElement>(':scope > [data-gap]')) ||
+    parentDOM;
 
   if (subDom !== null) {
     if (insertDOM != null) {

@@ -198,15 +198,22 @@ function $basicInsertStrategy(
       list = null;
     }
 
+    const isLineBreakNode = $isLineBreakNode(node);
+
     if (
+      isLineBreakNode ||
       ($isDecoratorNode(node) && node.isInline()) ||
       ($isElementNode(node) && node.isInline()) ||
-      $isTextNode(node) ||
-      $isLineBreakNode(node)
+      $isTextNode(node)
     ) {
       if (currentBlock === null) {
         currentBlock = $createParagraphNode();
         topLevelBlocks.push(currentBlock);
+        // In the case of LineBreakNode, we just need to
+        // add an empty ParagraphNode to the topLevelBlocks.
+        if (isLineBreakNode) {
+          continue;
+        }
       }
 
       if (currentBlock !== null) {

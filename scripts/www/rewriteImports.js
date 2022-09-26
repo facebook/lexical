@@ -30,7 +30,10 @@ glob('packages/**/flow/*.flow', options, function (error1, files) {
         throw error2;
       }
       const result = data
-        .replace(/ \* @flow strict/g, ' * @flow strict\n * @generated')
+        .replace(
+          / \* @flow strict/g,
+          ' * @flow strict\n * @generated\n * @oncall lexical_web_text_editor ',
+        )
         .replace(/from 'lexical'/g, "from 'Lexical'")
         .replace(/from 'lexical'/g, "from 'Lexical'")
         .replace(/from 'lexical\/LinkNode'/g, "from 'LexicalLinkNode'")

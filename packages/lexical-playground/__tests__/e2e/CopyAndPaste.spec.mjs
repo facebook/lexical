@@ -2168,7 +2168,6 @@ test.describe('CopyAndPaste', () => {
         </p>
         <p class="PlaygroundEditorTheme__paragraph">
           <br />
-          <br />
         </p>
       `,
     );

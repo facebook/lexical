@@ -112,7 +112,7 @@ export class QuoteNode extends ElementNode {
 
   createDOM(config: EditorConfig): HTMLElement {
     const wrapper = document.createElement('div');
-
+    wrapper.style.userSelect = 'none';
     const nonEditableContent = document.createElement('div');
     nonEditableContent.setAttribute('contenteditable', 'false');
 

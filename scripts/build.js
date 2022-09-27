@@ -264,13 +264,14 @@ function getComment() {
   if (isWWW) {
     lines.push(
       '*',
+      '* @fullSyntaxTransform',
+      '* @generated',
       '* @noflow',
       '* @nolint',
-      '* @preventMunge',
+      '* @oncall lexical_web_text_editor',
       '* @preserve-invariant-messages',
-      '* @generated',
       '* @preserve-whitespace',
-      '* @fullSyntaxTransform',
+      '* @preventMunge',
     );
   }
   lines.push(' */');

@@ -461,6 +461,11 @@ export class ElementNode extends LexicalNode {
   canIndent(): boolean {
     return true;
   }
+  /*
+   * This method controls the behavior of a the node during backwards
+   * deletion (i.e., backspace) when selection is at the beginning of
+   * the node (offset 0)
+   */
   collapseAtStart(selection: RangeSelection): boolean {
     return false;
   }

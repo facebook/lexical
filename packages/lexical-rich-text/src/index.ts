@@ -74,7 +74,6 @@ import {
   PASTE_COMMAND,
   REMOVE_TEXT_COMMAND,
 } from 'lexical';
-import {$copyToClipboard} from 'packages/lexical-clipboard/src/clipboard';
 import {CAN_USE_BEFORE_INPUT, IS_IOS, IS_SAFARI} from 'shared/environment';
 
 export type SerializedHeadingNode = Spread<
@@ -375,7 +374,10 @@ function onCutForRichText(
   event: CommandPayloadType<typeof CUT_COMMAND>,
   editor: LexicalEditor,
 ): void {
-  onCopyForRichText(event, editor);
+  copyToClipboard__EXPERIMENTAL(
+    editor,
+    event instanceof ClipboardEvent ? event : null,
+  );
   const selection = $getSelection();
   if ($isRangeSelection(selection)) {
     selection.removeText();
@@ -824,10 +826,11 @@ export function registerRichText(editor: LexicalEditor): () => void {
     editor.registerCommand(
       COPY_COMMAND,
       (event) => {
-        return copyToClipboard__EXPERIMENTAL(
+        copyToClipboard__EXPERIMENTAL(
           editor,
           event instanceof ClipboardEvent ? event : null,
         );
+        return true;
       },
       COMMAND_PRIORITY_EDITOR,
     ),

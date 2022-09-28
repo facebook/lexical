@@ -7,9 +7,9 @@
  */
 
 /* eslint-disable no-constant-condition */
+import type {Klass} from 'lexical';
 import type {EditorConfig, LexicalEditor} from './LexicalEditor';
 import type {RangeSelection} from './LexicalSelection';
-import type {Klass} from 'lexical';
 
 import invariant from 'shared/invariant';
 
@@ -602,6 +602,31 @@ export class LexicalNode {
     _config: EditorConfig,
   ): boolean {
     invariant(false, 'updateDOM: base method not extended');
+  }
+
+  insertBeforeDOM(
+    dom: HTMLElement,
+    childDOM: HTMLElement,
+    referenceNode: Node | null,
+  ): void {
+    if (referenceNode == null) {
+      // performance optimization (appendDOM is faster)
+      dom.appendChild(childDOM);
+    } else {
+      dom.insertBefore(childDOM, referenceNode);
+    }
+  }
+
+  removeChildDOM(dom: HTMLElement, childDOM: HTMLElement): void {
+    dom.removeChild(childDOM);
+  }
+
+  replaceChildDOM(
+    dom: HTMLElement,
+    newChildDOM: Node,
+    oldChildDOM: Node,
+  ): void {
+    dom.replaceChild(newChildDOM, oldChildDOM);
   }
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {

@@ -133,6 +133,30 @@ export class QuoteNode extends ElementNode {
     return false;
   }
 
+  insertBeforeDOM(
+    dom: HTMLElement,
+    childDOM: HTMLElement,
+    referenceNode: Node | null,
+  ): void {
+    dom
+      .querySelector(':scope > [data-gap]')!
+      .insertBefore(childDOM, referenceNode);
+  }
+
+  removeChildDOM(dom: HTMLElement, childDOM: HTMLElement): void {
+    dom.querySelector(':scope > [data-gap]')!.removeChild(childDOM);
+  }
+
+  replaceChildDOM(
+    dom: HTMLElement,
+    newChildDOM: Node,
+    oldChildDOM: Node,
+  ): void {
+    dom
+      .querySelector(':scope > [data-gap]')!
+      .replaceChild(newChildDOM, oldChildDOM);
+  }
+
   static importDOM(): DOMConversionMap | null {
     return {
       blockquote: (node: Node) => ({

@@ -14,7 +14,7 @@ import type {
   MutationListeners,
   RegisteredNodes,
 } from './LexicalEditor';
-import type {NodeKey, NodeMap} from './LexicalNode';
+import type {LexicalNode, NodeKey, NodeMap} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 
 import invariant from 'shared/invariant';
@@ -60,16 +60,16 @@ let activeNextNodeMap: NodeMap;
 let activePrevKeyToDOMMap: Map<NodeKey, HTMLElement>;
 let mutatedNodes: MutatedNodes;
 
-function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
+function destroyNode(
+  key: NodeKey,
+  parentNode: null | LexicalNode,
+  parentDOM: null | HTMLElement,
+): void {
   const node = activePrevNodeMap.get(key);
 
-  if (parentDOM !== null) {
-    const subDom =
-      (parentDOM &&
-        parentDOM.querySelector<HTMLElement>(':scope > [data-gap]')) ||
-      parentDOM;
+  if (parentDOM !== null && parentNode !== null) {
     const dom = getPrevElementByKeyOrThrow(key);
-    subDom.removeChild(dom);
+    parentNode.removeChildDOM(parentDOM, dom);
   }
 
   // This logic is really important, otherwise we will leak DOM nodes
@@ -98,6 +98,7 @@ function destroyChildren(
   children: Array<NodeKey>,
   _startIndex: number,
   endIndex: number,
+  parentNode: null | LexicalNode,
   dom: null | HTMLElement,
 ): void {
   let startIndex = _startIndex;
@@ -106,7 +107,7 @@ function destroyChildren(
     const child = children[startIndex];
 
     if (child !== undefined) {
-      destroyNode(child, dom);
+      destroyNode(child, parentNode, dom);
     }
   }
 }
@@ -139,6 +140,7 @@ function setElementFormat(dom: HTMLElement, format: number): void {
 }
 
 function createNode(
+  parentNode: LexicalNode,
   key: NodeKey,
   parentDOM: null | HTMLElement,
   insertDOM: null | Node,
@@ -182,7 +184,7 @@ function createNode(
       setElementFormat(dom, format);
     }
 
-    reconcileElementTerminatingLineBreak(null, children, dom);
+    reconcileElementTerminatingLineBreak(node, null, children, dom);
 
     if ($textContentRequiresDoubleLinebreakAtEnd(node)) {
       subTreeTextContent += DOUBLE_LINE_BREAK;
@@ -210,23 +212,14 @@ function createNode(
     editorTextContent += text;
   }
 
-  const subDom =
-    (parentDOM &&
-      parentDOM.querySelector<HTMLElement>(':scope > [data-gap]')) ||
-    parentDOM;
-
-  if (subDom !== null) {
+  if (parentDOM !== null) {
     if (insertDOM != null) {
-      subDom.insertBefore(dom, insertDOM);
+      parentNode.insertBeforeDOM(parentDOM, dom, insertDOM);
     } else {
       // @ts-expect-error: internal field
-      const possibleLineBreak = subDom.__lexicalLineBreak;
+      const possibleLineBreak = parentDOM.__lexicalLineBreak;
 
-      if (possibleLineBreak != null) {
-        subDom.insertBefore(dom, possibleLineBreak);
-      } else {
-        subDom.appendChild(dom);
-      }
+      parentNode.insertBeforeDOM(parentDOM, dom, possibleLineBreak);
     }
   }
 
@@ -253,12 +246,13 @@ function createChildrenWithDirection(
 ): void {
   const previousSubTreeDirectionedTextContent = subTreeDirectionedTextContent;
   subTreeDirectionedTextContent = '';
-  createChildren(children, 0, endIndex, dom, null);
+  createChildren(element, children, 0, endIndex, dom, null);
   reconcileBlockDirection(element, dom);
   subTreeDirectionedTextContent = previousSubTreeDirectionedTextContent;
 }
 
 function createChildren(
+  parentNode: LexicalNode,
   children: Array<NodeKey>,
   _startIndex: number,
   endIndex: number,
@@ -270,7 +264,7 @@ function createChildren(
   let startIndex = _startIndex;
 
   for (; startIndex <= endIndex; ++startIndex) {
-    createNode(children[startIndex], dom, insertDOM);
+    createNode(parentNode, children[startIndex], dom, insertDOM);
   }
 
   // @ts-expect-error: internal field
@@ -289,6 +283,7 @@ function isLastChildLineBreakOrDecorator(
 
 // If we end an element with a LineBreakNode, then we need to add an additional <br>
 function reconcileElementTerminatingLineBreak(
+  node: LexicalNode,
   prevChildren: null | Array<NodeKey>,
   nextChildren: Array<NodeKey>,
   dom: HTMLElement,
@@ -308,7 +303,7 @@ function reconcileElementTerminatingLineBreak(
       const element = dom.__lexicalLineBreak;
 
       if (element != null) {
-        dom.removeChild(element);
+        node.removeChildDOM(dom, element);
       }
 
       // @ts-expect-error: internal field
@@ -318,7 +313,7 @@ function reconcileElementTerminatingLineBreak(
     const element = document.createElement('br');
     // @ts-expect-error: internal field
     dom.__lexicalLineBreak = element;
-    dom.appendChild(element);
+    node.insertBeforeDOM(dom, element, null);
   }
 }
 
@@ -418,39 +413,46 @@ function reconcileChildren(
   subTreeTextContent = '';
   const prevChildrenLength = prevChildren.length;
   const nextChildrenLength = nextChildren.length;
-  const subDom = dom.querySelector<HTMLElement>(':scope > [data-gap]') || dom;
 
   if (prevChildrenLength === 1 && nextChildrenLength === 1) {
     const prevChildKey = prevChildren[0];
     const nextChildKey = nextChildren[0];
 
     if (prevChildKey === nextChildKey) {
-      reconcileNode(prevChildKey, subDom);
+      reconcileNode(prevChildKey, element, dom);
     } else {
       const lastDOM = getPrevElementByKeyOrThrow(prevChildKey);
-      const replacementDOM = createNode(nextChildKey, null, null);
-      subDom.replaceChild(replacementDOM, lastDOM);
-      destroyNode(prevChildKey, null);
+      const replacementDOM = createNode(element, nextChildKey, null, null);
+      element.replaceChildDOM(dom, replacementDOM, lastDOM);
+      destroyNode(prevChildKey, null, null);
     }
   } else if (prevChildrenLength === 0) {
     if (nextChildrenLength !== 0) {
-      createChildren(nextChildren, 0, nextChildrenLength - 1, dom, null);
+      createChildren(
+        element,
+        nextChildren,
+        0,
+        nextChildrenLength - 1,
+        dom,
+        null,
+      );
     }
   } else if (nextChildrenLength === 0) {
     if (prevChildrenLength !== 0) {
       // @ts-expect-error: internal field
-      const lexicalLineBreak = subDom.__lexicalLineBreak;
+      const lexicalLineBreak = dom.__lexicalLineBreak;
       const canUseFastPath = lexicalLineBreak == null;
       destroyChildren(
         prevChildren,
         0,
         prevChildrenLength - 1,
-        canUseFastPath ? null : subDom,
+        canUseFastPath ? null : element,
+        canUseFastPath ? null : dom,
       );
 
       if (canUseFastPath) {
         // Fast path for removing DOM nodes
-        subDom.textContent = '';
+        dom.textContent = '';
       }
     }
   } else {
@@ -475,6 +477,7 @@ function reconcileChildren(
 
 function reconcileNode(
   key: NodeKey,
+  parentNode: LexicalNode | null,
   parentDOM: HTMLElement | null,
 ): HTMLElement {
   const prevNode = activePrevNodeMap.get(key);
@@ -535,14 +538,14 @@ function reconcileNode(
 
   // Update node. If it returns true, we need to unmount and re-create the node
   if (nextNode.updateDOM(prevNode, dom, activeEditorConfig)) {
-    const replacementDOM = createNode(key, null, null);
-
-    if (parentDOM === null) {
-      invariant(false, 'reconcileNode: parentDOM is null');
+    if (parentDOM === null || parentNode === null) {
+      invariant(false, 'reconcileNode: parentDOM / parentNode is null');
     }
 
-    parentDOM.replaceChild(replacementDOM, dom);
-    destroyNode(key, null);
+    const replacementDOM = createNode(parentNode, key, null, null); // TODO
+
+    parentNode.replaceChildDOM(parentDOM, replacementDOM, dom);
+    destroyNode(key, null, null);
     return replacementDOM;
   }
 
@@ -568,7 +571,12 @@ function reconcileNode(
       reconcileChildrenWithDirection(prevChildren, nextChildren, nextNode, dom);
 
       if (!$isRootNode(nextNode)) {
-        reconcileElementTerminatingLineBreak(prevChildren, nextChildren, dom);
+        reconcileElementTerminatingLineBreak(
+          nextNode,
+          prevChildren,
+          nextChildren,
+          dom,
+        );
       }
     }
 
@@ -651,14 +659,12 @@ function reconcileNodeChildren(
   let prevIndex = 0;
   let nextIndex = 0;
 
-  const subDom = dom.querySelector<HTMLElement>(':scope > [data-gap]') || dom;
-
   while (prevIndex <= prevEndIndex && nextIndex <= nextEndIndex) {
     const prevKey = prevChildren[prevIndex];
     const nextKey = nextChildren[nextIndex];
 
     if (prevKey === nextKey) {
-      siblingDOM = getNextSibling(reconcileNode(nextKey, subDom));
+      siblingDOM = getNextSibling(reconcileNode(nextKey, element, dom));
       prevIndex++;
       nextIndex++;
     } else {
@@ -676,26 +682,22 @@ function reconcileNodeChildren(
       if (!nextHasPrevKey) {
         // Remove prev
         siblingDOM = getNextSibling(getPrevElementByKeyOrThrow(prevKey));
-        destroyNode(prevKey, subDom);
+        destroyNode(prevKey, element, dom);
         prevIndex++;
       } else if (!prevHasNextKey) {
         // Create next
-        createNode(nextKey, dom, siblingDOM);
+        createNode(element, nextKey, dom, siblingDOM);
         nextIndex++;
       } else {
         // Move next
         const childDOM = getElementByKeyOrThrow(activeEditor, nextKey);
 
         if (childDOM === siblingDOM) {
-          siblingDOM = getNextSibling(reconcileNode(nextKey, subDom));
+          siblingDOM = getNextSibling(reconcileNode(nextKey, element, dom));
         } else {
-          if (siblingDOM != null) {
-            subDom.insertBefore(childDOM, siblingDOM);
-          } else {
-            subDom.appendChild(childDOM);
-          }
+          element.insertBeforeDOM(dom, childDOM, siblingDOM);
 
-          reconcileNode(nextKey, subDom);
+          reconcileNode(nextKey, element, dom);
         }
 
         prevIndex++;
@@ -713,9 +715,16 @@ function reconcileNodeChildren(
       previousNode === undefined
         ? null
         : activeEditor.getElementByKey(previousNode);
-    createChildren(nextChildren, nextIndex, nextEndIndex, dom, insertDOM);
+    createChildren(
+      element,
+      nextChildren,
+      nextIndex,
+      nextEndIndex,
+      dom,
+      insertDOM,
+    );
   } else if (removeOldChildren && !appendNewChildren) {
-    destroyChildren(prevChildren, prevIndex, prevEndIndex, dom);
+    destroyChildren(prevChildren, prevIndex, prevEndIndex, element, dom);
   }
 }
 
@@ -746,7 +755,7 @@ export function reconcileRoot(
   activePrevKeyToDOMMap = new Map(editor._keyToDOMMap);
   const currentMutatedNodes = new Map();
   mutatedNodes = currentMutatedNodes;
-  reconcileNode('root', null);
+  reconcileNode('root', null, null);
   // We don't want a bunch of void checks throughout the scope
   // so instead we make it seem that these values are always set.
   // We also want to make sure we clear them down, otherwise we

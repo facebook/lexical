@@ -63,7 +63,7 @@ test.describe('Auto Links', () => {
   }) => {
     test.skip(isPlainText);
     const htmlWithLink = html`
-      <p dir="ltr">
+      <p>
         <a href="http://example.com" dir="ltr">
           <span data-lexical-text="true">http://example.com</span>
         </a>
@@ -79,8 +79,11 @@ test.describe('Auto Links', () => {
     await assertHTML(
       page,
       html`
-        <p dir="ltr">
-          <span data-lexical-text="true">http://example.com!</span>
+        <p>
+          <a dir="ltr" href="http://example.com">
+            <span data-lexical-text="true">http://example.com</span>
+          </a>
+          <span data-lexical-text="true">!</span>
         </p>
       `,
       undefined,
@@ -95,7 +98,7 @@ test.describe('Auto Links', () => {
     await assertHTML(
       page,
       html`
-        <p dir="ltr">
+        <p>
           <span data-lexical-text="true">!http://example.com</span>
         </p>
       `,
@@ -218,6 +221,37 @@ test.describe('Auto Links', () => {
           <span data-lexical-text="true"></span>
           <a href="https://4.com/" dir="ltr">
             <span data-lexical-text="true">https://4.com/</span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  test('Handles multiple autolinks in a row separated by non-alphanumeric characters, but not whitespace', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await pasteFromClipboard(page, {
+      'text/plain': 'https://1.com/,https://2.com/;;;https://3.com',
+    });
+    await assertHTML(
+      page,
+      html`
+        <p>
+          <a href="https://1.com/" dir="ltr">
+            <span data-lexical-text="true">https://1.com/</span>
+          </a>
+          <span data-lexical-text="true">,</span>
+          <a href="https://2.com/" dir="ltr">
+            <span data-lexical-text="true">https://2.com/</span>
+          </a>
+          <span data-lexical-text="true">;;;</span>
+          <a href="https://3.com" dir="ltr">
+            <span data-lexical-text="true">https://3.com</span>
           </a>
         </p>
       `,

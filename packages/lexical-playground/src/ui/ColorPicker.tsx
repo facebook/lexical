@@ -15,6 +15,7 @@ import DropDown from './DropDown';
 import TextInput from './TextInput';
 
 interface ColorPickerProps {
+  disabled?: boolean;
   buttonAriaLabel?: string;
   buttonClassName: string;
   buttonIconClassName?: string;
@@ -50,6 +51,7 @@ export default function ColorPicker({
   color,
   children,
   onChange,
+  disabled = false,
   ...rest
 }: Readonly<ColorPickerProps>): JSX.Element {
   const [selfColor, setSelfColor] = useState(transformColor('hex', color));
@@ -114,7 +116,7 @@ export default function ColorPicker({
   }, [color]);
 
   return (
-    <DropDown {...rest} stopCloseOnClickSelf={true}>
+    <DropDown {...rest} disabled={disabled} stopCloseOnClickSelf={true}>
       <div
         className="color-picker-wrapper"
         style={{width: WIDTH}}

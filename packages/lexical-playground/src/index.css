@@ -1306,7 +1306,10 @@ button.action-button:disabled {
   opacity: 0.6;
 }
 
-.toolbar button.toolbar-item:disabled i.format {
+.toolbar button.toolbar-item:disabled .icon,
+.toolbar button.toolbar-item:disabled .text,
+.toolbar button.toolbar-item:disabled i.format,
+.toolbar button.toolbar-item:disabled .chevron-down {
   opacity: 0.2;
 }
 

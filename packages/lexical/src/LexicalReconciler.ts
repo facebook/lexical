@@ -80,7 +80,7 @@ function destroyNode(
 
   if ($isElementNode(node)) {
     const children = node.__children;
-    destroyChildren(children, 0, children.length - 1, null);
+    destroyChildren(children, 0, children.length - 1, null, null);
   }
 
   if (node !== undefined) {
@@ -140,8 +140,8 @@ function setElementFormat(dom: HTMLElement, format: number): void {
 }
 
 function createNode(
-  parentNode: LexicalNode,
   key: NodeKey,
+  parentNode: LexicalNode,
   parentDOM: null | HTMLElement,
   insertDOM: null | Node,
 ): HTMLElement {
@@ -264,7 +264,7 @@ function createChildren(
   let startIndex = _startIndex;
 
   for (; startIndex <= endIndex; ++startIndex) {
-    createNode(parentNode, children[startIndex], dom, insertDOM);
+    createNode(children[startIndex], parentNode, dom, insertDOM);
   }
 
   // @ts-expect-error: internal field
@@ -422,7 +422,7 @@ function reconcileChildren(
       reconcileNode(prevChildKey, element, dom);
     } else {
       const lastDOM = getPrevElementByKeyOrThrow(prevChildKey);
-      const replacementDOM = createNode(element, nextChildKey, null, null);
+      const replacementDOM = createNode(nextChildKey, element, null, null);
       element.replaceChildDOM(dom, replacementDOM, lastDOM);
       destroyNode(prevChildKey, null, null);
     }
@@ -542,7 +542,7 @@ function reconcileNode(
       invariant(false, 'reconcileNode: parentDOM / parentNode is null');
     }
 
-    const replacementDOM = createNode(parentNode, key, null, null); // TODO
+    const replacementDOM = createNode(key, parentNode, null, null);
 
     parentNode.replaceChildDOM(parentDOM, replacementDOM, dom);
     destroyNode(key, null, null);
@@ -686,7 +686,7 @@ function reconcileNodeChildren(
         prevIndex++;
       } else if (!prevHasNextKey) {
         // Create next
-        createNode(element, nextKey, dom, siblingDOM);
+        createNode(nextKey, element, dom, siblingDOM);
         nextIndex++;
       } else {
         // Move next

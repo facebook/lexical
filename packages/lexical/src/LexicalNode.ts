@@ -604,6 +604,13 @@ export class LexicalNode {
     invariant(false, 'updateDOM: base method not extended');
   }
 
+  /**
+   * insertBeforeDOM controls where a child element is inserted in the DOM controlled by this node
+   *
+   * @param dom the DOM of the current node, i.e.: returned by createDOM
+   * @param childDOM the child to be added to the dom
+   * @param referenceNode the node before which the childDOM should be appended, or null to append the childDOM to the end
+   */
   insertBeforeDOM(
     dom: HTMLElement,
     childDOM: HTMLElement,
@@ -617,10 +624,22 @@ export class LexicalNode {
     }
   }
 
+  /**
+   * removeChildDOM controls how a DOM element "controlled" by this node (added via insertBeforeDOM) can be removed
+   *
+   * @param dom the DOM of the current node, i.e.: returned by createDOM
+   * @param childDOM the DOM node to be removed
+   */
   removeChildDOM(dom: HTMLElement, childDOM: HTMLElement): void {
     dom.removeChild(childDOM);
   }
 
+  /**
+   * replaceChildDOM controls how a DOM element "controlled" by this node (added via insertBeforeDOM) can be replaced
+   * @param dom the DOM of the current node, i.e.: returned by createDOM
+   * @param newChildDOM DOM node to be added
+   * @param oldChildDOM DOM node to be replaced
+   */
   replaceChildDOM(
     dom: HTMLElement,
     newChildDOM: Node,

@@ -45,7 +45,7 @@ export type QueryMatch = {
 export type Resolution = {
   match: QueryMatch;
   position: 'start' | 'end';
-  getRect: () => ClientRect;
+  getRect: () => DOMRect;
 };
 
 export const PUNCTUATION =
@@ -222,6 +222,101 @@ function startTransition(callback: () => void) {
   } else {
     callback();
   }
+}
+
+// Got from https://stackoverflow.com/a/42543908/2013580
+export function getScrollParent(
+  element: HTMLElement,
+  includeHidden: boolean,
+): HTMLElement | HTMLBodyElement {
+  let style = getComputedStyle(element);
+  const excludeStaticParent = style.position === 'absolute';
+  const overflowRegex = includeHidden
+    ? /(auto|scroll|hidden)/
+    : /(auto|scroll)/;
+  if (style.position === 'fixed') {
+    return document.body;
+  }
+  for (
+    let parent: HTMLElement | null = element;
+    (parent = parent.parentElement);
+
+  ) {
+    style = getComputedStyle(parent);
+    if (excludeStaticParent && style.position === 'static') {
+      continue;
+    }
+    if (
+      overflowRegex.test(style.overflow + style.overflowY + style.overflowX)
+    ) {
+      return parent;
+    }
+  }
+  return document.body;
+}
+
+function isTriggerVisibleInNearestScrollContainer(
+  targetElement: HTMLElement,
+  containerElement: HTMLElement,
+): boolean {
+  const tRect = targetElement.getBoundingClientRect();
+  const cRect = containerElement.getBoundingClientRect();
+  return tRect.top > cRect.top && tRect.top < cRect.bottom;
+}
+
+// Reposition the menu on scroll, window resize, and element resize.
+export function useDynamicPositioning(
+  resolution: Resolution | null,
+  targetElement: HTMLElement | null,
+  onReposition: () => void,
+  onVisibilityChange?: (isInView: boolean) => void,
+) {
+  const [editor] = useLexicalComposerContext();
+  useEffect(() => {
+    if (targetElement != null && resolution != null) {
+      const rootElement = editor.getRootElement();
+      const rootScrollParent =
+        rootElement != null
+          ? getScrollParent(rootElement, false)
+          : document.body;
+      let ticking = false;
+      let previousIsInView = isTriggerVisibleInNearestScrollContainer(
+        targetElement,
+        rootScrollParent,
+      );
+      const handleScroll = function () {
+        if (!ticking) {
+          window.requestAnimationFrame(function () {
+            onReposition();
+            ticking = false;
+          });
+          ticking = true;
+        }
+        const isInView = isTriggerVisibleInNearestScrollContainer(
+          targetElement,
+          rootScrollParent,
+        );
+        if (isInView !== previousIsInView) {
+          previousIsInView = isInView;
+          if (onVisibilityChange != null) {
+            onVisibilityChange(isInView);
+          }
+        }
+      };
+      const resizeObserver = new ResizeObserver(onReposition);
+      window.addEventListener('resize', onReposition);
+      document.addEventListener('scroll', handleScroll, {
+        capture: true,
+        passive: true,
+      });
+      resizeObserver.observe(targetElement);
+      return () => {
+        resizeObserver.unobserve(targetElement);
+        window.removeEventListener('resize', onReposition);
+        document.removeEventListener('scroll', handleScroll);
+      };
+    }
+  }, [targetElement, editor, onVisibilityChange, onReposition, resolution]);
 }
 
 function LexicalPopoverMenu<TOption extends TypeaheadOption>({
@@ -453,48 +548,68 @@ export function useBasicTypeaheadTriggerMatch(
   );
 }
 
-function useAnchorElementRef(
+function useMenuAnchorRef(
   resolution: Resolution | null,
+  setResolution: (r: Resolution | null) => void,
 ): MutableRefObject<HTMLElement> {
   const [editor] = useLexicalComposerContext();
   const anchorElementRef = useRef<HTMLElement>(document.createElement('div'));
 
-  useEffect(() => {
+  const positionMenu = useCallback(() => {
     const rootElement = editor.getRootElement();
-    function positionMenu() {
-      const containerDiv = anchorElementRef.current;
-      containerDiv.setAttribute('aria-label', 'Typeahead menu');
-      containerDiv.setAttribute('id', 'typeahead-menu');
-      containerDiv.setAttribute('role', 'listbox');
-      if (rootElement !== null && resolution !== null) {
-        const {left, top, width, height} = resolution.getRect();
-        containerDiv.style.top = `${top + height + 5 + window.pageYOffset}px`;
-        containerDiv.style.left = `${
-          left +
-          (resolution.position === 'start' ? 0 : width) +
-          window.pageXOffset
-        }px`;
+    const containerDiv = anchorElementRef.current;
+
+    if (rootElement !== null && resolution !== null) {
+      const {left, top, width, height} = resolution.getRect();
+      containerDiv.style.top = `${top + height + 5 + window.pageYOffset}px`;
+      containerDiv.style.left = `${
+        left +
+        (resolution.position === 'start' ? 0 : width) +
+        window.pageXOffset
+      }px`;
+
+      if (!containerDiv.isConnected) {
+        containerDiv.setAttribute('aria-label', 'Typeahead menu');
+        containerDiv.setAttribute('id', 'typeahead-menu');
+        containerDiv.setAttribute('role', 'listbox');
         containerDiv.style.display = 'block';
         containerDiv.style.position = 'absolute';
-        if (!containerDiv.isConnected) {
-          document.body.append(containerDiv);
-        }
-        anchorElementRef.current = containerDiv;
-        rootElement.setAttribute('aria-controls', 'typeahead-menu');
+        document.body.append(containerDiv);
       }
+      anchorElementRef.current = containerDiv;
+      rootElement.setAttribute('aria-controls', 'typeahead-menu');
     }
+  }, [editor, resolution]);
 
+  useEffect(() => {
+    const rootElement = editor.getRootElement();
     if (resolution !== null) {
       positionMenu();
-      window.addEventListener('resize', positionMenu);
       return () => {
-        window.removeEventListener('resize', positionMenu);
         if (rootElement !== null) {
           rootElement.removeAttribute('aria-controls');
         }
       };
     }
-  }, [editor, resolution]);
+  }, [editor, positionMenu, resolution]);
+
+  const onVisibilityChange = useCallback(
+    (isInView: boolean) => {
+      if (resolution !== null) {
+        if (!isInView) {
+          setResolution(null);
+        }
+      }
+    },
+    [resolution, setResolution],
+  );
+
+  useDynamicPositioning(
+    resolution,
+    anchorElementRef.current,
+    positionMenu,
+    onVisibilityChange,
+  );
 
   return anchorElementRef;
 }
@@ -528,7 +643,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends TypeaheadOption>({
 }: TypeaheadMenuPluginArgs<TOption>): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   const [resolution, setResolution] = useState<Resolution | null>(null);
-  const anchorElementRef = useAnchorElementRef(resolution);
+  const anchorElementRef = useMenuAnchorRef(resolution, setResolution);
 
   useEffect(() => {
     let activeRange: Range | null = document.createRange();
@@ -622,7 +737,7 @@ export function LexicalNodeMenuPlugin<TOption extends TypeaheadOption>({
   const [editor] = useLexicalComposerContext();
 
   const [resolution, setResolution] = useState<Resolution | null>(null);
-  const anchorElementRef = useAnchorElementRef(resolution);
+  const anchorElementRef = useMenuAnchorRef(resolution, setResolution);
 
   useEffect(() => {
     if (nodeKey && resolution == null) {

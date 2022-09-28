@@ -251,11 +251,9 @@ pre::-webkit-scrollbar-thumb {
 }
 
 #typeahead-menu {
-  position: fixed;
   background: #fff;
   box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.3);
   border-radius: 8px;
-  z-index: 3;
 }
 
 #typeahead-menu ul {

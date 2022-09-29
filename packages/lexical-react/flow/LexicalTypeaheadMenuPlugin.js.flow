@@ -57,7 +57,7 @@ export type TypeaheadMenuPluginProps<TOption> = {
   options: Array<TOption>,
   menuRenderFn: MenuRenderFn<TOption>,
   triggerFn: TriggerFn,
-  onOpen: () => void,
+  onOpen?: (resolution: Resolution) => void,
   onClose: () => void,
 };
 
@@ -80,7 +80,7 @@ type NodeMenuPluginProps<TOption> = {
   options: Array<TOption>,
   nodeKey: NodeKey | null,
   onClose?: () => void,
-  onOpen?: () => void,
+  onOpen?: (resolution: Resolution) => void,
   menuRenderFn: MenuRenderFn<TOption>,
 };
 

@@ -626,7 +626,7 @@ export type TypeaheadMenuPluginProps<TOption extends TypeaheadOption> = {
   menuRenderFn: MenuRenderFn<TOption>;
   triggerFn: TriggerFn;
   position?: 'start' | 'end';
-  onOpen?: () => void;
+  onOpen?: (resolution: Resolution) => void;
   onClose?: () => void;
 };
 
@@ -660,7 +660,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends TypeaheadOption>({
     (res: Resolution) => {
       setResolution(res);
       if (onOpen != null) {
-        onOpen();
+        onOpen(res);
       }
     },
     [onOpen],
@@ -747,7 +747,7 @@ type NodeMenuPluginProps<TOption extends TypeaheadOption> = {
   options: Array<TOption>;
   nodeKey: NodeKey | null;
   onClose?: () => void;
-  onOpen?: () => void;
+  onOpen?: (resolution: Resolution) => void;
   position?: 'start' | 'end';
   menuRenderFn: MenuRenderFn<TOption>;
 };
@@ -776,7 +776,7 @@ export function LexicalNodeMenuPlugin<TOption extends TypeaheadOption>({
     (res: Resolution) => {
       setResolution(res);
       if (onOpen != null) {
-        onOpen();
+        onOpen(res);
       }
     },
     [onOpen],

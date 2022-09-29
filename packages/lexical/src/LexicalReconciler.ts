@@ -483,6 +483,9 @@ function reconcileNode(
     activeDirtyElements.has(key);
   const dom = getElementByKeyOrThrow(activeEditor, key);
 
+  // If the node key points to the same instance in both states
+  // and isn't dirty, we just update the text content cache
+  // and return the existing DOM Node.
   if (prevNode === nextNode && !isDirty) {
     if ($isElementNode(prevNode)) {
       // @ts-expect-error: internal field
@@ -512,7 +515,8 @@ function reconcileNode(
 
     return dom;
   }
-
+  // If the node key doesn't point to the same instance in both maps,
+  // it means it were cloned. If they're also dirty, we mark them as mutated.
   if (prevNode !== nextNode && isDirty) {
     setMutatedNode(
       mutatedNodes,
@@ -715,6 +719,8 @@ export function reconcileRoot(
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
   dirtyLeaves: Set<NodeKey>,
 ): MutatedNodes {
+  // We cache text content to make retrieval more efficient.
+  // The cache must be rebuilt during reconciliation to account for any changes.
   subTreeTextContent = '';
   editorTextContent = '';
   subTreeDirectionedTextContent = '';
@@ -732,6 +738,8 @@ export function reconcileRoot(
   activeNextNodeMap = nextEditorState._nodeMap;
   activeEditorStateReadOnly = nextEditorState._readOnly;
   activePrevKeyToDOMMap = new Map(editor._keyToDOMMap);
+  // We keep track of mutated nodes so we can trigger mutation
+  // listeners later in the update cycle.
   const currentMutatedNodes = new Map();
   mutatedNodes = currentMutatedNodes;
   reconcileNode('root', null);

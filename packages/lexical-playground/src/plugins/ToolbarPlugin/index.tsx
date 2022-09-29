@@ -1127,7 +1127,7 @@ export default function ToolbarPlugin(): JSX.Element {
                 editor.dispatchCommand(INSERT_COLLAPSIBLE_COMMAND, undefined);
               }}
               className="item">
-              <i className="icon plus" />
+              <i className="icon caret-right" />
               <span className="text">Collapsible container</span>
             </DropDownItem>
             {EmbedConfigs.map((embedConfig) => (

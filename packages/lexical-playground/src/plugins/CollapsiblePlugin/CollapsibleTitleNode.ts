@@ -9,6 +9,7 @@
 import {
   $createParagraphNode,
   $getSelection,
+  $isElementNode,
   $isRangeSelection,
   DOMConversionMap,
   EditorConfig,
@@ -21,10 +22,7 @@ import {
 } from 'lexical';
 
 import {TOGGLE_COLLAPSIBLE_COMMAND} from '.';
-import {
-  $createCollapsibleContentNode,
-  $isCollapsibleContentNode,
-} from './CollapsibleContentNode';
+import {$isCollapsibleContentNode} from './CollapsibleContentNode';
 
 type SerializedCollapsibleTitleNode = Spread<
   {
@@ -95,14 +93,21 @@ export class CollapsibleTitleNode extends ElementNode {
       containerNode.insertAfter(paragraph);
       return paragraph;
     } else {
-      let contentNode = this.getNextSibling();
+      const contentNode = this.getNextSibling();
       if (!$isCollapsibleContentNode(contentNode)) {
-        contentNode = $createCollapsibleContentNode();
+        throw new Error(
+          'CollapsibleTitleNode expects to have CollapsibleContentNode sibling',
+        );
       }
 
-      const paragraph = $createParagraphNode();
-      contentNode.append(paragraph);
-      return paragraph;
+      const firstChild = contentNode.getFirstChild();
+      if ($isElementNode(firstChild)) {
+        return firstChild;
+      } else {
+        const paragraph = $createParagraphNode();
+        contentNode.append(paragraph);
+        return paragraph;
+      }
     }
   }
 }

@@ -7,22 +7,6 @@
  *
  */
 
-import type {
-  CommandPayloadType,
-  DOMConversionMap,
-  DOMConversionOutput,
-  EditorConfig,
-  EditorState,
-  ElementFormatType,
-  LexicalEditor,
-  LexicalNode,
-  NodeKey,
-  ParagraphNode,
-  SerializedElementNode,
-  Spread,
-  TextFormatType,
-} from 'lexical';
-
 import {
   $getHtmlContent,
   $getLexicalContent,
@@ -38,11 +22,14 @@ import {
   mergeRegister,
 } from '@lexical/utils';
 import {
+  $createChildgroupNode,
   $createParagraphNode,
   $getNearestNodeFromDOMNode,
   $getRoot,
   $getSelection,
+  $isChildgroupNode,
   $isDecoratorNode,
+  $isElementNode,
   $isGridSelection,
   $isNodeSelection,
   $isRangeSelection,
@@ -50,14 +37,20 @@ import {
   $isTextNode,
   CLICK_COMMAND,
   COMMAND_PRIORITY_EDITOR,
+  CommandPayloadType,
   CONTROLLED_TEXT_INSERTION_COMMAND,
   COPY_COMMAND,
   CUT_COMMAND,
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
+  DOMConversionMap,
+  DOMConversionOutput,
   DRAGSTART_COMMAND,
   DROP_COMMAND,
+  EditorConfig,
+  EditorState,
+  ElementFormatType,
   ElementNode,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
@@ -73,9 +66,16 @@ import {
   KEY_ENTER_COMMAND,
   KEY_ESCAPE_COMMAND,
   KEY_TAB_COMMAND,
+  LexicalEditor,
+  LexicalNode,
+  NodeKey,
   OUTDENT_CONTENT_COMMAND,
+  ParagraphNode,
   PASTE_COMMAND,
   REMOVE_TEXT_COMMAND,
+  SerializedElementNode,
+  Spread,
+  TextFormatType,
 } from 'lexical';
 import {CAN_USE_BEFORE_INPUT, IS_IOS, IS_SAFARI} from 'shared/environment';
 
@@ -674,10 +674,19 @@ export function registerRichText(
             editor.dispatchCommand(CONTROLLED_TEXT_INSERTION_COMMAND, '\t');
           },
           (block) => {
-            const indent = block.getIndent();
-            if (indent !== 10) {
-              block.setIndent(indent + 1);
+            const prev = block.getPreviousSibling();
+            if ($isElementNode(prev)) {
+              let lc = prev.getLastChild();
+              if (!$isChildgroupNode(lc)) {
+                lc = $createChildgroupNode();
+                prev.append(lc);
+              }
+              lc.append(block);
             }
+            // const indent = block.getIndent();
+            // if (indent !== 10) {
+            //   block.setIndent(indent + 1);
+            // }
           },
         );
         return true;

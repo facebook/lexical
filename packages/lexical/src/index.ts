@@ -138,6 +138,11 @@ export {
   $setSelection,
 } from './LexicalUtils';
 export {VERSION} from './LexicalVersion';
+export {
+  $createChildgroupNode,
+  $isChildgroupNode,
+  ChildgroupNode,
+} from './nodes/ChildgroupNode';
 export {$isDecoratorNode, DecoratorNode} from './nodes/LexicalDecoratorNode';
 export {$isElementNode, ElementNode} from './nodes/LexicalElementNode';
 export {$isGridCellNode, GridCellNode} from './nodes/LexicalGridCellNode';

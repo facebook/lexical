@@ -185,8 +185,7 @@ function $basicInsertStrategy(
 
     /**
      * There's no good way to add this to importDOM or importJSON directly,
-     * so this is here in order to safely correct faultimport { copyToClipboard__EXPERIMENTAL } from './clipboard';
-y clipboard data
+     * so this is here in order to safely correct faulty clipboard data
      * that we can't control and avoid crashing the app.
      * https://github.com/facebook/lexical/issues/2405
      */
@@ -574,6 +573,7 @@ export function copyToClipboard__EXPERIMENTAL(
       clipboardEventTimeout = null;
     }, EVENT_LATENCY);
     document.execCommand('copy');
+    element.remove();
   }
 }
 

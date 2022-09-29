@@ -7,6 +7,9 @@
  */
 
 import type {
+  DOMConversionMap,
+  DOMConversionOutput,
+  DOMExportOutput,
   LexicalCommand,
   LexicalNode,
   NodeKey,
@@ -110,11 +113,24 @@ export class HorizontalRuleNode extends DecoratorNode<JSX.Element> {
     return $createHorizontalRuleNode();
   }
 
+  static importDOM(): DOMConversionMap | null {
+    return {
+      hr: () => ({
+        conversion: convertHorizontalRuleElement,
+        priority: 0,
+      }),
+    };
+  }
+
   exportJSON(): SerializedLexicalNode {
     return {
       type: 'horizontalrule',
       version: 1,
     };
+  }
+
+  exportDOM(): DOMExportOutput {
+    return {element: document.createElement('hr')};
   }
 
   createDOM(): HTMLElement {
@@ -127,8 +143,8 @@ export class HorizontalRuleNode extends DecoratorNode<JSX.Element> {
     return '\n';
   }
 
-  isTopLevel(): true {
-    return true;
+  isInline(): false {
+    return false;
   }
 
   updateDOM(): false {
@@ -138,6 +154,10 @@ export class HorizontalRuleNode extends DecoratorNode<JSX.Element> {
   decorate(): JSX.Element {
     return <HorizontalRuleComponent nodeKey={this.__key} />;
   }
+}
+
+function convertHorizontalRuleElement(): DOMConversionOutput {
+  return {node: $createHorizontalRuleNode()};
 }
 
 export function $createHorizontalRuleNode(): HorizontalRuleNode {

@@ -2521,7 +2521,7 @@ describe('insertNodes', () => {
     const element = document.createElement('div');
     editor.setRootElement(element);
 
-    jest.spyOn(TestDecoratorNode.prototype, 'isTopLevel').mockReturnValue(true);
+    jest.spyOn(TestDecoratorNode.prototype, 'isInline').mockReturnValue(false);
 
     await editor.update(() => {
       $getRoot().append(

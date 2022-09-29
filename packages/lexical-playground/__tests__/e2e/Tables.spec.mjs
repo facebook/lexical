@@ -15,9 +15,12 @@ import {
   focusEditor,
   html,
   initialize,
+  insertHorizontalRule,
+  insertSampleImage,
   insertTable,
   IS_COLLAB,
   pasteFromClipboard,
+  SAMPLE_IMAGE_URL,
   selectCellsFromTableCords,
   selectFromAdditionalStylesDropdown,
   test,
@@ -1904,5 +1907,267 @@ test.describe('Tables', () => {
         {ignoreClasses: true},
       );
     }
+  });
+
+  test(`Horizontal rule inside cell`, async ({page, isPlainText}) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+
+    await insertTable(page);
+    await page.keyboard.type('123');
+    await insertHorizontalRule(page);
+
+    await assertHTML(
+      page,
+      html`
+        <p><br /></p>
+        <table>
+          <tr>
+            <th>
+              <p><span data-lexical-text="true">123</span></p>
+              <div
+                contenteditable="false"
+                style="display: contents"
+                data-lexical-decorator="true">
+                <hr />
+              </div>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p><br /></p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  test('Grid selection: can select multiple cells and insert an image', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    await insertTable(page);
+
+    await click(page, '.PlaygroundEditorTheme__tableCell');
+    await page.keyboard.type('Hello');
+
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.up('Shift');
+
+    await insertSampleImage(page);
+    await page.keyboard.type(' <- it works!');
+
+    // Wait for Decorator to mount.
+    await page.waitForTimeout(3000);
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <table class="PlaygroundEditorTheme__table">
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">Hello</span>
+              </p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span
+                  class="editor-image"
+                  contenteditable="false"
+                  data-lexical-decorator="true">
+                  <div draggable="false">
+                    <img
+                      alt="Yellow flower in tilt shift lens"
+                      draggable="false"
+                      src="${SAMPLE_IMAGE_URL}"
+                      style="height: inherit; max-width: 500px; width: inherit" />
+                  </div>
+                </span>
+                <span data-lexical-text="true">&lt;- it works!</span>
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
   });
 });

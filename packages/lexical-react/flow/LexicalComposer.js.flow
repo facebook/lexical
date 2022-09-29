@@ -7,20 +7,27 @@
  * @flow strict
  */
 
-import type {EditorThemeClasses, LexicalEditor, LexicalNode} from 'lexical';
-import type {InitialEditorStateType as InitialEditorStatePlainTextType} from '@lexical/plain-text';
-import type {InitialEditorStateType as InitialEditorStateRichTextType} from '@lexical/rich-text';
+import type {
+  EditorThemeClasses,
+  LexicalEditor,
+  LexicalNode,
+  EditorState,
+} from 'lexical';
+
+export type InitialEditorStateType =
+  | null
+  | string
+  | EditorState
+  | ((editor: LexicalEditor) => void);
 
 type Props = {
   initialConfig: $ReadOnly<{
     editor__DEPRECATED?: LexicalEditor | null,
-    readOnly?: boolean,
+    editable?: boolean,
     namespace: string,
     nodes?: $ReadOnlyArray<Class<LexicalNode>>,
     theme?: EditorThemeClasses,
-    editorState?:
-      | InitialEditorStateRichTextType
-      | InitialEditorStatePlainTextType,
+    editorState?: InitialEditorStateType,
     onError: (error: Error, editor: LexicalEditor) => void,
   }>,
   children: React$Node,

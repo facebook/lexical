@@ -14,7 +14,9 @@ import {
   LexicalComposerContext,
 } from '@lexical/react/LexicalComposerContext';
 import {
+  $createParagraphNode,
   $getRoot,
+  $getSelection,
   createEditor,
   EditorState,
   EditorThemeClasses,
@@ -22,7 +24,6 @@ import {
   LexicalNode,
 } from 'lexical';
 import {useMemo} from 'react';
-import * as React from 'react';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
 const HISTORY_MERGE_OPTIONS = {tag: 'history-merge'};
@@ -41,7 +42,7 @@ type Props = {
     nodes?: ReadonlyArray<Klass<LexicalNode>>;
     proxies?: Proxies;
     onError: (error: Error, editor: LexicalEditor) => void;
-    readOnly?: boolean;
+    editable?: boolean;
     theme?: EditorThemeClasses;
     editorState?: InitialEditorStateType;
   }>;
@@ -69,11 +70,11 @@ export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
 
       if (editor === null) {
         const newEditor = createEditor({
+          editable: false,
           namespace,
           nodes,
           onError: (error) => onError(error, newEditor),
           proxies,
-          readOnly: true,
           theme,
         });
         initializeEditor(newEditor, initialEditorState);
@@ -90,9 +91,9 @@ export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
   );
 
   useLayoutEffect(() => {
-    const isReadOnly = initialConfig.readOnly;
+    const isEditable = initialConfig.editable;
     const [editor] = composerContext;
-    editor.setReadOnly(isReadOnly || false);
+    editor.setEditable(isEditable !== undefined ? isEditable : true);
 
     // We only do this for init
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -112,21 +113,20 @@ function initializeEditor(
   if (initialEditorState === null) {
     return;
   } else if (initialEditorState === undefined) {
-    // TODO Uncomment in 0.4
-    // editor.update(() => {
-    //   const root = $getRoot();
-    //   if (root.isEmpty()) {
-    //     const paragraph = $createParagraphNode();
-    //     root.append(paragraph);
-    //     const activeElement = document.activeElement;
-    //     if (
-    //       $getSelection() !== null ||
-    //       (activeElement !== null && activeElement === editor.getRootElement())
-    //     ) {
-    //       paragraph.select();
-    //     }
-    //   }
-    // }, HISTORY_MERGE_OPTIONS);
+    editor.update(() => {
+      const root = $getRoot();
+      if (root.isEmpty()) {
+        const paragraph = $createParagraphNode();
+        root.append(paragraph);
+        const activeElement = document.activeElement;
+        if (
+          $getSelection() !== null ||
+          (activeElement !== null && activeElement === editor.getRootElement())
+        ) {
+          paragraph.select();
+        }
+      }
+    }, HISTORY_MERGE_OPTIONS);
   } else if (initialEditorState !== null) {
     switch (typeof initialEditorState) {
       case 'string': {

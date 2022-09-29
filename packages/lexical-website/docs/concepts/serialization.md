@@ -56,8 +56,7 @@ editor.update(() => {
   $getRoot().select();
 
   // Insert them at a selection.
-  const selection = $getSelection();
-  selection.insertNodes(nodes);
+  $insertNodes(nodes);
 });
 ```
 
@@ -108,6 +107,7 @@ export type DOMConversion = {
 export type DOMConversionFn = (
   element: Node,
   parent?: Node,
+  preformatted?: boolean,
 ) => DOMConversionOutput;
 
 export type DOMConversionOutput = {
@@ -147,12 +147,13 @@ static importDOM(): DOMConversionMap | null {
 
 If the imported ```<table>``` doesn't align with the expected GitHub code HTML, then we return null and allow the node to be handled by lower priority conversions.
 
-Much like `exportDOM`, `importDOM` exposes APIs to allow for post-processing of converted Nodes. The conversion function returns a `DOMConversionOutput` which can specify a function to run for each converted child (forChild) or on all the child nodes after the conversion is complete (after). The key difference here is that ```forChild``` runs for every deeply nested child node of the current node, whereas ```after``` will run only once after the transformation of the node and all its children is complete.
+Much like `exportDOM`, `importDOM` exposes APIs to allow for post-processing of converted Nodes. The conversion function returns a `DOMConversionOutput` which can specify a function to run for each converted child (forChild) or on all the child nodes after the conversion is complete (after). The key difference here is that ```forChild``` runs for every deeply nested child node of the current node, whereas ```after``` will run only once after the transformation of the node and all its children is complete. Finally, `preformatted` flag indicates that nested text content is preformatted (similar to `<pre>` tag) and all newlines and spaces should be preserved as is.
 
 ```js
 export type DOMConversionFn = (
   element: Node,
   parent?: Node,
+  preformatted?: boolean,
 ) => DOMConversionOutput;
 
 export type DOMConversionOutput = {

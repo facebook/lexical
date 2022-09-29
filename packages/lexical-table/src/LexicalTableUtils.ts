@@ -216,6 +216,7 @@ export function $insertTableColumn(
   targetIndex: number,
   shouldInsertAfter = true,
   columnCount: number,
+  grid: Grid,
 ): TableNode {
   const tableRows = tableNode.getChildren();
 
@@ -224,16 +225,6 @@ export function $insertTableColumn(
 
     if ($isTableRowNode(currentTableRowNode)) {
       for (let c = 0; c < columnCount; c++) {
-        let headerState = TableCellHeaderStates.NO_STATUS;
-
-        if (r === 0) {
-          headerState |= TableCellHeaderStates.ROW;
-        }
-
-        const newTableCell = $createTableCellNode(headerState);
-
-        newTableCell.append($createParagraphNode());
-
         const tableRowChildren = currentTableRowNode.getChildren();
 
         if (targetIndex >= tableRowChildren.length || targetIndex < 0) {
@@ -241,6 +232,26 @@ export function $insertTableColumn(
         }
 
         const targetCell = tableRowChildren[targetIndex];
+
+        invariant($isTableCellNode(targetCell), 'Expected table cell');
+
+        const {left, right} = $getTableCellSiblingsFromTableCellNode(
+          targetCell,
+          grid,
+        );
+
+        let headerState = TableCellHeaderStates.NO_STATUS;
+
+        if (
+          (left && left.hasHeaderState(TableCellHeaderStates.ROW)) ||
+          (right && right.hasHeaderState(TableCellHeaderStates.ROW))
+        ) {
+          headerState |= TableCellHeaderStates.ROW;
+        }
+
+        const newTableCell = $createTableCellNode(headerState);
+
+        newTableCell.append($createParagraphNode());
 
         if (shouldInsertAfter) {
           targetCell.insertAfter(newTableCell);

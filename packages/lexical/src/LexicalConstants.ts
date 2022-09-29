@@ -28,7 +28,7 @@ export const FULL_RECONCILE = 2;
 export const IS_NORMAL = 0;
 export const IS_TOKEN = 1;
 export const IS_SEGMENTED = 2;
-export const IS_INERT = 3;
+// IS_INERT = 3
 
 // Text node formatting
 export const IS_BOLD = 1;
@@ -116,15 +116,13 @@ export const ELEMENT_FORMAT_TO_TYPE: Record<number, ElementFormatType> = {
   [IS_ALIGN_RIGHT]: 'right',
 };
 
-export const TEXT_MODE_TO_TYPE: Record<TextModeType, 0 | 1 | 2 | 3> = {
-  inert: IS_INERT,
+export const TEXT_MODE_TO_TYPE: Record<TextModeType, 0 | 1 | 2> = {
   normal: IS_NORMAL,
   segmented: IS_SEGMENTED,
   token: IS_TOKEN,
 };
 
 export const TEXT_TYPE_TO_MODE: Record<number, TextModeType> = {
-  [IS_INERT]: 'inert',
   [IS_NORMAL]: 'normal',
   [IS_SEGMENTED]: 'segmented',
   [IS_TOKEN]: 'token',

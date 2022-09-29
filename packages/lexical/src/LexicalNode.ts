@@ -7,19 +7,13 @@
  */
 
 /* eslint-disable no-constant-condition */
+import type {Klass} from 'lexical';
 import type {EditorConfig, LexicalEditor} from './LexicalEditor';
 import type {RangeSelection} from './LexicalSelection';
-import type {Klass} from 'lexical';
 
 import invariant from 'shared/invariant';
 
-import {
-  $isDecoratorNode,
-  $isElementNode,
-  $isRootNode,
-  $isTextNode,
-  ElementNode,
-} from '.';
+import {$isElementNode, $isRootNode, $isTextNode, ElementNode} from '.';
 import {
   $getSelection,
   $isRangeSelection,
@@ -35,6 +29,7 @@ import {
 import {
   $getCompositionKey,
   $getNodeByKey,
+  $isRootOrShadowRoot,
   $maybeMoveChildrenSelectionToParent,
   $setCompositionKey,
   $setNodeKey,
@@ -104,14 +99,13 @@ export function removeNode(
   }
   if (
     !preserveEmptyParent &&
-    parent !== null &&
-    !$isRootNode(parent) &&
+    !$isRootOrShadowRoot(parent) &&
     !parent.canBeEmpty() &&
     parent.isEmpty()
   ) {
     removeNode(parent, restoreSelection);
   }
-  if (parent !== null && $isRootNode(parent) && parent.isEmpty()) {
+  if ($isRootNode(parent) && parent.isEmpty()) {
     parent.selectEnd();
   }
 }
@@ -136,6 +130,7 @@ export type DOMConversion<T extends HTMLElement = HTMLElement> = {
 export type DOMConversionFn<T extends HTMLElement = HTMLElement> = (
   element: T,
   parent?: Node,
+  preformatted?: boolean,
 ) => DOMConversionOutput | null;
 
 export type DOMChildConversion = (
@@ -153,6 +148,7 @@ export type DOMConversionOutput = {
   after?: (childLexicalNodes: Array<LexicalNode>) => Array<LexicalNode>;
   forChild?: DOMChildConversion;
   node: LexicalNode | null;
+  preformatted?: boolean;
 };
 
 export type DOMExportOutput = {
@@ -295,10 +291,7 @@ export class LexicalNode {
     let node: ElementNode | this | null = this;
     while (node !== null) {
       const parent: ElementNode | this | null = node.getParent();
-      if (
-        $isRootNode(parent) &&
-        ($isElementNode(node) || ($isDecoratorNode(node) && node.isTopLevel()))
-      ) {
+      if ($isRootOrShadowRoot(parent)) {
         return node;
       }
       node = parent;
@@ -589,18 +582,12 @@ export class LexicalNode {
     return mutableNode;
   }
 
-  getTextContent(
-    _includeInert?: boolean,
-    _includeDirectionless?: false,
-  ): string {
+  getTextContent(): string {
     return '';
   }
 
-  getTextContentSize(
-    includeInert?: boolean,
-    includeDirectionless?: false,
-  ): number {
-    return this.getTextContent(includeInert, includeDirectionless).length;
+  getTextContentSize(): number {
+    return this.getTextContent().length;
   }
 
   // View
@@ -615,6 +602,50 @@ export class LexicalNode {
     _config: EditorConfig,
   ): boolean {
     invariant(false, 'updateDOM: base method not extended');
+  }
+
+  /**
+   * insertBeforeDOM controls where a child element is inserted in the DOM controlled by this node
+   *
+   * @param dom the DOM of the current node, i.e.: returned by createDOM
+   * @param childDOM the child to be added to the dom
+   * @param referenceNode the node before which the childDOM should be appended, or null to append the childDOM to the end
+   */
+  insertBeforeDOM(
+    dom: HTMLElement,
+    childDOM: HTMLElement,
+    referenceNode: Node | null,
+  ): void {
+    if (referenceNode == null) {
+      // performance optimization (appendDOM is faster)
+      dom.appendChild(childDOM);
+    } else {
+      dom.insertBefore(childDOM, referenceNode);
+    }
+  }
+
+  /**
+   * removeChildDOM controls how a DOM element "controlled" by this node (added via insertBeforeDOM) can be removed
+   *
+   * @param dom the DOM of the current node, i.e.: returned by createDOM
+   * @param childDOM the DOM node to be removed
+   */
+  removeChildDOM(dom: HTMLElement, childDOM: HTMLElement): void {
+    dom.removeChild(childDOM);
+  }
+
+  /**
+   * replaceChildDOM controls how a DOM element "controlled" by this node (added via insertBeforeDOM) can be replaced
+   * @param dom the DOM of the current node, i.e.: returned by createDOM
+   * @param newChildDOM DOM node to be added
+   * @param oldChildDOM DOM node to be replaced
+   */
+  replaceChildDOM(
+    dom: HTMLElement,
+    newChildDOM: Node,
+    oldChildDOM: Node,
+  ): void {
+    dom.replaceChild(newChildDOM, oldChildDOM);
   }
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {
@@ -637,7 +668,6 @@ export class LexicalNode {
   // Setters and mutators
 
   remove(preserveEmptyParent?: boolean): void {
-    errorOnReadOnly();
     removeNode(this, true, preserveEmptyParent);
   }
 
@@ -728,7 +758,6 @@ export class LexicalNode {
   }
 
   insertBefore(nodeToInsert: LexicalNode): LexicalNode {
-    errorOnReadOnly();
     const writableSelf = this.getWritable();
     const writableNodeToInsert = nodeToInsert.getWritable();
     removeFromParent(writableNodeToInsert);
@@ -799,7 +828,7 @@ function errorOnTypeKlassMismatch(
   if (registeredNode === undefined) {
     invariant(
       false,
-      'Create node: Attempted to create node %s that was not previously registered on the editor. You can use register your custom nodes.',
+      'Create node: Attempted to create node %s that was not configured to be used on the editor.',
       klass.name,
     );
   }

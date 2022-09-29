@@ -1,11 +1,17 @@
-.inspected-element-view {
-  align-self: start;
-  border: 1px solid #282c34;
-  color: #fff;
-  grid-area: inspected-element;
-  height: 100vh;
+.inspected-element-container {
   padding: 1em 2em;
-  position: sticky;
+  overflow: scroll;
+}
+
+.inspected-element-view {
+  background: var(--main-dark-gray);
+  border: 1px solid var(--highlight-dark-gray);
+  color: var(--main-white);
+  height: calc(100vh - var(--top-row-height));
+  left: calc(100vw - var(--right-column-width));
+  overflow: auto;
+  position: fixed;
   text-align: left;
-  top: 0em;
+  top: var(--top-row-height);
+  width: var(--right-column-width);
 }

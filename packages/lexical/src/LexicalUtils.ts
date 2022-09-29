@@ -62,6 +62,7 @@ import {
   errorOnReadOnly,
   getActiveEditor,
   getActiveEditorState,
+  isCurrentlyReadOnlyMode,
   triggerCommandListeners,
   updateEditor,
 } from './LexicalUpdates';
@@ -143,12 +144,11 @@ export function getNearestEditorFromDOMNode(
   while (currentNode != null) {
     // @ts-expect-error: internal field
     const editor: LexicalEditor = currentNode.__lexicalEditor;
-    if (editor != null && !editor.isReadOnly()) {
+    if (editor != null) {
       return editor;
     }
     currentNode = currentNode.parentNode;
   }
-
   return null;
 }
 
@@ -162,12 +162,8 @@ export function getTextDirection(text: string): 'ltr' | 'rtl' | null {
   return null;
 }
 
-export function $isTokenOrInertOrSegmented(node: TextNode): boolean {
-  return $isTokenOrInert(node) || node.isSegmented();
-}
-
-export function $isTokenOrInert(node: TextNode): boolean {
-  return node.isToken() || node.isInert();
+export function $isTokenOrSegmented(node: TextNode): boolean {
+  return node.isToken() || node.isSegmented();
 }
 
 function isDOMNodeLexicalTextNode(node: Node): node is Text {
@@ -327,6 +323,9 @@ export function $setCompositionKey(compositionKey: null | NodeKey): void {
 }
 
 export function $getCompositionKey(): null | NodeKey {
+  if (isCurrentlyReadOnlyMode()) {
+    return null;
+  }
   const editor = getActiveEditor();
   return editor._compositionKey;
 }
@@ -583,7 +582,7 @@ export function $updateTextNodeFromDOMContent(
       const prevSelection = $getPreviousSelection();
 
       if (
-        $isTokenOrInert(node) ||
+        node.isToken() ||
         ($getCompositionKey() !== null && !isComposing) ||
         // Check if character was added at the start, and we need
         // to clear this input from occurring as that action wasn't
@@ -629,6 +628,9 @@ function $previousSiblingDoesNotAcceptText(node: TextNode): boolean {
   );
 }
 
+// This function is connected to $shouldPreventDefaultAndInsertText and determines whether the
+// TextNode boundaries are writable or we should use the previous/next sibling instead. For example,
+// in the case of a LinkNode, boundaries are not writable.
 function $shouldInsertTextAfterOrBeforeTextNode(
   selection: RangeSelection,
   node: TextNode,
@@ -642,16 +644,20 @@ function $shouldInsertTextAfterOrBeforeTextNode(
   const offset = selection.anchor.offset;
   const parent = node.getParentOrThrow();
   const isToken = node.isToken();
-  const shouldInsertTextBefore =
-    offset === 0 &&
-    (!node.canInsertTextBefore() ||
+  if (offset === 0) {
+    return (
+      !node.canInsertTextBefore() ||
       !parent.canInsertTextBefore() ||
       isToken ||
-      $previousSiblingDoesNotAcceptText(node));
-  const shouldInsertTextAfter =
-    node.getTextContentSize() === offset &&
-    (!node.canInsertTextBefore() || !parent.canInsertTextBefore() || isToken);
-  return shouldInsertTextBefore || shouldInsertTextAfter;
+      $previousSiblingDoesNotAcceptText(node)
+    );
+  } else if (offset === node.getTextContentSize()) {
+    return (
+      !node.canInsertTextAfter() || !parent.canInsertTextAfter() || isToken
+    );
+  } else {
+    return false;
+  }
 }
 
 // This function is used to determine if Lexical should attempt to override
@@ -660,7 +666,6 @@ function $shouldInsertTextAfterOrBeforeTextNode(
 // work as intended between different browsers and across word, line and character
 // boundary/formats. It also is important for text replacement, node schemas and
 // composition mechanics.
-
 export function $shouldPreventDefaultAndInsertText(
   selection: RangeSelection,
   text: string,
@@ -683,7 +688,7 @@ export function $shouldPreventDefaultAndInsertText(
       anchor.offset !== focus.offset &&
       !anchorNode.isComposing()) ||
     // Any non standard text node.
-    $isTokenOrInertOrSegmented(anchorNode) ||
+    $isTokenOrSegmented(anchorNode) ||
     // If the text length is more than a single character and we're either
     // dealing with this in "beforeinput" or where the node has already recently
     // been changed (thus is dirty).
@@ -1202,7 +1207,10 @@ export function $maybeMoveChildrenSelectionToParent(
   return selection;
 }
 
-function $hasAncestor(child: LexicalNode, targetNode: LexicalNode): boolean {
+export function $hasAncestor(
+  child: LexicalNode,
+  targetNode: LexicalNode,
+): boolean {
   let parent = child.getParent();
   while (parent !== null) {
     if (parent.is(targetNode)) {
@@ -1224,4 +1232,15 @@ export function getWindow(editor: LexicalEditor): Window {
     invariant(false, 'window object not found');
   }
   return windowObj;
+}
+
+export function $isInlineElementOrDecoratorNode(node: LexicalNode): boolean {
+  return (
+    ($isElementNode(node) && node.isInline()) ||
+    ($isDecoratorNode(node) && node.isInline())
+  );
+}
+
+export function $isRootOrShadowRoot(node: null | LexicalNode): boolean {
+  return $isRootNode(node) || ($isElementNode(node) && node.isShadowRoot());
 }

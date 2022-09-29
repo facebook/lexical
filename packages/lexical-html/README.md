@@ -30,6 +30,5 @@ const nodes = $generateNodesFromDOM(editor, dom);
 const editor = createEditor({ ...config, nodes });
 
 // Or insert them at a selection.
-const selection = $getSelection();
-selection.insertNodes(nodes);
+$insertNodes(nodes);
 ```

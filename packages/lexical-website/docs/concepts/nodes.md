@@ -47,7 +47,6 @@ Leaf type of node that contains text. It also includes few text-specific propert
 - `format` any combination of `bold`, `italic`, `underline`, `strikethrough`, `code`, `subscript` and `superscript`
 - `mode`
   - `token` - acts as immutable node, can't change its content and is deleted all at once
-  - `inert` - similar to `token`, but also set `contenteditable=false` so can't put cursor inside or partially select it
   - `segmented` - its content deleted by segments (one word at a time), it is editable although node becomes non-segmented once its content is updated
 - `style` can be used to apply inline css styles to text
 

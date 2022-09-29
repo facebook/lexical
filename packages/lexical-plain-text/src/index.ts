@@ -7,7 +7,7 @@
  *
  */
 
-import type {CommandPayloadType, EditorState, LexicalEditor} from 'lexical';
+import type {CommandPayloadType, LexicalEditor} from 'lexical';
 
 import {
   $getHtmlContent,
@@ -19,8 +19,6 @@ import {
 } from '@lexical/selection';
 import {mergeRegister} from '@lexical/utils';
 import {
-  $createParagraphNode,
-  $getRoot,
   $getSelection,
   $isRangeSelection,
   COMMAND_PRIORITY_EDITOR,
@@ -44,46 +42,24 @@ import {
 } from 'lexical';
 import {CAN_USE_BEFORE_INPUT, IS_IOS, IS_SAFARI} from 'shared/environment';
 
-export type InitialEditorStateType =
-  | null
-  | string
-  | EditorState
-  | ((editor: LexicalEditor) => void);
-
-// Convoluted logic to make this work with Flow. Order matters.
-const options = {
-  tag: 'history-merge',
-};
-
-const setEditorOptions: {
-  tag?: string;
-} = options;
-const updateOptions: {
-  onUpdate?: () => void;
-  skipTransforms?: true;
-  tag?: string;
-} = options;
-
 function onCopyForPlainText(
   event: CommandPayloadType<typeof COPY_COMMAND>,
   editor: LexicalEditor,
 ): void {
-  event.preventDefault();
   editor.update(() => {
     const clipboardData =
       event instanceof KeyboardEvent ? null : event.clipboardData;
     const selection = $getSelection();
 
-    if (selection !== null) {
-      if (clipboardData != null) {
-        const htmlString = $getHtmlContent(editor);
+    if (selection !== null && clipboardData != null) {
+      event.preventDefault();
+      const htmlString = $getHtmlContent(editor);
 
-        if (htmlString !== null) {
-          clipboardData.setData('text/html', htmlString);
-        }
-
-        clipboardData.setData('text/plain', selection.getTextContent());
+      if (htmlString !== null) {
+        clipboardData.setData('text/html', htmlString);
       }
+
+      clipboardData.setData('text/plain', selection.getTextContent());
     }
   });
 }
@@ -97,7 +73,9 @@ function onPasteForPlainText(
     () => {
       const selection = $getSelection();
       const clipboardData =
-        event instanceof InputEvent ? null : event.clipboardData;
+        event instanceof InputEvent || event instanceof KeyboardEvent
+          ? null
+          : event.clipboardData;
 
       if (clipboardData != null && $isRangeSelection(selection)) {
         $insertDataTransferForPlainText(clipboardData, selection);
@@ -123,58 +101,7 @@ function onCutForPlainText(
   });
 }
 
-function initializeEditor(
-  editor: LexicalEditor,
-  initialEditorState?: InitialEditorStateType,
-): void {
-  if (initialEditorState === null) {
-    return;
-  } else if (initialEditorState === undefined) {
-    editor.update(() => {
-      const root = $getRoot();
-      if (root.isEmpty()) {
-        const paragraph = $createParagraphNode();
-        root.append(paragraph);
-        const activeElement = document.activeElement;
-
-        if (
-          $getSelection() !== null ||
-          (activeElement !== null && activeElement === editor.getRootElement())
-        ) {
-          paragraph.select();
-        }
-      }
-    }, updateOptions);
-  } else if (initialEditorState !== null) {
-    switch (typeof initialEditorState) {
-      case 'string': {
-        const parsedEditorState = editor.parseEditorState(initialEditorState);
-        editor.setEditorState(parsedEditorState, setEditorOptions);
-        break;
-      }
-
-      case 'object': {
-        editor.setEditorState(initialEditorState, setEditorOptions);
-        break;
-      }
-
-      case 'function': {
-        editor.update(() => {
-          const root = $getRoot();
-          if (root.isEmpty()) {
-            initialEditorState(editor);
-          }
-        }, updateOptions);
-        break;
-      }
-    }
-  }
-}
-
-export function registerPlainText(
-  editor: LexicalEditor,
-  initialEditorState?: InitialEditorStateType,
-): () => void {
+export function registerPlainText(editor: LexicalEditor): () => void {
   const removeListener = mergeRegister(
     editor.registerCommand<boolean>(
       DELETE_CHARACTER_COMMAND,
@@ -462,6 +389,5 @@ export function registerPlainText(
       COMMAND_PRIORITY_EDITOR,
     ),
   );
-  initializeEditor(editor, initialEditorState);
   return removeListener;
 }

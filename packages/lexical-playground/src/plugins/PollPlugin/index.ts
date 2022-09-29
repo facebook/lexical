@@ -6,15 +6,15 @@
  *
  */
 
-import type {LexicalCommand} from 'lexical';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {$wrapNodeInElement} from '@lexical/utils';
 import {
-  $getSelection,
-  $isRangeSelection,
-  $isRootNode,
+  $createParagraphNode,
+  $insertNodes,
+  $isRootOrShadowRoot,
   COMMAND_PRIORITY_EDITOR,
   createCommand,
+  LexicalCommand,
 } from 'lexical';
 import {useEffect} from 'react';
 
@@ -32,17 +32,10 @@ export default function PollPlugin(): JSX.Element | null {
     return editor.registerCommand<string>(
       INSERT_POLL_COMMAND,
       (payload) => {
-        const selection = $getSelection();
-
-        if ($isRangeSelection(selection)) {
-          const question = payload;
-          const pollNode = $createPollNode(question);
-
-          if ($isRootNode(selection.anchor.getNode())) {
-            selection.insertParagraph();
-          }
-
-          selection.insertNodes([pollNode]);
+        const pollNode = $createPollNode(payload);
+        $insertNodes([pollNode]);
+        if ($isRootOrShadowRoot(pollNode.getParentOrThrow())) {
+          $wrapNodeInElement(pollNode, $createParagraphNode).selectEnd();
         }
 
         return true;

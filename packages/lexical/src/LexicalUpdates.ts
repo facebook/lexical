@@ -512,7 +512,6 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   const dirtyElements = editor._dirtyElements;
   const normalizedNodes = editor._normalizedNodes;
   const tags = editor._updateTags;
-  const pendingDecorators = editor._pendingDecorators;
   const deferred = editor._deferred;
 
   if (needsUpdate) {
@@ -534,7 +533,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   // Attempt to update the DOM selection, including focusing of the root element,
   // and scroll into view if needed.
   if (
-    !editor._readOnly &&
+    editor._editable &&
     // domSelection will be null in headless
     domSelection !== null &&
     (needsUpdate || pendingSelection === null || pendingSelection.dirty)
@@ -567,6 +566,10 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
     );
   }
 
+  /**
+   * Capture pendingDecorators after garbage collecting detached decorators
+   */
+  const pendingDecorators = editor._pendingDecorators;
   if (pendingDecorators !== null) {
     editor._decorators = pendingDecorators;
     editor._pendingDecorators = null;
@@ -623,7 +626,7 @@ function triggerMutationListeners(
 }
 
 export function triggerListeners(
-  type: 'update' | 'root' | 'decorator' | 'textcontent' | 'readonly',
+  type: 'update' | 'root' | 'decorator' | 'textcontent' | 'editable',
   editor: LexicalEditor,
   isCurrentlyEnqueuingUpdates: boolean,
   ...payload: unknown[]
@@ -786,7 +789,7 @@ function beginUpdate(
   let pendingEditorState = editor._pendingEditorState;
   let editorStateWasCloned = false;
 
-  if (pendingEditorState === null) {
+  if (pendingEditorState === null || pendingEditorState._readOnly) {
     pendingEditorState = editor._pendingEditorState =
       cloneEditorState(currentEditorState);
     editorStateWasCloned = true;

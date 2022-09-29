@@ -8,13 +8,6 @@
 
 import type {ListType} from '@lexical/list';
 import type {HeadingTagType} from '@lexical/rich-text';
-import type {
-  ElementNode,
-  Klass,
-  LexicalNode,
-  TextFormatType,
-  TextNode,
-} from 'lexical';
 
 import {$createCodeNode, $isCodeNode, CodeNode} from '@lexical/code';
 import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
@@ -34,7 +27,16 @@ import {
   HeadingNode,
   QuoteNode,
 } from '@lexical/rich-text';
-import {$createLineBreakNode, $createTextNode, $isTextNode} from 'lexical';
+import {
+  $createLineBreakNode,
+  $createTextNode,
+  $isTextNode,
+  ElementNode,
+  Klass,
+  LexicalNode,
+  TextFormatType,
+  TextNode,
+} from 'lexical';
 
 export type Transformer =
   | ElementTransformer
@@ -81,7 +83,7 @@ export type TextMatchTransformer = Readonly<{
   type: 'text-match';
 }>;
 
-const replaceWithBlock = (
+const createBlockNode = (
   createNode: (match: Array<string>) => ElementNode,
 ): ElementTransformer['replace'] => {
   return (parentNode, children, match) => {
@@ -165,7 +167,7 @@ export const HEADING: ElementTransformer = {
     return '#'.repeat(level) + ' ' + exportChildren(node);
   },
   regExp: /^(#{1,6})\s/,
-  replace: replaceWithBlock((match) => {
+  replace: createBlockNode((match) => {
     const tag = ('h' + match[1].length) as HeadingTagType;
     return $createHeadingNode(tag);
   }),
@@ -225,7 +227,7 @@ export const CODE: ElementTransformer = {
     );
   },
   regExp: /^```(\w{1,10})?\s/,
-  replace: replaceWithBlock((match) => {
+  replace: createBlockNode((match) => {
     return $createCodeNode(match ? match[1] : undefined);
   }),
   type: 'element',

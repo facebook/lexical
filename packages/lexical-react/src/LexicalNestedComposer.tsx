@@ -7,7 +7,12 @@
  */
 
 import type {LexicalComposerContextType} from '@lexical/react/LexicalComposerContext';
-import type {EditorThemeClasses, LexicalEditor} from 'lexical';
+import type {
+  EditorThemeClasses,
+  Klass,
+  LexicalEditor,
+  LexicalNode,
+} from 'lexical';
 
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {
@@ -21,11 +26,15 @@ import invariant from 'shared/invariant';
 export function LexicalNestedComposer({
   initialEditor,
   children,
+  initialNodes,
   initialTheme,
+  skipCollabChecks,
 }: {
   children: ReactNode;
   initialEditor: LexicalEditor;
   initialTheme?: EditorThemeClasses;
+  initialNodes?: ReadonlyArray<Klass<LexicalNode>>;
+  skipCollabChecks?: true;
 }): JSX.Element {
   const wasCollabPreviouslyReadyRef = useRef(false);
   const parentContext = useContext(LexicalComposerContext);
@@ -50,7 +59,26 @@ export function LexicalNestedComposer({
       }
 
       initialEditor._parentEditor = parentEditor;
-      initialEditor._nodes = parentEditor._nodes;
+
+      if (!initialNodes) {
+        const parentNodes = (initialEditor._nodes = new Map(
+          parentEditor._nodes,
+        ));
+        for (const [type, entry] of parentNodes) {
+          initialEditor._nodes.set(type, {
+            klass: entry.klass,
+            transforms: new Set(),
+          });
+        }
+      } else {
+        for (const klass of initialNodes) {
+          const type = klass.getType();
+          initialEditor._nodes.set(type, {
+            klass,
+            transforms: new Set(),
+          });
+        }
+      }
       initialEditor._config.namespace = parentEditor._config.namespace;
 
       return [initialEditor, context];
@@ -65,6 +93,7 @@ export function LexicalNestedComposer({
   // until the collaboration subdocument is ready.
   const {isCollabActive, yjsDocMap} = useCollaborationContext();
   const isCollabReady =
+    skipCollabChecks ||
     wasCollabPreviouslyReadyRef.current ||
     yjsDocMap.has(initialEditor.getKey());
 

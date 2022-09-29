@@ -77,7 +77,6 @@ import {
   $flushMutations,
   $getNodeByKey,
   $isSelectionCapturedInDecorator,
-  $isTokenOrInert,
   $setSelection,
   $shouldPreventDefaultAndInsertText,
   $updateSelectedTextFromDOM,
@@ -231,7 +230,10 @@ function onSelectionChange(
 
       if (selection.isCollapsed()) {
         // Badly interpreted range selection when collapsed - #1482
-        if (domSelection.type === 'Range') {
+        if (
+          domSelection.type === 'Range' &&
+          domSelection.anchorNode === domSelection.focusNode
+        ) {
           selection.dirty = true;
         }
 
@@ -350,8 +352,8 @@ function $canRemoveText(
     anchorNode !== focusNode ||
     $isElementNode(anchorNode) ||
     $isElementNode(focusNode) ||
-    !$isTokenOrInert(anchorNode) ||
-    !$isTokenOrInert(focusNode)
+    !anchorNode.isToken() ||
+    !focusNode.isToken()
   );
 }
 
@@ -399,6 +401,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
         // Used for handling backspace in Android.
         if (
           isPossiblyAndroidKeyPress(event.timeStamp) &&
+          editor.isComposing() &&
           selection.anchor.key === selection.focus.key
         ) {
           $setCompositionKey(null);
@@ -748,9 +751,12 @@ function onCompositionEnd(
 }
 
 function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
+  if (hasStoppedLexicalPropagation(event)) {
+    return;
+  }
+  stopLexicalPropagation(event);
   lastKeyDownTimeStamp = event.timeStamp;
   lastKeyCode = event.keyCode;
-
   if (editor.isComposing()) {
     return;
   }
@@ -921,6 +927,19 @@ function onDocumentSelectionChange(event: Event): void {
   }
 }
 
+function stopLexicalPropagation(event: Event): void {
+  // We attach a special property to ensure the same event doesn't re-fire
+  // for parent editors.
+  // @ts-ignore
+  event._lexicalHandled = true;
+}
+
+function hasStoppedLexicalPropagation(event: Event): boolean {
+  // @ts-ignore
+  const stopped = event._lexicalHandled === true;
+  return stopped;
+}
+
 export type EventHandler = (event: Event, editor: LexicalEditor) => void;
 
 export function addRootElementEvents(
@@ -944,12 +963,12 @@ export function addRootElementEvents(
     const eventHandler =
       typeof onEvent === 'function'
         ? (event: Event) => {
-            if (!editor.isReadOnly()) {
+            if (editor.isEditable()) {
               onEvent(event, editor);
             }
           }
         : (event: Event) => {
-            if (!editor.isReadOnly()) {
+            if (editor.isEditable()) {
               switch (eventName) {
                 case 'cut':
                   return dispatchCommand(

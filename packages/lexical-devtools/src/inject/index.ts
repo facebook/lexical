@@ -5,16 +5,50 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {EditorState} from 'lexical';
-import {LexicalHTMLElement, LexicalKey} from 'packages/lexical-devtools/types';
+import {EditorState, NodeSelection} from 'lexical';
+import {PointType} from 'packages/lexical/src/LexicalSelection';
+import {
+  GridSelectionJSON,
+  LexicalHTMLElement,
+  LexicalKey,
+  PointTypeJSON,
+  RangeSelectionJSON,
+} from 'packages/lexical-devtools/types';
 
 let editorDOMNode: LexicalHTMLElement | null, editorKey: string | null;
+
+const serializePoint = (point: PointType) => {
+  const newPoint = {} as PointTypeJSON;
+
+  for (const [key, value] of Object.entries(point)) {
+    if (key !== '_selection') {
+      newPoint[key] = value;
+    }
+  }
+
+  return newPoint;
+};
 
 // the existing editorState.toJSON() does not contain lexicalKeys
 // therefore, we have a custom serializeEditorState helper
 const serializeEditorState = (editorState: EditorState) => {
   const nodeMap = Object.fromEntries(editorState._nodeMap); // convert from Map structure to JSON-friendly object
-  return {nodeMap};
+
+  let selection: null | GridSelectionJSON | RangeSelectionJSON | NodeSelection =
+    null;
+
+  if (editorState._selection && 'anchor' in editorState._selection) {
+    // remove _selection.anchor._selection property if present in RangeSelection or GridSelection
+    // otherwise, the recursive structure makes the selection object unserializable
+    selection = editorState._selection;
+    selection.anchor = serializePoint(editorState._selection.anchor);
+    // do the same for the focus property
+    selection.focus = serializePoint(editorState._selection.focus);
+  } else if (editorState._selection) {
+    selection = editorState._selection;
+  }
+
+  return {nodeMap, selection};
 };
 
 const postEditorState = (editorState: EditorState) => {

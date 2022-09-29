@@ -204,6 +204,7 @@ declare export function $insertTableColumn(
   targetIndex: number,
   shouldInsertAfter?: boolean,
   columnCount: number,
+  grid: Grid,
 ): TableNode;
 
 declare export function $deleteTableColumn(

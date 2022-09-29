@@ -9,7 +9,7 @@
 import {
   $getNodeByKey,
   $getRoot,
-  $isTokenOrInertOrSegmented,
+  $isTokenOrSegmented,
   $nodesOfType,
   emptyFunction,
   generateRandomKey,
@@ -166,25 +166,18 @@ describe('LexicalUtils tests', () => {
       expect(getTextDirection(`\uFEFC`)).toBe('rtl');
     });
 
-    test('isTokenOrInertOrSegmented()', async () => {
+    test('isTokenOrSegmented()', async () => {
       const {editor} = testEnv;
 
       await editor.update(() => {
         const node = $createTextNode('foo');
-
-        expect($isTokenOrInertOrSegmented(node)).toBe(false);
+        expect($isTokenOrSegmented(node)).toBe(false);
 
         const tokenNode = $createTextNode().setMode('token');
-
-        expect($isTokenOrInertOrSegmented(tokenNode)).toBe(true);
-
-        const inertNode = $createTextNode('foo').setMode('inert');
-
-        expect($isTokenOrInertOrSegmented(inertNode)).toBe(true);
+        expect($isTokenOrSegmented(tokenNode)).toBe(true);
 
         const segmentedNode = $createTextNode('foo').setMode('segmented');
-
-        expect($isTokenOrInertOrSegmented(segmentedNode)).toBe(true);
+        expect($isTokenOrSegmented(segmentedNode)).toBe(true);
       });
     });
 

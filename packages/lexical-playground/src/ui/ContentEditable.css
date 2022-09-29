@@ -13,6 +13,6 @@
   position: relative;
   tab-size: 1;
   outline: 0;
-  padding: 10px;
-  min-height: calc(100% - 20px);
+  padding: 8px 28px;
+  min-height: calc(100% - 16px);
 }

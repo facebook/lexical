@@ -11,9 +11,13 @@ import {ContentEditable} from '@lexical/react/src/LexicalContentEditable';
 import {HistoryPlugin} from '@lexical/react/src/LexicalHistoryPlugin';
 import {RichTextPlugin} from '@lexical/react/src/LexicalRichTextPlugin';
 import {$createQuoteNode} from '@lexical/rich-text/src';
-import {$wrapLeafNodesInElements} from '@lexical/selection/src';
+import {$wrapNodes} from '@lexical/selection/src';
 import {
   $createRangeSelection,
+  CAN_REDO_COMMAND,
+  CAN_UNDO_COMMAND,
+  CLEAR_HISTORY_COMMAND,
+  COMMAND_PRIORITY_CRITICAL,
   LexicalEditor,
   SerializedElementNode,
   SerializedTextNode,
@@ -49,28 +53,64 @@ describe('LexicalHistory tests', () => {
   // Shared instance across tests
   let editor: LexicalEditor;
 
-  test('LexicalHistory.Redo after Quote Node', async () => {
-    function Test(): JSX.Element {
-      function TestPlugin() {
-        // Plugin used just to get our hands on the Editor object
-        [editor] = useLexicalComposerContext();
-        return null;
-      }
-
-      return (
-        <TestComposer>
-          <RichTextPlugin
-            contentEditable={<ContentEditable />}
-            placeholder={
-              <div className="editor-placeholder">Enter some text...</div>
-            }
-          />
-          <TestPlugin />
-          <HistoryPlugin />
-        </TestComposer>
-      );
+  function Test(): JSX.Element {
+    function TestPlugin() {
+      // Plugin used just to get our hands on the Editor object
+      [editor] = useLexicalComposerContext();
+      return null;
     }
 
+    return (
+      <TestComposer>
+        <RichTextPlugin
+          contentEditable={<ContentEditable />}
+          placeholder={
+            <div className="editor-placeholder">Enter some text...</div>
+          }
+        />
+        <TestPlugin />
+        <HistoryPlugin />
+      </TestComposer>
+    );
+  }
+
+  test('LexicalHistory after clearing', async () => {
+    let canRedo = true;
+    let canUndo = true;
+
+    ReactTestUtils.act(() => {
+      reactRoot.render(<Test key="smth" />);
+    });
+
+    editor.registerCommand<boolean>(
+      CAN_REDO_COMMAND,
+      (payload) => {
+        canRedo = payload;
+        return false;
+      },
+      COMMAND_PRIORITY_CRITICAL,
+    );
+
+    editor.registerCommand<boolean>(
+      CAN_UNDO_COMMAND,
+      (payload) => {
+        canUndo = payload;
+        return false;
+      },
+      COMMAND_PRIORITY_CRITICAL,
+    );
+
+    await Promise.resolve().then();
+
+    await ReactTestUtils.act(async () => {
+      editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined);
+    });
+
+    expect(canRedo).toBe(false);
+    expect(canUndo).toBe(false);
+  });
+
+  test('LexicalHistory.Redo after Quote Node', async () => {
     ReactTestUtils.act(() => {
       reactRoot.render(<Test key="smth" />);
     });
@@ -103,7 +143,7 @@ describe('LexicalHistory tests', () => {
         selection.focus.set(firstTextNode.getKey(), 3, 'text');
 
         $setSelection(selection);
-        $wrapLeafNodesInElements(selection, () => $createQuoteNode());
+        $wrapNodes(selection, () => $createQuoteNode());
       });
     });
 

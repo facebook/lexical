@@ -1,3 +1,165 @@
+## v0.5.0 (2022-09-23)
+
+- feat(lexical-playground): draggable block (#2860) 子瞻 Luci
+- Dispatch CAN_{REDO,UNDO}_COMMAND after clearing history (#3056) Wilberto Morales
+- Fix Table Deletion (#3053) Tyler Bainbridge
+- Remove previousText check (#3052) Tyler Bainbridge
+- Improve table selection handling when there are no siblings (#3051) Tyler Bainbridge
+- Fix initialEditorState flow (#3048) Gerard Rovira
+- Add Selection View in DevTools (#2955) Will
+- Fix (Known) Table Bugs (#3000) Tyler Bainbridge
+- Revise Vite compression (#3036) Gerard Rovira
+- Fix composition text boundary for canInsertTextAfter (#3045) Gerard Rovira
+- Fix nested mark creation when wrapping forward selection (#3027) Ken Powers
+- Add position property to menus & disable floating link toolbar for autolink nodes (#3035) Tyler Bainbridge
+- Update collab docs (#3033) Maksim Horbachevsky
+- feat(lexical-react): add initialEditorState for LexicalCollaborationPlugin (#3011) Dragoș Străinu
+- [0.5] Remove deprecated initialEditorState from OnChangePlugin (#3031) Gerard Rovira
+- [0.5] Remove initialEditorState from  Plain/RichTextPlugin (#3032) Gerard Rovira
+- Make  -> isEditable mandatory (#3030) Gerard Rovira
+- Add optional cursors container prop for a better positioning in scrollable layouts (#3025) Maksim Horbachevsky
+- [0.5] Treat undefined selection the same as null in  (#2948) Acy Watson
+- [0.5]  ->  (#3020) Gerard Rovira
+- getStyleObjectFromCSS to compute when cache miss (#3024) Gerard Rovira
+- [0.5] Revise usage of root node vs shadow (#3022) Gerard Rovira
+- Fix code highlighter race condition on transform (#3014) Gerard Rovira
+- : Selection-agnostic node insertion with Grid/Node selection support (#2638) Gerard Rovira
+- add docs (#3019) Acy Watson
+- [0.5] Remove INERT mode (#2421) Gerard Rovira
+- [0.5] Correct definition of isTopLevel; introduce DecoratorNode->isInline, ElementNode->isShadowRoot (#3009) Gerard Rovira
+- Revert md changes from #3001 (#3015) Maksim Horbachevsky
+- add install step (#3008) Acy Watson
+- Revise RnageSelection dirty toggle (#3007) Dominic Gannaway
+- Trim content for newlines only (#3006) Maksim Horbachevsky
+- Fix  flow type (#3005) Gerard Rovira
+- Fix bad TypeaheadMenuPlugin prod build (#3003) Gerard Rovira
+- Capture pendingDecorators after garbage collecting detached decorators (#2999) Adrien Wald
+- ElementNode -> isTopLevel() (#3001) Gerard Rovira
+- Rm unused helpers from older markdown code (#2998) Maksim Horbachevsky
+- Add DEPRECATED prefix to Grid APIs (#2966) Dominic Gannaway
+- [Automated Releases] Add logging and dry run to release script (#2986) Acy Watson
+- Fix www exports (#2994) Maksim Horbachevsky
+- Fix WWW import rewrite for React (#2996) Gerard Rovira
+- Fix insert column header bug (#2995) Tyler Bainbridge
+- docs: loadContent clarification (#2989) ly3xqhl8g9
+- docs: Fix URL of rich-text and plain-text (#2985) kimulaco
+- Fixed exportDOM for paragraph node (#2981) Hafiz
+- remove ff merge from release (#2984) Acy Watson
+- fix versioning for ff merge (#2983) Acy Watson
+- merge from main Acy Watson
+- merge from main Acy Watson
+- add back config Acy Watson
+- add ssh key Acy Watson
+- push config (#2979) Acy Watson
+- Clean up redundant newlines during pasting (#2969) Maksim Horbachevsky
+- config (#2977) Acy Watson
+- Improve docs around the React plugins page (#2976) Dominic Gannaway
+- install (#2972) Acy Watson
+- Update collab errors, related cleanup (#2971) Maksim Horbachevsky
+- Automated releases (#2949) Acy Watson
+- Add empty comment in front of 'export' in a bundled file (#2970) Maksim Horbachevsky
+- Fix bugs with isEditable (#2967) Dominic Gannaway
+- allow escaped markdown within TextFormatTransformer (#2964) Christian Ratz
+- Fix link breaking when formatting on (#2954) Patrick McCullough
+- fix typo on read-mode / edit-mode page (#2962) Christian Ratz
+- fix (#2957) Acy Watson
+- Add table cell menu back (#2958) Tyler Bainbridge
+- fix (#2956) Acy Watson
+
+## 0.4.1 (September 5, 2022)
+
+- Fix breaking bug for `isEditable` mode in editor initialization (#2945) Tim Laubert
+- Fix Safari selection highlighting bug (#2943) John Flockton
+- Fix Android backspace bug (#2940) Dominic Gannaway
+
+## 0.4.0 (September 3, 2022)
+
+### Breaking Changes
+
+#### Renamed isReadOnly API to isEditable
+
+editor.isReadyOnly -> editor.isEditable()
+editor.setReadyOnly -> editor.setEditable()
+editor.registerReadOnlyListener -> editor.registerEditableListener()
+editor config { readOnly: true } -> { editable: boolean }
+
+https://github.com/facebook/lexical/pull/2912
+
+#### Markdown Transformers Require Dependencies
+
+The "dependencies" property is now required for custom markdown Element and TextMatch Transformers. It takes an array of LexicalNode subclasses and
+asserts that they're available in the editor when transforms are registered.
+
+https://github.com/facebook/lexical/pull/2910
+
+#### Selection Updates when isEditable is false (previous ReadOnly mode)
+
+Lexical will now track and update selection in response to DOM selectionchange events when editor.isEditable is false. This is necessary for enabling some behavior
+such as commenting via marks, but may cause other indirect changes such as update listeners firing when they didn't previously.
+
+- Ensure editor states are cloned if read only (#2936) Dominic Gannaway
+- Prevent nested editor event duplication (#2935) Dominic Gannaway
+- Avoid preventing default for copy events when there is no selection (#2930) Dominic Gannaway
+- Non-Editable Mode Playground Improvements (#2927) Acy Watson
+- fix: do not import LexicalTypeaheadMenuPlugin from src folder (#2928) Eric Charles
+- Change read only mode API to editable mode (#2912) Dominic Gannaway
+- Fix typo (#2925) Tjaart van der Walt
+- Remove redundant readonly checks. (#2921) Acy Watson
+- allow selection in readonly mode (#2920) Acy Watson
+- Remove $getEditor (#2919) Dominic Gannaway
+- Use window of current default view (#2918) Dominic Gannaway
+- Fix bad CSS on content editable container (#2917) Dominic Gannaway
+- Ensure we only mutate a non-readonly editor state (#2915) Dominic Gannaway
+- Fix failing build (#2916) John Flockton
+- Read only validation server (#2899) Dominic Gannaway
+- Add serialized node type exports (#2914) Matthew Lin
+- Provide markdown plugin node dependencies (#2910) Dominic Gannaway
+- Fixed typo (#2908) Heesung Jang
+- Add Flow Types for AutoEmbedPlugin and TypeaheadPlugin (#2904) Tyler Bainbridge
+- Fix link pasting (#2903) Maksim Horbachevsky
+- Attempt transform of NodeSelection to RangeSelection on mouseDown (#2901) Gerard Rovira
+- chore: add e2e tests for maxlength plugin (#2478) Adithya Vardhan
+- Added sanitizer to FloatingLinkEditor (#2900) Heesung Jang
+- Rename website folder (#2902) John Flockton
+- remove unnecessary text append (#2898) John Flockton
+- Fix Lexical package main entry points (#2897) Dominic Gannaway
+- Fix overriding keyboard controls on internal decorator (#2895) Dominic Gannaway
+- Allow code highlighting to run without active selection (#2891) Maksim Horbachevsky
+- Fix editor content clipping bug (#2890) Dominic Gannaway
+- LexicalTypeaheadMenuPlugin - Increase priority for keyboard commands (#2885) Theo Tillberg
+- Remove redundant css property (#2888) Adam Kona
+- Playground: Fix collab connect/disconnect toggling (#2887) Maksim Horbachevsky
+- Improve heuristics around node selection and keyboard navigation (#2884) Dominic Gannaway
+- Don't merge history entries from different editors (#2873) Acy Watson
+- Exported DEFAULT_TRANSFORMERS array in react LexicalMarkdownShortcutPlugin (#2878) Kevin Ansfield
+- Replaced `addTransform` with `registerNodeTransform` in transforms doc (#2882) Kevin Ansfield
+- add example for additional nodes in plugin (#2879) Stefan Huber
+- add the corresponding import to react doc (#2881) Stefan Huber
+- Fix playground visual styling (#2876) Dominic Gannaway
+- chore(deps): bump minimist in /packages/lexical-website-new (#2744) dependabot[bot]
+- chore(deps): bump terser from 5.14.1 to 5.14.2 (#2869) dependabot[bot]
+- Change linebreak node handling in insertNodes (#2857) Acy Watson
+- Add some React Docs (#2858) Acy Watson
+- fix delete backward bug (#2870) Dominic Gannaway
+- add watch mode for auto-gen doc comments in dev (#2859) Acy Watson
+- Update package-lock.json (#2866) ＡＮＤＲＩ Ｈ.Ｕ
+- Update package-lock.json (#2865) ＡＮＤＲＩ Ｈ.Ｕ
+- Fix issue with emoji (#2853) John Flockton
+- Adjust Typeahead Styles (#2846) Tyler Bainbridge
+- revert inadvertent change (#2849) Acy Watson
+- Fix small type issue (#2847) John Flockton
+- Wider (#2848) John Flockton
+- Add autogenerated TypeDoc docs (#2837) Acy Watson
+- fix: set cursor grab when image can be dragged (#2831) 子瞻 Luci
+- fix(lexical-playground): two issues with scrolling-related scenarios (#2724) 子瞻 Luci
+- fix: add fallback for code formatting (#2833) Adithya Vardhan
+- rename local variables (#2840) Acy Watson
+- fix broken links in docs (#2839) Reid Barber
+- Fixing grammar on RootNode documentation (#2838) Aaron Freeland
+- fix: transfer format and indent info on wrap (#2832) Adithya Vardhan
+- fixed getStyleObjectFromRawCSS to handle css values with a colon (#2814) Hayden Warmington
+- Add Panel to Display Props for DevTools Nodes (#2803) Will
+
 ## 0.3.11 (August 12, 2022)
 
 - fix more code imports (#2828) Acy Watson

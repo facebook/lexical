@@ -11,7 +11,6 @@ import type {
   InsertTableCommandPayload,
   TableSelection,
 } from '@lexical/table';
-import type {ElementNode, NodeKey} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
@@ -27,8 +26,10 @@ import {
   $getNodeByKey,
   $getSelection,
   $isRangeSelection,
-  $isRootNode,
+  $isRootOrShadowRoot,
   COMMAND_PRIORITY_EDITOR,
+  ElementNode,
+  NodeKey,
 } from 'lexical';
 import {useEffect} from 'react';
 import invariant from 'shared/invariant';
@@ -63,7 +64,7 @@ export function TablePlugin(): JSX.Element | null {
             includeHeaders,
           );
 
-          if ($isRootNode(focusNode)) {
+          if ($isRootOrShadowRoot(focusNode)) {
             const target = focusNode.getChildAtIndex(focus.offset);
 
             if (target !== null) {

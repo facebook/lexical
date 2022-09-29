@@ -1,0 +1,13 @@
+.time-travel-view {
+  align-items: center;
+  background: var(--main-dark-gray);
+  border: 1px solid var(--highlight-dark-gray);
+  display: flex;
+  color: var(--main-white);
+  height: var(--top-row-height);
+  left: calc(100vw - var(--right-column-width));
+  position: fixed;
+  text-align: left;
+  top: 0em;
+  width: var(--right-column-width);
+}

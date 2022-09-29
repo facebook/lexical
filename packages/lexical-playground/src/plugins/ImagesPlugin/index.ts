@@ -5,16 +5,15 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {LexicalCommand, LexicalEditor} from 'lexical';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {mergeRegister} from '@lexical/utils';
+import {$wrapNodeInElement, mergeRegister} from '@lexical/utils';
 import {
+  $createParagraphNode,
   $createRangeSelection,
   $getSelection,
+  $insertNodes,
   $isNodeSelection,
-  $isRangeSelection,
-  $isRootNode,
+  $isRootOrShadowRoot,
   $setSelection,
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_HIGH,
@@ -23,6 +22,8 @@ import {
   DRAGOVER_COMMAND,
   DRAGSTART_COMMAND,
   DROP_COMMAND,
+  LexicalCommand,
+  LexicalEditor,
 } from 'lexical';
 import {useEffect} from 'react';
 import getSelection from 'shared/getDOMSelection';
@@ -38,7 +39,11 @@ export type InsertImagePayload = Readonly<ImagePayload>;
 
 export const INSERT_IMAGE_COMMAND: LexicalCommand<InsertImagePayload> =
   createCommand();
-export default function ImagesPlugin(): JSX.Element | null {
+export default function ImagesPlugin({
+  captionsEnabled,
+}: {
+  captionsEnabled?: boolean;
+}): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
@@ -50,14 +55,12 @@ export default function ImagesPlugin(): JSX.Element | null {
       editor.registerCommand<InsertImagePayload>(
         INSERT_IMAGE_COMMAND,
         (payload) => {
-          const selection = $getSelection();
-          if ($isRangeSelection(selection)) {
-            if ($isRootNode(selection.anchor.getNode())) {
-              selection.insertParagraph();
-            }
-            const imageNode = $createImageNode(payload);
-            selection.insertNodes([imageNode]);
+          const imageNode = $createImageNode(payload);
+          $insertNodes([imageNode]);
+          if ($isRootOrShadowRoot(imageNode.getParentOrThrow())) {
+            $wrapNodeInElement(imageNode, $createParagraphNode).selectEnd();
           }
+
           return true;
         },
         COMMAND_PRIORITY_EDITOR,
@@ -84,7 +87,7 @@ export default function ImagesPlugin(): JSX.Element | null {
         COMMAND_PRIORITY_HIGH,
       ),
     );
-  }, [editor]);
+  }, [captionsEnabled, editor]);
 
   return null;
 }

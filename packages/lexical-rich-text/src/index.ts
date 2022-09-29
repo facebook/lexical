@@ -8,6 +8,22 @@
  */
 
 import {
+  CommandPayloadType,
+  DEPRECATED_$isGridSelection,
+  DOMConversionMap,
+  DOMConversionOutput,
+  EditorConfig,
+  ElementFormatType,
+  LexicalEditor,
+  LexicalNode,
+  NodeKey,
+  ParagraphNode,
+  SerializedElementNode,
+  Spread,
+  TextFormatType,
+} from 'lexical';
+
+import {
   $getHtmlContent,
   $getLexicalContent,
   $insertDataTransferForRichText,
@@ -25,32 +41,24 @@ import {
   $createChildgroupNode,
   $createParagraphNode,
   $getNearestNodeFromDOMNode,
-  $getRoot,
   $getSelection,
   $isChildgroupNode,
   $isDecoratorNode,
   $isElementNode,
-  $isGridSelection,
   $isNodeSelection,
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
   CLICK_COMMAND,
   COMMAND_PRIORITY_EDITOR,
-  CommandPayloadType,
   CONTROLLED_TEXT_INSERTION_COMMAND,
   COPY_COMMAND,
   CUT_COMMAND,
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
-  DOMConversionMap,
-  DOMConversionOutput,
   DRAGSTART_COMMAND,
   DROP_COMMAND,
-  EditorConfig,
-  EditorState,
-  ElementFormatType,
   ElementNode,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
@@ -66,25 +74,11 @@ import {
   KEY_ENTER_COMMAND,
   KEY_ESCAPE_COMMAND,
   KEY_TAB_COMMAND,
-  LexicalEditor,
-  LexicalNode,
-  NodeKey,
   OUTDENT_CONTENT_COMMAND,
-  ParagraphNode,
   PASTE_COMMAND,
   REMOVE_TEXT_COMMAND,
-  SerializedElementNode,
-  Spread,
-  TextFormatType,
 } from 'lexical';
 import {CAN_USE_BEFORE_INPUT, IS_IOS, IS_SAFARI} from 'shared/environment';
-
-// TODO Remove in 0.4
-export type InitialEditorStateType =
-  | null
-  | string
-  | EditorState
-  | ((editor: LexicalEditor) => void);
 
 export type SerializedHeadingNode = Spread<
   {
@@ -103,17 +97,6 @@ export type SerializedQuoteNode = Spread<
   SerializedElementNode
 >;
 
-// Convoluted logic to make this work with Flow. Order matters.
-const options = {tag: 'history-merge'};
-const setEditorOptions: {
-  tag?: string;
-} = options;
-const updateOptions: {
-  onUpdate?: () => void;
-  skipTransforms?: true;
-  tag?: string;
-} = options;
-
 /** @noInheritDoc */
 export class QuoteNode extends ElementNode {
   static getType(): string {
@@ -131,12 +114,50 @@ export class QuoteNode extends ElementNode {
   // View
 
   createDOM(config: EditorConfig): HTMLElement {
+    const wrapper = document.createElement('div');
+    wrapper.style.userSelect = 'none';
+    const nonEditableContent = document.createElement('div');
+    nonEditableContent.setAttribute('contenteditable', 'false');
+
+    const input = document.createElement('input');
+    input.setAttribute('type', 'checkbox');
+    nonEditableContent.appendChild(input);
+    wrapper.appendChild(nonEditableContent);
+
     const element = document.createElement('blockquote');
+    element.setAttribute('data-gap', 'true');
     addClassNamesToElement(element, config.theme.quote);
-    return element;
+
+    wrapper.appendChild(element);
+    return wrapper;
   }
+
   updateDOM(prevNode: QuoteNode, dom: HTMLElement): boolean {
     return false;
+  }
+
+  insertBeforeDOM(
+    dom: HTMLElement,
+    childDOM: HTMLElement,
+    referenceNode: Node | null,
+  ): void {
+    dom
+      .querySelector(':scope > [data-gap]')!
+      .insertBefore(childDOM, referenceNode);
+  }
+
+  removeChildDOM(dom: HTMLElement, childDOM: HTMLElement): void {
+    dom.querySelector(':scope > [data-gap]')!.removeChild(childDOM);
+  }
+
+  replaceChildDOM(
+    dom: HTMLElement,
+    newChildDOM: Node,
+    oldChildDOM: Node,
+  ): void {
+    dom
+      .querySelector(':scope > [data-gap]')!
+      .replaceChild(newChildDOM, oldChildDOM);
   }
 
   static importDOM(): DOMConversionMap | null {
@@ -366,51 +387,6 @@ export function $isHeadingNode(
   return node instanceof HeadingNode;
 }
 
-function initializeEditor(
-  editor: LexicalEditor,
-  initialEditorState?: InitialEditorStateType,
-): void {
-  if (initialEditorState === null) {
-    return;
-  } else if (initialEditorState === undefined) {
-    editor.update(() => {
-      const root = $getRoot();
-      if (root.isEmpty()) {
-        const paragraph = $createParagraphNode();
-        root.append(paragraph);
-        const activeElement = document.activeElement;
-        if (
-          $getSelection() !== null ||
-          (activeElement !== null && activeElement === editor.getRootElement())
-        ) {
-          paragraph.select();
-        }
-      }
-    }, updateOptions);
-  } else if (initialEditorState !== null) {
-    switch (typeof initialEditorState) {
-      case 'string': {
-        const parsedEditorState = editor.parseEditorState(initialEditorState);
-        editor.setEditorState(parsedEditorState, setEditorOptions);
-        break;
-      }
-      case 'object': {
-        editor.setEditorState(initialEditorState, setEditorOptions);
-        break;
-      }
-      case 'function': {
-        editor.update(() => {
-          const root = $getRoot();
-          if (root.isEmpty()) {
-            initialEditorState(editor);
-          }
-        }, updateOptions);
-        break;
-      }
-    }
-  }
-}
-
 function onPasteForRichText(
   event: CommandPayloadType<typeof PASTE_COMMAND>,
   editor: LexicalEditor,
@@ -420,10 +396,12 @@ function onPasteForRichText(
     () => {
       const selection = $getSelection();
       const clipboardData =
-        event instanceof InputEvent ? null : event.clipboardData;
+        event instanceof InputEvent || event instanceof KeyboardEvent
+          ? null
+          : event.clipboardData;
       if (
         clipboardData != null &&
-        ($isRangeSelection(selection) || $isGridSelection(selection))
+        ($isRangeSelection(selection) || DEPRECATED_$isGridSelection(selection))
       ) {
         $insertDataTransferForRichText(clipboardData, selection, editor);
       }
@@ -438,9 +416,9 @@ function onCopyForRichText(
   event: CommandPayloadType<typeof COPY_COMMAND>,
   editor: LexicalEditor,
 ): void {
-  event.preventDefault();
   const selection = $getSelection();
   if (selection !== null) {
+    event.preventDefault();
     const clipboardData =
       event instanceof KeyboardEvent ? null : event.clipboardData;
     const htmlString = $getHtmlContent(editor);
@@ -518,10 +496,7 @@ function isTargetWithinDecorator(target: HTMLElement): boolean {
   return $isDecoratorNode(node);
 }
 
-export function registerRichText(
-  editor: LexicalEditor,
-  initialEditorState?: InitialEditorStateType,
-): () => void {
+export function registerRichText(editor: LexicalEditor): () => void {
   const removeListener = mergeRegister(
     editor.registerCommand(
       CLICK_COMMAND,
@@ -579,11 +554,14 @@ export function registerRichText(
         if (typeof eventOrText === 'string') {
           if ($isRangeSelection(selection)) {
             selection.insertText(eventOrText);
-          } else if ($isGridSelection(selection)) {
+          } else if (DEPRECATED_$isGridSelection(selection)) {
             // TODO: Insert into the first cell & clear selection.
           }
         } else {
-          if (!$isRangeSelection(selection) && !$isGridSelection(selection)) {
+          if (
+            !$isRangeSelection(selection) &&
+            !DEPRECATED_$isGridSelection(selection)
+          ) {
             return false;
           }
 
@@ -741,10 +719,7 @@ export function registerRichText(
       KEY_ARROW_DOWN_COMMAND,
       (event) => {
         const selection = $getSelection();
-        if (
-          $isNodeSelection(selection) &&
-          !isTargetWithinDecorator(event.target as HTMLElement)
-        ) {
+        if ($isNodeSelection(selection)) {
           // If selection is on a node, let's try and move selection
           // back to being a range selection.
           const nodes = selection.getNodes();
@@ -761,10 +736,7 @@ export function registerRichText(
       KEY_ARROW_LEFT_COMMAND,
       (event) => {
         const selection = $getSelection();
-        if (
-          $isNodeSelection(selection) &&
-          !isTargetWithinDecorator(event.target as HTMLElement)
-        ) {
+        if ($isNodeSelection(selection)) {
           // If selection is on a node, let's try and move selection
           // back to being a range selection.
           const nodes = selection.getNodes();
@@ -958,7 +930,10 @@ export function registerRichText(
       PASTE_COMMAND,
       (event) => {
         const selection = $getSelection();
-        if ($isRangeSelection(selection) || $isGridSelection(selection)) {
+        if (
+          $isRangeSelection(selection) ||
+          DEPRECATED_$isGridSelection(selection)
+        ) {
           onPasteForRichText(event, editor);
           return true;
         }
@@ -967,6 +942,5 @@ export function registerRichText(
       COMMAND_PRIORITY_EDITOR,
     ),
   );
-  initializeEditor(editor, initialEditorState);
   return removeListener;
 }

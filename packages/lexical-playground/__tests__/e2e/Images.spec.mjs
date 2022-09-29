@@ -24,6 +24,7 @@ import {
   insertUrlImage,
   IS_WINDOWS,
   SAMPLE_IMAGE_URL,
+  SAMPLE_LANDSCAPE_IMAGE_URL,
   selectorBoundingBox,
   test,
   waitForSelector,
@@ -605,5 +606,128 @@ test.describe('Images', () => {
     });
     expect(lexicalSelection.anchor).toBeTruthy();
     expect(lexicalSelection.focus).toBeTruthy();
+  });
+
+  test('Node selection: can select multiple image nodes and replace them with a new image', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    await page.keyboard.type('text1');
+    await page.keyboard.press('Enter');
+    await insertSampleImage(page);
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('text2');
+    await page.keyboard.press('Enter');
+    await insertSampleImage(page, 'alt');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('text3');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">text1</span>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true">
+            <div draggable="false">
+              <img
+                alt="Yellow flower in tilt shift lens"
+                draggable="false"
+                src="${SAMPLE_IMAGE_URL}"
+                style="height: inherit; max-width: 500px; width: inherit" />
+            </div>
+          </span>
+          <br />
+        </p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">text2</span>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true">
+            <div draggable="false">
+              <img
+                alt="Daylight fir trees forest glacier green high ice landscape"
+                draggable="false"
+                src="${SAMPLE_LANDSCAPE_IMAGE_URL}"
+                style="height: inherit; max-width: 500px; width: inherit" />
+            </div>
+          </span>
+          <br />
+        </p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">text3</span>
+        </p>
+      `,
+    );
+
+    await click(
+      page,
+      '.editor-image img[alt="Yellow flower in tilt shift lens"]',
+    );
+    await page.keyboard.down('Shift');
+    await click(
+      page,
+      '.editor-image img[alt="Daylight fir trees forest glacier green high ice landscape"]',
+    );
+    await page.keyboard.up('Shift');
+
+    await insertSampleImage(page);
+    await page.keyboard.type(' <- it works!');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">text1</span>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">text2</span>
+        </p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true">
+            <div draggable="false">
+              <img
+                alt="Yellow flower in tilt shift lens"
+                draggable="false"
+                src="${SAMPLE_IMAGE_URL}"
+                style="height: inherit; max-width: 500px; width: inherit" />
+            </div>
+          </span>
+          <span data-lexical-text="true">&lt;- it works!</span>
+        </p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">text3</span>
+        </p>
+      `,
+    );
   });
 });

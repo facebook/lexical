@@ -21,7 +21,7 @@ import type {
 } from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
-import {$getNearestNodeFromDOMNode, GridNode} from 'lexical';
+import {$getNearestNodeFromDOMNode, DEPRECATED_GridNode} from 'lexical';
 
 import {$isTableCellNode} from './LexicalTableCellNode';
 import {$isTableRowNode, TableRowNode} from './LexicalTableRowNode';
@@ -36,7 +36,7 @@ export type SerializedTableNode = Spread<
 >;
 
 /** @noInheritDoc */
-export class TableNode extends GridNode {
+export class TableNode extends DEPRECATED_GridNode {
   /** @internal */
   __grid?: Grid;
 
@@ -52,7 +52,7 @@ export class TableNode extends GridNode {
     return {
       table: (_node: Node) => ({
         conversion: convertTableElement,
-        priority: 0,
+        priority: 1,
       }),
     };
   }
@@ -121,6 +121,10 @@ export class TableNode extends GridNode {
 
   canBeEmpty(): false {
     return false;
+  }
+
+  isShadowRoot(): boolean {
+    return true;
   }
 
   getCordsFromCellNode(

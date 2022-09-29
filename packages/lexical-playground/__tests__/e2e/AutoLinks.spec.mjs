@@ -62,50 +62,32 @@ test.describe('Auto Links', () => {
     isPlainText,
   }) => {
     test.skip(isPlainText);
+    const htmlWithLink = html`
+      <p dir="ltr">
+        <a href="http://example.com" dir="ltr">
+          <span data-lexical-text="true">http://example.com</span>
+        </a>
+      </p>
+    `;
 
     await focusEditor(page);
     await page.keyboard.type('http://example.com');
-    await assertHTML(
-      page,
-      html`
-        <p dir="ltr">
-          <a dir="ltr" href="http://example.com">
-            <span data-lexical-text="true">http://example.com</span>
-          </a>
-        </p>
-      `,
-      undefined,
-      {ignoreClasses: true},
-    );
+    await assertHTML(page, htmlWithLink, undefined, {ignoreClasses: true});
 
     // Add non-url text after the link
     await page.keyboard.type('!');
     await assertHTML(
       page,
       html`
-        <p>
-          <a dir="ltr" href="http://example.com">
-            <span data-lexical-text="true">http://example.com</span>
-          </a>
-          <span data-lexical-text="true">!</span>
+        <p dir="ltr">
+          <span data-lexical-text="true">http://example.com!</span>
         </p>
       `,
       undefined,
       {ignoreClasses: true},
     );
     await page.keyboard.press('Backspace');
-    await assertHTML(
-      page,
-      html`
-        <p>
-          <a dir="ltr" href="http://example.com">
-            <span data-lexical-text="true">http://example.com</span>
-          </a>
-        </p>
-      `,
-      undefined,
-      {ignoreClasses: true},
-    );
+    await assertHTML(page, htmlWithLink, undefined, {ignoreClasses: true});
 
     // Add non-url text before the link
     await moveToLineBeginning(page);
@@ -113,42 +95,22 @@ test.describe('Auto Links', () => {
     await assertHTML(
       page,
       html`
-        <p>
-          <span data-lexical-text="true">!</span>
-          <a dir="ltr" href="http://example.com">
-            <span data-lexical-text="true">http://example.com</span>
-          </a>
+        <p dir="ltr">
+          <span data-lexical-text="true">!http://example.com</span>
         </p>
       `,
       undefined,
       {ignoreClasses: true},
     );
     await page.keyboard.press('Backspace');
-    await assertHTML(
-      page,
-      html`
-        <p>
-          <a dir="ltr" href="http://example.com">
-            <span data-lexical-text="true">http://example.com</span>
-          </a>
-        </p>
-      `,
-      undefined,
-      {ignoreClasses: true},
-    );
+    await assertHTML(page, htmlWithLink, undefined, {ignoreClasses: true});
 
     // Add newline after link
     await moveToLineEnd(page);
     await page.keyboard.press('Enter');
     await assertHTML(
       page,
-      html`
-        <p>
-          <a dir="ltr" href="http://example.com">
-            <span data-lexical-text="true">http://example.com</span>
-          </a>
-        </p>
-      ` +
+      htmlWithLink +
         html`
           <p><br /></p>
         `,
@@ -156,21 +118,10 @@ test.describe('Auto Links', () => {
       {ignoreClasses: true},
     );
     await page.keyboard.press('Backspace');
-    await assertHTML(
-      page,
-      html`
-        <p>
-          <a dir="ltr" href="http://example.com">
-            <span data-lexical-text="true">http://example.com</span>
-          </a>
-        </p>
-      `,
-      undefined,
-      {ignoreClasses: true},
-    );
+    await assertHTML(page, htmlWithLink, undefined, {ignoreClasses: true});
   });
 
-  test('Can create links when pasting text with urls', async ({
+  test('Can create link when pasting text with urls', async ({
     page,
     isPlainText,
   }) => {
@@ -197,37 +148,6 @@ test.describe('Auto Links', () => {
           <span data-lexical-text="true">and</span>
           <a href="https://www.example.com" dir="ltr">
             <span data-lexical-text="true">www.example.com</span>
-          </a>
-        </p>
-      `,
-      undefined,
-      {ignoreClasses: true},
-    );
-  });
-
-  test('Can create links when pasting text with multiple autolinks in a row separated by non-alphanumeric characters, but not whitespaces', async ({
-    page,
-    isPlainText,
-  }) => {
-    test.skip(isPlainText);
-    await focusEditor(page);
-    await pasteFromClipboard(page, {
-      'text/plain': 'https://1.com/,https://2.com/;;;https://3.com',
-    });
-    await assertHTML(
-      page,
-      html`
-        <p>
-          <a href="https://1.com/" dir="ltr">
-            <span data-lexical-text="true">https://1.com/</span>
-          </a>
-          <span data-lexical-text="true">,</span>
-          <a href="https://2.com/" dir="ltr">
-            <span data-lexical-text="true">https://2.com/</span>
-          </a>
-          <span data-lexical-text="true">;;;</span>
-          <a href="https://3.com" dir="ltr">
-            <span data-lexical-text="true">https://3.com</span>
           </a>
         </p>
       `,
@@ -265,6 +185,37 @@ test.describe('Auto Links', () => {
         <p dir="ltr">
           <a href="https://" dir="ltr">
             <span data-lexical-text="true">https://facebook.com</span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  test('Can create links when pasting text with multiple autolinks in a row separated by non-alphanumeric characters, but not whitespaces', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await pasteFromClipboard(page, {
+      'text/plain': 'https://1.com/,https://2.com/;;;https://3.com',
+    });
+    await assertHTML(
+      page,
+      html`
+        <p>
+          <a href="https://1.com/" dir="ltr">
+            <span data-lexical-text="true">https://1.com/</span>
+          </a>
+          <span data-lexical-text="true">,</span>
+          <a href="https://2.com/" dir="ltr">
+            <span data-lexical-text="true">https://2.com/</span>
+          </a>
+          <span data-lexical-text="true">;;;</span>
+          <a href="https://3.com" dir="ltr">
+            <span data-lexical-text="true">https://3.com</span>
           </a>
         </p>
       `,

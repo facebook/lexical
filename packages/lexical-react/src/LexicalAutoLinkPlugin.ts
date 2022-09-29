@@ -52,7 +52,7 @@ function findFirstMatch(
   return null;
 }
 
-const PUNCTUATION_OR_SPACE = /[.,;:!~\s]/;
+const PUNCTUATION_OR_SPACE = /[.,;\s]/;
 
 function isSeparator(char: string): boolean {
   return PUNCTUATION_OR_SPACE.test(char);
@@ -149,6 +149,7 @@ function handleLinkCreation(
       const linkNode = $createAutoLinkNode(match.url);
       const textNode = $createTextNode(match.text);
       textNode.setFormat(linkTextNode.getFormat());
+      textNode.setDetail(linkTextNode.getDetail());
       linkNode.append(textNode);
       linkTextNode.replace(linkNode);
       onChange(match.url, null);

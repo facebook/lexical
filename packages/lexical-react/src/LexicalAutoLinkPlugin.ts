@@ -52,32 +52,64 @@ function findFirstMatch(
   return null;
 }
 
+const PUNCTUATION_OR_SPACE = /[.,;\s]/;
+
+function isSeparator(char: string): boolean {
+  return PUNCTUATION_OR_SPACE.test(char);
+}
+
+function endsWithSeparator(textContent: string): boolean {
+  return isSeparator(textContent[textContent.length - 1]);
+}
+
+function startsWithSeparator(textContent: string): boolean {
+  return isSeparator(textContent[0]);
+}
+
 function isPreviousNodeValid(node: LexicalNode): boolean {
   let previousNode = node.getPreviousSibling();
-
   if ($isElementNode(previousNode)) {
     previousNode = previousNode.getLastDescendant();
   }
-
   return (
     previousNode === null ||
     $isLineBreakNode(previousNode) ||
-    ($isTextNode(previousNode) && previousNode.getTextContent().endsWith(' '))
+    ($isTextNode(previousNode) &&
+      endsWithSeparator(previousNode.getTextContent()))
   );
 }
 
 function isNextNodeValid(node: LexicalNode): boolean {
   let nextNode = node.getNextSibling();
-
   if ($isElementNode(nextNode)) {
     nextNode = nextNode.getFirstDescendant();
   }
-
   return (
     nextNode === null ||
     $isLineBreakNode(nextNode) ||
-    ($isTextNode(nextNode) && nextNode.getTextContent().startsWith(' '))
+    ($isTextNode(nextNode) && startsWithSeparator(nextNode.getTextContent()))
   );
+}
+
+function isContentAroundIsValid(
+  matchStart: number,
+  matchEnd: number,
+  text: string,
+  node: TextNode,
+): boolean {
+  const contentBeforeIsValid =
+    matchStart > 0
+      ? isSeparator(text[matchStart - 1])
+      : isPreviousNodeValid(node);
+  if (!contentBeforeIsValid) {
+    return false;
+  }
+
+  const contentAfterIsValid =
+    matchEnd < text.length
+      ? isSeparator(text[matchEnd])
+      : isNextNodeValid(node);
+  return contentAfterIsValid;
 }
 
 function handleLinkCreation(
@@ -86,63 +118,47 @@ function handleLinkCreation(
   onChange: ChangeHandler,
 ): void {
   const nodeText = node.getTextContent();
-  const nodeTextLength = nodeText.length;
   let text = nodeText;
-  let textOffset = 0;
-  let lastNode = node;
+  let invalidMatchEnd = 0;
+  let remainingTextNode = node;
   let match;
 
   while ((match = findFirstMatch(text, matchers)) && match !== null) {
-    const matchOffset = match.index;
-    const offset = textOffset + matchOffset;
+    const matchStart = match.index;
     const matchLength = match.length;
+    const matchEnd = matchStart + matchLength;
+    const isValid = isContentAroundIsValid(
+      invalidMatchEnd + matchStart,
+      invalidMatchEnd + matchEnd,
+      nodeText,
+      node,
+    );
 
-    // Previous node is valid if any of:
-    // 1. Space before same node
-    // 2. Space in previous simple text node
-    // 3. Previous node is LineBreakNode
-    let contentBeforeMatchIsValid;
-
-    if (offset > 0) {
-      contentBeforeMatchIsValid = nodeText[offset - 1] === ' ';
-    } else {
-      contentBeforeMatchIsValid = isPreviousNodeValid(node);
-    }
-
-    // Next node is valid if any of:
-    // 1. Space after same node
-    // 2. Space in next simple text node
-    // 3. Next node is LineBreakNode
-    let contentAfterMatchIsValid;
-
-    if (offset + matchLength < nodeTextLength) {
-      contentAfterMatchIsValid = nodeText[offset + matchLength] === ' ';
-    } else {
-      contentAfterMatchIsValid = isNextNodeValid(node);
-    }
-
-    if (contentBeforeMatchIsValid && contentAfterMatchIsValid) {
-      let middleNode;
-
-      if (matchOffset === 0) {
-        [middleNode, lastNode] = lastNode.splitText(matchLength);
+    if (isValid) {
+      let linkTextNode;
+      if (invalidMatchEnd + matchStart === 0) {
+        [linkTextNode, remainingTextNode] = remainingTextNode.splitText(
+          invalidMatchEnd + matchLength,
+        );
       } else {
-        [, middleNode, lastNode] = lastNode.splitText(
-          matchOffset,
-          matchOffset + matchLength,
+        [, linkTextNode, remainingTextNode] = remainingTextNode.splitText(
+          invalidMatchEnd + matchStart,
+          invalidMatchEnd + matchStart + matchLength,
         );
       }
-
-      const nodeFormat = node.__format;
       const linkNode = $createAutoLinkNode(match.url);
-      linkNode.append($createTextNode(match.text).setFormat(nodeFormat));
-      middleNode.replace(linkNode);
+      const textNode = $createTextNode(match.text);
+      textNode.setFormat(linkTextNode.getFormat());
+      textNode.setDetail(linkTextNode.getDetail());
+      linkNode.append(textNode);
+      linkTextNode.replace(linkNode);
       onChange(match.url, null);
+      invalidMatchEnd = 0;
+    } else {
+      invalidMatchEnd += matchEnd;
     }
 
-    const iterationOffset = matchOffset + matchLength;
-    text = text.substring(iterationOffset);
-    textOffset += iterationOffset;
+    text = text.substring(matchEnd);
   }
 }
 
@@ -154,10 +170,8 @@ function handleLinkEdit(
   // Check children are simple text
   const children = linkNode.getChildren();
   const childrenLength = children.length;
-
   for (let i = 0; i < childrenLength; i++) {
     const child = children[i];
-
     if (!$isTextNode(child) || !child.isSimpleText()) {
       replaceWithChildren(linkNode);
       onChange(null, linkNode.getURL());
@@ -168,7 +182,6 @@ function handleLinkEdit(
   // Check text content fully matches
   const text = linkNode.getTextContent();
   const match = findFirstMatch(text, matchers);
-
   if (match === null || match.text !== text) {
     replaceWithChildren(linkNode);
     onChange(null, linkNode.getURL());
@@ -183,7 +196,6 @@ function handleLinkEdit(
   }
 
   const url = linkNode.getURL();
-
   if (match !== null && url !== match.url) {
     linkNode.setURL(match.url);
     onChange(match.url, url);
@@ -197,12 +209,12 @@ function handleBadNeighbors(textNode: TextNode, onChange: ChangeHandler): void {
   const nextSibling = textNode.getNextSibling();
   const text = textNode.getTextContent();
 
-  if ($isAutoLinkNode(previousSibling) && !text.startsWith(' ')) {
+  if ($isAutoLinkNode(previousSibling) && !startsWithSeparator(text)) {
     replaceWithChildren(previousSibling);
     onChange(null, previousSibling.getURL());
   }
 
-  if ($isAutoLinkNode(nextSibling) && !text.endsWith(' ')) {
+  if ($isAutoLinkNode(nextSibling) && !endsWithSeparator(text)) {
     replaceWithChildren(nextSibling);
     onChange(null, nextSibling.getURL());
   }
@@ -242,7 +254,6 @@ function useAutoLink(
     return mergeRegister(
       editor.registerNodeTransform(TextNode, (textNode: TextNode) => {
         const parent = textNode.getParentOrThrow();
-
         if ($isAutoLinkNode(parent)) {
           handleLinkEdit(parent, matchers, onChangeWrapped);
         } else if (!$isLinkNode(parent)) {
@@ -252,9 +263,6 @@ function useAutoLink(
 
           handleBadNeighbors(textNode, onChangeWrapped);
         }
-      }),
-      editor.registerNodeTransform(AutoLinkNode, (linkNode: AutoLinkNode) => {
-        handleLinkEdit(linkNode, matchers, onChangeWrapped);
       }),
     );
   }, [editor, matchers, onChange]);

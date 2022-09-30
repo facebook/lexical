@@ -769,7 +769,7 @@ export default function ToolbarPlugin(): JSX.Element {
         COMMAND_PRIORITY_CRITICAL,
       ),
     );
-  }, [activeEditor, updateToolbar]);
+  }, [activeEditor, editor, updateToolbar]);
 
   const applyStyleText = useCallback(
     (styles: Record<string, string>) => {

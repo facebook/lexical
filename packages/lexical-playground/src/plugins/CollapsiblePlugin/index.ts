@@ -118,14 +118,11 @@ export default function CollapsiblePlugin(): JSX.Element | null {
           }
 
           const container = topLevelElement.getPreviousSibling();
-          if (
-            !$isCollapsibleContainerNode(container) ||
-            !container.getCollapsed()
-          ) {
+          if (!$isCollapsibleContainerNode(container) || container.getOpen()) {
             return false;
           }
 
-          container.setCollapsed(false);
+          container.setOpen(true);
           return true;
         },
         COMMAND_PRIORITY_LOW,
@@ -181,7 +178,7 @@ export default function CollapsiblePlugin(): JSX.Element | null {
               if ($isCollapsibleTitleNode(parent)) {
                 const container = parent.getParent();
                 if ($isCollapsibleContainerNode(container)) {
-                  container.setCollapsed(!container.getCollapsed());
+                  container.toggleOpen();
                   $setSelection(selection.clone());
                   return true;
                 }
@@ -225,7 +222,7 @@ export default function CollapsiblePlugin(): JSX.Element | null {
           editor.update(() => {
             const containerNode = $getNodeByKey(key);
             if ($isCollapsibleContainerNode(containerNode)) {
-              containerNode.setCollapsed(!containerNode.getCollapsed());
+              containerNode.toggleOpen();
             }
           });
 

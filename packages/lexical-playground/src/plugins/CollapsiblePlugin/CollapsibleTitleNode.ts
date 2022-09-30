@@ -8,9 +8,7 @@
 
 import {
   $createParagraphNode,
-  $getSelection,
   $isElementNode,
-  $isRangeSelection,
   DOMConversionMap,
   EditorConfig,
   ElementNode,
@@ -21,7 +19,7 @@ import {
   Spread,
 } from 'lexical';
 
-import {TOGGLE_COLLAPSIBLE_COMMAND} from '.';
+import {$isCollapsibleContainerNode} from './CollapsibleContainerNode';
 import {$isCollapsibleContentNode} from './CollapsibleContentNode';
 
 type SerializedCollapsibleTitleNode = Spread<
@@ -42,18 +40,7 @@ export class CollapsibleTitleNode extends ElementNode {
   }
 
   createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement {
-    const dom = document.createElement('div');
-    dom.addEventListener('click', () => {
-      editor.getEditorState().read(() => {
-        const selection = $getSelection();
-        if ($isRangeSelection(selection) && selection.isCollapsed()) {
-          editor.dispatchCommand(
-            TOGGLE_COLLAPSIBLE_COMMAND,
-            this.getParentOrThrow().getKey(),
-          );
-        }
-      });
-    });
+    const dom = document.createElement('summary');
     dom.classList.add('Collapsible__title');
     return dom;
   }
@@ -88,11 +75,13 @@ export class CollapsibleTitleNode extends ElementNode {
   insertNewAfter(): ElementNode {
     const containerNode = this.getParentOrThrow();
 
-    if (containerNode.getCollapsed()) {
-      const paragraph = $createParagraphNode();
-      containerNode.insertAfter(paragraph);
-      return paragraph;
-    } else {
+    if (!$isCollapsibleContainerNode(containerNode)) {
+      throw new Error(
+        'CollapsibleTitleNode expects to be child of CollapsibleContainerNode',
+      );
+    }
+
+    if (containerNode.getOpen()) {
       const contentNode = this.getNextSibling();
       if (!$isCollapsibleContentNode(contentNode)) {
         throw new Error(
@@ -108,6 +97,10 @@ export class CollapsibleTitleNode extends ElementNode {
         contentNode.append(paragraph);
         return paragraph;
       }
+    } else {
+      const paragraph = $createParagraphNode();
+      containerNode.insertAfter(paragraph);
+      return paragraph;
     }
   }
 }

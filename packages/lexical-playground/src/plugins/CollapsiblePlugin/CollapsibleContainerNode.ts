@@ -18,7 +18,6 @@ import {
 
 type SerializedCollapsibleContainerNode = Spread<
   {
-    collapsed: boolean;
     type: 'collapsible-container';
     version: 1;
   },
@@ -26,11 +25,11 @@ type SerializedCollapsibleContainerNode = Spread<
 >;
 
 export class CollapsibleContainerNode extends ElementNode {
-  __collapsed: boolean;
+  __open: boolean;
 
-  constructor(collapsed: boolean, key?: NodeKey) {
+  constructor(open: boolean, key?: NodeKey) {
     super(key);
-    this.__collapsed = collapsed !== false;
+    this.__open = open;
   }
 
   static getType(): string {
@@ -38,25 +37,22 @@ export class CollapsibleContainerNode extends ElementNode {
   }
 
   static clone(node: CollapsibleContainerNode): CollapsibleContainerNode {
-    return new CollapsibleContainerNode(node.__collapsed, node.__key);
+    return new CollapsibleContainerNode(node.__open, node.__key);
   }
 
   createDOM(config: EditorConfig): HTMLElement {
-    const dom = document.createElement('div');
+    const dom = document.createElement('details');
     dom.classList.add('Collapsible__container');
-    if (this.__collapsed) {
-      dom.classList.add('Collapsible__collapsed');
-    }
+    dom.open = this.__open;
     return dom;
   }
 
-  updateDOM(prevNode: CollapsibleContainerNode, dom: HTMLElement): boolean {
-    if (prevNode.__collapsed !== this.__collapsed) {
-      if (this.__collapsed) {
-        dom.classList.add('Collapsible__collapsed');
-      } else {
-        dom.classList.remove('Collapsible__collapsed');
-      }
+  updateDOM(
+    prevNode: CollapsibleContainerNode,
+    dom: HTMLDetailsElement,
+  ): boolean {
+    if (prevNode.__open !== this.__open) {
+      dom.open = this.__open;
     }
 
     return false;
@@ -70,31 +66,33 @@ export class CollapsibleContainerNode extends ElementNode {
     serializedNode: SerializedCollapsibleContainerNode,
   ): CollapsibleContainerNode {
     const node = $createCollapsibleContainerNode();
-    node.setCollapsed(serializedNode.collapsed);
     return node;
   }
 
   exportJSON(): SerializedCollapsibleContainerNode {
     return {
       ...super.exportJSON(),
-      collapsed: this.getCollapsed(),
       type: 'collapsible-container',
       version: 1,
     };
   }
 
-  setCollapsed(collapsed: boolean): void {
+  setOpen(open: boolean): void {
     const writable = this.getWritable();
-    writable.__collapsed = collapsed;
+    writable.__open = open;
   }
 
-  getCollapsed(): boolean {
-    return this.__collapsed;
+  getOpen(): boolean {
+    return this.__open;
+  }
+
+  toggleOpen(): void {
+    this.setOpen(!this.getOpen());
   }
 }
 
 export function $createCollapsibleContainerNode(): CollapsibleContainerNode {
-  return new CollapsibleContainerNode(false);
+  return new CollapsibleContainerNode(true);
 }
 
 export function $isCollapsibleContainerNode(

@@ -58,7 +58,7 @@ export type TypeaheadMenuPluginProps<TOption> = {
   menuRenderFn: MenuRenderFn<TOption>,
   triggerFn: TriggerFn,
   onOpen?: (resolution: Resolution) => void,
-  onClose: () => void,
+  onClose?: () => void,
 };
 
 export type TriggerFn = (

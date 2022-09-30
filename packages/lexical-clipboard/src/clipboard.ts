@@ -6,15 +6,6 @@
  *
  */
 
-import type {
-  GridSelection,
-  LexicalEditor,
-  LexicalNode,
-  NodeSelection,
-  RangeSelection,
-  SerializedTextNode,
-} from 'lexical';
-
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import {$createListNode, $isListItemNode} from '@lexical/list';
 import {
@@ -34,17 +25,26 @@ import {
   $isTextNode,
   $parseSerializedNode,
   $setSelection,
+  COMMAND_PRIORITY_CRITICAL,
+  COPY_COMMAND,
   DEPRECATED_$createGridSelection,
   DEPRECATED_$isGridCellNode,
   DEPRECATED_$isGridNode,
   DEPRECATED_$isGridRowNode,
   DEPRECATED_$isGridSelection,
   DEPRECATED_GridNode,
+  GridSelection,
+  LexicalEditor,
+  LexicalNode,
+  NodeSelection,
+  RangeSelection,
   SELECTION_CHANGE_COMMAND,
+  SerializedTextNode,
 } from 'lexical';
+import {IS_FIREFOX} from 'shared/environment';
 import invariant from 'shared/invariant';
 
-export function $getHtmlContent(editor: LexicalEditor): string | null {
+export function $getHtmlContent(editor: LexicalEditor): string {
   const selection = $getSelection();
 
   if (selection == null) {
@@ -56,13 +56,15 @@ export function $getHtmlContent(editor: LexicalEditor): string | null {
     ($isRangeSelection(selection) && selection.isCollapsed()) ||
     selection.getNodes().length === 0
   ) {
-    return null;
+    return '';
   }
 
   return $generateHtmlFromNodes(editor, selection);
 }
 
-export function $getLexicalContent(editor: LexicalEditor): string | null {
+// TODO 0.6.0 Return a blank string instead
+// TODO 0.6.0 Rename to $getJSON
+export function $getLexicalContent(editor: LexicalEditor): null | string {
   const selection = $getSelection();
 
   if (selection == null) {
@@ -455,6 +457,7 @@ function $appendNodesToJSON(
   return shouldInclude;
 }
 
+// TODO why $ function with Editor instance?
 export function $generateJSONFromSelectedNodes<
   SerializedNode extends BaseSerializedNode,
 >(
@@ -490,4 +493,111 @@ export function $generateNodesFromSerializedNodes(
     nodes.push(node);
   }
   return nodes;
+}
+
+const EVENT_LATENCY = 50;
+let clipboardEventTimeout: null | number = null;
+
+// TODO custom selection
+// TODO return Promise<boolean>
+// TODO potentially have a node customizable version for plain text
+export function copyToClipboard__EXPERIMENTAL(
+  editor: LexicalEditor,
+  event: null | ClipboardEvent,
+): void {
+  if (clipboardEventTimeout !== null) {
+    // Prevent weird conditions for now that can happen when this function is run multiple times
+    // synchronously. In the future, we can do better if we work with a Promise<boolean> or even
+    // Promise<void>
+    return;
+  }
+  if (event !== null) {
+    editor.update(() => {
+      $copyToClipboardEvent(editor, event);
+    });
+    return;
+  }
+
+  if (IS_FIREFOX) {
+    // ClipboardItem is not yet as good as ClipboardEvent. Most browsers only support a single
+    // item in the clipboard at one time but FF doesn't support the execCommand hack
+    if (typeof ClipboardItem !== 'undefined') {
+      const htmlString = $getHtmlContent(editor);
+      const clipboard = navigator.clipboard;
+      if (clipboard != null) {
+        // If we have to choose just one item, HTML > rest
+        const data = [
+          new ClipboardItem({
+            'text/html': new Blob([htmlString as BlobPart], {
+              type: 'text/html',
+            }),
+          }),
+        ];
+        clipboard.write(data);
+      }
+    }
+    return;
+  }
+
+  const rootElement = editor.getRootElement();
+  const domSelection = document.getSelection();
+  if (rootElement !== null && domSelection !== null) {
+    const element = document.createElement('span');
+    element.style.cssText = 'position: fixed; top: -1000px;';
+    element.append(document.createTextNode('#'));
+    rootElement.append(element);
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    domSelection.removeAllRanges();
+    domSelection.addRange(range);
+    const removeListener = editor.registerCommand(
+      COPY_COMMAND,
+      (secondEvent) => {
+        if (secondEvent instanceof ClipboardEvent) {
+          removeListener();
+          if (clipboardEventTimeout !== null) {
+            window.clearTimeout(clipboardEventTimeout);
+            clipboardEventTimeout = null;
+          }
+          $copyToClipboardEvent(editor, secondEvent);
+        }
+        // Block the entire copy flow while we wait for the next ClipboardEvent
+        return true;
+      },
+      COMMAND_PRIORITY_CRITICAL,
+    );
+    // If the above hack execCommand hack works, this timeout code should never fire. Otherwise,
+    // the listener will be quickly freed so that the user can reuse it again
+    clipboardEventTimeout = window.setTimeout(() => {
+      removeListener();
+      clipboardEventTimeout = null;
+    }, EVENT_LATENCY);
+    document.execCommand('copy');
+    element.remove();
+  }
+}
+
+// TODO shouldn't pass editor (pass namespace directly)
+function $copyToClipboardEvent(
+  editor: LexicalEditor,
+  event: ClipboardEvent,
+): void {
+  event.preventDefault();
+  const clipboardData = event.clipboardData;
+  if (clipboardData !== null) {
+    const selection = $getSelection();
+    const htmlString = $getHtmlContent(editor);
+    const lexicalString = $getLexicalContent(editor);
+    let plainString = '';
+    if (selection !== null) {
+      plainString = selection.getTextContent();
+    }
+    if (htmlString !== null) {
+      clipboardData.setData('text/html', htmlString);
+    }
+    if (lexicalString !== null) {
+      clipboardData.setData('application/x-lexical-editor', lexicalString);
+    }
+    clipboardData.setData('text/plain', plainString);
+  }
 }

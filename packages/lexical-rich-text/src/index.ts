@@ -23,9 +23,8 @@ import type {
 } from 'lexical';
 
 import {
-  $getHtmlContent,
-  $getLexicalContent,
   $insertDataTransferForRichText,
+  copyToClipboard__EXPERIMENTAL,
 } from '@lexical/clipboard';
 import {
   $moveCharacter,
@@ -371,50 +370,14 @@ function onPasteForRichText(
   );
 }
 
-function onCopyForRichText(
-  event: CommandPayloadType<typeof COPY_COMMAND>,
-  editor: LexicalEditor,
-): void {
-  const selection = $getSelection();
-  if (selection !== null) {
-    event.preventDefault();
-    const clipboardData =
-      event instanceof KeyboardEvent ? null : event.clipboardData;
-    const htmlString = $getHtmlContent(editor);
-    const lexicalString = $getLexicalContent(editor);
-
-    if (clipboardData != null) {
-      if (htmlString !== null) {
-        clipboardData.setData('text/html', htmlString);
-      }
-      if (lexicalString !== null) {
-        clipboardData.setData('application/x-lexical-editor', lexicalString);
-      }
-      const plainString = selection.getTextContent();
-      clipboardData.setData('text/plain', plainString);
-    } else {
-      const clipboard = navigator.clipboard;
-      if (clipboard != null) {
-        // Most browsers only support a single item in the clipboard at one time.
-        // So we optimize by only putting in HTML.
-        const data = [
-          new ClipboardItem({
-            'text/html': new Blob([htmlString as BlobPart], {
-              type: 'text/html',
-            }),
-          }),
-        ];
-        clipboard.write(data);
-      }
-    }
-  }
-}
-
 function onCutForRichText(
   event: CommandPayloadType<typeof CUT_COMMAND>,
   editor: LexicalEditor,
 ): void {
-  onCopyForRichText(event, editor);
+  copyToClipboard__EXPERIMENTAL(
+    editor,
+    event instanceof ClipboardEvent ? event : null,
+  );
   const selection = $getSelection();
   if ($isRangeSelection(selection)) {
     selection.removeText();
@@ -863,7 +826,10 @@ export function registerRichText(editor: LexicalEditor): () => void {
     editor.registerCommand(
       COPY_COMMAND,
       (event) => {
-        onCopyForRichText(event, editor);
+        copyToClipboard__EXPERIMENTAL(
+          editor,
+          event instanceof ClipboardEvent ? event : null,
+        );
         return true;
       },
       COMMAND_PRIORITY_EDITOR,

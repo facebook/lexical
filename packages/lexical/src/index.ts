@@ -115,6 +115,7 @@ export {
   $createRangeSelection,
   $getPreviousSelection,
   $getSelection,
+  $getTextContent,
   $insertNodes,
   $isNodeSelection,
   $isRangeSelection,

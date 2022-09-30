@@ -2733,3 +2733,11 @@ export function $insertNodes(
   }
   return selection.insertNodes(nodes, selectStart);
 }
+
+export function $getTextContent(): string {
+  const selection = $getSelection();
+  if (selection === null) {
+    return '';
+  }
+  return selection.getTextContent();
+}

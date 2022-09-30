@@ -62,8 +62,8 @@ export function $getHtmlContent(editor: LexicalEditor): string {
   return $generateHtmlFromNodes(editor, selection);
 }
 
-// TODO Return a blank string instead
-// TODO Rename to $getJSON
+// TODO 0.6.0 Return a blank string instead
+// TODO 0.6.0 Rename to $getJSON
 export function $getLexicalContent(editor: LexicalEditor): null | string {
   const selection = $getSelection();
 

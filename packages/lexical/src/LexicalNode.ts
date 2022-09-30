@@ -648,6 +648,15 @@ export class LexicalNode {
     dom.replaceChild(newChildDOM, oldChildDOM);
   }
 
+  /**
+   * fastClearDOM controls how a DOM element "controlled" by this node (added via insertBeforeDOM) can be cleared
+   * when the children of this Node are cleared
+   * @param dom the DOM of the current node, i.e.: returned by createDOM
+   */
+  fastClearDOM(dom: HTMLElement): void {
+    dom.textContent = '';
+  }
+
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const element = this.createDOM(editor._config, editor);
     return {element};

@@ -88,6 +88,7 @@ import TextInput from '../../ui/TextInput';
 import {getSelectedNode} from '../../utils/getSelectedNode';
 import {sanitizeUrl} from '../../utils/sanitizeUrl';
 import {EmbedConfigs} from '../AutoEmbedPlugin';
+import {INSERT_COLLAPSIBLE_COMMAND} from '../CollapsiblePlugin';
 import {INSERT_EQUATION_COMMAND} from '../EquationsPlugin';
 import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawPlugin';
 import {INSERT_IMAGE_COMMAND} from '../ImagesPlugin';
@@ -1150,6 +1151,14 @@ export default function ToolbarPlugin(): JSX.Element {
               className="item">
               <i className="icon sticky" />
               <span className="text">Sticky Note</span>
+            </DropDownItem>
+            <DropDownItem
+              onClick={() => {
+                editor.dispatchCommand(INSERT_COLLAPSIBLE_COMMAND, undefined);
+              }}
+              className="item">
+              <i className="icon caret-right" />
+              <span className="text">Collapsible container</span>
             </DropDownItem>
             {EmbedConfigs.map((embedConfig) => (
               <DropDownItem

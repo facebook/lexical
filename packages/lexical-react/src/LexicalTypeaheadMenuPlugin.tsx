@@ -651,19 +651,19 @@ export function LexicalTypeaheadMenuPlugin<TOption extends TypeaheadOption>({
 
   const closeTypeahead = useCallback(() => {
     setResolution(null);
-    if (onClose != null) {
+    if (onClose != null && resolution !== null) {
       onClose();
     }
-  }, [onClose]);
+  }, [onClose, resolution]);
 
   const openTypeahead = useCallback(
     (res: Resolution) => {
       setResolution(res);
-      if (onOpen != null) {
+      if (onOpen != null && resolution === null) {
         onOpen(res);
       }
     },
-    [onOpen],
+    [onOpen, resolution],
   );
 
   useEffect(() => {
@@ -767,19 +767,19 @@ export function LexicalNodeMenuPlugin<TOption extends TypeaheadOption>({
 
   const closeNodeMenu = useCallback(() => {
     setResolution(null);
-    if (onClose != null) {
+    if (onClose != null && resolution !== null) {
       onClose();
     }
-  }, [onClose]);
+  }, [onClose, resolution]);
 
   const openNodeMenu = useCallback(
     (res: Resolution) => {
       setResolution(res);
-      if (onOpen != null) {
+      if (onOpen != null && resolution === null) {
         onOpen(res);
       }
     },
-    [onOpen],
+    [onOpen, resolution],
   );
 
   useEffect(() => {

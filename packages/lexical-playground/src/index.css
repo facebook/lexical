@@ -392,6 +392,10 @@ i.horizontal-rule {
   background-image: url(images/icons/plus.svg);
 }
 
+.icon.caret-right {
+  background-image: url(images/icons/caret-right-fill.svg);
+}
+
 .icon.dropdown-more {
   background-image: url(images/icons/dropdown-more.svg);
 }

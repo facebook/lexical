@@ -34,12 +34,14 @@ function runElementTransformers(
   anchorNode: TextNode,
   anchorOffset: number,
   elementTransformers: ReadonlyArray<ElementTransformer>,
+  onlyOnTopLevelElements: boolean,
 ): boolean {
   const grandParentNode = parentNode.getParent();
 
   if (
-    !$isRootOrShadowRoot(grandParentNode) ||
-    parentNode.getFirstChild() !== anchorNode
+    onlyOnTopLevelElements &&
+    (!$isRootOrShadowRoot(grandParentNode) ||
+      parentNode.getFirstChild() !== anchorNode)
   ) {
     return false;
   }
@@ -323,6 +325,7 @@ function isEqualSubString(
 export function registerMarkdownShortcuts(
   editor: LexicalEditor,
   transformers: Array<Transformer> = TRANSFORMERS,
+  onlyOnTopLevelElements = true,
 ): () => void {
   const byType = transformersByType(transformers);
   const textFormatTransformersIndex = indexBy(
@@ -358,6 +361,7 @@ export function registerMarkdownShortcuts(
         anchorNode,
         anchorOffset,
         byType.element,
+        onlyOnTopLevelElements,
       )
     ) {
       return;

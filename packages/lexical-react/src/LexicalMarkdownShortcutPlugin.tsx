@@ -42,14 +42,20 @@ export const DEFAULT_TRANSFORMERS = [HR, ...TRANSFORMERS];
 
 export function MarkdownShortcutPlugin({
   transformers = DEFAULT_TRANSFORMERS,
+  onlyOnTopLevelElements = true,
 }: Readonly<{
   transformers?: Array<Transformer>;
+  onlyOnTopLevelElements?: boolean;
 }>): null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
-    return registerMarkdownShortcuts(editor, transformers);
-  }, [editor, transformers]);
+    return registerMarkdownShortcuts(
+      editor,
+      transformers,
+      onlyOnTopLevelElements,
+    );
+  }, [editor, transformers, onlyOnTopLevelElements]);
 
   return null;
 }

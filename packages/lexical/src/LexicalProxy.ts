@@ -23,7 +23,7 @@ export function $withNodeProxy<T extends LexicalNode>(createNode: () => T): T {
     'Node type %s is not registered',
     type,
   );
-  const proxyFn = registeredNode.proxy;
+  const proxyFn = registeredNode.proxy as any;
   if (proxyFn === null) {
     return originalNode;
   }

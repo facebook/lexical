@@ -2035,7 +2035,8 @@ function internalResolveSelectionPoint(
       if ($isElementNode(resolvedElement)) {
         let child = resolvedElement.getChildAtIndex(resolvedOffset);
         if (
-          child?.getType() !== 'childgroup' &&
+          child &&
+          child.getType() !== 'childgroup' &&
           $isElementNode(child) &&
           shouldResolveAncestor(child, resolvedOffset, lastPoint)
         ) {

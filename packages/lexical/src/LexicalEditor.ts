@@ -140,7 +140,7 @@ export type RegisteredNodes = Map<string, RegisteredNode>;
 export type RegisteredNode = {
   klass: Klass<LexicalNode>;
   transforms: Set<Transform<LexicalNode>>;
-  proxy: null | Proxy;
+  proxy?: null | Proxy;
 };
 
 export type Transform<T extends LexicalNode> = (node: T) => void;

@@ -73,7 +73,6 @@ export type {
   MutationListener,
   NodeMutation,
   Proxies,
-  ReadOnlyListener,
   SerializedEditor,
   Spread,
 } from './LexicalEditor';

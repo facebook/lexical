@@ -18,8 +18,6 @@ import {
   DROP_COMMAND,
   LexicalEditor,
 } from 'lexical';
-import {getElementByKeyOrThrow} from 'lexical/src/LexicalUtils';
-import * as React from 'react';
 import {DragEvent as ReactDragEvent, useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 
@@ -60,55 +58,60 @@ function getBlockElement(
   editor: LexicalEditor,
   event: MouseEvent,
 ): HTMLElement | null {
-  const anchorElementRect = anchorElem.getBoundingClientRect();
-  const topLevelNodeKeys = getTopLevelNodeKeys(editor);
-
   let blockElem: HTMLElement | null = null;
-
   editor.getEditorState().read(() => {
-    let index = getCurrentIndex(topLevelNodeKeys.length);
-    let direction = Indeterminate;
+    const anchorElementRect = anchorElem.getBoundingClientRect();
+    // const topLevelNodeKeys = getTopLevelNodeKeys(editor);
 
-    while (index >= 0 && index < topLevelNodeKeys.length) {
-      const key = topLevelNodeKeys[index];
-      const elem = getElementByKeyOrThrow(editor, key);
-      const point = new Point(event.x, event.y);
-      const domRect = Rect.fromDOM(elem);
-      const {marginTop, marginBottom} = window.getComputedStyle(elem);
+    // console.log(event.target);
+    const state = editor.getEditorState()._nodeMap;
+    const elements = new Map(
+      Array.from(
+        editor._keyToDOMMap,
+        (a) => a.reverse() as [HTMLElement, string],
+      ),
+    );
+    let tryElement = document.elementFromPoint(
+      anchorElementRect.left +
+        (anchorElementRect.right - anchorElementRect.left) / 2,
+      event.pageY,
+    ) as HTMLElement;
 
-      const rect = domRect.generateNewRect({
-        bottom: domRect.bottom + parseFloat(marginBottom),
-        left: anchorElementRect.left,
-        right: anchorElementRect.right,
-        top: domRect.top - parseFloat(marginTop),
-      });
-
-      const {
-        result,
-        reason: {isOnTopSide, isOnBottomSide},
-      } = rect.contains(point);
-
-      if (result) {
-        blockElem = elem;
-        prevIndex = index;
-        break;
+    do {
+      const key = elements.get(tryElement);
+      if (!key) {
+        continue;
       }
+      const node = state.get(key)!;
 
-      if (direction === Indeterminate) {
-        if (isOnTopSide) {
-          direction = Upward;
-        } else if (isOnBottomSide) {
-          direction = Downward;
-        } else {
-          // stop search block element
-          direction = Infinity;
+      if (
+        node.getParent()?.getType() === 'root' ||
+        node.getParent()?.getType() === 'childgroup' ||
+        node.getType() === 'listitem'
+      ) {
+        const domRect = Rect.fromDOM(tryElement);
+        const {marginTop, marginBottom} = window.getComputedStyle(tryElement);
+
+        const rect = domRect.generateNewRect({
+          bottom: domRect.bottom + parseFloat(marginBottom),
+          left: anchorElementRect.left,
+          right: anchorElementRect.right,
+          top: domRect.top - parseFloat(marginTop),
+        });
+        const point = new Point(event.x, event.y);
+        const {
+          result,
+          // reason: {isOnTopSide, isOnBottomSide},
+        } = rect.contains(point);
+
+        if (result) {
+          blockElem = tryElement;
+          // prevIndex = index;
+          break;
         }
       }
-
-      index += direction;
-    }
+    } while ((tryElement = tryElement.parentElement!));
   });
-
   return blockElem;
 }
 

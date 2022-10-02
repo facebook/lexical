@@ -648,6 +648,14 @@ export class LexicalNode {
     dom.replaceChild(newChildDOM, oldChildDOM);
   }
 
+  fastClearDOM(dom: HTMLElement): void {
+    dom.textContent = '';
+  }
+
+  getFirstChildDOM(dom: HTMLElement) {
+    return dom.firstChild;
+  }
+
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const element = this.createDOM(editor._config, editor);
     return {element};

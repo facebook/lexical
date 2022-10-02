@@ -15,7 +15,7 @@ import {OverflowNode} from '@lexical/overflow';
 import {HorizontalRuleNode} from '@lexical/react/LexicalHorizontalRuleNode';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
-import {ChildgroupNode, Klass, LexicalNode} from 'lexical';
+import {Klass, LexicalNode} from 'lexical';
 
 import {ACTextNode} from './ACTextNode';
 import {AutocompleteNode} from './AutocompleteNode';
@@ -62,7 +62,6 @@ const PlaygroundNodes: Array<Klass<LexicalNode>> = [
   YouTubeNode,
   FigmaNode,
   MarkNode,
-  ChildgroupNode,
 ];
 
 export default PlaygroundNodes;

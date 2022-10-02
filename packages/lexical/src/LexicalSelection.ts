@@ -42,6 +42,7 @@ import {
 } from './LexicalEvents';
 import {getIsProcesssingMutations} from './LexicalMutations';
 import {$normalizeSelection} from './LexicalNormalization';
+import {$withNodeProxy} from './LexicalProxy';
 import {
   getActiveEditor,
   getActiveEditorState,
@@ -64,7 +65,6 @@ import {
   scrollIntoViewIfNeeded,
   toggleTextFormatType,
 } from './LexicalUtils';
-import {$withNodeProxy} from './LexicalProxy';
 
 export type TextPointType = {
   _selection: RangeSelection | GridSelection;
@@ -1677,7 +1677,6 @@ export class RangeSelection implements BaseSelection {
     const focus = this.focus;
     const anchor = this.anchor;
     const collapse = alter === 'move';
-
     // Handle the selection movement around decorators.
     const possibleNode = $getDecoratorNode(focus, isBackward);
     if ($isDecoratorNode(possibleNode) && !possibleNode.isIsolated()) {
@@ -2002,6 +2001,7 @@ function internalResolveSelectionPoint(
   offset: number,
   lastPoint: null | PointType,
 ): null | PointType {
+  console.log('resolve');
   let resolvedOffset = offset;
   let resolvedNode: TextNode | LexicalNode | null;
   // If we have selection on an element, we will
@@ -2024,7 +2024,6 @@ function internalResolveSelectionPoint(
     }
     const childDOM = childNodes[resolvedOffset];
     resolvedNode = getNodeFromDOM(childDOM);
-
     if ($isTextNode(resolvedNode)) {
       resolvedOffset = getTextNodeOffset(resolvedNode, moveSelectionToEnd);
     } else {
@@ -2036,6 +2035,7 @@ function internalResolveSelectionPoint(
       if ($isElementNode(resolvedElement)) {
         let child = resolvedElement.getChildAtIndex(resolvedOffset);
         if (
+          child?.getType() !== 'childgroup' &&
           $isElementNode(child) &&
           shouldResolveAncestor(child, resolvedOffset, lastPoint)
         ) {

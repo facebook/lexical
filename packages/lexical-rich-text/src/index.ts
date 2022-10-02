@@ -38,13 +38,10 @@ import {
   mergeRegister,
 } from '@lexical/utils';
 import {
-  $createChildgroupNode,
   $createParagraphNode,
   $getNearestNodeFromDOMNode,
   $getSelection,
-  $isChildgroupNode,
   $isDecoratorNode,
-  $isElementNode,
   $isNodeSelection,
   $isRangeSelection,
   $isRootNode,
@@ -652,19 +649,10 @@ export function registerRichText(editor: LexicalEditor): () => void {
             editor.dispatchCommand(CONTROLLED_TEXT_INSERTION_COMMAND, '\t');
           },
           (block) => {
-            const prev = block.getPreviousSibling();
-            if ($isElementNode(prev)) {
-              let lc = prev.getLastChild();
-              if (!$isChildgroupNode(lc)) {
-                lc = $createChildgroupNode();
-                prev.append(lc);
-              }
-              lc.append(block);
+            const indent = block.getIndent();
+            if (indent !== 10) {
+              block.setIndent(indent + 1);
             }
-            // const indent = block.getIndent();
-            // if (indent !== 10) {
-            //   block.setIndent(indent + 1);
-            // }
           },
         );
         return true;

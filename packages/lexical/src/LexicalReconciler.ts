@@ -452,7 +452,7 @@ function reconcileChildren(
 
       if (canUseFastPath) {
         // Fast path for removing DOM nodes
-        dom.textContent = '';
+        element.fastClearDOM(dom);
       }
     }
   } else {

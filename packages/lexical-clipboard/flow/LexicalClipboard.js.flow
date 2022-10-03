@@ -29,6 +29,12 @@ declare export function $getHtmlContent(editor: LexicalEditor): string | null;
 declare export function $getLexicalContent(
   editor: LexicalEditor,
 ): string | null;
+
+declare export function $insertGeneratedNodes(
+  editor: LexicalEditor,
+  nodes: Array<LexicalNode>,
+  selection: RangeSelection | GridSelection,
+): void;
 /*
  * Plain Text
  */

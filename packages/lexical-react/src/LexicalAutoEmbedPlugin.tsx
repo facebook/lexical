@@ -221,17 +221,19 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
       ) =>
         anchorElement && nodeKey != null
           ? ReactDOM.createPortal(
-              <MenuComponent
-                options={options}
-                selectedItemIndex={selectedIndex}
-                onOptionClick={(option: AutoEmbedOption, index: number) => {
-                  setHighlightedIndex(index);
-                  selectOptionAndCleanUp(option);
-                }}
-                onOptionMouseEnter={(index: number) => {
-                  setHighlightedIndex(index);
-                }}
-              />,
+              <div className="typeahead-popover">
+                <MenuComponent
+                  options={options}
+                  selectedItemIndex={selectedIndex}
+                  onOptionClick={(option: AutoEmbedOption, index: number) => {
+                    setHighlightedIndex(index);
+                    selectOptionAndCleanUp(option);
+                  }}
+                  onOptionMouseEnter={(index: number) => {
+                    setHighlightedIndex(index);
+                  }}
+                />
+              </div>,
               anchorElement,
             )
           : null

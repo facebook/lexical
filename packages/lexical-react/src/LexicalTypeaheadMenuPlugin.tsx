@@ -548,6 +548,11 @@ export function useBasicTypeaheadTriggerMatch(
   );
 }
 
+type AnchorConfig = {
+  position?: 'start' | 'end';
+  paddingTop?: number;
+};
+
 function useMenuAnchorRef(
   resolution: Resolution | null,
   setResolution: (r: Resolution | null) => void,
@@ -561,12 +566,13 @@ function useMenuAnchorRef(
 
     if (rootElement !== null && resolution !== null) {
       const {left, top, width, height} = resolution.getRect();
-      containerDiv.style.top = `${top + height + 5 + window.pageYOffset}px`;
+      containerDiv.style.top = `${top + window.pageYOffset}px`;
       containerDiv.style.left = `${
         left +
         (resolution.position === 'start' ? 0 : width) +
         window.pageXOffset
       }px`;
+      containerDiv.style.height = `${height}px`;
 
       if (!containerDiv.isConnected) {
         containerDiv.setAttribute('aria-label', 'Typeahead menu');
@@ -615,6 +621,7 @@ function useMenuAnchorRef(
 }
 
 export type TypeaheadMenuPluginProps<TOption extends TypeaheadOption> = {
+  anchorConfig?: AnchorConfig;
   onQueryChange: (matchingString: string | null) => void;
   onSelectOption: (
     option: TOption,
@@ -738,6 +745,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends TypeaheadOption>({
 }
 
 type NodeMenuPluginProps<TOption extends TypeaheadOption> = {
+  anchorConfig?: AnchorConfig;
   onSelectOption: (
     option: TOption,
     textNodeContainingQuery: TextNode | null,
@@ -753,6 +761,7 @@ type NodeMenuPluginProps<TOption extends TypeaheadOption> = {
 };
 
 export function LexicalNodeMenuPlugin<TOption extends TypeaheadOption>({
+  anchorConfig,
   options,
   nodeKey,
   position = 'end',

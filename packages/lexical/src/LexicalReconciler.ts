@@ -639,10 +639,6 @@ function reconcileDecorator(key: NodeKey, decorator: unknown): void {
   pendingDecorators[key] = decorator;
 }
 
-function getFirstChild(element: HTMLElement): Node | null {
-  return element.firstChild;
-}
-
 function getNextSibling(element: HTMLElement): Node | null {
   return element.nextSibling;
 }
@@ -659,7 +655,7 @@ function reconcileNodeChildren(
   const nextEndIndex = nextChildrenLength - 1;
   let prevChildrenSet: Set<NodeKey> | undefined;
   let nextChildrenSet: Set<NodeKey> | undefined;
-  let siblingDOM: null | Node = getFirstChild(dom);
+  let siblingDOM: null | Node = element.getFirstChildDOM(dom);
   let prevIndex = 0;
   let nextIndex = 0;
 

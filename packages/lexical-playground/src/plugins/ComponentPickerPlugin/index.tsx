@@ -37,6 +37,7 @@ import * as ReactDOM from 'react-dom';
 import useModal from '../../hooks/useModal';
 import catTypingGif from '../../images/cat-typing.gif';
 import {EmbedConfigs} from '../AutoEmbedPlugin';
+import {INSERT_COLLAPSIBLE_COMMAND} from '../CollapsiblePlugin';
 import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawPlugin';
 import {INSERT_IMAGE_COMMAND} from '../ImagesPlugin';
 import {
@@ -306,6 +307,12 @@ export default function ComponentPickerMenuPlugin(): JSX.Element {
           showModal('Insert Image', (onClose) => (
             <InsertImageDialog activeEditor={editor} onClose={onClose} />
           )),
+      }),
+      new ComponentPickerOption('Collapsible', {
+        icon: <i className="icon caret-right" />,
+        keywords: ['collapse', 'collapsible', 'toggle'],
+        onSelect: () =>
+          editor.dispatchCommand(INSERT_COLLAPSIBLE_COMMAND, undefined),
       }),
       ...['left', 'center', 'right', 'justify'].map(
         (alignment) =>

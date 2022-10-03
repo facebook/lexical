@@ -7,9 +7,9 @@
  */
 
 /* eslint-disable no-constant-condition */
-import type {Klass} from 'lexical';
 import type {EditorConfig, LexicalEditor} from './LexicalEditor';
 import type {RangeSelection} from './LexicalSelection';
+import type {Klass} from 'lexical';
 
 import invariant from 'shared/invariant';
 
@@ -596,6 +596,16 @@ export class LexicalNode {
     invariant(false, 'createDOM: base method not extended');
   }
 
+  /*
+   * This method is called when a node changes and should update the DOM
+   * in whatever way is necessary to make it align with any changes that might
+   * have happened during the update.
+   *
+   * Returning "true" here will cause lexical to unmount and recreate the DOM node
+   * (by calling createDOM). You would need to do this if the element tag changes,
+   * for instance.
+   *
+   * */
   updateDOM(
     _prevNode: unknown,
     _dom: HTMLElement,

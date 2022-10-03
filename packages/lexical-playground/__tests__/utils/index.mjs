@@ -755,3 +755,18 @@ export async function pressToggleUnderline(page) {
   await page.keyboard.press('u');
   await keyUpCtrlOrMeta(page);
 }
+
+export async function dragDraggableMenuTo(
+  page,
+  toSelector,
+  positionStart = 'middle',
+  positionEnd = 'middle',
+) {
+  await dragMouse(
+    page,
+    await selectorBoundingBox(page, '.draggable-block-menu'),
+    await selectorBoundingBox(page, toSelector),
+    positionStart,
+    positionEnd,
+  );
+}

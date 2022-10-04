@@ -15,13 +15,11 @@ import type {
 } from 'lexical';
 
 declare export function createHeadlessEditor(editorConfig?: {
-  namespace?: string,
   editorState?: EditorState,
-  namespace: string,
-  theme?: EditorThemeClasses,
-  parentEditor?: LexicalEditor,
+  namespace?: string,
   nodes?: $ReadOnlyArray<Class<LexicalNode>>,
-  onError: (error: Error) => void,
-  disableEvents?: boolean,
-  readOnly?: boolean,
+  onError?: (error: Error) => void,
+  parentEditor?: LexicalEditor,
+  editable?: boolean,
+  theme?: EditorThemeClasses,
 }): LexicalEditor;

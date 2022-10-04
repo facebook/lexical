@@ -12,13 +12,13 @@ import {
   AutoEmbedOption,
   EmbedConfig,
   EmbedMatchResult,
-  EmbedMenuProps,
   LexicalAutoEmbedPlugin,
   URL_MATCHER,
 } from '@lexical/react/LexicalAutoEmbedPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useState} from 'react';
 import * as React from 'react';
+import * as ReactDOM from 'react-dom';
 
 import useModal from '../../hooks/useModal';
 import Button from '../../ui/Button';
@@ -189,20 +189,27 @@ function AutoEmbedMenu({
   selectedItemIndex,
   onOptionClick,
   onOptionMouseEnter,
-}: EmbedMenuProps) {
+}: {
+  selectedItemIndex: number | null;
+  onOptionClick: (option: AutoEmbedOption, index: number) => void;
+  onOptionMouseEnter: (index: number) => void;
+  options: Array<AutoEmbedOption>;
+}) {
   return (
-    <ul>
-      {options.map((option: AutoEmbedOption, i: number) => (
-        <AutoEmbedMenuItem
-          index={i}
-          isSelected={selectedItemIndex === i}
-          onClick={() => onOptionClick(option, i)}
-          onMouseEnter={() => onOptionMouseEnter(i)}
-          key={option.key}
-          option={option}
-        />
-      ))}
-    </ul>
+    <div className="typeahead-popover">
+      <ul>
+        {options.map((option: AutoEmbedOption, i: number) => (
+          <AutoEmbedMenuItem
+            index={i}
+            isSelected={selectedItemIndex === i}
+            onClick={() => onOptionClick(option, i)}
+            onMouseEnter={() => onOptionMouseEnter(i)}
+            key={option.key}
+            option={option}
+          />
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -284,7 +291,27 @@ export default function AutoEmbedPlugin(): JSX.Element {
         embedConfigs={EmbedConfigs}
         onOpenEmbedModalForConfig={openEmbedModal}
         getMenuOptions={getMenuOptions}
-        menuComponent={AutoEmbedMenu}
+        menuRenderFn={(
+          anchorElement,
+          {selectedIndex, options, selectOptionAndCleanUp, setHighlightedIndex},
+        ) =>
+          anchorElement
+            ? ReactDOM.createPortal(
+                <AutoEmbedMenu
+                  options={options}
+                  selectedItemIndex={selectedIndex}
+                  onOptionClick={(option: AutoEmbedOption, index: number) => {
+                    setHighlightedIndex(index);
+                    selectOptionAndCleanUp(option);
+                  }}
+                  onOptionMouseEnter={(index: number) => {
+                    setHighlightedIndex(index);
+                  }}
+                />,
+                anchorElement,
+              )
+            : null
+        }
       />
     </>
   );

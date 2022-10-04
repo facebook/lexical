@@ -34,19 +34,9 @@ export const URL_MATCHER: RegExp =
 export const INSERT_EMBED_COMMAND: LexicalCommand<EmbedConfig['type']> =
   createCommand();
 
-export type EmbedMenuProps = {
-  selectedItemIndex: number | null,
-  onOptionClick: (option: AutoEmbedOption, index: number) => void,
-  onOptionMouseEnter: (index: number) => void,
-  options: Array<AutoEmbedOption>,
-};
-
-export type EmbedMenuComponent = React.ComponentType<EmbedMenuProps>;
-
 type LexicalAutoEmbedPluginProps<TEmbedConfig> = {
   embedConfigs: Array<TEmbedConfig>,
   onOpenEmbedModalForConfig: (embedConfig: TEmbedConfig) => void,
-  menuComponent: EmbedMenuComponent,
   getMenuOptions: (
     activeEmbedConfig: TEmbedConfig,
     embedFn: () => void,

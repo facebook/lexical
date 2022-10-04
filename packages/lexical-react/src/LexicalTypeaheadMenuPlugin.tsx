@@ -72,6 +72,7 @@ export type MenuRenderFn<TOption extends TypeaheadOption> = (
     selectedIndex: number | null;
     selectOptionAndCleanUp: (option: TOption) => void;
     setHighlightedIndex: (index: number) => void;
+    options: Array<TOption>;
   },
   matchingString: string,
 ) => ReactPortal | JSX.Element | null;
@@ -497,11 +498,12 @@ function LexicalPopoverMenu<TOption extends TypeaheadOption>({
 
   const listItemProps = useMemo(
     () => ({
+      options,
       selectOptionAndCleanUp,
       selectedIndex,
       setHighlightedIndex,
     }),
-    [selectOptionAndCleanUp, selectedIndex],
+    [selectOptionAndCleanUp, selectedIndex, options],
   );
 
   return menuRenderFn(
@@ -547,11 +549,6 @@ export function useBasicTypeaheadTriggerMatch(
     [maxLength, minLength, trigger],
   );
 }
-
-type AnchorConfig = {
-  position?: 'start' | 'end';
-  paddingTop?: number;
-};
 
 function useMenuAnchorRef(
   resolution: Resolution | null,
@@ -621,7 +618,6 @@ function useMenuAnchorRef(
 }
 
 export type TypeaheadMenuPluginProps<TOption extends TypeaheadOption> = {
-  anchorConfig?: AnchorConfig;
   onQueryChange: (matchingString: string | null) => void;
   onSelectOption: (
     option: TOption,
@@ -745,7 +741,6 @@ export function LexicalTypeaheadMenuPlugin<TOption extends TypeaheadOption>({
 }
 
 type NodeMenuPluginProps<TOption extends TypeaheadOption> = {
-  anchorConfig?: AnchorConfig;
   onSelectOption: (
     option: TOption,
     textNodeContainingQuery: TextNode | null,
@@ -761,7 +756,6 @@ type NodeMenuPluginProps<TOption extends TypeaheadOption> = {
 };
 
 export function LexicalNodeMenuPlugin<TOption extends TypeaheadOption>({
-  anchorConfig,
   options,
   nodeKey,
   position = 'end',

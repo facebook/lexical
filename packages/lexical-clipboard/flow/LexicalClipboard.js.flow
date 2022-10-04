@@ -67,3 +67,8 @@ declare export function $generateJSONFromSelectedNodes<
 declare export function $generateNodesFromSerializedNodes(
   serializedNodes: Array<BaseSerializedNode>,
 ): Array<LexicalNode>;
+
+declare export function copyToClipboard__EXPERIMENTAL(
+  editor: LexicalEditor,
+  event: null | ClipboardEvent,
+): Promise<boolean>;

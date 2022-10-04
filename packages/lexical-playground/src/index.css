@@ -302,7 +302,6 @@ pre::-webkit-scrollbar-thumb {
   background-color: #fff;
   border-radius: 8px;
   border: 0;
-  max-width: 250px;
 }
 
 .typeahead-popover li.active {
@@ -339,6 +338,18 @@ pre::-webkit-scrollbar-thumb {
   margin-right: 8px;
   line-height: 16px;
   background-size: contain;
+}
+
+.component-picker-menu {
+  width: 200px;
+}
+
+.mentions-menu {
+  width: 250px;
+}
+
+.auto-embed-menu {
+  width: 150px;
 }
 
 i.palette {

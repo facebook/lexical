@@ -7,7 +7,6 @@
  */
 
 // eslint-disable-next-line simple-import-sort/imports
-// eslint-disable-next-line simple-import-sort/imports
 import type {
   LexicalCommand,
   LexicalEditor,
@@ -91,6 +90,9 @@ function findFirstNotSpaceOrTabCharAtText(
 
   return offset;
 }
+
+const MARK_START_PREFIX = 'MARK_START';
+const MARK_END_PREFIX = 'MARK_END';
 
 export function getStartOfCodeInLine(anchor: LexicalNode): {
   node: TextNode | null;
@@ -208,9 +210,9 @@ function getCodeContent(node: CodeNode): string {
   for (let i = 0; i < childrenLength; i++) {
     const child = children[i];
     if ($isMarkNode(child)) {
-      textContent += `/*$$MARK_START_${child.getIDs().join('_')}_$$*/`;
+      textContent += `/*${MARK_START_PREFIX}_${child.getIDs().join('_')}_*/`;
       textContent += child.getTextContent();
-      textContent += '/*$$MARK_END$$*/';
+      textContent += `/*${MARK_END_PREFIX}*/`;
     } else {
       textContent += child.getTextContent();
     }
@@ -331,13 +333,13 @@ function getHighlightNodes(
       const {content, type} = token;
       if (typeof content === 'string') {
         if (type === 'comment') {
-          if (content.startsWith('/*$$MARK_START')) {
+          if (content.startsWith(`/*${MARK_START_PREFIX}`)) {
             const splitContent = content.split('_');
             const markIds = splitContent.slice(2, splitContent.length - 1);
             currentMark = $createMarkNode(markIds);
             nodes.push(currentMark);
             return;
-          } else if (content.startsWith('/*$$MARK_END')) {
+          } else if (content.startsWith(`/*${MARK_END_PREFIX}`)) {
             currentMark = undefined;
             return;
           }

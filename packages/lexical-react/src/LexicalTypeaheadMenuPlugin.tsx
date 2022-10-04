@@ -13,12 +13,15 @@ import {
   $getSelection,
   $isRangeSelection,
   $isTextNode,
-  COMMAND_PRIORITY_NORMAL,
+  COMMAND_PRIORITY_CRITICAL,
+  COMMAND_PRIORITY_LOW,
+  createCommand,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
   KEY_ENTER_COMMAND,
   KEY_ESCAPE_COMMAND,
   KEY_TAB_COMMAND,
+  LexicalCommand,
   LexicalEditor,
   NodeKey,
   RangeSelection,
@@ -319,6 +322,11 @@ export function useDynamicPositioning(
   }, [targetElement, editor, onVisibilityChange, onReposition, resolution]);
 }
 
+export const SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND: LexicalCommand<{
+  index: number;
+  option: TypeaheadOption;
+}> = createCommand();
+
 function LexicalPopoverMenu<TOption extends TypeaheadOption>({
   close,
   editor,
@@ -399,6 +407,23 @@ function LexicalPopoverMenu<TOption extends TypeaheadOption>({
 
   useEffect(() => {
     return mergeRegister(
+      editor.registerCommand(
+        SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND,
+        ({option}) => {
+          if (option.ref && option.ref.current != null) {
+            scrollIntoViewIfNeeded(option.ref.current);
+            return true;
+          }
+
+          return false;
+        },
+        COMMAND_PRIORITY_LOW,
+      ),
+    );
+  }, [editor, updateSelectedIndex]);
+
+  useEffect(() => {
+    return mergeRegister(
       editor.registerCommand<KeyboardEvent>(
         KEY_ARROW_DOWN_COMMAND,
         (payload) => {
@@ -409,14 +434,20 @@ function LexicalPopoverMenu<TOption extends TypeaheadOption>({
             updateSelectedIndex(newSelectedIndex);
             const option = options[newSelectedIndex];
             if (option.ref != null && option.ref.current) {
-              scrollIntoViewIfNeeded(option.ref.current);
+              editor.dispatchCommand(
+                SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND,
+                {
+                  index: newSelectedIndex,
+                  option,
+                },
+              );
             }
             event.preventDefault();
             event.stopImmediatePropagation();
           }
           return true;
         },
-        COMMAND_PRIORITY_NORMAL,
+        COMMAND_PRIORITY_CRITICAL,
       ),
       editor.registerCommand<KeyboardEvent>(
         KEY_ARROW_UP_COMMAND,
@@ -435,7 +466,7 @@ function LexicalPopoverMenu<TOption extends TypeaheadOption>({
           }
           return true;
         },
-        COMMAND_PRIORITY_NORMAL,
+        COMMAND_PRIORITY_CRITICAL,
       ),
       editor.registerCommand<KeyboardEvent>(
         KEY_ESCAPE_COMMAND,
@@ -446,7 +477,7 @@ function LexicalPopoverMenu<TOption extends TypeaheadOption>({
           close();
           return true;
         },
-        COMMAND_PRIORITY_NORMAL,
+        COMMAND_PRIORITY_CRITICAL,
       ),
       editor.registerCommand<KeyboardEvent>(
         KEY_TAB_COMMAND,
@@ -464,7 +495,7 @@ function LexicalPopoverMenu<TOption extends TypeaheadOption>({
           selectOptionAndCleanUp(options[selectedIndex]);
           return true;
         },
-        COMMAND_PRIORITY_NORMAL,
+        COMMAND_PRIORITY_CRITICAL,
       ),
       editor.registerCommand(
         KEY_ENTER_COMMAND,
@@ -483,7 +514,7 @@ function LexicalPopoverMenu<TOption extends TypeaheadOption>({
           selectOptionAndCleanUp(options[selectedIndex]);
           return true;
         },
-        COMMAND_PRIORITY_NORMAL,
+        COMMAND_PRIORITY_CRITICAL,
       ),
     );
   }, [

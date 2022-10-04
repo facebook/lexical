@@ -14,6 +14,7 @@ import {
   $isRangeSelection,
   $isTextNode,
   COMMAND_PRIORITY_CRITICAL,
+  COMMAND_PRIORITY_LOW,
   createCommand,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
@@ -416,7 +417,7 @@ function LexicalPopoverMenu<TOption extends TypeaheadOption>({
 
           return false;
         },
-        COMMAND_PRIORITY_CRITICAL,
+        COMMAND_PRIORITY_LOW,
       ),
     );
   }, [editor, updateSelectedIndex]);

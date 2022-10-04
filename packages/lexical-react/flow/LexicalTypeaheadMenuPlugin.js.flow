@@ -7,6 +7,7 @@
  * @flow strict
  */
 
+import type {LexicalCommand} from '../../lexical/flow/Lexical';
 import type {LexicalEditor, NodeKey, TextNode} from 'lexical';
 import * as React from 'react';
 
@@ -30,6 +31,11 @@ declare export class TypeaheadOption {
   constructor(key: string): void;
   setRefElement(element: HTMLElement | null): void;
 }
+
+declare export var SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND: LexicalCommand<{
+  index: number,
+  option: TypeaheadOption,
+}>;
 
 export type MenuRenderFn<TOption> = (
   anchorElement: HTMLElement | null,

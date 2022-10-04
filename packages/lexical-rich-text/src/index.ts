@@ -370,20 +370,22 @@ function onPasteForRichText(
   );
 }
 
-function onCutForRichText(
+async function onCutForRichText(
   event: CommandPayloadType<typeof CUT_COMMAND>,
   editor: LexicalEditor,
-): void {
-  copyToClipboard__EXPERIMENTAL(
+): Promise<void> {
+  await copyToClipboard__EXPERIMENTAL(
     editor,
     event instanceof ClipboardEvent ? event : null,
   );
-  const selection = $getSelection();
-  if ($isRangeSelection(selection)) {
-    selection.removeText();
-  } else if ($isNodeSelection(selection)) {
-    selection.getNodes().forEach((node) => node.remove());
-  }
+  editor.update(() => {
+    const selection = $getSelection();
+    if ($isRangeSelection(selection)) {
+      selection.removeText();
+    } else if ($isNodeSelection(selection)) {
+      selection.getNodes().forEach((node) => node.remove());
+    }
+  });
 }
 
 function handleIndentAndOutdent(

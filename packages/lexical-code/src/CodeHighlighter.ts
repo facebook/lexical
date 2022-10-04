@@ -7,6 +7,7 @@
  */
 
 // eslint-disable-next-line simple-import-sort/imports
+// eslint-disable-next-line simple-import-sort/imports
 import type {
   LexicalCommand,
   LexicalEditor,
@@ -28,12 +29,14 @@ import 'prismjs/components/prism-python';
 import 'prismjs/components/prism-rust';
 import 'prismjs/components/prism-swift';
 
+import {$createMarkNode, $isMarkNode, MarkNode} from '@lexical/mark';
 import {mergeRegister} from '@lexical/utils';
 import {
   $createLineBreakNode,
   $createTextNode,
   $getNodeByKey,
   $getSelection,
+  $isElementNode,
   $isLineBreakNode,
   $isRangeSelection,
   $isTextNode,
@@ -55,7 +58,6 @@ import {
   getFirstCodeHighlightNodeOfLine,
   getLastCodeHighlightNodeOfLine,
 } from './CodeHighlightNode';
-
 import {$isCodeNode, CodeNode} from './CodeNode';
 
 function isSpaceOrTabChar(char: string): boolean {
@@ -199,6 +201,30 @@ function textNodeTransform(node: TextNode, editor: LexicalEditor): void {
   }
 }
 
+function getCodeContent(node: CodeNode): string {
+  let textContent = '';
+  const children = node.getChildren();
+  const childrenLength = children.length;
+  for (let i = 0; i < childrenLength; i++) {
+    const child = children[i];
+    if ($isMarkNode(child)) {
+      textContent += `/*$$MARK_START_${child.getIDs().join('_')}_$$*/`;
+      textContent += child.getTextContent();
+      textContent += '/*$$MARK_END$$*/';
+    } else {
+      textContent += child.getTextContent();
+    }
+    if (
+      $isElementNode(child) &&
+      i !== childrenLength - 1 &&
+      !child.isInline()
+    ) {
+      textContent += '\n\n';
+    }
+  }
+  return textContent;
+}
+
 function updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
   const codeElement = editor.getElementByKey(node.getKey());
   if (codeElement === null) {
@@ -252,12 +278,9 @@ function codeNodeTransform(node: CodeNode, editor: LexicalEditor) {
         if (!$isCodeNode(currentNode) || !currentNode.isAttached()) {
           return false;
         }
-        const code = currentNode.getTextContent();
-        const tokens = Prism.tokenize(
-          code,
-          Prism.languages[currentNode.getLanguage() || ''] ||
-            Prism.languages[DEFAULT_CODE_LANGUAGE],
-        );
+        const code = getCodeContent(currentNode);
+        const language = currentNode.getLanguage() || DEFAULT_CODE_LANGUAGE;
+        const tokens = Prism.tokenize(code, Prism.languages[language]);
         const highlightNodes = getHighlightNodes(tokens);
         const diffRange = getDiffRange(
           currentNode.getChildren(),
@@ -284,31 +307,51 @@ function getHighlightNodes(
   tokens: (string | Prism.Token)[],
 ): Array<LexicalNode> {
   const nodes: LexicalNode[] = [];
-
+  let currentMark: MarkNode | undefined = undefined;
+  const addCodeHightlightNode = (node: LexicalNode) => {
+    if (currentMark !== undefined) {
+      currentMark.append(node);
+    } else {
+      nodes.push(node);
+    }
+  };
   tokens.forEach((token) => {
     if (typeof token === 'string') {
       const partials = token.split('\n');
       for (let i = 0; i < partials.length; i++) {
         const text = partials[i];
         if (text.length) {
-          nodes.push($createCodeHighlightNode(text));
+          addCodeHightlightNode($createCodeHighlightNode(text));
         }
         if (i < partials.length - 1) {
-          nodes.push($createLineBreakNode());
+          addCodeHightlightNode($createLineBreakNode());
         }
       }
     } else {
-      const {content} = token;
+      const {content, type} = token;
       if (typeof content === 'string') {
-        nodes.push($createCodeHighlightNode(content, token.type));
+        if (type === 'comment') {
+          if (content.startsWith('/*$$MARK_START')) {
+            const splitContent = content.split('_');
+            const markIds = splitContent.slice(2, splitContent.length - 1);
+            currentMark = $createMarkNode(markIds);
+            nodes.push(currentMark);
+            return;
+          } else if (content.startsWith('/*$$MARK_END')) {
+            currentMark = undefined;
+            return;
+          }
+        } else {
+          addCodeHightlightNode($createCodeHighlightNode(content, type));
+        }
       } else if (
         Array.isArray(content) &&
         content.length === 1 &&
         typeof content[0] === 'string'
       ) {
-        nodes.push($createCodeHighlightNode(content[0], token.type));
+        addCodeHightlightNode($createCodeHighlightNode(content[0], type));
       } else if (Array.isArray(content)) {
-        nodes.push(...getHighlightNodes(content));
+        getHighlightNodes(content).forEach(addCodeHightlightNode);
       }
     }
   });

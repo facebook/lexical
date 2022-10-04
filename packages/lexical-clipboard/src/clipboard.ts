@@ -499,57 +499,60 @@ const EVENT_LATENCY = 50;
 let clipboardEventTimeout: null | number = null;
 
 // TODO custom selection
-// TODO return Promise<boolean>
 // TODO potentially have a node customizable version for plain text
-export function copyToClipboard__EXPERIMENTAL(
+export async function copyToClipboard__EXPERIMENTAL(
   editor: LexicalEditor,
   event: null | ClipboardEvent,
-): void {
+): Promise<boolean> {
   if (clipboardEventTimeout !== null) {
-    // Prevent weird conditions for now that can happen when this function is run multiple times
-    // synchronously. In the future, we can do better if we work with a Promise<boolean> or even
-    // Promise<void>
-    return;
+    // Prevent weird race conditions that can happen when this function is run multiple times
+    // synchronously. In the future, we can do better, we can cancel/override the previously running job.
+    return false;
   }
   if (event !== null) {
-    editor.update(() => {
-      $copyToClipboardEvent(editor, event);
+    return new Promise((resolve, reject) => {
+      editor.update(() => {
+        resolve($copyToClipboardEvent(editor, event));
+      });
     });
-    return;
   }
 
   if (IS_FIREFOX) {
     // ClipboardItem is not yet as good as ClipboardEvent. Most browsers only support a single
     // item in the clipboard at one time but FF doesn't support the execCommand hack
-    if (typeof ClipboardItem !== 'undefined') {
-      const htmlString = $getHtmlContent(editor);
-      const clipboard = navigator.clipboard;
-      if (clipboard != null) {
-        // If we have to choose just one item, HTML > rest
-        const data = [
-          new ClipboardItem({
-            'text/html': new Blob([htmlString as BlobPart], {
-              type: 'text/html',
-            }),
-          }),
-        ];
-        clipboard.write(data);
-      }
+    if (typeof ClipboardItem === 'undefined') {
+      return false;
     }
-    return;
+    const htmlString = $getHtmlContent(editor);
+    const clipboard = navigator.clipboard;
+    if (clipboard != null) {
+      // If we have to choose just one item, HTML > rest
+      const data = [
+        new ClipboardItem({
+          'text/html': new Blob([htmlString as BlobPart], {
+            type: 'text/html',
+          }),
+        }),
+      ];
+      clipboard.write(data);
+    }
+    return true;
   }
 
   const rootElement = editor.getRootElement();
   const domSelection = document.getSelection();
-  if (rootElement !== null && domSelection !== null) {
-    const element = document.createElement('span');
-    element.style.cssText = 'position: fixed; top: -1000px;';
-    element.append(document.createTextNode('#'));
-    rootElement.append(element);
-    const range = document.createRange();
-    range.selectNodeContents(element);
-    domSelection.removeAllRanges();
-    domSelection.addRange(range);
+  if (rootElement === null || domSelection === null) {
+    return false;
+  }
+  const element = document.createElement('span');
+  element.style.cssText = 'position: fixed; top: -1000px;';
+  element.append(document.createTextNode('#'));
+  rootElement.append(element);
+  const range = document.createRange();
+  range.selectNodeContents(element);
+  domSelection.removeAllRanges();
+  domSelection.addRange(range);
+  return new Promise((resolve, reject) => {
     const removeListener = editor.registerCommand(
       COPY_COMMAND,
       (secondEvent) => {
@@ -559,7 +562,7 @@ export function copyToClipboard__EXPERIMENTAL(
             window.clearTimeout(clipboardEventTimeout);
             clipboardEventTimeout = null;
           }
-          $copyToClipboardEvent(editor, secondEvent);
+          resolve($copyToClipboardEvent(editor, secondEvent));
         }
         // Block the entire copy flow while we wait for the next ClipboardEvent
         return true;
@@ -571,33 +574,36 @@ export function copyToClipboard__EXPERIMENTAL(
     clipboardEventTimeout = window.setTimeout(() => {
       removeListener();
       clipboardEventTimeout = null;
+      resolve(false);
     }, EVENT_LATENCY);
     document.execCommand('copy');
     element.remove();
-  }
+  });
 }
 
 // TODO shouldn't pass editor (pass namespace directly)
 function $copyToClipboardEvent(
   editor: LexicalEditor,
   event: ClipboardEvent,
-): void {
+): boolean {
   event.preventDefault();
   const clipboardData = event.clipboardData;
-  if (clipboardData !== null) {
-    const selection = $getSelection();
-    const htmlString = $getHtmlContent(editor);
-    const lexicalString = $getLexicalContent(editor);
-    let plainString = '';
-    if (selection !== null) {
-      plainString = selection.getTextContent();
-    }
-    if (htmlString !== null) {
-      clipboardData.setData('text/html', htmlString);
-    }
-    if (lexicalString !== null) {
-      clipboardData.setData('application/x-lexical-editor', lexicalString);
-    }
-    clipboardData.setData('text/plain', plainString);
+  if (clipboardData === null) {
+    return false;
   }
+  const selection = $getSelection();
+  const htmlString = $getHtmlContent(editor);
+  const lexicalString = $getLexicalContent(editor);
+  let plainString = '';
+  if (selection !== null) {
+    plainString = selection.getTextContent();
+  }
+  if (htmlString !== null) {
+    clipboardData.setData('text/html', htmlString);
+  }
+  if (lexicalString !== null) {
+    clipboardData.setData('application/x-lexical-editor', lexicalString);
+  }
+  clipboardData.setData('text/plain', plainString);
+  return true;
 }

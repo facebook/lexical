@@ -17,14 +17,15 @@ import type {
 
 import {createEditor} from 'lexical';
 
+type ErrorHandler = (error: Error) => void;
+
 export function createHeadlessEditor(editorConfig?: {
-  disableEvents?: boolean;
   editorState?: EditorState;
-  namespace: string;
+  namespace?: string;
   nodes?: ReadonlyArray<Klass<LexicalNode>>;
-  onError: (error: Error) => void;
+  onError?: ErrorHandler;
   parentEditor?: LexicalEditor;
-  readOnly?: boolean;
+  editable?: boolean;
   theme?: EditorThemeClasses;
 }): LexicalEditor {
   const editor = createEditor(editorConfig);

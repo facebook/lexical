@@ -8,6 +8,15 @@
 
 import type {TableNode} from './LexicalTableNode';
 import type {Cell, Cells, Grid} from './LexicalTableSelection';
+import type {
+  GridSelection,
+  LexicalCommand,
+  LexicalEditor,
+  LexicalNode,
+  NodeSelection,
+  RangeSelection,
+  TextFormatType,
+} from 'lexical';
 
 import {TableCellNode} from '@lexical/table';
 import {$findMatchingParent} from '@lexical/utils';
@@ -32,7 +41,6 @@ import {
   DEPRECATED_$isGridSelection,
   FOCUS_COMMAND,
   FORMAT_TEXT_COMMAND,
-  GridSelection,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
@@ -40,13 +48,7 @@ import {
   KEY_BACKSPACE_COMMAND,
   KEY_DELETE_COMMAND,
   KEY_TAB_COMMAND,
-  LexicalCommand,
-  LexicalEditor,
-  LexicalNode,
-  NodeSelection,
-  RangeSelection,
   SELECTION_CHANGE_COMMAND,
-  TextFormatType,
 } from 'lexical';
 
 import {$isTableCellNode} from './LexicalTableCellNode';

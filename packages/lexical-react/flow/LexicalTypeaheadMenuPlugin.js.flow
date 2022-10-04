@@ -43,6 +43,7 @@ export type MenuRenderFn<TOption> = (
     selectedIndex: number | null,
     selectOptionAndCleanUp: (option: TOption) => void,
     setHighlightedIndex: (index: number) => void,
+    options: Array<TOption>,
   },
   matchingString: string,
 ) => React.Portal | React.MixedElement | null;

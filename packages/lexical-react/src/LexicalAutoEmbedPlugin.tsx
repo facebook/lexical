@@ -11,6 +11,7 @@ import {$isLinkNode, AutoLinkNode, LinkNode} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   LexicalNodeMenuPlugin,
+  MenuRenderFn,
   TypeaheadOption,
 } from '@lexical/react/LexicalTypeaheadMenuPlugin';
 import {mergeRegister} from '@lexical/utils';
@@ -25,7 +26,6 @@ import {
 } from 'lexical';
 import {useCallback, useEffect, useMemo, useState} from 'react';
 import * as React from 'react';
-import * as ReactDOM from 'react-dom';
 
 export type EmbedMatchResult = {
   url: string;
@@ -47,15 +47,6 @@ export const URL_MATCHER =
 export const INSERT_EMBED_COMMAND: LexicalCommand<EmbedConfig['type']> =
   createCommand();
 
-export type EmbedMenuProps = {
-  selectedItemIndex: number | null;
-  onOptionClick: (option: AutoEmbedOption, index: number) => void;
-  onOptionMouseEnter: (index: number) => void;
-  options: Array<AutoEmbedOption>;
-};
-
-export type EmbedMenuComponent = React.ComponentType<EmbedMenuProps>;
-
 export class AutoEmbedOption extends TypeaheadOption {
   title: string;
   onSelect: (targetNode: LexicalNode | null) => void;
@@ -74,19 +65,19 @@ export class AutoEmbedOption extends TypeaheadOption {
 type LexicalAutoEmbedPluginProps<TEmbedConfig extends EmbedConfig> = {
   embedConfigs: Array<TEmbedConfig>;
   onOpenEmbedModalForConfig: (embedConfig: TEmbedConfig) => void;
-  menuComponent: EmbedMenuComponent;
   getMenuOptions: (
     activeEmbedConfig: TEmbedConfig,
     embedFn: () => void,
     dismissFn: () => void,
   ) => Array<AutoEmbedOption>;
+  menuRenderFn: MenuRenderFn<AutoEmbedOption>;
 };
 
 export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
   embedConfigs,
   onOpenEmbedModalForConfig,
   getMenuOptions,
-  menuComponent: MenuComponent,
+  menuRenderFn,
 }: LexicalAutoEmbedPluginProps<TEmbedConfig>): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
 
@@ -215,27 +206,7 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
       onClose={reset}
       onSelectOption={onSelectOption}
       options={options}
-      menuRenderFn={(
-        anchorElement,
-        {selectedIndex, selectOptionAndCleanUp, setHighlightedIndex},
-      ) =>
-        anchorElement && nodeKey != null
-          ? ReactDOM.createPortal(
-              <MenuComponent
-                options={options}
-                selectedItemIndex={selectedIndex}
-                onOptionClick={(option: AutoEmbedOption, index: number) => {
-                  setHighlightedIndex(index);
-                  selectOptionAndCleanUp(option);
-                }}
-                onOptionMouseEnter={(index: number) => {
-                  setHighlightedIndex(index);
-                }}
-              />,
-              anchorElement,
-            )
-          : null
-      }
+      menuRenderFn={menuRenderFn}
     />
   ) : null;
 }

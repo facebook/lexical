@@ -47,7 +47,6 @@ export type QueryMatch = {
 
 export type Resolution = {
   match: QueryMatch;
-  position: 'start' | 'end';
   getRect: () => DOMRect;
 };
 
@@ -661,7 +660,6 @@ export type TypeaheadMenuPluginProps<TOption extends TypeaheadOption> = {
   options: Array<TOption>;
   menuRenderFn: MenuRenderFn<TOption>;
   triggerFn: TriggerFn;
-  position?: 'start' | 'end';
   onOpen?: (resolution: Resolution) => void;
   onClose?: () => void;
 };
@@ -679,7 +677,6 @@ export function LexicalTypeaheadMenuPlugin<TOption extends TypeaheadOption>({
   onClose,
   menuRenderFn,
   triggerFn,
-  position = 'start',
 }: TypeaheadMenuPluginProps<TOption>): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   const [resolution, setResolution] = useState<Resolution | null>(null);
@@ -734,7 +731,6 @@ export function LexicalTypeaheadMenuPlugin<TOption extends TypeaheadOption>({
               openTypeahead({
                 getRect: () => range.getBoundingClientRect(),
                 match,
-                position,
               }),
             );
             return;
@@ -755,7 +751,6 @@ export function LexicalTypeaheadMenuPlugin<TOption extends TypeaheadOption>({
     triggerFn,
     onQueryChange,
     resolution,
-    position,
     closeTypeahead,
     openTypeahead,
   ]);
@@ -784,14 +779,12 @@ type NodeMenuPluginProps<TOption extends TypeaheadOption> = {
   nodeKey: NodeKey | null;
   onClose?: () => void;
   onOpen?: (resolution: Resolution) => void;
-  position?: 'start' | 'end';
   menuRenderFn: MenuRenderFn<TOption>;
 };
 
 export function LexicalNodeMenuPlugin<TOption extends TypeaheadOption>({
   options,
   nodeKey,
-  position = 'end',
   onClose,
   onOpen,
   onSelectOption,
@@ -834,7 +827,6 @@ export function LexicalNodeMenuPlugin<TOption extends TypeaheadOption>({
                 matchingString: text,
                 replaceableString: text,
               },
-              position,
             }),
           );
         }
@@ -842,7 +834,7 @@ export function LexicalNodeMenuPlugin<TOption extends TypeaheadOption>({
     } else if (nodeKey == null && resolution != null) {
       closeNodeMenu();
     }
-  }, [closeNodeMenu, editor, nodeKey, openNodeMenu, position, resolution]);
+  }, [closeNodeMenu, editor, nodeKey, openNodeMenu, resolution]);
 
   return resolution === null || editor === null ? null : (
     <LexicalPopoverMenu

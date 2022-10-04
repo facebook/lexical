@@ -693,23 +693,25 @@ export default function NewMentionsPlugin(): JSX.Element | null {
       ) =>
         anchorElement && results.length
           ? ReactDOM.createPortal(
-              <ul>
-                {options.map((option, i: number) => (
-                  <MentionsTypeaheadMenuItem
-                    index={i}
-                    isSelected={selectedIndex === i}
-                    onClick={() => {
-                      setHighlightedIndex(i);
-                      selectOptionAndCleanUp(option);
-                    }}
-                    onMouseEnter={() => {
-                      setHighlightedIndex(i);
-                    }}
-                    key={option.key}
-                    option={option}
-                  />
-                ))}
-              </ul>,
+              <div className="typeahead-popover">
+                <ul>
+                  {options.map((option, i: number) => (
+                    <MentionsTypeaheadMenuItem
+                      index={i}
+                      isSelected={selectedIndex === i}
+                      onClick={() => {
+                        setHighlightedIndex(i);
+                        selectOptionAndCleanUp(option);
+                      }}
+                      onMouseEnter={() => {
+                        setHighlightedIndex(i);
+                      }}
+                      key={option.key}
+                      option={option}
+                    />
+                  ))}
+                </ul>
+              </div>,
               anchorElement,
             )
           : null

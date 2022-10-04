@@ -75,6 +75,7 @@ export type MenuRenderFn<TOption extends TypeaheadOption> = (
     selectedIndex: number | null;
     selectOptionAndCleanUp: (option: TOption) => void;
     setHighlightedIndex: (index: number) => void;
+    options: Array<TOption>;
   },
   matchingString: string,
 ) => ReactPortal | JSX.Element | null;
@@ -528,11 +529,12 @@ function LexicalPopoverMenu<TOption extends TypeaheadOption>({
 
   const listItemProps = useMemo(
     () => ({
+      options,
       selectOptionAndCleanUp,
       selectedIndex,
       setHighlightedIndex,
     }),
-    [selectOptionAndCleanUp, selectedIndex],
+    [selectOptionAndCleanUp, selectedIndex, options],
   );
 
   return menuRenderFn(
@@ -592,12 +594,13 @@ function useMenuAnchorRef(
 
     if (rootElement !== null && resolution !== null) {
       const {left, top, width, height} = resolution.getRect();
-      containerDiv.style.top = `${top + height + 5 + window.pageYOffset}px`;
+      containerDiv.style.top = `${top + window.pageYOffset}px`;
       containerDiv.style.left = `${
         left +
         (resolution.position === 'start' ? 0 : width) +
         window.pageXOffset
       }px`;
+      containerDiv.style.height = `${height}px`;
 
       if (!containerDiv.isConnected) {
         containerDiv.setAttribute('aria-label', 'Typeahead menu');

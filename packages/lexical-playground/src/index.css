@@ -250,13 +250,14 @@ pre::-webkit-scrollbar-thumb {
   background-image: url(images/icons/download.svg);
 }
 
-#typeahead-menu {
+.typeahead-popover {
   background: #fff;
   box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.3);
   border-radius: 8px;
+  margin-top: 25px;
 }
 
-#typeahead-menu ul {
+.typeahead-popover ul {
   padding: 0;
   list-style: none;
   margin: 0;
@@ -265,16 +266,16 @@ pre::-webkit-scrollbar-thumb {
   overflow-y: scroll;
 }
 
-#typeahead-menu ul::-webkit-scrollbar {
+.typeahead-popover ul::-webkit-scrollbar {
   display: none;
 }
 
-#typeahead-menu ul {
+.typeahead-popover ul {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
 
-#typeahead-menu ul li {
+.typeahead-popover ul li {
   margin: 0;
   min-width: 180px;
   font-size: 14px;
@@ -283,11 +284,11 @@ pre::-webkit-scrollbar-thumb {
   border-radius: 8px;
 }
 
-#typeahead-menu ul li.selected {
+.typeahead-popover ul li.selected {
   background: #eee;
 }
 
-#typeahead-menu li {
+.typeahead-popover li {
   margin: 0 8px 0 8px;
   padding: 8px;
   color: #050505;
@@ -304,33 +305,33 @@ pre::-webkit-scrollbar-thumb {
   max-width: 250px;
 }
 
-#typeahead-menu li.active {
+.typeahead-popover li.active {
   display: flex;
   width: 20px;
   height: 20px;
   background-size: contain;
 }
 
-#typeahead-menu li:first-child {
+.typeahead-popover li:first-child {
   border-radius: 8px 8px 0px 0px;
 }
 
-#typeahead-menu li:last-child {
+.typeahead-popover li:last-child {
   border-radius: 0px 0px 8px 8px;
 }
 
-#typeahead-menu li:hover {
+.typeahead-popover li:hover {
   background-color: #eee;
 }
 
-#typeahead-menu li .text {
+.typeahead-popover li .text {
   display: flex;
   line-height: 20px;
   flex-grow: 1;
   min-width: 150px;
 }
 
-#typeahead-menu li .icon {
+.typeahead-popover li .icon {
   display: flex;
   width: 20px;
   height: 20px;

@@ -37,6 +37,7 @@ import CollapsiblePlugin from './plugins/CollapsiblePlugin';
 import CommentPlugin from './plugins/CommentPlugin';
 import ComponentPickerPlugin from './plugins/ComponentPickerPlugin';
 import DraggableBlockPlugin from './plugins/DraggableBlockPlugin';
+import EmojiPickerPlugin from './plugins/EmojiPickerPlugin';
 import EmojisPlugin from './plugins/EmojisPlugin';
 import EquationsPlugin from './plugins/EquationsPlugin';
 import ExcalidrawPlugin from './plugins/ExcalidrawPlugin';
@@ -120,6 +121,7 @@ export default function Editor(): JSX.Element {
         <AutoFocusPlugin />
         <ClearEditorPlugin />
         <ComponentPickerPlugin />
+        <EmojiPickerPlugin />
         <AutoEmbedPlugin />
         <MentionsPlugin />
         <EmojisPlugin />

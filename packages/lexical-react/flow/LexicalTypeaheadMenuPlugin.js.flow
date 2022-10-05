@@ -7,8 +7,7 @@
  * @flow strict
  */
 
-import type {LexicalCommand} from '../../lexical/flow/Lexical';
-import type {LexicalEditor, NodeKey, TextNode} from 'lexical';
+import type {LexicalCommand, LexicalEditor, NodeKey, TextNode} from 'lexical';
 import * as React from 'react';
 
 export type QueryMatch = {
@@ -38,7 +37,7 @@ declare export var SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND: LexicalCommand<{
 }>;
 
 export type MenuRenderFn<TOption> = (
-  anchorElement: HTMLElement | null,
+  anchorElementRef: React$ElementRef<HTMLElement | null>,
   itemProps: {
     selectedIndex: number | null,
     selectOptionAndCleanUp: (option: TOption) => void,

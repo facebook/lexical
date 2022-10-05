@@ -18,7 +18,6 @@ import {
   DROP_COMMAND,
   LexicalEditor,
 } from 'lexical';
-import {getElementByKeyOrThrow} from 'lexical/src/LexicalUtils';
 import * as React from 'react';
 import {DragEvent as ReactDragEvent, useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
@@ -71,7 +70,10 @@ function getBlockElement(
 
     while (index >= 0 && index < topLevelNodeKeys.length) {
       const key = topLevelNodeKeys[index];
-      const elem = getElementByKeyOrThrow(editor, key);
+      const elem = editor.getElementByKey(key);
+      if (elem === null) {
+        break;
+      }
       const point = new Point(event.x, event.y);
       const domRect = Rect.fromDOM(elem);
       const {marginTop, marginBottom} = window.getComputedStyle(elem);

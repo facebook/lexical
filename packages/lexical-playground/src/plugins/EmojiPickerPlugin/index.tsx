@@ -20,8 +20,7 @@ import {
 } from 'lexical';
 import * as React from 'react';
 import {useCallback, useEffect, useMemo, useState} from 'react';
-
-import {$createEmojiNode} from '../../nodes/EmojiNode';
+import * as ReactDOM from 'react-dom';
 
 class EmojiOption extends TypeaheadOption {
   title: string;
@@ -102,14 +101,12 @@ export default function EmojiPickerPlugin() {
   const emojiOptions = useMemo(
     () =>
       emojis != null
-        ? emojis
-            .map(
-              ({emoji, aliases, tags}) =>
-                new EmojiOption(aliases[0], emoji, {
-                  keywords: [...aliases, ...tags],
-                }),
-            )
-            .slice(0, MAX_EMOJI_SUGGESTION_COUNT)
+        ? emojis.map(
+            ({emoji, aliases, tags}) =>
+              new EmojiOption(aliases[0], emoji, {
+                keywords: [...aliases, ...tags],
+              }),
+          )
         : [],
     [emojis],
   );
@@ -150,9 +147,7 @@ export default function EmojiPickerPlugin() {
           nodeToRemove.remove();
         }
 
-        selection.insertNodes([
-          $createEmojiNode('emoji', selectedOption.emoji),
-        ]);
+        selection.insertNodes([$createTextNode(selectedOption.emoji)]);
 
         closeMenu();
       });
@@ -167,37 +162,38 @@ export default function EmojiPickerPlugin() {
       triggerFn={checkForTriggerMatch}
       options={options}
       menuRenderFn={(
-        anchorElement,
+        anchorElementRef,
         {selectedIndex, selectOptionAndCleanUp, setHighlightedIndex},
       ) => {
-        if (anchorElement == null || options.length === 0) {
+        if (anchorElementRef.current == null || options.length === 0) {
           return null;
         }
 
-        return (
-          anchorElement && (
-            <div className="typeahead-popover">
-              <ul>
-                {options.map((option: EmojiOption, index) => (
-                  <div key={option.key}>
-                    <EmojiMenuItem
-                      index={index}
-                      isSelected={selectedIndex === index}
-                      onClick={() => {
-                        setHighlightedIndex(index);
-                        selectOptionAndCleanUp(option);
-                      }}
-                      onMouseEnter={() => {
-                        setHighlightedIndex(index);
-                      }}
-                      option={option}
-                    />
-                  </div>
-                ))}
-              </ul>
-            </div>
-          )
-        );
+        return anchorElementRef.current && options.length
+          ? ReactDOM.createPortal(
+              <div className="typeahead-popover emoji-menu">
+                <ul>
+                  {options.map((option: EmojiOption, index) => (
+                    <div key={option.key}>
+                      <EmojiMenuItem
+                        index={index}
+                        isSelected={selectedIndex === index}
+                        onClick={() => {
+                          setHighlightedIndex(index);
+                          selectOptionAndCleanUp(option);
+                        }}
+                        onMouseEnter={() => {
+                          setHighlightedIndex(index);
+                        }}
+                        option={option}
+                      />
+                    </div>
+                  ))}
+                </ul>
+              </div>,
+              anchorElementRef.current,
+            )
+          : null;
       }}
     />
   );

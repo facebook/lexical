@@ -370,12 +370,12 @@ export default function ComponentPickerMenuPlugin(): JSX.Element {
         triggerFn={checkForTriggerMatch}
         options={options}
         menuRenderFn={(
-          anchorElement,
+          anchorElementRef,
           {selectedIndex, selectOptionAndCleanUp, setHighlightedIndex},
         ) =>
-          anchorElement && options.length
+          anchorElementRef.current && options.length
             ? ReactDOM.createPortal(
-                <div className="typeahead-popover">
+                <div className="typeahead-popover component-picker-menu">
                   <ul>
                     {options.map((option, i: number) => (
                       <ComponentPickerMenuItem
@@ -394,7 +394,7 @@ export default function ComponentPickerMenuPlugin(): JSX.Element {
                     ))}
                   </ul>
                 </div>,
-                anchorElement,
+                anchorElementRef.current,
               )
             : null
         }

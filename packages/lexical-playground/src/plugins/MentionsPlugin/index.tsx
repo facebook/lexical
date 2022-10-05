@@ -688,12 +688,12 @@ export default function NewMentionsPlugin(): JSX.Element | null {
       triggerFn={checkForMentionMatch}
       options={options}
       menuRenderFn={(
-        anchorElement,
+        anchorElementRef,
         {selectedIndex, selectOptionAndCleanUp, setHighlightedIndex},
       ) =>
-        anchorElement && results.length
+        anchorElementRef.current && results.length
           ? ReactDOM.createPortal(
-              <div className="typeahead-popover">
+              <div className="typeahead-popover mentions-menu">
                 <ul>
                   {options.map((option, i: number) => (
                     <MentionsTypeaheadMenuItem
@@ -712,7 +712,7 @@ export default function NewMentionsPlugin(): JSX.Element | null {
                   ))}
                 </ul>
               </div>,
-              anchorElement,
+              anchorElementRef.current,
             )
           : null
       }

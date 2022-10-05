@@ -7,8 +7,7 @@
  * @flow strict
  */
 
-import type {LexicalCommand} from '../../lexical/flow/Lexical';
-import type {LexicalEditor, NodeKey, TextNode} from 'lexical';
+import type {LexicalCommand, LexicalEditor, NodeKey, TextNode} from 'lexical';
 import * as React from 'react';
 
 export type QueryMatch = {

@@ -395,7 +395,11 @@ export class GridSelection implements BaseSelection {
     if (!DEPRECATED_$isGridSelection(selection)) {
       return false;
     }
-    return this.gridKey === selection.gridKey && this.anchor.is(this.focus);
+    return (
+      this.gridKey === selection.gridKey &&
+      this.anchor.is(selection.anchor) &&
+      this.focus.is(selection.focus)
+    );
   }
 
   set(gridKey: NodeKey, anchorCellKey: NodeKey, focusCellKey: NodeKey): void {

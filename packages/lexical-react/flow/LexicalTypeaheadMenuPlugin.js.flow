@@ -37,7 +37,7 @@ declare export var SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND: LexicalCommand<{
 }>;
 
 export type MenuRenderFn<TOption> = (
-  anchorElement: HTMLElement | null,
+  anchorElementRef: React$ElementRef<HTMLElement | null>,
   itemProps: {
     selectedIndex: number | null,
     selectOptionAndCleanUp: (option: TOption) => void,

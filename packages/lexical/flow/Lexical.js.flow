@@ -182,6 +182,7 @@ type EditorUpdateOptions = {
   onUpdate?: () => void,
   tag?: string,
   skipTransforms?: true,
+  flushSync?: true,
 };
 type EditorFocusOptions = {
   defaultSelection?: 'rootStart' | 'rootEnd',

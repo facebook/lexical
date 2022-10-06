@@ -2932,4 +2932,143 @@ describe('$patchStyleText', () => {
         '<p dir="ltr"><span style="text-emphasis: filled;" data-lexical-text="true">b</span></p>',
     );
   });
+
+  test('can patch a selection that ends on an element', async () => {
+    const editor = createTestEditor();
+    const element = document.createElement('div');
+    editor.setRootElement(element);
+
+    await editor.update(() => {
+      const root = $getRoot();
+
+      const paragraph = createParagraphWithNodes(editor, [
+        {
+          key: 'a',
+          mergeable: false,
+          text: 'a',
+        },
+      ]);
+
+      root.append(paragraph);
+
+      const link = $createLinkNode('https://');
+      link.append($createTextNode('link'));
+
+      const a = $getNodeByKey('a');
+      a.insertAfter(link);
+
+      setAnchorPoint({
+        key: 'a',
+        offset: 0,
+        type: 'text',
+      });
+      // Select to end of the link _element_
+      setFocusPoint({
+        key: link.getKey(),
+        offset: 1,
+        type: 'element',
+      });
+
+      const selection = $getSelection() as RangeSelection;
+      $patchStyleText(selection, {'text-emphasis': 'filled'});
+    });
+
+    expect(element.innerHTML).toBe(
+      '<p dir="ltr">' +
+        '<span style="text-emphasis: filled;" data-lexical-text="true">a</span>' +
+        '<a href="https://" dir="ltr">' +
+        '<span style="text-emphasis: filled;" data-lexical-text="true">link</span>' +
+        '</a>' +
+        '</p>',
+    );
+  });
+
+  test('can patch a reversed selection that ends on an element', async () => {
+    const editor = createTestEditor();
+    const element = document.createElement('div');
+    editor.setRootElement(element);
+
+    await editor.update(() => {
+      const root = $getRoot();
+
+      const paragraph = createParagraphWithNodes(editor, [
+        {
+          key: 'a',
+          mergeable: false,
+          text: 'a',
+        },
+      ]);
+
+      root.append(paragraph);
+
+      const link = $createLinkNode('https://');
+      link.append($createTextNode('link'));
+
+      const a = $getNodeByKey('a');
+      a.insertAfter(link);
+
+      // Select from the end of the link _element_
+      setAnchorPoint({
+        key: link.getKey(),
+        offset: 1,
+        type: 'element',
+      });
+      setFocusPoint({
+        key: 'a',
+        offset: 0,
+        type: 'text',
+      });
+
+      const selection = $getSelection() as RangeSelection;
+      $patchStyleText(selection, {'text-emphasis': 'filled'});
+    });
+
+    expect(element.innerHTML).toBe(
+      '<p dir="ltr">' +
+        '<span style="text-emphasis: filled;" data-lexical-text="true">a</span>' +
+        '<a href="https://" dir="ltr">' +
+        '<span style="text-emphasis: filled;" data-lexical-text="true">link</span>' +
+        '</a>' +
+        '</p>',
+    );
+  });
+
+  test('can patch a selection that starts and ends on an element', async () => {
+    const editor = createTestEditor();
+    const element = document.createElement('div');
+    editor.setRootElement(element);
+
+    await editor.update(() => {
+      const root = $getRoot();
+
+      const paragraph = $createParagraphNode();
+      root.append(paragraph);
+
+      const link = $createLinkNode('https://');
+      link.append($createTextNode('link'));
+      paragraph.append(link);
+
+      setAnchorPoint({
+        key: link.getKey(),
+        offset: 0,
+        type: 'element',
+      });
+      setFocusPoint({
+        key: link.getKey(),
+        offset: 1,
+        type: 'element',
+      });
+
+      const selection = $getSelection() as RangeSelection;
+      $patchStyleText(selection, {'text-emphasis': 'filled'});
+    });
+
+    expect(element.innerHTML).toBe(
+      '<p>' +
+        '<a href="https://" dir="ltr">' +
+        '<span style="text-emphasis: filled;" data-lexical-text="true">link</span>' +
+        '</a>' +
+        '</p>',
+    );
+  });
 });

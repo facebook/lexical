@@ -127,8 +127,8 @@ export default function ComponentPickerMenuPlugin(): JSX.Element {
       return options;
     }
 
-    const fullTableRegex = new RegExp(/([1-9]|10)x([1-9]|10)$/);
-    const partialTableRegex = new RegExp(/([1-9]|10)x?$/);
+    const fullTableRegex = new RegExp(/^([1-9]|10)x([1-9]|10)$/);
+    const partialTableRegex = new RegExp(/^([1-9]|10)x?$/);
 
     const fullTableMatch = fullTableRegex.exec(queryString);
     const partialTableMatch = partialTableRegex.exec(queryString);

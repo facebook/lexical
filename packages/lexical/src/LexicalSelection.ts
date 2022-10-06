@@ -1370,7 +1370,7 @@ export class RangeSelection implements BaseSelection {
           if (!node.canBeEmpty() && node.isEmpty()) {
             continue;
           }
-          if ($isRootOrShadowRoot(target)) {
+          if ($isRootNode(target)) {
             const placementNode = target.getChildAtIndex(anchorOffset);
             if (placementNode !== null) {
               placementNode.insertBefore(node);

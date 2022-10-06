@@ -665,7 +665,7 @@ export type TypeaheadMenuPluginProps<TOption extends TypeaheadOption> = {
   triggerFn: TriggerFn;
   onOpen?: (resolution: Resolution) => void;
   onClose?: () => void;
-  className: string;
+  className?: string;
 };
 
 export type TriggerFn = (
@@ -773,7 +773,6 @@ export function LexicalTypeaheadMenuPlugin<TOption extends TypeaheadOption>({
       options={options}
       menuRenderFn={menuRenderFn}
       onSelectOption={onSelectOption}
-      className={className}
     />
   );
 }

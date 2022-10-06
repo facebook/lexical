@@ -583,10 +583,10 @@ export function useBasicTypeaheadTriggerMatch(
 function useMenuAnchorRef(
   resolution: Resolution | null,
   setResolution: (r: Resolution | null) => void,
+  className?: string,
 ): MutableRefObject<HTMLElement> {
   const [editor] = useLexicalComposerContext();
   const anchorElementRef = useRef<HTMLElement>(document.createElement('div'));
-
   const positionMenu = useCallback(() => {
     const rootElement = editor.getRootElement();
     const containerDiv = anchorElementRef.current;
@@ -599,6 +599,9 @@ function useMenuAnchorRef(
       containerDiv.style.width = `${width}px`;
 
       if (!containerDiv.isConnected) {
+        if (className != null) {
+          containerDiv.classList.add(className);
+        }
         containerDiv.setAttribute('aria-label', 'Typeahead menu');
         containerDiv.setAttribute('id', 'typeahead-menu');
         containerDiv.setAttribute('role', 'listbox');
@@ -609,7 +612,7 @@ function useMenuAnchorRef(
       anchorElementRef.current = containerDiv;
       rootElement.setAttribute('aria-controls', 'typeahead-menu');
     }
-  }, [editor, resolution]);
+  }, [editor, resolution, className]);
 
   useEffect(() => {
     const rootElement = editor.getRootElement();
@@ -662,6 +665,7 @@ export type TypeaheadMenuPluginProps<TOption extends TypeaheadOption> = {
   triggerFn: TriggerFn;
   onOpen?: (resolution: Resolution) => void;
   onClose?: () => void;
+  anchorClassName?: string;
 };
 
 export type TriggerFn = (
@@ -677,10 +681,15 @@ export function LexicalTypeaheadMenuPlugin<TOption extends TypeaheadOption>({
   onClose,
   menuRenderFn,
   triggerFn,
+  anchorClassName,
 }: TypeaheadMenuPluginProps<TOption>): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   const [resolution, setResolution] = useState<Resolution | null>(null);
-  const anchorElementRef = useMenuAnchorRef(resolution, setResolution);
+  const anchorElementRef = useMenuAnchorRef(
+    resolution,
+    setResolution,
+    anchorClassName,
+  );
 
   const closeTypeahead = useCallback(() => {
     setResolution(null);
@@ -780,6 +789,7 @@ type NodeMenuPluginProps<TOption extends TypeaheadOption> = {
   onClose?: () => void;
   onOpen?: (resolution: Resolution) => void;
   menuRenderFn: MenuRenderFn<TOption>;
+  anchorClassName?: string;
 };
 
 export function LexicalNodeMenuPlugin<TOption extends TypeaheadOption>({
@@ -789,10 +799,15 @@ export function LexicalNodeMenuPlugin<TOption extends TypeaheadOption>({
   onOpen,
   onSelectOption,
   menuRenderFn,
+  anchorClassName,
 }: NodeMenuPluginProps<TOption>): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   const [resolution, setResolution] = useState<Resolution | null>(null);
-  const anchorElementRef = useMenuAnchorRef(resolution, setResolution);
+  const anchorElementRef = useMenuAnchorRef(
+    resolution,
+    setResolution,
+    anchorClassName,
+  );
 
   const closeNodeMenu = useCallback(() => {
     setResolution(null);

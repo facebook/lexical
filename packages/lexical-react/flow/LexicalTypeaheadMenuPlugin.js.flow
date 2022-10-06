@@ -65,6 +65,7 @@ export type TypeaheadMenuPluginProps<TOption> = {
   triggerFn: TriggerFn,
   onOpen?: (resolution: Resolution) => void,
   onClose?: () => void,
+  anchorClassName?: string,
 };
 
 export type TriggerFn = (
@@ -88,6 +89,7 @@ type NodeMenuPluginProps<TOption> = {
   onClose?: () => void,
   onOpen?: (resolution: Resolution) => void,
   menuRenderFn: MenuRenderFn<TOption>,
+  anchorClassName?: string,
 };
 
 declare export function LexicalNodeMenuPlugin<TOption>(

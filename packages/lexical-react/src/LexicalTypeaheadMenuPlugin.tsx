@@ -600,7 +600,7 @@ function useMenuAnchorRef(
 
       if (!containerDiv.isConnected) {
         if (className != null) {
-          containerDiv.classList.add(className);
+          containerDiv.className = className;
         }
         containerDiv.setAttribute('aria-label', 'Typeahead menu');
         containerDiv.setAttribute('id', 'typeahead-menu');

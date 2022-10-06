@@ -26,7 +26,7 @@ export const PUNCTUATION: string =
 
 declare export class TypeaheadOption {
   key: string;
-  ref: React$ElementRef<HTMLElement | null>;
+  ref: {current: HTMLElement | null};
   constructor(key: string): void;
   setRefElement(element: HTMLElement | null): void;
 }
@@ -37,7 +37,7 @@ declare export var SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND: LexicalCommand<{
 }>;
 
 export type MenuRenderFn<TOption> = (
-  anchorElementRef: React$ElementRef<HTMLElement | null>,
+  anchorElementRef: {current: HTMLElement | null},
   itemProps: {
     selectedIndex: number | null,
     selectOptionAndCleanUp: (option: TOption) => void,

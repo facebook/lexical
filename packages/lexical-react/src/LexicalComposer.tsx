@@ -13,9 +13,6 @@ import {
   LexicalComposerContext,
 } from '@lexical/react/LexicalComposerContext';
 import {
-  $createParagraphNode,
-  $getRoot,
-  $getSelection,
   createEditor,
   EditorState,
   EditorThemeClasses,
@@ -27,7 +24,7 @@ import {useMemo} from 'react';
 import * as React from 'react';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
-const HISTORY_MERGE_OPTIONS = {tag: 'history-merge'};
+import initializeEditor from './shared/initializeEditor';
 
 export type InitialEditorStateType =
   | null
@@ -102,49 +99,4 @@ export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
       {children}
     </LexicalComposerContext.Provider>
   );
-}
-
-function initializeEditor(
-  editor: LexicalEditor,
-  initialEditorState?: InitialEditorStateType,
-): void {
-  if (initialEditorState === null) {
-    return;
-  } else if (initialEditorState === undefined) {
-    editor.update(() => {
-      const root = $getRoot();
-      if (root.isEmpty()) {
-        const paragraph = $createParagraphNode();
-        root.append(paragraph);
-        const activeElement = document.activeElement;
-        if (
-          $getSelection() !== null ||
-          (activeElement !== null && activeElement === editor.getRootElement())
-        ) {
-          paragraph.select();
-        }
-      }
-    }, HISTORY_MERGE_OPTIONS);
-  } else if (initialEditorState !== null) {
-    switch (typeof initialEditorState) {
-      case 'string': {
-        const parsedEditorState = editor.parseEditorState(initialEditorState);
-        editor.setEditorState(parsedEditorState, HISTORY_MERGE_OPTIONS);
-        break;
-      }
-      case 'object': {
-        editor.setEditorState(initialEditorState, HISTORY_MERGE_OPTIONS);
-        break;
-      }
-      case 'function': {
-        editor.update(() => {
-          const root = $getRoot();
-          if (root.isEmpty()) {
-            initialEditorState(editor);
-          }
-        }, HISTORY_MERGE_OPTIONS);
-        break;
-      }
-    }
-  }
 }

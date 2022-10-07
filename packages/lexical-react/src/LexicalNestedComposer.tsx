@@ -23,6 +23,8 @@ import * as React from 'react';
 import {ReactNode, useContext, useEffect, useMemo, useRef} from 'react';
 import invariant from 'shared/invariant';
 
+import initializeEditor from './shared/initializeEditor';
+
 export function LexicalNestedComposer({
   initialEditor,
   children,
@@ -81,12 +83,14 @@ export function LexicalNestedComposer({
       }
       initialEditor._config.namespace = parentEditor._config.namespace;
 
+      initializeEditor(initialEditor);
+
       return [initialEditor, context];
     },
 
     // We only do this for init
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    [initialEditor],
   );
 
   // If collaboration is enabled, make sure we don't render the children

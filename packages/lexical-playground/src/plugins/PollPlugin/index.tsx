@@ -17,7 +17,8 @@ import {
   LexicalCommand,
   LexicalEditor,
 } from 'lexical';
-import React, {useEffect, useState} from 'react';
+import {useEffect, useState} from 'react';
+import * as React from 'react';
 
 import {$createPollNode, PollNode} from '../../nodes/PollNode';
 import Button from '../../ui/Button';

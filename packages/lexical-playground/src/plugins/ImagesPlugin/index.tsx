@@ -25,7 +25,8 @@ import {
   LexicalCommand,
   LexicalEditor,
 } from 'lexical';
-import React, {useEffect, useRef, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
+import * as React from 'react';
 import getSelection from 'shared/getDOMSelection';
 
 import landscapeImage from '../../images/landscape.jpg';

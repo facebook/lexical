@@ -27,6 +27,9 @@ import * as React from 'react';
 import invariant from 'shared/invariant';
 
 import {$createTableNodeWithDimensions, TableNode} from '../nodes/TableNode';
+import Button from '../ui/Button';
+import {DialogActions} from '../ui/Dialog';
+import TextInput from '../ui/TextInput';
 
 export type InsertTableCommandPayload = Readonly<{
   columns: string;
@@ -85,6 +88,58 @@ export function TableContext({children}: {children: JSX.Element}) {
       )}>
       {children}
     </CellContext.Provider>
+  );
+}
+
+export function InsertTableDialog({
+  activeEditor,
+  onClose,
+}: {
+  activeEditor: LexicalEditor;
+  onClose: () => void;
+}): JSX.Element {
+  const [rows, setRows] = useState('5');
+  const [columns, setColumns] = useState('5');
+
+  const onClick = () => {
+    activeEditor.dispatchCommand(INSERT_TABLE_COMMAND, {columns, rows});
+    onClose();
+  };
+
+  return (
+    <>
+      <TextInput label="No of rows" onChange={setRows} value={rows} />
+      <TextInput label="No of columns" onChange={setColumns} value={columns} />
+      <DialogActions data-test-id="table-modal-confirm-insert">
+        <Button onClick={onClick}>Confirm</Button>
+      </DialogActions>
+    </>
+  );
+}
+
+export function InsertNewTableDialog({
+  activeEditor,
+  onClose,
+}: {
+  activeEditor: LexicalEditor;
+  onClose: () => void;
+}): JSX.Element {
+  const [rows, setRows] = useState('5');
+  const [columns, setColumns] = useState('5');
+
+  const onClick = () => {
+    activeEditor.dispatchCommand(INSERT_TABLE_COMMAND, {columns, rows});
+    onClose();
+  };
+
+  return (
+    <>
+      <TextInput label="No of rows" onChange={setRows} value={rows} />
+      <TextInput label="No of columns" onChange={setColumns} value={columns} />
+      <DialogActions data-test-id="table-modal-confirm-insert">
+        <Button onClick={onClick}>Confirm</Button>
+      </DialogActions>
+    </>
   );
 }
 

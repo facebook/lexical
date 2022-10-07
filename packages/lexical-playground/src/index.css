@@ -352,6 +352,10 @@ pre::-webkit-scrollbar-thumb {
   width: 150px;
 }
 
+.emoji-menu {
+  width: 200px;
+}
+
 i.palette {
   background-image: url(images/icons/palette.svg);
 }

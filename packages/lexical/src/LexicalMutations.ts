@@ -143,7 +143,10 @@ export function $flushMutations(
           currentEditorState,
         );
 
-        if ($isDecoratorNode(targetNode)) {
+        if (
+          (targetNode === null && targetDOM !== rootElement) ||
+          $isDecoratorNode(targetNode)
+        ) {
           continue;
         }
 

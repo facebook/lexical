@@ -1,10 +1,4 @@
-/**
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- *
- */
+/* eslint-disable header/header */
 
 import type {LexicalComposerContextType} from '@lexical/react/LexicalComposerContext';
 
@@ -27,6 +21,8 @@ import {useMemo} from 'react';
 import * as React from 'react';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
+import {useLexicalMultiEditorProviderContextConfig} from './LexicalMultiEditorContext';
+
 const HISTORY_MERGE_OPTIONS = {tag: 'history-merge'};
 
 export type InitialEditorStateType =
@@ -46,9 +42,22 @@ type Props = {
     theme?: EditorThemeClasses;
     editorState?: InitialEditorStateType;
   }>;
+  initialMultiEditorProviderConfig?: Readonly<{
+    editorId: string;
+  }>;
 };
 
-export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
+export function LexicalComposer({
+  initialConfig,
+  initialMultiEditorProviderConfig,
+  children,
+}: Props): JSX.Element {
+  const multiEditorProviderContextConfig =
+    useLexicalMultiEditorProviderContextConfig(
+      initialMultiEditorProviderConfig?.editorId,
+      'LexicalComposer.useLexicalMultiEditorProviderContextConfig',
+    );
+
   const composerContext: [LexicalEditor, LexicalComposerContextType] = useMemo(
     () => {
       const {
@@ -65,7 +74,11 @@ export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
         theme,
       );
 
-      let editor = initialEditor || null;
+      let editor =
+        multiEditorProviderContextConfig.state === 'remountable' &&
+        typeof multiEditorProviderContextConfig.editor !== 'undefined'
+          ? multiEditorProviderContextConfig.editor
+          : initialEditor || null;
 
       if (editor === null) {
         const newEditor = createEditor({
@@ -80,6 +93,10 @@ export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
         editor = newEditor;
       }
 
+      if (multiEditorProviderContextConfig.state === 'listening') {
+        multiEditorProviderContextConfig.addEditor(editor);
+      }
+
       return [editor, context];
     },
 
@@ -89,6 +106,8 @@ export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
   );
 
   useLayoutEffect(() => {
+    if (multiEditorProviderContextConfig.state === 'remountable') return; // savedEditor === configured
+
     const isEditable = initialConfig.editable;
     const [editor] = composerContext;
     editor.setEditable(isEditable !== undefined ? isEditable : true);

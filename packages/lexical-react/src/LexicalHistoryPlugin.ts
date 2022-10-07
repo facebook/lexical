@@ -1,15 +1,10 @@
-/**
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- *
- */
+/* eslint-disable header/header */
 
 import type {HistoryState} from '@lexical/history';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 
+import {useLexicalMultiEditorProviderContextConfig} from './LexicalMultiEditorContext';
 import {useHistory} from './shared/useHistory';
 
 export {createEmptyHistoryState} from '@lexical/history';
@@ -18,12 +13,29 @@ export type {HistoryState};
 
 export function HistoryPlugin({
   externalHistoryState,
+  initialMultiEditorProviderConfig,
 }: {
   externalHistoryState?: HistoryState;
+  initialMultiEditorProviderConfig?: Readonly<{
+    editorId: string;
+  }>;
 }): null {
   const [editor] = useLexicalComposerContext();
+  const multiEditorProviderContextConfig =
+    useLexicalMultiEditorProviderContextConfig(
+      initialMultiEditorProviderConfig?.editorId,
+      'LexicalHistoryPlugin',
+    );
 
-  useHistory(editor, externalHistoryState);
+  const externalHistoryStateFromMultiEditorProviderContext =
+    multiEditorProviderContextConfig.state !== 'inactive'
+      ? multiEditorProviderContextConfig.history
+      : undefined;
+
+  useHistory(
+    editor,
+    externalHistoryStateFromMultiEditorProviderContext || externalHistoryState,
+  );
 
   return null;
 }

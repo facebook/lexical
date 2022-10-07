@@ -22,29 +22,16 @@
   },
   "devtools_page": "src/devtools/index.html",
   "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
-  "web_accessible_resources": [
-    "src/inject/index.js"
-  ],
+  "web_accessible_resources": ["src/inject/index.js"],
   "background": {
-    "scripts": [
-      "src/background/index.js"
-    ],
+    "scripts": ["src/background/index.js"],
     "persistent": false
   },
-  "permissions": [
-    "file:///*",
-    "http://*/*",
-    "https://*/*",
-    "clipboardWrite"
-  ],
+  "permissions": ["file:///*", "http://*/*", "https://*/*", "clipboardWrite"],
   "content_scripts": [
     {
-      "matches": [
-        "<all_urls>"
-      ],
-      "js": [
-        "src/content/index.js"
-      ],
+      "matches": ["<all_urls>"],
+      "js": ["src/content/index.js"],
       "run_at": "document_start"
     }
   ]

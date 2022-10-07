@@ -31,7 +31,7 @@
   "background": {
     "scripts": ["src/background/index.js"]
   },
-  "permissions": ["file:///*", "http://*/*", "https://*/*", "clipboardWrite"],
+  "permissions": ["file:///*", "http://*/*", "https://*/*"],
   "content_scripts": [
     {
       "matches": ["<all_urls>"],

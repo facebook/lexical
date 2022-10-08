@@ -24,8 +24,7 @@
   "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
   "web_accessible_resources": ["src/inject/index.js"],
   "background": {
-    "scripts": ["src/background/index.js"],
-    "persistent": false
+    "scripts": ["src/background/index.js"]
   },
   "permissions": ["file:///*", "http://*/*", "https://*/*"],
   "content_scripts": [

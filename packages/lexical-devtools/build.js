@@ -27,7 +27,6 @@ const postProcess = async (destinationPath, tempPath) => {
 };
 
 const build = async (tempPath, manifestPath) => {
-  //tempPath :: lex-dev.build.chrome
   const tempSrcPath = join(tempPath, 'src');
   const tempAssetsPath = join(tempPath, 'assets');
 
@@ -37,10 +36,10 @@ const build = async (tempPath, manifestPath) => {
   const buildSrcPath = join(__dirname, 'build', 'src');
   const buildAssetsPath = join(__dirname, 'build', 'assets');
 
-  await move(buildSrcPath, tempSrcPath); // Copy built files to tempPath :: lex-dev.build.chrome
-  await move(buildAssetsPath, tempAssetsPath); // Copy built files to tempPath :: lex-dev.build.chrome
+  await move(buildSrcPath, tempSrcPath); // Copy built files to tempPath
+  await move(buildAssetsPath, tempAssetsPath); // Copy built files to tempPath
 
-  const copiedManifestPath = join(tempPath, 'manifest.json'); //lex-dev.build.chrome.manifest
+  const copiedManifestPath = join(tempPath, 'manifest.json');
 
   await copy(manifestPath, copiedManifestPath);
   await Promise.all(
@@ -66,11 +65,11 @@ const build = async (tempPath, manifestPath) => {
 };
 
 const main = async (buildId) => {
-  const root = join(__dirname, buildId); //lex-dev.chrome
-  const destinationPath = join(root, 'build'); //lex-dev.chrome.build
+  const root = join(__dirname, buildId);
+  const destinationPath = join(root, 'build');
 
   try {
-    const tempPath = join(__dirname, 'build', buildId); //lex-dev.build.chrome
+    const tempPath = join(__dirname, 'build', buildId);
     const manifestPath = join(root, 'manifest.json');
     await preProcess(destinationPath, tempPath);
     await build(tempPath, manifestPath);

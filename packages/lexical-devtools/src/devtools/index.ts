@@ -10,7 +10,7 @@ const port = chrome.runtime.connect();
 // Create the panel which appears within the browser's DevTools, loading the Lexical DevTools App within index.html.
 chrome.devtools.panels.create(
   'Lexical',
-  '/../../favicon-32x32.png',
+  '',
   '/src/panel/index.html',
   function (panel) {
     panel.onShown.addListener(handleShown);

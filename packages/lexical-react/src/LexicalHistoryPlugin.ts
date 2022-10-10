@@ -3,8 +3,8 @@
 import type {HistoryState} from '@lexical/history';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useInternalLexicalMultiEditorContextConfig} from '@lexical/react/LexicalMultiEditorContext';
 
-import {useLexicalMultiEditorProviderContextConfig} from './LexicalMultiEditorContext';
 import {useHistory} from './shared/useHistory';
 
 export {createEmptyHistoryState} from '@lexical/history';
@@ -13,29 +13,20 @@ export type {HistoryState};
 
 export function HistoryPlugin({
   externalHistoryState,
-  initialMultiEditorProviderConfig,
 }: {
   externalHistoryState?: HistoryState;
-  initialMultiEditorProviderConfig?: Readonly<{
-    editorId: string;
-  }>;
 }): null {
-  const [editor] = useLexicalComposerContext();
-  const multiEditorProviderContextConfig =
-    useLexicalMultiEditorProviderContextConfig(
-      initialMultiEditorProviderConfig?.editorId,
-      'LexicalHistoryPlugin',
-    );
+  const [editor, context] = useLexicalComposerContext();
+  const multiEditorContext = useInternalLexicalMultiEditorContextConfig(
+    context.multiEditorKey,
+  );
 
-  const externalHistoryStateFromMultiEditorProviderContext =
-    multiEditorProviderContextConfig.state !== 'inactive'
-      ? multiEditorProviderContextConfig.history
+  const multiEditorContextHistoryState =
+    multiEditorContext.state === 'remountable'
+      ? multiEditorContext.history
       : undefined;
 
-  useHistory(
-    editor,
-    externalHistoryStateFromMultiEditorProviderContext || externalHistoryState,
-  );
+  useHistory(editor, multiEditorContextHistoryState || externalHistoryState);
 
   return null;
 }

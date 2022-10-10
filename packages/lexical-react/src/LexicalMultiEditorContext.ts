@@ -4,8 +4,9 @@ import type {HistoryState} from '@lexical/react/LexicalHistoryPlugin';
 import type {LexicalEditor} from 'lexical';
 
 import * as React from 'react';
+import invariant from 'shared/invariant';
 
-type LexicalMultiEditorProviderContextGetters = {
+type LexicalMultiEditorContextGetters = {
   getEditor: (editorId: string) => LexicalEditor | undefined;
   getEditorHistory: (editorId: string) => HistoryState | undefined;
   getEditorAndHistory: (editorId: string) =>
@@ -14,14 +15,15 @@ type LexicalMultiEditorProviderContextGetters = {
         history: HistoryState;
       }
     | undefined;
-  resetEditorStore: () => void;
+  getEditorKeychain: () => string[];
 };
-type LexicalMultiEditorProviderContextMutations = {
+type LexicalMultiEditorContextMutations = {
   addEditor: (editorId: string, editor: LexicalEditor) => void;
   deleteEditor: (editorId: string) => void;
+  resetEditorStore: () => void;
 };
 
-export type LexicalMultiEditorProviderContextEditorStore = Record<
+export type LexicalMultiEditorContextEditorStore = Record<
   string,
   {
     editor: LexicalEditor;
@@ -29,73 +31,73 @@ export type LexicalMultiEditorProviderContextEditorStore = Record<
   }
 >;
 
-export type LexicalMultiEditorContext =
-  LexicalMultiEditorProviderContextGetters &
-    LexicalMultiEditorProviderContextMutations;
+export type LexicalMultiEditorContext = LexicalMultiEditorContextGetters &
+  LexicalMultiEditorContextMutations;
 
-export type UseLexicalMultiEditorProviderContext = LexicalMultiEditorContext;
-export type UseLexicalMultiEditorProviderContextConfig =
+export type UseLexicalMultiEditorContext = LexicalMultiEditorContext;
+export type UseLexicalMultiEditorContextConfigInternal =
   | {
-      addEditor: (editor: LexicalEditor) => void;
       editor: LexicalEditor | undefined;
       history: HistoryState | undefined;
-      state: 'listening' | 'remountable';
+      state: 'remountable';
     }
+  | {addEditor: (editor: LexicalEditor) => void; state: 'listening'}
   | {state: 'inactive'};
 
-export const LexicalMultiEditorContext =
+export const LexicalMultiEditorContext: React.Context<LexicalMultiEditorContext | null> =
   React.createContext<LexicalMultiEditorContext | null>(null);
 
-export const useLexicalMultiEditorProviderContext =
-  (): UseLexicalMultiEditorProviderContext | null => {
-    const context = React.useContext(LexicalMultiEditorContext);
-    if (context === null) return null;
-
-    return context;
-  };
-
-export const useLexicalMultiEditorProviderContextConfig = (
-  editorId: string | undefined,
-  caller: string,
-): UseLexicalMultiEditorProviderContextConfig => {
+// TODO, nested editor context...
+export function useLexicalMultiEditorContext():
+  | UseLexicalMultiEditorContext
+  | Record<string, never> {
   const context = React.useContext(LexicalMultiEditorContext);
+  if (context === null) return {};
+
+  return context;
+}
+
+export function useInternalLexicalMultiEditorContextConfig(
+  editorId: string | undefined,
+): UseLexicalMultiEditorContextConfigInternal {
+  const context = useLexicalMultiEditorContext();
 
   const isActive = context !== null;
   const hasEditorId = typeof editorId !== 'undefined';
-  const isMissingConfigProps = isActive && !hasEditorId;
-  const isMissingActiveMultiEditorProvider = !isActive && hasEditorId;
 
-  if (isMissingConfigProps) {
-    console.error(
-      `${caller}: You haven't passed an initialMultiEditorProviderConfig.editorId prop. The LexicalMultiEditorProvider won't track editor history without it.`,
-    );
-  }
+  const isListening = isActive && hasEditorId;
+  const isMissingActiveMultiEditorProvider = !isActive && hasEditorId;
+  const isMissingMultiEditorContextConfigProps = isActive && !hasEditorId;
 
   if (isMissingActiveMultiEditorProvider) {
-    console.error(
-      `${caller}: For some reason, the LexicalMultiEditorProvider is not active. Did you add it to your tree? The initialMultiEditorProviderConfig.editorId prop won't work without it.`,
+    invariant(false, 'cannot find a LexicalMultiEditorProvider');
+  }
+
+  if (isMissingMultiEditorContextConfigProps) {
+    invariant(
+      false,
+      "cannot find a multiEditorKey. check your LexicalComposer's initConfig",
     );
   }
 
-  if (
-    !isActive ||
-    !hasEditorId ||
-    isMissingConfigProps ||
-    isMissingActiveMultiEditorProvider
-  ) {
-    return {state: 'inactive'};
+  if (!isListening) {
+    return {
+      state: 'inactive',
+    };
+  } else {
+    if (typeof context.getEditor(editorId) === 'undefined') {
+      return {
+        addEditor: (editor) => {
+          context.addEditor(editorId, editor);
+        },
+        state: 'listening',
+      };
+    } else {
+      return {
+        editor: context.getEditor(editorId),
+        history: context.getEditorHistory(editorId),
+        state: 'remountable',
+      };
+    }
   }
-
-  return {
-    addEditor: (editor: LexicalEditor) => {
-      if (typeof context.getEditor(editorId) !== 'undefined') return;
-      context.addEditor(editorId, editor);
-    },
-    editor: context.getEditor(editorId),
-    history: context.getEditorHistory(editorId),
-    state:
-      typeof context.getEditor(editorId) === 'undefined'
-        ? 'listening'
-        : 'remountable',
-  };
-};
+}

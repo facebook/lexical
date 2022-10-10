@@ -13,6 +13,7 @@ import invariant from 'shared/invariant';
 
 export type LexicalComposerContextType = {
   getTheme: () => EditorThemeClasses | null | undefined;
+  multiEditorKey?: string;
 };
 
 export type LexicalComposerContextWithEditor = [
@@ -29,6 +30,7 @@ export const LexicalComposerContext: React.Context<
 export function createLexicalComposerContext(
   parent: LexicalComposerContextWithEditor | null | undefined,
   theme: EditorThemeClasses | null | undefined,
+  multiEditorKey?: string,
 ): LexicalComposerContextType {
   let parentContext: LexicalComposerContextType | null = null;
 
@@ -46,6 +48,7 @@ export function createLexicalComposerContext(
 
   return {
     getTheme,
+    multiEditorKey,
   };
 }
 

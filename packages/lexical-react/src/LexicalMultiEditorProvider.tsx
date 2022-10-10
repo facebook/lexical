@@ -3,12 +3,11 @@
 import type {LexicalEditor} from 'lexical';
 
 import {createEmptyHistoryState} from '@lexical/history';
-import * as React from 'react';
-
 import {
   LexicalMultiEditorContext,
-  LexicalMultiEditorProviderContextEditorStore,
-} from './LexicalMultiEditorContext';
+  LexicalMultiEditorContextEditorStore,
+} from '@lexical/react/LexicalMultiEditorContext';
+import * as React from 'react';
 
 type Props = {
   children: JSX.Element | string | (JSX.Element | string)[];
@@ -17,23 +16,35 @@ type Props = {
 /**
  * *Overview*
  *
- * This component won't restore `editor` instances and histories from a database. Rather, it
- * collects them as they're mounted in your app so you can:
+ * This component collects editor instances and histories as they're mounted so you can:
  *
- * - Run `editor` updates, listeners, etc..., outside a `LexicalComposer`.
- * - Remount an editor throughout your app without losing its history or state.
+ *  - Run `editor` updates, listeners, etc..., outside a `LexicalComposer`.
+ *  - Easily remount editors without losing history or state — all without overusing the onChange plugin.
+ *    - Why? You'll stop resaving `editorState` via the `OnChangePlugin` just for an internal remount.
+ *    - Neither undo nor redo will work if you don't install the `HistoryPlugin`.
+ *      - This is standard Lexical behavior.
  *
  * *Directions*
  *
- * - Make the `LexicalMultiEditorProvider` a parent of your `LexicalComposer`s.
- * - Pass an `editorId` to each composer, as well as its `HistoryPlugin`, via the `initialMultiEditorProviderConfig` prop.
- *    - Note: History stacks are disabled if you don't use the `HistoryPlugin` — standard Lexical behavior.
- * - Enjoy your freedom.
+ * - Make the `LexicalMultiEditorProvider` a parent of your `LexicalComposer`.
+ * - Pass the composer a `multiEditorKey` via its `initialConfig`.
+ * - Get editors with `useLexicalMultiEditorContext` hook.
+ *
+ * *Public methods*
+ * - `addEditor`
+ * - `deleteEditor`
+ * - `getEditor`
+ * - `getEditorHistory`
+ * - `getEditorAndHistory`
+ * - `getEditorKeychain`
+ *   - Returns a list of your `editorStore`'s current keys. This can be handy when you need to look up a group of related editors `onClick` in order to serialize and save their `editorStates` to a database.
+ * - `resetEditorStore`
+ *   - Start over...
  */
 
 export function LexicalMultiEditorProvider({children}: Props): JSX.Element {
-  const editorStore =
-    React.useRef<LexicalMultiEditorProviderContextEditorStore>({});
+  // don't expose directly. safety first
+  const editorStore = React.useRef<LexicalMultiEditorContextEditorStore>({});
 
   // mutations
   const addEditor = React.useCallback(
@@ -67,27 +78,22 @@ export function LexicalMultiEditorProvider({children}: Props): JSX.Element {
     if (typeof editorStore.current[editorId] === 'undefined') return;
     return editorStore.current[editorId];
   }, []);
-
-  const value = React.useMemo((): LexicalMultiEditorContext => {
-    return {
-      addEditor,
-      deleteEditor,
-      getEditor,
-      getEditorAndHistory,
-      getEditorHistory,
-      resetEditorStore,
-    };
-  }, [
-    addEditor,
-    deleteEditor,
-    getEditor,
-    getEditorAndHistory,
-    getEditorHistory,
-    resetEditorStore,
-  ]);
+  const getEditorKeychain = React.useCallback(() => {
+    // use the key array to run your own search...
+    return Object.keys(editorStore.current);
+  }, []);
 
   return (
-    <LexicalMultiEditorContext.Provider value={value}>
+    <LexicalMultiEditorContext.Provider
+      value={{
+        addEditor,
+        deleteEditor,
+        getEditor,
+        getEditorAndHistory,
+        getEditorHistory,
+        getEditorKeychain,
+        resetEditorStore,
+      }}>
       {children}
     </LexicalMultiEditorContext.Provider>
   );

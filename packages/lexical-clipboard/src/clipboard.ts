@@ -41,7 +41,6 @@ import {
   SELECTION_CHANGE_COMMAND,
   SerializedTextNode,
 } from 'lexical';
-import {IS_FIREFOX} from 'shared/environment';
 import invariant from 'shared/invariant';
 
 export function $getHtmlContent(editor: LexicalEditor): string {
@@ -517,28 +516,6 @@ export async function copyToClipboard__EXPERIMENTAL(
     });
   }
 
-  if (IS_FIREFOX) {
-    // ClipboardItem is not yet as good as ClipboardEvent. Most browsers only support a single
-    // item in the clipboard at one time but FF doesn't support the execCommand hack
-    if (typeof ClipboardItem === 'undefined') {
-      return false;
-    }
-    const htmlString = $getHtmlContent(editor);
-    const clipboard = navigator.clipboard;
-    if (clipboard != null) {
-      // If we have to choose just one item, HTML > rest
-      const data = [
-        new ClipboardItem({
-          'text/html': new Blob([htmlString as BlobPart], {
-            type: 'text/html',
-          }),
-        }),
-      ];
-      clipboard.write(data);
-    }
-    return true;
-  }
-
   const rootElement = editor.getRootElement();
   const domSelection = document.getSelection();
   if (rootElement === null || domSelection === null) {
@@ -548,8 +525,9 @@ export async function copyToClipboard__EXPERIMENTAL(
   element.style.cssText = 'position: fixed; top: -1000px;';
   element.append(document.createTextNode('#'));
   rootElement.append(element);
-  const range = document.createRange();
-  range.selectNodeContents(element);
+  const range = new Range();
+  range.setStart(element, 0);
+  range.setEnd(element, 1);
   domSelection.removeAllRanges();
   domSelection.addRange(range);
   return new Promise((resolve, reject) => {

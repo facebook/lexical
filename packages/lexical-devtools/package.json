@@ -5,7 +5,13 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:chrome": "cross-env NODE_ENV=production node ./chrome/build",
+    "build:chrome:dev": "cross-env NODE_ENV=development node ./chrome/build",
+    "build:edge": "cross-env NODE_ENV=production node ./edge/build",
+    "build:edge:dev": "cross-env NODE_ENV=development node ./edge/build",
+    "build:firefox": "cross-env NODE_ENV=production node ./firefox/build",
+    "build:firefox:dev": "cross-env NODE_ENV=development node ./firefox/build"
   },
   "dependencies": {
     "react": "^18.0.0",

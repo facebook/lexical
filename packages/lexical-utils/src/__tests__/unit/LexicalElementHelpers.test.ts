@@ -26,7 +26,7 @@ describe('LexicalElementHelpers tests', () => {
 
     test('empty', async () => {
       const element = document.createElement('div');
-      addClassNamesToElement(element, null, undefined, false, true);
+      addClassNamesToElement(element, null, undefined, false, true, '');
 
       expect(element.className).toEqual('');
     });

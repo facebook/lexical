@@ -642,7 +642,7 @@ declare export class RootNode extends ElementNode {
   static clone(): RootNode;
   constructor(): void;
   getTextContent(): string;
-  select(): RangeSelection;
+  select(_anchorOffset?: number, _focusOffset?: number): RangeSelection;
   remove(): void;
   replace<N: LexicalNode>(node: N): N;
   insertBefore<T: LexicalNode>(nodeToInsert: T): T;

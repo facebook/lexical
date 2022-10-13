@@ -66,11 +66,15 @@ export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
         theme,
         multiEditorKey,
       );
+      const storeEditor =
+        multiEditorContext.state === 'tracking'
+          ? multiEditorContext.getEditor()
+          : undefined;
 
       let editor =
-        multiEditorContext.state === 'remountable' &&
-        typeof multiEditorContext.editor !== 'undefined'
-          ? multiEditorContext.editor
+        multiEditorContext.state === 'tracking' &&
+        typeof storeEditor !== 'undefined'
+          ? storeEditor
           : initialEditor || null;
 
       if (editor === null) {
@@ -99,7 +103,7 @@ export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
   );
 
   useLayoutEffect(() => {
-    if (multiEditorContext.state === 'remountable') return;
+    if (multiEditorContext.state === 'tracking') return;
 
     const isEditable = initialConfig.editable;
     const [editor] = composerContext;

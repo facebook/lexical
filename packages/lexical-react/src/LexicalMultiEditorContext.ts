@@ -3,31 +3,37 @@
 import type {HistoryState} from '@lexical/react/LexicalHistoryPlugin';
 import type {LexicalEditor} from 'lexical';
 
+import {createEmptyHistoryState} from '@lexical/react/LexicalHistoryPlugin';
 import * as React from 'react';
 import invariant from 'shared/invariant';
 
 type LexicalMultiEditorContextGetters = {
-  getEditor: (editorId: string) => LexicalEditor | undefined;
-  getEditorHistory: (editorId: string) => HistoryState | undefined;
-  getEditorAndHistory: (editorId: string) =>
+  getEditor: (editorKey: string) => LexicalEditor | undefined;
+  getEditorHistory: (editorKey: string) => HistoryState | undefined;
+  getEditorAndHistory: (editorKey: string) =>
     | {
         editor: LexicalEditor;
-        history: HistoryState;
+        history: HistoryState | undefined;
       }
     | undefined;
   getEditorKeychain: () => string[];
+  getNestedEditorList: (editorKey: string) => string[] | undefined;
+  isNestedEditor: (editorKey: string, nestedEditorKey: string) => boolean;
 };
 type LexicalMultiEditorContextMutations = {
-  addEditor: (editorId: string, editor: LexicalEditor) => void;
-  deleteEditor: (editorId: string) => void;
+  addEditor: (editorKey: string, editor: LexicalEditor) => void;
+  addHistory: (editorKey: string, hsitoryState: HistoryState) => void;
+  addNestedEditorToList: (editorKey: string, nestedEditorKey: string) => void;
+  deleteEditor: (editorKey: string) => void;
   resetEditorStore: () => void;
 };
 
 export type LexicalMultiEditorContextEditorStore = Record<
   string,
   {
+    childRoster: string[];
     editor: LexicalEditor;
-    history: HistoryState;
+    history: HistoryState | undefined;
   }
 >;
 
@@ -37,11 +43,15 @@ export type LexicalMultiEditorContext = LexicalMultiEditorContextGetters &
 export type UseLexicalMultiEditorContext = LexicalMultiEditorContext;
 export type UseLexicalMultiEditorContextConfigInternal =
   | {
-      editor: LexicalEditor | undefined;
-      history: HistoryState | undefined;
-      state: 'remountable';
+      addNestedEditorToList: (nestedEditorKey: string) => void;
+      getNestedEditorList: () => void;
+      getEditor: () => LexicalEditor | undefined;
+      getHistory: () => HistoryState | undefined;
+      isNestedEditor: (nestedEditorKey: string) => boolean;
+      startHistory: (externalHistoryState?: HistoryState) => void;
+      state: 'tracking';
     }
-  | {addEditor: (editor: LexicalEditor) => void; state: 'listening'}
+  | {addEditor: (editor: LexicalEditor | undefined) => void; state: 'listening'}
   | {state: 'inactive'};
 
 export const LexicalMultiEditorContext: React.Context<LexicalMultiEditorContext | null> =
@@ -58,16 +68,18 @@ export function useLexicalMultiEditorContext():
 }
 
 export function useInternalLexicalMultiEditorContextConfig(
-  editorId: string | undefined,
+  multiEditorKey: string | undefined | null,
 ): UseLexicalMultiEditorContextConfigInternal {
   const context = useLexicalMultiEditorContext();
 
   const isActive = context !== null;
-  const hasEditorId = typeof editorId !== 'undefined';
+  const hasMultiEditorKey = ((keyTest): keyTest is string => {
+    return typeof keyTest === 'string' && keyTest.length > 0;
+  })(multiEditorKey);
 
-  const isListening = isActive && hasEditorId;
-  const isMissingActiveMultiEditorProvider = !isActive && hasEditorId;
-  const isMissingMultiEditorContextConfigProps = isActive && !hasEditorId;
+  const isListening = isActive && hasMultiEditorKey;
+  const isMissingActiveMultiEditorProvider = !isActive && hasMultiEditorKey;
+  const isMissingMultiEditorContextConfigProps = isActive && !hasMultiEditorKey;
 
   if (isMissingActiveMultiEditorProvider) {
     invariant(false, 'cannot find a LexicalMultiEditorProvider');
@@ -85,18 +97,42 @@ export function useInternalLexicalMultiEditorContextConfig(
       state: 'inactive',
     };
   } else {
-    if (typeof context.getEditor(editorId) === 'undefined') {
+    if (typeof context.getEditor(multiEditorKey) === 'undefined') {
       return {
         addEditor: (editor) => {
-          context.addEditor(editorId, editor);
+          if (typeof editor === 'undefined') return;
+          context.addEditor(multiEditorKey, editor);
         },
         state: 'listening',
       };
     } else {
       return {
-        editor: context.getEditor(editorId),
-        history: context.getEditorHistory(editorId),
-        state: 'remountable',
+        addNestedEditorToList: (nestedEditorKey) => {
+          if (context.isNestedEditor(multiEditorKey, nestedEditorKey)) return;
+          context.addNestedEditorToList(multiEditorKey, nestedEditorKey);
+        },
+        getEditor: () => {
+          return context.getEditor(multiEditorKey);
+        },
+        getHistory: () => {
+          return context.getEditorHistory(multiEditorKey);
+        },
+        getNestedEditorList: () => {
+          return context.getNestedEditorList(multiEditorKey);
+        },
+        isNestedEditor: (nestedEditorKey) => {
+          return context.isNestedEditor(multiEditorKey, nestedEditorKey);
+        },
+        startHistory: (externalHistoryState) => {
+          // added separately because the history plugin manages it on its own
+          if (typeof context.getEditorHistory(multiEditorKey) !== 'undefined')
+            return;
+          context.addHistory(
+            multiEditorKey,
+            externalHistoryState ?? createEmptyHistoryState(),
+          );
+        },
+        state: 'tracking',
       };
     }
   }

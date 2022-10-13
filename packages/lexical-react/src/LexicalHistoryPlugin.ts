@@ -17,16 +17,22 @@ export function HistoryPlugin({
   externalHistoryState?: HistoryState;
 }): null {
   const [editor, context] = useLexicalComposerContext();
-  const multiEditorContext = useInternalLexicalMultiEditorContextConfig(
-    context.multiEditorKey,
-  );
 
-  const multiEditorContextHistoryState =
-    multiEditorContext.state === 'remountable'
-      ? multiEditorContext.history
+  const multiEditorKey = context.getMultiEditorKey(); // parentKey or null
+  const multiEditorContext =
+    useInternalLexicalMultiEditorContextConfig(multiEditorKey);
+
+  if (multiEditorContext.state === 'tracking') {
+    if (typeof multiEditorContext.getHistory() === 'undefined') {
+      multiEditorContext.startHistory(externalHistoryState);
+    }
+  }
+
+  const storeHistory =
+    multiEditorContext.state === 'tracking'
+      ? multiEditorContext?.getHistory()
       : undefined;
-
-  useHistory(editor, multiEditorContextHistoryState || externalHistoryState);
+  useHistory(editor, externalHistoryState ?? storeHistory);
 
   return null;
 }

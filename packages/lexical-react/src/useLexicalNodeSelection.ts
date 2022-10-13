@@ -41,7 +41,11 @@ export function useLexicalNodeSelection(
 
   useEffect(() => {
     return editor.registerUpdateListener(() => {
-      setIsSelected(isNodeSelected(editor, key));
+      const isSelectedNode = isNodeSelected(editor, key);
+
+      if (isSelectedNode) {
+        setIsSelected(isNodeSelected(editor, key));
+      }
     });
   }, [editor, key]);
 

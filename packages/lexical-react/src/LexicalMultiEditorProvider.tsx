@@ -2,7 +2,7 @@
 
 import type {LexicalEditor} from 'lexical';
 
-import {createEmptyHistoryState} from '@lexical/history';
+import {HistoryState} from '@lexical/history';
 import {
   LexicalMultiEditorContext,
   LexicalMultiEditorContextEditorStore,
@@ -48,50 +48,85 @@ export function LexicalMultiEditorProvider({children}: Props): JSX.Element {
 
   // mutations
   const addEditor = React.useCallback(
-    (editorId: string, editor: LexicalEditor) => {
-      if (typeof editorStore.current[editorId] !== 'undefined') return;
-      editorStore.current[editorId] = {
+    (editorKey: string, editor: LexicalEditor) => {
+      if (typeof editorStore.current[editorKey] !== 'undefined') return;
+      editorStore.current[editorKey] = {
+        childRoster: [],
         editor,
-        history: createEmptyHistoryState(),
+        history: undefined,
       };
     },
     [],
   );
-  const deleteEditor = React.useCallback((editorId: string) => {
-    if (typeof editorStore.current[editorId] === 'undefined') return;
-    delete editorStore.current[editorId];
+  const addHistory = React.useCallback(
+    (multiEditorKey: string, historyState: HistoryState) => {
+      if (typeof editorStore.current[multiEditorKey] === 'undefined') return;
+      editorStore.current[multiEditorKey] = {
+        ...editorStore.current[multiEditorKey],
+        history: historyState,
+      };
+    },
+    [],
+  );
+  const addNestedEditorToList = React.useCallback(
+    (editorKey: string, nestedEditorKey: string) => {
+      if (typeof editorStore.current[editorKey] === 'undefined') return;
+      editorStore.current[editorKey].childRoster.push(nestedEditorKey);
+    },
+    [],
+  );
+  const deleteEditor = React.useCallback((editorKey: string) => {
+    if (typeof editorStore.current[editorKey] === 'undefined') return;
+    delete editorStore.current[editorKey];
   }, []);
   const resetEditorStore = React.useCallback(() => {
     editorStore.current = {};
   }, []);
 
-  // getters
-  const getEditor = React.useCallback((editorId: string) => {
-    if (typeof editorStore.current[editorId] === 'undefined') return;
-    return editorStore.current[editorId].editor;
+  // ...all the rest
+  const getEditor = React.useCallback((editorKey: string) => {
+    if (typeof editorStore.current[editorKey] === 'undefined') return;
+    return editorStore.current[editorKey].editor;
   }, []);
-  const getEditorHistory = React.useCallback((editorId: string) => {
-    if (typeof editorStore.current[editorId] === 'undefined') return;
-    return editorStore.current[editorId].history;
+  const getEditorHistory = React.useCallback((editorKey: string) => {
+    if (typeof editorStore.current[editorKey] === 'undefined') return;
+    return editorStore.current[editorKey].history;
   }, []);
-  const getEditorAndHistory = React.useCallback((editorId: string) => {
-    if (typeof editorStore.current[editorId] === 'undefined') return;
-    return editorStore.current[editorId];
+  const getEditorAndHistory = React.useCallback((editorKey: string) => {
+    if (typeof editorStore.current[editorKey] === 'undefined') return;
+    return editorStore.current[editorKey];
   }, []);
   const getEditorKeychain = React.useCallback(() => {
-    // use the key array to run your own search...
     return Object.keys(editorStore.current);
   }, []);
+  const getNestedEditorList = React.useCallback((editorKey: string) => {
+    if (typeof editorStore.current[editorKey] === 'undefined') return;
+    return editorStore.current[editorKey].childRoster;
+  }, []);
+  const isNestedEditor = React.useCallback(
+    (editorKey: string, nestedEditorKey: string) => {
+      return (
+        typeof editorStore.current[editorKey].childRoster.find(
+          (key) => nestedEditorKey === key,
+        ) !== 'undefined'
+      );
+    },
+    [],
+  );
 
   return (
     <LexicalMultiEditorContext.Provider
       value={{
         addEditor,
+        addHistory,
+        addNestedEditorToList,
         deleteEditor,
         getEditor,
         getEditorAndHistory,
         getEditorHistory,
         getEditorKeychain,
+        getNestedEditorList,
+        isNestedEditor,
         resetEditorStore,
       }}>
       {children}

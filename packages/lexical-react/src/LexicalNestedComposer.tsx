@@ -19,6 +19,7 @@ import {
   createLexicalComposerContext,
   LexicalComposerContext,
 } from '@lexical/react/LexicalComposerContext';
+import {useInternalLexicalMultiEditorContextConfig} from '@lexical/react/LexicalMultiEditorContext';
 import * as React from 'react';
 import {ReactNode, useContext, useEffect, useMemo, useRef} from 'react';
 import invariant from 'shared/invariant';
@@ -36,50 +37,69 @@ export function LexicalNestedComposer({
   initialNodes?: ReadonlyArray<Klass<LexicalNode>>;
   skipCollabChecks?: true;
 }): JSX.Element {
-  const wasCollabPreviouslyReadyRef = useRef(false);
   const parentContext = useContext(LexicalComposerContext);
+  const {isCollabActive, yjsDocMap} = useCollaborationContext();
+  const wasCollabPreviouslyReadyRef = useRef(
+    yjsDocMap.has(initialEditor.getKey()) || false,
+  );
 
   if (parentContext == null) {
     invariant(false, 'Unexpected parent context null on a nested composer');
   }
 
+  // only runs on first mount. nested instances live on parent editor, so we can track with a simple string[]
+  const multiEditorContext = useInternalLexicalMultiEditorContextConfig(
+    parentContext[1].getMultiEditorKey(),
+  );
+
   const composerContext: [LexicalEditor, LexicalComposerContextType] = useMemo(
     () => {
       const [parentEditor, parentContextContext] = parentContext;
-      const composerTheme: EditorThemeClasses | undefined =
+      const isAlreadyConfigured =
+        multiEditorContext.state === 'tracking'
+          ? multiEditorContext.isNestedEditor(initialEditor.getKey())
+          : undefined;
+      const composerTheme =
         initialTheme || parentContextContext.getTheme() || undefined;
-
-      const context: LexicalComposerContextType = createLexicalComposerContext(
+      const context = createLexicalComposerContext(
         parentContext,
         composerTheme,
+        null,
       );
 
-      if (composerTheme !== undefined) {
-        initialEditor._config.theme = composerTheme;
-      }
-
-      initialEditor._parentEditor = parentEditor;
-
-      if (!initialNodes) {
-        const parentNodes = (initialEditor._nodes = new Map(
-          parentEditor._nodes,
-        ));
-        for (const [type, entry] of parentNodes) {
-          initialEditor._nodes.set(type, {
-            klass: entry.klass,
-            transforms: new Set(),
-          });
+      if (!isAlreadyConfigured) {
+        if (composerTheme !== undefined) {
+          initialEditor._config.theme = composerTheme;
         }
-      } else {
-        for (const klass of initialNodes) {
-          const type = klass.getType();
-          initialEditor._nodes.set(type, {
-            klass,
-            transforms: new Set(),
-          });
+
+        initialEditor._parentEditor = parentEditor;
+
+        if (!initialNodes) {
+          const parentNodes = (initialEditor._nodes = new Map(
+            parentEditor._nodes,
+          ));
+          for (const [type, entry] of parentNodes) {
+            initialEditor._nodes.set(type, {
+              klass: entry.klass,
+              transforms: new Set(),
+            });
+          }
+        } else {
+          for (const klass of initialNodes) {
+            const type = klass.getType();
+            initialEditor._nodes.set(type, {
+              klass,
+              transforms: new Set(),
+            });
+          }
         }
+
+        if (multiEditorContext.state === 'tracking') {
+          multiEditorContext.addNestedEditorToList(initialEditor.getKey());
+        }
+
+        initialEditor._config.namespace = parentEditor._config.namespace;
       }
-      initialEditor._config.namespace = parentEditor._config.namespace;
 
       return [initialEditor, context];
     },
@@ -91,7 +111,6 @@ export function LexicalNestedComposer({
 
   // If collaboration is enabled, make sure we don't render the children
   // until the collaboration subdocument is ready.
-  const {isCollabActive, yjsDocMap} = useCollaborationContext();
   const isCollabReady =
     skipCollabChecks ||
     wasCollabPreviouslyReadyRef.current ||
@@ -99,7 +118,9 @@ export function LexicalNestedComposer({
 
   useEffect(() => {
     if (isCollabReady) {
-      wasCollabPreviouslyReadyRef.current = true;
+      if (!wasCollabPreviouslyReadyRef.current) {
+        wasCollabPreviouslyReadyRef.current = true;
+      }
     }
   }, [isCollabReady]);
 

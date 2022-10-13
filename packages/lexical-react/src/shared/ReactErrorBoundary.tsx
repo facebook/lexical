@@ -79,17 +79,24 @@ class ErrorBoundary extends React.Component<
   React.PropsWithRef<React.PropsWithChildren<ErrorBoundaryProps>>,
   ErrorBoundaryState
 > {
+  state: ErrorBoundaryState;
+
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = initialState;
+    this.resetErrorBoundary = this.resetErrorBoundary.bind(this);
+  }
+
   static getDerivedStateFromError(error: Error) {
     return {error};
   }
 
-  state = initialState;
-  resetErrorBoundary = (...args: Array<unknown>) => {
+  resetErrorBoundary(...args: Array<unknown>) {
     // @ts-ignore
     // eslint-disable-next-line no-unused-expressions
     this.props.onReset && this.props.onReset(...args);
     this.reset();
-  };
+  }
 
   reset() {
     this.setState(initialState);

@@ -7,6 +7,7 @@
  */
 
 import type {
+  EditorConfig,
   EditorState,
   ElementNode,
   GridSelection,
@@ -18,6 +19,7 @@ import type {
 
 import {$isLinkNode, LinkNode} from '@lexical/link';
 import {$isMarkNode} from '@lexical/mark';
+import {mergeRegister} from '@lexical/utils';
 import {
   $getRoot,
   $getSelection,
@@ -73,22 +75,43 @@ export function TreeView({
   const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
-    setContent(generateContent(editor.getEditorState()));
-    return editor.registerUpdateListener(({editorState}) => {
-      const compositionKey = editor._compositionKey;
-      const treeText = generateContent(editor.getEditorState());
-      const compositionText =
-        compositionKey !== null && `Composition key: ${compositionKey}`;
-      setContent([treeText, compositionText].filter(Boolean).join('\n\n'));
+    setContent(
+      generateContent(
+        editor.getEditorState(),
+        editor._config,
+        editor._compositionKey,
+        editor._editable,
+      ),
+    );
+    return mergeRegister(
+      editor.registerUpdateListener(({editorState}) => {
+        const treeText = generateContent(
+          editor.getEditorState(),
+          editor._config,
+          editor._compositionKey,
+          editor._editable,
+        );
+        setContent(treeText);
 
-      if (!timeTravelEnabled) {
-        setTimeStampedEditorStates((currentEditorStates) => [
-          ...currentEditorStates,
-          [Date.now(), editorState],
-        ]);
-      }
-    });
+        if (!timeTravelEnabled) {
+          setTimeStampedEditorStates((currentEditorStates) => [
+            ...currentEditorStates,
+            [Date.now(), editorState],
+          ]);
+        }
+      }),
+      editor.registerEditableListener(() => {
+        const treeText = generateContent(
+          editor.getEditorState(),
+          editor._config,
+          editor._compositionKey,
+          editor._editable,
+        );
+        setContent(treeText);
+      }),
+    );
   }, [timeTravelEnabled, editor]);
+
   const totalEditorStates = timeStampedEditorStates.length;
 
   useEffect(() => {
@@ -247,7 +270,12 @@ function printGridSelection(selection: GridSelection): string {
   return `: grid\n  └ { grid: ${selection.gridKey}, anchorCell: ${selection.anchor.key}, focusCell: ${selection.focus.key} }`;
 }
 
-function generateContent(editorState: EditorState): string {
+function generateContent(
+  editorState: EditorState,
+  editorConfig: EditorConfig,
+  compositionKey: null | string,
+  editable: boolean,
+): string {
   let res = ' root\n';
 
   const selectionString = editorState.read(() => {
@@ -285,7 +313,16 @@ function generateContent(editorState: EditorState): string {
       : printObjectSelection(selection);
   });
 
-  return res + '\n selection' + selectionString;
+  res += '\n selection' + selectionString;
+
+  res += '\n\n editor:';
+  res += `\n  └ namespace ${editorConfig.namespace}`;
+  if (compositionKey !== null) {
+    res += `\n  └ compositionKey ${compositionKey}`;
+  }
+  res += `\n  └ editable ${String(editable)}`;
+
+  return res;
 }
 
 function visitTree(

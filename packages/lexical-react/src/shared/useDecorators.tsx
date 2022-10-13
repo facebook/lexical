@@ -11,6 +11,8 @@ import type {LexicalEditor} from 'lexical';
 import {useEffect, useMemo, useState} from 'react';
 import {createPortal, flushSync} from 'react-dom';
 import useLayoutEffect from 'shared/useLayoutEffect';
+import {Suspense, ErrorBoundary} from 'react';
+import * as React from 'react';
 
 export function useDecorators(editor: LexicalEditor): Array<JSX.Element> {
   const [decorators, setDecorators] = useState<Record<string, JSX.Element>>(
@@ -40,7 +42,13 @@ export function useDecorators(editor: LexicalEditor): Array<JSX.Element> {
 
     for (let i = 0; i < decoratorKeys.length; i++) {
       const nodeKey = decoratorKeys[i];
-      const reactDecorator = decorators[nodeKey];
+      const reactDecorator = (
+        <ErrorBoundary>
+          <Suspense fallback={<span>todo</span>}>
+            {decorators[nodeKey]}
+          </Suspense>
+        </ErrorBoundary>
+      );
       const element = editor.getElementByKey(nodeKey);
 
       if (element !== null) {

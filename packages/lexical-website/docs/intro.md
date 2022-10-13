@@ -4,8 +4,6 @@ sidebar_position: 1
 
 # Introduction
 
-> Note: Lexical is currently in early development and APIs and packages are likely to change quite often.
-
 Lexical is an extensible JavaScript web text-editor framework with an emphasis on reliability, accessibility, and performance. Lexical aims to provide a best-in-class developer experience, so you can easily prototype and build features with confidence. Combined with a highly extensible architecture, Lexical allows developers to create unique text editing experiences that scale in size and functionality.
 
 Lexical works by attaching itself to a `contentEditable` element and from there you can work with Lexical's declarative APIs to make

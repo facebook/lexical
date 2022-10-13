@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+// Source: https://github.com/bvaughn/react-error-boundary/blob/master/src/index.tsx
 
 import * as React from 'react';
 

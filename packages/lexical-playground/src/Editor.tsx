@@ -154,7 +154,7 @@ export default function Editor(): JSX.Element {
                 </div>
               }
               placeholder={placeholder}
-              // ErrorBoundary={ErrorBoundary}
+              ErrorBoundary={ErrorBoundary}
             />
             <MarkdownShortcutPlugin />
             <CodeHighlightPlugin />

@@ -25,6 +25,7 @@ import {createWebsocketProvider} from '../collaboration';
 import {useSharedHistoryContext} from '../context/SharedHistoryContext';
 import StickyEditorTheme from '../themes/StickyEditorTheme';
 import ContentEditable from '../ui/ContentEditable';
+import ErrorBoundary from '../ui/ErrorBoundary';
 import Placeholder from '../ui/Placeholder';
 import {$isStickyNode} from './StickyNode';
 
@@ -255,6 +256,7 @@ export default function StickyComponent({
                 What's up?
               </Placeholder>
             }
+            ErrorBoundary={ErrorBoundary}
           />
         </LexicalNestedComposer>
       </div>

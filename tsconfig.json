@@ -162,11 +162,11 @@
       "@lexical/react/LexicalAutoScrollPlugin": [
         "./packages/lexical-react/src/LexicalAutoScrollPlugin.ts"
       ],
-      "@lexical/react/LexicalMultiEditorProvider": [
-        "./packages/lexical-react/src/LexicalMultiEditorProvider.tsx"
+      "@lexical/react/LexicalMultiEditorStore": [
+        "./packages/lexical-react/src/LexicalMultiEditorStore.tsx"
       ],
-      "@lexical/react/LexicalMultiEditorContext": [
-        "./packages/lexical-react/src/LexicalMultiEditorContext.ts"
+      "@lexical/react/LexicalMultiEditorStoreCtx": [
+        "./packages/lexical-react/src/LexicalMultiEditorStoreCtx.ts"
       ],
 
       "@lexical/dragon/LexicalDragon": ["./packages/lexical-dragon/src/"],

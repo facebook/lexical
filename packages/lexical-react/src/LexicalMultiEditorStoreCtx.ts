@@ -1,9 +1,8 @@
 /* eslint-disable header/header */
 
-// import type {HistoryState} from '@lexical/react/LexicalMultiEditorStoreCtx';
+import type {HistoryState} from '@lexical/react/LexicalHistoryPlugin';
 import type {LexicalEditor} from 'lexical';
 
-import {HistoryState} from '@lexical/react/LexicalHistoryPlugin';
 import * as React from 'react';
 
 type LexicalMultiEditorStoreHelpers = {

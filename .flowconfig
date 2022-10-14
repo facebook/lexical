@@ -53,8 +53,8 @@ module.name_mapper='^@lexical/react/DEPRECATED_useLexicalHistory' -> '<PROJECT_R
 
 module.name_mapper='^@lexical/react/LexicalComposer' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalComposer.js.flow'
 module.name_mapper='^@lexical/react/LexicalComposerContext' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalComposerContext.js.flow'
-module.name_mapper='^@lexical/react/LexicalMultiEditorContext' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalMultiEditorContext.js.flow'
-module.name_mapper='^@lexical/react/LexicalMultiEditorProvider' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalMultiEditorProvider.js.flow'
+module.name_mapper='^@lexical/react/LexicalMultiEditorStoreCtx' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalMultiEditorStoreCtx.js.flow'
+module.name_mapper='^@lexical/react/LexicalMultiEditorStore' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalMultiEditorStore.js.flow'
 module.name_mapper='^@lexical/react/LexicalNestedComposer' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalNestedComposer.js.flow'
 module.name_mapper='^@lexical/react/LexicalContentEditable' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalContentEditable.js.flow'
 module.name_mapper='^@lexical/react/LexicalTreeView' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalTreeView.js.flow'

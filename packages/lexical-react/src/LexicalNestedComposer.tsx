@@ -20,9 +20,10 @@ import {
   LexicalComposerContext,
 } from '@lexical/react/LexicalComposerContext';
 import {
-  LexicalMultiEditorContext,
-  useLexicalMultiEditorContext,
-} from '@lexical/react/LexicalMultiEditorContext';
+  FullLexicalMultiEditorStore,
+  UseLexicalMultiEditorStore,
+  useLexicalMultiEditorStore,
+} from '@lexical/react/LexicalMultiEditorStoreCtx';
 import * as React from 'react';
 import {ReactNode, useContext, useEffect, useMemo, useRef} from 'react';
 import invariant from 'shared/invariant';
@@ -54,19 +55,19 @@ export function LexicalNestedComposer({
   // only runs on first mount. nested instances live on parent editor, so we can track with a simple string[]
 
   const multiEditorKey = parentContext[1].getMultiEditorKey() || undefined; // parentKey or null
-  const multiEditorContext = useLexicalMultiEditorContext();
-  const [isStringKey, isFullStore] = ((keyCtx, storeCtx) => {
-    const isKey = (ctx: string | undefined): ctx is string => {
-      return typeof ctx === 'string';
+  const multiEditorContext = useLexicalMultiEditorStore();
+  const [isStringKey, isFullStore] = (() => {
+    const isKey = (key: string | undefined): key is string => {
+      return typeof key === 'string';
     };
     const isStore = (
-      ctx: LexicalMultiEditorContext | Record<string, never>,
-    ): ctx is LexicalMultiEditorContext => {
-      return Object.keys(ctx).length > 0;
+      store: UseLexicalMultiEditorStore,
+    ): store is FullLexicalMultiEditorStore => {
+      return Object.keys(store).length > 0;
     };
 
     return [isKey, isStore];
-  })(multiEditorKey, multiEditorContext);
+  })();
   const isActiveStore =
     isStringKey(multiEditorKey) && isFullStore(multiEditorContext);
 

@@ -4,9 +4,9 @@ import type {HistoryState} from '@lexical/history';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
-  LexicalMultiEditorContext,
-  useLexicalMultiEditorContext,
-} from '@lexical/react/LexicalMultiEditorContext';
+  FullLexicalMultiEditorStore,
+  useLexicalMultiEditorStore,
+} from '@lexical/react/LexicalMultiEditorStoreCtx';
 
 import {useHistory} from './shared/useHistory';
 
@@ -22,9 +22,9 @@ export function HistoryPlugin({
   const [editor, context] = useLexicalComposerContext();
 
   const multiEditorKey = context.getMultiEditorKey() || undefined; // parentKey or null
-  const multiEditorContext = useLexicalMultiEditorContext();
+  const multiEditorContext = useLexicalMultiEditorStore();
   const isActiveStore =
-    ((storeCtx): storeCtx is LexicalMultiEditorContext => {
+    ((storeCtx): storeCtx is FullLexicalMultiEditorStore => {
       return Object.keys(storeCtx).length > 0;
     })(multiEditorContext) && typeof multiEditorKey === 'string';
   const storeHistory = isActiveStore

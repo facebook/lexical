@@ -7,9 +7,9 @@ import {
   LexicalComposerContext,
 } from '@lexical/react/LexicalComposerContext';
 import {
-  LexicalMultiEditorContext,
-  useLexicalMultiEditorContext,
-} from '@lexical/react/LexicalMultiEditorContext';
+  FullLexicalMultiEditorStore,
+  useLexicalMultiEditorStore,
+} from '@lexical/react/LexicalMultiEditorStoreCtx';
 import {
   $createParagraphNode,
   $getRoot,
@@ -49,9 +49,9 @@ type Props = {
 
 export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
   const multiEditorKey = initialConfig.multiEditorKey;
-  const multiEditorContext = useLexicalMultiEditorContext();
+  const multiEditorContext = useLexicalMultiEditorStore();
   const isActiveStore =
-    ((storeCtx): storeCtx is LexicalMultiEditorContext => {
+    ((storeCtx): storeCtx is FullLexicalMultiEditorStore => {
       return Object.keys(storeCtx).length > 0;
     })(multiEditorContext) && typeof multiEditorKey !== 'undefined';
   const isRemountableEditor =

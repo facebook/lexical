@@ -7,6 +7,7 @@
  */
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {INSERT_TABLE_COMMAND} from '@lexical/table';
 import {
   $createNodeSelection,
   $createParagraphNode,
@@ -54,7 +55,7 @@ export type CellEditorConfig = Readonly<{
   theme?: EditorThemeClasses;
 }>;
 
-export const INSERT_TABLE_COMMAND: LexicalCommand<InsertTableCommandPayload> =
+export const INSERT_NEW_TABLE_COMMAND: LexicalCommand<InsertTableCommandPayload> =
   createCommand();
 
 // @ts-ignore: not sure why TS doesn't like using null as the value?
@@ -128,7 +129,7 @@ export function InsertNewTableDialog({
   const [columns, setColumns] = useState('5');
 
   const onClick = () => {
-    activeEditor.dispatchCommand(INSERT_TABLE_COMMAND, {columns, rows});
+    activeEditor.dispatchCommand(INSERT_NEW_TABLE_COMMAND, {columns, rows});
     onClose();
   };
 

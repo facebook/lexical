@@ -19,9 +19,7 @@ export function RichTextPlugin({
   placeholder,
   // TODO 0.6 Make non-optional non-default
   ErrorBoundary = ({children, onError}) => (
-    <ReactErrorBoundary
-      fallback={<span>Decorated React Component crashed.</span>}
-      onError={onError}>
+    <ReactErrorBoundary fallback={null} onError={onError}>
       {children}
     </ReactErrorBoundary>
   ),

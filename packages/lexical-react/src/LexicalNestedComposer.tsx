@@ -52,6 +52,7 @@ export function LexicalNestedComposer({
     invariant(false, 'Unexpected parent context null on a nested composer');
   }
 
+  // TODO re-examine
   // only runs on first mount. nested instances live on parent editor, so we can track with a simple string[]
 
   const multiEditorKey = parentContext[1].getMultiEditorKey() || undefined; // parentKey or null

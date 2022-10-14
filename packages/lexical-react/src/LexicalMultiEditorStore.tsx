@@ -1,11 +1,9 @@
 /* eslint-disable header/header */
 
-import type {LexicalEditor} from 'lexical';
-
-import {HistoryState} from '@lexical/history';
 import {
   LexicalMultiEditorStoreCtx,
   MultiEditorStore,
+  UseLexicalMultiEditorStore,
 } from '@lexical/react/LexicalMultiEditorStoreCtx';
 import * as React from 'react';
 
@@ -47,8 +45,8 @@ export function LexicalMultiEditorStore({children}: Props): JSX.Element {
   const editorStore = React.useRef<MultiEditorStore>({});
 
   // mutations
-  const addEditor = React.useCallback(
-    (editorKey: string | undefined, editor: LexicalEditor) => {
+  const addEditor: UseLexicalMultiEditorStore['addEditor'] = React.useCallback(
+    (editorKey, editor) => {
       if (typeof editorKey === 'undefined') return;
       if (typeof editorStore.current[editorKey] !== 'undefined') return;
       editorStore.current[editorKey] = {
@@ -59,11 +57,8 @@ export function LexicalMultiEditorStore({children}: Props): JSX.Element {
     },
     [],
   );
-  const addHistory = React.useCallback(
-    (
-      multiEditorKey: string | undefined,
-      historyState: HistoryState | undefined,
-    ) => {
+  const addHistory: UseLexicalMultiEditorStore['addHistory'] =
+    React.useCallback((multiEditorKey, historyState) => {
       if (typeof multiEditorKey === 'undefined') return;
       if (typeof editorStore.current[multiEditorKey] === 'undefined') return;
       if (typeof historyState === 'undefined') return;
@@ -71,72 +66,65 @@ export function LexicalMultiEditorStore({children}: Props): JSX.Element {
         ...editorStore.current[multiEditorKey],
         history: historyState,
       };
-    },
-    [],
-  );
-  const addNestedEditorToList = React.useCallback(
-    (editorKey: string | undefined, nestedEditorKey: string) => {
+    }, []);
+  const addNestedEditorToList: UseLexicalMultiEditorStore['addNestedEditorToList'] =
+    React.useCallback((editorKey, nestedEditorKey) => {
       if (typeof editorKey === 'undefined') return;
       if (typeof editorStore.current[editorKey] === 'undefined') return;
       editorStore.current[editorKey].nestedEditorList.push(nestedEditorKey);
-    },
-    [],
-  );
-  const deleteEditor = React.useCallback((editorKey: string | undefined) => {
-    if (typeof editorKey === 'undefined') return;
-    if (typeof editorStore.current[editorKey] === 'undefined') return;
-    delete editorStore.current[editorKey];
-  }, []);
+    }, []);
+  const deleteEditor: UseLexicalMultiEditorStore['deleteEditor'] =
+    React.useCallback((editorKey) => {
+      if (typeof editorKey === 'undefined') return;
+      if (typeof editorStore.current[editorKey] === 'undefined') return;
+      delete editorStore.current[editorKey];
+    }, []);
   const resetEditorStore = React.useCallback(() => {
     editorStore.current = {};
   }, []);
 
   // getters
-  const getEditor = React.useCallback((editorKey: string | undefined) => {
-    if (typeof editorKey === 'undefined') return;
-    if (typeof editorStore.current[editorKey] === 'undefined') return;
-    return editorStore.current[editorKey].editor;
-  }, []);
-  const getEditorHistory = React.useCallback(
-    (editorKey: string | undefined) => {
+  const getEditor: UseLexicalMultiEditorStore['getEditor'] = React.useCallback(
+    (editorKey) => {
+      if (typeof editorKey === 'undefined') return;
+      if (typeof editorStore.current[editorKey] === 'undefined') return;
+      return editorStore.current[editorKey].editor;
+    },
+    [],
+  );
+  const getEditorHistory: UseLexicalMultiEditorStore['getEditorHistory'] =
+    React.useCallback((editorKey) => {
       if (typeof editorKey === 'undefined') return;
       if (typeof editorStore.current[editorKey] === 'undefined') return;
       return editorStore.current[editorKey].history;
-    },
-    [],
-  );
-  const getEditorAndHistory = React.useCallback(
-    (editorKey: string | undefined) => {
+    }, []);
+  const getEditorAndHistory: UseLexicalMultiEditorStore['getEditorAndHistory'] =
+    React.useCallback((editorKey) => {
       if (typeof editorKey === 'undefined') return;
       if (typeof editorStore.current[editorKey] === 'undefined') return;
       return editorStore.current[editorKey];
-    },
-    [],
-  );
-  const getEditorKeychain = React.useCallback(() => {
-    return Object.keys(editorStore.current);
-  }, []);
-  const getNestedEditorList = React.useCallback(
-    (editorKey: string | undefined) => {
+    }, []);
+  const getEditorKeychain: UseLexicalMultiEditorStore['getEditorKeychain'] =
+    React.useCallback(() => {
+      return Object.keys(editorStore.current);
+    }, []);
+  const getNestedEditorList: UseLexicalMultiEditorStore['getNestedEditorList'] =
+    React.useCallback((editorKey) => {
       if (typeof editorKey === 'undefined') return;
       if (typeof editorStore.current[editorKey] === 'undefined') return;
       return editorStore.current[editorKey].nestedEditorList;
-    },
-    [],
-  );
+    }, []);
 
   // helpers
-  const isNestedEditor = React.useCallback(
-    (editorKey: string | undefined, nestedEditorKey: string) => {
+  const isNestedEditor: UseLexicalMultiEditorStore['isNestedEditor'] =
+    React.useCallback((editorKey, nestedEditorKey) => {
       if (typeof editorKey === 'undefined') return false;
       return (
         typeof editorStore.current[editorKey].nestedEditorList.find(
           (key) => nestedEditorKey === key,
         ) !== 'undefined'
       );
-    },
-    [],
-  );
+    }, []);
 
   return (
     <LexicalMultiEditorStoreCtx.Provider

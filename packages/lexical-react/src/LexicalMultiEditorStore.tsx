@@ -91,7 +91,7 @@ export function LexicalMultiEditorStore({children}: Props): JSX.Element {
     editorStore.current = {};
   }, []);
 
-  // ...all the rest
+  // getters
   const getEditor = React.useCallback((editorKey: string | undefined) => {
     if (typeof editorKey === 'undefined') return;
     if (typeof editorStore.current[editorKey] === 'undefined') return;
@@ -124,6 +124,8 @@ export function LexicalMultiEditorStore({children}: Props): JSX.Element {
     },
     [],
   );
+
+  // helpers
   const isNestedEditor = React.useCallback(
     (editorKey: string | undefined, nestedEditorKey: string) => {
       if (typeof editorKey === 'undefined') return false;

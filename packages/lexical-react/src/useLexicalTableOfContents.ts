@@ -31,12 +31,16 @@ export default function useLexicalTableOfContents(): NodeKey[] {
         setNodeKeys(currentNodeKeys);
       });
     }, DEBOUNCE_MS);
-    return editor.registerUpdateListener(() => {
+    function computeOrDebounce() {
       if (editor.getEditorState()._nodeMap.size >= DEBOUNCE_NODE_SIZE) {
         compute();
       } else {
         compute(undefined, true);
       }
+    }
+    computeOrDebounce();
+    return editor.registerUpdateListener(() => {
+      computeOrDebounce();
     });
   }, [editor]);
   return nodeKeys;

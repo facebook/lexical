@@ -35,7 +35,7 @@
   color: #65676b;
   position: fixed;
   top: 200px;
-  right: 100px;
+  right: 160px;
   padding: 10px;
   width: 250px;
   display: flex;
@@ -43,6 +43,11 @@
   justify-content: flex-start;
   z-index: 1;
   height: 300px;
+}
+
+.ToC__heading {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .first-heading {

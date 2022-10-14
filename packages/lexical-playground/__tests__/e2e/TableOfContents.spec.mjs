@@ -12,6 +12,7 @@ import {
   getElement,
   html,
   initialize,
+  IS_MAC,
   repeat,
   selectFromFormatDropdown,
   sleep,
@@ -27,8 +28,9 @@ test.describe('Table of Contents', () => {
   test(`Adding headings to editor adds them to table of contents`, async ({
     page,
     isCollab,
+    isPlainText,
   }) => {
-    await test.skip(isCollab);
+    await test.skip(isCollab || isPlainText);
     await focusEditor(page);
     await selectFromFormatDropdown(page, '.h1');
     await page.keyboard.type('Hello');
@@ -58,8 +60,11 @@ test.describe('Table of Contents', () => {
   test(`Scrolling through headings in the editor makes them scroll inside the table of contents`, async ({
     page,
     isCollab,
+    isPlainText,
+    isRichText,
   }) => {
-    await test.skip(isCollab);
+    // This test needs revisiting
+    await test.skip(!IS_MAC && !isRichText);
     await focusEditor(page);
     await selectFromFormatDropdown(page, '.h1');
     await page.keyboard.type('Hello');

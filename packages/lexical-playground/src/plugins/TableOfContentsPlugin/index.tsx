@@ -131,9 +131,7 @@ export default function TableOfContentsPlugin({title}: Props): JSX.Element {
       <ul className="headings">
         {title != null && title.length > 0 && (
           <div className="normal-heading-wrapper">
-            <li className="first-heading">
-              {title.length > 20 ? title.substring(0, 17) + '...' : title}
-            </li>
+            <li className="ToC__heading first-heading">{title}</li>
             <br />
           </div>
         )}
@@ -188,11 +186,11 @@ function Item({
         className={indent(tag)}
         tabIndex={0}>
         <li
-          className={`normal-heading ${
+          className={`ToC__heading normal-heading ${
             selectedKey === nodeKey ? 'selected-heading' : ''
           }
       `}>
-          {('' + text).length > 27 ? text.substring(0, 27) + '...' : text}
+          {text}
         </li>
       </div>
     </div>

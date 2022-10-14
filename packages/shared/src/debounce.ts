@@ -15,7 +15,7 @@ export default function debounce<T = void>(
     if (timeout !== null) {
       window.clearTimeout(timeout);
     }
-    if (force) {
+    if (force === true) {
       fn(props);
     } else {
       timeout = window.setTimeout(() => fn(props), ms);

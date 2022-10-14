@@ -41,35 +41,33 @@ export function LexicalNestedComposer({
   skipCollabChecks?: true;
 }): JSX.Element {
   const parentContext = useContext(LexicalComposerContext);
-  const {isCollabActive, yjsDocMap} = useCollaborationContext();
-  // TODO review!
-  const wasCollabPreviouslyReadyRef = useRef(
-    yjsDocMap.has(initialEditor.getKey()) || false,
-  );
 
   if (parentContext == null) {
     invariant(false, 'Unexpected parent context null on a nested composer');
   }
 
-  // TODO re-examine
-  // only runs on first mount. nested instances live on parent editor, so we can track with a simple string[]
-
   const multiEditorStoreKey = parentContext[1].getMultiEditorKey() || undefined; // parentKey or null
   const multiEditorStore = useLexicalMultiEditorStore();
+
   const isActiveStore =
     ((store): store is FullLexicalMultiEditorStore => {
       return Object.keys(store).length > 0;
     })(multiEditorStore) && typeof multiEditorStoreKey === 'string';
+  const isAlreadyConfigured = isActiveStore
+    ? multiEditorStore.isNestedEditor(
+        multiEditorStoreKey,
+        initialEditor.getKey(),
+      )
+    : undefined;
+
+  const {isCollabActive, yjsDocMap} = useCollaborationContext();
+  const wasCollabPreviouslyReadyRef = useRef(
+    isAlreadyConfigured ? yjsDocMap.has(initialEditor.getKey()) : false,
+  );
 
   const composerContext: [LexicalEditor, LexicalComposerContextType] = useMemo(
     () => {
       const [parentEditor, parentContextContext] = parentContext;
-      const isAlreadyConfigured = isActiveStore
-        ? multiEditorStore.isNestedEditor(
-            multiEditorStoreKey,
-            initialEditor.getKey(),
-          )
-        : undefined;
       const composerTheme =
         initialTheme || parentContextContext.getTheme() || undefined;
       const context = createLexicalComposerContext(

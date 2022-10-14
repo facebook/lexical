@@ -52,19 +52,20 @@ export function LexicalMultiEditorStore({children}: Props): JSX.Element {
       editorStore.current[editorKey] = {
         editor,
         history: undefined,
+        // nested instances live on their top-level editor (AKA, parent editor), so
+        // we can use a string[] of ids to manage their config on remount
         nestedEditorList: [],
       };
     },
     [],
   );
   const addHistory: UseLexicalMultiEditorStore['addHistory'] =
-    React.useCallback((multiEditorStoreKey, historyState) => {
-      if (typeof multiEditorStoreKey === 'undefined') return;
-      if (typeof editorStore.current[multiEditorStoreKey] === 'undefined')
-        return;
+    React.useCallback((editorKey, historyState) => {
+      if (typeof editorKey === 'undefined') return;
+      if (typeof editorStore.current[editorKey] === 'undefined') return;
       if (typeof historyState === 'undefined') return;
-      editorStore.current[multiEditorStoreKey] = {
-        ...editorStore.current[multiEditorStoreKey],
+      editorStore.current[editorKey] = {
+        ...editorStore.current[editorKey],
         history: historyState,
       };
     }, []);

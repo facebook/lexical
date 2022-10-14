@@ -9,7 +9,7 @@ export type MultiEditorStore = Record<
   string,
   {
     editor: LexicalEditor;
-    history: HistoryStateParam;
+    history: HistoryState | undefined;
     nestedEditorList: string[];
   }
 >;
@@ -49,14 +49,14 @@ type LexicalMultiEditorStoreMutations = {
   resetEditorStore: () => void;
 };
 
-export type EmptyLexicalMultiEditorStore = Record<string, never>;
+export type NoLexicalMultiEditorStore = Record<string, never>; // i.e., no store
 export type FullLexicalMultiEditorStore = LexicalMultiEditorStoreGetters &
   LexicalMultiEditorStoreHelpers &
   LexicalMultiEditorStoreMutations;
 
 export type UseLexicalMultiEditorStore =
   | FullLexicalMultiEditorStore
-  | EmptyLexicalMultiEditorStore;
+  | NoLexicalMultiEditorStore;
 
 export const LexicalMultiEditorStoreCtx: React.Context<UseLexicalMultiEditorStore | null> =
   React.createContext<UseLexicalMultiEditorStore | null>(null);

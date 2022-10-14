@@ -30,7 +30,7 @@ export const LexicalComposerContext: React.Context<
 export function createLexicalComposerContext(
   parent: LexicalComposerContextWithEditor | null | undefined,
   theme: EditorThemeClasses | null | undefined,
-  multiEditorKey: string | null | undefined,
+  multiEditorStoreKey: string | null | undefined,
 ): LexicalComposerContextType {
   let parentContext: LexicalComposerContextType | null = null;
 
@@ -47,8 +47,8 @@ export function createLexicalComposerContext(
   }
 
   function getMultiEditorKey() {
-    if (multiEditorKey != null) {
-      return multiEditorKey;
+    if (multiEditorStoreKey != null) {
+      return multiEditorStoreKey;
     }
 
     return parentContext != null ? parentContext.getMultiEditorKey() : null;

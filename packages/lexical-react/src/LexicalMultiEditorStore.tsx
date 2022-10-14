@@ -25,7 +25,7 @@ type Props = {
  * *Directions*
  *
  * - Make the `LexicalMultiEditorStore` a parent of your `LexicalComposer`.
- * - Pass the composer a `multiEditorKey` via its `initialConfig`.
+ * - Pass the composer a `multiEditorStoreKey` via its `initialConfig`.
  * - Get editors with `useLexicalMultiEditorContext` hook.
  *
  * *Public methods*
@@ -58,12 +58,13 @@ export function LexicalMultiEditorStore({children}: Props): JSX.Element {
     [],
   );
   const addHistory: UseLexicalMultiEditorStore['addHistory'] =
-    React.useCallback((multiEditorKey, historyState) => {
-      if (typeof multiEditorKey === 'undefined') return;
-      if (typeof editorStore.current[multiEditorKey] === 'undefined') return;
+    React.useCallback((multiEditorStoreKey, historyState) => {
+      if (typeof multiEditorStoreKey === 'undefined') return;
+      if (typeof editorStore.current[multiEditorStoreKey] === 'undefined')
+        return;
       if (typeof historyState === 'undefined') return;
-      editorStore.current[multiEditorKey] = {
-        ...editorStore.current[multiEditorKey],
+      editorStore.current[multiEditorStoreKey] = {
+        ...editorStore.current[multiEditorStoreKey],
         history: historyState,
       };
     }, []);

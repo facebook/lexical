@@ -21,7 +21,6 @@ import {
 } from '@lexical/react/LexicalComposerContext';
 import {
   FullLexicalMultiEditorStore,
-  UseLexicalMultiEditorStore,
   useLexicalMultiEditorStore,
 } from '@lexical/react/LexicalMultiEditorStoreCtx';
 import * as React from 'react';
@@ -55,29 +54,19 @@ export function LexicalNestedComposer({
   // TODO re-examine
   // only runs on first mount. nested instances live on parent editor, so we can track with a simple string[]
 
-  const multiEditorKey = parentContext[1].getMultiEditorKey() || undefined; // parentKey or null
-  const multiEditorContext = useLexicalMultiEditorStore();
-  const [isStringKey, isFullStore] = (() => {
-    const isKey = (key: string | undefined): key is string => {
-      return typeof key === 'string';
-    };
-    const isStore = (
-      store: UseLexicalMultiEditorStore,
-    ): store is FullLexicalMultiEditorStore => {
-      return Object.keys(store).length > 0;
-    };
-
-    return [isKey, isStore];
-  })();
+  const multiEditorStoreKey = parentContext[1].getMultiEditorKey() || undefined; // parentKey or null
+  const multiEditorStore = useLexicalMultiEditorStore();
   const isActiveStore =
-    isStringKey(multiEditorKey) && isFullStore(multiEditorContext);
+    ((store): store is FullLexicalMultiEditorStore => {
+      return Object.keys(store).length > 0;
+    })(multiEditorStore) && typeof multiEditorStoreKey === 'string';
 
   const composerContext: [LexicalEditor, LexicalComposerContextType] = useMemo(
     () => {
       const [parentEditor, parentContextContext] = parentContext;
       const isAlreadyConfigured = isActiveStore
-        ? multiEditorContext.isNestedEditor(
-            multiEditorKey,
+        ? multiEditorStore.isNestedEditor(
+            multiEditorStoreKey,
             initialEditor.getKey(),
           )
         : undefined;
@@ -117,8 +106,8 @@ export function LexicalNestedComposer({
         }
 
         if (isActiveStore) {
-          multiEditorContext.addNestedEditorToList(
-            multiEditorKey,
+          multiEditorStore.addNestedEditorToList(
+            multiEditorStoreKey,
             initialEditor.getKey(),
           );
         }

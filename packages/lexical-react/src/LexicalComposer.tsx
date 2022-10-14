@@ -43,20 +43,20 @@ type Props = {
     editable?: boolean;
     theme?: EditorThemeClasses;
     editorState?: InitialEditorStateType;
-    multiEditorKey?: string;
+    multiEditorStoreKey?: string;
   }>;
 };
 
 export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
-  const multiEditorKey = initialConfig.multiEditorKey;
-  const multiEditorContext = useLexicalMultiEditorStore();
+  const multiEditorStoreKey = initialConfig.multiEditorStoreKey;
+  const multiEditorStore = useLexicalMultiEditorStore();
   const isActiveStore =
-    ((storeCtx): storeCtx is FullLexicalMultiEditorStore => {
-      return Object.keys(storeCtx).length > 0;
-    })(multiEditorContext) && typeof multiEditorKey !== 'undefined';
+    ((store): store is FullLexicalMultiEditorStore => {
+      return Object.keys(store).length > 0;
+    })(multiEditorStore) && typeof multiEditorStoreKey !== 'undefined';
   const isRemountableEditor =
     isActiveStore &&
-    typeof multiEditorContext.getEditor(initialConfig.multiEditorKey) !==
+    typeof multiEditorStore.getEditor(initialConfig.multiEditorStoreKey) !==
       'undefined';
 
   const composerContext: [LexicalEditor, LexicalComposerContextType] = useMemo(
@@ -73,10 +73,12 @@ export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
       const context: LexicalComposerContextType = createLexicalComposerContext(
         null,
         theme,
-        multiEditorKey,
+        multiEditorStoreKey,
       );
       let editor =
-        multiEditorContext?.getEditor(multiEditorKey) || initialEditor || null;
+        multiEditorStore?.getEditor(multiEditorStoreKey) ||
+        initialEditor ||
+        null;
 
       if (editor === null) {
         const newEditor = createEditor({
@@ -92,7 +94,7 @@ export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
       }
 
       if (isActiveStore && !isRemountableEditor) {
-        multiEditorContext.addEditor(multiEditorKey, editor);
+        multiEditorStore.addEditor(multiEditorStoreKey, editor);
       }
 
       return [editor, context];

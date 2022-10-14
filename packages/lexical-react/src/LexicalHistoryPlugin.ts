@@ -21,19 +21,19 @@ export function HistoryPlugin({
 }): null {
   const [editor, context] = useLexicalComposerContext();
 
-  const multiEditorKey = context.getMultiEditorKey() || undefined; // parentKey or null
-  const multiEditorContext = useLexicalMultiEditorStore();
+  const multiEditorStoreKey = context.getMultiEditorKey() || undefined; // parentKey or null
+  const multiEditorStore = useLexicalMultiEditorStore();
   const isActiveStore =
-    ((storeCtx): storeCtx is FullLexicalMultiEditorStore => {
-      return Object.keys(storeCtx).length > 0;
-    })(multiEditorContext) && typeof multiEditorKey === 'string';
+    ((store): store is FullLexicalMultiEditorStore => {
+      return Object.keys(store).length > 0;
+    })(multiEditorStore) && typeof multiEditorStoreKey === 'string';
   const storeHistory = isActiveStore
-    ? multiEditorContext.getEditorHistory(multiEditorKey)
+    ? multiEditorStore.getEditorHistory(multiEditorStoreKey)
     : undefined;
 
   if (isActiveStore) {
     if (typeof storeHistory === 'undefined') {
-      multiEditorContext.addHistory(multiEditorKey, externalHistoryState);
+      multiEditorStore.addHistory(multiEditorStoreKey, externalHistoryState);
     }
   }
 

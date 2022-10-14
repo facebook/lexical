@@ -19,7 +19,10 @@ import {
   createLexicalComposerContext,
   LexicalComposerContext,
 } from '@lexical/react/LexicalComposerContext';
-import {useInternalLexicalMultiEditorContextConfig} from '@lexical/react/LexicalMultiEditorContext';
+import {
+  LexicalMultiEditorContext,
+  useLexicalMultiEditorContext,
+} from '@lexical/react/LexicalMultiEditorContext';
 import * as React from 'react';
 import {ReactNode, useContext, useEffect, useMemo, useRef} from 'react';
 import invariant from 'shared/invariant';
@@ -39,6 +42,7 @@ export function LexicalNestedComposer({
 }): JSX.Element {
   const parentContext = useContext(LexicalComposerContext);
   const {isCollabActive, yjsDocMap} = useCollaborationContext();
+  // TODO review!
   const wasCollabPreviouslyReadyRef = useRef(
     yjsDocMap.has(initialEditor.getKey()) || false,
   );
@@ -48,17 +52,33 @@ export function LexicalNestedComposer({
   }
 
   // only runs on first mount. nested instances live on parent editor, so we can track with a simple string[]
-  const multiEditorContext = useInternalLexicalMultiEditorContextConfig(
-    parentContext[1].getMultiEditorKey(),
-  );
+
+  const multiEditorKey = parentContext[1].getMultiEditorKey() || undefined; // parentKey or null
+  const multiEditorContext = useLexicalMultiEditorContext();
+  const [isStringKey, isFullStore] = ((keyCtx, storeCtx) => {
+    const isKey = (ctx: string | undefined): ctx is string => {
+      return typeof ctx === 'string';
+    };
+    const isStore = (
+      ctx: LexicalMultiEditorContext | Record<string, never>,
+    ): ctx is LexicalMultiEditorContext => {
+      return Object.keys(ctx).length > 0;
+    };
+
+    return [isKey, isStore];
+  })(multiEditorKey, multiEditorContext);
+  const isActiveStore =
+    isStringKey(multiEditorKey) && isFullStore(multiEditorContext);
 
   const composerContext: [LexicalEditor, LexicalComposerContextType] = useMemo(
     () => {
       const [parentEditor, parentContextContext] = parentContext;
-      const isAlreadyConfigured =
-        multiEditorContext.state === 'tracking'
-          ? multiEditorContext.isNestedEditor(initialEditor.getKey())
-          : undefined;
+      const isAlreadyConfigured = isActiveStore
+        ? multiEditorContext.isNestedEditor(
+            multiEditorKey,
+            initialEditor.getKey(),
+          )
+        : undefined;
       const composerTheme =
         initialTheme || parentContextContext.getTheme() || undefined;
       const context = createLexicalComposerContext(
@@ -94,8 +114,11 @@ export function LexicalNestedComposer({
           }
         }
 
-        if (multiEditorContext.state === 'tracking') {
-          multiEditorContext.addNestedEditorToList(initialEditor.getKey());
+        if (isActiveStore) {
+          multiEditorContext.addNestedEditorToList(
+            multiEditorKey,
+            initialEditor.getKey(),
+          );
         }
 
         initialEditor._config.namespace = parentEditor._config.namespace;

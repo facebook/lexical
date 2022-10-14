@@ -3,7 +3,10 @@
 import type {HistoryState} from '@lexical/history';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {useInternalLexicalMultiEditorContextConfig} from '@lexical/react/LexicalMultiEditorContext';
+import {
+  LexicalMultiEditorContext,
+  useLexicalMultiEditorContext,
+} from '@lexical/react/LexicalMultiEditorContext';
 
 import {useHistory} from './shared/useHistory';
 
@@ -18,20 +21,22 @@ export function HistoryPlugin({
 }): null {
   const [editor, context] = useLexicalComposerContext();
 
-  const multiEditorKey = context.getMultiEditorKey(); // parentKey or null
-  const multiEditorContext =
-    useInternalLexicalMultiEditorContextConfig(multiEditorKey);
+  const multiEditorKey = context.getMultiEditorKey() || undefined; // parentKey or null
+  const multiEditorContext = useLexicalMultiEditorContext();
+  const isActiveStore =
+    ((storeCtx): storeCtx is LexicalMultiEditorContext => {
+      return Object.keys(storeCtx).length > 0;
+    })(multiEditorContext) && typeof multiEditorKey === 'string';
+  const storeHistory = isActiveStore
+    ? multiEditorContext.getEditorHistory(multiEditorKey)
+    : undefined;
 
-  if (multiEditorContext.state === 'tracking') {
-    if (typeof multiEditorContext.getHistory() === 'undefined') {
-      multiEditorContext.startHistory(externalHistoryState);
+  if (isActiveStore) {
+    if (typeof storeHistory === 'undefined') {
+      multiEditorContext.addHistory(multiEditorKey, externalHistoryState);
     }
   }
 
-  const storeHistory =
-    multiEditorContext.state === 'tracking'
-      ? multiEditorContext?.getHistory()
-      : undefined;
   useHistory(editor, externalHistoryState ?? storeHistory);
 
   return null;

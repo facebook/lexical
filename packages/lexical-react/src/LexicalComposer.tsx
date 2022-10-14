@@ -6,7 +6,10 @@ import {
   createLexicalComposerContext,
   LexicalComposerContext,
 } from '@lexical/react/LexicalComposerContext';
-import {useInternalLexicalMultiEditorContextConfig} from '@lexical/react/LexicalMultiEditorContext';
+import {
+  LexicalMultiEditorContext,
+  useLexicalMultiEditorContext,
+} from '@lexical/react/LexicalMultiEditorContext';
 import {
   $createParagraphNode,
   $getRoot,
@@ -45,9 +48,16 @@ type Props = {
 };
 
 export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
-  const multiEditorContext = useInternalLexicalMultiEditorContextConfig(
-    initialConfig.multiEditorKey,
-  );
+  const multiEditorKey = initialConfig.multiEditorKey;
+  const multiEditorContext = useLexicalMultiEditorContext();
+  const isActiveStore =
+    ((storeCtx): storeCtx is LexicalMultiEditorContext => {
+      return Object.keys(storeCtx).length > 0;
+    })(multiEditorContext) && typeof multiEditorKey !== 'undefined';
+  const isRemountableEditor =
+    isActiveStore &&
+    typeof multiEditorContext.getEditor(initialConfig.multiEditorKey) !==
+      'undefined';
 
   const composerContext: [LexicalEditor, LexicalComposerContextType] = useMemo(
     () => {
@@ -58,7 +68,6 @@ export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
         nodes,
         onError,
         editorState: initialEditorState,
-        multiEditorKey,
       } = initialConfig;
 
       const context: LexicalComposerContextType = createLexicalComposerContext(
@@ -66,16 +75,8 @@ export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
         theme,
         multiEditorKey,
       );
-      const storeEditor =
-        multiEditorContext.state === 'tracking'
-          ? multiEditorContext.getEditor()
-          : undefined;
-
       let editor =
-        multiEditorContext.state === 'tracking' &&
-        typeof storeEditor !== 'undefined'
-          ? storeEditor
-          : initialEditor || null;
+        multiEditorContext?.getEditor(multiEditorKey) || initialEditor || null;
 
       if (editor === null) {
         const newEditor = createEditor({
@@ -90,8 +91,8 @@ export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
         editor = newEditor;
       }
 
-      if (multiEditorContext.state === 'listening') {
-        multiEditorContext.addEditor(editor);
+      if (isActiveStore && !isRemountableEditor) {
+        multiEditorContext.addEditor(multiEditorKey, editor);
       }
 
       return [editor, context];
@@ -103,7 +104,7 @@ export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
   );
 
   useLayoutEffect(() => {
-    if (multiEditorContext.state === 'tracking') return;
+    if (isRemountableEditor) return; // all set...
 
     const isEditable = initialConfig.editable;
     const [editor] = composerContext;

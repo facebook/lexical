@@ -7,6 +7,7 @@
  *
  */
 
+export type {PasteCommandType} from './LexicalCommands';
 export type {
   CommandListenerPriority,
   CommandPayloadType,

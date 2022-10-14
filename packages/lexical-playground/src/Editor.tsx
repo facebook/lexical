@@ -50,6 +50,7 @@ import KeywordsPlugin from './plugins/KeywordsPlugin';
 import ListMaxIndentLevelPlugin from './plugins/ListMaxIndentLevelPlugin';
 import MarkdownShortcutPlugin from './plugins/MarkdownShortcutPlugin';
 import {MaxLengthPlugin} from './plugins/MaxLengthPlugin';
+import MediaUploaderPlugin from './plugins/MediaUploaderPlugin';
 import MentionsPlugin from './plugins/MentionsPlugin';
 import PollPlugin from './plugins/PollPlugin';
 import SpeechToTextPlugin from './plugins/SpeechToTextPlugin';
@@ -146,11 +147,13 @@ export default function Editor(): JSX.Element {
             )}
             <RichTextPlugin
               contentEditable={
-                <div className="editor-scroller">
-                  <div className="editor" ref={onRef}>
-                    <ContentEditable />
+                <MediaUploaderPlugin>
+                  <div className="editor-scroller">
+                    <div className="editor" ref={onRef}>
+                      <ContentEditable />
+                    </div>
                   </div>
-                </div>
+                </MediaUploaderPlugin>
               }
               placeholder={placeholder}
             />

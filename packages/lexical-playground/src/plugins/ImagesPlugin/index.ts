@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$wrapNodeInElement, mergeRegister} from '@lexical/utils';
 import {
@@ -16,7 +17,6 @@ import {
   $isRootOrShadowRoot,
   $setSelection,
   COMMAND_PRIORITY_EDITOR,
-  COMMAND_PRIORITY_HIGH,
   COMMAND_PRIORITY_LOW,
   createCommand,
   DRAGOVER_COMMAND,
@@ -39,6 +39,7 @@ export type InsertImagePayload = Readonly<ImagePayload>;
 
 export const INSERT_IMAGE_COMMAND: LexicalCommand<InsertImagePayload> =
   createCommand();
+
 export default function ImagesPlugin({
   captionsEnabled,
 }: {
@@ -70,7 +71,7 @@ export default function ImagesPlugin({
         (event) => {
           return onDragStart(event);
         },
-        COMMAND_PRIORITY_HIGH,
+        COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand<DragEvent>(
         DRAGOVER_COMMAND,
@@ -84,7 +85,7 @@ export default function ImagesPlugin({
         (event) => {
           return onDrop(event, editor);
         },
-        COMMAND_PRIORITY_HIGH,
+        COMMAND_PRIORITY_LOW,
       ),
     );
   }, [captionsEnabled, editor]);

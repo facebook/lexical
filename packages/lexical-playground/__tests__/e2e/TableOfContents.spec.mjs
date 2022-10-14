@@ -86,12 +86,12 @@ test.describe('Table of Contents', () => {
         <ul class="headings">
           <div class="normal-heading-wrapper">
             <div role="button" tabindex="0">
-              <li class="normal-heading">Hello</li>
+              <li class="ToC__heading normal-heading">Hello</li>
             </div>
           </div>
           <div class="normal-heading-wrapper">
             <div class="heading2" role="button" tabindex="0">
-              <li class="normal-heading">World</li>
+              <li class="ToC__heading normal-heading">World</li>
             </div>
           </div>
         </ul>
@@ -105,12 +105,12 @@ test.describe('Table of Contents', () => {
         <ul class="headings">
           <div class="normal-heading-wrapper">
             <div role="button" tabindex="0">
-              <li class="normal-heading">Hello</li>
+              <li class="ToC__heading normal-heading">Hello</li>
             </div>
           </div>
           <div class="normal-heading-wrapper">
             <div class="heading2" role="button" tabindex="0">
-              <li class="normal-heading">World</li>
+              <li class="ToC__heading normal-heading">World</li>
             </div>
           </div>
         </ul>
@@ -125,12 +125,12 @@ test.describe('Table of Contents', () => {
         <ul class="headings">
           <div class="normal-heading-wrapper">
             <div role="button" tabindex="0">
-              <li class="normal-heading">Hello</li>
+              <li class="ToC__heading normal-heading">Hello</li>
             </div>
           </div>
           <div class="normal-heading-wrapper">
             <div class="heading2" role="button" tabindex="0">
-              <li class="normal-heading">World</li>
+              <li class="ToC__heading normal-heading">World</li>
             </div>
           </div>
         </ul>

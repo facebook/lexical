@@ -5,13 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {HeadingTagType} from '@lexical/rich-text';
-import type {NodeKey} from 'lexical';
-
 import './index.css';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import LexicalTableOfContents__EXPERIMENTAL from '@lexical/react/LexicalTableOfContents__EXPERIMENTAL';
+import useLexicalTableOfContents from '@lexical/react/useLexicalTableOfContents';
+import {$isHeadingNode, HeadingTagType} from '@lexical/rich-text';
+import {$getNodeByKey, NodeKey} from 'lexical';
 import {useEffect, useRef, useState} from 'react';
 import * as React from 'react';
 
@@ -23,24 +22,23 @@ function indent(tagName: HeadingTagType) {
   }
 }
 
-function TableOfContentsList({
-  tableOfContents,
-}: {
-  tableOfContents: Array<[key: NodeKey, text: string, tag: HeadingTagType]>;
-}): JSX.Element {
-  const [selectedKey, setSelectedKey] = useState('');
-  const selectedIndex = useRef(0);
+type Props = {
+  title?: string;
+};
+
+export default function TableOfContentsPlugin({title}: Props): JSX.Element {
   const [editor] = useLexicalComposerContext();
+  const nodeKeys: NodeKey[] = useLexicalTableOfContents();
+  const [selectedKey, setSelectedKey] = useState<null | NodeKey>(null);
+  const selectedIndex = useRef(0);
 
   function scrollToNode(key: NodeKey, currIndex: number) {
-    editor.getEditorState().read(() => {
-      const domElement = editor.getElementByKey(key);
-      if (domElement !== null) {
-        domElement.scrollIntoView();
-        setSelectedKey(key);
-        selectedIndex.current = currIndex;
-      }
-    });
+    const domElement = editor.getElementByKey(key);
+    if (domElement !== null) {
+      domElement.scrollIntoView();
+      setSelectedKey(key);
+      selectedIndex.current = currIndex;
+    }
   }
   function isHeadingAtTheTopOfThePage(element: HTMLElement): boolean {
     const elementYPosition = element?.getClientRects()[0].y;
@@ -58,11 +56,11 @@ function TableOfContentsList({
   useEffect(() => {
     function scrollCallback() {
       if (
-        tableOfContents.length !== 0 &&
-        selectedIndex.current < tableOfContents.length - 1
+        nodeKeys.length !== 0 &&
+        selectedIndex.current < nodeKeys.length - 1
       ) {
         let currentHeading = editor.getElementByKey(
-          tableOfContents[selectedIndex.current][0],
+          nodeKeys[selectedIndex.current],
         );
         if (currentHeading !== null) {
           if (isHeadingBelowTheTopOfThePage(currentHeading)) {
@@ -73,7 +71,7 @@ function TableOfContentsList({
               selectedIndex.current > 0
             ) {
               const prevHeading = editor.getElementByKey(
-                tableOfContents[selectedIndex.current - 1][0],
+                nodeKeys[selectedIndex.current - 1],
               );
               if (
                 prevHeading !== null &&
@@ -84,17 +82,17 @@ function TableOfContentsList({
               }
               currentHeading = prevHeading;
             }
-            const prevHeadingKey = tableOfContents[selectedIndex.current][0];
+            const prevHeadingKey = nodeKeys[selectedIndex.current];
             setSelectedKey(prevHeadingKey);
           } else if (isHeadingAboveViewport(currentHeading)) {
             //On natural scroll, user is scrolling down
             while (
               currentHeading !== null &&
               isHeadingAboveViewport(currentHeading) &&
-              selectedIndex.current < tableOfContents.length - 1
+              selectedIndex.current < nodeKeys.length - 1
             ) {
               const nextHeading = editor.getElementByKey(
-                tableOfContents[selectedIndex.current + 1][0],
+                nodeKeys[selectedIndex.current + 1],
               );
               if (
                 nextHeading !== null &&
@@ -105,7 +103,7 @@ function TableOfContentsList({
               }
               currentHeading = nextHeading;
             }
-            const nextHeadingKey = tableOfContents[selectedIndex.current][0];
+            const nextHeadingKey = nodeKeys[selectedIndex.current];
             setSelectedKey(nextHeadingKey);
           }
         }
@@ -126,65 +124,77 @@ function TableOfContentsList({
 
     document.addEventListener('scroll', onScroll);
     return () => document.removeEventListener('scroll', onScroll);
-  }, [tableOfContents, editor]);
+  }, [nodeKeys, editor]);
 
   return (
     <div className="table-of-contents">
       <ul className="headings">
-        {tableOfContents.map(([key, text, tag], index) => {
-          if (index === 0) {
-            return (
-              <div className="normal-heading-wrapper">
-                <div
-                  className="first-heading"
-                  key={key}
-                  onClick={() => scrollToNode(key, index)}
-                  role="button"
-                  tabIndex={0}>
-                  {('' + text).length > 20
-                    ? text.substring(0, 20) + '...'
-                    : text}
-                </div>
-                <br />
-              </div>
-            );
-          } else {
-            return (
-              <div
-                className={`normal-heading-wrapper ${
-                  selectedKey === key ? 'selected-heading-wrapper' : ''
-                }`}>
-                <div
-                  key={key}
-                  onClick={() => scrollToNode(key, index)}
-                  role="button"
-                  className={indent(tag)}
-                  tabIndex={0}>
-                  <li
-                    className={`normal-heading ${
-                      selectedKey === key ? 'selected-heading' : ''
-                    }
-                    `}>
-                    {('' + text).length > 27
-                      ? text.substring(0, 27) + '...'
-                      : text}
-                  </li>
-                </div>
-              </div>
-            );
-          }
-        })}
+        {title != null && title.length > 0 && (
+          <div className="normal-heading-wrapper">
+            <li className="first-heading">
+              {title.length > 20 ? title.substring(0, 17) + '...' : title}
+            </li>
+            <br />
+          </div>
+        )}
+        {nodeKeys.map((nodeKey, i) => (
+          <Item
+            key={nodeKey}
+            nodeKey={nodeKey}
+            index={i}
+            selectedKey={selectedKey}
+            scrollToNode={scrollToNode}
+          />
+        ))}
       </ul>
     </div>
   );
 }
 
-export default function TableOfContentsPlugin() {
+type ItemProps = {
+  nodeKey: NodeKey;
+  index: number;
+  selectedKey: null | NodeKey;
+  scrollToNode: (key: NodeKey, currIndex: number) => void;
+};
+
+function Item({
+  nodeKey,
+  index,
+  selectedKey,
+  scrollToNode,
+}: ItemProps): null | JSX.Element {
+  const [editor] = useLexicalComposerContext();
+  const [text, tag] = editor.getEditorState().read(() => {
+    const node = $getNodeByKey(nodeKey);
+    if (node === null || !$isHeadingNode(node)) {
+      return [null, null];
+    }
+    return [node.getTextContent(), node.getTag()];
+  });
+  if (text === null || tag === null) {
+    return null;
+  }
+
   return (
-    <LexicalTableOfContents__EXPERIMENTAL>
-      {(tableOfContents) => {
-        return <TableOfContentsList tableOfContents={tableOfContents} />;
-      }}
-    </LexicalTableOfContents__EXPERIMENTAL>
+    <div
+      className={`normal-heading-wrapper ${
+        selectedKey === nodeKey ? 'selected-heading-wrapper' : ''
+      }`}>
+      <div
+        key={nodeKey}
+        onClick={() => scrollToNode(nodeKey, index)}
+        role="button"
+        className={indent(tag)}
+        tabIndex={0}>
+        <li
+          className={`normal-heading ${
+            selectedKey === nodeKey ? 'selected-heading' : ''
+          }
+      `}>
+          {('' + text).length > 27 ? text.substring(0, 27) + '...' : text}
+        </li>
+      </div>
+    </div>
   );
 }

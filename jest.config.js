@@ -88,6 +88,7 @@ module.exports = {
         '^@lexical/yjs$': '<rootDir>/packages/lexical-yjs/src/index.ts',
         '^lexical$': '<rootDir>/packages/lexical/src/index.ts',
         '^shared/canUseDOM$': '<rootDir>/packages/shared/src/canUseDOM.ts',
+        '^shared/debounce$': '<rootDir>/packages/shared/src/debounce.ts',
         '^shared/environment$': '<rootDir>/packages/shared/src/environment.ts',
         '^shared/getDOMSelection$':
           '<rootDir>/packages/shared/src/getDOMSelection.ts',

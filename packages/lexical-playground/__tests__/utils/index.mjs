@@ -39,6 +39,7 @@ export async function initialize({
   isCharLimit,
   isCharLimitUtf8,
   isMaxLength,
+  showTableOfContents,
   showNestedEditorTreeView,
 }) {
   const appSettings = {};
@@ -56,6 +57,7 @@ export async function initialize({
   appSettings.isCharLimit = !!isCharLimit;
   appSettings.isCharLimitUtf8 = !!isCharLimitUtf8;
   appSettings.isMaxLength = !!isMaxLength;
+  appSettings.showTableOfContents = !!showTableOfContents;
 
   const urlParams = appSettingsToURLParams(appSettings);
   const url = `http://localhost:${E2E_PORT}/${
@@ -401,6 +403,20 @@ export async function getHTML(page, selector = 'div[contenteditable="true"]') {
   const pageOrFrame = IS_COLLAB ? await page.frame('left') : page;
   const element = await pageOrFrame.locator(selector);
   return element.innerHTML();
+}
+
+export async function getElement(
+  page,
+  selector = 'div[contenteditable="true"]',
+) {
+  if (IS_COLLAB) {
+    const leftFrame = await page.frame('left');
+    await leftFrame.waitForSelector(selector);
+    return leftFrame.$(selector);
+  } else {
+    await page.waitForSelector(selector);
+    return page.$(selector);
+  }
 }
 
 export async function getEditorElement(page, parentSelector = '.editor-shell') {

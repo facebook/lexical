@@ -21,23 +21,35 @@ export function HistoryPlugin({
 }): null {
   const [editor, context] = useLexicalComposerContext();
 
-  const multiEditorStoreKey = context.getMultiEditorKey() || undefined; // parentKey or null
+  const multiEditorStoreKey = context.getMultiEditorKey() || undefined;
   const multiEditorStore = useLexicalMultiEditorStore();
   const isActiveStore =
     ((store): store is FullLexicalMultiEditorStore => {
       return Object.keys(store).length > 0;
     })(multiEditorStore) && typeof multiEditorStoreKey === 'string';
-  const storeHistory = isActiveStore
+
+  const hasHistoryKey = isActiveStore
+    ? multiEditorStore.hasHistoryKey(multiEditorStoreKey, editor.getKey())
+    : undefined;
+  let storedEditorHistory = isActiveStore
     ? multiEditorStore.getEditorHistory(multiEditorStoreKey)
     : undefined;
 
-  if (isActiveStore) {
-    if (typeof storeHistory === 'undefined') {
-      multiEditorStore.addHistory(multiEditorStoreKey, externalHistoryState);
+  if (isActiveStore && !hasHistoryKey) {
+    if (typeof storedEditorHistory === 'undefined') {
+      // top-level editor
+      storedEditorHistory = multiEditorStore.addHistory(
+        multiEditorStoreKey,
+        editor.getKey(), // parent
+        externalHistoryState,
+      );
+    } else {
+      // nested editors
+      multiEditorStore.addHistoryKey(multiEditorStoreKey, editor.getKey());
     }
   }
 
-  useHistory(editor, externalHistoryState ?? storeHistory);
+  useHistory(editor, externalHistoryState || storedEditorHistory);
 
   return null;
 }

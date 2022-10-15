@@ -23,6 +23,7 @@ import {
 } from 'lexical';
 import {useMemo} from 'react';
 import * as React from 'react';
+import invariant from 'shared/invariant';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
 const HISTORY_MERGE_OPTIONS = {tag: 'history-merge'};
@@ -50,6 +51,14 @@ type Props = {
 export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
   const multiEditorStoreKey = initialConfig.multiEditorStoreKey;
   const multiEditorStore = useLexicalMultiEditorStore();
+
+  if (Object.keys(multiEditorStore).length === 0) {
+    invariant(
+      false,
+      'LexicalComposer: No active multi-editor store. Add one or remove your multiEditorStoreKey.',
+    );
+  }
+
   const isActiveStore =
     ((store): store is FullLexicalMultiEditorStore => {
       return Object.keys(store).length > 0;
@@ -76,7 +85,7 @@ export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
         multiEditorStoreKey,
       );
       let editor =
-        multiEditorStore?.getEditor(multiEditorStoreKey) ||
+        multiEditorStore.getEditor(multiEditorStoreKey) ||
         initialEditor ||
         null;
 

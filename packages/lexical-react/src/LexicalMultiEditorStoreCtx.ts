@@ -5,47 +5,55 @@ import type {LexicalEditor} from 'lexical';
 
 import * as React from 'react';
 
-export type MultiEditorStore = Record<
-  string,
-  {
-    editor: LexicalEditor;
-    history: HistoryState | undefined;
-    nestedEditorList: string[];
-  }
->;
+export type EditorStoreRecord = {
+  editor: LexicalEditor;
+  historyState: HistoryState | undefined;
+  historyKeys: string[];
+  nestedEditorList: string[];
+};
+export type MultiEditorStore = Record<string, EditorStoreRecord>;
 
 export type EditorKeyParam = string | undefined;
 export type HistoryStateParam = HistoryState | undefined;
 
 type LexicalMultiEditorStoreHelpers = {
+  hasHistoryKey: (
+    multiEditorKey: EditorKeyParam,
+    lexicalEditorKey: string,
+  ) => boolean;
   isNestedEditor: (
-    editorKey: EditorKeyParam,
+    multiEditorKey: EditorKeyParam,
     nestedEditorKey: string,
   ) => boolean;
+  isValidMultiEditorKey: (multiEditorKey: EditorKeyParam) => boolean;
 };
 type LexicalMultiEditorStoreGetters = {
-  getEditor: (editorKey: EditorKeyParam) => LexicalEditor | undefined;
-  getEditorHistory: (editorKey: EditorKeyParam) => HistoryState | undefined;
-  getEditorAndHistory: (editorKey: EditorKeyParam) =>
-    | {
-        editor: LexicalEditor;
-        history: HistoryStateParam;
-      }
-    | undefined;
+  getEditor: (multiEditorKey: EditorKeyParam) => LexicalEditor | undefined;
+  getEditorHistory: (
+    multiEditorKey: EditorKeyParam,
+  ) => HistoryState | undefined;
+  getEditorStoreRecord: (
+    multiEditorKey: EditorKeyParam,
+  ) => EditorStoreRecord | undefined;
   getEditorKeychain: () => string[];
-  getNestedEditorList: (editorKey: EditorKeyParam) => string[] | undefined;
+  getNestedEditorList: (multiEditorKey: EditorKeyParam) => string[] | undefined;
 };
 type LexicalMultiEditorStoreMutations = {
-  addEditor: (editorKey: EditorKeyParam, editor: LexicalEditor) => void;
+  addEditor: (multiEditorKey: EditorKeyParam, editor: LexicalEditor) => void;
   addHistory: (
-    editorKey: EditorKeyParam,
-    hsitoryState: HistoryStateParam,
+    multiEditorKey: EditorKeyParam,
+    lexicalEditorKey: string,
+    historyState: HistoryStateParam,
+  ) => HistoryState | undefined;
+  addHistoryKey: (
+    multiEditorKey: EditorKeyParam,
+    lexicalEditorKey: string,
   ) => void;
   addNestedEditorToList: (
-    editorKey: EditorKeyParam,
+    multiEditorKey: EditorKeyParam,
     nestedEditorKey: string,
   ) => void;
-  deleteEditor: (editorKey: EditorKeyParam) => void;
+  deleteEditor: (multiEditorKey: EditorKeyParam) => void;
   resetEditorStore: () => void;
 };
 

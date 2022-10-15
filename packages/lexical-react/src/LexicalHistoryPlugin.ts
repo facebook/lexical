@@ -37,10 +37,10 @@ export function HistoryPlugin({
 
   if (isActiveStore && !hasHistoryKey) {
     if (typeof storedEditorHistory === 'undefined') {
-      // top-level editor
+      // top-level editor (AKA, parent editor)
       storedEditorHistory = multiEditorStore.addHistory(
         multiEditorStoreKey,
-        editor.getKey(), // parent
+        editor.getKey(),
         externalHistoryState,
       );
     } else {

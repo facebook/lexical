@@ -49,10 +49,10 @@ export function LexicalMultiEditorStore({children}: Props): JSX.Element {
   // internal utils
   const isValidStoreRecord = React.useCallback(
     (
-      multiEditorkey: string,
+      multiEditorKey: string,
       getEditorRecord: (k: string) => ReturnType<typeof getEditorStoreRecord>,
     ) => {
-      return Boolean(getEditorRecord(multiEditorkey));
+      return Boolean(getEditorRecord(multiEditorKey));
     },
     [],
   );
@@ -135,7 +135,7 @@ export function LexicalMultiEditorStore({children}: Props): JSX.Element {
       if (isValidStoreRecord(multiEditorKey, getEditorStoreRecord)) return; // only once!
       editorStore.current[multiEditorKey] = {
         editor,
-        // primarily used for nestedEditors. lets us better control set up of,
+        // primarily used for nestedEditors. lets us better control set up of
         // history plugin
         historyKeys: [],
         // set up by history plugin

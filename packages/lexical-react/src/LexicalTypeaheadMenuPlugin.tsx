@@ -728,7 +728,10 @@ export function LexicalTypeaheadMenuPlugin<TOption extends TypeaheadOption>({
         }
 
         const match = triggerFn(text, editor);
-        onQueryChange(match ? match.matchingString : null);
+
+        if (match !== null) {
+          onQueryChange(match.matchingString);
+        }
 
         if (
           match !== null &&

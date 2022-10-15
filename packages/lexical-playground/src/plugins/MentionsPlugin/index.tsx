@@ -13,7 +13,7 @@ import {
   TypeaheadOption,
   useBasicTypeaheadTriggerMatch,
 } from '@lexical/react/LexicalTypeaheadMenuPlugin';
-import {TextNode} from 'lexical';
+import {LexicalEditor, TextNode} from 'lexical';
 import {useCallback, useEffect, useMemo, useState} from 'react';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
@@ -673,12 +673,12 @@ export default function NewMentionsPlugin(): JSX.Element | null {
   );
 
   const checkForMentionMatch = useCallback(
-    (text: string) => {
+    (text: string, paramEditor: LexicalEditor) => {
       const mentionMatch = getPossibleQueryMatch(text);
-      const slashMatch = checkForSlashTriggerMatch(text, editor);
+      const slashMatch = checkForSlashTriggerMatch(text, paramEditor);
       return !slashMatch && mentionMatch ? mentionMatch : null;
     },
-    [checkForSlashTriggerMatch, editor],
+    [checkForSlashTriggerMatch],
   );
 
   return (

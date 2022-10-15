@@ -206,7 +206,7 @@ export default function ImageComponent({
   );
 
   useEffect(() => {
-    return mergeRegister(
+    const unregisterAll = mergeRegister(
       editor.registerUpdateListener(({editorState}) => {
         setSelection(editorState.read(() => $getSelection()));
       }),
@@ -257,6 +257,13 @@ export default function ImageComponent({
         COMMAND_PRIORITY_LOW,
       ),
     );
+
+    return () => {
+      // alt: register commands on caption (the
+      // instant nested editor instance)
+      activeEditorRef.current = null;
+      unregisterAll();
+    };
   }, [
     clearSelection,
     editor,

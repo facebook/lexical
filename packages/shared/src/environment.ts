@@ -6,6 +6,8 @@
  *
  */
 
+import {CAN_USE_DOM} from 'shared/canUseDOM';
+
 declare global {
   interface Document {
     documentMode?: unknown;
@@ -15,11 +17,6 @@ declare global {
     MSStream?: unknown;
   }
 }
-
-export const CAN_USE_DOM: boolean =
-  typeof window !== 'undefined' &&
-  typeof window.document !== 'undefined' &&
-  typeof window.document.createElement !== 'undefined';
 
 const documentMode =
   CAN_USE_DOM && 'documentMode' in document ? document.documentMode : null;

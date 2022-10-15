@@ -5,10 +5,4 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
-import {CAN_USE_DOM} from 'shared/canUseDOM';
-
-const getSelection = (): Selection | null =>
-  CAN_USE_DOM ? window.getSelection() : null;
-
-export default getSelection;
+export const CSS_TO_STYLES: Map<string, Record<string, string>> = new Map();

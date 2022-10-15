@@ -23,6 +23,10 @@
     "message": "API",
     "description": "The label for category API in sidebar tutorialSidebar"
   },
+  "sidebar.tutorialSidebar.category.Demos": {
+    "message": "Demos",
+    "description": "The label for category Demo in sidebar tutorialSidebar"
+  },
   "sidebar.tutorialSidebar.category.React": {
     "message": "React",
     "description": "The label for category React in sidebar tutorialSidebar"

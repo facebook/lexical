@@ -152,6 +152,8 @@
     "prettier": "^2.3.2",
     "prettier-plugin-organize-attributes": "^0.0.5",
     "react-test-renderer": "^17.0.2",
+    "react-router": "^6.3.0",
+    "react-router-dom": "^6.3.0",
     "rollup": "^2.75.5",
     "tmp": "^0.2.1",
     "ts-jest": "^28.0.2",
@@ -166,6 +168,7 @@
     }
   },
   "dependencies": {
-    "@types/katex": "^0.14.0"
+    "@types/katex": "^0.14.0",
+    "react-router-dom": "^6.4.2"
   }
 }

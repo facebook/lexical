@@ -168,7 +168,6 @@
     }
   },
   "dependencies": {
-    "@types/katex": "^0.14.0",
-    "react-router-dom": "^6.4.2"
+    "@types/katex": "^0.14.0"
   }
 }

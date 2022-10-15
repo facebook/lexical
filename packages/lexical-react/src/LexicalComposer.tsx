@@ -55,7 +55,7 @@ export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
   if (Object.keys(multiEditorStore).length === 0) {
     invariant(
       false,
-      'LexicalComposer: No active multi-editor store. Add one or remove your multiEditorStoreKey.',
+      `LexicalComposer: The multiEditorStoreKey requires a MultiEditorStore. Add it or remove the key.`,
     );
   }
 
@@ -115,7 +115,7 @@ export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
   );
 
   useLayoutEffect(() => {
-    if (isRemountableEditor) return; // all set...
+    if (isRemountableEditor) return; // already set
 
     const isEditable = initialConfig.editable;
     const [editor] = composerContext;

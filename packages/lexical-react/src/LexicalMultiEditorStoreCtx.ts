@@ -25,7 +25,6 @@ type LexicalMultiEditorStoreHelpers = {
     multiEditorKey: EditorKeyParam,
     nestedEditorKey: string,
   ) => boolean;
-  isValidMultiEditorKey: (multiEditorKey: EditorKeyParam) => boolean;
 };
 type LexicalMultiEditorStoreGetters = {
   getEditor: (multiEditorKey: EditorKeyParam) => LexicalEditor | undefined;

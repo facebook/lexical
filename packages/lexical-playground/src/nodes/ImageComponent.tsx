@@ -259,8 +259,6 @@ export default function ImageComponent({
     );
 
     return () => {
-      // alt: register commands on caption (the
-      // instant nested editor instance)
       activeEditorRef.current = null;
       unregisterAll();
     };

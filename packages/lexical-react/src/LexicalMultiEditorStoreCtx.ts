@@ -39,7 +39,7 @@ type LexicalMultiEditorStoreGetters = {
 };
 type LexicalMultiEditorStoreMutations = {
   addEditor: (multiEditorKey: EditorKeyParam, editor: LexicalEditor) => void;
-  addHistory: (
+  addOrCreateHistory: (
     multiEditorKey: EditorKeyParam,
     lexicalEditorKey: string,
     historyState: HistoryStateParam,

@@ -150,7 +150,7 @@ export function LexicalMultiEditorStore({children}: Props): JSX.Element {
     },
     [getEditorStoreRecord, isValidStoreRecord],
   );
-  const addHistory: UseLexicalMultiEditorStore['addHistory'] =
+  const addOrCreateHistory: UseLexicalMultiEditorStore['addOrCreateHistory'] =
     React.useCallback(
       (multiEditorKey, lexicalEditorKey, historyState) => {
         if (!isValidStoreRecord(multiEditorKey, getEditorStoreRecord)) return;
@@ -200,9 +200,9 @@ export function LexicalMultiEditorStore({children}: Props): JSX.Element {
     <LexicalMultiEditorStoreCtx.Provider
       value={{
         addEditor,
-        addHistory,
         addHistoryKey,
         addNestedEditorToList,
+        addOrCreateHistory,
         deleteEditor,
         getEditor,
         getEditorHistory,

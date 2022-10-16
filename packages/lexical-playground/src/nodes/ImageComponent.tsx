@@ -208,7 +208,9 @@ export default function ImageComponent({
   useEffect(() => {
     const unregisterAll = mergeRegister(
       editor.registerUpdateListener(({editorState}) => {
-        setSelection(editorState.read(() => $getSelection()));
+        if (activeEditorRef.current !== null) {
+          setSelection(editorState.read(() => $getSelection()));
+        }
       }),
       editor.registerCommand(
         SELECTION_CHANGE_COMMAND,

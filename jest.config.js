@@ -68,8 +68,10 @@ module.exports = {
           '<rootDir>/packages/lexical-react/src/LexicalLinkPlugin.ts',
         '^@lexical/react/LexicalListPlugin$':
           '<rootDir>/packages/lexical-react/src/LexicalListPlugin.ts',
+        '^@lexical/react/LexicalMultiEditorStoreCtx$':
+          '<rootDir>/packages/lexical-react/src/LexicalMultiEditorStoreCtx.ts',
         '^@lexical/react/LexicalPlainTextPlugin$':
-          '<rootDir>/packages/lexical-react/src/LexicalPlainTextPlugin.ts',
+          '<rootDir>/packages/lexical-react/src/LexicalListPlugin.ts',
         '^@lexical/react/LexicalTablePlugin$':
           '<rootDir>/packages/lexical-react/src/LexicalTablePlugin.ts',
         '^@lexical/react/useLexicalCanShowPlaceholder$':

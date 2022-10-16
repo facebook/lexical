@@ -49,24 +49,25 @@ type Props = {
 };
 
 export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
-  const multiEditorStoreKey = initialConfig.multiEditorStoreKey;
   const multiEditorStore = useLexicalMultiEditorStore();
-
-  if (Object.keys(multiEditorStore).length === 0) {
-    invariant(
-      false,
-      `LexicalComposer: The multiEditorStoreKey requires a MultiEditorStore. Add it or remove the key.`,
-    );
-  }
+  const multiEditorStoreKey = initialConfig.multiEditorStoreKey;
 
   const isActiveStore =
     ((store): store is FullLexicalMultiEditorStore => {
-      return Object.keys(store).length > 0;
+      const isActive = Object.keys(store).length > 0;
+
+      if (isActive && !multiEditorStoreKey) {
+        invariant(
+          false,
+          `LexicalComposer: The multiEditorStoreKey requires a MultiEditorStore. Add it or remove the key(s).`,
+        );
+      }
+
+      return isActive;
     })(multiEditorStore) && typeof multiEditorStoreKey !== 'undefined';
   const isRemountableEditor =
     isActiveStore &&
-    typeof multiEditorStore.getEditor(initialConfig.multiEditorStoreKey) !==
-      'undefined';
+    typeof multiEditorStore.getEditor(multiEditorStoreKey) !== 'undefined';
 
   const composerContext: [LexicalEditor, LexicalComposerContextType] = useMemo(
     () => {
@@ -85,7 +86,7 @@ export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
         multiEditorStoreKey,
       );
       let editor =
-        multiEditorStore.getEditor(multiEditorStoreKey) ||
+        (isActiveStore && multiEditorStore.getEditor(multiEditorStoreKey)) ||
         initialEditor ||
         null;
 

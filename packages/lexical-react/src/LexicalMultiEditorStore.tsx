@@ -56,10 +56,12 @@ export function LexicalMultiEditorStore({children}: Props): JSX.Element {
   const isValidStoreRecord = React.useCallback(
     (
       multiEditorKey: string | undefined,
-      checkRecordFunc: (k: string) => ReturnType<typeof getEditorStoreRecord>,
+      getStoreRecordFunc: (
+        k: string,
+      ) => ReturnType<typeof getEditorStoreRecord>,
     ): multiEditorKey is string => {
       if (!isValidMultiEditorKey(multiEditorKey)) return false;
-      return Boolean(checkRecordFunc(multiEditorKey));
+      return Boolean(getStoreRecordFunc(multiEditorKey));
     },
     [isValidMultiEditorKey],
   );
@@ -135,13 +137,13 @@ export function LexicalMultiEditorStore({children}: Props): JSX.Element {
       if (isValidStoreRecord(multiEditorKey, getEditorStoreRecord)) {
         editorStore.current[multiEditorKey] = {
           editor,
-          // primarily used for nestedEditors. lets us better control set up of
-          // history plugin
+          // primarily used for nestedEditors. allows for better control of
+          // history plugin set up
           historyKeys: [],
           // set up by history plugin
           historyState: undefined,
-          // nested instances live on their top-level editor (AKA, parent editor), so
-          // we can use a string[] of ids to manage their config on remount
+          // nested instances live on their top-level editor (AKA, parent editor). this
+          // allows us to manage their config on remount with a simple string[]
           nestedEditorList: [],
         };
       }

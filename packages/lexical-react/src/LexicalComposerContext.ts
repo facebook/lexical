@@ -13,7 +13,7 @@ import invariant from 'shared/invariant';
 
 export type LexicalComposerContextType = {
   getTheme: () => EditorThemeClasses | null | undefined;
-  getMultiEditorKey: () => string | null;
+  getMultiEditorStoreKey: () => string | null;
 };
 
 export type LexicalComposerContextWithEditor = [
@@ -46,16 +46,18 @@ export function createLexicalComposerContext(
     return parentContext != null ? parentContext.getTheme() : null;
   }
 
-  function getMultiEditorKey() {
+  function getMultiEditorStoreKey() {
     if (multiEditorStoreKey != null) {
       return multiEditorStoreKey;
     }
 
-    return parentContext != null ? parentContext.getMultiEditorKey() : null;
+    return parentContext != null
+      ? parentContext.getMultiEditorStoreKey()
+      : null;
   }
 
   return {
-    getMultiEditorKey,
+    getMultiEditorStoreKey,
     getTheme,
   };
 }

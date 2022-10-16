@@ -21,7 +21,7 @@ export function HistoryPlugin({
 }): null {
   const [editor, context] = useLexicalComposerContext();
 
-  const multiEditorStoreKey = context.getMultiEditorKey() || undefined;
+  const multiEditorStoreKey = context.getMultiEditorStoreKey() || undefined;
   const multiEditorStore = useLexicalMultiEditorStore();
   const isActiveStore =
     ((store): store is FullLexicalMultiEditorStore => {

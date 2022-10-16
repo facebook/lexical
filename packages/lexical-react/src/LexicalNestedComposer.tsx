@@ -46,8 +46,9 @@ export function LexicalNestedComposer({
     invariant(false, 'Unexpected parent context null on a nested composer');
   }
 
-  const multiEditorStoreKey = parentContext[1].getMultiEditorKey() || undefined; // parentKey or null
   const multiEditorStore = useLexicalMultiEditorStore();
+  const multiEditorStoreKey =
+    parentContext[1].getMultiEditorStoreKey() || undefined; // parentKey or null
 
   const isActiveStore =
     ((store): store is FullLexicalMultiEditorStore => {

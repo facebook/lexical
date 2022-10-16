@@ -6,13 +6,13 @@
  *
  */
 
-import {defineConfig} from 'vite';
-import react from '@vitejs/plugin-react';
-import {resolve} from 'path';
-import path from 'path';
-import fs from 'fs';
-import {replaceCodePlugin} from 'vite-plugin-replace';
 import babel from '@rollup/plugin-babel';
+import react from '@vitejs/plugin-react';
+import fs from 'fs';
+import { resolve } from 'path';
+import path from 'path';
+import { defineConfig } from 'vite';
+import { replaceCodePlugin } from 'vite-plugin-replace';
 
 const moduleResolution = [
   {
@@ -141,6 +141,8 @@ const moduleResolution = [
   'LexicalAutoEmbedPlugin',
   'LexicalOnChangePlugin',
   'LexicalAutoScrollPlugin',
+  'LexicalMultiEditorStore',
+  'LexicalMultiEditorStoreCtx',
 ].forEach((module) => {
   let resolvedPath = path.resolve(`../lexical-react/src/${module}.ts`);
 

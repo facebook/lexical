@@ -14,7 +14,7 @@ import * as ReactTestUtils from 'react-dom/test-utils';
 import {LexicalComposer} from '../../LexicalComposer';
 
 describe('LexicalNodeHelpers tests', () => {
-  let container = null;
+  let container: HTMLDivElement | null = null;
   let reactRoot;
 
   beforeEach(() => {
@@ -24,18 +24,22 @@ describe('LexicalNodeHelpers tests', () => {
   });
 
   afterEach(() => {
-    document.body.removeChild(container);
-    container = null;
+    if (container !== null) {
+      document.body.removeChild(container);
+      container = null;
+    }
 
     jest.restoreAllMocks();
   });
 
   it('LexicalComposerContext', async () => {
     const theme = {};
+    const multiEditorStoreKey = 'nowIKnowMyABCs';
 
     function TestPlugin() {
-      const [, contextTheme] = useLexicalComposerContext();
-      expect(contextTheme.getTheme()).toBe(theme);
+      const [, fullContext] = useLexicalComposerContext();
+      expect(fullContext.getTheme()).toBe(theme);
+      expect(fullContext.getMultiEditorStoreKey()).toBe(multiEditorStoreKey);
       return null;
     }
 

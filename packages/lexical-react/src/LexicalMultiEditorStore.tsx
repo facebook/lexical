@@ -137,13 +137,13 @@ export function LexicalMultiEditorStore({children}: Props): JSX.Element {
       if (isValidStoreRecord(multiEditorKey, getEditorStoreRecord)) {
         editorStore.current[multiEditorKey] = {
           editor,
-          // primarily used for nestedEditors. allows for better control of
-          // history plugin set up
+          // primarily used for nestedEditors. allows for better set up
+          // of history plugin
           historyKeys: [],
           // set up by history plugin
           historyState: undefined,
           // nested instances live on their top-level editor (AKA, parent editor). this
-          // allows us to manage their config on remount with a simple string[]
+          // allows us to manage their config on remount with an array of editor keys
           nestedEditorList: [],
         };
       }

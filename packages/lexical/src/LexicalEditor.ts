@@ -60,6 +60,7 @@ export type EditorUpdateOptions = {
   onUpdate?: () => void;
   skipTransforms?: true;
   tag?: string;
+  discrete?: true;
 };
 
 export type EditorSetOptions = {

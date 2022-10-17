@@ -47,6 +47,7 @@ describe('LexicalNodeHelpers tests', () => {
       return (
         <LexicalComposer
           initialConfig={{
+            multiEditorStoreKey,
             namespace: '',
             nodes: [],
             onError: () => {

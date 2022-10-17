@@ -35,6 +35,7 @@ type LexicalMultiEditorStoreGetters = {
     editorStoreKey: EditorKeyParam,
   ) => EditorStoreRecord | undefined;
   getEditorStoreKeychain: () => string[];
+  getHistoryKeys: (editorStoreKey: EditorKeyParam) => string[] | undefined;
   getNestedEditorKeys: (editorStoreKey: EditorKeyParam) => string[] | undefined;
 };
 type LexicalMultiEditorStoreMutations = {

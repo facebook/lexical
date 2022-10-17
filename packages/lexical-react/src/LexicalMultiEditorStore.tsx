@@ -68,6 +68,15 @@ export function LexicalMultiEditorStore({children}: Props): JSX.Element {
     React.useCallback(() => {
       return Object.keys(editorStore.current);
     }, []);
+  const getHistoryKeys: UseLexicalMultiEditorStore['getHistoryKeys'] =
+    React.useCallback(
+      (editorStoreKey) => {
+        if (!isValidEditorStoreRecord(editorStoreKey, getEditorStoreRecord))
+          return;
+        return editorStore.current[editorStoreKey].historyKeys;
+      },
+      [getEditorStoreRecord, isValidEditorStoreRecord],
+    );
   const getNestedEditorKeys: UseLexicalMultiEditorStore['getNestedEditorKeys'] =
     React.useCallback(
       (editorStoreKey) => {
@@ -107,8 +116,9 @@ export function LexicalMultiEditorStore({children}: Props): JSX.Element {
   // mutations
   const addEditor: UseLexicalMultiEditorStore['addEditor'] = React.useCallback(
     (editorStoreKey, editor) => {
+      if (!isValidEditorStoreKey(editorStoreKey)) return;
       // one-time only...
-      if (isValidEditorStoreRecord(editorStoreKey, getEditorStoreRecord)) {
+      if (!isValidEditorStoreRecord(editorStoreKey, getEditorStoreRecord)) {
         editorStore.current[editorStoreKey] = {
           editor,
           // primarily used for nestedEditors. allows for better set up
@@ -122,7 +132,7 @@ export function LexicalMultiEditorStore({children}: Props): JSX.Element {
         };
       }
     },
-    [getEditorStoreRecord, isValidEditorStoreRecord],
+    [getEditorStoreRecord, isValidEditorStoreKey, isValidEditorStoreRecord],
   );
   const addOrCreateHistory: UseLexicalMultiEditorStore['addOrCreateHistory'] =
     React.useCallback(
@@ -186,6 +196,7 @@ export function LexicalMultiEditorStore({children}: Props): JSX.Element {
         getEditorHistory,
         getEditorStoreKeychain,
         getEditorStoreRecord,
+        getHistoryKeys,
         getNestedEditorKeys,
         hasHistoryKey,
         isNestedEditor,

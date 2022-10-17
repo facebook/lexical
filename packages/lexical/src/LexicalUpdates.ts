@@ -765,7 +765,7 @@ function beginUpdate(
   let onUpdate;
   let tag;
   let skipTransforms = false;
-  let flushSync = false;
+  let discrete = false;
 
   if (options !== undefined) {
     onUpdate = options.onUpdate;
@@ -776,7 +776,7 @@ function beginUpdate(
     }
 
     skipTransforms = options.skipTransforms || false;
-    flushSync = options.flushSync || false;
+    discrete = options.discrete || false;
   }
 
   if (onUpdate) {
@@ -792,7 +792,7 @@ function beginUpdate(
       cloneEditorState(currentEditorState);
     editorStateWasCloned = true;
   }
-  pendingEditorState._flushSync = flushSync;
+  pendingEditorState._flushSync = discrete;
 
   const previousActiveEditorState = activeEditorState;
   const previousReadOnlyMode = isReadOnlyMode;

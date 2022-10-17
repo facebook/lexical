@@ -204,7 +204,7 @@ function $updateCells(
       const editorState = cellEditor.parseEditorState(cell.json);
       cellEditor._headless = true;
       cellEditor.setEditorState(editorState);
-      cellEditor.update(fn, {flushSync: true});
+      cellEditor.update(fn, {discrete: true});
       cellEditor._headless = false;
       const newJSON = JSON.stringify(cellEditor.getEditorState());
       updateTableNode((tableNode) => {

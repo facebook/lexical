@@ -2154,7 +2154,7 @@ describe('LexicalEditor tests', () => {
         );
       },
       {
-        flushSync: true,
+        discrete: true,
       },
     );
 

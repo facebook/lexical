@@ -13,7 +13,9 @@ import {useEffect} from 'react';
 
 import {$createFigmaNode, FigmaNode} from '../../nodes/FigmaNode';
 
-export const INSERT_FIGMA_COMMAND: LexicalCommand<string> = createCommand();
+export const INSERT_FIGMA_COMMAND: LexicalCommand<string> = createCommand(
+  'INSERT_FIGMA_COMMAND',
+);
 
 export default function FigmaPlugin(): JSX.Element | null {
   const [editor] = useLexicalComposerContext();

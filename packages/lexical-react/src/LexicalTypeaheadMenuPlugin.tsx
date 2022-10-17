@@ -325,7 +325,7 @@ export function useDynamicPositioning(
 export const SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND: LexicalCommand<{
   index: number;
   option: TypeaheadOption;
-}> = createCommand();
+}> = createCommand('SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND');
 
 function LexicalPopoverMenu<TOption extends TypeaheadOption>({
   close,

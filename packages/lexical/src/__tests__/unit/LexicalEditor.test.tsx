@@ -1614,7 +1614,7 @@ describe('LexicalEditor tests', () => {
     init();
 
     const commandListener = jest.fn();
-    const command = createCommand();
+    const command = createCommand('TEST_COMMAND');
     const payload = 'testPayload';
     const removeCommandListener = editor.registerCommand(
       command,
@@ -1643,7 +1643,7 @@ describe('LexicalEditor tests', () => {
 
     const commandListener = jest.fn();
     const commandListenerTwo = jest.fn();
-    const command = createCommand();
+    const command = createCommand('TEST_COMMAND');
     const removeCommandListener = editor.registerCommand(
       command,
       commandListener,
@@ -2071,7 +2071,7 @@ describe('LexicalEditor tests', () => {
     const textContentListener = jest.fn();
     const editableListener = jest.fn();
     const commandListener = jest.fn();
-    const TEST_COMMAND = createCommand();
+    const TEST_COMMAND = createCommand('TEST_COMMAND');
 
     init();
 

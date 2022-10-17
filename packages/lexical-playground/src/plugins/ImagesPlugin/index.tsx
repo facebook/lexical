@@ -45,7 +45,7 @@ import TextInput from '../../ui/TextInput';
 export type InsertImagePayload = Readonly<ImagePayload>;
 
 export const INSERT_IMAGE_COMMAND: LexicalCommand<InsertImagePayload> =
-  createCommand();
+  createCommand('INSERT_IMAGE_COMMAND');
 
 export function InsertImageUriDialogBody({
   onClick,

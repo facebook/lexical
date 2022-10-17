@@ -56,7 +56,7 @@ export type CellEditorConfig = Readonly<{
 }>;
 
 export const INSERT_NEW_TABLE_COMMAND: LexicalCommand<InsertTableCommandPayload> =
-  createCommand();
+  createCommand('INSERT_NEW_TABLE_COMMAND');
 
 // @ts-ignore: not sure why TS doesn't like using null as the value?
 export const CellContext: React.Context<CellContextShape> = createContext({

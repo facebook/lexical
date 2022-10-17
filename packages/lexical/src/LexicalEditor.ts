@@ -191,7 +191,10 @@ export const COMMAND_PRIORITY_HIGH = 3;
 export const COMMAND_PRIORITY_CRITICAL = 4;
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export type LexicalCommand<TPayload> = Record<string, never>;
+export type LexicalCommand<TPayload> = {
+  type?: string;
+};
+
 /**
  * Type helper for extracting the payload type from a command.
  *
@@ -681,10 +684,10 @@ export class LexicalEditor {
     return true;
   }
 
-  dispatchCommand<
-    TCommand extends LexicalCommand<unknown>,
-    TPayload extends CommandPayloadType<TCommand>,
-  >(type: TCommand, payload: TPayload): boolean {
+  dispatchCommand<TCommand extends LexicalCommand<unknown>>(
+    type: TCommand,
+    payload: CommandPayloadType<TCommand>,
+  ): boolean {
     return dispatchCommand(this, type, payload);
   }
 

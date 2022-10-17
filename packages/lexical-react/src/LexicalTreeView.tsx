@@ -189,6 +189,9 @@ export function TreeView({
           <button
             className={timeTravelPanelButtonClassName}
             onClick={() => {
+              if (playingIndexRef.current === totalEditorStates - 1) {
+                playingIndexRef.current = 1;
+              }
               setIsPlaying(!isPlaying);
             }}
             type="button">

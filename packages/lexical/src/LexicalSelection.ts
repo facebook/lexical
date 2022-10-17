@@ -1197,7 +1197,37 @@ export class RangeSelection implements BaseSelection {
   insertNodes(nodes: Array<LexicalNode>, selectStart?: boolean): boolean {
     // If there is a range selected remove the text in it
     if (!this.isCollapsed()) {
+      const selectionEnd = this.isBackward() ? this.anchor : this.focus;
+
+      const nextSibling = selectionEnd.getNode().getNextSibling();
+      const nextSiblingKey = nextSibling ? nextSibling.getKey() : null;
+
+      const prevSibling = selectionEnd.getNode().getPreviousSibling();
+      const prevSiblingKey = prevSibling ? prevSibling.getKey() : null;
+
       this.removeText();
+
+      // If the selection has been moved to an adjacent inline element, create
+      // a temporary text node that we can insert the nodes after.
+      if (this.isCollapsed() && this.focus.type === 'element') {
+        let textNode;
+
+        if (this.focus.key === nextSiblingKey && this.focus.offset === 0) {
+          textNode = $createTextNode();
+          this.focus.getNode().insertBefore(textNode);
+        } else if (
+          this.focus.key === prevSiblingKey &&
+          this.focus.offset === this.focus.getNode().getChildrenSize()
+        ) {
+          textNode = $createTextNode();
+          this.focus.getNode().insertAfter(textNode);
+        }
+
+        if (textNode) {
+          this.focus.set(textNode.__key, 0, 'text');
+          this.anchor.set(textNode.__key, 0, 'text');
+        }
+      }
     }
     const anchor = this.anchor;
     const anchorOffset = anchor.offset;

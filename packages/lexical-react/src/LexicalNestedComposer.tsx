@@ -54,7 +54,7 @@ export function LexicalNestedComposer({
     ((store): store is FullLexicalMultiEditorStore => {
       return Object.keys(store).length > 0;
     })(multiEditorStore) && typeof multiEditorStoreKey === 'string';
-  const isAlreadyConfigured = isActiveStore
+  const isRemountable = isActiveStore
     ? multiEditorStore.isNestedEditor(
         multiEditorStoreKey,
         initialEditor.getKey(),
@@ -63,7 +63,7 @@ export function LexicalNestedComposer({
 
   const {isCollabActive, yjsDocMap} = useCollaborationContext();
   const wasCollabPreviouslyReadyRef = useRef(
-    isAlreadyConfigured ? yjsDocMap.has(initialEditor.getKey()) : false,
+    isRemountable ? yjsDocMap.has(initialEditor.getKey()) : false,
   );
 
   const composerContext: [LexicalEditor, LexicalComposerContextType] = useMemo(
@@ -77,7 +77,7 @@ export function LexicalNestedComposer({
         null,
       );
 
-      if (!isAlreadyConfigured) {
+      if (!isRemountable) {
         if (composerTheme !== undefined) {
           initialEditor._config.theme = composerTheme;
         }

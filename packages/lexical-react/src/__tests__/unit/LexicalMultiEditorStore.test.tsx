@@ -16,7 +16,7 @@ import {HistoryPlugin} from '../../LexicalHistoryPlugin';
 import {LexicalMultiEditorStore} from '../../LexicalMultiEditorStore';
 import {useLexicalMultiEditorStore} from '../../LexicalMultiEditorStoreCtx';
 
-describe('LexicalNodeHelpers tests', () => {
+describe('More LexicalNodeHelpers tests', () => {
   let container: HTMLDivElement | null = null;
   let reactRoot;
 

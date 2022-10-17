@@ -52,7 +52,7 @@ But, they can make it easy to stumble into React "noops," too.
 
 Imagine you have a Lexical editor inside a tab. You update its state whenever a certain event listener fires on the editor. Now, say you pass that same editor to another tab, causing the old tab to unmount. Oh! React will now kick an ugly red noop error.
 
-Some of these problems may be hidden when editors can't more freely. 
+Some of these problems may be hidden when editors can't move freely. 
 
 Fortunately, you can manage them in the usual React way. 
 

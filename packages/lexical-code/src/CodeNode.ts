@@ -308,6 +308,11 @@ function convertDivElement(domNode: Node): DOMConversionOutput {
   // domNode is a <div> since we matched it by nodeName
   const div = domNode as HTMLDivElement;
   const isCode = isCodeElement(div);
+  if (!isCode) {
+    return {
+      node: null,
+    };
+  }
   return {
     after: (childLexicalNodes) => {
       const domParent = domNode.parentNode;
@@ -316,7 +321,7 @@ function convertDivElement(domNode: Node): DOMConversionOutput {
       }
       return childLexicalNodes;
     },
-    node: isCode ? $createCodeNode() : null,
+    node: $createCodeNode(),
     preformatted: isCode,
   };
 }

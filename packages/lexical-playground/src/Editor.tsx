@@ -64,6 +64,7 @@ import TwitterPlugin from './plugins/TwitterPlugin';
 import YouTubePlugin from './plugins/YouTubePlugin';
 import PlaygroundEditorTheme from './themes/PlaygroundEditorTheme';
 import ContentEditable from './ui/ContentEditable';
+import ErrorBoundary from './ui/ErrorBoundary';
 import Placeholder from './ui/Placeholder';
 
 const skipCollaborationInit =
@@ -153,6 +154,7 @@ export default function Editor(): JSX.Element {
                 </div>
               }
               placeholder={placeholder}
+              ErrorBoundary={ErrorBoundary}
             />
             <MarkdownShortcutPlugin />
             <CodeHighlightPlugin />
@@ -168,6 +170,7 @@ export default function Editor(): JSX.Element {
                   <ContentEditable className="TableNode__contentEditable" />
                 }
                 placeholder={''}
+                ErrorBoundary={ErrorBoundary}
               />
               <MentionsPlugin />
               <HistoryPlugin />
@@ -205,6 +208,7 @@ export default function Editor(): JSX.Element {
             <PlainTextPlugin
               contentEditable={<ContentEditable />}
               placeholder={placeholder}
+              ErrorBoundary={ErrorBoundary}
             />
             <HistoryPlugin externalHistoryState={historyState} />
           </>

@@ -12,6 +12,14 @@ import type {LexicalEditor} from 'lexical';
 
 import * as React from 'react';
 
+type ErrorBoundaryProps = $ReadOnly<{
+  children: React.Node,
+  onError?: (error: Error) => void,
+}>;
+export type ErrorBoundaryType = React.AbstractComponent<ErrorBoundaryProps>;
+
 declare export function useLexicalDecorators(
   editor: LexicalEditor,
+  // TODO 0.6 Make non-optional non-default
+  ErrorBoundary?: ErrorBoundaryType,
 ): Array<React.Node>;

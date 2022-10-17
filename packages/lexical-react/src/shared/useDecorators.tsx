@@ -8,11 +8,30 @@
 
 import type {LexicalEditor} from 'lexical';
 
-import {useEffect, useMemo, useState} from 'react';
+import {Suspense, useEffect, useMemo, useState} from 'react';
+import * as React from 'react';
 import {createPortal, flushSync} from 'react-dom';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
-export function useDecorators(editor: LexicalEditor): Array<JSX.Element> {
+import {ErrorBoundary as ReactErrorBoundary} from './ReactErrorBoundary';
+
+type ErrorBoundaryProps = {
+  children: JSX.Element;
+  onError: (error: Error) => void;
+};
+export type ErrorBoundaryType =
+  | React.ComponentClass<ErrorBoundaryProps>
+  | React.FC<ErrorBoundaryProps>;
+
+export function useDecorators(
+  editor: LexicalEditor,
+  // TODO 0.6 Make non-optional non-default
+  ErrorBoundary: ErrorBoundaryType = ({children, onError}) => (
+    <ReactErrorBoundary fallback={null} onError={onError}>
+      {children}
+    </ReactErrorBoundary>
+  ),
+): Array<JSX.Element> {
   const [decorators, setDecorators] = useState<Record<string, JSX.Element>>(
     () => editor.getDecorators<JSX.Element>(),
   );
@@ -40,7 +59,11 @@ export function useDecorators(editor: LexicalEditor): Array<JSX.Element> {
 
     for (let i = 0; i < decoratorKeys.length; i++) {
       const nodeKey = decoratorKeys[i];
-      const reactDecorator = decorators[nodeKey];
+      const reactDecorator = (
+        <ErrorBoundary onError={(e) => editor._onError(e)}>
+          <Suspense fallback={null}>{decorators[nodeKey]}</Suspense>
+        </ErrorBoundary>
+      );
       const element = editor.getElementByKey(nodeKey);
 
       if (element !== null) {
@@ -49,5 +72,5 @@ export function useDecorators(editor: LexicalEditor): Array<JSX.Element> {
     }
 
     return decoratedPortals;
-  }, [decorators, editor]);
+  }, [ErrorBoundary, decorators, editor]);
 }

@@ -646,13 +646,13 @@ export function triggerCommandListeners<
   TCommand extends LexicalCommand<unknown>,
 >(
   editor: LexicalEditor,
-  command: TCommand,
+  type: TCommand,
   payload: CommandPayloadType<TCommand>,
 ): boolean {
   if (editor._updating === false || activeEditor !== editor) {
     let returnVal = false;
     editor.update(() => {
-      returnVal = triggerCommandListeners(editor, command, payload);
+      returnVal = triggerCommandListeners(editor, type, payload);
     });
     return returnVal;
   }
@@ -663,7 +663,7 @@ export function triggerCommandListeners<
     for (let e = 0; e < editors.length; e++) {
       const currentEditor = editors[e];
       const commandListeners = currentEditor._commands;
-      const listenerInPriorityOrder = commandListeners.get(command);
+      const listenerInPriorityOrder = commandListeners.get(type);
 
       if (listenerInPriorityOrder !== undefined) {
         const listenersSet = listenerInPriorityOrder[i];

@@ -64,6 +64,7 @@ import useModal from '../../hooks/useModal';
 import CommentEditorTheme from '../../themes/CommentEditorTheme';
 import Button from '../../ui/Button';
 import ContentEditable from '../../ui/ContentEditable';
+import ErrorBoundary from '../../ui/ErrorBoundary';
 import Placeholder from '../../ui/Placeholder';
 
 export const INSERT_INLINE_COMMAND: LexicalCommand<void> = createCommand();
@@ -182,6 +183,7 @@ function PlainTextEditor({
         <PlainTextPlugin
           contentEditable={<ContentEditable className={className} />}
           placeholder={<Placeholder>{placeholder}</Placeholder>}
+          ErrorBoundary={ErrorBoundary}
         />
         <OnChangePlugin onChange={onChange} />
         <HistoryPlugin />

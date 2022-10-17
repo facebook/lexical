@@ -9,20 +9,28 @@
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import * as React from 'react';
 
+import {ErrorBoundary as ReactErrorBoundary} from './shared/ReactErrorBoundary';
 import {useCanShowPlaceholder} from './shared/useCanShowPlaceholder';
-import {useDecorators} from './shared/useDecorators';
+import {ErrorBoundaryType, useDecorators} from './shared/useDecorators';
 import {usePlainTextSetup} from './shared/usePlainTextSetup';
 
 export function PlainTextPlugin({
   contentEditable,
   placeholder,
+  // TODO 0.6 Make non-optional non-default
+  ErrorBoundary = ({children, onError}) => (
+    <ReactErrorBoundary fallback={null} onError={onError}>
+      {children}
+    </ReactErrorBoundary>
+  ),
 }: {
   contentEditable: JSX.Element;
   placeholder: JSX.Element | string;
+  ErrorBoundary?: ErrorBoundaryType;
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
   const showPlaceholder = useCanShowPlaceholder(editor);
-  const decorators = useDecorators(editor);
+  const decorators = useDecorators(editor, ErrorBoundary);
   usePlainTextSetup(editor);
 
   return (

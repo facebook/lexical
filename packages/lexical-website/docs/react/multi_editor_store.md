@@ -6,9 +6,11 @@ sidebar_position: 3
 
 The `LexicalMultiEditorStore` makes editor instances portable across your app. 
 
-It does this by working with the `LexicalComposer`. On mount, each composer (a) sets up an editor instance and (b) adds it to the multi-editor store when one is found. The `HistoryPlugin` follows the same process for `historyState`. 
+It does this by working with the `LexicalComposer`. On mount, each composer (a) sets up an editor instance and (b) adds it to the multi-editor store, should one be found. 
 
-Takeaway: The store's a repo. It doesn't "control" Lexical. 
+The `HistoryPlugin` follows the same process for `historyState`. 
+
+Takeaway: The store's a repo. It does not "control" Lexical. 
 
 ## Set up
 
@@ -17,11 +19,12 @@ Takeaway: The store's a repo. It doesn't "control" Lexical.
 
 ```
 <LexicalMultiEditorStore>
-  <LexicalComposer initialConfig{{
+  <LexicalComposer initialConfig={{
     ...
     multiEditorStoreKey: 'myFirstKey'
   }}>
-    <MyLexicalPlugin>
+    <HistoryPlugin />
+    <MyLexicalPlugin />
   </LexicalComposer>
 </LexicalMultiEditorStore>
 ```
@@ -30,7 +33,7 @@ Takeaway: The store's a repo. It doesn't "control" Lexical.
 
 ## API
 
-The `useMultiEditorStore` hook has several "public" functions.
+The `useMultiEditorStore` hook offers several "public" functions.
 
   - `getEditor`
   - `getEditorHistory`
@@ -41,7 +44,7 @@ The `useMultiEditorStore` hook has several "public" functions.
   - `isNestedEditor`
     - Returns `true` if an editor's key shows it to be the child of a top-level editor. 
   - `deleteEditor`
-    - A good way to close an editor with "finality," meaning you won't remount it or recreate it later. 
+    - A good way to close an editor with "finality," meaning you don't want to remount or recreate it later. 
   - `resetEditorStore`
     - It is what you think — use with care!
 
@@ -51,11 +54,11 @@ Portable editors can be great!!
 
 But, they can make it easy to stumble into React "noops," too. 
 
-Imagine you have a Lexical editor inside a tab. You update its state whenever a certain event listener fires on the editor. Now, say you pass that same editor to another tab, causing the old tab to unmount. Oh noes! React kicks an ugly red noop error.
+Imagine you have a Lexical editor inside a tab. You update its state whenever a certain event listener fires on the editor. Now, say you pass that same editor to another tab, causing the old tab to unmount. Oh noes! React kicks an ugly red noop.
 
 Take heart! You can fix these problems in the usual React way. 
 
-For instance: You could condition the `setState` on a nullable `ref` that you set to `null` in a `useEffect` clean-up function. This would prevent the noop from happening.
+One option: You could condition the `setState` on a nullable `ref` that you set to `null` in a `useEffect` clean-up function. This should prevent the noop from happening.
 
 Examples: 
 

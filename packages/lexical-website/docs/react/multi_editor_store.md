@@ -13,7 +13,7 @@ Takeaway: The store's a repo. It doesn't "control" Lexical.
 ## Set up
 
 1. Make the multi-editor store parent to one or more `LexicalComposers`. 
-2. Add a `multiEditorStoreKey` to each composer's `initialConfig` prop. 
+2. Add a `multiEditorStoreKey` to each composer's `initialConfig`. 
 
 ```
 <LexicalMultiEditorStore>
@@ -25,11 +25,12 @@ Takeaway: The store's a repo. It doesn't "control" Lexical.
   </LexicalComposer>
 </LexicalMultiEditorStore>
 ```
-3. Enjoy your freedom.
+3. Access the store with the `useMultiEditorStore` hook.
+4. Enjoy your freedom.
 
 ## API
 
-The `useMultiEditorStore` hook offers several "public" functions:
+The `useMultiEditorStore` hook has several "public" functions.
 
   - `getEditor`
   - `getEditorHistory`
@@ -50,15 +51,13 @@ Portable editors can be great!!
 
 But, they can make it easy to stumble into React "noops," too. 
 
-Imagine you have a Lexical editor inside a tab. You update its state whenever a certain event listener fires on the editor. Now, say you pass that same editor to another tab, causing the old tab to unmount. Oh! React will now kick an ugly red noop error.
+Imagine you have a Lexical editor inside a tab. You update its state whenever a certain event listener fires on the editor. Now, say you pass that same editor to another tab, causing the old tab to unmount. Oh noes! React kicks an ugly red noop error.
 
-Some of these problems may be hidden when editors can't move freely. 
+Take heart! You can fix these problems in the usual React way. 
 
-Fortunately, you can manage them in the usual React way. 
+For instance: You could condition the `setState` on a nullable `ref` that you set to `null` in a `useEffect` clean-up function. This would prevent the noop from happening.
 
-For instance: You could surround the `setState` with a nullable `ref` that you set to `null` in a `useEffect` clean-up function. This could prevent the noop from happening.
-
-Some examples: 
+Examples: 
 
 - `TypeAheadMenuPlugin.tsx` 
 - `useLexicalNodeSelection.ts`

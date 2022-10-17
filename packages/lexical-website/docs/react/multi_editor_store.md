@@ -38,8 +38,8 @@ The `useMultiEditorStore` hook offers several "public" functions.
   - `getEditor`
   - `getEditorHistory`
   - `getEditorStoreRecord`
-    - Returns a full `EditorRecord` — `editor`, `historStack`, `historyKeys`, and `nestedEditorList`.
-  - `getEditorKeychain`
+    - Returns a full `EditorRecord` — `editor`, `historStack`, `historyKeys`, and `nestedEditorKeys`.
+  - `getEditorStoreKeychain`
     - Returns a list of your `editorStore`'s current keys. One use is to look up a group of related editors `onClick` in order to serialize and save them.
   - `isNestedEditor`
     - Returns `true` if an editor's key shows it to be the child of a top-level editor. 

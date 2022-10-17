@@ -18,95 +18,98 @@ export function LexicalMultiEditorStore({children}: Props): JSX.Element {
   const editorStore = React.useRef<MultiEditorStore>({});
 
   // utils
-  const isValidMultiEditorKey = React.useCallback(
-    (multiEditorKey: string | undefined): multiEditorKey is string => {
-      return typeof multiEditorKey === 'string' && multiEditorKey.length > 0;
+  const isValidEditorStoreKey = React.useCallback(
+    (editorStoreKey: string | undefined): editorStoreKey is string => {
+      return typeof editorStoreKey === 'string' && editorStoreKey.length > 0;
     },
     [],
   );
-  const isValidStoreRecord = React.useCallback(
+  const isValidEditorStoreRecord = React.useCallback(
     (
-      multiEditorKey: string | undefined,
+      editorStoreKey: string | undefined,
       getStoreRecordFunc: (
         k: string,
       ) => ReturnType<typeof getEditorStoreRecord>,
-    ): multiEditorKey is string => {
-      if (!isValidMultiEditorKey(multiEditorKey)) return false;
-      return Boolean(getStoreRecordFunc(multiEditorKey));
+    ): editorStoreKey is string => {
+      if (!isValidEditorStoreKey(editorStoreKey)) return false;
+      return Boolean(getStoreRecordFunc(editorStoreKey));
     },
-    [isValidMultiEditorKey],
+    [isValidEditorStoreKey],
   );
 
   // getters
   const getEditorStoreRecord: UseLexicalMultiEditorStore['getEditorStoreRecord'] =
     React.useCallback(
-      (multiEditorKey) => {
-        if (!isValidMultiEditorKey(multiEditorKey)) return;
-        if (typeof editorStore.current[multiEditorKey] === 'undefined') return;
-        return editorStore.current[multiEditorKey];
+      (editorStoreKey) => {
+        if (!isValidEditorStoreKey(editorStoreKey)) return;
+        if (typeof editorStore.current[editorStoreKey] === 'undefined') return;
+        return editorStore.current[editorStoreKey];
       },
-      [isValidMultiEditorKey],
+      [isValidEditorStoreKey],
     );
   const getEditor: UseLexicalMultiEditorStore['getEditor'] = React.useCallback(
-    (multiEditorKey) => {
-      if (!isValidStoreRecord(multiEditorKey, getEditorStoreRecord)) return;
-      return editorStore.current[multiEditorKey].editor;
+    (editorStoreKey) => {
+      if (!isValidEditorStoreRecord(editorStoreKey, getEditorStoreRecord))
+        return;
+      return editorStore.current[editorStoreKey].editor;
     },
-    [getEditorStoreRecord, isValidStoreRecord],
+    [getEditorStoreRecord, isValidEditorStoreRecord],
   );
   const getEditorHistory: UseLexicalMultiEditorStore['getEditorHistory'] =
     React.useCallback(
-      (multiEditorKey) => {
-        if (!isValidStoreRecord(multiEditorKey, getEditorStoreRecord)) return;
-        return editorStore.current[multiEditorKey].historyState;
+      (editorStoreKey) => {
+        if (!isValidEditorStoreRecord(editorStoreKey, getEditorStoreRecord))
+          return;
+        return editorStore.current[editorStoreKey].historyState;
       },
-      [getEditorStoreRecord, isValidStoreRecord],
+      [getEditorStoreRecord, isValidEditorStoreRecord],
     );
-  const getEditorKeychain: UseLexicalMultiEditorStore['getEditorKeychain'] =
+  const getEditorStoreKeychain: UseLexicalMultiEditorStore['getEditorStoreKeychain'] =
     React.useCallback(() => {
       return Object.keys(editorStore.current);
     }, []);
-  const getNestedEditorList: UseLexicalMultiEditorStore['getNestedEditorList'] =
+  const getNestedEditorKeys: UseLexicalMultiEditorStore['getNestedEditorKeys'] =
     React.useCallback(
-      (multiEditorKey) => {
-        if (!isValidStoreRecord(multiEditorKey, getEditorStoreRecord)) return;
-        return editorStore.current[multiEditorKey].nestedEditorList;
+      (editorStoreKey) => {
+        if (!isValidEditorStoreRecord(editorStoreKey, getEditorStoreRecord))
+          return;
+        return editorStore.current[editorStoreKey].nestedEditorKeys;
       },
-      [getEditorStoreRecord, isValidStoreRecord],
+      [getEditorStoreRecord, isValidEditorStoreRecord],
     );
 
   // helpers
   const hasHistoryKey: UseLexicalMultiEditorStore['hasHistoryKey'] =
     React.useCallback(
-      (multiEditorKey, lexicalEditorKey) => {
-        if (!isValidStoreRecord(multiEditorKey, getEditorStoreRecord))
+      (editorStoreKey, lexicalEditorKey) => {
+        if (!isValidEditorStoreRecord(editorStoreKey, getEditorStoreRecord))
           return false;
-        return editorStore.current[multiEditorKey].historyKeys.includes(
+        return editorStore.current[editorStoreKey].historyKeys.includes(
           lexicalEditorKey,
         );
       },
-      [getEditorStoreRecord, isValidStoreRecord],
+      [getEditorStoreRecord, isValidEditorStoreRecord],
     );
   const isNestedEditor: UseLexicalMultiEditorStore['isNestedEditor'] =
     React.useCallback(
-      (multiEditorKey, nestedEditorKey) => {
-        if (!isValidStoreRecord(multiEditorKey, getEditorStoreRecord))
+      (editorStoreKey, lexicalEditorKey) => {
+        if (!isValidEditorStoreRecord(editorStoreKey, getEditorStoreRecord))
           return false;
         return (
-          typeof editorStore.current[multiEditorKey].nestedEditorList.find(
-            (key) => nestedEditorKey === key,
+          typeof editorStore.current[editorStoreKey].nestedEditorKeys.find(
+            (key) => lexicalEditorKey === key,
           ) !== 'undefined'
         );
       },
-      [getEditorStoreRecord, isValidStoreRecord],
+      [getEditorStoreRecord, isValidEditorStoreRecord],
     );
 
   // mutations
   const addEditor: UseLexicalMultiEditorStore['addEditor'] = React.useCallback(
-    (multiEditorKey, editor) => {
+    (editorStoreKey, editor) => {
       // one-time only...
-      if (isValidStoreRecord(multiEditorKey, getEditorStoreRecord)) {
-        editorStore.current[multiEditorKey] = {
+      if (isValidEditorStoreRecord(editorStoreKey, getEditorStoreRecord)) {
+        editorStore.current[editorStoreKey] = {
           editor,
           // primarily used for nestedEditors. allows for better set up
           // of history plugin
@@ -115,53 +118,57 @@ export function LexicalMultiEditorStore({children}: Props): JSX.Element {
           historyState: undefined,
           // nested instances live on their top-level editor (AKA, parent editor). this
           // allows us to manage their config on remount with an array of editor keys
-          nestedEditorList: [],
+          nestedEditorKeys: [],
         };
       }
     },
-    [getEditorStoreRecord, isValidStoreRecord],
+    [getEditorStoreRecord, isValidEditorStoreRecord],
   );
   const addOrCreateHistory: UseLexicalMultiEditorStore['addOrCreateHistory'] =
     React.useCallback(
-      (multiEditorKey, lexicalEditorKey, historyState) => {
-        if (!isValidStoreRecord(multiEditorKey, getEditorStoreRecord)) return;
-        if (typeof getEditorHistory(multiEditorKey) !== 'undefined') return;
+      (editorStoreKey, lexicalEditorKey, historyState) => {
+        if (!isValidEditorStoreRecord(editorStoreKey, getEditorStoreRecord))
+          return;
+        if (typeof getEditorHistory(editorStoreKey) !== 'undefined') return;
         const storedHistory = historyState || createEmptyHistoryState();
-        editorStore.current[multiEditorKey] = {
-          ...editorStore.current[multiEditorKey],
+        editorStore.current[editorStoreKey] = {
+          ...editorStore.current[editorStoreKey],
           historyKeys: [lexicalEditorKey],
           historyState: storedHistory,
         };
         return storedHistory;
       },
-      [getEditorHistory, getEditorStoreRecord, isValidStoreRecord],
+      [getEditorHistory, getEditorStoreRecord, isValidEditorStoreRecord],
     );
   const addHistoryKey: UseLexicalMultiEditorStore['addHistoryKey'] =
     React.useCallback(
-      (multiEditorKey, lexicalEditorKey) => {
-        if (!isValidStoreRecord(multiEditorKey, getEditorStoreRecord)) return;
-        if (hasHistoryKey(multiEditorKey, lexicalEditorKey)) return;
-        editorStore.current[multiEditorKey].historyKeys.push(lexicalEditorKey);
+      (editorStoreKey, lexicalEditorKey) => {
+        if (!isValidEditorStoreRecord(editorStoreKey, getEditorStoreRecord))
+          return;
+        if (hasHistoryKey(editorStoreKey, lexicalEditorKey)) return;
+        editorStore.current[editorStoreKey].historyKeys.push(lexicalEditorKey);
       },
-      [getEditorStoreRecord, hasHistoryKey, isValidStoreRecord],
+      [getEditorStoreRecord, hasHistoryKey, isValidEditorStoreRecord],
     );
-  const addNestedEditorToList: UseLexicalMultiEditorStore['addNestedEditorToList'] =
+  const addNestedEditorKey: UseLexicalMultiEditorStore['addNestedEditorKey'] =
     React.useCallback(
-      (multiEditorKey, nestedEditorKey) => {
-        if (!isValidStoreRecord(multiEditorKey, getEditorStoreRecord)) return;
-        editorStore.current[multiEditorKey].nestedEditorList.push(
-          nestedEditorKey,
+      (editorStoreKey, lexicalEditorKey) => {
+        if (!isValidEditorStoreRecord(editorStoreKey, getEditorStoreRecord))
+          return;
+        editorStore.current[editorStoreKey].nestedEditorKeys.push(
+          lexicalEditorKey,
         );
       },
-      [getEditorStoreRecord, isValidStoreRecord],
+      [getEditorStoreRecord, isValidEditorStoreRecord],
     );
   const deleteEditor: UseLexicalMultiEditorStore['deleteEditor'] =
     React.useCallback(
-      (multiEditorKey) => {
-        if (!isValidStoreRecord(multiEditorKey, getEditorStoreRecord)) return;
-        delete editorStore.current[multiEditorKey];
+      (editorStoreKey) => {
+        if (!isValidEditorStoreRecord(editorStoreKey, getEditorStoreRecord))
+          return;
+        delete editorStore.current[editorStoreKey];
       },
-      [getEditorStoreRecord, isValidStoreRecord],
+      [getEditorStoreRecord, isValidEditorStoreRecord],
     );
   const resetEditorStore = React.useCallback(() => {
     editorStore.current = {};
@@ -172,14 +179,14 @@ export function LexicalMultiEditorStore({children}: Props): JSX.Element {
       value={{
         addEditor,
         addHistoryKey,
-        addNestedEditorToList,
+        addNestedEditorKey,
         addOrCreateHistory,
         deleteEditor,
         getEditor,
         getEditorHistory,
-        getEditorKeychain,
+        getEditorStoreKeychain,
         getEditorStoreRecord,
-        getNestedEditorList,
+        getNestedEditorKeys,
         hasHistoryKey,
         isNestedEditor,
         resetEditorStore,

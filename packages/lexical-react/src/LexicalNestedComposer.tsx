@@ -105,7 +105,7 @@ export function LexicalNestedComposer({
         }
 
         if (isActiveStore) {
-          multiEditorStore.addNestedEditorToList(
+          multiEditorStore.addNestedEditorKey(
             multiEditorStoreKey,
             initialEditor.getKey(),
           );

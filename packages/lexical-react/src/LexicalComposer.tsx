@@ -65,7 +65,7 @@ export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
       if (isActive && !multiEditorStoreKey) {
         invariant(
           false,
-          `LexicalComposer: The multiEditorStoreKey requires a MultiEditorStore. Add it or remove the key.`,
+          'LexicalComposer: The multiEditorStoreKey requires a MultiEditorStore. Add it or remove the key.',
         );
       }
 

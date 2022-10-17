@@ -35,24 +35,21 @@ describe('More LexicalNodeHelpers tests', () => {
     jest.restoreAllMocks();
   });
 
-  it('LexicalMultiEditorStore w/o history', async () => {
+  it('LexicalMultiEditorStore stocks editors w/o history', async () => {
     const firstMultiEditorStoreKey = 'nowIKnowMyABCs';
     const secondMultiEditorStoreKey = 'nextTimeWontYouSingWithMe';
 
     function FirstTestPlugin() {
-      const [firstEditorInstance, firstFullContext] =
-        useLexicalComposerContext();
+      const [editor, context] = useLexicalComposerContext();
       const multiEditorStore = useLexicalMultiEditorStore();
 
-      expect(firstFullContext.getMultiEditorStoreKey()).toBe(
-        firstMultiEditorStoreKey,
-      );
+      expect(context.getMultiEditorStoreKey()).toBe(firstMultiEditorStoreKey);
 
       // remember, the FirstTestPlugin runs before the second LexicalComposer, so there's
       // only one key on the chain right now. there'll be two after the second one runs...
       expect(multiEditorStore.getEditorStoreKeychain()).toHaveLength(1);
       expect(multiEditorStore.getEditor(firstMultiEditorStoreKey)).toEqual(
-        firstEditorInstance,
+        editor,
       );
 
       expect(
@@ -63,18 +60,15 @@ describe('More LexicalNodeHelpers tests', () => {
     }
 
     function SecondTestPlugin() {
-      const [secondEditorInstance, secondFullContext] =
-        useLexicalComposerContext();
+      const [editor, context] = useLexicalComposerContext();
       const multiEditorStore = useLexicalMultiEditorStore();
 
-      expect(secondFullContext.getMultiEditorStoreKey()).toBe(
-        secondMultiEditorStoreKey,
-      );
+      expect(context.getMultiEditorStoreKey()).toBe(secondMultiEditorStoreKey);
 
       // and now there are two keys on the chain!
       expect(multiEditorStore.getEditorStoreKeychain()).toHaveLength(2);
       expect(multiEditorStore.getEditor(secondMultiEditorStoreKey)).toEqual(
-        secondEditorInstance,
+        editor,
       );
 
       expect(
@@ -118,33 +112,28 @@ describe('More LexicalNodeHelpers tests', () => {
     });
   });
 
-  it('LexicalMultiEditorStore w/history', async () => {
+  it('LexicalMultiEditorStore stocks editors w/history', async () => {
     const firstMultiEditorStoreKey = 'nowIKnowMyABCs';
     const secondMultiEditorStoreKey = 'nextTimeWontYouSingWithMe';
 
     function FirstTestPlugin() {
-      const [firstEditorInstance, firstFullContext] =
-        useLexicalComposerContext();
+      const [editor, context] = useLexicalComposerContext();
       const multiEditorStore = useLexicalMultiEditorStore();
 
-      expect(firstFullContext.getMultiEditorStoreKey()).toBe(
-        firstMultiEditorStoreKey,
-      );
+      expect(context.getMultiEditorStoreKey()).toBe(firstMultiEditorStoreKey);
 
       expect(multiEditorStore.getEditorStoreKeychain()).toHaveLength(1);
       expect(multiEditorStore.getEditor(firstMultiEditorStoreKey)).toEqual(
-        firstEditorInstance,
+        editor,
       );
 
-      // remember, these keys come from the EditorStoreRecord. there'll only
-      // be more than one when nested editors are at play
       expect(
         multiEditorStore.getHistoryKeys(firstMultiEditorStoreKey),
       ).toHaveLength(1);
       expect(
         multiEditorStore.hasHistoryKey(
           firstMultiEditorStoreKey,
-          firstEditorInstance.getKey(),
+          editor.getKey(),
         ),
       ).toBeTruthy();
       expect(
@@ -155,17 +144,14 @@ describe('More LexicalNodeHelpers tests', () => {
     }
 
     function SecondTestPlugin() {
-      const [secondEditorInstance, secondFullContext] =
-        useLexicalComposerContext();
+      const [editor, context] = useLexicalComposerContext();
       const multiEditorStore = useLexicalMultiEditorStore();
 
-      expect(secondFullContext.getMultiEditorStoreKey()).toBe(
-        secondMultiEditorStoreKey,
-      );
+      expect(context.getMultiEditorStoreKey()).toBe(secondMultiEditorStoreKey);
 
       expect(multiEditorStore.getEditorStoreKeychain()).toHaveLength(2);
       expect(multiEditorStore.getEditor(secondMultiEditorStoreKey)).toEqual(
-        secondEditorInstance,
+        editor,
       );
 
       expect(
@@ -174,7 +160,7 @@ describe('More LexicalNodeHelpers tests', () => {
       expect(
         multiEditorStore.hasHistoryKey(
           secondMultiEditorStoreKey,
-          secondEditorInstance.getKey(),
+          editor.getKey(),
         ),
       ).toBeTruthy();
       expect(
@@ -220,22 +206,22 @@ describe('More LexicalNodeHelpers tests', () => {
     });
   });
 
-  it('LexicalMultiEditorStore has portable editors', async () => {
+  it('LexicalMultiEditorStore makes editors portable', async () => {
     const firstMultiEditorStoreKey = 'nowIKnowMyABCs';
     const secondMultiEditorStoreKey = 'nextTimeWontYouSingWithMe';
 
-    const firstEditorInstanceRef = {current: null};
-    const secondEditorInstanceRef = {current: null};
+    const aEditorRef = {current: null};
+    const bEditorRef = {current: null};
 
     function FirstTestPlugin() {
-      const [firstEditorInstance] = useLexicalComposerContext();
-      firstEditorInstanceRef.current = firstEditorInstance;
+      const [editor] = useLexicalComposerContext();
+      aEditorRef.current = editor;
       return null;
     }
 
     function SecondTestPlugin() {
-      const [secondEditorInstance] = useLexicalComposerContext();
-      secondEditorInstanceRef.current = secondEditorInstance;
+      const [editor] = useLexicalComposerContext();
+      bEditorRef.current = editor;
       return null;
     }
 
@@ -243,10 +229,10 @@ describe('More LexicalNodeHelpers tests', () => {
       const multiEditorStore = useLexicalMultiEditorStore();
 
       expect(multiEditorStore.getEditor(firstMultiEditorStoreKey)).toBe(
-        firstEditorInstanceRef.current,
+        aEditorRef.current,
       );
       expect(multiEditorStore.getEditor(secondMultiEditorStoreKey)).toBe(
-        secondEditorInstanceRef.current,
+        bEditorRef.current,
       );
 
       return null;

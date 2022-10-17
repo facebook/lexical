@@ -18,7 +18,7 @@ const argv = require('minimist')(process.argv.slice(2));
 const nonInteractive = argv['non-interactive'];
 const dryRun = argv['dry-run'];
 const channel = argv.channel;
-const validChannels = new Set(['next', 'latest']);
+const validChannels = new Set(['next', 'latest', 'nightly', 'dev']);
 if (!validChannels.has(channel)) {
   console.error(`Invalid release channel: ${channel}`);
   process.exit(1);

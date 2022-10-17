@@ -219,4 +219,73 @@ describe('LexicalNodeHelpers tests', () => {
       reactRoot.render(<App />);
     });
   });
+
+  it('LexicalMultiEditorStore has portable editors', async () => {
+    const firstMultiEditorStoreKey = 'nowIKnowMyABCs';
+    const secondMultiEditorStoreKey = 'nextTimeWontYouSingWithMe';
+
+    const firstEditorInstanceRef = {current: null};
+    const secondEditorInstanceRef = {current: null};
+
+    function FirstTestPlugin() {
+      const [firstEditorInstance] = useLexicalComposerContext();
+      firstEditorInstanceRef.current = firstEditorInstance;
+      return null;
+    }
+
+    function SecondTestPlugin() {
+      const [secondEditorInstance] = useLexicalComposerContext();
+      secondEditorInstanceRef.current = secondEditorInstance;
+      return null;
+    }
+
+    function TheOutsideUp() {
+      const multiEditorStore = useLexicalMultiEditorStore();
+
+      expect(multiEditorStore.getEditor(firstMultiEditorStoreKey)).toBe(
+        firstEditorInstanceRef.current,
+      );
+      expect(multiEditorStore.getEditor(secondMultiEditorStoreKey)).toBe(
+        secondEditorInstanceRef.current,
+      );
+
+      return null;
+    }
+
+    function App() {
+      return (
+        <LexicalMultiEditorStore>
+          <LexicalComposer
+            initialConfig={{
+              multiEditorStoreKey: firstMultiEditorStoreKey,
+              namespace: '',
+              nodes: [],
+              onError: () => {
+                throw Error();
+              },
+            }}>
+            <HistoryPlugin />
+            <FirstTestPlugin />
+          </LexicalComposer>
+          <LexicalComposer
+            initialConfig={{
+              multiEditorStoreKey: secondMultiEditorStoreKey,
+              namespace: '',
+              nodes: [],
+              onError: () => {
+                throw Error();
+              },
+            }}>
+            <HistoryPlugin />
+            <SecondTestPlugin />
+          </LexicalComposer>
+          <TheOutsideUp />
+        </LexicalMultiEditorStore>
+      );
+    }
+
+    await ReactTestUtils.act(async () => {
+      reactRoot.render(<App />);
+    });
+  });
 });

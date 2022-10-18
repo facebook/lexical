@@ -200,6 +200,7 @@ function hideTargetLine(targetLineElem: HTMLElement | null) {
 function useDraggableBlockMenu(
   editor: LexicalEditor,
   anchorElem: HTMLElement,
+  isEditable: boolean,
 ): JSX.Element {
   const scrollerElem = anchorElem.parentElement;
 
@@ -340,7 +341,7 @@ function useDraggableBlockMenu(
         draggable={true}
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}>
-        <div className="icon" />
+        <div className={isEditable ? 'icon' : ''} />
       </div>
       <div className="draggable-block-target-line" ref={targetLineRef} />
     </>,
@@ -354,5 +355,5 @@ export default function DraggableBlockPlugin({
   anchorElem?: HTMLElement;
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
-  return useDraggableBlockMenu(editor, anchorElem);
+  return useDraggableBlockMenu(editor, anchorElem, editor._editable);
 }

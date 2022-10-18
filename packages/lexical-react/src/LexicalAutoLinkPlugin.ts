@@ -196,7 +196,7 @@ function handleLinkEdit(
   }
 
   const url = linkNode.getURL();
-  if (match !== null && url !== match.url) {
+  if (url !== match.url) {
     linkNode.setURL(match.url);
     onChange(match.url, url);
   }

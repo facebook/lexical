@@ -16,7 +16,7 @@ import {OnChangePlugin} from '@lexical/react/LexicalOnChangePlugin';
 
 ```jsx
 const initialConfig = {
-  namespace: 'MyEditor', 
+  namespace: 'MyEditor',
   theme,
   onError,
 };
@@ -36,7 +36,7 @@ const initialConfig = {
 
 ```jsx
 const initialConfig = {
-  namespace: 'MyEditor', 
+  namespace: 'MyEditor',
   theme,
   nodes: [ListNode, ListItemNode], // Pass the references to the nodes here
   onError,

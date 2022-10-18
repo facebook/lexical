@@ -132,8 +132,8 @@ export function LexicalMultiEditorStore({children}: Props): JSX.Element {
           historyKeys: [],
           // set up by history plugin
           historyState: undefined,
-          // nested instances live on their top-level editor (AKA, parent editor). this
-          // allows us to manage their config on remount with an array of editor keys
+          // lexicalEditorKeys. storing them helps us manage nested-editor
+          // config on remount
           nestedEditorKeys: [],
         };
       }

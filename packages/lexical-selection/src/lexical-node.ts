@@ -373,7 +373,10 @@ export function $patchStyleText(
       }
     } // multiple nodes selected.
   } else {
-    if ($isTextNode(firstNode)) {
+    if (
+      $isTextNode(firstNode) &&
+      startOffset < firstNode.getTextContentSize()
+    ) {
       if (startOffset !== 0) {
         // the entire first node isn't selected, so split it
         firstNode = firstNode.splitText(startOffset)[1];

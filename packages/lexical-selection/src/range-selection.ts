@@ -65,7 +65,6 @@ function isPointAttached(point: Point): boolean {
 export function $wrapNodes(
   selection: RangeSelection,
   createElement: () => ElementNode,
-  wrappingElement: null | ElementNode = null,
 ): void {
   const nodes = selection.getNodes();
   const nodesLength = nodes.length;
@@ -78,13 +77,7 @@ export function $wrapNodes(
     // their own branch. I.e. you don't want to wrap a whole table, but rather the contents of each
     // of each of the cell nodes.
     if ($isRootOrShadowRoot(node)) {
-      $wrapNodesImpl(
-        selection,
-        descendants,
-        descendants.length,
-        createElement,
-        wrappingElement,
-      );
+      $wrapNodesImpl(selection, descendants, descendants.length, createElement);
       descendants = [];
       topLevelNode = node;
     } else if (
@@ -93,23 +86,11 @@ export function $wrapNodes(
     ) {
       descendants.push(node);
     } else {
-      $wrapNodesImpl(
-        selection,
-        descendants,
-        descendants.length,
-        createElement,
-        wrappingElement,
-      );
+      $wrapNodesImpl(selection, descendants, descendants.length, createElement);
       descendants = [node];
     }
   }
-  $wrapNodesImpl(
-    selection,
-    descendants,
-    descendants.length,
-    createElement,
-    wrappingElement,
-  );
+  $wrapNodesImpl(selection, descendants, descendants.length, createElement);
 }
 
 export function $wrapNodesImpl(
@@ -117,7 +98,6 @@ export function $wrapNodesImpl(
   nodes: LexicalNode[],
   nodesLength: number,
   createElement: () => ElementNode,
-  wrappingElement: null | ElementNode = null,
 ): void {
   if (nodes.length === 0) {
     return;
@@ -209,24 +189,13 @@ export function $wrapNodesImpl(
     }
   }
 
-  if (wrappingElement !== null) {
-    for (let i = 0; i < elements.length; i++) {
-      const element = elements[i];
-      wrappingElement.append(element);
-    }
-  }
-
   // If our target is Root-like, let's see if we can re-adjust
   // so that the target is the first child instead.
   if ($isRootOrShadowRoot(target)) {
     if (targetIsPrevSibling) {
-      if (wrappingElement !== null) {
-        target.insertAfter(wrappingElement);
-      } else {
-        for (let i = elements.length - 1; i >= 0; i--) {
-          const element = elements[i];
-          target.insertAfter(element);
-        }
+      for (let i = elements.length - 1; i >= 0; i--) {
+        const element = elements[i];
+        target.insertAfter(element);
       }
     } else {
       const firstChild = target.getFirstChild();
@@ -236,33 +205,21 @@ export function $wrapNodesImpl(
       }
 
       if (firstChild === null) {
-        if (wrappingElement) {
-          target.append(wrappingElement);
-        } else {
-          for (let i = 0; i < elements.length; i++) {
-            const element = elements[i];
-            target.append(element);
-          }
+        for (let i = 0; i < elements.length; i++) {
+          const element = elements[i];
+          target.append(element);
         }
       } else {
-        if (wrappingElement !== null) {
-          firstChild.insertBefore(wrappingElement);
-        } else {
-          for (let i = 0; i < elements.length; i++) {
-            const element = elements[i];
-            firstChild.insertBefore(element);
-          }
+        for (let i = 0; i < elements.length; i++) {
+          const element = elements[i];
+          firstChild.insertBefore(element);
         }
       }
     }
   } else {
-    if (wrappingElement) {
-      target.insertAfter(wrappingElement);
-    } else {
-      for (let i = elements.length - 1; i >= 0; i--) {
-        const element = elements[i];
-        target.insertAfter(element);
-      }
+    for (let i = elements.length - 1; i >= 0; i--) {
+      const element = elements[i];
+      target.insertAfter(element);
     }
   }
 

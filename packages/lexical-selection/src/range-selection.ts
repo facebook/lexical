@@ -77,7 +77,7 @@ export function $wrapNodes(
     // their own branch. I.e. you don't want to wrap a whole table, but rather the contents of each
     // of each of the cell nodes.
     if ($isRootOrShadowRoot(node)) {
-      $wrapNodesImpl(selection, descendants, descendants.length, createElement);
+      $wrapNodesImpl(selection, descendants, createElement);
       descendants = [];
       topLevelNode = node;
     } else if (
@@ -86,21 +86,37 @@ export function $wrapNodes(
     ) {
       descendants.push(node);
     } else {
-      $wrapNodesImpl(selection, descendants, descendants.length, createElement);
+      $wrapNodesImpl(selection, descendants, createElement);
       descendants = [node];
     }
   }
-  $wrapNodesImpl(selection, descendants, descendants.length, createElement);
+  $wrapNodesImpl(selection, descendants, createElement);
 }
 
 export function $wrapNodesImpl(
   selection: RangeSelection,
   nodes: LexicalNode[],
-  nodesLength: number,
   createElement: () => ElementNode,
 ): void {
   const firstNode = nodes[0];
-  const elements = [];
+  const {target, targetIsPrevSibling} = findPlaceToInsert(firstNode);
+  const elements = createReplacement(nodes, createElement);
+  insertReplacement(elements, target, targetIsPrevSibling);
+
+  const prevSelection = $getPreviousSelection();
+
+  if (
+    $isRangeSelection(prevSelection) &&
+    isPointAttached(prevSelection.anchor) &&
+    isPointAttached(prevSelection.focus)
+  ) {
+    $setSelection(prevSelection.clone());
+  } else {
+    selection.dirty = true;
+  }
+}
+
+function findPlaceToInsert(firstNode: LexicalNode): ElementNode {
   // The below logic is to find the right target for us to
   // either insertAfter/insertBefore/append the corresponding
   // elements to. This is made more complicated due to nested
@@ -129,11 +145,21 @@ export function $wrapNodesImpl(
       break;
     }
   }
-  const movedLeafNodes: Set<NodeKey> = new Set();
 
+  return {target, targetIsPrevSibling};
+}
+
+function createReplacement(
+  nodes: LexicalNode[],
+  createElement: () => ElementNode,
+): ElementNode[] {
   // Move out all leaf nodes into our elements array.
   // If we find a top level empty element, also move make
   // an element for that.
+  const elements: ElementNode[] = [];
+  const movedLeafNodes: Set<NodeKey> = new Set();
+  const nodesLength = nodes.length;
+
   for (let i = 0; i < nodesLength; i++) {
     const node = nodes[i];
     let parent = node.getParent();
@@ -165,7 +191,14 @@ export function $wrapNodesImpl(
       node.remove(true);
     }
   }
+  return elements;
+}
 
+function insertReplacement(
+  elements: ElementNode[],
+  target: ElementNode,
+  targetIsPrevSibling: boolean,
+): void {
   // If our target is Root-like, let's see if we can re-adjust
   // so that the target is the first child instead.
   if ($isRootOrShadowRoot(target)) {
@@ -198,18 +231,6 @@ export function $wrapNodesImpl(
       const element = elements[i];
       target.insertAfter(element);
     }
-  }
-
-  const prevSelection = $getPreviousSelection();
-
-  if (
-    $isRangeSelection(prevSelection) &&
-    isPointAttached(prevSelection.anchor) &&
-    isPointAttached(prevSelection.focus)
-  ) {
-    $setSelection(prevSelection.clone());
-  } else {
-    selection.dirty = true;
   }
 }
 

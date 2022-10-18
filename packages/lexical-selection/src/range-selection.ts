@@ -134,6 +134,7 @@ export function $wrapNodesImpl(
       break;
     }
   }
+  const movedLeafNodes: Set<NodeKey> = new Set();
 
   // Move out all leaf nodes into our elements array.
   // If we find a top level empty element, also move make

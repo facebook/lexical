@@ -135,19 +135,6 @@ export function $wrapNodesImpl(
     }
   }
 
-  const emptyElements = new Set();
-
-  // Find any top level empty elements
-  for (let i = 0; i < nodesLength; i++) {
-    const node = nodes[i];
-
-    if ($isElementNode(node) && node.getChildrenSize() === 0) {
-      emptyElements.add(node.getKey());
-    }
-  }
-
-  const movedLeafNodes: Set<NodeKey> = new Set();
-
   // Move out all leaf nodes into our elements array.
   // If we find a top level empty element, also move make
   // an element for that.
@@ -180,7 +167,7 @@ export function $wrapNodesImpl(
         });
         $removeParentEmptyElements(parent);
       }
-    } else if (emptyElements.has(node.getKey())) {
+    } else if ($isElementNode(node) && node.getChildrenSize() === 0) {
       const targetElement = createElement();
       targetElement.setFormat(node.getFormatType());
       targetElement.setIndent(node.getIndent());

@@ -38,14 +38,11 @@ import useModal from '../../hooks/useModal';
 import catTypingGif from '../../images/cat-typing.gif';
 import {EmbedConfigs} from '../AutoEmbedPlugin';
 import {INSERT_COLLAPSIBLE_COMMAND} from '../CollapsiblePlugin';
+import {InsertEquationDialog} from '../EquationsPlugin';
 import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawPlugin';
-import {INSERT_IMAGE_COMMAND} from '../ImagesPlugin';
-import {
-  InsertEquationDialog,
-  InsertImageDialog,
-  InsertPollDialog,
-  InsertTableDialog,
-} from '../ToolbarPlugin';
+import {INSERT_IMAGE_COMMAND, InsertImageDialog} from '../ImagesPlugin';
+import {InsertPollDialog} from '../PollPlugin';
+import {InsertTableDialog} from '../TablePlugin';
 
 class ComponentPickerOption extends TypeaheadOption {
   // What shows up in the editor

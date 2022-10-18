@@ -45,7 +45,7 @@ export const URL_MATCHER =
   /((https?:\/\/(www\.)?)|(www\.))[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)/;
 
 export const INSERT_EMBED_COMMAND: LexicalCommand<EmbedConfig['type']> =
-  createCommand();
+  createCommand('INSERT_EMBED_COMMAND');
 
 export class AutoEmbedOption extends TypeaheadOption {
   title: string;

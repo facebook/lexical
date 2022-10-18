@@ -1614,7 +1614,7 @@ describe('LexicalEditor tests', () => {
     init();
 
     const commandListener = jest.fn();
-    const command = createCommand();
+    const command = createCommand('TEST_COMMAND');
     const payload = 'testPayload';
     const removeCommandListener = editor.registerCommand(
       command,
@@ -1643,7 +1643,7 @@ describe('LexicalEditor tests', () => {
 
     const commandListener = jest.fn();
     const commandListenerTwo = jest.fn();
-    const command = createCommand();
+    const command = createCommand('TEST_COMMAND');
     const removeCommandListener = editor.registerCommand(
       command,
       commandListener,
@@ -2071,7 +2071,7 @@ describe('LexicalEditor tests', () => {
     const textContentListener = jest.fn();
     const editableListener = jest.fn();
     const commandListener = jest.fn();
-    const TEST_COMMAND = createCommand();
+    const TEST_COMMAND = createCommand('TEST_COMMAND');
 
     init();
 
@@ -2141,5 +2141,27 @@ describe('LexicalEditor tests', () => {
     expect(textContentListener).toHaveBeenCalledTimes(1);
     expect(nodeTransformListener).toHaveBeenCalledTimes(1);
     expect(mutationListener).toHaveBeenCalledTimes(1);
+  });
+
+  it('can use flushSync for synchronous updates', () => {
+    init();
+    const onUpdate = jest.fn();
+    editor.registerUpdateListener(onUpdate);
+    editor.update(
+      () => {
+        $getRoot().append(
+          $createParagraphNode().append($createTextNode('Sync update')),
+        );
+      },
+      {
+        discrete: true,
+      },
+    );
+
+    const textContent = editor
+      .getEditorState()
+      .read(() => $getRoot().getTextContent());
+    expect(textContent).toBe('Sync update');
+    expect(onUpdate).toHaveBeenCalledTimes(1);
   });
 });

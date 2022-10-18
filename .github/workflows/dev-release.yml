@@ -1,0 +1,20 @@
+# name: Dev Publish to NPM
+# on:
+#   push:
+#     branches:
+#       - main
+# jobs:
+#   release:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v3
+#       # Setup .npmrc file to publish to npm
+#       - uses: actions/setup-node@v3
+#         with:
+#           node-version: '16.x'
+#           registry-url: 'https://registry.npmjs.org'
+#       - run: npm install
+#       - run: npm run prepare-release
+#       - run: node ./scripts/npm/release.js --non-interactive --dry-run=${{ secrets.RELEASE_DRY_RUN }} --channel dev
+#         env:
+#           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

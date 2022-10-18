@@ -11,7 +11,6 @@ import type {
   ElementNode,
   LexicalNode,
   NodeKey,
-  Point,
   RangeSelection,
   TextNode,
 } from 'lexical';
@@ -46,10 +45,6 @@ function $removeParentEmptyElements(startingNode: ElementNode): void {
 
     node = parentNode;
   }
-}
-
-function isPointAttached(point: Point): boolean {
-  return point.getNode().isAttached();
 }
 
 /**
@@ -100,23 +95,16 @@ export function $wrapNodesImpl(
 ): void {
   const firstNode = nodes[0];
   const {target, targetIsPrevSibling} = findPlaceToInsert(firstNode);
-  const elements = createReplacement(nodes, createElement);
-  insertReplacement(elements, target, targetIsPrevSibling);
-
-  const prevSelection = $getPreviousSelection();
-
-  if (
-    $isRangeSelection(prevSelection) &&
-    isPointAttached(prevSelection.anchor) &&
-    isPointAttached(prevSelection.focus)
-  ) {
-    $setSelection(prevSelection.clone());
-  } else {
-    selection.dirty = true;
-  }
+  const refSelection = TEMPORAL_saveReferenceSelection(selection);
+  const elements = $createReplacement(nodes, createElement);
+  $insertReplacement(elements, target, targetIsPrevSibling);
+  $TEMPORAL_restoreSelection(refSelection, selection);
 }
 
-function findPlaceToInsert(firstNode: LexicalNode): ElementNode {
+function findPlaceToInsert(firstNode: LexicalNode): {
+  target: ElementNode;
+  targetIsPrevSibling: boolean;
+} {
   // The below logic is to find the right target for us to
   // either insertAfter/insertBefore/append the corresponding
   // elements to. This is made more complicated due to nested
@@ -149,7 +137,28 @@ function findPlaceToInsert(firstNode: LexicalNode): ElementNode {
   return {target, targetIsPrevSibling};
 }
 
-function createReplacement(
+function TEMPORAL_saveReferenceSelection(selection: RangeSelection) {
+  const refSelection = !selection.isBackward()
+    ? {
+        anchorNextSibling: null,
+        anchorParent: selection.anchor.getNode().getParentOrThrow(),
+        anchorPrevSibling: selection.anchor.getNode().getPreviousSibling(),
+        focusNextSibling: selection.focus.getNode().getNextSibling(),
+        focusParent: selection.focus.getNode().getParentOrThrow(),
+        focusPrevSibling: null,
+      }
+    : {
+        anchorNextSibling: selection.anchor.getNode().getNextSibling(),
+        anchorParent: selection.anchor.getNode().getParentOrThrow(),
+        anchorPrevSibling: null,
+        focusNextSibling: null,
+        focusParent: selection.focus.getNode().getParentOrThrow(),
+        focusPrevSibling: selection.focus.getNode().getPreviousSibling(),
+      };
+  return refSelection;
+}
+
+function $createReplacement(
   nodes: LexicalNode[],
   createElement: () => ElementNode,
 ): ElementNode[] {
@@ -194,7 +203,7 @@ function createReplacement(
   return elements;
 }
 
-function insertReplacement(
+function $insertReplacement(
   elements: ElementNode[],
   target: ElementNode,
   targetIsPrevSibling: boolean,
@@ -231,6 +240,46 @@ function insertReplacement(
       const element = elements[i];
       target.insertAfter(element);
     }
+  }
+}
+
+interface refSelectionType {
+  anchorParent: ElementNode | null;
+  anchorPrevSibling: LexicalNode | null;
+  anchorNextSibling: LexicalNode | null;
+  focusNextSibling: LexicalNode | null;
+  focusPrevSibling: LexicalNode | null;
+  focusParent: ElementNode | null;
+}
+
+function $TEMPORAL_restoreSelection(
+  refSelection: refSelectionType,
+  selection: RangeSelection,
+): void {
+  // This is necessary to preserve the selection when anchor.type and/or focus.type
+  // are of type "element". This is because those elements are replaced by others
+  // with different keys. Ideally, *no* keys should be changed in $wrapNodes, and all
+  // of this would not be necessary.
+  const prevSelection = $getPreviousSelection();
+  if ($isRangeSelection(prevSelection)) {
+    const newSelection = prevSelection.clone();
+    if (newSelection.anchor.type === 'element') {
+      newSelection.anchor.key =
+        refSelection.anchorPrevSibling?.getNextSibling()?.getKey() ||
+        refSelection.anchorNextSibling?.getPreviousSibling()?.getKey() ||
+        refSelection.anchorParent?.getFirstChild()?.getKey() ||
+        newSelection.anchor.key;
+    }
+    if (newSelection.focus.type === 'element') {
+      newSelection.focus.key =
+        refSelection.focusNextSibling?.getPreviousSibling()?.getKey() ||
+        refSelection.focusPrevSibling?.getNextSibling()?.getKey() ||
+        refSelection.focusParent?.getFirstChild()?.getKey() ||
+        newSelection.focus.key;
+    }
+    $setSelection(newSelection);
+  } else {
+    selection.dirty = true;
   }
 }
 

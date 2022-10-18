@@ -133,6 +133,7 @@ const MATCHERS = [
       length: fullMatch.length,
       text: fullMatch,
       url: fullMatch.startsWith('http') ? fullMatch : `https://${fullMatch}`,
+      // attributes: { rel: 'noopener', target: '_blank' }, // Optional link attributes
     };
   },
 ];

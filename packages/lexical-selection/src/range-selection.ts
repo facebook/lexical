@@ -99,10 +99,6 @@ export function $wrapNodesImpl(
   nodesLength: number,
   createElement: () => ElementNode,
 ): void {
-  if (nodes.length === 0) {
-    return;
-  }
-
   const firstNode = nodes[0];
   const elementMapping: Map<NodeKey, ElementNode> = new Map();
   const elements = [];

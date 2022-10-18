@@ -274,7 +274,7 @@ function $TEMPORAL_restoreSelection(
       newSelection.focus.key =
         refSelection.focusNextSibling?.getPreviousSibling()?.getKey() ||
         refSelection.focusPrevSibling?.getNextSibling()?.getKey() ||
-        refSelection.focusParent?.getFirstChild()?.getKey() ||
+        refSelection.focusParent?.getLastChild()?.getKey() ||
         newSelection.focus.key;
     }
     $setSelection(newSelection);

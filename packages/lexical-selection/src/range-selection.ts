@@ -69,33 +69,6 @@ export function $wrapNodes(
 ): void {
   const nodes = selection.getNodes();
   const nodesLength = nodes.length;
-  const anchor = selection.anchor;
-
-  if (
-    nodesLength === 0 ||
-    (nodesLength === 1 &&
-      anchor.type === 'element' &&
-      anchor.getNode().getChildrenSize() === 0)
-  ) {
-    const target =
-      anchor.type === 'text'
-        ? anchor.getNode().getParentOrThrow()
-        : anchor.getNode();
-    const children = target.getChildren();
-    let element = createElement();
-    element.setFormat(target.getFormatType());
-    element.setIndent(target.getIndent());
-    children.forEach((child) => element.append(child));
-
-    if (wrappingElement) {
-      element = wrappingElement.append(element);
-    }
-
-    target.replace(element);
-
-    return;
-  }
-
   let topLevelNode = null;
   let descendants: LexicalNode[] = [];
   for (let i = 0; i < nodesLength; i++) {

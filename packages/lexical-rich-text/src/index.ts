@@ -374,8 +374,7 @@ async function onCutForRichText(
   event: CommandPayloadType<typeof CUT_COMMAND>,
   editor: LexicalEditor,
 ): Promise<void> {
-  const selection = editor.getEditorState().read(() => $getSelection());
-  if (selection == null) {
+  if (editor.getEditorState().read(() => $getSelection()) == null) {
     return;
   }
   await copyToClipboard__EXPERIMENTAL(
@@ -383,6 +382,7 @@ async function onCutForRichText(
     event instanceof ClipboardEvent ? event : null,
   );
   editor.update(() => {
+    const selection = $getSelection();
     if ($isRangeSelection(selection)) {
       selection.removeText();
     } else if ($isNodeSelection(selection)) {

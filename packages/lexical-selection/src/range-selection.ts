@@ -100,7 +100,6 @@ export function $wrapNodesImpl(
   createElement: () => ElementNode,
 ): void {
   const firstNode = nodes[0];
-  const elementMapping: Map<NodeKey, ElementNode> = new Map();
   const elements = [];
   // The below logic is to find the right target for us to
   // either insertAfter/insertBefore/append the corresponding
@@ -148,22 +147,16 @@ export function $wrapNodesImpl(
       $isLeafNode(node) &&
       !movedLeafNodes.has(node.getKey())
     ) {
-      const parentKey = parent.getKey();
-
-      if (elementMapping.get(parentKey) === undefined) {
-        const targetElement = createElement();
-        targetElement.setFormat(parent.getFormatType());
-        targetElement.setIndent(parent.getIndent());
-        elements.push(targetElement);
-        elementMapping.set(parentKey, targetElement);
-        // Move node and its siblings to the new
-        // element.
-        parent.getChildren().forEach((child) => {
-          targetElement.append(child);
-          movedLeafNodes.add(child.getKey());
-        });
-        $removeParentEmptyElements(parent);
-      }
+      const targetElement = createElement();
+      targetElement.setFormat(parent.getFormatType());
+      targetElement.setIndent(parent.getIndent());
+      elements.push(targetElement);
+      // Move node and its siblings to the new element.
+      parent.getChildren().forEach((child) => {
+        targetElement.append(child);
+        movedLeafNodes.add(child.getKey());
+      });
+      $removeParentEmptyElements(parent);
     } else if ($isElementNode(node) && node.getChildrenSize() === 0) {
       const targetElement = createElement();
       targetElement.setFormat(node.getFormatType());

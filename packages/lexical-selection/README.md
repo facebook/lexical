@@ -95,12 +95,12 @@ Expands the current Selection to cover all of the content in the editor.
 export function $selectAll(selection: RangeSelection): void;
 ```
 
-#### `$wrapNodes`
+#### `$setBlocksType`
 
-Attempts to wrap all nodes in the Selection in ElementNodes returned from createElement. If wrappingElement is provided, all of the wrapped leaves are appended to the wrappingElement. It attempts to append the resulting sub-tree to the nearest safe insertion target.
+Attempts to convert all element nodes in the Selection except the ones that are root-like.
 
 ```ts
-export function $wrapNodes(
+export function $setBlocksType(
   selection: RangeSelection,
   createElement: () => ElementNode,
   wrappingElement?: ElementNode,

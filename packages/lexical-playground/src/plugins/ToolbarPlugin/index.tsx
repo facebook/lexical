@@ -39,7 +39,7 @@ import {
   $isParentElementRTL,
   $patchStyleText,
   $selectAll,
-  $wrapNodes,
+  $setBlocksType,
 } from '@lexical/selection';
 import {
   $findMatchingParent,
@@ -161,7 +161,7 @@ function BlockFormatDropDown({
         const selection = $getSelection();
 
         if ($isRangeSelection(selection)) {
-          $wrapNodes(selection, () => $createParagraphNode());
+          $setBlocksType(selection, () => $createParagraphNode());
         }
       });
     }
@@ -173,7 +173,7 @@ function BlockFormatDropDown({
         const selection = $getSelection();
 
         if ($isRangeSelection(selection)) {
-          $wrapNodes(selection, () => $createHeadingNode(headingSize));
+          $setBlocksType(selection, () => $createHeadingNode(headingSize));
         }
       });
     }
@@ -209,7 +209,7 @@ function BlockFormatDropDown({
         const selection = $getSelection();
 
         if ($isRangeSelection(selection)) {
-          $wrapNodes(selection, () => $createQuoteNode());
+          $setBlocksType(selection, () => $createQuoteNode());
         }
       });
     }
@@ -222,7 +222,7 @@ function BlockFormatDropDown({
 
         if ($isRangeSelection(selection)) {
           if (selection.isCollapsed()) {
-            $wrapNodes(selection, () => $createCodeNode());
+            $setBlocksType(selection, () => $createCodeNode());
           } else {
             const textContent = selection.getTextContent();
             const codeNode = $createCodeNode();

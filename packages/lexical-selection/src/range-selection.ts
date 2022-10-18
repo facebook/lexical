@@ -57,7 +57,7 @@ function $removeParentEmptyElements(startingNode: ElementNode): void {
  * @param wrappingElement
  * @returns
  */
-export function $wrapNodes(
+export function $setBlocksType(
   selection: RangeSelection,
   createElement: () => ElementNode,
 ): void {
@@ -72,7 +72,7 @@ export function $wrapNodes(
     // their own branch. I.e. you don't want to wrap a whole table, but rather the contents of each
     // of each of the cell nodes.
     if ($isRootOrShadowRoot(node)) {
-      $wrapNodesImpl(selection, descendants, createElement);
+      $setBlocksTypeInSubtree(selection, descendants, createElement);
       descendants = [];
       topLevelNode = node;
     } else if (
@@ -81,14 +81,14 @@ export function $wrapNodes(
     ) {
       descendants.push(node);
     } else {
-      $wrapNodesImpl(selection, descendants, createElement);
+      $setBlocksTypeInSubtree(selection, descendants, createElement);
       descendants = [node];
     }
   }
-  $wrapNodesImpl(selection, descendants, createElement);
+  $setBlocksTypeInSubtree(selection, descendants, createElement);
 }
 
-export function $wrapNodesImpl(
+export function $setBlocksTypeInSubtree(
   selection: RangeSelection,
   nodes: LexicalNode[],
   createElement: () => ElementNode,
@@ -258,7 +258,7 @@ function $TEMPORAL_restoreSelection(
 ): void {
   // This is necessary to preserve the selection when anchor.type and/or focus.type
   // are of type "element". This is because those elements are replaced by others
-  // with different keys. Ideally, *no* keys should be changed in $wrapNodes, and all
+  // with different keys. Ideally, *no* keys should be changed in $setBlocksType, and all
   // of this would not be necessary.
   const prevSelection = $getPreviousSelection();
   if ($isRangeSelection(prevSelection)) {

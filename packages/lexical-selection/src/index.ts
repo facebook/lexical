@@ -22,9 +22,8 @@ import {
   $moveCaretSelection,
   $moveCharacter,
   $selectAll,
+  $setBlocksType,
   $shouldOverrideDefaultCharacterSelection,
-  $wrapNodes,
-  $wrapNodesImpl,
 } from './range-selection';
 import {
   createDOMRange,
@@ -48,9 +47,8 @@ export {
   $moveCaretSelection,
   $moveCharacter,
   $selectAll,
+  $setBlocksType,
   $shouldOverrideDefaultCharacterSelection,
-  $wrapNodes,
-  $wrapNodesImpl,
 };
 
 export {createDOMRange, createRectsFromDOMRange, getStyleObjectFromCSS};

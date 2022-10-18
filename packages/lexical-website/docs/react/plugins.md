@@ -124,14 +124,16 @@ const URL_MATCHER =
 const MATCHERS = [
   (text) => {
     const match = URL_MATCHER.exec(text);
-    return (
-      match && {
-        index: match.index,
-        length: match[0].length,
-        text: match[0],
-        url: match[0],
-      }
-    );
+    if (match === null) {
+      return null;
+    }
+    const fullMatch = match[0];
+    return {
+      index: match.index,
+      length: fullMatch.length,
+      text: fullMatch,
+      url: fullMatch.startsWith('http') ? fullMatch : `https://${fullMatch}`,
+    };
   },
 ];
 

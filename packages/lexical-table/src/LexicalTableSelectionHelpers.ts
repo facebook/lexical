@@ -126,7 +126,6 @@ export function applyTableHandlers(
             tableSelection.isHighlightingCells)
         ) {
           event.preventDefault();
-          isMouseDown = true;
           tableSelection.adjustFocusCellForSelection(cell);
         }
       }
@@ -171,7 +170,6 @@ export function applyTableHandlers(
     if (isMouseDown) {
       event.preventDefault();
       event.stopPropagation();
-      event.stopImmediatePropagation();
       isMouseDown = false;
     }
   };

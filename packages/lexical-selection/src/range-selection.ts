@@ -18,6 +18,7 @@ import type {
 import {
   $getDecoratorNode,
   $getPreviousSelection,
+  $getRoot,
   $hasAncestor,
   $isDecoratorNode,
   $isElementNode,
@@ -141,18 +142,18 @@ function TEMPORAL_saveReferenceSelection(selection: RangeSelection) {
   const refSelection = !selection.isBackward()
     ? {
         anchorNextSibling: null,
-        anchorParent: selection.anchor.getNode().getParentOrThrow(),
+        anchorParent: selection.anchor.getNode().getParent() || $getRoot(),
         anchorPrevSibling: selection.anchor.getNode().getPreviousSibling(),
         focusNextSibling: selection.focus.getNode().getNextSibling(),
-        focusParent: selection.focus.getNode().getParentOrThrow(),
+        focusParent: selection.focus.getNode().getParent() || $getRoot(),
         focusPrevSibling: null,
       }
     : {
         anchorNextSibling: selection.anchor.getNode().getNextSibling(),
-        anchorParent: selection.anchor.getNode().getParentOrThrow(),
+        anchorParent: selection.anchor.getNode().getParent() || $getRoot(),
         anchorPrevSibling: null,
         focusNextSibling: null,
-        focusParent: selection.focus.getNode().getParentOrThrow(),
+        focusParent: selection.focus.getNode().getParent() || $getRoot(),
         focusPrevSibling: selection.focus.getNode().getPreviousSibling(),
       };
   return refSelection;
@@ -177,7 +178,13 @@ function $createReplacement(
       parent = parent.getParent();
     }
 
-    if (
+    if ($isElementNode(node) && node.__children.length === 0) {
+      const targetElement = createElement();
+      targetElement.setFormat(node.getFormatType());
+      targetElement.setIndent(node.getIndent());
+      elements.push(targetElement);
+      node.remove(true);
+    } else if (
       parent !== null &&
       $isLeafNode(node) &&
       !movedLeafNodes.has(node.getKey())
@@ -192,12 +199,6 @@ function $createReplacement(
         movedLeafNodes.add(child.getKey());
       });
       $removeParentEmptyElements(parent);
-    } else if ($isElementNode(node) && node.getChildrenSize() === 0) {
-      const targetElement = createElement();
-      targetElement.setFormat(node.getFormatType());
-      targetElement.setIndent(node.getIndent());
-      elements.push(targetElement);
-      node.remove(true);
     }
   }
   return elements;

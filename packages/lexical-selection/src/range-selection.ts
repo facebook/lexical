@@ -9,6 +9,7 @@
 import type {ICloneSelectionContent} from './lexical-node';
 import type {
   ElementNode,
+  GridSelection,
   LexicalNode,
   NodeKey,
   Point,
@@ -63,7 +64,7 @@ function isPointAttached(point: Point): boolean {
  * @returns
  */
 export function $wrapNodes(
-  selection: RangeSelection,
+  selection: RangeSelection | GridSelection,
   createElement: () => ElementNode,
   wrappingElement: null | ElementNode = null,
 ): void {
@@ -140,7 +141,7 @@ export function $wrapNodes(
 }
 
 export function $wrapNodesImpl(
-  selection: RangeSelection,
+  selection: RangeSelection | GridSelection,
   nodes: LexicalNode[],
   nodesLength: number,
   createElement: () => ElementNode,

@@ -15,6 +15,9 @@ import LexicalTableOfContents__EXPERIMENTAL from '@lexical/react/LexicalTableOfC
 import {useEffect, useRef, useState} from 'react';
 import * as React from 'react';
 
+const MARGIN_ABOVE_EDITOR = 624;
+const HEADING_WIDTH = 9;
+
 function indent(tagName: HeadingTagType) {
   if (tagName === 'h2') {
     return 'heading2';
@@ -44,15 +47,18 @@ function TableOfContentsList({
   }
   function isHeadingAtTheTopOfThePage(element: HTMLElement): boolean {
     const elementYPosition = element?.getClientRects()[0].y;
-    return elementYPosition >= 0.26 && elementYPosition <= 9;
+    return (
+      elementYPosition >= MARGIN_ABOVE_EDITOR &&
+      elementYPosition <= MARGIN_ABOVE_EDITOR + HEADING_WIDTH
+    );
   }
   function isHeadingAboveViewport(element: HTMLElement): boolean {
     const elementYPosition = element?.getClientRects()[0].y;
-    return elementYPosition <= 0;
+    return elementYPosition < MARGIN_ABOVE_EDITOR;
   }
   function isHeadingBelowTheTopOfThePage(element: HTMLElement): boolean {
     const elementYPosition = element?.getClientRects()[0].y;
-    return elementYPosition > 9;
+    return elementYPosition >= MARGIN_ABOVE_EDITOR + HEADING_WIDTH;
   }
 
   useEffect(() => {

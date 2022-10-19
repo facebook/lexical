@@ -1089,7 +1089,6 @@ export function $updateDOMForSelection(
 ): Array<Cell> {
   const highlightedCells: Array<Cell> = [];
   const selectedCellNodes = new Set(selection ? selection.getNodes() : []);
-
   $forEachGridCell(grid, (cell, lexicalNode) => {
     const elem = cell.elem;
 

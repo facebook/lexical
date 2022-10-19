@@ -2742,6 +2742,7 @@ export function updateDOMSelection(
     );
 
     if (
+      !tags.has('skip-scroll-into-view') &&
       nextSelection.isCollapsed() &&
       rootElement !== null &&
       rootElement === activeElement

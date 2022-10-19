@@ -1433,7 +1433,21 @@ export class RangeSelection implements BaseSelection {
         ($isDecoratorNode(target) && !target.isInline())
       ) {
         lastNode = node;
-        target = target.insertAfter(node, false);
+        // when pasting top level node in the middle of paragraph
+        // we need to split paragraph instead of placing it inline
+        if (
+          $isRangeSelection(this) &&
+          $isDecoratorNode(node) &&
+          !node.isInline()
+        ) {
+          this.insertParagraph();
+          target = this.focus
+            .getNode()
+            .getTopLevelElementOrThrow()
+            .insertBefore(node);
+        } else {
+          target = target.insertAfter(node, false);
+        }
       } else {
         const nextTarget: ElementNode = target.getParentOrThrow();
         // if we're inserting an Element after a LineBreak, we want to move the target to the parent

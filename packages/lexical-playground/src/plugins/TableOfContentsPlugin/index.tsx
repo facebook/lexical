@@ -54,7 +54,6 @@ function TableOfContentsList({
   }
   function isHeadingAboveViewport(element: HTMLElement): boolean {
     const elementYPosition = element?.getClientRects()[0].y;
-    // console.log(editor, elementYPosition);
     return elementYPosition < MARGIN_ABOVE_EDITOR;
   }
   function isHeadingBelowTheTopOfThePage(element: HTMLElement): boolean {

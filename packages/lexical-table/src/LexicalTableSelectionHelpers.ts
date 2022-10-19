@@ -161,10 +161,10 @@ export function applyTableHandlers(
     });
   };
 
-  window.addEventListener('mousedown', mouseDownCallback);
+  tableElement.addEventListener('mousedown', mouseDownCallback);
 
   tableSelection.listenersToRemove.add(() =>
-    window.removeEventListener('mousedown', mouseDownCallback),
+    tableElement.removeEventListener('mousedown', mouseDownCallback),
   );
 
   const mouseUpCallback = (event: MouseEvent) => {
@@ -176,15 +176,7 @@ export function applyTableHandlers(
     }
   };
 
-  window.addEventListener('mouseup', mouseUpCallback);
-
-  tableSelection.listenersToRemove.add(() =>
-    window.removeEventListener('mouseup', mouseUpCallback),
-  );
-
-  tableSelection.listenersToRemove.add(() =>
-    tableElement.addEventListener('mouseup', mouseUpCallback),
-  );
+  tableElement.addEventListener('mouseup', mouseUpCallback);
 
   tableSelection.listenersToRemove.add(() =>
     tableElement.removeEventListener('mouseup', mouseUpCallback),
@@ -1097,6 +1089,7 @@ export function $updateDOMForSelection(
 ): Array<Cell> {
   const highlightedCells: Array<Cell> = [];
   const selectedCellNodes = new Set(selection ? selection.getNodes() : []);
+
   $forEachGridCell(grid, (cell, lexicalNode) => {
     const elem = cell.elem;
 

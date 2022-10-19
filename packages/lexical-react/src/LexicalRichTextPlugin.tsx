@@ -14,7 +14,7 @@ import {useCanShowPlaceholder} from './shared/useCanShowPlaceholder';
 import {ErrorBoundaryType, useDecorators} from './shared/useDecorators';
 import {useRichTextSetup} from './shared/useRichTextSetup';
 
-const ErrorBoundaryComponent = ({
+const DefaultErrorBoundary = ({
   children,
   onError,
 }: {
@@ -30,7 +30,7 @@ export function RichTextPlugin({
   contentEditable,
   placeholder,
   // TODO 0.6 Make non-optional non-default
-  ErrorBoundary = ErrorBoundaryComponent,
+  ErrorBoundary = DefaultErrorBoundary,
 }: Readonly<{
   contentEditable: JSX.Element;
   placeholder: JSX.Element | string;

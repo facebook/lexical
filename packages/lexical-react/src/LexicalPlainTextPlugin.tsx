@@ -14,7 +14,7 @@ import {useCanShowPlaceholder} from './shared/useCanShowPlaceholder';
 import {ErrorBoundaryType, useDecorators} from './shared/useDecorators';
 import {usePlainTextSetup} from './shared/usePlainTextSetup';
 
-const ErrorBoundaryComponent = ({
+const DefaultErrorBoundary = ({
   children,
   onError,
 }: {
@@ -30,7 +30,7 @@ export function PlainTextPlugin({
   contentEditable,
   placeholder,
   // TODO 0.6 Make non-optional non-default
-  ErrorBoundary = ErrorBoundaryComponent,
+  ErrorBoundary = DefaultErrorBoundary,
 }: {
   contentEditable: JSX.Element;
   placeholder: JSX.Element | string;

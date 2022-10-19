@@ -14,15 +14,23 @@ import {useCanShowPlaceholder} from './shared/useCanShowPlaceholder';
 import {ErrorBoundaryType, useDecorators} from './shared/useDecorators';
 import {usePlainTextSetup} from './shared/usePlainTextSetup';
 
+const DefaultErrorBoundary = ({
+  children,
+  onError,
+}: {
+  children: JSX.Element;
+  onError: (error: Error) => void;
+}) => (
+  <ReactErrorBoundary fallback={null} onError={onError}>
+    {children}
+  </ReactErrorBoundary>
+);
+
 export function PlainTextPlugin({
   contentEditable,
   placeholder,
   // TODO 0.6 Make non-optional non-default
-  ErrorBoundary = ({children, onError}) => (
-    <ReactErrorBoundary fallback={null} onError={onError}>
-      {children}
-    </ReactErrorBoundary>
-  ),
+  ErrorBoundary = DefaultErrorBoundary,
 }: {
   contentEditable: JSX.Element;
   placeholder: JSX.Element | string;

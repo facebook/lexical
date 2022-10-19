@@ -69,7 +69,7 @@ export function LexicalNestedComposer({
   const composerContext: [LexicalEditor, LexicalComposerContextType] = useMemo(
     () => {
       const [parentEditor, parentContextContext] = parentContext;
-      const composerTheme =
+      const composerTheme: EditorThemeClasses | undefined =
         initialTheme || parentContextContext.getTheme() || undefined;
       const context = createLexicalComposerContext(
         parentContext,

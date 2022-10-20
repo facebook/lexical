@@ -30,13 +30,10 @@ import {$cloneWithProperties} from './lexical-node';
 import {getStyleObjectFromCSS} from './utils';
 
 /**
- * Attempts to wrap all nodes in the Selection in ElementNodes returned from createElement.
- * If wrappingElement is provided, all of the wrapped leaves are appended to the wrappingElement.
- * It attempts to append the resulting sub-tree to the nearest safe insertion target.
+ * Converts all nodes in the selection that are of one block type to another specified by parameter
  *
  * @param selection
  * @param createElement
- * @param wrappingElement
  * @returns
  */
 export function $setBlocksType(

@@ -97,13 +97,12 @@ export function $selectAll(selection: RangeSelection): void;
 
 #### `$setBlocksType`
 
-Attempts to convert all element nodes in the Selection except the ones that are root-like.
+Converts all nodes in the selection that are of one block type to another specified by parameter
 
 ```ts
 export function $setBlocksType(
   selection: RangeSelection,
   createElement: () => ElementNode,
-  wrappingElement?: ElementNode,
 ): void;
 ```
 

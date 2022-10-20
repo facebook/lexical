@@ -7,7 +7,12 @@
  * @flow strict
  */
 
-import type {NodeKey, RangeSelection, TextNode} from 'lexical';
+import type {
+  NodeKey,
+  RangeSelection,
+  TextNode,
+  SerializedElementNode,
+} from 'lexical';
 import {ElementNode, LexicalNode} from 'lexical';
 
 export type SerializedMarkNode = {

@@ -317,7 +317,7 @@ function TreeViewContent({
         setState({rootdata: rootdata, selectionString: selectionString});
       }
     });
-  }, [editorState, get_node_children, rendercnt]);
+  }, [rendercnt]);
 
   const config = editor._config;
   const compositionKey = editor._compositionKey;

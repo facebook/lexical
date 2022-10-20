@@ -75,15 +75,15 @@ function TreeViewNode({
   indent,
   isLastChild,
   isRoot,
-  toggled,
+  isVisible,
 }: {
   data: TreeViewDataNode;
   indent: Array<string>; //array of symbols
   isLastChild: boolean;
   isRoot: boolean;
-  toggled: boolean;
+  isVisible: boolean;
 }): JSX.Element {
-  const [localToggled, set_localToggled] = useState<boolean>(toggled);
+  const [visible, set_visible] = useState<boolean>(isVisible);
 
   const l_indent = [...indent];
   const c_indent = [...indent];
@@ -150,7 +150,7 @@ function TreeViewNode({
   );
 
   function toggleTree() {
-    set_localToggled(!localToggled);
+    set_visible(!visible);
   }
 
   const toggleButtonStyle = {
@@ -161,15 +161,15 @@ function TreeViewNode({
 
   let buttonAction = '+';
   let children = <></>;
-  if (localToggled) {
+  if (visible) {
     buttonAction = '-';
     children = (
       <>
         {data.children.map((child: TreeViewDataNode, i: number) => (
           <TreeViewNode
             isRoot={false}
+            isVisible={true}
             isLastChild={i === data.children.length - 1}
-            toggled={true}
             key={child.line}
             data={child}
             indent={c_indent}
@@ -329,7 +329,7 @@ function TreeViewContent({
       <TreeViewNode
         isRoot={true}
         isLastChild={true}
-        toggled={true}
+        isVisible={true}
         data={state.rootdata}
         indent={[]}
       />

@@ -7,7 +7,17 @@
  */
 
 import type {ICloneSelectionContent} from './lexical-node';
-import type {
+
+import {
+  $getDecoratorNode,
+  $getPreviousSelection,
+  $getRoot,
+  $isDecoratorNode,
+  $isElementNode,
+  $isRangeSelection,
+  $isRootNode,
+  $isTextNode,
+  $setSelection,
   ElementNode,
   LexicalNode,
   NodeKey,
@@ -15,38 +25,8 @@ import type {
   TextNode,
 } from 'lexical';
 
-import {
-  $getDecoratorNode,
-  $getPreviousSelection,
-  $getRoot,
-  $hasAncestor,
-  $isDecoratorNode,
-  $isElementNode,
-  $isLeafNode,
-  $isRangeSelection,
-  $isRootNode,
-  $isRootOrShadowRoot,
-  $isTextNode,
-  $setSelection,
-} from 'lexical';
-
 import {$cloneWithProperties} from './lexical-node';
 import {getStyleObjectFromCSS} from './utils';
-
-function $removeParentEmptyElements(startingNode: ElementNode): void {
-  let node: ElementNode | null = startingNode;
-
-  while (node !== null && !$isRootOrShadowRoot(node)) {
-    const latest = node.getLatest();
-    const parentNode: ElementNode | null = node.getParent<ElementNode>();
-
-    if (latest.__children.length === 0) {
-      node.remove(true);
-    }
-
-    node = parentNode;
-  }
-}
 
 /**
  * Attempts to wrap all nodes in the Selection in ElementNodes returned from createElement.
@@ -62,80 +42,56 @@ export function $setBlocksType(
   selection: RangeSelection,
   createElement: () => ElementNode,
 ): void {
-  const nodes = selection.getNodes();
-  const nodesLength = nodes.length;
-  let topLevelNode = null;
-  let descendants: LexicalNode[] = [];
-  for (let i = 0; i < nodesLength; i++) {
-    const node = nodes[i];
-    // Determine whether wrapping has to be broken down into multiple chunks. This can happen if the
-    // user selected multiple Root-like nodes that have to be treated separately as if they are
-    // their own branch. I.e. you don't want to wrap a whole table, but rather the contents of each
-    // of each of the cell nodes.
-    if ($isRootOrShadowRoot(node)) {
-      $setBlocksTypeInSubtree(selection, descendants, createElement);
-      descendants = [];
-      topLevelNode = node;
-    } else if (
-      topLevelNode === null ||
-      (topLevelNode !== null && $hasAncestor(node, topLevelNode))
-    ) {
-      descendants.push(node);
-    } else {
-      $setBlocksTypeInSubtree(selection, descendants, createElement);
-      descendants = [node];
-    }
-  }
-  $setBlocksTypeInSubtree(selection, descendants, createElement);
-}
-
-export function $setBlocksTypeInSubtree(
-  selection: RangeSelection,
-  nodes: LexicalNode[],
-  createElement: () => ElementNode,
-): void {
-  const firstNode = nodes[0];
-  const {target, targetIsPrevSibling} = findPlaceToInsert(firstNode);
   const refSelection = TEMPORAL_saveReferenceSelection(selection);
-  const elements = $createReplacement(nodes, createElement);
-  $insertReplacement(elements, target, targetIsPrevSibling);
+  if (selection.anchor.key === 'root') {
+    const element = createElement();
+    const root = $getRoot();
+    const firstChild = root.getFirstChild();
+    if (firstChild) {
+      firstChild.replace(element);
+      firstChild.getChildren().forEach((child: LexicalNode) => {
+        element.append(child);
+      });
+    } else root.append(element);
+    return;
+  }
+
+  let currentNode = selection.isBackward()
+    ? selection.focus.getNode()
+    : selection.anchor.getNode();
+  let lastNode = selection.isBackward()
+    ? selection.anchor.getNode()
+    : selection.focus.getNode();
+  if (currentNode.__type === 'text') {
+    currentNode = currentNode.getParent() as ElementNode;
+    if (currentNode.isInline())
+      currentNode = currentNode.getParent() as ElementNode;
+  }
+  if (lastNode.__type === 'text') {
+    lastNode = lastNode.getParent() as ElementNode;
+    if (lastNode.isInline()) lastNode = lastNode.getParent() as ElementNode;
+  }
+  let continueFlag = true;
+  do {
+    if (currentNode === lastNode) continueFlag = false;
+    const targetElement = createElement();
+    targetElement.setFormat(currentNode.getFormatType());
+    targetElement.setIndent(currentNode.getIndent());
+    currentNode.replace(targetElement);
+    currentNode.getChildren().forEach((child) => {
+      targetElement.append(child);
+    });
+    currentNode = targetElement;
+    currentNode = getNextBlock(currentNode);
+  } while (continueFlag && currentNode);
   $TEMPORAL_restoreSelection(refSelection, selection);
 }
 
-function findPlaceToInsert(firstNode: LexicalNode): {
-  target: ElementNode;
-  targetIsPrevSibling: boolean;
-} {
-  // The below logic is to find the right target for us to
-  // either insertAfter/insertBefore/append the corresponding
-  // elements to. This is made more complicated due to nested
-  // structures.
-  let target = $isElementNode(firstNode)
-    ? firstNode
-    : firstNode.getParentOrThrow();
-
-  if (target.isInline()) {
-    target = target.getParentOrThrow();
+function getNextBlock(node) {
+  while (!node.getNextSibling()) {
+    node = node.getParent();
   }
-
-  let targetIsPrevSibling = false;
-  while (target !== null) {
-    const prevSibling = target.getPreviousSibling<ElementNode>();
-
-    if (prevSibling !== null) {
-      target = prevSibling;
-      targetIsPrevSibling = true;
-      break;
-    }
-
-    target = target.getParentOrThrow();
-
-    if ($isRootOrShadowRoot(target)) {
-      break;
-    }
-  }
-
-  return {target, targetIsPrevSibling};
+  return node.getNextSibling();
 }
 
 function TEMPORAL_saveReferenceSelection(selection: RangeSelection) {
@@ -157,91 +113,6 @@ function TEMPORAL_saveReferenceSelection(selection: RangeSelection) {
         focusPrevSibling: selection.focus.getNode().getPreviousSibling(),
       };
   return refSelection;
-}
-
-function $createReplacement(
-  nodes: LexicalNode[],
-  createElement: () => ElementNode,
-): ElementNode[] {
-  // Move out all leaf nodes into our elements array.
-  // If we find a top level empty element, also move make
-  // an element for that.
-  const elements: ElementNode[] = [];
-  const movedLeafNodes: Set<NodeKey> = new Set();
-  const nodesLength = nodes.length;
-
-  for (let i = 0; i < nodesLength; i++) {
-    const node = nodes[i];
-    let parent = node.getParent();
-
-    if (parent !== null && parent.isInline()) {
-      parent = parent.getParent();
-    }
-
-    if ($isElementNode(node) && node.__children.length === 0) {
-      const targetElement = createElement();
-      targetElement.setFormat(node.getFormatType());
-      targetElement.setIndent(node.getIndent());
-      elements.push(targetElement);
-      node.remove(true);
-    } else if (
-      parent !== null &&
-      $isLeafNode(node) &&
-      !movedLeafNodes.has(node.getKey())
-    ) {
-      const targetElement = createElement();
-      targetElement.setFormat(parent.getFormatType());
-      targetElement.setIndent(parent.getIndent());
-      elements.push(targetElement);
-      // Move node and its siblings to the new element.
-      parent.getChildren().forEach((child) => {
-        targetElement.append(child);
-        movedLeafNodes.add(child.getKey());
-      });
-      $removeParentEmptyElements(parent);
-    }
-  }
-  return elements;
-}
-
-function $insertReplacement(
-  elements: ElementNode[],
-  target: ElementNode,
-  targetIsPrevSibling: boolean,
-): void {
-  // If our target is Root-like, let's see if we can re-adjust
-  // so that the target is the first child instead.
-  if ($isRootOrShadowRoot(target)) {
-    if (targetIsPrevSibling) {
-      for (let i = elements.length - 1; i >= 0; i--) {
-        const element = elements[i];
-        target.insertAfter(element);
-      }
-    } else {
-      const firstChild = target.getFirstChild();
-
-      if ($isElementNode(firstChild)) {
-        target = firstChild;
-      }
-
-      if (firstChild === null) {
-        for (let i = 0; i < elements.length; i++) {
-          const element = elements[i];
-          target.append(element);
-        }
-      } else {
-        for (let i = 0; i < elements.length; i++) {
-          const element = elements[i];
-          firstChild.insertBefore(element);
-        }
-      }
-    }
-  } else {
-    for (let i = elements.length - 1; i >= 0; i--) {
-      const element = elements[i];
-      target.insertAfter(element);
-    }
-  }
 }
 
 interface refSelectionType {

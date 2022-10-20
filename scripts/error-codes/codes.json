@@ -94,5 +94,6 @@
   "92": "syncChildrenFromYjs: cound not find element node",
   "93": "syncChildrenFromYjs: expected text, element, decorator, or linebreak collab node",
   "94": "splice: could not find collab element node",
-  "95": "splice: expected offset to be greater than zero"
+  "95": "splice: expected offset to be greater than zero",
+  "96": "Expected node %s to have a last child."
 }

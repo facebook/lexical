@@ -109,6 +109,76 @@ describe('LexicalElementNode tests', () => {
     });
   });
 
+  describe('hasFormat()', () => {
+    test('should only return true the empty string when no format has been set', async () => {
+      await update(() => {
+        const node = $createTestElementNode();
+
+        expect(node.hasFormat('left')).toEqual(false);
+        expect(node.hasFormat('center')).toEqual(false);
+        expect(node.hasFormat('right')).toEqual(false);
+        expect(node.hasFormat('justify')).toEqual(false);
+        expect(node.hasFormat('')).toEqual(true);
+      });
+    });
+
+    test('should return true only for left when formatted left', async () => {
+      await update(() => {
+        const node = $createTestElementNode();
+
+        node.setFormat('left');
+
+        expect(node.hasFormat('left')).toEqual(true);
+        expect(node.hasFormat('center')).toEqual(false);
+        expect(node.hasFormat('right')).toEqual(false);
+        expect(node.hasFormat('justify')).toEqual(false);
+        expect(node.hasFormat('')).toEqual(false);
+      });
+    });
+
+    test('should return true only for center when centered', async () => {
+      await update(() => {
+        const node = $createTestElementNode();
+
+        node.setFormat('center');
+
+        expect(node.hasFormat('left')).toEqual(false);
+        expect(node.hasFormat('center')).toEqual(true);
+        expect(node.hasFormat('right')).toEqual(false);
+        expect(node.hasFormat('justify')).toEqual(false);
+        expect(node.hasFormat('')).toEqual(false);
+      });
+    });
+
+    test('should return true only for right when formatted right', async () => {
+      await update(() => {
+        const node = $createTestElementNode();
+
+        node.setFormat('right');
+
+        expect(node.hasFormat('left')).toEqual(false);
+        expect(node.hasFormat('center')).toEqual(false);
+        expect(node.hasFormat('right')).toEqual(true);
+        expect(node.hasFormat('justify')).toEqual(false);
+        expect(node.hasFormat('')).toEqual(false);
+      });
+    });
+
+    test('should return true only for justify when justified', async () => {
+      await update(() => {
+        const node = $createTestElementNode();
+
+        node.setFormat('justify');
+
+        expect(node.hasFormat('left')).toEqual(false);
+        expect(node.hasFormat('center')).toEqual(false);
+        expect(node.hasFormat('right')).toEqual(false);
+        expect(node.hasFormat('justify')).toEqual(true);
+        expect(node.hasFormat('')).toEqual(false);
+      });
+    });
+  });
+
   describe('getChildren()', () => {
     test('no children', async () => {
       await update(() => {

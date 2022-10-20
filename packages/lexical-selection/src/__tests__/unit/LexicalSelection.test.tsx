@@ -2401,6 +2401,8 @@ describe('LexicalSelection tests', () => {
         expect(rootChildren[0].__type).toBe('heading');
         expect(rootChildren[1].__type).toBe('heading');
         expect(rootChildren.length).toBe(2);
+        const sel = $getSelection();
+        expect(sel.getNodes().length).toBe(2);
       });
     });
 

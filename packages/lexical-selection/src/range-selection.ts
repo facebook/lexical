@@ -8,16 +8,17 @@
 
 import type {ICloneSelectionContent} from './lexical-node';
 
+import {$isCodeNode} from '@lexical/code';
+import {$isListItemNode} from '@lexical/list';
+import {$isHeadingNode, $isQuoteNode} from '@lexical/rich-text';
 import {
   $getDecoratorNode,
-  $getPreviousSelection,
   $getRoot,
   $isDecoratorNode,
   $isElementNode,
-  $isRangeSelection,
+  $isParagraphNode,
   $isRootNode,
   $isTextNode,
-  $setSelection,
   ElementNode,
   LexicalNode,
   NodeKey,
@@ -42,7 +43,6 @@ export function $setBlocksType(
   selection: RangeSelection,
   createElement: () => ElementNode,
 ): void {
-  const refSelection = TEMPORAL_saveReferenceSelection(selection);
   if (selection.anchor.key === 'root') {
     const element = createElement();
     const root = $getRoot();
@@ -56,103 +56,33 @@ export function $setBlocksType(
     return;
   }
 
-  let currentNode = selection.isBackward()
-    ? selection.focus.getNode()
-    : selection.anchor.getNode();
-  let lastNode = selection.isBackward()
-    ? selection.anchor.getNode()
-    : selection.focus.getNode();
-  if (currentNode.__type === 'text') {
-    currentNode = currentNode.getParent() as ElementNode;
-    if (currentNode.isInline())
-      currentNode = currentNode.getParent() as ElementNode;
+  const nodes = selection.getNodes();
+  if (selection.anchor.type === 'text') {
+    let firstBlock = selection.anchor.getNode().getParent() as LexicalNode;
+    firstBlock = (
+      firstBlock?.isInline() ? firstBlock.getParent() : firstBlock
+    ) as LexicalNode;
+    if (nodes.indexOf(firstBlock) === -1) nodes.push(firstBlock);
   }
-  if (lastNode.__type === 'text') {
-    lastNode = lastNode.getParent() as ElementNode;
-    if (lastNode.isInline()) lastNode = lastNode.getParent() as ElementNode;
-  }
-  let continueFlag = true;
-  do {
-    if (currentNode === lastNode) continueFlag = false;
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+    if (!isBlock(node)) continue;
     const targetElement = createElement();
-    targetElement.setFormat(currentNode.getFormatType());
-    targetElement.setIndent(currentNode.getIndent());
-    currentNode.replace(targetElement);
-    currentNode.getChildren().forEach((child) => {
-      targetElement.append(child);
-    });
-    currentNode = targetElement;
-    currentNode = getNextBlock(currentNode);
-  } while (continueFlag && currentNode);
-  $TEMPORAL_restoreSelection(refSelection, selection);
-}
-
-function getNextBlock(node) {
-  while (!node.getNextSibling()) {
-    node = node.getParent();
+    targetElement.setFormat(node.getFormatType());
+    targetElement.setIndent(node.getIndent());
+    node.replace(targetElement);
   }
-  return node.getNextSibling();
 }
 
-function TEMPORAL_saveReferenceSelection(selection: RangeSelection) {
-  const refSelection = !selection.isBackward()
-    ? {
-        anchorNextSibling: null,
-        anchorParent: selection.anchor.getNode().getParent() || $getRoot(),
-        anchorPrevSibling: selection.anchor.getNode().getPreviousSibling(),
-        focusNextSibling: selection.focus.getNode().getNextSibling(),
-        focusParent: selection.focus.getNode().getParent() || $getRoot(),
-        focusPrevSibling: null,
-      }
-    : {
-        anchorNextSibling: selection.anchor.getNode().getNextSibling(),
-        anchorParent: selection.anchor.getNode().getParent() || $getRoot(),
-        anchorPrevSibling: null,
-        focusNextSibling: null,
-        focusParent: selection.focus.getNode().getParent() || $getRoot(),
-        focusPrevSibling: selection.focus.getNode().getPreviousSibling(),
-      };
-  return refSelection;
-}
-
-interface refSelectionType {
-  anchorParent: ElementNode | null;
-  anchorPrevSibling: LexicalNode | null;
-  anchorNextSibling: LexicalNode | null;
-  focusNextSibling: LexicalNode | null;
-  focusPrevSibling: LexicalNode | null;
-  focusParent: ElementNode | null;
-}
-
-function $TEMPORAL_restoreSelection(
-  refSelection: refSelectionType,
-  selection: RangeSelection,
-): void {
-  // This is necessary to preserve the selection when anchor.type and/or focus.type
-  // are of type "element". This is because those elements are replaced by others
-  // with different keys. Ideally, *no* keys should be changed in $setBlocksType, and all
-  // of this would not be necessary.
-  const prevSelection = $getPreviousSelection();
-  if ($isRangeSelection(prevSelection)) {
-    const newSelection = prevSelection.clone();
-    if (newSelection.anchor.type === 'element') {
-      newSelection.anchor.key =
-        refSelection.anchorPrevSibling?.getNextSibling()?.getKey() ||
-        refSelection.anchorNextSibling?.getPreviousSibling()?.getKey() ||
-        refSelection.anchorParent?.getFirstChild()?.getKey() ||
-        newSelection.anchor.key;
-    }
-    if (newSelection.focus.type === 'element') {
-      newSelection.focus.key =
-        refSelection.focusNextSibling?.getPreviousSibling()?.getKey() ||
-        refSelection.focusPrevSibling?.getNextSibling()?.getKey() ||
-        refSelection.focusParent?.getLastChild()?.getKey() ||
-        newSelection.focus.key;
-    }
-    $setSelection(newSelection);
-  } else {
-    selection.dirty = true;
-  }
+function isBlock(node: LexicalNode) {
+  return (
+    $isElementNode(node) &&
+    ($isParagraphNode(node) ||
+      $isHeadingNode(node) ||
+      $isListItemNode(node) ||
+      $isQuoteNode(node) ||
+      $isCodeNode(node))
+  );
 }
 
 export function $shouldOverrideDefaultCharacterSelection(

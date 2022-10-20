@@ -33,6 +33,7 @@ import {
   $maybeMoveChildrenSelectionToParent,
   $setCompositionKey,
   $setNodeKey,
+  $setSelection,
   internalMarkNodeAsDirty,
   internalMarkSiblingsAsDirty,
   removeFromParent,
@@ -461,6 +462,7 @@ export class LexicalNode {
     return false;
   }
 
+  // TO-DO: this function can be simplified a lot
   getNodesBetween(targetNode: LexicalNode): Array<LexicalNode> {
     const isBefore = this.isBefore(targetNode);
     const nodes = [];
@@ -639,6 +641,7 @@ export class LexicalNode {
 
   replace<N extends LexicalNode>(replaceWith: N): N {
     errorOnReadOnly();
+    const selection = $getSelection()?.clone();
     const toReplaceKey = this.__key;
     const writableReplaceWith = replaceWith.getWritable();
     removeFromParent(writableReplaceWith);
@@ -654,8 +657,13 @@ export class LexicalNode {
     writableReplaceWith.__parent = newParent.__key;
     removeNode(this, false);
     internalMarkSiblingsAsDirty(writableReplaceWith);
-    const selection = $getSelection();
+    if ($isElementNode(this)) {
+      this.getChildren().forEach((child: LexicalNode) => {
+        writableReplaceWith.append(child);
+      });
+    }
     if ($isRangeSelection(selection)) {
+      $setSelection(selection);
       const anchor = selection.anchor;
       const focus = selection.focus;
       if (anchor.key === toReplaceKey) {

@@ -270,16 +270,22 @@ export function removeList(editor: LexicalEditor): void {
 
 export function updateChildrenListItemValue(
   list: ListNode,
-  children?: Array<ListItemNode>,
+  children?: Array<LexicalNode>,
 ): void {
-  (children || list.getChildren()).forEach((child: ListItemNode) => {
-    const prevValue = child.getValue();
-    const nextValue = $getListItemValue(child);
+  const childrenOrExisting = children || list.getChildren();
+  if (childrenOrExisting !== undefined) {
+    for (let i = 0; i < childrenOrExisting.length; i++) {
+      const child = childrenOrExisting[i];
+      if ($isListItemNode(child)) {
+        const prevValue = child.getValue();
+        const nextValue = $getListItemValue(child);
 
-    if (prevValue !== nextValue) {
-      child.setValue(nextValue);
+        if (prevValue !== nextValue) {
+          child.setValue(nextValue);
+        }
+      }
     }
-  });
+  }
 }
 
 export function $handleIndent(listItemNodes: Array<ListItemNode>): void {

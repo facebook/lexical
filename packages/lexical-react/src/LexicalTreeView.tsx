@@ -7,18 +7,19 @@
  */
 
 import type {
-  EditorConfig,
+  //EditorConfig,
   EditorState,
-  ElementNode,
+  //ElementNode,
   GridSelection,
   LexicalEditor,
   LexicalNode,
+  //NodeKey,
   NodeSelection,
   RangeSelection,
 } from 'lexical';
 
 import {$isLinkNode, LinkNode} from '@lexical/link';
-import {$isMarkNode} from '@lexical/mark';
+//import {$isMarkNode} from '@lexical/mark';
 import {mergeRegister} from '@lexical/utils';
 import {
   $getRoot,
@@ -28,8 +29,13 @@ import {
   $isTextNode,
   DEPRECATED_$isGridSelection,
 } from 'lexical';
+//import { relative } from 'node:path/win32';
+//import { isRedo } from 'packages/lexical/src/LexicalUtils';
 import * as React from 'react';
 import {useEffect, useRef, useState} from 'react';
+//import { render } from 'react-dom';
+
+const MAGIC_NUMBER1 = 500000;
 
 const NON_SINGLE_WIDTH_CHARS_REPLACEMENT: Readonly<Record<string, string>> =
   Object.freeze({
@@ -49,6 +55,318 @@ const SYMBOLS: Record<string, string> = Object.freeze({
   selectedLine: '>',
 });
 
+type TreeViewDataNode = {
+  line: string;
+  selLine: string;
+  children: Array<TreeViewDataNode>;
+  isSelected: boolean;
+};
+
+const indentingStyle = {
+  marginLeft: '1ch',
+  marginRight: '1ch',
+};
+const spaceStyle = {
+  marginLeft: '1ch',
+};
+
+function TreeViewNode({
+  data,
+  indent,
+  isLastChild,
+  isRoot,
+  toggled,
+}: {
+  data: TreeViewDataNode;
+  indent: Array<string>; //array of symbols
+  isLastChild: boolean;
+  isRoot: boolean;
+  toggled: boolean;
+}): JSX.Element {
+  const [localToggled, set_localToggled] = useState<boolean>(toggled);
+
+  const l_indent = [...indent];
+  const c_indent = [...indent];
+  const s_indent = [...indent];
+  if (!isRoot) {
+    if (isLastChild) {
+      l_indent.push(SYMBOLS.isLastChild);
+      c_indent.push(SYMBOLS.ancestorIsLastChild);
+      s_indent.push(SYMBOLS.ancestorIsLastChild);
+    } else {
+      l_indent.push(SYMBOLS.hasNextSibling);
+      c_indent.push(SYMBOLS.ancestorHasNextSibling);
+      s_indent.push(SYMBOLS.ancestorHasNextSibling);
+    }
+  }
+
+  const indenting = (
+    <>
+      {l_indent.map((x, i) => {
+        return (
+          <span key={i} style={indentingStyle}>
+            {x}
+          </span>
+        );
+      })}
+    </>
+  );
+
+  function get_spaces(sel: string): [Array<string>, string] {
+    if (!sel) return [[], sel];
+    const res: Array<string> = Array(0);
+    let i = 0;
+    for (i = 0; i < sel.length; i++) {
+      if (sel[i] !== '_') break;
+      res.push('');
+    }
+    const text = sel.substring(i);
+    return [res, text];
+  }
+
+  const [spaces, sel] = get_spaces(data.selLine);
+
+  const selected_indenting = (
+    <>
+      {s_indent.map((x, i) => {
+        return (
+          <span key={i} style={indentingStyle}>
+            {x}
+          </span>
+        );
+      })}
+    </>
+  );
+  const selected_indenting2 = (
+    <>
+      {spaces.map((x, i) => {
+        return (
+          <span key={i} style={spaceStyle}>
+            {x}
+          </span>
+        );
+      })}
+    </>
+  );
+
+  function toggleTree() {
+    set_localToggled(!localToggled);
+  }
+
+  const toggleButtonStyle = {
+    cursor: 'pointer',
+    fontFamily: '"Courier New", Courier, mono',
+    marginRight: '1ch',
+  };
+
+  let buttonAction = '+';
+  let children = <></>;
+  if (localToggled) {
+    buttonAction = '-';
+    children = (
+      <>
+        {data.children.map((child: TreeViewDataNode, i: number) => (
+          <TreeViewNode
+            isRoot={false}
+            isLastChild={i === data.children.length - 1}
+            toggled={true}
+            key={child.line}
+            data={child}
+            indent={c_indent}
+          />
+        ))}
+      </>
+    );
+  }
+
+  let togglebutton = (
+    <span
+      role="button"
+      tabIndex={0}
+      style={toggleButtonStyle}
+      onClick={toggleTree}>
+      [{buttonAction}]
+    </span>
+  );
+  if (data.children.length === 0) {
+    togglebutton = <></>;
+  }
+
+  let selected = ' ';
+  let selectedLine = <></>;
+  if (data.isSelected) {
+    selected = SYMBOLS.selectedLine;
+    selectedLine = (
+      <tr>
+        <td> </td>
+        <td> </td>
+        <td>
+          {selected_indenting}
+          {selected_indenting2}
+          {sel}
+        </td>
+      </tr>
+    );
+  }
+  return (
+    <>
+      <tr>
+        <td>{selected}</td>
+        <td>{togglebutton}</td>
+        <td>
+          {indenting}
+          {data.line}
+        </td>
+      </tr>
+      {selectedLine}
+      {children}
+    </>
+  );
+}
+
+type TreeViewContentState = {
+  rootdata: TreeViewDataNode;
+  selectionString: string;
+};
+
+function TreeViewContent({
+  editor,
+  rendercnt,
+}: {
+  editor: LexicalEditor;
+  rendercnt: number;
+}): JSX.Element {
+  const [state, setState] = useState<TreeViewContentState>({
+    rootdata: {children: [], isSelected: false, line: '', selLine: ''},
+    selectionString: '',
+  });
+
+  const editorState = editor.getEditorState();
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  function get_node_children(
+    node: LexicalNode,
+    selection: any,
+  ): Array<TreeViewDataNode> {
+    let childNodes = [];
+    if (node && node.getChildren) {
+      childNodes = node.getChildren();
+    }
+    const res: Array<TreeViewDataNode> = [];
+    childNodes.forEach((childNode: LexicalNode) => {
+      const nodeKey = childNode.getKey();
+      const nodeKeyDisplay = `(${nodeKey})`;
+      const typeDisplay = childNode.getType() || '';
+      const isSelected = childNode.isSelected();
+      //const idsDisplay = $isMarkNode(childNode);
+
+      const indent = Array<string>(0);
+      const sel = printSelectedCharsLine({
+        indent: indent,
+        isSelected: isSelected,
+        node: childNode,
+        nodeKeyDisplay: nodeKeyDisplay,
+        selection: selection,
+        typeDisplay: typeDisplay,
+      });
+
+      const line = `${nodeKeyDisplay} ${typeDisplay} ${printNode(childNode)}`;
+
+      res.push({
+        children: get_node_children(childNode, selection),
+        isSelected: isSelected,
+        line: line,
+        selLine: sel,
+      });
+    });
+    return res;
+  }
+
+  useEffect(() => {
+    editorState.read(() => {
+      const selection = $getSelection();
+      const selectionString =
+        selection === null
+          ? ': null'
+          : $isRangeSelection(selection)
+          ? printRangeSelection(selection)
+          : DEPRECATED_$isGridSelection(selection)
+          ? printGridSelection(selection)
+          : printObjectSelection(selection);
+      const root = $getRoot();
+      if (root != null) {
+        //const nodeKey = root.getKey();
+        //const nodeKeyDisplay = `(${nodeKey})`;
+        //const typeDisplay = root.getType() || '';
+        const isSelected = root.isSelected();
+        //const idsDisplay = $isMarkNode(root)
+
+        const line = 'root';
+
+        const children: Array<TreeViewDataNode> = get_node_children(
+          root,
+          selection,
+        );
+        const rootdata: TreeViewDataNode = {
+          children: children,
+          isSelected: isSelected,
+          line: line,
+          selLine: '',
+        };
+
+        setState({rootdata: rootdata, selectionString: selectionString});
+      }
+    });
+  }, [editorState, get_node_children, rendercnt]);
+
+  const config = editor._config;
+  const compositionKey = editor._compositionKey;
+  const editable = editor._editable;
+
+  let tree = <></>;
+  if (state.selectionString !== '') {
+    tree = (
+      <TreeViewNode
+        isRoot={true}
+        isLastChild={true}
+        toggled={true}
+        data={state.rootdata}
+        indent={[]}
+      />
+    );
+  }
+
+  const emulatedPreStyle: Record<string, unknown> = {
+    height: '180px', //
+    left: '0px',
+    lineHeight: '1.1',
+    marginBottom: '0px',
+    overflowY: 'auto',
+    position: 'relative',
+    right: '0px',
+  };
+
+  let compositionLine = <></>;
+  if (compositionKey != null)
+    compositionLine = <div>&nbsp;&nbsp;└ compositionKey {compositionKey}</div>;
+
+  return (
+    <>
+      <div className="htmlpre" style={emulatedPreStyle}>
+        <table cellPadding={0} cellSpacing={0} className={'treetable'}>
+          <tbody>{tree}</tbody>
+        </table>
+
+        <pre> selection {state.selectionString}</pre>
+        <div>editor:</div>
+        <div>&nbsp;&nbsp;└ namespace {config.namespace}</div>
+        {compositionLine}
+        <div>&nbsp;&nbsp;└ editable {String(editable)}</div>
+      </div>
+    </>
+  );
+}
+
 export function TreeView({
   timeTravelButtonClassName,
   timeTravelPanelSliderClassName,
@@ -67,31 +385,20 @@ export function TreeView({
   const [timeStampedEditorStates, setTimeStampedEditorStates] = useState<
     Array<[number, EditorState]>
   >([]);
-  const [content, setContent] = useState<string>('');
+
   const [timeTravelEnabled, setTimeTravelEnabled] = useState(false);
   const playingIndexRef = useRef(0);
   const treeElementRef = useRef<HTMLPreElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
+  const [rendercnt, set_rendercnt] = useState<number>(0);
+
   useEffect(() => {
-    setContent(
-      generateContent(
-        editor.getEditorState(),
-        editor._config,
-        editor._compositionKey,
-        editor._editable,
-      ),
-    );
     return mergeRegister(
       editor.registerUpdateListener(({editorState}) => {
-        const treeText = generateContent(
-          editor.getEditorState(),
-          editor._config,
-          editor._compositionKey,
-          editor._editable,
-        );
-        setContent(treeText);
+        //this could fail once every 500000 times...
+        set_rendercnt(Math.random() % MAGIC_NUMBER1);
 
         if (!timeTravelEnabled) {
           setTimeStampedEditorStates((currentEditorStates) => [
@@ -101,13 +408,7 @@ export function TreeView({
         }
       }),
       editor.registerEditableListener(() => {
-        const treeText = generateContent(
-          editor.getEditorState(),
-          editor._config,
-          editor._compositionKey,
-          editor._editable,
-        );
-        setContent(treeText);
+        set_rendercnt(Math.random() % MAGIC_NUMBER1);
       }),
     );
   }, [timeTravelEnabled, editor]);
@@ -183,7 +484,7 @@ export function TreeView({
           Time Travel
         </button>
       )}
-      <pre ref={treeElementRef}>{content}</pre>
+      <TreeViewContent editor={editor} rendercnt={rendercnt} />
       {timeTravelEnabled && (
         <div className={timeTravelPanelClassName}>
           <button
@@ -268,93 +569,6 @@ function printObjectSelection(selection: NodeSelection): string {
 
 function printGridSelection(selection: GridSelection): string {
   return `: grid\n  └ { grid: ${selection.gridKey}, anchorCell: ${selection.anchor.key}, focusCell: ${selection.focus.key} }`;
-}
-
-function generateContent(
-  editorState: EditorState,
-  editorConfig: EditorConfig,
-  compositionKey: null | string,
-  editable: boolean,
-): string {
-  let res = ' root\n';
-
-  const selectionString = editorState.read(() => {
-    const selection = $getSelection();
-
-    visitTree($getRoot(), (node: LexicalNode, indent: Array<string>) => {
-      const nodeKey = node.getKey();
-      const nodeKeyDisplay = `(${nodeKey})`;
-      const typeDisplay = node.getType() || '';
-      const isSelected = node.isSelected();
-      const idsDisplay = $isMarkNode(node)
-        ? ` id: [ ${node.getIDs().join(', ')} ] `
-        : '';
-
-      res += `${isSelected ? SYMBOLS.selectedLine : ' '} ${indent.join(
-        ' ',
-      )} ${nodeKeyDisplay} ${typeDisplay} ${idsDisplay} ${printNode(node)}\n`;
-
-      res += printSelectedCharsLine({
-        indent,
-        isSelected,
-        node,
-        nodeKeyDisplay,
-        selection,
-        typeDisplay,
-      });
-    });
-
-    return selection === null
-      ? ': null'
-      : $isRangeSelection(selection)
-      ? printRangeSelection(selection)
-      : DEPRECATED_$isGridSelection(selection)
-      ? printGridSelection(selection)
-      : printObjectSelection(selection);
-  });
-
-  res += '\n selection' + selectionString;
-
-  res += '\n\n editor:';
-  res += `\n  └ namespace ${editorConfig.namespace}`;
-  if (compositionKey !== null) {
-    res += `\n  └ compositionKey ${compositionKey}`;
-  }
-  res += `\n  └ editable ${String(editable)}`;
-
-  return res;
-}
-
-function visitTree(
-  currentNode: ElementNode,
-  visitor: (node: LexicalNode, indentArr: Array<string>) => void,
-  indent: Array<string> = [],
-) {
-  const childNodes = currentNode.getChildren();
-  const childNodesLength = childNodes.length;
-
-  childNodes.forEach((childNode, i) => {
-    visitor(
-      childNode,
-      indent.concat(
-        i === childNodesLength - 1
-          ? SYMBOLS.isLastChild
-          : SYMBOLS.hasNextSibling,
-      ),
-    );
-
-    if ($isElementNode(childNode)) {
-      visitTree(
-        childNode,
-        visitor,
-        indent.concat(
-          i === childNodesLength - 1
-            ? SYMBOLS.ancestorIsLastChild
-            : SYMBOLS.ancestorHasNextSibling,
-        ),
-      );
-    }
-  });
 }
 
 function normalize(text: string) {
@@ -527,30 +741,15 @@ function printSelectedCharsLine({
     return '';
   }
 
-  const selectionLastIndent =
-    indent[indent.length - 1] === SYMBOLS.hasNextSibling
-      ? SYMBOLS.ancestorHasNextSibling
-      : SYMBOLS.ancestorIsLastChild;
-
-  const indentionChars = [
-    ...indent.slice(0, indent.length - 1),
-    selectionLastIndent,
-  ];
-  const unselectedChars = Array(start + 1).fill(' ');
+  const unselectedChars = Array(start + 1).fill('_');
   const selectedChars = Array(end - start).fill(SYMBOLS.selectedChar);
-  const paddingLength = typeDisplay.length + 3; // 2 for the spaces around + 1 for the double quote.
+  const paddingLength = typeDisplay.length + 2; // 2 for the spaces around + 1 for the double quote.
 
   const nodePrintSpaces = Array(nodeKeyDisplay.length + paddingLength).fill(
-    ' ',
+    '_',
   );
 
-  return (
-    [
-      SYMBOLS.selectedLine,
-      indentionChars.join(' '),
-      [...nodePrintSpaces, ...unselectedChars, ...selectedChars].join(''),
-    ].join(' ') + '\n'
-  );
+  return [...nodePrintSpaces, ...unselectedChars, ...selectedChars].join('');
 }
 
 function $getSelectionStartEnd(

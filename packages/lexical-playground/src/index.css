@@ -1255,6 +1255,7 @@ button.action-button:disabled {
   position: absolute;
   background: none;
   color: #fff;
+  z-index: 4;
 }
 
 .debug-timetravel-button:hover {
@@ -1592,4 +1593,20 @@ hr.selected {
   white-space: pre-wrap;
   word-break: break-word;
   z-index: 3;
+}
+
+.treetable {
+  font-family: monospace;
+  white-space: nowrap;
+  vertical-align: top;
+  border-width: 1px;
+}
+
+.htmlpre::-webkit-scrollbar {
+  background: transparent;
+  width: 10px;
+}
+
+.htmlpre::-webkit-scrollbar-thumb {
+  background: #999;
 }

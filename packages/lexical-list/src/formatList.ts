@@ -283,10 +283,6 @@ export function updateChildrenListItemValue(
         if (prevValue !== nextValue) {
           child.setValue(nextValue);
         }
-      } else {
-        if (__DEV__) {
-          invariant(false, 'Expected ListNode child to be a ListItemNode');
-        }
       }
     }
   }

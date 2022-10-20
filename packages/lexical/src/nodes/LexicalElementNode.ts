@@ -241,9 +241,10 @@ export class ElementNode extends LexicalNode {
   hasFormat(type: ElementFormatType): boolean {
     if (type !== '') {
       const formatFlag = ELEMENT_TYPE_TO_FORMAT[type];
-      return (this.getFormat() & formatFlag) !== 0;
+      return this.getFormat() === formatFlag;
     }
-    return false;
+
+    return this.getFormat() === 0;
   }
 
   // Mutators

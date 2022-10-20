@@ -53,6 +53,7 @@ declare export function $wrapSelectionInMarkNode(
   selection: RangeSelection,
   isBackward: boolean,
   id: string,
+  createNode?: (ids: Array<string>) => MarkNode,
 ): void;
 
 declare export function $unwrapMarkNode(node: MarkNode): void;

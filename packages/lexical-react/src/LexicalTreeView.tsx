@@ -215,7 +215,7 @@ function TreeViewNode({
         <td>{togglebutton}</td>
         <td>
           {indenting}
-          {data.line}
+          <span dangerouslySetInnerHTML={{__html: data.line}} />
         </td>
       </tr>
       {selectedLine}
@@ -253,16 +253,14 @@ function TreeViewContent({
       childNodes = node.getChildren();
     }
     const res: Array<TreeViewDataNode> = [];
-    childNodes.forEach((childNode: LexicalNode) => {
+    childNodes.forEach((childNode: LexicalNode, i: number) => {
       const nodeKey = childNode.getKey();
       const nodeKeyDisplay = `(${nodeKey})`;
       const typeDisplay = childNode.getType() || '';
       const isSelected = childNode.isSelected();
       //const idsDisplay = $isMarkNode(childNode);
 
-      const indent = Array<string>(0);
       const sel = printSelectedCharsLine({
-        indent: indent,
         isSelected: isSelected,
         node: childNode,
         nodeKeyDisplay: nodeKeyDisplay,
@@ -270,7 +268,9 @@ function TreeViewContent({
         typeDisplay: typeDisplay,
       });
 
-      const line = `${nodeKeyDisplay} ${typeDisplay} ${printNode(childNode)}`;
+      let line = `${nodeKeyDisplay} ${typeDisplay} ${printNode(childNode)}`;
+
+      line = line.replaceAll(' ', '&nbsp;');
 
       res.push({
         children: get_node_children(childNode, selection),
@@ -699,14 +699,12 @@ function printRelProperties(node: LinkNode) {
 }
 
 function printSelectedCharsLine({
-  indent,
   isSelected,
   node,
   nodeKeyDisplay,
   selection,
   typeDisplay,
 }: {
-  indent: Array<string>;
   isSelected: boolean;
   node: LexicalNode;
   nodeKeyDisplay: string;

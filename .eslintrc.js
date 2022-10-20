@@ -15,7 +15,12 @@ const ERROR = 2;
 
 module.exports = {
   // Prettier must be last so it can override other configs (https://github.com/prettier/eslint-config-prettier#installation)
-  extends: ['fbjs', 'plugin:react-hooks/recommended', 'prettier'],
+  extends: [
+    'fbjs',
+    'plugin:react-hooks/recommended',
+    'plugin:lexical/all',
+    'prettier',
+  ],
 
   globals: {
     JSX: true,
@@ -101,6 +106,7 @@ module.exports = {
     'no-function-declare-after-return',
     'react',
     'no-only-tests',
+    'lexical',
   ],
 
   // Stop ESLint from looking for a configuration file in parent folders

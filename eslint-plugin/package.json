@@ -1,0 +1,9 @@
+{
+  "name": "eslint-plugin-lexical",
+  "version": "1.0.0",
+  "description": "ESLint plugin for lexical",
+  "main": "src/index.js",
+  "peerDependencies": {
+    "eslint": ">=4.19.1"
+  }
+}

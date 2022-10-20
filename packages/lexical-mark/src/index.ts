@@ -33,6 +33,7 @@ export function $wrapSelectionInMarkNode(
   selection: RangeSelection,
   isBackward: boolean,
   id: string,
+  createNode?: (ids: Array<string>) => MarkNode,
 ): void {
   const nodes = selection.getNodes();
   const anchorOffset = selection.anchor.offset;
@@ -109,7 +110,8 @@ export function $wrapSelectionInMarkNode(
 
       if (lastCreatedMarkNode === undefined) {
         // If we don't have a created mark node, we can make one
-        lastCreatedMarkNode = $createMarkNode([id]);
+        const createMarkNode = createNode || $createMarkNode;
+        lastCreatedMarkNode = createMarkNode([id]);
         targetNode.insertBefore(lastCreatedMarkNode);
       }
 

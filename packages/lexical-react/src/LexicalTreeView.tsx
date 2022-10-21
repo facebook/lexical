@@ -62,14 +62,6 @@ type TreeViewDataNode = {
   isSelected: boolean;
 };
 
-const indentingStyle = {
-  marginLeft: '1ch',
-  marginRight: '1ch',
-};
-const spaceStyle = {
-  marginLeft: '1ch',
-};
-
 function TreeViewNode({
   data,
   indent,
@@ -100,17 +92,12 @@ function TreeViewNode({
     }
   }
 
-  const indenting = (
-    <>
-      {l_indent.map((x, i) => {
-        return (
-          <span key={i} style={indentingStyle}>
-            {x}
-          </span>
-        );
-      })}
-    </>
-  );
+  let indenting = '';
+  for (let i = 0; i < l_indent.length; i++) {
+    indenting += '&nbsp;';
+    indenting += l_indent[i];
+    indenting += '&nbsp;';
+  }
 
   function get_spaces(sel: string): [Array<string>, string] {
     if (!sel) return [[], sel];
@@ -126,28 +113,13 @@ function TreeViewNode({
 
   const [spaces, sel] = get_spaces(data.selLine);
 
-  const selected_indenting = (
-    <>
-      {s_indent.map((x, i) => {
-        return (
-          <span key={i} style={indentingStyle}>
-            {x}
-          </span>
-        );
-      })}
-    </>
-  );
-  const selected_indenting2 = (
-    <>
-      {spaces.map((x, i) => {
-        return (
-          <span key={i} style={spaceStyle}>
-            {x}
-          </span>
-        );
-      })}
-    </>
-  );
+  let selected_indenting = '';
+  for (let i = 0; i < s_indent.length; i++) {
+    selected_indenting += '&nbsp;';
+    selected_indenting += s_indent[i];
+    selected_indenting += '&nbsp;';
+  }
+  const selected_indenting2 = '&nbsp;'.repeat(spaces.length);
 
   function toggleTree() {
     set_visible(!visible);
@@ -201,8 +173,8 @@ function TreeViewNode({
         <td> </td>
         <td> </td>
         <td>
-          {selected_indenting}
-          {selected_indenting2}
+          <span dangerouslySetInnerHTML={{__html: selected_indenting}} />
+          <span dangerouslySetInnerHTML={{__html: selected_indenting2}} />
           {sel}
         </td>
       </tr>
@@ -214,7 +186,7 @@ function TreeViewNode({
         <td>{selected}</td>
         <td>{togglebutton}</td>
         <td>
-          {indenting}
+          <span dangerouslySetInnerHTML={{__html: indenting}} />
           <span dangerouslySetInnerHTML={{__html: data.line}} />
         </td>
       </tr>
@@ -739,9 +711,9 @@ function printSelectedCharsLine({
     return '';
   }
 
-  const unselectedChars = Array(start + 1).fill('_');
+  const unselectedChars = Array(start).fill('_');
   const selectedChars = Array(end - start).fill(SYMBOLS.selectedChar);
-  const paddingLength = typeDisplay.length + 2; // 2 for the spaces around + 1 for the double quote.
+  const paddingLength = typeDisplay.length + 3; // 2 for the spaces around + 1 for the double quote.
 
   const nodePrintSpaces = Array(nodeKeyDisplay.length + paddingLength).fill(
     '_',

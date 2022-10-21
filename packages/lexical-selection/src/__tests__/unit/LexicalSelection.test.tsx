@@ -2456,6 +2456,7 @@ describe('LexicalSelection tests', () => {
         const row = table.getFirstChild();
         const column = row.getFirstChild();
         const paragraph = column.getFirstChild();
+        if (paragraph.getFirstChild()) paragraph.getFirstChild().remove();
         root.append(table);
 
         const selection = $createRangeSelection();

@@ -83,6 +83,12 @@ module.exports = {
         'header/header': OFF,
       },
     },
+    {
+      files: ['packages/**/src/__tests__/**', 'packages/lexical-playground/**'],
+      rules: {
+        'lexical/no-optional-chaining': OFF,
+      },
+    },
   ],
 
   parser: 'babel-eslint',

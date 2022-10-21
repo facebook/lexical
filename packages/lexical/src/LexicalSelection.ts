@@ -1438,7 +1438,8 @@ export class RangeSelection implements BaseSelection {
         if (
           $isRangeSelection(this) &&
           $isDecoratorNode(node) &&
-          !node.isInline()
+          !node.isInline() &&
+          $isTextNode(target)
         ) {
           this.insertParagraph();
           target = this.focus

@@ -2977,4 +2977,39 @@ test.describe('CopyAndPaste', () => {
       focusPath: [2, 0, 0],
     });
   });
+
+  test('Paste top level element in the middle of paragraph', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type('Hello world');
+    await moveToPrevWord(page);
+    await pasteFromClipboard(page, {
+      'text/html': `<hr />`,
+    });
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Hello</span>
+        </p>
+        <div
+          contenteditable="false"
+          style="display: contents"
+          data-lexical-decorator="true">
+          <hr />
+        </div>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">world</span>
+        </p>
+      `,
+    );
+  });
 });

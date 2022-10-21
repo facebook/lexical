@@ -28,7 +28,6 @@
     "typedoc-plugin-markdown": "^3.13.4"
   },
   "devDependencies": {
-    "babel-plugin-module-resolver": "^4.1.0",
     "buffer": "^6.0.3",
     "webpack": "^5.70.0"
   },

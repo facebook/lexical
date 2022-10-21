@@ -160,8 +160,10 @@ function BlockFormatDropDown({
     if (blockType !== 'paragraph') {
       editor.update(() => {
         const selection = $getSelection();
-        if ($isRangeSelection(selection) ||
-          DEPRECATED_$isGridSelection(selection))
+        if (
+          $isRangeSelection(selection) ||
+          DEPRECATED_$isGridSelection(selection)
+        )
           $setBlocksType(selection, () => $createParagraphNode());
       });
     }
@@ -171,8 +173,10 @@ function BlockFormatDropDown({
     if (blockType !== headingSize) {
       editor.update(() => {
         const selection = $getSelection();
-        if ($isRangeSelection(selection) ||
-          DEPRECATED_$isGridSelection(selection)) {
+        if (
+          $isRangeSelection(selection) ||
+          DEPRECATED_$isGridSelection(selection)
+        ) {
           $setBlocksType(selection, () => $createHeadingNode(headingSize));
         }
       });
@@ -207,8 +211,10 @@ function BlockFormatDropDown({
     if (blockType !== 'quote') {
       editor.update(() => {
         const selection = $getSelection();
-        if ($isRangeSelection(selection) ||
-          DEPRECATED_$isGridSelection(selection)) {
+        if (
+          $isRangeSelection(selection) ||
+          DEPRECATED_$isGridSelection(selection)
+        ) {
           $setBlocksType(selection, () => $createQuoteNode());
         }
       });

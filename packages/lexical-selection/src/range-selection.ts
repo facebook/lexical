@@ -20,6 +20,7 @@ import {
   $isRootNode,
   $isTextNode,
   ElementNode,
+  GridSelection,
   LexicalNode,
   NodeKey,
   RangeSelection,

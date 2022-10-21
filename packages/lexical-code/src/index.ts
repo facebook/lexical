@@ -11,6 +11,7 @@
 export {
   getEndOfCodeInLine,
   getStartOfCodeInLine,
+  PrismTokenizer,
   registerCodeHighlighting,
 } from './CodeHighlighter';
 export {

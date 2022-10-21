@@ -177,6 +177,9 @@ export class ListItemNode extends ElementNode {
         list.insertAfter(replaceWithNode);
         replaceWithNode.insertAfter(newList);
       }
+      this.getChildren().forEach((child: LexicalNode) => {
+        replaceWithNode.append(child);
+      });
       this.remove();
 
       if (childrenLength === 1) {
@@ -277,7 +280,9 @@ export class ListItemNode extends ElementNode {
         listNode.remove();
         listNodeParent.select();
       } else {
-        listNode.replace(paragraph);
+        listNode.insertBefore(paragraph);
+        listNode.remove();
+        // listNode.replace(paragraph);
         // If we have selection on the list item, we'll need to move it
         // to the paragraph
         const anchor = selection.anchor;

@@ -79,8 +79,8 @@ LINK
 And bundles of commonly used transformers:
 - `TRANSFORMERS` - all built-in transformers
 - `ELEMENT_TRANSFORMERS` - all built-in element transformers
-- `TEXT_FORMAT_TRANSFORMERS` - all built-in text format trasnformers
-- `TEXT_MATCH_TRANSFORMERS` - all built-in text match trasnformers
+- `TEXT_FORMAT_TRANSFORMERS` - all built-in text format transformers
+- `TEXT_MATCH_TRANSFORMERS` - all built-in text match transformers
 
 Transformers are explicitly passed to markdown API allowing application-specific subset of markdown or custom transformers.
 

@@ -37,7 +37,8 @@ import {getStyleObjectFromCSS} from './utils';
  * @returns
  */
 export function $setBlocksType(
-  selection: RangeSelection,
+  selection: RangeSelection | GridSelection,
+
   createElement: () => ElementNode,
 ): void {
   if (selection.anchor.key === 'root') {

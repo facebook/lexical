@@ -118,7 +118,7 @@ describe('LexicalElementNode tests', () => {
         expect(node.hasFormat('center')).toEqual(false);
         expect(node.hasFormat('right')).toEqual(false);
         expect(node.hasFormat('justify')).toEqual(false);
-        expect(node.hasFormat('')).toEqual(true);
+        expect(node.hasFormat('')).toEqual(false);
       });
     });
 

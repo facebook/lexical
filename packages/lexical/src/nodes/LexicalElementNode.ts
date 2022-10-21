@@ -240,8 +240,8 @@ export class ElementNode extends LexicalNode {
   }
   hasFormat(type: ElementFormatType): boolean {
     if (type !== '') {
-      const formatFlag = ELEMENT_TYPE_TO_FORMAT[type];
-      return (this.getFormat() & formatFlag) !== 0;
+      const formatFlag = 1 << ELEMENT_TYPE_TO_FORMAT[type];
+      return ((1 << this.getFormat()) & formatFlag) !== 0;
     }
     return false;
   }

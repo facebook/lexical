@@ -641,7 +641,8 @@ export class LexicalNode {
 
   replace<N extends LexicalNode>(replaceWith: N): N {
     errorOnReadOnly();
-    const selection = $getSelection()?.clone();
+    let selection = $getSelection();
+    if (selection !== null) selection = selection.clone();
     const toReplaceKey = this.__key;
     const writableReplaceWith = replaceWith.getWritable();
     removeFromParent(writableReplaceWith);

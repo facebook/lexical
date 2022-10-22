@@ -224,7 +224,7 @@ function BlockFormatDropDown({
   const formatCode = () => {
     if (blockType !== 'code') {
       editor.update(() => {
-        const selection = $getSelection();
+        let selection = $getSelection();
 
         if (
           $isRangeSelection(selection) ||
@@ -236,7 +236,9 @@ function BlockFormatDropDown({
             const textContent = selection.getTextContent();
             const codeNode = $createCodeNode();
             selection.insertNodes([codeNode]);
-            selection.insertRawText(textContent);
+            selection = $getSelection();
+            if ($isRangeSelection(selection))
+              selection.insertRawText(textContent);
           }
         }
       });

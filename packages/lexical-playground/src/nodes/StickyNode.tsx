@@ -59,7 +59,6 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
       node.__y,
       node.__color,
       node.__caption,
-      node.__editor,
       node.__key,
     );
   }
@@ -77,21 +76,18 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
     y: number,
     color: 'pink' | 'yellow',
     caption?: Caption,
-    editor?: LexicalEditor,
     key?: NodeKey,
   ) {
     super(key);
     this.__x = x;
     this.__y = y;
     this.__color = color;
+    this.__captionEditor = createEditor();
     if (caption !== undefined) {
-      this.__editor = createEditor();
-      const editorState = this.__editor.parseEditorState(
+      const editorState = this.__captionEditor.parseEditorState(
         JSON.stringify(caption.editorState),
       );
-      this.__editor.setEditorState(editorState);
-    } else {
-      this.__editor = editor;
+      this.__captionEditor.setEditorState(editorState);
     }
   }
 
@@ -136,7 +132,7 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
           x={this.__x}
           y={this.__y}
           nodeKey={this.getKey()}
-          editorCaption={this.__editor}
+          captionEditor={this.__captionEditor}
         />
       </Suspense>,
       document.body,

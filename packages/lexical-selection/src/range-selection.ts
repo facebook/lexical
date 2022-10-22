@@ -59,7 +59,7 @@ export function $setBlocksType(
   if (selection.anchor.type === 'text') {
     let firstBlock = selection.anchor.getNode().getParent() as LexicalNode;
     firstBlock = (
-      firstBlock?.isInline() ? firstBlock.getParent() : firstBlock
+      firstBlock.isInline() ? firstBlock.getParent() : firstBlock
     ) as LexicalNode;
     if (nodes.indexOf(firstBlock) === -1) nodes.push(firstBlock);
   }

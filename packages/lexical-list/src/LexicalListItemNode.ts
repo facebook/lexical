@@ -177,9 +177,11 @@ export class ListItemNode extends ElementNode {
         list.insertAfter(replaceWithNode);
         replaceWithNode.insertAfter(newList);
       }
-      this.getChildren().forEach((child: LexicalNode) => {
-        replaceWithNode.append(child);
-      });
+      if ($isElementNode(replaceWithNode)) {
+        this.getChildren().forEach((child: LexicalNode) => {
+          replaceWithNode.append(child);
+        });
+      }
       this.remove();
 
       if (childrenLength === 1) {

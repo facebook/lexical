@@ -8,6 +8,7 @@
 
 import type {
   EditorConfig,
+  EditorState,
   LexicalEditor,
   LexicalNode,
   NodeKey,
@@ -27,12 +28,16 @@ const StickyComponent = React.lazy(
 
 type StickyNoteColor = 'pink' | 'yellow';
 
+export type Caption = {
+  editorState: EditorState;
+};
+
 export type SerializedStickyNode = Spread<
   {
     xOffset: number;
     yOffset: number;
     color: StickyNoteColor;
-    caption: LexicalEditor;
+    caption: Caption;
     type: 'sticky';
     version: 1;
   },
@@ -43,7 +48,6 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
   __x: number;
   __y: number;
   __color: StickyNoteColor;
-  __caption: LexicalEditor;
 
   static getType(): string {
     return 'sticky';
@@ -55,6 +59,7 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
       node.__y,
       node.__color,
       node.__caption,
+      node.__editor,
       node.__key,
     );
   }
@@ -71,14 +76,23 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
     x: number,
     y: number,
     color: 'pink' | 'yellow',
-    caption?: LexicalEditor,
+    caption?: Caption,
+    editor?: LexicalEditor,
     key?: NodeKey,
   ) {
     super(key);
     this.__x = x;
     this.__y = y;
-    this.__caption = caption || createEditor();
     this.__color = color;
+    if (caption !== undefined) {
+      this.__editor = createEditor();
+      const editorState = this.__editor.parseEditorState(
+        JSON.stringify(caption.editorState),
+      );
+      this.__editor.setEditorState(editorState);
+    } else {
+      this.__editor = editor;
+    }
   }
 
   exportJSON(): SerializedStickyNode {
@@ -122,7 +136,7 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
           x={this.__x}
           y={this.__y}
           nodeKey={this.getKey()}
-          caption={this.__caption}
+          editorCaption={this.__editor}
         />
       </Suspense>,
       document.body,

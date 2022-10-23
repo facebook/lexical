@@ -11,7 +11,7 @@ const port = chrome.runtime.connect();
 chrome.devtools.panels.create(
   'Lexical',
   '',
-  '/src/panel/index.html',
+  'src/panel/index.html',
   function (panel) {
     panel.onShown.addListener(handleShown);
     // to do: add handleHidden() listener

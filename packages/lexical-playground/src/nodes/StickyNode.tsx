@@ -11,6 +11,7 @@ import type {
   LexicalEditor,
   LexicalNode,
   NodeKey,
+  SerializedEditorState,
   SerializedLexicalNode,
   Spread,
 } from 'lexical';
@@ -32,7 +33,7 @@ export type SerializedStickyNode = Spread<
     xOffset: number;
     yOffset: number;
     color: StickyNoteColor;
-    caption: LexicalEditor;
+    caption: SerializedEditorState;
     type: 'sticky';
     version: 1;
   },
@@ -43,7 +44,7 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
   __x: number;
   __y: number;
   __color: StickyNoteColor;
-  __caption: LexicalEditor;
+  __captionEditor: LexicalEditor;
 
   static getType(): string {
     return 'sticky';
@@ -54,16 +55,25 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
       node.__x,
       node.__y,
       node.__color,
-      node.__caption,
+      node.__captionEditor,
       node.__key,
     );
   }
   static importJSON(serializedNode: SerializedStickyNode): StickyNode {
+    const captionEditor = createEditor();
+    if (serializedNode.caption !== undefined) {
+      const editorState = captionEditor.parseEditorState(
+        serializedNode.caption,
+      );
+      if (!editorState.isEmpty()) {
+        captionEditor.setEditorState(editorState);
+      }
+    }
     return new StickyNode(
       serializedNode.xOffset,
       serializedNode.yOffset,
       serializedNode.color,
-      serializedNode.caption,
+      captionEditor,
     );
   }
 
@@ -71,19 +81,19 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
     x: number,
     y: number,
     color: 'pink' | 'yellow',
-    caption?: LexicalEditor,
+    captionEditor?: LexicalEditor,
     key?: NodeKey,
   ) {
     super(key);
     this.__x = x;
     this.__y = y;
-    this.__caption = caption || createEditor();
+    this.__captionEditor = captionEditor || createEditor();
     this.__color = color;
   }
 
   exportJSON(): SerializedStickyNode {
     return {
-      caption: this.__caption,
+      caption: this.__captionEditor.getEditorState(),
       color: this.__color,
       type: 'sticky',
       version: 1,
@@ -122,7 +132,7 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
           x={this.__x}
           y={this.__y}
           nodeKey={this.getKey()}
-          caption={this.__caption}
+          captionEditor={this.__captionEditor}
         />
       </Suspense>,
       document.body,

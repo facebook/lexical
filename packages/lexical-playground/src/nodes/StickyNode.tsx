@@ -8,10 +8,10 @@
 
 import type {
   EditorConfig,
+  EditorState,
   LexicalEditor,
   LexicalNode,
   NodeKey,
-  SerializedEditorState,
   SerializedLexicalNode,
   Spread,
 } from 'lexical';
@@ -33,7 +33,7 @@ export type SerializedStickyNode = Spread<
     xOffset: number;
     yOffset: number;
     color: StickyNoteColor;
-    caption: SerializedEditorState;
+    caption: EditorState;
     type: 'sticky';
     version: 1;
   },
@@ -63,7 +63,7 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
     const captionEditor = createEditor();
     if (serializedNode.caption !== undefined) {
       const editorState = captionEditor.parseEditorState(
-        serializedNode.caption,
+        JSON.stringify(serializedNode.caption),
       );
       if (!editorState.isEmpty()) {
         captionEditor.setEditorState(editorState);

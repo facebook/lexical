@@ -82,6 +82,7 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
     this.__x = x;
     this.__y = y;
     this.__color = color;
+    this.__caption = caption;
     this.__captionEditor = createEditor();
     if (caption !== undefined) {
       const editorState = this.__captionEditor.parseEditorState(

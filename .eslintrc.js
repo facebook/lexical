@@ -84,7 +84,11 @@ module.exports = {
       },
     },
     {
-      files: ['packages/**/src/__tests__/**', 'packages/lexical-playground/**'],
+      files: [
+        'packages/**/src/__tests__/**',
+        'packages/lexical-playground/**',
+        'packages/lexical-devtools/**',
+      ],
       rules: {
         'lexical/no-optional-chaining': OFF,
       },

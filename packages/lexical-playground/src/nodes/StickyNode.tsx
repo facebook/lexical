@@ -81,13 +81,13 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
     x: number,
     y: number,
     color: 'pink' | 'yellow',
-    captionEditor?: LexicalEditor,
+    caption?: LexicalEditor,
     key?: NodeKey,
   ) {
     super(key);
     this.__x = x;
     this.__y = y;
-    this.__captionEditor = captionEditor || createEditor();
+    this.__captionEditor = caption || createEditor();
     this.__color = color;
   }
 

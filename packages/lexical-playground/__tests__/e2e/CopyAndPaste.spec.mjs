@@ -15,6 +15,7 @@ import {
   moveToLineEnd,
   moveToPrevWord,
   selectAll,
+  selectCharacters,
 } from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
@@ -1009,6 +1010,193 @@ test.describe('CopyAndPaste', () => {
       focusOffset: 4,
       focusPath: [0, 3, 0, 0],
     });
+  });
+
+  test('Copy list items and paste into list', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    await page.keyboard.type('- one');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('two');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('three');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('four');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('five');
+
+    await selectAll(page);
+
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            value="1"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">one</span>
+          </li>
+          <li
+            value="2"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">two</span>
+          </li>
+          <li
+            value="3"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">three</span>
+          </li>
+          <li
+            value="4"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">four</span>
+          </li>
+          <li
+            value="5"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">five</span>
+          </li>
+        </ul>
+      `,
+    );
+
+    const clipboard = await copyToClipboard(page);
+
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+
+    await page.keyboard.type('12345');
+
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            value="1"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">one</span>
+          </li>
+          <li
+            value="2"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">two</span>
+          </li>
+          <li
+            value="3"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">three</span>
+          </li>
+          <li
+            value="4"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">four</span>
+          </li>
+          <li
+            value="5"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">five</span>
+          </li>
+        </ul>
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span data-lexical-text="true">12345</span>
+        </p>
+      `,
+    );
+
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('ArrowLeft');
+    await selectCharacters(page, 'left', 1);
+
+    await pasteFromClipboard(page, clipboard);
+
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            value="1"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">one</span>
+          </li>
+          <li
+            value="2"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">two</span>
+          </li>
+          <li
+            value="3"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">three</span>
+          </li>
+          <li
+            value="4"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">four</span>
+          </li>
+          <li
+            value="5"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">five</span>
+          </li>
+        </ul>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">12one</span>
+        </p>
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            value="1"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">two</span>
+          </li>
+          <li
+            value="2"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">three</span>
+          </li>
+          <li
+            value="3"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">four</span>
+          </li>
+          <li
+            value="4"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">five</span>
+          </li>
+          <li value="5" class="PlaygroundEditorTheme__listItem">
+            <span data-lexical-text="true">45</span>
+          </li>
+        </ul>
+      `,
+    );
   });
 
   test('Copy and paste of list items and paste back into list on an existing item', async ({

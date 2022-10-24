@@ -1159,6 +1159,9 @@ i.prettier-error {
 
 .table-cell-action-button-container {
   position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform;
 }
 
 .table-cell-action-button {

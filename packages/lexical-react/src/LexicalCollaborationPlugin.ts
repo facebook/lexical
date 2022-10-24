@@ -26,6 +26,7 @@ export function CollaborationPlugin({
   providerFactory,
   shouldBootstrap,
   username,
+  cursorColor,
   cursorsContainerRef,
   initialEditorState,
 }: {
@@ -37,10 +38,11 @@ export function CollaborationPlugin({
   ) => WebsocketProvider;
   shouldBootstrap: boolean;
   username?: string;
+  cursorColor?: string;
   cursorsContainerRef?: CursorsContainerRef;
   initialEditorState?: InitialEditorStateType;
 }): JSX.Element {
-  const collabContext = useCollaborationContext(username);
+  const collabContext = useCollaborationContext(username, cursorColor);
 
   const {yjsDocMap, name, color} = collabContext;
 

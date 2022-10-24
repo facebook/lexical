@@ -63,7 +63,7 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
     const captionEditor = createEditor();
     if (serializedNode.caption !== undefined) {
       const editorState = captionEditor.parseEditorState(
-        JSON.stringify(serializedNode.caption),
+        JSON.stringify(serializedNode.caption.editorState),
       );
       if (!editorState.isEmpty()) {
         captionEditor.setEditorState(editorState);

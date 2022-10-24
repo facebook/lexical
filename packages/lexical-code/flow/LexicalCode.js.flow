@@ -64,6 +64,16 @@ declare export class CodeHighlightNode extends TextNode {
   ): boolean;
   setFormat(format: number): this;
 }
+
+type TokenContent = string | Token | (string | Token)[];
+export interface Token {
+  type: string;
+  content: TokenContent;
+}
+export interface Tokenizer {
+  tokenize(code: string, language?: string): (string | Token)[];
+}
+
 declare function getHighlightThemeClass(
   theme: EditorThemeClasses,
   highlightType: ?string,
@@ -78,4 +88,5 @@ declare export function $isCodeHighlightNode(
 
 declare export function registerCodeHighlighting(
   editor: LexicalEditor,
+  tokenizer?: Tokenizer,
 ): () => void;

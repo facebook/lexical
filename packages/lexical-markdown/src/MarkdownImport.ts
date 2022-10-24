@@ -289,14 +289,22 @@ function importTextMatchTransformers(
 
       const startIndex = match.index || 0;
       const endIndex = startIndex + match[0].length;
-      let replaceNode;
+      let replaceNode, leftTextNode, rightTextNode;
 
       if (startIndex === 0) {
         [replaceNode, textNode] = textNode.splitText(endIndex);
       } else {
-        [, replaceNode, textNode] = textNode.splitText(startIndex, endIndex);
+        [leftTextNode, replaceNode, rightTextNode] = textNode.splitText(
+          startIndex,
+          endIndex,
+        );
       }
-
+      if (leftTextNode) {
+        importTextMatchTransformers(leftTextNode, textMatchTransformers);
+      }
+      if (rightTextNode) {
+        textNode = rightTextNode;
+      }
       transformer.replace(replaceNode, match);
       continue mainLoop;
     }

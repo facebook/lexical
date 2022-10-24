@@ -231,7 +231,7 @@ declare export class TableSelection {
   removeListeners(): void;
   trackTableGrid(): void;
   clearHighlight(): void;
-  adjustFocusCellForSelection(cell: Cell): void;
+  setFocusCellForSelection(cell: Cell): void;
   setAnchorCellForSelection(cell: Cell): void;
   formatCells(type: TextFormatType): void;
   clearText(): void;

@@ -23,6 +23,8 @@ export type ErrorBoundaryType =
   | React.ComponentClass<ErrorBoundaryProps>
   | React.FC<ErrorBoundaryProps>;
 
+const fallbackRenderer = () => null;
+
 const DefaultErrorBoundary = ({
   children,
   onError,
@@ -30,7 +32,7 @@ const DefaultErrorBoundary = ({
   children: JSX.Element;
   onError: (error: Error) => void;
 }) => (
-  <ReactErrorBoundary fallback={null} onError={onError}>
+  <ReactErrorBoundary fallbackRender={fallbackRenderer} onError={onError}>
     {children}
   </ReactErrorBoundary>
 );

@@ -13,6 +13,8 @@ import * as React from 'react';
 import {ErrorBoundary as ReactErrorBoundary} from './shared/ReactErrorBoundary';
 import {ErrorBoundaryType, useDecorators} from './shared/useDecorators';
 
+const fallbackRenderer = () => null;
+
 const DefaultErrorBoundary = ({
   children,
   onError,
@@ -20,7 +22,7 @@ const DefaultErrorBoundary = ({
   children: JSX.Element;
   onError: (error: Error) => void;
 }) => (
-  <ReactErrorBoundary fallback={null} onError={onError}>
+  <ReactErrorBoundary fallbackRender={fallbackRenderer} onError={onError}>
     {children}
   </ReactErrorBoundary>
 );

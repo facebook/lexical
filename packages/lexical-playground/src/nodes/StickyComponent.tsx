@@ -55,9 +55,9 @@ export default function StickyComponent({
   y,
   nodeKey,
   color,
-  captionEditor,
+  caption,
 }: {
-  captionEditor: LexicalEditor;
+  caption: LexicalEditor;
   color: 'pink' | 'yellow';
   nodeKey: NodeKey;
   x: number;
@@ -236,11 +236,11 @@ export default function StickyComponent({
           <i className="bucket" />
         </button>
         <LexicalNestedComposer
-          initialEditor={captionEditor}
+          initialEditor={caption}
           initialTheme={StickyEditorTheme}>
           {isCollabActive ? (
             <CollaborationPlugin
-              id={captionEditor.getKey()}
+              id={caption.getKey()}
               providerFactory={createWebsocketProvider}
               shouldBootstrap={true}
             />

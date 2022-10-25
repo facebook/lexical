@@ -301,9 +301,22 @@ export function $addNodeStyle(node: TextNode): void {
   CSS_TO_STYLES.set(CSSText, styles);
 }
 
-function $patchNodeStyle(node: TextNode, patch: Record<string, string>): void {
+function $patchNodeStyle(
+  node: TextNode,
+  patch: Record<string, string | null>,
+): void {
   const prevStyles = getStyleObjectFromCSS(node.getStyle());
-  const newStyles = prevStyles ? {...prevStyles, ...patch} : patch;
+  const newStyles = Object.entries(patch).reduce<Record<string, string>>(
+    (styles, [key, value]) => {
+      if (value === null) {
+        delete styles[key];
+      } else {
+        styles[key] = value;
+      }
+      return styles;
+    },
+    prevStyles || {},
+  );
   const newCSSText = getCSSFromStyleObject(newStyles);
   node.setStyle(newCSSText);
   CSS_TO_STYLES.set(newCSSText, newStyles);
@@ -311,7 +324,7 @@ function $patchNodeStyle(node: TextNode, patch: Record<string, string>): void {
 
 export function $patchStyleText(
   selection: RangeSelection | GridSelection,
-  patch: Record<string, string>,
+  patch: Record<string, string | null>,
 ): void {
   const selectedNodes = selection.getNodes();
   const selectedNodesLength = selectedNodes.length;

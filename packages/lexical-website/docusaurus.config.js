@@ -187,12 +187,6 @@ const config = {
             label: 'GitHub',
             position: 'right',
           },
-          {
-            label: 'Demos',
-            position: 'left',
-            sidebarId: 'demos',
-            type: 'docSidebar',
-          },
         ],
         logo: {
           alt: 'Lexical',

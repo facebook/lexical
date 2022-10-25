@@ -250,26 +250,31 @@ function updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
 // Using `skipTransforms` to prevent extra transforms since reformatting the code
 // will not affect code block content itself.
 //
-// Using extra flag (`isHighlighting`) since both CodeNode and CodeHighlightNode
+// Using extra cache (`nodesCurrentlyHighlighting`) since both CodeNode and CodeHighlightNode
 // transforms might be called at the same time (e.g. new CodeHighlight node inserted) and
 // in both cases we'll rerun whole reformatting over CodeNode, which is redundant.
 // Especially when pasting code into CodeBlock.
-let isHighlighting = false;
+
+const nodesCurrentlyHighlighting: Record<string, boolean> = {};
+
 function codeNodeTransform(
   node: CodeNode,
   editor: LexicalEditor,
   tokenizer: Tokenizer,
 ) {
-  if (isHighlighting) {
+  const nodeKey = node.getKey();
+
+  if (nodesCurrentlyHighlighting[nodeKey]) {
     return;
   }
-  isHighlighting = true;
+
+  nodesCurrentlyHighlighting[nodeKey] = true;
+
   // When new code block inserted it might not have language selected
   if (node.getLanguage() === undefined) {
     node.setLanguage(DEFAULT_CODE_LANGUAGE);
   }
 
-  const nodeKey = node.getKey();
   // Using nested update call to pass `skipTransforms` since we don't want
   // each individual codehighlight node to be transformed again as it's already
   // in its final state
@@ -277,9 +282,11 @@ function codeNodeTransform(
     () => {
       updateAndRetainSelection(nodeKey, () => {
         const currentNode = $getNodeByKey(nodeKey);
+
         if (!$isCodeNode(currentNode) || !currentNode.isAttached()) {
           return false;
         }
+
         const code = currentNode.getTextContent();
         const tokens = tokenizer.tokenize(
           code,
@@ -291,16 +298,18 @@ function codeNodeTransform(
           highlightNodes,
         );
         const {from, to, nodesForReplacement} = diffRange;
+
         if (from !== to || nodesForReplacement.length) {
           node.splice(from, to - from, nodesForReplacement);
           return true;
         }
+
         return false;
       });
     },
     {
       onUpdate: () => {
-        isHighlighting = false;
+        delete nodesCurrentlyHighlighting[nodeKey];
       },
       skipTransforms: true,
     },

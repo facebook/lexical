@@ -255,7 +255,7 @@ function updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
 // in both cases we'll rerun whole reformatting over CodeNode, which is redundant.
 // Especially when pasting code into CodeBlock.
 
-const nodesCurrentlyHighlighting: Record<string, boolean> = {};
+const nodesCurrentlyHighlighting = new Set();
 
 function codeNodeTransform(
   node: CodeNode,
@@ -264,11 +264,11 @@ function codeNodeTransform(
 ) {
   const nodeKey = node.getKey();
 
-  if (nodesCurrentlyHighlighting[nodeKey]) {
+  if (nodesCurrentlyHighlighting.has(nodeKey)) {
     return;
   }
 
-  nodesCurrentlyHighlighting[nodeKey] = true;
+  nodesCurrentlyHighlighting.add(nodeKey);
 
   // When new code block inserted it might not have language selected
   if (node.getLanguage() === undefined) {
@@ -309,7 +309,7 @@ function codeNodeTransform(
     },
     {
       onUpdate: () => {
-        delete nodesCurrentlyHighlighting[nodeKey];
+        nodesCurrentlyHighlighting.delete(nodeKey);
       },
       skipTransforms: true,
     },

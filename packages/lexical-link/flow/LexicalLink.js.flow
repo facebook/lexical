@@ -65,7 +65,13 @@ declare export class AutoLinkNode extends LinkNode {
   static clone(node: AutoLinkNode): AutoLinkNode;
   insertNewAfter(selection: RangeSelection): null | ElementNode;
 }
-declare export function $createAutoLinkNode(url: string): AutoLinkNode;
+declare export function $createAutoLinkNode(
+  url: string,
+  attributes?: {
+    rel?: null | string,
+    target?: null | string,
+  },
+): AutoLinkNode;
 declare export function $isAutoLinkNode(
   node: ?LexicalNode,
 ): boolean %checks(node instanceof AutoLinkNode);
@@ -81,6 +87,5 @@ declare export var TOGGLE_LINK_COMMAND: LexicalCommand<
 >;
 declare export function toggleLink(
   url: null | string,
-  target?: null | string,
-  rel?: null | string,
+  attributes: {target?: null | string, rel?: null | string},
 ): void;

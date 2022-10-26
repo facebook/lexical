@@ -348,13 +348,15 @@ async function pasteFromClipboardPageOrFrame(pageOrFrame, clipboardData) {
           getData(type, value) {
             return _clipboardData[type];
           },
-          types: ['Files'],
+          types: [...Object.keys(_clipboardData), 'Files'],
         };
       } else {
         eventClipboardData = {
+          files: [],
           getData(type, value) {
             return _clipboardData[type];
           },
+          types: Object.keys(_clipboardData),
         };
       }
 

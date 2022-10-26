@@ -2373,6 +2373,7 @@ export function internalCreateRangeSelection(
       (eventType === 'click' &&
         windowEvent &&
         (windowEvent as InputEvent).detail === 3) ||
+      eventType === 'drop' ||
       eventType === undefined);
   let anchorDOM, focusDOM, anchorOffset, focusOffset;
 

@@ -88,6 +88,8 @@ module.exports = {
         '^@lexical/yjs$': '<rootDir>/packages/lexical-yjs/src/index.ts',
         '^lexical$': '<rootDir>/packages/lexical/src/index.ts',
         '^shared/canUseDOM$': '<rootDir>/packages/shared/src/canUseDOM.ts',
+        '^shared/caretFromPoint$':
+          '<rootDir>/packages/shared/src/caretFromPoint.ts',
         '^shared/environment$': '<rootDir>/packages/shared/src/environment.ts',
         '^shared/getDOMSelection$':
           '<rootDir>/packages/shared/src/getDOMSelection.ts',

@@ -36,6 +36,7 @@ import CodeHighlightPlugin from './plugins/CodeHighlightPlugin';
 import CollapsiblePlugin from './plugins/CollapsiblePlugin';
 import CommentPlugin from './plugins/CommentPlugin';
 import ComponentPickerPlugin from './plugins/ComponentPickerPlugin';
+import DragDropPaste from './plugins/DragDropPastePlugin';
 import DraggableBlockPlugin from './plugins/DraggableBlockPlugin';
 import EmojiPickerPlugin from './plugins/EmojiPickerPlugin';
 import EmojisPlugin from './plugins/EmojisPlugin';
@@ -119,6 +120,7 @@ export default function Editor(): JSX.Element {
         }`}
         ref={scrollRef}>
         {isMaxLength && <MaxLengthPlugin maxLength={30} />}
+        <DragDropPaste />
         <AutoFocusPlugin />
         <ClearEditorPlugin />
         <ComponentPickerPlugin />

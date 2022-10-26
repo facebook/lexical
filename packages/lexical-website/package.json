@@ -20,11 +20,11 @@
     "@mdx-js/react": "^1.6.21",
     "@radix-ui/react-tabs": "^0.1.5",
     "clsx": "^1.1.1",
+    "docusaurus-plugin-typedoc": "^0.17.5",
     "prism-react-renderer": "^1.2.1",
     "react": "^18.0.0-alpha-64931821a-20210808",
     "react-dom": "^18.0.0-alpha-64931821a-20210808",
     "remark-import-partial": "0.0.2",
-    "docusaurus-plugin-typedoc": "^0.17.5",
     "typedoc-plugin-markdown": "^3.13.4"
   },
   "devDependencies": {

@@ -31,6 +31,13 @@ jest.mock('shared/environment', () => {
   return {...originalModule, IS_FIREFOX: true};
 });
 
+Object.defineProperty(window, 'DragEvent', {
+  value: class DragEvent {},
+});
+Object.defineProperty(window, 'ClipboardEvent', {
+  value: class ClipboardEvent {},
+});
+
 describe('LexicalEventHelpers', () => {
   let container = null;
 

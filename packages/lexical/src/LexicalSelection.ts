@@ -1779,7 +1779,7 @@ export class RangeSelection implements BaseSelection {
       const range = domSelection.getRangeAt(0);
       // Apply the DOM selection to our Lexical selection.
       const previousNodes = this.getNodes();
-      const root = previousNodes[0].getTopLevelElementOrThrow();
+      const root = previousNodes[0].getRoot();
       this.applyDOMRange(range);
       this.dirty = true;
       // Validate selection; make sure that the new selection respects shadow roots
@@ -1788,7 +1788,7 @@ export class RangeSelection implements BaseSelection {
       let shrinkSelection = false;
       for (let i = 0; i < nextNodes.length; i++) {
         const nextNode = nextNodes[i];
-        if (nextNode.getTopLevelElementOrThrow() === root) {
+        if (nextNode.getRoot() === root) {
           nextValidNodes.push(nextNode);
         } else {
           shrinkSelection = true;

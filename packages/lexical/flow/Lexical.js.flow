@@ -349,6 +349,7 @@ declare export class LexicalNode {
   getNextSibling<T: LexicalNode>(): T | null;
   getNextSiblings<T: LexicalNode>(): Array<T>;
   getCommonAncestor<T: ElementNode>(node: LexicalNode): T | null;
+  getRoot(): RootNode | ElementNode;
   is(object: ?LexicalNode): boolean;
   isBefore(targetNode: LexicalNode): boolean;
   isParentOf(targetNode: LexicalNode): boolean;

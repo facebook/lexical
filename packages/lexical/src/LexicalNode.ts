@@ -9,7 +9,7 @@
 /* eslint-disable no-constant-condition */
 import type {EditorConfig, LexicalEditor} from './LexicalEditor';
 import type {RangeSelection} from './LexicalSelection';
-import type {Klass} from 'lexical';
+import type {Klass, RootNode} from 'lexical';
 
 import invariant from 'shared/invariant';
 
@@ -588,6 +588,20 @@ export class LexicalNode {
 
   getTextContentSize(): number {
     return this.getTextContent().length;
+  }
+
+  /**
+   * Returns the nearest ShadowRoot or RootNode
+   */
+  getRoot(): RootNode | ElementNode {
+    let parent = this.getParentOrThrow();
+    while (parent !== null) {
+      if ($isRootOrShadowRoot(parent)) {
+        return parent;
+      }
+      parent = parent.getParentOrThrow();
+    }
+    return parent;
   }
 
   // View

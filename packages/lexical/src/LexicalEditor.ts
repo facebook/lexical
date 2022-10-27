@@ -816,10 +816,12 @@ export class LexicalEditor {
           if (selection !== null) {
             // Marking the selection dirty will force the selection back to it
             selection.dirty = true;
-          } else if (options.defaultSelection === 'rootStart') {
-            root.selectStart();
-          } else {
-            root.selectEnd();
+          } else if (root.getChildrenSize() !== 0) {
+            if (options.defaultSelection === 'rootStart') {
+              root.selectStart();
+            } else {
+              root.selectEnd();
+            }
           }
         },
         {

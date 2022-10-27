@@ -27,6 +27,7 @@ import {
 import {
   createUID,
   dispatchCommand,
+  getCachedClassNameArray,
   getDefaultView,
   markAllNodesAsDirty,
 } from './LexicalUtils';
@@ -707,6 +708,7 @@ export class LexicalEditor {
     const prevRootElement = this._rootElement;
 
     if (nextRootElement !== prevRootElement) {
+      const classNames = getCachedClassNameArray(this._config.theme, 'root');
       const pendingEditorState = this._pendingEditorState || this._editorState;
       this._rootElement = nextRootElement;
       resetEditor(this, prevRootElement, nextRootElement, pendingEditorState);
@@ -715,6 +717,9 @@ export class LexicalEditor {
         // TODO: remove this flag once we no longer use UEv2 internally
         if (!this._config.disableEvents) {
           removeRootElementEvents(prevRootElement);
+        }
+        if (classNames != null) {
+          prevRootElement.classList.remove(...classNames);
         }
       }
 
@@ -736,6 +741,9 @@ export class LexicalEditor {
         // TODO: remove this flag once we no longer use UEv2 internally
         if (!this._config.disableEvents) {
           addRootElementEvents(nextRootElement, this);
+        }
+        if (classNames != null) {
+          nextRootElement.classList.add(...classNames);
         }
       } else {
         this._window = null;

@@ -96,6 +96,15 @@ export function initializeUnitTest(
   runTests(testEnv);
 }
 
+export function initializeClipboard() {
+  Object.defineProperty(window, 'DragEvent', {
+    value: class DragEvent {},
+  });
+  Object.defineProperty(window, 'ClipboardEvent', {
+    value: class ClipboardEvent {},
+  });
+}
+
 export type SerializedTestElementNode = Spread<
   {
     type: 'test_block';

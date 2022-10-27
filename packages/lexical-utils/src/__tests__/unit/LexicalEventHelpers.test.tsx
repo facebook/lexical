@@ -21,7 +21,7 @@ import {
   setNativeSelectionWithPaths,
 } from '@lexical/selection/src/__tests__/utils';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
-import {TestComposer} from 'lexical/src/__tests__/utils';
+import {initializeClipboard, TestComposer} from 'lexical/src/__tests__/utils';
 import * as React from 'react';
 import {createRoot} from 'react-dom/client';
 import * as ReactTestUtils from 'react-dom/test-utils';
@@ -31,12 +31,7 @@ jest.mock('shared/environment', () => {
   return {...originalModule, IS_FIREFOX: true};
 });
 
-Object.defineProperty(window, 'DragEvent', {
-  value: class DragEvent {},
-});
-Object.defineProperty(window, 'ClipboardEvent', {
-  value: class ClipboardEvent {},
-});
+initializeClipboard();
 
 describe('LexicalEventHelpers', () => {
   let container = null;

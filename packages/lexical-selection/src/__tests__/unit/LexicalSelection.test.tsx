@@ -35,6 +35,7 @@ import {
   $createTestDecoratorNode,
   $createTestElementNode,
   createTestEditor,
+  initializeClipboard,
   TestComposer,
 } from 'lexical/src/__tests__/utils';
 import * as React from 'react';
@@ -68,6 +69,8 @@ import {
   setNativeSelectionWithPaths,
   undo,
 } from '../utils';
+
+initializeClipboard();
 
 jest.mock('shared/environment', () => {
   const originalModule = jest.requireActual('shared/environment');

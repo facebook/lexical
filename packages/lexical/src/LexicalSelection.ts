@@ -1768,7 +1768,7 @@ export class RangeSelection implements BaseSelection {
     // from getTargetRanges(), and is also better than trying to do it ourselves
     // using Intl.Segmenter or other workarounds that struggle with word segments
     // and line segments (especially with word wrapping and non-Roman languages).
-    $moveNativeSelection(
+    moveNativeSelection(
       domSelection,
       alter,
       isBackward ? 'backward' : 'forward',
@@ -1778,17 +1778,50 @@ export class RangeSelection implements BaseSelection {
     if (domSelection.rangeCount > 0) {
       const range = domSelection.getRangeAt(0);
       // Apply the DOM selection to our Lexical selection.
+      const previousNodes = this.getNodes();
+      const root = previousNodes[0].getTopLevelElementOrThrow();
       this.applyDOMRange(range);
       this.dirty = true;
-      // Because a range works on start and end, we might need to flip
-      // the anchor and focus points to match what the DOM has, not what
-      // the range has specifically.
-      if (
-        !collapse &&
-        (domSelection.anchorNode !== range.startContainer ||
-          domSelection.anchorOffset !== range.startOffset)
-      ) {
-        $swapPoints(this);
+      // Validate selection; make sure that the new selection respects shadow roots
+      const nextNodes = this.getNodes();
+      const nextValidNodes = [];
+      let shrinkSelection = false;
+      for (let i = 0; i < nextNodes.length; i++) {
+        const nextNode = nextNodes[i];
+        if (nextNode.getTopLevelElementOrThrow() === root) {
+          nextValidNodes.push(nextNode);
+        } else {
+          shrinkSelection = true;
+        }
+      }
+      if (!collapse) {
+        if (shrinkSelection) {
+          if (isBackward) {
+            const firstValidNode = nextValidNodes[0];
+            if ($isElementNode(firstValidNode)) {
+              firstValidNode.selectStart();
+            } else {
+              firstValidNode.getParentOrThrow().selectStart();
+            }
+          } else {
+            const lastValidNode = nextValidNodes[nextValidNodes.length - 1];
+            if ($isElementNode(lastValidNode)) {
+              lastValidNode.selectEnd();
+            } else {
+              lastValidNode.getParentOrThrow().selectEnd();
+            }
+          }
+        }
+
+        // Because a range works on start and end, we might need to flip
+        // the anchor and focus points to match what the DOM has, not what
+        // the range has specifically.
+        if (
+          domSelection.anchorNode !== range.startContainer ||
+          domSelection.anchorOffset !== range.startOffset
+        ) {
+          $swapPoints(this);
+        }
       }
     }
   }
@@ -1928,7 +1961,7 @@ function $swapPoints(selection: RangeSelection): void {
   selection._cachedNodes = null;
 }
 
-function $moveNativeSelection(
+function moveNativeSelection(
   domSelection: Selection,
   alter: 'move' | 'extend',
   direction: 'backward' | 'forward' | 'left' | 'right',

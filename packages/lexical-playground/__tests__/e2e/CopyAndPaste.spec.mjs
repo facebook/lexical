@@ -2673,7 +2673,7 @@ test.describe('CopyAndPaste', () => {
     await pasteFromClipboard(page, clipboard);
     await page.keyboard.type(' inline ');
     // Allow the browser some time to process the image
-    await page.pause(50);
+    await page.pause(200);
 
     await assertHTML(
       page,

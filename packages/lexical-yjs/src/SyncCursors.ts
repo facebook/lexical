@@ -148,10 +148,10 @@ function createCursorSelection(
 ): CursorSelection {
   const color = cursor.color;
   const caret = document.createElement('span');
-  caret.style.cssText = `position:absolute;top:0;bottom:0;right:-1px;width:1px;background-color:rgb(${color});z-index:10;`;
+  caret.style.cssText = `position:absolute;top:0;bottom:0;right:-1px;width:1px;background-color:${color};z-index:10;`;
   const name = document.createElement('span');
   name.textContent = cursor.name;
-  name.style.cssText = `position:absolute;left:-2px;top:-16px;background-color:rgb(${color});color:#fff;line-height:12px;height:12px;font-size:12px;padding:2px;font-family:Arial;font-weight:bold;white-space:nowrap;`;
+  name.style.cssText = `position:absolute;left:-2px;top:-16px;background-color:${color};color:#fff;line-height:12px;font-size:12px;padding:2px;font-family:Arial;font-weight:bold;white-space:nowrap;`;
   caret.appendChild(name);
   return {
     anchor: {
@@ -240,13 +240,19 @@ function updateCursor(
     if (selection === undefined) {
       selection = document.createElement('span');
       selections[i] = selection;
+      const selectionBg = document.createElement('span');
+      selection.appendChild(selectionBg);
       cursorsContainer.appendChild(selection);
     }
 
     const top = selectionRect.top - containerRect.top;
     const left = selectionRect.left - containerRect.left;
-    const style = `position:absolute;top:${top}px;left:${left}px;height:${selectionRect.height}px;width:${selectionRect.width}px;background-color:rgba(${color}, 0.3);pointer-events:none;z-index:5;`;
+    const style = `position:absolute;top:${top}px;left:${left}px;height:${selectionRect.height}px;width:${selectionRect.width}px;pointer-events:none;z-index:5;`;
     selection.style.cssText = style;
+
+    (
+      selection.firstChild as HTMLSpanElement
+    ).style.cssText = `${style}left:0;top:0;background-color:${color};opacity:0.3;`;
 
     if (i === selectionRectsLength - 1) {
       if (caret.parentNode !== selection) {

@@ -166,9 +166,6 @@ export function getStyleObjectFromRawCSS(css: string): Record<string, string> {
 }
 
 export function getStyleObjectFromCSS(css: string): Record<string, string> {
-  if (css === '') {
-    return {};
-  }
   let value = CSS_TO_STYLES.get(css);
   if (value === undefined) {
     value = getStyleObjectFromRawCSS(css);

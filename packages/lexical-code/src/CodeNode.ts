@@ -308,7 +308,7 @@ function convertDivElement(domNode: Node): DOMConversionOutput {
   // domNode is a <div> since we matched it by nodeName
   const div = domNode as HTMLDivElement;
   const isCode = isCodeElement(div);
-  if (!isCode) {
+  if (!isCode && !isCodeChildElement(div)) {
     return {
       node: null,
     };
@@ -321,7 +321,7 @@ function convertDivElement(domNode: Node): DOMConversionOutput {
       }
       return childLexicalNodes;
     },
-    node: $createCodeNode(),
+    node: isCode ? $createCodeNode() : null,
     preformatted: isCode,
   };
 }
@@ -350,8 +350,19 @@ function convertTableCellElement(domNode: Node): DOMConversionOutput {
   };
 }
 
-function isCodeElement(div: HTMLDivElement): boolean {
+function isCodeElement(div: HTMLElement): boolean {
   return div.style.fontFamily.match('monospace') !== null;
+}
+
+function isCodeChildElement(node: HTMLElement): boolean {
+  let parent = node.parentElement;
+  while (parent !== null) {
+    if (isCodeElement(parent)) {
+      return true;
+    }
+    parent = parent.parentElement;
+  }
+  return false;
 }
 
 function isGitHubCodeCell(

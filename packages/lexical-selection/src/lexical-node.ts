@@ -315,7 +315,7 @@ function $patchNodeStyle(
       }
       return styles;
     },
-    prevStyles || {},
+    {...prevStyles} || {},
   );
   const newCSSText = getCSSFromStyleObject(newStyles);
   node.setStyle(newCSSText);

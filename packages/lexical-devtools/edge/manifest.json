@@ -31,7 +31,7 @@
     {
       "matches": ["<all_urls>"],
       "js": ["src/content/index.js"],
-      "run_at": "document_start"
+      "run_at": "document_end"
     }
   ]
 }

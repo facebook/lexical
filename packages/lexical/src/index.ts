@@ -7,6 +7,7 @@
  *
  */
 
+export type {PasteCommandType} from './LexicalCommands';
 export type {
   CommandListenerPriority,
   CommandPayloadType,
@@ -110,6 +111,7 @@ export {
   createEditor,
 } from './LexicalEditor';
 export type {EventHandler} from './LexicalEvents';
+export {$normalizeSelection as $normalizeSelection__EXPERIMENTAL} from './LexicalNormalization';
 export {
   $createNodeSelection,
   $createRangeSelection,

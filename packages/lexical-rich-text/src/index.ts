@@ -937,7 +937,6 @@ export function registerRichText(editor: LexicalEditor): () => void {
         const [, files] = eventFiles(event);
         if (files !== null && files.length > 0) {
           editor.dispatchCommand(DRAG_DROP_PASTE, files);
-          event.preventDefault();
           return true;
         }
 
@@ -947,7 +946,6 @@ export function registerRichText(editor: LexicalEditor): () => void {
           DEPRECATED_$isGridSelection(selection)
         ) {
           onPasteForRichText(event, editor);
-          event.preventDefault();
           return true;
         }
 

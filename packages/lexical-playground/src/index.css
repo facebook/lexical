@@ -75,7 +75,6 @@ header h1 {
 
 .editor-scroller {
   min-height: 150px;
-  height: 360px;
   border: 0;
   resize: none;
   cursor: text;

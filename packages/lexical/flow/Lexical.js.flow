@@ -349,7 +349,6 @@ declare export class LexicalNode {
   getNextSibling<T: LexicalNode>(): T | null;
   getNextSiblings<T: LexicalNode>(): Array<T>;
   getCommonAncestor<T: ElementNode>(node: LexicalNode): T | null;
-  getRoot(): RootNode | ElementNode;
   is(object: ?LexicalNode): boolean;
   isBefore(targetNode: LexicalNode): boolean;
   isParentOf(targetNode: LexicalNode): boolean;
@@ -815,6 +814,9 @@ declare export function $isInlineElementOrDecoratorNode(
   node: LexicalNode,
 ): boolean %checks(node instanceof ElementNode ||
   node instanceof DecoratorNode);
+declare export function $getNearestRootOrShadowRoot(
+  node: LexicalNode,
+): RootNode | ElementNode;
 declare export function $isRootOrShadowRoot(
   node: LexicalNode,
 ): boolean %checks(node instanceof RootNode || node instanceof ElementNode);

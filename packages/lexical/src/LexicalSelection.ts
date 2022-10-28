@@ -50,6 +50,7 @@ import {
 import {
   $getCompositionKey,
   $getDecoratorNode,
+  $getNearestRootOrShadowRoot,
   $getNodeByKey,
   $getRoot,
   $hasAncestor,
@@ -1776,7 +1777,7 @@ export class RangeSelection implements BaseSelection {
     if (domSelection.rangeCount > 0) {
       const range = domSelection.getRangeAt(0);
       // Apply the DOM selection to our Lexical selection.
-      const root = this.anchor.getNode().getRoot();
+      const root = $getNearestRootOrShadowRoot(this.anchor.getNode());
       this.applyDOMRange(range);
       this.dirty = true;
       if (!collapse) {

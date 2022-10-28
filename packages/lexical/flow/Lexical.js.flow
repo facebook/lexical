@@ -814,6 +814,9 @@ declare export function $isInlineElementOrDecoratorNode(
   node: LexicalNode,
 ): boolean %checks(node instanceof ElementNode ||
   node instanceof DecoratorNode);
+declare export function $getNearestRootOrShadowRoot(
+  node: LexicalNode,
+): RootNode | ElementNode;
 declare export function $isRootOrShadowRoot(
   node: LexicalNode,
 ): boolean %checks(node instanceof RootNode || node instanceof ElementNode);

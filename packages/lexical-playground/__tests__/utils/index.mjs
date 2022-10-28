@@ -407,7 +407,7 @@ export async function sleep(delay) {
 
 // Fair time for the browser to process a newly inserted image
 export async function sleepInsertImage(count = 1) {
-  return await sleep(200 * count);
+  return await sleep(1000 * count);
 }
 
 export async function focusEditor(page, parentSelector = '.editor-shell') {

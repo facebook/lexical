@@ -676,9 +676,8 @@ export function applyTableHandlers(
             children.forEach((child) => newParagraphNode.append(child));
             nearestElementNode.replace(newParagraphNode);
             nearestElementNode.getWritable().__parent = tableCellNode.getKey();
+            return true;
           }
-
-          return true;
         }
       }
     }

@@ -50,8 +50,10 @@ import {
 import {
   $getCompositionKey,
   $getDecoratorNode,
+  $getNearestRootOrShadowRoot,
   $getNodeByKey,
   $getRoot,
+  $hasAncestor,
   $isRootOrShadowRoot,
   $isTokenOrSegmented,
   $setCompositionKey,
@@ -601,10 +603,7 @@ export class RangeSelection implements BaseSelection {
     let nodes: Array<LexicalNode>;
 
     if (firstNode.is(lastNode)) {
-      if (
-        $isElementNode(firstNode) &&
-        (firstNode.getChildrenSize() > 0 || firstNode.excludeFromCopy())
-      ) {
+      if ($isElementNode(firstNode) && firstNode.getChildrenSize() > 0) {
         nodes = [];
       } else {
         nodes = [firstNode];
@@ -1768,7 +1767,7 @@ export class RangeSelection implements BaseSelection {
     // from getTargetRanges(), and is also better than trying to do it ourselves
     // using Intl.Segmenter or other workarounds that struggle with word segments
     // and line segments (especially with word wrapping and non-Roman languages).
-    $moveNativeSelection(
+    moveNativeSelection(
       domSelection,
       alter,
       isBackward ? 'backward' : 'forward',
@@ -1778,17 +1777,51 @@ export class RangeSelection implements BaseSelection {
     if (domSelection.rangeCount > 0) {
       const range = domSelection.getRangeAt(0);
       // Apply the DOM selection to our Lexical selection.
+      const root = $getNearestRootOrShadowRoot(this.anchor.getNode());
       this.applyDOMRange(range);
       this.dirty = true;
-      // Because a range works on start and end, we might need to flip
-      // the anchor and focus points to match what the DOM has, not what
-      // the range has specifically.
-      if (
-        !collapse &&
-        (domSelection.anchorNode !== range.startContainer ||
-          domSelection.anchorOffset !== range.startOffset)
-      ) {
-        $swapPoints(this);
+      if (!collapse) {
+        // Validate selection; make sure that the new extended selection respects shadow roots
+        const nodes = this.getNodes();
+        const validNodes = [];
+        let shrinkSelection = false;
+        for (let i = 0; i < nodes.length; i++) {
+          const nextNode = nodes[i];
+          if ($hasAncestor(nextNode, root)) {
+            validNodes.push(nextNode);
+          } else {
+            shrinkSelection = true;
+          }
+        }
+        if (shrinkSelection && validNodes.length > 0) {
+          // validNodes length check is a safeguard against an invalid selection; as getNodes()
+          // will return an empty array in this case
+          if (isBackward) {
+            const firstValidNode = validNodes[0];
+            if ($isElementNode(firstValidNode)) {
+              firstValidNode.selectStart();
+            } else {
+              firstValidNode.getParentOrThrow().selectStart();
+            }
+          } else {
+            const lastValidNode = validNodes[validNodes.length - 1];
+            if ($isElementNode(lastValidNode)) {
+              lastValidNode.selectEnd();
+            } else {
+              lastValidNode.getParentOrThrow().selectEnd();
+            }
+          }
+        }
+
+        // Because a range works on start and end, we might need to flip
+        // the anchor and focus points to match what the DOM has, not what
+        // the range has specifically.
+        if (
+          domSelection.anchorNode !== range.startContainer ||
+          domSelection.anchorOffset !== range.startOffset
+        ) {
+          $swapPoints(this);
+        }
       }
     }
   }
@@ -1928,7 +1961,7 @@ function $swapPoints(selection: RangeSelection): void {
   selection._cachedNodes = null;
 }
 
-function $moveNativeSelection(
+function moveNativeSelection(
   domSelection: Selection,
   alter: 'move' | 'extend',
   direction: 'backward' | 'forward' | 'left' | 'right',

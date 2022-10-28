@@ -189,7 +189,7 @@ export class TestInlineElementNode extends ElementNode {
   }
 
   createDOM() {
-    return document.createElement('div');
+    return document.createElement('a');
   }
 
   updateDOM() {

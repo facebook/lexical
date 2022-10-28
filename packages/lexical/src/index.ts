@@ -127,6 +127,7 @@ export {
   $addUpdateTag,
   $getDecoratorNode,
   $getNearestNodeFromDOMNode,
+  $getNearestRootOrShadowRoot,
   $getNodeByKey,
   $getRoot,
   $hasAncestor,

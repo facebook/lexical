@@ -184,6 +184,7 @@
       "@lexical/yjs": ["./packages/lexical-yjs/src/"],
 
       "shared/canUseDOM": ["./packages/shared/src/canUseDOM.ts"],
+      "shared/caretFromPoint": ["./packages/shared/src/caretFromPoint.ts"],
       "shared/getDOMSelection": ["./packages/shared/src/getDOMSelection.ts"],
       "shared/simpleDiffWithCursor": [
         "packages/shared/src/simpleDiffWithCursor.ts"

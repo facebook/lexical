@@ -16,6 +16,7 @@ import {
   moveToPrevWord,
   selectAll,
   selectCharacters,
+  undo,
 } from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
@@ -30,9 +31,11 @@ import {
   insertTable,
   IS_LINUX,
   IS_WINDOWS,
+  LEXICAL_IMAGE_BASE64,
   pasteFromClipboard,
   selectCellsFromTableCords,
   selectFromAlignDropdown,
+  sleepInsertImage,
   test,
 } from '../utils/index.mjs';
 
@@ -2700,6 +2703,104 @@ test.describe('CopyAndPaste', () => {
             <span data-lexical-text="true">â..ï¸.Â&nbsp;Line 2.</span>
           </li>
         </ul>
+      `,
+    );
+  });
+
+  test('HTML Copy + paste an image', async ({page, isPlainText}) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    const clipboard = {
+      'playwright/base64': [LEXICAL_IMAGE_BASE64, 'image/png'],
+    };
+
+    await page.keyboard.type('An image');
+    await moveLeft(page, 'image'.length);
+    await pasteFromClipboard(page, clipboard);
+    await page.keyboard.type(' inline ');
+    await sleepInsertImage();
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">An</span>
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true">
+            <div draggable="false">
+              <img
+                alt="file"
+                draggable="false"
+                src="${LEXICAL_IMAGE_BASE64}"
+                style="height: inherit; max-width: 500px; width: inherit" />
+            </div>
+          </span>
+          <span data-lexical-text="true">inline image</span>
+        </p>
+      `,
+    );
+  });
+
+  test('HTML Copy + paste + undo multiple image', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    const clipboard = {
+      'playwright/base64_1': [LEXICAL_IMAGE_BASE64, 'image/png'],
+      'playwright/base64_2': [LEXICAL_IMAGE_BASE64, 'image/png'],
+    };
+
+    await pasteFromClipboard(page, clipboard);
+    await sleepInsertImage(2);
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true">
+            <div draggable="false">
+              <img
+                alt="file"
+                draggable="false"
+                src="${LEXICAL_IMAGE_BASE64}"
+                style="height: inherit; max-width: 500px; width: inherit" />
+            </div>
+          </span>
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true">
+            <div draggable="false">
+              <img
+                alt="file"
+                draggable="false"
+                src="${LEXICAL_IMAGE_BASE64}"
+                style="height: inherit; max-width: 500px; width: inherit" />
+            </div>
+          </span>
+          <br />
+        </p>
+      `,
+    );
+
+    await undo(page);
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
       `,
     );
   });

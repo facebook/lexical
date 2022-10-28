@@ -8,6 +8,7 @@
 import './index.css';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {eventFiles} from '@lexical/rich-text';
 import {mergeRegister} from '@lexical/utils';
 import {
   $getNearestNodeFromDOMNode,
@@ -247,6 +248,10 @@ function useDraggableBlockMenu(
 
   useEffect(() => {
     function onDragover(event: DragEvent): boolean {
+      const [isFileTransfer] = eventFiles(event);
+      if (isFileTransfer) {
+        return false;
+      }
       const {pageY, target} = event;
       if (!isHTMLElement(target)) {
         return false;
@@ -263,6 +268,10 @@ function useDraggableBlockMenu(
     }
 
     function onDrop(event: DragEvent): boolean {
+      const [isFileTransfer] = eventFiles(event);
+      if (isFileTransfer) {
+        return false;
+      }
       const {target, dataTransfer, pageY} = event;
       const dragData = dataTransfer?.getData(DRAG_DATA_FORMAT) || '';
       const draggedNode = $getNodeByKey(dragData);

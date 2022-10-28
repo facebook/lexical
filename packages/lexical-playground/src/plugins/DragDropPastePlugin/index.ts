@@ -37,10 +37,15 @@ export default function DragDropPaste(): null {
       DRAG_DROP_PASTE,
       (files) => {
         const filesIterator = files[Symbol.iterator]();
+        // Batch all node insertions together to prevent asynchronous behavior causing unnecessary
+        // DOM renders and redundant history entries
+        const insertQueue: Array<() => void> = [];
         const handleNextFile = () => {
           const {value: file, done} = filesIterator.next();
           if (done) {
-            // TODO batch history
+            for (let i = 0; i < insertQueue.length; i++) {
+              insertQueue[i]();
+            }
             return;
           }
           const fileReader = new FileReader();
@@ -50,10 +55,12 @@ export default function DragDropPaste(): null {
               typeof result === 'string' &&
               isAcceptableImageType(file.type)
             ) {
-              editor.dispatchCommand(INSERT_IMAGE_COMMAND, {
-                altText: file.name,
-                src: result,
-              });
+              insertQueue.push(() =>
+                editor.dispatchCommand(INSERT_IMAGE_COMMAND, {
+                  altText: file.name,
+                  src: result,
+                }),
+              );
             }
             handleNextFile();
           });

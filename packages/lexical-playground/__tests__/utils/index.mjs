@@ -332,19 +332,22 @@ async function pasteFromClipboardPageOrFrame(pageOrFrame, clipboardData) {
       clipboardData: _clipboardData,
       canUseBeforeInput: _canUseBeforeInput,
     }) => {
-      const clipboardBase64 = _clipboardData['playwright/base64'];
-      let file = null;
-      if (clipboardBase64) {
-        delete _clipboardData['playwright/base64'];
-        const [base64, type] = clipboardBase64;
-        const res = await fetch(base64);
-        const blob = await res.blob();
-        file = new File([blob], 'file', {type});
+      const files = [];
+      for (const [clipboardKey, clipboardValue] of Object.entries(
+        _clipboardData,
+      )) {
+        if (clipboardKey.startsWith('playwright/base64')) {
+          delete _clipboardData[clipboardKey];
+          const [base64, type] = clipboardValue;
+          const res = await fetch(base64);
+          const blob = await res.blob();
+          files.push(new File([blob], 'file', {type}));
+        }
       }
       let eventClipboardData;
-      if (file) {
+      if (files.length > 0) {
         eventClipboardData = {
-          files: [file],
+          files,
           getData(type, value) {
             return _clipboardData[type];
           },
@@ -352,7 +355,7 @@ async function pasteFromClipboardPageOrFrame(pageOrFrame, clipboardData) {
         };
       } else {
         eventClipboardData = {
-          files: [],
+          files,
           getData(type, value) {
             return _clipboardData[type];
           },
@@ -400,6 +403,11 @@ export async function pasteFromClipboard(page, clipboardData) {
 
 export async function sleep(delay) {
   await new Promise((resolve) => setTimeout(resolve, delay));
+}
+
+// Fair time for the browser to process a newly inserted image
+export async function sleepInsertImage(count = 1) {
+  return await sleep(200 * count);
 }
 
 export async function focusEditor(page, parentSelector = '.editor-shell') {

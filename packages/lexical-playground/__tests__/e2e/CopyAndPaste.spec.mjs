@@ -16,6 +16,7 @@ import {
   moveToPrevWord,
   selectAll,
   selectCharacters,
+  undo,
 } from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
@@ -34,6 +35,7 @@ import {
   pasteFromClipboard,
   selectCellsFromTableCords,
   selectFromAlignDropdown,
+  sleepInsertImage,
   test,
 } from '../utils/index.mjs';
 
@@ -2672,8 +2674,7 @@ test.describe('CopyAndPaste', () => {
     await moveLeft(page, 'image'.length);
     await pasteFromClipboard(page, clipboard);
     await page.keyboard.type(' inline ');
-    // Allow the browser some time to process the image
-    await page.pause(200);
+    await sleepInsertImage();
 
     await assertHTML(
       page,
@@ -2696,6 +2697,65 @@ test.describe('CopyAndPaste', () => {
           </span>
           <span data-lexical-text="true">inline image</span>
         </p>
+      `,
+    );
+  });
+
+  test('HTML Copy + paste + undo multiple image', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    const clipboard = {
+      'playwright/base64_1': [LEXICAL_IMAGE_BASE64, 'image/png'],
+      'playwright/base64_2': [LEXICAL_IMAGE_BASE64, 'image/png'],
+    };
+
+    await pasteFromClipboard(page, clipboard);
+    await sleepInsertImage(2);
+    await page.pause();
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true">
+            <div draggable="false">
+              <img
+                alt="file"
+                draggable="false"
+                src="${LEXICAL_IMAGE_BASE64}"
+                style="height: inherit; max-width: 500px; width: inherit" />
+            </div>
+          </span>
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true">
+            <div draggable="false">
+              <img
+                alt="file"
+                draggable="false"
+                src="${LEXICAL_IMAGE_BASE64}"
+                style="height: inherit; max-width: 500px; width: inherit" />
+            </div>
+          </span>
+          <br />
+        </p>
+      `,
+    );
+
+    await undo(page);
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
       `,
     );
   });

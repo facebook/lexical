@@ -52,6 +52,7 @@ import {
   $getDecoratorNode,
   $getNodeByKey,
   $getRoot,
+  $hasAncestor,
   $isRootOrShadowRoot,
   $isTokenOrSegmented,
   $setCompositionKey,
@@ -601,10 +602,7 @@ export class RangeSelection implements BaseSelection {
     let nodes: Array<LexicalNode>;
 
     if (firstNode.is(lastNode)) {
-      if (
-        $isElementNode(firstNode) &&
-        (firstNode.getChildrenSize() > 0 || firstNode.excludeFromCopy())
-      ) {
+      if ($isElementNode(firstNode) && firstNode.getChildrenSize() > 0) {
         nodes = [];
       } else {
         nodes = [firstNode];
@@ -1778,33 +1776,34 @@ export class RangeSelection implements BaseSelection {
     if (domSelection.rangeCount > 0) {
       const range = domSelection.getRangeAt(0);
       // Apply the DOM selection to our Lexical selection.
-      const previousNodes = this.getNodes();
-      const root = previousNodes[0].getRoot();
+      const root = this.anchor.getNode().getRoot();
       this.applyDOMRange(range);
       this.dirty = true;
-      // Validate selection; make sure that the new selection respects shadow roots
-      const nextNodes = this.getNodes();
-      const nextValidNodes = [];
-      let shrinkSelection = false;
-      for (let i = 0; i < nextNodes.length; i++) {
-        const nextNode = nextNodes[i];
-        if (nextNode.getRoot() === root) {
-          nextValidNodes.push(nextNode);
-        } else {
-          shrinkSelection = true;
-        }
-      }
       if (!collapse) {
-        if (shrinkSelection) {
+        // Validate selection; make sure that the new extended selection respects shadow roots
+        const nodes = this.getNodes();
+        const validNodes = [];
+        let shrinkSelection = false;
+        for (let i = 0; i < nodes.length; i++) {
+          const nextNode = nodes[i];
+          if ($hasAncestor(nextNode, root)) {
+            validNodes.push(nextNode);
+          } else {
+            shrinkSelection = true;
+          }
+        }
+        if (shrinkSelection && validNodes.length > 0) {
+          // validNodes length check is a safeguard against an invalid selection; as getNodes()
+          // will return an empty array in this case
           if (isBackward) {
-            const firstValidNode = nextValidNodes[0];
+            const firstValidNode = validNodes[0];
             if ($isElementNode(firstValidNode)) {
               firstValidNode.selectStart();
             } else {
               firstValidNode.getParentOrThrow().selectStart();
             }
           } else {
-            const lastValidNode = nextValidNodes[nextValidNodes.length - 1];
+            const lastValidNode = validNodes[validNodes.length - 1];
             if ($isElementNode(lastValidNode)) {
               lastValidNode.selectEnd();
             } else {

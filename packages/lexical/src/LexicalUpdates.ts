@@ -807,10 +807,14 @@ function beginUpdate(
   activeEditor = editor;
 
   try {
-    if (editorStateWasCloned && !editor._headless) {
-      pendingEditorState._selection = internalCreateSelection(editor);
-    } else if (editor._headless && currentEditorState._selection != null) {
-      pendingEditorState._selection = currentEditorState._selection.clone();
+    if (editorStateWasCloned) {
+      if (editor._headless) {
+        if (currentEditorState._selection != null) {
+          pendingEditorState._selection = currentEditorState._selection.clone();
+        }
+      } else {
+        pendingEditorState._selection = internalCreateSelection(editor);
+      }
     }
 
     const startingCompositionKey = editor._compositionKey;

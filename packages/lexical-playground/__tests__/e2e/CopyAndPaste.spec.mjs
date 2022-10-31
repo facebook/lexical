@@ -2834,10 +2834,8 @@ test.describe('CopyAndPaste', () => {
         </div>
       `,
     );
+    await click(page, 'hr:first-of-type');
 
-    await moveToEditorBeginning(page);
-    // selects first HR
-    await page.keyboard.press('ArrowRight');
     // sets focus between HRs
     await page.keyboard.press('ArrowRight');
 

@@ -11,7 +11,8 @@ import {HashtagNode} from '@lexical/hashtag';
 import {AutoLinkNode, LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
 import {OverflowNode} from '@lexical/overflow';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerContext} from '@lexical/react/src/LexicalComposerContext';
+import LexicalErrorBoundary from '@lexical/react/src/LexicalErrorBoundary';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
 import {$rootTextContent} from '@lexical/text';
@@ -97,11 +98,13 @@ describe('LexicalNodeHelpers tests', () => {
               <PlainTextPlugin
                 contentEditable={<ContentEditable />}
                 placeholder=""
+                ErrorBoundary={LexicalErrorBoundary}
               />
             ) : (
               <RichTextPlugin
                 contentEditable={<ContentEditable />}
                 placeholder=""
+                ErrorBoundary={LexicalErrorBoundary}
               />
             )}
           </LexicalComposer>
@@ -163,11 +166,13 @@ describe('LexicalNodeHelpers tests', () => {
               <PlainTextPlugin
                 contentEditable={<ContentEditable />}
                 placeholder=""
+                ErrorBoundary={LexicalErrorBoundary}
               />
             ) : (
               <RichTextPlugin
                 contentEditable={<ContentEditable />}
                 placeholder=""
+                ErrorBoundary={LexicalErrorBoundary}
               />
             )}
           </LexicalComposer>

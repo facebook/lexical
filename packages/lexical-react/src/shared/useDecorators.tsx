@@ -13,8 +13,6 @@ import * as React from 'react';
 import {createPortal, flushSync} from 'react-dom';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
-import {ErrorBoundary as ReactErrorBoundary} from './ReactErrorBoundary';
-
 type ErrorBoundaryProps = {
   children: JSX.Element;
   onError: (error: Error) => void;
@@ -23,24 +21,9 @@ export type ErrorBoundaryType =
   | React.ComponentClass<ErrorBoundaryProps>
   | React.FC<ErrorBoundaryProps>;
 
-const fallbackRenderer = () => null;
-
-const DefaultErrorBoundary = ({
-  children,
-  onError,
-}: {
-  children: JSX.Element;
-  onError: (error: Error) => void;
-}) => (
-  <ReactErrorBoundary fallbackRender={fallbackRenderer} onError={onError}>
-    {children}
-  </ReactErrorBoundary>
-);
-
 export function useDecorators(
   editor: LexicalEditor,
-  // TODO 0.6 Make non-optional non-default
-  ErrorBoundary: ErrorBoundaryType = DefaultErrorBoundary,
+  ErrorBoundary: ErrorBoundaryType,
 ): Array<JSX.Element> {
   const [decorators, setDecorators] = useState<Record<string, JSX.Element>>(
     () => editor.getDecorators<JSX.Element>(),

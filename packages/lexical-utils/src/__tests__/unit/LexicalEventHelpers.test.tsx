@@ -13,6 +13,7 @@ import {ListItemNode, ListNode} from '@lexical/list';
 import {OverflowNode} from '@lexical/overflow';
 import {useLexicalComposerContext} from '@lexical/react/src/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/src/LexicalContentEditable';
+import LexicalErrorBoundary from '@lexical/react/src/LexicalErrorBoundary';
 import {RichTextPlugin} from '@lexical/react/src/LexicalRichTextPlugin';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {
@@ -113,6 +114,7 @@ describe('LexicalEventHelpers', () => {
               <ContentEditable role={null} spellCheck={null} />
             }
             placeholder=""
+            ErrorBoundary={LexicalErrorBoundary}
           />
           <TestPlugin />
         </TestComposer>

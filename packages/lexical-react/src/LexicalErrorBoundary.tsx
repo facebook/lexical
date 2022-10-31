@@ -6,8 +6,6 @@
  *
  */
 
-import './ErrorBoundary.css';
-
 import * as React from 'react';
 import {ErrorBoundary as ReactErrorBoundary} from 'react-error-boundary';
 
@@ -16,17 +14,21 @@ type Props = {
   onError: (error: Error) => void;
 };
 
-export default function ErrorBoundary({children, onError}: Props): JSX.Element {
+export default function LexicalErrorBoundary({
+  children,
+  onError,
+}: Props): JSX.Element {
   return (
     <ReactErrorBoundary
       fallback={
-        <span className="ErrorBoundary__container">
-          React crashed. Please,{' '}
-          <a href="https://github.com/facebook/lexical/issues/new/choose">
-            file a task
-          </a>
-          .
-        </span>
+        <div
+          style={{
+            border: '1px solid #f00',
+            color: '#f00',
+            padding: '8px',
+          }}>
+          An error was thrown.
+        </div>
       }
       onError={onError}>
       {children}

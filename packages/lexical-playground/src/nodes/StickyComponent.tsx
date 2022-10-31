@@ -13,6 +13,7 @@ import './StickyNode.css';
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {LexicalNestedComposer} from '@lexical/react/LexicalNestedComposer';
 import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
@@ -25,7 +26,6 @@ import {createWebsocketProvider} from '../collaboration';
 import {useSharedHistoryContext} from '../context/SharedHistoryContext';
 import StickyEditorTheme from '../themes/StickyEditorTheme';
 import ContentEditable from '../ui/ContentEditable';
-import ErrorBoundary from '../ui/ErrorBoundary';
 import Placeholder from '../ui/Placeholder';
 import {$isStickyNode} from './StickyNode';
 
@@ -256,7 +256,7 @@ export default function StickyComponent({
                 What's up?
               </Placeholder>
             }
-            ErrorBoundary={ErrorBoundary}
+            ErrorBoundary={LexicalErrorBoundary}
           />
         </LexicalNestedComposer>
       </div>

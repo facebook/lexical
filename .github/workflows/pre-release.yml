@@ -1,13 +1,13 @@
 name: Publish to NPM
 on:
   push:
-    tags:
-      - 'v**-next.**'
+    branches:
+      - main
 
 jobs:
   release:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: contains(github.ref, '-next.')
     steps:
       - uses: actions/checkout@v3
       # Setup .npmrc file to publish to npm

@@ -16,10 +16,13 @@
  *
  */
 
+import type {RangeSelection} from 'lexical';
+
 import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $getSelection,
   COMMAND_PRIORITY_NORMAL,
   CONTROLLED_TEXT_INSERTION_COMMAND,
   ParagraphNode,
@@ -30,16 +33,13 @@ import {createHeadlessEditor} from '../..';
 describe('LexicalHeadlessEditor', () => {
   let editor;
 
-  async function update(callback) {
-    return new Promise((resolve) => {
-      editor.update(callback, {onUpdate: resolve});
-    });
+  async function update(updateFn) {
+    editor.update(updateFn);
+    await Promise.resolve();
   }
 
   function assertEditorState(editorState, nodes) {
-    const nodesFromState = Array.from(editorState._nodeMap).map(
-      (pair) => pair[1],
-    );
+    const nodesFromState = Array.from(editorState._nodeMap.values());
     expect(nodesFromState).toEqual(
       nodes.map((node) => expect.objectContaining(node)),
     );
@@ -48,8 +48,8 @@ describe('LexicalHeadlessEditor', () => {
   beforeEach(() => {
     editor = createHeadlessEditor({
       namespace: '',
-      onError: () => {
-        return;
+      onError: (error) => {
+        throw error;
       },
     });
   });
@@ -148,5 +148,23 @@ describe('LexicalHeadlessEditor', () => {
       expect.objectContaining({__type: 'paragraph'}),
     );
     expect(onTextContent).toBeCalledWith('Helloworld');
+  });
+
+  it('can preserve selection for pending editor state (within update loop)', async () => {
+    await update(() => {
+      const textNode = $createTextNode('Hello world');
+      $getRoot().append($createParagraphNode().append(textNode));
+      textNode.select(1, 2);
+    });
+
+    await update(() => {
+      const selection = $getSelection() as RangeSelection;
+      expect(selection.anchor).toEqual(
+        expect.objectContaining({offset: 1, type: 'text'}),
+      );
+      expect(selection.focus).toEqual(
+        expect.objectContaining({offset: 2, type: 'text'}),
+      );
+    });
   });
 });

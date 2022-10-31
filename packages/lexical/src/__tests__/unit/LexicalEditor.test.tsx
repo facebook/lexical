@@ -6,8 +6,9 @@
  *
  */
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerContext} from '@lexical/react/src/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/src/LexicalContentEditable';
+import LexicalErrorBoundary from '@lexical/react/src/LexicalErrorBoundary';
 import {RichTextPlugin} from '@lexical/react/src/LexicalRichTextPlugin';
 import {
   $createTableCellNode,
@@ -994,6 +995,7 @@ describe('LexicalEditor tests', () => {
                 <ContentEditable key={divKey} role={null} spellCheck={null} />
               }
               placeholder=""
+              ErrorBoundary={LexicalErrorBoundary}
             />
             <TestPlugin />
           </TestComposer>

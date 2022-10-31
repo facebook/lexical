@@ -62,6 +62,7 @@ React wrapper for `@lexical/rich-text` that adds major features for rich text ed
 <RichTextPlugin
   contentEditable={<ContentEditable />}
   placeholder={<div>Enter some text...</div>}
+  ErrorBoundary={LexicalErrorBoundary}
 />
 ```
 

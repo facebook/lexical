@@ -8,29 +8,11 @@
 
 import type {LexicalEditor} from 'lexical';
 
-import * as React from 'react';
-
-import {ErrorBoundary as ReactErrorBoundary} from './shared/ReactErrorBoundary';
 import {ErrorBoundaryType, useDecorators} from './shared/useDecorators';
-
-const fallbackRenderer = () => null;
-
-const DefaultErrorBoundary = ({
-  children,
-  onError,
-}: {
-  children: JSX.Element;
-  onError: (error: Error) => void;
-}) => (
-  <ReactErrorBoundary fallbackRender={fallbackRenderer} onError={onError}>
-    {children}
-  </ReactErrorBoundary>
-);
 
 export function useLexicalDecorators(
   editor: LexicalEditor,
-  // TODO 0.6 Make non-optional non-default
-  ErrorBoundary: ErrorBoundaryType = DefaultErrorBoundary,
+  ErrorBoundary: ErrorBoundaryType,
 ): Array<JSX.Element> {
   return useDecorators(editor, ErrorBoundary);
 }

@@ -6,7 +6,8 @@
  *
  */
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerContext} from '@lexical/react/src/LexicalComposerContext';
+import LexicalErrorBoundary from '@lexical/react/src/LexicalErrorBoundary';
 import {LexicalEditor} from 'lexical';
 import * as React from 'react';
 import {createRoot, Root} from 'react-dom/client';
@@ -40,6 +41,7 @@ function Editor({doc, provider, setEditor}) {
       <RichTextPlugin
         contentEditable={<ContentEditable />}
         placeholder={<></>}
+        ErrorBoundary={LexicalErrorBoundary}
       />
     </>
   );

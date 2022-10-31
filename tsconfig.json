@@ -117,6 +117,9 @@
       "@lexical/react/LexicalHashtagPlugin": [
         "./packages/lexical-react/src/LexicalHashtagPlugin.ts"
       ],
+      "@lexical/react/LexicalErrorBoundary": [
+        "./packages/lexical-react/src/LexicalErrorBoundary.tsx"
+      ],
       "@lexical/react/LexicalMarkdownShortcutPlugin": [
         "./packages/lexical-react/src/LexicalMarkdownShortcutPlugin.tsx"
       ],

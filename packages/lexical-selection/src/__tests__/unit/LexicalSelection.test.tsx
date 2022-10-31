@@ -10,6 +10,7 @@ import {$createLinkNode} from '@lexical/link';
 import {$createListItemNode, $createListNode} from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/src/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/src/LexicalContentEditable';
+import LexicalErrorBoundary from '@lexical/react/src/LexicalErrorBoundary';
 import {HistoryPlugin} from '@lexical/react/src/LexicalHistoryPlugin';
 import {RichTextPlugin} from '@lexical/react/src/LexicalRichTextPlugin';
 import {$createHeadingNode} from '@lexical/rich-text';
@@ -144,6 +145,7 @@ describe('LexicalSelection tests', () => {
               <ContentEditable role={null} spellCheck={null} />
             }
             placeholder=""
+            ErrorBoundary={LexicalErrorBoundary}
           />
           <HistoryPlugin />
           <TestPlugin />

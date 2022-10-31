@@ -32,7 +32,7 @@ export class DecoratorNode<T> extends LexicalNode {
     return true;
   }
 
-  isSelectable(): boolean {
+  isKeyboardSelectable(): boolean {
     return true;
   }
 }

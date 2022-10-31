@@ -734,6 +734,7 @@ declare export class DecoratorNode<X> extends LexicalNode {
   decorate(editor: LexicalEditor, config: EditorConfig): X;
   isIsolated(): boolean;
   isInline(): boolean;
+  isKeyboardSelectable(): boolean;
 }
 declare export function $isDecoratorNode(
   node: ?LexicalNode,

@@ -1715,7 +1715,7 @@ export class RangeSelection implements BaseSelection {
     if ($isDecoratorNode(possibleNode) && !possibleNode.isIsolated()) {
       // Make it possible to move selection from range selection to
       // node selection on the node.
-      if (collapse) {
+      if (collapse && possibleNode.isKeyboardSelectable()) {
         const nodeSelection = $createNodeSelection();
         nodeSelection.add(possibleNode.__key);
         $setSelection(nodeSelection);

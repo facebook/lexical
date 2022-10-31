@@ -1,3 +1,119 @@
+## v0.6.0 (2022-10-31)
+
+- [0.6] Make RichTextPlugin ErrorBoundary mandatory (#3295) Gerard Rovira
+- Optional decorator nodes selection with keyboard navigation (#3292) Ruslan Piliuta
+- Keep selection if state was not cloned (#3294) Maksim Horbachevsky
+- Preserve selection for pending state (#3293) Maksim Horbachevsky
+- Handle quotes in increment-version changelog (#3291) Gerard Rovira
+- v0.5.1-next.2 (#3286) Acy Watson
+- filter by branch (#3285) Acy Watson
+- Release on matching tag push to main (#3284) Acy Watson
+- Drag & drop & paste with precision (#3274) Gerard Rovira
+- Fix initial content tables initialization (#3281) Maksim Horbachevsky
+- selection.modify to respect ShadowRoot (#3279) Gerard Rovira
+- Add root theme class (#3277) Maksim Horbachevsky
+- Improve Collab cursor, add custom cursorColor (#3248) Dragoș Străinu
+- fix nodesOfType return type (#3262) Acy Watson
+- Copy styles to new object when patching (#3273) Acy Watson
+- Revert "Select end if root has no children (#3254)" (#3276) Acy Watson
+- Fix paste CodeNode leak  and and empty links (#3194) Gerard Rovira
+- Use set (#3258) John Flockton
+- Do not reconcile terminating linebreak for inline elements (#3268) Maksim Horbachevsky
+- Revert "v0.5.1-next.2 (#3269)" (#3272) Acy Watson
+- v0.5.1-next.2 (#3269) Acy Watson
+- Add inline plugin example for images (#3216) akmarzhan1
+- Select end if root has no children (#3254) John Flockton
+- Remove isHighlighting flag (#3256) John Flockton
+- Allow clearing styles with $patchStyleText (#3247) Brian Birtles
+- Improve logistics around table/grid selection (#3251) Tyler Bainbridge
+- Fix error boundary fallback (#3249) Maksim Horbachevsky
+- Allow skipping auto-scroll action on selection change (#3220) Ruslan Piliuta
+- pref(lexical-playground): reduce rendering consumption by creating compositing layers (#3069) 子瞻 Luci
+- chore: add new `eslint-plugin` with rule `no-optional-chaining` locally (#3233) Shanmughapriyan S
+- Handle left part of match (#3245) Clément Bacouelle
+- Expose Tokenizer interface to accept custom tokenizer other than Prism at @lexical/code (#3243) mizuno
+- fix list paste issue (#3239) Acy Watson
+- Fix typos in Markdown documentation (#3236) Mikko Tirronen
+- allow overriding mark node create fn (#3229) Acy Watson
+- Add SerializedMarkNode flow type (#3228) Acy Watson
+- Handle bad list item children gracefully (#3226) Gerard Rovira
+- Memoize ErrorBoundary (#3225) Gerard Rovira
+- Fix TableSelection Mouse Up Propagation Bug (#3223) Tyler Bainbridge
+- Don't apply element based offsets to text nodes in $patchStyleText (#3126) Brian Birtles
+- fix: fixed dual text appearance problem and removed outline scrollbar (#3207) Karam Qaoud
+- Safely remove parent elements when deleting at anchor offset 0 (#3213) Tyler Bainbridge
+- Allow Block change with GridSelection (#3212) Tyler Bainbridge
+- v0.5.1-next.1 (#3205) Acy Watson
+- Fix frozen selection (#3204) Acy Watson
+- fix: draggable block icon is invisible in read-only mode (#3198) Karam Qaoud
+- Fix sample code (lexical-react) (#3206) Yuki Shindo
+- chore: optimize svg (#3199) Strek
+- Fix $patchStyleText when the selection is anchored to the end of a text node (#3116) Brian Birtles
+- releases (#3203) Acy Watson
+- v0.5.1-next.0 (#3201) Acy Watson
+- fix: play `time travel` after reaching maximum range (#3197) Shanmughapriyan S
+- Add type to commands for logging  (#2942) John Flockton
+- Built-in Error/SuspenseBoundaries for React DecoratorNodes (#3178) Gerard Rovira
+- Add flushSync option to update() (#3119) Maksim Horbachevsky
+- nightly and dev releases (#3192) Acy Watson
+- Make the ComponentPicker independent of the Toolbar (#3142) EgonBolton
+- docs: Fixed broken link (#3190) Simon Proper
+- Fix insertNodes when replacing content adjacent to an inline element (#3137) Brian Birtles
+- Fix nested editor cut (#3177) Maksim Horbachevsky
+- Fix copy-paste CodeBlock with BR (#3174) Gerard Rovira
+- TreeView editor basics (#3153) Gerard Rovira
+- Remove development notice (#3171) Dominic Gannaway
+- Fix flow types for root.select() (#3168) Maksim Horbachevsky
+- Fix linting error (#3165) John Flockton
+- Check if DOM is accessible when calling `getSelection` (#3162) Lee Sanghyeon
+- ref(selection): separate @lexical/selection/index into multiple files (#3145) quochuy
+- Ignore empty class names in addClassNamesToElement (#3159) Acy Watson
+- remove repeated comments (#3154) Zuckjet
+- FF Node/Grid copy-paste support (#3147) Gerard Rovira
+- feat: add icons to extension and change build (#3140) Adithya Vardhan
+- Add Emoji Picker to Playground (#3122) Tyler Bainbridge
+- Ignore mutations which do not have target node (#3120) Ruslan Piliuta
+- flow types (#3133) Acy Watson
+- support multiple classes (#3134) Acy Watson
+- Fix regex (#3132) Tyler Bainbridge
+- Fix typeahead ref typedef (#3131) Maksim Horbachevsky
+- Add className prop to typeahead plugin (#3124) Acy Watson
+- Fix table paste (#3129) Gerard Rovira
+- Fix GridSelection comparison (#3118) Gerard Rovira
+- [0.6] More Typeahead Changes (#3112) Tyler Bainbridge
+- Fix typeahead import (#3117) Maksim Horbachevsky
+- Fix npm install on M1 macs (#3114) Nils Tijtgat
+- Update createHeadlessEditor to match createEditor typedef (#3111) Maksim Horbachevsky
+- fix(lexical-playground): draggable blockplugin uses unexposed apis (#3109) 子瞻 Luci
+- Typeaheads: Remove hard-coded "bottom" alignment (Breaking change) (#3104) Tyler Bainbridge
+- Typeaheads: Add scroll command and increase priority (#3106) Tyler Bainbridge
+- Lower key navigation command priority for Tables (#3107) Tyler Bainbridge
+- Fix DOM availability check (#3102) Maksim Horbachevsky
+- copyToClipboard to return success (#3105) Gerard Rovira
+- chore: add e2e test for draggable-block-plugin (#3090) 子瞻 Luci
+- Fix flow for $insertGeneratedNodes (#3101) Gerard Rovira
+- Make onClose optional on Flow Types. (#3091) Tyler Bainbridge
+- Add collapsible container plugin (#3082) Maksim Horbachevsky
+- Double-trigger hack for high-fidelity Node/Grid selection (#3080) Gerard Rovira
+- Tweet fallback to text on copy (#3088) Gerard Rovira
+- Add logic to catch separators (#3084) John Flockton
+- Add open/close callbacks to menu plugins (#3087) Tyler Bainbridge
+- Merge markdown E2E tests into one file (#3086) John Flockton
+- Add some inline documentation (#3076) Acy Watson
+- Removed extra 'is' in line 9 (#3083) Samuel Adeboye Folaranmi
+- fix(lexical-playground): read-only mode (#3081) 子瞻 Luci
+- Fix Resize and Scroll Issues (#3079) Tyler Bainbridge
+- Fix oncall annotation issue missing from some files (#3075) John Flockton
+- Add oncall annotation (#3071) John Flockton
+- chore(lexical-playground): add resizability back to regular tables (#3068) Yaroslav Kiliba
+- Update faq.md (#3070) Yun Feng
+- fix(lexical-clipboard): pasting from google docs (#3063) 子瞻 Luci
+- Update theming.md (#3067) Christian Owusu
+- Update intro.md (#3064) Christian Owusu
+- package-lock Gerard Rovira
+- v0.5.0 (#3059) Gerard Rovira
+- feat: add export/import DOM for horizontal rule node (#3057) Samuel Martineau
+
 ## v0.5.0 (2022-09-23)
 
 - feat(lexical-playground): draggable block (#2860) 子瞻 Luci

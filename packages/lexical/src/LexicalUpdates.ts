@@ -809,6 +809,8 @@ function beginUpdate(
   try {
     if (editorStateWasCloned && !editor._headless) {
       pendingEditorState._selection = internalCreateSelection(editor);
+    } else if (editor._headless && currentEditorState._selection != null) {
+      pendingEditorState._selection = currentEditorState._selection.clone();
     }
 
     const startingCompositionKey = editor._compositionKey;

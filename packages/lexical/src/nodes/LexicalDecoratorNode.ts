@@ -31,6 +31,10 @@ export class DecoratorNode<T> extends LexicalNode {
   isInline(): boolean {
     return true;
   }
+
+  isKeyboardSelectable(): boolean {
+    return true;
+  }
 }
 
 export function $isDecoratorNode<T>(

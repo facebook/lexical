@@ -12,6 +12,7 @@ import {CharacterLimitPlugin} from '@lexical/react/LexicalCharacterLimitPlugin';
 import {CheckListPlugin} from '@lexical/react/LexicalCheckListPlugin';
 import {ClearEditorPlugin} from '@lexical/react/LexicalClearEditorPlugin';
 import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
+import LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary';
 import {HashtagPlugin} from '@lexical/react/LexicalHashtagPlugin';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {LinkPlugin} from '@lexical/react/LexicalLinkPlugin';
@@ -65,7 +66,6 @@ import TwitterPlugin from './plugins/TwitterPlugin';
 import YouTubePlugin from './plugins/YouTubePlugin';
 import PlaygroundEditorTheme from './themes/PlaygroundEditorTheme';
 import ContentEditable from './ui/ContentEditable';
-import ErrorBoundary from './ui/ErrorBoundary';
 import Placeholder from './ui/Placeholder';
 
 const skipCollaborationInit =
@@ -156,7 +156,7 @@ export default function Editor(): JSX.Element {
                 </div>
               }
               placeholder={placeholder}
-              ErrorBoundary={ErrorBoundary}
+              ErrorBoundary={LexicalErrorBoundary}
             />
             <MarkdownShortcutPlugin />
             <CodeHighlightPlugin />
@@ -172,7 +172,7 @@ export default function Editor(): JSX.Element {
                   <ContentEditable className="TableNode__contentEditable" />
                 }
                 placeholder={''}
-                ErrorBoundary={ErrorBoundary}
+                ErrorBoundary={LexicalErrorBoundary}
               />
               <MentionsPlugin />
               <HistoryPlugin />
@@ -210,7 +210,7 @@ export default function Editor(): JSX.Element {
             <PlainTextPlugin
               contentEditable={<ContentEditable />}
               placeholder={placeholder}
-              ErrorBoundary={ErrorBoundary}
+              ErrorBoundary={LexicalErrorBoundary}
             />
             <HistoryPlugin externalHistoryState={historyState} />
           </>

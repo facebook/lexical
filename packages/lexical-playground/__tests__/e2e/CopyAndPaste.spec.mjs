@@ -2804,4 +2804,72 @@ test.describe('CopyAndPaste', () => {
       `,
     );
   });
+
+  test('HTML Copy + paste a paragraph element between horizontal rules', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    let clipboard = {'text/html': '<hr/><hr/>'};
+
+    await pasteFromClipboard(page, clipboard);
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <div
+          contenteditable="false"
+          style="display: contents;"
+          data-lexical-decorator="true">
+          <hr />
+        </div>
+        <div
+          contenteditable="false"
+          style="display: contents;"
+          data-lexical-decorator="true">
+          <hr />
+        </div>
+      `,
+    );
+    await click(page, 'hr:first-of-type');
+
+    // sets focus between HRs
+    await page.keyboard.press('ArrowRight');
+
+    clipboard = {'text/html': '<p>Text between HRs</p>'};
+
+    await pasteFromClipboard(page, clipboard);
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <div
+          contenteditable="false"
+          style="display: contents;"
+          data-lexical-decorator="true">
+          <hr />
+        </div>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Text between HRs</span>
+        </p>
+        <div
+          contenteditable="false"
+          style="display: contents;"
+          data-lexical-decorator="true">
+          <hr />
+        </div>
+      `,
+    );
+    await assertSelection(page, {
+      anchorOffset: 16,
+      anchorPath: [2, 0, 0],
+      focusOffset: 16,
+      focusPath: [2, 0, 0],
+    });
+  });
 });

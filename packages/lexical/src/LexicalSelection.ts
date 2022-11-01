@@ -1290,7 +1290,11 @@ export class RangeSelection implements BaseSelection {
     // Time to insert the nodes!
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i];
-      if ($isElementNode(node) && !node.isInline()) {
+      if (
+        !$isDecoratorNode(target) &&
+        $isElementNode(node) &&
+        !node.isInline()
+      ) {
         // -----
         // Heuristics for the replacement or merging of elements
         // -----

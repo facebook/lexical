@@ -1,5 +1,5 @@
 ---
-id: "demo-intro"
+id: "intro"
 title: "Demos Intro"
 sidebar_label: "Intro"
 sidebar_position: 0

@@ -24,6 +24,14 @@ declare export function removeClassNamesFromElement(
   element: HTMLElement,
   ...classNames: Array<typeof undefined | boolean | null | string>
 ): void;
+declare export function isMimeType(
+  file: File,
+  acceptableMimeTypes: Array<string>,
+): boolean;
+declare export function mediaFileReader(
+  files: Array<File>,
+  acceptableMimeTypes: Array<string>,
+): Promise<Array<$ReadOnly<{file: File, result: string}>>>;
 declare export function $dfs(
   startingNode?: LexicalNode,
   endingNode?: LexicalNode,

@@ -862,29 +862,18 @@ export function registerRichText(editor: LexicalEditor): () => void {
           const y = event.clientY;
           const eventRange = caretFromPoint(x, y);
           if (eventRange !== null) {
-            const {startOffset, endOffset, startContainer, endContainer} =
-              eventRange;
-            const startNode = $getNearestNodeFromDOMNode(startContainer);
-            const endNode = $getNearestNodeFromDOMNode(endContainer);
-            if (startNode !== null && endNode !== null) {
+            const {offset: domOffset, node: domNode} = eventRange;
+            const node = $getNearestNodeFromDOMNode(domNode);
+            if (node !== null) {
               const selection = $createRangeSelection();
-              if ($isTextNode(startNode)) {
-                selection.anchor.set(startNode.getKey(), startOffset, 'text');
+              if ($isTextNode(node)) {
+                selection.anchor.set(node.getKey(), domOffset, 'text');
+                selection.focus.set(node.getKey(), domOffset, 'text');
               } else {
-                selection.anchor.set(
-                  startNode.getParentOrThrow().getKey(),
-                  startNode.getIndexWithinParent() + 1,
-                  'element',
-                );
-              }
-              if ($isTextNode(endNode)) {
-                selection.focus.set(endNode.getKey(), endOffset, 'text');
-              } else {
-                selection.focus.set(
-                  endNode.getParentOrThrow().getKey(),
-                  endNode.getIndexWithinParent() + 1,
-                  'element',
-                );
+                const parentKey = node.getParentOrThrow().getKey();
+                const offset = node.getIndexWithinParent() + 1;
+                selection.anchor.set(parentKey, offset, 'element');
+                selection.focus.set(parentKey, offset, 'element');
               }
               const normalizedSelection =
                 $normalizeSelection__EXPERIMENTAL(selection);
@@ -913,7 +902,6 @@ export function registerRichText(editor: LexicalEditor): () => void {
         if (isFileTransfer && !$isRangeSelection(selection)) {
           return false;
         }
-        event.preventDefault();
         return true;
       },
       COMMAND_PRIORITY_EDITOR,
@@ -926,7 +914,17 @@ export function registerRichText(editor: LexicalEditor): () => void {
         if (isFileTransfer && !$isRangeSelection(selection)) {
           return false;
         }
-        event.preventDefault();
+        const x = event.clientX;
+        const y = event.clientY;
+        const eventRange = caretFromPoint(x, y);
+        if (eventRange !== null) {
+          const node = $getNearestNodeFromDOMNode(eventRange.node);
+          if ($isDecoratorNode(node)) {
+            // Show browser caret as the user is dragging the media across the screen. Won't work
+            // for DecoratorNode nor it's relevant.
+            event.preventDefault();
+          }
+        }
         return true;
       },
       COMMAND_PRIORITY_EDITOR,

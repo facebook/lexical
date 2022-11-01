@@ -2590,5 +2590,52 @@ describe('LexicalSelection tests', () => {
         );
       });
     });
+
+    test('Paragraph with links to heading with links', async () => {
+      const testEditor = createTestEditor();
+      const element = document.createElement('div');
+      testEditor.setRootElement(element);
+
+      await testEditor.update(() => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const text1 = $createTextNode('Links: ');
+        const text2 = $createTextNode('link1');
+        const text3 = $createTextNode('link2');
+        root.append(
+          paragraph.append(
+            text1,
+            $createLinkNode('https://lexical.dev').append(text2),
+            $createTextNode(' '),
+            $createLinkNode('https://playground.lexical.dev').append(text3),
+          ),
+        );
+
+        const paragraphChildrenKeys = [...paragraph.getChildrenKeys()];
+        const selection = $createRangeSelection();
+        $setSelection(selection);
+        setAnchorPoint({
+          key: text1.getKey(),
+          offset: 1,
+          type: 'text',
+        });
+        setFocusPoint({
+          key: text3.getKey(),
+          offset: 1,
+          type: 'text',
+        });
+
+        $wrapNodes(selection, () => {
+          return $createHeadingNode('h1');
+        });
+
+        const rootChildren = root.getChildren();
+        expect(rootChildren.length).toBe(1);
+        expect(rootChildren[0].getType()).toBe('heading');
+        expect(rootChildren[0].getChildrenKeys()).toEqual(
+          paragraphChildrenKeys,
+        );
+      });
+    });
   });
 });

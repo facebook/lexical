@@ -225,6 +225,9 @@ export function $wrapNodesImpl(
         parent.getChildren().forEach((child) => {
           targetElement.append(child);
           movedLeafNodes.add(child.getKey());
+          if ($isElementNode(child)) {
+            child.getChildrenKeys().forEach((key) => movedLeafNodes.add(key));
+          }
         });
         $removeParentEmptyElements(parent);
       }

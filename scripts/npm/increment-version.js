@@ -12,7 +12,7 @@
 
 const {exec} = require('child-process-promise');
 const argv = require('minimist')(process.argv.slice(2));
-const increment = argv._[0];
+const increment = argv.i;
 const validIncrements = new Set(['minor', 'patch', 'prerelease']);
 if (!validIncrements.has(increment)) {
   console.error(`Invalid value for increment: ${increment}`);

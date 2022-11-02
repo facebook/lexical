@@ -4,13 +4,14 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
+ * @flow strict
  */
 
-type Props = $ReadOnly<{
-  children: JSX.Element,
+export type LexicalErrorBoundaryProps = $ReadOnly<{
+  children: React$Node,
   onError: (error: Error) => void,
 }>;
 
 declare export default function LexicalErrorBoundary(
-  props: Props,
-): React.ReactNode;
+  props: LexicalErrorBoundaryProps,
+): React$Node;

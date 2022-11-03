@@ -19,22 +19,22 @@ type CollaborationContextType = {
 };
 
 const entries = [
-  ['Cat', 'rgb(255,165,0)'],
-  ['Dog', 'rgb(0,200,55)'],
-  ['Rabbit', 'rgb(160,0,200)'],
-  ['Frog', 'rgb(0,172,200)'],
-  ['Fox', 'rgb(197,200,0)'],
-  ['Hedgehog', 'rgb(31,200,0)'],
-  ['Pigeon', 'rgb(200,0,0)'],
-  ['Squirrel', 'rgb(200,0,148)'],
-  ['Bear', 'rgb(255,235,0)'],
-  ['Tiger', 'rgb(86,255,0)'],
-  ['Leopard', 'rgb(0,255,208)'],
-  ['Zebra', 'rgb(0,243,255)'],
-  ['Wolf', 'rgb(0,102,255)'],
-  ['Owl', 'rgb(147,0,255)'],
-  ['Gull', 'rgb(255,0,153)'],
-  ['Squid', 'rgb(0,220,255)'],
+  ['Cat', 'rgb(125, 50, 0)'],
+  ['Dog', 'rgb(100, 0, 0)'],
+  ['Rabbit', 'rgb(150, 0, 0)'],
+  ['Frog', 'rgb(200, 0, 0)'],
+  ['Fox', 'rgb(200, 75, 0)'],
+  ['Hedgehog', 'rgb(0, 75, 0)'],
+  ['Pigeon', 'rgb(0, 125, 0)'],
+  ['Squirrel', 'rgb(75, 100, 0)'],
+  ['Bear', 'rgb(125, 100, 0)'],
+  ['Tiger', 'rgb(0, 0, 150)'],
+  ['Leopard', 'rgb(0, 0, 200)'],
+  ['Zebra', 'rgb(0, 0, 250)'],
+  ['Wolf', 'rgb(0, 100, 150)'],
+  ['Owl', 'rgb(0, 100, 100)'],
+  ['Gull', 'rgb(100, 0, 100)'],
+  ['Squid', 'rgb(150, 0, 150)'],
 ];
 
 const randomEntry = entries[Math.floor(Math.random() * entries.length)];

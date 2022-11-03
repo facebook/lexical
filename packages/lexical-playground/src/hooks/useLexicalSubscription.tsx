@@ -19,8 +19,6 @@ export type LexicalSubscription<T> = {
 
 /**
  * Shortcut to Lexical subscriptions when values are used for render.
- *
- * useMLCSubscription(mlcFocusSubscription);
  */
 export default function useLexicalSubscription<T>(
   subscription: (editor: LexicalEditor) => LexicalSubscription<T>,

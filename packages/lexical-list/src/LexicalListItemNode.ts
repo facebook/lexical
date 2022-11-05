@@ -369,7 +369,7 @@ export class ListItemNode extends ElementNode {
       const parent = this.getParentOrThrow();
 
       if ($isListNode(parent)) {
-        const siblings = this.getNextSiblings<ListItemNode>();
+        const siblings = this.getNextSiblings();
         updateChildrenListItemValue(parent, siblings);
       }
     }

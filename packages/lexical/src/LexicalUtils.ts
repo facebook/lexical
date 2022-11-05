@@ -1105,11 +1105,12 @@ export function isFirefoxClipboardEvents(editor: LexicalEditor): boolean {
   );
 }
 
-export function dispatchCommand<
-  TCommand extends LexicalCommand<unknown>,
-  TPayload extends CommandPayloadType<TCommand>,
->(editor: LexicalEditor, type: TCommand, payload: TPayload): boolean {
-  return triggerCommandListeners(editor, type, payload);
+export function dispatchCommand<TCommand extends LexicalCommand<unknown>>(
+  editor: LexicalEditor,
+  command: TCommand,
+  payload: CommandPayloadType<TCommand>,
+): boolean {
+  return triggerCommandListeners(editor, command, payload);
 }
 
 export function $textContentRequiresDoubleLinebreakAtEnd(

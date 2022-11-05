@@ -6,6 +6,9 @@
  *
  */
 
-const getSelection = (): Selection | null => window.getSelection();
+import {CAN_USE_DOM} from 'shared/canUseDOM';
+
+const getSelection = (): Selection | null =>
+  CAN_USE_DOM ? window.getSelection() : null;
 
 export default getSelection;

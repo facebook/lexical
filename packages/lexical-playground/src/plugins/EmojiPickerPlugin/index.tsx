@@ -152,7 +152,7 @@ export default function EmojiPickerPlugin() {
         closeMenu();
       });
     },
-    [editor, options],
+    [editor],
   );
 
   return (

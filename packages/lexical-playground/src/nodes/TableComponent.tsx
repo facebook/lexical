@@ -6,7 +6,7 @@
  *
  */
 
-import type {EditorState, RangeSelection, TextFormatType} from 'lexical';
+import type {RangeSelection, TextFormatType} from 'lexical';
 
 import {
   $generateJSONFromSelectedNodes,
@@ -204,13 +204,7 @@ function $updateCells(
       const editorState = cellEditor.parseEditorState(cell.json);
       cellEditor._headless = true;
       cellEditor.setEditorState(editorState);
-      cellEditor.update(() => {
-        // Complete hack for now
-        const pendingEditorState =
-          cellEditor._pendingEditorState as EditorState;
-        pendingEditorState._flushSync = true;
-        fn();
-      });
+      cellEditor.update(fn, {discrete: true});
       cellEditor._headless = false;
       const newJSON = JSON.stringify(cellEditor.getEditorState());
       updateTableNode((tableNode) => {

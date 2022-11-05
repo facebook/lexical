@@ -64,6 +64,16 @@ const mapToPrismLanguage = (
     : undefined;
 };
 
+function hasChildDOMNodeTag(node: Node, tagName: string) {
+  for (const child of node.childNodes) {
+    if (child instanceof HTMLElement && child.tagName === tagName) {
+      return true;
+    }
+    hasChildDOMNodeTag(child, tagName);
+  }
+  return false;
+}
+
 const LANGUAGE_DATA_ATTRIBUTE = 'data-highlight-language';
 
 /** @noInheritDoc */
@@ -116,7 +126,8 @@ export class CodeNode extends ElementNode {
       // inline format handled by TextNode otherwise
       code: (node: Node) => {
         const isMultiLine =
-          node.textContent != null && /\r?\n/.test(node.textContent);
+          node.textContent != null &&
+          (/\r?\n/.test(node.textContent) || hasChildDOMNodeTag(node, 'BR'));
 
         return isMultiLine
           ? {

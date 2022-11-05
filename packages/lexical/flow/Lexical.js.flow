@@ -11,7 +11,7 @@
  * LexicalCommands
  */
 
-export type LexicalCommand<P> = $ReadOnly<{}>;
+export type LexicalCommand<P> = $ReadOnly<{type?: string}>;
 
 declare export var SELECTION_CHANGE_COMMAND: LexicalCommand<void>;
 declare export var CLICK_COMMAND: LexicalCommand<MouseEvent>;
@@ -53,7 +53,7 @@ declare export var CAN_UNDO_COMMAND: LexicalCommand<boolean>;
 declare export var FOCUS_COMMAND: LexicalCommand<FocusEvent>;
 declare export var BLUR_COMMAND: LexicalCommand<FocusEvent>;
 
-declare export function createCommand<T>(): LexicalCommand<T>;
+declare export function createCommand<T>(type?: string): LexicalCommand<T>;
 
 /**
  * LexicalEditor
@@ -182,6 +182,7 @@ type EditorUpdateOptions = {
   onUpdate?: () => void,
   tag?: string,
   skipTransforms?: true,
+  discrete?: true,
 };
 type EditorFocusOptions = {
   defaultSelection?: 'rootStart' | 'rootEnd',
@@ -642,7 +643,7 @@ declare export class RootNode extends ElementNode {
   static clone(): RootNode;
   constructor(): void;
   getTextContent(): string;
-  select(): RangeSelection;
+  select(_anchorOffset?: number, _focusOffset?: number): RangeSelection;
   remove(): void;
   replace<N: LexicalNode>(node: N): N;
   insertBefore<T: LexicalNode>(nodeToInsert: T): T;

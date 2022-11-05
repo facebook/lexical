@@ -51,6 +51,7 @@ import KeywordsPlugin from '../plugins/KeywordsPlugin';
 import MentionsPlugin from '../plugins/MentionsPlugin';
 import TreeViewPlugin from '../plugins/TreeViewPlugin';
 import ContentEditable from '../ui/ContentEditable';
+import ErrorBoundary from '../ui/ErrorBoundary';
 import ImageResizer from '../ui/ImageResizer';
 import Placeholder from '../ui/Placeholder';
 import {$isImageNode} from './ImageNode';
@@ -306,7 +307,6 @@ export default function ImageComponent({
 
   const draggable = isSelected && $isNodeSelection(selection);
   const isFocused = isSelected || isResizing;
-
   return (
     <Suspense fallback={null}>
       <>
@@ -352,6 +352,7 @@ export default function ImageComponent({
                     Enter a caption...
                   </Placeholder>
                 }
+                ErrorBoundary={ErrorBoundary}
               />
               {showNestedEditorTreeView === true ? <TreeViewPlugin /> : null}
             </LexicalNestedComposer>

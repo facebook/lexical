@@ -35,7 +35,7 @@
   color: #65676b;
   position: fixed;
   top: 200px;
-  right: 100px;
+  right: -35px;
   padding: 10px;
   width: 250px;
   display: flex;
@@ -57,10 +57,17 @@
   margin-left: 10px;
   padding: 0;
   overflow: scroll;
-  width: 100%;
+  width: 200px;
   height: 220px;
   overflow-x: hidden;
   overflow-y: auto;
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.headings::-webkit-scrollbar {
+  display: none;
 }
 
 .headings::before {

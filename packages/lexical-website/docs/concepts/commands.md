@@ -55,7 +55,7 @@ const formatBulletList = () => {
 };
 ```
 
-Which is later handled in [`useList`](https://github.com/facebook/lexical/blob/1f62ace08e15d55515f3750840133efecd6d7d01/packages/lexical-react/src/shared/useList.ts#L65) to insert the list into the editor.
+Which is later handled in [`useList`](https://github.com/facebook/lexical/blob/1f62ace08e15d55515f3750840133efecd6d7d01/packages/lexical-react/src/shared/useList.js#L65) to insert the list into the editor.
 
 ```js
 editor.registerCommand(

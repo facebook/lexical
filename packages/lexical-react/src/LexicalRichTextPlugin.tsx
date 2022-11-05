@@ -9,20 +9,37 @@
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import * as React from 'react';
 
+import {ErrorBoundary as ReactErrorBoundary} from './shared/ReactErrorBoundary';
 import {useCanShowPlaceholder} from './shared/useCanShowPlaceholder';
-import {useDecorators} from './shared/useDecorators';
+import {ErrorBoundaryType, useDecorators} from './shared/useDecorators';
 import {useRichTextSetup} from './shared/useRichTextSetup';
+
+const DefaultErrorBoundary = ({
+  children,
+  onError,
+}: {
+  children: JSX.Element;
+  onError: (error: Error) => void;
+}) => (
+  <ReactErrorBoundary fallback={null} onError={onError}>
+    {children}
+  </ReactErrorBoundary>
+);
 
 export function RichTextPlugin({
   contentEditable,
   placeholder,
+  // TODO 0.6 Make non-optional non-default
+  ErrorBoundary = DefaultErrorBoundary,
 }: Readonly<{
   contentEditable: JSX.Element;
   placeholder: JSX.Element | string;
+  // TODO 0.6 Make non-optional non-default
+  ErrorBoundary?: ErrorBoundaryType;
 }>): JSX.Element {
   const [editor] = useLexicalComposerContext();
   const showPlaceholder = useCanShowPlaceholder(editor);
-  const decorators = useDecorators(editor);
+  const decorators = useDecorators(editor, ErrorBoundary);
   useRichTextSetup(editor);
 
   return (

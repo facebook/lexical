@@ -23,7 +23,6 @@ import {$findMatchingParent} from '@lexical/utils';
 import {
   $createParagraphNode,
   $createRangeSelection,
-  $createTextNode,
   $getNearestNodeFromDOMNode,
   $getPreviousSelection,
   $getSelection,
@@ -127,7 +126,6 @@ export function applyTableHandlers(
             tableSelection.isHighlightingCells)
         ) {
           event.preventDefault();
-          isMouseDown = true;
           tableSelection.adjustFocusCellForSelection(cell);
         }
       }
@@ -172,7 +170,6 @@ export function applyTableHandlers(
     if (isMouseDown) {
       event.preventDefault();
       event.stopPropagation();
-      event.stopImmediatePropagation();
       isMouseDown = false;
     }
   };
@@ -640,40 +637,30 @@ export function applyTableHandlers(
         return true;
       }
 
-      const parentElementNode = $findMatchingParent(
-        selection.anchor.getNode(),
-        (n) => $isElementNode(n) && $isTableCellNode(n.getParent()),
-      );
-
       const nearestElementNode = $findMatchingParent(
         selection.anchor.getNode(),
         (n) => $isElementNode(n),
       );
 
+      const topLevelCellElementNode =
+        nearestElementNode &&
+        $findMatchingParent(
+          nearestElementNode,
+          (n) => $isElementNode(n) && $isTableCellNode(n.getParent()),
+        );
+
       if (
-        !$isElementNode(parentElementNode) ||
+        !$isElementNode(topLevelCellElementNode) ||
         !$isElementNode(nearestElementNode)
       ) {
         return false;
       }
 
-      const clearCell = () => {
-        const newParagraphNode = $createParagraphNode();
-        const textNode = $createTextNode();
-        newParagraphNode.append(textNode);
-        tableCellNode.append(newParagraphNode);
-        tableCellNode.getChildren().forEach((child) => {
-          if (child !== newParagraphNode) {
-            child.remove();
-          }
-        });
-      };
-
       if (
         command === DELETE_LINE_COMMAND &&
-        parentElementNode.getPreviousSibling() === null
+        topLevelCellElementNode.getPreviousSibling() === null
       ) {
-        clearCell();
+        // TODO: Fix Delete Line in Table Cells.
         return true;
       }
 
@@ -681,20 +668,15 @@ export function applyTableHandlers(
         command === DELETE_CHARACTER_COMMAND ||
         command === DELETE_WORD_COMMAND
       ) {
-        if (
-          selection.isCollapsed() &&
-          selection.anchor.offset === 0 &&
-          parentElementNode === nearestElementNode &&
-          parentElementNode.getPreviousSibling() === null
-        ) {
-          return true;
-        }
+        if (selection.isCollapsed() && selection.anchor.offset === 0) {
+          if (nearestElementNode !== topLevelCellElementNode) {
+            const children = nearestElementNode.getChildren();
+            const newParagraphNode = $createParagraphNode();
+            children.forEach((child) => newParagraphNode.append(child));
+            nearestElementNode.replace(newParagraphNode);
+            nearestElementNode.getWritable().__parent = tableCellNode.getKey();
+          }
 
-        if (
-          !$isParagraphNode(parentElementNode) &&
-          parentElementNode.getTextContentSize() === 0
-        ) {
-          clearCell();
           return true;
         }
       }

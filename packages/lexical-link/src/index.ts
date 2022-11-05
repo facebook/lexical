@@ -341,7 +341,7 @@ export const TOGGLE_LINK_COMMAND: LexicalCommand<
       rel?: string;
     }
   | null
-> = createCommand();
+> = createCommand('TOGGLE_LINK_COMMAND');
 
 export function toggleLink(
   url: null | string,

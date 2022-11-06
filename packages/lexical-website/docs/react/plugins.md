@@ -51,6 +51,7 @@ React wrapper for `@lexical/plain-text` that adds major features for plain text 
 <PlainTextPlugin
   contentEditable={<ContentEditable />}
   placeholder={<div>Enter some text...</div>}
+  ErrorBoundary={LexicalErrorBoundary}
 />
 ```
 

@@ -34,6 +34,8 @@ import * as React from 'react';
 import {ReactPortal, useCallback, useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 
+import useLexicalEditable from '../../hooks/useLexicalEditable';
+
 type TableCellActionMenuProps = Readonly<{
   contextRef: {current: null | HTMLElement};
   onClose: () => void;
@@ -537,9 +539,12 @@ export default function TableActionMenuPlugin({
   anchorElem = document.body,
 }: {
   anchorElem?: HTMLElement;
-}): ReactPortal {
+}): null | ReactPortal {
+  const isEditable = useLexicalEditable();
   return createPortal(
-    <TableCellActionMenuContainer anchorElem={anchorElem} />,
+    isEditable ? (
+      <TableCellActionMenuContainer anchorElem={anchorElem} />
+    ) : null,
     anchorElem,
   );
 }

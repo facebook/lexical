@@ -167,6 +167,7 @@
     }
   },
   "dependencies": {
-    "@types/katex": "^0.14.0"
+    "@types/katex": "^0.14.0",
+    "yjs": "^13.5.42"
   }
 }

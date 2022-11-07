@@ -75,7 +75,6 @@ header h1 {
 
 .editor-scroller {
   min-height: 150px;
-  height: 360px;
   border: 0;
   resize: none;
   cursor: text;
@@ -1159,6 +1158,9 @@ i.prettier-error {
 
 .table-cell-action-button-container {
   position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform;
 }
 
 .table-cell-action-button {

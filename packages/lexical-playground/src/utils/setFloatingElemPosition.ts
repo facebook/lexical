@@ -19,9 +19,7 @@ export function setFloatingElemPosition(
 
   if (targetRect === null || !scrollerElem) {
     floatingElem.style.opacity = '0';
-    floatingElem.style.top = '-10000px';
-    floatingElem.style.left = '-10000px';
-
+    floatingElem.style.transform = 'translate(-10000px, -10000px)';
     return;
   }
 
@@ -44,6 +42,5 @@ export function setFloatingElemPosition(
   left -= anchorElementRect.left;
 
   floatingElem.style.opacity = '1';
-  floatingElem.style.top = `${top}px`;
-  floatingElem.style.left = `${left}px`;
+  floatingElem.style.transform = `translate(${left}px, ${top}px)`;
 }

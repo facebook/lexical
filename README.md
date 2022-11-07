@@ -62,6 +62,7 @@ import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {OnChangePlugin} from '@lexical/react/LexicalOnChangePlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary';
 
 const theme = {
   // Theme styling goes here
@@ -114,6 +115,7 @@ function Editor() {
       <PlainTextPlugin
         contentEditable={<ContentEditable />}
         placeholder={<div>Enter some text...</div>}
+        ErrorBoundary={LexicalErrorBoundary}
       />
       <OnChangePlugin onChange={onChange} />
       <HistoryPlugin />

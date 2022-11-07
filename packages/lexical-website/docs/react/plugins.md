@@ -16,7 +16,7 @@ import {OnChangePlugin} from '@lexical/react/LexicalOnChangePlugin';
 
 ```jsx
 const initialConfig = {
-  namespace: 'MyEditor', 
+  namespace: 'MyEditor',
   theme,
   onError,
 };
@@ -36,7 +36,7 @@ const initialConfig = {
 
 ```jsx
 const initialConfig = {
-  namespace: 'MyEditor', 
+  namespace: 'MyEditor',
   theme,
   nodes: [ListNode, ListItemNode], // Pass the references to the nodes here
   onError,
@@ -51,6 +51,7 @@ React wrapper for `@lexical/plain-text` that adds major features for plain text 
 <PlainTextPlugin
   contentEditable={<ContentEditable />}
   placeholder={<div>Enter some text...</div>}
+  ErrorBoundary={LexicalErrorBoundary}
 />
 ```
 
@@ -62,6 +63,7 @@ React wrapper for `@lexical/rich-text` that adds major features for rich text ed
 <RichTextPlugin
   contentEditable={<ContentEditable />}
   placeholder={<div>Enter some text...</div>}
+  ErrorBoundary={LexicalErrorBoundary}
 />
 ```
 
@@ -124,14 +126,17 @@ const URL_MATCHER =
 const MATCHERS = [
   (text) => {
     const match = URL_MATCHER.exec(text);
-    return (
-      match && {
-        index: match.index,
-        length: match[0].length,
-        text: match[0],
-        url: match[0],
-      }
-    );
+    if (match === null) {
+      return null;
+    }
+    const fullMatch = match[0];
+    return {
+      index: match.index,
+      length: fullMatch.length,
+      text: fullMatch,
+      url: fullMatch.startsWith('http') ? fullMatch : `https://${fullMatch}`,
+      // attributes: { rel: 'noopener', target: '_blank' }, // Optional link attributes
+    };
   },
 ];
 

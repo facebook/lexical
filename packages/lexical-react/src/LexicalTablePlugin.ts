@@ -15,6 +15,7 @@ import type {
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $createTableNodeWithDimensions,
+  $isTableNode,
   applyTableHandlers,
   INSERT_TABLE_COMMAND,
   TableCellNode,
@@ -27,6 +28,7 @@ import {
   $getSelection,
   $isRangeSelection,
   $isRootOrShadowRoot,
+  $nodesOfType,
   COMMAND_PRIORITY_EDITOR,
   ElementNode,
   NodeKey,
@@ -95,34 +97,63 @@ export function TablePlugin(): JSX.Element | null {
   useEffect(() => {
     const tableSelections = new Map<NodeKey, TableSelection>();
 
-    return editor.registerMutationListener(TableNode, (nodeMutations) => {
-      for (const [nodeKey, mutation] of nodeMutations) {
-        if (mutation === 'created') {
-          editor.update(() => {
-            const tableElement = editor.getElementByKey(
-              nodeKey,
-            ) as HTMLTableElementWithWithTableSelectionState;
-            const tableNode = $getNodeByKey<TableNode>(nodeKey);
+    const initializeTableNode = (tableNode: TableNode) => {
+      const nodeKey = tableNode.getKey();
+      const tableElement = editor.getElementByKey(
+        nodeKey,
+      ) as HTMLTableElementWithWithTableSelectionState;
+      if (tableElement && !tableSelections.has(nodeKey)) {
+        const tableSelection = applyTableHandlers(
+          tableNode,
+          tableElement,
+          editor,
+        );
+        tableSelections.set(nodeKey, tableSelection);
+      }
+    };
 
-            if (tableElement && tableNode) {
-              const tableSelection = applyTableHandlers(
-                tableNode,
-                tableElement,
-                editor,
-              );
-              tableSelections.set(nodeKey, tableSelection);
-            }
-          });
-        } else if (mutation === 'destroyed') {
-          const tableSelection = tableSelections.get(nodeKey);
-
-          if (tableSelection !== undefined) {
-            tableSelection.removeListeners();
-            tableSelections.delete(nodeKey);
-          }
+    // Plugins might be loaded _after_ initial content is set, hence existing table nodes
+    // won't be initialized from mutation[create] listener. Instead doing it here,
+    editor.getEditorState().read(() => {
+      const tableNodes = $nodesOfType(TableNode);
+      for (const tableNode of tableNodes) {
+        if ($isTableNode(tableNode)) {
+          initializeTableNode(tableNode);
         }
       }
     });
+
+    const unregisterMutationListener = editor.registerMutationListener(
+      TableNode,
+      (nodeMutations) => {
+        for (const [nodeKey, mutation] of nodeMutations) {
+          if (mutation === 'created') {
+            editor.getEditorState().read(() => {
+              const tableNode = $getNodeByKey<TableNode>(nodeKey);
+              if ($isTableNode(tableNode)) {
+                initializeTableNode(tableNode);
+              }
+            });
+          } else if (mutation === 'destroyed') {
+            const tableSelection = tableSelections.get(nodeKey);
+
+            if (tableSelection !== undefined) {
+              tableSelection.removeListeners();
+              tableSelections.delete(nodeKey);
+            }
+          }
+        }
+      },
+    );
+
+    return () => {
+      unregisterMutationListener();
+      // Hook might be called multiple times so cleaning up tables listeners as well,
+      // as it'll be reinitialized during recurring call
+      for (const [, tableSelection] of tableSelections) {
+        tableSelection.removeListeners();
+      }
+    };
   }, [editor]);
 
   return null;

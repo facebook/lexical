@@ -6,8 +6,9 @@
  *
  */
 
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalComposerContext} from '@lexical/react/src/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/src/LexicalContentEditable';
+import LexicalErrorBoundary from '@lexical/react/src/LexicalErrorBoundary';
 import {RichTextPlugin} from '@lexical/react/src/LexicalRichTextPlugin';
 import {
   $createTableCellNode,
@@ -54,6 +55,7 @@ import {getEditorStateTextContent} from '../../LexicalUtils';
 import {
   $createTestDecoratorNode,
   $createTestElementNode,
+  $createTestInlineElementNode,
   createTestEditor,
   TestComposer,
 } from '../utils';
@@ -62,7 +64,7 @@ import {
 global.IS_REACT_ACT_ENVIRONMENT = true;
 
 describe('LexicalEditor tests', () => {
-  let container = null;
+  let container: HTMLElement;
   let reactRoot;
 
   beforeEach(() => {
@@ -993,6 +995,7 @@ describe('LexicalEditor tests', () => {
                 <ContentEditable key={divKey} role={null} spellCheck={null} />
               }
               placeholder=""
+              ErrorBoundary={LexicalErrorBoundary}
             />
             <TestPlugin />
           </TestComposer>
@@ -2163,5 +2166,22 @@ describe('LexicalEditor tests', () => {
       .read(() => $getRoot().getTextContent());
     expect(textContent).toBe('Sync update');
     expect(onUpdate).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not include linebreak into inline elements', async () => {
+    init();
+
+    await editor.update(() => {
+      $getRoot().append(
+        $createParagraphNode().append(
+          $createTextNode('Hello'),
+          $createTestInlineElementNode(),
+        ),
+      );
+    });
+
+    expect(container.firstElementChild?.innerHTML).toBe(
+      '<p dir="ltr"><span data-lexical-text="true">Hello</span><a></a></p>',
+    );
   });
 });

@@ -55,6 +55,60 @@ export function removeClassNamesFromElement(
   });
 }
 
+export function isMimeType(
+  file: File,
+  acceptableMimeTypes: Array<string>,
+): boolean {
+  for (const acceptableType of acceptableMimeTypes) {
+    if (file.type.startsWith(acceptableType)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Lexical File Reader with:
+ *  1. MIME type support
+ *  2. batched results (HistoryPlugin compatibility)
+ *  3. Order aware (respects the order when multiple Files are passed)
+ *
+ * const filesResult = await mediaFileReader(files, ['image/']);
+ * filesResult.forEach(file => editor.dispatchCommand('INSERT_IMAGE', {
+ *   src: file.result,
+ * }));
+ */
+export function mediaFileReader(
+  files: Array<File>,
+  acceptableMimeTypes: Array<string>,
+): Promise<Array<{file: File; result: string}>> {
+  const filesIterator = files[Symbol.iterator]();
+  return new Promise((resolve, reject) => {
+    const processed: Array<{file: File; result: string}> = [];
+    const handleNextFile = () => {
+      const {done, value: file} = filesIterator.next();
+      if (done) {
+        return resolve(processed);
+      }
+      const fileReader = new FileReader();
+      fileReader.addEventListener('error', reject);
+      fileReader.addEventListener('load', () => {
+        const result = fileReader.result;
+        if (typeof result === 'string') {
+          processed.push({file, result});
+        }
+        handleNextFile();
+      });
+      if (isMimeType(file, acceptableMimeTypes)) {
+        fileReader.readAsDataURL(file);
+      } else {
+        handleNextFile();
+      }
+    };
+    handleNextFile();
+  });
+}
+
 export function $dfs(
   startingNode?: LexicalNode,
   endingNode?: LexicalNode,

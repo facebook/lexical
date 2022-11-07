@@ -6,14 +6,13 @@
  *
  */
 
-import type {Spread} from 'lexical';
-
 import {
   addClassNamesToElement,
   removeClassNamesFromElement,
 } from '@lexical/utils';
 import {
   $createTextNode,
+  $isElementNode,
   DOMConversionMap,
   DOMConversionOutput,
   EditorConfig,
@@ -23,6 +22,7 @@ import {
   LexicalNode,
   NodeKey,
   SerializedElementNode,
+  Spread,
 } from 'lexical';
 
 import {$createListItemNode, $isListItemNode, ListItemNode} from '.';
@@ -163,9 +163,11 @@ export class ListNode extends ElementNode {
 
         if ($isListNode(currentNode)) {
           listItemNode.append(currentNode);
-        } else {
+        } else if ($isElementNode(currentNode)) {
           const textNode = $createTextNode(currentNode.getTextContent());
           listItemNode.append(textNode);
+        } else {
+          listItemNode.append(currentNode);
         }
         super.append(listItemNode);
       }

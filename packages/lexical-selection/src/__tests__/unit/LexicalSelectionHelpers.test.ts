@@ -3071,4 +3071,39 @@ describe('$patchStyleText', () => {
         '</p>',
     );
   });
+
+  test('can clear a style', async () => {
+    const editor = createTestEditor();
+    const element = document.createElement('div');
+    editor.setRootElement(element);
+
+    await editor.update(() => {
+      const root = $getRoot();
+
+      const paragraph = $createParagraphNode();
+      root.append(paragraph);
+
+      const text = $createTextNode('text');
+      paragraph.append(text);
+
+      setAnchorPoint({
+        key: text.getKey(),
+        offset: 0,
+        type: 'text',
+      });
+      setFocusPoint({
+        key: text.getKey(),
+        offset: text.getTextContentSize(),
+        type: 'text',
+      });
+
+      const selection = $getSelection() as RangeSelection;
+      $patchStyleText(selection, {'text-emphasis': 'filled'});
+      $patchStyleText(selection, {'text-emphasis': null});
+    });
+
+    expect(element.innerHTML).toBe(
+      '<p dir="ltr"><span data-lexical-text="true">text</span></p>',
+    );
+  });
 });

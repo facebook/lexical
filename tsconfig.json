@@ -117,6 +117,9 @@
       "@lexical/react/LexicalHashtagPlugin": [
         "./packages/lexical-react/src/LexicalHashtagPlugin.ts"
       ],
+      "@lexical/react/LexicalErrorBoundary": [
+        "./packages/lexical-react/src/LexicalErrorBoundary.tsx"
+      ],
       "@lexical/react/LexicalMarkdownShortcutPlugin": [
         "./packages/lexical-react/src/LexicalMarkdownShortcutPlugin.tsx"
       ],
@@ -184,6 +187,7 @@
       "@lexical/yjs": ["./packages/lexical-yjs/src/"],
 
       "shared/canUseDOM": ["./packages/shared/src/canUseDOM.ts"],
+      "shared/caretFromPoint": ["./packages/shared/src/caretFromPoint.ts"],
       "shared/getDOMSelection": ["./packages/shared/src/getDOMSelection.ts"],
       "shared/simpleDiffWithCursor": [
         "packages/shared/src/simpleDiffWithCursor.ts"

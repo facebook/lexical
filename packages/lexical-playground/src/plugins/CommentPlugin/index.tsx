@@ -29,6 +29,7 @@ import {ClearEditorPlugin} from '@lexical/react/LexicalClearEditorPlugin';
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {OnChangePlugin} from '@lexical/react/LexicalOnChangePlugin';
 import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
@@ -64,7 +65,6 @@ import useModal from '../../hooks/useModal';
 import CommentEditorTheme from '../../themes/CommentEditorTheme';
 import Button from '../../ui/Button';
 import ContentEditable from '../../ui/ContentEditable';
-import ErrorBoundary from '../../ui/ErrorBoundary';
 import Placeholder from '../../ui/Placeholder';
 
 export const INSERT_INLINE_COMMAND: LexicalCommand<void> = createCommand(
@@ -185,7 +185,7 @@ function PlainTextEditor({
         <PlainTextPlugin
           contentEditable={<ContentEditable className={className} />}
           placeholder={<Placeholder>{placeholder}</Placeholder>}
-          ErrorBoundary={ErrorBoundary}
+          ErrorBoundary={LexicalErrorBoundary}
         />
         <OnChangePlugin onChange={onChange} />
         <HistoryPlugin />

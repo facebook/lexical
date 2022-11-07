@@ -178,7 +178,9 @@ function createNode(
       setElementFormat(dom, format);
     }
 
-    reconcileElementTerminatingLineBreak(null, children, dom);
+    if (!node.isInline()) {
+      reconcileElementTerminatingLineBreak(null, children, dom);
+    }
 
     if ($textContentRequiresDoubleLinebreakAtEnd(node)) {
       subTreeTextContent += DOUBLE_LINE_BREAK;
@@ -561,7 +563,7 @@ function reconcileNode(
     if (childrenAreDifferent || isDirty) {
       reconcileChildrenWithDirection(prevChildren, nextChildren, nextNode, dom);
 
-      if (!$isRootNode(nextNode)) {
+      if (!$isRootNode(nextNode) && !nextNode.isInline()) {
         reconcileElementTerminatingLineBreak(prevChildren, nextChildren, dom);
       }
     }

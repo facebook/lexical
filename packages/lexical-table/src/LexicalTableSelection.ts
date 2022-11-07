@@ -79,13 +79,13 @@ if (CAN_USE_DOM) {
 }
 
 export class TableSelection {
-  currentX: number;
-  currentY: number;
+  focusX: number;
+  focusY: number;
   listenersToRemove: Set<() => void>;
   grid: Grid;
   isHighlightingCells: boolean;
-  startX: number;
-  startY: number;
+  anchorX: number;
+  anchorY: number;
   tableNodeKey: NodeKey;
   anchorCell: Cell | null;
   focusCell: Cell | null;
@@ -97,10 +97,10 @@ export class TableSelection {
 
   constructor(editor: LexicalEditor, tableNodeKey: string) {
     this.isHighlightingCells = false;
-    this.startX = -1;
-    this.startY = -1;
-    this.currentX = -1;
-    this.currentY = -1;
+    this.anchorX = -1;
+    this.anchorY = -1;
+    this.focusX = -1;
+    this.focusY = -1;
     this.listenersToRemove = new Set();
     this.tableNodeKey = tableNodeKey;
     this.editor = editor;
@@ -173,6 +173,20 @@ export class TableSelection {
   }
 
   clearHighlight() {
+    this.isHighlightingCells = false;
+    this.anchorX = -1;
+    this.anchorY = -1;
+    this.focusX = -1;
+    this.focusY = -1;
+    this.gridSelection = null;
+    this.anchorCellNodeKey = null;
+    this.focusCellNodeKey = null;
+    this.anchorCell = null;
+    this.focusCell = null;
+    this.hasHijackedSelectionStyles = false;
+
+    this.enableHighlightStyle();
+
     this.editor.update(() => {
       const tableNode = $getNodeByKey(this.tableNodeKey);
 
@@ -187,24 +201,9 @@ export class TableSelection {
       }
 
       const grid = getTableGrid(tableElement);
-      this.isHighlightingCells = false;
-      this.startX = -1;
-      this.startY = -1;
-      this.currentX = -1;
-      this.currentY = -1;
-      this.gridSelection = null;
-      this.anchorCellNodeKey = null;
-      this.focusCellNodeKey = null;
-      this.anchorCell = null;
-      this.focusCell = null;
-      this.hasHijackedSelectionStyles = false;
-
       $updateDOMForSelection(grid, null);
       $setSelection(null);
-
       this.editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
-
-      this.enableHighlightStyle();
     });
   }
 
@@ -240,14 +239,12 @@ export class TableSelection {
       this.isHighlightingCells = true;
       this.disableHighlightStyle();
       $updateDOMForSelection(this.grid, this.gridSelection);
-    }
-
-    if (selection == null) {
+    } else if (selection == null) {
       this.clearHighlight();
     }
   }
 
-  adjustFocusCellForSelection(cell: Cell, ignoreStart = false) {
+  setFocusCellForSelection(cell: Cell, ignoreStart = false) {
     this.editor.update(() => {
       const tableNode = $getNodeByKey(this.tableNodeKey);
 
@@ -272,7 +269,7 @@ export class TableSelection {
           domSelection.setBaseAndExtent(
             this.anchorCell.elem,
             0,
-            this.anchorCell.elem,
+            this.focusCell.elem,
             0,
           );
         }
@@ -280,16 +277,16 @@ export class TableSelection {
 
       if (
         !this.isHighlightingCells &&
-        (this.startX !== cellX || this.startY !== cellY || ignoreStart)
+        (this.anchorX !== cellX || this.anchorY !== cellY || ignoreStart)
       ) {
         this.isHighlightingCells = true;
         this.disableHighlightStyle();
-      } else if (cellX === this.currentX && cellY === this.currentY) {
+      } else if (cellX === this.focusX && cellY === this.focusY) {
         return;
       }
 
-      this.currentX = cellX;
-      this.currentY = cellY;
+      this.focusX = cellX;
+      this.focusY = cellY;
 
       if (this.isHighlightingCells) {
         const focusTableCellNode = $getNearestNodeFromDOMNode(cell.elem);
@@ -301,7 +298,8 @@ export class TableSelection {
         ) {
           const focusNodeKey = focusTableCellNode.getKey();
 
-          this.gridSelection = DEPRECATED_$createGridSelection();
+          this.gridSelection =
+            this.gridSelection.clone() || DEPRECATED_$createGridSelection();
 
           this.focusCellNodeKey = focusNodeKey;
           this.gridSelection.set(
@@ -321,19 +319,12 @@ export class TableSelection {
   }
 
   setAnchorCellForSelection(cell: Cell) {
+    this.isHighlightingCells = false;
+    this.anchorCell = cell;
+    this.anchorX = cell.x;
+    this.anchorY = cell.y;
+
     this.editor.update(() => {
-      if (this.anchorCell === cell && this.isHighlightingCells) {
-        const domSelection = getDOMSelection();
-        // Collapse the selection
-        if (domSelection) {
-          domSelection.setBaseAndExtent(cell.elem, 0, cell.elem, 0);
-        }
-      }
-
-      this.anchorCell = cell;
-      this.startX = cell.x;
-      this.startY = cell.y;
-
       const anchorTableCellNode = $getNearestNodeFromDOMNode(cell.elem);
 
       if ($isTableCellNode(anchorTableCellNode)) {

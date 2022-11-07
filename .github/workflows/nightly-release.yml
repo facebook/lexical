@@ -2,7 +2,7 @@ name: Nightly Release Branch
 on:
   schedule:
     # Run daily at 2:30am UTC
-    - cron: '30 2 * * *'
+    - cron: '30 2 * * 1-5'
 jobs:
   release:
     runs-on: ubuntu-latest

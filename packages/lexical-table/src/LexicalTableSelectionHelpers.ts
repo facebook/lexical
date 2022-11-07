@@ -81,7 +81,7 @@ export function applyTableHandlers(
       event.stopImmediatePropagation();
       event.stopPropagation();
       tableSelection.setAnchorCellForSelection(cell);
-      tableSelection.adjustFocusCellForSelection(cell, true);
+      tableSelection.setFocusCellForSelection(cell, true);
       isMouseDown = false;
     }
   });
@@ -121,12 +121,12 @@ export function applyTableHandlers(
 
         if (
           isMouseDown &&
-          (tableSelection.startX !== cellX ||
-            tableSelection.startY !== cellY ||
+          (tableSelection.anchorX !== cellX ||
+            tableSelection.anchorY !== cellY ||
             tableSelection.isHighlightingCells)
         ) {
           event.preventDefault();
-          tableSelection.adjustFocusCellForSelection(cell);
+          tableSelection.setFocusCellForSelection(cell);
         }
       }
     }
@@ -170,8 +170,9 @@ export function applyTableHandlers(
     if (isMouseDown) {
       event.preventDefault();
       event.stopPropagation();
-      isMouseDown = false;
     }
+
+    isMouseDown = false;
   };
 
   window.addEventListener('mouseup', mouseUpCallback);
@@ -675,9 +676,8 @@ export function applyTableHandlers(
             children.forEach((child) => newParagraphNode.append(child));
             nearestElementNode.replace(newParagraphNode);
             nearestElementNode.getWritable().__parent = tableCellNode.getKey();
+            return true;
           }
-
-          return true;
         }
       }
     }
@@ -1248,7 +1248,7 @@ const adjustFocusNodeInDirection = (
     case 'backward':
     case 'forward':
       if (x !== (isForward ? tableSelection.grid.columns - 1 : 0)) {
-        tableSelection.adjustFocusCellForSelection(
+        tableSelection.setFocusCellForSelection(
           tableNode.getCellFromCordsOrThrow(
             x + (isForward ? 1 : -1),
             y,
@@ -1260,7 +1260,7 @@ const adjustFocusNodeInDirection = (
       return true;
     case 'up':
       if (y !== 0) {
-        tableSelection.adjustFocusCellForSelection(
+        tableSelection.setFocusCellForSelection(
           tableNode.getCellFromCordsOrThrow(x, y - 1, tableSelection.grid),
         );
 
@@ -1270,7 +1270,7 @@ const adjustFocusNodeInDirection = (
       }
     case 'down':
       if (y !== tableSelection.grid.rows - 1) {
-        tableSelection.adjustFocusCellForSelection(
+        tableSelection.setFocusCellForSelection(
           tableNode.getCellFromCordsOrThrow(x, y + 1, tableSelection.grid),
         );
 

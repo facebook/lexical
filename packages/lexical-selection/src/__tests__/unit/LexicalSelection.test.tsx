@@ -10,6 +10,7 @@ import {$createLinkNode} from '@lexical/link';
 import {$createListItemNode, $createListNode} from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/src/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/src/LexicalContentEditable';
+import LexicalErrorBoundary from '@lexical/react/src/LexicalErrorBoundary';
 import {HistoryPlugin} from '@lexical/react/src/LexicalHistoryPlugin';
 import {RichTextPlugin} from '@lexical/react/src/LexicalRichTextPlugin';
 import {$createHeadingNode} from '@lexical/rich-text';
@@ -35,6 +36,7 @@ import {
   $createTestDecoratorNode,
   $createTestElementNode,
   createTestEditor,
+  initializeClipboard,
   TestComposer,
 } from 'lexical/src/__tests__/utils';
 import * as React from 'react';
@@ -68,6 +70,8 @@ import {
   setNativeSelectionWithPaths,
   undo,
 } from '../utils';
+
+initializeClipboard();
 
 jest.mock('shared/environment', () => {
   const originalModule = jest.requireActual('shared/environment');
@@ -141,6 +145,7 @@ describe('LexicalSelection tests', () => {
               <ContentEditable role={null} spellCheck={null} />
             }
             placeholder=""
+            ErrorBoundary={LexicalErrorBoundary}
           />
           <HistoryPlugin />
           <TestPlugin />
@@ -2582,6 +2587,53 @@ describe('LexicalSelection tests', () => {
 
         expect(JSON.stringify(testEditor._pendingEditorState.toJSON())).toBe(
           '{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"","type":"text","version":1},{"detail":0,"format":0,"mode":"normal","style":"","text":"","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"},{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"","type":"text","version":1},{"detail":0,"format":0,"mode":"normal","style":"","text":"","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"},{"children":[{"children":[{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"},{"children":[],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"},{"children":[],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"}],"direction":null,"format":"","indent":0,"type":"tablecell","version":1,"headerState":3},{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"},{"children":[],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"},{"children":[],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"}],"direction":null,"format":"","indent":0,"type":"tablecell","version":1,"headerState":1}],"direction":null,"format":"","indent":0,"type":"tablerow","version":1}],"direction":null,"format":"","indent":0,"type":"table","version":1},{"children":[],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"}],"direction":null,"format":"","indent":0,"type":"root","version":1}}',
+        );
+      });
+    });
+
+    test('Paragraph with links to heading with links', async () => {
+      const testEditor = createTestEditor();
+      const element = document.createElement('div');
+      testEditor.setRootElement(element);
+
+      await testEditor.update(() => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const text1 = $createTextNode('Links: ');
+        const text2 = $createTextNode('link1');
+        const text3 = $createTextNode('link2');
+        root.append(
+          paragraph.append(
+            text1,
+            $createLinkNode('https://lexical.dev').append(text2),
+            $createTextNode(' '),
+            $createLinkNode('https://playground.lexical.dev').append(text3),
+          ),
+        );
+
+        const paragraphChildrenKeys = [...paragraph.getChildrenKeys()];
+        const selection = $createRangeSelection();
+        $setSelection(selection);
+        setAnchorPoint({
+          key: text1.getKey(),
+          offset: 1,
+          type: 'text',
+        });
+        setFocusPoint({
+          key: text3.getKey(),
+          offset: 1,
+          type: 'text',
+        });
+
+        $wrapNodes(selection, () => {
+          return $createHeadingNode('h1');
+        });
+
+        const rootChildren = root.getChildren();
+        expect(rootChildren.length).toBe(1);
+        expect(rootChildren[0].getType()).toBe('heading');
+        expect(rootChildren[0].getChildrenKeys()).toEqual(
+          paragraphChildrenKeys,
         );
       });
     });

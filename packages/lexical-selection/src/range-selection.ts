@@ -194,7 +194,7 @@ export function $wrapNodesImpl(
     }
   }
 
-  const movedLeafNodes: Set<NodeKey> = new Set();
+  const movedNodes: Set<NodeKey> = new Set();
 
   // Move out all leaf nodes into our elements array.
   // If we find a top level empty element, also move make
@@ -210,7 +210,7 @@ export function $wrapNodesImpl(
     if (
       parent !== null &&
       $isLeafNode(node) &&
-      !movedLeafNodes.has(node.getKey())
+      !movedNodes.has(node.getKey())
     ) {
       const parentKey = parent.getKey();
 
@@ -224,7 +224,11 @@ export function $wrapNodesImpl(
         // element.
         parent.getChildren().forEach((child) => {
           targetElement.append(child);
-          movedLeafNodes.add(child.getKey());
+          movedNodes.add(child.getKey());
+          if ($isElementNode(child)) {
+            // Skip nested leaf nodes if the parent has already been moved
+            child.getChildrenKeys().forEach((key) => movedNodes.add(key));
+          }
         });
         $removeParentEmptyElements(parent);
       }
@@ -469,7 +473,12 @@ export function $cloneRangeSelectionContent(
   const [anchorOffset, focusOffset] = selection.getCharacterOffsets();
   const nodes = selection.getNodes();
 
-  if (nodes.length === 0) {
+  if (
+    nodes.length === 0 ||
+    (nodes.length === 1 &&
+      $isElementNode(nodes[0]) &&
+      nodes[0].excludeFromCopy('clone'))
+  ) {
     return {
       nodeMap: [],
       range: [],

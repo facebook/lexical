@@ -70,6 +70,7 @@ module.name_mapper='^@lexical/react/LexicalTypeaheadMenuPlugin' -> '<PROJECT_ROO
 module.name_mapper='^@lexical/react/LexicalHistoryPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalHistoryPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalOnChangePlugin' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalOnChangePlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalHashtagPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalHashtagPlugin.js.flow'
+module.name_mapper='^@lexical/react/LexicalErrorBoundary' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalErrorBoundary.js.flow'
 module.name_mapper='^@lexical/react/LexicalMarkdownShortcutPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalMarkdownShortcutPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalAutoFocusPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalAutoFocusPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalTableOfContents__EXPERIMENTAL' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalTableOfContents__EXPERIMENTAL.js.flow'
@@ -109,6 +110,7 @@ module.name_mapper='^shared/warnOnlyOnce' -> '<PROJECT_ROOT>/packages/shared/src
 module.name_mapper='^shared/environment' -> '<PROJECT_ROOT>/packages/shared/src/environment.js'
 module.name_mapper='^shared/useLayoutEffect' -> '<PROJECT_ROOT>/packages/shared/src/useLayoutEffect.js'
 module.name_mapper='^shared/canUseDOM' -> '<PROJECT_ROOT>/packages/shared/src/canUseDOM.js'
+module.name_mapper='^shared/caretFromPoint' -> '<PROJECT_ROOT>/packages/shared/src/caretFromPoint.js'
 
 munge_underscores=false
 

@@ -20,6 +20,7 @@ import {AutoFocusPlugin} from '@lexical/react/LexicalAutoFocusPlugin';
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary';
 import {HashtagPlugin} from '@lexical/react/LexicalHashtagPlugin';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {LinkPlugin} from '@lexical/react/LexicalLinkPlugin';
@@ -51,7 +52,6 @@ import KeywordsPlugin from '../plugins/KeywordsPlugin';
 import MentionsPlugin from '../plugins/MentionsPlugin';
 import TreeViewPlugin from '../plugins/TreeViewPlugin';
 import ContentEditable from '../ui/ContentEditable';
-import ErrorBoundary from '../ui/ErrorBoundary';
 import ImageResizer from '../ui/ImageResizer';
 import Placeholder from '../ui/Placeholder';
 import {$isImageNode} from './ImageNode';
@@ -352,7 +352,7 @@ export default function ImageComponent({
                     Enter a caption...
                   </Placeholder>
                 }
-                ErrorBoundary={ErrorBoundary}
+                ErrorBoundary={LexicalErrorBoundary}
               />
               {showNestedEditorTreeView === true ? <TreeViewPlugin /> : null}
             </LexicalNestedComposer>

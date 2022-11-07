@@ -13,6 +13,7 @@ import {ListItemNode, ListNode} from '@lexical/list';
 import {OverflowNode} from '@lexical/overflow';
 import {useLexicalComposerContext} from '@lexical/react/src/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/src/LexicalContentEditable';
+import LexicalErrorBoundary from '@lexical/react/src/LexicalErrorBoundary';
 import {RichTextPlugin} from '@lexical/react/src/LexicalRichTextPlugin';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {
@@ -21,7 +22,7 @@ import {
   setNativeSelectionWithPaths,
 } from '@lexical/selection/src/__tests__/utils';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
-import {TestComposer} from 'lexical/src/__tests__/utils';
+import {initializeClipboard, TestComposer} from 'lexical/src/__tests__/utils';
 import * as React from 'react';
 import {createRoot} from 'react-dom/client';
 import * as ReactTestUtils from 'react-dom/test-utils';
@@ -30,6 +31,8 @@ jest.mock('shared/environment', () => {
   const originalModule = jest.requireActual('shared/environment');
   return {...originalModule, IS_FIREFOX: true};
 });
+
+initializeClipboard();
 
 describe('LexicalEventHelpers', () => {
   let container = null;
@@ -111,6 +114,7 @@ describe('LexicalEventHelpers', () => {
               <ContentEditable role={null} spellCheck={null} />
             }
             placeholder=""
+            ErrorBoundary={LexicalErrorBoundary}
           />
           <TestPlugin />
         </TestComposer>

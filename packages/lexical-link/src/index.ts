@@ -30,15 +30,18 @@ import {
   Spread,
 } from 'lexical';
 
+export type LinkAttributes = {
+  rel?: null | string;
+  target?: null | string;
+};
+
 export type SerializedLinkNode = Spread<
   {
     type: 'link';
     url: string;
-    target?: null | string;
-    rel?: null | string;
     version: 1;
   },
-  SerializedElementNode
+  Spread<LinkAttributes, SerializedElementNode>
 >;
 
 /** @noInheritDoc */
@@ -62,14 +65,7 @@ export class LinkNode extends ElementNode {
     );
   }
 
-  constructor(
-    url: string,
-    attributes: {
-      target?: null | string;
-      rel?: null | string;
-    } = {},
-    key?: NodeKey,
-  ) {
+  constructor(url: string, attributes: LinkAttributes = {}, key?: NodeKey) {
     super(key);
     const {target = null, rel = null} = attributes;
     this.__url = url;
@@ -245,10 +241,7 @@ function convertAnchorElement(domNode: Node): DOMConversionOutput {
 
 export function $createLinkNode(
   url: string,
-  attributes?: {
-    target?: null | string;
-    rel?: null | string;
-  },
+  attributes?: LinkAttributes,
 ): LinkNode {
   return new LinkNode(url, attributes);
 }
@@ -322,10 +315,7 @@ export class AutoLinkNode extends LinkNode {
 
 export function $createAutoLinkNode(
   url: string,
-  attributes?: {
-    target?: null | string;
-    rel?: null | string;
-  },
+  attributes?: LinkAttributes,
 ): AutoLinkNode {
   return new AutoLinkNode(url, attributes);
 }
@@ -337,21 +327,12 @@ export function $isAutoLinkNode(
 }
 
 export const TOGGLE_LINK_COMMAND: LexicalCommand<
-  | string
-  | {
-      url: string;
-      target?: string;
-      rel?: string;
-    }
-  | null
+  string | ({url: string} & LinkAttributes) | null
 > = createCommand('TOGGLE_LINK_COMMAND');
 
 export function toggleLink(
   url: null | string,
-  attributes: {
-    target?: null | string;
-    rel?: null | string;
-  } = {},
+  attributes: LinkAttributes = {},
 ): void {
   const {target, rel} = attributes;
   const selection = $getSelection();

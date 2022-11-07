@@ -355,9 +355,9 @@ declare export class LexicalNode {
   isParentOf(targetNode: LexicalNode): boolean;
   getNodesBetween(targetNode: LexicalNode): Array<LexicalNode>;
   isDirty(): boolean;
-  // $FlowFixMe
+  // $FlowFixMe[incompatible-type]
   getLatest<T: LexicalNode>(this: T): T;
-  // $FlowFixMe
+  // $FlowFixMe[incompatible-type]
   getWritable<T: LexicalNode>(this: T): T;
   getTextContent(includeDirectionless?: boolean): string;
   getTextContentSize(includeDirectionless?: boolean): number;
@@ -459,7 +459,7 @@ declare export class RangeSelection implements BaseSelection {
     focusOffset: number,
   ): void;
   getTextContent(): string;
-  // $FlowFixMe DOM API
+  // $FlowFixMe[cannot-resolve-name] DOM API
   applyDOMRange(range: StaticRange): void;
   clone(): RangeSelection;
   toggleFormat(format: TextFormatType): void;

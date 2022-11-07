@@ -6,7 +6,7 @@ sidebar_label: "List Plugin"
 
 This page focuses on implementing the list plugin and the code you need to incorporate lists into your editor. You can check out the CodeSandbox directly or view, edit and try out the code in real-time inside the embed. 
 
-You can create new lists by selecting relevant text and playing around with the buttons in the toolbar. The below example has two different types of lists (i.e., bullet and numbered) for simplicity, but it is also possible to use checklists. 
+You can create new lists by selecting relevant text and playing around with the buttons in the toolbar. 
 
 <iframe src="https://codesandbox.io/embed/lexical-list-plugin-example-00d642?fontsize=14&hidenavigation=1&module=/src/Editor.js,/src/plugins/ListToolbar.tsx&theme=dark&view=split"
      style={{width:100+"%", height:700+"px", border:0, "border-radius": 4+"px", overflow:"hidden"}}

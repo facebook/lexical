@@ -6,6 +6,7 @@
  *
  */
 
+import type {LinkAttributes} from '@lexical/link';
 import type {ElementNode, LexicalEditor, LexicalNode} from 'lexical';
 
 import {
@@ -29,6 +30,7 @@ import invariant from 'shared/invariant';
 type ChangeHandler = (url: string | null, prevUrl: string | null) => void;
 
 type LinkMatcherResult = {
+  attributes?: LinkAttributes;
   index: number;
   length: number;
   text: string;
@@ -146,7 +148,7 @@ function handleLinkCreation(
           invalidMatchEnd + matchStart + matchLength,
         );
       }
-      const linkNode = $createAutoLinkNode(match.url);
+      const linkNode = $createAutoLinkNode(match.url, match.attributes);
       const textNode = $createTextNode(match.text);
       textNode.setFormat(linkTextNode.getFormat());
       textNode.setDetail(linkTextNode.getDetail());
@@ -196,9 +198,23 @@ function handleLinkEdit(
   }
 
   const url = linkNode.getURL();
-  if (match !== null && url !== match.url) {
+  if (url !== match.url) {
     linkNode.setURL(match.url);
     onChange(match.url, url);
+  }
+
+  if (match.attributes) {
+    const rel = linkNode.getRel();
+    if (rel !== match.attributes.rel) {
+      linkNode.setRel(match.attributes.rel || null);
+      onChange(match.attributes.rel || null, rel);
+    }
+
+    const target = linkNode.getTarget();
+    if (target !== match.attributes.target) {
+      linkNode.setTarget(match.attributes.target || null);
+      onChange(match.attributes.target || null, target);
+    }
   }
 }
 

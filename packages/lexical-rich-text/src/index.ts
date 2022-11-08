@@ -407,7 +407,7 @@ async function onCutForRichText(
 // control this with the first boolean flag.
 export function eventFiles(
   event: DragEvent | PasteCommandType,
-): [boolean, Array<File>] {
+): [boolean, Array<File>, boolean] {
   let dataTransfer: null | DataTransfer = null;
   if (event instanceof DragEvent) {
     dataTransfer = event.dataTransfer;
@@ -416,9 +416,14 @@ export function eventFiles(
   }
 
   if (dataTransfer === null) {
-    return [false, []];
+    return [false, [], false];
   }
-  return [dataTransfer.types.includes('Files'), Array.from(dataTransfer.files)];
+
+  const types = dataTransfer.types;
+  const hasFiles = types.includes('Files');
+  const hasContent =
+    types.includes('text/html') || types.includes('text/plain');
+  return [hasFiles, Array.from(dataTransfer.files), hasContent];
 }
 
 function handleIndentAndOutdent(
@@ -934,8 +939,8 @@ export function registerRichText(editor: LexicalEditor): () => void {
     editor.registerCommand(
       PASTE_COMMAND,
       (event) => {
-        const [, files] = eventFiles(event);
-        if (files !== null && files.length > 0) {
+        const [, files, hasTextContent] = eventFiles(event);
+        if (files.length > 0 && !hasTextContent) {
           editor.dispatchCommand(DRAG_DROP_PASTE, files);
           return true;
         }

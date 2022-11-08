@@ -5,18 +5,47 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-const port = chrome.runtime.connect();
+let panelCreated = false;
 
-// Create the panel which appears within the browser's DevTools, loading the Lexical DevTools App within index.html.
-chrome.devtools.panels.create(
-  'Lexical',
-  '',
-  'src/panel/index.html',
-  function (panel) {
-    panel.onShown.addListener(handleShown);
-    // to do: add handleHidden() listener
-  },
-);
+const port = chrome.runtime.connect({
+  name: 'devtools',
+});
+
+function syncSavedPreferences() {
+  // TODO: Save devtools panel settings
+}
+
+syncSavedPreferences();
+
+function createPanelIfLexicalLoaded() {
+  if (panelCreated) {
+    return;
+  }
+
+  chrome.devtools.inspectedWindow.eval(
+    `window.document.querySelectorAll('div[data-lexical-editor]').length > 0`,
+    function (pageHasLexical, error) {
+      if (!pageHasLexical) {
+        return;
+      }
+
+      panelCreated = true;
+
+      clearInterval(loadCheckInterval);
+
+      // Create the panel which appears within the browser devtools
+      chrome.devtools.panels.create(
+        'Lexical',
+        '',
+        'src/panel/index.html',
+        function (panel) {
+          panel.onShown.addListener(handleShown);
+          // TODO: add handleHidden() listener
+        },
+      );
+    },
+  );
+}
 
 function handleShown() {
   // init message goes → background script → content script
@@ -24,6 +53,21 @@ function handleShown() {
   port.postMessage({
     name: 'init',
     tabId: chrome.devtools.inspectedWindow.tabId,
-    type: 'FROM_DEVTOOLS',
   });
 }
+
+// Load (or reload) the DevTools extension when the user navigates to a new page.
+function checkPageForLexical() {
+  syncSavedPreferences();
+  createPanelIfLexicalLoaded();
+}
+
+// Check for Lexical before loading the DevTools extension when the user navigates to a new page.
+chrome.devtools.network.onNavigated.addListener(checkPageForLexical);
+
+// In case Lexical is added after page load
+const loadCheckInterval = setInterval(function () {
+  createPanelIfLexicalLoaded();
+}, 1000);
+
+createPanelIfLexicalLoaded();

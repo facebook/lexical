@@ -22,7 +22,7 @@
       "48": "icons/48-disabled.png",
       "128": "icons/128-disabled.png"
     },
-    "default_popup": "popups/index.html",
+    "default_popup": "popups/disabled.html",
     "browser_style": true
   },
   "devtools_page": "src/main/index.html",

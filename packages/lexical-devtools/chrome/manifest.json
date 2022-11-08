@@ -18,7 +18,7 @@
       "48": "icons/48-disabled.png",
       "128": "icons/128-disabled.png"
     },
-    "default_popup": "popups/index.html"
+    "default_popup": "popups/disabled.html"
   },
   "devtools_page": "src/main/index.html",
   "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",

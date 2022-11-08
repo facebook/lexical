@@ -902,6 +902,28 @@ describe('LexicalEditor tests', () => {
     );
   });
 
+  for (const editable of [true, false]) {
+    it(`Retains pendingEditor while rootNode is not set (${
+      editable ? 'editable' : 'non-editable'
+    })`, async () => {
+      const JSON_EDITOR_STATE =
+        '{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"123","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"paragraph","version":1}],"direction":null,"format":"","indent":0,"type":"root","version":1}}';
+      init();
+      const contentEditable = editor.getRootElement();
+      editor.setEditable(editable);
+      editor.setRootElement(null);
+      const editorState = editor.parseEditorState(JSON_EDITOR_STATE);
+      editor.setEditorState(editorState);
+      editor.update(() => {
+        //
+      });
+      editor.setRootElement(contentEditable);
+      expect(JSON.stringify(editor.getEditorState().toJSON())).toBe(
+        JSON_EDITOR_STATE,
+      );
+    });
+  }
+
   describe('With node decorators', () => {
     function useDecorators() {
       const [decorators, setDecorators] = useState(() =>

@@ -791,8 +791,9 @@ function beginUpdate(
   let editorStateWasCloned = false;
 
   if (pendingEditorState === null || pendingEditorState._readOnly) {
-    pendingEditorState = editor._pendingEditorState =
-      cloneEditorState(currentEditorState);
+    pendingEditorState = editor._pendingEditorState = cloneEditorState(
+      pendingEditorState || currentEditorState,
+    );
     editorStateWasCloned = true;
   }
   pendingEditorState._flushSync = discrete;

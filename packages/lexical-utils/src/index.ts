@@ -8,12 +8,14 @@
  */
 
 import {
+  $copyNode,
   $createParagraphNode,
   $getRoot,
   $getSelection,
   $isElementNode,
   $isNodeSelection,
   $isRangeSelection,
+  $isRootOrShadowRoot,
   $isTextNode,
   $setSelection,
   createEditor,
@@ -440,4 +442,46 @@ export function $wrapNodeInElement(
   node.replace(elementNode);
   elementNode.append(node);
   return elementNode;
+}
+
+export function $splitNode(
+  node: ElementNode,
+  offset: number,
+): [ElementNode | null, ElementNode] {
+  let startNode = node.getChildAtIndex(offset);
+  if (startNode == null) {
+    startNode = node;
+  }
+
+  const recurse = (
+    currentNode: LexicalNode,
+  ): [ElementNode, ElementNode, LexicalNode] => {
+    const parent = currentNode.getParentOrThrow();
+    const isParentRoot = $isRootOrShadowRoot(parent);
+    // The node we start split from (leaf) is moved, but its recursive
+    // parents are copied to create separate tree
+    const nodeToMove =
+      currentNode === startNode && !isParentRoot
+        ? currentNode
+        : $copyNode(currentNode);
+
+    if (isParentRoot) {
+      currentNode.insertAfter(nodeToMove);
+      return [
+        currentNode as ElementNode,
+        nodeToMove as ElementNode,
+        nodeToMove,
+      ];
+    } else {
+      const [leftTree, rightTree, newParent] = recurse(parent);
+      const nextSiblings = currentNode.getNextSiblings();
+
+      newParent.append(nodeToMove, ...nextSiblings);
+      return [leftTree, rightTree, nodeToMove];
+    }
+  };
+
+  const [leftTree, rightTree] = recurse(startNode);
+
+  return [leftTree, rightTree];
 }

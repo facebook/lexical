@@ -465,7 +465,7 @@ export function $splitNode(
   node: ElementNode,
   offset: number,
 ): [ElementNode | null, ElementNode] {
-  let startNode = node.getChildAtIndex(offset) as LexicalNode;
+  let startNode = node.getChildAtIndex(offset);
   if (startNode == null) {
     startNode = node;
   }

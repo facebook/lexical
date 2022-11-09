@@ -329,6 +329,22 @@ export class TestDecoratorNode extends DecoratorNode<JSX.Element> {
     };
   }
 
+  importDOM() {
+    return {
+      'test-decorator': (domNode: HTMLElement) => {
+        return {
+          conversion: () => ({node: $createTestDecoratorNode()}),
+        };
+      },
+    };
+  }
+
+  exportDOM() {
+    return {
+      element: document.createElement('test-decorator'),
+    };
+  }
+
   getTextContent() {
     return 'Hello world';
   }

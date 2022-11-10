@@ -10,8 +10,14 @@
 // Each tab will have a separate messaging port for the devTools app & the inspectedWindow's content script, eg. { tabId: { reactPort, contentScriptPort } }
 const tabsToPorts: Record<
   number,
-  {contentScriptPort?: chrome.runtime.Port; reactPort?: chrome.runtime.Port}
+  {
+    contentScriptPort?: chrome.runtime.Port;
+    reactPort?: chrome.runtime.Port;
+    devtoolsPort?: chrome.runtime.Port;
+  }
 > = {};
+
+const IS_FIREFOX: boolean = navigator.userAgent.indexOf('Firefox') >= 0;
 
 // The Lexical DevTools React UI sends a message to initialize the port.
 chrome.runtime.onConnect.addListener((port: chrome.runtime.Port) => {
@@ -28,20 +34,26 @@ chrome.runtime.onConnect.addListener((port: chrome.runtime.Port) => {
       return;
     }
 
-    if (message.name === 'init' && message.type === 'FROM_APP') {
+    if (message.name === 'init' && port.name === 'react-app') {
       tabsToPorts[tabId] = tabsToPorts[tabId] ? tabsToPorts[tabId] : {};
       tabsToPorts[message.tabId].reactPort = port;
       return;
     }
 
-    if (message.name === 'init' && message.type === 'FROM_CONTENT') {
+    if (message.name === 'init' && port.name === 'content-script') {
       tabsToPorts[tabId] = tabsToPorts[tabId] ? tabsToPorts[tabId] : {};
       tabsToPorts[tabId].contentScriptPort = port;
+      port.postMessage({
+        name: 'checkForLexical',
+      });
       return;
     }
 
-    // initial editorState requested from devtools panel
-    if (message.name === 'init' && message.type === 'FROM_DEVTOOLS') {
+    if (message.name === 'lexical-found' && port.name === 'content-script') {
+      setIconAndPopup('production', tabId);
+    }
+
+    if (message.name === 'init' && port.name === 'devtools') {
       const contentScriptPort = tabsToPorts[tabId].contentScriptPort;
       if (contentScriptPort) {
         contentScriptPort.postMessage({
@@ -70,3 +82,55 @@ chrome.runtime.onConnect.addListener((port: chrome.runtime.Port) => {
     }
   });
 });
+
+function isRestrictedBrowserPage(url: string | undefined) {
+  return !url || new URL(url).protocol === 'chrome:';
+}
+
+function checkAndHandleRestrictedPageIfSo(tab: chrome.tabs.Tab) {
+  if (tab && tab.id && isRestrictedBrowserPage(tab.url)) {
+    setIconAndPopup('restricted', tab.id);
+  }
+}
+
+if (!IS_FIREFOX) {
+  chrome.tabs.query({}, (tabs) =>
+    tabs.forEach(checkAndHandleRestrictedPageIfSo),
+  );
+  chrome.tabs.onCreated.addListener((tab: chrome.tabs.Tab) => {
+    checkAndHandleRestrictedPageIfSo(tab);
+  });
+}
+
+// Listen to URL changes on the active tab and update the DevTools icon.
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (IS_FIREFOX) {
+    // We don't properly detect protected URLs in Firefox at the moment.
+    // However we can reset the DevTools icon to its loading state when the URL changes.
+    // It will be updated to the correct icon by the onMessage callback below.
+    if (tab.active && changeInfo.status === 'loading') {
+      setIconAndPopup('disabled', tabId);
+    }
+  } else {
+    // Don't reset the icon to the loading state for Chrome or Edge.
+    // The onUpdated callback fires more frequently for these browsers,
+    // often after onMessage has been called.
+    checkAndHandleRestrictedPageIfSo(tab);
+  }
+});
+
+function setIconAndPopup(lexicalBuildType: string, tabId: number) {
+  chrome.browserAction.setIcon({
+    path: {
+      '128': 'icons/128-' + lexicalBuildType + '.png',
+      '16': 'icons/16-' + lexicalBuildType + '.png',
+      '32': 'icons/32-' + lexicalBuildType + '.png',
+      '48': 'icons/48-' + lexicalBuildType + '.png',
+    },
+    tabId: tabId,
+  });
+  chrome.browserAction.setPopup({
+    popup: 'popups/' + lexicalBuildType + '.html',
+    tabId: tabId,
+  });
+}

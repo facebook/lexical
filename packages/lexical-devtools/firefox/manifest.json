@@ -22,10 +22,10 @@
       "48": "icons/48-disabled.png",
       "128": "icons/128-disabled.png"
     },
-    "default_popup": "src/popup/index.html",
+    "default_popup": "popups/disabled.html",
     "browser_style": true
   },
-  "devtools_page": "src/devtools/index.html",
+  "devtools_page": "src/main/index.html",
   "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
   "web_accessible_resources": ["src/inject/index.js"],
   "background": {
@@ -36,7 +36,7 @@
     {
       "matches": ["<all_urls>"],
       "js": ["src/content/index.js"],
-      "run_at": "document_start"
+      "run_at": "document_end"
     }
   ]
 }

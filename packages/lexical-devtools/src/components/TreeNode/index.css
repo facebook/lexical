@@ -5,6 +5,7 @@
   margin: 0;
   padding: 0;
   text-decoration: none;
+  -webkit-user-select: none;
   user-select: none;
 }
 

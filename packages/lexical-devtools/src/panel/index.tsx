@@ -11,9 +11,9 @@ import './index.css';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom/client';
 
-import App from '../App';
+import App from '../components/App';
 
-ReactDOM.createRoot(document.getElementById('root') as Element).render(
+ReactDOM.createRoot(document.getElementById('container') as Element).render(
   <React.StrictMode>
     <App />
   </React.StrictMode>,

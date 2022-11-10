@@ -14,7 +14,7 @@ const {readFileSync, writeFileSync} = require('fs');
 const {copy, ensureDir, move, remove} = require('fs-extra');
 const {join} = require('path');
 
-const STATIC_FILES = ['icons'];
+const STATIC_FILES = ['icons', 'popups'];
 
 const preProcess = async (destinationPath, tempPath) => {
   await remove(destinationPath); // Clean up from previously completed builds

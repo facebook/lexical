@@ -470,21 +470,38 @@ export function $restoreEditorState(
 export function $insertNodeToNearestRoot<T extends LexicalNode>(node: T): T {
   const selection = $getSelection();
   if ($isRangeSelection(selection)) {
-    const focusNode = selection.focus.getNode();
-    focusNode.getTopLevelElementOrThrow().insertAfter(node);
-  } else if (
-    $isNodeSelection(selection) ||
-    DEPRECATED_$isGridSelection(selection)
-  ) {
-    const nodes = selection.getNodes();
-    nodes[nodes.length - 1].getTopLevelElementOrThrow().insertAfter(node);
+    const {focus} = selection;
+    const focusNode = focus.getNode();
+    const focusOffset = focus.offset;
+    let splitNode: ElementNode;
+    let splitOffset: number;
+
+    if ($isTextNode(focusNode)) {
+      splitNode = focusNode.getParentOrThrow();
+      splitOffset = focusNode.getIndexWithinParent();
+      if (focusOffset > 0) {
+        splitOffset += 1;
+        focusNode.splitText(focusOffset);
+      }
+    } else {
+      splitNode = focusNode;
+      splitOffset = focusOffset;
+    }
+    const [, rightTree] = $splitNode(splitNode, splitOffset);
+    rightTree.insertBefore(node);
+    rightTree.selectStart();
   } else {
-    const root = $getRoot();
-    root.append(node);
+    if ($isNodeSelection(selection) || DEPRECATED_$isGridSelection(selection)) {
+      const nodes = selection.getNodes();
+      nodes[nodes.length - 1].getTopLevelElementOrThrow().insertAfter(node);
+    } else {
+      const root = $getRoot();
+      root.append(node);
+    }
+    const paragraphNode = $createParagraphNode();
+    node.insertAfter(paragraphNode);
+    paragraphNode.select();
   }
-  const paragraphNode = $createParagraphNode();
-  node.insertAfter(paragraphNode);
-  paragraphNode.select();
   return node.getLatest();
 }
 

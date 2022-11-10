@@ -102,6 +102,23 @@ if (!IS_FIREFOX) {
   });
 }
 
+// Listen to URL changes on the active tab and update the DevTools icon.
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (IS_FIREFOX) {
+    // We don't properly detect protected URLs in Firefox at the moment.
+    // However we can reset the DevTools icon to its loading state when the URL changes.
+    // It will be updated to the correct icon by the onMessage callback below.
+    if (tab.active && changeInfo.status === 'loading') {
+      setIconAndPopup('disabled', tabId);
+    }
+  } else {
+    // Don't reset the icon to the loading state for Chrome or Edge.
+    // The onUpdated callback fires more frequently for these browsers,
+    // often after onMessage has been called.
+    checkAndHandleRestrictedPageIfSo(tab);
+  }
+});
+
 function setIconAndPopup(lexicalBuildType: string, tabId: number) {
   chrome.browserAction.setIcon({
     path: {

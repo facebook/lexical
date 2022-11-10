@@ -58,7 +58,7 @@ const editorStateRef = useRef();
   editorState: initialEditorState
 }}>
   <LexicalRichTextPlugin />
-  <LexicalOnChangePlugin onChange={editorState => editorStateRef.current = editorState} />
+  <OnChangePlugin onChange={editorState => editorStateRef.current = editorState} />
   <Button label="Save" onPress={() => {
     if (editorStateRef.current) {
       saveContent(JSON.stringify(editorStateRef.current))

@@ -8,16 +8,13 @@
 
 import type {ICloneSelectionContent} from './lexical-node';
 
-import {$isCodeNode} from '@lexical/code';
-import {$isListItemNode} from '@lexical/list';
-import {$isHeadingNode, $isQuoteNode} from '@lexical/rich-text';
 import {
   $getDecoratorNode,
   $getRoot,
   $isDecoratorNode,
   $isElementNode,
-  $isParagraphNode,
   $isRootNode,
+  $isRootOrShadowRoot,
   $isTextNode,
   ElementNode,
   GridSelection,
@@ -76,11 +73,8 @@ export function $setBlocksType(
 function isBlock(node: LexicalNode) {
   return (
     $isElementNode(node) &&
-    ($isParagraphNode(node) ||
-      $isHeadingNode(node) ||
-      $isListItemNode(node) ||
-      $isQuoteNode(node) ||
-      $isCodeNode(node))
+    !$isRootOrShadowRoot(node) &&
+    $isRootOrShadowRoot(node.getParent())
   );
 }
 

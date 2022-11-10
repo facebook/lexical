@@ -8,6 +8,7 @@
 
 import {useLexicalComposerContext} from '@lexical/react/src/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/src/LexicalContentEditable';
+import LexicalErrorBoundary from '@lexical/react/src/LexicalErrorBoundary';
 import {HistoryPlugin} from '@lexical/react/src/LexicalHistoryPlugin';
 import {RichTextPlugin} from '@lexical/react/src/LexicalRichTextPlugin';
 import {$createQuoteNode} from '@lexical/rich-text/src';
@@ -67,6 +68,7 @@ describe('LexicalHistory tests', () => {
           placeholder={
             <div className="editor-placeholder">Enter some text...</div>
           }
+          ErrorBoundary={LexicalErrorBoundary}
         />
         <TestPlugin />
         <HistoryPlugin />

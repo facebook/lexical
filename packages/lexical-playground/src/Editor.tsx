@@ -12,6 +12,7 @@ import {CharacterLimitPlugin} from '@lexical/react/LexicalCharacterLimitPlugin';
 import {CheckListPlugin} from '@lexical/react/LexicalCheckListPlugin';
 import {ClearEditorPlugin} from '@lexical/react/LexicalClearEditorPlugin';
 import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
+import LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary';
 import {HashtagPlugin} from '@lexical/react/LexicalHashtagPlugin';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {LinkPlugin} from '@lexical/react/LexicalLinkPlugin';
@@ -36,6 +37,7 @@ import CodeHighlightPlugin from './plugins/CodeHighlightPlugin';
 import CollapsiblePlugin from './plugins/CollapsiblePlugin';
 import CommentPlugin from './plugins/CommentPlugin';
 import ComponentPickerPlugin from './plugins/ComponentPickerPlugin';
+import DragDropPaste from './plugins/DragDropPastePlugin';
 import DraggableBlockPlugin from './plugins/DraggableBlockPlugin';
 import EmojiPickerPlugin from './plugins/EmojiPickerPlugin';
 import EmojisPlugin from './plugins/EmojisPlugin';
@@ -64,7 +66,6 @@ import TwitterPlugin from './plugins/TwitterPlugin';
 import YouTubePlugin from './plugins/YouTubePlugin';
 import PlaygroundEditorTheme from './themes/PlaygroundEditorTheme';
 import ContentEditable from './ui/ContentEditable';
-import ErrorBoundary from './ui/ErrorBoundary';
 import Placeholder from './ui/Placeholder';
 
 const skipCollaborationInit =
@@ -119,6 +120,7 @@ export default function Editor(): JSX.Element {
         }`}
         ref={scrollRef}>
         {isMaxLength && <MaxLengthPlugin maxLength={30} />}
+        <DragDropPaste />
         <AutoFocusPlugin />
         <ClearEditorPlugin />
         <ComponentPickerPlugin />
@@ -154,7 +156,7 @@ export default function Editor(): JSX.Element {
                 </div>
               }
               placeholder={placeholder}
-              ErrorBoundary={ErrorBoundary}
+              ErrorBoundary={LexicalErrorBoundary}
             />
             <MarkdownShortcutPlugin />
             <CodeHighlightPlugin />
@@ -170,7 +172,7 @@ export default function Editor(): JSX.Element {
                   <ContentEditable className="TableNode__contentEditable" />
                 }
                 placeholder={''}
-                ErrorBoundary={ErrorBoundary}
+                ErrorBoundary={LexicalErrorBoundary}
               />
               <MentionsPlugin />
               <HistoryPlugin />
@@ -208,7 +210,7 @@ export default function Editor(): JSX.Element {
             <PlainTextPlugin
               contentEditable={<ContentEditable />}
               placeholder={placeholder}
-              ErrorBoundary={ErrorBoundary}
+              ErrorBoundary={LexicalErrorBoundary}
             />
             <HistoryPlugin externalHistoryState={historyState} />
           </>

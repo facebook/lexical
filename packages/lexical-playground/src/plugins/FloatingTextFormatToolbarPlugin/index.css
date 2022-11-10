@@ -4,15 +4,16 @@
   padding: 4px;
   vertical-align: middle;
   position: absolute;
+  top: 0;
+  left: 0;
   z-index: 10;
-  top: -10000px;
-  left: -10000px;
   opacity: 0;
   background-color: #fff;
   box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.3);
   border-radius: 8px;
   transition: opacity 0.5s;
   height: 35px;
+  will-change: transform;
 }
 
 .floating-text-format-popup button.popup-item {

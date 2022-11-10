@@ -791,8 +791,9 @@ function beginUpdate(
   let editorStateWasCloned = false;
 
   if (pendingEditorState === null || pendingEditorState._readOnly) {
-    pendingEditorState = editor._pendingEditorState =
-      cloneEditorState(currentEditorState);
+    pendingEditorState = editor._pendingEditorState = cloneEditorState(
+      pendingEditorState || currentEditorState,
+    );
     editorStateWasCloned = true;
   }
   pendingEditorState._flushSync = discrete;
@@ -807,8 +808,14 @@ function beginUpdate(
   activeEditor = editor;
 
   try {
-    if (editorStateWasCloned && !editor._headless) {
-      pendingEditorState._selection = internalCreateSelection(editor);
+    if (editorStateWasCloned) {
+      if (editor._headless) {
+        if (currentEditorState._selection != null) {
+          pendingEditorState._selection = currentEditorState._selection.clone();
+        }
+      } else {
+        pendingEditorState._selection = internalCreateSelection(editor);
+      }
     }
 
     const startingCompositionKey = editor._compositionKey;

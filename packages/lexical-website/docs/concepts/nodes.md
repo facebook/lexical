@@ -52,14 +52,14 @@ Leaf type of node that contains text. It also includes few text-specific propert
 
 ### [`DecoratorNode`](https://github.com/facebook/lexical/blob/main/packages/lexical/src/nodes/LexicalDecoratorNode.ts)
 
-Wrapper node to insert arbitrary view (component) inside the editor. Decorator node rendering is framework-agnostic and with
+Wrapper node to insert arbitrary view (component) inside the editor. Decorator node rendering is framework-agnostic and
 can output components from React, vanilla js or other frameworks.
 
 ## Node Properties
 
 Lexical nodes can have properties. It's important that these properties are JSON serializable too, so you should never
 be assigning a property to a node that is a function, Symbol, Map, Set, or any other object that has a different prototype
-than the built-ins. `null`, `undefined`, `number`, `string`, `boolean`, `{}` and `[]` are all types of property that be
+than the built-ins. `null`, `undefined`, `number`, `string`, `boolean`, `{}` and `[]` are all types of property that can be
 assigned to node.
 
 By convention, we prefix properties with `__` (double underscore) so that it makes it clear that these properties are private

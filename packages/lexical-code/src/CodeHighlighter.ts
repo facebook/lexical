@@ -58,6 +58,26 @@ import {
 
 import {$isCodeNode, CodeNode} from './CodeNode';
 
+type TokenContent = string | Token | (string | Token)[];
+
+export interface Token {
+  type: string;
+  content: TokenContent;
+}
+
+export interface Tokenizer {
+  tokenize(code: string, language?: string): (string | Token)[];
+}
+
+export const PrismTokenizer: Tokenizer = {
+  tokenize(code: string, language?: string): (string | Token)[] {
+    return Prism.tokenize(
+      code,
+      Prism.languages[language || ''] || Prism.languages[DEFAULT_CODE_LANGUAGE],
+    );
+  },
+};
+
 function isSpaceOrTabChar(char: string): boolean {
   return char === ' ' || char === '\t';
 }
@@ -186,12 +206,16 @@ export function getEndOfCodeInLine(anchor: LexicalNode): {
   };
 }
 
-function textNodeTransform(node: TextNode, editor: LexicalEditor): void {
+function textNodeTransform(
+  node: TextNode,
+  editor: LexicalEditor,
+  tokenizer: Tokenizer,
+): void {
   // Since CodeNode has flat children structure we only need to check
   // if node's parent is a code node and run highlighting if so
   const parentNode = node.getParent();
   if ($isCodeNode(parentNode)) {
-    codeNodeTransform(parentNode, editor);
+    codeNodeTransform(parentNode, editor, tokenizer);
   } else if ($isCodeHighlightNode(node)) {
     // When code block converted into paragraph or other element
     // code highlight nodes converted back to normal text
@@ -226,22 +250,31 @@ function updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
 // Using `skipTransforms` to prevent extra transforms since reformatting the code
 // will not affect code block content itself.
 //
-// Using extra flag (`isHighlighting`) since both CodeNode and CodeHighlightNode
+// Using extra cache (`nodesCurrentlyHighlighting`) since both CodeNode and CodeHighlightNode
 // transforms might be called at the same time (e.g. new CodeHighlight node inserted) and
 // in both cases we'll rerun whole reformatting over CodeNode, which is redundant.
 // Especially when pasting code into CodeBlock.
-let isHighlighting = false;
-function codeNodeTransform(node: CodeNode, editor: LexicalEditor) {
-  if (isHighlighting) {
+
+const nodesCurrentlyHighlighting = new Set();
+
+function codeNodeTransform(
+  node: CodeNode,
+  editor: LexicalEditor,
+  tokenizer: Tokenizer,
+) {
+  const nodeKey = node.getKey();
+
+  if (nodesCurrentlyHighlighting.has(nodeKey)) {
     return;
   }
-  isHighlighting = true;
+
+  nodesCurrentlyHighlighting.add(nodeKey);
+
   // When new code block inserted it might not have language selected
   if (node.getLanguage() === undefined) {
     node.setLanguage(DEFAULT_CODE_LANGUAGE);
   }
 
-  const nodeKey = node.getKey();
   // Using nested update call to pass `skipTransforms` since we don't want
   // each individual codehighlight node to be transformed again as it's already
   // in its final state
@@ -249,14 +282,15 @@ function codeNodeTransform(node: CodeNode, editor: LexicalEditor) {
     () => {
       updateAndRetainSelection(nodeKey, () => {
         const currentNode = $getNodeByKey(nodeKey);
+
         if (!$isCodeNode(currentNode) || !currentNode.isAttached()) {
           return false;
         }
+
         const code = currentNode.getTextContent();
-        const tokens = Prism.tokenize(
+        const tokens = tokenizer.tokenize(
           code,
-          Prism.languages[currentNode.getLanguage() || ''] ||
-            Prism.languages[DEFAULT_CODE_LANGUAGE],
+          currentNode.getLanguage() || DEFAULT_CODE_LANGUAGE,
         );
         const highlightNodes = getHighlightNodes(tokens);
         const diffRange = getDiffRange(
@@ -264,25 +298,25 @@ function codeNodeTransform(node: CodeNode, editor: LexicalEditor) {
           highlightNodes,
         );
         const {from, to, nodesForReplacement} = diffRange;
+
         if (from !== to || nodesForReplacement.length) {
           node.splice(from, to - from, nodesForReplacement);
           return true;
         }
+
         return false;
       });
     },
     {
       onUpdate: () => {
-        isHighlighting = false;
+        nodesCurrentlyHighlighting.delete(nodeKey);
       },
       skipTransforms: true,
     },
   );
 }
 
-function getHighlightNodes(
-  tokens: (string | Prism.Token)[],
-): Array<LexicalNode> {
+function getHighlightNodes(tokens: (string | Token)[]): LexicalNode[] {
   const nodes: LexicalNode[] = [];
 
   tokens.forEach((token) => {
@@ -654,11 +688,18 @@ function handleMoveTo(
   return true;
 }
 
-export function registerCodeHighlighting(editor: LexicalEditor): () => void {
+export function registerCodeHighlighting(
+  editor: LexicalEditor,
+  tokenizer?: Tokenizer,
+): () => void {
   if (!editor.hasNodes([CodeNode, CodeHighlightNode])) {
     throw new Error(
       'CodeHighlightPlugin: CodeNode or CodeHighlightNode not registered on editor',
     );
+  }
+
+  if (tokenizer == null) {
+    tokenizer = PrismTokenizer;
   }
 
   return mergeRegister(
@@ -675,13 +716,13 @@ export function registerCodeHighlighting(editor: LexicalEditor): () => void {
       });
     }),
     editor.registerNodeTransform(CodeNode, (node) =>
-      codeNodeTransform(node, editor),
+      codeNodeTransform(node, editor, tokenizer as Tokenizer),
     ),
     editor.registerNodeTransform(TextNode, (node) =>
-      textNodeTransform(node, editor),
+      textNodeTransform(node, editor, tokenizer as Tokenizer),
     ),
     editor.registerNodeTransform(CodeHighlightNode, (node) =>
-      textNodeTransform(node, editor),
+      textNodeTransform(node, editor, tokenizer as Tokenizer),
     ),
     editor.registerCommand(
       INDENT_CONTENT_COMMAND,

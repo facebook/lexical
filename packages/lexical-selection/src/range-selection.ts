@@ -240,7 +240,12 @@ export function $cloneRangeSelectionContent(
   const [anchorOffset, focusOffset] = selection.getCharacterOffsets();
   const nodes = selection.getNodes();
 
-  if (nodes.length === 0) {
+  if (
+    nodes.length === 0 ||
+    (nodes.length === 1 &&
+      $isElementNode(nodes[0]) &&
+      nodes[0].excludeFromCopy('clone'))
+  ) {
     return {
       nodeMap: [],
       range: [],

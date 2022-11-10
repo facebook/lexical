@@ -15,6 +15,8 @@ import {
   moveToLineEnd,
   moveToPrevWord,
   selectAll,
+  selectCharacters,
+  undo,
 } from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
@@ -29,9 +31,11 @@ import {
   insertTable,
   IS_LINUX,
   IS_WINDOWS,
+  LEXICAL_IMAGE_BASE64,
   pasteFromClipboard,
   selectCellsFromTableCords,
   selectFromAlignDropdown,
+  sleepInsertImage,
   test,
 } from '../utils/index.mjs';
 
@@ -1009,6 +1013,193 @@ test.describe('CopyAndPaste', () => {
       focusOffset: 4,
       focusPath: [0, 3, 0, 0],
     });
+  });
+
+  test('Copy list items and paste into list', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    await page.keyboard.type('- one');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('two');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('three');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('four');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('five');
+
+    await selectAll(page);
+
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            value="1"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">one</span>
+          </li>
+          <li
+            value="2"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">two</span>
+          </li>
+          <li
+            value="3"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">three</span>
+          </li>
+          <li
+            value="4"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">four</span>
+          </li>
+          <li
+            value="5"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">five</span>
+          </li>
+        </ul>
+      `,
+    );
+
+    const clipboard = await copyToClipboard(page);
+
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+
+    await page.keyboard.type('12345');
+
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            value="1"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">one</span>
+          </li>
+          <li
+            value="2"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">two</span>
+          </li>
+          <li
+            value="3"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">three</span>
+          </li>
+          <li
+            value="4"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">four</span>
+          </li>
+          <li
+            value="5"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">five</span>
+          </li>
+        </ul>
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span data-lexical-text="true">12345</span>
+        </p>
+      `,
+    );
+
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('ArrowLeft');
+    await selectCharacters(page, 'left', 1);
+
+    await pasteFromClipboard(page, clipboard);
+
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            value="1"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">one</span>
+          </li>
+          <li
+            value="2"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">two</span>
+          </li>
+          <li
+            value="3"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">three</span>
+          </li>
+          <li
+            value="4"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">four</span>
+          </li>
+          <li
+            value="5"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">five</span>
+          </li>
+        </ul>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">12one</span>
+        </p>
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            value="1"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">two</span>
+          </li>
+          <li
+            value="2"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">three</span>
+          </li>
+          <li
+            value="3"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">four</span>
+          </li>
+          <li
+            value="4"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">five</span>
+          </li>
+          <li value="5" class="PlaygroundEditorTheme__listItem">
+            <span data-lexical-text="true">45</span>
+          </li>
+        </ul>
+      `,
+    );
   });
 
   test('Copy and paste of list items and paste back into list on an existing item', async ({
@@ -2468,5 +2659,217 @@ test.describe('CopyAndPaste', () => {
         </p>
       `,
     );
+  });
+
+  test('HTML Copy + paste empty link #3193', async ({page, isPlainText}) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    const clipboard = {
+      'text/html': `<meta charset='utf-8'><div class="xisnujt x1e56ztr" style="margin-bottom: 8px; min-height: 20px; font-family: system-ui, -apple-system, &quot;system-ui&quot;, &quot;.SFNSText-Regular&quot;, sans-serif; color: rgb(5, 5, 5); font-size: 15px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: left; text-indent: 0px; text-transform: none; white-space: normal; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; background-color: rgb(255, 255, 255); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial;"><span class="x193iq5w xeuugli x13faqbe x1vvkbs xlh3980 xvmahel x1n0sxbx x6prxxf xvq8zen xo1l8bm xzsf02u" style="word-break: break-word; max-width: 100%; font-family: inherit; overflow-wrap: break-word; font-size: 0.9375rem; min-width: 0px; font-weight: 400; -webkit-font-smoothing: antialiased; line-height: 1.3333; color: var(--primary-text);">Line 0</span></div><ul class="x1e56ztr x1xmf6yo x1xfsgkm xrylv2j" style="list-style-type: circle; margin: 8px 0px; padding: 0px 0px 0px 32px; color: rgb(5, 5, 5); font-family: system-ui, -apple-system, &quot;system-ui&quot;, &quot;.SFNSText-Regular&quot;, sans-serif; font-size: 15px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: left; text-indent: 0px; text-transform: none; white-space: normal; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; background-color: rgb(255, 255, 255); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial;"><li><div class="xisnujt x1e56ztr" style="margin-bottom: 8px; min-height: 20px; font-family: inherit;"><span class="x193iq5w xeuugli x13faqbe x1vvkbs xlh3980 xvmahel x1n0sxbx x6prxxf xvq8zen xo1l8bm xzsf02u" style="word-break: break-word; max-width: 100%; font-family: inherit; overflow-wrap: break-word; font-size: 0.9375rem; min-width: 0px; font-weight: 400; -webkit-font-smoothing: antialiased; line-height: 1.3333; color: var(--primary-text);"><span class="xiy17q3 x1tbiz1a x1rg5ohu x1j61x8r x1fcty0u xdj266r xhhsvwb xat24cr xgzva0m x6ikm8r x10wlt62 xxymvpz xlup9mm x1kky2od" style="overflow: hidden; font-weight: normal; font-style: normal; width: 16px; display: inline-block; background-size: contain; margin: 0px 1px; background-repeat: no-repeat; height: 16px; vertical-align: middle; font-family: inherit; background-image: url(&quot;https://static.xx.fbcdn.net/images/emoji.php/v9/t14/1.5/16/2611.png&quot;);"><span class="xidgzdc xbyyjgo xt0psk2 x19co3pv" style="color: transparent; opacity: 0.5; display: inline; font-family: inherit;">â..ï¸.</span></span><span>Â </span>Line 1<span>Â </span><span style="font-family: inherit;"><a class="x1i10hfl xjbqb8w x6umtig x1b1mbwd xaqea5y xav7gou x9f619 x1ypdohk xt0psk2 xe8uvvx xdj266r x11i5rnm xat24cr x1mh8g0r xexx8yu x4uap5 x18d9i69 xkhd6sd x16tdsg8 x1hl2dhg xggy1nq x1a2a7pz x1fey0fg" href="https://www.internalfb.com/removed?entry_point=20" rel="nofollow noopener" role="link" tabindex="0" target="_blank" style="color: var(--blue-link); cursor: pointer; text-decoration: none; outline: none; list-style: none; border-width: 0px; border-style: initial; border-color: initial; margin: 0px; text-align: inherit; padding: 0px; -webkit-tap-highlight-color: transparent; box-sizing: border-box; touch-action: manipulation; background-color: transparent; display: inline; font-family: inherit;"><span class="xt0psk2" style="display: inline; font-family: inherit;"><span style="font-family: inherit;">Some link</span></span></a></span>.</span></div></li><li><div class="xisnujt x1e56ztr" style="margin-bottom: 8px; min-height: 20px; font-family: inherit;"><span class="x193iq5w xeuugli x13faqbe x1vvkbs xlh3980 xvmahel x1n0sxbx x6prxxf xvq8zen xo1l8bm xzsf02u" style="word-break: break-word; max-width: 100%; font-family: inherit; overflow-wrap: break-word; font-size: 0.9375rem; min-width: 0px; font-weight: 400; -webkit-font-smoothing: antialiased; line-height: 1.3333; color: var(--primary-text);"><span class="xiy17q3 x1tbiz1a x1rg5ohu x1j61x8r x1fcty0u xdj266r xhhsvwb xat24cr xgzva0m x6ikm8r x10wlt62 xxymvpz xlup9mm x1kky2od" style="overflow: hidden; font-weight: normal; font-style: normal; width: 16px; display: inline-block; background-size: contain; margin: 0px 1px; background-repeat: no-repeat; height: 16px; vertical-align: middle; font-family: inherit; background-image: url(&quot;https://static.xx.fbcdn.net/images/emoji.php/v9/t14/1.5/16/2611.png&quot;);"><span class="xidgzdc xbyyjgo xt0psk2 x19co3pv" style="color: transparent; opacity: 0.5; display: inline; font-family: inherit;">â..ï¸.</span></span><span>Â </span>Line 2.</span></div></li></ul>`,
+    };
+
+    await pasteFromClipboard(page, clipboard);
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Line 0</span>
+        </p>
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="1">
+            <span data-lexical-text="true">â..ï¸.Â&nbsp;Line 1Â&nbsp;</span>
+            <a
+              class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+              dir="ltr"
+              href="https://www.internalfb.com/removed?entry_point=20"
+              rel="nofollow noopener"
+              target="_blank">
+              <span data-lexical-text="true">Some link</span>
+            </a>
+            <span data-lexical-text="true">.</span>
+          </li>
+          <li
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="2">
+            <span data-lexical-text="true">â..ï¸.Â&nbsp;Line 2.</span>
+          </li>
+        </ul>
+      `,
+    );
+  });
+
+  test('HTML Copy + paste an image', async ({page, isPlainText}) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    const clipboard = {
+      'playwright/base64': [LEXICAL_IMAGE_BASE64, 'image/png'],
+    };
+
+    await page.keyboard.type('An image');
+    await moveLeft(page, 'image'.length);
+    await pasteFromClipboard(page, clipboard);
+    await page.keyboard.type(' inline ');
+    await sleepInsertImage();
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">An</span>
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true">
+            <div draggable="false">
+              <img
+                alt="file"
+                draggable="false"
+                src="${LEXICAL_IMAGE_BASE64}"
+                style="height: inherit; max-width: 500px; width: inherit" />
+            </div>
+          </span>
+          <span data-lexical-text="true">inline image</span>
+        </p>
+      `,
+    );
+  });
+
+  test('HTML Copy + paste + undo multiple image', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    const clipboard = {
+      'playwright/base64_1': [LEXICAL_IMAGE_BASE64, 'image/png'],
+      'playwright/base64_2': [LEXICAL_IMAGE_BASE64, 'image/png'],
+    };
+
+    await pasteFromClipboard(page, clipboard);
+    await sleepInsertImage(2);
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true">
+            <div draggable="false">
+              <img
+                alt="file"
+                draggable="false"
+                src="${LEXICAL_IMAGE_BASE64}"
+                style="height: inherit; max-width: 500px; width: inherit" />
+            </div>
+          </span>
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true">
+            <div draggable="false">
+              <img
+                alt="file"
+                draggable="false"
+                src="${LEXICAL_IMAGE_BASE64}"
+                style="height: inherit; max-width: 500px; width: inherit" />
+            </div>
+          </span>
+          <br />
+        </p>
+      `,
+    );
+
+    await undo(page);
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+  });
+
+  test('HTML Copy + paste a paragraph element between horizontal rules', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    let clipboard = {'text/html': '<hr/><hr/>'};
+
+    await pasteFromClipboard(page, clipboard);
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <div
+          contenteditable="false"
+          style="display: contents;"
+          data-lexical-decorator="true">
+          <hr />
+        </div>
+        <div
+          contenteditable="false"
+          style="display: contents;"
+          data-lexical-decorator="true">
+          <hr />
+        </div>
+      `,
+    );
+    await click(page, 'hr:first-of-type');
+
+    // sets focus between HRs
+    await page.keyboard.press('ArrowRight');
+
+    clipboard = {'text/html': '<p>Text between HRs</p>'};
+
+    await pasteFromClipboard(page, clipboard);
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <div
+          contenteditable="false"
+          style="display: contents;"
+          data-lexical-decorator="true">
+          <hr />
+        </div>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Text between HRs</span>
+        </p>
+        <div
+          contenteditable="false"
+          style="display: contents;"
+          data-lexical-decorator="true">
+          <hr />
+        </div>
+      `,
+    );
+    await assertSelection(page, {
+      anchorOffset: 16,
+      anchorPath: [2, 0, 0],
+      focusOffset: 16,
+      focusPath: [2, 0, 0],
+    });
   });
 });

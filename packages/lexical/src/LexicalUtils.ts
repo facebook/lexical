@@ -1026,21 +1026,19 @@ export function setMutatedNode(
   }
 }
 
-export function $nodesOfType<T extends LexicalNode>(
-  klass: Klass<T>,
-): Array<LexicalNode> {
+export function $nodesOfType<T extends LexicalNode>(klass: Klass<T>): Array<T> {
   const editorState = getActiveEditorState();
   const readOnly = editorState._readOnly;
   const klassType = klass.getType();
   const nodes = editorState._nodeMap;
-  const nodesOfType = [];
+  const nodesOfType: Array<T> = [];
   for (const [, node] of nodes) {
     if (
       node instanceof klass &&
       node.__type === klassType &&
       (readOnly || node.isAttached())
     ) {
-      nodesOfType.push(node);
+      nodesOfType.push(node as T);
     }
   }
   return nodesOfType;
@@ -1240,6 +1238,19 @@ export function $isInlineElementOrDecoratorNode(node: LexicalNode): boolean {
     ($isElementNode(node) && node.isInline()) ||
     ($isDecoratorNode(node) && node.isInline())
   );
+}
+
+export function $getNearestRootOrShadowRoot(
+  node: LexicalNode,
+): RootNode | ElementNode {
+  let parent = node.getParentOrThrow();
+  while (parent !== null) {
+    if ($isRootOrShadowRoot(parent)) {
+      return parent;
+    }
+    parent = parent.getParentOrThrow();
+  }
+  return parent;
 }
 
 export function $isRootOrShadowRoot(node: null | LexicalNode): boolean {

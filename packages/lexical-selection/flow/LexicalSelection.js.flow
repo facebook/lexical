@@ -29,7 +29,7 @@ declare export function getStyleObjectFromCSS(css: string): {
 declare export function $patchStyleText(
   selection: RangeSelection | GridSelection,
   patch: {
-    [string]: string,
+    [string]: string | null,
   },
 ): void;
 declare export function $getSelectionStyleValueForProperty(

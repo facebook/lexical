@@ -7,13 +7,16 @@
  * @flow strict
  */
 
+import type {LinkAttributes} from '@lexical/link';
+
 type ChangeHandler = (url: string | null, prevUrl: string | null) => void;
 
 type LinkMatcherResult = {
+  attributes?: LinkAttributes,
+  index: number,
+  length: number,
   text: string,
   url: string,
-  length: number,
-  index: number,
 };
 
 export type LinkMatcher = (text: string) => LinkMatcherResult | null;

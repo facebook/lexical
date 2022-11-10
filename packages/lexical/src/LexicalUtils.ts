@@ -1256,3 +1256,10 @@ export function $getNearestRootOrShadowRoot(
 export function $isRootOrShadowRoot(node: null | LexicalNode): boolean {
   return $isRootNode(node) || ($isElementNode(node) && node.isShadowRoot());
 }
+
+export function $copyNode<T extends LexicalNode>(node: T): T {
+  // @ts-ignore
+  const copy = node.constructor.clone(node);
+  $setNodeKey(copy, null);
+  return copy;
+}

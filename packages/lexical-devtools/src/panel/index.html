@@ -2,11 +2,30 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Lexical Developer Tools</title>
+    <style>
+      html {
+        display: flex;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        flex: 1;
+        display: flex;
+      }
+      #container {
+        display: flex;
+        flex: 1;
+        width: 100%;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="./components/main/index.tsx"></script>
+    <div id="container">Unable to find Lexical on the page.</div>
+    <script type="module" src="./index.tsx"></script>
   </body>
 </html>

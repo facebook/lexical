@@ -13,8 +13,12 @@ declare global {
   interface DocumentEventMap {
     editorStateUpdate: CustomEvent;
     highlight: CustomEvent;
+    lexicalPresenceUpdate: CustomEvent;
   }
 }
+
+let backendDisconnected = false;
+let backendInitialized = false;
 
 // for security reasons, content scripts cannot read Lexical's changes to the DOM
 // in order to access the editorState, we inject this script directly into the page
@@ -23,29 +27,20 @@ script.src = chrome.runtime.getURL('src/inject/index.js');
 document.documentElement.appendChild(script);
 if (script.parentNode) script.parentNode.removeChild(script);
 
-const port = chrome.runtime.connect();
-
-port.postMessage({
-  name: 'init',
-  type: 'FROM_CONTENT',
+const port = chrome.runtime.connect({
+  name: 'content-script',
 });
 
-// Listen to editorState updates from the inspected page, via the registerUpdateListener injected by devtools.js
-window.addEventListener('message', function (event) {
-  if (event.source !== window) {
-    // Security check: https://developer.chrome.com/docs/extensions/mv3/content_scripts/#host-page-communication
-    return;
-  }
+function sayHelloToBackend() {
+  port.postMessage({
+    name: 'init',
+  });
+}
 
-  if (
-    event.data.type &&
-    event.data.type === 'FROM_PAGE' &&
-    event.data.name === 'editor-update'
-  ) {
+document.addEventListener('lexicalPresenceUpdate', function (e) {
+  if (e.detail.lexical) {
     port.postMessage({
-      editorState: event.data.editorState,
-      name: 'editor-update',
-      type: 'FROM_CONTENT',
+      name: 'lexical-found',
     });
   }
 });
@@ -54,7 +49,6 @@ document.addEventListener('editorStateUpdate', function (e) {
   port.postMessage({
     editorState: e.detail.editorState,
     name: 'editor-update',
-    type: 'FROM_CONTENT',
   });
 });
 
@@ -69,7 +63,21 @@ function getCloneInto(): CloneInto | null {
 
 const cloneInto = getCloneInto();
 
+function handleDisconnect() {
+  backendDisconnected = true;
+  // TODO: remove event listeners and post shutdown message
+}
+
 port.onMessage.addListener((message) => {
+  if (message.name === 'checkForLexical') {
+    backendInitialized = true;
+    // As we load scripts on document_end, we wait for the
+    // page to load before dispatching checkForLexical event
+    window.onload = function () {
+      document.dispatchEvent(new CustomEvent('checkForLexical'));
+    };
+  }
+
   if (message.name === 'highlight') {
     const data = {lexicalKey: message.lexicalKey as string};
     const detail =
@@ -91,3 +99,16 @@ port.onMessage.addListener((message) => {
     document.dispatchEvent(new CustomEvent('loadEditorState'));
   }
 });
+port.onDisconnect.addListener(handleDisconnect);
+
+sayHelloToBackend();
+
+if (!backendInitialized) {
+  const intervalID = setInterval(() => {
+    if (backendInitialized || backendDisconnected) {
+      clearInterval(intervalID);
+    } else {
+      sayHelloToBackend();
+    }
+  }, 500);
+}

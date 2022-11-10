@@ -2628,7 +2628,7 @@ describe('LexicalSelection tests', () => {
           type: 'text',
         });
 
-        $wrapNodes(selection, () => {
+        $setBlocksType(selection, () => {
           return $createHeadingNode('h1');
         });
 

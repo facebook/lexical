@@ -826,6 +826,10 @@ declare export function $hasAncestor(
   child: LexicalNode,
   targetNode: LexicalNode,
 ): boolean;
+declare export function $copyNode(
+  node: ElementNode,
+  offset: number,
+): [ElementNode, ElementNode];
 
 /**
  * LexicalVersion

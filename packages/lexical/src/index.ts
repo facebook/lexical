@@ -127,6 +127,7 @@ export {
 export {$parseSerializedNode} from './LexicalUpdates';
 export {
   $addUpdateTag,
+  $copyNode,
   $getDecoratorNode,
   $getNearestNodeFromDOMNode,
   $getNearestRootOrShadowRoot,

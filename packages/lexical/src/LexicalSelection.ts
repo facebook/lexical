@@ -12,7 +12,9 @@ import type {LexicalNode, NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextFormatType} from './nodes/LexicalTextNode';
 
+import {$splitNode} from '@lexical/utils';
 import {IS_CHROME} from 'shared/environment';
+import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
 
 import {
@@ -1438,14 +1440,22 @@ export class RangeSelection implements BaseSelection {
         if (
           $isRangeSelection(this) &&
           $isDecoratorNode(node) &&
-          !node.isInline() &&
-          $isTextNode(target)
+          !$isDecoratorNode(target) &&
+          !node.isInline()
         ) {
-          this.insertParagraph();
-          target = this.focus
-            .getNode()
-            .getTopLevelElementOrThrow()
-            .insertBefore(node);
+          let splitNode;
+          let splitOffset;
+
+          if ($isTextNode(target)) {
+            splitNode = target.getParentOrThrow();
+            const [textNode] = target.splitText(anchorOffset);
+            splitOffset = textNode.getIndexWithinParent() + 1;
+          } else {
+            splitNode = target;
+            splitOffset = anchorOffset;
+          }
+          const [, rightTree] = $splitNode(splitNode, splitOffset);
+          rightTree.insertBefore(node);
         } else {
           target = target.insertAfter(node, false);
         }

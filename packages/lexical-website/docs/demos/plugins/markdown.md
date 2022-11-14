@@ -8,7 +8,7 @@ This page focuses on implementing the markdown plugin and the code you need to i
 
 The editor already has some prepopulated text, and you can press the button on the bottom right to turn the current text into Markdown text. If you press again, it will turn back to standard editor text. This is a rich text editor example, and you can see most of the formatting functionality (e.g., bold, italic, underlined text).
 
-Currently, for simplicity purposes, the link plugin is very basic, so you will have to press twice on the links to see the URL and edit it. You can further import the AutoLink and ClickableLink plugins to be able to click on the link to jump straight to the website of your preference. 
+Currently, for the purposes of simplicity, the link plugin is very basic, so you will have to press twice on the links to see the URL and edit it. You can further import the AutoLink and ClickableLink plugins to be able to click on the link to jump straight to the website of your preference. 
 
 <iframe src="https://codesandbox.io/embed/lexical-markdown-plugin-example-4076jq?fontsize=14&hidenavigation=1&module=/src/Editor.js,/src/plugins/MarkdownTransformers.ts,/src/plugins/ActionsPlugin.tsx&theme=dark&view=split"
      style={{width:"100%", height:"700px", border:0, borderRadius: "4px", overflow:"hidden"}}

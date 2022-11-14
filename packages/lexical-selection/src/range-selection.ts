@@ -68,6 +68,37 @@ export function $wrapNodes(
   createElement: () => ElementNode,
   wrappingElement: null | ElementNode = null,
 ): void {
+  const selectionEnd = selection.isBackward()
+    ? selection.anchor
+    : selection.focus;
+  if (
+    $isRangeSelection(selection) &&
+    !selection.isCollapsed() &&
+    selectionEnd.offset === 0
+  ) {
+    let trailingNode = selectionEnd.getNode();
+    while (trailingNode !== null) {
+      const parentOffset = trailingNode.getIndexWithinParent();
+      trailingNode = trailingNode.getParentOrThrow();
+
+      if ($isRootOrShadowRoot(trailingNode)) {
+        if (selection.isBackward()) {
+          const collapsedEndSelection = selection.clone();
+          collapsedEndSelection.focus = collapsedEndSelection.anchor;
+          $moveCharacter(collapsedEndSelection, false, true);
+          selection.anchor = collapsedEndSelection.anchor;
+        } else {
+          $moveCharacter(selection, true, true);
+        }
+        break;
+      }
+
+      if (parentOffset !== 0) {
+        break;
+      }
+    }
+  }
+
   const nodes = selection.getNodes();
   const nodesLength = nodes.length;
   const anchor = selection.anchor;

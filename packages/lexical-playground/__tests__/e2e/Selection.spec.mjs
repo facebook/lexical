@@ -221,4 +221,51 @@ test.describe('Selection', () => {
       focusPath: [0, 1, 0, 0],
     });
   });
+
+  test('Deselects trailing edge that starts on the next line when converts block', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type('First paragraph');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Second paragraph');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Third paragraph');
+
+    await moveToLineBeginning(page);
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.up('Shift');
+
+    await selectFromFormatDropdown(page, '.h1');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">First paragraph</span>
+        </p>
+        <h1
+          class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Second paragraph</span>
+        </h1>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Third paragraph</span>
+        </p>
+      `,
+    );
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [0, 1, 0],
+      focusOffset: 0,
+      focusPath: [0, 2, 0],
+    });
+  });
 });

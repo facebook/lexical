@@ -1440,11 +1440,11 @@ export class RangeSelection implements BaseSelection {
         if (
           $isRangeSelection(this) &&
           $isDecoratorNode(node) &&
-          !$isDecoratorNode(target) &&
+          ($isElementNode(target) || $isTextNode(target)) &&
           !node.isInline()
         ) {
-          let splitNode;
-          let splitOffset;
+          let splitNode: ElementNode;
+          let splitOffset: number;
 
           if ($isTextNode(target)) {
             splitNode = target.getParentOrThrow();
@@ -1455,7 +1455,7 @@ export class RangeSelection implements BaseSelection {
             splitOffset = anchorOffset;
           }
           const [, rightTree] = $splitNode(splitNode, splitOffset);
-          rightTree.insertBefore(node);
+          target = rightTree.insertBefore(node);
         } else {
           target = target.insertAfter(node, false);
         }

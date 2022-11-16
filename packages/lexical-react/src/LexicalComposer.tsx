@@ -40,7 +40,13 @@ type Props = {
   initialConfig: Readonly<{
     editor__DEPRECATED?: LexicalEditor | null;
     namespace: string;
-    nodes?: ReadonlyArray<Klass<LexicalNode>>;
+    nodes?: ReadonlyArray<
+      | Klass<LexicalNode>
+      | {
+          replace: Klass<LexicalNode>;
+          with: <T extends LexicalNode>(node: T) => LexicalNode;
+        }
+    >;
     onError: (error: Error, editor: LexicalEditor) => void;
     editable?: boolean;
     theme?: EditorThemeClasses;

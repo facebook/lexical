@@ -14,7 +14,7 @@ import type {
   Spread,
 } from 'lexical';
 
-import {TextNode} from 'lexical';
+import {$applyNodeReplacement, TextNode} from 'lexical';
 
 export type SerializedEmojiNode = Spread<
   {
@@ -98,5 +98,6 @@ export function $createEmojiNode(
   className: string,
   emojiText: string,
 ): EmojiNode {
-  return new EmojiNode(className, emojiText).setMode('token');
+  const node = new EmojiNode(className, emojiText).setMode('token');
+  return $applyNodeReplacement(node);
 }

@@ -21,7 +21,12 @@ import {
   addClassNamesToElement,
   removeClassNamesFromElement,
 } from '@lexical/utils';
-import {$isElementNode, $isRangeSelection, ElementNode} from 'lexical';
+import {
+  $applyNodeReplacement,
+  $isElementNode,
+  $isRangeSelection,
+  ElementNode,
+} from 'lexical';
 
 export type SerializedMarkNode = Spread<
   {
@@ -200,7 +205,7 @@ export class MarkNode extends ElementNode {
 }
 
 export function $createMarkNode(ids: Array<string>): MarkNode {
-  return new MarkNode(ids);
+  return $applyNodeReplacement(new MarkNode(ids));
 }
 
 export function $isMarkNode(node: LexicalNode | null): node is MarkNode {

@@ -849,6 +849,10 @@ declare export function $parseSerializedNode(
   serializedNode: InternalSerializedNode,
 ): LexicalNode;
 
+declare export function $applyNodeReplacement<N: LexicalNode>(
+  node: LexicalNode,
+): N;
+
 export type SerializedLexicalNode = {
   type: string,
   version: number,

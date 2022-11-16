@@ -1263,3 +1263,29 @@ export function $copyNode<T extends LexicalNode>(node: T): T {
   $setNodeKey(copy, null);
   return copy;
 }
+
+export function $applyNodeReplacement<N extends LexicalNode>(
+  node: LexicalNode,
+): N {
+  const editor = getActiveEditor();
+  const nodeType = (node.constructor as Klass<LexicalNode>).getType();
+  const registeredNode = editor._nodes.get(nodeType);
+  if (registeredNode === undefined) {
+    invariant(
+      false,
+      '$initializeNode failed. Ensure node has been registered to the editor. You can do this by passing the node class via the "nodes" array in the editor config.',
+    );
+  }
+  const replaceFunc = registeredNode.replace;
+  if (replaceFunc !== null) {
+    const replacementNode = replaceFunc(node) as N;
+    if (!(replacementNode instanceof node.constructor)) {
+      invariant(
+        false,
+        '$initializeNode failed. Ensure replacement node is a subclass of the original node.',
+      );
+    }
+    return replacementNode;
+  }
+  return node as N;
+}

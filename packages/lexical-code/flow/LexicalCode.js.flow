@@ -22,7 +22,7 @@ import {ElementNode, TextNode} from 'lexical';
 declare export class CodeNode extends ElementNode {
   static getType(): string;
   static clone(node: CodeNode): CodeNode;
-  constructor(key?: NodeKey): void;
+  constructor(language: ?string, key?: NodeKey): void;
   createDOM(config: EditorConfig): HTMLElement;
   updateDOM(prevNode: CodeNode, dom: HTMLElement): boolean;
   insertNewAfter(
@@ -33,7 +33,7 @@ declare export class CodeNode extends ElementNode {
   setLanguage(language: string): void;
   getLanguage(): string | void;
 }
-declare export function $createCodeNode(language?: string): CodeNode;
+declare export function $createCodeNode(language: ?string): CodeNode;
 declare export function $isCodeNode(
   node: ?LexicalNode,
 ): boolean %checks(node instanceof CodeNode);
@@ -71,6 +71,7 @@ export interface Token {
   content: TokenContent;
 }
 export interface Tokenizer {
+  defaultLanguage: string;
   tokenize(code: string, language?: string): (string | Token)[];
 }
 

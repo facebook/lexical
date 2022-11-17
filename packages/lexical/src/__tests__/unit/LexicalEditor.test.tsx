@@ -18,6 +18,7 @@ import {
   TableRowNode,
 } from '@lexical/table';
 import {
+  type LexicalNode,
   $createLineBreakNode,
   $createNodeSelection,
   $createParagraphNode,
@@ -58,6 +59,7 @@ import {
   $createTestInlineElementNode,
   createTestEditor,
   TestComposer,
+  TestTextNode,
 } from '../utils';
 // No idea why we suddenly need to do this, but it fixes the tests
 // with latest experimental React version.
@@ -75,6 +77,7 @@ describe('LexicalEditor tests', () => {
 
   afterEach(() => {
     document.body.removeChild(container);
+    // @ts-ignore
     container = null;
 
     jest.restoreAllMocks();
@@ -176,7 +179,7 @@ describe('LexicalEditor tests', () => {
   it('Should handle nested updates in the correct sequence', async () => {
     init();
 
-    let log = [];
+    let log: Array<string> = [];
 
     editor.update(() => {
       const root = $getRoot();
@@ -624,7 +627,7 @@ describe('LexicalEditor tests', () => {
         const root = $getRoot();
         const paragraph0 = $createParagraphNode();
         const paragraph1 = $createParagraphNode();
-        const textNodes = [];
+        const textNodes: Array<LexicalNode> = [];
 
         for (let i = 0; i < 6; i++) {
           const node = $createTextNode(String(i)).toggleUnmergeable();
@@ -2205,5 +2208,38 @@ describe('LexicalEditor tests', () => {
     expect(container.firstElementChild?.innerHTML).toBe(
       '<p dir="ltr"><span data-lexical-text="true">Hello</span><a></a></p>',
     );
+  });
+
+  it('node replacement works', async () => {
+    const newEditor = createTestEditor({
+      nodes: [
+        TestTextNode,
+        {
+          replace: TextNode,
+          // @ts-ignore
+          with: (node: TextNode) => new TestTextNode(node.getTextContent()),
+        },
+      ],
+      onError: jest.fn(),
+      theme: {
+        text: {
+          bold: 'editor-text-bold',
+          italic: 'editor-text-italic',
+          underline: 'editor-text-underline',
+        },
+      },
+    });
+
+    newEditor.setRootElement(container);
+
+    await newEditor.update(() => {
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+      const text = $createTextNode('123');
+      root.append(paragraph);
+      paragraph.append(text);
+      expect(text instanceof TestTextNode).toBe(true);
+      expect(text.getTextContent()).toBe('123');
+    });
   });
 });

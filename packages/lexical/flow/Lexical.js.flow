@@ -266,7 +266,10 @@ declare export function createEditor(editorConfig?: {
   namespace: string,
   theme?: EditorThemeClasses,
   parentEditor?: LexicalEditor,
-  nodes?: $ReadOnlyArray<Class<LexicalNode>>,
+  nodes?: $ReadOnlyArray<
+    | Class<LexicalNode>
+    | {replace: Class<LexicalNode>, with: (node: LexicalNode) => LexicalNode},
+  >,
   onError: (error: Error) => void,
   disableEvents?: boolean,
   editable?: boolean,

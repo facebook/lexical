@@ -54,6 +54,7 @@ import {
   DEFAULT_CODE_LANGUAGE,
   getFirstCodeHighlightNodeOfLine,
   getLastCodeHighlightNodeOfLine,
+  SerializableMeta,
 } from './CodeHighlightNode';
 
 import {$isCodeNode, CodeNode} from './CodeNode';
@@ -63,6 +64,7 @@ type TokenContent = string | Token | (string | Token)[];
 export interface Token {
   type: string;
   content: TokenContent;
+  meta?: SerializableMeta | null | undefined;
 }
 
 export interface Tokenizer {
@@ -334,13 +336,15 @@ function getHighlightNodes(tokens: (string | Token)[]): LexicalNode[] {
     } else {
       const {content} = token;
       if (typeof content === 'string') {
-        nodes.push($createCodeHighlightNode(content, token.type));
+        nodes.push($createCodeHighlightNode(content, token.type, token.meta));
       } else if (
         Array.isArray(content) &&
         content.length === 1 &&
         typeof content[0] === 'string'
       ) {
-        nodes.push($createCodeHighlightNode(content[0], token.type));
+        nodes.push(
+          $createCodeHighlightNode(content[0], token.type, token.meta),
+        );
       } else if (Array.isArray(content)) {
         nodes.push(...getHighlightNodes(content));
       }

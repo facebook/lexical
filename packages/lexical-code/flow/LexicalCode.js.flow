@@ -51,8 +51,14 @@ declare export function getCodeLanguages(): Array<string>;
 
 declare export class CodeHighlightNode extends TextNode {
   __highlightType: ?string;
-  constructor(text: string, highlightType?: string, key?: NodeKey): void;
+  constructor(
+    text: string,
+    highlightType?: string,
+    meta?: SerializableMeta,
+    key?: NodeKey,
+  ): void;
   static getType(): string;
+  getMeta(): SerializableMeta;
   // $FlowFixMe
   static clone(node: CodeHighlightNode): CodeHighlightNode;
   createDOM(config: EditorConfig): HTMLElement;
@@ -69,10 +75,23 @@ type TokenContent = string | Token | (string | Token)[];
 export interface Token {
   type: string;
   content: TokenContent;
+  meta?: SerializableMeta;
 }
 export interface Tokenizer {
   tokenize(code: string, language?: string): (string | Token)[];
 }
+
+type Serializable =
+  | number
+  | string
+  | boolean
+  | null
+  | SerializableMeta
+  | Serializable[];
+
+export type SerializableMeta = {
+  [key: string]: Serializable,
+};
 
 declare function getHighlightThemeClass(
   theme: EditorThemeClasses,
@@ -81,6 +100,7 @@ declare function getHighlightThemeClass(
 declare export function $createCodeHighlightNode(
   text: string,
   highlightType?: string,
+  meta?: SerializableMeta,
 ): CodeHighlightNode;
 declare export function $isCodeHighlightNode(
   node: ?LexicalNode,

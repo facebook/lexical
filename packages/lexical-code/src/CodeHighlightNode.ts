@@ -43,11 +43,24 @@ export const DEFAULT_CODE_LANGUAGE = 'javascript';
 type SerializedCodeHighlightNode = Spread<
   {
     highlightType: string | null | undefined;
+    meta: SerializableMeta | null | undefined;
     type: 'code-highlight';
     version: 1;
   },
   SerializedTextNode
 >;
+
+type Serializable =
+  | number
+  | string
+  | boolean
+  | null
+  | SerializableMeta
+  | Serializable[];
+
+export type SerializableMeta = {
+  [key: string]: Serializable;
+};
 
 export const CODE_LANGUAGE_FRIENDLY_NAME_MAP: Record<string, string> = {
   c: 'C',
@@ -97,14 +110,17 @@ export const getCodeLanguages = (): Array<string> =>
 export class CodeHighlightNode extends TextNode {
   /** @internal */
   __highlightType: string | null | undefined;
+  __meta: SerializableMeta | null | undefined;
 
   constructor(
     text: string,
     highlightType?: string | null | undefined,
+    meta?: SerializableMeta | null | undefined,
     key?: NodeKey,
   ) {
     super(text, key);
     this.__highlightType = highlightType;
+    this.__meta = meta;
   }
 
   static getType(): string {
@@ -115,6 +131,7 @@ export class CodeHighlightNode extends TextNode {
     return new CodeHighlightNode(
       node.__text,
       node.__highlightType || undefined,
+      node.__meta,
       node.__key,
     );
   }
@@ -122,6 +139,11 @@ export class CodeHighlightNode extends TextNode {
   getHighlightType(): string | null | undefined {
     const self = this.getLatest();
     return self.__highlightType;
+  }
+
+  getMeta(): SerializableMeta | null | undefined {
+    const self = this.getLatest();
+    return self.__meta;
   }
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -165,6 +187,7 @@ export class CodeHighlightNode extends TextNode {
     const node = $createCodeHighlightNode(
       serializedNode.text,
       serializedNode.highlightType,
+      serializedNode.meta,
     );
     node.setFormat(serializedNode.format);
     node.setDetail(serializedNode.detail);
@@ -177,6 +200,7 @@ export class CodeHighlightNode extends TextNode {
     return {
       ...super.exportJSON(),
       highlightType: this.getHighlightType(),
+      meta: this.getMeta(),
       type: 'code-highlight',
       version: 1,
     };
@@ -203,8 +227,11 @@ function getHighlightThemeClass(
 export function $createCodeHighlightNode(
   text: string,
   highlightType?: string | null | undefined,
+  meta?: SerializableMeta | null | undefined,
 ): CodeHighlightNode {
-  return $applyNodeReplacement(new CodeHighlightNode(text, highlightType));
+  return $applyNodeReplacement(
+    new CodeHighlightNode(text, highlightType, meta),
+  );
 }
 
 export function $isCodeHighlightNode(

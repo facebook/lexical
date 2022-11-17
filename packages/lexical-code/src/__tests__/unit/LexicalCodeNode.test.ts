@@ -6,7 +6,11 @@
  *
  */
 
-import {$createCodeNode} from '@lexical/code';
+import {
+  $createCodeHighlightNode,
+  $createCodeNode,
+  CodeHighlightNode,
+} from '@lexical/code';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -133,6 +137,57 @@ describe('LexicalCodeNode tests', () => {
         expect(codeNode.__type).toEqual(createdCodeNode.__type);
         expect(codeNode.__parent).toEqual(createdCodeNode.__parent);
         expect(codeNode.__key).not.toEqual(createdCodeNode.__key);
+      });
+    });
+
+    test('CodeHighlightNode.exportJSON() should serialize meta field and CodeHighlightNode.importJSON() should deserialize original metadata', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        const node = $createCodeHighlightNode('(', 'leftparen', {
+          anotherEndTokenId: 'ID4',
+          arr: [
+            1,
+            2,
+            3,
+            {
+              bar: 'foo',
+            },
+          ],
+          isError: false,
+          obj: {
+            foo: 'bar',
+          },
+          offset: 3,
+          tokenId: 'ID1',
+        });
+
+        const json = node.exportJSON();
+        expect(json.highlightType).toEqual('leftparen');
+        expect(json.meta).toEqual({
+          anotherEndTokenId: 'ID4',
+          arr: [
+            1,
+            2,
+            3,
+            {
+              bar: 'foo',
+            },
+          ],
+          isError: false,
+          obj: {
+            foo: 'bar',
+          },
+          offset: 3,
+          tokenId: 'ID1',
+        });
+        expect(json.type).toEqual('code-highlight');
+        expect(json.version).toEqual(1);
+
+        const deserializedNode = CodeHighlightNode.importJSON(json);
+        expect(deserializedNode.__text).toEqual(node.__text);
+        expect(deserializedNode.__highlightType).toEqual(node.__highlightType);
+        expect(deserializedNode.__meta).toEqual(node.__meta);
       });
     });
   });

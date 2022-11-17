@@ -64,10 +64,24 @@ export async function moveToEditorEnd(page) {
   }
 }
 
+export async function moveToPrevWord(page) {
+  await keyDownCtrlOrAlt(page);
+  await page.keyboard.press('ArrowLeft');
+  await keyUpCtrlOrAlt(page);
+}
+
 export async function moveToNextWord(page) {
   await keyDownCtrlOrAlt(page);
   await page.keyboard.press('ArrowRight');
   await keyUpCtrlOrAlt(page);
+}
+
+export async function extendToNextWord(page) {
+  await page.keyboard.down('Shift');
+  await keyDownCtrlOrAlt(page);
+  await page.keyboard.press('ArrowRight');
+  await keyUpCtrlOrAlt(page);
+  await page.keyboard.up('Shift');
 }
 
 export async function deleteNextWord(page) {
@@ -86,12 +100,6 @@ export async function deleteForward(page) {
   await page.keyboard.down('Control');
   await page.keyboard.press('d');
   await page.keyboard.up('Control');
-}
-
-export async function moveToPrevWord(page) {
-  await keyDownCtrlOrAlt(page);
-  await page.keyboard.press('ArrowLeft');
-  await keyUpCtrlOrAlt(page);
 }
 
 export async function moveToParagraphBeginning(page) {

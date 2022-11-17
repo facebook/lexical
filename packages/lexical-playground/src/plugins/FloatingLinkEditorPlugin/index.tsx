@@ -27,7 +27,7 @@ import {createPortal} from 'react-dom';
 
 import LinkPreview from '../../ui/LinkPreview';
 import {getSelectedNode} from '../../utils/getSelectedNode';
-import {sanitizeUrl} from '../../utils/sanitizeUrl';
+import {sanitizeUrl} from '../../utils/url';
 import {setFloatingElemPosition} from '../../utils/setFloatingElemPosition';
 
 function FloatingLinkEditor({

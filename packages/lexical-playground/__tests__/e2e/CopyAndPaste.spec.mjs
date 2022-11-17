@@ -8,11 +8,13 @@
 import {expect} from '@playwright/test';
 
 import {
+  extendToNextWord,
   moveLeft,
   moveToEditorBeginning,
   moveToEditorEnd,
   moveToLineBeginning,
   moveToLineEnd,
+  moveToNextWord,
   moveToPrevWord,
   selectAll,
   selectCharacters,
@@ -2706,6 +2708,27 @@ test.describe('CopyAndPaste', () => {
         </ul>
       `,
     );
+  });
+
+  test.only('HTML Copy + paste empty link #3193', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    await page.type('A Lexical in the wild');
+    await moveToNextWord(page);
+    await extendToNextWord(page);
+
+    const clipboard = {
+      'text/plain': `https://lexical.dev`,
+    };
+
+    await pasteFromClipboard(page, clipboard);
+
+    await assertHTML(page, html``);
   });
 
   test('HTML Copy + paste an image', async ({page, isPlainText}) => {

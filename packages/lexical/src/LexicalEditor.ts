@@ -340,7 +340,9 @@ export function createEditor(editorConfig?: {
     | {
         replace: Klass<LexicalNode>;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        with: <T extends { new (...args: any): any }>(node: InstanceType<T>) => LexicalNode;
+        with: <T extends {new (...args: any): any}>(
+          node: InstanceType<T>,
+        ) => LexicalNode;
       }
   >;
   onError?: ErrorHandler;

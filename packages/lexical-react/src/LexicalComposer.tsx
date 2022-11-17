@@ -45,7 +45,9 @@ type Props = {
       | {
           replace: Klass<LexicalNode>;
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          with: <T extends { new (...args: any): any }>(node: InstanceType<T>) => LexicalNode;
+          with: <T extends {new (...args: any): any}>(
+            node: InstanceType<T>,
+          ) => LexicalNode;
         }
     >;
     onError: (error: Error, editor: LexicalEditor) => void;

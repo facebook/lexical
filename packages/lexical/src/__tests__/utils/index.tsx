@@ -9,7 +9,9 @@
 import type {
   EditorState,
   EditorThemeClasses,
+  Klass,
   LexicalEditor,
+  LexicalNode,
   RangeSelection,
   SerializedElementNode,
   SerializedLexicalNode,
@@ -151,6 +153,17 @@ export class TestElementNode extends ElementNode {
 
 export function $createTestElementNode(): TestElementNode {
   return new TestElementNode();
+}
+
+export class TestTextNode extends TextNode {
+  static getType() {
+    return 'test_text';
+  }
+
+  static clone(node: TestTextNode): TestTextNode {
+    // @ts-ignore
+    return new TestTextNode(node.__text, node.__key);
+  }
 }
 
 export type SerializedTestInlineElementNode = Spread<
@@ -389,6 +402,7 @@ const DEFAULT_NODES = [
   TestExcludeFromCopyElementNode,
   TestDecoratorNode,
   TestInlineElementNode,
+  TestTextNode,
 ];
 
 export function TestComposer({
@@ -420,7 +434,16 @@ export function createTestEditor(
     editorState?: EditorState;
     theme?: EditorThemeClasses;
     parentEditor?: LexicalEditor;
-    nodes?: ReadonlyArray<typeof DEFAULT_NODES[number]>;
+    nodes?: ReadonlyArray<
+      | Klass<LexicalNode>
+      | {
+          replace: Klass<LexicalNode>;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          with: <T extends {new (...args: any): any}>(
+            node: InstanceType<T>,
+          ) => LexicalNode;
+        }
+    >;
     onError?: (error: Error) => void;
     disableEvents?: boolean;
     readOnly?: boolean;
@@ -433,6 +456,7 @@ export function createTestEditor(
       throw e;
     },
     ...config,
+    // @ts-ignore
     nodes: DEFAULT_NODES.concat(customNodes),
   });
   return editor;

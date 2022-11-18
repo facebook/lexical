@@ -10,6 +10,7 @@ import type {Spread} from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
 import {
+  $applyNodeReplacement,
   DEPRECATED_GridRowNode,
   DOMConversionMap,
   DOMConversionOutput,
@@ -111,7 +112,7 @@ export function convertTableRowElement(domNode: Node): DOMConversionOutput {
 }
 
 export function $createTableRowNode(height?: number): TableRowNode {
-  return new TableRowNode(height);
+  return $applyNodeReplacement(new TableRowNode(height));
 }
 
 export function $isTableRowNode(

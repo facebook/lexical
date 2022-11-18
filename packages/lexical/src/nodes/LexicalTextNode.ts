@@ -51,6 +51,7 @@ import {
 } from '../LexicalSelection';
 import {errorOnReadOnly} from '../LexicalUpdates';
 import {
+  $applyNodeReplacement,
   $getCompositionKey,
   $setCompositionKey,
   getCachedClassNameArray,
@@ -908,7 +909,7 @@ function convertTextFormatElement(domNode: Node): DOMConversionOutput {
 }
 
 export function $createTextNode(text = ''): TextNode {
-  return new TextNode(text);
+  return $applyNodeReplacement(new TextNode(text));
 }
 
 export function $isTextNode(

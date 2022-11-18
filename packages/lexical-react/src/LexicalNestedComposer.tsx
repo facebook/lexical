@@ -67,6 +67,7 @@ export function LexicalNestedComposer({
         for (const [type, entry] of parentNodes) {
           initialEditor._nodes.set(type, {
             klass: entry.klass,
+            replace: entry.replace,
             transforms: new Set(),
           });
         }
@@ -75,6 +76,7 @@ export function LexicalNestedComposer({
           const type = klass.getType();
           initialEditor._nodes.set(type, {
             klass,
+            replace: null,
             transforms: new Set(),
           });
         }

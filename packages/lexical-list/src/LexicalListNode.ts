@@ -11,6 +11,7 @@ import {
   removeClassNamesFromElement,
 } from '@lexical/utils';
 import {
+  $applyNodeReplacement,
   $createTextNode,
   $isElementNode,
   DOMConversionMap,
@@ -282,7 +283,7 @@ const TAG_TO_LIST_TYPE: Record<string, ListType> = {
 };
 
 export function $createListNode(listType: ListType, start = 1): ListNode {
-  return new ListNode(listType, start);
+  return $applyNodeReplacement(new ListNode(listType, start));
 }
 
 export function $isListNode(

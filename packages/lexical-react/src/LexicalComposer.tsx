@@ -40,7 +40,16 @@ type Props = {
   initialConfig: Readonly<{
     editor__DEPRECATED?: LexicalEditor | null;
     namespace: string;
-    nodes?: ReadonlyArray<Klass<LexicalNode>>;
+    nodes?: ReadonlyArray<
+      | Klass<LexicalNode>
+      | {
+          replace: Klass<LexicalNode>;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          with: <T extends {new (...args: any): any}>(
+            node: InstanceType<T>,
+          ) => LexicalNode;
+        }
+    >;
     onError: (error: Error, editor: LexicalEditor) => void;
     editable?: boolean;
     theme?: EditorThemeClasses;

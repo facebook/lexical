@@ -25,7 +25,10 @@ type Props = {
     editor__DEPRECATED?: LexicalEditor | null,
     editable?: boolean,
     namespace: string,
-    nodes?: $ReadOnlyArray<Class<LexicalNode>>,
+    nodes?: $ReadOnlyArray<
+      | Class<LexicalNode>
+      | {replace: Class<LexicalNode>, with: (node: LexicalNode) => LexicalNode},
+    >,
     theme?: EditorThemeClasses,
     editorState?: InitialEditorStateType,
     onError: (error: Error, editor: LexicalEditor) => void,

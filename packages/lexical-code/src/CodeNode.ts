@@ -34,6 +34,7 @@ import 'prismjs/components/prism-swift';
 
 import {addClassNamesToElement} from '@lexical/utils';
 import {
+  $applyNodeReplacement,
   $createLineBreakNode,
   $createParagraphNode,
   $getSelection,
@@ -291,7 +292,7 @@ export class CodeNode extends ElementNode {
 export function $createCodeNode(
   language?: string | null | undefined,
 ): CodeNode {
-  return new CodeNode(language);
+  return $applyNodeReplacement(new CodeNode(language));
 }
 
 export function $isCodeNode(

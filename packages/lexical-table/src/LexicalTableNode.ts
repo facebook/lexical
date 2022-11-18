@@ -21,7 +21,11 @@ import type {
 } from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
-import {$getNearestNodeFromDOMNode, DEPRECATED_GridNode} from 'lexical';
+import {
+  $applyNodeReplacement,
+  $getNearestNodeFromDOMNode,
+  DEPRECATED_GridNode,
+} from 'lexical';
 
 import {$isTableCellNode} from './LexicalTableCellNode';
 import {$isTableRowNode, TableRowNode} from './LexicalTableRowNode';
@@ -234,7 +238,7 @@ export function convertTableElement(_domNode: Node): DOMConversionOutput {
 }
 
 export function $createTableNode(): TableNode {
-  return new TableNode();
+  return $applyNodeReplacement(new TableNode());
 }
 
 export function $isTableNode(

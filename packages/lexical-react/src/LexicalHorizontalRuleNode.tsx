@@ -20,6 +20,7 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
 import {mergeRegister} from '@lexical/utils';
 import {
+  $applyNodeReplacement,
   $getNodeByKey,
   $getSelection,
   $isNodeSelection,
@@ -161,7 +162,7 @@ function convertHorizontalRuleElement(): DOMConversionOutput {
 }
 
 export function $createHorizontalRuleNode(): HorizontalRuleNode {
-  return new HorizontalRuleNode();
+  return $applyNodeReplacement(new HorizontalRuleNode());
 }
 
 export function $isHorizontalRuleNode(

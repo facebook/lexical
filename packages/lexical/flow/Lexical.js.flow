@@ -267,7 +267,10 @@ declare export function createEditor(editorConfig?: {
   namespace: string,
   theme?: EditorThemeClasses,
   parentEditor?: LexicalEditor,
-  nodes?: $ReadOnlyArray<Class<LexicalNode>>,
+  nodes?: $ReadOnlyArray<
+    | Class<LexicalNode>
+    | {replace: Class<LexicalNode>, with: (node: LexicalNode) => LexicalNode},
+  >,
   onError: (error: Error) => void,
   disableEvents?: boolean,
   editable?: boolean,
@@ -849,6 +852,10 @@ type InternalSerializedNode = {
 declare export function $parseSerializedNode(
   serializedNode: InternalSerializedNode,
 ): LexicalNode;
+
+declare export function $applyNodeReplacement<N: LexicalNode>(
+  node: LexicalNode,
+): N;
 
 export type SerializedLexicalNode = {
   type: string,

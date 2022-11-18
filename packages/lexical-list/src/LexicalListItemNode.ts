@@ -27,6 +27,7 @@ import {
   removeClassNamesFromElement,
 } from '@lexical/utils';
 import {
+  $applyNodeReplacement,
   $createParagraphNode,
   $isElementNode,
   $isParagraphNode,
@@ -509,7 +510,7 @@ function convertListItemElement(domNode: Node): DOMConversionOutput {
 }
 
 export function $createListItemNode(checked?: boolean): ListItemNode {
-  return new ListItemNode(undefined, checked);
+  return $applyNodeReplacement(new ListItemNode(undefined, checked));
 }
 
 export function $isListItemNode(

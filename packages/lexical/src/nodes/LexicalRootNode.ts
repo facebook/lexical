@@ -94,6 +94,10 @@ export class RootNode extends ElementNode {
     return super.append(...nodesToAppend);
   }
 
+  collapseAtStart(): true {
+    return true;
+  }
+
   static importJSON(serializedNode: SerializedRootNode): RootNode {
     // We don't create a root, and instead use the existing root.
     const node = $getRoot();

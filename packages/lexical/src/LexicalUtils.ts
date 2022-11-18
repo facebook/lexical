@@ -1243,6 +1243,10 @@ export function $isInlineElementOrDecoratorNode(node: LexicalNode): boolean {
 export function $getNearestRootOrShadowRoot(
   node: LexicalNode,
 ): RootNode | ElementNode {
+  if ($isRootNode(node) || ($isElementNode(node) && node.isShadowRoot())) {
+    return node;
+  }
+
   let parent = node.getParentOrThrow();
   while (parent !== null) {
     if ($isRootOrShadowRoot(parent)) {

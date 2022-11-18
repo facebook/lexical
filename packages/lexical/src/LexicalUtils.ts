@@ -1136,38 +1136,57 @@ export function getElementByKeyOrThrow(
 
 export function scrollIntoViewIfNeeded(
   editor: LexicalEditor,
-  anchor: PointType,
   rootElement: HTMLElement,
   tags: Set<string>,
+  domSelection: Selection,
 ): void {
-  let anchorNode: LexicalNode = anchor.getNode();
-  if ($isElementNode(anchorNode)) {
-    const descendantNode = anchorNode.getDescendantByIndex(anchor.offset);
-    if (descendantNode !== null) {
-      anchorNode = descendantNode;
-    }
+  const range = domSelection.rangeCount > 0 ? domSelection.getRangeAt(0) : null;
+  const doc = rootElement.ownerDocument;
+  const defaultView = doc.defaultView;
+
+  if (range === null || defaultView === null) {
+    return;
   }
-  const element = editor.getElementByKey(anchorNode.__key) as Element;
+  let {top: currentTop, bottom: currentBottom} = range.getBoundingClientRect();
+  let targetTop = 0;
+  let targetBottom = 0;
+  let element: HTMLElement | null = rootElement;
+  let didScroll = false;
 
-  if (element !== null) {
-    const rect = element.getBoundingClientRect();
-
-    if (rect.bottom > getWindow(editor).innerHeight) {
-      element.scrollIntoView(false);
-    } else if (rect.top < 0) {
-      element.scrollIntoView();
+  while (element !== null) {
+    const isBodyElement = element === doc.body;
+    if (isBodyElement) {
+      targetTop = 0;
+      targetBottom = getWindow(editor).innerHeight;
     } else {
-      const rootRect = rootElement.getBoundingClientRect();
+      const targetRect = element.getBoundingClientRect();
+      targetTop = targetRect.top;
+      targetBottom = targetRect.bottom;
+    }
+    let diff = 0;
 
-      // Rects can returning decimal numbers that differ due to rounding
-      // differences. So let's normalize the values.
-      if (Math.floor(rect.bottom) > Math.floor(rootRect.bottom)) {
-        element.scrollIntoView(false);
-      } else if (Math.floor(rect.top) < Math.floor(rootRect.top)) {
-        element.scrollIntoView();
+    if (currentTop < targetTop) {
+      diff = -(targetTop - currentTop);
+    } else if (currentBottom > targetBottom) {
+      diff = currentBottom - targetBottom;
+    }
+
+    if (diff !== 0) {
+      didScroll = true;
+      if (isBodyElement) {
+        // Only handles scrolling of Y axis
+        defaultView.scrollBy(0, diff);
+      } else {
+        const scrollTop = element.scrollTop;
+        element.scrollTop += diff;
+        const yOffset = element.scrollTop - scrollTop;
+        currentTop -= yOffset;
+        currentBottom -= yOffset;
       }
     }
-
+    element = element.parentElement;
+  }
+  if (didScroll) {
     tags.add('scroll-into-view');
   }
 }

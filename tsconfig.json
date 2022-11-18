@@ -162,9 +162,6 @@
       "@lexical/react/LexicalCheckListPlugin": [
         "./packages/lexical-react/src/LexicalCheckListPlugin.tsx"
       ],
-      "@lexical/react/LexicalAutoScrollPlugin": [
-        "./packages/lexical-react/src/LexicalAutoScrollPlugin.ts"
-      ],
 
       "@lexical/dragon/LexicalDragon": ["./packages/lexical-dragon/src/"],
       "@lexical/history/LexicalHistory": ["./packages/lexical-history/src/"],

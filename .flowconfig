@@ -86,7 +86,6 @@ module.name_mapper='^@lexical/react/LexicalAutoEmbedPlugin' -> '<PROJECT_ROOT>/p
 
 module.name_mapper='^@lexical/react/LexicalListPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalListPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalCheckListPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalCheckListPlugin.js.flow'
-module.name_mapper='^@lexical/react/LexicalAutoScrollPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalAutoScrollPlugin.js.flow'
 
 module.name_mapper='^@lexical/dragon/LexicalDragon' -> '<PROJECT_ROOT>/packages/lexical-dragon/flow/LexicalDragon.js.flow'
 module.name_mapper='^@lexical/history/LexicalHistory' -> '<PROJECT_ROOT>/packages/lexical-history/flow/LexicalHistory.js.flow'

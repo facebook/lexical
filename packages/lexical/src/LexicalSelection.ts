@@ -2785,7 +2785,9 @@ export function updateDOMSelection(
       rootElement !== null &&
       rootElement === activeElement
     ) {
-      scrollIntoViewIfNeeded(editor, anchor, rootElement, tags);
+      console.time('scroll');
+      scrollIntoViewIfNeeded(editor, rootElement, tags, domSelection);
+      console.timeEnd('scroll');
     }
 
     markSelectionChangeFromDOMUpdate();

@@ -5,12 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *
  * @flow strict
- * @format
  */
 
 import type {LexicalEditor} from 'lexical';
 
-declare export function useLexicalCanShowPlaceholder(
-  editor: LexicalEditor,
-  withEditable__DEPRECATED?: boolean,
-): boolean;
+declare export default function useLexicalEditable(): boolean;

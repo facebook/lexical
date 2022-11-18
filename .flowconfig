@@ -62,6 +62,8 @@ module.name_mapper='^@lexical/react/LexicalBlockWithAlignableContents' -> '<PROJ
 module.name_mapper='^@lexical/react/useLexicalIsTextContentEmpty' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalIsTextContentEmpty.js.flow'
 module.name_mapper='^@lexical/react/useLexicalNodeSelection' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalNodeSelection.js.flow'
 module.name_mapper='^@lexical/react/useLexicalTextEntity' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalTextEntity.js.flow'
+module.name_mapper='^@lexical/react/useLexicalSubscription' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalSubscription.js.flow'
+module.name_mapper='^@lexical/react/useLexicalEditable' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalEditable.js.flow'
 
 # Composer Plugins
 module.name_mapper='^@lexical/react/LexicalPlainTextPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalPlainTextPlugin.js.flow'

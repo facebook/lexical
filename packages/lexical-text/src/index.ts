@@ -99,9 +99,13 @@ export function $rootTextContent(): string {
 
 export function $canShowPlaceholder(
   isComposing: boolean,
-  isEditable: boolean,
+  // TODO 0.7 Remove
+  isEditable__DEPRECATED?: boolean,
 ): boolean {
-  if (!isEditable || !$isRootTextContentEmpty(isComposing, false)) {
+  if (
+    isEditable__DEPRECATED === false ||
+    !$isRootTextContentEmpty(isComposing, false)
+  ) {
     return false;
   }
 
@@ -143,9 +147,10 @@ export function $canShowPlaceholder(
 
 export function $canShowPlaceholderCurry(
   isEditorComposing: boolean,
-  isEditable: boolean,
+  // TODO 0.7 Remove
+  isEditable__DEPRECATED?: boolean,
 ): () => boolean {
-  return () => $canShowPlaceholder(isEditorComposing, isEditable);
+  return () => $canShowPlaceholder(isEditorComposing, isEditable__DEPRECATED);
 }
 
 export type EntityMatch = {end: number; start: number};

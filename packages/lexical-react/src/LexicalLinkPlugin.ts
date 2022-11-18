@@ -21,9 +21,7 @@ type Props = {
   validateUrl?: (url: string) => boolean;
 };
 
-const alwaysValidUrlFn = () => true;
-
-export function LinkPlugin({validateUrl = alwaysValidUrlFn}: Props): null {
+export function LinkPlugin({validateUrl}: Props): null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
@@ -38,7 +36,7 @@ export function LinkPlugin({validateUrl = alwaysValidUrlFn}: Props): null {
             toggleLink(payload);
             return true;
           } else if (typeof payload === 'string') {
-            if (validateUrl(payload)) {
+            if (validateUrl === undefined || validateUrl(payload)) {
               toggleLink(payload);
               return true;
             }
@@ -51,27 +49,32 @@ export function LinkPlugin({validateUrl = alwaysValidUrlFn}: Props): null {
         },
         COMMAND_PRIORITY_LOW,
       ),
-      editor.registerCommand(
-        PASTE_COMMAND,
-        (payload) => {
-          const selection = $getSelection();
-          if (
-            !$isRangeSelection(selection) ||
-            selection.isCollapsed() ||
-            !(payload instanceof ClipboardEvent) ||
-            payload.clipboardData == null
-          ) {
-            return false;
-          }
-          const clipboardText = payload.clipboardData.getData('text');
-          if (!validateUrl(clipboardText)) {
-            return false;
-          }
-          editor.dispatchCommand(TOGGLE_LINK_COMMAND, clipboardText);
-          return true;
-        },
-        COMMAND_PRIORITY_LOW,
-      ),
+      validateUrl !== undefined
+        ? editor.registerCommand(
+            PASTE_COMMAND,
+            (event) => {
+              const selection = $getSelection();
+              if (
+                !$isRangeSelection(selection) ||
+                selection.isCollapsed() ||
+                !(event instanceof ClipboardEvent) ||
+                event.clipboardData == null
+              ) {
+                return false;
+              }
+              const clipboardText = event.clipboardData.getData('text');
+              if (!validateUrl(clipboardText)) {
+                return false;
+              }
+              editor.dispatchCommand(TOGGLE_LINK_COMMAND, clipboardText);
+              event.preventDefault();
+              return true;
+            },
+            COMMAND_PRIORITY_LOW,
+          )
+        : () => {
+            // Don't paste arbritrary text as a link when there's no validate function
+          },
     );
   }, [editor, validateUrl]);
 

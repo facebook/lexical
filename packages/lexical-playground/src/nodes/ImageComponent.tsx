@@ -48,13 +48,13 @@ import {useSettings} from '../context/SettingsContext';
 import {useSharedHistoryContext} from '../context/SharedHistoryContext';
 import EmojisPlugin from '../plugins/EmojisPlugin';
 import KeywordsPlugin from '../plugins/KeywordsPlugin';
+import LinkPlugin from '../plugins/LinkPlugin';
 import MentionsPlugin from '../plugins/MentionsPlugin';
 import TreeViewPlugin from '../plugins/TreeViewPlugin';
 import ContentEditable from '../ui/ContentEditable';
 import ImageResizer from '../ui/ImageResizer';
 import Placeholder from '../ui/Placeholder';
 import {$isImageNode} from './ImageNode';
-import LinkPlugin from '../plugins/LinkPlugin';
 
 const imageCache = new Set();
 

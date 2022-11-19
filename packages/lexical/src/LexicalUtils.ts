@@ -1136,18 +1136,17 @@ export function getElementByKeyOrThrow(
 
 export function scrollIntoViewIfNeeded(
   editor: LexicalEditor,
+  selectionRect: DOMRect,
   rootElement: HTMLElement,
   tags: Set<string>,
-  domSelection: Selection,
 ): void {
-  const range = domSelection.rangeCount > 0 ? domSelection.getRangeAt(0) : null;
   const doc = rootElement.ownerDocument;
   const defaultView = doc.defaultView;
 
-  if (range === null || defaultView === null) {
+  if (defaultView === null) {
     return;
   }
-  let {top: currentTop, bottom: currentBottom} = range.getBoundingClientRect();
+  let {top: currentTop, bottom: currentBottom} = selectionRect;
   let targetTop = 0;
   let targetBottom = 0;
   let element: HTMLElement | null = rootElement;

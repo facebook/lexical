@@ -12,7 +12,6 @@ import type {LexicalNode, NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextFormatType} from './nodes/LexicalTextNode';
 
-import {IS_IOS, IS_SAFARI} from 'shared/environment';
 import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
 
@@ -2760,11 +2759,7 @@ export function updateDOMSelection(
         preventScroll: true,
       });
     }
-
-    // In Safari/iOS if we have selection on an element, then we also
-    // need to additionally set the DOM selection, otherwise a selectionchange
-    // event will not fire.
-    if (!(IS_IOS || IS_SAFARI) || anchor.type !== 'element') {
+    if (anchor.type !== 'element') {
       return;
     }
   }
@@ -2785,7 +2780,20 @@ export function updateDOMSelection(
       rootElement !== null &&
       rootElement === activeElement
     ) {
-      scrollIntoViewIfNeeded(editor, anchor, rootElement, tags);
+      const selectionTarget: null | Range | HTMLElement | Text =
+        nextSelection instanceof RangeSelection &&
+        nextSelection.anchor.type === 'element'
+          ? (nextAnchorNode.childNodes[nextAnchorOffset] as
+              | HTMLElement
+              | Text) || null
+          : domSelection.rangeCount > 0
+          ? domSelection.getRangeAt(0)
+          : null;
+      if (selectionTarget !== null) {
+        // @ts-ignore Text nodes do have getBoundingClientRect
+        const selectionRect = selectionTarget.getBoundingClientRect();
+        scrollIntoViewIfNeeded(editor, selectionRect, rootElement, tags);
+      }
     }
 
     markSelectionChangeFromDOMUpdate();

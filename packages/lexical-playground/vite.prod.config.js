@@ -141,7 +141,6 @@ const moduleResolution = [
   'LexicalAutoLinkPlugin',
   'LexicalAutoEmbedPlugin',
   'LexicalOnChangePlugin',
-  'LexicalAutoScrollPlugin',
 ].forEach((module) => {
   let resolvedPath = path.resolve(`../lexical-react/dist/${module}.js`);
   moduleResolution.push({

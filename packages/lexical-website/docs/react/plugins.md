@@ -145,19 +145,6 @@ const MATCHERS = [
 <AutoLinkPlugin matchers=[MATCHERS] />
 ```
 
-### `LexicalAutoScrollPlugin`
-
-Lexical auto-scrolls its contenteditable container while typing. This plugin can be used for cases when other element up in a DOM tree needs to be scrolled (e.g. when editor is rendered within dialog with limited height):
-
-```jsx
-<div ref={containerWithScrollRef}>
-  <LexicalComposer>
-    ...
-    <AutoScrollPlugin scrollRef={containerWithScrollRef} />
-  </LexicalComposer>
-</div>
-```
-
 ### `LexicalClearEditorPlugin`
 
 Adds `clearEditor` command support to clear editor's content

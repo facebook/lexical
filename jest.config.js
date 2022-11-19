@@ -52,8 +52,6 @@ module.exports = {
           '<rootDir>/packages/lexical-react/src/LexicalAutoEmbedPlugin.tsx',
         '^@lexical/react/LexicalAutoLinkPlugin$':
           '<rootDir>/packages/lexical-react/src/LexicalAutoLinkPlugin.ts',
-        '^@lexical/react/LexicalAutoScrollPlugin$':
-          '<rootDir>/packages/lexical-react/src/LexicalAutoScrollPlugin.ts',
         '^@lexical/react/LexicalCheckListPlugin$':
           '<rootDir>/packages/lexical-react/src/LexicalCheckListPlugin.ts',
         '^@lexical/react/LexicalCollaborationContext$':

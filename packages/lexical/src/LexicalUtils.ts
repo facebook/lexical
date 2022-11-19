@@ -1136,39 +1136,52 @@ export function getElementByKeyOrThrow(
 
 export function scrollIntoViewIfNeeded(
   editor: LexicalEditor,
-  anchor: PointType,
+  selectionRect: DOMRect,
   rootElement: HTMLElement,
   tags: Set<string>,
 ): void {
-  let anchorNode: LexicalNode = anchor.getNode();
-  if ($isElementNode(anchorNode)) {
-    const descendantNode = anchorNode.getDescendantByIndex(anchor.offset);
-    if (descendantNode !== null) {
-      anchorNode = descendantNode;
-    }
+  const doc = rootElement.ownerDocument;
+  const defaultView = doc.defaultView;
+
+  if (defaultView === null) {
+    return;
   }
-  const element = editor.getElementByKey(anchorNode.__key) as Element;
+  let {top: currentTop, bottom: currentBottom} = selectionRect;
+  let targetTop = 0;
+  let targetBottom = 0;
+  let element: HTMLElement | null = rootElement;
 
-  if (element !== null) {
-    const rect = element.getBoundingClientRect();
-
-    if (rect.bottom > getWindow(editor).innerHeight) {
-      element.scrollIntoView(false);
-    } else if (rect.top < 0) {
-      element.scrollIntoView();
+  while (element !== null) {
+    const isBodyElement = element === doc.body;
+    if (isBodyElement) {
+      targetTop = 0;
+      targetBottom = getWindow(editor).innerHeight;
     } else {
-      const rootRect = rootElement.getBoundingClientRect();
+      const targetRect = element.getBoundingClientRect();
+      targetTop = targetRect.top;
+      targetBottom = targetRect.bottom;
+    }
+    let diff = 0;
 
-      // Rects can returning decimal numbers that differ due to rounding
-      // differences. So let's normalize the values.
-      if (Math.floor(rect.bottom) > Math.floor(rootRect.bottom)) {
-        element.scrollIntoView(false);
-      } else if (Math.floor(rect.top) < Math.floor(rootRect.top)) {
-        element.scrollIntoView();
+    if (currentTop < targetTop) {
+      diff = -(targetTop - currentTop);
+    } else if (currentBottom > targetBottom) {
+      diff = currentBottom - targetBottom;
+    }
+
+    if (diff !== 0) {
+      if (isBodyElement) {
+        // Only handles scrolling of Y axis
+        defaultView.scrollBy(0, diff);
+      } else {
+        const scrollTop = element.scrollTop;
+        element.scrollTop += diff;
+        const yOffset = element.scrollTop - scrollTop;
+        currentTop -= yOffset;
+        currentBottom -= yOffset;
       }
     }
-
-    tags.add('scroll-into-view');
+    element = element.parentElement;
   }
 }
 

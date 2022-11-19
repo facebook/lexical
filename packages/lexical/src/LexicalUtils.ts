@@ -1150,7 +1150,6 @@ export function scrollIntoViewIfNeeded(
   let targetTop = 0;
   let targetBottom = 0;
   let element: HTMLElement | null = rootElement;
-  let didScroll = false;
 
   while (element !== null) {
     const isBodyElement = element === doc.body;
@@ -1171,7 +1170,6 @@ export function scrollIntoViewIfNeeded(
     }
 
     if (diff !== 0) {
-      didScroll = true;
       if (isBodyElement) {
         // Only handles scrolling of Y axis
         defaultView.scrollBy(0, diff);
@@ -1184,9 +1182,6 @@ export function scrollIntoViewIfNeeded(
       }
     }
     element = element.parentElement;
-  }
-  if (didScroll) {
-    tags.add('scroll-into-view');
   }
 }
 

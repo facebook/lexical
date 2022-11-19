@@ -8,11 +8,13 @@
 import {expect} from '@playwright/test';
 
 import {
+  extendToNextWord,
   moveLeft,
   moveToEditorBeginning,
   moveToEditorEnd,
   moveToLineBeginning,
   moveToLineEnd,
+  moveToNextWord,
   moveToPrevWord,
   selectAll,
   selectCharacters,
@@ -2704,6 +2706,42 @@ test.describe('CopyAndPaste', () => {
             <span data-lexical-text="true">â..ï¸.Â&nbsp;Line 2.</span>
           </li>
         </ul>
+      `,
+    );
+  });
+
+  test('HTML Paste a link into text', async ({page, isPlainText}) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    await page.keyboard.type('A Lexical in the wild');
+    await page.pause();
+    await moveToLineBeginning(page);
+    await moveToNextWord(page);
+    await extendToNextWord(page);
+
+    const clipboard = {
+      text: `https://lexical.dev`,
+    };
+
+    await pasteFromClipboard(page, clipboard);
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">A</span>
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://lexical.dev">
+            <span data-lexical-text="true">Lexical</span>
+          </a>
+          <span data-lexical-text="true">in the wild</span>
+        </p>
       `,
     );
   });

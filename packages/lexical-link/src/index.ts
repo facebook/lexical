@@ -371,9 +371,7 @@ export function toggleLink(
         if (target !== undefined) {
           linkNode.setTarget(target);
         }
-        if (rel !== undefined) {
-          linkNode.setRel(rel);
-        }
+        linkNode.setRel(rel || 'noopener');
         return;
       }
     }

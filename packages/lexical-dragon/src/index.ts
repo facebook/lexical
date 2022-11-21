@@ -16,7 +16,11 @@ import {
 } from 'lexical';
 
 export function registerDragonSupport(editor: LexicalEditor): () => void {
+  const origin = window.location.origin;
   const handler = (event: MessageEvent) => {
+    if (event.origin !== origin) {
+      return;
+    }
     const rootElement = editor.getRootElement();
 
     if (document.activeElement !== rootElement) {

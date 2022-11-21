@@ -1780,7 +1780,10 @@ export class RangeSelection implements BaseSelection {
     if (domSelection.rangeCount > 0) {
       const range = domSelection.getRangeAt(0);
       // Apply the DOM selection to our Lexical selection.
-      const root = $getNearestRootOrShadowRoot(this.anchor.getNode());
+      const anchorNode = this.anchor.getNode();
+      const root = $isRootNode(anchorNode)
+        ? anchorNode
+        : $getNearestRootOrShadowRoot(anchorNode);
       this.applyDOMRange(range);
       this.dirty = true;
       if (!collapse) {
@@ -1850,6 +1853,25 @@ export class RangeSelection implements BaseSelection {
         if ($isElementNode(nextSibling) && !nextSibling.canExtractContents()) {
           return;
         }
+      }
+      // Handle the deletion around decorators.
+      const possibleNode = $getDecoratorNode(focus, isBackward);
+      if ($isDecoratorNode(possibleNode) && !possibleNode.isIsolated()) {
+        // Make it possible to move selection from range selection to
+        // node selection on the node.
+        if (
+          possibleNode.isKeyboardSelectable() &&
+          $isElementNode(anchorNode) &&
+          anchorNode.getChildrenSize() === 0
+        ) {
+          anchorNode.remove();
+          const nodeSelection = $createNodeSelection();
+          nodeSelection.add(possibleNode.__key);
+          $setSelection(nodeSelection);
+        } else {
+          possibleNode.remove();
+        }
+        return;
       }
       this.modify('extend', isBackward, 'character');
 

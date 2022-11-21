@@ -18,17 +18,20 @@ import {
   $isTableCellNode,
   TableCellHeaderStates,
   TableCellNode,
+  SerializedTableCellNode
 } from './LexicalTableCellNode';
 import {
   $createTableNode,
   $getElementGridForTableNode,
   $isTableNode,
   TableNode,
+  SerializedTableNode
 } from './LexicalTableNode';
 import {
   $createTableRowNode,
   $isTableRowNode,
   TableRowNode,
+  SerializedTableRowNode
 } from './LexicalTableRowNode';
 import {TableSelection} from './LexicalTableSelection';
 import {
@@ -77,6 +80,9 @@ export {
   TableNode,
   TableRowNode,
   TableSelection,
+  SerializedTableNode,
+  SerializedTableCellNode,
+  SerializedTableRowNode
 };
 
 export type InsertTableCommandPayload = Readonly<{

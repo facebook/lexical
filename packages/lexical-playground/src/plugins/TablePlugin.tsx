@@ -162,7 +162,7 @@ export function TablePlugin({
     cellContext.set(cellEditorConfig, children);
 
     return editor.registerCommand<InsertTableCommandPayload>(
-      INSERT_TABLE_COMMAND,
+      INSERT_NEW_TABLE_COMMAND,
       ({columns, rows, includeHeaders}) => {
         const selection = $getSelection();
 

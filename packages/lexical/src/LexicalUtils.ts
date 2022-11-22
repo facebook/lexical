@@ -1134,11 +1134,18 @@ export function getElementByKeyOrThrow(
   return element;
 }
 
+export function getParentElement(element: HTMLElement): HTMLElement | null {
+  const parentElement =
+    (element as HTMLSlotElement).assignedSlot || element.parentElement;
+  return parentElement !== null && parentElement.nodeType === 11
+    ? ((parentElement as unknown as ShadowRoot).host as HTMLElement)
+    : parentElement;
+}
+
 export function scrollIntoViewIfNeeded(
   editor: LexicalEditor,
   selectionRect: DOMRect,
   rootElement: HTMLElement,
-  tags: Set<string>,
 ): void {
   const doc = rootElement.ownerDocument;
   const defaultView = doc.defaultView;
@@ -1181,7 +1188,10 @@ export function scrollIntoViewIfNeeded(
         currentBottom -= yOffset;
       }
     }
-    element = element.parentElement;
+    if (isBodyElement) {
+      break;
+    }
+    element = getParentElement(element);
   }
 }
 

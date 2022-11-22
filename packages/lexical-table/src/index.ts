@@ -16,22 +16,22 @@ import {createCommand} from 'lexical';
 import {
   $createTableCellNode,
   $isTableCellNode,
+  SerializedTableCellNode,
   TableCellHeaderStates,
   TableCellNode,
-  SerializedTableCellNode
 } from './LexicalTableCellNode';
 import {
   $createTableNode,
   $getElementGridForTableNode,
   $isTableNode,
+  SerializedTableNode,
   TableNode,
-  SerializedTableNode
 } from './LexicalTableNode';
 import {
   $createTableRowNode,
   $isTableRowNode,
+  SerializedTableRowNode,
   TableRowNode,
-  SerializedTableRowNode
 } from './LexicalTableRowNode';
 import {TableSelection} from './LexicalTableSelection';
 import {

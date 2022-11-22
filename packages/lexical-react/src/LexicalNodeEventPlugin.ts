@@ -7,7 +7,12 @@
  */
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {type Klass, type LexicalNode, type NodeKey} from 'lexical';
+import {
+  type Klass,
+  type LexicalEditor,
+  type LexicalNode,
+  type NodeKey,
+} from 'lexical';
 import {useRef} from 'react';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
@@ -18,7 +23,11 @@ export function NodeEventPlugin({
 }: {
   nodeType: Klass<LexicalNode>;
   eventType: string;
-  eventListener: (event: Event, nodeKey: NodeKey) => void;
+  eventListener: (
+    event: Event,
+    editor: LexicalEditor,
+    nodeKey: NodeKey,
+  ) => void;
 }): null {
   const [editor] = useLexicalComposerContext();
   const listenerRef = useRef(eventListener);
@@ -33,7 +42,7 @@ export function NodeEventPlugin({
 
           if (mutation === 'created' && element !== null) {
             element.addEventListener(eventType, (event: Event) => {
-              listenerRef.current(event, key);
+              listenerRef.current(event, editor, key);
             });
           }
         }

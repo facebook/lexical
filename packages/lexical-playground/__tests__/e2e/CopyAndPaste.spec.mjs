@@ -1423,6 +1423,7 @@ test.describe('CopyAndPaste', () => {
           dir="ltr">
           <a
             href="https://"
+            rel="noopener"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
             dir="ltr">
             <span data-lexical-text="true">Hello</span>
@@ -1430,6 +1431,7 @@ test.describe('CopyAndPaste', () => {
           <span data-lexical-text="true">World</span>
           <a
             href="https://"
+            rel="noopener"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
             dir="ltr">
             <span data-lexical-text="true">Hello</span>
@@ -1556,6 +1558,7 @@ test.describe('CopyAndPaste', () => {
         <p class="PlaygroundEditorTheme__paragraph">
           <a
             href="https://facebook.com"
+            rel="noopener"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
             dir="ltr">
             <span data-lexical-text="true">Facebook!</span>
@@ -2737,7 +2740,8 @@ test.describe('CopyAndPaste', () => {
           <a
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
             dir="ltr"
-            href="https://lexical.dev">
+            href="https://lexical.dev"
+            rel="noopener">
             <span data-lexical-text="true">Lexical</span>
           </a>
           <span data-lexical-text="true">in the wild</span>

@@ -334,7 +334,8 @@ export function toggleLink(
   url: null | string,
   attributes: LinkAttributes = {},
 ): void {
-  const {target, rel} = attributes;
+  const {target} = attributes;
+  const rel = attributes.rel === undefined ? 'noopener' : attributes.rel;
   const selection = $getSelection();
 
   if (!$isRangeSelection(selection)) {
@@ -371,7 +372,7 @@ export function toggleLink(
         if (target !== undefined) {
           linkNode.setTarget(target);
         }
-        if (rel !== undefined) {
+        if (rel !== null) {
           linkNode.setRel(rel);
         }
         return;
@@ -398,8 +399,8 @@ export function toggleLink(
         if (target !== undefined) {
           parent.setTarget(target);
         }
-        if (rel !== undefined) {
-          parent.setRel(rel);
+        if (rel !== null) {
+          linkNode.setRel(rel);
         }
         return;
       }

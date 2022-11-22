@@ -83,6 +83,7 @@ module.name_mapper='^@lexical/react/LexicalTablePlugin' -> '<PROJECT_ROOT>/packa
 module.name_mapper='^@lexical/react/LexicalLinkPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalLinkPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalAutoLinkPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalAutoLinkPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalAutoEmbedPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalAutoEmbedPlugin.js.flow'
+module.name_mapper='^@lexical/react/LexicalNodeEventPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalNodeEventPlugin.js.flow'
 
 module.name_mapper='^@lexical/react/LexicalListPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalListPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalCheckListPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalCheckListPlugin.js.flow'

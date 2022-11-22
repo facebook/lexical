@@ -114,6 +114,9 @@
       "@lexical/react/LexicalOnChangePlugin": [
         "./packages/lexical-react/src/LexicalOnChangePlugin.ts"
       ],
+      "@lexical/react/LexicalNodeEventPlugin": [
+        "./packages/lexical-react/src/LexicalNodeEventPlugin.ts"
+      ],
       "@lexical/react/LexicalHashtagPlugin": [
         "./packages/lexical-react/src/LexicalHashtagPlugin.ts"
       ],

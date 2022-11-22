@@ -1179,7 +1179,7 @@ ___~~this one too~~___
 
 It ~~___works [with links](https://lexical.io)___~~ too
 
-Links [with underscores](https://lexical.io/tag_here_and__here__and___here___too)
+Links [with underscores](https://lexical.io/tag_here_and__here__and___here___too) and ([parenthesis](https://lexical.dev))
 
 *Nested **stars tags** are handled too*
 ### Headings
@@ -1299,6 +1299,14 @@ const IMPORTED_MARKDOWN_HTML = html`
       dir="ltr">
       <span data-lexical-text="true">with underscores</span>
     </a>
+    <span data-lexical-text="true">and (</span>
+    <a
+      href="https://lexical.dev"
+      class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+      dir="ltr">
+      <span data-lexical-text="true">parenthesis</span>
+    </a>
+    <span data-lexical-text="true">)</span>
   </p>
   <p
     class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"

@@ -334,8 +334,8 @@ export const LINK: TextMatchTransformer = {
       return linkContent;
     }
   },
-  importRegExp: /(?:\[([^[]+)\])(?:\(([^(]+)\))/,
-  regExp: /(?:\[([^[]+)\])(?:\(([^(]+)\))$/,
+  importRegExp: /(?:\[([^[]+)\])(?:\(([^()]+)\))/,
+  regExp: /(?:\[([^[]+)\])(?:\(([^()]+)\))$/,
   replace: (textNode, match) => {
     const [, linkText, linkUrl] = match;
     const linkNode = $createLinkNode(linkUrl);

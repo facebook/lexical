@@ -247,6 +247,7 @@ export function $wrapNodesImpl(
       wrappingElement.append(element);
     }
   }
+  let lastElement = null;
 
   // If our target is Root-like, let's see if we can re-adjust
   // so that the target is the first child instead.
@@ -274,6 +275,7 @@ export function $wrapNodesImpl(
           for (let i = 0; i < elements.length; i++) {
             const element = elements[i];
             target.append(element);
+            lastElement = element;
           }
         }
       } else {
@@ -283,6 +285,7 @@ export function $wrapNodesImpl(
           for (let i = 0; i < elements.length; i++) {
             const element = elements[i];
             firstChild.insertBefore(element);
+            lastElement = element;
           }
         }
       }
@@ -294,6 +297,7 @@ export function $wrapNodesImpl(
       for (let i = elements.length - 1; i >= 0; i--) {
         const element = elements[i];
         target.insertAfter(element);
+        lastElement = element;
       }
     }
   }
@@ -306,6 +310,8 @@ export function $wrapNodesImpl(
     isPointAttached(prevSelection.focus)
   ) {
     $setSelection(prevSelection.clone());
+  } else if (lastElement !== null) {
+    lastElement.selectEnd();
   } else {
     selection.dirty = true;
   }

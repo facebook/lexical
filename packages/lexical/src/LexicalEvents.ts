@@ -751,10 +751,6 @@ function onCompositionEnd(
 }
 
 function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
-  if (hasStoppedLexicalPropagation(event)) {
-    return;
-  }
-  stopLexicalPropagation(event);
   lastKeyDownTimeStamp = event.timeStamp;
   lastKeyCode = event.keyCode;
   if (editor.isComposing()) {
@@ -963,11 +959,19 @@ export function addRootElementEvents(
     const eventHandler =
       typeof onEvent === 'function'
         ? (event: Event) => {
+            if (hasStoppedLexicalPropagation(event)) {
+              return;
+            }
+            stopLexicalPropagation(event);
             if (editor.isEditable()) {
               onEvent(event, editor);
             }
           }
         : (event: Event) => {
+            if (hasStoppedLexicalPropagation(event)) {
+              return;
+            }
+            stopLexicalPropagation(event);
             if (editor.isEditable()) {
               switch (eventName) {
                 case 'cut':

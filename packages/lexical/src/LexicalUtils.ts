@@ -1312,3 +1312,20 @@ export function $applyNodeReplacement<N extends LexicalNode>(
   }
   return node as N;
 }
+
+export function errorOnInsertTextNodeOnRoot(
+  node: LexicalNode,
+  insertNode: LexicalNode,
+): void {
+  const parentNode = node.getParent();
+  if (
+    $isRootNode(parentNode) &&
+    !$isElementNode(insertNode) &&
+    !$isDecoratorNode(insertNode)
+  ) {
+    invariant(
+      false,
+      'Only element or decorator nodes can be inserted in to the root node',
+    );
+  }
+}

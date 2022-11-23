@@ -33,6 +33,7 @@ import {
   $maybeMoveChildrenSelectionToParent,
   $setCompositionKey,
   $setNodeKey,
+  errorOnInsertTextNodeOnRoot,
   internalMarkNodeAsDirty,
   internalMarkSiblingsAsDirty,
   removeFromParent,
@@ -639,6 +640,7 @@ export class LexicalNode {
 
   replace<N extends LexicalNode>(replaceWith: N): N {
     errorOnReadOnly();
+    errorOnInsertTextNodeOnRoot(this, replaceWith);
     const toReplaceKey = this.__key;
     const writableReplaceWith = replaceWith.getWritable();
     removeFromParent(writableReplaceWith);
@@ -673,6 +675,7 @@ export class LexicalNode {
 
   insertAfter(nodeToInsert: LexicalNode): LexicalNode {
     errorOnReadOnly();
+    errorOnInsertTextNodeOnRoot(this, nodeToInsert);
     const writableSelf = this.getWritable();
     const writableNodeToInsert = nodeToInsert.getWritable();
     const oldParent = writableNodeToInsert.getParent();
@@ -724,6 +727,8 @@ export class LexicalNode {
   }
 
   insertBefore(nodeToInsert: LexicalNode): LexicalNode {
+    errorOnReadOnly();
+    errorOnInsertTextNodeOnRoot(this, nodeToInsert);
     const writableSelf = this.getWritable();
     const writableNodeToInsert = nodeToInsert.getWritable();
     removeFromParent(writableNodeToInsert);

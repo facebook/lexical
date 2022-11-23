@@ -1,3 +1,21 @@
+## v0.6.3 (2022-11-23)
+
+- Apply event propagation between all event types (#3401) Dominic Gannaway
+- Fix selection bug in code highlighting transform (#3405) Dominic Gannaway
+- Exports SerializedNodes from @lexical/table (#3393) tolkienfan2
+- Ensure we do not render br after non inline decorators (#3406) Dominic Gannaway
+- Fix collapsible bugs (#3404) Maksim Horbachevsky
+- Add more invariants around insertion of text nodes into root (#3399) Dominic Gannaway
+- Fix bad selection on $wrapNodes (#3400) Dominic Gannaway
+- Fix insertNodes bug around isolated decorators (#3403) Dominic Gannaway
+- Fix element indent duplication (#3398) Dominic Gannaway
+- Fix bug in scrollIntoViewIfNeeded (#3397) Dominic Gannaway
+- Fix md links regexp (#3395) Maksim Horbachevsky
+- Add LexicalNodeEventPlugin to @lexical/react (#3392) Dominic Gannaway
+- Add rel noopener by default (#3386) Acy Watson
+- Fix selection bugs with decorators (#3391) Dominic Gannaway
+- Fix experimental tables (#3390) Dominic Gannaway
+
 ## v0.6.2 (2022-11-21)
 
 - Validate dragon origin (#3385) Dominic Gannaway

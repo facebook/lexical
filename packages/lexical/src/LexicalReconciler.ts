@@ -277,7 +277,7 @@ function isLastChildLineBreakOrDecorator(
 ): boolean {
   const childKey = children[children.length - 1];
   const node = nodeMap.get(childKey);
-  return $isLineBreakNode(node) || $isDecoratorNode(node);
+  return $isLineBreakNode(node) || ($isDecoratorNode(node) && node.isInline());
 }
 
 // If we end an element with a LineBreakNode, then we need to add an additional <br>

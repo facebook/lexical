@@ -386,9 +386,6 @@ async function onCutForRichText(
   event: CommandPayloadType<typeof CUT_COMMAND>,
   editor: LexicalEditor,
 ): Promise<void> {
-  if (editor.getEditorState().read(() => $getSelection()) == null) {
-    return;
-  }
   await copyToClipboard__EXPERIMENTAL(
     editor,
     event instanceof ClipboardEvent ? event : null,

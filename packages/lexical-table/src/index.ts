@@ -85,8 +85,8 @@ export {
 export type {
   SerializedTableCellNode,
   SerializedTableNode,
-  SerializedTableRowNode
-}
+  SerializedTableRowNode,
+};
 
 export type InsertTableCommandPayload = Readonly<{
   columns: string;

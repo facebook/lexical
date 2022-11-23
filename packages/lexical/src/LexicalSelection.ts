@@ -1476,7 +1476,11 @@ export class RangeSelection implements BaseSelection {
           if (
             $isElementNode(target) &&
             !$isBlockElementNode(sibling) &&
-            !($isDecoratorNode(sibling) && !sibling.isInline())
+            !(
+              $isDecoratorNode(sibling) &&
+              // Note: We are only looking for decorators that are inline and not isolated.
+              (!sibling.isInline() || sibling.isIsolated())
+            )
           ) {
             if (originalTarget === target) {
               target.append(sibling);

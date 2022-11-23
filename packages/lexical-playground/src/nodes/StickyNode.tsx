@@ -11,6 +11,7 @@ import type {
   LexicalEditor,
   LexicalNode,
   NodeKey,
+  SerializedEditor,
   SerializedLexicalNode,
   Spread,
 } from 'lexical';
@@ -32,7 +33,7 @@ export type SerializedStickyNode = Spread<
     xOffset: number;
     yOffset: number;
     color: StickyNoteColor;
-    caption: LexicalEditor;
+    caption: SerializedEditor;
     type: 'sticky';
     version: 1;
   },
@@ -59,12 +60,18 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
     );
   }
   static importJSON(serializedNode: SerializedStickyNode): StickyNode {
-    return new StickyNode(
+    const stickyNode = new StickyNode(
       serializedNode.xOffset,
       serializedNode.yOffset,
       serializedNode.color,
-      serializedNode.caption,
     );
+    const caption = serializedNode.caption;
+    const nestedEditor = stickyNode.__caption;
+    const editorState = nestedEditor.parseEditorState(caption.editorState);
+    if (!editorState.isEmpty()) {
+      nestedEditor.setEditorState(editorState);
+    }
+    return stickyNode;
   }
 
   constructor(
@@ -83,7 +90,7 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
 
   exportJSON(): SerializedStickyNode {
     return {
-      caption: this.__caption,
+      caption: this.__caption.toJSON(),
       color: this.__color,
       type: 'sticky',
       version: 1,

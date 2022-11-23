@@ -345,4 +345,94 @@ test.describe('HorizontalRule', () => {
       focusPath: [2],
     });
   });
+
+  test('Can delete remove paragraph after a horizontal rule without deleting a horizontal rule', async ({
+    page,
+    browserName,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    await selectFromInsertDropdown(page, '.horizontal-rule');
+
+    await waitForSelector(page, 'hr');
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <div
+          contenteditable="false"
+          style="display: contents;"
+          data-lexical-decorator="true">
+          <hr />
+        </div>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [2],
+      focusOffset: 0,
+      focusPath: [2],
+    });
+
+    // Delete content
+    await page.keyboard.press('Backspace');
+
+    await focusEditor(page);
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <div
+          contenteditable="false"
+          style="display: contents;"
+          data-lexical-decorator="true">
+          <hr class="selected" />
+        </div>
+      `,
+    );
+
+    if (browserName === 'webkit' || browserName === 'firefox') {
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [],
+        focusOffset: 0,
+        focusPath: [],
+      });
+    } else {
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [0],
+        focusOffset: 0,
+        focusPath: [0],
+      });
+    }
+
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.press('Delete');
+
+    await assertHTML(
+      page,
+      html`
+        <div
+          contenteditable="false"
+          style="display: contents;"
+          data-lexical-decorator="true">
+          <hr class="selected" />
+        </div>
+      `,
+    );
+
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [],
+      focusOffset: 0,
+      focusPath: [],
+    });
+  });
 });

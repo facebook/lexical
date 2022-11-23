@@ -1317,7 +1317,7 @@ export function errorOnInsertTextNodeOnRoot(
   node: LexicalNode,
   insertNode: LexicalNode,
 ): void {
-  const parentNode = node.getParentNode();
+  const parentNode = node.getParent();
   if (
     $isRootNode(parentNode) &&
     !$isElementNode(insertNode) &&

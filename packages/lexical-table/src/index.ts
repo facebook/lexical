@@ -83,8 +83,8 @@ export {
 };
 
 export type {
-  SerializedTableNode,
   SerializedTableCellNode,
+  SerializedTableNode,
   SerializedTableRowNode
 }
 

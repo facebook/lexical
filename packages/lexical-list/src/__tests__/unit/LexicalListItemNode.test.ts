@@ -6,7 +6,7 @@
  *
  */
 
-import {$getRoot, TextNode} from 'lexical';
+import {$createParagraphNode, $getRoot, TextNode} from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
 import {
@@ -179,12 +179,12 @@ describe('LexicalListItemNode tests', () => {
         );
 
         await editor.update(() => {
-          const textNode = new TextNode('bar');
-          listItemNode1.replace(textNode);
+          const paragraphNode = $createParagraphNode();
+          listItemNode1.replace(paragraphNode);
         });
 
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><span data-lexical-text="true">bar</span><ul><li value="1" dir="ltr"><span data-lexical-text="true">two</span></li><li value="2" dir="ltr"><span data-lexical-text="true">three</span></li></ul></div>',
+          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p><br></p><ul><li value="1" dir="ltr"><span data-lexical-text="true">two</span></li><li value="2" dir="ltr"><span data-lexical-text="true">three</span></li></ul></div>',
         );
       });
 
@@ -192,12 +192,12 @@ describe('LexicalListItemNode tests', () => {
         const {editor} = testEnv;
 
         await editor.update(() => {
-          const textNode = new TextNode('bar');
-          listItemNode3.replace(textNode);
+          const paragraphNode = $createParagraphNode();
+          listItemNode3.replace(paragraphNode);
         });
 
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><ul><li value="1" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" dir="ltr"><span data-lexical-text="true">two</span></li></ul><span data-lexical-text="true">bar</span></div>',
+          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><ul><li value="1" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" dir="ltr"><span data-lexical-text="true">two</span></li></ul><p><br></p></div>',
         );
       });
 
@@ -205,12 +205,12 @@ describe('LexicalListItemNode tests', () => {
         const {editor} = testEnv;
 
         await editor.update(() => {
-          const textNode = new TextNode('bar');
-          listItemNode2.replace(textNode);
+          const paragraphNode = $createParagraphNode();
+          listItemNode2.replace(paragraphNode);
         });
 
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><ul><li value="1" dir="ltr"><span data-lexical-text="true">one</span></li></ul><span data-lexical-text="true">bar</span><ul><li value="1" dir="ltr"><span data-lexical-text="true">three</span></li></ul></div>',
+          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><ul><li value="1" dir="ltr"><span data-lexical-text="true">one</span></li></ul><p><br></p><ul><li value="1" dir="ltr"><span data-lexical-text="true">three</span></li></ul></div>',
         );
       });
 
@@ -227,12 +227,12 @@ describe('LexicalListItemNode tests', () => {
         );
 
         await editor.update(() => {
-          const textNode = new TextNode('bar');
-          listItemNode1.replace(textNode);
+          const paragraphNode = $createParagraphNode();
+          listItemNode1.replace(paragraphNode);
         });
 
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><span data-lexical-text="true">bar</span></div>',
+          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p><br></p></div>',
         );
       });
     });

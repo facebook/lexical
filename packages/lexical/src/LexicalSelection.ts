@@ -1352,8 +1352,15 @@ export class RangeSelection implements BaseSelection {
             const children = element.getChildren();
             const childrenLength = children.length;
             if ($isElementNode(target)) {
+              let firstChild = target.getFirstChild();
               for (let s = 0; s < childrenLength; s++) {
-                target.append(children[s]);
+                const child = children[s];
+                if (firstChild === null) {
+                  target.append(child);
+                } else {
+                  firstChild.insertAfter(child);
+                }
+                firstChild = child;
               }
             } else {
               for (let s = childrenLength - 1; s >= 0; s--) {
@@ -1463,7 +1470,11 @@ export class RangeSelection implements BaseSelection {
         if (lastChild === null) {
           target.select();
         } else if ($isTextNode(lastChild)) {
-          lastChild.select();
+          if (lastChild.getTextContent() === '') {
+            lastChild.selectPrevious();
+          } else {
+            lastChild.select();
+          }
         } else {
           lastChild.selectNext();
         }

@@ -95,5 +95,7 @@
   "93": "syncChildrenFromYjs: expected text, element, decorator, or linebreak collab node",
   "94": "splice: could not find collab element node",
   "95": "splice: expected offset to be greater than zero",
-  "96": "Expected node %s to have a last child."
+  "96": "Expected node %s to have a last child.",
+  "97": "$initializeNode failed. Ensure node has been registered to the editor. You can do this by passing the node class via the \"nodes\" array in the editor config.",
+  "98": "$initializeNode failed. Ensure replacement node is a subclass of the original node."
 }

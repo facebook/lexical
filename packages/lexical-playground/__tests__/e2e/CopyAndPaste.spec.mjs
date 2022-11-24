@@ -2863,18 +2863,8 @@ test.describe('CopyAndPaste', () => {
       page,
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-        <div
-          contenteditable="false"
-          style="display: contents;"
-          data-lexical-decorator="true">
-          <hr />
-        </div>
-        <div
-          contenteditable="false"
-          style="display: contents;"
-          data-lexical-decorator="true">
-          <hr />
-        </div>
+        <hr class="" contenteditable="false" data-lexical-decorator="true" />
+        <hr class="" contenteditable="false" data-lexical-decorator="true" />
       `,
     );
     await click(page, 'hr:first-of-type');
@@ -2889,23 +2879,13 @@ test.describe('CopyAndPaste', () => {
       page,
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-        <div
-          contenteditable="false"
-          style="display: contents;"
-          data-lexical-decorator="true">
-          <hr />
-        </div>
+        <hr class="" contenteditable="false" data-lexical-decorator="true" />
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr">
           <span data-lexical-text="true">Text between HRs</span>
         </p>
-        <div
-          contenteditable="false"
-          style="display: contents;"
-          data-lexical-decorator="true">
-          <hr />
-        </div>
+        <hr class="" contenteditable="false" data-lexical-decorator="true" />
       `,
     );
     await assertSelection(page, {

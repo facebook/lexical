@@ -1929,12 +1929,10 @@ test.describe('Tables', () => {
           <tr>
             <th>
               <p><span data-lexical-text="true">123</span></p>
-              <div
+              <hr
+                class=""
                 contenteditable="false"
-                style="display: contents"
-                data-lexical-decorator="true">
-                <hr />
-              </div>
+                data-lexical-decorator="true" />
               <p><br /></p>
             </th>
             <th>

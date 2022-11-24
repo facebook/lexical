@@ -350,8 +350,9 @@ test.describe('HorizontalRule', () => {
     page,
     browserName,
     isPlainText,
+    isCollab,
   }) => {
-    test.skip(isPlainText);
+    test.skip(isPlainText || isCollab);
 
     await focusEditor(page);
 
@@ -363,12 +364,7 @@ test.describe('HorizontalRule', () => {
       page,
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-        <div
-          contenteditable="false"
-          style="display: contents;"
-          data-lexical-decorator="true">
-          <hr />
-        </div>
+        <hr class="" contenteditable="false" data-lexical-decorator="true" />
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
       `,
     );
@@ -388,12 +384,10 @@ test.describe('HorizontalRule', () => {
       page,
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-        <div
+        <hr
+          class="selected"
           contenteditable="false"
-          style="display: contents;"
-          data-lexical-decorator="true">
-          <hr class="selected" />
-        </div>
+          data-lexical-decorator="true" />
       `,
     );
 
@@ -419,12 +413,10 @@ test.describe('HorizontalRule', () => {
     await assertHTML(
       page,
       html`
-        <div
+        <hr
+          class="selected"
           contenteditable="false"
-          style="display: contents;"
-          data-lexical-decorator="true">
-          <hr class="selected" />
-        </div>
+          data-lexical-decorator="true" />
       `,
     );
 

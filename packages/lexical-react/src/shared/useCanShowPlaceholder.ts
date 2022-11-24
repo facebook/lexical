@@ -15,35 +15,23 @@ import useLayoutEffect from 'shared/useLayoutEffect';
 
 function canShowPlaceholderFromCurrentEditorState(
   editor: LexicalEditor,
-  withEditable__DEPRECATED: boolean,
 ): boolean {
   const currentCanShowPlaceholder = editor
     .getEditorState()
-    .read(
-      $canShowPlaceholderCurry(
-        editor.isComposing(),
-        withEditable__DEPRECATED ? editor.isEditable() : undefined,
-      ),
-    );
+    .read($canShowPlaceholderCurry(editor.isComposing()));
 
   return currentCanShowPlaceholder;
 }
 
-export function useCanShowPlaceholder(
-  editor: LexicalEditor,
-  withEditable__DEPRECATED = true,
-): boolean {
+export function useCanShowPlaceholder(editor: LexicalEditor): boolean {
   const [canShowPlaceholder, setCanShowPlaceholder] = useState(() =>
-    canShowPlaceholderFromCurrentEditorState(editor, withEditable__DEPRECATED),
+    canShowPlaceholderFromCurrentEditorState(editor),
   );
 
   useLayoutEffect(() => {
     function resetCanShowPlaceholder() {
       const currentCanShowPlaceholder =
-        canShowPlaceholderFromCurrentEditorState(
-          editor,
-          withEditable__DEPRECATED,
-        );
+        canShowPlaceholderFromCurrentEditorState(editor);
       setCanShowPlaceholder(currentCanShowPlaceholder);
     }
     resetCanShowPlaceholder();
@@ -55,7 +43,7 @@ export function useCanShowPlaceholder(
         resetCanShowPlaceholder();
       }),
     );
-  }, [editor, withEditable__DEPRECATED]);
+  }, [editor]);
 
   return canShowPlaceholder;
 }

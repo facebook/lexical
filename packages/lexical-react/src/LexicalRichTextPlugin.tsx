@@ -17,12 +17,13 @@ import {useRichTextSetup} from './shared/useRichTextSetup';
 export function RichTextPlugin({
   contentEditable,
   placeholder,
-  placeholderNonEditable,
   ErrorBoundary,
 }: {
   contentEditable: JSX.Element;
-  placeholder: string | JSX.Element;
-  placeholderNonEditable?: null | string | JSX.Element;
+  placeholder:
+    | ((isEditable: boolean) => null | JSX.Element)
+    | null
+    | JSX.Element;
   ErrorBoundary: ErrorBoundaryType;
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
@@ -32,31 +33,28 @@ export function RichTextPlugin({
   return (
     <>
       {contentEditable}
-      <Placeholder
-        placeholder={placeholder}
-        placeholderNonEditable={placeholderNonEditable}
-      />
+      <Placeholder content={placeholder} />
       {decorators}
     </>
   );
 }
 
 function Placeholder({
-  placeholder,
-  placeholderNonEditable,
+  content,
 }: {
-  placeholder: string | JSX.Element;
-  placeholderNonEditable?: null | string | JSX.Element;
+  content: ((isEditable: boolean) => null | JSX.Element) | null | JSX.Element;
 }): null | JSX.Element {
   const [editor] = useLexicalComposerContext();
-  const showPlaceholder = useCanShowPlaceholder(editor, false);
+  const showPlaceholder = useCanShowPlaceholder(editor);
   const editable = useLexicalEditable();
 
   if (!showPlaceholder) {
     return null;
-  } else if (placeholderNonEditable === undefined) {
-    return editable ? <>{placeholder}</> : null;
+  }
+
+  if (typeof content === 'function') {
+    return content(editable);
   } else {
-    return editable ? <>{placeholder}</> : <>{placeholderNonEditable}</>;
+    return content;
   }
 }

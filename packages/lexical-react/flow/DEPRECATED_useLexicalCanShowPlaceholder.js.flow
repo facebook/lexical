@@ -12,5 +12,4 @@ import type {LexicalEditor} from 'lexical';
 
 declare export function useLexicalCanShowPlaceholder(
   editor: LexicalEditor,
-  withEditable__DEPRECATED?: boolean,
 ): boolean;

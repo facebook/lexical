@@ -2879,21 +2879,13 @@ test.describe('CopyAndPaste', () => {
       page,
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-        <hr
-          class=""
-          contenteditable="false"
-          data-lexical-decorator="true"
-        />
+        <hr class="" contenteditable="false" data-lexical-decorator="true" />
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr">
           <span data-lexical-text="true">Text between HRs</span>
         </p>
-        <hr
-          class=""
-          contenteditable="false"
-          data-lexical-decorator="true"
-        />
+        <hr class="" contenteditable="false" data-lexical-decorator="true" />
       `,
     );
     await assertSelection(page, {

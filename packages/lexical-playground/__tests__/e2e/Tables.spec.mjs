@@ -1932,8 +1932,7 @@ test.describe('Tables', () => {
               <hr
                 class=""
                 contenteditable="false"
-                data-lexical-decorator="true"
-              />
+                data-lexical-decorator="true" />
               <p><br /></p>
             </th>
             <th>

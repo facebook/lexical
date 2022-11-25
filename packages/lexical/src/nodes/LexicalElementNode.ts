@@ -55,6 +55,10 @@ export class ElementNode extends LexicalNode {
   /** @internal */
   __children: Array<NodeKey>;
   /** @internal */
+  __first: null | NodeKey;
+  /** @internal */
+  __last: null | NodeKey;
+  /** @internal */
   __format: number;
   /** @internal */
   __indent: number;
@@ -63,7 +67,10 @@ export class ElementNode extends LexicalNode {
 
   constructor(key?: NodeKey) {
     super(key);
+    // TODO: remove children and switch to using first/last as part of linked list work
     this.__children = [];
+    this.__first = null;
+    this.__last = null;
     this.__format = 0;
     this.__indent = 0;
     this.__dir = null;

@@ -383,7 +383,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
   }
 
   updateEditor(editor, () => {
-    const selection = $getSelection();
+    let selection = $getSelection();
 
     if (inputType === 'deleteContentBackward') {
       if (selection === null) {
@@ -393,8 +393,8 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
         if (!$isRangeSelection(prevSelection)) {
           return;
         }
-
-        $setSelection(prevSelection.clone());
+        selection = prevSelection.clone();
+        $setSelection(selection);
       }
 
       if ($isRangeSelection(selection)) {

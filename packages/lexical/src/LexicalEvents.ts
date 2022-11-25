@@ -23,6 +23,7 @@ import {
   $getPreviousSelection,
   $getRoot,
   $getSelection,
+  $isDecoratorNode,
   $isElementNode,
   $isNodeSelection,
   $isRangeSelection,
@@ -75,6 +76,7 @@ import {internalCreateRangeSelection, RangeSelection} from './LexicalSelection';
 import {updateEditor} from './LexicalUpdates';
 import {
   $flushMutations,
+  $getDecoratorNode,
   $getNodeByKey,
   $isSelectionCapturedInDecorator,
   $setSelection,
@@ -390,11 +392,16 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
         // Use previous selection
         const prevSelection = $getPreviousSelection();
 
-        if (!$isRangeSelection(prevSelection)) {
+        if (!$isRangeSelection(prevSelection) || !prevSelection.isCollapsed()) {
           return;
         }
-        selection = prevSelection.clone();
-        $setSelection(selection);
+        // Handle deletion of decorator nodes on Android
+        const anchor = prevSelection.anchor;
+        const possibleNode = $getDecoratorNode(anchor, true);
+        if ($isDecoratorNode(possibleNode) && !possibleNode.isIsolated()) {
+          selection = prevSelection.clone();
+          $setSelection(selection);
+        }
       }
 
       if ($isRangeSelection(selection)) {

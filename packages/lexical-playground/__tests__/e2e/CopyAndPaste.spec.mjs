@@ -2981,8 +2981,9 @@ test.describe('CopyAndPaste', () => {
   test('Paste top level element in the middle of paragraph', async ({
     page,
     isPlainText,
+    isCollab,
   }) => {
-    test.skip(isPlainText);
+    test.skip(isPlainText || isCollab);
     await focusEditor(page);
     await page.keyboard.type('Hello world');
     await moveToPrevWord(page);
@@ -2998,12 +2999,7 @@ test.describe('CopyAndPaste', () => {
           dir="ltr">
           <span data-lexical-text="true">Hello</span>
         </p>
-        <div
-          contenteditable="false"
-          style="display: contents"
-          data-lexical-decorator="true">
-          <hr />
-        </div>
+        <hr class="" contenteditable="false" data-lexical-decorator="true" />
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr">
@@ -3016,8 +3012,9 @@ test.describe('CopyAndPaste', () => {
   test('Paste top level element in the middle of list', async ({
     page,
     isPlainText,
+    isCollab,
   }) => {
-    test.skip(isPlainText);
+    test.skip(isPlainText || isCollab);
     await focusEditor(page);
     // Add three list items
     await page.keyboard.type('- one');
@@ -3031,6 +3028,7 @@ test.describe('CopyAndPaste', () => {
     await page.keyboard.press('Enter');
     await page.keyboard.press('Enter');
     await page.keyboard.press('ArrowUp');
+    await moveLeft(page, 4);
     await page.keyboard.press('ArrowUp');
     await page.keyboard.press('ArrowUp');
     await pasteFromClipboard(page, {
@@ -3054,12 +3052,11 @@ test.describe('CopyAndPaste', () => {
             <span data-lexical-text="true">two</span>
           </li>
         </ul>
+        <hr class="" contenteditable="false" data-lexical-decorator="true" />
         <div
+          class="PlaygroundEditorTheme__blockCursor"
           contenteditable="false"
-          style="display: contents"
-          data-lexical-decorator="true">
-          <hr />
-        </div>
+          data-lexical-cursor="true"></div>
         <ul class="PlaygroundEditorTheme__ul">
           <li
             value="1"

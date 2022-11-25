@@ -1066,6 +1066,7 @@ describe('LexicalEditor tests', () => {
           __next: null,
           __parent: null,
           __prev: null,
+          __size: 0,
           __type: 'root',
         });
         expect(paragraph).toEqual({
@@ -1079,6 +1080,7 @@ describe('LexicalEditor tests', () => {
           __next: null,
           __parent: 'root',
           __prev: null,
+          __size: 0,
           __type: 'paragraph',
         });
       });
@@ -1149,6 +1151,7 @@ describe('LexicalEditor tests', () => {
           __next: null,
           __parent: null,
           __prev: null,
+          __size: 0,
           __type: 'root',
         });
         expect(parsedParagraph).toEqual({
@@ -1162,6 +1165,7 @@ describe('LexicalEditor tests', () => {
           __next: null,
           __parent: 'root',
           __prev: null,
+          __size: 0,
           __type: 'paragraph',
         });
         expect(parsedText).toEqual({
@@ -1227,6 +1231,7 @@ describe('LexicalEditor tests', () => {
           __next: null,
           __parent: null,
           __prev: null,
+          __size: 0,
           __type: 'root',
         });
         expect(parsedParagraph).toEqual({
@@ -1240,6 +1245,7 @@ describe('LexicalEditor tests', () => {
           __next: null,
           __parent: 'root',
           __prev: null,
+          __size: 0,
           __type: 'paragraph',
         });
         expect(parsedText).toEqual({
@@ -1311,6 +1317,7 @@ describe('LexicalEditor tests', () => {
           __next: null,
           __parent: null,
           __prev: null,
+          __size: 0,
           __type: 'root',
         });
         expect(parsedParagraph).toEqual({
@@ -1324,6 +1331,7 @@ describe('LexicalEditor tests', () => {
           __next: null,
           __parent: 'root',
           __prev: null,
+          __size: 0,
           __type: 'paragraph',
         });
         expect(parsedText).toEqual({

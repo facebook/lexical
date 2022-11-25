@@ -59,6 +59,8 @@ export class ElementNode extends LexicalNode {
   /** @internal */
   __last: null | NodeKey;
   /** @internal */
+  __size: number;
+  /** @internal */
   __format: number;
   /** @internal */
   __indent: number;
@@ -71,6 +73,7 @@ export class ElementNode extends LexicalNode {
     this.__children = [];
     this.__first = null;
     this.__last = null;
+    this.__size = 0;
     this.__format = 0;
     this.__indent = 0;
     this.__dir = null;

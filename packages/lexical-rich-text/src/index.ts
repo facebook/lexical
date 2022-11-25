@@ -298,9 +298,9 @@ export class HeadingNode extends ElementNode {
   }
 
   // Mutation
-  insertNewAfter(selection: RangeSelection): ParagraphNode | HeadingNode {
+  insertNewAfter(selection?: RangeSelection): ParagraphNode | HeadingNode {
     const newElement =
-      selection.anchor.offset < this.getTextContentSize()
+      selection && selection.anchor.offset < this.getTextContentSize()
         ? $createHeadingNode(this.getTag())
         : $createParagraphNode();
     const direction = this.getDirection();
@@ -309,9 +309,9 @@ export class HeadingNode extends ElementNode {
     return newElement;
   }
 
-  collapseAtStart(selection: RangeSelection): true {
+  collapseAtStart(selection?: RangeSelection): true {
     const newElement =
-      selection.anchor.offset < this.getTextContentSize()
+      selection && selection.anchor.offset < this.getTextContentSize()
         ? $createHeadingNode(this.getTag())
         : $createParagraphNode();
     const children = this.getChildren();

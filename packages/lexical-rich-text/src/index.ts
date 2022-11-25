@@ -299,8 +299,9 @@ export class HeadingNode extends ElementNode {
 
   // Mutation
   insertNewAfter(selection?: RangeSelection): ParagraphNode | HeadingNode {
+    const selectionOffset = selection ? selection.anchor.offset : 0;
     const newElement =
-      selection && selection.anchor.offset < this.getTextContentSize()
+      selectionOffset < this.getTextContentSize() && selectionOffset > 0
         ? $createHeadingNode(this.getTag())
         : $createParagraphNode();
     const direction = this.getDirection();

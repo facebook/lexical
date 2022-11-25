@@ -2443,8 +2443,6 @@ export function internalCreateRangeSelection(
       eventType === 'beforeinput' ||
       eventType === 'compositionstart' ||
       eventType === 'compositionend' ||
-      // @ts-ignore Detect Grammarly and update selection for extension
-      windowEvent._lexicalHandled === true ||
       (eventType === 'click' &&
         windowEvent &&
         (windowEvent as InputEvent).detail === 3) ||

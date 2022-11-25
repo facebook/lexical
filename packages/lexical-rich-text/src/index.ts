@@ -19,6 +19,7 @@ import type {
   NodeKey,
   ParagraphNode,
   PasteCommandType,
+  RangeSelection,
   SerializedElementNode,
   Spread,
   TextFormatType,
@@ -297,20 +298,25 @@ export class HeadingNode extends ElementNode {
   }
 
   // Mutation
-
-  insertNewAfter(): ParagraphNode {
-    const newElement = $createParagraphNode();
+  insertNewAfter(selection: RangeSelection): ParagraphNode | HeadingNode {
+    const newElement =
+      selection.anchor.offset < this.getTextContentSize()
+        ? $createHeadingNode(this.getTag())
+        : $createParagraphNode();
     const direction = this.getDirection();
     newElement.setDirection(direction);
     this.insertAfter(newElement);
     return newElement;
   }
 
-  collapseAtStart(): true {
-    const paragraph = $createParagraphNode();
+  collapseAtStart(selection: RangeSelection): true {
+    const newElement =
+      selection.anchor.offset < this.getTextContentSize()
+        ? $createHeadingNode(this.getTag())
+        : $createParagraphNode();
     const children = this.getChildren();
-    children.forEach((child) => paragraph.append(child));
-    this.replace(paragraph);
+    children.forEach((child) => newElement.append(child));
+    this.replace(newElement);
     return true;
   }
 

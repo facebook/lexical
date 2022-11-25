@@ -70,7 +70,6 @@ export type TextPointType = {
   _selection: RangeSelection | GridSelection;
   getNode: () => TextNode;
   is: (point: PointType) => boolean;
-  isAtNodeEnd: () => boolean;
   isBefore: (point: PointType) => boolean;
   key: NodeKey;
   offset: number;
@@ -82,7 +81,6 @@ export type ElementPointType = {
   _selection: RangeSelection | GridSelection;
   getNode: () => ElementNode;
   is: (point: PointType) => boolean;
-  isAtNodeEnd: () => boolean;
   isBefore: (point: PointType) => boolean;
   key: NodeKey;
   offset: number;
@@ -104,6 +102,7 @@ export class Point {
     this.offset = offset;
     this.type = type;
   }
+
   is(point: PointType): boolean {
     return (
       this.key === point.key &&
@@ -111,6 +110,7 @@ export class Point {
       this.type === point.type
     );
   }
+
   isBefore(b: PointType): boolean {
     let aNode = this.getNode();
     let bNode = b.getNode();
@@ -130,6 +130,7 @@ export class Point {
     }
     return aNode.isBefore(bNode);
   }
+
   getNode(): LexicalNode {
     const key = this.key;
     const node = $getNodeByKey(key);
@@ -138,6 +139,7 @@ export class Point {
     }
     return node;
   }
+
   set(key: NodeKey, offset: number, type: 'text' | 'element'): void {
     const selection = this._selection;
     const oldKey = this.key;

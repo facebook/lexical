@@ -304,19 +304,26 @@ export class HeadingNode extends ElementNode {
         ? $createHeadingNode(this.getTag())
         : $createParagraphNode();
     const direction = this.getDirection();
+
     newElement.setDirection(direction);
     this.insertAfter(newElement);
+
     return newElement;
   }
 
-  collapseAtStart(selection?: RangeSelection): true {
-    const newElement =
-      selection && selection.anchor.offset < this.getTextContentSize()
-        ? $createHeadingNode(this.getTag())
-        : $createParagraphNode();
+  collapseAtStart(): true {
+    const previousSibling = this.getPreviousSibling();
+    const isPreviouSiblingEmpty =
+      !previousSibling ||
+      (previousSibling && previousSibling.getTextContentSize() === 0);
+    const newElement = isPreviouSiblingEmpty
+      ? $createHeadingNode(this.getTag())
+      : $createParagraphNode();
     const children = this.getChildren();
+
     children.forEach((child) => newElement.append(child));
     this.replace(newElement);
+
     return true;
   }
 

@@ -58,6 +58,8 @@ declare export function createCommand<T>(type?: string): LexicalCommand<T>;
 /**
  * LexicalEditor
  */
+type IntentionallyMarkedAsDirtyElement = Boolean;
+
 type MutationListeners = Map<MutationListener, Class<LexicalNode>>;
 export type NodeMutation = 'created' | 'updated' | 'destroyed';
 type UpdateListener = ({
@@ -260,7 +262,6 @@ export const COMMAND_PRIORITY_NORMAL = 2;
 export const COMMAND_PRIORITY_HIGH = 3;
 export const COMMAND_PRIORITY_CRITICAL = 4;
 
-export type IntentionallyMarkedAsDirtyElement = boolean;
 declare export function createEditor(editorConfig?: {
   editorState?: EditorState,
   namespace: string,

@@ -14,7 +14,6 @@ export type {
   EditableListener,
   EditorConfig,
   EditorThemeClasses,
-  IntentionallyMarkedAsDirtyElement,
   Klass,
   LexicalCommand,
   LexicalEditor,

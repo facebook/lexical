@@ -18,7 +18,6 @@ import type {
   NodeMap,
   NodeKey,
   TextNode,
-  IntentionallyMarkedAsDirtyElement,
 } from 'lexical';
 
 // $FlowFixMe: todo
@@ -219,6 +218,8 @@ declare export class CollabTextNode {
 
   destroy(binding: Binding): void;
 }
+
+type IntentionallyMarkedAsDirtyElement = boolean;
 
 declare export class CollabElementNode {
   _key: NodeKey;

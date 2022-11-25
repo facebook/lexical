@@ -8,7 +8,6 @@
 
 import type {
   EditorConfig,
-  IntentionallyMarkedAsDirtyElement,
   LexicalEditor,
   MutatedNodes,
   MutationListeners,
@@ -42,6 +41,8 @@ import {
   getTextDirection,
   setMutatedNode,
 } from './LexicalUtils';
+
+type IntentionallyMarkedAsDirtyElement = boolean;
 
 let subTreeTextContent = '';
 let subTreeDirectionedTextContent = '';

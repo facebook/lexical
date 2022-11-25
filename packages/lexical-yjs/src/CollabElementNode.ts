@@ -7,12 +7,7 @@
  */
 
 import type {Binding} from '.';
-import type {
-  ElementNode,
-  IntentionallyMarkedAsDirtyElement,
-  NodeKey,
-  NodeMap,
-} from 'lexical';
+import type {ElementNode, NodeKey, NodeMap} from 'lexical';
 import type {AbstractType, XmlElement, XmlText} from 'yjs';
 
 import {
@@ -37,6 +32,8 @@ import {
   syncPropertiesFromLexical,
   syncPropertiesFromYjs,
 } from './Utils';
+
+type IntentionallyMarkedAsDirtyElement = boolean;
 
 export class CollabElementNode {
   _key: NodeKey;

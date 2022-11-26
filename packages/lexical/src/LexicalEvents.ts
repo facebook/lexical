@@ -72,16 +72,19 @@ import {
   IS_ALL_FORMATTING,
 } from './LexicalConstants';
 import {internalCreateRangeSelection, RangeSelection} from './LexicalSelection';
-import {updateEditor} from './LexicalUpdates';
+import {getActiveEditor, updateEditor} from './LexicalUpdates';
 import {
   $flushMutations,
   $getNodeByKey,
   $isSelectionCapturedInDecorator,
+  $isTokenOrSegmented,
   $setSelection,
-  $shouldPreventDefaultAndInsertText,
+  $shouldInsertTextAfterOrBeforeTextNode,
   $updateSelectedTextFromDOM,
   $updateTextNodeFromDOMContent,
   dispatchCommand,
+  doesContainGrapheme,
+  getAnchorTextFromDOM,
   getDOMTextNode,
   getEditorsToPropagate,
   getNearestEditorFromDOMNode,
@@ -154,6 +157,7 @@ if (CAN_USE_BEFORE_INPUT) {
 
 let lastKeyDownTimeStamp = 0;
 let lastKeyCode = 0;
+let lastBeforeInputInsertTextTimeStamp = 0;
 let rootElementsRegistered = 0;
 let isSelectionChangeFromDOMUpdate = false;
 let isSelectionChangeFromMouseDown = false;
@@ -165,6 +169,60 @@ let collapsedSelectionFormat: [number, number, NodeKey, number] = [
   'root',
   0,
 ];
+
+// This function is used to determine if Lexical should attempt to override
+// the default browser behavior for insertion of text and use its own internal
+// heuristics. This is an extremely important function, and makes much of Lexical
+// work as intended between different browsers and across word, line and character
+// boundary/formats. It also is important for text replacement, node schemas and
+// composition mechanics.
+function $shouldPreventDefaultAndInsertText(
+  selection: RangeSelection,
+  text: string,
+  timeStamp: number,
+  isBeforeInput: boolean,
+): boolean {
+  const anchor = selection.anchor;
+  const focus = selection.focus;
+  const anchorNode = anchor.getNode();
+  const domSelection = getDOMSelection();
+  const domAnchorNode = domSelection !== null ? domSelection.anchorNode : null;
+  const anchorKey = anchor.key;
+  const backingAnchorElement = getActiveEditor().getElementByKey(anchorKey);
+  const textLength = text.length;
+
+  return (
+    anchorKey !== focus.key ||
+    // If we're working with a non-text node.
+    !$isTextNode(anchorNode) ||
+    // If we are replacing a range with a single character or grapheme, and not composing.
+    (((!isBeforeInput &&
+      (!CAN_USE_BEFORE_INPUT ||
+        // We check to see if there has been
+        // a recent beforeinput event for "textInput". If there has been one in the last
+        // 50ms then we proceed as normal. However, if there is not, then this is likely
+        // a dangling `input` event caused by execCommand('insertText').
+        lastBeforeInputInsertTextTimeStamp < timeStamp + 50)) ||
+      textLength < 2 ||
+      doesContainGrapheme(text)) &&
+      anchor.offset !== focus.offset &&
+      !anchorNode.isComposing()) ||
+    // Any non standard text node.
+    $isTokenOrSegmented(anchorNode) ||
+    // If the text length is more than a single character and we're either
+    // dealing with this in "beforeinput" or where the node has already recently
+    // been changed (thus is dirty).
+    (anchorNode.isDirty() && textLength > 1) ||
+    // If the DOM selection element is not the same as the backing node
+    (backingAnchorElement !== null &&
+      !anchorNode.isComposing() &&
+      domAnchorNode !== getDOMTextNode(backingAnchorElement)) ||
+    // Check if we're changing from bold to italics, or some other format.
+    anchorNode.getFormat() !== selection.format ||
+    // One last set of heuristics to check against.
+    $shouldInsertTextAfterOrBeforeTextNode(selection, anchorNode)
+  );
+}
 
 function shouldSkipSelectionChange(
   domNode: null | Node,
@@ -458,12 +516,17 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
         selection.insertRawText(text);
       } else if (
         data != null &&
-        $shouldPreventDefaultAndInsertText(selection, data)
+        $shouldPreventDefaultAndInsertText(
+          selection,
+          data,
+          event.timeStamp,
+          true,
+        )
       ) {
         event.preventDefault();
         dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, data);
       }
-
+      lastBeforeInputInsertTextTimeStamp = event.timeStamp;
       return;
     }
 
@@ -604,7 +667,12 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
     if (
       data != null &&
       $isRangeSelection(selection) &&
-      $shouldPreventDefaultAndInsertText(selection, data)
+      $shouldPreventDefaultAndInsertText(
+        selection,
+        data,
+        event.timeStamp,
+        false,
+      )
     ) {
       // Given we're over-riding the default behavior, we will need
       // to ensure to disable composition before dispatching the
@@ -613,7 +681,29 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
         onCompositionEndImpl(editor, data);
         isFirefoxEndingComposition = false;
       }
-      dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, data);
+      const anchor = selection.anchor;
+      const anchorNode = anchor.getNode();
+      const domSelection = getDOMSelection();
+      if (domSelection === null) {
+        return;
+      }
+      const offset = anchor.offset;
+      // If the content is the same as inserted, then don't dispatch an insertion.
+      // Given onInput doesn't take the current selection (it uses the previous)
+      // we can compare that against what the DOM currently says.
+      if (
+        !CAN_USE_BEFORE_INPUT ||
+        selection.isCollapsed() ||
+        !$isTextNode(anchorNode) ||
+        domSelection.anchorNode === null ||
+        anchorNode.getTextContent().slice(0, offset) +
+          data +
+          anchorNode.getTextContent().slice(offset + selection.focus.offset) !==
+          getAnchorTextFromDOM(domSelection.anchorNode)
+      ) {
+        dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, data);
+      }
+
       const textLength = data.length;
 
       // Another hack for FF, as it's possible that the IME is still

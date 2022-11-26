@@ -198,7 +198,10 @@ function $shouldPreventDefaultAndInsertText(
     // If we are replacing a range with a single character or grapheme, and not composing.
     (((!isBeforeInput &&
       (!CAN_USE_BEFORE_INPUT ||
-        // Attempt to detect execCommand('insertText')
+        // We check to see if there has been
+        // a recent beforeinput event for "textInput". If there has been one in the last
+        // 50ms then we proceed as normal. However, if there is not, then this is likely
+        // a dangling `input` event caused by execCommand('insertText').
         lastBeforeInputInsertTextTimeStamp < timeStamp + 50)) ||
       textLength < 2 ||
       doesContainGrapheme(text)) &&

@@ -171,6 +171,10 @@ export class LexicalNode {
   __key: string;
   /** @internal */
   __parent: null | NodeKey;
+  /** @internal */
+  __prev: null | NodeKey;
+  /** @internal */
+  __next: null | NodeKey;
 
   // Flow doesn't support abstract classes unfortunately, so we can't _force_
   // subclasses of Node to implement statics. All subclasses of Node should have
@@ -197,6 +201,8 @@ export class LexicalNode {
     // @ts-expect-error
     this.__type = this.constructor.getType();
     this.__parent = null;
+    this.__prev = null;
+    this.__next = null;
     $setNodeKey(this, key);
 
     if (__DEV__) {

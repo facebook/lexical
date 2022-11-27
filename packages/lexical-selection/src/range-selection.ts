@@ -43,12 +43,8 @@ export function $setBlocksType(
     const element = createElement();
     const root = $getRoot();
     const firstChild = root.getFirstChild();
-    if (firstChild) {
-      firstChild.replace(element);
-      firstChild.getChildren().forEach((child: LexicalNode) => {
-        element.append(child);
-      });
-    } else root.append(element);
+    if (firstChild) firstChild.replace(element, true);
+    else root.append(element);
     return;
   }
 
@@ -66,16 +62,12 @@ export function $setBlocksType(
     const targetElement = createElement();
     targetElement.setFormat(node.getFormatType());
     targetElement.setIndent(node.getIndent());
-    node.replace(targetElement);
+    node.replace(targetElement, true);
   }
 }
 
 function isBlock(node: LexicalNode) {
-  return (
-    $isElementNode(node) &&
-    !$isRootOrShadowRoot(node) &&
-    $isRootOrShadowRoot(node.getParent())
-  );
+  return $isElementNode(node) && !$isRootOrShadowRoot(node) && !node.isInline();
 }
 
 export function $shouldOverrideDefaultCharacterSelection(

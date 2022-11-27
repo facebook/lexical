@@ -57,6 +57,24 @@ export type {
   TextFormatType,
   TextModeType,
 } from './nodes/LexicalTextNode';
+export type {
+  SerializedAutoLinkNode,
+  SerializedLinkNode,
+} from './../../lexical-link/src';
+export type {
+  SerializedTableCellNode,
+  SerializedTableNode,
+  SerializedTableRowNode,
+} from './../../lexical-table/src';
+export type {
+  SerializedListItemNode,
+  SerializedListNode,
+} from './../../lexical-list/src';
+export type {
+  SerializedHeadingNode,
+  SerializedQuoteNode,
+} from './../../lexical-rich-text/src';
+export type {SerializedCodeNode} from './../../lexical-code/src';
 
 // TODO Move this somewhere else and/or recheck if we still need this
 export {

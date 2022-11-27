@@ -20,16 +20,21 @@ export type InitialEditorStateType =
   | EditorState
   | ((editor: LexicalEditor) => void);
 
+export type InitialConfigType = $ReadOnly<{
+  editor__DEPRECATED?: LexicalEditor | null,
+  editable?: boolean,
+  namespace: string,
+  nodes?: $ReadOnlyArray<
+    | Class<LexicalNode>
+    | {replace: Class<LexicalNode>, with: (node: LexicalNode) => LexicalNode},
+  >,
+  theme?: EditorThemeClasses,
+  editorState?: InitialEditorStateType,
+  onError: (error: Error, editor: LexicalEditor) => void,
+}>;
+
 type Props = {
-  initialConfig: $ReadOnly<{
-    editor__DEPRECATED?: LexicalEditor | null,
-    editable?: boolean,
-    namespace: string,
-    nodes?: $ReadOnlyArray<Class<LexicalNode>>,
-    theme?: EditorThemeClasses,
-    editorState?: InitialEditorStateType,
-    onError: (error: Error, editor: LexicalEditor) => void,
-  }>,
+  initialConfig: InitialConfigType,
   children: React$Node,
 };
 

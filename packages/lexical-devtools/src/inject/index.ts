@@ -15,6 +15,7 @@ import {
   RangeSelectionJSON,
 } from 'packages/lexical-devtools/types';
 
+let lexical: boolean;
 let editorDOMNode: LexicalHTMLElement | null, editorKey: string | null;
 
 const serializePoint = (point: PointType) => {
@@ -56,6 +57,14 @@ const postEditorState = (editorState: EditorState) => {
   const data = {editorState: serializedEditorState};
   document.dispatchEvent(new CustomEvent('editorStateUpdate', {detail: data}));
 };
+
+document.addEventListener('checkForLexical', function (e) {
+  lexical = document.querySelectorAll('div[data-lexical-editor]').length > 0;
+  const data = {lexical: lexical};
+  document.dispatchEvent(
+    new CustomEvent('lexicalPresenceUpdate', {detail: data}),
+  );
+});
 
 document.addEventListener('loadEditorState', function (e) {
   // query document for Lexical editor instance.

@@ -266,7 +266,10 @@ declare export function createEditor(editorConfig?: {
   namespace: string,
   theme?: EditorThemeClasses,
   parentEditor?: LexicalEditor,
-  nodes?: $ReadOnlyArray<Class<LexicalNode>>,
+  nodes?: $ReadOnlyArray<
+    | Class<LexicalNode>
+    | {replace: Class<LexicalNode>, with: (node: LexicalNode) => LexicalNode},
+  >,
   onError: (error: Error) => void,
   disableEvents?: boolean,
   editable?: boolean,
@@ -491,7 +494,6 @@ type TextPointType = {
   getNode: () => TextNode,
   set: (key: NodeKey, offset: number, type: 'text' | 'element') => void,
   getCharacterOffset: () => number,
-  isAtNodeEnd: () => boolean,
 };
 export type ElementPoint = ElementPointType;
 type ElementPointType = {
@@ -502,7 +504,6 @@ type ElementPointType = {
   isBefore: (PointType) => boolean,
   getNode: () => ElementNode,
   set: (key: NodeKey, offset: number, type: 'text' | 'element') => void,
-  isAtNodeEnd: () => boolean,
 };
 export type Point = PointType;
 type PointType = TextPointType | ElementPointType;
@@ -825,6 +826,10 @@ declare export function $hasAncestor(
   child: LexicalNode,
   targetNode: LexicalNode,
 ): boolean;
+declare export function $copyNode(
+  node: ElementNode,
+  offset: number,
+): [ElementNode, ElementNode];
 
 /**
  * LexicalVersion
@@ -844,6 +849,10 @@ type InternalSerializedNode = {
 declare export function $parseSerializedNode(
   serializedNode: InternalSerializedNode,
 ): LexicalNode;
+
+declare export function $applyNodeReplacement<N: LexicalNode>(
+  node: LexicalNode,
+): N;
 
 export type SerializedLexicalNode = {
   type: string,

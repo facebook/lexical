@@ -113,6 +113,10 @@ export class RootNode extends ElementNode {
       version: 1,
     };
   }
+
+  collapseAtStart(): true {
+    return true;
+  }
 }
 
 export function $createRootNode(): RootNode {

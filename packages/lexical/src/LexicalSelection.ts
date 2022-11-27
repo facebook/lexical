@@ -12,7 +12,6 @@ import type {LexicalNode, NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextFormatType} from './nodes/LexicalTextNode';
 
-import {IS_IOS, IS_SAFARI} from 'shared/environment';
 import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
 
@@ -71,7 +70,6 @@ export type TextPointType = {
   _selection: RangeSelection | GridSelection;
   getNode: () => TextNode;
   is: (point: PointType) => boolean;
-  isAtNodeEnd: () => boolean;
   isBefore: (point: PointType) => boolean;
   key: NodeKey;
   offset: number;
@@ -83,7 +81,6 @@ export type ElementPointType = {
   _selection: RangeSelection | GridSelection;
   getNode: () => ElementNode;
   is: (point: PointType) => boolean;
-  isAtNodeEnd: () => boolean;
   isBefore: (point: PointType) => boolean;
   key: NodeKey;
   offset: number;
@@ -105,6 +102,7 @@ export class Point {
     this.offset = offset;
     this.type = type;
   }
+
   is(point: PointType): boolean {
     return (
       this.key === point.key &&
@@ -112,6 +110,7 @@ export class Point {
       this.type === point.type
     );
   }
+
   isBefore(b: PointType): boolean {
     let aNode = this.getNode();
     let bNode = b.getNode();
@@ -131,6 +130,7 @@ export class Point {
     }
     return aNode.isBefore(bNode);
   }
+
   getNode(): LexicalNode {
     const key = this.key;
     const node = $getNodeByKey(key);
@@ -139,6 +139,7 @@ export class Point {
     }
     return node;
   }
+
   set(key: NodeKey, offset: number, type: 'text' | 'element'): void {
     const selection = this._selection;
     const oldKey = this.key;
@@ -1353,8 +1354,15 @@ export class RangeSelection implements BaseSelection {
             const children = element.getChildren();
             const childrenLength = children.length;
             if ($isElementNode(target)) {
+              let firstChild = target.getFirstChild();
               for (let s = 0; s < childrenLength; s++) {
-                target.append(children[s]);
+                const child = children[s];
+                if (firstChild === null) {
+                  target.append(child);
+                } else {
+                  firstChild.insertAfter(child);
+                }
+                firstChild = child;
               }
             } else {
               for (let s = childrenLength - 1; s >= 0; s--) {
@@ -1464,7 +1472,11 @@ export class RangeSelection implements BaseSelection {
         if (lastChild === null) {
           target.select();
         } else if ($isTextNode(lastChild)) {
-          lastChild.select();
+          if (lastChild.getTextContent() === '') {
+            lastChild.selectPrevious();
+          } else {
+            lastChild.select();
+          }
         } else {
           lastChild.selectNext();
         }
@@ -1477,7 +1489,11 @@ export class RangeSelection implements BaseSelection {
           if (
             $isElementNode(target) &&
             !$isBlockElementNode(sibling) &&
-            !($isDecoratorNode(sibling) && !sibling.isInline())
+            !(
+              $isDecoratorNode(sibling) &&
+              // Note: We are only looking for decorators that are inline and not isolated.
+              (!sibling.isInline() || sibling.isIsolated())
+            )
           ) {
             if (originalTarget === target) {
               target.append(sibling);
@@ -1781,7 +1797,10 @@ export class RangeSelection implements BaseSelection {
     if (domSelection.rangeCount > 0) {
       const range = domSelection.getRangeAt(0);
       // Apply the DOM selection to our Lexical selection.
-      const root = $getNearestRootOrShadowRoot(this.anchor.getNode());
+      const anchorNode = this.anchor.getNode();
+      const root = $isRootNode(anchorNode)
+        ? anchorNode
+        : $getNearestRootOrShadowRoot(anchorNode);
       this.applyDOMRange(range);
       this.dirty = true;
       if (!collapse) {
@@ -1851,6 +1870,25 @@ export class RangeSelection implements BaseSelection {
         if ($isElementNode(nextSibling) && !nextSibling.canExtractContents()) {
           return;
         }
+      }
+      // Handle the deletion around decorators.
+      const possibleNode = $getDecoratorNode(focus, isBackward);
+      if ($isDecoratorNode(possibleNode) && !possibleNode.isIsolated()) {
+        // Make it possible to move selection from range selection to
+        // node selection on the node.
+        if (
+          possibleNode.isKeyboardSelectable() &&
+          $isElementNode(anchorNode) &&
+          anchorNode.getChildrenSize() === 0
+        ) {
+          anchorNode.remove();
+          const nodeSelection = $createNodeSelection();
+          nodeSelection.add(possibleNode.__key);
+          $setSelection(nodeSelection);
+        } else {
+          possibleNode.remove();
+        }
+        return;
       }
       this.modify('extend', isBackward, 'character');
 
@@ -2760,11 +2798,7 @@ export function updateDOMSelection(
         preventScroll: true,
       });
     }
-
-    // In Safari/iOS if we have selection on an element, then we also
-    // need to additionally set the DOM selection, otherwise a selectionchange
-    // event will not fire.
-    if (!(IS_IOS || IS_SAFARI) || anchor.type !== 'element') {
+    if (anchor.type !== 'element') {
       return;
     }
   }
@@ -2785,7 +2819,20 @@ export function updateDOMSelection(
       rootElement !== null &&
       rootElement === activeElement
     ) {
-      scrollIntoViewIfNeeded(editor, anchor, rootElement, tags);
+      const selectionTarget: null | Range | HTMLElement | Text =
+        nextSelection instanceof RangeSelection &&
+        nextSelection.anchor.type === 'element'
+          ? (nextAnchorNode.childNodes[nextAnchorOffset] as
+              | HTMLElement
+              | Text) || null
+          : domSelection.rangeCount > 0
+          ? domSelection.getRangeAt(0)
+          : null;
+      if (selectionTarget !== null) {
+        // @ts-ignore Text nodes do have getBoundingClientRect
+        const selectionRect = selectionTarget.getBoundingClientRect();
+        scrollIntoViewIfNeeded(editor, selectionRect, rootElement);
+      }
     }
 
     markSelectionChangeFromDOMUpdate();

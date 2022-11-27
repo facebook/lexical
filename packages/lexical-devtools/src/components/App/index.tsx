@@ -43,7 +43,6 @@ function App(): JSX.Element {
         lexicalKey,
         name: 'highlight',
         tabId: window.chrome.devtools.inspectedWindow.tabId,
-        type: 'FROM_APP',
       });
     },
     [port],
@@ -54,7 +53,6 @@ function App(): JSX.Element {
       port.current?.postMessage({
         name: 'dehighlight',
         tabId: window.chrome.devtools.inspectedWindow.tabId,
-        type: 'FROM_APP',
       });
     },
     [port],
@@ -62,13 +60,14 @@ function App(): JSX.Element {
 
   useEffect(() => {
     // create and initialize the messaging port to receive editorState updates
-    port.current = window.chrome.runtime.connect();
+    port.current = window.chrome.runtime.connect({
+      name: 'react-app',
+    });
 
     // post init message to background JS so tabId will be registered
     port.current.postMessage({
       name: 'init',
       tabId: window.chrome.devtools.inspectedWindow.tabId,
-      type: 'FROM_APP',
     });
 
     return () => {

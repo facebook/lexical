@@ -67,7 +67,11 @@ export function $setBlocksType(
 }
 
 function isBlock(node: LexicalNode) {
-  return $isElementNode(node) && !$isRootOrShadowRoot(node) && !node.isInline();
+  return (
+    $isElementNode(node) &&
+    !$isRootOrShadowRoot(node) &&
+    $isRootOrShadowRoot(node.getParent())
+  );
 }
 
 export function $shouldOverrideDefaultCharacterSelection(

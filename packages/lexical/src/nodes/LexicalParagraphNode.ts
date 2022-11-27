@@ -16,7 +16,7 @@ import type {
 import type {SerializedElementNode} from './LexicalElementNode';
 import type {Spread} from 'lexical';
 
-import {getCachedClassNameArray} from '../LexicalUtils';
+import {$applyNodeReplacement, getCachedClassNameArray} from '../LexicalUtils';
 import {ElementNode} from './LexicalElementNode';
 import {$isTextNode} from './LexicalTextNode';
 
@@ -145,7 +145,7 @@ function convertParagraphElement(): DOMConversionOutput {
 }
 
 export function $createParagraphNode(): ParagraphNode {
-  return new ParagraphNode();
+  return $applyNodeReplacement(new ParagraphNode());
 }
 
 export function $isParagraphNode(

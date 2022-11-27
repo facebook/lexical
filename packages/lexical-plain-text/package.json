@@ -7,13 +7,13 @@
     "plain-text"
   ],
   "license": "MIT",
-  "version": "0.6.1-next.0",
+  "version": "0.6.3",
   "main": "LexicalPlainText.js",
   "peerDependencies": {
-    "lexical": "0.6.1-next.0",
-    "@lexical/utils": "0.6.1-next.0",
-    "@lexical/selection": "0.6.1-next.0",
-    "@lexical/clipboard": "0.6.1-next.0"
+    "lexical": "0.6.3",
+    "@lexical/utils": "0.6.3",
+    "@lexical/selection": "0.6.3",
+    "@lexical/clipboard": "0.6.3"
   },
   "repository": {
     "type": "git",

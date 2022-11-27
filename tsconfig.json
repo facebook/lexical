@@ -114,6 +114,9 @@
       "@lexical/react/LexicalOnChangePlugin": [
         "./packages/lexical-react/src/LexicalOnChangePlugin.ts"
       ],
+      "@lexical/react/LexicalNodeEventPlugin": [
+        "./packages/lexical-react/src/LexicalNodeEventPlugin.ts"
+      ],
       "@lexical/react/LexicalHashtagPlugin": [
         "./packages/lexical-react/src/LexicalHashtagPlugin.ts"
       ],
@@ -161,9 +164,6 @@
       ],
       "@lexical/react/LexicalCheckListPlugin": [
         "./packages/lexical-react/src/LexicalCheckListPlugin.tsx"
-      ],
-      "@lexical/react/LexicalAutoScrollPlugin": [
-        "./packages/lexical-react/src/LexicalAutoScrollPlugin.ts"
       ],
 
       "@lexical/dragon/LexicalDragon": ["./packages/lexical-dragon/src/"],

@@ -8,13 +8,14 @@
 
 // eslint-disable-next-line simple-import-sort/imports
 import {
+  $applyNodeReplacement,
   $isLineBreakNode,
-  EditorConfig,
-  EditorThemeClasses,
-  LexicalNode,
-  NodeKey,
-  SerializedTextNode,
-  Spread,
+  type EditorConfig,
+  type EditorThemeClasses,
+  type LexicalNode,
+  type NodeKey,
+  type SerializedTextNode,
+  type Spread,
   TextNode,
 } from 'lexical';
 
@@ -203,7 +204,7 @@ export function $createCodeHighlightNode(
   text: string,
   highlightType?: string | null | undefined,
 ): CodeHighlightNode {
-  return new CodeHighlightNode(text, highlightType);
+  return $applyNodeReplacement(new CodeHighlightNode(text, highlightType));
 }
 
 export function $isCodeHighlightNode(

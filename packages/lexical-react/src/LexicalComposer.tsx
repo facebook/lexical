@@ -35,17 +35,28 @@ export type InitialEditorStateType =
   | EditorState
   | ((editor: LexicalEditor) => void);
 
+export type InitialConfigType = Readonly<{
+  editor__DEPRECATED?: LexicalEditor | null;
+  namespace: string;
+  nodes?: ReadonlyArray<
+    | Klass<LexicalNode>
+    | {
+        replace: Klass<LexicalNode>;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        with: <T extends {new (...args: any): any}>(
+          node: InstanceType<T>,
+        ) => LexicalNode;
+      }
+  >;
+  onError: (error: Error, editor: LexicalEditor) => void;
+  editable?: boolean;
+  theme?: EditorThemeClasses;
+  editorState?: InitialEditorStateType;
+}>;
+
 type Props = {
   children: JSX.Element | string | (JSX.Element | string)[];
-  initialConfig: Readonly<{
-    editor__DEPRECATED?: LexicalEditor | null;
-    namespace: string;
-    nodes?: ReadonlyArray<Klass<LexicalNode>>;
-    onError: (error: Error, editor: LexicalEditor) => void;
-    editable?: boolean;
-    theme?: EditorThemeClasses;
-    editorState?: InitialEditorStateType;
-  }>;
+  initialConfig: InitialConfigType;
 };
 
 export function LexicalComposer({initialConfig, children}: Props): JSX.Element {

@@ -18,6 +18,7 @@ import {
   TableRowNode,
 } from '@lexical/table';
 import {
+  type LexicalNode,
   $createLineBreakNode,
   $createNodeSelection,
   $createParagraphNode,
@@ -58,6 +59,7 @@ import {
   $createTestInlineElementNode,
   createTestEditor,
   TestComposer,
+  TestTextNode,
 } from '../utils';
 // No idea why we suddenly need to do this, but it fixes the tests
 // with latest experimental React version.
@@ -75,6 +77,7 @@ describe('LexicalEditor tests', () => {
 
   afterEach(() => {
     document.body.removeChild(container);
+    // @ts-ignore
     container = null;
 
     jest.restoreAllMocks();
@@ -176,7 +179,7 @@ describe('LexicalEditor tests', () => {
   it('Should handle nested updates in the correct sequence', async () => {
     init();
 
-    let log = [];
+    let log: Array<string> = [];
 
     editor.update(() => {
       const root = $getRoot();
@@ -624,7 +627,7 @@ describe('LexicalEditor tests', () => {
         const root = $getRoot();
         const paragraph0 = $createParagraphNode();
         const paragraph1 = $createParagraphNode();
-        const textNodes = [];
+        const textNodes: Array<LexicalNode> = [];
 
         for (let i = 0; i < 6; i++) {
           const node = $createTextNode(String(i)).toggleUnmergeable();
@@ -1055,19 +1058,29 @@ describe('LexicalEditor tests', () => {
           __cachedText: '',
           __children: [paragraph.getKey()],
           __dir: null,
+          __first: null,
           __format: 0,
           __indent: 0,
           __key: 'root',
+          __last: null,
+          __next: null,
           __parent: null,
+          __prev: null,
+          __size: 0,
           __type: 'root',
         });
         expect(paragraph).toEqual({
           __children: [],
           __dir: null,
+          __first: null,
           __format: 0,
           __indent: 0,
           __key: paragraph.getKey(),
+          __last: null,
+          __next: null,
           __parent: 'root',
+          __prev: null,
+          __size: 0,
           __type: 'paragraph',
         });
       });
@@ -1130,19 +1143,29 @@ describe('LexicalEditor tests', () => {
           __cachedText: null,
           __children: [paragraphKey],
           __dir: 'ltr',
+          __first: null,
           __format: 0,
           __indent: 0,
           __key: 'root',
+          __last: null,
+          __next: null,
           __parent: null,
+          __prev: null,
+          __size: 0,
           __type: 'root',
         });
         expect(parsedParagraph).toEqual({
           __children: [textKey],
           __dir: 'ltr',
+          __first: null,
           __format: 0,
           __indent: 0,
           __key: paragraphKey,
+          __last: null,
+          __next: null,
           __parent: 'root',
+          __prev: null,
+          __size: 0,
           __type: 'paragraph',
         });
         expect(parsedText).toEqual({
@@ -1150,7 +1173,9 @@ describe('LexicalEditor tests', () => {
           __format: 0,
           __key: textKey,
           __mode: 0,
+          __next: null,
           __parent: paragraphKey,
+          __prev: null,
           __style: '',
           __text: 'Hello world',
           __type: 'text',
@@ -1198,19 +1223,29 @@ describe('LexicalEditor tests', () => {
           __cachedText: null,
           __children: [paragraphKey],
           __dir: 'ltr',
+          __first: null,
           __format: 0,
           __indent: 0,
           __key: 'root',
+          __last: null,
+          __next: null,
           __parent: null,
+          __prev: null,
+          __size: 0,
           __type: 'root',
         });
         expect(parsedParagraph).toEqual({
           __children: [textKey],
           __dir: 'ltr',
+          __first: null,
           __format: 0,
           __indent: 0,
           __key: paragraphKey,
+          __last: null,
+          __next: null,
           __parent: 'root',
+          __prev: null,
+          __size: 0,
           __type: 'paragraph',
         });
         expect(parsedText).toEqual({
@@ -1218,7 +1253,9 @@ describe('LexicalEditor tests', () => {
           __format: 0,
           __key: textKey,
           __mode: 0,
+          __next: null,
           __parent: paragraphKey,
+          __prev: null,
           __style: '',
           __text: 'Hello world',
           __type: 'text',
@@ -1272,19 +1309,29 @@ describe('LexicalEditor tests', () => {
           __cachedText: null,
           __children: [paragraphKey],
           __dir: 'ltr',
+          __first: null,
           __format: 0,
           __indent: 0,
           __key: 'root',
+          __last: null,
+          __next: null,
           __parent: null,
+          __prev: null,
+          __size: 0,
           __type: 'root',
         });
         expect(parsedParagraph).toEqual({
           __children: [textKey],
           __dir: 'ltr',
+          __first: null,
           __format: 0,
           __indent: 0,
           __key: paragraphKey,
+          __last: null,
+          __next: null,
           __parent: 'root',
+          __prev: null,
+          __size: 0,
           __type: 'paragraph',
         });
         expect(parsedText).toEqual({
@@ -1292,7 +1339,9 @@ describe('LexicalEditor tests', () => {
           __format: 0,
           __key: textKey,
           __mode: 0,
+          __next: null,
           __parent: paragraphKey,
+          __prev: null,
           __style: '',
           __text: 'Hello world',
           __type: 'text',
@@ -2205,5 +2254,38 @@ describe('LexicalEditor tests', () => {
     expect(container.firstElementChild?.innerHTML).toBe(
       '<p dir="ltr"><span data-lexical-text="true">Hello</span><a></a></p>',
     );
+  });
+
+  it('node replacement works', async () => {
+    const newEditor = createTestEditor({
+      nodes: [
+        TestTextNode,
+        {
+          replace: TextNode,
+          // @ts-ignore
+          with: (node: TextNode) => new TestTextNode(node.getTextContent()),
+        },
+      ],
+      onError: jest.fn(),
+      theme: {
+        text: {
+          bold: 'editor-text-bold',
+          italic: 'editor-text-italic',
+          underline: 'editor-text-underline',
+        },
+      },
+    });
+
+    newEditor.setRootElement(container);
+
+    await newEditor.update(() => {
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+      const text = $createTextNode('123');
+      root.append(paragraph);
+      paragraph.append(text);
+      expect(text instanceof TestTextNode).toBe(true);
+      expect(text.getTextContent()).toBe('123');
+    });
   });
 });

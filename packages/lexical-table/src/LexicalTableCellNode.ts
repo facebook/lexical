@@ -20,6 +20,7 @@ import type {
 
 import {addClassNamesToElement} from '@lexical/utils';
 import {
+  $applyNodeReplacement,
   $createParagraphNode,
   $isElementNode,
   $isLineBreakNode,
@@ -251,7 +252,7 @@ export function $createTableCellNode(
   colSpan = 1,
   width?: number,
 ): TableCellNode {
-  return new TableCellNode(headerState, colSpan, width);
+  return $applyNodeReplacement(new TableCellNode(headerState, colSpan, width));
 }
 
 export function $isTableCellNode(

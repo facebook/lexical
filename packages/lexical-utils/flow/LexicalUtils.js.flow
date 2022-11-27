@@ -78,3 +78,8 @@ declare export function $wrapNodeInElement(
   node: LexicalNode,
   createElementNode: () => ElementNode,
 ): ElementNode;
+
+declare export function $splitNode(
+  node: ElementNode,
+  offset: number,
+): [ElementNode | null, ElementNode];

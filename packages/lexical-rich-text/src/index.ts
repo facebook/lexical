@@ -42,9 +42,12 @@ import {
   $applyNodeReplacement,
   $createParagraphNode,
   $createRangeSelection,
+  $getAdjacentNode,
   $getNearestNodeFromDOMNode,
+  $getRoot,
   $getSelection,
   $isDecoratorNode,
+  $isElementNode,
   $isNodeSelection,
   $isRangeSelection,
   $isRootNode,
@@ -459,9 +462,14 @@ function handleIndentAndOutdent(
   }
 }
 
-function isTargetWithinDecorator(target: HTMLElement): boolean {
+function $isTargetWithinDecorator(target: HTMLElement): boolean {
   const node = $getNearestNodeFromDOMNode(target);
   return $isDecoratorNode(node);
+}
+
+function $isSelectionAtEndOfRoot(selection: RangeSelection) {
+  const focus = selection.focus;
+  return focus.key === 'root' && focus.offset === $getRoot().getChildrenSize();
 }
 
 export function registerRichText(editor: LexicalEditor): () => void {
@@ -660,13 +668,28 @@ export function registerRichText(editor: LexicalEditor): () => void {
         const selection = $getSelection();
         if (
           $isNodeSelection(selection) &&
-          !isTargetWithinDecorator(event.target as HTMLElement)
+          !$isTargetWithinDecorator(event.target as HTMLElement)
         ) {
           // If selection is on a node, let's try and move selection
           // back to being a range selection.
           const nodes = selection.getNodes();
           if (nodes.length > 0) {
             nodes[0].selectPrevious();
+            return true;
+          }
+        } else if ($isRangeSelection(selection)) {
+          const possibleNode = $getAdjacentNode(selection.focus, true);
+          if ($isDecoratorNode(possibleNode) && !possibleNode.isIsolated()) {
+            possibleNode.selectPrevious();
+            event.preventDefault();
+            return true;
+          } else if (
+            $isElementNode(possibleNode) &&
+            !possibleNode.isInline() &&
+            !possibleNode.canBeEmpty()
+          ) {
+            possibleNode.select();
+            event.preventDefault();
             return true;
           }
         }
@@ -684,6 +707,17 @@ export function registerRichText(editor: LexicalEditor): () => void {
           const nodes = selection.getNodes();
           if (nodes.length > 0) {
             nodes[0].selectNext(0, 0);
+            return true;
+          }
+        } else if ($isRangeSelection(selection)) {
+          if ($isSelectionAtEndOfRoot(selection)) {
+            event.preventDefault();
+            return true;
+          }
+          const possibleNode = $getAdjacentNode(selection.focus, false);
+          if ($isDecoratorNode(possibleNode) && !possibleNode.isIsolated()) {
+            possibleNode.selectNext();
+            event.preventDefault();
             return true;
           }
         }
@@ -724,7 +758,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
         const selection = $getSelection();
         if (
           $isNodeSelection(selection) &&
-          !isTargetWithinDecorator(event.target as HTMLElement)
+          !$isTargetWithinDecorator(event.target as HTMLElement)
         ) {
           // If selection is on a node, let's try and move selection
           // back to being a range selection.
@@ -751,7 +785,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     editor.registerCommand<KeyboardEvent>(
       KEY_BACKSPACE_COMMAND,
       (event) => {
-        if (isTargetWithinDecorator(event.target as HTMLElement)) {
+        if ($isTargetWithinDecorator(event.target as HTMLElement)) {
           return false;
         }
         const selection = $getSelection();
@@ -779,7 +813,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     editor.registerCommand<KeyboardEvent>(
       KEY_DELETE_COMMAND,
       (event) => {
-        if (isTargetWithinDecorator(event.target as HTMLElement)) {
+        if ($isTargetWithinDecorator(event.target as HTMLElement)) {
           return false;
         }
         const selection = $getSelection();

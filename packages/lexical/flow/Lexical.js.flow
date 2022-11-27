@@ -816,7 +816,7 @@ declare export function $setSelection(
   selection: null | RangeSelection | NodeSelection | GridSelection,
 ): void;
 declare export function $nodesOfType<T: LexicalNode>(klass: Class<T>): Array<T>;
-declare export function $getDecoratorNode(
+declare export function $getAdjacentNode(
   focus: Point,
   isBackward: boolean,
 ): null | LexicalNode;

@@ -48,8 +48,8 @@ import {
   isCurrentlyReadOnlyMode,
 } from './LexicalUpdates';
 import {
+  $getAdjacentNode,
   $getCompositionKey,
-  $getDecoratorNode,
   $getNearestRootOrShadowRoot,
   $getNodeByKey,
   $getRoot,
@@ -64,6 +64,7 @@ import {
   getTextNodeOffset,
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
+  removeDOMBlockCursorElement,
   scrollIntoViewIfNeeded,
   toggleTextFormatType,
 } from './LexicalUtils';
@@ -1734,7 +1735,7 @@ export class RangeSelection implements BaseSelection {
     const collapse = alter === 'move';
 
     // Handle the selection movement around decorators.
-    const possibleNode = $getDecoratorNode(focus, isBackward);
+    const possibleNode = $getAdjacentNode(focus, isBackward);
     if ($isDecoratorNode(possibleNode) && !possibleNode.isIsolated()) {
       // Make it possible to move selection from range selection to
       // node selection on the node.
@@ -1783,6 +1784,21 @@ export class RangeSelection implements BaseSelection {
 
     if (!domSelection) {
       return;
+    }
+    const editor = getActiveEditor();
+    const blockCursorElement = editor._blockCursorElement;
+    const rootElement = editor._rootElement;
+    // Remove the block cursor element if it exists. This will ensure selection
+    // works as intended. If we leave it in the DOM all sorts of strange bugs
+    // occur. :/
+    if (
+      rootElement !== null &&
+      blockCursorElement !== null &&
+      $isElementNode(possibleNode) &&
+      !possibleNode.isInline() &&
+      !possibleNode.canBeEmpty()
+    ) {
+      removeDOMBlockCursorElement(blockCursorElement, editor, rootElement);
     }
     // We use the DOM selection.modify API here to "tell" us what the selection
     // will be. We then use it to update the Lexical selection accordingly. This
@@ -1875,7 +1891,7 @@ export class RangeSelection implements BaseSelection {
         }
       }
       // Handle the deletion around decorators.
-      const possibleNode = $getDecoratorNode(focus, isBackward);
+      const possibleNode = $getAdjacentNode(focus, isBackward);
       if ($isDecoratorNode(possibleNode) && !possibleNode.isIsolated()) {
         // Make it possible to move selection from range selection to
         // node selection on the node.
@@ -2112,6 +2128,7 @@ function internalResolveSelectionPoint(
   dom: Node,
   offset: number,
   lastPoint: null | PointType,
+  editor: LexicalEditor,
 ): null | PointType {
   let resolvedOffset = offset;
   let resolvedNode: TextNode | LexicalNode | null;
@@ -2133,7 +2150,14 @@ function internalResolveSelectionPoint(
       moveSelectionToEnd = true;
       resolvedOffset = childNodesLength - 1;
     }
-    const childDOM = childNodes[resolvedOffset];
+    let childDOM = childNodes[resolvedOffset];
+    let hasBlockCursor = false;
+    if (childDOM === editor._blockCursorElement) {
+      childDOM = childNodes[resolvedOffset + 1];
+      hasBlockCursor = true;
+    } else if (editor._blockCursorElement !== null) {
+      resolvedOffset--;
+    }
     resolvedNode = getNodeFromDOM(childDOM);
 
     if ($isTextNode(resolvedNode)) {
@@ -2158,14 +2182,20 @@ function internalResolveSelectionPoint(
             resolvedOffset = 0;
           } else {
             child = descendant;
-            resolvedElement = child.getParentOrThrow();
+            resolvedElement = $isElementNode(child)
+              ? child
+              : child.getParentOrThrow();
           }
         }
         if ($isTextNode(child)) {
           resolvedNode = child;
           resolvedElement = null;
           resolvedOffset = getTextNodeOffset(child, moveSelectionToEnd);
-        } else if (child !== resolvedElement && moveSelectionToEnd) {
+        } else if (
+          child !== resolvedElement &&
+          moveSelectionToEnd &&
+          !hasBlockCursor
+        ) {
           resolvedOffset++;
         }
       } else {
@@ -2318,6 +2348,7 @@ function internalResolveSelectionPoints(
     anchorDOM,
     anchorOffset,
     $isRangeSelection(lastSelection) ? lastSelection.anchor : null,
+    editor,
   );
   if (resolvedAnchorPoint === null) {
     return null;
@@ -2326,6 +2357,7 @@ function internalResolveSelectionPoints(
     focusDOM,
     focusOffset,
     $isRangeSelection(lastSelection) ? lastSelection.focus : null,
+    editor,
   );
   if (resolvedFocusPoint === null) {
     return null;

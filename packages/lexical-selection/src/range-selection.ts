@@ -18,7 +18,7 @@ import type {
 } from 'lexical';
 
 import {
-  $getDecoratorNode,
+  $getAdjacentNode,
   $getPreviousSelection,
   $hasAncestor,
   $isDecoratorNode,
@@ -321,9 +321,14 @@ export function $shouldOverrideDefaultCharacterSelection(
   selection: RangeSelection,
   isBackward: boolean,
 ): boolean {
-  const possibleNode = $getDecoratorNode(selection.focus, isBackward);
+  const possibleNode = $getAdjacentNode(selection.focus, isBackward);
 
-  return $isDecoratorNode(possibleNode) && !possibleNode.isIsolated();
+  return (
+    ($isDecoratorNode(possibleNode) && !possibleNode.isIsolated()) ||
+    ($isElementNode(possibleNode) &&
+      !possibleNode.isInline() &&
+      !possibleNode.canBeEmpty())
+  );
 }
 
 export function $moveCaretSelection(

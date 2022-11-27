@@ -130,7 +130,7 @@ export {
   $addUpdateTag,
   $applyNodeReplacement,
   $copyNode,
-  $getDecoratorNode,
+  $getAdjacentNode,
   $getNearestNodeFromDOMNode,
   $getNearestRootOrShadowRoot,
   $getNodeByKey,

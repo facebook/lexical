@@ -17,7 +17,10 @@ import {
 } from '../utils/index.mjs';
 
 test.describe('Headings', () => {
-  test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
+  test.beforeEach(({isPlainText, isCollab, page}) => {
+    test.skip(isPlainText);
+    initialize({isCollab, page});
+  });
 
   test('Stays as a heading when you backspace at the start of a heading with no previous sibling nodes present', async ({
     page,

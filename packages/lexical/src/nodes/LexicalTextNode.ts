@@ -538,14 +538,20 @@ export class TextNode extends LexicalNode {
   setMode(type: TextModeType): this {
     const mode = TEXT_MODE_TO_TYPE[type];
     const self = this.getWritable();
+    if (self.__mode === mode) {
+      return self;
+    }
     self.__mode = mode;
     return self;
   }
 
   setTextContent(text: string): this {
-    const writableSelf = this.getWritable();
-    writableSelf.__text = text;
-    return writableSelf;
+    const self = this.getWritable();
+    if (self.__text === text) {
+      return self;
+    }
+    self.__text = text;
+    return self;
   }
 
   select(_anchorOffset?: number, _focusOffset?: number): RangeSelection {

@@ -286,7 +286,8 @@ export class ListItemNode extends ElementNode {
         listNode.remove();
         listNodeParent.select();
       } else {
-        listNode.replace(paragraph);
+        listNode.insertBefore(paragraph);
+        listNode.remove();
         // If we have selection on the list item, we'll need to move it
         // to the paragraph
         const anchor = selection.anchor;

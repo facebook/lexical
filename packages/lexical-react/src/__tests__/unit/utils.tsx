@@ -9,7 +9,6 @@
 import {useLexicalComposerContext} from '@lexical/react/src/LexicalComposerContext';
 import LexicalErrorBoundary from '@lexical/react/src/LexicalErrorBoundary';
 import {LexicalEditor} from 'lexical';
-import * as React from 'react';
 import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'react-dom/test-utils';
 import * as Y from 'yjs';

@@ -6,10 +6,10 @@
  *
  */
 
-import type {Binding} from '.';
-import type {CollabElementNode} from './CollabElementNode';
 import type {LineBreakNode, NodeKey} from 'lexical';
 import type {Map as YMap} from 'yjs';
+import type {Binding} from '.';
+import type {CollabElementNode} from './CollabElementNode';
 
 import {$getNodeByKey, $isLineBreakNode} from 'lexical';
 

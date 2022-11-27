@@ -11,12 +11,12 @@ import type {LexicalEditor} from 'lexical';
 import {
   $handleListInsertParagraph,
   indentList,
+  insertList,
   INSERT_ORDERED_LIST_COMMAND,
   INSERT_UNORDERED_LIST_COMMAND,
-  insertList,
   outdentList,
-  REMOVE_LIST_COMMAND,
   removeList,
+  REMOVE_LIST_COMMAND,
 } from '@lexical/list';
 import {mergeRegister} from '@lexical/utils';
 import {

@@ -6,13 +6,13 @@
  *
  */
 
+import type {Spread} from 'lexical';
 import type {
   DOMConversionMap,
   DOMConversionOutput,
   NodeKey,
   SerializedLexicalNode,
 } from '../LexicalNode';
-import type {Spread} from 'lexical';
 
 import {LexicalNode} from '../LexicalNode';
 import {$applyNodeReplacement} from '../LexicalUtils';

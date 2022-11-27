@@ -8,7 +8,6 @@
 
 import './Dialog.css';
 
-import * as React from 'react';
 import {ReactNode} from 'react';
 
 type Props = Readonly<{

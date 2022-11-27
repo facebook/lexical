@@ -6,10 +6,10 @@
  *
  */
 
-import type {Binding} from '.';
-import type {CollabElementNode} from './CollabElementNode';
 import type {DecoratorNode, NodeKey, NodeMap} from 'lexical';
 import type {XmlElement} from 'yjs';
+import type {Binding} from '.';
+import type {CollabElementNode} from './CollabElementNode';
 
 import {$getNodeByKey, $isDecoratorNode} from 'lexical';
 import invariant from 'shared/invariant';

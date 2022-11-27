@@ -12,7 +12,6 @@ import {
   DevToolsTree,
   NodeProperties,
 } from 'packages/lexical-devtools/types';
-import * as React from 'react';
 
 import TreeNode from '../TreeNode';
 

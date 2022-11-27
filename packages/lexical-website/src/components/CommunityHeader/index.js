@@ -9,7 +9,6 @@
 import Translate from '@docusaurus/Translate';
 import CommunityHeaderSvg from '@site/static/img/community-header.svg';
 import clsx from 'clsx';
-import React from 'react';
 
 import styles from './styles.module.css';
 

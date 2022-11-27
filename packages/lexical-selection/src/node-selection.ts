@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {ICloneSelectionContent} from './lexical-node';
 import type {NodeSelection} from 'lexical';
+import type {ICloneSelectionContent} from './lexical-node';
 
 import invariant from 'shared/invariant';
 

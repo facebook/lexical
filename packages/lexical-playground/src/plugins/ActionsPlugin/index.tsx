@@ -25,7 +25,6 @@ import {
   CLEAR_EDITOR_COMMAND,
   COMMAND_PRIORITY_EDITOR,
 } from 'lexical';
-import * as React from 'react';
 import {useCallback, useEffect, useState} from 'react';
 
 import useModal from '../../hooks/useModal';

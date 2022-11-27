@@ -6,7 +6,6 @@
  *
  */
 
-import * as React from 'react';
 import {useMemo, useState} from 'react';
 
 import {isDevPlayground} from './appSettings';

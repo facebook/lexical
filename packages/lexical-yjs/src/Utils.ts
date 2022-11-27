@@ -6,7 +6,6 @@
  *
  */
 
-import type {Binding, YjsNode} from '.';
 import type {
   DecoratorNode,
   ElementNode,
@@ -14,6 +13,7 @@ import type {
   RangeSelection,
   TextNode,
 } from 'lexical';
+import type {Binding, YjsNode} from '.';
 
 import {
   $getNodeByKey,

@@ -31,7 +31,6 @@ import {
   KEY_BACKSPACE_COMMAND,
   KEY_DELETE_COMMAND,
 } from 'lexical';
-import * as React from 'react';
 import {useCallback, useEffect} from 'react';
 
 export type SerializedHorizontalRuleNode = SerializedLexicalNode & {

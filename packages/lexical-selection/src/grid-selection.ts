@@ -6,8 +6,8 @@
  *
  */
 
-import type {ICloneSelectionContent} from './lexical-node';
 import type {GridSelection, LexicalNode, NodeKey} from 'lexical';
+import type {ICloneSelectionContent} from './lexical-node';
 
 import {$cloneWithProperties} from './lexical-node';
 

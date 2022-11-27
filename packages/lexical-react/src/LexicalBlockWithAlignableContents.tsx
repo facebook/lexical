@@ -27,7 +27,6 @@ import {
   KEY_BACKSPACE_COMMAND,
   KEY_DELETE_COMMAND,
 } from 'lexical';
-import * as React from 'react';
 import {ReactNode, useCallback, useEffect, useRef} from 'react';
 
 type Props = Readonly<{

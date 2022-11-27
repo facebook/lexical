@@ -6,8 +6,6 @@
  *
  */
 
-import type {TableNode} from './LexicalTableNode';
-import type {Cell, Cells, Grid} from './LexicalTableSelection';
 import type {
   GridSelection,
   LexicalCommand,
@@ -17,6 +15,8 @@ import type {
   RangeSelection,
   TextFormatType,
 } from 'lexical';
+import type {TableNode} from './LexicalTableNode';
+import type {Cell, Cells, Grid} from './LexicalTableSelection';
 
 import {TableCellNode} from '@lexical/table';
 import {$findMatchingParent} from '@lexical/utils';

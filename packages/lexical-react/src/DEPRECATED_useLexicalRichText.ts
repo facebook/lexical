@@ -6,8 +6,8 @@
  *
  */
 
-import type {HistoryState} from './DEPRECATED_useLexicalHistory';
 import type {LexicalEditor} from 'lexical';
+import type {HistoryState} from './DEPRECATED_useLexicalHistory';
 
 import {useLexicalHistory} from './DEPRECATED_useLexicalHistory';
 import {useRichTextSetup} from './shared/useRichTextSetup';

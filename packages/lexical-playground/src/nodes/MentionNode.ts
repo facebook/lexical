@@ -9,6 +9,8 @@
 import type {Spread} from 'lexical';
 
 import {
+  $applyNodeReplacement,
+  TextNode,
   type DOMConversionMap,
   type DOMConversionOutput,
   type DOMExportOutput,
@@ -16,8 +18,6 @@ import {
   type LexicalNode,
   type NodeKey,
   type SerializedTextNode,
-  $applyNodeReplacement,
-  TextNode,
 } from 'lexical';
 
 export type SerializedMentionNode = Spread<

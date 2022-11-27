@@ -12,7 +12,6 @@ import type {LexicalEditor} from 'lexical';
 import {useHistory} from './shared/useHistory';
 
 export {createEmptyHistoryState} from '@lexical/history';
-
 export type {HistoryState};
 
 export function useLexicalHistory(

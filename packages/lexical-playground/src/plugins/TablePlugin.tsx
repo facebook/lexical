@@ -23,8 +23,8 @@ import {
   LexicalEditor,
   LexicalNode,
 } from 'lexical';
-import {createContext, useContext, useEffect, useMemo, useState} from 'react';
 import * as React from 'react';
+import {createContext, useContext, useEffect, useMemo, useState} from 'react';
 import invariant from 'shared/invariant';
 
 import {$createTableNodeWithDimensions, TableNode} from '../nodes/TableNode';

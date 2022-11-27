@@ -7,8 +7,6 @@
  */
 import './index.css';
 
-import * as React from 'react';
-
 function TimeTravelView() {
   return <div className="time-travel-view" />;
 }

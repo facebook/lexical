@@ -19,15 +19,10 @@ import {
   TextModeType,
   TextNode,
 } from 'lexical';
-import * as React from 'react';
 import {createRef, useEffect, useMemo} from 'react';
 import {createRoot} from 'react-dom/client';
 import * as ReactTestUtils from 'react-dom/test-utils';
 
-import {
-  $createTestSegmentedNode,
-  createTestEditor,
-} from '../../../__tests__/utils';
 import {
   IS_BOLD,
   IS_CODE,
@@ -40,6 +35,10 @@ import {
   $setCompositionKey,
   getEditorStateTextContent,
 } from '../../../LexicalUtils';
+import {
+  $createTestSegmentedNode,
+  createTestEditor,
+} from '../../../__tests__/utils';
 
 const editorConfig = Object.freeze({
   namespace: '',

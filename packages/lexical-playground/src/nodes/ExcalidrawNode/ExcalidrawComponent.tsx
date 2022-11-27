@@ -6,8 +6,8 @@
  *
  */
 
-import type {ExcalidrawElementFragment} from './ExcalidrawModal';
 import type {NodeKey} from 'lexical';
+import type {ExcalidrawElementFragment} from './ExcalidrawModal';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
@@ -22,10 +22,9 @@ import {
   KEY_DELETE_COMMAND,
 } from 'lexical';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import * as React from 'react';
 
-import ImageResizer from '../../ui/ImageResizer';
 import {$isExcalidrawNode} from '.';
+import ImageResizer from '../../ui/ImageResizer';
 import ExcalidrawImage from './ExcalidrawImage';
 import ExcalidrawModal from './ExcalidrawModal';
 

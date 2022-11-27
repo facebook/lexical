@@ -31,7 +31,6 @@ import {
   TextNode,
 } from 'lexical';
 import {useCallback, useMemo, useState} from 'react';
-import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 
 import useModal from '../../hooks/useModal';
@@ -40,7 +39,7 @@ import {EmbedConfigs} from '../AutoEmbedPlugin';
 import {INSERT_COLLAPSIBLE_COMMAND} from '../CollapsiblePlugin';
 import {InsertEquationDialog} from '../EquationsPlugin';
 import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawPlugin';
-import {INSERT_IMAGE_COMMAND, InsertImageDialog} from '../ImagesPlugin';
+import {InsertImageDialog, INSERT_IMAGE_COMMAND} from '../ImagesPlugin';
 import {InsertPollDialog} from '../PollPlugin';
 import {InsertTableDialog} from '../TablePlugin';
 

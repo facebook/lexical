@@ -6,7 +6,6 @@
  *
  */
 
-import type {ICloneSelectionContent} from './lexical-node';
 import type {
   ElementNode,
   GridSelection,
@@ -16,6 +15,7 @@ import type {
   RangeSelection,
   TextNode,
 } from 'lexical';
+import type {ICloneSelectionContent} from './lexical-node';
 
 import {
   $getDecoratorNode,

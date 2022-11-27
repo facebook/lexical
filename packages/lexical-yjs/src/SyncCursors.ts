@@ -6,7 +6,6 @@
  *
  */
 
-import type {Binding} from './Bindings';
 import type {
   GridSelection,
   NodeKey,
@@ -16,6 +15,7 @@ import type {
   RangeSelection,
 } from 'lexical';
 import type {AbsolutePosition, RelativePosition} from 'yjs';
+import type {Binding} from './Bindings';
 
 import {createDOMRange, createRectsFromDOMRange} from '@lexical/selection';
 import {

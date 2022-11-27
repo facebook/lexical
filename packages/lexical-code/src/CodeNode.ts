@@ -7,6 +7,7 @@
  */
 
 // eslint-disable-next-line simple-import-sort/imports
+import type {CodeHighlightNode} from '@lexical/code';
 import type {
   DOMConversionMap,
   DOMConversionOutput,
@@ -18,18 +19,17 @@ import type {
   SerializedElementNode,
   Spread,
 } from 'lexical';
-import type {CodeHighlightNode} from '@lexical/code';
 
-import 'prismjs/components/prism-clike';
-import 'prismjs/components/prism-javascript';
-import 'prismjs/components/prism-markup';
-import 'prismjs/components/prism-markdown';
 import 'prismjs/components/prism-c';
+import 'prismjs/components/prism-clike';
 import 'prismjs/components/prism-css';
+import 'prismjs/components/prism-javascript';
+import 'prismjs/components/prism-markdown';
+import 'prismjs/components/prism-markup';
 import 'prismjs/components/prism-objectivec';
-import 'prismjs/components/prism-sql';
 import 'prismjs/components/prism-python';
 import 'prismjs/components/prism-rust';
+import 'prismjs/components/prism-sql';
 import 'prismjs/components/prism-swift';
 
 import {addClassNamesToElement} from '@lexical/utils';
@@ -41,11 +41,11 @@ import {
   $isRangeSelection,
   ElementNode,
 } from 'lexical';
+import * as Prism from 'prismjs';
 import {
   $createCodeHighlightNode,
   getFirstCodeHighlightNodeOfLine,
 } from './CodeHighlightNode';
-import * as Prism from 'prismjs';
 
 export type SerializedCodeNode = Spread<
   {

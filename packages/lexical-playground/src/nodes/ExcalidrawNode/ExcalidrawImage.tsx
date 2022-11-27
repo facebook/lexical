@@ -12,7 +12,6 @@ import {
   NonDeleted,
 } from '@excalidraw/excalidraw/types/element/types';
 import {AppState} from '@excalidraw/excalidraw/types/types';
-import * as React from 'react';
 import {useEffect, useState} from 'react';
 
 type ImageType = 'svg' | 'canvas';

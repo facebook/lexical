@@ -6,7 +6,6 @@
  *
  */
 
-import type {ListNode} from './';
 import type {
   DOMConversionMap,
   DOMConversionOutput,
@@ -21,6 +20,7 @@ import type {
   SerializedElementNode,
   Spread,
 } from 'lexical';
+import type {ListNode} from './';
 
 import {
   addClassNamesToElement,

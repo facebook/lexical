@@ -7,9 +7,9 @@
  *
  */
 
+import type {LexicalCommand} from 'lexical';
 import type {SerializedListItemNode} from './LexicalListItemNode';
 import type {ListType, SerializedListNode} from './LexicalListNode';
-import type {LexicalCommand} from 'lexical';
 
 import {createCommand} from 'lexical';
 

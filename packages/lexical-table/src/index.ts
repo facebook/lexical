@@ -7,9 +7,9 @@
  *
  */
 
+import type {LexicalCommand} from 'lexical';
 import type {Cell} from './LexicalTableSelection';
 import type {HTMLTableElementWithWithTableSelectionState} from './LexicalTableSelectionHelpers';
-import type {LexicalCommand} from 'lexical';
 
 import {createCommand} from 'lexical';
 
@@ -81,7 +81,6 @@ export {
   TableRowNode,
   TableSelection,
 };
-
 export type {
   SerializedTableCellNode,
   SerializedTableNode,

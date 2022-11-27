@@ -18,7 +18,6 @@ import {
   KEY_ESCAPE_COMMAND,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
-import * as React from 'react';
 import {useCallback, useEffect, useRef, useState} from 'react';
 
 import EquationEditor from '../ui/EquationEditor';

@@ -6,7 +6,6 @@
  *
  */
 import {EditorState, NodeSelection} from 'lexical';
-import {PointType} from 'packages/lexical/src/LexicalSelection';
 import {
   GridSelectionJSON,
   LexicalHTMLElement,
@@ -14,6 +13,7 @@ import {
   PointTypeJSON,
   RangeSelectionJSON,
 } from 'packages/lexical-devtools/types';
+import {PointType} from 'packages/lexical/src/LexicalSelection';
 
 let lexical: boolean;
 let editorDOMNode: LexicalHTMLElement | null, editorKey: string | null;

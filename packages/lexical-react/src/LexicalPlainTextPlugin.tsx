@@ -7,7 +7,6 @@
  */
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import * as React from 'react';
 
 import {useCanShowPlaceholder} from './shared/useCanShowPlaceholder';
 import {ErrorBoundaryType, useDecorators} from './shared/useDecorators';

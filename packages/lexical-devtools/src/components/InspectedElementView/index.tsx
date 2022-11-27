@@ -8,7 +8,6 @@
 import './index.css';
 
 import {NodeProperties} from 'packages/lexical-devtools/types';
-import * as React from 'react';
 
 import InspectedElementRow from '../InspectedElementRow';
 

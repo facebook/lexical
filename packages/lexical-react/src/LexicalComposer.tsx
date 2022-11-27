@@ -24,7 +24,6 @@ import {
   LexicalNode,
 } from 'lexical';
 import {useMemo} from 'react';
-import * as React from 'react';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
 const HISTORY_MERGE_OPTIONS = {tag: 'history-merge'};

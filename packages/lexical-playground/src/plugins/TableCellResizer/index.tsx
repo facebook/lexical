@@ -26,7 +26,6 @@ import {
   DEPRECATED_$isGridSelection,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
-import * as React from 'react';
 import {
   MouseEventHandler,
   ReactPortal,

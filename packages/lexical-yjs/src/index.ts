@@ -7,10 +7,10 @@
  *
  */
 
-import type {Binding} from './Bindings';
 import type {LexicalCommand} from 'lexical';
 import type {WebsocketProvider} from 'y-websocket';
 import type {Doc, RelativePosition, UndoManager, XmlText} from 'yjs';
+import type {Binding} from './Bindings';
 
 import {createCommand} from 'lexical';
 import {UndoManager as YjsUndoManager} from 'yjs';
@@ -56,9 +56,14 @@ export type Operation = {
 export type Delta = Array<Operation>;
 export type YjsNode = Record<string, unknown>;
 export type YjsEvent = Record<string, unknown>;
-export type {Provider};
-export type {Binding, ClientID} from './Bindings';
 export {createBinding} from './Bindings';
+export type {Binding, ClientID} from './Bindings';
+export {syncCursorPositions} from './SyncCursors';
+export {
+  syncLexicalUpdateToYjs,
+  syncYjsChangesToLexical,
+} from './SyncEditorStates';
+export type {Provider};
 
 export function createUndoManager(
   binding: Binding,
@@ -106,8 +111,3 @@ export function setLocalStateFocus(
   localState.focusing = focusing;
   awareness.setLocalState(localState);
 }
-export {syncCursorPositions} from './SyncCursors';
-export {
-  syncLexicalUpdateToYjs,
-  syncYjsChangesToLexical,
-} from './SyncEditorStates';

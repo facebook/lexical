@@ -7,65 +7,11 @@
  *
  */
 
-export type {PasteCommandType} from './LexicalCommands';
-export type {
-  CommandListenerPriority,
-  CommandPayloadType,
-  EditableListener,
-  EditorConfig,
-  EditorThemeClasses,
-  IntentionallyMarkedAsDirtyElement,
-  Klass,
-  LexicalCommand,
-  LexicalEditor,
-  MutationListener,
-  NodeMutation,
-  SerializedEditor,
-  Spread,
-} from './LexicalEditor';
-export type {EditorState, SerializedEditorState} from './LexicalEditorState';
-export type {
-  DOMChildConversion,
-  DOMConversion,
-  DOMConversionFn,
-  DOMConversionMap,
-  DOMConversionOutput,
-  DOMExportOutput,
-  LexicalNode,
-  NodeKey,
-  NodeMap,
-  SerializedLexicalNode,
-} from './LexicalNode';
-export type {
-  BaseSelection,
-  ElementPointType as ElementPoint,
-  GridSelection,
-  GridSelectionShape,
-  NodeSelection,
-  Point,
-  RangeSelection,
-  TextPointType as TextPoint,
-} from './LexicalSelection';
-export type {
-  ElementFormatType,
-  SerializedElementNode,
-} from './nodes/LexicalElementNode';
-export type {SerializedGridCellNode} from './nodes/LexicalGridCellNode';
-export type {SerializedRootNode} from './nodes/LexicalRootNode';
-export type {
-  SerializedTextNode,
-  TextFormatType,
-  TextModeType,
-} from './nodes/LexicalTextNode';
+export type {SerializedCodeNode} from './../../lexical-code/src';
 export type {
   SerializedAutoLinkNode,
   SerializedLinkNode,
 } from './../../lexical-link/src';
-export type {
-  SerializedTableCellNode,
-  SerializedTableNode,
-  SerializedTableRowNode,
-} from './../../lexical-table/src';
 export type {
   SerializedListItemNode,
   SerializedListNode,
@@ -74,8 +20,11 @@ export type {
   SerializedHeadingNode,
   SerializedQuoteNode,
 } from './../../lexical-rich-text/src';
-export type {SerializedCodeNode} from './../../lexical-code/src';
-
+export type {
+  SerializedTableCellNode,
+  SerializedTableNode,
+  SerializedTableRowNode,
+} from './../../lexical-table/src';
 // TODO Move this somewhere else and/or recheck if we still need this
 export {
   BLUR_COMMAND,
@@ -121,6 +70,7 @@ export {
   SELECTION_CHANGE_COMMAND,
   UNDO_COMMAND,
 } from './LexicalCommands';
+export type {PasteCommandType} from './LexicalCommands';
 export {
   COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_EDITOR,
@@ -129,7 +79,35 @@ export {
   COMMAND_PRIORITY_NORMAL,
   createEditor,
 } from './LexicalEditor';
+export type {
+  CommandListenerPriority,
+  CommandPayloadType,
+  EditableListener,
+  EditorConfig,
+  EditorThemeClasses,
+  IntentionallyMarkedAsDirtyElement,
+  Klass,
+  LexicalCommand,
+  LexicalEditor,
+  MutationListener,
+  NodeMutation,
+  SerializedEditor,
+  Spread,
+} from './LexicalEditor';
+export type {EditorState, SerializedEditorState} from './LexicalEditorState';
 export type {EventHandler} from './LexicalEvents';
+export type {
+  DOMChildConversion,
+  DOMConversion,
+  DOMConversionFn,
+  DOMConversionMap,
+  DOMConversionOutput,
+  DOMExportOutput,
+  LexicalNode,
+  NodeKey,
+  NodeMap,
+  SerializedLexicalNode,
+} from './LexicalNode';
 export {$normalizeSelection as $normalizeSelection__EXPERIMENTAL} from './LexicalNormalization';
 export {
   $createNodeSelection,
@@ -142,6 +120,16 @@ export {
   $isRangeSelection,
   DEPRECATED_$createGridSelection,
   DEPRECATED_$isGridSelection,
+} from './LexicalSelection';
+export type {
+  BaseSelection,
+  ElementPointType as ElementPoint,
+  GridSelection,
+  GridSelectionShape,
+  NodeSelection,
+  Point,
+  RangeSelection,
+  TextPointType as TextPoint,
 } from './LexicalSelection';
 export {$parseSerializedNode} from './LexicalUpdates';
 export {
@@ -164,10 +152,15 @@ export {
 export {VERSION} from './LexicalVersion';
 export {$isDecoratorNode, DecoratorNode} from './nodes/LexicalDecoratorNode';
 export {$isElementNode, ElementNode} from './nodes/LexicalElementNode';
+export type {
+  ElementFormatType,
+  SerializedElementNode,
+} from './nodes/LexicalElementNode';
 export {
   DEPRECATED_$isGridCellNode,
   DEPRECATED_GridCellNode,
 } from './nodes/LexicalGridCellNode';
+export type {SerializedGridCellNode} from './nodes/LexicalGridCellNode';
 export {
   DEPRECATED_$isGridNode,
   DEPRECATED_GridNode,
@@ -176,17 +169,23 @@ export {
   DEPRECATED_$isGridRowNode,
   DEPRECATED_GridRowNode,
 } from './nodes/LexicalGridRowNode';
-export type {SerializedLineBreakNode} from './nodes/LexicalLineBreakNode';
 export {
   $createLineBreakNode,
   $isLineBreakNode,
   LineBreakNode,
 } from './nodes/LexicalLineBreakNode';
-export type {SerializedParagraphNode} from './nodes/LexicalParagraphNode';
+export type {SerializedLineBreakNode} from './nodes/LexicalLineBreakNode';
 export {
   $createParagraphNode,
   $isParagraphNode,
   ParagraphNode,
 } from './nodes/LexicalParagraphNode';
+export type {SerializedParagraphNode} from './nodes/LexicalParagraphNode';
 export {$isRootNode, RootNode} from './nodes/LexicalRootNode';
+export type {SerializedRootNode} from './nodes/LexicalRootNode';
 export {$createTextNode, $isTextNode, TextNode} from './nodes/LexicalTextNode';
+export type {
+  SerializedTextNode,
+  TextFormatType,
+  TextModeType,
+} from './nodes/LexicalTextNode';

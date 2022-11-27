@@ -6,6 +6,7 @@
  *
  */
 
+import type {Spread} from 'lexical';
 import type {EditorConfig, LexicalEditor} from '../LexicalEditor';
 import type {
   DOMConversionMap,
@@ -14,7 +15,6 @@ import type {
   LexicalNode,
 } from '../LexicalNode';
 import type {SerializedElementNode} from './LexicalElementNode';
-import type {Spread} from 'lexical';
 
 import {$applyNodeReplacement, getCachedClassNameArray} from '../LexicalUtils';
 import {ElementNode} from './LexicalElementNode';

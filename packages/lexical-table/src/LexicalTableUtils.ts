@@ -6,8 +6,8 @@
  *
  */
 
-import type {Grid} from './LexicalTableSelection';
 import type {LexicalNode} from 'lexical';
+import type {Grid} from './LexicalTableSelection';
 
 import {$findMatchingParent} from '@lexical/utils';
 import {$createParagraphNode, $createTextNode} from 'lexical';

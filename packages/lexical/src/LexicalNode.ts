@@ -7,9 +7,9 @@
  */
 
 /* eslint-disable no-constant-condition */
+import type {Klass} from 'lexical';
 import type {EditorConfig, LexicalEditor} from './LexicalEditor';
 import type {RangeSelection} from './LexicalSelection';
-import type {Klass} from 'lexical';
 
 import invariant from 'shared/invariant';
 

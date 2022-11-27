@@ -41,7 +41,6 @@ export {
   $sliceSelectedTextNodeContent,
   trimTextContentFromAnchor,
 };
-
 export {
   $getSelectionStyleValueForProperty,
   $isParentElementRTL,
@@ -52,5 +51,4 @@ export {
   $wrapNodes,
   $wrapNodesImpl,
 };
-
 export {createDOMRange, createRectsFromDOMRange, getStyleObjectFromCSS};

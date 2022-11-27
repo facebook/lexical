@@ -8,7 +8,6 @@
 import './index.css';
 
 import {DevToolsSelection} from 'packages/lexical-devtools/types';
-import * as React from 'react';
 
 function SelectionView({selection}: {selection: DevToolsSelection | null}) {
   const anchor =

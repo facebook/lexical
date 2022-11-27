@@ -7,8 +7,8 @@
  *
  */
 
-import type {SerializedMarkNode} from './MarkNode';
 import type {LexicalNode, RangeSelection, TextNode} from 'lexical';
+import type {SerializedMarkNode} from './MarkNode';
 
 import {$isElementNode, $isTextNode} from 'lexical';
 

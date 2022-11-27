@@ -28,7 +28,6 @@ import {
   $isTextNode,
   DEPRECATED_$isGridSelection,
 } from 'lexical';
-import * as React from 'react';
 import {useEffect, useRef, useState} from 'react';
 
 const NON_SINGLE_WIDTH_CHARS_REPLACEMENT: Readonly<Record<string, string>> =

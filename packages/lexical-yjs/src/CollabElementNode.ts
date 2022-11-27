@@ -6,7 +6,6 @@
  *
  */
 
-import type {Binding} from '.';
 import type {
   ElementNode,
   IntentionallyMarkedAsDirtyElement,
@@ -14,6 +13,7 @@ import type {
   NodeMap,
 } from 'lexical';
 import type {AbstractType, XmlElement, XmlText} from 'yjs';
+import type {Binding} from '.';
 
 import {
   $getNodeByKey,

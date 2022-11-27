@@ -6,13 +6,13 @@
  *
  */
 
+import type {LexicalEditor, NodeKey} from 'lexical';
+import type {Doc} from 'yjs';
 import type {CollabDecoratorNode} from './CollabDecoratorNode';
 import type {CollabElementNode} from './CollabElementNode';
 import type {CollabLineBreakNode} from './CollabLineBreakNode';
 import type {CollabTextNode} from './CollabTextNode';
 import type {Cursor} from './SyncCursors';
-import type {LexicalEditor, NodeKey} from 'lexical';
-import type {Doc} from 'yjs';
 
 import invariant from 'shared/invariant';
 import {WebsocketProvider} from 'y-websocket';

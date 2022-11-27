@@ -18,7 +18,6 @@ import {
   TableRowNode,
 } from '@lexical/table';
 import {
-  type LexicalNode,
   $createLineBreakNode,
   $createNodeSelection,
   $createParagraphNode,
@@ -38,8 +37,8 @@ import {
   NodeKey,
   ParagraphNode,
   TextNode,
+  type LexicalNode,
 } from 'lexical';
-import * as React from 'react';
 import {
   createRef,
   ReactNode,

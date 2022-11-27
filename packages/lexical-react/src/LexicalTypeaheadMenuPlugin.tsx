@@ -27,6 +27,7 @@ import {
   RangeSelection,
   TextNode,
 } from 'lexical';
+import * as React from 'react';
 import {
   MutableRefObject,
   ReactPortal,
@@ -36,7 +37,6 @@ import {
   useRef,
   useState,
 } from 'react';
-import * as React from 'react';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
 export type QueryMatch = {

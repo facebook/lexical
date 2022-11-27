@@ -6,6 +6,7 @@
  *
  */
 
+import type {Spread} from 'lexical';
 import type {EditorConfig, TextNodeThemeClasses} from '../LexicalEditor';
 import type {
   DOMConversionMap,
@@ -18,7 +19,6 @@ import type {
   NodeSelection,
   RangeSelection,
 } from '../LexicalSelection';
-import type {Spread} from 'lexical';
 
 import {IS_FIREFOX} from 'shared/environment';
 import invariant from 'shared/invariant';

@@ -6,8 +6,8 @@
  *
  */
 
-import type {InputEvents} from './shared/useEditorEvents';
 import type {LexicalEditor} from 'lexical';
+import type {InputEvents} from './shared/useEditorEvents';
 
 import {useEditorEvents} from './shared/useEditorEvents';
 

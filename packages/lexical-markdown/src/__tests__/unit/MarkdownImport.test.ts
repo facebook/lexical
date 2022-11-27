@@ -9,10 +9,10 @@
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
 import {$createTextNode, $getRoot} from 'lexical';
-import {ImageNode} from './../../../../lexical-playground/src/nodes/ImageNode';
-import {EquationNode} from './../../../../lexical-playground/src/nodes/EquationNode';
-import {createMarkdownImport} from './../../MarkdownImport';
 import {ELEMENT_TRANSFORMERS, TEXT_FORMAT_TRANSFORMERS} from './../..';
+import {EquationNode} from './../../../../lexical-playground/src/nodes/EquationNode';
+import {ImageNode} from './../../../../lexical-playground/src/nodes/ImageNode';
+import {createMarkdownImport} from './../../MarkdownImport';
 import {TextMatchTransformer, Transformer} from './../../MarkdownTransformers';
 
 const URL =

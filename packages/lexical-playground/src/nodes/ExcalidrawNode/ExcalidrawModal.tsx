@@ -9,7 +9,6 @@
 import './ExcalidrawModal.css';
 
 import Excalidraw from '@excalidraw/excalidraw';
-import * as React from 'react';
 import {ReactPortal, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 

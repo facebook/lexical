@@ -6,6 +6,7 @@
  *
  */
 
+import type {Spread} from 'lexical';
 import type {NodeKey, SerializedLexicalNode} from '../LexicalNode';
 import type {
   GridSelection,
@@ -13,7 +14,6 @@ import type {
   PointType,
   RangeSelection,
 } from '../LexicalSelection';
-import type {Spread} from 'lexical';
 
 import invariant from 'shared/invariant';
 

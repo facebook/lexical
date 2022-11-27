@@ -9,7 +9,7 @@
 import Link from '@docusaurus/Link';
 import * as Tabs from '@radix-ui/react-tabs';
 import clsx from 'clsx';
-import React, {useState} from 'react';
+import {useState} from 'react';
 
 import styles from './styles.module.css';
 

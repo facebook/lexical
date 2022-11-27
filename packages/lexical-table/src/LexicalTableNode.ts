@@ -6,8 +6,6 @@
  *
  */
 
-import type {TableCellNode} from './LexicalTableCellNode';
-import type {Cell, Grid} from './LexicalTableSelection';
 import type {
   DOMConversionMap,
   DOMConversionOutput,
@@ -19,6 +17,8 @@ import type {
   SerializedElementNode,
   Spread,
 } from 'lexical';
+import type {TableCellNode} from './LexicalTableCellNode';
+import type {Cell, Grid} from './LexicalTableSelection';
 
 import {addClassNamesToElement} from '@lexical/utils';
 import {

@@ -39,7 +39,6 @@ import {
   initializeClipboard,
   TestComposer,
 } from 'lexical/src/__tests__/utils';
-import * as React from 'react';
 import {createRoot} from 'react-dom/client';
 import * as ReactTestUtils from 'react-dom/test-utils';
 

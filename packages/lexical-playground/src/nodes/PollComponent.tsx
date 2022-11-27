@@ -27,7 +27,6 @@ import {
   NodeSelection,
   RangeSelection,
 } from 'lexical';
-import * as React from 'react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 import Button from '../ui/Button';

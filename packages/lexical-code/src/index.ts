@@ -17,9 +17,9 @@ export {
 export {
   $createCodeHighlightNode,
   $isCodeHighlightNode,
+  CodeHighlightNode,
   CODE_LANGUAGE_FRIENDLY_NAME_MAP,
   CODE_LANGUAGE_MAP,
-  CodeHighlightNode,
   DEFAULT_CODE_LANGUAGE,
   getCodeLanguages,
   getDefaultCodeLanguage,

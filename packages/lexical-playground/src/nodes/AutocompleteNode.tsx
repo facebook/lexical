@@ -14,7 +14,6 @@ import {
   NodeKey,
   SerializedLexicalNode,
 } from 'lexical';
-import * as React from 'react';
 
 import {useSharedAutocompleteContext} from '../context/SharedAutocompleteContext';
 import {uuid as UUID} from '../plugins/AutocompletePlugin';

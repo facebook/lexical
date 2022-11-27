@@ -23,7 +23,6 @@ import {
   $getSelection,
   $isNodeSelection,
 } from 'lexical';
-import * as React from 'react';
 import {createRoot} from 'react-dom/client';
 import * as ReactTestUtils from 'react-dom/test-utils';
 

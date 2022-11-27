@@ -8,8 +8,8 @@
 
 import type {LexicalEditor} from 'lexical';
 
-import {Suspense, useEffect, useMemo, useState} from 'react';
 import * as React from 'react';
+import {Suspense, useEffect, useMemo, useState} from 'react';
 import {createPortal, flushSync} from 'react-dom';
 import useLayoutEffect from 'shared/useLayoutEffect';
 

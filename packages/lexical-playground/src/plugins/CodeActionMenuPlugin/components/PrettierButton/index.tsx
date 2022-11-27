@@ -15,7 +15,6 @@ import * as htmlParser from 'prettier/parser-html';
 import * as markdownParser from 'prettier/parser-markdown';
 import * as cssParser from 'prettier/parser-postcss';
 import {format} from 'prettier/standalone';
-import * as React from 'react';
 import {useState} from 'react';
 
 interface Props {

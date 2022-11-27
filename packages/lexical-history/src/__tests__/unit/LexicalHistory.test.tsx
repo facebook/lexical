@@ -24,11 +24,10 @@ import {
   SerializedTextNode,
   UNDO_COMMAND,
 } from 'lexical/src';
-import {TestComposer} from 'lexical/src/__tests__/utils';
 import {$getRoot, $setSelection} from 'lexical/src/LexicalUtils';
 import {$createParagraphNode} from 'lexical/src/nodes/LexicalParagraphNode';
 import {$createTextNode} from 'lexical/src/nodes/LexicalTextNode';
-import React from 'react';
+import {TestComposer} from 'lexical/src/__tests__/utils';
 import {createRoot} from 'react-dom/client';
 import * as ReactTestUtils from 'react-dom/test-utils';
 

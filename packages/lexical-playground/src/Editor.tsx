@@ -18,7 +18,6 @@ import {ListPlugin} from '@lexical/react/LexicalListPlugin';
 import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
-import * as React from 'react';
 import {useState} from 'react';
 
 import {createWebsocketProvider} from './collaboration';

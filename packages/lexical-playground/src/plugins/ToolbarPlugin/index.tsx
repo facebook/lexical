@@ -68,7 +68,6 @@ import {
   UNDO_COMMAND,
 } from 'lexical';
 import {useCallback, useEffect, useState} from 'react';
-import * as React from 'react';
 import {IS_APPLE} from 'shared/environment';
 
 import useModal from '../../hooks/useModal';
@@ -83,9 +82,9 @@ import {INSERT_COLLAPSIBLE_COMMAND} from '../CollapsiblePlugin';
 import {InsertEquationDialog} from '../EquationsPlugin';
 import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawPlugin';
 import {
-  INSERT_IMAGE_COMMAND,
   InsertImageDialog,
   InsertImagePayload,
+  INSERT_IMAGE_COMMAND,
 } from '../ImagesPlugin';
 import {InsertPollDialog} from '../PollPlugin';
 import {InsertNewTableDialog, InsertTableDialog} from '../TablePlugin';

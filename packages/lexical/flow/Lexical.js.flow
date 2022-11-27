@@ -494,7 +494,6 @@ type TextPointType = {
   getNode: () => TextNode,
   set: (key: NodeKey, offset: number, type: 'text' | 'element') => void,
   getCharacterOffset: () => number,
-  isAtNodeEnd: () => boolean,
 };
 export type ElementPoint = ElementPointType;
 type ElementPointType = {
@@ -505,7 +504,6 @@ type ElementPointType = {
   isBefore: (PointType) => boolean,
   getNode: () => ElementNode,
   set: (key: NodeKey, offset: number, type: 'text' | 'element') => void,
-  isAtNodeEnd: () => boolean,
 };
 export type Point = PointType;
 type PointType = TextPointType | ElementPointType;

@@ -639,7 +639,7 @@ export class LexicalNode {
     removeNode(this, true, preserveEmptyParent);
   }
 
-  replace<N extends LexicalNode>(replaceWith: N): N {
+  replace<N extends LexicalNode>(replaceWith: N, includeChildren?: boolean): N {
     errorOnReadOnly();
     let selection = $getSelection();
     if (selection !== null) selection = selection.clone();
@@ -658,7 +658,7 @@ export class LexicalNode {
     writableReplaceWith.__parent = newParent.__key;
     removeNode(this, false);
     internalMarkSiblingsAsDirty(writableReplaceWith);
-    if ($isElementNode(this)) {
+    if (includeChildren) {
       this.getChildren().forEach((child: LexicalNode) => {
         writableReplaceWith.append(child);
       });

@@ -130,4 +130,10 @@ describe('LexicalUtils#splitNode', () => {
       });
     });
   }
+
+  it('throws when splitting root', async () => {
+    await update(() => {
+      expect(() => $splitNode($getRoot(), 0)).toThrow();
+    });
+  });
 });

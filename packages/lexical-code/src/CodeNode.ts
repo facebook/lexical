@@ -47,7 +47,7 @@ import {
 } from './CodeHighlightNode';
 import * as Prism from 'prismjs';
 
-type SerializedCodeNode = Spread<
+export type SerializedCodeNode = Spread<
   {
     language: string | null | undefined;
     type: 'code';

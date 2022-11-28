@@ -213,8 +213,9 @@ function $shouldPreventDefaultAndInsertText(
     // dealing with this in "beforeinput" or where the node has already recently
     // been changed (thus is dirty).
     (anchorNode.isDirty() && textLength > 1) ||
-    // If the DOM selection element is not the same as the backing node
-    (backingAnchorElement !== null &&
+    // If the DOM selection element is not the same as the backing node during beforeinput.
+    ((isBeforeInput || !CAN_USE_BEFORE_INPUT) &&
+      backingAnchorElement !== null &&
       !anchorNode.isComposing() &&
       domAnchorNode !== getDOMTextNode(backingAnchorElement)) ||
     // Check if we're changing from bold to italics, or some other format.

@@ -497,7 +497,7 @@ test.describe('Composition', () => {
 
       await waitForSelector(page, '.mention');
 
-      await moveLeft(page, 8);
+      await moveLeft(page, 9);
 
       await page.keyboard.imeSetComposition('ｓ', 1, 1);
       await page.keyboard.imeSetComposition('す', 1, 1);
@@ -513,20 +513,36 @@ test.describe('Composition', () => {
       await page.keyboard.imeSetComposition('もじあ', 3, 3);
       await page.keyboard.insertText('もじあ');
 
-      await assertHTML(
-        page,
-        html`
-          <p
-            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-            dir="ltr">
-            <span data-lexical-text="true">Luke S​すし もじあkywalker</span>
-          </p>
-        `,
-      );
+      if (browserName === 'webkit')
+        await assertHTML(
+          page,
+          html`
+            <p
+              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+              dir="ltr">
+              <span data-lexical-text="true">
+                Luke &nbsp;すし もじあSkywalker
+              </span>
+            </p>
+          `,
+        );
+
+      if (browserName === 'chromium')
+        await assertHTML(
+          page,
+          html`
+            <p
+              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+              dir="ltr">
+              <span data-lexical-text="true">Luke ​すし もじあSkywalker</span>
+            </p>
+          `,
+        );
+
       await assertSelection(page, {
-        anchorOffset: 13,
+        anchorOffset: 12,
         anchorPath: [0, 0, 0],
-        focusOffset: 13,
+        focusOffset: 12,
         focusPath: [0, 0, 0],
       });
     });

@@ -7,24 +7,6 @@
  *
  */
 
- export type {SerializedCodeNode} from './../../lexical-code/src';
- export type {
-   SerializedAutoLinkNode,
-   SerializedLinkNode,
- } from './../../lexical-link/src';
- export type {
-   SerializedListItemNode,
-   SerializedListNode,
- } from './../../lexical-list/src';
- export type {
-   SerializedHeadingNode,
-   SerializedQuoteNode,
- } from './../../lexical-rich-text/src';
- export type {
-   SerializedTableCellNode,
-   SerializedTableNode,
-   SerializedTableRowNode,
- } from './../../lexical-table/src';
 export type {PasteCommandType} from './LexicalCommands';
 export type {
   CommandListenerPriority,

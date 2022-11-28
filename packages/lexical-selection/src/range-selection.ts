@@ -84,8 +84,8 @@ export function $wrapNodes(
       if ($isRootOrShadowRoot(trailingNode)) {
         if (selection.isBackward()) {
           const collapsedEndSelection = selection.clone();
-          collapsedEndSelection.focus = collapsedEndSelection.anchor;
-          $moveCharacter(collapsedEndSelection, false, true);
+          collapsedEndSelection.modify('move', false, 'character');
+          collapsedEndSelection.modify('move', true, 'character');
           selection.anchor = collapsedEndSelection.anchor;
         } else {
           $moveCharacter(selection, true, true);

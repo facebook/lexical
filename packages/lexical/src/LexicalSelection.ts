@@ -182,6 +182,7 @@ function selectPointOnNode(point: PointType, node: LexicalNode): void {
     if ($isTextNode(nextSibling)) {
       key = nextSibling.__key;
       offset = 0;
+      type = 'text';
     } else {
       const parentNode = node.getParent();
       if (parentNode) {

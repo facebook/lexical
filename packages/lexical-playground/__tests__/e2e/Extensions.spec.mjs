@@ -13,7 +13,6 @@ import {
   focusEditor,
   html,
   initialize,
-  sleep,
   test,
 } from '../utils/index.mjs';
 
@@ -195,15 +194,17 @@ test.describe('Extensions', () => {
     }
   });
 
-  test(`document.execCommand("insertText") with selection`, async ({page}) => {
+  test(`document.execCommand("insertText") with selection`, async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
     await focusEditor(page);
 
     await page.keyboard.type('hello world');
     await page.keyboard.press('Enter');
     await page.keyboard.type('asd t');
     await page.keyboard.press('ArrowUp');
-
-    await sleep(100);
 
     // Selection is on the last paragraph
     await evaluate(

@@ -537,19 +537,19 @@ export class TextNode extends LexicalNode {
 
   setMode(type: TextModeType): this {
     const mode = TEXT_MODE_TO_TYPE[type];
-    const self = this.getWritable();
-    if (self.__mode === mode) {
-      return self;
+    if (this.__mode === mode) {
+      return this;
     }
+    const self = this.getWritable();
     self.__mode = mode;
     return self;
   }
 
   setTextContent(text: string): this {
-    const self = this.getWritable();
-    if (self.__text === text) {
-      return self;
+    if (this.__text === text) {
+      return this;
     }
+    const self = this.getWritable();
     self.__text = text;
     return self;
   }

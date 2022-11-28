@@ -214,7 +214,7 @@ function $shouldPreventDefaultAndInsertText(
     // been changed (thus is dirty).
     (anchorNode.isDirty() && textLength > 1) ||
     // If the DOM selection element is not the same as the backing node during beforeinput.
-    (isBeforeInput &&
+    ((isBeforeInput || !CAN_USE_BEFORE_INPUT) &&
       backingAnchorElement !== null &&
       !anchorNode.isComposing() &&
       domAnchorNode !== getDOMTextNode(backingAnchorElement)) ||

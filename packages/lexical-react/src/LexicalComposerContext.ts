@@ -20,11 +20,8 @@ export type LexicalComposerContextWithEditor = [
   LexicalComposerContextType,
 ];
 
-export const LexicalComposerContext: React.Context<
-  LexicalComposerContextWithEditor | null | undefined
-> = createReactContext<LexicalComposerContextWithEditor | null | undefined>(
-  null,
-);
+export const LexicalComposerContext: React.Context<LexicalComposerContextWithEditor | null> =
+  createReactContext<LexicalComposerContextWithEditor | null>(null);
 
 export function createLexicalComposerContext(
   parent: LexicalComposerContextWithEditor | null | undefined,

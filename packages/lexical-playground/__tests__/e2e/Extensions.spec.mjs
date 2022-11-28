@@ -13,6 +13,7 @@ import {
   focusEditor,
   html,
   initialize,
+  sleep,
   test,
 } from '../utils/index.mjs';
 
@@ -201,6 +202,8 @@ test.describe('Extensions', () => {
     await page.keyboard.press('Enter');
     await page.keyboard.type('asd t');
     await page.keyboard.press('ArrowUp');
+
+    await sleep(100);
 
     // Selection is on the last paragraph
     await evaluate(

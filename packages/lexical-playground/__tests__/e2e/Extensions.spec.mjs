@@ -194,9 +194,7 @@ test.describe('Extensions', () => {
     }
   });
 
-  test(`document.execCommand("insertText") with selection`, async ({
-    page,
-  }) => {
+  test(`document.execCommand("insertText") with selection`, async ({page}) => {
     await focusEditor(page);
 
     await page.keyboard.type('hello world');

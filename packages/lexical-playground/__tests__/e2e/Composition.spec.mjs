@@ -497,7 +497,7 @@ test.describe('Composition', () => {
 
       await waitForSelector(page, '.mention');
 
-      await moveLeft(page, 9);
+      await moveLeft(page, 8);
 
       await page.keyboard.imeSetComposition('ｓ', 1, 1);
       await page.keyboard.imeSetComposition('す', 1, 1);
@@ -519,14 +519,14 @@ test.describe('Composition', () => {
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
             dir="ltr">
-            <span data-lexical-text="true">Luke すし もじあSkywalker</span>
+            <span data-lexical-text="true">Luke S​すし もじあkywalker</span>
           </p>
         `,
       );
       await assertSelection(page, {
-        anchorOffset: 11,
+        anchorOffset: 13,
         anchorPath: [0, 0, 0],
-        focusOffset: 11,
+        focusOffset: 13,
         focusPath: [0, 0, 0],
       });
     });

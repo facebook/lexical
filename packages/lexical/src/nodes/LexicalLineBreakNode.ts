@@ -76,7 +76,7 @@ export class LineBreakNode extends LexicalNode {
     return $createLineBreakNode();
   }
 
-  exportJSON(): SerializedLexicalNode {
+  exportJSON(): SerializedLineBreakNode {
     return {
       type: 'linebreak',
       version: 1,

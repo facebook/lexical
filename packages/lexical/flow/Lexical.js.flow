@@ -627,7 +627,8 @@ declare export class LineBreakNode extends LexicalNode {
   static importJSON(
     serializedLineBreakNode: SerializedLineBreakNode,
   ): LineBreakNode;
-  exportJSON(): SerializedLexicalNode;
+  // $FlowExpectedError[incompatible-extend] 'linebreak' is a literal string
+  exportJSON(): SerializedLineBreakNode;
 }
 declare export function $createLineBreakNode(): LineBreakNode;
 declare export function $isLineBreakNode(
@@ -755,7 +756,8 @@ declare export class ParagraphNode extends ElementNode {
   static importJSON(
     serializedParagraphNode: SerializedParagraphNode,
   ): ParagraphNode;
-  exportJSON(): SerializedElementNode;
+  // $FlowExpectedError[incompatible-extend] 'paragraph' is a literal string
+  exportJSON(): SerializedParagraphNode;
 }
 declare export function $createParagraphNode(): ParagraphNode;
 declare export function $isParagraphNode(

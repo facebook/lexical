@@ -155,6 +155,10 @@ export function $createTestElementNode(): TestElementNode {
   return new TestElementNode();
 }
 
+type SerializedTestTextNode = Spread<
+  {type: 'test_text'; version: 1},
+  SerializedTextNode
+>;
 export class TestTextNode extends TextNode {
   static getType() {
     return 'test_text';
@@ -163,6 +167,19 @@ export class TestTextNode extends TextNode {
   static clone(node: TestTextNode): TestTextNode {
     // @ts-ignore
     return new TestTextNode(node.__text, node.__key);
+  }
+
+  static importJSON(serializedNode: SerializedTestTextNode): TestTextNode {
+    // @ts-ignore
+    return new TestTextNode(serializedNode.__text);
+  }
+
+  exportJSON(): SerializedTestTextNode {
+    return {
+      ...super.exportJSON(),
+      type: 'test_text',
+      version: 1,
+    };
   }
 }
 
@@ -342,7 +359,7 @@ export class TestDecoratorNode extends DecoratorNode<JSX.Element> {
     };
   }
 
-  importDOM() {
+  static importDOM() {
     return {
       'test-decorator': (domNode: HTMLElement) => {
         return {

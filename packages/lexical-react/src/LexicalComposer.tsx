@@ -25,6 +25,7 @@ import {
 } from 'lexical';
 import {useMemo} from 'react';
 import * as React from 'react';
+import {CAN_USE_DOM} from 'shared/canUseDOM';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
 const HISTORY_MERGE_OPTIONS = {tag: 'history-merge'};
@@ -127,7 +128,7 @@ function initializeEditor(
       if (root.isEmpty()) {
         const paragraph = $createParagraphNode();
         root.append(paragraph);
-        const activeElement = document.activeElement;
+        const activeElement = CAN_USE_DOM ? document.activeElement : null;
         if (
           $getSelection() !== null ||
           (activeElement !== null && activeElement === editor.getRootElement())

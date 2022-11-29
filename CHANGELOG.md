@@ -1,3 +1,28 @@
+## v0.6.4 (2022-11-29)
+
+- Fix issue with readonly image resizing (#3448) John Flockton
+- check CAN_USE_DOM before accessing document (#3444) ProvidenceXz
+- Add `type="button"` to <button /> components (#3447) Scott Agirs
+- Add horizontal rule plugin (#3446) akmarzhan1
+- Add isEditable listener to nested composer (#3445) John Flockton
+- Exports serialized node types (#3436) tolkienfan2
+- Fix bug in selectPointOnNode (#3443) Dominic Gannaway
+- $splitNode & $insertNodeToNearestRoot for root selection (#3442) Maksim Horbachevsky
+- Updated exportJSON types (#3231) Matt Reid
+- Fix deleting empty paragraphs (#3261) Petar Smolic
+- Change command priority in typeahead (#3441) John Flockton
+- Fix grammary 2 (#3438) Dominic Gannaway
+- Don't unnecessarily mark text nodes as dirty (#3437) John Flockton
+- fix: playground bug(floating link editor not closing with 'Escape' key (#2941) Joseph Jang
+- Fix a couple of bugs with Headings creation (#3425) John Flockton
+- Fix text replacement via insertText (#3429) Dominic Gannaway
+- Add link list properties to nodes (#3424) Dominic Gannaway
+- Fix browser selection with horizontal rule (#3418) Dominic Gannaway
+- add excalidraw plugin example (#3412) akmarzhan1
+- Fix $splitNode Flow type (#3411) Gerard Rovira
+- Fix insertNodes merging logic (#3413) Dominic Gannaway
+- refactor: React composer initialConfig to exported type (#3396) Simon Proper
+
 ## v0.6.3 (2022-11-23)
 
 - Apply event propagation between all event types (#3401) Dominic Gannaway

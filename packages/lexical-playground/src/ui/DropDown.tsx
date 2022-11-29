@@ -51,7 +51,12 @@ export function DropDownItem({
   }, [ref, registerItem]);
 
   return (
-    <button className={className} onClick={onClick} ref={ref} title={title}>
+    <button
+      className={className}
+      onClick={onClick}
+      ref={ref}
+      title={title}
+      type="button">
       {children}
     </button>
   );

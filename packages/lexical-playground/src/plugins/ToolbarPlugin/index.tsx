@@ -603,6 +603,7 @@ export default function ToolbarPlugin(): JSX.Element {
           activeEditor.dispatchCommand(UNDO_COMMAND, undefined);
         }}
         title={IS_APPLE ? 'Undo (⌘Z)' : 'Undo (Ctrl+Z)'}
+        type="button"
         className="toolbar-item spaced"
         aria-label="Undo">
         <i className="format undo" />
@@ -613,6 +614,7 @@ export default function ToolbarPlugin(): JSX.Element {
           activeEditor.dispatchCommand(REDO_COMMAND, undefined);
         }}
         title={IS_APPLE ? 'Redo (⌘Y)' : 'Redo (Ctrl+Y)'}
+        type="button"
         className="toolbar-item"
         aria-label="Redo">
         <i className="format redo" />
@@ -671,6 +673,7 @@ export default function ToolbarPlugin(): JSX.Element {
             }}
             className={'toolbar-item spaced ' + (isBold ? 'active' : '')}
             title={IS_APPLE ? 'Bold (⌘B)' : 'Bold (Ctrl+B)'}
+            type="button"
             aria-label={`Format text as bold. Shortcut: ${
               IS_APPLE ? '⌘B' : 'Ctrl+B'
             }`}>
@@ -683,6 +686,7 @@ export default function ToolbarPlugin(): JSX.Element {
             }}
             className={'toolbar-item spaced ' + (isItalic ? 'active' : '')}
             title={IS_APPLE ? 'Italic (⌘I)' : 'Italic (Ctrl+I)'}
+            type="button"
             aria-label={`Format text as italics. Shortcut: ${
               IS_APPLE ? '⌘I' : 'Ctrl+I'
             }`}>
@@ -695,6 +699,7 @@ export default function ToolbarPlugin(): JSX.Element {
             }}
             className={'toolbar-item spaced ' + (isUnderline ? 'active' : '')}
             title={IS_APPLE ? 'Underline (⌘U)' : 'Underline (Ctrl+U)'}
+            type="button"
             aria-label={`Format text to underlined. Shortcut: ${
               IS_APPLE ? '⌘U' : 'Ctrl+U'
             }`}>
@@ -707,6 +712,7 @@ export default function ToolbarPlugin(): JSX.Element {
             }}
             className={'toolbar-item spaced ' + (isCode ? 'active' : '')}
             title="Insert code block"
+            type="button"
             aria-label="Insert code block">
             <i className="format code" />
           </button>
@@ -715,7 +721,8 @@ export default function ToolbarPlugin(): JSX.Element {
             onClick={insertLink}
             className={'toolbar-item spaced ' + (isLink ? 'active' : '')}
             aria-label="Insert link"
-            title="Insert link">
+            title="Insert link"
+            type="button">
             <i className="format link" />
           </button>
           <ColorPicker

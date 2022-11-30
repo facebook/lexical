@@ -70,3 +70,7 @@ declare module 'prismjs/components/prism-rust' {
 declare module 'prismjs/components/prism-swift' {
   declare module.exports: {};
 }
+
+declare module 'prismjs/components/prism-typescript' {
+  declare module.exports: {};
+}

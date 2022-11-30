@@ -30,9 +30,11 @@ import {
   DOUBLE_LINE_BREAK,
   FULL_RECONCILE,
   IS_ALIGN_CENTER,
+  IS_ALIGN_END,
   IS_ALIGN_JUSTIFY,
   IS_ALIGN_LEFT,
   IS_ALIGN_RIGHT,
+  IS_ALIGN_START,
 } from './LexicalConstants';
 import {EditorState} from './LexicalEditorState';
 import {
@@ -131,6 +133,10 @@ function setElementFormat(dom: HTMLElement, format: number): void {
     setTextAlign(domStyle, 'right');
   } else if (format === IS_ALIGN_JUSTIFY) {
     setTextAlign(domStyle, 'justify');
+  } else if (format === IS_ALIGN_START) {
+    setTextAlign(domStyle, 'start');
+  } else if (format === IS_ALIGN_END) {
+    setTextAlign(domStyle, 'end');
   }
 }
 

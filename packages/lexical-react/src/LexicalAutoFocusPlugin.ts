@@ -26,9 +26,8 @@ export function AutoFocusPlugin({defaultSelection}: Props): null {
         const activeElement = document.activeElement;
         const rootElement = editor.getRootElement() as HTMLDivElement;
         if (
-          !rootElement.contains(activeElement) ||
-          rootElement !== null ||
-          activeElement === null
+          rootElement !== null &&
+          (activeElement === null || !rootElement.contains(activeElement))
         ) {
           // Note: preventScroll won't work in Webkit.
           rootElement.focus({preventScroll: true});

@@ -547,7 +547,6 @@ test.describe('Images', () => {
     await page.keyboard.press('Enter');
 
     await insertSampleImage(page);
-    await page.pause();
 
     await dragImage(page, 'span[data-lexical-text="true"]');
 

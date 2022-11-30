@@ -48,7 +48,14 @@ export type SerializedElementNode = Spread<
   SerializedLexicalNode
 >;
 
-export type ElementFormatType = 'left' | 'center' | 'right' | 'justify' | '';
+export type ElementFormatType =
+  | 'left'
+  | 'start'
+  | 'center'
+  | 'right'
+  | 'end'
+  | 'justify'
+  | '';
 
 /** @noInheritDoc */
 export class ElementNode extends LexicalNode {

@@ -661,7 +661,14 @@ declare export function $isRootNode(
 /**
  * LexicalElementNode
  */
-export type ElementFormatType = 'left' | 'center' | 'right' | 'justify' | '';
+export type ElementFormatType =
+  | 'left'
+  | 'start'
+  | 'center'
+  | 'right'
+  | 'end'
+  | 'justify'
+  | '';
 declare export class ElementNode extends LexicalNode {
   __children: Array<NodeKey>;
   __format: number;

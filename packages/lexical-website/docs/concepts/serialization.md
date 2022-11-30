@@ -1,6 +1,4 @@
----
-sidebar_position: 9
----
+
 
 # Serialization & Deserialization
 
@@ -51,7 +49,7 @@ editor.update(() => {
 
   // Once you have the DOM instance it's easy to generate LexicalNodes.
   const nodes = $generateNodesFromDOM(editor, dom);
-  
+
   // Select the root
   $getRoot().select();
 
@@ -76,7 +74,7 @@ editor.update(() => {
 
   // Once you have the DOM instance it's easy to generate LexicalNodes.
   const nodes = $generateNodesFromDOM(editor, dom.window.document);
-  
+
   // Select the root
   $getRoot().select();
 

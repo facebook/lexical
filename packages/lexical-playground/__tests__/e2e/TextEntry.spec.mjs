@@ -48,7 +48,8 @@ test.describe('TextEntry', () => {
     });
   });
 
-  test(`Can insert text and replace it`, async ({page}) => {
+  test(`Can insert text and replace it`, async ({isCollab, page}) => {
+    test.skip(isCollab);
     await page.locator('[data-lexical-editor]').fill('Front');
     await page.locator('[data-lexical-editor]').fill('Front updated');
     await assertHTML(

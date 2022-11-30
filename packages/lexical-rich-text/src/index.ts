@@ -299,32 +299,24 @@ export class HeadingNode extends ElementNode {
 
   // Mutation
   insertNewAfter(selection?: RangeSelection): ParagraphNode | HeadingNode {
-    const selectionOffset = selection ? selection.anchor.offset : 0;
+    const anchorOffet = selection ? selection.anchor.offset : 0;
     const newElement =
-      selectionOffset < this.getTextContentSize() && selectionOffset > 0
+      anchorOffet > 0 && anchorOffet < this.getTextContentSize()
         ? $createHeadingNode(this.getTag())
         : $createParagraphNode();
     const direction = this.getDirection();
-
     newElement.setDirection(direction);
     this.insertAfter(newElement);
-
     return newElement;
   }
 
   collapseAtStart(): true {
-    const previousSibling = this.getPreviousSibling();
-    const isPreviouSiblingEmpty =
-      !previousSibling ||
-      (previousSibling && previousSibling.getTextContentSize() === 0);
-    const newElement = isPreviouSiblingEmpty
+    const newElement = !this.isEmpty()
       ? $createHeadingNode(this.getTag())
       : $createParagraphNode();
     const children = this.getChildren();
-
     children.forEach((child) => newElement.append(child));
     this.replace(newElement);
-
     return true;
   }
 

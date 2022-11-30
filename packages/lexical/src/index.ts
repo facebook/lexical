@@ -23,7 +23,8 @@ export type {
   SerializedEditor,
   Spread,
 } from './LexicalEditor';
-export type {EditorState, SerializedEditorState} from './LexicalEditorState';
+export type {SerializedEditorState} from './LexicalEditorState'
+export {EditorState} from './LexicalEditorState';
 export type {
   DOMChildConversion,
   DOMConversion,

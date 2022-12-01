@@ -29,14 +29,12 @@ import {
 import {
   $getCompositionKey,
   $getNodeByKey,
-  $getNodeByKeyOrThrow,
   $isRootOrShadowRoot,
   $maybeMoveChildrenSelectionToParent,
   $setCompositionKey,
   $setNodeKey,
   errorOnInsertTextNodeOnRoot,
   internalMarkNodeAsDirty,
-  internalMarkSiblingsAsDirty,
   removeFromParent,
 } from './LexicalUtils';
 
@@ -85,19 +83,15 @@ export function removeNode(
     }
   }
 
-  const writableParent = parent.getWritable();
-  const parentChildren = writableParent.__children;
-  const index = parentChildren.indexOf(key);
-  if (index === -1) {
-    invariant(false, 'Node is not a child of its parent');
-  }
-  const writableNodeToRemove = nodeToRemove.getWritable();
-  internalMarkSiblingsAsDirty(nodeToRemove);
-  removeFromParent(writableNodeToRemove);
-
   if ($isRangeSelection(selection) && restoreSelection && !selectionMoved) {
+    // Doing this is O(n) so lets avoid it unless we need to do it
+    const index = nodeToRemove.getIndexWithinParent();
+    removeFromParent(nodeToRemove);
     $updateElementSelectionOnCreateDeleteNode(selection, parent, index, -1);
+  } else {
+    removeFromParent(nodeToRemove);
   }
+
   if (
     !preserveEmptyParent &&
     !$isRootOrShadowRoot(parent) &&
@@ -106,7 +100,7 @@ export function removeNode(
   ) {
     removeNode(parent, restoreSelection);
   }
-  if ($isRootNode(parent) && parent.isEmpty()) {
+  if (restoreSelection && $isRootNode(parent) && parent.isEmpty()) {
     parent.selectEnd();
   }
 }
@@ -262,8 +256,16 @@ export class LexicalNode {
     if (parent === null) {
       return -1;
     }
-    const children = parent.__children;
-    return children.indexOf(this.__key);
+    let node = parent.getFirstChild();
+    let index = 0;
+    while (node !== null) {
+      if (this.is(node)) {
+        return index;
+      }
+      index++;
+      node = node.getNextSibling();
+    }
+    return -1;
   }
 
   getParent<T extends ElementNode>(): T | null {
@@ -327,54 +329,39 @@ export class LexicalNode {
   }
 
   getPreviousSibling<T extends LexicalNode>(): T | null {
-    const parent = this.getParent();
-    if (parent === null) {
-      return null;
-    }
-    const children = parent.__children;
-    const index = children.indexOf(this.__key);
-    if (index <= 0) {
-      return null;
-    }
-    return $getNodeByKey<T>(children[index - 1]);
+    const self = this.getLatest();
+    const prevKey = self.__prev;
+    return prevKey === null ? null : $getNodeByKey<T>(prevKey);
   }
 
   getPreviousSiblings<T extends LexicalNode>(): Array<T> {
-    const parent = this.getParent();
-    if (parent === null) {
-      return [];
+    const siblings: Array<T> = [];
+    const parent = this.getParentOrThrow();
+    let node: null | T = parent.getFirstChild();
+    while (node !== null) {
+      if (node.is(this)) {
+        break;
+      }
+      siblings.push(node);
+      node = node.getNextSibling();
     }
-    const children = parent.__children;
-    const index = children.indexOf(this.__key);
-    return children
-      .slice(0, index)
-      .map((childKey) => $getNodeByKeyOrThrow<T>(childKey));
+    return siblings;
   }
 
   getNextSibling<T extends LexicalNode>(): T | null {
-    const parent = this.getParent();
-    if (parent === null) {
-      return null;
-    }
-    const children = parent.__children;
-    const childrenLength = children.length;
-    const index = children.indexOf(this.__key);
-    if (index >= childrenLength - 1) {
-      return null;
-    }
-    return $getNodeByKey<T>(children[index + 1]);
+    const self = this.getLatest();
+    const nextKey = self.__next;
+    return nextKey === null ? null : $getNodeByKey<T>(nextKey);
   }
 
   getNextSiblings<T extends LexicalNode>(): Array<T> {
-    const parent = this.getParent();
-    if (parent === null) {
-      return [];
+    const siblings: Array<T> = [];
+    let node: null | T = this.getNextSibling();
+    while (node !== null) {
+      siblings.push(node);
+      node = node.getNextSibling();
     }
-    const children = parent.__children;
-    const index = children.indexOf(this.__key);
-    return children
-      .slice(index + 1)
-      .map((childKey) => $getNodeByKeyOrThrow<T>(childKey));
+    return siblings;
   }
 
   getCommonAncestor<T extends ElementNode = ElementNode>(
@@ -424,7 +411,7 @@ export class LexicalNode {
     while (true) {
       const parent: ElementNode = node.getParentOrThrow();
       if (parent === commonAncestor) {
-        indexA = parent.__children.indexOf(node.__key);
+        indexA = node.getIndexWithinParent();
         break;
       }
       node = parent;
@@ -433,7 +420,7 @@ export class LexicalNode {
     while (true) {
       const parent: ElementNode = node.getParentOrThrow();
       if (parent === commonAncestor) {
-        indexB = parent.__children.indexOf(node.__key);
+        indexB = node.getIndexWithinParent();
         break;
       }
       node = parent;
@@ -560,7 +547,6 @@ export class LexicalNode {
     mutableNode.__next = latestNode.__next;
     mutableNode.__prev = latestNode.__prev;
     if ($isElementNode(latestNode) && $isElementNode(mutableNode)) {
-      mutableNode.__children = Array.from(latestNode.__children);
       mutableNode.__first = latestNode.__first;
       mutableNode.__last = latestNode.__last;
       mutableNode.__size = latestNode.__size;
@@ -640,21 +626,36 @@ export class LexicalNode {
   replace<N extends LexicalNode>(replaceWith: N): N {
     errorOnReadOnly();
     errorOnInsertTextNodeOnRoot(this, replaceWith);
+    const self = this.getLatest();
     const toReplaceKey = this.__key;
+    const key = replaceWith.__key;
     const writableReplaceWith = replaceWith.getWritable();
+    const writableParent = this.getParentOrThrow().getWritable();
+    const size = writableParent.__size;
     removeFromParent(writableReplaceWith);
-    const newParent = this.getParentOrThrow();
-    const writableParent = newParent.getWritable();
-    const children = writableParent.__children;
-    const index = children.indexOf(this.__key);
-    const newKey = writableReplaceWith.__key;
-    if (index === -1) {
-      invariant(false, 'Node is not a child of its parent');
+    const prevSibling = self.getPreviousSibling();
+    const nextSibling = self.getNextSibling();
+    const prevKey = self.__prev;
+    const nextKey = self.__next;
+    const parentKey = self.__parent;
+    removeNode(self, false);
+
+    if (prevSibling === null) {
+      writableParent.__first = key;
+    } else {
+      const writablePrevSibling = prevSibling.getWritable();
+      writablePrevSibling.__next = key;
     }
-    children.splice(index, 0, newKey);
-    writableReplaceWith.__parent = newParent.__key;
-    removeNode(this, false);
-    internalMarkSiblingsAsDirty(writableReplaceWith);
+    writableReplaceWith.__prev = prevKey;
+    if (nextSibling === null) {
+      writableParent.__last = key;
+    } else {
+      const writableNextSibling = nextSibling.getWritable();
+      writableNextSibling.__prev = key;
+    }
+    writableReplaceWith.__next = nextKey;
+    writableReplaceWith.__parent = parentKey;
+    writableParent.__size = size;
     const selection = $getSelection();
     if ($isRangeSelection(selection)) {
       const anchor = selection.anchor;
@@ -667,7 +668,7 @@ export class LexicalNode {
       }
     }
     if ($getCompositionKey() === toReplaceKey) {
-      $setCompositionKey(newKey);
+      $setCompositionKey(key);
     }
     return writableReplaceWith;
   }
@@ -679,10 +680,11 @@ export class LexicalNode {
     const writableNodeToInsert = nodeToInsert.getWritable();
     const oldParent = writableNodeToInsert.getParent();
     const selection = $getSelection();
-    const oldIndex = nodeToInsert.getIndexWithinParent();
     let elementAnchorSelectionOnNode = false;
     let elementFocusSelectionOnNode = false;
     if (oldParent !== null) {
+      // TODO: this is O(n), can we improve?
+      const oldIndex = nodeToInsert.getIndexWithinParent();
       removeFromParent(writableNodeToInsert);
       if ($isRangeSelection(selection)) {
         const oldParentKey = oldParent.__key;
@@ -698,17 +700,30 @@ export class LexicalNode {
           focus.offset === oldIndex + 1;
       }
     }
+    const nextSibling = this.getNextSibling();
     const writableParent = this.getParentOrThrow().getWritable();
     const insertKey = writableNodeToInsert.__key;
-    writableNodeToInsert.__parent = writableSelf.__parent;
-    const children = writableParent.__children;
-    const index = children.indexOf(writableSelf.__key);
-    if (index === -1) {
-      invariant(false, 'Node is not a child of its parent');
+    const nextKey = writableSelf.__next;
+    let isAppending = false;
+    if (nextSibling === null) {
+      writableParent.__last = insertKey;
+      isAppending = true;
+    } else {
+      const writableNextSibling = nextSibling.getWritable();
+      writableNextSibling.__prev = insertKey;
     }
-    children.splice(index + 1, 0, insertKey);
-    internalMarkSiblingsAsDirty(writableNodeToInsert);
-    if ($isRangeSelection(selection)) {
+    writableParent.__size++;
+    writableSelf.__next = insertKey;
+    writableNodeToInsert.__next = nextKey;
+    writableNodeToInsert.__prev = writableSelf.__key;
+    writableNodeToInsert.__parent = writableSelf.__parent;
+    if (
+      $isRangeSelection(selection) &&
+      (!isAppending ||
+        elementFocusSelectionOnNode ||
+        selection.anchor.type === 'element')
+    ) {
+      const index = this.getIndexWithinParent();
       $updateElementSelectionOnCreateDeleteNode(
         selection,
         writableParent,
@@ -730,24 +745,28 @@ export class LexicalNode {
     errorOnInsertTextNodeOnRoot(this, nodeToInsert);
     const writableSelf = this.getWritable();
     const writableNodeToInsert = nodeToInsert.getWritable();
-    removeFromParent(writableNodeToInsert);
-    const writableParent = this.getParentOrThrow().getWritable();
     const insertKey = writableNodeToInsert.__key;
-    writableNodeToInsert.__parent = writableSelf.__parent;
-    const children = writableParent.__children;
-    const index = children.indexOf(writableSelf.__key);
-    if (index === -1) {
-      invariant(false, 'Node is not a child of its parent');
+    removeFromParent(writableNodeToInsert);
+    const prevSibling = this.getPreviousSibling();
+    const writableParent = this.getParentOrThrow().getWritable();
+    const prevKey = writableSelf.__prev;
+    // TODO: this is O(n), can we improve?
+    const index = this.getIndexWithinParent();
+    if (prevSibling === null) {
+      writableParent.__first = insertKey;
+    } else {
+      const writablePrevSibling = prevSibling.getWritable();
+      writablePrevSibling.__next = insertKey;
     }
-    children.splice(index, 0, insertKey);
-    internalMarkSiblingsAsDirty(writableNodeToInsert);
+    writableParent.__size++;
+    writableSelf.__prev = insertKey;
+    writableNodeToInsert.__prev = prevKey;
+    writableNodeToInsert.__next = writableSelf.__key;
+    writableNodeToInsert.__parent = writableSelf.__parent;
     const selection = $getSelection();
     if ($isRangeSelection(selection)) {
-      $updateElementSelectionOnCreateDeleteNode(
-        selection,
-        writableParent,
-        index,
-      );
+      const parent = this.getParentOrThrow();
+      $updateElementSelectionOnCreateDeleteNode(selection, parent, index);
     }
     return nodeToInsert;
   }

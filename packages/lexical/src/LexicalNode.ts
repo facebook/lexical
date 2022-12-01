@@ -95,7 +95,7 @@ export function removeNode(
   parentChildren.splice(index, 1);
   const writableNodeToRemove = nodeToRemove.getWritable();
   writableNodeToRemove.__parent = null;
-  removeFromParent(writableNodeToRemove)
+  removeFromParent(writableNodeToRemove);
 
   if ($isRangeSelection(selection) && restoreSelection && !selectionMoved) {
     $updateElementSelectionOnCreateDeleteNode(selection, parent, index, -1);

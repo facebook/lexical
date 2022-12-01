@@ -399,23 +399,9 @@ export class ElementNode extends LexicalNode {
       if ($isRangeSelection(selection)) {
         const nodesToRemoveKeySet = new Set(nodesToRemoveKeys);
         const nodesToInsertKeySet = new Set(nodesToInsertKeys);
-        const isPointRemoved = (point: PointType): boolean => {
-          let node: ElementNode | TextNode | null = point.getNode();
-          while (node) {
-            const nodeKey = node.__key;
-            if (
-              nodesToRemoveKeySet.has(nodeKey) &&
-              !nodesToInsertKeySet.has(nodeKey)
-            ) {
-              return true;
-            }
-            node = node.getParent();
-          }
-          return false;
-        };
 
         const {anchor, focus} = selection;
-        if (isPointRemoved(anchor)) {
+        if (isPointRemoved(anchor, nodesToRemoveKeySet, nodesToInsertKeySet)) {
           moveSelectionPointToSibling(
             anchor,
             anchor.getNode(),
@@ -424,7 +410,7 @@ export class ElementNode extends LexicalNode {
             nodeAfterRange,
           );
         }
-        if (isPointRemoved(focus)) {
+        if (isPointRemoved(focus, nodesToRemoveKeySet, nodesToInsertKeySet)) {
           moveSelectionPointToSibling(
             focus,
             focus.getNode(),
@@ -533,4 +519,20 @@ export function $isElementNode(
   node: LexicalNode | null | undefined,
 ): node is ElementNode {
   return node instanceof ElementNode;
+}
+
+function isPointRemoved(
+  point: PointType,
+  nodesToRemoveKeySet: Set<NodeKey>,
+  nodesToInsertKeySet: Set<NodeKey>,
+): boolean {
+  let node: ElementNode | TextNode | null = point.getNode();
+  while (node) {
+    const nodeKey = node.__key;
+    if (nodesToRemoveKeySet.has(nodeKey) && !nodesToInsertKeySet.has(nodeKey)) {
+      return true;
+    }
+    node = node.getParent();
+  }
+  return false;
 }

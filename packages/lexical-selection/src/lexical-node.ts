@@ -44,6 +44,9 @@ function $updateElementNodeProperties<T extends ElementNode>(
   source: ElementNode,
 ): T {
   target.__children = Array.from(source.__children);
+  target.__first = source.__first;
+  target.__last = source.__last;
+  target.__size = source.__size;
   target.__format = source.__format;
   target.__indent = source.__indent;
   target.__dir = source.__dir;
@@ -67,6 +70,8 @@ export function $cloneWithProperties<T extends LexicalNode>(node: T): T {
   // @ts-expect-error
   const clone: T = constructor.clone(latest);
   clone.__parent = latest.__parent;
+  clone.__next = latest.__next;
+  clone.__prev = latest.__prev;
 
   if ($isElementNode(latest) && $isElementNode(clone)) {
     return $updateElementNodeProperties(clone, latest);

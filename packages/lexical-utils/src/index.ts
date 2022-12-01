@@ -363,8 +363,14 @@ function unstable_internalCreateNodeFromParse(
   if ($isElementNode(node)) {
     const children = parsedNode.__children;
 
+    let prevNode = null;
     for (let i = 0; i < children.length; i++) {
       const childKey = children[i];
+      if (i === 0) {
+        node.__first = childKey;
+      } else if (i === children.length - 1) {
+        node.__last = childKey;
+      }
       const parsedChild = parsedNodeMap.get(childKey);
 
       if (parsedChild !== undefined) {
@@ -376,8 +382,12 @@ function unstable_internalCreateNodeFromParse(
           activeEditorState,
         );
         const newChildKey = child.__key;
-
+        if (prevNode !== null) {
+          child.__prev = prevNode.__key;
+          prevNode.__next = newChildKey;
+        }
         node.__children.push(newChildKey);
+        prevNode = child;
       }
     }
 

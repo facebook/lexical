@@ -264,6 +264,7 @@ export function removeFromParent(writableNode: LexicalNode): void {
     }
     internalMarkSiblingsAsDirty(writableNode);
     children.splice(index, 1);
+    writableNode.__parent = null;
   }
 }
 
@@ -1290,4 +1291,16 @@ export function errorOnInsertTextNodeOnRoot(
       'Only element or decorator nodes can be inserted in to the root node',
     );
   }
+}
+
+export function $getNodeByKeyOrThrow<N extends LexicalNode>(key: NodeKey): N {
+  const node = $getNodeByKey<N>(key);
+  if (node === null) {
+    invariant(
+      false,
+      "Expected node with key %s to exist but it's not in the nodeMap.",
+      key,
+    );
+  }
+  return node;
 }

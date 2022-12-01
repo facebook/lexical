@@ -271,6 +271,7 @@ export function HashtagPlugin(): JSX.Element | null {
     const hashtagLength = matchArr[3].length + 1;
     const startOffset = matchArr.index + matchArr[1].length;
     const endOffset = startOffset + hashtagLength;
+
     return {
       end: endOffset,
       start: startOffset,

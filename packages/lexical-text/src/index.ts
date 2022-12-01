@@ -160,14 +160,14 @@ export function registerLexicalTextEntity<T extends TextNode>(
     return node instanceof targetNode;
   };
 
+  const getMode = (node: TextNode): number => {
+    return node.getLatest().__mode;
+  };
+
   const replaceWithSimpleText = (node: TextNode): void => {
     const textNode = $createTextNode(node.getTextContent());
     textNode.setFormat(node.getFormat());
     node.replace(textNode);
-  };
-
-  const getMode = (node: TextNode): number => {
-    return node.getLatest().__mode;
   };
 
   const textNodeTransform = (node: TextNode) => {
@@ -175,107 +175,50 @@ export function registerLexicalTextEntity<T extends TextNode>(
       return;
     }
 
-    const prevSibling = node.getPreviousSibling();
-    let text = node.getTextContent();
-    let currentNode = node;
-    let match;
+    const text = node.getTextContent();
+    const match = getMatch(text);
 
-    if ($isTextNode(prevSibling)) {
-      const previousText = prevSibling.getTextContent();
-      const combinedText = previousText + text;
-      const prevMatch = getMatch(combinedText);
+    if ($isTextNode(node)) {
+      if (match) {
+        let nodeToReplace;
 
-      if (isTargetNode(prevSibling)) {
-        if (prevMatch === null || getMode(prevSibling) !== 0) {
-          replaceWithSimpleText(prevSibling);
-
-          return;
+        if (match.start > 0) {
+          [, nodeToReplace] = node.splitText(match.start, match.end);
         } else {
-          const diff = prevMatch.end - previousText.length;
-
-          if (diff > 0) {
-            const concatText = text.slice(0, diff);
-            const newTextContent = previousText + concatText;
-            prevSibling.select();
-            prevSibling.setTextContent(newTextContent);
-
-            if (diff === text.length) {
-              node.remove();
-            } else {
-              const remainingText = text.slice(diff);
-              node.setTextContent(remainingText);
-            }
-
-            return;
-          }
+          [nodeToReplace] = node.splitText(match.end);
         }
-      } else if (prevMatch === null || prevMatch.start < previousText.length) {
-        return;
+
+        if (nodeToReplace) {
+          nodeToReplace.replace(createNode(nodeToReplace));
+        }
       }
     }
 
-    // eslint-disable-next-line no-constant-condition
-    while (true) {
-      match = getMatch(text);
-      let nextText = match === null ? '' : text.slice(match.end);
-      text = nextText;
+    const previousSibling = node.getPreviousSibling();
 
-      if (nextText === '') {
-        const nextSibling = currentNode.getNextSibling();
+    // The below handles the logic for when tou need to merge a text entity with a previous sibling which matches
+    if (isTargetNode(previousSibling)) {
+      const previousText = previousSibling.getTextContent();
+      const combinedText = previousText + text;
+      const previousSiblingCurrentNodeMatch = getMatch(combinedText);
 
-        if ($isTextNode(nextSibling)) {
-          nextText =
-            currentNode.getTextContent() + nextSibling.getTextContent();
-          const nextMatch = getMatch(nextText);
-
-          if (nextMatch === null) {
-            if (isTargetNode(nextSibling)) {
-              replaceWithSimpleText(nextSibling);
-            } else {
-              nextSibling.markDirty();
-            }
-
-            return;
-          } else if (nextMatch.start !== 0) {
-            return;
-          }
-        }
-      } else {
-        const nextMatch = getMatch(nextText);
-
-        if (nextMatch !== null && nextMatch.start === 0) {
-          return;
-        }
-      }
-
-      if (match === null) {
-        return;
-      }
-
-      if (
-        match.start === 0 &&
-        $isTextNode(prevSibling) &&
-        prevSibling.isTextEntity()
+      if (!previousSiblingCurrentNodeMatch) {
+        previousSibling.replace($createTextNode(previousText));
+      } else if (
+        previousSiblingCurrentNodeMatch &&
+        previousSiblingCurrentNodeMatch.end > previousText.length
       ) {
-        continue;
-      }
+        previousSibling.select();
 
-      let nodeToReplace;
-
-      if (match.start === 0) {
-        [nodeToReplace, currentNode] = currentNode.splitText(match.end);
-      } else {
-        [, nodeToReplace, currentNode] = currentNode.splitText(
-          match.start,
-          match.end,
+        previousSibling.setTextContent(
+          combinedText.slice(0, previousSiblingCurrentNodeMatch.end),
         );
-      }
 
-      const replacementNode = createNode(nodeToReplace);
-      nodeToReplace.replace(replacementNode);
+        const replacementText = combinedText.slice(
+          previousSiblingCurrentNodeMatch.end,
+        );
 
-      if (currentNode == null) {
-        return;
+        node.setTextContent(replacementText);
       }
     }
   };
@@ -316,14 +259,13 @@ export function registerLexicalTextEntity<T extends TextNode>(
     }
   };
 
-  const removePlainTextTransform = editor.registerNodeTransform(
-    TextNode,
-    textNodeTransform,
-  );
   const removeReverseNodeTransform = editor.registerNodeTransform<T>(
     targetNode,
     reverseNodeTransform,
   );
 
-  return [removePlainTextTransform, removeReverseNodeTransform];
+  return [
+    editor.registerNodeTransform(TextNode, textNodeTransform),
+    // removeReverseNodeTransform,
+  ];
 }

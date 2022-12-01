@@ -228,7 +228,7 @@ test.describe('Keywords', () => {
     });
   });
 
-  test('Can type "congrats Bob!" where " Bob!" is bold', async ({
+  test.only('Can type "congrats Bob!" where " Bob!" is bold', async ({
     page,
     browserName,
     isCollab,

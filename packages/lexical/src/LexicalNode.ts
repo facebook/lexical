@@ -84,11 +84,18 @@ export function removeNode(
       selectionMoved = true;
     }
   }
+
   const writableParent = parent.getWritable();
   const parentChildren = writableParent.__children;
   const index = parentChildren.indexOf(key);
+  if (index === -1) {
+    invariant(false, 'Node is not a child of its parent');
+  }
+  internalMarkSiblingsAsDirty(nodeToRemove);
+  parentChildren.splice(index, 1);
   const writableNodeToRemove = nodeToRemove.getWritable();
-  removeFromParent(writableNodeToRemove);
+  writableNodeToRemove.__parent = null;
+  removeFromParent(writableNodeToRemove)
 
   if ($isRangeSelection(selection) && restoreSelection && !selectionMoved) {
     $updateElementSelectionOnCreateDeleteNode(selection, parent, index, -1);

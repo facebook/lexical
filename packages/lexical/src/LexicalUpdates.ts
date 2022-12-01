@@ -510,6 +510,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   const normalizedNodes = editor._normalizedNodes;
   const tags = editor._updateTags;
   const deferred = editor._deferred;
+  const dirtyLeavesCount = dirtyLeaves.size;
 
   if (needsUpdate) {
     editor._dirtyType = NO_DIRTY_NODES;
@@ -545,6 +546,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
         domSelection,
         tags,
         rootElement as HTMLElement,
+        dirtyLeavesCount,
       );
     } finally {
       activeEditor = previousActiveEditor;

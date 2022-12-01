@@ -2708,6 +2708,7 @@ export function updateDOMSelection(
   domSelection: Selection,
   tags: Set<string>,
   rootElement: HTMLElement,
+  dirtyLeavesCount: number,
 ): void {
   const anchorDOMNode = domSelection.anchorNode;
   const focusDOMNode = domSelection.focusNode;
@@ -2807,12 +2808,30 @@ export function updateDOMSelection(
   // Apply the updated selection to the DOM. Note: this will trigger
   // a "selectionchange" event, although it will be asynchronous.
   try {
-    domSelection.setBaseAndExtent(
-      nextAnchorNode,
-      nextAnchorOffset,
-      nextFocusNode,
-      nextFocusOffset,
-    );
+    // When updating more than 1000 nodes, it's actually better to defer
+    // updating the selection till the next frame. This is because Chrome's
+    // Blink engine has hard limit on how many DOM nodes it can redraw in
+    // a single cycle, so keeping it to the next frame improves performance.
+    // The downside is that is makes the computation within Lexical more
+    // complex, as now, we've sync update the DOM, but selection no longer
+    // matches.
+    if (dirtyLeavesCount > 1000) {
+      window.requestAnimationFrame(() =>
+        domSelection.setBaseAndExtent(
+          nextAnchorNode as Node,
+          nextAnchorOffset,
+          nextFocusNode as Node,
+          nextFocusOffset,
+        ),
+      );
+    } else {
+      domSelection.setBaseAndExtent(
+        nextAnchorNode,
+        nextAnchorOffset,
+        nextFocusNode,
+        nextFocusOffset,
+      );
+    }
 
     if (
       !tags.has('skip-scroll-into-view') &&

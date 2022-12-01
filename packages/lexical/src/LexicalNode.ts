@@ -91,10 +91,8 @@ export function removeNode(
   if (index === -1) {
     invariant(false, 'Node is not a child of its parent');
   }
-  internalMarkSiblingsAsDirty(nodeToRemove);
-  parentChildren.splice(index, 1);
   const writableNodeToRemove = nodeToRemove.getWritable();
-  writableNodeToRemove.__parent = null;
+  internalMarkSiblingsAsDirty(nodeToRemove);
   removeFromParent(writableNodeToRemove);
 
   if ($isRangeSelection(selection) && restoreSelection && !selectionMoved) {

@@ -16,12 +16,6 @@ import type {
   Point,
   RangeSelection,
 } from 'lexical';
-declare export function $cloneContents<T: LexicalNode>(
-  selection: RangeSelection | NodeSelection | GridSelection,
-): {
-  nodeMap: Array<[NodeKey, T]>,
-  range: Array<NodeKey>,
-};
 declare export function $cloneWithProperties<T: LexicalNode>(node: T): T;
 declare export function getStyleObjectFromCSS(css: string): {
   [string]: string,

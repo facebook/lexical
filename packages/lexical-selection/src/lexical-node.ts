@@ -22,17 +22,12 @@ import {
   $getNodeByKey,
   $getPreviousSelection,
   $isElementNode,
-  $isNodeSelection,
   $isRangeSelection,
   $isTextNode,
   DEPRECATED_$isGridSelection,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 import {CSS_TO_STYLES} from './constants';
-import {$cloneGridSelectionContent} from './grid-selection';
-import {$cloneNodeSelectionContent} from './node-selection';
-import {$cloneRangeSelectionContent} from './range-selection';
 import {
   getCSSFromStyleObject,
   getStyleObjectFromCSS,
@@ -43,7 +38,6 @@ function $updateElementNodeProperties<T extends ElementNode>(
   target: T,
   source: ElementNode,
 ): T {
-  target.__children = Array.from(source.__children);
   target.__first = source.__first;
   target.__last = source.__last;
   target.__size = source.__size;
@@ -248,56 +242,9 @@ export function trimTextContentFromAnchor(
   }
 }
 
-function errGetLatestOnClone(): void {
-  invariant(false, 'getLatest() on clone node');
-}
-
 export interface ICloneSelectionContent {
   nodeMap: Array<[NodeKey, LexicalNode]>;
   range: Array<NodeKey>;
-}
-
-export function $cloneContents(
-  selection: RangeSelection | NodeSelection | GridSelection,
-): ICloneSelectionContent {
-  let clone: ICloneSelectionContent = {
-    nodeMap: [],
-    range: [],
-  };
-
-  if ($isRangeSelection(selection)) {
-    clone = $cloneRangeSelectionContent(selection);
-  } else if (DEPRECATED_$isGridSelection(selection)) {
-    clone = $cloneGridSelectionContent(selection);
-  } else if ($isNodeSelection(selection)) {
-    clone = $cloneNodeSelectionContent(selection);
-  }
-
-  if (__DEV__) {
-    const nodeMap = clone.nodeMap;
-
-    for (let i = 0; i < nodeMap.length; i++) {
-      const node = nodeMap[i][1];
-
-      if (node.getLatest === errGetLatestOnClone) {
-        continue;
-      }
-
-      Object.setPrototypeOf(
-        node,
-        Object.create(Object.getPrototypeOf(node), {
-          getLatest: {
-            configurable: true,
-            enumerable: true,
-            value: errGetLatestOnClone,
-            writable: true,
-          },
-        }),
-      );
-    }
-  }
-
-  return clone;
 }
 
 export function $addNodeStyle(node: TextNode): void {

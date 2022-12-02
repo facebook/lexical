@@ -12,6 +12,7 @@ import type {LexicalNode, NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextFormatType} from './nodes/LexicalTextNode';
 
+import { IS_CHROME } from 'shared/environment';
 import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
 
@@ -2806,14 +2807,14 @@ export function updateDOMSelection(
     // Apply the updated selection to the DOM. Note: this will trigger
     // a "selectionchange" event, although it will be asynchronous.
     try {
-      // When updating more than 1000 nodes, it's actually better to defer
+      // When updating more than 1000 nodes on Chrome, it's actually better to defer
       // updating the selection till the next frame. This is because Chrome's
       // Blink engine has hard limit on how many DOM nodes it can redraw in
       // a single cycle, so keeping it to the next frame improves performance.
       // The downside is that is makes the computation within Lexical more
       // complex, as now, we've sync update the DOM, but selection no longer
       // matches.
-      if (dirtyLeavesCount > 1000) {
+      if (IS_CHROME && dirtyLeavesCount > 1000) {
         window.requestAnimationFrame(() =>
           domSelection.setBaseAndExtent(
             nextAnchorNode as Node,

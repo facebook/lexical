@@ -2701,21 +2701,6 @@ export function adjustPointOffsetForMergedSibling(
   }
 }
 
-function applyDOMSelection(
-  domSelection: Selection,
-  nextAnchorNode: Node,
-  nextAnchorOffset: number,
-  nextFocusNode: Node,
-  nextFocusOffset: number,
-): void {
-  domSelection.setBaseAndExtent(
-    nextAnchorNode,
-    nextAnchorOffset,
-    nextFocusNode,
-    nextFocusOffset,
-  );
-}
-
 export function updateDOMSelection(
   prevSelection: RangeSelection | NodeSelection | GridSelection | null,
   nextSelection: RangeSelection | NodeSelection | GridSelection | null,
@@ -2830,8 +2815,7 @@ export function updateDOMSelection(
       // matches.
       if (dirtyLeavesCount > 1000) {
         window.requestAnimationFrame(() =>
-          applyDOMSelection(
-            domSelection,
+          domSelection.setBaseAndExtent(
             nextAnchorNode as Node,
             nextAnchorOffset,
             nextFocusNode as Node,
@@ -2839,8 +2823,7 @@ export function updateDOMSelection(
           ),
         );
       } else {
-        applyDOMSelection(
-          domSelection,
+        domSelection.setBaseAndExtent(
           nextAnchorNode,
           nextAnchorOffset,
           nextFocusNode,

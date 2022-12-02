@@ -30,6 +30,25 @@ import {
 
 import {setAnchorPoint, setFocusPoint} from '../utils';
 
+Range.prototype.getBoundingClientRect = function (): DOMRect {
+  const rect = {
+    bottom: 0,
+    height: 0,
+    left: 0,
+    right: 0,
+    top: 0,
+    width: 0,
+    x: 0,
+    y: 0,
+  };
+  return {
+    ...rect,
+    toJSON() {
+      return rect;
+    },
+  };
+};
+
 function createParagraphWithNodes(editor, nodes) {
   const paragraph = $createParagraphNode();
   const nodeMap = editor._pendingEditorState._nodeMap;

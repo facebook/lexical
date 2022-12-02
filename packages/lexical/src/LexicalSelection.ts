@@ -12,6 +12,7 @@ import type {LexicalNode, NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextFormatType} from './nodes/LexicalTextNode';
 
+import {IS_CHROME} from 'shared/environment';
 import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
 
@@ -2708,6 +2709,7 @@ export function updateDOMSelection(
   domSelection: Selection,
   tags: Set<string>,
   rootElement: HTMLElement,
+  dirtyLeavesCount: number,
 ): void {
   const anchorDOMNode = domSelection.anchorNode;
   const focusDOMNode = domSelection.focusNode;
@@ -2791,10 +2793,7 @@ export function updateDOMSelection(
     !(domSelection.type === 'Range' && isCollapsed)
   ) {
     // If the root element does not have focus, ensure it has focus
-    if (
-      rootElement !== null &&
-      (activeElement === null || !rootElement.contains(activeElement))
-    ) {
+    if (activeElement === null || !rootElement.contains(activeElement)) {
       rootElement.focus({
         preventScroll: true,
       });
@@ -2804,44 +2803,61 @@ export function updateDOMSelection(
     }
   }
 
-  // Apply the updated selection to the DOM. Note: this will trigger
-  // a "selectionchange" event, although it will be asynchronous.
-  try {
-    domSelection.setBaseAndExtent(
-      nextAnchorNode,
-      nextAnchorOffset,
-      nextFocusNode,
-      nextFocusOffset,
-    );
-
-    if (
-      !tags.has('skip-scroll-into-view') &&
-      nextSelection.isCollapsed() &&
-      rootElement !== null &&
-      rootElement === activeElement
-    ) {
-      const selectionTarget: null | Range | HTMLElement | Text =
-        nextSelection instanceof RangeSelection &&
-        nextSelection.anchor.type === 'element'
-          ? (nextAnchorNode.childNodes[nextAnchorOffset] as
-              | HTMLElement
-              | Text) || null
-          : domSelection.rangeCount > 0
-          ? domSelection.getRangeAt(0)
-          : null;
-      if (selectionTarget !== null) {
-        // @ts-ignore Text nodes do have getBoundingClientRect
-        const selectionRect = selectionTarget.getBoundingClientRect();
-        scrollIntoViewIfNeeded(editor, selectionRect, rootElement);
+  if (!tags.has('skip-scroll-into-view'))
+    // Apply the updated selection to the DOM. Note: this will trigger
+    // a "selectionchange" event, although it will be asynchronous.
+    try {
+      // When updating more than 1000 nodes on Chrome, it's actually better to defer
+      // updating the selection till the next frame. This is because Chrome's
+      // Blink engine has hard limit on how many DOM nodes it can redraw in
+      // a single cycle, so keeping it to the next frame improves performance.
+      // The downside is that is makes the computation within Lexical more
+      // complex, as now, we've sync update the DOM, but selection no longer
+      // matches.
+      if (IS_CHROME && dirtyLeavesCount > 1000) {
+        window.requestAnimationFrame(() =>
+          domSelection.setBaseAndExtent(
+            nextAnchorNode as Node,
+            nextAnchorOffset,
+            nextFocusNode as Node,
+            nextFocusOffset,
+          ),
+        );
+      } else {
+        domSelection.setBaseAndExtent(
+          nextAnchorNode,
+          nextAnchorOffset,
+          nextFocusNode,
+          nextFocusOffset,
+        );
       }
+    } catch (error) {
+      // If we encounter an error, continue. This can sometimes
+      // occur with FF and there's no good reason as to why it
+      // should happen.
     }
-
-    markSelectionChangeFromDOMUpdate();
-  } catch (error) {
-    // If we encounter an error, continue. This can sometimes
-    // occur with FF and there's no good reason as to why it
-    // should happen.
+  if (
+    !tags.has('skip-scroll-into-view') &&
+    nextSelection.isCollapsed() &&
+    rootElement !== null &&
+    rootElement === document.activeElement
+  ) {
+    const selectionTarget: null | Range | HTMLElement | Text =
+      nextSelection instanceof RangeSelection &&
+      nextSelection.anchor.type === 'element'
+        ? (nextAnchorNode.childNodes[nextAnchorOffset] as HTMLElement | Text) ||
+          null
+        : domSelection.rangeCount > 0
+        ? domSelection.getRangeAt(0)
+        : null;
+    if (selectionTarget !== null) {
+      // @ts-ignore Text nodes do have getBoundingClientRect
+      const selectionRect = selectionTarget.getBoundingClientRect();
+      scrollIntoViewIfNeeded(editor, selectionRect, rootElement);
+    }
   }
+
+  markSelectionChangeFromDOMUpdate();
 }
 
 export function $insertNodes(

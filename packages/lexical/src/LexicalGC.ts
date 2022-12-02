@@ -40,37 +40,31 @@ export function $garbageCollectDetachedDecorators(
 
 function $garbageCollectDetachedDeepChildNodes(
   node: ElementNode,
-  parentKey: NodeKey,
   prevNodeMap: NodeMap,
   nodeMap: NodeMap,
   dirtyNodes: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
 ): void {
-  const children = node.__children;
-  const childrenLength = children.length;
+  let child = node.getFirstChild();
 
-  for (let i = 0; i < childrenLength; i++) {
-    const childKey = children[i];
-    const child = nodeMap.get(childKey);
-
-    if (child !== undefined && child.__parent === parentKey) {
-      if ($isElementNode(child)) {
-        $garbageCollectDetachedDeepChildNodes(
-          child,
-          childKey,
-          prevNodeMap,
-          nodeMap,
-          dirtyNodes,
-        );
-      }
-
-      // If we have created a node and it was dereferenced, then also
-      // remove it from out dirty nodes Set.
-      if (!prevNodeMap.has(childKey)) {
-        dirtyNodes.delete(childKey);
-      }
-
-      nodeMap.delete(childKey);
+  while (child !== null) {
+    const childKey = child.__key;
+    const nextSibling = child.getNextSibling();
+    if ($isElementNode(child)) {
+      $garbageCollectDetachedDeepChildNodes(
+        child,
+        prevNodeMap,
+        nodeMap,
+        dirtyNodes,
+      );
     }
+
+    // If we have created a node and it was dereferenced, then also
+    // remove it from out dirty nodes Set.
+    if (!prevNodeMap.has(childKey)) {
+      dirtyNodes.delete(childKey);
+    }
+    nodeMap.delete(childKey);
+    child = nextSibling;
   }
 }
 
@@ -104,7 +98,6 @@ export function $garbageCollectDetachedNodes(
         if ($isElementNode(node)) {
           $garbageCollectDetachedDeepChildNodes(
             node,
-            nodeKey,
             prevNodeMap,
             nodeMap,
             dirtyElements,

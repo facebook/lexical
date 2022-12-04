@@ -4,6 +4,12 @@ This package allows you to use interact with Lexical in a headless environment (
 main features like editor.update(), editor.registerNodeTransform(), editor.registerUpdateListener()
 to create, update or traverse state.
 
+Install `@lexical/headless`:
+
+```
+npm install --save @lexical/headless
+```
+
 ```js
 const { createHeadlessEditor } = require('@lexical/headless');
 

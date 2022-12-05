@@ -983,8 +983,14 @@ export function setMutatedNode(
     mutatedNodesByType = new Map();
     mutatedNodes.set(klass, mutatedNodesByType);
   }
-  if (!mutatedNodesByType.has(nodeKey)) {
-    mutatedNodesByType.set(nodeKey, mutation);
+  const prevMutation = mutatedNodesByType.get(nodeKey);
+  // If the node has already been "destroyed", yet we are
+  // re-making it, then this means a move likely happened.
+  // We should change the mutation to be that of "updated"
+  // instead.
+  const isMove = prevMutation === 'destroyed' && mutation === 'created';
+  if (prevMutation === undefined || isMove) {
+    mutatedNodesByType.set(nodeKey, isMove ? 'updated' : mutation);
   }
 }
 

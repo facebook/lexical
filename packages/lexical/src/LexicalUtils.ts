@@ -106,13 +106,12 @@ export function $isSelectionCapturedInDecorator(node: Node): boolean {
   return $isDecoratorNode($getNearestNodeFromDOMNode(node));
 }
 
-// TODO change to $ function
 export function isSelectionCapturedInDecoratorInput(anchorDOM: Node): boolean {
   const activeElement = document.activeElement;
   const nodeName = activeElement !== null ? activeElement.nodeName : null;
   return (
-    !$isDecoratorNode($getNearestNodeFromDOMNode(anchorDOM)) ||
-    (nodeName !== 'INPUT' && nodeName !== 'TEXTAREA')
+    $isDecoratorNode($getNearestNodeFromDOMNode(anchorDOM)) &&
+    (nodeName === 'INPUT' || nodeName === 'TEXTAREA')
   );
 }
 
@@ -129,7 +128,7 @@ export function isSelectionWithinEditor(
       rootElement.contains(focusDOM) &&
       // Ignore if selection is within nested editor
       anchorDOM !== null &&
-      isSelectionCapturedInDecoratorInput(anchorDOM as Node) &&
+      !isSelectionCapturedInDecoratorInput(anchorDOM as Node) &&
       getNearestEditorFromDOMNode(anchorDOM) === editor
     );
   } catch (error) {

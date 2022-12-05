@@ -62,6 +62,7 @@ import {
   getElementByKeyOrThrow,
   getNodeFromDOM,
   getTextNodeOffset,
+  isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
   scrollIntoViewIfNeeded,
   toggleTextFormatType,
@@ -2719,7 +2720,11 @@ export function updateDOMSelection(
 
   // TODO: make this not hard-coded, and add another config option
   // that makes this configurable.
-  if (tags.has('collaboration') && activeElement !== rootElement) {
+  if (
+    (tags.has('collaboration') && activeElement !== rootElement) ||
+    (activeElement !== null &&
+      isSelectionCapturedInDecoratorInput(activeElement))
+  ) {
     return;
   }
 

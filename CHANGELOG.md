@@ -1,3 +1,23 @@
+## v0.6.5 (2022-12-05)
+
+- Fix mutation listener for when DOM moves occur (#3493) Dominic Gannaway
+- Fix decorator input selection (#3491) Dominic Gannaway
+- Inform users that they need to install headless (#3487) Phillip Burch
+- Revert changes (#3481) Dominic Gannaway
+- Improve selection performance on large updates (#3478) Dominic Gannaway
+- Support TypeScript language in code nodes (#3469) Jonas Bengtsson
+- Improve element splicing and node removal (#3454) Dominic Gannaway
+- Add start and end as format types (#3472) John Flockton
+- Fix test for collab (#3471) Dominic Gannaway
+- Add e2e test for text replacement (#3470) Dominic Gannaway
+- Markdown decorators export fallback to text content (#3464) Maksim Horbachevsky
+- Update conditional statement in LexicalAutoFocusPlugin to the same logic as in LexicalSelection (#3466) John Flockton
+- Add Node Replacement Docs (#3462) Acy Watson
+- Inherit headless flag from parent editor (#3459) Maksim Horbachevsky
+- Change heading to paragraph when heading is empty (#3455) John Flockton
+- Show caret while drag&drop (#3300) Gerard Rovira
+- Fix superscript & subscript not being converted from html string (#3453) Rajatava Mukherjee%
+
 ## v0.6.4 (2022-11-29)
 
 - Fix issue with readonly image resizing (#3448) John Flockton

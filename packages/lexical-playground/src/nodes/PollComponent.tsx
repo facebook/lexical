@@ -210,7 +210,7 @@ export default function PollComponent({
           cb(node);
         }
       },
-      { onUpdate },
+      {onUpdate},
     );
   };
 

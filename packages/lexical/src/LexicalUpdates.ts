@@ -417,9 +417,9 @@ function handleDEVOnlyPendingUpdateGuarantees(
 export function commitPendingUpdates(editor: LexicalEditor): void {
   const pendingEditorState = editor._pendingEditorState;
   const rootElement = editor._rootElement;
-  const headless = editor._headless;
+  const shouldSkipDOM = editor._headless || rootElement === null;
 
-  if ((rootElement === null && !headless) || pendingEditorState === null) {
+  if (pendingEditorState === null) {
     return;
   }
 
@@ -440,7 +440,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   editor._pendingEditorState = null;
   editor._editorState = pendingEditorState;
 
-  if (!headless && needsUpdate && observer !== null) {
+  if (!shouldSkipDOM && needsUpdate && observer !== null) {
     activeEditor = editor;
     activeEditorState = pendingEditorState;
     isReadOnlyMode = false;
@@ -525,7 +525,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   // Reconciliation has finished. Now update selection and trigger listeners.
   // ======
 
-  const domSelection = headless ? null : getDOMSelection();
+  const domSelection = shouldSkipDOM ? null : getDOMSelection();
 
   // Attempt to update the DOM selection, including focusing of the root element,
   // and scroll into view if needed.

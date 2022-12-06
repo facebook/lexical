@@ -196,15 +196,14 @@ function $shouldPreventDefaultAndInsertText(
     // If we're working with a non-text node.
     !$isTextNode(anchorNode) ||
     // If we are replacing a range with a single character or grapheme, and not composing.
-    (((!isBeforeInput &&
+    (!isBeforeInput &&
       (!CAN_USE_BEFORE_INPUT ||
         // We check to see if there has been
         // a recent beforeinput event for "textInput". If there has been one in the last
         // 50ms then we proceed as normal. However, if there is not, then this is likely
         // a dangling `input` event caused by execCommand('insertText').
-        lastBeforeInputInsertTextTimeStamp < timeStamp + 50)) ||
-      textLength < 2 ||
-      doesContainGrapheme(text)) &&
+        lastBeforeInputInsertTextTimeStamp < timeStamp + 50) &&
+      (textLength < 2 || doesContainGrapheme(text)) &&
       anchor.offset !== focus.offset &&
       !anchorNode.isComposing()) ||
     // Any non standard text node.
@@ -218,6 +217,8 @@ function $shouldPreventDefaultAndInsertText(
       backingAnchorElement !== null &&
       !anchorNode.isComposing() &&
       domAnchorNode !== getDOMTextNode(backingAnchorElement)) ||
+    // If the DOM selection element is orphaned
+    (backingAnchorElement !== null && !backingAnchorElement.isConnected) ||
     // Check if we're changing from bold to italics, or some other format.
     anchorNode.getFormat() !== selection.format ||
     // One last set of heuristics to check against.
@@ -688,6 +689,9 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
       if (domSelection === null) {
         return;
       }
+      const backingAnchorElement = getActiveEditor().getElementByKey(
+        selection.anchor.key,
+      );
       const offset = anchor.offset;
       // If the content is the same as inserted, then don't dispatch an insertion.
       // Given onInput doesn't take the current selection (it uses the previous)
@@ -697,6 +701,9 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
         selection.isCollapsed() ||
         !$isTextNode(anchorNode) ||
         domSelection.anchorNode === null ||
+        // If the DOM node for our anchor is orphaned, however, we need to do
+        // the text insertion.
+        (backingAnchorElement !== null && !backingAnchorElement.isConnected) ||
         anchorNode.getTextContent().slice(0, offset) +
           data +
           anchorNode.getTextContent().slice(offset + selection.focus.offset) !==

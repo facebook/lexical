@@ -228,17 +228,19 @@ export function AutoEmbedDialog({
 
   const validateText = useMemo(
     () =>
-      debounce(() => {
-        const urlMatch = URL_MATCHER.exec(text);
-        if (embedConfig != null && text != null && urlMatch != null) {
-          Promise.resolve(embedConfig.parseUrl(text)).then((parseResult) => {
-            setEmbedResult(parseResult);
-          });
+      debounce((inputText) => {
+        const urlMatch = URL_MATCHER.exec(inputText);
+        if (embedConfig != null && inputText != null && urlMatch != null) {
+          Promise.resolve(embedConfig.parseUrl(inputText)).then(
+            (parseResult) => {
+              setEmbedResult(parseResult);
+            },
+          );
         } else if (embedResult != null) {
           setEmbedResult(null);
         }
       }, 200),
-    [embedConfig, embedResult, text],
+    [embedConfig, embedResult],
   );
 
   const onClick = () => {
@@ -258,8 +260,9 @@ export function AutoEmbedDialog({
           value={text}
           data-test-id={`${embedConfig.type}-embed-modal-url`}
           onChange={(e) => {
-            setText(e.target.value);
-            validateText();
+            const {value} = e.target;
+            setText(value);
+            validateText(value);
           }}
         />
       </div>

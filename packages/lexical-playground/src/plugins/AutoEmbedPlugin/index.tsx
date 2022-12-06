@@ -16,7 +16,6 @@ import {
   URL_MATCHER,
 } from '@lexical/react/LexicalAutoEmbedPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {debounce} from 'lodash-es';
 import {useMemo, useState} from 'react';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
@@ -215,6 +214,16 @@ function AutoEmbedMenu({
   );
 }
 
+const debounce = (callback: (text: string) => void, delay: number) => {
+  let timeoutId: number;
+  return (text: string) => {
+    window.clearTimeout(timeoutId);
+    timeoutId = window.setTimeout(() => {
+      callback(text);
+    }, delay);
+  };
+};
+
 export function AutoEmbedDialog({
   embedConfig,
   onClose,
@@ -228,7 +237,7 @@ export function AutoEmbedDialog({
 
   const validateText = useMemo(
     () =>
-      debounce((inputText) => {
+      debounce((inputText: string) => {
         const urlMatch = URL_MATCHER.exec(inputText);
         if (embedConfig != null && inputText != null && urlMatch != null) {
           Promise.resolve(embedConfig.parseUrl(inputText)).then(

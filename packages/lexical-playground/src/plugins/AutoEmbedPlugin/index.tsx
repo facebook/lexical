@@ -16,7 +16,8 @@ import {
   URL_MATCHER,
 } from '@lexical/react/LexicalAutoEmbedPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {useState} from 'react';
+import {debounce} from 'lodash-es';
+import {useMemo, useState} from 'react';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 
@@ -59,7 +60,7 @@ export const YoutubeEmbedConfig: PlaygroundEmbedConfig = {
   keywords: ['youtube', 'video'],
 
   // Determine if a given URL is a match and return url data.
-  parseUrl: (url: string) => {
+  parseUrl: async (url: string) => {
     const match =
       /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/.exec(url);
 
@@ -223,10 +224,22 @@ export function AutoEmbedDialog({
 }): JSX.Element {
   const [text, setText] = useState('');
   const [editor] = useLexicalComposerContext();
+  const [embedResult, setEmbedResult] = useState<EmbedMatchResult | null>(null);
 
-  const urlMatch = URL_MATCHER.exec(text);
-  const embedResult =
-    text != null && urlMatch != null ? embedConfig.parseUrl(text) : null;
+  const validateText = useMemo(
+    () =>
+      debounce(() => {
+        const urlMatch = URL_MATCHER.exec(text);
+        if (embedConfig != null && text != null && urlMatch != null) {
+          Promise.resolve(embedConfig.parseUrl(text)).then((parseResult) => {
+            setEmbedResult(parseResult);
+          });
+        } else if (embedResult != null) {
+          setEmbedResult(null);
+        }
+      }, 200),
+    [embedConfig, embedResult, text],
+  );
 
   const onClick = () => {
     if (embedResult != null) {
@@ -246,6 +259,7 @@ export function AutoEmbedDialog({
           data-test-id={`${embedConfig.type}-embed-modal-url`}
           onChange={(e) => {
             setText(e.target.value);
+            validateText();
           }}
         />
       </div>
@@ -302,6 +316,7 @@ export default function AutoEmbedPlugin(): JSX.Element {
                   className="typeahead-popover auto-embed-menu"
                   style={{
                     marginLeft: anchorElementRef.current.style.width,
+                    width: 200,
                   }}>
                   <AutoEmbedMenu
                     options={options}

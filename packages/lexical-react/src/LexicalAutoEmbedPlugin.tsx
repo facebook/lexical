@@ -27,20 +27,24 @@ import {
 import {useCallback, useEffect, useMemo, useState} from 'react';
 import * as React from 'react';
 
-export type EmbedMatchResult = {
+export type EmbedMatchResult<TEmbedMatchResult = unknown> = {
   url: string;
   id: string;
+  data?: TEmbedMatchResult;
 };
 
-export interface EmbedConfig {
+export interface EmbedConfig<
+  TEmbedMatchResultData = unknown,
+  TEmbedMatchResult = EmbedMatchResult<TEmbedMatchResultData>,
+> {
   // Used to identify this config e.g. youtube, tweet, google-maps.
   type: string;
   // Determine if a given URL is a match and return url data.
   parseUrl: (
     text: string,
-  ) => Promise<EmbedMatchResult | null> | EmbedMatchResult | null;
+  ) => Promise<TEmbedMatchResult | null> | TEmbedMatchResult | null;
   // Create the Lexical embed node from the url data.
-  insertNode: (editor: LexicalEditor, result: EmbedMatchResult) => void;
+  insertNode: (editor: LexicalEditor, result: TEmbedMatchResult) => void;
 }
 
 export const URL_MATCHER =

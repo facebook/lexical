@@ -169,6 +169,7 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
         }
         return null;
       });
+
       if ($isLinkNode(linkNode)) {
         const result = await Promise.resolve(
           activeEmbedConfig.parseUrl(linkNode.__url),
@@ -176,12 +177,12 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
         if (result != null) {
           editor.update(() => {
             activeEmbedConfig.insertNode(editor, result);
+            if (linkNode.isAttached()) {
+              editor.update(() => {
+                linkNode.remove();
+              });
+            }
           });
-          if (linkNode.isAttached()) {
-            editor.update(() => {
-              linkNode.remove();
-            });
-          }
         }
       }
     }

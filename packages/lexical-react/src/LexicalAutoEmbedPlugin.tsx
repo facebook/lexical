@@ -36,7 +36,9 @@ export interface EmbedConfig {
   // Used to identify this config e.g. youtube, tweet, google-maps.
   type: string;
   // Determine if a given URL is a match and return url data.
-  parseUrl: (text: string) => Promise<EmbedMatchResult | null>;
+  parseUrl: (
+    text: string,
+  ) => Promise<EmbedMatchResult | null> | EmbedMatchResult | null;
   // Create the Lexical embed node from the url data.
   insertNode: (editor: LexicalEditor, result: EmbedMatchResult) => void;
 }

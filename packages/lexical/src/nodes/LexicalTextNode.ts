@@ -255,9 +255,13 @@ function createTextInnerDOM(
 /** @noInheritDoc */
 export class TextNode extends LexicalNode {
   __text: string;
+  /** @internal */
   __format: number;
+  /** @internal */
   __style: string;
+  /** @internal */
   __mode: 0 | 1 | 2 | 3;
+  /** @internal */
   __detail: number;
 
   static getType(): string {

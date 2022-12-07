@@ -178,9 +178,7 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
           editor.update(() => {
             activeEmbedConfig.insertNode(editor, result);
             if (linkNode.isAttached()) {
-              editor.update(() => {
-                linkNode.remove();
-              });
+              linkNode.remove();
             }
           });
         }

@@ -2288,4 +2288,14 @@ describe('LexicalEditor tests', () => {
       expect(text.getTextContent()).toBe('123');
     });
   });
+
+  it('reconciles state without root element', () => {
+    editor = createTestEditor({});
+    const state = editor.parseEditorState(
+      `{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"Hello world","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+    );
+    editor.setEditorState(state);
+    expect(editor._editorState).toBe(state);
+    expect(editor._pendingEditorState).toBe(null);
+  });
 });

@@ -4,9 +4,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.SelectorsDispatcher = void 0;
-
 var _dispatcher = require("./dispatcher");
-
 /**
  * Copyright (c) Microsoft Corporation.
  *
@@ -22,16 +20,17 @@ var _dispatcher = require("./dispatcher");
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 class SelectorsDispatcher extends _dispatcher.Dispatcher {
   constructor(scope, selectors) {
     super(scope, selectors, 'Selectors', {});
     this._type_Selectors = true;
   }
-
   async register(params) {
     await this._object.register(params.name, params.source, params.contentScript);
   }
-
+  async setTestIdAttributeName(params, metadata) {
+    this._object.setTestIdAttributeName(params.testIdAttributeName);
+  }
 }
-
 exports.SelectorsDispatcher = SelectorsDispatcher;

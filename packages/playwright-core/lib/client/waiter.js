@@ -4,13 +4,9 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.Waiter = void 0;
-
 var _stackTrace = require("../utils/stackTrace");
-
 var _errors = require("../common/errors");
-
 var _utils = require("../utils");
-
 /**
  * Copyright (c) Microsoft Corporation.
  *
@@ -26,6 +22,7 @@ var _utils = require("../utils");
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 class Waiter {
   constructor(channelOwner, event) {
     this._dispose = void 0;
@@ -37,7 +34,6 @@ class Waiter {
     this._error = void 0;
     this._waitId = (0, _utils.createGuid)();
     this._channelOwner = channelOwner;
-
     this._channelOwner._channel.waitForEventInfo({
       info: {
         waitId: this._waitId,
@@ -45,7 +41,6 @@ class Waiter {
         event
       }
     }).catch(() => {});
-
     this._dispose = [() => this._channelOwner._wrapApiCall(async () => {
       await this._channelOwner._channel.waitForEventInfo({
         info: {
@@ -56,11 +51,9 @@ class Waiter {
       });
     }, true).catch(() => {})];
   }
-
   static createForEvent(channelOwner, event) {
     return new Waiter(channelOwner, event);
   }
-
   async waitForEvent(emitter, event, predicate) {
     const {
       promise,
@@ -68,38 +61,31 @@ class Waiter {
     } = waitForEvent(emitter, event, predicate);
     return this.waitForPromise(promise, dispose);
   }
-
   rejectOnEvent(emitter, event, error, predicate) {
     const {
       promise,
       dispose
     } = waitForEvent(emitter, event, predicate);
-
     this._rejectOn(promise.then(() => {
       throw error;
     }), dispose);
   }
-
   rejectOnTimeout(timeout, message) {
     if (!timeout) return;
     const {
       promise,
       dispose
     } = waitForTimeout(timeout);
-
     this._rejectOn(promise.then(() => {
       throw new _errors.TimeoutError(message);
     }), dispose);
   }
-
   rejectImmediately(error) {
     this._immediateError = error;
   }
-
   dispose() {
     for (const dispose of this._dispose) dispose();
   }
-
   async waitForPromise(promise, dispose) {
     try {
       if (this._immediateError) throw this._immediateError;
@@ -114,10 +100,8 @@ class Waiter {
       throw e;
     }
   }
-
   log(s) {
     this._logs.push(s);
-
     this._channelOwner._wrapApiCall(async () => {
       await this._channelOwner._channel.waitForEventInfo({
         info: {
@@ -128,17 +112,12 @@ class Waiter {
       }).catch(() => {});
     }, true);
   }
-
   _rejectOn(promise, dispose) {
     this._failures.push(promise);
-
     if (dispose) this._dispose.push(dispose);
   }
-
 }
-
 exports.Waiter = Waiter;
-
 function waitForEvent(emitter, event, predicate) {
   let listener;
   const promise = new Promise((resolve, reject) => {
@@ -152,30 +131,23 @@ function waitForEvent(emitter, event, predicate) {
         reject(e);
       }
     };
-
     emitter.addListener(event, listener);
   });
-
   const dispose = () => emitter.removeListener(event, listener);
-
   return {
     promise,
     dispose
   };
 }
-
 function waitForTimeout(timeout) {
   let timeoutId;
   const promise = new Promise(resolve => timeoutId = setTimeout(resolve, timeout));
-
   const dispose = () => clearTimeout(timeoutId);
-
   return {
     promise,
     dispose
   };
 }
-
 function formatLogRecording(log) {
   if (!log.length) return '';
   const header = ` logs `;

@@ -4,7 +4,6 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.yazl = exports.yauzl = exports.extract = void 0;
-
 /**
  * Copyright (c) Microsoft Corporation.
  *
@@ -20,14 +19,10 @@ exports.yazl = exports.yauzl = exports.extract = void 0;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 const yazl = require('./zipBundleImpl').yazl;
-
 exports.yazl = yazl;
-
 const yauzl = require('./zipBundleImpl').yauzl;
-
 exports.yauzl = yauzl;
-
 const extract = require('./zipBundleImpl').extract;
-
 exports.extract = extract;

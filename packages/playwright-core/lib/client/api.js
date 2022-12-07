@@ -237,55 +237,29 @@ Object.defineProperty(exports, "Worker", {
     return _worker.Worker;
   }
 });
-
 var _accessibility = require("./accessibility");
-
 var _android = require("./android");
-
 var _browser = require("./browser");
-
 var _browserContext = require("./browserContext");
-
 var _browserType = require("./browserType");
-
 var _consoleMessage = require("./consoleMessage");
-
 var _coverage = require("./coverage");
-
 var _dialog = require("./dialog");
-
 var _download = require("./download");
-
 var _electron = require("./electron");
-
 var _locator = require("./locator");
-
 var _elementHandle = require("./elementHandle");
-
 var _fileChooser = require("./fileChooser");
-
 var _errors = require("../common/errors");
-
 var _frame = require("./frame");
-
 var _input = require("./input");
-
 var _jsHandle = require("./jsHandle");
-
 var _network = require("./network");
-
 var _fetch = require("./fetch");
-
 var _page = require("./page");
-
 var _selectors = require("./selectors");
-
 var _tracing = require("./tracing");
-
 var _video = require("./video");
-
 var _worker = require("./worker");
-
 var _cdpSession = require("./cdpSession");
-
 var _playwright = require("./playwright");

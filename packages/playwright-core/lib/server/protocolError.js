@@ -5,7 +5,6 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.ProtocolError = void 0;
 exports.isSessionClosedError = isSessionClosedError;
-
 /**
  * Copyright (c) Microsoft Corporation.
  *
@@ -21,17 +20,15 @@ exports.isSessionClosedError = isSessionClosedError;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 class ProtocolError extends Error {
   constructor(sessionClosed, message) {
     super(message);
     this.sessionClosed = void 0;
     this.sessionClosed = sessionClosed || false;
   }
-
 }
-
 exports.ProtocolError = ProtocolError;
-
 function isSessionClosedError(e) {
   return e instanceof ProtocolError && e.sessionClosed;
 }

@@ -1,32 +1,26 @@
-<!--
-  Copyright (c) Microsoft Corporation.
 
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
-
-      http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
--->
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" sizes="32x32" href="icon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="icon-16x16.png">
-    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" type="image/png" sizes="32x32" href="./icon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="./icon-16x16.png">
+    <link rel="manifest" href="./manifest.webmanifest">
     <title>Playwright Trace Viewer</title>
-    <script type="module" crossorigin src="main.ce7ea3d1.js"></script>
-    <link rel="stylesheet" href="main.a5d7e729.css">
+    <script type="module" crossorigin src="./index.460bb022.js"></script>
+    <link rel="stylesheet" href="./index.a3a59263.css">
   </head>
   <body>
     <div id="root"></div>
     
+    <dialog id="fallback-error">
+      <p>The Playwright Trace Viewer must be loaded over the <code>http://</code> or <code>https://</code> protocols.</p>
+      <p>For more information, please see the <a href="https://aka.ms/playwright/trace-viewer-file-protocol">docs</a>.</p>
+    </dialog>
+    <script>
+      if (!/^https?:/.test(window.location.protocol))
+        document.getElementById("fallback-error").show();
+    </script>
   </body>
 </html>

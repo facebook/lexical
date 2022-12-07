@@ -1,999 +1,20 @@
-var __create = Object.create;
-var __defProp = Object.defineProperty;
-var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-var __getOwnPropNames = Object.getOwnPropertyNames;
-var __getProtoOf = Object.getPrototypeOf;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __commonJS = (cb, mod) => function __require() {
-  return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
-};
-var __export = (target, all) => {
+"use strict";
+let __export = (target, all) => {
   for (var name in all)
-    __defProp(target, name, { get: all[name], enumerable: true });
+    target[name] = all[name];
 };
-var __copyProps = (to, from, except, desc) => {
-  if (from && typeof from === "object" || typeof from === "function") {
-    for (let key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+let __commonJS = cb => function __require() {
+  let fn;
+  for (const name in cb) {
+    fn = cb[name];
+    break;
   }
-  return to;
+  const exports = {};
+  fn(exports);
+  return exports;
 };
-var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target, mod));
-var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
-
-// packages/playwright-core/src/server/isomorphic/cssTokenizer.js
-var require_cssTokenizer = __commonJS({
-  "packages/playwright-core/src/server/isomorphic/cssTokenizer.js"(exports) {
-    (function(root, factory) {
-      if (typeof define === "function" && define.amd) {
-        define(["exports"], factory);
-      } else if (typeof exports !== "undefined") {
-        factory(exports);
-      } else {
-        factory(root);
-      }
-    })(exports, function(exports2) {
-      var between = function(num, first, last) {
-        return num >= first && num <= last;
-      };
-      function digit(code) {
-        return between(code, 48, 57);
-      }
-      function hexdigit(code) {
-        return digit(code) || between(code, 65, 70) || between(code, 97, 102);
-      }
-      function uppercaseletter(code) {
-        return between(code, 65, 90);
-      }
-      function lowercaseletter(code) {
-        return between(code, 97, 122);
-      }
-      function letter(code) {
-        return uppercaseletter(code) || lowercaseletter(code);
-      }
-      function nonascii(code) {
-        return code >= 128;
-      }
-      function namestartchar(code) {
-        return letter(code) || nonascii(code) || code == 95;
-      }
-      function namechar(code) {
-        return namestartchar(code) || digit(code) || code == 45;
-      }
-      function nonprintable(code) {
-        return between(code, 0, 8) || code == 11 || between(code, 14, 31) || code == 127;
-      }
-      function newline(code) {
-        return code == 10;
-      }
-      function whitespace(code) {
-        return newline(code) || code == 9 || code == 32;
-      }
-      function badescape(code) {
-        return newline(code) || isNaN(code);
-      }
-      var maximumallowedcodepoint = 1114111;
-      var InvalidCharacterError = function(message) {
-        this.message = message;
-      };
-      InvalidCharacterError.prototype = new Error();
-      InvalidCharacterError.prototype.name = "InvalidCharacterError";
-      function preprocess(str) {
-        var codepoints = [];
-        for (var i = 0; i < str.length; i++) {
-          var code = str.charCodeAt(i);
-          if (code == 13 && str.charCodeAt(i + 1) == 10) {
-            code = 10;
-            i++;
-          }
-          if (code == 13 || code == 12)
-            code = 10;
-          if (code == 0)
-            code = 65533;
-          if (between(code, 55296, 56319) && between(str.charCodeAt(i + 1), 56320, 57343)) {
-            var lead = code - 55296;
-            var trail = str.charCodeAt(i + 1) - 56320;
-            code = Math.pow(2, 16) + lead * Math.pow(2, 10) + trail;
-            i++;
-          }
-          codepoints.push(code);
-        }
-        return codepoints;
-      }
-      function stringFromCode(code) {
-        if (code <= 65535)
-          return String.fromCharCode(code);
-        code -= Math.pow(2, 16);
-        var lead = Math.floor(code / Math.pow(2, 10)) + 55296;
-        var trail = code % Math.pow(2, 10) + 56320;
-        return String.fromCharCode(lead) + String.fromCharCode(trail);
-      }
-      function tokenize2(str) {
-        str = preprocess(str);
-        var i = -1;
-        var tokens = [];
-        var code;
-        var line = 0;
-        var column = 0;
-        var lastLineLength = 0;
-        var incrLineno = function() {
-          line += 1;
-          lastLineLength = column;
-          column = 0;
-        };
-        var locStart = { line, column };
-        var codepoint = function(i2) {
-          if (i2 >= str.length) {
-            return -1;
-          }
-          return str[i2];
-        };
-        var next = function(num) {
-          if (num === void 0)
-            num = 1;
-          if (num > 3)
-            throw "Spec Error: no more than three codepoints of lookahead.";
-          return codepoint(i + num);
-        };
-        var consume = function(num) {
-          if (num === void 0)
-            num = 1;
-          i += num;
-          code = codepoint(i);
-          if (newline(code))
-            incrLineno();
-          else
-            column += num;
-          return true;
-        };
-        var reconsume = function() {
-          i -= 1;
-          if (newline(code)) {
-            line -= 1;
-            column = lastLineLength;
-          } else {
-            column -= 1;
-          }
-          locStart.line = line;
-          locStart.column = column;
-          return true;
-        };
-        var eof = function(codepoint2) {
-          if (codepoint2 === void 0)
-            codepoint2 = code;
-          return codepoint2 == -1;
-        };
-        var donothing = function() {
-        };
-        var parseerror = function() {
-          console.log("Parse error at index " + i + ", processing codepoint 0x" + code.toString(16) + ".");
-          return true;
-        };
-        var consumeAToken = function() {
-          consumeComments();
-          consume();
-          if (whitespace(code)) {
-            while (whitespace(next()))
-              consume();
-            return new WhitespaceToken2();
-          } else if (code == 34)
-            return consumeAStringToken();
-          else if (code == 35) {
-            if (namechar(next()) || areAValidEscape(next(1), next(2))) {
-              var token = new HashToken2();
-              if (wouldStartAnIdentifier(next(1), next(2), next(3)))
-                token.type = "id";
-              token.value = consumeAName();
-              return token;
-            } else {
-              return new DelimToken2(code);
-            }
-          } else if (code == 36) {
-            if (next() == 61) {
-              consume();
-              return new SuffixMatchToken();
-            } else {
-              return new DelimToken2(code);
-            }
-          } else if (code == 39)
-            return consumeAStringToken();
-          else if (code == 40)
-            return new OpenParenToken();
-          else if (code == 41)
-            return new CloseParenToken2();
-          else if (code == 42) {
-            if (next() == 61) {
-              consume();
-              return new SubstringMatchToken();
-            } else {
-              return new DelimToken2(code);
-            }
-          } else if (code == 43) {
-            if (startsWithANumber()) {
-              reconsume();
-              return consumeANumericToken();
-            } else {
-              return new DelimToken2(code);
-            }
-          } else if (code == 44)
-            return new CommaToken2();
-          else if (code == 45) {
-            if (startsWithANumber()) {
-              reconsume();
-              return consumeANumericToken();
-            } else if (next(1) == 45 && next(2) == 62) {
-              consume(2);
-              return new CDCToken2();
-            } else if (startsWithAnIdentifier()) {
-              reconsume();
-              return consumeAnIdentlikeToken();
-            } else {
-              return new DelimToken2(code);
-            }
-          } else if (code == 46) {
-            if (startsWithANumber()) {
-              reconsume();
-              return consumeANumericToken();
-            } else {
-              return new DelimToken2(code);
-            }
-          } else if (code == 58)
-            return new ColonToken2();
-          else if (code == 59)
-            return new SemicolonToken2();
-          else if (code == 60) {
-            if (next(1) == 33 && next(2) == 45 && next(3) == 45) {
-              consume(3);
-              return new CDOToken2();
-            } else {
-              return new DelimToken2(code);
-            }
-          } else if (code == 64) {
-            if (wouldStartAnIdentifier(next(1), next(2), next(3))) {
-              return new AtKeywordToken2(consumeAName());
-            } else {
-              return new DelimToken2(code);
-            }
-          } else if (code == 91)
-            return new OpenSquareToken2();
-          else if (code == 92) {
-            if (startsWithAValidEscape()) {
-              reconsume();
-              return consumeAnIdentlikeToken();
-            } else {
-              parseerror();
-              return new DelimToken2(code);
-            }
-          } else if (code == 93)
-            return new CloseSquareToken2();
-          else if (code == 94) {
-            if (next() == 61) {
-              consume();
-              return new PrefixMatchToken();
-            } else {
-              return new DelimToken2(code);
-            }
-          } else if (code == 123)
-            return new OpenCurlyToken2();
-          else if (code == 124) {
-            if (next() == 61) {
-              consume();
-              return new DashMatchToken();
-            } else if (next() == 124) {
-              consume();
-              return new ColumnToken2();
-            } else {
-              return new DelimToken2(code);
-            }
-          } else if (code == 125)
-            return new CloseCurlyToken2();
-          else if (code == 126) {
-            if (next() == 61) {
-              consume();
-              return new IncludeMatchToken();
-            } else {
-              return new DelimToken2(code);
-            }
-          } else if (digit(code)) {
-            reconsume();
-            return consumeANumericToken();
-          } else if (namestartchar(code)) {
-            reconsume();
-            return consumeAnIdentlikeToken();
-          } else if (eof())
-            return new EOFToken2();
-          else
-            return new DelimToken2(code);
-        };
-        var consumeComments = function() {
-          while (next(1) == 47 && next(2) == 42) {
-            consume(2);
-            while (true) {
-              consume();
-              if (code == 42 && next() == 47) {
-                consume();
-                break;
-              } else if (eof()) {
-                parseerror();
-                return;
-              }
-            }
-          }
-        };
-        var consumeANumericToken = function() {
-          var num = consumeANumber();
-          if (wouldStartAnIdentifier(next(1), next(2), next(3))) {
-            var token = new DimensionToken();
-            token.value = num.value;
-            token.repr = num.repr;
-            token.type = num.type;
-            token.unit = consumeAName();
-            return token;
-          } else if (next() == 37) {
-            consume();
-            var token = new PercentageToken2();
-            token.value = num.value;
-            token.repr = num.repr;
-            return token;
-          } else {
-            var token = new NumberToken2();
-            token.value = num.value;
-            token.repr = num.repr;
-            token.type = num.type;
-            return token;
-          }
-        };
-        var consumeAnIdentlikeToken = function() {
-          var str2 = consumeAName();
-          if (str2.toLowerCase() == "url" && next() == 40) {
-            consume();
-            while (whitespace(next(1)) && whitespace(next(2)))
-              consume();
-            if (next() == 34 || next() == 39) {
-              return new FunctionToken2(str2);
-            } else if (whitespace(next()) && (next(2) == 34 || next(2) == 39)) {
-              return new FunctionToken2(str2);
-            } else {
-              return consumeAURLToken();
-            }
-          } else if (next() == 40) {
-            consume();
-            return new FunctionToken2(str2);
-          } else {
-            return new IdentToken2(str2);
-          }
-        };
-        var consumeAStringToken = function(endingCodePoint) {
-          if (endingCodePoint === void 0)
-            endingCodePoint = code;
-          var string = "";
-          while (consume()) {
-            if (code == endingCodePoint || eof()) {
-              return new StringToken2(string);
-            } else if (newline(code)) {
-              parseerror();
-              reconsume();
-              return new BadStringToken2();
-            } else if (code == 92) {
-              if (eof(next())) {
-                donothing();
-              } else if (newline(next())) {
-                consume();
-              } else {
-                string += stringFromCode(consumeEscape());
-              }
-            } else {
-              string += stringFromCode(code);
-            }
-          }
-        };
-        var consumeAURLToken = function() {
-          var token = new URLToken2("");
-          while (whitespace(next()))
-            consume();
-          if (eof(next()))
-            return token;
-          while (consume()) {
-            if (code == 41 || eof()) {
-              return token;
-            } else if (whitespace(code)) {
-              while (whitespace(next()))
-                consume();
-              if (next() == 41 || eof(next())) {
-                consume();
-                return token;
-              } else {
-                consumeTheRemnantsOfABadURL();
-                return new BadURLToken2();
-              }
-            } else if (code == 34 || code == 39 || code == 40 || nonprintable(code)) {
-              parseerror();
-              consumeTheRemnantsOfABadURL();
-              return new BadURLToken2();
-            } else if (code == 92) {
-              if (startsWithAValidEscape()) {
-                token.value += stringFromCode(consumeEscape());
-              } else {
-                parseerror();
-                consumeTheRemnantsOfABadURL();
-                return new BadURLToken2();
-              }
-            } else {
-              token.value += stringFromCode(code);
-            }
-          }
-        };
-        var consumeEscape = function() {
-          consume();
-          if (hexdigit(code)) {
-            var digits = [code];
-            for (var total = 0; total < 5; total++) {
-              if (hexdigit(next())) {
-                consume();
-                digits.push(code);
-              } else {
-                break;
-              }
-            }
-            if (whitespace(next()))
-              consume();
-            var value = parseInt(digits.map(function(x) {
-              return String.fromCharCode(x);
-            }).join(""), 16);
-            if (value > maximumallowedcodepoint)
-              value = 65533;
-            return value;
-          } else if (eof()) {
-            return 65533;
-          } else {
-            return code;
-          }
-        };
-        var areAValidEscape = function(c1, c2) {
-          if (c1 != 92)
-            return false;
-          if (newline(c2))
-            return false;
-          return true;
-        };
-        var startsWithAValidEscape = function() {
-          return areAValidEscape(code, next());
-        };
-        var wouldStartAnIdentifier = function(c1, c2, c3) {
-          if (c1 == 45) {
-            return namestartchar(c2) || c2 == 45 || areAValidEscape(c2, c3);
-          } else if (namestartchar(c1)) {
-            return true;
-          } else if (c1 == 92) {
-            return areAValidEscape(c1, c2);
-          } else {
-            return false;
-          }
-        };
-        var startsWithAnIdentifier = function() {
-          return wouldStartAnIdentifier(code, next(1), next(2));
-        };
-        var wouldStartANumber = function(c1, c2, c3) {
-          if (c1 == 43 || c1 == 45) {
-            if (digit(c2))
-              return true;
-            if (c2 == 46 && digit(c3))
-              return true;
-            return false;
-          } else if (c1 == 46) {
-            if (digit(c2))
-              return true;
-            return false;
-          } else if (digit(c1)) {
-            return true;
-          } else {
-            return false;
-          }
-        };
-        var startsWithANumber = function() {
-          return wouldStartANumber(code, next(1), next(2));
-        };
-        var consumeAName = function() {
-          var result = "";
-          while (consume()) {
-            if (namechar(code)) {
-              result += stringFromCode(code);
-            } else if (startsWithAValidEscape()) {
-              result += stringFromCode(consumeEscape());
-            } else {
-              reconsume();
-              return result;
-            }
-          }
-        };
-        var consumeANumber = function() {
-          var repr = [];
-          var type = "integer";
-          if (next() == 43 || next() == 45) {
-            consume();
-            repr += stringFromCode(code);
-          }
-          while (digit(next())) {
-            consume();
-            repr += stringFromCode(code);
-          }
-          if (next(1) == 46 && digit(next(2))) {
-            consume();
-            repr += stringFromCode(code);
-            consume();
-            repr += stringFromCode(code);
-            type = "number";
-            while (digit(next())) {
-              consume();
-              repr += stringFromCode(code);
-            }
-          }
-          var c1 = next(1), c2 = next(2), c3 = next(3);
-          if ((c1 == 69 || c1 == 101) && digit(c2)) {
-            consume();
-            repr += stringFromCode(code);
-            consume();
-            repr += stringFromCode(code);
-            type = "number";
-            while (digit(next())) {
-              consume();
-              repr += stringFromCode(code);
-            }
-          } else if ((c1 == 69 || c1 == 101) && (c2 == 43 || c2 == 45) && digit(c3)) {
-            consume();
-            repr += stringFromCode(code);
-            consume();
-            repr += stringFromCode(code);
-            consume();
-            repr += stringFromCode(code);
-            type = "number";
-            while (digit(next())) {
-              consume();
-              repr += stringFromCode(code);
-            }
-          }
-          var value = convertAStringToANumber(repr);
-          return { type, value, repr };
-        };
-        var convertAStringToANumber = function(string) {
-          return +string;
-        };
-        var consumeTheRemnantsOfABadURL = function() {
-          while (consume()) {
-            if (code == 41 || eof()) {
-              return;
-            } else if (startsWithAValidEscape()) {
-              consumeEscape();
-              donothing();
-            } else {
-              donothing();
-            }
-          }
-        };
-        var iterationCount = 0;
-        while (!eof(next())) {
-          tokens.push(consumeAToken());
-          iterationCount++;
-          if (iterationCount > str.length * 2)
-            return "I'm infinite-looping!";
-        }
-        return tokens;
-      }
-      function CSSParserToken() {
-        throw "Abstract Base Class";
-      }
-      CSSParserToken.prototype.toJSON = function() {
-        return { token: this.tokenType };
-      };
-      CSSParserToken.prototype.toString = function() {
-        return this.tokenType;
-      };
-      CSSParserToken.prototype.toSource = function() {
-        return "" + this;
-      };
-      function BadStringToken2() {
-        return this;
-      }
-      BadStringToken2.prototype = Object.create(CSSParserToken.prototype);
-      BadStringToken2.prototype.tokenType = "BADSTRING";
-      function BadURLToken2() {
-        return this;
-      }
-      BadURLToken2.prototype = Object.create(CSSParserToken.prototype);
-      BadURLToken2.prototype.tokenType = "BADURL";
-      function WhitespaceToken2() {
-        return this;
-      }
-      WhitespaceToken2.prototype = Object.create(CSSParserToken.prototype);
-      WhitespaceToken2.prototype.tokenType = "WHITESPACE";
-      WhitespaceToken2.prototype.toString = function() {
-        return "WS";
-      };
-      WhitespaceToken2.prototype.toSource = function() {
-        return " ";
-      };
-      function CDOToken2() {
-        return this;
-      }
-      CDOToken2.prototype = Object.create(CSSParserToken.prototype);
-      CDOToken2.prototype.tokenType = "CDO";
-      CDOToken2.prototype.toSource = function() {
-        return "<!--";
-      };
-      function CDCToken2() {
-        return this;
-      }
-      CDCToken2.prototype = Object.create(CSSParserToken.prototype);
-      CDCToken2.prototype.tokenType = "CDC";
-      CDCToken2.prototype.toSource = function() {
-        return "-->";
-      };
-      function ColonToken2() {
-        return this;
-      }
-      ColonToken2.prototype = Object.create(CSSParserToken.prototype);
-      ColonToken2.prototype.tokenType = ":";
-      function SemicolonToken2() {
-        return this;
-      }
-      SemicolonToken2.prototype = Object.create(CSSParserToken.prototype);
-      SemicolonToken2.prototype.tokenType = ";";
-      function CommaToken2() {
-        return this;
-      }
-      CommaToken2.prototype = Object.create(CSSParserToken.prototype);
-      CommaToken2.prototype.tokenType = ",";
-      function GroupingToken() {
-        throw "Abstract Base Class";
-      }
-      GroupingToken.prototype = Object.create(CSSParserToken.prototype);
-      function OpenCurlyToken2() {
-        this.value = "{";
-        this.mirror = "}";
-        return this;
-      }
-      OpenCurlyToken2.prototype = Object.create(GroupingToken.prototype);
-      OpenCurlyToken2.prototype.tokenType = "{";
-      function CloseCurlyToken2() {
-        this.value = "}";
-        this.mirror = "{";
-        return this;
-      }
-      CloseCurlyToken2.prototype = Object.create(GroupingToken.prototype);
-      CloseCurlyToken2.prototype.tokenType = "}";
-      function OpenSquareToken2() {
-        this.value = "[";
-        this.mirror = "]";
-        return this;
-      }
-      OpenSquareToken2.prototype = Object.create(GroupingToken.prototype);
-      OpenSquareToken2.prototype.tokenType = "[";
-      function CloseSquareToken2() {
-        this.value = "]";
-        this.mirror = "[";
-        return this;
-      }
-      CloseSquareToken2.prototype = Object.create(GroupingToken.prototype);
-      CloseSquareToken2.prototype.tokenType = "]";
-      function OpenParenToken() {
-        this.value = "(";
-        this.mirror = ")";
-        return this;
-      }
-      OpenParenToken.prototype = Object.create(GroupingToken.prototype);
-      OpenParenToken.prototype.tokenType = "(";
-      function CloseParenToken2() {
-        this.value = ")";
-        this.mirror = "(";
-        return this;
-      }
-      CloseParenToken2.prototype = Object.create(GroupingToken.prototype);
-      CloseParenToken2.prototype.tokenType = ")";
-      function IncludeMatchToken() {
-        return this;
-      }
-      IncludeMatchToken.prototype = Object.create(CSSParserToken.prototype);
-      IncludeMatchToken.prototype.tokenType = "~=";
-      function DashMatchToken() {
-        return this;
-      }
-      DashMatchToken.prototype = Object.create(CSSParserToken.prototype);
-      DashMatchToken.prototype.tokenType = "|=";
-      function PrefixMatchToken() {
-        return this;
-      }
-      PrefixMatchToken.prototype = Object.create(CSSParserToken.prototype);
-      PrefixMatchToken.prototype.tokenType = "^=";
-      function SuffixMatchToken() {
-        return this;
-      }
-      SuffixMatchToken.prototype = Object.create(CSSParserToken.prototype);
-      SuffixMatchToken.prototype.tokenType = "$=";
-      function SubstringMatchToken() {
-        return this;
-      }
-      SubstringMatchToken.prototype = Object.create(CSSParserToken.prototype);
-      SubstringMatchToken.prototype.tokenType = "*=";
-      function ColumnToken2() {
-        return this;
-      }
-      ColumnToken2.prototype = Object.create(CSSParserToken.prototype);
-      ColumnToken2.prototype.tokenType = "||";
-      function EOFToken2() {
-        return this;
-      }
-      EOFToken2.prototype = Object.create(CSSParserToken.prototype);
-      EOFToken2.prototype.tokenType = "EOF";
-      EOFToken2.prototype.toSource = function() {
-        return "";
-      };
-      function DelimToken2(code) {
-        this.value = stringFromCode(code);
-        return this;
-      }
-      DelimToken2.prototype = Object.create(CSSParserToken.prototype);
-      DelimToken2.prototype.tokenType = "DELIM";
-      DelimToken2.prototype.toString = function() {
-        return "DELIM(" + this.value + ")";
-      };
-      DelimToken2.prototype.toJSON = function() {
-        var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
-        json.value = this.value;
-        return json;
-      };
-      DelimToken2.prototype.toSource = function() {
-        if (this.value == "\\")
-          return "\\\n";
-        else
-          return this.value;
-      };
-      function StringValuedToken() {
-        throw "Abstract Base Class";
-      }
-      StringValuedToken.prototype = Object.create(CSSParserToken.prototype);
-      StringValuedToken.prototype.ASCIIMatch = function(str) {
-        return this.value.toLowerCase() == str.toLowerCase();
-      };
-      StringValuedToken.prototype.toJSON = function() {
-        var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
-        json.value = this.value;
-        return json;
-      };
-      function IdentToken2(val) {
-        this.value = val;
-      }
-      IdentToken2.prototype = Object.create(StringValuedToken.prototype);
-      IdentToken2.prototype.tokenType = "IDENT";
-      IdentToken2.prototype.toString = function() {
-        return "IDENT(" + this.value + ")";
-      };
-      IdentToken2.prototype.toSource = function() {
-        return escapeIdent(this.value);
-      };
-      function FunctionToken2(val) {
-        this.value = val;
-        this.mirror = ")";
-      }
-      FunctionToken2.prototype = Object.create(StringValuedToken.prototype);
-      FunctionToken2.prototype.tokenType = "FUNCTION";
-      FunctionToken2.prototype.toString = function() {
-        return "FUNCTION(" + this.value + ")";
-      };
-      FunctionToken2.prototype.toSource = function() {
-        return escapeIdent(this.value) + "(";
-      };
-      function AtKeywordToken2(val) {
-        this.value = val;
-      }
-      AtKeywordToken2.prototype = Object.create(StringValuedToken.prototype);
-      AtKeywordToken2.prototype.tokenType = "AT-KEYWORD";
-      AtKeywordToken2.prototype.toString = function() {
-        return "AT(" + this.value + ")";
-      };
-      AtKeywordToken2.prototype.toSource = function() {
-        return "@" + escapeIdent(this.value);
-      };
-      function HashToken2(val) {
-        this.value = val;
-        this.type = "unrestricted";
-      }
-      HashToken2.prototype = Object.create(StringValuedToken.prototype);
-      HashToken2.prototype.tokenType = "HASH";
-      HashToken2.prototype.toString = function() {
-        return "HASH(" + this.value + ")";
-      };
-      HashToken2.prototype.toJSON = function() {
-        var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
-        json.value = this.value;
-        json.type = this.type;
-        return json;
-      };
-      HashToken2.prototype.toSource = function() {
-        if (this.type == "id") {
-          return "#" + escapeIdent(this.value);
-        } else {
-          return "#" + escapeHash(this.value);
-        }
-      };
-      function StringToken2(val) {
-        this.value = val;
-      }
-      StringToken2.prototype = Object.create(StringValuedToken.prototype);
-      StringToken2.prototype.tokenType = "STRING";
-      StringToken2.prototype.toString = function() {
-        return '"' + escapeString(this.value) + '"';
-      };
-      function URLToken2(val) {
-        this.value = val;
-      }
-      URLToken2.prototype = Object.create(StringValuedToken.prototype);
-      URLToken2.prototype.tokenType = "URL";
-      URLToken2.prototype.toString = function() {
-        return "URL(" + this.value + ")";
-      };
-      URLToken2.prototype.toSource = function() {
-        return 'url("' + escapeString(this.value) + '")';
-      };
-      function NumberToken2() {
-        this.value = null;
-        this.type = "integer";
-        this.repr = "";
-      }
-      NumberToken2.prototype = Object.create(CSSParserToken.prototype);
-      NumberToken2.prototype.tokenType = "NUMBER";
-      NumberToken2.prototype.toString = function() {
-        if (this.type == "integer")
-          return "INT(" + this.value + ")";
-        return "NUMBER(" + this.value + ")";
-      };
-      NumberToken2.prototype.toJSON = function() {
-        var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
-        json.value = this.value;
-        json.type = this.type;
-        json.repr = this.repr;
-        return json;
-      };
-      NumberToken2.prototype.toSource = function() {
-        return this.repr;
-      };
-      function PercentageToken2() {
-        this.value = null;
-        this.repr = "";
-      }
-      PercentageToken2.prototype = Object.create(CSSParserToken.prototype);
-      PercentageToken2.prototype.tokenType = "PERCENTAGE";
-      PercentageToken2.prototype.toString = function() {
-        return "PERCENTAGE(" + this.value + ")";
-      };
-      PercentageToken2.prototype.toJSON = function() {
-        var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
-        json.value = this.value;
-        json.repr = this.repr;
-        return json;
-      };
-      PercentageToken2.prototype.toSource = function() {
-        return this.repr + "%";
-      };
-      function DimensionToken() {
-        this.value = null;
-        this.type = "integer";
-        this.repr = "";
-        this.unit = "";
-      }
-      DimensionToken.prototype = Object.create(CSSParserToken.prototype);
-      DimensionToken.prototype.tokenType = "DIMENSION";
-      DimensionToken.prototype.toString = function() {
-        return "DIM(" + this.value + "," + this.unit + ")";
-      };
-      DimensionToken.prototype.toJSON = function() {
-        var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
-        json.value = this.value;
-        json.type = this.type;
-        json.repr = this.repr;
-        json.unit = this.unit;
-        return json;
-      };
-      DimensionToken.prototype.toSource = function() {
-        var source = this.repr;
-        var unit = escapeIdent(this.unit);
-        if (unit[0].toLowerCase() == "e" && (unit[1] == "-" || between(unit.charCodeAt(1), 48, 57))) {
-          unit = "\\65 " + unit.slice(1, unit.length);
-        }
-        return source + unit;
-      };
-      function escapeIdent(string) {
-        string = "" + string;
-        var result = "";
-        var firstcode = string.charCodeAt(0);
-        for (var i = 0; i < string.length; i++) {
-          var code = string.charCodeAt(i);
-          if (code == 0) {
-            throw new InvalidCharacterError("Invalid character: the input contains U+0000.");
-          }
-          if (between(code, 1, 31) || code == 127 || i == 0 && between(code, 48, 57) || i == 1 && between(code, 48, 57) && firstcode == 45) {
-            result += "\\" + code.toString(16) + " ";
-          } else if (code >= 128 || code == 45 || code == 95 || between(code, 48, 57) || between(code, 65, 90) || between(code, 97, 122)) {
-            result += string[i];
-          } else {
-            result += "\\" + string[i];
-          }
-        }
-        return result;
-      }
-      function escapeHash(string) {
-        string = "" + string;
-        var result = "";
-        var firstcode = string.charCodeAt(0);
-        for (var i = 0; i < string.length; i++) {
-          var code = string.charCodeAt(i);
-          if (code == 0) {
-            throw new InvalidCharacterError("Invalid character: the input contains U+0000.");
-          }
-          if (code >= 128 || code == 45 || code == 95 || between(code, 48, 57) || between(code, 65, 90) || between(code, 97, 122)) {
-            result += string[i];
-          } else {
-            result += "\\" + code.toString(16) + " ";
-          }
-        }
-        return result;
-      }
-      function escapeString(string) {
-        string = "" + string;
-        var result = "";
-        for (var i = 0; i < string.length; i++) {
-          var code = string.charCodeAt(i);
-          if (code == 0) {
-            throw new InvalidCharacterError("Invalid character: the input contains U+0000.");
-          }
-          if (between(code, 1, 31) || code == 127) {
-            result += "\\" + code.toString(16) + " ";
-          } else if (code == 34 || code == 92) {
-            result += "\\" + string[i];
-          } else {
-            result += string[i];
-          }
-        }
-        return result;
-      }
-      exports2.tokenize = tokenize2;
-      exports2.IdentToken = IdentToken2;
-      exports2.FunctionToken = FunctionToken2;
-      exports2.AtKeywordToken = AtKeywordToken2;
-      exports2.HashToken = HashToken2;
-      exports2.StringToken = StringToken2;
-      exports2.BadStringToken = BadStringToken2;
-      exports2.URLToken = URLToken2;
-      exports2.BadURLToken = BadURLToken2;
-      exports2.DelimToken = DelimToken2;
-      exports2.NumberToken = NumberToken2;
-      exports2.PercentageToken = PercentageToken2;
-      exports2.DimensionToken = DimensionToken;
-      exports2.IncludeMatchToken = IncludeMatchToken;
-      exports2.DashMatchToken = DashMatchToken;
-      exports2.PrefixMatchToken = PrefixMatchToken;
-      exports2.SuffixMatchToken = SuffixMatchToken;
-      exports2.SubstringMatchToken = SubstringMatchToken;
-      exports2.ColumnToken = ColumnToken2;
-      exports2.WhitespaceToken = WhitespaceToken2;
-      exports2.CDOToken = CDOToken2;
-      exports2.CDCToken = CDCToken2;
-      exports2.ColonToken = ColonToken2;
-      exports2.SemicolonToken = SemicolonToken2;
-      exports2.CommaToken = CommaToken2;
-      exports2.OpenParenToken = OpenParenToken;
-      exports2.CloseParenToken = CloseParenToken2;
-      exports2.OpenSquareToken = OpenSquareToken2;
-      exports2.CloseSquareToken = CloseSquareToken2;
-      exports2.OpenCurlyToken = OpenCurlyToken2;
-      exports2.CloseCurlyToken = CloseCurlyToken2;
-      exports2.EOFToken = EOFToken2;
-      exports2.CSSParserToken = CSSParserToken;
-      exports2.GroupingToken = GroupingToken;
-    });
-  }
-});
-
+let __toESM = mod => ({ ...mod, 'default': mod });
+let __toCommonJS = mod =>  ({ ...mod, __esModule: true });
 // packages/playwright-core/src/server/injected/injectedScript.ts
 var injectedScript_exports = {};
 __export(injectedScript_exports, {
@@ -1048,9 +69,9 @@ function enclosingShadowHost(element) {
     element = element.parentElement;
   return parentElementOrShadowHost(element);
 }
-function closestCrossShadow(element, css2) {
+function closestCrossShadow(element, css) {
   while (element) {
-    const closest = element.closest(css2);
+    const closest = element.closest(css);
     if (closest)
       return closest;
     element = enclosingShadowHost(element);
@@ -1060,8 +81,6 @@ function isElementVisible(element) {
   if (!element.ownerDocument || !element.ownerDocument.defaultView)
     return true;
   const style = element.ownerDocument.defaultView.getComputedStyle(element);
-  if (!style || style.visibility === "hidden")
-    return false;
   if (style.display === "contents") {
     for (let child = element.firstChild; child; child = child.nextSibling) {
       if (child.nodeType === 1 && isElementVisible(child))
@@ -1071,6 +90,10 @@ function isElementVisible(element) {
     }
     return false;
   }
+  if (Element.prototype.checkVisibility && !element.checkVisibility({ checkOpacity: false, checkVisibilityCSS: false }))
+    return false;
+  if (!style || style.visibility === "hidden")
+    return false;
   const rect = element.getBoundingClientRect();
   return rect.width > 0 && rect.height > 0;
 }
@@ -1113,29 +136,8 @@ function matchesAttributePart(value, attr) {
     return objValue.split(" ").includes(attrValue);
   return false;
 }
-function createLaxTextMatcher(text) {
-  text = text.trim().replace(/\s+/g, " ").toLowerCase();
-  return (elementText2) => {
-    const s = elementText2.full.trim().replace(/\s+/g, " ").toLowerCase();
-    return s.includes(text);
-  };
-}
-function createStrictTextMatcher(text) {
-  text = text.trim().replace(/\s+/g, " ");
-  return (elementText2) => {
-    if (!text && !elementText2.immediate.length)
-      return true;
-    return elementText2.immediate.some((s) => s.trim().replace(/\s+/g, " ") === text);
-  };
-}
-function createRegexTextMatcher(source, flags) {
-  const re = new RegExp(source, flags);
-  return (elementText2) => {
-    return re.test(elementText2.full);
-  };
-}
 function shouldSkipForTextMatching(element) {
-  return element.nodeName === "SCRIPT" || element.nodeName === "STYLE" || document.head && document.head.contains(element);
+  return element.nodeName === "SCRIPT" || element.nodeName === "NOSCRIPT" || element.nodeName === "STYLE" || document.head && document.head.contains(element);
 }
 function elementText(cache, root) {
   let value = cache.get(root);
@@ -1182,16 +184,973 @@ function elementMatchesText(cache, element, matcher) {
   return "self";
 }
 
+// packages/playwright-core/src/server/isomorphic/cssTokenizer.ts
+var between = function(num, first, last) {
+  return num >= first && num <= last;
+};
+function digit(code) {
+  return between(code, 48, 57);
+}
+function hexdigit(code) {
+  return digit(code) || between(code, 65, 70) || between(code, 97, 102);
+}
+function uppercaseletter(code) {
+  return between(code, 65, 90);
+}
+function lowercaseletter(code) {
+  return between(code, 97, 122);
+}
+function letter(code) {
+  return uppercaseletter(code) || lowercaseletter(code);
+}
+function nonascii(code) {
+  return code >= 128;
+}
+function namestartchar(code) {
+  return letter(code) || nonascii(code) || code === 95;
+}
+function namechar(code) {
+  return namestartchar(code) || digit(code) || code === 45;
+}
+function nonprintable(code) {
+  return between(code, 0, 8) || code === 11 || between(code, 14, 31) || code === 127;
+}
+function newline(code) {
+  return code === 10;
+}
+function whitespace(code) {
+  return newline(code) || code === 9 || code === 32;
+}
+var maximumallowedcodepoint = 1114111;
+var InvalidCharacterError = class extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "InvalidCharacterError";
+  }
+};
+function preprocess(str) {
+  const codepoints = [];
+  for (let i = 0; i < str.length; i++) {
+    let code = str.charCodeAt(i);
+    if (code === 13 && str.charCodeAt(i + 1) === 10) {
+      code = 10;
+      i++;
+    }
+    if (code === 13 || code === 12)
+      code = 10;
+    if (code === 0)
+      code = 65533;
+    if (between(code, 55296, 56319) && between(str.charCodeAt(i + 1), 56320, 57343)) {
+      const lead = code - 55296;
+      const trail = str.charCodeAt(i + 1) - 56320;
+      code = Math.pow(2, 16) + lead * Math.pow(2, 10) + trail;
+      i++;
+    }
+    codepoints.push(code);
+  }
+  return codepoints;
+}
+function stringFromCode(code) {
+  if (code <= 65535)
+    return String.fromCharCode(code);
+  code -= Math.pow(2, 16);
+  const lead = Math.floor(code / Math.pow(2, 10)) + 55296;
+  const trail = code % Math.pow(2, 10) + 56320;
+  return String.fromCharCode(lead) + String.fromCharCode(trail);
+}
+function tokenize(str1) {
+  const str = preprocess(str1);
+  let i = -1;
+  const tokens = [];
+  let code;
+  let line = 0;
+  let column = 0;
+  let lastLineLength = 0;
+  const incrLineno = function() {
+    line += 1;
+    lastLineLength = column;
+    column = 0;
+  };
+  const locStart = { line, column };
+  const codepoint = function(i2) {
+    if (i2 >= str.length)
+      return -1;
+    return str[i2];
+  };
+  const next = function(num) {
+    if (num === void 0)
+      num = 1;
+    if (num > 3)
+      throw "Spec Error: no more than three codepoints of lookahead.";
+    return codepoint(i + num);
+  };
+  const consume = function(num) {
+    if (num === void 0)
+      num = 1;
+    i += num;
+    code = codepoint(i);
+    if (newline(code))
+      incrLineno();
+    else
+      column += num;
+    return true;
+  };
+  const reconsume = function() {
+    i -= 1;
+    if (newline(code)) {
+      line -= 1;
+      column = lastLineLength;
+    } else {
+      column -= 1;
+    }
+    locStart.line = line;
+    locStart.column = column;
+    return true;
+  };
+  const eof = function(codepoint2) {
+    if (codepoint2 === void 0)
+      codepoint2 = code;
+    return codepoint2 === -1;
+  };
+  const donothing = function() {
+  };
+  const parseerror = function() {
+    console.log("Parse error at index " + i + ", processing codepoint 0x" + code.toString(16) + ".");
+    return true;
+  };
+  const consumeAToken = function() {
+    consumeComments();
+    consume();
+    if (whitespace(code)) {
+      while (whitespace(next()))
+        consume();
+      return new WhitespaceToken();
+    } else if (code === 34) {
+      return consumeAStringToken();
+    } else if (code === 35) {
+      if (namechar(next()) || areAValidEscape(next(1), next(2))) {
+        const token = new HashToken("");
+        if (wouldStartAnIdentifier(next(1), next(2), next(3)))
+          token.type = "id";
+        token.value = consumeAName();
+        return token;
+      } else {
+        return new DelimToken(code);
+      }
+    } else if (code === 36) {
+      if (next() === 61) {
+        consume();
+        return new SuffixMatchToken();
+      } else {
+        return new DelimToken(code);
+      }
+    } else if (code === 39) {
+      return consumeAStringToken();
+    } else if (code === 40) {
+      return new OpenParenToken();
+    } else if (code === 41) {
+      return new CloseParenToken();
+    } else if (code === 42) {
+      if (next() === 61) {
+        consume();
+        return new SubstringMatchToken();
+      } else {
+        return new DelimToken(code);
+      }
+    } else if (code === 43) {
+      if (startsWithANumber()) {
+        reconsume();
+        return consumeANumericToken();
+      } else {
+        return new DelimToken(code);
+      }
+    } else if (code === 44) {
+      return new CommaToken();
+    } else if (code === 45) {
+      if (startsWithANumber()) {
+        reconsume();
+        return consumeANumericToken();
+      } else if (next(1) === 45 && next(2) === 62) {
+        consume(2);
+        return new CDCToken();
+      } else if (startsWithAnIdentifier()) {
+        reconsume();
+        return consumeAnIdentlikeToken();
+      } else {
+        return new DelimToken(code);
+      }
+    } else if (code === 46) {
+      if (startsWithANumber()) {
+        reconsume();
+        return consumeANumericToken();
+      } else {
+        return new DelimToken(code);
+      }
+    } else if (code === 58) {
+      return new ColonToken();
+    } else if (code === 59) {
+      return new SemicolonToken();
+    } else if (code === 60) {
+      if (next(1) === 33 && next(2) === 45 && next(3) === 45) {
+        consume(3);
+        return new CDOToken();
+      } else {
+        return new DelimToken(code);
+      }
+    } else if (code === 64) {
+      if (wouldStartAnIdentifier(next(1), next(2), next(3)))
+        return new AtKeywordToken(consumeAName());
+      else
+        return new DelimToken(code);
+    } else if (code === 91) {
+      return new OpenSquareToken();
+    } else if (code === 92) {
+      if (startsWithAValidEscape()) {
+        reconsume();
+        return consumeAnIdentlikeToken();
+      } else {
+        parseerror();
+        return new DelimToken(code);
+      }
+    } else if (code === 93) {
+      return new CloseSquareToken();
+    } else if (code === 94) {
+      if (next() === 61) {
+        consume();
+        return new PrefixMatchToken();
+      } else {
+        return new DelimToken(code);
+      }
+    } else if (code === 123) {
+      return new OpenCurlyToken();
+    } else if (code === 124) {
+      if (next() === 61) {
+        consume();
+        return new DashMatchToken();
+      } else if (next() === 124) {
+        consume();
+        return new ColumnToken();
+      } else {
+        return new DelimToken(code);
+      }
+    } else if (code === 125) {
+      return new CloseCurlyToken();
+    } else if (code === 126) {
+      if (next() === 61) {
+        consume();
+        return new IncludeMatchToken();
+      } else {
+        return new DelimToken(code);
+      }
+    } else if (digit(code)) {
+      reconsume();
+      return consumeANumericToken();
+    } else if (namestartchar(code)) {
+      reconsume();
+      return consumeAnIdentlikeToken();
+    } else if (eof()) {
+      return new EOFToken();
+    } else {
+      return new DelimToken(code);
+    }
+  };
+  const consumeComments = function() {
+    while (next(1) === 47 && next(2) === 42) {
+      consume(2);
+      while (true) {
+        consume();
+        if (code === 42 && next() === 47) {
+          consume();
+          break;
+        } else if (eof()) {
+          parseerror();
+          return;
+        }
+      }
+    }
+  };
+  const consumeANumericToken = function() {
+    const num = consumeANumber();
+    if (wouldStartAnIdentifier(next(1), next(2), next(3))) {
+      const token = new DimensionToken();
+      token.value = num.value;
+      token.repr = num.repr;
+      token.type = num.type;
+      token.unit = consumeAName();
+      return token;
+    } else if (next() === 37) {
+      consume();
+      const token = new PercentageToken();
+      token.value = num.value;
+      token.repr = num.repr;
+      return token;
+    } else {
+      const token = new NumberToken();
+      token.value = num.value;
+      token.repr = num.repr;
+      token.type = num.type;
+      return token;
+    }
+  };
+  const consumeAnIdentlikeToken = function() {
+    const str2 = consumeAName();
+    if (str2.toLowerCase() === "url" && next() === 40) {
+      consume();
+      while (whitespace(next(1)) && whitespace(next(2)))
+        consume();
+      if (next() === 34 || next() === 39)
+        return new FunctionToken(str2);
+      else if (whitespace(next()) && (next(2) === 34 || next(2) === 39))
+        return new FunctionToken(str2);
+      else
+        return consumeAURLToken();
+    } else if (next() === 40) {
+      consume();
+      return new FunctionToken(str2);
+    } else {
+      return new IdentToken(str2);
+    }
+  };
+  const consumeAStringToken = function(endingCodePoint) {
+    if (endingCodePoint === void 0)
+      endingCodePoint = code;
+    let string = "";
+    while (consume()) {
+      if (code === endingCodePoint || eof()) {
+        return new StringToken(string);
+      } else if (newline(code)) {
+        parseerror();
+        reconsume();
+        return new BadStringToken();
+      } else if (code === 92) {
+        if (eof(next()))
+          donothing();
+        else if (newline(next()))
+          consume();
+        else
+          string += stringFromCode(consumeEscape());
+      } else {
+        string += stringFromCode(code);
+      }
+    }
+    throw new Error("Internal error");
+  };
+  const consumeAURLToken = function() {
+    const token = new URLToken("");
+    while (whitespace(next()))
+      consume();
+    if (eof(next()))
+      return token;
+    while (consume()) {
+      if (code === 41 || eof()) {
+        return token;
+      } else if (whitespace(code)) {
+        while (whitespace(next()))
+          consume();
+        if (next() === 41 || eof(next())) {
+          consume();
+          return token;
+        } else {
+          consumeTheRemnantsOfABadURL();
+          return new BadURLToken();
+        }
+      } else if (code === 34 || code === 39 || code === 40 || nonprintable(code)) {
+        parseerror();
+        consumeTheRemnantsOfABadURL();
+        return new BadURLToken();
+      } else if (code === 92) {
+        if (startsWithAValidEscape()) {
+          token.value += stringFromCode(consumeEscape());
+        } else {
+          parseerror();
+          consumeTheRemnantsOfABadURL();
+          return new BadURLToken();
+        }
+      } else {
+        token.value += stringFromCode(code);
+      }
+    }
+    throw new Error("Internal error");
+  };
+  const consumeEscape = function() {
+    consume();
+    if (hexdigit(code)) {
+      const digits = [code];
+      for (let total = 0; total < 5; total++) {
+        if (hexdigit(next())) {
+          consume();
+          digits.push(code);
+        } else {
+          break;
+        }
+      }
+      if (whitespace(next()))
+        consume();
+      let value = parseInt(digits.map(function(x) {
+        return String.fromCharCode(x);
+      }).join(""), 16);
+      if (value > maximumallowedcodepoint)
+        value = 65533;
+      return value;
+    } else if (eof()) {
+      return 65533;
+    } else {
+      return code;
+    }
+  };
+  const areAValidEscape = function(c1, c2) {
+    if (c1 !== 92)
+      return false;
+    if (newline(c2))
+      return false;
+    return true;
+  };
+  const startsWithAValidEscape = function() {
+    return areAValidEscape(code, next());
+  };
+  const wouldStartAnIdentifier = function(c1, c2, c3) {
+    if (c1 === 45)
+      return namestartchar(c2) || c2 === 45 || areAValidEscape(c2, c3);
+    else if (namestartchar(c1))
+      return true;
+    else if (c1 === 92)
+      return areAValidEscape(c1, c2);
+    else
+      return false;
+  };
+  const startsWithAnIdentifier = function() {
+    return wouldStartAnIdentifier(code, next(1), next(2));
+  };
+  const wouldStartANumber = function(c1, c2, c3) {
+    if (c1 === 43 || c1 === 45) {
+      if (digit(c2))
+        return true;
+      if (c2 === 46 && digit(c3))
+        return true;
+      return false;
+    } else if (c1 === 46) {
+      if (digit(c2))
+        return true;
+      return false;
+    } else if (digit(c1)) {
+      return true;
+    } else {
+      return false;
+    }
+  };
+  const startsWithANumber = function() {
+    return wouldStartANumber(code, next(1), next(2));
+  };
+  const consumeAName = function() {
+    let result = "";
+    while (consume()) {
+      if (namechar(code)) {
+        result += stringFromCode(code);
+      } else if (startsWithAValidEscape()) {
+        result += stringFromCode(consumeEscape());
+      } else {
+        reconsume();
+        return result;
+      }
+    }
+    throw new Error("Internal parse error");
+  };
+  const consumeANumber = function() {
+    let repr = "";
+    let type = "integer";
+    if (next() === 43 || next() === 45) {
+      consume();
+      repr += stringFromCode(code);
+    }
+    while (digit(next())) {
+      consume();
+      repr += stringFromCode(code);
+    }
+    if (next(1) === 46 && digit(next(2))) {
+      consume();
+      repr += stringFromCode(code);
+      consume();
+      repr += stringFromCode(code);
+      type = "number";
+      while (digit(next())) {
+        consume();
+        repr += stringFromCode(code);
+      }
+    }
+    const c1 = next(1), c2 = next(2), c3 = next(3);
+    if ((c1 === 69 || c1 === 101) && digit(c2)) {
+      consume();
+      repr += stringFromCode(code);
+      consume();
+      repr += stringFromCode(code);
+      type = "number";
+      while (digit(next())) {
+        consume();
+        repr += stringFromCode(code);
+      }
+    } else if ((c1 === 69 || c1 === 101) && (c2 === 43 || c2 === 45) && digit(c3)) {
+      consume();
+      repr += stringFromCode(code);
+      consume();
+      repr += stringFromCode(code);
+      consume();
+      repr += stringFromCode(code);
+      type = "number";
+      while (digit(next())) {
+        consume();
+        repr += stringFromCode(code);
+      }
+    }
+    const value = convertAStringToANumber(repr);
+    return { type, value, repr };
+  };
+  const convertAStringToANumber = function(string) {
+    return +string;
+  };
+  const consumeTheRemnantsOfABadURL = function() {
+    while (consume()) {
+      if (code === 41 || eof()) {
+        return;
+      } else if (startsWithAValidEscape()) {
+        consumeEscape();
+        donothing();
+      } else {
+        donothing();
+      }
+    }
+  };
+  let iterationCount = 0;
+  while (!eof(next())) {
+    tokens.push(consumeAToken());
+    iterationCount++;
+    if (iterationCount > str.length * 2)
+      throw new Error("I'm infinite-looping!");
+  }
+  return tokens;
+}
+var CSSParserToken = class {
+  constructor() {
+    this.tokenType = "";
+  }
+  toJSON() {
+    return { token: this.tokenType };
+  }
+  toString() {
+    return this.tokenType;
+  }
+  toSource() {
+    return "" + this;
+  }
+};
+var BadStringToken = class extends CSSParserToken {
+  constructor() {
+    super(...arguments);
+    this.tokenType = "BADSTRING";
+  }
+};
+var BadURLToken = class extends CSSParserToken {
+  constructor() {
+    super(...arguments);
+    this.tokenType = "BADURL";
+  }
+};
+var WhitespaceToken = class extends CSSParserToken {
+  constructor() {
+    super(...arguments);
+    this.tokenType = "WHITESPACE";
+  }
+  toString() {
+    return "WS";
+  }
+  toSource() {
+    return " ";
+  }
+};
+var CDOToken = class extends CSSParserToken {
+  constructor() {
+    super(...arguments);
+    this.tokenType = "CDO";
+  }
+  toSource() {
+    return "<!--";
+  }
+};
+var CDCToken = class extends CSSParserToken {
+  constructor() {
+    super(...arguments);
+    this.tokenType = "CDC";
+  }
+  toSource() {
+    return "-->";
+  }
+};
+var ColonToken = class extends CSSParserToken {
+  constructor() {
+    super(...arguments);
+    this.tokenType = ":";
+  }
+};
+var SemicolonToken = class extends CSSParserToken {
+  constructor() {
+    super(...arguments);
+    this.tokenType = ";";
+  }
+};
+var CommaToken = class extends CSSParserToken {
+  constructor() {
+    super(...arguments);
+    this.tokenType = ",";
+  }
+};
+var GroupingToken = class extends CSSParserToken {
+  constructor() {
+    super(...arguments);
+    this.value = "";
+    this.mirror = "";
+  }
+};
+var OpenCurlyToken = class extends GroupingToken {
+  constructor() {
+    super();
+    this.tokenType = "{";
+    this.value = "{";
+    this.mirror = "}";
+  }
+};
+var CloseCurlyToken = class extends GroupingToken {
+  constructor() {
+    super();
+    this.tokenType = "}";
+    this.value = "}";
+    this.mirror = "{";
+  }
+};
+var OpenSquareToken = class extends GroupingToken {
+  constructor() {
+    super();
+    this.tokenType = "[";
+    this.value = "[";
+    this.mirror = "]";
+  }
+};
+var CloseSquareToken = class extends GroupingToken {
+  constructor() {
+    super();
+    this.tokenType = "]";
+    this.value = "]";
+    this.mirror = "[";
+  }
+};
+var OpenParenToken = class extends GroupingToken {
+  constructor() {
+    super();
+    this.tokenType = "(";
+    this.value = "(";
+    this.mirror = ")";
+  }
+};
+var CloseParenToken = class extends GroupingToken {
+  constructor() {
+    super();
+    this.tokenType = ")";
+    this.value = ")";
+    this.mirror = "(";
+  }
+};
+var IncludeMatchToken = class extends CSSParserToken {
+  constructor() {
+    super(...arguments);
+    this.tokenType = "~=";
+  }
+};
+var DashMatchToken = class extends CSSParserToken {
+  constructor() {
+    super(...arguments);
+    this.tokenType = "|=";
+  }
+};
+var PrefixMatchToken = class extends CSSParserToken {
+  constructor() {
+    super(...arguments);
+    this.tokenType = "^=";
+  }
+};
+var SuffixMatchToken = class extends CSSParserToken {
+  constructor() {
+    super(...arguments);
+    this.tokenType = "$=";
+  }
+};
+var SubstringMatchToken = class extends CSSParserToken {
+  constructor() {
+    super(...arguments);
+    this.tokenType = "*=";
+  }
+};
+var ColumnToken = class extends CSSParserToken {
+  constructor() {
+    super(...arguments);
+    this.tokenType = "||";
+  }
+};
+var EOFToken = class extends CSSParserToken {
+  constructor() {
+    super(...arguments);
+    this.tokenType = "EOF";
+  }
+  toSource() {
+    return "";
+  }
+};
+var DelimToken = class extends CSSParserToken {
+  constructor(code) {
+    super();
+    this.tokenType = "DELIM";
+    this.value = "";
+    this.value = stringFromCode(code);
+  }
+  toString() {
+    return "DELIM(" + this.value + ")";
+  }
+  toJSON() {
+    const json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
+    json.value = this.value;
+    return json;
+  }
+  toSource() {
+    if (this.value === "\\")
+      return "\\\n";
+    else
+      return this.value;
+  }
+};
+var StringValuedToken = class extends CSSParserToken {
+  constructor() {
+    super(...arguments);
+    this.value = "";
+  }
+  ASCIIMatch(str) {
+    return this.value.toLowerCase() === str.toLowerCase();
+  }
+  toJSON() {
+    const json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
+    json.value = this.value;
+    return json;
+  }
+};
+var IdentToken = class extends StringValuedToken {
+  constructor(val) {
+    super();
+    this.tokenType = "IDENT";
+    this.value = val;
+  }
+  toString() {
+    return "IDENT(" + this.value + ")";
+  }
+  toSource() {
+    return escapeIdent(this.value);
+  }
+};
+var FunctionToken = class extends StringValuedToken {
+  constructor(val) {
+    super();
+    this.tokenType = "FUNCTION";
+    this.value = val;
+    this.mirror = ")";
+  }
+  toString() {
+    return "FUNCTION(" + this.value + ")";
+  }
+  toSource() {
+    return escapeIdent(this.value) + "(";
+  }
+};
+var AtKeywordToken = class extends StringValuedToken {
+  constructor(val) {
+    super();
+    this.tokenType = "AT-KEYWORD";
+    this.value = val;
+  }
+  toString() {
+    return "AT(" + this.value + ")";
+  }
+  toSource() {
+    return "@" + escapeIdent(this.value);
+  }
+};
+var HashToken = class extends StringValuedToken {
+  constructor(val) {
+    super();
+    this.tokenType = "HASH";
+    this.value = val;
+    this.type = "unrestricted";
+  }
+  toString() {
+    return "HASH(" + this.value + ")";
+  }
+  toJSON() {
+    const json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
+    json.value = this.value;
+    json.type = this.type;
+    return json;
+  }
+  toSource() {
+    if (this.type === "id")
+      return "#" + escapeIdent(this.value);
+    else
+      return "#" + escapeHash(this.value);
+  }
+};
+var StringToken = class extends StringValuedToken {
+  constructor(val) {
+    super();
+    this.tokenType = "STRING";
+    this.value = val;
+  }
+  toString() {
+    return '"' + escapeString(this.value) + '"';
+  }
+};
+var URLToken = class extends StringValuedToken {
+  constructor(val) {
+    super();
+    this.tokenType = "URL";
+    this.value = val;
+  }
+  toString() {
+    return "URL(" + this.value + ")";
+  }
+  toSource() {
+    return 'url("' + escapeString(this.value) + '")';
+  }
+};
+var NumberToken = class extends CSSParserToken {
+  constructor() {
+    super();
+    this.tokenType = "NUMBER";
+    this.type = "integer";
+    this.repr = "";
+  }
+  toString() {
+    if (this.type === "integer")
+      return "INT(" + this.value + ")";
+    return "NUMBER(" + this.value + ")";
+  }
+  toJSON() {
+    const json = super.toJSON();
+    json.value = this.value;
+    json.type = this.type;
+    json.repr = this.repr;
+    return json;
+  }
+  toSource() {
+    return this.repr;
+  }
+};
+var PercentageToken = class extends CSSParserToken {
+  constructor() {
+    super();
+    this.tokenType = "PERCENTAGE";
+    this.repr = "";
+  }
+  toString() {
+    return "PERCENTAGE(" + this.value + ")";
+  }
+  toJSON() {
+    const json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
+    json.value = this.value;
+    json.repr = this.repr;
+    return json;
+  }
+  toSource() {
+    return this.repr + "%";
+  }
+};
+var DimensionToken = class extends CSSParserToken {
+  constructor() {
+    super();
+    this.tokenType = "DIMENSION";
+    this.type = "integer";
+    this.repr = "";
+    this.unit = "";
+  }
+  toString() {
+    return "DIM(" + this.value + "," + this.unit + ")";
+  }
+  toJSON() {
+    const json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
+    json.value = this.value;
+    json.type = this.type;
+    json.repr = this.repr;
+    json.unit = this.unit;
+    return json;
+  }
+  toSource() {
+    const source = this.repr;
+    let unit = escapeIdent(this.unit);
+    if (unit[0].toLowerCase() === "e" && (unit[1] === "-" || between(unit.charCodeAt(1), 48, 57))) {
+      unit = "\\65 " + unit.slice(1, unit.length);
+    }
+    return source + unit;
+  }
+};
+function escapeIdent(string) {
+  string = "" + string;
+  let result = "";
+  const firstcode = string.charCodeAt(0);
+  for (let i = 0; i < string.length; i++) {
+    const code = string.charCodeAt(i);
+    if (code === 0)
+      throw new InvalidCharacterError("Invalid character: the input contains U+0000.");
+    if (between(code, 1, 31) || code === 127 || i === 0 && between(code, 48, 57) || i === 1 && between(code, 48, 57) && firstcode === 45)
+      result += "\\" + code.toString(16) + " ";
+    else if (code >= 128 || code === 45 || code === 95 || between(code, 48, 57) || between(code, 65, 90) || between(code, 97, 122))
+      result += string[i];
+    else
+      result += "\\" + string[i];
+  }
+  return result;
+}
+function escapeHash(string) {
+  string = "" + string;
+  let result = "";
+  for (let i = 0; i < string.length; i++) {
+    const code = string.charCodeAt(i);
+    if (code === 0)
+      throw new InvalidCharacterError("Invalid character: the input contains U+0000.");
+    if (code >= 128 || code === 45 || code === 95 || between(code, 48, 57) || between(code, 65, 90) || between(code, 97, 122))
+      result += string[i];
+    else
+      result += "\\" + code.toString(16) + " ";
+  }
+  return result;
+}
+function escapeString(string) {
+  string = "" + string;
+  let result = "";
+  for (let i = 0; i < string.length; i++) {
+    const code = string.charCodeAt(i);
+    if (code === 0)
+      throw new InvalidCharacterError("Invalid character: the input contains U+0000.");
+    if (between(code, 1, 31) || code === 127)
+      result += "\\" + code.toString(16) + " ";
+    else if (code === 34 || code === 92)
+      result += "\\" + string[i];
+    else
+      result += string[i];
+  }
+  return result;
+}
+
 // packages/playwright-core/src/server/isomorphic/cssParser.ts
-var css = __toESM(require_cssTokenizer());
 var InvalidSelectorError = class extends Error {
 };
 function parseCSS(selector, customNames) {
   let tokens;
   try {
-    tokens = css.tokenize(selector);
-    if (!(tokens[tokens.length - 1] instanceof css.EOFToken))
-      tokens.push(new css.EOFToken());
+    tokens = tokenize(selector);
+    if (!(tokens[tokens.length - 1] instanceof EOFToken))
+      tokens.push(new EOFToken());
   } catch (e) {
     const newMessage = e.message + ` while parsing selector "${selector}"`;
     const index = (e.stack || "").indexOf(e.message);
@@ -1201,7 +1160,7 @@ function parseCSS(selector, customNames) {
     throw e;
   }
   const unsupportedToken = tokens.find((token) => {
-    return token instanceof css.AtKeywordToken || token instanceof css.BadStringToken || token instanceof css.BadURLToken || token instanceof css.ColumnToken || token instanceof css.CDOToken || token instanceof css.CDCToken || token instanceof css.SemicolonToken || token instanceof css.OpenCurlyToken || token instanceof css.CloseCurlyToken || token instanceof css.URLToken || token instanceof css.PercentageToken;
+    return token instanceof AtKeywordToken || token instanceof BadStringToken || token instanceof BadURLToken || token instanceof ColumnToken || token instanceof CDOToken || token instanceof CDCToken || token instanceof SemicolonToken || token instanceof OpenCurlyToken || token instanceof CloseCurlyToken || token instanceof URLToken || token instanceof PercentageToken;
   });
   if (unsupportedToken)
     throw new InvalidSelectorError(`Unsupported token "${unsupportedToken.toSource()}" while parsing selector "${selector}"`);
@@ -1211,35 +1170,35 @@ function parseCSS(selector, customNames) {
     return new InvalidSelectorError(`Unexpected token "${tokens[pos].toSource()}" while parsing selector "${selector}"`);
   }
   function skipWhitespace() {
-    while (tokens[pos] instanceof css.WhitespaceToken)
+    while (tokens[pos] instanceof WhitespaceToken)
       pos++;
   }
   function isIdent(p = pos) {
-    return tokens[p] instanceof css.IdentToken;
+    return tokens[p] instanceof IdentToken;
   }
   function isString(p = pos) {
-    return tokens[p] instanceof css.StringToken;
+    return tokens[p] instanceof StringToken;
   }
   function isNumber(p = pos) {
-    return tokens[p] instanceof css.NumberToken;
+    return tokens[p] instanceof NumberToken;
   }
   function isComma(p = pos) {
-    return tokens[p] instanceof css.CommaToken;
+    return tokens[p] instanceof CommaToken;
   }
   function isCloseParen(p = pos) {
-    return tokens[p] instanceof css.CloseParenToken;
+    return tokens[p] instanceof CloseParenToken;
   }
   function isStar(p = pos) {
-    return tokens[p] instanceof css.DelimToken && tokens[p].value === "*";
+    return tokens[p] instanceof DelimToken && tokens[p].value === "*";
   }
   function isEOF(p = pos) {
-    return tokens[p] instanceof css.EOFToken;
+    return tokens[p] instanceof EOFToken;
   }
   function isClauseCombinator(p = pos) {
-    return tokens[p] instanceof css.DelimToken && [">", "+", "~"].includes(tokens[p].value);
+    return tokens[p] instanceof DelimToken && [">", "+", "~"].includes(tokens[p].value);
   }
   function isSelectorClauseEnd(p = pos) {
-    return isComma(p) || isCloseParen(p) || isEOF(p) || isClauseCombinator(p) || tokens[p] instanceof css.WhitespaceToken;
+    return isComma(p) || isCloseParen(p) || isEOF(p) || isClauseCombinator(p) || tokens[p] instanceof WhitespaceToken;
   }
   function consumeFunctionArguments() {
     const result2 = [consumeArgument()];
@@ -1286,15 +1245,15 @@ function parseCSS(selector, customNames) {
     while (!isSelectorClauseEnd()) {
       if (isIdent() || isStar()) {
         rawCSSString += tokens[pos++].toSource();
-      } else if (tokens[pos] instanceof css.HashToken) {
+      } else if (tokens[pos] instanceof HashToken) {
         rawCSSString += tokens[pos++].toSource();
-      } else if (tokens[pos] instanceof css.DelimToken && tokens[pos].value === ".") {
+      } else if (tokens[pos] instanceof DelimToken && tokens[pos].value === ".") {
         pos++;
         if (isIdent())
           rawCSSString += "." + tokens[pos++].toSource();
         else
           throw unexpected();
-      } else if (tokens[pos] instanceof css.ColonToken) {
+      } else if (tokens[pos] instanceof ColonToken) {
         pos++;
         if (isIdent()) {
           if (!customNames.has(tokens[pos].value.toLowerCase())) {
@@ -1304,7 +1263,7 @@ function parseCSS(selector, customNames) {
             functions.push({ name, args: [] });
             names.add(name);
           }
-        } else if (tokens[pos] instanceof css.FunctionToken) {
+        } else if (tokens[pos] instanceof FunctionToken) {
           const name = tokens[pos++].value.toLowerCase();
           if (!customNames.has(name)) {
             rawCSSString += `:${name}(${consumeBuiltinFunctionArguments()})`;
@@ -1319,12 +1278,12 @@ function parseCSS(selector, customNames) {
         } else {
           throw unexpected();
         }
-      } else if (tokens[pos] instanceof css.OpenSquareToken) {
+      } else if (tokens[pos] instanceof OpenSquareToken) {
         rawCSSString += "[";
         pos++;
-        while (!(tokens[pos] instanceof css.CloseSquareToken) && !isEOF())
+        while (!(tokens[pos] instanceof CloseSquareToken) && !isEOF())
           rawCSSString += tokens[pos++].toSource();
-        if (!(tokens[pos] instanceof css.CloseSquareToken))
+        if (!(tokens[pos] instanceof CloseSquareToken))
           throw unexpected();
         rawCSSString += "]";
         pos++;
@@ -1351,7 +1310,7 @@ function parseCSS(selector, customNames) {
 }
 
 // packages/playwright-core/src/server/isomorphic/selectorParser.ts
-var kNestedSelectorNames = /* @__PURE__ */ new Set(["has", "left-of", "right-of", "above", "below", "near"]);
+var kNestedSelectorNames = /* @__PURE__ */ new Set(["internal:has", "left-of", "right-of", "above", "below", "near"]);
 var kNestedSelectorNamesWithDistance = /* @__PURE__ */ new Set(["left-of", "right-of", "above", "below", "near"]);
 var customCSSNames = /* @__PURE__ */ new Set(["not", "is", "where", "has", "scope", "light", "visible", "text", "text-matches", "text-is", "has-text", "above", "below", "right-of", "left-of", "near", "nth-match"]);
 function parseSelector(selector) {
@@ -1384,7 +1343,7 @@ function parseSelector(selector) {
         throw new Error(`Malformed selector: ${part.name}=` + part.body);
       }
       const result2 = { name: part.name, source: part.body, body: { parsed: parseSelector(innerSelector), distance } };
-      if (result2.body.parsed.parts.some((part2) => part2.name === "control" && part2.body === "enter-frame"))
+      if (result2.body.parsed.parts.some((part2) => part2.name === "internal:control" && part2.body === "enter-frame"))
         throw new Error(`Frames are not allowed inside "${part.name}" selectors`);
       return result2;
     }
@@ -1733,12 +1692,11 @@ function findReactRoots(root, roots = []) {
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
   do {
     const node = walker.currentNode;
-    if (node.hasOwnProperty("_reactRootContainer")) {
+    const rootKey = Object.keys(node).find((key) => key.startsWith("__reactContainer"));
+    if (rootKey) {
+      roots.push(node[rootKey].stateNode.current);
+    } else if (node.hasOwnProperty("_reactRootContainer")) {
       roots.push(node._reactRootContainer._internalRoot.current);
-    } else {
-      const rootKey = Object.keys(node).find((key) => key.startsWith("__reactContainer"));
-      if (rootKey)
-        roots.push(node[rootKey].stateNode.current);
     }
     if (node instanceof Element && node.hasAttribute("data-reactroot")) {
       for (const key of Object.keys(node)) {
@@ -2512,8 +2470,10 @@ function getElementAccessibleNameInternal(element, options) {
   if (allowsNameFromContent || options.embeddedInLabelledBy !== "none" || options.embeddedInLabel !== "none" || options.embeddedInTextAlternativeElement || options.embeddedInTargetElement === "descendant") {
     options.visitedElements.add(element);
     const tokens = [];
-    const visit = (node) => {
+    const visit = (node, skipSlotted) => {
       var _a;
+      if (skipSlotted && node.assignedSlot)
+        return;
       if (node.nodeType === 1) {
         const display = ((_a = getComputedStyle(node)) == null ? void 0 : _a.getPropertyValue("display")) || "inline";
         let token = getElementAccessibleNameInternal(node, childOptions);
@@ -2525,14 +2485,20 @@ function getElementAccessibleNameInternal(element, options) {
       }
     };
     tokens.push(getPseudoContent(getComputedStyle(element, "::before")));
-    for (let child = element.firstChild; child; child = child.nextSibling)
-      visit(child);
-    if (element.shadowRoot) {
-      for (let child = element.shadowRoot.firstChild; child; child = child.nextSibling)
-        visit(child);
+    const assignedNodes = element.nodeName === "SLOT" ? element.assignedNodes() : [];
+    if (assignedNodes.length) {
+      for (const child of assignedNodes)
+        visit(child, false);
+    } else {
+      for (let child = element.firstChild; child; child = child.nextSibling)
+        visit(child, true);
+      if (element.shadowRoot) {
+        for (let child = element.shadowRoot.firstChild; child; child = child.nextSibling)
+          visit(child, true);
+      }
+      for (const owned of getIdRefs(element, element.getAttribute("aria-owns")))
+        visit(owned, true);
     }
-    for (const owned of getIdRefs(element, element.getAttribute("aria-owns")))
-      visit(owned);
     tokens.push(getPseudoContent(getComputedStyle(element, "::after")));
     const accessibleName = tokens.join("");
     if (accessibleName.trim())
@@ -2557,6 +2523,10 @@ function getAriaSelected(element) {
 }
 var kAriaCheckedRoles = ["checkbox", "menuitemcheckbox", "option", "radio", "switch", "menuitemradio", "treeitem"];
 function getAriaChecked(element) {
+  const result = getAriaCheckedStrict(element);
+  return result === "error" ? false : result;
+}
+function getAriaCheckedStrict(element) {
   if (element.tagName === "INPUT" && element.indeterminate)
     return "mixed";
   if (element.tagName === "INPUT" && ["checkbox", "radio"].includes(element.type))
@@ -2567,8 +2537,9 @@ function getAriaChecked(element) {
       return true;
     if (checked === "mixed")
       return "mixed";
+    return false;
   }
-  return false;
+  return "error";
 }
 var kAriaPressedRoles = ["button"];
 function getAriaPressed(element) {
@@ -2585,9 +2556,15 @@ var kAriaExpandedRoles = ["application", "button", "checkbox", "combobox", "grid
 function getAriaExpanded(element) {
   if (element.tagName === "DETAILS")
     return element.open;
-  if (kAriaExpandedRoles.includes(getAriaRole(element) || ""))
-    return getAriaBoolean(element.getAttribute("aria-expanded")) === true;
-  return false;
+  if (kAriaExpandedRoles.includes(getAriaRole(element) || "")) {
+    const expanded = element.getAttribute("aria-expanded");
+    if (expanded === null)
+      return "none";
+    if (expanded === "true")
+      return true;
+    return false;
+  }
+  return "none";
 }
 var kAriaLevelRoles = ["heading", "listitem", "row", "treeitem"];
 function getAriaLevel(element) {
@@ -2627,6 +2604,54 @@ function hasExplicitAriaDisabled(element) {
       return false;
   }
   return hasExplicitAriaDisabled(parentElementOrShadowHost(element));
+}
+
+// packages/playwright-core/src/utils/isomorphic/stringUtils.ts
+function escapeWithQuotes(text, char = "'") {
+  const stringified = JSON.stringify(text);
+  const escapedText = stringified.substring(1, stringified.length - 1).replace(/\\"/g, '"');
+  if (char === "'")
+    return char + escapedText.replace(/[']/g, "\\'") + char;
+  if (char === '"')
+    return char + escapedText.replace(/["]/g, '\\"') + char;
+  if (char === "`")
+    return char + escapedText.replace(/[`]/g, "`") + char;
+  throw new Error("Invalid escape char");
+}
+function toTitleCase(name) {
+  return name.charAt(0).toUpperCase() + name.substring(1);
+}
+function toSnakeCase(name) {
+  return name.replace(/([a-z0-9])([A-Z])/g, "$1_$2").replace(/([A-Z])([A-Z][a-z])/g, "$1_$2").toLowerCase();
+}
+function cssEscape(s) {
+  let result = "";
+  for (let i = 0; i < s.length; i++)
+    result += cssEscapeOne(s, i);
+  return result;
+}
+function cssEscapeOne(s, i) {
+  const c = s.charCodeAt(i);
+  if (c === 0)
+    return "\uFFFD";
+  if (c >= 1 && c <= 31 || c >= 48 && c <= 57 && (i === 0 || i === 1 && s.charCodeAt(0) === 45))
+    return "\\" + c.toString(16) + " ";
+  if (i === 0 && c === 45 && s.length === 1)
+    return "\\" + s.charAt(i);
+  if (c >= 128 || c === 45 || c === 95 || c >= 48 && c <= 57 || c >= 65 && c <= 90 || c >= 97 && c <= 122)
+    return s.charAt(i);
+  return "\\" + s.charAt(i);
+}
+function normalizeWhiteSpace(text) {
+  return text.replace(/\u200b/g, "").trim().replace(/\s+/g, " ");
+}
+function escapeForTextSelector(text, exact) {
+  if (typeof text !== "string")
+    return String(text);
+  return `${JSON.stringify(text)}${exact ? "s" : "i"}`;
+}
+function escapeForAttributeSelector(value, exact) {
+  return `"${value.replace(/["]/g, '\\"')}"${exact ? "s" : "i"}`;
 }
 
 // packages/playwright-core/src/server/injected/roleSelectorEngine.ts
@@ -2677,6 +2702,10 @@ function validateAttributes(attrs, role) {
         validateSupportedRole(attr.name, kAriaExpandedRoles, role);
         validateSupportedValues(attr, [true, false]);
         validateSupportedOp(attr, ["<truthy>", "="]);
+        if (attr.op === "<truthy>") {
+          attr.op = "=";
+          attr.value = true;
+        }
         break;
       }
       case "level": {
@@ -2710,8 +2739,8 @@ function validateAttributes(attrs, role) {
     }
   }
 }
-var RoleEngine = {
-  queryAll(scope, selector) {
+function createRoleEngine(internal) {
+  const queryAll = (scope, selector) => {
     const parsed = parseAttributeSelector(selector, true);
     const role = parsed.name.toLowerCase();
     if (!role)
@@ -2763,7 +2792,11 @@ var RoleEngine = {
           return;
       }
       if (nameAttr !== void 0) {
-        const accessibleName = getElementAccessibleName(element, includeHidden, hiddenCache);
+        const accessibleName = normalizeWhiteSpace(getElementAccessibleName(element, includeHidden, hiddenCache));
+        if (typeof nameAttr.value === "string")
+          nameAttr.value = normalizeWhiteSpace(nameAttr.value);
+        if (internal && !nameAttr.caseSensitive && nameAttr.op === "=")
+          nameAttr.op = "*=";
         if (!matchesAttributePart(accessibleName, nameAttr))
           return;
       }
@@ -2782,8 +2815,9 @@ var RoleEngine = {
     };
     query(scope);
     return result;
-  }
-};
+  };
+  return { queryAll };
+}
 
 // packages/playwright-core/src/server/injected/layoutSelectorUtils.ts
 function boxRightOf(box1, box2, maxDistance) {
@@ -2982,16 +3016,16 @@ var SelectorEvaluatorImpl = class {
     if (!simple.functions.length)
       return this._queryCSS(context, simple.css || "*");
     return this._cached(this._cacheQuerySimple, simple, [context.scope, context.pierceShadow], () => {
-      let css2 = simple.css;
+      let css = simple.css;
       const funcs = simple.functions;
-      if (css2 === "*" && funcs.length)
-        css2 = void 0;
+      if (css === "*" && funcs.length)
+        css = void 0;
       let elements;
       let firstIndex = -1;
-      if (css2 !== void 0) {
-        elements = this._queryCSS(context, css2);
+      if (css !== void 0) {
+        elements = this._queryCSS(context, css);
         const hasScopeClause = funcs.some((f) => f.name === "scope");
-        if (hasScopeClause && context.scope.nodeType === 1)
+        if (hasScopeClause && context.scope.nodeType === 1 && this._matchesCSS(context.scope, css))
           elements.unshift(context.scope);
       } else {
         firstIndex = funcs.findIndex((func) => this._getEngine(func.name).query !== void 0);
@@ -3099,14 +3133,14 @@ var SelectorEvaluatorImpl = class {
       return engine.query(context, args, this);
     });
   }
-  _matchesCSS(element, css2) {
-    return element.matches(css2);
+  _matchesCSS(element, css) {
+    return element.matches(css);
   }
-  _queryCSS(context, css2) {
-    return this._cached(this._cacheQueryCSS, css2, [context.scope, context.pierceShadow], () => {
+  _queryCSS(context, css) {
+    return this._cached(this._cacheQueryCSS, css, [context.scope, context.pierceShadow], () => {
       let result = [];
       function query(root) {
-        result = result.concat([...root.querySelectorAll(css2)]);
+        result = result.concat([...root.querySelectorAll(css)]);
         if (!context.pierceShadow)
           return;
         if (root.shadowRoot)
@@ -3195,7 +3229,8 @@ var textEngine = {
   matches(element, args, context, evaluator) {
     if (args.length !== 1 || typeof args[0] !== "string")
       throw new Error(`"text" engine expects a single string`);
-    const matcher = createLaxTextMatcher(args[0]);
+    const text = normalizeWhiteSpace(args[0]).toLowerCase();
+    const matcher = (elementText2) => normalizeWhiteSpace(elementText2.full).toLowerCase().includes(text);
     return elementMatchesText(evaluator._cacheText, element, matcher) === "self";
   }
 };
@@ -3203,7 +3238,12 @@ var textIsEngine = {
   matches(element, args, context, evaluator) {
     if (args.length !== 1 || typeof args[0] !== "string")
       throw new Error(`"text-is" engine expects a single string`);
-    const matcher = createStrictTextMatcher(args[0]);
+    const text = normalizeWhiteSpace(args[0]);
+    const matcher = (elementText2) => {
+      if (!text && !elementText2.immediate.length)
+        return true;
+      return elementText2.immediate.some((s) => normalizeWhiteSpace(s) === text);
+    };
     return elementMatchesText(evaluator._cacheText, element, matcher) !== "none";
   }
 };
@@ -3211,7 +3251,8 @@ var textMatchesEngine = {
   matches(element, args, context, evaluator) {
     if (args.length === 0 || typeof args[0] !== "string" || args.length > 2 || args.length === 2 && typeof args[1] !== "string")
       throw new Error(`"text-matches" engine expects a regexp body and optional regexp flags`);
-    const matcher = createRegexTextMatcher(args[0], args.length === 2 ? args[1] : void 0);
+    const re = new RegExp(args[0], args.length === 2 ? args[1] : void 0);
+    const matcher = (elementText2) => re.test(elementText2.full);
     return elementMatchesText(evaluator._cacheText, element, matcher) === "self";
   }
 };
@@ -3221,7 +3262,8 @@ var hasTextEngine = {
       throw new Error(`"has-text" engine expects a single string`);
     if (shouldSkipForTextMatching(element))
       return false;
-    const matcher = createLaxTextMatcher(args[0]);
+    const text = normalizeWhiteSpace(args[0]).toLowerCase();
+    const matcher = (elementText2) => normalizeWhiteSpace(elementText2.full).toLowerCase().includes(text);
     return matcher(elementText(evaluator._cacheText, element));
   }
 };
@@ -3314,13 +3356,26 @@ function sortInDOMOrder(elements) {
 // packages/playwright-core/src/server/injected/selectorGenerator.ts
 var cacheAllowText = /* @__PURE__ */ new Map();
 var cacheDisallowText = /* @__PURE__ */ new Map();
+var kTestIdScore = 1;
+var kOtherTestIdScore = 2;
+var kPlaceholderScore = 3;
+var kLabelScore = 3;
+var kRoleWithNameScore = 5;
+var kAltTextScore = 10;
+var kTextScore = 15;
+var kTitleScore = 20;
+var kCSSIdScore = 100;
+var kRoleWithoutNameScore = 140;
+var kCSSInputTypeNameScore = 150;
+var kCSSTagNameScore = 200;
 var kNthScore = 1e3;
-function generateSelector(injectedScript, targetElement, strict) {
+var kCSSFallbackScore = 1e7;
+function generateSelector(injectedScript, targetElement, testIdAttributeName) {
   injectedScript._evaluator.begin();
   try {
-    targetElement = targetElement.closest("button,select,input,[role=button],[role=checkbox],[role=radio]") || targetElement;
-    const targetTokens = generateSelectorFor(injectedScript, targetElement, strict);
-    const bestTokens = targetTokens || cssFallback(injectedScript, targetElement, strict);
+    targetElement = targetElement.closest("button,select,input,[role=button],[role=checkbox],[role=radio],a,[role=link]") || targetElement;
+    const targetTokens = generateSelectorFor(injectedScript, targetElement, testIdAttributeName);
+    const bestTokens = targetTokens || cssFallback(injectedScript, targetElement);
     const selector = joinTokens(bestTokens);
     const parsedSelector = injectedScript.parseSelector(selector);
     return {
@@ -3336,17 +3391,18 @@ function generateSelector(injectedScript, targetElement, strict) {
 function filterRegexTokens(textCandidates) {
   return textCandidates.filter((c) => c[0].selector[0] !== "/");
 }
-function generateSelectorFor(injectedScript, targetElement, strict) {
+function generateSelectorFor(injectedScript, targetElement, testIdAttributeName) {
   if (targetElement.ownerDocument.documentElement === targetElement)
     return [{ engine: "css", selector: "html", score: 1 }];
+  const accessibleNameCache = /* @__PURE__ */ new Map();
   const calculate = (element, allowText) => {
     const allowNthMatch = element === targetElement;
-    let textCandidates = allowText ? buildTextCandidates(injectedScript, element, element === targetElement).map((token) => [token]) : [];
+    let textCandidates = allowText ? buildTextCandidates(injectedScript, element, element === targetElement, accessibleNameCache) : [];
     if (element !== targetElement) {
       textCandidates = filterRegexTokens(textCandidates);
     }
-    const noTextCandidates = buildCandidates(injectedScript, element).map((token) => [token]);
-    let result = chooseFirstSelector(injectedScript, targetElement.ownerDocument, element, [...textCandidates, ...noTextCandidates], allowNthMatch, strict);
+    const noTextCandidates = buildCandidates(injectedScript, element, testIdAttributeName, accessibleNameCache).map((token) => [token]);
+    let result = chooseFirstSelector(injectedScript, targetElement.ownerDocument, element, [...textCandidates, ...noTextCandidates], allowNthMatch);
     textCandidates = filterRegexTokens(textCandidates);
     const checkWithText = (textCandidatesToUse) => {
       const allowParentText = allowText && !textCandidatesToUse.length;
@@ -3364,7 +3420,7 @@ function generateSelectorFor(injectedScript, targetElement, strict) {
           continue;
         if (result && combineScores([...parentTokens, ...bestPossibleInParent]) >= combineScores(result))
           continue;
-        bestPossibleInParent = chooseFirstSelector(injectedScript, parent, element, candidates, allowNthMatch, strict);
+        bestPossibleInParent = chooseFirstSelector(injectedScript, parent, element, candidates, allowNthMatch);
         if (!bestPossibleInParent)
           return;
         const combined = [...parentTokens, ...bestPossibleInParent];
@@ -3388,54 +3444,74 @@ function generateSelectorFor(injectedScript, targetElement, strict) {
   };
   return calculateCached(targetElement, true);
 }
-function buildCandidates(injectedScript, element) {
+function buildCandidates(injectedScript, element, testIdAttributeName, accessibleNameCache) {
+  var _a;
   const candidates = [];
-  for (const attribute of ["data-testid", "data-test-id", "data-test"]) {
-    if (element.getAttribute(attribute))
-      candidates.push({ engine: "css", selector: `[${attribute}=${quoteAttributeValue(element.getAttribute(attribute))}]`, score: 1 });
+  if (element.getAttribute(testIdAttributeName))
+    candidates.push({ engine: "internal:testid", selector: `[${testIdAttributeName}=${escapeForAttributeSelector(element.getAttribute(testIdAttributeName), true)}]`, score: kTestIdScore });
+  for (const attr of ["data-testid", "data-test-id", "data-test"]) {
+    if (attr !== testIdAttributeName && element.getAttribute(attr))
+      candidates.push({ engine: "css", selector: `[${attr}=${quoteAttributeValue(element.getAttribute(attr))}]`, score: kOtherTestIdScore });
   }
-  if (element.nodeName === "INPUT") {
+  if (element.nodeName === "INPUT" || element.nodeName === "TEXTAREA") {
     const input = element;
     if (input.placeholder)
-      candidates.push({ engine: "css", selector: `[placeholder=${quoteAttributeValue(input.placeholder)}]`, score: 10 });
+      candidates.push({ engine: "internal:attr", selector: `[placeholder=${escapeForAttributeSelector(input.placeholder, false)}]`, score: kPlaceholderScore });
+    const label = (_a = input.labels) == null ? void 0 : _a[0];
+    if (label) {
+      const labelText = elementText(injectedScript._evaluator._cacheText, label).full.trim();
+      candidates.push({ engine: "internal:label", selector: escapeForTextSelector(labelText, false), score: kLabelScore });
+    }
   }
-  if (element.getAttribute("aria-label"))
-    candidates.push({ engine: "css", selector: `[aria-label=${quoteAttributeValue(element.getAttribute("aria-label"))}]`, score: 10 });
+  const ariaRole = getAriaRole(element);
+  if (ariaRole && !["none", "presentation"].includes(ariaRole)) {
+    const ariaName = getElementAccessibleName(element, false, accessibleNameCache);
+    if (ariaName)
+      candidates.push({ engine: "internal:role", selector: `${ariaRole}[name=${escapeForAttributeSelector(ariaName, false)}]`, score: kRoleWithNameScore });
+    else
+      candidates.push({ engine: "internal:role", selector: ariaRole, score: kRoleWithoutNameScore });
+  }
   if (element.getAttribute("alt") && ["APPLET", "AREA", "IMG", "INPUT"].includes(element.nodeName))
-    candidates.push({ engine: "css", selector: `${cssEscape(element.nodeName.toLowerCase())}[alt=${quoteAttributeValue(element.getAttribute("alt"))}]`, score: 10 });
-  if (element.getAttribute("role"))
-    candidates.push({ engine: "css", selector: `${cssEscape(element.nodeName.toLowerCase())}[role=${quoteAttributeValue(element.getAttribute("role"))}]`, score: 50 });
-  if (element.getAttribute("name") && ["BUTTON", "FORM", "FIELDSET", "IFRAME", "INPUT", "KEYGEN", "OBJECT", "OUTPUT", "SELECT", "TEXTAREA", "MAP", "META", "PARAM"].includes(element.nodeName))
-    candidates.push({ engine: "css", selector: `${cssEscape(element.nodeName.toLowerCase())}[name=${quoteAttributeValue(element.getAttribute("name"))}]`, score: 50 });
+    candidates.push({ engine: "internal:attr", selector: `[alt=${escapeForAttributeSelector(element.getAttribute("alt"), false)}]`, score: kAltTextScore });
+  if (element.getAttribute("name") && ["BUTTON", "FORM", "FIELDSET", "FRAME", "IFRAME", "INPUT", "KEYGEN", "OBJECT", "OUTPUT", "SELECT", "TEXTAREA", "MAP", "META", "PARAM"].includes(element.nodeName))
+    candidates.push({ engine: "css", selector: `${cssEscape(element.nodeName.toLowerCase())}[name=${quoteAttributeValue(element.getAttribute("name"))}]`, score: kCSSInputTypeNameScore });
+  if (element.getAttribute("title"))
+    candidates.push({ engine: "internal:attr", selector: `[title=${escapeForAttributeSelector(element.getAttribute("title"), false)}]`, score: kTitleScore });
   if (["INPUT", "TEXTAREA"].includes(element.nodeName) && element.getAttribute("type") !== "hidden") {
     if (element.getAttribute("type"))
-      candidates.push({ engine: "css", selector: `${cssEscape(element.nodeName.toLowerCase())}[type=${quoteAttributeValue(element.getAttribute("type"))}]`, score: 50 });
+      candidates.push({ engine: "css", selector: `${cssEscape(element.nodeName.toLowerCase())}[type=${quoteAttributeValue(element.getAttribute("type"))}]`, score: kCSSInputTypeNameScore });
   }
-  if (["INPUT", "TEXTAREA", "SELECT"].includes(element.nodeName))
-    candidates.push({ engine: "css", selector: cssEscape(element.nodeName.toLowerCase()), score: 50 });
+  if (["INPUT", "TEXTAREA", "SELECT"].includes(element.nodeName) && element.getAttribute("type") !== "hidden")
+    candidates.push({ engine: "css", selector: cssEscape(element.nodeName.toLowerCase()), score: kCSSInputTypeNameScore + 1 });
   const idAttr = element.getAttribute("id");
   if (idAttr && !isGuidLike(idAttr))
-    candidates.push({ engine: "css", selector: makeSelectorForId(idAttr), score: 100 });
-  candidates.push({ engine: "css", selector: cssEscape(element.nodeName.toLowerCase()), score: 200 });
+    candidates.push({ engine: "css", selector: makeSelectorForId(idAttr), score: kCSSIdScore });
+  candidates.push({ engine: "css", selector: cssEscape(element.nodeName.toLowerCase()), score: kCSSTagNameScore });
   return candidates;
 }
-function buildTextCandidates(injectedScript, element, allowHasText) {
+function buildTextCandidates(injectedScript, element, isTargetNode, accessibleNameCache) {
   if (element.nodeName === "SELECT")
     return [];
-  const text = elementText(injectedScript._evaluator._cacheText, element).full.trim().replace(/\s+/g, " ").substring(0, 80);
+  const text = normalizeWhiteSpace(elementText(injectedScript._evaluator._cacheText, element).full).substring(0, 80);
   if (!text)
     return [];
   const candidates = [];
-  let escaped = text;
-  if (text.includes('"') || text.includes(">>") || text[0] === "/")
-    escaped = `/.*${escapeForRegex(text)}.*/`;
-  candidates.push({ engine: "text", selector: escaped, score: 10 });
-  if (allowHasText && escaped === text) {
-    let prefix = element.nodeName.toLowerCase();
-    if (element.hasAttribute("role"))
-      prefix += `[role=${quoteAttributeValue(element.getAttribute("role"))}]`;
-    candidates.push({ engine: "css", selector: `${prefix}:has-text("${text}")`, score: 30 });
+  const escaped = escapeForTextSelector(text, false);
+  if (isTargetNode)
+    candidates.push([{ engine: "internal:text", selector: escaped, score: kTextScore }]);
+  const ariaRole = getAriaRole(element);
+  const candidate = [];
+  if (ariaRole && !["none", "presentation"].includes(ariaRole)) {
+    const ariaName = getElementAccessibleName(element, false, accessibleNameCache);
+    if (ariaName)
+      candidate.push({ engine: "internal:role", selector: `${ariaRole}[name=${escapeForAttributeSelector(ariaName, false)}]`, score: kRoleWithNameScore });
+    else
+      candidate.push({ engine: "internal:role", selector: ariaRole, score: kRoleWithoutNameScore });
+  } else {
+    candidate.push({ engine: "css", selector: element.nodeName.toLowerCase(), score: kCSSTagNameScore });
   }
+  candidate.push({ engine: "internal:has-text", selector: escaped, score: kTextScore });
+  candidates.push(candidate);
   return candidates;
 }
 function parentElementOrShadowHost2(element) {
@@ -3450,8 +3526,7 @@ function parentElementOrShadowHost2(element) {
 function makeSelectorForId(id) {
   return /^[a-zA-Z][a-zA-Z0-9\-\_]+$/.test(id) ? "#" + id : `[id="${cssEscape(id)}"]`;
 }
-function cssFallback(injectedScript, targetElement, strict) {
-  const kFallbackScore = 1e7;
+function cssFallback(injectedScript, targetElement) {
   const root = targetElement.ownerDocument;
   const tokens = [];
   function uniqueCSSSelector(prefix) {
@@ -3464,9 +3539,7 @@ function cssFallback(injectedScript, targetElement, strict) {
     return node === targetElement ? selector : void 0;
   }
   function makeStrict(selector) {
-    const token = { engine: "css", selector, score: kFallbackScore };
-    if (!strict)
-      return [token];
+    const token = { engine: "css", selector, score: kCSSFallbackScore };
     const parsedSelector = injectedScript.parseSelector(selector);
     const elements = injectedScript.querySelectorAll(parsedSelector, targetElement.ownerDocument);
     if (elements.length === 1)
@@ -3487,7 +3560,7 @@ function cssFallback(injectedScript, targetElement, strict) {
     const parent = element.parentNode;
     const classes = [...element.classList];
     for (let i = 0; i < classes.length; ++i) {
-      const token = "." + classes.slice(0, i + 1).join(".");
+      const token = "." + cssEscape(classes.slice(0, i + 1).join("."));
       const selector = uniqueCSSSelector(token);
       if (selector)
         return makeStrict(selector);
@@ -3513,9 +3586,6 @@ function cssFallback(injectedScript, targetElement, strict) {
   }
   return makeStrict(uniqueCSSSelector());
 }
-function escapeForRegex(text) {
-  return text.replace(/[.*+?^>${}()|[\]\\]/g, "\\$&");
-}
 function quoteAttributeValue(text) {
   return `"${cssEscape(text).replace(/\\ /g, " ")}"`;
 }
@@ -3539,18 +3609,17 @@ function combineScores(tokens) {
     score += tokens[i].score * (tokens.length - i);
   return score;
 }
-function chooseFirstSelector(injectedScript, scope, targetElement, selectors, allowNthMatch, strict) {
+function chooseFirstSelector(injectedScript, scope, targetElement, selectors, allowNthMatch) {
   const joined = selectors.map((tokens) => ({ tokens, score: combineScores(tokens) }));
   joined.sort((a, b) => a.score - b.score);
   let bestWithIndex = null;
   for (const { tokens } of joined) {
     const parsedSelector = injectedScript.parseSelector(joinTokens(tokens));
     const result = injectedScript.querySelectorAll(parsedSelector, scope);
-    const isStrictEnough = !strict || result.length === 1;
-    const index = result.indexOf(targetElement);
-    if (index === 0 && isStrictEnough) {
+    if (result[0] === targetElement && result.length === 1) {
       return tokens;
     }
+    const index = result.indexOf(targetElement);
     if (!allowNthMatch || bestWithIndex || index === -1 || result.length > 5)
       continue;
     const nth = { engine: "nth", selector: String(index), score: kNthScore };
@@ -3584,47 +3653,426 @@ function isGuidLike(id) {
   }
   return transitionCount >= id.length / 4;
 }
-function cssEscape(s) {
-  let result = "";
-  for (let i = 0; i < s.length; i++)
-    result += cssEscapeOne(s, i);
-  return result;
+
+// packages/playwright-core/src/server/isomorphic/locatorGenerators.ts
+function asLocator(lang, selector, isFrameLocator = false) {
+  return innerAsLocator(generators[lang], parseSelector(selector), isFrameLocator);
 }
-function cssEscapeOne(s, i) {
-  const c = s.charCodeAt(i);
-  if (c === 0)
-    return "\uFFFD";
-  if (c >= 1 && c <= 31 || c >= 48 && c <= 57 && (i === 0 || i === 1 && s.charCodeAt(0) === 45))
-    return "\\" + c.toString(16) + " ";
-  if (i === 0 && c === 45 && s.length === 1)
-    return "\\" + s.charAt(i);
-  if (c >= 128 || c === 45 || c === 95 || c >= 48 && c <= 57 || c >= 65 && c <= 90 || c >= 97 && c <= 122)
-    return s.charAt(i);
-  return "\\" + s.charAt(i);
+function innerAsLocator(factory, parsed, isFrameLocator = false) {
+  const parts = [...parsed.parts];
+  for (let index = 0; index < parts.length - 1; index++) {
+    if (parts[index].name === "nth" && parts[index + 1].name === "internal:control" && parts[index + 1].body === "enter-frame") {
+      const [nth] = parts.splice(index, 1);
+      parts.splice(index + 1, 0, nth);
+    }
+  }
+  const tokens = [];
+  let nextBase = isFrameLocator ? "frame-locator" : "page";
+  for (let index = 0; index < parts.length; index++) {
+    const part = parts[index];
+    const base = nextBase;
+    nextBase = "locator";
+    if (part.name === "nth") {
+      if (part.body === "0")
+        tokens.push(factory.generateLocator(base, "first", ""));
+      else if (part.body === "-1")
+        tokens.push(factory.generateLocator(base, "last", ""));
+      else
+        tokens.push(factory.generateLocator(base, "nth", part.body));
+      continue;
+    }
+    if (part.name === "internal:text") {
+      const { exact, text } = detectExact(part.body);
+      tokens.push(factory.generateLocator(base, "text", text, { exact }));
+      continue;
+    }
+    if (part.name === "internal:has-text") {
+      const { exact, text } = detectExact(part.body);
+      tokens.push(factory.generateLocator(base, "has-text", text, { exact }));
+      continue;
+    }
+    if (part.name === "internal:has") {
+      const inner = innerAsLocator(factory, part.body.parsed);
+      tokens.push(factory.generateLocator(base, "has", inner));
+      continue;
+    }
+    if (part.name === "internal:label") {
+      const { exact, text } = detectExact(part.body);
+      tokens.push(factory.generateLocator(base, "label", text, { exact }));
+      continue;
+    }
+    if (part.name === "internal:role") {
+      const attrSelector = parseAttributeSelector(part.body, true);
+      const options = { attrs: [] };
+      for (const attr of attrSelector.attributes) {
+        if (attr.name === "name") {
+          options.exact = attr.caseSensitive;
+          options.name = attr.value;
+        } else {
+          if (attr.name === "level" && typeof attr.value === "string")
+            attr.value = +attr.value;
+          options.attrs.push({ name: attr.name === "include-hidden" ? "includeHidden" : attr.name, value: attr.value });
+        }
+      }
+      tokens.push(factory.generateLocator(base, "role", attrSelector.name, options));
+      continue;
+    }
+    if (part.name === "internal:testid") {
+      const attrSelector = parseAttributeSelector(part.body, true);
+      const { value } = attrSelector.attributes[0];
+      tokens.push(factory.generateLocator(base, "test-id", value));
+      continue;
+    }
+    if (part.name === "internal:attr") {
+      const attrSelector = parseAttributeSelector(part.body, true);
+      const { name, value, caseSensitive } = attrSelector.attributes[0];
+      const text = value;
+      const exact = !!caseSensitive;
+      if (name === "placeholder") {
+        tokens.push(factory.generateLocator(base, "placeholder", text, { exact }));
+        continue;
+      }
+      if (name === "alt") {
+        tokens.push(factory.generateLocator(base, "alt", text, { exact }));
+        continue;
+      }
+      if (name === "title") {
+        tokens.push(factory.generateLocator(base, "title", text, { exact }));
+        continue;
+      }
+    }
+    let locatorType = "default";
+    const nextPart = parts[index + 1];
+    if (nextPart && nextPart.name === "internal:control" && nextPart.body === "enter-frame") {
+      locatorType = "frame";
+      nextBase = "frame-locator";
+      index++;
+    }
+    const p = { parts: [part] };
+    tokens.push(factory.generateLocator(base, locatorType, stringifySelector(p)));
+  }
+  return tokens.join(".");
+}
+function detectExact(text) {
+  let exact = false;
+  const match = text.match(/^\/(.*)\/([igm]*)$/);
+  if (match)
+    return { text: new RegExp(match[1], match[2]) };
+  if (text.endsWith('"')) {
+    text = JSON.parse(text);
+    exact = true;
+  } else if (text.endsWith('"s')) {
+    text = JSON.parse(text.substring(0, text.length - 1));
+    exact = true;
+  } else if (text.endsWith('"i')) {
+    text = JSON.parse(text.substring(0, text.length - 1));
+    exact = false;
+  }
+  return { exact, text };
+}
+var JavaScriptLocatorFactory = class {
+  generateLocator(base, kind, body, options = {}) {
+    switch (kind) {
+      case "default":
+        return `locator(${this.quote(body)})`;
+      case "frame":
+        return `frameLocator(${this.quote(body)})`;
+      case "nth":
+        return `nth(${body})`;
+      case "first":
+        return `first()`;
+      case "last":
+        return `last()`;
+      case "role":
+        const attrs = [];
+        if (isRegExp(options.name)) {
+          attrs.push(`name: ${options.name}`);
+        } else if (typeof options.name === "string") {
+          attrs.push(`name: ${this.quote(options.name)}`);
+          if (options.exact)
+            attrs.push(`exact: true`);
+        }
+        for (const { name, value } of options.attrs)
+          attrs.push(`${name}: ${typeof value === "string" ? this.quote(value) : value}`);
+        const attrString = attrs.length ? `, { ${attrs.join(", ")} }` : "";
+        return `getByRole(${this.quote(body)}${attrString})`;
+      case "has-text":
+        return `filter({ hasText: ${this.toHasText(body)} })`;
+      case "has":
+        return `filter({ has: ${body} })`;
+      case "test-id":
+        return `getByTestId(${this.quote(body)})`;
+      case "text":
+        return this.toCallWithExact("getByText", body, !!options.exact);
+      case "alt":
+        return this.toCallWithExact("getByAltText", body, !!options.exact);
+      case "placeholder":
+        return this.toCallWithExact("getByPlaceholder", body, !!options.exact);
+      case "label":
+        return this.toCallWithExact("getByLabel", body, !!options.exact);
+      case "title":
+        return this.toCallWithExact("getByTitle", body, !!options.exact);
+      default:
+        throw new Error("Unknown selector kind " + kind);
+    }
+  }
+  toCallWithExact(method, body, exact) {
+    if (isRegExp(body))
+      return `${method}(${body})`;
+    return exact ? `${method}(${this.quote(body)}, { exact: true })` : `${method}(${this.quote(body)})`;
+  }
+  toHasText(body) {
+    if (isRegExp(body))
+      return String(body);
+    return this.quote(body);
+  }
+  quote(text) {
+    return escapeWithQuotes(text, "'");
+  }
+};
+var PythonLocatorFactory = class {
+  generateLocator(base, kind, body, options = {}) {
+    switch (kind) {
+      case "default":
+        return `locator(${this.quote(body)})`;
+      case "frame":
+        return `frame_locator(${this.quote(body)})`;
+      case "nth":
+        return `nth(${body})`;
+      case "first":
+        return `first`;
+      case "last":
+        return `last`;
+      case "role":
+        const attrs = [];
+        if (isRegExp(options.name)) {
+          attrs.push(`name=${this.regexToString(options.name)}`);
+        } else if (typeof options.name === "string") {
+          attrs.push(`name=${this.quote(options.name)}`);
+          if (options.exact)
+            attrs.push(`exact=True`);
+        }
+        for (const { name, value } of options.attrs) {
+          let valueString = typeof value === "string" ? this.quote(value) : value;
+          if (typeof value === "boolean")
+            valueString = value ? "True" : "False";
+          attrs.push(`${toSnakeCase(name)}=${valueString}`);
+        }
+        const attrString = attrs.length ? `, ${attrs.join(", ")}` : "";
+        return `get_by_role(${this.quote(body)}${attrString})`;
+      case "has-text":
+        return `filter(has_text=${this.toHasText(body)})`;
+      case "has":
+        return `filter(has=${body})`;
+      case "test-id":
+        return `get_by_test_id(${this.quote(body)})`;
+      case "text":
+        return this.toCallWithExact("get_by_text", body, !!options.exact);
+      case "alt":
+        return this.toCallWithExact("get_by_alt_text", body, !!options.exact);
+      case "placeholder":
+        return this.toCallWithExact("get_by_placeholder", body, !!options.exact);
+      case "label":
+        return this.toCallWithExact("get_by_label", body, !!options.exact);
+      case "title":
+        return this.toCallWithExact("get_by_title", body, !!options.exact);
+      default:
+        throw new Error("Unknown selector kind " + kind);
+    }
+  }
+  regexToString(body) {
+    const suffix = body.flags.includes("i") ? ", re.IGNORECASE" : "";
+    return `re.compile(r"${body.source.replace(/\\\//, "/").replace(/"/g, '\\"')}"${suffix})`;
+  }
+  toCallWithExact(method, body, exact) {
+    if (isRegExp(body))
+      return `${method}(${this.regexToString(body)})`;
+    if (exact)
+      return `${method}(${this.quote(body)}, exact=True)`;
+    return `${method}(${this.quote(body)})`;
+  }
+  toHasText(body) {
+    if (isRegExp(body))
+      return this.regexToString(body);
+    return `${this.quote(body)}`;
+  }
+  quote(text) {
+    return escapeWithQuotes(text, '"');
+  }
+};
+var JavaLocatorFactory = class {
+  generateLocator(base, kind, body, options = {}) {
+    let clazz;
+    switch (base) {
+      case "page":
+        clazz = "Page";
+        break;
+      case "frame-locator":
+        clazz = "FrameLocator";
+        break;
+      case "locator":
+        clazz = "Locator";
+        break;
+    }
+    switch (kind) {
+      case "default":
+        return `locator(${this.quote(body)})`;
+      case "frame":
+        return `frameLocator(${this.quote(body)})`;
+      case "nth":
+        return `nth(${body})`;
+      case "first":
+        return `first()`;
+      case "last":
+        return `last()`;
+      case "role":
+        const attrs = [];
+        if (isRegExp(options.name)) {
+          attrs.push(`.setName(${this.regexToString(options.name)})`);
+        } else if (typeof options.name === "string") {
+          attrs.push(`.setName(${this.quote(options.name)})`);
+          if (options.exact)
+            attrs.push(`.setExact(true)`);
+        }
+        for (const { name, value } of options.attrs)
+          attrs.push(`.set${toTitleCase(name)}(${typeof value === "string" ? this.quote(value) : value})`);
+        const attrString = attrs.length ? `, new ${clazz}.GetByRoleOptions()${attrs.join("")}` : "";
+        return `getByRole(AriaRole.${toSnakeCase(body).toUpperCase()}${attrString})`;
+      case "has-text":
+        return `filter(new ${clazz}.LocatorOptions().setHasText(${this.toHasText(body)}))`;
+      case "has":
+        return `filter(new ${clazz}.LocatorOptions().setHas(${body}))`;
+      case "test-id":
+        return `getByTestId(${this.quote(body)})`;
+      case "text":
+        return this.toCallWithExact(clazz, "getByText", body, !!options.exact);
+      case "alt":
+        return this.toCallWithExact(clazz, "getByAltText", body, !!options.exact);
+      case "placeholder":
+        return this.toCallWithExact(clazz, "getByPlaceholder", body, !!options.exact);
+      case "label":
+        return this.toCallWithExact(clazz, "getByLabel", body, !!options.exact);
+      case "title":
+        return this.toCallWithExact(clazz, "getByTitle", body, !!options.exact);
+      default:
+        throw new Error("Unknown selector kind " + kind);
+    }
+  }
+  regexToString(body) {
+    const suffix = body.flags.includes("i") ? ", Pattern.CASE_INSENSITIVE" : "";
+    return `Pattern.compile(${this.quote(body.source)}${suffix})`;
+  }
+  toCallWithExact(clazz, method, body, exact) {
+    if (isRegExp(body))
+      return `${method}(${this.regexToString(body)})`;
+    if (exact)
+      return `${method}(${this.quote(body)}, new ${clazz}.${toTitleCase(method)}Options().setExact(true))`;
+    return `${method}(${this.quote(body)})`;
+  }
+  toHasText(body) {
+    if (isRegExp(body))
+      return this.regexToString(body);
+    return this.quote(body);
+  }
+  quote(text) {
+    return escapeWithQuotes(text, '"');
+  }
+};
+var CSharpLocatorFactory = class {
+  generateLocator(base, kind, body, options = {}) {
+    switch (kind) {
+      case "default":
+        return `Locator(${this.quote(body)})`;
+      case "frame":
+        return `FrameLocator(${this.quote(body)})`;
+      case "nth":
+        return `Nth(${body})`;
+      case "first":
+        return `First`;
+      case "last":
+        return `Last`;
+      case "role":
+        const attrs = [];
+        if (isRegExp(options.name)) {
+          attrs.push(`NameRegex = ${this.regexToString(options.name)}`);
+        } else if (typeof options.name === "string") {
+          attrs.push(`Name = ${this.quote(options.name)}`);
+          if (options.exact)
+            attrs.push(`Exact = true`);
+        }
+        for (const { name, value } of options.attrs)
+          attrs.push(`${toTitleCase(name)} = ${typeof value === "string" ? this.quote(value) : value}`);
+        const attrString = attrs.length ? `, new() { ${attrs.join(", ")} }` : "";
+        return `GetByRole(AriaRole.${toTitleCase(body)}${attrString})`;
+      case "has-text":
+        return `Filter(new() { ${this.toHasText(body)} })`;
+      case "has":
+        return `Filter(new() { Has = ${body} })`;
+      case "test-id":
+        return `GetByTestId(${this.quote(body)})`;
+      case "text":
+        return this.toCallWithExact("GetByText", body, !!options.exact);
+      case "alt":
+        return this.toCallWithExact("GetByAltText", body, !!options.exact);
+      case "placeholder":
+        return this.toCallWithExact("GetByPlaceholder", body, !!options.exact);
+      case "label":
+        return this.toCallWithExact("GetByLabel", body, !!options.exact);
+      case "title":
+        return this.toCallWithExact("GetByTitle", body, !!options.exact);
+      default:
+        throw new Error("Unknown selector kind " + kind);
+    }
+  }
+  regexToString(body) {
+    const suffix = body.flags.includes("i") ? ", RegexOptions.IgnoreCase" : "";
+    return `new Regex(${this.quote(body.source)}${suffix})`;
+  }
+  toCallWithExact(method, body, exact) {
+    if (isRegExp(body))
+      return `${method}(${this.regexToString(body)})`;
+    if (exact)
+      return `${method}(${this.quote(body)}, new() { Exact = true })`;
+    return `${method}(${this.quote(body)})`;
+  }
+  toHasText(body) {
+    if (isRegExp(body))
+      return `HasTextRegex = ${this.regexToString(body)}`;
+    return `HasText = ${this.quote(body)}`;
+  }
+  quote(text) {
+    return escapeWithQuotes(text, '"');
+  }
+};
+var generators = {
+  javascript: new JavaScriptLocatorFactory(),
+  python: new PythonLocatorFactory(),
+  java: new JavaLocatorFactory(),
+  csharp: new CSharpLocatorFactory()
+};
+function isRegExp(obj) {
+  return obj instanceof RegExp;
 }
 
 // packages/playwright-core/src/server/injected/highlight.ts
 var Highlight = class {
-  constructor(isUnderTest) {
-    this._highlightElements = [];
-    this._isUnderTest = isUnderTest;
-    this._outerGlassPaneElement = document.createElement("x-pw-glass");
-    this._outerGlassPaneElement.style.position = "fixed";
-    this._outerGlassPaneElement.style.top = "0";
-    this._outerGlassPaneElement.style.right = "0";
-    this._outerGlassPaneElement.style.bottom = "0";
-    this._outerGlassPaneElement.style.left = "0";
-    this._outerGlassPaneElement.style.zIndex = "2147483647";
-    this._outerGlassPaneElement.style.pointerEvents = "none";
-    this._outerGlassPaneElement.style.display = "flex";
-    this._tooltipElement = document.createElement("x-pw-tooltip");
+  constructor(injectedScript) {
+    this._highlightEntries = [];
+    this._language = "javascript";
+    this._injectedScript = injectedScript;
+    this._isUnderTest = injectedScript.isUnderTest;
+    this._glassPaneElement = document.createElement("x-pw-glass");
+    this._glassPaneElement.style.position = "fixed";
+    this._glassPaneElement.style.top = "0";
+    this._glassPaneElement.style.right = "0";
+    this._glassPaneElement.style.bottom = "0";
+    this._glassPaneElement.style.left = "0";
+    this._glassPaneElement.style.zIndex = "2147483647";
+    this._glassPaneElement.style.pointerEvents = "none";
+    this._glassPaneElement.style.display = "flex";
     this._actionPointElement = document.createElement("x-pw-action-point");
     this._actionPointElement.setAttribute("hidden", "true");
-    this._innerGlassPaneElement = document.createElement("x-pw-glass-inner");
-    this._innerGlassPaneElement.style.flex = "auto";
-    this._innerGlassPaneElement.appendChild(this._tooltipElement);
-    this._glassPaneShadow = this._outerGlassPaneElement.attachShadow({ mode: isUnderTest ? "open" : "closed" });
-    this._glassPaneShadow.appendChild(this._innerGlassPaneElement);
+    this._glassPaneShadow = this._glassPaneElement.attachShadow({ mode: this._isUnderTest ? "open" : "closed" });
     this._glassPaneShadow.appendChild(this._actionPointElement);
     const styleElement = document.createElement("style");
     styleElement.textContent = `
@@ -3668,13 +4116,24 @@ var Highlight = class {
     this._glassPaneShadow.appendChild(styleElement);
   }
   install() {
-    document.documentElement.appendChild(this._outerGlassPaneElement);
+    document.documentElement.appendChild(this._glassPaneElement);
+  }
+  setLanguage(language) {
+    this._language = language;
+  }
+  runHighlightOnRaf(selector) {
+    if (this._rafRequest)
+      cancelAnimationFrame(this._rafRequest);
+    this.updateHighlight(this._injectedScript.querySelectorAll(selector, document.documentElement), stringifySelector(selector), false);
+    this._rafRequest = requestAnimationFrame(() => this.runHighlightOnRaf(selector));
   }
   uninstall() {
-    this._outerGlassPaneElement.remove();
+    if (this._rafRequest)
+      cancelAnimationFrame(this._rafRequest);
+    this._glassPaneElement.remove();
   }
   isInstalled() {
-    return this._outerGlassPaneElement.parentElement === document.documentElement && !this._outerGlassPaneElement.nextElementSibling;
+    return this._glassPaneElement.parentElement === document.documentElement && !this._glassPaneElement.nextElementSibling;
   }
   showActionPoint(x, y) {
     this._actionPointElement.style.top = y + "px";
@@ -3686,72 +4145,98 @@ var Highlight = class {
   hideActionPoint() {
     this._actionPointElement.hidden = true;
   }
+  clearHighlight() {
+    var _a, _b;
+    for (const entry of this._highlightEntries) {
+      (_a = entry.highlightElement) == null ? void 0 : _a.remove();
+      (_b = entry.tooltipElement) == null ? void 0 : _b.remove();
+    }
+    this._highlightEntries = [];
+  }
   updateHighlight(elements, selector, isRecording) {
-    this._tooltipElement.textContent = selector;
-    this._tooltipElement.style.top = "0";
-    this._tooltipElement.style.left = "0";
-    this._tooltipElement.style.display = "flex";
-    const boxes = elements.map((e) => e.getBoundingClientRect());
-    const tooltipWidth = this._tooltipElement.offsetWidth;
-    const tooltipHeight = this._tooltipElement.offsetHeight;
-    const totalWidth = this._innerGlassPaneElement.offsetWidth;
-    const totalHeight = this._innerGlassPaneElement.offsetHeight;
-    if (boxes.length) {
-      const primaryBox = boxes[0];
-      let anchorLeft = primaryBox.left;
+    let color;
+    if (isRecording)
+      color = "#dc6f6f7f";
+    else
+      color = elements.length > 1 ? "#f6b26b7f" : "#6fa8dc7f";
+    this._innerUpdateHighlight(elements, { color, tooltipText: selector ? asLocator(this._language, selector) : "" });
+  }
+  maskElements(elements) {
+    this._innerUpdateHighlight(elements, { color: "#F0F" });
+  }
+  _innerUpdateHighlight(elements, options) {
+    if (this._highlightIsUpToDate(elements, options.tooltipText))
+      return;
+    this.clearHighlight();
+    for (let i = 0; i < elements.length; ++i) {
+      const highlightElement = this._createHighlightElement();
+      this._glassPaneShadow.appendChild(highlightElement);
+      let tooltipElement;
+      if (options.tooltipText) {
+        tooltipElement = document.createElement("x-pw-tooltip");
+        this._glassPaneShadow.appendChild(tooltipElement);
+        const suffix = elements.length > 1 ? ` [${i + 1} of ${elements.length}]` : "";
+        tooltipElement.textContent = options.tooltipText + suffix;
+        tooltipElement.style.top = "0";
+        tooltipElement.style.left = "0";
+        tooltipElement.style.display = "flex";
+      }
+      this._highlightEntries.push({ targetElement: elements[i], tooltipElement, highlightElement, tooltipText: options.tooltipText });
+    }
+    for (const entry of this._highlightEntries) {
+      entry.box = entry.targetElement.getBoundingClientRect();
+      if (!entry.tooltipElement)
+        continue;
+      const tooltipWidth = entry.tooltipElement.offsetWidth;
+      const tooltipHeight = entry.tooltipElement.offsetHeight;
+      const totalWidth = this._glassPaneElement.offsetWidth;
+      const totalHeight = this._glassPaneElement.offsetHeight;
+      let anchorLeft = entry.box.left;
       if (anchorLeft + tooltipWidth > totalWidth - 5)
         anchorLeft = totalWidth - tooltipWidth - 5;
-      let anchorTop = primaryBox.bottom + 5;
+      let anchorTop = entry.box.bottom + 5;
       if (anchorTop + tooltipHeight > totalHeight - 5) {
-        if (primaryBox.top > tooltipHeight + 5) {
-          anchorTop = primaryBox.top - tooltipHeight - 5;
+        if (entry.box.top > tooltipHeight + 5) {
+          anchorTop = entry.box.top - tooltipHeight - 5;
         } else {
           anchorTop = totalHeight - 5 - tooltipHeight;
         }
       }
-      this._tooltipElement.style.top = anchorTop + "px";
-      this._tooltipElement.style.left = anchorLeft + "px";
-    } else {
-      this._tooltipElement.style.display = "none";
+      entry.tooltipTop = anchorTop;
+      entry.tooltipLeft = anchorLeft;
     }
-    const pool = this._highlightElements;
-    this._highlightElements = [];
-    for (const box of boxes) {
-      const highlightElement = pool.length ? pool.shift() : this._createHighlightElement();
-      const color = isRecording ? "#dc6f6f7f" : "#6fa8dc7f";
-      highlightElement.style.backgroundColor = this._highlightElements.length ? "#f6b26b7f" : color;
-      highlightElement.style.left = box.x + "px";
-      highlightElement.style.top = box.y + "px";
-      highlightElement.style.width = box.width + "px";
-      highlightElement.style.height = box.height + "px";
-      highlightElement.style.display = "block";
-      this._highlightElements.push(highlightElement);
+    for (const entry of this._highlightEntries) {
+      if (entry.tooltipElement) {
+        entry.tooltipElement.style.top = entry.tooltipTop + "px";
+        entry.tooltipElement.style.left = entry.tooltipLeft + "px";
+      }
+      const box = entry.box;
+      entry.highlightElement.style.backgroundColor = options.color;
+      entry.highlightElement.style.left = box.x + "px";
+      entry.highlightElement.style.top = box.y + "px";
+      entry.highlightElement.style.width = box.width + "px";
+      entry.highlightElement.style.height = box.height + "px";
+      entry.highlightElement.style.display = "block";
       if (this._isUnderTest)
         console.error("Highlight box for test: " + JSON.stringify({ x: box.x, y: box.y, width: box.width, height: box.height }));
     }
-    for (const highlightElement of pool) {
-      highlightElement.style.display = "none";
-      this._highlightElements.push(highlightElement);
-    }
   }
-  maskElements(elements) {
-    const boxes = elements.map((e) => e.getBoundingClientRect());
-    const pool = this._highlightElements;
-    this._highlightElements = [];
-    for (const box of boxes) {
-      const highlightElement = pool.length ? pool.shift() : this._createHighlightElement();
-      highlightElement.style.backgroundColor = "#F0F";
-      highlightElement.style.left = box.x + "px";
-      highlightElement.style.top = box.y + "px";
-      highlightElement.style.width = box.width + "px";
-      highlightElement.style.height = box.height + "px";
-      highlightElement.style.display = "block";
-      this._highlightElements.push(highlightElement);
+  _highlightIsUpToDate(elements, tooltipText) {
+    if (elements.length !== this._highlightEntries.length)
+      return false;
+    for (let i = 0; i < this._highlightEntries.length; ++i) {
+      if (tooltipText !== this._highlightEntries[i].tooltipText)
+        return false;
+      if (elements[i] !== this._highlightEntries[i].targetElement)
+        return false;
+      const oldBox = this._highlightEntries[i].box;
+      if (!oldBox)
+        return false;
+      const box = elements[i].getBoundingClientRect();
+      if (box.top !== oldBox.top || box.right !== oldBox.right || box.bottom !== oldBox.bottom || box.left !== oldBox.left)
+        return false;
     }
-    for (const highlightElement of pool) {
-      highlightElement.style.display = "none";
-      this._highlightElements.push(highlightElement);
-    }
+    return true;
   }
   _createHighlightElement() {
     const highlightElement = document.createElement("x-pw-highlight");
@@ -3761,25 +4246,27 @@ var Highlight = class {
     highlightElement.style.width = "0";
     highlightElement.style.height = "0";
     highlightElement.style.boxSizing = "border-box";
-    this._glassPaneShadow.appendChild(highlightElement);
     return highlightElement;
   }
 };
 
 // packages/playwright-core/src/server/injected/injectedScript.ts
 var InjectedScript = class {
-  constructor(isUnderTest, stableRafCount, browserName, experimentalFeaturesEnabled, customEngines) {
+  constructor(isUnderTest, sdkLanguage, testIdAttributeNameForStrictErrorAndConsoleCodegen, stableRafCount, browserName, customEngines) {
     this.onGlobalListenersRemoved = /* @__PURE__ */ new Set();
+    this._testIdAttributeNameForStrictErrorAndConsoleCodegen = "data-testid";
     this.isUnderTest = isUnderTest;
+    this._sdkLanguage = sdkLanguage;
+    this._testIdAttributeNameForStrictErrorAndConsoleCodegen = testIdAttributeNameForStrictErrorAndConsoleCodegen;
     this._evaluator = new SelectorEvaluatorImpl(/* @__PURE__ */ new Map());
     this._engines = /* @__PURE__ */ new Map();
     this._engines.set("xpath", XPathEngine);
     this._engines.set("xpath:light", XPathEngine);
     this._engines.set("_react", ReactEngine);
     this._engines.set("_vue", VueEngine);
-    this._engines.set("role", RoleEngine);
-    this._engines.set("text", this._createTextEngine(true));
-    this._engines.set("text:light", this._createTextEngine(false));
+    this._engines.set("role", createRoleEngine(false));
+    this._engines.set("text", this._createTextEngine(true, false));
+    this._engines.set("text:light", this._createTextEngine(false, false));
     this._engines.set("id", this._createAttributeEngine("id", true));
     this._engines.set("id:light", this._createAttributeEngine("id", false));
     this._engines.set("data-testid", this._createAttributeEngine("data-testid", true));
@@ -3791,8 +4278,14 @@ var InjectedScript = class {
     this._engines.set("css", this._createCSSEngine());
     this._engines.set("nth", { queryAll: () => [] });
     this._engines.set("visible", this._createVisibleEngine());
-    this._engines.set("control", this._createControlEngine());
-    this._engines.set("has", this._createHasEngine());
+    this._engines.set("internal:control", this._createControlEngine());
+    this._engines.set("internal:has", this._createHasEngine());
+    this._engines.set("internal:label", this._createInternalLabelEngine());
+    this._engines.set("internal:text", this._createTextEngine(true, true));
+    this._engines.set("internal:has-text", this._createInternalHasTextEngine());
+    this._engines.set("internal:attr", this._createNamedAttributeEngine());
+    this._engines.set("internal:testid", this._createNamedAttributeEngine());
+    this._engines.set("internal:role", createRoleEngine(true));
     for (const { name, engine } of customEngines)
       this._engines.set(name, engine);
     this._stableRafCount = stableRafCount;
@@ -3805,6 +4298,9 @@ var InjectedScript = class {
   eval(expression) {
     return globalThis.eval(expression);
   }
+  testIdAttributeNameForStrictErrorAndConsoleCodegen() {
+    return this._testIdAttributeNameForStrictErrorAndConsoleCodegen;
+  }
   parseSelector(selector) {
     const result = parseSelector(selector);
     for (const name of allEngineNames(result)) {
@@ -3813,8 +4309,8 @@ var InjectedScript = class {
     }
     return result;
   }
-  generateSelector(targetElement) {
-    return generateSelector(this, targetElement, true).selector;
+  generateSelector(targetElement, testIdAttributeName) {
+    return generateSelector(this, targetElement, testIdAttributeName).selector;
   }
   querySelector(selector, root, strict) {
     const result = this.querySelectorAll(selector, root);
@@ -3849,7 +4345,7 @@ var InjectedScript = class {
       const withHas = { parts: selector.parts.slice(0, selector.capture + 1) };
       if (selector.capture < selector.parts.length - 1) {
         const parsed = { parts: selector.parts.slice(selector.capture + 1) };
-        const has = { name: "has", body: { parsed }, source: stringifySelector(parsed) };
+        const has = { name: "internal:has", body: { parsed }, source: stringifySelector(parsed) };
         withHas.parts.push(has);
       }
       return this.querySelectorAll(withHas, root);
@@ -3892,8 +4388,8 @@ var InjectedScript = class {
   }
   _createAttributeEngine(attribute, shadow) {
     const toCSS = (selector) => {
-      const css2 = `[${attribute}=${JSON.stringify(selector)}]`;
-      return [{ simples: [{ selector: { css: css2, functions: [] }, combinator: "" }] }];
+      const css = `[${attribute}=${JSON.stringify(selector)}]`;
+      return [{ simples: [{ selector: { css, functions: [] }, combinator: "" }] }];
     };
     return {
       queryAll: (root, selector) => {
@@ -3902,16 +4398,15 @@ var InjectedScript = class {
     };
   }
   _createCSSEngine() {
-    const evaluator = this._evaluator;
     return {
-      queryAll(root, body) {
-        return evaluator.query({ scope: root, pierceShadow: true }, body);
+      queryAll: (root, body) => {
+        return this._evaluator.query({ scope: root, pierceShadow: true }, body);
       }
     };
   }
-  _createTextEngine(shadow) {
-    const queryList = (root, selector) => {
-      const { matcher, kind } = createTextMatcher(selector);
+  _createTextEngine(shadow, internal) {
+    const queryAll = (root, selector) => {
+      const { matcher, kind } = createTextMatcher(selector, internal);
       const result = [];
       let lastDidNotMatchSelf = null;
       const appendElement = (element) => {
@@ -3920,7 +4415,7 @@ var InjectedScript = class {
         const matches = elementMatchesText(this._evaluator._cacheText, element, matcher);
         if (matches === "none")
           lastDidNotMatchSelf = element;
-        if (matches === "self" || matches === "selfAndChildren" && kind === "strict")
+        if (matches === "self" || matches === "selfAndChildren" && kind === "strict" && !internal)
           result.push(element);
       };
       if (root.nodeType === Node.ELEMENT_NODE)
@@ -3930,11 +4425,53 @@ var InjectedScript = class {
         appendElement(element);
       return result;
     };
+    return { queryAll };
+  }
+  _createInternalHasTextEngine() {
     return {
       queryAll: (root, selector) => {
-        return queryList(root, selector);
+        if (root.nodeType !== 1)
+          return [];
+        const element = root;
+        const text = elementText(this._evaluator._cacheText, element);
+        const { matcher } = createTextMatcher(selector, true);
+        return matcher(text) ? [element] : [];
       }
     };
+  }
+  _createInternalLabelEngine() {
+    return {
+      queryAll: (root, selector) => {
+        const { matcher } = createTextMatcher(selector, true);
+        const result = [];
+        const labels = this._evaluator._queryCSS({ scope: root, pierceShadow: true }, "label");
+        for (const label of labels) {
+          const control = label.control;
+          if (control && matcher(elementText(this._evaluator._cacheText, label)))
+            result.push(control);
+        }
+        return result;
+      }
+    };
+  }
+  _createNamedAttributeEngine() {
+    const queryAll = (root, selector) => {
+      const parsed = parseAttributeSelector(selector, true);
+      if (parsed.name || parsed.attributes.length !== 1)
+        throw new Error("Malformed attribute selector: " + selector);
+      const { name, value, caseSensitive } = parsed.attributes[0];
+      const lowerCaseValue = caseSensitive ? null : value.toLowerCase();
+      let matcher;
+      if (value instanceof RegExp)
+        matcher = (s) => !!s.match(value);
+      else if (caseSensitive)
+        matcher = (s) => s === value;
+      else
+        matcher = (s) => s.toLowerCase().includes(lowerCaseValue);
+      const elements = this._evaluator._queryCSS({ scope: root, pierceShadow: true }, `[${name}]`);
+      return elements.filter((e) => matcher(e.getAttribute(name)));
+    };
+    return { queryAll };
   }
   _createControlEngine() {
     return {
@@ -3943,7 +4480,12 @@ var InjectedScript = class {
           return [];
         if (body === "return-empty")
           return [];
-        throw new Error(`Internal error, unknown control selector ${body}`);
+        if (body === "component") {
+          if (root.nodeType !== 1)
+            return [];
+          return [root.childElementCount === 1 ? root.firstElementChild : root];
+        }
+        throw new Error(`Internal error, unknown internal:control selector ${body}`);
       }
     };
   }
@@ -3961,15 +4503,6 @@ var InjectedScript = class {
       if (root.nodeType !== 1)
         return [];
       return isElementVisible(root) === Boolean(body) ? [root] : [];
-    };
-    return { queryAll };
-  }
-  _createLayoutEngine(name) {
-    const queryAll = (root, body) => {
-      if (root.nodeType !== 1)
-        return [];
-      const has = !!this.querySelector(body, root, false);
-      return has ? [root] : [];
     };
     return { queryAll };
   }
@@ -4084,12 +4617,29 @@ var InjectedScript = class {
     const style = node.ownerDocument.defaultView.getComputedStyle(node);
     return { left: parseInt(style.borderLeftWidth || "", 10), top: parseInt(style.borderTopWidth || "", 10) };
   }
+  describeIFrameStyle(iframe) {
+    if (!iframe.ownerDocument || !iframe.ownerDocument.defaultView)
+      return "error:notconnected";
+    const defaultView = iframe.ownerDocument.defaultView;
+    for (let e = iframe; e; e = parentElementOrShadowHost(e)) {
+      if (defaultView.getComputedStyle(e).transform !== "none")
+        return "transformed";
+    }
+    const iframeStyle = defaultView.getComputedStyle(iframe);
+    return { borderLeft: parseInt(iframeStyle.borderLeftWidth || "", 10), borderTop: parseInt(iframeStyle.borderTopWidth || "", 10) };
+  }
   retarget(node, behavior) {
     let element = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
     if (!element)
       return null;
-    if (!element.matches("input, textarea, select"))
-      element = element.closest("button, [role=button], [role=checkbox], [role=radio]") || element;
+    if (behavior === "none")
+      return element;
+    if (!element.matches("input, textarea, select")) {
+      if (behavior === "button-link")
+        element = element.closest("button, [role=button], a, [role=link]") || element;
+      else
+        element = element.closest("button, [role=button], [role=checkbox], [role=radio]") || element;
+    }
     if (behavior === "follow-label") {
       if (!element.matches("input, textarea, button, select, [role=button], [role=checkbox], [role=radio]") && !element.isContentEditable) {
         element = element.closest("label") || element;
@@ -4148,7 +4698,7 @@ var InjectedScript = class {
     });
   }
   elementState(node, state) {
-    const element = this.retarget(node, ["stable", "visible", "hidden"].includes(state) ? "no-follow-label" : "follow-label");
+    const element = this.retarget(node, ["stable", "visible", "hidden"].includes(state) ? "none" : "follow-label");
     if (!element || !element.isConnected) {
       if (state === "hidden")
         return true;
@@ -4167,16 +4717,11 @@ var InjectedScript = class {
     if (state === "editable")
       return !disabled && editable;
     if (state === "checked" || state === "unchecked") {
-      if (["checkbox", "radio"].includes(element.getAttribute("role") || "")) {
-        const result2 = element.getAttribute("aria-checked") === "true";
-        return state === "checked" ? result2 : !result2;
-      }
-      if (element.nodeName !== "INPUT")
+      const need = state === "checked";
+      const checked = getAriaCheckedStrict(element);
+      if (checked === "error")
         throw this.createStacklessError("Not a checkbox or radio button");
-      if (!["radio", "checkbox"].includes(element.type.toLowerCase()))
-        throw this.createStacklessError("Not a checkbox or radio button");
-      const result = element.checked;
-      return state === "checked" ? result : !result;
+      return need === checked;
     }
     throw this.createStacklessError(`Unexpected element state "${state}"`);
   }
@@ -4287,14 +4832,18 @@ var InjectedScript = class {
     element.focus();
     return "done";
   }
+  _activelyFocused(node) {
+    const activeElement = node.getRootNode().activeElement;
+    const isFocused = activeElement === node && !!node.ownerDocument && node.ownerDocument.hasFocus();
+    return { activeElement, isFocused };
+  }
   focusNode(node, resetSelectionIfNotFocused) {
     if (!node.isConnected)
       return "error:notconnected";
     if (node.nodeType !== Node.ELEMENT_NODE)
       throw this.createStacklessError("Node is not an element");
-    const activeElement = node.getRootNode().activeElement;
-    const wasFocused = activeElement === node && node.ownerDocument && node.ownerDocument.hasFocus();
-    if (!wasFocused && activeElement && activeElement.blur) {
+    const { activeElement, isFocused: wasFocused } = this._activelyFocused(node);
+    if (node.isContentEditable && !wasFocused && activeElement && activeElement.blur) {
       activeElement.blur();
     }
     node.focus();
@@ -4305,6 +4854,14 @@ var InjectedScript = class {
       } catch (e) {
       }
     }
+    return "done";
+  }
+  blurNode(node) {
+    if (!node.isConnected)
+      return "error:notconnected";
+    if (node.nodeType !== Node.ELEMENT_NODE)
+      throw this.createStacklessError("Node is not an element");
+    node.blur();
     return "done";
   }
   setInputFiles(node, payloads) {
@@ -4328,15 +4885,37 @@ var InjectedScript = class {
     input.dispatchEvent(new Event("input", { "bubbles": true }));
     input.dispatchEvent(new Event("change", { "bubbles": true }));
   }
-  checkHitTargetAt(node, point) {
-    let element = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
-    if (!element || !element.isConnected)
-      return "error:notconnected";
-    element = element.closest("button, [role=button]") || element;
-    const hitElement = this.deepElementFromPoint(document, point.x, point.y);
-    return this._expectHitTargetParent(hitElement, element);
-  }
-  _expectHitTargetParent(hitElement, targetElement) {
+  expectHitTarget(hitPoint, targetElement) {
+    var _a;
+    const roots = [];
+    let parentElement = targetElement;
+    while (parentElement) {
+      const root = enclosingShadowRootOrDocument(parentElement);
+      if (!root)
+        break;
+      roots.push(root);
+      if (root.nodeType === 9)
+        break;
+      parentElement = root.host;
+    }
+    let hitElement;
+    for (let index = roots.length - 1; index >= 0; index--) {
+      const root = roots[index];
+      const elements = root.elementsFromPoint(hitPoint.x, hitPoint.y);
+      const singleElement = root.elementFromPoint(hitPoint.x, hitPoint.y);
+      if (singleElement && elements[0] && parentElementOrShadowHost(singleElement) === elements[0]) {
+        const style = (_a = document.defaultView) == null ? void 0 : _a.getComputedStyle(singleElement);
+        if ((style == null ? void 0 : style.display) === "contents") {
+          elements.unshift(singleElement);
+        }
+      }
+      const innerElement = elements[0];
+      if (!innerElement)
+        break;
+      hitElement = innerElement;
+      if (index && innerElement !== roots[index - 1].host)
+        break;
+    }
     const hitParents = [];
     while (hitElement && hitElement !== targetElement) {
       hitParents.push(hitElement);
@@ -4360,11 +4939,17 @@ var InjectedScript = class {
       return { hitTargetDescription: `${hitTargetDescription} from ${rootHitTargetDescription} subtree` };
     return { hitTargetDescription };
   }
-  setupHitTargetInterceptor(node, action, blockAllEvents) {
-    const maybeElement = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
-    if (!maybeElement || !maybeElement.isConnected)
+  setupHitTargetInterceptor(node, action, hitPoint, blockAllEvents) {
+    const element = this.retarget(node, "button-link");
+    if (!element || !element.isConnected)
       return "error:notconnected";
-    const element = maybeElement.closest("button, [role=button]") || maybeElement;
+    if (hitPoint) {
+      const preliminaryResult = this.expectHitTarget(hitPoint, element);
+      if (preliminaryResult !== "done")
+        return preliminaryResult.hitTargetDescription;
+    }
+    if (action === "drag")
+      return { stop: () => "done" };
     const events = {
       "hover": kHoverHitTargetInterceptorEvents,
       "tap": kTapHitTargetInterceptorEvents,
@@ -4377,10 +4962,8 @@ var InjectedScript = class {
       if (!event.isTrusted)
         return;
       const point = !!window.TouchEvent && event instanceof window.TouchEvent ? event.touches[0] : event;
-      if (result === void 0 && point) {
-        const hitElement = this.deepElementFromPoint(document, point.clientX, point.clientY);
-        result = this._expectHitTargetParent(hitElement, element);
-      }
+      if (result === void 0 && point)
+        result = this.expectHitTarget({ x: point.clientX, y: point.clientY }, element);
       if (blockAllEvents || result !== "done" && result !== void 0) {
         event.preventDefault();
         event.stopPropagation();
@@ -4417,24 +5000,14 @@ var InjectedScript = class {
       case "drag":
         event = new DragEvent(type, eventInit);
         break;
+      case "wheel":
+        event = new WheelEvent(type, eventInit);
+        break;
       default:
         event = new Event(type, eventInit);
         break;
     }
     node.dispatchEvent(event);
-  }
-  deepElementFromPoint(document2, x, y) {
-    let container = document2;
-    let element;
-    while (container) {
-      const elements = container.elementsFromPoint(x, y);
-      const innerElement = elements[0];
-      if (!innerElement || element === innerElement)
-        break;
-      element = innerElement;
-      container = element.shadowRoot;
-    }
-    return element;
   }
   previewNode(node) {
     if (node.nodeType === Node.TEXT_NODE)
@@ -4473,13 +5046,13 @@ var InjectedScript = class {
   strictModeViolationError(selector, matches) {
     const infos = matches.slice(0, 10).map((m) => ({
       preview: this.previewNode(m),
-      selector: this.generateSelector(m)
+      selector: this.generateSelector(m, this._testIdAttributeNameForStrictErrorAndConsoleCodegen)
     }));
     const lines = infos.map((info, i) => `
-    ${i + 1}) ${info.preview} aka playwright.$("${info.selector}")`);
+    ${i + 1}) ${info.preview} aka ${asLocator(this._sdkLanguage, info.selector)}`);
     if (infos.length < matches.length)
       lines.push("\n    ...");
-    return this.createStacklessError(`strict mode violation: "${stringifySelector(selector)}" resolved to ${matches.length} elements:${lines.join("")}
+    return this.createStacklessError(`strict mode violation: ${asLocator(this._sdkLanguage, stringifySelector(selector))} resolved to ${matches.length} elements:${lines.join("")}
 `);
   }
   createStacklessError(message) {
@@ -4495,7 +5068,7 @@ var InjectedScript = class {
   maskSelectors(selectors) {
     if (this._highlight)
       this.hideHighlight();
-    this._highlight = new Highlight(this.isUnderTest);
+    this._highlight = new Highlight(this);
     this._highlight.install();
     const elements = [];
     for (const selector of selectors)
@@ -4504,16 +5077,10 @@ var InjectedScript = class {
   }
   highlight(selector) {
     if (!this._highlight) {
-      this._highlight = new Highlight(this.isUnderTest);
+      this._highlight = new Highlight(this);
       this._highlight.install();
     }
-    this._runHighlightOnRaf(selector);
-  }
-  _runHighlightOnRaf(selector) {
-    if (!this._highlight)
-      return;
-    this._highlight.updateHighlight(this.querySelectorAll(selector, document.documentElement), stringifySelector(selector), false);
-    requestAnimationFrame(() => this._runHighlightOnRaf(selector));
+    this._highlight.runHighlightOnRaf(selector);
   }
   hideHighlight() {
     if (this._highlight) {
@@ -4565,6 +5132,8 @@ var InjectedScript = class {
         elementState = progress.injectedScript.elementState(element, "disabled");
       } else if (expression === "to.be.editable") {
         elementState = progress.injectedScript.elementState(element, "editable");
+      } else if (expression === "to.be.readonly") {
+        elementState = !progress.injectedScript.elementState(element, "editable");
       } else if (expression === "to.be.empty") {
         if (element.nodeName === "INPUT" || element.nodeName === "TEXTAREA")
           elementState = !element.value;
@@ -4573,7 +5142,7 @@ var InjectedScript = class {
       } else if (expression === "to.be.enabled") {
         elementState = progress.injectedScript.elementState(element, "enabled");
       } else if (expression === "to.be.focused") {
-        elementState = document.activeElement === element;
+        elementState = this._activelyFocused(element).isFocused;
       } else if (expression === "to.be.hidden") {
         elementState = progress.injectedScript.elementState(element, "hidden");
       } else if (expression === "to.be.visible") {
@@ -4595,17 +5164,31 @@ var InjectedScript = class {
       }
     }
     {
+      if (expression === "to.have.values") {
+        element = this.retarget(element, "follow-label");
+        if (element.nodeName !== "SELECT" || !element.multiple)
+          throw this.createStacklessError("Not a select element with a multiple attribute");
+        const received = [...element.selectedOptions].map((o) => o.value);
+        if (received.length !== options.expectedText.length)
+          return { received, matches: false };
+        return { received, matches: received.map((r, i) => new ExpectedTextMatcher(options.expectedText[i]).matches(r)).every(Boolean) };
+      }
+    }
+    {
       let received;
       if (expression === "to.have.attribute") {
-        received = element.getAttribute(options.expressionArg) || "";
+        const value = element.getAttribute(options.expressionArg);
+        if (value === null)
+          return { received: null, matches: false };
+        received = value;
       } else if (expression === "to.have.class") {
-        received = element.className;
+        received = element.classList.toString();
       } else if (expression === "to.have.css") {
         received = window.getComputedStyle(element).getPropertyValue(options.expressionArg);
       } else if (expression === "to.have.id") {
         received = element.id;
       } else if (expression === "to.have.text") {
-        received = options.useInnerText ? element.innerText : element.textContent || "";
+        received = options.useInnerText ? element.innerText : elementText(/* @__PURE__ */ new Map(), element).full;
       } else if (expression === "to.have.title") {
         received = document.title;
       } else if (expression === "to.have.url") {
@@ -4623,6 +5206,29 @@ var InjectedScript = class {
     }
     throw this.createStacklessError("Unknown expect matcher: " + expression);
   }
+  renderUnexpectedValue(expression, received) {
+    if (expression === "to.be.checked")
+      return received ? "checked" : "unchecked";
+    if (expression === "to.be.unchecked")
+      return received ? "unchecked" : "checked";
+    if (expression === "to.be.visible")
+      return received ? "visible" : "hidden";
+    if (expression === "to.be.hidden")
+      return received ? "hidden" : "visible";
+    if (expression === "to.be.enabled")
+      return received ? "enabled" : "disabled";
+    if (expression === "to.be.disabled")
+      return received ? "disabled" : "enabled";
+    if (expression === "to.be.editable")
+      return received ? "editable" : "readonly";
+    if (expression === "to.be.readonly")
+      return received ? "readonly" : "editable";
+    if (expression === "to.be.empty")
+      return received ? "empty" : "not empty";
+    if (expression === "to.be.focused")
+      return received ? "focused" : "not focused";
+    return received;
+  }
   expectArray(elements, options) {
     const expression = options.expression;
     if (expression === "to.have.count") {
@@ -4632,26 +5238,22 @@ var InjectedScript = class {
     }
     let received;
     if (expression === "to.have.text.array" || expression === "to.contain.text.array")
-      received = elements.map((e) => options.useInnerText ? e.innerText : e.textContent || "");
+      received = elements.map((e) => options.useInnerText ? e.innerText : elementText(/* @__PURE__ */ new Map(), e).full);
     else if (expression === "to.have.class.array")
-      received = elements.map((e) => e.className);
+      received = elements.map((e) => e.classList.toString());
     if (received && options.expectedText) {
       const lengthShouldMatch = expression !== "to.contain.text.array";
       const matchesLength = received.length === options.expectedText.length || !lengthShouldMatch;
       if (!matchesLength)
         return { received, matches: false };
-      let i = 0;
       const matchers = options.expectedText.map((e) => new ExpectedTextMatcher(e));
-      let allMatchesFound = true;
-      for (const matcher of matchers) {
-        while (i < received.length && !matcher.matches(received[i]))
-          i++;
-        if (i >= received.length) {
-          allMatchesFound = false;
-          break;
-        }
+      let mIndex = 0, rIndex = 0;
+      while (mIndex < matchers.length && rIndex < received.length) {
+        if (matchers[mIndex].matches(received[rIndex]))
+          ++mIndex;
+        ++rIndex;
       }
-      return { received, matches: allMatchesFound };
+      return { received, matches: mIndex === matchers.length };
     }
     throw this.createStacklessError("Unknown expect matcher: " + expression);
   }
@@ -4708,13 +5310,15 @@ var eventType = /* @__PURE__ */ new Map([
   ["dragenter", "drag"],
   ["dragleave", "drag"],
   ["dragexit", "drag"],
-  ["drop", "drag"]
+  ["drop", "drag"],
+  ["wheel", "wheel"]
 ]);
 var kHoverHitTargetInterceptorEvents = /* @__PURE__ */ new Set(["mousemove"]);
 var kTapHitTargetInterceptorEvents = /* @__PURE__ */ new Set(["pointerdown", "pointerup", "touchstart", "touchend", "touchcancel"]);
 var kMouseHitTargetInterceptorEvents = /* @__PURE__ */ new Set(["mousedown", "mouseup", "pointerdown", "pointerup", "click", "auxclick", "dblclick", "contextmenu"]);
 var kAllHitTargetInterceptorEvents = /* @__PURE__ */ new Set([...kHoverHitTargetInterceptorEvents, ...kTapHitTargetInterceptorEvents, ...kMouseHitTargetInterceptorEvents]);
-function unescape(s) {
+function cssUnquote(s) {
+  s = s.substring(1, s.length - 1);
   if (!s.includes("\\"))
     return s;
   const r = [];
@@ -4726,34 +5330,59 @@ function unescape(s) {
   }
   return r.join("");
 }
-function createTextMatcher(selector) {
+function createTextMatcher(selector, internal) {
   if (selector[0] === "/" && selector.lastIndexOf("/") > 0) {
     const lastSlash = selector.lastIndexOf("/");
-    const matcher2 = createRegexTextMatcher(selector.substring(1, lastSlash), selector.substring(lastSlash + 1));
-    return { matcher: matcher2, kind: "regex" };
+    const re = new RegExp(selector.substring(1, lastSlash), selector.substring(lastSlash + 1));
+    return { matcher: (elementText2) => re.test(elementText2.full), kind: "regex" };
   }
+  const unquote = internal ? JSON.parse.bind(JSON) : cssUnquote;
   let strict = false;
   if (selector.length > 1 && selector[0] === '"' && selector[selector.length - 1] === '"') {
-    selector = unescape(selector.substring(1, selector.length - 1));
+    selector = unquote(selector);
+    strict = true;
+  } else if (internal && selector.length > 1 && selector[0] === '"' && selector[selector.length - 2] === '"' && selector[selector.length - 1] === "i") {
+    selector = unquote(selector.substring(0, selector.length - 1));
+    strict = false;
+  } else if (internal && selector.length > 1 && selector[0] === '"' && selector[selector.length - 2] === '"' && selector[selector.length - 1] === "s") {
+    selector = unquote(selector.substring(0, selector.length - 1));
+    strict = true;
+  } else if (selector.length > 1 && selector[0] === "'" && selector[selector.length - 1] === "'") {
+    selector = unquote(selector);
     strict = true;
   }
-  if (selector.length > 1 && selector[0] === "'" && selector[selector.length - 1] === "'") {
-    selector = unescape(selector.substring(1, selector.length - 1));
-    strict = true;
+  selector = normalizeWhiteSpace(selector);
+  if (strict) {
+    if (internal)
+      return { kind: "strict", matcher: (elementText2) => normalizeWhiteSpace(elementText2.full) === selector };
+    const strictTextNodeMatcher = (elementText2) => {
+      if (!selector && !elementText2.immediate.length)
+        return true;
+      return elementText2.immediate.some((s) => normalizeWhiteSpace(s) === selector);
+    };
+    return { matcher: strictTextNodeMatcher, kind: "strict" };
   }
-  const matcher = strict ? createStrictTextMatcher(selector) : createLaxTextMatcher(selector);
-  return { matcher, kind: strict ? "strict" : "lax" };
+  selector = selector.toLowerCase();
+  return { kind: "lax", matcher: (elementText2) => normalizeWhiteSpace(elementText2.full).toLowerCase().includes(selector) };
 }
 var ExpectedTextMatcher = class {
   constructor(expected) {
     this._normalizeWhiteSpace = expected.normalizeWhiteSpace;
-    this._string = expected.matchSubstring ? void 0 : this.normalizeWhiteSpace(expected.string);
-    this._substring = expected.matchSubstring ? this.normalizeWhiteSpace(expected.string) : void 0;
-    this._regex = expected.regexSource ? new RegExp(expected.regexSource, expected.regexFlags) : void 0;
+    this._ignoreCase = expected.ignoreCase;
+    this._string = expected.matchSubstring ? void 0 : this.normalize(expected.string);
+    this._substring = expected.matchSubstring ? this.normalize(expected.string) : void 0;
+    if (expected.regexSource) {
+      const flags = new Set((expected.regexFlags || "").split(""));
+      if (expected.ignoreCase === false)
+        flags.delete("i");
+      if (expected.ignoreCase === true)
+        flags.add("i");
+      this._regex = new RegExp(expected.regexSource, [...flags].join(""));
+    }
   }
   matches(text) {
-    if (this._normalizeWhiteSpace && !this._regex)
-      text = this.normalizeWhiteSpace(text);
+    if (!this._regex)
+      text = this.normalize(text);
     if (this._string !== void 0)
       return text === this._string;
     if (this._substring !== void 0)
@@ -4762,10 +5391,14 @@ var ExpectedTextMatcher = class {
       return !!this._regex.test(text);
     return false;
   }
-  normalizeWhiteSpace(s) {
+  normalize(s) {
     if (!s)
       return s;
-    return this._normalizeWhiteSpace ? s.trim().replace(/\u200b/g, "").replace(/\s+/g, " ") : s;
+    if (this._normalizeWhiteSpace)
+      s = normalizeWhiteSpace(s);
+    if (this._ignoreCase)
+      s = s.toLocaleLowerCase();
+    return s;
   }
 };
 function deepEquals(a, b) {

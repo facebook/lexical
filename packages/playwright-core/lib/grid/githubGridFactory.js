@@ -4,13 +4,9 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = void 0;
-
 var _https = _interopRequireDefault(require("https"));
-
 var _utilsBundle = require("../utilsBundle");
-
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
 /**
  * Copyright (c) Microsoft Corporation.
  *
@@ -26,6 +22,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 const repoName = process.env.GITHUB_AGENT_REPO;
 if (!repoName) throw new Error('GITHUB_AGENT_REPO is not specified.');
 const repoAccessToken = process.env.GITHUB_AGENT_REPO_ACCESS_TOKEN;
@@ -44,16 +41,13 @@ const githubFactory = {
     await createWorkflow(options);
   }
 };
-
 async function createWorkflow(inputs) {
   if (!['windows', 'linux', 'macos'].includes(inputs.os)) {
     log(`unsupported OS: ${inputs.os}`);
     return false;
   }
-
   return new Promise(fulfill => {
     log(`triggering workflow ${JSON.stringify(inputs)}`);
-
     const req = _https.default.request(`https://api.github.com/repos/${repoName}/actions/workflows/agent.yml/dispatches`, {
       method: 'POST',
       headers: {
@@ -66,7 +60,6 @@ async function createWorkflow(inputs) {
       const success = !!response.statusCode && 200 <= response.statusCode && response.statusCode < 300;
       fulfill(success);
     });
-
     req.on('error', e => {
       log(`failed to create workflow ${inputs.agentId}`);
       fulfill(false);
@@ -77,6 +70,5 @@ async function createWorkflow(inputs) {
     }));
   });
 }
-
 var _default = githubFactory;
 exports.default = _default;

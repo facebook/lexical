@@ -3,20 +3,13 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.getClientLanguage = getClientLanguage;
+exports.getEmbedderName = getEmbedderName;
 exports.getPlaywrightVersion = getPlaywrightVersion;
 exports.getUserAgent = getUserAgent;
-
 var _child_process = require("child_process");
-
-var _fs = _interopRequireDefault(require("fs"));
-
 var _os = _interopRequireDefault(require("os"));
-
-var _ubuntuVersion = require("../utils/ubuntuVersion");
-
+var _linuxUtils = require("../utils/linuxUtils");
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
 /**
  * Copyright (c) Microsoft Corporation.
  *
@@ -32,27 +25,22 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-let cachedUserAgent;
 
+let cachedUserAgent;
 function getUserAgent() {
   if (cachedUserAgent) return cachedUserAgent;
-
   try {
     cachedUserAgent = determineUserAgent();
   } catch (e) {
     cachedUserAgent = 'Playwright/unknown';
   }
-
   return cachedUserAgent;
 }
-
 function determineUserAgent() {
   let osIdentifier = 'unknown';
   let osVersion = 'unknown';
-
   if (process.platform === 'win32') {
     const version = _os.default.release().split('.');
-
     osIdentifier = 'windows';
     osVersion = `${version[0]}.${version[1]}`;
   } else if (process.platform === 'darwin') {
@@ -62,50 +50,42 @@ function determineUserAgent() {
     osIdentifier = 'macOS';
     osVersion = `${version[0]}.${version[1]}`;
   } else if (process.platform === 'linux') {
-    try {
-      // List of /etc/os-release values for different distributions could be
-      // found here: https://gist.github.com/aslushnikov/8ceddb8288e4cf9db3039c02e0f4fb75
-      const osReleaseText = _fs.default.readFileSync('/etc/os-release', 'utf8');
-
-      const fields = (0, _ubuntuVersion.parseOSReleaseText)(osReleaseText);
-      osIdentifier = fields.get('id') || 'unknown';
-      osVersion = fields.get('version_id') || 'unknown';
-    } catch (e) {
+    const distroInfo = (0, _linuxUtils.getLinuxDistributionInfoSync)();
+    if (distroInfo) {
+      osIdentifier = distroInfo.id || 'linux';
+      osVersion = distroInfo.version || 'unknown';
+    } else {
       // Linux distribution without /etc/os-release.
       // Default to linux/unknown.
       osIdentifier = 'linux';
     }
   }
-
+  const additionalTokens = [];
+  if (process.env.CI) additionalTokens.push('CI/1');
+  const serializedTokens = additionalTokens.length ? ' ' + additionalTokens.join(' ') : '';
   const {
-    langName,
-    langVersion
-  } = getClientLanguage();
-  return `Playwright/${getPlaywrightVersion()} (${_os.default.arch()}; ${osIdentifier} ${osVersion}) ${langName}/${langVersion}`;
+    embedderName,
+    embedderVersion
+  } = getEmbedderName();
+  return `Playwright/${getPlaywrightVersion()} (${_os.default.arch()}; ${osIdentifier} ${osVersion}) ${embedderName}/${embedderVersion}${serializedTokens}`;
 }
-
-function getClientLanguage() {
-  let langName = 'unknown';
-  let langVersion = 'unknown';
-
+function getEmbedderName() {
+  let embedderName = 'unknown';
+  let embedderVersion = 'unknown';
   if (!process.env.PW_LANG_NAME) {
-    langName = 'node';
-    langVersion = process.version.substring(1).split('.').slice(0, 2).join('.');
+    embedderName = 'node';
+    embedderVersion = process.version.substring(1).split('.').slice(0, 2).join('.');
   } else if (['node', 'python', 'java', 'csharp'].includes(process.env.PW_LANG_NAME)) {
     var _process$env$PW_LANG_;
-
-    langName = process.env.PW_LANG_NAME;
-    langVersion = (_process$env$PW_LANG_ = process.env.PW_LANG_NAME_VERSION) !== null && _process$env$PW_LANG_ !== void 0 ? _process$env$PW_LANG_ : 'unknown';
+    embedderName = process.env.PW_LANG_NAME;
+    embedderVersion = (_process$env$PW_LANG_ = process.env.PW_LANG_NAME_VERSION) !== null && _process$env$PW_LANG_ !== void 0 ? _process$env$PW_LANG_ : 'unknown';
   }
-
   return {
-    langName,
-    langVersion
+    embedderName,
+    embedderVersion
   };
 }
-
 function getPlaywrightVersion(majorMinorOnly = false) {
   const packageJson = require('./../../package.json');
-
   return majorMinorOnly ? packageJson.version.split('.').slice(0, 2).join('.') : packageJson.version;
 }

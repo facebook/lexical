@@ -1,7 +1,6 @@
 "use strict";
 
 var _inProcessFactory = require("./inProcessFactory");
-
 /**
  * Copyright (c) Microsoft Corporation.
  *
@@ -17,4 +16,5 @@ var _inProcessFactory = require("./inProcessFactory");
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 module.exports = (0, _inProcessFactory.createInProcessPlaywright)();

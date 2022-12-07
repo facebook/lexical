@@ -4,7 +4,6 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.kLifecycleEvents = void 0;
-
 /**
  * Copyright 2018 Google Inc. All rights reserved.
  * Modifications copyright (c) Microsoft Corporation.
@@ -21,5 +20,6 @@ exports.kLifecycleEvents = void 0;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 const kLifecycleEvents = new Set(['load', 'domcontentloaded', 'networkidle', 'commit']);
 exports.kLifecycleEvents = kLifecycleEvents;

@@ -7,11 +7,8 @@ exports.SdkObject = void 0;
 exports.createInstrumentation = createInstrumentation;
 exports.kTestSdkObjects = void 0;
 exports.serverSideCallMetadata = serverSideCallMetadata;
-
 var _events = require("events");
-
 var _utils = require("../utils");
-
 /**
  * Copyright (c) Microsoft Corporation. All rights reserved.
  *
@@ -27,9 +24,9 @@ var _utils = require("../utils");
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 const kTestSdkObjects = new WeakSet();
 exports.kTestSdkObjects = kTestSdkObjects;
-
 class SdkObject extends _events.EventEmitter {
   constructor(parent, guidPrefix, guid) {
     super();
@@ -38,16 +35,14 @@ class SdkObject extends _events.EventEmitter {
     this.instrumentation = void 0;
     this.guid = guid || `${guidPrefix || ''}@${(0, _utils.createGuid)()}`;
     this.setMaxListeners(0);
-    this.attribution = { ...parent.attribution
+    this.attribution = {
+      ...parent.attribution
     };
     this.instrumentation = parent.instrumentation;
     if (process.env._PW_INTERNAL_COUNT_SDK_OBJECTS) kTestSdkObjects.add(this);
   }
-
 }
-
 exports.SdkObject = SdkObject;
-
 function createInstrumentation() {
   const listeners = new Map();
   return new Proxy({}, {
@@ -58,14 +53,12 @@ function createInstrumentation() {
       return async (sdkObject, ...params) => {
         for (const [listener, context] of listeners) {
           var _prop, _ref;
-
           if (!context || sdkObject.attribution.context === context) await ((_prop = (_ref = listener)[prop]) === null || _prop === void 0 ? void 0 : _prop.call(_ref, sdkObject, ...params));
         }
       };
     }
   });
 }
-
 function serverSideCallMetadata() {
   return {
     id: '',

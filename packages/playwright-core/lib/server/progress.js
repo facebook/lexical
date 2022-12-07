@@ -4,13 +4,9 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.ProgressController = void 0;
-
 var _errors = require("../common/errors");
-
 var _utils = require("../utils");
-
 var _manualPromise = require("../utils/manualPromise");
-
 /**
  * Copyright (c) Microsoft Corporation.
  *
@@ -26,8 +22,10 @@ var _manualPromise = require("../utils/manualPromise");
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 class ProgressController {
   // Cleanups to be run only in the case of abort.
+
   constructor(metadata, sdkObject) {
     this._forceAbortPromise = new _manualPromise.ManualPromise();
     this._cleanups = [];
@@ -42,27 +40,27 @@ class ProgressController {
     this.metadata = metadata;
     this.sdkObject = sdkObject;
     this.instrumentation = sdkObject.instrumentation;
-
     this._forceAbortPromise.catch(e => null); // Prevent unhandled promise rejection.
-
   }
 
   setLogName(logName) {
     this._logName = logName;
   }
-
   lastIntermediateResult() {
     return this._lastIntermediateResult;
   }
-
+  abort(error) {
+    this._forceAbortPromise.reject(error);
+  }
   async run(task, timeout) {
+    var _this$sdkObject$attri;
     if (timeout) {
       this._timeout = timeout;
       this._deadline = timeout ? (0, _utils.monotonicTime)() + timeout : 0;
     }
-
     (0, _utils.assert)(this._state === 'before');
     this._state = 'running';
+    (_this$sdkObject$attri = this.sdkObject.attribution.context) === null || _this$sdkObject$attri === void 0 ? void 0 : _this$sdkObject$attri._activeProgressControllers.add(this);
     const progress = {
       log: message => {
         progress.logEntry({
@@ -72,12 +70,13 @@ class ProgressController {
       logEntry: entry => {
         if ('message' in entry) {
           const message = entry.message;
-          if (this._state === 'running') this.metadata.log.push(message); // Note: we might be sending logs after progress has finished, for example browser logs.
-
+          if (this._state === 'running') this.metadata.log.push(message);
+          // Note: we might be sending logs after progress has finished, for example browser logs.
           this.instrumentation.onCallLog(this.sdkObject, this.metadata, this._logName, message);
         }
-
-        if ('intermediateResult' in entry) this._lastIntermediateResult = entry.intermediateResult;
+        if ('intermediateResult' in entry) this._lastIntermediateResult = {
+          value: entry.intermediateResult
+        };
       },
       timeUntilDeadline: () => this._deadline ? this._deadline - (0, _utils.monotonicTime)() : 2147483647,
       // 2^31-1 safe setTimeout in Node.
@@ -95,7 +94,6 @@ class ProgressController {
     };
     const timeoutError = new _errors.TimeoutError(`Timeout ${this._timeout}ms exceeded.`);
     const timer = setTimeout(() => this._forceAbortPromise.reject(timeoutError), progress.timeUntilDeadline());
-
     try {
       const promise = task(progress);
       const result = await Promise.race([promise, this._forceAbortPromise]);
@@ -106,18 +104,16 @@ class ProgressController {
       await Promise.all(this._cleanups.splice(0).map(runCleanup));
       throw e;
     } finally {
+      var _this$sdkObject$attri2;
+      (_this$sdkObject$attri2 = this.sdkObject.attribution.context) === null || _this$sdkObject$attri2 === void 0 ? void 0 : _this$sdkObject$attri2._activeProgressControllers.delete(this);
       clearTimeout(timer);
     }
   }
-
 }
-
 exports.ProgressController = ProgressController;
-
 async function runCleanup(cleanup) {
   try {
     await cleanup();
   } catch (e) {}
 }
-
 class AbortedError extends Error {}

@@ -4,9 +4,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.Dialog = void 0;
-
 var _channelOwner = require("./channelOwner");
-
 /**
  * Copyright (c) Microsoft Corporation.
  *
@@ -22,37 +20,30 @@ var _channelOwner = require("./channelOwner");
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 class Dialog extends _channelOwner.ChannelOwner {
   static from(dialog) {
     return dialog._object;
   }
-
   constructor(parent, type, guid, initializer) {
     super(parent, type, guid, initializer);
   }
-
   type() {
     return this._initializer.type;
   }
-
   message() {
     return this._initializer.message;
   }
-
   defaultValue() {
     return this._initializer.defaultValue;
   }
-
   async accept(promptText) {
     await this._channel.accept({
       promptText
     });
   }
-
   async dismiss() {
     await this._channel.dismiss();
   }
-
 }
-
 exports.Dialog = Dialog;

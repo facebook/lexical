@@ -7,10 +7,7 @@
  */
 
 import type {ElementNode} from '.';
-import type {
-  IntentionallyMarkedAsDirtyElement,
-  LexicalEditor,
-} from './LexicalEditor';
+import type {LexicalEditor} from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
 import type {NodeKey, NodeMap} from './LexicalNode';
 
@@ -37,6 +34,8 @@ export function $garbageCollectDetachedDecorators(
     }
   }
 }
+
+type IntentionallyMarkedAsDirtyElement = boolean;
 
 function $garbageCollectDetachedDeepChildNodes(
   node: ElementNode,

@@ -6,11 +6,7 @@
  *
  */
 
-import type {
-  EditorState,
-  IntentionallyMarkedAsDirtyElement,
-  NodeKey,
-} from 'lexical';
+import type {EditorState, NodeKey} from 'lexical';
 
 import {$createOffsetView} from '@lexical/offset';
 import {
@@ -216,6 +212,8 @@ function handleNormalizationMergeConflicts(
     }
   }
 }
+
+type IntentionallyMarkedAsDirtyElement = boolean;
 
 export function syncLexicalUpdateToYjs(
   binding: Binding,

@@ -9,7 +9,6 @@
 import type {
   CommandPayloadType,
   EditorThemeClasses,
-  IntentionallyMarkedAsDirtyElement,
   Klass,
   LexicalCommand,
   MutatedNodes,
@@ -232,6 +231,8 @@ export function $setNodeKey(
   editor._dirtyType = HAS_DIRTY_NODES;
   node.__key = key;
 }
+
+type IntentionallyMarkedAsDirtyElement = boolean;
 
 function internalMarkParentElementsAsDirty(
   parentKey: NodeKey,

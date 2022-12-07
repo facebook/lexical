@@ -252,7 +252,8 @@ export type ListenerType =
 
 export type TransformerType = 'text' | 'decorator' | 'element' | 'root';
 
-export type IntentionallyMarkedAsDirtyElement = boolean;
+type IntentionallyMarkedAsDirtyElement = boolean;
+
 type DOMConversionCache = Map<
   string,
   Array<(node: Node) => DOMConversion | null>

@@ -4,11 +4,8 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.helper = void 0;
-
 var _debugLogger = require("../common/debugLogger");
-
 var _eventsHelper = require("../utils/eventsHelper");
-
 /**
  * Copyright 2017 Google Inc. All rights reserved.
  * Modifications copyright (c) Microsoft Corporation.
@@ -25,12 +22,12 @@ var _eventsHelper = require("../utils/eventsHelper");
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 class Helper {
   static completeUserURL(urlString) {
     if (urlString.startsWith('localhost') || urlString.startsWith('127.0.0.1')) urlString = 'http://' + urlString;
     return urlString;
   }
-
   static enclosingIntRect(rect) {
     const x = Math.floor(rect.x + 1e-3);
     const y = Math.floor(rect.y + 1e-3);
@@ -43,14 +40,12 @@ class Helper {
       height: y2 - y
     };
   }
-
   static enclosingIntSize(size) {
     return {
       width: Math.floor(size.width + 1e-3),
       height: Math.floor(size.height + 1e-3)
     };
   }
-
   static getViewportSizeFromWindowFeatures(features) {
     const widthString = features.find(f => f.startsWith('width='));
     const heightString = features.find(f => f.startsWith('height='));
@@ -62,55 +57,43 @@ class Helper {
     };
     return null;
   }
-
   static waitForEvent(progress, emitter, event, predicate) {
     const listeners = [];
     const promise = new Promise((resolve, reject) => {
       listeners.push(_eventsHelper.eventsHelper.addEventListener(emitter, event, eventArg => {
         try {
           if (predicate && !predicate(eventArg)) return;
-
           _eventsHelper.eventsHelper.removeEventListeners(listeners);
-
           resolve(eventArg);
         } catch (e) {
           _eventsHelper.eventsHelper.removeEventListeners(listeners);
-
           reject(e);
         }
       }));
     });
-
     const dispose = () => _eventsHelper.eventsHelper.removeEventListeners(listeners);
-
     if (progress) progress.cleanupWhenAborted(dispose);
     return {
       promise,
       dispose
     };
   }
-
   static secondsToRoundishMillis(value) {
     return (value * 1000000 | 0) / 1000;
   }
-
   static millisToRoundishMillis(value) {
     return (value * 1000 | 0) / 1000;
   }
-
   static debugProtocolLogger(protocolLogger) {
     return (direction, message) => {
       if (protocolLogger) protocolLogger(direction, message);
       if (_debugLogger.debugLogger.isEnabled('protocol')) _debugLogger.debugLogger.log('protocol', (direction === 'send' ? 'SEND ► ' : '◀ RECV ') + JSON.stringify(message));
     };
   }
-
   static formatBrowserLogs(logs) {
     if (!logs.length) return '';
     return '\n' + '='.repeat(20) + ' Browser output: ' + '='.repeat(20) + '\n' + logs.join('\n');
   }
-
 }
-
 const helper = Helper;
 exports.helper = helper;

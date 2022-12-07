@@ -4,7 +4,6 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.Coverage = void 0;
-
 /**
  * Copyright (c) Microsoft Corporation.
  *
@@ -20,28 +19,23 @@ exports.Coverage = void 0;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 class Coverage {
   constructor(channel) {
     this._channel = void 0;
     this._channel = channel;
   }
-
   async startJSCoverage(options = {}) {
     await this._channel.startJSCoverage(options);
   }
-
   async stopJSCoverage() {
     return (await this._channel.stopJSCoverage()).entries;
   }
-
   async startCSSCoverage(options = {}) {
     await this._channel.startCSSCoverage(options);
   }
-
   async stopCSSCoverage() {
     return (await this._channel.stopCSSCoverage()).entries;
   }
-
 }
-
 exports.Coverage = Coverage;

@@ -4,12 +4,9 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.ManualPromise = void 0;
-
 let _Symbol$species, _Symbol$toStringTag;
-
 _Symbol$species = Symbol.species;
 _Symbol$toStringTag = Symbol.toStringTag;
-
 /**
  * Copyright (c) Microsoft Corporation.
  *
@@ -25,6 +22,7 @@ _Symbol$toStringTag = Symbol.toStringTag;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 class ManualPromise extends Promise {
   constructor() {
     let resolve;
@@ -40,31 +38,22 @@ class ManualPromise extends Promise {
     this._resolve = resolve;
     this._reject = reject;
   }
-
   isDone() {
     return this._isDone;
   }
-
   resolve(t) {
     this._isDone = true;
-
     this._resolve(t);
   }
-
   reject(e) {
     this._isDone = true;
-
     this._reject(e);
   }
-
   static get [_Symbol$species]() {
     return Promise;
   }
-
   get [_Symbol$toStringTag]() {
     return 'ManualPromise';
   }
-
 }
-
 exports.ManualPromise = ManualPromise;

@@ -4,21 +4,11 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.JavaLanguageGenerator = void 0;
-
 var _language = require("./language");
-
-var _recorderActions = require("./recorderActions");
-
 var _utils = require("./utils");
-
-var _deviceDescriptors = _interopRequireDefault(require("../deviceDescriptors"));
-
 var _javascript = require("./javascript");
-
 var _stringUtils = require("../../utils/isomorphic/stringUtils");
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
+var _locatorGenerators = require("../isomorphic/locatorGenerators");
 /**
  * Copyright (c) Microsoft Corporation.
  *
@@ -34,85 +24,65 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+const deviceDescriptors = require('../deviceDescriptorsSource.json');
 class JavaLanguageGenerator {
   constructor() {
     this.id = 'java';
-    this.fileName = 'Java';
+    this.groupName = 'Java';
+    this.name = 'Library';
     this.highlighter = 'java';
   }
-
   generateAction(actionInContext) {
     const action = actionInContext.action;
     const pageAlias = actionInContext.frame.pageAlias;
     const formatter = new _javascript.JavaScriptFormatter(6);
-    formatter.newLine();
-    formatter.add('// ' + (0, _recorderActions.actionTitle)(action));
-
     if (action.name === 'openPage') {
       formatter.add(`Page ${pageAlias} = context.newPage();`);
       if (action.url && action.url !== 'about:blank' && action.url !== 'chrome://newtab/') formatter.add(`${pageAlias}.navigate(${quote(action.url)});`);
       return formatter.format();
     }
-
     let subject;
-
+    let inFrameLocator = false;
     if (actionInContext.frame.isMainFrame) {
       subject = pageAlias;
     } else if (actionInContext.frame.selectorsChain && action.name !== 'navigate') {
-      const locators = actionInContext.frame.selectorsChain.map(selector => '.' + asLocator(selector, 'frameLocator'));
+      const locators = actionInContext.frame.selectorsChain.map(selector => `.frameLocator(${quote(selector)})`);
       subject = `${pageAlias}${locators.join('')}`;
+      inFrameLocator = true;
     } else if (actionInContext.frame.name) {
       subject = `${pageAlias}.frame(${quote(actionInContext.frame.name)})`;
     } else {
       subject = `${pageAlias}.frameByUrl(${quote(actionInContext.frame.url)})`;
     }
-
     const signals = (0, _language.toSignalMap)(action);
-
     if (signals.dialog) {
       formatter.add(`  ${pageAlias}.onceDialog(dialog -> {
         System.out.println(String.format("Dialog message: %s", dialog.message()));
         dialog.dismiss();
       });`);
     }
-
-    const actionCall = this._generateActionCall(action);
-
+    const actionCall = this._generateActionCall(action, inFrameLocator);
     let code = `${subject}.${actionCall};`;
-
     if (signals.popup) {
       code = `Page ${signals.popup.popupAlias} = ${pageAlias}.waitForPopup(() -> {
         ${code}
       });`;
     }
-
     if (signals.download) {
-      code = `Download download = ${pageAlias}.waitForDownload(() -> {
+      code = `Download download${signals.download.downloadAlias} = ${pageAlias}.waitForDownload(() -> {
         ${code}
       });`;
     }
-
-    if (signals.waitForNavigation) {
-      code = `
-      // ${pageAlias}.waitForNavigation(new Page.WaitForNavigationOptions().setUrl(${quote(signals.waitForNavigation.url)}), () ->
-      ${pageAlias}.waitForNavigation(() -> {
-        ${code}
-      });`;
-    }
-
     formatter.add(code);
-    if (signals.assertNavigation) formatter.add(`// assertThat(${pageAlias}).hasURL(${quote(signals.assertNavigation.url)});`);
     return formatter.format();
   }
-
-  _generateActionCall(action) {
+  _generateActionCall(action, inFrameLocator) {
     switch (action.name) {
       case 'openPage':
         throw Error('Not reached');
-
       case 'closePage':
         return 'close()';
-
       case 'click':
         {
           let method = 'click';
@@ -124,36 +94,31 @@ class JavaLanguageGenerator {
           if (action.clickCount > 2) options.clickCount = action.clickCount;
           if (action.position) options.position = action.position;
           const optionsText = formatClickOptions(options);
-          return asLocator(action.selector) + `.${method}(${optionsText})`;
+          return this._asLocator(action.selector, inFrameLocator) + `.${method}(${optionsText})`;
         }
-
       case 'check':
-        return asLocator(action.selector) + `.check()`;
-
+        return this._asLocator(action.selector, inFrameLocator) + `.check()`;
       case 'uncheck':
-        return asLocator(action.selector) + `.uncheck()`;
-
+        return this._asLocator(action.selector, inFrameLocator) + `.uncheck()`;
       case 'fill':
-        return asLocator(action.selector) + `.fill(${quote(action.text)})`;
-
+        return this._asLocator(action.selector, inFrameLocator) + `.fill(${quote(action.text)})`;
       case 'setInputFiles':
-        return asLocator(action.selector) + `.setInputFiles(${formatPath(action.files.length === 1 ? action.files[0] : action.files)})`;
-
+        return this._asLocator(action.selector, inFrameLocator) + `.setInputFiles(${formatPath(action.files.length === 1 ? action.files[0] : action.files)})`;
       case 'press':
         {
           const modifiers = (0, _utils.toModifiers)(action.modifiers);
           const shortcut = [...modifiers, action.key].join('+');
-          return asLocator(action.selector) + `.press(${quote(shortcut)})`;
+          return this._asLocator(action.selector, inFrameLocator) + `.press(${quote(shortcut)})`;
         }
-
       case 'navigate':
         return `navigate(${quote(action.url)})`;
-
       case 'select':
-        return asLocator(action.selector) + `.selectOption(${formatSelectOption(action.options.length > 1 ? action.options : action.options[0])})`;
+        return this._asLocator(action.selector, inFrameLocator) + `.selectOption(${formatSelectOption(action.options.length > 1 ? action.options : action.options[0])})`;
     }
   }
-
+  _asLocator(selector, inFrameLocator) {
+    return (0, _locatorGenerators.asLocator)('java', selector, inFrameLocator);
+  }
   generateHeader(options) {
     const formatter = new _javascript.JavaScriptFormatter();
     formatter.add(`
@@ -169,50 +134,43 @@ class JavaLanguageGenerator {
           BrowserContext context = browser.newContext(${formatContextOptions(options.contextOptions, options.deviceName)});`);
     return formatter.format();
   }
-
   generateFooter(saveStorage) {
     const storageStateLine = saveStorage ? `\n      context.storageState(new BrowserContext.StorageStateOptions().setPath(${quote(saveStorage)}));\n` : '';
     return `${storageStateLine}    }
   }
 }`;
   }
-
 }
-
 exports.JavaLanguageGenerator = JavaLanguageGenerator;
-
 function formatPath(files) {
   if (Array.isArray(files)) {
     if (files.length === 0) return 'new Path[0]';
     return `new Path[] {${files.map(s => 'Paths.get(' + quote(s) + ')').join(', ')}}`;
   }
-
   return `Paths.get(${quote(files)})`;
 }
-
 function formatSelectOption(options) {
   if (Array.isArray(options)) {
     if (options.length === 0) return 'new String[0]';
     return `new String[] {${options.map(s => quote(s)).join(', ')}}`;
   }
-
   return quote(options);
 }
-
 function formatLaunchOptions(options) {
   const lines = [];
-  if (!Object.keys(options).length) return '';
+  if (!Object.keys(options).filter(key => options[key] !== undefined).length) return '';
   lines.push('new BrowserType.LaunchOptions()');
-  if (typeof options.headless === 'boolean') lines.push(`  .setHeadless(false)`);
   if (options.channel) lines.push(`  .setChannel(${quote(options.channel)})`);
+  if (typeof options.headless === 'boolean') lines.push(`  .setHeadless(false)`);
   return lines.join('\n');
 }
-
 function formatContextOptions(contextOptions, deviceName) {
+  var _options$recordHar, _options$recordHar2, _options$recordHar3, _options$recordHar4, _options$recordHar5, _options$recordHar6, _options$recordHar7;
   const lines = [];
   if (!Object.keys(contextOptions).length && !deviceName) return '';
-  const device = deviceName ? _deviceDescriptors.default[deviceName] : {};
-  const options = { ...device,
+  const device = deviceName ? deviceDescriptors[deviceName] : {};
+  const options = {
+    ...device,
     ...contextOptions
   };
   lines.push('new Browser.NewContextOptions()');
@@ -225,13 +183,18 @@ function formatContextOptions(contextOptions, deviceName) {
   if (options.isMobile) lines.push(`  .setIsMobile(${options.isMobile})`);
   if (options.locale) lines.push(`  .setLocale(${quote(options.locale)})`);
   if (options.proxy) lines.push(`  .setProxy(new Proxy(${quote(options.proxy.server)}))`);
+  if ((_options$recordHar = options.recordHar) !== null && _options$recordHar !== void 0 && _options$recordHar.content) lines.push(`  .setRecordHarContent(HarContentPolicy.${(_options$recordHar2 = options.recordHar) === null || _options$recordHar2 === void 0 ? void 0 : _options$recordHar2.content.toUpperCase()})`);
+  if ((_options$recordHar3 = options.recordHar) !== null && _options$recordHar3 !== void 0 && _options$recordHar3.mode) lines.push(`  .setRecordHarMode(HarMode.${(_options$recordHar4 = options.recordHar) === null || _options$recordHar4 === void 0 ? void 0 : _options$recordHar4.mode.toUpperCase()})`);
+  if ((_options$recordHar5 = options.recordHar) !== null && _options$recordHar5 !== void 0 && _options$recordHar5.omitContent) lines.push(`  .setRecordHarOmitContent(true)`);
+  if ((_options$recordHar6 = options.recordHar) !== null && _options$recordHar6 !== void 0 && _options$recordHar6.path) lines.push(`  .setRecordHarPath(Paths.get(${quote(options.recordHar.path)}))`);
+  if ((_options$recordHar7 = options.recordHar) !== null && _options$recordHar7 !== void 0 && _options$recordHar7.urlFilter) lines.push(`  .setRecordHarUrlFilter(${quote(options.recordHar.urlFilter)})`);
+  if (options.serviceWorkers) lines.push(`  .setServiceWorkers(ServiceWorkerPolicy.${options.serviceWorkers.toUpperCase()})`);
   if (options.storageState) lines.push(`  .setStorageStatePath(Paths.get(${quote(options.storageState)}))`);
   if (options.timezoneId) lines.push(`  .setTimezoneId(${quote(options.timezoneId)})`);
   if (options.userAgent) lines.push(`  .setUserAgent(${quote(options.userAgent)})`);
   if (options.viewport) lines.push(`  .setViewportSize(${options.viewport.width}, ${options.viewport.height})`);
   return lines.join('\n');
 }
-
 function formatClickOptions(options) {
   const lines = [];
   if (options.button) lines.push(`  .setButton(MouseButton.${options.button.toUpperCase()})`);
@@ -242,14 +205,6 @@ function formatClickOptions(options) {
   lines.unshift(`new Locator.ClickOptions()`);
   return lines.join('\n');
 }
-
 function quote(text) {
   return (0, _stringUtils.escapeWithQuotes)(text, '\"');
-}
-
-function asLocator(selector, locatorFn = 'locator') {
-  const match = selector.match(/(.*)\s+>>\s+nth=(\d+)$/);
-  if (!match) return `${locatorFn}(${quote(selector)})`;
-  if (+match[2] === 0) return `${locatorFn}(${quote(match[1])}).first()`;
-  return `${locatorFn}(${quote(match[1])}).nth(${match[2]})`;
 }

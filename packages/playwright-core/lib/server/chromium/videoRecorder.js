@@ -4,17 +4,11 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.VideoRecorder = void 0;
-
 var _utils = require("../../utils");
-
 var _page = require("../page");
-
 var _processLauncher = require("../../utils/processLauncher");
-
 var _progress = require("../progress");
-
 var _instrumentation = require("../instrumentation");
-
 /**
  * Copyright (c) Microsoft Corporation.
  *
@@ -30,8 +24,8 @@ var _instrumentation = require("../instrumentation");
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-const fps = 25;
 
+const fps = 25;
 class VideoRecorder {
   static async launch(page, ffmpegPath, options) {
     if (!options.outputFile.endsWith('.webm')) throw new Error('File must have .webm extension');
@@ -43,7 +37,6 @@ class VideoRecorder {
       return recorder;
     });
   }
-
   constructor(page, ffmpegPath, progress) {
     this._process = null;
     this._gracefullyClose = null;
@@ -59,7 +52,6 @@ class VideoRecorder {
     this._ffmpegPath = ffmpegPath;
     page.on(_page.Page.Events.ScreencastFrame, frame => this.writeFrame(frame.buffer, frame.timestamp));
   }
-
   async _launch(options) {
     // How to tune the codec:
     // 1. Read vp8 documentation to figure out the options.
@@ -99,6 +91,7 @@ class VideoRecorder {
     // "-an" means no audio.
     // "-threads 1" means using one thread. This drastically reduces stalling when
     //   cpu is overbooked. By default vp8 tries to use all available threads?
+
     const w = options.width;
     const h = options.height;
     const args = `-loglevel error -f image2pipe -avioflags direct -fpsprobesize 0 -probesize 32 -analyzeduration 0 -c:v mjpeg -i - -y -an -r ${fps} -c:v vp8 -qmin 0 -qmax 50 -crf 8 -deadline realtime -speed 8 -b:v 1M -threads 1 -vf pad=${w}:${h}:0:0:gray,crop=${w}:${h}:0:0`.split(' ');
@@ -130,37 +123,27 @@ class VideoRecorder {
     this._process = launchedProcess;
     this._gracefullyClose = gracefullyClose;
   }
-
   writeFrame(frame, timestamp) {
     (0, _utils.assert)(this._process);
     if (this._isStopped) return;
-
-    this._progress.log(`writing frame ` + timestamp);
-
     if (this._lastFrameBuffer) {
       const durationSec = timestamp - this._lastFrameTimestamp;
       const repeatCount = Math.max(1, Math.round(fps * durationSec));
-
       for (let i = 0; i < repeatCount; ++i) this._frameQueue.push(this._lastFrameBuffer);
-
       this._lastWritePromise = this._lastWritePromise.then(() => this._sendFrames());
     }
-
     this._lastFrameBuffer = frame;
     this._lastFrameTimestamp = timestamp;
     this._lastWriteTimestamp = (0, _utils.monotonicTime)();
   }
-
   async _sendFrames() {
     while (this._frameQueue.length) await this._sendFrame(this._frameQueue.shift());
   }
-
   async _sendFrame(frame) {
     return new Promise(f => this._process.stdin.write(frame, f)).then(error => {
       if (error) this._progress.log(`ffmpeg failed to write: ${error}`);
     });
   }
-
   async stop() {
     if (this._isStopped) return;
     this.writeFrame(Buffer.from([]), this._lastFrameTimestamp + ((0, _utils.monotonicTime)() - this._lastWriteTimestamp) / 1000);
@@ -168,7 +151,5 @@ class VideoRecorder {
     await this._lastWritePromise;
     await this._gracefullyClose();
   }
-
 }
-
 exports.VideoRecorder = VideoRecorder;

@@ -4,13 +4,8 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.TracingDispatcher = void 0;
-
-var _tracing = require("../trace/recorder/tracing");
-
 var _artifactDispatcher = require("./artifactDispatcher");
-
 var _dispatcher = require("./dispatcher");
-
 /**
  * Copyright (c) Microsoft Corporation.
  *
@@ -26,41 +21,34 @@ var _dispatcher = require("./dispatcher");
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 class TracingDispatcher extends _dispatcher.Dispatcher {
   static from(scope, tracing) {
     const result = (0, _dispatcher.existingDispatcher)(tracing);
     return result || new TracingDispatcher(scope, tracing);
   }
-
   constructor(scope, tracing) {
-    super(scope, tracing, 'Tracing', {}, true);
+    super(scope, tracing, 'Tracing', {});
     this._type_Tracing = true;
-    tracing.on(_tracing.Tracing.Events.Dispose, () => this._dispose());
   }
-
   async tracingStart(params) {
     await this._object.start(params);
   }
-
   async tracingStartChunk(params) {
     await this._object.startChunk(params);
   }
-
   async tracingStopChunk(params) {
     const {
       artifact,
       sourceEntries
     } = await this._object.stopChunk(params);
     return {
-      artifact: artifact ? new _artifactDispatcher.ArtifactDispatcher(this._scope, artifact) : undefined,
+      artifact: artifact ? _artifactDispatcher.ArtifactDispatcher.from(this, artifact) : undefined,
       sourceEntries
     };
   }
-
   async tracingStop(params) {
     await this._object.stop();
   }
-
 }
-
 exports.TracingDispatcher = TracingDispatcher;

@@ -4,7 +4,6 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.Events = void 0;
-
 /**
  * Copyright 2019 Google Inc. All rights reserved.
  * Modifications copyright (c) Microsoft Corporation.
@@ -21,6 +20,7 @@ exports.Events = void 0;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 const Events = {
   AndroidDevice: {
     WebView: 'webview',

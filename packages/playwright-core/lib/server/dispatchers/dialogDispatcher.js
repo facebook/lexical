@@ -4,9 +4,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.DialogDispatcher = void 0;
-
 var _dispatcher = require("./dispatcher");
-
 /**
  * Copyright (c) Microsoft Corporation.
  *
@@ -22,6 +20,7 @@ var _dispatcher = require("./dispatcher");
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 class DialogDispatcher extends _dispatcher.Dispatcher {
   constructor(scope, dialog) {
     super(scope, dialog, 'Dialog', {
@@ -31,15 +30,11 @@ class DialogDispatcher extends _dispatcher.Dispatcher {
     });
     this._type_Dialog = true;
   }
-
   async accept(params) {
     await this._object.accept(params.promptText);
   }
-
   async dismiss() {
     await this._object.dismiss();
   }
-
 }
-
 exports.DialogDispatcher = DialogDispatcher;

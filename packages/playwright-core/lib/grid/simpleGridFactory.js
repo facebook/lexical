@@ -4,13 +4,9 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = void 0;
-
 var _child_process = _interopRequireDefault(require("child_process"));
-
 var _path = _interopRequireDefault(require("path"));
-
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
 /**
  * Copyright (c) Microsoft Corporation.
  *
@@ -26,6 +22,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 const simpleFactory = {
   name: 'Agents co-located with grid',
   capacity: Infinity,

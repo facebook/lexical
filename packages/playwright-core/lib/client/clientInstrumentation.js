@@ -4,7 +4,6 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.createInstrumentation = createInstrumentation;
-
 /**
  * Copyright (c) Microsoft Corporation. All rights reserved.
  *
@@ -20,6 +19,7 @@ exports.createInstrumentation = createInstrumentation;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 function createInstrumentation() {
   const listeners = [];
   return new Proxy({}, {
@@ -31,7 +31,6 @@ function createInstrumentation() {
       return async (...params) => {
         for (const listener of listeners) {
           var _prop, _ref;
-
           await ((_prop = (_ref = listener)[prop]) === null || _prop === void 0 ? void 0 : _prop.call(_ref, ...params));
         }
       };

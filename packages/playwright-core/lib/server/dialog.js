@@ -4,11 +4,8 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.Dialog = void 0;
-
 var _utils = require("../utils");
-
 var _instrumentation = require("./instrumentation");
-
 /**
  * Copyright 2017 Google Inc. All rights reserved.
  * Modifications copyright (c) Microsoft Corporation.
@@ -25,6 +22,7 @@ var _instrumentation = require("./instrumentation");
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 class Dialog extends _instrumentation.SdkObject {
   constructor(page, type, message, onHandle, defaultValue) {
     super(page, 'dialog');
@@ -39,40 +37,31 @@ class Dialog extends _instrumentation.SdkObject {
     this._message = message;
     this._onHandle = onHandle;
     this._defaultValue = defaultValue || '';
-
     this._page._frameManager.dialogDidOpen(this);
   }
-
   type() {
     return this._type;
   }
-
   message() {
     return this._message;
   }
-
   defaultValue() {
     return this._defaultValue;
   }
-
   async accept(promptText) {
     (0, _utils.assert)(!this._handled, 'Cannot accept dialog which is already handled!');
     this._handled = true;
-
     this._page._frameManager.dialogWillClose(this);
-
     await this._onHandle(true, promptText);
   }
-
   async dismiss() {
     (0, _utils.assert)(!this._handled, 'Cannot dismiss dialog which is already handled!');
     this._handled = true;
-
     this._page._frameManager.dialogWillClose(this);
-
     await this._onHandle(false);
   }
-
+  async close() {
+    if (this._type === 'beforeunload') await this.accept();else await this.dismiss();
+  }
 }
-
 exports.Dialog = Dialog;

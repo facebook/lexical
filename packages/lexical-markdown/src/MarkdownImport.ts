@@ -24,6 +24,7 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $isElementNode,
   $isParagraphNode,
   $isTextNode,
 } from 'lexical';
@@ -78,6 +79,7 @@ export function createMarkdownImport(
     // Removing empty paragraphs as md does not really
     // allow empty lines and uses them as dilimiter
     const children = root.getChildren();
+    importTextNodes(children, textFormatTransformersIndex, byType.textMatch);
     for (const child of children) {
       if (isEmptyParagraph(child)) {
         child.remove();
@@ -125,12 +127,6 @@ function importBlocks(
     }
   }
 
-  importTextFormatTransformers(
-    textNode,
-    textFormatTransformersIndex,
-    textMatchTransformers,
-  );
-
   // If no transformer found and we left with original paragraph node
   // can check if its content can be appended to the previous node
   // if it's a paragraph, quote or list
@@ -159,6 +155,28 @@ function importBlocks(
         ]);
         elementNode.remove();
       }
+    }
+  }
+}
+
+function importTextNodes(
+  nodes: Array<LexicalNode>,
+  textFormatTransformersIndex: TextFormatTransformersIndex,
+  textMatchTransformers: Array<TextMatchTransformer>,
+) {
+  for (const node of nodes) {
+    if ($isElementNode(node)) {
+      importTextNodes(
+        node.getChildren(),
+        textFormatTransformersIndex,
+        textMatchTransformers,
+      );
+    } else if ($isTextNode(node)) {
+      importTextFormatTransformers(
+        node,
+        textFormatTransformersIndex,
+        textMatchTransformers,
+      );
     }
   }
 }

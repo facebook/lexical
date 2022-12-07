@@ -11,6 +11,7 @@ import type {DOMConversion, NodeKey} from './LexicalNode';
 
 import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
+import warnOnlyOnce from 'shared/warnOnlyOnce';
 
 import {$getRoot, $getSelection, TextNode} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
@@ -393,7 +394,7 @@ export function createEditor(editorConfig?: {
           ['getType', 'clone'].forEach((method) => {
             // eslint-disable-next-line no-prototype-builtins
             if (!klass.hasOwnProperty(method)) {
-              console.warn(`${name} must implement static "${method}" method`);
+              warnOnlyOnce(`${name} must implement static "${method}" method`);
             }
           });
           if (
@@ -402,14 +403,14 @@ export function createEditor(editorConfig?: {
             // eslint-disable-next-line no-prototype-builtins
             klass.hasOwnProperty('exportDOM')
           ) {
-            console.warn(
+            warnOnlyOnce(
               `${name} should implement "importDOM" if using a custom "exportDOM" method to ensure HTML serialization (important for copy & paste) works as expected`,
             );
           }
           if (proto instanceof DecoratorNode) {
             // eslint-disable-next-line no-prototype-builtins
             if (!proto.hasOwnProperty('decorate')) {
-              console.warn(
+              warnOnlyOnce(
                 `${proto.constructor.name} must implement "decorate" method`,
               );
             }
@@ -418,7 +419,7 @@ export function createEditor(editorConfig?: {
             // eslint-disable-next-line no-prototype-builtins
             !klass.hasOwnProperty('importJSON')
           ) {
-            console.warn(
+            warnOnlyOnce(
               `${name} should implement "importJSON" method to ensure JSON and default HTML serialization works as expected`,
             );
           }
@@ -426,7 +427,7 @@ export function createEditor(editorConfig?: {
             // eslint-disable-next-line no-prototype-builtins
             !proto.hasOwnProperty('exportJSON')
           ) {
-            console.warn(
+            warnOnlyOnce(
               `${name} should implement "exportJSON" method to ensure JSON and default HTML serialization works as expected`,
             );
           }

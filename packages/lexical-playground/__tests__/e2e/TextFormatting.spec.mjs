@@ -27,6 +27,7 @@ import {
   initialize,
   insertSampleImage,
   SAMPLE_IMAGE_URL,
+  sleep,
   test,
   waitForSelector,
 } from '../utils/index.mjs';
@@ -836,7 +837,14 @@ test.describe('TextFormatting', () => {
     await moveRight(page, 8);
     await page.keyboard.down('Shift');
 
-    await page.keyboard.type('c');
+    await assertSelection(page, {
+      anchorOffset: 2,
+      anchorPath: [0, 0, 0],
+      focusOffset: 3,
+      focusPath: [0, 6, 0],
+    });
+
+    await page.keyboard.type('z');
 
     await assertHTML(
       page,
@@ -844,7 +852,7 @@ test.describe('TextFormatting', () => {
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr">
-          <span data-lexical-text="true">12c</span>
+          <span data-lexical-text="true">12z</span>
         </p>
       `,
     );

@@ -68,7 +68,9 @@ function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
 
   if (parentDOM !== null) {
     const dom = getPrevElementByKeyOrThrow(key);
-    parentDOM.removeChild(dom);
+    if (dom.parentNode === parentDOM) {
+      parentDOM.removeChild(dom);
+    }
   }
 
   // This logic is really important, otherwise we will leak DOM nodes

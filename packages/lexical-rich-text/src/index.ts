@@ -81,7 +81,6 @@ import {
   KEY_DELETE_COMMAND,
   KEY_ENTER_COMMAND,
   KEY_ESCAPE_COMMAND,
-  KEY_TAB_COMMAND,
   OUTDENT_CONTENT_COMMAND,
   PASTE_COMMAND,
   REMOVE_TEXT_COMMAND,
@@ -849,21 +848,6 @@ export function registerRichText(editor: LexicalEditor): () => void {
           }
         }
         return editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND, undefined);
-      },
-      COMMAND_PRIORITY_EDITOR,
-    ),
-    editor.registerCommand<KeyboardEvent>(
-      KEY_TAB_COMMAND,
-      (event) => {
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        event.preventDefault();
-        return editor.dispatchCommand(
-          event.shiftKey ? OUTDENT_CONTENT_COMMAND : INDENT_CONTENT_COMMAND,
-          undefined,
-        );
       },
       COMMAND_PRIORITY_EDITOR,
     ),

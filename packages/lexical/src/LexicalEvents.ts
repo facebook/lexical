@@ -223,6 +223,7 @@ function $shouldPreventDefaultAndInsertText(
     // If the DOM has not been updated for an input event
     (!isBeforeInput &&
       domAnchorNode &&
+      !anchorNode.isComposing() &&
       getInsertedText(selection, text) !==
         getAnchorTextFromDOM(domAnchorNode)) ||
     // Check if we're changing from bold to italics, or some other format.

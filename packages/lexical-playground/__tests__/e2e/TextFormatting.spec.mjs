@@ -27,7 +27,6 @@ import {
   initialize,
   insertSampleImage,
   SAMPLE_IMAGE_URL,
-  sleep,
   test,
   waitForSelector,
 } from '../utils/index.mjs';

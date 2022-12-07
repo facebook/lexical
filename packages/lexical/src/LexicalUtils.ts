@@ -510,6 +510,29 @@ export function getAnchorTextFromDOM(anchorNode: Node): null | string {
   return null;
 }
 
+export function getInsertedText(
+  selection: RangeSelection,
+  text: string,
+): null | string {
+  if (selection.anchor.key !== selection.focus.key) {
+    return null;
+  }
+
+  const anchor = selection.anchor;
+  const anchorNode = anchor.getNode();
+  if (!$isTextNode(anchorNode)) {
+    return null;
+  }
+
+  const existingText = anchorNode.getTextContent();
+
+  return (
+    existingText.slice(0, anchor.offset) +
+    text +
+    existingText.slice(anchor.offset + selection.focus.offset)
+  );
+}
+
 export function $updateSelectedTextFromDOM(
   isCompositionEnd: boolean,
   data?: string,

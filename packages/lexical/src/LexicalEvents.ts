@@ -87,6 +87,7 @@ import {
   getAnchorTextFromDOM,
   getDOMTextNode,
   getEditorsToPropagate,
+  getInsertedText,
   getNearestEditorFromDOMNode,
   getWindow,
   isBackspace,
@@ -219,6 +220,11 @@ function $shouldPreventDefaultAndInsertText(
       domAnchorNode !== getDOMTextNode(backingAnchorElement)) ||
     // If the DOM selection element is orphaned
     (backingAnchorElement !== null && !backingAnchorElement.isConnected) ||
+    // If the DOM has not been updated for an input event
+    (!isBeforeInput &&
+      domAnchorNode &&
+      getInsertedText(selection, text) !==
+        getAnchorTextFromDOM(domAnchorNode)) ||
     // Check if we're changing from bold to italics, or some other format.
     anchorNode.getFormat() !== selection.format ||
     // One last set of heuristics to check against.
@@ -692,7 +698,6 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
       const backingAnchorElement = getActiveEditor().getElementByKey(
         selection.anchor.key,
       );
-      const offset = anchor.offset;
       // If the content is the same as inserted, then don't dispatch an insertion.
       // Given onInput doesn't take the current selection (it uses the previous)
       // we can compare that against what the DOM currently says.
@@ -704,9 +709,7 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
         // If the DOM node for our anchor is orphaned, however, we need to do
         // the text insertion.
         (backingAnchorElement !== null && !backingAnchorElement.isConnected) ||
-        anchorNode.getTextContent().slice(0, offset) +
-          data +
-          anchorNode.getTextContent().slice(offset + selection.focus.offset) !==
+        getInsertedText(selection, data) !==
           getAnchorTextFromDOM(domSelection.anchorNode)
       ) {
         dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, data);

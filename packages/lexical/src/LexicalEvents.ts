@@ -713,6 +713,8 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
           getAnchorTextFromDOM(domSelection.anchorNode)
       ) {
         dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, data);
+      } else {
+        $updateSelectedTextFromDOM(false);
       }
 
       const textLength = data.length;

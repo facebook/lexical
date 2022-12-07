@@ -158,7 +158,7 @@ export class ListItemNode extends ElementNode {
     const list = this.getParentOrThrow();
 
     if ($isListNode(list)) {
-      const childrenKeys = list.__children;
+      const childrenKeys = list.getChildrenKeys();
       const childrenLength = childrenKeys.length;
       const index = childrenKeys.indexOf(this.__key);
 

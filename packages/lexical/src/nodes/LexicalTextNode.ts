@@ -677,7 +677,6 @@ export class TextNode extends LexicalNode {
     }
     const firstPart = parts[0];
     const parent = self.getParentOrThrow();
-    const parentKey = parent.__key;
     let writableNode;
     const format = self.getFormat();
     const style = self.getStyle();
@@ -687,7 +686,6 @@ export class TextNode extends LexicalNode {
     if (self.isSegmented()) {
       // Create a new TextNode
       writableNode = $createTextNode(firstPart);
-      writableNode.__parent = parentKey;
       writableNode.__format = format;
       writableNode.__style = style;
       writableNode.__detail = detail;
@@ -744,21 +742,18 @@ export class TextNode extends LexicalNode {
         $setCompositionKey(siblingKey);
       }
       textSize = nextTextSize;
-      sibling.__parent = parentKey;
       splitNodes.push(sibling);
     }
 
     // Insert the nodes into the parent's children
     internalMarkSiblingsAsDirty(this);
     const writableParent = parent.getWritable();
-    const writableParentChildren = writableParent.__children;
-    const insertionIndex = writableParentChildren.indexOf(key);
-    const splitNodesKeys = splitNodes.map((splitNode) => splitNode.__key);
+    const insertionIndex = this.getIndexWithinParent();
     if (hasReplacedSelf) {
-      writableParentChildren.splice(insertionIndex, 0, ...splitNodesKeys);
+      writableParent.splice(insertionIndex, 0, splitNodes);
       this.remove();
     } else {
-      writableParentChildren.splice(insertionIndex, 1, ...splitNodesKeys);
+      writableParent.splice(insertionIndex, 1, splitNodes);
     }
 
     if ($isRangeSelection(selection)) {

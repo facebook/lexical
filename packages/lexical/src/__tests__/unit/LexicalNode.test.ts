@@ -311,7 +311,10 @@ describe('LexicalNode tests', () => {
         );
 
         await editor.getEditorState().read(() => {
-          expect(barTextNode.getPreviousSibling()).toEqual(textNode);
+          expect(barTextNode.getPreviousSibling()).toEqual({
+            ...textNode,
+            __next: '3',
+          });
           expect(textNode.getPreviousSibling()).toEqual(null);
         });
         expect(() => textNode.getPreviousSibling()).toThrow();
@@ -336,10 +339,21 @@ describe('LexicalNode tests', () => {
 
         await editor.getEditorState().read(() => {
           expect(bazTextNode.getPreviousSiblings()).toEqual([
-            textNode,
-            barTextNode,
+            {
+              ...textNode,
+              __next: '3',
+            },
+            {
+              ...barTextNode,
+              __prev: '2',
+            },
           ]);
-          expect(barTextNode.getPreviousSiblings()).toEqual([textNode]);
+          expect(barTextNode.getPreviousSiblings()).toEqual([
+            {
+              ...textNode,
+              __next: '3',
+            },
+          ]);
           expect(textNode.getPreviousSiblings()).toEqual([]);
         });
         expect(() => textNode.getPreviousSiblings()).toThrow();

@@ -18,6 +18,6 @@ type InitialEditorStateType =
 
 declare export function RichTextPlugin({
   contentEditable: React$Node,
-  placeholder: React$Node,
+  placeholder: ((isEditable: boolean) => React$Node) | React$Node,
   ErrorBoundary: ErrorBoundaryType,
 }): React$Node;

@@ -18,7 +18,7 @@ function canShowPlaceholderFromCurrentEditorState(
 ): boolean {
   const currentCanShowPlaceholder = editor
     .getEditorState()
-    .read($canShowPlaceholderCurry(editor.isComposing(), editor.isEditable()));
+    .read($canShowPlaceholderCurry(editor.isComposing()));
 
   return currentCanShowPlaceholder;
 }

@@ -98,7 +98,12 @@
       "@lexical/react/useLexicalTextEntity": [
         "./packages/lexical-react/src/useLexicalTextEntity.ts"
       ],
-
+      "@lexical/react/useLexicalSubscription": [
+        "./packages/lexical-react/src/useLexicalSubscription.ts"
+      ],
+      "@lexical/react/useLexicalEditable": [
+        "./packages/lexical-react/src/useLexicalEditable.ts"
+      ],
       "@lexical/react/LexicalPlainTextPlugin": [
         "./packages/lexical-react/src/LexicalPlainTextPlugin.tsx"
       ],

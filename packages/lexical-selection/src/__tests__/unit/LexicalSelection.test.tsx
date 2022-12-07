@@ -163,7 +163,7 @@ describe('LexicalSelection tests', () => {
               // eslint-disable-next-line jsx-a11y/aria-role
               <ContentEditable role={null} spellCheck={null} />
             }
-            placeholder=""
+            placeholder={null}
             ErrorBoundary={LexicalErrorBoundary}
           />
           <HistoryPlugin />

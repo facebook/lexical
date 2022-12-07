@@ -74,8 +74,12 @@ module.exports = {
           '<rootDir>/packages/lexical-react/src/useLexicalCanShowPlaceholder.ts',
         '^@lexical/react/useLexicalDecorators$':
           '<rootDir>/packages/lexical-react/src/useLexicalDecorators.ts',
+        '^@lexical/react/useLexicalEditable$':
+          '<rootDir>/packages/lexical-react/src/useLexicalEditable.ts',
         '^@lexical/react/useLexicalEditor$':
           '<rootDir>/packages/lexical-react/src/useLexicalEditor.ts',
+        '^@lexical/react/useLexicalSubscription$':
+          '<rootDir>/packages/lexical-react/src/useLexicalSubscription.ts',
         '^@lexical/rich-text$':
           '<rootDir>/packages/lexical-rich-text/src/index.ts',
         '^@lexical/selection$':

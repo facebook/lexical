@@ -271,6 +271,22 @@ export class ElementNode extends LexicalNode {
     let anchorOffset = _anchorOffset;
     let focusOffset = _focusOffset;
     const childrenCount = this.getChildrenSize();
+    if (!this.canBeEmpty()) {
+      if (_anchorOffset === 0 && _focusOffset === 0) {
+        const firstChild = this.getFirstChild();
+        if ($isTextNode(firstChild) || $isElementNode(firstChild)) {
+          return firstChild.select(0, 0);
+        }
+      } else if (
+        (_anchorOffset === undefined || _anchorOffset === childrenCount) &&
+        (_focusOffset === undefined || _focusOffset === childrenCount)
+      ) {
+        const lastChild = this.getLastChild();
+        if ($isTextNode(lastChild) || $isElementNode(lastChild)) {
+          return lastChild.select();
+        }
+      }
+    }
     if (anchorOffset === undefined) {
       anchorOffset = childrenCount;
     }

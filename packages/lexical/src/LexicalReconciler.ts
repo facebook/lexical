@@ -635,7 +635,14 @@ function getFirstChild(element: HTMLElement): Node | null {
 }
 
 function getNextSibling(element: HTMLElement): Node | null {
-  return element.nextSibling;
+  let nextSibling = element.nextSibling;
+  if (
+    nextSibling !== null &&
+    nextSibling === activeEditor._blockCursorElement
+  ) {
+    nextSibling = nextSibling.nextSibling;
+  }
+  return nextSibling;
 }
 
 function reconcileNodeChildren(

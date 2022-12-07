@@ -8,6 +8,7 @@
 
 import type {
   CommandPayloadType,
+  EditorConfig,
   EditorThemeClasses,
   Klass,
   LexicalCommand,
@@ -1033,7 +1034,7 @@ function resolveElement(
   return block.getChildAtIndex(isBackward ? offset - 1 : offset);
 }
 
-export function $getDecoratorNode(
+export function $getAdjacentNode(
   focus: PointType,
   isBackward: boolean,
 ): null | LexicalNode {
@@ -1309,4 +1310,103 @@ export function $getNodeByKeyOrThrow<N extends LexicalNode>(key: NodeKey): N {
     );
   }
   return node;
+}
+
+function createBlockCursorElement(editorConfig: EditorConfig): HTMLDivElement {
+  const theme = editorConfig.theme;
+  const element = document.createElement('div');
+  element.contentEditable = 'false';
+  element.setAttribute('data-lexical-cursor', 'true');
+  let blockCursorTheme = theme.blockCursor;
+  if (blockCursorTheme !== undefined) {
+    if (typeof blockCursorTheme === 'string') {
+      const classNamesArr = blockCursorTheme.split(' ');
+      // @ts-expect-error: intentional
+      blockCursorTheme = theme.blockCursor = classNamesArr;
+    }
+    if (blockCursorTheme !== undefined) {
+      element.classList.add(...blockCursorTheme);
+    }
+  }
+  return element;
+}
+
+function needsBlockCursor(node: null | LexicalNode): boolean {
+  return (
+    ($isDecoratorNode(node) || ($isElementNode(node) && !node.canBeEmpty())) &&
+    !node.isInline()
+  );
+}
+
+export function removeDOMBlockCursorElement(
+  blockCursorElement: HTMLElement,
+  editor: LexicalEditor,
+  rootElement: HTMLElement,
+) {
+  rootElement.style.removeProperty('caret-color');
+  editor._blockCursorElement = null;
+  const parentElement = blockCursorElement.parentElement;
+  if (parentElement !== null) {
+    parentElement.removeChild(blockCursorElement);
+  }
+}
+
+export function updateDOMBlockCursorElement(
+  editor: LexicalEditor,
+  rootElement: HTMLElement,
+  nextSelection: null | RangeSelection | NodeSelection | GridSelection,
+): void {
+  let blockCursorElement = editor._blockCursorElement;
+
+  if (
+    $isRangeSelection(nextSelection) &&
+    nextSelection.isCollapsed() &&
+    nextSelection.anchor.type === 'element' &&
+    rootElement.contains(document.activeElement)
+  ) {
+    const anchor = nextSelection.anchor;
+    const elementNode = anchor.getNode();
+    const offset = anchor.offset;
+    const elementNodeSize = elementNode.getChildrenSize();
+    let isBlockCursor = false;
+    let insertBeforeElement: null | HTMLElement = null;
+
+    if (offset === elementNodeSize) {
+      const child = elementNode.getChildAtIndex(offset - 1);
+      if (needsBlockCursor(child)) {
+        isBlockCursor = true;
+      }
+    } else {
+      const child = elementNode.getChildAtIndex(offset);
+      if (needsBlockCursor(child)) {
+        const sibling = (child as LexicalNode).getPreviousSibling();
+        if (sibling === null || needsBlockCursor(sibling)) {
+          isBlockCursor = true;
+          insertBeforeElement = editor.getElementByKey(
+            (child as LexicalNode).__key,
+          );
+        }
+      }
+    }
+    if (isBlockCursor) {
+      const elementDOM = editor.getElementByKey(
+        elementNode.__key,
+      ) as HTMLElement;
+      if (blockCursorElement === null) {
+        editor._blockCursorElement = blockCursorElement =
+          createBlockCursorElement(editor._config);
+      }
+      rootElement.style.caretColor = 'transparent';
+      if (insertBeforeElement === null) {
+        elementDOM.appendChild(blockCursorElement);
+      } else {
+        elementDOM.insertBefore(blockCursorElement, insertBeforeElement);
+      }
+      return;
+    }
+  }
+  // Remove cursor
+  if (blockCursorElement !== null) {
+    removeDOMBlockCursorElement(blockCursorElement, editor, rootElement);
+  }
 }

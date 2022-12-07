@@ -1114,12 +1114,13 @@ export function addRootElementEvents(
                     event as FocusEvent,
                   );
 
-                case 'blur':
+                case 'blur': {
                   return dispatchCommand(
                     editor,
                     BLUR_COMMAND,
                     event as FocusEvent,
                   );
+                }
 
                 case 'drop':
                   return dispatchCommand(

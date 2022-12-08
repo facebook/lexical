@@ -98,6 +98,17 @@ export function TreeView({
   );
 
   useEffect(() => {
+    setContent(
+      generateContent(
+        editor.getEditorState(),
+        editor._config,
+        editor._compositionKey,
+        editor._editable,
+      ),
+    );
+  }, [editor]);
+
+  useEffect(() => {
     return mergeRegister(
       editor.registerUpdateListener(({editorState, dirtyLeaves}) => {
         if (!showLimited && dirtyLeaves.size > 1000) {

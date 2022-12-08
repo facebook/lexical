@@ -67,14 +67,16 @@ export interface Token {
 }
 
 export interface Tokenizer {
+  defaultLanguage: string;
   tokenize(code: string, language?: string): (string | Token)[];
 }
 
 export const PrismTokenizer: Tokenizer = {
+  defaultLanguage: DEFAULT_CODE_LANGUAGE,
   tokenize(code: string, language?: string): (string | Token)[] {
     return Prism.tokenize(
       code,
-      Prism.languages[language || ''] || Prism.languages[DEFAULT_CODE_LANGUAGE],
+      Prism.languages[language || ''] || Prism.languages[this.defaultLanguage],
     );
   },
 };
@@ -273,7 +275,7 @@ function codeNodeTransform(
 
   // When new code block inserted it might not have language selected
   if (node.getLanguage() === undefined) {
-    node.setLanguage(DEFAULT_CODE_LANGUAGE);
+    node.setLanguage(tokenizer.defaultLanguage);
   }
 
   // Using nested update call to pass `skipTransforms` since we don't want
@@ -291,7 +293,7 @@ function codeNodeTransform(
         const code = currentNode.getTextContent();
         const tokens = tokenizer.tokenize(
           code,
-          currentNode.getLanguage() || DEFAULT_CODE_LANGUAGE,
+          currentNode.getLanguage() || tokenizer.defaultLanguage,
         );
         const highlightNodes = getHighlightNodes(tokens);
         const diffRange = getDiffRange(

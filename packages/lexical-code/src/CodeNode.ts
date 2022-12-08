@@ -214,6 +214,7 @@ export class CodeNode extends ElementNode {
   // Mutation
   insertNewAfter(
     selection: RangeSelection,
+    restoreSelection = true,
   ): null | ParagraphNode | CodeHighlightNode {
     const children = this.getChildren();
     const childrenLength = children.length;
@@ -229,7 +230,7 @@ export class CodeNode extends ElementNode {
       children[childrenLength - 1].remove();
       children[childrenLength - 2].remove();
       const newElement = $createParagraphNode();
-      this.insertAfter(newElement);
+      this.insertAfter(newElement, restoreSelection);
       return newElement;
     }
 

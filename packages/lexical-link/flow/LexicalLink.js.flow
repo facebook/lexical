@@ -47,7 +47,10 @@ declare export class LinkNode extends ElementNode {
   setTarget(target: null | string): void;
   getRel(): null | string;
   setRel(rel: null | string): void;
-  insertNewAfter(selection: RangeSelection): null | ElementNode;
+  insertNewAfter(
+    selection: RangeSelection,
+    restoreSelection?: boolean,
+  ): null | ElementNode;
   canInsertTextBefore(): false;
   canInsertTextAfter(): false;
   canBeEmpty(): false;
@@ -64,7 +67,10 @@ declare export class AutoLinkNode extends LinkNode {
   static getType(): string;
   // $FlowFixMe clone method inheritance
   static clone(node: AutoLinkNode): AutoLinkNode;
-  insertNewAfter(selection: RangeSelection): null | ElementNode;
+  insertNewAfter(
+    selection: RangeSelection,
+    restoreSelection?: boolean,
+  ): null | ElementNode;
 }
 declare export function $createAutoLinkNode(
   url: string,

@@ -72,7 +72,7 @@ export class CollapsibleTitleNode extends ElementNode {
     return true;
   }
 
-  insertNewAfter(): ElementNode {
+  insertNewAfter(_: RangeSelection, restoreSelection = true): ElementNode {
     const containerNode = this.getParentOrThrow();
 
     if (!$isCollapsibleContainerNode(containerNode)) {
@@ -99,7 +99,7 @@ export class CollapsibleTitleNode extends ElementNode {
       }
     } else {
       const paragraph = $createParagraphNode();
-      containerNode.insertAfter(paragraph);
+      containerNode.insertAfter(paragraph, restoreSelection);
       return paragraph;
     }
   }

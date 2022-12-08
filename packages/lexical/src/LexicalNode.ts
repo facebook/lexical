@@ -716,7 +716,6 @@ export class LexicalNode {
     writableNodeToInsert.__prev = writableSelf.__key;
     writableNodeToInsert.__parent = writableSelf.__parent;
     if (restoreSelection && $isRangeSelection(selection)) {
-      debugger;
       const index = this.getIndexWithinParent();
       $updateElementSelectionOnCreateDeleteNode(
         selection,

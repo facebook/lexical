@@ -176,8 +176,14 @@ export class LinkNode extends ElementNode {
     writable.__rel = rel;
   }
 
-  insertNewAfter(selection: RangeSelection): null | ElementNode {
-    const element = this.getParentOrThrow().insertNewAfter(selection);
+  insertNewAfter(
+    selection: RangeSelection,
+    restoreSelection = true,
+  ): null | ElementNode {
+    const element = this.getParentOrThrow().insertNewAfter(
+      selection,
+      restoreSelection,
+    );
     if ($isElementNode(element)) {
       const linkNode = $createLinkNode(this.__url, {
         rel: this.__rel,
@@ -299,8 +305,14 @@ export class AutoLinkNode extends LinkNode {
     };
   }
 
-  insertNewAfter(selection: RangeSelection): null | ElementNode {
-    const element = this.getParentOrThrow().insertNewAfter(selection);
+  insertNewAfter(
+    selection: RangeSelection,
+    restoreSelection = true,
+  ): null | ElementNode {
+    const element = this.getParentOrThrow().insertNewAfter(
+      selection,
+      restoreSelection,
+    );
     if ($isElementNode(element)) {
       const linkNode = $createAutoLinkNode(this.__url, {
         rel: this._rel,

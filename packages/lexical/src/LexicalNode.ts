@@ -623,7 +623,7 @@ export class LexicalNode {
     removeNode(this, true, preserveEmptyParent);
   }
 
-  replace<N extends LexicalNode>(replaceWith: N): N {
+  replace<N extends LexicalNode>(replaceWith: N, restoreSelection = true): N {
     errorOnReadOnly();
     errorOnInsertTextNodeOnRoot(this, replaceWith);
     const self = this.getLatest();
@@ -657,7 +657,7 @@ export class LexicalNode {
     writableReplaceWith.__parent = parentKey;
     writableParent.__size = size;
     const selection = $getSelection();
-    if ($isRangeSelection(selection)) {
+    if ($isRangeSelection(selection) && restoreSelection) {
       const anchor = selection.anchor;
       const focus = selection.focus;
       if (anchor.key === toReplaceKey) {
@@ -673,7 +673,7 @@ export class LexicalNode {
     return writableReplaceWith;
   }
 
-  insertAfter(nodeToInsert: LexicalNode): LexicalNode {
+  insertAfter(nodeToInsert: LexicalNode, restoreSelection = true): LexicalNode {
     errorOnReadOnly();
     errorOnInsertTextNodeOnRoot(this, nodeToInsert);
     const writableSelf = this.getWritable();
@@ -704,10 +704,8 @@ export class LexicalNode {
     const writableParent = this.getParentOrThrow().getWritable();
     const insertKey = writableNodeToInsert.__key;
     const nextKey = writableSelf.__next;
-    let isAppending = false;
     if (nextSibling === null) {
       writableParent.__last = insertKey;
-      isAppending = true;
     } else {
       const writableNextSibling = nextSibling.getWritable();
       writableNextSibling.__prev = insertKey;
@@ -717,12 +715,7 @@ export class LexicalNode {
     writableNodeToInsert.__next = nextKey;
     writableNodeToInsert.__prev = writableSelf.__key;
     writableNodeToInsert.__parent = writableSelf.__parent;
-    if (
-      $isRangeSelection(selection) &&
-      (!isAppending ||
-        elementFocusSelectionOnNode ||
-        selection.anchor.type === 'element')
-    ) {
+    if (restoreSelection && $isRangeSelection(selection)) {
       const index = this.getIndexWithinParent();
       $updateElementSelectionOnCreateDeleteNode(
         selection,
@@ -740,7 +733,10 @@ export class LexicalNode {
     return nodeToInsert;
   }
 
-  insertBefore(nodeToInsert: LexicalNode): LexicalNode {
+  insertBefore(
+    nodeToInsert: LexicalNode,
+    restoreSelection = true,
+  ): LexicalNode {
     errorOnReadOnly();
     errorOnInsertTextNodeOnRoot(this, nodeToInsert);
     const writableSelf = this.getWritable();
@@ -764,7 +760,7 @@ export class LexicalNode {
     writableNodeToInsert.__next = writableSelf.__key;
     writableNodeToInsert.__parent = writableSelf.__parent;
     const selection = $getSelection();
-    if ($isRangeSelection(selection)) {
+    if (restoreSelection && $isRangeSelection(selection)) {
       const parent = this.getParentOrThrow();
       $updateElementSelectionOnCreateDeleteNode(selection, parent, index);
     }

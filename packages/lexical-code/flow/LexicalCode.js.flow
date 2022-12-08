@@ -27,6 +27,7 @@ declare export class CodeNode extends ElementNode {
   updateDOM(prevNode: CodeNode, dom: HTMLElement): boolean;
   insertNewAfter(
     selection: RangeSelection,
+    restoreSelection?: boolean,
   ): null | ParagraphNode | CodeHighlightNode;
   canInsertTab(): boolean;
   collapseAtStart(): true;

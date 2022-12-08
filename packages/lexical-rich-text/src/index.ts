@@ -160,11 +160,11 @@ export class QuoteNode extends ElementNode {
 
   // Mutation
 
-  insertNewAfter(): ParagraphNode {
+  insertNewAfter(_: RangeSelection, restoreSelection?: boolean): ParagraphNode {
     const newBlock = $createParagraphNode();
     const direction = this.getDirection();
     newBlock.setDirection(direction);
-    this.insertAfter(newBlock);
+    this.insertAfter(newBlock, restoreSelection);
     return newBlock;
   }
 
@@ -300,7 +300,10 @@ export class HeadingNode extends ElementNode {
   }
 
   // Mutation
-  insertNewAfter(selection?: RangeSelection): ParagraphNode | HeadingNode {
+  insertNewAfter(
+    selection?: RangeSelection,
+    restoreSelection = true,
+  ): ParagraphNode | HeadingNode {
     const anchorOffet = selection ? selection.anchor.offset : 0;
     const newElement =
       anchorOffet > 0 && anchorOffet < this.getTextContentSize()
@@ -308,7 +311,7 @@ export class HeadingNode extends ElementNode {
         : $createParagraphNode();
     const direction = this.getDirection();
     newElement.setDirection(direction);
-    this.insertAfter(newElement);
+    this.insertAfter(newElement, restoreSelection);
     return newElement;
   }
 

@@ -709,7 +709,10 @@ declare export class ElementNode extends LexicalNode {
   setDirection(direction: 'ltr' | 'rtl' | null): this;
   setFormat(type: ElementFormatType): this;
   setIndent(indentLevel: number): this;
-  insertNewAfter(selection: RangeSelection): null | LexicalNode;
+  insertNewAfter(
+    selection: RangeSelection,
+    restoreSelection?: boolean,
+  ): null | LexicalNode;
   canInsertTab(): boolean;
   canIndent(): boolean;
   collapseAtStart(selection: RangeSelection): boolean;

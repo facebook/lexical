@@ -883,10 +883,10 @@ export class RangeSelection implements BaseSelection {
           textNode.setFormat(format);
           textNode.select();
           if (startOffset === 0) {
-            firstNode.insertBefore(textNode);
+            firstNode.insertBefore(textNode, false);
           } else {
             const [targetNode] = firstNode.splitText(startOffset);
-            targetNode.insertAfter(textNode);
+            targetNode.insertAfter(textNode, false);
           }
           // When composing, we need to adjust the anchor offset so that
           // we correctly replace that right range.
@@ -952,7 +952,7 @@ export class RangeSelection implements BaseSelection {
         ) {
           if (lastNode.isSegmented()) {
             const textNode = $createTextNode(lastNode.getTextContent());
-            lastNode.replace(textNode);
+            lastNode.replace(textNode, false);
             lastNode = textNode;
           }
           lastNode = (lastNode as TextNode).spliceText(0, endOffset, '');
@@ -1006,7 +1006,7 @@ export class RangeSelection implements BaseSelection {
             lastNodeChild.is(lastElementChild)
           ) {
             if (!firstAndLastElementsAreEqual) {
-              insertionTarget.insertAfter(lastNodeChild);
+              insertionTarget.insertAfter(lastNodeChild, false);
             }
           } else {
             lastNodeChild.remove();
@@ -1056,7 +1056,7 @@ export class RangeSelection implements BaseSelection {
       } else {
         const textNode = $createTextNode(text);
         textNode.select();
-        firstNode.replace(textNode);
+        firstNode.replace(textNode, false);
       }
 
       // Remove all selected nodes that haven't already been removed.
@@ -1402,7 +1402,7 @@ export class RangeSelection implements BaseSelection {
       if ($isElementNode(target) && !target.isInline()) {
         lastNode = node;
         if ($isDecoratorNode(node) && !node.isInline()) {
-          target = target.insertAfter(node);
+          target = target.insertAfter(node, false);
         } else if (!$isElementNode(node)) {
           const firstChild = target.getFirstChild();
           if (firstChild !== null) {
@@ -1424,7 +1424,7 @@ export class RangeSelection implements BaseSelection {
             }
             target = node;
           } else {
-            target = target.insertAfter(node);
+            target = target.insertAfter(node, false);
           }
         }
       } else if (
@@ -1433,7 +1433,7 @@ export class RangeSelection implements BaseSelection {
         ($isDecoratorNode(target) && !target.isInline())
       ) {
         lastNode = node;
-        target = target.insertAfter(node);
+        target = target.insertAfter(node, false);
       } else {
         const nextTarget: ElementNode = target.getParentOrThrow();
         // if we're inserting an Element after a LineBreak, we want to move the target to the parent
@@ -1584,7 +1584,7 @@ export class RangeSelection implements BaseSelection {
         const child = currentElement.getChildAtIndex(anchorOffset);
         paragraph.select();
         if (child !== null) {
-          child.insertBefore(paragraph);
+          child.insertBefore(paragraph, false);
         } else {
           currentElement.append(paragraph);
         }
@@ -1599,7 +1599,7 @@ export class RangeSelection implements BaseSelection {
       currentElement.isInline()
     ) {
       const parent = currentElement.getParentOrThrow();
-      const newElement = parent.insertNewAfter(this);
+      const newElement = parent.insertNewAfter(this, false);
       if ($isElementNode(newElement)) {
         const children = parent.getChildren();
         for (let i = 0; i < children.length; i++) {
@@ -1608,7 +1608,7 @@ export class RangeSelection implements BaseSelection {
       }
       return;
     }
-    const newElement = currentElement.insertNewAfter(this);
+    const newElement = currentElement.insertNewAfter(this, false);
     if (newElement === null) {
       // Handle as a line break insertion
       this.insertLineBreak();

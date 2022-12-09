@@ -58,7 +58,7 @@ declare export function createCommand<T>(type?: string): LexicalCommand<T>;
 /**
  * LexicalEditor
  */
-type IntentionallyMarkedAsDirtyElement = Boolean;
+type IntentionallyMarkedAsDirtyElement = boolean;
 
 type MutationListeners = Map<MutationListener, Class<LexicalNode>>;
 export type NodeMutation = 'created' | 'updated' | 'destroyed';

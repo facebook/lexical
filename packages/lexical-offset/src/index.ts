@@ -438,7 +438,7 @@ function $createOffsetNode(
   const start = state.offset;
 
   if ($isElementNode(node)) {
-    const childKeys = node.getChildrenKeys();
+    const childKeys = createChildrenArray(node, nodeMap);
     const blockIsEmpty = childKeys.length === 0;
     const child = blockIsEmpty
       ? null

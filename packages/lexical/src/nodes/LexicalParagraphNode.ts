@@ -97,7 +97,7 @@ export class ParagraphNode extends ElementNode {
     return node;
   }
 
-  exportJSON(): SerializedParagraphNode {
+  exportJSON(): SerializedElementNode {
     return {
       ...super.exportJSON(),
       type: 'paragraph',

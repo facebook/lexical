@@ -1,3 +1,32 @@
+## v0.7.0 (2022-12-09)
+
+Lexical 0.7 includes some breaking changes, including:
+- Removal of `$cloneContents` from `@lexical/selection`
+- Changes to `PlainTextPlugin` and `RichTextPlugin` with regards to how placeholders are handled
+- Pressing tab with the `RichTextPlugin` no longer indents by default, use the `LexicalTabIndentationPlugin` for this behavior.
+
+Lexical 0.7 includes performance and usability improvements. Notably, Lexical has a new internal architecture that allows for
+much better performance with large documents of content. Lexical also now provides a way to handle selection between blocks
+of content by providing an emulated cursor (make sure you add a `blockCursor` theme to your editor config to use it).
+
+- Revert "Fix exportJSON return types for ParagraphNode and LineBreakNode" (#3521) John Flockton
+- Move default language setting to Tokenizer (#3368) mizuno
+- Improve LexicalTreeView around large EditorStates (#3515) Dominic Gannaway
+- Improve insertBefore, insertAfter, replace selection restoration logic (#3516) Dominic Gannaway
+- ⏸ [0.7] Switch the internal architecture to utilize doubly linked lists (#3480) Dominic Gannaway
+- Add missing annotation to internal field of Textnode (#3514) John Flockton
+- ⏸ [0.7] Remove indentation keyboard shortcuts in RTE set up (#2855) John Flockton
+- Fix dom-less reconciliation (#3506) Maksim Horbachevsky
+- ⏸ [0.7] Add block emulated cursors (#3434) Dominic Gannaway
+- ⏸ [0.7] Customize Placeholder visibility (#3379) Gerard Rovira
+- ⏸ [0.7] Remove IntentionallyMarkedAsDirtyElement from public API (#3422) John Flockton
+- ⏸ [0.7] Remove $cloneContents (#3483) Dominic Gannaway
+- Update Playwright (#3511) Dominic Gannaway
+- Improve Auto Embed (#3505) Tyler Bainbridge
+- Skip tab e2e test in webkit (#3512) Dominic Gannaway
+- Add poll and speech-to-text plugin examples (#3484) akmarzhan1
+- Fix typedef for wrapNodes (#3492) Maksim Horbachevsky
+
 ## v0.6.5 (2022-12-05)
 
 - Fix mutation listener for when DOM moves occur (#3493) Dominic Gannaway

@@ -6,4 +6,4 @@
  *
  */
 
-export const VERSION = '0.6.5';
+export const VERSION = '0.7.0';

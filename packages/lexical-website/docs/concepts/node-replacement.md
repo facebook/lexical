@@ -9,7 +9,7 @@ Node Overrides allow you to replace all instances of a given node in your editor
 ```
 const editorConfig = {
     ...
-    nodes={
+    nodes=[
         // Don't forget to register your custom node separately!
         CustomParagraphNode,
         {
@@ -18,7 +18,7 @@ const editorConfig = {
                 return new CustomParagraphNode();
             }
         }
-    }
+    ]
 }
 ```
 

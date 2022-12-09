@@ -15,6 +15,10 @@
     "message": "Getting Started",
     "description": "The label for category Getting Started in sidebar tutorialSidebar"
   },
+  "sidebar.tutorialSidebar.category.Demos": {
+    "message": "Demos",
+    "description": "The label for category Demo in sidebar tutorialSidebar"
+  },
   "sidebar.tutorialSidebar.category.Concepts": {
     "message": "Concepts",
     "description": "The label for category Concepts in sidebar tutorialSidebar"

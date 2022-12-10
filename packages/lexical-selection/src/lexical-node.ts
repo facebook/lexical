@@ -10,7 +10,6 @@ import type {
   GridSelection,
   LexicalEditor,
   LexicalNode,
-  NodeKey,
   NodeSelection,
   Point,
   RangeSelection,
@@ -240,11 +239,6 @@ export function trimTextContentFromAnchor(
       remaining = 0;
     }
   }
-}
-
-export interface ICloneSelectionContent {
-  nodeMap: Array<[NodeKey, LexicalNode]>;
-  range: Array<NodeKey>;
 }
 
 export function $addNodeStyle(node: TextNode): void {

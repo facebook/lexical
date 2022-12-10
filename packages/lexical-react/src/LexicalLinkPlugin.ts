@@ -68,7 +68,7 @@ export function LinkPlugin({validateUrl}: Props): null {
                 return false;
               }
               // If we select nodes that are elements then avoid applying the link.
-              if (!selection.getNodes().find(node => $isElementNode(node))) {
+              if (!selection.getNodes().some(node => $isElementNode(node))) {
                 editor.dispatchCommand(TOGGLE_LINK_COMMAND, clipboardText);
                 event.preventDefault();
                 return true;

@@ -1,3 +1,77 @@
+## v0.7.0 (2022-12-09)
+
+Lexical 0.7 includes some breaking changes, including:
+- Removal of `$cloneContents` from `@lexical/selection`
+- Changes to `PlainTextPlugin` and `RichTextPlugin` with regards to how placeholders are handled
+- Pressing tab with the `RichTextPlugin` no longer indents by default, use the `LexicalTabIndentationPlugin` for this behavior.
+
+Lexical 0.7 includes performance and usability improvements. Notably, Lexical has a new internal architecture that allows for
+much better performance with large documents of content. Lexical also now provides a way to handle selection between blocks
+of content by providing an emulated cursor (make sure you add a `blockCursor` theme to your editor config to use it).
+
+- Revert "Fix exportJSON return types for ParagraphNode and LineBreakNode" (#3521) John Flockton
+- Move default language setting to Tokenizer (#3368) mizuno
+- Improve LexicalTreeView around large EditorStates (#3515) Dominic Gannaway
+- Improve insertBefore, insertAfter, replace selection restoration logic (#3516) Dominic Gannaway
+- ⏸ [0.7] Switch the internal architecture to utilize doubly linked lists (#3480) Dominic Gannaway
+- Add missing annotation to internal field of Textnode (#3514) John Flockton
+- ⏸ [0.7] Remove indentation keyboard shortcuts in RTE set up (#2855) John Flockton
+- Fix dom-less reconciliation (#3506) Maksim Horbachevsky
+- ⏸ [0.7] Add block emulated cursors (#3434) Dominic Gannaway
+- ⏸ [0.7] Customize Placeholder visibility (#3379) Gerard Rovira
+- ⏸ [0.7] Remove IntentionallyMarkedAsDirtyElement from public API (#3422) John Flockton
+- ⏸ [0.7] Remove $cloneContents (#3483) Dominic Gannaway
+- Update Playwright (#3511) Dominic Gannaway
+- Improve Auto Embed (#3505) Tyler Bainbridge
+- Skip tab e2e test in webkit (#3512) Dominic Gannaway
+- Add poll and speech-to-text plugin examples (#3484) akmarzhan1
+- Fix typedef for wrapNodes (#3492) Maksim Horbachevsky
+
+## v0.6.5 (2022-12-05)
+
+- Fix mutation listener for when DOM moves occur (#3493) Dominic Gannaway
+- Fix decorator input selection (#3491) Dominic Gannaway
+- Inform users that they need to install headless (#3487) Phillip Burch
+- Revert changes (#3481) Dominic Gannaway
+- Improve selection performance on large updates (#3478) Dominic Gannaway
+- Support TypeScript language in code nodes (#3469) Jonas Bengtsson
+- Improve element splicing and node removal (#3454) Dominic Gannaway
+- Add start and end as format types (#3472) John Flockton
+- Fix test for collab (#3471) Dominic Gannaway
+- Add e2e test for text replacement (#3470) Dominic Gannaway
+- Markdown decorators export fallback to text content (#3464) Maksim Horbachevsky
+- Update conditional statement in LexicalAutoFocusPlugin to the same logic as in LexicalSelection (#3466) John Flockton
+- Add Node Replacement Docs (#3462) Acy Watson
+- Inherit headless flag from parent editor (#3459) Maksim Horbachevsky
+- Change heading to paragraph when heading is empty (#3455) John Flockton
+- Show caret while drag&drop (#3300) Gerard Rovira
+- Fix superscript & subscript not being converted from html string (#3453) Rajatava Mukherjee%
+
+## v0.6.4 (2022-11-29)
+
+- Fix issue with readonly image resizing (#3448) John Flockton
+- check CAN_USE_DOM before accessing document (#3444) ProvidenceXz
+- Add `type="button"` to <button /> components (#3447) Scott Agirs
+- Add horizontal rule plugin (#3446) akmarzhan1
+- Add isEditable listener to nested composer (#3445) John Flockton
+- Exports serialized node types (#3436) tolkienfan2
+- Fix bug in selectPointOnNode (#3443) Dominic Gannaway
+- $splitNode & $insertNodeToNearestRoot for root selection (#3442) Maksim Horbachevsky
+- Updated exportJSON types (#3231) Matt Reid
+- Fix deleting empty paragraphs (#3261) Petar Smolic
+- Change command priority in typeahead (#3441) John Flockton
+- Fix grammary 2 (#3438) Dominic Gannaway
+- Don't unnecessarily mark text nodes as dirty (#3437) John Flockton
+- fix: playground bug(floating link editor not closing with 'Escape' key (#2941) Joseph Jang
+- Fix a couple of bugs with Headings creation (#3425) John Flockton
+- Fix text replacement via insertText (#3429) Dominic Gannaway
+- Add link list properties to nodes (#3424) Dominic Gannaway
+- Fix browser selection with horizontal rule (#3418) Dominic Gannaway
+- add excalidraw plugin example (#3412) akmarzhan1
+- Fix $splitNode Flow type (#3411) Gerard Rovira
+- Fix insertNodes merging logic (#3413) Dominic Gannaway
+- refactor: React composer initialConfig to exported type (#3396) Simon Proper
+
 ## v0.6.3 (2022-11-23)
 
 - Apply event propagation between all event types (#3401) Dominic Gannaway

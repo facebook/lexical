@@ -51,7 +51,10 @@ function PollOptionComponent({
   option: Option;
   options: Options;
   totalVotes: number;
-  withPollNode: (cb: (pollNode: PollNode) => void) => void;
+  withPollNode: (
+    cb: (pollNode: PollNode) => void,
+    onSelect?: () => void,
+  ) => void;
 }): JSX.Element {
   const {clientID} = useCollaborationContext();
   const checkboxRef = useRef(null);
@@ -93,9 +96,19 @@ function PollOptionComponent({
           type="text"
           value={text}
           onChange={(e) => {
-            withPollNode((node) => {
-              node.setOptionText(option, e.target.value);
-            });
+            const target = e.target;
+            const value = target.value;
+            const selectionStart = target.selectionStart;
+            const selectionEnd = target.selectionEnd;
+            withPollNode(
+              (node) => {
+                node.setOptionText(option, value);
+              },
+              () => {
+                target.selectionStart = selectionStart;
+                target.selectionEnd = selectionEnd;
+              },
+            );
           }}
           placeholder={`Option ${index + 1}`}
         />
@@ -186,13 +199,19 @@ export default function PollComponent({
     );
   }, [clearSelection, editor, isSelected, nodeKey, onDelete, setSelected]);
 
-  const withPollNode = (cb: (node: PollNode) => void): void => {
-    editor.update(() => {
-      const node = $getNodeByKey(nodeKey);
-      if ($isPollNode(node)) {
-        cb(node);
-      }
-    });
+  const withPollNode = (
+    cb: (node: PollNode) => void,
+    onUpdate?: () => void,
+  ): void => {
+    editor.update(
+      () => {
+        const node = $getNodeByKey(nodeKey);
+        if ($isPollNode(node)) {
+          cb(node);
+        }
+      },
+      {onUpdate},
+    );
   };
 
   const addOption = () => {

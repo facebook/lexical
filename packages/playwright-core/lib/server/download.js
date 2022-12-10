@@ -4,17 +4,11 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.Download = void 0;
-
 var _path = _interopRequireDefault(require("path"));
-
 var _page = require("./page");
-
 var _utils = require("../utils");
-
 var _artifact = require("./artifact");
-
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
 /**
  * Copyright (c) Microsoft Corporation.
  *
@@ -30,6 +24,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 class Download {
   constructor(page, downloadsPath, uuid, url, suggestedFilename) {
     this.artifact = void 0;
@@ -43,23 +38,16 @@ class Download {
     this._page = page;
     this.url = url;
     this._suggestedFilename = suggestedFilename;
-
     page._browserContext._downloads.add(this);
-
     if (suggestedFilename !== undefined) this._page.emit(_page.Page.Events.Download, this);
   }
-
   _filenameSuggested(suggestedFilename) {
     (0, _utils.assert)(this._suggestedFilename === undefined);
     this._suggestedFilename = suggestedFilename;
-
     this._page.emit(_page.Page.Events.Download, this);
   }
-
   suggestedFilename() {
     return this._suggestedFilename;
   }
-
 }
-
 exports.Download = Download;

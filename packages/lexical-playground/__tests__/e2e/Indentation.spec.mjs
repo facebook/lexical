@@ -9,6 +9,7 @@
 import {selectAll} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
+  click,
   focusEditor,
   html,
   initialize,
@@ -37,7 +38,8 @@ test.describe('Identation', () => {
     await page.keyboard.type('item 2');
     await page.keyboard.press('Enter');
     await page.keyboard.type('item 3');
-    await page.keyboard.press('Tab');
+    await click(page, '.toolbar-item.alignment');
+    await click(page, 'button:has-text("Indent")');
     await page.keyboard.press('Enter');
     await page.keyboard.press('Enter');
     await page.keyboard.press('Enter');
@@ -245,7 +247,8 @@ test.describe('Identation', () => {
       `,
     );
 
-    await page.keyboard.press('Tab');
+    await click(page, '.toolbar-item.alignment');
+    await click(page, 'button:has-text("Indent")');
 
     await assertHTML(
       page,
@@ -553,7 +556,8 @@ test.describe('Identation', () => {
       `,
     );
 
-    await page.keyboard.press('Tab');
+    await click(page, '.toolbar-item.alignment');
+    await click(page, 'button:has-text("Indent")');
 
     await assertHTML(
       page,
@@ -867,9 +871,8 @@ test.describe('Identation', () => {
       `,
     );
 
-    await page.keyboard.down('Shift');
-    await page.keyboard.press('Tab');
-    await page.keyboard.up('Shift');
+    await click(page, '.toolbar-item.alignment');
+    await click(page, 'button:has-text("Outdent")');
 
     await assertHTML(
       page,
@@ -1177,9 +1180,8 @@ test.describe('Identation', () => {
       `,
     );
 
-    await page.keyboard.down('Shift');
-    await page.keyboard.press('Tab');
-    await page.keyboard.up('Shift');
+    await click(page, '.toolbar-item.alignment');
+    await click(page, 'button:has-text("Outdent")');
 
     await assertHTML(
       page,

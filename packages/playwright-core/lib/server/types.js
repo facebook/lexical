@@ -3,8 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.reducedMotions = exports.mediaTypes = exports.kLifecycleEvents = exports.forcedColors = exports.colorSchemes = void 0;
-
+exports.kLifecycleEvents = void 0;
 /**
  * Copyright 2018 Google Inc. All rights reserved.
  * Modifications copyright (c) Microsoft Corporation.
@@ -21,13 +20,6 @@ exports.reducedMotions = exports.mediaTypes = exports.kLifecycleEvents = exports
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 const kLifecycleEvents = new Set(['load', 'domcontentloaded', 'networkidle', 'commit']);
 exports.kLifecycleEvents = kLifecycleEvents;
-const mediaTypes = new Set(['screen', 'print']);
-exports.mediaTypes = mediaTypes;
-const colorSchemes = new Set(['dark', 'light', 'no-preference']);
-exports.colorSchemes = colorSchemes;
-const reducedMotions = new Set(['no-preference', 'reduce']);
-exports.reducedMotions = reducedMotions;
-const forcedColors = new Set(['active', 'none']);
-exports.forcedColors = forcedColors;

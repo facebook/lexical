@@ -1,7 +1,7 @@
 {
   "name": "@lexical/monorepo",
   "description": "Lexical is an extensible text editor framework that provides excellent reliability, accessibility and performance.",
-  "version": "0.6.3",
+  "version": "0.7.0",
   "license": "MIT",
   "private": true,
   "workspaces": [
@@ -102,7 +102,7 @@
     "@babel/preset-flow": "^7.14.5",
     "@babel/preset-react": "^7.14.5",
     "@babel/preset-typescript": "^7.16.7",
-    "@playwright/test": "^1.22.1",
+    "@playwright/test": "^1.28.1",
     "@rollup/plugin-alias": "^3.1.4",
     "@rollup/plugin-babel": "^5.3.0",
     "@rollup/plugin-commonjs": "^19.0.1",
@@ -149,7 +149,6 @@
     "lint-staged": "^11.1.0",
     "minimist": "^1.2.5",
     "npm-run-all": "^4.1.5",
-    "playwright": "1.23.0-next-alpha-trueadm-fork",
     "prettier": "^2.3.2",
     "prettier-plugin-organize-attributes": "^0.0.5",
     "react-test-renderer": "^17.0.2",
@@ -163,7 +162,8 @@
   },
   "overrides": {
     "@playwright/test": {
-      "playwright-core": "1.23.0-next-alpha-trueadm-fork"
+      "playwright": "1.29.0-next-alpha-trueadm-fork",
+      "playwright-core": "1.29.0-next-alpha-trueadm-fork"
     }
   },
   "dependencies": {

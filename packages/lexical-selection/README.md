@@ -4,20 +4,6 @@ This package contains selection helpers for Lexical.
 
 ### Methods
 
-#### `$cloneContents`
-
-Clones the Lexical nodes in the selection, returning a map of Key -> LexicalNode and a list containing the keys
-of all direct children of the RootNode. Useful for insertion/transfer operations, such as copy and paste.
-
-```ts
-export function $cloneContents(
-  selection: RangeSelection | NodeSelection | GridSelection,
-): {
-  nodeMap: Array<[NodeKey, LexicalNode]>;
-  range: Array<NodeKey>;
-};
-```
-
 #### `getStyleObjectFromCSS`
 
 Given a CSS string, returns an object from the style cache.

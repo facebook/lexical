@@ -7,10 +7,7 @@
  */
 
 import type {ElementNode} from '.';
-import type {
-  IntentionallyMarkedAsDirtyElement,
-  LexicalEditor,
-} from './LexicalEditor';
+import type {LexicalEditor} from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
 import type {NodeKey, NodeMap} from './LexicalNode';
 
@@ -38,6 +35,8 @@ export function $garbageCollectDetachedDecorators(
   }
 }
 
+type IntentionallyMarkedAsDirtyElement = boolean;
+
 function $garbageCollectDetachedDeepChildNodes(
   node: ElementNode,
   parentKey: NodeKey,
@@ -45,13 +44,10 @@ function $garbageCollectDetachedDeepChildNodes(
   nodeMap: NodeMap,
   dirtyNodes: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
 ): void {
-  const children = node.__children;
-  const childrenLength = children.length;
+  let child = node.getFirstChild();
 
-  for (let i = 0; i < childrenLength; i++) {
-    const childKey = children[i];
-    const child = nodeMap.get(childKey);
-
+  while (child !== null) {
+    const childKey = child.__key;
     if (child !== undefined && child.__parent === parentKey) {
       if ($isElementNode(child)) {
         $garbageCollectDetachedDeepChildNodes(
@@ -68,9 +64,9 @@ function $garbageCollectDetachedDeepChildNodes(
       if (!prevNodeMap.has(childKey)) {
         dirtyNodes.delete(childKey);
       }
-
       nodeMap.delete(childKey);
     }
+    child = child.isAttached() ? child.getNextSibling() : null;
   }
 }
 

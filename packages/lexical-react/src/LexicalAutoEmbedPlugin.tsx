@@ -27,18 +27,24 @@ import {
 import {useCallback, useEffect, useMemo, useState} from 'react';
 import * as React from 'react';
 
-export type EmbedMatchResult = {
+export type EmbedMatchResult<TEmbedMatchResult = unknown> = {
   url: string;
   id: string;
+  data?: TEmbedMatchResult;
 };
 
-export interface EmbedConfig {
+export interface EmbedConfig<
+  TEmbedMatchResultData = unknown,
+  TEmbedMatchResult = EmbedMatchResult<TEmbedMatchResultData>,
+> {
   // Used to identify this config e.g. youtube, tweet, google-maps.
   type: string;
   // Determine if a given URL is a match and return url data.
-  parseUrl: (text: string) => EmbedMatchResult | null;
+  parseUrl: (
+    text: string,
+  ) => Promise<TEmbedMatchResult | null> | TEmbedMatchResult | null;
   // Create the Lexical embed node from the url data.
-  insertNode: (editor: LexicalEditor, result: EmbedMatchResult) => void;
+  insertNode: (editor: LexicalEditor, result: TEmbedMatchResult) => void;
 }
 
 export const URL_MATCHER =
@@ -92,15 +98,20 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
 
   const checkIfLinkNodeIsEmbeddable = useCallback(
     (key: NodeKey) => {
-      editor.getEditorState().read(() => {
+      editor.getEditorState().read(async () => {
         const linkNode = $getNodeByKey(key);
         if ($isLinkNode(linkNode)) {
-          const embedConfigMatch = embedConfigs.find((embedConfig) =>
-            embedConfig.parseUrl(linkNode.__url),
-          );
-          if (embedConfigMatch != null) {
-            setActiveEmbedConfig(embedConfigMatch);
-            setNodeKey(linkNode.getKey());
+          for (let i = 0; i < embedConfigs.length; i++) {
+            const embedConfig = embedConfigs[i];
+
+            const urlMatch = await Promise.resolve(
+              embedConfig.parseUrl(linkNode.__url),
+            );
+
+            if (urlMatch != null) {
+              setActiveEmbedConfig(embedConfig);
+              setNodeKey(linkNode.getKey());
+            }
           }
         }
       });
@@ -149,7 +160,7 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
     );
   }, [editor, embedConfigs, onOpenEmbedModalForConfig]);
 
-  const embedLinkViaActiveEmbedConfig = useCallback(() => {
+  const embedLinkViaActiveEmbedConfig = useCallback(async () => {
     if (activeEmbedConfig != null && nodeKey != null) {
       const linkNode = editor.getEditorState().read(() => {
         const node = $getNodeByKey(nodeKey);
@@ -158,17 +169,18 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
         }
         return null;
       });
+
       if ($isLinkNode(linkNode)) {
-        const result = activeEmbedConfig.parseUrl(linkNode.__url);
+        const result = await Promise.resolve(
+          activeEmbedConfig.parseUrl(linkNode.__url),
+        );
         if (result != null) {
           editor.update(() => {
             activeEmbedConfig.insertNode(editor, result);
-          });
-          if (linkNode.isAttached()) {
-            editor.update(() => {
+            if (linkNode.isAttached()) {
               linkNode.remove();
-            });
-          }
+            }
+          });
         }
       }
     }

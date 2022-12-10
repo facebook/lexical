@@ -143,8 +143,7 @@ describe('LexicalHeadingNode tests', () => {
         `<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><h2 dir="ltr"><span data-lexical-text="true">${text}</span></h2></div>`,
       );
       await editor.update(() => {
-        const selection = $getSelection();
-        const result = headingNode.insertNewAfter(selection);
+        const result = headingNode.insertNewAfter();
         expect(result).toBeInstanceOf(ParagraphNode);
         expect(result.getDirection()).toEqual(headingNode.getDirection());
       });

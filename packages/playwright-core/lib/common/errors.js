@@ -6,7 +6,6 @@ Object.defineProperty(exports, "__esModule", {
 exports.TimeoutError = void 0;
 exports.isSafeCloseError = isSafeCloseError;
 exports.kBrowserOrContextClosedError = exports.kBrowserClosedError = void 0;
-
 /**
  * Copyright 2018 Google Inc. All rights reserved.
  * Modifications copyright (c) Microsoft Corporation.
@@ -23,23 +22,20 @@ exports.kBrowserOrContextClosedError = exports.kBrowserClosedError = void 0;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 class CustomError extends Error {
   constructor(message) {
     super(message);
     this.name = this.constructor.name;
     Error.captureStackTrace(this, this.constructor);
   }
-
 }
-
 class TimeoutError extends CustomError {}
-
 exports.TimeoutError = TimeoutError;
 const kBrowserClosedError = 'Browser has been closed';
 exports.kBrowserClosedError = kBrowserClosedError;
 const kBrowserOrContextClosedError = 'Target page, context or browser has been closed';
 exports.kBrowserOrContextClosedError = kBrowserOrContextClosedError;
-
 function isSafeCloseError(error) {
   return error.message.endsWith(kBrowserClosedError) || error.message.endsWith(kBrowserOrContextClosedError);
 }

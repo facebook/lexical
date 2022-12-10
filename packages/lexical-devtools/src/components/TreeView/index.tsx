@@ -43,10 +43,13 @@ function TreeView({
     const node = map[nodeKey];
     const children: Array<DevToolsNode> = [];
 
-    if (Object.prototype.hasOwnProperty.call(node, '__children')) {
-      node.__children.forEach((childKey: string) => {
+    if (Object.prototype.hasOwnProperty.call(node, '__first')) {
+      let childKey = node.__first;
+      while (childKey !== null) {
+        const child = map[nodeKey];
         children.push(depthFirstSearch(map, childKey, depth + 1));
-      });
+        childKey = child.__next;
+      }
     }
 
     return {

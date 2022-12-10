@@ -74,6 +74,7 @@ export type EditorFocusOptions = {
 };
 
 export type EditorThemeClasses = {
+  blockCursor?: EditorThemeClassName;
   characterLimit?: EditorThemeClassName;
   code?: EditorThemeClassName;
   codeHighlight?: Record<string, EditorThemeClassName>;
@@ -252,7 +253,8 @@ export type ListenerType =
 
 export type TransformerType = 'text' | 'decorator' | 'element' | 'root';
 
-export type IntentionallyMarkedAsDirtyElement = boolean;
+type IntentionallyMarkedAsDirtyElement = boolean;
+
 type DOMConversionCache = Map<
   string,
   Array<(node: Node) => DOMConversion | null>
@@ -280,6 +282,7 @@ export function resetEditor(
   editor._normalizedNodes = new Set();
   editor._updateTags = new Set();
   editor._updates = [];
+  editor._blockCursorElement = null;
 
   const observer = editor._observer;
 
@@ -491,6 +494,7 @@ export class LexicalEditor {
   _htmlConversions: DOMConversionCache;
   _window: null | Window;
   _editable: boolean;
+  _blockCursorElement: null | HTMLDivElement;
 
   constructor(
     editorState: EditorState,
@@ -550,8 +554,9 @@ export class LexicalEditor {
     // We don't actually make use of the `editable` argument above.
     // Doing so, causes e2e tests around the lock to fail.
     this._editable = true;
-    this._headless = false;
+    this._headless = parentEditor !== null && parentEditor._headless;
     this._window = null;
+    this._blockCursorElement = null;
   }
 
   isComposing(): boolean {

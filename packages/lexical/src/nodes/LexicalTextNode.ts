@@ -255,9 +255,13 @@ function createTextInnerDOM(
 /** @noInheritDoc */
 export class TextNode extends LexicalNode {
   __text: string;
+  /** @internal */
   __format: number;
+  /** @internal */
   __style: string;
+  /** @internal */
   __mode: 0 | 1 | 2 | 3;
+  /** @internal */
   __detail: number;
 
   static getType(): string {
@@ -460,6 +464,14 @@ export class TextNode extends LexicalNode {
         conversion: convertTextFormatElement,
         priority: 0,
       }),
+      sub: (node: Node) => ({
+        conversion: convertTextFormatElement,
+        priority: 0,
+      }),
+      sup: (node: Node) => ({
+        conversion: convertTextFormatElement,
+        priority: 0,
+      }),
       u: (node: Node) => ({
         conversion: convertTextFormatElement,
         priority: 0,
@@ -537,15 +549,21 @@ export class TextNode extends LexicalNode {
 
   setMode(type: TextModeType): this {
     const mode = TEXT_MODE_TO_TYPE[type];
+    if (this.__mode === mode) {
+      return this;
+    }
     const self = this.getWritable();
     self.__mode = mode;
     return self;
   }
 
   setTextContent(text: string): this {
-    const writableSelf = this.getWritable();
-    writableSelf.__text = text;
-    return writableSelf;
+    if (this.__text === text) {
+      return this;
+    }
+    const self = this.getWritable();
+    self.__text = text;
+    return self;
   }
 
   select(_anchorOffset?: number, _focusOffset?: number): RangeSelection {
@@ -659,7 +677,6 @@ export class TextNode extends LexicalNode {
     }
     const firstPart = parts[0];
     const parent = self.getParentOrThrow();
-    const parentKey = parent.__key;
     let writableNode;
     const format = self.getFormat();
     const style = self.getStyle();
@@ -669,7 +686,6 @@ export class TextNode extends LexicalNode {
     if (self.isSegmented()) {
       // Create a new TextNode
       writableNode = $createTextNode(firstPart);
-      writableNode.__parent = parentKey;
       writableNode.__format = format;
       writableNode.__style = style;
       writableNode.__detail = detail;
@@ -726,21 +742,18 @@ export class TextNode extends LexicalNode {
         $setCompositionKey(siblingKey);
       }
       textSize = nextTextSize;
-      sibling.__parent = parentKey;
       splitNodes.push(sibling);
     }
 
     // Insert the nodes into the parent's children
     internalMarkSiblingsAsDirty(this);
     const writableParent = parent.getWritable();
-    const writableParentChildren = writableParent.__children;
-    const insertionIndex = writableParentChildren.indexOf(key);
-    const splitNodesKeys = splitNodes.map((splitNode) => splitNode.__key);
+    const insertionIndex = this.getIndexWithinParent();
     if (hasReplacedSelf) {
-      writableParentChildren.splice(insertionIndex, 0, ...splitNodesKeys);
+      writableParent.splice(insertionIndex, 0, splitNodes);
       this.remove();
     } else {
-      writableParentChildren.splice(insertionIndex, 1, ...splitNodesKeys);
+      writableParent.splice(insertionIndex, 1, splitNodes);
     }
 
     if ($isRangeSelection(selection)) {
@@ -889,6 +902,8 @@ const nodeNameToTextFormat: Record<string, TextFormatType> = {
   em: 'italic',
   i: 'italic',
   strong: 'bold',
+  sub: 'subscript',
+  sup: 'superscript',
   u: 'underline',
 };
 function convertTextFormatElement(domNode: Node): DOMConversionOutput {

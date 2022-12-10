@@ -4,11 +4,8 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.CRPDF = void 0;
-
 var _utils = require("../../utils");
-
 var _crProtocolHelper = require("./crProtocolHelper");
-
 /**
  * Copyright 2017 Google Inc. All rights reserved.
  * Modifications copyright (c) Microsoft Corporation.
@@ -25,6 +22,7 @@ var _crProtocolHelper = require("./crProtocolHelper");
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 const PagePaperFormats = {
   letter: {
     width: 8.5,
@@ -77,12 +75,10 @@ const unitToPixels = {
   'cm': 37.8,
   'mm': 3.78
 };
-
 function convertPrintParameterToInches(text) {
   if (text === undefined) return undefined;
   let unit = text.substring(text.length - 2).toLowerCase();
   let valueText = '';
-
   if (unitToPixels.hasOwnProperty(unit)) {
     valueText = text.substring(0, text.length - 2);
   } else {
@@ -91,20 +87,17 @@ function convertPrintParameterToInches(text) {
     unit = 'px';
     valueText = text;
   }
-
   const value = Number(valueText);
   (0, _utils.assert)(!isNaN(value), 'Failed to parse parameter value: ' + text);
   const pixels = value * unitToPixels[unit];
   return pixels / 96;
 }
-
 class CRPDF {
   constructor(client) {
     this._client = void 0;
     this._client = client;
   }
-
-  async generate(options = {}) {
+  async generate(options) {
     const {
       scale = 1,
       displayHeaderFooter = false,
@@ -118,7 +111,6 @@ class CRPDF {
     } = options;
     let paperWidth = 8.5;
     let paperHeight = 11;
-
     if (options.format) {
       const format = PagePaperFormats[options.format.toLowerCase()];
       (0, _utils.assert)(format, 'Unknown paper format: ' + options.format);
@@ -128,7 +120,6 @@ class CRPDF {
       paperWidth = convertPrintParameterToInches(options.width) || paperWidth;
       paperHeight = convertPrintParameterToInches(options.height) || paperHeight;
     }
-
     const marginTop = convertPrintParameterToInches(margin.top) || 0;
     const marginLeft = convertPrintParameterToInches(margin.left) || 0;
     const marginBottom = convertPrintParameterToInches(margin.bottom) || 0;
@@ -152,7 +143,5 @@ class CRPDF {
     });
     return await (0, _crProtocolHelper.readProtocolStream)(this._client, result.stream, null);
   }
-
 }
-
 exports.CRPDF = CRPDF;

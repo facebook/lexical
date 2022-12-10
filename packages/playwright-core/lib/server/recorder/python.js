@@ -4,19 +4,10 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.PythonLanguageGenerator = void 0;
-
 var _language = require("./language");
-
-var _recorderActions = require("./recorderActions");
-
 var _utils = require("./utils");
-
 var _stringUtils = require("../../utils/isomorphic/stringUtils");
-
-var _deviceDescriptors = _interopRequireDefault(require("../deviceDescriptors"));
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
+var _locatorGenerators = require("../isomorphic/locatorGenerators");
 /**
  * Copyright (c) Microsoft Corporation.
  *
@@ -32,43 +23,40 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+const deviceDescriptors = require('../deviceDescriptorsSource.json');
 class PythonLanguageGenerator {
   constructor(isAsync, isPyTest) {
-    this.id = 'python';
-    this.fileName = 'Python';
+    this.id = void 0;
+    this.groupName = 'Python';
+    this.name = void 0;
     this.highlighter = 'python';
     this._awaitPrefix = void 0;
     this._asyncPrefix = void 0;
     this._isAsync = void 0;
     this._isPyTest = void 0;
-    this.id = isPyTest ? 'pytest' : isAsync ? 'python-async' : 'python';
-    this.fileName = isPyTest ? 'Pytest' : isAsync ? 'Python Async' : 'Python';
+    this.id = isPyTest ? 'python-pytest' : isAsync ? 'python-async' : 'python';
+    this.name = isPyTest ? 'Pytest' : isAsync ? 'Library Async' : 'Library';
     this._isAsync = isAsync;
     this._isPyTest = isPyTest;
     this._awaitPrefix = isAsync ? 'await ' : '';
     this._asyncPrefix = isAsync ? 'async ' : '';
   }
-
   generateAction(actionInContext) {
     const action = actionInContext.action;
     if (this._isPyTest && (action.name === 'openPage' || action.name === 'closePage')) return '';
     const pageAlias = actionInContext.frame.pageAlias;
     const formatter = new PythonFormatter(4);
-    formatter.newLine();
-    formatter.add('# ' + (0, _recorderActions.actionTitle)(action));
-
     if (action.name === 'openPage') {
       formatter.add(`${pageAlias} = ${this._awaitPrefix}context.new_page()`);
       if (action.url && action.url !== 'about:blank' && action.url !== 'chrome://newtab/') formatter.add(`${this._awaitPrefix}${pageAlias}.goto(${quote(action.url)})`);
       return formatter.format();
     }
-
     let subject;
-
     if (actionInContext.frame.isMainFrame) {
       subject = pageAlias;
     } else if (actionInContext.frame.selectorsChain && action.name !== 'navigate') {
-      const locators = actionInContext.frame.selectorsChain.map(selector => '.' + asLocator(selector, 'frame_locator'));
+      const locators = actionInContext.frame.selectorsChain.map(selector => `.frame_locator(${quote(selector)})`);
       subject = `${pageAlias}${locators.join('')}`;
     } else if (actionInContext.frame.name) {
       subject = `${pageAlias}.frame(${formatOptions({
@@ -79,49 +67,31 @@ class PythonLanguageGenerator {
         url: actionInContext.frame.url
       }, false)})`;
     }
-
     const signals = (0, _language.toSignalMap)(action);
     if (signals.dialog) formatter.add(`  ${pageAlias}.once("dialog", lambda dialog: dialog.dismiss())`);
-
     const actionCall = this._generateActionCall(action);
-
     let code = `${this._awaitPrefix}${subject}.${actionCall}`;
-
     if (signals.popup) {
-      code = `${this._asyncPrefix}with ${pageAlias}.expect_popup() as popup_info {
+      code = `${this._asyncPrefix}with ${pageAlias}.expect_popup() as ${signals.popup.popupAlias}_info {
         ${code}
       }
-      ${signals.popup.popupAlias} = ${this._awaitPrefix}popup_info.value`;
+      ${signals.popup.popupAlias} = ${this._awaitPrefix}${signals.popup.popupAlias}_info.value`;
     }
-
     if (signals.download) {
-      code = `${this._asyncPrefix}with ${pageAlias}.expect_download() as download_info {
+      code = `${this._asyncPrefix}with ${pageAlias}.expect_download() as download${signals.download.downloadAlias}_info {
         ${code}
       }
-      download = ${this._awaitPrefix}download_info.value`;
+      download${signals.download.downloadAlias} = ${this._awaitPrefix}download${signals.download.downloadAlias}_info.value`;
     }
-
-    if (signals.waitForNavigation) {
-      code = `
-      # ${this._asyncPrefix}with ${pageAlias}.expect_navigation(url=${quote(signals.waitForNavigation.url)}):
-      ${this._asyncPrefix}with ${pageAlias}.expect_navigation() {
-        ${code}
-      }`;
-    }
-
     formatter.add(code);
-    if (signals.assertNavigation) formatter.add(`  # ${this._awaitPrefix}expect(${pageAlias}).to_have_url(${quote(signals.assertNavigation.url)})`);
     return formatter.format();
   }
-
   _generateActionCall(action) {
     switch (action.name) {
       case 'openPage':
         throw Error('Not reached');
-
       case 'closePage':
         return 'close()';
-
       case 'click':
         {
           let method = 'click';
@@ -133,43 +103,35 @@ class PythonLanguageGenerator {
           if (action.clickCount > 2) options.clickCount = action.clickCount;
           if (action.position) options.position = action.position;
           const optionsString = formatOptions(options, false);
-          return asLocator(action.selector) + `.${method}(${optionsString})`;
+          return this._asLocator(action.selector) + `.${method}(${optionsString})`;
         }
-
       case 'check':
-        return asLocator(action.selector) + `.check()`;
-
+        return this._asLocator(action.selector) + `.check()`;
       case 'uncheck':
-        return asLocator(action.selector) + `.uncheck()`;
-
+        return this._asLocator(action.selector) + `.uncheck()`;
       case 'fill':
-        return asLocator(action.selector) + `.fill(${quote(action.text)})`;
-
+        return this._asLocator(action.selector) + `.fill(${quote(action.text)})`;
       case 'setInputFiles':
-        return asLocator(action.selector) + `.set_input_files(${formatValue(action.files.length === 1 ? action.files[0] : action.files)})`;
-
+        return this._asLocator(action.selector) + `.set_input_files(${formatValue(action.files.length === 1 ? action.files[0] : action.files)})`;
       case 'press':
         {
           const modifiers = (0, _utils.toModifiers)(action.modifiers);
           const shortcut = [...modifiers, action.key].join('+');
-          return asLocator(action.selector) + `.press(${quote(shortcut)})`;
+          return this._asLocator(action.selector) + `.press(${quote(shortcut)})`;
         }
-
       case 'navigate':
         return `goto(${quote(action.url)})`;
-
       case 'select':
-        return asLocator(action.selector) + `.select_option(${formatValue(action.options.length === 1 ? action.options[0] : action.options)})`;
+        return this._asLocator(action.selector) + `.select_option(${formatValue(action.options.length === 1 ? action.options[0] : action.options)})`;
     }
   }
-
+  _asLocator(selector) {
+    return (0, _locatorGenerators.asLocator)('python', selector);
+  }
   generateHeader(options) {
     const formatter = new PythonFormatter();
-
     if (this._isPyTest) {
-      const contextOptions = formatContextOptions(options.contextOptions, options.deviceName, true
-      /* asDict */
-      );
+      const contextOptions = formatContextOptions(options.contextOptions, options.deviceName, true /* asDict */);
       const fixture = contextOptions ? `
 
 @pytest.fixture(scope="session")
@@ -201,10 +163,8 @@ def run(playwright: Playwright) -> None {
     browser = playwright.${options.browserName}.launch(${formatOptions(options.launchOptions, false)})
     context = browser.new_context(${formatContextOptions(options.contextOptions, options.deviceName)})`);
     }
-
     return formatter.format();
   }
-
   generateFooter(saveStorage) {
     if (this._isPyTest) {
       return '';
@@ -234,11 +194,8 @@ with sync_playwright() as playwright:
 `;
     }
   }
-
 }
-
 exports.PythonLanguageGenerator = PythonLanguageGenerator;
-
 function formatValue(value) {
   if (value === false) return 'False';
   if (value === true) return 'True';
@@ -248,27 +205,33 @@ function formatValue(value) {
   if (typeof value === 'object') return JSON.stringify(value);
   return String(value);
 }
-
-function toSnakeCase(name) {
-  const toSnakeCaseRegex = /((?<=[a-z0-9])[A-Z]|(?!^)[A-Z](?=[a-z]))/g;
-  return name.replace(toSnakeCaseRegex, `_$1`).toLowerCase();
-}
-
 function formatOptions(value, hasArguments, asDict) {
-  const keys = Object.keys(value);
+  const keys = Object.keys(value).filter(key => value[key] !== undefined).sort();
   if (!keys.length) return '';
   return (hasArguments ? ', ' : '') + keys.map(key => {
-    if (asDict) return `"${toSnakeCase(key)}": ${formatValue(value[key])}`;
-    return `${toSnakeCase(key)}=${formatValue(value[key])}`;
+    if (asDict) return `"${(0, _stringUtils.toSnakeCase)(key)}": ${formatValue(value[key])}`;
+    return `${(0, _stringUtils.toSnakeCase)(key)}=${formatValue(value[key])}`;
   }).join(', ');
 }
-
-function formatContextOptions(options, deviceName, asDict) {
-  const device = deviceName && _deviceDescriptors.default[deviceName];
-  if (!device) return formatOptions(options, false, asDict);
-  return `**playwright.devices[${quote(deviceName)}]` + formatOptions((0, _language.sanitizeDeviceOptions)(device, options), true, asDict);
+function convertContextOptions(options) {
+  const result = {
+    ...options
+  };
+  if (options.recordHar) {
+    result['record_har_path'] = options.recordHar.path;
+    result['record_har_content'] = options.recordHar.content;
+    result['record_har_mode'] = options.recordHar.mode;
+    result['record_har_omit_content'] = options.recordHar.omitContent;
+    result['record_har_url_filter'] = options.recordHar.urlFilter;
+    delete result.recordHar;
+  }
+  return result;
 }
-
+function formatContextOptions(options, deviceName, asDict) {
+  const device = deviceName && deviceDescriptors[deviceName];
+  if (!device) return formatOptions(convertContextOptions(options), false, asDict);
+  return `**playwright.devices[${quote(deviceName)}]` + formatOptions(convertContextOptions((0, _language.sanitizeDeviceOptions)(device, options)), true, asDict);
+}
 class PythonFormatter {
   constructor(offset = 0) {
     this._baseIndent = void 0;
@@ -277,53 +240,34 @@ class PythonFormatter {
     this._baseIndent = ' '.repeat(4);
     this._baseOffset = ' '.repeat(offset);
   }
-
   prepend(text) {
     this._lines = text.trim().split('\n').map(line => line.trim()).concat(this._lines);
   }
-
   add(text) {
     this._lines.push(...text.trim().split('\n').map(line => line.trim()));
   }
-
   newLine() {
     this._lines.push('');
   }
-
   format() {
     let spaces = '';
     const lines = [];
-
     this._lines.forEach(line => {
       if (line === '') return lines.push(line);
-
       if (line === '}') {
         spaces = spaces.substring(this._baseIndent.length);
         return;
       }
-
       line = spaces + line;
-
       if (line.endsWith('{')) {
         spaces += this._baseIndent;
         line = line.substring(0, line.length - 1).trimEnd() + ':';
       }
-
       return lines.push(this._baseOffset + line);
     });
-
     return lines.join('\n');
   }
-
 }
-
 function quote(text) {
   return (0, _stringUtils.escapeWithQuotes)(text, '\"');
-}
-
-function asLocator(selector, locatorFn = 'locator') {
-  const match = selector.match(/(.*)\s+>>\s+nth=(\d+)$/);
-  if (!match) return `${locatorFn}(${quote(selector)})`;
-  if (+match[2] === 0) return `${locatorFn}(${quote(match[1])}).first`;
-  return `${locatorFn}(${quote(match[1])}).nth(${match[2]})`;
 }

@@ -1,6 +1,4 @@
----
-sidebar_position: 3
----
+
 
 # Listeners
 
@@ -119,7 +117,7 @@ removeEditableListener();
 
 Get notified when a the editor's decorator object changes. The decorator object contains
 all `DecoratorNode` keys -> their decorated value. This is primarily used with external
-UI frameworks. 
+UI frameworks.
 
 ```js
 const removeDecoratorListener = editor.registerDecoratorListener(

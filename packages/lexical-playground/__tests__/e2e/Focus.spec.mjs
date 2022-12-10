@@ -17,8 +17,10 @@ import {
 
 test.describe('Focus', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
-  test(`can tab out of the editor`, async ({page, isRichText}) => {
-    test.skip(isRichText);
+  test(`can tab out of the editor`, async ({browserName, page, isRichText}) => {
+    // This won't work in webkit on macOS as tab works differently unless changed in
+    // system preferences.
+    test.skip(isRichText || browserName === 'webkit');
     await focusEditor(page);
     await page.keyboard.press('Tab');
     const isEditorFocused = await page.evaluate(() => {

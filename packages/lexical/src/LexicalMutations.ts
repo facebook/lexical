@@ -131,6 +131,7 @@ export function $flushMutations(
       // We use the current editor state, as that reflects what is
       // actually "on screen".
       const currentEditorState = editor._editorState;
+      const blockCursorElement = editor._blockCursorElement;
       let shouldRevertSelection = false;
       let possibleTextForFirefoxPaste = '';
 
@@ -179,6 +180,7 @@ export function $flushMutations(
 
             if (
               parentDOM != null &&
+              addedDOM !== blockCursorElement &&
               node === null &&
               (addedDOM.nodeName !== 'BR' ||
                 !isManagedLineBreak(addedDOM, parentDOM, editor))
@@ -206,8 +208,9 @@ export function $flushMutations(
               const removedDOM = removedDOMs[s];
 
               if (
-                removedDOM.nodeName === 'BR' &&
-                isManagedLineBreak(removedDOM, targetDOM, editor)
+                (removedDOM.nodeName === 'BR' &&
+                  isManagedLineBreak(removedDOM, targetDOM, editor)) ||
+                blockCursorElement === removedDOM
               ) {
                 targetDOM.appendChild(removedDOM);
                 unremovedBRs++;
@@ -232,7 +235,7 @@ export function $flushMutations(
       if (badDOMTargets.size > 0) {
         for (const [targetDOM, targetNode] of badDOMTargets) {
           if ($isElementNode(targetNode)) {
-            const childKeys = targetNode.__children;
+            const childKeys = targetNode.getChildrenKeys();
             let currentDOM = targetDOM.firstChild;
 
             for (let s = 0; s < childKeys.length; s++) {

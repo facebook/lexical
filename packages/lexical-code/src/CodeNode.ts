@@ -31,6 +31,7 @@ import 'prismjs/components/prism-sql';
 import 'prismjs/components/prism-python';
 import 'prismjs/components/prism-rust';
 import 'prismjs/components/prism-swift';
+import 'prismjs/components/prism-typescript';
 
 import {addClassNamesToElement} from '@lexical/utils';
 import {
@@ -47,7 +48,7 @@ import {
 } from './CodeHighlightNode';
 import * as Prism from 'prismjs';
 
-type SerializedCodeNode = Spread<
+export type SerializedCodeNode = Spread<
   {
     language: string | null | undefined;
     type: 'code';
@@ -213,6 +214,7 @@ export class CodeNode extends ElementNode {
   // Mutation
   insertNewAfter(
     selection: RangeSelection,
+    restoreSelection = true,
   ): null | ParagraphNode | CodeHighlightNode {
     const children = this.getChildren();
     const childrenLength = children.length;
@@ -228,7 +230,7 @@ export class CodeNode extends ElementNode {
       children[childrenLength - 1].remove();
       children[childrenLength - 2].remove();
       const newElement = $createParagraphNode();
-      this.insertAfter(newElement);
+      this.insertAfter(newElement, restoreSelection);
       return newElement;
     }
 

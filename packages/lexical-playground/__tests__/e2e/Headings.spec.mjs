@@ -103,7 +103,7 @@ test.describe('Headings', () => {
     );
   });
 
-  test('Changes to a paragraphwhen you press enter at the end of a heading', async ({
+  test('Changes to a paragraph when you press enter at the end of a heading', async ({
     page,
   }) => {
     await focusEditor(page);

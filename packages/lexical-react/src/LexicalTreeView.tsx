@@ -29,7 +29,7 @@ import {
   DEPRECATED_$isGridSelection,
 } from 'lexical';
 import * as React from 'react';
-import {useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 
 const NON_SINGLE_WIDTH_CHARS_REPLACEMENT: Readonly<Record<string, string>> =
   Object.freeze({
@@ -73,6 +73,29 @@ export function TreeView({
   const treeElementRef = useRef<HTMLPreElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isLimited, setIsLimited] = useState(false);
+  const [showLimited, setShowLimited] = useState(false);
+  const lastEditorStateRef = useRef<null | EditorState>(null);
+
+  const generateTree = useCallback(
+    (editorState: EditorState) => {
+      const treeText = generateContent(
+        editor.getEditorState(),
+        editor._config,
+        editor._compositionKey,
+        editor._editable,
+      );
+      setContent(treeText);
+
+      if (!timeTravelEnabled) {
+        setTimeStampedEditorStates((currentEditorStates) => [
+          ...currentEditorStates,
+          [Date.now(), editorState],
+        ]);
+      }
+    },
+    [editor, timeTravelEnabled],
+  );
 
   useEffect(() => {
     setContent(
@@ -83,22 +106,19 @@ export function TreeView({
         editor._editable,
       ),
     );
-    return mergeRegister(
-      editor.registerUpdateListener(({editorState}) => {
-        const treeText = generateContent(
-          editor.getEditorState(),
-          editor._config,
-          editor._compositionKey,
-          editor._editable,
-        );
-        setContent(treeText);
+  }, [editor]);
 
-        if (!timeTravelEnabled) {
-          setTimeStampedEditorStates((currentEditorStates) => [
-            ...currentEditorStates,
-            [Date.now(), editorState],
-          ]);
+  useEffect(() => {
+    return mergeRegister(
+      editor.registerUpdateListener(({editorState, dirtyLeaves}) => {
+        if (!showLimited && dirtyLeaves.size > 1000) {
+          lastEditorStateRef.current = editorState;
+          setIsLimited(true);
+          if (!showLimited) {
+            return;
+          }
         }
+        generateTree(editorState);
       }),
       editor.registerEditableListener(() => {
         const treeText = generateContent(
@@ -110,7 +130,7 @@ export function TreeView({
         setContent(treeText);
       }),
     );
-  }, [timeTravelEnabled, editor]);
+  }, [editor, isLimited, generateTree, showLimited]);
 
   const totalEditorStates = timeStampedEditorStates.length;
 
@@ -167,24 +187,51 @@ export function TreeView({
 
   return (
     <div className={viewClassName}>
-      {!timeTravelEnabled && totalEditorStates > 2 && (
-        <button
-          onClick={() => {
-            const rootElement = editor.getRootElement();
+      {!showLimited && isLimited ? (
+        <div style={{padding: 20}}>
+          <span style={{marginRight: 20}}>
+            Detected large EditorState, this can impact debugging performance.
+          </span>
+          <button
+            onClick={() => {
+              setShowLimited(true);
+              const editorState = lastEditorStateRef.current;
+              if (editorState !== null) {
+                lastEditorStateRef.current = null;
+                generateTree(editorState);
+              }
+            }}
+            style={{
+              background: 'transparent',
+              border: '1px solid white',
+              color: 'white',
+              cursor: 'pointer',
+              padding: 5,
+            }}>
+            Show full tree
+          </button>
+        </div>
+      ) : null}
+      {!timeTravelEnabled &&
+        (showLimited || !isLimited) &&
+        totalEditorStates > 2 && (
+          <button
+            onClick={() => {
+              const rootElement = editor.getRootElement();
 
-            if (rootElement !== null) {
-              rootElement.contentEditable = 'false';
-              playingIndexRef.current = totalEditorStates - 1;
-              setTimeTravelEnabled(true);
-            }
-          }}
-          className={timeTravelButtonClassName}
-          type="button">
-          Time Travel
-        </button>
-      )}
-      <pre ref={treeElementRef}>{content}</pre>
-      {timeTravelEnabled && (
+              if (rootElement !== null) {
+                rootElement.contentEditable = 'false';
+                playingIndexRef.current = totalEditorStates - 1;
+                setTimeTravelEnabled(true);
+              }
+            }}
+            className={timeTravelButtonClassName}
+            type="button">
+            Time Travel
+          </button>
+        )}
+      {(showLimited || !isLimited) && <pre ref={treeElementRef}>{content}</pre>}
+      {timeTravelEnabled && (showLimited || !isLimited) && (
         <div className={timeTravelPanelClassName}>
           <button
             className={timeTravelPanelButtonClassName}

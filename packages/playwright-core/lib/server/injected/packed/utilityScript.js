@@ -1,21 +1,20 @@
-var __defProp = Object.defineProperty;
-var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-var __getOwnPropNames = Object.getOwnPropertyNames;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __export = (target, all) => {
+"use strict";
+let __export = (target, all) => {
   for (var name in all)
-    __defProp(target, name, { get: all[name], enumerable: true });
+    target[name] = all[name];
 };
-var __copyProps = (to, from, except, desc) => {
-  if (from && typeof from === "object" || typeof from === "function") {
-    for (let key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+let __commonJS = cb => function __require() {
+  let fn;
+  for (const name in cb) {
+    fn = cb[name];
+    break;
   }
-  return to;
+  const exports = {};
+  fn(exports);
+  return exports;
 };
-var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
-
+let __toESM = mod => ({ ...mod, 'default': mod });
+let __toCommonJS = mod =>  ({ ...mod, __esModule: true });
 // packages/playwright-core/src/server/injected/utilityScript.ts
 var utilityScript_exports = {};
 __export(utilityScript_exports, {
@@ -31,8 +30,16 @@ function source() {
   function isDate(obj) {
     return obj instanceof Date || Object.prototype.toString.call(obj) === "[object Date]";
   }
+  function isURL(obj) {
+    return obj instanceof URL || Object.prototype.toString.call(obj) === "[object URL]";
+  }
   function isError(obj) {
-    return obj instanceof Error || obj && obj.__proto__ && obj.__proto__.name === "Error";
+    var _a;
+    try {
+      return obj instanceof Error || obj && ((_a = Object.getPrototypeOf(obj)) == null ? void 0 : _a.name) === "Error";
+    } catch (error) {
+      return false;
+    }
   }
   function parseEvaluationResultValue2(value, handles = [], refs = /* @__PURE__ */ new Map()) {
     if (Object.is(value, void 0))
@@ -57,6 +64,8 @@ function source() {
       }
       if ("d" in value)
         return new Date(value.d);
+      if ("u" in value)
+        return new URL(value.u);
       if ("r" in value)
         return new RegExp(value.r.p, value.r.f);
       if ("a" in value) {
@@ -83,11 +92,11 @@ function source() {
   }
   function serialize(value, handleSerializer, visitorInfo) {
     if (value && typeof value === "object") {
-      if (globalThis.Window && value instanceof globalThis.Window)
+      if (typeof globalThis.Window === "function" && value instanceof globalThis.Window)
         return "ref: <Window>";
-      if (globalThis.Document && value instanceof globalThis.Document)
+      if (typeof globalThis.Document === "function" && value instanceof globalThis.Document)
         return "ref: <Document>";
-      if (globalThis.Node && value instanceof globalThis.Node)
+      if (typeof globalThis.Node === "function" && value instanceof globalThis.Node)
         return "ref: <Node>";
     }
     return innerSerialize(value, handleSerializer, visitorInfo);
@@ -128,6 +137,8 @@ ${error.stack}`;
     }
     if (isDate(value))
       return { d: value.toJSON() };
+    if (isURL(value))
+      return { u: value.toJSON() };
     if (isRegExp(value))
       return { r: { p: value.source, f: value.flags } };
     const id = visitorInfo.visited.get(value);
@@ -157,6 +168,8 @@ ${error.stack}`;
         else
           o.push({ k: name, v: serialize(item, handleSerializer, visitorInfo) });
       }
+      if (o.length === 0 && value.toJSON && typeof value.toJSON === "function")
+        return innerSerialize(value.toJSON(), handleSerializer, visitorInfo);
       return { o, id: id2 };
     }
   }
@@ -168,10 +181,16 @@ var serializeAsCallArgument = result.serializeAsCallArgument;
 
 // packages/playwright-core/src/server/injected/utilityScript.ts
 var UtilityScript = class {
-  evaluate(isFunction, returnByValue, expression, argCount, ...argsAndHandles) {
+  constructor() {
+    this.serializeAsCallArgument = serializeAsCallArgument;
+    this.parseEvaluationResultValue = parseEvaluationResultValue;
+  }
+  evaluate(isFunction, returnByValue, exposeUtilityScript, expression, argCount, ...argsAndHandles) {
     const args = argsAndHandles.slice(0, argCount);
     const handles = argsAndHandles.slice(argCount);
     const parameters = args.map((a) => parseEvaluationResultValue(a, handles));
+    if (exposeUtilityScript)
+      parameters.unshift(this);
     let result2 = globalThis.eval(expression);
     if (isFunction === true) {
       result2 = result2(...parameters);

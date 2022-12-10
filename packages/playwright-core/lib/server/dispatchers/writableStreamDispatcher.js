@@ -4,11 +4,8 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.WritableStreamDispatcher = void 0;
-
 var _dispatcher = require("./dispatcher");
-
 var _utils = require("../../utils");
-
 /**
  * Copyright (c) Microsoft Corporation.
  *
@@ -24,6 +21,7 @@ var _utils = require("../../utils");
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 class WritableStreamDispatcher extends _dispatcher.Dispatcher {
   constructor(scope, stream) {
     super(scope, {
@@ -32,25 +30,20 @@ class WritableStreamDispatcher extends _dispatcher.Dispatcher {
     }, 'WritableStream', {});
     this._type_WritableStream = true;
   }
-
   async write(params) {
     const stream = this._object.stream;
     await new Promise((fulfill, reject) => {
-      stream.write(Buffer.from(params.binary, 'base64'), error => {
+      stream.write(params.binary, error => {
         if (error) reject(error);else fulfill();
       });
     });
   }
-
   async close() {
     const stream = this._object.stream;
     await new Promise(fulfill => stream.end(fulfill));
   }
-
   path() {
     return this._object.stream.path;
   }
-
 }
-
 exports.WritableStreamDispatcher = WritableStreamDispatcher;

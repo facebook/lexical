@@ -9,7 +9,6 @@
 
 import {
   $addNodeStyle,
-  $cloneContents,
   $cloneWithProperties,
   $isAtNodeEnd,
   $patchStyleText,
@@ -33,7 +32,6 @@ import {
 
 export {
   $addNodeStyle,
-  $cloneContents,
   $cloneWithProperties,
   $isAtNodeEnd,
   $patchStyleText,

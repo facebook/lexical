@@ -7,12 +7,7 @@
  */
 
 import type {Binding} from '.';
-import type {
-  ElementNode,
-  IntentionallyMarkedAsDirtyElement,
-  NodeKey,
-  NodeMap,
-} from 'lexical';
+import type {ElementNode, NodeKey, NodeMap} from 'lexical';
 import type {AbstractType, XmlElement, XmlText} from 'yjs';
 
 import {
@@ -30,13 +25,17 @@ import {CollabTextNode} from './CollabTextNode';
 import {
   $createCollabNodeFromLexicalNode,
   $getNodeByKeyOrThrow,
+  createChildrenArray,
   createLexicalNodeFromCollabNode,
   getOrInitCollabNodeFromSharedType,
   getPositionFromElementAndOffset,
+  removeFromParent,
   spliceString,
   syncPropertiesFromLexical,
   syncPropertiesFromYjs,
 } from './Utils';
+
+type IntentionallyMarkedAsDirtyElement = boolean;
 
 export class CollabElementNode {
   _key: NodeKey;
@@ -237,7 +236,7 @@ export class CollabElementNode {
     );
 
     const key = lexicalNode.__key;
-    const prevLexicalChildrenKeys = lexicalNode.__children;
+    const prevLexicalChildrenKeys = createChildrenArray(lexicalNode, null);
     const nextLexicalChildrenKeys: Array<NodeKey> = [];
     const lexicalChildrenKeysLength = prevLexicalChildrenKeys.length;
     const collabChildren = this._children;
@@ -245,19 +244,13 @@ export class CollabElementNode {
     const collabNodeMap = binding.collabNodeMap;
     const visitedKeys = new Set();
     let collabKeys;
-
-    // Assign the new children key array that we're about to mutate
     let writableLexicalNode;
+    let prevIndex = 0;
+    let prevChildNode = null;
 
     if (collabChildrenLength !== lexicalChildrenKeysLength) {
-      writableLexicalNode = lazilyCloneElementNode(
-        lexicalNode,
-        writableLexicalNode,
-        nextLexicalChildrenKeys,
-      );
+      writableLexicalNode = lexicalNode.getWritable();
     }
-
-    let prevIndex = 0;
 
     for (let i = 0; i < collabChildrenLength; i++) {
       const lexicalChildKey = prevLexicalChildrenKeys[prevIndex];
@@ -291,6 +284,7 @@ export class CollabElementNode {
         }
 
         nextLexicalChildrenKeys[i] = lexicalChildKey;
+        prevChildNode = collabLexicalChildNode;
         prevIndex++;
       } else {
         if (collabKeys === undefined) {
@@ -311,16 +305,14 @@ export class CollabElementNode {
           lexicalChildKey !== undefined &&
           !collabKeys.has(lexicalChildKey)
         ) {
+          const nodeToRemove = $getNodeByKeyOrThrow(lexicalChildKey);
+          removeFromParent(nodeToRemove);
           i--;
           prevIndex++;
           continue;
         }
 
-        writableLexicalNode = lazilyCloneElementNode(
-          lexicalNode,
-          writableLexicalNode,
-          nextLexicalChildrenKeys,
-        );
+        writableLexicalNode = lexicalNode.getWritable();
         // Create/Replace
         const lexicalChildNode = createLexicalNodeFromCollabNode(
           binding,
@@ -330,6 +322,30 @@ export class CollabElementNode {
         const childKey = lexicalChildNode.__key;
         collabNodeMap.set(childKey, childCollabNode);
         nextLexicalChildrenKeys[i] = childKey;
+        if (prevChildNode === null) {
+          const nextSibling = writableLexicalNode.getFirstChild();
+          writableLexicalNode.__first = childKey;
+          if (nextSibling !== null) {
+            const writableNextSibling = nextSibling.getWritable();
+            writableNextSibling.__prev = childKey;
+            lexicalChildNode.__next = writableNextSibling.__key;
+          }
+        } else {
+          const writablePrevChildNode = prevChildNode.getWritable();
+          const nextSibling = prevChildNode.getNextSibling();
+          writablePrevChildNode.__next = childKey;
+          lexicalChildNode.__prev = prevChildNode.__key;
+          if (nextSibling !== null) {
+            const writableNextSibling = nextSibling.getWritable();
+            writableNextSibling.__prev = childKey;
+            lexicalChildNode.__next = writableNextSibling.__key;
+          }
+        }
+        if (i === collabChildrenLength - 1) {
+          writableLexicalNode.__last = childKey;
+        }
+        writableLexicalNode.__size++;
+        prevChildNode = lexicalChildNode;
       }
     }
 
@@ -338,15 +354,13 @@ export class CollabElementNode {
 
       if (!visitedKeys.has(lexicalChildKey)) {
         // Remove
-        const lexicalChildNode =
-          $getNodeByKeyOrThrow(lexicalChildKey).getWritable();
+        const lexicalChildNode = $getNodeByKeyOrThrow(lexicalChildKey);
         const collabNode = binding.collabNodeMap.get(lexicalChildKey);
 
         if (collabNode !== undefined) {
           collabNode.destroy(binding);
         }
-
-        lexicalChildNode.__parent = null;
+        removeFromParent(lexicalChildNode);
       }
     }
   }
@@ -422,8 +436,10 @@ export class CollabElementNode {
   ): void {
     const prevLexicalNode = this.getPrevNode(prevNodeMap);
     const prevChildren =
-      prevLexicalNode === null ? [] : prevLexicalNode.__children;
-    const nextChildren = nextLexicalNode.__children;
+      prevLexicalNode === null
+        ? []
+        : createChildrenArray(prevLexicalNode, prevNodeMap);
+    const nextChildren = createChildrenArray(nextLexicalNode, null);
     const prevEndIndex = prevChildren.length - 1;
     const nextEndIndex = nextChildren.length - 1;
     const collabNodeMap = binding.collabNodeMap;
@@ -638,20 +654,6 @@ export class CollabElementNode {
 
     collabNodeMap.delete(this._key);
   }
-}
-
-function lazilyCloneElementNode(
-  lexicalNode: ElementNode,
-  writableLexicalNode: ElementNode | undefined,
-  nextLexicalChildrenKeys: Array<NodeKey>,
-): ElementNode {
-  if (writableLexicalNode === undefined) {
-    const clone = lexicalNode.getWritable();
-    clone.__children = nextLexicalChildrenKeys;
-    return clone;
-  }
-
-  return writableLexicalNode;
 }
 
 export function $createCollabElementNode(

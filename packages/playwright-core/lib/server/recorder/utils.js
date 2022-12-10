@@ -5,7 +5,6 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.toClickOptions = toClickOptions;
 exports.toModifiers = toModifiers;
-
 /**
  * Copyright (c) Microsoft Corporation.
  *
@@ -21,6 +20,7 @@ exports.toModifiers = toModifiers;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 function toClickOptions(action) {
   let method = 'click';
   if (action.clickCount === 2) method = 'dblclick';
@@ -35,7 +35,6 @@ function toClickOptions(action) {
     options
   };
 }
-
 function toModifiers(modifiers) {
   const result = [];
   if (modifiers & 1) result.push('Alt');

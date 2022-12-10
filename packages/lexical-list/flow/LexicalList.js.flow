@@ -42,7 +42,7 @@ declare export function insertList(
 declare export class ListItemNode extends ElementNode {
   append(...nodes: LexicalNode[]): this;
   replace<N: LexicalNode>(replaceWithNode: N): N;
-  insertAfter(node: LexicalNode): LexicalNode;
+  insertAfter(node: LexicalNode, restoreSelection?: boolean): LexicalNode;
   insertNewAfter(): ListItemNode | ParagraphNode;
   collapseAtStart(selection: RangeSelection): true;
   getIndent(): number;

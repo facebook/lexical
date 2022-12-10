@@ -18,6 +18,7 @@ import {
   TableRowNode,
 } from '@lexical/table';
 import {
+  type LexicalEditor,
   type LexicalNode,
   $createLineBreakNode,
   $createNodeSelection,
@@ -34,8 +35,6 @@ import {
   createCommand,
   DEPRECATED_$createGridSelection,
   ElementNode,
-  LexicalEditor,
-  NodeKey,
   ParagraphNode,
   TextNode,
 } from 'lexical';
@@ -52,7 +51,6 @@ import {createPortal} from 'react-dom';
 import {createRoot} from 'react-dom/client';
 import * as ReactTestUtils from 'react-dom/test-utils';
 
-import {getEditorStateTextContent} from '../../LexicalUtils';
 import {
   $createTestDecoratorNode,
   $createTestElementNode,
@@ -1019,7 +1017,7 @@ describe('LexicalEditor tests', () => {
                 // eslint-disable-next-line jsx-a11y/aria-role
                 <ContentEditable key={divKey} role={null} spellCheck={null} />
               }
-              placeholder=""
+              placeholder={null}
               ErrorBoundary={LexicalErrorBoundary}
             />
             <TestPlugin />
@@ -1056,21 +1054,19 @@ describe('LexicalEditor tests', () => {
         const paragraph = root.getFirstChild();
         expect(root).toEqual({
           __cachedText: '',
-          __children: [paragraph.getKey()],
           __dir: null,
-          __first: null,
+          __first: paragraph.getKey(),
           __format: 0,
           __indent: 0,
           __key: 'root',
-          __last: null,
+          __last: paragraph.getKey(),
           __next: null,
           __parent: null,
           __prev: null,
-          __size: 0,
+          __size: 1,
           __type: 'root',
         });
         expect(paragraph).toEqual({
-          __children: [],
           __dir: null,
           __first: null,
           __format: 0,
@@ -1141,31 +1137,29 @@ describe('LexicalEditor tests', () => {
       it('Parses the nodes of a stringified editor state', async () => {
         expect(parsedRoot).toEqual({
           __cachedText: null,
-          __children: [paragraphKey],
           __dir: 'ltr',
-          __first: null,
+          __first: paragraphKey,
           __format: 0,
           __indent: 0,
           __key: 'root',
-          __last: null,
+          __last: paragraphKey,
           __next: null,
           __parent: null,
           __prev: null,
-          __size: 0,
+          __size: 1,
           __type: 'root',
         });
         expect(parsedParagraph).toEqual({
-          __children: [textKey],
           __dir: 'ltr',
-          __first: null,
+          __first: textKey,
           __format: 0,
           __indent: 0,
           __key: paragraphKey,
-          __last: null,
+          __last: textKey,
           __next: null,
           __parent: 'root',
           __prev: null,
-          __size: 0,
+          __size: 1,
           __type: 'paragraph',
         });
         expect(parsedText).toEqual({
@@ -1221,31 +1215,29 @@ describe('LexicalEditor tests', () => {
       it('Parses the nodes of a stringified editor state', async () => {
         expect(parsedRoot).toEqual({
           __cachedText: null,
-          __children: [paragraphKey],
           __dir: 'ltr',
-          __first: null,
+          __first: paragraphKey,
           __format: 0,
           __indent: 0,
           __key: 'root',
-          __last: null,
+          __last: paragraphKey,
           __next: null,
           __parent: null,
           __prev: null,
-          __size: 0,
+          __size: 1,
           __type: 'root',
         });
         expect(parsedParagraph).toEqual({
-          __children: [textKey],
           __dir: 'ltr',
-          __first: null,
+          __first: textKey,
           __format: 0,
           __indent: 0,
           __key: paragraphKey,
-          __last: null,
+          __last: textKey,
           __next: null,
           __parent: 'root',
           __prev: null,
-          __size: 0,
+          __size: 1,
           __type: 'paragraph',
         });
         expect(parsedText).toEqual({
@@ -1307,31 +1299,29 @@ describe('LexicalEditor tests', () => {
       it('Parses the nodes of a stringified editor state', async () => {
         expect(parsedRoot).toEqual({
           __cachedText: null,
-          __children: [paragraphKey],
           __dir: 'ltr',
-          __first: null,
+          __first: paragraphKey,
           __format: 0,
           __indent: 0,
           __key: 'root',
-          __last: null,
+          __last: paragraphKey,
           __next: null,
           __parent: null,
           __prev: null,
-          __size: 0,
+          __size: 1,
           __type: 'root',
         });
         expect(parsedParagraph).toEqual({
-          __children: [textKey],
           __dir: 'ltr',
-          __first: null,
+          __first: textKey,
           __format: 0,
           __indent: 0,
           __key: paragraphKey,
-          __last: null,
+          __last: textKey,
           __next: null,
           __parent: 'root',
           __prev: null,
-          __size: 0,
+          __size: 1,
           __type: 'paragraph',
         });
         expect(parsedText).toEqual({
@@ -1400,157 +1390,6 @@ describe('LexicalEditor tests', () => {
         root.append(paragraph);
       });
     }
-
-    function generatePermutations(maxLen: number): string[][] {
-      if (maxLen > 26) {
-        throw new Error('maxLen <= 26');
-      }
-
-      const result = [];
-      const current = [];
-      const seen = new Set();
-
-      (function permutationsImpl() {
-        if (current.length > maxLen) {
-          return;
-        }
-
-        result.push(current.slice());
-
-        for (let i = 0; i < maxLen; i++) {
-          const key = String(String.fromCharCode('a'.charCodeAt(0) + i));
-
-          if (seen.has(key)) {
-            continue;
-          }
-
-          seen.add(key);
-          current.push(key);
-          permutationsImpl();
-          seen.delete(key);
-          current.pop();
-        }
-      })();
-
-      return result;
-    }
-
-    it('adds/removes/updates children', async () => {
-      async function forPreviousNext(previous: string[], next: string[]) {
-        const textToKey: Map<string, NodeKey> = new Map();
-
-        // Previous editor state
-        await update(() => {
-          const writableParagraph = $getRoot()
-            .getFirstChild<ParagraphNode>()
-            .getWritable();
-          writableParagraph.__children = [];
-
-          for (let i = 0; i < previous.length; i++) {
-            const previousText = previous[i];
-            const textNode = new TextNode(previousText).toggleUnmergeable();
-            textNode.__parent = writableParagraph.__key;
-
-            writableParagraph.__children.push(textNode.__key);
-
-            textToKey.set(previousText, textNode.__key);
-          }
-        });
-
-        expect(getEditorStateTextContent(editor.getEditorState())).toBe(
-          previous.join(''),
-        );
-
-        // Next editor state
-        const nextSet = new Set(next);
-
-        await update(() => {
-          const writableParagraph = $getRoot()
-            .getFirstChild<ParagraphNode>()
-            .getWritable();
-
-          // Remove previous that are not in next
-          for (let i = 0; i < previous.length; i++) {
-            const previousText = previous[i];
-
-            if (!nextSet.has(previousText)) {
-              const previousKey = textToKey.get(previousText);
-              const previousNode = $getNodeByKey(previousKey);
-              previousNode.remove();
-              textToKey.delete(previousText);
-            }
-          }
-
-          for (let i = 0; i < next.length; i++) {
-            const nextText = next[i];
-            const nextKey = textToKey.get(nextText);
-            let textNode;
-
-            if (nextKey === undefined) {
-              // New node; append to the end
-              textNode = new TextNode(nextText).toggleUnmergeable();
-              textNode.__parent = writableParagraph.__key;
-
-              expect($getNodeByKey(nextKey)).toBe(null);
-
-              textToKey.set(nextText, textNode.__key);
-
-              writableParagraph.__children.push(textNode.__key);
-            } else {
-              // Node exists in previous; reorder it
-              textNode = $getNodeByKey(nextKey);
-
-              expect(textNode.__text).toBe(nextText);
-
-              writableParagraph.__children.splice(
-                writableParagraph.__children.indexOf(nextKey),
-                1,
-              );
-
-              writableParagraph.__children.push(textNode.__key);
-            }
-          }
-        });
-        // Expect text content + HTML to be correct
-        expect(getEditorStateTextContent(editor.getEditorState())).toBe(
-          next.join(''),
-        );
-        expect(container.innerHTML.replace(/\sclass="*."/g, '')).toBe(
-          `<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p${
-            next.length > 0 ? ' dir="ltr"' : ''
-          }>${
-            next.length > 0
-              ? next
-                  .map(
-                    (text) => `<span data-lexical-text="true">${text}</span>`,
-                  )
-                  .join('')
-              : `<br>`
-          }</p></div>`,
-        );
-
-        // Expect editorState to have the correct latest nodes
-        editor.getEditorState().read(() => {
-          for (let i = 0; i < next.length; i++) {
-            const nextText = next[i];
-            const nextKey = textToKey.get(nextText);
-
-            expect($getNodeByKey(nextKey)).not.toBe(null);
-          }
-        });
-
-        expect(editor.getEditorState()._nodeMap.size).toBe(next.length + 2);
-      }
-
-      const permutations = generatePermutations(4);
-
-      for (let i = 0; i < permutations.length; i++) {
-        for (let j = 0; j < permutations.length; j++) {
-          await forPreviousNext(permutations[i], permutations[j]);
-          await reset();
-        }
-      }
-    });
 
     it('moves node to different tree branches', async () => {
       function createElementNodeWithText(text: string) {
@@ -2006,7 +1845,7 @@ describe('LexicalEditor tests', () => {
 
     expect(textNodeMutation1[0].size).toBe(1);
     expect(textNodeMutation1[0].get(textNodeKeys[0])).toBe('created');
-    expect(textNodeMutation2[0].size).toBe(1);
+    expect(textNodeMutation2[0].size).toBe(2);
     expect(textNodeMutation2[0].get(textNodeKeys[2])).toBe('created');
     expect(textNodeMutation3[0].size).toBe(2);
     expect(textNodeMutation3[0].get(textNodeKeys[0])).toBe('updated');
@@ -2287,5 +2126,15 @@ describe('LexicalEditor tests', () => {
       expect(text instanceof TestTextNode).toBe(true);
       expect(text.getTextContent()).toBe('123');
     });
+  });
+
+  it('reconciles state without root element', () => {
+    editor = createTestEditor({});
+    const state = editor.parseEditorState(
+      `{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"Hello world","type":"text","version":1}],"direction":"ltr","format":"","indent":0,"type":"paragraph","version":1}],"direction":"ltr","format":"","indent":0,"type":"root","version":1}}`,
+    );
+    editor.setEditorState(state);
+    expect(editor._editorState).toBe(state);
+    expect(editor._pendingEditorState).toBe(null);
   });
 });

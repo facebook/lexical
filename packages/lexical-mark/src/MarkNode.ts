@@ -150,8 +150,14 @@ export class MarkNode extends ElementNode {
     }
   }
 
-  insertNewAfter(selection: RangeSelection): null | ElementNode {
-    const element = this.getParentOrThrow().insertNewAfter(selection);
+  insertNewAfter(
+    selection: RangeSelection,
+    restoreSelection = true,
+  ): null | ElementNode {
+    const element = this.getParentOrThrow().insertNewAfter(
+      selection,
+      restoreSelection,
+    );
     if ($isElementNode(element)) {
       const markNode = $createMarkNode(this.__ids);
       element.append(markNode);

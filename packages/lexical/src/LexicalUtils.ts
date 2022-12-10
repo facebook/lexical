@@ -8,8 +8,8 @@
 
 import type {
   CommandPayloadType,
+  EditorConfig,
   EditorThemeClasses,
-  IntentionallyMarkedAsDirtyElement,
   Klass,
   LexicalCommand,
   MutatedNodes,
@@ -106,13 +106,12 @@ export function $isSelectionCapturedInDecorator(node: Node): boolean {
   return $isDecoratorNode($getNearestNodeFromDOMNode(node));
 }
 
-// TODO change to $ function
 export function isSelectionCapturedInDecoratorInput(anchorDOM: Node): boolean {
   const activeElement = document.activeElement;
   const nodeName = activeElement !== null ? activeElement.nodeName : null;
   return (
-    !$isDecoratorNode($getNearestNodeFromDOMNode(anchorDOM)) ||
-    (nodeName !== 'INPUT' && nodeName !== 'TEXTAREA')
+    $isDecoratorNode($getNearestNodeFromDOMNode(anchorDOM)) &&
+    (nodeName === 'INPUT' || nodeName === 'TEXTAREA')
   );
 }
 
@@ -129,7 +128,7 @@ export function isSelectionWithinEditor(
       rootElement.contains(focusDOM) &&
       // Ignore if selection is within nested editor
       anchorDOM !== null &&
-      isSelectionCapturedInDecoratorInput(anchorDOM as Node) &&
+      !isSelectionCapturedInDecoratorInput(anchorDOM as Node) &&
       getNearestEditorFromDOMNode(anchorDOM) === editor
     );
   } catch (error) {
@@ -234,6 +233,8 @@ export function $setNodeKey(
   node.__key = key;
 }
 
+type IntentionallyMarkedAsDirtyElement = boolean;
+
 function internalMarkParentElementsAsDirty(
   parentKey: NodeKey,
   nodeMap: NodeMap,
@@ -253,17 +254,54 @@ function internalMarkParentElementsAsDirty(
   }
 }
 
-export function removeFromParent(writableNode: LexicalNode): void {
-  const oldParent = writableNode.getParent();
+export function removeFromParent(node: LexicalNode): void {
+  const oldParent = node.getParent();
   if (oldParent !== null) {
+    const writableNode = node.getWritable();
     const writableParent = oldParent.getWritable();
-    const children = writableParent.__children;
-    const index = children.indexOf(writableNode.__key);
-    if (index === -1) {
-      invariant(false, 'Node is not a child of its parent');
+    const prevSibling = node.getPreviousSibling();
+    const nextSibling = node.getNextSibling();
+    // TODO: this function duplicates a bunch of operations, can be simplified.
+    if (prevSibling === null) {
+      if (nextSibling !== null) {
+        const writableNextSibling = nextSibling.getWritable();
+        writableParent.__first = nextSibling.__key;
+        writableNextSibling.__prev = null;
+      } else {
+        writableParent.__first = null;
+      }
+    } else {
+      const writablePrevSibling = prevSibling.getWritable();
+      if (nextSibling !== null) {
+        const writableNextSibling = nextSibling.getWritable();
+        writableNextSibling.__prev = writablePrevSibling.__key;
+        writablePrevSibling.__next = writableNextSibling.__key;
+      } else {
+        writablePrevSibling.__next = null;
+      }
+      writableNode.__prev = null;
     }
-    internalMarkSiblingsAsDirty(writableNode);
-    children.splice(index, 1);
+    if (nextSibling === null) {
+      if (prevSibling !== null) {
+        const writablePrevSibling = prevSibling.getWritable();
+        writableParent.__last = prevSibling.__key;
+        writablePrevSibling.__next = null;
+      } else {
+        writableParent.__last = null;
+      }
+    } else {
+      const writableNextSibling = nextSibling.getWritable();
+      if (prevSibling !== null) {
+        const writablePrevSibling = prevSibling.getWritable();
+        writablePrevSibling.__next = writableNextSibling.__key;
+        writableNextSibling.__prev = writablePrevSibling.__key;
+      } else {
+        writableNextSibling.__prev = null;
+      }
+      writableNode.__next = null;
+    }
+    writableParent.__size--;
+    writableNode.__parent = null;
   }
 }
 
@@ -983,8 +1021,14 @@ export function setMutatedNode(
     mutatedNodesByType = new Map();
     mutatedNodes.set(klass, mutatedNodesByType);
   }
-  if (!mutatedNodesByType.has(nodeKey)) {
-    mutatedNodesByType.set(nodeKey, mutation);
+  const prevMutation = mutatedNodesByType.get(nodeKey);
+  // If the node has already been "destroyed", yet we are
+  // re-making it, then this means a move likely happened.
+  // We should change the mutation to be that of "updated"
+  // instead.
+  const isMove = prevMutation === 'destroyed' && mutation === 'created';
+  if (prevMutation === undefined || isMove) {
+    mutatedNodesByType.set(nodeKey, isMove ? 'updated' : mutation);
   }
 }
 
@@ -1026,7 +1070,7 @@ function resolveElement(
   return block.getChildAtIndex(isBackward ? offset - 1 : offset);
 }
 
-export function $getDecoratorNode(
+export function $getAdjacentNode(
   focus: PointType,
   isBackward: boolean,
 ): null | LexicalNode {
@@ -1289,5 +1333,116 @@ export function errorOnInsertTextNodeOnRoot(
       false,
       'Only element or decorator nodes can be inserted in to the root node',
     );
+  }
+}
+
+export function $getNodeByKeyOrThrow<N extends LexicalNode>(key: NodeKey): N {
+  const node = $getNodeByKey<N>(key);
+  if (node === null) {
+    invariant(
+      false,
+      "Expected node with key %s to exist but it's not in the nodeMap.",
+      key,
+    );
+  }
+  return node;
+}
+
+function createBlockCursorElement(editorConfig: EditorConfig): HTMLDivElement {
+  const theme = editorConfig.theme;
+  const element = document.createElement('div');
+  element.contentEditable = 'false';
+  element.setAttribute('data-lexical-cursor', 'true');
+  let blockCursorTheme = theme.blockCursor;
+  if (blockCursorTheme !== undefined) {
+    if (typeof blockCursorTheme === 'string') {
+      const classNamesArr = blockCursorTheme.split(' ');
+      // @ts-expect-error: intentional
+      blockCursorTheme = theme.blockCursor = classNamesArr;
+    }
+    if (blockCursorTheme !== undefined) {
+      element.classList.add(...blockCursorTheme);
+    }
+  }
+  return element;
+}
+
+function needsBlockCursor(node: null | LexicalNode): boolean {
+  return (
+    ($isDecoratorNode(node) || ($isElementNode(node) && !node.canBeEmpty())) &&
+    !node.isInline()
+  );
+}
+
+export function removeDOMBlockCursorElement(
+  blockCursorElement: HTMLElement,
+  editor: LexicalEditor,
+  rootElement: HTMLElement,
+) {
+  rootElement.style.removeProperty('caret-color');
+  editor._blockCursorElement = null;
+  const parentElement = blockCursorElement.parentElement;
+  if (parentElement !== null) {
+    parentElement.removeChild(blockCursorElement);
+  }
+}
+
+export function updateDOMBlockCursorElement(
+  editor: LexicalEditor,
+  rootElement: HTMLElement,
+  nextSelection: null | RangeSelection | NodeSelection | GridSelection,
+): void {
+  let blockCursorElement = editor._blockCursorElement;
+
+  if (
+    $isRangeSelection(nextSelection) &&
+    nextSelection.isCollapsed() &&
+    nextSelection.anchor.type === 'element' &&
+    rootElement.contains(document.activeElement)
+  ) {
+    const anchor = nextSelection.anchor;
+    const elementNode = anchor.getNode();
+    const offset = anchor.offset;
+    const elementNodeSize = elementNode.getChildrenSize();
+    let isBlockCursor = false;
+    let insertBeforeElement: null | HTMLElement = null;
+
+    if (offset === elementNodeSize) {
+      const child = elementNode.getChildAtIndex(offset - 1);
+      if (needsBlockCursor(child)) {
+        isBlockCursor = true;
+      }
+    } else {
+      const child = elementNode.getChildAtIndex(offset);
+      if (needsBlockCursor(child)) {
+        const sibling = (child as LexicalNode).getPreviousSibling();
+        if (sibling === null || needsBlockCursor(sibling)) {
+          isBlockCursor = true;
+          insertBeforeElement = editor.getElementByKey(
+            (child as LexicalNode).__key,
+          );
+        }
+      }
+    }
+    if (isBlockCursor) {
+      const elementDOM = editor.getElementByKey(
+        elementNode.__key,
+      ) as HTMLElement;
+      if (blockCursorElement === null) {
+        editor._blockCursorElement = blockCursorElement =
+          createBlockCursorElement(editor._config);
+      }
+      rootElement.style.caretColor = 'transparent';
+      if (insertBeforeElement === null) {
+        elementDOM.appendChild(blockCursorElement);
+      } else {
+        elementDOM.insertBefore(blockCursorElement, insertBeforeElement);
+      }
+      return;
+    }
+  }
+  // Remove cursor
+  if (blockCursorElement !== null) {
+    removeDOMBlockCursorElement(blockCursorElement, editor, rootElement);
   }
 }

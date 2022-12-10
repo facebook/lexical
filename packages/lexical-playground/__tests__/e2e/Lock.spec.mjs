@@ -14,7 +14,7 @@ test.describe('Lock', () => {
   test.beforeEach(({isCollab, page}) =>
     initialize({isAutocomplete: true, isCollab, page}),
   );
-  test('Placeholder disappears when read-only', async ({
+  test('Placeholder remains when non-editable', async ({
     page,
     isPlainText,
     isCollab,
@@ -29,7 +29,7 @@ test.describe('Lock', () => {
     );
 
     await click(page, '.action-button.lock');
-    expect(await pageOrFrame.innerHTML('.editor-container')).not.toContain(
+    expect(await pageOrFrame.innerHTML('.editor-container')).toContain(
       placeholder,
     );
   });

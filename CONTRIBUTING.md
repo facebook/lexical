@@ -1,6 +1,6 @@
 # Contributing to lexical
 
-We want to make contributingi to this project as easy and transparent as
+We want to make contributing to this project as easy and transparent as
 possible.
 
 ## Pull Requests

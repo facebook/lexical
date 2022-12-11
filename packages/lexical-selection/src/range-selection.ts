@@ -6,6 +6,16 @@
  *
  */
 
+import type {
+  ElementNode,
+  GridSelection,
+  LexicalNode,
+  NodeKey,
+  Point,
+  RangeSelection,
+  TextNode,
+} from 'lexical';
+
 import {
   $getAdjacentNode,
   $getPreviousSelection,
@@ -13,16 +23,12 @@ import {
   $hasAncestor,
   $isDecoratorNode,
   $isElementNode,
+  $isLeafNode,
+  $isRangeSelection,
   $isRootNode,
   $isRootOrShadowRoot,
   $isTextNode,
   $setSelection,
-  ElementNode,
-  GridSelection,
-  LexicalNode,
-  NodeKey,
-  RangeSelection,
-  TextNode,
 } from 'lexical';
 
 import {getStyleObjectFromCSS} from './utils';
@@ -68,6 +74,25 @@ export function $setBlocksType_experimental(
 
 function isBlock(node: LexicalNode) {
   return $isElementNode(node) && !$isRootOrShadowRoot(node) && !node.isInline();
+}
+
+function isPointAttached(point: Point): boolean {
+  return point.getNode().isAttached();
+}
+
+function $removeParentEmptyElements(startingNode: ElementNode): void {
+  let node: ElementNode | null = startingNode;
+
+  while (node !== null && !$isRootOrShadowRoot(node)) {
+    const latest = node.getLatest();
+    const parentNode: ElementNode | null = node.getParent<ElementNode>();
+
+    if (latest.getChildrenSize() === 0) {
+      node.remove(true);
+    }
+
+    node = parentNode;
+  }
 }
 
 export function $wrapNodes(

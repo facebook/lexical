@@ -6,19 +6,25 @@
  *
  */
 
+import type {
+  ElementNode,
+  GridSelection,
+  LexicalNode,
+  NodeKey,
+  RangeSelection,
+  TextNode,
+} from 'lexical';
+
 import {
   $getAdjacentNode,
-  $getRoot,
+  $getPreviousSelection,
+  $hasAncestor,
   $isDecoratorNode,
   $isElementNode,
   $isRootNode,
   $isRootOrShadowRoot,
   $isTextNode,
-  ElementNode,
-  GridSelection,
-  LexicalNode,
-  RangeSelection,
-  TextNode,
+  $setSelection,
 } from 'lexical';
 
 import {getStyleObjectFromCSS} from './utils';

@@ -11,6 +11,7 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {mergeRegister} from '@lexical/utils';
 import {
   $getSelection,
+  $isElementNode,
   $isRangeSelection,
   COMMAND_PRIORITY_LOW,
   PASTE_COMMAND,
@@ -66,9 +67,13 @@ export function LinkPlugin({validateUrl}: Props): null {
               if (!validateUrl(clipboardText)) {
                 return false;
               }
-              editor.dispatchCommand(TOGGLE_LINK_COMMAND, clipboardText);
-              event.preventDefault();
-              return true;
+              // If we select nodes that are elements then avoid applying the link.
+              if (!selection.getNodes().some((node) => $isElementNode(node))) {
+                editor.dispatchCommand(TOGGLE_LINK_COMMAND, clipboardText);
+                event.preventDefault();
+                return true;
+              }
+              return false;
             },
             COMMAND_PRIORITY_LOW,
           )

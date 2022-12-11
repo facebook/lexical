@@ -10,6 +10,7 @@
     "baseUrl": ".",
     "typeRoots": ["node_modules/@types", "libdefs/globals"],
     "skipLibCheck": true,
+    "resolveJsonModule": true,
 
     "paths": {
       "lexical": ["./packages/lexical/src/"],

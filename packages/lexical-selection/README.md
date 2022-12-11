@@ -81,12 +81,12 @@ Expands the current Selection to cover all of the content in the editor.
 export function $selectAll(selection: RangeSelection): void;
 ```
 
-#### `$setBlocksType`
+#### `$setBlocksType_experimental`
 
 Converts all nodes in the selection that are of one block type to another specified by parameter
 
 ```ts
-export function $setBlocksType(
+export function $setBlocksType_experimental(
   selection: RangeSelection,
   createElement: () => ElementNode,
 ): void;

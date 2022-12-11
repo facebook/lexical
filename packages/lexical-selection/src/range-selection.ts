@@ -30,7 +30,7 @@ import {getStyleObjectFromCSS} from './utils';
  * @param createElement
  * @returns
  */
-export function $setBlocksType(
+export function $setBlocksType_experimental(
   selection: RangeSelection | GridSelection,
 
   createElement: () => ElementNode,

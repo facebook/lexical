@@ -625,11 +625,7 @@ export class LexicalNode {
     removeNode(this, true, preserveEmptyParent);
   }
 
-  replace<N extends LexicalNode>(
-    replaceWith: N,
-    restoreSelection = true,
-    includeChildren?: boolean,
-  ): N {
+  replace<N extends LexicalNode>(replaceWith: N, includeChildren?: boolean): N {
     errorOnReadOnly();
     let selection = $getSelection();
     if (selection !== null) selection = selection.clone();
@@ -669,7 +665,7 @@ export class LexicalNode {
         writableReplaceWith.append(child);
       });
     }
-    if ($isRangeSelection(selection) && restoreSelection) {
+    if ($isRangeSelection(selection)) {
       $setSelection(selection);
       const anchor = selection.anchor;
       const focus = selection.focus;

@@ -152,6 +152,21 @@ describe('LexicalListItemNode tests', () => {
         );
       });
 
+      test('another list item node', async () => {
+        const {editor} = testEnv;
+
+        await editor.update(() => {
+          const newListItemNode = new ListItemNode();
+
+          newListItemNode.append(new TextNode('bar'));
+          listItemNode1.replace(newListItemNode);
+        });
+
+        expect(testEnv.outerHTML).toBe(
+          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><ul><li value="1" dir="ltr"><span data-lexical-text="true">bar</span></li><li value="2" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" dir="ltr"><span data-lexical-text="true">three</span></li></ul></div>',
+        );
+      });
+
       test('first list item with a non list item node', async () => {
         const {editor} = testEnv;
 

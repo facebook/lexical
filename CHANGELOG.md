@@ -1,3 +1,14 @@
+## v0.7.1 (2022-12-11)
+
+Contains several small bug fixes from the Lexical 0.7.0 release.
+- Fix paste for LexicalLinkPlugin (#3528) Dominic Gannaway
+- RTL fix for checkbox (#3529) shiva-Aluri
+- Add demos section to the navbar (#3507) akmarzhan1
+- Fix lexical-offset (#3526) Dominic Gannaway
+- Add missing Flow type for indentation plugin (#3527) John Flockton
+- Docs: fix "node" type in "Node Overrides" example code (#3525) Chris Montrois
+- Fix small Flow error (#3523) John Flockton
+
 ## v0.7.0 (2022-12-09)
 
 Lexical 0.7 includes some breaking changes, including:

@@ -303,11 +303,15 @@ function initializeEditor(
             case 'string': {
               const parsedEditorState =
                 editor.parseEditorState(initialEditorState);
-              editor.setEditorState(parsedEditorState, {tag: 'history-merge'});
+              editor.setEditorState(parsedEditorState, {
+                tag: 'collaboration-init',
+              });
               break;
             }
             case 'object': {
-              editor.setEditorState(initialEditorState, {tag: 'history-merge'});
+              editor.setEditorState(initialEditorState, {
+                tag: 'collaboration-init',
+              });
               break;
             }
             case 'function': {
@@ -318,7 +322,7 @@ function initializeEditor(
                     initialEditorState(editor);
                   }
                 },
-                {tag: 'history-merge'},
+                {tag: 'collaboration-init'},
               );
               break;
             }
@@ -339,7 +343,7 @@ function initializeEditor(
       }
     },
     {
-      tag: 'history-merge',
+      tag: 'collaboration-init',
     },
   );
 }

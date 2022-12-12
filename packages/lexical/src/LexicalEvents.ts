@@ -132,7 +132,7 @@ const PASS_THROUGH_COMMAND = Object.freeze({});
 const ANDROID_COMPOSITION_LATENCY = 30;
 const rootElementEvents: RootElementEvents = [
   ['keydown', onKeyDown],
-  ['mousedown', onMouseDown],
+  ['pointerdown', onPointerDown],
   ['compositionstart', onCompositionStart],
   ['compositionend', onCompositionEnd],
   ['input', onInput],
@@ -379,10 +379,11 @@ function onClick(event: MouseEvent, editor: LexicalEditor): void {
   });
 }
 
-function onMouseDown(event: MouseEvent, editor: LexicalEditor) {
+function onPointerDown(event: PointerEvent, editor: LexicalEditor) {
   // TODO implement text drag & drop
   const target = event.target;
-  if (target instanceof Node) {
+  const pointerType = event.pointerType;
+  if (target instanceof Node && pointerType !== 'touch') {
     updateEditor(editor, () => {
       // Drag & drop should not recompute selection until mouse up; otherwise the initially
       // selected content is lost.

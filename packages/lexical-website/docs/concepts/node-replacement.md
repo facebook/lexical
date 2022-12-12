@@ -15,7 +15,7 @@ const editorConfig = {
         {
             replace: ParagraphNode,
             with: (node: ParagraphNode) => {
-                return new CustomParagraphNode();
+                return new CustomParagraphNode(node.__key);
             }
         }
     ]

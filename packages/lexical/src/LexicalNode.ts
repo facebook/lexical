@@ -337,7 +337,10 @@ export class LexicalNode {
 
   getPreviousSiblings<T extends LexicalNode>(): Array<T> {
     const siblings: Array<T> = [];
-    const parent = this.getParentOrThrow();
+    const parent = this.getParent();
+    if (parent === null) {
+      return siblings;
+    }
     let node: null | T = parent.getFirstChild();
     while (node !== null) {
       if (node.is(this)) {

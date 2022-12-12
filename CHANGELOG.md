@@ -15,6 +15,7 @@ Lexical 0.7 includes some breaking changes, including:
 - Removal of `$cloneContents` from `@lexical/selection`
 - Changes to `PlainTextPlugin` and `RichTextPlugin` with regards to how placeholders are handled
 - Pressing tab with the `RichTextPlugin` no longer indents by default, use the `LexicalTabIndentationPlugin` for this behavior.
+- The unstable helper function `unstable_convertLegacyJSONEditorState` has been removed. This was always meant to be a temporary work-around to allow developers to convert their formats to the new JSON format rather than using the actual editor state internals directly.
 
 Lexical 0.7 includes performance and usability improvements. Notably, Lexical has a new internal architecture that allows for
 much better performance with large documents of content. Lexical also now provides a way to handle selection between blocks

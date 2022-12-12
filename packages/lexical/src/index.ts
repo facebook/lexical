@@ -142,7 +142,6 @@ export {
   $setCompositionKey,
   $setSelection,
 } from './LexicalUtils';
-export {VERSION} from './LexicalVersion';
 export {$isDecoratorNode, DecoratorNode} from './nodes/LexicalDecoratorNode';
 export {$isElementNode, ElementNode} from './nodes/LexicalElementNode';
 export {

@@ -847,11 +847,6 @@ declare export function $copyNode(
 ): [ElementNode, ElementNode];
 
 /**
- * LexicalVersion
- */
-declare export var VERSION: string;
-
-/**
  * Serialization/Deserialization
  * */
 

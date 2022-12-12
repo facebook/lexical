@@ -106,6 +106,7 @@
     "@rollup/plugin-alias": "^3.1.4",
     "@rollup/plugin-babel": "^5.3.0",
     "@rollup/plugin-commonjs": "^19.0.1",
+    "@rollup/plugin-json": "^5.0.2",
     "@rollup/plugin-node-resolve": "^13.0.2",
     "@rollup/plugin-replace": "^3.0.0",
     "@types/jest": "^27.5.0",

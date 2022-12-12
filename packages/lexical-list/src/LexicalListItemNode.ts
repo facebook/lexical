@@ -150,7 +150,10 @@ export class ListItemNode extends ElementNode {
     return this;
   }
 
-  replace<N extends LexicalNode>(replaceWithNode: N): N {
+  replace<N extends LexicalNode>(
+    replaceWithNode: N,
+    includeChildren?: boolean,
+  ): N {
     if ($isListItemNode(replaceWithNode)) {
       return super.replace(replaceWithNode);
     }
@@ -177,6 +180,11 @@ export class ListItemNode extends ElementNode {
         }
         list.insertAfter(replaceWithNode);
         replaceWithNode.insertAfter(newList);
+      }
+      if (includeChildren) {
+        this.getChildren().forEach((child: LexicalNode) => {
+          replaceWithNode.append(child);
+        });
       }
       this.remove();
 
@@ -281,7 +289,8 @@ export class ListItemNode extends ElementNode {
         listNode.remove();
         listNodeParent.select();
       } else {
-        listNode.replace(paragraph);
+        listNode.insertBefore(paragraph);
+        listNode.remove();
         // If we have selection on the list item, we'll need to move it
         // to the paragraph
         const anchor = selection.anchor;

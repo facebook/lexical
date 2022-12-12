@@ -39,7 +39,7 @@ import {
   $isParentElementRTL,
   $patchStyleText,
   $selectAll,
-  $wrapNodes,
+  $setBlocksType_experimental,
 } from '@lexical/selection';
 import {
   $findMatchingParent,
@@ -160,13 +160,11 @@ function BlockFormatDropDown({
     if (blockType !== 'paragraph') {
       editor.update(() => {
         const selection = $getSelection();
-
         if (
           $isRangeSelection(selection) ||
           DEPRECATED_$isGridSelection(selection)
-        ) {
-          $wrapNodes(selection, () => $createParagraphNode());
-        }
+        )
+          $setBlocksType_experimental(selection, () => $createParagraphNode());
       });
     }
   };
@@ -175,12 +173,13 @@ function BlockFormatDropDown({
     if (blockType !== headingSize) {
       editor.update(() => {
         const selection = $getSelection();
-
         if (
           $isRangeSelection(selection) ||
           DEPRECATED_$isGridSelection(selection)
         ) {
-          $wrapNodes(selection, () => $createHeadingNode(headingSize));
+          $setBlocksType_experimental(selection, () =>
+            $createHeadingNode(headingSize),
+          );
         }
       });
     }
@@ -214,12 +213,11 @@ function BlockFormatDropDown({
     if (blockType !== 'quote') {
       editor.update(() => {
         const selection = $getSelection();
-
         if (
           $isRangeSelection(selection) ||
           DEPRECATED_$isGridSelection(selection)
         ) {
-          $wrapNodes(selection, () => $createQuoteNode());
+          $setBlocksType_experimental(selection, () => $createQuoteNode());
         }
       });
     }
@@ -228,19 +226,21 @@ function BlockFormatDropDown({
   const formatCode = () => {
     if (blockType !== 'code') {
       editor.update(() => {
-        const selection = $getSelection();
+        let selection = $getSelection();
 
         if (
           $isRangeSelection(selection) ||
           DEPRECATED_$isGridSelection(selection)
         ) {
           if (selection.isCollapsed()) {
-            $wrapNodes(selection, () => $createCodeNode());
+            $setBlocksType_experimental(selection, () => $createCodeNode());
           } else {
             const textContent = selection.getTextContent();
             const codeNode = $createCodeNode();
             selection.insertNodes([codeNode]);
-            selection.insertRawText(textContent);
+            selection = $getSelection();
+            if ($isRangeSelection(selection))
+              selection.insertRawText(textContent);
           }
         }
       });

@@ -44,10 +44,9 @@ declare export function $moveCharacter(
   isBackward: boolean,
 ): void;
 declare export function $selectAll(selection: RangeSelection): void;
-declare export function $wrapNodes(
-  selection: RangeSelection | GridSelection,
+declare export function $setBlocksType_experimental(
+  selection: RangeSelection,
   createElement: () => ElementNode,
-  wrappingElement?: ElementNode,
 ): void;
 declare export function $isAtNodeEnd(point: Point): boolean;
 declare export function $shouldOverrideDefaultCharacterSelection(

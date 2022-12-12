@@ -952,7 +952,7 @@ export class RangeSelection implements BaseSelection {
         ) {
           if (lastNode.isSegmented()) {
             const textNode = $createTextNode(lastNode.getTextContent());
-            lastNode.replace(textNode, false);
+            lastNode.replace(textNode);
             lastNode = textNode;
           }
           lastNode = (lastNode as TextNode).spliceText(0, endOffset, '');
@@ -1056,7 +1056,7 @@ export class RangeSelection implements BaseSelection {
       } else {
         const textNode = $createTextNode(text);
         textNode.select();
-        firstNode.replace(textNode, false);
+        firstNode.replace(textNode);
       }
 
       // Remove all selected nodes that haven't already been removed.

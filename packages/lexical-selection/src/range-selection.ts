@@ -19,6 +19,7 @@ import type {
 import {
   $getAdjacentNode,
   $getPreviousSelection,
+  $getRoot,
   $hasAncestor,
   $isDecoratorNode,
   $isElementNode,
@@ -31,6 +32,53 @@ import {
 } from 'lexical';
 
 import {getStyleObjectFromCSS} from './utils';
+
+/**
+ * Converts all nodes in the selection that are of one block type to another specified by parameter
+ *
+ * @param selection
+ * @param createElement
+ * @returns
+ */
+export function $setBlocksType_experimental(
+  selection: RangeSelection | GridSelection,
+
+  createElement: () => ElementNode,
+): void {
+  if (selection.anchor.key === 'root') {
+    const element = createElement();
+    const root = $getRoot();
+    const firstChild = root.getFirstChild();
+    if (firstChild) firstChild.replace(element, true);
+    else root.append(element);
+    return;
+  }
+
+  const nodes = selection.getNodes();
+  if (selection.anchor.type === 'text') {
+    let firstBlock = selection.anchor.getNode().getParent() as LexicalNode;
+    firstBlock = (
+      firstBlock.isInline() ? firstBlock.getParent() : firstBlock
+    ) as LexicalNode;
+    if (nodes.indexOf(firstBlock) === -1) nodes.push(firstBlock);
+  }
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+    if (!isBlock(node)) continue;
+    const targetElement = createElement();
+    targetElement.setFormat(node.getFormatType());
+    targetElement.setIndent(node.getIndent());
+    node.replace(targetElement, true);
+  }
+}
+
+function isBlock(node: LexicalNode) {
+  return $isElementNode(node) && !$isRootOrShadowRoot(node) && !node.isInline();
+}
+
+function isPointAttached(point: Point): boolean {
+  return point.getNode().isAttached();
+}
 
 function $removeParentEmptyElements(startingNode: ElementNode): void {
   let node: ElementNode | null = startingNode;
@@ -47,20 +95,6 @@ function $removeParentEmptyElements(startingNode: ElementNode): void {
   }
 }
 
-function isPointAttached(point: Point): boolean {
-  return point.getNode().isAttached();
-}
-
-/**
- * Attempts to wrap all nodes in the Selection in ElementNodes returned from createElement.
- * If wrappingElement is provided, all of the wrapped leaves are appended to the wrappingElement.
- * It attempts to append the resulting sub-tree to the nearest safe insertion target.
- *
- * @param selection
- * @param createElement
- * @param wrappingElement
- * @returns
- */
 export function $wrapNodes(
   selection: RangeSelection | GridSelection,
   createElement: () => ElementNode,

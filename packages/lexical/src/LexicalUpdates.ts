@@ -68,7 +68,10 @@ const observerOptions = {
 };
 
 export function isCurrentlyReadOnlyMode(): boolean {
-  return isReadOnlyMode;
+  return (
+    isReadOnlyMode ||
+    (activeEditorState !== null && activeEditorState._readOnly)
+  );
 }
 
 export function errorOnReadOnly(): void {

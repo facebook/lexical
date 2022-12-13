@@ -105,7 +105,7 @@ editor.update(() => {
   root.append(paragraphNode);
 });
 ```
-**It's important to note that the core library (the 'lexical' package) does not listen for any commands or perform any updates to the editor state in response to user events out-of-the-box.** In order to see text and other content appear in the editor, you need to register [command listeners](https://lexical.dev/docs/concepts/commands#editorregistercommand) and update the editor in the callback. Lexical provides a couple of helper packages to make it easy wire up a lot of the basic commands you might want for [plain text](https://lexical.dev/docs/packages/lexical-plain-text) or [rich text](https://lexical.dev/docs/packages/lexical-rich-text) experiences.
+**It's important to note that the core library (the 'lexical' package) does not listen for any commands or perform any updates to the editor state in response to user events out-of-the-box.** In order to see text and other content appear in the editor, you need to register [command listeners](https://lexical.dev/docs/concepts/commands#editorregistercommand) and update the editor in the callback. Lexical provides a couple of helper packages to make it easy to wire up a lot of the basic commands you might want for [plain text](https://lexical.dev/docs/packages/lexical-plain-text) or [rich text](https://lexical.dev/docs/packages/lexical-rich-text) experiences.
 
 If you want to know when the editor updates so you can react to the changes, you can add an update
 listener to the editor, as shown below:

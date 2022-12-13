@@ -13,8 +13,8 @@ import {
   $createTextNode,
   $getRoot,
   $isElementNode,
+  $isParagraphNode,
   $isTextNode,
-  ParagraphNode,
   TextNode,
 } from 'lexical';
 
@@ -115,7 +115,7 @@ export function $canShowPlaceholder(isComposing: boolean): boolean {
     const topBlock = children[i];
 
     if ($isElementNode(topBlock)) {
-      if (!(topBlock instanceof ParagraphNode)) {
+      if (!$isParagraphNode(topBlock)) {
         return false;
       }
 

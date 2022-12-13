@@ -30,7 +30,7 @@ export default function ClickableLinkPlugin({
   const [editor] = useLexicalComposerContext();
   useEffect(() => {
     function onClick(e: Event) {
-      const event = e as MouseEvent;
+      const event = e as MouseEvent | PointerEvent;
       const linkDomNode = getLinkDomNode(event, editor);
 
       if (linkDomNode === null) {
@@ -70,9 +70,10 @@ export default function ClickableLinkPlugin({
 
       try {
         if (href !== null) {
+          const isMiddle = event.type === 'auxclick' && event.button === 1;
           window.open(
             href,
-            newTab || event.metaKey || event.ctrlKey ? '_blank' : '_self',
+            newTab || event.metaKey || event.ctrlKey || isMiddle ? '_blank' : '_self',
           );
           event.preventDefault();
         }
@@ -88,10 +89,12 @@ export default function ClickableLinkPlugin({
       ) => {
         if (prevRootElement !== null) {
           prevRootElement.removeEventListener('click', onClick);
+          prevRootElement.removeEventListener('auxclick', onClick);
         }
 
         if (rootElement !== null) {
           rootElement.addEventListener('click', onClick);
+          rootElement.addEventListener('auxclick', onClick);
         }
       },
     );
@@ -104,7 +107,7 @@ function isLinkDomNode(domNode: Node): boolean {
 }
 
 function getLinkDomNode(
-  event: MouseEvent,
+  event: MouseEvent | PointerEvent,
   editor: LexicalEditor,
 ): HTMLAnchorElement | null {
   return editor.getEditorState().read(() => {

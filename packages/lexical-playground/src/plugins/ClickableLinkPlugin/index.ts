@@ -73,7 +73,9 @@ export default function ClickableLinkPlugin({
           const isMiddle = event.type === 'auxclick' && event.button === 1;
           window.open(
             href,
-            newTab || event.metaKey || event.ctrlKey || isMiddle ? '_blank' : '_self',
+            newTab || event.metaKey || event.ctrlKey || isMiddle
+              ? '_blank'
+              : '_self',
           );
           event.preventDefault();
         }

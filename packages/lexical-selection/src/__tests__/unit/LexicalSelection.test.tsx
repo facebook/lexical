@@ -191,7 +191,7 @@ describe('LexicalSelection tests', () => {
     return Promise.resolve().then();
   }
 
-  test('Expect initial output to be a block with no text', () => {
+  test('Expect initial output to be a block with no text.', () => {
     expect(container.innerHTML).toBe(
       '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p class="editor-paragraph"><br></p></div>',
     );

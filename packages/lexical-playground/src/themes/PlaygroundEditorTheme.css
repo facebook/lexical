@@ -84,6 +84,7 @@
 }
 .PlaygroundEditorTheme__link:hover {
   text-decoration: underline;
+  cursor: pointer;
 }
 .PlaygroundEditorTheme__code {
   background-color: rgb(240, 242, 245);

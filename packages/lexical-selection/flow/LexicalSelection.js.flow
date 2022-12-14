@@ -48,7 +48,7 @@ declare export function $wrapNodes(
   selection: RangeSelection | GridSelection,
   createElement: () => ElementNode,
   wrappingElement: null | ElementNode,
-): void
+): void;
 declare export function $setBlocksType_experimental(
   selection: RangeSelection,
   createElement: () => ElementNode,

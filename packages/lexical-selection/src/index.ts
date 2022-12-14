@@ -23,7 +23,7 @@ import {
   $selectAll,
   $setBlocksType_experimental,
   $shouldOverrideDefaultCharacterSelection,
-  $wrapNodes
+  $wrapNodes,
 } from './range-selection';
 import {
   createDOMRange,
@@ -48,7 +48,7 @@ export {
   $selectAll,
   $setBlocksType_experimental,
   $shouldOverrideDefaultCharacterSelection,
-  $wrapNodes
+  $wrapNodes,
 };
 
 export {createDOMRange, createRectsFromDOMRange, getStyleObjectFromCSS};

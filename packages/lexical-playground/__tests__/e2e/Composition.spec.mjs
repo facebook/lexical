@@ -526,7 +526,7 @@ test.describe('Composition', () => {
             </p>
           `,
         );
-
+      /* eslint-disable no-irregular-whitespace */
       if (browserName === 'chromium')
         await assertHTML(
           page,

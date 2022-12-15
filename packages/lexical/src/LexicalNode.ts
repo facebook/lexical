@@ -830,13 +830,15 @@ function errorOnTypeKlassMismatch(
     );
   }
   const editorKlass = registeredNode.klass;
-  if (editorKlass !== klass) {
+  if (editorKlass !== klass && !(editorKlass.prototype instanceof klass)) {
     invariant(
       false,
-      'Create node: Type %s in node %s does not match registered node %s with the same type',
+      'Create node: Type %s in node %s does not match registered node %s with the same type or %s is not a subclass of %s',
       type,
       klass.name,
       editorKlass.name,
+      editorKlass.name,
+      klass.name
     );
   }
 }

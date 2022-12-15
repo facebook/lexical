@@ -862,6 +862,8 @@ function convertSpanElement(domNode: Node): DOMConversionOutput {
         lexicalNode.toggleFormat('superscript');
       }
 
+      lexicalNode.setStyle(span.style.cssText);
+
       return lexicalNode;
     },
     node: null,

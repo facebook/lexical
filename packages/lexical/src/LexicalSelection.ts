@@ -1882,9 +1882,10 @@ export class RangeSelection implements BaseSelection {
           (anchor.type === 'text' &&
             anchor.offset === anchorNode.getTextContentSize()))
       ) {
+        const parent = anchorNode.getParent();
         const nextSibling =
           anchorNode.getNextSibling() ||
-          anchorNode.getParentOrThrow().getNextSibling();
+          (parent === null ? null : parent.getNextSibling());
 
         if ($isElementNode(nextSibling) && !nextSibling.canExtractContents()) {
           return;

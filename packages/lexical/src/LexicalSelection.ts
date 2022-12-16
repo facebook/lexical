@@ -2742,7 +2742,7 @@ export function updateDOMSelection(
   domSelection: Selection,
   tags: Set<string>,
   rootElement: HTMLElement,
-  dirtyLeavesCount: number,
+  nodeCount: number,
 ): void {
   const anchorDOMNode = domSelection.anchorNode;
   const focusDOMNode = domSelection.focusNode;
@@ -2851,7 +2851,7 @@ export function updateDOMSelection(
       // The downside is that is makes the computation within Lexical more
       // complex, as now, we've sync update the DOM, but selection no longer
       // matches.
-      if (IS_CHROME && dirtyLeavesCount > 1000) {
+      if (IS_CHROME && nodeCount > 1000) {
         window.requestAnimationFrame(() =>
           domSelection.setBaseAndExtent(
             nextAnchorNode as Node,

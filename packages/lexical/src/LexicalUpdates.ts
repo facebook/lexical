@@ -19,7 +19,6 @@ import type {
 import type {SerializedEditorState} from './LexicalEditorState';
 import type {LexicalNode, SerializedLexicalNode} from './LexicalNode';
 
-import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
 
 import {$isElementNode, $isTextNode} from '.';
@@ -47,6 +46,7 @@ import {
 } from './LexicalSelection';
 import {
   $getCompositionKey,
+  getDOMSelection,
   getEditorStateTextContent,
   getEditorsToPropagate,
   getRegisteredNodeOrThrow,
@@ -114,6 +114,10 @@ export function getActiveEditor(): LexicalEditor {
     );
   }
 
+  return activeEditor;
+}
+
+export function internalGetActiveEditor(): LexicalEditor | null {
   return activeEditor;
 }
 
@@ -962,8 +966,4 @@ export function updateEditor(
   } else {
     beginUpdate(editor, updateFn, options);
   }
-}
-
-export function internalGetActiveEditor(): null | LexicalEditor {
-  return activeEditor;
 }

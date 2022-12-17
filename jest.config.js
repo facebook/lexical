@@ -93,8 +93,6 @@ module.exports = {
         '^shared/caretFromPoint$':
           '<rootDir>/packages/shared/src/caretFromPoint.ts',
         '^shared/environment$': '<rootDir>/packages/shared/src/environment.ts',
-        '^shared/getDOMSelection$':
-          '<rootDir>/packages/shared/src/getDOMSelection.ts',
         '^shared/invariant$': '<rootDir>/packages/shared/src/invariant.ts',
         '^shared/simpleDiffWithCursor$':
           '<rootDir>/packages/shared/src/simpleDiffWithCursor.ts',

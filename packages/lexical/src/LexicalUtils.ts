@@ -29,8 +29,8 @@ import type {
 import type {RootNode} from './nodes/LexicalRootNode';
 import type {TextFormatType, TextNode} from './nodes/LexicalTextNode';
 
+import {CAN_USE_DOM} from 'shared/canUseDOM';
 import {IS_APPLE, IS_IOS, IS_SAFARI} from 'shared/environment';
-import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
 
 import {
@@ -62,6 +62,7 @@ import {
   errorOnReadOnly,
   getActiveEditor,
   getActiveEditorState,
+  internalGetActiveEditor,
   isCurrentlyReadOnlyMode,
   triggerCommandListeners,
   updateEditor,
@@ -1445,4 +1446,13 @@ export function updateDOMBlockCursorElement(
   if (blockCursorElement !== null) {
     removeDOMBlockCursorElement(blockCursorElement, editor, rootElement);
   }
+}
+
+export function getDOMSelection(): null | Selection {
+  const editor = internalGetActiveEditor();
+  if (!CAN_USE_DOM) {
+    return null;
+  }
+  const win = (editor && editor._window) || window;
+  return win.getSelection();
 }

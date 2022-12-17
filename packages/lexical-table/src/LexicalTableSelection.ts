@@ -28,7 +28,6 @@ import {
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import {CAN_USE_DOM} from 'shared/canUseDOM';
-import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
 
 import {$isTableCellNode} from './LexicalTableCellNode';
@@ -52,6 +51,9 @@ export type Grid = {
   columns: number;
   rows: number;
 };
+
+const getDOMSelection = (): Selection | null =>
+  CAN_USE_DOM ? window.getSelection() : null;
 
 if (CAN_USE_DOM) {
   const disableNativeSelectionUi = document.createElement('style');

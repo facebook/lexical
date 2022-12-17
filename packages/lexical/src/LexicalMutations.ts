@@ -15,7 +15,6 @@ import type {
 } from './LexicalSelection';
 
 import {IS_FIREFOX} from 'shared/environment';
-import getDOMSelection from 'shared/getDOMSelection';
 
 import {
   $getSelection,
@@ -30,6 +29,7 @@ import {updateEditor} from './LexicalUpdates';
 import {
   $getNearestNodeFromDOMNode,
   $updateTextNodeFromDOMContent,
+  getDOMSelection,
   getNodeFromDOMNode,
   getWindow,
   internalGetRoot,

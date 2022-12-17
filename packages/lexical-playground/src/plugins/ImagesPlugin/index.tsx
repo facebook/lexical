@@ -27,7 +27,7 @@ import {
 } from 'lexical';
 import {useEffect, useRef, useState} from 'react';
 import * as React from 'react';
-import getSelection from 'shared/getDOMSelection';
+import {CAN_USE_DOM} from 'shared/canUseDOM';
 
 import landscapeImage from '../../images/landscape.jpg';
 import yellowFlowerImage from '../../images/yellow-flower.jpg';
@@ -43,6 +43,9 @@ import FileInput from '../../ui/FileInput';
 import TextInput from '../../ui/TextInput';
 
 export type InsertImagePayload = Readonly<ImagePayload>;
+
+const getDOMSelection = (): Selection | null =>
+  CAN_USE_DOM ? window.getSelection() : null;
 
 export const INSERT_IMAGE_COMMAND: LexicalCommand<InsertImagePayload> =
   createCommand('INSERT_IMAGE_COMMAND');
@@ -367,7 +370,7 @@ function canDropImage(event: DragEvent): boolean {
 
 function getDragSelection(event: DragEvent): Range | null | undefined {
   let range;
-  const domSelection = getSelection();
+  const domSelection = getDOMSelection();
   if (document.caretRangeFromPoint) {
     range = document.caretRangeFromPoint(event.clientX, event.clientY);
   } else if (event.rangeParent && domSelection !== null) {

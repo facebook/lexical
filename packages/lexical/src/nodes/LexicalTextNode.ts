@@ -493,15 +493,31 @@ export class TextNode extends LexicalNode {
     return node;
   }
 
+  // This improves Lexical's basic text output in copy+paste plus
+  // for headless mode where people might use Lexical to generate
+  // HTML content and not have the ability to use CSS classes.
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const {element} = super.exportDOM(editor);
 
-    if (
-      element !== null &&
-      this.hasFormat('bold') &&
-      this.hasFormat('italic')
-    ) {
-      element.style.fontStyle = 'italic';
+    if (element !== null) {
+      const style = element.style;
+
+      if (this.hasFormat('bold')) {
+        style.fontWeight = 'bold';
+      }
+      if (this.hasFormat('italic')) {
+        style.fontStyle = 'italic';
+      }
+      const isStrikethrough = this.hasFormat('underline');
+      if (this.hasFormat('underline')) {
+        if (isStrikethrough) {
+          style.textDecoration = 'underline line-through';
+        } else {
+          style.textDecoration = 'underline';
+        }
+      } else if (isStrikethrough) {
+        style.textDecoration = 'line-through';
+      }
     }
 
     return {

@@ -7,27 +7,21 @@
  * @flow strict
  */
 
-export type Props = $ReadOnly<{
-  ariaActiveDescendantID?: string,
-  ariaAutoComplete?: string,
-  ariaControls?: string,
-  ariaDescribedBy?: string,
-  ariaExpanded?: boolean,
-  ariaLabel?: string,
-  ariaLabelledBy?: string,
-  ariaMultiline?: boolean,
-  ariaOwneeID?: string,
-  ariaRequired?: string,
-  autoCapitalize?: boolean,
-  autoComplete?: boolean,
-  autoCorrect?: boolean,
-  className?: string,
-  readOnly?: boolean,
-  role?: string,
-  style?: $Shape<{[string]: string | number}>,
-  spellCheck?: boolean,
-  tabIndex?: number,
-  testid?: string,
-}>;
+import * as React from 'react';
+
+export type Props = {
+  ariaActiveDescendant?: React$Element['aria-activedescendant'];
+  ariaAutoComplete?: React.AriaAttributes['aria-autocomplete'];
+  ariaControls?: React.AriaAttributes['aria-controls'];
+  ariaDescribedBy?: React.AriaAttributes['aria-describedby'];
+  ariaExpanded?: React.AriaAttributes['aria-expanded'];
+  ariaLabel?: React.AriaAttributes['aria-label'];
+  ariaLabelledBy?: React.AriaAttributes['aria-labelledby'];
+  ariaMultiline?: React.AriaAttributes['aria-multiline'];
+  ariaOwns?: React.AriaAttributes['aria-owns'];
+  ariaRequired?: React.AriaAttributes['aria-required'];
+  autoCapitalize?: HTMLDivElement['autocapitalize'];
+  'data-testid'?: string | null | undefined;
+} & React.AllHTMLAttributes<HTMLDivElement>;
 
 declare export function ContentEditable(props: Props): React$Node;

@@ -1779,13 +1779,12 @@ export class RangeSelection implements BaseSelection {
         return;
       }
     }
-
-    const domSelection = getDOMSelection();
+    const editor = getActiveEditor();
+    const domSelection = getDOMSelection(editor._window);
 
     if (!domSelection) {
       return;
     }
-    const editor = getActiveEditor();
     const blockCursorElement = editor._blockCursorElement;
     const rootElement = editor._rootElement;
     // Remove the block cursor element if it exists. This will ensure selection
@@ -2437,7 +2436,7 @@ export function internalCreateSelection(
 ): null | RangeSelection | NodeSelection | GridSelection {
   const currentEditorState = editor.getEditorState();
   const lastSelection = currentEditorState._selection;
-  const domSelection = getDOMSelection();
+  const domSelection = getDOMSelection(editor._window);
 
   if (
     $isNodeSelection(lastSelection) ||

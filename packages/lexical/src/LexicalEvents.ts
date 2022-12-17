@@ -185,10 +185,11 @@ function $shouldPreventDefaultAndInsertText(
   const anchor = selection.anchor;
   const focus = selection.focus;
   const anchorNode = anchor.getNode();
-  const domSelection = getDOMSelection();
+  const editor = getActiveEditor();
+  const domSelection = getDOMSelection(editor._window);
   const domAnchorNode = domSelection !== null ? domSelection.anchorNode : null;
   const anchorKey = anchor.key;
-  const backingAnchorElement = getActiveEditor().getElementByKey(anchorKey);
+  const backingAnchorElement = editor.getElementByKey(anchorKey);
   const textLength = text.length;
 
   return (
@@ -352,7 +353,7 @@ function onSelectionChange(
 function onClick(event: MouseEvent, editor: LexicalEditor): void {
   updateEditor(editor, () => {
     const selection = $getSelection();
-    const domSelection = getDOMSelection();
+    const domSelection = getDOMSelection(editor._window);
     const lastSelection = $getPreviousSelection();
 
     if ($isRangeSelection(selection)) {
@@ -685,7 +686,7 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
       }
       const anchor = selection.anchor;
       const anchorNode = anchor.getNode();
-      const domSelection = getDOMSelection();
+      const domSelection = getDOMSelection(editor._window);
       if (domSelection === null) {
         return;
       }
@@ -725,7 +726,7 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
         $setCompositionKey(null);
       }
     } else {
-      $updateSelectedTextFromDOM(false);
+      $updateSelectedTextFromDOM(false, editor);
 
       // onInput always fires after onCompositionEnd for FF.
       if (isFirefoxEndingComposition) {
@@ -821,7 +822,7 @@ function onCompositionEndImpl(editor: LexicalEditor, data?: string): void {
     }
   }
 
-  $updateSelectedTextFromDOM(true, data);
+  $updateSelectedTextFromDOM(true, editor, data);
 }
 
 function onCompositionEnd(
@@ -958,7 +959,14 @@ function getRootElementRemoveHandles(
 const activeNestedEditorsMap: Map<string, LexicalEditor> = new Map();
 
 function onDocumentSelectionChange(event: Event): void {
-  const domSelection = getDOMSelection();
+  const target = event.target as null | Element | Document;
+  const targetWindow =
+    target == null
+      ? null
+      : target.nodeType === 9
+      ? (target as Document).defaultView
+      : (target as Element).ownerDocument.defaultView;
+  const domSelection = getDOMSelection(targetWindow);
   if (domSelection === null) {
     return;
   }

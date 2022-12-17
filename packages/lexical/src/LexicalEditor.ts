@@ -880,7 +880,7 @@ export class LexicalEditor {
       rootElement.blur();
     }
 
-    const domSelection = getDOMSelection();
+    const domSelection = getDOMSelection(this._window);
 
     if (domSelection !== null) {
       domSelection.removeAllRanges();

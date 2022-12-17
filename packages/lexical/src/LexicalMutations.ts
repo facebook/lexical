@@ -82,7 +82,7 @@ function handleTextMutation(
   node: TextNode,
   editor: LexicalEditor,
 ): void {
-  const domSelection = getDOMSelection();
+  const domSelection = getDOMSelection(editor._window);
   let anchorOffset = null;
   let focusOffset = null;
 

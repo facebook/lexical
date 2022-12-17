@@ -147,7 +147,7 @@ export function getNearestEditorFromDOMNode(
     if (editor != null) {
       return editor;
     }
-    currentNode = currentNode.parentNode;
+    currentNode = getParentElement(currentNode);
   }
   return null;
 }
@@ -404,7 +404,7 @@ export function $getNearestNodeFromDOMNode(
     if (node !== null) {
       return node;
     }
-    dom = dom.parentNode;
+    dom = getParentElement(dom);
   }
   return null;
 }
@@ -514,7 +514,7 @@ function getNodeKeyFromDOM(
     if (key !== undefined) {
       return key;
     }
-    node = node.parentNode;
+    node = getParentElement(node);
   }
   return null;
 }
@@ -1142,9 +1142,9 @@ export function getElementByKeyOrThrow(
   return element;
 }
 
-export function getParentElement(element: HTMLElement): HTMLElement | null {
+export function getParentElement(node: Node): HTMLElement | null {
   const parentElement =
-    (element as HTMLSlotElement).assignedSlot || element.parentElement;
+    (node as HTMLSlotElement).assignedSlot || node.parentElement;
   return parentElement !== null && parentElement.nodeType === 11
     ? ((parentElement as unknown as ShadowRoot).host as HTMLElement)
     : parentElement;

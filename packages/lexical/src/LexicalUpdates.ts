@@ -537,7 +537,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   // Reconciliation has finished. Now update selection and trigger listeners.
   // ======
 
-  const domSelection = shouldSkipDOM ? null : getDOMSelection();
+  const domSelection = shouldSkipDOM ? null : getDOMSelection(editor._window);
 
   // Attempt to update the DOM selection, including focusing of the root element,
   // and scroll into view if needed.

@@ -62,7 +62,6 @@ import {
   errorOnReadOnly,
   getActiveEditor,
   getActiveEditorState,
-  internalGetActiveEditor,
   isCurrentlyReadOnlyMode,
   triggerCommandListeners,
   updateEditor,
@@ -551,10 +550,11 @@ export function getAnchorTextFromDOM(anchorNode: Node): null | string {
 
 export function $updateSelectedTextFromDOM(
   isCompositionEnd: boolean,
+  editor: LexicalEditor,
   data?: string,
 ): void {
   // Update the text content with the latest composition text
-  const domSelection = getDOMSelection();
+  const domSelection = getDOMSelection(editor._window);
   if (domSelection === null) {
     return;
   }
@@ -1449,11 +1449,6 @@ export function updateDOMBlockCursorElement(
   }
 }
 
-export function getDOMSelection(): null | Selection {
-  const editor = internalGetActiveEditor();
-  if (!CAN_USE_DOM) {
-    return null;
-  }
-  const win = (editor && editor._window) || window;
-  return win.getSelection();
+export function getDOMSelection(targetWindow: null | Window): null | Selection {
+  return !CAN_USE_DOM ? null : (targetWindow || window).getSelection();
 }

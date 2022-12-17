@@ -521,7 +521,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   const normalizedNodes = editor._normalizedNodes;
   const tags = editor._updateTags;
   const deferred = editor._deferred;
-  const dirtyLeavesCount = dirtyLeaves.size;
+  const nodeCount = pendingEditorState._nodeMap.size;
 
   if (needsUpdate) {
     editor._dirtyType = NO_DIRTY_NODES;
@@ -569,7 +569,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
           domSelection,
           tags,
           rootElement as HTMLElement,
-          dirtyLeavesCount,
+          nodeCount,
         );
       }
       updateDOMBlockCursorElement(

@@ -98,20 +98,23 @@ export function TreeView({
   );
 
   useEffect(() => {
-    setContent(
-      generateContent(
-        editor.getEditorState(),
-        editor._config,
-        editor._compositionKey,
-        editor._editable,
-      ),
-    );
-  }, [editor]);
+    const editorState = editor.getEditorState();
+    if (!showLimited && editorState._nodeMap.size > 1000) {
+      setContent(
+        generateContent(
+          editorState,
+          editor._config,
+          editor._compositionKey,
+          editor._editable,
+        ),
+      );
+    }
+  }, [editor, showLimited]);
 
   useEffect(() => {
     return mergeRegister(
-      editor.registerUpdateListener(({editorState, dirtyLeaves}) => {
-        if (!showLimited && dirtyLeaves.size > 1000) {
+      editor.registerUpdateListener(({editorState}) => {
+        if (!showLimited && editorState._nodeMap.size > 1000) {
           lastEditorStateRef.current = editorState;
           setIsLimited(true);
           if (!showLimited) {

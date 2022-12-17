@@ -18,8 +18,8 @@ import type {
   NodeSelection,
   RangeSelection,
 } from '../LexicalSelection';
-import type {Spread} from 'lexical';
 
+import {$createLineBreakNode, Spread} from 'lexical';
 import {IS_FIREFOX} from 'shared/environment';
 import invariant from 'shared/invariant';
 
@@ -436,43 +436,47 @@ export class TextNode extends LexicalNode {
 
   static importDOM(): DOMConversionMap | null {
     return {
-      '#text': (node: Node) => ({
+      '#text': () => ({
         conversion: convertTextDOMNode,
         priority: 0,
       }),
-      b: (node: Node) => ({
+      b: () => ({
         conversion: convertBringAttentionToElement,
         priority: 0,
       }),
-      code: (node: Node) => ({
+      br: () => ({
+        conversion: convertLineBreakToElement,
+        priority: 0,
+      }),
+      code: () => ({
         conversion: convertTextFormatElement,
         priority: 0,
       }),
-      em: (node: Node) => ({
+      em: () => ({
         conversion: convertTextFormatElement,
         priority: 0,
       }),
-      i: (node: Node) => ({
+      i: () => ({
         conversion: convertTextFormatElement,
         priority: 0,
       }),
-      span: (node: HTMLSpanElement) => ({
+      span: () => ({
         conversion: convertSpanElement,
         priority: 0,
       }),
-      strong: (node: Node) => ({
+      strong: () => ({
         conversion: convertTextFormatElement,
         priority: 0,
       }),
-      sub: (node: Node) => ({
+      sub: () => ({
         conversion: convertTextFormatElement,
         priority: 0,
       }),
-      sup: (node: Node) => ({
+      sup: () => ({
         conversion: convertTextFormatElement,
         priority: 0,
       }),
-      u: (node: Node) => ({
+      u: () => ({
         conversion: convertTextFormatElement,
         priority: 0,
       }),
@@ -867,6 +871,13 @@ function convertSpanElement(domNode: Node): DOMConversionOutput {
     node: null,
   };
 }
+
+function convertLineBreakToElement(): DOMConversionOutput {
+  return {
+    node: $createLineBreakNode(),
+  };
+}
+
 function convertBringAttentionToElement(domNode: Node): DOMConversionOutput {
   // domNode is a <b> since we matched it by nodeName
   const b = domNode as HTMLElement;
@@ -883,6 +894,7 @@ function convertBringAttentionToElement(domNode: Node): DOMConversionOutput {
     node: null,
   };
 }
+
 function convertTextDOMNode(
   domNode: Node,
   _parent?: Node,
@@ -897,6 +909,7 @@ function convertTextDOMNode(
   }
   return {node: $createTextNode(textContent)};
 }
+
 const nodeNameToTextFormat: Record<string, TextFormatType> = {
   code: 'code',
   em: 'italic',
@@ -906,6 +919,7 @@ const nodeNameToTextFormat: Record<string, TextFormatType> = {
   sup: 'superscript',
   u: 'underline',
 };
+
 function convertTextFormatElement(domNode: Node): DOMConversionOutput {
   const format = nodeNameToTextFormat[domNode.nodeName.toLowerCase()];
   if (format === undefined) {

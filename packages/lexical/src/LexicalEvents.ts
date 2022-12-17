@@ -17,7 +17,6 @@ import {
   IS_IOS,
   IS_SAFARI,
 } from 'shared/environment';
-import getDOMSelection from 'shared/getDOMSelection';
 
 import {
   $getPreviousSelection,
@@ -85,6 +84,7 @@ import {
   dispatchCommand,
   doesContainGrapheme,
   getAnchorTextFromDOM,
+  getDOMSelection,
   getDOMTextNode,
   getEditorsToPropagate,
   getNearestEditorFromDOMNode,

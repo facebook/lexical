@@ -9,10 +9,10 @@
     "text"
   ],
   "license": "MIT",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "main": "LexicalText.js",
   "peerDependencies": {
-    "lexical": "0.7.1"
+    "lexical": "0.7.2"
   },
   "repository": {
     "type": "git",

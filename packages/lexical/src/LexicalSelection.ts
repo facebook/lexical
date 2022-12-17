@@ -13,7 +13,6 @@ import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextFormatType} from './nodes/LexicalTextNode';
 
 import {IS_CHROME} from 'shared/environment';
-import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
 
 import {
@@ -58,6 +57,7 @@ import {
   $isTokenOrSegmented,
   $setCompositionKey,
   doesContainGrapheme,
+  getDOMSelection,
   getDOMTextNode,
   getElementByKeyOrThrow,
   getNodeFromDOM,
@@ -2029,8 +2029,6 @@ function moveNativeSelection(
   direction: 'backward' | 'forward' | 'left' | 'right',
   granularity: 'character' | 'word' | 'lineboundary',
 ): void {
-  // @ts-expect-error Selection.modify() method applies a change to the current selection or cursor position,
-  // but is still non-standard in some browsers.
   domSelection.modify(alter, direction, granularity);
 }
 

@@ -458,6 +458,7 @@ export function internalGetRoot(editorState: EditorState): RootNode {
 export function $setSelection(
   selection: null | RangeSelection | NodeSelection | GridSelection,
 ): void {
+  errorOnReadOnly();
   const editorState = getActiveEditorState();
   if (selection !== null) {
     if (__DEV__) {

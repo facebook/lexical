@@ -257,6 +257,12 @@ function createTextInnerDOM(
   }
 }
 
+function wrapElementWith(element: HTMLElement, tag: string): HTMLElement {
+  const el = document.createElement(tag);
+  el.appendChild(element);
+  return el;
+}
+
 /** @noInheritDoc */
 export class TextNode extends LexicalNode {
   __text: string;
@@ -497,26 +503,23 @@ export class TextNode extends LexicalNode {
   // for headless mode where people might use Lexical to generate
   // HTML content and not have the ability to use CSS classes.
   exportDOM(editor: LexicalEditor): DOMExportOutput {
-    const {element} = super.exportDOM(editor);
+    let {element} = super.exportDOM(editor);
 
+    // This is the only way to properly add support for most clients,
+    // even if it's semantically incorrect to have to resort to using
+    // <b>, <u>, <s>, <i> elements.
     if (element !== null) {
-      const style = element.style;
-
       if (this.hasFormat('bold')) {
-        style.fontWeight = 'bold';
+        element = wrapElementWith(element, 'b');
       }
       if (this.hasFormat('italic')) {
-        style.fontStyle = 'italic';
+        element = wrapElementWith(element, 'i');
       }
-      const isStrikethrough = this.hasFormat('underline');
+      if (this.hasFormat('strikethrough')) {
+        element = wrapElementWith(element, 's');
+      }
       if (this.hasFormat('underline')) {
-        if (isStrikethrough) {
-          style.textDecoration = 'underline line-through';
-        } else {
-          style.textDecoration = 'underline';
-        }
-      } else if (isStrikethrough) {
-        style.textDecoration = 'line-through';
+        element = wrapElementWith(element, 'u');
       }
     }
 

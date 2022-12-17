@@ -268,6 +268,10 @@ function convertListNode(domNode: Node): DOMConversionOutput {
   if (nodeName === 'ol') {
     node = $createListNode('number');
   } else if (nodeName === 'ul') {
+    // @ts-ignore-next-line this prop might exist
+    if (domNode.__lexicalListType === 'check') {
+      node = $createListNode('check');
+    }
     node = $createListNode('bullet');
   }
 

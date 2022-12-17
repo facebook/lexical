@@ -518,7 +518,9 @@ function updateListItemChecked(
 }
 
 function convertListItemElement(domNode: Node): DOMConversionOutput {
-  return {node: $createListItemNode()};
+  // @ts-ignore-next-line
+  const checked = domNode['aria-checked'] === 'true';
+  return {node: $createListItemNode(checked)};
 }
 
 export function $createListItemNode(checked?: boolean): ListItemNode {

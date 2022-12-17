@@ -6,10 +6,15 @@
  *
  */
 
-import type {EditorConfig, TextNodeThemeClasses} from '../LexicalEditor';
+import type {
+  EditorConfig,
+  LexicalEditor,
+  TextNodeThemeClasses,
+} from '../LexicalEditor';
 import type {
   DOMConversionMap,
   DOMConversionOutput,
+  DOMExportOutput,
   NodeKey,
   SerializedLexicalNode,
 } from '../LexicalNode';
@@ -486,6 +491,22 @@ export class TextNode extends LexicalNode {
     node.setMode(serializedNode.mode);
     node.setStyle(serializedNode.style);
     return node;
+  }
+
+  exportDOM(editor: LexicalEditor): DOMExportOutput {
+    const {element} = super.exportDOM(editor);
+
+    if (
+      element !== null &&
+      this.hasFormat('bold') &&
+      this.hasFormat('italic')
+    ) {
+      element.style.fontStyle = 'italic';
+    }
+
+    return {
+      element,
+    };
   }
 
   exportJSON(): SerializedTextNode {

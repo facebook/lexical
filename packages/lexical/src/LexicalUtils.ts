@@ -1450,7 +1450,7 @@ export function updateDOMBlockCursorElement(
 
 export function getDOMSelection(): null | Selection {
   const editor = internalGetActiveEditor();
-  if (CAN_USE_DOM) {
+  if (!CAN_USE_DOM) {
     return null;
   }
   const win = (editor && editor._window) || window;

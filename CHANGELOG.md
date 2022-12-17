@@ -1,3 +1,25 @@
+## v0.7.2 (2022-12-17)
+
+- Use the actual node count rather than the dirty node count (#3569) Dominic Gannaway
+- Utilize getParentElement internally when traversing up the DOM tree (#3576) Dominic Gannaway
+- check read only flag during $setSelection (#3572) yf-yang
+- Fix iframe selection issues (#3573) Dominic Gannaway
+- Fix left arrow selection on list nodes (#3575) Dominic Gannaway
+- fix: deleting forward on the last decorate node (#3568) Oleksii Piatetskyi
+- Image gets stuck in resizing state fix (#3562) (#3565) Sharat Chandar M
+- Fix flow again (#3566) Acy Watson
+- Fix placeholder text for custom Paragraph Nodes (#3557) moy2010
+- Disable lint rule in composition test (#3552) Acy Watson
+- Add $wrapNodes back to flow (#3551) Acy Watson
+- [Playground] Support clicking on links with middle mouse button (#3547) zeitstein
+- Fix bug 3535 (#3537) lizhu68
+- docs: typo fix (#3544) Bryan Ricker
+- Don't throw if getPreviousSiblings can't find a parent (#3543) Acy Watson
+- Change mousedown event type to fix selection Chromium bug on Android (#3541) John Flockton
+- Various fixes in $wrapNodes (#3234) EgonBolton
+- Add missing changelog entry to 0.7 (#3533) Dominic Gannaway
+- Remove VERSION (#3531) John Flockton
+
 ## v0.7.1 (2022-12-11)
 
 Contains several small bug fixes from the Lexical 0.7.0 release.

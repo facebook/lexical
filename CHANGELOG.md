@@ -1,3 +1,11 @@
+## v0.7.3 (2022-12-18)
+
+- Fix bold italic exportDOM (#3584) Dominic Gannaway
+- Fix copy/paste issue with line breaks within paragraphs  (#3581) John Flockton
+- Fix various collaboration cursor bugs (#3582) Dominic Gannaway
+- Update PlaygroundEditorTheme.css (#3553) pavan-reddy-28
+- More extensive fixes for Lexical in iframes (#3578) Dominic Gannaway
+
 ## v0.7.2 (2022-12-17)
 
 - Use the actual node count rather than the dirty node count (#3569) Dominic Gannaway

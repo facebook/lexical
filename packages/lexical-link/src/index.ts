@@ -22,6 +22,7 @@ import type {
 
 import {addClassNamesToElement} from '@lexical/utils';
 import {
+  $applyNodeReplacement,
   $getSelection,
   $isElementNode,
   $isRangeSelection,
@@ -249,7 +250,7 @@ export function $createLinkNode(
   url: string,
   attributes?: LinkAttributes,
 ): LinkNode {
-  return new LinkNode(url, attributes);
+  return $applyNodeReplacement(new LinkNode(url, attributes));
 }
 
 export function $isLinkNode(

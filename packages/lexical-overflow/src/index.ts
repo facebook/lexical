@@ -16,7 +16,7 @@ import type {
   Spread,
 } from 'lexical';
 
-import {ElementNode} from 'lexical';
+import {$applyNodeReplacement, ElementNode} from 'lexical';
 
 export type SerializedOverflowNode = Spread<
   {
@@ -83,7 +83,7 @@ export class OverflowNode extends ElementNode {
 }
 
 export function $createOverflowNode(): OverflowNode {
-  return new OverflowNode();
+  return $applyNodeReplacement(new OverflowNode());
 }
 
 export function $isOverflowNode(

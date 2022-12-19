@@ -9,6 +9,7 @@
 import type {
   EditorConfig,
   LexicalEditor,
+  Spread,
   TextNodeThemeClasses,
 } from '../LexicalEditor';
 import type {
@@ -24,7 +25,6 @@ import type {
   RangeSelection,
 } from '../LexicalSelection';
 
-import {$createLineBreakNode, Spread} from 'lexical';
 import {IS_FIREFOX} from 'shared/environment';
 import invariant from 'shared/invariant';
 
@@ -63,6 +63,7 @@ import {
   internalMarkSiblingsAsDirty,
   toggleTextFormatType,
 } from '../LexicalUtils';
+import {$createLineBreakNode} from './LexicalLineBreakNode';
 
 export type SerializedTextNode = Spread<
   {

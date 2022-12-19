@@ -330,7 +330,7 @@ export function $createAutoLinkNode(
   url: string,
   attributes?: LinkAttributes,
 ): AutoLinkNode {
-  return new AutoLinkNode(url, attributes);
+  return $applyNodeReplacement(new AutoLinkNode(url, attributes));
 }
 
 export function $isAutoLinkNode(

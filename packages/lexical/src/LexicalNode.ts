@@ -645,7 +645,7 @@ export class LexicalNode {
     const prevKey = self.__prev;
     const nextKey = self.__next;
     const parentKey = self.__parent;
-    removeNode(self, false);
+    removeNode(self, false, true);
 
     if (prevSibling === null) {
       writableParent.__first = key;

@@ -95,7 +95,8 @@
     "update-changelog": "node ./scripts/npm/update-changelog",
     "update-version": "node ./scripts/updateVersion",
     "postversion": "git checkout -b $npm_package_version && npm install && npm run update-version && npm run update-changelog && git add -A && git commit -m v${npm_package_version} && git tag -a v${npm_package_version} -m v${npm_package_version}",
-    "release": "npm run prepare-release && node ./scripts/npm/release.js"
+    "release": "npm run prepare-release && node ./scripts/npm/release.js",
+    "size": "npm run build && size-limit"
   },
   "devDependencies": {
     "@ampproject/rollup-plugin-closure-compiler": "^0.27.0",
@@ -109,6 +110,7 @@
     "@rollup/plugin-json": "^5.0.2",
     "@rollup/plugin-node-resolve": "^13.0.2",
     "@rollup/plugin-replace": "^3.0.0",
+    "@size-limit/preset-big-lib": "^8.1.0",
     "@types/jest": "^27.5.0",
     "@types/node": "^17.0.31",
     "@types/prismjs": "^1.26.0",
@@ -154,6 +156,7 @@
     "prettier-plugin-organize-attributes": "^0.0.5",
     "react-test-renderer": "^17.0.2",
     "rollup": "^2.75.5",
+    "size-limit": "^8.1.0",
     "tmp": "^0.2.1",
     "ts-jest": "^28.0.2",
     "ts-node": "^10.9.1",
@@ -170,5 +173,16 @@
   "dependencies": {
     "@types/katex": "^0.14.0",
     "yjs": "^13.5.42"
-  }
+  },
+  "size-limit": [
+    {
+      "path": "packages/lexical/dist/Lexical.js"
+    },
+    {
+      "path": "packages/lexical-rich-text/dist/LexicalRichText.js"
+    },
+    {
+      "path": "packages/lexical-plain-text/dist/LexicalPlainText.js"
+    }
+  ]
 }

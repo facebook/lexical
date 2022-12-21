@@ -11,6 +11,7 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
 import React, {useMemo} from 'react';
 
+// @ts-ignore - File does exist
 import codes from '../../../../../../scripts/error-codes/codes.json';
 import styles from './styles.module.css';
 

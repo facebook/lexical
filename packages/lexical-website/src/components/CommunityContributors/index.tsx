@@ -98,7 +98,7 @@ export default function CommunityContributors() {
             <div className="avatar avatar--vertical text--center">
               <div>
                 <img
-                  class="avatar__photo avatar__photo--xl"
+                  className="avatar__photo avatar__photo--xl"
                   alt={name}
                   src={imageUrl}
                 />

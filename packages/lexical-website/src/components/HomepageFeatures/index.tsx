@@ -6,6 +6,8 @@
  *
  */
 
+/* eslint-disable @typescript-eslint/no-var-requires */
+
 import Translate from '@docusaurus/Translate';
 import clsx from 'clsx';
 import React from 'react';
@@ -54,7 +56,13 @@ const FeatureList = [
   },
 ];
 
-function Feature({Svg, title, description}) {
+type FeatureProps = {
+  Svg: React.FC<{className: string; alt: string}>;
+  title: string;
+  description: React.ReactNode;
+};
+
+function Feature({Svg, title, description}: FeatureProps) {
   return (
     <div>
       <div className="text--center">

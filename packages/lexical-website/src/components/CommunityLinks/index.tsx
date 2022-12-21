@@ -6,6 +6,8 @@
  *
  */
 
+/* eslint-disable @typescript-eslint/no-var-requires */
+
 import Link from '@docusaurus/Link';
 import Translate from '@docusaurus/Translate';
 import clsx from 'clsx';

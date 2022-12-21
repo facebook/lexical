@@ -12,8 +12,8 @@ import React from 'react';
 
 export default function CommunityHowToContribute() {
   return (
-    <div class="container">
-      <div class="row">
+    <div className="container">
+      <div className="row">
         <h2>
           <Translate
             id="pages.community.howTo.howToSubHeader"
@@ -67,10 +67,10 @@ export default function CommunityHowToContribute() {
             description="Phrase inviting users to join us as contributors after agreeing to the guidelines">
             Once you've read over those, we invite you to join us on the
           </Translate>{' '}
-          <Link
-            to="https://github.com/facebook/lexical"
-            description="Hyperlink to GitHub repo">
-            <Translate id="pages.community.contributors.joinUsRepoLink">
+          <Link to="https://github.com/facebook/lexical">
+            <Translate
+              id="pages.community.contributors.joinUsRepoLink"
+              description="Hyperlink to GitHub repo">
               Lexical GitHub repository
             </Translate>
           </Link>

@@ -2577,6 +2577,80 @@ test.describe('CopyAndPaste', () => {
     );
   });
 
+  test('HTML Copy + paste a checklist', async ({page, isPlainText}) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    const clipboard = {
+      'text/html': `<meta charset='utf-8'><ul __lexicallisttype="check"><li role="checkbox" tabindex="-1" aria-checked="false" value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked"><span>Hello</span></li><li role="checkbox" tabindex="-1" aria-checked="false" value="2" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked"><span>world</span></li></ul>`,
+    };
+
+    await pasteFromClipboard(page, clipboard);
+
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            role="checkbox"
+            tabindex="-1"
+            aria-checked="false"
+            value="1"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">Hello</span>
+          </li>
+          <li
+            role="checkbox"
+            tabindex="-1"
+            aria-checked="false"
+            value="2"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">world</span>
+          </li>
+        </ul>
+      `,
+    );
+
+    await clearEditor(page);
+    await focusEditor(page);
+
+    // Ensure we preserve checked status.
+    clipboard[
+      'text/html'
+    ] = `<meta charset='utf-8'><ul __lexicallisttype="check"><li role="checkbox" tabindex="-1" aria-checked="true" value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemChecked"><span>Hello</span></li><li role="checkbox" tabindex="-1" aria-checked="false" value="2" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked"><span>world</span></li></ul>`;
+
+    await pasteFromClipboard(page, clipboard);
+
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            role="checkbox"
+            tabindex="-1"
+            aria-checked="true"
+            value="1"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemChecked PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">Hello</span>
+          </li>
+          <li
+            role="checkbox"
+            tabindex="-1"
+            aria-checked="false"
+            value="2"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">world</span>
+          </li>
+        </ul>
+      `,
+    );
+  });
+
   test('HTML Copy + paste a code block with BR', async ({
     page,
     isPlainText,

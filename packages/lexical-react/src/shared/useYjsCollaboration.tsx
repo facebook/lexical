@@ -8,7 +8,7 @@
 
 import type {Binding} from '@lexical/yjs';
 import type {LexicalEditor} from 'lexical';
-import type {Doc, Transaction, YEvent} from 'yjs';
+import {Doc, Transaction, UndoManager, YEvent} from 'yjs';
 
 import {mergeRegister} from '@lexical/utils';
 import {
@@ -104,8 +104,9 @@ export function useYjsCollaboration(
       events: Array<YEvent<any>>,
       transaction: Transaction,
     ) => {
+      const isFromUndoManger = transaction.origin instanceof UndoManager
       if (transaction.origin !== binding) {
-        syncYjsChangesToLexical(binding, provider, events);
+        syncYjsChangesToLexical(binding, provider, events, isFromUndoManger);
       }
     };
 

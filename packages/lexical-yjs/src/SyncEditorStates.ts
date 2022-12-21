@@ -84,6 +84,7 @@ export function syncYjsChangesToLexical(
   binding: Binding,
   provider: WebsocketProvider,
   events: Array<YEvent<YText>>,
+  isFromUndoManger: boolean
 ): void {
   const editor = binding.editor;
   const currentEditorState = editor._editorState;
@@ -161,7 +162,7 @@ export function syncYjsChangesToLexical(
         syncCursorPositions(binding, provider);
       },
       skipTransforms: true,
-      tag: 'collaboration',
+      tag: isFromUndoManger ? 'collaboration-history' : 'collaboration',
     },
   );
 }

@@ -1,3 +1,9 @@
+## v0.7.4 (2022-12-20)
+
+- Add missing usages of `$applyNodeReplacement` (#3592) John Flockton
+- Fix import issue with line break nodes (#3593) John Flockton
+- Allow LinkNode to be replaced by custom node, fix bug in #3367 (#3588) Nhan Ho
+
 ## v0.7.3 (2022-12-18)
 
 - Fix bold italic exportDOM (#3584) Dominic Gannaway

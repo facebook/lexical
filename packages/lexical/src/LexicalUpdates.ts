@@ -21,7 +21,7 @@ import type {LexicalNode, SerializedLexicalNode} from './LexicalNode';
 
 import invariant from 'shared/invariant';
 
-import {$isElementNode, $isTextNode} from '.';
+import {$isElementNode, $isTextNode, SELECTION_CHANGE_COMMAND} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
 import {resetEditor} from './LexicalEditor';
 import {
@@ -596,7 +596,19 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
       dirtyLeaves,
     );
   }
-
+  let selectionChanged = false;
+  if (!$isRangeSelection(pendingSelection) && pendingSelection !== null) {
+    if (currentSelection === null) {
+      if (pendingSelection !== null) {
+        selectionChanged = true;
+      }
+    } else if (!currentSelection.is(pendingSelection)) {
+      selectionChanged = true;
+    }
+  }
+  if (selectionChanged) {
+    editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+  }
   /**
    * Capture pendingDecorators after garbage collecting detached decorators
    */

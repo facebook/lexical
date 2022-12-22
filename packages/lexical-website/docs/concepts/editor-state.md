@@ -87,7 +87,7 @@ Here's an example of how you can update an editor instance:
 
 ```js
 import {$getRoot, $getSelection} from 'lexical';
-import {$createParagraphNode} from 'lexical/PargraphNode';
+import {$createParagraphNode} from 'lexical';
 
 // Inside the `editor.update` you can use special $ prefixed helper functions.
 // These functions cannot be used outside the closure, and will error if you try.

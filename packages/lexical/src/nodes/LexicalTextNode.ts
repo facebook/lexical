@@ -968,7 +968,7 @@ function convertTextFormatElement(domNode: Node): DOMConversionOutput {
   }
   return {
     forChild: (lexicalNode) => {
-      if ($isTextNode(lexicalNode)) {
+      if ($isTextNode(lexicalNode) && !lexicalNode.hasFormat(format)) {
         lexicalNode.toggleFormat(format);
       }
 

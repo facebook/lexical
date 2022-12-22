@@ -338,6 +338,7 @@ pre::-webkit-scrollbar-thumb {
   line-height: 16px;
   background-size: contain;
   background-repeat: no-repeat;
+  background-position: center;
 }
 
 .component-picker-menu {

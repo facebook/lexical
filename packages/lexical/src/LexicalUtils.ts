@@ -107,11 +107,20 @@ export function $isSelectionCapturedInDecorator(node: Node): boolean {
 }
 
 export function isSelectionCapturedInDecoratorInput(anchorDOM: Node): boolean {
-  const activeElement = document.activeElement;
-  const nodeName = activeElement !== null ? activeElement.nodeName : null;
+  const activeElement = document.activeElement as HTMLElement;
+
+  if (activeElement === null) {
+    return false;
+  }
+  const nodeName = activeElement.nodeName;
+
   return (
     $isDecoratorNode($getNearestNodeFromDOMNode(anchorDOM)) &&
-    (nodeName === 'INPUT' || nodeName === 'TEXTAREA')
+    (nodeName === 'INPUT' ||
+      nodeName === 'TEXTAREA' ||
+      (activeElement.contentEditable === 'true' &&
+        // @ts-ignore iternal field
+        activeElement.__lexicalEditor == null))
   );
 }
 

@@ -1,3 +1,21 @@
+## v0.7.5 (2022-12-23)
+
+- selectionChange fix (#3623) Dominic Gannaway
+- Add docs for root listener (#3625) Acy Watson
+- Add docs re: working with DOM Events (#3624) Acy Watson
+- background-repeat: no-repeat; (#3621) Aloento
+- Add logic in isSelectionCapturedInDecoratorInput for contentEditables (#3622) Dominic Gannaway
+- Fix bug in convertTextFormatElement (#3618) Dominic Gannaway
+- Add size limit report (#3600) Maksim Horbachevsky
+- Allow focus/blur propagation in useYjsFocusTracking (#3617) Dominic Gannaway
+- Add missing changelog for 0.7.4 (#3598) John Flockton
+- Fix getSelectedNode logic for forward selection (#3609) moy2010
+- Fix typo in documentation (#3614) Jeremy Bernier
+- Fix bad rebase (#3607) Dominic Gannaway
+- Escape plus signs of the tag in MarkdownImport, fixes #3596 (#3599) Teemu Pöntelin
+- Add HTML paste support for checklists (#3579) Acy Watson
+- Preserve empty parent during replacement (#3595) Maksim Horbachevsky
+
 ## v0.7.4 (2022-12-20)
 
 - Add missing usages of `$applyNodeReplacement` (#3592) John Flockton

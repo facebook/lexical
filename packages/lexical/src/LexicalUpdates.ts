@@ -598,11 +598,8 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   }
   let selectionChanged = false;
   if (!$isRangeSelection(pendingSelection) && pendingSelection !== null) {
-    if (currentSelection === null) {
-      selectionChanged = true;
-    } else if (!currentSelection.is(pendingSelection)) {
-      selectionChanged = true;
-    }
+    selectionChanged =
+      currentSelection === null || !currentSelection.is(pendingSelection);
   }
   if (selectionChanged) {
     editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);

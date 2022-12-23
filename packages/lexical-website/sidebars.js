@@ -47,6 +47,7 @@ const sidebars = {
         'concepts/selection',
         'concepts/read-only',
         'concepts/serialization',
+        'concepts/dom-events',
       ],
       label: 'Concepts',
       type: 'category',

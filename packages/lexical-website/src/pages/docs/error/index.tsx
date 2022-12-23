@@ -9,7 +9,7 @@
 import BrowserOnly from '@docusaurus/BrowserOnly';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
-import React, {useMemo} from 'react';
+import * as React from 'react';
 
 // @ts-ignore - File does exist
 import codes from '../../../../../../scripts/error-codes/codes.json';
@@ -42,7 +42,7 @@ export default function ErrorCodePage() {
 }
 
 function ErrorFinder() {
-  const error = useMemo(() => {
+  const error = React.useMemo(() => {
     const code = new URLSearchParams(window.location.search).get('code');
     if (code === null) {
       return null;

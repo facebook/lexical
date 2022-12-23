@@ -12,7 +12,7 @@ import HomepageExamples from '@site/src/components/HomepageExamples';
 import HomepageFeatures from '@site/src/components/HomepageFeatures';
 import Layout from '@theme/Layout';
 import clsx from 'clsx';
-import React from 'react';
+import * as React from 'react';
 
 import styles from './styles.module.css';
 

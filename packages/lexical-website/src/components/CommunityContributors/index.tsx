@@ -7,7 +7,7 @@
  */
 
 import Translate from '@docusaurus/Translate';
-import React from 'react';
+import * as React from 'react';
 
 const CONTRIBUTORS = [
   {

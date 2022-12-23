@@ -11,7 +11,7 @@
 import Link from '@docusaurus/Link';
 import Translate from '@docusaurus/Translate';
 import clsx from 'clsx';
-import React from 'react';
+import * as React from 'react';
 
 import ImageSwitcher from '../ImageSwitcher';
 import styles from './styles.module.css';

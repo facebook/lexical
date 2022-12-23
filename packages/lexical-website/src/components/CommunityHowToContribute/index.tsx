@@ -8,7 +8,7 @@
 
 import Link from '@docusaurus/Link';
 import Translate from '@docusaurus/Translate';
-import React from 'react';
+import * as React from 'react';
 
 export default function CommunityHowToContribute() {
   return (

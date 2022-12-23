@@ -7,7 +7,7 @@
  */
 
 import {useColorMode} from '@docusaurus/theme-common';
-import React from 'react';
+import * as React from 'react';
 
 type ImageSwitcherProps = {
   light: React.FC;

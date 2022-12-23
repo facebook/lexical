@@ -10,7 +10,7 @@
 
 import Translate from '@docusaurus/Translate';
 import clsx from 'clsx';
-import React from 'react';
+import * as React from 'react';
 
 import styles from './styles.module.css';
 

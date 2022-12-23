@@ -9,7 +9,7 @@
 import Link from '@docusaurus/Link';
 import * as Tabs from '@radix-ui/react-tabs';
 import clsx from 'clsx';
-import React, {useState} from 'react';
+import * as React from 'react';
 
 import styles from './styles.module.css';
 
@@ -58,7 +58,7 @@ const EXAMPLES = [
 ];
 
 export default function HomepageExamples() {
-  const [activeItemID, setActiveItemID] = useState(EXAMPLES[0].id);
+  const [activeItemID, setActiveItemID] = React.useState(EXAMPLES[0].id);
 
   return (
     <Tabs.Root

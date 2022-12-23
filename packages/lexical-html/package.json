@@ -8,10 +8,10 @@
     "html"
   ],
   "license": "MIT",
-  "version": "0.7.4",
+  "version": "0.7.5",
   "main": "LexicalHtml.js",
   "peerDependencies": {
-    "lexical": "0.7.4"
+    "lexical": "0.7.5"
   },
   "repository": {
     "type": "git",
@@ -19,6 +19,6 @@
     "directory": "packages/lexical-html"
   },
   "dependencies": {
-    "@lexical/selection": "0.7.4"
+    "@lexical/selection": "0.7.5"
   }
 }

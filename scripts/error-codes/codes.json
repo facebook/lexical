@@ -97,5 +97,9 @@
   "95": "splice: expected offset to be greater than zero",
   "96": "Expected node %s to have a last child.",
   "97": "$initializeNode failed. Ensure node has been registered to the editor. You can do this by passing the node class via the \"nodes\" array in the editor config.",
-  "98": "$initializeNode failed. Ensure replacement node is a subclass of the original node."
+  "98": "$initializeNode failed. Ensure replacement node is a subclass of the original node.",
+  "99": "Only element or decorator nodes can be inserted in to the root node",
+  "100": "splice: sibling not found",
+  "101": "createChildrenArray: node does not exist in nodeMap",
+  "102": "Can not call $splitNode() on root element"
 }

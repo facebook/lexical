@@ -596,12 +596,11 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
       dirtyLeaves,
     );
   }
-  let selectionChanged = false;
-  if (!$isRangeSelection(pendingSelection) && pendingSelection !== null) {
-    selectionChanged =
-      currentSelection === null || !currentSelection.is(pendingSelection);
-  }
-  if (selectionChanged) {
+  if (
+    !$isRangeSelection(pendingSelection) &&
+    pendingSelection !== null &&
+    (currentSelection === null || !currentSelection.is(pendingSelection))
+  ) {
     editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
   }
   /**

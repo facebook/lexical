@@ -599,9 +599,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   let selectionChanged = false;
   if (!$isRangeSelection(pendingSelection) && pendingSelection !== null) {
     if (currentSelection === null) {
-      if (pendingSelection !== null) {
-        selectionChanged = true;
-      }
+      selectionChanged = true;
     } else if (!currentSelection.is(pendingSelection)) {
       selectionChanged = true;
     }

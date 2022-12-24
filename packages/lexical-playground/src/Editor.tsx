@@ -17,6 +17,7 @@ import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {ListPlugin} from '@lexical/react/LexicalListPlugin';
 import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
+import {TabIndentationPlugin} from '@lexical/react/LexicalTabIndentationPlugin';
 import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
 import * as React from 'react';
 import {useState} from 'react';
@@ -188,6 +189,7 @@ export default function Editor(): JSX.Element {
             <EquationsPlugin />
             <ExcalidrawPlugin />
             <TabFocusPlugin />
+            <TabIndentationPlugin />
             <CollapsiblePlugin />
             {floatingAnchorElem && (
               <>

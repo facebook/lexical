@@ -171,6 +171,9 @@
       "@lexical/react/LexicalCheckListPlugin": [
         "./packages/lexical-react/src/LexicalCheckListPlugin.tsx"
       ],
+      "@lexical/react/LexicalTabIndentationPlugin": [
+        "./packages/lexical-react/src/LexicalTabIndentationPlugin.tsx"
+      ],
 
       "@lexical/dragon/LexicalDragon": ["./packages/lexical-dragon/src/"],
       "@lexical/history/LexicalHistory": ["./packages/lexical-history/src/"],

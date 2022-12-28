@@ -41,12 +41,14 @@ function utf8Length(text: string) {
 
 export function CharacterLimitPlugin({
   charset = 'UTF-16',
+  maxLength = CHARACTER_LIMIT,
 }: {
   charset: 'UTF-8' | 'UTF-16';
+  maxLength: number;
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
 
-  const [remainingCharacters, setRemainingCharacters] = useState(0);
+  const [remainingCharacters, setRemainingCharacters] = useState(maxLength);
 
   const characterLimitProps = useMemo(
     () => ({
@@ -64,7 +66,7 @@ export function CharacterLimitPlugin({
     [charset],
   );
 
-  useCharacterLimit(editor, CHARACTER_LIMIT, characterLimitProps);
+  useCharacterLimit(editor, maxLength, characterLimitProps);
 
   return (
     <span

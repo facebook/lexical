@@ -81,9 +81,7 @@ export function ContentEditable({
       aria-multiline={ariaMultiline}
       aria-owns={!isEditable ? undefined : ariaOwns}
       aria-required={ariaRequired}
-      autoCapitalize={
-        autoCapitalize !== undefined ? String(autoCapitalize) : undefined
-      }
+      autoCapitalize={autoCapitalize}
       className={className}
       contentEditable={isEditable}
       data-testid={testid}

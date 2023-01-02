@@ -2,6 +2,7 @@
   "recommendations": [
     "dbaeumer.vscode-eslint",
     "esbenp.prettier-vscode",
-    "NuclleaR.vscode-extension-auto-import"
+    "NuclleaR.vscode-extension-auto-import",
+    "flowtype.flow-for-vscode"
   ]
 }

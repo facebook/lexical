@@ -1670,8 +1670,8 @@ describe('LexicalEditor tests', () => {
       const paragraph = $createParagraphNode();
       const paragraph2 = $createParagraphNode();
       root.append(paragraph);
-      paragraph.append($createTextNode('bar'))
-      paragraph2.append($createTextNode('yar'))
+      paragraph.append($createTextNode('bar'));
+      paragraph2.append($createTextNode('yar'));
       paragraph.insertAfter(paragraph2);
     });
 
@@ -1683,8 +1683,8 @@ describe('LexicalEditor tests', () => {
       const paragraph = $createParagraphNode();
       const paragraph2 = $createParagraphNode();
       root.getLastChild().insertAfter(paragraph);
-      paragraph.append($createTextNode('bar2'))
-      paragraph2.append($createTextNode('yar2'))
+      paragraph.append($createTextNode('bar2'));
+      paragraph2.append($createTextNode('yar2'));
       paragraph.insertAfter(paragraph2);
     });
 

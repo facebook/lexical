@@ -678,34 +678,40 @@ export class LexicalEditor {
     };
   }
 
+  private registerNodeTransformToKlass<T extends LexicalNode>(
+    klass: Klass<T>,
+    listener: Transform<T>,
+  ): RegisteredNode {
+    const type = klass.getType();
+
+    const registeredNode = this._nodes.get(type);
+
+    if (registeredNode === undefined) {
+      invariant(
+        false,
+        'Node %s has not been registered. Ensure node has been passed to createEditor.',
+        klass.name,
+      );
+    }
+    const transforms = registeredNode.transforms;
+    transforms.add(listener as Transform<LexicalNode>);
+
+    return registeredNode;
+  }
+
   registerNodeTransform<T extends LexicalNode>(
     klass: Klass<T>,
     listener: Transform<T>,
   ): () => void {
-    const register = <U extends LexicalNode>(kls: Klass<U>): RegisteredNode => {
-      const type = kls.getType();
+    const registeredNode = this.registerNodeTransformToKlass(klass, listener);
+    const registeredNodes = [registeredNode];
 
-      const registeredNode = this._nodes.get(type);
-
-      if (registeredNode === undefined) {
-        invariant(
-          false,
-          'Node %s has not been registered. Ensure node has been passed to createEditor.',
-          kls.name,
-        );
-      }
-      const transforms = registeredNode.transforms;
-      transforms.add(listener as Transform<LexicalNode>);
-
-      return registeredNode;
-    };
-
-    const registered = register(klass);
-    const registeredNodes = [registered];
-
-    const replaceWithKlass = registered.replaceWithKlass;
+    const replaceWithKlass = registeredNode.replaceWithKlass;
     if (replaceWithKlass != null) {
-      const registeredReplaceWithNode = register(replaceWithKlass);
+      const registeredReplaceWithNode = this.registerNodeTransformToKlass(
+        replaceWithKlass,
+        listener as Transform<LexicalNode>,
+      );
       registeredNodes.push(registeredReplaceWithNode);
     }
 

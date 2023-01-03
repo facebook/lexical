@@ -176,6 +176,9 @@ function createNode(
       const endIndex = childrenSize - 1;
       const children = createChildrenArray(node, activeNextNodeMap);
       createChildrenWithDirection(children, endIndex, node, dom);
+      if ($textContentRequiresDoubleLinebreakAtEnd(node)) {
+        subTreeTextContent += DOUBLE_LINE_BREAK;
+      }
     }
     const format = node.__format;
 
@@ -613,7 +616,7 @@ function reconcileNode(
     $isRootNode(nextNode) &&
     nextNode.__cachedText !== editorTextContent
   ) {
-    // Cache the latest text content.
+        // Cache the latest text content.
     nextNode = nextNode.getWritable();
     nextNode.__cachedText = editorTextContent;
   }

@@ -176,6 +176,11 @@ function createNode(
       const endIndex = childrenSize - 1;
       const children = createChildrenArray(node, activeNextNodeMap);
       createChildrenWithDirection(children, endIndex, node, dom);
+      if ($textContentRequiresDoubleLinebreakAtEnd(node)) {
+        subTreeTextContent += DOUBLE_LINE_BREAK;
+        // @ts-expect-error: internal field
+        dom.__lexicalTextContent = subTreeTextContent;
+      }
     }
     const format = node.__format;
 

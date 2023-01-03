@@ -1663,6 +1663,33 @@ describe('LexicalEditor tests', () => {
 
     expect(fn).toHaveBeenCalledTimes(2);
     expect(fn).toHaveBeenCalledWith('foobar\n');
+
+    await editor.update(() => {
+      const root = $getRoot();
+      root.clear();
+      const paragraph = $createParagraphNode();
+      const paragraph2 = $createParagraphNode();
+      root.append(paragraph);
+      paragraph.append($createTextNode('bar'));
+      paragraph2.append($createTextNode('yar'));
+      paragraph.insertAfter(paragraph2);
+    });
+
+    expect(fn).toHaveBeenCalledTimes(3);
+    expect(fn).toHaveBeenCalledWith('bar\n\nyar');
+
+    await editor.update(() => {
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+      const paragraph2 = $createParagraphNode();
+      root.getLastChild().insertAfter(paragraph);
+      paragraph.append($createTextNode('bar2'));
+      paragraph2.append($createTextNode('yar2'));
+      paragraph.insertAfter(paragraph2);
+    });
+
+    expect(fn).toHaveBeenCalledTimes(4);
+    expect(fn).toHaveBeenCalledWith('bar\n\nyar\n\nbar2\n\nyar2');
   });
 
   it('mutation listener', async () => {

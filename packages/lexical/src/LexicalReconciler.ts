@@ -616,7 +616,7 @@ function reconcileNode(
     $isRootNode(nextNode) &&
     nextNode.__cachedText !== editorTextContent
   ) {
-        // Cache the latest text content.
+    // Cache the latest text content.
     nextNode = nextNode.getWritable();
     nextNode.__cachedText = editorTextContent;
   }

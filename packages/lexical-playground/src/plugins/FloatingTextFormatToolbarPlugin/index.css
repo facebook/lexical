@@ -128,3 +128,9 @@
   background-color: #eee;
   margin: 0 4px;
 }
+
+@media (max-width: 1024px) {
+  .floating-text-format-popup button.insert-comment {
+    display: none;
+  }
+}

@@ -80,13 +80,19 @@ export type MenuRenderFn<TOption extends TypeaheadOption> = (
 
 const scrollIntoViewIfNeeded = (target: HTMLElement) => {
   const container = document.getElementById('typeahead-menu');
+
   if (container) {
-    const containerRect = container.getBoundingClientRect();
-    const targetRect = target.getBoundingClientRect();
-    if (targetRect.bottom > containerRect.bottom) {
+    const parentNode = target.parentNode as HTMLElement | null;
+
+    if (parentNode) {
+      const parentRect = parentNode.getBoundingClientRect();
+
+      if (parentRect.top + parentRect.height > window.innerHeight) {
+        parentNode.scrollIntoView(false);
+      }
+      parentNode.scrollTop = target.offsetTop - target.clientHeight;
+    } else {
       target.scrollIntoView(false);
-    } else if (targetRect.top < containerRect.top) {
-      target.scrollIntoView();
     }
   }
 };

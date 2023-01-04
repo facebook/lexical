@@ -369,7 +369,7 @@ function createTextFormatTransformersIndex(
   for (const transformer of textTransformers) {
     const {tag} = transformer;
     transformersByTag[tag] = transformer;
-    const tagRegExp = tag.replace(/(\*|\^)/g, '\\$1');
+    const tagRegExp = tag.replace(/(\*|\^|\+)/g, '\\$1');
     openTagsRegExp.push(tagRegExp);
 
     if (IS_SAFARI || IS_IOS) {

@@ -9,7 +9,8 @@
 import type {LexicalEditor, LexicalNode} from 'lexical';
 
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
-import {$getRoot, $isElementNode} from 'lexical';
+import {$getRoot, $isElementNode, $setSelection} from 'lexical';
+import {$createRangeSelection} from 'lexical/src';
 import {
   $createTestDecoratorNode,
   createTestEditor,
@@ -94,6 +95,38 @@ describe('LexicalUtils#insertNodeToNearestRoot', () => {
       selectionOffset: 0, // Selection on text node after "Hello" world
       selectionPath: [0, 0],
     },
+    {
+      _: 'insert with selection on root start',
+      expectedHtml:
+        '<test-decorator></test-decorator>' +
+        '<test-decorator></test-decorator>' +
+        '<p><span>Before</span></p>' +
+        '<p><span>After</span></p>',
+      initialHtml:
+        '<test-decorator></test-decorator>' +
+        '<p><span>Before</span></p>' +
+        '<p><span>After</span></p>',
+      selectionOffset: 0,
+      selectionPath: [],
+    },
+    {
+      _: 'insert with selection on root child',
+      expectedHtml:
+        '<p><span>Before</span></p>' +
+        '<test-decorator></test-decorator>' +
+        '<p><span>After</span></p>',
+      initialHtml: '<p>Before</p><p>After</p>',
+      selectionOffset: 1,
+      selectionPath: [],
+    },
+    {
+      _: 'insert with selection on root end',
+      expectedHtml:
+        '<p><span>Before</span></p>' + '<test-decorator></test-decorator>',
+      initialHtml: '<p>Before</p>',
+      selectionOffset: 1,
+      selectionPath: [],
+    },
   ];
 
   for (const testCase of testCases) {
@@ -110,17 +143,27 @@ describe('LexicalUtils#insertNodeToNearestRoot', () => {
           .clear()
           .append(...nodesToInsert);
 
-        let nodeToSplit: LexicalNode = $getRoot();
+        let selectionNode: LexicalNode = $getRoot();
         for (const index of testCase.selectionPath) {
-          if (!$isElementNode(nodeToSplit)) {
+          if (!$isElementNode(selectionNode)) {
             throw new Error(
               'Expected node to be element (to traverse the tree)',
             );
           }
-          nodeToSplit = nodeToSplit.getChildAtIndex(index);
+          selectionNode = selectionNode.getChildAtIndex(index);
         }
 
-        nodeToSplit.select(testCase.selectionOffset, testCase.selectionOffset);
+        // Calling selectionNode.select() would "normalize" selection and move it
+        // to text node (if available), while for the purpose of the test we'd want
+        // to use whatever was passed (e.g. keep selection on root node)
+        const selection = $createRangeSelection();
+        const type = $isElementNode(selectionNode) ? 'element' : 'text';
+        selection.anchor.key = selection.focus.key = selectionNode.getKey();
+        selection.anchor.offset = selection.focus.offset =
+          testCase.selectionOffset;
+        selection.anchor.type = selection.focus.type = type;
+        $setSelection(selection);
+
         $insertNodeToNearestRoot($createTestDecoratorNode());
 
         // Cleaning up list value attributes as it's not really needed in this test

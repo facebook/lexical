@@ -4,20 +4,6 @@ This package contains selection helpers for Lexical.
 
 ### Methods
 
-#### `$cloneContents`
-
-Clones the Lexical nodes in the selection, returning a map of Key -> LexicalNode and a list containing the keys
-of all direct children of the RootNode. Useful for insertion/transfer operations, such as copy and paste.
-
-```ts
-export function $cloneContents(
-  selection: RangeSelection | NodeSelection | GridSelection,
-): {
-  nodeMap: Array<[NodeKey, LexicalNode]>;
-  range: Array<NodeKey>;
-};
-```
-
 #### `getStyleObjectFromCSS`
 
 Given a CSS string, returns an object from the style cache.
@@ -95,15 +81,14 @@ Expands the current Selection to cover all of the content in the editor.
 export function $selectAll(selection: RangeSelection): void;
 ```
 
-#### `$wrapNodes`
+#### `$setBlocksType_experimental`
 
-Attempts to wrap all nodes in the Selection in ElementNodes returned from createElement. If wrappingElement is provided, all of the wrapped leaves are appended to the wrappingElement. It attempts to append the resulting sub-tree to the nearest safe insertion target.
+Converts all nodes in the selection that are of one block type to another specified by parameter
 
 ```ts
-export function $wrapNodes(
+export function $setBlocksType_experimental(
   selection: RangeSelection,
   createElement: () => ElementNode,
-  wrappingElement?: ElementNode,
 ): void;
 ```
 

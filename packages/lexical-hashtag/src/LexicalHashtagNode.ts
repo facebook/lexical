@@ -14,7 +14,7 @@ import type {
 } from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
-import {TextNode} from 'lexical';
+import {$applyNodeReplacement, TextNode} from 'lexical';
 
 /** @noInheritDoc */
 export class HashtagNode extends TextNode {
@@ -62,7 +62,7 @@ export class HashtagNode extends TextNode {
 }
 
 export function $createHashtagNode(text = ''): HashtagNode {
-  return new HashtagNode(text);
+  return $applyNodeReplacement(new HashtagNode(text));
 }
 
 export function $isHashtagNode(

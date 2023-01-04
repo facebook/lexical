@@ -337,6 +337,8 @@ pre::-webkit-scrollbar-thumb {
   margin-right: 8px;
   line-height: 16px;
   background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
 }
 
 .component-picker-menu {
@@ -1594,4 +1596,26 @@ hr.selected {
   white-space: pre-wrap;
   word-break: break-word;
   z-index: 3;
+}
+
+.PlaygroundEditorTheme__blockCursor {
+  display: block;
+  pointer-events: none;
+  position: absolute;
+}
+
+.PlaygroundEditorTheme__blockCursor:after {
+  content: '';
+  display: block;
+  position: absolute;
+  top: -2px;
+  width: 20px;
+  border-top: 1px solid black;
+  animation: CursorBlink 1.1s steps(2, start) infinite;
+}
+
+@keyframes CursorBlink {
+  to {
+    visibility: hidden;
+  }
 }

@@ -4,13 +4,9 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.launchGridAgent = launchGridAgent;
-
 var _utilsBundle = require("../utilsBundle");
-
 var _child_process = require("child_process");
-
 var _userAgent = require("../common/userAgent");
-
 /**
  * Copyright (c) Microsoft Corporation.
  *
@@ -26,13 +22,12 @@ var _userAgent = require("../common/userAgent");
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 function launchGridAgent(agentId, gridURL, runId) {
   const log = (0, _utilsBundle.debug)(`pw:grid:agent:${agentId}`);
   log('created');
   const params = new URLSearchParams();
-  params.set('pwVersion', (0, _userAgent.getPlaywrightVersion)(true
-  /* majorMinorOnly */
-  ));
+  params.set('pwVersion', (0, _userAgent.getPlaywrightVersion)(true /* majorMinorOnly */));
   params.set('agentId', agentId);
   if (runId) params.set('runId', runId);
   const ws = new _utilsBundle.ws(gridURL.replace('http://', 'ws://') + `/registerAgent?` + params.toString());
@@ -40,20 +35,17 @@ function launchGridAgent(agentId, gridURL, runId) {
     log('worker requested ' + message);
     const {
       workerId,
-      browserAlias
+      browserName
     } = JSON.parse(message);
-
     if (!workerId) {
       log('workerId not specified');
       return;
     }
-
-    if (!browserAlias) {
-      log('browserAlias not specified');
+    if (!browserName) {
+      log('browserName not specified');
       return;
     }
-
-    (0, _child_process.fork)(require.resolve('./gridBrowserWorker.js'), [gridURL, agentId, workerId, browserAlias], {
+    (0, _child_process.fork)(require.resolve('./gridBrowserWorker.js'), [gridURL, agentId, workerId, browserName], {
       detached: true
     });
   });

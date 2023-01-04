@@ -4,21 +4,13 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.Snapshotter = void 0;
-
 var _browserContext = require("../../browserContext");
-
 var _page = require("../../page");
-
 var _eventsHelper = require("../../../utils/eventsHelper");
-
 var _debugLogger = require("../../../common/debugLogger");
-
 var _snapshotterInjected = require("./snapshotterInjected");
-
 var _utils = require("../../../utils");
-
 var _utilsBundle = require("../../../utilsBundle");
-
 /**
  * Copyright (c) Microsoft Corporation.
  *
@@ -34,6 +26,7 @@ var _utilsBundle = require("../../../utilsBundle");
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 class Snapshotter {
   constructor(context, delegate) {
     this._context = void 0;
@@ -47,64 +40,53 @@ class Snapshotter {
     const guid = (0, _utils.createGuid)();
     this._snapshotStreamer = '__playwright_snapshot_streamer_' + guid;
   }
-
   started() {
     return this._started;
   }
-
   async start() {
     this._started = true;
-
     if (!this._initialized) {
       this._initialized = true;
       await this._initialize();
     }
-
     await this.reset();
   }
-
   async reset() {
     if (this._started) await this._runInAllFrames(`window["${this._snapshotStreamer}"].reset()`);
   }
-
   async stop() {
     this._started = false;
   }
-
   async _initialize() {
     for (const page of this._context.pages()) this._onPage(page);
-
     this._eventListeners = [_eventsHelper.eventsHelper.addEventListener(this._context, _browserContext.BrowserContext.Events.Page, this._onPage.bind(this))];
     const initScript = `(${_snapshotterInjected.frameSnapshotStreamer})("${this._snapshotStreamer}")`;
     await this._context.addInitScript(initScript);
     await this._runInAllFrames(initScript);
   }
-
   async _runInAllFrames(expression) {
     const frames = [];
-
     for (const page of this._context.pages()) frames.push(...page.frames());
-
     await Promise.all(frames.map(frame => {
       return frame.nonStallingRawEvaluateInExistingMainContext(expression).catch(e => _debugLogger.debugLogger.log('error', e));
     }));
   }
-
   dispose() {
     _eventsHelper.eventsHelper.removeEventListeners(this._eventListeners);
   }
-
   async captureSnapshot(page, snapshotName, element) {
     // Prepare expression synchronously.
-    const expression = `window["${this._snapshotStreamer}"].captureSnapshot(${JSON.stringify(snapshotName)})`; // In a best-effort manner, without waiting for it, mark target element.
+    const expression = `window["${this._snapshotStreamer}"].captureSnapshot(${JSON.stringify(snapshotName)})`;
 
+    // In a best-effort manner, without waiting for it, mark target element.
     element === null || element === void 0 ? void 0 : element.callFunctionNoReply((element, snapshotName) => {
       element.setAttribute('__playwright_target__', snapshotName);
-    }, snapshotName); // In each frame, in a non-stalling manner, capture the snapshots.
+    }, snapshotName);
 
+    // In each frame, in a non-stalling manner, capture the snapshots.
     const snapshots = page.frames().map(async frame => {
-      const data = await frame.nonStallingRawEvaluateInExistingMainContext(expression).catch(e => _debugLogger.debugLogger.log('error', e)); // Something went wrong -> bail out, our snapshots are best-efforty.
-
+      const data = await frame.nonStallingRawEvaluateInExistingMainContext(expression).catch(e => _debugLogger.debugLogger.log('error', e));
+      // Something went wrong -> bail out, our snapshots are best-efforty.
       if (!data || !this._started) return;
       const snapshot = {
         snapshotName,
@@ -119,7 +101,6 @@ class Snapshotter {
         resourceOverrides: [],
         isMainFrame: page.mainFrame() === frame
       };
-
       for (const {
         url,
         content,
@@ -128,12 +109,10 @@ class Snapshotter {
         if (typeof content === 'string') {
           const buffer = Buffer.from(content);
           const sha1 = (0, _utils.calculateSha1)(buffer) + '.' + (_utilsBundle.mime.getExtension(contentType) || 'dat');
-
           this._delegate.onSnapshotterBlob({
             sha1,
             buffer
           });
-
           snapshot.resourceOverrides.push({
             url,
             sha1
@@ -145,19 +124,15 @@ class Snapshotter {
           });
         }
       }
-
       this._delegate.onFrameSnapshot(snapshot);
     });
     await Promise.all(snapshots);
   }
-
   _onPage(page) {
     // Annotate frame hierarchy so that snapshots could include frame ids.
     for (const frame of page.frames()) this._annotateFrameHierarchy(frame);
-
     this._eventListeners.push(_eventsHelper.eventsHelper.addEventListener(page, _page.Page.Events.FrameAttached, frame => this._annotateFrameHierarchy(frame)));
   }
-
   async _annotateFrameHierarchy(frame) {
     try {
       const frameElement = await frame.frameElement();
@@ -178,7 +153,5 @@ class Snapshotter {
       frameElement.dispose();
     } catch (e) {}
   }
-
 }
-
 exports.Snapshotter = Snapshotter;

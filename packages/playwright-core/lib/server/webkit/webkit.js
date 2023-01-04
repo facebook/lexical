@@ -4,21 +4,13 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.WebKit = void 0;
-
 var _wkBrowser = require("../webkit/wkBrowser");
-
 var _path = _interopRequireDefault(require("path"));
-
 var _wkConnection = require("./wkConnection");
-
 var _browserType = require("../browserType");
-
 var _stackTrace = require("../../utils/stackTrace");
-
 var _utils = require("../../utils");
-
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
 /**
  * Copyright 2017 Google Inc. All rights reserved.
  * Modifications copyright (c) Microsoft Corporation.
@@ -35,26 +27,24 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 class WebKit extends _browserType.BrowserType {
   constructor(playwrightOptions) {
     super('webkit', playwrightOptions);
   }
-
   _connectToTransport(transport, options) {
     return _wkBrowser.WKBrowser.connect(transport, options);
   }
-
   _amendEnvironment(env, userDataDir, executable, browserArguments) {
-    return { ...env,
+    return {
+      ...env,
       CURL_COOKIE_JAR_PATH: _path.default.join(userDataDir, 'cookiejar.db')
     };
   }
-
   _rewriteStartupError(error) {
     if (error.message.includes('cannot open display')) return (0, _stackTrace.rewriteErrorMessage)(error, '\n' + (0, _utils.wrapInASCIIBox)(_browserType.kNoXServerRunningError, 1));
     return error;
   }
-
   _attemptToGracefullyCloseBrowser(transport) {
     transport.send({
       method: 'Playwright.close',
@@ -62,7 +52,6 @@ class WebKit extends _browserType.BrowserType {
       id: _wkConnection.kBrowserCloseMessageId
     });
   }
-
   _defaultArgs(options, isPersistent, userDataDir) {
     const {
       args = [],
@@ -76,7 +65,6 @@ class WebKit extends _browserType.BrowserType {
     if (process.platform === 'win32') webkitArguments.push('--disable-accelerated-compositing');
     if (headless) webkitArguments.push('--headless');
     if (isPersistent) webkitArguments.push(`--user-data-dir=${userDataDir}`);else webkitArguments.push(`--no-startup-window`);
-
     if (proxy) {
       if (process.platform === 'darwin') {
         webkitArguments.push(`--proxy=${proxy.server}`);
@@ -89,12 +77,9 @@ class WebKit extends _browserType.BrowserType {
         if (proxy.bypass) webkitArguments.push(`--curl-noproxy=${proxy.bypass}`);
       }
     }
-
     webkitArguments.push(...args);
     if (isPersistent) webkitArguments.push('about:blank');
     return webkitArguments;
   }
-
 }
-
 exports.WebKit = WebKit;

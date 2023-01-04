@@ -39,7 +39,7 @@ import {
   $isParentElementRTL,
   $patchStyleText,
   $selectAll,
-  $wrapNodes,
+  $setBlocksType_experimental,
 } from '@lexical/selection';
 import {
   $findMatchingParent,
@@ -77,7 +77,7 @@ import {$createStickyNode} from '../../nodes/StickyNode';
 import ColorPicker from '../../ui/ColorPicker';
 import DropDown, {DropDownItem} from '../../ui/DropDown';
 import {getSelectedNode} from '../../utils/getSelectedNode';
-import {sanitizeUrl} from '../../utils/sanitizeUrl';
+import {sanitizeUrl} from '../../utils/url';
 import {EmbedConfigs} from '../AutoEmbedPlugin';
 import {INSERT_COLLAPSIBLE_COMMAND} from '../CollapsiblePlugin';
 import {InsertEquationDialog} from '../EquationsPlugin';
@@ -160,13 +160,11 @@ function BlockFormatDropDown({
     if (blockType !== 'paragraph') {
       editor.update(() => {
         const selection = $getSelection();
-
         if (
           $isRangeSelection(selection) ||
           DEPRECATED_$isGridSelection(selection)
-        ) {
-          $wrapNodes(selection, () => $createParagraphNode());
-        }
+        )
+          $setBlocksType_experimental(selection, () => $createParagraphNode());
       });
     }
   };
@@ -175,12 +173,13 @@ function BlockFormatDropDown({
     if (blockType !== headingSize) {
       editor.update(() => {
         const selection = $getSelection();
-
         if (
           $isRangeSelection(selection) ||
           DEPRECATED_$isGridSelection(selection)
         ) {
-          $wrapNodes(selection, () => $createHeadingNode(headingSize));
+          $setBlocksType_experimental(selection, () =>
+            $createHeadingNode(headingSize),
+          );
         }
       });
     }
@@ -214,12 +213,11 @@ function BlockFormatDropDown({
     if (blockType !== 'quote') {
       editor.update(() => {
         const selection = $getSelection();
-
         if (
           $isRangeSelection(selection) ||
           DEPRECATED_$isGridSelection(selection)
         ) {
-          $wrapNodes(selection, () => $createQuoteNode());
+          $setBlocksType_experimental(selection, () => $createQuoteNode());
         }
       });
     }
@@ -228,19 +226,21 @@ function BlockFormatDropDown({
   const formatCode = () => {
     if (blockType !== 'code') {
       editor.update(() => {
-        const selection = $getSelection();
+        let selection = $getSelection();
 
         if (
           $isRangeSelection(selection) ||
           DEPRECATED_$isGridSelection(selection)
         ) {
           if (selection.isCollapsed()) {
-            $wrapNodes(selection, () => $createCodeNode());
+            $setBlocksType_experimental(selection, () => $createCodeNode());
           } else {
             const textContent = selection.getTextContent();
             const codeNode = $createCodeNode();
             selection.insertNodes([codeNode]);
-            selection.insertRawText(textContent);
+            selection = $getSelection();
+            if ($isRangeSelection(selection))
+              selection.insertRawText(textContent);
           }
         }
       });
@@ -603,6 +603,7 @@ export default function ToolbarPlugin(): JSX.Element {
           activeEditor.dispatchCommand(UNDO_COMMAND, undefined);
         }}
         title={IS_APPLE ? 'Undo (⌘Z)' : 'Undo (Ctrl+Z)'}
+        type="button"
         className="toolbar-item spaced"
         aria-label="Undo">
         <i className="format undo" />
@@ -613,6 +614,7 @@ export default function ToolbarPlugin(): JSX.Element {
           activeEditor.dispatchCommand(REDO_COMMAND, undefined);
         }}
         title={IS_APPLE ? 'Redo (⌘Y)' : 'Redo (Ctrl+Y)'}
+        type="button"
         className="toolbar-item"
         aria-label="Redo">
         <i className="format redo" />
@@ -671,6 +673,7 @@ export default function ToolbarPlugin(): JSX.Element {
             }}
             className={'toolbar-item spaced ' + (isBold ? 'active' : '')}
             title={IS_APPLE ? 'Bold (⌘B)' : 'Bold (Ctrl+B)'}
+            type="button"
             aria-label={`Format text as bold. Shortcut: ${
               IS_APPLE ? '⌘B' : 'Ctrl+B'
             }`}>
@@ -683,6 +686,7 @@ export default function ToolbarPlugin(): JSX.Element {
             }}
             className={'toolbar-item spaced ' + (isItalic ? 'active' : '')}
             title={IS_APPLE ? 'Italic (⌘I)' : 'Italic (Ctrl+I)'}
+            type="button"
             aria-label={`Format text as italics. Shortcut: ${
               IS_APPLE ? '⌘I' : 'Ctrl+I'
             }`}>
@@ -695,6 +699,7 @@ export default function ToolbarPlugin(): JSX.Element {
             }}
             className={'toolbar-item spaced ' + (isUnderline ? 'active' : '')}
             title={IS_APPLE ? 'Underline (⌘U)' : 'Underline (Ctrl+U)'}
+            type="button"
             aria-label={`Format text to underlined. Shortcut: ${
               IS_APPLE ? '⌘U' : 'Ctrl+U'
             }`}>
@@ -707,6 +712,7 @@ export default function ToolbarPlugin(): JSX.Element {
             }}
             className={'toolbar-item spaced ' + (isCode ? 'active' : '')}
             title="Insert code block"
+            type="button"
             aria-label="Insert code block">
             <i className="format code" />
           </button>
@@ -715,7 +721,8 @@ export default function ToolbarPlugin(): JSX.Element {
             onClick={insertLink}
             className={'toolbar-item spaced ' + (isLink ? 'active' : '')}
             aria-label="Insert link"
-            title="Insert link">
+            title="Insert link"
+            type="button">
             <i className="format link" />
           </button>
           <ColorPicker

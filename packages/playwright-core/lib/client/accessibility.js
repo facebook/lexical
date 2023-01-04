@@ -4,7 +4,6 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.Accessibility = void 0;
-
 /**
  * Copyright 2017 Google Inc. All rights reserved.
  * Modifications copyright (c) Microsoft Corporation.
@@ -21,8 +20,10 @@ exports.Accessibility = void 0;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 function axNodeFromProtocol(axNode) {
-  const result = { ...axNode,
+  const result = {
+    ...axNode,
     value: axNode.valueNumber !== undefined ? axNode.valueNumber : axNode.valueString,
     checked: axNode.checked === 'checked' ? true : axNode.checked === 'unchecked' ? false : axNode.checked,
     pressed: axNode.pressed === 'pressed' ? true : axNode.pressed === 'released' ? false : axNode.pressed,
@@ -32,13 +33,11 @@ function axNodeFromProtocol(axNode) {
   delete result.valueString;
   return result;
 }
-
 class Accessibility {
   constructor(channel) {
     this._channel = void 0;
     this._channel = channel;
   }
-
   async snapshot(options = {}) {
     const root = options.root ? options.root._elementChannel : undefined;
     const result = await this._channel.accessibilitySnapshot({
@@ -47,7 +46,5 @@ class Accessibility {
     });
     return result.rootAXNode ? axNodeFromProtocol(result.rootAXNode) : null;
   }
-
 }
-
 exports.Accessibility = Accessibility;

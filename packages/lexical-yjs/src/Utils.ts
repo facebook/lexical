@@ -11,6 +11,7 @@ import type {
   DecoratorNode,
   ElementNode,
   LexicalNode,
+  NodeMap,
   RangeSelection,
   TextNode,
 } from 'lexical';
@@ -40,10 +41,14 @@ import {$createCollabTextNode, CollabTextNode} from './CollabTextNode';
 
 const excludedProperties: Set<string> = new Set([
   '__key',
-  '__children',
   '__parent',
   '__cachedText',
   '__text',
+  '__size',
+  '__next',
+  '__prev',
+  '__first',
+  '__last',
 ]);
 
 export function getIndexOfYjsNode(
@@ -439,4 +444,73 @@ export function doesSelectionNeedRecovering(
 
 export function syncWithTransaction(binding: Binding, fn: () => void): void {
   binding.doc.transact(fn, binding);
+}
+
+export function createChildrenArray(
+  element: ElementNode,
+  nodeMap: null | NodeMap,
+): Array<NodeKey> {
+  const children = [];
+  let nodeKey = element.__first;
+  while (nodeKey !== null) {
+    const node =
+      nodeMap === null ? $getNodeByKey(nodeKey) : nodeMap.get(nodeKey);
+    if (node === null || node === undefined) {
+      invariant(false, 'createChildrenArray: node does not exist in nodeMap');
+    }
+    children.push(nodeKey);
+    nodeKey = node.__next;
+  }
+  return children;
+}
+
+export function removeFromParent(node: LexicalNode): void {
+  const oldParent = node.getParent();
+  if (oldParent !== null) {
+    const writableNode = node.getWritable();
+    const writableParent = oldParent.getWritable();
+    const prevSibling = node.getPreviousSibling();
+    const nextSibling = node.getNextSibling();
+    // TODO: this function duplicates a bunch of operations, can be simplified.
+    if (prevSibling === null) {
+      if (nextSibling !== null) {
+        const writableNextSibling = nextSibling.getWritable();
+        writableParent.__first = nextSibling.__key;
+        writableNextSibling.__prev = null;
+      } else {
+        writableParent.__first = null;
+      }
+    } else {
+      const writablePrevSibling = prevSibling.getWritable();
+      if (nextSibling !== null) {
+        const writableNextSibling = nextSibling.getWritable();
+        writableNextSibling.__prev = writablePrevSibling.__key;
+        writablePrevSibling.__next = writableNextSibling.__key;
+      } else {
+        writablePrevSibling.__next = null;
+      }
+      writableNode.__prev = null;
+    }
+    if (nextSibling === null) {
+      if (prevSibling !== null) {
+        const writablePrevSibling = prevSibling.getWritable();
+        writableParent.__last = prevSibling.__key;
+        writablePrevSibling.__next = null;
+      } else {
+        writableParent.__last = null;
+      }
+    } else {
+      const writableNextSibling = nextSibling.getWritable();
+      if (prevSibling !== null) {
+        const writablePrevSibling = prevSibling.getWritable();
+        writablePrevSibling.__next = writableNextSibling.__key;
+        writableNextSibling.__prev = writablePrevSibling.__key;
+      } else {
+        writableNextSibling.__prev = null;
+      }
+      writableNode.__next = null;
+    }
+    writableParent.__size--;
+    writableNode.__parent = null;
+  }
 }

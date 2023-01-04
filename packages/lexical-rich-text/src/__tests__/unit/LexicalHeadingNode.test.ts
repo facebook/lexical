@@ -11,7 +11,7 @@ import {
   $isHeadingNode,
   HeadingNode,
 } from '@lexical/rich-text';
-import {$createTextNode, $getRoot, ParagraphNode} from 'lexical';
+import {$createTextNode, $getRoot, $getSelection, ParagraphNode} from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
 const editorConfig = Object.freeze({
@@ -91,7 +91,8 @@ describe('LexicalHeadingNode tests', () => {
         '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><h1><br></h1></div>',
       );
       await editor.update(() => {
-        const result = headingNode.insertNewAfter();
+        const selection = $getSelection();
+        const result = headingNode.insertNewAfter(selection);
         expect(result).toBeInstanceOf(ParagraphNode);
         expect(result.getDirection()).toEqual(headingNode.getDirection());
       });

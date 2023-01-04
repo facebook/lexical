@@ -151,7 +151,7 @@ test.describe('Markdown', () => {
     },
     {
       expectation:
-        '<div data-lexical-decorator="true" contenteditable="false" style="display: contents;"><hr></div><p class="PlaygroundEditorTheme__paragraph"><br></p>',
+        '<hr class="" data-lexical-decorator="true" contenteditable="false" /><p class="PlaygroundEditorTheme__paragraph"><br></p>',
       importExpectation: '',
       isBlockTest: true,
       markdownImport: '',
@@ -160,7 +160,7 @@ test.describe('Markdown', () => {
     },
     {
       expectation:
-        '<div data-lexical-decorator="true" contenteditable="false" style="display: contents;"><hr></div><p class="PlaygroundEditorTheme__paragraph"><br></p>',
+        '<hr class="" data-lexical-decorator="true" contenteditable="false" /><p class="PlaygroundEditorTheme__paragraph"><br></p>',
       importExpectation: '',
       isBlockTest: true,
       markdownImport: '',
@@ -494,24 +494,14 @@ test.describe('Markdown', () => {
     },
     {
       html: html`
-        <div
-          contenteditable="false"
-          style="display: contents;"
-          data-lexical-decorator="true">
-          <hr />
-        </div>
+        <hr class="" contenteditable="false" data-lexical-decorator="true" />
         <p><br /></p>
       `,
       text: '--- ',
     },
     {
       html: html`
-        <div
-          contenteditable="false"
-          style="display: contents;"
-          data-lexical-decorator="true">
-          <hr />
-        </div>
+        <hr class="" contenteditable="false" data-lexical-decorator="true" />
         <p><br /></p>
       `,
       text: '*** ',
@@ -1129,12 +1119,7 @@ const TYPED_MARKDOWN_HTML = html`
     dir="ltr">
     <span data-lexical-text="true">Quote</span>
   </blockquote>
-  <div
-    contenteditable="false"
-    style="display: contents;"
-    data-lexical-decorator="true">
-    <hr />
-  </div>
+  <hr class="" contenteditable="false" data-lexical-decorator="true" />
   <ul class="PlaygroundEditorTheme__ul">
     <li
       value="1"
@@ -1179,7 +1164,7 @@ ___~~this one too~~___
 
 It ~~___works [with links](https://lexical.io)___~~ too
 
-Links [with underscores](https://lexical.io/tag_here_and__here__and___here___too)
+Links [with underscores](https://lexical.io/tag_here_and__here__and___here___too) and ([parenthesis](https://lexical.dev))
 
 *Nested **stars tags** are handled too*
 ### Headings
@@ -1299,6 +1284,14 @@ const IMPORTED_MARKDOWN_HTML = html`
       dir="ltr">
       <span data-lexical-text="true">with underscores</span>
     </a>
+    <span data-lexical-text="true">and (</span>
+    <a
+      href="https://lexical.dev"
+      class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+      dir="ltr">
+      <span data-lexical-text="true">parenthesis</span>
+    </a>
+    <span data-lexical-text="true">)</span>
   </p>
   <p
     class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
@@ -1339,12 +1332,7 @@ const IMPORTED_MARKDOWN_HTML = html`
   <h3 class="PlaygroundEditorTheme__h3 PlaygroundEditorTheme__ltr" dir="ltr">
     <span data-lexical-text="true">Horizontal Rules</span>
   </h3>
-  <div
-    contenteditable="false"
-    style="display: contents;"
-    data-lexical-decorator="true">
-    <hr />
-  </div>
+  <hr class="" contenteditable="false" data-lexical-decorator="true" />
   <h3 class="PlaygroundEditorTheme__h3 PlaygroundEditorTheme__ltr" dir="ltr">
     <span data-lexical-text="true">Blockquotes</span>
   </h3>

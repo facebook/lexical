@@ -8,13 +8,14 @@
 
 // eslint-disable-next-line simple-import-sort/imports
 import {
+  $applyNodeReplacement,
   $isLineBreakNode,
-  EditorConfig,
-  EditorThemeClasses,
-  LexicalNode,
-  NodeKey,
-  SerializedTextNode,
-  Spread,
+  type EditorConfig,
+  type EditorThemeClasses,
+  type LexicalNode,
+  type NodeKey,
+  type SerializedTextNode,
+  type Spread,
   TextNode,
 } from 'lexical';
 
@@ -31,6 +32,7 @@ import 'prismjs/components/prism-sql';
 import 'prismjs/components/prism-python';
 import 'prismjs/components/prism-rust';
 import 'prismjs/components/prism-swift';
+import 'prismjs/components/prism-typescript';
 
 import {
   addClassNamesToElement,
@@ -61,6 +63,7 @@ export const CODE_LANGUAGE_FRIENDLY_NAME_MAP: Record<string, string> = {
   rust: 'Rust',
   sql: 'SQL',
   swift: 'Swift',
+  typescript: 'TypeScript',
   xml: 'XML',
 };
 
@@ -70,6 +73,7 @@ export const CODE_LANGUAGE_MAP: Record<string, string> = {
   plaintext: 'plain',
   python: 'py',
   text: 'plain',
+  ts: 'typescript',
 };
 
 export function normalizeCodeLang(lang: string) {
@@ -203,7 +207,7 @@ export function $createCodeHighlightNode(
   text: string,
   highlightType?: string | null | undefined,
 ): CodeHighlightNode {
-  return new CodeHighlightNode(text, highlightType);
+  return $applyNodeReplacement(new CodeHighlightNode(text, highlightType));
 }
 
 export function $isCodeHighlightNode(

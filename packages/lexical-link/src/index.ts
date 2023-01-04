@@ -22,6 +22,7 @@ import type {
 
 import {addClassNamesToElement} from '@lexical/utils';
 import {
+  $applyNodeReplacement,
   $getSelection,
   $isElementNode,
   $isRangeSelection,
@@ -176,8 +177,14 @@ export class LinkNode extends ElementNode {
     writable.__rel = rel;
   }
 
-  insertNewAfter(selection: RangeSelection): null | ElementNode {
-    const element = this.getParentOrThrow().insertNewAfter(selection);
+  insertNewAfter(
+    selection: RangeSelection,
+    restoreSelection = true,
+  ): null | ElementNode {
+    const element = this.getParentOrThrow().insertNewAfter(
+      selection,
+      restoreSelection,
+    );
     if ($isElementNode(element)) {
       const linkNode = $createLinkNode(this.__url, {
         rel: this.__rel,
@@ -243,7 +250,7 @@ export function $createLinkNode(
   url: string,
   attributes?: LinkAttributes,
 ): LinkNode {
-  return new LinkNode(url, attributes);
+  return $applyNodeReplacement(new LinkNode(url, attributes));
 }
 
 export function $isLinkNode(
@@ -299,8 +306,14 @@ export class AutoLinkNode extends LinkNode {
     };
   }
 
-  insertNewAfter(selection: RangeSelection): null | ElementNode {
-    const element = this.getParentOrThrow().insertNewAfter(selection);
+  insertNewAfter(
+    selection: RangeSelection,
+    restoreSelection = true,
+  ): null | ElementNode {
+    const element = this.getParentOrThrow().insertNewAfter(
+      selection,
+      restoreSelection,
+    );
     if ($isElementNode(element)) {
       const linkNode = $createAutoLinkNode(this.__url, {
         rel: this._rel,
@@ -317,7 +330,7 @@ export function $createAutoLinkNode(
   url: string,
   attributes?: LinkAttributes,
 ): AutoLinkNode {
-  return new AutoLinkNode(url, attributes);
+  return $applyNodeReplacement(new AutoLinkNode(url, attributes));
 }
 
 export function $isAutoLinkNode(
@@ -334,7 +347,8 @@ export function toggleLink(
   url: null | string,
   attributes: LinkAttributes = {},
 ): void {
-  const {target, rel} = attributes;
+  const {target} = attributes;
+  const rel = attributes.rel === undefined ? 'noopener' : attributes.rel;
   const selection = $getSelection();
 
   if (!$isRangeSelection(selection)) {
@@ -371,7 +385,7 @@ export function toggleLink(
         if (target !== undefined) {
           linkNode.setTarget(target);
         }
-        if (rel !== undefined) {
+        if (rel !== null) {
           linkNode.setRel(rel);
         }
         return;
@@ -398,8 +412,8 @@ export function toggleLink(
         if (target !== undefined) {
           parent.setTarget(target);
         }
-        if (rel !== undefined) {
-          parent.setRel(rel);
+        if (rel !== null) {
+          linkNode.setRel(rel);
         }
         return;
       }

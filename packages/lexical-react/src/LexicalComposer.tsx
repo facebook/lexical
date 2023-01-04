@@ -25,6 +25,7 @@ import {
 } from 'lexical';
 import {useMemo} from 'react';
 import * as React from 'react';
+import {CAN_USE_DOM} from 'shared/canUseDOM';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
 const HISTORY_MERGE_OPTIONS = {tag: 'history-merge'};
@@ -35,17 +36,28 @@ export type InitialEditorStateType =
   | EditorState
   | ((editor: LexicalEditor) => void);
 
+export type InitialConfigType = Readonly<{
+  editor__DEPRECATED?: LexicalEditor | null;
+  namespace: string;
+  nodes?: ReadonlyArray<
+    | Klass<LexicalNode>
+    | {
+        replace: Klass<LexicalNode>;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        with: <T extends {new (...args: any): any}>(
+          node: InstanceType<T>,
+        ) => LexicalNode;
+      }
+  >;
+  onError: (error: Error, editor: LexicalEditor) => void;
+  editable?: boolean;
+  theme?: EditorThemeClasses;
+  editorState?: InitialEditorStateType;
+}>;
+
 type Props = {
   children: JSX.Element | string | (JSX.Element | string)[];
-  initialConfig: Readonly<{
-    editor__DEPRECATED?: LexicalEditor | null;
-    namespace: string;
-    nodes?: ReadonlyArray<Klass<LexicalNode>>;
-    onError: (error: Error, editor: LexicalEditor) => void;
-    editable?: boolean;
-    theme?: EditorThemeClasses;
-    editorState?: InitialEditorStateType;
-  }>;
+  initialConfig: InitialConfigType;
 };
 
 export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
@@ -116,7 +128,7 @@ function initializeEditor(
       if (root.isEmpty()) {
         const paragraph = $createParagraphNode();
         root.append(paragraph);
-        const activeElement = document.activeElement;
+        const activeElement = CAN_USE_DOM ? document.activeElement : null;
         if (
           $getSelection() !== null ||
           (activeElement !== null && activeElement === editor.getRootElement())

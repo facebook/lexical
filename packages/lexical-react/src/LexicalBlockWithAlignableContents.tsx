@@ -109,9 +109,8 @@ export function BlockWithAlignableContents({
       editor.registerCommand<MouseEvent>(
         CLICK_COMMAND,
         (event) => {
-          event.preventDefault();
-
           if (event.target === ref.current) {
+            event.preventDefault();
             if (!event.shiftKey) {
               clearSelection();
             }

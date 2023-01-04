@@ -228,17 +228,17 @@ export function useYjsFocusTracking(
     return mergeRegister(
       editor.registerCommand(
         FOCUS_COMMAND,
-        (payload) => {
+        () => {
           setLocalStateFocus(provider, name, color, true);
-          return true;
+          return false;
         },
         COMMAND_PRIORITY_EDITOR,
       ),
       editor.registerCommand(
         BLUR_COMMAND,
-        (payload) => {
+        () => {
           setLocalStateFocus(provider, name, color, false);
-          return true;
+          return false;
         },
         COMMAND_PRIORITY_EDITOR,
       ),

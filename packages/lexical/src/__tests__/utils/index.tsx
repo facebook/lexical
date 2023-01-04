@@ -9,7 +9,9 @@
 import type {
   EditorState,
   EditorThemeClasses,
+  Klass,
   LexicalEditor,
+  LexicalNode,
   RangeSelection,
   SerializedElementNode,
   SerializedLexicalNode,
@@ -151,6 +153,34 @@ export class TestElementNode extends ElementNode {
 
 export function $createTestElementNode(): TestElementNode {
   return new TestElementNode();
+}
+
+type SerializedTestTextNode = Spread<
+  {type: 'test_text'; version: 1},
+  SerializedTextNode
+>;
+export class TestTextNode extends TextNode {
+  static getType() {
+    return 'test_text';
+  }
+
+  static clone(node: TestTextNode): TestTextNode {
+    // @ts-ignore
+    return new TestTextNode(node.__text, node.__key);
+  }
+
+  static importJSON(serializedNode: SerializedTestTextNode): TestTextNode {
+    // @ts-ignore
+    return new TestTextNode(serializedNode.__text);
+  }
+
+  exportJSON(): SerializedTestTextNode {
+    return {
+      ...super.exportJSON(),
+      type: 'test_text',
+      version: 1,
+    };
+  }
 }
 
 export type SerializedTestInlineElementNode = Spread<
@@ -329,7 +359,7 @@ export class TestDecoratorNode extends DecoratorNode<JSX.Element> {
     };
   }
 
-  importDOM() {
+  static importDOM() {
     return {
       'test-decorator': (domNode: HTMLElement) => {
         return {
@@ -389,6 +419,7 @@ const DEFAULT_NODES = [
   TestExcludeFromCopyElementNode,
   TestDecoratorNode,
   TestInlineElementNode,
+  TestTextNode,
 ];
 
 export function TestComposer({
@@ -420,7 +451,16 @@ export function createTestEditor(
     editorState?: EditorState;
     theme?: EditorThemeClasses;
     parentEditor?: LexicalEditor;
-    nodes?: ReadonlyArray<typeof DEFAULT_NODES[number]>;
+    nodes?: ReadonlyArray<
+      | Klass<LexicalNode>
+      | {
+          replace: Klass<LexicalNode>;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          with: <T extends {new (...args: any): any}>(
+            node: InstanceType<T>,
+          ) => LexicalNode;
+        }
+    >;
     onError?: (error: Error) => void;
     disableEvents?: boolean;
     readOnly?: boolean;
@@ -433,6 +473,7 @@ export function createTestEditor(
       throw e;
     },
     ...config,
+    // @ts-ignore
     nodes: DEFAULT_NODES.concat(customNodes),
   });
   return editor;

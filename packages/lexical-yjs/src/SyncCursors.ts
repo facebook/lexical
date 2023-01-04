@@ -22,7 +22,9 @@ import {
   $getNodeByKey,
   $getSelection,
   $isElementNode,
+  $isLineBreakNode,
   $isRangeSelection,
+  $isTextNode,
 } from 'lexical';
 import {WebsocketProvider} from 'y-websocket';
 import {
@@ -80,6 +82,23 @@ function createRelativePosition(
     }
 
     offset = currentOffset + 1 + offset;
+  } else if (
+    collabNode instanceof CollabElementNode &&
+    point.type === 'element'
+  ) {
+    const parent = point.getNode();
+    let accumulatedOffset = 0;
+    let i = 0;
+    let node = parent.getFirstChild();
+    while (node !== null && i++ < offset) {
+      if ($isTextNode(node)) {
+        accumulatedOffset += node.getTextContentSize() + 1;
+      } else {
+        accumulatedOffset++;
+      }
+      node = node.getNextSibling();
+    }
+    offset = accumulatedOffset;
   }
 
   return createRelativePositionFromTypeIndex(sharedType, offset);
@@ -216,21 +235,34 @@ function updateCursor(
   if (anchorNode == null || focusNode == null) {
     return;
   }
+  let selectionRects: Array<DOMRect>;
 
-  const range = createDOMRange(
-    editor,
-    anchorNode,
-    anchor.offset,
-    focusNode,
-    focus.offset,
-  );
+  // In the case of a collapsed selection on a linebreak, we need
+  // to improvise as the browser will return nothing here as <br>
+  // apparantly take up no visual space :/
+  // This won't work in all cases, but it's better than just showing
+  // nothing all the time.
+  if (anchorNode === focusNode && $isLineBreakNode(anchorNode)) {
+    const brRect = (
+      editor.getElementByKey(anchorKey) as HTMLElement
+    ).getBoundingClientRect();
+    selectionRects = [brRect];
+  } else {
+    const range = createDOMRange(
+      editor,
+      anchorNode,
+      anchor.offset,
+      focusNode,
+      focus.offset,
+    );
 
-  if (range === null) {
-    return;
+    if (range === null) {
+      return;
+    }
+    selectionRects = createRectsFromDOMRange(editor, range);
   }
 
   const selectionsLength = selections.length;
-  const selectionRects = createRectsFromDOMRange(editor, range);
   const selectionRectsLength = selectionRects.length;
 
   for (let i = 0; i < selectionRectsLength; i++) {
@@ -305,29 +337,30 @@ export function syncLocalCursorPosition(
         if (!$isRangeSelection(selection)) {
           return;
         }
-
         const anchor = selection.anchor;
         const focus = selection.focus;
 
-        if (anchor.key !== anchorKey || anchor.offset !== anchorOffset) {
-          const anchorNode = $getNodeByKey(anchorKey);
-          selection.anchor.set(
-            anchorKey,
-            anchorOffset,
-            $isElementNode(anchorNode) ? 'element' : 'text',
-          );
-        }
-
-        if (focus.key !== focusKey || focus.offset !== focusOffset) {
-          const focusNode = $getNodeByKey(focusKey);
-          selection.focus.set(
-            focusKey,
-            focusOffset,
-            $isElementNode(focusNode) ? 'element' : 'text',
-          );
-        }
+        setPoint(anchor, anchorKey, anchorOffset);
+        setPoint(focus, focusKey, focusOffset);
       }
     }
+  }
+}
+
+function setPoint(point: Point, key: NodeKey, offset: number): void {
+  if (point.key !== key || point.offset !== offset) {
+    let anchorNode = $getNodeByKey(key);
+    if (
+      anchorNode !== null &&
+      !$isElementNode(anchorNode) &&
+      !$isTextNode(anchorNode)
+    ) {
+      const parent = anchorNode.getParentOrThrow();
+      key = parent.getKey();
+      offset = anchorNode.getIndexWithinParent();
+      anchorNode = parent;
+    }
+    point.set(key, offset, $isElementNode(anchorNode) ? 'element' : 'text');
   }
 }
 

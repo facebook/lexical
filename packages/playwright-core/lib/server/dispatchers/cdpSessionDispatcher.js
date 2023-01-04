@@ -4,11 +4,8 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.CDPSessionDispatcher = void 0;
-
 var _crConnection = require("../chromium/crConnection");
-
 var _dispatcher = require("./dispatcher");
-
 /**
  * Copyright (c) Microsoft Corporation.
  *
@@ -24,31 +21,26 @@ var _dispatcher = require("./dispatcher");
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 class CDPSessionDispatcher extends _dispatcher.Dispatcher {
   constructor(scope, crSession) {
-    super(scope, crSession, 'CDPSession', {}, true);
+    super(scope, crSession, 'CDPSession', {});
     this._type_CDPSession = true;
-
     crSession._eventListener = (method, params) => {
       this._dispatchEvent('event', {
         method,
         params
       });
     };
-
-    crSession.on(_crConnection.CRSessionEvents.Disconnected, () => this._dispose());
+    this.addObjectListener(_crConnection.CRSessionEvents.Disconnected, () => this._dispose());
   }
-
   async send(params) {
     return {
       result: await this._object.send(params.method, params.params)
     };
   }
-
   async detach() {
     return this._object.detach();
   }
-
 }
-
 exports.CDPSessionDispatcher = CDPSessionDispatcher;

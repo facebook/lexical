@@ -19,10 +19,9 @@ import type {
 import type {SerializedEditorState} from './LexicalEditorState';
 import type {LexicalNode, SerializedLexicalNode} from './LexicalNode';
 
-import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
 
-import {$isElementNode, $isTextNode} from '.';
+import {$isElementNode, $isTextNode, SELECTION_CHANGE_COMMAND} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
 import {resetEditor} from './LexicalEditor';
 import {
@@ -47,10 +46,13 @@ import {
 } from './LexicalSelection';
 import {
   $getCompositionKey,
+  getDOMSelection,
   getEditorStateTextContent,
   getEditorsToPropagate,
   getRegisteredNodeOrThrow,
+  removeDOMBlockCursorElement,
   scheduleMicroTask,
+  updateDOMBlockCursorElement,
 } from './LexicalUtils';
 
 let activeEditorState: null | EditorState = null;
@@ -59,8 +61,17 @@ let isReadOnlyMode = false;
 let isAttemptingToRecoverFromReconcilerError = false;
 let infiniteTransformCount = 0;
 
+const observerOptions = {
+  characterData: true,
+  childList: true,
+  subtree: true,
+};
+
 export function isCurrentlyReadOnlyMode(): boolean {
-  return isReadOnlyMode;
+  return (
+    isReadOnlyMode ||
+    (activeEditorState !== null && activeEditorState._readOnly)
+  );
 }
 
 export function errorOnReadOnly(): void {
@@ -103,6 +114,10 @@ export function getActiveEditor(): LexicalEditor {
     );
   }
 
+  return activeEditor;
+}
+
+export function internalGetActiveEditor(): LexicalEditor | null {
   return activeEditor;
 }
 
@@ -417,9 +432,9 @@ function handleDEVOnlyPendingUpdateGuarantees(
 export function commitPendingUpdates(editor: LexicalEditor): void {
   const pendingEditorState = editor._pendingEditorState;
   const rootElement = editor._rootElement;
-  const headless = editor._headless;
+  const shouldSkipDOM = editor._headless || rootElement === null;
 
-  if ((rootElement === null && !headless) || pendingEditorState === null) {
+  if (pendingEditorState === null) {
     return;
   }
 
@@ -440,7 +455,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   editor._pendingEditorState = null;
   editor._editorState = pendingEditorState;
 
-  if (!headless && needsUpdate && observer !== null) {
+  if (!shouldSkipDOM && needsUpdate && observer !== null) {
     activeEditor = editor;
     activeEditorState = pendingEditorState;
     isReadOnlyMode = false;
@@ -481,11 +496,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
 
       return;
     } finally {
-      observer.observe(rootElement as Node, {
-        characterData: true,
-        childList: true,
-        subtree: true,
-      });
+      observer.observe(rootElement as Node, observerOptions);
       editor._updating = previouslyUpdating;
       activeEditorState = previousActiveEditorState;
       isReadOnlyMode = previousReadOnlyMode;
@@ -510,6 +521,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   const normalizedNodes = editor._normalizedNodes;
   const tags = editor._updateTags;
   const deferred = editor._deferred;
+  const nodeCount = pendingEditorState._nodeMap.size;
 
   if (needsUpdate) {
     editor._dirtyType = NO_DIRTY_NODES;
@@ -525,7 +537,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   // Reconciliation has finished. Now update selection and trigger listeners.
   // ======
 
-  const domSelection = headless ? null : getDOMSelection();
+  const domSelection = shouldSkipDOM ? null : getDOMSelection(editor._window);
 
   // Attempt to update the DOM selection, including focusing of the root element,
   // and scroll into view if needed.
@@ -538,14 +550,36 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
     activeEditor = editor;
     activeEditorState = pendingEditorState;
     try {
-      updateDOMSelection(
-        currentSelection,
-        pendingSelection,
+      if (observer !== null) {
+        observer.disconnect();
+      }
+      if (needsUpdate || pendingSelection === null || pendingSelection.dirty) {
+        const blockCursorElement = editor._blockCursorElement;
+        if (blockCursorElement !== null) {
+          removeDOMBlockCursorElement(
+            blockCursorElement,
+            editor,
+            rootElement as HTMLElement,
+          );
+        }
+        updateDOMSelection(
+          currentSelection,
+          pendingSelection,
+          editor,
+          domSelection,
+          tags,
+          rootElement as HTMLElement,
+          nodeCount,
+        );
+      }
+      updateDOMBlockCursorElement(
         editor,
-        domSelection,
-        tags,
         rootElement as HTMLElement,
+        pendingSelection,
       );
+      if (observer !== null) {
+        observer.observe(rootElement as Node, observerOptions);
+      }
     } finally {
       activeEditor = previousActiveEditor;
       activeEditorState = previousActiveEditorState;
@@ -562,7 +596,13 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
       dirtyLeaves,
     );
   }
-
+  if (
+    !$isRangeSelection(pendingSelection) &&
+    pendingSelection !== null &&
+    (currentSelection === null || !currentSelection.is(pendingSelection))
+  ) {
+    editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+  }
   /**
    * Capture pendingDecorators after garbage collecting detached decorators
    */
@@ -893,10 +933,14 @@ function beginUpdate(
     editor._updating = previouslyUpdating;
     infiniteTransformCount = 0;
   }
+  const windowObj = editor._window;
+  const windowEvent = windowObj !== null ? window.event : null;
+  const eventType = windowEvent != null ? windowEvent.type : null;
 
   const shouldUpdate =
     editor._dirtyType !== NO_DIRTY_NODES ||
-    editorStateHasDirtySelection(pendingEditorState, editor);
+    editorStateHasDirtySelection(pendingEditorState, editor) ||
+    (editor._blockCursorElement !== null && eventType === 'blur');
 
   if (shouldUpdate) {
     if (pendingEditorState._flushSync) {
@@ -928,8 +972,4 @@ export function updateEditor(
   } else {
     beginUpdate(editor, updateFn, options);
   }
-}
-
-export function internalGetActiveEditor(): null | LexicalEditor {
-  return activeEditor;
 }

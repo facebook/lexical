@@ -4,17 +4,11 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.WKExecutionContext = void 0;
-
 var js = _interopRequireWildcard(require("../javascript"));
-
 var _utilityScriptSerializers = require("../isomorphic/utilityScriptSerializers");
-
 var _protocolError = require("../protocolError");
-
 function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
-
 function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
-
 /**
  * Copyright 2017 Google Inc. All rights reserved.
  * Modifications copyright (c) Microsoft Corporation.
@@ -31,6 +25,7 @@ function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && 
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 class WKExecutionContext {
   constructor(session, contextId) {
     this._session = void 0;
@@ -38,7 +33,6 @@ class WKExecutionContext {
     this._session = session;
     this._contextId = contextId;
   }
-
   async rawEvaluateJSON(expression) {
     try {
       const response = await this._session.send('Runtime.evaluate', {
@@ -52,7 +46,6 @@ class WKExecutionContext {
       throw rewriteError(error);
     }
   }
-
   async rawEvaluateHandle(expression) {
     try {
       const response = await this._session.send('Runtime.evaluate', {
@@ -66,7 +59,6 @@ class WKExecutionContext {
       throw rewriteError(error);
     }
   }
-
   rawCallFunctionNoReply(func, ...args) {
     this._session.send('Runtime.callFunctionOn', {
       functionDeclaration: func.toString(),
@@ -80,7 +72,6 @@ class WKExecutionContext {
       emulateUserGesture: true
     }).catch(() => {});
   }
-
   async evaluateWithArguments(expression, returnByValue, utilityScript, values, objectIds) {
     try {
       const response = await this._session.send('Runtime.callFunctionOn', {
@@ -104,73 +95,56 @@ class WKExecutionContext {
       throw rewriteError(error);
     }
   }
-
   async getProperties(context, objectId) {
     const response = await this._session.send('Runtime.getProperties', {
       objectId,
       ownProperties: true
     });
     const result = new Map();
-
     for (const property of response.properties) {
       if (!property.enumerable || !property.value) continue;
       result.set(property.name, context.createHandle(property.value));
     }
-
     return result;
   }
-
   createHandle(context, remoteObject) {
     const isPromise = remoteObject.className === 'Promise';
     return new js.JSHandle(context, isPromise ? 'promise' : remoteObject.subtype || remoteObject.type, renderPreview(remoteObject), remoteObject.objectId, potentiallyUnserializableValue(remoteObject));
   }
-
   async releaseHandle(objectId) {
     await this._session.send('Runtime.releaseObject', {
       objectId
     });
   }
-
 }
-
 exports.WKExecutionContext = WKExecutionContext;
-
 function potentiallyUnserializableValue(remoteObject) {
   const value = remoteObject.value;
   const isUnserializable = remoteObject.type === 'number' && ['NaN', '-Infinity', 'Infinity', '-0'].includes(remoteObject.description);
   return isUnserializable ? js.parseUnserializableValue(remoteObject.description) : value;
 }
-
 function rewriteError(error) {
   if (!js.isJavaScriptErrorInEvaluate(error) && !(0, _protocolError.isSessionClosedError)(error)) return new Error('Execution context was destroyed, most likely because of a navigation.');
   return error;
 }
-
 function renderPreview(object) {
   if (object.type === 'undefined') return 'undefined';
   if ('value' in object) return String(object.value);
-
   if (object.description === 'Object' && object.preview) {
     const tokens = [];
-
     for (const {
       name,
       value
     } of object.preview.properties) tokens.push(`${name}: ${value}`);
-
     return `{${tokens.join(', ')}}`;
   }
-
   if (object.subtype === 'array' && object.preview) {
     const result = [];
-
     for (const {
       name,
       value
     } of object.preview.properties) result[+name] = value;
-
     return '[' + String(result) + ']';
   }
-
   return object.description;
 }

@@ -15,7 +15,14 @@ import {
 } from 'lexical';
 
 import {LexicalNode} from '../../LexicalNode';
-import {initializeUnitTest, TestElementNode} from '../utils';
+import {$createParagraphNode} from '../../nodes/LexicalParagraphNode';
+import {$createTextNode} from '../../nodes/LexicalTextNode';
+import {
+  $createTestInlineElementNode,
+  initializeUnitTest,
+  TestElementNode,
+  TestInlineElementNode,
+} from '../utils';
 
 class TestNode extends LexicalNode {
   static getType(): string {
@@ -311,7 +318,10 @@ describe('LexicalNode tests', () => {
         );
 
         await editor.getEditorState().read(() => {
-          expect(barTextNode.getPreviousSibling()).toEqual(textNode);
+          expect(barTextNode.getPreviousSibling()).toEqual({
+            ...textNode,
+            __next: '3',
+          });
           expect(textNode.getPreviousSibling()).toEqual(null);
         });
         expect(() => textNode.getPreviousSibling()).toThrow();
@@ -336,10 +346,21 @@ describe('LexicalNode tests', () => {
 
         await editor.getEditorState().read(() => {
           expect(bazTextNode.getPreviousSiblings()).toEqual([
-            textNode,
-            barTextNode,
+            {
+              ...textNode,
+              __next: '3',
+            },
+            {
+              ...barTextNode,
+              __prev: '2',
+            },
           ]);
-          expect(barTextNode.getPreviousSiblings()).toEqual([textNode]);
+          expect(barTextNode.getPreviousSiblings()).toEqual([
+            {
+              ...textNode,
+              __next: '3',
+            },
+          ]);
           expect(textNode.getPreviousSiblings()).toEqual([]);
         });
         expect(() => textNode.getPreviousSiblings()).toThrow();
@@ -806,6 +827,32 @@ describe('LexicalNode tests', () => {
           '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p><span data-lexical-text="true">bar</span></p></div>',
         );
         // TODO: add text direction validations
+      });
+
+      test('LexicalNode.replace() within canBeEmpty: false', async () => {
+        const {editor} = testEnv;
+
+        jest
+          .spyOn(TestInlineElementNode.prototype, 'canBeEmpty')
+          .mockReturnValue(false);
+
+        await editor.update(() => {
+          textNode = $createTextNode('Hello');
+
+          $getRoot()
+            .clear()
+            .append(
+              $createParagraphNode().append(
+                $createTestInlineElementNode().append(textNode),
+              ),
+            );
+
+          textNode.replace($createTextNode('world'));
+        });
+
+        expect(testEnv.outerHTML).toBe(
+          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p><a dir="ltr"><span data-lexical-text="true">world</span></a></p></div>',
+        );
       });
 
       test('LexicalNode.insertAfter()', async () => {

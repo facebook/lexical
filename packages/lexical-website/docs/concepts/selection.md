@@ -1,6 +1,4 @@
----
-sidebar_position: 3
----
+
 
 # Selection
 
@@ -35,7 +33,7 @@ Both the `anchor` and `focus` points refer to an object that represents a specif
 
 NodeSelection represents a selection of multiple arbitrary nodes. For example, three images selected at the same time.
 
-- `getNodes()` returns an array containing the selected LexicalNodes 
+- `getNodes()` returns an array containing the selected LexicalNodes
 
 ### `GridSelection`
 

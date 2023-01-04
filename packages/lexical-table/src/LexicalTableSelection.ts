@@ -28,7 +28,6 @@ import {
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import {CAN_USE_DOM} from 'shared/canUseDOM';
-import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
 
 import {$isTableCellNode} from './LexicalTableCellNode';
@@ -52,6 +51,9 @@ export type Grid = {
   columns: number;
   rows: number;
 };
+
+const getDOMSelection = (targetWindow: Window | null): Selection | null =>
+  CAN_USE_DOM ? (targetWindow || window).getSelection() : null;
 
 if (CAN_USE_DOM) {
   const disableNativeSelectionUi = document.createElement('style');
@@ -263,7 +265,7 @@ export class TableSelection {
       this.focusCell = cell;
 
       if (this.anchorCell !== null) {
-        const domSelection = getDOMSelection();
+        const domSelection = getDOMSelection(this.editor._window);
         // Collapse the selection
         if (domSelection) {
           domSelection.setBaseAndExtent(

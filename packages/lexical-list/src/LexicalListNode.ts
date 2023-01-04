@@ -11,10 +11,12 @@ import {
   removeClassNamesFromElement,
 } from '@lexical/utils';
 import {
+  $applyNodeReplacement,
   $createTextNode,
   $isElementNode,
   DOMConversionMap,
   DOMConversionOutput,
+  DOMExportOutput,
   EditorConfig,
   EditorThemeClasses,
   ElementNode,
@@ -131,6 +133,19 @@ export class ListNode extends ElementNode {
     node.setIndent(serializedNode.indent);
     node.setDirection(serializedNode.direction);
     return node;
+  }
+
+  exportDOM(editor: LexicalEditor): DOMExportOutput {
+    const element = document.createElement(this.__tag);
+    if (this.__start !== 1) {
+      element.setAttribute('start', String(this.__start));
+    }
+    if (this.__listType === 'check') {
+      element.setAttribute('__lexicalListType', 'check');
+    }
+    return {
+      element,
+    };
   }
 
   exportJSON(): SerializedListNode {
@@ -263,11 +278,17 @@ function normalizeChildren(nodes: Array<LexicalNode>): Array<ListItemNode> {
 function convertListNode(domNode: Node): DOMConversionOutput {
   const nodeName = domNode.nodeName.toLowerCase();
   let node = null;
-
   if (nodeName === 'ol') {
     node = $createListNode('number');
   } else if (nodeName === 'ul') {
-    node = $createListNode('bullet');
+    if (
+      domNode instanceof HTMLElement &&
+      domNode.getAttribute('__lexicallisttype') === 'check'
+    ) {
+      node = $createListNode('check');
+    } else {
+      node = $createListNode('bullet');
+    }
   }
 
   return {
@@ -282,7 +303,7 @@ const TAG_TO_LIST_TYPE: Record<string, ListType> = {
 };
 
 export function $createListNode(listType: ListType, start = 1): ListNode {
-  return new ListNode(listType, start);
+  return $applyNodeReplacement(new ListNode(listType, start));
 }
 
 export function $isListNode(

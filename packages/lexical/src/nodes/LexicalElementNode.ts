@@ -34,7 +34,6 @@ import {errorOnReadOnly, getActiveEditor} from '../LexicalUpdates';
 import {
   $getNodeByKey,
   $isRootOrShadowRoot,
-  internalMarkNodeAsDirty,
   removeFromParent,
 } from '../LexicalUtils';
 
@@ -48,12 +47,23 @@ export type SerializedElementNode = Spread<
   SerializedLexicalNode
 >;
 
-export type ElementFormatType = 'left' | 'center' | 'right' | 'justify' | '';
+export type ElementFormatType =
+  | 'left'
+  | 'start'
+  | 'center'
+  | 'right'
+  | 'end'
+  | 'justify'
+  | '';
 
 /** @noInheritDoc */
 export class ElementNode extends LexicalNode {
   /** @internal */
-  __children: Array<NodeKey>;
+  __first: null | NodeKey;
+  /** @internal */
+  __last: null | NodeKey;
+  /** @internal */
+  __size: number;
   /** @internal */
   __format: number;
   /** @internal */
@@ -63,7 +73,9 @@ export class ElementNode extends LexicalNode {
 
   constructor(key?: NodeKey) {
     super(key);
-    this.__children = [];
+    this.__first = null;
+    this.__last = null;
+    this.__size = 0;
     this.__format = 0;
     this.__indent = 0;
     this.__dir = null;
@@ -82,23 +94,26 @@ export class ElementNode extends LexicalNode {
     return self.__indent;
   }
   getChildren<T extends LexicalNode>(): Array<T> {
-    const self = this.getLatest();
-    const children = self.__children;
-    const childrenNodes: Array<T> = [];
-    for (let i = 0; i < children.length; i++) {
-      const childNode = $getNodeByKey<T>(children[i]);
-      if (childNode !== null) {
-        childrenNodes.push(childNode);
-      }
+    const children: Array<T> = [];
+    let child: T | null = this.getFirstChild();
+    while (child !== null) {
+      children.push(child);
+      child = child.getNextSibling();
     }
-    return childrenNodes;
+    return children;
   }
   getChildrenKeys(): Array<NodeKey> {
-    return this.getLatest().__children;
+    const children: Array<NodeKey> = [];
+    let child: LexicalNode | null = this.getFirstChild();
+    while (child !== null) {
+      children.push(child.__key);
+      child = child.getNextSibling();
+    }
+    return children;
   }
   getChildrenSize(): number {
     const self = this.getLatest();
-    return self.__children.length;
+    return self.__size;
   }
   isEmpty(): boolean {
     return this.getChildrenSize() === 0;
@@ -110,21 +125,21 @@ export class ElementNode extends LexicalNode {
   }
   isLastChild(): boolean {
     const self = this.getLatest();
-    const parent = self.getParentOrThrow();
-    return parent.getLastChild() === self;
+    const parentLastChild = this.getParentOrThrow().getLastChild();
+    return parentLastChild !== null && parentLastChild.is(self);
   }
   getAllTextNodes(): Array<TextNode> {
     const textNodes = [];
-    const self = this.getLatest();
-    const children = self.__children;
-    for (let i = 0; i < children.length; i++) {
-      const childNode = $getNodeByKey<LexicalNode>(children[i]);
-      if ($isTextNode(childNode)) {
-        textNodes.push(childNode);
-      } else if ($isElementNode(childNode)) {
-        const subChildrenNodes = childNode.getAllTextNodes();
+    let child: LexicalNode | null = this.getFirstChild();
+    while (child !== null) {
+      if ($isTextNode(child)) {
+        textNodes.push(child);
+      }
+      if ($isElementNode(child)) {
+        const subChildrenNodes = child.getAllTextNodes();
         textNodes.push(...subChildrenNodes);
       }
+      child = child.getNextSibling();
     }
     return textNodes;
   }
@@ -178,12 +193,8 @@ export class ElementNode extends LexicalNode {
   }
   getFirstChild<T extends LexicalNode>(): null | T {
     const self = this.getLatest();
-    const children = self.__children;
-    const childrenLength = children.length;
-    if (childrenLength === 0) {
-      return null;
-    }
-    return $getNodeByKey<T>(children[0]);
+    const firstKey = self.__first;
+    return firstKey === null ? null : $getNodeByKey<T>(firstKey);
   }
   getFirstChildOrThrow<T extends LexicalNode>(): T {
     const firstChild = this.getFirstChild<T>();
@@ -194,12 +205,8 @@ export class ElementNode extends LexicalNode {
   }
   getLastChild<T extends LexicalNode>(): null | T {
     const self = this.getLatest();
-    const children = self.__children;
-    const childrenLength = children.length;
-    if (childrenLength === 0) {
-      return null;
-    }
-    return $getNodeByKey<T>(children[childrenLength - 1]);
+    const lastKey = self.__last;
+    return lastKey === null ? null : $getNodeByKey<T>(lastKey);
   }
   getLastChildOrThrow<T extends LexicalNode>(): T {
     const lastChild = this.getLastChild<T>();
@@ -209,13 +216,31 @@ export class ElementNode extends LexicalNode {
     return lastChild;
   }
   getChildAtIndex<T extends LexicalNode>(index: number): null | T {
-    const self = this.getLatest();
-    const children = self.__children;
-    const key = children[index];
-    if (key === undefined) {
+    const size = this.getChildrenSize();
+    let node: null | T;
+    let i;
+    if (index < size / 2) {
+      node = this.getFirstChild<T>();
+      i = 0;
+      while (node !== null && i <= index) {
+        if (i === index) {
+          return node;
+        }
+        node = node.getNextSibling();
+        i++;
+      }
       return null;
     }
-    return $getNodeByKey(key);
+    node = this.getLastChild<T>();
+    i = size - 1;
+    while (node !== null && i >= index) {
+      if (i === index) {
+        return node;
+      }
+      node = node.getPreviousSibling();
+      i--;
+    }
+    return null;
   }
   getTextContent(): string {
     let textContent = '';
@@ -254,6 +279,22 @@ export class ElementNode extends LexicalNode {
     let anchorOffset = _anchorOffset;
     let focusOffset = _focusOffset;
     const childrenCount = this.getChildrenSize();
+    if (!this.canBeEmpty()) {
+      if (_anchorOffset === 0 && _focusOffset === 0) {
+        const firstChild = this.getFirstChild();
+        if ($isTextNode(firstChild) || $isElementNode(firstChild)) {
+          return firstChild.select(0, 0);
+        }
+      } else if (
+        (_anchorOffset === undefined || _anchorOffset === childrenCount) &&
+        (_focusOffset === undefined || _focusOffset === childrenCount)
+      ) {
+        const lastChild = this.getLastChild();
+        if ($isTextNode(lastChild) || $isElementNode(lastChild)) {
+          return lastChild.select();
+        }
+      }
+    }
     if (anchorOffset === undefined) {
       anchorOffset = childrenCount;
     }
@@ -328,50 +369,92 @@ export class ElementNode extends LexicalNode {
     deleteCount: number,
     nodesToInsert: Array<LexicalNode>,
   ): this {
+    const nodesToInsertLength = nodesToInsert.length;
+    const oldSize = this.getChildrenSize();
     const writableSelf = this.getWritable();
     const writableSelfKey = writableSelf.__key;
-    const writableSelfChildren = writableSelf.__children;
-    const nodesToInsertLength = nodesToInsert.length;
     const nodesToInsertKeys = [];
+    const nodesToRemoveKeys = [];
+    const nodeAfterRange = this.getChildAtIndex(start + deleteCount);
+    let nodeBeforeRange = null;
+    let newSize = oldSize - deleteCount + nodesToInsertLength;
 
-    // Remove nodes to insert from their previous parent
+    if (start !== 0) {
+      if (start === oldSize) {
+        nodeBeforeRange = this.getLastChild();
+      } else {
+        const node = this.getChildAtIndex(start);
+        if (node !== null) {
+          nodeBeforeRange = node.getPreviousSibling();
+        }
+      }
+    }
+
+    if (deleteCount > 0) {
+      let nodeToDelete =
+        nodeBeforeRange === null
+          ? this.getFirstChild()
+          : nodeBeforeRange.getNextSibling();
+      for (let i = 0; i < deleteCount; i++) {
+        if (nodeToDelete === null) {
+          invariant(false, 'splice: sibling not found');
+        }
+        const nextSibling = nodeToDelete.getNextSibling();
+        const nodeKeyToDelete = nodeToDelete.__key;
+        const writableNodeToDelete = nodeToDelete.getWritable();
+        removeFromParent(writableNodeToDelete);
+        nodesToRemoveKeys.push(nodeKeyToDelete);
+        nodeToDelete = nextSibling;
+      }
+    }
+
+    let prevNode = nodeBeforeRange;
     for (let i = 0; i < nodesToInsertLength; i++) {
       const nodeToInsert = nodesToInsert[i];
+      if (prevNode !== null && nodeToInsert.is(prevNode)) {
+        nodeBeforeRange = prevNode = prevNode.getPreviousSibling();
+      }
       const writableNodeToInsert = nodeToInsert.getWritable();
+      if (writableNodeToInsert.__parent === writableSelfKey) {
+        newSize--;
+      }
+      removeFromParent(writableNodeToInsert);
+      const nodeKeyToInsert = nodeToInsert.__key;
+      if (prevNode === null) {
+        writableSelf.__first = nodeKeyToInsert;
+        writableNodeToInsert.__prev = null;
+      } else {
+        const writablePrevNode = prevNode.getWritable();
+        writablePrevNode.__next = nodeKeyToInsert;
+        writableNodeToInsert.__prev = writablePrevNode.__key;
+      }
       if (nodeToInsert.__key === writableSelfKey) {
         invariant(false, 'append: attempting to append self');
       }
-      removeFromParent(writableNodeToInsert);
       // Set child parent to self
       writableNodeToInsert.__parent = writableSelfKey;
-      const newKey = writableNodeToInsert.__key;
-      nodesToInsertKeys.push(newKey);
+      nodesToInsertKeys.push(nodeKeyToInsert);
+      prevNode = nodeToInsert;
     }
 
-    // Mark range edges siblings as dirty
-    const nodeBeforeRange = this.getChildAtIndex(start - 1);
-    if (nodeBeforeRange) {
-      internalMarkNodeAsDirty(nodeBeforeRange);
-    }
-    const nodeAfterRange = this.getChildAtIndex(start + deleteCount);
-    if (nodeAfterRange) {
-      internalMarkNodeAsDirty(nodeAfterRange);
+    if (start + deleteCount === oldSize) {
+      if (prevNode !== null) {
+        const writablePrevNode = prevNode.getWritable();
+        writablePrevNode.__next = null;
+        writableSelf.__last = prevNode.__key;
+      }
+    } else if (nodeAfterRange !== null) {
+      const writableNodeAfterRange = nodeAfterRange.getWritable();
+      if (prevNode !== null) {
+        const writablePrevNode = prevNode.getWritable();
+        writableNodeAfterRange.__prev = prevNode.__key;
+        writablePrevNode.__next = nodeAfterRange.__key;
+      } else {
+        writableNodeAfterRange.__prev = null;
+      }
     }
 
-    // Remove defined range of children
-    let nodesToRemoveKeys: Array<NodeKey>;
-
-    // Using faster push when only appending nodes
-    if (start === writableSelfChildren.length) {
-      writableSelfChildren.push(...nodesToInsertKeys);
-      nodesToRemoveKeys = [];
-    } else {
-      nodesToRemoveKeys = writableSelfChildren.splice(
-        start,
-        deleteCount,
-        ...nodesToInsertKeys,
-      );
-    }
+    writableSelf.__size = newSize;
 
     // In case of deletion we need to adjust selection, unlink removed nodes
     // and clean up node itself if it becomes empty. None of these needed
@@ -382,23 +465,9 @@ export class ElementNode extends LexicalNode {
       if ($isRangeSelection(selection)) {
         const nodesToRemoveKeySet = new Set(nodesToRemoveKeys);
         const nodesToInsertKeySet = new Set(nodesToInsertKeys);
-        const isPointRemoved = (point: PointType): boolean => {
-          let node: ElementNode | TextNode | null = point.getNode();
-          while (node) {
-            const nodeKey = node.__key;
-            if (
-              nodesToRemoveKeySet.has(nodeKey) &&
-              !nodesToInsertKeySet.has(nodeKey)
-            ) {
-              return true;
-            }
-            node = node.getParent();
-          }
-          return false;
-        };
 
         const {anchor, focus} = selection;
-        if (isPointRemoved(anchor)) {
+        if (isPointRemoved(anchor, nodesToRemoveKeySet, nodesToInsertKeySet)) {
           moveSelectionPointToSibling(
             anchor,
             anchor.getNode(),
@@ -407,7 +476,7 @@ export class ElementNode extends LexicalNode {
             nodeAfterRange,
           );
         }
-        if (isPointRemoved(focus)) {
+        if (isPointRemoved(focus, nodesToRemoveKeySet, nodesToInsertKeySet)) {
           moveSelectionPointToSibling(
             focus,
             focus.getNode(),
@@ -416,23 +485,8 @@ export class ElementNode extends LexicalNode {
             nodeAfterRange,
           );
         }
-
-        // Unlink removed nodes from current parent
-        const nodesToRemoveKeysLength = nodesToRemoveKeys.length;
-        for (let i = 0; i < nodesToRemoveKeysLength; i++) {
-          const nodeToRemove = $getNodeByKey<LexicalNode>(nodesToRemoveKeys[i]);
-          if (nodeToRemove != null) {
-            const writableNodeToRemove = nodeToRemove.getWritable();
-            writableNodeToRemove.__parent = null;
-          }
-        }
-
         // Cleanup if node can't be empty
-        if (
-          writableSelfChildren.length === 0 &&
-          !this.canBeEmpty() &&
-          !$isRootOrShadowRoot(this)
-        ) {
+        if (newSize === 0 && !this.canBeEmpty() && !$isRootOrShadowRoot(this)) {
           this.remove();
         }
       }
@@ -452,7 +506,10 @@ export class ElementNode extends LexicalNode {
     };
   }
   // These are intended to be extends for specific element heuristics.
-  insertNewAfter(selection: RangeSelection): null | LexicalNode {
+  insertNewAfter(
+    selection: RangeSelection,
+    restoreSelection?: boolean,
+  ): null | LexicalNode {
     return null;
   }
   canInsertTab(): boolean {
@@ -495,7 +552,7 @@ export class ElementNode extends LexicalNode {
   }
   // A shadow root is a Node that behaves like RootNode. The shadow root (and RootNode) mark the
   // end of the hiercharchy, most implementations should treat it as there's nothing (upwards)
-  // beyond this point. For example, node.getTopElement(), when performed inside a TableCellNode
+  // beyond this point. For example, node.getTopLevelElement(), when performed inside a TableCellNode
   // will return the immediate first child underneath TableCellNode instead of RootNode.
   isShadowRoot(): boolean {
     return false;
@@ -516,4 +573,20 @@ export function $isElementNode(
   node: LexicalNode | null | undefined,
 ): node is ElementNode {
   return node instanceof ElementNode;
+}
+
+function isPointRemoved(
+  point: PointType,
+  nodesToRemoveKeySet: Set<NodeKey>,
+  nodesToInsertKeySet: Set<NodeKey>,
+): boolean {
+  let node: ElementNode | TextNode | null = point.getNode();
+  while (node) {
+    const nodeKey = node.__key;
+    if (nodesToRemoveKeySet.has(nodeKey) && !nodesToInsertKeySet.has(nodeKey)) {
+      return true;
+    }
+    node = node.getParent();
+  }
+  return false;
 }

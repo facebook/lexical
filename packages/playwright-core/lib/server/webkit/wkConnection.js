@@ -6,21 +6,13 @@ Object.defineProperty(exports, "__esModule", {
 exports.WKSession = exports.WKConnection = void 0;
 exports.createProtocolError = createProtocolError;
 exports.kPageProxyMessageReceived = exports.kBrowserCloseMessageId = void 0;
-
 var _events = require("events");
-
 var _utils = require("../../utils");
-
 var _stackTrace = require("../../utils/stackTrace");
-
 var _debugLogger = require("../../common/debugLogger");
-
 var _helper = require("../helper");
-
 var _errors = require("../../common/errors");
-
 var _protocolError = require("../protocolError");
-
 /**
  * Copyright 2017 Google Inc. All rights reserved.
  * Modifications copyright (c) Microsoft Corporation.
@@ -37,15 +29,16 @@ var _protocolError = require("../protocolError");
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 // WKPlaywright uses this special id to issue Browser.close command which we
 // should ignore.
-const kBrowserCloseMessageId = -9999; // We emulate kPageProxyMessageReceived message to unify it with Browser.pageProxyCreated
-// and Browser.pageProxyDestroyed for easier management.
+const kBrowserCloseMessageId = -9999;
 
+// We emulate kPageProxyMessageReceived message to unify it with Browser.pageProxyCreated
+// and Browser.pageProxyDestroyed for easier management.
 exports.kBrowserCloseMessageId = kBrowserCloseMessageId;
 const kPageProxyMessageReceived = 'kPageProxyMessageReceived';
 exports.kPageProxyMessageReceived = kPageProxyMessageReceived;
-
 class WKConnection {
   constructor(transport, onDisconnect, protocolLogger, browserLogsCollector) {
     this._transport = void 0;
@@ -56,31 +49,26 @@ class WKConnection {
     this._closed = false;
     this.browserSession = void 0;
     this._transport = transport;
-    this._transport.onmessage = this._dispatchMessage.bind(this);
-    this._transport.onclose = this._onClose.bind(this);
     this._onDisconnect = onDisconnect;
     this._protocolLogger = protocolLogger;
     this._browserLogsCollector = browserLogsCollector;
     this.browserSession = new WKSession(this, '', _errors.kBrowserClosedError, message => {
       this.rawSend(message);
     });
+    this._transport.onmessage = this._dispatchMessage.bind(this);
+    // onclose should be set last, since it can be immediately called.
+    this._transport.onclose = this._onClose.bind(this);
   }
-
   nextMessageId() {
     return ++this._lastId;
   }
-
   rawSend(message) {
     this._protocolLogger('send', message);
-
     this._transport.send(message);
   }
-
   _dispatchMessage(message) {
     this._protocolLogger('receive', message);
-
     if (message.id === kBrowserCloseMessageId) return;
-
     if (message.pageProxyId) {
       const payload = {
         message: message,
@@ -92,31 +80,23 @@ class WKConnection {
       });
       return;
     }
-
     this.browserSession.dispatchMessage(message);
   }
-
   _onClose() {
     this._closed = true;
     this._transport.onmessage = undefined;
     this._transport.onclose = undefined;
     this.browserSession.dispose(true);
-
     this._onDisconnect();
   }
-
   isClosed() {
     return this._closed;
   }
-
   close() {
     if (!this._closed) this._transport.close();
   }
-
 }
-
 exports.WKConnection = WKConnection;
-
 class WKSession extends _events.EventEmitter {
   constructor(connection, sessionId, errorText, rawSend) {
     super();
@@ -143,7 +123,6 @@ class WKSession extends _events.EventEmitter {
     this.removeListener = super.removeListener;
     this.once = super.once;
   }
-
   async send(method, params) {
     if (this._crashed) throw new _protocolError.ProtocolError(true, 'Target crashed');
     if (this._disposed) throw new _protocolError.ProtocolError(true, `Target closed`);
@@ -153,9 +132,7 @@ class WKSession extends _events.EventEmitter {
       method,
       params
     };
-
     this._rawSend(messageObj);
-
     return new Promise((resolve, reject) => {
       this._callbacks.set(id, {
         resolve,
@@ -165,38 +142,28 @@ class WKSession extends _events.EventEmitter {
       });
     });
   }
-
   sendMayFail(method, params) {
     return this.send(method, params).catch(error => _debugLogger.debugLogger.log('error', error));
   }
-
   markAsCrashed() {
     this._crashed = true;
   }
-
   isDisposed() {
     return this._disposed;
   }
-
   dispose(disconnected) {
     if (disconnected) this.errorText = 'Browser closed.' + _helper.helper.formatBrowserLogs(this.connection._browserLogsCollector.recentLogs());
-
     for (const callback of this._callbacks.values()) {
       callback.error.sessionClosed = true;
       callback.reject((0, _stackTrace.rewriteErrorMessage)(callback.error, this.errorText));
     }
-
     this._callbacks.clear();
-
     this._disposed = true;
   }
-
   dispatchMessage(object) {
     if (object.id && this._callbacks.has(object.id)) {
       const callback = this._callbacks.get(object.id);
-
       this._callbacks.delete(object.id);
-
       if (object.error) callback.reject(createProtocolError(callback.error, callback.method, object.error));else callback.resolve(object.result);
     } else if (object.id && !object.error) {
       // Response might come after session has been disposed and rejected all callbacks.
@@ -205,11 +172,8 @@ class WKSession extends _events.EventEmitter {
       Promise.resolve().then(() => this.emit(object.method, object.params));
     }
   }
-
 }
-
 exports.WKSession = WKSession;
-
 function createProtocolError(error, method, protocolError) {
   let message = `Protocol error (${method}): ${protocolError.message}`;
   if ('data' in protocolError) message += ` ${JSON.stringify(protocolError.data)}`;

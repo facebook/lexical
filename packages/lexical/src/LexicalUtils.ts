@@ -8,8 +8,8 @@
 
 import type {
   CommandPayloadType,
+  EditorConfig,
   EditorThemeClasses,
-  IntentionallyMarkedAsDirtyElement,
   Klass,
   LexicalCommand,
   MutatedNodes,
@@ -29,8 +29,8 @@ import type {
 import type {RootNode} from './nodes/LexicalRootNode';
 import type {TextFormatType, TextNode} from './nodes/LexicalTextNode';
 
+import {CAN_USE_DOM} from 'shared/canUseDOM';
 import {IS_APPLE, IS_IOS, IS_SAFARI} from 'shared/environment';
-import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
 
 import {
@@ -106,13 +106,21 @@ export function $isSelectionCapturedInDecorator(node: Node): boolean {
   return $isDecoratorNode($getNearestNodeFromDOMNode(node));
 }
 
-// TODO change to $ function
 export function isSelectionCapturedInDecoratorInput(anchorDOM: Node): boolean {
-  const activeElement = document.activeElement;
-  const nodeName = activeElement !== null ? activeElement.nodeName : null;
+  const activeElement = document.activeElement as HTMLElement;
+
+  if (activeElement === null) {
+    return false;
+  }
+  const nodeName = activeElement.nodeName;
+
   return (
-    !$isDecoratorNode($getNearestNodeFromDOMNode(anchorDOM)) ||
-    (nodeName !== 'INPUT' && nodeName !== 'TEXTAREA')
+    $isDecoratorNode($getNearestNodeFromDOMNode(anchorDOM)) &&
+    (nodeName === 'INPUT' ||
+      nodeName === 'TEXTAREA' ||
+      (activeElement.contentEditable === 'true' &&
+        // @ts-ignore iternal field
+        activeElement.__lexicalEditor == null))
   );
 }
 
@@ -129,7 +137,7 @@ export function isSelectionWithinEditor(
       rootElement.contains(focusDOM) &&
       // Ignore if selection is within nested editor
       anchorDOM !== null &&
-      isSelectionCapturedInDecoratorInput(anchorDOM as Node) &&
+      !isSelectionCapturedInDecoratorInput(anchorDOM as Node) &&
       getNearestEditorFromDOMNode(anchorDOM) === editor
     );
   } catch (error) {
@@ -147,7 +155,7 @@ export function getNearestEditorFromDOMNode(
     if (editor != null) {
       return editor;
     }
-    currentNode = currentNode.parentNode;
+    currentNode = getParentElement(currentNode);
   }
   return null;
 }
@@ -234,6 +242,8 @@ export function $setNodeKey(
   node.__key = key;
 }
 
+type IntentionallyMarkedAsDirtyElement = boolean;
+
 function internalMarkParentElementsAsDirty(
   parentKey: NodeKey,
   nodeMap: NodeMap,
@@ -253,17 +263,54 @@ function internalMarkParentElementsAsDirty(
   }
 }
 
-export function removeFromParent(writableNode: LexicalNode): void {
-  const oldParent = writableNode.getParent();
+export function removeFromParent(node: LexicalNode): void {
+  const oldParent = node.getParent();
   if (oldParent !== null) {
+    const writableNode = node.getWritable();
     const writableParent = oldParent.getWritable();
-    const children = writableParent.__children;
-    const index = children.indexOf(writableNode.__key);
-    if (index === -1) {
-      invariant(false, 'Node is not a child of its parent');
+    const prevSibling = node.getPreviousSibling();
+    const nextSibling = node.getNextSibling();
+    // TODO: this function duplicates a bunch of operations, can be simplified.
+    if (prevSibling === null) {
+      if (nextSibling !== null) {
+        const writableNextSibling = nextSibling.getWritable();
+        writableParent.__first = nextSibling.__key;
+        writableNextSibling.__prev = null;
+      } else {
+        writableParent.__first = null;
+      }
+    } else {
+      const writablePrevSibling = prevSibling.getWritable();
+      if (nextSibling !== null) {
+        const writableNextSibling = nextSibling.getWritable();
+        writableNextSibling.__prev = writablePrevSibling.__key;
+        writablePrevSibling.__next = writableNextSibling.__key;
+      } else {
+        writablePrevSibling.__next = null;
+      }
+      writableNode.__prev = null;
     }
-    internalMarkSiblingsAsDirty(writableNode);
-    children.splice(index, 1);
+    if (nextSibling === null) {
+      if (prevSibling !== null) {
+        const writablePrevSibling = prevSibling.getWritable();
+        writableParent.__last = prevSibling.__key;
+        writablePrevSibling.__next = null;
+      } else {
+        writableParent.__last = null;
+      }
+    } else {
+      const writableNextSibling = nextSibling.getWritable();
+      if (prevSibling !== null) {
+        const writablePrevSibling = prevSibling.getWritable();
+        writablePrevSibling.__next = writableNextSibling.__key;
+        writableNextSibling.__prev = writablePrevSibling.__key;
+      } else {
+        writableNextSibling.__prev = null;
+      }
+      writableNode.__next = null;
+    }
+    writableParent.__size--;
+    writableNode.__parent = null;
   }
 }
 
@@ -365,7 +412,7 @@ export function $getNearestNodeFromDOMNode(
     if (node !== null) {
       return node;
     }
-    dom = dom.parentNode;
+    dom = getParentElement(dom);
   }
   return null;
 }
@@ -420,6 +467,7 @@ export function internalGetRoot(editorState: EditorState): RootNode {
 export function $setSelection(
   selection: null | RangeSelection | NodeSelection | GridSelection,
 ): void {
+  errorOnReadOnly();
   const editorState = getActiveEditorState();
   if (selection !== null) {
     if (__DEV__) {
@@ -474,7 +522,7 @@ function getNodeKeyFromDOM(
     if (key !== undefined) {
       return key;
     }
-    node = node.parentNode;
+    node = getParentElement(node);
   }
   return null;
 }
@@ -502,22 +550,29 @@ export function createUID(): string {
     .substr(0, 5);
 }
 
+export function getAnchorTextFromDOM(anchorNode: Node): null | string {
+  if (anchorNode.nodeType === DOM_TEXT_TYPE) {
+    return anchorNode.nodeValue;
+  }
+  return null;
+}
+
 export function $updateSelectedTextFromDOM(
   isCompositionEnd: boolean,
+  editor: LexicalEditor,
   data?: string,
 ): void {
   // Update the text content with the latest composition text
-  const domSelection = getDOMSelection();
+  const domSelection = getDOMSelection(editor._window);
   if (domSelection === null) {
     return;
   }
   const anchorNode = domSelection.anchorNode;
   let {anchorOffset, focusOffset} = domSelection;
-  if (anchorNode !== null && anchorNode.nodeType === DOM_TEXT_TYPE) {
+  if (anchorNode !== null) {
+    let textContent = getAnchorTextFromDOM(anchorNode);
     const node = $getNearestNodeFromDOMNode(anchorNode);
-    if ($isTextNode(node)) {
-      let textContent = anchorNode.nodeValue;
-
+    if (textContent !== null && $isTextNode(node)) {
       // Data is intentionally truthy, as we check for boolean, null and empty string.
       if (textContent === COMPOSITION_SUFFIX && data) {
         const offset = data.length;
@@ -631,7 +686,7 @@ function $previousSiblingDoesNotAcceptText(node: TextNode): boolean {
 // This function is connected to $shouldPreventDefaultAndInsertText and determines whether the
 // TextNode boundaries are writable or we should use the previous/next sibling instead. For example,
 // in the case of a LinkNode, boundaries are not writable.
-function $shouldInsertTextAfterOrBeforeTextNode(
+export function $shouldInsertTextAfterOrBeforeTextNode(
   selection: RangeSelection,
   node: TextNode,
 ): boolean {
@@ -658,50 +713,6 @@ function $shouldInsertTextAfterOrBeforeTextNode(
   } else {
     return false;
   }
-}
-
-// This function is used to determine if Lexical should attempt to override
-// the default browser behavior for insertion of text and use its own internal
-// heuristics. This is an extremely important function, and makes much of Lexical
-// work as intended between different browsers and across word, line and character
-// boundary/formats. It also is important for text replacement, node schemas and
-// composition mechanics.
-export function $shouldPreventDefaultAndInsertText(
-  selection: RangeSelection,
-  text: string,
-): boolean {
-  const anchor = selection.anchor;
-  const focus = selection.focus;
-  const anchorNode = anchor.getNode();
-  const domSelection = getDOMSelection();
-  const domAnchorNode = domSelection !== null ? domSelection.anchorNode : null;
-  const anchorKey = anchor.key;
-  const backingAnchorElement = getActiveEditor().getElementByKey(anchorKey);
-  const textLength = text.length;
-
-  return (
-    anchorKey !== focus.key ||
-    // If we're working with a non-text node.
-    !$isTextNode(anchorNode) ||
-    // If we are replacing a range with a single character or grapheme, and not composing.
-    ((textLength < 2 || doesContainGrapheme(text)) &&
-      anchor.offset !== focus.offset &&
-      !anchorNode.isComposing()) ||
-    // Any non standard text node.
-    $isTokenOrSegmented(anchorNode) ||
-    // If the text length is more than a single character and we're either
-    // dealing with this in "beforeinput" or where the node has already recently
-    // been changed (thus is dirty).
-    (anchorNode.isDirty() && textLength > 1) ||
-    // If the DOM selection element is not the same as the backing node
-    (backingAnchorElement !== null &&
-      !anchorNode.isComposing() &&
-      domAnchorNode !== getDOMTextNode(backingAnchorElement)) ||
-    // Check if we're changing from bold to italics, or some other format.
-    anchorNode.getFormat() !== selection.format ||
-    // One last set of heuristics to check against.
-    $shouldInsertTextAfterOrBeforeTextNode(selection, anchorNode)
-  );
 }
 
 export function isTab(
@@ -1021,8 +1032,14 @@ export function setMutatedNode(
     mutatedNodesByType = new Map();
     mutatedNodes.set(klass, mutatedNodesByType);
   }
-  if (!mutatedNodesByType.has(nodeKey)) {
-    mutatedNodesByType.set(nodeKey, mutation);
+  const prevMutation = mutatedNodesByType.get(nodeKey);
+  // If the node has already been "destroyed", yet we are
+  // re-making it, then this means a move likely happened.
+  // We should change the mutation to be that of "updated"
+  // instead.
+  const isMove = prevMutation === 'destroyed' && mutation === 'created';
+  if (prevMutation === undefined || isMove) {
+    mutatedNodesByType.set(nodeKey, isMove ? 'updated' : mutation);
   }
 }
 
@@ -1064,7 +1081,7 @@ function resolveElement(
   return block.getChildAtIndex(isBackward ? offset - 1 : offset);
 }
 
-export function $getDecoratorNode(
+export function $getAdjacentNode(
   focus: PointType,
   isBackward: boolean,
 ): null | LexicalNode {
@@ -1134,41 +1151,64 @@ export function getElementByKeyOrThrow(
   return element;
 }
 
+export function getParentElement(node: Node): HTMLElement | null {
+  const parentElement =
+    (node as HTMLSlotElement).assignedSlot || node.parentElement;
+  return parentElement !== null && parentElement.nodeType === 11
+    ? ((parentElement as unknown as ShadowRoot).host as HTMLElement)
+    : parentElement;
+}
+
 export function scrollIntoViewIfNeeded(
   editor: LexicalEditor,
-  anchor: PointType,
+  selectionRect: DOMRect,
   rootElement: HTMLElement,
-  tags: Set<string>,
 ): void {
-  let anchorNode: LexicalNode = anchor.getNode();
-  if ($isElementNode(anchorNode)) {
-    const descendantNode = anchorNode.getDescendantByIndex(anchor.offset);
-    if (descendantNode !== null) {
-      anchorNode = descendantNode;
-    }
+  const doc = rootElement.ownerDocument;
+  const defaultView = doc.defaultView;
+
+  if (defaultView === null) {
+    return;
   }
-  const element = editor.getElementByKey(anchorNode.__key) as Element;
+  let {top: currentTop, bottom: currentBottom} = selectionRect;
+  let targetTop = 0;
+  let targetBottom = 0;
+  let element: HTMLElement | null = rootElement;
 
-  if (element !== null) {
-    const rect = element.getBoundingClientRect();
-
-    if (rect.bottom > getWindow(editor).innerHeight) {
-      element.scrollIntoView(false);
-    } else if (rect.top < 0) {
-      element.scrollIntoView();
+  while (element !== null) {
+    const isBodyElement = element === doc.body;
+    if (isBodyElement) {
+      targetTop = 0;
+      targetBottom = getWindow(editor).innerHeight;
     } else {
-      const rootRect = rootElement.getBoundingClientRect();
+      const targetRect = element.getBoundingClientRect();
+      targetTop = targetRect.top;
+      targetBottom = targetRect.bottom;
+    }
+    let diff = 0;
 
-      // Rects can returning decimal numbers that differ due to rounding
-      // differences. So let's normalize the values.
-      if (Math.floor(rect.bottom) > Math.floor(rootRect.bottom)) {
-        element.scrollIntoView(false);
-      } else if (Math.floor(rect.top) < Math.floor(rootRect.top)) {
-        element.scrollIntoView();
+    if (currentTop < targetTop) {
+      diff = -(targetTop - currentTop);
+    } else if (currentBottom > targetBottom) {
+      diff = currentBottom - targetBottom;
+    }
+
+    if (diff !== 0) {
+      if (isBodyElement) {
+        // Only handles scrolling of Y axis
+        defaultView.scrollBy(0, diff);
+      } else {
+        const scrollTop = element.scrollTop;
+        element.scrollTop += diff;
+        const yOffset = element.scrollTop - scrollTop;
+        currentTop -= yOffset;
+        currentBottom -= yOffset;
       }
     }
-
-    tags.add('scroll-into-view');
+    if (isBodyElement) {
+      break;
+    }
+    element = getParentElement(element);
   }
 }
 
@@ -1262,4 +1302,162 @@ export function $copyNode<T extends LexicalNode>(node: T): T {
   const copy = node.constructor.clone(node);
   $setNodeKey(copy, null);
   return copy;
+}
+
+export function $applyNodeReplacement<N extends LexicalNode>(
+  node: LexicalNode,
+): N {
+  const editor = getActiveEditor();
+  const nodeType = (node.constructor as Klass<LexicalNode>).getType();
+  const registeredNode = editor._nodes.get(nodeType);
+  if (registeredNode === undefined) {
+    invariant(
+      false,
+      '$initializeNode failed. Ensure node has been registered to the editor. You can do this by passing the node class via the "nodes" array in the editor config.',
+    );
+  }
+  const replaceFunc = registeredNode.replace;
+  if (replaceFunc !== null) {
+    const replacementNode = replaceFunc(node) as N;
+    if (!(replacementNode instanceof node.constructor)) {
+      invariant(
+        false,
+        '$initializeNode failed. Ensure replacement node is a subclass of the original node.',
+      );
+    }
+    return replacementNode;
+  }
+  return node as N;
+}
+
+export function errorOnInsertTextNodeOnRoot(
+  node: LexicalNode,
+  insertNode: LexicalNode,
+): void {
+  const parentNode = node.getParent();
+  if (
+    $isRootNode(parentNode) &&
+    !$isElementNode(insertNode) &&
+    !$isDecoratorNode(insertNode)
+  ) {
+    invariant(
+      false,
+      'Only element or decorator nodes can be inserted in to the root node',
+    );
+  }
+}
+
+export function $getNodeByKeyOrThrow<N extends LexicalNode>(key: NodeKey): N {
+  const node = $getNodeByKey<N>(key);
+  if (node === null) {
+    invariant(
+      false,
+      "Expected node with key %s to exist but it's not in the nodeMap.",
+      key,
+    );
+  }
+  return node;
+}
+
+function createBlockCursorElement(editorConfig: EditorConfig): HTMLDivElement {
+  const theme = editorConfig.theme;
+  const element = document.createElement('div');
+  element.contentEditable = 'false';
+  element.setAttribute('data-lexical-cursor', 'true');
+  let blockCursorTheme = theme.blockCursor;
+  if (blockCursorTheme !== undefined) {
+    if (typeof blockCursorTheme === 'string') {
+      const classNamesArr = blockCursorTheme.split(' ');
+      // @ts-expect-error: intentional
+      blockCursorTheme = theme.blockCursor = classNamesArr;
+    }
+    if (blockCursorTheme !== undefined) {
+      element.classList.add(...blockCursorTheme);
+    }
+  }
+  return element;
+}
+
+function needsBlockCursor(node: null | LexicalNode): boolean {
+  return (
+    ($isDecoratorNode(node) || ($isElementNode(node) && !node.canBeEmpty())) &&
+    !node.isInline()
+  );
+}
+
+export function removeDOMBlockCursorElement(
+  blockCursorElement: HTMLElement,
+  editor: LexicalEditor,
+  rootElement: HTMLElement,
+) {
+  rootElement.style.removeProperty('caret-color');
+  editor._blockCursorElement = null;
+  const parentElement = blockCursorElement.parentElement;
+  if (parentElement !== null) {
+    parentElement.removeChild(blockCursorElement);
+  }
+}
+
+export function updateDOMBlockCursorElement(
+  editor: LexicalEditor,
+  rootElement: HTMLElement,
+  nextSelection: null | RangeSelection | NodeSelection | GridSelection,
+): void {
+  let blockCursorElement = editor._blockCursorElement;
+
+  if (
+    $isRangeSelection(nextSelection) &&
+    nextSelection.isCollapsed() &&
+    nextSelection.anchor.type === 'element' &&
+    rootElement.contains(document.activeElement)
+  ) {
+    const anchor = nextSelection.anchor;
+    const elementNode = anchor.getNode();
+    const offset = anchor.offset;
+    const elementNodeSize = elementNode.getChildrenSize();
+    let isBlockCursor = false;
+    let insertBeforeElement: null | HTMLElement = null;
+
+    if (offset === elementNodeSize) {
+      const child = elementNode.getChildAtIndex(offset - 1);
+      if (needsBlockCursor(child)) {
+        isBlockCursor = true;
+      }
+    } else {
+      const child = elementNode.getChildAtIndex(offset);
+      if (needsBlockCursor(child)) {
+        const sibling = (child as LexicalNode).getPreviousSibling();
+        if (sibling === null || needsBlockCursor(sibling)) {
+          isBlockCursor = true;
+          insertBeforeElement = editor.getElementByKey(
+            (child as LexicalNode).__key,
+          );
+        }
+      }
+    }
+    if (isBlockCursor) {
+      const elementDOM = editor.getElementByKey(
+        elementNode.__key,
+      ) as HTMLElement;
+      if (blockCursorElement === null) {
+        editor._blockCursorElement = blockCursorElement =
+          createBlockCursorElement(editor._config);
+      }
+      rootElement.style.caretColor = 'transparent';
+      if (insertBeforeElement === null) {
+        elementDOM.appendChild(blockCursorElement);
+      } else {
+        elementDOM.insertBefore(blockCursorElement, insertBeforeElement);
+      }
+      return;
+    }
+  }
+  // Remove cursor
+  if (blockCursorElement !== null) {
+    removeDOMBlockCursorElement(blockCursorElement, editor, rootElement);
+  }
+}
+
+export function getDOMSelection(targetWindow: null | Window): null | Selection {
+  return !CAN_USE_DOM ? null : (targetWindow || window).getSelection();
 }

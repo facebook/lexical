@@ -14,7 +14,13 @@ import type {
 } from '@lexical/markdown';
 import type {ElementNode, LexicalNode, TextFormatType, TextNode} from 'lexical';
 
-import {$getRoot, $isElementNode, $isLineBreakNode, $isTextNode} from 'lexical';
+import {
+  $getRoot,
+  $isDecoratorNode,
+  $isElementNode,
+  $isLineBreakNode,
+  $isTextNode,
+} from 'lexical';
 
 import {transformersByType} from './utils';
 
@@ -66,9 +72,13 @@ function exportTopLevelElements(
     }
   }
 
-  return $isElementNode(node)
-    ? exportChildren(node, textTransformersIndex, textMatchTransformers)
-    : null;
+  if ($isElementNode(node)) {
+    return exportChildren(node, textTransformersIndex, textMatchTransformers);
+  } else if ($isDecoratorNode(node)) {
+    return node.getTextContent();
+  } else {
+    return null;
+  }
 }
 
 function exportChildren(
@@ -109,6 +119,8 @@ function exportChildren(
       output.push(
         exportChildren(child, textTransformersIndex, textMatchTransformers),
       );
+    } else if ($isDecoratorNode(child)) {
+      output.push(child.getTextContent());
     }
   }
 

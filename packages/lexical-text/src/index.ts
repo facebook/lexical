@@ -13,6 +13,7 @@ import {
   $createTextNode,
   $getRoot,
   $isElementNode,
+  $isParagraphNode,
   $isTextNode,
   TextNode,
 } from 'lexical';
@@ -97,11 +98,8 @@ export function $rootTextContent(): string {
   return root.getTextContent();
 }
 
-export function $canShowPlaceholder(
-  isComposing: boolean,
-  isEditable: boolean,
-): boolean {
-  if (!isEditable || !$isRootTextContentEmpty(isComposing, false)) {
+export function $canShowPlaceholder(isComposing: boolean): boolean {
+  if (!$isRootTextContentEmpty(isComposing, false)) {
     return false;
   }
 
@@ -117,7 +115,7 @@ export function $canShowPlaceholder(
     const topBlock = children[i];
 
     if ($isElementNode(topBlock)) {
-      if (topBlock.__type !== 'paragraph') {
+      if (!$isParagraphNode(topBlock)) {
         return false;
       }
 
@@ -143,9 +141,8 @@ export function $canShowPlaceholder(
 
 export function $canShowPlaceholderCurry(
   isEditorComposing: boolean,
-  isEditable: boolean,
 ): () => boolean {
-  return () => $canShowPlaceholder(isEditorComposing, isEditable);
+  return () => $canShowPlaceholder(isEditorComposing);
 }
 
 export type EntityMatch = {end: number; start: number};

@@ -7,18 +7,13 @@
  */
 
 import type {LexicalComposerContextType} from '@lexical/react/LexicalComposerContext';
-import type {
-  EditorThemeClasses,
-  Klass,
-  LexicalEditor,
-  LexicalNode,
-} from 'lexical';
 
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {
   createLexicalComposerContext,
   LexicalComposerContext,
 } from '@lexical/react/LexicalComposerContext';
+import {EditorThemeClasses, Klass, LexicalEditor, LexicalNode} from 'lexical';
 import * as React from 'react';
 import {ReactNode, useContext, useEffect, useMemo, useRef} from 'react';
 import invariant from 'shared/invariant';
@@ -43,11 +38,12 @@ export function LexicalNestedComposer({
     invariant(false, 'Unexpected parent context null on a nested composer');
   }
 
+  const [parentEditor, {getTheme: getParentTheme}] = parentContext;
+
   const composerContext: [LexicalEditor, LexicalComposerContextType] = useMemo(
     () => {
-      const [parentEditor, parentContextContext] = parentContext;
       const composerTheme: EditorThemeClasses | undefined =
-        initialTheme || parentContextContext.getTheme() || undefined;
+        initialTheme || getParentTheme() || undefined;
 
       const context: LexicalComposerContextType = createLexicalComposerContext(
         parentContext,
@@ -67,6 +63,7 @@ export function LexicalNestedComposer({
         for (const [type, entry] of parentNodes) {
           initialEditor._nodes.set(type, {
             klass: entry.klass,
+            replace: entry.replace,
             transforms: new Set(),
           });
         }
@@ -75,6 +72,7 @@ export function LexicalNestedComposer({
           const type = klass.getType();
           initialEditor._nodes.set(type, {
             klass,
+            replace: null,
             transforms: new Set(),
           });
         }
@@ -89,9 +87,9 @@ export function LexicalNestedComposer({
     [],
   );
 
-  // If collaboration is enabled, make sure we don't render the children
-  // until the collaboration subdocument is ready.
+  // If collaboration is enabled, make sure we don't render the children until the collaboration subdocument is ready.
   const {isCollabActive, yjsDocMap} = useCollaborationContext();
+
   const isCollabReady =
     skipCollabChecks ||
     wasCollabPreviouslyReadyRef.current ||
@@ -102,6 +100,13 @@ export function LexicalNestedComposer({
       wasCollabPreviouslyReadyRef.current = true;
     }
   }, [isCollabReady]);
+
+  // Update `isEditable` state of nested editor in response to the same change on parent editor.
+  useEffect(() => {
+    return parentEditor.registerEditableListener((editable) => {
+      initialEditor.setEditable(editable);
+    });
+  }, [initialEditor, parentEditor]);
 
   return (
     <LexicalComposerContext.Provider value={composerContext}>

@@ -391,6 +391,10 @@ export class TableNode extends DecoratorNode<JSX.Element> {
       </Suspense>
     );
   }
+
+  isInline(): false {
+    return false;
+  }
 }
 
 export function $isTableNode(

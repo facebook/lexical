@@ -1,7 +1,6 @@
 "use strict";
 
 var _fileUtils = require("./fileUtils");
-
 /**
  * Copyright (c) Microsoft Corporation.
  *
@@ -17,10 +16,10 @@ var _fileUtils = require("./fileUtils");
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 (async () => {
   const dirs = process.argv.slice(2);
   const errors = await (0, _fileUtils.removeFolders)(dirs);
-
   for (let i = 0; i < dirs.length; ++i) {
     if (errors[i]) {
       // eslint-disable-next-line no-console

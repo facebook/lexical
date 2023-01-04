@@ -58,6 +58,8 @@ declare export function createCommand<T>(type?: string): LexicalCommand<T>;
 /**
  * LexicalEditor
  */
+type IntentionallyMarkedAsDirtyElement = boolean;
+
 type MutationListeners = Map<MutationListener, Class<LexicalNode>>;
 export type NodeMutation = 'created' | 'updated' | 'destroyed';
 type UpdateListener = ({
@@ -260,13 +262,15 @@ export const COMMAND_PRIORITY_NORMAL = 2;
 export const COMMAND_PRIORITY_HIGH = 3;
 export const COMMAND_PRIORITY_CRITICAL = 4;
 
-export type IntentionallyMarkedAsDirtyElement = boolean;
 declare export function createEditor(editorConfig?: {
   editorState?: EditorState,
   namespace: string,
   theme?: EditorThemeClasses,
   parentEditor?: LexicalEditor,
-  nodes?: $ReadOnlyArray<Class<LexicalNode>>,
+  nodes?: $ReadOnlyArray<
+    | Class<LexicalNode>
+    | {replace: Class<LexicalNode>, with: (node: LexicalNode) => LexicalNode},
+  >,
   onError: (error: Error) => void,
   disableEvents?: boolean,
   editable?: boolean,
@@ -327,6 +331,8 @@ declare export class LexicalNode {
   __type: string;
   __key: NodeKey;
   __parent: null | NodeKey;
+  __next: null | NodeKey;
+  __prev: null | NodeKey;
   static getType(): string;
   static clone(data: $FlowFixMe): LexicalNode;
   static importDOM(): DOMConversionMap | null;
@@ -491,7 +497,6 @@ type TextPointType = {
   getNode: () => TextNode,
   set: (key: NodeKey, offset: number, type: 'text' | 'element') => void,
   getCharacterOffset: () => number,
-  isAtNodeEnd: () => boolean,
 };
 export type ElementPoint = ElementPointType;
 type ElementPointType = {
@@ -502,7 +507,6 @@ type ElementPointType = {
   isBefore: (PointType) => boolean,
   getNode: () => ElementNode,
   set: (key: NodeKey, offset: number, type: 'text' | 'element') => void,
-  isAtNodeEnd: () => boolean,
 };
 export type Point = PointType;
 type PointType = TextPointType | ElementPointType;
@@ -659,9 +663,18 @@ declare export function $isRootNode(
 /**
  * LexicalElementNode
  */
-export type ElementFormatType = 'left' | 'center' | 'right' | 'justify' | '';
+export type ElementFormatType =
+  | 'left'
+  | 'start'
+  | 'center'
+  | 'right'
+  | 'end'
+  | 'justify'
+  | '';
 declare export class ElementNode extends LexicalNode {
-  __children: Array<NodeKey>;
+  __first: null | NodeKey;
+  __last: null | NodeKey;
+  __size: number;
   __format: number;
   __indent: number;
   __dir: 'ltr' | 'rtl' | null;
@@ -695,7 +708,10 @@ declare export class ElementNode extends LexicalNode {
   setDirection(direction: 'ltr' | 'rtl' | null): this;
   setFormat(type: ElementFormatType): this;
   setIndent(indentLevel: number): this;
-  insertNewAfter(selection: RangeSelection): null | LexicalNode;
+  insertNewAfter(
+    selection: RangeSelection,
+    restoreSelection?: boolean,
+  ): null | LexicalNode;
   canInsertTab(): boolean;
   canIndent(): boolean;
   collapseAtStart(selection: RangeSelection): boolean;
@@ -806,7 +822,7 @@ declare export function $setSelection(
   selection: null | RangeSelection | NodeSelection | GridSelection,
 ): void;
 declare export function $nodesOfType<T: LexicalNode>(klass: Class<T>): Array<T>;
-declare export function $getDecoratorNode(
+declare export function $getAdjacentNode(
   focus: Point,
   isBackward: boolean,
 ): null | LexicalNode;
@@ -831,11 +847,6 @@ declare export function $copyNode(
 ): [ElementNode, ElementNode];
 
 /**
- * LexicalVersion
- */
-declare export var VERSION: string;
-
-/**
  * Serialization/Deserialization
  * */
 
@@ -848,6 +859,10 @@ type InternalSerializedNode = {
 declare export function $parseSerializedNode(
   serializedNode: InternalSerializedNode,
 ): LexicalNode;
+
+declare export function $applyNodeReplacement<N: LexicalNode>(
+  node: LexicalNode,
+): N;
 
 export type SerializedLexicalNode = {
   type: string,

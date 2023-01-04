@@ -18,14 +18,12 @@ import {
   $isRootOrShadowRoot,
   $isTextNode,
   $setSelection,
-  createEditor,
   DEPRECATED_$isGridSelection,
   EditorState,
   ElementNode,
   Klass,
   LexicalEditor,
   LexicalNode,
-  NodeKey,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -306,150 +304,6 @@ export function registerNestedElementResolver<N extends ElementNode>(
   return editor.registerNodeTransform(targetNode, elementNodeTransform);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ParseObject = any;
-
-function unstable_internalCreateNodeFromParse(
-  parsedNode: ParseObject,
-  parsedNodeMap: Map<string, ParseObject>,
-  editor: LexicalEditor,
-  parentKey: null | NodeKey,
-  activeEditorState: EditorState,
-): LexicalNode {
-  const nodeType = parsedNode.__type;
-  const registeredNode = editor._nodes.get(nodeType);
-
-  if (registeredNode === undefined) {
-    invariant(false, 'createNodeFromParse: type "%s" + not found', nodeType);
-  }
-
-  // Check for properties that are editors
-  for (const property in parsedNode) {
-    const value = parsedNode[property];
-
-    if (value != null && typeof value === 'object') {
-      const parsedEditorState = value.editorState;
-
-      if (parsedEditorState != null) {
-        const nestedEditor = createEditor({
-          namespace: parsedEditorState.namespace,
-        });
-        nestedEditor._nodes = editor._nodes;
-        nestedEditor._parentEditor = editor._parentEditor;
-        nestedEditor._pendingEditorState =
-          unstable_convertLegacyJSONEditorState(
-            nestedEditor,
-            parsedEditorState,
-          );
-        parsedNode[property] = nestedEditor;
-      }
-    }
-  }
-
-  const NodeKlass = registeredNode.klass;
-  const parsedKey = parsedNode.__key;
-  // We set the parsedKey to undefined before calling clone() so that
-  // we get a new random key assigned.
-  parsedNode.__key = undefined;
-  const node = NodeKlass.clone(parsedNode);
-  parsedNode.__key = parsedKey;
-  const key = node.__key;
-  activeEditorState._nodeMap.set(key, node);
-
-  node.__parent = parentKey;
-
-  // We will need to recursively handle the children in the case
-  // of a ElementNode.
-  if ($isElementNode(node)) {
-    const children = parsedNode.__children;
-
-    for (let i = 0; i < children.length; i++) {
-      const childKey = children[i];
-      const parsedChild = parsedNodeMap.get(childKey);
-
-      if (parsedChild !== undefined) {
-        const child = unstable_internalCreateNodeFromParse(
-          parsedChild,
-          parsedNodeMap,
-          editor,
-          key,
-          activeEditorState,
-        );
-        const newChildKey = child.__key;
-
-        node.__children.push(newChildKey);
-      }
-    }
-
-    node.__indent = parsedNode.__indent;
-    node.__format = parsedNode.__format;
-    node.__dir = parsedNode.__dir;
-  } else if ($isTextNode(node)) {
-    node.__format = parsedNode.__format;
-    node.__style = parsedNode.__style;
-    node.__mode = parsedNode.__mode;
-    node.__detail = parsedNode.__detail;
-  }
-  return node;
-}
-
-function unstable_parseEditorState(
-  parsedEditorState: ParseObject,
-  editor: LexicalEditor,
-): EditorState {
-  // This is hacky, do not do this!
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const EditorStateClass: any = editor._editorState.constructor;
-  const nodeMap = new Map();
-  const editorState = new EditorStateClass(nodeMap);
-  const parsedNodeMap: Map<string, ParseObject> = new Map(
-    parsedEditorState._nodeMap,
-  );
-  // root always exists in Map
-  const parsedRoot = parsedNodeMap.get('root');
-  const isUpdating = editor._updating;
-  try {
-    editor._updating = false;
-    editor.update(() => {
-      const dirtyElements = editor._dirtyElements;
-      const dirtyLeaves = editor._dirtyLeaves;
-      const dirtyType = editor._dirtyType;
-      editor._dirtyElements = new Map();
-      editor._dirtyLeaves = new Set();
-      editor._dirtyType = 0;
-      try {
-        unstable_internalCreateNodeFromParse(
-          parsedRoot,
-          parsedNodeMap,
-          editor,
-          null,
-          editorState,
-        );
-      } finally {
-        editor._dirtyElements = dirtyElements;
-        editor._dirtyLeaves = dirtyLeaves;
-        editor._dirtyType = dirtyType;
-      }
-    });
-  } finally {
-    editor._updating = isUpdating;
-  }
-  editorState._readOnly = true;
-  return editorState;
-}
-
-// TODO: remove this function in version 0.4
-export function unstable_convertLegacyJSONEditorState(
-  editor: LexicalEditor,
-  maybeStringifiedEditorState: string,
-): EditorState {
-  const parsedEditorState =
-    typeof maybeStringifiedEditorState === 'string'
-      ? JSON.parse(maybeStringifiedEditorState)
-      : maybeStringifiedEditorState;
-  return unstable_parseEditorState(parsedEditorState, editor);
-}
-
 export function $restoreEditorState(
   editor: LexicalEditor,
   editorState: EditorState,
@@ -473,23 +327,33 @@ export function $insertNodeToNearestRoot<T extends LexicalNode>(node: T): T {
     const {focus} = selection;
     const focusNode = focus.getNode();
     const focusOffset = focus.offset;
-    let splitNode: ElementNode;
-    let splitOffset: number;
 
-    if ($isTextNode(focusNode)) {
-      splitNode = focusNode.getParentOrThrow();
-      splitOffset = focusNode.getIndexWithinParent();
-      if (focusOffset > 0) {
-        splitOffset += 1;
-        focusNode.splitText(focusOffset);
+    if ($isRootOrShadowRoot(focusNode)) {
+      const focusChild = focusNode.getChildAtIndex(focusOffset);
+      if (focusChild == null) {
+        focusNode.append(node);
+      } else {
+        focusChild.insertBefore(node);
       }
+      node.selectNext();
     } else {
-      splitNode = focusNode;
-      splitOffset = focusOffset;
+      let splitNode: ElementNode;
+      let splitOffset: number;
+      if ($isTextNode(focusNode)) {
+        splitNode = focusNode.getParentOrThrow();
+        splitOffset = focusNode.getIndexWithinParent();
+        if (focusOffset > 0) {
+          splitOffset += 1;
+          focusNode.splitText(focusOffset);
+        }
+      } else {
+        splitNode = focusNode;
+        splitOffset = focusOffset;
+      }
+      const [, rightTree] = $splitNode(splitNode, splitOffset);
+      rightTree.insertBefore(node);
+      rightTree.selectStart();
     }
-    const [, rightTree] = $splitNode(splitNode, splitOffset);
-    rightTree.insertBefore(node);
-    rightTree.selectStart();
   } else {
     if ($isNodeSelection(selection) || DEPRECATED_$isGridSelection(selection)) {
       const nodes = selection.getNodes();
@@ -523,6 +387,11 @@ export function $splitNode(
   if (startNode == null) {
     startNode = node;
   }
+
+  invariant(
+    !$isRootOrShadowRoot(node),
+    'Can not call $splitNode() on root element',
+  );
 
   const recurse = (
     currentNode: LexicalNode,

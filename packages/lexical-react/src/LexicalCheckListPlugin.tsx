@@ -114,17 +114,21 @@ export function CheckListPlugin(): null {
                   anchorNode,
                   (node) => $isElementNode(node) && !node.isInline(),
                 );
+                if ($isListItemNode(elementNode)) {
+                  const parent = elementNode.getParent();
+                  if (
+                    $isListNode(parent) &&
+                    parent.getListType() === 'check' &&
+                    (isElement ||
+                      elementNode.getFirstDescendant() === anchorNode)
+                  ) {
+                    const domNode = editor.getElementByKey(elementNode.__key);
 
-                if (
-                  $isListItemNode(elementNode) &&
-                  (isElement || elementNode.getFirstDescendant() === anchorNode)
-                ) {
-                  const domNode = editor.getElementByKey(elementNode.__key);
-
-                  if (domNode != null && document.activeElement !== domNode) {
-                    domNode.focus();
-                    event.preventDefault();
-                    return true;
+                    if (domNode != null && document.activeElement !== domNode) {
+                      domNode.focus();
+                      event.preventDefault();
+                      return true;
+                    }
                   }
                 }
               }

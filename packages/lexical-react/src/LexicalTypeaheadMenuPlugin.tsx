@@ -13,7 +13,6 @@ import {
   $getSelection,
   $isRangeSelection,
   $isTextNode,
-  COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_LOW,
   createCommand,
   KEY_ARROW_DOWN_COMMAND,
@@ -447,7 +446,7 @@ function LexicalPopoverMenu<TOption extends TypeaheadOption>({
           }
           return true;
         },
-        COMMAND_PRIORITY_CRITICAL,
+        COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand<KeyboardEvent>(
         KEY_ARROW_UP_COMMAND,
@@ -466,7 +465,7 @@ function LexicalPopoverMenu<TOption extends TypeaheadOption>({
           }
           return true;
         },
-        COMMAND_PRIORITY_CRITICAL,
+        COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand<KeyboardEvent>(
         KEY_ESCAPE_COMMAND,
@@ -477,7 +476,7 @@ function LexicalPopoverMenu<TOption extends TypeaheadOption>({
           close();
           return true;
         },
-        COMMAND_PRIORITY_CRITICAL,
+        COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand<KeyboardEvent>(
         KEY_TAB_COMMAND,
@@ -495,7 +494,7 @@ function LexicalPopoverMenu<TOption extends TypeaheadOption>({
           selectOptionAndCleanUp(options[selectedIndex]);
           return true;
         },
-        COMMAND_PRIORITY_CRITICAL,
+        COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(
         KEY_ENTER_COMMAND,
@@ -514,7 +513,7 @@ function LexicalPopoverMenu<TOption extends TypeaheadOption>({
           selectOptionAndCleanUp(options[selectedIndex]);
           return true;
         },
-        COMMAND_PRIORITY_CRITICAL,
+        COMMAND_PRIORITY_LOW,
       ),
     );
   }, [

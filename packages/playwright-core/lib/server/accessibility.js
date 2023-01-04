@@ -4,7 +4,6 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.Accessibility = void 0;
-
 /**
  * Copyright 2018 Google Inc. All rights reserved.
  * Modifications copyright (c) Microsoft Corporation.
@@ -21,12 +20,12 @@ exports.Accessibility = void 0;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 class Accessibility {
   constructor(getAXTree) {
     this._getAXTree = void 0;
     this._getAXTree = getAXTree;
   }
-
   async snapshot(options = {}) {
     const {
       interestingOnly = true,
@@ -36,35 +35,26 @@ class Accessibility {
       tree,
       needle
     } = await this._getAXTree(root || undefined);
-
     if (!interestingOnly) {
       if (root) return needle && serializeTree(needle)[0];
       return serializeTree(tree)[0];
     }
-
     const interestingNodes = new Set();
     collectInterestingNodes(interestingNodes, tree, false);
     if (root && (!needle || !interestingNodes.has(needle))) return null;
     return serializeTree(needle || tree, interestingNodes)[0];
   }
-
 }
-
 exports.Accessibility = Accessibility;
-
 function collectInterestingNodes(collection, node, insideControl) {
   if (node.isInteresting(insideControl)) collection.add(node);
   if (node.isLeafNode()) return;
   insideControl = insideControl || node.isControl();
-
   for (const child of node.children()) collectInterestingNodes(collection, child, insideControl);
 }
-
 function serializeTree(node, whitelistedNodes) {
   const children = [];
-
   for (const child of node.children()) children.push(...serializeTree(child, whitelistedNodes));
-
   if (whitelistedNodes && !whitelistedNodes.has(node)) return children;
   const serializedNode = node.serialize();
   if (children.length) serializedNode.children = children;

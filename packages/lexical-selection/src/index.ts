@@ -9,7 +9,6 @@
 
 import {
   $addNodeStyle,
-  $cloneContents,
   $cloneWithProperties,
   $isAtNodeEnd,
   $patchStyleText,
@@ -22,9 +21,9 @@ import {
   $moveCaretSelection,
   $moveCharacter,
   $selectAll,
+  $setBlocksType_experimental,
   $shouldOverrideDefaultCharacterSelection,
   $wrapNodes,
-  $wrapNodesImpl,
 } from './range-selection';
 import {
   createDOMRange,
@@ -34,7 +33,6 @@ import {
 
 export {
   $addNodeStyle,
-  $cloneContents,
   $cloneWithProperties,
   $isAtNodeEnd,
   $patchStyleText,
@@ -48,9 +46,9 @@ export {
   $moveCaretSelection,
   $moveCharacter,
   $selectAll,
+  $setBlocksType_experimental,
   $shouldOverrideDefaultCharacterSelection,
   $wrapNodes,
-  $wrapNodesImpl,
 };
 
 export {createDOMRange, createRectsFromDOMRange, getStyleObjectFromCSS};

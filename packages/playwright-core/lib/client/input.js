@@ -4,7 +4,6 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.Touchscreen = exports.Mouse = exports.Keyboard = void 0;
-
 /**
  * Copyright 2017 Google Inc. All rights reserved.
  * Modifications copyright (c) Microsoft Corporation.
@@ -21,30 +20,27 @@ exports.Touchscreen = exports.Mouse = exports.Keyboard = void 0;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 class Keyboard {
   constructor(page) {
     this._page = void 0;
     this._page = page;
   }
-
   async down(key) {
     await this._page._channel.keyboardDown({
       key
     });
   }
-
   async up(key) {
     await this._page._channel.keyboardUp({
       key
     });
   }
-
   async insertText(text) {
     await this._page._channel.keyboardInsertText({
       text
     });
   }
-
   async imeSetComposition(text, selectionStart, selectionEnd, options) {
     await this._page._channel.keyboardImeSetComposition({
       text,
@@ -53,31 +49,25 @@ class Keyboard {
       ...options
     });
   }
-
   async type(text, options = {}) {
     await this._page._channel.keyboardType({
       text,
       ...options
     });
   }
-
   async press(key, options = {}) {
     await this._page._channel.keyboardPress({
       key,
       ...options
     });
   }
-
 }
-
 exports.Keyboard = Keyboard;
-
 class Mouse {
   constructor(page) {
     this._page = void 0;
     this._page = page;
   }
-
   async move(x, y, options = {}) {
     await this._page._channel.mouseMove({
       x,
@@ -85,16 +75,14 @@ class Mouse {
       ...options
     });
   }
-
   async down(options = {}) {
-    await this._page._channel.mouseDown({ ...options
+    await this._page._channel.mouseDown({
+      ...options
     });
   }
-
   async up(options = {}) {
     await this._page._channel.mouseUp(options);
   }
-
   async click(x, y, options = {}) {
     await this._page._channel.mouseClick({
       x,
@@ -102,37 +90,30 @@ class Mouse {
       ...options
     });
   }
-
   async dblclick(x, y, options = {}) {
-    await this.click(x, y, { ...options,
+    await this.click(x, y, {
+      ...options,
       clickCount: 2
     });
   }
-
   async wheel(deltaX, deltaY) {
     await this._page._channel.mouseWheel({
       deltaX,
       deltaY
     });
   }
-
 }
-
 exports.Mouse = Mouse;
-
 class Touchscreen {
   constructor(page) {
     this._page = void 0;
     this._page = page;
   }
-
   async tap(x, y) {
     await this._page._channel.touchscreenTap({
       x,
       y
     });
   }
-
 }
-
 exports.Touchscreen = Touchscreen;

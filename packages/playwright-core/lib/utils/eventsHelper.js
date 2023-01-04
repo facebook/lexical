@@ -4,7 +4,6 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.eventsHelper = void 0;
-
 /**
  * Copyright 2017 Google Inc. All rights reserved.
  * Modifications copyright (c) Microsoft Corporation.
@@ -21,6 +20,7 @@ exports.eventsHelper = void 0;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 class EventsHelper {
   static addEventListener(emitter, eventName, handler) {
     emitter.on(eventName, handler);
@@ -30,14 +30,10 @@ class EventsHelper {
       handler
     };
   }
-
   static removeEventListeners(listeners) {
     for (const listener of listeners) listener.emitter.removeListener(listener.eventName, listener.handler);
-
     listeners.splice(0, listeners.length);
   }
-
 }
-
 const eventsHelper = EventsHelper;
 exports.eventsHelper = eventsHelper;

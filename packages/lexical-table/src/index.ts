@@ -16,6 +16,7 @@ import {createCommand} from 'lexical';
 import {
   $createTableCellNode,
   $isTableCellNode,
+  SerializedTableCellNode,
   TableCellHeaderStates,
   TableCellNode,
 } from './LexicalTableCellNode';
@@ -23,11 +24,13 @@ import {
   $createTableNode,
   $getElementGridForTableNode,
   $isTableNode,
+  SerializedTableNode,
   TableNode,
 } from './LexicalTableNode';
 import {
   $createTableRowNode,
   $isTableRowNode,
+  SerializedTableRowNode,
   TableRowNode,
 } from './LexicalTableRowNode';
 import {TableSelection} from './LexicalTableSelection';
@@ -77,6 +80,12 @@ export {
   TableNode,
   TableRowNode,
   TableSelection,
+};
+
+export type {
+  SerializedTableCellNode,
+  SerializedTableNode,
+  SerializedTableRowNode,
 };
 
 export type InsertTableCommandPayload = Readonly<{

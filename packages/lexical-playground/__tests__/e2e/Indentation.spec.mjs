@@ -9,6 +9,7 @@
 import {selectAll} from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
+  click,
   focusEditor,
   html,
   initialize,
@@ -37,7 +38,8 @@ test.describe('Identation', () => {
     await page.keyboard.type('item 2');
     await page.keyboard.press('Enter');
     await page.keyboard.type('item 3');
-    await page.keyboard.press('Tab');
+    await click(page, '.toolbar-item.alignment');
+    await click(page, 'button:has-text("Indent")');
     await page.keyboard.press('Enter');
     await page.keyboard.press('Enter');
     await page.keyboard.press('Enter');
@@ -245,7 +247,8 @@ test.describe('Identation', () => {
       `,
     );
 
-    await page.keyboard.press('Tab');
+    await click(page, '.toolbar-item.alignment');
+    await click(page, 'button:has-text("Indent")');
 
     await assertHTML(
       page,
@@ -253,19 +256,19 @@ test.describe('Identation', () => {
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr"
-          style="padding-inline-start: 40px">
+          style="padding-inline-start: 20px">
           <span data-lexical-text="true">foo</span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr"
-          style="padding-inline-start: 40px">
+          style="padding-inline-start: 20px">
           <span data-lexical-text="true">bar</span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr"
-          style="padding-inline-start: 40px">
+          style="padding-inline-start: 20px">
           <span data-lexical-text="true">yar</span>
         </p>
         <ul class="PlaygroundEditorTheme__ul">
@@ -315,7 +318,7 @@ test.describe('Identation', () => {
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
                 dir="ltr"
-                style="padding-inline-start: 40px">
+                style="padding-inline-start: 20px">
                 <span data-lexical-text="true">foo</span>
               </p>
             </th>
@@ -553,7 +556,8 @@ test.describe('Identation', () => {
       `,
     );
 
-    await page.keyboard.press('Tab');
+    await click(page, '.toolbar-item.alignment');
+    await click(page, 'button:has-text("Indent")');
 
     await assertHTML(
       page,
@@ -561,19 +565,19 @@ test.describe('Identation', () => {
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr"
-          style="padding-inline-start: 80px">
+          style="padding-inline-start: 40px">
           <span data-lexical-text="true">foo</span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr"
-          style="padding-inline-start: 80px">
+          style="padding-inline-start: 40px">
           <span data-lexical-text="true">bar</span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr"
-          style="padding-inline-start: 80px">
+          style="padding-inline-start: 40px">
           <span data-lexical-text="true">yar</span>
         </p>
         <ul class="PlaygroundEditorTheme__ul">
@@ -629,7 +633,7 @@ test.describe('Identation', () => {
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
                 dir="ltr"
-                style="padding-inline-start: 80px">
+                style="padding-inline-start: 40px">
                 <span data-lexical-text="true">foo</span>
               </p>
             </th>
@@ -867,9 +871,8 @@ test.describe('Identation', () => {
       `,
     );
 
-    await page.keyboard.down('Shift');
-    await page.keyboard.press('Tab');
-    await page.keyboard.up('Shift');
+    await click(page, '.toolbar-item.alignment');
+    await click(page, 'button:has-text("Outdent")');
 
     await assertHTML(
       page,
@@ -877,19 +880,19 @@ test.describe('Identation', () => {
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr"
-          style="padding-inline-start: 40px">
+          style="padding-inline-start: 20px">
           <span data-lexical-text="true">foo</span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr"
-          style="padding-inline-start: 40px">
+          style="padding-inline-start: 20px">
           <span data-lexical-text="true">bar</span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr"
-          style="padding-inline-start: 40px">
+          style="padding-inline-start: 20px">
           <span data-lexical-text="true">yar</span>
         </p>
         <ul class="PlaygroundEditorTheme__ul">
@@ -939,7 +942,7 @@ test.describe('Identation', () => {
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
                 dir="ltr"
-                style="padding-inline-start: 40px">
+                style="padding-inline-start: 20px">
                 <span data-lexical-text="true">foo</span>
               </p>
             </th>
@@ -1177,9 +1180,8 @@ test.describe('Identation', () => {
       `,
     );
 
-    await page.keyboard.down('Shift');
-    await page.keyboard.press('Tab');
-    await page.keyboard.up('Shift');
+    await click(page, '.toolbar-item.alignment');
+    await click(page, 'button:has-text("Outdent")');
 
     await assertHTML(
       page,

@@ -4,11 +4,8 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.CRDevTools = void 0;
-
 var _fs = _interopRequireDefault(require("fs"));
-
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
 /**
  * Copyright (c) Microsoft Corporation.
  *
@@ -24,9 +21,11 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-const kBindingName = '__pw_devtools__'; // This class intercepts preferences-related DevTools embedder methods
-// and stores preferences as a json file in the browser installation directory.
 
+const kBindingName = '__pw_devtools__';
+
+// This class intercepts preferences-related DevTools embedder methods
+// and stores preferences as a json file in the browser installation directory.
 class CRDevTools {
   constructor(preferencesPath) {
     this._preferencesPath = void 0;
@@ -36,14 +35,12 @@ class CRDevTools {
     this._preferencesPath = preferencesPath;
     this._savePromise = Promise.resolve();
   }
-
   install(session) {
     session.on('Runtime.bindingCalled', async event => {
       if (event.name !== kBindingName) return;
       const parsed = JSON.parse(event.payload);
       let result = undefined;
       if (this.__testHookOnBinding) this.__testHookOnBinding(parsed);
-
       if (parsed.method === 'getPreferences') {
         if (this._prefs === undefined) {
           try {
@@ -53,22 +50,17 @@ class CRDevTools {
             this._prefs = {};
           }
         }
-
         result = this._prefs;
       } else if (parsed.method === 'setPreference') {
         this._prefs[parsed.params[0]] = parsed.params[1];
-
         this._save();
       } else if (parsed.method === 'removePreference') {
         delete this._prefs[parsed.params[0]];
-
         this._save();
       } else if (parsed.method === 'clearPreferences') {
         this._prefs = {};
-
         this._save();
       }
-
       session.send('Runtime.evaluate', {
         expression: `window.DevToolsAPI.embedderMessageAck(${parsed.id}, ${JSON.stringify(result)})`,
         contextId: event.executionContextId
@@ -102,14 +94,11 @@ class CRDevTools {
       `
     }), session.send('Runtime.runIfWaitingForDebugger')]).catch(e => null);
   }
-
   _save() {
     // Serialize saves to avoid corruption.
     this._savePromise = this._savePromise.then(async () => {
       await _fs.default.promises.writeFile(this._preferencesPath, JSON.stringify(this._prefs)).catch(e => null);
     });
   }
-
 }
-
 exports.CRDevTools = CRDevTools;

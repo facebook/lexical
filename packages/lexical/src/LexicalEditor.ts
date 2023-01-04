@@ -7,9 +7,8 @@
  */
 
 import type {EditorState, SerializedEditorState} from './LexicalEditorState';
-import type {DOMConversion, LexicalNode, NodeKey} from './LexicalNode';
+import type {DOMConversion, NodeKey} from './LexicalNode';
 
-import getDOMSelection from 'shared/getDOMSelection';
 import invariant from 'shared/invariant';
 
 import {$getRoot, $getSelection, TextNode} from '.';
@@ -17,6 +16,7 @@ import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
 import {createEmptyEditorState} from './LexicalEditorState';
 import {addRootElementEvents, removeRootElementEvents} from './LexicalEvents';
 import {flushRootMutations, initMutationObserver} from './LexicalMutations';
+import {LexicalNode} from './LexicalNode';
 import {
   commitPendingUpdates,
   internalGetActiveEditor,
@@ -29,6 +29,7 @@ import {
   dispatchCommand,
   getCachedClassNameArray,
   getDefaultView,
+  getDOMSelection,
   markAllNodesAsDirty,
 } from './LexicalUtils';
 import {DecoratorNode} from './nodes/LexicalDecoratorNode';
@@ -73,6 +74,7 @@ export type EditorFocusOptions = {
 };
 
 export type EditorThemeClasses = {
+  blockCursor?: EditorThemeClassName;
   characterLimit?: EditorThemeClassName;
   code?: EditorThemeClassName;
   codeHighlight?: Record<string, EditorThemeClassName>;
@@ -142,6 +144,7 @@ export type RegisteredNodes = Map<string, RegisteredNode>;
 export type RegisteredNode = {
   klass: Klass<LexicalNode>;
   transforms: Set<Transform<LexicalNode>>;
+  replace: null | ((node: LexicalNode) => LexicalNode);
 };
 
 export type Transform<T extends LexicalNode> = (node: T) => void;
@@ -250,7 +253,8 @@ export type ListenerType =
 
 export type TransformerType = 'text' | 'decorator' | 'element' | 'root';
 
-export type IntentionallyMarkedAsDirtyElement = boolean;
+type IntentionallyMarkedAsDirtyElement = boolean;
+
 type DOMConversionCache = Map<
   string,
   Array<(node: Node) => DOMConversion | null>
@@ -278,6 +282,7 @@ export function resetEditor(
   editor._normalizedNodes = new Set();
   editor._updateTags = new Set();
   editor._updates = [];
+  editor._blockCursorElement = null;
 
   const observer = editor._observer;
 
@@ -333,7 +338,16 @@ export function createEditor(editorConfig?: {
   disableEvents?: boolean;
   editorState?: EditorState;
   namespace?: string;
-  nodes?: ReadonlyArray<Klass<LexicalNode>>;
+  nodes?: ReadonlyArray<
+    | Klass<LexicalNode>
+    | {
+        replace: Klass<LexicalNode>;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        with: <T extends {new (...args: any): any}>(
+          node: InstanceType<T>,
+        ) => LexicalNode;
+      }
+  >;
   onError?: ErrorHandler;
   parentEditor?: LexicalEditor;
   editable?: boolean;
@@ -366,7 +380,14 @@ export function createEditor(editorConfig?: {
   } else {
     registeredNodes = new Map();
     for (let i = 0; i < nodes.length; i++) {
-      const klass = nodes[i];
+      let klass = nodes[i];
+      let replacementClass = null;
+
+      if (typeof klass !== 'function') {
+        const options = klass;
+        klass = options.replace;
+        replacementClass = options.with;
+      }
       // Ensure custom nodes implement required methods.
       if (__DEV__) {
         const name = klass.name;
@@ -417,6 +438,7 @@ export function createEditor(editorConfig?: {
       const type = klass.getType();
       registeredNodes.set(type, {
         klass,
+        replace: replacementClass,
         transforms: new Set(),
       });
     }
@@ -472,6 +494,7 @@ export class LexicalEditor {
   _htmlConversions: DOMConversionCache;
   _window: null | Window;
   _editable: boolean;
+  _blockCursorElement: null | HTMLDivElement;
 
   constructor(
     editorState: EditorState,
@@ -531,8 +554,9 @@ export class LexicalEditor {
     // We don't actually make use of the `editable` argument above.
     // Doing so, causes e2e tests around the lock to fail.
     this._editable = true;
-    this._headless = false;
+    this._headless = parentEditor !== null && parentEditor._headless;
     this._window = null;
+    this._blockCursorElement = null;
   }
 
   isComposing(): boolean {
@@ -856,7 +880,7 @@ export class LexicalEditor {
       rootElement.blur();
     }
 
-    const domSelection = getDOMSelection();
+    const domSelection = getDOMSelection(this._window);
 
     if (domSelection !== null) {
       domSelection.removeAllRanges();

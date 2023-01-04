@@ -16,7 +16,7 @@ import type {
   Spread,
 } from 'lexical';
 
-import {ElementNode} from 'lexical';
+import {$applyNodeReplacement, ElementNode} from 'lexical';
 
 export type SerializedOverflowNode = Spread<
   {
@@ -69,9 +69,12 @@ export class OverflowNode extends ElementNode {
     return false;
   }
 
-  insertNewAfter(selection: RangeSelection): null | LexicalNode {
+  insertNewAfter(
+    selection: RangeSelection,
+    restoreSelection = true,
+  ): null | LexicalNode {
     const parent = this.getParentOrThrow();
-    return parent.insertNewAfter(selection);
+    return parent.insertNewAfter(selection, restoreSelection);
   }
 
   excludeFromCopy(): boolean {
@@ -80,7 +83,7 @@ export class OverflowNode extends ElementNode {
 }
 
 export function $createOverflowNode(): OverflowNode {
-  return new OverflowNode();
+  return $applyNodeReplacement(new OverflowNode());
 }
 
 export function $isOverflowNode(

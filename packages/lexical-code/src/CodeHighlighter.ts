@@ -27,6 +27,7 @@ import 'prismjs/components/prism-sql';
 import 'prismjs/components/prism-python';
 import 'prismjs/components/prism-rust';
 import 'prismjs/components/prism-swift';
+import 'prismjs/components/prism-typescript';
 
 import {mergeRegister} from '@lexical/utils';
 import {
@@ -66,14 +67,16 @@ export interface Token {
 }
 
 export interface Tokenizer {
+  defaultLanguage: string;
   tokenize(code: string, language?: string): (string | Token)[];
 }
 
 export const PrismTokenizer: Tokenizer = {
+  defaultLanguage: DEFAULT_CODE_LANGUAGE,
   tokenize(code: string, language?: string): (string | Token)[] {
     return Prism.tokenize(
       code,
-      Prism.languages[language || ''] || Prism.languages[DEFAULT_CODE_LANGUAGE],
+      Prism.languages[language || ''] || Prism.languages[this.defaultLanguage],
     );
   },
 };
@@ -272,7 +275,7 @@ function codeNodeTransform(
 
   // When new code block inserted it might not have language selected
   if (node.getLanguage() === undefined) {
-    node.setLanguage(DEFAULT_CODE_LANGUAGE);
+    node.setLanguage(tokenizer.defaultLanguage);
   }
 
   // Using nested update call to pass `skipTransforms` since we don't want
@@ -290,7 +293,7 @@ function codeNodeTransform(
         const code = currentNode.getTextContent();
         const tokens = tokenizer.tokenize(
           code,
-          currentNode.getLanguage() || DEFAULT_CODE_LANGUAGE,
+          currentNode.getLanguage() || tokenizer.defaultLanguage,
         );
         const highlightNodes = getHighlightNodes(tokens);
         const diffRange = getDiffRange(
@@ -381,9 +384,7 @@ function updateAndRetainSelection(
     textOffset =
       anchorOffset +
       anchorNode.getPreviousSiblings().reduce((offset, _node) => {
-        return (
-          offset + ($isLineBreakNode(_node) ? 0 : _node.getTextContentSize())
-        );
+        return offset + _node.getTextContentSize();
       }, 0);
   }
 
@@ -402,9 +403,10 @@ function updateAndRetainSelection(
   // If it was non-element anchor then we walk through child nodes
   // and looking for a position of original text offset
   node.getChildren().some((_node) => {
-    if ($isTextNode(_node)) {
+    const isText = $isTextNode(_node);
+    if (isText || $isLineBreakNode(_node)) {
       const textContentSize = _node.getTextContentSize();
-      if (textContentSize >= textOffset) {
+      if (isText && textContentSize >= textOffset) {
         _node.select(textOffset, textOffset);
         return true;
       }

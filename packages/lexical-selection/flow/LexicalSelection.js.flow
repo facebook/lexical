@@ -16,12 +16,6 @@ import type {
   Point,
   RangeSelection,
 } from 'lexical';
-declare export function $cloneContents<T: LexicalNode>(
-  selection: RangeSelection | NodeSelection | GridSelection,
-): {
-  nodeMap: Array<[NodeKey, T]>,
-  range: Array<NodeKey>,
-};
 declare export function $cloneWithProperties<T: LexicalNode>(node: T): T;
 declare export function getStyleObjectFromCSS(css: string): {
   [string]: string,
@@ -51,9 +45,13 @@ declare export function $moveCharacter(
 ): void;
 declare export function $selectAll(selection: RangeSelection): void;
 declare export function $wrapNodes(
-  selection: RangeSelection,
+  selection: RangeSelection | GridSelection,
   createElement: () => ElementNode,
   wrappingElement?: ElementNode,
+): void;
+declare export function $setBlocksType_experimental(
+  selection: RangeSelection,
+  createElement: () => ElementNode,
 ): void;
 declare export function $isAtNodeEnd(point: Point): boolean;
 declare export function $shouldOverrideDefaultCharacterSelection(

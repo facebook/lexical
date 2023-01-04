@@ -23,7 +23,6 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary';
 import {HashtagPlugin} from '@lexical/react/LexicalHashtagPlugin';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
-import {LinkPlugin} from '@lexical/react/LexicalLinkPlugin';
 import {LexicalNestedComposer} from '@lexical/react/LexicalNestedComposer';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
@@ -35,6 +34,7 @@ import {
   $setSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
+  DRAGSTART_COMMAND,
   KEY_BACKSPACE_COMMAND,
   KEY_DELETE_COMMAND,
   KEY_ENTER_COMMAND,
@@ -49,6 +49,7 @@ import {useSettings} from '../context/SettingsContext';
 import {useSharedHistoryContext} from '../context/SharedHistoryContext';
 import EmojisPlugin from '../plugins/EmojisPlugin';
 import KeywordsPlugin from '../plugins/KeywordsPlugin';
+import LinkPlugin from '../plugins/LinkPlugin';
 import MentionsPlugin from '../plugins/MentionsPlugin';
 import TreeViewPlugin from '../plugins/TreeViewPlugin';
 import ContentEditable from '../ui/ContentEditable';
@@ -242,6 +243,19 @@ export default function ImageComponent({
         COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(
+        DRAGSTART_COMMAND,
+        (event) => {
+          if (event.target === imageRef.current) {
+            // TODO This is just a temporary workaround for FF to behave like other browsers.
+            // Ideally, this handles drag & drop too (and all browsers).
+            event.preventDefault();
+            return true;
+          }
+          return false;
+        },
+        COMMAND_PRIORITY_LOW,
+      ),
+      editor.registerCommand(
         KEY_DELETE_COMMAND,
         onDelete,
         COMMAND_PRIORITY_LOW,
@@ -305,7 +319,7 @@ export default function ImageComponent({
     settings: {showNestedEditorTreeView},
   } = useSettings();
 
-  const draggable = isSelected && $isNodeSelection(selection);
+  const draggable = isSelected && $isNodeSelection(selection) && !isResizing;
   const isFocused = isSelected || isResizing;
   return (
     <Suspense fallback={null}>

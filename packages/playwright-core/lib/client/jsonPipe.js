@@ -4,9 +4,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.JsonPipe = void 0;
-
 var _channelOwner = require("./channelOwner");
-
 /**
  * Copyright (c) Microsoft Corporation.
  *
@@ -22,19 +20,16 @@ var _channelOwner = require("./channelOwner");
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 class JsonPipe extends _channelOwner.ChannelOwner {
   static from(jsonPipe) {
     return jsonPipe._object;
   }
-
   constructor(parent, type, guid, initializer) {
     super(parent, type, guid, initializer);
   }
-
   channel() {
     return this._channel;
   }
-
 }
-
 exports.JsonPipe = JsonPipe;

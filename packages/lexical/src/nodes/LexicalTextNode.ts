@@ -6,10 +6,16 @@
  *
  */
 
-import type {EditorConfig, TextNodeThemeClasses} from '../LexicalEditor';
+import type {
+  EditorConfig,
+  LexicalEditor,
+  Spread,
+  TextNodeThemeClasses,
+} from '../LexicalEditor';
 import type {
   DOMConversionMap,
   DOMConversionOutput,
+  DOMExportOutput,
   NodeKey,
   SerializedLexicalNode,
 } from '../LexicalNode';
@@ -18,7 +24,6 @@ import type {
   NodeSelection,
   RangeSelection,
 } from '../LexicalSelection';
-import type {Spread} from 'lexical';
 
 import {IS_FIREFOX} from 'shared/environment';
 import invariant from 'shared/invariant';
@@ -51,12 +56,14 @@ import {
 } from '../LexicalSelection';
 import {errorOnReadOnly} from '../LexicalUpdates';
 import {
+  $applyNodeReplacement,
   $getCompositionKey,
   $setCompositionKey,
   getCachedClassNameArray,
   internalMarkSiblingsAsDirty,
   toggleTextFormatType,
 } from '../LexicalUtils';
+import {$createLineBreakNode} from './LexicalLineBreakNode';
 
 export type SerializedTextNode = Spread<
   {
@@ -251,12 +258,22 @@ function createTextInnerDOM(
   }
 }
 
+function wrapElementWith(element: HTMLElement, tag: string): HTMLElement {
+  const el = document.createElement(tag);
+  el.appendChild(element);
+  return el;
+}
+
 /** @noInheritDoc */
 export class TextNode extends LexicalNode {
   __text: string;
+  /** @internal */
   __format: number;
+  /** @internal */
   __style: string;
+  /** @internal */
   __mode: 0 | 1 | 2 | 3;
+  /** @internal */
   __detail: number;
 
   static getType(): string {
@@ -431,39 +448,51 @@ export class TextNode extends LexicalNode {
 
   static importDOM(): DOMConversionMap | null {
     return {
-      '#text': (node: Node) => ({
+      '#text': () => ({
         conversion: convertTextDOMNode,
         priority: 0,
       }),
-      b: (node: Node) => ({
+      b: () => ({
         conversion: convertBringAttentionToElement,
         priority: 0,
       }),
-      code: (node: Node) => ({
+      br: () => ({
+        conversion: convertLineBreakToElement,
+        priority: 0,
+      }),
+      code: () => ({
         conversion: convertTextFormatElement,
         priority: 0,
       }),
-      em: (node: Node) => ({
+      em: () => ({
         conversion: convertTextFormatElement,
         priority: 0,
       }),
-      i: (node: Node) => ({
+      i: () => ({
         conversion: convertTextFormatElement,
         priority: 0,
       }),
-      s: (node: Node) => ({
+      s: () => ({
         conversion: convertTextFormatElement,
         priority: 0,
       }),
-      span: (node: HTMLSpanElement) => ({
+      span: () => ({
         conversion: convertSpanElement,
         priority: 0,
       }),
-      strong: (node: Node) => ({
+      strong: () => ({
         conversion: convertTextFormatElement,
         priority: 0,
       }),
-      u: (node: Node) => ({
+      sub: () => ({
+        conversion: convertTextFormatElement,
+        priority: 0,
+      }),
+      sup: () => ({
+        conversion: convertTextFormatElement,
+        priority: 0,
+      }),
+      u: () => ({
         conversion: convertTextFormatElement,
         priority: 0,
       }),
@@ -477,6 +506,35 @@ export class TextNode extends LexicalNode {
     node.setMode(serializedNode.mode);
     node.setStyle(serializedNode.style);
     return node;
+  }
+
+  // This improves Lexical's basic text output in copy+paste plus
+  // for headless mode where people might use Lexical to generate
+  // HTML content and not have the ability to use CSS classes.
+  exportDOM(editor: LexicalEditor): DOMExportOutput {
+    let {element} = super.exportDOM(editor);
+
+    // This is the only way to properly add support for most clients,
+    // even if it's semantically incorrect to have to resort to using
+    // <b>, <u>, <s>, <i> elements.
+    if (element !== null) {
+      if (this.hasFormat('bold')) {
+        element = wrapElementWith(element, 'b');
+      }
+      if (this.hasFormat('italic')) {
+        element = wrapElementWith(element, 'i');
+      }
+      if (this.hasFormat('strikethrough')) {
+        element = wrapElementWith(element, 's');
+      }
+      if (this.hasFormat('underline')) {
+        element = wrapElementWith(element, 'u');
+      }
+    }
+
+    return {
+      element,
+    };
   }
 
   exportJSON(): SerializedTextNode {
@@ -540,15 +598,21 @@ export class TextNode extends LexicalNode {
 
   setMode(type: TextModeType): this {
     const mode = TEXT_MODE_TO_TYPE[type];
+    if (this.__mode === mode) {
+      return this;
+    }
     const self = this.getWritable();
     self.__mode = mode;
     return self;
   }
 
   setTextContent(text: string): this {
-    const writableSelf = this.getWritable();
-    writableSelf.__text = text;
-    return writableSelf;
+    if (this.__text === text) {
+      return this;
+    }
+    const self = this.getWritable();
+    self.__text = text;
+    return self;
   }
 
   select(_anchorOffset?: number, _focusOffset?: number): RangeSelection {
@@ -662,7 +726,6 @@ export class TextNode extends LexicalNode {
     }
     const firstPart = parts[0];
     const parent = self.getParentOrThrow();
-    const parentKey = parent.__key;
     let writableNode;
     const format = self.getFormat();
     const style = self.getStyle();
@@ -672,7 +735,6 @@ export class TextNode extends LexicalNode {
     if (self.isSegmented()) {
       // Create a new TextNode
       writableNode = $createTextNode(firstPart);
-      writableNode.__parent = parentKey;
       writableNode.__format = format;
       writableNode.__style = style;
       writableNode.__detail = detail;
@@ -729,21 +791,18 @@ export class TextNode extends LexicalNode {
         $setCompositionKey(siblingKey);
       }
       textSize = nextTextSize;
-      sibling.__parent = parentKey;
       splitNodes.push(sibling);
     }
 
     // Insert the nodes into the parent's children
     internalMarkSiblingsAsDirty(this);
     const writableParent = parent.getWritable();
-    const writableParentChildren = writableParent.__children;
-    const insertionIndex = writableParentChildren.indexOf(key);
-    const splitNodesKeys = splitNodes.map((splitNode) => splitNode.__key);
+    const insertionIndex = this.getIndexWithinParent();
     if (hasReplacedSelf) {
-      writableParentChildren.splice(insertionIndex, 0, ...splitNodesKeys);
+      writableParent.splice(insertionIndex, 0, splitNodes);
       this.remove();
     } else {
-      writableParentChildren.splice(insertionIndex, 1, ...splitNodesKeys);
+      writableParent.splice(insertionIndex, 1, splitNodes);
     }
 
     if ($isRangeSelection(selection)) {
@@ -857,6 +916,13 @@ function convertSpanElement(domNode: Node): DOMConversionOutput {
     node: null,
   };
 }
+
+function convertLineBreakToElement(): DOMConversionOutput {
+  return {
+    node: $createLineBreakNode(),
+  };
+}
+
 function convertBringAttentionToElement(domNode: Node): DOMConversionOutput {
   // domNode is a <b> since we matched it by nodeName
   const b = domNode as HTMLElement;
@@ -873,6 +939,7 @@ function convertBringAttentionToElement(domNode: Node): DOMConversionOutput {
     node: null,
   };
 }
+
 function convertTextDOMNode(
   domNode: Node,
   _parent?: Node,
@@ -887,14 +954,18 @@ function convertTextDOMNode(
   }
   return {node: $createTextNode(textContent)};
 }
+
 const nodeNameToTextFormat: Record<string, TextFormatType> = {
   code: 'code',
   em: 'italic',
   i: 'italic',
   s: 'strikethrough',
   strong: 'bold',
+  sub: 'subscript',
+  sup: 'superscript',
   u: 'underline',
 };
+
 function convertTextFormatElement(domNode: Node): DOMConversionOutput {
   const format = nodeNameToTextFormat[domNode.nodeName.toLowerCase()];
   if (format === undefined) {
@@ -902,7 +973,7 @@ function convertTextFormatElement(domNode: Node): DOMConversionOutput {
   }
   return {
     forChild: (lexicalNode) => {
-      if ($isTextNode(lexicalNode)) {
+      if ($isTextNode(lexicalNode) && !lexicalNode.hasFormat(format)) {
         lexicalNode.toggleFormat(format);
       }
 
@@ -913,7 +984,7 @@ function convertTextFormatElement(domNode: Node): DOMConversionOutput {
 }
 
 export function $createTextNode(text = ''): TextNode {
-  return new TextNode(text);
+  return $applyNodeReplacement(new TextNode(text));
 }
 
 export function $isTextNode(

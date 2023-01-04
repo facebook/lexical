@@ -10,6 +10,7 @@
     "baseUrl": ".",
     "typeRoots": ["node_modules/@types", "libdefs/globals"],
     "skipLibCheck": true,
+    "resolveJsonModule": true,
 
     "paths": {
       "lexical": ["./packages/lexical/src/"],
@@ -98,7 +99,12 @@
       "@lexical/react/useLexicalTextEntity": [
         "./packages/lexical-react/src/useLexicalTextEntity.ts"
       ],
-
+      "@lexical/react/useLexicalSubscription": [
+        "./packages/lexical-react/src/useLexicalSubscription.ts"
+      ],
+      "@lexical/react/useLexicalEditable": [
+        "./packages/lexical-react/src/useLexicalEditable.ts"
+      ],
       "@lexical/react/LexicalPlainTextPlugin": [
         "./packages/lexical-react/src/LexicalPlainTextPlugin.tsx"
       ],
@@ -113,6 +119,9 @@
       ],
       "@lexical/react/LexicalOnChangePlugin": [
         "./packages/lexical-react/src/LexicalOnChangePlugin.ts"
+      ],
+      "@lexical/react/LexicalNodeEventPlugin": [
+        "./packages/lexical-react/src/LexicalNodeEventPlugin.ts"
       ],
       "@lexical/react/LexicalHashtagPlugin": [
         "./packages/lexical-react/src/LexicalHashtagPlugin.ts"
@@ -162,8 +171,8 @@
       "@lexical/react/LexicalCheckListPlugin": [
         "./packages/lexical-react/src/LexicalCheckListPlugin.tsx"
       ],
-      "@lexical/react/LexicalAutoScrollPlugin": [
-        "./packages/lexical-react/src/LexicalAutoScrollPlugin.ts"
+      "@lexical/react/LexicalTabIndentationPlugin": [
+        "./packages/lexical-react/src/LexicalTabIndentationPlugin.tsx"
       ],
 
       "@lexical/dragon/LexicalDragon": ["./packages/lexical-dragon/src/"],
@@ -188,7 +197,6 @@
 
       "shared/canUseDOM": ["./packages/shared/src/canUseDOM.ts"],
       "shared/caretFromPoint": ["./packages/shared/src/caretFromPoint.ts"],
-      "shared/getDOMSelection": ["./packages/shared/src/getDOMSelection.ts"],
       "shared/simpleDiffWithCursor": [
         "packages/shared/src/simpleDiffWithCursor.ts"
       ],

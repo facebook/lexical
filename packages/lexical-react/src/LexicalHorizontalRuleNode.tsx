@@ -20,6 +20,7 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
 import {mergeRegister} from '@lexical/utils';
 import {
+  $applyNodeReplacement,
   $getNodeByKey,
   $getSelection,
   $isNodeSelection,
@@ -31,7 +32,7 @@ import {
   KEY_DELETE_COMMAND,
 } from 'lexical';
 import * as React from 'react';
-import {useCallback, useEffect, useRef} from 'react';
+import {useCallback, useEffect} from 'react';
 
 export type SerializedHorizontalRuleNode = SerializedLexicalNode & {
   type: 'horizontalrule';
@@ -43,7 +44,6 @@ export const INSERT_HORIZONTAL_RULE_COMMAND: LexicalCommand<void> =
 
 function HorizontalRuleComponent({nodeKey}: {nodeKey: NodeKey}) {
   const [editor] = useLexicalComposerContext();
-  const hrRef = useRef(null);
   const [isSelected, setSelected, clearSelection] =
     useLexicalNodeSelection(nodeKey);
 
@@ -68,7 +68,7 @@ function HorizontalRuleComponent({nodeKey}: {nodeKey: NodeKey}) {
       editor.registerCommand(
         CLICK_COMMAND,
         (event: MouseEvent) => {
-          const hrElem = hrRef.current;
+          const hrElem = editor.getElementByKey(nodeKey);
 
           if (event.target === hrElem) {
             if (!event.shiftKey) {
@@ -93,9 +93,16 @@ function HorizontalRuleComponent({nodeKey}: {nodeKey: NodeKey}) {
         COMMAND_PRIORITY_LOW,
       ),
     );
-  }, [clearSelection, editor, isSelected, onDelete, setSelected]);
+  }, [clearSelection, editor, isSelected, nodeKey, onDelete, setSelected]);
 
-  return <hr ref={hrRef} className={isSelected ? 'selected' : undefined} />;
+  useEffect(() => {
+    const hrElem = editor.getElementByKey(nodeKey);
+    if (hrElem !== null) {
+      hrElem.className = isSelected ? 'selected' : '';
+    }
+  }, [editor, isSelected, nodeKey]);
+
+  return null;
 }
 
 export class HorizontalRuleNode extends DecoratorNode<JSX.Element> {
@@ -134,9 +141,7 @@ export class HorizontalRuleNode extends DecoratorNode<JSX.Element> {
   }
 
   createDOM(): HTMLElement {
-    const div = document.createElement('div');
-    div.style.display = 'contents';
-    return div;
+    return document.createElement('hr');
   }
 
   getTextContent(): '\n' {
@@ -161,7 +166,7 @@ function convertHorizontalRuleElement(): DOMConversionOutput {
 }
 
 export function $createHorizontalRuleNode(): HorizontalRuleNode {
-  return new HorizontalRuleNode();
+  return $applyNodeReplacement(new HorizontalRuleNode());
 }
 
 export function $isHorizontalRuleNode(

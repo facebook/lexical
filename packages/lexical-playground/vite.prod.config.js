@@ -115,6 +115,8 @@ const moduleResolution = [
   'LexicalComposerContext',
   'useLexicalIsTextContentEmpty',
   'useLexicalTextEntity',
+  'useLexicalSubscription',
+  'useLexicalEditable',
   'LexicalContentEditable',
   'LexicalNestedComposer',
   'LexicalHorizontalRuleNode',
@@ -141,7 +143,8 @@ const moduleResolution = [
   'LexicalAutoLinkPlugin',
   'LexicalAutoEmbedPlugin',
   'LexicalOnChangePlugin',
-  'LexicalAutoScrollPlugin',
+  'LexicalNodeEventPlugin',
+  'LexicalTabIndentationPlugin'
 ].forEach((module) => {
   let resolvedPath = path.resolve(`../lexical-react/dist/${module}.js`);
   moduleResolution.push({

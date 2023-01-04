@@ -4,13 +4,9 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.debugLogger = exports.RecentLogsCollector = void 0;
-
 var _utilsBundle = require("../utilsBundle");
-
 var _fs = _interopRequireDefault(require("fs"));
-
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
 /**
  * Copyright (c) Microsoft Corporation.
  *
@@ -26,6 +22,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 const debugLoggerColorMap = {
   'api': 45,
   // cyan
@@ -46,65 +43,47 @@ const debugLoggerColorMap = {
   'channel:response': 202,
   // orange
   'channel:event': 207 // magenta
-
 };
 
 class DebugLogger {
   constructor() {
     this._debuggers = new Map();
-
     if (process.env.DEBUG_FILE) {
       const ansiRegex = new RegExp(['[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)', '(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-ntqry=><~]))'].join('|'), 'g');
-
       const stream = _fs.default.createWriteStream(process.env.DEBUG_FILE);
-
       _utilsBundle.debug.log = data => {
         stream.write(data.replace(ansiRegex, ''));
         stream.write('\n');
       };
     }
   }
-
   log(name, message) {
     let cachedDebugger = this._debuggers.get(name);
-
     if (!cachedDebugger) {
       cachedDebugger = (0, _utilsBundle.debug)(`pw:${name}`);
-
       this._debuggers.set(name, cachedDebugger);
-
       cachedDebugger.color = debugLoggerColorMap[name];
     }
-
     cachedDebugger(message);
   }
-
   isEnabled(name) {
     return _utilsBundle.debug.enabled(`pw:${name}`);
   }
-
 }
-
 const debugLogger = new DebugLogger();
 exports.debugLogger = debugLogger;
 const kLogCount = 150;
-
 class RecentLogsCollector {
   constructor() {
     this._logs = [];
   }
-
   log(message) {
     this._logs.push(message);
-
     if (this._logs.length === kLogCount * 2) this._logs.splice(0, kLogCount);
   }
-
   recentLogs() {
     if (this._logs.length > kLogCount) return this._logs.slice(-kLogCount);
     return this._logs;
   }
-
 }
-
 exports.RecentLogsCollector = RecentLogsCollector;

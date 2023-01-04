@@ -321,7 +321,8 @@ test.describe('CodeBlock', () => {
     await focusEditor(page);
     await page.keyboard.type('``` alert(1);');
     await page.keyboard.press('Enter');
-    await page.keyboard.press('Tab');
+    await click(page, '.toolbar-item.alignment');
+    await click(page, 'button:has-text("Indent")');
     await page.keyboard.type('alert(2);');
     await page.keyboard.press('Enter');
     await assertHTML(
@@ -401,7 +402,8 @@ test.describe('CodeBlock', () => {
     await focusEditor(page);
     await page.keyboard.type('``` if (x) {');
     await page.keyboard.press('Enter');
-    await page.keyboard.press('Tab');
+    await click(page, '.toolbar-item.alignment');
+    await click(page, 'button:has-text("Indent")');
     await page.keyboard.type('x();');
     await page.keyboard.press('Enter');
     await page.keyboard.press('Backspace');
@@ -473,8 +475,10 @@ test.describe('CodeBlock', () => {
     await page.keyboard.press('ArrowUp');
     await page.keyboard.press('ArrowUp');
     await page.keyboard.up('Shift');
-    await page.keyboard.press('Tab');
-    await page.keyboard.press('Tab');
+    await click(page, '.toolbar-item.alignment');
+    await click(page, 'button:has-text("Indent")');
+    await click(page, '.toolbar-item.alignment');
+    await click(page, 'button:has-text("Indent")');
     await assertHTML(
       page,
       html`
@@ -541,7 +545,8 @@ test.describe('CodeBlock', () => {
       `,
     );
     await page.keyboard.down('Shift');
-    await page.keyboard.press('Tab');
+    await click(page, '.toolbar-item.alignment');
+    await click(page, 'button:has-text("Outdent")');
     await page.keyboard.up('Shift');
     await assertHTML(
       page,
@@ -608,10 +613,10 @@ test.describe('CodeBlock', () => {
         </code>
       `,
     );
-    await page.keyboard.down('Shift');
-    await page.keyboard.press('Tab');
-    await page.keyboard.press('Tab');
-    await page.keyboard.up('Shift');
+    await click(page, '.toolbar-item.alignment');
+    await click(page, 'button:has-text("Outdent")');
+    await click(page, '.toolbar-item.alignment');
+    await click(page, 'button:has-text("Outdent")');
     await assertHTML(
       page,
       html`
@@ -1059,7 +1064,8 @@ test.describe('CodeBlock', () => {
     await focusEditor(page);
     await page.keyboard.type('``` ');
     await page.keyboard.press('Space');
-    await page.keyboard.press('Tab');
+    await click(page, '.toolbar-item.alignment');
+    await click(page, 'button:has-text("Indent")');
     await page.keyboard.type('a b');
     await page.keyboard.press('Space');
     await page.keyboard.press('Enter');

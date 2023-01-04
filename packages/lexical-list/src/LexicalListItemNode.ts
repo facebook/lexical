@@ -27,6 +27,7 @@ import {
   removeClassNamesFromElement,
 } from '@lexical/utils';
 import {
+  $applyNodeReplacement,
   $createParagraphNode,
   $isElementNode,
   $isParagraphNode,
@@ -149,7 +150,10 @@ export class ListItemNode extends ElementNode {
     return this;
   }
 
-  replace<N extends LexicalNode>(replaceWithNode: N): N {
+  replace<N extends LexicalNode>(
+    replaceWithNode: N,
+    includeChildren?: boolean,
+  ): N {
     if ($isListItemNode(replaceWithNode)) {
       return super.replace(replaceWithNode);
     }
@@ -157,7 +161,7 @@ export class ListItemNode extends ElementNode {
     const list = this.getParentOrThrow();
 
     if ($isListNode(list)) {
-      const childrenKeys = list.__children;
+      const childrenKeys = list.getChildrenKeys();
       const childrenLength = childrenKeys.length;
       const index = childrenKeys.indexOf(this.__key);
 
@@ -177,6 +181,11 @@ export class ListItemNode extends ElementNode {
         list.insertAfter(replaceWithNode);
         replaceWithNode.insertAfter(newList);
       }
+      if (includeChildren) {
+        this.getChildren().forEach((child: LexicalNode) => {
+          replaceWithNode.append(child);
+        });
+      }
       this.remove();
 
       if (childrenLength === 1) {
@@ -187,7 +196,7 @@ export class ListItemNode extends ElementNode {
     return replaceWithNode;
   }
 
-  insertAfter(node: LexicalNode): LexicalNode {
+  insertAfter(node: LexicalNode, restoreSelection = true): LexicalNode {
     const listNode = this.getParentOrThrow();
 
     if (!$isListNode(listNode)) {
@@ -200,7 +209,7 @@ export class ListItemNode extends ElementNode {
     const siblings = this.getNextSiblings();
 
     if ($isListItemNode(node)) {
-      const after = super.insertAfter(node);
+      const after = super.insertAfter(node, restoreSelection);
       const afterListNode = node.getParentOrThrow();
 
       if ($isListNode(afterListNode)) {
@@ -219,7 +228,7 @@ export class ListItemNode extends ElementNode {
       for (let i = children.length - 1; i >= 0; i--) {
         child = children[i];
 
-        this.insertAfter(child);
+        this.insertAfter(child, restoreSelection);
       }
 
       return child;
@@ -227,14 +236,14 @@ export class ListItemNode extends ElementNode {
 
     // Otherwise, split the list
     // Split the lists and insert the node in between them
-    listNode.insertAfter(node);
+    listNode.insertAfter(node, restoreSelection);
 
     if (siblings.length !== 0) {
       const newListNode = $createListNode(listNode.getListType());
 
       siblings.forEach((sibling) => newListNode.append(sibling));
 
-      node.insertAfter(newListNode);
+      node.insertAfter(newListNode, restoreSelection);
     }
 
     return node;
@@ -253,11 +262,14 @@ export class ListItemNode extends ElementNode {
     }
   }
 
-  insertNewAfter(): ListItemNode | ParagraphNode {
+  insertNewAfter(
+    _: RangeSelection,
+    restoreSelection = true,
+  ): ListItemNode | ParagraphNode {
     const newElement = $createListItemNode(
       this.__checked == null ? undefined : false,
     );
-    this.insertAfter(newElement);
+    this.insertAfter(newElement, restoreSelection);
 
     return newElement;
   }
@@ -277,7 +289,8 @@ export class ListItemNode extends ElementNode {
         listNode.remove();
         listNodeParent.select();
       } else {
-        listNode.replace(paragraph);
+        listNode.insertBefore(paragraph);
+        listNode.remove();
         // If we have selection on the list item, we'll need to move it
         // to the paragraph
         const anchor = selection.anchor;
@@ -505,11 +518,14 @@ function updateListItemChecked(
 }
 
 function convertListItemElement(domNode: Node): DOMConversionOutput {
-  return {node: $createListItemNode()};
+  const checked =
+    domNode instanceof HTMLElement &&
+    domNode.getAttribute('aria-checked') === 'true';
+  return {node: $createListItemNode(checked)};
 }
 
 export function $createListItemNode(checked?: boolean): ListItemNode {
-  return new ListItemNode(undefined, checked);
+  return $applyNodeReplacement(new ListItemNode(undefined, checked));
 }
 
 export function $isListItemNode(

@@ -8,7 +8,9 @@
 
 import type {EditorState, LexicalEditor} from 'lexical';
 
-import {CLEAR_HISTORY_COMMAND, VERSION} from 'lexical';
+import {CLEAR_HISTORY_COMMAND} from 'lexical';
+
+import {version} from '../package.json';
 
 export function importFile(editor: LexicalEditor) {
   readTextFileFromSystem((text) => {
@@ -48,7 +50,7 @@ type DocumentJSON = {
   editorState: EditorState;
   lastSaved: number;
   source: string | 'Lexical';
-  version: typeof VERSION;
+  version: typeof version;
 };
 
 export function exportFile(
@@ -64,7 +66,7 @@ export function exportFile(
     editorState: editorState,
     lastSaved: now.getTime(),
     source: config.source || 'Lexical',
-    version: VERSION,
+    version,
   };
   const fileName = config.fileName || now.toISOString();
   exportBlob(documentJSON, `${fileName}.lexical`);

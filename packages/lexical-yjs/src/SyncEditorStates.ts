@@ -84,7 +84,7 @@ export function syncYjsChangesToLexical(
   binding: Binding,
   provider: WebsocketProvider,
   events: Array<YEvent<YText>>,
-  isFromUndoManger: boolean
+  isFromUndoManger: boolean,
 ): void {
   const editor = binding.editor;
   const currentEditorState = editor._editorState;

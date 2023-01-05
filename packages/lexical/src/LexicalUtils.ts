@@ -635,10 +635,14 @@ export function $updateTextNodeFromDOMContent(
       }
       const parent = node.getParent();
       const prevSelection = $getPreviousSelection();
+      const compositionKey = $getCompositionKey();
+      const nodeKey = node.getKey();
 
       if (
         node.isToken() ||
-        ($getCompositionKey() !== null && !isComposing) ||
+        (compositionKey !== null &&
+          nodeKey === compositionKey &&
+          !isComposing) ||
         // Check if character was added at the start, and we need
         // to clear this input from occurring as that action wasn't
         // permitted.

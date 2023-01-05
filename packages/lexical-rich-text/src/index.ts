@@ -681,7 +681,11 @@ export function registerRichText(editor: LexicalEditor): () => void {
           }
         } else if ($isRangeSelection(selection)) {
           const possibleNode = $getAdjacentNode(selection.focus, true);
-          if ($isDecoratorNode(possibleNode) && !possibleNode.isIsolated()) {
+          if (
+            $isDecoratorNode(possibleNode) &&
+            !possibleNode.isIsolated() &&
+            !possibleNode.isInline()
+          ) {
             possibleNode.selectPrevious();
             event.preventDefault();
             return true;
@@ -717,7 +721,11 @@ export function registerRichText(editor: LexicalEditor): () => void {
             return true;
           }
           const possibleNode = $getAdjacentNode(selection.focus, false);
-          if ($isDecoratorNode(possibleNode) && !possibleNode.isIsolated()) {
+          if (
+            $isDecoratorNode(possibleNode) &&
+            !possibleNode.isIsolated() &&
+            !possibleNode.isInline()
+          ) {
             possibleNode.selectNext();
             event.preventDefault();
             return true;

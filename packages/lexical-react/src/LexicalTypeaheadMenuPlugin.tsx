@@ -84,7 +84,10 @@ const scrollIntoViewIfNeeded = (target: HTMLElement) => {
   if (container) {
     const parentNode = target.parentNode as HTMLElement | null;
 
-    if (parentNode) {
+    if (
+      parentNode &&
+      /auto|scroll/.test(getComputedStyle(parentNode).overflow)
+    ) {
       const parentRect = parentNode.getBoundingClientRect();
 
       if (parentRect.top + parentRect.height > window.innerHeight) {

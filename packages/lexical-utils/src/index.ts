@@ -350,9 +350,19 @@ export function $insertNodeToNearestRoot<T extends LexicalNode>(node: T): T {
         splitNode = focusNode;
         splitOffset = focusOffset;
       }
-      const [, rightTree] = $splitNode(splitNode, splitOffset);
-      rightTree.insertBefore(node);
-      rightTree.selectStart();
+      const selectionAtLastOffset = focusNode.__text.length === focusOffset;
+      if (
+        splitNode.__type === 'listitem' &&
+        splitNode.__next == null &&
+        selectionAtLastOffset
+      ) {
+        const parentNode = splitNode.getParentOrThrow();
+        parentNode.insertAfter(node);
+      } else {
+        const [, rightTree] = $splitNode(splitNode, splitOffset);
+        rightTree.insertBefore(node);
+        rightTree.selectStart();
+      }
     }
   } else {
     if ($isNodeSelection(selection) || DEPRECATED_$isGridSelection(selection)) {

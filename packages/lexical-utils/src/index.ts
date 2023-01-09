@@ -340,6 +340,7 @@ export function $insertNodeToNearestRoot<T extends LexicalNode>(node: T): T {
     } else {
       let splitNode: ElementNode;
       let splitOffset: number;
+      const focusNodeTextLength = focusNode.getTextContent().length;
       if ($isTextNode(focusNode)) {
         splitNode = focusNode.getParentOrThrow();
         splitOffset = focusNode.getIndexWithinParent();
@@ -352,8 +353,7 @@ export function $insertNodeToNearestRoot<T extends LexicalNode>(node: T): T {
         splitOffset = focusOffset;
       }
       const selectionAtTextEnd =
-        $isTextNode(focusNode) &&
-        focusNode.getTextContent().length === focusOffset;
+        $isTextNode(focusNode) && focusNodeTextLength === focusOffset;
       if (
         splitNode.canInsertAfter(splitNode) &&
         splitNode.__next == null &&

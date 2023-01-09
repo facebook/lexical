@@ -15,6 +15,7 @@ import {
   $isElementNode,
   $isNodeSelection,
   $isRangeSelection,
+  $isRootNode,
   $isRootOrShadowRoot,
   $isTextNode,
   $setSelection,
@@ -359,7 +360,11 @@ export function $insertNodeToNearestRoot<T extends LexicalNode>(node: T): T {
         selectionAtTextEnd
       ) {
         const parentNode = splitNode.getParentOrThrow();
-        parentNode.insertAfter(node);
+        if ($isRootNode(parentNode)) {
+          splitNode.insertAfter(node);
+        } else {
+          parentNode.insertAfter(node);
+        }
       } else {
         const [, rightTree] = $splitNode(splitNode, splitOffset);
         rightTree.insertBefore(node);

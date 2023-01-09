@@ -350,12 +350,13 @@ export function $insertNodeToNearestRoot<T extends LexicalNode>(node: T): T {
         splitNode = focusNode;
         splitOffset = focusOffset;
       }
-      const selectionAtLastOffset =
+      const selectionAtTextEnd =
+        $isTextNode(focusNode) &&
         focusNode.getTextContent().length === focusOffset;
       if (
         splitNode.canInsertAfter(splitNode) &&
         splitNode.__next == null &&
-        selectionAtLastOffset
+        selectionAtTextEnd
       ) {
         const parentNode = splitNode.getParentOrThrow();
         parentNode.insertAfter(node);

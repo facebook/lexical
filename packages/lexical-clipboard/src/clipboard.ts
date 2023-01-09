@@ -425,7 +425,7 @@ function $appendNodesToJSON(
     // if an uncollapsed selection ends or starts at the end of a line of specialized text
     // nodes, such as code tokens, we will get a 'blank' text node here, i.e., one with
     // text of length 0. we don't want this, it makes for a confusing mess. reset!
-    if ($isTextNode(target) && target.__text.length > 0) {
+    if (target.__text.length > 0) {
       (serializedNode as SerializedTextNode).text = target.__text;
     } else {
       shouldInclude = false;

@@ -7,6 +7,7 @@
  *
  */
 
+import {$isListItemNode} from '@lexical/list';
 import {
   $copyNode,
   $createParagraphNode,
@@ -355,7 +356,7 @@ export function $insertNodeToNearestRoot<T extends LexicalNode>(node: T): T {
       const selectionAtTextEnd =
         $isTextNode(focusNode) && focusNodeTextLength === focusOffset;
       if (
-        splitNode.canInsertAfter(splitNode) &&
+        $isListItemNode(splitNode) &&
         splitNode.__next == null &&
         selectionAtTextEnd
       ) {

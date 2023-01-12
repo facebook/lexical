@@ -6,8 +6,10 @@
  *
  */
 
-import type {
+import {
   CommandPayloadType,
+  COMMAND_PRIORITY_CRITICAL,
+  COMMAND_PRIORITY_EDITOR,
   EditorUpdateOptions,
   LexicalCommand,
   LexicalEditor,
@@ -699,26 +701,30 @@ export function triggerCommandListeners<
 
   const editors = getEditorsToPropagate(editor);
 
-  for (let i = 4; i >= 0; i--) {
-    for (let e = 0; e < editors.length; e++) {
-      const currentEditor = editors[e];
+  for (let priority = COMMAND_PRIORITY_CRITICAL; priority >= COMMAND_PRIORITY_EDITOR; priority--) {
+    for (let currentEditor of editors) {
       const commandListeners = currentEditor._commands;
       const listenerInPriorityOrder = commandListeners.get(type);
 
-      if (listenerInPriorityOrder !== undefined) {
-        const listenersSet = listenerInPriorityOrder[i];
+      if (listenerInPriorityOrder == undefined) {
+        continue
+      }
 
-        if (listenersSet !== undefined) {
-          const listeners = Array.from(listenersSet);
-          const listenersLength = listeners.length;
+      const listenersSet = listenerInPriorityOrder[priority];
 
-          for (let j = 0; j < listenersLength; j++) {
-            if (listeners[j](payload, editor) === true) {
-              return true;
-            }
-          }
+      if (listenersSet == undefined) {
+        continue
+      }
+
+      const listeners = Array.from(listenersSet);
+
+      for (let listener of listeners) {
+        const shouldSkipRemainingListeners = listener(payload, editor) === true
+        if (shouldSkipRemainingListeners) {
+          return true;
         }
       }
+      
     }
   }
 

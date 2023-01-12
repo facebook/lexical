@@ -85,7 +85,11 @@ describe('LexicalParagraphNode tests', () => {
         expect(domElement.outerHTML).toBe('<p class="my-paragraph-class"></p>');
 
         const newParagraphNode = new ParagraphNode();
-        const result = newParagraphNode.updateDOM(paragraphNode, domElement);
+        const result = newParagraphNode.updateDOM(
+          paragraphNode,
+          domElement,
+          editorConfig,
+        );
 
         expect(result).toBe(false);
         expect(domElement.outerHTML).toBe('<p class="my-paragraph-class"></p>');

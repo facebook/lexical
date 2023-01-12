@@ -49,7 +49,11 @@ export class ParagraphNode extends ElementNode {
     }
     return dom;
   }
-  updateDOM(prevNode: ParagraphNode, dom: HTMLElement): boolean {
+  updateDOM(
+    prevNode: ParagraphNode,
+    dom: HTMLElement,
+    config: EditorConfig,
+  ): boolean {
     return false;
   }
 

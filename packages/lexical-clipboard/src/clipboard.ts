@@ -422,7 +422,15 @@ function $appendNodesToJSON(
   // We need a way to create a clone of a Node in memory with it's own key, but
   // until then this hack will work for the selected text extract use case.
   if ($isTextNode(target)) {
-    (serializedNode as SerializedTextNode).text = target.__text;
+    const text = target.__text;
+    // If an uncollapsed selection ends or starts at the end of a line of specialized,
+    // TextNodes, such as code tokens, we will get a 'blank' TextNode here, i.e., one
+    // with text of length 0. We don't want this, it makes a confusing mess. Reset!
+    if (text.length > 0) {
+      (serializedNode as SerializedTextNode).text = text;
+    } else {
+      shouldInclude = false;
+    }
   }
 
   for (let i = 0; i < children.length; i++) {

@@ -107,7 +107,11 @@ export class CodeNode extends ElementNode {
     }
     return element;
   }
-  updateDOM(prevNode: CodeNode, dom: HTMLElement): boolean {
+  updateDOM(
+    prevNode: CodeNode,
+    dom: HTMLElement,
+    config: EditorConfig,
+  ): boolean {
     const language = this.__language;
     const prevLanguage = prevNode.__language;
 
@@ -273,7 +277,7 @@ export class CodeNode extends ElementNode {
     return false;
   }
 
-  collapseAtStart(): true {
+  collapseAtStart(): boolean {
     const paragraph = $createParagraphNode();
     const children = this.getChildren();
     children.forEach((child) => paragraph.append(child));

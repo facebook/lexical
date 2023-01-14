@@ -6,6 +6,7 @@
  *
  */
 
+import {$createCodeNode, $isCodeHighlightNode} from '@lexical/code';
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import {$createListNode, $isListItemNode} from '@lexical/list';
 import {
@@ -201,7 +202,15 @@ function $basicInsertStrategy(
 
     const isLineBreakNode = $isLineBreakNode(node);
 
-    if (
+    if ($isCodeHighlightNode(node)) {
+      if (currentBlock === null) {
+        currentBlock = $createCodeNode();
+        topLevelBlocks.push(currentBlock);
+      }
+      if (currentBlock !== null) {
+        currentBlock.append(node);
+      }
+    } else if (
       isLineBreakNode ||
       ($isDecoratorNode(node) && node.isInline()) ||
       ($isElementNode(node) && node.isInline()) ||

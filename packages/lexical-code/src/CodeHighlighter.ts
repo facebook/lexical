@@ -693,6 +693,7 @@ function handleMoveTo(
 export function registerCodeHighlighting(
   editor: LexicalEditor,
   tokenizer?: Tokenizer,
+  withNativeMovement?: boolean,
 ): () => void {
   if (!editor.hasNodes([CodeNode, CodeHighlightNode])) {
     throw new Error(
@@ -704,7 +705,7 @@ export function registerCodeHighlighting(
     tokenizer = PrismTokenizer;
   }
 
-  return mergeRegister(
+  const listeners = [
     editor.registerMutationListener(CodeNode, (mutations) => {
       editor.update(() => {
         for (const [key, type] of mutations) {
@@ -746,15 +747,24 @@ export function registerCodeHighlighting(
       (payload): boolean => handleShiftLines(KEY_ARROW_DOWN_COMMAND, payload),
       COMMAND_PRIORITY_LOW,
     ),
-    editor.registerCommand(
-      MOVE_TO_END,
-      (payload): boolean => handleMoveTo(MOVE_TO_END, payload),
-      COMMAND_PRIORITY_LOW,
-    ),
-    editor.registerCommand(
-      MOVE_TO_START,
-      (payload): boolean => handleMoveTo(MOVE_TO_START, payload),
-      COMMAND_PRIORITY_LOW,
-    ),
-  );
+  ];
+
+  if (!withNativeMovement) {
+    listeners.push(
+      editor.registerCommand(
+        MOVE_TO_END,
+        (payload): boolean => handleMoveTo(MOVE_TO_END, payload),
+        COMMAND_PRIORITY_LOW,
+      ),
+    );
+    listeners.push(
+      editor.registerCommand(
+        MOVE_TO_START,
+        (payload): boolean => handleMoveTo(MOVE_TO_START, payload),
+        COMMAND_PRIORITY_LOW,
+      ),
+    );
+  }
+
+  return mergeRegister(...listeners);
 }

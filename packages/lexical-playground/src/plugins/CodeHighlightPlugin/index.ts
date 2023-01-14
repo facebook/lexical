@@ -19,7 +19,7 @@ export default function CodeHighlightPlugin({
 
   useEffect(() => {
     return registerCodeHighlighting(editor, undefined, withNativeMovement);
-  }, [editor]);
+  }, [editor, withNativeMovement]);
 
   return null;
 }

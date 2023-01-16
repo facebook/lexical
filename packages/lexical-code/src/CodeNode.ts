@@ -129,7 +129,7 @@ export class CodeNode extends ElementNode {
     return {
       // Typically <pre> is used for code blocks, and <code> for inline code styles
       // but if it's a multi line <code> we'll create a block. Pass through to
-      // inline format handled by TextNode otherwise
+      // inline format handled by TextNode otherwise.
       code: (node: Node) => {
         const isMultiLine =
           node.textContent != null &&

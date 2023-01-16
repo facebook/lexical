@@ -156,7 +156,7 @@ export class CodeNode extends ElementNode {
         if (isGitHubCodeTable(table as HTMLTableElement)) {
           return {
             conversion: convertTableElement,
-            priority: 4,
+            priority: 3,
           };
         }
         return null;
@@ -169,7 +169,7 @@ export class CodeNode extends ElementNode {
         if (isGitHubCodeCell(td)) {
           return {
             conversion: convertTableCellElement,
-            priority: 4,
+            priority: 3,
           };
         }
         if (table && isGitHubCodeTable(table)) {
@@ -177,7 +177,7 @@ export class CodeNode extends ElementNode {
           // Otherwise it'll fall back to the T
           return {
             conversion: convertCodeNoop,
-            priority: 4,
+            priority: 3,
           };
         }
 
@@ -190,7 +190,7 @@ export class CodeNode extends ElementNode {
         if (table && isGitHubCodeTable(table)) {
           return {
             conversion: convertCodeNoop,
-            priority: 4,
+            priority: 3,
           };
         }
         return null;

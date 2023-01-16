@@ -44,7 +44,7 @@ export function $setBlocksType_experimental(
   selection: RangeSelection | GridSelection,
 
   createElement: (node?: LexicalNode) => ElementNode,
-  createParentElement: (blockCollection: LexicalNode[]) => ElementNode,
+  createParentElement?: (blockCollection: LexicalNode[]) => ElementNode,
 ): void {
   if (selection.anchor.key === 'root') {
     const element = createElement();

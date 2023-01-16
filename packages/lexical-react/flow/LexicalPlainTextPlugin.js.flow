@@ -7,8 +7,16 @@
  * @flow strict
  */
 
-import type {ErrorBoundaryType} from './DEPRECATED_useLexicalDecorators';
 import type {EditorState, LexicalEditor} from 'lexical';
+
+import * as React from 'react';
+
+type ErrorBoundaryProps = $ReadOnly<{
+  children: React$Node,
+  onError: (error: Error) => void,
+}>;
+
+type ErrorBoundaryType = React.AbstractComponent<ErrorBoundaryProps>;
 
 type InitialEditorStateType =
   | null

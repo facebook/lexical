@@ -43,7 +43,8 @@ import {getStyleObjectFromCSS} from './utils';
 export function $setBlocksType_experimental(
   selection: RangeSelection | GridSelection,
 
-  createElement: () => ElementNode,
+  createElement: (node?: LexicalNode) => ElementNode,
+  createParentElement: (blockCollection: LexicalNode[]) => ElementNode,
 ): void {
   if (selection.anchor.key === 'root') {
     const element = createElement();
@@ -62,13 +63,46 @@ export function $setBlocksType_experimental(
     ) as LexicalNode;
     if (nodes.indexOf(firstBlock) === -1) nodes.push(firstBlock);
   }
-  for (let i = 0; i < nodes.length; i++) {
-    const node = nodes[i];
-    if (!isBlock(node)) continue;
-    const targetElement = createElement();
-    targetElement.setFormat(node.getFormatType());
-    targetElement.setIndent(node.getIndent());
-    node.replace(targetElement, true);
+
+  if (createParentElement === undefined) {
+    for (let i = 0; i < nodes.length; i++) {
+      const node = nodes[i];
+      if (!isBlock(node)) continue;
+      const targetElement = createElement(node);
+      targetElement.setFormat(node.getFormatType());
+      targetElement.setIndent(node.getIndent());
+      node.replace(targetElement, true);
+    }
+  }
+
+  if (createParentElement !== undefined) {
+    const blockCollection = [];
+    let attached = false;
+
+    for (let i = 0; i < nodes.length; i++) {
+      const node = nodes[i];
+      if (!isBlock(node)) continue;
+      const targetElement = createElement(node);
+      targetElement.setFormat(node.getFormatType());
+      targetElement.setIndent(node.getIndent());
+      blockCollection.push(targetElement);
+    }
+
+    const parentElement = createParentElement(blockCollection);
+
+    for (let i = 0; i < nodes.length; i++) {
+      const node = nodes[i];
+
+      // attach parent to first position,
+      // then remove all
+
+      if (!attached && isBlock(node)) {
+        attached = true;
+        node.replace(parentElement, true);
+      }
+
+      node.remove();
+    }
   }
 }
 

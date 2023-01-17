@@ -48,7 +48,7 @@ export function $getHtmlContent(editor: LexicalEditor): string {
   const selection = $getSelection();
 
   if (selection == null) {
-    return '';
+    throw new Error('Expected valid LexicalSelection');
   }
 
   // If we haven't selected anything
@@ -68,7 +68,7 @@ export function $getLexicalContent(editor: LexicalEditor): null | string {
   const selection = $getSelection();
 
   if (selection == null) {
-    return null;
+    throw new Error('Expected valid LexicalSelection');
   }
 
   // If we haven't selected anything

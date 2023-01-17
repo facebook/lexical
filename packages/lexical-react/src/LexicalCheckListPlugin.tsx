@@ -35,6 +35,8 @@ export function CheckListPlugin(): null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
+    listenPointerDown(editor.getRootElement());
+
     return mergeRegister(
       editor.registerCommand(
         INSERT_CHECK_LIST_COMMAND,
@@ -139,7 +141,6 @@ export function CheckListPlugin(): null {
         },
         COMMAND_PRIORITY_LOW,
       ),
-      listenPointerDown(),
     );
   });
 
@@ -148,16 +149,20 @@ export function CheckListPlugin(): null {
 
 let listenersCount = 0;
 
-function listenPointerDown() {
+function listenPointerDown(rootElement: HTMLElement | null) {
+  if (rootElement === null) {
+    return;
+  }
+
   if (listenersCount++ === 0) {
-    document.addEventListener('click', handleClick);
-    document.addEventListener('pointerdown', handlePointerDown);
+    rootElement.addEventListener('click', handleClick);
+    rootElement.addEventListener('pointerdown', handlePointerDown);
   }
 
   return () => {
     if (--listenersCount === 0) {
-      document.removeEventListener('click', handleClick);
-      document.removeEventListener('pointerdown', handlePointerDown);
+      rootElement.removeEventListener('click', handleClick);
+      rootElement.removeEventListener('pointerdown', handlePointerDown);
     }
   };
 }

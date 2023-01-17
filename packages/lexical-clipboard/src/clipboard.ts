@@ -34,6 +34,7 @@ import {
   DEPRECATED_$isGridSelection,
   DEPRECATED_GridNode,
   GridSelection,
+  isSelectionWithinEditor,
   LexicalEditor,
   LexicalNode,
   NodeSelection,
@@ -572,6 +573,20 @@ function $copyToClipboardEvent(
   editor: LexicalEditor,
   event: ClipboardEvent,
 ): boolean {
+  const domSelection = window.getSelection();
+  if (!domSelection) {
+    return false;
+  }
+  const anchorDOM = domSelection.anchorNode;
+  const focusDOM = domSelection.focusNode;
+  if (
+    anchorDOM == null ||
+    focusDOM == null ||
+    !isSelectionWithinEditor(editor, anchorDOM, focusDOM)
+  ) {
+    return false;
+  }
+  event.preventDefault();
   const clipboardData = event.clipboardData;
   if (clipboardData === null) {
     return false;

@@ -139,18 +139,16 @@ export function CheckListPlugin(): null {
         },
         COMMAND_PRIORITY_LOW,
       ),
-      editor.registerRootListener((rootElement) => {
-        if (rootElement === null) {
-          return;
+      editor.registerRootListener((rootElement, prevElement) => {
+        if (rootElement !== null) {
+          rootElement.addEventListener('click', handleClick);
+          rootElement.addEventListener('pointerdown', handlePointerDown);
         }
 
-        rootElement.addEventListener('click', handleClick);
-        rootElement.addEventListener('pointerdown', handlePointerDown);
-
-        return () => {
-          rootElement.removeEventListener('click', handleClick);
-          rootElement.removeEventListener('pointerdown', handlePointerDown);
-        };
+        if (prevElement !== null) {
+          prevElement.removeEventListener('click', handleClick);
+          prevElement.removeEventListener('pointerdown', handlePointerDown);
+        }
       }),
     );
   });

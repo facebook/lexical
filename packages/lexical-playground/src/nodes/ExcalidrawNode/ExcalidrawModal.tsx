@@ -96,7 +96,9 @@ export default function ExcalidrawModal({
     const currentModalRef = excaliDrawModelRef.current;
 
     const onKeyDown = (event: KeyboardEvent) => {
-      onDelete();
+      if (event.key === 'Escape') {
+        onDelete();
+      }
     };
 
     if (currentModalRef !== null) {

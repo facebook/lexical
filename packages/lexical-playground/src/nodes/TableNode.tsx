@@ -232,9 +232,7 @@ export class TableNode extends DecoratorNode<JSX.Element> {
   }
 
   createDOM(): HTMLElement {
-    const div = document.createElement('div');
-    div.style.display = 'contents';
-    return div;
+    return document.createElement('div');
   }
 
   updateDOM(): false {

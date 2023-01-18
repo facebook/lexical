@@ -398,7 +398,8 @@ function $appendNodesToJSON(
   currentNode: LexicalNode,
   targetArray: Array<BaseSerializedNode> = [],
 ): boolean {
-  let shouldInclude = selection != null ? currentNode.isSelected() : true;
+  let shouldInclude =
+    selection != null ? currentNode.isSelected(selection) : true;
   const shouldExclude =
     $isElementNode(currentNode) && currentNode.excludeFromCopy('html');
   let target = currentNode;

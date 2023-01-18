@@ -8,7 +8,11 @@
 
 /* eslint-disable no-constant-condition */
 import type {EditorConfig, LexicalEditor} from './LexicalEditor';
-import type {RangeSelection} from './LexicalSelection';
+import type {
+  GridSelection,
+  NodeSelection,
+  RangeSelection,
+} from './LexicalSelection';
 import type {Klass} from 'lexical';
 
 import invariant from 'shared/invariant';
@@ -222,8 +226,10 @@ export class LexicalNode {
     return false;
   }
 
-  isSelected(): boolean {
-    const selection = $getSelection();
+  isSelected(
+    _selection?: null | RangeSelection | NodeSelection | GridSelection,
+  ): boolean {
+    const selection = _selection || $getSelection();
     if (selection == null) {
       return false;
     }

@@ -57,6 +57,7 @@ module.name_mapper='^@lexical/react/LexicalNestedComposer' -> '<PROJECT_ROOT>/pa
 module.name_mapper='^@lexical/react/LexicalContentEditable' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalContentEditable.js.flow'
 module.name_mapper='^@lexical/react/LexicalTreeView' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalTreeView.js.flow'
 module.name_mapper='^@lexical/react/LexicalHorizontalRuleNode' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalHorizontalRuleNode.js.flow'
+module.name_mapper='^@lexical/react/LexicalHorizontalRulePlugin' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalHorizontalRulePlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalDecoratorBlockNode' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalDecoratorBlockNode.js.flow'
 module.name_mapper='^@lexical/react/LexicalBlockWithAlignableContents' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalBlockWithAlignableContents.js.flow'
 module.name_mapper='^@lexical/react/useLexicalIsTextContentEmpty' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalIsTextContentEmpty.js.flow'

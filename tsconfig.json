@@ -84,6 +84,9 @@
       "@lexical/react/LexicalHorizontalRuleNode": [
         "./packages/lexical-react/src/LexicalHorizontalRuleNode.tsx"
       ],
+      "@lexical/react/LexicalHorizontalRulePlugin": [
+        "./packages/lexical-react/src/LexicalHorizontalRulePlugin.ts"
+      ],
       "@lexical/react/LexicalDecoratorBlockNode": [
         "./packages/lexical-react/src/LexicalDecoratorBlockNode.ts"
       ],

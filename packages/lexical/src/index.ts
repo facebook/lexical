@@ -141,6 +141,7 @@ export {
   $nodesOfType,
   $setCompositionKey,
   $setSelection,
+  isSelectionWithinEditor,
 } from './LexicalUtils';
 export {$isDecoratorNode, DecoratorNode} from './nodes/LexicalDecoratorNode';
 export {$isElementNode, ElementNode} from './nodes/LexicalElementNode';

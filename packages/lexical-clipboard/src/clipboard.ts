@@ -580,8 +580,8 @@ function $copyToClipboardEvent(
   const anchorDOM = domSelection.anchorNode;
   const focusDOM = domSelection.focusNode;
   if (
-    anchorDOM == null ||
-    focusDOM == null ||
+    anchorDOM !== null &&
+    focusDOM !== null &&
     !isSelectionWithinEditor(editor, anchorDOM, focusDOM)
   ) {
     return false;

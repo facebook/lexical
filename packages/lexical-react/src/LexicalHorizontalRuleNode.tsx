@@ -54,13 +54,13 @@ function HorizontalRuleComponent({nodeKey}: {nodeKey: NodeKey}) {
         event.preventDefault();
         const node = $getNodeByKey(nodeKey);
         if ($isHorizontalRuleNode(node)) {
+          node.selectPrevious();
           node.remove();
         }
-        setSelected(false);
       }
       return false;
     },
-    [isSelected, nodeKey, setSelected],
+    [isSelected, nodeKey],
   );
 
   useEffect(() => {

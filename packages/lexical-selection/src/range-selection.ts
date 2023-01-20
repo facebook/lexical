@@ -126,16 +126,14 @@ export function $setBlocksType_experimental(
       nestedBlocks.push(targetElement);
     }
 
+    const skipIdx = nodes.findIndex((node) => isBlock(node));
     const parentBlock = options.createParentBlock(nestedBlocks, nodes);
-    const firstBlock = nodes.find((node) => isBlock(node));
 
-    // iife: quick type guard in absence of opt. chaining
-    ((n) => n && n.replace(parentBlock))(firstBlock);
+    ((node) => node && node.replace(parentBlock))(nodes[skipIdx]);
+    nodes.forEach((node, idx) => (idx !== skipIdx ? node.remove() : null));
     // sometimes the selection is lost, so we'll set one
     // addt'l selection can be applied via return value
-    parentBlock.getFirstChild().select(0, 0);
-    nodes.splice(0, 1);
-    nodes.forEach((node) => node.remove());
+    parentBlock.getFirstChild().select(0);
 
     return [parentBlock];
   }

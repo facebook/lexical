@@ -35,18 +35,18 @@ import {getStyleObjectFromCSS} from './utils';
 interface SetBlocksTypeOptions_experimental {
   createParentBlock?: (
     nestedBlocks: ElementNode[] | LexicalNode[],
-    nodes: ElementNode[] | LexicalNode[],
+    selectedNodes: ElementNode[] | LexicalNode[],
   ) => ElementNode | LexicalNode;
   handleShadowRoot?: (node: ElementNode | LexicalNode) => void;
   collapseShadowRootNodes?: boolean;
 }
 
 /**
- * Converts nodes from one block type to another, as defined by parameter function.
+ * Converts selected nodes from one type to another, as defined by parameter function.
  *
- * Will optionally collapse, or process, shadowRoot nodes, if any one of their children is included
- * in the selected nodes. Finally, parentBlocks — AKA nested nodes or shadowRoot nodes — can be
- * created by passing the optional `createParentBlock` function.
+ * Will optionally process shadowRoot nodes, and all their children, if any one of them is included
+ * in the selected nodes. Finally, parentBlocks — AKA nested nodes — can be created by passing
+ * the optional `createParentBlock` function.
  *
  * @param selection
  * @param createElement
@@ -57,7 +57,7 @@ export function $setBlocksType_experimental(
   selection: RangeSelection | GridSelection,
   createElement: (
     node?: ElementNode | LexicalNode,
-    nodes?: ElementNode[] | LexicalNode[],
+    selectedNodes?: ElementNode[] | LexicalNode[],
   ) => ElementNode,
   options?: SetBlocksTypeOptions_experimental,
 ) {
@@ -76,10 +76,10 @@ export function $setBlocksType_experimental(
   let nodes = selection.getNodes();
   const createElementTarget = (
     node: ElementNode | LexicalNode,
-    currentNodes: ElementNode[] | LexicalNode[],
+    selectedNodes: ElementNode[] | LexicalNode[],
   ) => {
     if (!isBlock(node)) return null;
-    const targetElement = createElement(node, currentNodes);
+    const targetElement = createElement(node, selectedNodes);
     targetElement.setFormat(node.getFormatType());
     targetElement.setIndent(node.getIndent());
     return targetElement;
@@ -101,13 +101,13 @@ export function $setBlocksType_experimental(
     options &&
     (options.collapseShadowRootNodes || options.handleShadowRoot)
   ) {
-    const nodesAfterCollapse = collapseShadowRoots(
+    const nodesAfterShadowRootCollapse = collapseShadowRoots(
       nodes,
       options as SetBlocksTypeOptions_experimental,
     );
 
-    if (nodesAfterCollapse.length > 0) {
-      nodes = nodesAfterCollapse;
+    if (nodesAfterShadowRootCollapse.length > 0) {
+      nodes = nodesAfterShadowRootCollapse;
     }
   }
 
@@ -143,22 +143,22 @@ export function $setBlocksType_experimental(
     const parentBlock = options.createParentBlock(nestedBlocks, nodes);
 
     ((node) => node && node.replace(parentBlock))(nodes[skipIdx]);
-    nodes.forEach((node, idx) => (idx !== skipIdx ? node.remove() : null));
+    nodes.forEach((node, idx) => (idx !== skipIdx ? node.remove() : undefined));
 
     (() => {
-      const currentSelection = $getSelection();
+      const selectionUpdate = $getSelection();
 
       // the selection can break if the initial selection was (a) backward,
       // (b) uncollapsed, and (c) is now being nested into a parentBlock.
       // this select will prevent the resulting 'no selection' error.
-      // reset via the caller: { onUpdate: editor.update() }
+      // can reset via the caller: { onUpdate: editor.update() }
 
-      if ($isRangeSelection(currentSelection)) {
-        const anchorKey = currentSelection.anchor.key;
+      if ($isRangeSelection(selectionUpdate)) {
+        const anchorKey = selectionUpdate.anchor.key;
         const firstActiveChild = parentBlock.getFirstChild();
         const firstActiveGrandchild = firstActiveChild.getFirstChild();
 
-        const isSelectionBroken = ![
+        const isCorrectSelection = [
           parentBlock.getKey(),
           firstActiveChild.getKey(),
           firstActiveGrandchild.getKey(),
@@ -166,7 +166,7 @@ export function $setBlocksType_experimental(
           return key === anchorKey;
         });
 
-        if (isSelectionBroken) {
+        if (!isCorrectSelection) {
           firstActiveChild.select(0);
         }
       }
@@ -184,7 +184,7 @@ function collapseShadowRoots(
 ) {
   const shadows = [];
   const shadowRootKeys = new Set<string>();
-  const nodesAndShadows: (ElementNode | LexicalNode | string)[] = [...nodes];
+  const nodesAndShadowKeys: (ElementNode | LexicalNode | string)[] = [...nodes];
   const dirtyNodeSets: Record<string, Set<string>> = {};
 
   const getShadowKey = (key: string) => `shadowRoot-${key}`;
@@ -199,11 +199,10 @@ function collapseShadowRoots(
       const nodeKey = node.getKey();
       const parentKey = parent.getKey();
 
-      // don't include the shadowRoots!
       if (parentKey !== 'root' && parent.isShadowRoot()) {
         const dirtyNodeSet = dirtyNodeSets[parentKey];
 
-        // mark selected nodes as dirty if they are a child of
+        // mark each selected node as dirty if it is a child of
         // shadowRoot. note: we assume selection.getNodes()
         // returns a stable sequence of shadow nodes
 
@@ -249,12 +248,12 @@ function collapseShadowRoots(
     const [shadowKey, dirtyNodeSet] = keyAndSet;
 
     for (const nodeKey of dirtyNodeSet) {
-      const nodeIndex = nodesAndShadows.findIndex((maybeNode) => {
+      const nodeIndex = nodesAndShadowKeys.findIndex((maybeNode) => {
         return typeof maybeNode !== 'string' && maybeNode.getKey() === nodeKey;
       });
 
       if (nodeIndex > -1) {
-        nodesAndShadows[nodeIndex] = getShadowKey(shadowKey);
+        nodesAndShadowKeys[nodeIndex] = getShadowKey(shadowKey);
       }
     }
   });
@@ -267,17 +266,17 @@ function collapseShadowRoots(
     const allChildren = $getRoot().getChildren();
     const newChildren = allChildren.slice(shadowStart, shadowEnd);
 
-    const spliceStart = nodesAndShadows.findIndex((maybeKey) => {
+    const spliceStart = nodesAndShadowKeys.findIndex((maybeKey) => {
       return isShadow(shadowKey, maybeKey);
     });
-    const deleteCount = nodesAndShadows.filter((maybeKey) => {
+    const deleteCount = nodesAndShadowKeys.filter((maybeKey) => {
       return isShadow(shadowKey, maybeKey);
     }).length;
 
-    nodesAndShadows.splice(spliceStart, deleteCount, ...newChildren);
+    nodesAndShadowKeys.splice(spliceStart, deleteCount, ...newChildren);
   });
 
-  return nodesAndShadows as (ElementNode | LexicalNode)[];
+  return nodesAndShadowKeys as (ElementNode | LexicalNode)[];
 }
 
 function isBlock(node: LexicalNode) {

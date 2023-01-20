@@ -58,7 +58,7 @@ export function $setBlocksType_experimental(
   createElement: (
     node?: ElementNode | LexicalNode,
     selectedNodes?: ElementNode[] | LexicalNode[],
-  ) => ElementNode,
+  ) => ElementNode | LexicalNode,
   options?: SetBlocksTypeOptions_experimental,
 ) {
   // 1. special handling for root

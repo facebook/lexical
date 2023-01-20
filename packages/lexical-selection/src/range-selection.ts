@@ -11,6 +11,7 @@ import {
   $getNodeByKey,
   $getPreviousSelection,
   $getRoot,
+  $getSelection,
   $hasAncestor,
   $isDecoratorNode,
   $isElementNode,
@@ -131,9 +132,33 @@ export function $setBlocksType_experimental(
 
     ((node) => node && node.replace(parentBlock))(nodes[skipIdx]);
     nodes.forEach((node, idx) => (idx !== skipIdx ? node.remove() : null));
-    // sometimes the selection is lost, so we'll set one
-    // addt'l selection can be applied via return value
-    parentBlock.getFirstChild().select(0);
+
+    (() => {
+      const currentSelection = $getSelection();
+
+      // the selection can break if the initial selection was (a) backward,
+      // (b) uncollapsed, and (c) is now being nested into a parentBlock.
+      // this select will prevent the resulting 'no selection' error.
+      // reset via the caller: { onUpdate: editor.update() }
+
+      if ($isRangeSelection(currentSelection)) {
+        const anchorKey = currentSelection.anchor.key;
+        const firstActiveChild = parentBlock.getFirstChild();
+        const firstActiveGrandchild = firstActiveChild.getFirstChild();
+
+        const isSelectionBroken = ![
+          parentBlock.getKey(),
+          firstActiveChild.getKey(),
+          firstActiveGrandchild.getKey(),
+        ].includes((key: string | null) => {
+          return key === anchorKey;
+        });
+
+        if (isSelectionBroken) {
+          firstActiveChild.select(0);
+        }
+      }
+    })();
 
     return [parentBlock];
   }

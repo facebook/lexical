@@ -1604,6 +1604,27 @@ test.describe('CopyAndPaste', () => {
     );
   });
 
+  test('HTML Copy + paste a Lexical nested list', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    const clipboard = {
+      'text/html':
+        '<ul><li>Hello</li><li><ul><li>awesome</li></ul></li><li>world!</li></ul>',
+    };
+
+    await pasteFromClipboard(page, clipboard);
+
+    await assertHTML(
+      page,
+      '<ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">Hello</span></li><li value="2" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"><ul class="PlaygroundEditorTheme__ul"><li value="1" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">awesome</span></li></ul></li><li value="2" class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">world!</span></li></ul>',
+    );
+  });
+
   test('HTML Copy + paste (Nested List - directly nested ul)', async ({
     page,
     isPlainText,

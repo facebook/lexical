@@ -42,15 +42,16 @@ interface SetBlocksTypeOptions_experimental {
 }
 
 /**
- * Converts all nodes in the selection that are of one block type to another, as specified by passed creation function.
+ * Converts selection nodes from one block type to another, as defined by parameter.
  *
- * Options object lets `shadowRoot` nodes to be treated as one unit, regardless of selection
- * point(s). It also allows the creation of 'parent blocks' for nested node structures.
+ * Will optionally collapse, or process, shadowRoot nodes, if any one of their children is included
+ * in the selection. Finally, parentBlocks — AKA nested nodes or shadowRoot nodes — can be
+ * created by passing the optional `createParentBlock` function.
  *
  * @param selection
  * @param createElement
  * @param SetBlocksTypeOptions_experimental
- * @returns
+ * @returns (ElementNode | LexicalNode)[]
  */
 export function $setBlocksType_experimental(
   selection: RangeSelection | GridSelection,
@@ -187,7 +188,7 @@ function collapseShadowRoots(
       if (parent.getKey() !== 'root' && parent.isShadowRoot()) {
         const dirtyNodeSet = dirtyNodeSets[parent.getKey()];
 
-        // mark selected nodes as dirty if they are a child of a
+        // mark selected nodes as dirty if they are a child of
         // shadowRoot. note: we assume selection.getNodes()
         // creates a stable sequence of shadow nodes
 

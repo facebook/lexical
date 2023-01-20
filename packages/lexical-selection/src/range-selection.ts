@@ -55,13 +55,13 @@ interface SetBlocksTypeOptions_experimental {
 export function $setBlocksType_experimental(
   selection: RangeSelection | GridSelection,
   createElement: (
-    node: ElementNode | LexicalNode | undefined,
-    nodes: ElementNode[] | LexicalNode[] | undefined,
+    node?: ElementNode | LexicalNode,
+    nodes?: ElementNode[] | LexicalNode[],
   ) => ElementNode,
   options?: SetBlocksTypeOptions_experimental,
 ) {
   if (selection.anchor.key === 'root') {
-    const element = createElement(undefined, undefined);
+    const element = createElement();
     const root = $getRoot();
     const firstChild = root.getFirstChild();
     if (firstChild) firstChild.replace(element, true);

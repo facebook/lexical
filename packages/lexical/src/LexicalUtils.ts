@@ -573,6 +573,19 @@ export function $updateSelectedTextFromDOM(
     let textContent = getAnchorTextFromDOM(anchorNode);
     const node = $getNearestNodeFromDOMNode(anchorNode);
     if (textContent !== null && $isTextNode(node)) {
+      // The newly typed character may be missing from the DOM's textContent
+      // when some types of tokenized nodes include a tab. For instance,
+      // a LinedCodeNode <code><div><codeToken></div></code> will
+      // result in the following misbehavior:
+
+      // a. /tconst --> type 'd' at offset 1 --> /tconst
+      //  - Missing 'd'
+      // b. /tconst --> type 'd' at offset 3 --> /tcodnst
+      //    --> type 'd' at offset 3 --> /tcodnst
+      //  - Missing second 'd'
+
+      // In these cases, we can fix the problem by manually inserting the
+      // newly typed character where we know it should have been.
       const hasTabCharacter = textContent.includes('\t');
 
       if (data && hasTabCharacter) {

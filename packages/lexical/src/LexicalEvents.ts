@@ -851,6 +851,28 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
   }
 
   const {keyCode, shiftKey, ctrlKey, metaKey, altKey} = event;
+  const domSelection = window.getSelection();
+  if (!domSelection) {
+    return;
+  }
+  const anchorDOM = domSelection.anchorNode;
+  const focusDOM = domSelection.focusNode;
+  let isInEditor = true;
+
+  updateEditor(editor, () => {
+    if (
+      anchorDOM !== null &&
+      focusDOM !== null &&
+      !isSelectionWithinEditor(editor, anchorDOM, focusDOM)
+    ) {
+      isInEditor = false;
+      return;
+    }
+  });
+
+  if (!isInEditor) {
+    return;
+  }
 
   if (isMoveForward(keyCode, ctrlKey, altKey, metaKey)) {
     dispatchCommand(editor, KEY_ARROW_RIGHT_COMMAND, event);

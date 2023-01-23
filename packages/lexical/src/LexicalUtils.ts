@@ -573,6 +573,22 @@ export function $updateSelectedTextFromDOM(
     let textContent = getAnchorTextFromDOM(anchorNode);
     const node = $getNearestNodeFromDOMNode(anchorNode);
     if (textContent !== null && $isTextNode(node)) {
+      const hasTabCharacter = textContent.includes('\t');
+
+      if (data && hasTabCharacter) {
+        const selectionOffset = data.length;
+        const insertionOffset = anchorOffset + data.length - 1;
+        const beforeInsertion = textContent.slice(0, insertionOffset);
+        const afterInsertion = textContent.slice(
+          insertionOffset,
+          textContent.length,
+        );
+
+        textContent = `${beforeInsertion}${data}${afterInsertion}`;
+        anchorOffset += anchorOffset + selectionOffset;
+        focusOffset += focusOffset + selectionOffset;
+      }
+
       // Data is intentionally truthy, as we check for boolean, null and empty string.
       if (textContent === COMPOSITION_SUFFIX && data) {
         const offset = data.length;

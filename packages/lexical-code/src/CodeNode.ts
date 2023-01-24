@@ -145,13 +145,13 @@ export class CodeNode extends ElementNode {
       div: (node: Node) => {
         // domNode is a <div> since we matched it by nodeName
         const div = node as HTMLDivElement;
-        if (!isCodeElement(div)){
+        if (!isCodeElement(div)) {
           return null;
         }
         return {
           conversion: convertDivElement,
           priority: 1,
-        }
+        };
       },
       pre: (node: Node) => ({
         conversion: convertPreElement,

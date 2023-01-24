@@ -7,8 +7,11 @@
  * @flow strict
  */
 
-import type {ErrorBoundaryType} from './DEPRECATED_useLexicalDecorators';
 import type {EditorState, LexicalEditor} from 'lexical';
+
+import typeof LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary';
+
+import * as React from 'react';
 
 type InitialEditorStateType =
   | null
@@ -19,5 +22,5 @@ type InitialEditorStateType =
 declare export function PlainTextPlugin({
   contentEditable: React$Node,
   placeholder: ((isEditable: boolean) => React$Node) | React$Node,
-  ErrorBoundary: ErrorBoundaryType,
+  ErrorBoundary: LexicalErrorBoundary,
 }): React$Node;

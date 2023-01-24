@@ -201,7 +201,20 @@ function isTextNodeUnchanged(
 ): boolean {
   const prevNode = prevEditorState._nodeMap.get(key);
   const nextNode = nextEditorState._nodeMap.get(key);
-  if ($isTextNode(prevNode) && $isTextNode(nextNode)) {
+
+  let isDeletingLine = false;
+  const prevSelection = prevEditorState._selection;
+  const nextSelection = nextEditorState._selection;
+
+  if ($isRangeSelection(prevSelection) && $isRangeSelection(nextSelection)) {
+    isDeletingLine =
+      prevSelection.anchor.type === 'element' &&
+      prevSelection.focus.type === 'element' &&
+      nextSelection.anchor.type === 'text' &&
+      nextSelection.focus.type === 'text';
+  }
+
+  if (!isDeletingLine && $isTextNode(prevNode) && $isTextNode(nextNode)) {
     return (
       prevNode.__type === nextNode.__type &&
       prevNode.__text === nextNode.__text &&

@@ -13,7 +13,10 @@ import type {
   DOMExportOutput,
   LexicalNode,
 } from '../LexicalNode';
-import type {SerializedElementNode} from './LexicalElementNode';
+import type {
+  ElementFormatType,
+  SerializedElementNode,
+} from './LexicalElementNode';
 import type {RangeSelection, Spread} from 'lexical';
 
 import {$applyNodeReplacement, getCachedClassNameArray} from '../LexicalUtils';
@@ -144,8 +147,16 @@ export class ParagraphNode extends ElementNode {
   }
 }
 
-function convertParagraphElement(): DOMConversionOutput {
-  return {node: $createParagraphNode()};
+function convertParagraphElement(element: HTMLElement): DOMConversionOutput {
+  const node = $createParagraphNode();
+  if (element.style) {
+    node.setFormat(element.style.textAlign as ElementFormatType);
+    const indent = parseInt(element.style.textIndent) / 20;
+    if (indent > 0) {
+      node.setIndent(indent);
+    }
+  }
+  return {node};
 }
 
 export function $createParagraphNode(): ParagraphNode {

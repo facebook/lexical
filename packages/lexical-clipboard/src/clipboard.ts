@@ -48,7 +48,7 @@ export function $getHtmlContent(editor: LexicalEditor): string {
   const selection = $getSelection();
 
   if (selection == null) {
-    throw new Error('Expected valid LexicalSelection');
+    invariant(false, 'Expected valid LexicalSelection');
   }
 
   // If we haven't selected anything
@@ -68,7 +68,7 @@ export function $getLexicalContent(editor: LexicalEditor): null | string {
   const selection = $getSelection();
 
   if (selection == null) {
-    throw new Error('Expected valid LexicalSelection');
+    invariant(false, 'Expected valid LexicalSelection');
   }
 
   // If we haven't selected anything
@@ -588,10 +588,10 @@ function $copyToClipboardEvent(
   }
   event.preventDefault();
   const clipboardData = event.clipboardData;
-  if (clipboardData === null) {
+  const selection = $getSelection();
+  if (clipboardData === null || selection === null) {
     return false;
   }
-  const selection = $getSelection();
   const htmlString = $getHtmlContent(editor);
   const lexicalString = $getLexicalContent(editor);
   let plainString = '';

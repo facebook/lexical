@@ -202,9 +202,9 @@ function isTextNodeUnchanged(
   const prevNode = prevEditorState._nodeMap.get(key);
   const nextNode = nextEditorState._nodeMap.get(key);
 
-  let isDeletingLine = false;
   const prevSelection = prevEditorState._selection;
   const nextSelection = nextEditorState._selection;
+  let isDeletingLine = false;
 
   if ($isRangeSelection(prevSelection) && $isRangeSelection(nextSelection)) {
     isDeletingLine =

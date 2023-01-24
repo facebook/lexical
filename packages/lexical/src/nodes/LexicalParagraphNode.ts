@@ -151,7 +151,7 @@ function convertParagraphElement(element: HTMLElement): DOMConversionOutput {
   const node = $createParagraphNode();
   if (element.style) {
     node.setFormat(element.style.textAlign as ElementFormatType);
-    const indent = parseInt(element.style.textIndent) / 20;
+    const indent = parseInt(element.style.textIndent, 10) / 20;
     if (indent > 0) {
       node.setIndent(indent);
     }

@@ -40,13 +40,6 @@ module.name_mapper='^@lexical/overflow' -> '<PROJECT_ROOT>/packages/lexical-over
 module.name_mapper='^@lexical/markdown' -> '<PROJECT_ROOT>/packages/lexical-markdown/flow/LexicalMarkdown.js.flow'
 module.name_mapper='^@lexical/mark' -> '<PROJECT_ROOT>/packages/lexical-mark/flow/LexicalMark.js.flow'
 
-module.name_mapper='^@lexical/react/DEPRECATED_useLexicalEditor' -> '<PROJECT_ROOT>/packages/lexical-react/flow/DEPRECATED_useLexicalEditor.js.flow'
-module.name_mapper='^@lexical/react/DEPRECATED_useLexicalRichText' -> '<PROJECT_ROOT>/packages/lexical-react/flow/DEPRECATED_useLexicalRichText.js.flow'
-module.name_mapper='^@lexical/react/DEPRECATED_useLexicalPlainText' -> '<PROJECT_ROOT>/packages/lexical-react/flow/DEPRECATED_useLexicalPlainText.js.flow'
-module.name_mapper='^@lexical/react/DEPRECATED_useLexicalCanShowPlaceholder' -> '<PROJECT_ROOT>/packages/lexical-react/flow/DEPRECATED_useLexicalCanShowPlaceholder.js.flow'
-module.name_mapper='^@lexical/react/DEPRECATED_useLexicalCharacterLimit' -> '<PROJECT_ROOT>/packages/lexical-react/flow/DEPRECATED_useLexicalCharacterLimit.js.flow'
-module.name_mapper='^@lexical/react/DEPRECATED_useLexicalHistory' -> '<PROJECT_ROOT>/packages/lexical-react/flow/DEPRECATED_useLexicalHistory.js.flow'
-
 module.name_mapper='^@lexical/react/LexicalComposer' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalComposer.js.flow'
 module.name_mapper='^@lexical/react/LexicalComposerContext' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalComposerContext.js.flow'
 module.name_mapper='^@lexical/react/LexicalNestedComposer' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalNestedComposer.js.flow'

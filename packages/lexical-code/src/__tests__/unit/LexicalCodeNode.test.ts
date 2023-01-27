@@ -64,7 +64,11 @@ describe('LexicalCodeNode tests', () => {
           theme: {},
         });
         expect(domElement.outerHTML).toBe('<code spellcheck="false"></code>');
-        const result = newCodeNode.updateDOM(codeNode, domElement);
+        const result = newCodeNode.updateDOM(
+          codeNode,
+          domElement,
+          editorConfig,
+        );
         expect(result).toBe(false);
         expect(domElement.outerHTML).toBe('<code spellcheck="false"></code>');
       });

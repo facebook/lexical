@@ -263,11 +263,14 @@ function normalizeChildren(nodes: Array<LexicalNode>): Array<ListItemNode> {
     const node = nodes[i];
     if ($isListItemNode(node)) {
       normalizedListItems.push(node);
-      node.getChildren().forEach((child) => {
-        if ($isListNode(child)) {
-          normalizedListItems.push(wrapInListItem(child));
-        }
-      });
+      const children = node.getChildren();
+      if (children.length > 1) {
+        children.forEach((child) => {
+          if ($isListNode(child)) {
+            normalizedListItems.push(wrapInListItem(child));
+          }
+        });
+      }
     } else {
       normalizedListItems.push(wrapInListItem(node));
     }

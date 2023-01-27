@@ -50,22 +50,6 @@ glob('packages/**/flow/*.flow', options, function (error1, files) {
           "from 'DEPRECATED_useLexicalPlainText'",
         )
         .replace(
-          /from '@lexical\/react\/DEPRECATED_useLexicalEditorEvents'/g,
-          "from 'DEPRECATED_useLexicalEditorEvents'",
-        )
-        .replace(
-          /from '@lexical\/react\/DEPRECATED_useLexicalAutoFormatter'/g,
-          "from 'DEPRECATED_useLexicalAutoFormatter'",
-        )
-        .replace(
-          /from '@lexical\/react\/DEPRECATED_useLexicalDecorators'/g,
-          "from 'DEPRECATED_useLexicalDecorators'",
-        )
-        .replace(
-          /from '@lexical\/react\/DEPRECATED_useLexicalList'/g,
-          "from 'DEPRECATED_useLexicalList'",
-        )
-        .replace(
           /from '@lexical\/react\/DEPRECATED_useLexicalCanShowPlaceholder'/g,
           "from 'DEPRECATED_useLexicalCanShowPlaceholder'",
         )

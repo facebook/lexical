@@ -581,7 +581,7 @@ export function $updateSelectedTextFromDOM(
       // a. /tconst --> type 'd' at offset 1 --> /tconst
       //  - Missing 'd'
       // b. /tconst --> type 'd' at offset 3 --> /tcodnst
-      //    --> type 'd' at offset 3 --> /tcodnst
+      //    --> type another 'd' at offset 3 --> /tcodnst
       //  - Missing second 'd'
 
       // In these cases, we can fix the problem by manually inserting the

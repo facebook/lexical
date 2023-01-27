@@ -11,7 +11,9 @@ import type {NodeKey} from 'lexical';
 import './index.css';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import LexicalTableOfContents__EXPERIMENTAL from '@lexical/react/LexicalTableOfContents__EXPERIMENTAL';
+import LexicalTableOfContents__EXPERIMENTAL, {
+  TableOfContentsEntry,
+} from '@lexical/react/LexicalTableOfContents__EXPERIMENTAL';
 import {useEffect, useRef, useState} from 'react';
 import * as React from 'react';
 
@@ -45,7 +47,7 @@ function isHeadingBelowTheTopOfThePage(element: HTMLElement): boolean {
 function TableOfContentsList({
   tableOfContents,
 }: {
-  tableOfContents: Array<[key: NodeKey, text: string, tag: HeadingTagType]>;
+  tableOfContents: Array<TableOfContentsEntry>;
 }): JSX.Element {
   const [selectedKey, setSelectedKey] = useState('');
   const selectedIndex = useRef(0);

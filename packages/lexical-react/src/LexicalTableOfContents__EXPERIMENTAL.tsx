@@ -13,7 +13,11 @@ import {$isHeadingNode, HeadingNode, HeadingTagType} from '@lexical/rich-text';
 import {$getNodeByKey, $getRoot, TextNode} from 'lexical';
 import {useEffect, useState} from 'react';
 
-type TableOfContentsEntry = [key: NodeKey, text: string, tag: HeadingTagType];
+export type TableOfContentsEntry = [
+  key: NodeKey,
+  text: string,
+  tag: HeadingTagType,
+];
 
 function toEntry(heading: HeadingNode): TableOfContentsEntry {
   return [heading.getKey(), heading.getTextContent(), heading.getTag()];

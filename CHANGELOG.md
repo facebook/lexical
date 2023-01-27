@@ -1,3 +1,18 @@
+## v0.7.6 (2023-01-10)
+
+- Fix typo in LexicalAutoLinkPlugin code example (#3685) Lorenzo
+- updated typo (#3697) Christopher Tran
+- Add width and height to serialized image nodes (#3684) Ebad
+- fix: force to set TextNode's content when compositionKey is invalid (#3679) Conatus
+- Fix: convert html 's' tag to node for strickethrough format is missing (#3673) hun
+- Fix bug with ArrowDown/ArrowUp in RichTextPlugin (#3676) Dominic Gannaway
+- Remove ts-ignore for createContext (#3671) yf-yang
+- Fix bug in reconciler sub-tree text content cache (#3669) Dominic Gannaway
+- Hide commenting controls on mobile screen sizes (#3667) Dominic Gannaway
+- Fix theming docs (#3668) Dominic Gannaway
+- update: change character_limit to be passed as a props( maxlength) (#3649) 0x harry
+- Add TabIndentationPlugin to playground. (#3632) Acy Watson
+
 ## v0.7.5 (2022-12-23)
 
 - selectionChange fix (#3623) Dominic Gannaway

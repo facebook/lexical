@@ -142,7 +142,7 @@ const MATCHERS = [
 
 ...
 
-<AutoLinkPlugin matchers=[MATCHERS] />
+<AutoLinkPlugin matchers={MATCHERS} />
 ```
 
 ### `LexicalClearEditorPlugin`

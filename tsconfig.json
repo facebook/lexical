@@ -44,18 +44,6 @@
       "@lexical/react/DEPRECATED_useLexicalPlainText": [
         "./packages/lexical-react/src/DEPRECATED_useLexicalPlainText.ts"
       ],
-      "@lexical/react/DEPRECATED_useLexicalEditorEvents": [
-        "./packages/lexical-react/src/DEPRECATED_useLexicalEditorEvents.ts"
-      ],
-      "@lexical/react/DEPRECATED_useLexicalAutoFormatter": [
-        "./packages/lexical-react/src/DEPRECATED_useLexicalAutoFormatter.ts"
-      ],
-      "@lexical/react/DEPRECATED_useLexicalDecorators": [
-        "./packages/lexical-react/src/DEPRECATED_useLexicalDecorators.ts"
-      ],
-      "@lexical/react/DEPRECATED_useLexicalList": [
-        "./packages/lexical-react/src/DEPRECATED_useLexicalList.ts"
-      ],
       "@lexical/react/DEPRECATED_useLexicalCanShowPlaceholder": [
         "./packages/lexical-react/src/DEPRECATED_useLexicalCanShowPlaceholder.ts"
       ],
@@ -83,6 +71,9 @@
       ],
       "@lexical/react/LexicalHorizontalRuleNode": [
         "./packages/lexical-react/src/LexicalHorizontalRuleNode.tsx"
+      ],
+      "@lexical/react/LexicalHorizontalRulePlugin": [
+        "./packages/lexical-react/src/LexicalHorizontalRulePlugin.ts"
       ],
       "@lexical/react/LexicalDecoratorBlockNode": [
         "./packages/lexical-react/src/LexicalDecoratorBlockNode.ts"

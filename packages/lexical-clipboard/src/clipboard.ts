@@ -34,6 +34,7 @@ import {
   DEPRECATED_$isGridSelection,
   DEPRECATED_GridNode,
   GridSelection,
+  isSelectionWithinEditor,
   LexicalEditor,
   LexicalNode,
   NodeSelection,
@@ -47,7 +48,7 @@ export function $getHtmlContent(editor: LexicalEditor): string {
   const selection = $getSelection();
 
   if (selection == null) {
-    throw new Error('Expected valid LexicalSelection');
+    invariant(false, 'Expected valid LexicalSelection');
   }
 
   // If we haven't selected anything
@@ -67,7 +68,7 @@ export function $getLexicalContent(editor: LexicalEditor): null | string {
   const selection = $getSelection();
 
   if (selection == null) {
-    throw new Error('Expected valid LexicalSelection');
+    invariant(false, 'Expected valid LexicalSelection');
   }
 
   // If we haven't selected anything
@@ -422,7 +423,15 @@ function $appendNodesToJSON(
   // We need a way to create a clone of a Node in memory with it's own key, but
   // until then this hack will work for the selected text extract use case.
   if ($isTextNode(target)) {
-    (serializedNode as SerializedTextNode).text = target.__text;
+    const text = target.__text;
+    // If an uncollapsed selection ends or starts at the end of a line of specialized,
+    // TextNodes, such as code tokens, we will get a 'blank' TextNode here, i.e., one
+    // with text of length 0. We don't want this, it makes a confusing mess. Reset!
+    if (text.length > 0) {
+      (serializedNode as SerializedTextNode).text = text;
+    } else {
+      shouldInclude = false;
+    }
   }
 
   for (let i = 0; i < children.length; i++) {
@@ -564,12 +573,25 @@ function $copyToClipboardEvent(
   editor: LexicalEditor,
   event: ClipboardEvent,
 ): boolean {
-  event.preventDefault();
-  const clipboardData = event.clipboardData;
-  if (clipboardData === null) {
+  const domSelection = window.getSelection();
+  if (!domSelection) {
     return false;
   }
+  const anchorDOM = domSelection.anchorNode;
+  const focusDOM = domSelection.focusNode;
+  if (
+    anchorDOM !== null &&
+    focusDOM !== null &&
+    !isSelectionWithinEditor(editor, anchorDOM, focusDOM)
+  ) {
+    return false;
+  }
+  event.preventDefault();
+  const clipboardData = event.clipboardData;
   const selection = $getSelection();
+  if (clipboardData === null || selection === null) {
+    return false;
+  }
   const htmlString = $getHtmlContent(editor);
   const lexicalString = $getLexicalContent(editor);
   let plainString = '';

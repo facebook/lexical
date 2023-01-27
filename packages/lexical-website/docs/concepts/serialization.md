@@ -131,7 +131,7 @@ static importDOM(): DOMConversionMap | null {
       if (isGitHubCodeTable(node as HTMLTableElement)) {
         return {
           conversion: convertTableElement,
-          priority: 4,
+          priority: 3,
         };
       }
       return null;

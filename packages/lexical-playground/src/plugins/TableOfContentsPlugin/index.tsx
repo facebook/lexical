@@ -26,6 +26,22 @@ function indent(tagName: HeadingTagType) {
   }
 }
 
+function isHeadingAtTheTopOfThePage(element: HTMLElement): boolean {
+  const elementYPosition = element?.getClientRects()[0].y;
+  return (
+    elementYPosition >= MARGIN_ABOVE_EDITOR &&
+    elementYPosition <= MARGIN_ABOVE_EDITOR + HEADING_WIDTH
+  );
+}
+function isHeadingAboveViewport(element: HTMLElement): boolean {
+  const elementYPosition = element?.getClientRects()[0].y;
+  return elementYPosition < MARGIN_ABOVE_EDITOR;
+}
+function isHeadingBelowTheTopOfThePage(element: HTMLElement): boolean {
+  const elementYPosition = element?.getClientRects()[0].y;
+  return elementYPosition >= MARGIN_ABOVE_EDITOR + HEADING_WIDTH;
+}
+
 function TableOfContentsList({
   tableOfContents,
 }: {
@@ -44,21 +60,6 @@ function TableOfContentsList({
         selectedIndex.current = currIndex;
       }
     });
-  }
-  function isHeadingAtTheTopOfThePage(element: HTMLElement): boolean {
-    const elementYPosition = element?.getClientRects()[0].y;
-    return (
-      elementYPosition >= MARGIN_ABOVE_EDITOR &&
-      elementYPosition <= MARGIN_ABOVE_EDITOR + HEADING_WIDTH
-    );
-  }
-  function isHeadingAboveViewport(element: HTMLElement): boolean {
-    const elementYPosition = element?.getClientRects()[0].y;
-    return elementYPosition < MARGIN_ABOVE_EDITOR;
-  }
-  function isHeadingBelowTheTopOfThePage(element: HTMLElement): boolean {
-    const elementYPosition = element?.getClientRects()[0].y;
-    return elementYPosition >= MARGIN_ABOVE_EDITOR + HEADING_WIDTH;
   }
 
   useEffect(() => {

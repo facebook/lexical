@@ -158,11 +158,11 @@ function TableOfContentsList({
           } else {
             return (
               <div
+                key={key}
                 className={`normal-heading-wrapper ${
                   selectedKey === key ? 'selected-heading-wrapper' : ''
                 }`}>
                 <div
-                  key={key}
                   onClick={() => scrollToNode(key, index)}
                   role="button"
                   className={indent(tag)}

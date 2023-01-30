@@ -145,7 +145,7 @@ export default function LexicalTableOfContentsPlugin({
               const newHeading = $getNodeByKey<HeadingNode>(nodeKey);
               if (newHeading !== null) {
                 let prevHeading = newHeading.getPreviousSibling();
-                while (prevHeading && !$isHeadingNode(prevHeading)) {
+                while (prevHeading !== null && !$isHeadingNode(prevHeading)) {
                   prevHeading = prevHeading.getPreviousSibling();
                 }
                 currentTableOfContents = $insertHeadingIntoTableOfContents(
@@ -163,7 +163,7 @@ export default function LexicalTableOfContentsPlugin({
               const newHeading = $getNodeByKey<HeadingNode>(nodeKey);
               if (newHeading !== null) {
                 let prevHeading = newHeading.getPreviousSibling();
-                while (prevHeading && !$isHeadingNode(prevHeading)) {
+                while (prevHeading !== null && !$isHeadingNode(prevHeading)) {
                   prevHeading = prevHeading.getPreviousSibling();
                 }
                 currentTableOfContents = $updateHeadingPosition(

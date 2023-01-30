@@ -5,15 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import type {TableOfContentsEntry} from '@lexical/react/LexicalTableOfContents__EXPERIMENTAL';
 import type {HeadingTagType} from '@lexical/rich-text';
 import type {NodeKey} from 'lexical';
 
 import './index.css';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import LexicalTableOfContents__EXPERIMENTAL, {
-  TableOfContentsEntry,
-} from '@lexical/react/LexicalTableOfContents__EXPERIMENTAL';
+import LexicalTableOfContents__EXPERIMENTAL from '@lexical/react/LexicalTableOfContents__EXPERIMENTAL';
 import {useEffect, useRef, useState} from 'react';
 import * as React from 'react';
 

@@ -622,7 +622,6 @@ function TableCell({
       ) : (
         <>
           <div
-            style={{position: 'relative', zIndex: 3}}
             dangerouslySetInnerHTML={{
               __html:
                 editorStateJSON === ''

@@ -121,12 +121,14 @@ const DEFAULT_INDENT_VALUE = '20px';
 function setElementIndent(dom: HTMLElement, indent: number): void {
   const indentClassName = activeEditorConfig.theme.indent;
 
-  if (
-    typeof indentClassName === 'string' &&
-    !dom.classList.contains(indentClassName)
-  ) {
-    const classesToAdd = indentClassName.split(' ').filter((n) => n !== '');
-    dom.classList.add(...classesToAdd);
+  if (typeof indentClassName === 'string') {
+    const elementHasClassName = dom.classList.contains(indentClassName);
+
+    if (indent > 0 && !elementHasClassName) {
+      dom.classList.add(indentClassName);
+    } else if (indent < 1 && elementHasClassName) {
+      dom.classList.remove(indentClassName);
+    }
   }
 
   const indentationBaseValue =

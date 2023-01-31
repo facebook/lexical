@@ -38,8 +38,8 @@ test.describe('Element format', () => {
       page,
       html`
         <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          style="padding-inline-start: 40px; text-align: center;"
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
+          style="padding-inline-start: calc(40px); text-align: center;"
           dir="ltr">
           <span data-lexical-text="true">Hello</span>
           <a

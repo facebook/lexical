@@ -13,7 +13,11 @@ import {$isHeadingNode, HeadingNode, HeadingTagType} from '@lexical/rich-text';
 import {$getNodeByKey, $getRoot, TextNode} from 'lexical';
 import {useEffect, useState} from 'react';
 
-type TableOfContentsEntry = [key: NodeKey, text: string, tag: HeadingTagType];
+export type TableOfContentsEntry = [
+  key: NodeKey,
+  text: string,
+  tag: HeadingTagType,
+];
 
 function toEntry(heading: HeadingNode): TableOfContentsEntry {
   return [heading.getKey(), heading.getTextContent(), heading.getTag()];
@@ -76,7 +80,7 @@ function $updateHeadingInTableOfContents(
  * is undefined, `heading` is placed at the start of table of contents
  */
 function $updateHeadingPosition(
-  prevHeading: HeadingNode | undefined,
+  prevHeading: HeadingNode | null,
   heading: HeadingNode,
   currentTableOfContents: Array<TableOfContentsEntry>,
 ): Array<TableOfContentsEntry> {
@@ -141,7 +145,7 @@ export default function LexicalTableOfContentsPlugin({
               const newHeading = $getNodeByKey<HeadingNode>(nodeKey);
               if (newHeading !== null) {
                 let prevHeading = newHeading.getPreviousSibling();
-                while (prevHeading && !$isHeadingNode(prevHeading)) {
+                while (prevHeading !== null && !$isHeadingNode(prevHeading)) {
                   prevHeading = prevHeading.getPreviousSibling();
                 }
                 currentTableOfContents = $insertHeadingIntoTableOfContents(
@@ -158,9 +162,10 @@ export default function LexicalTableOfContentsPlugin({
             } else if (mutation === 'updated') {
               const newHeading = $getNodeByKey<HeadingNode>(nodeKey);
               if (newHeading !== null) {
-                const prevHeading = newHeading
-                  .getPreviousSiblings()
-                  .find($isHeadingNode);
+                let prevHeading = newHeading.getPreviousSibling();
+                while (prevHeading !== null && !$isHeadingNode(prevHeading)) {
+                  prevHeading = prevHeading.getPreviousSibling();
+                }
                 currentTableOfContents = $updateHeadingPosition(
                   prevHeading,
                   newHeading,

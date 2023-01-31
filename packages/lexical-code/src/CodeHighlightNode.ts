@@ -17,6 +17,7 @@ import {
   type SerializedTextNode,
   type Spread,
   TextNode,
+  ElementNode,
 } from 'lexical';
 
 import * as Prism from 'prismjs';
@@ -38,6 +39,7 @@ import {
   addClassNamesToElement,
   removeClassNamesFromElement,
 } from '@lexical/utils';
+import {$createCodeNode} from './CodeNode';
 
 export const DEFAULT_CODE_LANGUAGE = 'javascript';
 
@@ -188,6 +190,14 @@ export class CodeHighlightNode extends TextNode {
   // Prevent formatting (bold, underline, etc)
   setFormat(format: number): this {
     return this;
+  }
+
+  hasRequiredParent(): true {
+    return true;
+  }
+
+  createParentElementNode(): ElementNode {
+    return $createCodeNode();
   }
 }
 

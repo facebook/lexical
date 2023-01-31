@@ -17,7 +17,13 @@ import type {Klass} from 'lexical';
 
 import invariant from 'shared/invariant';
 
-import {$isElementNode, $isRootNode, $isTextNode, ElementNode} from '.';
+import {
+  $createParagraphNode,
+  $isElementNode,
+  $isRootNode,
+  $isTextNode,
+  ElementNode,
+} from '.';
 import {
   $getSelection,
   $isRangeSelection,
@@ -785,6 +791,14 @@ export class LexicalNode {
       $updateElementSelectionOnCreateDeleteNode(selection, parent, index);
     }
     return nodeToInsert;
+  }
+
+  hasRequiredParent(): boolean {
+    return false;
+  }
+
+  createParentElementNode(): ElementNode {
+    return $createParagraphNode();
   }
 
   selectPrevious(anchorOffset?: number, focusOffset?: number): RangeSelection {

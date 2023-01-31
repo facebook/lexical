@@ -7,7 +7,6 @@
  */
 
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
-import {$createListNode, $isListItemNode} from '@lexical/list';
 import {
   $addNodeStyle,
   $cloneWithProperties,
@@ -109,8 +108,9 @@ export function $insertDataTransferForRichText(
         const nodes = $generateNodesFromSerializedNodes(payload.nodes);
         return $insertGeneratedNodes(editor, nodes, selection);
       }
-      // eslint-disable-next-line no-empty
-    } catch {}
+    } catch {
+      // Fail silently.
+    }
   }
 
   const htmlString = dataTransfer.getData('text/html');
@@ -120,8 +120,9 @@ export function $insertDataTransferForRichText(
       const dom = parser.parseFromString(htmlString, 'text/html');
       const nodes = $generateNodesFromDOM(editor, dom);
       return $insertGeneratedNodes(editor, nodes, selection);
-      // eslint-disable-next-line no-empty
-    } catch {}
+    } catch {
+      // Fail silently.
+    }
   }
 
   // Multi-line plain text in rich text mode pasted as separate paragraphs
@@ -178,27 +179,8 @@ function $basicInsertStrategy(
   // Wrap text and inline nodes in paragraph nodes so we have all blocks at the top-level
   const topLevelBlocks = [];
   let currentBlock = null;
-  let list = null;
-
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
-
-    /**
-     * There's no good way to add this to importDOM or importJSON directly,
-     * so this is here in order to safely correct faulty clipboard data
-     * that we can't control and avoid crashing the app.
-     * https://github.com/facebook/lexical/issues/2405
-     */
-    if ($isListItemNode(node)) {
-      if (list == null) {
-        list = $createListNode('bullet');
-        topLevelBlocks.push(list);
-      }
-      list.append(node);
-      continue;
-    } else if (list != null) {
-      list = null;
-    }
 
     const isLineBreakNode = $isLineBreakNode(node);
 
@@ -206,10 +188,11 @@ function $basicInsertStrategy(
       isLineBreakNode ||
       ($isDecoratorNode(node) && node.isInline()) ||
       ($isElementNode(node) && node.isInline()) ||
-      $isTextNode(node)
+      $isTextNode(node) ||
+      node.hasRequiredParent()
     ) {
       if (currentBlock === null) {
-        currentBlock = $createParagraphNode();
+        currentBlock = node.createParentElementNode();
         topLevelBlocks.push(currentBlock);
         // In the case of LineBreakNode, we just need to
         // add an empty ParagraphNode to the topLevelBlocks.

@@ -192,7 +192,7 @@ function $basicInsertStrategy(
       node.hasRequiredParent()
     ) {
       if (currentBlock === null) {
-        currentBlock = node.createParentElementNode();
+        currentBlock = node.isParentRequired();
         topLevelBlocks.push(currentBlock);
         // In the case of LineBreakNode, we just need to
         // add an empty ParagraphNode to the topLevelBlocks.

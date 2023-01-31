@@ -424,7 +424,7 @@ export class ListItemNode extends ElementNode {
     return true;
   }
 
-  createParentElementNode(): ElementNode {
+  isParentRequired(): ElementNode {
     return $createListNode('bullet');
   }
 }

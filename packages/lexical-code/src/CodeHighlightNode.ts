@@ -196,7 +196,7 @@ export class CodeHighlightNode extends TextNode {
     return true;
   }
 
-  createParentElementNode(): ElementNode {
+  isParentRequired(): ElementNode {
     return $createCodeNode();
   }
 }

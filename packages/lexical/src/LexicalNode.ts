@@ -797,7 +797,7 @@ export class LexicalNode {
     return false;
   }
 
-  createParentElementNode(): ElementNode {
+  isParentRequired(): ElementNode {
     return $createParagraphNode();
   }
 

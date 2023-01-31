@@ -45,6 +45,9 @@
   margin: 0;
   text-transform: uppercase;
 }
+.PlaygroundEditorTheme__indent {
+  --lexical-indent-base-value: 20px;
+}
 .PlaygroundEditorTheme__textBold {
   font-weight: bold;
 }

@@ -116,10 +116,26 @@ function setTextAlign(domStyle: CSSStyleDeclaration, value: string): void {
   domStyle.setProperty('text-align', value);
 }
 
+const DEFAULT_INDENT_VALUE = '20px';
+
 function setElementIndent(dom: HTMLElement, indent: number): void {
+  const indentClassName = activeEditorConfig.theme.indent;
+
+  if (
+    typeof indentClassName === 'string' &&
+    !dom.classList.contains(indentClassName)
+  ) {
+    const classesToAdd = indentClassName.split(' ').filter((n) => n !== '');
+    dom.classList.add(...classesToAdd);
+  }
+
+  const indentationBaseValue =
+    getComputedStyle(dom).getPropertyValue('--lexical-indent-base-value') ||
+    DEFAULT_INDENT_VALUE;
+
   dom.style.setProperty(
     'padding-inline-start',
-    indent === 0 ? '' : indent * 20 + 'px',
+    indent === 0 ? '' : `calc(${indent} * ${indentationBaseValue})`,
   );
 }
 

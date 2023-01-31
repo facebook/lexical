@@ -31,6 +31,7 @@ import {
 import {
   IS_BOLD,
   IS_CODE,
+  IS_HIGHLIGHT,
   IS_ITALIC,
   IS_STRIKETHROUGH,
   IS_UNDERLINE,
@@ -47,6 +48,7 @@ const editorConfig = Object.freeze({
     text: {
       bold: 'my-bold-class',
       code: 'my-code-class',
+      highlight: 'my-highlight-class',
       italic: 'my-italic-class',
       strikethrough: 'my-strikethrough-class',
       underline: 'my-underline-class',
@@ -223,6 +225,12 @@ describe('LexicalTextNode tests', () => {
       IS_CODE,
       (node) => node.hasFormat('code'),
       (node) => node.toggleFormat('code'),
+    ],
+    [
+      'highlight',
+      IS_HIGHLIGHT,
+      (node) => node.hasFormat('highlight'),
+      (node) => node.toggleFormat('highlight'),
     ],
   ])(
     '%s flag',
@@ -569,6 +577,12 @@ describe('LexicalTextNode tests', () => {
         '<span class="my-strikethrough-class">My text node</span>',
       ],
       [
+        'highlight',
+        IS_HIGHLIGHT,
+        'My text node',
+        '<mark><span class="my-highlight-class">My text node</span></mark>',
+      ],
+      [
         'italic',
         IS_ITALIC,
         'My text node',
@@ -601,10 +615,27 @@ describe('LexicalTextNode tests', () => {
           'My text node</span></code>',
       ],
       [
+        'highlight + italic',
+        IS_HIGHLIGHT | IS_ITALIC,
+        'My text node',
+        '<mark><em class="my-highlight-class my-italic-class">My text node</em></mark>',
+      ],
+      [
         'code + underline + strikethrough + bold + italic',
         IS_CODE | IS_UNDERLINE | IS_STRIKETHROUGH | IS_BOLD | IS_ITALIC,
         'My text node',
         '<code><strong class="my-underline-strikethrough-class my-bold-class my-code-class my-italic-class">My text node</strong></code>',
+      ],
+      [
+        'code + underline + strikethrough + bold + italic + highlight',
+        IS_CODE |
+          IS_UNDERLINE |
+          IS_STRIKETHROUGH |
+          IS_BOLD |
+          IS_ITALIC |
+          IS_HIGHLIGHT,
+        'My text node',
+        '<code><strong class="my-underline-strikethrough-class my-bold-class my-code-class my-highlight-class my-italic-class">My text node</strong></code>',
       ],
     ])('%s text format type', async (_type, format, contents, expectedHTML) => {
       await update(() => {

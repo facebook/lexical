@@ -34,6 +34,7 @@ import {
   IS_BOLD,
   IS_CODE,
   IS_DIRECTIONLESS,
+  IS_HIGHLIGHT,
   IS_ITALIC,
   IS_SEGMENTED,
   IS_STRIKETHROUGH,
@@ -83,6 +84,7 @@ export type TextFormatType =
   | 'underline'
   | 'strikethrough'
   | 'italic'
+  | 'highlight'
   | 'code'
   | 'subscript'
   | 'superscript';
@@ -96,6 +98,9 @@ export type TextMarks = Array<TextMark>;
 function getElementOuterTag(node: TextNode, format: number): string | null {
   if (format & IS_CODE) {
     return 'code';
+  }
+  if (format & IS_HIGHLIGHT) {
+    return 'mark';
   }
   if (format & IS_SUBSCRIPT) {
     return 'sub';

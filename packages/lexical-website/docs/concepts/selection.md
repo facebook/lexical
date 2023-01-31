@@ -100,13 +100,15 @@ editor.update(() => {
   someNode.select();
   someNode.selectPrevious();
   someNode.selectNext();
-  
+
   // On element nodes, you can use these.
   someNode.selectStart();
   someNode.selectEnd();
 
   // Set a node selection
   const nodeSelection = $createNodeSelection();
+  // Add a node key to the selection.
+  nodeSelection.add(someKey);
   $setSelection(nodeSelection);
 
   // You can also clear selection by setting it to `null`.

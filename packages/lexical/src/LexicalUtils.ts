@@ -573,6 +573,41 @@ export function $updateSelectedTextFromDOM(
     let textContent = getAnchorTextFromDOM(anchorNode);
     const node = $getNearestNodeFromDOMNode(anchorNode);
     if (textContent !== null && $isTextNode(node)) {
+      if (node.canContainTabs()) {
+        const hasTabCharacter = textContent.includes('\t');
+
+        // At present, this condition is primarily used for code highlights when
+        // grouped together in lines (divs). If a code highlight includes a tab,
+        // the newly typed character may be missing from the DOM's textContent.
+
+        // Let's take an example. If a LinedCodeNode looked roughly like this:
+        // <code><div><codeHighlight /><codeHighlight /></div></code>,
+        // the following could occur when using tabs:
+
+        // a. /tconst --type--> 'd' at offset 1 --get--> /tconst
+        //    - Missing 'd'
+        // b. /tconst --type--> 'd' at offset 3 --get--> /tcondst
+        //    --type--> 'd' at offset 3 --get--> /tcondst
+        //    - Missing second 'd'
+
+        // In these cases, we can fix the problem by manually inserting the
+        // newly typed character where we know it should have been.
+
+        if (data && data.length > 0 && hasTabCharacter) {
+          const selectionOffset = data.length;
+          const insertionOffset = anchorOffset + selectionOffset - 1;
+          const beforeInsertion = textContent.slice(0, insertionOffset);
+          const afterInsertion = textContent.slice(
+            insertionOffset,
+            textContent.length,
+          );
+
+          textContent = `${beforeInsertion}${data}${afterInsertion}`;
+          anchorOffset += selectionOffset;
+          focusOffset += selectionOffset;
+        }
+      }
+
       // Data is intentionally truthy, as we check for boolean, null and empty string.
       if (textContent === COMPOSITION_SUFFIX && data) {
         const offset = data.length;

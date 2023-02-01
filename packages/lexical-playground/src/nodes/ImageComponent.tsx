@@ -275,7 +275,6 @@ export default function ImageComponent({
         COMMAND_PRIORITY_LOW,
       ),
     );
-
     return () => {
       isMounted = false;
       unregister();

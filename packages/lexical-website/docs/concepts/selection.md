@@ -58,4 +58,60 @@ has moved to another editor on the page. This can also happen when trying to sel
 
 ## Working with selection
 
-> TODO
+Selection can be found using the `$getSelection()` helper, exported from the `lexical` package. This function can be used within
+an update, a read, or a command listener.
+
+```js
+import {$getSelection, SELECTION_CHANGE_COMMAND} from 'lexical';
+
+editor.update(() => {
+  const selection = $getSelection();
+});
+
+editorState.read(() => {
+  const selection = $getSelection();
+});
+
+// SELECTION_CHANGE_COMMAND fires when selection changes within a Lexical editor.
+editor.registerCommand(SELECTION_CHANGE_COMMAND, () => {
+  const selection = $getSelection();
+});
+```
+
+In some cases you might want to create a new type of selection and set the editor selection to
+be that. This can only be done in update or command listeners.
+
+```js
+import {$setSelection, $createRangeSelection, $createNodeSelection} from 'lexical';
+
+editor.update(() => {
+  // Set a range selection
+  const rangeSelection = $createRangeSelection();
+  $setSelection(rangeSelection);
+
+  // You can also indirectly create a range selection, by calling some of the selection
+  // methods on Lexical nodes.
+  const someNode = $getNodeByKey(someKey);
+
+  // On element nodes, this will create a RangeSelection with type "element",
+  // referencing an offset relating to the child within the element.
+  // On text nodes, this will create a RangeSelection with type "text",
+  // referencing the text character offset.
+  someNode.select();
+  someNode.selectPrevious();
+  someNode.selectNext();
+
+  // On element nodes, you can use these.
+  someNode.selectStart();
+  someNode.selectEnd();
+
+  // Set a node selection
+  const nodeSelection = $createNodeSelection();
+  // Add a node key to the selection.
+  nodeSelection.add(someKey);
+  $setSelection(nodeSelection);
+
+  // You can also clear selection by setting it to `null`.
+  $setSelection(null);
+});
+```

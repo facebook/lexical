@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import type {TableOfContentsEntry} from '@lexical/react/LexicalTableOfContents__EXPERIMENTAL';
 import type {HeadingTagType} from '@lexical/rich-text';
 import type {NodeKey} from 'lexical';
 
@@ -45,7 +46,7 @@ function isHeadingBelowTheTopOfThePage(element: HTMLElement): boolean {
 function TableOfContentsList({
   tableOfContents,
 }: {
-  tableOfContents: Array<[key: NodeKey, text: string, tag: HeadingTagType]>;
+  tableOfContents: Array<TableOfContentsEntry>;
 }): JSX.Element {
   const [selectedKey, setSelectedKey] = useState('');
   const selectedIndex = useRef(0);
@@ -141,10 +142,9 @@ function TableOfContentsList({
         {tableOfContents.map(([key, text, tag], index) => {
           if (index === 0) {
             return (
-              <div className="normal-heading-wrapper">
+              <div className="normal-heading-wrapper" key={key}>
                 <div
                   className="first-heading"
-                  key={key}
                   onClick={() => scrollToNode(key, index)}
                   role="button"
                   tabIndex={0}>
@@ -160,9 +160,9 @@ function TableOfContentsList({
               <div
                 className={`normal-heading-wrapper ${
                   selectedKey === key ? 'selected-heading-wrapper' : ''
-                }`}>
+                }`}
+                key={key}>
                 <div
-                  key={key}
                   onClick={() => scrollToNode(key, index)}
                   role="button"
                   className={indent(tag)}

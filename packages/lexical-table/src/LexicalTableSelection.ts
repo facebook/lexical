@@ -55,31 +55,6 @@ export type Grid = {
 const getDOMSelection = (targetWindow: Window | null): Selection | null =>
   CAN_USE_DOM ? (targetWindow || window).getSelection() : null;
 
-if (CAN_USE_DOM) {
-  const disableNativeSelectionUi = document.createElement('style');
-  disableNativeSelectionUi.innerHTML = `
-    table.disable-selection {
-      -webkit-touch-callout: none;
-      -webkit-user-select: none; 
-      -khtml-user-select: none; 
-      -moz-user-select: none; 
-      -ms-user-select: none; 
-      user-select: none;
-    }
-  
-    .disable-selection span::selection{
-      background-color: transparent;
-    }
-    .disable-selection br::selection{
-      background-color: transparent;
-    }
-  `;
-
-  if (document.body) {
-    document.body.append(disableNativeSelectionUi);
-  }
-}
-
 export class TableSelection {
   focusX: number;
   focusY: number;

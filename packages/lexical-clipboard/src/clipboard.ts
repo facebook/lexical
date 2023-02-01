@@ -189,10 +189,10 @@ function $basicInsertStrategy(
       ($isDecoratorNode(node) && node.isInline()) ||
       ($isElementNode(node) && node.isInline()) ||
       $isTextNode(node) ||
-      node.hasRequiredParent()
+      node.isParentRequired()
     ) {
       if (currentBlock === null) {
-        currentBlock = node.isParentRequired();
+        currentBlock = node.createParentElementNode();
         topLevelBlocks.push(currentBlock);
         // In the case of LineBreakNode, we just need to
         // add an empty ParagraphNode to the topLevelBlocks.

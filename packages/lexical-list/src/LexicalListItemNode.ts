@@ -420,11 +420,11 @@ export class ListItemNode extends ElementNode {
     );
   }
 
-  hasRequiredParent(): true {
+  isParentRequired(): true {
     return true;
   }
 
-  isParentRequired(): ElementNode {
+  createParentElementNode(): ElementNode {
     return $createListNode('bullet');
   }
 }

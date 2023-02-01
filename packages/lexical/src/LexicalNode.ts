@@ -793,11 +793,11 @@ export class LexicalNode {
     return nodeToInsert;
   }
 
-  hasRequiredParent(): boolean {
+  isParentRequired(): boolean {
     return false;
   }
 
-  isParentRequired(): ElementNode {
+  createParentElementNode(): ElementNode {
     return $createParagraphNode();
   }
 

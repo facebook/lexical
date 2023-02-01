@@ -593,7 +593,7 @@ export function $updateSelectedTextFromDOM(
         // In these cases, we can fix the problem by manually inserting the
         // newly typed character where we know it should have been.
 
-        if (data && hasTabCharacter) {
+        if (data && data.length > 0 && hasTabCharacter) {
           const selectionOffset = data.length;
           const insertionOffset = anchorOffset + selectionOffset - 1;
           const beforeInsertion = textContent.slice(0, insertionOffset);

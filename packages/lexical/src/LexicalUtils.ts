@@ -573,33 +573,39 @@ export function $updateSelectedTextFromDOM(
     let textContent = getAnchorTextFromDOM(anchorNode);
     const node = $getNearestNodeFromDOMNode(anchorNode);
     if (textContent !== null && $isTextNode(node)) {
-      // The newly typed character may be missing from the DOM's textContent
-      // when some types of tokenized nodes include a tab. For instance,
-      // a LinedCodeNode <code><div><codeToken></div></code> will
-      // result in the following misbehavior:
+      if (node.canContainTabs()) {
+        const hasTabCharacter = textContent.includes('\t');
 
-      // a. /tconst --> type 'd' at offset 1 --> /tconst
-      //  - Missing 'd'
-      // b. /tconst --> type 'd' at offset 3 --> /tcodnst
-      //    --> type another 'd' at offset 3 --> /tcodnst
-      //  - Missing second 'd'
+        // At present, this condition is primarily used for code highlights when
+        // grouped together in lines (divs). If a code highlight includes a tab,
+        // the newly typed character may be missing from the DOM's textContent.
 
-      // In these cases, we can fix the problem by manually inserting the
-      // newly typed character where we know it should have been.
-      const hasTabCharacter = textContent.includes('\t');
+        // Let's take an example. If a LinedCodeNode looked roughly like this:
+        // <code><div><codeHighlight /><codeHighlight /></div></code>,
+        // the following could occur when using tabs:
 
-      if (data && hasTabCharacter) {
-        const selectionOffset = data.length;
-        const insertionOffset = anchorOffset + data.length - 1;
-        const beforeInsertion = textContent.slice(0, insertionOffset);
-        const afterInsertion = textContent.slice(
-          insertionOffset,
-          textContent.length,
-        );
+        // a. /tconst --type--> 'd' at offset 1 --get--> /tconst
+        //    - Missing 'd'
+        // b. /tconst --type--> 'd' at offset 3 --get--> /tcondst
+        //    --type--> 'd' at offset 3 --get--> /tcondst
+        //    - Missing second 'd'
 
-        textContent = `${beforeInsertion}${data}${afterInsertion}`;
-        anchorOffset += anchorOffset + selectionOffset;
-        focusOffset += focusOffset + selectionOffset;
+        // In these cases, we can fix the problem by manually inserting the
+        // newly typed character where we know it should have been.
+
+        if (data && hasTabCharacter) {
+          const selectionOffset = data.length;
+          const insertionOffset = anchorOffset + selectionOffset - 1;
+          const beforeInsertion = textContent.slice(0, insertionOffset);
+          const afterInsertion = textContent.slice(
+            insertionOffset,
+            textContent.length,
+          );
+
+          textContent = `${beforeInsertion}${data}${afterInsertion}`;
+          anchorOffset += selectionOffset;
+          focusOffset += selectionOffset;
+        }
       }
 
       // Data is intentionally truthy, as we check for boolean, null and empty string.

@@ -726,7 +726,8 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
         $setCompositionKey(null);
       }
     } else {
-      $updateSelectedTextFromDOM(false, editor);
+      const characterData = data !== null ? data : undefined;
+      $updateSelectedTextFromDOM(false, editor, characterData);
 
       // onInput always fires after onCompositionEnd for FF.
       if (isFirefoxEndingComposition) {

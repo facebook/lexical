@@ -125,22 +125,6 @@ export function findNearestListItemNode(
   return null;
 }
 
-export function getUniqueListItemNodes(
-  nodeList: Array<LexicalNode>,
-): Array<ListItemNode> {
-  const keys = new Set<ListItemNode>();
-
-  for (let i = 0; i < nodeList.length; i++) {
-    const node = nodeList[i];
-
-    if ($isListItemNode(node)) {
-      keys.add(node);
-    }
-  }
-
-  return Array.from(keys);
-}
-
 export function $removeHighestEmptyListParent(
   sublist: ListItemNode | ListNode,
 ) {

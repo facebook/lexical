@@ -37,8 +37,6 @@ import {
   $getAllListItems,
   $getTopListNode,
   $removeHighestEmptyListParent,
-  findNearestListItemNode,
-  getUniqueListItemNodes,
   isNestedListNode,
 } from './utils';
 
@@ -288,186 +286,140 @@ export function updateChildrenListItemValue(
   }
 }
 
-export function $handleIndent(listItemNodes: Array<ListItemNode>): void {
+export function $handleIndent(listItemNode: ListItemNode): void {
   // go through each node and decide where to move it.
   const removed = new Set<NodeKey>();
 
-  listItemNodes.forEach((listItemNode: ListItemNode) => {
-    if (isNestedListNode(listItemNode) || removed.has(listItemNode.getKey())) {
-      return;
-    }
-
-    const parent = listItemNode.getParent();
-
-    // We can cast both of the below `isNestedListNode` only returns a boolean type instead of a user-defined type guards
-    const nextSibling =
-      listItemNode.getNextSibling<ListItemNode>() as ListItemNode;
-    const previousSibling =
-      listItemNode.getPreviousSibling<ListItemNode>() as ListItemNode;
-    // if there are nested lists on either side, merge them all together.
-
-    if (isNestedListNode(nextSibling) && isNestedListNode(previousSibling)) {
-      const innerList = previousSibling.getFirstChild();
-
-      if ($isListNode(innerList)) {
-        innerList.append(listItemNode);
-        const nextInnerList = nextSibling.getFirstChild();
-
-        if ($isListNode(nextInnerList)) {
-          const children = nextInnerList.getChildren();
-          append(innerList, children);
-          nextSibling.remove();
-          removed.add(nextSibling.getKey());
-        }
-        updateChildrenListItemValue(innerList);
-      }
-    } else if (isNestedListNode(nextSibling)) {
-      // if the ListItemNode is next to a nested ListNode, merge them
-      const innerList = nextSibling.getFirstChild();
-
-      if ($isListNode(innerList)) {
-        const firstChild = innerList.getFirstChild();
-
-        if (firstChild !== null) {
-          firstChild.insertBefore(listItemNode);
-        }
-        updateChildrenListItemValue(innerList);
-      }
-    } else if (isNestedListNode(previousSibling)) {
-      const innerList = previousSibling.getFirstChild();
-
-      if ($isListNode(innerList)) {
-        innerList.append(listItemNode);
-        updateChildrenListItemValue(innerList);
-      }
-    } else {
-      // otherwise, we need to create a new nested ListNode
-
-      if ($isListNode(parent)) {
-        const newListItem = $createListItemNode();
-        const newList = $createListNode(parent.getListType());
-        newListItem.append(newList);
-        newList.append(listItemNode);
-
-        if (previousSibling) {
-          previousSibling.insertAfter(newListItem);
-        } else if (nextSibling) {
-          nextSibling.insertBefore(newListItem);
-        } else {
-          parent.append(newListItem);
-        }
-      }
-    }
-
-    if ($isListNode(parent)) {
-      updateChildrenListItemValue(parent);
-    }
-  });
-}
-
-export function $handleOutdent(listItemNodes: Array<ListItemNode>): void {
-  // go through each node and decide where to move it.
-
-  listItemNodes.forEach((listItemNode) => {
-    if (isNestedListNode(listItemNode)) {
-      return;
-    }
-    const parentList = listItemNode.getParent();
-    const grandparentListItem = parentList ? parentList.getParent() : undefined;
-    const greatGrandparentList = grandparentListItem
-      ? grandparentListItem.getParent()
-      : undefined;
-    // If it doesn't have these ancestors, it's not indented.
-
-    if (
-      $isListNode(greatGrandparentList) &&
-      $isListItemNode(grandparentListItem) &&
-      $isListNode(parentList)
-    ) {
-      // if it's the first child in it's parent list, insert it into the
-      // great grandparent list before the grandparent
-      const firstChild = parentList ? parentList.getFirstChild() : undefined;
-      const lastChild = parentList ? parentList.getLastChild() : undefined;
-
-      if (listItemNode.is(firstChild)) {
-        grandparentListItem.insertBefore(listItemNode);
-
-        if (parentList.isEmpty()) {
-          grandparentListItem.remove();
-        }
-        // if it's the last child in it's parent list, insert it into the
-        // great grandparent list after the grandparent.
-      } else if (listItemNode.is(lastChild)) {
-        grandparentListItem.insertAfter(listItemNode);
-
-        if (parentList.isEmpty()) {
-          grandparentListItem.remove();
-        }
-      } else {
-        // otherwise, we need to split the siblings into two new nested lists
-        const listType = parentList.getListType();
-        const previousSiblingsListItem = $createListItemNode();
-        const previousSiblingsList = $createListNode(listType);
-        previousSiblingsListItem.append(previousSiblingsList);
-        listItemNode
-          .getPreviousSiblings()
-          .forEach((sibling) => previousSiblingsList.append(sibling));
-        const nextSiblingsListItem = $createListItemNode();
-        const nextSiblingsList = $createListNode(listType);
-        nextSiblingsListItem.append(nextSiblingsList);
-        append(nextSiblingsList, listItemNode.getNextSiblings());
-        // put the sibling nested lists on either side of the grandparent list item in the great grandparent.
-        grandparentListItem.insertBefore(previousSiblingsListItem);
-        grandparentListItem.insertAfter(nextSiblingsListItem);
-        // replace the grandparent list item (now between the siblings) with the outdented list item.
-        grandparentListItem.replace(listItemNode);
-      }
-      updateChildrenListItemValue(parentList);
-      updateChildrenListItemValue(greatGrandparentList);
-    }
-  });
-}
-
-function maybeIndentOrOutdent(direction: 'indent' | 'outdent'): void {
-  const selection = $getSelection();
-
-  if (!$isRangeSelection(selection)) {
+  if (isNestedListNode(listItemNode) || removed.has(listItemNode.getKey())) {
     return;
   }
-  const selectedNodes = selection.getNodes();
-  let listItemNodes: Array<ListItemNode> = [];
 
-  if (selectedNodes.length === 0) {
-    selectedNodes.push(selection.anchor.getNode());
-  }
+  const parent = listItemNode.getParent();
 
-  if (selectedNodes.length === 1) {
-    // Only 1 node selected. Selection may not contain the ListNodeItem so we traverse the tree to
-    // find whether this is part of a ListItemNode
-    const nearestListItemNode = findNearestListItemNode(selectedNodes[0]);
+  // We can cast both of the below `isNestedListNode` only returns a boolean type instead of a user-defined type guards
+  const nextSibling =
+    listItemNode.getNextSibling<ListItemNode>() as ListItemNode;
+  const previousSibling =
+    listItemNode.getPreviousSibling<ListItemNode>() as ListItemNode;
+  // if there are nested lists on either side, merge them all together.
 
-    if (nearestListItemNode !== null) {
-      listItemNodes = [nearestListItemNode];
+  if (isNestedListNode(nextSibling) && isNestedListNode(previousSibling)) {
+    const innerList = previousSibling.getFirstChild();
+
+    if ($isListNode(innerList)) {
+      innerList.append(listItemNode);
+      const nextInnerList = nextSibling.getFirstChild();
+
+      if ($isListNode(nextInnerList)) {
+        const children = nextInnerList.getChildren();
+        append(innerList, children);
+        nextSibling.remove();
+        removed.add(nextSibling.getKey());
+      }
+      updateChildrenListItemValue(innerList);
+    }
+  } else if (isNestedListNode(nextSibling)) {
+    // if the ListItemNode is next to a nested ListNode, merge them
+    const innerList = nextSibling.getFirstChild();
+
+    if ($isListNode(innerList)) {
+      const firstChild = innerList.getFirstChild();
+
+      if (firstChild !== null) {
+        firstChild.insertBefore(listItemNode);
+      }
+      updateChildrenListItemValue(innerList);
+    }
+  } else if (isNestedListNode(previousSibling)) {
+    const innerList = previousSibling.getFirstChild();
+
+    if ($isListNode(innerList)) {
+      innerList.append(listItemNode);
+      updateChildrenListItemValue(innerList);
     }
   } else {
-    listItemNodes = getUniqueListItemNodes(selectedNodes);
-  }
+    // otherwise, we need to create a new nested ListNode
 
-  if (listItemNodes.length > 0) {
-    if (direction === 'indent') {
-      $handleIndent(listItemNodes);
-    } else {
-      $handleOutdent(listItemNodes);
+    if ($isListNode(parent)) {
+      const newListItem = $createListItemNode();
+      const newList = $createListNode(parent.getListType());
+      newListItem.append(newList);
+      newList.append(listItemNode);
+
+      if (previousSibling) {
+        previousSibling.insertAfter(newListItem);
+      } else if (nextSibling) {
+        nextSibling.insertBefore(newListItem);
+      } else {
+        parent.append(newListItem);
+      }
     }
   }
+
+  if ($isListNode(parent)) {
+    updateChildrenListItemValue(parent);
+  }
 }
 
-export function indentList(): void {
-  maybeIndentOrOutdent('indent');
-}
+export function $handleOutdent(listItemNode: ListItemNode): void {
+  // go through each node and decide where to move it.
 
-export function outdentList(): void {
-  maybeIndentOrOutdent('outdent');
+  if (isNestedListNode(listItemNode)) {
+    return;
+  }
+  const parentList = listItemNode.getParent();
+  const grandparentListItem = parentList ? parentList.getParent() : undefined;
+  const greatGrandparentList = grandparentListItem
+    ? grandparentListItem.getParent()
+    : undefined;
+  // If it doesn't have these ancestors, it's not indented.
+
+  if (
+    $isListNode(greatGrandparentList) &&
+    $isListItemNode(grandparentListItem) &&
+    $isListNode(parentList)
+  ) {
+    // if it's the first child in it's parent list, insert it into the
+    // great grandparent list before the grandparent
+    const firstChild = parentList ? parentList.getFirstChild() : undefined;
+    const lastChild = parentList ? parentList.getLastChild() : undefined;
+
+    if (listItemNode.is(firstChild)) {
+      grandparentListItem.insertBefore(listItemNode);
+
+      if (parentList.isEmpty()) {
+        grandparentListItem.remove();
+      }
+      // if it's the last child in it's parent list, insert it into the
+      // great grandparent list after the grandparent.
+    } else if (listItemNode.is(lastChild)) {
+      grandparentListItem.insertAfter(listItemNode);
+
+      if (parentList.isEmpty()) {
+        grandparentListItem.remove();
+      }
+    } else {
+      // otherwise, we need to split the siblings into two new nested lists
+      const listType = parentList.getListType();
+      const previousSiblingsListItem = $createListItemNode();
+      const previousSiblingsList = $createListNode(listType);
+      previousSiblingsListItem.append(previousSiblingsList);
+      listItemNode
+        .getPreviousSiblings()
+        .forEach((sibling) => previousSiblingsList.append(sibling));
+      const nextSiblingsListItem = $createListItemNode();
+      const nextSiblingsList = $createListNode(listType);
+      nextSiblingsListItem.append(nextSiblingsList);
+      append(nextSiblingsList, listItemNode.getNextSiblings());
+      // put the sibling nested lists on either side of the grandparent list item in the great grandparent.
+      grandparentListItem.insertBefore(previousSiblingsListItem);
+      grandparentListItem.insertAfter(nextSiblingsListItem);
+      // replace the grandparent list item (now between the siblings) with the outdented list item.
+      grandparentListItem.replace(listItemNode);
+    }
+    updateChildrenListItemValue(parentList);
+    updateChildrenListItemValue(greatGrandparentList);
+  }
 }
 
 export function $handleListInsertParagraph(): boolean {

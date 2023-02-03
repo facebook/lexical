@@ -286,6 +286,8 @@ test.describe('CodeActionMenu', () => {
     await mouseMoveToSelector(page, 'code.PlaygroundEditorTheme__code');
     await click(page, 'button[aria-label=prettier]');
 
+    await page.waitForTimeout(3000);
+
     expect(await page.$('i.format.prettier-error')).toBeTruthy();
 
     const errorTips = await page.$('pre.code-error-tips');

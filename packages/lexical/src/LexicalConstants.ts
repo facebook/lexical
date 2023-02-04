@@ -47,7 +47,8 @@ export const IS_ALL_FORMATTING =
   IS_UNDERLINE |
   IS_CODE |
   IS_SUBSCRIPT |
-  IS_SUPERSCRIPT;
+  IS_SUPERSCRIPT |
+  IS_HIGHLIGHT;
 
 // Text node details
 export const IS_DIRECTIONLESS = 1;

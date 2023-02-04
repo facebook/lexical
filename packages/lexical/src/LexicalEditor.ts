@@ -50,6 +50,7 @@ export type TextNodeThemeClasses = {
   base?: EditorThemeClassName;
   bold?: EditorThemeClassName;
   code?: EditorThemeClassName;
+  highlight?: EditorThemeClassName;
   italic?: EditorThemeClassName;
   strikethrough?: EditorThemeClassName;
   subscript?: EditorThemeClassName;

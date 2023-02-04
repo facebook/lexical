@@ -157,7 +157,7 @@ export class ListItemNode extends ElementNode {
     if ($isListItemNode(replaceWithNode)) {
       return super.replace(replaceWithNode);
     }
-
+    if (includeChildren) return super.replace(replaceWithNode, includeChildren);
     const list = this.getParentOrThrow();
 
     if ($isListNode(list)) {
@@ -249,9 +249,9 @@ export class ListItemNode extends ElementNode {
     return node;
   }
 
-  remove(preserveEmptyParent?: boolean): void {
+  remove(preserveEmptyParent?: boolean, keepChildren?: boolean): void {
     const nextSibling = this.getNextSibling();
-    super.remove(preserveEmptyParent);
+    super.remove(preserveEmptyParent, keepChildren);
 
     if (nextSibling !== null) {
       const parent = nextSibling.getParent();

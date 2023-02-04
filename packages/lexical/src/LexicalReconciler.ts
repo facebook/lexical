@@ -151,7 +151,7 @@ function createNode(
   const node = activeNextNodeMap.get(key);
 
   if (node === undefined) {
-    invariant(false, 'createNode: node does not exist in nodeMap');
+    invariant(false, 'createNode: node %s does not exist in nodeMap', key);
   }
   const dom = node.createDOM(activeEditorConfig, activeEditor);
   storeDOMWithKey(key, dom, activeEditor);
@@ -419,7 +419,11 @@ function createChildrenArray(
   while (nodeKey !== null) {
     const node = nodeMap.get(nodeKey);
     if (node === undefined) {
-      invariant(false, 'createChildrenArray: node does not exist in nodeMap');
+      invariant(
+        false,
+        'createChildrenArray: node %s does not exist in nodeMap',
+        nodeKey,
+      );
     }
     children.push(nodeKey);
     nodeKey = node.__next;

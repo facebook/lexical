@@ -263,55 +263,48 @@ function internalMarkParentElementsAsDirty(
   }
 }
 
-export function removeFromParent(node: LexicalNode): void {
+export function removeFromParent(
+  node: LexicalNode,
+  keepChildren?: boolean,
+): void {
   const oldParent = node.getParent();
-  if (oldParent !== null) {
-    const writableNode = node.getWritable();
-    const writableParent = oldParent.getWritable();
-    const prevSibling = node.getPreviousSibling();
-    const nextSibling = node.getNextSibling();
-    // TODO: this function duplicates a bunch of operations, can be simplified.
-    if (prevSibling === null) {
-      if (nextSibling !== null) {
-        const writableNextSibling = nextSibling.getWritable();
-        writableParent.__first = nextSibling.__key;
-        writableNextSibling.__prev = null;
-      } else {
-        writableParent.__first = null;
-      }
-    } else {
-      const writablePrevSibling = prevSibling.getWritable();
-      if (nextSibling !== null) {
-        const writableNextSibling = nextSibling.getWritable();
-        writableNextSibling.__prev = writablePrevSibling.__key;
-        writablePrevSibling.__next = writableNextSibling.__key;
-      } else {
-        writablePrevSibling.__next = null;
-      }
-      writableNode.__prev = null;
-    }
-    if (nextSibling === null) {
-      if (prevSibling !== null) {
-        const writablePrevSibling = prevSibling.getWritable();
-        writableParent.__last = prevSibling.__key;
-        writablePrevSibling.__next = null;
-      } else {
-        writableParent.__last = null;
-      }
-    } else {
-      const writableNextSibling = nextSibling.getWritable();
-      if (prevSibling !== null) {
-        const writablePrevSibling = prevSibling.getWritable();
-        writablePrevSibling.__next = writableNextSibling.__key;
-        writableNextSibling.__prev = writablePrevSibling.__key;
-      } else {
-        writableNextSibling.__prev = null;
-      }
-      writableNode.__next = null;
-    }
-    writableParent.__size--;
-    writableNode.__parent = null;
+  if (oldParent === null) return;
+  const writableNode = node.getWritable();
+  const writableParent = oldParent.getWritable();
+  const prevSibling = node.getPreviousSibling();
+  const nextSibling = node.getNextSibling();
+  const firstOrNext = keepChildren && node.__first ? node.__first : node.__next;
+  const lastOrPrev = keepChildren && node.__last ? node.__last : node.__prev;
+
+  if (!prevSibling) {
+    writableParent.__first = firstOrNext;
+  } else {
+    const writablePrevSibling = prevSibling.getWritable();
+    writablePrevSibling.__next = firstOrNext;
   }
+  if (!nextSibling) {
+    writableParent.__last = lastOrPrev;
+  } else {
+    const writableNextSibling = nextSibling.getWritable();
+    writableNextSibling.__prev = lastOrPrev;
+  }
+  writableParent.__size--;
+
+  if (keepChildren && writableNode.__first) {
+    writableParent.__size += writableNode.__size;
+    const writableFirstChild = writableNode.getFirstChild().getWritable();
+    writableFirstChild.__prev = writableNode.__prev;
+    const writableLastChild = writableNode.getLastChild().getWritable();
+    writableLastChild.__next = writableNode.__next;
+    const children = writableNode.getChildren();
+    children.forEach((child: LexicalNode) => {
+      const writableChild = child.getWritable();
+      writableChild.__parent = writableNode.__parent;
+    });
+  }
+  writableNode.__prev = null;
+  writableNode.__next = null;
+  writableNode.__parent = null;
 }
 
 // Never use this function directly! It will break

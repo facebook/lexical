@@ -55,24 +55,33 @@ export function $setBlocksType_experimental(
   }
 
   const nodes = selection.getNodes();
-  if (selection.anchor.type === 'text') {
-    let firstBlock = selection.anchor.getNode().getParent() as LexicalNode;
-    firstBlock = (
-      firstBlock.isInline() ? firstBlock.getParent() : firstBlock
-    ) as LexicalNode;
-    if (nodes.indexOf(firstBlock) === -1) nodes.push(firstBlock);
+  let current = selection.anchor.getNode().getParent();
+  while (current && isBlock(current)) {
+    if (nodes.indexOf(current) === -1) nodes.push(current);
+    current = current.getParent();
   }
   for (let i = 0; i < nodes.length; i++) {
-    const node = nodes[i];
+    const node = nodes[i].getLatest();
     if (!isBlock(node)) continue;
-    const targetElement = createElement();
-    targetElement.setFormat(node.getFormatType());
-    targetElement.setIndent(node.getIndent());
-    node.replace(targetElement, true);
+    if (isLeafElement(node)) {
+      const targetElement = createElement();
+      targetElement.setFormat(node.getFormatType());
+      // targetElement.setIndent(node.getIndent());
+      node.replace(targetElement, true);
+    } else {
+      node.remove(true, true);
+    }
   }
 }
 
-function isBlock(node: LexicalNode) {
+function isLeafElement(node: LexicalNode): boolean {
+  const firstChild = node.getFirstChild();
+  return (
+    firstChild === null || $isTextNode(firstChild) || firstChild.isInline()
+  );
+}
+
+function isBlock(node: LexicalNode): boolean {
   return $isElementNode(node) && !$isRootOrShadowRoot(node) && !node.isInline();
 }
 

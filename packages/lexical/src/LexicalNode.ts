@@ -60,6 +60,7 @@ export function removeNode(
   nodeToRemove: LexicalNode,
   restoreSelection: boolean,
   preserveEmptyParent?: boolean,
+  keepChildren?: boolean,
 ): void {
   errorOnReadOnly();
   const key = nodeToRemove.__key;
@@ -97,10 +98,10 @@ export function removeNode(
   if ($isRangeSelection(selection) && restoreSelection && !selectionMoved) {
     // Doing this is O(n) so lets avoid it unless we need to do it
     const index = nodeToRemove.getIndexWithinParent();
-    removeFromParent(nodeToRemove);
+    removeFromParent(nodeToRemove, keepChildren);
     $updateElementSelectionOnCreateDeleteNode(selection, parent, index, -1);
   } else {
-    removeFromParent(nodeToRemove);
+    removeFromParent(nodeToRemove, keepChildren);
   }
 
   if (
@@ -109,7 +110,7 @@ export function removeNode(
     !parent.canBeEmpty() &&
     parent.isEmpty()
   ) {
-    removeNode(parent, restoreSelection);
+    removeNode(parent, restoreSelection, preserveEmptyParent, keepChildren);
   }
   if (restoreSelection && $isRootNode(parent) && parent.isEmpty()) {
     parent.selectEnd();
@@ -638,8 +639,8 @@ export class LexicalNode {
 
   // Setters and mutators
 
-  remove(preserveEmptyParent?: boolean): void {
-    removeNode(this, true, preserveEmptyParent);
+  remove(preserveEmptyParent?: boolean, keepChildren?: boolean): void {
+    removeNode(this, true, preserveEmptyParent, keepChildren);
   }
 
   replace<N extends LexicalNode>(replaceWith: N, includeChildren?: boolean): N {

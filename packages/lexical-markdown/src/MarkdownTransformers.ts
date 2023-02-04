@@ -269,6 +269,12 @@ export const INLINE_CODE: TextFormatTransformer = {
   type: 'text-format',
 };
 
+export const HIGHLIGHT: TextFormatTransformer = {
+  format: ['highlight'],
+  tag: '==',
+  type: 'text-format',
+};
+
 export const BOLD_ITALIC_STAR: TextFormatTransformer = {
   format: ['bold', 'italic'],
   tag: '***',

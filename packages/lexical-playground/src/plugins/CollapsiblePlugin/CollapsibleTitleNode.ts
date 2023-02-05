@@ -10,6 +10,8 @@ import {
   $createParagraphNode,
   $isElementNode,
   DOMConversionMap,
+  DOMConversionOutput,
+  DOMExportOutput,
   EditorConfig,
   ElementNode,
   LexicalEditor,
@@ -29,6 +31,15 @@ type SerializedCollapsibleTitleNode = Spread<
   },
   SerializedElementNode
 >;
+
+export function convertSummaryElement(
+  domNode: HTMLElement,
+): DOMConversionOutput | null {
+  const node = $createCollapsibleTitleNode();
+  return {
+    node,
+  };
+}
 
 export class CollapsibleTitleNode extends ElementNode {
   static getType(): string {
@@ -50,13 +61,25 @@ export class CollapsibleTitleNode extends ElementNode {
   }
 
   static importDOM(): DOMConversionMap | null {
-    return {};
+    return {
+      summary: (domNode: HTMLElement) => {
+        return {
+          conversion: convertSummaryElement,
+          priority: 1,
+        };
+      },
+    };
   }
 
   static importJSON(
     serializedNode: SerializedCollapsibleTitleNode,
   ): CollapsibleTitleNode {
     return $createCollapsibleTitleNode();
+  }
+
+  exportDOM(): DOMExportOutput {
+    const element = document.createElement('summary');
+    return {element};
   }
 
   exportJSON(): SerializedCollapsibleTitleNode {

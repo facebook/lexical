@@ -13,24 +13,26 @@ import {$isHeadingNode, HeadingNode, HeadingTagType} from '@lexical/rich-text';
 import {$getNodeByKey, $getRoot, TextNode} from 'lexical';
 import {useEffect, useState} from 'react';
 
+export type TableOfContentsEntry = [
+  key: NodeKey,
+  text: string,
+  tag: HeadingTagType,
+];
+
+function toEntry(heading: HeadingNode): TableOfContentsEntry {
+  return [heading.getKey(), heading.getTextContent(), heading.getTag()];
+}
+
 function $insertHeadingIntoTableOfContents(
   prevHeading: HeadingNode | null,
   newHeading: HeadingNode | null,
-  currentTableOfContents: Array<
-    [key: NodeKey, text: string, tag: HeadingTagType]
-  >,
-): Array<[key: NodeKey, text: string, tag: HeadingTagType]> {
+  currentTableOfContents: Array<TableOfContentsEntry>,
+): Array<TableOfContentsEntry> {
   if (newHeading === null) {
     return currentTableOfContents;
   }
-  const newEntry: [key: NodeKey, text: string, tag: HeadingTagType] = [
-    newHeading.getKey(),
-    newHeading.getTextContent(),
-    newHeading.getTag(),
-  ];
-  let newTableOfContents: Array<
-    [key: NodeKey, text: string, tag: HeadingTagType]
-  > = [];
+  const newEntry: TableOfContentsEntry = toEntry(newHeading);
+  let newTableOfContents: Array<TableOfContentsEntry> = [];
   if (prevHeading === null) {
     newTableOfContents = [newEntry, ...currentTableOfContents];
   } else {
@@ -47,10 +49,8 @@ function $insertHeadingIntoTableOfContents(
 
 function $deleteHeadingFromTableOfContents(
   key: NodeKey,
-  currentTableOfContents: Array<
-    [key: NodeKey, text: string, tag: HeadingTagType]
-  >,
-): Array<[key: NodeKey, text: string, tag: HeadingTagType]> {
+  currentTableOfContents: Array<TableOfContentsEntry>,
+): Array<TableOfContentsEntry> {
   const newTableOfContents = [];
   for (const heading of currentTableOfContents) {
     if (heading[0] !== key) {
@@ -62,21 +62,12 @@ function $deleteHeadingFromTableOfContents(
 
 function $updateHeadingInTableOfContents(
   heading: HeadingNode,
-  currentTableOfContents: Array<
-    [key: NodeKey, text: string, tag: HeadingTagType]
-  >,
-): Array<[key: NodeKey, text: string, tag: HeadingTagType]> {
-  const newTextContent = heading.getTextContent();
-  const newTableOfContents: Array<
-    [key: NodeKey, text: string, tag: HeadingTagType]
-  > = [];
+  currentTableOfContents: Array<TableOfContentsEntry>,
+): Array<TableOfContentsEntry> {
+  const newTableOfContents: Array<TableOfContentsEntry> = [];
   for (const oldHeading of currentTableOfContents) {
     if (oldHeading[0] === heading.getKey()) {
-      newTableOfContents.push([
-        heading.getKey(),
-        newTextContent,
-        heading.getTag(),
-      ]);
+      newTableOfContents.push(toEntry(heading));
     } else {
       newTableOfContents.push(oldHeading);
     }
@@ -84,9 +75,37 @@ function $updateHeadingInTableOfContents(
   return newTableOfContents;
 }
 
+/**
+ * Returns the updated table of contents, placing the given `heading` before the given `prevHeading`. If `prevHeading`
+ * is undefined, `heading` is placed at the start of table of contents
+ */
+function $updateHeadingPosition(
+  prevHeading: HeadingNode | null,
+  heading: HeadingNode,
+  currentTableOfContents: Array<TableOfContentsEntry>,
+): Array<TableOfContentsEntry> {
+  const newTableOfContents: Array<TableOfContentsEntry> = [];
+  const newEntry: TableOfContentsEntry = toEntry(heading);
+
+  if (!prevHeading) {
+    newTableOfContents.push(newEntry);
+  }
+  for (const oldHeading of currentTableOfContents) {
+    if (oldHeading[0] === heading.getKey()) {
+      continue;
+    }
+    newTableOfContents.push(oldHeading);
+    if (prevHeading && oldHeading[0] === prevHeading.getKey()) {
+      newTableOfContents.push(newEntry);
+    }
+  }
+
+  return newTableOfContents;
+}
+
 type Props = {
   children: (
-    values: Array<[key: NodeKey, text: string, tag: HeadingTagType]>,
+    values: Array<TableOfContentsEntry>,
     editor: LexicalEditor,
   ) => JSX.Element;
 };
@@ -95,14 +114,12 @@ export default function LexicalTableOfContentsPlugin({
   children,
 }: Props): JSX.Element {
   const [tableOfContents, setTableOfContents] = useState<
-    Array<[key: NodeKey, text: string, tag: HeadingTagType]>
+    Array<TableOfContentsEntry>
   >([]);
   const [editor] = useLexicalComposerContext();
   useEffect(() => {
     // Set table of contents initial state
-    let currentTableOfContents: Array<
-      [key: NodeKey, text: string, tag: HeadingTagType]
-    > = [];
+    let currentTableOfContents: Array<TableOfContentsEntry> = [];
     editor.getEditorState().read(() => {
       const root = $getRoot();
       const rootChildren = root.getChildren();
@@ -128,7 +145,7 @@ export default function LexicalTableOfContentsPlugin({
               const newHeading = $getNodeByKey<HeadingNode>(nodeKey);
               if (newHeading !== null) {
                 let prevHeading = newHeading.getPreviousSibling();
-                while (prevHeading && !$isHeadingNode(prevHeading)) {
+                while (prevHeading !== null && !$isHeadingNode(prevHeading)) {
                   prevHeading = prevHeading.getPreviousSibling();
                 }
                 currentTableOfContents = $insertHeadingIntoTableOfContents(
@@ -136,16 +153,28 @@ export default function LexicalTableOfContentsPlugin({
                   newHeading,
                   currentTableOfContents,
                 );
-                setTableOfContents(currentTableOfContents);
               }
             } else if (mutation === 'destroyed') {
               currentTableOfContents = $deleteHeadingFromTableOfContents(
                 nodeKey,
                 currentTableOfContents,
               );
-              setTableOfContents(currentTableOfContents);
+            } else if (mutation === 'updated') {
+              const newHeading = $getNodeByKey<HeadingNode>(nodeKey);
+              if (newHeading !== null) {
+                let prevHeading = newHeading.getPreviousSibling();
+                while (prevHeading !== null && !$isHeadingNode(prevHeading)) {
+                  prevHeading = prevHeading.getPreviousSibling();
+                }
+                currentTableOfContents = $updateHeadingPosition(
+                  prevHeading,
+                  newHeading,
+                  currentTableOfContents,
+                );
+              }
             }
           }
+          setTableOfContents(currentTableOfContents);
         });
       },
     );

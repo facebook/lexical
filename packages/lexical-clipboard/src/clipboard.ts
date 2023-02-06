@@ -7,7 +7,6 @@
  */
 
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
-import {$createListNode, $isListItemNode} from '@lexical/list';
 import {
   $addNodeStyle,
   $cloneWithProperties,
@@ -34,6 +33,7 @@ import {
   DEPRECATED_$isGridSelection,
   DEPRECATED_GridNode,
   GridSelection,
+  isSelectionWithinEditor,
   LexicalEditor,
   LexicalNode,
   NodeSelection,
@@ -47,7 +47,7 @@ export function $getHtmlContent(editor: LexicalEditor): string {
   const selection = $getSelection();
 
   if (selection == null) {
-    throw new Error('Expected valid LexicalSelection');
+    invariant(false, 'Expected valid LexicalSelection');
   }
 
   // If we haven't selected anything
@@ -67,7 +67,7 @@ export function $getLexicalContent(editor: LexicalEditor): null | string {
   const selection = $getSelection();
 
   if (selection == null) {
-    throw new Error('Expected valid LexicalSelection');
+    invariant(false, 'Expected valid LexicalSelection');
   }
 
   // If we haven't selected anything
@@ -108,8 +108,9 @@ export function $insertDataTransferForRichText(
         const nodes = $generateNodesFromSerializedNodes(payload.nodes);
         return $insertGeneratedNodes(editor, nodes, selection);
       }
-      // eslint-disable-next-line no-empty
-    } catch {}
+    } catch {
+      // Fail silently.
+    }
   }
 
   const htmlString = dataTransfer.getData('text/html');
@@ -119,8 +120,9 @@ export function $insertDataTransferForRichText(
       const dom = parser.parseFromString(htmlString, 'text/html');
       const nodes = $generateNodesFromDOM(editor, dom);
       return $insertGeneratedNodes(editor, nodes, selection);
-      // eslint-disable-next-line no-empty
-    } catch {}
+    } catch {
+      // Fail silently.
+    }
   }
 
   // Multi-line plain text in rich text mode pasted as separate paragraphs
@@ -177,27 +179,8 @@ function $basicInsertStrategy(
   // Wrap text and inline nodes in paragraph nodes so we have all blocks at the top-level
   const topLevelBlocks = [];
   let currentBlock = null;
-  let list = null;
-
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
-
-    /**
-     * There's no good way to add this to importDOM or importJSON directly,
-     * so this is here in order to safely correct faulty clipboard data
-     * that we can't control and avoid crashing the app.
-     * https://github.com/facebook/lexical/issues/2405
-     */
-    if ($isListItemNode(node)) {
-      if (list == null) {
-        list = $createListNode('bullet');
-        topLevelBlocks.push(list);
-      }
-      list.append(node);
-      continue;
-    } else if (list != null) {
-      list = null;
-    }
 
     const isLineBreakNode = $isLineBreakNode(node);
 
@@ -205,10 +188,11 @@ function $basicInsertStrategy(
       isLineBreakNode ||
       ($isDecoratorNode(node) && node.isInline()) ||
       ($isElementNode(node) && node.isInline()) ||
-      $isTextNode(node)
+      $isTextNode(node) ||
+      node.isParentRequired()
     ) {
       if (currentBlock === null) {
-        currentBlock = $createParagraphNode();
+        currentBlock = node.createParentElementNode();
         topLevelBlocks.push(currentBlock);
         // In the case of LineBreakNode, we just need to
         // add an empty ParagraphNode to the topLevelBlocks.
@@ -398,7 +382,8 @@ function $appendNodesToJSON(
   currentNode: LexicalNode,
   targetArray: Array<BaseSerializedNode> = [],
 ): boolean {
-  let shouldInclude = selection != null ? currentNode.isSelected() : true;
+  let shouldInclude =
+    selection != null ? currentNode.isSelected(selection) : true;
   const shouldExclude =
     $isElementNode(currentNode) && currentNode.excludeFromCopy('html');
   let target = currentNode;
@@ -422,7 +407,15 @@ function $appendNodesToJSON(
   // We need a way to create a clone of a Node in memory with it's own key, but
   // until then this hack will work for the selected text extract use case.
   if ($isTextNode(target)) {
-    (serializedNode as SerializedTextNode).text = target.__text;
+    const text = target.__text;
+    // If an uncollapsed selection ends or starts at the end of a line of specialized,
+    // TextNodes, such as code tokens, we will get a 'blank' TextNode here, i.e., one
+    // with text of length 0. We don't want this, it makes a confusing mess. Reset!
+    if (text.length > 0) {
+      (serializedNode as SerializedTextNode).text = text;
+    } else {
+      shouldInclude = false;
+    }
   }
 
   for (let i = 0; i < children.length; i++) {
@@ -564,12 +557,25 @@ function $copyToClipboardEvent(
   editor: LexicalEditor,
   event: ClipboardEvent,
 ): boolean {
-  event.preventDefault();
-  const clipboardData = event.clipboardData;
-  if (clipboardData === null) {
+  const domSelection = window.getSelection();
+  if (!domSelection) {
     return false;
   }
+  const anchorDOM = domSelection.anchorNode;
+  const focusDOM = domSelection.focusNode;
+  if (
+    anchorDOM !== null &&
+    focusDOM !== null &&
+    !isSelectionWithinEditor(editor, anchorDOM, focusDOM)
+  ) {
+    return false;
+  }
+  event.preventDefault();
+  const clipboardData = event.clipboardData;
   const selection = $getSelection();
+  if (clipboardData === null || selection === null) {
+    return false;
+  }
   const htmlString = $getHtmlContent(editor);
   const lexicalString = $getLexicalContent(editor);
   let plainString = '';

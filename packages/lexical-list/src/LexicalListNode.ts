@@ -136,12 +136,14 @@ export class ListNode extends ElementNode {
   }
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {
-    const element = document.createElement(this.__tag);
-    if (this.__start !== 1) {
-      element.setAttribute('start', String(this.__start));
-    }
-    if (this.__listType === 'check') {
-      element.setAttribute('__lexicalListType', 'check');
+    const {element} = super.exportDOM(editor);
+    if (element) {
+      if (this.__start !== 1) {
+        element.setAttribute('start', String(this.__start));
+      }
+      if (this.__listType === 'check') {
+        element.setAttribute('__lexicalListType', 'check');
+      }
     }
     return {
       element,
@@ -263,11 +265,14 @@ function normalizeChildren(nodes: Array<LexicalNode>): Array<ListItemNode> {
     const node = nodes[i];
     if ($isListItemNode(node)) {
       normalizedListItems.push(node);
-      node.getChildren().forEach((child) => {
-        if ($isListNode(child)) {
-          normalizedListItems.push(wrapInListItem(child));
-        }
-      });
+      const children = node.getChildren();
+      if (children.length > 1) {
+        children.forEach((child) => {
+          if ($isListNode(child)) {
+            normalizedListItems.push(wrapInListItem(child));
+          }
+        });
+      }
     } else {
       normalizedListItems.push(wrapInListItem(node));
     }

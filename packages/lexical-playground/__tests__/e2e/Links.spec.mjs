@@ -711,9 +711,7 @@ test.describe('Links', () => {
     await assertHTML(
       page,
       html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
+        <p class="PlaygroundEditorTheme__paragraph">
           <span data-lexical-text="true"></span>
           <a
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"

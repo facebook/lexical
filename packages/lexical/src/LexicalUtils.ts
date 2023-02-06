@@ -263,10 +263,7 @@ function internalMarkParentElementsAsDirty(
   }
 }
 
-export function removeFromParent(
-  node: LexicalNode,
-  keepChildren?: boolean,
-): void {
+export function removeFromParent(node: LexicalNode): void {
   const oldParent = node.getParent();
   if (oldParent === null) return;
   node = node.getWritable();
@@ -275,27 +272,13 @@ export function removeFromParent(
   let prevSibling = node.getPreviousSibling();
   if (prevSibling) prevSibling = prevSibling.getWritable();
   const writableParent = oldParent.getWritable();
-  const firstOrNext = keepChildren && node.__first ? node.__first : node.__next;
-  const lastOrPrev = keepChildren && node.__last ? node.__last : node.__prev;
 
-  if (!prevSibling) writableParent.__first = firstOrNext;
-  else prevSibling.__next = firstOrNext;
-  if (!nextSibling) writableParent.__last = lastOrPrev;
-  else nextSibling.__prev = lastOrPrev;
+  if (!prevSibling) writableParent.__first = node.__next;
+  else prevSibling.__next = node.__next;
+  if (!nextSibling) writableParent.__last = node.__prev;
+  else nextSibling.__prev = node.__prev;
 
   writableParent.__size--;
-  if (keepChildren && node.__first) {
-    writableParent.__size += node.__size;
-    const writableFirstChild = node.getFirstChild().getWritable();
-    writableFirstChild.__prev = node.__prev;
-    const writableLastChild = node.getLastChild().getWritable();
-    writableLastChild.__next = node.__next;
-    const children = node.getChildren();
-    children.forEach((child: LexicalNode) => {
-      const writableChild = child.getWritable();
-      writableChild.__parent = node.__parent;
-    });
-  }
   node.__prev = null;
   node.__next = null;
   node.__parent = null;

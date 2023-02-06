@@ -242,9 +242,9 @@ export class ListItemNode extends ElementNode {
     return node;
   }
 
-  remove(preserveEmptyParent?: boolean, keepChildren?: boolean): void {
+  remove(preserveEmptyParent?: boolean): void {
     const nextSibling = this.getNextSibling();
-    super.remove(preserveEmptyParent, keepChildren);
+    super.remove(preserveEmptyParent);
 
     if (nextSibling !== null) {
       const parent = nextSibling.getParent();

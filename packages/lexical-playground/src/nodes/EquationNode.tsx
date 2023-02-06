@@ -114,7 +114,7 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
         }
         return {
           conversion: convertEquationElement,
-          priority: 1,
+          priority: 2,
         };
       },
       span: (domNode: HTMLElement) => {

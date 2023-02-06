@@ -269,42 +269,36 @@ export function removeFromParent(
 ): void {
   const oldParent = node.getParent();
   if (oldParent === null) return;
-  const writableNode = node.getWritable();
+  node = node.getWritable();
+  let nextSibling = node.getNextSibling();
+  if (nextSibling) nextSibling = nextSibling.getWritable();
+  let prevSibling = node.getPreviousSibling();
+  if (prevSibling) prevSibling = prevSibling.getWritable();
   const writableParent = oldParent.getWritable();
-  const prevSibling = node.getPreviousSibling();
-  const nextSibling = node.getNextSibling();
   const firstOrNext = keepChildren && node.__first ? node.__first : node.__next;
   const lastOrPrev = keepChildren && node.__last ? node.__last : node.__prev;
 
-  if (!prevSibling) {
-    writableParent.__first = firstOrNext;
-  } else {
-    const writablePrevSibling = prevSibling.getWritable();
-    writablePrevSibling.__next = firstOrNext;
-  }
-  if (!nextSibling) {
-    writableParent.__last = lastOrPrev;
-  } else {
-    const writableNextSibling = nextSibling.getWritable();
-    writableNextSibling.__prev = lastOrPrev;
-  }
-  writableParent.__size--;
+  if (!prevSibling) writableParent.__first = firstOrNext;
+  else prevSibling.__next = firstOrNext;
+  if (!nextSibling) writableParent.__last = lastOrPrev;
+  else nextSibling.__prev = lastOrPrev;
 
-  if (keepChildren && writableNode.__first) {
-    writableParent.__size += writableNode.__size;
-    const writableFirstChild = writableNode.getFirstChild().getWritable();
-    writableFirstChild.__prev = writableNode.__prev;
-    const writableLastChild = writableNode.getLastChild().getWritable();
-    writableLastChild.__next = writableNode.__next;
-    const children = writableNode.getChildren();
+  writableParent.__size--;
+  if (keepChildren && node.__first) {
+    writableParent.__size += node.__size;
+    const writableFirstChild = node.getFirstChild().getWritable();
+    writableFirstChild.__prev = node.__prev;
+    const writableLastChild = node.getLastChild().getWritable();
+    writableLastChild.__next = node.__next;
+    const children = node.getChildren();
     children.forEach((child: LexicalNode) => {
       const writableChild = child.getWritable();
-      writableChild.__parent = writableNode.__parent;
+      writableChild.__parent = node.__parent;
     });
   }
-  writableNode.__prev = null;
-  writableNode.__next = null;
-  writableNode.__parent = null;
+  node.__prev = null;
+  node.__next = null;
+  node.__parent = null;
 }
 
 // Never use this function directly! It will break

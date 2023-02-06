@@ -35,9 +35,9 @@ export function NodeEventPlugin({
   listenerRef.current = eventListener;
 
   useLayoutEffect(() => {
-    return editor.registerMutationListener(nodeType, (mutations) => {
-      const registedElements: WeakSet<HTMLElement> = new WeakSet();
+    const registedElements: WeakSet<HTMLElement> = new WeakSet();
 
+    return editor.registerMutationListener(nodeType, (mutations) => {
       editor.getEditorState().read(() => {
         for (const [key, mutation] of mutations) {
           const element: null | HTMLElement = editor.getElementByKey(key);

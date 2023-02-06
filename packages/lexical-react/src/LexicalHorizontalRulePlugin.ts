@@ -19,7 +19,7 @@ import {
 } from 'lexical';
 import {useEffect} from 'react';
 
-export default function HorizontalRulePlugin(): null {
+export function HorizontalRulePlugin(): null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {

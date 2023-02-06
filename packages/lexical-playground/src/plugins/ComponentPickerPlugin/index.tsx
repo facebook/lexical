@@ -42,7 +42,7 @@ import {InsertEquationDialog} from '../EquationsPlugin';
 import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawPlugin';
 import {INSERT_IMAGE_COMMAND, InsertImageDialog} from '../ImagesPlugin';
 import {InsertPollDialog} from '../PollPlugin';
-import {InsertTableDialog} from '../TablePlugin';
+import {InsertNewTableDialog, InsertTableDialog} from '../TablePlugin';
 
 class ComponentPickerOption extends TypeaheadOption {
   // What shows up in the editor
@@ -202,6 +202,14 @@ export default function ComponentPickerMenuPlugin(): JSX.Element {
         onSelect: () =>
           showModal('Insert Table', (onClose) => (
             <InsertTableDialog activeEditor={editor} onClose={onClose} />
+          )),
+      }),
+      new ComponentPickerOption('Table (Experimental)', {
+        icon: <i className="icon table" />,
+        keywords: ['table', 'grid', 'spreadsheet', 'rows', 'columns'],
+        onSelect: () =>
+          showModal('Insert Table', (onClose) => (
+            <InsertNewTableDialog activeEditor={editor} onClose={onClose} />
           )),
       }),
       new ComponentPickerOption('Numbered List', {

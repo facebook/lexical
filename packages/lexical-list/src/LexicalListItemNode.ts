@@ -419,6 +419,14 @@ export class ListItemNode extends ElementNode {
       this.getTextContent().length === selection.getTextContent().length
     );
   }
+
+  isParentRequired(): true {
+    return true;
+  }
+
+  createParentElementNode(): ElementNode {
+    return $createListNode('bullet');
+  }
 }
 
 function $setListItemThemeClassNames(

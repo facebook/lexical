@@ -14,6 +14,7 @@ import {
   TextNode,
 } from 'lexical';
 
+import {$createRangeSelection} from '../..';
 import {LexicalNode} from '../../LexicalNode';
 import {$createParagraphNode} from '../../nodes/LexicalParagraphNode';
 import {$createTextNode} from '../../nodes/LexicalTextNode';
@@ -215,6 +216,41 @@ describe('LexicalNode tests', () => {
           expect(newParagraphNode.isSelected()).toBe(true);
           expect(newTextNode.isSelected()).toBe(true);
         });
+      });
+
+      test('LexicalNode.isSelected(): with custom range selection', async () => {
+        const {editor} = testEnv;
+        let newParagraphNode;
+        let newTextNode;
+
+        await editor.update(() => {
+          expect(paragraphNode.isSelected()).toBe(false);
+          expect(textNode.isSelected()).toBe(false);
+          newParagraphNode = new ParagraphNode();
+          newTextNode = new TextNode('bar');
+          newParagraphNode.append(newTextNode);
+          paragraphNode.insertAfter(newParagraphNode);
+          expect(newParagraphNode.isSelected()).toBe(false);
+          expect(newTextNode.isSelected()).toBe(false);
+        });
+
+        await editor.update(() => {
+          const rangeSelection = $createRangeSelection();
+
+          rangeSelection.anchor.type = 'text';
+          rangeSelection.anchor.offset = 1;
+          rangeSelection.anchor.key = textNode.getKey();
+          rangeSelection.focus.type = 'text';
+          rangeSelection.focus.offset = 1;
+          rangeSelection.focus.key = newTextNode.getKey();
+
+          expect(paragraphNode.isSelected(rangeSelection)).toBe(true);
+          expect(textNode.isSelected(rangeSelection)).toBe(true);
+          expect(newParagraphNode.isSelected(rangeSelection)).toBe(true);
+          expect(newTextNode.isSelected(rangeSelection)).toBe(true);
+        });
+
+        await Promise.resolve().then();
       });
 
       test('LexicalNode.getKey()', async () => {

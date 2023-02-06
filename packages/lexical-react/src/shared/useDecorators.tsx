@@ -17,6 +17,7 @@ type ErrorBoundaryProps = {
   children: JSX.Element;
   onError: (error: Error) => void;
 };
+
 export type ErrorBoundaryType =
   | React.ComponentClass<ErrorBoundaryProps>
   | React.FC<ErrorBoundaryProps>;

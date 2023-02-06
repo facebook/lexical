@@ -139,27 +139,21 @@ export function CheckListPlugin(): null {
         },
         COMMAND_PRIORITY_LOW,
       ),
-      listenPointerDown(),
+      editor.registerRootListener((rootElement, prevElement) => {
+        if (rootElement !== null) {
+          rootElement.addEventListener('click', handleClick);
+          rootElement.addEventListener('pointerdown', handlePointerDown);
+        }
+
+        if (prevElement !== null) {
+          prevElement.removeEventListener('click', handleClick);
+          prevElement.removeEventListener('pointerdown', handlePointerDown);
+        }
+      }),
     );
   });
 
   return null;
-}
-
-let listenersCount = 0;
-
-function listenPointerDown() {
-  if (listenersCount++ === 0) {
-    document.addEventListener('click', handleClick);
-    document.addEventListener('pointerdown', handlePointerDown);
-  }
-
-  return () => {
-    if (--listenersCount === 0) {
-      document.removeEventListener('click', handleClick);
-      document.removeEventListener('pointerdown', handlePointerDown);
-    }
-  };
 }
 
 function handleCheckItemEvent(event: PointerEvent, callback: () => void) {

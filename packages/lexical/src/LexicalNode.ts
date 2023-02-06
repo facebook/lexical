@@ -8,12 +8,22 @@
 
 /* eslint-disable no-constant-condition */
 import type {EditorConfig, LexicalEditor} from './LexicalEditor';
-import type {RangeSelection} from './LexicalSelection';
+import type {
+  GridSelection,
+  NodeSelection,
+  RangeSelection,
+} from './LexicalSelection';
 import type {Klass} from 'lexical';
 
 import invariant from 'shared/invariant';
 
-import {$isElementNode, $isRootNode, $isTextNode, ElementNode} from '.';
+import {
+  $createParagraphNode,
+  $isElementNode,
+  $isRootNode,
+  $isTextNode,
+  ElementNode,
+} from '.';
 import {
   $getSelection,
   $isRangeSelection,
@@ -222,13 +232,17 @@ export class LexicalNode {
     return false;
   }
 
-  isSelected(): boolean {
-    const selection = $getSelection();
-    if (selection == null) {
+  isSelected(
+    selection?: null | RangeSelection | NodeSelection | GridSelection,
+  ): boolean {
+    const targetSelection = selection || $getSelection();
+    if (targetSelection == null) {
       return false;
     }
 
-    const isSelected = selection.getNodes().some((n) => n.__key === this.__key);
+    const isSelected = targetSelection
+      .getNodes()
+      .some((n) => n.__key === this.__key);
 
     if ($isTextNode(this)) {
       return isSelected;
@@ -236,11 +250,11 @@ export class LexicalNode {
     // For inline images inside of element nodes.
     // Without this change the image will be selected if the cursor is before or after it.
     if (
-      $isRangeSelection(selection) &&
-      selection.anchor.type === 'element' &&
-      selection.focus.type === 'element' &&
-      selection.anchor.key === selection.focus.key &&
-      selection.anchor.offset === selection.focus.offset
+      $isRangeSelection(targetSelection) &&
+      targetSelection.anchor.type === 'element' &&
+      targetSelection.focus.type === 'element' &&
+      targetSelection.anchor.key === targetSelection.focus.key &&
+      targetSelection.anchor.offset === targetSelection.focus.offset
     ) {
       return false;
     }
@@ -520,7 +534,7 @@ export class LexicalNode {
     if (latest === null) {
       invariant(
         false,
-        'Lexical node does not exist in active editor state. Avoid using the same node references between nested closures from editor.read/editor.update.',
+        'Lexical node does not exist in active editor state. Avoid using the same node references between nested closures from editorState.read/editor.update.',
       );
     }
     return latest;
@@ -777,6 +791,14 @@ export class LexicalNode {
       $updateElementSelectionOnCreateDeleteNode(selection, parent, index);
     }
     return nodeToInsert;
+  }
+
+  isParentRequired(): boolean {
+    return false;
+  }
+
+  createParentElementNode(): ElementNode {
+    return $createParagraphNode();
   }
 
   selectPrevious(anchorOffset?: number, focusOffset?: number): RangeSelection {

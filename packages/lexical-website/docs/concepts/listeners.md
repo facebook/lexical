@@ -133,8 +133,8 @@ removeDecoratorListener();
 
 ## `registerRootListener`
 
-Get notified when a the editor's root DOM element (the content editable Lexical attaches to) changes. This is primarily used to
-attach event listener to the root element.
+Get notified when the editor's root DOM element (the content editable Lexical attaches to) changes. This is primarily used to
+attach event listeners to the root element.
 
 ```js
 const removeRootListener = editor.registerRootListener(

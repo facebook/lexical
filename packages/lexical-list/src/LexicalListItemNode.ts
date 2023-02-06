@@ -157,42 +157,36 @@ export class ListItemNode extends ElementNode {
     if ($isListItemNode(replaceWithNode)) {
       return super.replace(replaceWithNode);
     }
-    if (includeChildren) return super.replace(replaceWithNode, includeChildren);
-    const list = this.getParentOrThrow();
+    const listItem = this.getWritable();
+    this.setIndent(0);
 
-    if ($isListNode(list)) {
-      const childrenKeys = list.getChildrenKeys();
-      const childrenLength = childrenKeys.length;
-      const index = childrenKeys.indexOf(this.__key);
-
-      if (index === 0) {
-        list.insertBefore(replaceWithNode);
-      } else if (index === childrenLength - 1) {
-        list.insertAfter(replaceWithNode);
-      } else {
-        // Split the list
-        const newList = $createListNode(list.getListType());
-        const children = list.getChildren();
-
-        for (let i = index + 1; i < childrenLength; i++) {
-          const child = children[i];
-          newList.append(child);
-        }
-        list.insertAfter(replaceWithNode);
-        replaceWithNode.insertAfter(newList);
+    const list = listItem.getParentOrThrow();
+    if (!$isListNode(list)) return replaceWithNode;
+    if (list.__first === listItem.__key) {
+      list.insertBefore(replaceWithNode);
+    } else if (list.__last === listItem.__key) {
+      list.insertAfter(replaceWithNode);
+    } else {
+      // Split the list
+      const newList = $createListNode(list.getListType());
+      let nextsibling = listItem.getNextSibling();
+      while (nextsibling) {
+        const nodeToAppend = nextsibling;
+        nextsibling = nextsibling.getNextSibling();
+        newList.append(nodeToAppend);
       }
-      if (includeChildren) {
-        this.getChildren().forEach((child: LexicalNode) => {
-          replaceWithNode.append(child);
-        });
-      }
-      this.remove();
-
-      if (childrenLength === 1) {
-        list.remove();
-      }
+      list.insertAfter(replaceWithNode);
+      replaceWithNode.insertAfter(newList);
     }
-
+    if (includeChildren) {
+      listItem.getChildren().forEach((child: LexicalNode) => {
+        replaceWithNode.append(child);
+      });
+    }
+    listItem.remove();
+    if (list.__size === 0) {
+      list.remove();
+    }
     return replaceWithNode;
   }
 

@@ -42,10 +42,10 @@ import {getStyleObjectFromCSS} from './utils';
  */
 export function $setBlocksType_experimental(
   selection: RangeSelection | GridSelection,
-
   createElement: () => ElementNode,
 ): void {
   if (selection.anchor.key === 'root') {
+    // Should we actually handle this case?
     const element = createElement();
     const root = $getRoot();
     const firstChild = root.getFirstChild();
@@ -53,36 +53,27 @@ export function $setBlocksType_experimental(
     else root.append(element);
     return;
   }
-
   const nodes = selection.getNodes();
-  let current = selection.anchor.getNode().getParent();
-  while (current && isBlock(current)) {
-    if (nodes.indexOf(current) === -1) nodes.push(current);
-    current = current.getParent();
+  const maybeBlock = selection.anchor.getNode().getParent();
+  if (maybeBlock) {
+    nodes.push(maybeBlock);
+    if (maybeBlock.isInline()) nodes.push(maybeBlock.getParentOrThrow());
   }
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i].getLatest();
     if (!isBlock(node)) continue;
-    if (isLeafElement(node)) {
-      const targetElement = createElement();
-      targetElement.setFormat(node.getFormatType());
-      // targetElement.setIndent(node.getIndent());
-      node.replace(targetElement, true);
-    } else {
-      node.remove(true, true);
-    }
+    const targetElement = createElement();
+    targetElement.setFormat(node.getFormatType());
+    targetElement.setIndent(node.getIndent());
+    node.replace(targetElement, true);
   }
 }
-
-function isLeafElement(node: LexicalNode): boolean {
-  const firstChild = node.getFirstChild();
-  return (
-    firstChild === null || $isTextNode(firstChild) || firstChild.isInline()
-  );
-}
-
 function isBlock(node: LexicalNode): boolean {
-  return $isElementNode(node) && !$isRootOrShadowRoot(node) && !node.isInline();
+  if (!$isElementNode(node) || $isRootOrShadowRoot(node)) return false;
+  const firstChild = node.getFirstChild();
+  const isLeafElement =
+    firstChild === null || $isTextNode(firstChild) || firstChild.isInline();
+  return !node.isInline() && node.canBeEmpty() !== false && isLeafElement;
 }
 
 function isPointAttached(point: Point): boolean {

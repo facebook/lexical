@@ -1,3 +1,36 @@
+## v0.7.7 (2023-02-03)
+
+- Add list-style-position:inside (#3814) John Flockton
+- Fix is selected noop (#3805) James Abels
+- Add `createParentElementNode` method on LexicalNode to fix copy/paste issues with clipboard (#3800) John Flockton
+- Remove innerHTML injection from table selection (#3804) John Flockton
+- Better tab handling (#3770) James Abels
+- Fix line delete bug in history (#3769) James Abels
+- List node export dom with css classes (#3801) Maksim Horbachevsky
+- Add highlight TextFormatType (#3583) moy2010
+- Add check that target is not the root node (#3797) John Flockton
+- Fix $generateJSONFromSelectedNodes with a custom selection passed in (#3749) William Wang
+- Improve selection docs (#3798) Dominic Gannaway
+- Fix copy paste wrong order in TableOfContents (#3786) Daniel Voigt
+- fix(lexical-playground): fix bugs related to ComponentPickerPlugin (#3787) Shota Shimizu
+- fix: styling information of paragraph are missing while importing dom (#3771) Rajatava Mukherjee
+- Stabilize WeakMap in NodeEventPlugin (#3780) James Abels
+- Clean up wonky logic (#3768) Dominic Gannaway
+- Remove deprecated modules from core code base (#3729) John Flockton
+- Edit CSS to fix marker alignment issue in Safari (#3753) John Flockton
+- Move horizontal rule plugin to lexical/react (#3751) John Flockton
+- Fix equation transformer in Playground (#3758) Leonardo E. Dominguez
+- Fix list normalization on HTML paste. (#3757) Acy Watson
+- Remove preventDefault from $copyToClipboardEvent (#3742) John Flockton
+- fix(lexical-playground): NewTablePlugin is not draggable (#3747) Shota Shimizu
+- Attach checkbox click listeners to editor root element instead of document (#3738) John Flockton
+- Update listener in toc (#3726) Stepan Bolotnikov
+- Close Excalidraw only on Escape key down (#3737) John Flockton
+- fix: type-ahead menu scroll problem (#3672) huang yao
+- Tweak CodeNode to allow for overrides (#3731) James Abels
+- Discard empty TextNode that can creep into appendJSON (#3695) James Abels
+- Add config to updateDOM in ParagraphNode  (#3693) James Abels
+
 ## v0.7.6 (2023-01-10)
 
 - Fix typo in LexicalAutoLinkPlugin code example (#3685) Lorenzo

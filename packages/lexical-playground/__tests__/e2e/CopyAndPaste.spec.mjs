@@ -2998,4 +2998,102 @@ test.describe('CopyAndPaste', () => {
       focusPath: [2, 0, 0],
     });
   });
+
+  test('Paste top level element in the middle of paragraph', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await focusEditor(page);
+    await page.keyboard.type('Hello world');
+    await moveToPrevWord(page);
+    await pasteFromClipboard(page, {
+      'text/html': `<hr />`,
+    });
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Hello</span>
+        </p>
+        <hr class="" contenteditable="false" data-lexical-decorator="true" />
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">world</span>
+        </p>
+      `,
+    );
+  });
+
+  test('Paste top level element in the middle of list', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await focusEditor(page);
+    // Add three list items
+    await page.keyboard.type('- one');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('two');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('three');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('four');
+
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('ArrowUp');
+    await moveLeft(page, 4);
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.press('ArrowUp');
+    await pasteFromClipboard(page, {
+      'text/html': `<hr />`,
+    });
+
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            value="1"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">one</span>
+          </li>
+          <li
+            value="2"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">two</span>
+          </li>
+        </ul>
+        <hr class="" contenteditable="false" data-lexical-decorator="true" />
+        <div
+          class="PlaygroundEditorTheme__blockCursor"
+          contenteditable="false"
+          data-lexical-cursor="true"></div>
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            value="1"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">three</span>
+          </li>
+          <li
+            value="2"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">four</span>
+          </li>
+        </ul>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+  });
 });

@@ -41,7 +41,7 @@ interface SetBlocksTypeOptions_experimental {
 }
 
 /**
- * Converts selected nodes from one type to another, as defined by parameter function.
+ * Converts selection nodes from one type to another, as defined by parameter function.
  *
  * Will optionally process shadowRoot nodes, and all their children, if any one of them is included
  * in the selected nodes. Finally, parentBlocks — AKA nested nodes — can be created by passing

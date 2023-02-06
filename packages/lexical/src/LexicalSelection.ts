@@ -12,6 +12,7 @@ import type {LexicalNode, NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextFormatType} from './nodes/LexicalTextNode';
 
+import {$splitNode} from '@lexical/utils';
 import {IS_CHROME} from 'shared/environment';
 import invariant from 'shared/invariant';
 
@@ -1434,7 +1435,30 @@ export class RangeSelection implements BaseSelection {
         ($isDecoratorNode(target) && !target.isInline())
       ) {
         lastNode = node;
-        target = target.insertAfter(node, false);
+        // when pasting top level node in the middle of paragraph
+        // we need to split paragraph instead of placing it inline
+        if (
+          $isRangeSelection(this) &&
+          $isDecoratorNode(node) &&
+          ($isElementNode(target) || $isTextNode(target)) &&
+          !node.isInline()
+        ) {
+          let splitNode: ElementNode;
+          let splitOffset: number;
+
+          if ($isTextNode(target)) {
+            splitNode = target.getParentOrThrow();
+            const [textNode] = target.splitText(anchorOffset);
+            splitOffset = textNode.getIndexWithinParent() + 1;
+          } else {
+            splitNode = target;
+            splitOffset = anchorOffset;
+          }
+          const [, rightTree] = $splitNode(splitNode, splitOffset);
+          target = rightTree.insertBefore(node);
+        } else {
+          target = target.insertAfter(node, false);
+        }
       } else {
         const nextTarget: ElementNode = target.getParentOrThrow();
         // if we're inserting an Element after a LineBreak, we want to move the target to the parent

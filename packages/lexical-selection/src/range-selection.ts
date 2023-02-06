@@ -34,7 +34,7 @@ import {getStyleObjectFromCSS} from './utils';
 interface SetBlocksTypeOptions_experimental {
   createParentBlock?: (
     childBlocks: ElementNode[] | LexicalNode[],
-    selectedNodes: ElementNode[] | LexicalNode[],
+    selectionNodes: ElementNode[] | LexicalNode[],
   ) => ElementNode | LexicalNode;
   handleShadowRoot?: (node: ElementNode | LexicalNode) => void;
   collapseShadowRootNodes?: boolean;

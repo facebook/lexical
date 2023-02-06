@@ -157,19 +157,18 @@ export class ListItemNode extends ElementNode {
     if ($isListItemNode(replaceWithNode)) {
       return super.replace(replaceWithNode);
     }
-    const listItem = this.getWritable();
     this.setIndent(0);
 
-    const list = listItem.getParentOrThrow();
+    const list = this.getParentOrThrow();
     if (!$isListNode(list)) return replaceWithNode;
-    if (list.__first === listItem.__key) {
+    if (list.__first === this.__key) {
       list.insertBefore(replaceWithNode);
-    } else if (list.__last === listItem.__key) {
+    } else if (list.__last === this.__key) {
       list.insertAfter(replaceWithNode);
     } else {
       // Split the list
       const newList = $createListNode(list.getListType());
-      let nextsibling = listItem.getNextSibling();
+      let nextsibling = this.getNextSibling();
       while (nextsibling) {
         const nodeToAppend = nextsibling;
         nextsibling = nextsibling.getNextSibling();
@@ -179,11 +178,11 @@ export class ListItemNode extends ElementNode {
       replaceWithNode.insertAfter(newList);
     }
     if (includeChildren) {
-      listItem.getChildren().forEach((child: LexicalNode) => {
+      this.getChildren().forEach((child: LexicalNode) => {
         replaceWithNode.append(child);
       });
     }
-    listItem.remove();
+    this.remove();
     if (list.__size === 0) {
       list.remove();
     }

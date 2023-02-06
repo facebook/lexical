@@ -62,7 +62,7 @@ export function $setBlocksType_experimental(
   }
 
   for (let i = 0; i < nodes.length; i++) {
-    const node = nodes[i].getLatest();
+    const node = nodes[i];
     if (!isBlock(node)) continue;
     const targetElement = createElement();
     targetElement.setFormat(node.getFormatType());

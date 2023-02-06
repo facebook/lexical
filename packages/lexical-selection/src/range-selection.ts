@@ -11,7 +11,6 @@ import {
   $getNodeByKey,
   $getPreviousSelection,
   $getRoot,
-  $getSelection,
   $hasAncestor,
   $isDecoratorNode,
   $isElementNode,
@@ -34,7 +33,7 @@ import {getStyleObjectFromCSS} from './utils';
 
 interface SetBlocksTypeOptions_experimental {
   createParentBlock?: (
-    nestedBlocks: ElementNode[] | LexicalNode[],
+    childBlocks: ElementNode[] | LexicalNode[],
     selectedNodes: ElementNode[] | LexicalNode[],
   ) => ElementNode | LexicalNode;
   handleShadowRoot?: (node: ElementNode | LexicalNode) => void;
@@ -46,7 +45,8 @@ interface SetBlocksTypeOptions_experimental {
  *
  * Will optionally process shadowRoot nodes, and all their children, if any one of them is included
  * in the selected nodes. Finally, parentBlocks — AKA nested nodes — can be created by passing
- * the optional `createParentBlock` function.
+ * the optional `createParentBlock` function. Also, you MUST set a new selection (all forms)
+ * in this function to prevent the operation from failing with a no-selection error.
  *
  * @param selection
  * @param createElement
@@ -56,12 +56,13 @@ interface SetBlocksTypeOptions_experimental {
 export function $setBlocksType_experimental(
   selection: RangeSelection | GridSelection,
   createElement: (
-    node?: ElementNode | LexicalNode,
-    selectedNodes?: ElementNode[] | LexicalNode[],
+    blockNode?: ElementNode | LexicalNode,
+    selectionNodes?: ElementNode[] | LexicalNode[],
   ) => ElementNode | LexicalNode,
   options?: SetBlocksTypeOptions_experimental,
 ) {
   // 1. special handling for root
+
   if (selection.anchor.key === 'root') {
     const element = createElement();
     const root = $getRoot();
@@ -75,13 +76,13 @@ export function $setBlocksType_experimental(
 
   let nodes = selection.getNodes();
   const createElementTarget = (
-    node: ElementNode | LexicalNode,
-    selectedNodes: ElementNode[] | LexicalNode[],
+    blockNode: ElementNode | LexicalNode,
+    selectionNodes: ElementNode[] | LexicalNode[],
   ) => {
-    if (!isBlock(node)) return null;
-    const targetElement = createElement(node, selectedNodes);
-    targetElement.setFormat(node.getFormatType());
-    targetElement.setIndent(node.getIndent());
+    if (!isBlock(blockNode)) return null;
+    const targetElement = createElement(blockNode, selectionNodes);
+    targetElement.setFormat(blockNode.getFormatType());
+    targetElement.setIndent(blockNode.getIndent());
     return targetElement;
   };
 
@@ -96,15 +97,11 @@ export function $setBlocksType_experimental(
   }
 
   // 4. optionally collapse shadowRoot nodes
+  const handleShadowRoot =
+    options && (options.collapseShadowRootNodes || options.handleShadowRoot);
 
-  if (
-    options &&
-    (options.collapseShadowRootNodes || options.handleShadowRoot)
-  ) {
-    const nodesAfterShadowRootCollapse = collapseShadowRoots(
-      nodes,
-      options as SetBlocksTypeOptions_experimental,
-    );
+  if (handleShadowRoot) {
+    const nodesAfterShadowRootCollapse = collapseShadowRoots(nodes, options);
 
     if (nodesAfterShadowRootCollapse.length > 0) {
       nodes = nodesAfterShadowRootCollapse;
@@ -130,47 +127,22 @@ export function $setBlocksType_experimental(
   // 6. advanced path for nested node creation
 
   if (options && options.createParentBlock) {
-    const nestedBlocks = [];
+    const childBlocks = [];
 
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i];
       const targetElement = createElementTarget(node, nodes);
       if (targetElement === null) continue;
-      nestedBlocks.push(targetElement);
+      childBlocks.push(targetElement);
     }
 
-    const skipIdx = nodes.findIndex((node) => isBlock(node));
-    const parentBlock = options.createParentBlock(nestedBlocks, nodes);
+    const shadowRootIdx = nodes.findIndex((node) => isBlock(node));
+    const parentBlock = options.createParentBlock(childBlocks, nodes);
 
-    ((node) => node && node.replace(parentBlock))(nodes[skipIdx]);
-    nodes.forEach((node, idx) => (idx !== skipIdx ? node.remove() : undefined));
-
-    (() => {
-      const selectionUpdate = $getSelection();
-
-      // the selection can break if the initial selection was (a) backward,
-      // (b) uncollapsed, and (c) is now being nested into a parentBlock.
-      // this select will prevent the resulting 'no selection' error.
-      // can reset via the caller: { onUpdate: editor.update() }
-
-      if ($isRangeSelection(selectionUpdate)) {
-        const anchorKey = selectionUpdate.anchor.key;
-        const firstActiveChild = parentBlock.getFirstChild();
-        const firstActiveGrandchild = firstActiveChild.getFirstChild();
-
-        const isCorrectSelection = [
-          parentBlock.getKey(),
-          firstActiveChild.getKey(),
-          firstActiveGrandchild.getKey(),
-        ].includes((key: string | null) => {
-          return key === anchorKey;
-        });
-
-        if (!isCorrectSelection) {
-          firstActiveChild.select(0);
-        }
-      }
-    })();
+    ((node) => node && node.replace(parentBlock))(nodes[shadowRootIdx]);
+    nodes.forEach((node, idx) =>
+      idx !== shadowRootIdx ? node.remove() : undefined,
+    );
 
     return [parentBlock];
   }
@@ -184,7 +156,7 @@ function collapseShadowRoots(
 ) {
   const shadows = [];
   const shadowRootKeys = new Set<string>();
-  const nodesAndShadowKeys: (ElementNode | LexicalNode | string)[] = [...nodes];
+  const nodesAndShadows: (ElementNode | LexicalNode | string)[] = [...nodes];
   const dirtyNodeSets: Record<string, Set<string>> = {};
 
   const getShadowKey = (key: string) => `shadowRoot-${key}`;
@@ -221,7 +193,7 @@ function collapseShadowRoots(
   });
 
   // 2. handle the shadows in a consistent manner. default is to
-  // collapse them at start, but custom handling is possible
+  // collapseAtStart, but custom handling is possible
 
   for (const shadowRootKey of shadowRootKeys) {
     const shadowRootNode = $getNodeByKey(shadowRootKey);
@@ -248,12 +220,12 @@ function collapseShadowRoots(
     const [shadowKey, dirtyNodeSet] = keyAndSet;
 
     for (const nodeKey of dirtyNodeSet) {
-      const nodeIndex = nodesAndShadowKeys.findIndex((maybeNode) => {
+      const nodeIndex = nodesAndShadows.findIndex((maybeNode) => {
         return typeof maybeNode !== 'string' && maybeNode.getKey() === nodeKey;
       });
 
       if (nodeIndex > -1) {
-        nodesAndShadowKeys[nodeIndex] = getShadowKey(shadowKey);
+        nodesAndShadows[nodeIndex] = getShadowKey(shadowKey);
       }
     }
   });
@@ -266,17 +238,17 @@ function collapseShadowRoots(
     const allChildren = $getRoot().getChildren();
     const newChildren = allChildren.slice(shadowStart, shadowEnd);
 
-    const spliceStart = nodesAndShadowKeys.findIndex((maybeKey) => {
+    const spliceStart = nodesAndShadows.findIndex((maybeKey) => {
       return isShadow(shadowKey, maybeKey);
     });
-    const deleteCount = nodesAndShadowKeys.filter((maybeKey) => {
+    const deleteCount = nodesAndShadows.filter((maybeKey) => {
       return isShadow(shadowKey, maybeKey);
     }).length;
 
-    nodesAndShadowKeys.splice(spliceStart, deleteCount, ...newChildren);
+    nodesAndShadows.splice(spliceStart, deleteCount, ...newChildren);
   });
 
-  return nodesAndShadowKeys as (ElementNode | LexicalNode)[];
+  return nodesAndShadows as (ElementNode | LexicalNode)[];
 }
 
 function isBlock(node: LexicalNode) {

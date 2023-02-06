@@ -45,8 +45,8 @@ interface SetBlocksTypeOptions_experimental {
  *
  * Will optionally process shadowRoot nodes, and all their children, if any one of them is included
  * in the selected nodes. Finally, parentBlocks — AKA nested nodes — can be created by passing
- * the optional `createParentBlock` function. Also, you MUST set a new selection (all forms)
- * in this function to prevent the operation from failing with a no-selection error.
+ * the optional `createParentBlock` function. When working with shadowRoot, be mindful of
+ * resetting the selection. Nodes are being removed, so the selection can be lost.
  *
  * @param selection
  * @param createElement

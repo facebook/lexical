@@ -54,11 +54,13 @@ export function $setBlocksType_experimental(
     return;
   }
   const nodes = selection.getNodes();
-  const maybeBlock = selection.anchor.getNode().getParent();
-  if (maybeBlock) {
-    nodes.push(maybeBlock);
-    if (maybeBlock.isInline()) nodes.push(maybeBlock.getParentOrThrow());
+  let maybeBlock = selection.anchor.getNode().getParentOrThrow();
+  if (nodes.indexOf(maybeBlock) === -1) nodes.push(maybeBlock);
+  if (maybeBlock.isInline()) {
+    maybeBlock = maybeBlock.getParentOrThrow();
+    if (nodes.indexOf(maybeBlock) === -1) nodes.push(maybeBlock);
   }
+
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i].getLatest();
     if (!isBlock(node)) continue;
@@ -68,6 +70,7 @@ export function $setBlocksType_experimental(
     node.replace(targetElement, true);
   }
 }
+
 function isBlock(node: LexicalNode): boolean {
   if (!$isElementNode(node) || $isRootOrShadowRoot(node)) return false;
   const firstChild = node.getFirstChild();

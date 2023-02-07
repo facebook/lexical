@@ -68,7 +68,9 @@ export type SerializedYouTubeNode = Spread<
   SerializedDecoratorBlockNode
 >;
 
-function convertYoutubeElement(domNode: HTMLElement): null | DOMConversionOutput {
+function convertYoutubeElement(
+  domNode: HTMLElement,
+): null | DOMConversionOutput {
   const videoID = domNode.getAttribute('data-lexical-youtube');
   if (videoID) {
     const node = $createYouTubeNode(videoID);
@@ -121,13 +123,13 @@ export class YouTubeNode extends DecoratorBlockNode {
     );
     element.setAttribute('allowfullscreen', 'true');
     element.setAttribute('title', 'YouTube video');
-    return {element}
+    return {element};
   }
 
   static importDOM(): DOMConversionMap | null {
     return {
       iframe: (domNode: HTMLElement) => {
-        if (!domNode.hasAttribute('data-lexical-youtube') ) {
+        if (!domNode.hasAttribute('data-lexical-youtube')) {
           return null;
         }
         return {

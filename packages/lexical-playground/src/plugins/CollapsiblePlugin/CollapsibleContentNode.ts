@@ -8,6 +8,8 @@
 
 import {
   DOMConversionMap,
+  DOMConversionOutput,
+  DOMExportOutput,
   EditorConfig,
   ElementNode,
   LexicalNode,
@@ -22,6 +24,15 @@ type SerializedCollapsibleContentNode = Spread<
   },
   SerializedElementNode
 >;
+
+export function convertCollapsibleContentElement(
+  domNode: HTMLElement,
+): DOMConversionOutput | null {
+  const node = $createCollapsibleContentNode();
+  return {
+    node,
+  };
+}
 
 export class CollapsibleContentNode extends ElementNode {
   static getType(): string {
@@ -43,7 +54,23 @@ export class CollapsibleContentNode extends ElementNode {
   }
 
   static importDOM(): DOMConversionMap | null {
-    return {};
+    return {
+      div: (domNode: HTMLElement) => {
+        if (!domNode.hasAttribute('data-lexical-collapsible-content')) {
+          return null;
+        }
+        return {
+          conversion: convertCollapsibleContentElement,
+          priority: 2,
+        };
+      },
+    };
+  }
+
+  exportDOM(): DOMExportOutput {
+    const element = document.createElement('div');
+    element.setAttribute('data-lexical-collapsible-content', 'true');
+    return {element};
   }
 
   static importJSON(

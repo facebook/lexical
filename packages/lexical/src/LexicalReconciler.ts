@@ -176,11 +176,6 @@ function createNode(
       const endIndex = childrenSize - 1;
       const children = createChildrenArray(node, activeNextNodeMap);
       createChildrenWithDirection(children, endIndex, node, dom);
-      if ($textContentRequiresDoubleLinebreakAtEnd(node)) {
-        subTreeTextContent += DOUBLE_LINE_BREAK;
-        // @ts-expect-error: internal field
-        dom.__lexicalTextContent = subTreeTextContent;
-      }
     }
     const format = node.__format;
 
@@ -252,13 +247,14 @@ function createChildrenWithDirection(
 ): void {
   const previousSubTreeDirectionedTextContent = subTreeDirectionedTextContent;
   subTreeDirectionedTextContent = '';
-  createChildren(children, 0, endIndex, dom, null);
+  createChildren(children, element, 0, endIndex, dom, null);
   reconcileBlockDirection(element, dom);
   subTreeDirectionedTextContent = previousSubTreeDirectionedTextContent;
 }
 
 function createChildren(
   children: Array<NodeKey>,
+  element: ElementNode,
   _startIndex: number,
   endIndex: number,
   dom: null | HTMLElement,
@@ -271,7 +267,9 @@ function createChildren(
   for (; startIndex <= endIndex; ++startIndex) {
     createNode(children[startIndex], dom, insertDOM);
   }
-
+  if ($textContentRequiresDoubleLinebreakAtEnd(element)) {
+    subTreeTextContent += DOUBLE_LINE_BREAK;
+  }
   // @ts-expect-error: internal field
   dom.__lexicalTextContent = subTreeTextContent;
   subTreeTextContent = previousSubTreeTextContent + subTreeTextContent;
@@ -454,7 +452,14 @@ function reconcileChildren(
 
     if (prevChildrenSize === 0) {
       if (nextChildrenSize !== 0) {
-        createChildren(nextChildren, 0, nextChildrenSize - 1, dom, null);
+        createChildren(
+          nextChildren,
+          nextElement,
+          0,
+          nextChildrenSize - 1,
+          dom,
+          null,
+        );
       }
     } else if (nextChildrenSize === 0) {
       if (prevChildrenSize !== 0) {
@@ -475,6 +480,7 @@ function reconcileChildren(
       }
     } else {
       reconcileNodeChildren(
+        nextElement,
         prevChildren,
         nextChildren,
         prevChildrenSize,
@@ -662,6 +668,7 @@ function getNextSibling(element: HTMLElement): Node | null {
 }
 
 function reconcileNodeChildren(
+  nextElement: ElementNode,
   prevChildren: Array<NodeKey>,
   nextChildren: Array<NodeKey>,
   prevChildrenLength: number,
@@ -736,7 +743,14 @@ function reconcileNodeChildren(
       previousNode === undefined
         ? null
         : activeEditor.getElementByKey(previousNode);
-    createChildren(nextChildren, nextIndex, nextEndIndex, dom, insertDOM);
+    createChildren(
+      nextChildren,
+      nextElement,
+      nextIndex,
+      nextEndIndex,
+      dom,
+      insertDOM,
+    );
   } else if (removeOldChildren && !appendNewChildren) {
     destroyChildren(prevChildren, prevIndex, prevEndIndex, dom);
   }

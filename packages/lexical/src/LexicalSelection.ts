@@ -218,7 +218,7 @@ function $transferStartingElementPointToTextPoint(
   start: ElementPointType,
   end: PointType,
   format: number,
-) {
+): void {
   const element = start.getNode();
   const placementNode = element.getChildAtIndex(start.offset);
   const textNode = $createTextNode();
@@ -600,9 +600,18 @@ export class RangeSelection implements BaseSelection {
       firstNode = firstNodeDescendant != null ? firstNodeDescendant : firstNode;
     }
     if ($isElementNode(lastNode)) {
-      const lastNodeDescendant = lastNode.getDescendantByIndex<ElementNode>(
+      let lastNodeDescendant = lastNode.getDescendantByIndex<ElementNode>(
         focus.offset,
       );
+      // We don't want to over-select, as node selection infers the child before
+      // the last descendant, not including that descendant.
+      if (
+        lastNodeDescendant !== null &&
+        lastNodeDescendant !== firstNode &&
+        lastNode.getChildAtIndex(focus.offset) === lastNodeDescendant
+      ) {
+        lastNodeDescendant = lastNodeDescendant.getPreviousSibling();
+      }
       lastNode = lastNodeDescendant != null ? lastNodeDescendant : lastNode;
     }
 
@@ -665,10 +674,16 @@ export class RangeSelection implements BaseSelection {
           let text = node.getTextContent();
           if (node === firstNode) {
             if (node === lastNode) {
-              text =
-                anchorOffset < focusOffset
-                  ? text.slice(anchorOffset, focusOffset)
-                  : text.slice(focusOffset, anchorOffset);
+              if (
+                anchor.type !== 'element' ||
+                focus.type !== 'element' ||
+                focus.offset === anchor.offset
+              ) {
+                text =
+                  anchorOffset < focusOffset
+                    ? text.slice(anchorOffset, focusOffset)
+                    : text.slice(focusOffset, anchorOffset);
+              }
             } else {
               text = isBefore
                 ? text.slice(anchorOffset)

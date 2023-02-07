@@ -1908,7 +1908,7 @@ describe('LexicalSelection tests', () => {
         fn: ({paragraph, textNode1, textNode2, decorator, anchor, focus}) => {
           textNode1.remove();
           textNode2.remove();
-          anchor.set(paragraph.getKey(), 0, 'block');
+          anchor.set(paragraph.getKey(), 0, 'element');
           focus.set(paragraph.getKey(), 1, 'element');
 
           return decorator.getTextContent();

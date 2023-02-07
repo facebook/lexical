@@ -309,8 +309,13 @@ export function $restoreEditorState(
   editorState: EditorState,
 ): void {
   const FULL_RECONCILE = 2;
-  const nodeMap = new Map(editorState._nodeMap);
+  const nodeMap = new Map();
   const activeEditorState = editor._pendingEditorState;
+
+  for (const [key, node] of editorState._nodeMap) {
+    // @ts-ignore
+    nodeMap.set(key, node.constructor.clone(node))
+  }
 
   if (activeEditorState) {
     activeEditorState._nodeMap = nodeMap;

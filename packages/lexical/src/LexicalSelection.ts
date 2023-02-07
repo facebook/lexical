@@ -1976,6 +1976,14 @@ export class RangeSelection implements BaseSelection {
       }
     }
     this.removeText();
+    if (
+      isBackward &&
+      this.isCollapsed() &&
+      this.anchor.type === 'element' &&
+      this.anchor.offset === 0
+    ) {
+      this.anchor.getNode().collapseAtStart(this);
+    }
   }
 
   deleteLine(isBackward: boolean): void {

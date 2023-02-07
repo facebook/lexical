@@ -705,13 +705,14 @@ test.describe('Links', () => {
     );
 
     await moveRight(page, 1);
-    await selectCharacters(page, 'right', 1);
     await page.keyboard.type('a');
 
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph">
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
           <span data-lexical-text="true"></span>
           <a
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
@@ -734,6 +735,7 @@ test.describe('Links', () => {
         </p>
       `,
     );
+
     await assertSelection(page, {
       anchorOffset: 1,
       anchorPath: [0, 2, 0],

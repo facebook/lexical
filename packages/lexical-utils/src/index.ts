@@ -314,7 +314,7 @@ export function $restoreEditorState(
 
   for (const [key, node] of editorState._nodeMap) {
     // @ts-ignore
-    nodeMap.set(key, node.constructor.clone(node))
+    nodeMap.set(key, node.constructor.clone(node));
   }
 
   if (activeEditorState) {

@@ -949,7 +949,7 @@ test.describe('CopyAndPaste', () => {
     });
   });
 
-  test.only('Copy list items and paste back into list', async ({
+  test('Copy list items and paste back into list', async ({
     page,
     isPlainText,
     isCollab,

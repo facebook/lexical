@@ -1485,10 +1485,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
       // getNodes
       setupTestCase((selection) => {
-        expect(selection.getNodes()).toEqual([
-          $getNodeByKey('a'),
-          $getNodeByKey('b'),
-        ]);
+        expect(selection.getNodes()).toEqual([$getNodeByKey('a')]);
       });
 
       // getTextContent

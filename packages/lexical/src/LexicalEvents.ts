@@ -204,7 +204,7 @@ function $shouldPreventDefaultAndInsertText(
         // 50ms then we proceed as normal. However, if there is not, then this is likely
         // a dangling `input` event caused by execCommand('insertText').
         lastBeforeInputInsertTextTimeStamp < timeStamp + 50)) ||
-      textLength < 2 ||
+      (anchorNode.isDirty() && textLength < 2) ||
       doesContainGrapheme(text)) &&
       anchor.offset !== focus.offset &&
       !anchorNode.isComposing()) ||

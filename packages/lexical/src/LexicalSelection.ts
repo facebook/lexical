@@ -1975,7 +1975,20 @@ export class RangeSelection implements BaseSelection {
         }
       }
     }
+    const wasCollapsed = this.isCollapsed();
     this.removeText();
+    if (
+      isBackward &&
+      !wasCollapsed &&
+      this.isCollapsed() &&
+      this.anchor.type === 'element' &&
+      this.anchor.offset === 0
+    ) {
+      const anchorNode = this.anchor.getNode();
+      if (anchorNode.isEmpty() && $isRootNode(anchorNode.getParent())) {
+        anchorNode.collapseAtStart(this);
+      }
+    }
   }
 
   deleteLine(isBackward: boolean): void {

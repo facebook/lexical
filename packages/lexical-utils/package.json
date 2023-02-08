@@ -15,7 +15,8 @@
   },
   "dependencies": {
     "@lexical/list": "0.7.8",
-    "@lexical/table": "0.7.8"
+    "@lexical/table": "0.7.8",
+    "@lexical/selection": "0.7.8"
   },
   "repository": {
     "type": "git",

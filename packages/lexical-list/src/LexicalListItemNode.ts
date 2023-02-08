@@ -161,9 +161,9 @@ export class ListItemNode extends ElementNode {
 
     const list = this.getParentOrThrow();
     if (!$isListNode(list)) return replaceWithNode;
-    if (list.__first === this.__key) {
+    if (list.__first === this.getKey()) {
       list.insertBefore(replaceWithNode);
-    } else if (list.__last === this.__key) {
+    } else if (list.__last === this.getKey()) {
       list.insertAfter(replaceWithNode);
     } else {
       // Split the list

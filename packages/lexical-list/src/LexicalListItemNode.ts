@@ -168,10 +168,10 @@ export class ListItemNode extends ElementNode {
     } else {
       // Split the list
       const newList = $createListNode(list.getListType());
-      let nextsibling = this.getNextSibling();
-      while (nextsibling) {
-        const nodeToAppend = nextsibling;
-        nextsibling = nextsibling.getNextSibling();
+      let nextSibling = this.getNextSibling();
+      while (nextSibling) {
+        const nodeToAppend = nextSibling;
+        nextSibling = nextSibling.getNextSibling();
         newList.append(nodeToAppend);
       }
       list.insertAfter(replaceWithNode);

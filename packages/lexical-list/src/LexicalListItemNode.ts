@@ -183,7 +183,7 @@ export class ListItemNode extends ElementNode {
       });
     }
     this.remove();
-    if (list.__size === 0) {
+    if (list.getChildrenSize() === 0) {
       list.remove();
     }
     return replaceWithNode;

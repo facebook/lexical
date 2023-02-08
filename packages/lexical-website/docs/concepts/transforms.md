@@ -69,14 +69,14 @@ editor.registerNodeTransform(TextNode, textNode => {
   if (textNode.getTextContent() === 'modified') {
     textNode.setTextContent('re-modified');
   }
-}
+})
 // Plugin 2
 editor.registerNodeTransform(TextNode, textNode => {
   // This transform runs only once
   if (textNode.getTextContent() === 'original') {
     textNode.setTextContent('modified');
   }
-}
+})
 // App
 editor.addListener('update', ({editorState}) => {
   const text = editorState.read($textContent);

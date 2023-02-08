@@ -2,6 +2,7 @@
   "compilerOptions": {
     "target": "ES2019",
     "lib": ["esnext", "dom", "dom.iterable"],
+    "module": "esnext",
     "jsx": "react-jsx",
     "moduleResolution": "node",
     "downlevelIteration": true,

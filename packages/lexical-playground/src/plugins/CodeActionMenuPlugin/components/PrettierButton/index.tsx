@@ -10,11 +10,6 @@ import './index.css';
 import {$isCodeNode} from '@lexical/code';
 import {$getNearestNodeFromDOMNode, LexicalEditor} from 'lexical';
 import {Options} from 'prettier';
-import * as babelParser from 'prettier/parser-babel';
-import * as htmlParser from 'prettier/parser-html';
-import * as markdownParser from 'prettier/parser-markdown';
-import * as cssParser from 'prettier/parser-postcss';
-import {format} from 'prettier/standalone';
 import * as React from 'react';
 import {useState} from 'react';
 
@@ -24,22 +19,37 @@ interface Props {
   getCodeDOMNode: () => HTMLElement | null;
 }
 
+const PRETTIER_PARSER_MODULES = {
+  css: () => import('prettier/parser-postcss'),
+  html: () => import('prettier/parser-html'),
+  js: () => import('prettier/parser-babel'),
+  markdown: () => import('prettier/parser-markdown'),
+} as const;
+
+type LanguagesType = keyof typeof PRETTIER_PARSER_MODULES;
+
+async function loadPrettierParserByLang(lang: string) {
+  const dynamicImport = PRETTIER_PARSER_MODULES[lang as LanguagesType];
+  return await dynamicImport();
+}
+
+async function loadPrettierFormat() {
+  const {format} = await import('prettier/standalone');
+  return format;
+}
+
 const PRETTIER_OPTIONS_BY_LANG: Record<string, Options> = {
   css: {
     parser: 'css',
-    plugins: [cssParser],
   },
   html: {
     parser: 'html',
-    plugins: [htmlParser],
   },
   js: {
     parser: 'babel',
-    plugins: [babelParser],
   },
   markdown: {
     parser: 'markdown',
-    plugins: [markdownParser],
   },
 };
 
@@ -67,37 +77,41 @@ export function PrettierButton({lang, editor, getCodeDOMNode}: Props) {
   async function handleClick(): Promise<void> {
     const codeDOMNode = getCodeDOMNode();
 
-    if (!codeDOMNode) {
-      return;
-    }
+    try {
+      const format = await loadPrettierFormat();
+      const options = getPrettierOptions(lang);
+      options.plugins = [await loadPrettierParserByLang(lang)];
 
-    editor.update(() => {
-      const codeNode = $getNearestNodeFromDOMNode(codeDOMNode);
+      if (!codeDOMNode) {
+        return;
+      }
 
-      if ($isCodeNode(codeNode)) {
-        const content = codeNode.getTextContent();
-        const options = getPrettierOptions(lang);
+      editor.update(() => {
+        const codeNode = $getNearestNodeFromDOMNode(codeDOMNode);
 
-        let parsed = '';
+        if ($isCodeNode(codeNode)) {
+          const content = codeNode.getTextContent();
 
-        try {
+          let parsed = '';
+
           parsed = format(content, options);
-        } catch (error: unknown) {
-          if (error instanceof Error) {
-            setSyntaxError(error.message);
-            setTipsVisible(true);
-          } else {
-            console.error('Unexpected error: ', error);
+
+          if (parsed !== '') {
+            const selection = codeNode.select(0);
+            selection.insertText(parsed);
+            setSyntaxError('');
+            setTipsVisible(false);
           }
         }
-        if (parsed !== '') {
-          const selection = codeNode.select(0);
-          selection.insertText(parsed);
-          setSyntaxError('');
-          setTipsVisible(false);
-        }
+      });
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setSyntaxError(error.message);
+        setTipsVisible(true);
+      } else {
+        console.error('Unexpected error: ', error);
       }
-    });
+    }
   }
 
   function handleMouseEnter() {

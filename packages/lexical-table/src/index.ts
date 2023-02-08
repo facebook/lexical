@@ -88,10 +88,17 @@ export type {
   SerializedTableRowNode,
 };
 
+export type InsertTableCommandPayloadHeaders =
+  | Readonly<{
+      rows: boolean;
+      columns: boolean;
+    }>
+  | boolean;
+
 export type InsertTableCommandPayload = Readonly<{
   columns: string;
   rows: string;
-  includeHeaders?: boolean;
+  includeHeaders?: InsertTableCommandPayloadHeaders;
 }>;
 
 export const INSERT_TABLE_COMMAND: LexicalCommand<InsertTableCommandPayload> =

@@ -13,6 +13,7 @@ import {$findMatchingParent} from '@lexical/utils';
 import {$createParagraphNode, $createTextNode} from 'lexical';
 import invariant from 'shared/invariant';
 
+import {InsertTableCommandPayloadHeaders} from '.';
 import {
   $createTableCellNode,
   $isTableCellNode,
@@ -29,7 +30,7 @@ import {
 export function $createTableNodeWithDimensions(
   rowCount: number,
   columnCount: number,
-  includeHeaders = true,
+  includeHeaders: InsertTableCommandPayloadHeaders = true,
 ): TableNode {
   const tableNode = $createTableNode();
 
@@ -39,7 +40,12 @@ export function $createTableNodeWithDimensions(
     for (let iColumn = 0; iColumn < columnCount; iColumn++) {
       let headerState = TableCellHeaderStates.NO_STATUS;
 
-      if (includeHeaders) {
+      if (typeof includeHeaders === 'object') {
+        if (iRow === 0 && includeHeaders.rows)
+          headerState |= TableCellHeaderStates.ROW;
+        if (iColumn === 0 && includeHeaders.columns)
+          headerState |= TableCellHeaderStates.COLUMN;
+      } else if (includeHeaders) {
         if (iRow === 0) headerState |= TableCellHeaderStates.ROW;
         if (iColumn === 0) headerState |= TableCellHeaderStates.COLUMN;
       }

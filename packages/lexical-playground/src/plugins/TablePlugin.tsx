@@ -102,7 +102,11 @@ export function InsertTableDialog({
   const [columns, setColumns] = useState('5');
 
   const onClick = () => {
-    activeEditor.dispatchCommand(INSERT_TABLE_COMMAND, {columns, rows});
+    activeEditor.dispatchCommand(INSERT_TABLE_COMMAND, {
+      columns,
+      rows,
+    });
+
     onClose();
   };
 

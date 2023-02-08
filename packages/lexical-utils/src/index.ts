@@ -314,6 +314,10 @@ export function $restoreEditorState(
   const activeEditorState = editor._pendingEditorState;
 
   for (const [key, node] of editorState._nodeMap) {
+    const clone = $cloneWithProperties(node);
+    if ($isTextNode(clone)) {
+      clone.__text = node.__text;
+    }
     nodeMap.set(key, $cloneWithProperties(node));
   }
 

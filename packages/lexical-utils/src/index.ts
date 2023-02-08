@@ -318,7 +318,7 @@ export function $restoreEditorState(
     if ($isTextNode(clone)) {
       clone.__text = node.__text;
     }
-    nodeMap.set(key, $cloneWithProperties(node));
+    nodeMap.set(key, clone);
   }
 
   if (activeEditorState) {

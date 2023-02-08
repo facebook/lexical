@@ -1,3 +1,20 @@
+## v0.7.8 (2023-02-08)
+
+- Update transforms.md (#3845) Ben
+- Fix over selection (#3838) Dominic Gannaway
+- Fix $restoreEditorState (#3842) Dominic Gannaway
+- Fix select all + delete behaviour (#3840) Dominic Gannaway
+- Fix(#3716,#3815): Prevent layout shift while using typeahead menu (#3826) rettoSea
+- Add anchor dirty node check for text length less than 2 chars (#3832) John Flockton
+- Fix reconciler bug with handling of text content (#3837) Dominic Gannaway
+- Add exportDOM and importDOM for Collapsible Container Plugin (#3827) Ivaylo Pavlov
+- Fix pasting top level nodes inline (#3238) Petar Smolic
+- Add IS_HIGHLIGHT format to combined formats to properly calculate format (#3822) moy2010
+- Add highlight markdown text format shortcut (#3823) moy2010
+- Add highlight text node theme class (#3824) moy2010
+- add importDom and exportDom method to EquationNode (#3813) Najmus Sakib
+- fix: Typo (#3816) Cornelius
+
 ## v0.7.7 (2023-02-03)
 
 - Add list-style-position:inside (#3814) John Flockton

@@ -23,6 +23,7 @@ export type Props = $ReadOnly<{
   ariaRequired?: HTMLDivElement['aria-required'],
   autoCapitalize?: HTMLDivElement['autocapitalize'],
   'data-testid'?: string | null,
+  ...
 }>;
 
 declare export function ContentEditable(props: Props): React$Node;

@@ -21,7 +21,7 @@ import {
   $moveCaretSelection,
   $moveCharacter,
   $selectAll,
-  $setBlocksType_experimental,
+  $setBlocksType,
   $shouldOverrideDefaultCharacterSelection,
 } from './range-selection';
 import {
@@ -45,7 +45,7 @@ export {
   $moveCaretSelection,
   $moveCharacter,
   $selectAll,
-  $setBlocksType_experimental,
+  $setBlocksType,
   $shouldOverrideDefaultCharacterSelection,
 };
 

@@ -32,7 +32,7 @@ import {ReactNode, useCallback, useEffect, useRef} from 'react';
 
 type Props = Readonly<{
   children: ReactNode;
-  format: ElementFormatType | null | undefined;
+  format?: ElementFormatType | null;
   nodeKey: NodeKey;
   className: Readonly<{
     base: string;

@@ -2000,7 +2000,11 @@ export class RangeSelection implements BaseSelection {
       this.anchor.offset === 0
     ) {
       const anchorNode = this.anchor.getNode();
-      if (anchorNode.isEmpty() && $isRootNode(anchorNode.getParent())) {
+      if (
+        anchorNode.isEmpty() &&
+        $isRootNode(anchorNode.getParent()) &&
+        anchorNode.getIndexWithinParent() === 0
+      ) {
         anchorNode.collapseAtStart(this);
       }
     }

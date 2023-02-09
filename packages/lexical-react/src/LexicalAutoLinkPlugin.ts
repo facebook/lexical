@@ -280,7 +280,11 @@ function useAutoLink(
         if ($isAutoLinkNode(parent)) {
           handleLinkEdit(parent, matchers, onChangeWrapped);
         } else if (!$isLinkNode(parent)) {
-          if (textNode.isSimpleText() && !$isAutoLinkNode(previous)) {
+          if (
+            textNode.isSimpleText() &&
+            (startsWithSeparator(textNode.getTextContent()) ||
+              !$isAutoLinkNode(previous))
+          ) {
             handleLinkCreation(textNode, matchers, onChangeWrapped);
           }
 

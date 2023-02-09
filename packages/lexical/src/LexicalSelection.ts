@@ -12,7 +12,6 @@ import type {LexicalNode, NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextFormatType} from './nodes/LexicalTextNode';
 
-import {$splitNode} from '@lexical/utils';
 import {IS_CHROME} from 'shared/environment';
 import invariant from 'shared/invariant';
 
@@ -57,6 +56,7 @@ import {
   $isRootOrShadowRoot,
   $isTokenOrSegmented,
   $setCompositionKey,
+  $splitNode,
   doesContainGrapheme,
   getDOMSelection,
   getDOMTextNode,

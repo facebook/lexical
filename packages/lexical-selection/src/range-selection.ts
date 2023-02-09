@@ -45,7 +45,6 @@ export function $setBlocksType_experimental(
   createElement: () => ElementNode,
 ): void {
   if (selection.anchor.key === 'root') {
-    // Should we actually handle this case?
     const element = createElement();
     const root = $getRoot();
     const firstChild = root.getFirstChild();

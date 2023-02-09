@@ -845,9 +845,15 @@ function onCompositionEnd(
 }
 
 function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
+  const domSelection = getDOMSelection(editor._window);
   lastKeyDownTimeStamp = event.timeStamp;
   lastKeyCode = event.keyCode;
-  if (editor.isComposing()) {
+  if (editor.isComposing() || domSelection === null) {
+    return;
+  }
+  const anchorDOM = domSelection.anchorNode;
+  const focusDOM = domSelection.focusNode;
+  if (!isSelectionWithinEditor(editor, anchorDOM, focusDOM)) {
     return;
   }
 

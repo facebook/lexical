@@ -2812,7 +2812,7 @@ export function updateDOMSelection(
   if (
     (tags.has('collaboration') && activeElement !== rootElement) ||
     (activeElement !== null &&
-      isSelectionCapturedInDecoratorInput(activeElement))
+      isSelectionCapturedInDecoratorInput(activeElement, editor))
   ) {
     return;
   }

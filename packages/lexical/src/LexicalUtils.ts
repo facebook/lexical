@@ -106,7 +106,10 @@ export function $isSelectionCapturedInDecorator(node: Node): boolean {
   return $isDecoratorNode($getNearestNodeFromDOMNode(node));
 }
 
-export function isSelectionCapturedInDecoratorInput(anchorDOM: Node): boolean {
+export function isSelectionCapturedInDecoratorInput(
+  anchorDOM: Node,
+  editor: LexicalEditor,
+): boolean {
   const activeElement = document.activeElement as HTMLElement;
 
   if (activeElement === null) {
@@ -115,7 +118,7 @@ export function isSelectionCapturedInDecoratorInput(anchorDOM: Node): boolean {
   const nodeName = activeElement.nodeName;
 
   return (
-    $isDecoratorNode($getNearestNodeFromDOMNode(anchorDOM)) &&
+    $isDecoratorNode(internalGetNearestNodeFromDOMNode(anchorDOM, editor)) &&
     (nodeName === 'INPUT' ||
       nodeName === 'TEXTAREA' ||
       (activeElement.contentEditable === 'true' &&
@@ -137,7 +140,7 @@ export function isSelectionWithinEditor(
       rootElement.contains(focusDOM) &&
       // Ignore if selection is within nested editor
       anchorDOM !== null &&
-      !isSelectionCapturedInDecoratorInput(anchorDOM as Node) &&
+      !isSelectionCapturedInDecoratorInput(anchorDOM as Node, editor) &&
       getNearestEditorFromDOMNode(anchorDOM) === editor
     );
   } catch (error) {
@@ -411,6 +414,24 @@ export function $getNearestNodeFromDOMNode(
     const node = getNodeFromDOMNode(dom, editorState);
     if (node !== null) {
       return node;
+    }
+    dom = getParentElement(dom);
+  }
+  return null;
+}
+
+export function internalGetNearestNodeFromDOMNode(
+  startingDOM: Node,
+  editor: LexicalEditor,
+): LexicalNode | null {
+  let dom: Node | null = startingDOM;
+  while (dom != null) {
+    const key = getNodeKeyFromDOM(dom, editor);
+    if (key !== null) {
+      const node = $getNodeByKey(key, editor._editorState);
+      if (node !== null) {
+        return node;
+      }
     }
     dom = getParentElement(dom);
   }

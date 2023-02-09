@@ -8,35 +8,26 @@
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import * as React from 'react';
-import {CSSProperties, useCallback, useState} from 'react';
+import {useCallback, useState} from 'react';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
-export type Props = Readonly<{
-  ariaActiveDescendantID?: string;
-  ariaAutoComplete?: string;
-  ariaControls?: string;
-  ariaDescribedBy?: string;
-  ariaExpanded?: boolean;
-  ariaLabel?: string;
-  ariaLabelledBy?: string;
-  ariaMultiline?: boolean;
-  ariaOwneeID?: string;
-  ariaRequired?: string;
-  autoCapitalize?: boolean;
-  autoComplete?: boolean;
-  autoCorrect?: boolean;
-  className?: string;
-  id?: string;
-  readOnly?: boolean;
-  role?: string;
-  spellCheck?: boolean;
-  style?: CSSProperties;
-  tabIndex?: number;
-  testid?: string;
-}>;
+export type Props = {
+  ariaActiveDescendant?: React.AriaAttributes['aria-activedescendant'];
+  ariaAutoComplete?: React.AriaAttributes['aria-autocomplete'];
+  ariaControls?: React.AriaAttributes['aria-controls'];
+  ariaDescribedBy?: React.AriaAttributes['aria-describedby'];
+  ariaExpanded?: React.AriaAttributes['aria-expanded'];
+  ariaLabel?: React.AriaAttributes['aria-label'];
+  ariaLabelledBy?: React.AriaAttributes['aria-labelledby'];
+  ariaMultiline?: React.AriaAttributes['aria-multiline'];
+  ariaOwns?: React.AriaAttributes['aria-owns'];
+  ariaRequired?: React.AriaAttributes['aria-required'];
+  autoCapitalize?: HTMLDivElement['autocapitalize'];
+  'data-testid'?: string | null | undefined;
+} & React.AllHTMLAttributes<HTMLDivElement>;
 
 export function ContentEditable({
-  ariaActiveDescendantID,
+  ariaActiveDescendant,
   ariaAutoComplete,
   ariaControls,
   ariaDescribedBy,
@@ -44,18 +35,16 @@ export function ContentEditable({
   ariaLabel,
   ariaLabelledBy,
   ariaMultiline,
-  ariaOwneeID,
+  ariaOwns,
   ariaRequired,
   autoCapitalize,
-  autoComplete,
-  autoCorrect,
   className,
   id,
   role = 'textbox',
   spellCheck = true,
   style,
   tabIndex,
-  testid,
+  'data-testid': testid,
 }: Props): JSX.Element {
   const [editor] = useLexicalComposerContext();
   const [isEditable, setEditable] = useState(false);
@@ -76,24 +65,23 @@ export function ContentEditable({
 
   return (
     <div
-      aria-activedescendant={!isEditable ? null : ariaActiveDescendantID}
-      aria-autocomplete={!isEditable ? null : ariaAutoComplete}
-      aria-controls={!isEditable ? null : ariaControls}
+      aria-activedescendant={!isEditable ? undefined : ariaActiveDescendant}
+      aria-autocomplete={!isEditable ? 'none' : ariaAutoComplete}
+      aria-controls={!isEditable ? undefined : ariaControls}
       aria-describedby={ariaDescribedBy}
       aria-expanded={
-        !isEditable ? null : role === 'combobox' ? !!ariaExpanded : null
+        !isEditable
+          ? undefined
+          : role === 'combobox'
+          ? !!ariaExpanded
+          : undefined
       }
       aria-label={ariaLabel}
       aria-labelledby={ariaLabelledBy}
       aria-multiline={ariaMultiline}
-      aria-owns={!isEditable ? null : ariaOwneeID}
+      aria-owns={!isEditable ? undefined : ariaOwns}
       aria-required={ariaRequired}
-      autoCapitalize={
-        autoCapitalize !== undefined ? String(autoCapitalize) : undefined
-      }
-      // @ts-ignore This is a valid attribute
-      autoComplete={autoComplete}
-      autoCorrect={autoCorrect !== undefined ? String(autoCorrect) : undefined}
+      autoCapitalize={autoCapitalize}
       className={className}
       contentEditable={isEditable}
       data-testid={testid}

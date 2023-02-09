@@ -1,3 +1,20 @@
+## v0.8.9 (2023-02-09)
+
+This release includes some breaking changes, including: 
+    - Remove of `indentList` and `outdentList` from `@lexical/list`.
+    - Refactor of the `LexicalContentEditable` types from `@lexical/react` to make them more accurate with `HTMLDivElement` attributes.
+
+This release adds functionality to apply node transforms to node replacements, it allows users to specify tab indentation sizes, and improved support for tracking the origin of YJS updates for collaborative editing.
+
+- Ensure deletions capture existing formatting (#3867) Dominic Gannaway
+- Add style properties to RangeSelection (#3863) Dominic Gannaway
+- List indentation simplified (#3809) EgonBolton
+- Update ContentEditable types (#3580) John Flockton
+- Allow the format property to be omitted (#3812) Karibash
+- Allow users to customise the indentation of tabs (#3802) John Flockton
+- Apply node transform not only to the original node but also to the overriding node (#3639) mizuno
+- feat: set the update tag from yjs based on the origin (#3608) El-Hussein Abdelraouf
+
 ## v0.7.9 (2023-02-09)
 
 - Fix bad import into core (#3861) Dominic Gannaway

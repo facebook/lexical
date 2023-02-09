@@ -1,3 +1,12 @@
+## v0.7.9 (2023-02-09)
+
+- Fix bad import into core (#3861) Dominic Gannaway
+- Add import/export DOM methods to YouTubeNode and improve EquationNode (#3835) Pervez Ali
+- Fix backspace regression (#3862) Dominic Gannaway
+- Fix restoreEditorState (#3856) Dominic Gannaway
+- Add more configuration for heading in INSERT_TABLE_COMMAND (#3843) Sebastien Ahkrin
+- perf(playground): load prettier and its parsers on demand in code block (#3637) Shanmughapriyan
+
 ## v0.7.8 (2023-02-08)
 
 - Update transforms.md (#3845) Ben

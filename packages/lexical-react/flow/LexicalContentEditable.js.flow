@@ -9,19 +9,20 @@
 
 import * as React from 'react';
 
-export type Props = {
-  ariaActiveDescendant?: React$Element['aria-activedescendant'];
-  ariaAutoComplete?: React.AriaAttributes['aria-autocomplete'];
-  ariaControls?: React.AriaAttributes['aria-controls'];
-  ariaDescribedBy?: React.AriaAttributes['aria-describedby'];
-  ariaExpanded?: React.AriaAttributes['aria-expanded'];
-  ariaLabel?: React.AriaAttributes['aria-label'];
-  ariaLabelledBy?: React.AriaAttributes['aria-labelledby'];
-  ariaMultiline?: React.AriaAttributes['aria-multiline'];
-  ariaOwns?: React.AriaAttributes['aria-owns'];
-  ariaRequired?: React.AriaAttributes['aria-required'];
-  autoCapitalize?: HTMLDivElement['autocapitalize'];
-  'data-testid'?: string | null | undefined;
-} & React.AllHTMLAttributes<HTMLDivElement>;
+export type Props = $ReadOnly<{
+  ...$Partial<HTMLDivElement>,
+  ariaActiveDescendant?: HTMLDivElement['aria-activedescendant'],
+  ariaAutoComplete?: HTMLDivElement['aria-autocomplete'],
+  ariaControls?: HTMLDivElement['aria-controls'],
+  ariaDescribedBy?: HTMLDivElement['aria-describedby'],
+  ariaExpanded?: HTMLDivElement['aria-expanded'],
+  ariaLabel?: HTMLDivElement['aria-label'],
+  ariaLabelledBy?: HTMLDivElement['aria-labelledby'],
+  ariaMultiline?: HTMLDivElement['aria-multiline'],
+  ariaOwns?: HTMLDivElement['aria-owns'],
+  ariaRequired?: HTMLDivElement['aria-required'],
+  autoCapitalize?: HTMLDivElement['autocapitalize'],
+  'data-testid'?: string | null,
+}>;
 
 declare export function ContentEditable(props: Props): React$Node;

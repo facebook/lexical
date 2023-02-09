@@ -7,6 +7,7 @@
  *
  */
 
+import {$cloneWithProperties} from '@lexical/selection';
 import {
   $copyNode,
   $createParagraphNode,
@@ -313,8 +314,11 @@ export function $restoreEditorState(
   const activeEditorState = editor._pendingEditorState;
 
   for (const [key, node] of editorState._nodeMap) {
-    // @ts-ignore
-    nodeMap.set(key, node.constructor.clone(node));
+    const clone = $cloneWithProperties(node);
+    if ($isTextNode(clone)) {
+      clone.__text = node.__text;
+    }
+    nodeMap.set(key, clone);
   }
 
   if (activeEditorState) {

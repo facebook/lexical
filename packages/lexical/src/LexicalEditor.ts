@@ -146,6 +146,7 @@ export type RegisteredNode = {
   klass: Klass<LexicalNode>;
   transforms: Set<Transform<LexicalNode>>;
   replace: null | ((node: LexicalNode) => LexicalNode);
+  replaceWithKlass: null | Klass<LexicalNode>;
 };
 
 export type Transform<T extends LexicalNode> = (node: T) => void;
@@ -347,6 +348,8 @@ export function createEditor(editorConfig?: {
         with: <T extends {new (...args: any): any}>(
           node: InstanceType<T>,
         ) => LexicalNode;
+
+        withKlass?: Klass<LexicalNode>;
       }
   >;
   onError?: ErrorHandler;
@@ -383,11 +386,13 @@ export function createEditor(editorConfig?: {
     for (let i = 0; i < nodes.length; i++) {
       let klass = nodes[i];
       let replacementClass = null;
+      let replacementKlass = null;
 
       if (typeof klass !== 'function') {
         const options = klass;
         klass = options.replace;
         replacementClass = options.with;
+        replacementKlass = options.withKlass ? options.withKlass : null;
       }
       // Ensure custom nodes implement required methods.
       if (__DEV__) {
@@ -440,6 +445,7 @@ export function createEditor(editorConfig?: {
       registeredNodes.set(type, {
         klass,
         replace: replacementClass,
+        replaceWithKlass: replacementKlass,
         transforms: new Set(),
       });
     }
@@ -673,10 +679,10 @@ export class LexicalEditor {
     };
   }
 
-  registerNodeTransform<T extends LexicalNode>(
+  private registerNodeTransformToKlass<T extends LexicalNode>(
     klass: Klass<T>,
     listener: Transform<T>,
-  ): () => void {
+  ): RegisteredNode {
     const type = klass.getType();
 
     const registeredNode = this._nodes.get(type);
@@ -688,12 +694,33 @@ export class LexicalEditor {
         klass.name,
       );
     }
-
     const transforms = registeredNode.transforms;
     transforms.add(listener as Transform<LexicalNode>);
-    markAllNodesAsDirty(this, type);
+
+    return registeredNode;
+  }
+
+  registerNodeTransform<T extends LexicalNode>(
+    klass: Klass<T>,
+    listener: Transform<T>,
+  ): () => void {
+    const registeredNode = this.registerNodeTransformToKlass(klass, listener);
+    const registeredNodes = [registeredNode];
+
+    const replaceWithKlass = registeredNode.replaceWithKlass;
+    if (replaceWithKlass != null) {
+      const registeredReplaceWithNode = this.registerNodeTransformToKlass(
+        replaceWithKlass,
+        listener as Transform<LexicalNode>,
+      );
+      registeredNodes.push(registeredReplaceWithNode);
+    }
+
+    markAllNodesAsDirty(this, klass.getType());
     return () => {
-      transforms.delete(listener as Transform<LexicalNode>);
+      registeredNodes.forEach((node) =>
+        node.transforms.delete(listener as Transform<LexicalNode>),
+      );
     };
   }
 

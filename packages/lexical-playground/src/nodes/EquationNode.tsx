@@ -114,7 +114,7 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
         }
         return {
           conversion: convertEquationElement,
-          priority: 1,
+          priority: 2,
         };
       },
       span: (domNode: HTMLElement) => {
@@ -132,6 +132,10 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
   updateDOM(prevNode: EquationNode): boolean {
     // If the inline property changes, replace the element
     return this.__inline !== prevNode.__inline;
+  }
+
+  getTextContent(): string {
+    return this.__equation;
   }
 
   getEquation(): string {

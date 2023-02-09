@@ -7,6 +7,9 @@
  */
 
 import type {
+  DOMConversionMap,
+  DOMConversionOutput,
+  DOMExportOutput,
   EditorConfig,
   ElementFormatType,
   LexicalEditor,
@@ -65,6 +68,17 @@ export type SerializedYouTubeNode = Spread<
   SerializedDecoratorBlockNode
 >;
 
+function convertYoutubeElement(
+  domNode: HTMLElement,
+): null | DOMConversionOutput {
+  const videoID = domNode.getAttribute('data-lexical-youtube');
+  if (videoID) {
+    const node = $createYouTubeNode(videoID);
+    return {node};
+  }
+  return null;
+}
+
 export class YouTubeNode extends DecoratorBlockNode {
   __id: string;
 
@@ -94,6 +108,36 @@ export class YouTubeNode extends DecoratorBlockNode {
   constructor(id: string, format?: ElementFormatType, key?: NodeKey) {
     super(format, key);
     this.__id = id;
+  }
+
+  exportDOM(): DOMExportOutput {
+    const element = document.createElement('iframe');
+    element.setAttribute('data-lexical-youtube', this.__id);
+    element.setAttribute('width', '560');
+    element.setAttribute('height', '315');
+    element.setAttribute('src', `https://www.youtube.com/embed/${this.__id}`);
+    element.setAttribute('frameborder', '0');
+    element.setAttribute(
+      'allow',
+      'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
+    );
+    element.setAttribute('allowfullscreen', 'true');
+    element.setAttribute('title', 'YouTube video');
+    return {element};
+  }
+
+  static importDOM(): DOMConversionMap | null {
+    return {
+      iframe: (domNode: HTMLElement) => {
+        if (!domNode.hasAttribute('data-lexical-youtube')) {
+          return null;
+        }
+        return {
+          conversion: convertYoutubeElement,
+          priority: 1,
+        };
+      },
+    };
   }
 
   updateDOM(): false {

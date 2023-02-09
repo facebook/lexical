@@ -163,8 +163,9 @@ let isSelectionChangeFromDOMUpdate = false;
 let isSelectionChangeFromMouseDown = false;
 let isInsertLineBreak = false;
 let isFirefoxEndingComposition = false;
-let collapsedSelectionFormat: [number, number, NodeKey, number] = [
+let collapsedSelectionFormat: [number, string, number, NodeKey, number] = [
   0,
+  '',
   0,
   'root',
   0,
@@ -221,6 +222,7 @@ function $shouldPreventDefaultAndInsertText(
       domAnchorNode !== getDOMTextNode(backingAnchorElement)) ||
     // Check if we're changing from bold to italics, or some other format.
     anchorNode.getFormat() !== selection.format ||
+    anchorNode.getStyle() !== selection.style ||
     // One last set of heuristics to check against.
     $shouldInsertTextAfterOrBeforeTextNode(selection, anchorNode)
   );
@@ -304,7 +306,7 @@ function onSelectionChange(
         const currentTimeStamp = windowEvent
           ? windowEvent.timeStamp
           : performance.now();
-        const [lastFormat, lastOffset, lastKey, timeStamp] =
+        const [lastFormat, lastStyle, lastOffset, lastKey, timeStamp] =
           collapsedSelectionFormat;
 
         if (
@@ -313,11 +315,14 @@ function onSelectionChange(
           anchor.key === lastKey
         ) {
           selection.format = lastFormat;
+          selection.style = lastStyle;
         } else {
           if (anchor.type === 'text') {
             selection.format = anchorNode.getFormat();
+            selection.style = anchorNode.getStyle();
           } else if (anchor.type === 'element') {
             selection.format = 0;
+            selection.style = '';
           }
         }
       } else {
@@ -329,6 +334,7 @@ function onSelectionChange(
         for (let i = 0; i < nodesLength; i++) {
           const node = nodes[i];
           if ($isTextNode(node)) {
+            // TODO: what about style?
             hasTextNodes = true;
             combinedFormat &= node.getFormat();
             if (combinedFormat === 0) {
@@ -477,6 +483,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
             const anchorNode = selection.anchor.getNode();
             anchorNode.markDirty();
             selection.format = anchorNode.getFormat();
+            selection.style = anchorNode.getStyle();
           }
         } else {
           event.preventDefault();
@@ -751,6 +758,7 @@ function onCompositionStart(
 
     if ($isRangeSelection(selection) && !editor.isComposing()) {
       const anchor = selection.anchor;
+      const node = selection.anchor.getNode();
       $setCompositionKey(anchor.key);
 
       if (
@@ -762,7 +770,8 @@ function onCompositionStart(
         // need to invoke the empty space heuristic below.
         anchor.type === 'element' ||
         !selection.isCollapsed() ||
-        selection.anchor.getNode().getFormat() !== selection.format
+        node.getFormat() !== selection.format ||
+        node.getStyle() !== selection.style
       ) {
         // We insert a zero width character, ready for the composition
         // to get inserted into the new node we create. If
@@ -1201,9 +1210,10 @@ export function markSelectionChangeFromDOMUpdate(): void {
 
 export function markCollapsedSelectionFormat(
   format: number,
+  style: string,
   offset: number,
   key: NodeKey,
   timeStamp: number,
 ): void {
-  collapsedSelectionFormat = [format, offset, key, timeStamp];
+  collapsedSelectionFormat = [format, style, offset, key, timeStamp];
 }

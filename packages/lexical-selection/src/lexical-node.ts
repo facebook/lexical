@@ -269,7 +269,7 @@ function $patchNodeStyle(
 }
 
 export function $patchStyleText(
-  selection: RangeSelection | GridSelection,
+  selection: RangeSelection,
   patch: Record<string, string | null>,
 ): void {
   const selectedNodes = selection.getNodes();
@@ -279,6 +279,15 @@ export function $patchStyleText(
   let lastNode = selectedNodes[lastIndex];
 
   if (selection.isCollapsed()) {
+    const styles = getStyleObjectFromCSS(selection.style);
+    Object.entries(patch).forEach(([key, value]) => {
+      if (value !== null) {
+        styles[key] = value;
+      }
+      return styles;
+    });
+    const style = getCSSFromStyleObject(styles);
+    selection.setStyle(style);
     return;
   }
 

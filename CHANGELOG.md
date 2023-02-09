@@ -1,4 +1,4 @@
-## v0.8.9 (2023-02-09)
+## v0.8.0 (2023-02-09)
 
 This release includes some breaking changes, including: 
     - Remove of `indentList` and `outdentList` from `@lexical/list`.

@@ -8,7 +8,6 @@
 
 import type {Binding} from '@lexical/yjs';
 import type {LexicalEditor} from 'lexical';
-import type {Doc, Transaction, YEvent} from 'yjs';
 
 import {mergeRegister} from '@lexical/utils';
 import {
@@ -36,6 +35,7 @@ import * as React from 'react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 import {WebsocketProvider} from 'y-websocket';
+import {Doc, Transaction, UndoManager, YEvent} from 'yjs';
 
 import {InitialEditorStateType} from '../LexicalComposer';
 
@@ -104,8 +104,10 @@ export function useYjsCollaboration(
       events: Array<YEvent<any>>,
       transaction: Transaction,
     ) => {
-      if (transaction.origin !== binding) {
-        syncYjsChangesToLexical(binding, provider, events);
+      const origin = transaction.origin;
+      if (origin !== binding) {
+        const isFromUndoManger = origin instanceof UndoManager;
+        syncYjsChangesToLexical(binding, provider, events, isFromUndoManger);
       }
     };
 

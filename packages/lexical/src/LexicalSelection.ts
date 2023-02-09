@@ -2032,6 +2032,11 @@ export class RangeSelection implements BaseSelection {
         anchorNode.collapseAtStart(this);
       }
     }
+    const anchorNode = this.anchor.getNode();
+    if ($isTextNode(anchorNode)) {
+      this.format = anchorNode.getFormat();
+      this.style = anchorNode.getStyle();
+    }
   }
 
   deleteLine(isBackward: boolean): void {

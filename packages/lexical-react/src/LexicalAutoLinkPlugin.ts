@@ -236,7 +236,7 @@ function handleBadNeighbors(
   }
 
   if ($isAutoLinkNode(nextSibling) && !endsWithSeparator(text)) {
-    nextSibling.append(textNode);
+    replaceWithChildren(nextSibling);
     handleLinkEdit(nextSibling, matchers, onChange);
     onChange(null, nextSibling.getURL());
   }

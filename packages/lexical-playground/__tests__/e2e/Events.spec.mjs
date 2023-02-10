@@ -81,13 +81,8 @@ test.describe('Events', () => {
       });
       editable.dispatchEvent(characterBeforeInputEvent);
       textNode.textContent += character;
-      // Selection should be set with the event; this won't quite work, but not sure how to fix it..
-      // document.getSelection().setBaseAndExtent(textNode, 2, textNode, 2);
       editable.dispatchEvent(replacementBeforeInputEvent);
       editable.dispatchEvent(characterInputEvent);
-      // Lexical will prevent default for the replacement input event via the clipboard logic; we
-      // will assume this is correct
-      // editable.dispatchEvent(replacementInputEvent);
     });
 
     await assertHTML(

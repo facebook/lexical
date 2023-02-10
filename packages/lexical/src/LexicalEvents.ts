@@ -506,7 +506,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
     // a combination of autocorrection + autocapitalization.
     // Having Lexical run everything in controlled mode would fix the issue without additional code
     // but this would kill the massive performance win from the most common typing event.
-    // Alternative, when this happens we can prematurely update our EditorState based on the DOM
+    // Alternatively, when this happens we can prematurely update our EditorState based on the DOM
     // content, a job that would usually be the input event's responsibility.
     if (unprocessedBeforeInputData !== null) {
       $updateSelectedTextFromDOM(false, editor, unprocessedBeforeInputData);

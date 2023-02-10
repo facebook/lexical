@@ -50,6 +50,7 @@ import {
   KEY_ARROW_UP_COMMAND,
   KEY_BACKSPACE_COMMAND,
   KEY_DELETE_COMMAND,
+  KEY_DOWN_COMMAND,
   KEY_ENTER_COMMAND,
   KEY_ESCAPE_COMMAND,
   KEY_SPACE_COMMAND,
@@ -861,6 +862,10 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
   }
 
   const {keyCode, shiftKey, ctrlKey, metaKey, altKey} = event;
+
+  if (dispatchCommand(editor, KEY_DOWN_COMMAND, event)) {
+    return;
+  }
 
   if (isMoveForward(keyCode, ctrlKey, altKey, metaKey)) {
     dispatchCommand(editor, KEY_ARROW_RIGHT_COMMAND, event);

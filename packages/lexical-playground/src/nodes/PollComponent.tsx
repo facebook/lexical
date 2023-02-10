@@ -31,7 +31,7 @@ import * as React from 'react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 import Button from '../ui/Button';
-import joinClasses from '../utils/join-classes';
+import joinClasses from '../utils/joinClasses';
 import {$isPollNode, createPollOption} from './PollNode';
 
 function getTotalVotes(options: Options): number {

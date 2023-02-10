@@ -16,3 +16,8 @@
   padding: 8px 28px;
   min-height: calc(100% - 16px);
 }
+@media (max-width: 1025px) {
+  .ContentEditable__root {
+    padding: 8px;
+  }
+}

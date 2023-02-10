@@ -46,9 +46,10 @@ test.describe('Events', () => {
         ];
       }
       const character = 'S'; // S for space because the space itself gets trimmed in the assertHTML
+      const replacementCharacter = 'I';
       const dataTransfer = new DataTransfer();
-      dataTransfer.setData('text/plain', 'I');
-      dataTransfer.setData('text/html', 'I');
+      dataTransfer.setData('text/plain', replacementCharacter);
+      dataTransfer.setData('text/html', replacementCharacter);
       const characterBeforeInputEvent = new InputEvent('beforeinput', {
         bubbles: true,
         cancelable: true,
@@ -64,6 +65,8 @@ test.describe('Events', () => {
       const replacementBeforeInputEvent = new InputEvent('beforeinput', {
         bubbles: true,
         cancelable: true,
+        clipboardData: dataTransfer,
+        data: replacementCharacter,
         dataTransfer,
         inputType: 'insertReplacementText',
       });

@@ -116,7 +116,7 @@ export default function ColorPicker({
   }, [color]);
 
   return (
-    <DropDown {...rest} disabled={disabled} stopCloseOnClickSelf={true}>
+    <DropDown {...rest} disabled={disabled}>
       <div
         className="color-picker-wrapper"
         style={{width: WIDTH}}

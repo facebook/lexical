@@ -12,6 +12,7 @@ import {
   focusEditor,
   html,
   initialize,
+  LEGACY_EVENTS,
   test,
 } from '../utils/index.mjs';
 
@@ -20,6 +21,9 @@ test.describe('Events', () => {
     initialize({isAutocomplete: true, isCollab, page}),
   );
   test('Autocapitalization (MacOS specific)', async ({page, isPlainText}) => {
+    if (LEGACY_EVENTS) {
+      return;
+    }
     await focusEditor(page);
     await page.keyboard.type('i');
     await evaluate(page, () => {

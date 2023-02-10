@@ -86,7 +86,7 @@ header h1 {
 }
 
 .editor {
-  flex: 1 1 auto;
+  flex: auto;
   position: relative;
 }
 

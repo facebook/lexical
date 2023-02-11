@@ -92,6 +92,8 @@ export {
   BOLD_UNDERSCORE,
   CHECK_LIST,
   CODE,
+  createMarkdownExport,
+  createMarkdownImport,
   ELEMENT_TRANSFORMERS,
   ElementTransformer,
   HEADING,

@@ -34,6 +34,8 @@ import 'prismjs/components/prism-python';
 import 'prismjs/components/prism-rust';
 import 'prismjs/components/prism-swift';
 import 'prismjs/components/prism-typescript';
+import 'prismjs/components/prism-java';
+import 'prismjs/components/prism-cpp';
 
 import {
   addClassNamesToElement,
@@ -67,6 +69,8 @@ export const CODE_LANGUAGE_FRIENDLY_NAME_MAP: Record<string, string> = {
   swift: 'Swift',
   typescript: 'TypeScript',
   xml: 'XML',
+  java: 'Java',
+  cpp: 'C++',
 };
 
 export const CODE_LANGUAGE_MAP: Record<string, string> = {
@@ -76,6 +80,8 @@ export const CODE_LANGUAGE_MAP: Record<string, string> = {
   python: 'py',
   text: 'plain',
   ts: 'typescript',
+  java: 'java',
+  cpp: 'cpp',
 };
 
 export function normalizeCodeLang(lang: string) {

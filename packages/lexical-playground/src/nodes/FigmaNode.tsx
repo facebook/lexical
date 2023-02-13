@@ -7,6 +7,7 @@
  */
 
 import type {
+  DOMExportOutput,
   EditorConfig,
   ElementFormatType,
   LexicalEditor,
@@ -87,6 +88,22 @@ export class FigmaNode extends DecoratorBlockNode {
       type: 'figma',
       version: 1,
     };
+  }
+
+  exportDOM(): DOMExportOutput {
+    const element = document.createElement('div');
+    element.style.textAlign = this.__format;
+    const iframeElement = document.createElement('iframe');
+    iframeElement.setAttribute('data-lexical-figma', this.__id);
+    iframeElement.setAttribute('width', '560');
+    iframeElement.setAttribute('height', '315');
+    iframeElement.setAttribute(
+      'src',
+      `https://www.figma.com/embed?embed_host=lexical&url=https://www.figma.com/file/${this.__id}`,
+    );
+    iframeElement.setAttribute('frameborder', '0');
+    element.append(iframeElement);
+    return {element};
   }
 
   constructor(id: string, format?: ElementFormatType, key?: NodeKey) {

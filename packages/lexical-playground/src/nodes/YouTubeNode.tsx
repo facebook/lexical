@@ -111,18 +111,24 @@ export class YouTubeNode extends DecoratorBlockNode {
   }
 
   exportDOM(): DOMExportOutput {
-    const element = document.createElement('iframe');
-    element.setAttribute('data-lexical-youtube', this.__id);
-    element.setAttribute('width', '560');
-    element.setAttribute('height', '315');
-    element.setAttribute('src', `https://www.youtube.com/embed/${this.__id}`);
-    element.setAttribute('frameborder', '0');
-    element.setAttribute(
+    const element = document.createElement('div');
+    element.style.textAlign = this.__format;
+    const iframeElement = document.createElement('iframe');
+    iframeElement.setAttribute('data-lexical-youtube', this.__id);
+    iframeElement.setAttribute('width', '560');
+    iframeElement.setAttribute('height', '315');
+    iframeElement.setAttribute(
+      'src',
+      `https://www.youtube.com/embed/${this.__id}`,
+    );
+    iframeElement.setAttribute('frameborder', '0');
+    iframeElement.setAttribute(
       'allow',
       'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
     );
-    element.setAttribute('allowfullscreen', 'true');
-    element.setAttribute('title', 'YouTube video');
+    iframeElement.setAttribute('allowfullscreen', 'true');
+    iframeElement.setAttribute('title', 'YouTube video');
+    element.append(iframeElement);
     return {element};
   }
 

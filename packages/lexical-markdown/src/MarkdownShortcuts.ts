@@ -419,7 +419,11 @@ export function registerMarkdownShortcuts(
 
         const parentNode = anchorNode.getParent();
 
-        if (parentNode === null || $isCodeNode(parentNode)) {
+        if (
+          parentNode === null ||
+          !anchorNode.canContainMarkdown() ||
+          $isCodeNode(parentNode)
+        ) {
           return;
         }
 

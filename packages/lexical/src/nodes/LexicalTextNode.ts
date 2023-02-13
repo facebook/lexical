@@ -707,6 +707,10 @@ export class TextNode extends LexicalNode {
     return false;
   }
 
+  canContainMarkdown(): boolean {
+    return true;
+  }
+
   splitText(...splitOffsets: Array<number>): Array<TextNode> {
     errorOnReadOnly();
     const self = this.getLatest();

@@ -2032,11 +2032,6 @@ export class RangeSelection implements BaseSelection {
         anchorNode.collapseAtStart(this);
       }
     }
-    const anchorNode = this.anchor.getNode();
-    if ($isTextNode(anchorNode)) {
-      this.format = anchorNode.getFormat();
-      this.style = anchorNode.getStyle();
-    }
   }
 
   deleteLine(isBackward: boolean): void {
@@ -2876,11 +2871,19 @@ export function updateDOMSelection(
   const isCollapsed = nextSelection.isCollapsed();
   let nextAnchorNode: HTMLElement | Text | null = anchorDOM;
   let nextFocusNode: HTMLElement | Text | null = focusDOM;
-  let anchorFormatChanged = false;
+  let anchorFormatOrStyleChanged = false;
 
   if (anchor.type === 'text') {
     nextAnchorNode = getDOMTextNode(anchorDOM);
-    anchorFormatChanged = anchor.getNode().getFormat() !== nextFormat;
+    const anchorNode = anchor.getNode();
+    anchorFormatOrStyleChanged =
+      anchorNode.getFormat() !== nextFormat ||
+      anchorNode.getStyle() !== nextStyle;
+  } else if (
+    $isRangeSelection(prevSelection) &&
+    prevSelection.anchor.type === 'text'
+  ) {
+    anchorFormatOrStyleChanged = true;
   }
 
   if (focus.type === 'text') {
@@ -2896,7 +2899,7 @@ export function updateDOMSelection(
   if (
     isCollapsed &&
     (prevSelection === null ||
-      anchorFormatChanged ||
+      anchorFormatOrStyleChanged ||
       ($isRangeSelection(prevSelection) &&
         (prevSelection.format !== nextFormat ||
           prevSelection.style !== nextStyle)))

@@ -325,9 +325,9 @@ test.describe('History', () => {
         `,
       );
       await assertSelection(page, {
-        anchorOffset: 17,
+        anchorOffset: 11,
         anchorPath: [1, 0, 0],
-        focusOffset: 17,
+        focusOffset: 11,
         focusPath: [1, 0, 0],
       });
     } else {

@@ -246,7 +246,7 @@ function useFloatingLinkEditorToolbar(
 
   useEffect(() => {
     return mergeRegister(
-      editor.registerUpdateListener(({ editorState }) => {
+      editor.registerUpdateListener(({editorState}) => {
         editorState.read(() => {
           updateToolbar();
         });

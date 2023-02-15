@@ -20,7 +20,7 @@ import type {
   SerializedElementNode,
 } from 'lexical';
 
-import {addClassNamesToElement} from '@lexical/utils';
+import {addClassNamesToElement, isHTMLAnchorElement} from '@lexical/utils';
 import {
   $applyNodeReplacement,
   $getSelection,
@@ -234,7 +234,7 @@ export class LinkNode extends ElementNode {
 
 function convertAnchorElement(domNode: Node): DOMConversionOutput {
   let node = null;
-  if (domNode instanceof HTMLAnchorElement) {
+  if (isHTMLAnchorElement(domNode)) {
     const content = domNode.textContent;
     if (content !== null && content !== '') {
       node = $createLinkNode(domNode.getAttribute('href') || '', {

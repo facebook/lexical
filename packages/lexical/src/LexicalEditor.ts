@@ -141,6 +141,28 @@ export type EditorConfig = {
   theme: EditorThemeClasses;
 };
 
+export type CreateEditorArgs = {
+  disableEvents?: boolean;
+  editorState?: EditorState;
+  namespace?: string;
+  nodes?: ReadonlyArray<
+    | Klass<LexicalNode>
+    | {
+        replace: Klass<LexicalNode>;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        with: <T extends {new (...args: any): any}>(
+          node: InstanceType<T>,
+        ) => LexicalNode;
+
+        withKlass?: Klass<LexicalNode>;
+      }
+  >;
+  onError?: ErrorHandler;
+  parentEditor?: LexicalEditor;
+  editable?: boolean;
+  theme?: EditorThemeClasses;
+};
+
 export type RegisteredNodes = Map<string, RegisteredNode>;
 
 export type RegisteredNode = {
@@ -337,27 +359,7 @@ function initializeConversionCache(nodes: RegisteredNodes): DOMConversionCache {
   return conversionCache;
 }
 
-export function createEditor(editorConfig?: {
-  disableEvents?: boolean;
-  editorState?: EditorState;
-  namespace?: string;
-  nodes?: ReadonlyArray<
-    | Klass<LexicalNode>
-    | {
-        replace: Klass<LexicalNode>;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        with: <T extends {new (...args: any): any}>(
-          node: InstanceType<T>,
-        ) => LexicalNode;
-
-        withKlass?: Klass<LexicalNode>;
-      }
-  >;
-  onError?: ErrorHandler;
-  parentEditor?: LexicalEditor;
-  editable?: boolean;
-  theme?: EditorThemeClasses;
-}): LexicalEditor {
+export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
   const config = editorConfig || {};
   const activeEditor = internalGetActiveEditor();
   const theme = config.theme || {};

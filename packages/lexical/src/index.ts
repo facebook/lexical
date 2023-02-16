@@ -11,6 +11,7 @@ export type {PasteCommandType} from './LexicalCommands';
 export type {
   CommandListenerPriority,
   CommandPayloadType,
+  CreateEditorArgs,
   EditableListener,
   EditorConfig,
   EditorThemeClasses,

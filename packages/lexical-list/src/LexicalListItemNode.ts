@@ -24,6 +24,7 @@ import type {
 
 import {
   addClassNamesToElement,
+  isHTMLElement,
   removeClassNamesFromElement,
 } from '@lexical/utils';
 import {
@@ -521,8 +522,7 @@ function updateListItemChecked(
 
 function convertListItemElement(domNode: Node): DOMConversionOutput {
   const checked =
-    domNode instanceof HTMLElement &&
-    domNode.getAttribute('aria-checked') === 'true';
+    isHTMLElement(domNode) && domNode.getAttribute('aria-checked') === 'true';
   return {node: $createListItemNode(checked)};
 }
 

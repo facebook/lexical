@@ -389,3 +389,12 @@ export function $wrapNodeInElement(
   elementNode.append(node);
   return elementNode;
 }
+
+export function isHTMLAnchorElement(x: Node): x is HTMLAnchorElement {
+  return isHTMLElement(x) && x.tagName === 'A';
+}
+
+export function isHTMLElement(x: Node | EventTarget): x is HTMLElement {
+  // @ts-ignore-next-line - strict check on nodeType here should filter out non-Element EventTarget implementors
+  return x.nodeType === 1;
+}

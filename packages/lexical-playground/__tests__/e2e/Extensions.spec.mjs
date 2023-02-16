@@ -18,9 +18,7 @@ import {
 
 test.describe('Extensions', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
-  test(`document.execCommand("insertText")`, async ({isCollab, page}) => {
-    // This test is flaky in collab #3915
-    test.fixme(isCollab);
+  test(`document.execCommand("insertText")`, async ({page}) => {
     await focusEditor(page);
 
     await evaluate(
@@ -198,8 +196,11 @@ test.describe('Extensions', () => {
 
   test(`document.execCommand("insertText") with selection`, async ({
     page,
+    isCollab,
     isPlainText,
   }) => {
+    // This test is flaky in collab #3915
+    test.fixme(isCollab);
     test.skip(isPlainText);
     await focusEditor(page);
 

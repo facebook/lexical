@@ -57,8 +57,10 @@ type SerializedCodeHighlightNode = Spread<
 export const CODE_LANGUAGE_FRIENDLY_NAME_MAP: Record<string, string> = {
   c: 'C',
   clike: 'C-like',
+  cpp: 'C++',
   css: 'CSS',
   html: 'HTML',
+  java: 'Java',
   js: 'JavaScript',
   markdown: 'Markdown',
   objc: 'Objective-C',
@@ -69,19 +71,17 @@ export const CODE_LANGUAGE_FRIENDLY_NAME_MAP: Record<string, string> = {
   swift: 'Swift',
   typescript: 'TypeScript',
   xml: 'XML',
-  java: 'Java',
-  cpp: 'C++',
 };
 
 export const CODE_LANGUAGE_MAP: Record<string, string> = {
+  cpp: 'cpp',
+  java: 'java',
   javascript: 'js',
   md: 'markdown',
   plaintext: 'plain',
   python: 'py',
   text: 'plain',
   ts: 'typescript',
-  java: 'java',
-  cpp: 'cpp',
 };
 
 export function normalizeCodeLang(lang: string) {

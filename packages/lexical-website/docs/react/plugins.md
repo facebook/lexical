@@ -69,7 +69,7 @@ React wrapper for `@lexical/rich-text` that adds major features for rich text ed
 
 ### `LexicalOnChangePlugin`
 
-Plugin that calls `onChange` whenever Lexical state is updated. Using `ignoreInitialChange` (`true` by default) and `ignoreSelectionChange` (`false` by default) can give more granular control over changes that are causing `onChange` call
+Plugin that calls `onChange` whenever Lexical state is updated. Using `ignoreHistoryMergeTagChange` (`true` by default) and `ignoreSelectionChange` (`false` by default) can give more granular control over changes that are causing `onChange` call
 
 ```jsx
 <OnChangePlugin onChange={onChange} />

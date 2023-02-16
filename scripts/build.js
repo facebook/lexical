@@ -103,6 +103,8 @@ const externals = [
   'prismjs/components/prism-rust',
   'prismjs/components/prism-swift',
   'prismjs/components/prism-typescript',
+  'prismjs/components/prism-java',
+  'prismjs/components/prism-cpp',
   '@lexical/list',
   '@lexical/table',
   '@lexical/file',

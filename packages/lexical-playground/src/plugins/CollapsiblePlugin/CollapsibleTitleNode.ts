@@ -46,10 +46,6 @@ export class CollapsibleTitleNode extends ElementNode {
     return 'collapsible-title';
   }
 
-  static clone(node: CollapsibleTitleNode): CollapsibleTitleNode {
-    return new CollapsibleTitleNode(node.__key);
-  }
-
   createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement {
     const dom = document.createElement('summary');
     dom.classList.add('Collapsible__title');

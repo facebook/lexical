@@ -58,14 +58,6 @@ export class LinkNode extends ElementNode {
     return 'link';
   }
 
-  static clone(node: LinkNode): LinkNode {
-    return new LinkNode(
-      node.__url,
-      {rel: node.__rel, target: node.__target},
-      node.__key,
-    );
-  }
-
   constructor(url: string, attributes: LinkAttributes = {}, key?: NodeKey) {
     super(key);
     const {target = null, rel = null} = attributes;
@@ -272,14 +264,6 @@ export type SerializedAutoLinkNode = Spread<
 export class AutoLinkNode extends LinkNode {
   static getType(): string {
     return 'autolink';
-  }
-
-  static clone(node: AutoLinkNode): AutoLinkNode {
-    return new AutoLinkNode(
-      node.__url,
-      {rel: node.__rel, target: node.__target},
-      node.__key,
-    );
   }
 
   static importJSON(serializedNode: SerializedAutoLinkNode): AutoLinkNode {

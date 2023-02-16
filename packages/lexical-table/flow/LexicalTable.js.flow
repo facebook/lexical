@@ -35,7 +35,6 @@ export type TableCellHeaderState = $Values<typeof TableCellHeaderStates>;
 
 declare export class TableCellNode extends ElementNode {
   static getType(): string;
-  static clone(node: TableCellNode): TableCellNode;
   constructor(
     headerState?: TableCellHeaderState,
     colSpan?: number,
@@ -75,7 +74,6 @@ declare export function $isTableCellNode(
 
 declare export class TableNode extends ElementNode {
   static getType(): string;
-  static clone(node: TableNode): TableNode;
   constructor(grid: ?Grid, key?: NodeKey): void;
   createDOM(config: EditorConfig): HTMLElement;
   updateDOM(prevNode: TableNode, dom: HTMLElement): boolean;
@@ -104,7 +102,6 @@ declare export function $isTableNode(
 
 declare export class TableRowNode extends ElementNode {
   static getType(): string;
-  static clone(node: TableRowNode): TableRowNode;
   constructor(height?: ?number, key?: NodeKey): void;
   createDOM(config: EditorConfig): HTMLElement;
   updateDOM(prevNode: TableRowNode, dom: HTMLElement): boolean;

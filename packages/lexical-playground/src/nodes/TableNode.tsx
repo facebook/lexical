@@ -197,10 +197,6 @@ export class TableNode extends DecoratorNode<JSX.Element> {
     return 'tablesheet';
   }
 
-  static clone(node: TableNode): TableNode {
-    return new TableNode(Array.from(node.__rows), node.__key);
-  }
-
   static importJSON(serializedNode: SerializedTableNode): TableNode {
     return $createTableNode(serializedNode.rows);
   }

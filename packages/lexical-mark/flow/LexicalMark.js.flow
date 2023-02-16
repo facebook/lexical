@@ -25,8 +25,6 @@ export type SerializedMarkNode = {
 
 declare export class MarkNode extends ElementNode {
   __ids: Array<string>;
-
-  static clone(node: MarkNode): MarkNode;
   constructor(ids: Array<string>, key?: NodeKey): void;
 
   hasID(id: string): boolean;

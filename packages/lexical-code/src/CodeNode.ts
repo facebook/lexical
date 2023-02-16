@@ -87,10 +87,6 @@ export class CodeNode extends ElementNode {
     return 'code';
   }
 
-  static clone(node: CodeNode): CodeNode {
-    return new CodeNode(node.__language, node.__key);
-  }
-
   constructor(language?: string | null | undefined, key?: NodeKey) {
     super(key);
     this.__language = mapToPrismLanguage(language);

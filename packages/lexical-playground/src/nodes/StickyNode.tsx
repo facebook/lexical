@@ -50,15 +50,6 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
     return 'sticky';
   }
 
-  static clone(node: StickyNode): StickyNode {
-    return new StickyNode(
-      node.__x,
-      node.__y,
-      node.__color,
-      node.__caption,
-      node.__key,
-    );
-  }
   static importJSON(serializedNode: SerializedStickyNode): StickyNode {
     const stickyNode = new StickyNode(
       serializedNode.xOffset,

@@ -22,10 +22,6 @@ export class HashtagNode extends TextNode {
     return 'hashtag';
   }
 
-  static clone(node: HashtagNode): HashtagNode {
-    return new HashtagNode(node.__text, node.__key);
-  }
-
   constructor(text: string, key?: NodeKey) {
     super(text, key);
   }

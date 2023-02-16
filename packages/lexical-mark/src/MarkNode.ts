@@ -46,10 +46,6 @@ export class MarkNode extends ElementNode {
     return 'mark';
   }
 
-  static clone(node: MarkNode): MarkNode {
-    return new MarkNode(Array.from(node.__ids), node.__key);
-  }
-
   static importDOM(): null {
     return null;
   }

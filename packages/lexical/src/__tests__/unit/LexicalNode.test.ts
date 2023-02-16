@@ -30,10 +30,6 @@ class TestNode extends LexicalNode {
     return 'test';
   }
 
-  static clone(node: TestNode) {
-    return new TestNode(node.__key);
-  }
-
   createDOM() {
     return document.createElement('div');
   }

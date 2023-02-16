@@ -57,15 +57,6 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
     return 'tablecell';
   }
 
-  static clone(node: TableCellNode): TableCellNode {
-    return new TableCellNode(
-      node.__headerState,
-      node.__colSpan,
-      node.__width,
-      node.__key,
-    );
-  }
-
   static importDOM(): DOMConversionMap | null {
     return {
       td: (node: Node) => ({

@@ -64,7 +64,6 @@
   "62": "reconcileNode: parentDOM is null",
   "63": "Expected node with key %s to exist but it's not in the nodeMap.",
   "64": "LexicalNode: Node %s does not implement .getType().",
-  "65": "LexicalNode: Node %s does not implement .clone().",
   "66": "Expected node %s to have a parent.",
   "67": "Expected node %s to have a top parent element.",
   "68": "getNodesBetween: ancestor is null",

@@ -285,10 +285,6 @@ export class TextNode extends LexicalNode {
     return 'text';
   }
 
-  static clone(node: TextNode): TextNode {
-    return new TextNode(node.__text, node.__key);
-  }
-
   constructor(text: string, key?: NodeKey) {
     super(key);
     this.__text = text;

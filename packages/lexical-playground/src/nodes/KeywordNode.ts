@@ -28,10 +28,6 @@ export class KeywordNode extends TextNode {
     return 'keyword';
   }
 
-  static clone(node: KeywordNode): KeywordNode {
-    return new KeywordNode(node.__text, node.__key);
-  }
-
   static importJSON(serializedNode: SerializedKeywordNode): KeywordNode {
     const node = $createKeywordNode(serializedNode.text);
     node.setFormat(serializedNode.format);

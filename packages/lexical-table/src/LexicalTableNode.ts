@@ -48,10 +48,6 @@ export class TableNode extends DEPRECATED_GridNode {
     return 'table';
   }
 
-  static clone(node: TableNode): TableNode {
-    return new TableNode(node.__key);
-  }
-
   static importDOM(): DOMConversionMap | null {
     return {
       table: (_node: Node) => ({

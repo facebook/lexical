@@ -1574,14 +1574,7 @@ export class RangeSelection implements BaseSelection {
             target = sibling;
           } else {
             if ($isElementNode(sibling) && !sibling.canInsertAfter(target)) {
-              // @ts-ignore The clone method does exist on the constructor.
-              const prevParentClone = prevParent.constructor.clone(prevParent);
-              if (!$isElementNode(prevParentClone)) {
-                invariant(
-                  false,
-                  'insertNodes: cloned parent clone is not an element',
-                );
-              }
+              const prevParentClone = prevParent.clone();
               prevParentClone.append(sibling);
               target.insertAfter(prevParentClone);
             } else {

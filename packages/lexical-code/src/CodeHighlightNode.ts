@@ -116,14 +116,6 @@ export class CodeHighlightNode extends TextNode {
     return 'code-highlight';
   }
 
-  static clone(node: CodeHighlightNode): CodeHighlightNode {
-    return new CodeHighlightNode(
-      node.__text,
-      node.__highlightType || undefined,
-      node.__key,
-    );
-  }
-
   getHighlightType(): string | null | undefined {
     const self = this.getLatest();
     return self.__highlightType;

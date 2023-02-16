@@ -115,10 +115,6 @@ export class QuoteNode extends ElementNode {
     return 'quote';
   }
 
-  static clone(node: QuoteNode): QuoteNode {
-    return new QuoteNode(node.__key);
-  }
-
   constructor(key?: NodeKey) {
     super(key);
   }
@@ -196,10 +192,6 @@ export class HeadingNode extends ElementNode {
 
   static getType(): string {
     return 'heading';
-  }
-
-  static clone(node: HeadingNode): HeadingNode {
-    return new HeadingNode(node.__tag, node.__key);
   }
 
   constructor(tag: HeadingTagType, key?: NodeKey) {

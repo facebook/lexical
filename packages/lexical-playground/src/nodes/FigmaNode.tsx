@@ -70,10 +70,6 @@ export class FigmaNode extends DecoratorBlockNode {
     return 'figma';
   }
 
-  static clone(node: FigmaNode): FigmaNode {
-    return new FigmaNode(node.__id, node.__format, node.__key);
-  }
-
   static importJSON(serializedNode: SerializedFigmaNode): FigmaNode {
     const node = $createFigmaNode(serializedNode.documentID);
     node.setFormat(serializedNode.format);

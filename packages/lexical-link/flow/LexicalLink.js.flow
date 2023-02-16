@@ -25,7 +25,6 @@ declare export class LinkNode extends ElementNode {
   __target: null | string;
   __rel: null | string;
   static getType(): string;
-  static clone(node: LinkNode): LinkNode;
   constructor(
     url: string,
     attributes?: {
@@ -65,8 +64,6 @@ declare export function $isLinkNode(
 ): boolean %checks(node instanceof LinkNode);
 declare export class AutoLinkNode extends LinkNode {
   static getType(): string;
-  // $FlowFixMe clone method inheritance
-  static clone(node: AutoLinkNode): AutoLinkNode;
   insertNewAfter(
     selection: RangeSelection,
     restoreSelection?: boolean,

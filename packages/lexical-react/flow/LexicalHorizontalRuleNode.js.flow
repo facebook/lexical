@@ -13,7 +13,6 @@ import {DecoratorNode} from 'lexical';
 
 declare export class HorizontalRuleNode extends DecoratorNode<React$Node> {
   static getType(): string;
-  static clone(node: HorizontalRuleNode): HorizontalRuleNode;
   createDOM(): HTMLElement;
   getTextContent(): '\n';
   updateDOM(): false;

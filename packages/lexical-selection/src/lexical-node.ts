@@ -281,13 +281,16 @@ export function $patchStyleText(
   if (selection.isCollapsed()) {
     const styles = getStyleObjectFromCSS(selection.style);
     Object.entries(patch).forEach(([key, value]) => {
-      if (value !== null) {
+      if (value === null) {
+        delete styles[key];
+      } else {
         styles[key] = value;
       }
       return styles;
     });
     const style = getCSSFromStyleObject(styles);
     selection.setStyle(style);
+    CSS_TO_STYLES.set(style, styles);
     return;
   }
 

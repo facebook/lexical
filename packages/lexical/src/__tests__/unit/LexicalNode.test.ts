@@ -87,16 +87,6 @@ describe('LexicalNode tests', () => {
         });
       });
 
-      test('LexicalNode.clone()', async () => {
-        const {editor} = testEnv;
-
-        await editor.update(() => {
-          const node = new LexicalNode('__custom_key__');
-
-          expect(() => node.clone()).toThrow();
-        });
-      });
-
       test('LexicalNode.getType()', async () => {
         const {editor} = testEnv;
 

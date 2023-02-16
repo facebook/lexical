@@ -21,7 +21,6 @@ import {ElementNode, TextNode} from 'lexical';
 
 declare export class CodeNode extends ElementNode {
   static getType(): string;
-  static clone(node: CodeNode): CodeNode;
   constructor(language: ?string, key?: NodeKey): void;
   createDOM(config: EditorConfig): HTMLElement;
   updateDOM(prevNode: CodeNode, dom: HTMLElement): boolean;
@@ -55,7 +54,6 @@ declare export class CodeHighlightNode extends TextNode {
   constructor(text: string, highlightType?: string, key?: NodeKey): void;
   static getType(): string;
   // $FlowFixMe
-  static clone(node: CodeHighlightNode): CodeHighlightNode;
   createDOM(config: EditorConfig): HTMLElement;
   updateDOM(
     // $FlowFixMe

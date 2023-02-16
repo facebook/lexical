@@ -31,12 +31,6 @@ export class ParagraphNode extends ElementNode {
     return 'paragraph';
   }
 
-  static clone(node: ParagraphNode): ParagraphNode {
-    return new ParagraphNode(node.__key);
-  }
-
-  // View
-
   createDOM(config: EditorConfig): HTMLElement {
     const dom = document.createElement('p');
     const classNames = getCachedClassNameArray(config.theme, 'paragraph');

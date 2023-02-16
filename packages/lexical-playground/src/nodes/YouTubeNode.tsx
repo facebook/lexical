@@ -84,10 +84,6 @@ export class YouTubeNode extends DecoratorBlockNode {
     return 'youtube';
   }
 
-  static clone(node: YouTubeNode): YouTubeNode {
-    return new YouTubeNode(node.__id, node.__format, node.__key);
-  }
-
   static importJSON(serializedNode: SerializedYouTubeNode): YouTubeNode {
     const node = $createYouTubeNode(serializedNode.videoID);
     node.setFormat(serializedNode.format);

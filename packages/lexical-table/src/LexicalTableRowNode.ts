@@ -36,10 +36,6 @@ export class TableRowNode extends DEPRECATED_GridRowNode {
     return 'tablerow';
   }
 
-  static clone(node: TableRowNode): TableRowNode {
-    return new TableRowNode(node.__height, node.__key);
-  }
-
   static importDOM(): DOMConversionMap | null {
     return {
       tr: (node: Node) => ({

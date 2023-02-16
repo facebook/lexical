@@ -55,10 +55,6 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
     return 'excalidraw';
   }
 
-  static clone(node: ExcalidrawNode): ExcalidrawNode {
-    return new ExcalidrawNode(node.__data, node.__key);
-  }
-
   static importJSON(serializedNode: SerializedExcalidrawNode): ExcalidrawNode {
     return new ExcalidrawNode(serializedNode.data);
   }

@@ -113,10 +113,6 @@ export class TestElementNode extends ElementNode {
     return 'test_block';
   }
 
-  static clone(node: TestElementNode) {
-    return new TestElementNode(node.__key);
-  }
-
   static importJSON(
     serializedNode: SerializedTestElementNode,
   ): TestInlineElementNode {
@@ -155,11 +151,6 @@ export class TestTextNode extends TextNode {
     return 'test_text';
   }
 
-  static clone(node: TestTextNode): TestTextNode {
-    // @ts-ignore
-    return new TestTextNode(node.__text, node.__key);
-  }
-
   static importJSON(serializedNode: SerializedTestTextNode): TestTextNode {
     // @ts-ignore
     return new TestTextNode(serializedNode.__text);
@@ -179,10 +170,6 @@ export type SerializedTestInlineElementNode = SerializedElementNode;
 export class TestInlineElementNode extends ElementNode {
   static getType(): string {
     return 'test_inline_block';
-  }
-
-  static clone(node: TestInlineElementNode) {
-    return new TestInlineElementNode(node.__key);
   }
 
   static importJSON(
@@ -273,10 +260,6 @@ export class TestSegmentedNode extends TextNode {
     return 'test_segmented';
   }
 
-  static clone(node: TestSegmentedNode): TestSegmentedNode {
-    return new TestSegmentedNode(node.__text, node.__key);
-  }
-
   static importJSON(
     serializedNode: SerializedTestSegmentedNode,
   ): TestSegmentedNode {
@@ -306,10 +289,6 @@ export type SerializedTestExcludeFromCopyElementNode = SerializedElementNode;
 export class TestExcludeFromCopyElementNode extends ElementNode {
   static getType(): string {
     return 'test_exclude_from_copy_block';
-  }
-
-  static clone(node: TestExcludeFromCopyElementNode) {
-    return new TestExcludeFromCopyElementNode(node.__key);
   }
 
   static importJSON(
@@ -352,10 +331,6 @@ export type SerializedTestDecoratorNode = SerializedLexicalNode;
 export class TestDecoratorNode extends DecoratorNode<JSX.Element> {
   static getType(): string {
     return 'test_decorator';
-  }
-
-  static clone(node: TestDecoratorNode) {
-    return new TestDecoratorNode(node.__key);
   }
 
   static importJSON(

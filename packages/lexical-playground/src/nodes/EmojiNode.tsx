@@ -30,10 +30,6 @@ export class EmojiNode extends TextNode {
     return 'emoji';
   }
 
-  static clone(node: EmojiNode): EmojiNode {
-    return new EmojiNode(node.__className, node.__text, node.__key);
-  }
-
   constructor(className: string, text: string, key?: NodeKey) {
     super(text, key);
     this.__className = className;

@@ -85,10 +85,6 @@ export class PollNode extends DecoratorNode<JSX.Element> {
     return 'poll';
   }
 
-  static clone(node: PollNode): PollNode {
-    return new PollNode(node.__question, node.__options, node.__key);
-  }
-
   static importJSON(serializedNode: SerializedPollNode): PollNode {
     const node = $createPollNode(
       serializedNode.question,

@@ -38,10 +38,6 @@ export class AutocompleteNode extends DecoratorNode<JSX.Element | null> {
   // TODO add comment
   __uuid: string;
 
-  static clone(node: AutocompleteNode): AutocompleteNode {
-    return new AutocompleteNode(node.__key);
-  }
-
   static getType(): 'autocomplete' {
     return 'autocomplete';
   }

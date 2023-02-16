@@ -97,10 +97,9 @@ class MyCustomNode extends SomeOtherNode {
 }
 ```
 
-Lastly, all nodes should have both a `static getType()` method and a `static clone()` method.
+Lastly, all nodes should have a `static getType()` method.
 Lexical uses the type to be able to reconstruct a node back with its associated class prototype
-during deserialization (important for copy + paste!). Lexical uses cloning to ensure consistency
-between creation of new `EditorState` snapshots.
+during deserialization (important for copy + paste!).
 
 Expanding on the example above with these methods:
 
@@ -110,10 +109,6 @@ class MyCustomNode extends SomeOtherNode {
 
   static getType(): string {
     return 'custom-node';
-  }
-
-  static clone(node: MyCustomNode): MyCustomNode {
-    return new MyCustomNode(node.__foo, node.__key);
   }
 
   constructor(foo: string, key?: NodeKey) {
@@ -154,10 +149,6 @@ import {ElementNode} from 'lexical';
 export class CustomParagraph extends ElementNode {
   static getType(): string {
     return 'custom-paragraph';
-  }
-
-  static clone(node: ParagraphNode): ParagraphNode {
-    return new CustomParagraph(node.__key);
   }
 
   createDOM(): HTMLElement {
@@ -203,10 +194,6 @@ export class ColoredNode extends TextNode {
     return 'colored';
   }
 
-  static clone(node: ColoredNode): ColoredNode {
-    return new ColoredNode(node.__text, node.__color, node.__key);
-  }
-
   createDOM(config: EditorConfig): HTMLElement {
     const element = super.createDOM(config);
     element.style.color = this.__color;
@@ -243,10 +230,6 @@ export class VideoNode extends DecoratorNode<ReactNode> {
 
   static getType(): string {
     return 'video';
-  }
-
-  static clone(node: VideoNode): VideoNode {
-    return new VideoNode(node.__id, node.__key);
   }
 
   constructor(id: string, key?: NodeKey) {

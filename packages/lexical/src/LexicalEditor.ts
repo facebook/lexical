@@ -409,7 +409,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
         const name = klass.name;
         if (name !== 'RootNode') {
           const proto = klass.prototype;
-          ['getType', 'clone'].forEach((method) => {
+          ['getType'].forEach((method) => {
             // eslint-disable-next-line no-prototype-builtins
             if (!klass.hasOwnProperty(method)) {
               console.warn(`${name} must implement static "${method}" method`);

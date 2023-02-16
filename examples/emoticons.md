@@ -75,10 +75,6 @@ export class EmoticonNode extends TextNode {
     return 'emoticon';
   }
 
-  static clone(node) {
-    return new EmoticonNode(node.__className, node.__text, node.__key);
-  }
-
   constructor(className, text, key) {
     super(text, key);
     this.__className = className;
@@ -102,10 +98,6 @@ export class EmoticonNode extends TextNode {
 
   static getType() {
     return 'emoticon';
-  }
-
-  static clone(node) {
-    return new EmoticonNode(node.__className, node.__text, node.__key);
   }
 
   constructor(className, text, key) {

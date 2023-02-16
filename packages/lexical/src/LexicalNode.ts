@@ -171,7 +171,7 @@ export class LexicalNode {
 
   // Flow doesn't support abstract classes unfortunately, so we can't _force_
   // subclasses of Node to implement statics. All subclasses of Node should have
-  // a static getType and clone method though. We define getType and clone here so we can call it
+  // a static getType. We define getType here so we can call it
   // on any  Node, and we throw this error by default since the subclass should provide
   // their own implementation.
   /**
@@ -683,7 +683,6 @@ export class LexicalNode {
     }
     const mutableNode = latestNode.clone();
     cloneNotNeeded.add(key);
-    mutableNode.__key = key;
     internalMarkNodeAsDirty(mutableNode);
     // Update reference in node map
     nodeMap.set(key, mutableNode);

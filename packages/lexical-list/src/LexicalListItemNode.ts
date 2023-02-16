@@ -65,10 +65,6 @@ export class ListItemNode extends ElementNode {
     return 'listitem';
   }
 
-  static clone(node: ListItemNode): ListItemNode {
-    return new ListItemNode(node.__value, node.__checked, node.__key);
-  }
-
   constructor(value?: number, checked?: boolean, key?: NodeKey) {
     super(key);
     this.__value = value === undefined ? 1 : value;

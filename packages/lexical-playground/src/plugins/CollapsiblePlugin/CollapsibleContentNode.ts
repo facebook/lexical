@@ -32,10 +32,6 @@ export class CollapsibleContentNode extends ElementNode {
     return 'collapsible-content';
   }
 
-  static clone(node: CollapsibleContentNode): CollapsibleContentNode {
-    return new CollapsibleContentNode(node.__key);
-  }
-
   createDOM(config: EditorConfig): HTMLElement {
     const dom = document.createElement('div');
     dom.classList.add('Collapsible__content');

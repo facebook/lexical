@@ -46,7 +46,7 @@ describe('LexicalLinkNode tests', () => {
       await editor.update(() => {
         const linkNode = new LinkNode('/');
 
-        const linkNodeClone = LinkNode.clone(linkNode);
+        const linkNodeClone = linkNode.clone();
 
         expect(linkNodeClone).not.toBe(linkNode);
         expect(linkNodeClone).toStrictEqual(linkNode);

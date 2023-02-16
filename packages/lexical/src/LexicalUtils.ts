@@ -1337,8 +1337,15 @@ export function $isRootOrShadowRoot(node: null | LexicalNode): boolean {
 }
 
 export function $copyNode<T extends LexicalNode>(node: T): T {
-  // @ts-ignore
-  const copy = node.constructor.clone(node);
+  const copy = node.clone();
+  copy.__parent = null;
+  copy.__next = null;
+  copy.__prev = null;
+  if ($isElementNode(copy)) {
+    copy.__first = null;
+    copy.__last = null;
+    copy.__size = 0;
+  }
   $setNodeKey(copy, null);
   return copy;
 }

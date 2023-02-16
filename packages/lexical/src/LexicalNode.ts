@@ -182,6 +182,13 @@ export class LexicalNode {
     );
   }
 
+  clone(): this {
+    let clone = Object.create(Object.getPrototypeOf(this));
+    const deepClone = JSON.parse(JSON.stringify(this));
+    clone = Object.assign(clone, deepClone);
+    return clone;
+  }
+
   static clone(_data: unknown): LexicalNode {
     invariant(
       false,
@@ -548,7 +555,6 @@ export class LexicalNode {
     const key = this.__key;
     // Ensure we get the latest node from pending state
     const latestNode = this.getLatest();
-    const parent = latestNode.__parent;
     const cloneNotNeeded = editor._cloneNotNeeded;
     const selection = $getSelection();
     if (selection !== null) {
@@ -559,25 +565,7 @@ export class LexicalNode {
       internalMarkNodeAsDirty(latestNode);
       return latestNode;
     }
-    const constructor = latestNode.constructor;
-    // @ts-expect-error
-    const mutableNode = constructor.clone(latestNode);
-    mutableNode.__parent = parent;
-    mutableNode.__next = latestNode.__next;
-    mutableNode.__prev = latestNode.__prev;
-    if ($isElementNode(latestNode) && $isElementNode(mutableNode)) {
-      mutableNode.__first = latestNode.__first;
-      mutableNode.__last = latestNode.__last;
-      mutableNode.__size = latestNode.__size;
-      mutableNode.__indent = latestNode.__indent;
-      mutableNode.__format = latestNode.__format;
-      mutableNode.__dir = latestNode.__dir;
-    } else if ($isTextNode(latestNode) && $isTextNode(mutableNode)) {
-      mutableNode.__format = latestNode.__format;
-      mutableNode.__style = latestNode.__style;
-      mutableNode.__mode = latestNode.__mode;
-      mutableNode.__detail = latestNode.__detail;
-    }
+    const mutableNode = latestNode.clone();
     cloneNotNeeded.add(key);
     mutableNode.__key = key;
     internalMarkNodeAsDirty(mutableNode);

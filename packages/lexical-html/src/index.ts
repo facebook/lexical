@@ -18,10 +18,7 @@ import type {
   RangeSelection,
 } from 'lexical';
 
-import {
-  $cloneWithProperties,
-  $sliceSelectedTextNodeContent,
-} from '@lexical/selection';
+import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {$getRoot, $isElementNode, $isTextNode} from 'lexical';
 
 /**
@@ -86,7 +83,7 @@ function $appendNodesToHTML(
   let target = currentNode;
 
   if (selection !== null) {
-    let clone = $cloneWithProperties<LexicalNode>(currentNode);
+    let clone = currentNode.clone();
     clone =
       $isTextNode(clone) && selection != null
         ? $sliceSelectedTextNodeContent(selection, clone)

@@ -6,12 +6,7 @@
  *
  */
 
-import type {
-  EditorConfig,
-  LexicalNode,
-  NodeKey,
-  SerializedTextNode,
-} from 'lexical';
+import type {EditorConfig, LexicalNode, NodeKey} from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
 import {$applyNodeReplacement, TextNode} from 'lexical';
@@ -34,13 +29,6 @@ export class HashtagNode extends TextNode {
     const element = super.createDOM(config);
     addClassNamesToElement(element, config.theme.hashtag);
     return element;
-  }
-
-  exportJSON(): SerializedTextNode {
-    return {
-      ...super.exportJSON(),
-      type: 'hashtag',
-    };
   }
 
   canInsertTextBefore(): boolean {

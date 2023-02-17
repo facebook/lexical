@@ -123,13 +123,6 @@ export class HorizontalRuleNode extends DecoratorNode<JSX.Element> {
     };
   }
 
-  exportJSON(): SerializedLexicalNode {
-    return {
-      type: 'horizontalrule',
-      version: 1,
-    };
-  }
-
   exportDOM(): DOMExportOutput {
     return {element: document.createElement('hr')};
   }

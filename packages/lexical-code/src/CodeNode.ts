@@ -198,15 +198,6 @@ export class CodeNode extends ElementNode {
     };
   }
 
-  exportJSON(): SerializedCodeNode {
-    return {
-      ...super.exportJSON(),
-      language: this.getLanguage(),
-      type: 'code',
-      version: 1,
-    };
-  }
-
   // Mutation
   insertNewAfter(
     selection: RangeSelection,

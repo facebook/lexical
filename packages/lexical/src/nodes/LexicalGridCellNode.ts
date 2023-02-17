@@ -31,13 +31,6 @@ export class DEPRECATED_GridCellNode extends ElementNode {
     super(key);
     this.__colSpan = colSpan;
   }
-
-  exportJSON(): SerializedGridCellNode {
-    return {
-      ...super.exportJSON(),
-      colSpan: this.__colSpan,
-    };
-  }
 }
 
 export function DEPRECATED_$isGridCellNode(

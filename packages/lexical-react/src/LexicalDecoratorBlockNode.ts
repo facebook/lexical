@@ -31,14 +31,6 @@ export class DecoratorBlockNode extends DecoratorNode<JSX.Element> {
     this.__format = format || '';
   }
 
-  exportJSON(): SerializedDecoratorBlockNode {
-    return {
-      format: this.__format || '',
-      type: 'decorator-block',
-      version: 1,
-    };
-  }
-
   createDOM(): HTMLElement {
     return document.createElement('div');
   }

@@ -74,17 +74,6 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
     this.__color = color;
   }
 
-  exportJSON(): SerializedStickyNode {
-    return {
-      caption: this.__caption.toJSON(),
-      color: this.__color,
-      type: 'sticky',
-      version: 1,
-      xOffset: this.__x,
-      yOffset: this.__y,
-    };
-  }
-
   createDOM(config: EditorConfig): HTMLElement {
     const div = document.createElement('div');
     div.style.display = 'contents';

@@ -338,7 +338,6 @@ declare export class LexicalNode {
   static importDOM(): DOMConversionMap | null;
   constructor(key?: NodeKey): void;
   exportDOM(editor: LexicalEditor): DOMExportOutput;
-  exportJSON(): SerializedLexicalNode;
   getType(): string;
   isAttached(): boolean;
   isSelected(): boolean;
@@ -608,7 +607,6 @@ declare export class TextNode extends LexicalNode {
   splitText(...splitOffsets: Array<number>): Array<TextNode>;
   mergeWithSibling(target: TextNode): TextNode;
   isTextEntity(): boolean;
-  exportJSON(): SerializedTextNode;
 }
 declare export function $createTextNode(text?: string): TextNode;
 declare export function $isTextNode(
@@ -626,7 +624,6 @@ declare export class LineBreakNode extends LexicalNode {
   getTextContent(): '\n';
   createDOM(): HTMLElement;
   updateDOM(): false;
-  exportJSON(): SerializedLexicalNode;
 }
 declare export function $createLineBreakNode(): LineBreakNode;
 declare export function $isLineBreakNode(
@@ -731,7 +728,6 @@ declare export class ElementNode extends LexicalNode {
     deleteCount: number,
     nodesToInsert: Array<LexicalNode>,
   ): this;
-  exportJSON(): SerializedElementNode;
 }
 declare export function $isElementNode(
   node: ?LexicalNode,
@@ -763,7 +759,6 @@ declare export class ParagraphNode extends ElementNode {
   updateDOM(prevNode: ParagraphNode, dom: HTMLElement): boolean;
   insertNewAfter(): ParagraphNode;
   collapseAtStart(): boolean;
-  exportJSON(): SerializedElementNode;
 }
 declare export function $createParagraphNode(): ParagraphNode;
 declare export function $isParagraphNode(

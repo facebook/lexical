@@ -24,7 +24,6 @@ declare export class HashtagNode extends TextNode {
   createDOM(config: EditorConfig): HTMLElement;
   canInsertTextBefore(): boolean;
   isTextEntity(): true;
-  exportJSON(): SerializedTextNode;
 }
 declare export function $createHashtagNode(text?: string): HashtagNode;
 declare export function $isHashtagNode(

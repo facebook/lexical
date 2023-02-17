@@ -96,15 +96,6 @@ export class PollNode extends DecoratorNode<JSX.Element> {
     this.__options = options || [createPollOption(), createPollOption()];
   }
 
-  exportJSON(): SerializedPollNode {
-    return {
-      options: this.__options,
-      question: this.__question,
-      type: 'poll',
-      version: 1,
-    };
-  }
-
   addOption(option: Option): void {
     const self = this.getWritable();
     const options = Array.from(self.__options);

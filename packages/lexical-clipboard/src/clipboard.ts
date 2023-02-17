@@ -347,35 +347,6 @@ export interface BaseSerializedNode {
   version: number;
 }
 
-function exportNodeToJSON<T extends LexicalNode>(node: T): BaseSerializedNode {
-  const serializedNode = node.exportJSON();
-  const nodeClass = node.constructor;
-
-  // @ts-expect-error TODO Replace Class utility type with InstanceType
-  if (serializedNode.type !== nodeClass.getType()) {
-    invariant(
-      false,
-      'LexicalNode: Node %s does not implement .exportJSON().',
-      nodeClass.name,
-    );
-  }
-
-  // @ts-expect-error TODO Replace Class utility type with InstanceType
-  const serializedChildren = serializedNode.children;
-
-  if ($isElementNode(node)) {
-    if (!Array.isArray(serializedChildren)) {
-      invariant(
-        false,
-        'LexicalNode: Node %s is an element but .exportJSON() does not have a children array.',
-        nodeClass.name,
-      );
-    }
-  }
-
-  return serializedNode;
-}
-
 function $appendNodesToJSON(
   editor: LexicalEditor,
   selection: RangeSelection | NodeSelection | GridSelection | null,
@@ -398,7 +369,7 @@ function $appendNodesToJSON(
   }
   const children = $isElementNode(target) ? target.getChildren() : [];
 
-  const serializedNode = exportNodeToJSON(target);
+  const serializedNode = target.exportJSON();
 
   // TODO: TextNode calls getTextContent() (NOT node.__text) within it's exportJSON method
   // which uses getLatest() to get the text from the original node with the same key.

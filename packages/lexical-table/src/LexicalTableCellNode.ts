@@ -130,16 +130,6 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
     };
   }
 
-  exportJSON(): SerializedTableCellNode {
-    return {
-      ...super.exportJSON(),
-      colSpan: super.__colSpan,
-      headerState: this.__headerState,
-      type: 'tablecell',
-      width: this.getWidth(),
-    };
-  }
-
   getTag(): string {
     return this.hasHeader() ? 'th' : 'td';
   }

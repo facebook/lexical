@@ -126,17 +126,6 @@ export class LinkNode extends ElementNode {
     };
   }
 
-  exportJSON(): SerializedLinkNode | SerializedAutoLinkNode {
-    return {
-      ...super.exportJSON(),
-      rel: this.getRel(),
-      target: this.getTarget(),
-      type: 'link',
-      url: this.getURL(),
-      version: 1,
-    };
-  }
-
   getURL(): string {
     return this.getLatest().__url;
   }
@@ -272,14 +261,6 @@ export class AutoLinkNode extends LinkNode {
   static importDOM(): null {
     // TODO: Should link node should handle the import over autolink?
     return null;
-  }
-
-  exportJSON(): SerializedAutoLinkNode {
-    return {
-      ...super.exportJSON(),
-      type: 'autolink',
-      version: 1,
-    };
   }
 
   insertNewAfter(

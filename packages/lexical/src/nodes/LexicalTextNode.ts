@@ -533,18 +533,6 @@ export class TextNode extends LexicalNode {
     };
   }
 
-  exportJSON(): SerializedTextNode {
-    return {
-      detail: this.getDetail(),
-      format: this.getFormat(),
-      mode: this.getMode(),
-      style: this.getStyle(),
-      text: this.getTextContent(),
-      type: 'text',
-      version: 1,
-    };
-  }
-
   // Mutators
   selectionTransform(
     prevSelection: null | RangeSelection | NodeSelection | GridSelection,

@@ -48,15 +48,6 @@ export class AutocompleteNode extends DecoratorNode<JSX.Element | null> {
     return 'autocomplete';
   }
 
-  exportJSON(): SerializedAutocompleteNode {
-    return {
-      ...super.exportJSON(),
-      type: 'autocomplete',
-      uuid: this.__uuid,
-      version: 1,
-    };
-  }
-
   constructor(uuid: string, key?: NodeKey) {
     super(key);
     this.__uuid = uuid;

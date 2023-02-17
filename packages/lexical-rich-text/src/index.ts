@@ -143,13 +143,6 @@ export class QuoteNode extends ElementNode {
     };
   }
 
-  exportJSON(): SerializedElementNode {
-    return {
-      ...super.exportJSON(),
-      type: 'quote',
-    };
-  }
-
   // Mutation
 
   insertNewAfter(_: RangeSelection, restoreSelection?: boolean): ParagraphNode {
@@ -272,15 +265,6 @@ export class HeadingNode extends ElementNode {
         }
         return null;
       },
-    };
-  }
-
-  exportJSON(): SerializedHeadingNode {
-    return {
-      ...super.exportJSON(),
-      tag: this.getTag(),
-      type: 'heading',
-      version: 1,
     };
   }
 

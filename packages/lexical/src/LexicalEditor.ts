@@ -424,14 +424,6 @@ export function createEditor(editorConfig?: {
               );
             }
           }
-          if (
-            // eslint-disable-next-line no-prototype-builtins
-            !proto.hasOwnProperty('exportJSON')
-          ) {
-            console.warn(
-              `${name} should implement "exportJSON" method to ensure JSON and default HTML serialization works as expected`,
-            );
-          }
         }
       }
       const type = klass.getType();

@@ -74,15 +74,6 @@ export class FigmaNode extends DecoratorBlockNode {
     return new FigmaNode(node.__id, node.__format, node.__key);
   }
 
-  exportJSON(): SerializedFigmaNode {
-    return {
-      ...super.exportJSON(),
-      documentID: this.__id,
-      type: 'figma',
-      version: 1,
-    };
-  }
-
   constructor(id: string, format?: ElementFormatType, key?: NodeKey) {
     super(format, key);
     this.__id = id;

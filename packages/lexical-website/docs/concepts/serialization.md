@@ -184,43 +184,6 @@ const editorState = editor.getEditorState();
 const jsonString = JSON.stringify(editorState);
 ```
 
-#### `LexicalNode.exportJSON()`
-
-You can control how a `LexicalNode` is represented as JSON by adding an `exportJSON()` method. It's important to ensure your serialized JSON node has a `type` field and a `children` field if it's an `ElementNode`.
-
-```js
-export type SerializedLexicalNode = {
-  type: string;
-  version: number;
-};
-
-exportJSON(): SerializedLexicalNode
-```
-
-When transforming an editor state into JSON, we simply traverse the current editor state and call the `exportJSON` method for each Node in order to convert it to a `SerializedLexicalNode` object that represents the JSON object for the given node. The built-in nodes from Lexical already have a JSON representation defined, but you'll need to define ones for your own custom nodes.
-
-Here's an example of `exportJSON` for the `HeadingNode`:
-
-```js
-export type SerializedHeadingNode = Spread<
-  {
-    tag: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
-    type: 'heading';
-    version: 1;
-  },
-  SerializedElementNode
->;
-
-exportJSON(): SerializedHeadingNode {
-  return {
-    ...super.exportJSON(),
-    tag: this.getTag(),
-    type: 'heading',
-    version: 1,
-  };
-}
-```
-
 ### Versioning & Breaking Changes
 
 It's important to note that you should avoid making breaking changes to existing fields in your JSON object, especially if backwards compatibility is an important part of your editor. That's why we recommend using a version field to separate the different changes in your node as you add or change functionality of custom nodes. Here's the serialized type definition for Lexical's base `TextNode` class:

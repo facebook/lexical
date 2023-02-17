@@ -143,15 +143,6 @@ export class TweetNode extends DecoratorBlockNode {
     return new TweetNode(node.__id, node.__format, node.__key);
   }
 
-  exportJSON(): SerializedTweetNode {
-    return {
-      ...super.exportJSON(),
-      id: this.getId(),
-      type: 'tweet',
-      version: 1,
-    };
-  }
-
   static importDOM(): DOMConversionMap<HTMLDivElement> | null {
     return {
       div: (domNode: HTMLDivElement) => {

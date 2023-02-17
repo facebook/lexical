@@ -56,14 +56,6 @@ export class TableRowNode extends DEPRECATED_GridRowNode {
     this.__height = height;
   }
 
-  exportJSON(): SerializedElementNode {
-    return {
-      ...super.exportJSON(),
-      type: 'tablerow',
-      version: 1,
-    };
-  }
-
   createDOM(config: EditorConfig): HTMLElement {
     const element = document.createElement('tr');
 

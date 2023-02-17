@@ -96,14 +96,6 @@ export class ParagraphNode extends ElementNode {
     };
   }
 
-  exportJSON(): SerializedElementNode {
-    return {
-      ...super.exportJSON(),
-      type: 'paragraph',
-      version: 1,
-    };
-  }
-
   // Mutation
 
   insertNewAfter(_: RangeSelection, restoreSelection: boolean): ParagraphNode {

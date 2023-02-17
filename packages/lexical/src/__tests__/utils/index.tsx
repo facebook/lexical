@@ -124,14 +124,6 @@ export class TestElementNode extends ElementNode {
     return new TestElementNode(node.__key);
   }
 
-  exportJSON(): SerializedTestElementNode {
-    return {
-      ...super.exportJSON(),
-      type: 'test_block',
-      version: 1,
-    };
-  }
-
   createDOM() {
     return document.createElement('div');
   }
@@ -145,10 +137,6 @@ export function $createTestElementNode(): TestElementNode {
   return new TestElementNode();
 }
 
-type SerializedTestTextNode = Spread<
-  {type: 'test_text'; version: 1},
-  SerializedTextNode
->;
 export class TestTextNode extends TextNode {
   static getType() {
     return 'test_text';
@@ -157,14 +145,6 @@ export class TestTextNode extends TextNode {
   static clone(node: TestTextNode): TestTextNode {
     // @ts-ignore
     return new TestTextNode(node.__text, node.__key);
-  }
-
-  exportJSON(): SerializedTestTextNode {
-    return {
-      ...super.exportJSON(),
-      type: 'test_text',
-      version: 1,
-    };
   }
 }
 
@@ -183,14 +163,6 @@ export class TestInlineElementNode extends ElementNode {
 
   static clone(node: TestInlineElementNode) {
     return new TestInlineElementNode(node.__key);
-  }
-
-  exportJSON(): SerializedTestInlineElementNode {
-    return {
-      ...super.exportJSON(),
-      type: 'test_inline_block',
-      version: 1,
-    };
   }
 
   createDOM() {
@@ -226,14 +198,6 @@ export class TestSegmentedNode extends TextNode {
   static clone(node: TestSegmentedNode): TestSegmentedNode {
     return new TestSegmentedNode(node.__text, node.__key);
   }
-
-  exportJSON(): SerializedTestSegmentedNode {
-    return {
-      ...super.exportJSON(),
-      type: 'test_segmented',
-      version: 1,
-    };
-  }
 }
 
 export function $createTestSegmentedNode(text): TestSegmentedNode {
@@ -255,14 +219,6 @@ export class TestExcludeFromCopyElementNode extends ElementNode {
 
   static clone(node: TestExcludeFromCopyElementNode) {
     return new TestExcludeFromCopyElementNode(node.__key);
-  }
-
-  exportJSON(): SerializedTestExcludeFromCopyElementNode {
-    return {
-      ...super.exportJSON(),
-      type: 'test_exclude_from_copy_block',
-      version: 1,
-    };
   }
 
   createDOM() {
@@ -297,14 +253,6 @@ export class TestDecoratorNode extends DecoratorNode<JSX.Element> {
 
   static clone(node: TestDecoratorNode) {
     return new TestDecoratorNode(node.__key);
-  }
-
-  exportJSON(): SerializedTestDecoratorNode {
-    return {
-      ...super.exportJSON(),
-      type: 'test_decorator',
-      version: 1,
-    };
   }
 
   static importDOM() {

@@ -142,17 +142,6 @@ export class ListNode extends ElementNode {
     };
   }
 
-  exportJSON(): SerializedListNode {
-    return {
-      ...super.exportJSON(),
-      listType: this.getListType(),
-      start: this.getStart(),
-      tag: this.getTag(),
-      type: 'list',
-      version: 1,
-    };
-  }
-
   canBeEmpty(): false {
     return false;
   }

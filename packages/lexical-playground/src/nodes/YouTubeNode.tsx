@@ -90,15 +90,6 @@ export class YouTubeNode extends DecoratorBlockNode {
     return new YouTubeNode(node.__id, node.__format, node.__key);
   }
 
-  exportJSON(): SerializedYouTubeNode {
-    return {
-      ...super.exportJSON(),
-      type: 'youtube',
-      version: 1,
-      videoID: this.__id,
-    };
-  }
-
   constructor(id: string, format?: ElementFormatType, key?: NodeKey) {
     super(format, key);
     this.__id = id;

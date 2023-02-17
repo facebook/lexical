@@ -494,17 +494,6 @@ export class ElementNode extends LexicalNode {
 
     return writableSelf;
   }
-  // JSON serialization
-  exportJSON(): SerializedElementNode {
-    return {
-      children: [],
-      direction: this.getDirection(),
-      format: this.getFormatType(),
-      indent: this.getIndent(),
-      type: 'element',
-      version: 1,
-    };
-  }
   // These are intended to be extends for specific element heuristics.
   insertNewAfter(
     selection: RangeSelection,

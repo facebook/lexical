@@ -65,14 +65,6 @@ export class TableNode extends DEPRECATED_GridNode {
     super(key);
   }
 
-  exportJSON(): SerializedElementNode {
-    return {
-      ...super.exportJSON(),
-      type: 'table',
-      version: 1,
-    };
-  }
-
   createDOM(config: EditorConfig, editor?: LexicalEditor): HTMLElement {
     const tableElement = document.createElement('table');
 

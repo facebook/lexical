@@ -62,14 +62,6 @@ export class EmojiNode extends TextNode {
     return false;
   }
 
-  exportJSON(): SerializedEmojiNode {
-    return {
-      ...super.exportJSON(),
-      className: this.getClassName(),
-      type: 'emoji',
-    };
-  }
-
   getClassName(): string {
     const self = this.getLatest();
     return self.__className;

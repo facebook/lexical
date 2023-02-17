@@ -14,8 +14,6 @@ import {
   type EditorThemeClasses,
   type LexicalNode,
   type NodeKey,
-  type SerializedTextNode,
-  type Spread,
   TextNode,
   ElementNode,
 } from 'lexical';
@@ -42,15 +40,6 @@ import {
 import {$createCodeNode} from './CodeNode';
 
 export const DEFAULT_CODE_LANGUAGE = 'javascript';
-
-type SerializedCodeHighlightNode = Spread<
-  {
-    highlightType: string | null | undefined;
-    type: 'code-highlight';
-    version: 1;
-  },
-  SerializedTextNode
->;
 
 export const CODE_LANGUAGE_FRIENDLY_NAME_MAP: Record<string, string> = {
   c: 'C',
@@ -162,15 +151,6 @@ export class CodeHighlightNode extends TextNode {
       }
     }
     return update;
-  }
-
-  exportJSON(): SerializedCodeHighlightNode {
-    return {
-      ...super.exportJSON(),
-      highlightType: this.getHighlightType(),
-      type: 'code-highlight',
-      version: 1,
-    };
   }
 
   // Prevent formatting (bold, underline, etc)

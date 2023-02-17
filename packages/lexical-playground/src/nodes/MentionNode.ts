@@ -61,15 +61,6 @@ export class MentionNode extends TextNode {
     this.__mention = mentionName;
   }
 
-  exportJSON(): SerializedMentionNode {
-    return {
-      ...super.exportJSON(),
-      mentionName: this.__mention,
-      type: 'mention',
-      version: 1,
-    };
-  }
-
   createDOM(config: EditorConfig): HTMLElement {
     const dom = super.createDOM(config);
     dom.style.cssText = mentionStyle;

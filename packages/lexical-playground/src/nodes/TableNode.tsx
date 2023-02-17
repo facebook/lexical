@@ -201,14 +201,6 @@ export class TableNode extends DecoratorNode<JSX.Element> {
     return new TableNode(Array.from(node.__rows), node.__key);
   }
 
-  exportJSON(): SerializedTableNode {
-    return {
-      rows: this.__rows,
-      type: 'tablesheet',
-      version: 1,
-    };
-  }
-
   static importDOM(): DOMConversionMap | null {
     return {
       table: (_node: Node) => ({

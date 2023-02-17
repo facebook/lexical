@@ -61,14 +61,6 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
     return new ExcalidrawNode(node.__data, node.__key);
   }
 
-  exportJSON(): SerializedExcalidrawNode {
-    return {
-      data: this.__data,
-      type: 'excalidraw',
-      version: 1,
-    };
-  }
-
   constructor(data = '[]', key?: NodeKey) {
     super(key);
     this.__data = data;

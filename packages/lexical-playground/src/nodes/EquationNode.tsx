@@ -68,15 +68,6 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
     this.__inline = inline ?? false;
   }
 
-  exportJSON(): SerializedEquationNode {
-    return {
-      equation: this.getEquation(),
-      inline: this.__inline,
-      type: 'equation',
-      version: 1,
-    };
-  }
-
   createDOM(_config: EditorConfig): HTMLElement {
     return document.createElement(this.__inline ? 'span' : 'div');
   }

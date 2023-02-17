@@ -93,17 +93,6 @@ export class RootNode extends ElementNode {
     return super.append(...nodesToAppend);
   }
 
-  exportJSON(): SerializedRootNode {
-    return {
-      children: [],
-      direction: this.getDirection(),
-      format: this.getFormatType(),
-      indent: this.getIndent(),
-      type: 'root',
-      version: 1,
-    };
-  }
-
   collapseAtStart(): true {
     return true;
   }

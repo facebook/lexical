@@ -116,16 +116,6 @@ export class ListItemNode extends ElementNode {
     };
   }
 
-  exportJSON(): SerializedListItemNode {
-    return {
-      ...super.exportJSON(),
-      checked: this.getChecked(),
-      type: 'listitem',
-      value: this.getValue(),
-      version: 1,
-    };
-  }
-
   append(...nodes: LexicalNode[]): this {
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i];

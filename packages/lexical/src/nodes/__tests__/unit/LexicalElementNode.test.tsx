@@ -255,12 +255,12 @@ describe('LexicalElementNode tests', () => {
     test('basic', async () => {
       await update(() => {
         expect($getRoot().getFirstChild().getTextContentSize()).toBe(
-          'FooBarBaz'.length,
+          $getRoot().getFirstChild().getTextContent().length,
         );
       });
     });
 
-    test('child getTextContentSize() does not match getTextContent().length', async () => {
+    test('child node getTextContentSize() can be overridden and is then reflected when calling the same method on parent node', async () => {
       await update(() => {
         const block = $createTestElementNode();
         const text = $createTextNode('Foo');

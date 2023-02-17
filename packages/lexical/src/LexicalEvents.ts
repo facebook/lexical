@@ -159,6 +159,7 @@ if (CAN_USE_BEFORE_INPUT) {
 let lastKeyDownTimeStamp = 0;
 let lastKeyCode = 0;
 let lastBeforeInputInsertTextTimeStamp = 0;
+let unprocessedBeforeInputData: null | string = null;
 let rootElementsRegistered = 0;
 let isSelectionChangeFromDOMUpdate = false;
 let isSelectionChangeFromMouseDown = false;
@@ -500,13 +501,26 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
 
     const data = event.data;
 
+    // This represents the case when two beforeinput events are triggered at the same time (without a
+    // full event loop ending at input). This happens with MacOS with the default keyboard settings,
+    // a combination of autocorrection + autocapitalization.
+    // Having Lexical run everything in controlled mode would fix the issue without additional code
+    // but this would kill the massive performance win from the most common typing event.
+    // Alternatively, when this happens we can prematurely update our EditorState based on the DOM
+    // content, a job that would usually be the input event's responsibility.
+    if (unprocessedBeforeInputData !== null) {
+      $updateSelectedTextFromDOM(false, editor, unprocessedBeforeInputData);
+    }
+
     if (
-      !selection.dirty &&
+      (!selection.dirty || unprocessedBeforeInputData !== null) &&
       selection.isCollapsed() &&
       !$isRootNode(selection.anchor.getNode())
     ) {
       $applyTargetRange(selection, event);
     }
+
+    unprocessedBeforeInputData = null;
 
     const anchor = selection.anchor;
     const focus = selection.focus;
@@ -536,6 +550,8 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
       ) {
         event.preventDefault();
         dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, data);
+      } else {
+        unprocessedBeforeInputData = data;
       }
       lastBeforeInputInsertTextTimeStamp = event.timeStamp;
       return;
@@ -748,6 +764,7 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
     // since the change.
     $flushMutations();
   });
+  unprocessedBeforeInputData = null;
 }
 
 function onCompositionStart(

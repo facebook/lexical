@@ -27,7 +27,7 @@ import {
   $isParagraphNode,
   $isTextNode,
 } from 'lexical';
-import {IS_IOS, IS_SAFARI} from 'shared/environment';
+import {IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from 'shared/environment';
 
 import {PUNCTUATION_OR_SPACE, transformersByType} from './utils';
 
@@ -372,7 +372,7 @@ function createTextFormatTransformersIndex(
     const tagRegExp = tag.replace(/(\*|\^|\+)/g, '\\$1');
     openTagsRegExp.push(tagRegExp);
 
-    if (IS_SAFARI || IS_IOS) {
+    if (IS_SAFARI || IS_IOS || IS_APPLE_WEBKIT) {
       fullMatchRegExpByTag[tag] = new RegExp(
         `(${tagRegExp})(?![${tagRegExp}\\s])(.*?[^${tagRegExp}\\s])${tagRegExp}(?!${tagRegExp})`,
       );
@@ -388,7 +388,7 @@ function createTextFormatTransformersIndex(
     fullMatchRegExpByTag,
     // Reg exp to find opening tags
     openTagsRegExp: new RegExp(
-      (IS_SAFARI || IS_IOS ? '' : `${escapeRegExp}`) +
+      (IS_SAFARI || IS_IOS || IS_APPLE_WEBKIT ? '' : `${escapeRegExp}`) +
         '(' +
         openTagsRegExp.join('|') +
         ')',

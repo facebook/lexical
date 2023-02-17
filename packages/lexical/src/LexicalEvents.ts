@@ -13,6 +13,7 @@ import type {TextNode} from './nodes/LexicalTextNode';
 
 import {
   CAN_USE_BEFORE_INPUT,
+  IS_APPLE_WEBKIT,
   IS_FIREFOX,
   IS_IOS,
   IS_SAFARI,
@@ -745,7 +746,7 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
       }
 
       // This ensures consistency on Android.
-      if (!IS_SAFARI && !IS_IOS && editor.isComposing()) {
+      if (!IS_SAFARI && !IS_IOS && !IS_APPLE_WEBKIT && editor.isComposing()) {
         lastKeyDownTimeStamp = 0;
         $setCompositionKey(null);
       }

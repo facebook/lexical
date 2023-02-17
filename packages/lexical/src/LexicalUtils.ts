@@ -30,7 +30,7 @@ import type {RootNode} from './nodes/LexicalRootNode';
 import type {TextFormatType, TextNode} from './nodes/LexicalTextNode';
 
 import {CAN_USE_DOM} from 'shared/canUseDOM';
-import {IS_APPLE, IS_IOS, IS_SAFARI} from 'shared/environment';
+import {IS_APPLE, IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from 'shared/environment';
 import invariant from 'shared/invariant';
 
 import {
@@ -653,7 +653,7 @@ export function $updateTextNodeFromDOMContent(
     if (compositionEnd || normalizedTextContent !== prevTextContent) {
       if (normalizedTextContent === '') {
         $setCompositionKey(null);
-        if (!IS_SAFARI && !IS_IOS) {
+        if (!IS_SAFARI && !IS_IOS && !IS_APPLE_WEBKIT) {
           // For composition (mainly Android), we have to remove the node on a later update
           const editor = getActiveEditor();
           setTimeout(() => {

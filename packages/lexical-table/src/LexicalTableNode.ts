@@ -44,7 +44,7 @@ export class TableNode extends DEPRECATED_GridNode {
   /** @internal */
   __grid?: Grid;
 
-  static getType(): 'table' {
+  static getType(): string {
     return 'table';
   }
 

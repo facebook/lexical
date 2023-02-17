@@ -90,12 +90,6 @@ export class PollNode extends DecoratorNode<JSX.Element> {
     return new PollNode(node.__question, node.__options, node.__key);
   }
 
-  static importJSON(serializedNode: SerializedPollNode): PollNode {
-    const node = $createPollNode(serializedNode.question);
-    serializedNode.options.forEach(node.addOption);
-    return node;
-  }
-
   constructor(question: string, options?: Options, key?: NodeKey) {
     super(key);
     this.__question = question;

@@ -504,15 +504,6 @@ export class TextNode extends LexicalNode {
     };
   }
 
-  static importJSON(serializedNode: SerializedTextNode): TextNode {
-    const node = $createTextNode(serializedNode.text);
-    node.setFormat(serializedNode.format);
-    node.setDetail(serializedNode.detail);
-    node.setMode(serializedNode.mode);
-    node.setStyle(serializedNode.style);
-    return node;
-  }
-
   // This improves Lexical's basic text output in copy+paste plus
   // for headless mode where people might use Lexical to generate
   // HTML content and not have the ability to use CSS classes.

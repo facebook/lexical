@@ -90,12 +90,6 @@ export class YouTubeNode extends DecoratorBlockNode {
     return new YouTubeNode(node.__id, node.__format, node.__key);
   }
 
-  static importJSON(serializedNode: SerializedYouTubeNode): YouTubeNode {
-    const node = $createYouTubeNode(serializedNode.videoID);
-    node.setFormat(serializedNode.format);
-    return node;
-  }
-
   exportJSON(): SerializedYouTubeNode {
     return {
       ...super.exportJSON(),

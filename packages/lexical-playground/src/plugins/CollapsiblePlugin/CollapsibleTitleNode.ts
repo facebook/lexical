@@ -71,12 +71,6 @@ export class CollapsibleTitleNode extends ElementNode {
     };
   }
 
-  static importJSON(
-    serializedNode: SerializedCollapsibleTitleNode,
-  ): CollapsibleTitleNode {
-    return $createCollapsibleTitleNode();
-  }
-
   exportDOM(): DOMExportOutput {
     const element = document.createElement('summary');
     return {element};

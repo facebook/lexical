@@ -116,14 +116,6 @@ export class ListItemNode extends ElementNode {
     };
   }
 
-  static importJSON(serializedNode: SerializedListItemNode): ListItemNode {
-    const node = new ListItemNode(serializedNode.value, serializedNode.checked);
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
-  }
-
   exportJSON(): SerializedListItemNode {
     return {
       ...super.exportJSON(),

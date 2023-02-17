@@ -426,14 +426,6 @@ export function createEditor(editorConfig?: {
           }
           if (
             // eslint-disable-next-line no-prototype-builtins
-            !klass.hasOwnProperty('importJSON')
-          ) {
-            console.warn(
-              `${name} should implement "importJSON" method to ensure JSON and default HTML serialization works as expected`,
-            );
-          }
-          if (
-            // eslint-disable-next-line no-prototype-builtins
             !proto.hasOwnProperty('exportJSON')
           ) {
             console.warn(

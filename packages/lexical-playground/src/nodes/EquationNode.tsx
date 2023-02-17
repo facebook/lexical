@@ -68,14 +68,6 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
     this.__inline = inline ?? false;
   }
 
-  static importJSON(serializedNode: SerializedEquationNode): EquationNode {
-    const node = $createEquationNode(
-      serializedNode.equation,
-      serializedNode.inline,
-    );
-    return node;
-  }
-
   exportJSON(): SerializedEquationNode {
     return {
       equation: this.getEquation(),

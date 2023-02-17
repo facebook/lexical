@@ -608,7 +608,6 @@ declare export class TextNode extends LexicalNode {
   splitText(...splitOffsets: Array<number>): Array<TextNode>;
   mergeWithSibling(target: TextNode): TextNode;
   isTextEntity(): boolean;
-  static importJSON(serializedTextNode: SerializedTextNode): TextNode;
   exportJSON(): SerializedTextNode;
 }
 declare export function $createTextNode(text?: string): TextNode;
@@ -627,9 +626,6 @@ declare export class LineBreakNode extends LexicalNode {
   getTextContent(): '\n';
   createDOM(): HTMLElement;
   updateDOM(): false;
-  static importJSON(
-    serializedLineBreakNode: SerializedLineBreakNode,
-  ): LineBreakNode;
   exportJSON(): SerializedLexicalNode;
 }
 declare export function $createLineBreakNode(): LineBreakNode;
@@ -767,9 +763,6 @@ declare export class ParagraphNode extends ElementNode {
   updateDOM(prevNode: ParagraphNode, dom: HTMLElement): boolean;
   insertNewAfter(): ParagraphNode;
   collapseAtStart(): boolean;
-  static importJSON(
-    serializedParagraphNode: SerializedParagraphNode,
-  ): ParagraphNode;
   exportJSON(): SerializedElementNode;
 }
 declare export function $createParagraphNode(): ParagraphNode;

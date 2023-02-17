@@ -198,14 +198,6 @@ export class CodeNode extends ElementNode {
     };
   }
 
-  static importJSON(serializedNode: SerializedCodeNode): CodeNode {
-    const node = $createCodeNode(serializedNode.language);
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
-  }
-
   exportJSON(): SerializedCodeNode {
     return {
       ...super.exportJSON(),

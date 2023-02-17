@@ -93,25 +93,6 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     );
   }
 
-  static importJSON(serializedNode: SerializedImageNode): ImageNode {
-    const {altText, height, width, maxWidth, caption, src, showCaption} =
-      serializedNode;
-    const node = $createImageNode({
-      altText,
-      height,
-      maxWidth,
-      showCaption,
-      src,
-      width,
-    });
-    const nestedEditor = node.__caption;
-    const editorState = nestedEditor.parseEditorState(caption.editorState);
-    if (!editorState.isEmpty()) {
-      nestedEditor.setEditorState(editorState);
-    }
-    return node;
-  }
-
   exportDOM(): DOMExportOutput {
     const element = document.createElement('img');
     element.setAttribute('src', this.__src);

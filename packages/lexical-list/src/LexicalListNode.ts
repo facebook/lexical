@@ -127,14 +127,6 @@ export class ListNode extends ElementNode {
     };
   }
 
-  static importJSON(serializedNode: SerializedListNode): ListNode {
-    const node = $createListNode(serializedNode.listType, serializedNode.start);
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
-  }
-
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const {element} = super.exportDOM(editor);
     if (element) {

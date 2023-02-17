@@ -143,14 +143,6 @@ export class QuoteNode extends ElementNode {
     };
   }
 
-  static importJSON(serializedNode: SerializedQuoteNode): QuoteNode {
-    const node = $createQuoteNode();
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
-  }
-
   exportJSON(): SerializedElementNode {
     return {
       ...super.exportJSON(),
@@ -281,13 +273,6 @@ export class HeadingNode extends ElementNode {
         return null;
       },
     };
-  }
-  static importJSON(serializedNode: SerializedHeadingNode): HeadingNode {
-    const node = $createHeadingNode(serializedNode.tag);
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
   }
 
   exportJSON(): SerializedHeadingNode {

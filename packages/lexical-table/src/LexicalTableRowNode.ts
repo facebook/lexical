@@ -51,10 +51,6 @@ export class TableRowNode extends DEPRECATED_GridRowNode {
     };
   }
 
-  static importJSON(serializedNode: SerializedTableRowNode): TableRowNode {
-    return $createTableRowNode(serializedNode.height);
-  }
-
   constructor(height?: number, key?: NodeKey) {
     super(key);
     this.__height = height;

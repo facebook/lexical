@@ -36,15 +36,6 @@ export class HashtagNode extends TextNode {
     return element;
   }
 
-  static importJSON(serializedNode: SerializedTextNode): HashtagNode {
-    const node = $createHashtagNode(serializedNode.text);
-    node.setFormat(serializedNode.format);
-    node.setDetail(serializedNode.detail);
-    node.setMode(serializedNode.mode);
-    node.setStyle(serializedNode.style);
-    return node;
-  }
-
   exportJSON(): SerializedTextNode {
     return {
       ...super.exportJSON(),

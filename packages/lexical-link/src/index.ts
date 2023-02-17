@@ -126,19 +126,6 @@ export class LinkNode extends ElementNode {
     };
   }
 
-  static importJSON(
-    serializedNode: SerializedLinkNode | SerializedAutoLinkNode,
-  ): LinkNode {
-    const node = $createLinkNode(serializedNode.url, {
-      rel: serializedNode.rel,
-      target: serializedNode.target,
-    });
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
-  }
-
   exportJSON(): SerializedLinkNode | SerializedAutoLinkNode {
     return {
       ...super.exportJSON(),
@@ -280,17 +267,6 @@ export class AutoLinkNode extends LinkNode {
       {rel: node.__rel, target: node.__target},
       node.__key,
     );
-  }
-
-  static importJSON(serializedNode: SerializedAutoLinkNode): AutoLinkNode {
-    const node = $createAutoLinkNode(serializedNode.url, {
-      rel: serializedNode.rel,
-      target: serializedNode.target,
-    });
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
   }
 
   static importDOM(): null {

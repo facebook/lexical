@@ -143,12 +143,6 @@ export class TweetNode extends DecoratorBlockNode {
     return new TweetNode(node.__id, node.__format, node.__key);
   }
 
-  static importJSON(serializedNode: SerializedTweetNode): TweetNode {
-    const node = $createTweetNode(serializedNode.id);
-    node.setFormat(serializedNode.format);
-    return node;
-  }
-
   exportJSON(): SerializedTweetNode {
     return {
       ...super.exportJSON(),

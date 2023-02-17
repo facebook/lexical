@@ -36,10 +36,6 @@ export class OverflowNode extends ElementNode {
     return new OverflowNode(node.__key);
   }
 
-  static importJSON(serializedNode: SerializedOverflowNode): OverflowNode {
-    return $createOverflowNode();
-  }
-
   static importDOM(): null {
     return null;
   }

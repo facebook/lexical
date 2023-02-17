@@ -124,16 +124,6 @@ export class TestElementNode extends ElementNode {
     return new TestElementNode(node.__key);
   }
 
-  static importJSON(
-    serializedNode: SerializedTestElementNode,
-  ): TestInlineElementNode {
-    const node = $createTestInlineElementNode();
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
-  }
-
   exportJSON(): SerializedTestElementNode {
     return {
       ...super.exportJSON(),
@@ -169,11 +159,6 @@ export class TestTextNode extends TextNode {
     return new TestTextNode(node.__text, node.__key);
   }
 
-  static importJSON(serializedNode: SerializedTestTextNode): TestTextNode {
-    // @ts-ignore
-    return new TestTextNode(serializedNode.__text);
-  }
-
   exportJSON(): SerializedTestTextNode {
     return {
       ...super.exportJSON(),
@@ -198,16 +183,6 @@ export class TestInlineElementNode extends ElementNode {
 
   static clone(node: TestInlineElementNode) {
     return new TestInlineElementNode(node.__key);
-  }
-
-  static importJSON(
-    serializedNode: SerializedTestInlineElementNode,
-  ): TestInlineElementNode {
-    const node = $createTestInlineElementNode();
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
   }
 
   exportJSON(): SerializedTestInlineElementNode {
@@ -252,17 +227,6 @@ export class TestSegmentedNode extends TextNode {
     return new TestSegmentedNode(node.__text, node.__key);
   }
 
-  static importJSON(
-    serializedNode: SerializedTestSegmentedNode,
-  ): TestSegmentedNode {
-    const node = $createTestSegmentedNode(serializedNode.text);
-    node.setFormat(serializedNode.format);
-    node.setDetail(serializedNode.detail);
-    node.setMode(serializedNode.mode);
-    node.setStyle(serializedNode.style);
-    return node;
-  }
-
   exportJSON(): SerializedTestSegmentedNode {
     return {
       ...super.exportJSON(),
@@ -291,16 +255,6 @@ export class TestExcludeFromCopyElementNode extends ElementNode {
 
   static clone(node: TestExcludeFromCopyElementNode) {
     return new TestExcludeFromCopyElementNode(node.__key);
-  }
-
-  static importJSON(
-    serializedNode: SerializedTestExcludeFromCopyElementNode,
-  ): TestExcludeFromCopyElementNode {
-    const node = $createTestExcludeFromCopyElementNode();
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
   }
 
   exportJSON(): SerializedTestExcludeFromCopyElementNode {
@@ -343,12 +297,6 @@ export class TestDecoratorNode extends DecoratorNode<JSX.Element> {
 
   static clone(node: TestDecoratorNode) {
     return new TestDecoratorNode(node.__key);
-  }
-
-  static importJSON(
-    serializedNode: SerializedTestDecoratorNode,
-  ): TestDecoratorNode {
-    return $createTestDecoratorNode();
   }
 
   exportJSON(): SerializedTestDecoratorNode {

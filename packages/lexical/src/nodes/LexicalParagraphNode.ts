@@ -96,14 +96,6 @@ export class ParagraphNode extends ElementNode {
     };
   }
 
-  static importJSON(serializedNode: SerializedParagraphNode): ParagraphNode {
-    const node = $createParagraphNode();
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
-  }
-
   exportJSON(): SerializedElementNode {
     return {
       ...super.exportJSON(),

@@ -13,7 +13,6 @@ import invariant from 'shared/invariant';
 
 import {NO_DIRTY_NODES} from '../LexicalConstants';
 import {getActiveEditor, isCurrentlyReadOnlyMode} from '../LexicalUpdates';
-import {$getRoot} from '../LexicalUtils';
 import {$isDecoratorNode} from './LexicalDecoratorNode';
 import {$isElementNode, ElementNode} from './LexicalElementNode';
 
@@ -92,15 +91,6 @@ export class RootNode extends ElementNode {
       }
     }
     return super.append(...nodesToAppend);
-  }
-
-  static importJSON(serializedNode: SerializedRootNode): RootNode {
-    // We don't create a root, and instead use the existing root.
-    const node = $getRoot();
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
   }
 
   exportJSON(): SerializedRootNode {

@@ -74,12 +74,6 @@ export class FigmaNode extends DecoratorBlockNode {
     return new FigmaNode(node.__id, node.__format, node.__key);
   }
 
-  static importJSON(serializedNode: SerializedFigmaNode): FigmaNode {
-    const node = $createFigmaNode(serializedNode.documentID);
-    node.setFormat(serializedNode.format);
-    return node;
-  }
-
   exportJSON(): SerializedFigmaNode {
     return {
       ...super.exportJSON(),

@@ -48,13 +48,6 @@ export class AutocompleteNode extends DecoratorNode<JSX.Element | null> {
     return 'autocomplete';
   }
 
-  static importJSON(
-    serializedNode: SerializedAutocompleteNode,
-  ): AutocompleteNode {
-    const node = $createAutocompleteNode(serializedNode.uuid);
-    return node;
-  }
-
   exportJSON(): SerializedAutocompleteNode {
     return {
       ...super.exportJSON(),

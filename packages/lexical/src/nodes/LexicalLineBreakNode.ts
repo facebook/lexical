@@ -70,12 +70,6 @@ export class LineBreakNode extends LexicalNode {
     };
   }
 
-  static importJSON(
-    serializedLineBreakNode: SerializedLineBreakNode,
-  ): LineBreakNode {
-    return $createLineBreakNode();
-  }
-
   exportJSON(): SerializedLexicalNode {
     return {
       type: 'linebreak',

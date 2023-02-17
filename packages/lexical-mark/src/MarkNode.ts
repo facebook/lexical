@@ -54,14 +54,6 @@ export class MarkNode extends ElementNode {
     return null;
   }
 
-  static importJSON(serializedNode: SerializedMarkNode): MarkNode {
-    const node = $createMarkNode(serializedNode.ids);
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
-  }
-
   exportJSON(): SerializedMarkNode {
     return {
       ...super.exportJSON(),

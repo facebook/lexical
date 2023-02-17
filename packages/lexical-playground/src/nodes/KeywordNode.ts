@@ -32,15 +32,6 @@ export class KeywordNode extends TextNode {
     return new KeywordNode(node.__text, node.__key);
   }
 
-  static importJSON(serializedNode: SerializedKeywordNode): KeywordNode {
-    const node = $createKeywordNode(serializedNode.text);
-    node.setFormat(serializedNode.format);
-    node.setDetail(serializedNode.detail);
-    node.setMode(serializedNode.mode);
-    node.setStyle(serializedNode.style);
-    return node;
-  }
-
   exportJSON(): SerializedKeywordNode {
     return {
       ...super.exportJSON(),

@@ -79,14 +79,6 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
     };
   }
 
-  static importJSON(serializedNode: SerializedTableCellNode): TableCellNode {
-    return $createTableCellNode(
-      serializedNode.headerState,
-      serializedNode.colSpan,
-      serializedNode.width || undefined,
-    );
-  }
-
   constructor(
     headerState = TableCellHeaderStates.NO_STATUS,
     colSpan = 1,

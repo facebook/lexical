@@ -61,10 +61,6 @@ export class TableNode extends DEPRECATED_GridNode {
     };
   }
 
-  static importJSON(_serializedNode: SerializedTableNode): TableNode {
-    return $createTableNode();
-  }
-
   constructor(key?: NodeKey) {
     super(key);
   }

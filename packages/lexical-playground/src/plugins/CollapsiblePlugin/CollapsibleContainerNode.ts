@@ -82,13 +82,6 @@ export class CollapsibleContainerNode extends ElementNode {
     };
   }
 
-  static importJSON(
-    serializedNode: SerializedCollapsibleContainerNode,
-  ): CollapsibleContainerNode {
-    const node = $createCollapsibleContainerNode(serializedNode.open);
-    return node;
-  }
-
   exportDOM(): DOMExportOutput {
     const element = document.createElement('details');
     element.open = this.__open;

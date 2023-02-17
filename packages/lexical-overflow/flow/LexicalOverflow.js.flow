@@ -22,7 +22,6 @@ declare export class OverflowNode extends ElementNode {
   updateDOM(prevNode: OverflowNode, dom: HTMLElement): boolean;
   insertNewAfter(selection: RangeSelection): null | LexicalNode;
   excludeFromCopy(): boolean;
-  static importJSON(serializedNode: SerializedOverflowNode): OverflowNode;
 }
 declare export function $createOverflowNode(): OverflowNode;
 declare export function $isOverflowNode(

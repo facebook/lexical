@@ -73,12 +73,6 @@ export class CollapsibleContentNode extends ElementNode {
     return {element};
   }
 
-  static importJSON(
-    serializedNode: SerializedCollapsibleContentNode,
-  ): CollapsibleContentNode {
-    return $createCollapsibleContentNode();
-  }
-
   isShadowRoot(): boolean {
     return true;
   }

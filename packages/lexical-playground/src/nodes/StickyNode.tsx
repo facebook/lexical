@@ -59,20 +59,6 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
       node.__key,
     );
   }
-  static importJSON(serializedNode: SerializedStickyNode): StickyNode {
-    const stickyNode = new StickyNode(
-      serializedNode.xOffset,
-      serializedNode.yOffset,
-      serializedNode.color,
-    );
-    const caption = serializedNode.caption;
-    const nestedEditor = stickyNode.__caption;
-    const editorState = nestedEditor.parseEditorState(caption.editorState);
-    if (!editorState.isEmpty()) {
-      nestedEditor.setEditorState(editorState);
-    }
-    return stickyNode;
-  }
 
   constructor(
     x: number,

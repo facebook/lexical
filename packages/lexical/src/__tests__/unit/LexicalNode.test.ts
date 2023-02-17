@@ -38,10 +38,6 @@ class TestNode extends LexicalNode {
     return document.createElement('div');
   }
 
-  static importJSON() {
-    return new TestNode();
-  }
-
   exportJSON() {
     return {type: 'test', version: 1};
   }

@@ -221,33 +221,6 @@ exportJSON(): SerializedHeadingNode {
 }
 ```
 
-#### `LexicalNode.importJSON()`
-
-You can control how a `LexicalNode` is serialized back into a node from JSON by adding an `importJSON()` method.
-
-```js
-export type SerializedLexicalNode = {
-  type: string;
-  version: number;
-};
-
-importJSON(jsonNode: SerializedLexicalNode): LexicalNode
-```
-
-This method works in the opposite way to how `exportJSON` works. Lexical uses the `type` field on the JSON object to determine what Lexical node class it needs to map to, so keeping the `type` field consistent with the `getType()` of the LexicalNode is essential.
-
-Here's an example of `importJSON` for the `HeadingNode`:
-
-```js
-static importJSON(serializedNode: SerializedHeadingNode): HeadingNode {
-  const node = $createHeadingNode(serializedNode.tag);
-  node.setFormat(serializedNode.format);
-  node.setIndent(serializedNode.indent);
-  node.setDirection(serializedNode.direction);
-  return node;
-}
-```
-
 ### Versioning & Breaking Changes
 
 It's important to note that you should avoid making breaking changes to existing fields in your JSON object, especially if backwards compatibility is an important part of your editor. That's why we recommend using a version field to separate the different changes in your node as you add or change functionality of custom nodes. Here's the serialized type definition for Lexical's base `TextNode` class:

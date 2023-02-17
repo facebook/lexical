@@ -114,12 +114,6 @@ export class HorizontalRuleNode extends DecoratorNode<JSX.Element> {
     return new HorizontalRuleNode(node.__key);
   }
 
-  static importJSON(
-    serializedNode: SerializedHorizontalRuleNode,
-  ): HorizontalRuleNode {
-    return $createHorizontalRuleNode();
-  }
-
   static importDOM(): DOMConversionMap | null {
     return {
       hr: () => ({

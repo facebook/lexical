@@ -628,14 +628,6 @@ export class LexicalNode {
     invariant(false, 'exportJSON: base method not extended');
   }
 
-  static importJSON(_serializedNode: SerializedLexicalNode): LexicalNode {
-    invariant(
-      false,
-      'LexicalNode: Node %s does not implement .importJSON().',
-      this.name,
-    );
-  }
-
   // Setters and mutators
 
   remove(preserveEmptyParent?: boolean): void {

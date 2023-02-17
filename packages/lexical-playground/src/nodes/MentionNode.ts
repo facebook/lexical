@@ -55,15 +55,6 @@ export class MentionNode extends TextNode {
   static clone(node: MentionNode): MentionNode {
     return new MentionNode(node.__mention, node.__text, node.__key);
   }
-  static importJSON(serializedNode: SerializedMentionNode): MentionNode {
-    const node = $createMentionNode(serializedNode.mentionName);
-    node.setTextContent(serializedNode.text);
-    node.setFormat(serializedNode.format);
-    node.setDetail(serializedNode.detail);
-    node.setMode(serializedNode.mode);
-    node.setStyle(serializedNode.style);
-    return node;
-  }
 
   constructor(mentionName: string, text?: string, key?: NodeKey) {
     super(text ?? mentionName, key);

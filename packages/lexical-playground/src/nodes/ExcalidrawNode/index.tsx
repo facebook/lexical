@@ -61,10 +61,6 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
     return new ExcalidrawNode(node.__data, node.__key);
   }
 
-  static importJSON(serializedNode: SerializedExcalidrawNode): ExcalidrawNode {
-    return new ExcalidrawNode(serializedNode.data);
-  }
-
   exportJSON(): SerializedExcalidrawNode {
     return {
       data: this.__data,

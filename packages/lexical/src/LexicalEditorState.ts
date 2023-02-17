@@ -15,9 +15,7 @@ import type {
 } from './LexicalSelection';
 import type {SerializedRootNode} from './nodes/LexicalRootNode';
 
-import invariant from 'shared/invariant';
-
-import {$isElementNode, $isTextNode} from '.';
+import {$isElementNode} from '.';
 import {readEditorState} from './LexicalUpdates';
 import {$getRoot} from './LexicalUtils';
 import {$createRootNode} from './nodes/LexicalRootNode';
@@ -55,53 +53,11 @@ export function createEmptyEditorState(): EditorState {
 }
 
 function exportNodeToJSON<SerializedNode>(node: LexicalNode): SerializedNode {
-  let serializedNode = JSON.parse(JSON.stringify(node.getLatest()));
-  delete serializedNode.__first;
-  delete serializedNode.__last;
-  delete serializedNode.__size;
-  delete serializedNode.__parent;
-  delete serializedNode.__next;
-  delete serializedNode.__prev;
-  delete serializedNode.__cachedText;
-  delete serializedNode.__key;
-  delete serializedNode.__dir;
-  serializedNode = Object.fromEntries(
-    Object.entries(serializedNode).map(([k, v]) => [k.slice(2), v]),
-  );
-  if ($isElementNode(node)) {
-    serializedNode = {children: [], ...serializedNode};
-    serializedNode.direction = node.getDirection();
-    serializedNode.format = node.getFormatType();
-    serializedNode.indent = node.getIndent();
-  }
-  if ($isTextNode(node)) {
-    serializedNode.mode = node.getMode();
-  }
-  serializedNode.type = node.getType();
-  serializedNode.version = 1;
-
-  const nodeClass = node.constructor;
-
-  // @ts-expect-error TODO Replace Class utility type with InstanceType
-  if (serializedNode.type !== nodeClass.getType()) {
-    invariant(
-      false,
-      'LexicalNode: Node %s does not implement .exportJSON().',
-      nodeClass.name,
-    );
-  }
+  const serializedNode = node.exportJSON();
 
   const serializedChildren = serializedNode.children;
 
   if ($isElementNode(node)) {
-    if (!Array.isArray(serializedChildren)) {
-      invariant(
-        false,
-        'LexicalNode: Node %s is an element but .exportJSON() does not have a children array.',
-        nodeClass.name,
-      );
-    }
-
     const children = node.getChildren();
 
     for (let i = 0; i < children.length; i++) {

@@ -624,8 +624,32 @@ export class LexicalNode {
     return {element};
   }
 
-  exportJSON(): SerializedLexicalNode {
-    invariant(false, 'exportJSON: base method not extended');
+  exportJSON() {
+    let serializedNode = JSON.parse(JSON.stringify(this.getLatest()));
+    delete serializedNode.__first;
+    delete serializedNode.__last;
+    delete serializedNode.__size;
+    delete serializedNode.__parent;
+    delete serializedNode.__next;
+    delete serializedNode.__prev;
+    delete serializedNode.__cachedText;
+    delete serializedNode.__key;
+    delete serializedNode.__dir;
+    serializedNode = Object.fromEntries(
+      Object.entries(serializedNode).map(([k, v]) => [k.slice(2), v]),
+    );
+    if ($isElementNode(this)) {
+      serializedNode = {children: [], ...serializedNode};
+      serializedNode.direction = this.getDirection();
+      serializedNode.format = this.getFormatType();
+      serializedNode.indent = this.getIndent();
+    }
+    if ($isTextNode(this)) {
+      serializedNode.mode = this.getMode();
+    }
+    serializedNode.type = this.getType();
+    serializedNode.version = 1;
+    return serializedNode;
   }
 
   // Setters and mutators

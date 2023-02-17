@@ -309,17 +309,33 @@ function $parseSerializedNodeImpl<
     invariant(false, 'parseEditorState: type "%s" + not found', type);
   }
 
-  const nodeClass = registeredNode.klass;
-
-  if (serializedNode.type !== nodeClass.getType()) {
-    invariant(
-      false,
-      'LexicalNode: Node %s does not implement .importJSON().',
-      nodeClass.name,
-    );
+  const serializedNode2 = JSON.parse(JSON.stringify(serializedNode));
+  delete serializedNode2.children;
+  delete serializedNode2.version;
+  delete serializedNode2.mode;
+  delete serializedNode2.direction;
+  delete serializedNode2.format;
+  let node = new registeredNode.klass();
+  // @ts-expect-error
+  node.setFormat(serializedNode.format);
+  if ($isTextNode(node)) {
+    // @ts-expect-error
+    node.setMode(serializedNode.mode);
   }
-
-  const node = nodeClass.importJSON(serializedNode);
+  if (
+    $isElementNode(node) &&
+    type !== 'tablecell' &&
+    type !== 'tablerow' &&
+    type !== 'table'
+  ) {
+    // @ts-expect-error
+    node.setDirection(serializedNode.direction);
+  }
+  const prefix = '__';
+  const withUnderscore = Object.fromEntries(
+    Object.entries(serializedNode2).map(([k, v]) => [`${prefix}${k}`, v]),
+  );
+  node = Object.assign(node, withUnderscore);
   const children = serializedNode.children;
 
   if ($isElementNode(node) && Array.isArray(children)) {

@@ -259,6 +259,23 @@ export class ElementNode extends LexicalNode {
     }
     return textContent;
   }
+  getTextContentSize(): number {
+    let textContentSize = 0;
+    const children = this.getChildren();
+    const childrenLength = children.length;
+    for (let i = 0; i < childrenLength; i++) {
+      const child = children[i];
+      textContentSize += child.getTextContentSize();
+      if (
+        $isElementNode(child) &&
+        i !== childrenLength - 1 &&
+        !child.isInline()
+      ) {
+        textContentSize += DOUBLE_LINE_BREAK.length;
+      }
+    }
+    return textContentSize;
+  }
   getDirection(): 'ltr' | 'rtl' | null {
     const self = this.getLatest();
     return self.__dir;

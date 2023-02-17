@@ -251,6 +251,27 @@ describe('LexicalElementNode tests', () => {
     });
   });
 
+  describe('getTextContentSize()', () => {
+    test('basic', async () => {
+      await update(() => {
+        expect($getRoot().getFirstChild().getTextContentSize()).toBe(
+          'FooBarBaz'.length,
+        );
+      });
+    });
+
+    test('child getTextContentSize() does not match getTextContent().length', async () => {
+      await update(() => {
+        const block = $createTestElementNode();
+        const text = $createTextNode('Foo');
+        text.getTextContentSize = () => 1;
+        block.append(text);
+
+        expect(block.getTextContentSize()).toBe(1);
+      });
+    });
+  });
+
   describe('splice', () => {
     let block;
 

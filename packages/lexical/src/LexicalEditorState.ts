@@ -17,7 +17,7 @@ import type {SerializedRootNode} from './nodes/LexicalRootNode';
 
 import invariant from 'shared/invariant';
 
-import {$isElementNode} from '.';
+import {$isElementNode, $isTextNode} from '.';
 import {readEditorState} from './LexicalUpdates';
 import {$getRoot} from './LexicalUtils';
 import {$createRootNode} from './nodes/LexicalRootNode';
@@ -55,7 +55,31 @@ export function createEmptyEditorState(): EditorState {
 }
 
 function exportNodeToJSON<SerializedNode>(node: LexicalNode): SerializedNode {
-  const serializedNode = node.exportJSON();
+  let serializedNode = JSON.parse(JSON.stringify(node.getLatest()));
+  delete serializedNode.__first;
+  delete serializedNode.__last;
+  delete serializedNode.__size;
+  delete serializedNode.__parent;
+  delete serializedNode.__next;
+  delete serializedNode.__prev;
+  delete serializedNode.__cachedText;
+  delete serializedNode.__key;
+  delete serializedNode.__dir;
+  serializedNode = Object.fromEntries(
+    Object.entries(serializedNode).map(([k, v]) => [k.slice(2), v]),
+  );
+  if ($isElementNode(node)) {
+    serializedNode = {children: [], ...serializedNode};
+    serializedNode.direction = node.getDirection();
+    serializedNode.format = node.getFormatType();
+    serializedNode.indent = node.getIndent();
+  }
+  if ($isTextNode(node)) {
+    serializedNode.mode = node.getMode();
+  }
+  serializedNode.type = node.getType();
+  serializedNode.version = 1;
+
   const nodeClass = node.constructor;
 
   // @ts-expect-error TODO Replace Class utility type with InstanceType
@@ -67,7 +91,6 @@ function exportNodeToJSON<SerializedNode>(node: LexicalNode): SerializedNode {
     );
   }
 
-  // @ts-expect-error TODO Replace Class utility type with InstanceType
   const serializedChildren = serializedNode.children;
 
   if ($isElementNode(node)) {
@@ -88,7 +111,6 @@ function exportNodeToJSON<SerializedNode>(node: LexicalNode): SerializedNode {
     }
   }
 
-  // @ts-expect-error
   return serializedNode;
 }
 

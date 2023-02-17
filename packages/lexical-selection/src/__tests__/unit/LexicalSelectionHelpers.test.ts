@@ -8,7 +8,10 @@
 
 import {$createLinkNode} from '@lexical/link';
 import {$createHeadingNode} from '@lexical/rich-text';
-import {$patchStyleText} from '@lexical/selection';
+import {
+  $getSelectionStyleValueForProperty,
+  $patchStyleText,
+} from '@lexical/selection';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -2861,5 +2864,51 @@ describe('$patchStyleText', () => {
     expect(element.innerHTML).toBe(
       '<p dir="ltr"><span data-lexical-text="true">text</span></p>',
     );
+  });
+
+  test('can toggle a style on a collapsed selection', async () => {
+    const editor = createTestEditor();
+    const element = document.createElement('div');
+    editor.setRootElement(element);
+
+    await editor.update(() => {
+      const root = $getRoot();
+
+      const paragraph = $createParagraphNode();
+      root.append(paragraph);
+
+      const text = $createTextNode('text');
+      paragraph.append(text);
+
+      setAnchorPoint({
+        key: text.getKey(),
+        offset: 0,
+        type: 'text',
+      });
+      setFocusPoint({
+        key: text.getKey(),
+        offset: 0,
+        type: 'text',
+      });
+
+      const selection = $getSelection() as RangeSelection;
+      $patchStyleText(selection, {'text-emphasis': 'filled'});
+
+      expect(
+        $getSelectionStyleValueForProperty(selection, 'text-emphasis', ''),
+      ).toEqual('filled');
+
+      $patchStyleText(selection, {'text-emphasis': null});
+
+      expect(
+        $getSelectionStyleValueForProperty(selection, 'text-emphasis', ''),
+      ).toEqual('');
+
+      $patchStyleText(selection, {'text-emphasis': 'filled'});
+
+      expect(
+        $getSelectionStyleValueForProperty(selection, 'text-emphasis', ''),
+      ).toEqual('filled');
+    });
   });
 });

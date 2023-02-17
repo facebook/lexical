@@ -13,7 +13,12 @@ import type {
   TextModeType,
 } from './nodes/LexicalTextNode';
 
-import {IS_FIREFOX, IS_IOS, IS_SAFARI} from 'shared/environment';
+import {
+  IS_APPLE_WEBKIT,
+  IS_FIREFOX,
+  IS_IOS,
+  IS_SAFARI,
+} from 'shared/environment';
 
 // DOM
 export const DOM_ELEMENT_TYPE = 1;
@@ -69,7 +74,9 @@ const ZERO_WIDTH_SPACE = '\u200b';
 // For iOS/Safari we use a non breaking space, otherwise the cursor appears
 // overlapping the composed text.
 export const COMPOSITION_SUFFIX: string =
-  IS_SAFARI || IS_IOS ? NON_BREAKING_SPACE : ZERO_WIDTH_SPACE;
+  IS_SAFARI || IS_IOS || IS_APPLE_WEBKIT
+    ? NON_BREAKING_SPACE
+    : ZERO_WIDTH_SPACE;
 export const DOUBLE_LINE_BREAK = '\n\n';
 
 // For FF, we need to use a non-breaking space, or it gets composition

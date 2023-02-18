@@ -7,13 +7,12 @@
  */
 
 import type {LexicalEditor} from './LexicalEditor';
-import type {LexicalNode, NodeMap} from './LexicalNode';
+import type {LexicalNode, NodeMap, serializableNode} from './LexicalNode';
 import type {
   GridSelection,
   NodeSelection,
   RangeSelection,
 } from './LexicalSelection';
-import type {SerializedRootNode} from './nodes/LexicalRootNode';
 
 import {$isElementNode} from '.';
 import {readEditorState} from './LexicalUpdates';
@@ -21,7 +20,7 @@ import {$getRoot} from './LexicalUtils';
 import {$createRootNode} from './nodes/LexicalRootNode';
 
 export interface SerializedEditorState {
-  root: SerializedRootNode;
+  root: serializableNode<LexicalNode>;
 }
 
 export function editorStateHasDirtySelection(
@@ -52,7 +51,7 @@ export function createEmptyEditorState(): EditorState {
   return new EditorState(new Map([['root', $createRootNode()]]));
 }
 
-function exportNodeToJSON<SerializedNode>(node: LexicalNode): SerializedNode {
+function exportNodeToJSON(node: LexicalNode) {
   const serializedNode = node.exportJSON();
 
   const serializedChildren = serializedNode.children;

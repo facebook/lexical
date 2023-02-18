@@ -296,10 +296,8 @@ export function $parseSerializedNode(
   );
 }
 
-function $parseSerializedNodeImpl<
-  SerializedNode extends InternalSerializedNode,
->(
-  serializedNode: SerializedNode,
+function $parseSerializedNodeImpl(
+  serializedNode: any,
   registeredNodes: RegisteredNodes,
 ): LexicalNode {
   const type = serializedNode.type;
@@ -319,7 +317,6 @@ function $parseSerializedNodeImpl<
   // @ts-expect-error
   node.setFormat(serializedNode.format);
   if ($isTextNode(node)) {
-    // @ts-expect-error
     node.setMode(serializedNode.mode);
   }
   if (
@@ -328,7 +325,6 @@ function $parseSerializedNodeImpl<
     type !== 'tablerow' &&
     type !== 'table'
   ) {
-    // @ts-expect-error
     node.setDirection(serializedNode.direction);
   }
   const prefix = '__';

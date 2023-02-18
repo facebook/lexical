@@ -155,8 +155,6 @@ export type DOMExportOutput = {
 export type NodeKey = string;
 
 export class LexicalNode {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [x: string]: any;
   /** @internal */
   __type: string;
   /** @internal */
@@ -624,7 +622,7 @@ export class LexicalNode {
     return {element};
   }
 
-  exportJSON() {
+  exportJSON(): serializableNode<this> {
     let serializedNode = JSON.parse(JSON.stringify(this.getLatest()));
     delete serializedNode.__first;
     delete serializedNode.__last;
@@ -648,7 +646,7 @@ export class LexicalNode {
       serializedNode.mode = this.getMode();
     }
     serializedNode.type = this.getType();
-    serializedNode.version = 1;
+    serializedNode.version = 1; // To-do: ¿What should I do with this?
     return serializedNode;
   }
 
@@ -693,7 +691,11 @@ export class LexicalNode {
     writableReplaceWith.__next = nextKey;
     writableReplaceWith.__parent = parentKey;
     writableParent.__size = size;
-    if (includeChildren) {
+    if (
+      includeChildren &&
+      $isElementNode(this) &&
+      $isElementNode(writableReplaceWith)
+    ) {
       this.getChildren().forEach((child: LexicalNode) => {
         writableReplaceWith.append(child);
       });
@@ -878,3 +880,43 @@ function errorOnTypeKlassMismatch(
     );
   }
 }
+
+// In the following lines we follow the exportJSON process.
+
+// 1. Eliminate the methods leaving only the properties
+type onlyProps<T> = Pick<
+  T,
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  {[K in keyof T]: T[K] extends Function ? never : K}[keyof T]
+>;
+
+// 2. Rename '__dir' to '__direction'
+type Direction<T> = {
+  [Property in keyof onlyProps<T> as Property extends '__dir'
+    ? '__direction'
+    : Property]: onlyProps<T>[Property];
+};
+
+// 3. Eliminate the properties that we are not going to use
+type OmitProps<T> = Omit<
+  Direction<T>,
+  | '__key'
+  | '__first'
+  | '__last'
+  | '__size'
+  | '__parent'
+  | '__next'
+  | '__prev'
+  | '__cachedText'
+  | '__key'
+>;
+
+// 4. We remove the two underscores from each property
+type DropUnderscore<T> = {
+  [K in keyof OmitProps<T> as K extends `__${infer I}`
+    ? I
+    : K]: OmitProps<T>[K];
+};
+
+// 5. We're done!
+type serializableNode<T> = DropUnderscore<T> & {version: number};

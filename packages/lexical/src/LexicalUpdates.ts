@@ -331,7 +331,7 @@ function $parseSerializedNodeImpl(
   const withUnderscore = Object.fromEntries(
     Object.entries(serializedNode2).map(([k, v]) => [`${prefix}${k}`, v]),
   );
-  node = Object.assign(node, withUnderscore);
+  node = Object.assign(node, withUnderscore) as unknown as LexicalNode;
   const children = serializedNode.children;
 
   if ($isElementNode(node) && Array.isArray(children)) {

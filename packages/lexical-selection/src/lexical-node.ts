@@ -67,11 +67,14 @@ export function $cloneWithProperties<T extends LexicalNode>(node: T): T {
   clone.__prev = latest.__prev;
 
   if ($isElementNode(latest) && $isElementNode(clone)) {
-    return $updateElementNodeProperties(clone, latest);
+    return $updateElementNodeProperties(
+      clone,
+      latest as unknown as ElementNode,
+    );
   }
 
   if ($isTextNode(latest) && $isTextNode(clone)) {
-    return $updateTextNodeProperties(clone, latest);
+    return $updateTextNodeProperties(clone, latest as unknown as TextNode);
   }
 
   return clone;

@@ -386,7 +386,7 @@ export class LexicalNode {
     const a = this.getParents();
     const b = node.getParents();
     if ($isElementNode(this)) {
-      a.unshift(this);
+      a.unshift(this as unknown as ElementNode);
     }
     if ($isElementNode(node)) {
       b.unshift(node);

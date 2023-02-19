@@ -34,7 +34,12 @@ import {
   TableNode,
   TableRowNode,
 } from '@lexical/table';
-import {$createTextNode, $isParagraphNode, $isTextNode,LexicalNode} from 'lexical';
+import {
+  $createTextNode,
+  $isParagraphNode,
+  $isTextNode,
+  LexicalNode,
+} from 'lexical';
 
 import {
   $createEquationNode,
@@ -159,7 +164,9 @@ export const TABLE: ElementTransformer = {
 
     for (const row of node.getChildren()) {
       const rowOutput = [];
-      if (!$isTableRowNode(row)) continue;
+      if (!$isTableRowNode(row)) {
+        continue;
+      }
 
       let isHeaderRow = false;
       for (const cell of row.getChildren()) {
@@ -185,15 +192,21 @@ export const TABLE: ElementTransformer = {
     // Header row
     if (TABLE_ROW_DIVIDER_REG_EXP.test(match[0])) {
       const table = parentNode.getPreviousSibling();
-      if (!table || !$isTableNode(table)) return;
+      if (!table || !$isTableNode(table)) {
+        return;
+      }
 
       const rows = table.getChildren();
       const lastRow = rows[rows.length - 1];
-      if (!lastRow || !$isTableRowNode(lastRow)) return;
+      if (!lastRow || !$isTableRowNode(lastRow)) {
+        return;
+      }
 
       // Add header state to row cells
       lastRow.getChildren().forEach((cell) => {
-        if (!$isTableCellNode(cell)) return;
+        if (!$isTableCellNode(cell)) {
+          return;
+        }
         cell.toggleHeaderStyle(TableCellHeaderStates.ROW);
       });
 
@@ -281,7 +294,9 @@ const createTableCell = (textContent: string): TableCellNode => {
 
 const mapToTableCells = (textContent: string): Array<TableCellNode> | null => {
   const match = textContent.match(TABLE_ROW_REG_EXP);
-  if (!match || !match[1]) return null;
+  if (!match || !match[1]) {
+    return null;
+  }
   return match[1].split('|').map((text) => createTableCell(text));
 };
 

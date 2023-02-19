@@ -20,7 +20,7 @@ import type {
   SerializedElementNode,
 } from 'lexical';
 
-import {addClassNamesToElement} from '@lexical/utils';
+import {$findMatchingParent, addClassNamesToElement} from '@lexical/utils';
 import {
   $applyNodeReplacement,
   $getSelection,
@@ -273,7 +273,7 @@ export class AutoLinkNode extends LinkNode {
     );
     if ($isElementNode(element)) {
       const linkNode = $createAutoLinkNode(this.__url, {
-        rel: this._rel,
+        rel: this.__rel,
         target: this.__target,
       });
       element.append(linkNode);
@@ -334,9 +334,7 @@ export function toggleLink(
       const firstNode = nodes[0];
       // if the first node is a LinkNode or if its
       // parent is a LinkNode, we update the URL, target and rel.
-      const linkNode = $isLinkNode(firstNode)
-        ? firstNode
-        : $getLinkAncestor(firstNode);
+      const linkNode = $findMatchingParent(firstNode, $isLinkNode) as LinkNode;
       if (linkNode !== null) {
         linkNode.setURL(url);
         if (target !== undefined) {
@@ -411,21 +409,4 @@ export function toggleLink(
       }
     });
   }
-}
-
-function $getLinkAncestor(node: LexicalNode): null | LexicalNode {
-  return $getAncestor(node, (ancestor) => $isLinkNode(ancestor));
-}
-
-function $getAncestor(
-  node: LexicalNode,
-  predicate: (ancestor: LexicalNode) => boolean,
-): null | LexicalNode {
-  let parent: null | LexicalNode = node;
-  while (
-    parent !== null &&
-    (parent = parent.getParent()) !== null &&
-    !predicate(parent)
-  );
-  return parent;
 }

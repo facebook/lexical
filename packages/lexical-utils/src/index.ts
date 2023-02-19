@@ -25,6 +25,7 @@ import {
   Klass,
   LexicalEditor,
   LexicalNode,
+  TextNode,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -207,6 +208,8 @@ export type DOMNodeToLexicalConversionMap = Record<
   DOMNodeToLexicalConversion
 >;
 
+// TODO: It would be nice if this function returned
+// the type of findFn since sometimes it is a type predicate.
 export function $findMatchingParent(
   startingNode: LexicalNode,
   findFn: (node: LexicalNode) => boolean,
@@ -318,7 +321,7 @@ export function $restoreEditorState(
   for (const [key, node] of editorState._nodeMap) {
     const clone = $cloneWithProperties(node);
     if ($isTextNode(clone)) {
-      clone.__text = node.__text;
+      clone.__text = (node as TextNode).__text;
     }
     nodeMap.set(key, clone);
   }

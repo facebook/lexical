@@ -451,7 +451,7 @@ export class GridSelection implements BaseSelection {
   insertNodes(nodes: Array<LexicalNode>, selectStart?: boolean): boolean {
     const focusNode = this.focus.getNode();
     const selection = $normalizeSelection(
-      focusNode.select(0, focusNode.getChildrenSize()),
+      focusNode.select(0, (focusNode as ElementNode).getChildrenSize()),
     );
     return selection.insertNodes(nodes, selectStart);
   }
@@ -2109,7 +2109,7 @@ function moveNativeSelection(
   direction: 'backward' | 'forward' | 'left' | 'right',
   granularity: 'character' | 'word' | 'lineboundary',
 ): void {
-  // @ts-expect-error Selection.modify() method applies a change to the current selection or cursor position,
+  // Selection.modify() method applies a change to the current selection or cursor position,
   // but is still non-standard in some browsers.
   domSelection.modify(alter, direction, granularity);
 }

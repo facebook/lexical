@@ -42,7 +42,11 @@ export type Spread<T1, T2> = Omit<T2, keyof T1> & T1;
 export type Klass<T extends LexicalNode> = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   new (...args: any[]): T;
-} & Omit<LexicalNode, 'constructor'>;
+} & {
+  getType: () => string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  importDOM?: () => any;
+};
 
 export type EditorThemeClassName = string;
 

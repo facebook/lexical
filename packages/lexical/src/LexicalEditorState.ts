@@ -54,15 +54,14 @@ export function createEmptyEditorState(): EditorState {
 function exportNodeToJSON(node: LexicalNode) {
   const serializedNode = node.exportJSON();
 
-  const serializedChildren = serializedNode.children;
-
   if ($isElementNode(node)) {
     const children = node.getChildren();
+    serializedNode.children = [];
 
     for (let i = 0; i < children.length; i++) {
       const child = children[i];
       const serializedChildNode = exportNodeToJSON(child);
-      serializedChildren.push(serializedChildNode);
+      serializedNode.children.push(serializedChildNode);
     }
   }
 

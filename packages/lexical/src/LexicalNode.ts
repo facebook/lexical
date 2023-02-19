@@ -919,4 +919,7 @@ type DropUnderscore<T> = {
 };
 
 // 5. We're done!
-type serializableNode<T> = DropUnderscore<T> & {version: number};
+export type serializableNode<T> = DropUnderscore<T> & {
+  version: number;
+  children?: Array<serializableNode<LexicalNode>>;
+};

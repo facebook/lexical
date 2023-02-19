@@ -1542,7 +1542,7 @@ export function $splitNode(
       const [leftTree, rightTree, newParent] = recurse(parent);
       const nextSiblings = currentNode.getNextSiblings();
 
-      newParent.append(nodeToMove, ...nextSiblings);
+      (newParent as ElementNode).append(nodeToMove, ...nextSiblings);
       return [leftTree, rightTree, nodeToMove];
     }
   };

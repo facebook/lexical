@@ -675,7 +675,11 @@ export class LexicalNode {
     writableReplaceWith.__next = nextKey;
     writableReplaceWith.__parent = parentKey;
     writableParent.__size = size;
-    if (includeChildren) {
+    if (
+      includeChildren &&
+      $isElementNode(writableReplaceWith) &&
+      $isElementNode(this)
+    ) {
       this.getChildren().forEach((child: LexicalNode) => {
         writableReplaceWith.append(child);
       });

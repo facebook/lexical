@@ -18,6 +18,7 @@ import {
   COMMAND_PRIORITY_EDITOR,
   createCommand,
   EditorThemeClasses,
+  ElementNode,
   Klass,
   LexicalCommand,
   LexicalEditor,
@@ -184,12 +185,14 @@ export function TablePlugin({
           );
 
           if ($isRootOrShadowRoot(focusNode)) {
-            const target = focusNode.getChildAtIndex(focus.offset);
+            const target = (focusNode as ElementNode).getChildAtIndex(
+              focus.offset,
+            );
 
             if (target !== null) {
               target.insertBefore(tableNode);
             } else {
-              focusNode.append(tableNode);
+              (focusNode as ElementNode).append(tableNode);
             }
 
             tableNode.insertBefore($createParagraphNode());

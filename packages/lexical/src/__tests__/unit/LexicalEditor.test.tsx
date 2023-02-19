@@ -426,7 +426,7 @@ describe('LexicalEditor tests', () => {
     const italicsListener = editor.registerNodeTransform(
       ParagraphNode,
       (paragraph) => {
-        const child = paragraph.getLastDescendant();
+        const child = paragraph.getLastDescendant() as TextNode;
 
         if (
           child !== null &&
@@ -447,7 +447,7 @@ describe('LexicalEditor tests', () => {
     await editor.update(() => {
       const root = $getRoot();
       const paragraph = root.getFirstChild();
-      paragraph.markDirty();
+      paragraph?.markDirty();
     });
 
     testParagraphListener();
@@ -2226,9 +2226,8 @@ describe('LexicalEditor tests', () => {
           TestTextNode,
           {
             replace: TextNode,
-            // @ts-ignore
             with: (node: TextNode) => new TestTextNode(node.getTextContent()),
-
+            // @ts-ignore
             withKlass: TestTextNode,
           },
         ],

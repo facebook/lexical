@@ -23,7 +23,8 @@ const expectedTextContent =
 
 const IMAGE: TextMatchTransformer = {
   dependencies: [ImageNode],
-  export: (node, exportChildren, exportFormat) => {
+  // @ts-ignore
+  export: (node: ImageNode, exportChildren, exportFormat) => {
     return `![${node.getAltText()}](${node.getSrc()})`;
   },
   importRegExp: /!(?:\[([^[]*)\])(?:\(([^(]+)\))/,
@@ -39,7 +40,8 @@ const IMAGE: TextMatchTransformer = {
 
 const EQUATION: TextMatchTransformer = {
   dependencies: [EquationNode],
-  export: (node, exportChildren, exportFormat) => {
+  // @ts-ignore
+  export: (node: EquationNode, exportChildren, exportFormat) => {
     return `$${node.getEquation()}$`;
   },
   importRegExp: /\$([^$].+?)\$/,
@@ -69,7 +71,7 @@ describe('MarkdownImport tests', () => {
         test('createMarkdownImport', async () => {
           const {editor} = testEnv;
 
-          await editor.update(() => {
+          await editor?.update(() => {
             createMarkdownResult = createMarkdownImport(transformers);
           });
         });

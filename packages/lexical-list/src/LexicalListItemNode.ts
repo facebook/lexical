@@ -181,7 +181,7 @@ export class ListItemNode extends ElementNode {
         list.insertAfter(replaceWithNode);
         replaceWithNode.insertAfter(newList);
       }
-      if (includeChildren) {
+      if (includeChildren && $isElementNode(replaceWithNode)) {
         this.getChildren().forEach((child: LexicalNode) => {
           replaceWithNode.append(child);
         });

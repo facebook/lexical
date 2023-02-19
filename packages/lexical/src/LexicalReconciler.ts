@@ -522,7 +522,7 @@ function reconcileNode(
   parentDOM: HTMLElement | null,
 ): HTMLElement {
   const prevNode = activePrevNodeMap.get(key);
-  let nextNode = activeNextNodeMap.get(key);
+  const nextNode = activeNextNodeMap.get(key);
 
   if (prevNode === undefined || nextNode === undefined) {
     invariant(
@@ -643,8 +643,8 @@ function reconcileNode(
     nextNode.__cachedText !== editorTextContent
   ) {
     // Cache the latest text content.
-    nextNode = nextNode.getWritable();
-    nextNode.__cachedText = editorTextContent;
+    const root = nextNode.getWritable();
+    root.__cachedText = editorTextContent;
   }
 
   if (__DEV__) {

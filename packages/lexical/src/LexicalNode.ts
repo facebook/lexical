@@ -155,8 +155,6 @@ export type DOMExportOutput = {
 export type NodeKey = string;
 
 export class LexicalNode {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [x: string]: any;
   /** @internal */
   __type: string;
   /** @internal */

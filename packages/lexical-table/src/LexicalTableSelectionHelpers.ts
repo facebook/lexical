@@ -9,6 +9,7 @@
 import type {TableNode} from './LexicalTableNode';
 import type {Cell, Cells, Grid} from './LexicalTableSelection';
 import type {
+  ElementNode,
   GridSelection,
   LexicalCommand,
   LexicalEditor,
@@ -913,11 +914,13 @@ export function applyTableHandlers(
               const gridSelection = DEPRECATED_$createGridSelection();
               const tableKey = tableNode.getKey();
 
-              const firstCell = tableNode
-                .getFirstChildOrThrow()
-                .getFirstChild();
+              const firstCell = (
+                tableNode.getFirstChildOrThrow() as ElementNode
+              ).getFirstChild();
 
-              const lastCell = tableNode.getLastChildOrThrow().getLastChild();
+              const lastCell = (
+                tableNode.getLastChildOrThrow() as ElementNode
+              ).getLastChild();
 
               if (firstCell != null && lastCell != null) {
                 gridSelection.set(

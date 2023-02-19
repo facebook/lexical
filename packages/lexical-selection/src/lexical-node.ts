@@ -122,11 +122,9 @@ export function $sliceSelectedTextNodeContent(
 }
 
 export function $isAtNodeEnd(point: Point): boolean {
-  if (point.type === 'text') {
-    return point.offset === point.getNode().getTextContentSize();
-  }
-
-  return point.offset === point.getNode().getChildrenSize();
+  const node = point.getNode();
+  if ($isElementNode(node)) return point.offset === node.getChildrenSize();
+  else return point.offset === node.getTextContentSize();
 }
 
 export function trimTextContentFromAnchor(
@@ -160,7 +158,7 @@ export function trimTextContentFromAnchor(
         }
         parentSibling = parent.getPreviousSibling();
       }
-      if (parent !== null) {
+      if ($isElementNode(parent)) {
         additionalElementWhitespace = parent.isInline() ? 0 : 2;
         if ($isElementNode(parentSibling)) {
           nextNode = parentSibling.getLastDescendant();

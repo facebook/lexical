@@ -1332,7 +1332,11 @@ export function $getNearestRootOrShadowRoot(
   return parent;
 }
 
-export function $isRootOrShadowRoot(node: null | LexicalNode): boolean {
+type ShadowRoot = ElementNode & Record<string, unknown>;
+
+export function $isRootOrShadowRoot(
+  node: null | LexicalNode,
+): node is ShadowRoot {
   return $isRootNode(node) || ($isElementNode(node) && node.isShadowRoot());
 }
 

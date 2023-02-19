@@ -318,7 +318,7 @@ function onSelectionChange(
           selection.format = lastFormat;
           selection.style = lastStyle;
         } else {
-          if (anchor.type === 'text') {
+          if ($isTextNode(anchorNode)) {
             selection.format = anchorNode.getFormat();
             selection.style = anchorNode.getStyle();
           } else if (anchor.type === 'element') {
@@ -369,7 +369,7 @@ function onClick(event: MouseEvent, editor: LexicalEditor): void {
 
       if (
         domSelection &&
-        anchor.type === 'element' &&
+        $isElementNode(anchorNode) &&
         anchor.offset === 0 &&
         selection.isCollapsed() &&
         !$isRootNode(anchorNode) &&

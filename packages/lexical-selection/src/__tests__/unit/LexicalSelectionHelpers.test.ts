@@ -2911,4 +2911,50 @@ describe('$patchStyleText', () => {
       ).toEqual('filled');
     });
   });
+
+  test('updates cached styles when setting on a collapsed selection', async () => {
+    const editor = createTestEditor();
+    const element = document.createElement('div');
+    editor.setRootElement(element);
+
+    await editor.update(() => {
+      const root = $getRoot();
+
+      const paragraph = $createParagraphNode();
+      root.append(paragraph);
+
+      const text = $createTextNode('text');
+      paragraph.append(text);
+
+      setAnchorPoint({
+        key: text.getKey(),
+        offset: 0,
+        type: 'text',
+      });
+      setFocusPoint({
+        key: text.getKey(),
+        offset: 0,
+        type: 'text',
+      });
+
+      // First fetch the initial style -- this will cause the CSS cache to be
+      // populated with an empty string pointing to an empty style object.
+      const selection = $getSelection() as RangeSelection;
+      $getSelectionStyleValueForProperty(selection, 'color', '');
+
+      // Now when we set the style, we should _not_ touch the previously created
+      // empty style object, but create a new one instead.
+      $patchStyleText(selection, {color: 'red'});
+
+      // We can check that result by clearing the style and re-querying it.
+      ($getSelection() as RangeSelection).setStyle('');
+
+      const color = $getSelectionStyleValueForProperty(
+        $getSelection() as RangeSelection,
+        'color',
+        '',
+      );
+      expect(color).toEqual('');
+    });
+  });
 });

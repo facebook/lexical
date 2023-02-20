@@ -221,6 +221,12 @@ pre::-webkit-scrollbar-thumb {
   bottom: 20px;
 }
 
+#docs-button {
+  position: fixed;
+  left: 170px;
+  bottom: 20px;
+}
+
 #options-button::after {
   background-image: url(images/icons/gear.svg);
 }
@@ -231,6 +237,10 @@ pre::-webkit-scrollbar-thumb {
 
 #paste-log-button::after {
   background-image: url(images/icons/clipboard.svg);
+}
+
+#docs-button::after {
+  background-image: url(images/icons/file-earmark-text.svg);
 }
 
 #test-recorder-button-snapshot {

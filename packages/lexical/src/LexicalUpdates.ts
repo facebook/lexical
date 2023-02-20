@@ -307,13 +307,22 @@ function $parseSerializedNodeImpl(
     invariant(false, 'parseEditorState: type "%s" + not found', type);
   }
 
+  const nodeClass = registeredNode.klass;
+
+  if (serializedNode.type !== nodeClass.getType()) {
+    invariant(
+      false,
+      'LexicalNode: Node %s does not implement .importJSON().',
+      nodeClass.name,
+    );
+  }
   const serializedNode2 = JSON.parse(JSON.stringify(serializedNode));
   delete serializedNode2.children;
   delete serializedNode2.version;
   delete serializedNode2.mode;
   delete serializedNode2.direction;
   delete serializedNode2.format;
-  let node = new registeredNode.klass();
+  let node = new nodeClass();
   // @ts-expect-error
   node.setFormat(serializedNode.format);
   if ($isTextNode(node)) {

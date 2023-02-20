@@ -208,8 +208,6 @@ export type DOMNodeToLexicalConversionMap = Record<
   DOMNodeToLexicalConversion
 >;
 
-// TODO: It would be nice if this function returned
-// the type of findFn since sometimes it is a type predicate.
 export function $findMatchingParent(
   startingNode: LexicalNode,
   findFn: (node: LexicalNode) => boolean,

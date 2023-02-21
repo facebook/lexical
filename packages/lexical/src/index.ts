@@ -145,6 +145,7 @@ export {
   $setSelection,
   $splitNode,
   isSelectionWithinEditor,
+  getElementByKeyOrThrow
 } from './LexicalUtils';
 export {$isDecoratorNode, DecoratorNode} from './nodes/LexicalDecoratorNode';
 export {$isElementNode, ElementNode} from './nodes/LexicalElementNode';

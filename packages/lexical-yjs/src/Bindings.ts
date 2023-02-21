@@ -15,9 +15,9 @@ import type {LexicalEditor, NodeKey} from 'lexical';
 import type {Doc} from 'yjs';
 
 import invariant from 'shared/invariant';
-import {WebsocketProvider} from 'y-websocket';
 import {XmlText} from 'yjs';
 
+import {Provider} from '.';
 import {$createCollabElementNode} from './CollabElementNode';
 
 export type ClientID = number;
@@ -42,7 +42,7 @@ export type Binding = {
 
 export function createBinding(
   editor: LexicalEditor,
-  provider: WebsocketProvider,
+  provider: Provider,
   id: string,
   doc: Doc | null | undefined,
   docMap: Map<string, Doc>,

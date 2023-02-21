@@ -8,10 +8,9 @@
 
 import type {LexicalEditor} from 'lexical';
 
-import {TOGGLE_CONNECT_COMMAND} from '@lexical/yjs';
+import {Provider, TOGGLE_CONNECT_COMMAND} from '@lexical/yjs';
 import {COMMAND_PRIORITY_LOW} from 'lexical';
 import {useEffect, useState} from 'react';
-import {WebsocketProvider} from 'y-websocket';
 import {
   Array as YArray,
   Map as YMap,
@@ -106,7 +105,7 @@ export class CommentStore {
   _editor: LexicalEditor;
   _comments: Comments;
   _changeListeners: Set<() => void>;
-  _collabProvider: null | WebsocketProvider;
+  _collabProvider: null | Provider;
 
   constructor(editor: LexicalEditor) {
     this._comments = [];
@@ -283,7 +282,7 @@ export class CommentStore {
     return sharedMap;
   }
 
-  registerCollaboration(provider: WebsocketProvider): () => void {
+  registerCollaboration(provider: Provider): () => void {
     this._collabProvider = provider;
     const sharedCommentsArray = this._getCollabComments();
 

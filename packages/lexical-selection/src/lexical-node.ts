@@ -23,6 +23,7 @@ import {
   $isElementNode,
   $isRangeSelection,
   $isTextNode,
+  $isRootNode,
   DEPRECATED_$isGridSelection,
 } from 'lexical';
 
@@ -183,7 +184,7 @@ export function trimTextContentFromAnchor(
     if (!$isTextNode(currentNode) || remaining >= textNodeSize) {
       const parent = currentNode.getParent();
       currentNode.remove();
-      if (parent != null && parent.getChildrenSize() === 0) {
+      if (parent != null && parent.getChildrenSize() === 0 && !$isRootNode(parent)) {
         parent.remove();
       }
       remaining -= textNodeSize + additionalElementWhitespace;

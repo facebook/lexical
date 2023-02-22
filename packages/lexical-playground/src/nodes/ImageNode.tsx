@@ -15,8 +15,6 @@ import type {
   LexicalNode,
   NodeKey,
   SerializedEditor,
-  SerializedLexicalNode,
-  Spread,
 } from 'lexical';
 
 import {$applyNodeReplacement, createEditor, DecoratorNode} from 'lexical';
@@ -49,20 +47,17 @@ function convertImageElement(domNode: Node): null | DOMConversionOutput {
   return null;
 }
 
-export type SerializedImageNode = Spread<
-  {
-    altText: string;
-    caption: SerializedEditor;
-    height?: number;
-    maxWidth: number;
-    showCaption: boolean;
-    src: string;
-    width?: number;
-    type: 'image';
-    version: 1;
-  },
-  SerializedLexicalNode
->;
+export type SerializedImageNode = {
+  altText: string;
+  caption: SerializedEditor;
+  height?: number;
+  maxWidth: number;
+  showCaption: boolean;
+  src: string;
+  width?: number;
+  type: 'image';
+  version: 1;
+};
 
 export class ImageNode extends DecoratorNode<JSX.Element> {
   __src: string;
@@ -91,6 +86,28 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
       node.__captionsEnabled,
       node.__key,
     );
+  }
+
+  // The importJSON method without an exportJSON() is required, because
+  // the LexicalEditor class (in caption) has a toJSON method that
+  // converts it to SerializedEditor.
+  static importJSON(serializedNode: SerializedImageNode): ImageNode {
+    const {altText, height, width, maxWidth, caption, src, showCaption} =
+      serializedNode;
+    const node = $createImageNode({
+      altText,
+      height,
+      maxWidth,
+      showCaption,
+      src,
+      width,
+    });
+    const nestedEditor = node.__caption;
+    const editorState = nestedEditor.parseEditorState(caption.editorState);
+    if (!editorState.isEmpty()) {
+      nestedEditor.setEditorState(editorState);
+    }
+    return node;
   }
 
   exportDOM(): DOMExportOutput {

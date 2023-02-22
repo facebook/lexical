@@ -7,20 +7,20 @@
  */
 
 import type {LexicalEditor} from './LexicalEditor';
-import type {LexicalNode, NodeMap, serializableNode} from './LexicalNode';
+import type {LexicalNode, NodeMap} from './LexicalNode';
 import type {
   GridSelection,
   NodeSelection,
   RangeSelection,
 } from './LexicalSelection';
 
-import {$isElementNode} from '.';
+import {$isElementNode, SerializedElementNode} from '.';
 import {readEditorState} from './LexicalUpdates';
 import {$getRoot} from './LexicalUtils';
 import {$createRootNode} from './nodes/LexicalRootNode';
 
 export interface SerializedEditorState {
-  root: serializableNode<LexicalNode>;
+  root: SerializedElementNode;
 }
 
 export function editorStateHasDirtySelection(

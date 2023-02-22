@@ -622,7 +622,7 @@ export class LexicalNode {
     return {element};
   }
 
-  exportJSON(): serializableNode<this> {
+  exportJSON() {
     let serializedNode = JSON.parse(JSON.stringify(this.getLatest()));
     delete serializedNode.__first;
     delete serializedNode.__last;
@@ -880,46 +880,3 @@ function errorOnTypeKlassMismatch(
     );
   }
 }
-
-// In the following lines we follow the exportJSON process.
-
-// 1. Eliminate the methods leaving only the properties
-type onlyProps<T> = Pick<
-  T,
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  {[K in keyof T]: T[K] extends Function ? never : K}[keyof T]
->;
-
-// 2. Rename '__dir' to '__direction'
-type Direction<T> = {
-  [Property in keyof onlyProps<T> as Property extends '__dir'
-    ? '__direction'
-    : Property]: onlyProps<T>[Property];
-};
-
-// 3. Eliminate the properties that we are not going to use
-type OmitProps<T> = Omit<
-  Direction<T>,
-  | '__key'
-  | '__first'
-  | '__last'
-  | '__size'
-  | '__parent'
-  | '__next'
-  | '__prev'
-  | '__cachedText'
-  | '__key'
->;
-
-// 4. We remove the two underscores from each property
-type DropUnderscore<T> = {
-  [K in keyof OmitProps<T> as K extends `__${infer I}`
-    ? I
-    : K]: OmitProps<T>[K];
-};
-
-// 5. We're done!
-export type serializableNode<T> = DropUnderscore<T> & {
-  version: number;
-  children?: Array<serializableNode<LexicalNode>>;
-};

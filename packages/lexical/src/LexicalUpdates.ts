@@ -316,31 +316,32 @@ function $parseSerializedNodeImpl(
       nodeClass.name,
     );
   }
-  const serializedNode2 = JSON.parse(JSON.stringify(serializedNode));
-  delete serializedNode2.children;
-  delete serializedNode2.version;
-  delete serializedNode2.mode;
-  delete serializedNode2.direction;
-  delete serializedNode2.format;
-  let node = new nodeClass();
+  let node: LexicalNode;
   // @ts-expect-error
-  node.setFormat(serializedNode.format);
-  if ($isTextNode(node)) {
-    node.setMode(serializedNode.mode);
+  if (nodeClass.importJSON) node = nodeClass.importJSON(serializedNode);
+  else {
+    node = new nodeClass();
+    const serializedNode2 = JSON.parse(JSON.stringify(serializedNode));
+    delete serializedNode2.children;
+    delete serializedNode2.version;
+    delete serializedNode2.mode;
+    delete serializedNode2.direction;
+    delete serializedNode2.format;
+    if ($isTextNode(node)) {
+      node.setMode(serializedNode.mode);
+    }
+    if ($isElementNode(node)) {
+      node.setFormat(serializedNode.format);
+      if (type !== 'tablecell' && type !== 'tablerow' && type !== 'table') {
+        node.setDirection(serializedNode.direction);
+      }
+    }
+    const prefix = '__';
+    const withUnderscore = Object.fromEntries(
+      Object.entries(serializedNode2).map(([k, v]) => [`${prefix}${k}`, v]),
+    );
+    node = Object.assign(node, withUnderscore) as unknown as LexicalNode;
   }
-  if (
-    $isElementNode(node) &&
-    type !== 'tablecell' &&
-    type !== 'tablerow' &&
-    type !== 'table'
-  ) {
-    node.setDirection(serializedNode.direction);
-  }
-  const prefix = '__';
-  const withUnderscore = Object.fromEntries(
-    Object.entries(serializedNode2).map(([k, v]) => [`${prefix}${k}`, v]),
-  );
-  node = Object.assign(node, withUnderscore) as unknown as LexicalNode;
   const children = serializedNode.children;
 
   if ($isElementNode(node) && Array.isArray(children)) {

@@ -66,6 +66,28 @@ function TextFormatFloatingToolbar({
   const insertComment = () => {
     editor.dispatchCommand(INSERT_INLINE_COMMAND, undefined);
   };
+  
+  function mouseMoveListener(e) {
+    if(e.buttons == 1 || e.buttons == 3){
+      popupCharStylesEditorRef.current.style.pointerEvents = "none";
+    }
+  }
+  function mouseUpListener(e) {
+    popupCharStylesEditorRef.current.style.pointerEvents = "auto";
+  }
+
+  useEffect(() => {
+    if(popupCharStylesEditorRef?.current) {
+      document.addEventListener('mousemove', mouseMoveListener);
+      document.addEventListener('mouseup', mouseUpListener);
+
+      return () => {
+        document.removeEventListener('mousemove', mouseMoveListener);
+        document.removeEventListener('mouseup', mouseUpListener);
+      };
+    }
+    
+  }, [popupCharStylesEditorRef]);
 
   const updateTextFormatFloatingToolbar = useCallback(() => {
     const selection = $getSelection();

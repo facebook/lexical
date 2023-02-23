@@ -66,18 +66,23 @@ function TextFormatFloatingToolbar({
   const insertComment = () => {
     editor.dispatchCommand(INSERT_INLINE_COMMAND, undefined);
   };
-  
-  function mouseMoveListener(e) {
-    if(e.buttons == 1 || e.buttons == 3){
-      popupCharStylesEditorRef.current.style.pointerEvents = "none";
+
+  function mouseMoveListener(e: MouseEvent) {
+    if (
+      popupCharStylesEditorRef?.current &&
+      (e.buttons === 1 || e.buttons === 3)
+    ) {
+      popupCharStylesEditorRef.current.style.pointerEvents = 'none';
     }
   }
-  function mouseUpListener(e) {
-    popupCharStylesEditorRef.current.style.pointerEvents = "auto";
+  function mouseUpListener(e: MouseEvent) {
+    if (popupCharStylesEditorRef?.current) {
+      popupCharStylesEditorRef.current.style.pointerEvents = 'auto';
+    }
   }
 
   useEffect(() => {
-    if(popupCharStylesEditorRef?.current) {
+    if (popupCharStylesEditorRef?.current) {
       document.addEventListener('mousemove', mouseMoveListener);
       document.addEventListener('mouseup', mouseUpListener);
 
@@ -86,7 +91,6 @@ function TextFormatFloatingToolbar({
         document.removeEventListener('mouseup', mouseUpListener);
       };
     }
-    
   }, [popupCharStylesEditorRef]);
 
   const updateTextFormatFloatingToolbar = useCallback(() => {

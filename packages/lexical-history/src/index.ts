@@ -431,6 +431,7 @@ export function registerHistory(
     if (mergeAction === HISTORY_PUSH) {
       if (redoStack.length !== 0) {
         historyState.redoStack = [];
+        editor.dispatchCommand(CAN_REDO_COMMAND, false);
       }
 
       if (current !== null) {

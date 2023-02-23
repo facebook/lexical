@@ -54,6 +54,7 @@ export class TableRowNode extends DEPRECATED_GridRowNode {
   constructor(height?: number, key?: NodeKey) {
     super(key);
     this.__height = height;
+    return $applyNodeReplacement(this);
   }
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -100,7 +101,7 @@ export function convertTableRowElement(domNode: Node): DOMConversionOutput {
 }
 
 export function $createTableRowNode(height?: number): TableRowNode {
-  return $applyNodeReplacement(new TableRowNode(height));
+  return new TableRowNode(height);
 }
 
 export function $isTableRowNode(

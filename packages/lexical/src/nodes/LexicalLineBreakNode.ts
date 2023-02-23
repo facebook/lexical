@@ -36,6 +36,7 @@ export class LineBreakNode extends LexicalNode {
 
   constructor(key?: NodeKey) {
     super(key);
+    return $applyNodeReplacement(this);
   }
 
   getTextContent(): '\n' {
@@ -76,7 +77,7 @@ function convertLineBreakElement(node: Node): DOMConversionOutput {
 }
 
 export function $createLineBreakNode(): LineBreakNode {
-  return $applyNodeReplacement(new LineBreakNode());
+  return new LineBreakNode();
 }
 
 export function $isLineBreakNode(

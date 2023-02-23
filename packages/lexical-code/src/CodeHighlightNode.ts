@@ -99,6 +99,7 @@ export class CodeHighlightNode extends TextNode {
   ) {
     super(text, key);
     this.__highlightType = highlightType;
+    return $applyNodeReplacement(this);
   }
 
   static getType(): string {
@@ -183,7 +184,7 @@ export function $createCodeHighlightNode(
   text: string,
   highlightType?: string | null | undefined,
 ): CodeHighlightNode {
-  return $applyNodeReplacement(new CodeHighlightNode(text, highlightType));
+  return new CodeHighlightNode(text, highlightType);
 }
 
 export function $isCodeHighlightNode(

@@ -38,6 +38,7 @@ export class EmojiNode extends TextNode {
   constructor(className: string, text: string, key?: NodeKey) {
     super(text, key);
     this.__className = className;
+    return $applyNodeReplacement(this);
   }
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -78,6 +79,5 @@ export function $createEmojiNode(
   className: string,
   emojiText: string,
 ): EmojiNode {
-  const node = new EmojiNode(className, emojiText).setMode('token');
-  return $applyNodeReplacement(node);
+  return new EmojiNode(className, emojiText).setMode('token');
 }

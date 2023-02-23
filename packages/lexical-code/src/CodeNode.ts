@@ -94,6 +94,7 @@ export class CodeNode extends ElementNode {
   constructor(language?: string | null | undefined, key?: NodeKey) {
     super(key);
     this.__language = mapToPrismLanguage(language);
+    return $applyNodeReplacement(this);
   }
 
   // View
@@ -281,7 +282,7 @@ export class CodeNode extends ElementNode {
 export function $createCodeNode(
   language?: string | null | undefined,
 ): CodeNode {
-  return $applyNodeReplacement(new CodeNode(language));
+  return new CodeNode(language);
 }
 
 export function $isCodeNode(

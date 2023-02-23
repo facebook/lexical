@@ -88,6 +88,7 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
     super(colSpan, key);
     this.__headerState = headerState;
     this.__width = width;
+    return $applyNodeReplacement(this);
   }
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -234,7 +235,7 @@ export function $createTableCellNode(
   colSpan = 1,
   width?: number,
 ): TableCellNode {
-  return $applyNodeReplacement(new TableCellNode(headerState, colSpan, width));
+  return new TableCellNode(headerState, colSpan, width);
 }
 
 export function $isTableCellNode(

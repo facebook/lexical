@@ -43,6 +43,7 @@ export class OverflowNode extends ElementNode {
   constructor(key?: NodeKey) {
     super(key);
     this.__type = 'overflow';
+    return $applyNodeReplacement(this);
   }
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -72,7 +73,7 @@ export class OverflowNode extends ElementNode {
 }
 
 export function $createOverflowNode(): OverflowNode {
-  return $applyNodeReplacement(new OverflowNode());
+  return new OverflowNode();
 }
 
 export function $isOverflowNode(

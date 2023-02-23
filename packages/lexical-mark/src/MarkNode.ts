@@ -57,6 +57,7 @@ export class MarkNode extends ElementNode {
   constructor(ids: Array<string>, key?: NodeKey) {
     super(key);
     this.__ids = ids || [];
+    return $applyNodeReplacement(this);
   }
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -194,7 +195,7 @@ export class MarkNode extends ElementNode {
 }
 
 export function $createMarkNode(ids: Array<string>): MarkNode {
-  return $applyNodeReplacement(new MarkNode(ids));
+  return new MarkNode(ids);
 }
 
 export function $isMarkNode(node: LexicalNode | null): node is MarkNode {

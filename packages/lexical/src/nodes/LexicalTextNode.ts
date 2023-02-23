@@ -296,6 +296,7 @@ export class TextNode extends LexicalNode {
     this.__style = '';
     this.__mode = 0;
     this.__detail = 0;
+    return $applyNodeReplacement(this);
   }
 
   getFormat(): number {
@@ -972,7 +973,7 @@ function convertTextFormatElement(domNode: Node): DOMConversionOutput {
 }
 
 export function $createTextNode(text = ''): TextNode {
-  return $applyNodeReplacement(new TextNode(text));
+  return new TextNode(text);
 }
 
 export function $isTextNode(

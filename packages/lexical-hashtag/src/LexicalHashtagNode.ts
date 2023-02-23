@@ -23,6 +23,7 @@ export class HashtagNode extends TextNode {
 
   constructor(text: string, key?: NodeKey) {
     super(text, key);
+    return $applyNodeReplacement(this);
   }
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -41,7 +42,7 @@ export class HashtagNode extends TextNode {
 }
 
 export function $createHashtagNode(text = ''): HashtagNode {
-  return $applyNodeReplacement(new HashtagNode(text));
+  return new HashtagNode(text);
 }
 
 export function $isHashtagNode(

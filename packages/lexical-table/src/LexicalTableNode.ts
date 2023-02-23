@@ -63,6 +63,7 @@ export class TableNode extends DEPRECATED_GridNode {
 
   constructor(key?: NodeKey) {
     super(key);
+    return $applyNodeReplacement(this);
   }
 
   createDOM(config: EditorConfig, editor?: LexicalEditor): HTMLElement {
@@ -226,7 +227,7 @@ export function convertTableElement(_domNode: Node): DOMConversionOutput {
 }
 
 export function $createTableNode(): TableNode {
-  return $applyNodeReplacement(new TableNode());
+  return new TableNode();
 }
 
 export function $isTableNode(

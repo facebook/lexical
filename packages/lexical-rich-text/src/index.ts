@@ -121,6 +121,7 @@ export class QuoteNode extends ElementNode {
 
   constructor(key?: NodeKey) {
     super(key);
+    return $applyNodeReplacement(this);
   }
 
   // View
@@ -163,7 +164,7 @@ export class QuoteNode extends ElementNode {
 }
 
 export function $createQuoteNode(): QuoteNode {
-  return $applyNodeReplacement(new QuoteNode());
+  return new QuoteNode();
 }
 
 export function $isQuoteNode(
@@ -190,6 +191,7 @@ export class HeadingNode extends ElementNode {
   constructor(tag: HeadingTagType, key?: NodeKey) {
     super(key);
     this.__tag = tag;
+    return $applyNodeReplacement(this);
   }
 
   getTag(): HeadingTagType {
@@ -328,7 +330,7 @@ function convertBlockquoteElement(): DOMConversionOutput {
 }
 
 export function $createHeadingNode(headingTag: HeadingTagType): HeadingNode {
-  return $applyNodeReplacement(new HeadingNode(headingTag));
+  return new HeadingNode(headingTag);
 }
 
 export function $isHeadingNode(

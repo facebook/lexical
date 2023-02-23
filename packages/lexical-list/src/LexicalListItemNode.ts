@@ -72,6 +72,7 @@ export class ListItemNode extends ElementNode {
     super(key);
     this.__value = value === undefined ? 1 : value;
     this.__checked = checked;
+    return $applyNodeReplacement(this);
   }
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -509,7 +510,7 @@ function convertListItemElement(domNode: Node): DOMConversionOutput {
 }
 
 export function $createListItemNode(checked?: boolean): ListItemNode {
-  return $applyNodeReplacement(new ListItemNode(undefined, checked));
+  return new ListItemNode(undefined, checked);
 }
 
 export function $isListItemNode(

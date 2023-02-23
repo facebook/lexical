@@ -72,6 +72,7 @@ export class LinkNode extends ElementNode {
     this.__url = url;
     this.__target = target;
     this.__rel = rel;
+    return $applyNodeReplacement(this);
   }
 
   createDOM(config: EditorConfig): HTMLAnchorElement {
@@ -226,7 +227,7 @@ export function $createLinkNode(
   url: string,
   attributes?: LinkAttributes,
 ): LinkNode {
-  return $applyNodeReplacement(new LinkNode(url, attributes));
+  return new LinkNode(url, attributes);
 }
 
 export function $isLinkNode(
@@ -248,6 +249,11 @@ export type SerializedAutoLinkNode = Spread<
 export class AutoLinkNode extends LinkNode {
   static getType(): string {
     return 'autolink';
+  }
+
+  constructor(url: string, attributes: LinkAttributes = {}, key?: NodeKey) {
+    super(url, attributes, key);
+    return $applyNodeReplacement(this);
   }
 
   static clone(node: AutoLinkNode): AutoLinkNode {
@@ -287,7 +293,7 @@ export function $createAutoLinkNode(
   url: string,
   attributes?: LinkAttributes,
 ): AutoLinkNode {
-  return $applyNodeReplacement(new AutoLinkNode(url, attributes));
+  return new AutoLinkNode(url, attributes);
 }
 
 export function $isAutoLinkNode(

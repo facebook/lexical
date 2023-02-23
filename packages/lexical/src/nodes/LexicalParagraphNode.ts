@@ -12,6 +12,7 @@ import type {
   DOMConversionOutput,
   DOMExportOutput,
   LexicalNode,
+  NodeKey,
 } from '../LexicalNode';
 import type {
   ElementFormatType,
@@ -35,6 +36,11 @@ export type SerializedParagraphNode = Spread<
 export class ParagraphNode extends ElementNode {
   static getType(): string {
     return 'paragraph';
+  }
+
+  constructor(key?: NodeKey) {
+    super(key);
+    return $applyNodeReplacement(this);
   }
 
   static clone(node: ParagraphNode): ParagraphNode {
@@ -144,7 +150,7 @@ function convertParagraphElement(element: HTMLElement): DOMConversionOutput {
 }
 
 export function $createParagraphNode(): ParagraphNode {
-  return $applyNodeReplacement(new ParagraphNode());
+  return new ParagraphNode();
 }
 
 export function $isParagraphNode(

@@ -59,6 +59,8 @@ export class MentionNode extends TextNode {
   constructor(mentionName: string, text?: string, key?: NodeKey) {
     super(text ?? mentionName, key);
     this.__mention = mentionName;
+    this.setMode('segmented').toggleDirectionless();
+    return $applyNodeReplacement(this);
   }
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -95,9 +97,7 @@ export class MentionNode extends TextNode {
 }
 
 export function $createMentionNode(mentionName: string): MentionNode {
-  const mentionNode = new MentionNode(mentionName);
-  mentionNode.setMode('segmented').toggleDirectionless();
-  return $applyNodeReplacement(mentionNode);
+  return (mentionNode = new MentionNode(mentionName));
 }
 
 export function $isMentionNode(

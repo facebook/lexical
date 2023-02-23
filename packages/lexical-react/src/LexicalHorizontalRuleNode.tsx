@@ -110,6 +110,11 @@ export class HorizontalRuleNode extends DecoratorNode<JSX.Element> {
     return 'horizontalrule';
   }
 
+  constructor(key?: NodeKey) {
+    super(key);
+    return $applyNodeReplacement(this);
+  }
+
   static clone(node: HorizontalRuleNode): HorizontalRuleNode {
     return new HorizontalRuleNode(node.__key);
   }
@@ -153,7 +158,7 @@ function convertHorizontalRuleElement(): DOMConversionOutput {
 }
 
 export function $createHorizontalRuleNode(): HorizontalRuleNode {
-  return $applyNodeReplacement(new HorizontalRuleNode());
+  return new HorizontalRuleNode();
 }
 
 export function $isHorizontalRuleNode(

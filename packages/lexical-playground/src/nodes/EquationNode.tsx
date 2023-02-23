@@ -66,6 +66,7 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
     super(key);
     this.__equation = equation;
     this.__inline = inline ?? false;
+    return $applyNodeReplacement(this);
   }
 
   createDOM(_config: EditorConfig): HTMLElement {
@@ -147,8 +148,7 @@ export function $createEquationNode(
   equation = '',
   inline = false,
 ): EquationNode {
-  const equationNode = new EquationNode(equation, inline);
-  return $applyNodeReplacement(equationNode);
+  return new EquationNode(equation, inline);
 }
 
 export function $isEquationNode(

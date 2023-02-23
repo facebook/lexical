@@ -148,6 +148,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     this.__showCaption = showCaption || false;
     this.__caption = caption || createEditor();
     this.__captionsEnabled = captionsEnabled || captionsEnabled === undefined;
+    return $applyNodeReplacement(this);
   }
 
   setWidthAndHeight(
@@ -219,18 +220,16 @@ export function $createImageNode({
   caption,
   key,
 }: ImagePayload): ImageNode {
-  return $applyNodeReplacement(
-    new ImageNode(
-      src,
-      altText,
-      maxWidth,
-      width,
-      height,
-      showCaption,
-      caption,
-      captionsEnabled,
-      key,
-    ),
+  return new ImageNode(
+    src,
+    altText,
+    maxWidth,
+    width,
+    height,
+    showCaption,
+    caption,
+    captionsEnabled,
+    key,
   );
 }
 

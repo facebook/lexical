@@ -70,6 +70,7 @@ export class ListNode extends ElementNode {
     this.__listType = _listType;
     this.__tag = _listType === 'number' ? 'ol' : 'ul';
     this.__start = start;
+    return $applyNodeReplacement(this);
   }
 
   getTag(): ListNodeTagType {
@@ -289,7 +290,7 @@ const TAG_TO_LIST_TYPE: Record<string, ListType> = {
 };
 
 export function $createListNode(listType: ListType, start = 1): ListNode {
-  return $applyNodeReplacement(new ListNode(listType, start));
+  return new ListNode(listType, start);
 }
 
 export function $isListNode(

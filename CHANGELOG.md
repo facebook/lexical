@@ -1,6 +1,31 @@
+## v0.8.1 (2023-02-22)
+
+- Clone objects from the CSS cache before mutating them (#3945) Brian Birtles
+- added docsfeature-button in lexical playground issue#3918 (#3935) Mohan Sai Potla
+- fix: change from  to  (#3942) Asim Kattum Thazha
+- Added Chinese character support for native webkit (#3846) Annabelle Almås
+- Fix autocapitalization (#3881) Gerard Rovira
+- Expand the actionable empty playground editor text area via flex (#3883) Brandon
+- Fix toggling styles on collapsed selections with  (#3922) Brian Birtles
+- Remove condition for history merge on null prev selection (#3914) Acy Watson
+- fix: change tablecell return type for TableCellNode (#3925) Sebastien Ahkrin
+- Align types for createEditor APIs (#3928) Acy Watson
+- Remove instanceof type checks against HTMLElement and subtypes (#3913) Acy Watson
+- Fix small lint error breaking main (#3924) John Flockton
+- Update plugins.md (#3926) dimitarbikov
+- Added support for Java & C++ (#3884) Vignesh gupta
+- Add fixme annotation to flaky collab tests (#3916) Acy Watson
+- Playground: fix issue with floating link editor plugin not closing (#3904) Rich
+- Further tweaks to format/style selection (#3895) Dominic Gannaway
+- Add KEY_DOWN_COMMAND (#3878) Dominic Gannaway
+- Remove draggable block plugin on mobile devices (#3875) John Flockton
+- Close color pickers on select (#3874) John Flockton
+- Fix ContentEditable types for internal use (#3868) John Flockton
+- Fix v0.8.9 typo in changelog, should be v0.8.0 (#3869) Joel Besada
+
 ## v0.8.0 (2023-02-09)
 
-This release includes some breaking changes, including: 
+This release includes some breaking changes, including:
     - Remove of `indentList` and `outdentList` from `@lexical/list`.
     - Refactor of the `LexicalContentEditable` types from `@lexical/react` to make them more accurate with `HTMLDivElement` attributes.
 

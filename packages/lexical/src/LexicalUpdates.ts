@@ -326,11 +326,11 @@ function $parseSerializedNodeImpl(
     delete serializedNode2.version;
     delete serializedNode2.mode;
     delete serializedNode2.direction;
-    delete serializedNode2.format;
     if ($isTextNode(node)) {
       node.setMode(serializedNode.mode);
     }
     if ($isElementNode(node)) {
+      delete serializedNode2.format;
       node.setFormat(serializedNode.format);
       if (type !== 'tablecell' && type !== 'tablerow' && type !== 'table') {
         node.setDirection(serializedNode.direction);

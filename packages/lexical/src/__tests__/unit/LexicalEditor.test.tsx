@@ -919,8 +919,8 @@ describe('LexicalEditor tests', () => {
         //
       });
       editor.setRootElement(contentEditable);
-      expect(JSON.stringify(editor.getEditorState().toJSON())).toBe(
-        JSON_EDITOR_STATE,
+      expect(editor.getEditorState().toJSON()).toStrictEqual(
+        JSON.parse(JSON_EDITOR_STATE),
       );
     });
   }

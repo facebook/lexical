@@ -622,6 +622,14 @@ export class LexicalNode {
     return {element};
   }
 
+  // toJSON() {
+  //   return {
+  //     ...super.toJSON(),
+  //     type: this.getType(),
+  //     version: 1, // To-do: ¿What should I do with this?
+  //   }
+  // }
+
   exportJSON() {
     let serializedNode = JSON.parse(JSON.stringify(this.getLatest()));
     delete serializedNode.__first;
@@ -634,7 +642,7 @@ export class LexicalNode {
     delete serializedNode.__key;
     delete serializedNode.__dir;
     serializedNode = Object.fromEntries(
-      Object.entries(serializedNode).map(([k, v]) => [k.slice(2), v]),
+      Object.entries(serializedNode).map(([k, v]) => [k.replace(/^__/, ''), v]),
     );
     if ($isElementNode(this)) {
       serializedNode = {children: [], ...serializedNode};

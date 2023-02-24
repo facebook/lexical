@@ -177,7 +177,7 @@ function $basicInsertStrategy(
   selection: RangeSelection | GridSelection,
 ) {
   // Wrap text and inline nodes in paragraph nodes so we have all blocks at the top-level
-  const topLevelBlocks = [];
+  const topLevelBlocks: LexicalNode[] = [];
   let currentBlock = null;
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
@@ -209,6 +209,18 @@ function $basicInsertStrategy(
       currentBlock = null;
     }
   }
+
+  // if (Boolean(topLevelBlocks.length) && topLevelBlocks.every(topLevelBlock => $isCodeNode(topLevelBlock))) {
+  //   const firstCodeBlock = topLevelBlocks[0] as CodeNode;
+  //
+  //   topLevelBlocks.forEach((topLevelBlock, index) => {
+  //     if (index !== 0) {
+  //       firstCodeBlock.append(...(topLevelBlock as CodeNode).getChildren())
+  //     }
+  //   });
+  //
+  //   topLevelBlocks = [topLevelBlocks[0]];
+  // }
 
   if ($isRangeSelection(selection)) {
     selection.insertNodes(topLevelBlocks);

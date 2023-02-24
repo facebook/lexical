@@ -130,6 +130,10 @@ export class CodeNode extends ElementNode {
       // Typically <pre> is used for code blocks, and <code> for inline code styles
       // but if it's a multi line <code> we'll create a block. Pass through to
       // inline format handled by TextNode otherwise.
+      br: (node: Node) => ({
+        conversion: convertBreakElement,
+        priority: 1,
+      }),
       code: (node: Node) => {
         const isMultiLine =
           node.textContent != null &&
@@ -150,6 +154,18 @@ export class CodeNode extends ElementNode {
         conversion: convertPreElement,
         priority: 0,
       }),
+      span: (node: Node) => {
+        const span = node;
+        // domNode is a <span> since we matched it by nodeName
+        if (isSpanCodeElement(span as HTMLSpanElement)) {
+          return {
+            conversion: convertSpanElement,
+            priority: 1,
+          };
+        }
+
+        return null;
+      },
       table: (node: Node) => {
         const table = node;
         // domNode is a <table> since we matched it by nodeName
@@ -333,6 +349,36 @@ function convertDivElement(domNode: Node): DOMConversionOutput {
   };
 }
 
+function convertSpanElement(domNode: Node): DOMConversionOutput {
+  // domNode is a <span> since we matched it by nodeName
+  const span = domNode as HTMLSpanElement;
+  const isCode = isCodeElement(span);
+  if (!isCode && !isCodeChildElement(span)) {
+    return {
+      node: null,
+    };
+  }
+  return {
+    after: (childLexicalNodes) => childLexicalNodes,
+    node: isCode ? $createCodeNode() : null,
+    preformatted: isCode,
+  };
+}
+
+function convertBreakElement(domNode: Node): DOMConversionOutput {
+  // domNode is a <br> since we matched it by nodeName
+  const br = domNode as HTMLBRElement;
+  if (!isCodeChildElement(br)) {
+    return {
+      node: null,
+    };
+  }
+  return {
+    after: (childLexicalNodes) => childLexicalNodes,
+    node: null,
+  };
+}
+
 function convertTableElement(): DOMConversionOutput {
   return {node: $createCodeNode(), preformatted: true};
 }
@@ -357,8 +403,8 @@ function convertTableCellElement(domNode: Node): DOMConversionOutput {
   };
 }
 
-function isCodeElement(div: HTMLElement): boolean {
-  return div.style.fontFamily.match('monospace') !== null;
+function isCodeElement(htmlElement: HTMLElement): boolean {
+  return htmlElement.style.fontFamily.match('monospace') !== null;
 }
 
 function isCodeChildElement(node: HTMLElement): boolean {
@@ -380,4 +426,8 @@ function isGitHubCodeCell(
 
 function isGitHubCodeTable(table: HTMLTableElement): table is HTMLTableElement {
   return table.classList.contains('js-file-line-container');
+}
+
+function isSpanCodeElement(span: HTMLSpanElement): span is HTMLTableElement {
+  return span.style.fontFamily.includes('monospace');
 }

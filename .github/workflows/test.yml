@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [16.15.1]
+        node-version: [18.14.2]
     env:
       CI: true
       GITHUB_TOKEN: ${{ secrets.DANGER_GITHUB_API_TOKEN }}

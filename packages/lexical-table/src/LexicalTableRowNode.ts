@@ -22,7 +22,7 @@ export class TableRowNode extends DEPRECATED_GridRowNode {
   /** @internal */
   __height?: number;
 
-  static getType(): 'tablerow' {
+  static getType(): string {
     return 'tablerow';
   }
 

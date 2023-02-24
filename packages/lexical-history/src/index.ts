@@ -284,11 +284,10 @@ function createMergeActionGetter(
       }
 
       const selection = nextEditorState._selection;
-      const prevSelection = prevEditorState._selection;
       const hasDirtyNodes = dirtyLeaves.size > 0 || dirtyElements.size > 0;
 
       if (!hasDirtyNodes) {
-        if (prevSelection === null && selection !== null) {
+        if (selection !== null) {
           return HISTORY_MERGE;
         }
 
@@ -432,6 +431,7 @@ export function registerHistory(
     if (mergeAction === HISTORY_PUSH) {
       if (redoStack.length !== 0) {
         historyState.redoStack = [];
+        editor.dispatchCommand(CAN_REDO_COMMAND, false);
       }
 
       if (current !== null) {

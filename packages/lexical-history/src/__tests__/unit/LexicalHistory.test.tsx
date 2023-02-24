@@ -20,6 +20,7 @@ import {
   CLEAR_HISTORY_COMMAND,
   COMMAND_PRIORITY_CRITICAL,
   LexicalEditor,
+  REDO_COMMAND,
   UNDO_COMMAND,
 } from 'lexical/src';
 import {TestComposer} from 'lexical/src/__tests__/utils';
@@ -170,6 +171,91 @@ describe('LexicalHistory tests', () => {
     expect(JSON.stringify(initialJSONState)).toBe(
       JSON.stringify(editor.getEditorState().toJSON()),
     );
+  });
+
+  test('LexicalHistory in sequence: change, undo, redo, undo, change', async () => {
+    let canRedo = false;
+    let canUndo = false;
+
+    ReactTestUtils.act(() => {
+      reactRoot.render(<Test key="smth" />);
+    });
+
+    editor.registerCommand<boolean>(
+      CAN_REDO_COMMAND,
+      (payload) => {
+        canRedo = payload;
+        return false;
+      },
+      COMMAND_PRIORITY_CRITICAL,
+    );
+
+    editor.registerCommand<boolean>(
+      CAN_UNDO_COMMAND,
+      (payload) => {
+        canUndo = payload;
+        return false;
+      },
+      COMMAND_PRIORITY_CRITICAL,
+    );
+
+    // focus (needs the focus to initialize)
+    await ReactTestUtils.act(async () => {
+      editor.focus();
+    });
+
+    expect(canRedo).toBe(false);
+    expect(canUndo).toBe(false);
+
+    // change
+    await ReactTestUtils.act(async () => {
+      await editor.update(() => {
+        const root = $getRoot();
+        const paragraph = createParagraphNode('foo');
+        root.append(paragraph);
+      });
+    });
+    expect(canRedo).toBe(false);
+    expect(canUndo).toBe(true);
+
+    // undo
+    await ReactTestUtils.act(async () => {
+      await editor.update(() => {
+        editor.dispatchCommand(UNDO_COMMAND, undefined);
+      });
+    });
+    expect(canRedo).toBe(true);
+    expect(canUndo).toBe(false);
+
+    // redo
+    await ReactTestUtils.act(async () => {
+      await editor.update(() => {
+        editor.dispatchCommand(REDO_COMMAND, undefined);
+      });
+    });
+    expect(canRedo).toBe(false);
+    expect(canUndo).toBe(true);
+
+    // undo
+    await ReactTestUtils.act(async () => {
+      await editor.update(() => {
+        editor.dispatchCommand(UNDO_COMMAND, undefined);
+      });
+    });
+    expect(canRedo).toBe(true);
+    expect(canUndo).toBe(false);
+
+    // change
+    await ReactTestUtils.act(async () => {
+      await editor.update(() => {
+        const root = $getRoot();
+        const paragraph = createParagraphNode('foo');
+        root.append(paragraph);
+      });
+    });
+
+    expect(canRedo).toBe(false);
+    expect(canUndo).toBe(true);
   });
 });
 

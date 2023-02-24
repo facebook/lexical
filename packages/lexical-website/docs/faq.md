@@ -80,7 +80,7 @@ You can leverage Lexical's command listening system. Lexical provides specific c
 ```js
 import {KEY_ENTER_COMMAND, COMMAND_PRIORITY_LOW} from 'lexical';
 
-editor.addCommandListener(KEY_ENTER_COMMAND, (event: KeyboardEvent) => {
+editor.registerCommand(KEY_ENTER_COMMAND, (event: KeyboardEvent) => {
   // Handle enter key presses here
   return false;
 }, COMMAND_PRIORITY_LOW)
@@ -94,7 +94,7 @@ the command listener.
 ```js
 import {KEY_DOWN_COMMAND, COMMAND_PRIORITY_LOW} from 'lexical';
 
-editor.addCommandListener(KEY_DOWN_COMMAND, (event: KeyboardEvent) => {
+editor.registerCommand(KEY_DOWN_COMMAND, (event: KeyboardEvent) => {
   // Handle event here
   return false;
 }, COMMAND_PRIORITY_LOW)

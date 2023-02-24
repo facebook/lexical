@@ -42,7 +42,7 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
   /** @internal */
   __width?: number;
 
-  static getType(): 'tablecell' {
+  static getType(): string {
     return 'tablecell';
   }
 

@@ -7,27 +7,13 @@
  *
  */
 
-import type {
-  EditorState,
-  EditorThemeClasses,
-  Klass,
-  LexicalEditor,
-  LexicalNode,
-} from 'lexical';
+import type {CreateEditorArgs, LexicalEditor} from 'lexical';
 
 import {createEditor} from 'lexical';
 
-type ErrorHandler = (error: Error) => void;
-
-export function createHeadlessEditor(editorConfig?: {
-  editorState?: EditorState;
-  namespace?: string;
-  nodes?: ReadonlyArray<Klass<LexicalNode>>;
-  onError?: ErrorHandler;
-  parentEditor?: LexicalEditor;
-  editable?: boolean;
-  theme?: EditorThemeClasses;
-}): LexicalEditor {
+export function createHeadlessEditor(
+  editorConfig?: CreateEditorArgs,
+): LexicalEditor {
   const editor = createEditor(editorConfig);
   editor._headless = true;
 

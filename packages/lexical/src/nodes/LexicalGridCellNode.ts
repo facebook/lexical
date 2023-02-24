@@ -6,21 +6,9 @@
  *
  */
 
-import type {
-  LexicalNode,
-  NodeKey,
-  SerializedElementNode,
-  Spread,
-} from 'lexical';
+import type {LexicalNode, NodeKey} from 'lexical';
 
 import {ElementNode} from './LexicalElementNode';
-
-export type SerializedGridCellNode = Spread<
-  {
-    colSpan: number;
-  },
-  SerializedElementNode
->;
 
 /** @noInheritDoc */
 export class DEPRECATED_GridCellNode extends ElementNode {

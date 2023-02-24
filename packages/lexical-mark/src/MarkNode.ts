@@ -13,8 +13,6 @@ import type {
   NodeKey,
   NodeSelection,
   RangeSelection,
-  SerializedElementNode,
-  Spread,
 } from 'lexical';
 
 import {
@@ -27,15 +25,6 @@ import {
   $isRangeSelection,
   ElementNode,
 } from 'lexical';
-
-export type SerializedMarkNode = Spread<
-  {
-    ids: Array<string>;
-    type: 'mark';
-    version: 1;
-  },
-  SerializedElementNode
->;
 
 /** @noInheritDoc */
 export class MarkNode extends ElementNode {

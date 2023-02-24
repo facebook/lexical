@@ -13,10 +13,6 @@ import type {
   LexicalEditor,
   LexicalNode,
   RangeSelection,
-  SerializedElementNode,
-  SerializedLexicalNode,
-  SerializedTextNode,
-  Spread,
 } from 'lexical';
 
 import {CodeHighlightNode, CodeNode} from '@lexical/code';
@@ -107,14 +103,6 @@ export function initializeClipboard() {
   });
 }
 
-export type SerializedTestElementNode = Spread<
-  {
-    type: 'test_block';
-    version: 1;
-  },
-  SerializedElementNode
->;
-
 export class TestElementNode extends ElementNode {
   static getType(): string {
     return 'test_block';
@@ -148,14 +136,6 @@ export class TestTextNode extends TextNode {
   }
 }
 
-export type SerializedTestInlineElementNode = Spread<
-  {
-    type: 'test_inline_block';
-    version: 1;
-  },
-  SerializedElementNode
->;
-
 export class TestInlineElementNode extends ElementNode {
   static getType(): string {
     return 'test_inline_block';
@@ -182,14 +162,6 @@ export function $createTestInlineElementNode(): TestInlineElementNode {
   return new TestInlineElementNode();
 }
 
-export type SerializedTestSegmentedNode = Spread<
-  {
-    type: 'test_segmented';
-    version: 1;
-  },
-  SerializedTextNode
->;
-
 export class TestSegmentedNode extends TextNode {
   static getType(): string {
     return 'test_segmented';
@@ -203,14 +175,6 @@ export class TestSegmentedNode extends TextNode {
 export function $createTestSegmentedNode(text): TestSegmentedNode {
   return new TestSegmentedNode(text).setMode('segmented');
 }
-
-export type SerializedTestExcludeFromCopyElementNode = Spread<
-  {
-    type: 'test_exclude_from_copy_block';
-    version: 1;
-  },
-  SerializedElementNode
->;
 
 export class TestExcludeFromCopyElementNode extends ElementNode {
   static getType(): string {
@@ -237,14 +201,6 @@ export class TestExcludeFromCopyElementNode extends ElementNode {
 export function $createTestExcludeFromCopyElementNode(): TestExcludeFromCopyElementNode {
   return new TestExcludeFromCopyElementNode();
 }
-
-export type SerializedTestDecoratorNode = Spread<
-  {
-    type: 'test_decorator';
-    version: 1;
-  },
-  SerializedLexicalNode
->;
 
 export class TestDecoratorNode extends DecoratorNode<JSX.Element> {
   static getType(): string {

@@ -17,7 +17,6 @@ import type {
   NodeKey,
   NodeSelection,
   RangeSelection,
-  SerializedElementNode,
 } from 'lexical';
 
 import {$findMatchingParent, addClassNamesToElement} from '@lexical/utils';
@@ -28,22 +27,12 @@ import {
   $isRangeSelection,
   createCommand,
   ElementNode,
-  Spread,
 } from 'lexical';
 
 export type LinkAttributes = {
   rel?: null | string;
   target?: null | string;
 };
-
-export type SerializedLinkNode = Spread<
-  {
-    type: 'link';
-    url: string;
-    version: 1;
-  },
-  Spread<LinkAttributes, SerializedElementNode>
->;
 
 /** @noInheritDoc */
 export class LinkNode extends ElementNode {
@@ -235,14 +224,6 @@ export function $isLinkNode(
 ): node is LinkNode {
   return node instanceof LinkNode;
 }
-
-export type SerializedAutoLinkNode = Spread<
-  {
-    type: 'autolink';
-    version: 1;
-  },
-  SerializedLinkNode
->;
 
 // Custom node type to override `canInsertTextAfter` that will
 // allow typing within the link

@@ -23,23 +23,10 @@ import {
   LexicalEditor,
   LexicalNode,
   NodeKey,
-  SerializedElementNode,
-  Spread,
 } from 'lexical';
 
 import {$createListItemNode, $isListItemNode, ListItemNode} from '.';
 import {$getListDepth, wrapInListItem} from './utils';
-
-export type SerializedListNode = Spread<
-  {
-    listType: ListType;
-    start: number;
-    tag: ListNodeTagType;
-    type: 'list';
-    version: 1;
-  },
-  SerializedElementNode
->;
 
 export type ListType = 'number' | 'bullet' | 'check';
 

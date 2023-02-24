@@ -7,24 +7,9 @@
  *
  */
 
-import type {
-  EditorConfig,
-  LexicalNode,
-  NodeKey,
-  RangeSelection,
-  SerializedElementNode,
-  Spread,
-} from 'lexical';
+import type {EditorConfig, LexicalNode, NodeKey, RangeSelection} from 'lexical';
 
 import {$applyNodeReplacement, ElementNode} from 'lexical';
-
-export type SerializedOverflowNode = Spread<
-  {
-    type: 'overflow';
-    version: 1;
-  },
-  SerializedElementNode
->;
 
 /** @noInheritDoc */
 export class OverflowNode extends ElementNode {

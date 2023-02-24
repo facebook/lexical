@@ -17,7 +17,7 @@ import type {
   Transform,
 } from './LexicalEditor';
 import type {SerializedEditorState} from './LexicalEditorState';
-import type {LexicalNode, SerializedLexicalNode} from './LexicalNode';
+import type {LexicalNode} from './LexicalNode';
 
 import invariant from 'shared/invariant';
 
@@ -280,16 +280,11 @@ function $applyAllTransforms(
   editor._dirtyElements = dirtyElements;
 }
 
-type InternalSerializedNode = {
-  children?: Array<InternalSerializedNode>;
-  type: string;
-  version: number;
-};
-
 export function $parseSerializedNode(
-  serializedNode: SerializedLexicalNode,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  serializedNode: any,
 ): LexicalNode {
-  const internalSerializedNode: InternalSerializedNode = serializedNode;
+  const internalSerializedNode = serializedNode;
   return $parseSerializedNodeImpl(
     internalSerializedNode,
     getActiveEditor()._nodes,
@@ -297,6 +292,7 @@ export function $parseSerializedNode(
 }
 
 function $parseSerializedNodeImpl(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   serializedNode: any,
   registeredNodes: RegisteredNodes,
 ): LexicalNode {

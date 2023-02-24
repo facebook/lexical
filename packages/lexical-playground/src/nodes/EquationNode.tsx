@@ -12,8 +12,6 @@ import type {
   EditorConfig,
   LexicalNode,
   NodeKey,
-  SerializedLexicalNode,
-  Spread,
 } from 'lexical';
 
 import katex from 'katex';
@@ -25,15 +23,6 @@ const EquationComponent = React.lazy(
   // @ts-ignore
   () => import('./EquationComponent'),
 );
-
-export type SerializedEquationNode = Spread<
-  {
-    type: 'equation';
-    equation: string;
-    inline: boolean;
-  },
-  SerializedLexicalNode
->;
 
 function convertEquationElement(
   domNode: HTMLElement,

@@ -14,23 +14,12 @@ import type {
   LexicalNode,
   NodeKey,
 } from '../LexicalNode';
-import type {
-  ElementFormatType,
-  SerializedElementNode,
-} from './LexicalElementNode';
-import type {RangeSelection, Spread} from 'lexical';
+import type {ElementFormatType} from './LexicalElementNode';
+import type {RangeSelection} from 'lexical';
 
 import {$applyNodeReplacement, getCachedClassNameArray} from '../LexicalUtils';
 import {ElementNode} from './LexicalElementNode';
 import {$isTextNode} from './LexicalTextNode';
-
-export type SerializedParagraphNode = Spread<
-  {
-    type: 'paragraph';
-    version: 1;
-  },
-  SerializedElementNode
->;
 
 /** @noInheritDoc */
 export class ParagraphNode extends ElementNode {

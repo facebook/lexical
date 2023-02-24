@@ -14,8 +14,6 @@ import type {
   LexicalEditor,
   LexicalNode,
   NodeKey,
-  SerializedGridCellNode,
-  Spread,
 } from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
@@ -36,15 +34,6 @@ export const TableCellHeaderStates = {
 
 export type TableCellHeaderState =
   typeof TableCellHeaderStates[keyof typeof TableCellHeaderStates];
-
-export type SerializedTableCellNode = Spread<
-  {
-    headerState: TableCellHeaderState;
-    type: 'tablecell';
-    width?: number;
-  },
-  SerializedGridCellNode
->;
 
 /** @noInheritDoc */
 export class TableCellNode extends DEPRECATED_GridCellNode {

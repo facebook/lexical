@@ -6,23 +6,9 @@
  *
  */
 
-import type {
-  EditorConfig,
-  LexicalNode,
-  NodeKey,
-  SerializedTextNode,
-  Spread,
-} from 'lexical';
+import type {EditorConfig, LexicalNode, NodeKey} from 'lexical';
 
 import {$applyNodeReplacement, TextNode} from 'lexical';
-
-export type SerializedEmojiNode = Spread<
-  {
-    className: string;
-    type: 'emoji';
-  },
-  SerializedTextNode
->;
 
 export class EmojiNode extends TextNode {
   __className: string;

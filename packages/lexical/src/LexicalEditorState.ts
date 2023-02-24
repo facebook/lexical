@@ -14,11 +14,19 @@ import type {
   RangeSelection,
 } from './LexicalSelection';
 
-import {$isElementNode, SerializedElementNode} from '.';
+import {$isElementNode, ElementFormatType} from '.';
 import {readEditorState} from './LexicalUpdates';
 import {$getRoot} from './LexicalUtils';
 import {$createRootNode} from './nodes/LexicalRootNode';
 
+type SerializedElementNode = {
+  type: string;
+  version: number;
+  children: Array<SerializedElementNode>;
+  direction: 'ltr' | 'rtl' | null;
+  format: ElementFormatType;
+  indent: number;
+};
 export interface SerializedEditorState {
   root: SerializedElementNode;
 }

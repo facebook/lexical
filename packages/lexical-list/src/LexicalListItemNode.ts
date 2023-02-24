@@ -18,8 +18,6 @@ import type {
   NodeSelection,
   ParagraphNode,
   RangeSelection,
-  SerializedElementNode,
-  Spread,
 } from 'lexical';
 
 import {
@@ -42,16 +40,6 @@ import {
   $handleOutdent,
   updateChildrenListItemValue,
 } from './formatList';
-
-export type SerializedListItemNode = Spread<
-  {
-    checked: boolean | undefined;
-    type: 'listitem';
-    value: number;
-    version: 1;
-  },
-  SerializedElementNode
->;
 
 /** @noInheritDoc */
 export class ListItemNode extends ElementNode {

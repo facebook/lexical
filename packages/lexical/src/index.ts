@@ -20,7 +20,6 @@ export type {
   MutationListener,
   NodeMutation,
   SerializedEditor,
-  Spread,
 } from './LexicalEditor';
 export type {EditorState, SerializedEditorState} from './LexicalEditorState';
 export type {
@@ -33,7 +32,6 @@ export type {
   LexicalNode,
   NodeKey,
   NodeMap,
-  SerializedLexicalNode,
 } from './LexicalNode';
 export type {
   BaseSelection,
@@ -45,17 +43,8 @@ export type {
   RangeSelection,
   TextPointType as TextPoint,
 } from './LexicalSelection';
-export type {
-  ElementFormatType,
-  SerializedElementNode,
-} from './nodes/LexicalElementNode';
-export type {SerializedGridCellNode} from './nodes/LexicalGridCellNode';
-export type {SerializedRootNode} from './nodes/LexicalRootNode';
-export type {
-  SerializedTextNode,
-  TextFormatType,
-  TextModeType,
-} from './nodes/LexicalTextNode';
+export type {ElementFormatType} from './nodes/LexicalElementNode';
+export type {TextFormatType, TextModeType} from './nodes/LexicalTextNode';
 
 // TODO Move this somewhere else and/or recheck if we still need this
 export {
@@ -159,13 +148,11 @@ export {
   DEPRECATED_$isGridRowNode,
   DEPRECATED_GridRowNode,
 } from './nodes/LexicalGridRowNode';
-export type {SerializedLineBreakNode} from './nodes/LexicalLineBreakNode';
 export {
   $createLineBreakNode,
   $isLineBreakNode,
   LineBreakNode,
 } from './nodes/LexicalLineBreakNode';
-export type {SerializedParagraphNode} from './nodes/LexicalParagraphNode';
 export {
   $createParagraphNode,
   $isParagraphNode,

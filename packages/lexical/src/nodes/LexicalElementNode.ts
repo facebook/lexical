@@ -6,14 +6,13 @@
  *
  */
 
-import type {NodeKey, SerializedLexicalNode} from '../LexicalNode';
+import type {NodeKey} from '../LexicalNode';
 import type {
   GridSelection,
   NodeSelection,
   PointType,
   RangeSelection,
 } from '../LexicalSelection';
-import type {Spread} from 'lexical';
 
 import invariant from 'shared/invariant';
 
@@ -36,16 +35,6 @@ import {
   $isRootOrShadowRoot,
   removeFromParent,
 } from '../LexicalUtils';
-
-export type SerializedElementNode = Spread<
-  {
-    children: Array<SerializedLexicalNode>;
-    direction: 'ltr' | 'rtl' | null;
-    format: ElementFormatType;
-    indent: number;
-  },
-  SerializedLexicalNode
->;
 
 export type ElementFormatType =
   | 'left'

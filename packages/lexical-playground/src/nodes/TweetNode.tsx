@@ -15,14 +15,10 @@ import type {
   LexicalEditor,
   LexicalNode,
   NodeKey,
-  Spread,
 } from 'lexical';
 
 import {BlockWithAlignableContents} from '@lexical/react/LexicalBlockWithAlignableContents';
-import {
-  DecoratorBlockNode,
-  SerializedDecoratorBlockNode,
-} from '@lexical/react/LexicalDecoratorBlockNode';
+import {DecoratorBlockNode} from '@lexical/react/LexicalDecoratorBlockNode';
 import * as React from 'react';
 import {useCallback, useEffect, useRef, useState} from 'react';
 
@@ -122,15 +118,6 @@ function TweetComponent({
     </BlockWithAlignableContents>
   );
 }
-
-export type SerializedTweetNode = Spread<
-  {
-    id: string;
-    type: 'tweet';
-    version: 1;
-  },
-  SerializedDecoratorBlockNode
->;
 
 export class TweetNode extends DecoratorBlockNode {
   __id: string;

@@ -15,14 +15,10 @@ import type {
   LexicalEditor,
   LexicalNode,
   NodeKey,
-  Spread,
 } from 'lexical';
 
 import {BlockWithAlignableContents} from '@lexical/react/LexicalBlockWithAlignableContents';
-import {
-  DecoratorBlockNode,
-  SerializedDecoratorBlockNode,
-} from '@lexical/react/LexicalDecoratorBlockNode';
+import {DecoratorBlockNode} from '@lexical/react/LexicalDecoratorBlockNode';
 import * as React from 'react';
 
 type YouTubeComponentProps = Readonly<{
@@ -58,15 +54,6 @@ function YouTubeComponent({
     </BlockWithAlignableContents>
   );
 }
-
-export type SerializedYouTubeNode = Spread<
-  {
-    videoID: string;
-    type: 'youtube';
-    version: 1;
-  },
-  SerializedDecoratorBlockNode
->;
 
 function convertYoutubeElement(
   domNode: HTMLElement,

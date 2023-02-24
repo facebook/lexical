@@ -6,14 +6,7 @@
  *
  */
 
-import type {Spread} from 'lexical';
-
-import {
-  DecoratorNode,
-  EditorConfig,
-  NodeKey,
-  SerializedLexicalNode,
-} from 'lexical';
+import {DecoratorNode, EditorConfig, NodeKey} from 'lexical';
 import * as React from 'react';
 
 import {useSharedAutocompleteContext} from '../context/SharedAutocompleteContext';
@@ -26,15 +19,6 @@ declare global {
     };
   }
 }
-
-export type SerializedAutocompleteNode = Spread<
-  {
-    type: 'autocomplete';
-    version: 1;
-    uuid: string;
-  },
-  SerializedLexicalNode
->;
 
 export class AutocompleteNode extends DecoratorNode<JSX.Element | null> {
   // TODO add comment

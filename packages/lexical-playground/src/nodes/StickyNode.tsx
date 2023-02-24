@@ -12,8 +12,6 @@ import type {
   LexicalNode,
   NodeKey,
   SerializedEditor,
-  SerializedLexicalNode,
-  Spread,
 } from 'lexical';
 
 import {$setSelection, createEditor, DecoratorNode} from 'lexical';
@@ -28,17 +26,14 @@ const StickyComponent = React.lazy(
 
 type StickyNoteColor = 'pink' | 'yellow';
 
-export type SerializedStickyNode = Spread<
-  {
-    xOffset: number;
-    yOffset: number;
-    color: StickyNoteColor;
-    caption: SerializedEditor;
-    type: 'sticky';
-    version: 1;
-  },
-  SerializedLexicalNode
->;
+type SerializedStickyNode = {
+  xOffset: number;
+  yOffset: number;
+  color: StickyNoteColor;
+  caption: SerializedEditor;
+  type: 'image';
+  version: 1;
+};
 
 export class StickyNode extends DecoratorNode<JSX.Element> {
   __x: number;
@@ -72,6 +67,21 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
     this.__y = y;
     this.__caption = caption || createEditor();
     this.__color = color;
+  }
+
+  static importJSON(serializedNode: SerializedStickyNode): StickyNode {
+    const stickyNode = new StickyNode(
+      serializedNode.xOffset,
+      serializedNode.yOffset,
+      serializedNode.color,
+    );
+    const caption = serializedNode.caption;
+    const nestedEditor = stickyNode.__caption;
+    const editorState = nestedEditor.parseEditorState(caption.editorState);
+    if (!editorState.isEmpty()) {
+      nestedEditor.setEditorState(editorState);
+    }
+    return stickyNode;
   }
 
   createDOM(config: EditorConfig): HTMLElement {

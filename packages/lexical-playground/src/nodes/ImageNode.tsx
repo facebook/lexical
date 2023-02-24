@@ -47,7 +47,7 @@ function convertImageElement(domNode: Node): null | DOMConversionOutput {
   return null;
 }
 
-export type SerializedImageNode = {
+type SerializedImageNode = {
   altText: string;
   caption: SerializedEditor;
   height?: number;

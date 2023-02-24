@@ -9,7 +9,6 @@
 import type {
   EditorConfig,
   LexicalEditor,
-  Spread,
   TextNodeThemeClasses,
 } from '../LexicalEditor';
 import type {
@@ -17,7 +16,6 @@ import type {
   DOMConversionOutput,
   DOMExportOutput,
   NodeKey,
-  SerializedLexicalNode,
 } from '../LexicalNode';
 import type {
   GridSelection,
@@ -65,17 +63,6 @@ import {
   toggleTextFormatType,
 } from '../LexicalUtils';
 import {$createLineBreakNode} from './LexicalLineBreakNode';
-
-export type SerializedTextNode = Spread<
-  {
-    detail: number;
-    format: number;
-    mode: TextModeType;
-    style: string;
-    text: string;
-  },
-  SerializedLexicalNode
->;
 
 export type TextDetailType = 'directionless' | 'unmergable';
 

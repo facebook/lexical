@@ -7,8 +7,7 @@
  *
  */
 
-import type {SerializedListItemNode} from './LexicalListItemNode';
-import type {ListType, SerializedListNode} from './LexicalListNode';
+import type {ListType} from './LexicalListNode';
 import type {LexicalCommand} from 'lexical';
 
 import {createCommand} from 'lexical';
@@ -34,8 +33,6 @@ export {
   ListNode,
   ListType,
   removeList,
-  SerializedListItemNode,
-  SerializedListNode,
 };
 
 export const INSERT_UNORDERED_LIST_COMMAND: LexicalCommand<void> =

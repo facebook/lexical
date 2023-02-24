@@ -14,8 +14,6 @@ import type {
   LexicalEditor,
   LexicalNode,
   NodeKey,
-  SerializedLexicalNode,
-  Spread,
 } from 'lexical';
 
 import {DecoratorNode} from 'lexical';
@@ -78,15 +76,6 @@ export function createRow(): Row {
     id: createUID(),
   };
 }
-
-export type SerializedTableNode = Spread<
-  {
-    rows: Rows;
-    type: 'tablesheet';
-    version: 1;
-  },
-  SerializedLexicalNode
->;
 
 export function extractRowsFromHTML(tableElem: HTMLTableElement): Rows {
   const rowElems = tableElem.querySelectorAll('tr');

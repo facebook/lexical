@@ -12,14 +12,10 @@ import type {
   LexicalEditor,
   LexicalNode,
   NodeKey,
-  Spread,
 } from 'lexical';
 
 import {BlockWithAlignableContents} from '@lexical/react/LexicalBlockWithAlignableContents';
-import {
-  DecoratorBlockNode,
-  SerializedDecoratorBlockNode,
-} from '@lexical/react/LexicalDecoratorBlockNode';
+import {DecoratorBlockNode} from '@lexical/react/LexicalDecoratorBlockNode';
 import * as React from 'react';
 
 type FigmaComponentProps = Readonly<{
@@ -53,15 +49,6 @@ function FigmaComponent({
     </BlockWithAlignableContents>
   );
 }
-
-export type SerializedFigmaNode = Spread<
-  {
-    documentID: string;
-    type: 'figma';
-    version: 1;
-  },
-  SerializedDecoratorBlockNode
->;
 
 export class FigmaNode extends DecoratorBlockNode {
   __id: string;

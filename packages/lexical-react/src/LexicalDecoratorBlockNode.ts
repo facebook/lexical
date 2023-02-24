@@ -6,22 +6,9 @@
  *
  */
 
-import type {
-  ElementFormatType,
-  LexicalNode,
-  NodeKey,
-  SerializedLexicalNode,
-  Spread,
-} from 'lexical';
+import type {ElementFormatType, LexicalNode, NodeKey} from 'lexical';
 
 import {DecoratorNode} from 'lexical';
-
-export type SerializedDecoratorBlockNode = Spread<
-  {
-    format: ElementFormatType;
-  },
-  SerializedLexicalNode
->;
 
 export class DecoratorBlockNode extends DecoratorNode<JSX.Element> {
   __format: ElementFormatType;

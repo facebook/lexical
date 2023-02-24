@@ -13,8 +13,6 @@ import {
   DOMExportOutput,
   LexicalNode,
   NodeKey,
-  SerializedLexicalNode,
-  Spread,
 } from 'lexical';
 import * as React from 'react';
 import {Suspense} from 'react';
@@ -58,16 +56,6 @@ function cloneOption(
     votes: votes || Array.from(option.votes),
   };
 }
-
-export type SerializedPollNode = Spread<
-  {
-    question: string;
-    options: Options;
-    type: 'poll';
-    version: 1;
-  },
-  SerializedLexicalNode
->;
 
 function convertPollElement(domNode: HTMLElement): DOMConversionOutput | null {
   const question = domNode.getAttribute('data-lexical-poll-question');

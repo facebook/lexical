@@ -28,5 +28,4 @@ export {
   getLastCodeHighlightNodeOfLine,
   normalizeCodeLang,
 } from './CodeHighlightNode';
-export type {SerializedCodeNode} from './CodeNode';
 export {$createCodeNode, $isCodeNode, CodeNode} from './CodeNode';

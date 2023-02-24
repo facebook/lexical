@@ -51,11 +51,6 @@ import {
 
 export type NodeMap = Map<NodeKey, LexicalNode>;
 
-export type SerializedLexicalNode = {
-  type: string;
-  version: number;
-};
-
 export function removeNode(
   nodeToRemove: LexicalNode,
   restoreSelection: boolean,
@@ -621,14 +616,6 @@ export class LexicalNode {
     const element = this.createDOM(editor._config, editor);
     return {element};
   }
-
-  // toJSON() {
-  //   return {
-  //     ...super.toJSON(),
-  //     type: this.getType(),
-  //     version: 1, // To-do: ¿What should I do with this?
-  //   }
-  // }
 
   exportJSON() {
     let serializedNode = JSON.parse(JSON.stringify(this.getLatest()));

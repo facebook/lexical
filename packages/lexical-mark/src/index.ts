@@ -7,7 +7,6 @@
  *
  */
 
-import type {SerializedMarkNode} from './MarkNode';
 import type {LexicalNode, RangeSelection, TextNode} from 'lexical';
 
 import {$isElementNode, $isTextNode} from 'lexical';
@@ -148,4 +147,4 @@ export function $getMarkIDs(
   return null;
 }
 
-export {$createMarkNode, $isMarkNode, MarkNode, SerializedMarkNode};
+export {$createMarkNode, $isMarkNode, MarkNode};

@@ -6,13 +6,7 @@
  *
  * @flow strict
  */
-import type {
-  EditorConfig,
-  LexicalNode,
-  NodeKey,
-  RangeSelection,
-  SerializedElementNode,
-} from 'lexical';
+import type {EditorConfig, LexicalNode, NodeKey, RangeSelection} from 'lexical';
 import {ElementNode} from 'lexical';
 declare export class OverflowNode extends ElementNode {
   static getType(): string;
@@ -27,10 +21,3 @@ declare export function $createOverflowNode(): OverflowNode;
 declare export function $isOverflowNode(
   node: ?LexicalNode,
 ): boolean %checks(node instanceof OverflowNode);
-
-export type SerializedOverflowNode = {
-  ...SerializedElementNode,
-  type: 'overflow',
-  version: 1,
-  ...
-};

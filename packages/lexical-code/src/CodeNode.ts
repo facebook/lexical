@@ -15,8 +15,6 @@ import type {
   NodeKey,
   ParagraphNode,
   RangeSelection,
-  SerializedElementNode,
-  Spread,
 } from 'lexical';
 import type {CodeHighlightNode} from '@lexical/code';
 
@@ -47,15 +45,6 @@ import {
   getFirstCodeHighlightNodeOfLine,
 } from './CodeHighlightNode';
 import * as Prism from 'prismjs';
-
-export type SerializedCodeNode = Spread<
-  {
-    language: string | null | undefined;
-    type: 'code';
-    version: 1;
-  },
-  SerializedElementNode
->;
 
 const mapToPrismLanguage = (
   language: string | null | undefined,

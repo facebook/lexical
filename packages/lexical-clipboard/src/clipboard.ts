@@ -39,7 +39,6 @@ import {
   NodeSelection,
   RangeSelection,
   SELECTION_CHANGE_COMMAND,
-  SerializedTextNode,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -383,7 +382,7 @@ function $appendNodesToJSON(
     // TextNodes, such as code tokens, we will get a 'blank' TextNode here, i.e., one
     // with text of length 0. We don't want this, it makes a confusing mess. Reset!
     if (text.length > 0) {
-      (serializedNode as SerializedTextNode).text = text;
+      serializedNode.text = text;
     } else {
       shouldInclude = false;
     }

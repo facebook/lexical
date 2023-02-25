@@ -858,7 +858,7 @@ declare export function $applyNodeReplacement<N: LexicalNode>(
 ): N;
 
 export interface SerializedEditorState {
-  root: SerializedElementNode;
+  root: SerializedNode;
 }
 
 export type SerializedEditor = {

@@ -27,8 +27,8 @@ const StickyComponent = React.lazy(
 type StickyNoteColor = 'pink' | 'yellow';
 
 type SerializedStickyNode = {
-  xOffset: number;
-  yOffset: number;
+  x: number;
+  y: number;
   color: StickyNoteColor;
   caption: SerializedEditor;
   type: 'sticky';
@@ -57,8 +57,8 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
 
   static importJSON(serializedNode: SerializedStickyNode): StickyNode {
     const stickyNode = new StickyNode(
-      serializedNode.xOffset,
-      serializedNode.yOffset,
+      serializedNode.x,
+      serializedNode.y,
       serializedNode.color,
     );
     const caption = serializedNode.caption;
@@ -82,17 +82,6 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
     this.__y = y;
     this.__caption = caption || createEditor();
     this.__color = color;
-  }
-
-  exportJSON(): SerializedStickyNode {
-    return {
-      caption: this.__caption.toJSON(),
-      color: this.__color,
-      type: 'sticky',
-      version: 1,
-      xOffset: this.__x,
-      yOffset: this.__y,
-    };
   }
 
   createDOM(config: EditorConfig): HTMLElement {

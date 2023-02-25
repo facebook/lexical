@@ -16,7 +16,7 @@ import type {
   RegisteredNodes,
   Transform,
 } from './LexicalEditor';
-import type {SerializedEditorState} from './LexicalEditorState';
+import type {SerializedEditorState, SerializedNode} from './LexicalEditorState';
 import type {LexicalNode} from './LexicalNode';
 
 import invariant from 'shared/invariant';
@@ -281,19 +281,13 @@ function $applyAllTransforms(
 }
 
 export function $parseSerializedNode(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  serializedNode: any,
+  serializedNode: SerializedNode,
 ): LexicalNode {
-  const internalSerializedNode = serializedNode;
-  return $parseSerializedNodeImpl(
-    internalSerializedNode,
-    getActiveEditor()._nodes,
-  );
+  return $parseSerializedNodeImpl(serializedNode, getActiveEditor()._nodes);
 }
 
 function $parseSerializedNodeImpl(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  serializedNode: any,
+  serializedNode: SerializedNode,
   registeredNodes: RegisteredNodes,
 ): LexicalNode {
   const type = serializedNode.type;
@@ -308,7 +302,7 @@ function $parseSerializedNodeImpl(
   if (serializedNode.type !== nodeClass.getType()) {
     invariant(
       false,
-      'LexicalNode: Node %s does not implement .importJSON().',
+      'LexicalNode: Node %s is not exporting a property type matching .getType()',
       nodeClass.name,
     );
   }

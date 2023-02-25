@@ -14,21 +14,26 @@ import type {
   RangeSelection,
 } from './LexicalSelection';
 
-import {$isElementNode, ElementFormatType} from '.';
+import {$isElementNode, ElementFormatType, TextModeType} from '.';
 import {readEditorState} from './LexicalUpdates';
 import {$getRoot} from './LexicalUtils';
 import {$createRootNode} from './nodes/LexicalRootNode';
 
-type SerializedElementNode = {
+export type SerializedNode = {
   type: string;
   version: number;
-  children: Array<SerializedElementNode>;
+  children: Array<SerializedNode>;
   direction: 'ltr' | 'rtl' | null;
-  format: ElementFormatType;
   indent: number;
+  format: ElementFormatType;
+  detail: number;
+  mode: TextModeType;
+  style: string;
+  text: string;
 };
+
 export interface SerializedEditorState {
-  root: SerializedElementNode;
+  root: SerializedNode;
 }
 
 export function editorStateHasDirtySelection(

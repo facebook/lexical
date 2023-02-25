@@ -837,15 +837,20 @@ declare export function $copyNode(
 /**
  * Serialization/Deserialization
  * */
-
-type InternalSerializedNode = {
-  children?: Array<InternalSerializedNode>,
+type SerializedNode = {
   type: string,
   version: number,
+  children: Array<SerializedNode>,
+  direction: 'ltr' | 'rtl' | null,
+  indent: number,
+  format: ElementFormatType,
+  detail: number,
+  mode: TextModeType,
+  style: string,
+  text: string,
 };
-
 declare export function $parseSerializedNode(
-  serializedNode: InternalSerializedNode,
+  serializedNode: SerializedNode,
 ): LexicalNode;
 
 declare export function $applyNodeReplacement<N: LexicalNode>(
@@ -853,7 +858,7 @@ declare export function $applyNodeReplacement<N: LexicalNode>(
 ): N;
 
 export interface SerializedEditorState {
-  root: SerializedRootNode;
+  root: SerializedElementNode;
 }
 
 export type SerializedEditor = {

@@ -31,7 +31,7 @@ type SerializedStickyNode = {
   yOffset: number;
   color: StickyNoteColor;
   caption: SerializedEditor;
-  type: 'image';
+  type: 'sticky';
   version: 1;
 };
 
@@ -55,6 +55,21 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
     );
   }
 
+  static importJSON(serializedNode: SerializedStickyNode): StickyNode {
+    const stickyNode = new StickyNode(
+      serializedNode.xOffset,
+      serializedNode.yOffset,
+      serializedNode.color,
+    );
+    const caption = serializedNode.caption;
+    const nestedEditor = stickyNode.__caption;
+    const editorState = nestedEditor.parseEditorState(caption.editorState);
+    if (!editorState.isEmpty()) {
+      nestedEditor.setEditorState(editorState);
+    }
+    return stickyNode;
+  }
+
   constructor(
     x: number,
     y: number,
@@ -69,19 +84,15 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
     this.__color = color;
   }
 
-  static importJSON(serializedNode: SerializedStickyNode): StickyNode {
-    const stickyNode = new StickyNode(
-      serializedNode.xOffset,
-      serializedNode.yOffset,
-      serializedNode.color,
-    );
-    const caption = serializedNode.caption;
-    const nestedEditor = stickyNode.__caption;
-    const editorState = nestedEditor.parseEditorState(caption.editorState);
-    if (!editorState.isEmpty()) {
-      nestedEditor.setEditorState(editorState);
-    }
-    return stickyNode;
+  exportJSON(): SerializedStickyNode {
+    return {
+      caption: this.__caption.toJSON(),
+      color: this.__color,
+      type: 'sticky',
+      version: 1,
+      xOffset: this.__x,
+      yOffset: this.__y,
+    };
   }
 
   createDOM(config: EditorConfig): HTMLElement {

@@ -39,6 +39,7 @@ import {
   NodeSelection,
   RangeSelection,
   SELECTION_CHANGE_COMMAND,
+  SerializedNode,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -340,17 +341,11 @@ function $mergeGridNodesStrategy(
   }
 }
 
-export interface BaseSerializedNode {
-  children?: Array<BaseSerializedNode>;
-  type: string;
-  version: number;
-}
-
 function $appendNodesToJSON(
   editor: LexicalEditor,
   selection: RangeSelection | NodeSelection | GridSelection | null,
   currentNode: LexicalNode,
-  targetArray: Array<BaseSerializedNode> = [],
+  targetArray: Array<SerializedNode> = [],
 ): boolean {
   let shouldInclude =
     selection != null ? currentNode.isSelected(selection) : true;
@@ -420,9 +415,7 @@ function $appendNodesToJSON(
 }
 
 // TODO why $ function with Editor instance?
-export function $generateJSONFromSelectedNodes<
-  SerializedNode extends BaseSerializedNode,
->(
+export function $generateJSONFromSelectedNodes(
   editor: LexicalEditor,
   selection: RangeSelection | NodeSelection | GridSelection | null,
 ): {
@@ -443,7 +436,7 @@ export function $generateJSONFromSelectedNodes<
 }
 
 export function $generateNodesFromSerializedNodes(
-  serializedNodes: Array<BaseSerializedNode>,
+  serializedNodes: Array<SerializedNode>,
 ): Array<LexicalNode> {
   const nodes = [];
   for (let i = 0; i < serializedNodes.length; i++) {

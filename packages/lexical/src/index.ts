@@ -22,7 +22,11 @@ export type {
   NodeMutation,
   SerializedEditor,
 } from './LexicalEditor';
-export type {EditorState, SerializedEditorState} from './LexicalEditorState';
+export type {
+  EditorState,
+  SerializedEditorState,
+  SerializedNode,
+} from './LexicalEditorState';
 export type {
   DOMChildConversion,
   DOMConversion,

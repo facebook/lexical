@@ -12,6 +12,7 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$findMatchingParent, mergeRegister} from '@lexical/utils';
 import {
   $createParagraphNode,
+  $getNearestNodeFromDOMNode,
   $getNodeByKey,
   $getPreviousSelection,
   $getSelection,
@@ -49,6 +50,24 @@ export const TOGGLE_COLLAPSIBLE_COMMAND = createCommand<NodeKey>();
 
 export default function CollapsiblePlugin(): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    const toggleArrowClick = (event: Event) => {
+      const domNode = event.target as HTMLElement;
+      if (editor !== null && editor.isEditable()) {
+        editor.update(() => {
+          const node = $getNearestNodeFromDOMNode(domNode);
+          if ($isCollapsibleContainerNode(node)) {
+            node.toggleOpen();
+          }
+        });
+      }
+    };
+
+    window.addEventListener('toggle', toggleArrowClick, true);
+    return () => window.removeEventListener('toggle', toggleArrowClick, true);
+  }, [editor]);
+
   useEffect(() => {
     if (
       !editor.hasNodes([

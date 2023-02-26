@@ -601,25 +601,27 @@ export class RangeSelection implements BaseSelection {
     const anchor = this.anchor;
     const focus = this.focus;
     const isBefore = anchor.isBefore(focus);
-    let firstNode = isBefore ? anchor.getNode() : focus.getNode();
-    let lastNode = isBefore ? focus.getNode() : anchor.getNode();
-    const firstOffset = isBefore ? anchor.offset : focus.offset;
-    const lastOffset = isBefore ? focus.offset : anchor.offset;
+    const firstPoint = isBefore ? anchor : focus;
+    const lastPoint = isBefore ? focus : anchor;
+    let firstNode = firstPoint.getNode();
+    let lastNode = lastPoint.getNode();
+    const startOffset = firstPoint.offset;
+    const endOffset = lastPoint.offset;
 
     if ($isElementNode(firstNode)) {
       const firstNodeDescendant =
-        firstNode.getDescendantByIndex<ElementNode>(firstOffset);
+        firstNode.getDescendantByIndex<ElementNode>(startOffset);
       firstNode = firstNodeDescendant != null ? firstNodeDescendant : firstNode;
     }
     if ($isElementNode(lastNode)) {
       let lastNodeDescendant =
-        lastNode.getDescendantByIndex<ElementNode>(lastOffset);
+        lastNode.getDescendantByIndex<ElementNode>(endOffset);
       // We don't want to over-select, as node selection infers the child before
       // the last descendant, not including that descendant.
       if (
         lastNodeDescendant !== null &&
         lastNodeDescendant !== firstNode &&
-        lastNode.getChildAtIndex(lastOffset) === lastNodeDescendant
+        lastNode.getChildAtIndex(endOffset) === lastNodeDescendant
       ) {
         lastNodeDescendant = lastNodeDescendant.getPreviousSibling();
       }

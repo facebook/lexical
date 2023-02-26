@@ -184,6 +184,36 @@ const editorState = editor.getEditorState();
 const jsonString = JSON.stringify(editorState);
 ```
 
+#### `LexicalNode.exportJSON()`
+
+You can control how a `LexicalNode` is represented as JSON by adding an `exportJSON()` method. It's important to ensure your serialized JSON node has a `type` field.
+
+```js
+export type SerializedLexicalNode = {
+  type: string;
+  version: number;
+};
+
+exportJSON(): SerializedLexicalNode
+```
+
+When transforming an editor state into JSON, we simply traverse the current editor state and call the `exportJSON` method for each Node in order to convert it to a `SerializedLexicalNode` object that represents the JSON object for the given node. If your properties are JSON serializable, this method is not necessary.
+#### `LexicalNode.importJSON()`
+
+You can control how a `LexicalNode` is serialized back into a node from JSON by adding an `importJSON()` method.
+
+```js
+export type SerializedLexicalNode = {
+  type: string;
+  version: number;
+};
+
+importJSON(jsonNode: SerializedLexicalNode): LexicalNode
+```
+
+This method works in the opposite way to how `exportJSON` works. Lexical uses the `type` field on the JSON object to determine what Lexical node class it needs to map to, so keeping the `type` field consistent with the `getType()` of the LexicalNode is essential. If your properties are JSON serializable, this method is not necessary.
+
+
 ### Versioning & Breaking Changes
 
 It's important to note that you should avoid making breaking changes to existing fields in your JSON object, especially if backwards compatibility is an important part of your editor. 
@@ -204,8 +234,6 @@ type HeadingLevelType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 class HeadingNode extends ElementNode {
   __level: HeadingLevelType; // We are changing __tag with __level
 
-  // other methods...
-
   static importJSON(serializedNode: SerializedHeadingNode): HeadingNode {
     // We use the `tag` property in case we are importing a node that was
     // saved before the rename, otherwise we use `level`.
@@ -215,6 +243,6 @@ class HeadingNode extends ElementNode {
     node.setDirection(serializedNode.direction);
     return node;
   }
-
 }
 ```
+You could also define a `version` property on `exportJSON` that you could use to correctly deserialize to `importJSON`.

@@ -30,7 +30,7 @@ import type {RootNode} from './nodes/LexicalRootNode';
 import type {TextFormatType, TextNode} from './nodes/LexicalTextNode';
 
 import {CAN_USE_DOM} from 'shared/canUseDOM';
-import {IS_APPLE, IS_IOS, IS_SAFARI} from 'shared/environment';
+import {IS_APPLE, IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from 'shared/environment';
 import invariant from 'shared/invariant';
 
 import {
@@ -653,7 +653,7 @@ export function $updateTextNodeFromDOMContent(
     if (compositionEnd || normalizedTextContent !== prevTextContent) {
       if (normalizedTextContent === '') {
         $setCompositionKey(null);
-        if (!IS_SAFARI && !IS_IOS) {
+        if (!IS_SAFARI && !IS_IOS && !IS_APPLE_WEBKIT) {
           // For composition (mainly Android), we have to remove the node on a later update
           const editor = getActiveEditor();
           setTimeout(() => {
@@ -1499,4 +1499,51 @@ export function updateDOMBlockCursorElement(
 
 export function getDOMSelection(targetWindow: null | Window): null | Selection {
   return !CAN_USE_DOM ? null : (targetWindow || window).getSelection();
+}
+
+export function $splitNode(
+  node: ElementNode,
+  offset: number,
+): [ElementNode | null, ElementNode] {
+  let startNode = node.getChildAtIndex(offset);
+  if (startNode == null) {
+    startNode = node;
+  }
+
+  invariant(
+    !$isRootOrShadowRoot(node),
+    'Can not call $splitNode() on root element',
+  );
+
+  const recurse = (
+    currentNode: LexicalNode,
+  ): [ElementNode, ElementNode, LexicalNode] => {
+    const parent = currentNode.getParentOrThrow();
+    const isParentRoot = $isRootOrShadowRoot(parent);
+    // The node we start split from (leaf) is moved, but its recursive
+    // parents are copied to create separate tree
+    const nodeToMove =
+      currentNode === startNode && !isParentRoot
+        ? currentNode
+        : $copyNode(currentNode);
+
+    if (isParentRoot) {
+      currentNode.insertAfter(nodeToMove);
+      return [
+        currentNode as ElementNode,
+        nodeToMove as ElementNode,
+        nodeToMove,
+      ];
+    } else {
+      const [leftTree, rightTree, newParent] = recurse(parent);
+      const nextSiblings = currentNode.getNextSiblings();
+
+      newParent.append(nodeToMove, ...nextSiblings);
+      return [leftTree, rightTree, nodeToMove];
+    }
+  };
+
+  const [leftTree, rightTree] = recurse(startNode);
+
+  return [leftTree, rightTree];
 }

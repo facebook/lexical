@@ -50,6 +50,7 @@ export type TextNodeThemeClasses = {
   base?: EditorThemeClassName;
   bold?: EditorThemeClassName;
   code?: EditorThemeClassName;
+  highlight?: EditorThemeClassName;
   italic?: EditorThemeClassName;
   strikethrough?: EditorThemeClassName;
   subscript?: EditorThemeClassName;
@@ -129,6 +130,7 @@ export type EditorThemeClasses = {
     base?: EditorThemeClassName;
     focus?: EditorThemeClassName;
   };
+  indent?: EditorThemeClassName;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 };
@@ -139,12 +141,35 @@ export type EditorConfig = {
   theme: EditorThemeClasses;
 };
 
+export type CreateEditorArgs = {
+  disableEvents?: boolean;
+  editorState?: EditorState;
+  namespace?: string;
+  nodes?: ReadonlyArray<
+    | Klass<LexicalNode>
+    | {
+        replace: Klass<LexicalNode>;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        with: <T extends {new (...args: any): any}>(
+          node: InstanceType<T>,
+        ) => LexicalNode;
+
+        withKlass?: Klass<LexicalNode>;
+      }
+  >;
+  onError?: ErrorHandler;
+  parentEditor?: LexicalEditor;
+  editable?: boolean;
+  theme?: EditorThemeClasses;
+};
+
 export type RegisteredNodes = Map<string, RegisteredNode>;
 
 export type RegisteredNode = {
   klass: Klass<LexicalNode>;
   transforms: Set<Transform<LexicalNode>>;
   replace: null | ((node: LexicalNode) => LexicalNode);
+  replaceWithKlass: null | Klass<LexicalNode>;
 };
 
 export type Transform<T extends LexicalNode> = (node: T) => void;
@@ -334,25 +359,7 @@ function initializeConversionCache(nodes: RegisteredNodes): DOMConversionCache {
   return conversionCache;
 }
 
-export function createEditor(editorConfig?: {
-  disableEvents?: boolean;
-  editorState?: EditorState;
-  namespace?: string;
-  nodes?: ReadonlyArray<
-    | Klass<LexicalNode>
-    | {
-        replace: Klass<LexicalNode>;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        with: <T extends {new (...args: any): any}>(
-          node: InstanceType<T>,
-        ) => LexicalNode;
-      }
-  >;
-  onError?: ErrorHandler;
-  parentEditor?: LexicalEditor;
-  editable?: boolean;
-  theme?: EditorThemeClasses;
-}): LexicalEditor {
+export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
   const config = editorConfig || {};
   const activeEditor = internalGetActiveEditor();
   const theme = config.theme || {};
@@ -382,11 +389,13 @@ export function createEditor(editorConfig?: {
     for (let i = 0; i < nodes.length; i++) {
       let klass = nodes[i];
       let replacementClass = null;
+      let replacementKlass = null;
 
       if (typeof klass !== 'function') {
         const options = klass;
         klass = options.replace;
         replacementClass = options.with;
+        replacementKlass = options.withKlass ? options.withKlass : null;
       }
       // Ensure custom nodes implement required methods.
       if (__DEV__) {
@@ -439,6 +448,7 @@ export function createEditor(editorConfig?: {
       registeredNodes.set(type, {
         klass,
         replace: replacementClass,
+        replaceWithKlass: replacementKlass,
         transforms: new Set(),
       });
     }
@@ -672,10 +682,10 @@ export class LexicalEditor {
     };
   }
 
-  registerNodeTransform<T extends LexicalNode>(
+  private registerNodeTransformToKlass<T extends LexicalNode>(
     klass: Klass<T>,
     listener: Transform<T>,
-  ): () => void {
+  ): RegisteredNode {
     const type = klass.getType();
 
     const registeredNode = this._nodes.get(type);
@@ -687,12 +697,33 @@ export class LexicalEditor {
         klass.name,
       );
     }
-
     const transforms = registeredNode.transforms;
     transforms.add(listener as Transform<LexicalNode>);
-    markAllNodesAsDirty(this, type);
+
+    return registeredNode;
+  }
+
+  registerNodeTransform<T extends LexicalNode>(
+    klass: Klass<T>,
+    listener: Transform<T>,
+  ): () => void {
+    const registeredNode = this.registerNodeTransformToKlass(klass, listener);
+    const registeredNodes = [registeredNode];
+
+    const replaceWithKlass = registeredNode.replaceWithKlass;
+    if (replaceWithKlass != null) {
+      const registeredReplaceWithNode = this.registerNodeTransformToKlass(
+        replaceWithKlass,
+        listener as Transform<LexicalNode>,
+      );
+      registeredNodes.push(registeredReplaceWithNode);
+    }
+
+    markAllNodesAsDirty(this, klass.getType());
     return () => {
-      transforms.delete(listener as Transform<LexicalNode>);
+      registeredNodes.forEach((node) =>
+        node.transforms.delete(listener as Transform<LexicalNode>),
+      );
     };
   }
 

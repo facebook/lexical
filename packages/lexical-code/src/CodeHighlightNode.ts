@@ -34,6 +34,8 @@ import 'prismjs/components/prism-python';
 import 'prismjs/components/prism-rust';
 import 'prismjs/components/prism-swift';
 import 'prismjs/components/prism-typescript';
+import 'prismjs/components/prism-java';
+import 'prismjs/components/prism-cpp';
 
 import {
   addClassNamesToElement,
@@ -55,8 +57,10 @@ type SerializedCodeHighlightNode = Spread<
 export const CODE_LANGUAGE_FRIENDLY_NAME_MAP: Record<string, string> = {
   c: 'C',
   clike: 'C-like',
+  cpp: 'C++',
   css: 'CSS',
   html: 'HTML',
+  java: 'Java',
   js: 'JavaScript',
   markdown: 'Markdown',
   objc: 'Objective-C',
@@ -70,6 +74,8 @@ export const CODE_LANGUAGE_FRIENDLY_NAME_MAP: Record<string, string> = {
 };
 
 export const CODE_LANGUAGE_MAP: Record<string, string> = {
+  cpp: 'cpp',
+  java: 'java',
   javascript: 'js',
   md: 'markdown',
   plaintext: 'plain',

@@ -11,6 +11,7 @@ export type {PasteCommandType} from './LexicalCommands';
 export type {
   CommandListenerPriority,
   CommandPayloadType,
+  CreateEditorArgs,
   EditableListener,
   EditorConfig,
   EditorThemeClasses,
@@ -88,6 +89,7 @@ export {
   KEY_ARROW_UP_COMMAND,
   KEY_BACKSPACE_COMMAND,
   KEY_DELETE_COMMAND,
+  KEY_DOWN_COMMAND,
   KEY_ENTER_COMMAND,
   KEY_ESCAPE_COMMAND,
   KEY_MODIFIER_COMMAND,
@@ -141,6 +143,7 @@ export {
   $nodesOfType,
   $setCompositionKey,
   $setSelection,
+  $splitNode,
   isSelectionWithinEditor,
 } from './LexicalUtils';
 export {$isDecoratorNode, DecoratorNode} from './nodes/LexicalDecoratorNode';

@@ -7,8 +7,8 @@
  *
  */
 
+import {$cloneWithProperties} from '@lexical/selection';
 import {
-  $copyNode,
   $createParagraphNode,
   $getRoot,
   $getSelection,
@@ -18,6 +18,7 @@ import {
   $isRootOrShadowRoot,
   $isTextNode,
   $setSelection,
+  $splitNode,
   DEPRECATED_$isGridSelection,
   EditorState,
   ElementNode,
@@ -26,6 +27,8 @@ import {
   LexicalNode,
 } from 'lexical';
 import invariant from 'shared/invariant';
+
+export {$splitNode};
 
 export type DFSNode = Readonly<{
   depth: number;
@@ -309,8 +312,16 @@ export function $restoreEditorState(
   editorState: EditorState,
 ): void {
   const FULL_RECONCILE = 2;
-  const nodeMap = new Map(editorState._nodeMap);
+  const nodeMap = new Map();
   const activeEditorState = editor._pendingEditorState;
+
+  for (const [key, node] of editorState._nodeMap) {
+    const clone = $cloneWithProperties(node);
+    if ($isTextNode(clone)) {
+      clone.__text = node.__text;
+    }
+    nodeMap.set(key, clone);
+  }
 
   if (activeEditorState) {
     activeEditorState._nodeMap = nodeMap;
@@ -379,49 +390,11 @@ export function $wrapNodeInElement(
   return elementNode;
 }
 
-export function $splitNode(
-  node: ElementNode,
-  offset: number,
-): [ElementNode | null, ElementNode] {
-  let startNode = node.getChildAtIndex(offset);
-  if (startNode == null) {
-    startNode = node;
-  }
+export function isHTMLAnchorElement(x: Node): x is HTMLAnchorElement {
+  return isHTMLElement(x) && x.tagName === 'A';
+}
 
-  invariant(
-    !$isRootOrShadowRoot(node),
-    'Can not call $splitNode() on root element',
-  );
-
-  const recurse = (
-    currentNode: LexicalNode,
-  ): [ElementNode, ElementNode, LexicalNode] => {
-    const parent = currentNode.getParentOrThrow();
-    const isParentRoot = $isRootOrShadowRoot(parent);
-    // The node we start split from (leaf) is moved, but its recursive
-    // parents are copied to create separate tree
-    const nodeToMove =
-      currentNode === startNode && !isParentRoot
-        ? currentNode
-        : $copyNode(currentNode);
-
-    if (isParentRoot) {
-      currentNode.insertAfter(nodeToMove);
-      return [
-        currentNode as ElementNode,
-        nodeToMove as ElementNode,
-        nodeToMove,
-      ];
-    } else {
-      const [leftTree, rightTree, newParent] = recurse(parent);
-      const nextSiblings = currentNode.getNextSiblings();
-
-      newParent.append(nodeToMove, ...nextSiblings);
-      return [leftTree, rightTree, nodeToMove];
-    }
-  };
-
-  const [leftTree, rightTree] = recurse(startNode);
-
-  return [leftTree, rightTree];
+export function isHTMLElement(x: Node | EventTarget): x is HTMLElement {
+  // @ts-ignore-next-line - strict check on nodeType here should filter out non-Element EventTarget implementors
+  return x.nodeType === 1;
 }

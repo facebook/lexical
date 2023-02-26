@@ -56,6 +56,7 @@ import {
   $isRootOrShadowRoot,
   $isTokenOrSegmented,
   $setCompositionKey,
+  $splitNode,
   doesContainGrapheme,
   getDOMSelection,
   getDOMTextNode,
@@ -217,7 +218,8 @@ function $transferStartingElementPointToTextPoint(
   start: ElementPointType,
   end: PointType,
   format: number,
-) {
+  style: string,
+): void {
   const element = start.getNode();
   const placementNode = element.getChildAtIndex(start.offset);
   const textNode = $createTextNode();
@@ -225,6 +227,7 @@ function $transferStartingElementPointToTextPoint(
     ? $createParagraphNode().append(textNode)
     : textNode;
   textNode.setFormat(format);
+  textNode.setStyle(style);
   if (placementNode === null) {
     element.append(target);
   } else {
@@ -549,13 +552,20 @@ export class RangeSelection implements BaseSelection {
   focus: PointType;
   dirty: boolean;
   format: number;
+  style: string;
   _cachedNodes: null | Array<LexicalNode>;
 
-  constructor(anchor: PointType, focus: PointType, format: number) {
+  constructor(
+    anchor: PointType,
+    focus: PointType,
+    format: number,
+    style: string,
+  ) {
     this.anchor = anchor;
     this.focus = focus;
     this.dirty = false;
     this.format = format;
+    this.style = style;
     this._cachedNodes = null;
     anchor._selection = this;
     focus._selection = this;
@@ -570,7 +580,8 @@ export class RangeSelection implements BaseSelection {
     return (
       this.anchor.is(selection.anchor) &&
       this.focus.is(selection.focus) &&
-      this.format === selection.format
+      this.format === selection.format &&
+      this.style === selection.style
     );
   }
 
@@ -599,9 +610,18 @@ export class RangeSelection implements BaseSelection {
       firstNode = firstNodeDescendant != null ? firstNodeDescendant : firstNode;
     }
     if ($isElementNode(lastNode)) {
-      const lastNodeDescendant = lastNode.getDescendantByIndex<ElementNode>(
+      let lastNodeDescendant = lastNode.getDescendantByIndex<ElementNode>(
         focus.offset,
       );
+      // We don't want to over-select, as node selection infers the child before
+      // the last descendant, not including that descendant.
+      if (
+        lastNodeDescendant !== null &&
+        lastNodeDescendant !== firstNode &&
+        lastNode.getChildAtIndex(focus.offset) === lastNodeDescendant
+      ) {
+        lastNodeDescendant = lastNodeDescendant.getPreviousSibling();
+      }
       lastNode = lastNodeDescendant != null ? lastNodeDescendant : lastNode;
     }
 
@@ -664,10 +684,16 @@ export class RangeSelection implements BaseSelection {
           let text = node.getTextContent();
           if (node === firstNode) {
             if (node === lastNode) {
-              text =
-                anchorOffset < focusOffset
-                  ? text.slice(anchorOffset, focusOffset)
-                  : text.slice(focusOffset, anchorOffset);
+              if (
+                anchor.type !== 'element' ||
+                focus.type !== 'element' ||
+                focus.offset === anchor.offset
+              ) {
+                text =
+                  anchorOffset < focusOffset
+                    ? text.slice(anchorOffset, focusOffset)
+                    : text.slice(focusOffset, anchorOffset);
+              }
             } else {
               text = isBefore
                 ? text.slice(anchorOffset)
@@ -728,12 +754,18 @@ export class RangeSelection implements BaseSelection {
       $createPoint(anchor.key, anchor.offset, anchor.type),
       $createPoint(focus.key, focus.offset, focus.type),
       this.format,
+      this.style,
     );
     return selection;
   }
 
   toggleFormat(format: TextFormatType): void {
     this.format = toggleTextFormatType(this.format, format, null);
+    this.dirty = true;
+  }
+
+  setStyle(style: string): void {
+    this.style = style;
     this.dirty = true;
   }
 
@@ -767,11 +799,12 @@ export class RangeSelection implements BaseSelection {
     const focus = this.focus;
     const isBefore = this.isCollapsed() || anchor.isBefore(focus);
     const format = this.format;
+    const style = this.style;
 
     if (isBefore && anchor.type === 'element') {
-      $transferStartingElementPointToTextPoint(anchor, focus, format);
+      $transferStartingElementPointToTextPoint(anchor, focus, format, style);
     } else if (!isBefore && focus.type === 'element') {
-      $transferStartingElementPointToTextPoint(focus, anchor, format);
+      $transferStartingElementPointToTextPoint(focus, anchor, format, style);
     }
     const selectedNodes = this.getNodes();
     const selectedNodesLength = selectedNodes.length;
@@ -874,13 +907,19 @@ export class RangeSelection implements BaseSelection {
         return;
       }
       const firstNodeFormat = firstNode.getFormat();
+      const firstNodeStyle = firstNode.getStyle();
 
-      if (startOffset === endOffset && firstNodeFormat !== format) {
+      if (
+        startOffset === endOffset &&
+        (firstNodeFormat !== format || firstNodeStyle !== style)
+      ) {
         if (firstNode.getTextContent() === '') {
           firstNode.setFormat(format);
+          firstNode.setStyle(style);
         } else {
           const textNode = $createTextNode(text);
           textNode.setFormat(format);
+          textNode.setStyle(style);
           textNode.select();
           if (startOffset === 0) {
             firstNode.insertBefore(textNode, false);
@@ -908,6 +947,7 @@ export class RangeSelection implements BaseSelection {
           this.anchor.offset -= text.length;
         } else {
           this.format = firstNodeFormat;
+          this.style = firstNodeStyle;
         }
       }
     } else {
@@ -1434,7 +1474,30 @@ export class RangeSelection implements BaseSelection {
         ($isDecoratorNode(target) && !target.isInline())
       ) {
         lastNode = node;
-        target = target.insertAfter(node, false);
+        // when pasting top level node in the middle of paragraph
+        // we need to split paragraph instead of placing it inline
+        if (
+          $isRangeSelection(this) &&
+          $isDecoratorNode(node) &&
+          ($isElementNode(target) || $isTextNode(target)) &&
+          !node.isInline()
+        ) {
+          let splitNode: ElementNode;
+          let splitOffset: number;
+
+          if ($isTextNode(target)) {
+            splitNode = target.getParentOrThrow();
+            const [textNode] = target.splitText(anchorOffset);
+            splitOffset = textNode.getIndexWithinParent() + 1;
+          } else {
+            splitNode = target;
+            splitOffset = anchorOffset;
+          }
+          const [, rightTree] = $splitNode(splitNode, splitOffset);
+          target = rightTree.insertBefore(node);
+        } else {
+          target = target.insertAfter(node, false);
+        }
       } else {
         const nextTarget: ElementNode = target.getParentOrThrow();
         // if we're inserting an Element after a LineBreak, we want to move the target to the parent
@@ -1951,7 +2014,24 @@ export class RangeSelection implements BaseSelection {
         }
       }
     }
+    const wasCollapsed = this.isCollapsed();
     this.removeText();
+    if (
+      isBackward &&
+      !wasCollapsed &&
+      this.isCollapsed() &&
+      this.anchor.type === 'element' &&
+      this.anchor.offset === 0
+    ) {
+      const anchorNode = this.anchor.getNode();
+      if (
+        anchorNode.isEmpty() &&
+        $isRootNode(anchorNode.getParent()) &&
+        anchorNode.getIndexWithinParent() === 0
+      ) {
+        anchorNode.collapseAtStart(this);
+      }
+    }
   }
 
   deleteLine(isBackward: boolean): void {
@@ -2410,6 +2490,7 @@ export function internalMakeRangeSelection(
     $createPoint(anchorKey, anchorOffset, anchorType),
     $createPoint(focusKey, focusOffset, focusType),
     0,
+    '',
   );
   selection.dirty = true;
   editorState._selection = selection;
@@ -2419,7 +2500,7 @@ export function internalMakeRangeSelection(
 export function $createRangeSelection(): RangeSelection {
   const anchor = $createPoint('root', 0, 'element');
   const focus = $createPoint('root', 0, 'element');
-  return new RangeSelection(anchor, focus, 0);
+  return new RangeSelection(anchor, focus, 0, '');
 }
 
 export function $createNodeSelection(): NodeSelection {
@@ -2524,6 +2605,7 @@ export function internalCreateRangeSelection(
     resolvedAnchorPoint,
     resolvedFocusPoint,
     !$isRangeSelection(lastSelection) ? 0 : lastSelection.format,
+    !$isRangeSelection(lastSelection) ? '' : lastSelection.style,
   );
 }
 
@@ -2785,14 +2867,23 @@ export function updateDOMSelection(
   const nextAnchorOffset = anchor.offset;
   const nextFocusOffset = focus.offset;
   const nextFormat = nextSelection.format;
+  const nextStyle = nextSelection.style;
   const isCollapsed = nextSelection.isCollapsed();
   let nextAnchorNode: HTMLElement | Text | null = anchorDOM;
   let nextFocusNode: HTMLElement | Text | null = focusDOM;
-  let anchorFormatChanged = false;
+  let anchorFormatOrStyleChanged = false;
 
   if (anchor.type === 'text') {
     nextAnchorNode = getDOMTextNode(anchorDOM);
-    anchorFormatChanged = anchor.getNode().getFormat() !== nextFormat;
+    const anchorNode = anchor.getNode();
+    anchorFormatOrStyleChanged =
+      anchorNode.getFormat() !== nextFormat ||
+      anchorNode.getStyle() !== nextStyle;
+  } else if (
+    $isRangeSelection(prevSelection) &&
+    prevSelection.anchor.type === 'text'
+  ) {
+    anchorFormatOrStyleChanged = true;
   }
 
   if (focus.type === 'text') {
@@ -2808,11 +2899,14 @@ export function updateDOMSelection(
   if (
     isCollapsed &&
     (prevSelection === null ||
-      anchorFormatChanged ||
-      ($isRangeSelection(prevSelection) && prevSelection.format !== nextFormat))
+      anchorFormatOrStyleChanged ||
+      ($isRangeSelection(prevSelection) &&
+        (prevSelection.format !== nextFormat ||
+          prevSelection.style !== nextStyle)))
   ) {
     markCollapsedSelectionFormat(
       nextFormat,
+      nextStyle,
       nextAnchorOffset,
       anchorKey,
       performance.now(),

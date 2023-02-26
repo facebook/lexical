@@ -21,6 +21,7 @@ import {
   $isDecoratorNode,
   $isNodeSelection,
   $isRangeSelection,
+  $setSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
   FORMAT_ELEMENT_COMMAND,
@@ -32,7 +33,7 @@ import {ReactNode, useCallback, useEffect, useRef} from 'react';
 
 type Props = Readonly<{
   children: ReactNode;
-  format: ElementFormatType | null | undefined;
+  format?: ElementFormatType | null;
   nodeKey: NodeKey;
   className: Readonly<{
     base: string;
@@ -58,18 +59,18 @@ export function BlockWithAlignableContents({
         event.preventDefault();
         editor.update(() => {
           const node = $getNodeByKey(nodeKey);
+          if (node === null) return;
 
+          $setSelection(node.selectPrevious());
           if ($isDecoratorNode(node)) {
             node.remove();
           }
-
-          setSelected(false);
         });
       }
 
       return false;
     },
-    [editor, isSelected, nodeKey, setSelected],
+    [editor, isSelected, nodeKey],
   );
 
   useEffect(() => {

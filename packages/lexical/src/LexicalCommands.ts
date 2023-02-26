@@ -46,6 +46,8 @@ export const FORMAT_TEXT_COMMAND: LexicalCommand<TextFormatType> =
   createCommand('FORMAT_TEXT_COMMAND');
 export const UNDO_COMMAND: LexicalCommand<void> = createCommand('UNDO_COMMAND');
 export const REDO_COMMAND: LexicalCommand<void> = createCommand('REDO_COMMAND');
+export const KEY_DOWN_COMMAND: LexicalCommand<KeyboardEvent> =
+  createCommand('KEYDOWN_COMMAND');
 export const KEY_ARROW_RIGHT_COMMAND: LexicalCommand<KeyboardEvent> =
   createCommand('KEY_ARROW_RIGHT_COMMAND');
 export const MOVE_TO_END: LexicalCommand<KeyboardEvent> =

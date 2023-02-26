@@ -204,7 +204,7 @@ export default function CollapsiblePlugin(): JSX.Element | null {
             const content = $createCollapsibleContentNode().append(
               $createParagraphNode(),
             );
-            const container = $createCollapsibleContainerNode().append(
+            const container = $createCollapsibleContainerNode(true).append(
               title,
               content,
             );

@@ -23,7 +23,7 @@ import {
 export type SerializedTableRowNode = Spread<
   {
     height: number;
-    type: 'tablerow';
+    type: string;
     version: 1;
   },
   SerializedElementNode
@@ -34,7 +34,7 @@ export class TableRowNode extends DEPRECATED_GridRowNode {
   /** @internal */
   __height?: number;
 
-  static getType(): 'tablerow' {
+  static getType(): string {
     return 'tablerow';
   }
 

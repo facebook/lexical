@@ -84,6 +84,7 @@ export function syncYjsChangesToLexical(
   binding: Binding,
   provider: WebsocketProvider,
   events: Array<YEvent<YText>>,
+  isFromUndoManger: boolean,
 ): void {
   const editor = binding.editor;
   const currentEditorState = editor._editorState;
@@ -161,7 +162,7 @@ export function syncYjsChangesToLexical(
         syncCursorPositions(binding, provider);
       },
       skipTransforms: true,
-      tag: 'collaboration',
+      tag: isFromUndoManger ? 'historic' : 'collaboration',
     },
   );
 }
@@ -234,7 +235,7 @@ export function syncLexicalUpdateToYjs(
       // types a character and we get it, we don't want to then insert
       // the same character again. The exception to this heuristic is
       // when we need to handle normalization merge conflicts.
-      if (tags.has('collaboration')) {
+      if (tags.has('collaboration') || tags.has('historic')) {
         if (normalizedNodes.size > 0) {
           handleNormalizationMergeConflicts(binding, normalizedNodes);
         }

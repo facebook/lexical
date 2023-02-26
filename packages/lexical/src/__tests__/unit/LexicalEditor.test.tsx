@@ -2122,39 +2122,6 @@ describe('LexicalEditor tests', () => {
     );
   });
 
-  it('node replacement works', async () => {
-    const newEditor = createTestEditor({
-      nodes: [
-        TestTextNode,
-        {
-          replace: TextNode,
-          // @ts-ignore
-          with: (node: TextNode) => new TestTextNode(node.getTextContent()),
-        },
-      ],
-      onError: jest.fn(),
-      theme: {
-        text: {
-          bold: 'editor-text-bold',
-          italic: 'editor-text-italic',
-          underline: 'editor-text-underline',
-        },
-      },
-    });
-
-    newEditor.setRootElement(container);
-
-    await newEditor.update(() => {
-      const root = $getRoot();
-      const paragraph = $createParagraphNode();
-      const text = $createTextNode('123');
-      root.append(paragraph);
-      paragraph.append(text);
-      expect(text instanceof TestTextNode).toBe(true);
-      expect(text.getTextContent()).toBe('123');
-    });
-  });
-
   it('reconciles state without root element', () => {
     editor = createTestEditor({});
     const state = editor.parseEditorState(
@@ -2163,5 +2130,142 @@ describe('LexicalEditor tests', () => {
     editor.setEditorState(state);
     expect(editor._editorState).toBe(state);
     expect(editor._pendingEditorState).toBe(null);
+  });
+
+  describe('node replacement', () => {
+    it('should works correctly', async () => {
+      const onError = jest.fn();
+
+      const newEditor = createTestEditor({
+        nodes: [
+          TestTextNode,
+          {
+            replace: TextNode,
+            // @ts-ignore
+            with: (node: TextNode) => new TestTextNode(node.getTextContent()),
+          },
+        ],
+        onError: onError,
+        theme: {
+          text: {
+            bold: 'editor-text-bold',
+            italic: 'editor-text-italic',
+            underline: 'editor-text-underline',
+          },
+        },
+      });
+
+      newEditor.setRootElement(container);
+
+      await newEditor.update(() => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const text = $createTextNode('123');
+        root.append(paragraph);
+        paragraph.append(text);
+        expect(text instanceof TestTextNode).toBe(true);
+        expect(text.getTextContent()).toBe('123');
+      });
+
+      expect(onError).not.toHaveBeenCalled();
+    });
+
+    it('node transform to the nodes specified by "replace" should not be applied to the nodes specified by "with" when "withKlass" is not specified', async () => {
+      const onError = jest.fn();
+
+      const newEditor = createTestEditor({
+        nodes: [
+          TestTextNode,
+          {
+            replace: TextNode,
+            // @ts-ignore
+            with: (node: TextNode) => new TestTextNode(node.getTextContent()),
+          },
+        ],
+        onError: onError,
+        theme: {
+          text: {
+            bold: 'editor-text-bold',
+            italic: 'editor-text-italic',
+            underline: 'editor-text-underline',
+          },
+        },
+      });
+
+      newEditor.setRootElement(container);
+
+      const mockTransform = jest.fn();
+      const removeTransform = newEditor.registerNodeTransform(
+        TextNode,
+        mockTransform,
+      );
+
+      await newEditor.update(() => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const text = $createTextNode('123');
+        root.append(paragraph);
+        paragraph.append(text);
+        expect(text instanceof TestTextNode).toBe(true);
+        expect(text.getTextContent()).toBe('123');
+      });
+
+      await newEditor.getEditorState().read(() => {
+        expect(mockTransform).toHaveBeenCalledTimes(0);
+      });
+
+      expect(onError).not.toHaveBeenCalled();
+      removeTransform();
+    });
+
+    it('node transform to the nodes specified by "replace" should be applied also to the nodes specified by "with" when "withKlass" is specified', async () => {
+      const onError = jest.fn();
+
+      const newEditor = createTestEditor({
+        nodes: [
+          TestTextNode,
+          {
+            replace: TextNode,
+            // @ts-ignore
+            with: (node: TextNode) => new TestTextNode(node.getTextContent()),
+
+            withKlass: TestTextNode,
+          },
+        ],
+        onError: onError,
+        theme: {
+          text: {
+            bold: 'editor-text-bold',
+            italic: 'editor-text-italic',
+            underline: 'editor-text-underline',
+          },
+        },
+      });
+
+      newEditor.setRootElement(container);
+
+      const mockTransform = jest.fn();
+      const removeTransform = newEditor.registerNodeTransform(
+        TextNode,
+        mockTransform,
+      );
+
+      await newEditor.update(() => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const text = $createTextNode('123');
+        root.append(paragraph);
+        paragraph.append(text);
+        expect(text instanceof TestTextNode).toBe(true);
+        expect(text.getTextContent()).toBe('123');
+      });
+
+      await newEditor.getEditorState().read(() => {
+        expect(mockTransform).toHaveBeenCalledTimes(1);
+      });
+
+      expect(onError).not.toHaveBeenCalled();
+      removeTransform();
+    });
   });
 });

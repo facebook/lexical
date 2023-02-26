@@ -7,27 +7,23 @@
  * @flow strict
  */
 
+import * as React from 'react';
+
 export type Props = $ReadOnly<{
-  ariaActiveDescendantID?: string,
-  ariaAutoComplete?: string,
-  ariaControls?: string,
-  ariaDescribedBy?: string,
-  ariaExpanded?: boolean,
-  ariaLabel?: string,
-  ariaLabelledBy?: string,
-  ariaMultiline?: boolean,
-  ariaOwneeID?: string,
-  ariaRequired?: string,
-  autoCapitalize?: boolean,
-  autoComplete?: boolean,
-  autoCorrect?: boolean,
-  className?: string,
-  readOnly?: boolean,
-  role?: string,
-  style?: $Shape<{[string]: string | number}>,
-  spellCheck?: boolean,
-  tabIndex?: number,
-  testid?: string,
+  ...$Partial<HTMLDivElement>,
+  ariaActiveDescendant?: HTMLDivElement['aria-activedescendant'],
+  ariaAutoComplete?: HTMLDivElement['aria-autocomplete'],
+  ariaControls?: HTMLDivElement['aria-controls'],
+  ariaDescribedBy?: HTMLDivElement['aria-describedby'],
+  ariaExpanded?: HTMLDivElement['aria-expanded'],
+  ariaLabel?: HTMLDivElement['aria-label'],
+  ariaLabelledBy?: HTMLDivElement['aria-labelledby'],
+  ariaMultiline?: HTMLDivElement['aria-multiline'],
+  ariaOwns?: HTMLDivElement['aria-owns'],
+  ariaRequired?: HTMLDivElement['aria-required'],
+  autoCapitalize?: HTMLDivElement['autocapitalize'],
+  'data-testid'?: string | null,
+  ...
 }>;
 
 declare export function ContentEditable(props: Props): React$Node;

@@ -448,13 +448,22 @@ export function $getSelectionStyleValueForProperty(
   styleProperty: string,
   defaultValue = '',
 ): string {
-  let styleValue = null;
+  let styleValue: string | null = null;
   const nodes = selection.getNodes();
   const anchor = selection.anchor;
   const focus = selection.focus;
   const isBackward = selection.isBackward();
   const endOffset = isBackward ? focus.offset : anchor.offset;
   const endNode = isBackward ? focus.getNode() : anchor.getNode();
+
+  if (selection.style !== '') {
+    const css = selection.style;
+    const styleObject = getStyleObjectFromCSS(css);
+
+    if (styleObject !== null && styleProperty in styleObject) {
+      return styleObject[styleProperty];
+    }
+  }
 
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
@@ -477,7 +486,7 @@ export function $getSelectionStyleValueForProperty(
         styleValue = nodeStyleValue;
       } else if (styleValue !== nodeStyleValue) {
         // multiple text nodes are in the selection and they don't all
-        // have the same font size.
+        // have the same style.
         styleValue = '';
         break;
       }

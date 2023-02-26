@@ -7,6 +7,8 @@
  */
 
 import type {
+  DOMConversionMap,
+  DOMConversionOutput,
   EditorConfig,
   LexicalNode,
   NodeKey,
@@ -14,7 +16,8 @@ import type {
   Spread,
 } from 'lexical';
 
-import {$applyNodeReplacement, DecoratorNode} from 'lexical';
+import katex from 'katex';
+import {$applyNodeReplacement, DecoratorNode, DOMExportOutput} from 'lexical';
 import * as React from 'react';
 import {Suspense} from 'react';
 
@@ -31,6 +34,21 @@ export type SerializedEquationNode = Spread<
   },
   SerializedLexicalNode
 >;
+
+function convertEquationElement(
+  domNode: HTMLElement,
+): null | DOMConversionOutput {
+  let equation = domNode.getAttribute('data-lexical-equation');
+  const inline = domNode.getAttribute('data-lexical-inline') === 'true';
+  // Decode the equation from base64
+  equation = atob(equation || '');
+  if (equation) {
+    const node = $createEquationNode(equation, inline);
+    return {node};
+  }
+
+  return null;
+}
 
 export class EquationNode extends DecoratorNode<JSX.Element> {
   __equation: string;
@@ -71,9 +89,53 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
     return document.createElement(this.__inline ? 'span' : 'div');
   }
 
+  exportDOM(): DOMExportOutput {
+    const element = document.createElement(this.__inline ? 'span' : 'div');
+    // Encode the equation as base64 to avoid issues with special characters
+    const equation = btoa(this.__equation);
+    element.setAttribute('data-lexical-equation', equation);
+    element.setAttribute('data-lexical-inline', `${this.__inline}`);
+    katex.render(this.__equation, element, {
+      displayMode: !this.__inline, // true === block display //
+      errorColor: '#cc0000',
+      output: 'html',
+      strict: 'warn',
+      throwOnError: false,
+      trust: false,
+    });
+    return {element};
+  }
+
+  static importDOM(): DOMConversionMap | null {
+    return {
+      div: (domNode: HTMLElement) => {
+        if (!domNode.hasAttribute('data-lexical-equation')) {
+          return null;
+        }
+        return {
+          conversion: convertEquationElement,
+          priority: 2,
+        };
+      },
+      span: (domNode: HTMLElement) => {
+        if (!domNode.hasAttribute('data-lexical-equation')) {
+          return null;
+        }
+        return {
+          conversion: convertEquationElement,
+          priority: 1,
+        };
+      },
+    };
+  }
+
   updateDOM(prevNode: EquationNode): boolean {
     // If the inline property changes, replace the element
     return this.__inline !== prevNode.__inline;
+  }
+
+  getTextContent(): string {
+    return this.__equation;
   }
 
   getEquation(): string {

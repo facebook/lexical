@@ -216,6 +216,8 @@ test.describe('CodeActionMenu', () => {
     await mouseMoveToSelector(page, 'code.PlaygroundEditorTheme__code');
     await click(page, 'button[aria-label=prettier]');
 
+    await page.waitForTimeout(3000);
+
     await assertHTML(
       page,
       `
@@ -283,6 +285,8 @@ test.describe('CodeActionMenu', () => {
 
     await mouseMoveToSelector(page, 'code.PlaygroundEditorTheme__code');
     await click(page, 'button[aria-label=prettier]');
+
+    await page.waitForTimeout(3000);
 
     expect(await page.$('i.format.prettier-error')).toBeTruthy();
 

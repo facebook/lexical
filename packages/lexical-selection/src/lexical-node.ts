@@ -247,11 +247,13 @@ export function $addNodeStyle(node: TextNode): void {
   CSS_TO_STYLES.set(CSSText, styles);
 }
 
-function $patchNodeStyle(
-  node: TextNode,
+function $patchStyle(
+  target: TextNode | RangeSelection,
   patch: Record<string, string | null>,
 ): void {
-  const prevStyles = getStyleObjectFromCSS(node.getStyle());
+  const prevStyles = getStyleObjectFromCSS(
+    'getStyle' in target ? target.getStyle() : target.style,
+  );
   const newStyles = Object.entries(patch).reduce<Record<string, string>>(
     (styles, [key, value]) => {
       if (value === null) {
@@ -264,12 +266,12 @@ function $patchNodeStyle(
     {...prevStyles} || {},
   );
   const newCSSText = getCSSFromStyleObject(newStyles);
-  node.setStyle(newCSSText);
+  target.setStyle(newCSSText);
   CSS_TO_STYLES.set(newCSSText, newStyles);
 }
 
 export function $patchStyleText(
-  selection: RangeSelection | GridSelection,
+  selection: RangeSelection,
   patch: Record<string, string | null>,
 ): void {
   const selectedNodes = selection.getNodes();
@@ -279,6 +281,7 @@ export function $patchStyleText(
   let lastNode = selectedNodes[lastIndex];
 
   if (selection.isCollapsed()) {
+    $patchStyle(selection, patch);
     return;
   }
 
@@ -331,14 +334,14 @@ export function $patchStyleText(
 
       // The entire node is selected, so just format it
       if (startOffset === 0 && endOffset === firstNodeTextLength) {
-        $patchNodeStyle(firstNode, patch);
+        $patchStyle(firstNode, patch);
         firstNode.select(startOffset, endOffset);
       } else {
         // The node is partially selected, so split it into two nodes
         // and style the selected one.
         const splitNodes = firstNode.splitText(startOffset, endOffset);
         const replacement = startOffset === 0 ? splitNodes[0] : splitNodes[1];
-        $patchNodeStyle(replacement, patch);
+        $patchStyle(replacement, patch);
         replacement.select(0, endOffset - startOffset);
       }
     } // multiple nodes selected.
@@ -353,7 +356,7 @@ export function $patchStyleText(
         startOffset = 0;
       }
 
-      $patchNodeStyle(firstNode as TextNode, patch);
+      $patchStyle(firstNode as TextNode, patch);
     }
 
     if ($isTextNode(lastNode)) {
@@ -374,7 +377,7 @@ export function $patchStyleText(
       }
 
       if (endOffset !== 0) {
-        $patchNodeStyle(lastNode as TextNode, patch);
+        $patchStyle(lastNode as TextNode, patch);
       }
     }
 
@@ -389,7 +392,7 @@ export function $patchStyleText(
         selectedNodeKey !== lastNode.getKey() &&
         !selectedNode.isToken()
       ) {
-        $patchNodeStyle(selectedNode, patch);
+        $patchStyle(selectedNode, patch);
       }
     }
   }

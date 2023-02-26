@@ -13,13 +13,7 @@ import type {LexicalCommand} from 'lexical';
 
 import {createCommand} from 'lexical';
 
-import {
-  $handleListInsertParagraph,
-  indentList,
-  insertList,
-  outdentList,
-  removeList,
-} from './formatList';
+import {$handleListInsertParagraph, insertList, removeList} from './formatList';
 import {
   $createListItemNode,
   $isListItemNode,
@@ -35,12 +29,10 @@ export {
   $handleListInsertParagraph,
   $isListItemNode,
   $isListNode,
-  indentList,
   insertList,
   ListItemNode,
   ListNode,
   ListType,
-  outdentList,
   removeList,
   SerializedListItemNode,
   SerializedListNode,

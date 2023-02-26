@@ -585,7 +585,14 @@ test.describe('Images', () => {
     browserName,
     isCollab,
   }) => {
+    // This test is flaky in collab #3915
+    test.fixme(isCollab);
     test.skip(isPlainText);
+
+    await page.setViewportSize({
+      height: 1000,
+      width: 2000,
+    });
 
     await focusEditor(page);
 

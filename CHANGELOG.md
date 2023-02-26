@@ -1,3 +1,104 @@
+## v0.8.1 (2023-02-22)
+
+- Clone objects from the CSS cache before mutating them (#3945) Brian Birtles
+- added docsfeature-button in lexical playground issue#3918 (#3935) Mohan Sai Potla
+- fix: change from  to  (#3942) Asim Kattum Thazha
+- Added Chinese character support for native webkit (#3846) Annabelle Almås
+- Fix autocapitalization (#3881) Gerard Rovira
+- Expand the actionable empty playground editor text area via flex (#3883) Brandon
+- Fix toggling styles on collapsed selections with  (#3922) Brian Birtles
+- Remove condition for history merge on null prev selection (#3914) Acy Watson
+- fix: change tablecell return type for TableCellNode (#3925) Sebastien Ahkrin
+- Align types for createEditor APIs (#3928) Acy Watson
+- Remove instanceof type checks against HTMLElement and subtypes (#3913) Acy Watson
+- Fix small lint error breaking main (#3924) John Flockton
+- Update plugins.md (#3926) dimitarbikov
+- Added support for Java & C++ (#3884) Vignesh gupta
+- Add fixme annotation to flaky collab tests (#3916) Acy Watson
+- Playground: fix issue with floating link editor plugin not closing (#3904) Rich
+- Further tweaks to format/style selection (#3895) Dominic Gannaway
+- Add KEY_DOWN_COMMAND (#3878) Dominic Gannaway
+- Remove draggable block plugin on mobile devices (#3875) John Flockton
+- Close color pickers on select (#3874) John Flockton
+- Fix ContentEditable types for internal use (#3868) John Flockton
+- Fix v0.8.9 typo in changelog, should be v0.8.0 (#3869) Joel Besada
+
+## v0.8.0 (2023-02-09)
+
+This release includes some breaking changes, including:
+    - Remove of `indentList` and `outdentList` from `@lexical/list`.
+    - Refactor of the `LexicalContentEditable` types from `@lexical/react` to make them more accurate with `HTMLDivElement` attributes.
+
+This release adds functionality to apply node transforms to node replacements, it allows users to specify tab indentation sizes, and improved support for tracking the origin of YJS updates for collaborative editing.
+
+- Ensure deletions capture existing formatting (#3867) Dominic Gannaway
+- Add style properties to RangeSelection (#3863) Dominic Gannaway
+- List indentation simplified (#3809) EgonBolton
+- Update ContentEditable types (#3580) John Flockton
+- Allow the format property to be omitted (#3812) Karibash
+- Allow users to customise the indentation of tabs (#3802) John Flockton
+- Apply node transform not only to the original node but also to the overriding node (#3639) mizuno
+- feat: set the update tag from yjs based on the origin (#3608) El-Hussein Abdelraouf
+
+## v0.7.9 (2023-02-09)
+
+- Fix bad import into core (#3861) Dominic Gannaway
+- Add import/export DOM methods to YouTubeNode and improve EquationNode (#3835) Pervez Ali
+- Fix backspace regression (#3862) Dominic Gannaway
+- Fix restoreEditorState (#3856) Dominic Gannaway
+- Add more configuration for heading in INSERT_TABLE_COMMAND (#3843) Sebastien Ahkrin
+- perf(playground): load prettier and its parsers on demand in code block (#3637) Shanmughapriyan
+
+## v0.7.8 (2023-02-08)
+
+- Update transforms.md (#3845) Ben
+- Fix over selection (#3838) Dominic Gannaway
+- Fix $restoreEditorState (#3842) Dominic Gannaway
+- Fix select all + delete behaviour (#3840) Dominic Gannaway
+- Fix(#3716,#3815): Prevent layout shift while using typeahead menu (#3826) rettoSea
+- Add anchor dirty node check for text length less than 2 chars (#3832) John Flockton
+- Fix reconciler bug with handling of text content (#3837) Dominic Gannaway
+- Add exportDOM and importDOM for Collapsible Container Plugin (#3827) Ivaylo Pavlov
+- Fix pasting top level nodes inline (#3238) Petar Smolic
+- Add IS_HIGHLIGHT format to combined formats to properly calculate format (#3822) moy2010
+- Add highlight markdown text format shortcut (#3823) moy2010
+- Add highlight text node theme class (#3824) moy2010
+- add importDom and exportDom method to EquationNode (#3813) Najmus Sakib
+- fix: Typo (#3816) Cornelius
+
+## v0.7.7 (2023-02-03)
+
+- Add list-style-position:inside (#3814) John Flockton
+- Fix is selected noop (#3805) James Abels
+- Add `createParentElementNode` method on LexicalNode to fix copy/paste issues with clipboard (#3800) John Flockton
+- Remove innerHTML injection from table selection (#3804) John Flockton
+- Better tab handling (#3770) James Abels
+- Fix line delete bug in history (#3769) James Abels
+- List node export dom with css classes (#3801) Maksim Horbachevsky
+- Add highlight TextFormatType (#3583) moy2010
+- Add check that target is not the root node (#3797) John Flockton
+- Fix $generateJSONFromSelectedNodes with a custom selection passed in (#3749) William Wang
+- Improve selection docs (#3798) Dominic Gannaway
+- Fix copy paste wrong order in TableOfContents (#3786) Daniel Voigt
+- fix(lexical-playground): fix bugs related to ComponentPickerPlugin (#3787) Shota Shimizu
+- fix: styling information of paragraph are missing while importing dom (#3771) Rajatava Mukherjee
+- Stabilize WeakMap in NodeEventPlugin (#3780) James Abels
+- Clean up wonky logic (#3768) Dominic Gannaway
+- Remove deprecated modules from core code base (#3729) John Flockton
+- Edit CSS to fix marker alignment issue in Safari (#3753) John Flockton
+- Move horizontal rule plugin to lexical/react (#3751) John Flockton
+- Fix equation transformer in Playground (#3758) Leonardo E. Dominguez
+- Fix list normalization on HTML paste. (#3757) Acy Watson
+- Remove preventDefault from $copyToClipboardEvent (#3742) John Flockton
+- fix(lexical-playground): NewTablePlugin is not draggable (#3747) Shota Shimizu
+- Attach checkbox click listeners to editor root element instead of document (#3738) John Flockton
+- Update listener in toc (#3726) Stepan Bolotnikov
+- Close Excalidraw only on Escape key down (#3737) John Flockton
+- fix: type-ahead menu scroll problem (#3672) huang yao
+- Tweak CodeNode to allow for overrides (#3731) James Abels
+- Discard empty TextNode that can creep into appendJSON (#3695) James Abels
+- Add config to updateDOM in ParagraphNode  (#3693) James Abels
+
 ## v0.7.6 (2023-01-10)
 
 - Fix typo in LexicalAutoLinkPlugin code example (#3685) Lorenzo

@@ -8,10 +8,10 @@
     "headless"
   ],
   "license": "MIT",
-  "version": "0.7.6",
+  "version": "0.8.1",
   "main": "LexicalHeadless.js",
   "peerDependencies": {
-    "lexical": "0.7.6"
+    "lexical": "0.8.1"
   },
   "repository": {
     "type": "git",

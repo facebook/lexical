@@ -61,3 +61,41 @@ editor.update(() => {
   $getRoot().clear();
 })
 ```
+
+## How do I listen to specific key down events?
+
+You can leverage Lexical's command listening system. Lexical provides specific commands for many common keyboard operations, such as:
+
+- `KEY_ARROW_LEFT_COMMAND`
+- `KEY_ARROW_RIGHT_COMMAND`
+- `KEY_ARROW_UP_COMMAND`
+- `KEY_ARROW_DOWN_COMMAND`
+- `KEY_SPACE_COMMAND`
+- `KEY_ENTER_COMMAND`
+- `KEY_BACKSPACE_COMMAND`
+- `KEY_DELETE_COMMAND`
+- `KEY_TAB_COMMAND`
+- `KEY_ESCAPE_COMMAND`
+
+```js
+import {KEY_ENTER_COMMAND, COMMAND_PRIORITY_LOW} from 'lexical';
+
+editor.registerCommand(KEY_ENTER_COMMAND, (event: KeyboardEvent) => {
+  // Handle enter key presses here
+  return false;
+}, COMMAND_PRIORITY_LOW)
+```
+
+You can use the generic `KEY_DOWN_COMMAND` command to listen
+to all keydown events. Do note, that returning `true` in your listener will prevent any
+other key based commands from firing, so in most cases you'll want to return `false` from
+the command listener.
+
+```js
+import {KEY_DOWN_COMMAND, COMMAND_PRIORITY_LOW} from 'lexical';
+
+editor.registerCommand(KEY_DOWN_COMMAND, (event: KeyboardEvent) => {
+  // Handle event here
+  return false;
+}, COMMAND_PRIORITY_LOW)
+```

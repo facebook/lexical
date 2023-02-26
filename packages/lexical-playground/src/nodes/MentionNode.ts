@@ -47,7 +47,6 @@ export class MentionNode extends TextNode {
   constructor(mentionName: string, text?: string, key?: NodeKey) {
     super(text ?? mentionName, key);
     this.__mention = mentionName;
-    this.setMode('segmented').toggleDirectionless();
     return $applyNodeReplacement(this);
   }
 
@@ -85,7 +84,9 @@ export class MentionNode extends TextNode {
 }
 
 export function $createMentionNode(mentionName: string): MentionNode {
-  return new MentionNode(mentionName);
+  const mentionNode = new MentionNode(mentionName);
+  mentionNode.setMode('segmented').toggleDirectionless();
+  return mentionNode;
 }
 
 export function $isMentionNode(

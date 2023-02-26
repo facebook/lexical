@@ -158,7 +158,6 @@ export class ListItemNode extends ElementNode {
       return super.replace(replaceWithNode);
     }
     this.setIndent(0);
-
     const list = this.getParentOrThrow();
     if (!$isListNode(list)) return replaceWithNode;
     if (list.getFirstChildKey() === this.getKey()) {

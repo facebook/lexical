@@ -601,15 +601,10 @@ export class RangeSelection implements BaseSelection {
     const anchor = this.anchor;
     const focus = this.focus;
     const isBefore = anchor.isBefore(focus);
-    let firstNode = anchor.getNode();
-    let lastNode = focus.getNode();
-    let firstOffset = anchor.offset;
-    let lastOffset = focus.offset;
-
-    if (!isBefore) {
-      [firstNode, lastNode] = [lastNode, firstNode];
-      [firstOffset, lastOffset] = [lastOffset, firstOffset];
-    }
+    let firstNode = isBefore ? anchor.getNode() : focus.getNode();
+    let lastNode = isBefore ? focus.getNode() : anchor.getNode();
+    const firstOffset = isBefore ? anchor.offset : focus.offset;
+    const lastOffset = isBefore ? focus.offset : anchor.offset;
 
     if ($isElementNode(firstNode)) {
       const firstNodeDescendant =

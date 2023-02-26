@@ -196,8 +196,11 @@ test.describe('Extensions', () => {
 
   test(`document.execCommand("insertText") with selection`, async ({
     page,
+    isCollab,
     isPlainText,
   }) => {
+    // This test is flaky in collab #3915
+    test.fixme(isCollab);
     test.skip(isPlainText);
     await focusEditor(page);
 

@@ -13,6 +13,7 @@ import type {TextNode} from './nodes/LexicalTextNode';
 
 import {
   CAN_USE_BEFORE_INPUT,
+  IS_APPLE_WEBKIT,
   IS_FIREFOX,
   IS_IOS,
   IS_SAFARI,
@@ -159,6 +160,7 @@ if (CAN_USE_BEFORE_INPUT) {
 let lastKeyDownTimeStamp = 0;
 let lastKeyCode = 0;
 let lastBeforeInputInsertTextTimeStamp = 0;
+let unprocessedBeforeInputData: null | string = null;
 let rootElementsRegistered = 0;
 let isSelectionChangeFromDOMUpdate = false;
 let isSelectionChangeFromMouseDown = false;
@@ -180,6 +182,7 @@ let collapsedSelectionFormat: [number, string, number, NodeKey, number] = [
 // composition mechanics.
 function $shouldPreventDefaultAndInsertText(
   selection: RangeSelection,
+  domTargetRange: null | StaticRange,
   text: string,
   timeStamp: number,
   isBeforeInput: boolean,
@@ -221,6 +224,13 @@ function $shouldPreventDefaultAndInsertText(
       backingAnchorElement !== null &&
       !anchorNode.isComposing() &&
       domAnchorNode !== getDOMTextNode(backingAnchorElement)) ||
+    // If TargetRange is not the same as the DOM selection; browser trying to edit random parts
+    // of the editor.
+    (domSelection !== null &&
+      domTargetRange !== null &&
+      (!domTargetRange.collapsed ||
+        domTargetRange.startContainer !== domSelection.anchorNode ||
+        domTargetRange.startOffset !== domSelection.anchorOffset)) ||
     // Check if we're changing from bold to italics, or some other format.
     anchorNode.getFormat() !== selection.format ||
     anchorNode.getStyle() !== selection.style ||
@@ -402,14 +412,15 @@ function onPointerDown(event: PointerEvent, editor: LexicalEditor) {
   }
 }
 
-function $applyTargetRange(selection: RangeSelection, event: InputEvent): void {
-  if (event.getTargetRanges) {
-    const targetRange = event.getTargetRanges()[0];
-
-    if (targetRange) {
-      selection.applyDOMRange(targetRange);
-    }
+function getTargetRange(event: InputEvent): null | StaticRange {
+  if (!event.getTargetRanges) {
+    return null;
   }
+  const targetRanges = event.getTargetRanges();
+  if (targetRanges.length === 0) {
+    return null;
+  }
+  return targetRanges[0];
 }
 
 function $canRemoveText(
@@ -434,6 +445,7 @@ function isPossiblyAndroidKeyPress(timeStamp: number): boolean {
 
 function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
   const inputType = event.inputType;
+  const targetRange = getTargetRange(event);
 
   // We let the browser do its own thing for composition.
   if (
@@ -500,13 +512,27 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
 
     const data = event.data;
 
-    if (
-      !selection.dirty &&
-      selection.isCollapsed() &&
-      !$isRootNode(selection.anchor.getNode())
-    ) {
-      $applyTargetRange(selection, event);
+    // This represents the case when two beforeinput events are triggered at the same time (without a
+    // full event loop ending at input). This happens with MacOS with the default keyboard settings,
+    // a combination of autocorrection + autocapitalization.
+    // Having Lexical run everything in controlled mode would fix the issue without additional code
+    // but this would kill the massive performance win from the most common typing event.
+    // Alternatively, when this happens we can prematurely update our EditorState based on the DOM
+    // content, a job that would usually be the input event's responsibility.
+    if (unprocessedBeforeInputData !== null) {
+      $updateSelectedTextFromDOM(false, editor, unprocessedBeforeInputData);
     }
+
+    if (
+      (!selection.dirty || unprocessedBeforeInputData !== null) &&
+      selection.isCollapsed() &&
+      !$isRootNode(selection.anchor.getNode()) &&
+      targetRange !== null
+    ) {
+      selection.applyDOMRange(targetRange);
+    }
+
+    unprocessedBeforeInputData = null;
 
     const anchor = selection.anchor;
     const focus = selection.focus;
@@ -529,6 +555,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
         data != null &&
         $shouldPreventDefaultAndInsertText(
           selection,
+          targetRange,
           data,
           event.timeStamp,
           true,
@@ -536,6 +563,8 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
       ) {
         event.preventDefault();
         dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, data);
+      } else {
+        unprocessedBeforeInputData = data;
       }
       lastBeforeInputInsertTextTimeStamp = event.timeStamp;
       return;
@@ -674,12 +703,14 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
   updateEditor(editor, () => {
     const selection = $getSelection();
     const data = event.data;
+    const targetRange = getTargetRange(event);
 
     if (
       data != null &&
       $isRangeSelection(selection) &&
       $shouldPreventDefaultAndInsertText(
         selection,
+        targetRange,
         data,
         event.timeStamp,
         false,
@@ -729,7 +760,7 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
       }
 
       // This ensures consistency on Android.
-      if (!IS_SAFARI && !IS_IOS && editor.isComposing()) {
+      if (!IS_SAFARI && !IS_IOS && !IS_APPLE_WEBKIT && editor.isComposing()) {
         lastKeyDownTimeStamp = 0;
         $setCompositionKey(null);
       }
@@ -748,6 +779,7 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
     // since the change.
     $flushMutations();
   });
+  unprocessedBeforeInputData = null;
 }
 
 function onCompositionStart(

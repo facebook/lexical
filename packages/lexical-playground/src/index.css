@@ -78,7 +78,7 @@ header h1 {
   border: 0;
   resize: none;
   cursor: text;
-  display: block;
+  display: flex;
   position: relative;
   outline: 0;
   overflow: auto;
@@ -86,7 +86,7 @@ header h1 {
 }
 
 .editor {
-  height: 100%;
+  flex: auto;
   position: relative;
 }
 
@@ -221,6 +221,12 @@ pre::-webkit-scrollbar-thumb {
   bottom: 20px;
 }
 
+#docs-button {
+  position: fixed;
+  left: 170px;
+  bottom: 20px;
+}
+
 #options-button::after {
   background-image: url(images/icons/gear.svg);
 }
@@ -231,6 +237,10 @@ pre::-webkit-scrollbar-thumb {
 
 #paste-log-button::after {
   background-image: url(images/icons/clipboard.svg);
+}
+
+#docs-button::after {
+  background-image: url(images/icons/file-earmark-text.svg);
 }
 
 #test-recorder-button-snapshot {

@@ -40,7 +40,12 @@ import {
   PASTE_COMMAND,
   REMOVE_TEXT_COMMAND,
 } from 'lexical';
-import {CAN_USE_BEFORE_INPUT, IS_IOS, IS_SAFARI} from 'shared/environment';
+import {
+  CAN_USE_BEFORE_INPUT,
+  IS_APPLE_WEBKIT,
+  IS_IOS,
+  IS_SAFARI,
+} from 'shared/environment';
 
 function onCopyForPlainText(
   event: CommandPayloadType<typeof COPY_COMMAND>,
@@ -305,7 +310,10 @@ export function registerPlainText(editor: LexicalEditor): () => void {
           // This can also cause a strange performance issue in
           // Safari, where there is a noticeable pause due to
           // preventing the key down of enter.
-          if ((IS_IOS || IS_SAFARI) && CAN_USE_BEFORE_INPUT) {
+          if (
+            (IS_IOS || IS_SAFARI || IS_APPLE_WEBKIT) &&
+            CAN_USE_BEFORE_INPUT
+          ) {
             return false;
           }
 

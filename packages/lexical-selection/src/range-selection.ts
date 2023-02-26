@@ -446,7 +446,7 @@ export function $getSelectionStyleValueForProperty(
   styleProperty: string,
   defaultValue = '',
 ): string {
-  let styleValue = null;
+  let styleValue: string | null = null;
   const nodes = selection.getNodes();
   const anchor = selection.anchor;
   const focus = selection.focus;
@@ -457,20 +457,9 @@ export function $getSelectionStyleValueForProperty(
   if (selection.style !== '') {
     const css = selection.style;
     const styleObject = getStyleObjectFromCSS(css);
-    let nodeStyleValue;
 
-    if (styleObject !== null) {
-      nodeStyleValue = styleObject[styleProperty] || defaultValue;
-    } else {
-      nodeStyleValue = defaultValue;
-    }
-
-    if (styleValue === null) {
-      styleValue = nodeStyleValue;
-    } else if (styleValue !== nodeStyleValue) {
-      // multiple text nodes are in the selection and they don't all
-      // have the same font size.
-      styleValue = '';
+    if (styleObject !== null && styleProperty in styleObject) {
+      return styleObject[styleProperty];
     }
   }
 
@@ -495,7 +484,7 @@ export function $getSelectionStyleValueForProperty(
         styleValue = nodeStyleValue;
       } else if (styleValue !== nodeStyleValue) {
         // multiple text nodes are in the selection and they don't all
-        // have the same font size.
+        // have the same style.
         styleValue = '';
         break;
       }

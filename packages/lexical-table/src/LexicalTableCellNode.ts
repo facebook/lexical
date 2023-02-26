@@ -40,7 +40,7 @@ export type TableCellHeaderState =
 export type SerializedTableCellNode = Spread<
   {
     headerState: TableCellHeaderState;
-    type: 'tablecell';
+    type: string;
     width?: number;
   },
   SerializedGridCellNode
@@ -53,7 +53,7 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
   /** @internal */
   __width?: number;
 
-  static getType(): 'tablecell' {
+  static getType(): string {
     return 'tablecell';
   }
 

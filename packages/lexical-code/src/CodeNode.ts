@@ -32,8 +32,10 @@ import 'prismjs/components/prism-python';
 import 'prismjs/components/prism-rust';
 import 'prismjs/components/prism-swift';
 import 'prismjs/components/prism-typescript';
+import 'prismjs/components/prism-java';
+import 'prismjs/components/prism-cpp';
 
-import {addClassNamesToElement} from '@lexical/utils';
+import {addClassNamesToElement, isHTMLElement} from '@lexical/utils';
 import {
   $applyNodeReplacement,
   $createLineBreakNode,
@@ -68,7 +70,7 @@ const mapToPrismLanguage = (
 
 function hasChildDOMNodeTag(node: Node, tagName: string) {
   for (const child of node.childNodes) {
-    if (child instanceof HTMLElement && child.tagName === tagName) {
+    if (isHTMLElement(child) && child.tagName === tagName) {
       return true;
     }
     hasChildDOMNodeTag(child, tagName);

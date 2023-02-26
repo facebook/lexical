@@ -8,6 +8,7 @@
 
 import {
   addClassNamesToElement,
+  isHTMLElement,
   removeClassNamesFromElement,
 } from '@lexical/utils';
 import {
@@ -281,7 +282,7 @@ function convertListNode(domNode: Node): DOMConversionOutput {
     node = $createListNode('number');
   } else if (nodeName === 'ul') {
     if (
-      domNode instanceof HTMLElement &&
+      isHTMLElement(domNode) &&
       domNode.getAttribute('__lexicallisttype') === 'check'
     ) {
       node = $createListNode('check');

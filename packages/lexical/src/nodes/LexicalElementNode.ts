@@ -39,7 +39,7 @@ import {
 
 export type SerializedElementNode = Spread<
   {
-    children: Array<SerializedLexicalNode>;
+    children: Array<SerializedLexicalNode & Record<string, unknown>>;
     direction: 'ltr' | 'rtl' | null;
     format: ElementFormatType;
     indent: number;

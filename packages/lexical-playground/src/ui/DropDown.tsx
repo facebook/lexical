@@ -141,6 +141,7 @@ export default function DropDown({
   buttonIconClassName,
   children,
   stopCloseOnClickSelf,
+  onClose,
 }: {
   disabled?: boolean;
   buttonAriaLabel?: string;
@@ -149,6 +150,7 @@ export default function DropDown({
   buttonLabel?: string;
   children: ReactNode;
   stopCloseOnClickSelf?: boolean;
+  onClose?: () => void;
 }): JSX.Element {
   const dropDownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -199,7 +201,22 @@ export default function DropDown({
       };
     }
   }, [dropDownRef, buttonRef, showDropDown, stopCloseOnClickSelf]);
+  function usePrevious(value: any) {
+    const ref = useRef();
+    useEffect(() => {
+      ref.current = value;
+    });
+    return ref.current;
+  }
+  const prevShowDropDown = usePrevious(showDropDown);
 
+  useEffect(() => {
+    if (prevShowDropDown && !showDropDown) {
+      if (onClose) {
+        onClose();
+      }
+    }
+  }, [showDropDown]);
   return (
     <>
       <button

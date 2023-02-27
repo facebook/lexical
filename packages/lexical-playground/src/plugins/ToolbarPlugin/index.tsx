@@ -526,13 +526,16 @@ export default function ToolbarPlugin(): JSX.Element {
   }, [activeEditor, editor, updateToolbar]);
 
   const applyStyleText = useCallback(
-    (styles: Record<string, string>) => {
-      activeEditor.update(() => {
-        const selection = $getSelection();
-        if ($isRangeSelection(selection)) {
-          $patchStyleText(selection, styles);
-        }
-      });
+    (styles: Record<string, string>, skipHistory?: boolean) => {
+      activeEditor.update(
+        () => {
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            $patchStyleText(selection, styles);
+          }
+        },
+        {tag: skipHistory ? 'historic' : undefined},
+      );
     },
     [activeEditor],
   );
@@ -558,12 +561,25 @@ export default function ToolbarPlugin(): JSX.Element {
 
   const onFontColorSelect = useCallback(
     (value: string) => {
+      applyStyleText({color: value}, true);
+    },
+    [applyStyleText],
+  );
+  const onFontColorSelectionEnd = useCallback(
+    (value: string) => {
       applyStyleText({color: value});
     },
     [applyStyleText],
   );
 
   const onBgColorSelect = useCallback(
+    (value: string) => {
+      applyStyleText({'background-color': value}, true);
+    },
+    [applyStyleText],
+  );
+
+  const onBgColorSelectionEnd = useCallback(
     (value: string) => {
       applyStyleText({'background-color': value});
     },
@@ -733,6 +749,7 @@ export default function ToolbarPlugin(): JSX.Element {
             color={fontColor}
             onChange={onFontColorSelect}
             title="text color"
+            onClose={onFontColorSelectionEnd}
           />
           <ColorPicker
             disabled={!isEditable}
@@ -741,6 +758,7 @@ export default function ToolbarPlugin(): JSX.Element {
             buttonIconClassName="icon bg-color"
             color={bgColor}
             onChange={onBgColorSelect}
+            onClose={onBgColorSelectionEnd}
             title="bg color"
           />
           <DropDown

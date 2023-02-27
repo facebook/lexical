@@ -12,14 +12,10 @@ import type {
   LexicalEditor,
   LexicalNode,
   NodeKey,
-  Spread,
 } from 'lexical';
 
 import {BlockWithAlignableContents} from '@lexical/react/LexicalBlockWithAlignableContents';
-import {
-  DecoratorBlockNode,
-  SerializedDecoratorBlockNode,
-} from '@lexical/react/LexicalDecoratorBlockNode';
+import {DecoratorBlockNode} from '@lexical/react/LexicalDecoratorBlockNode';
 import * as React from 'react';
 
 type FigmaComponentProps = Readonly<{
@@ -54,15 +50,6 @@ function FigmaComponent({
   );
 }
 
-export type SerializedFigmaNode = Spread<
-  {
-    documentID: string;
-    type: 'figma';
-    version: 1;
-  },
-  SerializedDecoratorBlockNode
->;
-
 export class FigmaNode extends DecoratorBlockNode {
   __id: string;
 
@@ -72,21 +59,6 @@ export class FigmaNode extends DecoratorBlockNode {
 
   static clone(node: FigmaNode): FigmaNode {
     return new FigmaNode(node.__id, node.__format, node.__key);
-  }
-
-  static importJSON(serializedNode: SerializedFigmaNode): FigmaNode {
-    const node = $createFigmaNode(serializedNode.documentID);
-    node.setFormat(serializedNode.format);
-    return node;
-  }
-
-  exportJSON(): SerializedFigmaNode {
-    return {
-      ...super.exportJSON(),
-      documentID: this.__id,
-      type: 'figma',
-      version: 1,
-    };
   }
 
   constructor(id: string, format?: ElementFormatType, key?: NodeKey) {

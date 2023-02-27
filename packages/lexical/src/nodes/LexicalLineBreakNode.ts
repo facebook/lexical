@@ -10,19 +10,10 @@ import type {
   DOMConversionMap,
   DOMConversionOutput,
   NodeKey,
-  SerializedLexicalNode,
 } from '../LexicalNode';
-import type {Spread} from 'lexical';
 
 import {LexicalNode} from '../LexicalNode';
 import {$applyNodeReplacement} from '../LexicalUtils';
-
-export type SerializedLineBreakNode = Spread<
-  {
-    type: 'linebreak';
-  },
-  SerializedLexicalNode
->;
 
 /** @noInheritDoc */
 export class LineBreakNode extends LexicalNode {
@@ -36,6 +27,7 @@ export class LineBreakNode extends LexicalNode {
 
   constructor(key?: NodeKey) {
     super(key);
+    return $applyNodeReplacement(this);
   }
 
   getTextContent(): '\n' {
@@ -69,19 +61,6 @@ export class LineBreakNode extends LexicalNode {
       },
     };
   }
-
-  static importJSON(
-    serializedLineBreakNode: SerializedLineBreakNode,
-  ): LineBreakNode {
-    return $createLineBreakNode();
-  }
-
-  exportJSON(): SerializedLexicalNode {
-    return {
-      type: 'linebreak',
-      version: 1,
-    };
-  }
 }
 
 function convertLineBreakElement(node: Node): DOMConversionOutput {
@@ -89,7 +68,7 @@ function convertLineBreakElement(node: Node): DOMConversionOutput {
 }
 
 export function $createLineBreakNode(): LineBreakNode {
-  return $applyNodeReplacement(new LineBreakNode());
+  return new LineBreakNode();
 }
 
 export function $isLineBreakNode(

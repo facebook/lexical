@@ -6,8 +6,6 @@
  *
  */
 
-import type {Spread} from 'lexical';
-
 import {addClassNamesToElement} from '@lexical/utils';
 import {
   $applyNodeReplacement,
@@ -17,17 +15,7 @@ import {
   EditorConfig,
   LexicalNode,
   NodeKey,
-  SerializedElementNode,
 } from 'lexical';
-
-export type SerializedTableRowNode = Spread<
-  {
-    height: number;
-    type: string;
-    version: 1;
-  },
-  SerializedElementNode
->;
 
 /** @noInheritDoc */
 export class TableRowNode extends DEPRECATED_GridRowNode {
@@ -51,21 +39,10 @@ export class TableRowNode extends DEPRECATED_GridRowNode {
     };
   }
 
-  static importJSON(serializedNode: SerializedTableRowNode): TableRowNode {
-    return $createTableRowNode(serializedNode.height);
-  }
-
   constructor(height?: number, key?: NodeKey) {
     super(key);
     this.__height = height;
-  }
-
-  exportJSON(): SerializedElementNode {
-    return {
-      ...super.exportJSON(),
-      type: 'tablerow',
-      version: 1,
-    };
+    return $applyNodeReplacement(this);
   }
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -112,7 +89,7 @@ export function convertTableRowElement(domNode: Node): DOMConversionOutput {
 }
 
 export function $createTableRowNode(height?: number): TableRowNode {
-  return $applyNodeReplacement(new TableRowNode(height));
+  return new TableRowNode(height);
 }
 
 export function $isTableRowNode(

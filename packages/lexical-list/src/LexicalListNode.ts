@@ -24,23 +24,10 @@ import {
   LexicalEditor,
   LexicalNode,
   NodeKey,
-  SerializedElementNode,
-  Spread,
 } from 'lexical';
 
 import {$createListItemNode, $isListItemNode, ListItemNode} from '.';
 import {$getListDepth, wrapInListItem} from './utils';
-
-export type SerializedListNode = Spread<
-  {
-    listType: ListType;
-    start: number;
-    tag: ListNodeTagType;
-    type: 'list';
-    version: 1;
-  },
-  SerializedElementNode
->;
 
 export type ListType = 'number' | 'bullet' | 'check';
 
@@ -71,6 +58,7 @@ export class ListNode extends ElementNode {
     this.__listType = _listType;
     this.__tag = _listType === 'number' ? 'ol' : 'ul';
     this.__start = start;
+    return $applyNodeReplacement(this);
   }
 
   getTag(): ListNodeTagType {
@@ -128,14 +116,6 @@ export class ListNode extends ElementNode {
     };
   }
 
-  static importJSON(serializedNode: SerializedListNode): ListNode {
-    const node = $createListNode(serializedNode.listType, serializedNode.start);
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
-  }
-
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const {element} = super.exportDOM(editor);
     if (element) {
@@ -148,17 +128,6 @@ export class ListNode extends ElementNode {
     }
     return {
       element,
-    };
-  }
-
-  exportJSON(): SerializedListNode {
-    return {
-      ...super.exportJSON(),
-      listType: this.getListType(),
-      start: this.getStart(),
-      tag: this.getTag(),
-      type: 'list',
-      version: 1,
     };
   }
 
@@ -309,7 +278,7 @@ const TAG_TO_LIST_TYPE: Record<string, ListType> = {
 };
 
 export function $createListNode(listType: ListType, start = 1): ListNode {
-  return $applyNodeReplacement(new ListNode(listType, start));
+  return new ListNode(listType, start);
 }
 
 export function $isListNode(

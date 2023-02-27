@@ -21,8 +21,6 @@ import {
   COMMAND_PRIORITY_CRITICAL,
   LexicalEditor,
   REDO_COMMAND,
-  SerializedElementNode,
-  SerializedTextNode,
   UNDO_COMMAND,
 } from 'lexical/src';
 import {TestComposer} from 'lexical/src/__tests__/utils';
@@ -154,21 +152,15 @@ describe('LexicalHistory tests', () => {
     expect(afterQuoteInsertionJSONState.root.children.length).toBe(2);
     expect(afterQuoteInsertionJSONState.root.children[0].type).toBe('quote');
 
-    expect(
-      (afterQuoteInsertionJSONState.root.children as SerializedElementNode[])[0]
-        .children.length,
-    ).toBe(1);
-    expect(
-      (afterQuoteInsertionJSONState.root.children as SerializedElementNode[])[0]
-        .children[0].type,
-    ).toBe('text');
-    expect(
-      (
-        (
-          afterQuoteInsertionJSONState.root.children as SerializedElementNode[]
-        )[0].children[0] as SerializedTextNode
-      ).text,
-    ).toBe('AAA');
+    expect(afterQuoteInsertionJSONState.root.children[0].children.length).toBe(
+      1,
+    );
+    expect(afterQuoteInsertionJSONState.root.children[0].children[0].type).toBe(
+      'text',
+    );
+    expect(afterQuoteInsertionJSONState.root.children[0].children[0].text).toBe(
+      'AAA',
+    );
 
     await ReactTestUtils.act(async () => {
       await editor.update(() => {

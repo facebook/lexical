@@ -55,10 +55,9 @@ can output components from React, vanilla js or other frameworks.
 
 ## Node Properties
 
-Lexical nodes can have properties. It's important that these properties are JSON serializable too, so you should never
-be assigning a property to a node that is a function, Symbol, Map, Set, or any other object that has a different prototype
-than the built-ins. `null`, `undefined`, `number`, `string`, `boolean`, `{}` and `[]` are all types of property that can be
-assigned to node.
+Lexical nodes can have properties. You don't have to worry about serializable JSON properties like `null`, `undefined`, `number`, `string`, `boolean`, `{}` and `[]`.
+
+However, it is important that if you define a property that is not JSON serializable (function, symbol, map, array, cyclic object, etc.), you must define `exportJSON` and `static importJSON` methods on the node. An example of this is the `ImageNode` in the Playground code, which because the `__caption` property is a `LexicalEditor` requires custom serialization.
 
 By convention, we prefix properties with `__` (double underscore) so that it makes it clear that these properties are private
 and their access should be avoided directly. We opted for `__` instead of `_` because of the fact that some build tooling

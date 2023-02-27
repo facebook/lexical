@@ -13,17 +13,27 @@ import type {
   NodeSelection,
   RangeSelection,
 } from './LexicalSelection';
-import type {SerializedRootNode} from './nodes/LexicalRootNode';
 
-import invariant from 'shared/invariant';
-
-import {$isElementNode} from '.';
+import {$isElementNode, ElementFormatType, TextModeType} from '.';
 import {readEditorState} from './LexicalUpdates';
 import {$getRoot} from './LexicalUtils';
 import {$createRootNode} from './nodes/LexicalRootNode';
 
+export type SerializedNode = {
+  type: string;
+  version: number;
+  children: Array<SerializedNode>;
+  direction: 'ltr' | 'rtl' | null;
+  indent: number;
+  format: ElementFormatType;
+  detail: number;
+  mode: TextModeType;
+  style: string;
+  text: string;
+};
+
 export interface SerializedEditorState {
-  root: SerializedRootNode;
+  root: SerializedNode;
 }
 
 export function editorStateHasDirtySelection(
@@ -54,41 +64,20 @@ export function createEmptyEditorState(): EditorState {
   return new EditorState(new Map([['root', $createRootNode()]]));
 }
 
-function exportNodeToJSON<SerializedNode>(node: LexicalNode): SerializedNode {
+function exportNodeToJSON(node: LexicalNode) {
   const serializedNode = node.exportJSON();
-  const nodeClass = node.constructor;
-
-  // @ts-expect-error TODO Replace Class utility type with InstanceType
-  if (serializedNode.type !== nodeClass.getType()) {
-    invariant(
-      false,
-      'LexicalNode: Node %s does not implement .exportJSON().',
-      nodeClass.name,
-    );
-  }
-
-  // @ts-expect-error TODO Replace Class utility type with InstanceType
-  const serializedChildren = serializedNode.children;
 
   if ($isElementNode(node)) {
-    if (!Array.isArray(serializedChildren)) {
-      invariant(
-        false,
-        'LexicalNode: Node %s is an element but .exportJSON() does not have a children array.',
-        nodeClass.name,
-      );
-    }
-
     const children = node.getChildren();
+    serializedNode.children = [];
 
     for (let i = 0; i < children.length; i++) {
       const child = children[i];
       const serializedChildNode = exportNodeToJSON(child);
-      serializedChildren.push(serializedChildNode);
+      serializedNode.children.push(serializedChildNode);
     }
   }
 
-  // @ts-expect-error
   return serializedNode;
 }
 

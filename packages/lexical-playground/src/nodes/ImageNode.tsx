@@ -15,8 +15,6 @@ import type {
   LexicalNode,
   NodeKey,
   SerializedEditor,
-  SerializedLexicalNode,
-  Spread,
 } from 'lexical';
 
 import {$applyNodeReplacement, createEditor, DecoratorNode} from 'lexical';
@@ -49,20 +47,17 @@ function convertImageElement(domNode: Node): null | DOMConversionOutput {
   return null;
 }
 
-export type SerializedImageNode = Spread<
-  {
-    altText: string;
-    caption: SerializedEditor;
-    height?: number;
-    maxWidth: number;
-    showCaption: boolean;
-    src: string;
-    width?: number;
-    type: 'image';
-    version: 1;
-  },
-  SerializedLexicalNode
->;
+type SerializedImageNode = {
+  altText: string;
+  caption: SerializedEditor;
+  height?: number;
+  maxWidth: number;
+  showCaption: boolean;
+  src: string;
+  width?: number;
+  type: 'image';
+  version: 1;
+};
 
 export class ImageNode extends DecoratorNode<JSX.Element> {
   __src: string;
@@ -93,6 +88,9 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     );
   }
 
+  // The importJSON method without an exportJSON() is required, because
+  // the LexicalEditor class (in caption) has a toJSON method that
+  // converts it to SerializedEditor.
   static importJSON(serializedNode: SerializedImageNode): ImageNode {
     const {altText, height, width, maxWidth, caption, src, showCaption} =
       serializedNode;
@@ -150,20 +148,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     this.__showCaption = showCaption || false;
     this.__caption = caption || createEditor();
     this.__captionsEnabled = captionsEnabled || captionsEnabled === undefined;
-  }
-
-  exportJSON(): SerializedImageNode {
-    return {
-      altText: this.getAltText(),
-      caption: this.__caption.toJSON(),
-      height: this.__height === 'inherit' ? 0 : this.__height,
-      maxWidth: this.__maxWidth,
-      showCaption: this.__showCaption,
-      src: this.getSrc(),
-      type: 'image',
-      version: 1,
-      width: this.__width === 'inherit' ? 0 : this.__width,
-    };
+    return $applyNodeReplacement(this);
   }
 
   setWidthAndHeight(
@@ -235,18 +220,16 @@ export function $createImageNode({
   caption,
   key,
 }: ImagePayload): ImageNode {
-  return $applyNodeReplacement(
-    new ImageNode(
-      src,
-      altText,
-      maxWidth,
-      width,
-      height,
-      showCaption,
-      caption,
-      captionsEnabled,
-      key,
-    ),
+  return new ImageNode(
+    src,
+    altText,
+    maxWidth,
+    width,
+    height,
+    showCaption,
+    caption,
+    captionsEnabled,
+    key,
   );
 }
 

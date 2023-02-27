@@ -24,6 +24,7 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $isElementNode,
   $isParagraphNode,
   $isTextNode,
 } from 'lexical';
@@ -152,7 +153,7 @@ function importBlocks(
         }
       }
 
-      if (targetNode != null && targetNode.getTextContentSize() > 0) {
+      if ($isElementNode(targetNode) && targetNode.getTextContentSize() > 0) {
         targetNode.splice(targetNode.getChildrenSize(), 0, [
           $createLineBreakNode(),
           ...elementNode.getChildren(),

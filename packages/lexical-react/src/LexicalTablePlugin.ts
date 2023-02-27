@@ -67,12 +67,14 @@ export function TablePlugin(): JSX.Element | null {
           );
 
           if ($isRootOrShadowRoot(focusNode)) {
-            const target = focusNode.getChildAtIndex(focus.offset);
+            const target = (focusNode as ElementNode).getChildAtIndex(
+              focus.offset,
+            );
 
             if (target !== null) {
               target.insertBefore(tableNode);
             } else {
-              focusNode.append(tableNode);
+              (focusNode as ElementNode).append(tableNode);
             }
 
             tableNode.insertBefore($createParagraphNode());

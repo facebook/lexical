@@ -25,6 +25,7 @@ import {
   Klass,
   LexicalEditor,
   LexicalNode,
+  TextNode,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -318,7 +319,7 @@ export function $restoreEditorState(
   for (const [key, node] of editorState._nodeMap) {
     const clone = $cloneWithProperties(node);
     if ($isTextNode(clone)) {
-      clone.__text = node.__text;
+      clone.__text = (node as TextNode).__text;
     }
     nodeMap.set(key, clone);
   }
@@ -340,9 +341,11 @@ export function $insertNodeToNearestRoot<T extends LexicalNode>(node: T): T {
     const focusOffset = focus.offset;
 
     if ($isRootOrShadowRoot(focusNode)) {
-      const focusChild = focusNode.getChildAtIndex(focusOffset);
+      const focusChild = (focusNode as ElementNode).getChildAtIndex(
+        focusOffset,
+      );
       if (focusChild == null) {
-        focusNode.append(node);
+        (focusNode as ElementNode).append(node);
       } else {
         focusChild.insertBefore(node);
       }

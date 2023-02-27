@@ -8,6 +8,7 @@
 
 import type {Binding} from './Bindings';
 import type {
+  ElementNode,
   GridSelection,
   NodeKey,
   NodeMap,
@@ -86,7 +87,7 @@ function createRelativePosition(
     collabNode instanceof CollabElementNode &&
     point.type === 'element'
   ) {
-    const parent = point.getNode();
+    const parent = point.getNode() as ElementNode;
     let accumulatedOffset = 0;
     let i = 0;
     let node = parent.getFirstChild();

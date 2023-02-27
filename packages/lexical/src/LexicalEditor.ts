@@ -37,12 +37,14 @@ import {LineBreakNode} from './nodes/LexicalLineBreakNode';
 import {ParagraphNode} from './nodes/LexicalParagraphNode';
 import {RootNode} from './nodes/LexicalRootNode';
 
-export type Spread<T1, T2> = Omit<T2, keyof T1> & T1;
-
 export type Klass<T extends LexicalNode> = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   new (...args: any[]): T;
-} & Omit<LexicalNode, 'constructor'>;
+} & {
+  getType: () => string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  importDOM?: () => any;
+};
 
 export type EditorThemeClassName = string;
 
@@ -425,22 +427,6 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
                 `${proto.constructor.name} must implement "decorate" method`,
               );
             }
-          }
-          if (
-            // eslint-disable-next-line no-prototype-builtins
-            !klass.hasOwnProperty('importJSON')
-          ) {
-            console.warn(
-              `${name} should implement "importJSON" method to ensure JSON and default HTML serialization works as expected`,
-            );
-          }
-          if (
-            // eslint-disable-next-line no-prototype-builtins
-            !proto.hasOwnProperty('exportJSON')
-          ) {
-            console.warn(
-              `${name} should implement "exportJSON" method to ensure JSON and default HTML serialization works as expected`,
-            );
           }
         }
       }

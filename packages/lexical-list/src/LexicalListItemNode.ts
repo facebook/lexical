@@ -18,8 +18,6 @@ import type {
   NodeSelection,
   ParagraphNode,
   RangeSelection,
-  SerializedElementNode,
-  Spread,
 } from 'lexical';
 
 import {
@@ -44,16 +42,6 @@ import {
   updateChildrenListItemValue,
 } from './formatList';
 
-export type SerializedListItemNode = Spread<
-  {
-    checked: boolean | undefined;
-    type: 'listitem';
-    value: number;
-    version: 1;
-  },
-  SerializedElementNode
->;
-
 /** @noInheritDoc */
 export class ListItemNode extends ElementNode {
   /** @internal */
@@ -73,6 +61,7 @@ export class ListItemNode extends ElementNode {
     super(key);
     this.__value = value === undefined ? 1 : value;
     this.__checked = checked;
+    return $applyNodeReplacement(this);
   }
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -114,24 +103,6 @@ export class ListItemNode extends ElementNode {
         conversion: convertListItemElement,
         priority: 0,
       }),
-    };
-  }
-
-  static importJSON(serializedNode: SerializedListItemNode): ListItemNode {
-    const node = new ListItemNode(serializedNode.value, serializedNode.checked);
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
-  }
-
-  exportJSON(): SerializedListItemNode {
-    return {
-      ...super.exportJSON(),
-      checked: this.getChecked(),
-      type: 'listitem',
-      value: this.getValue(),
-      version: 1,
     };
   }
 
@@ -182,7 +153,7 @@ export class ListItemNode extends ElementNode {
         list.insertAfter(replaceWithNode);
         replaceWithNode.insertAfter(newList);
       }
-      if (includeChildren) {
+      if (includeChildren && $isElementNode(replaceWithNode)) {
         this.getChildren().forEach((child: LexicalNode) => {
           replaceWithNode.append(child);
         });
@@ -527,7 +498,7 @@ function convertListItemElement(domNode: Node): DOMConversionOutput {
 }
 
 export function $createListItemNode(checked?: boolean): ListItemNode {
-  return $applyNodeReplacement(new ListItemNode(undefined, checked));
+  return new ListItemNode(undefined, checked);
 }
 
 export function $isListItemNode(

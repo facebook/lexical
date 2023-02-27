@@ -20,8 +20,6 @@ import type {
   ParagraphNode,
   PasteCommandType,
   RangeSelection,
-  SerializedElementNode,
-  Spread,
   TextFormatType,
 } from 'lexical';
 
@@ -93,26 +91,9 @@ import {
   IS_SAFARI,
 } from 'shared/environment';
 
-export type SerializedHeadingNode = Spread<
-  {
-    tag: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
-    type: 'heading';
-    version: 1;
-  },
-  SerializedElementNode
->;
-
 export const DRAG_DROP_PASTE: LexicalCommand<Array<File>> = createCommand(
   'DRAG_DROP_PASTE_FILE',
 );
-
-export type SerializedQuoteNode = Spread<
-  {
-    type: 'quote';
-    version: 1;
-  },
-  SerializedElementNode
->;
 
 /** @noInheritDoc */
 export class QuoteNode extends ElementNode {
@@ -126,6 +107,7 @@ export class QuoteNode extends ElementNode {
 
   constructor(key?: NodeKey) {
     super(key);
+    return $applyNodeReplacement(this);
   }
 
   // View
@@ -145,21 +127,6 @@ export class QuoteNode extends ElementNode {
         conversion: convertBlockquoteElement,
         priority: 0,
       }),
-    };
-  }
-
-  static importJSON(serializedNode: SerializedQuoteNode): QuoteNode {
-    const node = $createQuoteNode();
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
-  }
-
-  exportJSON(): SerializedElementNode {
-    return {
-      ...super.exportJSON(),
-      type: 'quote',
     };
   }
 
@@ -183,7 +150,7 @@ export class QuoteNode extends ElementNode {
 }
 
 export function $createQuoteNode(): QuoteNode {
-  return $applyNodeReplacement(new QuoteNode());
+  return new QuoteNode();
 }
 
 export function $isQuoteNode(
@@ -210,6 +177,7 @@ export class HeadingNode extends ElementNode {
   constructor(tag: HeadingTagType, key?: NodeKey) {
     super(key);
     this.__tag = tag;
+    return $applyNodeReplacement(this);
   }
 
   getTag(): HeadingTagType {
@@ -287,22 +255,6 @@ export class HeadingNode extends ElementNode {
       },
     };
   }
-  static importJSON(serializedNode: SerializedHeadingNode): HeadingNode {
-    const node = $createHeadingNode(serializedNode.tag);
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
-  }
-
-  exportJSON(): SerializedHeadingNode {
-    return {
-      ...super.exportJSON(),
-      tag: this.getTag(),
-      type: 'heading',
-      version: 1,
-    };
-  }
 
   // Mutation
   insertNewAfter(
@@ -364,7 +316,7 @@ function convertBlockquoteElement(): DOMConversionOutput {
 }
 
 export function $createHeadingNode(headingTag: HeadingTagType): HeadingNode {
-  return $applyNodeReplacement(new HeadingNode(headingTag));
+  return new HeadingNode(headingTag);
 }
 
 export function $isHeadingNode(

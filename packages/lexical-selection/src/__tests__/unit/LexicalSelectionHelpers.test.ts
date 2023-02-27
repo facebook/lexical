@@ -20,6 +20,7 @@ import {
   $getSelection,
   $isNodeSelection,
   $isRangeSelection,
+  ElementNode,
   RangeSelection,
   TextNode,
 } from 'lexical';
@@ -2577,7 +2578,7 @@ describe('insertNodes', () => {
     });
 
     await editor.update(() => {
-      const selection = $getRoot().getFirstChild().select();
+      const selection = ($getRoot()?.getFirstChild() as ElementNode)?.select();
       selection.insertNodes([
         $createParagraphNode().append($createTextNode('Text before')),
       ]);

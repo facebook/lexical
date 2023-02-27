@@ -9,7 +9,6 @@
 import type {
   EditorConfig,
   LexicalEditor,
-  Spread,
   TextNodeThemeClasses,
 } from '../LexicalEditor';
 import type {
@@ -17,7 +16,6 @@ import type {
   DOMConversionOutput,
   DOMExportOutput,
   NodeKey,
-  SerializedLexicalNode,
 } from '../LexicalNode';
 import type {
   GridSelection,
@@ -65,17 +63,6 @@ import {
   toggleTextFormatType,
 } from '../LexicalUtils';
 import {$createLineBreakNode} from './LexicalLineBreakNode';
-
-export type SerializedTextNode = Spread<
-  {
-    detail: number;
-    format: number;
-    mode: TextModeType;
-    style: string;
-    text: string;
-  },
-  SerializedLexicalNode
->;
 
 export type TextDetailType = 'directionless' | 'unmergable';
 
@@ -296,6 +283,7 @@ export class TextNode extends LexicalNode {
     this.__style = '';
     this.__mode = 0;
     this.__detail = 0;
+    return $applyNodeReplacement(this);
   }
 
   getFormat(): number {
@@ -504,15 +492,6 @@ export class TextNode extends LexicalNode {
     };
   }
 
-  static importJSON(serializedNode: SerializedTextNode): TextNode {
-    const node = $createTextNode(serializedNode.text);
-    node.setFormat(serializedNode.format);
-    node.setDetail(serializedNode.detail);
-    node.setMode(serializedNode.mode);
-    node.setStyle(serializedNode.style);
-    return node;
-  }
-
   // This improves Lexical's basic text output in copy+paste plus
   // for headless mode where people might use Lexical to generate
   // HTML content and not have the ability to use CSS classes.
@@ -539,18 +518,6 @@ export class TextNode extends LexicalNode {
 
     return {
       element,
-    };
-  }
-
-  exportJSON(): SerializedTextNode {
-    return {
-      detail: this.getDetail(),
-      format: this.getFormat(),
-      mode: this.getMode(),
-      style: this.getStyle(),
-      text: this.getTextContent(),
-      type: 'text',
-      version: 1,
     };
   }
 
@@ -993,7 +960,7 @@ function convertTextFormatElement(domNode: Node): DOMConversionOutput {
 }
 
 export function $createTextNode(text = ''): TextNode {
-  return $applyNodeReplacement(new TextNode(text));
+  return new TextNode(text);
 }
 
 export function $isTextNode(

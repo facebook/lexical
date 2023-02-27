@@ -13,7 +13,6 @@ import type {
   LexicalCommand,
   LexicalNode,
   NodeKey,
-  SerializedLexicalNode,
 } from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
@@ -33,11 +32,6 @@ import {
 } from 'lexical';
 import * as React from 'react';
 import {useCallback, useEffect} from 'react';
-
-export type SerializedHorizontalRuleNode = SerializedLexicalNode & {
-  type: 'horizontalrule';
-  version: 1;
-};
 
 export const INSERT_HORIZONTAL_RULE_COMMAND: LexicalCommand<void> =
   createCommand('INSERT_HORIZONTAL_RULE_COMMAND');
@@ -110,14 +104,13 @@ export class HorizontalRuleNode extends DecoratorNode<JSX.Element> {
     return 'horizontalrule';
   }
 
-  static clone(node: HorizontalRuleNode): HorizontalRuleNode {
-    return new HorizontalRuleNode(node.__key);
+  constructor(key?: NodeKey) {
+    super(key);
+    return $applyNodeReplacement(this);
   }
 
-  static importJSON(
-    serializedNode: SerializedHorizontalRuleNode,
-  ): HorizontalRuleNode {
-    return $createHorizontalRuleNode();
+  static clone(node: HorizontalRuleNode): HorizontalRuleNode {
+    return new HorizontalRuleNode(node.__key);
   }
 
   static importDOM(): DOMConversionMap | null {
@@ -126,13 +119,6 @@ export class HorizontalRuleNode extends DecoratorNode<JSX.Element> {
         conversion: convertHorizontalRuleElement,
         priority: 0,
       }),
-    };
-  }
-
-  exportJSON(): SerializedLexicalNode {
-    return {
-      type: 'horizontalrule',
-      version: 1,
     };
   }
 
@@ -166,7 +152,7 @@ function convertHorizontalRuleElement(): DOMConversionOutput {
 }
 
 export function $createHorizontalRuleNode(): HorizontalRuleNode {
-  return $applyNodeReplacement(new HorizontalRuleNode());
+  return new HorizontalRuleNode();
 }
 
 export function $isHorizontalRuleNode(

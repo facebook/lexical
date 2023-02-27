@@ -328,7 +328,7 @@ function onSelectionChange(
           selection.format = lastFormat;
           selection.style = lastStyle;
         } else {
-          if (anchor.type === 'text') {
+          if ($isTextNode(anchorNode)) {
             selection.format = anchorNode.getFormat();
             selection.style = anchorNode.getStyle();
           } else if (anchor.type === 'element') {
@@ -379,7 +379,7 @@ function onClick(event: MouseEvent, editor: LexicalEditor): void {
 
       if (
         domSelection &&
-        anchor.type === 'element' &&
+        $isElementNode(anchorNode) &&
         anchor.offset === 0 &&
         selection.isCollapsed() &&
         !$isRootNode(anchorNode) &&
@@ -496,7 +496,8 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
             const anchorNode = selection.anchor.getNode();
             anchorNode.markDirty();
             selection.format = anchorNode.getFormat();
-            selection.style = anchorNode.getStyle();
+            if ($isTextNode(anchorNode))
+              selection.style = anchorNode.getStyle();
           }
         } else {
           event.preventDefault();
@@ -804,7 +805,7 @@ function onCompositionStart(
         anchor.type === 'element' ||
         !selection.isCollapsed() ||
         node.getFormat() !== selection.format ||
-        node.getStyle() !== selection.style
+        ($isTextNode(node) && node.getStyle() !== selection.style)
       ) {
         // We insert a zero width character, ready for the composition
         // to get inserted into the new node we create. If

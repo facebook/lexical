@@ -11,7 +11,7 @@ import {$createTextNode, $getRoot, ParagraphNode, TextNode} from 'lexical';
 import {createTestConnection, waitForReact} from './utils';
 
 describe('Collaboration', () => {
-  let container = null;
+  let container: HTMLDivElement | null = null;
 
   beforeEach(() => {
     container = document.createElement('div');
@@ -19,7 +19,7 @@ describe('Collaboration', () => {
   });
 
   afterEach(() => {
-    document.body.removeChild(container);
+    document.body.removeChild(container as HTMLDivElement);
     container = null;
   });
 
@@ -56,7 +56,7 @@ describe('Collaboration', () => {
 
         const text = $createTextNode('Hello world');
 
-        paragraph.append(text);
+        paragraph?.append(text);
       });
     });
 
@@ -72,9 +72,9 @@ describe('Collaboration', () => {
         const root = $getRoot();
 
         const paragraph = root.getFirstChild<ParagraphNode>();
-        const text = paragraph.getFirstChild<TextNode>();
+        const text = paragraph?.getFirstChild<TextNode>();
 
-        text.spliceText(6, 5, 'metaverse');
+        text?.spliceText(6, 5, 'metaverse');
       });
     });
 
@@ -112,7 +112,7 @@ describe('Collaboration', () => {
         const paragraph = root.getFirstChild<ParagraphNode>();
         const text = $createTextNode('Hello world');
 
-        paragraph.append(text);
+        paragraph?.append(text);
       });
     });
     expect(client1.getHTML()).toEqual(
@@ -128,7 +128,7 @@ describe('Collaboration', () => {
         const paragraph = root.getFirstChild<ParagraphNode>();
         const text = $createTextNode('Hello world');
 
-        paragraph.append(text);
+        paragraph?.append(text);
       });
     });
 
@@ -158,9 +158,9 @@ describe('Collaboration', () => {
         const root = $getRoot();
 
         const paragraph = root.getFirstChild<ParagraphNode>();
-        const text = paragraph.getFirstChild<TextNode>();
+        const text = paragraph?.getFirstChild<TextNode>();
 
-        text.spliceText(11, 11, '');
+        text?.spliceText(11, 11, '');
       });
     });
 
@@ -176,9 +176,9 @@ describe('Collaboration', () => {
         const root = $getRoot();
 
         const paragraph = root.getFirstChild<ParagraphNode>();
-        const text = paragraph.getFirstChild<TextNode>();
+        const text = paragraph?.getFirstChild<TextNode>();
 
-        text.spliceText(11, 11, '!');
+        text?.spliceText(11, 11, '!');
       });
     });
 
@@ -215,7 +215,7 @@ describe('Collaboration', () => {
 
         const paragraph = root.getFirstChild<ParagraphNode>();
         const text = $createTextNode('Hello world');
-        paragraph.append(text);
+        paragraph?.append(text);
       });
     });
 
@@ -236,7 +236,7 @@ describe('Collaboration', () => {
         const root = $getRoot();
 
         const paragraph = root.getFirstChild<ParagraphNode>();
-        paragraph.getFirstChild().remove();
+        paragraph?.getFirstChild()?.remove();
       });
     });
 
@@ -252,7 +252,7 @@ describe('Collaboration', () => {
 
         const paragraph = root.getFirstChild<ParagraphNode>();
 
-        paragraph.getFirstChild<TextNode>().spliceText(11, 0, 'Hello world');
+        paragraph?.getFirstChild<TextNode>()?.spliceText(11, 0, 'Hello world');
       });
     });
 

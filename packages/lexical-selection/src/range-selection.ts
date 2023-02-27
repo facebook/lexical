@@ -56,14 +56,13 @@ export function $setBlocksType_experimental(
 
   const nodes = selection.getNodes();
   if (selection.anchor.type === 'text') {
-    let firstBlock = selection.anchor.getNode().getParent() as LexicalNode;
-    firstBlock = (
-      firstBlock.isInline() ? firstBlock.getParent() : firstBlock
-    ) as LexicalNode;
-    if (nodes.indexOf(firstBlock) === -1) nodes.push(firstBlock);
+    let firstBlock = selection.anchor.getNode().getParent();
+    firstBlock =
+      firstBlock && firstBlock.isInline() ? firstBlock.getParent() : firstBlock;
+    if (firstBlock && nodes.indexOf(firstBlock) === -1) nodes.push(firstBlock);
   }
   for (let i = 0; i < nodes.length; i++) {
-    const node = nodes[i];
+    const node = nodes[i] as ElementNode;
     if (!isBlock(node)) continue;
     const targetElement = createElement();
     targetElement.setFormat(node.getFormatType());
@@ -266,8 +265,8 @@ export function $wrapNodesImpl(
       }
     } else if (emptyElements.has(node.getKey())) {
       const targetElement = createElement();
-      targetElement.setFormat(node.getFormatType());
-      targetElement.setIndent(node.getIndent());
+      targetElement.setFormat((node as ElementNode).getFormatType());
+      targetElement.setIndent((node as ElementNode).getIndent());
       elements.push(targetElement);
       node.remove(true);
     }

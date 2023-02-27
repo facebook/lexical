@@ -14,8 +14,6 @@ import type {
   LexicalEditor,
   LexicalNode,
   NodeKey,
-  SerializedLexicalNode,
-  Spread,
 } from 'lexical';
 
 import {DecoratorNode} from 'lexical';
@@ -78,15 +76,6 @@ export function createRow(): Row {
     id: createUID(),
   };
 }
-
-export type SerializedTableNode = Spread<
-  {
-    rows: Rows;
-    type: 'tablesheet';
-    version: 1;
-  },
-  SerializedLexicalNode
->;
 
 export function extractRowsFromHTML(tableElem: HTMLTableElement): Rows {
   const rowElems = tableElem.querySelectorAll('tr');
@@ -199,18 +188,6 @@ export class TableNode extends DecoratorNode<JSX.Element> {
 
   static clone(node: TableNode): TableNode {
     return new TableNode(Array.from(node.__rows), node.__key);
-  }
-
-  static importJSON(serializedNode: SerializedTableNode): TableNode {
-    return $createTableNode(serializedNode.rows);
-  }
-
-  exportJSON(): SerializedTableNode {
-    return {
-      rows: this.__rows,
-      type: 'tablesheet',
-      version: 1,
-    };
   }
 
   static importDOM(): DOMConversionMap | null {

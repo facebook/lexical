@@ -14,8 +14,6 @@ import type {
   LexicalEditor,
   LexicalNode,
   NodeKey,
-  SerializedGridCellNode,
-  Spread,
 } from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
@@ -36,15 +34,6 @@ export const TableCellHeaderStates = {
 
 export type TableCellHeaderState =
   typeof TableCellHeaderStates[keyof typeof TableCellHeaderStates];
-
-export type SerializedTableCellNode = Spread<
-  {
-    headerState: TableCellHeaderState;
-    type: string;
-    width?: number;
-  },
-  SerializedGridCellNode
->;
 
 /** @noInheritDoc */
 export class TableCellNode extends DEPRECATED_GridCellNode {
@@ -79,14 +68,6 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
     };
   }
 
-  static importJSON(serializedNode: SerializedTableCellNode): TableCellNode {
-    return $createTableCellNode(
-      serializedNode.headerState,
-      serializedNode.colSpan,
-      serializedNode.width || undefined,
-    );
-  }
-
   constructor(
     headerState = TableCellHeaderStates.NO_STATUS,
     colSpan = 1,
@@ -96,6 +77,7 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
     super(colSpan, key);
     this.__headerState = headerState;
     this.__width = width;
+    return $applyNodeReplacement(this);
   }
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -135,16 +117,6 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
 
     return {
       element,
-    };
-  }
-
-  exportJSON(): SerializedTableCellNode {
-    return {
-      ...super.exportJSON(),
-      colSpan: super.__colSpan,
-      headerState: this.__headerState,
-      type: 'tablecell',
-      width: this.getWidth(),
     };
   }
 
@@ -252,7 +224,7 @@ export function $createTableCellNode(
   colSpan = 1,
   width?: number,
 ): TableCellNode {
-  return $applyNodeReplacement(new TableCellNode(headerState, colSpan, width));
+  return new TableCellNode(headerState, colSpan, width);
 }
 
 export function $isTableCellNode(

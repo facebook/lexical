@@ -13,8 +13,6 @@ import {
   DOMExportOutput,
   LexicalNode,
   NodeKey,
-  SerializedLexicalNode,
-  Spread,
 } from 'lexical';
 import * as React from 'react';
 import {Suspense} from 'react';
@@ -59,16 +57,6 @@ function cloneOption(
   };
 }
 
-export type SerializedPollNode = Spread<
-  {
-    question: string;
-    options: Options;
-    type: 'poll';
-    version: 1;
-  },
-  SerializedLexicalNode
->;
-
 function convertPollElement(domNode: HTMLElement): DOMConversionOutput | null {
   const question = domNode.getAttribute('data-lexical-poll-question');
   if (question !== null) {
@@ -90,25 +78,10 @@ export class PollNode extends DecoratorNode<JSX.Element> {
     return new PollNode(node.__question, node.__options, node.__key);
   }
 
-  static importJSON(serializedNode: SerializedPollNode): PollNode {
-    const node = $createPollNode(serializedNode.question);
-    serializedNode.options.forEach(node.addOption);
-    return node;
-  }
-
   constructor(question: string, options?: Options, key?: NodeKey) {
     super(key);
     this.__question = question;
     this.__options = options || [createPollOption(), createPollOption()];
-  }
-
-  exportJSON(): SerializedPollNode {
-    return {
-      options: this.__options,
-      question: this.__question,
-      type: 'poll',
-      version: 1,
-    };
   }
 
   addOption(option: Option): void {

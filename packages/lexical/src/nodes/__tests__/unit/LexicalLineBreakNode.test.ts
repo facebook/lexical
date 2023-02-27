@@ -31,8 +31,7 @@ describe('LexicalLineBreakNode tests', () => {
 
         // If you broke this test, you changed the public interface of a
         // serialized Lexical Core Node. Please ensure the correct adapter
-        // logic is in place in the corresponding importJSON  method
-        // to accomodate these changes.
+        // logic is in place to accomodate these changes.
         expect(node.exportJSON()).toStrictEqual({
           type: 'linebreak',
           version: 1,

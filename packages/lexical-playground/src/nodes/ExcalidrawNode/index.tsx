@@ -14,8 +14,6 @@ import type {
   LexicalEditor,
   LexicalNode,
   NodeKey,
-  SerializedLexicalNode,
-  Spread,
 } from 'lexical';
 
 import {DecoratorNode} from 'lexical';
@@ -26,15 +24,6 @@ const ExcalidrawComponent = React.lazy(
   // @ts-ignore
   () => import('./ExcalidrawComponent'),
 );
-
-export type SerializedExcalidrawNode = Spread<
-  {
-    data: string;
-    type: 'excalidraw';
-    version: 1;
-  },
-  SerializedLexicalNode
->;
 
 function convertExcalidrawElement(
   domNode: HTMLElement,
@@ -59,18 +48,6 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
 
   static clone(node: ExcalidrawNode): ExcalidrawNode {
     return new ExcalidrawNode(node.__data, node.__key);
-  }
-
-  static importJSON(serializedNode: SerializedExcalidrawNode): ExcalidrawNode {
-    return new ExcalidrawNode(serializedNode.data);
-  }
-
-  exportJSON(): SerializedExcalidrawNode {
-    return {
-      data: this.__data,
-      type: 'excalidraw',
-      version: 1,
-    };
   }
 
   constructor(data = '[]', key?: NodeKey) {

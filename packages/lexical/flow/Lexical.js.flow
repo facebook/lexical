@@ -338,7 +338,6 @@ declare export class LexicalNode {
   static importDOM(): DOMConversionMap | null;
   constructor(key?: NodeKey): void;
   exportDOM(editor: LexicalEditor): DOMExportOutput;
-  exportJSON(): SerializedLexicalNode;
   getType(): string;
   isAttached(): boolean;
   isSelected(): boolean;
@@ -608,8 +607,6 @@ declare export class TextNode extends LexicalNode {
   splitText(...splitOffsets: Array<number>): Array<TextNode>;
   mergeWithSibling(target: TextNode): TextNode;
   isTextEntity(): boolean;
-  static importJSON(serializedTextNode: SerializedTextNode): TextNode;
-  exportJSON(): SerializedTextNode;
 }
 declare export function $createTextNode(text?: string): TextNode;
 declare export function $isTextNode(
@@ -627,10 +624,6 @@ declare export class LineBreakNode extends LexicalNode {
   getTextContent(): '\n';
   createDOM(): HTMLElement;
   updateDOM(): false;
-  static importJSON(
-    serializedLineBreakNode: SerializedLineBreakNode,
-  ): LineBreakNode;
-  exportJSON(): SerializedLexicalNode;
 }
 declare export function $createLineBreakNode(): LineBreakNode;
 declare export function $isLineBreakNode(
@@ -735,7 +728,6 @@ declare export class ElementNode extends LexicalNode {
     deleteCount: number,
     nodesToInsert: Array<LexicalNode>,
   ): this;
-  exportJSON(): SerializedElementNode;
 }
 declare export function $isElementNode(
   node: ?LexicalNode,
@@ -767,10 +759,6 @@ declare export class ParagraphNode extends ElementNode {
   updateDOM(prevNode: ParagraphNode, dom: HTMLElement): boolean;
   insertNewAfter(): ParagraphNode;
   collapseAtStart(): boolean;
-  static importJSON(
-    serializedParagraphNode: SerializedParagraphNode,
-  ): ParagraphNode;
-  exportJSON(): SerializedElementNode;
 }
 declare export function $createParagraphNode(): ParagraphNode;
 declare export function $isParagraphNode(
@@ -849,72 +837,28 @@ declare export function $copyNode(
 /**
  * Serialization/Deserialization
  * */
-
-type InternalSerializedNode = {
-  children?: Array<InternalSerializedNode>,
+type SerializedNode = {
   type: string,
   version: number,
+  children: Array<SerializedNode>,
+  direction: 'ltr' | 'rtl' | null,
+  indent: number,
+  format: ElementFormatType,
+  detail: number,
+  mode: TextModeType,
+  style: string,
+  text: string,
 };
-
 declare export function $parseSerializedNode(
-  serializedNode: InternalSerializedNode,
+  serializedNode: SerializedNode,
 ): LexicalNode;
 
 declare export function $applyNodeReplacement<N: LexicalNode>(
   node: LexicalNode,
 ): N;
 
-export type SerializedLexicalNode = {
-  type: string,
-  version: number,
-  ...
-};
-
-export type SerializedTextNode = {
-  ...SerializedLexicalNode,
-  detail: number,
-  format: number,
-  mode: TextModeType,
-  style: string,
-  text: string,
-  ...
-};
-
-export type SerializedElementNode = {
-  ...SerializedLexicalNode,
-  children: Array<SerializedLexicalNode>,
-  direction: 'ltr' | 'rtl' | null,
-  format: ElementFormatType,
-  indent: number,
-  ...
-};
-
-export type SerializedParagraphNode = {
-  ...SerializedElementNode,
-  type: 'paragraph',
-  ...
-};
-
-export type SerializedLineBreakNode = {
-  ...SerializedLexicalNode,
-  type: 'linebreak',
-  ...
-};
-
-export type SerializedRootNode = {
-  ...SerializedElementNode,
-  type: 'root',
-  ...
-};
-
-export type SerializedGridCellNode = {
-  ...SerializedElementNode,
-  colSpan: number,
-  ...
-};
-
 export interface SerializedEditorState {
-  root: SerializedRootNode;
+  root: SerializedNode;
 }
 
 export type SerializedEditor = {

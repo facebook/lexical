@@ -6,14 +6,7 @@
  *
  */
 
-import type {Spread} from 'lexical';
-
-import {
-  DecoratorNode,
-  EditorConfig,
-  NodeKey,
-  SerializedLexicalNode,
-} from 'lexical';
+import {DecoratorNode, EditorConfig, NodeKey} from 'lexical';
 import * as React from 'react';
 
 import {useSharedAutocompleteContext} from '../context/SharedAutocompleteContext';
@@ -27,15 +20,6 @@ declare global {
   }
 }
 
-export type SerializedAutocompleteNode = Spread<
-  {
-    type: 'autocomplete';
-    version: 1;
-    uuid: string;
-  },
-  SerializedLexicalNode
->;
-
 export class AutocompleteNode extends DecoratorNode<JSX.Element | null> {
   // TODO add comment
   __uuid: string;
@@ -46,22 +30,6 @@ export class AutocompleteNode extends DecoratorNode<JSX.Element | null> {
 
   static getType(): 'autocomplete' {
     return 'autocomplete';
-  }
-
-  static importJSON(
-    serializedNode: SerializedAutocompleteNode,
-  ): AutocompleteNode {
-    const node = $createAutocompleteNode(serializedNode.uuid);
-    return node;
-  }
-
-  exportJSON(): SerializedAutocompleteNode {
-    return {
-      ...super.exportJSON(),
-      type: 'autocomplete',
-      uuid: this.__uuid,
-      version: 1,
-    };
   }
 
   constructor(uuid: string, key?: NodeKey) {

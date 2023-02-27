@@ -6,8 +6,6 @@
  *
  */
 
-import type {Spread} from 'lexical';
-
 import {
   type DOMConversionMap,
   type DOMConversionOutput,
@@ -15,19 +13,9 @@ import {
   type EditorConfig,
   type LexicalNode,
   type NodeKey,
-  type SerializedTextNode,
   $applyNodeReplacement,
   TextNode,
 } from 'lexical';
-
-export type SerializedMentionNode = Spread<
-  {
-    mentionName: string;
-    type: 'mention';
-    version: 1;
-  },
-  SerializedTextNode
->;
 
 function convertMentionElement(
   domNode: HTMLElement,
@@ -55,28 +43,11 @@ export class MentionNode extends TextNode {
   static clone(node: MentionNode): MentionNode {
     return new MentionNode(node.__mention, node.__text, node.__key);
   }
-  static importJSON(serializedNode: SerializedMentionNode): MentionNode {
-    const node = $createMentionNode(serializedNode.mentionName);
-    node.setTextContent(serializedNode.text);
-    node.setFormat(serializedNode.format);
-    node.setDetail(serializedNode.detail);
-    node.setMode(serializedNode.mode);
-    node.setStyle(serializedNode.style);
-    return node;
-  }
 
   constructor(mentionName: string, text?: string, key?: NodeKey) {
     super(text ?? mentionName, key);
     this.__mention = mentionName;
-  }
-
-  exportJSON(): SerializedMentionNode {
-    return {
-      ...super.exportJSON(),
-      mentionName: this.__mention,
-      type: 'mention',
-      version: 1,
-    };
+    return $applyNodeReplacement(this);
   }
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -115,7 +86,7 @@ export class MentionNode extends TextNode {
 export function $createMentionNode(mentionName: string): MentionNode {
   const mentionNode = new MentionNode(mentionName);
   mentionNode.setMode('segmented').toggleDirectionless();
-  return $applyNodeReplacement(mentionNode);
+  return mentionNode;
 }
 
 export function $isMentionNode(

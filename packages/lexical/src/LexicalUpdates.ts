@@ -16,8 +16,8 @@ import type {
   RegisteredNodes,
   Transform,
 } from './LexicalEditor';
-import type {SerializedEditorState} from './LexicalEditorState';
-import type {LexicalNode, SerializedLexicalNode} from './LexicalNode';
+import type {SerializedEditorState, SerializedNode} from './LexicalEditorState';
+import type {LexicalNode} from './LexicalNode';
 
 import invariant from 'shared/invariant';
 
@@ -280,25 +280,13 @@ function $applyAllTransforms(
   editor._dirtyElements = dirtyElements;
 }
 
-type InternalSerializedNode = {
-  children?: Array<InternalSerializedNode>;
-  type: string;
-  version: number;
-};
-
 export function $parseSerializedNode(
-  serializedNode: SerializedLexicalNode,
+  serializedNode: SerializedNode,
 ): LexicalNode {
-  const internalSerializedNode: InternalSerializedNode = serializedNode;
-  return $parseSerializedNodeImpl(
-    internalSerializedNode,
-    getActiveEditor()._nodes,
-  );
+  return $parseSerializedNodeImpl(serializedNode, getActiveEditor()._nodes);
 }
 
-function $parseSerializedNodeImpl<
-  SerializedNode extends InternalSerializedNode,
->(
+function $parseSerializedNodeImpl(
   serializedNode: SerializedNode,
   registeredNodes: RegisteredNodes,
 ): LexicalNode {
@@ -314,12 +302,36 @@ function $parseSerializedNodeImpl<
   if (serializedNode.type !== nodeClass.getType()) {
     invariant(
       false,
-      'LexicalNode: Node %s does not implement .importJSON().',
+      'LexicalNode: Node %s is not exporting a property type matching .getType()',
       nodeClass.name,
     );
   }
-
-  const node = nodeClass.importJSON(serializedNode);
+  let node: LexicalNode;
+  // @ts-expect-error
+  if (nodeClass.importJSON) node = nodeClass.importJSON(serializedNode);
+  else {
+    node = new nodeClass();
+    const serializedNode2 = JSON.parse(JSON.stringify(serializedNode));
+    delete serializedNode2.children;
+    delete serializedNode2.version;
+    delete serializedNode2.mode;
+    delete serializedNode2.direction;
+    if ($isTextNode(node)) {
+      node.setMode(serializedNode.mode);
+    }
+    if ($isElementNode(node)) {
+      delete serializedNode2.format;
+      node.setFormat(serializedNode.format);
+      if (type !== 'tablecell' && type !== 'tablerow' && type !== 'table') {
+        node.setDirection(serializedNode.direction);
+      }
+    }
+    const prefix = '__';
+    const withUnderscore = Object.fromEntries(
+      Object.entries(serializedNode2).map(([k, v]) => [`${prefix}${k}`, v]),
+    );
+    node = Object.assign(node, withUnderscore) as unknown as LexicalNode;
+  }
   const children = serializedNode.children;
 
   if ($isElementNode(node) && Array.isArray(children)) {

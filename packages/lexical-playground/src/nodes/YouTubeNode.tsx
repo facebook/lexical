@@ -15,14 +15,10 @@ import type {
   LexicalEditor,
   LexicalNode,
   NodeKey,
-  Spread,
 } from 'lexical';
 
 import {BlockWithAlignableContents} from '@lexical/react/LexicalBlockWithAlignableContents';
-import {
-  DecoratorBlockNode,
-  SerializedDecoratorBlockNode,
-} from '@lexical/react/LexicalDecoratorBlockNode';
+import {DecoratorBlockNode} from '@lexical/react/LexicalDecoratorBlockNode';
 import * as React from 'react';
 
 type YouTubeComponentProps = Readonly<{
@@ -59,15 +55,6 @@ function YouTubeComponent({
   );
 }
 
-export type SerializedYouTubeNode = Spread<
-  {
-    videoID: string;
-    type: 'youtube';
-    version: 1;
-  },
-  SerializedDecoratorBlockNode
->;
-
 function convertYoutubeElement(
   domNode: HTMLElement,
 ): null | DOMConversionOutput {
@@ -88,21 +75,6 @@ export class YouTubeNode extends DecoratorBlockNode {
 
   static clone(node: YouTubeNode): YouTubeNode {
     return new YouTubeNode(node.__id, node.__format, node.__key);
-  }
-
-  static importJSON(serializedNode: SerializedYouTubeNode): YouTubeNode {
-    const node = $createYouTubeNode(serializedNode.videoID);
-    node.setFormat(serializedNode.format);
-    return node;
-  }
-
-  exportJSON(): SerializedYouTubeNode {
-    return {
-      ...super.exportJSON(),
-      type: 'youtube',
-      version: 1,
-      videoID: this.__id,
-    };
   }
 
   constructor(id: string, format?: ElementFormatType, key?: NodeKey) {

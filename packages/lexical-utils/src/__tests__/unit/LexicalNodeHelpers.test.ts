@@ -11,6 +11,7 @@ import {
   $createTextNode,
   $getNodeByKey,
   $getRoot,
+  ElementNode,
   LexicalEditor,
   NodeKey,
 } from 'lexical';
@@ -32,14 +33,14 @@ describe('LexicalNodeHelpers tests', () => {
      *  DFS: R, P1, B1, T1, B2, T2, T3, P2, T4, T5, B3, T6
      */
     test('DFS node order', async () => {
-      const editor: LexicalEditor = testEnv.editor;
+      const editor: LexicalEditor | null = testEnv.editor;
 
       let expectedKeys: Array<{
         depth: number;
         node: NodeKey;
       }> = [];
 
-      await editor.update(() => {
+      await editor?.update(() => {
         const root = $getRoot();
 
         const paragraph1 = $createParagraphNode();
@@ -122,10 +123,10 @@ describe('LexicalNodeHelpers tests', () => {
         ];
       });
 
-      editor.getEditorState().read(() => {
+      editor?.getEditorState().read(() => {
         const expectedNodes = expectedKeys.map(({depth, node: nodeKey}) => ({
           depth,
-          node: $getNodeByKey(nodeKey).getLatest(),
+          node: $getNodeByKey(nodeKey)?.getLatest(),
         }));
 
         const first = expectedNodes[0];
@@ -143,14 +144,14 @@ describe('LexicalNodeHelpers tests', () => {
     });
 
     test('DFS triggers getLatest()', async () => {
-      const editor: LexicalEditor = testEnv.editor;
+      const editor: LexicalEditor | null = testEnv.editor;
 
-      let rootKey;
-      let paragraphKey;
-      let block1Key;
-      let block2Key;
+      let rootKey: NodeKey;
+      let paragraphKey: NodeKey;
+      let block1Key: NodeKey;
+      let block2Key: NodeKey;
 
-      await editor.update(() => {
+      await editor?.update(() => {
         const root = $getRoot();
 
         const paragraph = $createParagraphNode();
@@ -166,11 +167,11 @@ describe('LexicalNodeHelpers tests', () => {
         paragraph.append(block1, block2);
       });
 
-      await editor.update(() => {
-        const root = $getNodeByKey(rootKey);
-        const paragraph = $getNodeByKey(paragraphKey);
-        const block1 = $getNodeByKey(block1Key);
-        const block2 = $getNodeByKey(block2Key);
+      await editor?.update(() => {
+        const root = $getNodeByKey(rootKey) as ElementNode;
+        const paragraph = $getNodeByKey(paragraphKey) as ElementNode;
+        const block1 = $getNodeByKey(block1Key) as ElementNode;
+        const block2 = $getNodeByKey(block2Key) as ElementNode;
 
         const block3 = $createTestElementNode();
 

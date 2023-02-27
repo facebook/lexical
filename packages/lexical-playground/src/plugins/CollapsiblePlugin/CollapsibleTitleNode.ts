@@ -17,20 +17,10 @@ import {
   LexicalEditor,
   LexicalNode,
   RangeSelection,
-  SerializedElementNode,
-  Spread,
 } from 'lexical';
 
 import {$isCollapsibleContainerNode} from './CollapsibleContainerNode';
 import {$isCollapsibleContentNode} from './CollapsibleContentNode';
-
-type SerializedCollapsibleTitleNode = Spread<
-  {
-    type: 'collapsible-title';
-    version: 1;
-  },
-  SerializedElementNode
->;
 
 export function convertSummaryElement(
   domNode: HTMLElement,
@@ -71,23 +61,9 @@ export class CollapsibleTitleNode extends ElementNode {
     };
   }
 
-  static importJSON(
-    serializedNode: SerializedCollapsibleTitleNode,
-  ): CollapsibleTitleNode {
-    return $createCollapsibleTitleNode();
-  }
-
   exportDOM(): DOMExportOutput {
     const element = document.createElement('summary');
     return {element};
-  }
-
-  exportJSON(): SerializedCollapsibleTitleNode {
-    return {
-      ...super.exportJSON(),
-      type: 'collapsible-title',
-      version: 1,
-    };
   }
 
   collapseAtStart(_selection: RangeSelection): boolean {

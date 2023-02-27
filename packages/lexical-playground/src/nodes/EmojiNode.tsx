@@ -6,23 +6,9 @@
  *
  */
 
-import type {
-  EditorConfig,
-  LexicalNode,
-  NodeKey,
-  SerializedTextNode,
-  Spread,
-} from 'lexical';
+import type {EditorConfig, LexicalNode, NodeKey} from 'lexical';
 
 import {$applyNodeReplacement, TextNode} from 'lexical';
-
-export type SerializedEmojiNode = Spread<
-  {
-    className: string;
-    type: 'emoji';
-  },
-  SerializedTextNode
->;
 
 export class EmojiNode extends TextNode {
   __className: string;
@@ -38,6 +24,7 @@ export class EmojiNode extends TextNode {
   constructor(className: string, text: string, key?: NodeKey) {
     super(text, key);
     this.__className = className;
+    return $applyNodeReplacement(this);
   }
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -62,26 +49,6 @@ export class EmojiNode extends TextNode {
     return false;
   }
 
-  static importJSON(serializedNode: SerializedEmojiNode): EmojiNode {
-    const node = $createEmojiNode(
-      serializedNode.className,
-      serializedNode.text,
-    );
-    node.setFormat(serializedNode.format);
-    node.setDetail(serializedNode.detail);
-    node.setMode(serializedNode.mode);
-    node.setStyle(serializedNode.style);
-    return node;
-  }
-
-  exportJSON(): SerializedEmojiNode {
-    return {
-      ...super.exportJSON(),
-      className: this.getClassName(),
-      type: 'emoji',
-    };
-  }
-
   getClassName(): string {
     const self = this.getLatest();
     return self.__className;
@@ -98,6 +65,5 @@ export function $createEmojiNode(
   className: string,
   emojiText: string,
 ): EmojiNode {
-  const node = new EmojiNode(className, emojiText).setMode('token');
-  return $applyNodeReplacement(node);
+  return new EmojiNode(className, emojiText).setMode('token');
 }

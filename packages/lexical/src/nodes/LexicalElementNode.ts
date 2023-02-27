@@ -6,14 +6,13 @@
  *
  */
 
-import type {NodeKey, SerializedLexicalNode} from '../LexicalNode';
+import type {NodeKey} from '../LexicalNode';
 import type {
   GridSelection,
   NodeSelection,
   PointType,
   RangeSelection,
 } from '../LexicalSelection';
-import type {Spread} from 'lexical';
 
 import invariant from 'shared/invariant';
 
@@ -36,16 +35,6 @@ import {
   $isRootOrShadowRoot,
   removeFromParent,
 } from '../LexicalUtils';
-
-export type SerializedElementNode = Spread<
-  {
-    children: Array<SerializedLexicalNode>;
-    direction: 'ltr' | 'rtl' | null;
-    format: ElementFormatType;
-    indent: number;
-  },
-  SerializedLexicalNode
->;
 
 export type ElementFormatType =
   | 'left'
@@ -510,17 +499,6 @@ export class ElementNode extends LexicalNode {
     }
 
     return writableSelf;
-  }
-  // JSON serialization
-  exportJSON(): SerializedElementNode {
-    return {
-      children: [],
-      direction: this.getDirection(),
-      format: this.getFormatType(),
-      indent: this.getIndent(),
-      type: 'element',
-      version: 1,
-    };
   }
   // These are intended to be extends for specific element heuristics.
   insertNewAfter(

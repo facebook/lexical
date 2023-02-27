@@ -13,17 +13,7 @@ import {
   EditorConfig,
   ElementNode,
   LexicalNode,
-  SerializedElementNode,
-  Spread,
 } from 'lexical';
-
-type SerializedCollapsibleContentNode = Spread<
-  {
-    type: 'collapsible-content';
-    version: 1;
-  },
-  SerializedElementNode
->;
 
 export function convertCollapsibleContentElement(
   domNode: HTMLElement,
@@ -73,22 +63,8 @@ export class CollapsibleContentNode extends ElementNode {
     return {element};
   }
 
-  static importJSON(
-    serializedNode: SerializedCollapsibleContentNode,
-  ): CollapsibleContentNode {
-    return $createCollapsibleContentNode();
-  }
-
   isShadowRoot(): boolean {
     return true;
-  }
-
-  exportJSON(): SerializedCollapsibleContentNode {
-    return {
-      ...super.exportJSON(),
-      type: 'collapsible-content',
-      version: 1,
-    };
   }
 }
 

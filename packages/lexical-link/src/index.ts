@@ -17,10 +17,13 @@ import type {
   NodeKey,
   NodeSelection,
   RangeSelection,
-  SerializedElementNode,
 } from 'lexical';
 
-import {addClassNamesToElement, isHTMLAnchorElement} from '@lexical/utils';
+import {
+  $findMatchingParent,
+  addClassNamesToElement,
+  isHTMLAnchorElement,
+} from '@lexical/utils';
 import {
   $applyNodeReplacement,
   $getSelection,
@@ -28,22 +31,12 @@ import {
   $isRangeSelection,
   createCommand,
   ElementNode,
-  Spread,
 } from 'lexical';
 
 export type LinkAttributes = {
   rel?: null | string;
   target?: null | string;
 };
-
-export type SerializedLinkNode = Spread<
-  {
-    type: 'link';
-    url: string;
-    version: 1;
-  },
-  Spread<LinkAttributes, SerializedElementNode>
->;
 
 /** @noInheritDoc */
 export class LinkNode extends ElementNode {
@@ -72,6 +65,7 @@ export class LinkNode extends ElementNode {
     this.__url = url;
     this.__target = target;
     this.__rel = rel;
+    return $applyNodeReplacement(this);
   }
 
   createDOM(config: EditorConfig): HTMLAnchorElement {
@@ -123,30 +117,6 @@ export class LinkNode extends ElementNode {
         conversion: convertAnchorElement,
         priority: 1,
       }),
-    };
-  }
-
-  static importJSON(
-    serializedNode: SerializedLinkNode | SerializedAutoLinkNode,
-  ): LinkNode {
-    const node = $createLinkNode(serializedNode.url, {
-      rel: serializedNode.rel,
-      target: serializedNode.target,
-    });
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
-  }
-
-  exportJSON(): SerializedLinkNode | SerializedAutoLinkNode {
-    return {
-      ...super.exportJSON(),
-      rel: this.getRel(),
-      target: this.getTarget(),
-      type: 'link',
-      url: this.getURL(),
-      version: 1,
     };
   }
 
@@ -250,7 +220,7 @@ export function $createLinkNode(
   url: string,
   attributes?: LinkAttributes,
 ): LinkNode {
-  return $applyNodeReplacement(new LinkNode(url, attributes));
+  return new LinkNode(url, attributes);
 }
 
 export function $isLinkNode(
@@ -259,19 +229,16 @@ export function $isLinkNode(
   return node instanceof LinkNode;
 }
 
-export type SerializedAutoLinkNode = Spread<
-  {
-    type: 'autolink';
-    version: 1;
-  },
-  SerializedLinkNode
->;
-
 // Custom node type to override `canInsertTextAfter` that will
 // allow typing within the link
 export class AutoLinkNode extends LinkNode {
   static getType(): string {
     return 'autolink';
+  }
+
+  constructor(url: string, attributes: LinkAttributes = {}, key?: NodeKey) {
+    super(url, attributes, key);
+    return $applyNodeReplacement(this);
   }
 
   static clone(node: AutoLinkNode): AutoLinkNode {
@@ -282,28 +249,9 @@ export class AutoLinkNode extends LinkNode {
     );
   }
 
-  static importJSON(serializedNode: SerializedAutoLinkNode): AutoLinkNode {
-    const node = $createAutoLinkNode(serializedNode.url, {
-      rel: serializedNode.rel,
-      target: serializedNode.target,
-    });
-    node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
-    node.setDirection(serializedNode.direction);
-    return node;
-  }
-
   static importDOM(): null {
     // TODO: Should link node should handle the import over autolink?
     return null;
-  }
-
-  exportJSON(): SerializedAutoLinkNode {
-    return {
-      ...super.exportJSON(),
-      type: 'autolink',
-      version: 1,
-    };
   }
 
   insertNewAfter(
@@ -316,7 +264,7 @@ export class AutoLinkNode extends LinkNode {
     );
     if ($isElementNode(element)) {
       const linkNode = $createAutoLinkNode(this.__url, {
-        rel: this._rel,
+        rel: this.__rel,
         target: this.__target,
       });
       element.append(linkNode);
@@ -330,7 +278,7 @@ export function $createAutoLinkNode(
   url: string,
   attributes?: LinkAttributes,
 ): AutoLinkNode {
-  return $applyNodeReplacement(new AutoLinkNode(url, attributes));
+  return new AutoLinkNode(url, attributes);
 }
 
 export function $isAutoLinkNode(
@@ -377,9 +325,7 @@ export function toggleLink(
       const firstNode = nodes[0];
       // if the first node is a LinkNode or if its
       // parent is a LinkNode, we update the URL, target and rel.
-      const linkNode = $isLinkNode(firstNode)
-        ? firstNode
-        : $getLinkAncestor(firstNode);
+      const linkNode = $findMatchingParent(firstNode, $isLinkNode) as LinkNode;
       if (linkNode !== null) {
         linkNode.setURL(url);
         if (target !== undefined) {
@@ -454,21 +400,4 @@ export function toggleLink(
       }
     });
   }
-}
-
-function $getLinkAncestor(node: LexicalNode): null | LexicalNode {
-  return $getAncestor(node, (ancestor) => $isLinkNode(ancestor));
-}
-
-function $getAncestor(
-  node: LexicalNode,
-  predicate: (ancestor: LexicalNode) => boolean,
-): null | LexicalNode {
-  let parent: null | LexicalNode = node;
-  while (
-    parent !== null &&
-    (parent = parent.getParent()) !== null &&
-    !predicate(parent)
-  );
-  return parent;
 }

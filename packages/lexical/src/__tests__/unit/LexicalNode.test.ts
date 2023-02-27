@@ -37,14 +37,6 @@ class TestNode extends LexicalNode {
   createDOM() {
     return document.createElement('div');
   }
-
-  static importJSON() {
-    return new TestNode();
-  }
-
-  exportJSON() {
-    return {type: 'test', version: 1};
-  }
 }
 
 // This is a hack to bypass the node type validation on LexicalNode. We never want to create
@@ -93,7 +85,7 @@ describe('LexicalNode tests', () => {
         await editor.update(() => {
           const node = new LexicalNode('__custom_key__');
 
-          expect(() => node.clone()).toThrow();
+          expect(() => LexicalNode.clone(node)).toThrow();
         });
       });
 

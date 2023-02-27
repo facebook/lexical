@@ -176,17 +176,15 @@ export function trimTextContentFromAnchor(
       // TODO: should this be handled in core?
       text = '\n\n';
     }
-    const textNodeSize = text.length;
-    const offset = textNodeSize - remaining;
-    const slicedText = text.slice(0, offset);
+    const currentNodeSize = currentNode.getTextContentSize();
 
-    if (!$isTextNode(currentNode) || remaining >= textNodeSize) {
+    if (!$isTextNode(currentNode) || remaining >= currentNodeSize) {
       const parent = currentNode.getParent();
       currentNode.remove();
       if (parent != null && parent.getChildrenSize() === 0) {
         parent.remove();
       }
-      remaining -= textNodeSize + additionalElementWhitespace;
+      remaining -= currentNodeSize + additionalElementWhitespace;
       currentNode = nextNode;
     } else {
       const key = currentNode.getKey();
@@ -200,6 +198,8 @@ export function trimTextContentFromAnchor(
           }
           return null;
         });
+      const offset = currentNodeSize - remaining;
+      const slicedText = text.slice(0, offset);
       if (prevTextContent !== null && prevTextContent !== text) {
         const prevSelection = $getPreviousSelection();
         let target = currentNode;
@@ -218,10 +218,10 @@ export function trimTextContentFromAnchor(
         // Split text
         const isSelected = anchor.key === key;
         let anchorOffset = anchor.offset;
-        // Move offset to end if it's less than the remaniing number, otherwise
+        // Move offset to end if it's less than the remaining number, otherwise
         // we'll have a negative splitStart.
         if (anchorOffset < remaining) {
-          anchorOffset = textNodeSize;
+          anchorOffset = currentNodeSize;
         }
         const splitStart = isSelected ? anchorOffset - remaining : 0;
         const splitEnd = isSelected ? anchorOffset : offset;

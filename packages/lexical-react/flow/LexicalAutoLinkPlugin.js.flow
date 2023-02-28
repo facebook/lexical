@@ -21,11 +21,10 @@ type LinkMatcherResult = {
 
 export type LinkMatcher = (text: string) => LinkMatcherResult | null;
 
-declare export function urlLinkMatcher(text: string): LinkMatcherResult | null;
-
-declare export function emailLinkMatcher(
-  text: string,
-): LinkMatcherResult | null;
+declare export function createLinkMatcherWithRegExp(
+  regExp: RegExp,
+  urlTransformer?: (text: string) => string,
+): LinkMatcher;
 
 declare export function AutoLinkPlugin(props: {
   matchers: Array<LinkMatcher>,

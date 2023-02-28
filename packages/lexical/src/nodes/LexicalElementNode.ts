@@ -115,14 +115,6 @@ export class ElementNode extends LexicalNode {
     const self = this.getLatest();
     return self.__size;
   }
-  getFirstChildKey(): null | NodeKey {
-    const self = this.getLatest();
-    return self.__first;
-  }
-  getLastChildKey(): null | NodeKey {
-    const self = this.getLatest();
-    return self.__last;
-  }
   isEmpty(): boolean {
     return this.getChildrenSize() === 0;
   }

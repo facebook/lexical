@@ -79,7 +79,10 @@ export function LexicalNestedComposer({
           });
         }
       }
+
       initialEditor._config.namespace = parentEditor._config.namespace;
+
+      initialEditor._editable = parentEditor._editable;
 
       return [initialEditor, context];
     },

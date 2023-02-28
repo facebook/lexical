@@ -312,7 +312,7 @@ export function $patchStyleText(
   }
 
   // This is the case where we only selected a single node
-  if (firstNode.is(lastNode)) {
+  if (selectedNodes.length === 1) {
     if ($isTextNode(firstNode)) {
       startOffset =
         startType === 'element'

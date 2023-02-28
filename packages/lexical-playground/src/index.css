@@ -81,6 +81,7 @@ header h1 {
   display: flex;
   position: relative;
   outline: 0;
+  z-index: 0;
   overflow: auto;
   resize: vertical;
 }
@@ -1102,7 +1103,7 @@ i.prettier-error {
 .actions {
   position: absolute;
   text-align: right;
-  padding: 10px;
+  margin: 10px;
   bottom: 0;
   right: 0;
 }

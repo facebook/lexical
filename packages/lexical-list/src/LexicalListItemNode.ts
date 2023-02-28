@@ -158,42 +158,34 @@ export class ListItemNode extends ElementNode {
     if ($isListItemNode(replaceWithNode)) {
       return super.replace(replaceWithNode);
     }
-
+    this.setIndent(0);
     const list = this.getParentOrThrow();
-
-    if ($isListNode(list)) {
-      const childrenKeys = list.getChildrenKeys();
-      const childrenLength = childrenKeys.length;
-      const index = childrenKeys.indexOf(this.__key);
-
-      if (index === 0) {
-        list.insertBefore(replaceWithNode);
-      } else if (index === childrenLength - 1) {
-        list.insertAfter(replaceWithNode);
-      } else {
-        // Split the list
-        const newList = $createListNode(list.getListType());
-        const children = list.getChildren();
-
-        for (let i = index + 1; i < childrenLength; i++) {
-          const child = children[i];
-          newList.append(child);
-        }
-        list.insertAfter(replaceWithNode);
-        replaceWithNode.insertAfter(newList);
+    if (!$isListNode(list)) return replaceWithNode;
+    if (list.__first === this.getKey()) {
+      list.insertBefore(replaceWithNode);
+    } else if (list.__last === this.getKey()) {
+      list.insertAfter(replaceWithNode);
+    } else {
+      // Split the list
+      const newList = $createListNode(list.getListType());
+      let nextSibling = this.getNextSibling();
+      while (nextSibling) {
+        const nodeToAppend = nextSibling;
+        nextSibling = nextSibling.getNextSibling();
+        newList.append(nodeToAppend);
       }
-      if (includeChildren) {
-        this.getChildren().forEach((child: LexicalNode) => {
-          replaceWithNode.append(child);
-        });
-      }
-      this.remove();
-
-      if (childrenLength === 1) {
-        list.remove();
-      }
+      list.insertAfter(replaceWithNode);
+      replaceWithNode.insertAfter(newList);
     }
-
+    if (includeChildren) {
+      this.getChildren().forEach((child: LexicalNode) => {
+        replaceWithNode.append(child);
+      });
+    }
+    this.remove();
+    if (list.getChildrenSize() === 0) {
+      list.remove();
+    }
     return replaceWithNode;
   }
 

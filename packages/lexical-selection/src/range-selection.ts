@@ -42,7 +42,6 @@ import {getStyleObjectFromCSS} from './utils';
  */
 export function $setBlocksType_experimental(
   selection: RangeSelection | GridSelection,
-
   createElement: () => ElementNode,
 ): void {
   if (selection.anchor.key === 'root') {
@@ -53,15 +52,14 @@ export function $setBlocksType_experimental(
     else root.append(element);
     return;
   }
-
   const nodes = selection.getNodes();
-  if (selection.anchor.type === 'text') {
-    let firstBlock = selection.anchor.getNode().getParent() as LexicalNode;
-    firstBlock = (
-      firstBlock.isInline() ? firstBlock.getParent() : firstBlock
-    ) as LexicalNode;
-    if (nodes.indexOf(firstBlock) === -1) nodes.push(firstBlock);
+  let maybeBlock = selection.anchor.getNode().getParentOrThrow();
+  if (nodes.indexOf(maybeBlock) === -1) nodes.push(maybeBlock);
+  if (maybeBlock.isInline()) {
+    maybeBlock = maybeBlock.getParentOrThrow();
+    if (nodes.indexOf(maybeBlock) === -1) nodes.push(maybeBlock);
   }
+
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
     if (!isBlock(node)) continue;
@@ -72,8 +70,12 @@ export function $setBlocksType_experimental(
   }
 }
 
-function isBlock(node: LexicalNode) {
-  return $isElementNode(node) && !$isRootOrShadowRoot(node) && !node.isInline();
+function isBlock(node: LexicalNode): boolean {
+  if (!$isElementNode(node) || $isRootOrShadowRoot(node)) return false;
+  const firstChild = node.getFirstChild();
+  const isLeafElement =
+    firstChild === null || $isTextNode(firstChild) || firstChild.isInline();
+  return !node.isInline() && node.canBeEmpty() !== false && isLeafElement;
 }
 
 function isPointAttached(point: Point): boolean {

@@ -6,7 +6,7 @@
  *
  */
 
-import type {LexicalNode} from '../LexicalNode';
+import type {LexicalNode, SerializedLexicalNode} from '../LexicalNode';
 import type {SerializedElementNode} from './LexicalElementNode';
 
 import invariant from 'shared/invariant';
@@ -17,7 +17,9 @@ import {$getRoot} from '../LexicalUtils';
 import {$isDecoratorNode} from './LexicalDecoratorNode';
 import {$isElementNode, ElementNode} from './LexicalElementNode';
 
-export type SerializedRootNode = SerializedElementNode;
+export type SerializedRootNode<
+  T extends SerializedLexicalNode = SerializedLexicalNode,
+> = SerializedElementNode<T>;
 
 /** @noInheritDoc */
 export class RootNode extends ElementNode {

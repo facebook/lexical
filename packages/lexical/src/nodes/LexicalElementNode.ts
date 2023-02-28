@@ -37,9 +37,11 @@ import {
   removeFromParent,
 } from '../LexicalUtils';
 
-export type SerializedElementNode = Spread<
+export type SerializedElementNode<
+  T extends SerializedLexicalNode = SerializedLexicalNode,
+> = Spread<
   {
-    children: Array<SerializedLexicalNode>;
+    children: Array<T>;
     direction: 'ltr' | 'rtl' | null;
     format: ElementFormatType;
     indent: number;

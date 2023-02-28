@@ -10,8 +10,8 @@ import type {Doc} from 'yjs';
 
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {Provider} from '@lexical/yjs';
 import {useEffect, useMemo} from 'react';
-import {WebsocketProvider} from 'y-websocket';
 
 import {InitialEditorStateType} from './LexicalComposer';
 import {
@@ -35,7 +35,7 @@ export function CollaborationPlugin({
     // eslint-disable-next-line no-shadow
     id: string,
     yjsDocMap: Map<string, Doc>,
-  ) => WebsocketProvider;
+  ) => Provider;
   shouldBootstrap: boolean;
   username?: string;
   cursorColor?: string;

@@ -6,6 +6,7 @@
  *
  */
 
+import type {Provider} from '@lexical/yjs';
 import type {
   EditorState,
   LexicalCommand,
@@ -50,7 +51,6 @@ import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import * as React from 'react';
 import {createPortal} from 'react-dom';
 import useLayoutEffect from 'shared/useLayoutEffect';
-import {WebsocketProvider} from 'y-websocket';
 
 import {
   Comment,
@@ -700,10 +700,7 @@ function useCollabAuthorName(): string {
 export default function CommentPlugin({
   providerFactory,
 }: {
-  providerFactory?: (
-    id: string,
-    yjsDocMap: Map<string, Doc>,
-  ) => WebsocketProvider;
+  providerFactory?: (id: string, yjsDocMap: Map<string, Doc>) => Provider;
 }): JSX.Element {
   const collabContext = useCollaborationContext();
   const [editor] = useLexicalComposerContext();

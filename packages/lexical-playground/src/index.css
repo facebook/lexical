@@ -78,8 +78,10 @@ header h1 {
   border: 0;
   resize: none;
   cursor: text;
+  display: flex;
   position: relative;
   outline: 0;
+  z-index: 0;
   overflow: auto;
   resize: vertical;
 }

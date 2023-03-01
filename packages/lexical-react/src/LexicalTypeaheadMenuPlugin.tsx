@@ -833,30 +833,45 @@ export function LexicalNodeMenuPlugin<TOption extends TypeaheadOption>({
     [onOpen, resolution],
   );
 
-  useEffect(() => {
-    if (nodeKey && resolution == null) {
+  const positionOrCloseMenu = useCallback(() => {
+    if (nodeKey) {
       editor.update(() => {
         const node = $getNodeByKey(nodeKey);
         const domElement = editor.getElementByKey(nodeKey);
-
         if (node != null && domElement != null) {
           const text = node.getTextContent();
-          startTransition(() =>
-            openNodeMenu({
-              getRect: () => domElement.getBoundingClientRect(),
-              match: {
-                leadOffset: text.length,
-                matchingString: text,
-                replaceableString: text,
-              },
-            }),
-          );
+          if (resolution == null || resolution.match.matchingString !== text) {
+            startTransition(() =>
+              openNodeMenu({
+                getRect: () => domElement.getBoundingClientRect(),
+                match: {
+                  leadOffset: text.length,
+                  matchingString: text,
+                  replaceableString: text,
+                },
+              }),
+            );
+          }
         }
       });
     } else if (nodeKey == null && resolution != null) {
       closeNodeMenu();
     }
   }, [closeNodeMenu, editor, nodeKey, openNodeMenu, resolution]);
+
+  useEffect(() => {
+    positionOrCloseMenu();
+  }, [positionOrCloseMenu, nodeKey]);
+
+  useEffect(() => {
+    if (nodeKey != null) {
+      return editor.registerUpdateListener(({dirtyElements}) => {
+        if (dirtyElements.get(nodeKey)) {
+          positionOrCloseMenu();
+        }
+      });
+    }
+  }, [editor, positionOrCloseMenu, nodeKey]);
 
   return resolution === null || editor === null ? null : (
     <LexicalPopoverMenu

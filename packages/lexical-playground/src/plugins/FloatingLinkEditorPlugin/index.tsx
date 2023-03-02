@@ -108,6 +108,29 @@ function FloatingLinkEditor({
   }, [anchorElem, editor]);
 
   useEffect(() => {
+    function mouseMoveListener(e: MouseEvent) {
+      if (editorRef?.current && (e.buttons === 1 || e.buttons === 3)) {
+        editorRef.current.style.pointerEvents = 'none';
+      }
+    }
+    function mouseUpListener(e: MouseEvent) {
+      if (editorRef?.current) {
+        editorRef.current.style.pointerEvents = 'auto';
+      }
+    }
+
+    if (editorRef?.current) {
+      document.addEventListener('mousemove', mouseMoveListener);
+      document.addEventListener('mouseup', mouseUpListener);
+
+      return () => {
+        document.removeEventListener('mousemove', mouseMoveListener);
+        document.removeEventListener('mouseup', mouseUpListener);
+      };
+    }
+  }, [editorRef]);
+
+  useEffect(() => {
     const scrollerElem = anchorElem.parentElement;
 
     const update = () => {
@@ -175,7 +198,7 @@ function FloatingLinkEditor({
 
   return (
     <div ref={editorRef} className="link-editor">
-      {isEditMode ? (
+      {!isLink ? null : isEditMode ? (
         <input
           ref={inputRef}
           className="link-input"
@@ -263,17 +286,15 @@ function useFloatingLinkEditorToolbar(
     );
   }, [editor, updateToolbar]);
 
-  return isLink
-    ? createPortal(
-        <FloatingLinkEditor
-          editor={activeEditor}
-          isLink={isLink}
-          anchorElem={anchorElem}
-          setIsLink={setIsLink}
-        />,
-        anchorElem,
-      )
-    : null;
+  return createPortal(
+    <FloatingLinkEditor
+      editor={activeEditor}
+      isLink={isLink}
+      anchorElem={anchorElem}
+      setIsLink={setIsLink}
+    />,
+    anchorElem,
+  );
 }
 
 export default function FloatingLinkEditorPlugin({

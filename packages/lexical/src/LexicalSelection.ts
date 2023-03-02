@@ -1467,6 +1467,9 @@ export class RangeSelection implements BaseSelection {
               target.append(node);
             }
             target = node;
+          } else if (node.isInline()) {
+            target.append(node);
+            target = node;
           } else {
             target = target.insertAfter(node, false);
           }

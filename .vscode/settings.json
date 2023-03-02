@@ -8,5 +8,8 @@
       "source.fixAll.eslint",
       "source.fixAll.format"
     ]
+  },
+  "[xml]": {
+    "editor.defaultFormatter": "redhat.vscode-xml"
   }
 }

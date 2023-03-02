@@ -146,6 +146,21 @@ function TableActionMenu({
     });
   }, [editor, tableCellNode]);
 
+  const mergeTableColumnsAtSelection = () => {
+    editor.update(() => {
+      const selection = $getSelection();
+      if (DEPRECATED_$isGridSelection(selection)) {
+        const anchor = selection.anchor.getNode();
+        const focus = selection.focus.getNode();
+        if ($isTableCellNode(anchor)) {
+          anchor.getWritable().__rowSpan = 2;
+          focus.remove();
+          anchor.select();
+        }
+      }
+    });
+  };
+
   const insertTableRowAtSelection = useCallback(
     (shouldInsertAfter: boolean) => {
       editor.update(() => {
@@ -336,6 +351,10 @@ function TableActionMenu({
       onClick={(e) => {
         e.stopPropagation();
       }}>
+      <button className="item" onClick={() => mergeTableColumnsAtSelection()}>
+        Merge cells
+      </button>
+      <hr />
       <button className="item" onClick={() => insertTableRowAtSelection(false)}>
         <span className="text">
           Insert{' '}

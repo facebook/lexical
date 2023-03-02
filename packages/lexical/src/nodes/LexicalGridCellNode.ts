@@ -26,10 +26,12 @@ export type SerializedGridCellNode = Spread<
 export class DEPRECATED_GridCellNode extends ElementNode {
   /** @internal */
   __colSpan: number;
+  __rowSpan: number;
 
   constructor(colSpan: number, key?: NodeKey) {
     super(key);
     this.__colSpan = colSpan;
+    this.__rowSpan = 1;
   }
 
   exportJSON(): SerializedGridCellNode {

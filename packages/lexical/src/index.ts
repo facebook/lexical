@@ -9,6 +9,7 @@
 
 export type {PasteCommandType} from './LexicalCommands';
 export type {
+  CommandListener,
   CommandListenerPriority,
   CommandPayloadType,
   CreateEditorArgs,

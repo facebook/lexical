@@ -104,7 +104,7 @@ pre {
   padding: 10px;
   font-size: 12px;
   overflow: auto;
-  max-height: 180px;
+  max-height: 400px;
 }
 
 .tree-view-output {
@@ -114,7 +114,6 @@ pre {
   padding: 0;
   font-size: 12px;
   margin: 1px auto 10px auto;
-  max-height: 250px;
   position: relative;
   overflow: hidden;
   border-bottom-left-radius: 10px;

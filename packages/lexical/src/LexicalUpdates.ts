@@ -132,6 +132,7 @@ export function $applyTransforms(
 
   if (transformsArr === undefined) {
     transformsArr = Array.from(registeredNode.transforms);
+    transformsArr.push(node.transform.bind(node));
     transformsCache.set(type, transformsArr);
   }
 

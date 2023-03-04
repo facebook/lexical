@@ -78,14 +78,11 @@ export class ListItemNode extends ElementNode {
   createDOM(config: EditorConfig): HTMLElement {
     const element = document.createElement('li');
     const parent = this.getParent();
-
-    if ($isListNode(parent)) {
-      updateChildrenListItemValue(parent);
-      updateListItemChecked(element, this, null, parent);
+    if ($isListNode(parent) && parent.getListType() === 'check') {
+      updateListItemChecked(dom, this, prevNode, parent);
     }
     element.value = this.__value;
     $setListItemThemeClassNames(element, config.theme, this);
-
     return element;
   }
 
@@ -95,17 +92,24 @@ export class ListItemNode extends ElementNode {
     config: EditorConfig,
   ): boolean {
     const parent = this.getParent();
-
-    if ($isListNode(parent)) {
-      updateChildrenListItemValue(parent);
+    if ($isListNode(parent) && parent.getListType() === 'check') {
       updateListItemChecked(dom, this, prevNode, parent);
     }
     // @ts-expect-error - this is always HTMLListItemElement
     dom.value = this.__value;
-
     $setListItemThemeClassNames(dom, config.theme, this);
 
     return false;
+  }
+
+  transform(): void {
+    const parent = this.getParent();
+    if ($isListNode(parent)) {
+      updateChildrenListItemValue(parent);
+      if (parent.getListType() !== 'check' && this.getChecked() != null) {
+        this.setChecked(undefined);
+      }
+    }
   }
 
   static importDOM(): DOMConversionMap | null {
@@ -482,32 +486,23 @@ function updateListItemChecked(
   prevListItemNode: ListItemNode | null,
   listNode: ListNode,
 ): void {
-  const isCheckList = listNode.getListType() === 'check';
-
-  if (isCheckList) {
-    // Only add attributes for leaf list items
-    if ($isListNode(listItemNode.getFirstChild())) {
-      dom.removeAttribute('role');
-      dom.removeAttribute('tabIndex');
-      dom.removeAttribute('aria-checked');
-    } else {
-      dom.setAttribute('role', 'checkbox');
-      dom.setAttribute('tabIndex', '-1');
-
-      if (
-        !prevListItemNode ||
-        listItemNode.__checked !== prevListItemNode.__checked
-      ) {
-        dom.setAttribute(
-          'aria-checked',
-          listItemNode.getChecked() ? 'true' : 'false',
-        );
-      }
-    }
+  // Only add attributes for leaf list items
+  if ($isListNode(listItemNode.getFirstChild())) {
+    dom.removeAttribute('role');
+    dom.removeAttribute('tabIndex');
+    dom.removeAttribute('aria-checked');
   } else {
-    // Clean up checked state
-    if (listItemNode.getChecked() != null) {
-      listItemNode.setChecked(undefined);
+    dom.setAttribute('role', 'checkbox');
+    dom.setAttribute('tabIndex', '-1');
+
+    if (
+      !prevListItemNode ||
+      listItemNode.__checked !== prevListItemNode.__checked
+    ) {
+      dom.setAttribute(
+        'aria-checked',
+        listItemNode.getChecked() ? 'true' : 'false',
+      );
     }
   }
 }

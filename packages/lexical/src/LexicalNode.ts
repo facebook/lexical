@@ -802,6 +802,10 @@ export class LexicalNode {
     );
   }
 
+  transform(): void {
+    return;
+  }
+
   // Setters and mutators
 
   /**

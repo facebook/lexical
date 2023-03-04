@@ -79,7 +79,7 @@ export class ListItemNode extends ElementNode {
     const element = document.createElement('li');
     const parent = this.getParent();
     if ($isListNode(parent) && parent.getListType() === 'check') {
-      updateListItemChecked(dom, this, prevNode, parent);
+      updateListItemChecked(element, this, null, parent);
     }
     element.value = this.__value;
     $setListItemThemeClassNames(element, config.theme, this);

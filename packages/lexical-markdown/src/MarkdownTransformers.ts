@@ -258,7 +258,7 @@ export const ORDERED_LIST: ElementTransformer = {
   export: (node, exportChildren) => {
     return $isListNode(node) ? listExport(node, exportChildren, 0) : null;
   },
-  regExp: /^(\s*)(\d{1,})\.\s/,
+  regExp: /^(\s*)1\.\s/,
   replace: listReplace('number'),
   type: 'element',
 };

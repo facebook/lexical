@@ -29,8 +29,6 @@ import {
   DEPRECATED_$isGridCellNode,
   DEPRECATED_$isGridNode,
   DEPRECATED_$isGridRowNode,
-  DEPRECATED_GridCellNode,
-  DEPRECATED_GridNode,
   TextNode,
 } from '.';
 import {DOM_ELEMENT_TYPE, TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
@@ -455,6 +453,7 @@ export class GridSelection implements BaseSelection {
     return selection.insertNodes(nodes, selectStart);
   }
 
+  // TODO Deprecate this method. It's confusing when used with colspan|rowspan
   getShape(): GridSelectionShape {
     const anchorCellNode = $getNodeByKey(this.anchor.key);
     invariant(anchorCellNode !== null, 'getNodes: expected to find AnchorNode');
@@ -489,45 +488,35 @@ export class GridSelection implements BaseSelection {
     if (cachedNodes !== null) {
       return cachedNodes;
     }
-    const nodesSet = new Set<LexicalNode>();
-    const {fromX, fromY, toX, toY} = this.getShape();
-
-    const gridNode = $getNodeByKey<DEPRECATED_GridNode>(this.gridKey);
-    if (!DEPRECATED_$isGridNode(gridNode)) {
-      invariant(false, 'getNodes: expected to find GridNode');
-    }
-    nodesSet.add(gridNode);
-
-    const gridRowNodes = gridNode.getChildren();
-    for (let r = fromY; r <= toY; r++) {
-      const gridRowNode = gridRowNodes[r];
-      nodesSet.add(gridRowNode);
-
-      if (!DEPRECATED_$isGridRowNode(gridRowNode)) {
-        invariant(false, 'getNodes: expected to find GridRowNode');
-      }
-      const gridCellNodes = gridRowNode.getChildren<DEPRECATED_GridCellNode>();
-      for (let c = fromX; c <= toX; c++) {
-        const gridCellNode = gridCellNodes[c];
-        if (!DEPRECATED_$isGridCellNode(gridCellNode)) {
-          invariant(false, 'getNodes: expected to find GridCellNode');
+    const anchorNode = this.anchor.getNode();
+    const focusNode = this.focus.getNode();
+    const nodesBetween =
+      anchorNode === focusNode
+        ? [anchorNode]
+        : anchorNode.getNodesBetween(focusNode);
+    const nodes: Array<LexicalNode> = [];
+    let lastRow = null;
+    for (let i = 0; i < nodesBetween.length; i++) {
+      const node = nodesBetween[i];
+      if (DEPRECATED_$isGridCellNode(node)) {
+        const currentRow = node.getParent();
+        invariant(
+          DEPRECATED_$isGridRowNode(currentRow),
+          'Expected GridCellNode parent to be a GridRowNode',
+        );
+        if (lastRow === null) {
+          const table = currentRow.getParent();
+          invariant(
+            DEPRECATED_$isGridNode(table),
+            'Expected GridRowNode parent to be a GridNode',
+          );
+          nodes.push(table, currentRow);
+        } else if (currentRow !== lastRow) {
+          nodes.push(currentRow);
         }
-        nodesSet.add(gridCellNode);
-
-        const children = gridCellNode.getChildren();
-
-        while (children.length > 0) {
-          const child = children.shift() as LexicalNode;
-          nodesSet.add(child);
-          if ($isElementNode(child)) {
-            children.unshift(...child.getChildren());
-          }
-        }
+        nodes.push(node, ...node.getChildren());
+        lastRow = currentRow;
       }
-    }
-    const nodes = Array.from(nodesSet);
-    if (!isCurrentlyReadOnlyMode()) {
-      this._cachedNodes = nodes;
     }
     return nodes;
   }

@@ -40,6 +40,16 @@ export class DEPRECATED_GridCellNode extends ElementNode {
       colSpan: this.__colSpan,
     };
   }
+
+  setColSpan(colSpan: number): this {
+    this.getWritable().__colSpan = colSpan;
+    return this;
+  }
+
+  setRowSpan(rowSpan: number): this {
+    this.getWritable().__rowSpan = rowSpan;
+    return this;
+  }
 }
 
 export function DEPRECATED_$isGridCellNode(

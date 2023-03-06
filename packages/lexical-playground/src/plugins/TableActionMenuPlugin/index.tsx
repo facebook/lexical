@@ -29,17 +29,74 @@ import {
   $getRoot,
   $getSelection,
   $isRangeSelection,
+  DEPRECATED_$isGridCellNode,
   DEPRECATED_$isGridSelection,
+  GridSelection,
 } from 'lexical';
 import * as React from 'react';
 import {ReactPortal, useCallback, useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
+import invariant from 'shared/invariant';
+
+function computeSelectionCount(selection: GridSelection): {
+  columns: number;
+  rows: number;
+} {
+  const selectionShape = selection.getShape();
+  return {
+    columns: selectionShape.toX - selectionShape.fromX + 1,
+    rows: selectionShape.toY - selectionShape.fromY + 1,
+  };
+}
+
+// This is important when merging cells as there is no good way to re-merge weird shapes (a result
+// of selecting merged cells and non-merged)
+function isGridSelectionRectangular(selection: GridSelection): boolean {
+  const nodes = selection.getNodes();
+  const currentRows: Array<number> = [];
+  let currentRow = null;
+  let expectedColumns = null;
+  let currentColumns = 0;
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+    if ($isTableCellNode(node)) {
+      const row = node.getParentOrThrow();
+      invariant(
+        $isTableRowNode(row),
+        'Expected CellNode to have a RowNode parent',
+      );
+      if (currentRow !== row) {
+        if (expectedColumns !== null && currentColumns !== expectedColumns) {
+          return false;
+        }
+        if (currentRow !== null) {
+          expectedColumns = currentColumns;
+        }
+        currentRow = row;
+        currentColumns = 0;
+      }
+      const colSpan = node.__colSpan;
+      for (let j = 0; j < colSpan; j++) {
+        if (currentRows[currentColumns + j] === undefined) {
+          currentRows[currentColumns + j] = 0;
+        }
+        currentRows[currentColumns + j] += node.__rowSpan;
+      }
+      currentColumns += colSpan;
+    }
+  }
+  return (
+    (expectedColumns === null || currentColumns === expectedColumns) &&
+    currentRows.every((v) => v === currentRows[0])
+  );
+}
 
 type TableCellActionMenuProps = Readonly<{
   contextRef: {current: null | HTMLElement};
   onClose: () => void;
   setIsMenuOpen: (isOpen: boolean) => void;
   tableCellNode: TableCellNode;
+  cellMerge__EXPERIMENTAL: boolean;
 }>;
 
 function TableActionMenu({
@@ -47,6 +104,7 @@ function TableActionMenu({
   tableCellNode: _tableCellNode,
   setIsMenuOpen,
   contextRef,
+  cellMerge__EXPERIMENTAL,
 }: TableCellActionMenuProps) {
   const [editor] = useLexicalComposerContext();
   const dropDownRef = useRef<HTMLDivElement | null>(null);
@@ -55,6 +113,7 @@ function TableActionMenu({
     columns: 1,
     rows: 1,
   });
+  const [canMergeCells, setCanMergeCells] = useState(false);
 
   useEffect(() => {
     return editor.registerMutationListener(TableCellNode, (nodeMutations) => {
@@ -72,14 +131,9 @@ function TableActionMenu({
   useEffect(() => {
     editor.getEditorState().read(() => {
       const selection = $getSelection();
-
       if (DEPRECATED_$isGridSelection(selection)) {
-        const selectionShape = selection.getShape();
-
-        updateSelectionCounts({
-          columns: selectionShape.toX - selectionShape.fromX + 1,
-          rows: selectionShape.toY - selectionShape.fromY + 1,
-        });
+        updateSelectionCounts(computeSelectionCount(selection));
+        setCanMergeCells(isGridSelectionRectangular(selection));
       }
     });
   }, [editor]);
@@ -150,13 +204,23 @@ function TableActionMenu({
     editor.update(() => {
       const selection = $getSelection();
       if (DEPRECATED_$isGridSelection(selection)) {
-        const anchor = selection.anchor.getNode();
-        const focus = selection.focus.getNode();
-        if ($isTableCellNode(anchor)) {
-          anchor.getWritable().__rowSpan = 2;
-          focus.remove();
-          anchor.select();
+        const {columns, rows} = computeSelectionCount(selection);
+        const nodes = selection.getNodes();
+        let isFirstCell = true;
+        for (let i = 0; i < nodes.length; i++) {
+          const node = nodes[i];
+          if (DEPRECATED_$isGridCellNode(node)) {
+            if (isFirstCell) {
+              node.setColSpan(columns).setRowSpan(rows);
+              selection.anchor.set(node.getKey(), 0, 'element');
+              selection.focus.set(node.getKey(), 0, 'element');
+              isFirstCell = false;
+            } else {
+              nodes[i].remove();
+            }
+          }
         }
+        onClose();
       }
     });
   };
@@ -351,10 +415,18 @@ function TableActionMenu({
       onClick={(e) => {
         e.stopPropagation();
       }}>
-      <button className="item" onClick={() => mergeTableColumnsAtSelection()}>
-        Merge cells
-      </button>
-      <hr />
+      {cellMerge__EXPERIMENTAL &&
+        (selectionCounts.columns > 1 || selectionCounts.rows > 1) &&
+        canMergeCells && (
+          <>
+            <button
+              className="item"
+              onClick={() => mergeTableColumnsAtSelection()}>
+              Merge cells
+            </button>
+            <hr />
+          </>
+        )}
       <button className="item" onClick={() => insertTableRowAtSelection(false)}>
         <span className="text">
           Insert{' '}
@@ -428,8 +500,10 @@ function TableActionMenu({
 
 function TableCellActionMenuContainer({
   anchorElem,
+  cellMerge__EXPERIMENTAL,
 }: {
   anchorElem: HTMLElement;
+  cellMerge__EXPERIMENTAL: boolean;
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
 
@@ -545,6 +619,7 @@ function TableCellActionMenuContainer({
               setIsMenuOpen={setIsMenuOpen}
               onClose={() => setIsMenuOpen(false)}
               tableCellNode={tableCellNode}
+              cellMerge__EXPERIMENTAL={cellMerge__EXPERIMENTAL}
             />
           )}
         </>
@@ -555,13 +630,18 @@ function TableCellActionMenuContainer({
 
 export default function TableActionMenuPlugin({
   anchorElem = document.body,
+  cellMerge__EXPERIMENTAL = false,
 }: {
   anchorElem?: HTMLElement;
+  cellMerge__EXPERIMENTAL?: boolean;
 }): null | ReactPortal {
   const isEditable = useLexicalEditable();
   return createPortal(
     isEditable ? (
-      <TableCellActionMenuContainer anchorElem={anchorElem} />
+      <TableCellActionMenuContainer
+        anchorElem={anchorElem}
+        cellMerge__EXPERIMENTAL={cellMerge__EXPERIMENTAL}
+      />
     ) : null,
     anchorElem,
   );

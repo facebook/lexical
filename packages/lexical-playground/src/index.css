@@ -1623,6 +1623,15 @@ button.action-button:disabled {
   letter-spacing: -2px;
 }
 
+.editor-equation {
+  cursor: default;
+  user-select: none;
+}
+
+.editor-equation.focused {
+  outline: 2px solid rgb(60, 132, 244);
+}
+
 button.item i {
   opacity: 0.6;
 }

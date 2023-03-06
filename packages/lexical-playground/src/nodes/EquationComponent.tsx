@@ -6,16 +6,12 @@
  *
  */
 
-import type {NodeKey} from 'lexical';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {mergeRegister} from '@lexical/utils';
-import {
-  $getNodeByKey,
-  $getSelection,
-  $isNodeSelection,
-  COMMAND_PRIORITY_HIGH,
+import { $getNodeByKey,
+$getSelection, $isNodeSelection, COMMAND_PRIORITY_HIGH,
   KEY_ESCAPE_COMMAND,
+NodeKey,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import * as React from 'react';
@@ -116,15 +112,13 @@ export default function EquationComponent({
           equation={equationValue}
           setEquation={setEquationValue}
           inline={inline}
-          inputRef={inputRef}
+          ref={inputRef}
         />
       ) : (
         <KatexRenderer
           equation={equationValue}
           inline={inline}
-          onClick={() => {
-            setShowEquationEditor(true);
-          }}
+          onDoubleClick={() => setShowEquationEditor(true)}
         />
       )}
     </>

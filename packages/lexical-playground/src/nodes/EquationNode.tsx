@@ -86,7 +86,9 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
   }
 
   createDOM(_config: EditorConfig): HTMLElement {
-    return document.createElement(this.__inline ? 'span' : 'div');
+    const element = document.createElement(this.__inline ? 'span' : 'div');
+    element.className = 'editor-equation';
+    return element;
   }
 
   exportDOM(): DOMExportOutput {

@@ -41,8 +41,10 @@ import {$createListNode, $isListNode} from './';
 import {
   $handleIndent,
   $handleOutdent,
+  mergeLists,
   updateChildrenListItemValue,
 } from './formatList';
+import {isNestedListNode} from './utils';
 
 export type SerializedListItemNode = Spread<
   {
@@ -243,10 +245,19 @@ export class ListItemNode extends ElementNode {
   }
 
   remove(preserveEmptyParent?: boolean): void {
+    const prevSibling = this.getPreviousSibling();
     const nextSibling = this.getNextSibling();
     super.remove(preserveEmptyParent);
 
-    if (nextSibling !== null) {
+    if (
+      prevSibling &&
+      nextSibling &&
+      isNestedListNode(prevSibling) &&
+      isNestedListNode(nextSibling)
+    ) {
+      mergeLists(prevSibling.getFirstChild(), nextSibling.getFirstChild());
+      nextSibling.remove();
+    } else if (nextSibling) {
       const parent = nextSibling.getParent();
 
       if ($isListNode(parent)) {

@@ -15,6 +15,7 @@ import {
   ListItemNode,
   ListNode,
 } from '../..';
+import {expectHtmlToBeEqual, html} from '../utils';
 
 const editorConfig = Object.freeze({
   namespace: '',
@@ -27,10 +28,6 @@ const editorConfig = Object.freeze({
     },
   },
 });
-
-function stripLineBreaks(str: string): string {
-  return str.replace(/\n\s+/g, '');
-}
 
 describe('LexicalListItemNode tests', () => {
   initializeUnitTest((testEnv) => {
@@ -266,9 +263,13 @@ describe('LexicalListItemNode tests', () => {
           root.append(parent);
         });
 
-        expect(testEnv.outerHTML).toBe(
-          stripLineBreaks(`
-            <div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">
+        expectHtmlToBeEqual(
+          testEnv.outerHTML,
+          html`
+            <div
+              contenteditable="true"
+              style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+              data-lexical-editor="true">
               <ul>
                 <li value="1" dir="ltr">
                   <span data-lexical-text="true">A</span>
@@ -281,14 +282,18 @@ describe('LexicalListItemNode tests', () => {
                 </li>
               </ul>
             </div>
-          `),
+          `,
         );
 
         await editor.update(() => x.remove());
 
-        expect(testEnv.outerHTML).toBe(
-          stripLineBreaks(`
-            <div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">
+        expectHtmlToBeEqual(
+          testEnv.outerHTML,
+          html`
+            <div
+              contenteditable="true"
+              style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+              data-lexical-editor="true">
               <ul>
                 <li value="1" dir="ltr">
                   <span data-lexical-text="true">A</span>
@@ -298,7 +303,7 @@ describe('LexicalListItemNode tests', () => {
                 </li>
               </ul>
             </div>
-          `),
+          `,
         );
       });
 
@@ -330,9 +335,13 @@ describe('LexicalListItemNode tests', () => {
           root.append(parent);
         });
 
-        expect(testEnv.outerHTML).toBe(
-          stripLineBreaks(`
-            <div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">
+        expectHtmlToBeEqual(
+          testEnv.outerHTML,
+          html`
+            <div
+              contenteditable="true"
+              style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+              data-lexical-editor="true">
               <ul>
                 <li value="1">
                   <ul>
@@ -349,14 +358,18 @@ describe('LexicalListItemNode tests', () => {
                 </li>
               </ul>
             </div>
-          `),
+          `,
         );
 
         await editor.update(() => x.remove());
 
-        expect(testEnv.outerHTML).toBe(
-          stripLineBreaks(`
-            <div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">
+        expectHtmlToBeEqual(
+          testEnv.outerHTML,
+          html`
+            <div
+              contenteditable="true"
+              style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+              data-lexical-editor="true">
               <ul>
                 <li value="1">
                   <ul>
@@ -370,7 +383,7 @@ describe('LexicalListItemNode tests', () => {
                 </li>
               </ul>
             </div>
-          `),
+          `,
         );
       });
 
@@ -402,9 +415,13 @@ describe('LexicalListItemNode tests', () => {
           root.append(parent);
         });
 
-        expect(testEnv.outerHTML).toBe(
-          stripLineBreaks(`
-            <div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">
+        expectHtmlToBeEqual(
+          testEnv.outerHTML,
+          html`
+            <div
+              contenteditable="true"
+              style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+              data-lexical-editor="true">
               <ul>
                 <li value="1" dir="ltr">
                   <span data-lexical-text="true">A</span>
@@ -421,14 +438,18 @@ describe('LexicalListItemNode tests', () => {
                 </li>
               </ul>
             </div>
-          `),
+          `,
         );
 
         await editor.update(() => x.remove());
 
-        expect(testEnv.outerHTML).toBe(
-          stripLineBreaks(`
-            <div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">
+        expectHtmlToBeEqual(
+          testEnv.outerHTML,
+          html`
+            <div
+              contenteditable="true"
+              style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+              data-lexical-editor="true">
               <ul>
                 <li value="1" dir="ltr">
                   <span data-lexical-text="true">A</span>
@@ -442,7 +463,7 @@ describe('LexicalListItemNode tests', () => {
                 </li>
               </ul>
             </div>
-          `),
+          `,
         );
       });
 
@@ -478,9 +499,13 @@ describe('LexicalListItemNode tests', () => {
           root.append(parent);
         });
 
-        expect(testEnv.outerHTML).toBe(
-          stripLineBreaks(`
-            <div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">
+        expectHtmlToBeEqual(
+          testEnv.outerHTML,
+          html`
+            <div
+              contenteditable="true"
+              style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+              data-lexical-editor="true">
               <ul>
                 <li value="1">
                   <ul>
@@ -501,14 +526,18 @@ describe('LexicalListItemNode tests', () => {
                 </li>
               </ul>
             </div>
-          `),
+          `,
         );
 
         await editor.update(() => x.remove());
 
-        expect(testEnv.outerHTML).toBe(
-          stripLineBreaks(`
-            <div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">
+        expectHtmlToBeEqual(
+          testEnv.outerHTML,
+          html`
+            <div
+              contenteditable="true"
+              style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+              data-lexical-editor="true">
               <ul>
                 <li value="1">
                   <ul>
@@ -522,7 +551,7 @@ describe('LexicalListItemNode tests', () => {
                 </li>
               </ul>
             </div>
-          `),
+          `,
         );
       });
 
@@ -566,9 +595,13 @@ describe('LexicalListItemNode tests', () => {
           root.append(parent);
         });
 
-        expect(testEnv.outerHTML).toBe(
-          stripLineBreaks(`
-            <div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">
+        expectHtmlToBeEqual(
+          testEnv.outerHTML,
+          html`
+            <div
+              contenteditable="true"
+              style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+              data-lexical-editor="true">
               <ul>
                 <li value="1">
                   <ul>
@@ -596,14 +629,18 @@ describe('LexicalListItemNode tests', () => {
                 </li>
               </ul>
             </div>
-          `),
+          `,
         );
 
         await editor.update(() => x.remove());
 
-        expect(testEnv.outerHTML).toBe(
-          stripLineBreaks(`
-            <div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">
+        expectHtmlToBeEqual(
+          testEnv.outerHTML,
+          html`
+            <div
+              contenteditable="true"
+              style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+              data-lexical-editor="true">
               <ul>
                 <li value="1">
                   <ul>
@@ -624,7 +661,7 @@ describe('LexicalListItemNode tests', () => {
                 </li>
               </ul>
             </div>
-          `),
+          `,
         );
       });
 
@@ -668,9 +705,13 @@ describe('LexicalListItemNode tests', () => {
           root.append(parent);
         });
 
-        expect(testEnv.outerHTML).toBe(
-          stripLineBreaks(`
-            <div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">
+        expectHtmlToBeEqual(
+          testEnv.outerHTML,
+          html`
+            <div
+              contenteditable="true"
+              style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+              data-lexical-editor="true">
               <ul>
                 <li value="1">
                   <ul>
@@ -698,14 +739,18 @@ describe('LexicalListItemNode tests', () => {
                 </li>
               </ul>
             </div>
-          `),
+          `,
         );
 
         await editor.update(() => x.remove());
 
-        expect(testEnv.outerHTML).toBe(
-          stripLineBreaks(`
-            <div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">
+        expectHtmlToBeEqual(
+          testEnv.outerHTML,
+          html`
+            <div
+              contenteditable="true"
+              style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+              data-lexical-editor="true">
               <ul>
                 <li value="1">
                   <ul>
@@ -726,7 +771,7 @@ describe('LexicalListItemNode tests', () => {
                 </li>
               </ul>
             </div>
-          `),
+          `,
         );
       });
 
@@ -778,9 +823,13 @@ describe('LexicalListItemNode tests', () => {
           root.append(parent);
         });
 
-        expect(testEnv.outerHTML).toBe(
-          stripLineBreaks(`
-            <div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">
+        expectHtmlToBeEqual(
+          testEnv.outerHTML,
+          html`
+            <div
+              contenteditable="true"
+              style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+              data-lexical-editor="true">
               <ul>
                 <li value="1">
                   <ul>
@@ -815,14 +864,18 @@ describe('LexicalListItemNode tests', () => {
                 </li>
               </ul>
             </div>
-          `),
+          `,
         );
 
         await editor.update(() => x.remove());
 
-        expect(testEnv.outerHTML).toBe(
-          stripLineBreaks(`
-            <div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">
+        expectHtmlToBeEqual(
+          testEnv.outerHTML,
+          html`
+            <div
+              contenteditable="true"
+              style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+              data-lexical-editor="true">
               <ul>
                 <li value="1">
                   <ul>
@@ -846,7 +899,7 @@ describe('LexicalListItemNode tests', () => {
                 </li>
               </ul>
             </div>
-          `),
+          `,
         );
       });
     });

@@ -27,6 +27,7 @@ import {Dispatch, useCallback, useEffect, useRef, useState} from 'react';
 import * as React from 'react';
 import {createPortal} from 'react-dom';
 
+import {useSettings} from '../../context/SettingsContext';
 import LinkPreview from '../../ui/LinkPreview';
 import {getSelectedNode} from '../../utils/getSelectedNode';
 import {setFloatingElemPosition} from '../../utils/setFloatingElemPosition';
@@ -43,9 +44,13 @@ function FloatingLinkEditor({
   setIsLink: Dispatch<boolean>;
   anchorElem: HTMLElement;
 }): JSX.Element {
+  const {
+    settings: {enableLinkPreviews},
+  } = useSettings();
   const editorRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [linkUrl, setLinkUrl] = useState('');
+  const [editedLinkUrl, setEditedLinkUrl] = useState('');
   const [isEditMode, setEditMode] = useState(false);
   const [lastSelection, setLastSelection] = useState<
     RangeSelection | GridSelection | NodeSelection | null
@@ -196,34 +201,65 @@ function FloatingLinkEditor({
     }
   }, [isEditMode]);
 
+  const monitorInputInteraction = (
+    event: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      handleLinkSubmission();
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      setEditMode(false);
+    }
+  };
+
+  const handleLinkSubmission = () => {
+    if (lastSelection !== null) {
+      if (linkUrl !== '') {
+        editor.dispatchCommand(TOGGLE_LINK_COMMAND, sanitizeUrl(editedLinkUrl));
+      }
+      setEditMode(false);
+    }
+  };
+
   return (
     <div ref={editorRef} className="link-editor">
       {!isLink ? null : isEditMode ? (
-        <input
-          ref={inputRef}
-          className="link-input"
-          value={linkUrl}
-          onChange={(event) => {
-            setLinkUrl(event.target.value);
-          }}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' || event.key === 'Escape') {
-              event.preventDefault();
-              if (lastSelection !== null) {
-                if (linkUrl !== '') {
-                  editor.dispatchCommand(
-                    TOGGLE_LINK_COMMAND,
-                    sanitizeUrl(linkUrl),
-                  );
-                }
+        <>
+          <input
+            ref={inputRef}
+            className="link-input"
+            value={editedLinkUrl}
+            onChange={(event) => {
+              setEditedLinkUrl(event.target.value);
+            }}
+            onKeyDown={(event) => {
+              monitorInputInteraction(event);
+            }}
+          />
+          <div>
+            <div
+              className="link-cancel"
+              role="button"
+              tabIndex={0}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => {
                 setEditMode(false);
-              }
-            }
-          }}
-        />
+              }}
+            />
+
+            <div
+              className="link-confirm"
+              role="button"
+              tabIndex={0}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={handleLinkSubmission}
+            />
+          </div>
+        </>
       ) : (
         <>
-          <div className="link-input">
+          <div className="link-view">
             <a href={linkUrl} target="_blank" rel="noopener noreferrer">
               {linkUrl}
             </a>
@@ -233,11 +269,12 @@ function FloatingLinkEditor({
               tabIndex={0}
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => {
+                setEditedLinkUrl(linkUrl);
                 setEditMode(true);
               }}
             />
           </div>
-          <LinkPreview url={linkUrl} />
+          {enableLinkPreviews ? <LinkPreview url={linkUrl} /> : ''}
         </>
       )}
     </div>

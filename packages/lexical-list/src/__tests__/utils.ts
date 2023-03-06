@@ -10,7 +10,10 @@ import prettier from 'prettier';
 
 // This tag function is just used to trigger prettier auto-formatting.
 // (https://prettier.io/blog/2020/08/24/2.1.0.html#api)
-export function html(partials: TemplateStringsArray, ...params: string[]) {
+export function html(
+  partials: TemplateStringsArray,
+  ...params: string[]
+): string {
   let output = '';
   for (let i = 0; i < partials.length; i++) {
     output += partials[i];
@@ -25,6 +28,6 @@ export function expectHtmlToBeEqual(expected: string, actual: string): void {
   expect(prettifyHtml(expected)).toBe(prettifyHtml(actual));
 }
 
-function prettifyHtml(s: string) {
+function prettifyHtml(s: string): string {
   return prettier.format(s.replace(/\n/g, ''), {parser: 'html'});
 }

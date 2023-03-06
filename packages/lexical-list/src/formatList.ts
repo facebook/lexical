@@ -353,6 +353,7 @@ export function $handleIndent(listItemNode: ListItemNode): void {
       } else {
         parent.append(newListItem);
       }
+      updateChildrenListItemValue(newList);
     }
   }
 

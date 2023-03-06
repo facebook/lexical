@@ -644,7 +644,7 @@ export class LexicalEditor {
   }
   /**
    * Registers a listener for when the editor's decorator object changes. The decorator object contains
-   * all DecoratorNode keys -> their decorated value. This is primarily used with external UI frameworks..
+   * all DecoratorNode keys -> their decorated value. This is primarily used with external UI frameworks.
    *
    * Will trigger the provided callback each time the editor transitions between these states until the
    * teardown function is called.

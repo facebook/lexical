@@ -587,6 +587,12 @@ i.prettier-error {
   font-family: inherit;
 }
 
+.link-editor .link-view a {
+  display: block;
+  word-break: break-word;
+  width: calc(100% - 33px);
+}
+
 .link-editor div.link-edit {
   background-image: url(images/icons/pencil-fill.svg);
   background-size: 16px;

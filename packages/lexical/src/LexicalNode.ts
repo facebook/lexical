@@ -802,8 +802,8 @@ export class LexicalNode {
     );
   }
 
-  transform(): void {
-    return;
+  static transform(): ((node: LexicalNode) => void) | null {
+    return null;
   }
 
   // Setters and mutators

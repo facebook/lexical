@@ -102,14 +102,16 @@ export class ListItemNode extends ElementNode {
     return false;
   }
 
-  transform(): void {
-    const parent = this.getParent();
-    if ($isListNode(parent)) {
-      updateChildrenListItemValue(parent);
-      if (parent.getListType() !== 'check' && this.getChecked() != null) {
-        this.setChecked(undefined);
+  static transform(): (node: LexicalNode) => void {
+    return (node: LexicalNode) => {
+      const parent = node.getParent();
+      if ($isListNode(parent)) {
+        updateChildrenListItemValue(parent);
+        if (parent.getListType() !== 'check' && node.getChecked() != null) {
+          node.setChecked(undefined);
+        }
       }
-    }
+    };
   }
 
   static importDOM(): DOMConversionMap | null {

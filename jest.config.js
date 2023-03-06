@@ -46,8 +46,7 @@ module.exports = {
           '<rootDir>/packages/lexical-overflow/src/index.ts',
         '^@lexical/plain-text$':
           '<rootDir>/packages/lexical-plain-text/src/index.ts',
-        '^@lexical/react/DEPRECATED_useLexicalRichText$':
-          '<rootDir>/packages/lexical-react/src/DEPRECATED_useLexicalRichText.ts',
+
         '^@lexical/react/LexicalAutoEmbedPlugin$':
           '<rootDir>/packages/lexical-react/src/LexicalAutoEmbedPlugin.tsx',
         '^@lexical/react/LexicalAutoLinkPlugin$':

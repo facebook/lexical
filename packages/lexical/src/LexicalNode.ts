@@ -793,13 +793,24 @@ export class LexicalNode {
    * See [Serialization & Deserialization](https://lexical.dev/docs/concepts/serialization#lexical---html).
    *
    * */
-
   static importJSON(_serializedNode: SerializedLexicalNode): LexicalNode {
     invariant(
       false,
       'LexicalNode: Node %s does not implement .importJSON().',
       this.name,
     );
+  }
+  /**
+   * @experimental
+   *
+   * Registers the returned function as a transform on the node during
+   * Editor initialization. Most such use cases should be addressed via
+   * the {@link LexicalEditor.registerNodeTransform} API.
+   *
+   * Experimental - use at your own risk.
+   */
+  static transform(): ((node: LexicalNode) => void) | null {
+    return null;
   }
 
   // Setters and mutators

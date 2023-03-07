@@ -29,6 +29,7 @@ import {
 } from 'lexical';
 
 import {$createListItemNode, $isListItemNode, ListItemNode} from '.';
+import {updateChildrenListItemValue} from './formatList';
 import {$getListDepth, wrapInListItem} from './utils';
 
 export type SerializedListNode = Spread<
@@ -190,7 +191,7 @@ export class ListNode extends ElementNode {
         super.append(listItemNode);
       }
     }
-
+    updateChildrenListItemValue(this);
     return this;
   }
 

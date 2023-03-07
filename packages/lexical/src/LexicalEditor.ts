@@ -452,11 +452,16 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
         }
       }
       const type = klass.getType();
+      const transform = klass.transform();
+      const transforms = new Set();
+      if (transform !== null) {
+        transforms.add(transform);
+      }
       registeredNodes.set(type, {
         klass,
         replace: replacementClass,
         replaceWithKlass: replacementKlass,
-        transforms: new Set(),
+        transforms,
       });
     }
   }

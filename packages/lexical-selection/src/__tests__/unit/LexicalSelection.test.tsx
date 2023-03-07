@@ -17,7 +17,7 @@ import {$createHeadingNode} from '@lexical/rich-text';
 import {
   $addNodeStyle,
   $getSelectionStyleValueForProperty,
-  $setBlocksType_experimental,
+  $setBlocksType,
 } from '@lexical/selection';
 import {$createTableNodeWithDimensions} from '@lexical/table';
 import {
@@ -2279,7 +2279,7 @@ describe('LexicalSelection tests', () => {
     });
   });
 
-  describe('$setBlocksType_experimental', () => {
+  describe('$setBlocksType', () => {
     test('Collapsed selection in text', async () => {
       const testEditor = createTestEditor();
       const element = document.createElement('div');
@@ -2308,7 +2308,7 @@ describe('LexicalSelection tests', () => {
           type: 'text',
         });
 
-        $setBlocksType_experimental(selection, () => {
+        $setBlocksType(selection, () => {
           return $createHeadingNode('h1');
         });
 
@@ -2343,7 +2343,7 @@ describe('LexicalSelection tests', () => {
           type: 'element',
         });
 
-        $setBlocksType_experimental(selection, () => {
+        $setBlocksType(selection, () => {
           return $createHeadingNode('h1');
         });
 
@@ -2382,7 +2382,7 @@ describe('LexicalSelection tests', () => {
           type: 'text',
         });
 
-        $setBlocksType_experimental(selection, () => {
+        $setBlocksType(selection, () => {
           return $createHeadingNode('h1');
         });
 
@@ -2417,7 +2417,7 @@ describe('LexicalSelection tests', () => {
           type: 'element',
         });
 
-        $setBlocksType_experimental(selection, () => {
+        $setBlocksType(selection, () => {
           return $createHeadingNode('h1');
         });
 
@@ -2458,7 +2458,7 @@ describe('LexicalSelection tests', () => {
           type: 'text',
         });
 
-        $setBlocksType_experimental(selection, () => {
+        $setBlocksType(selection, () => {
           return $createHeadingNode('h1');
         });
 
@@ -2498,7 +2498,7 @@ describe('LexicalSelection tests', () => {
 
         const columnChildrenPrev = column.getChildren();
         expect(columnChildrenPrev[0].__type).toBe('paragraph');
-        $setBlocksType_experimental(selection, () => {
+        $setBlocksType(selection, () => {
           return $createHeadingNode('h1');
         });
 
@@ -2540,7 +2540,7 @@ describe('LexicalSelection tests', () => {
 
         const columnChildrenPrev = column.getChildren();
         expect(columnChildrenPrev[0].__type).toBe('paragraph');
-        $setBlocksType_experimental(selection, () => {
+        $setBlocksType(selection, () => {
           return $createHeadingNode('h1');
         });
 
@@ -2603,7 +2603,7 @@ describe('LexicalSelection tests', () => {
         // @ts-ignore
         const selection = $getSelection() as RangeSelection;
 
-        $setBlocksType_experimental(selection, () => {
+        $setBlocksType(selection, () => {
           return $createHeadingNode('h1');
         });
 
@@ -2647,7 +2647,7 @@ describe('LexicalSelection tests', () => {
           type: 'text',
         });
 
-        $setBlocksType_experimental(selection, () => {
+        $setBlocksType(selection, () => {
           return $createHeadingNode('h1');
         });
 
@@ -2692,7 +2692,7 @@ describe('LexicalSelection tests', () => {
           type: 'text',
         });
 
-        $setBlocksType_experimental(selection, () => {
+        $setBlocksType(selection, () => {
           return $createHeadingNode('h1');
         });
       });
@@ -2731,7 +2731,7 @@ describe('LexicalSelection tests', () => {
           type: 'text',
         });
 
-        $setBlocksType_experimental(selection, () => {
+        $setBlocksType(selection, () => {
           return $createHeadingNode('h1');
         });
       });

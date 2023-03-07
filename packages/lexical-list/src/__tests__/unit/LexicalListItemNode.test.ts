@@ -51,16 +51,22 @@ describe('LexicalListItemNode tests', () => {
       await editor.update(() => {
         const listItemNode = new ListItemNode();
 
-        expect(listItemNode.createDOM(editorConfig).outerHTML).toBe(
-          '<li value="1" class="my-listItem-item-class"></li>',
+        expectHtmlToBeEqual(
+          listItemNode.createDOM(editorConfig).outerHTML,
+          html`
+            <li value="1" class="my-listItem-item-class"></li>
+          `,
         );
 
-        expect(
+        expectHtmlToBeEqual(
           listItemNode.createDOM({
             namespace: '',
             theme: {},
           }).outerHTML,
-        ).toBe('<li value="1"></li>');
+          html`
+            <li value="1"></li>
+          `,
+        );
       });
     });
 
@@ -73,8 +79,11 @@ describe('LexicalListItemNode tests', () => {
 
           const domElement = listItemNode.createDOM(editorConfig);
 
-          expect(domElement.outerHTML).toBe(
-            '<li value="1" class="my-listItem-item-class"></li>',
+          expectHtmlToBeEqual(
+            domElement.outerHTML,
+            html`
+              <li value="1" class="my-listItem-item-class"></li>
+            `,
           );
           const newListItemNode = new ListItemNode();
 
@@ -86,8 +95,11 @@ describe('LexicalListItemNode tests', () => {
 
           expect(result).toBe(false);
 
-          expect(domElement.outerHTML).toBe(
-            '<li value="1" class="my-listItem-item-class"></li>',
+          expectHtmlToBeEqual(
+            domElement.outerHTML,
+            html`
+              <li value="1" class="my-listItem-item-class"></li>
+            `,
           );
         });
       });
@@ -102,8 +114,11 @@ describe('LexicalListItemNode tests', () => {
           parentListNode.append(parentlistItemNode);
           const domElement = parentlistItemNode.createDOM(editorConfig);
 
-          expect(domElement.outerHTML).toBe(
-            '<li value="1" class="my-listItem-item-class"></li>',
+          expectHtmlToBeEqual(
+            domElement.outerHTML,
+            html`
+              <li value="1" class="my-listItem-item-class"></li>
+            `,
           );
           const nestedListNode = new ListNode('bullet', 1);
           nestedListNode.append(new ListItemNode());
@@ -116,8 +131,13 @@ describe('LexicalListItemNode tests', () => {
 
           expect(result).toBe(false);
 
-          expect(domElement.outerHTML).toBe(
-            '<li value="1" class="my-listItem-item-class my-nested-list-listItem-class"></li>',
+          expectHtmlToBeEqual(
+            domElement.outerHTML,
+            html`
+              <li
+                value="1"
+                class="my-listItem-item-class my-nested-list-listItem-class"></li>
+            `,
           );
         });
       });
@@ -148,8 +168,26 @@ describe('LexicalListItemNode tests', () => {
           listNode.append(listItemNode1, listItemNode2, listItemNode3);
         });
 
-        expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><ul><li value="1" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" dir="ltr"><span data-lexical-text="true">three</span></li></ul></div>',
+        expectHtmlToBeEqual(
+          testEnv.outerHTML,
+          html`
+            <div
+              contenteditable="true"
+              style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+              data-lexical-editor="true">
+              <ul>
+                <li value="1" dir="ltr">
+                  <span data-lexical-text="true">one</span>
+                </li>
+                <li value="2" dir="ltr">
+                  <span data-lexical-text="true">two</span>
+                </li>
+                <li value="3" dir="ltr">
+                  <span data-lexical-text="true">three</span>
+                </li>
+              </ul>
+            </div>
+          `,
         );
       });
 
@@ -163,8 +201,26 @@ describe('LexicalListItemNode tests', () => {
           listItemNode1.replace(newListItemNode);
         });
 
-        expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><ul><li value="1" dir="ltr"><span data-lexical-text="true">bar</span></li><li value="2" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" dir="ltr"><span data-lexical-text="true">three</span></li></ul></div>',
+        expectHtmlToBeEqual(
+          testEnv.outerHTML,
+          html`
+            <div
+              contenteditable="true"
+              style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+              data-lexical-editor="true">
+              <ul>
+                <li value="1" dir="ltr">
+                  <span data-lexical-text="true">bar</span>
+                </li>
+                <li value="2" dir="ltr">
+                  <span data-lexical-text="true">two</span>
+                </li>
+                <li value="3" dir="ltr">
+                  <span data-lexical-text="true">three</span>
+                </li>
+              </ul>
+            </div>
+          `,
         );
       });
 
@@ -175,8 +231,26 @@ describe('LexicalListItemNode tests', () => {
           return;
         });
 
-        expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><ul><li value="1" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" dir="ltr"><span data-lexical-text="true">three</span></li></ul></div>',
+        expectHtmlToBeEqual(
+          testEnv.outerHTML,
+          html`
+            <div
+              contenteditable="true"
+              style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+              data-lexical-editor="true">
+              <ul>
+                <li value="1" dir="ltr">
+                  <span data-lexical-text="true">one</span>
+                </li>
+                <li value="2" dir="ltr">
+                  <span data-lexical-text="true">two</span>
+                </li>
+                <li value="3" dir="ltr">
+                  <span data-lexical-text="true">three</span>
+                </li>
+              </ul>
+            </div>
+          `,
         );
 
         await editor.update(() => {
@@ -184,8 +258,24 @@ describe('LexicalListItemNode tests', () => {
           listItemNode1.replace(paragraphNode);
         });
 
-        expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p><br></p><ul><li value="1" dir="ltr"><span data-lexical-text="true">two</span></li><li value="2" dir="ltr"><span data-lexical-text="true">three</span></li></ul></div>',
+        expectHtmlToBeEqual(
+          testEnv.outerHTML,
+          html`
+            <div
+              contenteditable="true"
+              style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+              data-lexical-editor="true">
+              <p><br /></p>
+              <ul>
+                <li value="1" dir="ltr">
+                  <span data-lexical-text="true">two</span>
+                </li>
+                <li value="2" dir="ltr">
+                  <span data-lexical-text="true">three</span>
+                </li>
+              </ul>
+            </div>
+          `,
         );
       });
 
@@ -197,8 +287,24 @@ describe('LexicalListItemNode tests', () => {
           listItemNode3.replace(paragraphNode);
         });
 
-        expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><ul><li value="1" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" dir="ltr"><span data-lexical-text="true">two</span></li></ul><p><br></p></div>',
+        expectHtmlToBeEqual(
+          testEnv.outerHTML,
+          html`
+            <div
+              contenteditable="true"
+              style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+              data-lexical-editor="true">
+              <ul>
+                <li value="1" dir="ltr">
+                  <span data-lexical-text="true">one</span>
+                </li>
+                <li value="2" dir="ltr">
+                  <span data-lexical-text="true">two</span>
+                </li>
+              </ul>
+              <p><br /></p>
+            </div>
+          `,
         );
       });
 
@@ -210,8 +316,26 @@ describe('LexicalListItemNode tests', () => {
           listItemNode2.replace(paragraphNode);
         });
 
-        expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><ul><li value="1" dir="ltr"><span data-lexical-text="true">one</span></li></ul><p><br></p><ul><li value="1" dir="ltr"><span data-lexical-text="true">three</span></li></ul></div>',
+        expectHtmlToBeEqual(
+          testEnv.outerHTML,
+          html`
+            <div
+              contenteditable="true"
+              style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+              data-lexical-editor="true">
+              <ul>
+                <li value="1" dir="ltr">
+                  <span data-lexical-text="true">one</span>
+                </li>
+              </ul>
+              <p><br /></p>
+              <ul>
+                <li value="1" dir="ltr">
+                  <span data-lexical-text="true">three</span>
+                </li>
+              </ul>
+            </div>
+          `,
         );
       });
 
@@ -223,8 +347,20 @@ describe('LexicalListItemNode tests', () => {
           listItemNode3.remove();
         });
 
-        expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><ul><li value="1" dir="ltr"><span data-lexical-text="true">one</span></li></ul></div>',
+        expectHtmlToBeEqual(
+          testEnv.outerHTML,
+          html`
+            <div
+              contenteditable="true"
+              style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+              data-lexical-editor="true">
+              <ul>
+                <li value="1" dir="ltr">
+                  <span data-lexical-text="true">one</span>
+                </li>
+              </ul>
+            </div>
+          `,
         );
 
         await editor.update(() => {
@@ -232,8 +368,16 @@ describe('LexicalListItemNode tests', () => {
           listItemNode1.replace(paragraphNode);
         });
 
-        expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p><br></p></div>',
+        expectHtmlToBeEqual(
+          testEnv.outerHTML,
+          html`
+            <div
+              contenteditable="true"
+              style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+              data-lexical-editor="true">
+              <p><br /></p>
+            </div>
+          `,
         );
       });
     });
@@ -929,8 +1073,26 @@ describe('LexicalListItemNode tests', () => {
           listItemNode3.append(new TextNode('three'));
         });
 
-        expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><ul><li value="1" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" dir="ltr"><span data-lexical-text="true">three</span></li></ul></div>',
+        expectHtmlToBeEqual(
+          testEnv.outerHTML,
+          html`
+            <div
+              contenteditable="true"
+              style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+              data-lexical-editor="true">
+              <ul>
+                <li value="1" dir="ltr">
+                  <span data-lexical-text="true">one</span>
+                </li>
+                <li value="2" dir="ltr">
+                  <span data-lexical-text="true">two</span>
+                </li>
+                <li value="3" dir="ltr">
+                  <span data-lexical-text="true">three</span>
+                </li>
+              </ul>
+            </div>
+          `,
         );
       });
 
@@ -941,8 +1103,27 @@ describe('LexicalListItemNode tests', () => {
           listItemNode1.insertNewAfter();
         });
 
-        expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><ul><li value="1" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2"><br></li><li value="3" dir="ltr"><span data-lexical-text="true">two</span></li><li value="4" dir="ltr"><span data-lexical-text="true">three</span></li></ul></div>',
+        expectHtmlToBeEqual(
+          testEnv.outerHTML,
+          html`
+            <div
+              contenteditable="true"
+              style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+              data-lexical-editor="true">
+              <ul>
+                <li value="1" dir="ltr">
+                  <span data-lexical-text="true">one</span>
+                </li>
+                <li value="2"><br /></li>
+                <li value="3" dir="ltr">
+                  <span data-lexical-text="true">two</span>
+                </li>
+                <li value="4" dir="ltr">
+                  <span data-lexical-text="true">three</span>
+                </li>
+              </ul>
+            </div>
+          `,
         );
       });
 
@@ -953,8 +1134,27 @@ describe('LexicalListItemNode tests', () => {
           listItemNode3.insertNewAfter();
         });
 
-        expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><ul><li value="1" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" dir="ltr"><span data-lexical-text="true">three</span></li><li value="4"><br></li></ul></div>',
+        expectHtmlToBeEqual(
+          testEnv.outerHTML,
+          html`
+            <div
+              contenteditable="true"
+              style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+              data-lexical-editor="true">
+              <ul>
+                <li value="1" dir="ltr">
+                  <span data-lexical-text="true">one</span>
+                </li>
+                <li value="2" dir="ltr">
+                  <span data-lexical-text="true">two</span>
+                </li>
+                <li value="3" dir="ltr">
+                  <span data-lexical-text="true">three</span>
+                </li>
+                <li value="4"><br /></li>
+              </ul>
+            </div>
+          `,
         );
       });
 
@@ -965,8 +1165,27 @@ describe('LexicalListItemNode tests', () => {
           listItemNode3.insertNewAfter();
         });
 
-        expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><ul><li value="1" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" dir="ltr"><span data-lexical-text="true">two</span></li><li value="3" dir="ltr"><span data-lexical-text="true">three</span></li><li value="4"><br></li></ul></div>',
+        expectHtmlToBeEqual(
+          testEnv.outerHTML,
+          html`
+            <div
+              contenteditable="true"
+              style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+              data-lexical-editor="true">
+              <ul>
+                <li value="1" dir="ltr">
+                  <span data-lexical-text="true">one</span>
+                </li>
+                <li value="2" dir="ltr">
+                  <span data-lexical-text="true">two</span>
+                </li>
+                <li value="3" dir="ltr">
+                  <span data-lexical-text="true">three</span>
+                </li>
+                <li value="4"><br /></li>
+              </ul>
+            </div>
+          `,
         );
       });
 
@@ -978,16 +1197,41 @@ describe('LexicalListItemNode tests', () => {
           listItemNode3.remove();
         });
 
-        expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><ul><li value="1" dir="ltr"><span data-lexical-text="true">one</span></li></ul></div>',
+        expectHtmlToBeEqual(
+          testEnv.outerHTML,
+          html`
+            <div
+              contenteditable="true"
+              style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+              data-lexical-editor="true">
+              <ul>
+                <li value="1" dir="ltr">
+                  <span data-lexical-text="true">one</span>
+                </li>
+              </ul>
+            </div>
+          `,
         );
 
         await editor.update(() => {
           listItemNode1.insertNewAfter();
         });
 
-        expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><ul><li value="1" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2"><br></li></ul></div>',
+        expectHtmlToBeEqual(
+          testEnv.outerHTML,
+          html`
+            <div
+              contenteditable="true"
+              style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+              data-lexical-editor="true">
+              <ul>
+                <li value="1" dir="ltr">
+                  <span data-lexical-text="true">one</span>
+                </li>
+                <li value="2"><br /></li>
+              </ul>
+            </div>
+          `,
         );
       });
     });
@@ -1048,8 +1292,30 @@ describe('LexicalListItemNode tests', () => {
           expect(listItemNode1.getIndent()).toBe(3);
         });
 
-        expect(editor.getRootElement().innerHTML).toBe(
-          '<ul><li value="1"><ul><li value="1"><ul><li value="1"><ul><li value="1" dir="ltr"><span data-lexical-text="true">one</span></li></ul></li></ul></li></ul></li><li value="1" dir="ltr"><span data-lexical-text="true">two</span></li></ul>',
+        expectHtmlToBeEqual(
+          editor.getRootElement().innerHTML,
+          html`
+            <ul>
+              <li value="1">
+                <ul>
+                  <li value="1">
+                    <ul>
+                      <li value="1">
+                        <ul>
+                          <li value="1" dir="ltr">
+                            <span data-lexical-text="true">one</span>
+                          </li>
+                        </ul>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+              <li value="1" dir="ltr">
+                <span data-lexical-text="true">two</span>
+              </li>
+            </ul>
+          `,
         );
 
         await editor.update(() => {
@@ -1060,8 +1326,18 @@ describe('LexicalListItemNode tests', () => {
           expect(listItemNode1.getIndent()).toBe(0);
         });
 
-        expect(editor.getRootElement().innerHTML).toBe(
-          '<ul><li value="1" dir="ltr"><span data-lexical-text="true">one</span></li><li value="2" dir="ltr"><span data-lexical-text="true">two</span></li></ul>',
+        expectHtmlToBeEqual(
+          editor.getRootElement().innerHTML,
+          html`
+            <ul>
+              <li value="1" dir="ltr">
+                <span data-lexical-text="true">one</span>
+              </li>
+              <li value="2" dir="ltr">
+                <span data-lexical-text="true">two</span>
+              </li>
+            </ul>
+          `,
         );
       });
     });

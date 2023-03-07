@@ -23,7 +23,6 @@ import {
   $getPreviousSelection,
   $getRoot,
   $getSelection,
-  $isDecoratorNode,
   $isElementNode,
   $isNodeSelection,
   $isRangeSelection,
@@ -437,8 +436,11 @@ function $canRemoveText(
   );
 }
 
-function isPossiblyAndroidKeyPress(): boolean {
-  return lastKeyCode === 229;
+function isPossiblyAndroidKeyPress(timeStamp: number): boolean {
+  return (
+    lastKeyCode === 229 &&
+    timeStamp < lastKeyDownTimeStamp + ANDROID_COMPOSITION_LATENCY
+  );
 }
 
 function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
@@ -477,35 +479,24 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
 
       if ($isRangeSelection(selection)) {
         // Used for handling backspace in Android.
-
         if (
-          isPossiblyAndroidKeyPress() &&
+          isPossiblyAndroidKeyPress(event.timeStamp) &&
+          editor.isComposing() &&
           selection.anchor.key === selection.focus.key
         ) {
           $setCompositionKey(null);
           lastKeyDownTimeStamp = 0;
-
           // Fixes an Android bug where selection flickers when backspacing
           setTimeout(() => {
             updateEditor(editor, () => {
               $setCompositionKey(null);
             });
           }, ANDROID_COMPOSITION_LATENCY);
-
-          const anchorNode = selection.anchor.getNode();
-
           if ($isRangeSelection(selection)) {
+            const anchorNode = selection.anchor.getNode();
             anchorNode.markDirty();
             selection.format = anchorNode.getFormat();
             selection.style = anchorNode.getStyle();
-          }
-
-          if (
-            $isDecoratorNode(anchorNode.getPreviousSibling()) &&
-            selection.anchor.offset === 0
-          ) {
-            event.preventDefault();
-            dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);
           }
         } else {
           event.preventDefault();

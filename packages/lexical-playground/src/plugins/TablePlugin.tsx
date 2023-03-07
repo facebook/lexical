@@ -112,8 +112,18 @@ export function InsertTableDialog({
 
   return (
     <>
-      <TextInput label="No of rows" onChange={setRows} value={rows} />
-      <TextInput label="No of columns" onChange={setColumns} value={columns} />
+      <TextInput
+        label="No of rows"
+        onChange={setRows}
+        value={rows}
+        data-test-id="table-modal-rows"
+      />
+      <TextInput
+        label="No of columns"
+        onChange={setColumns}
+        value={columns}
+        data-test-id="table-modal-columns"
+      />
       <DialogActions data-test-id="table-model-confirm-insert">
         <Button onClick={onClick}>Confirm</Button>
       </DialogActions>
@@ -138,9 +148,19 @@ export function InsertNewTableDialog({
 
   return (
     <>
-      <TextInput label="No of rows" onChange={setRows} value={rows} />
-      <TextInput label="No of columns" onChange={setColumns} value={columns} />
-      <DialogActions data-test-id="table-model-confirm-insert">
+      <TextInput
+        label="No of rows"
+        onChange={setRows}
+        value={rows}
+        data-test-id="table-modal-rows"
+      />
+      <TextInput
+        label="No of columns"
+        onChange={setColumns}
+        value={columns}
+        data-test-id="table-modal-columns"
+      />
+      <DialogActions data-test-id="table-modal-confirm-insert">
         <Button onClick={onClick}>Confirm</Button>
       </DialogActions>
     </>

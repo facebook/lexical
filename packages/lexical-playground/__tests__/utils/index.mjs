@@ -712,15 +712,31 @@ export async function selectFromAlignDropdown(page, selector) {
   await click(page, '.dropdown ' + selector);
 }
 
-export async function insertTable(page) {
+export async function insertTable(page, rows = null, columns = null) {
   await selectFromInsertDropdown(page, '.item .table');
+  if (rows !== null) {
+    await page
+      .locator('input[data-test-id="table-modal-rows"]')
+      .fill(String(rows));
+  }
+  if (columns !== null) {
+    await page
+      .locator('input[data-test-id="table-modal-columns"]')
+      .fill(String(columns));
+  }
   await click(
     page,
     'div[data-test-id="table-model-confirm-insert"] > .Button__root',
   );
 }
 
-export async function selectCellsFromTableCords(page, firstCords, secondCords) {
+export async function selectCellsFromTableCords(
+  page,
+  firstCords,
+  secondCords,
+  isFirstHeader = false,
+  isSecondHeader = false,
+) {
   let leftFrame = page;
   if (IS_COLLAB) {
     await focusEditor(page);
@@ -728,14 +744,14 @@ export async function selectCellsFromTableCords(page, firstCords, secondCords) {
   }
 
   const firstRowFirstColumnCell = await leftFrame.locator(
-    `table:first-of-type > tr:nth-child(${firstCords.y + 1}) > th:nth-child(${
-      firstCords.x + 1
-    })`,
+    `table:first-of-type > tr:nth-child(${firstCords.y + 1}) > ${
+      isFirstHeader ? 'th' : 'td'
+    }:nth-child(${firstCords.x + 1})`,
   );
   const secondRowSecondCell = await leftFrame.locator(
-    `table:first-of-type > tr:nth-child(${secondCords.y + 1}) > td:nth-child(${
-      secondCords.x + 1
-    })`,
+    `table:first-of-type > tr:nth-child(${secondCords.y + 1}) > ${
+      isSecondHeader ? 'th' : 'td'
+    }:nth-child(${secondCords.x + 1})`,
   );
 
   // Focus on inside the iFrame or the boundingBox() below returns null.
@@ -750,6 +766,11 @@ export async function selectCellsFromTableCords(page, firstCords, secondCords) {
     await firstRowFirstColumnCell.boundingBox(),
     await secondRowSecondCell.boundingBox(),
   );
+}
+
+export async function mergeTableCells(page) {
+  await click(page, '.table-cell-action-button-container');
+  await click(page, '.item:text("Merge cells")');
 }
 
 export async function enableCompositionKeyEvents(page) {

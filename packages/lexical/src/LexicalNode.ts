@@ -416,6 +416,9 @@ export class LexicalNode {
   }
 
   isBefore(targetNode: LexicalNode): boolean {
+    if (this === targetNode) {
+      return false;
+    }
     if (targetNode.isParentOf(this)) {
       return true;
     }

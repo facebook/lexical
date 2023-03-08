@@ -40,7 +40,7 @@ import {getStyleObjectFromCSS} from './utils';
  * @param createElement
  * @returns
  */
-export function $setBlocksType_experimental(
+export function $setBlocksType(
   selection: RangeSelection | GridSelection,
   createElement: () => ElementNode,
 ): void {
@@ -48,21 +48,38 @@ export function $setBlocksType_experimental(
     const element = createElement();
     const root = $getRoot();
     const firstChild = root.getFirstChild();
-    if (firstChild) firstChild.replace(element, true);
-    else root.append(element);
+
+    if (firstChild) {
+      firstChild.replace(element, true);
+    } else {
+      root.append(element);
+    }
+
     return;
   }
+
   const nodes = selection.getNodes();
   let maybeBlock = selection.anchor.getNode().getParentOrThrow();
-  if (nodes.indexOf(maybeBlock) === -1) nodes.push(maybeBlock);
+
+  if (nodes.indexOf(maybeBlock) === -1) {
+    nodes.push(maybeBlock);
+  }
+
   if (maybeBlock.isInline()) {
     maybeBlock = maybeBlock.getParentOrThrow();
-    if (nodes.indexOf(maybeBlock) === -1) nodes.push(maybeBlock);
+
+    if (nodes.indexOf(maybeBlock) === -1) {
+      nodes.push(maybeBlock);
+    }
   }
 
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
-    if (!isBlock(node)) continue;
+
+    if (!isBlock(node)) {
+      continue;
+    }
+
     const targetElement = createElement();
     targetElement.setFormat(node.getFormatType());
     targetElement.setIndent(node.getIndent());
@@ -71,10 +88,14 @@ export function $setBlocksType_experimental(
 }
 
 function isBlock(node: LexicalNode): boolean {
-  if (!$isElementNode(node) || $isRootOrShadowRoot(node)) return false;
+  if (!$isElementNode(node) || $isRootOrShadowRoot(node)) {
+    return false;
+  }
+
   const firstChild = node.getFirstChild();
   const isLeafElement =
     firstChild === null || $isTextNode(firstChild) || firstChild.isInline();
+
   return !node.isInline() && node.canBeEmpty() !== false && isLeafElement;
 }
 

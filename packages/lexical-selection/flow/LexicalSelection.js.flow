@@ -49,7 +49,7 @@ declare export function $wrapNodes(
   createElement: () => ElementNode,
   wrappingElement?: ElementNode,
 ): void;
-declare export function $setBlocksType_experimental(
+declare export function $setBlocksType(
   selection: RangeSelection,
   createElement: () => ElementNode,
 ): void;

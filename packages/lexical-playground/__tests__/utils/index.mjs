@@ -712,7 +712,7 @@ export async function selectFromAlignDropdown(page, selector) {
   await click(page, '.dropdown ' + selector);
 }
 
-export async function insertTable(page, rows = null, columns = null) {
+export async function insertTable(page, rows = 2, columns = 3) {
   let leftFrame = page;
   if (IS_COLLAB) {
     leftFrame = await page.frame('left');

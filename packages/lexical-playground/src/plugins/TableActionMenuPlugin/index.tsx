@@ -96,7 +96,7 @@ type TableCellActionMenuProps = Readonly<{
   onClose: () => void;
   setIsMenuOpen: (isOpen: boolean) => void;
   tableCellNode: TableCellNode;
-  cellMerge__EXPERIMENTAL: boolean;
+  cellMerge: boolean;
 }>;
 
 function TableActionMenu({
@@ -104,7 +104,7 @@ function TableActionMenu({
   tableCellNode: _tableCellNode,
   setIsMenuOpen,
   contextRef,
-  cellMerge__EXPERIMENTAL,
+  cellMerge,
 }: TableCellActionMenuProps) {
   const [editor] = useLexicalComposerContext();
   const dropDownRef = useRef<HTMLDivElement | null>(null);
@@ -415,7 +415,7 @@ function TableActionMenu({
       onClick={(e) => {
         e.stopPropagation();
       }}>
-      {cellMerge__EXPERIMENTAL &&
+      {cellMerge &&
         (selectionCounts.columns > 1 || selectionCounts.rows > 1) &&
         canMergeCells && (
           <>
@@ -500,10 +500,10 @@ function TableActionMenu({
 
 function TableCellActionMenuContainer({
   anchorElem,
-  cellMerge__EXPERIMENTAL,
+  cellMerge,
 }: {
   anchorElem: HTMLElement;
-  cellMerge__EXPERIMENTAL: boolean;
+  cellMerge: boolean;
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
 
@@ -619,7 +619,7 @@ function TableCellActionMenuContainer({
               setIsMenuOpen={setIsMenuOpen}
               onClose={() => setIsMenuOpen(false)}
               tableCellNode={tableCellNode}
-              cellMerge__EXPERIMENTAL={cellMerge__EXPERIMENTAL}
+              cellMerge={cellMerge}
             />
           )}
         </>
@@ -630,17 +630,17 @@ function TableCellActionMenuContainer({
 
 export default function TableActionMenuPlugin({
   anchorElem = document.body,
-  cellMerge__EXPERIMENTAL = false,
+  cellMerge = false,
 }: {
   anchorElem?: HTMLElement;
-  cellMerge__EXPERIMENTAL?: boolean;
+  cellMerge?: boolean;
 }): null | ReactPortal {
   const isEditable = useLexicalEditable();
   return createPortal(
     isEditable ? (
       <TableCellActionMenuContainer
         anchorElem={anchorElem}
-        cellMerge__EXPERIMENTAL={cellMerge__EXPERIMENTAL}
+        cellMerge={cellMerge}
       />
     ) : null,
     anchorElem,

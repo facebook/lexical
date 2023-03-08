@@ -218,7 +218,7 @@ export default function Editor(): JSX.Element {
                 <FloatingLinkEditorPlugin anchorElem={floatingAnchorElem} />
                 <TableCellActionMenuPlugin
                   anchorElem={floatingAnchorElem}
-                  cellMerge__EXPERIMENTAL={true}
+                  cellMerge={true}
                 />
                 <FloatingTextFormatToolbarPlugin
                   anchorElem={floatingAnchorElem}

@@ -58,8 +58,7 @@ export function addClassNamesToElement(
 /**
  * Takes an HTML element and removes the classNames passed within an array,
  * ignoring any non-string types. A space can be used to remove multiple classes
- * eg. element = <div class="element-inner active small">
- * removeClassNamesFromElement(element, ['active small', true, null]);
+ * eg. removeClassNamesFromElement(element, ['active small', true, null])
  * will remove both the 'active' and 'small' classes from that element.
  * @param element - the element in which the classes are removed
  * @param classNames - an array defining the class names to remove from the element

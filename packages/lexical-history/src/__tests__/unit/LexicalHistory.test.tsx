@@ -12,7 +12,7 @@ import LexicalErrorBoundary from '@lexical/react/src/LexicalErrorBoundary';
 import {HistoryPlugin} from '@lexical/react/src/LexicalHistoryPlugin';
 import {RichTextPlugin} from '@lexical/react/src/LexicalRichTextPlugin';
 import {$createQuoteNode} from '@lexical/rich-text/src';
-import {$setBlocksType_experimental} from '@lexical/selection/src';
+import {$setBlocksType} from '@lexical/selection/src';
 import {
   $createRangeSelection,
   CAN_REDO_COMMAND,
@@ -146,7 +146,7 @@ describe('LexicalHistory tests', () => {
         selection.focus.set(firstTextNode.getKey(), 3, 'text');
 
         $setSelection(selection);
-        $setBlocksType_experimental(selection, () => $createQuoteNode());
+        $setBlocksType(selection, () => $createQuoteNode());
       });
     });
 

@@ -466,8 +466,6 @@ export class GridSelection implements BaseSelection {
     return selection.insertNodes(nodes, selectStart);
   }
 
-  // getShape2(): {co};
-
   // TODO Deprecate this method. It's confusing when used with colspan|rowspan
   getShape(): GridSelectionShape {
     const anchorCellNode = $getNodeByKey(this.anchor.key);

@@ -713,14 +713,18 @@ export async function selectFromAlignDropdown(page, selector) {
 }
 
 export async function insertTable(page, rows = null, columns = null) {
+  let leftFrame = page;
+  if (IS_COLLAB) {
+    leftFrame = await page.frame('left');
+  }
   await selectFromInsertDropdown(page, '.item .table');
   if (rows !== null) {
-    await page
+    await leftFrame
       .locator('input[data-test-id="table-modal-rows"]')
       .fill(String(rows));
   }
   if (columns !== null) {
-    await page
+    await leftFrame
       .locator('input[data-test-id="table-modal-columns"]')
       .fill(String(columns));
   }

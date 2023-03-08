@@ -7,6 +7,7 @@
  */
 
 import {
+  moveDown,
   moveRight,
   pressBackspace,
   selectAll,
@@ -2482,6 +2483,97 @@ test.describe('Tables', () => {
                 <span data-lexical-text="true">first</span>
               </p>
             </th>
+          </tr>
+        </table>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+  });
+
+  test('Select multiple merged cells (selection expands to a rectangle)', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    await insertTable(page, 3, 3);
+
+    await click(page, '.PlaygroundEditorTheme__tableCell');
+    await moveDown(page, 1);
+    await selectCellsFromTableCords(
+      page,
+      {x: 0, y: 0},
+      {x: 0, y: 1},
+      true,
+      true,
+    );
+    await mergeTableCells(page);
+    await page.pause();
+
+    await moveRight(page, 1);
+    await selectCellsFromTableCords(
+      page,
+      {x: 1, y: 0},
+      {x: 2, y: 0},
+      true,
+      true,
+    );
+    await mergeTableCells(page);
+    await page.pause();
+
+    await selectCellsFromTableCords(
+      page,
+      {x: 0, y: 0},
+      {x: 1, y: 0},
+      true,
+      true,
+    );
+    await page.pause();
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <table class="PlaygroundEditorTheme__table disable-selection">
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              rowspan="2"
+              style="background-color: rgb(172, 206, 247); caret-color: transparent">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              colspan="2"
+              style="background-color: rgb(172, 206, 247); caret-color: transparent">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <td
+              class="PlaygroundEditorTheme__tableCell"
+              style="background-color: rgb(172, 206, 247); caret-color: transparent">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td
+              class="PlaygroundEditorTheme__tableCell"
+              style="background-color: rgb(172, 206, 247); caret-color: transparent">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
           </tr>
         </table>
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>

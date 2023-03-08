@@ -8,7 +8,7 @@
 
 import type {LexicalEditor} from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
-import type {LexicalNode, NodeKey} from './LexicalNode';
+import type {NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextFormatType} from './nodes/LexicalTextNode';
 
@@ -31,6 +31,7 @@ import {
   DEPRECATED_$isGridRowNode,
   DEPRECATED_GridCellNode,
   DEPRECATED_GridNode,
+  DEPRECATED_GridRowNode,
   TextNode,
 } from '.';
 import {DOM_ELEMENT_TYPE, TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
@@ -39,6 +40,7 @@ import {
   markSelectionChangeFromDOMUpdate,
 } from './LexicalEvents';
 import {getIsProcesssingMutations} from './LexicalMutations';
+import {LexicalNode} from './LexicalNode';
 import {$normalizeSelection} from './LexicalNormalization';
 import {
   getActiveEditor,
@@ -95,12 +97,12 @@ export type ElementPointType = {
 
 export type PointType = TextPointType | ElementPointType;
 
-type GridMapValueType = {
+export type GridMapValueType = {
   cell: DEPRECATED_GridCellNode;
   startRow: number;
   startColumn: number;
 };
-type GridMapType = Array<Array<GridMapValueType>>;
+export type GridMapType = Array<Array<GridMapValueType>>;
 
 export class Point {
   key: NodeKey;
@@ -464,6 +466,8 @@ export class GridSelection implements BaseSelection {
     return selection.insertNodes(nodes, selectStart);
   }
 
+  // getShape2(): {co};
+
   // TODO Deprecate this method. It's confusing when used with colspan|rowspan
   getShape(): GridSelectionShape {
     const anchorCellNode = $getNodeByKey(this.anchor.key);
@@ -506,6 +510,7 @@ export class GridSelection implements BaseSelection {
       anchorNode,
       DEPRECATED_$isGridCellNode,
     );
+    // todo replace with triplet
     const focusCell = $findMatchingParent(
       focusNode,
       DEPRECATED_$isGridCellNode,
@@ -532,7 +537,7 @@ export class GridSelection implements BaseSelection {
     // once (on load) and iterate on it as updates occur. However, to do this we need to have the
     // ability to store a state. Killing GridSelection and moving the logic to the plugin would make
     // this possible.
-    const [map, cellAMap, cellBMap] = computeGridMap(
+    const [map, cellAMap, cellBMap] = DEPRECATED_$computeGridMap(
       gridNode,
       anchorCell,
       focusCell,
@@ -2213,8 +2218,6 @@ function moveNativeSelection(
   direction: 'backward' | 'forward' | 'left' | 'right',
   granularity: 'character' | 'word' | 'lineboundary',
 ): void {
-  // @ts-expect-error Selection.modify() method applies a change to the current selection or cursor position,
-  // but is still non-standard in some browsers.
   domSelection.modify(alter, direction, granularity);
 }
 
@@ -3096,7 +3099,7 @@ export function $getTextContent(): string {
   return selection.getTextContent();
 }
 
-function computeGridMap(
+export function DEPRECATED_$computeGridMap(
   grid: DEPRECATED_GridNode,
   cellA: DEPRECATED_GridCellNode,
   cellB: DEPRECATED_GridCellNode,
@@ -3159,4 +3162,41 @@ function computeGridMap(
   invariant(cellAValue !== null, 'Anchor not found in Grid');
   invariant(cellBValue !== null, 'Focus not found in Grid');
   return [tableMap, cellAValue, cellBValue];
+}
+
+export function DEPRECATED_$getNodeTriplet(
+  source: PointType | LexicalNode | DEPRECATED_GridCellNode,
+): [DEPRECATED_GridCellNode, DEPRECATED_GridRowNode, DEPRECATED_GridNode] {
+  let cell: DEPRECATED_GridCellNode;
+  if (source instanceof DEPRECATED_GridCellNode) {
+    cell = source;
+  } else if (source instanceof LexicalNode) {
+    const cell_ = $findMatchingParent(source, DEPRECATED_$isGridCellNode);
+    invariant(
+      DEPRECATED_$isGridCellNode(cell_),
+      'Expected to find a parent GridCellNode',
+    );
+    cell = cell_;
+  } else {
+    const cell_ = $findMatchingParent(
+      source.getNode(),
+      DEPRECATED_$isGridCellNode,
+    );
+    invariant(
+      DEPRECATED_$isGridCellNode(cell_),
+      'Expected to find a parent GridCellNode',
+    );
+    cell = cell_;
+  }
+  const row = cell.getParent();
+  invariant(
+    DEPRECATED_$isGridRowNode(row),
+    'Expected GridCellNode to have a parent GridRowNode',
+  );
+  const grid = row.getParent();
+  invariant(
+    DEPRECATED_$isGridNode(grid),
+    'Expected GridRowNode to have a parent GridNode',
+  );
+  return [cell, row, grid];
 }

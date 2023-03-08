@@ -179,6 +179,15 @@ export async function moveRight(page, numCharacters = 1, delayMs) {
   }
 }
 
+export async function moveDown(page, numCharacters = 1, delayMs) {
+  for (let i = 0; i < numCharacters; i++) {
+    if (delayMs !== undefined) {
+      await sleep(delayMs);
+    }
+    await page.keyboard.press('ArrowDown');
+  }
+}
+
 export async function pressBackspace(page, numCharacters = 1, delayMs) {
   for (let i = 0; i < numCharacters; i++) {
     if (delayMs !== undefined) {

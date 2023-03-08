@@ -256,19 +256,19 @@ test.describe('Identation', () => {
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
           dir="ltr"
-          style="padding-inline-start: calc(20px)">
+          style="padding-inline-start: calc(40px)">
           <span data-lexical-text="true">foo</span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
           dir="ltr"
-          style="padding-inline-start: calc(20px)">
+          style="padding-inline-start: calc(40px)">
           <span data-lexical-text="true">bar</span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
           dir="ltr"
-          style="padding-inline-start: calc(20px)">
+          style="padding-inline-start: calc(40px)">
           <span data-lexical-text="true">yar</span>
         </p>
         <ul class="PlaygroundEditorTheme__ul">
@@ -307,7 +307,7 @@ test.describe('Identation', () => {
         </code>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-          style="padding-inline-start: calc(20px)">
+          style="padding-inline-start: calc(40px)">
           <br />
         </p>
         <table class="PlaygroundEditorTheme__table disable-selection">
@@ -318,7 +318,7 @@ test.describe('Identation', () => {
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
                 dir="ltr"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <span data-lexical-text="true">foo</span>
               </p>
             </th>
@@ -327,7 +327,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </th>
@@ -336,7 +336,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </th>
@@ -345,7 +345,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </th>
@@ -354,7 +354,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </th>
@@ -365,7 +365,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </th>
@@ -374,7 +374,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </td>
@@ -383,7 +383,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </td>
@@ -392,7 +392,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </td>
@@ -401,7 +401,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </td>
@@ -412,7 +412,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </th>
@@ -421,7 +421,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </td>
@@ -430,7 +430,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </td>
@@ -439,7 +439,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </td>
@@ -448,7 +448,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </td>
@@ -459,7 +459,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </th>
@@ -468,7 +468,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </td>
@@ -477,7 +477,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </td>
@@ -486,7 +486,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </td>
@@ -495,7 +495,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </td>
@@ -506,7 +506,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </th>
@@ -515,7 +515,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </td>
@@ -524,7 +524,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </td>
@@ -533,7 +533,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </td>
@@ -542,7 +542,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </td>
@@ -550,7 +550,7 @@ test.describe('Identation', () => {
         </table>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-          style="padding-inline-start: calc(20px)">
+          style="padding-inline-start: calc(40px)">
           <br />
         </p>
       `,
@@ -565,19 +565,19 @@ test.describe('Identation', () => {
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
           dir="ltr"
-          style="padding-inline-start: calc(40px)">
+          style="padding-inline-start: calc(80px)">
           <span data-lexical-text="true">foo</span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
           dir="ltr"
-          style="padding-inline-start: calc(40px)">
+          style="padding-inline-start: calc(80px)">
           <span data-lexical-text="true">bar</span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
           dir="ltr"
-          style="padding-inline-start: calc(40px)">
+          style="padding-inline-start: calc(80px)">
           <span data-lexical-text="true">yar</span>
         </p>
         <ul class="PlaygroundEditorTheme__ul">
@@ -622,7 +622,7 @@ test.describe('Identation', () => {
         </code>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-          style="padding-inline-start: calc(40px)">
+          style="padding-inline-start: calc(80px)">
           <br />
         </p>
         <table class="PlaygroundEditorTheme__table disable-selection">
@@ -633,7 +633,7 @@ test.describe('Identation', () => {
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
                 dir="ltr"
-                style="padding-inline-start: calc(40px)">
+                style="padding-inline-start: calc(80px)">
                 <span data-lexical-text="true">foo</span>
               </p>
             </th>
@@ -642,7 +642,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
+                style="padding-inline-start: calc(80px)">
                 <br />
               </p>
             </th>
@@ -651,7 +651,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
+                style="padding-inline-start: calc(80px)">
                 <br />
               </p>
             </th>
@@ -660,7 +660,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
+                style="padding-inline-start: calc(80px)">
                 <br />
               </p>
             </th>
@@ -669,7 +669,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
+                style="padding-inline-start: calc(80px)">
                 <br />
               </p>
             </th>
@@ -680,7 +680,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
+                style="padding-inline-start: calc(80px)">
                 <br />
               </p>
             </th>
@@ -689,7 +689,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
+                style="padding-inline-start: calc(80px)">
                 <br />
               </p>
             </td>
@@ -698,7 +698,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
+                style="padding-inline-start: calc(80px)">
                 <br />
               </p>
             </td>
@@ -707,7 +707,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
+                style="padding-inline-start: calc(80px)">
                 <br />
               </p>
             </td>
@@ -716,7 +716,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
+                style="padding-inline-start: calc(80px)">
                 <br />
               </p>
             </td>
@@ -727,7 +727,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
+                style="padding-inline-start: calc(80px)">
                 <br />
               </p>
             </th>
@@ -736,7 +736,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
+                style="padding-inline-start: calc(80px)">
                 <br />
               </p>
             </td>
@@ -745,7 +745,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
+                style="padding-inline-start: calc(80px)">
                 <br />
               </p>
             </td>
@@ -754,7 +754,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
+                style="padding-inline-start: calc(80px)">
                 <br />
               </p>
             </td>
@@ -763,7 +763,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
+                style="padding-inline-start: calc(80px)">
                 <br />
               </p>
             </td>
@@ -774,7 +774,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
+                style="padding-inline-start: calc(80px)">
                 <br />
               </p>
             </th>
@@ -783,7 +783,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
+                style="padding-inline-start: calc(80px)">
                 <br />
               </p>
             </td>
@@ -792,7 +792,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
+                style="padding-inline-start: calc(80px)">
                 <br />
               </p>
             </td>
@@ -801,7 +801,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
+                style="padding-inline-start: calc(80px)">
                 <br />
               </p>
             </td>
@@ -810,7 +810,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
+                style="padding-inline-start: calc(80px)">
                 <br />
               </p>
             </td>
@@ -821,7 +821,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
+                style="padding-inline-start: calc(80px)">
                 <br />
               </p>
             </th>
@@ -830,7 +830,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
+                style="padding-inline-start: calc(80px)">
                 <br />
               </p>
             </td>
@@ -839,7 +839,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
+                style="padding-inline-start: calc(80px)">
                 <br />
               </p>
             </td>
@@ -848,7 +848,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
+                style="padding-inline-start: calc(80px)">
                 <br />
               </p>
             </td>
@@ -857,7 +857,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
+                style="padding-inline-start: calc(80px)">
                 <br />
               </p>
             </td>
@@ -865,7 +865,7 @@ test.describe('Identation', () => {
         </table>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-          style="padding-inline-start: calc(40px)">
+          style="padding-inline-start: calc(80px)">
           <br />
         </p>
       `,
@@ -880,19 +880,19 @@ test.describe('Identation', () => {
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
           dir="ltr"
-          style="padding-inline-start: calc(20px)">
+          style="padding-inline-start: calc(40px)">
           <span data-lexical-text="true">foo</span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
           dir="ltr"
-          style="padding-inline-start: calc(20px)">
+          style="padding-inline-start: calc(40px)">
           <span data-lexical-text="true">bar</span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
           dir="ltr"
-          style="padding-inline-start: calc(20px)">
+          style="padding-inline-start: calc(40px)">
           <span data-lexical-text="true">yar</span>
         </p>
         <ul class="PlaygroundEditorTheme__ul">
@@ -931,7 +931,7 @@ test.describe('Identation', () => {
         </code>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-          style="padding-inline-start: calc(20px)">
+          style="padding-inline-start: calc(40px)">
           <br />
         </p>
         <table class="PlaygroundEditorTheme__table disable-selection">
@@ -942,7 +942,7 @@ test.describe('Identation', () => {
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
                 dir="ltr"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <span data-lexical-text="true">foo</span>
               </p>
             </th>
@@ -951,7 +951,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </th>
@@ -960,7 +960,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </th>
@@ -969,7 +969,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </th>
@@ -978,7 +978,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </th>
@@ -989,7 +989,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </th>
@@ -998,7 +998,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </td>
@@ -1007,7 +1007,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </td>
@@ -1016,7 +1016,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </td>
@@ -1025,7 +1025,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </td>
@@ -1036,7 +1036,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </th>
@@ -1045,7 +1045,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </td>
@@ -1054,7 +1054,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </td>
@@ -1063,7 +1063,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </td>
@@ -1072,7 +1072,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </td>
@@ -1083,7 +1083,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </th>
@@ -1092,7 +1092,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </td>
@@ -1101,7 +1101,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </td>
@@ -1110,7 +1110,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </td>
@@ -1119,7 +1119,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </td>
@@ -1130,7 +1130,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </th>
@@ -1139,7 +1139,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </td>
@@ -1148,7 +1148,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </td>
@@ -1157,7 +1157,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </td>
@@ -1166,7 +1166,7 @@ test.describe('Identation', () => {
               style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <br />
               </p>
             </td>
@@ -1174,7 +1174,7 @@ test.describe('Identation', () => {
         </table>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-          style="padding-inline-start: calc(20px)">
+          style="padding-inline-start: calc(40px)">
           <br />
         </p>
       `,

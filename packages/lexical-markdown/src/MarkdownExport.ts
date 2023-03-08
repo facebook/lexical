@@ -26,7 +26,7 @@ import {transformersByType} from './utils';
 
 export function createMarkdownExport(
   transformers: Array<Transformer>,
-): (root?: ElementNode) => string {
+): (node?: ElementNode) => string {
   const byType = transformersByType(transformers);
 
   // Export only uses text formats that are responsible for single format
@@ -35,9 +35,9 @@ export function createMarkdownExport(
     (transformer) => transformer.format.length === 1,
   );
 
-  return (root) => {
+  return (node) => {
     const output = [];
-    const children = (root || $getRoot()).getChildren();
+    const children = (node || $getRoot()).getChildren();
 
     for (const child of children) {
       const result = exportTopLevelElements(

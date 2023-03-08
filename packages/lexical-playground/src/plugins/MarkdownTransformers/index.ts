@@ -7,9 +7,9 @@
  */
 
 import {
+  $convertFromMarkdownString,
+  $convertToMarkdownString,
   CHECK_LIST,
-  createMarkdownExport,
-  createMarkdownImport,
   ELEMENT_TRANSFORMERS,
   ElementTransformer,
   TEXT_FORMAT_TRANSFORMERS,
@@ -48,7 +48,7 @@ import {
 } from '../../nodes/EquationNode';
 import {$createImageNode, $isImageNode, ImageNode} from '../../nodes/ImageNode';
 import {$createTweetNode, $isTweetNode, TweetNode} from '../../nodes/TweetNode';
-import emojiList from '../EmojiPickerPlugin/emoji-list';
+import emojiList from '../../utils/emoji-list';
 
 export const HR: ElementTransformer = {
   dependencies: [HorizontalRuleNode],
@@ -160,7 +160,6 @@ export const TABLE: ElementTransformer = {
     }
 
     const output: string[] = [];
-    const exportNode = createMarkdownExport(PLAYGROUND_TRANSFORMERS);
 
     for (const row of node.getChildren()) {
       const rowOutput = [];
@@ -172,7 +171,12 @@ export const TABLE: ElementTransformer = {
       for (const cell of row.getChildren()) {
         // It's TableCellNode so it's just to make flow happy
         if ($isTableCellNode(cell)) {
-          rowOutput.push(exportNode(cell).replace(/\n/g, '\\n'));
+          rowOutput.push(
+            $convertToMarkdownString(PLAYGROUND_TRANSFORMERS, cell).replace(
+              /\n/g,
+              '\\n',
+            ),
+          );
           if (cell.__headerState === TableCellHeaderStates.ROW) {
             isHeaderRow = true;
           }
@@ -288,7 +292,7 @@ function getTableColumnsSize(table: TableNode) {
 const createTableCell = (textContent: string): TableCellNode => {
   textContent = textContent.replace(/\\n/g, '\n');
   const cell = $createTableCellNode(TableCellHeaderStates.NO_STATUS);
-  createMarkdownImport(PLAYGROUND_TRANSFORMERS)(textContent, cell);
+  $convertFromMarkdownString(textContent, PLAYGROUND_TRANSFORMERS, cell);
   return cell;
 };
 

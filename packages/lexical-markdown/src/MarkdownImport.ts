@@ -42,16 +42,16 @@ type TextFormatTransformersIndex = Readonly<{
 
 export function createMarkdownImport(
   transformers: Array<Transformer>,
-): (markdownString: string, target?: ElementNode) => void {
+): (markdownString: string, node?: ElementNode) => void {
   const byType = transformersByType(transformers);
   const textFormatTransformersIndex = createTextFormatTransformersIndex(
     byType.textFormat,
   );
 
-  return (markdownString, target) => {
+  return (markdownString, node) => {
     const lines = markdownString.split('\n');
     const linesLength = lines.length;
-    const root = target || $getRoot();
+    const root = node || $getRoot();
     root.clear();
 
     for (let i = 0; i < linesLength; i++) {
@@ -84,8 +84,6 @@ export function createMarkdownImport(
         child.remove();
       }
     }
-
-    root.selectEnd();
   };
 }
 

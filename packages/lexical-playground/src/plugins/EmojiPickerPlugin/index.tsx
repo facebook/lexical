@@ -95,7 +95,7 @@ export default function EmojiPickerPlugin() {
 
   useEffect(() => {
     // @ts-ignore
-    import('./emoji-list.ts').then((file) => setEmojis(file.default));
+    import('../../utils/emoji-list.ts').then((file) => setEmojis(file.default));
   }, []);
 
   const emojiOptions = useMemo(

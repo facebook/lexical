@@ -158,13 +158,13 @@ This plugin allows you to navigate to certain sections of the page by clicking o
 ```jsx
 <TableOfContentsPlugin />
 ```
-You can alternatively leverage the use of `LexicalTableOfContents__EXPERIMENTAL` API, which provides you with all the functioanlity that `TableOfContentsPlugin` provides, but without any styling.
-In order to use `LexicalTableOfContents__EXPERIMENTAL`, you need to pass a callback function in its children. This callback function gives you access to the up-to-date data of the table of contents. You can access this data through a single parameter for the callback which comes in the form of an array of arrays `[[headingKey, headingTextContent, headingTag], [], [], ...]`
+You can alternatively leverage the use of `LexicalTableOfContents` API, which provides you with all the functioanlity that `TableOfContentsPlugin` provides, but without any styling.
+In order to use `LexicalTableOfContents`, you need to pass a callback function in its children. This callback function gives you access to the up-to-date data of the table of contents. You can access this data through a single parameter for the callback which comes in the form of an array of arrays `[[headingKey, headingTextContent, headingTag], [], [], ...]`
 `headingKey`: Unique key that identifies the heading.`headingTextContent`: A string of the exact text of the heading.`headingTag`: A string that reads either 'h1', 'h2', or 'h3'.
 ```jsx
-<LexicalTableOfContents__EXPERIMENTAL>
+<LexicalTableOfContents>
   {(tableOfContentsArray) => {
     return <MyCustomTableOfContetsPlugin tableOfContents={tableOfContentsArray} />;
   }}
-</LexicalTableOfContents__EXPERIMENTAL>
+</LexicalTableOfContents>
 ```

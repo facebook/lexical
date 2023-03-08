@@ -97,6 +97,7 @@ function $removeParentEmptyElements(startingNode: ElementNode): void {
   }
 }
 
+/** @deprecated */
 export function $wrapNodes(
   selection: RangeSelection | GridSelection,
   createElement: () => ElementNode,

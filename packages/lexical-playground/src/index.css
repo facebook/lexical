@@ -58,7 +58,6 @@ header h1 {
 .editor-shell .editor-container {
   background: #fff;
   position: relative;
-  cursor: text;
   display: block;
   border-bottom-left-radius: 10px;
   border-bottom-right-radius: 10px;
@@ -76,7 +75,6 @@ header h1 {
 .editor-scroller {
   min-height: 150px;
   border: 0;
-  cursor: text;
   display: flex;
   position: relative;
   outline: 0;
@@ -88,6 +86,7 @@ header h1 {
 .editor {
   flex: auto;
   position: relative;
+  z-index: -1;
 }
 
 .test-recorder-output {

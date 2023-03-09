@@ -2282,6 +2282,91 @@ test.describe('CopyAndPaste', () => {
         </table>
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
       `,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <table class="PlaygroundEditorTheme__table">
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">a</span>
+              </p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">b</span>
+              </p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">c</span>
+              </p>
+            </th>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">d</span>
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
     );
   });
 

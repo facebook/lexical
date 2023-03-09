@@ -1599,13 +1599,9 @@ test.describe('Tables', () => {
     await insertTable(page, 1, 2);
     await moveToEditorBeginning(page);
 
-    await page.pause();
-
     await page.keyboard.down('Shift');
     await page.keyboard.press('ArrowRight');
     await page.keyboard.up('Shift');
-
-    await page.pause();
 
     await assertHTML(
       page,
@@ -1625,7 +1621,20 @@ test.describe('Tables', () => {
         </table>
         <p><br /></p>
       `,
-      undefined,
+      html`
+        <p><br /></p>
+        <table>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+          </tr>
+        </table>
+        <p><br /></p>
+      `,
       {ignoreClasses: true},
     );
   });

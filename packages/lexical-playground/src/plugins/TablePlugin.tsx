@@ -103,14 +103,9 @@ export function InsertTableDialog({
   const [isDisabled, setIsDisabled] = useState(true);
 
   useEffect(() => {
-    if (
-      rows &&
-      +rows > 0 &&
-      +rows <= 500 &&
-      columns &&
-      +columns > 0 &&
-      +columns <= 50
-    ) {
+    const row = Number(rows);
+    const column = Number(columns);
+    if (row && row > 0 && row <= 500 && column && column > 0 && column <= 50) {
       setIsDisabled(false);
     } else {
       setIsDisabled(true);
@@ -163,14 +158,9 @@ export function InsertNewTableDialog({
   const [isDisabled, setIsDisabled] = useState(true);
 
   useEffect(() => {
-    if (
-      rows &&
-      +rows > 0 &&
-      +rows <= 500 &&
-      columns &&
-      +columns > 0 &&
-      +columns <= 50
-    ) {
+    const row = Number(rows);
+    const column = Number(columns);
+    if (row && row > 0 && row <= 500 && column && column > 0 && column <= 50) {
       setIsDisabled(false);
     } else {
       setIsDisabled(true);

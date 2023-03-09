@@ -782,6 +782,16 @@ export async function insertTableRowBelow(page) {
   await click(page, '.item[data-test-id="table-insert-row-below"]');
 }
 
+export async function insertTableColumnBefore(page) {
+  await click(page, '.table-cell-action-button-container');
+  await click(page, '.item[data-test-id="table-insert-column-before"]');
+}
+
+export async function insertTableColumnAfter(page) {
+  await click(page, '.table-cell-action-button-container');
+  await click(page, '.item[data-test-id="table-insert-column-after"]');
+}
+
 export async function mergeTableCells(page) {
   await click(page, '.table-cell-action-button-container');
   await click(page, '.item[data-test-id="table-merge-cells"]');

@@ -10,12 +10,11 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import useLexicalEditable from '@lexical/react/useLexicalEditable';
 import {
   $deleteTableColumn,
-  $getElementGridForTableNode,
   $getTableCellNodeFromLexicalNode,
   $getTableColumnIndexFromTableCellNode,
   $getTableNodeFromLexicalNodeOrThrow,
   $getTableRowIndexFromTableCellNode,
-  $insertTableColumn,
+  $insertTableColumn__EXPERIMENTAL,
   $insertTableRow__EXPERIMENTAL,
   $isTableCellNode,
   $isTableRowNode,
@@ -243,44 +242,11 @@ function TableActionMenu({
   const insertTableColumnAtSelection = useCallback(
     (shouldInsertAfter: boolean) => {
       editor.update(() => {
-        const selection = $getSelection();
-
-        const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
-
-        let tableColumnIndex;
-
-        if (DEPRECATED_$isGridSelection(selection)) {
-          const selectionShape = selection.getShape();
-          tableColumnIndex = shouldInsertAfter
-            ? selectionShape.toX
-            : selectionShape.fromX;
-        } else {
-          tableColumnIndex =
-            $getTableColumnIndexFromTableCellNode(tableCellNode);
-        }
-
-        const grid = $getElementGridForTableNode(editor, tableNode);
-
-        $insertTableColumn(
-          tableNode,
-          tableColumnIndex,
-          shouldInsertAfter,
-          selectionCounts.columns,
-          grid,
-        );
-
-        clearTableSelection();
-
+        $insertTableColumn__EXPERIMENTAL(shouldInsertAfter);
         onClose();
       });
     },
-    [
-      editor,
-      tableCellNode,
-      selectionCounts.columns,
-      clearTableSelection,
-      onClose,
-    ],
+    [editor, onClose],
   );
 
   const deleteTableRowAtSelection = useCallback(() => {
@@ -431,7 +397,7 @@ function TableActionMenu({
       <button
         className="item"
         onClick={() => insertTableColumnAtSelection(false)}
-        data-test-id="table-insert-column-left">
+        data-test-id="table-insert-column-before">
         <span className="text">
           Insert{' '}
           {selectionCounts.columns === 1
@@ -443,7 +409,7 @@ function TableActionMenu({
       <button
         className="item"
         onClick={() => insertTableColumnAtSelection(true)}
-        data-test-id="table-insert-column-right">
+        data-test-id="table-insert-column-after">
         <span className="text">
           Insert{' '}
           {selectionCounts.columns === 1

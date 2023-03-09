@@ -40,8 +40,8 @@ export type DFSNode = Readonly<{
  * ignoring any non-string types. A space can be used to add multiple classes
  * eg. addClassNamesToElement(element, ['element-inner active', true, null])
  * will add both 'element-inner' and 'active' as classes to that element.
- * @param element - the element in which the classes are added
- * @param classNames - an array defining the class names to add to the element
+ * @param element - The element in which the classes are added
+ * @param classNames - An array defining the class names to add to the element
  */
 export function addClassNamesToElement(
   element: HTMLElement,
@@ -60,8 +60,8 @@ export function addClassNamesToElement(
  * ignoring any non-string types. A space can be used to remove multiple classes
  * eg. removeClassNamesFromElement(element, ['active small', true, null])
  * will remove both the 'active' and 'small' classes from that element.
- * @param element - the element in which the classes are removed
- * @param classNames - an array defining the class names to remove from the element
+ * @param element - The element in which the classes are removed
+ * @param classNames - An array defining the class names to remove from the element
  */
 export function removeClassNamesFromElement(
   element: HTMLElement,
@@ -78,8 +78,8 @@ export function removeClassNamesFromElement(
  * Returns true if the file type matches the types passed within the acceptableMimeTypes array, false otherwise.
  * The types passed must be strings and are CASE-SENSITIVE.
  * eg. if file is of type 'text' and acceptableMimeTypes = ['TEXT', 'IMAGE'] the function will return false.
- * @param file - the file you want to type check.
- * @param acceptableMimeTypes - an array of strings of types which the file is checked against.
+ * @param file - The file you want to type check.
+ * @param acceptableMimeTypes - An array of strings of types which the file is checked against.
  * @returns true if the file is an acceptable mime type, false otherwise.
  */
 export function isMimeType(
@@ -141,9 +141,9 @@ export function mediaFileReader(
  * before backtracking and finding a new path. Consider solving a maze by hugging either wall, moving down a
  * branch until you hit a dead-end (leaf) and backtracking to find the nearest branching path and repeat.
  * It will then return all the nodes found in the search in an array of objects.
- * @param startingNode - the node to start the search, if ommitted, it will start at the root node.
- * @param endingNode - the node to end the search, if ommitted, it will find all descendants of the startingNode.
- * @returns an array of objects of all the nodes found by the search, including their depth into the tree.
+ * @param startingNode - The node to start the search, if ommitted, it will start at the root node.
+ * @param endingNode - The node to end the search, if ommitted, it will find all descendants of the startingNode.
+ * @returns An array of objects of all the nodes found by the search, including their depth into the tree.
  * {depth: number, node: LexicalNode} It will always return at least 1 node (the ending node) so long as it exists
  */
 export function $dfs(
@@ -187,11 +187,6 @@ export function $dfs(
   return nodes;
 }
 
-/**
- * Returns the node's depth in the tree from the root.
- * @param node - the node whose depth is gotten.
- * @returns depth as a number.
- */
 function $getDepth(node: LexicalNode): number {
   let innerNode: LexicalNode | null = node;
   let depth = 0;
@@ -229,8 +224,8 @@ export function $getNearestNodeOfType<T extends ElementNode>(
 
 /**
  *Returns the element node of the nearest ancestor, otherwise throws an error.
- * @param startNode - the starting node of the search
- * @returns the ancestor node found
+ * @param startNode - The starting node of the search
+ * @returns The ancestor node found
  */
 export function $getNearestBlockElementAncestorOrThrow(
   startNode: LexicalNode,
@@ -262,9 +257,9 @@ export type DOMNodeToLexicalConversionMap = Record<
  * Starts with a node and moves up the tree (toward the root node) to find a matching node based on
  * the search parameters of the findFn. (Consider JavaScripts' .find() function where a testing function must be
  * passed as an argument. eg. if( (node) => node.__type === 'div') ) return true; otherwise return false
- * @param startingNode - the node where the search starts.
- * @param findFn - a testing function that returns true if the current node satisfies the testing parameters.
- * @returns a parent node that matches the findFn parameters, or null if one wasn't found.
+ * @param startingNode - The node where the search starts.
+ * @param findFn - A testing function that returns true if the current node satisfies the testing parameters.
+ * @returns A parent node that matches the findFn parameters, or null if one wasn't found.
  */
 export function $findMatchingParent(
   startingNode: LexicalNode,
@@ -286,9 +281,23 @@ export function $findMatchingParent(
 type Func = () => void;
 
 /**
- * Executes each function passed into the mergeRegister function argument.
- * @param func - an array of functions meant to be executed.
- * @returns undefined
+ * Returns a function that will execute all functions passed when called. It is generally used
+ * to register multiple lexical listeners and then tear them down with a single function call, such
+ * as React's useEffect hook. 
+ * @example 
+ * ```ts
+ * useEffect(() => {
+ *   return mergeRegister( 
+ *     editor.registerCommand(...registerCommand1 logic),
+ *     editor.registerCommand(...registerCommand2 logic),
+ *     editor.registerCommand(...registerCommand3 logic)
+ *   )
+ * }, [editor])
+ * ```
+ * Note the functions don't neccesarily need to be in an array as all arguements 
+ * are considered to be the func argument and spread from there. 
+ * @param func - An array of functions meant to be executed by the returned function.
+ * @returns the function which executes all the passed register command functions.
  */
 export function mergeRegister(...func: Array<Func>): () => void {
   return () => {
@@ -297,12 +306,13 @@ export function mergeRegister(...func: Array<Func>): () => void {
 }
 
 /**
- *
- * @param editor - the lexical editor
- * @param targetNode - the target for the nested element to be extracted from.
- * @param cloneNode - see {@link lexical!$createMarkNode}
- * @param handleOverlap - handles any overlap between the node to extract and the targetNode
- * @returns the lexical editor
+ * Attempts to resolve nested element nodes of the same type into a single node of that type. 
+ * It is generally used for marks/commenting
+ * @param editor - The lexical editor
+ * @param targetNode - The target for the nested element to be extracted from.
+ * @param cloneNode - See {@link lexical!$createMarkNode}
+ * @param handleOverlap - Handles any overlap between the node to extract and the targetNode
+ * @returns The lexical editor
  */
 export function registerNestedElementResolver<N extends ElementNode>(
   editor: LexicalEditor,
@@ -310,20 +320,10 @@ export function registerNestedElementResolver<N extends ElementNode>(
   cloneNode: (from: N) => N,
   handleOverlap: (from: N, to: N) => void,
 ): () => void {
-  /**
-   * @param node - node to be tested against the targetNode instance
-   * @returns true if there is a match, false otherwise
-   */
   const $isTargetNode = (node: LexicalNode | null | undefined): node is N => {
     return node instanceof targetNode;
   };
 
-  /**
-   * Looks for an ancestor of a node of type targetNode. Ensures there are not any children of the node of the same targetNode instance
-   * @param node - the node to start the search.
-   * @returns an object containing the matched parent node and its child, or null if either an instance of targetNode is not found
-   * or the passed node has a child instance of targetNode.
-   */
   const $findMatch = (node: N): {child: ElementNode; parent: N} | null => {
     // First validate we don't have any children that are of the target,
     // as we need to handle them first.
@@ -352,10 +352,6 @@ export function registerNestedElementResolver<N extends ElementNode>(
     return null;
   };
 
-  /**
-   * Finds node's ancestor of type targetNode and extracts it.
-   * @param node - node to extract
-   */
   const elementNodeTransform = (node: N) => {
     const match = $findMatch(node);
 
@@ -396,8 +392,8 @@ export function registerNestedElementResolver<N extends ElementNode>(
 /**
  * Clones the editor and marks it as dirty to be reconciled. If there was a selection,
  * it would be set back to its previous state, or null otherwise.
- * @param editor - the lexical editor
- * @param editorState - the editor's state
+ * @param editor - The lexical editor
+ * @param editorState - The editor's state
  */
 export function $restoreEditorState(
   editor: LexicalEditor,
@@ -429,8 +425,8 @@ export function $restoreEditorState(
  * the node will be appended there, otherwise, it will be inserted before the insertion area.
  * If there is no selection where the node is to be inserted, it will be appended after any current nodes
  * within the tree, as a child of the root node. A paragraph node will then be added after the inserted node and selected.
- * @param node - the node to be inserted
- * @returns the node after its insertion
+ * @param node - The node to be inserted
+ * @returns The node after its insertion
  */
 export function $insertNodeToNearestRoot<T extends LexicalNode>(node: T): T {
   const selection = $getSelection();
@@ -482,9 +478,9 @@ export function $insertNodeToNearestRoot<T extends LexicalNode>(node: T): T {
 
 /**
  * Wraps the node into another node created from a createElementNode function, eg. $createParagraphNode
- * @param node - node to be wrapped.
- * @param createElementNode - creates a new lexcial element to wrap the to-be-wrapped node and returns it.
- * @returns a new lexcial element with the previous node appended within (as a child, including its children).
+ * @param node - Node to be wrapped.
+ * @param createElementNode - Creates a new lexcial element to wrap the to-be-wrapped node and returns it.
+ * @returns A new lexcial element with the previous node appended within (as a child, including its children).
  */
 export function $wrapNodeInElement(
   node: LexicalNode,
@@ -497,16 +493,16 @@ export function $wrapNodeInElement(
 }
 
 /**
- * @param x - the element being tested
- * @returns returns true if x is an HTML anchor tag, false otherwise
+ * @param x - The element being tested
+ * @returns Returns true if x is an HTML anchor tag, false otherwise
  */
 export function isHTMLAnchorElement(x: Node): x is HTMLAnchorElement {
   return isHTMLElement(x) && x.tagName === 'A';
 }
 
 /**
- * @param x - the element being testing
- * @returns returns true if x is an HTML element, false otherwise.
+ * @param x - The element being testing
+ * @returns Returns true if x is an HTML element, false otherwise.
  */
 export function isHTMLElement(x: Node | EventTarget): x is HTMLElement {
   // @ts-ignore-next-line - strict check on nodeType here should filter out non-Element EventTarget implementors

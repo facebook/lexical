@@ -492,7 +492,7 @@ let clipboardEventTimeout: null | number = null;
 
 // TODO custom selection
 // TODO potentially have a node customizable version for plain text
-export async function copyToClipboard__EXPERIMENTAL(
+export async function copyToClipboard(
   editor: LexicalEditor,
   event: null | ClipboardEvent,
 ): Promise<boolean> {

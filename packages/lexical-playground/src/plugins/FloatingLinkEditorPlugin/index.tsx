@@ -113,29 +113,6 @@ function FloatingLinkEditor({
   }, [anchorElem, editor]);
 
   useEffect(() => {
-    function mouseMoveListener(e: MouseEvent) {
-      if (editorRef?.current && (e.buttons === 1 || e.buttons === 3)) {
-        editorRef.current.style.pointerEvents = 'none';
-      }
-    }
-    function mouseUpListener(e: MouseEvent) {
-      if (editorRef?.current) {
-        editorRef.current.style.pointerEvents = 'auto';
-      }
-    }
-
-    if (editorRef?.current) {
-      document.addEventListener('mousemove', mouseMoveListener);
-      document.addEventListener('mouseup', mouseUpListener);
-
-      return () => {
-        document.removeEventListener('mousemove', mouseMoveListener);
-        document.removeEventListener('mouseup', mouseUpListener);
-      };
-    }
-  }, [editorRef]);
-
-  useEffect(() => {
     const scrollerElem = anchorElem.parentElement;
 
     const update = () => {

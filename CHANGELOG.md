@@ -1,3 +1,46 @@
+## v0.9.0 (2023-03-08)
+
+- deprecate $wrapNodes (#4059) Acy Watson
+- [0.9] Remove experimental flag for setBlockTypes (#4045) John Flockton
+- [0.9] Remove experimental flag from content plugins (#4036) John Flockton
+- Table - cell merging (#4046) Gerard Rovira
+- After removing a ListItemNode, merge its siblings. (#4035) Awjin
+- [0.9] Remove experimental flag for copyToClipboard (#4037) John Flockton
+- Fix inf loop block cursor (#4049) Gerard Rovira
+- Fix type import syntax for CodeHighlightNode (#4053) John Flockton
+- Fix list deserialization (#4030) Acy Watson
+- Fix EquationNode issues on Android  (#4040) John Flockton
+- Styling tweaks to better accommodate long urls (#4041) Brandon
+- Add docs for LexicalEditor (#4034) Acy Watson
+- Add docs for LexicalNode APIs (#4033) Acy Watson
+- Remove remaining deprecated hooks (#3782) John Flockton
+- Improved link editor UX (#4026) Brandon
+- Add command logging into tree view (#4022) John Flockton
+- Deprecate experimental DevTools browser extension (#4023) John Flockton
+- Fix Chrome beforeinput race condition on large docs (#4016) Gerard Rovira
+- Fix insertNode insertion for inline Elements inside empty Elements (#4018) Gerard Rovira
+- fix(lexical-playground): link editor flashs (#4013) 子瞻 Luci
+- Reposition Node Menu when Node Changes (#4010) Tyler Bainbridge
+- Fix small lint error (#4014) John Flockton
+- Check if parent node is root in order to remove it in trimTextContentFromAnchor (#3952) Theodore Nastos
+- Fix PollNode copy and paste missing options (#4002) John Flockton
+- Fix converting nodes with nested lists (#3821) EgonBolton
+- Fix selection on color change (#4004) Konrad Ryczko
+- Cleanup excessive use of WebsocketProvider for types (#3979) Maksim Horbachevsky
+- Nested composers should initialize with parent editor editable state (#4001) John Flockton
+- Adjust playground CSS to fix vertical resize being disabled in select scenarios (#3997) Brandon
+- Improve serialization types for element node children (#3990) John Flockton
+- Listen to Collapsible Section toggle event (#3983) Ivaylo Pavlov
+- Doc: initial execution of listener function (#3991) Gerard Delmàs
+- Fix getNodes of RangeSelection (#3966) kosei28
+- Account for children text content size in 's  (#3930) Giacomo Randazzo
+- Update badge URL in README (#3987) Andrew Doan
+- Fix: Floating toolbar flashes on hover over empty lines when the selection is backwards. (#3959) Alessio Gravili
+- Bump jest and node versions to accommodate structuredClone (#3969) Acy Watson
+- Make one previous node be selected when deleting a block (#3970) Karibash
+- Beforeinput prevent default on mismatching targetRanges (#3954) Gerard Rovira
+- Trigger  as false when  goes down to 0 (#3943) Diego Esclapez
+
 ## v0.8.1 (2023-02-22)
 
 - Clone objects from the CSS cache before mutating them (#3945) Brian Birtles

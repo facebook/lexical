@@ -99,10 +99,18 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
   }
 
   createDOM(config: EditorConfig): HTMLElement {
-    const element = document.createElement(this.getTag());
+    const element = document.createElement(
+      this.getTag(),
+    ) as HTMLTableCellElement;
 
     if (this.__width) {
       element.style.width = `${this.__width}px`;
+    }
+    if (this.__colSpan !== 1) {
+      element.colSpan = this.__colSpan;
+    }
+    if (this.__rowSpan !== 1) {
+      element.rowSpan = this.__rowSpan;
     }
 
     addClassNamesToElement(
@@ -118,18 +126,25 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
     const {element} = super.exportDOM(editor);
 
     if (element) {
+      const element_ = element as HTMLTableCellElement;
       const maxWidth = 700;
       const colCount = this.getParentOrThrow().getChildrenSize();
-      element.style.border = '1px solid black';
-      element.style.width = `${
+      element_.style.border = '1px solid black';
+      if (this.__colSpan !== 1) {
+        element_.colSpan = this.__colSpan;
+      }
+      if (this.__rowSpan !== 1) {
+        element_.rowSpan = this.__rowSpan;
+      }
+      element_.style.width = `${
         this.getWidth() || Math.max(90, maxWidth / colCount)
       }px`;
 
-      element.style.verticalAlign = 'top';
-      element.style.textAlign = 'start';
+      element_.style.verticalAlign = 'top';
+      element_.style.textAlign = 'start';
 
       if (this.hasHeader()) {
-        element.style.backgroundColor = '#f2f3f5';
+        element_.style.backgroundColor = '#f2f3f5';
       }
     }
 
@@ -195,7 +210,9 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
   updateDOM(prevNode: TableCellNode): boolean {
     return (
       prevNode.__headerState !== this.__headerState ||
-      prevNode.__width !== this.__width
+      prevNode.__width !== this.__width ||
+      prevNode.__colSpan !== this.__colSpan ||
+      prevNode.__rowSpan !== this.__rowSpan
     );
   }
 

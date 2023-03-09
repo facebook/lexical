@@ -17,7 +17,6 @@ concurrency:
 
 jobs:
   integrity:
-    if: github.repository_owner == 'facebook'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -47,7 +46,6 @@ jobs:
       - run: npm run build-www
 
   unit:
-    if: github.repository_owner == 'facebook'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -74,7 +72,6 @@ jobs:
       - run: npm run test-unit
 
   e2e-mac:
-    if: github.repository_owner == 'facebook'
     runs-on: macos-latest
     strategy:
       matrix:
@@ -116,7 +113,6 @@ jobs:
           retention-days: 7
 
   e2e-linux:
-    if: github.repository_owner == 'facebook'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -162,7 +158,6 @@ jobs:
           retention-days: 7
 
   e2e-windows:
-    if: github.repository_owner == 'facebook'
     runs-on: windows-latest
     strategy:
       matrix:
@@ -203,7 +198,6 @@ jobs:
           retention-days: 7
 
   e2e-collab-mac:
-    if: github.repository_owner == 'facebook'
     runs-on: macos-latest
     strategy:
       matrix:
@@ -241,7 +235,6 @@ jobs:
           retention-days: 7
 
   e2e-collab-linux:
-    if: github.repository_owner == 'facebook'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -283,7 +276,6 @@ jobs:
           retention-days: 7
 
   e2e-collab-windows:
-    if: github.repository_owner == 'facebook'
     runs-on: windows-latest
     strategy:
       matrix:
@@ -320,7 +312,6 @@ jobs:
           retention-days: 7
 
   e2e-prod:
-    if: github.repository_owner == 'facebook'
     runs-on: macos-latest
     strategy:
       matrix:
@@ -362,7 +353,6 @@ jobs:
           retention-days: 7
 
   e2e-collab-prod:
-    if: github.repository_owner == 'facebook'
     runs-on: macos-latest
     strategy:
       matrix:

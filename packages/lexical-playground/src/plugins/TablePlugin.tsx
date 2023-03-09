@@ -98,8 +98,24 @@ export function InsertTableDialog({
   activeEditor: LexicalEditor;
   onClose: () => void;
 }): JSX.Element {
-  const [rows, setRows] = useState('5');
-  const [columns, setColumns] = useState('5');
+  const [rows, setRows] = useState('');
+  const [columns, setColumns] = useState('');
+  const [isDisabled, setIsDisabled] = useState(true);
+
+  useEffect(() => {
+    if (
+      rows &&
+      +rows > 0 &&
+      +rows <= 500 &&
+      columns &&
+      +columns > 0 &&
+      +columns <= 50
+    ) {
+      setIsDisabled(false);
+    } else {
+      setIsDisabled(true);
+    }
+  }, [rows, columns]);
 
   const onClick = () => {
     activeEditor.dispatchCommand(INSERT_TABLE_COMMAND, {
@@ -113,19 +129,23 @@ export function InsertTableDialog({
   return (
     <>
       <TextInput
-        label="No of rows"
+        placeholder={'# of rows (1-500)'}
+        label="Rows"
         onChange={setRows}
         value={rows}
         data-test-id="table-modal-rows"
       />
       <TextInput
-        label="No of columns"
+        placeholder={'# of columns (1-50)'}
+        label="Columns"
         onChange={setColumns}
         value={columns}
         data-test-id="table-modal-columns"
       />
       <DialogActions data-test-id="table-model-confirm-insert">
-        <Button onClick={onClick}>Confirm</Button>
+        <Button disabled={isDisabled} onClick={onClick}>
+          Confirm
+        </Button>
       </DialogActions>
     </>
   );
@@ -138,8 +158,24 @@ export function InsertNewTableDialog({
   activeEditor: LexicalEditor;
   onClose: () => void;
 }): JSX.Element {
-  const [rows, setRows] = useState('5');
-  const [columns, setColumns] = useState('5');
+  const [rows, setRows] = useState('');
+  const [columns, setColumns] = useState('');
+  const [isDisabled, setIsDisabled] = useState(true);
+
+  useEffect(() => {
+    if (
+      rows &&
+      +rows > 0 &&
+      +rows <= 500 &&
+      columns &&
+      +columns > 0 &&
+      +columns <= 50
+    ) {
+      setIsDisabled(false);
+    } else {
+      setIsDisabled(true);
+    }
+  }, [rows, columns]);
 
   const onClick = () => {
     activeEditor.dispatchCommand(INSERT_NEW_TABLE_COMMAND, {columns, rows});
@@ -149,19 +185,23 @@ export function InsertNewTableDialog({
   return (
     <>
       <TextInput
-        label="No of rows"
+        placeholder={'# of rows (1-500)'}
+        label="Rows"
         onChange={setRows}
         value={rows}
         data-test-id="table-modal-rows"
       />
       <TextInput
-        label="No of columns"
+        placeholder={'# of columns (1-50)'}
+        label="Columns"
         onChange={setColumns}
         value={columns}
         data-test-id="table-modal-columns"
       />
-      <DialogActions data-test-id="table-modal-confirm-insert">
-        <Button onClick={onClick}>Confirm</Button>
+      <DialogActions data-test-id="table-model-confirm-insert">
+        <Button disabled={isDisabled} onClick={onClick}>
+          Confirm
+        </Button>
       </DialogActions>
     </>
   );

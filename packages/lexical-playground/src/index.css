@@ -76,7 +76,6 @@ header h1 {
 .editor-scroller {
   min-height: 150px;
   border: 0;
-  resize: none;
   cursor: text;
   display: flex;
   position: relative;
@@ -1377,6 +1376,9 @@ button.action-button:disabled {
   vertical-align: middle;
   overflow: auto;
   height: 36px;
+  position: sticky;
+  top: 0;
+  z-index: 2;
 }
 
 .toolbar button.toolbar-item {

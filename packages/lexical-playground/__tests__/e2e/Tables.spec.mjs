@@ -19,6 +19,7 @@ import {
   click,
   clickSelectors,
   copyToClipboard,
+  deleteTableRows,
   focusEditor,
   html,
   initialize,
@@ -1212,6 +1213,62 @@ test.describe('Tables', () => {
             <td class="PlaygroundEditorTheme__tableCell">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </td>
+          </tr>
+        </table>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+  });
+
+  test('Delete rows (with conflicting merged cell)', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    await insertTable(page, 4, 2);
+
+    await selectCellsFromTableCords(
+      page,
+      {x: 1, y: 1},
+      {x: 1, y: 3},
+      false,
+      false,
+    );
+    await mergeTableCells(page);
+
+    await page.pause();
+    await selectCellsFromTableCords(
+      page,
+      {x: 0, y: 0},
+      {x: 0, y: 1},
+      true,
+      true,
+    );
+
+    await deleteTableRows(page);
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <table class="PlaygroundEditorTheme__table">
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <td class="PlaygroundEditorTheme__tableCell" rowspan="2">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
           </tr>
         </table>
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>

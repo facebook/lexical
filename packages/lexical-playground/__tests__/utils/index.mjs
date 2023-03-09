@@ -797,6 +797,21 @@ export async function mergeTableCells(page) {
   await click(page, '.item[data-test-id="table-merge-cells"]');
 }
 
+export async function deleteTableRows(page) {
+  await click(page, '.table-cell-action-button-container');
+  await click(page, '.item[data-test-id="table-delete-rows"]');
+}
+
+export async function deleteTableColumns(page) {
+  await click(page, '.table-cell-action-button-container');
+  await click(page, '.item[data-test-id="table-delete-columns"]');
+}
+
+export async function deleteTable(page) {
+  await click(page, '.table-cell-action-button-container');
+  await click(page, '.item[data-test-id="table-delete"]');
+}
+
 export async function enableCompositionKeyEvents(page) {
   const targetPage = IS_COLLAB ? await page.frame('left') : page;
   await targetPage.evaluate(() => {

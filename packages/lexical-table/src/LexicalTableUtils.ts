@@ -7,6 +7,7 @@
  */
 
 import type {Grid} from './LexicalTableSelection';
+import type {ElementNode} from 'lexical';
 
 import {$findMatchingParent} from '@lexical/utils';
 import {
@@ -18,6 +19,7 @@ import {
   DEPRECATED_$getNodeTriplet,
   DEPRECATED_$isGridRowNode,
   DEPRECATED_$isGridSelection,
+  DEPRECATED_GridCellNode,
   LexicalNode,
 } from 'lexical';
 import invariant from 'shared/invariant';
@@ -393,4 +395,97 @@ export function $deleteTableColumn(
   }
 
   return tableNode;
+}
+
+export function $deleteTableRow__EXPERIMENTAL(): void {
+  const selection = $getSelection();
+  invariant(
+    $isRangeSelection(selection) || DEPRECATED_$isGridSelection(selection),
+    'Expected a RangeSelection or GridSelection',
+  );
+  const anchor = selection.anchor.getNode();
+  const focus = selection.focus.getNode();
+  const [anchorCell, , grid] = DEPRECATED_$getNodeTriplet(anchor);
+  const [focusCell] = DEPRECATED_$getNodeTriplet(focus);
+  const [gridMap, anchorCellMap, focusCellMap] = DEPRECATED_$computeGridMap(
+    grid,
+    anchorCell,
+    focusCell,
+  );
+  const {startRow: anchorStartRow} = anchorCellMap;
+  const {startRow: focusStartRow} = focusCellMap;
+  const focusEndRow = focusStartRow + focusCell.__rowSpan - 1;
+  if (gridMap.length === focusEndRow - anchorStartRow + 1) {
+    // Empty grid
+    grid.remove();
+    return;
+  }
+  const columnCount = gridMap[0].length;
+  const nextRow = gridMap[focusEndRow + 1];
+  const nextRowNode = grid.getChildAtIndex(focusEndRow + 1);
+  invariant(
+    DEPRECATED_$isGridRowNode(nextRowNode),
+    'Expected GridNode childAtIndex(%s) to be RowNode',
+    String(focusEndRow + 1),
+  );
+  for (let row = focusEndRow; row >= anchorStartRow; row--) {
+    for (let column = columnCount - 1; column >= 0; column--) {
+      const {
+        cell,
+        startRow: cellStartRow,
+        startColumn: cellStartColumn,
+      } = gridMap[row][column];
+      if (cellStartColumn !== column) {
+        // Don't repeat work for the same Cell
+        continue;
+      }
+      // Rows overflowing top have to be trimmed
+      if (row === anchorStartRow && cellStartRow < anchorStartRow) {
+        cell.setRowSpan(cell.__rowSpan - (cellStartRow - anchorStartRow));
+      }
+      // Rows overflowing bottom have to be trimmed and moved to the next row
+      if (
+        cellStartRow >= anchorStartRow &&
+        cellStartRow + cell.__rowSpan - 1 > focusEndRow
+      ) {
+        cell.setRowSpan(cell.__rowSpan - (focusEndRow - cellStartRow + 1));
+        if (column === 0) {
+          $insertFirst(nextRowNode, cell);
+        } else {
+          const {cell: previousCell} = nextRow[column - 1];
+          previousCell.insertAfter(cell);
+        }
+      }
+    }
+    const rowNode = grid.getChildAtIndex(row);
+    invariant(
+      DEPRECATED_$isGridRowNode(rowNode),
+      'Expected GridNode childAtIndex(%s) to be RowNode',
+      String(row),
+    );
+    rowNode.remove();
+  }
+  if (nextRow !== undefined) {
+    const {cell} = nextRow[0];
+    $moveSelectionToCell(cell);
+  } else {
+    const previousRow = gridMap[anchorStartRow - 1];
+    const {cell} = previousRow[0];
+    $moveSelectionToCell(cell);
+  }
+}
+
+function $moveSelectionToCell(cell: DEPRECATED_GridCellNode): void {
+  const firstDescendant = cell.getFirstDescendant();
+  invariant(firstDescendant !== null, 'Unexpected empty cell');
+  firstDescendant.getParentOrThrow().selectStart();
+}
+
+function $insertFirst(parent: ElementNode, node: LexicalNode): void {
+  const firstChild = parent.getFirstChild();
+  if (firstChild !== null) {
+    parent.insertBefore(firstChild);
+  } else {
+    parent.append(node);
+  }
 }

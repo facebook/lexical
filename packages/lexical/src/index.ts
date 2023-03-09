@@ -145,6 +145,7 @@ export {
   $setCompositionKey,
   $setSelection,
   $splitNode,
+  getNearestEditorFromDOMNode,
   isSelectionWithinEditor,
 } from './LexicalUtils';
 export {$isDecoratorNode, DecoratorNode} from './nodes/LexicalDecoratorNode';

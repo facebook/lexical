@@ -88,6 +88,7 @@ header h1 {
   position: relative;
   resize: vertical;
   z-index: -1;
+  padding-bottom: 50px;
 }
 
 .test-recorder-output {
@@ -1152,7 +1153,7 @@ i.prettier-error {
 }
 
 .actions {
-  position: inherit;
+  position: absolute;
   text-align: right;
   margin: 10px;
   bottom: 0;

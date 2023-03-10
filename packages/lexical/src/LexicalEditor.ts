@@ -1087,6 +1087,7 @@ export class LexicalEditor {
               callbackFn();
             }
           },
+          tag: 'focus',
         },
       );
       // In the case where onUpdate doesn't fire (due to the focus update not

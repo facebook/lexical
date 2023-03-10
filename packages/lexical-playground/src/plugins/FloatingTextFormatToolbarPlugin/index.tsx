@@ -317,8 +317,7 @@ function useFloatingTextFormatToolbar(
           anchorOffset > 0
         ) {
           setIsText(false);
-        } else {
-          setIsText(true);
+          return;
         }
       }
     });

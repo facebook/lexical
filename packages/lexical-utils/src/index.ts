@@ -283,11 +283,11 @@ type Func = () => void;
 /**
  * Returns a function that will execute all functions passed when called. It is generally used
  * to register multiple lexical listeners and then tear them down with a single function call, such
- * as React's useEffect hook. 
- * @example 
+ * as React's useEffect hook.
+ * @example
  * ```ts
  * useEffect(() => {
- *   return mergeRegister( 
+ *   return mergeRegister(
  *     editor.registerCommand(...registerCommand1 logic),
  *     editor.registerCommand(...registerCommand2 logic),
  *     editor.registerCommand(...registerCommand3 logic)
@@ -295,10 +295,10 @@ type Func = () => void;
  * }, [editor])
  * ```
  * In this case, useEffect is returning the function returned by mergeRegister as a cleanup
- * function to be executed after either the useEffect runs again (due to one of its dependencies 
- * updating) or the compenent it resides in unmounts, like when the component re-renders. 
- * Note the functions don't neccesarily need to be in an array as all arguements 
- * are considered to be the func argument and spread from there. 
+ * function to be executed after either the useEffect runs again (due to one of its dependencies
+ * updating) or the compenent it resides in unmounts.
+ * Note the functions don't neccesarily need to be in an array as all arguements
+ * are considered to be the func argument and spread from there.
  * @param func - An array of functions meant to be executed by the returned function.
  * @returns the function which executes all the passed register command functions.
  */
@@ -309,11 +309,11 @@ export function mergeRegister(...func: Array<Func>): () => void {
 }
 
 /**
- * Attempts to resolve nested element nodes of the same type into a single node of that type. 
+ * Attempts to resolve nested element nodes of the same type into a single node of that type.
  * It is generally used for marks/commenting
  * @param editor - The lexical editor
  * @param targetNode - The target for the nested element to be extracted from.
- * @param cloneNode - See {@link lexical!$createMarkNode}
+ * @param cloneNode - See {@link $createMarkNode}
  * @param handleOverlap - Handles any overlap between the node to extract and the targetNode
  * @returns The lexical editor
  */

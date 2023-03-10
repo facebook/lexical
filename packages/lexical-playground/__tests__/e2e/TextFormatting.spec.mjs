@@ -924,7 +924,7 @@ test.describe('TextFormatting', () => {
     await page.keyboard.type('A');
     await page.keyboard.press('Enter');
     await page.keyboard.type('B');
-    await selectCharacters(page, 'left', 2);
+    await selectCharacters(page, 'left', 3);
     await toggleBold(page);
     await toggleItalic(page);
 

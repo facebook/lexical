@@ -35,7 +35,7 @@ In most cases, it is possible to achieve the same or very similar result through
 Additionally, each cycle creates a brand new EditorState object which can interfere with plugins like HistoryPlugin (undo-redo) if not handled correctly.
 
 ```js
-editor.addUpdateListener(() => {
+editor.registerUpdateListener(() => {
   editor.update(() => {
     // Don't do this
   });

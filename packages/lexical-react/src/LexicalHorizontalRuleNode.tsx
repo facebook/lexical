@@ -148,7 +148,7 @@ export class HorizontalRuleNode extends DecoratorNode<JSX.Element> {
     return '\n';
   }
 
-  isInline(): boolean {
+  isInline(): false {
     return false;
   }
 

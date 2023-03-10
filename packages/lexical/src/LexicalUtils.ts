@@ -1082,24 +1082,6 @@ export function setMutatedNode(
   }
 }
 
-export function $nodesOfType<T extends LexicalNode>(klass: Klass<T>): Array<T> {
-  const editorState = getActiveEditorState();
-  const readOnly = editorState._readOnly;
-  const klassType = klass.getType();
-  const nodes = editorState._nodeMap;
-  const nodesOfType: Array<T> = [];
-  for (const [, node] of nodes) {
-    if (
-      node instanceof klass &&
-      node.__type === klassType &&
-      (readOnly || node.isAttached())
-    ) {
-      nodesOfType.push(node as T);
-    }
-  }
-  return nodesOfType;
-}
-
 function resolveElement(
   element: ElementNode,
   isBackward: boolean,

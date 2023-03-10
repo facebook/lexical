@@ -17,6 +17,7 @@ import {
   $isRangeSelection,
   $isRootOrShadowRoot,
   $isTextNode,
+  $nodesOfType,
   $setSelection,
   $splitNode,
   DEPRECATED_$isGridSelection,
@@ -25,6 +26,7 @@ import {
   Klass,
   LexicalEditor,
   LexicalNode,
+  NodeKey,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -510,4 +512,44 @@ export function isHTMLAnchorElement(x: Node): x is HTMLAnchorElement {
 export function isHTMLElement(x: Node | EventTarget): x is HTMLElement {
   // @ts-ignore-next-line - strict check on nodeType here should filter out non-Element EventTarget implementors
   return x.nodeType === 1;
+}
+
+export function registerNodesOfTypeListener(
+  editor: LexicalEditor,
+  klass: Klass<LexicalNode>,
+  listener: (nodes: Set<NodeKey>) => void,
+  fireImmediately: void | boolean = false,
+): () => void {
+  let nodes = new Set<NodeKey>();
+  editor.getEditorState().read(() => {
+    const nodesArr = $nodesOfType(klass);
+    for (const node of nodesArr) {
+      nodes.add(node.getKey());
+    }
+  });
+  if (fireImmediately) {
+    listener(nodes);
+  }
+  return editor.registerMutationListener(klass, (mutations) => {
+    let newNodes = null;
+    for (const [key, mutation] of mutations) {
+      const created = mutation === 'created';
+      const destroyed = mutation === 'destroyed';
+      if (created || destroyed) {
+        if (newNodes === null) {
+          newNodes = new Set(nodes);
+        }
+        if (created) {
+          newNodes.add(key);
+        }
+        if (destroyed) {
+          newNodes.delete(key);
+        }
+      }
+    }
+    if (newNodes !== null) {
+      nodes = newNodes;
+      listener(nodes);
+    }
+  });
 }

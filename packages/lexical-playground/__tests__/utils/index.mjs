@@ -772,9 +772,19 @@ export async function selectCellsFromTableCords(
   );
 }
 
+export async function insertTableRowAbove(page) {
+  await click(page, '.table-cell-action-button-container');
+  await click(page, '.item[data-test-id="table-insert-row-above"]');
+}
+
+export async function insertTableRowBelow(page) {
+  await click(page, '.table-cell-action-button-container');
+  await click(page, '.item[data-test-id="table-insert-row-below"]');
+}
+
 export async function mergeTableCells(page) {
   await click(page, '.table-cell-action-button-container');
-  await click(page, '.item:text("Merge cells")');
+  await click(page, '.item[data-test-id="table-merge-cells"]');
 }
 
 export async function enableCompositionKeyEvents(page) {

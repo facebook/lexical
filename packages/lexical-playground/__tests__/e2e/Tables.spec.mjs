@@ -8,6 +8,7 @@
 
 import {
   moveDown,
+  moveLeft,
   moveRight,
   moveToEditorBeginning,
   pressBackspace,
@@ -24,6 +25,7 @@ import {
   insertHorizontalRule,
   insertSampleImage,
   insertTable,
+  insertTableRowBelow,
   IS_COLLAB,
   mergeTableCells,
   pasteFromClipboard,
@@ -934,7 +936,7 @@ test.describe('Tables', () => {
       page,
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-        <table class="PlaygroundEditorTheme__table disable-selection">
+        <table class="PlaygroundEditorTheme__table">
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
@@ -1099,6 +1101,62 @@ test.describe('Tables', () => {
             <td class="PlaygroundEditorTheme__tableCell">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </td>
+          </tr>
+        </table>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+  });
+
+  test('Insert row above (with conflicting merged cell)', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    await insertTable(page, 2, 2);
+
+    await click(page, '.PlaygroundEditorTheme__tableCell');
+    await moveDown(page, 1);
+    await selectCellsFromTableCords(
+      page,
+      {x: 1, y: 0},
+      {x: 1, y: 1},
+      true,
+      false,
+    );
+    await mergeTableCells(page);
+
+    await moveLeft(page, 1);
+    await page.pause();
+    await insertTableRowBelow(page);
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <table class="PlaygroundEditorTheme__table">
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              rowspan="3">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <td class="PlaygroundEditorTheme__tableCell"><br /></td>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
           </tr>
         </table>
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>

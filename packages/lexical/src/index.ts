@@ -40,6 +40,8 @@ export type {
 export type {
   BaseSelection,
   ElementPointType as ElementPoint,
+  GridMapType,
+  GridMapValueType,
   GridSelection,
   GridSelectionShape,
   NodeSelection,
@@ -124,7 +126,9 @@ export {
   $insertNodes,
   $isNodeSelection,
   $isRangeSelection,
+  DEPRECATED_$computeGridMap,
   DEPRECATED_$createGridSelection,
+  DEPRECATED_$getNodeTriplet,
   DEPRECATED_$isGridSelection,
 } from './LexicalSelection';
 export {$parseSerializedNode} from './LexicalUpdates';

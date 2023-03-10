@@ -49,6 +49,7 @@ import {
   $getTableRowNodeFromTableCellNodeOrThrow,
   $insertTableColumn,
   $insertTableRow,
+  $insertTableRow__EXPERIMENTAL,
   $removeTableRowAtIndex,
 } from './LexicalTableUtils';
 
@@ -66,6 +67,7 @@ export {
   $getTableRowNodeFromTableCellNodeOrThrow,
   $insertTableColumn,
   $insertTableRow,
+  $insertTableRow__EXPERIMENTAL,
   $isTableCellNode,
   $isTableNode,
   $isTableRowNode,

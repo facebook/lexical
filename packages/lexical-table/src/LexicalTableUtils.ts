@@ -7,10 +7,19 @@
  */
 
 import type {Grid} from './LexicalTableSelection';
-import type {LexicalNode} from 'lexical';
 
 import {$findMatchingParent} from '@lexical/utils';
-import {$createParagraphNode, $createTextNode} from 'lexical';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getSelection,
+  $isRangeSelection,
+  DEPRECATED_$computeGridMap,
+  DEPRECATED_$getNodeTriplet,
+  DEPRECATED_$isGridRowNode,
+  DEPRECATED_$isGridSelection,
+  LexicalNode,
+} from 'lexical';
 import invariant from 'shared/invariant';
 
 import {InsertTableCommandPayloadHeaders} from '.';
@@ -215,6 +224,60 @@ export function $insertTableRow(
   }
 
   return tableNode;
+}
+
+export function $insertTableRow__EXPERIMENTAL(insertAfter = true): void {
+  const selection = $getSelection();
+  invariant(
+    $isRangeSelection(selection) || DEPRECATED_$isGridSelection(selection),
+    'Expected a RangeSelection or GridSelection',
+  );
+  const focus = selection.focus.getNode();
+  const [focusCell, , grid] = DEPRECATED_$getNodeTriplet(focus);
+  const [gridMap, focusCellMap] = DEPRECATED_$computeGridMap(
+    grid,
+    focusCell,
+    focusCell,
+  );
+  const {startRow: focusStartRow} = focusCellMap;
+  if (insertAfter) {
+    const focusEndRow = focusStartRow + focusCell.__rowSpan - 1;
+    const focusEndRowMap = gridMap[focusEndRow];
+    const newRow = $createTableRowNode();
+    const columnCount = gridMap[0].length;
+    for (let i = 0; i < columnCount; i++) {
+      const {cell, startRow} = focusEndRowMap[i];
+      if (startRow + cell.__rowSpan - 1 <= focusEndRow) {
+        newRow.append($createTableCellNode(TableCellHeaderStates.NO_STATUS));
+      } else {
+        cell.setRowSpan(cell.__rowSpan + 1);
+      }
+    }
+    const focusEndRowNode = grid.getChildAtIndex(focusEndRow);
+    invariant(
+      DEPRECATED_$isGridRowNode(focusEndRowNode),
+      'focusEndRow is not a GridRowNode',
+    );
+    focusEndRowNode.insertAfter(newRow);
+  } else {
+    const focusStartRowMap = gridMap[focusStartRow];
+    const newRow = $createTableRowNode();
+    const columnCount = gridMap[0].length;
+    for (let i = 0; i < columnCount; i++) {
+      const {cell, startRow} = focusStartRowMap[i];
+      if (startRow === focusStartRow) {
+        newRow.append($createTableCellNode(TableCellHeaderStates.NO_STATUS));
+      } else {
+        cell.setRowSpan(cell.__rowSpan + 1);
+      }
+    }
+    const focusStartRowNode = grid.getChildAtIndex(focusStartRow);
+    invariant(
+      DEPRECATED_$isGridRowNode(focusStartRowNode),
+      'focusEndRow is not a GridRowNode',
+    );
+    focusStartRowNode.insertBefore(newRow);
+  }
 }
 
 export function $insertTableColumn(

@@ -16,7 +16,7 @@ import {
   $getTableNodeFromLexicalNodeOrThrow,
   $getTableRowIndexFromTableCellNode,
   $insertTableColumn,
-  $insertTableRow,
+  $insertTableRow__EXPERIMENTAL,
   $isTableCellNode,
   $isTableRowNode,
   $removeTableRowAtIndex,
@@ -212,8 +212,13 @@ function TableActionMenu({
           if (DEPRECATED_$isGridCellNode(node)) {
             if (isFirstCell) {
               node.setColSpan(columns).setRowSpan(rows);
-              selection.anchor.set(node.getKey(), 0, 'element');
-              selection.focus.set(node.getKey(), 0, 'element');
+              // TODO copy other editors' cell selection behavior
+              const lastDescendant = node.getLastDescendant();
+              invariant(
+                lastDescendant !== null,
+                'Unexpected empty lastDescendant on the resulting merged cell',
+              );
+              lastDescendant.select();
               isFirstCell = false;
             } else {
               nodes[i].remove();
@@ -228,37 +233,11 @@ function TableActionMenu({
   const insertTableRowAtSelection = useCallback(
     (shouldInsertAfter: boolean) => {
       editor.update(() => {
-        const selection = $getSelection();
-
-        const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
-
-        let tableRowIndex;
-
-        if (DEPRECATED_$isGridSelection(selection)) {
-          const selectionShape = selection.getShape();
-          tableRowIndex = shouldInsertAfter
-            ? selectionShape.toY
-            : selectionShape.fromY;
-        } else {
-          tableRowIndex = $getTableRowIndexFromTableCellNode(tableCellNode);
-        }
-
-        const grid = $getElementGridForTableNode(editor, tableNode);
-
-        $insertTableRow(
-          tableNode,
-          tableRowIndex,
-          shouldInsertAfter,
-          selectionCounts.rows,
-          grid,
-        );
-
-        clearTableSelection();
-
+        $insertTableRow__EXPERIMENTAL(shouldInsertAfter);
         onClose();
       });
     },
-    [editor, tableCellNode, selectionCounts.rows, clearTableSelection, onClose],
+    [editor, onClose],
   );
 
   const insertTableColumnAtSelection = useCallback(
@@ -421,20 +400,27 @@ function TableActionMenu({
           <>
             <button
               className="item"
-              onClick={() => mergeTableColumnsAtSelection()}>
+              onClick={() => mergeTableColumnsAtSelection()}
+              data-test-id="table-merge-cells">
               Merge cells
             </button>
             <hr />
           </>
         )}
-      <button className="item" onClick={() => insertTableRowAtSelection(false)}>
+      <button
+        className="item"
+        onClick={() => insertTableRowAtSelection(false)}
+        data-test-id="table-insert-row-above">
         <span className="text">
           Insert{' '}
           {selectionCounts.rows === 1 ? 'row' : `${selectionCounts.rows} rows`}{' '}
           above
         </span>
       </button>
-      <button className="item" onClick={() => insertTableRowAtSelection(true)}>
+      <button
+        className="item"
+        onClick={() => insertTableRowAtSelection(true)}
+        data-test-id="table-insert-row-below">
         <span className="text">
           Insert{' '}
           {selectionCounts.rows === 1 ? 'row' : `${selectionCounts.rows} rows`}{' '}
@@ -444,7 +430,8 @@ function TableActionMenu({
       <hr />
       <button
         className="item"
-        onClick={() => insertTableColumnAtSelection(false)}>
+        onClick={() => insertTableColumnAtSelection(false)}
+        data-test-id="table-insert-column-left">
         <span className="text">
           Insert{' '}
           {selectionCounts.columns === 1
@@ -455,7 +442,8 @@ function TableActionMenu({
       </button>
       <button
         className="item"
-        onClick={() => insertTableColumnAtSelection(true)}>
+        onClick={() => insertTableColumnAtSelection(true)}
+        data-test-id="table-insert-column-right">
         <span className="text">
           Insert{' '}
           {selectionCounts.columns === 1

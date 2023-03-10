@@ -144,15 +144,15 @@ export class HorizontalRuleNode extends DecoratorNode<JSX.Element> {
     return document.createElement('hr');
   }
 
-  getTextContent(): '\n' {
+  getTextContent(): string {
     return '\n';
   }
 
-  isInline(): false {
+  isInline(): boolean {
     return false;
   }
 
-  updateDOM(): false {
+  updateDOM(): boolean {
     return false;
   }
 

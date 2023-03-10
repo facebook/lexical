@@ -9,7 +9,7 @@
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import useLexicalEditable from '@lexical/react/useLexicalEditable';
 import {
-  $deleteTableColumn,
+  $deleteTableColumn__EXPERIMENTAL,
   $deleteTableRow__EXPERIMENTAL,
   $getTableCellNodeFromLexicalNode,
   $getTableColumnIndexFromTableCellNode,
@@ -268,17 +268,10 @@ function TableActionMenu({
 
   const deleteTableColumnAtSelection = useCallback(() => {
     editor.update(() => {
-      const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
-
-      const tableColumnIndex =
-        $getTableColumnIndexFromTableCellNode(tableCellNode);
-
-      $deleteTableColumn(tableNode, tableColumnIndex);
-
-      clearTableSelection();
+      $deleteTableColumn__EXPERIMENTAL();
       onClose();
     });
-  }, [editor, tableCellNode, clearTableSelection, onClose]);
+  }, [editor, onClose]);
 
   const toggleTableRowIsHeader = useCallback(() => {
     editor.update(() => {

@@ -42,6 +42,7 @@ import {
 import {
   $createTableNodeWithDimensions,
   $deleteTableColumn,
+  $deleteTableColumn__EXPERIMENTAL,
   $deleteTableRow__EXPERIMENTAL,
   $getTableCellNodeFromLexicalNode,
   $getTableColumnIndexFromTableCellNode,
@@ -61,6 +62,7 @@ export {
   $createTableNodeWithDimensions,
   $createTableRowNode,
   $deleteTableColumn,
+  $deleteTableColumn__EXPERIMENTAL,
   $deleteTableRow__EXPERIMENTAL,
   $getElementGridForTableNode,
   $getTableCellNodeFromLexicalNode,

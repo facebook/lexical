@@ -475,6 +475,73 @@ export function $deleteTableRow__EXPERIMENTAL(): void {
   }
 }
 
+export function $deleteTableColumn__EXPERIMENTAL(): void {
+  const selection = $getSelection();
+  invariant(
+    $isRangeSelection(selection) || DEPRECATED_$isGridSelection(selection),
+    'Expected a RangeSelection or GridSelection',
+  );
+  const anchor = selection.anchor.getNode();
+  const focus = selection.focus.getNode();
+  const [anchorCell, , grid] = DEPRECATED_$getNodeTriplet(anchor);
+  const [focusCell] = DEPRECATED_$getNodeTriplet(focus);
+  const [gridMap, anchorCellMap, focusCellMap] = DEPRECATED_$computeGridMap(
+    grid,
+    anchorCell,
+    focusCell,
+  );
+  const {startColumn: anchorStartColumn} = anchorCellMap;
+  const {startRow: focusStartRow, startColumn: focusStartColumn} = focusCellMap;
+  const startColumn = Math.min(anchorStartColumn, focusStartColumn);
+  const endColumn = Math.max(
+    anchorStartColumn + anchorCell.__colSpan - 1,
+    focusStartColumn + focusCell.__colSpan - 1,
+  );
+  const selectedColumnCount = endColumn - startColumn + 1;
+  const columnCount = gridMap[0].length;
+  if (columnCount === endColumn - startColumn + 1) {
+    // Empty grid
+    grid.selectPrevious();
+    grid.remove();
+    return;
+  }
+  const rowCount = gridMap.length;
+  for (let row = 0; row < rowCount; row++) {
+    for (let column = startColumn; column <= endColumn; column++) {
+      const {cell, startColumn: cellStartColumn} = gridMap[row][column];
+      if (cellStartColumn < startColumn) {
+        if (column === startColumn) {
+          const overflowLeft = startColumn - cellStartColumn;
+          // Overflowing left
+          cell.setColSpan(
+            cell.__colSpan -
+              // Possible overflow right too
+              Math.min(selectedColumnCount, cell.__colSpan - overflowLeft),
+          );
+        }
+      } else if (cellStartColumn + cell.__colSpan - 1 > endColumn) {
+        if (column === endColumn) {
+          // Overflowing right
+          const inSelectedArea = endColumn - cellStartColumn + 1;
+          cell.setColSpan(cell.__colSpan - inSelectedArea);
+        }
+      } else {
+        cell.remove();
+      }
+    }
+  }
+  const focusRowMap = gridMap[focusStartRow];
+  const nextColumn = focusRowMap[focusStartColumn + focusCell.__colSpan];
+  if (nextColumn !== undefined) {
+    const {cell} = nextColumn;
+    $moveSelectionToCell(cell);
+  } else {
+    const previousRow = focusRowMap[focusStartColumn - 1];
+    const {cell} = previousRow;
+    $moveSelectionToCell(cell);
+  }
+}
+
 function $moveSelectionToCell(cell: DEPRECATED_GridCellNode): void {
   const firstDescendant = cell.getFirstDescendant();
   invariant(firstDescendant !== null, 'Unexpected empty cell');

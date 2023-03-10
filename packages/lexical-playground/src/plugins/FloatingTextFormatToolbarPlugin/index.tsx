@@ -306,6 +306,21 @@ function useFloatingTextFormatToolbar(
       } else {
         setIsText(false);
       }
+
+      if ($isRangeSelection(selection) && !selection.isCollapsed()) {
+        const anchorOffset = selection.anchor.offset;
+        const focusOffset = selection.focus.offset;
+        if (
+          selection.anchor.key !== selection.focus.key &&
+          selection.dirty &&
+          focusOffset === 0 &&
+          anchorOffset > 0
+        ) {
+          setIsText(false);
+        } else {
+          setIsText(true);
+        }
+      }
     });
   }, [editor]);
 

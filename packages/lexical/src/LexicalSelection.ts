@@ -46,7 +46,9 @@ import {
   isCurrentlyReadOnlyMode,
 } from './LexicalUpdates';
 import {
+  $findMatchingParent,
   $getAdjacentNode,
+  $getChildrenRecursively,
   $getCompositionKey,
   $getNearestRootOrShadowRoot,
   $getNodeByKey,
@@ -92,6 +94,13 @@ export type ElementPointType = {
 };
 
 export type PointType = TextPointType | ElementPointType;
+
+type GridMapValueType = {
+  cell: DEPRECATED_GridCellNode;
+  startRow: number;
+  startColumn: number;
+};
+type GridMapType = Array<Array<GridMapValueType>>;
 
 export class Point {
   key: NodeKey;
@@ -455,6 +464,7 @@ export class GridSelection implements BaseSelection {
     return selection.insertNodes(nodes, selectStart);
   }
 
+  // TODO Deprecate this method. It's confusing when used with colspan|rowspan
   getShape(): GridSelectionShape {
     const anchorCellNode = $getNodeByKey(this.anchor.key);
     invariant(anchorCellNode !== null, 'getNodes: expected to find AnchorNode');
@@ -489,43 +499,132 @@ export class GridSelection implements BaseSelection {
     if (cachedNodes !== null) {
       return cachedNodes;
     }
-    const nodesSet = new Set<LexicalNode>();
-    const {fromX, fromY, toX, toY} = this.getShape();
 
-    const gridNode = $getNodeByKey<DEPRECATED_GridNode>(this.gridKey);
-    if (!DEPRECATED_$isGridNode(gridNode)) {
-      invariant(false, 'getNodes: expected to find GridNode');
+    const anchorNode = this.anchor.getNode();
+    const focusNode = this.focus.getNode();
+    const anchorCell = $findMatchingParent(
+      anchorNode,
+      DEPRECATED_$isGridCellNode,
+    );
+    const focusCell = $findMatchingParent(
+      focusNode,
+      DEPRECATED_$isGridCellNode,
+    );
+    invariant(
+      DEPRECATED_$isGridCellNode(anchorCell),
+      'Expected GridSelection anchor to be (or a child of) GridCellNode',
+    );
+    invariant(
+      DEPRECATED_$isGridCellNode(focusCell),
+      'Expected GridSelection focus to be (or a child of) GridCellNode',
+    );
+    const anchorRow = anchorCell.getParent();
+    invariant(
+      DEPRECATED_$isGridRowNode(anchorRow),
+      'Expected anchorCell to have a parent GridRowNode',
+    );
+    const gridNode = anchorRow.getParent();
+    invariant(
+      DEPRECATED_$isGridNode(gridNode),
+      'Expected tableNode to have a parent GridNode',
+    );
+    // TODO Mapping the whole Grid every time not efficient. We need to compute the entire state only
+    // once (on load) and iterate on it as updates occur. However, to do this we need to have the
+    // ability to store a state. Killing GridSelection and moving the logic to the plugin would make
+    // this possible.
+    const [map, cellAMap, cellBMap] = computeGridMap(
+      gridNode,
+      anchorCell,
+      focusCell,
+    );
+
+    let minColumn = Math.min(cellAMap.startColumn, cellBMap.startColumn);
+    let minRow = Math.min(cellAMap.startRow, cellBMap.startRow);
+    let maxColumn = Math.max(
+      cellAMap.startColumn + cellAMap.cell.__colSpan - 1,
+      cellBMap.startColumn + cellBMap.cell.__colSpan - 1,
+    );
+    let maxRow = Math.max(
+      cellAMap.startRow + cellAMap.cell.__rowSpan - 1,
+      cellBMap.startRow + cellBMap.cell.__rowSpan - 1,
+    );
+    let exploredMinColumn = minColumn;
+    let exploredMinRow = minRow;
+    let exploredMaxColumn = minColumn;
+    let exploredMaxRow = minRow;
+    function expandBoundary(mapValue: GridMapValueType): void {
+      const {
+        cell,
+        startColumn: cellStartColumn,
+        startRow: cellStartRow,
+      } = mapValue;
+      minColumn = Math.min(minColumn, cellStartColumn);
+      minRow = Math.min(minRow, cellStartRow);
+      maxColumn = Math.max(maxColumn, cellStartColumn + cell.__colSpan - 1);
+      maxRow = Math.max(maxRow, cellStartRow + cell.__rowSpan - 1);
     }
-    nodesSet.add(gridNode);
-
-    const gridRowNodes = gridNode.getChildren();
-    for (let r = fromY; r <= toY; r++) {
-      const gridRowNode = gridRowNodes[r];
-      nodesSet.add(gridRowNode);
-
-      if (!DEPRECATED_$isGridRowNode(gridRowNode)) {
-        invariant(false, 'getNodes: expected to find GridRowNode');
+    while (
+      minColumn < exploredMinColumn ||
+      minRow < exploredMinRow ||
+      maxColumn > exploredMaxColumn ||
+      maxRow > exploredMaxRow
+    ) {
+      if (minColumn < exploredMinColumn) {
+        // Expand on the left
+        const rowDiff = exploredMaxRow - exploredMinRow;
+        const previousColumn = exploredMinColumn - 1;
+        for (let i = 0; i <= rowDiff; i++) {
+          expandBoundary(map[exploredMinRow + i][previousColumn]);
+        }
+        exploredMinColumn = previousColumn;
       }
-      const gridCellNodes = gridRowNode.getChildren<DEPRECATED_GridCellNode>();
-      for (let c = fromX; c <= toX; c++) {
-        const gridCellNode = gridCellNodes[c];
-        if (!DEPRECATED_$isGridCellNode(gridCellNode)) {
-          invariant(false, 'getNodes: expected to find GridCellNode');
+      if (minRow < exploredMinRow) {
+        // Expand on top
+        const columnDiff = exploredMaxColumn - exploredMinColumn;
+        const previousRow = exploredMinRow - 1;
+        for (let i = 0; i <= columnDiff; i++) {
+          expandBoundary(map[previousRow][exploredMinColumn + i]);
         }
-        nodesSet.add(gridCellNode);
-
-        const children = gridCellNode.getChildren();
-
-        while (children.length > 0) {
-          const child = children.shift() as LexicalNode;
-          nodesSet.add(child);
-          if ($isElementNode(child)) {
-            children.unshift(...child.getChildren());
-          }
+        exploredMinRow = previousRow;
+      }
+      if (maxColumn > exploredMaxColumn) {
+        // Expand on the right
+        const rowDiff = exploredMaxRow - exploredMinRow;
+        const nextColumn = exploredMaxColumn + 1;
+        for (let i = 0; i <= rowDiff; i++) {
+          expandBoundary(map[exploredMinRow + i][nextColumn]);
         }
+        exploredMaxColumn = nextColumn;
+      }
+      if (maxRow > exploredMaxRow) {
+        // Expand on the bottom
+        const columnDiff = exploredMaxColumn - exploredMinColumn;
+        const nextRow = exploredMaxRow + 1;
+        for (let i = 0; i <= columnDiff; i++) {
+          expandBoundary(map[nextRow][exploredMinColumn + i]);
+        }
+        exploredMaxRow = nextRow;
       }
     }
-    const nodes = Array.from(nodesSet);
+
+    const nodes: Array<LexicalNode> = [gridNode];
+    let lastRow = null;
+    for (let i = minRow; i <= maxRow; i++) {
+      for (let j = minColumn; j <= maxColumn; j++) {
+        const {cell} = map[i][j];
+        const currentRow = cell.getParent();
+        invariant(
+          DEPRECATED_$isGridRowNode(currentRow),
+          'Expected GridCellNode parent to be a GridRowNode',
+        );
+        if (currentRow !== lastRow) {
+          nodes.push(currentRow);
+        }
+        nodes.push(cell, ...$getChildrenRecursively(cell));
+        lastRow = currentRow;
+      }
+    }
+
     if (!isCurrentlyReadOnlyMode()) {
       this._cachedNodes = nodes;
     }
@@ -2995,4 +3094,69 @@ export function $getTextContent(): string {
     return '';
   }
   return selection.getTextContent();
+}
+
+function computeGridMap(
+  grid: DEPRECATED_GridNode,
+  cellA: DEPRECATED_GridCellNode,
+  cellB: DEPRECATED_GridCellNode,
+): [GridMapType, GridMapValueType, GridMapValueType] {
+  const tableMap: GridMapType = [];
+  let cellAValue: null | GridMapValueType = null;
+  let cellBValue: null | GridMapValueType = null;
+  function write(
+    startRow: number,
+    startColumn: number,
+    cell: DEPRECATED_GridCellNode,
+  ) {
+    const value = {
+      cell,
+      startColumn,
+      startRow,
+    };
+    const rowSpan = cell.__rowSpan;
+    const colSpan = cell.__colSpan;
+    for (let i = 0; i < rowSpan; i++) {
+      if (tableMap[startRow + i] === undefined) {
+        tableMap[startRow + i] = [];
+      }
+      for (let j = 0; j < colSpan; j++) {
+        tableMap[startRow + i][startColumn + j] = value;
+      }
+    }
+    if (cellA.is(cell)) {
+      cellAValue = value;
+    }
+    if (cellB.is(cell)) {
+      cellBValue = value;
+    }
+  }
+  function isEmpty(row: number, column: number) {
+    return tableMap[row] === undefined || tableMap[row][column] === undefined;
+  }
+
+  const gridChildren = grid.getChildren();
+  for (let i = 0; i < gridChildren.length; i++) {
+    const row = gridChildren[i];
+    invariant(
+      DEPRECATED_$isGridRowNode(row),
+      'Expected GridNode children to be GridRowNode',
+    );
+    const rowChildren = row.getChildren();
+    let j = 0;
+    for (const cell of rowChildren) {
+      invariant(
+        DEPRECATED_$isGridCellNode(cell),
+        'Expected GridRowNode children to be GridCellNode',
+      );
+      while (!isEmpty(i, j)) {
+        j++;
+      }
+      write(i, j, cell);
+      j += cell.__colSpan;
+    }
+  }
+  invariant(cellAValue !== null, 'Anchor not found in Grid');
+  invariant(cellBValue !== null, 'Focus not found in Grid');
+  return [tableMap, cellAValue, cellBValue];
 }

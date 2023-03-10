@@ -207,6 +207,29 @@ function createListOrMerge(node: ElementNode, listType: ListType): ListNode {
   }
 }
 
+export function mergeLists(list1: ListNode, list2: ListNode): void {
+  const listItem1 = list1.getLastChild();
+  const listItem2 = list2.getFirstChild();
+
+  if (
+    listItem1 &&
+    listItem2 &&
+    isNestedListNode(listItem1) &&
+    isNestedListNode(listItem2)
+  ) {
+    mergeLists(listItem1.getFirstChild(), listItem2.getFirstChild());
+    listItem2.remove();
+  }
+
+  const toMerge = list2.getChildren();
+  if (toMerge.length > 0) {
+    list1.append(...toMerge);
+    updateChildrenListItemValue(list1);
+  }
+
+  list2.remove();
+}
+
 export function removeList(editor: LexicalEditor): void {
   editor.update(() => {
     const selection = $getSelection();
@@ -353,6 +376,7 @@ export function $handleIndent(listItemNode: ListItemNode): void {
       } else {
         parent.append(newListItem);
       }
+      updateChildrenListItemValue(newList);
     }
   }
 

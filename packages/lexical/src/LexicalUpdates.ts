@@ -933,14 +933,10 @@ function beginUpdate(
     editor._updating = previouslyUpdating;
     infiniteTransformCount = 0;
   }
-  const windowObj = editor._window;
-  const windowEvent = windowObj !== null ? window.event : null;
-  const eventType = windowEvent != null ? windowEvent.type : null;
 
   const shouldUpdate =
     editor._dirtyType !== NO_DIRTY_NODES ||
-    editorStateHasDirtySelection(pendingEditorState, editor) ||
-    (editor._blockCursorElement !== null && eventType === 'blur');
+    editorStateHasDirtySelection(pendingEditorState, editor);
 
   if (shouldUpdate) {
     if (pendingEditorState._flushSync) {

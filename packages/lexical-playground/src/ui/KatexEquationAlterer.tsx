@@ -65,7 +65,7 @@ export default function KatexEquationAlterer({
         <KatexRenderer
           equation={equation}
           inline={false}
-          onClick={() => null}
+          onDoubleClick={() => null}
         />
       </div>
       <div className="KatexEquationAlterer_dialogActions">

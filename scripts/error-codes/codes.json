@@ -101,5 +101,16 @@
   "99": "Only element or decorator nodes can be inserted in to the root node",
   "100": "splice: sibling not found",
   "101": "createChildrenArray: node does not exist in nodeMap",
-  "102": "Can not call $splitNode() on root element"
+  "102": "Can not call $splitNode() on root element",
+  "103": "Expected GridSelection anchor to be (or a child of) GridCellNode",
+  "104": "Expected GridSelection focus to be (or a child of) GridCellNode",
+  "105": "Expected anchorCell to have a parent GridRowNode",
+  "106": "Expected tableNode to have a parent GridNode",
+  "107": "Expected GridCellNode parent to be a GridRowNode",
+  "108": "Expected GridNode children to be GridRowNode",
+  "109": "Expected GridRowNode children to be GridCellNode",
+  "110": "Anchor not found in Grid",
+  "111": "Focus not found in Grid",
+  "112": "Stack.length > 0; can't be undefined",
+  "113": "Lexical node does not exist in active editor state. Avoid using the same node references between nested closures from editorState.read/editor.update."
 }

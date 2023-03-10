@@ -58,7 +58,6 @@ header h1 {
 .editor-shell .editor-container {
   background: #fff;
   position: relative;
-  cursor: text;
   display: block;
   border-bottom-left-radius: 10px;
   border-bottom-right-radius: 10px;
@@ -76,8 +75,6 @@ header h1 {
 .editor-scroller {
   min-height: 150px;
   border: 0;
-  resize: none;
-  cursor: text;
   display: flex;
   position: relative;
   outline: 0;
@@ -89,6 +86,8 @@ header h1 {
 .editor {
   flex: auto;
   position: relative;
+  resize: vertical;
+  z-index: -1;
 }
 
 .test-recorder-output {
@@ -559,9 +558,9 @@ i.prettier-error {
 
 .link-editor .link-input {
   display: block;
-  width: calc(100% - 24px);
+  width: calc(100% - 75px);
   box-sizing: border-box;
-  margin: 8px 12px;
+  margin: 12px 12px;
   padding: 8px 12px;
   border-radius: 15px;
   background-color: #eee;
@@ -571,6 +570,26 @@ i.prettier-error {
   outline: 0;
   position: relative;
   font-family: inherit;
+}
+
+.link-editor .link-view {
+  display: block;
+  width: calc(100% - 24px);
+  margin: 8px 12px;
+  padding: 8px 12px;
+  border-radius: 15px;
+  font-size: 15px;
+  color: rgb(5, 5, 5);
+  border: 0;
+  outline: 0;
+  position: relative;
+  font-family: inherit;
+}
+
+.link-editor .link-view a {
+  display: block;
+  word-break: break-word;
+  width: calc(100% - 33px);
 }
 
 .link-editor div.link-edit {
@@ -587,10 +606,39 @@ i.prettier-error {
   cursor: pointer;
 }
 
+.link-editor div.link-cancel {
+  background-image: url(images/icons/close.svg);
+  background-size: 16px;
+  background-position: center;
+  background-repeat: no-repeat;
+  width: 35px;
+  vertical-align: -0.25em;
+  margin-right: 28px;
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  cursor: pointer;
+}
+
+.link-editor div.link-confirm {
+  background-image: url(images/icons/success-alt.svg);
+  background-size: 16px;
+  background-position: center;
+  background-repeat: no-repeat;
+  width: 35px;
+  vertical-align: -0.25em;
+  margin-right: 2px;
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  cursor: pointer;
+}
+
 .link-editor .link-input a {
   color: rgb(33, 111, 219);
-  text-decoration: none;
-  display: block;
+  text-decoration: underline;
   white-space: nowrap;
   overflow: hidden;
   margin-right: 30px;
@@ -612,6 +660,10 @@ i.prettier-error {
   border: none;
   background-color: rgba(0, 0, 0, 0.075);
   border-radius: 4px;
+}
+
+.ContentEditable__root .PlaygroundEditorTheme__link {
+  pointer-events: none;
 }
 
 .mention:focus {
@@ -1324,6 +1376,9 @@ button.action-button:disabled {
   vertical-align: middle;
   overflow: auto;
   height: 36px;
+  position: sticky;
+  top: 0;
+  z-index: 2;
 }
 
 .toolbar button.toolbar-item {
@@ -1574,6 +1629,15 @@ button.action-button:disabled {
 
 .spacer {
   letter-spacing: -2px;
+}
+
+.editor-equation {
+  cursor: default;
+  user-select: none;
+}
+
+.editor-equation.focused {
+  outline: 2px solid rgb(60, 132, 244);
 }
 
 button.item i {

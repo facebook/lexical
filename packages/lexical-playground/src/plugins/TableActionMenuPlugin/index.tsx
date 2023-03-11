@@ -10,6 +10,7 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import useLexicalEditable from '@lexical/react/useLexicalEditable';
 import {
   $deleteTableColumn,
+  $deleteTableRow__EXPERIMENTAL,
   $getTableCellNodeFromLexicalNode,
   $getTableColumnIndexFromTableCellNode,
   $getTableNodeFromLexicalNodeOrThrow,
@@ -18,7 +19,6 @@ import {
   $insertTableRow__EXPERIMENTAL,
   $isTableCellNode,
   $isTableRowNode,
-  $removeTableRowAtIndex,
   getTableSelectionFromTableElement,
   HTMLTableElementWithWithTableSelectionState,
   TableCellHeaderStates,
@@ -251,15 +251,10 @@ function TableActionMenu({
 
   const deleteTableRowAtSelection = useCallback(() => {
     editor.update(() => {
-      const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
-      const tableRowIndex = $getTableRowIndexFromTableCellNode(tableCellNode);
-
-      $removeTableRowAtIndex(tableNode, tableRowIndex);
-
-      clearTableSelection();
+      $deleteTableRow__EXPERIMENTAL();
       onClose();
     });
-  }, [editor, tableCellNode, clearTableSelection, onClose]);
+  }, [editor, onClose]);
 
   const deleteTableAtSelection = useCallback(() => {
     editor.update(() => {
@@ -419,13 +414,22 @@ function TableActionMenu({
         </span>
       </button>
       <hr />
-      <button className="item" onClick={() => deleteTableColumnAtSelection()}>
+      <button
+        className="item"
+        onClick={() => deleteTableColumnAtSelection()}
+        data-test-id="table-delete-columns">
         <span className="text">Delete column</span>
       </button>
-      <button className="item" onClick={() => deleteTableRowAtSelection()}>
+      <button
+        className="item"
+        onClick={() => deleteTableRowAtSelection()}
+        data-test-id="table-delete-rows">
         <span className="text">Delete row</span>
       </button>
-      <button className="item" onClick={() => deleteTableAtSelection()}>
+      <button
+        className="item"
+        onClick={() => deleteTableAtSelection()}
+        data-test-id="table-delete">
         <span className="text">Delete table</span>
       </button>
       <hr />

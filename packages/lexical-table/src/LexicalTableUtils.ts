@@ -239,12 +239,12 @@ export function $insertTableRow__EXPERIMENTAL(insertAfter = true): void {
     focusCell,
     focusCell,
   );
+  const columnCount = gridMap[0].length;
   const {startRow: focusStartRow} = focusCellMap;
   if (insertAfter) {
     const focusEndRow = focusStartRow + focusCell.__rowSpan - 1;
     const focusEndRowMap = gridMap[focusEndRow];
     const newRow = $createTableRowNode();
-    const columnCount = gridMap[0].length;
     for (let i = 0; i < columnCount; i++) {
       const {cell, startRow} = focusEndRowMap[i];
       if (startRow + cell.__rowSpan - 1 <= focusEndRow) {
@@ -262,7 +262,6 @@ export function $insertTableRow__EXPERIMENTAL(insertAfter = true): void {
   } else {
     const focusStartRowMap = gridMap[focusStartRow];
     const newRow = $createTableRowNode();
-    const columnCount = gridMap[0].length;
     for (let i = 0; i < columnCount; i++) {
       const {cell, startRow} = focusStartRowMap[i];
       if (startRow === focusStartRow) {
@@ -332,6 +331,45 @@ export function $insertTableColumn(
   }
 
   return tableNode;
+}
+
+export function $insertTableColumn__EXPERIMENTAL(insertAfter = true): void {
+  const selection = $getSelection();
+  invariant(
+    $isRangeSelection(selection) || DEPRECATED_$isGridSelection(selection),
+    'Expected a RangeSelection or GridSelection',
+  );
+  const focus = selection.focus.getNode();
+  const [focusCell, , grid] = DEPRECATED_$getNodeTriplet(focus);
+  const [gridMap, focusCellMap] = DEPRECATED_$computeGridMap(
+    grid,
+    focusCell,
+    focusCell,
+  );
+  const rowCount = gridMap.length;
+  const {startColumn: focusStartColumn} = focusCellMap;
+  if (insertAfter) {
+    const focusEndColumn = focusStartColumn + focusCell.__colSpan - 1;
+    for (let i = 0; i < rowCount; i++) {
+      const {cell, startColumn} = gridMap[i][focusEndColumn];
+      if (startColumn + cell.__colSpan - 1 <= focusEndColumn) {
+        cell.insertAfter($createTableCellNode(TableCellHeaderStates.NO_STATUS));
+      } else {
+        cell.setColSpan(cell.__colSpan + 1);
+      }
+    }
+  } else {
+    for (let i = 0; i < rowCount; i++) {
+      const {cell, startColumn} = gridMap[i][focusStartColumn];
+      if (startColumn === focusStartColumn) {
+        cell.insertBefore(
+          $createTableCellNode(TableCellHeaderStates.NO_STATUS),
+        );
+      } else {
+        cell.setColSpan(cell.__colSpan + 1);
+      }
+    }
+  }
 }
 
 export function $deleteTableColumn(

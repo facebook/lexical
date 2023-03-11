@@ -1120,7 +1120,6 @@ test.describe('Tables', () => {
     await insertTable(page, 2, 2);
 
     await click(page, '.PlaygroundEditorTheme__tableCell');
-    await moveDown(page, 1);
     await selectCellsFromTableCords(
       page,
       {x: 1, y: 0},
@@ -1131,7 +1130,6 @@ test.describe('Tables', () => {
     await mergeTableCells(page);
 
     await moveLeft(page, 1);
-    await page.pause();
     await insertTableRowBelow(page);
 
     await assertHTML(
@@ -1170,13 +1168,16 @@ test.describe('Tables', () => {
     isPlainText,
   }) => {
     test.skip(isPlainText);
+    if (IS_COLLAB) {
+      // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
+      page.setViewportSize({height: 1000, width: 3000});
+    }
 
     await focusEditor(page);
 
     await insertTable(page, 2, 2);
 
     await click(page, '.PlaygroundEditorTheme__tableCell');
-    await moveDown(page, 1);
     await selectCellsFromTableCords(
       page,
       {x: 0, y: 0},

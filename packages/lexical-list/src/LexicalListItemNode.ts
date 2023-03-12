@@ -526,10 +526,20 @@ function convertListItemElement(domNode: Node): DOMConversionOutput {
   return {node: $createListItemNode(checked)};
 }
 
+/**
+ * Creates a new List Item node, passing true/false will convert it to a checkbox input.
+ * @param checked - Is the List Item a checkbox and, if so, is it checked? undefined/null: not a checkbox, true/false is a checkbox and checked/unchecked, respectively.
+ * @returns The new List Item.
+ */
 export function $createListItemNode(checked?: boolean): ListItemNode {
   return $applyNodeReplacement(new ListItemNode(undefined, checked));
 }
 
+/**
+ * Checks to see if the node is a ListItemNode.
+ * @param node - The node to be checked.
+ * @returns true if the node is a ListItemNode, false otherwise.
+ */
 export function $isListItemNode(
   node: LexicalNode | null | undefined,
 ): node is ListItemNode {

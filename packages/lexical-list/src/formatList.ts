@@ -80,6 +80,18 @@ function $getListItemValue(listItem: ListItemNode): number {
   return value;
 }
 
+/**
+ * Inserts a new ListNode. If the selection's anchor node is an empty ListItemNode, it will
+ * replace its parent with a new ListNode and re-insert the ListItemNode and any previous children.
+ * If its anchor node is an empty ListItemNode that is also a child of the root/shadow root,
+ * it will replace the ListItemNode with a new ListNode and add a new ListItemNode.
+ * If the selection's anchor node is not an empty ListItemNode, it will add a new ListNode
+ * if the anchor is an empty node. Otherwise, if the node is a leaf node, it will attempt
+ * to find a ListNode up the branch and replace it with a new ListNode, or create a new
+ * ListNode at the nearest root/shadow root.
+ * @param editor - The lexical editor.
+ * @param listType - The type of list, "number" | "bullet" | "check".
+ */
 export function insertList(editor: LexicalEditor, listType: ListType): void {
   editor.update(() => {
     const selection = $getSelection();
@@ -207,6 +219,12 @@ function createListOrMerge(node: ElementNode, listType: ListType): ListNode {
   }
 }
 
+/**
+ * A recursive function that goes through each list and their children,
+ * appending list2 children after list1 children.
+ * @param list1 - The first list to be merged.
+ * @param list2 - The second list to be merged.
+ */
 export function mergeLists(list1: ListNode, list2: ListNode): void {
   const listItem1 = list1.getLastChild();
   const listItem2 = list2.getFirstChild();
@@ -230,6 +248,13 @@ export function mergeLists(list1: ListNode, list2: ListNode): void {
   list2.remove();
 }
 
+/**
+ * Searches for the nearest ancestral ListNode and removes it. If selection is an empty ListItemNode
+ * it will remove the whole list, including the ListItemNode. For each ListItemNode in the ListNode,
+ * removeList will also generate new ParagraphNodes in the removed ListNode's place. Any child node
+ * inside a ListItemNode will be appended to the new ParagraphNodes.
+ * @param editor - The lexical editor.
+ */
 export function removeList(editor: LexicalEditor): void {
   editor.update(() => {
     const selection = $getSelection();
@@ -289,6 +314,13 @@ export function removeList(editor: LexicalEditor): void {
   });
 }
 
+/**
+ * Takes the value of a child ListItemNode and makes it the value the ListItemNode
+ * should be if it isn't already. If only certain children should be updated, they
+ * can be passed optionally in an array.
+ * @param list - The list whose children are updated.
+ * @param children - An array of the children to be updated.
+ */
 export function updateChildrenListItemValue(
   list: ListNode,
   children?: Array<LexicalNode>,
@@ -309,6 +341,10 @@ export function updateChildrenListItemValue(
   }
 }
 
+/**
+ *
+ * @param listItemNode - The ListItemNode to be indented.
+ */
 export function $handleIndent(listItemNode: ListItemNode): void {
   // go through each node and decide where to move it.
   const removed = new Set<NodeKey>();
@@ -385,6 +421,11 @@ export function $handleIndent(listItemNode: ListItemNode): void {
   }
 }
 
+/**
+ *
+ * @param listItemNode
+ * @returns
+ */
 export function $handleOutdent(listItemNode: ListItemNode): void {
   // go through each node and decide where to move it.
 
@@ -446,6 +487,10 @@ export function $handleOutdent(listItemNode: ListItemNode): void {
   }
 }
 
+/**
+ *
+ * @returns
+ */
 export function $handleListInsertParagraph(): boolean {
   const selection = $getSelection();
 

@@ -160,7 +160,7 @@ export function findNearestListItemNode(
  * Takes a deeply nested ListNode or ListItemNode and traverses up the branch to delete the first
  * ancestral ListNode (which could be the root ListNode) or ListItemNode with siblings, essentially
  * bringing the deeply nested node up the branch once. Would remove sublist if it has siblings.
- * Should not break ListItem -> List -> ListItem chain as empty ListNodes should be removed on .remove().
+ * Should not break ListItem -> List -> ListItem chain as empty List/ItemNodes should be removed on .remove().
  * @param sublist - The nested ListNode or ListItemNode to be brought up the branch.
  */
 export function $removeHighestEmptyListParent(

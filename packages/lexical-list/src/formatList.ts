@@ -81,14 +81,12 @@ function $getListItemValue(listItem: ListItemNode): number {
 }
 
 /**
- * Inserts a new ListNode. If the selection's anchor node is an empty ListItemNode, it will
- * replace its parent with a new ListNode and re-insert the ListItemNode and any previous children.
- * If its anchor node is an empty ListItemNode that is also a child of the root/shadow root,
- * it will replace the ListItemNode with a new ListNode and add a new ListItemNode.
- * If the selection's anchor node is not an empty ListItemNode, it will add a new ListNode
- * if the anchor is an empty node. Otherwise, if the node is a leaf node, it will attempt
- * to find a ListNode up the branch and replace it with a new ListNode, or create a new
- * ListNode at the nearest root/shadow root.
+ * Inserts a new ListNode. If the selection's anchor node is an empty ListItemNode and is a child of
+ * the root/shadow root, it will replace the ListItemNode with a ListNode and the old ListItemNode.
+ * Otherwise it will replace its parent with a new ListNode and re-insert the ListItemNode and any previous children.
+ * If the selection's anchor node is not an empty ListItemNode, it will add a new ListNode or merge an existing ListNode,
+ * unless the the node is a leaf node, in which case it will attempt to find a ListNode up the branch and replace it with
+ * a new ListNode, or create a new ListNode at the nearest root/shadow root.
  * @param editor - The lexical editor.
  * @param listType - The type of list, "number" | "bullet" | "check".
  */
@@ -220,8 +218,8 @@ function createListOrMerge(node: ElementNode, listType: ListType): ListNode {
 }
 
 /**
- * A recursive function that goes through each list and their children,
- * appending list2 children after list1 children.
+ * A recursive function that goes through each list and their children, including nested lists,
+ * appending list2 children after list1 children and updating ListItemNode values.
  * @param list1 - The first list to be merged.
  * @param list2 - The second list to be merged.
  */
@@ -342,7 +340,9 @@ export function updateChildrenListItemValue(
 }
 
 /**
- *
+ * Adds an empty ListNode/ListItemNode chain at listItemNode, so as to
+ * create an indent effect. Won't indent ListItemNodes that have a ListNode as
+ * a child, but does merge sibling ListItemNodes if one has a nested ListNode.
  * @param listItemNode - The ListItemNode to be indented.
  */
 export function $handleIndent(listItemNode: ListItemNode): void {
@@ -422,9 +422,10 @@ export function $handleIndent(listItemNode: ListItemNode): void {
 }
 
 /**
- *
- * @param listItemNode
- * @returns
+ * Removes an indent by removing an empty ListNode/ListItemNode chain. An indented ListItemNode
+ * has a great grandparent node of type ListNode, which is where the ListItemNode will reside
+ * within as a child.
+ * @param listItemNode - The ListItemNode to remove the indent (outdent).
  */
 export function $handleOutdent(listItemNode: ListItemNode): void {
   // go through each node and decide where to move it.
@@ -488,8 +489,13 @@ export function $handleOutdent(listItemNode: ListItemNode): void {
 }
 
 /**
- *
- * @returns
+ * Attempts to insert a ParagraphNode at selection and selects the new node. The selection must contain a ListItemNode
+ * or a node that does not already contain text. If its grandparent is the root/shadow root, it will get the ListNode
+ * (which should be the parent node) and insert the ParagraphNode as a sibling to the ListNode. If the ListNode is
+ * nested in a ListItemNode instead, it will add the ParagraphNode after the grandparent ListItemNode.
+ * Throws an invariant if the selection is not a child of a ListNode.
+ * @returns true if a ParagraphNode was inserted succesfully, false if there is no selection
+ * or the selection does not contain a ListItemNode or the node already holds text.
  */
 export function $handleListInsertParagraph(): boolean {
   const selection = $getSelection();

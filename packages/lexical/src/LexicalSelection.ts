@@ -1535,6 +1535,7 @@ export class RangeSelection implements BaseSelection {
         }
       } else if (
         didReplaceOrMerge &&
+        !$isElementNode(node) &&
         !$isDecoratorNode(node) &&
         $isRootOrShadowRoot(target.getParent<ElementNode>())
       ) {

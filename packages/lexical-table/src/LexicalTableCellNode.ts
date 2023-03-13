@@ -58,12 +58,14 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
   }
 
   static clone(node: TableCellNode): TableCellNode {
-    return new TableCellNode(
+    const tableNode = new TableCellNode(
       node.__headerState,
       node.__colSpan,
       node.__width,
       node.__key,
     );
+    tableNode.__rowSpan = node.__rowSpan;
+    return tableNode;
   }
 
   static importDOM(): DOMConversionMap | null {
@@ -243,6 +245,10 @@ export function convertTableCellNodeElement(
       ? TableCellHeaderStates.ROW
       : TableCellHeaderStates.NO_STATUS,
   );
+  if (domNode instanceof HTMLTableCellElement) {
+    tableCellNode.__colSpan = domNode.colSpan;
+    tableCellNode.__rowSpan = domNode.rowSpan;
+  }
 
   return {
     forChild: (lexicalNode, parentLexicalNode) => {

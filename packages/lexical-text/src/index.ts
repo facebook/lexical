@@ -16,7 +16,10 @@ import {
   $isParagraphNode,
   $isTextNode,
   TextNode,
+  TextModeType
 } from 'lexical';
+
+import {TEXT_TYPE_TO_MODE} from 'lexical/LexicalConstants'
 
 export type TextNodeWithOffset = {
   node: TextNode;
@@ -163,8 +166,8 @@ export function registerLexicalTextEntity<T extends TextNode>(
     node.replace(textNode);
   };
 
-  const getMode = (node: TextNode): number => {
-    return node.getLatest().__mode;
+  const getMode = (node: TextNode): TextModeType => {
+    return TEXT_TYPE_TO_MODE[node.getLatest().__mode];
   };
 
   const textNodeTransform = (node: TextNode) => {
@@ -183,7 +186,7 @@ export function registerLexicalTextEntity<T extends TextNode>(
       const prevMatch = getMatch(combinedText);
 
       if (isTargetNode(prevSibling)) {
-        if (prevMatch === null || getMode(prevSibling) !== 0) {
+        if (prevMatch === null || getMode(prevSibling) !== 'normal') {
           replaceWithSimpleText(prevSibling);
 
           return;

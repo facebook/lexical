@@ -28,7 +28,7 @@ describe('LexicalUtils#insertNodeToNearestRoot', () => {
 
   beforeEach(async () => {
     editor = createTestEditor();
-    editor._headless = true;
+    editor._frontendAdapter.setTemporarilyHeadless(true);
   });
 
   const testCases: Array<{

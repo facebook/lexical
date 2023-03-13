@@ -202,10 +202,10 @@ function $updateCells(
     const cell = getCell(rows, id, cellCoordMap);
     if (cell !== null && cellEditor !== null) {
       const editorState = cellEditor.parseEditorState(cell.json);
-      cellEditor._headless = true;
+      cellEditor._frontendAdapter.setTemporarilyHeadless(true);
       cellEditor.setEditorState(editorState);
       cellEditor.update(fn, {discrete: true});
-      cellEditor._headless = false;
+      cellEditor._frontendAdapter.setTemporarilyHeadless(false);
       const newJSON = JSON.stringify(cellEditor.getEditorState());
       updateTableNode((tableNode) => {
         const [x, y] = cellCoordMap.get(id) as [number, number];

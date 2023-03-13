@@ -13,9 +13,10 @@ import invariant from 'shared/invariant';
 
 import {$getRoot, $getSelection, TextNode} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
+import {createDOMFrontendAdapter} from './LexicalDOMFrontendAdapter';
 import {createEmptyEditorState} from './LexicalEditorState';
-import {addRootElementEvents, removeRootElementEvents} from './LexicalEvents';
-import {flushRootMutations, initMutationObserver} from './LexicalMutations';
+import {LexicalFrontendAdapter} from './LexicalFrontendAdapter';
+import {flushRootMutations} from './LexicalMutations';
 import {LexicalNode} from './LexicalNode';
 import {
   commitPendingUpdates,
@@ -27,8 +28,6 @@ import {
 import {
   createUID,
   dispatchCommand,
-  getCachedClassNameArray,
-  getDefaultView,
   getDOMSelection,
   markAllNodesAsDirty,
 } from './LexicalUtils';
@@ -161,6 +160,7 @@ export type CreateEditorArgs = {
   parentEditor?: LexicalEditor;
   editable?: boolean;
   theme?: EditorThemeClasses;
+  frontendAdapter?: LexicalFrontendAdapter;
 };
 
 export type RegisteredNodes = Map<string, RegisteredNode>;
@@ -368,6 +368,7 @@ function initializeConversionCache(nodes: RegisteredNodes): DOMConversionCache {
  */
 export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
   const config = editorConfig || {};
+  const frontendAdapter = config.frontendAdapter || createDOMFrontendAdapter();
   const activeEditor = internalGetActiveEditor();
   const theme = config.theme || {};
   const parentEditor =
@@ -478,6 +479,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
     onError ? onError : console.error,
     initializeConversionCache(registeredNodes),
     isEditable,
+    frontendAdapter,
   );
 
   if (initialEditorState !== undefined) {
@@ -489,11 +491,9 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
 }
 export class LexicalEditor {
   /** @internal */
-  _headless: boolean;
+  _frontendAdapter: LexicalFrontendAdapter;
   /** @internal */
   _parentEditor: null | LexicalEditor;
-  /** @internal */
-  _rootElement: null | HTMLElement;
   /** @internal */
   _editorState: EditorState;
   /** @internal */
@@ -541,8 +541,6 @@ export class LexicalEditor {
   /** @internal */
   _htmlConversions: DOMConversionCache;
   /** @internal */
-  _window: null | Window;
-  /** @internal */
   _editable: boolean;
   /** @internal */
   _blockCursorElement: null | HTMLDivElement;
@@ -556,10 +554,13 @@ export class LexicalEditor {
     onError: ErrorHandler,
     htmlConversions: DOMConversionCache,
     editable: boolean,
+    frontendAdapter: LexicalFrontendAdapter,
   ) {
     this._parentEditor = parentEditor;
+    this._frontendAdapter = frontendAdapter;
+    this._frontendAdapter.setEditor(this);
     // The root element associated with this editor
-    this._rootElement = null;
+    this._frontendAdapter.setRootElement(null);
     // The current editor state
     this._editorState = editorState;
     // Handling of drafts and updates
@@ -606,8 +607,6 @@ export class LexicalEditor {
     // We don't actually make use of the `editable` argument above.
     // Doing so, causes e2e tests around the lock to fail.
     this._editable = true;
-    this._headless = parentEditor !== null && parentEditor._headless;
-    this._window = null;
     this._blockCursorElement = null;
   }
 
@@ -692,13 +691,7 @@ export class LexicalEditor {
    * @returns a teardown function that can be used to cleanup the listener.
    */
   registerRootListener(listener: RootListener): () => void {
-    const listenerSetOrMap = this._listeners.root;
-    listener(this._rootElement, null);
-    listenerSetOrMap.add(listener);
-    return () => {
-      listener(null, this._rootElement);
-      listenerSetOrMap.delete(listener);
-    };
+    return this._frontendAdapter.registerRootListener(listener);
   }
   /**
    * Registers a listener that will trigger anytime the provided command
@@ -894,7 +887,7 @@ export class LexicalEditor {
    * this reference may not be stable.
    */
   getRootElement(): null | HTMLElement {
-    return this._rootElement;
+    return this._frontendAdapter.getRootElement();
   }
 
   /**
@@ -910,52 +903,7 @@ export class LexicalEditor {
    * for events on.
    */
   setRootElement(nextRootElement: null | HTMLElement): void {
-    const prevRootElement = this._rootElement;
-
-    if (nextRootElement !== prevRootElement) {
-      const classNames = getCachedClassNameArray(this._config.theme, 'root');
-      const pendingEditorState = this._pendingEditorState || this._editorState;
-      this._rootElement = nextRootElement;
-      resetEditor(this, prevRootElement, nextRootElement, pendingEditorState);
-
-      if (prevRootElement !== null) {
-        // TODO: remove this flag once we no longer use UEv2 internally
-        if (!this._config.disableEvents) {
-          removeRootElementEvents(prevRootElement);
-        }
-        if (classNames != null) {
-          prevRootElement.classList.remove(...classNames);
-        }
-      }
-
-      if (nextRootElement !== null) {
-        const windowObj = getDefaultView(nextRootElement);
-        const style = nextRootElement.style;
-        style.userSelect = 'text';
-        style.whiteSpace = 'pre-wrap';
-        style.wordBreak = 'break-word';
-        nextRootElement.setAttribute('data-lexical-editor', 'true');
-        this._window = windowObj;
-        this._dirtyType = FULL_RECONCILE;
-        initMutationObserver(this);
-
-        this._updateTags.add('history-merge');
-
-        commitPendingUpdates(this);
-
-        // TODO: remove this flag once we no longer use UEv2 internally
-        if (!this._config.disableEvents) {
-          addRootElementEvents(nextRootElement, this);
-        }
-        if (classNames != null) {
-          nextRootElement.classList.add(...classNames);
-        }
-      } else {
-        this._window = null;
-      }
-
-      triggerListeners('root', this, false, nextRootElement, prevRootElement);
-    }
+    this._frontendAdapter.setRootElement(nextRootElement);
   }
 
   /**
@@ -1058,7 +1006,7 @@ export class LexicalEditor {
    * focused. Can be rootStart, rootEnd, or undefined. Defaults to rootEnd.
    */
   focus(callbackFn?: () => void, options: EditorFocusOptions = {}): void {
-    const rootElement = this._rootElement;
+    const rootElement = this._frontendAdapter.getRootElement();
 
     if (rootElement !== null) {
       // This ensures that iOS does not trigger caps lock upon focus
@@ -1102,13 +1050,13 @@ export class LexicalEditor {
    * Removes focus from the editor.
    */
   blur(): void {
-    const rootElement = this._rootElement;
+    const rootElement = this._frontendAdapter.getRootElement();
 
     if (rootElement !== null) {
       rootElement.blur();
     }
 
-    const domSelection = getDOMSelection(this._window);
+    const domSelection = getDOMSelection(this._frontendAdapter.getWindow());
 
     if (domSelection !== null) {
       domSelection.removeAllRanges();

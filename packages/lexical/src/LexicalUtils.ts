@@ -563,7 +563,7 @@ export function $updateSelectedTextFromDOM(
   data?: string,
 ): void {
   // Update the text content with the latest composition text
-  const domSelection = getDOMSelection(editor._window);
+  const domSelection = getDOMSelection(editor._frontendAdapter.getWindow());
   if (domSelection === null) {
     return;
   }
@@ -1305,7 +1305,7 @@ export function getDefaultView(domElem: HTMLElement): Window | null {
 }
 
 export function getWindow(editor: LexicalEditor): Window {
-  const windowObj = editor._window;
+  const windowObj = editor._frontendAdapter.getWindow();
   if (windowObj === null) {
     invariant(false, 'window object not found');
   }

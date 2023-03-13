@@ -240,7 +240,9 @@ export class TableSelection {
       this.focusCell = cell;
 
       if (this.anchorCell !== null) {
-        const domSelection = getDOMSelection(this.editor._window);
+        const domSelection = getDOMSelection(
+          this.editor._frontendAdapter.getWindow(),
+        );
         // Collapse the selection
         if (domSelection) {
           domSelection.setBaseAndExtent(

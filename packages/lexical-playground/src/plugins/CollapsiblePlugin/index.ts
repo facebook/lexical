@@ -162,7 +162,8 @@ export default function CollapsiblePlugin(): JSX.Element | null {
         INSERT_PARAGRAPH_COMMAND,
         () => {
           // @ts-ignore
-          const windowEvent: KeyboardEvent | undefined = editor._window?.event;
+          const windowEvent: KeyboardEvent | undefined =
+            editor._frontendAdapter.getWindow()?.event;
 
           if (
             windowEvent &&

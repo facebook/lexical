@@ -1951,13 +1951,13 @@ export class RangeSelection implements BaseSelection {
       }
     }
     const editor = getActiveEditor();
-    const domSelection = getDOMSelection(editor._window);
+    const domSelection = getDOMSelection(editor._frontendAdapter.getWindow());
 
     if (!domSelection) {
       return;
     }
     const blockCursorElement = editor._blockCursorElement;
-    const rootElement = editor._rootElement;
+    const rootElement = editor._frontendAdapter.getRootElement();
     // Remove the block cursor element if it exists. This will ensure selection
     // works as intended. If we leave it in the DOM all sorts of strange bugs
     // occur. :/
@@ -2625,7 +2625,7 @@ export function internalCreateSelection(
 ): null | RangeSelection | NodeSelection | GridSelection {
   const currentEditorState = editor.getEditorState();
   const lastSelection = currentEditorState._selection;
-  const domSelection = getDOMSelection(editor._window);
+  const domSelection = getDOMSelection(editor._frontendAdapter.getWindow());
 
   if (
     $isNodeSelection(lastSelection) ||
@@ -2642,7 +2642,7 @@ export function internalCreateRangeSelection(
   domSelection: Selection | null,
   editor: LexicalEditor,
 ): null | RangeSelection {
-  const windowObj = editor._window;
+  const windowObj = editor._frontendAdapter.getWindow();
   if (windowObj === null) {
     return null;
   }

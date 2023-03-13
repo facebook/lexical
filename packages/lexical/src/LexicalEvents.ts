@@ -191,7 +191,7 @@ function $shouldPreventDefaultAndInsertText(
   const focus = selection.focus;
   const anchorNode = anchor.getNode();
   const editor = getActiveEditor();
-  const domSelection = getDOMSelection(editor._window);
+  const domSelection = getDOMSelection(editor._frontendAdapter.getWindow());
   const domAnchorNode = domSelection !== null ? domSelection.anchorNode : null;
   const anchorKey = anchor.key;
   const backingAnchorElement = editor.getElementByKey(anchorKey);
@@ -370,7 +370,7 @@ function onSelectionChange(
 function onClick(event: MouseEvent, editor: LexicalEditor): void {
   updateEditor(editor, () => {
     const selection = $getSelection();
-    const domSelection = getDOMSelection(editor._window);
+    const domSelection = getDOMSelection(editor._frontendAdapter.getWindow());
     const lastSelection = $getPreviousSelection();
 
     if ($isRangeSelection(selection)) {
@@ -725,7 +725,7 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
       }
       const anchor = selection.anchor;
       const anchorNode = anchor.getNode();
-      const domSelection = getDOMSelection(editor._window);
+      const domSelection = getDOMSelection(editor._frontendAdapter.getWindow());
       if (domSelection === null) {
         return;
       }

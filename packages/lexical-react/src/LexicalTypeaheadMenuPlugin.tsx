@@ -322,7 +322,7 @@ export function useDynamicPositioning(
         capture: true,
         passive: true,
       });
-      resizeObserver.observe(targetElement);
+      // resizeObserver.observe(targetElement);
       return () => {
         resizeObserver.unobserve(targetElement);
         window.removeEventListener('resize', onReposition);

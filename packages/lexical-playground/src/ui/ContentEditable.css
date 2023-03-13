@@ -14,7 +14,6 @@
   tab-size: 1;
   outline: 0;
   padding: 8px 28px 40px 8px;
-  min-height: calc(100% - 16px);
 }
 @media (max-width: 1025px) {
   .ContentEditable__root {

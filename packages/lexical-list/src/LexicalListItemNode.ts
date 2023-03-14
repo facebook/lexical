@@ -128,7 +128,9 @@ export class ListItemNode extends ElementNode {
   static importJSON(serializedNode: SerializedListItemNode): ListItemNode {
     const node = new ListItemNode(serializedNode.value, serializedNode.checked);
     node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
+    //setIndent is overridden here with logic that doesn't need
+    //to run during deserialization
+    node.getWritable().__indent = serializedNode.indent;
     node.setDirection(serializedNode.direction);
     return node;
   }
@@ -367,6 +369,10 @@ export class ListItemNode extends ElementNode {
   }
 
   setIndent(indent: number): this {
+    invariant(
+      typeof indent === 'number' && indent > -1,
+      'Invalid indent value.',
+    );
     let currentIndent = this.getIndent();
     while (currentIndent !== indent) {
       if (currentIndent < indent) {

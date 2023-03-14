@@ -309,10 +309,21 @@ const TAG_TO_LIST_TYPE: Record<string, ListType> = {
   ul: 'bullet',
 };
 
+/**
+ * Creates a ListNode of listType.
+ * @param listType - The type of list to be created. Can be 'number', 'bullet', or 'check'.
+ * @param start - Where an ordered list starts its count, start = 1 if left undefined.
+ * @returns The new ListNode
+ */
 export function $createListNode(listType: ListType, start = 1): ListNode {
   return $applyNodeReplacement(new ListNode(listType, start));
 }
 
+/**
+ * Checks to see if the node is a ListNode.
+ * @param node - The node to be checked.
+ * @returns true if the node is a ListNode, false otherwise.
+ */
 export function $isListNode(
   node: LexicalNode | null | undefined,
 ): node is ListNode {

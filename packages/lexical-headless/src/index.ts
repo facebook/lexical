@@ -9,8 +9,7 @@
 
 import type {CreateEditorArgs, LexicalEditor} from 'lexical';
 
-import {createEditor} from 'lexical';
-import {LexicalHeadlessFrontendAdapter} from 'packages/lexical/src/LexicalHeadlessFrontendAdapter';
+import {createEditor, LexicalHeadlessFrontendAdapter} from 'lexical';
 
 export function createHeadlessEditor(
   editorConfig?: CreateEditorArgs,

@@ -107,6 +107,7 @@ export {
   SELECTION_CHANGE_COMMAND,
   UNDO_COMMAND,
 } from './LexicalCommands';
+export {LexicalDOMFrontendAdapter} from './LexicalDOMFrontendAdapter';
 export {
   COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_EDITOR,
@@ -116,6 +117,8 @@ export {
   createEditor,
 } from './LexicalEditor';
 export type {EventHandler} from './LexicalEvents';
+export {LexicalFrontendAdapter} from './LexicalFrontendAdapter';
+export {LexicalHeadlessFrontendAdapter} from './LexicalHeadlessFrontendAdapter';
 export {$normalizeSelection as $normalizeSelection__EXPERIMENTAL} from './LexicalNormalization';
 export {
   $createNodeSelection,

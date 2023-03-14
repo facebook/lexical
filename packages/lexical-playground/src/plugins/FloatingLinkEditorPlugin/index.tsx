@@ -27,8 +27,6 @@ import {Dispatch, useCallback, useEffect, useRef, useState} from 'react';
 import * as React from 'react';
 import {createPortal} from 'react-dom';
 
-import {useSettings} from '../../context/SettingsContext';
-import LinkPreview from '../../ui/LinkPreview';
 import {getSelectedNode} from '../../utils/getSelectedNode';
 import {setFloatingElemPosition} from '../../utils/setFloatingElemPosition';
 import {sanitizeUrl} from '../../utils/url';
@@ -44,9 +42,6 @@ function FloatingLinkEditor({
   setIsLink: Dispatch<boolean>;
   anchorElem: HTMLElement;
 }): JSX.Element {
-  const {
-    settings: {enableLinkPreviews},
-  } = useSettings();
   const editorRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [linkUrl, setLinkUrl] = useState('');
@@ -235,24 +230,21 @@ function FloatingLinkEditor({
           </div>
         </>
       ) : (
-        <>
-          <div className="link-view">
-            <a href={linkUrl} target="_blank" rel="noopener noreferrer">
-              {linkUrl}
-            </a>
-            <div
-              className="link-edit"
-              role="button"
-              tabIndex={0}
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={() => {
-                setEditedLinkUrl(linkUrl);
-                setEditMode(true);
-              }}
-            />
-          </div>
-          {enableLinkPreviews ? <LinkPreview url={linkUrl} /> : ''}
-        </>
+        <div className="link-view">
+          <a href={linkUrl} target="_blank" rel="noopener noreferrer">
+            {linkUrl}
+          </a>
+          <div
+            className="link-edit"
+            role="button"
+            tabIndex={0}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => {
+              setEditedLinkUrl(linkUrl);
+              setEditMode(true);
+            }}
+          />
+        </div>
       )}
     </div>
   );

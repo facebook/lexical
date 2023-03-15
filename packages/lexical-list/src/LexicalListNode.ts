@@ -286,7 +286,9 @@ function convertListNode(domNode: Node): DOMConversionOutput {
   const nodeName = domNode.nodeName.toLowerCase();
   let node = null;
   if (nodeName === 'ol') {
-    node = $createListNode('number');
+    // @ts-ignore
+    const start = domNode.start;
+    node = $createListNode('number', start);
   } else if (nodeName === 'ul') {
     if (
       isHTMLElement(domNode) &&

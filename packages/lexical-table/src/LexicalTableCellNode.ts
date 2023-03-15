@@ -58,12 +58,14 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
   }
 
   static clone(node: TableCellNode): TableCellNode {
-    return new TableCellNode(
+    const tableNode = new TableCellNode(
       node.__headerState,
       node.__colSpan,
       node.__width,
       node.__key,
     );
+    tableNode.__rowSpan = node.__rowSpan;
+    return tableNode;
   }
 
   static importDOM(): DOMConversionMap | null {
@@ -236,6 +238,7 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
 export function convertTableCellNodeElement(
   domNode: Node,
 ): DOMConversionOutput {
+  const domNode_ = domNode as HTMLTableCellElement;
   const nodeName = domNode.nodeName.toLowerCase();
 
   const tableCellNode = $createTableCellNode(
@@ -243,6 +246,8 @@ export function convertTableCellNodeElement(
       ? TableCellHeaderStates.ROW
       : TableCellHeaderStates.NO_STATUS,
   );
+  tableCellNode.__colSpan = domNode_.colSpan;
+  tableCellNode.__rowSpan = domNode_.rowSpan;
 
   return {
     forChild: (lexicalNode, parentLexicalNode) => {

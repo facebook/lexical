@@ -238,6 +238,7 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
 export function convertTableCellNodeElement(
   domNode: Node,
 ): DOMConversionOutput {
+  const domNode_ = domNode as HTMLTableCellElement;
   const nodeName = domNode.nodeName.toLowerCase();
 
   const tableCellNode = $createTableCellNode(
@@ -245,10 +246,8 @@ export function convertTableCellNodeElement(
       ? TableCellHeaderStates.ROW
       : TableCellHeaderStates.NO_STATUS,
   );
-  if (domNode instanceof HTMLTableCellElement) {
-    tableCellNode.__colSpan = domNode.colSpan;
-    tableCellNode.__rowSpan = domNode.rowSpan;
-  }
+  tableCellNode.__colSpan = domNode_.colSpan;
+  tableCellNode.__rowSpan = domNode_.rowSpan;
 
   return {
     forChild: (lexicalNode, parentLexicalNode) => {

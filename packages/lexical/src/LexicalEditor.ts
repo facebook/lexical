@@ -37,7 +37,7 @@ import {LineBreakNode} from './nodes/LexicalLineBreakNode';
 import {ParagraphNode} from './nodes/LexicalParagraphNode';
 import {RootNode} from './nodes/LexicalRootNode';
 
-export type Spread<T1, T2> = Omit<T2, keyof T1> & T1;
+export type Spread<T1, T2> = {[K in Exclude<keyof T1, keyof T2>]: T1[K]} & T2;
 
 export type Klass<T extends LexicalNode> = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

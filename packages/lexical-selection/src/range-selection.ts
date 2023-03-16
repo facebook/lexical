@@ -37,7 +37,6 @@ import {getStyleObjectFromCSS} from './utils';
  * Converts all nodes in the selection that are of one block type to another.
  * @param selection - The selected blocks to be converted.
  * @param createElement - The function that creates the node. eg. $createParagraphNode.
- * @returns
  */
 export function $setBlocksType(
   selection: RangeSelection | GridSelection,
@@ -121,8 +120,8 @@ function $removeParentEmptyElements(startingNode: ElementNode): void {
  * @deprecated
  * Wraps all nodes in the selection into another node of the type returned by createElement.
  * @param selection - The selection of nodes to be wrapped.
- * @param createElement - A function that creates the ElementNode. eg. $createParagraphNode.
- * @param wrappingElement - An element to append the wrapper to. 
+ * @param createElement - A function that creates the wrapping ElementNode. eg. $createParagraphNode.
+ * @param wrappingElement - An element to append the wrapped selection and its children to. 
  */
 export function $wrapNodes(
   selection: RangeSelection | GridSelection,
@@ -202,12 +201,12 @@ export function $wrapNodes(
 }
 
 /**
- * 
- * @param selection 
- * @param nodes 
- * @param nodesLength 
- * @param createElement 
- * @param wrappingElement 
+ * Wraps each node into a new ElementNode.
+ * @param selection - The selection of nodes to wrap.
+ * @param nodes - An array of nodes, generally the descendants of the selection.
+ * @param nodesLength - The length of nodes.
+ * @param createElement - A function that creates the wrapping ElementNode. eg. $createParagraphNode.
+ * @param wrappingElement - An element to wrap all the nodes into. 
  * @returns 
  */
 export function $wrapNodesImpl(
@@ -388,10 +387,10 @@ export function $wrapNodesImpl(
 }
 
 /**
- * Used with DecoratorNodes
- * @param selection 
- * @param isBackward 
- * @returns true if default character selection should be overridden, false if not.
+ * Determines if the default character selection should be overridden. Used with DecoratorNodes
+ * @param selection - The selection whose default character selection may need to be overridden.
+ * @param isBackward - Is the selection backwards (the focus comes before the anchor)?
+ * @returns true if it should be overridden, false if not.
  */
 export function $shouldOverrideDefaultCharacterSelection(
   selection: RangeSelection,
@@ -493,11 +492,11 @@ export function $selectAll(selection: RangeSelection): void {
 }
 
 /**
- * 
+ * Returns the current value of a CSS property for Nodes, if set. If not set, it returns the defaultValue.
  * @param node - The node whose style value to get.
- * @param styleProperty 
- * @param defaultValue 
- * @returns 
+ * @param styleProperty - The CSS style property.
+ * @param defaultValue - The default value for the property.
+ * @returns The value of the property for node.
  */
 function $getNodeStyleValueForProperty(
   node: TextNode,
@@ -515,11 +514,12 @@ function $getNodeStyleValueForProperty(
 }
 
 /**
- * 
- * @param selection - The 
- * @param styleProperty 
- * @param defaultValue 
- * @returns 
+ * Returns the current value of a CSS property for TextNodes in the Selection, if set. If not set, it returns the defaultValue.
+ * If all TextNodes do not have the same value, it returns an empty string.
+ * @param selection - The selection of TextNodes whose value to find.
+ * @param styleProperty - The CSS style property.
+ * @param defaultValue - The default value for the property, defaults to an empty string.
+ * @returns The value of the property for the selected TextNodes.
  */
 export function $getSelectionStyleValueForProperty(
   selection: RangeSelection,

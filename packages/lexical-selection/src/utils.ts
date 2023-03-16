@@ -165,6 +165,11 @@ export function getStyleObjectFromRawCSS(css: string): Record<string, string> {
   return styleObject;
 }
 
+/**
+ * Given a CSS string, returns an object from the style cache.
+ * @param css - The CSS property as a string.
+ * @returns The value of the given CSS property.
+ */
 export function getStyleObjectFromCSS(css: string): Record<string, string> {
   let value = CSS_TO_STYLES.get(css);
   if (value === undefined) {

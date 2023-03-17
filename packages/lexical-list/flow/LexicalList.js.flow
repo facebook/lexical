@@ -78,8 +78,6 @@ export type SerializedListItemNode = {
   ...SerializedElementNode,
   checked: boolean | void,
   value: number,
-  type: 'listitem',
-  version: 1,
   ...
 };
 
@@ -88,7 +86,5 @@ export type SerializedListNode = {
   listType: ListType,
   start: number,
   tag: ListNodeTagType,
-  type: 'list',
-  version: 1,
   ...
 };

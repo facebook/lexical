@@ -24,7 +24,6 @@ export type SerializedTableRowNode = Spread<
   {
     height: number;
     type: string;
-    version: 1;
   },
   SerializedElementNode
 >;

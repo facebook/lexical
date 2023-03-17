@@ -62,8 +62,6 @@ function YouTubeComponent({
 export type SerializedYouTubeNode = Spread<
   {
     videoID: string;
-    type: 'youtube';
-    version: 1;
   },
   SerializedDecoratorBlockNode
 >;

@@ -121,7 +121,7 @@ function $removeParentEmptyElements(startingNode: ElementNode): void {
  * Wraps all nodes in the selection into another node of the type returned by createElement.
  * @param selection - The selection of nodes to be wrapped.
  * @param createElement - A function that creates the wrapping ElementNode. eg. $createParagraphNode.
- * @param wrappingElement - An element to append the wrapped selection and its children to. 
+ * @param wrappingElement - An element to append the wrapped selection and its children to.
  */
 export function $wrapNodes(
   selection: RangeSelection | GridSelection,
@@ -206,8 +206,8 @@ export function $wrapNodes(
  * @param nodes - An array of nodes, generally the descendants of the selection.
  * @param nodesLength - The length of nodes.
  * @param createElement - A function that creates the wrapping ElementNode. eg. $createParagraphNode.
- * @param wrappingElement - An element to wrap all the nodes into. 
- * @returns 
+ * @param wrappingElement - An element to wrap all the nodes into.
+ * @returns
  */
 export function $wrapNodesImpl(
   selection: RangeSelection | GridSelection,
@@ -411,7 +411,7 @@ export function $shouldOverrideDefaultCharacterSelection(
  * @param selection - The selected text or nodes.
  * @param isHoldingShift - Is the shift key being held down during the operation.
  * @param isBackward - Is the selection selected backwards (the focus comes before the anchor)?
- * @param granularity - The distance to adjust the current selection. 
+ * @param granularity - The distance to adjust the current selection.
  */
 export function $moveCaretSelection(
   selection: RangeSelection,

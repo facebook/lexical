@@ -797,7 +797,8 @@ export default function ToolbarPlugin(): JSX.Element {
             buttonClassName="toolbar-item spaced"
             buttonLabel="Insert"
             buttonAriaLabel="Insert specialized editor node"
-            buttonIconClassName="icon plus">
+            buttonIconClassName="icon plus"
+            stopCloseOnClickSelf={true}>
             <DropDownItem
               onClick={() => {
                 activeEditor.dispatchCommand(
@@ -940,7 +941,8 @@ export default function ToolbarPlugin(): JSX.Element {
         buttonLabel="Align"
         buttonIconClassName="icon left-align"
         buttonClassName="toolbar-item spaced alignment"
-        buttonAriaLabel="Formatting options for text alignment">
+        buttonAriaLabel="Formatting options for text alignment"
+        stopCloseOnClickSelf={true}>
         <DropDownItem
           onClick={() => {
             activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'left');

@@ -115,7 +115,11 @@ export function $canShowPlaceholder(isComposing: boolean): boolean {
   for (let i = 0; i < childrenLength; i++) {
     const topBlock = children[i];
 
-    if ($isElementNode(topBlock) || $isDecoratorNode(topBlock)) {
+    if ($isDecoratorNode(topBlock)) {
+      return false;
+    }
+
+    if ($isElementNode(topBlock)) {
       if (!$isParagraphNode(topBlock)) {
         return false;
       }

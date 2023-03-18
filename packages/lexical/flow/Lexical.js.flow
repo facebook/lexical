@@ -881,47 +881,31 @@ declare export function $applyNodeReplacement<N: LexicalNode>(
 export type SerializedLexicalNode = {
   type: string,
   version: number,
-  ...
 };
 
-export type SerializedTextNode = {
-  ...SerializedLexicalNode,
+export type SerializedTextNode = SerializedLexicalNode & {
   detail: number,
   format: number,
   mode: TextModeType,
   style: string,
   text: string,
-  ...
 };
 
-export type SerializedElementNode = {
-  ...SerializedLexicalNode,
+export type SerializedElementNode = SerializedLexicalNode & {
   children: Array<SerializedLexicalNode>,
   direction: 'ltr' | 'rtl' | null,
   format: ElementFormatType,
   indent: number,
-  ...
 };
 
-export type SerializedParagraphNode = {
-  ...SerializedElementNode,
-  ...
-};
+export type SerializedParagraphNode = SerializedElementNode;
 
-export type SerializedLineBreakNode = {
-  ...SerializedLexicalNode,
-  ...
-};
+export type SerializedLineBreakNode = SerializedLexicalNode;
 
-export type SerializedRootNode = {
-  ...SerializedElementNode,
-  ...
-};
+export type SerializedRootNode = SerializedElementNode;
 
-export type SerializedGridCellNode = {
-  ...SerializedElementNode,
+export type SerializedGridCellNode = SerializedElementNode & {
   colSpan: number,
-  ...
 };
 
 export interface SerializedEditorState {

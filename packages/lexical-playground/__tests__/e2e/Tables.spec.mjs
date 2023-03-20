@@ -16,6 +16,7 @@ import {
 } from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
+  assertSelection,
   click,
   clickSelectors,
   copyToClipboard,
@@ -1006,7 +1007,6 @@ test.describe('Tables', () => {
       true,
     );
     await mergeTableCells(page);
-    await page.pause();
 
     await moveRight(page, 1);
     await selectCellsFromTableCords(
@@ -1017,7 +1017,6 @@ test.describe('Tables', () => {
       true,
     );
     await mergeTableCells(page);
-    await page.pause();
 
     await selectCellsFromTableCords(
       page,
@@ -1026,7 +1025,6 @@ test.describe('Tables', () => {
       true,
       true,
     );
-    await page.pause();
 
     await assertHTML(
       page,
@@ -1252,7 +1250,6 @@ test.describe('Tables', () => {
     );
     await mergeTableCells(page);
 
-    await page.pause();
     await selectCellsFromTableCords(
       page,
       {x: 0, y: 0},
@@ -1312,7 +1309,6 @@ test.describe('Tables', () => {
     );
     await mergeTableCells(page);
 
-    await page.pause();
     await selectCellsFromTableCords(
       page,
       {x: 0, y: 0},
@@ -1320,10 +1316,8 @@ test.describe('Tables', () => {
       true,
       true,
     );
-    await page.pause();
 
     await deleteTableColumns(page);
-    await page.pause();
 
     await assertHTML(
       page,
@@ -1349,5 +1343,33 @@ test.describe('Tables', () => {
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
       `,
     );
+  });
+
+  test('Deselect when click outside #3785 #4138', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    if (IS_COLLAB) {
+      // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
+      page.setViewportSize({height: 1000, width: 3000});
+    }
+
+    await focusEditor(page);
+
+    await page.keyboard.type('123');
+    await insertTable(page, 1, 1);
+    await selectAll(page);
+
+    await page.pause();
+    await click(page, 'div[contenteditable="true"] p:first-of-type');
+    await page.pause();
+
+    await assertSelection(page, {
+      anchorOffset: 3,
+      anchorPath: [0, 0, 0],
+      focusOffset: 3,
+      focusPath: [0, 0, 0],
+    });
   });
 });

@@ -161,6 +161,7 @@ export default function PlaygroundApp(): JSX.Element {
   return (
     <SettingsContext>
       <App />
+      <App />
       <a
         href="https://github.com/facebook/lexical/tree/main/packages/lexical-playground"
         className="github-corner"

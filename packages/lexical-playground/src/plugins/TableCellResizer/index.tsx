@@ -18,12 +18,13 @@ import {
   $getTableRowIndexFromTableCellNode,
   $isTableCellNode,
   $isTableRowNode,
-  getCellFromTarget,
 } from '@lexical/table';
+import {$findMatchingParent} from '@lexical/utils';
 import {
   $getNearestNodeFromDOMNode,
   $getSelection,
   COMMAND_PRIORITY_HIGH,
+  DEPRECATED_$isGridCellNode,
   DEPRECATED_$isGridSelection,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
@@ -38,6 +39,9 @@ import {
   useState,
 } from 'react';
 import {createPortal} from 'react-dom';
+import invariant from 'shared/invariant';
+
+import {throttle1} from '../../utils/throttle';
 
 type MousePosition = {
   x: number;
@@ -89,11 +93,12 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
   }, []);
 
   useEffect(() => {
-    const onMouseMove = (event: MouseEvent) => {
-      setTimeout(() => {
+    const THROTTLE_MS = draggingDirection !== null ? 20 : 200;
+    const [onMouseMove, onMouseMoveDecommission] = throttle1(
+      (event: MouseEvent) => {
         const target = event.target;
 
-        if (draggingDirection) {
+        if (draggingDirection !== null) {
           updateMouseCurrentPos({
             x: event.clientX,
             y: event.clientY,
@@ -105,40 +110,55 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
           return;
         }
 
-        if (targetRef.current !== target) {
-          targetRef.current = target as HTMLElement;
-          const cell = getCellFromTarget(target as HTMLElement);
-
-          if (cell && activeCell !== cell) {
-            editor.update(() => {
-              const tableCellNode = $getNearestNodeFromDOMNode(cell.elem);
-              if (!tableCellNode) {
-                throw new Error('TableCellResizer: Table cell node not found.');
-              }
-
-              const tableNode =
-                $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
-              const tableElement = editor.getElementByKey(tableNode.getKey());
-
-              if (!tableElement) {
-                throw new Error('TableCellResizer: Table element not found.');
-              }
-
-              targetRef.current = target as HTMLElement;
-              tableRectRef.current = tableElement.getBoundingClientRect();
-              updateActiveCell(cell);
+        if (targetRef.current !== target && target instanceof HTMLElement) {
+          targetRef.current = null;
+          tableRectRef.current = null;
+          editor.update(() => {
+            const targetNode = $getNearestNodeFromDOMNode(target);
+            if (targetNode === null) {
+              resetState();
+              return;
+            }
+            const cellNode = $findMatchingParent(
+              targetNode,
+              DEPRECATED_$isGridCellNode,
+            );
+            if (!DEPRECATED_$isGridCellNode(cellNode)) {
+              resetState();
+              return;
+            }
+            const cellElement = editor.getElementByKey(cellNode.getKey());
+            if (cellElement === null) {
+              resetState();
+              return;
+            }
+            const tableNode = $getTableNodeFromLexicalNodeOrThrow(cellNode);
+            const tableElement = editor.getElementByKey(tableNode.getKey());
+            invariant(
+              tableElement instanceof HTMLElement,
+              'Expected to find HTML TableElement from TableNode',
+            );
+            targetRef.current = target;
+            tableRectRef.current = tableElement.getBoundingClientRect();
+            // TODO FIXME the coordinates no longer work with merged cells
+            // @ts-ignore internal
+            const cellData = cellElement._cell;
+            updateActiveCell({
+              elem: cellElement,
+              highlighted: cellData.highlighted,
+              x: cellData.x,
+              y: cellData.y,
             });
-          } else if (cell == null) {
-            resetState();
-          }
+          });
         }
-      }, 0);
-    };
+      },
+      THROTTLE_MS,
+    );
 
     document.addEventListener('mousemove', onMouseMove);
-
     return () => {
       document.removeEventListener('mousemove', onMouseMove);
+      onMouseMoveDecommission();
     };
   }, [activeCell, draggingDirection, editor, resetState]);
 

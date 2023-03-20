@@ -1001,6 +1001,7 @@ export function getTableSelectionFromTableElement(
   return tableElement[LEXICAL_ELEMENT_KEY];
 }
 
+// TODO 0.10 Deprecate
 export function getCellFromTarget(node: Node): Cell | null {
   let currentNode: ParentNode | Node | null = node;
 

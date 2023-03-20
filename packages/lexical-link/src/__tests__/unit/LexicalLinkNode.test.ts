@@ -157,7 +157,7 @@ describe('LexicalLinkNode tests', () => {
 
         expect(linkNode.getTitle()).toBe('Hello world');
 
-        linkNode.setRel('World hello');
+        linkNode.setTitle('World hello');
 
         expect(linkNode.getTitle()).toBe('World hello');
       });

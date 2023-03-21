@@ -371,7 +371,6 @@ export const TOGGLE_LINK_COMMAND: LexicalCommand<
  * but saves any children and brings them up to the parent node.
  * @param url - The URL the link directs to.
  * @param attributes - Optional HTML a tag attributes. { target, rel }
- * @returns
  */
 export function toggleLink(
   url: null | string,

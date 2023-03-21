@@ -508,7 +508,7 @@ export function registerHistory(
 }
 
 /**
- * Creates an exmpty history state where the stacks are empty arrays and current is null.
+ * Creates an empty history state.
  * @returns - The empty history state, as an object.
  */
 export function createEmptyHistoryState(): HistoryState {

@@ -77,7 +77,7 @@ export function $findTextIntersectionFromCharacters(
 
 /**
  * Determines if the root has any text content and can trim any whitespace if it does.
- * @param isEditorComposing - Has the editor recieved input?
+ * @param isEditorComposing - Is the editor in composition mode due to an active Input Method Editor?
  * @param trim - Should the root text have its whitespaced trimmed? Defaults to true.
  * @returns true if text content is empty, false if there is text or isEditorComposing is true.
  */
@@ -100,7 +100,7 @@ export function $isRootTextContentEmpty(
 
 /**
  * Returns a function that executes {@link $isRootTextContentEmpty}
- * @param isEditorComposing - Has the editor recieved input?
+ * @param isEditorComposing - Is the editor in composition mode due to an active Input Method Editor?
  * @param trim - Should the root text have its whitespaced trimmed? Defaults to true.
  * @returns A function that executes $isRootTextContentEmpty based on arguments.
  */
@@ -124,7 +124,7 @@ export function $rootTextContent(): string {
 /**
  * Determines if the input should show the placeholder. If anything is in
  * in the root the placeholder should not be shown.
- * @param isComposing - Has the editor recieved input?
+ * @param isComposing - Is the editor in composition mode due to an active Input Method Editor?
  * @returns true if the input should show the placeholder, false otherwise.
  */
 export function $canShowPlaceholder(isComposing: boolean): boolean {
@@ -170,8 +170,8 @@ export function $canShowPlaceholder(isComposing: boolean): boolean {
 
 /**
  * Returns a function that executes {@link $canShowPlaceholder}
- * @param isEditorComposing - Has the editor recieved input?
- * @returns A fucntion that executes $canShowPlaceholder with arguments.
+ * @param isEditorComposing - Is the editor in composition mode due to an active Input Method Editor?
+ * @returns A function that executes $canShowPlaceholder with arguments.
  */
 export function $canShowPlaceholderCurry(
   isEditorComposing: boolean,
@@ -183,7 +183,7 @@ export type EntityMatch = {end: number; start: number};
 
 /**
  * Returns a touple that can be rested (...) into mergeRegister to clean up
- * node transforms listeners that transforms text into another node, like a HashtagNode.
+ * node transforms listeners that transforms text into another node, eg. a HashtagNode.
  * @example
  * ```ts
  *   useEffect(() => {
@@ -193,12 +193,12 @@ export type EntityMatch = {end: number; start: number};
   }, [createNode, editor, getMatch, targetNode]);
  * ```
  * Where targetNode is the type of node containing the text you want to transform (like a text input),
- * then getMatch uses a regex to find a #foo and then creates a HashtagNode containing #foo.
+ * then getMatch uses a regex to find a matching text and creates the proper node to include the matching text.
  * @param editor - The lexical editor.
  * @param getMatch - Finds a matching string that satisfies a regex expression.
  * @param targetNode - The node type that contains text to match with. eg. HashtagNode
  * @param createNode - A function that creates a new node to contain the matched text. eg createHashtagNode
- * @returns An array containing 
+ * @returns An array containing the plain text and reverse node transform listeners.
  */
 export function registerLexicalTextEntity<T extends TextNode>(
   editor: LexicalEditor,

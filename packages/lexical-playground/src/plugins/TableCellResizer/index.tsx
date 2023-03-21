@@ -93,7 +93,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
   }, []);
 
   useEffect(() => {
-    const THROTTLE_MS = draggingDirection !== null ? 20 : 200;
+    const throttleMs = draggingDirection !== null ? 20 : 200;
     const [onMouseMove, onMouseMoveDecommission] = throttle1(
       (event: MouseEvent) => {
         const target = event.target;
@@ -152,7 +152,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
           });
         }
       },
-      THROTTLE_MS,
+      throttleMs,
     );
 
     document.addEventListener('mousemove', onMouseMove);

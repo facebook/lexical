@@ -182,12 +182,23 @@ export function $canShowPlaceholderCurry(
 export type EntityMatch = {end: number; start: number};
 
 /**
- *
+ * Returns a touple that can be rested (...) into mergeRegister to clean up
+ * node transforms listeners that transforms text into another node, like a HashtagNode.
+ * @example
+ * ```ts
+ *   useEffect(() => {
+    return mergeRegister(
+      ...registerLexicalTextEntity(editor, getMatch, targetNode, createNode),
+    );
+  }, [createNode, editor, getMatch, targetNode]);
+ * ```
+ * Where targetNode is the type of node containing the text you want to transform (like a text input),
+ * then getMatch uses a regex to find a #foo and then creates a HashtagNode containing #foo.
  * @param editor - The lexical editor.
- * @param getMatch
- * @param targetNode
- * @param createNode
- * @returns
+ * @param getMatch - Finds a matching string that satisfies a regex expression.
+ * @param targetNode - The node type that contains text to match with. eg. HashtagNode
+ * @param createNode - A function that creates a new node to contain the matched text. eg createHashtagNode
+ * @returns An array containing 
  */
 export function registerLexicalTextEntity<T extends TextNode>(
   editor: LexicalEditor,

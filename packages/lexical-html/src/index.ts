@@ -32,6 +32,7 @@ import {$getRoot, $isElementNode, $isTextNode} from 'lexical';
 export function $generateNodesFromDOM(
   editor: LexicalEditor,
   dom: Document,
+  ignoreTags = IGNORE_TAGS,
 ): Array<LexicalNode> {
   let lexicalNodes: Array<LexicalNode> = [];
   const elements = dom.body ? dom.body.childNodes : [];
@@ -39,8 +40,8 @@ export function $generateNodesFromDOM(
   for (let i = 0; i < elements.length; i++) {
     const element = elements[i];
 
-    if (!IGNORE_TAGS.has(element.nodeName)) {
-      const lexicalNode = $createNodesFromDOM(element, editor);
+    if (!ignoreTags.has(element.nodeName)) {
+      const lexicalNode = $createNodesFromDOM(element, editor, ignoreTags);
 
       if (lexicalNode !== null) {
         lexicalNodes = lexicalNodes.concat(lexicalNode);
@@ -167,13 +168,14 @@ const IGNORE_TAGS = new Set(['STYLE']);
 function $createNodesFromDOM(
   node: Node,
   editor: LexicalEditor,
+  ignoreTags = IGNORE_TAGS,
   forChildMap: Map<string, DOMChildConversion> = new Map(),
   parentLexicalNode?: LexicalNode | null | undefined,
   preformatted = false,
 ): Array<LexicalNode> {
   let lexicalNodes: Array<LexicalNode> = [];
 
-  if (IGNORE_TAGS.has(node.nodeName)) {
+  if (ignoreTags.has(node.nodeName)) {
     return lexicalNodes;
   }
 
@@ -220,6 +222,7 @@ function $createNodesFromDOM(
       ...$createNodesFromDOM(
         children[i],
         editor,
+        ignoreTags,
         new Map(forChildMap),
         currentLexicalNode,
         preformatted ||

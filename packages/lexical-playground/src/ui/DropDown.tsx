@@ -140,7 +140,6 @@ export default function DropDown({
   buttonClassName,
   buttonIconClassName,
   children,
-  stopCloseOnClickSelf,
 }: {
   disabled?: boolean;
   buttonAriaLabel?: string;
@@ -181,14 +180,20 @@ export default function DropDown({
     if (button !== null && showDropDown) {
       const handle = (event: MouseEvent) => {
         const target = event.target;
-        if (stopCloseOnClickSelf) {
-          if (
-            dropDownRef.current &&
-            dropDownRef.current.contains(target as Node)
-          )
-            return;
-        }
-        if (!button.contains(target as Node)) {
+        if (
+          dropDownRef.current &&
+          dropDownRef.current.contains(target as Node) &&
+          (target instanceof HTMLDivElement ||
+            target instanceof HTMLInputElement ||
+            target instanceof HTMLLabelElement)
+        )
+          return;
+        if (
+          !button.contains(target as Node) ||
+          !button.contains(target as HTMLSpanElement) ||
+          target instanceof HTMLLIElement ||
+          target instanceof HTMLInputElement
+        ) {
           setShowDropDown(false);
         }
       };
@@ -198,7 +203,7 @@ export default function DropDown({
         document.removeEventListener('click', handle);
       };
     }
-  }, [dropDownRef, buttonRef, showDropDown, stopCloseOnClickSelf]);
+  }, [dropDownRef, buttonRef, showDropDown]);
 
   return (
     <>

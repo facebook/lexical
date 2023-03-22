@@ -23,6 +23,7 @@ interface ColorPickerProps {
   color: string;
   children?: ReactNode;
   onChange?: (color: string) => void;
+  stopCloseOnClickSelf?: boolean;
   title?: string;
 }
 

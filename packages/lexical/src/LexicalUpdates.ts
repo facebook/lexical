@@ -371,6 +371,10 @@ export function parseEditorState(
     if (__DEV__) {
       handleDEVOnlyPendingUpdateGuarantees(editorState);
     }
+  } catch (error) {
+    if (error instanceof Error) {
+      editor._onError(error);
+    }
   } finally {
     editor._dirtyElements = previousDirtyElements;
     editor._dirtyLeaves = previousDirtyLeaves;

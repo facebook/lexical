@@ -188,12 +188,7 @@ export default function DropDown({
             target instanceof HTMLLabelElement)
         )
           return;
-        if (
-          !button.contains(target as Node) ||
-          !button.contains(target as HTMLSpanElement) ||
-          target instanceof HTMLLIElement ||
-          target instanceof HTMLInputElement
-        ) {
+        if (!button.contains(target as Node)) {
           setShowDropDown(false);
         }
       };

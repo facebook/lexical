@@ -27,10 +27,8 @@ import {Dispatch, useCallback, useEffect, useRef, useState} from 'react';
 import * as React from 'react';
 import {createPortal} from 'react-dom';
 
-import {useSettings} from '../../context/SettingsContext';
-import LinkPreview from '../../ui/LinkPreview';
 import {getSelectedNode} from '../../utils/getSelectedNode';
-import {setFloatingElemPosition} from '../../utils/setFloatingElemPosition';
+import {setFloatingElemPositionForLinkEditor} from '../../utils/setFloatingElemPositionForLinkEditor';
 import {sanitizeUrl} from '../../utils/url';
 
 function FloatingLinkEditor({
@@ -44,9 +42,6 @@ function FloatingLinkEditor({
   setIsLink: Dispatch<boolean>;
   anchorElem: HTMLElement;
 }): JSX.Element {
-  const {
-    settings: {enableLinkPreviews},
-  } = useSettings();
   const editorRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [linkUrl, setLinkUrl] = useState('');
@@ -86,23 +81,16 @@ function FloatingLinkEditor({
       rootElement.contains(nativeSelection.anchorNode) &&
       editor.isEditable()
     ) {
-      const domRange = nativeSelection.getRangeAt(0);
-      let rect;
-      if (nativeSelection.anchorNode === rootElement) {
-        let inner = rootElement;
-        while (inner.firstElementChild != null) {
-          inner = inner.firstElementChild as HTMLElement;
-        }
-        rect = inner.getBoundingClientRect();
-      } else {
-        rect = domRange.getBoundingClientRect();
+      const domRect: DOMRect | undefined =
+        nativeSelection.focusNode?.parentElement?.getBoundingClientRect();
+      if (domRect) {
+        domRect.y += 40;
+        setFloatingElemPositionForLinkEditor(domRect, editorElem, anchorElem);
       }
-
-      setFloatingElemPosition(rect, editorElem, anchorElem);
       setLastSelection(selection);
     } else if (!activeElement || activeElement.className !== 'link-input') {
       if (rootElement !== null) {
-        setFloatingElemPosition(null, editorElem, anchorElem);
+        setFloatingElemPositionForLinkEditor(null, editorElem, anchorElem);
       }
       setLastSelection(null);
       setEditMode(false);
@@ -235,24 +223,21 @@ function FloatingLinkEditor({
           </div>
         </>
       ) : (
-        <>
-          <div className="link-view">
-            <a href={linkUrl} target="_blank" rel="noopener noreferrer">
-              {linkUrl}
-            </a>
-            <div
-              className="link-edit"
-              role="button"
-              tabIndex={0}
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={() => {
-                setEditedLinkUrl(linkUrl);
-                setEditMode(true);
-              }}
-            />
-          </div>
-          {enableLinkPreviews ? <LinkPreview url={linkUrl} /> : ''}
-        </>
+        <div className="link-view">
+          <a href={linkUrl} target="_blank" rel="noopener noreferrer">
+            {linkUrl}
+          </a>
+          <div
+            className="link-edit"
+            role="button"
+            tabIndex={0}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => {
+              setEditedLinkUrl(linkUrl);
+              setEditMode(true);
+            }}
+          />
+        </div>
       )}
     </div>
   );

@@ -12,6 +12,7 @@ import type {Klass, LexicalEditor, LexicalNode, RootNode} from 'lexical';
 import {
   $createTextNode,
   $getRoot,
+  $isDecoratorNode,
   $isElementNode,
   $isParagraphNode,
   $isTextNode,
@@ -142,6 +143,10 @@ export function $canShowPlaceholder(isComposing: boolean): boolean {
 
   for (let i = 0; i < childrenLength; i++) {
     const topBlock = children[i];
+
+    if ($isDecoratorNode(topBlock)) {
+      return false;
+    }
 
     if ($isElementNode(topBlock)) {
       if (!$isParagraphNode(topBlock)) {

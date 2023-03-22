@@ -29,7 +29,7 @@
   },
   "devDependencies": {
     "buffer": "^6.0.3",
-    "webpack": "^5.70.0"
+    "webpack": "^5.76.0"
   },
   "browserslist": {
     "production": [

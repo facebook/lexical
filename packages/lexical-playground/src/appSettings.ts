@@ -18,7 +18,6 @@ export type SettingName =
   | 'showTreeView'
   | 'showNestedEditorTreeView'
   | 'emptyEditor'
-  | 'enableLinkPreviews'
   | 'showTableOfContents';
 
 export type Settings = Record<SettingName, boolean>;
@@ -31,7 +30,6 @@ export const isDevPlayground: boolean =
 export const DEFAULT_SETTINGS: Settings = {
   disableBeforeInput: false,
   emptyEditor: isDevPlayground,
-  enableLinkPreviews: false,
   isAutocomplete: false,
   isCharLimit: false,
   isCharLimitUtf8: false,

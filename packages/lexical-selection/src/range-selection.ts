@@ -34,11 +34,9 @@ import {
 import {getStyleObjectFromCSS} from './utils';
 
 /**
- * Converts all nodes in the selection that are of one block type to another specified by parameter
- *
- * @param selection
- * @param createElement
- * @returns
+ * Converts all nodes in the selection that are of one block type to another.
+ * @param selection - The selected blocks to be converted.
+ * @param createElement - The function that creates the node. eg. $createParagraphNode.
  */
 export function $setBlocksType(
   selection: RangeSelection | GridSelection,
@@ -118,7 +116,13 @@ function $removeParentEmptyElements(startingNode: ElementNode): void {
   }
 }
 
-/** @deprecated */
+/**
+ * @deprecated
+ * Wraps all nodes in the selection into another node of the type returned by createElement.
+ * @param selection - The selection of nodes to be wrapped.
+ * @param createElement - A function that creates the wrapping ElementNode. eg. $createParagraphNode.
+ * @param wrappingElement - An element to append the wrapped selection and its children to.
+ */
 export function $wrapNodes(
   selection: RangeSelection | GridSelection,
   createElement: () => ElementNode,
@@ -196,6 +200,15 @@ export function $wrapNodes(
   );
 }
 
+/**
+ * Wraps each node into a new ElementNode.
+ * @param selection - The selection of nodes to wrap.
+ * @param nodes - An array of nodes, generally the descendants of the selection.
+ * @param nodesLength - The length of nodes.
+ * @param createElement - A function that creates the wrapping ElementNode. eg. $createParagraphNode.
+ * @param wrappingElement - An element to wrap all the nodes into.
+ * @returns
+ */
 export function $wrapNodesImpl(
   selection: RangeSelection | GridSelection,
   nodes: LexicalNode[],
@@ -373,6 +386,12 @@ export function $wrapNodesImpl(
   }
 }
 
+/**
+ * Determines if the default character selection should be overridden. Used with DecoratorNodes
+ * @param selection - The selection whose default character selection may need to be overridden.
+ * @param isBackward - Is the selection backwards (the focus comes before the anchor)?
+ * @returns true if it should be overridden, false if not.
+ */
 export function $shouldOverrideDefaultCharacterSelection(
   selection: RangeSelection,
   isBackward: boolean,
@@ -387,6 +406,13 @@ export function $shouldOverrideDefaultCharacterSelection(
   );
 }
 
+/**
+ * Moves the selection according to the arguments.
+ * @param selection - The selected text or nodes.
+ * @param isHoldingShift - Is the shift key being held down during the operation.
+ * @param isBackward - Is the selection selected backwards (the focus comes before the anchor)?
+ * @param granularity - The distance to adjust the current selection.
+ */
 export function $moveCaretSelection(
   selection: RangeSelection,
   isHoldingShift: boolean,
@@ -396,6 +422,11 @@ export function $moveCaretSelection(
   selection.modify(isHoldingShift ? 'extend' : 'move', isBackward, granularity);
 }
 
+/**
+ * Tests a parent element for right to left direction.
+ * @param selection - The selection whose parent is to be tested.
+ * @returns true if the selections' parent element has a direction of 'rtl' (right to left), false otherwise.
+ */
 export function $isParentElementRTL(selection: RangeSelection): boolean {
   const anchorNode = selection.anchor.getNode();
   const parent = $isRootNode(anchorNode)
@@ -405,6 +436,12 @@ export function $isParentElementRTL(selection: RangeSelection): boolean {
   return parent.getDirection() === 'rtl';
 }
 
+/**
+ * Moves selection by character according to arguments.
+ * @param selection - The selection of the characters to move.
+ * @param isHoldingShift - Is the shift key being held down during the operation.
+ * @param isBackward - Is the selection backward (the focus comes before the anchor)?
+ */
 export function $moveCharacter(
   selection: RangeSelection,
   isHoldingShift: boolean,
@@ -419,6 +456,10 @@ export function $moveCharacter(
   );
 }
 
+/**
+ * Expands the current Selection to cover all of the content in the editor.
+ * @param selection - The current selection.
+ */
 export function $selectAll(selection: RangeSelection): void {
   const anchor = selection.anchor;
   const focus = selection.focus;
@@ -450,6 +491,13 @@ export function $selectAll(selection: RangeSelection): void {
   }
 }
 
+/**
+ * Returns the current value of a CSS property for Nodes, if set. If not set, it returns the defaultValue.
+ * @param node - The node whose style value to get.
+ * @param styleProperty - The CSS style property.
+ * @param defaultValue - The default value for the property.
+ * @returns The value of the property for node.
+ */
 function $getNodeStyleValueForProperty(
   node: TextNode,
   styleProperty: string,
@@ -465,6 +513,14 @@ function $getNodeStyleValueForProperty(
   return defaultValue;
 }
 
+/**
+ * Returns the current value of a CSS property for TextNodes in the Selection, if set. If not set, it returns the defaultValue.
+ * If all TextNodes do not have the same value, it returns an empty string.
+ * @param selection - The selection of TextNodes whose value to find.
+ * @param styleProperty - The CSS style property.
+ * @param defaultValue - The default value for the property, defaults to an empty string.
+ * @returns The value of the property for the selected TextNodes.
+ */
 export function $getSelectionStyleValueForProperty(
   selection: RangeSelection,
   styleProperty: string,

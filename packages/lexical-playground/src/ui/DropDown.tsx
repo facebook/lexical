@@ -147,7 +147,6 @@ export default function DropDown({
   buttonIconClassName?: string;
   buttonLabel?: string;
   children: ReactNode;
-  stopCloseOnClickSelf?: boolean;
 }): JSX.Element {
   const dropDownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);

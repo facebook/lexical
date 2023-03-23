@@ -66,7 +66,7 @@ export async function initialize({
 
   // Having more horizontal space prevents redundant text wraps for tests
   // which affects CMD+ArrowRight/Left navigation
-  page.setViewportSize({height: 1000, width: isCollab ? 2000 : 1000});
+  page.setViewportSize({height: 1000, width: isCollab ? 2500 : 1250});
   await page.goto(url);
 
   await exposeLexicalEditor(page);

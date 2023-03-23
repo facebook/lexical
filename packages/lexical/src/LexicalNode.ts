@@ -791,12 +791,15 @@ export class LexicalNode {
 
   /**
    * Controls how the this node is deserialized from JSON. This is usually boilerplate,
-   * but provides an abstraction betweent he node implementation and serialized interfaec that can
+   * but provides an abstraction between the node implementation and serialized interface that can
    * be important if you ever make breaking changes to a node schema (by adding or removing properties).
-   * See [Serialization & Deserialization](https://lexical.dev/docs/concepts/serialization#lexical---html).
+   * See [Serialization & Deserialization](https://lexical.dev/docs/concepts/serialization#lexical---json).
    *
    * */
-  static importJSON(_serializedNode: SerializedLexicalNode): LexicalNode {
+  static importJSON(
+    _serializedNode: SerializedLexicalNode,
+    _updateTags: Set<string>,
+  ): LexicalNode {
     invariant(
       false,
       'LexicalNode: Node %s does not implement .importJSON().',

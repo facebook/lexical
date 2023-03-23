@@ -248,6 +248,23 @@ static importJSON(serializedNode: SerializedHeadingNode): HeadingNode {
 }
 ```
 
+`importJSON` is called with a second parameter containing any `updateTags` on the current editor. This is useful if you need to change the behavior of the import depending on what kind of editor update is happening.
+
+Here's an example of `importJSON` checking if the user is currently in the middle of a `paste` action.
+
+```js
+static importJSON(serializedNode: SerializedCustomNode, updateTags: Set<string>): CustomNode {
+  const node = $createCustomNode();
+  if (updateTags.has('paste')) {
+    // Do something special here when pasting
+  }
+  node.setFormat(serializedNode.format);
+  node.setIndent(serializedNode.indent);
+  node.setDirection(serializedNode.direction);
+  return node;
+}
+```
+
 ### Versioning & Breaking Changes
 
 It's important to note that you should avoid making breaking changes to existing fields in your JSON object, especially if backwards compatibility is an important part of your editor. That's why we recommend using a version field to separate the different changes in your node as you add or change functionality of custom nodes. Here's the serialized type definition for Lexical's base `TextNode` class:

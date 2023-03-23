@@ -293,6 +293,7 @@ export function $parseSerializedNode(
   return $parseSerializedNodeImpl(
     internalSerializedNode,
     getActiveEditor()._nodes,
+    getActiveEditor()._updateTags,
   );
 }
 
@@ -301,6 +302,7 @@ function $parseSerializedNodeImpl<
 >(
   serializedNode: SerializedNode,
   registeredNodes: RegisteredNodes,
+  updateTags: Set<string>,
 ): LexicalNode {
   const type = serializedNode.type;
   const registeredNode = registeredNodes.get(type);
@@ -319,7 +321,7 @@ function $parseSerializedNodeImpl<
     );
   }
 
-  const node = nodeClass.importJSON(serializedNode);
+  const node = nodeClass.importJSON(serializedNode, updateTags);
   const children = serializedNode.children;
 
   if ($isElementNode(node) && Array.isArray(children)) {
@@ -328,6 +330,7 @@ function $parseSerializedNodeImpl<
       const childNode = $parseSerializedNodeImpl(
         serializedJSONChildNode,
         registeredNodes,
+        updateTags,
       );
       node.append(childNode);
     }
@@ -360,7 +363,8 @@ export function parseEditorState(
   try {
     const registeredNodes = editor._nodes;
     const serializedNode = serializedEditorState.root;
-    $parseSerializedNodeImpl(serializedNode, registeredNodes);
+    const updateTags = editor._updateTags;
+    $parseSerializedNodeImpl(serializedNode, registeredNodes, updateTags);
     if (updateFn) {
       updateFn();
     }

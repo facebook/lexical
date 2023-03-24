@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+// eslint-disable-next-line simple-import-sort/imports
 import type {LexicalNode, MutationListener} from 'lexical';
 
 import {$isLinkNode, AutoLinkNode, LinkNode} from '@lexical/link';
@@ -17,6 +18,7 @@ import {
 import {mergeRegister} from '@lexical/utils';
 import {
   $getNodeByKey,
+  $getSelection,
   COMMAND_PRIORITY_EDITOR,
   createCommand,
   LexicalCommand,
@@ -176,6 +178,9 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
         );
         if (result != null) {
           editor.update(() => {
+            if (!$getSelection()) {
+              linkNode.selectEnd();
+            }
             activeEmbedConfig.insertNode(editor, result);
             if (linkNode.isAttached()) {
               linkNode.remove();

@@ -19,9 +19,18 @@ import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {
   applySelectionInputs,
   pasteHTML,
+  pasteLexical,
   setNativeSelectionWithPaths,
 } from '@lexical/selection/src/__tests__/utils';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
+import {
+  $applyNodeReplacement,
+  DOMConversionMap,
+  ElementNode,
+  NodeKey,
+  SerializedElementNode,
+  Spread,
+} from 'lexical/src';
 import {initializeClipboard, TestComposer} from 'lexical/src/__tests__/utils';
 import * as React from 'react';
 import {createRoot} from 'react-dom/client';
@@ -72,6 +81,74 @@ Range.prototype.getBoundingClientRect = function (): DOMRect {
   };
 };
 
+export type SerializedSectionNode = Spread<
+  {
+    id: string;
+    type: 'section';
+    version: number;
+  },
+  SerializedElementNode
+>;
+
+class SectionNode extends ElementNode {
+  __id: string;
+
+  static getType(): string {
+    return 'section';
+  }
+
+  static clone(node: SectionNode): SectionNode {
+    return new SectionNode(node.__id, node.__key);
+  }
+
+  constructor(id?: string, key?: NodeKey) {
+    super(key);
+    this.__id = id || '';
+  }
+
+  createDOM(): HTMLElement {
+    const element = document.createElement('section');
+    element.id = this.__id;
+    return element;
+  }
+
+  updateDOM(prevNode: SectionNode, dom: HTMLElement): boolean {
+    dom.id = this.__id;
+    return false;
+  }
+
+  static importDOM(): DOMConversionMap | null {
+    return {
+      section: (node: Node) => ({
+        conversion: (domNode: Node) => {
+          return {node: $applyNodeReplacement(new SectionNode())};
+        },
+        priority: 0,
+      }),
+    };
+  }
+
+  static importJSON(
+    serializedNode: SerializedSectionNode,
+    updateTags: Set<string>,
+  ): SectionNode {
+    const node = new SectionNode(
+      serializedNode.id.startsWith('change_on_paste') && updateTags.has('paste')
+        ? 'pasted_id'
+        : serializedNode.id,
+    );
+    return node;
+  }
+
+  exportJSON(): SerializedSectionNode {
+    return {
+      ...super.exportJSON(),
+      id: this.__id,
+      type: 'section',
+    };
+  }
+}
+
 describe('LexicalEventHelpers', () => {
   let container = null;
 
@@ -114,6 +191,7 @@ describe('LexicalEventHelpers', () => {
               AutoLinkNode,
               LinkNode,
               OverflowNode,
+              SectionNode,
             ],
             theme: {
               code: 'editor-code',
@@ -409,6 +487,80 @@ describe('LexicalEventHelpers', () => {
 
         test(name + ` (#${i + 1})`, async () => {
           await applySelectionInputs(testUnit.inputs, update, editor);
+
+          // Validate HTML matches
+          expect(container.innerHTML).toBe(testUnit.expectedHTML);
+        });
+      });
+    });
+
+    describe('Lexical data', () => {
+      const helloNodeContent = (
+        namespace: string,
+        type: string,
+        otherProps = '',
+      ) =>
+        pasteLexical(`{
+        "namespace": "${namespace}",
+        "nodes": [
+          {
+            "children": [
+              {
+                "detail": 0,
+                "format": 0,
+                "mode": "normal",
+                "style": "",
+                "text": "Hello",
+                "type": "text",
+                "version": 1
+              }
+            ],
+            "direction": "ltr",
+            "format": "",
+            "indent": 0,
+            "type": "${type}",
+            "version": 1,
+            ${otherProps}
+          }
+        ]
+      }`);
+
+      const suite = [
+        {
+          expectedHTML:
+            '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><h1 class="editor-heading-h1" dir="ltr"><span data-lexical-text="true">Hello</span></h1></div>',
+          inputs: (namespace: string) => [
+            helloNodeContent(namespace, 'heading', '"tag": "h1"'),
+          ],
+          name: 'should produce the correct editor state from a pasted lexical h1 element',
+        },
+        {
+          expectedHTML:
+            '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><section id="keep_this_id" dir="ltr"><span data-lexical-text="true">Hello</span></section></div>',
+          inputs: (namespace: string) => [
+            helloNodeContent(namespace, 'section', '"id": "keep_this_id"'),
+          ],
+          name: 'should produce the correct editor state from a pasted lexical section element with fixed ID',
+        },
+        {
+          expectedHTML:
+            '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><section id="pasted_id" dir="ltr"><span data-lexical-text="true">Hello</span></section></div>',
+          inputs: (namespace: string) => [
+            helloNodeContent(namespace, 'section', '"id": "change_on_paste"'),
+          ],
+          name: 'should produce the correct editor state from a pasted lexical section element with changeable ID on paste',
+        },
+      ];
+
+      suite.forEach((testUnit, i) => {
+        const name = testUnit.name || 'Test case';
+
+        test(name + ` (#${i + 1})`, async () => {
+          await applySelectionInputs(
+            testUnit.inputs(editor?._config.namespace),
+            update,
+            editor,
+          );
 
           // Validate HTML matches
           expect(container.innerHTML).toBe(testUnit.expectedHTML);

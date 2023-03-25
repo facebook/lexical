@@ -9,6 +9,7 @@
 import './Input.css';
 
 import * as React from 'react';
+import {HTMLInputTypeAttribute} from 'react';
 
 type Props = Readonly<{
   'data-test-id'?: string;
@@ -16,7 +17,7 @@ type Props = Readonly<{
   onChange: (val: string) => void;
   placeholder?: string;
   value: string;
-  numberOnly?: boolean;
+  type?: HTMLInputTypeAttribute;
 }>;
 
 export default function TextInput({
@@ -25,13 +26,13 @@ export default function TextInput({
   onChange,
   placeholder = '',
   'data-test-id': dataTestId,
-  numberOnly = false,
+  type = 'text',
 }: Props): JSX.Element {
   return (
     <div className="Input__wrapper">
       <label className="Input__label">{label}</label>
       <input
-        type={numberOnly ? 'number' : 'text'}
+        type={type}
         className="Input__input"
         placeholder={placeholder}
         value={value}

@@ -22,7 +22,6 @@ interface ColorPickerProps {
   color: string;
   children?: ReactNode;
   onChange?: (color: string) => void;
-  stopCloseOnClickSelf?: boolean;
   title?: string;
 }
 
@@ -52,7 +51,6 @@ export default function ColorPicker({
   children,
   onChange,
   disabled = false,
-  stopCloseOnClickSelf = true,
   ...rest
 }: Readonly<ColorPickerProps>): JSX.Element {
   const [selfColor, setSelfColor] = useState(transformColor('hex', color));
@@ -118,10 +116,7 @@ export default function ColorPicker({
   }, [color]);
 
   return (
-    <DropDown
-      {...rest}
-      disabled={disabled}
-      stopCloseOnClickSelf={stopCloseOnClickSelf}>
+    <DropDown {...rest} disabled={disabled}>
       <div
         className="color-picker-wrapper"
         style={{width: WIDTH}}

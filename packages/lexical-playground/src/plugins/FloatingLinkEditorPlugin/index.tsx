@@ -257,8 +257,7 @@ function useFloatingLinkEditorToolbar(
       const linkParent = $findMatchingParent(node, $isLinkNode);
       const autoLinkParent = $findMatchingParent(node, $isAutoLinkNode);
 
-      // We don't want this menu to open for auto links.
-      if (linkParent != null && autoLinkParent == null) {
+      if (linkParent != null || autoLinkParent != null) {
         setIsLink(true);
       } else {
         setIsLink(false);

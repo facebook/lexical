@@ -9,7 +9,7 @@
   opacity: 0;
   background-color: #fff;
   box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
-  border-radius: 8px;
+  border-radius: 0 0 8px 8px;
   transition: opacity 0.5s;
   will-change: transform;
 }

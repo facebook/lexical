@@ -128,7 +128,9 @@ export class ListItemNode extends ElementNode {
   static importJSON(serializedNode: SerializedListItemNode): ListItemNode {
     const node = new ListItemNode(serializedNode.value, serializedNode.checked);
     node.setFormat(serializedNode.format);
-    node.setIndent(serializedNode.indent);
+    //setIndent is overridden here with logic that doesn't need
+    //to run during deserialization
+    node.getWritable().__indent = serializedNode.indent;
     node.setDirection(serializedNode.direction);
     return node;
   }
@@ -367,6 +369,10 @@ export class ListItemNode extends ElementNode {
   }
 
   setIndent(indent: number): this {
+    invariant(
+      typeof indent === 'number' && indent > -1,
+      'Invalid indent value.',
+    );
     let currentIndent = this.getIndent();
     while (currentIndent !== indent) {
       if (currentIndent < indent) {
@@ -526,10 +532,20 @@ function convertListItemElement(domNode: Node): DOMConversionOutput {
   return {node: $createListItemNode(checked)};
 }
 
+/**
+ * Creates a new List Item node, passing true/false will convert it to a checkbox input.
+ * @param checked - Is the List Item a checkbox and, if so, is it checked? undefined/null: not a checkbox, true/false is a checkbox and checked/unchecked, respectively.
+ * @returns The new List Item.
+ */
 export function $createListItemNode(checked?: boolean): ListItemNode {
   return $applyNodeReplacement(new ListItemNode(undefined, checked));
 }
 
+/**
+ * Checks to see if the node is a ListItemNode.
+ * @param node - The node to be checked.
+ * @returns true if the node is a ListItemNode, false otherwise.
+ */
 export function $isListItemNode(
   node: LexicalNode | null | undefined,
 ): node is ListItemNode {

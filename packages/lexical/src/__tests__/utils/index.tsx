@@ -235,6 +235,58 @@ export function $createTestInlineElementNode(): TestInlineElementNode {
   return new TestInlineElementNode();
 }
 
+export type SerializedTestShadowRootNode = Spread<
+  {
+    type: 'test_block';
+    version: 1;
+  },
+  SerializedElementNode
+>;
+
+export class TestShadowRootNode extends ElementNode {
+  static getType(): string {
+    return 'test_shadow_root';
+  }
+
+  static clone(node: TestShadowRootNode) {
+    return new TestElementNode(node.__key);
+  }
+
+  static importJSON(
+    serializedNode: SerializedTestShadowRootNode,
+  ): TestShadowRootNode {
+    const node = $createTestShadowRootNode();
+    node.setFormat(serializedNode.format);
+    node.setIndent(serializedNode.indent);
+    node.setDirection(serializedNode.direction);
+    return node;
+  }
+
+  exportJSON(): SerializedTestShadowRootNode {
+    return {
+      ...super.exportJSON(),
+      type: 'test_block',
+      version: 1,
+    };
+  }
+
+  createDOM() {
+    return document.createElement('div');
+  }
+
+  updateDOM() {
+    return false;
+  }
+
+  isShadowRoot() {
+    return true;
+  }
+}
+
+export function $createTestShadowRootNode(): TestShadowRootNode {
+  return new TestShadowRootNode();
+}
+
 export type SerializedTestSegmentedNode = Spread<
   {
     type: 'test_segmented';
@@ -419,6 +471,7 @@ const DEFAULT_NODES = [
   TestExcludeFromCopyElementNode,
   TestDecoratorNode,
   TestInlineElementNode,
+  TestShadowRootNode,
   TestTextNode,
 ];
 

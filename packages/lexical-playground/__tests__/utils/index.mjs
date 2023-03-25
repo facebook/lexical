@@ -762,7 +762,7 @@ export async function selectCellsFromTableCords(
   await firstRowFirstColumnCell.click(
     // This is a test runner quirk. Chrome seems to need two clicks to focus on the
     // content editable cell before dragging, but Firefox treats it as a double click event.
-    E2E_BROWSER !== 'firefox' ? {clickCount: 2} : {},
+    E2E_BROWSER === 'chromium' ? {clickCount: 2} : {},
   );
 
   await dragMouse(

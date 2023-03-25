@@ -26,6 +26,8 @@ import {
 } from 'lexical';
 import {
   $createTestDecoratorNode,
+  $createTestElementNode,
+  $createTestShadowRootNode,
   createTestEditor,
   TestDecoratorNode,
 } from 'lexical/src/__tests__/utils';
@@ -2556,6 +2558,23 @@ describe('LexicalSelectionHelpers tests', () => {
       expect(element.innerHTML).toBe(
         '<p><a href="https://lexical.dev" dir="ltr"><span data-lexical-text="true">Lexical</span></a><span data-lexical-text="true">...</span></p>',
       );
+    });
+
+    test('Can insert an ElementNode after ShadowRoot', async () => {
+      const editor = createTestEditor();
+      const element = document.createElement('div');
+      editor.setRootElement(element);
+
+      await editor.update(() => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        root.append(paragraph);
+        paragraph.selectStart();
+        const element1 = $createTestShadowRootNode();
+        const element2 = $createTestElementNode();
+        $insertNodes([element1, element2]);
+      });
+      expect(element.innerHTML).toBe('<div><br></div><div><br></div>');
     });
   });
 });

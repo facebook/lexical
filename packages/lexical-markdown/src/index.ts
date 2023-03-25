@@ -13,6 +13,7 @@ import type {
   TextMatchTransformer,
   Transformer,
 } from './MarkdownTransformers';
+import type {ElementNode} from 'lexical';
 
 import {createMarkdownExport} from './MarkdownExport';
 import {createMarkdownImport} from './MarkdownImport';
@@ -71,16 +72,18 @@ const TRANSFORMERS: Array<Transformer> = [
 function $convertFromMarkdownString(
   markdown: string,
   transformers: Array<Transformer> = TRANSFORMERS,
+  node?: ElementNode,
 ): void {
   const importMarkdown = createMarkdownImport(transformers);
-  return importMarkdown(markdown);
+  return importMarkdown(markdown, node);
 }
 
 function $convertToMarkdownString(
   transformers: Array<Transformer> = TRANSFORMERS,
+  node?: ElementNode,
 ): string {
   const exportMarkdown = createMarkdownExport(transformers);
-  return exportMarkdown();
+  return exportMarkdown(node);
 }
 
 export {

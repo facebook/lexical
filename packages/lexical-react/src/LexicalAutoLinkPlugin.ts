@@ -39,6 +39,22 @@ type LinkMatcherResult = {
 
 export type LinkMatcher = (text: string) => LinkMatcherResult | null;
 
+export function createLinkMatcherWithRegExp(
+  regExp: RegExp,
+  urlTransformer: (text: string) => string = (text) => text,
+) {
+  return (text: string) => {
+    const match = regExp.exec(text);
+    if (match === null) return null;
+    return {
+      index: match.index,
+      length: match[0].length,
+      text: match[0],
+      url: urlTransformer(text),
+    };
+  };
+}
+
 function findFirstMatch(
   text: string,
   matchers: Array<LinkMatcher>,

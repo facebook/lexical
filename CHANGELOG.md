@@ -1,3 +1,49 @@
+## v0.9.1 (2023-03-24)
+
+- Explicit E2E_BROWSER on E2E runs (#4179) Gerard Rovira
+- Fix tables Webkit e2e (#4175) Gerard Rovira
+- Remove unused convertToMarkdown file (#4169) themagickoala
+- Improve markdown transformers (#3886) Godefroy
+- Iterate through the live NodeList instead of copying to an array in $generateNodesFromDOM (#4164) Acy Watson
+- Bump Excalidraw to v0.14.2 (#4153) Ivaylo Pavlov
+- Fix table stealing selectionchange (#4162) Gerard Rovira
+- Improve Documentation #2845 - lexical/selection (#4140) Harry Sanders
+- UX: Floating link editor: better positioning (#4158) Alessio Gravili
+- DecoratorNode not disabling placeholder at root (#4147) Harry Sanders
+- Color picker - fixes #4127 (#4146) Harry Sanders
+- Validate against infinite loop in ListItemNode.setIndent (#4120) Acy Watson
+- Paste merged celled table (#4116) Gerard Rovira
+- Add md import/export tests, fix numbered lists pasting (#4123) Maksim Horbachevsky
+- Bump webpack from 5.75.0 to 5.76.0 (#4128) dependabot[bot]
+- fix: drag-over event on windows (#4125) 子瞻 Luci
+- Remove link preview (#4122) John Flockton
+- Add a function to create a LinkMatcher based on a RegExp (#3972) Karibash
+- Revise padding for smaller res (#4112) Gerard Rovira
+- Catch failures in parseEditorState (#4109) Acy Watson
+- Improve Documentation #2845 - lexical/list (#4107) Harry Sanders
+- Fix tables Collab E2E (#4117) Gerard Rovira
+- Fix ShadowRoot + X insertNode (#4115) Gerard Rovira
+- Overflow of logos of action items in Lexical Playground (#4096) 7gaurab_khanal
+- Remove columns w/ span support (#4093) Gerard Rovira
+- Remove rows w/ span support (#4078) Gerard Rovira
+- Table insert column w/ span support (#4074) Gerard Rovira
+- Table insert row w/ span support (#4063) Gerard Rovira
+- Use broader return types in `HorizontalRuleNode` (#4097) Chris Montrois
+- Add focus tag to editor.focus (#4092) Dragoș Străinu
+- Improve Documentation #2845 - lexical/utils (#4047) Harry Sanders
+- Fix toolbars that shouldn't appear in certain cases (#4077) Warren19
+- Fixed reference to old `addUpdateListener` method in transforms doc (#4094) Kevin Ansfield
+- Pass tags to onChange for LexicalOnChangePlugin (#4091) Dragoș Străinu
+- Fix tables E2E (#4090) John Flockton
+- Change default indent to 40px (#4025) EgonBolton
+- Update CODEOWNERS (#4089) John Flockton
+- Updated InsertTableDialog UX (#4082) Brandon
+- Export getNearestEditorFromDOMNode (#4079) Gerard Rovira
+- Fix unresponsive resize handle in Safari (#4081) Brandon
+- Sticky toolbar to assist in editing large content (#4076) Brandon
+- Fix table RangeSelection test (#4061) Gerard Rovira
+- Trim table e2e assert (#4060) Gerard Rovira
+
 ## v0.9.0 (2023-03-08)
 
 - deprecate $wrapNodes (#4059) Acy Watson

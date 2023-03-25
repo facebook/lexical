@@ -16,6 +16,7 @@ type Props = Readonly<{
   onChange: (val: string) => void;
   placeholder?: string;
   value: string;
+  numberOnly?: boolean;
 }>;
 
 export default function TextInput({
@@ -24,12 +25,13 @@ export default function TextInput({
   onChange,
   placeholder = '',
   'data-test-id': dataTestId,
+  numberOnly = false,
 }: Props): JSX.Element {
   return (
     <div className="Input__wrapper">
       <label className="Input__label">{label}</label>
       <input
-        type="text"
+        type={numberOnly ? 'number' : 'text'}
         className="Input__input"
         placeholder={placeholder}
         value={value}

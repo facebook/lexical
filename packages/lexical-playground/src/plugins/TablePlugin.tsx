@@ -129,6 +129,7 @@ export function InsertTableDialog({
         onChange={setRows}
         value={rows}
         data-test-id="table-modal-rows"
+        numberOnly={true}
       />
       <TextInput
         placeholder={'# of columns (1-50)'}
@@ -136,6 +137,7 @@ export function InsertTableDialog({
         onChange={setColumns}
         value={columns}
         data-test-id="table-modal-columns"
+        numberOnly={true}
       />
       <DialogActions data-test-id="table-model-confirm-insert">
         <Button disabled={isDisabled} onClick={onClick}>
@@ -180,6 +182,7 @@ export function InsertNewTableDialog({
         onChange={setRows}
         value={rows}
         data-test-id="table-modal-rows"
+        numberOnly={true}
       />
       <TextInput
         placeholder={'# of columns (1-50)'}
@@ -187,6 +190,7 @@ export function InsertNewTableDialog({
         onChange={setColumns}
         value={columns}
         data-test-id="table-modal-columns"
+        numberOnly={true}
       />
       <DialogActions data-test-id="table-model-confirm-insert">
         <Button disabled={isDisabled} onClick={onClick}>

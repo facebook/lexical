@@ -17,59 +17,91 @@ import {
 import * as React from 'react';
 import {createPortal} from 'react-dom';
 
+import TextInput from './TextInput';
+
 type DropDownContextType = {
-  registerItem: (ref: React.RefObject<HTMLButtonElement>) => void;
+  closeDropDown: () => void;
+  registerItem: ((ref: React.RefObject<HTMLButtonElement>) => void) | null;
 };
 
-const DropDownContext = React.createContext<DropDownContextType | null>(null);
+export const DropDownContext = React.createContext<DropDownContextType>({
+  closeDropDown: () => {
+    return;
+  },
+  registerItem: null,
+});
 
-export function DropDownItem({
-  children,
-  className,
-  onClick,
-  title,
-}: {
-  children: React.ReactNode;
+type DropDownTextInput = {
+  'data-test-id'?: string | undefined;
+  label: string;
+  onChange: (val: string, closeDropDown: () => void) => void;
+  placeholder?: string | undefined;
+  value: string;
+  type: 'text';
+};
+
+type DropDrownButton = {
+  children?: React.ReactNode;
   className: string;
+  key?: string;
   onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  style?: React.CSSProperties;
   title?: string;
-}) {
+  type?: 'button';
+};
+
+export function DropDownItem(props: DropDrownButton | DropDownTextInput) {
   const ref = useRef<HTMLButtonElement>(null);
 
   const dropDownContext = React.useContext(DropDownContext);
 
-  if (dropDownContext === null) {
+  if (dropDownContext.registerItem === null) {
     throw new Error('DropDownItem must be used within a DropDown');
   }
 
-  const {registerItem} = dropDownContext;
+  const {registerItem, closeDropDown} = dropDownContext;
 
   useEffect(() => {
-    if (ref && ref.current) {
+    if (ref && ref.current && registerItem !== null) {
       registerItem(ref);
     }
   }, [ref, registerItem]);
 
   return (
-    <button
-      className={className}
-      onClick={onClick}
-      ref={ref}
-      title={title}
-      type="button">
-      {children}
-    </button>
+    <>
+      {props.type === 'text' ? (
+        <TextInput
+          label={props.label}
+          onChange={(e: string) => props.onChange(e, closeDropDown)}
+          value={props.value}
+        />
+      ) : (
+        <button
+          className={props.className}
+          key={props.key}
+          onClick={async (e) => {
+            await props.onClick(e);
+            closeDropDown();
+          }}
+          ref={ref}
+          style={props.style}
+          title={props.title}
+          type="button">
+          {props.children}
+        </button>
+      )}
+    </>
   );
 }
 
 function DropDownItems({
   children,
   dropDownRef,
-  onClose,
+  closeDropDown,
 }: {
   children: React.ReactNode;
   dropDownRef: React.Ref<HTMLDivElement>;
-  onClose: () => void;
+  closeDropDown: () => void;
 }) {
   const [items, setItems] = useState<React.RefObject<HTMLButtonElement>[]>();
   const [highlightedItem, setHighlightedItem] =
@@ -92,7 +124,7 @@ function DropDownItems({
     }
 
     if (key === 'Escape' || key === 'Tab') {
-      onClose();
+      closeDropDown();
     } else if (key === 'ArrowUp') {
       setHighlightedItem((prev) => {
         if (!prev) return items[0];
@@ -109,9 +141,10 @@ function DropDownItems({
 
   const contextValue = useMemo(
     () => ({
+      closeDropDown,
       registerItem,
     }),
-    [registerItem],
+    [registerItem, closeDropDown],
   );
 
   useEffect(() => {
@@ -152,9 +185,9 @@ export default function DropDown({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [showDropDown, setShowDropDown] = useState(false);
 
-  const handleClose = () => {
+  const closeDropDown = () => {
     setShowDropDown(false);
-    if (buttonRef && buttonRef.current) {
+    if (buttonRef.current) {
       buttonRef.current.focus();
     }
   };
@@ -179,13 +212,7 @@ export default function DropDown({
     if (button !== null && showDropDown) {
       const handle = (event: MouseEvent) => {
         const target = event.target;
-        if (
-          dropDownRef.current &&
-          dropDownRef.current.contains(target as Node) &&
-          (target instanceof HTMLDivElement ||
-            target instanceof HTMLInputElement ||
-            target instanceof HTMLLabelElement)
-        )
+        if (dropDownRef.current && dropDownRef.current.contains(target as Node))
           return;
         if (!button.contains(target as Node)) {
           setShowDropDown(false);
@@ -216,7 +243,9 @@ export default function DropDown({
 
       {showDropDown &&
         createPortal(
-          <DropDownItems dropDownRef={dropDownRef} onClose={handleClose}>
+          <DropDownItems
+            dropDownRef={dropDownRef}
+            closeDropDown={closeDropDown}>
             {children}
           </DropDownItems>,
           document.body,

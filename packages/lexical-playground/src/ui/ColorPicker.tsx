@@ -11,8 +11,7 @@ import './ColorPicker.css';
 import {ReactNode, useEffect, useMemo, useRef, useState} from 'react';
 import * as React from 'react';
 
-import DropDown from './DropDown';
-import TextInput from './TextInput';
+import DropDown, {DropDownItem} from './DropDown';
 
 interface ColorPickerProps {
   disabled?: boolean;
@@ -73,11 +72,12 @@ export default function ColorPicker({
     [selfColor.hsv],
   );
 
-  const onSetHex = (hex: string) => {
+  const onSetHex = async (hex: string, closeDropDown: () => void) => {
     setInputColor(hex);
     if (/^#[0-9A-Fa-f]{6}$/i.test(hex)) {
       const newColor = transformColor('hex', hex);
-      setSelfColor(newColor);
+      await setSelfColor(newColor);
+      closeDropDown();
     }
   };
 
@@ -121,17 +121,22 @@ export default function ColorPicker({
         className="color-picker-wrapper"
         style={{width: WIDTH}}
         ref={innerDivRef}>
-        <TextInput label="Hex" onChange={onSetHex} value={inputColor} />
+        <DropDownItem
+          label="Hex"
+          onChange={(hex, closeDropDown) => onSetHex(hex, closeDropDown)}
+          type="text"
+          value={inputColor}
+        />
         <div className="color-picker-basic-color">
           {basicColors.map((basicColor) => (
-            <button
+            <DropDownItem
               className={basicColor === selfColor.hex ? ' active' : ''}
               key={basicColor}
-              style={{backgroundColor: basicColor}}
               onClick={() => {
                 setInputColor(basicColor);
                 setSelfColor(transformColor('hex', basicColor));
               }}
+              style={{backgroundColor: basicColor}}
             />
           ))}
         </div>

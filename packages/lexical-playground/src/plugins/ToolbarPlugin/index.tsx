@@ -38,7 +38,6 @@ import {
   $getSelectionStyleValueForProperty,
   $isParentElementRTL,
   $patchStyleText,
-  $selectAll,
   $setBlocksType,
 } from '@lexical/selection';
 import {$isTableNode} from '@lexical/table';
@@ -555,14 +554,30 @@ export default function ToolbarPlugin(): JSX.Element {
     activeEditor.update(() => {
       const selection = $getSelection();
       if ($isRangeSelection(selection)) {
-        $selectAll(selection);
-        selection.getNodes().forEach((node) => {
+        const anchor = selection.anchor;
+        const focus = selection.focus;
+        const nodes = selection.getNodes();
+
+        if (anchor.key === focus.key && anchor.offset === focus.offset) {
+          return;
+        }
+
+        nodes.forEach((node, idx) => {
+          // We split the first and last node by the selection
+          // So that we don't format unselected text inside those nodes
           if ($isTextNode(node)) {
+            if (idx === 0 && anchor.offset !== 0) {
+              node = node.splitText(anchor.offset)[1];
+            }
+            if (idx === nodes.length - 1) {
+              node = node.splitText(focus.offset)[0];
+            }
             node.setFormat(0);
             node.setStyle('');
             $getNearestBlockElementAncestorOrThrow(node).setFormat('');
-          }
-          if ($isDecoratorBlockNode(node)) {
+          } else if ($isHeadingNode(node)) {
+            // TODO: Replace with a TextNode
+          } else if ($isDecoratorBlockNode(node)) {
             node.setFormat('');
           }
         });

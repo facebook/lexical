@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-// eslint-disable-next-line simple-import-sort/imports
 import type {LexicalNode, MutationListener} from 'lexical';
 
 import {$isLinkNode, AutoLinkNode, LinkNode} from '@lexical/link';

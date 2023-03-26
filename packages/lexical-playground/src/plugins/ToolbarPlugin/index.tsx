@@ -32,6 +32,7 @@ import {
   $createHeadingNode,
   $createQuoteNode,
   $isHeadingNode,
+  $isQuoteNode,
   HeadingTagType,
 } from '@lexical/rich-text';
 import {
@@ -575,8 +576,8 @@ export default function ToolbarPlugin(): JSX.Element {
             node.setFormat(0);
             node.setStyle('');
             $getNearestBlockElementAncestorOrThrow(node).setFormat('');
-          } else if ($isHeadingNode(node)) {
-            // TODO: Replace with a TextNode
+          } else if ($isHeadingNode(node) || $isQuoteNode(node)) {
+            node.replace($createParagraphNode(), true);
           } else if ($isDecoratorBlockNode(node)) {
             node.setFormat('');
           }

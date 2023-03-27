@@ -19,21 +19,16 @@ import {$isElementNode, ElementNode} from 'lexical';
 export type LinkAttributes = {
   rel?: null | string,
   target?: null | string,
+  title?: null | string,
 };
 declare export class LinkNode extends ElementNode {
   __url: string;
   __target: null | string;
   __rel: null | string;
+  __title: null | string;
   static getType(): string;
   static clone(node: LinkNode): LinkNode;
-  constructor(
-    url: string,
-    attributes?: {
-      rel?: null | string,
-      target?: null | string,
-    },
-    key?: NodeKey,
-  ): void;
+  constructor(url: string, attributes?: LinkAttributes, key?: NodeKey): void;
   createDOM(config: EditorConfig): HTMLElement;
   updateDOM(
     prevNode: LinkNode,
@@ -47,6 +42,8 @@ declare export class LinkNode extends ElementNode {
   setTarget(target: null | string): void;
   getRel(): null | string;
   setRel(rel: null | string): void;
+  getTitle(): null | string;
+  setTitle(title: null | string): void;
   insertNewAfter(
     selection: RangeSelection,
     restoreSelection?: boolean,
@@ -85,5 +82,5 @@ declare export var TOGGLE_LINK_COMMAND: LexicalCommand<
 >;
 declare export function toggleLink(
   url: null | string,
-  attributes: {target?: null | string, rel?: null | string},
+  attributes: LinkAttributes,
 ): void;

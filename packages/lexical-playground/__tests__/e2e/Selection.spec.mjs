@@ -223,7 +223,7 @@ test.describe('Selection', () => {
     });
   });
 
-  test('Can delete at boundary #xyz', async ({page, isPlainText}) => {
+  test('Can delete at boundary #4221', async ({page, isPlainText}) => {
     test.skip(!isPlainText);
     await focusEditor(page);
     await page.keyboard.type('aaa');

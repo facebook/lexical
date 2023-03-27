@@ -1353,7 +1353,7 @@ describe('LexicalSelection tests', () => {
             expectedAnchor: text,
             expectedAnchorOffset: 0,
             expectedFocus: text,
-            expectedFocusOffset: 0,
+            expectedFocusOffset: 3,
           };
         },
         focusOffset: 1,
@@ -1440,7 +1440,7 @@ describe('LexicalSelection tests', () => {
             expectedAnchor: originalText1,
             expectedAnchorOffset: 0,
             expectedFocus: originalText1,
-            expectedFocusOffset: 0,
+            expectedFocusOffset: 3,
           };
         },
         fnBefore: (paragraph, originalText1) => {
@@ -1624,15 +1624,29 @@ describe('LexicalSelection tests', () => {
           originalText1.getNextSibling().remove();
 
           return {
-            expectedAnchor: paragraph,
-            expectedAnchorOffset: 1,
-            expectedFocus: paragraph,
-            expectedFocusOffset: 1,
+            expectedAnchor: originalText1,
+            expectedAnchorOffset: 3,
+            expectedFocus: originalText1,
+            expectedFocusOffset: 3,
           };
         },
         focusOffset: 1,
-        name: 'remove - #xyz',
-        only: true,
+        name: 'remove - Remove with collapsed selection at offset #4221',
+      },
+      {
+        anchorOffset: 0,
+        fn: (paragraph, originalText1) => {
+          originalText1.getNextSibling().remove();
+
+          return {
+            expectedAnchor: originalText1,
+            expectedAnchorOffset: 0,
+            expectedFocus: originalText1,
+            expectedFocusOffset: 3,
+          };
+        },
+        focusOffset: 1,
+        name: 'remove - Remove with non-collapsed selection at offset',
       },
     ]
       .reduce((testSuite, testCase) => {

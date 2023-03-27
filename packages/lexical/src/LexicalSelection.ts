@@ -2762,31 +2762,38 @@ export function $updateElementSelectionOnCreateDeleteNode(
       // The new selection might point to text nodes, try to resolve them
       $updateSelectionResolveTextNodes(selection);
     }
-    return;
-  }
-  // Multiple nodes selected. We shift or redimension selection
-  const isBackward = selection.isBackward();
-  const firstPoint = isBackward ? focus : anchor;
-  const firstPointNode = firstPoint.getNode();
-  const lastPoint = isBackward ? anchor : focus;
-  const lastPointNode = lastPoint.getNode();
-  if (parentNode.is(firstPointNode)) {
-    const firstPointOffset = firstPoint.offset;
-    if (
-      (nodeOffset <= firstPointOffset && times > 0) ||
-      (nodeOffset < firstPointOffset && times < 0)
-    ) {
-      firstPoint.set(
-        parentKey,
-        Math.max(0, firstPointOffset + times),
-        'element',
-      );
+  } else {
+    // Multiple nodes selected. We shift or redimension selection
+    const isBackward = selection.isBackward();
+    const firstPoint = isBackward ? focus : anchor;
+    const firstPointNode = firstPoint.getNode();
+    const lastPoint = isBackward ? anchor : focus;
+    const lastPointNode = lastPoint.getNode();
+    if (parentNode.is(firstPointNode)) {
+      const firstPointOffset = firstPoint.offset;
+      if (
+        (nodeOffset <= firstPointOffset && times > 0) ||
+        (nodeOffset < firstPointOffset && times < 0)
+      ) {
+        firstPoint.set(
+          parentKey,
+          Math.max(0, firstPointOffset + times),
+          'element',
+        );
+      }
     }
-  }
-  if (parentNode.is(lastPointNode)) {
-    const lastPointOffset = lastPoint.offset;
-    if (nodeOffset <= lastPointOffset) {
-      lastPoint.set(parentKey, Math.max(0, lastPointOffset + times), 'element');
+    if (parentNode.is(lastPointNode)) {
+      const lastPointOffset = lastPoint.offset;
+      if (
+        (nodeOffset <= lastPointOffset && times > 0) ||
+        (nodeOffset < lastPointOffset && times < 0)
+      ) {
+        lastPoint.set(
+          parentKey,
+          Math.max(0, lastPointOffset + times),
+          'element',
+        );
+      }
     }
   }
   // The new selection might point to text nodes, try to resolve them

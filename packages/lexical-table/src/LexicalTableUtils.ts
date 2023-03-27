@@ -565,14 +565,13 @@ export function $unmergeCell(): void {
   );
   const anchor = selection.anchor.getNode();
   const [cell, row, grid] = DEPRECATED_$getNodeTriplet(anchor);
-  const writableCell = cell.getWritable();
   const colSpan = cell.__colSpan;
   const rowSpan = cell.__rowSpan;
   if (colSpan > 1) {
     for (let i = 1; i < colSpan; i++) {
       cell.insertAfter($createTableCellNode(TableCellHeaderStates.NO_STATUS));
     }
-    writableCell.__colSpan = 1;
+    cell.setColSpan(1);
   }
   if (rowSpan > 1) {
     const [map, cellMap] = DEPRECATED_$computeGridMap(grid, cell, cell);
@@ -612,6 +611,6 @@ export function $unmergeCell(): void {
         }
       }
     }
-    writableCell.__rowSpan = 1;
+    cell.setRowSpan(1);
   }
 }

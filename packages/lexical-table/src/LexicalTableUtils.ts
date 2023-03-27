@@ -551,8 +551,66 @@ function $moveSelectionToCell(cell: DEPRECATED_GridCellNode): void {
 function $insertFirst(parent: ElementNode, node: LexicalNode): void {
   const firstChild = parent.getFirstChild();
   if (firstChild !== null) {
-    parent.insertBefore(firstChild);
+    firstChild.insertBefore(node);
   } else {
     parent.append(node);
+  }
+}
+
+export function $unmergeCell(): void {
+  const selection = $getSelection();
+  invariant(
+    $isRangeSelection(selection) || DEPRECATED_$isGridSelection(selection),
+    'Expected a RangeSelection or GridSelection',
+  );
+  const anchor = selection.anchor.getNode();
+  const [cell, row, grid] = DEPRECATED_$getNodeTriplet(anchor);
+  const colSpan = cell.__colSpan;
+  const rowSpan = cell.__rowSpan;
+  if (colSpan > 1) {
+    for (let i = 1; i < colSpan; i++) {
+      cell.insertAfter($createTableCellNode(TableCellHeaderStates.NO_STATUS));
+    }
+    cell.setColSpan(1);
+  }
+  if (rowSpan > 1) {
+    const [map, cellMap] = DEPRECATED_$computeGridMap(grid, cell, cell);
+    const {startColumn, startRow} = cellMap;
+    let currentRowNode;
+    for (let i = 1; i < rowSpan; i++) {
+      const currentRow = startRow + i;
+      const currentRowMap = map[currentRow];
+      currentRowNode = row.getNextSibling();
+      invariant(
+        DEPRECATED_$isGridRowNode(currentRowNode),
+        'Expected row next sibling to be a row',
+      );
+      let insertAfterCell: null | DEPRECATED_GridCellNode = null;
+      for (let column = 0; column < startColumn; column++) {
+        const currentCellMap = currentRowMap[column];
+        const currentCell = currentCellMap.cell;
+        if (currentCellMap.startRow === currentRow) {
+          insertAfterCell = currentCell;
+        }
+        if (currentCell.__colSpan > 1) {
+          column += currentCell.__colSpan - 1;
+        }
+      }
+      if (insertAfterCell === null) {
+        for (let j = 0; j < colSpan; j++) {
+          $insertFirst(
+            currentRowNode,
+            $createTableCellNode(TableCellHeaderStates.NO_STATUS),
+          );
+        }
+      } else {
+        for (let j = 0; j < colSpan; j++) {
+          insertAfterCell.insertAfter(
+            $createTableCellNode(TableCellHeaderStates.NO_STATUS),
+          );
+        }
+      }
+    }
+    cell.setRowSpan(1);
   }
 }

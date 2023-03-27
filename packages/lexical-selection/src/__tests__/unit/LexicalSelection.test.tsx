@@ -1618,6 +1618,22 @@ describe('LexicalSelection tests', () => {
         focusOffset: 3,
         name: "Selection resolves to the end of text node when it's at the end (2)",
       },
+      {
+        anchorOffset: 1,
+        fn: (paragraph, originalText1) => {
+          originalText1.getNextSibling().remove();
+
+          return {
+            expectedAnchor: paragraph,
+            expectedAnchorOffset: 1,
+            expectedFocus: paragraph,
+            expectedFocusOffset: 1,
+          };
+        },
+        focusOffset: 1,
+        name: 'remove - #xyz',
+        only: true,
+      },
     ]
       .reduce((testSuite, testCase) => {
         // Test inverse selection

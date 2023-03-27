@@ -2752,7 +2752,10 @@ export function $updateElementSelectionOnCreateDeleteNode(
   // Single node. We shift selection but never redimension it
   if (selection.isCollapsed()) {
     const selectionOffset = anchor.offset;
-    if (nodeOffset <= selectionOffset) {
+    if (
+      (nodeOffset <= selectionOffset && times > 0) ||
+      (nodeOffset < selectionOffset && times < 0)
+    ) {
       const newSelectionOffset = Math.max(0, selectionOffset + times);
       anchor.set(parentKey, newSelectionOffset, 'element');
       focus.set(parentKey, newSelectionOffset, 'element');
@@ -2769,7 +2772,10 @@ export function $updateElementSelectionOnCreateDeleteNode(
   const lastPointNode = lastPoint.getNode();
   if (parentNode.is(firstPointNode)) {
     const firstPointOffset = firstPoint.offset;
-    if (nodeOffset <= firstPointOffset) {
+    if (
+      (nodeOffset <= firstPointOffset && times > 0) ||
+      (nodeOffset < firstPointOffset && times < 0)
+    ) {
       firstPoint.set(
         parentKey,
         Math.max(0, firstPointOffset + times),

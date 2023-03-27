@@ -9,12 +9,7 @@
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {INSERT_TABLE_COMMAND} from '@lexical/table';
 import {
-  $createNodeSelection,
-  $createParagraphNode,
-  $getSelection,
-  $isRangeSelection,
-  $isRootOrShadowRoot,
-  $setSelection,
+  $insertNodes,
   COMMAND_PRIORITY_EDITOR,
   createCommand,
   EditorThemeClasses,
@@ -217,43 +212,12 @@ export function TablePlugin({
     return editor.registerCommand<InsertTableCommandPayload>(
       INSERT_NEW_TABLE_COMMAND,
       ({columns, rows, includeHeaders}) => {
-        const selection = $getSelection();
-
-        if (!$isRangeSelection(selection)) {
-          return true;
-        }
-
-        const focus = selection.focus;
-        const focusNode = focus.getNode();
-
-        if (focusNode !== null) {
-          const tableNode = $createTableNodeWithDimensions(
-            Number(rows),
-            Number(columns),
-            includeHeaders,
-          );
-
-          if ($isRootOrShadowRoot(focusNode)) {
-            const target = focusNode.getChildAtIndex(focus.offset);
-
-            if (target !== null) {
-              target.insertBefore(tableNode);
-            } else {
-              focusNode.append(tableNode);
-            }
-
-            tableNode.insertBefore($createParagraphNode());
-          } else {
-            const topLevelNode = focusNode.getTopLevelElementOrThrow();
-            topLevelNode.insertAfter(tableNode);
-          }
-
-          tableNode.insertAfter($createParagraphNode());
-          const nodeSelection = $createNodeSelection();
-          nodeSelection.add(tableNode.getKey());
-          $setSelection(nodeSelection);
-        }
-
+        const tableNode = $createTableNodeWithDimensions(
+          Number(rows),
+          Number(columns),
+          includeHeaders,
+        );
+        $insertNodes([tableNode]);
         return true;
       },
       COMMAND_PRIORITY_EDITOR,

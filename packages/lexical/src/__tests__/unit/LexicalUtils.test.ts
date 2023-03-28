@@ -7,6 +7,7 @@
  */
 
 import {
+  $copyNodeDeep,
   $getNodeByKey,
   $getRoot,
   $isTokenOrSegmented,
@@ -230,6 +231,43 @@ describe('LexicalUtils tests', () => {
         expect(currentParagraphKeys).toEqual(
           expect.arrayContaining(paragraphKeys),
         );
+      });
+    });
+
+    test('$copyNodeDeep', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const root = $getRoot();
+        const paragraph1 = $createParagraphNode();
+        const paragraph2 = $createParagraphNode();
+        const text1 = $createTextNode('1');
+        const text2 = $createTextNode('2');
+        text2.toggleUnmergeable();
+        const text3 = $createTextNode('3');
+        const text4 = $createTextNode('4');
+        text4.toggleUnmergeable();
+        paragraph1.append(text1, text2);
+        paragraph2.append(text3, text4);
+        root.append(paragraph1, paragraph2);
+
+        const rootCopy = $copyNodeDeep(root);
+        root.append(...rootCopy.getChildren());
+      });
+      editor.getEditorState().read(() => {
+        const root = $getRoot();
+        for (let i = 0; i < 4; i++) {
+          const child = root.getChildAtIndex(i);
+          expect(child).not.toBe(null);
+          if (child !== null) {
+            expect(child.getChildrenSize()).toBe(2);
+            if (i % 2 === 0) {
+              expect(child.getTextContent()).toBe('12');
+            } else {
+              expect(child.getTextContent()).toBe('34');
+            }
+          }
+        }
+        expect(root.getChildrenSize()).toBe(4);
       });
     });
   });

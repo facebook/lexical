@@ -1343,6 +1343,29 @@ export function $copyNode<T extends LexicalNode>(node: T): T {
   return copy;
 }
 
+export function $copyNodeDeep<T extends LexicalNode>(node: T): T {
+  const nodeCopy = $copyNode(node);
+  const stack: Array<[LexicalNode, LexicalNode]> = [[node, nodeCopy]];
+  let stackLength: number;
+  while ((stackLength = stack.length) > 0) {
+    for (let i = 0; i < stackLength; i++) {
+      const tuple = stack.shift();
+      if (tuple !== undefined) {
+        const [currentNode, currentNodeCopy] = tuple;
+        if ($isElementNode(currentNode) && $isElementNode(currentNodeCopy)) {
+          const children = currentNode.getChildren();
+          for (const child of children) {
+            const childCopy = $copyNode(child);
+            currentNodeCopy.append(childCopy);
+            stack.push([child, childCopy]);
+          }
+        }
+      }
+    }
+  }
+  return nodeCopy;
+}
+
 export function $applyNodeReplacement<N extends LexicalNode>(
   node: LexicalNode,
 ): N {

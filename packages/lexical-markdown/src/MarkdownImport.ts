@@ -24,6 +24,7 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $getSelection,
   $isParagraphNode,
   $isTextNode,
   ElementNode,
@@ -83,6 +84,10 @@ export function createMarkdownImport(
       if (isEmptyParagraph(child)) {
         child.remove();
       }
+    }
+
+    if ($getSelection() !== null) {
+      root.selectEnd();
     }
   };
 }

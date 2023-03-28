@@ -712,6 +712,11 @@ export async function selectFromAlignDropdown(page, selector) {
   await click(page, '.dropdown ' + selector);
 }
 
+export async function selectFromTableDropdown(page, selector) {
+  await click(page, '.toolbar-item[aria-label="Open table toolkit"]');
+  await click(page, '.dropdown ' + selector);
+}
+
 export async function insertTable(page, rows = 2, columns = 3) {
   let leftFrame = page;
   if (IS_COLLAB) {

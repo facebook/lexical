@@ -814,7 +814,7 @@ export default function ToolbarPlugin(): JSX.Element {
                 disabled={!isEditable}
                 buttonClassName="toolbar-item spaced"
                 buttonLabel="Table"
-                buttonAriaLabel="Insert specialized editor node"
+                buttonAriaLabel="Open table toolkit"
                 buttonIconClassName="icon table secondary">
                 <DropDownItem
                   onClick={() => {

@@ -275,6 +275,12 @@ function convertAnchorElement(domNode: Node): DOMConversionOutput {
   return {node};
 }
 
+/**
+ * Takes a URL and creates a LinkNode.
+ * @param url - The URL the LinkNode should direct to.
+ * @param attributes - Optional HTML a tag attributes { target, rel, title }
+ * @returns The LinkNode.
+ */
 export function $createLinkNode(
   url: string,
   attributes?: LinkAttributes,
@@ -282,6 +288,11 @@ export function $createLinkNode(
   return $applyNodeReplacement(new LinkNode(url, attributes));
 }
 
+/**
+ * Determines if node is a LinkNode.
+ * @param node - The node to be checked.
+ * @returns true if node is a LinkNode, false otherwise.
+ */
 export function $isLinkNode(
   node: LexicalNode | null | undefined,
 ): node is LinkNode {
@@ -357,6 +368,13 @@ export class AutoLinkNode extends LinkNode {
   }
 }
 
+/**
+ * Takes a URL and creates an AutoLinkNode. AutoLinkNodes are generally automatically generated
+ * during typing, which is especially useful when a button to generate a LinkNode is not practical.
+ * @param url - The URL the LinkNode should direct to.
+ * @param attributes - Optional HTML a tag attributes. { target, rel, title }
+ * @returns The LinkNode.
+ */
 export function $createAutoLinkNode(
   url: string,
   attributes?: LinkAttributes,
@@ -364,6 +382,11 @@ export function $createAutoLinkNode(
   return $applyNodeReplacement(new AutoLinkNode(url, attributes));
 }
 
+/**
+ * Determines if node is an AutoLinkNode.
+ * @param node - The node to be checked.
+ * @returns true if node is an AutoLinkNode, false otherwise.
+ */
 export function $isAutoLinkNode(
   node: LexicalNode | null | undefined,
 ): node is AutoLinkNode {
@@ -374,6 +397,12 @@ export const TOGGLE_LINK_COMMAND: LexicalCommand<
   string | ({url: string} & LinkAttributes) | null
 > = createCommand('TOGGLE_LINK_COMMAND');
 
+/**
+ * Generates or updates a LinkNode. It can also delete a LinkNode if the URL is null,
+ * but saves any children and brings them up to the parent node.
+ * @param url - The URL the link directs to.
+ * @param attributes - Optional HTML a tag attributes. { target, rel, title }
+ */
 export function toggleLink(
   url: null | string,
   attributes: LinkAttributes = {},

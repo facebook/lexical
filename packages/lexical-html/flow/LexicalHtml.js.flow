@@ -25,5 +25,7 @@ declare export function $generateHtmlFromNodes(
 declare export function $generateNodesFromDOM(
   editor: LexicalEditor,
   dom: Document,
-  ignoreTags?: Set<string>,
+  options?: {
+    ignoreTags: Set<string>,
+  },
 ): Array<LexicalNode>;

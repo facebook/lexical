@@ -32,7 +32,7 @@ import {$getRoot, $isElementNode, $isTextNode} from 'lexical';
 export function $generateNodesFromDOM(
   editor: LexicalEditor,
   dom: Document,
-  ignoreTags = IGNORE_TAGS,
+  {ignoreTags = IGNORE_TAGS}: {ignoreTags?: Set<string>} = {},
 ): Array<LexicalNode> {
   let lexicalNodes: Array<LexicalNode> = [];
   const elements = dom.body ? dom.body.childNodes : [];
@@ -41,7 +41,7 @@ export function $generateNodesFromDOM(
     const element = elements[i];
 
     if (!ignoreTags.has(element.nodeName)) {
-      const lexicalNode = $createNodesFromDOM(element, editor, ignoreTags);
+      const lexicalNode = $createNodesFromDOM(element, editor, {ignoreTags});
 
       if (lexicalNode !== null) {
         lexicalNodes = lexicalNodes.concat(lexicalNode);
@@ -168,10 +168,17 @@ const IGNORE_TAGS = new Set(['STYLE']);
 function $createNodesFromDOM(
   node: Node,
   editor: LexicalEditor,
-  ignoreTags = IGNORE_TAGS,
-  forChildMap: Map<string, DOMChildConversion> = new Map(),
-  parentLexicalNode?: LexicalNode | null | undefined,
-  preformatted = false,
+  {
+    ignoreTags = IGNORE_TAGS,
+    forChildMap = new Map(),
+    parentLexicalNode,
+    preformatted = false,
+  }: {
+    ignoreTags?: Set<string>;
+    forChildMap?: Map<string, DOMChildConversion>;
+    parentLexicalNode?: LexicalNode | null | undefined;
+    preformatted?: boolean;
+  },
 ): Array<LexicalNode> {
   let lexicalNodes: Array<LexicalNode> = [];
 
@@ -219,15 +226,14 @@ function $createNodesFromDOM(
 
   for (let i = 0; i < children.length; i++) {
     childLexicalNodes.push(
-      ...$createNodesFromDOM(
-        children[i],
-        editor,
+      ...$createNodesFromDOM(children[i], editor, {
+        forChildMap: new Map(forChildMap),
         ignoreTags,
-        new Map(forChildMap),
-        currentLexicalNode,
-        preformatted ||
+        parentLexicalNode: currentLexicalNode,
+        preformatted:
+          preformatted ||
           (transformOutput && transformOutput.preformatted) === true,
-      ),
+      }),
     );
   }
 

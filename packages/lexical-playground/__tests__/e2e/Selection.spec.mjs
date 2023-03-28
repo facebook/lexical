@@ -11,6 +11,7 @@ import {
   moveToLineBeginning,
   moveToPrevWord,
   pressShiftEnter,
+  selectAll,
 } from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
@@ -261,6 +262,22 @@ test.describe('Selection', () => {
           dir="ltr">
           <span data-lexical-text="true">aaa</span>
         </p>
+      `,
+    );
+  });
+
+  test('Can select all with node selection', async ({page, isPlainText}) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type('Text before');
+    await insertSampleImage(page);
+    await page.keyboard.type('Text after');
+    await selectAll(page);
+    await page.keyboard.press('Delete');
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
       `,
     );
   });

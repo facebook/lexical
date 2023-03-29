@@ -79,10 +79,7 @@ export type MenuRenderFn<TOption extends TypeaheadOption> = (
 ) => ReactPortal | JSX.Element | null;
 
 const scrollIntoViewIfNeeded = (target: HTMLElement) => {
-  const container = document.getElementById('typeahead-menu');
-  if (!container) return;
-
-  const typeaheadContainerNode = container.querySelector('.typeahead-popover');
+  const typeaheadContainerNode = document.getElementById('typeahead-menu');
   if (!typeaheadContainerNode) return;
 
   const typeaheadRect = typeaheadContainerNode.getBoundingClientRect();

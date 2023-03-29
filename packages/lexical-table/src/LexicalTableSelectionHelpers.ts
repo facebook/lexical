@@ -145,6 +145,7 @@ export function applyTableHandlers(
     if (event.button !== 0) {
       return;
     }
+
     editor.update(() => {
       const selection = $getSelection();
       const target = event.target;

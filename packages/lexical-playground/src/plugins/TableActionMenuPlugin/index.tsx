@@ -19,6 +19,7 @@ import {
   $insertTableRow__EXPERIMENTAL,
   $isTableCellNode,
   $isTableRowNode,
+  $unmergeCell,
   getTableSelectionFromTableElement,
   HTMLTableElementWithWithTableSelectionState,
   TableCellHeaderStates,
@@ -28,6 +29,7 @@ import {
   $getRoot,
   $getSelection,
   $isRangeSelection,
+  DEPRECATED_$getNodeTriplet,
   DEPRECATED_$isGridCellNode,
   DEPRECATED_$isGridSelection,
   GridSelection,
@@ -90,6 +92,20 @@ function isGridSelectionRectangular(selection: GridSelection): boolean {
   );
 }
 
+function $canUnmerge(): boolean {
+  const selection = $getSelection();
+  if (
+    ($isRangeSelection(selection) && !selection.isCollapsed()) ||
+    (DEPRECATED_$isGridSelection(selection) &&
+      !selection.anchor.is(selection.focus)) ||
+    (!$isRangeSelection(selection) && !DEPRECATED_$isGridSelection(selection))
+  ) {
+    return false;
+  }
+  const [cell] = DEPRECATED_$getNodeTriplet(selection.anchor);
+  return cell.__colSpan > 1 || cell.__rowSpan > 1;
+}
+
 type TableCellActionMenuProps = Readonly<{
   contextRef: {current: null | HTMLElement};
   onClose: () => void;
@@ -113,6 +129,7 @@ function TableActionMenu({
     rows: 1,
   });
   const [canMergeCells, setCanMergeCells] = useState(false);
+  const [canUnmergeCell, setCanUnmergeCell] = useState(false);
 
   useEffect(() => {
     return editor.registerMutationListener(TableCellNode, (nodeMutations) => {
@@ -130,10 +147,18 @@ function TableActionMenu({
   useEffect(() => {
     editor.getEditorState().read(() => {
       const selection = $getSelection();
+      // Merge cells
       if (DEPRECATED_$isGridSelection(selection)) {
+        const currentSelectionCounts = computeSelectionCount(selection);
         updateSelectionCounts(computeSelectionCount(selection));
-        setCanMergeCells(isGridSelectionRectangular(selection));
+        setCanMergeCells(
+          isGridSelectionRectangular(selection) &&
+            (currentSelectionCounts.columns > 1 ||
+              currentSelectionCounts.rows > 1),
+        );
       }
+      // Unmerge cell
+      setCanUnmergeCell($canUnmerge());
     });
   }, [editor]);
 
@@ -199,7 +224,7 @@ function TableActionMenu({
     });
   }, [editor, tableCellNode]);
 
-  const mergeTableColumnsAtSelection = () => {
+  const mergeTableCellsAtSelection = () => {
     editor.update(() => {
       const selection = $getSelection();
       if (DEPRECATED_$isGridSelection(selection)) {
@@ -226,6 +251,12 @@ function TableActionMenu({
         }
         onClose();
       }
+    });
+  };
+
+  const unmergeTableCellsAtSelection = () => {
+    editor.update(() => {
+      $unmergeCell();
     });
   };
 
@@ -340,6 +371,29 @@ function TableActionMenu({
     });
   }, [editor, tableCellNode, clearTableSelection, onClose]);
 
+  let mergeCellButton: null | JSX.Element = null;
+  if (cellMerge) {
+    if (canMergeCells) {
+      mergeCellButton = (
+        <button
+          className="item"
+          onClick={() => mergeTableCellsAtSelection()}
+          data-test-id="table-merge-cells">
+          Merge cells
+        </button>
+      );
+    } else if (canUnmergeCell) {
+      mergeCellButton = (
+        <button
+          className="item"
+          onClick={() => unmergeTableCellsAtSelection()}
+          data-test-id="table-unmerge-cells">
+          Unmerge cells
+        </button>
+      );
+    }
+  }
+
   return createPortal(
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions
     <div
@@ -348,19 +402,12 @@ function TableActionMenu({
       onClick={(e) => {
         e.stopPropagation();
       }}>
-      {cellMerge &&
-        (selectionCounts.columns > 1 || selectionCounts.rows > 1) &&
-        canMergeCells && (
-          <>
-            <button
-              className="item"
-              onClick={() => mergeTableColumnsAtSelection()}
-              data-test-id="table-merge-cells">
-              Merge cells
-            </button>
-            <hr />
-          </>
-        )}
+      {mergeCellButton !== null && (
+        <>
+          {mergeCellButton}
+          <hr />
+        </>
+      )}
       <button
         className="item"
         onClick={() => insertTableRowAtSelection(false)}

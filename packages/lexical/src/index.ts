@@ -142,6 +142,7 @@ export {
   $getNodeByKey,
   $getRoot,
   $hasAncestor,
+  $hasUpdateTag,
   $isInlineElementOrDecoratorNode,
   $isLeafNode,
   $isRootOrShadowRoot,

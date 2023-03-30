@@ -99,7 +99,7 @@ function $appendNodesToHTML(
     return false;
   }
 
-  const fragment = new DocumentFragment();
+  const fragment = document.createDocumentFragment();
 
   for (let i = 0; i < children.length; i++) {
     const childNode = children[i];

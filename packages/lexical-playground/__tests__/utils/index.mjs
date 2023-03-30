@@ -66,7 +66,7 @@ export async function initialize({
 
   // Having more horizontal space prevents redundant text wraps for tests
   // which affects CMD+ArrowRight/Left navigation
-  page.setViewportSize({height: 1000, width: isCollab ? 2000 : 1000});
+  page.setViewportSize({height: 1000, width: isCollab ? 2500 : 1250});
   await page.goto(url);
 
   await exposeLexicalEditor(page);
@@ -712,6 +712,11 @@ export async function selectFromAlignDropdown(page, selector) {
   await click(page, '.dropdown ' + selector);
 }
 
+export async function selectFromTableDropdown(page, selector) {
+  await click(page, '.toolbar-item[aria-label="Open table toolkit"]');
+  await click(page, '.dropdown ' + selector);
+}
+
 export async function insertTable(page, rows = 2, columns = 3) {
   let leftFrame = page;
   if (IS_COLLAB) {
@@ -795,6 +800,11 @@ export async function insertTableColumnAfter(page) {
 export async function mergeTableCells(page) {
   await click(page, '.table-cell-action-button-container');
   await click(page, '.item[data-test-id="table-merge-cells"]');
+}
+
+export async function unmergeTableCell(page) {
+  await click(page, '.table-cell-action-button-container');
+  await click(page, '.item[data-test-id="table-unmerge-cells"]');
 }
 
 export async function deleteTableRows(page) {

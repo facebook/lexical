@@ -128,9 +128,6 @@ export class ListItemNode extends ElementNode {
   static importJSON(serializedNode: SerializedListItemNode): ListItemNode {
     const node = new ListItemNode(serializedNode.value, serializedNode.checked);
     node.setFormat(serializedNode.format);
-    //setIndent is overridden here with logic that doesn't need
-    //to run during deserialization
-    node.getWritable().__indent = serializedNode.indent;
     node.setDirection(serializedNode.direction);
     return node;
   }

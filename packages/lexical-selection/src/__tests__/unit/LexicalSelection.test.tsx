@@ -1353,7 +1353,7 @@ describe('LexicalSelection tests', () => {
             expectedAnchor: text,
             expectedAnchorOffset: 0,
             expectedFocus: text,
-            expectedFocusOffset: 0,
+            expectedFocusOffset: 3,
           };
         },
         focusOffset: 1,
@@ -1440,7 +1440,7 @@ describe('LexicalSelection tests', () => {
             expectedAnchor: originalText1,
             expectedAnchorOffset: 0,
             expectedFocus: originalText1,
-            expectedFocusOffset: 0,
+            expectedFocusOffset: 3,
           };
         },
         fnBefore: (paragraph, originalText1) => {
@@ -1617,6 +1617,36 @@ describe('LexicalSelection tests', () => {
         },
         focusOffset: 3,
         name: "Selection resolves to the end of text node when it's at the end (2)",
+      },
+      {
+        anchorOffset: 1,
+        fn: (paragraph, originalText1) => {
+          originalText1.getNextSibling().remove();
+
+          return {
+            expectedAnchor: originalText1,
+            expectedAnchorOffset: 3,
+            expectedFocus: originalText1,
+            expectedFocusOffset: 3,
+          };
+        },
+        focusOffset: 1,
+        name: 'remove - Remove with collapsed selection at offset #4221',
+      },
+      {
+        anchorOffset: 0,
+        fn: (paragraph, originalText1) => {
+          originalText1.getNextSibling().remove();
+
+          return {
+            expectedAnchor: originalText1,
+            expectedAnchorOffset: 0,
+            expectedFocus: originalText1,
+            expectedFocusOffset: 3,
+          };
+        },
+        focusOffset: 1,
+        name: 'remove - Remove with non-collapsed selection at offset',
       },
     ]
       .reduce((testSuite, testCase) => {

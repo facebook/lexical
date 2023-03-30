@@ -112,7 +112,6 @@ describe('LexicalEventHelpers', () => {
               HashtagNode,
               CodeHighlightNode,
               AutoLinkNode,
-              LinkNode,
               OverflowNode,
             ],
             theme: {

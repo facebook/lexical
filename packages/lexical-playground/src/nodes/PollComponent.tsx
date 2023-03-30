@@ -119,7 +119,7 @@ function PollOptionComponent({
           'PollNode__optionDelete',
           options.length < 3 && 'PollNode__optionDeleteDisabled',
         )}
-        arial-label="Remove"
+        aria-label="Remove"
         onClick={() => {
           withPollNode((node) => {
             node.deleteOption(option);

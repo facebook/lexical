@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-export const getDefaultView = (value: any): Window | null => {
+export const getDefaultView = (value: Node): Window | null => {
   return (
     (value && value.ownerDocument && value.ownerDocument.defaultView) || null
   );
@@ -14,7 +14,7 @@ export const getDefaultView = (value: any): Window | null => {
 /**
  * Check if a value is a DOM node.
  */
-export default function isDOMNode(value: EventTarget | null): value is Node {
+export default function isDOMNode(value: Node): value is Node {
   const window = getDefaultView(value);
   return !!window && value instanceof Node;
 }

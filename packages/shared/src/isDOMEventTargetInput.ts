@@ -14,7 +14,7 @@ import isDOMNode from './isDOMNode';
  */
 export default function isDOMEventTargetInput(event: PasteCommandType) {
   return (
-    isDOMNode(event.target) &&
+    isDOMNode(event.target as Node) &&
     (event.target instanceof HTMLInputElement ||
       event.target instanceof HTMLTextAreaElement)
   );

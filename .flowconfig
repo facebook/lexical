@@ -103,6 +103,7 @@ module.name_mapper='^shared/environment' -> '<PROJECT_ROOT>/packages/shared/src/
 module.name_mapper='^shared/useLayoutEffect' -> '<PROJECT_ROOT>/packages/shared/src/useLayoutEffect.js'
 module.name_mapper='^shared/canUseDOM' -> '<PROJECT_ROOT>/packages/shared/src/canUseDOM.js'
 module.name_mapper='^shared/caretFromPoint' -> '<PROJECT_ROOT>/packages/shared/src/caretFromPoint.js'
+module.name_mapper='^shared/isDOMEventTargetInput' -> '<PROJECT_ROOT>/packages/shared/src/isDOMEventTargetInput.js'
 
 munge_underscores=false
 

@@ -92,6 +92,7 @@ import {
   IS_IOS,
   IS_SAFARI,
 } from 'shared/environment';
+import isDOMEventTargetInput from 'shared/isDOMEventTargetInput';
 
 export type SerializedHeadingNode = Spread<
   {
@@ -978,6 +979,11 @@ export function registerRichText(editor: LexicalEditor): () => void {
         if (files.length > 0 && !hasTextContent) {
           editor.dispatchCommand(DRAG_DROP_PASTE, files);
           return true;
+        }
+
+        // if inputs then paste within the input ignore creating a new node on paste event
+        if (isDOMEventTargetInput(event)) {
+          return false;
         }
 
         const selection = $getSelection();

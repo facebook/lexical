@@ -958,6 +958,11 @@ test.describe('Tables', () => {
                 dir="ltr">
                 <span data-lexical-text="true">first</span>
               </p>
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">second</span>
+              </p>
             </th>
           </tr>
         </table>
@@ -982,6 +987,11 @@ test.describe('Tables', () => {
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
                 dir="ltr">
                 <span data-lexical-text="true">first</span>
+              </p>
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">second</span>
               </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell"><br /></td>

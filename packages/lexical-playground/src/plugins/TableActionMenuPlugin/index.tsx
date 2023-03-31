@@ -6,7 +6,7 @@
  *
  */
 
-import type {DEPRECATED_GridCellNode} from 'lexical';
+import type {DEPRECATED_GridCellNode, ElementNode} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import useLexicalEditable from '@lexical/react/useLexicalEditable';
@@ -28,10 +28,13 @@ import {
   TableCellNode,
 } from '@lexical/table';
 import {
+  $createParagraphNode,
   $getRoot,
   $getSelection,
+  $isElementNode,
   $isParagraphNode,
   $isRangeSelection,
+  $isTextNode,
   DEPRECATED_$getNodeTriplet,
   DEPRECATED_$isGridCellNode,
   DEPRECATED_$isGridSelection,
@@ -107,6 +110,28 @@ function $canUnmerge(): boolean {
   }
   const [cell] = DEPRECATED_$getNodeTriplet(selection.anchor);
   return cell.__colSpan > 1 || cell.__rowSpan > 1;
+}
+
+function $cellContainsEmptyParagraph(cell: DEPRECATED_GridCellNode): boolean {
+  if (cell.getChildrenSize() !== 1) {
+    return false;
+  }
+  const firstChild = cell.getFirstChildOrThrow();
+  if (!$isParagraphNode(firstChild) || !firstChild.isEmpty()) {
+    return false;
+  }
+  return true;
+}
+
+function $selectLastDescendant(node: ElementNode): void {
+  const lastDescendant = node.getLastDescendant();
+  if ($isTextNode(lastDescendant)) {
+    lastDescendant.select();
+  } else if ($isElementNode(lastDescendant)) {
+    lastDescendant.selectEnd();
+  } else if (lastDescendant !== null) {
+    lastDescendant.selectNext();
+  }
 }
 
 type TableCellActionMenuProps = Readonly<{
@@ -239,33 +264,29 @@ function TableActionMenu({
           if (DEPRECATED_$isGridCellNode(node)) {
             if (firstCell === null) {
               node.setColSpan(columns).setRowSpan(rows);
-              const lastDescendant = node.getLastDescendant();
-              invariant(
-                lastDescendant !== null,
-                'Unexpected empty lastDescendant on the resulting merged cell',
-              );
-              lastDescendant.select();
               firstCell = node;
+              const isEmpty = $cellContainsEmptyParagraph(node);
               let firstChild;
               if (
-                node.getChildrenSize() === 1 &&
-                $isParagraphNode((firstChild = node.getFirstChild())) &&
-                firstChild.isEmpty()
+                isEmpty &&
+                $isParagraphNode((firstChild = node.getFirstChild()))
               ) {
                 firstChild.remove();
               }
             } else if (DEPRECATED_$isGridCellNode(firstCell)) {
-              let firstChild;
-              if (
-                node.getChildrenSize() > 1 ||
-                !$isParagraphNode((firstChild = node.getFirstChild())) ||
-                firstChild.getChildrenSize() > 0
-              ) {
+              const isEmpty = $cellContainsEmptyParagraph(node);
+              if (!isEmpty) {
                 firstCell.append(...node.getChildren());
               }
               node.remove();
             }
           }
+        }
+        if (firstCell !== null) {
+          if (firstCell.getChildrenSize() === 0) {
+            firstCell.append($createParagraphNode());
+          }
+          $selectLastDescendant(firstCell);
         }
         onClose();
       }

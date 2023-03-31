@@ -1031,6 +1031,14 @@ export function isDelete(keyCode: number): boolean {
   return keyCode === 46;
 }
 
+export function isSelectAll(
+  keyCode: number,
+  metaKey: boolean,
+  ctrlKey: boolean,
+): boolean {
+  return keyCode === 65 && controlOrMeta(metaKey, ctrlKey);
+}
+
 export function getCachedClassNameArray(
   classNamesTheme: EditorThemeClasses,
   classNameThemeType: string,

@@ -958,6 +958,11 @@ test.describe('Tables', () => {
                 dir="ltr">
                 <span data-lexical-text="true">first</span>
               </p>
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">second</span>
+              </p>
             </th>
           </tr>
         </table>
@@ -982,6 +987,11 @@ test.describe('Tables', () => {
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
                 dir="ltr">
                 <span data-lexical-text="true">first</span>
+              </p>
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">second</span>
               </p>
             </th>
             <td class="PlaygroundEditorTheme__tableCell"><br /></td>
@@ -1111,6 +1121,96 @@ test.describe('Tables', () => {
             </th>
             <td class="PlaygroundEditorTheme__tableCell"><br /></td>
             <td class="PlaygroundEditorTheme__tableCell"><br /></td>
+          </tr>
+        </table>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+  });
+
+  test('Merge with content', async ({page, isPlainText}) => {
+    test.skip(isPlainText);
+    if (IS_COLLAB) {
+      // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
+      page.setViewportSize({height: 1000, width: 3000});
+    }
+
+    await focusEditor(page);
+
+    await insertTable(page, 3, 3);
+    await moveDown(page, 1);
+    await moveRight(page, 1);
+    await page.keyboard.type('A');
+    await moveRight(page, 1);
+    await page.keyboard.type('B');
+    await moveRight(page, 2);
+    await page.keyboard.type('C');
+    await moveRight(page, 1);
+    await page.keyboard.type('D');
+
+    await selectCellsFromTableCords(
+      page,
+      {x: 1, y: 1},
+      {x: 2, y: 2},
+      false,
+      false,
+    );
+    await mergeTableCells(page);
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <table class="PlaygroundEditorTheme__table">
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <td
+              class="PlaygroundEditorTheme__tableCell"
+              colspan="2"
+              rowspan="2">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">A</span>
+              </p>
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">B</span>
+              </p>
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">C</span>
+              </p>
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">D</span>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
           </tr>
         </table>
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>

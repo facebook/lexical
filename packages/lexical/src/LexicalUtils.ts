@@ -26,6 +26,7 @@ import type {
   PointType,
   RangeSelection,
 } from './LexicalSelection';
+import type {ElementFormatType} from './nodes/LexicalElementNode';
 import type {RootNode} from './nodes/LexicalRootNode';
 import type {TextFormatType, TextNode} from './nodes/LexicalTextNode';
 
@@ -1590,4 +1591,21 @@ export function $getChildrenRecursively(node: LexicalNode): Array<LexicalNode> {
     }
   }
   return nodes;
+}
+
+export function convertDOMElementLexicalData(
+  element: HTMLElement,
+  lexicalNode: ElementNode,
+): ElementNode {
+  const lexicalDataFormatAlign = element.getAttribute(
+    'lexical-data-format-align',
+  );
+  const lexicalDataIndent = element.getAttribute('lexical-data-indent');
+  if (lexicalDataFormatAlign !== null) {
+    lexicalNode.setFormat(lexicalDataFormatAlign as ElementFormatType);
+  }
+  if (lexicalDataIndent != null) {
+    lexicalNode.setIndent(parseInt(lexicalDataIndent, 10));
+  }
+  return lexicalNode;
 }

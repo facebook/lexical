@@ -28,8 +28,10 @@ export type {EditorState, SerializedEditorState} from './LexicalEditorState';
 export type {
   DOMChildConversion,
   DOMConversion,
+  DOMConversionContext,
   DOMConversionFn,
   DOMConversionMap,
+  DOMConversionOptions,
   DOMConversionOutput,
   DOMExportOutput,
   LexicalNode,
@@ -150,6 +152,7 @@ export {
   $setCompositionKey,
   $setSelection,
   $splitNode,
+  convertDOMElementLexicalData,
   getNearestEditorFromDOMNode,
   isSelectionWithinEditor,
 } from './LexicalUtils';

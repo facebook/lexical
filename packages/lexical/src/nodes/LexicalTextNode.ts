@@ -13,6 +13,7 @@ import type {
   TextNodeThemeClasses,
 } from '../LexicalEditor';
 import type {
+  DOMConversionContext,
   DOMConversionMap,
   DOMConversionOutput,
   DOMExportOutput,
@@ -535,6 +536,7 @@ export class TextNode extends LexicalNode {
       if (this.hasFormat('underline')) {
         element = wrapElementWith(element, 'u');
       }
+      element.setAttribute('lexical-data-style', element.style.cssText);
     }
 
     return {
@@ -881,7 +883,12 @@ export class TextNode extends LexicalNode {
   }
 }
 
-function convertSpanElement(domNode: Node): DOMConversionOutput {
+function convertSpanElement(
+  domNode: Node,
+  _parent?: Node,
+  _preformatted?: boolean,
+  context?: DOMConversionContext,
+): DOMConversionOutput {
   // domNode is a <span> since we matched it by nodeName
   const span = domNode as HTMLSpanElement;
   // Google Docs uses span tags + font-weight for bold text
@@ -895,6 +902,7 @@ function convertSpanElement(domNode: Node): DOMConversionOutput {
   const hasUnderlineTextDecoration = span.style.textDecoration === 'underline';
   // Google Docs uses span tags + vertical-align to specify subscript and superscript
   const verticalAlign = span.style.verticalAlign;
+  const lexicalStyleData = span.getAttribute('lexical-data-style');
 
   return {
     forChild: (lexicalNode) => {
@@ -919,7 +927,9 @@ function convertSpanElement(domNode: Node): DOMConversionOutput {
       if (verticalAlign === 'super') {
         lexicalNode.toggleFormat('superscript');
       }
-
+      if (context && context.textStyles && lexicalStyleData !== null) {
+        lexicalNode.setStyle(lexicalStyleData);
+      }
       return lexicalNode;
     },
     node: null,

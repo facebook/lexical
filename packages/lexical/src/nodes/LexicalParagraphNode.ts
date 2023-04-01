@@ -8,18 +8,20 @@
 
 import type {EditorConfig, LexicalEditor} from '../LexicalEditor';
 import type {
+  DOMConversionContext,
   DOMConversionMap,
   DOMConversionOutput,
   DOMExportOutput,
   LexicalNode,
 } from '../LexicalNode';
-import type {
-  ElementFormatType,
-  SerializedElementNode,
-} from './LexicalElementNode';
+import type {SerializedElementNode} from './LexicalElementNode';
 import type {RangeSelection, Spread} from 'lexical';
 
-import {$applyNodeReplacement, getCachedClassNameArray} from '../LexicalUtils';
+import {
+  $applyNodeReplacement,
+  convertDOMElementLexicalData,
+  getCachedClassNameArray,
+} from '../LexicalUtils';
 import {ElementNode} from './LexicalElementNode';
 import {$isTextNode} from './LexicalTextNode';
 
@@ -71,26 +73,23 @@ export class ParagraphNode extends ElementNode {
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const {element} = super.exportDOM(editor);
-
     if (element && this.isEmpty()) {
       element.append(document.createElement('br'));
     }
-    if (element) {
+    if (element !== null) {
       const formatType = this.getFormatType();
-      element.style.textAlign = formatType;
-
+      if (formatType !== '') {
+        element.style.textAlign = formatType;
+      }
       const direction = this.getDirection();
       if (direction) {
         element.dir = direction;
       }
       const indent = this.getIndent();
       if (indent > 0) {
-        // padding-inline-start is not widely supported in email HTML, but
-        // Lexical Reconciler uses padding-inline-start. Using text-indent instead.
-        element.style.textIndent = `${indent * 20}px`;
+        element.style.paddingInlineStart = `${indent * 20}px`;
       }
     }
-
     return {
       element,
     };
@@ -147,16 +146,19 @@ export class ParagraphNode extends ElementNode {
   }
 }
 
-function convertParagraphElement(element: HTMLElement): DOMConversionOutput {
-  const node = $createParagraphNode();
-  if (element.style) {
-    node.setFormat(element.style.textAlign as ElementFormatType);
-    const indent = parseInt(element.style.textIndent, 10) / 20;
-    if (indent > 0) {
-      node.setIndent(indent);
-    }
+function convertParagraphElement(
+  element: HTMLElement,
+  _parent?: Node,
+  _preformatted?: boolean,
+  context?: DOMConversionContext,
+): DOMConversionOutput {
+  let node: ElementNode = $createParagraphNode();
+  if (context !== undefined && context.elementFormats === true) {
+    node = convertDOMElementLexicalData(element, node);
   }
-  return {node};
+  return {
+    node,
+  };
 }
 
 export function $createParagraphNode(): ParagraphNode {

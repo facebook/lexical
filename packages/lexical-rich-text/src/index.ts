@@ -7,24 +7,6 @@
  *
  */
 
-import type {
-  CommandPayloadType,
-  DOMConversionMap,
-  DOMConversionOutput,
-  EditorConfig,
-  ElementFormatType,
-  LexicalCommand,
-  LexicalEditor,
-  LexicalNode,
-  NodeKey,
-  ParagraphNode,
-  PasteCommandType,
-  RangeSelection,
-  SerializedElementNode,
-  Spread,
-  TextFormatType,
-} from 'lexical';
-
 import {
   $insertDataTransferForRichText,
   copyToClipboard,
@@ -56,7 +38,9 @@ import {
   $setSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_EDITOR,
+  CommandPayloadType,
   CONTROLLED_TEXT_INSERTION_COMMAND,
+  convertDOMElementLexicalData,
   COPY_COMMAND,
   createCommand,
   CUT_COMMAND,
@@ -64,9 +48,15 @@ import {
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
   DEPRECATED_$isGridSelection,
+  DOMConversionContext,
+  DOMConversionMap,
+  DOMConversionOutput,
+  DOMExportOutput,
   DRAGOVER_COMMAND,
   DRAGSTART_COMMAND,
   DROP_COMMAND,
+  EditorConfig,
+  ElementFormatType,
   ElementNode,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
@@ -81,9 +71,19 @@ import {
   KEY_DELETE_COMMAND,
   KEY_ENTER_COMMAND,
   KEY_ESCAPE_COMMAND,
+  LexicalCommand,
+  LexicalEditor,
+  LexicalNode,
+  NodeKey,
   OUTDENT_CONTENT_COMMAND,
+  ParagraphNode,
   PASTE_COMMAND,
+  PasteCommandType,
+  RangeSelection,
   REMOVE_TEXT_COMMAND,
+  SerializedElementNode,
+  Spread,
+  TextFormatType,
 } from 'lexical';
 import caretFromPoint from 'shared/caretFromPoint';
 import {
@@ -272,13 +272,20 @@ export class HeadingNode extends ElementNode {
         }
         return null;
       },
-      span: (node: Node) => {
-        if (isGoogleDocsTitle(node)) {
+      span: (domNode: Node) => {
+        if (isGoogleDocsTitle(domNode)) {
           return {
-            conversion: (domNode: Node) => {
-              return {
-                node: $createHeadingNode('h1'),
-              };
+            conversion: (
+              element: HTMLElement,
+              _parent?: Node,
+              _preformatted?: boolean,
+              context?: DOMConversionContext,
+            ) => {
+              let node: ElementNode = $createHeadingNode('h1');
+              if (context && context.elementFormats) {
+                node = convertDOMElementLexicalData(element, node);
+              }
+              return {node};
             },
             priority: 3,
           };
@@ -287,12 +294,37 @@ export class HeadingNode extends ElementNode {
       },
     };
   }
+
   static importJSON(serializedNode: SerializedHeadingNode): HeadingNode {
     const node = $createHeadingNode(serializedNode.tag);
     node.setFormat(serializedNode.format);
     node.setIndent(serializedNode.indent);
     node.setDirection(serializedNode.direction);
     return node;
+  }
+
+  exportDOM(editor: LexicalEditor): DOMExportOutput {
+    const {element} = super.exportDOM(editor);
+    if (element && this.isEmpty()) {
+      element.append(document.createElement('br'));
+    }
+    if (element !== null) {
+      const formatType = this.getFormatType();
+      if (formatType !== '') {
+        element.style.textAlign = formatType;
+      }
+      const direction = this.getDirection();
+      if (direction) {
+        element.dir = direction;
+      }
+      const indent = this.getIndent();
+      if (indent > 0) {
+        element.style.paddingInlineStart = `${indent * 20}px`;
+      }
+    }
+    return {
+      element,
+    };
   }
 
   exportJSON(): SerializedHeadingNode {
@@ -342,8 +374,13 @@ function isGoogleDocsTitle(domNode: Node): boolean {
   return false;
 }
 
-function convertHeadingElement(domNode: Node): DOMConversionOutput {
-  const nodeName = domNode.nodeName.toLowerCase();
+function convertHeadingElement(
+  element: HTMLElement,
+  _parent?: Node,
+  _preformatted?: boolean,
+  context?: DOMConversionContext,
+): DOMConversionOutput {
+  const nodeName = element.nodeName.toLowerCase();
   let node = null;
   if (
     nodeName === 'h1' ||
@@ -354,6 +391,9 @@ function convertHeadingElement(domNode: Node): DOMConversionOutput {
     nodeName === 'h6'
   ) {
     node = $createHeadingNode(nodeName);
+    if (context && context.elementFormats) {
+      convertDOMElementLexicalData(element, node);
+    }
   }
   return {node};
 }

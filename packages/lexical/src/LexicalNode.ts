@@ -121,10 +121,27 @@ export type DOMConversion<T extends HTMLElement = HTMLElement> = {
   priority: 0 | 1 | 2 | 3 | 4;
 };
 
+export type DOMConversionOptions = {
+  textStyles?: true;
+  elementFormats?: true;
+  preformatted?: boolean;
+};
+
+export type DOMConversionContext = {
+  editor: LexicalEditor;
+  textStyles?: true;
+  elementFormats?: true;
+  parent?: Node;
+  preformatted?: boolean;
+};
+
 export type DOMConversionFn<T extends HTMLElement = HTMLElement> = (
   element: T,
+  /** @deprecated use context.parent */
   parent?: Node,
+  /** @deprecated use context.preformatted */
   preformatted?: boolean,
+  context?: DOMConversionContext,
 ) => DOMConversionOutput | null;
 
 export type DOMChildConversion = (

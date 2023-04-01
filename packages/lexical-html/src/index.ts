@@ -11,6 +11,7 @@ import type {
   DOMChildConversion,
   DOMConversion,
   DOMConversionFn,
+  DOMConversionOptions,
   GridSelection,
   LexicalEditor,
   LexicalNode,
@@ -24,6 +25,11 @@ import {
 } from '@lexical/selection';
 import {$getRoot, $isElementNode, $isTextNode} from 'lexical';
 
+export type GenerateNodesFromDOMOptions = Pick<
+  DOMConversionOptions,
+  'textStyles'
+>;
+
 /**
  * How you parse your html string to get a document is left up to you. In the browser you can use the native
  * DOMParser API to generate a document (see clipboard.ts), but to use in a headless environment you can use JSDom
@@ -32,6 +38,7 @@ import {$getRoot, $isElementNode, $isTextNode} from 'lexical';
 export function $generateNodesFromDOM(
   editor: LexicalEditor,
   dom: Document,
+  options?: GenerateNodesFromDOMOptions,
 ): Array<LexicalNode> {
   let lexicalNodes: Array<LexicalNode> = [];
   const elements = dom.body ? dom.body.childNodes : [];
@@ -40,7 +47,13 @@ export function $generateNodesFromDOM(
     const element = elements[i];
 
     if (!IGNORE_TAGS.has(element.nodeName)) {
-      const lexicalNode = $createNodesFromDOM(element, editor);
+      const lexicalNode = $createNodesFromDOM(
+        element,
+        editor,
+        undefined,
+        undefined,
+        {preformatted: false, ...options},
+      );
 
       if (lexicalNode !== null) {
         lexicalNodes = lexicalNodes.concat(lexicalNode);
@@ -169,18 +182,30 @@ function $createNodesFromDOM(
   editor: LexicalEditor,
   forChildMap: Map<string, DOMChildConversion> = new Map(),
   parentLexicalNode?: LexicalNode | null | undefined,
-  preformatted = false,
+  options: DOMConversionOptions = {},
 ): Array<LexicalNode> {
   let lexicalNodes: Array<LexicalNode> = [];
 
   if (IGNORE_TAGS.has(node.nodeName)) {
     return lexicalNodes;
   }
+  const {preformatted, textStyles} = options;
+  const transformContext = {
+    editor,
+    parent: undefined,
+    preformatted,
+    textStyles,
+  };
 
   let currentLexicalNode = null;
   const transformFunction = getConversionFunction(node, editor);
   const transformOutput = transformFunction
-    ? transformFunction(node as HTMLElement, undefined, preformatted)
+    ? transformFunction(
+        node as HTMLElement,
+        undefined,
+        preformatted,
+        transformContext,
+      )
     : null;
   let postTransform = null;
 
@@ -222,8 +247,12 @@ function $createNodesFromDOM(
         editor,
         new Map(forChildMap),
         currentLexicalNode,
-        preformatted ||
-          (transformOutput && transformOutput.preformatted) === true,
+        {
+          ...options,
+          preformatted:
+            preformatted ||
+            (transformOutput && transformOutput.preformatted) === true,
+        },
       ),
     );
   }

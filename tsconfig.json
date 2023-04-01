@@ -170,9 +170,6 @@
 
       "shared/canUseDOM": ["./packages/shared/src/canUseDOM.ts"],
       "shared/caretFromPoint": ["./packages/shared/src/caretFromPoint.ts"],
-      "shared/isDOMEventTargetInput": [
-        "./packages/shared/src/isDOMEventTargetInput.ts"
-      ],
       "shared/simpleDiffWithCursor": [
         "packages/shared/src/simpleDiffWithCursor.ts"
       ],

@@ -93,8 +93,6 @@ module.exports = {
           '<rootDir>/packages/shared/src/caretFromPoint.ts',
         '^shared/environment$': '<rootDir>/packages/shared/src/environment.ts',
         '^shared/invariant$': '<rootDir>/packages/shared/src/invariant.ts',
-        '^shared/isDOMEventTargetInput$':
-          '<rootDir>/packages/shared/src/isDOMEventTargetInput.ts',
         '^shared/simpleDiffWithCursor$':
           '<rootDir>/packages/shared/src/simpleDiffWithCursor.ts',
         '^shared/useLayoutEffect$':

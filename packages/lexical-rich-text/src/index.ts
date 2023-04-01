@@ -73,6 +73,7 @@ import {
   INDENT_CONTENT_COMMAND,
   INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
+  isSelectionCapturedInDecoratorInput,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
@@ -92,7 +93,6 @@ import {
   IS_IOS,
   IS_SAFARI,
 } from 'shared/environment';
-import isDOMEventTargetInput from 'shared/isDOMEventTargetInput';
 
 export type SerializedHeadingNode = Spread<
   {
@@ -982,7 +982,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
         }
 
         // if inputs then paste within the input ignore creating a new node on paste event
-        if (isDOMEventTargetInput(event)) {
+        if (isSelectionCapturedInDecoratorInput(event.target as Node)) {
           return false;
         }
 

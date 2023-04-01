@@ -157,12 +157,13 @@ export default function ExcalidrawComponent({
         initialElements={elements}
         isShown={isModalOpen}
         onDelete={deleteNode}
+        onClose={() => setModalOpen(false)}
         onSave={(newData) => {
           editor.setEditable(true);
           setData(newData);
           setModalOpen(false);
         }}
-        closeOnClickOutside={true}
+        closeOnClickOutside={false}
       />
       {elements.length > 0 && (
         <button

@@ -81,7 +81,7 @@ export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
 
       if (editor === null) {
         const newEditor = createEditor({
-          editable: false,
+          editable: initialConfig.editable ?? true,
           namespace,
           nodes,
           onError: (error) => onError(error, newEditor),

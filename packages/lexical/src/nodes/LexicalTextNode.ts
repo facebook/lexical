@@ -536,7 +536,10 @@ export class TextNode extends LexicalNode {
       if (this.hasFormat('underline')) {
         element = wrapElementWith(element, 'u');
       }
-      element.setAttribute('lexical-data-style', element.style.cssText);
+      const cssText = element.style.cssText;
+      if (cssText !== '') {
+        element.setAttribute('lexical-data-style', cssText);
+      }
     }
 
     return {
@@ -927,7 +930,12 @@ function convertSpanElement(
       if (verticalAlign === 'super') {
         lexicalNode.toggleFormat('superscript');
       }
-      if (context && context.textStyles && lexicalStyleData !== null) {
+      if (
+        context &&
+        context.textStyles &&
+        lexicalStyleData !== null &&
+        lexicalStyleData !== ''
+      ) {
         lexicalNode.setStyle(lexicalStyleData);
       }
       return lexicalNode;

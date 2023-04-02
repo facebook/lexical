@@ -27,7 +27,7 @@ import {$getRoot, $isElementNode, $isTextNode} from 'lexical';
 
 export type GenerateNodesFromDOMOptions = Pick<
   DOMConversionOptions,
-  'textStyles'
+  'textStyles' | 'elementFormats'
 >;
 
 /**

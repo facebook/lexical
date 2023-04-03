@@ -7,7 +7,12 @@
  */
 
 import type {EditorState, SerializedEditorState} from './LexicalEditorState';
-import type {DOMConversion, NodeKey} from './LexicalNode';
+import type {
+  DOMConversion,
+  DOMConversionMap,
+  DOMExportOutput,
+  NodeKey,
+} from './LexicalNode';
 
 import invariant from 'shared/invariant';
 
@@ -160,6 +165,10 @@ export type CreateEditorArgs = {
   parentEditor?: LexicalEditor;
   editable?: boolean;
   theme?: EditorThemeClasses;
+  html?: {
+    export?: Map<Klass<LexicalNode>, DOMExportOutput>;
+    import?: DOMConversionMap;
+  };
 };
 
 export type RegisteredNodes = Map<string, RegisteredNode>;
@@ -330,9 +339,24 @@ export function resetEditor(
   }
 }
 
-function initializeConversionCache(nodes: RegisteredNodes): DOMConversionCache {
+function initializeConversionCache(
+  nodes: RegisteredNodes,
+  additionalConversions?: DOMConversionMap,
+): DOMConversionCache {
   const conversionCache = new Map();
   const handledConversions = new Set();
+  const addConversionsToCache = (map: DOMConversionMap) => {
+    Object.keys(map).forEach((key) => {
+      let currentCache = conversionCache.get(key);
+
+      if (currentCache === undefined) {
+        currentCache = [];
+        conversionCache.set(key, currentCache);
+      }
+
+      currentCache.push(map[key]);
+    });
+  };
   nodes.forEach((node) => {
     const importDOM =
       node.klass.importDOM != null
@@ -347,18 +371,12 @@ function initializeConversionCache(nodes: RegisteredNodes): DOMConversionCache {
     const map = importDOM();
 
     if (map !== null) {
-      Object.keys(map).forEach((key) => {
-        let currentCache = conversionCache.get(key);
-
-        if (currentCache === undefined) {
-          currentCache = [];
-          conversionCache.set(key, currentCache);
-        }
-
-        currentCache.push(map[key]);
-      });
+      addConversionsToCache(map);
     }
   });
+  if (additionalConversions) {
+    addConversionsToCache(additionalConversions);
+  }
   return conversionCache;
 }
 
@@ -469,7 +487,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
       });
     }
   }
-
+  const {html} = config;
   const editor = new LexicalEditor(
     editorState,
     parentEditor,
@@ -480,7 +498,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
       theme,
     },
     onError ? onError : console.error,
-    initializeConversionCache(registeredNodes),
+    initializeConversionCache(registeredNodes, html ? html.import : undefined),
     isEditable,
   );
 

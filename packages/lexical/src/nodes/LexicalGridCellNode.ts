@@ -18,6 +18,7 @@ import {ElementNode} from './LexicalElementNode';
 export type SerializedGridCellNode = Spread<
   {
     colSpan: number;
+    rowSpan: number;
   },
   SerializedElementNode
 >;
@@ -38,6 +39,7 @@ export class DEPRECATED_GridCellNode extends ElementNode {
     return {
       ...super.exportJSON(),
       colSpan: this.__colSpan,
+      rowSpan: this.__rowSpan,
     };
   }
 

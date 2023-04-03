@@ -548,7 +548,7 @@ export type GridMapValueType = {
 };
 export type GridMapType = Array<Array<GridMapValueType>>;
 declare export function DEPRECATED_$computeGridMap(
-  grid: deprecated_GridCellNode,
+  grid: deprecated_GridNode,
   cellA: deprecated_GridCellNode,
   cellB: deprecated_GridCellNode,
 ): [GridMapType, GridMapValueType, GridMapValueType];

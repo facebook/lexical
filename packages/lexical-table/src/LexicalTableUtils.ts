@@ -380,7 +380,7 @@ export function $insertTableColumn__EXPERIMENTAL(insertAfter = true): void {
     }
     const rowMap = gridMap[i];
     if (insertAfterColumn < 0) {
-      loopRow.append($createTableCellNodeForInsertTableColumn());
+      $insertFirst(loopRow, $createTableCellNodeForInsertTableColumn());
       continue;
     }
     const {

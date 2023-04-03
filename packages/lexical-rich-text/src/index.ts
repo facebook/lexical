@@ -73,6 +73,7 @@ import {
   INDENT_CONTENT_COMMAND,
   INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
+  isSelectionCapturedInDecoratorInput,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
@@ -978,6 +979,11 @@ export function registerRichText(editor: LexicalEditor): () => void {
         if (files.length > 0 && !hasTextContent) {
           editor.dispatchCommand(DRAG_DROP_PASTE, files);
           return true;
+        }
+
+        // if inputs then paste within the input ignore creating a new node on paste event
+        if (isSelectionCapturedInDecoratorInput(event.target as Node)) {
+          return false;
         }
 
         const selection = $getSelection();

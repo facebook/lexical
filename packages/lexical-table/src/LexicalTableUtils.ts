@@ -7,7 +7,7 @@
  */
 
 import type {Grid} from './LexicalTableSelection';
-import type {ElementNode} from 'lexical';
+import type {DEPRECATED_GridRowNode, ElementNode} from 'lexical';
 
 import {$findMatchingParent} from '@lexical/utils';
 import {
@@ -350,27 +350,66 @@ export function $insertTableColumn__EXPERIMENTAL(insertAfter = true): void {
   );
   const rowCount = gridMap.length;
   const {startColumn: focusStartColumn} = focusCellMap;
-  if (insertAfter) {
-    const focusEndColumn = focusStartColumn + focusCell.__colSpan - 1;
-    for (let i = 0; i < rowCount; i++) {
-      const {cell, startColumn} = gridMap[i][focusEndColumn];
-      if (startColumn + cell.__colSpan - 1 <= focusEndColumn) {
-        cell.insertAfter($createTableCellNode(TableCellHeaderStates.NO_STATUS));
-      } else {
-        cell.setColSpan(cell.__colSpan + 1);
-      }
+  const insertAfterColumn = insertAfter
+    ? focusStartColumn + focusCell.__colSpan - 1
+    : focusStartColumn - 1;
+  const gridFirstChild = grid.getFirstChild();
+  invariant(
+    DEPRECATED_$isGridRowNode(gridFirstChild),
+    'Expected firstTable child to be a row',
+  );
+  let firstInsertedCell: null | DEPRECATED_GridCellNode = null;
+  function $createTableCellNodeForInsertTableColumn() {
+    const cell = $createTableCellNode(TableCellHeaderStates.NO_STATUS).append(
+      $createParagraphNode(),
+    );
+    if (firstInsertedCell === null) {
+      firstInsertedCell = cell;
     }
-  } else {
-    for (let i = 0; i < rowCount; i++) {
-      const {cell, startColumn} = gridMap[i][focusStartColumn];
-      if (startColumn === focusStartColumn) {
-        cell.insertBefore(
-          $createTableCellNode(TableCellHeaderStates.NO_STATUS),
-        );
-      } else {
-        cell.setColSpan(cell.__colSpan + 1);
-      }
+    return cell;
+  }
+  let loopRow: DEPRECATED_GridRowNode = gridFirstChild;
+  rowLoop: for (let i = 0; i < rowCount; i++) {
+    if (i !== 0) {
+      const currentRow = loopRow.getNextSibling();
+      invariant(
+        DEPRECATED_$isGridRowNode(currentRow),
+        'Expected row nextSibling to be a row',
+      );
+      loopRow = currentRow;
     }
+    const rowMap = gridMap[i];
+    if (insertAfterColumn < 0) {
+      loopRow.append($createTableCellNodeForInsertTableColumn());
+      continue;
+    }
+    const {
+      cell: currentCell,
+      startColumn: currentStartColumn,
+      startRow: currentStartRow,
+    } = rowMap[insertAfterColumn];
+    if (currentStartColumn + currentCell.__colSpan - 1 <= insertAfterColumn) {
+      let insertAfterCell: DEPRECATED_GridCellNode = currentCell;
+      let insertAfterCellRowStart = currentStartRow;
+      let prevCellIndex = insertAfterColumn;
+      while (insertAfterCellRowStart !== i && insertAfterCell.__rowSpan > 1) {
+        prevCellIndex -= currentCell.__colSpan;
+        if (prevCellIndex >= 0) {
+          const {cell: cell_, startRow: startRow_} = rowMap[prevCellIndex];
+          insertAfterCell = cell_;
+          insertAfterCellRowStart = startRow_;
+        } else {
+          loopRow.append($createTableCellNodeForInsertTableColumn());
+          continue rowLoop;
+        }
+      }
+      insertAfterCell.insertAfter($createTableCellNodeForInsertTableColumn());
+    } else {
+      currentCell.setColSpan(currentCell.__colSpan + 1);
+    }
+  }
+  if (firstInsertedCell !== null) {
+    $moveSelectionToCell(firstInsertedCell);
   }
 }
 

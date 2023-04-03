@@ -17,6 +17,8 @@ import {
 import * as React from 'react';
 import {createPortal} from 'react-dom';
 
+import usePrevious from '../hooks/usePrevious';
+
 type DropDownContextType = {
   registerItem: (ref: React.RefObject<HTMLButtonElement>) => void;
 };
@@ -201,13 +203,7 @@ export default function DropDown({
       };
     }
   }, [dropDownRef, buttonRef, showDropDown, stopCloseOnClickSelf]);
-  function usePrevious(value: any) {
-    const ref = useRef();
-    useEffect(() => {
-      ref.current = value;
-    });
-    return ref.current;
-  }
+
   const prevShowDropDown = usePrevious(showDropDown);
 
   useEffect(() => {
@@ -216,7 +212,8 @@ export default function DropDown({
         onClose();
       }
     }
-  }, [showDropDown]);
+  }, [onClose, prevShowDropDown, showDropDown]);
+
   return (
     <>
       <button

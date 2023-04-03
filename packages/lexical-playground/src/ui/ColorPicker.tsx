@@ -8,7 +8,14 @@
 
 import './ColorPicker.css';
 
-import {ReactNode, useEffect, useMemo, useRef, useState} from 'react';
+import {
+  ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import * as React from 'react';
 
 import DropDown from './DropDown';
@@ -101,11 +108,11 @@ export default function ColorPicker({
     setSelfColor(newColor);
     setInputColor(newColor.hex);
   };
-  const HandleDropDownClose = React.useCallback(() => {
+  const HandleDropDownClose = useCallback(() => {
     if (onClose) {
       onClose(selfColor.hex);
     }
-  }, [selfColor]);
+  }, [onClose, selfColor.hex]);
 
   useEffect(() => {
     // Check if the dropdown is actually active

@@ -82,11 +82,13 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
   }
 
   static importJSON(serializedNode: SerializedTableCellNode): TableCellNode {
-    return $createTableCellNode(
+    const cellNode = $createTableCellNode(
       serializedNode.headerState,
       serializedNode.colSpan,
       serializedNode.width || undefined,
     );
+    cellNode.__rowSpan = serializedNode.rowSpan;
+    return cellNode;
   }
 
   constructor(
@@ -158,7 +160,6 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
   exportJSON(): SerializedTableCellNode {
     return {
       ...super.exportJSON(),
-      colSpan: super.__colSpan,
       headerState: this.__headerState,
       type: 'tablecell',
       width: this.getWidth(),

@@ -1,3 +1,92 @@
+## v0.9.1 (2023-03-24)
+
+- Explicit E2E_BROWSER on E2E runs (#4179) Gerard Rovira
+- Fix tables Webkit e2e (#4175) Gerard Rovira
+- Remove unused convertToMarkdown file (#4169) themagickoala
+- Improve markdown transformers (#3886) Godefroy
+- Iterate through the live NodeList instead of copying to an array in $generateNodesFromDOM (#4164) Acy Watson
+- Bump Excalidraw to v0.14.2 (#4153) Ivaylo Pavlov
+- Fix table stealing selectionchange (#4162) Gerard Rovira
+- Improve Documentation #2845 - lexical/selection (#4140) Harry Sanders
+- UX: Floating link editor: better positioning (#4158) Alessio Gravili
+- DecoratorNode not disabling placeholder at root (#4147) Harry Sanders
+- Color picker - fixes #4127 (#4146) Harry Sanders
+- Validate against infinite loop in ListItemNode.setIndent (#4120) Acy Watson
+- Paste merged celled table (#4116) Gerard Rovira
+- Add md import/export tests, fix numbered lists pasting (#4123) Maksim Horbachevsky
+- Bump webpack from 5.75.0 to 5.76.0 (#4128) dependabot[bot]
+- fix: drag-over event on windows (#4125) 子瞻 Luci
+- Remove link preview (#4122) John Flockton
+- Add a function to create a LinkMatcher based on a RegExp (#3972) Karibash
+- Revise padding for smaller res (#4112) Gerard Rovira
+- Catch failures in parseEditorState (#4109) Acy Watson
+- Improve Documentation #2845 - lexical/list (#4107) Harry Sanders
+- Fix tables Collab E2E (#4117) Gerard Rovira
+- Fix ShadowRoot + X insertNode (#4115) Gerard Rovira
+- Overflow of logos of action items in Lexical Playground (#4096) 7gaurab_khanal
+- Remove columns w/ span support (#4093) Gerard Rovira
+- Remove rows w/ span support (#4078) Gerard Rovira
+- Table insert column w/ span support (#4074) Gerard Rovira
+- Table insert row w/ span support (#4063) Gerard Rovira
+- Use broader return types in `HorizontalRuleNode` (#4097) Chris Montrois
+- Add focus tag to editor.focus (#4092) Dragoș Străinu
+- Improve Documentation #2845 - lexical/utils (#4047) Harry Sanders
+- Fix toolbars that shouldn't appear in certain cases (#4077) Warren19
+- Fixed reference to old `addUpdateListener` method in transforms doc (#4094) Kevin Ansfield
+- Pass tags to onChange for LexicalOnChangePlugin (#4091) Dragoș Străinu
+- Fix tables E2E (#4090) John Flockton
+- Change default indent to 40px (#4025) EgonBolton
+- Update CODEOWNERS (#4089) John Flockton
+- Updated InsertTableDialog UX (#4082) Brandon
+- Export getNearestEditorFromDOMNode (#4079) Gerard Rovira
+- Fix unresponsive resize handle in Safari (#4081) Brandon
+- Sticky toolbar to assist in editing large content (#4076) Brandon
+- Fix table RangeSelection test (#4061) Gerard Rovira
+- Trim table e2e assert (#4060) Gerard Rovira
+
+## v0.9.0 (2023-03-08)
+
+- deprecate $wrapNodes (#4059) Acy Watson
+- [0.9] Remove experimental flag for setBlockTypes (#4045) John Flockton
+- [0.9] Remove experimental flag from content plugins (#4036) John Flockton
+- Table - cell merging (#4046) Gerard Rovira
+- After removing a ListItemNode, merge its siblings. (#4035) Awjin
+- [0.9] Remove experimental flag for copyToClipboard (#4037) John Flockton
+- Fix inf loop block cursor (#4049) Gerard Rovira
+- Fix type import syntax for CodeHighlightNode (#4053) John Flockton
+- Fix list deserialization (#4030) Acy Watson
+- Fix EquationNode issues on Android  (#4040) John Flockton
+- Styling tweaks to better accommodate long urls (#4041) Brandon
+- Add docs for LexicalEditor (#4034) Acy Watson
+- Add docs for LexicalNode APIs (#4033) Acy Watson
+- Remove remaining deprecated hooks (#3782) John Flockton
+- Improved link editor UX (#4026) Brandon
+- Add command logging into tree view (#4022) John Flockton
+- Deprecate experimental DevTools browser extension (#4023) John Flockton
+- Fix Chrome beforeinput race condition on large docs (#4016) Gerard Rovira
+- Fix insertNode insertion for inline Elements inside empty Elements (#4018) Gerard Rovira
+- fix(lexical-playground): link editor flashs (#4013) 子瞻 Luci
+- Reposition Node Menu when Node Changes (#4010) Tyler Bainbridge
+- Fix small lint error (#4014) John Flockton
+- Check if parent node is root in order to remove it in trimTextContentFromAnchor (#3952) Theodore Nastos
+- Fix PollNode copy and paste missing options (#4002) John Flockton
+- Fix converting nodes with nested lists (#3821) EgonBolton
+- Fix selection on color change (#4004) Konrad Ryczko
+- Cleanup excessive use of WebsocketProvider for types (#3979) Maksim Horbachevsky
+- Nested composers should initialize with parent editor editable state (#4001) John Flockton
+- Adjust playground CSS to fix vertical resize being disabled in select scenarios (#3997) Brandon
+- Improve serialization types for element node children (#3990) John Flockton
+- Listen to Collapsible Section toggle event (#3983) Ivaylo Pavlov
+- Doc: initial execution of listener function (#3991) Gerard Delmàs
+- Fix getNodes of RangeSelection (#3966) kosei28
+- Account for children text content size in 's  (#3930) Giacomo Randazzo
+- Update badge URL in README (#3987) Andrew Doan
+- Fix: Floating toolbar flashes on hover over empty lines when the selection is backwards. (#3959) Alessio Gravili
+- Bump jest and node versions to accommodate structuredClone (#3969) Acy Watson
+- Make one previous node be selected when deleting a block (#3970) Karibash
+- Beforeinput prevent default on mismatching targetRanges (#3954) Gerard Rovira
+- Trigger  as false when  goes down to 0 (#3943) Diego Esclapez
+
 ## v0.8.1 (2023-02-22)
 
 - Clone objects from the CSS cache before mutating them (#3945) Brian Birtles

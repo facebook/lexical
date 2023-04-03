@@ -22,6 +22,7 @@ import {
   $getPreviousSelection,
   $isElementNode,
   $isRangeSelection,
+  $isRootNode,
   $isTextNode,
   DEPRECATED_$isGridSelection,
 } from 'lexical';
@@ -57,6 +58,11 @@ function $updateTextNodeProperties<T extends TextNode>(
   return target;
 }
 
+/**
+ * Returns a copy of a node, but generates a new key for the copy.
+ * @param node - The node to be cloned.
+ * @returns The clone of the node.
+ */
 export function $cloneWithProperties<T extends LexicalNode>(node: T): T {
   const latest = node.getLatest();
   const constructor = latest.constructor;
@@ -77,6 +83,13 @@ export function $cloneWithProperties<T extends LexicalNode>(node: T): T {
   return clone;
 }
 
+/**
+ * Generally used to append text content to HTML and JSON. Grabs the text content and "slices"
+ * it to be generated into the new TextNode.
+ * @param selection - The selection containing the node whose TextNode is to be edited.
+ * @param textNode - The TextNode to be edited.
+ * @returns The updated TextNode.
+ */
 export function $sliceSelectedTextNodeContent(
   selection: RangeSelection | GridSelection | NodeSelection,
   textNode: TextNode,
@@ -121,6 +134,11 @@ export function $sliceSelectedTextNodeContent(
   return textNode;
 }
 
+/**
+ * Determines if the current selection is at the end of the node.
+ * @param point - The point of the selection to test.
+ * @returns true if the provided point offset is in the last possible position, false otherwise.
+ */
 export function $isAtNodeEnd(point: Point): boolean {
   if (point.type === 'text') {
     return point.offset === point.getNode().getTextContentSize();
@@ -129,6 +147,14 @@ export function $isAtNodeEnd(point: Point): boolean {
   return point.offset === point.getNode().getChildrenSize();
 }
 
+/**
+ * Trims text from a node in order to shorten it, eg. to enforce a text's max length. If it deletes text
+ * that is an ancestor of the anchor then it will leave 2 indents, otherwise, if no text content exists, it deletes
+ * the TextNode. It will move the focus to either the end of any left over text or beginning of a new TextNode.
+ * @param editor - The lexical editor.
+ * @param anchor - The anchor of the current selection, where the selection should be pointing.
+ * @param delCount - The amount of characters to delete. Useful as a dynamic variable eg. textContentSize - maxLength;
+ */
 export function trimTextContentFromAnchor(
   editor: LexicalEditor,
   anchor: Point,
@@ -176,17 +202,19 @@ export function trimTextContentFromAnchor(
       // TODO: should this be handled in core?
       text = '\n\n';
     }
-    const textNodeSize = text.length;
-    const offset = textNodeSize - remaining;
-    const slicedText = text.slice(0, offset);
+    const currentNodeSize = currentNode.getTextContentSize();
 
-    if (!$isTextNode(currentNode) || remaining >= textNodeSize) {
+    if (!$isTextNode(currentNode) || remaining >= currentNodeSize) {
       const parent = currentNode.getParent();
       currentNode.remove();
-      if (parent != null && parent.getChildrenSize() === 0) {
+      if (
+        parent != null &&
+        parent.getChildrenSize() === 0 &&
+        !$isRootNode(parent)
+      ) {
         parent.remove();
       }
-      remaining -= textNodeSize + additionalElementWhitespace;
+      remaining -= currentNodeSize + additionalElementWhitespace;
       currentNode = nextNode;
     } else {
       const key = currentNode.getKey();
@@ -200,6 +228,8 @@ export function trimTextContentFromAnchor(
           }
           return null;
         });
+      const offset = currentNodeSize - remaining;
+      const slicedText = text.slice(0, offset);
       if (prevTextContent !== null && prevTextContent !== text) {
         const prevSelection = $getPreviousSelection();
         let target = currentNode;
@@ -218,10 +248,10 @@ export function trimTextContentFromAnchor(
         // Split text
         const isSelected = anchor.key === key;
         let anchorOffset = anchor.offset;
-        // Move offset to end if it's less than the remaniing number, otherwise
+        // Move offset to end if it's less than the remaining number, otherwise
         // we'll have a negative splitStart.
         if (anchorOffset < remaining) {
-          anchorOffset = textNodeSize;
+          anchorOffset = currentNodeSize;
         }
         const splitStart = isSelected ? anchorOffset - remaining : 0;
         const splitEnd = isSelected ? anchorOffset : offset;
@@ -241,6 +271,10 @@ export function trimTextContentFromAnchor(
   }
 }
 
+/**
+ * Gets the TextNode's style object and adds the styles to the CSS.
+ * @param node - The TextNode to add styles to.
+ */
 export function $addNodeStyle(node: TextNode): void {
   const CSSText = node.getStyle();
   const styles = getStyleObjectFromRawCSS(CSSText);
@@ -270,6 +304,13 @@ function $patchStyle(
   CSS_TO_STYLES.set(newCSSText, newStyles);
 }
 
+/**
+ * Applies the provided styles to the TextNodes in the provided Selection.
+ * Will update partially selected TextNodes by splitting the TextNode and applying
+ * the styles to the appropriate one.
+ * @param selection - The selected node(s) to update.
+ * @param patch - The patch to apply, which can include multiple styles. { CSSProperty: value }
+ */
 export function $patchStyleText(
   selection: RangeSelection,
   patch: Record<string, string | null>,
@@ -312,7 +353,7 @@ export function $patchStyleText(
   }
 
   // This is the case where we only selected a single node
-  if (firstNode.is(lastNode)) {
+  if (selectedNodes.length === 1) {
     if ($isTextNode(firstNode)) {
       startOffset =
         startType === 'element'

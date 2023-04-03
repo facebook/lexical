@@ -8,11 +8,10 @@
 
 import type {LexicalEditor} from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
-import type {LexicalNode, NodeKey} from './LexicalNode';
+import type {NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextFormatType} from './nodes/LexicalTextNode';
 
-import {IS_CHROME} from 'shared/environment';
 import invariant from 'shared/invariant';
 
 import {
@@ -32,6 +31,7 @@ import {
   DEPRECATED_$isGridRowNode,
   DEPRECATED_GridCellNode,
   DEPRECATED_GridNode,
+  DEPRECATED_GridRowNode,
   TextNode,
 } from '.';
 import {DOM_ELEMENT_TYPE, TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
@@ -40,6 +40,7 @@ import {
   markSelectionChangeFromDOMUpdate,
 } from './LexicalEvents';
 import {getIsProcesssingMutations} from './LexicalMutations';
+import {LexicalNode} from './LexicalNode';
 import {$normalizeSelection} from './LexicalNormalization';
 import {
   getActiveEditor,
@@ -47,7 +48,9 @@ import {
   isCurrentlyReadOnlyMode,
 } from './LexicalUpdates';
 import {
+  $findMatchingParent,
   $getAdjacentNode,
+  $getChildrenRecursively,
   $getCompositionKey,
   $getNearestRootOrShadowRoot,
   $getNodeByKey,
@@ -93,6 +96,13 @@ export type ElementPointType = {
 };
 
 export type PointType = TextPointType | ElementPointType;
+
+export type GridMapValueType = {
+  cell: DEPRECATED_GridCellNode;
+  startRow: number;
+  startColumn: number;
+};
+export type GridMapType = Array<Array<GridMapValueType>>;
 
 export class Point {
   key: NodeKey;
@@ -456,6 +466,7 @@ export class GridSelection implements BaseSelection {
     return selection.insertNodes(nodes, selectStart);
   }
 
+  // TODO Deprecate this method. It's confusing when used with colspan|rowspan
   getShape(): GridSelectionShape {
     const anchorCellNode = $getNodeByKey(this.anchor.key);
     invariant(anchorCellNode !== null, 'getNodes: expected to find AnchorNode');
@@ -490,43 +501,133 @@ export class GridSelection implements BaseSelection {
     if (cachedNodes !== null) {
       return cachedNodes;
     }
-    const nodesSet = new Set<LexicalNode>();
-    const {fromX, fromY, toX, toY} = this.getShape();
 
-    const gridNode = $getNodeByKey<DEPRECATED_GridNode>(this.gridKey);
-    if (!DEPRECATED_$isGridNode(gridNode)) {
-      invariant(false, 'getNodes: expected to find GridNode');
+    const anchorNode = this.anchor.getNode();
+    const focusNode = this.focus.getNode();
+    const anchorCell = $findMatchingParent(
+      anchorNode,
+      DEPRECATED_$isGridCellNode,
+    );
+    // todo replace with triplet
+    const focusCell = $findMatchingParent(
+      focusNode,
+      DEPRECATED_$isGridCellNode,
+    );
+    invariant(
+      DEPRECATED_$isGridCellNode(anchorCell),
+      'Expected GridSelection anchor to be (or a child of) GridCellNode',
+    );
+    invariant(
+      DEPRECATED_$isGridCellNode(focusCell),
+      'Expected GridSelection focus to be (or a child of) GridCellNode',
+    );
+    const anchorRow = anchorCell.getParent();
+    invariant(
+      DEPRECATED_$isGridRowNode(anchorRow),
+      'Expected anchorCell to have a parent GridRowNode',
+    );
+    const gridNode = anchorRow.getParent();
+    invariant(
+      DEPRECATED_$isGridNode(gridNode),
+      'Expected tableNode to have a parent GridNode',
+    );
+    // TODO Mapping the whole Grid every time not efficient. We need to compute the entire state only
+    // once (on load) and iterate on it as updates occur. However, to do this we need to have the
+    // ability to store a state. Killing GridSelection and moving the logic to the plugin would make
+    // this possible.
+    const [map, cellAMap, cellBMap] = DEPRECATED_$computeGridMap(
+      gridNode,
+      anchorCell,
+      focusCell,
+    );
+
+    let minColumn = Math.min(cellAMap.startColumn, cellBMap.startColumn);
+    let minRow = Math.min(cellAMap.startRow, cellBMap.startRow);
+    let maxColumn = Math.max(
+      cellAMap.startColumn + cellAMap.cell.__colSpan - 1,
+      cellBMap.startColumn + cellBMap.cell.__colSpan - 1,
+    );
+    let maxRow = Math.max(
+      cellAMap.startRow + cellAMap.cell.__rowSpan - 1,
+      cellBMap.startRow + cellBMap.cell.__rowSpan - 1,
+    );
+    let exploredMinColumn = minColumn;
+    let exploredMinRow = minRow;
+    let exploredMaxColumn = minColumn;
+    let exploredMaxRow = minRow;
+    function expandBoundary(mapValue: GridMapValueType): void {
+      const {
+        cell,
+        startColumn: cellStartColumn,
+        startRow: cellStartRow,
+      } = mapValue;
+      minColumn = Math.min(minColumn, cellStartColumn);
+      minRow = Math.min(minRow, cellStartRow);
+      maxColumn = Math.max(maxColumn, cellStartColumn + cell.__colSpan - 1);
+      maxRow = Math.max(maxRow, cellStartRow + cell.__rowSpan - 1);
     }
-    nodesSet.add(gridNode);
-
-    const gridRowNodes = gridNode.getChildren();
-    for (let r = fromY; r <= toY; r++) {
-      const gridRowNode = gridRowNodes[r];
-      nodesSet.add(gridRowNode);
-
-      if (!DEPRECATED_$isGridRowNode(gridRowNode)) {
-        invariant(false, 'getNodes: expected to find GridRowNode');
+    while (
+      minColumn < exploredMinColumn ||
+      minRow < exploredMinRow ||
+      maxColumn > exploredMaxColumn ||
+      maxRow > exploredMaxRow
+    ) {
+      if (minColumn < exploredMinColumn) {
+        // Expand on the left
+        const rowDiff = exploredMaxRow - exploredMinRow;
+        const previousColumn = exploredMinColumn - 1;
+        for (let i = 0; i <= rowDiff; i++) {
+          expandBoundary(map[exploredMinRow + i][previousColumn]);
+        }
+        exploredMinColumn = previousColumn;
       }
-      const gridCellNodes = gridRowNode.getChildren<DEPRECATED_GridCellNode>();
-      for (let c = fromX; c <= toX; c++) {
-        const gridCellNode = gridCellNodes[c];
-        if (!DEPRECATED_$isGridCellNode(gridCellNode)) {
-          invariant(false, 'getNodes: expected to find GridCellNode');
+      if (minRow < exploredMinRow) {
+        // Expand on top
+        const columnDiff = exploredMaxColumn - exploredMinColumn;
+        const previousRow = exploredMinRow - 1;
+        for (let i = 0; i <= columnDiff; i++) {
+          expandBoundary(map[previousRow][exploredMinColumn + i]);
         }
-        nodesSet.add(gridCellNode);
-
-        const children = gridCellNode.getChildren();
-
-        while (children.length > 0) {
-          const child = children.shift() as LexicalNode;
-          nodesSet.add(child);
-          if ($isElementNode(child)) {
-            children.unshift(...child.getChildren());
-          }
+        exploredMinRow = previousRow;
+      }
+      if (maxColumn > exploredMaxColumn) {
+        // Expand on the right
+        const rowDiff = exploredMaxRow - exploredMinRow;
+        const nextColumn = exploredMaxColumn + 1;
+        for (let i = 0; i <= rowDiff; i++) {
+          expandBoundary(map[exploredMinRow + i][nextColumn]);
         }
+        exploredMaxColumn = nextColumn;
+      }
+      if (maxRow > exploredMaxRow) {
+        // Expand on the bottom
+        const columnDiff = exploredMaxColumn - exploredMinColumn;
+        const nextRow = exploredMaxRow + 1;
+        for (let i = 0; i <= columnDiff; i++) {
+          expandBoundary(map[nextRow][exploredMinColumn + i]);
+        }
+        exploredMaxRow = nextRow;
       }
     }
-    const nodes = Array.from(nodesSet);
+
+    const nodes: Array<LexicalNode> = [gridNode];
+    let lastRow = null;
+    for (let i = minRow; i <= maxRow; i++) {
+      for (let j = minColumn; j <= maxColumn; j++) {
+        const {cell} = map[i][j];
+        const currentRow = cell.getParent();
+        invariant(
+          DEPRECATED_$isGridRowNode(currentRow),
+          'Expected GridCellNode parent to be a GridRowNode',
+        );
+        if (currentRow !== lastRow) {
+          nodes.push(currentRow);
+        }
+        nodes.push(cell, ...$getChildrenRecursively(cell));
+        lastRow = currentRow;
+      }
+    }
+
     if (!isCurrentlyReadOnlyMode()) {
       this._cachedNodes = nodes;
     }
@@ -600,25 +701,28 @@ export class RangeSelection implements BaseSelection {
     }
     const anchor = this.anchor;
     const focus = this.focus;
-    let firstNode = anchor.getNode();
-    let lastNode = focus.getNode();
+    const isBefore = anchor.isBefore(focus);
+    const firstPoint = isBefore ? anchor : focus;
+    const lastPoint = isBefore ? focus : anchor;
+    let firstNode = firstPoint.getNode();
+    let lastNode = lastPoint.getNode();
+    const startOffset = firstPoint.offset;
+    const endOffset = lastPoint.offset;
 
     if ($isElementNode(firstNode)) {
-      const firstNodeDescendant = firstNode.getDescendantByIndex<ElementNode>(
-        anchor.offset,
-      );
+      const firstNodeDescendant =
+        firstNode.getDescendantByIndex<ElementNode>(startOffset);
       firstNode = firstNodeDescendant != null ? firstNodeDescendant : firstNode;
     }
     if ($isElementNode(lastNode)) {
-      let lastNodeDescendant = lastNode.getDescendantByIndex<ElementNode>(
-        focus.offset,
-      );
+      let lastNodeDescendant =
+        lastNode.getDescendantByIndex<ElementNode>(endOffset);
       // We don't want to over-select, as node selection infers the child before
       // the last descendant, not including that descendant.
       if (
         lastNodeDescendant !== null &&
         lastNodeDescendant !== firstNode &&
-        lastNode.getChildAtIndex(focus.offset) === lastNodeDescendant
+        lastNode.getChildAtIndex(endOffset) === lastNodeDescendant
       ) {
         lastNodeDescendant = lastNodeDescendant.getPreviousSibling();
       }
@@ -1431,6 +1535,7 @@ export class RangeSelection implements BaseSelection {
         }
       } else if (
         didReplaceOrMerge &&
+        !$isElementNode(node) &&
         !$isDecoratorNode(node) &&
         $isRootOrShadowRoot(target.getParent<ElementNode>())
       ) {
@@ -1463,6 +1568,9 @@ export class RangeSelection implements BaseSelection {
             } else {
               target.append(node);
             }
+            target = node;
+          } else if (node.isInline()) {
+            target.append(node);
             target = node;
           } else {
             target = target.insertAfter(node, false);
@@ -2644,35 +2752,48 @@ export function $updateElementSelectionOnCreateDeleteNode(
   // Single node. We shift selection but never redimension it
   if (selection.isCollapsed()) {
     const selectionOffset = anchor.offset;
-    if (nodeOffset <= selectionOffset) {
+    if (
+      (nodeOffset <= selectionOffset && times > 0) ||
+      (nodeOffset < selectionOffset && times < 0)
+    ) {
       const newSelectionOffset = Math.max(0, selectionOffset + times);
       anchor.set(parentKey, newSelectionOffset, 'element');
       focus.set(parentKey, newSelectionOffset, 'element');
       // The new selection might point to text nodes, try to resolve them
       $updateSelectionResolveTextNodes(selection);
     }
-    return;
-  }
-  // Multiple nodes selected. We shift or redimension selection
-  const isBackward = selection.isBackward();
-  const firstPoint = isBackward ? focus : anchor;
-  const firstPointNode = firstPoint.getNode();
-  const lastPoint = isBackward ? anchor : focus;
-  const lastPointNode = lastPoint.getNode();
-  if (parentNode.is(firstPointNode)) {
-    const firstPointOffset = firstPoint.offset;
-    if (nodeOffset <= firstPointOffset) {
-      firstPoint.set(
-        parentKey,
-        Math.max(0, firstPointOffset + times),
-        'element',
-      );
+  } else {
+    // Multiple nodes selected. We shift or redimension selection
+    const isBackward = selection.isBackward();
+    const firstPoint = isBackward ? focus : anchor;
+    const firstPointNode = firstPoint.getNode();
+    const lastPoint = isBackward ? anchor : focus;
+    const lastPointNode = lastPoint.getNode();
+    if (parentNode.is(firstPointNode)) {
+      const firstPointOffset = firstPoint.offset;
+      if (
+        (nodeOffset <= firstPointOffset && times > 0) ||
+        (nodeOffset < firstPointOffset && times < 0)
+      ) {
+        firstPoint.set(
+          parentKey,
+          Math.max(0, firstPointOffset + times),
+          'element',
+        );
+      }
     }
-  }
-  if (parentNode.is(lastPointNode)) {
-    const lastPointOffset = lastPoint.offset;
-    if (nodeOffset <= lastPointOffset) {
-      lastPoint.set(parentKey, Math.max(0, lastPointOffset + times), 'element');
+    if (parentNode.is(lastPointNode)) {
+      const lastPointOffset = lastPoint.offset;
+      if (
+        (nodeOffset <= lastPointOffset && times > 0) ||
+        (nodeOffset < lastPointOffset && times < 0)
+      ) {
+        lastPoint.set(
+          parentKey,
+          Math.max(0, lastPointOffset + times),
+          'element',
+        );
+      }
     }
   }
   // The new selection might point to text nodes, try to resolve them
@@ -2938,30 +3059,12 @@ export function updateDOMSelection(
   // Apply the updated selection to the DOM. Note: this will trigger
   // a "selectionchange" event, although it will be asynchronous.
   try {
-    // When updating more than 1000 nodes on Chrome, it's actually better to defer
-    // updating the selection till the next frame. This is because Chrome's
-    // Blink engine has hard limit on how many DOM nodes it can redraw in
-    // a single cycle, so keeping it to the next frame improves performance.
-    // The downside is that is makes the computation within Lexical more
-    // complex, as now, we've sync update the DOM, but selection no longer
-    // matches.
-    if (IS_CHROME && nodeCount > 1000) {
-      window.requestAnimationFrame(() =>
-        domSelection.setBaseAndExtent(
-          nextAnchorNode as Node,
-          nextAnchorOffset,
-          nextFocusNode as Node,
-          nextFocusOffset,
-        ),
-      );
-    } else {
-      domSelection.setBaseAndExtent(
-        nextAnchorNode,
-        nextAnchorOffset,
-        nextFocusNode,
-        nextFocusOffset,
-      );
-    }
+    domSelection.setBaseAndExtent(
+      nextAnchorNode,
+      nextAnchorOffset,
+      nextFocusNode,
+      nextFocusOffset,
+    );
   } catch (error) {
     // If we encounter an error, continue. This can sometimes
     // occur with FF and there's no good reason as to why it
@@ -3008,4 +3111,106 @@ export function $getTextContent(): string {
     return '';
   }
   return selection.getTextContent();
+}
+
+export function DEPRECATED_$computeGridMap(
+  grid: DEPRECATED_GridNode,
+  cellA: DEPRECATED_GridCellNode,
+  cellB: DEPRECATED_GridCellNode,
+): [GridMapType, GridMapValueType, GridMapValueType] {
+  const tableMap: GridMapType = [];
+  let cellAValue: null | GridMapValueType = null;
+  let cellBValue: null | GridMapValueType = null;
+  function write(
+    startRow: number,
+    startColumn: number,
+    cell: DEPRECATED_GridCellNode,
+  ) {
+    const value = {
+      cell,
+      startColumn,
+      startRow,
+    };
+    const rowSpan = cell.__rowSpan;
+    const colSpan = cell.__colSpan;
+    for (let i = 0; i < rowSpan; i++) {
+      if (tableMap[startRow + i] === undefined) {
+        tableMap[startRow + i] = [];
+      }
+      for (let j = 0; j < colSpan; j++) {
+        tableMap[startRow + i][startColumn + j] = value;
+      }
+    }
+    if (cellA.is(cell)) {
+      cellAValue = value;
+    }
+    if (cellB.is(cell)) {
+      cellBValue = value;
+    }
+  }
+  function isEmpty(row: number, column: number) {
+    return tableMap[row] === undefined || tableMap[row][column] === undefined;
+  }
+
+  const gridChildren = grid.getChildren();
+  for (let i = 0; i < gridChildren.length; i++) {
+    const row = gridChildren[i];
+    invariant(
+      DEPRECATED_$isGridRowNode(row),
+      'Expected GridNode children to be GridRowNode',
+    );
+    const rowChildren = row.getChildren();
+    let j = 0;
+    for (const cell of rowChildren) {
+      invariant(
+        DEPRECATED_$isGridCellNode(cell),
+        'Expected GridRowNode children to be GridCellNode',
+      );
+      while (!isEmpty(i, j)) {
+        j++;
+      }
+      write(i, j, cell);
+      j += cell.__colSpan;
+    }
+  }
+  invariant(cellAValue !== null, 'Anchor not found in Grid');
+  invariant(cellBValue !== null, 'Focus not found in Grid');
+  return [tableMap, cellAValue, cellBValue];
+}
+
+export function DEPRECATED_$getNodeTriplet(
+  source: PointType | LexicalNode | DEPRECATED_GridCellNode,
+): [DEPRECATED_GridCellNode, DEPRECATED_GridRowNode, DEPRECATED_GridNode] {
+  let cell: DEPRECATED_GridCellNode;
+  if (source instanceof DEPRECATED_GridCellNode) {
+    cell = source;
+  } else if (source instanceof LexicalNode) {
+    const cell_ = $findMatchingParent(source, DEPRECATED_$isGridCellNode);
+    invariant(
+      DEPRECATED_$isGridCellNode(cell_),
+      'Expected to find a parent GridCellNode',
+    );
+    cell = cell_;
+  } else {
+    const cell_ = $findMatchingParent(
+      source.getNode(),
+      DEPRECATED_$isGridCellNode,
+    );
+    invariant(
+      DEPRECATED_$isGridCellNode(cell_),
+      'Expected to find a parent GridCellNode',
+    );
+    cell = cell_;
+  }
+  const row = cell.getParent();
+  invariant(
+    DEPRECATED_$isGridRowNode(row),
+    'Expected GridCellNode to have a parent GridRowNode',
+  );
+  const grid = row.getParent();
+  invariant(
+    DEPRECATED_$isGridNode(grid),
+    'Expected GridRowNode to have a parent GridNode',
+  );
+  return [cell, row, grid];
 }

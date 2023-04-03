@@ -8,14 +8,7 @@
 
 import './ColorPicker.css';
 
-import {
-  ReactNode,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import {ReactNode, useEffect, useMemo, useRef, useState} from 'react';
 import * as React from 'react';
 
 import DropDown from './DropDown';
@@ -30,6 +23,7 @@ interface ColorPickerProps {
   color: string;
   children?: ReactNode;
   onChange?: (color: string) => void;
+  stopCloseOnClickSelf?: boolean;
   title?: string;
   onClose?: (value: string) => void;
 }
@@ -61,6 +55,7 @@ export default function ColorPicker({
   onChange,
   disabled = false,
   onClose,
+  stopCloseOnClickSelf = true,
   ...rest
 }: Readonly<ColorPickerProps>): JSX.Element {
   const [selfColor, setSelfColor] = useState(transformColor('hex', color));
@@ -108,11 +103,6 @@ export default function ColorPicker({
     setSelfColor(newColor);
     setInputColor(newColor.hex);
   };
-  const HandleDropDownClose = useCallback(() => {
-    if (onClose) {
-      onClose(selfColor.hex);
-    }
-  }, [onClose, selfColor.hex]);
 
   useEffect(() => {
     // Check if the dropdown is actually active
@@ -130,7 +120,10 @@ export default function ColorPicker({
   }, [color]);
 
   return (
-    <DropDown {...rest} disabled={disabled} onClose={HandleDropDownClose}>
+    <DropDown
+      {...rest}
+      disabled={disabled}
+      stopCloseOnClickSelf={stopCloseOnClickSelf}>
       <div
         className="color-picker-wrapper"
         style={{width: WIDTH}}

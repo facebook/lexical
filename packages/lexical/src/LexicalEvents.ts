@@ -116,6 +116,7 @@ import {
   isOpenLineBreak,
   isParagraph,
   isRedo,
+  isSelectAll,
   isSelectionWithinEditor,
   isSpace,
   isTab,
@@ -180,6 +181,7 @@ let collapsedSelectionFormat: [number, string, number, NodeKey, number] = [
 // work as intended between different browsers and across word, line and character
 // boundary/formats. It also is important for text replacement, node schemas and
 // composition mechanics.
+
 function $shouldPreventDefaultAndInsertText(
   selection: RangeSelection,
   domTargetRange: null | StaticRange,
@@ -977,6 +979,12 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
       } else if (isCut(keyCode, shiftKey, metaKey, ctrlKey)) {
         event.preventDefault();
         dispatchCommand(editor, CUT_COMMAND, event);
+      } else if (isSelectAll(keyCode, metaKey, ctrlKey)) {
+        event.preventDefault();
+        editor.update(() => {
+          const root = $getRoot();
+          root.select(0, root.getChildrenSize());
+        });
       }
     }
   }

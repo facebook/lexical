@@ -71,8 +71,9 @@ export type SerializedPollNode = Spread<
 
 function convertPollElement(domNode: HTMLElement): DOMConversionOutput | null {
   const question = domNode.getAttribute('data-lexical-poll-question');
-  if (question !== null) {
-    const node = $createPollNode(question);
+  const options = domNode.getAttribute('data-lexical-poll-options');
+  if (question !== null && options !== null) {
+    const node = $createPollNode(question, JSON.parse(options));
     return {node};
   }
   return null;
@@ -91,15 +92,18 @@ export class PollNode extends DecoratorNode<JSX.Element> {
   }
 
   static importJSON(serializedNode: SerializedPollNode): PollNode {
-    const node = $createPollNode(serializedNode.question);
+    const node = $createPollNode(
+      serializedNode.question,
+      serializedNode.options,
+    );
     serializedNode.options.forEach(node.addOption);
     return node;
   }
 
-  constructor(question: string, options?: Options, key?: NodeKey) {
+  constructor(question: string, options: Options, key?: NodeKey) {
     super(key);
     this.__question = question;
-    this.__options = options || [createPollOption(), createPollOption()];
+    this.__options = options;
   }
 
   exportJSON(): SerializedPollNode {
@@ -169,6 +173,10 @@ export class PollNode extends DecoratorNode<JSX.Element> {
   exportDOM(): DOMExportOutput {
     const element = document.createElement('span');
     element.setAttribute('data-lexical-poll-question', this.__question);
+    element.setAttribute(
+      'data-lexical-poll-options',
+      JSON.stringify(this.__options),
+    );
     return {element};
   }
 
@@ -195,8 +203,8 @@ export class PollNode extends DecoratorNode<JSX.Element> {
   }
 }
 
-export function $createPollNode(question: string): PollNode {
-  return new PollNode(question);
+export function $createPollNode(question: string, options: Options): PollNode {
+  return new PollNode(question, options);
 }
 
 export function $isPollNode(

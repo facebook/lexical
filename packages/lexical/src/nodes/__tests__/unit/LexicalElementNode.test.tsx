@@ -251,6 +251,27 @@ describe('LexicalElementNode tests', () => {
     });
   });
 
+  describe('getTextContentSize()', () => {
+    test('basic', async () => {
+      await update(() => {
+        expect($getRoot().getFirstChild().getTextContentSize()).toBe(
+          $getRoot().getFirstChild().getTextContent().length,
+        );
+      });
+    });
+
+    test('child node getTextContentSize() can be overridden and is then reflected when calling the same method on parent node', async () => {
+      await update(() => {
+        const block = $createTestElementNode();
+        const text = $createTextNode('Foo');
+        text.getTextContentSize = () => 1;
+        block.append(text);
+
+        expect(block.getTextContentSize()).toBe(1);
+      });
+    });
+  });
+
   describe('splice', () => {
     let block;
 

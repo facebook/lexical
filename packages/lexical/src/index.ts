@@ -9,6 +9,7 @@
 
 export type {PasteCommandType} from './LexicalCommands';
 export type {
+  CommandListener,
   CommandListenerPriority,
   CommandPayloadType,
   CreateEditorArgs,
@@ -39,6 +40,8 @@ export type {
 export type {
   BaseSelection,
   ElementPointType as ElementPoint,
+  GridMapType,
+  GridMapValueType,
   GridSelection,
   GridSelectionShape,
   NodeSelection,
@@ -123,7 +126,9 @@ export {
   $insertNodes,
   $isNodeSelection,
   $isRangeSelection,
+  DEPRECATED_$computeGridMap,
   DEPRECATED_$createGridSelection,
+  DEPRECATED_$getNodeTriplet,
   DEPRECATED_$isGridSelection,
 } from './LexicalSelection';
 export {$parseSerializedNode} from './LexicalUpdates';
@@ -137,6 +142,7 @@ export {
   $getNodeByKey,
   $getRoot,
   $hasAncestor,
+  $hasUpdateTag,
   $isInlineElementOrDecoratorNode,
   $isLeafNode,
   $isRootOrShadowRoot,
@@ -144,6 +150,7 @@ export {
   $setCompositionKey,
   $setSelection,
   $splitNode,
+  getNearestEditorFromDOMNode,
   isSelectionWithinEditor,
 } from './LexicalUtils';
 export {$isDecoratorNode, DecoratorNode} from './nodes/LexicalDecoratorNode';

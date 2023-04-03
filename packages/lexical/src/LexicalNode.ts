@@ -174,6 +174,12 @@ export class LexicalNode {
   // a static getType and clone method though. We define getType and clone here so we can call it
   // on any  Node, and we throw this error by default since the subclass should provide
   // their own implementation.
+  /**
+   * Returns the string type of this node. Every node must
+   * implement this and it MUST BE UNIQUE amongst nodes registered
+   * on the editor.
+   *
+   */
   static getType(): string {
     invariant(
       false,
@@ -182,6 +188,12 @@ export class LexicalNode {
     );
   }
 
+  /**
+   * Clones this node, creating a new node with a different key
+   * and adding it to the EditorState (but not attaching it anywhere!). All nodes must
+   * implement this method.
+   *
+   */
   static clone(_data: unknown): LexicalNode {
     invariant(
       false,
@@ -211,10 +223,18 @@ export class LexicalNode {
   }
   // Getters and Traversers
 
+  /**
+   * Returns the string type of this node.
+   */
   getType(): string {
     return this.__type;
   }
 
+  /**
+   * Returns true if there is a path between this node and the RootNode, false otherwise.
+   * This is a way of determining if the node is "attached" EditorState. Unattached nodes
+   * won't be reconciled and will ultimatelt be cleaned up by the Lexical GC.
+   */
   isAttached(): boolean {
     let nodeKey: string | null = this.__key;
     while (nodeKey !== null) {
@@ -232,6 +252,13 @@ export class LexicalNode {
     return false;
   }
 
+  /**
+   * Returns true if this node is contained within the provided Selection., false otherwise.
+   * Relies on the algorithms implemented in {@link BaseSelection.getNodes} to determine
+   * what's included.
+   *
+   * @param selection - The selection that we want to determine if the node is in.
+   */
   isSelected(
     selection?: null | RangeSelection | NodeSelection | GridSelection,
   ): boolean {
@@ -261,11 +288,17 @@ export class LexicalNode {
     return isSelected;
   }
 
+  /**
+   * Returns this nodes key.
+   */
   getKey(): NodeKey {
     // Key is stable between copies
     return this.__key;
   }
 
+  /**
+   * Returns the zero-based index of this node within the parent.
+   */
   getIndexWithinParent(): number {
     const parent = this.getParent();
     if (parent === null) {
@@ -283,6 +316,9 @@ export class LexicalNode {
     return -1;
   }
 
+  /**
+   * Returns the parent of this node, or null if none is found.
+   */
   getParent<T extends ElementNode>(): T | null {
     const parent = this.getLatest().__parent;
     if (parent === null) {
@@ -291,6 +327,9 @@ export class LexicalNode {
     return $getNodeByKey<T>(parent);
   }
 
+  /**
+   * Returns the parent of this node, or throws if none is found.
+   */
   getParentOrThrow<T extends ElementNode>(): T {
     const parent = this.getParent<T>();
     if (parent === null) {
@@ -299,6 +338,11 @@ export class LexicalNode {
     return parent;
   }
 
+  /**
+   * Returns the highest (in the EditorState tree)
+   * non-root ancestor of this node, or null if none is found. See {@link lexical!$isRootOrShadowRoot}
+   * for more information on which Elements comprise "roots".
+   */
   getTopLevelElement(): ElementNode | this | null {
     let node: ElementNode | this | null = this;
     while (node !== null) {
@@ -311,6 +355,11 @@ export class LexicalNode {
     return null;
   }
 
+  /**
+   * Returns the highest (in the EditorState tree)
+   * non-root ancestor of this node, or throws if none is found. See {@link lexical!$isRootOrShadowRoot}
+   * for more information on which Elements comprise "roots".
+   */
   getTopLevelElementOrThrow(): ElementNode | this {
     const parent = this.getTopLevelElement();
     if (parent === null) {
@@ -323,6 +372,11 @@ export class LexicalNode {
     return parent;
   }
 
+  /**
+   * Returns a list of the every ancestor of this node,
+   * all the way up to the RootNode.
+   *
+   */
   getParents(): Array<ElementNode> {
     const parents: Array<ElementNode> = [];
     let node = this.getParent();
@@ -333,6 +387,11 @@ export class LexicalNode {
     return parents;
   }
 
+  /**
+   * Returns a list of the keys of every ancestor of this node,
+   * all the way up to the RootNode.
+   *
+   */
   getParentKeys(): Array<NodeKey> {
     const parents = [];
     let node = this.getParent();
@@ -343,12 +402,22 @@ export class LexicalNode {
     return parents;
   }
 
+  /**
+   * Returns the "previous" siblings - that is, the node that comes
+   * before this one in the same parent.
+   *
+   */
   getPreviousSibling<T extends LexicalNode>(): T | null {
     const self = this.getLatest();
     const prevKey = self.__prev;
     return prevKey === null ? null : $getNodeByKey<T>(prevKey);
   }
 
+  /**
+   * Returns the "previous" siblings - that is, the nodes that come between
+   * this one and the first child of it's parent, inclusive.
+   *
+   */
   getPreviousSiblings<T extends LexicalNode>(): Array<T> {
     const siblings: Array<T> = [];
     const parent = this.getParent();
@@ -366,12 +435,22 @@ export class LexicalNode {
     return siblings;
   }
 
+  /**
+   * Returns the "next" siblings - that is, the node that comes
+   * after this one in the same parent
+   *
+   */
   getNextSibling<T extends LexicalNode>(): T | null {
     const self = this.getLatest();
     const nextKey = self.__next;
     return nextKey === null ? null : $getNodeByKey<T>(nextKey);
   }
 
+  /**
+   * Returns all "next" siblings - that is, the nodes that come between this
+   * one and the last child of it's parent, inclusive.
+   *
+   */
   getNextSiblings<T extends LexicalNode>(): Array<T> {
     const siblings: Array<T> = [];
     let node: null | T = this.getNextSibling();
@@ -382,6 +461,12 @@ export class LexicalNode {
     return siblings;
   }
 
+  /**
+   * Returns the closest common ancestor of this node and the provided one or null
+   * if one cannot be found.
+   *
+   * @param node - the other node to find the common ancestor of.
+   */
   getCommonAncestor<T extends ElementNode = ElementNode>(
     node: LexicalNode,
   ): T | null {
@@ -408,6 +493,12 @@ export class LexicalNode {
     return null;
   }
 
+  /**
+   * Returns true if the provided node is the exact same one as this node, from Lexical's perspective.
+   * Always use this instead of referential equality.
+   *
+   * @param object - the node to perform the equality comparison on.
+   */
   is(object: LexicalNode | null | undefined): boolean {
     if (object == null) {
       return false;
@@ -415,7 +506,15 @@ export class LexicalNode {
     return this.__key === object.__key;
   }
 
+  /**
+   * Returns true if this node logical precedes the target node in the editor state.
+   *
+   * @param targetNode - the node we're testing to see if it's after this one.
+   */
   isBefore(targetNode: LexicalNode): boolean {
+    if (this === targetNode) {
+      return false;
+    }
     if (targetNode.isParentOf(this)) {
       return true;
     }
@@ -446,6 +545,11 @@ export class LexicalNode {
     return indexA < indexB;
   }
 
+  /**
+   * Returns true if this node is the parent of the target node, false otherwise.
+   *
+   * @param targetNode - the would-be child node.
+   */
   isParentOf(targetNode: LexicalNode): boolean {
     const key = this.__key;
     if (key === targetNode.__key) {
@@ -462,6 +566,12 @@ export class LexicalNode {
   }
 
   // TO-DO: this function can be simplified a lot
+  /**
+   * Returns a list of nodes that are between this node and
+   * the target node in the EditorState.
+   *
+   * @param targetNode - the node that marks the other end of the range of nodes to be returned.
+   */
   getNodesBetween(targetNode: LexicalNode): Array<LexicalNode> {
     const isBefore = this.isBefore(targetNode);
     const nodes = [];
@@ -523,12 +633,21 @@ export class LexicalNode {
     return nodes;
   }
 
+  /**
+   * Returns true if this node has been marked dirty during this update cycle.
+   *
+   */
   isDirty(): boolean {
     const editor = getActiveEditor();
     const dirtyLeaves = editor._dirtyLeaves;
     return dirtyLeaves !== null && dirtyLeaves.has(this.__key);
   }
 
+  /**
+   * Returns the latest version of the node from the active EditorState.
+   * This is used to avoid getting values from stale node references.
+   *
+   */
   getLatest(): this {
     const latest = $getNodeByKey<this>(this.__key);
     if (latest === null) {
@@ -540,6 +659,11 @@ export class LexicalNode {
     return latest;
   }
 
+  /**
+   * Returns a mutable version of the node. Will throw an error if
+   * called outside of a Lexical Editor {@link LexicalEditor.update} callback.
+   *
+   */
   getWritable(): this {
     errorOnReadOnly();
     const editorState = getActiveEditorState();
@@ -587,22 +711,44 @@ export class LexicalNode {
     return mutableNode;
   }
 
+  /**
+   * Returns the text content of the node. Override this for
+   * custom nodes that should have a representation in plain text
+   * format (for copy + paste, for example)
+   *
+   */
   getTextContent(): string {
     return '';
   }
 
+  /**
+   * Returns the length of the string produced by calling getTextContent on this node.
+   *
+   */
   getTextContentSize(): number {
     return this.getTextContent().length;
   }
 
   // View
 
+  /**
+   * Called during the reconciliation process to determine which nodes
+   * to insert into the DOM for this Lexical Node.
+   *
+   * This method must return exactly one HTMLElement. Nested elements are not supported.
+   *
+   * Do not attempt to update the Lexical EditorState during this phase of the update lifecyle.
+   *
+   * @param _config - allows access to things like the EditorTheme (to apply classes) during reconciliation.
+   * @param _editor - allows access to the editor for context during reconciliation.
+   *
+   * */
   createDOM(_config: EditorConfig, _editor: LexicalEditor): HTMLElement {
     invariant(false, 'createDOM: base method not extended');
   }
 
-  /*
-   * This method is called when a node changes and should update the DOM
+  /**
+   * Called when a node changes and should update the DOM
    * in whatever way is necessary to make it align with any changes that might
    * have happened during the update.
    *
@@ -619,15 +765,37 @@ export class LexicalNode {
     invariant(false, 'updateDOM: base method not extended');
   }
 
+  /**
+   * Controls how the this node is serialized to HTML. This is important for
+   * copy and paste between Lexical and non-Lexical editors, or Lexical editors with different namespaces,
+   * in which case the primary transfer format is HTML. It's also important if you're serializing
+   * to HTML for any other reason via {@link @lexical/html!$generateHtmlFromNodes}. You could
+   * also use this method to build your own HTML renderer.
+   *
+   * */
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const element = this.createDOM(editor._config, editor);
     return {element};
   }
 
+  /**
+   * Controls how the this node is serialized to JSON. This is important for
+   * copy and paste between Lexical editors sharing the same namespace. It's also important
+   * if you're serializing to JSON for persistent storage somewhere.
+   * See [Serialization & Deserialization](https://lexical.dev/docs/concepts/serialization#lexical---html).
+   *
+   * */
   exportJSON(): SerializedLexicalNode {
     invariant(false, 'exportJSON: base method not extended');
   }
 
+  /**
+   * Controls how the this node is deserialized from JSON. This is usually boilerplate,
+   * but provides an abstraction between the node implementation and serialized interface that can
+   * be important if you ever make breaking changes to a node schema (by adding or removing properties).
+   * See [Serialization & Deserialization](https://lexical.dev/docs/concepts/serialization#lexical---html).
+   *
+   * */
   static importJSON(_serializedNode: SerializedLexicalNode): LexicalNode {
     invariant(
       false,
@@ -635,13 +803,40 @@ export class LexicalNode {
       this.name,
     );
   }
+  /**
+   * @experimental
+   *
+   * Registers the returned function as a transform on the node during
+   * Editor initialization. Most such use cases should be addressed via
+   * the {@link LexicalEditor.registerNodeTransform} API.
+   *
+   * Experimental - use at your own risk.
+   */
+  static transform(): ((node: LexicalNode) => void) | null {
+    return null;
+  }
 
   // Setters and mutators
 
+  /**
+   * Removes this LexicalNode from the EditorState. If the node isn't re-inserted
+   * somewhere, the Lexical garbage collector will eventually clean it up.
+   *
+   * @param preserveEmptyParent - If falsy, the node's parent will be removed if
+   * it's empty after the removal operation. This is the default behavior, subject to
+   * other node heuristics such as {@link ElementNode#canBeEmpty}
+   * */
   remove(preserveEmptyParent?: boolean): void {
     removeNode(this, true, preserveEmptyParent);
   }
 
+  /**
+   * Replaces this LexicalNode with the provided node, optionally transferring the children
+   * of the replaced node to the replacing node.
+   *
+   * @param replaceWith - The node to replace this one with.
+   * @param includeChildren - Whether or not to transfer the children of this node to the replacing node.
+   * */
   replace<N extends LexicalNode>(replaceWith: N, includeChildren?: boolean): N {
     errorOnReadOnly();
     let selection = $getSelection();
@@ -699,6 +894,13 @@ export class LexicalNode {
     return writableReplaceWith;
   }
 
+  /**
+   * Inserts a node after this LexicalNode (as the next sibling).
+   *
+   * @param nodeToInsert - The node to insert after this one.
+   * @param restoreSelection - Whether or not to attempt to resolve the
+   * selection to the appropriate place after the operation is complete.
+   * */
   insertAfter(nodeToInsert: LexicalNode, restoreSelection = true): LexicalNode {
     errorOnReadOnly();
     errorOnInsertTextNodeOnRoot(this, nodeToInsert);
@@ -759,6 +961,13 @@ export class LexicalNode {
     return nodeToInsert;
   }
 
+  /**
+   * Inserts a node before this LexicalNode (as the previous sibling).
+   *
+   * @param nodeToInsert - The node to insert after this one.
+   * @param restoreSelection - Whether or not to attempt to resolve the
+   * selection to the appropriate place after the operation is complete.
+   * */
   insertBefore(
     nodeToInsert: LexicalNode,
     restoreSelection = true,
@@ -793,14 +1002,30 @@ export class LexicalNode {
     return nodeToInsert;
   }
 
+  /**
+   * Whether or not this node has a required parent. Used during copy + paste operations
+   * to normalize nodes that would otherwise be orphaned. For example, ListItemNodes without
+   * a ListNode parent or TextNodes with a ParagraphNode parent.
+   *
+   * */
   isParentRequired(): boolean {
     return false;
   }
 
+  /**
+   * The creation logic for any required parent. Should be implemented if {@link isParentRequired} returns true.
+   *
+   * */
   createParentElementNode(): ElementNode {
     return $createParagraphNode();
   }
 
+  /**
+   * Moves selection to the previous sibling of this node, at the specified offsets.
+   *
+   * @param anchorOffset - The anchor offset for selection.
+   * @param focusOffset -  The focus offset for selection
+   * */
   selectPrevious(anchorOffset?: number, focusOffset?: number): RangeSelection {
     errorOnReadOnly();
     const prevSibling = this.getPreviousSibling();
@@ -817,6 +1042,12 @@ export class LexicalNode {
     return prevSibling.select(anchorOffset, focusOffset);
   }
 
+  /**
+   * Moves selection to the next sibling of this node, at the specified offsets.
+   *
+   * @param anchorOffset - The anchor offset for selection.
+   * @param focusOffset -  The focus offset for selection
+   * */
   selectNext(anchorOffset?: number, focusOffset?: number): RangeSelection {
     errorOnReadOnly();
     const nextSibling = this.getNextSibling();
@@ -832,7 +1063,12 @@ export class LexicalNode {
     }
     return nextSibling.select(anchorOffset, focusOffset);
   }
-  // Proxy to mark something as dirty
+
+  /**
+   * Marks a node dirty, triggering transforms and
+   * forcing it to be reconciled during the update cycle.
+   *
+   * */
   markDirty(): void {
     this.getWritable();
   }

@@ -26,13 +26,13 @@ import {
   $isRangeSelection,
   $isTextNode,
 } from 'lexical';
-import {WebsocketProvider} from 'y-websocket';
 import {
   compareRelativePositions,
   createAbsolutePositionFromRelativePosition,
   createRelativePositionFromTypeIndex,
 } from 'yjs';
 
+import {Provider} from '.';
 import {CollabDecoratorNode} from './CollabDecoratorNode';
 import {CollabElementNode} from './CollabElementNode';
 import {CollabLineBreakNode} from './CollabLineBreakNode';
@@ -302,7 +302,7 @@ function updateCursor(
 
 export function syncLocalCursorPosition(
   binding: Binding,
-  provider: WebsocketProvider,
+  provider: Provider,
 ): void {
   const awareness = provider.awareness;
   const localState = awareness.getLocalState();
@@ -403,7 +403,7 @@ function getCollabNodeAndOffset(
 
 export function syncCursorPositions(
   binding: Binding,
-  provider: WebsocketProvider,
+  provider: Provider,
 ): void {
   const awarenessStates = Array.from(provider.awareness.getStates());
   const localClientID = binding.clientID;
@@ -489,7 +489,7 @@ export function syncCursorPositions(
 
 export function syncLexicalSelectionToYjs(
   binding: Binding,
-  provider: WebsocketProvider,
+  provider: Provider,
   prevSelection: null | RangeSelection | NodeSelection | GridSelection,
   nextSelection: null | RangeSelection | NodeSelection | GridSelection,
 ): void {

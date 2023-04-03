@@ -68,7 +68,7 @@ declare export function $generateNodesFromSerializedNodes(
   serializedNodes: Array<BaseSerializedNode>,
 ): Array<LexicalNode>;
 
-declare export function copyToClipboard__EXPERIMENTAL(
+declare export function copyToClipboard(
   editor: LexicalEditor,
   event: null | ClipboardEvent,
 ): Promise<boolean>;

@@ -15,5 +15,5 @@ export {
   $insertDataTransferForPlainText,
   $insertDataTransferForRichText,
   $insertGeneratedNodes,
-  copyToClipboard__EXPERIMENTAL,
+  copyToClipboard,
 } from './clipboard';

@@ -7,10 +7,21 @@
  */
 
 import type {Grid} from './LexicalTableSelection';
-import type {LexicalNode} from 'lexical';
+import type {ElementNode} from 'lexical';
 
 import {$findMatchingParent} from '@lexical/utils';
-import {$createParagraphNode, $createTextNode} from 'lexical';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getSelection,
+  $isRangeSelection,
+  DEPRECATED_$computeGridMap,
+  DEPRECATED_$getNodeTriplet,
+  DEPRECATED_$isGridRowNode,
+  DEPRECATED_$isGridSelection,
+  DEPRECATED_GridCellNode,
+  LexicalNode,
+} from 'lexical';
 import invariant from 'shared/invariant';
 
 import {InsertTableCommandPayloadHeaders} from '.';
@@ -217,6 +228,59 @@ export function $insertTableRow(
   return tableNode;
 }
 
+export function $insertTableRow__EXPERIMENTAL(insertAfter = true): void {
+  const selection = $getSelection();
+  invariant(
+    $isRangeSelection(selection) || DEPRECATED_$isGridSelection(selection),
+    'Expected a RangeSelection or GridSelection',
+  );
+  const focus = selection.focus.getNode();
+  const [focusCell, , grid] = DEPRECATED_$getNodeTriplet(focus);
+  const [gridMap, focusCellMap] = DEPRECATED_$computeGridMap(
+    grid,
+    focusCell,
+    focusCell,
+  );
+  const columnCount = gridMap[0].length;
+  const {startRow: focusStartRow} = focusCellMap;
+  if (insertAfter) {
+    const focusEndRow = focusStartRow + focusCell.__rowSpan - 1;
+    const focusEndRowMap = gridMap[focusEndRow];
+    const newRow = $createTableRowNode();
+    for (let i = 0; i < columnCount; i++) {
+      const {cell, startRow} = focusEndRowMap[i];
+      if (startRow + cell.__rowSpan - 1 <= focusEndRow) {
+        newRow.append($createTableCellNode(TableCellHeaderStates.NO_STATUS));
+      } else {
+        cell.setRowSpan(cell.__rowSpan + 1);
+      }
+    }
+    const focusEndRowNode = grid.getChildAtIndex(focusEndRow);
+    invariant(
+      DEPRECATED_$isGridRowNode(focusEndRowNode),
+      'focusEndRow is not a GridRowNode',
+    );
+    focusEndRowNode.insertAfter(newRow);
+  } else {
+    const focusStartRowMap = gridMap[focusStartRow];
+    const newRow = $createTableRowNode();
+    for (let i = 0; i < columnCount; i++) {
+      const {cell, startRow} = focusStartRowMap[i];
+      if (startRow === focusStartRow) {
+        newRow.append($createTableCellNode(TableCellHeaderStates.NO_STATUS));
+      } else {
+        cell.setRowSpan(cell.__rowSpan + 1);
+      }
+    }
+    const focusStartRowNode = grid.getChildAtIndex(focusStartRow);
+    invariant(
+      DEPRECATED_$isGridRowNode(focusStartRowNode),
+      'focusEndRow is not a GridRowNode',
+    );
+    focusStartRowNode.insertBefore(newRow);
+  }
+}
+
 export function $insertTableColumn(
   tableNode: TableNode,
   targetIndex: number,
@@ -271,6 +335,45 @@ export function $insertTableColumn(
   return tableNode;
 }
 
+export function $insertTableColumn__EXPERIMENTAL(insertAfter = true): void {
+  const selection = $getSelection();
+  invariant(
+    $isRangeSelection(selection) || DEPRECATED_$isGridSelection(selection),
+    'Expected a RangeSelection or GridSelection',
+  );
+  const focus = selection.focus.getNode();
+  const [focusCell, , grid] = DEPRECATED_$getNodeTriplet(focus);
+  const [gridMap, focusCellMap] = DEPRECATED_$computeGridMap(
+    grid,
+    focusCell,
+    focusCell,
+  );
+  const rowCount = gridMap.length;
+  const {startColumn: focusStartColumn} = focusCellMap;
+  if (insertAfter) {
+    const focusEndColumn = focusStartColumn + focusCell.__colSpan - 1;
+    for (let i = 0; i < rowCount; i++) {
+      const {cell, startColumn} = gridMap[i][focusEndColumn];
+      if (startColumn + cell.__colSpan - 1 <= focusEndColumn) {
+        cell.insertAfter($createTableCellNode(TableCellHeaderStates.NO_STATUS));
+      } else {
+        cell.setColSpan(cell.__colSpan + 1);
+      }
+    }
+  } else {
+    for (let i = 0; i < rowCount; i++) {
+      const {cell, startColumn} = gridMap[i][focusStartColumn];
+      if (startColumn === focusStartColumn) {
+        cell.insertBefore(
+          $createTableCellNode(TableCellHeaderStates.NO_STATUS),
+        );
+      } else {
+        cell.setColSpan(cell.__colSpan + 1);
+      }
+    }
+  }
+}
+
 export function $deleteTableColumn(
   tableNode: TableNode,
   targetIndex: number,
@@ -292,4 +395,222 @@ export function $deleteTableColumn(
   }
 
   return tableNode;
+}
+
+export function $deleteTableRow__EXPERIMENTAL(): void {
+  const selection = $getSelection();
+  invariant(
+    $isRangeSelection(selection) || DEPRECATED_$isGridSelection(selection),
+    'Expected a RangeSelection or GridSelection',
+  );
+  const anchor = selection.anchor.getNode();
+  const focus = selection.focus.getNode();
+  const [anchorCell, , grid] = DEPRECATED_$getNodeTriplet(anchor);
+  const [focusCell] = DEPRECATED_$getNodeTriplet(focus);
+  const [gridMap, anchorCellMap, focusCellMap] = DEPRECATED_$computeGridMap(
+    grid,
+    anchorCell,
+    focusCell,
+  );
+  const {startRow: anchorStartRow} = anchorCellMap;
+  const {startRow: focusStartRow} = focusCellMap;
+  const focusEndRow = focusStartRow + focusCell.__rowSpan - 1;
+  if (gridMap.length === focusEndRow - anchorStartRow + 1) {
+    // Empty grid
+    grid.remove();
+    return;
+  }
+  const columnCount = gridMap[0].length;
+  const nextRow = gridMap[focusEndRow + 1];
+  const nextRowNode = grid.getChildAtIndex(focusEndRow + 1);
+  invariant(
+    DEPRECATED_$isGridRowNode(nextRowNode),
+    'Expected GridNode childAtIndex(%s) to be RowNode',
+    String(focusEndRow + 1),
+  );
+  for (let row = focusEndRow; row >= anchorStartRow; row--) {
+    for (let column = columnCount - 1; column >= 0; column--) {
+      const {
+        cell,
+        startRow: cellStartRow,
+        startColumn: cellStartColumn,
+      } = gridMap[row][column];
+      if (cellStartColumn !== column) {
+        // Don't repeat work for the same Cell
+        continue;
+      }
+      // Rows overflowing top have to be trimmed
+      if (row === anchorStartRow && cellStartRow < anchorStartRow) {
+        cell.setRowSpan(cell.__rowSpan - (cellStartRow - anchorStartRow));
+      }
+      // Rows overflowing bottom have to be trimmed and moved to the next row
+      if (
+        cellStartRow >= anchorStartRow &&
+        cellStartRow + cell.__rowSpan - 1 > focusEndRow
+      ) {
+        cell.setRowSpan(cell.__rowSpan - (focusEndRow - cellStartRow + 1));
+        if (column === 0) {
+          $insertFirst(nextRowNode, cell);
+        } else {
+          const {cell: previousCell} = nextRow[column - 1];
+          previousCell.insertAfter(cell);
+        }
+      }
+    }
+    const rowNode = grid.getChildAtIndex(row);
+    invariant(
+      DEPRECATED_$isGridRowNode(rowNode),
+      'Expected GridNode childAtIndex(%s) to be RowNode',
+      String(row),
+    );
+    rowNode.remove();
+  }
+  if (nextRow !== undefined) {
+    const {cell} = nextRow[0];
+    $moveSelectionToCell(cell);
+  } else {
+    const previousRow = gridMap[anchorStartRow - 1];
+    const {cell} = previousRow[0];
+    $moveSelectionToCell(cell);
+  }
+}
+
+export function $deleteTableColumn__EXPERIMENTAL(): void {
+  const selection = $getSelection();
+  invariant(
+    $isRangeSelection(selection) || DEPRECATED_$isGridSelection(selection),
+    'Expected a RangeSelection or GridSelection',
+  );
+  const anchor = selection.anchor.getNode();
+  const focus = selection.focus.getNode();
+  const [anchorCell, , grid] = DEPRECATED_$getNodeTriplet(anchor);
+  const [focusCell] = DEPRECATED_$getNodeTriplet(focus);
+  const [gridMap, anchorCellMap, focusCellMap] = DEPRECATED_$computeGridMap(
+    grid,
+    anchorCell,
+    focusCell,
+  );
+  const {startColumn: anchorStartColumn} = anchorCellMap;
+  const {startRow: focusStartRow, startColumn: focusStartColumn} = focusCellMap;
+  const startColumn = Math.min(anchorStartColumn, focusStartColumn);
+  const endColumn = Math.max(
+    anchorStartColumn + anchorCell.__colSpan - 1,
+    focusStartColumn + focusCell.__colSpan - 1,
+  );
+  const selectedColumnCount = endColumn - startColumn + 1;
+  const columnCount = gridMap[0].length;
+  if (columnCount === endColumn - startColumn + 1) {
+    // Empty grid
+    grid.selectPrevious();
+    grid.remove();
+    return;
+  }
+  const rowCount = gridMap.length;
+  for (let row = 0; row < rowCount; row++) {
+    for (let column = startColumn; column <= endColumn; column++) {
+      const {cell, startColumn: cellStartColumn} = gridMap[row][column];
+      if (cellStartColumn < startColumn) {
+        if (column === startColumn) {
+          const overflowLeft = startColumn - cellStartColumn;
+          // Overflowing left
+          cell.setColSpan(
+            cell.__colSpan -
+              // Possible overflow right too
+              Math.min(selectedColumnCount, cell.__colSpan - overflowLeft),
+          );
+        }
+      } else if (cellStartColumn + cell.__colSpan - 1 > endColumn) {
+        if (column === endColumn) {
+          // Overflowing right
+          const inSelectedArea = endColumn - cellStartColumn + 1;
+          cell.setColSpan(cell.__colSpan - inSelectedArea);
+        }
+      } else {
+        cell.remove();
+      }
+    }
+  }
+  const focusRowMap = gridMap[focusStartRow];
+  const nextColumn = focusRowMap[focusStartColumn + focusCell.__colSpan];
+  if (nextColumn !== undefined) {
+    const {cell} = nextColumn;
+    $moveSelectionToCell(cell);
+  } else {
+    const previousRow = focusRowMap[focusStartColumn - 1];
+    const {cell} = previousRow;
+    $moveSelectionToCell(cell);
+  }
+}
+
+function $moveSelectionToCell(cell: DEPRECATED_GridCellNode): void {
+  const firstDescendant = cell.getFirstDescendant();
+  invariant(firstDescendant !== null, 'Unexpected empty cell');
+  firstDescendant.getParentOrThrow().selectStart();
+}
+
+function $insertFirst(parent: ElementNode, node: LexicalNode): void {
+  const firstChild = parent.getFirstChild();
+  if (firstChild !== null) {
+    firstChild.insertBefore(node);
+  } else {
+    parent.append(node);
+  }
+}
+
+export function $unmergeCell(): void {
+  const selection = $getSelection();
+  invariant(
+    $isRangeSelection(selection) || DEPRECATED_$isGridSelection(selection),
+    'Expected a RangeSelection or GridSelection',
+  );
+  const anchor = selection.anchor.getNode();
+  const [cell, row, grid] = DEPRECATED_$getNodeTriplet(anchor);
+  const colSpan = cell.__colSpan;
+  const rowSpan = cell.__rowSpan;
+  if (colSpan > 1) {
+    for (let i = 1; i < colSpan; i++) {
+      cell.insertAfter($createTableCellNode(TableCellHeaderStates.NO_STATUS));
+    }
+    cell.setColSpan(1);
+  }
+  if (rowSpan > 1) {
+    const [map, cellMap] = DEPRECATED_$computeGridMap(grid, cell, cell);
+    const {startColumn, startRow} = cellMap;
+    let currentRowNode;
+    for (let i = 1; i < rowSpan; i++) {
+      const currentRow = startRow + i;
+      const currentRowMap = map[currentRow];
+      currentRowNode = row.getNextSibling();
+      invariant(
+        DEPRECATED_$isGridRowNode(currentRowNode),
+        'Expected row next sibling to be a row',
+      );
+      let insertAfterCell: null | DEPRECATED_GridCellNode = null;
+      for (let column = 0; column < startColumn; column++) {
+        const currentCellMap = currentRowMap[column];
+        const currentCell = currentCellMap.cell;
+        if (currentCellMap.startRow === currentRow) {
+          insertAfterCell = currentCell;
+        }
+        if (currentCell.__colSpan > 1) {
+          column += currentCell.__colSpan - 1;
+        }
+      }
+      if (insertAfterCell === null) {
+        for (let j = 0; j < colSpan; j++) {
+          $insertFirst(
+            currentRowNode,
+            $createTableCellNode(TableCellHeaderStates.NO_STATUS),
+          );
+        }
+      } else {
+        for (let j = 0; j < colSpan; j++) {
+          insertAfterCell.insertAfter(
+            $createTableCellNode(TableCellHeaderStates.NO_STATUS),
+          );
+        }
+      }
+    }
+    cell.setRowSpan(1);
+  }
 }

@@ -12,6 +12,7 @@ import {
   DOMExportOutput,
   EditorConfig,
   ElementNode,
+  LexicalEditor,
   LexicalNode,
   NodeKey,
   SerializedElementNode,
@@ -53,10 +54,16 @@ export class CollapsibleContainerNode extends ElementNode {
     return new CollapsibleContainerNode(node.__open, node.__key);
   }
 
-  createDOM(config: EditorConfig): HTMLElement {
+  createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement {
     const dom = document.createElement('details');
     dom.classList.add('Collapsible__container');
     dom.open = this.__open;
+    dom.addEventListener('toggle', () => {
+      const open = editor.getEditorState().read(() => this.getOpen());
+      if (open !== dom.open) {
+        editor.update(() => this.toggleOpen());
+      }
+    });
     return dom;
   }
 
@@ -91,7 +98,7 @@ export class CollapsibleContainerNode extends ElementNode {
 
   exportDOM(): DOMExportOutput {
     const element = document.createElement('details');
-    element.open = this.__open;
+    element.setAttribute('open', this.__open.toString());
     return {element};
   }
 
@@ -110,7 +117,7 @@ export class CollapsibleContainerNode extends ElementNode {
   }
 
   getOpen(): boolean {
-    return this.__open;
+    return this.getLatest().__open;
   }
 
   toggleOpen(): void {

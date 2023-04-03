@@ -118,7 +118,6 @@ function App(): JSX.Element {
   } = useSettings();
 
   const initialConfig = {
-    editable: true,
     editorState: isCollab
       ? null
       : emptyEditor

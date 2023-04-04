@@ -3085,8 +3085,14 @@ export function updateDOMSelection(
         ? domSelection.getRangeAt(0)
         : null;
     if (selectionTarget !== null) {
-      // @ts-ignore Text nodes do have getBoundingClientRect
-      const selectionRect = selectionTarget.getBoundingClientRect();
+      let selectionRect: DOMRect;
+      if (selectionTarget instanceof Text) {
+        const range = document.createRange();
+        range.selectNode(selectionTarget);
+        selectionRect = range.getBoundingClientRect();
+      } else {
+        selectionRect = selectionTarget.getBoundingClientRect();
+      }
       scrollIntoViewIfNeeded(editor, selectionRect, rootElement);
     }
   }

@@ -6,7 +6,11 @@
  *
  */
 
-import type {NodeKey, SerializedLexicalNode} from '../LexicalNode';
+import type {
+  DOMExportOutput,
+  NodeKey,
+  SerializedLexicalNode,
+} from '../LexicalNode';
 import type {
   GridSelection,
   NodeSelection,
@@ -23,6 +27,7 @@ import {
   ELEMENT_FORMAT_TO_TYPE,
   ELEMENT_TYPE_TO_FORMAT,
 } from '../LexicalConstants';
+import {LexicalEditor} from '../LexicalEditor';
 import {LexicalNode} from '../LexicalNode';
 import {
   $getSelection,
@@ -524,7 +529,25 @@ export class ElementNode extends LexicalNode {
       version: 1,
     };
   }
-  // These are intended to be extends for specific element heuristics.
+
+  exportDOM(editor: LexicalEditor): DOMExportOutput {
+    const {element} = super.exportDOM(editor);
+    if (element !== null) {
+      const formatType = this.getFormatType();
+      if (formatType !== '') {
+        element.setAttribute('lexical-data-format-align', formatType);
+      }
+      const indent = this.getIndent();
+      if (indent > 0) {
+        element.setAttribute('lexical-data-format-indent', `${indent}`);
+      }
+    }
+    return {
+      element,
+    };
+  }
+
+  // These are intended to be extended for specific element heuristics.
   insertNewAfter(
     selection: RangeSelection,
     restoreSelection?: boolean,

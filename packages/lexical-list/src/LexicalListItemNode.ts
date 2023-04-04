@@ -10,6 +10,7 @@ import type {ListNode} from './';
 import type {
   DOMConversionMap,
   DOMConversionOutput,
+  DOMExportOutput,
   EditorConfig,
   EditorThemeClasses,
   GridSelection,
@@ -34,6 +35,7 @@ import {
   $isParagraphNode,
   $isRangeSelection,
   ElementNode,
+  LexicalEditor,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -130,6 +132,10 @@ export class ListItemNode extends ElementNode {
     node.setFormat(serializedNode.format);
     node.setDirection(serializedNode.direction);
     return node;
+  }
+
+  exportDOM(editor: LexicalEditor): DOMExportOutput {
+    return {element: this.createDOM(editor._config)};
   }
 
   exportJSON(): SerializedListItemNode {

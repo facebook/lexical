@@ -30,8 +30,6 @@ const ExcalidrawComponent = React.lazy(
 export type SerializedExcalidrawNode = Spread<
   {
     data: string;
-    type: 'excalidraw';
-    version: 1;
   },
   SerializedLexicalNode
 >;

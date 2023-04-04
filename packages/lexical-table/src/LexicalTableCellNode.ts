@@ -40,7 +40,6 @@ export type TableCellHeaderState =
 export type SerializedTableCellNode = Spread<
   {
     headerState: TableCellHeaderState;
-    type: string;
     width?: number;
   },
   SerializedGridCellNode

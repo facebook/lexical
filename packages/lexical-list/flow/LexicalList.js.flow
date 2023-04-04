@@ -74,21 +74,13 @@ declare export var INSERT_ORDERED_LIST_COMMAND: LexicalCommand<void>;
 declare export var INSERT_CHECK_LIST_COMMAND: LexicalCommand<void>;
 declare export var REMOVE_LIST_COMMAND: LexicalCommand<void>;
 
-export type SerializedListItemNode = {
-  ...SerializedElementNode,
+export type SerializedListItemNode = SerializedElementNode & {
   checked: boolean | void,
   value: number,
-  type: 'listitem',
-  version: 1,
-  ...
 };
 
-export type SerializedListNode = {
-  ...SerializedElementNode,
+export type SerializedListNode = SerializedElementNode & {
   listType: ListType,
   start: number,
   tag: ListNodeTagType,
-  type: 'list',
-  version: 1,
-  ...
 };

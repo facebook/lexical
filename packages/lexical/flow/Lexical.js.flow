@@ -905,19 +905,21 @@ export type SerializedElementNode = {
 
 export type SerializedParagraphNode = {
   ...SerializedElementNode,
-  type: 'paragraph',
   ...
 };
 
 export type SerializedLineBreakNode = {
   ...SerializedLexicalNode,
-  type: 'linebreak',
+  ...
+};
+
+export type SerializedDecoratorNode = {
+  ...SerializedLexicalNode,
   ...
 };
 
 export type SerializedRootNode = {
   ...SerializedElementNode,
-  type: 'root',
   ...
 };
 

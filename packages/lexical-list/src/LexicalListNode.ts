@@ -37,8 +37,6 @@ export type SerializedListNode = Spread<
     listType: ListType;
     start: number;
     tag: ListNodeTagType;
-    type: 'list';
-    version: 1;
   },
   SerializedElementNode
 >;

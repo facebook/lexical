@@ -3084,11 +3084,15 @@ export function updateDOMSelection(
         : domSelection.rangeCount > 0
         ? domSelection.getRangeAt(0)
         : null;
-    if (selectionTarget instanceof Text) {
-      const range = document.createRange();
-      range.select(selectionTarget);
-      selectionRect = range.getBoundingClientRect();
-      const selectionRect = selectionTarget.getBoundingClientRect();
+    if (selectionTarget !== null) {
+      let selectionRect: DOMRect;
+      if (selectionTarget instanceof Text) {
+        const range = document.createRange();
+        range.selectNode(selectionTarget);
+        selectionRect = range.getBoundingClientRect();
+      } else {
+        selectionRect = selectionTarget.getBoundingClientRect();
+      }
       scrollIntoViewIfNeeded(editor, selectionRect, rootElement);
     }
   }

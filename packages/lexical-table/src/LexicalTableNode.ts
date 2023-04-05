@@ -121,10 +121,6 @@ export class TableNode extends DEPRECATED_GridNode {
     return false;
   }
 
-  isShadowRoot(): boolean {
-    return true;
-  }
-
   getCordsFromCellNode(
     tableCellNode: TableCellNode,
     grid: Grid,

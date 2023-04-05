@@ -1518,7 +1518,7 @@ test.describe('Tables', () => {
 
     await focusEditor(page);
 
-    await insertTable(page, 2, 1);
+    await insertTable(page, 2, 2);
 
     await click(page, '.PlaygroundEditorTheme__tableCell');
     await selectCellsFromTableCords(
@@ -1541,12 +1541,19 @@ test.describe('Tables', () => {
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </td>
             <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              rowspan="2">
+              rowspan="2"
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </th>
           </tr>
           <tr>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
             <td class="PlaygroundEditorTheme__tableCell">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </td>

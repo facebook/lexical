@@ -109,10 +109,10 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
     if (this.__width) {
       element.style.width = `${this.__width}px`;
     }
-    if (this.__colSpan !== 1) {
+    if (this.__colSpan > 1) {
       element.colSpan = this.__colSpan;
     }
-    if (this.__rowSpan !== 1) {
+    if (this.__rowSpan > 1) {
       element.rowSpan = this.__rowSpan;
     }
 

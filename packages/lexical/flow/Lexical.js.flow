@@ -375,8 +375,14 @@ declare export class LexicalNode {
   ): boolean;
   remove(preserveEmptyParent?: boolean): void;
   replace<N: LexicalNode>(replaceWith: N): N;
-  insertAfter(nodeToInsert: LexicalNode): LexicalNode;
-  insertBefore(nodeToInsert: LexicalNode): LexicalNode;
+  insertAfter(
+    nodeToInsert: LexicalNode,
+    restoreSelection?: boolean,
+  ): LexicalNode;
+  insertBefore(
+    nodeToInsert: LexicalNode,
+    restoreSelection?: boolean,
+  ): LexicalNode;
   selectPrevious(anchorOffset?: number, focusOffset?: number): RangeSelection;
   selectNext(anchorOffset?: number, focusOffset?: number): RangeSelection;
   markDirty(): void;
@@ -849,7 +855,7 @@ declare export function $getNearestRootOrShadowRoot(
   node: LexicalNode,
 ): RootNode | ElementNode;
 declare export function $isRootOrShadowRoot(
-  node: LexicalNode,
+  node: ?LexicalNode,
 ): boolean %checks(node instanceof RootNode || node instanceof ElementNode);
 declare export function $hasAncestor(
   child: LexicalNode,

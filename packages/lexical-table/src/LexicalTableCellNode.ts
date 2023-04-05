@@ -133,10 +133,10 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
       const maxWidth = 700;
       const colCount = this.getParentOrThrow().getChildrenSize();
       element_.style.border = '1px solid black';
-      if (this.__colSpan !== 1) {
+      if (this.__colSpan > 1) {
         element_.colSpan = this.__colSpan;
       }
-      if (this.__rowSpan !== 1) {
+      if (this.__rowSpan > 1) {
         element_.rowSpan = this.__rowSpan;
       }
       element_.style.width = `${

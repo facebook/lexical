@@ -461,7 +461,9 @@ export function $deleteTableRow__EXPERIMENTAL(): void {
   }
   const columnCount = gridMap[0].length;
   const nextRow = gridMap[focusEndRow + 1];
-  const nextRowNode = grid.getChildAtIndex(focusEndRow + 1);
+  const nextRowNode: DEPRECATED_GridRowNode | null = grid.getChildAtIndex(
+    focusEndRow + 1,
+  );
   invariant(
     nextRowNode != null ? DEPRECATED_$isGridRowNode(nextRowNode) : true,
     'Expected GridNode childAtIndex(%s) to be RowNode',
@@ -488,7 +490,7 @@ export function $deleteTableRow__EXPERIMENTAL(): void {
         cellStartRow + cell.__rowSpan - 1 > focusEndRow
       ) {
         cell.setRowSpan(cell.__rowSpan - (focusEndRow - cellStartRow + 1));
-        if (column === 0) {
+        if (column === 0 && nextRowNode != null) {
           $insertFirst(nextRowNode, cell);
         } else {
           const {cell: previousCell} = nextRow[column - 1];

@@ -463,7 +463,7 @@ export function $deleteTableRow__EXPERIMENTAL(): void {
   const nextRow = gridMap[focusEndRow + 1];
   const nextRowNode = grid.getChildAtIndex(focusEndRow + 1);
   invariant(
-    DEPRECATED_$isGridRowNode(nextRowNode),
+    nextRowNode != null ? DEPRECATED_$isGridRowNode(nextRowNode) : true,
     'Expected GridNode childAtIndex(%s) to be RowNode',
     String(focusEndRow + 1),
   );

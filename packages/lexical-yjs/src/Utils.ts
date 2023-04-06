@@ -244,6 +244,15 @@ export function syncPropertiesFromYjs(
     if (excludedProperties.has(property)) {
       continue;
     }
+    const additionalExcludedProperties = binding.excludedProperties.get(
+      lexicalNode.constructor as Klass<LexicalNode>,
+    );
+    if (
+      additionalExcludedProperties !== undefined &&
+      additionalExcludedProperties.has(property)
+    ) {
+      continue;
+    }
 
     const prevValue = lexicalNode[property];
     let nextValue =

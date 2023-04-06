@@ -244,15 +244,6 @@ export function syncPropertiesFromYjs(
     if (excludedProperties.has(property)) {
       continue;
     }
-    const additionalExcludedProperties = binding.excludedProperties.get(
-      lexicalNode.constructor as Klass<LexicalNode>,
-    );
-    if (
-      additionalExcludedProperties !== undefined &&
-      additionalExcludedProperties.has(property)
-    ) {
-      continue;
-    }
 
     const prevValue = lexicalNode[property];
     let nextValue =
@@ -294,10 +285,10 @@ export function syncPropertiesFromLexical(
   const type = nextLexicalNode.__type;
   const nodeProperties = binding.nodeProperties;
   let properties = nodeProperties.get(type);
-  const additionalExlcudedProperties = binding.excludedProperties.get(
-    nextLexicalNode.constructor as Klass<LexicalNode>,
-  );
   if (properties === undefined) {
+    const additionalExlcudedProperties = binding.excludedProperties.get(
+      nextLexicalNode.constructor as Klass<LexicalNode>,
+    );
     properties = Object.keys(nextLexicalNode).filter((property) => {
       return (
         !excludedProperties.has(property) ||

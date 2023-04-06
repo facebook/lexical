@@ -11,9 +11,9 @@ import {$isLinkNode, AutoLinkNode, LinkNode} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   LexicalNodeMenuPlugin,
+  MenuOption,
   MenuRenderFn,
-  TypeaheadOption,
-} from '@lexical/react/LexicalTypeaheadMenuPlugin';
+} from '@lexical/react/LexicalNodeMenuPlugin';
 import {mergeRegister} from '@lexical/utils';
 import {
   $getNodeByKey,
@@ -54,7 +54,7 @@ export const URL_MATCHER =
 export const INSERT_EMBED_COMMAND: LexicalCommand<EmbedConfig['type']> =
   createCommand('INSERT_EMBED_COMMAND');
 
-export class AutoEmbedOption extends TypeaheadOption {
+export class AutoEmbedOption extends MenuOption {
   title: string;
   onSelect: (targetNode: LexicalNode | null) => void;
   constructor(

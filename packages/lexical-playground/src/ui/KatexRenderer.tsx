@@ -25,18 +25,14 @@ export default function KatexRenderer({
     const katexElement = katexElementRef.current;
 
     if (katexElement !== null) {
-      try {
-        katex.render(equation, katexElement, {
-          displayMode: !inline, // true === block display //
-          errorColor: '#cc0000',
-          output: 'html',
-          strict: 'warn',
-          throwOnError: false,
-          trust: false,
-        });
-      } catch (_) {
-        // Fail silently
-      }
+      katex.render(equation, katexElement, {
+        displayMode: !inline, // true === block display //
+        errorColor: '#cc0000',
+        output: 'html',
+        strict: 'warn',
+        throwOnError: false,
+        trust: false,
+      });
     }
   }, [equation, inline]);
 

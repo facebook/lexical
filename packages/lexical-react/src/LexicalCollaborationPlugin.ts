@@ -11,7 +11,7 @@ import type {Doc} from 'yjs';
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {Provider} from '@lexical/yjs';
-import {addExcludedProperty} from 'packages/lexical-yjs/src/Utils';
+import {ExcludedProperties} from 'packages/lexical-yjs/src/Bindings';
 import {useEffect, useMemo} from 'react';
 
 import {InitialEditorStateType} from './LexicalComposer';
@@ -34,7 +34,7 @@ type Props = {
   cursorColor?: string;
   cursorsContainerRef?: CursorsContainerRef;
   initialEditorState?: InitialEditorStateType;
-  excludedProperties?: string[];
+  excludedProperties?: ExcludedProperties;
 };
 
 export function CollaborationPlugin({
@@ -52,14 +52,6 @@ export function CollaborationPlugin({
   const {yjsDocMap, name, color} = collabContext;
 
   const [editor] = useLexicalComposerContext();
-
-  useEffect(() => {
-    if (excludedProperties !== undefined) {
-      for (let i = 0; i < excludedProperties.length; i++) {
-        addExcludedProperty(excludedProperties[i]);
-      }
-    }
-  }, [excludedProperties]);
 
   useEffect(() => {
     collabContext.isCollabActive = true;
@@ -88,6 +80,7 @@ export function CollaborationPlugin({
     shouldBootstrap,
     cursorsContainerRef,
     initialEditorState,
+    excludedProperties,
   );
 
   collabContext.clientID = binding.clientID;

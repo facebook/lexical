@@ -223,6 +223,10 @@ export function createLexicalNodeFromCollabNode(
   return lexicalNode;
 }
 
+export function addExcludedProperty(property: string): void {
+  excludedProperties.add(property);
+}
+
 export function syncPropertiesFromYjs(
   binding: Binding,
   sharedType: XmlText | YMap<unknown> | XmlElement,

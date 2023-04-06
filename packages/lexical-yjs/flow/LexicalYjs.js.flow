@@ -366,6 +366,8 @@ declare export function syncYjsChangesToLexical(
   events: Array<YjsEvent>,
 ): void;
 
+declare export function addExcludedProperty(property: string): void;
+
 declare export var CONNECTED_COMMAND: LexicalCommand<boolean>;
 declare export var TOGGLE_CONNECT_COMMAND: LexicalCommand<boolean>;
 

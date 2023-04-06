@@ -2058,7 +2058,7 @@ export class RangeSelection implements BaseSelection {
           anchorNode.getNextSibling() ||
           (parent === null ? null : parent.getNextSibling());
 
-        if ($isElementNode(nextSibling) && !nextSibling.canExtractContents()) {
+        if ($isElementNode(nextSibling) && nextSibling.isShadowRoot()) {
           return;
         }
       }

@@ -19,6 +19,7 @@ import {
 } from 'lexical';
 import * as React from 'react';
 import {useCallback, useEffect, useRef, useState} from 'react';
+import {ErrorBoundary} from 'react-error-boundary';
 
 import EquationEditor from '../ui/EquationEditor';
 import KatexRenderer from '../ui/KatexRenderer';
@@ -118,11 +119,13 @@ export default function EquationComponent({
           ref={inputRef}
         />
       ) : (
-        <KatexRenderer
-          equation={equationValue}
-          inline={inline}
-          onDoubleClick={() => setShowEquationEditor(true)}
-        />
+        <ErrorBoundary onError={(e) => editor._onError(e)} fallback={null}>
+          <KatexRenderer
+            equation={equationValue}
+            inline={inline}
+            onDoubleClick={() => setShowEquationEditor(true)}
+          />
+        </ErrorBoundary>
       )}
     </>
   );

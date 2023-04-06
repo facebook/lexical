@@ -289,6 +289,10 @@ test.describe('Selection', () => {
 
   test('Can delete forward a Collapsible', async ({page, isPlainText}) => {
     test.skip(isPlainText);
+    if (!IS_MAC) {
+      // Do Windows/Linux have equivalent shortcuts?
+      return;
+    }
     await focusEditor(page);
     await page.keyboard.type('abc');
     await insertCollapsible(page);
@@ -313,6 +317,10 @@ test.describe('Selection', () => {
   // even further
   test('Can delete forward a Table', async ({page, isPlainText}) => {
     test.skip(isPlainText);
+    if (!IS_MAC) {
+      // Do Windows/Linux have equivalent shortcuts?
+      return;
+    }
     await focusEditor(page);
     await page.keyboard.type('abc');
     await insertTable(page, 1, 2);

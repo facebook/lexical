@@ -32,13 +32,13 @@ import {
   $createHeadingNode,
   $createQuoteNode,
   $isHeadingNode,
+  $isQuoteNode,
   HeadingTagType,
 } from '@lexical/rich-text';
 import {
   $getSelectionStyleValueForProperty,
   $isParentElementRTL,
   $patchStyleText,
-  $selectAll,
   $setBlocksType,
 } from '@lexical/selection';
 import {$isTableNode} from '@lexical/table';
@@ -555,14 +555,35 @@ export default function ToolbarPlugin(): JSX.Element {
     activeEditor.update(() => {
       const selection = $getSelection();
       if ($isRangeSelection(selection)) {
-        $selectAll(selection);
-        selection.getNodes().forEach((node) => {
+        const anchor = selection.anchor;
+        const focus = selection.focus;
+        const nodes = selection.getNodes();
+
+        if (anchor.key === focus.key && anchor.offset === focus.offset) {
+          return;
+        }
+
+        nodes.forEach((node, idx) => {
+          // We split the first and last node by the selection
+          // So that we don't format unselected text inside those nodes
           if ($isTextNode(node)) {
-            node.setFormat(0);
-            node.setStyle('');
-            $getNearestBlockElementAncestorOrThrow(node).setFormat('');
-          }
-          if ($isDecoratorBlockNode(node)) {
+            if (idx === 0 && anchor.offset !== 0) {
+              node = node.splitText(anchor.offset)[1] || node;
+            }
+            if (idx === nodes.length - 1) {
+              node = node.splitText(focus.offset)[0] || node;
+            }
+
+            if (node.__style !== '') {
+              node.setStyle('');
+            }
+            if (node.__format !== 0) {
+              node.setFormat(0);
+              $getNearestBlockElementAncestorOrThrow(node).setFormat('');
+            }
+          } else if ($isHeadingNode(node) || $isQuoteNode(node)) {
+            node.replace($createParagraphNode(), true);
+          } else if ($isDecoratorBlockNode(node)) {
             node.setFormat('');
           }
         });

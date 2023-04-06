@@ -112,6 +112,7 @@ export class TableNode extends DEPRECATED_GridNode {
     };
   }
 
+  // TODO 0.10 deprecate
   canExtractContents(): false {
     return false;
   }

@@ -739,6 +739,10 @@ export async function insertTable(page, rows = 2, columns = 3) {
   );
 }
 
+export async function insertCollapsible(page) {
+  await selectFromInsertDropdown(page, '.item .caret-right');
+}
+
 export async function selectCellsFromTableCords(
   page,
   firstCords,

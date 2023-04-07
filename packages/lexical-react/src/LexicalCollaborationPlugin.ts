@@ -10,8 +10,7 @@ import type {Doc} from 'yjs';
 
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {Provider} from '@lexical/yjs';
-import {ExcludedProperties} from 'packages/lexical-yjs/src/Bindings';
+import {ExcludedProperties, Provider} from '@lexical/yjs';
 import {useEffect, useMemo} from 'react';
 
 import {InitialEditorStateType} from './LexicalComposer';

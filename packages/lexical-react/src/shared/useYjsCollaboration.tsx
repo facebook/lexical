@@ -6,7 +6,7 @@
  *
  */
 
-import type {Binding, Provider} from '@lexical/yjs';
+import type {Binding, ExcludedProperties,Provider} from '@lexical/yjs';
 import type {LexicalEditor} from 'lexical';
 
 import {mergeRegister} from '@lexical/utils';
@@ -31,7 +31,6 @@ import {
   REDO_COMMAND,
   UNDO_COMMAND,
 } from 'lexical';
-import {ExcludedProperties} from 'packages/lexical-yjs/src/Bindings';
 import * as React from 'react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';

@@ -11,6 +11,7 @@ import type {Doc} from 'yjs';
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {Provider} from '@lexical/yjs';
+import {ExcludedProperties} from 'packages/lexical-yjs/src/Bindings';
 import {useEffect, useMemo} from 'react';
 
 import {InitialEditorStateType} from './LexicalComposer';
@@ -21,15 +22,7 @@ import {
   useYjsHistory,
 } from './shared/useYjsCollaboration';
 
-export function CollaborationPlugin({
-  id,
-  providerFactory,
-  shouldBootstrap,
-  username,
-  cursorColor,
-  cursorsContainerRef,
-  initialEditorState,
-}: {
+type Props = {
   id: string;
   providerFactory: (
     // eslint-disable-next-line no-shadow
@@ -41,7 +34,19 @@ export function CollaborationPlugin({
   cursorColor?: string;
   cursorsContainerRef?: CursorsContainerRef;
   initialEditorState?: InitialEditorStateType;
-}): JSX.Element {
+  excludedProperties?: ExcludedProperties;
+};
+
+export function CollaborationPlugin({
+  id,
+  providerFactory,
+  shouldBootstrap,
+  username,
+  cursorColor,
+  cursorsContainerRef,
+  initialEditorState,
+  excludedProperties,
+}: Props): JSX.Element {
   const collabContext = useCollaborationContext(username, cursorColor);
 
   const {yjsDocMap, name, color} = collabContext;
@@ -75,6 +80,7 @@ export function CollaborationPlugin({
     shouldBootstrap,
     cursorsContainerRef,
     initialEditorState,
+    excludedProperties,
   );
 
   collabContext.clientID = binding.clientID;

@@ -85,11 +85,8 @@ export function LexicalContextMenuPlugin<TOption extends MenuOption>({
   const handleContextMenu = useCallback(
     (event: MouseEvent) => {
       event.preventDefault();
-
-      const {clientX: mouseX, clientY: mouseY} = event;
-
       openNodeMenu({
-        getRect: () => new DOMRect(mouseX, mouseY, 1, 1),
+        getRect: () => new DOMRect(event.clientX, event.clientY, 1, 1),
       });
     },
     [openNodeMenu],

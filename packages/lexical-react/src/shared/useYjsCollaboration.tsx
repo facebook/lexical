@@ -31,6 +31,7 @@ import {
   REDO_COMMAND,
   UNDO_COMMAND,
 } from 'lexical';
+import {ExcludedProperties} from 'packages/lexical-yjs/src/Bindings';
 import * as React from 'react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
@@ -50,13 +51,14 @@ export function useYjsCollaboration(
   shouldBootstrap: boolean,
   cursorsContainerRef?: CursorsContainerRef,
   initialEditorState?: InitialEditorStateType,
+  excludedProperties?: ExcludedProperties,
 ): [JSX.Element, Binding] {
   const isReloadingDoc = useRef(false);
   const [doc, setDoc] = useState(docMap.get(id));
 
   const binding = useMemo(
-    () => createBinding(editor, provider, id, doc, docMap),
-    [editor, provider, id, docMap, doc],
+    () => createBinding(editor, provider, id, doc, docMap, excludedProperties),
+    [editor, provider, id, docMap, doc, excludedProperties],
   );
 
   const connect = useCallback(() => {

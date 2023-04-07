@@ -6,6 +6,13 @@
  *
  */
 
+import type {
+  MenuRenderFn,
+  MenuResolution,
+  MenuTextMatch,
+  TriggerFn,
+} from './shared/LexicalMenu';
+
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $getSelection,
@@ -20,15 +27,7 @@ import {
 import {useCallback, useEffect, useState} from 'react';
 import * as React from 'react';
 
-import {
-  LexicalMenu,
-  MenuOption,
-  MenuRenderFn,
-  MenuResolution,
-  MenuTextMatch,
-  TriggerFn,
-  useMenuAnchorRef,
-} from './shared/LexicalMenu';
+import {LexicalMenu, MenuOption, useMenuAnchorRef} from './shared/LexicalMenu';
 
 export const PUNCTUATION =
   '\\.,\\+\\*\\?\\$\\@\\|#{}\\(\\)\\^\\-\\[\\]\\\\/!%\'"~=<>_:;';

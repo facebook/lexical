@@ -70,7 +70,7 @@ export type MenuRenderFn<TOption extends MenuOption> = (
     setHighlightedIndex: (index: number) => void;
     options: Array<TOption>;
   },
-  matchingString: string,
+  matchingString: string | null,
 ) => ReactPortal | JSX.Element | null;
 
 const scrollIntoViewIfNeeded = (target: HTMLElement) => {

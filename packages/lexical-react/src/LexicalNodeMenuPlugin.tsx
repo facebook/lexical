@@ -6,18 +6,14 @@
  *
  */
 
+import type {MenuRenderFn, MenuResolution} from './shared/LexicalMenu';
+
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$getNodeByKey, NodeKey, TextNode} from 'lexical';
 import {useCallback, useEffect, useState} from 'react';
 import * as React from 'react';
 
-import {
-  LexicalMenu,
-  MenuOption,
-  MenuRenderFn,
-  MenuResolution,
-  useMenuAnchorRef,
-} from './shared/LexicalMenu';
+import {LexicalMenu, MenuOption, useMenuAnchorRef} from './shared/LexicalMenu';
 
 function startTransition(callback: () => void) {
   if (React.startTransition) {

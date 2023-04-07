@@ -38,6 +38,7 @@ import CodeHighlightPlugin from './plugins/CodeHighlightPlugin';
 import CollapsiblePlugin from './plugins/CollapsiblePlugin';
 import CommentPlugin from './plugins/CommentPlugin';
 import ComponentPickerPlugin from './plugins/ComponentPickerPlugin';
+import ContextMenuPlugin from './plugins/ContextMenuPlugin';
 import DragDropPaste from './plugins/DragDropPastePlugin';
 import DraggableBlockPlugin from './plugins/DraggableBlockPlugin';
 import EmojiPickerPlugin from './plugins/EmojiPickerPlugin';
@@ -68,7 +69,6 @@ import YouTubePlugin from './plugins/YouTubePlugin';
 import PlaygroundEditorTheme from './themes/PlaygroundEditorTheme';
 import ContentEditable from './ui/ContentEditable';
 import Placeholder from './ui/Placeholder';
-import ContextMenuPlugin from './plugins/ContextMenuPlugin';
 
 const skipCollaborationInit =
   // @ts-ignore
@@ -86,6 +86,7 @@ export default function Editor(): JSX.Element {
       isRichText,
       showTreeView,
       showTableOfContents,
+      shouldUseLexicalContextMenu,
     },
   } = useSettings();
   const text = isCollab
@@ -145,7 +146,7 @@ export default function Editor(): JSX.Element {
         <ComponentPickerPlugin />
         <EmojiPickerPlugin />
         <AutoEmbedPlugin />
-        <ContextMenuPlugin />
+
         <MentionsPlugin />
         <EmojisPlugin />
         <HashtagPlugin />
@@ -246,6 +247,7 @@ export default function Editor(): JSX.Element {
         )}
         {isAutocomplete && <AutocompletePlugin />}
         <div>{showTableOfContents && <TableOfContentsPlugin />}</div>
+        {shouldUseLexicalContextMenu && <ContextMenuPlugin />}
         <ActionsPlugin isRichText={isRichText} />
       </div>
       {showTreeView && <TreeViewPlugin />}

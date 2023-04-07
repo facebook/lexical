@@ -116,7 +116,7 @@ export default function ContextMenuPlugin(): JSX.Element {
     ) => {
       editor.update(() => {
         selectedOption.onSelect(targetNode);
-        closeMenu();
+        // closeMenu();
       });
     },
     [editor],

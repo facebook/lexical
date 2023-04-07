@@ -6,7 +6,7 @@
  *
  */
 
-import type {Binding, ExcludedProperties,Provider} from '@lexical/yjs';
+import type {Binding, ExcludedProperties, Provider} from '@lexical/yjs';
 import type {LexicalEditor} from 'lexical';
 
 import {mergeRegister} from '@lexical/utils';

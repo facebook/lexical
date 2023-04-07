@@ -113,7 +113,10 @@ export class YouTubeNode extends DecoratorBlockNode {
     element.setAttribute('data-lexical-youtube', this.__id);
     element.setAttribute('width', '560');
     element.setAttribute('height', '315');
-    element.setAttribute('src', `https://www.youtube-nocookie.com/embed/${this.__id}`);
+    element.setAttribute(
+      'src',
+      `https://www.youtube-nocookie.com/embed/${this.__id}`,
+    );
     element.setAttribute('frameborder', '0');
     element.setAttribute(
       'allow',

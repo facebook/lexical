@@ -1,8 +1,8 @@
 name: Nightly Release Branch
 on:
-  schedule:
-    # Run daily at 2:30am UTC
-    - cron: '30 2 * * 1-5'
+  push:
+    branches:
+      - main
 jobs:
   release:
     # prevents this action from running on forks
@@ -13,6 +13,9 @@ jobs:
         with:
           ssh-key: ${{ secrets.SSH_KEY }}
           fetch-depth: 0
+      - uses: pozetroninc/github-action-get-latest-release@master
+        with:
+          repository: facebook/lexical
       # Setup .npmrc file to publish to npm
       - uses: actions/setup-node@v3
         with:
@@ -21,6 +24,26 @@ jobs:
       - run: |
           git config user.name "Lexical GitHub Actions Bot"
           git config user.email "<>"
+      -
       - run: npm install
+      - name: Get Current Version
+        id: current_version
+        run: echo "current_version=$(npm pkg get version)" >> "$GITHUB_OUTPUT"
+        ## increment the root package.json version
       - run: npm run increment-version -- --i prerelease
-      - run: git push -u git@github.com:facebook/lexical.git --follow-tags
+        ## increment other package versions
+      - run: npm run update-version
+      - name: Get New Version
+        id: new_version
+        run: echo "new_version=$(npm pkg get version)" >> "$GITHUB_OUTPUT"
+        ## tag the current commit
+      - run: git tag -a v${{ steps.new_version.outputs.new_version }} -m v${{ steps.new_version.outputs.new_version }}
+        ## push tags to the remote
+      - run: git push -u git@github.com:facebook/lexical.git --tags
+        ## prepare & release
+      - run: npm run prepare-release
+      - run: node ./scripts/npm/release.js --non-interactive --dry-run=${{ secrets.RELEASE_DRY_RUN }} --channel next
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        ## create Github release
+      #- run: gh release create ${{ steps.new_version.outputs.new_version }} --verify-tag --prerelease --generate-notes --notes-start-tag ${{ steps.current_version.outputs.current_version }}

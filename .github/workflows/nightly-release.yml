@@ -14,6 +14,7 @@ jobs:
           ssh-key: ${{ secrets.SSH_KEY }}
           fetch-depth: 0
       - uses: pozetroninc/github-action-get-latest-release@master
+        id: latest_release
         with:
           repository: facebook/lexical
       # Setup .npmrc file to publish to npm
@@ -30,7 +31,7 @@ jobs:
         id: current_version
         run: echo "current_version=$(npm pkg get version)" >> "$GITHUB_OUTPUT"
         ## increment the root package.json version
-      - run: npm run increment-version -- --i prerelease
+      - run: npm run increment-version -- --i prerelease -- base ${{ steps.latest_release.outputs.release }}
         ## increment other package versions
       - run: npm run update-version
       - name: Get New Version

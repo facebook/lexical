@@ -103,6 +103,7 @@ module.exports = {
           '<rootDir>/scripts/error-codes/formatProdErrorMessage.js',
       },
       preset: 'ts-jest',
+      setupFiles: ['core-js'],
       testEnvironment: 'jsdom',
       testMatch: ['**/__tests__/unit/**/*.test{.ts,.tsx,.js,.jsx}'],
       transform: {

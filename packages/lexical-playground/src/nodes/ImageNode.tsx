@@ -79,6 +79,22 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     return 'image';
   }
 
+  clone(): this {
+    let clone = new ImageNode(
+      this.__src,
+      this.__altText,
+      this.__maxWidth,
+      this.__width,
+      this.__height,
+      this.__showCaption,
+      this.__caption,
+      this.__captionsEnabled,
+      this.__key,
+    ) as this;
+    clone = Object.assign(clone, this); // copy next, prev, parent, first, last y size.
+    return clone;
+  }
+
   static importJSON(serializedNode: SerializedImageNode): ImageNode {
     const {altText, height, width, maxWidth, caption, src, showCaption} =
       serializedNode;

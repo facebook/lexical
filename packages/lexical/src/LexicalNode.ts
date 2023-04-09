@@ -188,15 +188,30 @@ export class LexicalNode {
     );
   }
 
-  /**
-   * Clones this node. Nodes need to extend this method only if
-   * they cannot be cloned with the structuredClone API, such as
-   * imageNode and stickyNode, because they use nested editors.
-   */
   clone(): this {
-    const clone = Object.create(Object.getPrototypeOf(this));
-    const deepClone = structuredClone(this);
-    return Object.assign(clone, deepClone);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const props: {[key: string]: any} = {};
+    const propertyNames = Object.getOwnPropertyNames(this);
+
+    for (let i = 0; i < propertyNames.length; i++) {
+      const property = propertyNames[i];
+      const propertyDescriptor = Object.getOwnPropertyDescriptor(
+        this,
+        property,
+      );
+
+      if (propertyDescriptor && propertyDescriptor.value !== undefined) {
+        props[property] = propertyDescriptor.value;
+      } else {
+        props[property] = this[property];
+      }
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const cloned = new (this.constructor as new (...args: any[]) => this)(
+      ...Object.values(props),
+    );
+    return Object.assign(cloned, props);
   }
 
   constructor(key?: NodeKey) {

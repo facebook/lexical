@@ -184,7 +184,7 @@ export class LexicalNode {
 
   clone(): this {
     let clone = Object.create(Object.getPrototypeOf(this));
-    const deepClone = JSON.parse(JSON.stringify(this));
+    const deepClone = structuredClone(this);
     clone = Object.assign(clone, deepClone);
     return clone;
   }

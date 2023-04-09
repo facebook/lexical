@@ -189,29 +189,40 @@ export class LexicalNode {
   }
 
   clone(): this {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const props: {[key: string]: any} = {};
-    const propertyNames = Object.getOwnPropertyNames(this);
+    try {
+      // this block works for nodes that can be structured cloned
+      // (e.g. does not work with nested editors like imageNode)
+      const clone = Object.create(Object.getPrototypeOf(this));
+      const deepClone = structuredClone(this);
+      return Object.assign(clone, deepClone);
+    } catch (e) {
+      // this works for any node whose constructor does not receive a required
+      // parameter that is not a direct property of the node. (e.g. LinkNode
+      // constructor group some properties in the attrs object parameter)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const props: {[key: string]: any} = {};
+      const propertyNames = Object.getOwnPropertyNames(this);
 
-    for (let i = 0; i < propertyNames.length; i++) {
-      const property = propertyNames[i];
-      const propertyDescriptor = Object.getOwnPropertyDescriptor(
-        this,
-        property,
-      );
+      for (let i = 0; i < propertyNames.length; i++) {
+        const property = propertyNames[i];
+        const propertyDescriptor = Object.getOwnPropertyDescriptor(
+          this,
+          property,
+        );
 
-      if (propertyDescriptor && propertyDescriptor.value !== undefined) {
-        props[property] = propertyDescriptor.value;
-      } else {
-        props[property] = this[property];
+        if (propertyDescriptor && propertyDescriptor.value !== undefined) {
+          props[property] = propertyDescriptor.value;
+        } else {
+          props[property] = this[property];
+        }
       }
-    }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const cloned = new (this.constructor as new (...args: any[]) => this)(
-      ...Object.values(props),
-    );
-    return Object.assign(cloned, props);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const cloned = new (this.constructor as new (...args: any[]) => this)(
+        ...Object.values(props),
+      );
+      return Object.assign(cloned, props);
+    }
   }
 
   constructor(key?: NodeKey) {

@@ -506,7 +506,11 @@ export function $handleListInsertParagraph(): boolean {
   // Only run this code on empty list items
   const anchor = selection.anchor.getNode();
 
-  if (!$isListItemNode(anchor) || anchor.getTextContent() !== '') {
+  if (
+    !$isListItemNode(anchor) ||
+    anchor.getTextContent() !== '' ||
+    anchor.selectedNodeList === undefined
+  ) {
     return false;
   }
   const topListNode = $getTopListNode(anchor);

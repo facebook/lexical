@@ -14,10 +14,11 @@ import type {Cursor} from './SyncCursors';
 import type {LexicalEditor, NodeKey} from 'lexical';
 import type {Doc} from 'yjs';
 
+import {Klass, LexicalNode} from 'lexical';
 import invariant from 'shared/invariant';
-import {WebsocketProvider} from 'y-websocket';
 import {XmlText} from 'yjs';
 
+import {Provider} from '.';
 import {$createCollabElementNode} from './CollabElementNode';
 
 export type ClientID = number;
@@ -38,14 +39,17 @@ export type Binding = {
   id: string;
   nodeProperties: Map<string, Array<string>>;
   root: CollabElementNode;
+  excludedProperties: ExcludedProperties;
 };
+export type ExcludedProperties = Map<Klass<LexicalNode>, Set<string>>;
 
 export function createBinding(
   editor: LexicalEditor,
-  provider: WebsocketProvider,
+  provider: Provider,
   id: string,
   doc: Doc | null | undefined,
   docMap: Map<string, Doc>,
+  excludedProperties?: ExcludedProperties,
 ): Binding {
   invariant(
     doc !== undefined && doc !== null,
@@ -66,6 +70,7 @@ export function createBinding(
     doc,
     docMap,
     editor,
+    excludedProperties: excludedProperties || new Map(),
     id,
     nodeProperties: new Map(),
     root,

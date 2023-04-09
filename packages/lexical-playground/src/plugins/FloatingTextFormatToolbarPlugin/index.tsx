@@ -306,6 +306,12 @@ function useFloatingTextFormatToolbar(
       } else {
         setIsText(false);
       }
+
+      const rawTextContent = selection.getTextContent().replace(/\n/g, '');
+      if (!selection.isCollapsed() && rawTextContent === '') {
+        setIsText(false);
+        return;
+      }
     });
   }, [editor]);
 

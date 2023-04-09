@@ -13,11 +13,11 @@ import {useEffect, useRef} from 'react';
 export default function KatexRenderer({
   equation,
   inline,
-  onClick,
+  onDoubleClick,
 }: Readonly<{
   equation: string;
   inline: boolean;
-  onClick: () => void;
+  onDoubleClick: () => void;
 }>): JSX.Element {
   const katexElementRef = useRef(null);
 
@@ -37,18 +37,18 @@ export default function KatexRenderer({
   }, [equation, inline]);
 
   return (
-    // We use spacers either side to ensure Android doesn't try and compose from the
+    // We use an empty image tag either side to ensure Android doesn't try and compose from the
     // inner text from Katex. There didn't seem to be any other way of making this work,
     // without having a physical space.
     <>
-      <span className="spacer"> </span>
+      <img src="#" alt="" />
       <span
         role="button"
         tabIndex={-1}
-        onClick={onClick}
+        onDoubleClick={onDoubleClick}
         ref={katexElementRef}
       />
-      <span className="spacer"> </span>
+      <img src="#" alt="" />
     </>
   );
 }

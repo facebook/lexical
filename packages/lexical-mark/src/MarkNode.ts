@@ -31,8 +31,6 @@ import {
 export type SerializedMarkNode = Spread<
   {
     ids: Array<string>;
-    type: 'mark';
-    version: 1;
   },
   SerializedElementNode
 >;

@@ -24,20 +24,19 @@ export function MaxLengthPlugin({maxLength}: {maxLength: number}): null {
         return;
       }
       const prevEditorState = editor.getEditorState();
-      const prevTextContent = prevEditorState.read(() =>
-        rootNode.getTextContent(),
+      const prevTextContentSize = prevEditorState.read(() =>
+        rootNode.getTextContentSize(),
       );
-      const textContent = rootNode.getTextContent();
-      if (prevTextContent !== textContent) {
-        const textLength = textContent.length;
-        const delCount = textLength - maxLength;
+      const textContentSize = rootNode.getTextContentSize();
+      if (prevTextContentSize !== textContentSize) {
+        const delCount = textContentSize - maxLength;
         const anchor = selection.anchor;
 
         if (delCount > 0) {
           // Restore the old editor state instead if the last
           // text content was already at the limit.
           if (
-            prevTextContent.length === maxLength &&
+            prevTextContentSize === maxLength &&
             lastRestoredEditorState !== prevEditorState
           ) {
             lastRestoredEditorState = prevEditorState;

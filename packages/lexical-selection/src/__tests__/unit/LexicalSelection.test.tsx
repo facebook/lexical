@@ -17,7 +17,7 @@ import {$createHeadingNode} from '@lexical/rich-text';
 import {
   $addNodeStyle,
   $getSelectionStyleValueForProperty,
-  $setBlocksType_experimental,
+  $setBlocksType,
 } from '@lexical/selection';
 import {$createTableNodeWithDimensions} from '@lexical/table';
 import {
@@ -1353,7 +1353,7 @@ describe('LexicalSelection tests', () => {
             expectedAnchor: text,
             expectedAnchorOffset: 0,
             expectedFocus: text,
-            expectedFocusOffset: 0,
+            expectedFocusOffset: 3,
           };
         },
         focusOffset: 1,
@@ -1440,7 +1440,7 @@ describe('LexicalSelection tests', () => {
             expectedAnchor: originalText1,
             expectedAnchorOffset: 0,
             expectedFocus: originalText1,
-            expectedFocusOffset: 0,
+            expectedFocusOffset: 3,
           };
         },
         fnBefore: (paragraph, originalText1) => {
@@ -1617,6 +1617,36 @@ describe('LexicalSelection tests', () => {
         },
         focusOffset: 3,
         name: "Selection resolves to the end of text node when it's at the end (2)",
+      },
+      {
+        anchorOffset: 1,
+        fn: (paragraph, originalText1) => {
+          originalText1.getNextSibling().remove();
+
+          return {
+            expectedAnchor: originalText1,
+            expectedAnchorOffset: 3,
+            expectedFocus: originalText1,
+            expectedFocusOffset: 3,
+          };
+        },
+        focusOffset: 1,
+        name: 'remove - Remove with collapsed selection at offset #4221',
+      },
+      {
+        anchorOffset: 0,
+        fn: (paragraph, originalText1) => {
+          originalText1.getNextSibling().remove();
+
+          return {
+            expectedAnchor: originalText1,
+            expectedAnchorOffset: 0,
+            expectedFocus: originalText1,
+            expectedFocusOffset: 3,
+          };
+        },
+        focusOffset: 1,
+        name: 'remove - Remove with non-collapsed selection at offset',
       },
     ]
       .reduce((testSuite, testCase) => {
@@ -2279,7 +2309,7 @@ describe('LexicalSelection tests', () => {
     });
   });
 
-  describe('$setBlocksType_experimental', () => {
+  describe('$setBlocksType', () => {
     test('Collapsed selection in text', async () => {
       const testEditor = createTestEditor();
       const element = document.createElement('div');
@@ -2308,7 +2338,7 @@ describe('LexicalSelection tests', () => {
           type: 'text',
         });
 
-        $setBlocksType_experimental(selection, () => {
+        $setBlocksType(selection, () => {
           return $createHeadingNode('h1');
         });
 
@@ -2343,7 +2373,7 @@ describe('LexicalSelection tests', () => {
           type: 'element',
         });
 
-        $setBlocksType_experimental(selection, () => {
+        $setBlocksType(selection, () => {
           return $createHeadingNode('h1');
         });
 
@@ -2382,7 +2412,7 @@ describe('LexicalSelection tests', () => {
           type: 'text',
         });
 
-        $setBlocksType_experimental(selection, () => {
+        $setBlocksType(selection, () => {
           return $createHeadingNode('h1');
         });
 
@@ -2417,7 +2447,7 @@ describe('LexicalSelection tests', () => {
           type: 'element',
         });
 
-        $setBlocksType_experimental(selection, () => {
+        $setBlocksType(selection, () => {
           return $createHeadingNode('h1');
         });
 
@@ -2458,7 +2488,7 @@ describe('LexicalSelection tests', () => {
           type: 'text',
         });
 
-        $setBlocksType_experimental(selection, () => {
+        $setBlocksType(selection, () => {
           return $createHeadingNode('h1');
         });
 
@@ -2498,7 +2528,7 @@ describe('LexicalSelection tests', () => {
 
         const columnChildrenPrev = column.getChildren();
         expect(columnChildrenPrev[0].__type).toBe('paragraph');
-        $setBlocksType_experimental(selection, () => {
+        $setBlocksType(selection, () => {
           return $createHeadingNode('h1');
         });
 
@@ -2540,7 +2570,7 @@ describe('LexicalSelection tests', () => {
 
         const columnChildrenPrev = column.getChildren();
         expect(columnChildrenPrev[0].__type).toBe('paragraph');
-        $setBlocksType_experimental(selection, () => {
+        $setBlocksType(selection, () => {
           return $createHeadingNode('h1');
         });
 
@@ -2603,12 +2633,12 @@ describe('LexicalSelection tests', () => {
         // @ts-ignore
         const selection = $getSelection() as RangeSelection;
 
-        $setBlocksType_experimental(selection, () => {
+        $setBlocksType(selection, () => {
           return $createHeadingNode('h1');
         });
 
         expect(JSON.stringify(testEditor._pendingEditorState.toJSON())).toBe(
-          '{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"","type":"text","version":1},{"detail":0,"format":0,"mode":"normal","style":"","text":"","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"},{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"","type":"text","version":1},{"detail":0,"format":0,"mode":"normal","style":"","text":"","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"},{"children":[{"children":[{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"},{"children":[],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"},{"children":[],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"}],"direction":null,"format":"","indent":0,"type":"tablecell","version":1,"headerState":3},{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"},{"children":[],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"},{"children":[],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"}],"direction":null,"format":"","indent":0,"type":"tablecell","version":1,"headerState":1}],"direction":null,"format":"","indent":0,"type":"tablerow","version":1}],"direction":null,"format":"","indent":0,"type":"table","version":1},{"children":[],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"}],"direction":null,"format":"","indent":0,"type":"root","version":1}}',
+          '{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"","type":"text","version":1},{"detail":0,"format":0,"mode":"normal","style":"","text":"","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"},{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"","type":"text","version":1},{"detail":0,"format":0,"mode":"normal","style":"","text":"","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"},{"children":[{"children":[{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"},{"children":[],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"},{"children":[],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"}],"direction":null,"format":"","indent":0,"type":"tablecell","version":1,"colSpan":1,"rowSpan":1,"headerState":3},{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"},{"children":[],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"},{"children":[],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"}],"direction":null,"format":"","indent":0,"type":"tablecell","version":1,"colSpan":1,"rowSpan":1,"headerState":1}],"direction":null,"format":"","indent":0,"type":"tablerow","version":1}],"direction":null,"format":"","indent":0,"type":"table","version":1},{"children":[],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"}],"direction":null,"format":"","indent":0,"type":"root","version":1}}',
         );
       });
     });
@@ -2647,7 +2677,7 @@ describe('LexicalSelection tests', () => {
           type: 'text',
         });
 
-        $setBlocksType_experimental(selection, () => {
+        $setBlocksType(selection, () => {
           return $createHeadingNode('h1');
         });
 
@@ -2658,6 +2688,86 @@ describe('LexicalSelection tests', () => {
           paragraphChildrenKeys,
         );
       });
+    });
+
+    test('Nested list', async () => {
+      const testEditor = createTestEditor();
+      const element = document.createElement('div');
+      testEditor.setRootElement(element);
+
+      await testEditor.update(() => {
+        const root = $getRoot();
+        const ul1 = $createListNode('bullet');
+        const text1 = $createTextNode('1');
+        const li1 = $createListItemNode().append(text1);
+        const li1_wrapper = $createListItemNode();
+        const ul2 = $createListNode('bullet');
+        const text1_1 = $createTextNode('1.1');
+        const li1_1 = $createListItemNode().append(text1_1);
+        ul1.append(li1, li1_wrapper);
+        li1_wrapper.append(ul2);
+        ul2.append(li1_1);
+        root.append(ul1);
+
+        const selection = $createRangeSelection();
+        $setSelection(selection);
+        setAnchorPoint({
+          key: text1.getKey(),
+          offset: 1,
+          type: 'text',
+        });
+        setFocusPoint({
+          key: text1_1.getKey(),
+          offset: 1,
+          type: 'text',
+        });
+
+        $setBlocksType(selection, () => {
+          return $createHeadingNode('h1');
+        });
+      });
+      expect(element.innerHTML).toStrictEqual(
+        `<h1><span data-lexical-text="true">1</span></h1><h1 style="padding-inline-start: calc(1 * 40px);"><span data-lexical-text="true">1.1</span></h1>`,
+      );
+    });
+
+    test('Nested list with listItem twice indented from his father', async () => {
+      const testEditor = createTestEditor();
+      const element = document.createElement('div');
+      testEditor.setRootElement(element);
+
+      await testEditor.update(() => {
+        const root = $getRoot();
+        const ul1 = $createListNode('bullet');
+        const li1_wrapper = $createListItemNode();
+        const ul2 = $createListNode('bullet');
+        const text1_1 = $createTextNode('1.1');
+        const li1_1 = $createListItemNode().append(text1_1);
+        ul1.append(li1_wrapper);
+        li1_wrapper.append(ul2);
+        ul2.append(li1_1);
+        root.append(ul1);
+
+        const selection = $createRangeSelection();
+        $setSelection(selection);
+        setAnchorPoint({
+          key: text1_1.getKey(),
+          offset: 1,
+          type: 'text',
+        });
+        setFocusPoint({
+          key: text1_1.getKey(),
+          offset: 1,
+          type: 'text',
+        });
+
+        $setBlocksType(selection, () => {
+          return $createHeadingNode('h1');
+        });
+      });
+      expect(element.innerHTML).toStrictEqual(
+        `<h1 style="padding-inline-start: calc(1 * 40px);"><span data-lexical-text="true">1.1</span></h1>`,
+      );
     });
   });
 });

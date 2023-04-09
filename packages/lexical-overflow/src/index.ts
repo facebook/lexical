@@ -13,18 +13,11 @@ import type {
   NodeKey,
   RangeSelection,
   SerializedElementNode,
-  Spread,
 } from 'lexical';
 
 import {$applyNodeReplacement, ElementNode} from 'lexical';
 
-export type SerializedOverflowNode = Spread<
-  {
-    type: 'overflow';
-    version: 1;
-  },
-  SerializedElementNode
->;
+export type SerializedOverflowNode = SerializedElementNode;
 
 /** @noInheritDoc */
 export class OverflowNode extends ElementNode {

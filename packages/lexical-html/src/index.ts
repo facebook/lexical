@@ -31,10 +31,9 @@ export function $generateNodesFromDOM(
   dom: Document,
 ): Array<LexicalNode> {
   let lexicalNodes: Array<LexicalNode> = [];
-  const elements: Array<Node> = dom.body ? Array.from(dom.body.childNodes) : [];
-  const elementsLength = elements.length;
+  const elements = dom.body ? dom.body.childNodes : [];
 
-  for (let i = 0; i < elementsLength; i++) {
+  for (let i = 0; i < elements.length; i++) {
     const element = elements[i];
 
     if (!IGNORE_TAGS.has(element.nodeName)) {
@@ -97,7 +96,7 @@ function $appendNodesToHTML(
     return false;
   }
 
-  const fragment = new DocumentFragment();
+  const fragment = document.createDocumentFragment();
 
   for (let i = 0; i < children.length; i++) {
     const childNode = children[i];
@@ -160,7 +159,7 @@ function getConversionFunction(
   return currentConversion !== null ? currentConversion.conversion : null;
 }
 
-const IGNORE_TAGS = new Set(['STYLE']);
+const IGNORE_TAGS = new Set(['STYLE', 'SCRIPT']);
 
 function $createNodesFromDOM(
   node: Node,

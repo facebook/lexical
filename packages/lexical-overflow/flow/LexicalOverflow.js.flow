@@ -28,9 +28,4 @@ declare export function $isOverflowNode(
   node: ?LexicalNode,
 ): boolean %checks(node instanceof OverflowNode);
 
-export type SerializedOverflowNode = {
-  ...SerializedElementNode,
-  type: 'overflow',
-  version: 1,
-  ...
-};
+export type SerializedOverflowNode = SerializedElementNode;

@@ -26,10 +26,12 @@ import {
   $isElementNode,
   $isRangeSelection,
   $isTextNode,
+  COMMAND_PRIORITY_HIGH,
   DEPRECATED_$isGridSelection,
+  LexicalCommand,
 } from 'lexical';
 import * as React from 'react';
-import {useCallback, useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 const NON_SINGLE_WIDTH_CHARS_REPLACEMENT: Readonly<Record<string, string>> =
   Object.freeze({
@@ -77,14 +79,18 @@ export function TreeView({
   const [showLimited, setShowLimited] = useState(false);
   const lastEditorStateRef = useRef<null | EditorState>(null);
 
+  const commandsLog = useLexicalCommandsLog(editor);
+
   const generateTree = useCallback(
     (editorState: EditorState) => {
       const treeText = generateContent(
         editor.getEditorState(),
         editor._config,
+        commandsLog,
         editor._compositionKey,
         editor._editable,
       );
+
       setContent(treeText);
 
       if (!timeTravelEnabled) {
@@ -94,22 +100,24 @@ export function TreeView({
         ]);
       }
     },
-    [editor, timeTravelEnabled],
+    [commandsLog, editor, timeTravelEnabled],
   );
 
   useEffect(() => {
     const editorState = editor.getEditorState();
+
     if (!showLimited && editorState._nodeMap.size > 1000) {
       setContent(
         generateContent(
           editorState,
           editor._config,
+          commandsLog,
           editor._compositionKey,
           editor._editable,
         ),
       );
     }
-  }, [editor, showLimited]);
+  }, [commandsLog, editor, showLimited]);
 
   useEffect(() => {
     return mergeRegister(
@@ -127,13 +135,14 @@ export function TreeView({
         const treeText = generateContent(
           editor.getEditorState(),
           editor._config,
+          commandsLog,
           editor._compositionKey,
           editor._editable,
         );
         setContent(treeText);
       }),
     );
-  }, [editor, isLimited, generateTree, showLimited]);
+  }, [commandsLog, editor, isLimited, generateTree, showLimited]);
 
   const totalEditorStates = timeStampedEditorStates.length;
 
@@ -293,6 +302,49 @@ export function TreeView({
   );
 }
 
+function useLexicalCommandsLog(
+  editor: LexicalEditor,
+): ReadonlyArray<LexicalCommand<unknown> & {payload: unknown}> {
+  const [loggedCommands, setLoggedCommands] = useState<
+    ReadonlyArray<LexicalCommand<unknown> & {payload: unknown}>
+  >([]);
+
+  useEffect(() => {
+    const unregisterCommandListeners = new Set<() => void>();
+
+    for (const [command] of editor._commands) {
+      unregisterCommandListeners.add(
+        editor.registerCommand(
+          command,
+          (payload) => {
+            setLoggedCommands((state) => {
+              const newState = [...state];
+              newState.push({
+                payload,
+                type: command.type ? command.type : 'UNKNOWN',
+              });
+
+              if (newState.length > 10) {
+                newState.shift();
+              }
+
+              return newState;
+            });
+
+            return false;
+          },
+          COMMAND_PRIORITY_HIGH,
+        ),
+      );
+    }
+
+    return () =>
+      unregisterCommandListeners.forEach((unregister) => unregister());
+  }, [editor]);
+
+  return useMemo(() => loggedCommands, [loggedCommands]);
+}
+
 function printRangeSelection(selection: RangeSelection): string {
   let res = '';
 
@@ -317,7 +369,7 @@ function printRangeSelection(selection: RangeSelection): string {
   return res;
 }
 
-function printObjectSelection(selection: NodeSelection): string {
+function printNodeSelection(selection: NodeSelection): string {
   return `: node\n  └ [${Array.from(selection._nodes).join(', ')}]`;
 }
 
@@ -328,6 +380,7 @@ function printGridSelection(selection: GridSelection): string {
 function generateContent(
   editorState: EditorState,
   editorConfig: EditorConfig,
+  commandsLog: ReadonlyArray<LexicalCommand<unknown> & {payload: unknown}>,
   compositionKey: null | string,
   editable: boolean,
 ): string {
@@ -365,10 +418,22 @@ function generateContent(
       ? printRangeSelection(selection)
       : DEPRECATED_$isGridSelection(selection)
       ? printGridSelection(selection)
-      : printObjectSelection(selection);
+      : printNodeSelection(selection);
   });
 
   res += '\n selection' + selectionString;
+
+  res += '\n\n commands:';
+
+  if (commandsLog.length) {
+    for (const {type, payload} of commandsLog) {
+      res += `\n  └ { type: ${type}, payload: ${
+        payload instanceof Event ? payload.constructor.name : payload
+      } }`;
+    }
+  } else {
+    res += '\n  └ None dispatched.';
+  }
 
   res += '\n\n editor:';
   res += `\n  └ namespace ${editorConfig.namespace}`;
@@ -477,7 +542,11 @@ function printAllTextNodeProperties(node: LexicalNode) {
 }
 
 function printAllLinkNodeProperties(node: LinkNode) {
-  return [printTargetProperties(node), printRelProperties(node)]
+  return [
+    printTargetProperties(node),
+    printRelProperties(node),
+    printTitleProperties(node),
+  ]
     .filter(Boolean)
     .join(', ');
 }
@@ -535,6 +604,15 @@ function printRelProperties(node: LinkNode) {
   // TODO Fix nullish on LinkNode
   if (str != null) {
     str = 'rel: ' + str;
+  }
+  return str;
+}
+
+function printTitleProperties(node: LinkNode) {
+  let str = node.getTitle();
+  // TODO Fix nullish on LinkNode
+  if (str != null) {
+    str = 'title: ' + str;
   }
   return str;
 }

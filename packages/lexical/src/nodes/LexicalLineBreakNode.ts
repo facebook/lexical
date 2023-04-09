@@ -12,17 +12,11 @@ import type {
   NodeKey,
   SerializedLexicalNode,
 } from '../LexicalNode';
-import type {Spread} from 'lexical';
 
 import {LexicalNode} from '../LexicalNode';
 import {$applyNodeReplacement} from '../LexicalUtils';
 
-export type SerializedLineBreakNode = Spread<
-  {
-    type: 'linebreak';
-  },
-  SerializedLexicalNode
->;
+export type SerializedLineBreakNode = SerializedLexicalNode;
 
 /** @noInheritDoc */
 export class LineBreakNode extends LexicalNode {

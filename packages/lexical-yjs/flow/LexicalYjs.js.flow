@@ -14,6 +14,7 @@ import type {
   ElementNode,
   LexicalCommand,
   LexicalEditor,
+  LexicalNode,
   LineBreakNode,
   NodeMap,
   NodeKey,
@@ -109,6 +110,8 @@ export type Binding = {
   nodeProperties: Map<string, Array<string>>,
   root: CollabElementNode,
 };
+
+export type ExcludedProperties = Map<Class<LexicalNode>, Set<string>>;
 
 declare export class CollabDecoratorNode {
   _xmlElem: XmlElement;

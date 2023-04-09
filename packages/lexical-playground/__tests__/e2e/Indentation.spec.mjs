@@ -19,6 +19,7 @@ import {
 
 test.describe('Identation', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
+
   test(`Can create content and indent and outdent it all`, async ({
     page,
     browserName,
@@ -49,7 +50,7 @@ test.describe('Identation', () => {
     await page.keyboard.press('Enter');
     await page.keyboard.press('Enter');
 
-    await insertTable(page);
+    await insertTable(page, 1, 1);
 
     await page.keyboard.type('foo');
 
@@ -113,134 +114,6 @@ test.describe('Identation', () => {
                 <span data-lexical-text="true">foo</span>
               </p>
             </th>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </th>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </th>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </th>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </th>
-          </tr>
-          <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </th>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-          </tr>
-          <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </th>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-          </tr>
-          <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </th>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-          </tr>
-          <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </th>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
           </tr>
         </table>
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
@@ -256,19 +129,19 @@ test.describe('Identation', () => {
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
           dir="ltr"
-          style="padding-inline-start: calc(20px)">
+          style="padding-inline-start: calc(40px)">
           <span data-lexical-text="true">foo</span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
           dir="ltr"
-          style="padding-inline-start: calc(20px)">
+          style="padding-inline-start: calc(40px)">
           <span data-lexical-text="true">bar</span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
           dir="ltr"
-          style="padding-inline-start: calc(20px)">
+          style="padding-inline-start: calc(40px)">
           <span data-lexical-text="true">yar</span>
         </p>
         <ul class="PlaygroundEditorTheme__ul">
@@ -307,7 +180,7 @@ test.describe('Identation', () => {
         </code>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-          style="padding-inline-start: calc(20px)">
+          style="padding-inline-start: calc(40px)">
           <br />
         </p>
         <table class="PlaygroundEditorTheme__table disable-selection">
@@ -318,239 +191,15 @@ test.describe('Identation', () => {
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
                 dir="ltr"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <span data-lexical-text="true">foo</span>
               </p>
             </th>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </th>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </th>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </th>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </th>
-          </tr>
-          <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </th>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </td>
-          </tr>
-          <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </th>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </td>
-          </tr>
-          <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </th>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </td>
-          </tr>
-          <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </th>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </td>
           </tr>
         </table>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-          style="padding-inline-start: calc(20px)">
+          style="padding-inline-start: calc(40px)">
           <br />
         </p>
       `,
@@ -565,19 +214,19 @@ test.describe('Identation', () => {
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
           dir="ltr"
-          style="padding-inline-start: calc(40px)">
+          style="padding-inline-start: calc(80px)">
           <span data-lexical-text="true">foo</span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
           dir="ltr"
-          style="padding-inline-start: calc(40px)">
+          style="padding-inline-start: calc(80px)">
           <span data-lexical-text="true">bar</span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
           dir="ltr"
-          style="padding-inline-start: calc(40px)">
+          style="padding-inline-start: calc(80px)">
           <span data-lexical-text="true">yar</span>
         </p>
         <ul class="PlaygroundEditorTheme__ul">
@@ -622,7 +271,7 @@ test.describe('Identation', () => {
         </code>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-          style="padding-inline-start: calc(40px)">
+          style="padding-inline-start: calc(80px)">
           <br />
         </p>
         <table class="PlaygroundEditorTheme__table disable-selection">
@@ -633,239 +282,15 @@ test.describe('Identation', () => {
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
                 dir="ltr"
-                style="padding-inline-start: calc(40px)">
+                style="padding-inline-start: calc(80px)">
                 <span data-lexical-text="true">foo</span>
               </p>
             </th>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
-                <br />
-              </p>
-            </th>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
-                <br />
-              </p>
-            </th>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
-                <br />
-              </p>
-            </th>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
-                <br />
-              </p>
-            </th>
-          </tr>
-          <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
-                <br />
-              </p>
-            </th>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
-                <br />
-              </p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
-                <br />
-              </p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
-                <br />
-              </p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
-                <br />
-              </p>
-            </td>
-          </tr>
-          <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
-                <br />
-              </p>
-            </th>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
-                <br />
-              </p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
-                <br />
-              </p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
-                <br />
-              </p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
-                <br />
-              </p>
-            </td>
-          </tr>
-          <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
-                <br />
-              </p>
-            </th>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
-                <br />
-              </p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
-                <br />
-              </p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
-                <br />
-              </p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
-                <br />
-              </p>
-            </td>
-          </tr>
-          <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
-                <br />
-              </p>
-            </th>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
-                <br />
-              </p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
-                <br />
-              </p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
-                <br />
-              </p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(40px)">
-                <br />
-              </p>
-            </td>
           </tr>
         </table>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-          style="padding-inline-start: calc(40px)">
+          style="padding-inline-start: calc(80px)">
           <br />
         </p>
       `,
@@ -880,19 +305,19 @@ test.describe('Identation', () => {
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
           dir="ltr"
-          style="padding-inline-start: calc(20px)">
+          style="padding-inline-start: calc(40px)">
           <span data-lexical-text="true">foo</span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
           dir="ltr"
-          style="padding-inline-start: calc(20px)">
+          style="padding-inline-start: calc(40px)">
           <span data-lexical-text="true">bar</span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
           dir="ltr"
-          style="padding-inline-start: calc(20px)">
+          style="padding-inline-start: calc(40px)">
           <span data-lexical-text="true">yar</span>
         </p>
         <ul class="PlaygroundEditorTheme__ul">
@@ -931,7 +356,7 @@ test.describe('Identation', () => {
         </code>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-          style="padding-inline-start: calc(20px)">
+          style="padding-inline-start: calc(40px)">
           <br />
         </p>
         <table class="PlaygroundEditorTheme__table disable-selection">
@@ -942,239 +367,15 @@ test.describe('Identation', () => {
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr PlaygroundEditorTheme__indent"
                 dir="ltr"
-                style="padding-inline-start: calc(20px)">
+                style="padding-inline-start: calc(40px)">
                 <span data-lexical-text="true">foo</span>
               </p>
             </th>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </th>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </th>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </th>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </th>
-          </tr>
-          <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </th>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </td>
-          </tr>
-          <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </th>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </td>
-          </tr>
-          <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </th>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </td>
-          </tr>
-          <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </th>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-                style="padding-inline-start: calc(20px)">
-                <br />
-              </p>
-            </td>
           </tr>
         </table>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-          style="padding-inline-start: calc(20px)">
+          style="padding-inline-start: calc(40px)">
           <br />
         </p>
       `,
@@ -1245,134 +446,6 @@ test.describe('Identation', () => {
                 <span data-lexical-text="true">foo</span>
               </p>
             </th>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph" style=""><br /></p>
-            </th>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph" style=""><br /></p>
-            </th>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph" style=""><br /></p>
-            </th>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph" style=""><br /></p>
-            </th>
-          </tr>
-          <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph" style=""><br /></p>
-            </th>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph" style=""><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph" style=""><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph" style=""><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph" style=""><br /></p>
-            </td>
-          </tr>
-          <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph" style=""><br /></p>
-            </th>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph" style=""><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph" style=""><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph" style=""><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph" style=""><br /></p>
-            </td>
-          </tr>
-          <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph" style=""><br /></p>
-            </th>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph" style=""><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph" style=""><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph" style=""><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph" style=""><br /></p>
-            </td>
-          </tr>
-          <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph" style=""><br /></p>
-            </th>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph" style=""><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph" style=""><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph" style=""><br /></p>
-            </td>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
-              <p class="PlaygroundEditorTheme__paragraph" style=""><br /></p>
-            </td>
           </tr>
         </table>
         <p class="PlaygroundEditorTheme__paragraph" style=""><br /></p>

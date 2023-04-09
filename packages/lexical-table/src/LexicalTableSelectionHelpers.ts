@@ -37,6 +37,7 @@ import {
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
   DEPRECATED_$createGridSelection,
+  DEPRECATED_$isGridNode,
   DEPRECATED_$isGridSelection,
   FOCUS_COMMAND,
   FORMAT_TEXT_COMMAND,
@@ -141,21 +142,29 @@ export function applyTableHandlers(
 
   // Clear selection when clicking outside of dom.
   const mouseDownCallback = (event: MouseEvent) => {
-    isMouseDown = true;
-
     if (event.button !== 0) {
       return;
     }
 
     editor.update(() => {
       const selection = $getSelection();
-
-      if (
-        DEPRECATED_$isGridSelection(selection) &&
-        selection.gridKey === tableSelection.tableNodeKey &&
-        rootElement.contains(event.target as Node)
-      ) {
-        return tableSelection.clearHighlight();
+      const target = event.target;
+      if (target instanceof Node) {
+        if (
+          DEPRECATED_$isGridSelection(selection) &&
+          selection.gridKey === tableSelection.tableNodeKey &&
+          rootElement.contains(target)
+        ) {
+          return tableSelection.clearHighlight();
+        }
+        // TODO Revise this logic; the UX selection boundaries and nested editors
+        const node = $getNearestNodeFromDOMNode(target);
+        if (
+          node !== null &&
+          $findMatchingParent(node, DEPRECATED_$isGridNode)
+        ) {
+          isMouseDown = true;
+        }
       }
     });
   };
@@ -167,7 +176,7 @@ export function applyTableHandlers(
   );
 
   const mouseUpCallback = (event: MouseEvent) => {
-    if (isMouseDown) {
+    if (isMouseDown && !doesTargetContainText(event.target as Node)) {
       event.preventDefault();
       event.stopPropagation();
     }
@@ -176,15 +185,11 @@ export function applyTableHandlers(
   };
 
   window.addEventListener('mouseup', mouseUpCallback);
-
   tableSelection.listenersToRemove.add(() =>
     window.removeEventListener('mouseup', mouseUpCallback),
   );
 
-  tableSelection.listenersToRemove.add(() =>
-    tableElement.addEventListener('mouseup', mouseUpCallback),
-  );
-
+  tableElement.addEventListener('mouseup', mouseUpCallback);
   tableSelection.listenersToRemove.add(() =>
     tableElement.removeEventListener('mouseup', mouseUpCallback),
   );
@@ -1017,6 +1022,19 @@ export function getCellFromTarget(node: Node): Cell | null {
   }
 
   return null;
+}
+
+export function doesTargetContainText(node: Node): boolean {
+  const currentNode: ParentNode | Node | null = node;
+
+  if (currentNode !== null) {
+    const nodeName = currentNode.nodeName;
+
+    if (nodeName === 'SPAN') {
+      return true;
+    }
+  }
+  return false;
 }
 
 export function getTableGrid(tableElement: HTMLElement): Grid {

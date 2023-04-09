@@ -1031,6 +1031,14 @@ export function isDelete(keyCode: number): boolean {
   return keyCode === 46;
 }
 
+export function isSelectAll(
+  keyCode: number,
+  metaKey: boolean,
+  ctrlKey: boolean,
+): boolean {
+  return keyCode === 65 && controlOrMeta(metaKey, ctrlKey);
+}
+
 export function getCachedClassNameArray(
   classNamesTheme: EditorThemeClasses,
   classNameThemeType: string,
@@ -1553,4 +1561,40 @@ export function $splitNode(
   const [leftTree, rightTree] = recurse(startNode);
 
   return [leftTree, rightTree];
+}
+
+export function $findMatchingParent(
+  startingNode: LexicalNode,
+  findFn: (node: LexicalNode) => boolean,
+): LexicalNode | null {
+  let curr: ElementNode | LexicalNode | null = startingNode;
+
+  while (curr !== $getRoot() && curr != null) {
+    if (findFn(curr)) {
+      return curr;
+    }
+
+    curr = curr.getParent();
+  }
+
+  return null;
+}
+
+export function $getChildrenRecursively(node: LexicalNode): Array<LexicalNode> {
+  const nodes = [];
+  const stack = [node];
+  while (stack.length > 0) {
+    const currentNode = stack.pop();
+    invariant(
+      currentNode !== undefined,
+      "Stack.length > 0; can't be undefined",
+    );
+    if ($isElementNode(currentNode)) {
+      stack.unshift(...currentNode.getChildren());
+    }
+    if (currentNode !== node) {
+      nodes.push(currentNode);
+    }
+  }
+  return nodes;
 }

@@ -10,7 +10,7 @@
 import * as React from 'react';
 
 export type Props = $ReadOnly<{
-  ...$Partial<HTMLDivElement>,
+  ...Partial<HTMLDivElement>,
   ariaActiveDescendant?: HTMLDivElement['aria-activedescendant'],
   ariaAutoComplete?: HTMLDivElement['aria-autocomplete'],
   ariaControls?: HTMLDivElement['aria-controls'],

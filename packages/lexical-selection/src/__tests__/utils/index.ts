@@ -824,7 +824,7 @@ export async function applySelectionInputs(inputs, update, editor) {
                 {
                   clipboardData: {
                     getData: (type) => {
-                      if (type === 'application/x-lexical-nodes') {
+                      if (type === 'application/x-lexical-editor') {
                         return input.text;
                       }
 

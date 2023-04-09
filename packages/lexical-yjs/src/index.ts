@@ -9,7 +9,6 @@
 
 import type {Binding} from './Bindings';
 import type {LexicalCommand} from 'lexical';
-import type {WebsocketProvider} from 'y-websocket';
 import type {Doc, RelativePosition, UndoManager, XmlText} from 'yjs';
 
 import {createCommand} from 'lexical';
@@ -57,7 +56,7 @@ export type Delta = Array<Operation>;
 export type YjsNode = Record<string, unknown>;
 export type YjsEvent = Record<string, unknown>;
 export type {Provider};
-export type {Binding, ClientID} from './Bindings';
+export type {Binding, ClientID, ExcludedProperties} from './Bindings';
 export {createBinding} from './Bindings';
 
 export function createUndoManager(
@@ -70,7 +69,7 @@ export function createUndoManager(
 }
 
 export function initLocalState(
-  provider: WebsocketProvider,
+  provider: Provider,
   name: string,
   color: string,
   focusing: boolean,
@@ -85,7 +84,7 @@ export function initLocalState(
 }
 
 export function setLocalStateFocus(
-  provider: WebsocketProvider,
+  provider: Provider,
   name: string,
   color: string,
   focusing: boolean,

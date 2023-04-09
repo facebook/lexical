@@ -19,10 +19,9 @@ import {
   $setSelection,
 } from 'lexical';
 import invariant from 'shared/invariant';
-import {WebsocketProvider} from 'y-websocket';
 import {Text as YText, YEvent, YMapEvent, YTextEvent, YXmlEvent} from 'yjs';
 
-import {Binding} from '.';
+import {Binding, Provider} from '.';
 import {CollabDecoratorNode} from './CollabDecoratorNode';
 import {CollabElementNode} from './CollabElementNode';
 import {CollabTextNode} from './CollabTextNode';
@@ -82,7 +81,7 @@ function syncEvent(binding: Binding, event: any): void {
 
 export function syncYjsChangesToLexical(
   binding: Binding,
-  provider: WebsocketProvider,
+  provider: Provider,
   events: Array<YEvent<YText>>,
   isFromUndoManger: boolean,
 ): void {
@@ -218,7 +217,7 @@ type IntentionallyMarkedAsDirtyElement = boolean;
 
 export function syncLexicalUpdateToYjs(
   binding: Binding,
-  provider: WebsocketProvider,
+  provider: Provider,
   prevEditorState: EditorState,
   currEditorState: EditorState,
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,

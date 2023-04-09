@@ -23,8 +23,6 @@ import {
 export type SerializedMentionNode = Spread<
   {
     mentionName: string;
-    type: 'mention';
-    version: 1;
   },
   SerializedTextNode
 >;

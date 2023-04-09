@@ -1,6 +1,6 @@
 # `@lexical/headless`
 
-This package allows you to use interact with Lexical in a headless environment (one that does not rely on DOM, e.g. for Node.js environment), and use its
+This package allows you to interact with Lexical in a headless environment (one that does not rely on DOM, e.g. for Node.js environment), and use its
 main features like editor.update(), editor.registerNodeTransform(), editor.registerUpdateListener()
 to create, update or traverse state.
 

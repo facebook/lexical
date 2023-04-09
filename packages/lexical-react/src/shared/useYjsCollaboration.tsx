@@ -6,7 +6,7 @@
  *
  */
 
-import type {Binding} from '@lexical/yjs';
+import type {Binding, ExcludedProperties, Provider} from '@lexical/yjs';
 import type {LexicalEditor} from 'lexical';
 
 import {mergeRegister} from '@lexical/utils';
@@ -34,7 +34,6 @@ import {
 import * as React from 'react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
-import {WebsocketProvider} from 'y-websocket';
 import {Doc, Transaction, UndoManager, YEvent} from 'yjs';
 
 import {InitialEditorStateType} from '../LexicalComposer';
@@ -44,20 +43,21 @@ export type CursorsContainerRef = React.MutableRefObject<HTMLElement | null>;
 export function useYjsCollaboration(
   editor: LexicalEditor,
   id: string,
-  provider: WebsocketProvider,
+  provider: Provider,
   docMap: Map<string, Doc>,
   name: string,
   color: string,
   shouldBootstrap: boolean,
   cursorsContainerRef?: CursorsContainerRef,
   initialEditorState?: InitialEditorStateType,
+  excludedProperties?: ExcludedProperties,
 ): [JSX.Element, Binding] {
   const isReloadingDoc = useRef(false);
   const [doc, setDoc] = useState(docMap.get(id));
 
   const binding = useMemo(
-    () => createBinding(editor, provider, id, doc, docMap),
-    [editor, provider, id, docMap, doc],
+    () => createBinding(editor, provider, id, doc, docMap, excludedProperties),
+    [editor, provider, id, docMap, doc, excludedProperties],
   );
 
   const connect = useCallback(() => {
@@ -222,7 +222,7 @@ export function useYjsCollaboration(
 
 export function useYjsFocusTracking(
   editor: LexicalEditor,
-  provider: WebsocketProvider,
+  provider: Provider,
   name: string,
   color: string,
 ) {

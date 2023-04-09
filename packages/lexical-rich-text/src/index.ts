@@ -27,7 +27,7 @@ import type {
 
 import {
   $insertDataTransferForRichText,
-  copyToClipboard__EXPERIMENTAL,
+  copyToClipboard,
 } from '@lexical/clipboard';
 import {
   $moveCharacter,
@@ -73,6 +73,7 @@ import {
   INDENT_CONTENT_COMMAND,
   INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
+  isSelectionCapturedInDecoratorInput,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
@@ -96,8 +97,6 @@ import {
 export type SerializedHeadingNode = Spread<
   {
     tag: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
-    type: 'heading';
-    version: 1;
   },
   SerializedElementNode
 >;
@@ -106,13 +105,7 @@ export const DRAG_DROP_PASTE: LexicalCommand<Array<File>> = createCommand(
   'DRAG_DROP_PASTE_FILE',
 );
 
-export type SerializedQuoteNode = Spread<
-  {
-    type: 'quote';
-    version: 1;
-  },
-  SerializedElementNode
->;
+export type SerializedQuoteNode = SerializedElementNode;
 
 /** @noInheritDoc */
 export class QuoteNode extends ElementNode {
@@ -394,10 +387,7 @@ async function onCutForRichText(
   event: CommandPayloadType<typeof CUT_COMMAND>,
   editor: LexicalEditor,
 ): Promise<void> {
-  await copyToClipboard__EXPERIMENTAL(
-    editor,
-    event instanceof ClipboardEvent ? event : null,
-  );
+  await copyToClipboard(editor, event instanceof ClipboardEvent ? event : null);
   editor.update(() => {
     const selection = $getSelection();
     if ($isRangeSelection(selection)) {
@@ -953,10 +943,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     editor.registerCommand(
       COPY_COMMAND,
       (event) => {
-        copyToClipboard__EXPERIMENTAL(
-          editor,
-          event instanceof ClipboardEvent ? event : null,
-        );
+        copyToClipboard(editor, event instanceof ClipboardEvent ? event : null);
         return true;
       },
       COMMAND_PRIORITY_EDITOR,
@@ -976,6 +963,11 @@ export function registerRichText(editor: LexicalEditor): () => void {
         if (files.length > 0 && !hasTextContent) {
           editor.dispatchCommand(DRAG_DROP_PASTE, files);
           return true;
+        }
+
+        // if inputs then paste within the input ignore creating a new node on paste event
+        if (isSelectionCapturedInDecoratorInput(event.target as Node)) {
+          return false;
         }
 
         const selection = $getSelection();

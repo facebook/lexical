@@ -10,8 +10,8 @@ import type {Doc} from 'yjs';
 
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {ExcludedProperties, Provider} from '@lexical/yjs';
 import {useEffect, useMemo} from 'react';
-import {WebsocketProvider} from 'y-websocket';
 
 import {InitialEditorStateType} from './LexicalComposer';
 import {
@@ -21,6 +21,21 @@ import {
   useYjsHistory,
 } from './shared/useYjsCollaboration';
 
+type Props = {
+  id: string;
+  providerFactory: (
+    // eslint-disable-next-line no-shadow
+    id: string,
+    yjsDocMap: Map<string, Doc>,
+  ) => Provider;
+  shouldBootstrap: boolean;
+  username?: string;
+  cursorColor?: string;
+  cursorsContainerRef?: CursorsContainerRef;
+  initialEditorState?: InitialEditorStateType;
+  excludedProperties?: ExcludedProperties;
+};
+
 export function CollaborationPlugin({
   id,
   providerFactory,
@@ -29,19 +44,8 @@ export function CollaborationPlugin({
   cursorColor,
   cursorsContainerRef,
   initialEditorState,
-}: {
-  id: string;
-  providerFactory: (
-    // eslint-disable-next-line no-shadow
-    id: string,
-    yjsDocMap: Map<string, Doc>,
-  ) => WebsocketProvider;
-  shouldBootstrap: boolean;
-  username?: string;
-  cursorColor?: string;
-  cursorsContainerRef?: CursorsContainerRef;
-  initialEditorState?: InitialEditorStateType;
-}): JSX.Element {
+  excludedProperties,
+}: Props): JSX.Element {
   const collabContext = useCollaborationContext(username, cursorColor);
 
   const {yjsDocMap, name, color} = collabContext;
@@ -75,6 +79,7 @@ export function CollaborationPlugin({
     shouldBootstrap,
     cursorsContainerRef,
     initialEditorState,
+    excludedProperties,
   );
 
   collabContext.clientID = binding.clientID;

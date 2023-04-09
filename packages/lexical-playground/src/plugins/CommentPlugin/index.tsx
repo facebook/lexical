@@ -6,11 +6,13 @@
  *
  */
 
+import type {Provider} from '@lexical/yjs';
 import type {
   EditorState,
   LexicalCommand,
   LexicalEditor,
   NodeKey,
+  RangeSelection,
 } from 'lexical';
 import type {Doc} from 'yjs';
 
@@ -50,7 +52,6 @@ import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import * as React from 'react';
 import {createPortal} from 'react-dom';
 import useLayoutEffect from 'shared/useLayoutEffect';
-import {WebsocketProvider} from 'y-websocket';
 
 import {
   Comment,
@@ -223,6 +224,8 @@ function CommentInputBox({
   submitAddComment: (
     commentOrThread: Comment | Thread,
     isInlineComment: boolean,
+    thread?: Thread,
+    selection?: RangeSelection | null,
   ) => void;
 }) {
   const [content, setContent] = useState('');
@@ -235,6 +238,7 @@ function CommentInputBox({
     }),
     [],
   );
+  const selectionRef = useRef<RangeSelection | null>(null);
   const author = useCollabAuthorName();
 
   const updateLocation = useCallback(() => {
@@ -242,6 +246,7 @@ function CommentInputBox({
       const selection = $getSelection();
 
       if ($isRangeSelection(selection)) {
+        selectionRef.current = selection.clone();
         const anchor = selection.anchor;
         const focus = selection.focus;
         const range = createDOMRange(
@@ -318,8 +323,8 @@ function CommentInputBox({
   const submitComment = () => {
     if (canSubmit) {
       let quote = editor.getEditorState().read(() => {
-        const selection = $getSelection();
-        return selection !== null ? selection.getTextContent() : '';
+        const selection = selectionRef.current;
+        return selection ? selection.getTextContent() : '';
       });
       if (quote.length > 100) {
         quote = quote.slice(0, 99) + '…';
@@ -327,7 +332,10 @@ function CommentInputBox({
       submitAddComment(
         createThread(quote, [createComment(content, author)]),
         true,
+        undefined,
+        selectionRef.current,
       );
+      selectionRef.current = null;
     }
   };
 
@@ -700,10 +708,7 @@ function useCollabAuthorName(): string {
 export default function CommentPlugin({
   providerFactory,
 }: {
-  providerFactory?: (
-    id: string,
-    yjsDocMap: Map<string, Doc>,
-  ) => WebsocketProvider;
+  providerFactory?: (id: string, yjsDocMap: Map<string, Doc>) => Provider;
 }): JSX.Element {
   const collabContext = useCollaborationContext();
   const [editor] = useLexicalComposerContext();
@@ -777,26 +782,17 @@ export default function CommentPlugin({
       commentOrThread: Comment | Thread,
       isInlineComment: boolean,
       thread?: Thread,
+      selection?: RangeSelection | null,
     ) => {
       commentStore.addComment(commentOrThread, thread);
       if (isInlineComment) {
         editor.update(() => {
-          const selection = $getSelection();
           if ($isRangeSelection(selection)) {
-            const focus = selection.focus;
-            const anchor = selection.anchor;
             const isBackward = selection.isBackward();
             const id = commentOrThread.id;
 
             // Wrap content in a MarkNode
             $wrapSelectionInMarkNode(selection, isBackward, id);
-
-            // Make selection collapsed at the end
-            if (isBackward) {
-              focus.set(anchor.key, anchor.offset, anchor.type);
-            } else {
-              anchor.set(focus.key, focus.offset, focus.type);
-            }
           }
         });
         setShowCommentInput(false);
@@ -916,10 +912,10 @@ export default function CommentPlugin({
           if (!hasAnchorKey) {
             setActiveAnchorKey(null);
           }
+          if (!tags.has('collaboration') && $isRangeSelection(selection)) {
+            setShowCommentInput(false);
+          }
         });
-        if (!tags.has('collaboration')) {
-          setShowCommentInput(false);
-        }
       }),
       editor.registerCommand(
         INSERT_INLINE_COMMAND,

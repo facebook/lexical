@@ -330,7 +330,10 @@ export const LINK: TextMatchTransformer = {
     if (!$isLinkNode(node)) {
       return null;
     }
-    const linkContent = `[${node.getTextContent()}](${node.getURL()})`;
+    const title = node.getTitle();
+    const linkContent = title
+      ? `[${node.getTextContent()}](${node.getURL()} "${title}")`
+      : `[${node.getTextContent()}](${node.getURL()})`;
     const firstChild = node.getFirstChild();
     // Add text styles only if link has single text node inside. If it's more
     // then one we ignore it as markdown does not support nested styles for links
@@ -340,11 +343,13 @@ export const LINK: TextMatchTransformer = {
       return linkContent;
     }
   },
-  importRegExp: /(?:\[([^[]+)\])(?:\(([^()]+)\))/,
-  regExp: /(?:\[([^[]+)\])(?:\(([^()]+)\))$/,
+  importRegExp:
+    /(?:\[([^[]+)\])(?:\((?:([^()\s]+)(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))/,
+  regExp:
+    /(?:\[([^[]+)\])(?:\((?:([^()\s]+)(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))$/,
   replace: (textNode, match) => {
-    const [, linkText, linkUrl] = match;
-    const linkNode = $createLinkNode(linkUrl);
+    const [, linkText, linkUrl, linkTitle] = match;
+    const linkNode = $createLinkNode(linkUrl, {title: linkTitle});
     const linkTextNode = $createTextNode(linkText);
     linkTextNode.setFormat(textNode.getFormat());
     linkNode.append(linkTextNode);

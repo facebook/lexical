@@ -36,25 +36,6 @@
       "@lexical/markdown": ["./packages/lexical-markdown/src/"],
       "@lexical/mark": ["./packages/lexical-mark/src/"],
 
-      "@lexical/react/DEPRECATED_useLexicalEditor": [
-        "./packages/lexical-react/src/DEPRECATED_useLexicalEditor.ts"
-      ],
-      "@lexical/react/DEPRECATED_useLexicalRichText": [
-        "./packages/lexical-react/src/DEPRECATED_useLexicalRichText.ts"
-      ],
-      "@lexical/react/DEPRECATED_useLexicalPlainText": [
-        "./packages/lexical-react/src/DEPRECATED_useLexicalPlainText.ts"
-      ],
-      "@lexical/react/DEPRECATED_useLexicalCanShowPlaceholder": [
-        "./packages/lexical-react/src/DEPRECATED_useLexicalCanShowPlaceholder.ts"
-      ],
-      "@lexical/react/DEPRECATED_useLexicalCharacterLimit": [
-        "./packages/lexical-react/src/DEPRECATED_useLexicalCharacterLimit.ts"
-      ],
-      "@lexical/react/DEPRECATED_useLexicalHistory": [
-        "./packages/lexical-react/src/DEPRECATED_useLexicalHistory.ts"
-      ],
-
       "@lexical/react/LexicalComposer": [
         "./packages/lexical-react/src/LexicalComposer.tsx"
       ],
@@ -127,8 +108,8 @@
       "@lexical/react/LexicalAutoFocusPlugin": [
         "./packages/lexical-react/src/LexicalAutoFocusPlugin.ts"
       ],
-      "@lexical/react/LexicalTableOfContents__EXPERIMENTAL": [
-        "./packages/lexical-react/src/LexicalTableOfContents__EXPERIMENTAL.tsx"
+      "@lexical/react/LexicalTableOfContents": [
+        "./packages/lexical-react/src/LexicalTableOfContents.tsx"
       ],
       "@lexical/react/LexicalAutoFormatterPlugin": [
         "./packages/lexical-react/src/LexicalAutoFormatterPlugin.ts"

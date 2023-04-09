@@ -15,12 +15,8 @@ import type {
 } from 'lexical';
 import {ElementNode, LexicalNode} from 'lexical';
 
-export type SerializedMarkNode = {
-  ...SerializedElementNode,
+export type SerializedMarkNode = SerializedElementNode & {
   ids: Array<string>,
-  type: 'mark',
-  version: 1,
-  ...
 };
 
 declare export class MarkNode extends ElementNode {

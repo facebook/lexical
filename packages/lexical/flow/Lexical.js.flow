@@ -541,6 +541,17 @@ declare export function $insertNodes(
   nodes: Array<LexicalNode>,
   selectStart?: boolean,
 ): boolean;
+export type GridMapValueType = {
+  cell: deprecated_GridCellNode,
+  startRow: number,
+  startColumn: number,
+};
+export type GridMapType = Array<Array<GridMapValueType>>;
+declare export function DEPRECATED_$computeGridMap(
+  grid: deprecated_GridNode,
+  cellA: deprecated_GridCellNode,
+  cellB: deprecated_GridCellNode,
+): [GridMapType, GridMapValueType, GridMapValueType];
 
 /**
  * LexicalTextNode
@@ -787,8 +798,11 @@ declare export function DEPRECATED_$isGridRowNode(
 
 declare export class deprecated_GridCellNode extends ElementNode {
   __colSpan: number;
+  __rowSpan: number;
 
   constructor(colSpan: number, key?: NodeKey): void;
+  getRowSpan(): number;
+  getColSpan(): number;
 }
 
 declare export function DEPRECATED_$isGridCellNode(
@@ -887,19 +901,21 @@ export type SerializedElementNode = {
 
 export type SerializedParagraphNode = {
   ...SerializedElementNode,
-  type: 'paragraph',
   ...
 };
 
 export type SerializedLineBreakNode = {
   ...SerializedLexicalNode,
-  type: 'linebreak',
+  ...
+};
+
+export type SerializedDecoratorNode = {
+  ...SerializedLexicalNode,
   ...
 };
 
 export type SerializedRootNode = {
   ...SerializedElementNode,
-  type: 'root',
   ...
 };
 

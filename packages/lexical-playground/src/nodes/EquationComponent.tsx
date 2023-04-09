@@ -6,8 +6,6 @@
  *
  */
 
-import type {NodeKey} from 'lexical';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {mergeRegister} from '@lexical/utils';
 import {
@@ -16,10 +14,12 @@ import {
   $isNodeSelection,
   COMMAND_PRIORITY_HIGH,
   KEY_ESCAPE_COMMAND,
+  NodeKey,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import * as React from 'react';
 import {useCallback, useEffect, useRef, useState} from 'react';
+import {ErrorBoundary} from 'react-error-boundary';
 
 import EquationEditor from '../ui/EquationEditor';
 import KatexRenderer from '../ui/KatexRenderer';
@@ -116,16 +116,16 @@ export default function EquationComponent({
           equation={equationValue}
           setEquation={setEquationValue}
           inline={inline}
-          inputRef={inputRef}
+          ref={inputRef}
         />
       ) : (
-        <KatexRenderer
-          equation={equationValue}
-          inline={inline}
-          onClick={() => {
-            setShowEquationEditor(true);
-          }}
-        />
+        <ErrorBoundary onError={(e) => editor._onError(e)} fallback={null}>
+          <KatexRenderer
+            equation={equationValue}
+            inline={inline}
+            onDoubleClick={() => setShowEquationEditor(true)}
+          />
+        </ErrorBoundary>
       )}
     </>
   );

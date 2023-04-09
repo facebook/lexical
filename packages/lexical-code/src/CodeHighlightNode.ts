@@ -6,21 +6,14 @@
  *
  */
 
-// eslint-disable-next-line simple-import-sort/imports
-import {
-  $applyNodeReplacement,
-  $isLineBreakNode,
-  type EditorConfig,
-  type EditorThemeClasses,
-  type LexicalNode,
-  type NodeKey,
-  type SerializedTextNode,
-  type Spread,
-  TextNode,
-  ElementNode,
+import type {
+  EditorConfig,
+  EditorThemeClasses,
+  LexicalNode,
+  NodeKey,
+  SerializedTextNode,
+  Spread,
 } from 'lexical';
-
-import * as Prism from 'prismjs';
 
 import 'prismjs/components/prism-clike';
 import 'prismjs/components/prism-javascript';
@@ -41,6 +34,14 @@ import {
   addClassNamesToElement,
   removeClassNamesFromElement,
 } from '@lexical/utils';
+import {
+  $applyNodeReplacement,
+  $isLineBreakNode,
+  ElementNode,
+  TextNode,
+} from 'lexical';
+import * as Prism from 'prismjs';
+
 import {$createCodeNode} from './CodeNode';
 
 export const DEFAULT_CODE_LANGUAGE = 'javascript';
@@ -48,8 +49,6 @@ export const DEFAULT_CODE_LANGUAGE = 'javascript';
 type SerializedCodeHighlightNode = Spread<
   {
     highlightType: string | null | undefined;
-    type: 'code-highlight';
-    version: 1;
   },
   SerializedTextNode
 >;

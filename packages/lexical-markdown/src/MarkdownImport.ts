@@ -13,7 +13,7 @@ import type {
   TextMatchTransformer,
   Transformer,
 } from '@lexical/markdown';
-import type {LexicalNode, RootNode, TextNode} from 'lexical';
+import type {LexicalNode, TextNode} from 'lexical';
 
 import {$createCodeNode} from '@lexical/code';
 import {$isListItemNode, $isListNode} from '@lexical/list';
@@ -24,8 +24,10 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $getSelection,
   $isParagraphNode,
   $isTextNode,
+  ElementNode,
 } from 'lexical';
 import {IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from 'shared/environment';
 
@@ -41,16 +43,16 @@ type TextFormatTransformersIndex = Readonly<{
 
 export function createMarkdownImport(
   transformers: Array<Transformer>,
-): (markdownString: string) => void {
+): (markdownString: string, node?: ElementNode) => void {
   const byType = transformersByType(transformers);
   const textFormatTransformersIndex = createTextFormatTransformersIndex(
     byType.textFormat,
   );
 
-  return (markdownString: string) => {
+  return (markdownString, node) => {
     const lines = markdownString.split('\n');
     const linesLength = lines.length;
-    const root = $getRoot();
+    const root = node || $getRoot();
     root.clear();
 
     for (let i = 0; i < linesLength; i++) {
@@ -84,7 +86,9 @@ export function createMarkdownImport(
       }
     }
 
-    root.selectEnd();
+    if ($getSelection() !== null) {
+      root.selectEnd();
+    }
   };
 }
 
@@ -104,7 +108,7 @@ function isEmptyParagraph(node: LexicalNode): boolean {
 
 function importBlocks(
   lineText: string,
-  rootNode: RootNode,
+  rootNode: ElementNode,
   elementTransformers: Array<ElementTransformer>,
   textFormatTransformersIndex: TextFormatTransformersIndex,
   textMatchTransformers: Array<TextMatchTransformer>,
@@ -166,7 +170,7 @@ function importBlocks(
 function importCodeBlock(
   lines: Array<string>,
   startLineIndex: number,
-  rootNode: RootNode,
+  rootNode: ElementNode,
 ): [CodeNode | null, number] {
   const openMatch = lines[startLineIndex].match(CODE_BLOCK_REG_EXP);
 

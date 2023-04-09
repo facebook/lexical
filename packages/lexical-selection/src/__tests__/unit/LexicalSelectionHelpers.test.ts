@@ -18,6 +18,7 @@ import {
   $getNodeByKey,
   $getRoot,
   $getSelection,
+  $insertNodes,
   $isNodeSelection,
   $isRangeSelection,
   RangeSelection,
@@ -25,6 +26,8 @@ import {
 } from 'lexical';
 import {
   $createTestDecoratorNode,
+  $createTestElementNode,
+  $createTestShadowRootNode,
   createTestEditor,
   TestDecoratorNode,
 } from 'lexical/src/__tests__/utils';
@@ -2516,6 +2519,62 @@ describe('LexicalSelectionHelpers tests', () => {
           '<p dir="ltr"><a href="https://" dir="ltr"><span data-lexical-text="true">link</span></a><span data-lexical-text="true">foo</span></p>',
         );
       });
+    });
+
+    test('Can insert link into empty paragraph', async () => {
+      const editor = createTestEditor();
+      const element = document.createElement('div');
+      editor.setRootElement(element);
+
+      await editor.update(() => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        root.append(paragraph);
+        const linkNode = $createLinkNode('https://lexical.dev');
+        const linkTextNode = $createTextNode('Lexical');
+        linkNode.append(linkTextNode);
+        $insertNodes([linkNode]);
+      });
+      expect(element.innerHTML).toBe(
+        '<p><a href="https://lexical.dev" dir="ltr"><span data-lexical-text="true">Lexical</span></a></p>',
+      );
+    });
+
+    test('Can insert link into empty paragraph (2)', async () => {
+      const editor = createTestEditor();
+      const element = document.createElement('div');
+      editor.setRootElement(element);
+
+      await editor.update(() => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        root.append(paragraph);
+        const linkNode = $createLinkNode('https://lexical.dev');
+        const linkTextNode = $createTextNode('Lexical');
+        linkNode.append(linkTextNode);
+        const textNode2 = $createTextNode('...');
+        $insertNodes([linkNode, textNode2]);
+      });
+      expect(element.innerHTML).toBe(
+        '<p><a href="https://lexical.dev" dir="ltr"><span data-lexical-text="true">Lexical</span></a><span data-lexical-text="true">...</span></p>',
+      );
+    });
+
+    test('Can insert an ElementNode after ShadowRoot', async () => {
+      const editor = createTestEditor();
+      const element = document.createElement('div');
+      editor.setRootElement(element);
+
+      await editor.update(() => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        root.append(paragraph);
+        paragraph.selectStart();
+        const element1 = $createTestShadowRootNode();
+        const element2 = $createTestElementNode();
+        $insertNodes([element1, element2]);
+      });
+      expect(element.innerHTML).toBe('<div><br></div><div><br></div>');
     });
   });
 });

@@ -144,7 +144,7 @@ export default function ExcalidrawModal({
       const partialState: Partial<AppState> = {
         exportBackground: appState.exportBackground,
         exportScale: appState.exportScale,
-        exportWithDarkMode: appState.appState,
+        exportWithDarkMode: appState.theme === 'dark',
         isBindingEnabled: appState.isBindingEnabled,
         isLoading: appState.isLoading,
         name: appState.name,

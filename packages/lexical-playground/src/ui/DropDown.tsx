@@ -79,8 +79,8 @@ export function DropDownItem(props: DropDrownButton | DropDownTextInput) {
         <button
           className={props.className}
           key={props.key}
-          onClick={async (e) => {
-            await props.onClick(e);
+          onClick={(event) => {
+            props.onClick(event);
             closeDropDown();
           }}
           ref={ref}

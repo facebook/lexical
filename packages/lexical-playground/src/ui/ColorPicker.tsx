@@ -72,11 +72,11 @@ export default function ColorPicker({
     [selfColor.hsv],
   );
 
-  const onSetHex = async (hex: string, closeDropDown: () => void) => {
+  const onSetHex = (hex: string, closeDropDown: () => void) => {
     setInputColor(hex);
     if (/^#[0-9A-Fa-f]{6}$/i.test(hex)) {
       const newColor = transformColor('hex', hex);
-      await setSelfColor(newColor);
+      setSelfColor(newColor);
       closeDropDown();
     }
   };
@@ -102,7 +102,7 @@ export default function ColorPicker({
 
   useEffect(() => {
     // Check if the dropdown is actually active
-    if (innerDivRef.current !== null && onChange) {
+    if (onChange) {
       onChange(selfColor.hex);
       setInputColor(selfColor.hex);
     }

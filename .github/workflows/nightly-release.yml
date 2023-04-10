@@ -13,7 +13,7 @@ jobs:
         with:
           ssh-key: ${{ secrets.SSH_KEY }}
           fetch-depth: 0
-      - uses: pozetroninc/github-action-get-latest-release@master
+      - uses: pozetroninc/github-action-get-latest-release@d1dafdb6e338bdab109e6afce581a01858680dfb
         id: latest_release
         with:
           repository: facebook/lexical

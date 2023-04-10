@@ -901,7 +901,10 @@ export class LexicalNode {
    * @param restoreSelection - Whether or not to attempt to resolve the
    * selection to the appropriate place after the operation is complete.
    * */
-  insertAfter(nodeToInsert: LexicalNode, restoreSelection = true): LexicalNode {
+  insertAfter<T extends LexicalNode>(
+    nodeToInsert: T,
+    restoreSelection = true,
+  ): T {
     errorOnReadOnly();
     errorOnInsertTextNodeOnRoot(this, nodeToInsert);
     const writableSelf = this.getWritable();
@@ -968,10 +971,10 @@ export class LexicalNode {
    * @param restoreSelection - Whether or not to attempt to resolve the
    * selection to the appropriate place after the operation is complete.
    * */
-  insertBefore(
-    nodeToInsert: LexicalNode,
+  insertBefore<T extends LexicalNode>(
+    nodeToInsert: T,
     restoreSelection = true,
-  ): LexicalNode {
+  ): T {
     errorOnReadOnly();
     errorOnInsertTextNodeOnRoot(this, nodeToInsert);
     const writableSelf = this.getWritable();

@@ -53,7 +53,7 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
   /** @internal */
   __width?: number;
   /** @internal */
-  __backgroundColor: null | string = null;
+  __backgroundColor: null | string;
 
   static getType(): string {
     return 'tablecell';
@@ -104,6 +104,7 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
     super(colSpan, key);
     this.__headerState = headerState;
     this.__width = width;
+    this.__backgroundColor = null;
   }
 
   createDOM(config: EditorConfig): HTMLElement {

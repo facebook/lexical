@@ -157,16 +157,16 @@ function TableActionMenu({
         leftPosition + dropDownElementRect.width > rootEleRect.right
       ) {
         const position = menuButtonRect.left - dropDownElementRect.width - 5;
-        leftPosition = position < 0 ? 5 : position;
+        leftPosition = (position < 0 ? 5 : position) + window.pageXOffset;
       }
-      dropDownElement.style.left = `${leftPosition}px`;
+      dropDownElement.style.left = `${leftPosition + window.pageXOffset}px`;
 
       let topPosition = menuButtonRect.top;
       if (topPosition + dropDownElementRect.height > window.innerHeight) {
         const position = menuButtonRect.bottom - dropDownElementRect.height;
-        topPosition = position < 0 ? 5 : position;
+        topPosition = (position < 0 ? 5 : position) + window.pageYOffset;
       }
-      dropDownElement.style.top = `${topPosition}px`;
+      dropDownElement.style.top = `${topPosition + +window.pageYOffset}px`;
     }
   }, [contextRef, dropDownRef, editor]);
 

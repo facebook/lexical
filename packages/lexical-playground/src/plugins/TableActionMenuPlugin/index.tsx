@@ -187,7 +187,7 @@ function TableActionMenu({
   const [canMergeCells, setCanMergeCells] = useState(false);
   const [canUnmergeCell, setCanUnmergeCell] = useState(false);
   const [backgroundColor, setBackgroundColor] = useState(
-    () => currentCellBackgroundColor(editor) ?? '',
+    () => currentCellBackgroundColor(editor) || '',
   );
 
   useEffect(() => {
@@ -199,7 +199,7 @@ function TableActionMenu({
         editor.getEditorState().read(() => {
           updateTableCellNode(tableCellNode.getLatest());
         });
-        setBackgroundColor(currentCellBackgroundColor(editor) ?? '');
+        setBackgroundColor(currentCellBackgroundColor(editor) || '');
       }
     });
   }, [editor, tableCellNode]);

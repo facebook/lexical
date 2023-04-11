@@ -18,7 +18,12 @@ import type {
   LexicalCommand,
 } from 'lexical';
 
-import {ElementNode} from 'lexical';
+import {
+  ElementNode,
+  deprecated_GridCellNode,
+  deprecated_GridRowNode,
+  deprecated_GridNode,
+} from 'Lexical';
 
 /**
  * LexicalTableCellNode
@@ -33,7 +38,7 @@ export const TableCellHeaderStates = {
 
 export type TableCellHeaderState = $Values<typeof TableCellHeaderStates>;
 
-declare export class TableCellNode extends ElementNode {
+declare export class TableCellNode extends deprecated_GridCellNode {
   static getType(): string;
   static clone(node: TableCellNode): TableCellNode;
   constructor(
@@ -73,7 +78,7 @@ declare export function $isTableCellNode(
  * LexicalTableNode
  */
 
-declare export class TableNode extends ElementNode {
+declare export class TableNode extends deprecated_GridNode {
   static getType(): string;
   static clone(node: TableNode): TableNode;
   constructor(grid: ?Grid, key?: NodeKey): void;
@@ -102,7 +107,7 @@ declare export function $isTableNode(
  * LexicalTableRowNode
  */
 
-declare export class TableRowNode extends ElementNode {
+declare export class TableRowNode extends deprecated_GridRowNode {
   static getType(): string;
   static clone(node: TableRowNode): TableRowNode;
   constructor(height?: ?number, key?: NodeKey): void;
@@ -211,6 +216,16 @@ declare export function $deleteTableColumn(
   tableNode: TableNode,
   targetIndex: number,
 ): TableNode;
+
+declare export function $insertTableRow__EXPERIMENTAL(
+  insertAfter: boolean,
+): void;
+declare export function $insertTableColumn__EXPERIMENTAL(
+  insertAfter: boolean,
+): void;
+declare export function $deleteTableRow__EXPERIMENTAL(): void;
+declare export function $deleteTableColumn__EXPERIMENTAL(): void;
+declare export function $unmergeCell(): void;
 
 /**
  * LexicalTableSelection.js

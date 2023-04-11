@@ -552,6 +552,9 @@ declare export function DEPRECATED_$computeGridMap(
   cellA: deprecated_GridCellNode,
   cellB: deprecated_GridCellNode,
 ): [GridMapType, GridMapValueType, GridMapValueType];
+declare export function DEPRECATED_$getNodeTriplet(
+  source: PointType | LexicalNode | deprecated_GridCellNode,
+): [deprecated_GridCellNode, deprecated_GridRowNode, deprecated_GridNode];
 
 /**
  * LexicalTextNode
@@ -805,8 +808,10 @@ declare export class deprecated_GridCellNode extends ElementNode {
   __rowSpan: number;
 
   constructor(colSpan: number, key?: NodeKey): void;
-  getRowSpan(): number;
   getColSpan(): number;
+  setColSpan(colSpan: number): this;
+  getRowSpan(): number;
+  setRowSpan(rowSpan: number): this;
 }
 
 declare export function DEPRECATED_$isGridCellNode(

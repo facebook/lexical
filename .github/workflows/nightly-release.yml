@@ -6,7 +6,7 @@ on:
 jobs:
   release:
     # prevents this action from running on forks
-    if: github.repository_owner == 'facebook'
+    if: github.repository_owner == 'facebook' && !startsWith(github.ref, 'v')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3

@@ -151,20 +151,22 @@ function TableActionMenu({
       const menuButtonRect = menuButtonElement.getBoundingClientRect();
       dropDownElement.style.opacity = '1';
       const dropDownElementRect = dropDownElement.getBoundingClientRect();
-      let leftPosition = menuButtonRect.right + 5;
+      const margin = 5;
+      let leftPosition = menuButtonRect.right + margin;
       if (
         leftPosition + dropDownElementRect.width > window.innerWidth ||
         leftPosition + dropDownElementRect.width > rootEleRect.right
       ) {
-        const position = menuButtonRect.left - dropDownElementRect.width - 5;
-        leftPosition = (position < 0 ? 5 : position) + window.pageXOffset;
+        const position =
+          menuButtonRect.left - dropDownElementRect.width - margin;
+        leftPosition = (position < 0 ? margin : position) + window.pageXOffset;
       }
       dropDownElement.style.left = `${leftPosition + window.pageXOffset}px`;
 
       let topPosition = menuButtonRect.top;
       if (topPosition + dropDownElementRect.height > window.innerHeight) {
         const position = menuButtonRect.bottom - dropDownElementRect.height;
-        topPosition = (position < 0 ? 5 : position) + window.pageYOffset;
+        topPosition = (position < 0 ? margin : position) + window.pageYOffset;
       }
       dropDownElement.style.top = `${topPosition + +window.pageYOffset}px`;
     }

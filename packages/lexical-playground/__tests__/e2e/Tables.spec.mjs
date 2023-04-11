@@ -36,6 +36,7 @@ import {
   SAMPLE_IMAGE_URL,
   selectCellsFromTableCords,
   selectFromAdditionalStylesDropdown,
+  setBackgroundColor,
   test,
   unmergeTableCell,
 } from '../utils/index.mjs';
@@ -1484,7 +1485,6 @@ test.describe('Tables', () => {
     );
     await mergeTableCells(page);
     await insertTableColumnBefore(page);
-    await page.pause();
 
     await assertHTML(
       page,
@@ -1646,9 +1646,7 @@ test.describe('Tables', () => {
     await insertTable(page, 1, 1);
     await selectAll(page);
 
-    await page.pause();
     await click(page, 'div[contenteditable="true"] p:first-of-type');
-    await page.pause();
 
     await assertSelection(page, {
       anchorOffset: 3,
@@ -1656,5 +1654,37 @@ test.describe('Tables', () => {
       focusOffset: 3,
       focusPath: [0, 0, 0],
     });
+  });
+
+  test('Background color to cell', async ({page, isPlainText}) => {
+    test.skip(isPlainText);
+    if (IS_COLLAB) {
+      // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
+      page.setViewportSize({height: 1000, width: 3000});
+    }
+
+    await focusEditor(page);
+
+    await insertTable(page, 1, 1);
+    await setBackgroundColor(page);
+    await click(page, '.color-picker-basic-color button');
+    await click(page, '.Modal__closeButton');
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <table class="PlaygroundEditorTheme__table">
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              style="background-color: rgb(208, 2, 27)">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+          </tr>
+        </table>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
   });
 });

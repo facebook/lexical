@@ -826,6 +826,11 @@ export async function deleteTable(page) {
   await click(page, '.item[data-test-id="table-delete"]');
 }
 
+export async function setBackgroundColor(page) {
+  await click(page, '.table-cell-action-button-container');
+  await click(page, '.item[data-test-id="table-background-color"]');
+}
+
 export async function enableCompositionKeyEvents(page) {
   const targetPage = IS_COLLAB ? await page.frame('left') : page;
   await targetPage.evaluate(() => {

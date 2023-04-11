@@ -41,6 +41,7 @@ export type SerializedTableCellNode = Spread<
   {
     headerState: TableCellHeaderState;
     width?: number;
+    backgroundColor?: null | string;
   },
   SerializedGridCellNode
 >;
@@ -51,20 +52,23 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
   __headerState: TableCellHeaderState;
   /** @internal */
   __width?: number;
+  /** @internal */
+  __backgroundColor: null | string = null;
 
   static getType(): string {
     return 'tablecell';
   }
 
   static clone(node: TableCellNode): TableCellNode {
-    const tableNode = new TableCellNode(
+    const cellNode = new TableCellNode(
       node.__headerState,
       node.__colSpan,
       node.__width,
       node.__key,
     );
-    tableNode.__rowSpan = node.__rowSpan;
-    return tableNode;
+    cellNode.__rowSpan = node.__rowSpan;
+    cellNode.__backgroundColor = node.__backgroundColor;
+    return cellNode;
   }
 
   static importDOM(): DOMConversionMap | null {
@@ -87,6 +91,7 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
       serializedNode.width || undefined,
     );
     cellNode.__rowSpan = serializedNode.rowSpan;
+    cellNode.__backgroundColor = serializedNode.backgroundColor || null;
     return cellNode;
   }
 
@@ -114,6 +119,9 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
     }
     if (this.__rowSpan > 1) {
       element.rowSpan = this.__rowSpan;
+    }
+    if (this.__backgroundColor !== null) {
+      element.style.backgroundColor = this.__backgroundColor;
     }
 
     addClassNamesToElement(
@@ -146,7 +154,10 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
       element_.style.verticalAlign = 'top';
       element_.style.textAlign = 'start';
 
-      if (this.hasHeader()) {
+      const backgroundColor = this.getBackgroundColor();
+      if (backgroundColor !== null) {
+        element_.style.backgroundColor = backgroundColor;
+      } else if (this.hasHeader()) {
         element_.style.backgroundColor = '#f2f3f5';
       }
     }
@@ -159,6 +170,7 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
   exportJSON(): SerializedTableCellNode {
     return {
       ...super.exportJSON(),
+      backgroundColor: this.getBackgroundColor(),
       headerState: this.__headerState,
       type: 'tablecell',
       width: this.getWidth(),
@@ -189,6 +201,14 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
     return this.getLatest().__width;
   }
 
+  getBackgroundColor(): null | string {
+    return this.__backgroundColor;
+  }
+
+  setBackgroundColor(newBackgroundColor: null | string): void {
+    this.getWritable().__backgroundColor = newBackgroundColor;
+  }
+
   toggleHeaderStyle(headerStateToToggle: TableCellHeaderState): TableCellNode {
     const self = this.getWritable();
 
@@ -214,7 +234,8 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
       prevNode.__headerState !== this.__headerState ||
       prevNode.__width !== this.__width ||
       prevNode.__colSpan !== this.__colSpan ||
-      prevNode.__rowSpan !== this.__rowSpan
+      prevNode.__rowSpan !== this.__rowSpan ||
+      prevNode.__backgroundColor !== this.__backgroundColor
     );
   }
 
@@ -248,6 +269,10 @@ export function convertTableCellNodeElement(
   );
   tableCellNode.__colSpan = domNode_.colSpan;
   tableCellNode.__rowSpan = domNode_.rowSpan;
+  const backgroundColor = domNode_.style.backgroundColor;
+  if (backgroundColor !== '') {
+    tableCellNode.__backgroundColor = backgroundColor;
+  }
 
   return {
     forChild: (lexicalNode, parentLexicalNode) => {

@@ -75,8 +75,8 @@ import {IS_APPLE} from 'shared/environment';
 import useModal from '../../hooks/useModal';
 import catTypingGif from '../../images/cat-typing.gif';
 import {$createStickyNode} from '../../nodes/StickyNode';
-import ColorPicker from '../../ui/ColorPicker';
 import DropDown, {DropDownItem} from '../../ui/DropDown';
+import DropdownColorPicker from '../../ui/DropdownColorPicker';
 import {getSelectedNode} from '../../utils/getSelectedNode';
 import {sanitizeUrl} from '../../utils/url';
 import {EmbedConfigs} from '../AutoEmbedPlugin';
@@ -759,7 +759,7 @@ export default function ToolbarPlugin(): JSX.Element {
             type="button">
             <i className="format link" />
           </button>
-          <ColorPicker
+          <DropdownColorPicker
             disabled={!isEditable}
             buttonClassName="toolbar-item color-picker"
             buttonAriaLabel="Formatting text color"
@@ -768,7 +768,7 @@ export default function ToolbarPlugin(): JSX.Element {
             onChange={onFontColorSelect}
             title="text color"
           />
-          <ColorPicker
+          <DropdownColorPicker
             disabled={!isEditable}
             buttonClassName="toolbar-item color-picker"
             buttonAriaLabel="Formatting background color"

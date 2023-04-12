@@ -118,7 +118,7 @@
         "./packages/lexical-react/src/LexicalCharacterLimitPlugin.tsx"
       ],
       "@lexical/react/LexicalClearEditorPlugin": [
-        "./packages/lexical-react/src/LexicalClearEditorPlugin.ts"
+        "./packages/lexical-react/src/LexicalClearEditorPlugin.tsx"
       ],
       "@lexical/react/LexicalClickableLinkPlugin": [
         "./packages/lexical-react/src/LexicalClickableLinkPlugin.ts"

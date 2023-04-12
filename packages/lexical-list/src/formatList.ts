@@ -505,11 +505,10 @@ export function $handleListInsertParagraph(): boolean {
   }
   // Only run this code on empty list items
   const anchor = selection.anchor.getNode();
-
   if (
     !$isListItemNode(anchor) ||
     anchor.getTextContent() !== '' ||
-    anchor.selectedNodeList === undefined
+    !anchor.selectedNodeList
   ) {
     return false;
   }

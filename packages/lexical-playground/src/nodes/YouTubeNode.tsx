@@ -49,7 +49,7 @@ function YouTubeComponent({
       <iframe
         width="560"
         height="315"
-        src={`https://www.youtube.com/embed/${videoID}`}
+        src={`https://www.youtube-nocookie.com/embed/${videoID}`}
         frameBorder="0"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen={true}
@@ -62,8 +62,6 @@ function YouTubeComponent({
 export type SerializedYouTubeNode = Spread<
   {
     videoID: string;
-    type: 'youtube';
-    version: 1;
   },
   SerializedDecoratorBlockNode
 >;
@@ -115,7 +113,10 @@ export class YouTubeNode extends DecoratorBlockNode {
     element.setAttribute('data-lexical-youtube', this.__id);
     element.setAttribute('width', '560');
     element.setAttribute('height', '315');
-    element.setAttribute('src', `https://www.youtube.com/embed/${this.__id}`);
+    element.setAttribute(
+      'src',
+      `https://www.youtube-nocookie.com/embed/${this.__id}`,
+    );
     element.setAttribute('frameborder', '0');
     element.setAttribute(
       'allow',

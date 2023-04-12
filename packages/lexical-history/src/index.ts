@@ -390,6 +390,15 @@ function clearHistory(historyState: HistoryState) {
   historyState.current = null;
 }
 
+/**
+ * Registers necessary listeners to manage undo/redo history stack and related editor commands.
+ * It returns `unregister` callback that cleans up all listeners and should be called on editor unmount.
+ * @param editor - The lexical editor.
+ * @param historyState - The history state, containing the current state and the undo/redo stack.
+ * @param delay - The time (in milliseconds) the editor should delay generating a new history stack,
+ * instead of merging the current changes with the current stack.
+ * @returns The listeners cleanup callback function.
+ */
 export function registerHistory(
   editor: LexicalEditor,
   historyState: HistoryState,
@@ -498,6 +507,10 @@ export function registerHistory(
   };
 }
 
+/**
+ * Creates an empty history state.
+ * @returns - The empty history state, as an object.
+ */
 export function createEmptyHistoryState(): HistoryState {
   return {
     current: null,

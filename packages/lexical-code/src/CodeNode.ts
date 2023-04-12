@@ -53,8 +53,6 @@ import * as Prism from 'prismjs';
 export type SerializedCodeNode = Spread<
   {
     language: string | null | undefined;
-    type: 'code';
-    version: 1;
   },
   SerializedElementNode
 >;

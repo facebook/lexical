@@ -438,6 +438,16 @@ i.horizontal-rule {
   background-image: url(images/icons/bg-color.svg);
 }
 
+.icon.table {
+  background-color: #6c757d;
+  mask-image: url(images/icons/table.svg);
+  -webkit-mask-image: url(images/icons/table.svg);
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+  mask-size: contain;
+  -webkit-mask-size: contain;
+}
+
 i.image {
   background-image: url(images/icons/file-image.svg);
 }
@@ -594,6 +604,20 @@ i.prettier-error {
 
 .link-editor div.link-edit {
   background-image: url(images/icons/pencil-fill.svg);
+  background-size: 16px;
+  background-position: center;
+  background-repeat: no-repeat;
+  width: 35px;
+  vertical-align: -0.25em;
+  position: absolute;
+  right: 30px;
+  top: 0;
+  bottom: 0;
+  cursor: pointer;
+}
+
+.link-editor div.link-trash {
+  background-image: url(images/icons/trash.svg);
   background-size: 16px;
   background-position: center;
   background-repeat: no-repeat;

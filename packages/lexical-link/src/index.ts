@@ -34,13 +34,12 @@ import {
 export type LinkAttributes = {
   rel?: null | string;
   target?: null | string;
+  title?: null | string;
 };
 
 export type SerializedLinkNode = Spread<
   {
-    type: 'link';
     url: string;
-    version: 1;
   },
   Spread<LinkAttributes, SerializedElementNode>
 >;
@@ -53,6 +52,8 @@ export class LinkNode extends ElementNode {
   __target: null | string;
   /** @internal */
   __rel: null | string;
+  /** @internal */
+  __title: null | string;
 
   static getType(): string {
     return 'link';
@@ -61,17 +62,18 @@ export class LinkNode extends ElementNode {
   static clone(node: LinkNode): LinkNode {
     return new LinkNode(
       node.__url,
-      {rel: node.__rel, target: node.__target},
+      {rel: node.__rel, target: node.__target, title: node.__title},
       node.__key,
     );
   }
 
   constructor(url: string, attributes: LinkAttributes = {}, key?: NodeKey) {
     super(key);
-    const {target = null, rel = null} = attributes;
+    const {target = null, rel = null, title = null} = attributes;
     this.__url = url;
     this.__target = target;
     this.__rel = rel;
+    this.__title = title;
   }
 
   createDOM(config: EditorConfig): HTMLAnchorElement {
@@ -82,6 +84,9 @@ export class LinkNode extends ElementNode {
     }
     if (this.__rel !== null) {
       element.rel = this.__rel;
+    }
+    if (this.__title !== null) {
+      element.title = this.__title;
     }
     addClassNamesToElement(element, config.theme.link);
     return element;
@@ -95,6 +100,7 @@ export class LinkNode extends ElementNode {
     const url = this.__url;
     const target = this.__target;
     const rel = this.__rel;
+    const title = this.__title;
     if (url !== prevNode.__url) {
       anchor.href = url;
     }
@@ -112,6 +118,14 @@ export class LinkNode extends ElementNode {
         anchor.rel = rel;
       } else {
         anchor.removeAttribute('rel');
+      }
+    }
+
+    if (title !== prevNode.__title) {
+      if (title) {
+        anchor.title = title;
+      } else {
+        anchor.removeAttribute('title');
       }
     }
     return false;
@@ -132,6 +146,7 @@ export class LinkNode extends ElementNode {
     const node = $createLinkNode(serializedNode.url, {
       rel: serializedNode.rel,
       target: serializedNode.target,
+      title: serializedNode.title,
     });
     node.setFormat(serializedNode.format);
     node.setIndent(serializedNode.indent);
@@ -144,6 +159,7 @@ export class LinkNode extends ElementNode {
       ...super.exportJSON(),
       rel: this.getRel(),
       target: this.getTarget(),
+      title: this.getTitle(),
       type: 'link',
       url: this.getURL(),
       version: 1,
@@ -177,6 +193,15 @@ export class LinkNode extends ElementNode {
     writable.__rel = rel;
   }
 
+  getTitle(): null | string {
+    return this.getLatest().__title;
+  }
+
+  setTitle(title: null | string): void {
+    const writable = this.getWritable();
+    writable.__title = title;
+  }
+
   insertNewAfter(
     selection: RangeSelection,
     restoreSelection = true,
@@ -189,6 +214,7 @@ export class LinkNode extends ElementNode {
       const linkNode = $createLinkNode(this.__url, {
         rel: this.__rel,
         target: this.__target,
+        title: this.__title,
       });
       element.append(linkNode);
       return linkNode;
@@ -240,12 +266,19 @@ function convertAnchorElement(domNode: Node): DOMConversionOutput {
       node = $createLinkNode(domNode.getAttribute('href') || '', {
         rel: domNode.getAttribute('rel'),
         target: domNode.getAttribute('target'),
+        title: domNode.getAttribute('title'),
       });
     }
   }
   return {node};
 }
 
+/**
+ * Takes a URL and creates a LinkNode.
+ * @param url - The URL the LinkNode should direct to.
+ * @param attributes - Optional HTML a tag attributes { target, rel, title }
+ * @returns The LinkNode.
+ */
 export function $createLinkNode(
   url: string,
   attributes?: LinkAttributes,
@@ -253,19 +286,18 @@ export function $createLinkNode(
   return $applyNodeReplacement(new LinkNode(url, attributes));
 }
 
+/**
+ * Determines if node is a LinkNode.
+ * @param node - The node to be checked.
+ * @returns true if node is a LinkNode, false otherwise.
+ */
 export function $isLinkNode(
   node: LexicalNode | null | undefined,
 ): node is LinkNode {
   return node instanceof LinkNode;
 }
 
-export type SerializedAutoLinkNode = Spread<
-  {
-    type: 'autolink';
-    version: 1;
-  },
-  SerializedLinkNode
->;
+export type SerializedAutoLinkNode = SerializedLinkNode;
 
 // Custom node type to override `canInsertTextAfter` that will
 // allow typing within the link
@@ -277,7 +309,7 @@ export class AutoLinkNode extends LinkNode {
   static clone(node: AutoLinkNode): AutoLinkNode {
     return new AutoLinkNode(
       node.__url,
-      {rel: node.__rel, target: node.__target},
+      {rel: node.__rel, target: node.__target, title: node.__title},
       node.__key,
     );
   }
@@ -286,6 +318,7 @@ export class AutoLinkNode extends LinkNode {
     const node = $createAutoLinkNode(serializedNode.url, {
       rel: serializedNode.rel,
       target: serializedNode.target,
+      title: serializedNode.title,
     });
     node.setFormat(serializedNode.format);
     node.setIndent(serializedNode.indent);
@@ -318,6 +351,7 @@ export class AutoLinkNode extends LinkNode {
       const linkNode = $createAutoLinkNode(this.__url, {
         rel: this._rel,
         target: this.__target,
+        title: this.__title,
       });
       element.append(linkNode);
       return linkNode;
@@ -326,6 +360,13 @@ export class AutoLinkNode extends LinkNode {
   }
 }
 
+/**
+ * Takes a URL and creates an AutoLinkNode. AutoLinkNodes are generally automatically generated
+ * during typing, which is especially useful when a button to generate a LinkNode is not practical.
+ * @param url - The URL the LinkNode should direct to.
+ * @param attributes - Optional HTML a tag attributes. { target, rel, title }
+ * @returns The LinkNode.
+ */
 export function $createAutoLinkNode(
   url: string,
   attributes?: LinkAttributes,
@@ -333,6 +374,11 @@ export function $createAutoLinkNode(
   return $applyNodeReplacement(new AutoLinkNode(url, attributes));
 }
 
+/**
+ * Determines if node is an AutoLinkNode.
+ * @param node - The node to be checked.
+ * @returns true if node is an AutoLinkNode, false otherwise.
+ */
 export function $isAutoLinkNode(
   node: LexicalNode | null | undefined,
 ): node is AutoLinkNode {
@@ -343,11 +389,17 @@ export const TOGGLE_LINK_COMMAND: LexicalCommand<
   string | ({url: string} & LinkAttributes) | null
 > = createCommand('TOGGLE_LINK_COMMAND');
 
+/**
+ * Generates or updates a LinkNode. It can also delete a LinkNode if the URL is null,
+ * but saves any children and brings them up to the parent node.
+ * @param url - The URL the link directs to.
+ * @param attributes - Optional HTML a tag attributes. { target, rel, title }
+ */
 export function toggleLink(
   url: null | string,
   attributes: LinkAttributes = {},
 ): void {
-  const {target} = attributes;
+  const {target, title} = attributes;
   const rel = attributes.rel === undefined ? 'noopener' : attributes.rel;
   const selection = $getSelection();
 
@@ -388,6 +440,9 @@ export function toggleLink(
         if (rel !== null) {
           linkNode.setRel(rel);
         }
+        if (title !== undefined) {
+          linkNode.setTitle(title);
+        }
         return;
       }
     }
@@ -414,6 +469,9 @@ export function toggleLink(
         }
         if (rel !== null) {
           linkNode.setRel(rel);
+        }
+        if (title !== undefined) {
+          linkNode.setTitle(title);
         }
         return;
       }
@@ -457,12 +515,12 @@ export function toggleLink(
 }
 
 function $getLinkAncestor(node: LexicalNode): null | LexicalNode {
-  return $getAncestor(node, (ancestor) => $isLinkNode(ancestor));
+  return $getAncestor(node, $isLinkNode);
 }
 
-function $getAncestor(
+function $getAncestor<NodeType extends LexicalNode = LexicalNode>(
   node: LexicalNode,
-  predicate: (ancestor: LexicalNode) => boolean,
+  predicate: (ancestor: LexicalNode) => ancestor is NodeType,
 ): null | LexicalNode {
   let parent: null | LexicalNode = node;
   while (

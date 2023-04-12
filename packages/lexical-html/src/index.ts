@@ -99,7 +99,7 @@ function $appendNodesToHTML(
     return false;
   }
 
-  const fragment = new DocumentFragment();
+  const fragment = document.createDocumentFragment();
 
   for (let i = 0; i < children.length; i++) {
     const childNode = children[i];
@@ -162,7 +162,7 @@ function getConversionFunction(
   return currentConversion !== null ? currentConversion.conversion : null;
 }
 
-const IGNORE_TAGS = new Set(['STYLE']);
+const IGNORE_TAGS = new Set(['STYLE', 'SCRIPT']);
 
 function $createNodesFromDOM(
   node: Node,

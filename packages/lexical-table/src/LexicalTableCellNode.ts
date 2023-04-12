@@ -40,7 +40,6 @@ export type TableCellHeaderState =
 export type SerializedTableCellNode = Spread<
   {
     headerState: TableCellHeaderState;
-    type: string;
     width?: number;
   },
   SerializedGridCellNode
@@ -82,11 +81,13 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
   }
 
   static importJSON(serializedNode: SerializedTableCellNode): TableCellNode {
-    return $createTableCellNode(
+    const cellNode = $createTableCellNode(
       serializedNode.headerState,
       serializedNode.colSpan,
       serializedNode.width || undefined,
     );
+    cellNode.__rowSpan = serializedNode.rowSpan;
+    return cellNode;
   }
 
   constructor(
@@ -108,10 +109,10 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
     if (this.__width) {
       element.style.width = `${this.__width}px`;
     }
-    if (this.__colSpan !== 1) {
+    if (this.__colSpan > 1) {
       element.colSpan = this.__colSpan;
     }
-    if (this.__rowSpan !== 1) {
+    if (this.__rowSpan > 1) {
       element.rowSpan = this.__rowSpan;
     }
 
@@ -132,10 +133,10 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
       const maxWidth = 700;
       const colCount = this.getParentOrThrow().getChildrenSize();
       element_.style.border = '1px solid black';
-      if (this.__colSpan !== 1) {
+      if (this.__colSpan > 1) {
         element_.colSpan = this.__colSpan;
       }
-      if (this.__rowSpan !== 1) {
+      if (this.__rowSpan > 1) {
         element_.rowSpan = this.__rowSpan;
       }
       element_.style.width = `${
@@ -158,7 +159,6 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
   exportJSON(): SerializedTableCellNode {
     return {
       ...super.exportJSON(),
-      colSpan: super.__colSpan,
       headerState: this.__headerState,
       type: 'tablecell',
       width: this.getWidth(),

@@ -6,6 +6,8 @@
  *
  */
 
+import type {DEPRECATED_GridCellNode, ElementNode} from 'lexical';
+
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import useLexicalEditable from '@lexical/react/useLexicalEditable';
 import {
@@ -19,15 +21,21 @@ import {
   $insertTableRow__EXPERIMENTAL,
   $isTableCellNode,
   $isTableRowNode,
+  $unmergeCell,
   getTableSelectionFromTableElement,
   HTMLTableElementWithWithTableSelectionState,
   TableCellHeaderStates,
   TableCellNode,
 } from '@lexical/table';
 import {
+  $createParagraphNode,
   $getRoot,
   $getSelection,
+  $isElementNode,
+  $isParagraphNode,
   $isRangeSelection,
+  $isTextNode,
+  DEPRECATED_$getNodeTriplet,
   DEPRECATED_$isGridCellNode,
   DEPRECATED_$isGridSelection,
   GridSelection,
@@ -90,6 +98,42 @@ function isGridSelectionRectangular(selection: GridSelection): boolean {
   );
 }
 
+function $canUnmerge(): boolean {
+  const selection = $getSelection();
+  if (
+    ($isRangeSelection(selection) && !selection.isCollapsed()) ||
+    (DEPRECATED_$isGridSelection(selection) &&
+      !selection.anchor.is(selection.focus)) ||
+    (!$isRangeSelection(selection) && !DEPRECATED_$isGridSelection(selection))
+  ) {
+    return false;
+  }
+  const [cell] = DEPRECATED_$getNodeTriplet(selection.anchor);
+  return cell.__colSpan > 1 || cell.__rowSpan > 1;
+}
+
+function $cellContainsEmptyParagraph(cell: DEPRECATED_GridCellNode): boolean {
+  if (cell.getChildrenSize() !== 1) {
+    return false;
+  }
+  const firstChild = cell.getFirstChildOrThrow();
+  if (!$isParagraphNode(firstChild) || !firstChild.isEmpty()) {
+    return false;
+  }
+  return true;
+}
+
+function $selectLastDescendant(node: ElementNode): void {
+  const lastDescendant = node.getLastDescendant();
+  if ($isTextNode(lastDescendant)) {
+    lastDescendant.select();
+  } else if ($isElementNode(lastDescendant)) {
+    lastDescendant.selectEnd();
+  } else if (lastDescendant !== null) {
+    lastDescendant.selectNext();
+  }
+}
+
 type TableCellActionMenuProps = Readonly<{
   contextRef: {current: null | HTMLElement};
   onClose: () => void;
@@ -113,6 +157,7 @@ function TableActionMenu({
     rows: 1,
   });
   const [canMergeCells, setCanMergeCells] = useState(false);
+  const [canUnmergeCell, setCanUnmergeCell] = useState(false);
 
   useEffect(() => {
     return editor.registerMutationListener(TableCellNode, (nodeMutations) => {
@@ -130,10 +175,18 @@ function TableActionMenu({
   useEffect(() => {
     editor.getEditorState().read(() => {
       const selection = $getSelection();
+      // Merge cells
       if (DEPRECATED_$isGridSelection(selection)) {
+        const currentSelectionCounts = computeSelectionCount(selection);
         updateSelectionCounts(computeSelectionCount(selection));
-        setCanMergeCells(isGridSelectionRectangular(selection));
+        setCanMergeCells(
+          isGridSelectionRectangular(selection) &&
+            (currentSelectionCounts.columns > 1 ||
+              currentSelectionCounts.rows > 1),
+        );
       }
+      // Unmerge cell
+      setCanUnmergeCell($canUnmerge());
     });
   }, [editor]);
 
@@ -199,33 +252,50 @@ function TableActionMenu({
     });
   }, [editor, tableCellNode]);
 
-  const mergeTableColumnsAtSelection = () => {
+  const mergeTableCellsAtSelection = () => {
     editor.update(() => {
       const selection = $getSelection();
       if (DEPRECATED_$isGridSelection(selection)) {
         const {columns, rows} = computeSelectionCount(selection);
         const nodes = selection.getNodes();
-        let isFirstCell = true;
+        let firstCell: null | DEPRECATED_GridCellNode = null;
         for (let i = 0; i < nodes.length; i++) {
           const node = nodes[i];
           if (DEPRECATED_$isGridCellNode(node)) {
-            if (isFirstCell) {
+            if (firstCell === null) {
               node.setColSpan(columns).setRowSpan(rows);
-              // TODO copy other editors' cell selection behavior
-              const lastDescendant = node.getLastDescendant();
-              invariant(
-                lastDescendant !== null,
-                'Unexpected empty lastDescendant on the resulting merged cell',
-              );
-              lastDescendant.select();
-              isFirstCell = false;
-            } else {
-              nodes[i].remove();
+              firstCell = node;
+              const isEmpty = $cellContainsEmptyParagraph(node);
+              let firstChild;
+              if (
+                isEmpty &&
+                $isParagraphNode((firstChild = node.getFirstChild()))
+              ) {
+                firstChild.remove();
+              }
+            } else if (DEPRECATED_$isGridCellNode(firstCell)) {
+              const isEmpty = $cellContainsEmptyParagraph(node);
+              if (!isEmpty) {
+                firstCell.append(...node.getChildren());
+              }
+              node.remove();
             }
           }
         }
+        if (firstCell !== null) {
+          if (firstCell.getChildrenSize() === 0) {
+            firstCell.append($createParagraphNode());
+          }
+          $selectLastDescendant(firstCell);
+        }
         onClose();
       }
+    });
+  };
+
+  const unmergeTableCellsAtSelection = () => {
+    editor.update(() => {
+      $unmergeCell();
     });
   };
 
@@ -340,6 +410,29 @@ function TableActionMenu({
     });
   }, [editor, tableCellNode, clearTableSelection, onClose]);
 
+  let mergeCellButton: null | JSX.Element = null;
+  if (cellMerge) {
+    if (canMergeCells) {
+      mergeCellButton = (
+        <button
+          className="item"
+          onClick={() => mergeTableCellsAtSelection()}
+          data-test-id="table-merge-cells">
+          Merge cells
+        </button>
+      );
+    } else if (canUnmergeCell) {
+      mergeCellButton = (
+        <button
+          className="item"
+          onClick={() => unmergeTableCellsAtSelection()}
+          data-test-id="table-unmerge-cells">
+          Unmerge cells
+        </button>
+      );
+    }
+  }
+
   return createPortal(
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions
     <div
@@ -348,19 +441,12 @@ function TableActionMenu({
       onClick={(e) => {
         e.stopPropagation();
       }}>
-      {cellMerge &&
-        (selectionCounts.columns > 1 || selectionCounts.rows > 1) &&
-        canMergeCells && (
-          <>
-            <button
-              className="item"
-              onClick={() => mergeTableColumnsAtSelection()}
-              data-test-id="table-merge-cells">
-              Merge cells
-            </button>
-            <hr />
-          </>
-        )}
+      {mergeCellButton !== null && (
+        <>
+          {mergeCellButton}
+          <hr />
+        </>
+      )}
       <button
         className="item"
         onClick={() => insertTableRowAtSelection(false)}

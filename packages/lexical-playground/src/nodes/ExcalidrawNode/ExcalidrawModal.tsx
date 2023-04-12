@@ -31,6 +31,10 @@ type Props = {
    */
   isShown?: boolean;
   /**
+   * Callback when closing and discarding the new changes
+   */
+  onClose: () => void;
+  /**
    * Completely remove Excalidraw component
    */
   onDelete: () => void;
@@ -51,6 +55,7 @@ export default function ExcalidrawModal({
   initialElements,
   isShown = false,
   onDelete,
+  onClose,
 }: Props): ReactPortal | null {
   const excaliDrawModelRef = useRef<HTMLDivElement | null>(null);
 
@@ -138,13 +143,13 @@ export default function ExcalidrawModal({
         onClose={() => {
           setDiscardModalOpen(false);
         }}
-        closeOnClickOutside={true}>
+        closeOnClickOutside={false}>
         Are you sure you want to discard the changes?
         <div className="ExcalidrawModal__discardModal">
           <Button
             onClick={() => {
               setDiscardModalOpen(false);
-              onDelete();
+              onClose();
             }}>
             Discard
           </Button>{' '}

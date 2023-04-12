@@ -40,6 +40,7 @@ test.describe('Clear All Formatting', () => {
     await toggleItalic(page);
     await toggleUnderline(page);
     await page.keyboard.type(' Test');
+    await selectAll(page);
     await selectFromAdditionalStylesDropdown(page, '.clear');
     await assertHTML(
       page,

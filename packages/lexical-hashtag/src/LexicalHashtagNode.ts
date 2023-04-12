@@ -61,10 +61,20 @@ export class HashtagNode extends TextNode {
   }
 }
 
+/**
+ * Generates a HashtagNode, which is a string following the format of a # followed by some text, eg. #lexical.
+ * @param text - The text used inside the HashtagNode.
+ * @returns - The HashtagNode with the embedded text.
+ */
 export function $createHashtagNode(text = ''): HashtagNode {
   return $applyNodeReplacement(new HashtagNode(text));
 }
 
+/**
+ * Determines if node is a HashtagNode.
+ * @param node - The node to be checked.
+ * @returns true if node is a HashtagNode, false otherwise.
+ */
 export function $isHashtagNode(
   node: LexicalNode | null | undefined,
 ): node is HashtagNode {

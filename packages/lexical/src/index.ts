@@ -142,6 +142,7 @@ export {
   $getNodeByKey,
   $getRoot,
   $hasAncestor,
+  $hasUpdateTag,
   $isInlineElementOrDecoratorNode,
   $isLeafNode,
   $isRootOrShadowRoot,
@@ -150,6 +151,7 @@ export {
   $setSelection,
   $splitNode,
   getNearestEditorFromDOMNode,
+  isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
 } from './LexicalUtils';
 export {$isDecoratorNode, DecoratorNode} from './nodes/LexicalDecoratorNode';

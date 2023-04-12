@@ -118,10 +118,10 @@
         "./packages/lexical-react/src/LexicalCharacterLimitPlugin.tsx"
       ],
       "@lexical/react/LexicalClearEditorPlugin": [
-        "./packages/lexical-react/src/LexicalClearEditorPlugin.tsx"
+        "./packages/lexical-react/src/LexicalClearEditorPlugin.ts"
       ],
       "@lexical/react/LexicalClickableLinkPlugin": [
-        "./packages/lexical-react/src/LexicalClickableLinkPlugin.ts"
+        "./packages/lexical-react/src/LexicalClickableLinkPlugin.tsx"
       ],
       "@lexical/react/LexicalCollaborationContext": [
         "./packages/lexical-react/src/LexicalCollaborationContext.ts"

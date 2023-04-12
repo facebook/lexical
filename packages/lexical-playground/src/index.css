@@ -686,10 +686,6 @@ i.prettier-error {
   border-radius: 4px;
 }
 
-.ContentEditable__root .PlaygroundEditorTheme__link {
-  pointer-events: none;
-}
-
 .mention:focus {
   box-shadow: rgb(180 213 255) 0px 0px 0px 2px;
   outline: none;

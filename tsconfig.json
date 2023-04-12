@@ -120,6 +120,9 @@
       "@lexical/react/LexicalClearEditorPlugin": [
         "./packages/lexical-react/src/LexicalClearEditorPlugin.ts"
       ],
+      "@lexical/react/LexicalClickableLinkPlugin": [
+        "./packages/lexical-react/src/LexicalClickableLinkPlugin.ts"
+      ],
       "@lexical/react/LexicalCollaborationContext": [
         "./packages/lexical-react/src/LexicalCollaborationContext.ts"
       ],

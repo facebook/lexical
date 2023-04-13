@@ -82,8 +82,6 @@ export function createRow(): Row {
 export type SerializedTableNode = Spread<
   {
     rows: Rows;
-    type: 'tablesheet';
-    version: 1;
   },
   SerializedLexicalNode
 >;

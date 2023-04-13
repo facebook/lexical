@@ -7,64 +7,43 @@
  *
  */
 
-import type {Cell} from './LexicalTableSelection';
-import type {HTMLTableElementWithWithTableSelectionState} from './LexicalTableSelectionHelpers';
 import type {LexicalCommand} from 'lexical';
 
 import {createCommand} from 'lexical';
 
-import {
+export type {SerializedTableCellNode} from './LexicalTableCellNode';
+export {
   $createTableCellNode,
   $isTableCellNode,
-  SerializedTableCellNode,
   TableCellHeaderStates,
   TableCellNode,
 } from './LexicalTableCellNode';
-import {
+export type {SerializedTableNode} from './LexicalTableNode';
+export {
   $createTableNode,
   $getElementGridForTableNode,
   $isTableNode,
-  SerializedTableNode,
   TableNode,
 } from './LexicalTableNode';
-import {
+export type {SerializedTableRowNode} from './LexicalTableRowNode';
+export {
   $createTableRowNode,
   $isTableRowNode,
-  SerializedTableRowNode,
   TableRowNode,
 } from './LexicalTableRowNode';
-import {TableSelection} from './LexicalTableSelection';
-import {
+export type {Cell} from './LexicalTableSelection';
+export {TableSelection} from './LexicalTableSelection';
+export type {HTMLTableElementWithWithTableSelectionState} from './LexicalTableSelectionHelpers';
+export {
   applyTableHandlers,
   getCellFromTarget,
   getTableSelectionFromTableElement,
 } from './LexicalTableSelectionHelpers';
-import {
-  $createTableNodeWithDimensions,
-  $deleteTableColumn,
-  $deleteTableColumn__EXPERIMENTAL,
-  $deleteTableRow__EXPERIMENTAL,
-  $getTableCellNodeFromLexicalNode,
-  $getTableColumnIndexFromTableCellNode,
-  $getTableNodeFromLexicalNodeOrThrow,
-  $getTableRowIndexFromTableCellNode,
-  $getTableRowNodeFromTableCellNodeOrThrow,
-  $insertTableColumn,
-  $insertTableColumn__EXPERIMENTAL,
-  $insertTableRow,
-  $insertTableRow__EXPERIMENTAL,
-  $removeTableRowAtIndex,
-} from './LexicalTableUtils';
-
 export {
-  $createTableCellNode,
-  $createTableNode,
   $createTableNodeWithDimensions,
-  $createTableRowNode,
   $deleteTableColumn,
   $deleteTableColumn__EXPERIMENTAL,
   $deleteTableRow__EXPERIMENTAL,
-  $getElementGridForTableNode,
   $getTableCellNodeFromLexicalNode,
   $getTableColumnIndexFromTableCellNode,
   $getTableNodeFromLexicalNodeOrThrow,
@@ -74,27 +53,9 @@ export {
   $insertTableColumn__EXPERIMENTAL,
   $insertTableRow,
   $insertTableRow__EXPERIMENTAL,
-  $isTableCellNode,
-  $isTableNode,
-  $isTableRowNode,
   $removeTableRowAtIndex,
-  applyTableHandlers,
-  Cell,
-  getCellFromTarget,
-  getTableSelectionFromTableElement,
-  HTMLTableElementWithWithTableSelectionState,
-  TableCellHeaderStates,
-  TableCellNode,
-  TableNode,
-  TableRowNode,
-  TableSelection,
-};
-
-export type {
-  SerializedTableCellNode,
-  SerializedTableNode,
-  SerializedTableRowNode,
-};
+  $unmergeCell,
+} from './LexicalTableUtils';
 
 export type InsertTableCommandPayloadHeaders =
   | Readonly<{

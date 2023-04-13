@@ -2058,7 +2058,7 @@ export class RangeSelection implements BaseSelection {
           anchorNode.getNextSibling() ||
           (parent === null ? null : parent.getNextSibling());
 
-        if ($isElementNode(nextSibling) && !nextSibling.canExtractContents()) {
+        if ($isElementNode(nextSibling) && nextSibling.isShadowRoot()) {
           return;
         }
       }
@@ -2752,35 +2752,48 @@ export function $updateElementSelectionOnCreateDeleteNode(
   // Single node. We shift selection but never redimension it
   if (selection.isCollapsed()) {
     const selectionOffset = anchor.offset;
-    if (nodeOffset <= selectionOffset) {
+    if (
+      (nodeOffset <= selectionOffset && times > 0) ||
+      (nodeOffset < selectionOffset && times < 0)
+    ) {
       const newSelectionOffset = Math.max(0, selectionOffset + times);
       anchor.set(parentKey, newSelectionOffset, 'element');
       focus.set(parentKey, newSelectionOffset, 'element');
       // The new selection might point to text nodes, try to resolve them
       $updateSelectionResolveTextNodes(selection);
     }
-    return;
-  }
-  // Multiple nodes selected. We shift or redimension selection
-  const isBackward = selection.isBackward();
-  const firstPoint = isBackward ? focus : anchor;
-  const firstPointNode = firstPoint.getNode();
-  const lastPoint = isBackward ? anchor : focus;
-  const lastPointNode = lastPoint.getNode();
-  if (parentNode.is(firstPointNode)) {
-    const firstPointOffset = firstPoint.offset;
-    if (nodeOffset <= firstPointOffset) {
-      firstPoint.set(
-        parentKey,
-        Math.max(0, firstPointOffset + times),
-        'element',
-      );
+  } else {
+    // Multiple nodes selected. We shift or redimension selection
+    const isBackward = selection.isBackward();
+    const firstPoint = isBackward ? focus : anchor;
+    const firstPointNode = firstPoint.getNode();
+    const lastPoint = isBackward ? anchor : focus;
+    const lastPointNode = lastPoint.getNode();
+    if (parentNode.is(firstPointNode)) {
+      const firstPointOffset = firstPoint.offset;
+      if (
+        (nodeOffset <= firstPointOffset && times > 0) ||
+        (nodeOffset < firstPointOffset && times < 0)
+      ) {
+        firstPoint.set(
+          parentKey,
+          Math.max(0, firstPointOffset + times),
+          'element',
+        );
+      }
     }
-  }
-  if (parentNode.is(lastPointNode)) {
-    const lastPointOffset = lastPoint.offset;
-    if (nodeOffset <= lastPointOffset) {
-      lastPoint.set(parentKey, Math.max(0, lastPointOffset + times), 'element');
+    if (parentNode.is(lastPointNode)) {
+      const lastPointOffset = lastPoint.offset;
+      if (
+        (nodeOffset <= lastPointOffset && times > 0) ||
+        (nodeOffset < lastPointOffset && times < 0)
+      ) {
+        lastPoint.set(
+          parentKey,
+          Math.max(0, lastPointOffset + times),
+          'element',
+        );
+      }
     }
   }
   // The new selection might point to text nodes, try to resolve them
@@ -3072,8 +3085,14 @@ export function updateDOMSelection(
         ? domSelection.getRangeAt(0)
         : null;
     if (selectionTarget !== null) {
-      // @ts-ignore Text nodes do have getBoundingClientRect
-      const selectionRect = selectionTarget.getBoundingClientRect();
+      let selectionRect: DOMRect;
+      if (selectionTarget instanceof Text) {
+        const range = document.createRange();
+        range.selectNode(selectionTarget);
+        selectionRect = range.getBoundingClientRect();
+      } else {
+        selectionRect = selectionTarget.getBoundingClientRect();
+      }
       scrollIntoViewIfNeeded(editor, selectionRect, rootElement);
     }
   }

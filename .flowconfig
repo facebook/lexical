@@ -6,6 +6,7 @@
 .*/npm/.*
 .*/.tempUserDataDir/.*
 .*/node_modules/.*
+.*/libdefs/.*
 
 [include]
 ./packages/
@@ -112,7 +113,7 @@ suppress_type=$FixMe
 suppress_type=$FlowExpectedError
 
 [libs]
-./libdefs/
+./libdefs/yjs.js
 ./scripts/flow/environment.js
 ./flow-typed/yjs.js
 ./flow-typed/prism.js
@@ -120,3 +121,6 @@ suppress_type=$FlowExpectedError
 [strict]
 nonstrict-import
 unclear-type
+
+[version]
+^0.203.0

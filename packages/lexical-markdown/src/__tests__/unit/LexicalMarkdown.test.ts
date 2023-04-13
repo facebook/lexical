@@ -100,6 +100,14 @@ describe('Markdown', () => {
       md: '[Hello](https://lexical.dev) world',
     },
     {
+      html: '<p><a href="https://lexical.dev" title="Hello world"><span>Hello</span></a><span> world</span></p>',
+      md: '[Hello](https://lexical.dev "Hello world") world',
+    },
+    {
+      html: '<p><a href="https://lexical.dev" title="Title with \\&quot; escaped character"><span>Hello</span></a><span> world</span></p>',
+      md: '[Hello](https://lexical.dev "Title with \\" escaped character") world',
+    },
+    {
       html: '<p><span>Hello </span><s><i><b><strong>world</strong></b></i></s><span>!</span></p>',
       md: 'Hello ~~***world***~~!',
     },

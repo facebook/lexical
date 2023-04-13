@@ -7,9 +7,14 @@
  */
 
 import {
+  deleteForward,
+  moveLeft,
+  moveRight,
+  moveToEditorBeginning,
   moveToLineBeginning,
   moveToPrevWord,
   pressShiftEnter,
+  selectAll,
 } from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
@@ -20,8 +25,10 @@ import {
   focusEditor,
   html,
   initialize,
+  insertCollapsible,
   insertImageCaption,
   insertSampleImage,
+  insertTable,
   IS_MAC,
   keyDownCtrlOrMeta,
   keyUpCtrlOrMeta,
@@ -220,5 +227,129 @@ test.describe('Selection', () => {
       focusOffset: 4,
       focusPath: [0, 1, 0, 0],
     });
+  });
+
+  test('Can delete at boundary #4221', async ({page, isPlainText}) => {
+    test.skip(!isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type('aaa');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('b');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('c');
+
+    await page.keyboard.down('Shift');
+    await moveLeft(page, 3);
+    await page.keyboard.up('Shift');
+    await page.keyboard.press('Delete');
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">aaa</span>
+          <br />
+          <br />
+        </p>
+      `,
+    );
+
+    await page.keyboard.down('Shift');
+    await moveLeft(page, 1);
+    await page.keyboard.up('Shift');
+    await page.keyboard.press('Delete');
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">aaa</span>
+        </p>
+      `,
+    );
+  });
+
+  test('Can select all with node selection', async ({page, isPlainText}) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type('Text before');
+    await insertSampleImage(page);
+    await page.keyboard.type('Text after');
+    await selectAll(page);
+    await page.keyboard.press('Delete');
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+  });
+
+  test('Can delete forward a Collapsible', async ({page, isPlainText}) => {
+    test.skip(isPlainText);
+    if (!IS_MAC) {
+      // Do Windows/Linux have equivalent shortcuts?
+      return;
+    }
+    await focusEditor(page);
+    await page.keyboard.type('abc');
+    await insertCollapsible(page);
+    await moveToEditorBeginning(page);
+    await moveRight(page, 3);
+    await deleteForward(page);
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">abc</span>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+  });
+
+  // TODO I don't think this test is correct but at least this test will prevent it from regressing
+  // even further
+  test('Can delete forward a Table', async ({page, isPlainText}) => {
+    test.skip(isPlainText);
+    if (!IS_MAC) {
+      // Do Windows/Linux have equivalent shortcuts?
+      return;
+    }
+    await focusEditor(page);
+    await page.keyboard.type('abc');
+    await insertTable(page, 1, 2);
+    await moveToEditorBeginning(page);
+    await moveRight(page, 3);
+    await deleteForward(page);
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">abc</span>
+        </p>
+        <table class="PlaygroundEditorTheme__table">
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+          </tr>
+        </table>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
   });
 });

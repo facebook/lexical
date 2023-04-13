@@ -32,15 +32,16 @@ import {
   $createHeadingNode,
   $createQuoteNode,
   $isHeadingNode,
+  $isQuoteNode,
   HeadingTagType,
 } from '@lexical/rich-text';
 import {
   $getSelectionStyleValueForProperty,
   $isParentElementRTL,
   $patchStyleText,
-  $selectAll,
   $setBlocksType,
 } from '@lexical/selection';
+import {$isTableNode} from '@lexical/table';
 import {
   $findMatchingParent,
   $getNearestBlockElementAncestorOrThrow,
@@ -105,6 +106,11 @@ const blockTypeToBlockName = {
   quote: 'Quote',
 };
 
+const rootTypeToRootName = {
+  root: 'Root',
+  table: 'Table',
+};
+
 function getCodeLanguageOptions(): [string, string][] {
   const options: [string, string][] = [];
 
@@ -150,9 +156,11 @@ function dropDownActiveClass(active: boolean) {
 function BlockFormatDropDown({
   editor,
   blockType,
+  rootType,
   disabled = false,
 }: {
   blockType: keyof typeof blockTypeToBlockName;
+  rootType: keyof typeof rootTypeToRootName;
   editor: LexicalEditor;
   disabled?: boolean;
 }): JSX.Element {
@@ -373,6 +381,8 @@ export default function ToolbarPlugin(): JSX.Element {
   const [activeEditor, setActiveEditor] = useState(editor);
   const [blockType, setBlockType] =
     useState<keyof typeof blockTypeToBlockName>('paragraph');
+  const [rootType, setRootType] =
+    useState<keyof typeof rootTypeToRootName>('root');
   const [selectedElementKey, setSelectedElementKey] = useState<NodeKey | null>(
     null,
   );
@@ -395,7 +405,7 @@ export default function ToolbarPlugin(): JSX.Element {
   const [codeLanguage, setCodeLanguage] = useState<string>('');
   const [isEditable, setIsEditable] = useState(() => editor.isEditable());
 
-  const updateToolbar = useCallback(() => {
+  const $updateToolbar = useCallback(() => {
     const selection = $getSelection();
     if ($isRangeSelection(selection)) {
       const anchorNode = selection.anchor.getNode();
@@ -431,6 +441,13 @@ export default function ToolbarPlugin(): JSX.Element {
         setIsLink(true);
       } else {
         setIsLink(false);
+      }
+
+      const tableNode = $findMatchingParent(node, $isTableNode);
+      if ($isTableNode(tableNode)) {
+        setRootType('table');
+      } else {
+        setRootType('root');
       }
 
       if (elementDOM !== null) {
@@ -485,13 +502,13 @@ export default function ToolbarPlugin(): JSX.Element {
     return editor.registerCommand(
       SELECTION_CHANGE_COMMAND,
       (_payload, newEditor) => {
-        updateToolbar();
+        $updateToolbar();
         setActiveEditor(newEditor);
         return false;
       },
       COMMAND_PRIORITY_CRITICAL,
     );
-  }, [editor, updateToolbar]);
+  }, [editor, $updateToolbar]);
 
   useEffect(() => {
     return mergeRegister(
@@ -500,7 +517,7 @@ export default function ToolbarPlugin(): JSX.Element {
       }),
       activeEditor.registerUpdateListener(({editorState}) => {
         editorState.read(() => {
-          updateToolbar();
+          $updateToolbar();
         });
       }),
       activeEditor.registerCommand<boolean>(
@@ -520,7 +537,7 @@ export default function ToolbarPlugin(): JSX.Element {
         COMMAND_PRIORITY_CRITICAL,
       ),
     );
-  }, [activeEditor, editor, updateToolbar]);
+  }, [$updateToolbar, activeEditor, editor]);
 
   const applyStyleText = useCallback(
     (styles: Record<string, string>) => {
@@ -538,14 +555,35 @@ export default function ToolbarPlugin(): JSX.Element {
     activeEditor.update(() => {
       const selection = $getSelection();
       if ($isRangeSelection(selection)) {
-        $selectAll(selection);
-        selection.getNodes().forEach((node) => {
+        const anchor = selection.anchor;
+        const focus = selection.focus;
+        const nodes = selection.getNodes();
+
+        if (anchor.key === focus.key && anchor.offset === focus.offset) {
+          return;
+        }
+
+        nodes.forEach((node, idx) => {
+          // We split the first and last node by the selection
+          // So that we don't format unselected text inside those nodes
           if ($isTextNode(node)) {
-            node.setFormat(0);
-            node.setStyle('');
-            $getNearestBlockElementAncestorOrThrow(node).setFormat('');
-          }
-          if ($isDecoratorBlockNode(node)) {
+            if (idx === 0 && anchor.offset !== 0) {
+              node = node.splitText(anchor.offset)[1] || node;
+            }
+            if (idx === nodes.length - 1) {
+              node = node.splitText(focus.offset)[0] || node;
+            }
+
+            if (node.__style !== '') {
+              node.setStyle('');
+            }
+            if (node.__format !== 0) {
+              node.setFormat(0);
+              $getNearestBlockElementAncestorOrThrow(node).setFormat('');
+            }
+          } else if ($isHeadingNode(node) || $isQuoteNode(node)) {
+            node.replace($createParagraphNode(), true);
+          } else if ($isDecoratorBlockNode(node)) {
             node.setFormat('');
           }
         });
@@ -622,32 +660,31 @@ export default function ToolbarPlugin(): JSX.Element {
           <BlockFormatDropDown
             disabled={!isEditable}
             blockType={blockType}
+            rootType={rootType}
             editor={editor}
           />
           <Divider />
         </>
       )}
       {blockType === 'code' ? (
-        <>
-          <DropDown
-            disabled={!isEditable}
-            buttonClassName="toolbar-item code-language"
-            buttonLabel={getLanguageFriendlyName(codeLanguage)}
-            buttonAriaLabel="Select language">
-            {CODE_LANGUAGE_OPTIONS.map(([value, name]) => {
-              return (
-                <DropDownItem
-                  className={`item ${dropDownActiveClass(
-                    value === codeLanguage,
-                  )}`}
-                  onClick={() => onCodeLanguageSelect(value)}
-                  key={value}>
-                  <span className="text">{name}</span>
-                </DropDownItem>
-              );
-            })}
-          </DropDown>
-        </>
+        <DropDown
+          disabled={!isEditable}
+          buttonClassName="toolbar-item code-language"
+          buttonLabel={getLanguageFriendlyName(codeLanguage)}
+          buttonAriaLabel="Select language">
+          {CODE_LANGUAGE_OPTIONS.map(([value, name]) => {
+            return (
+              <DropDownItem
+                className={`item ${dropDownActiveClass(
+                  value === codeLanguage,
+                )}`}
+                onClick={() => onCodeLanguageSelect(value)}
+                key={value}>
+                <span className="text">{name}</span>
+              </DropDownItem>
+            );
+          })}
+        </DropDown>
       ) : (
         <>
           <FontDropDown
@@ -792,6 +829,25 @@ export default function ToolbarPlugin(): JSX.Element {
             </DropDownItem>
           </DropDown>
           <Divider />
+          {rootType === 'table' && (
+            <>
+              <DropDown
+                disabled={!isEditable}
+                buttonClassName="toolbar-item spaced"
+                buttonLabel="Table"
+                buttonAriaLabel="Open table toolkit"
+                buttonIconClassName="icon table secondary">
+                <DropDownItem
+                  onClick={() => {
+                    /**/
+                  }}
+                  className="item">
+                  <span className="text">TODO</span>
+                </DropDownItem>
+              </DropDown>
+              <Divider />
+            </>
+          )}
           <DropDown
             disabled={!isEditable}
             buttonClassName="toolbar-item spaced"

@@ -17,7 +17,7 @@ import {
   test,
 } from '../utils/index.mjs';
 
-const TEST_URL = 'https://www.youtube.com/embed/jNQXAC9IVRw';
+const TEST_URL = 'https://www.youtube-nocookie.com/embed/jNQXAC9IVRw';
 test.describe('BlockWithAlignableContents', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
 

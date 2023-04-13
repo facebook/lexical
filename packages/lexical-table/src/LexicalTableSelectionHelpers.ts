@@ -176,7 +176,7 @@ export function applyTableHandlers(
   );
 
   const mouseUpCallback = (event: MouseEvent) => {
-    if (isMouseDown) {
+    if (isMouseDown && !doesTargetContainText(event.target as Node)) {
       event.preventDefault();
       event.stopPropagation();
     }
@@ -1022,6 +1022,19 @@ export function getCellFromTarget(node: Node): Cell | null {
   }
 
   return null;
+}
+
+export function doesTargetContainText(node: Node): boolean {
+  const currentNode: ParentNode | Node | null = node;
+
+  if (currentNode !== null) {
+    const nodeName = currentNode.nodeName;
+
+    if (nodeName === 'SPAN') {
+      return true;
+    }
+  }
+  return false;
 }
 
 export function getTableGrid(tableElement: HTMLElement): Grid {

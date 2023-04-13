@@ -16,7 +16,6 @@ import type {
   SerializedElementNode,
   SerializedLexicalNode,
   SerializedTextNode,
-  Spread,
 } from 'lexical';
 
 import {CodeHighlightNode, CodeNode} from '@lexical/code';
@@ -107,13 +106,7 @@ export function initializeClipboard() {
   });
 }
 
-export type SerializedTestElementNode = Spread<
-  {
-    type: 'test_block';
-    version: 1;
-  },
-  SerializedElementNode
->;
+export type SerializedTestElementNode = SerializedElementNode;
 
 export class TestElementNode extends ElementNode {
   static getType(): string {
@@ -155,10 +148,8 @@ export function $createTestElementNode(): TestElementNode {
   return new TestElementNode();
 }
 
-type SerializedTestTextNode = Spread<
-  {type: 'test_text'; version: 1},
-  SerializedTextNode
->;
+type SerializedTestTextNode = SerializedTextNode;
+
 export class TestTextNode extends TextNode {
   static getType() {
     return 'test_text';
@@ -183,13 +174,7 @@ export class TestTextNode extends TextNode {
   }
 }
 
-export type SerializedTestInlineElementNode = Spread<
-  {
-    type: 'test_inline_block';
-    version: 1;
-  },
-  SerializedElementNode
->;
+export type SerializedTestInlineElementNode = SerializedElementNode;
 
 export class TestInlineElementNode extends ElementNode {
   static getType(): string {
@@ -235,13 +220,7 @@ export function $createTestInlineElementNode(): TestInlineElementNode {
   return new TestInlineElementNode();
 }
 
-export type SerializedTestShadowRootNode = Spread<
-  {
-    type: 'test_block';
-    version: 1;
-  },
-  SerializedElementNode
->;
+export type SerializedTestShadowRootNode = SerializedElementNode;
 
 export class TestShadowRootNode extends ElementNode {
   static getType(): string {
@@ -287,13 +266,7 @@ export function $createTestShadowRootNode(): TestShadowRootNode {
   return new TestShadowRootNode();
 }
 
-export type SerializedTestSegmentedNode = Spread<
-  {
-    type: 'test_segmented';
-    version: 1;
-  },
-  SerializedTextNode
->;
+export type SerializedTestSegmentedNode = SerializedTextNode;
 
 export class TestSegmentedNode extends TextNode {
   static getType(): string {
@@ -328,13 +301,7 @@ export function $createTestSegmentedNode(text): TestSegmentedNode {
   return new TestSegmentedNode(text).setMode('segmented');
 }
 
-export type SerializedTestExcludeFromCopyElementNode = Spread<
-  {
-    type: 'test_exclude_from_copy_block';
-    version: 1;
-  },
-  SerializedElementNode
->;
+export type SerializedTestExcludeFromCopyElementNode = SerializedElementNode;
 
 export class TestExcludeFromCopyElementNode extends ElementNode {
   static getType(): string {
@@ -380,13 +347,7 @@ export function $createTestExcludeFromCopyElementNode(): TestExcludeFromCopyElem
   return new TestExcludeFromCopyElementNode();
 }
 
-export type SerializedTestDecoratorNode = Spread<
-  {
-    type: 'test_decorator';
-    version: 1;
-  },
-  SerializedLexicalNode
->;
+export type SerializedTestDecoratorNode = SerializedLexicalNode;
 
 export class TestDecoratorNode extends DecoratorNode<JSX.Element> {
   static getType(): string {

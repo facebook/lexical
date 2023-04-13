@@ -23,7 +23,7 @@ import {
   deprecated_GridCellNode,
   deprecated_GridRowNode,
   deprecated_GridNode,
-} from 'Lexical';
+} from 'lexical';
 
 /**
  * LexicalTableCellNode

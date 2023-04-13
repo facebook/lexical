@@ -188,10 +188,6 @@ export class HeadingNode extends ElementNode {
   /** @internal */
   __tag: HeadingTagType;
 
-  static clone(node: HeadingNode): HeadingNode {
-    return new HeadingNode(node.__tag, node.__key);
-  }
-
   static getType(): string {
     return 'heading';
   }

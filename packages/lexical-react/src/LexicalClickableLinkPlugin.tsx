@@ -8,7 +8,7 @@
 
 import {$isLinkNode} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$findMatchingParent} from '@lexical/utils';
+import {$findMatchingParent, isHTMLAnchorElement} from '@lexical/utils';
 import {
   $getNearestNodeFromDOMNode,
   $getSelection,
@@ -64,17 +64,13 @@ export default function LexicalClickableLinkPlugin({
             url = maybeLinkNode.getURL();
             urlTarget = maybeLinkNode.getTarget();
           } else {
-            const a =
-              target instanceof HTMLAnchorElement
+            const a = (
+              isHTMLAnchorElement(target)
                 ? target
-                : domGetParent(
-                    target,
-                    (node) => node instanceof HTMLAnchorElement,
-                  );
-            if (a instanceof HTMLAnchorElement) {
-              url = a.href;
-              urlTarget = a.target;
-            }
+                : domGetParent(target, isHTMLAnchorElement)
+            ) as HTMLAnchorElement;
+            url = a.href;
+            urlTarget = a.target;
           }
         }
       });

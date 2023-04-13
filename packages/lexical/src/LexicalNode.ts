@@ -190,6 +190,42 @@ export class LexicalNode {
   }
 
   clone(): this {
+    console.time('constructor-constraint');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const props: {[key: string]: any} = {};
+    const propertyNames = Object.getOwnPropertyNames(this);
+    for (let i = 0; i < propertyNames.length; i++) {
+      const property = propertyNames[i];
+      const propertyDescriptor = Object.getOwnPropertyDescriptor(
+        this,
+        property,
+      );
+
+      if (propertyDescriptor && propertyDescriptor.value !== undefined) {
+        props[property] = propertyDescriptor.value;
+      } else {
+        props[property] = this[property];
+      }
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const cloned = new (this.constructor as new (...args: any[]) => this)(
+      ...Object.values(props),
+    );
+    const constructorCloned = Object.assign(cloned, props);
+    console.timeEnd('constructor-constraint');
+
+    console.time('structuredClone');
+    const clone = Object.create(Object.getPrototypeOf(this));
+    const deepClone = structuredClone(this) as this;
+    const clonedWithStructured = Object.assign(clone, deepClone);
+    console.timeEnd('structuredClone');
+
+    console.time('stringify');
+    const cloneX = Object.create(Object.getPrototypeOf(this));
+    const deepCloneX = JSON.parse(JSON.stringify(this));
+    const stringifyClone = Object.assign(cloneX, deepCloneX);
+    console.timeEnd('stringify');
+
     const latestNode = this.getLatest();
     const editor = getActiveEditor();
     const cloneNotNeeded = editor._cloneNotNeeded;
@@ -219,42 +255,6 @@ export class LexicalNode {
     mutableNode.__key = key;
     console.timeEnd('oldClone');
 
-    console.time('stringify');
-    const cloneX = Object.create(Object.getPrototypeOf(this));
-    const deepCloneX = JSON.parse(JSON.stringify(this));
-    const stringifyClone = Object.assign(cloneX, deepCloneX);
-    console.timeEnd('stringify');
-
-    console.time('structuredClone');
-    const clone = Object.create(Object.getPrototypeOf(this));
-    const deepClone = structuredClone(this) as this;
-    const clonedWithStructured = Object.assign(clone, deepClone);
-    console.timeEnd('structuredClone');
-
-    console.time('constructor-constraint');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const props: {[key: string]: any} = {};
-    const propertyNames = Object.getOwnPropertyNames(this);
-    for (let i = 0; i < propertyNames.length; i++) {
-      const property = propertyNames[i];
-      const propertyDescriptor = Object.getOwnPropertyDescriptor(
-        this,
-        property,
-      );
-
-      if (propertyDescriptor && propertyDescriptor.value !== undefined) {
-        props[property] = propertyDescriptor.value;
-      } else {
-        props[property] = this[property];
-      }
-    }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const cloned = new (this.constructor as new (...args: any[]) => this)(
-      ...Object.values(props),
-    );
-    const constructorCloned = Object.assign(cloned, props);
-    console.timeEnd('constructor-constraint');
-
     // if you want to verify that the 4 clones are the same you can uncomment this:
     // console.table({
     //   clonedWithStructured,
@@ -263,7 +263,7 @@ export class LexicalNode {
     //   stringifyClone,
     // });
 
-    return mutableNode;
+    return clonedWithStructured;
   }
 
   constructor(key?: NodeKey) {

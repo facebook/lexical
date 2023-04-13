@@ -84,7 +84,7 @@ export function DropDownItem(props: DropDrownButton | DropDownTextInput) {
             closeDropDown();
           }}
           ref={ref}
-          style={props.style ? props.style : undefined}
+          style={props.style}
           title={props.title}
           type="button">
           {props.children}

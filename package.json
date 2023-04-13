@@ -124,7 +124,6 @@
     "chokidar": "^3.5.2",
     "concurrently": "^6.2.0",
     "confusing-browser-globals": "^1.0.10",
-    "core-js": "^3.30.0",
     "cross-env": "^7.0.3",
     "eslint": "^7.31.0",
     "eslint-config-fbjs": "^3.1.1",

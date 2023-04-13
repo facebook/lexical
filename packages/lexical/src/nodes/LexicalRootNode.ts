@@ -30,6 +30,10 @@ export class RootNode extends ElementNode {
     return 'root';
   }
 
+  static clone(node: RootNode): RootNode {
+    return new RootNode();
+  }
+
   constructor() {
     super('root');
     this.__cachedText = null;

@@ -7,6 +7,7 @@
  */
 
 /* eslint-disable no-constant-condition */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import type {EditorConfig, LexicalEditor} from './LexicalEditor';
 import type {
   GridSelection,
@@ -189,40 +190,80 @@ export class LexicalNode {
   }
 
   clone(): this {
-    try {
-      // this block works for nodes that can be structured cloned
-      // (e.g. does not work with nested editors like imageNode)
-      const clone = Object.create(Object.getPrototypeOf(this));
-      const deepClone = structuredClone(this);
-      return Object.assign(clone, deepClone);
-    } catch (e) {
-      // this works for any node whose constructor does not receive a required
-      // parameter that is not a direct property of the node. (e.g. LinkNode
-      // constructor group some properties in the attrs object parameter)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const props: {[key: string]: any} = {};
-      const propertyNames = Object.getOwnPropertyNames(this);
+    const latestNode = this.getLatest();
+    const editor = getActiveEditor();
+    const cloneNotNeeded = editor._cloneNotNeeded;
+    const key = this.__key;
 
-      for (let i = 0; i < propertyNames.length; i++) {
-        const property = propertyNames[i];
-        const propertyDescriptor = Object.getOwnPropertyDescriptor(
-          this,
-          property,
-        );
-
-        if (propertyDescriptor && propertyDescriptor.value !== undefined) {
-          props[property] = propertyDescriptor.value;
-        } else {
-          props[property] = this[property];
-        }
-      }
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const cloned = new (this.constructor as new (...args: any[]) => this)(
-        ...Object.values(props),
-      );
-      return Object.assign(cloned, props);
+    console.time('oldClone');
+    const constructor = latestNode.constructor;
+    // @ts-expect-error
+    const mutableNode = constructor.clone(latestNode);
+    mutableNode.__parent = latestNode.__parent;
+    mutableNode.__next = latestNode.__next;
+    mutableNode.__prev = latestNode.__prev;
+    if ($isElementNode(latestNode) && $isElementNode(mutableNode)) {
+      mutableNode.__first = latestNode.__first;
+      mutableNode.__last = latestNode.__last;
+      mutableNode.__size = latestNode.__size;
+      mutableNode.__indent = latestNode.__indent;
+      mutableNode.__format = latestNode.__format;
+      mutableNode.__dir = latestNode.__dir;
+    } else if ($isTextNode(latestNode) && $isTextNode(mutableNode)) {
+      mutableNode.__format = latestNode.__format;
+      mutableNode.__style = latestNode.__style;
+      mutableNode.__mode = latestNode.__mode;
+      mutableNode.__detail = latestNode.__detail;
     }
+    cloneNotNeeded.add(key);
+    mutableNode.__key = key;
+    console.timeEnd('oldClone');
+
+    console.time('stringify');
+    const cloneX = Object.create(Object.getPrototypeOf(this));
+    const deepCloneX = JSON.parse(JSON.stringify(this));
+    const stringifyClone = Object.assign(cloneX, deepCloneX);
+    console.timeEnd('stringify');
+
+    console.time('structuredClone');
+    const clone = Object.create(Object.getPrototypeOf(this));
+    const deepClone = structuredClone(this) as this;
+    const clonedWithStructured = Object.assign(clone, deepClone);
+    console.timeEnd('structuredClone');
+
+    console.time('constructor-constraint');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const props: {[key: string]: any} = {};
+    const propertyNames = Object.getOwnPropertyNames(this);
+    for (let i = 0; i < propertyNames.length; i++) {
+      const property = propertyNames[i];
+      const propertyDescriptor = Object.getOwnPropertyDescriptor(
+        this,
+        property,
+      );
+
+      if (propertyDescriptor && propertyDescriptor.value !== undefined) {
+        props[property] = propertyDescriptor.value;
+      } else {
+        props[property] = this[property];
+      }
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const cloned = new (this.constructor as new (...args: any[]) => this)(
+      ...Object.values(props),
+    );
+    const constructorCloned = Object.assign(cloned, props);
+    console.timeEnd('constructor-constraint');
+
+    // if you want to verify that the 4 clones are the same you can uncomment this:
+    // console.table({
+    //   clonedWithStructured,
+    //   constructorCloned,
+    //   mutableNode,
+    //   stringifyClone,
+    // });
+
+    return mutableNode;
   }
 
   constructor(key?: NodeKey) {

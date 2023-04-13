@@ -281,10 +281,6 @@ export class TextNode extends LexicalNode {
   /** @internal */
   __detail: number;
 
-  static clone(node: TextNode): TextNode {
-    return new TextNode(node.__text, node.__key);
-  }
-
   static getType(): string {
     return 'text';
   }

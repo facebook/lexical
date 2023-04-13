@@ -190,7 +190,6 @@ export class LexicalNode {
   }
 
   clone(): this {
-    console.time('constructor-constraint');
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const props: {[key: string]: any} = {};
     const propertyNames = Object.getOwnPropertyNames(this);
@@ -208,92 +207,8 @@ export class LexicalNode {
       }
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const cloned = new (this.constructor as new (...args: any[]) => this)(
-      ...Object.values(props),
-    );
-    const constructorCloned = Object.assign(cloned, props);
-    console.timeEnd('constructor-constraint');
-
-    console.time('not-stringify-nor-structured');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const props2: {[key: string]: any} = {};
-    const propertyNames2 = Object.getOwnPropertyNames(this);
-    for (let i = 0; i < propertyNames2.length; i++) {
-      const property = propertyNames2[i];
-      const propertyDescriptor = Object.getOwnPropertyDescriptor(
-        this,
-        property,
-      );
-
-      if (propertyDescriptor && propertyDescriptor.value !== undefined) {
-        props2[property] = propertyDescriptor.value;
-      } else {
-        props2[property] = this[property];
-      }
-    }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const cloned2 = Object.create(Object.getPrototypeOf(this));
-    const constructorCloned2 = Object.assign(cloned2, props2);
-    console.timeEnd('not-stringify-nor-structured');
-
-    //this one should be commented if you test with images or sticky nodes
-    console.time('structuredClone');
-    const clone = Object.create(Object.getPrototypeOf(this));
-    const deepClone = structuredClone(this) as this;
-    const clonedWithStructured = Object.assign(clone, deepClone);
-    console.timeEnd('structuredClone');
-
-    console.time('stringify');
-    const cloneX = Object.create(Object.getPrototypeOf(this));
-    const deepCloneX = JSON.parse(JSON.stringify(this));
-    const stringifyClone = Object.assign(cloneX, deepCloneX);
-    console.timeEnd('stringify');
-
-    console.time('no-valid-with-objects');
-    const cloneY = Object.create(Object.getPrototypeOf(this));
-    const cloneNotValidWithObjects = Object.assign(cloneX, cloneY);
-    console.timeEnd('no-valid-with-objects');
-
-    const latestNode = this.getLatest();
-    const editor = getActiveEditor();
-    const cloneNotNeeded = editor._cloneNotNeeded;
-    const key = this.__key;
-
-    console.time('oldClone');
-    const constructor = latestNode.constructor;
-    // @ts-expect-error
-    const mutableNode = constructor.clone(latestNode);
-    mutableNode.__parent = latestNode.__parent;
-    mutableNode.__next = latestNode.__next;
-    mutableNode.__prev = latestNode.__prev;
-    if ($isElementNode(latestNode) && $isElementNode(mutableNode)) {
-      mutableNode.__first = latestNode.__first;
-      mutableNode.__last = latestNode.__last;
-      mutableNode.__size = latestNode.__size;
-      mutableNode.__indent = latestNode.__indent;
-      mutableNode.__format = latestNode.__format;
-      mutableNode.__dir = latestNode.__dir;
-    } else if ($isTextNode(latestNode) && $isTextNode(mutableNode)) {
-      mutableNode.__format = latestNode.__format;
-      mutableNode.__style = latestNode.__style;
-      mutableNode.__mode = latestNode.__mode;
-      mutableNode.__detail = latestNode.__detail;
-    }
-    cloneNotNeeded.add(key);
-    mutableNode.__key = key;
-    console.timeEnd('oldClone');
-
-    // if you want to verify that the 4 clones are the same you can uncomment this:
-    // console.table({
-    //   cloneNotValidWithObjects,
-    //   clonedWithStructured,
-    //   constructorCloned,
-    //   constructorCloned2,
-    //   mutableNode,
-    //   stringifyClone,
-    // });
-
-    return mutableNode;
+    const cloned = Object.create(Object.getPrototypeOf(this));
+    return Object.assign(cloned, props);
   }
 
   constructor(key?: NodeKey) {
@@ -776,32 +691,7 @@ export class LexicalNode {
       internalMarkNodeAsDirty(latestNode);
       return latestNode;
     }
-    const mutableNode1 = latestNode.clone();
-
-    console.time('oldClone');
-    const constructor = latestNode.constructor;
-    // @ts-expect-error
-    const mutableNode = constructor.clone(latestNode);
-    mutableNode.__parent = latestNode.__parent;
-    mutableNode.__next = latestNode.__next;
-    mutableNode.__prev = latestNode.__prev;
-    if ($isElementNode(latestNode) && $isElementNode(mutableNode)) {
-      mutableNode.__first = latestNode.__first;
-      mutableNode.__last = latestNode.__last;
-      mutableNode.__size = latestNode.__size;
-      mutableNode.__indent = latestNode.__indent;
-      mutableNode.__format = latestNode.__format;
-      mutableNode.__dir = latestNode.__dir;
-    } else if ($isTextNode(latestNode) && $isTextNode(mutableNode)) {
-      mutableNode.__format = latestNode.__format;
-      mutableNode.__style = latestNode.__style;
-      mutableNode.__mode = latestNode.__mode;
-      mutableNode.__detail = latestNode.__detail;
-    }
-    cloneNotNeeded.add(key);
-    mutableNode.__key = key;
-    console.timeEnd('oldClone');
-
+    const mutableNode = latestNode.clone();
     cloneNotNeeded.add(key);
     internalMarkNodeAsDirty(mutableNode);
     // Update reference in node map

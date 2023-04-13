@@ -208,9 +208,7 @@ export class LexicalNode {
       }
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const cloned = new (this.constructor as new (...args: any[]) => this)(
-      ...Object.values(props),
-    );
+    const cloned = Object.create(Object.getPrototypeOf(this));
     const constructorCloned = Object.assign(cloned, props);
     console.timeEnd('constructor-constraint');
 
@@ -746,7 +744,32 @@ export class LexicalNode {
       internalMarkNodeAsDirty(latestNode);
       return latestNode;
     }
-    const mutableNode = latestNode.clone();
+    const mutableNode1 = latestNode.clone();
+
+    console.time('oldClone');
+    const constructor = latestNode.constructor;
+    // @ts-expect-error
+    const mutableNode = constructor.clone(latestNode);
+    mutableNode.__parent = latestNode.__parent;
+    mutableNode.__next = latestNode.__next;
+    mutableNode.__prev = latestNode.__prev;
+    if ($isElementNode(latestNode) && $isElementNode(mutableNode)) {
+      mutableNode.__first = latestNode.__first;
+      mutableNode.__last = latestNode.__last;
+      mutableNode.__size = latestNode.__size;
+      mutableNode.__indent = latestNode.__indent;
+      mutableNode.__format = latestNode.__format;
+      mutableNode.__dir = latestNode.__dir;
+    } else if ($isTextNode(latestNode) && $isTextNode(mutableNode)) {
+      mutableNode.__format = latestNode.__format;
+      mutableNode.__style = latestNode.__style;
+      mutableNode.__mode = latestNode.__mode;
+      mutableNode.__detail = latestNode.__detail;
+    }
+    cloneNotNeeded.add(key);
+    mutableNode.__key = key;
+    console.timeEnd('oldClone');
+
     cloneNotNeeded.add(key);
     internalMarkNodeAsDirty(mutableNode);
     // Update reference in node map

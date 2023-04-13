@@ -208,10 +208,35 @@ export class LexicalNode {
       }
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const cloned = Object.create(Object.getPrototypeOf(this));
+    const cloned = new (this.constructor as new (...args: any[]) => this)(
+      ...Object.values(props),
+    );
     const constructorCloned = Object.assign(cloned, props);
     console.timeEnd('constructor-constraint');
 
+    console.time('not-stringify-nor-structured');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const props2: {[key: string]: any} = {};
+    const propertyNames2 = Object.getOwnPropertyNames(this);
+    for (let i = 0; i < propertyNames2.length; i++) {
+      const property = propertyNames2[i];
+      const propertyDescriptor = Object.getOwnPropertyDescriptor(
+        this,
+        property,
+      );
+
+      if (propertyDescriptor && propertyDescriptor.value !== undefined) {
+        props2[property] = propertyDescriptor.value;
+      } else {
+        props2[property] = this[property];
+      }
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const cloned2 = Object.create(Object.getPrototypeOf(this));
+    const constructorCloned2 = Object.assign(cloned2, props2);
+    console.timeEnd('not-stringify-nor-structured');
+
+    //this one should be commented if you test with images or sticky nodes
     console.time('structuredClone');
     const clone = Object.create(Object.getPrototypeOf(this));
     const deepClone = structuredClone(this) as this;
@@ -223,6 +248,11 @@ export class LexicalNode {
     const deepCloneX = JSON.parse(JSON.stringify(this));
     const stringifyClone = Object.assign(cloneX, deepCloneX);
     console.timeEnd('stringify');
+
+    console.time('no-valid-with-objects');
+    const cloneY = Object.create(Object.getPrototypeOf(this));
+    const cloneNotValidWithObjects = Object.assign(cloneX, cloneY);
+    console.timeEnd('no-valid-with-objects');
 
     const latestNode = this.getLatest();
     const editor = getActiveEditor();
@@ -255,13 +285,15 @@ export class LexicalNode {
 
     // if you want to verify that the 4 clones are the same you can uncomment this:
     // console.table({
+    //   cloneNotValidWithObjects,
     //   clonedWithStructured,
     //   constructorCloned,
+    //   constructorCloned2,
     //   mutableNode,
     //   stringifyClone,
     // });
 
-    return clonedWithStructured;
+    return mutableNode;
   }
 
   constructor(key?: NodeKey) {

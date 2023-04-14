@@ -398,6 +398,7 @@ export const TOGGLE_LINK_COMMAND: LexicalCommand<
 export function toggleLink(
   url: null | string,
   attributes: LinkAttributes = {},
+  sanitizeUrl?: null | ((_url: string) => string | null),
 ): void {
   const {target, title} = attributes;
   const rel = attributes.rel === undefined ? 'noopener' : attributes.rel;
@@ -408,22 +409,15 @@ export function toggleLink(
   }
   const nodes = selection.extract();
 
-  if (url === null) {
-    // Remove LinkNodes
-    nodes.forEach((node) => {
-      const parent = node.getParent();
-
-      if ($isLinkNode(parent)) {
-        const children = parent.getChildren();
-
-        for (let i = 0; i < children.length; i++) {
-          parent.insertBefore(children[i]);
-        }
-
-        parent.remove();
+  if (url !== null) {
+    let sanitizedUrl: string | null = url;
+    if (sanitizeUrl !== null) {
+      const sanitize = sanitizeUrl ?? _sanitizeUrl;
+      sanitizedUrl = sanitize(url);
+      if (sanitizedUrl === null) {
+        return;
       }
-    });
-  } else {
+    }
     // Add or merge LinkNodes
     if (nodes.length === 1) {
       const firstNode = nodes[0];
@@ -511,7 +505,38 @@ export function toggleLink(
         linkNode.append(node);
       }
     });
+  } else {
+    // Remove LinkNodes
+    nodes.forEach((node) => {
+      const parent = node.getParent();
+
+      if ($isLinkNode(parent)) {
+        const children = parent.getChildren();
+
+        for (let i = 0; i < children.length; i++) {
+          parent.insertBefore(children[i]);
+        }
+
+        parent.remove();
+      }
+    });
   }
+}
+
+function _sanitizeUrl(url: string): string | null {
+  /** A pattern that matches safe  URLs. */
+  const SAFE_URL_PATTERN =
+    /^(?:(?:https?|mailto|ftp|tel|file|sms):|[^&:/?#]*(?:[/?#]|$))/gi;
+
+  /** A pattern that matches safe data URLs. */
+  const DATA_URL_PATTERN =
+    /^data:(?:image\/(?:bmp|gif|jpeg|jpg|png|tiff|webp)|video\/(?:mpeg|mp4|ogg|webm)|audio\/(?:mp3|oga|ogg|opus));base64,[a-z0-9+/]+=*$/i;
+
+  url = String(url).trim();
+
+  if (url.match(SAFE_URL_PATTERN) || url.match(DATA_URL_PATTERN)) return url;
+
+  return 'https://';
 }
 
 function $getLinkAncestor(node: LexicalNode): null | LexicalNode {

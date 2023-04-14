@@ -78,7 +78,6 @@ import {$createStickyNode} from '../../nodes/StickyNode';
 import ColorPicker from '../../ui/ColorPicker';
 import DropDown, {DropDownItem} from '../../ui/DropDown';
 import {getSelectedNode} from '../../utils/getSelectedNode';
-import {sanitizeUrl} from '../../utils/url';
 import {EmbedConfigs} from '../AutoEmbedPlugin';
 import {INSERT_COLLAPSIBLE_COMMAND} from '../CollapsiblePlugin';
 import {InsertEquationDialog} from '../EquationsPlugin';
@@ -607,7 +606,7 @@ export default function ToolbarPlugin(): JSX.Element {
 
   const insertLink = useCallback(() => {
     if (!isLink) {
-      editor.dispatchCommand(TOGGLE_LINK_COMMAND, sanitizeUrl('https://'));
+      editor.dispatchCommand(TOGGLE_LINK_COMMAND, 'https://');
     } else {
       editor.dispatchCommand(TOGGLE_LINK_COMMAND, null);
     }

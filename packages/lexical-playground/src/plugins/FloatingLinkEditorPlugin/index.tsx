@@ -29,7 +29,6 @@ import {createPortal} from 'react-dom';
 
 import {getSelectedNode} from '../../utils/getSelectedNode';
 import {setFloatingElemPositionForLinkEditor} from '../../utils/setFloatingElemPositionForLinkEditor';
-import {sanitizeUrl} from '../../utils/url';
 
 function FloatingLinkEditor({
   editor,
@@ -181,7 +180,7 @@ function FloatingLinkEditor({
   const handleLinkSubmission = () => {
     if (lastSelection !== null) {
       if (linkUrl !== '') {
-        editor.dispatchCommand(TOGGLE_LINK_COMMAND, sanitizeUrl(editedLinkUrl));
+        editor.dispatchCommand(TOGGLE_LINK_COMMAND, editedLinkUrl);
       }
       setEditMode(false);
     }

@@ -1,3 +1,56 @@
+## 0.9.2 (2023-04-14)
+
+- Update codes.json (#4320) Gerard Rovira
+- Missing table types (#4302) Gerard Rovira
+- Fix cursor changing to default when resizing image (#4317) (#4318) Mohit Singh Chauhan
+- Persist files and scene state in Excalidraw plugin (#4299) Ivaylo Pavlov
+- Fix crash on prettier formatting fail (#4310) Syed Umar Anis
+- YouTube embed: use more privacy-friendly youtube-nocookie.com instead of youtube.com (#4282) Alessio Gravili
+- Fix flowtypes for insertBefore/after (#4245) Maksim Horbachevsky
+- Fix excluded property imports (#4287) Acy Watson
+- Allow excluding specific properties from collab syncing via plugin (#4275) Acy Watson
+- Update tables.md (#4278) Gerard Rovira
+- Refactor Check for mention match function (#4277) Aleksandr Kiliushin
+- Replace canExtractContents with ShadowRoot check (#4276) Gerard Rovira
+- Ignore script nodes in HTML deserialization (#4249) Acy Watson
+- Fix Clear Formatting (Fixes #4188) (#4204) Ivaylo Pavlov
+- Add try catch around katex renderer (#4260) John Flockton
+- last table row delete throwing error (#4270) Aman Bansal
+- Upgrade Flow to 0.2 (#4264) Gerard Rovira
+- Cell merge backwards compatiblity 2 (#4268) Gerard Rovira
+- Cell merge backwards compatiblity (#4267) Gerard Rovira
+- fix get text selectRect error (#4263) yjh
+- Loosen node and version types (#4143) John Flockton
+- Bugfix: Comment popup closes when cursor hovers over table (#4228) Ben Carleton
+- isEditable is true on first render even if editor initiated with false (#4251) Aman Bansal
+- Fix TableCellNode import/exportJSON (#4259) Gerard Rovira
+- Flow: table missing methods (#4261) Gerard Rovira
+- Fix insertTableColumn when rowSpan > 1 (#4258) Gerard Rovira
+- Bugfix: Floating tool bar not responsive in tables (#4237) Ben Carleton
+- pasting text on input was creating a new paragraph node instead of ad… (#4246) Aman Bansal
+- Excalidraw Component fixes (#4252) Ivaylo Pavlov
+- Preserve content with merging cells (#4242) Gerard Rovira
+- Support select all for node selection (#4233) Maksim Horbachevsky
+- Fix TypeaheadMenuPlugin scrollIntoView to not rely on external class (#4238) Dragoș Străinu
+- Ignore __indent in list deserialization (#4241) Acy Watson
+- Revise Excalidraw dependency (#4234) Gerard Rovira
+- Table toolbar foundation (#4182) Gerard Rovira
+- Restore MD selection (#4232) Gerard Rovira
+- Fixed `aria-label` typo (#4229) Hao Luo
+- Export $hasUpdateTag (#4216) Alma Madsen
+- Fix incorrect placement of Auto Embed (#4192) wangqi
+- Fix bad selection shift at boundary (#4219) Gerard Rovira
+- Improve Documentation - multiple modules (#4166) Harry Sanders
+- Unmerge cell (#4212) Gerard Rovira
+- Only allow numbers in TablePlugin row / column number input (#4201) Alessio Gravili
+- Create fragment attached to the doc (#4186) Maksim Horbachevsky
+- Add a title to the link node to support titles in markdown (#4161) themagickoala
+- Fix table insertion (#4180) Gerard Rovira
+- added trash button to floatingLinkEditor plugin to toggle the link to… (#4209) Aman Bansal
+- Delete unused LinkPreview.css (#4200) Alessio Gravili
+- Use 'padding' shorthand CSS rule (#4198) Alessio Gravili
+- Add missing flow file (#4193) Maksim Horbachevsky
+
 ## v0.9.1 (2023-03-24)
 
 - Explicit E2E_BROWSER on E2E runs (#4179) Gerard Rovira

@@ -412,7 +412,7 @@ export function toggleLink(
   if (url !== null) {
     let sanitizedUrl: string | null = url;
     if (sanitizeUrl !== null) {
-      const sanitize = sanitizeUrl ?? _sanitizeUrl;
+      const sanitize = sanitizeUrl ? sanitizeUrl : _sanitizeUrl;
       sanitizedUrl = sanitize(url);
       if (sanitizedUrl === null) {
         return;

@@ -43,7 +43,7 @@ import {getIsProcesssingMutations} from './LexicalMutations';
 import {LexicalNode} from './LexicalNode';
 import {$normalizeSelection} from './LexicalNormalization';
 import {
-  getActiveEditor,
+  $getActiveEditor,
   getActiveEditorState,
   isCurrentlyReadOnlyMode,
 } from './LexicalUpdates';
@@ -821,7 +821,7 @@ export class RangeSelection implements BaseSelection {
   }
 
   applyDOMRange(range: StaticRange): void {
-    const editor = getActiveEditor();
+    const editor = $getActiveEditor();
     const currentEditorState = editor.getEditorState();
     const lastSelection = currentEditorState._selection;
     const resolvedSelectionPoints = internalResolveSelectionPoints(
@@ -1951,7 +1951,7 @@ export class RangeSelection implements BaseSelection {
         return;
       }
     }
-    const editor = getActiveEditor();
+    const editor = $getActiveEditor();
     const domSelection = getDOMSelection(editor._window);
 
     if (!domSelection) {
@@ -2498,7 +2498,7 @@ function normalizeSelectionPointsForBoundaries(
       focus.offset = anchor.offset;
       focus.type = anchor.type;
     }
-    const editor = getActiveEditor();
+    const editor = $getActiveEditor();
 
     if (
       editor.isComposing() &&
@@ -2731,7 +2731,7 @@ export function $getPreviousSelection():
   | RangeSelection
   | NodeSelection
   | GridSelection {
-  const editor = getActiveEditor();
+  const editor = $getActiveEditor();
   return editor._editorState._selection;
 }
 

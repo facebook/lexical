@@ -32,8 +32,8 @@ import {
   moveSelectionPointToSibling,
 } from './LexicalSelection';
 import {
+  $getActiveEditor,
   errorOnReadOnly,
-  getActiveEditor,
   getActiveEditorState,
 } from './LexicalUpdates';
 import {
@@ -638,7 +638,7 @@ export class LexicalNode {
    *
    */
   isDirty(): boolean {
-    const editor = getActiveEditor();
+    const editor = $getActiveEditor();
     const dirtyLeaves = editor._dirtyLeaves;
     return dirtyLeaves !== null && dirtyLeaves.has(this.__key);
   }
@@ -667,7 +667,7 @@ export class LexicalNode {
   getWritable(): this {
     errorOnReadOnly();
     const editorState = getActiveEditorState();
-    const editor = getActiveEditor();
+    const editor = $getActiveEditor();
     const nodeMap = editorState._nodeMap;
     const key = this.__key;
     // Ensure we get the latest node from pending state
@@ -1078,7 +1078,7 @@ function errorOnTypeKlassMismatch(
   type: string,
   klass: Klass<LexicalNode>,
 ): void {
-  const registeredNode = getActiveEditor()._nodes.get(type);
+  const registeredNode = $getActiveEditor()._nodes.get(type);
   // Common error - split in its own invariant
   if (registeredNode === undefined) {
     invariant(

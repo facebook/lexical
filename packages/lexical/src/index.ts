@@ -131,7 +131,7 @@ export {
   DEPRECATED_$getNodeTriplet,
   DEPRECATED_$isGridSelection,
 } from './LexicalSelection';
-export {$parseSerializedNode} from './LexicalUpdates';
+export {$getActiveEditor, $parseSerializedNode} from './LexicalUpdates';
 export {
   $addUpdateTag,
   $applyNodeReplacement,

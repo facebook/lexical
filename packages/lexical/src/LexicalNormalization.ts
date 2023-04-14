@@ -10,7 +10,7 @@ import type {RangeSelection, TextNode} from '.';
 import type {PointType} from './LexicalSelection';
 
 import {$isElementNode, $isTextNode} from '.';
-import {getActiveEditor} from './LexicalUpdates';
+import {$getActiveEditor} from './LexicalUpdates';
 
 function $canSimpleTextNodesBeMerged(
   node1: TextNode,
@@ -32,7 +32,7 @@ function $canSimpleTextNodesBeMerged(
 function $mergeTextNodes(node1: TextNode, node2: TextNode): TextNode {
   const writableNode1 = node1.mergeWithSibling(node2);
 
-  const normalizedNodes = getActiveEditor()._normalizedNodes;
+  const normalizedNodes = $getActiveEditor()._normalizedNodes;
 
   normalizedNodes.add(node1.__key);
   normalizedNodes.add(node2.__key);

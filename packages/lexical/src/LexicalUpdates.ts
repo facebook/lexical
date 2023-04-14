@@ -103,7 +103,12 @@ export function getActiveEditorState(): EditorState {
   return activeEditorState;
 }
 
-export function getActiveEditor(): LexicalEditor {
+/**
+ * Returns the active LexicalEditor instance in the current update.
+ *
+ * @returns The active LexicalEditor instance
+ */
+export function $getActiveEditor(): LexicalEditor {
   if (activeEditor === null) {
     invariant(
       false,
@@ -292,7 +297,7 @@ export function $parseSerializedNode(
   const internalSerializedNode: InternalSerializedNode = serializedNode;
   return $parseSerializedNodeImpl(
     internalSerializedNode,
-    getActiveEditor()._nodes,
+    $getActiveEditor()._nodes,
   );
 }
 

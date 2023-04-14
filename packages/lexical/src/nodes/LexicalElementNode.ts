@@ -30,7 +30,7 @@ import {
   internalMakeRangeSelection,
   moveSelectionPointToSibling,
 } from '../LexicalSelection';
-import {errorOnReadOnly, getActiveEditor} from '../LexicalUpdates';
+import {$getActiveEditor, errorOnReadOnly} from '../LexicalUpdates';
 import {
   $getNodeByKey,
   $isRootOrShadowRoot,
@@ -121,7 +121,7 @@ export class ElementNode extends LexicalNode {
     return this.getChildrenSize() === 0;
   }
   isDirty(): boolean {
-    const editor = getActiveEditor();
+    const editor = $getActiveEditor();
     const dirtyElements = editor._dirtyElements;
     return dirtyElements !== null && dirtyElements.has(this.__key);
   }

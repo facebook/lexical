@@ -73,7 +73,7 @@ import {
   IS_ALL_FORMATTING,
 } from './LexicalConstants';
 import {internalCreateRangeSelection, RangeSelection} from './LexicalSelection';
-import {getActiveEditor, updateEditor} from './LexicalUpdates';
+import {$getActiveEditor, updateEditor} from './LexicalUpdates';
 import {
   $flushMutations,
   $getNodeByKey,
@@ -192,7 +192,7 @@ function $shouldPreventDefaultAndInsertText(
   const anchor = selection.anchor;
   const focus = selection.focus;
   const anchorNode = anchor.getNode();
-  const editor = getActiveEditor();
+  const editor = $getActiveEditor();
   const domSelection = getDOMSelection(editor._window);
   const domAnchorNode = domSelection !== null ? domSelection.anchorNode : null;
   const anchorKey = anchor.key;

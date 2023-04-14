@@ -58,9 +58,9 @@ import {
 import {LexicalEditor} from './LexicalEditor';
 import {flushRootMutations} from './LexicalMutations';
 import {
+  $getActiveEditor,
   errorOnInfiniteTransforms,
   errorOnReadOnly,
-  getActiveEditor,
   getActiveEditorState,
   isCurrentlyReadOnlyMode,
   triggerCommandListeners,
@@ -227,7 +227,7 @@ export function $setNodeKey(
   }
   errorOnReadOnly();
   errorOnInfiniteTransforms();
-  const editor = getActiveEditor();
+  const editor = $getActiveEditor();
   const editorState = getActiveEditorState();
   const key = generateRandomKey();
   editorState._nodeMap.set(key, node);
@@ -321,7 +321,7 @@ export function internalMarkNodeAsDirty(node: LexicalNode): void {
   const latest = node.getLatest();
   const parent = latest.__parent;
   const editorState = getActiveEditorState();
-  const editor = getActiveEditor();
+  const editor = $getActiveEditor();
   const nodeMap = editorState._nodeMap;
   const dirtyElements = editor._dirtyElements;
   if (parent !== null) {
@@ -350,7 +350,7 @@ export function internalMarkSiblingsAsDirty(node: LexicalNode) {
 
 export function $setCompositionKey(compositionKey: null | NodeKey): void {
   errorOnReadOnly();
-  const editor = getActiveEditor();
+  const editor = $getActiveEditor();
   const previousCompositionKey = editor._compositionKey;
   if (compositionKey !== previousCompositionKey) {
     editor._compositionKey = compositionKey;
@@ -373,7 +373,7 @@ export function $getCompositionKey(): null | NodeKey {
   if (isCurrentlyReadOnlyMode()) {
     return null;
   }
-  const editor = getActiveEditor();
+  const editor = $getActiveEditor();
   return editor._compositionKey;
 }
 
@@ -393,7 +393,7 @@ export function getNodeFromDOMNode(
   dom: Node,
   editorState?: EditorState,
 ): LexicalNode | null {
-  const editor = getActiveEditor();
+  const editor = $getActiveEditor();
   // @ts-ignore We intentionally add this to the Node.
   const key = dom[`__lexicalKey_${editor._key}`];
   if (key !== undefined) {
@@ -486,12 +486,12 @@ export function $setSelection(
 
 export function $flushMutations(): void {
   errorOnReadOnly();
-  const editor = getActiveEditor();
+  const editor = $getActiveEditor();
   flushRootMutations(editor);
 }
 
 export function getNodeFromDOM(dom: Node): null | LexicalNode {
-  const editor = getActiveEditor();
+  const editor = $getActiveEditor();
   const nodeKey = getNodeKeyFromDOM(dom, editor);
   if (nodeKey === null) {
     const rootElement = editor.getRootElement();
@@ -655,7 +655,7 @@ export function $updateTextNodeFromDOMContent(
         $setCompositionKey(null);
         if (!IS_SAFARI && !IS_IOS && !IS_APPLE_WEBKIT) {
           // For composition (mainly Android), we have to remove the node on a later update
-          const editor = getActiveEditor();
+          const editor = $getActiveEditor();
           setTimeout(() => {
             editor.update(() => {
               if (node.isAttached()) {
@@ -1260,13 +1260,13 @@ export function scrollIntoViewIfNeeded(
 }
 
 export function $hasUpdateTag(tag: string): boolean {
-  const editor = getActiveEditor();
+  const editor = $getActiveEditor();
   return editor._updateTags.has(tag);
 }
 
 export function $addUpdateTag(tag: string): void {
   errorOnReadOnly();
-  const editor = getActiveEditor();
+  const editor = $getActiveEditor();
   editor._updateTags.add(tag);
 }
 
@@ -1354,7 +1354,7 @@ export function $copyNode<T extends LexicalNode>(node: T): T {
 export function $applyNodeReplacement<N extends LexicalNode>(
   node: LexicalNode,
 ): N {
-  const editor = getActiveEditor();
+  const editor = $getActiveEditor();
   const nodeType = (node.constructor as Klass<LexicalNode>).getType();
   const registeredNode = editor._nodes.get(nodeType);
   if (registeredNode === undefined) {

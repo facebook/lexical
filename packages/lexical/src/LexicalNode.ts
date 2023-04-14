@@ -190,25 +190,11 @@ export class LexicalNode {
   }
 
   clone(): this {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const props: {[key: string]: any} = {};
-    const propertyNames = Object.getOwnPropertyNames(this);
-    for (let i = 0; i < propertyNames.length; i++) {
-      const property = propertyNames[i];
-      const propertyDescriptor = Object.getOwnPropertyDescriptor(
-        this,
-        property,
-      );
-
-      if (propertyDescriptor && propertyDescriptor.value !== undefined) {
-        props[property] = propertyDescriptor.value;
-      } else {
-        props[property] = this[property];
-      }
+    const clone = Object.create(Object.getPrototypeOf(this));
+    for (const prop in this) {
+      clone[prop] = this[prop];
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const cloned = Object.create(Object.getPrototypeOf(this));
-    return Object.assign(cloned, props);
+    return clone;
   }
 
   constructor(key?: NodeKey) {

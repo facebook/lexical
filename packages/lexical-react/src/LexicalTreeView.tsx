@@ -7,7 +7,6 @@
  */
 
 import type {
-  EditorConfig,
   EditorState,
   ElementNode,
   GridSelection,
@@ -87,15 +86,7 @@ export function TreeView({
 
   const generateTree = useCallback(
     (editorState: EditorState) => {
-      const treeText = generateContent(
-        editor.getEditorState(),
-        editor._config,
-        commandsLog,
-        editor._compositionKey,
-        editor._editable,
-        showExportDOM,
-        editor,
-      );
+      const treeText = generateContent(editor, commandsLog, showExportDOM);
 
       setContent(treeText);
 
@@ -106,24 +97,14 @@ export function TreeView({
         ]);
       }
     },
-    [commandsLog, editor, timeTravelEnabled],
+    [commandsLog, editor, timeTravelEnabled, showExportDOM],
   );
 
   useEffect(() => {
     const editorState = editor.getEditorState();
 
     if (!showLimited && editorState._nodeMap.size < 1000) {
-      setContent(
-        generateContent(
-          editorState,
-          editor._config,
-          commandsLog,
-          editor._compositionKey,
-          editor._editable,
-          showExportDOM,
-          editor,
-        ),
-      );
+      setContent(generateContent(editor, commandsLog, showExportDOM));
     }
   }, [commandsLog, editor, showLimited, showExportDOM]);
 
@@ -140,15 +121,7 @@ export function TreeView({
         generateTree(editorState);
       }),
       editor.registerEditableListener(() => {
-        const treeText = generateContent(
-          editor.getEditorState(),
-          editor._config,
-          commandsLog,
-          editor._compositionKey,
-          editor._editable,
-          showExportDOM,
-          editor,
-        );
+        const treeText = generateContent(editor, commandsLog, showExportDOM);
         setContent(treeText);
       }),
     );
@@ -241,14 +214,14 @@ export function TreeView({
           </button>
         </div>
       ) : null}
-      {
+      {!showLimited ? (
         <button
           onClick={() => setShowExportDOM(!showExportDOM)}
           className={treeTypeButtonClassName}
           type="button">
           {showExportDOM ? 'Tree' : 'Export DOM'}
         </button>
-      }
+      ) : null}
       {!timeTravelEnabled &&
         (showLimited || !isLimited) &&
         totalEditorStates > 2 && (
@@ -403,14 +376,15 @@ function printGridSelection(selection: GridSelection): string {
 }
 
 function generateContent(
-  editorState: EditorState,
-  editorConfig: EditorConfig,
-  commandsLog: ReadonlyArray<LexicalCommand<unknown> & {payload: unknown}>,
-  compositionKey: null | string,
-  editable: boolean,
-  exportDOM: boolean,
   editor: LexicalEditor,
+  commandsLog: ReadonlyArray<LexicalCommand<unknown> & {payload: unknown}>,
+  exportDOM: boolean,
 ): string {
+  const editorState = editor.getEditorState();
+  const editorConfig = editor._config;
+  const compositionKey = editor._compositionKey;
+  const editable = editor._editable;
+
   if (exportDOM) {
     let htmlString = '';
     editorState.read(() => {
@@ -727,7 +701,7 @@ function printPrettyHTML(str: string) {
   return prettifyHTML(div, 0).innerHTML;
 }
 
-function prettifyHTML(node: any, level: number) {
+function prettifyHTML(node: Element, level: number) {
   const indentBefore = new Array(level++ + 1).join('  ');
   const indentAfter = new Array(level - 1).join('  ');
   let textNode;

@@ -38,6 +38,8 @@ import {
   TextNode,
 } from 'lexical';
 
+import {$convertToMarkdownString} from '.';
+
 export type Transformer =
   | ElementTransformer
   | TextFormatTransformer
@@ -49,6 +51,7 @@ export type ElementTransformer = {
     node: LexicalNode,
     // eslint-disable-next-line no-shadow
     traverseChildren: (node: ElementNode) => string,
+    transformers: Array<Transformer>,
   ) => string | null;
   regExp: RegExp;
   replace: (
@@ -176,37 +179,86 @@ export const HEADING: ElementTransformer = {
 
 export const QUOTE: ElementTransformer = {
   dependencies: [QuoteNode],
-  export: (node, exportChildren) => {
+  export: (node, _exportChildren, transformers) => {
     if (!$isQuoteNode(node)) {
       return null;
     }
 
-    const lines = exportChildren(node).split('\n');
-    const output = [];
-    for (const line of lines) {
-      output.push('> ' + line);
-    }
-    return output.join('\n');
+    return $convertToMarkdownString(transformers, node)
+      .split('\n\n')
+      .map((line) =>
+        line
+          .split('\n')
+          .map((inner) => `> ${inner}`)
+          .join('\n'),
+      )
+      .join('\n');
   },
-  regExp: /^>\s/,
-  replace: (parentNode, children, _match, isImport) => {
+  regExp: /^>((\s>)*)\s?/,
+  replace: (parentNode, children, match, isImport) => {
+    // Figure out how many levels of indentation there are
+    const numberOfIndents = match[0].length > 1 ? match[0].length / 2 : 1;
+
+    // isImport is true when converting from markdown to AST
     if (isImport) {
-      const previousNode = parentNode.getPreviousSibling();
-      if ($isQuoteNode(previousNode)) {
-        previousNode.splice(previousNode.getChildrenSize(), 0, [
-          $createLineBreakNode(),
-          ...children,
-        ]);
-        previousNode.select(0, 0);
+      // Get the previous node to append to
+      let existingQuoteNode = parentNode.getPreviousSibling();
+      // If the previous node was a quote, then we're adding to it (or nesting further)
+      if ($isQuoteNode(existingQuoteNode)) {
+        // Get the deepest nested blockquote of the previous node and track the number of indents
+        let quoteChildren = existingQuoteNode.getChildren();
+        let lastQuoteChild = quoteChildren[quoteChildren.length - 1];
+        let previousNumberOfIndents = 1;
+        while (
+          $isQuoteNode(lastQuoteChild) &&
+          numberOfIndents > previousNumberOfIndents
+        ) {
+          previousNumberOfIndents++;
+          existingQuoteNode = lastQuoteChild;
+          quoteChildren = existingQuoteNode.getChildren();
+          lastQuoteChild = quoteChildren[quoteChildren.length - 1];
+        }
+        if (numberOfIndents > previousNumberOfIndents) {
+          // If we still have further indents, we need to create a new quote node
+          const topLevelQuote = $createQuoteNode();
+          let quoteNode = topLevelQuote;
+          for (let i = 1; i < numberOfIndents - previousNumberOfIndents; i++) {
+            const newQuote = $createQuoteNode();
+            quoteNode.append(newQuote);
+            quoteNode = newQuote;
+          }
+          topLevelQuote.append(...children);
+          existingQuoteNode.splice(existingQuoteNode.getChildrenSize(), 0, [
+            $createLineBreakNode(),
+            topLevelQuote,
+          ]);
+        } else if ($isQuoteNode(lastQuoteChild)) {
+          existingQuoteNode.splice(existingQuoteNode.getChildrenSize(), 0, [
+            ...children,
+          ]);
+        } else {
+          // Otherwise we need to add the quote's content to the previous blockquote
+          existingQuoteNode.splice(existingQuoteNode.getChildrenSize(), 0, [
+            $createLineBreakNode(),
+            ...children,
+          ]);
+        }
+        existingQuoteNode.select(0, 0);
         parentNode.remove();
         return;
       }
     }
 
-    const node = $createQuoteNode();
-    node.append(...children);
-    parentNode.replace(node);
-    node.select(0, 0);
+    const topLevelQuote = $createQuoteNode();
+    let quoteNode = topLevelQuote;
+    for (let i = 1; i < numberOfIndents; i++) {
+      const newQuote = $createQuoteNode();
+      quoteNode.append(newQuote);
+      quoteNode = newQuote;
+    }
+    quoteNode.append(...children);
+    parentNode.replace(quoteNode);
+    quoteNode.select(0, 0);
   },
   type: 'element',
 };

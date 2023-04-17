@@ -49,6 +49,17 @@ describe('Markdown', () => {
       md: '> Hello\n> world!',
     },
     {
+      // Nested blockquotes
+      html: `<blockquote><span>Hello</span><br><blockquote><span>world!</span></blockquote></blockquote>`,
+      md: `> Hello\n> > world!`,
+      // skipImport: true,
+    },
+    {
+      // Nested blockquotes
+      html: `<p><span>This is a block of text.</span><br><span>It has multiple lines.</span></p><blockquote><span>Then it has a quote.</span><br><span>The quote has multiple lines.</span><br><blockquote><span>And multiple levels of nesting.</span><br><span>With multiple lines.</span></blockquote><span>And then it goes back to one.</span></blockquote>`,
+      md: `This is a block of text.\nIt has multiple lines.\n\n> Then it has a quote.\n> The quote has multiple lines.\n> > And multiple levels of nesting.\n> > With multiple lines.\n> And then it goes back to one.`,
+    },
+    {
       // Miltiline list items
       html: '<ul><li value="1"><span>Hello</span></li><li value="2"><span>world</span><br><span>!</span><br><span>!</span></li></ul>',
       md: '- Hello\n- world\n!\n!',

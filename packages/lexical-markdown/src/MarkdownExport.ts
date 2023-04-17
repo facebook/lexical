@@ -63,8 +63,15 @@ function exportTopLevelElements(
   textMatchTransformers: Array<TextMatchTransformer>,
 ): string | null {
   for (const transformer of elementTransformers) {
-    const result = transformer.export(node, (_node) =>
-      exportChildren(_node, textTransformersIndex, textMatchTransformers),
+    const result = transformer.export(
+      node,
+      (_node) =>
+        exportChildren(_node, textTransformersIndex, textMatchTransformers),
+      [
+        ...elementTransformers,
+        ...textTransformersIndex,
+        ...textMatchTransformers,
+      ],
     );
 
     if (result != null) {
@@ -77,6 +84,32 @@ function exportTopLevelElements(
   } else if ($isDecoratorNode(node)) {
     return node.getTextContent();
   } else {
+    for (const transformer of textMatchTransformers) {
+      const result = transformer.export(
+        node,
+        (parentNode) =>
+          exportChildren(
+            parentNode,
+            textTransformersIndex,
+            textMatchTransformers,
+          ),
+        (textNode, textContent) =>
+          exportTextFormat(textNode, textContent, textTransformersIndex),
+      );
+
+      if (result != null) {
+        return result;
+      }
+    }
+
+    if ($isTextNode(node)) {
+      return exportTextFormat(
+        node,
+        node.getTextContent(),
+        textTransformersIndex,
+      );
+    }
+
     return null;
   }
 }

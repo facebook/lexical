@@ -68,7 +68,7 @@ test.describe('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    initialize({isCollab, page});
+    await initialize({isCollab, page});
     test.skip(isPlainText);
     await focusEditor(page);
 
@@ -108,7 +108,7 @@ test.describe('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    initialize({isCollab, page});
+    await initialize({isCollab, page});
     test.skip(isPlainText);
 
     await focusEditor(page);
@@ -150,7 +150,7 @@ test.describe('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    initialize({isCollab, page});
+    await initialize({isCollab, page});
     test.skip(isPlainText);
 
     await focusEditor(page);
@@ -198,7 +198,7 @@ test.describe('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    initialize({isCollab, page});
+    await initialize({isCollab, page});
     test.skip(isPlainText);
 
     await focusEditor(page);
@@ -284,7 +284,7 @@ test.describe('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    initialize({isCollab, page});
+    await initialize({isCollab, page});
     test.skip(isPlainText);
 
     await focusEditor(page);
@@ -404,7 +404,7 @@ test.describe('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    initialize({isCollab, page});
+    await initialize({isCollab, page});
     test.skip(isPlainText);
 
     await focusEditor(page);
@@ -495,7 +495,7 @@ test.describe('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    initialize({isCollab, page});
+    await initialize({isCollab, page});
     test.skip(isPlainText);
 
     await focusEditor(page);
@@ -577,7 +577,7 @@ test.describe('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    initialize({isCollab, page});
+    await initialize({isCollab, page});
     test.skip(isPlainText);
 
     await focusEditor(page);
@@ -635,7 +635,7 @@ test.describe('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    initialize({isCollab, page});
+    await initialize({isCollab, page});
     test.skip(isPlainText);
 
     await focusEditor(page);
@@ -687,7 +687,7 @@ test.describe('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    initialize({isCollab, page});
+    await initialize({isCollab, page});
     test.skip(isPlainText);
 
     await focusEditor(page);
@@ -766,7 +766,7 @@ test.describe('Tables', () => {
   });
 
   test(`Horizontal rule inside cell`, async ({page, isPlainText, isCollab}) => {
-    initialize({isCollab, page});
+    await initialize({isCollab, page});
     test.skip(isPlainText);
     await focusEditor(page);
 
@@ -802,7 +802,7 @@ test.describe('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    initialize({isCollab, page});
+    await initialize({isCollab, page});
     test.skip(isPlainText);
 
     await focusEditor(page);
@@ -878,7 +878,7 @@ test.describe('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    initialize({isCollab, page});
+    await initialize({isCollab, page});
     test.skip(isPlainText);
 
     await focusEditor(page);
@@ -952,7 +952,7 @@ test.describe('Tables', () => {
   });
 
   test('Merge/unmerge cells (1)', async ({page, isPlainText, isCollab}) => {
-    initialize({isCollab, page});
+    await initialize({isCollab, page});
     test.skip(isPlainText);
     if (IS_COLLAB) {
       // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
@@ -1039,7 +1039,7 @@ test.describe('Tables', () => {
   });
 
   test('Merge/unmerge cells (2)', async ({page, isPlainText, isCollab}) => {
-    initialize({isCollab, page});
+    await initialize({isCollab, page});
     test.skip(isPlainText);
     if (IS_COLLAB) {
       // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
@@ -1166,7 +1166,7 @@ test.describe('Tables', () => {
   });
 
   test('Merge with content', async ({page, isPlainText, isCollab}) => {
-    initialize({isCollab, page});
+    await initialize({isCollab, page});
     test.skip(isPlainText);
     if (IS_COLLAB) {
       // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
@@ -1261,7 +1261,7 @@ test.describe('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    initialize({isCollab, page});
+    await initialize({isCollab, page});
     test.skip(isPlainText);
 
     await focusEditor(page);
@@ -1389,7 +1389,7 @@ test.describe('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    initialize({isCollab, page});
+    await initialize({isCollab, page});
     test.skip(isPlainText);
     if (IS_COLLAB) {
       // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
@@ -1449,7 +1449,7 @@ test.describe('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    initialize({isCollab, page});
+    await initialize({isCollab, page});
     test.skip(isPlainText);
     if (IS_COLLAB) {
       // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
@@ -1509,7 +1509,7 @@ test.describe('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    initialize({isCollab, page});
+    await initialize({isCollab, page});
     test.skip(isPlainText);
     if (IS_COLLAB) {
       // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
@@ -1562,7 +1562,7 @@ test.describe('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    initialize({isCollab, page});
+    await initialize({isCollab, page});
     test.skip(isPlainText);
     if (IS_COLLAB) {
       // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
@@ -1623,7 +1623,7 @@ test.describe('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    initialize({isCollab, page});
+    await initialize({isCollab, page});
     test.skip(isPlainText);
     if (IS_COLLAB) {
       // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
@@ -1684,7 +1684,7 @@ test.describe('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    initialize({isCollab, page});
+    await initialize({isCollab, page});
     test.skip(isPlainText);
     if (IS_COLLAB) {
       // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)

@@ -1741,7 +1741,7 @@ test.describe('Tables', () => {
 });
 
 test('Cell merge feature disabled', async ({page, isPlainText, isCollab}) => {
-  initialize({isCollab, page, tableCellMerge: false});
+  await initialize({isCollab, page, tableCellMerge: false});
   test.skip(isPlainText);
 
   await focusEditor(page);

@@ -212,7 +212,7 @@ export function TablePlugin({
     }
     return editor.registerNodeTransform(TableCellNode, (node) => {
       if (node.getBackgroundColor() !== null) {
-        node.setBackgroundColor = null;
+        node.setBackgroundColor(null);
       }
     });
   }, [editor, hasCellBackgroundColor, hasCellMerge]);

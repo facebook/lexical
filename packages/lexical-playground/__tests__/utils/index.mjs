@@ -63,6 +63,9 @@ export async function initialize({
   if (tableCellMerge !== undefined) {
     appSettings.tableCellMerge = tableCellMerge;
   }
+  if (tableCellBackgroundColor !== undefined) {
+    appSettings.tableCellBackgroundColor = tableCellBackgroundColor;
+  }
 
   const urlParams = appSettingsToURLParams(appSettings);
   const url = `http://localhost:${E2E_PORT}/${

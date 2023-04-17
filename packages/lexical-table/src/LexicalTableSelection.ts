@@ -218,10 +218,11 @@ export class TableSelection {
 
   updateTableGridSelection(selection: GridSelection | null) {
     if (selection != null && selection.gridKey === this.tableNodeKey) {
+      const editor = this.editor;
       this.gridSelection = selection;
       this.isHighlightingCells = true;
       this.disableHighlightStyle();
-      $updateDOMForSelection(this.editor, this.grid, this.gridSelection);
+      $updateDOMForSelection(editor, this.grid, this.gridSelection);
     } else if (selection == null) {
       this.clearHighlight();
     }

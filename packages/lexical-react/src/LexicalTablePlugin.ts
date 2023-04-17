@@ -54,8 +54,10 @@ function $insertFirst(parent: ElementNode, node: LexicalNode): void {
 
 export function TablePlugin({
   hasCellMerge = true,
+  hasCellBackgroundColor = true,
 }: {
   hasCellMerge?: boolean;
+  hasCellBackgroundColor?: boolean;
 }): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
 
@@ -202,6 +204,18 @@ export function TablePlugin({
       }
     });
   }, [editor, hasCellMerge]);
+
+  // Remove cell background color when feature is disabled
+  useEffect(() => {
+    if (hasCellBackgroundColor) {
+      return;
+    }
+    return editor.registerNodeTransform(TableCellNode, (node) => {
+      if (node.getBackgroundColor() !== null) {
+        node.setBackgroundColor = null;
+      }
+    });
+  }, [editor, hasCellBackgroundColor, hasCellMerge]);
 
   return null;
 }

@@ -43,6 +43,7 @@ export async function initialize({
   isMaxLength,
   showNestedEditorTreeView,
   tableCellMerge,
+  tableCellBackgroundColor,
 }) {
   const appSettings = {};
   appSettings.isRichText = IS_RICH_TEXT;

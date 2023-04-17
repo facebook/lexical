@@ -600,12 +600,10 @@ function useMenuAnchorRef(
   const positionMenu = useCallback(() => {
     const rootElement = editor.getRootElement();
     const containerDiv = anchorElementRef.current;
-    const menuEle = containerDiv.getElementsByClassName(
-      'typeahead-popover component-picker-menu',
-    );
-    if (rootElement !== null && resolution !== null && menuEle.length !== 0) {
+    const menuEle = containerDiv.firstChild as Element;
+    if (rootElement !== null && resolution !== null && menuEle !== null) {
       const {left, top, width, height} = resolution.getRect();
-      const menuRect = menuEle[0].getBoundingClientRect();
+      const menuRect = menuEle.getBoundingClientRect();
       const menuHeight = menuRect.height;
       const menuWidth = menuRect.width;
 

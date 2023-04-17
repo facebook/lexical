@@ -1368,6 +1368,21 @@ button.action-button:disabled {
   text-decoration: underline;
 }
 
+.debug-treetype-button {
+  border: 0;
+  padding: 0;
+  font-size: 12px;
+  top: 10px;
+  right: 85px;
+  position: absolute;
+  background: none;
+  color: #fff;
+}
+
+.debug-treetype-button:hover {
+  text-decoration: underline;
+}
+
 .connecting {
   font-size: 15px;
   color: #999;

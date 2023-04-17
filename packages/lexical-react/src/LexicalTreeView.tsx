@@ -7,7 +7,6 @@
  */
 
 import type {
-  EditorConfig,
   EditorState,
   ElementNode,
   GridSelection,
@@ -17,6 +16,7 @@ import type {
   RangeSelection,
 } from 'lexical';
 
+import {$generateHtmlFromNodes} from '@lexical/html';
 import {$isLinkNode, LinkNode} from '@lexical/link';
 import {$isMarkNode} from '@lexical/mark';
 import {mergeRegister} from '@lexical/utils';
@@ -52,6 +52,7 @@ const SYMBOLS: Record<string, string> = Object.freeze({
 });
 
 export function TreeView({
+  treeTypeButtonClassName,
   timeTravelButtonClassName,
   timeTravelPanelSliderClassName,
   timeTravelPanelButtonClassName,
@@ -60,6 +61,7 @@ export function TreeView({
   editor,
 }: {
   editor: LexicalEditor;
+  treeTypeButtonClassName: string;
   timeTravelButtonClassName: string;
   timeTravelPanelButtonClassName: string;
   timeTravelPanelClassName: string;
@@ -71,6 +73,7 @@ export function TreeView({
   >([]);
   const [content, setContent] = useState<string>('');
   const [timeTravelEnabled, setTimeTravelEnabled] = useState(false);
+  const [showExportDOM, setShowExportDOM] = useState(false);
   const playingIndexRef = useRef(0);
   const treeElementRef = useRef<HTMLPreElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -83,13 +86,7 @@ export function TreeView({
 
   const generateTree = useCallback(
     (editorState: EditorState) => {
-      const treeText = generateContent(
-        editor.getEditorState(),
-        editor._config,
-        commandsLog,
-        editor._compositionKey,
-        editor._editable,
-      );
+      const treeText = generateContent(editor, commandsLog, showExportDOM);
 
       setContent(treeText);
 
@@ -100,24 +97,16 @@ export function TreeView({
         ]);
       }
     },
-    [commandsLog, editor, timeTravelEnabled],
+    [commandsLog, editor, timeTravelEnabled, showExportDOM],
   );
 
   useEffect(() => {
     const editorState = editor.getEditorState();
 
-    if (!showLimited && editorState._nodeMap.size > 1000) {
-      setContent(
-        generateContent(
-          editorState,
-          editor._config,
-          commandsLog,
-          editor._compositionKey,
-          editor._editable,
-        ),
-      );
+    if (!showLimited && editorState._nodeMap.size < 1000) {
+      setContent(generateContent(editor, commandsLog, showExportDOM));
     }
-  }, [commandsLog, editor, showLimited]);
+  }, [commandsLog, editor, showLimited, showExportDOM]);
 
   useEffect(() => {
     return mergeRegister(
@@ -132,17 +121,18 @@ export function TreeView({
         generateTree(editorState);
       }),
       editor.registerEditableListener(() => {
-        const treeText = generateContent(
-          editor.getEditorState(),
-          editor._config,
-          commandsLog,
-          editor._compositionKey,
-          editor._editable,
-        );
+        const treeText = generateContent(editor, commandsLog, showExportDOM);
         setContent(treeText);
       }),
     );
-  }, [commandsLog, editor, isLimited, generateTree, showLimited]);
+  }, [
+    commandsLog,
+    editor,
+    showExportDOM,
+    isLimited,
+    generateTree,
+    showLimited,
+  ]);
 
   const totalEditorStates = timeStampedEditorStates.length;
 
@@ -223,6 +213,14 @@ export function TreeView({
             Show full tree
           </button>
         </div>
+      ) : null}
+      {!showLimited ? (
+        <button
+          onClick={() => setShowExportDOM(!showExportDOM)}
+          className={treeTypeButtonClassName}
+          type="button">
+          {showExportDOM ? 'Tree' : 'Export DOM'}
+        </button>
       ) : null}
       {!timeTravelEnabled &&
         (showLimited || !isLimited) &&
@@ -378,12 +376,23 @@ function printGridSelection(selection: GridSelection): string {
 }
 
 function generateContent(
-  editorState: EditorState,
-  editorConfig: EditorConfig,
+  editor: LexicalEditor,
   commandsLog: ReadonlyArray<LexicalCommand<unknown> & {payload: unknown}>,
-  compositionKey: null | string,
-  editable: boolean,
+  exportDOM: boolean,
 ): string {
+  const editorState = editor.getEditorState();
+  const editorConfig = editor._config;
+  const compositionKey = editor._compositionKey;
+  const editable = editor._editable;
+
+  if (exportDOM) {
+    let htmlString = '';
+    editorState.read(() => {
+      htmlString = printPrettyHTML($generateHtmlFromNodes(editor));
+    });
+    return htmlString;
+  }
+
   let res = ' root\n';
 
   const selectionString = editorState.read(() => {
@@ -684,6 +693,30 @@ function printSelectedCharsLine({
       [...nodePrintSpaces, ...unselectedChars, ...selectedChars].join(''),
     ].join(' ') + '\n'
   );
+}
+
+function printPrettyHTML(str: string) {
+  const div = document.createElement('div');
+  div.innerHTML = str.trim();
+  return prettifyHTML(div, 0).innerHTML;
+}
+
+function prettifyHTML(node: Element, level: number) {
+  const indentBefore = new Array(level++ + 1).join('  ');
+  const indentAfter = new Array(level - 1).join('  ');
+  let textNode;
+
+  for (let i = 0; i < node.children.length; i++) {
+    textNode = document.createTextNode('\n' + indentBefore);
+    node.insertBefore(textNode, node.children[i]);
+    prettifyHTML(node.children[i], level);
+    if (node.lastElementChild === node.children[i]) {
+      textNode = document.createTextNode('\n' + indentAfter);
+      node.appendChild(textNode);
+    }
+  }
+
+  return node;
 }
 
 function $getSelectionStartEnd(

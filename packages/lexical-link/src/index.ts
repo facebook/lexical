@@ -78,7 +78,13 @@ export class LinkNode extends ElementNode {
 
   createDOM(config: EditorConfig): HTMLAnchorElement {
     const element = document.createElement('a');
-    element.href = this.__url;
+    let href = this.__url;
+    const url = new URL(this.__url);
+    // eslint-disable-next-line no-script-url
+    if (url.protocol === 'javascript:') {
+      href = '#';
+    }
+    element.href = href;
     if (this.__target !== null) {
       element.target = this.__target;
     }

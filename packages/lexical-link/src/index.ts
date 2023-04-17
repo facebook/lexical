@@ -86,7 +86,7 @@ export class LinkNode extends ElementNode {
 
   createDOM(config: EditorConfig): HTMLAnchorElement {
     const element = document.createElement('a');
-    element.href = this.sanitizeUrl(this.__href);
+    element.href = this.sanitizeUrl(this.__url);
     if (this.__target !== null) {
       element.target = this.__target;
     }
@@ -162,14 +162,14 @@ export class LinkNode extends ElementNode {
     return node;
   }
 
-  static sanitizeUrl(url: string): string {
+  sanitizeUrl(url: string): string {
     try {
       const parsedUrl = new URL(url);
       // eslint-disable-next-line no-script-url
-      if (SUPPORTED_URL_PROTOCOLS.has(parsedUrl.protocol)) {
+      if (!SUPPORTED_URL_PROTOCOLS.has(parsedUrl.protocol)) {
         return 'about:blank';
       }
-    } catch {
+    } catch (e) {
       return 'https://';
     }
     return url;

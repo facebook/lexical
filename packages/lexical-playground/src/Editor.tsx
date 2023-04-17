@@ -85,6 +85,7 @@ export default function Editor(): JSX.Element {
       isRichText,
       showTreeView,
       showTableOfContents,
+      tableCellMerge,
     },
   } = useSettings();
   const text = isCollab
@@ -180,7 +181,7 @@ export default function Editor(): JSX.Element {
             <ListPlugin />
             <CheckListPlugin />
             <ListMaxIndentLevelPlugin maxDepth={7} />
-            <TablePlugin />
+            <TablePlugin hasCellMerge={tableCellMerge} />
             <TableCellResizer />
             <NewTablePlugin cellEditorConfig={cellEditorConfig}>
               <AutoFocusPlugin />

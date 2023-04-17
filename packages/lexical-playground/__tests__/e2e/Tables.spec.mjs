@@ -63,11 +63,12 @@ async function fillTablePartiallyWithText(page) {
 }
 
 test.describe('Tables', () => {
-  test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   test(`Can a table be inserted from the toolbar`, async ({
     page,
     isPlainText,
+    isCollab,
   }) => {
+    initialize({isCollab, page});
     test.skip(isPlainText);
     await focusEditor(page);
 
@@ -102,7 +103,12 @@ test.describe('Tables', () => {
     );
   });
 
-  test(`Can type inside of table cell`, async ({page, isPlainText}) => {
+  test(`Can type inside of table cell`, async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    initialize({isCollab, page});
     test.skip(isPlainText);
 
     await focusEditor(page);
@@ -139,7 +145,12 @@ test.describe('Tables', () => {
     );
   });
 
-  test(`Can navigate table with keyboard`, async ({page, isPlainText}) => {
+  test(`Can navigate table with keyboard`, async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    initialize({isCollab, page});
     test.skip(isPlainText);
 
     await focusEditor(page);
@@ -185,7 +196,9 @@ test.describe('Tables', () => {
   test(`Can select cells using Table selection`, async ({
     page,
     isPlainText,
+    isCollab,
   }) => {
+    initialize({isCollab, page});
     test.skip(isPlainText);
 
     await focusEditor(page);
@@ -269,7 +282,9 @@ test.describe('Tables', () => {
   test(`Can select cells using Table selection via keyboard`, async ({
     page,
     isPlainText,
+    isCollab,
   }) => {
+    initialize({isCollab, page});
     test.skip(isPlainText);
 
     await focusEditor(page);
@@ -384,7 +399,12 @@ test.describe('Tables', () => {
     );
   });
 
-  test(`Can style text using Table selection`, async ({page, isPlainText}) => {
+  test(`Can style text using Table selection`, async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    initialize({isCollab, page});
     test.skip(isPlainText);
 
     await focusEditor(page);
@@ -473,7 +493,9 @@ test.describe('Tables', () => {
   test(`Can copy + paste (internal) using Table selection`, async ({
     page,
     isPlainText,
+    isCollab,
   }) => {
+    initialize({isCollab, page});
     test.skip(isPlainText);
 
     await focusEditor(page);
@@ -550,7 +572,12 @@ test.describe('Tables', () => {
     );
   });
 
-  test(`Can clear text using Table selection`, async ({page, isPlainText}) => {
+  test(`Can clear text using Table selection`, async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    initialize({isCollab, page});
     test.skip(isPlainText);
 
     await focusEditor(page);
@@ -608,6 +635,7 @@ test.describe('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
+    initialize({isCollab, page});
     test.skip(isPlainText);
 
     await focusEditor(page);
@@ -659,6 +687,7 @@ test.describe('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
+    initialize({isCollab, page});
     test.skip(isPlainText);
 
     await focusEditor(page);
@@ -736,7 +765,8 @@ test.describe('Tables', () => {
     );
   });
 
-  test(`Horizontal rule inside cell`, async ({page, isPlainText}) => {
+  test(`Horizontal rule inside cell`, async ({page, isPlainText, isCollab}) => {
+    initialize({isCollab, page});
     test.skip(isPlainText);
     await focusEditor(page);
 
@@ -770,7 +800,9 @@ test.describe('Tables', () => {
   test('Grid selection: can select multiple cells and insert an image', async ({
     page,
     isPlainText,
+    isCollab,
   }) => {
+    initialize({isCollab, page});
     test.skip(isPlainText);
 
     await focusEditor(page);
@@ -844,7 +876,9 @@ test.describe('Tables', () => {
   test('Grid selection: can backspace lines, backspacing empty cell does not destroy it #3278', async ({
     page,
     isPlainText,
+    isCollab,
   }) => {
+    initialize({isCollab, page});
     test.skip(isPlainText);
 
     await focusEditor(page);
@@ -917,7 +951,8 @@ test.describe('Tables', () => {
     );
   });
 
-  test('Merge/unmerge cells (1)', async ({page, isPlainText}) => {
+  test('Merge/unmerge cells (1)', async ({page, isPlainText, isCollab}) => {
+    initialize({isCollab, page});
     test.skip(isPlainText);
     if (IS_COLLAB) {
       // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
@@ -1003,7 +1038,8 @@ test.describe('Tables', () => {
     );
   });
 
-  test('Merge/unmerge cells (2)', async ({page, isPlainText}) => {
+  test('Merge/unmerge cells (2)', async ({page, isPlainText, isCollab}) => {
+    initialize({isCollab, page});
     test.skip(isPlainText);
     if (IS_COLLAB) {
       // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
@@ -1129,7 +1165,8 @@ test.describe('Tables', () => {
     );
   });
 
-  test('Merge with content', async ({page, isPlainText}) => {
+  test('Merge with content', async ({page, isPlainText, isCollab}) => {
+    initialize({isCollab, page});
     test.skip(isPlainText);
     if (IS_COLLAB) {
       // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
@@ -1222,7 +1259,9 @@ test.describe('Tables', () => {
   test('Select multiple merged cells (selection expands to a rectangle)', async ({
     page,
     isPlainText,
+    isCollab,
   }) => {
+    initialize({isCollab, page});
     test.skip(isPlainText);
 
     await focusEditor(page);
@@ -1348,7 +1387,9 @@ test.describe('Tables', () => {
   test('Insert row above (with conflicting merged cell)', async ({
     page,
     isPlainText,
+    isCollab,
   }) => {
+    initialize({isCollab, page});
     test.skip(isPlainText);
     if (IS_COLLAB) {
       // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
@@ -1406,7 +1447,9 @@ test.describe('Tables', () => {
   test('Insert column before (with conflicting merged cell)', async ({
     page,
     isPlainText,
+    isCollab,
   }) => {
+    initialize({isCollab, page});
     test.skip(isPlainText);
     if (IS_COLLAB) {
       // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
@@ -1464,7 +1507,9 @@ test.describe('Tables', () => {
   test('Insert column before (with selected cell with rowspan > 1)', async ({
     page,
     isPlainText,
+    isCollab,
   }) => {
+    initialize({isCollab, page});
     test.skip(isPlainText);
     if (IS_COLLAB) {
       // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
@@ -1515,7 +1560,9 @@ test.describe('Tables', () => {
   test('Delete rows (with conflicting merged cell)', async ({
     page,
     isPlainText,
+    isCollab,
   }) => {
+    initialize({isCollab, page});
     test.skip(isPlainText);
     if (IS_COLLAB) {
       // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
@@ -1574,7 +1621,9 @@ test.describe('Tables', () => {
   test('Delete columns (with conflicting merged cell)', async ({
     page,
     isPlainText,
+    isCollab,
   }) => {
+    initialize({isCollab, page});
     test.skip(isPlainText);
     if (IS_COLLAB) {
       // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
@@ -1633,7 +1682,9 @@ test.describe('Tables', () => {
   test('Deselect when click outside #3785 #4138', async ({
     page,
     isPlainText,
+    isCollab,
   }) => {
+    initialize({isCollab, page});
     test.skip(isPlainText);
     if (IS_COLLAB) {
       // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
@@ -1687,4 +1738,104 @@ test.describe('Tables', () => {
       `,
     );
   });
+});
+
+test('Cell merge feature disabled', async ({page, isPlainText, isCollab}) => {
+  initialize({isCollab, page, tableCellMerge: false});
+  test.skip(isPlainText);
+
+  await focusEditor(page);
+  await pasteFromClipboard(page, {
+    'text/html': `<div dir="ltr">
+      <table>
+         <tbody>
+            <tr>
+               <td colspan="2" rowspan="2">
+                  <p dir="ltr">Hello world</p>
+               </td>
+               <td>
+                  <p dir="ltr">a</p>
+               </td>
+            </tr>
+            <tr>
+               <td>
+                  <p dir="ltr">b</p>
+               </td>
+            </tr>
+            <tr>
+               <td>
+                  <p dir="ltr">c</p>
+               </td>
+               <td>
+                  <p dir="ltr">d</p>
+               </td>
+               <td>
+                  <p dir="ltr">e</p>
+               </td>
+            </tr>
+         </tbody>
+      </table>
+   </div>`,
+  });
+
+  await page.pause();
+
+  await assertHTML(
+    page,
+    html`
+      <table class="PlaygroundEditorTheme__table">
+        <tr>
+          <td class="PlaygroundEditorTheme__tableCell">
+            <p
+              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+              dir="ltr">
+              <span data-lexical-text="true">Hello world</span>
+            </p>
+          </td>
+          <td class="PlaygroundEditorTheme__tableCell"><br /></td>
+          <td class="PlaygroundEditorTheme__tableCell">
+            <p
+              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+              dir="ltr">
+              <span data-lexical-text="true">a</span>
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td class="PlaygroundEditorTheme__tableCell"><br /></td>
+          <td class="PlaygroundEditorTheme__tableCell"><br /></td>
+          <td class="PlaygroundEditorTheme__tableCell">
+            <p
+              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+              dir="ltr">
+              <span data-lexical-text="true">b</span>
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td class="PlaygroundEditorTheme__tableCell">
+            <p
+              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+              dir="ltr">
+              <span data-lexical-text="true">c</span>
+            </p>
+          </td>
+          <td class="PlaygroundEditorTheme__tableCell">
+            <p
+              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+              dir="ltr">
+              <span data-lexical-text="true">d</span>
+            </p>
+          </td>
+          <td class="PlaygroundEditorTheme__tableCell">
+            <p
+              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+              dir="ltr">
+              <span data-lexical-text="true">e</span>
+            </p>
+          </td>
+        </tr>
+      </table>
+    `,
+  );
 });

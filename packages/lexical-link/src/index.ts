@@ -86,7 +86,7 @@ export class LinkNode extends ElementNode {
         href = 'about:blank';
       }
     } catch {
-      href = 'about:blank';
+      href = 'https://';
     }
     element.href = href;
     if (this.__target !== null) {

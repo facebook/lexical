@@ -1840,3 +1840,103 @@ test.describe('Tables', () => {
     );
   });
 });
+
+test('Cell merge feature disabled', async ({page, isPlainText, isCollab}) => {
+  initialize({isCollab, page, tableCellMerge: false});
+  test.skip(isPlainText);
+
+  await focusEditor(page);
+  await pasteFromClipboard(page, {
+    'text/html': `<div dir="ltr">
+      <table>
+         <tbody>
+            <tr>
+               <td colspan="2" rowspan="2">
+                  <p dir="ltr">Hello world</p>
+               </td>
+               <td>
+                  <p dir="ltr">a</p>
+               </td>
+            </tr>
+            <tr>
+               <td>
+                  <p dir="ltr">b</p>
+               </td>
+            </tr>
+            <tr>
+               <td>
+                  <p dir="ltr">c</p>
+               </td>
+               <td>
+                  <p dir="ltr">d</p>
+               </td>
+               <td>
+                  <p dir="ltr">e</p>
+               </td>
+            </tr>
+         </tbody>
+      </table>
+   </div>`,
+  });
+
+  await page.pause();
+
+  await assertHTML(
+    page,
+    html`
+      <table class="PlaygroundEditorTheme__table">
+        <tr>
+          <td class="PlaygroundEditorTheme__tableCell">
+            <p
+              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+              dir="ltr">
+              <span data-lexical-text="true">Hello world</span>
+            </p>
+          </td>
+          <td class="PlaygroundEditorTheme__tableCell"><br /></td>
+          <td class="PlaygroundEditorTheme__tableCell">
+            <p
+              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+              dir="ltr">
+              <span data-lexical-text="true">a</span>
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td class="PlaygroundEditorTheme__tableCell"><br /></td>
+          <td class="PlaygroundEditorTheme__tableCell"><br /></td>
+          <td class="PlaygroundEditorTheme__tableCell">
+            <p
+              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+              dir="ltr">
+              <span data-lexical-text="true">b</span>
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td class="PlaygroundEditorTheme__tableCell">
+            <p
+              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+              dir="ltr">
+              <span data-lexical-text="true">c</span>
+            </p>
+          </td>
+          <td class="PlaygroundEditorTheme__tableCell">
+            <p
+              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+              dir="ltr">
+              <span data-lexical-text="true">d</span>
+            </p>
+          </td>
+          <td class="PlaygroundEditorTheme__tableCell">
+            <p
+              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+              dir="ltr">
+              <span data-lexical-text="true">e</span>
+            </p>
+          </td>
+        </tr>
+      </table>
+    `,
+  );
+});

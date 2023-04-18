@@ -27,6 +27,7 @@ import {
   IS_LINUX,
   keyDownCtrlOrMeta,
   keyUpCtrlOrMeta,
+  pasteFromClipboard,
   test,
 } from '../utils/index.mjs';
 
@@ -610,6 +611,169 @@ test.describe('Links', () => {
             <span data-lexical-text="true">a</span>
           </a>
           <span data-lexical-text="true">a</span>
+        </p>
+      `,
+    );
+  });
+
+  test(`Can create a link then insert text after it, via typing`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type('ab');
+
+    // Turn 'a' into a link
+    await moveLeft(page, 'b'.length);
+    await selectCharacters(page, 'left', 1);
+    await click(page, '.link');
+
+    // Type a character at the right-hand edge of the link
+    await moveRight(page, 1);
+    await page.keyboard.type('x');
+
+    // The character should be inserted after the link
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://"
+            rel="noopener">
+            <span data-lexical-text="true">a</span>
+          </a>
+          <span data-lexical-text="true">xb</span>
+        </p>
+      `,
+    );
+  });
+
+  test(`Can create a link then insert text after it, via pasting plain text`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type('ab');
+
+    // Turn 'a' into a link
+    await moveLeft(page, 'b'.length);
+    await selectCharacters(page, 'left', 1);
+    await click(page, '.link');
+
+    // Paste some text at the right-hand edge of the link
+    await moveRight(page, 1);
+    await pasteFromClipboard(page, {'text/plain': 'x'});
+
+    // The character should be inserted after the link
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://"
+            rel="noopener">
+            <span data-lexical-text="true">a</span>
+          </a>
+          <span data-lexical-text="true">xb</span>
+        </p>
+      `,
+    );
+  });
+
+  // Fails: https://github.com/facebook/lexical/issues/4295
+  test(`Can create a link then insert text after it, via pasting Lexical text`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type('ab');
+
+    // Turn 'a' into a link
+    await moveLeft(page, 'b'.length);
+    await selectCharacters(page, 'left', 1);
+    await click(page, '.link');
+
+    // Paste some text at the right-hand edge of the link
+    await moveRight(page, 1);
+    await pasteFromClipboard(page, {
+      'application/x-lexical-editor': JSON.stringify({
+        namespace: 'Playground',
+        nodes: [
+          {
+            detail: 0,
+            format: 0,
+            mode: 'normal',
+            style: '',
+            text: 'x',
+            type: 'text',
+            version: 1,
+          },
+        ],
+      }),
+    });
+
+    // Expected: As with the equivalent 'via pasting plain text' test above, the
+    // 'x' should be inserted after the link.
+    //
+    // Observed: the whole line becomes inserted into the link.
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://"
+            rel="noopener">
+            <span data-lexical-text="true">a</span>
+          </a>
+          <span data-lexical-text="true">xb</span>
+        </p>
+      `,
+    );
+  });
+
+  // Fails: https://github.com/facebook/lexical/issues/4295
+  test(`Can create a link then insert text after it, via pasting HTML`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type('ab');
+
+    // Turn 'a' into a link
+    await moveLeft(page, 'b'.length);
+    await selectCharacters(page, 'left', 1);
+    await click(page, '.link');
+
+    // Paste some text at the right-hand edge of the link
+    await moveRight(page, 1);
+    await pasteFromClipboard(page, {'text/html': 'x'});
+
+    // Expected: As with the equivalent 'via pasting plain text' test above, the
+    // 'x' should be inserted after the link.
+    //
+    // Observed: the whole line becomes inserted into the link.
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://"
+            rel="noopener">
+            <span data-lexical-text="true">a</span>
+          </a>
+          <span data-lexical-text="true">xb</span>
         </p>
       `,
     );

@@ -43,6 +43,7 @@ export async function initialize({
   isMaxLength,
   showNestedEditorTreeView,
   tableCellMerge,
+  tableCellBackgroundColor,
 }) {
   const appSettings = {};
   appSettings.isRichText = IS_RICH_TEXT;
@@ -61,6 +62,9 @@ export async function initialize({
   appSettings.isMaxLength = !!isMaxLength;
   if (tableCellMerge !== undefined) {
     appSettings.tableCellMerge = tableCellMerge;
+  }
+  if (tableCellBackgroundColor !== undefined) {
+    appSettings.tableCellBackgroundColor = tableCellBackgroundColor;
   }
 
   const urlParams = appSettingsToURLParams(appSettings);

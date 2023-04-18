@@ -1839,4 +1839,47 @@ test.describe('Tables', () => {
       `,
     );
   });
+
+  test('Cell background color feature disabled', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    await initialize({isCollab, page, tableCellBackgroundColor: false});
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+    await pasteFromClipboard(page, {
+      'text/html': `<div dir="ltr">
+        <table>
+           <tbody>
+              <tr>
+                 <td style="background-color: red">
+                    <p dir="ltr">Hello world</p>
+                 </td>
+              </tr>
+           </tbody>
+        </table>
+     </div>`,
+    });
+
+    await page.pause();
+
+    await assertHTML(
+      page,
+      html`
+        <table class="PlaygroundEditorTheme__table">
+          <tr>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">Hello world</span>
+              </p>
+            </td>
+          </tr>
+        </table>
+      `,
+    );
+  });
 });

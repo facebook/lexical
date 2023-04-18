@@ -203,7 +203,7 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
   }
 
   getBackgroundColor(): null | string {
-    return this.__backgroundColor;
+    return this.getLatest().__backgroundColor;
   }
 
   setBackgroundColor(newBackgroundColor: null | string): void {

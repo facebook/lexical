@@ -87,6 +87,7 @@ export default function Editor(): JSX.Element {
       showTreeView,
       showTableOfContents,
       tableCellMerge,
+      tableCellBackgroundColor,
     },
   } = useSettings();
   const isEditable = useLexicalEditable();
@@ -183,7 +184,10 @@ export default function Editor(): JSX.Element {
             <ListPlugin />
             <CheckListPlugin />
             <ListMaxIndentLevelPlugin maxDepth={7} />
-            <TablePlugin hasCellMerge={tableCellMerge} />
+            <TablePlugin
+              hasCellMerge={tableCellMerge}
+              hasCellBackgroundColor={tableCellBackgroundColor}
+            />
             <TableCellResizer />
             <NewTablePlugin cellEditorConfig={cellEditorConfig}>
               <AutoFocusPlugin />

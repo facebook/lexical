@@ -77,7 +77,6 @@ import {getActiveEditor, updateEditor} from './LexicalUpdates';
 import {
   $flushMutations,
   $getNodeByKey,
-  $isSelectionCapturedInDecorator,
   $isTokenOrSegmented,
   $setSelection,
   $shouldInsertTextAfterOrBeforeTextNode,
@@ -135,7 +134,6 @@ const PASS_THROUGH_COMMAND = Object.freeze({});
 const ANDROID_COMPOSITION_LATENCY = 30;
 const rootElementEvents: RootElementEvents = [
   ['keydown', onKeyDown],
-  ['pointerdown', onPointerDown],
   ['compositionstart', onCompositionStart],
   ['compositionend', onCompositionEnd],
   ['input', onInput],
@@ -164,7 +162,6 @@ let lastBeforeInputInsertTextTimeStamp = 0;
 let unprocessedBeforeInputData: null | string = null;
 let rootElementsRegistered = 0;
 let isSelectionChangeFromDOMUpdate = false;
-let isSelectionChangeFromMouseDown = false;
 let isInsertLineBreak = false;
 let isFirefoxEndingComposition = false;
 let collapsedSelectionFormat: [number, string, number, NodeKey, number] = [
@@ -369,7 +366,7 @@ function onSelectionChange(
 // This results in a tiny selection box that looks buggy/broken. This can
 // also help other browsers when selection might "appear" lost, when it
 // really isn't.
-function onClick(event: MouseEvent, editor: LexicalEditor): void {
+function onClick(event: PointerEvent, editor: LexicalEditor): void {
   updateEditor(editor, () => {
     const selection = $getSelection();
     const domSelection = getDOMSelection(editor._window);
@@ -395,23 +392,14 @@ function onClick(event: MouseEvent, editor: LexicalEditor): void {
       }
     }
 
+    // This is used to update the selection on mobile devices when the user
+    // clicks on text after a node selection.
+    if (event.pointerType === 'touch') {
+      onDocumentSelectionChange(event);
+    }
+
     dispatchCommand(editor, CLICK_COMMAND, event);
   });
-}
-
-function onPointerDown(event: PointerEvent, editor: LexicalEditor) {
-  // TODO implement text drag & drop
-  const target = event.target;
-  const pointerType = event.pointerType;
-  if (target instanceof Node && pointerType !== 'touch') {
-    updateEditor(editor, () => {
-      // Drag & drop should not recompute selection until mouse up; otherwise the initially
-      // selected content is lost.
-      if (!$isSelectionCapturedInDecorator(target)) {
-        isSelectionChangeFromMouseDown = true;
-      }
-    });
-  }
 }
 
 function getTargetRange(event: InputEvent): null | StaticRange {
@@ -1030,30 +1018,30 @@ function onDocumentSelectionChange(event: Event): void {
     return;
   }
 
-  if (isSelectionChangeFromMouseDown) {
-    isSelectionChangeFromMouseDown = false;
-    updateEditor(nextActiveEditor, () => {
-      const lastSelection = $getPreviousSelection();
-      const domAnchorNode = domSelection.anchorNode;
-      if (domAnchorNode === null) {
-        return;
-      }
-      const nodeType = domAnchorNode.nodeType;
-      // If the user is attempting to click selection back onto text, then
-      // we should attempt create a range selection.
-      // When we click on an empty paragraph node or the end of a paragraph that ends
-      // with an image/poll, the nodeType will be ELEMENT_NODE
-      if (nodeType !== DOM_ELEMENT_TYPE && nodeType !== DOM_TEXT_TYPE) {
-        return;
-      }
-      const newSelection = internalCreateRangeSelection(
-        lastSelection,
-        domSelection,
-        nextActiveEditor,
-      );
-      $setSelection(newSelection);
-    });
-  }
+  updateEditor(nextActiveEditor, () => {
+    const lastSelection = $getPreviousSelection();
+    if (!$isNodeSelection(lastSelection)) {
+      return;
+    }
+    const domAnchorNode = domSelection.anchorNode;
+    if (domAnchorNode === null) {
+      return;
+    }
+    const nodeType = domAnchorNode.nodeType;
+    // If the user is attempting to click selection back onto text, then
+    // we should attempt create a range selection.
+    // When we click on an empty paragraph node or the end of a paragraph that ends
+    // with an image/poll, the nodeType will be ELEMENT_NODE
+    if (nodeType !== DOM_ELEMENT_TYPE && nodeType !== DOM_TEXT_TYPE) {
+      return;
+    }
+    const newSelection = internalCreateRangeSelection(
+      lastSelection,
+      domSelection,
+      nextActiveEditor,
+    );
+    $setSelection(newSelection);
+  });
 
   // When editor receives selection change event, we're checking if
   // it has any sibling editors (within same parent editor) that were active

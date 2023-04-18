@@ -366,18 +366,34 @@ export function $isHeadingNode(
   return node instanceof HeadingNode;
 }
 
+export function isDataTransfer(
+  payload: PasteCommandType,
+): payload is DataTransfer {
+  return payload instanceof DataTransfer;
+}
+
 function onPasteForRichText(
   event: CommandPayloadType<typeof PASTE_COMMAND>,
   editor: LexicalEditor,
 ): void {
-  event.preventDefault();
+  if (!isDataTransfer(event)) {
+    event.preventDefault();
+  }
   editor.update(
     () => {
       const selection = $getSelection();
-      const clipboardData =
-        event instanceof InputEvent || event instanceof KeyboardEvent
-          ? null
-          : event.clipboardData;
+      let clipboardData;
+
+      if (event instanceof InputEvent || event instanceof KeyboardEvent) {
+        clipboardData = null;
+      } else if (isDataTransfer(event)) {
+        clipboardData = event;
+      } else {
+        clipboardData = event.clipboardData;
+      }
+
+      console.log({clipboardData});
+
       if (
         clipboardData != null &&
         ($isRangeSelection(selection) || DEPRECATED_$isGridSelection(selection))
@@ -410,10 +426,13 @@ async function onCutForRichText(
 // in certain ocassions, we want to know whether it was a file transfer, as opposed to text. We
 // control this with the first boolean flag.
 export function eventFiles(
-  event: DragEvent | PasteCommandType,
+  event: DragEvent | PasteCommandType | DataTransfer,
 ): [boolean, Array<File>, boolean] {
   let dataTransfer: null | DataTransfer = null;
-  if (event instanceof DragEvent) {
+
+  if (event instanceof DataTransfer) {
+    dataTransfer = event;
+  } else if (event instanceof DragEvent) {
     dataTransfer = event.dataTransfer;
   } else if (event instanceof ClipboardEvent) {
     dataTransfer = event.clipboardData;
@@ -474,12 +493,12 @@ export function registerRichText(editor: LexicalEditor): () => void {
     editor.registerCommand(
       CLICK_COMMAND,
       (payload) => {
-        const selection = $getSelection();
-        if ($isNodeSelection(selection)) {
-          selection.clear();
-          return true;
-        }
-        return false;
+        // const selection = $getSelection();
+        // if ($isNodeSelection(selection)) {
+        //   selection.clear();
+        //   return true;
+        // }
+        // return false;
       },
       0,
     ),
@@ -968,17 +987,22 @@ export function registerRichText(editor: LexicalEditor): () => void {
       PASTE_COMMAND,
       (event) => {
         const [, files, hasTextContent] = eventFiles(event);
+        // debugger;
         if (files.length > 0 && !hasTextContent) {
           editor.dispatchCommand(DRAG_DROP_PASTE, files);
           return true;
         }
 
         // if inputs then paste within the input ignore creating a new node on paste event
-        if (isSelectionCapturedInDecoratorInput(event.target as Node)) {
+        if (
+          !isDataTransfer(event) &&
+          isSelectionCapturedInDecoratorInput(event.target as Node)
+        ) {
           return false;
         }
 
         const selection = $getSelection();
+        console.log({selection});
         if (
           $isRangeSelection(selection) ||
           DEPRECATED_$isGridSelection(selection)

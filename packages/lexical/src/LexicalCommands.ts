@@ -8,7 +8,11 @@
 
 import type {ElementFormatType, LexicalCommand, TextFormatType} from 'lexical';
 
-export type PasteCommandType = ClipboardEvent | InputEvent | KeyboardEvent;
+export type PasteCommandType =
+  | ClipboardEvent
+  | InputEvent
+  | KeyboardEvent
+  | DataTransfer;
 
 export function createCommand<T>(type?: string): LexicalCommand<T> {
   return __DEV__ ? {type} : {};
@@ -88,10 +92,12 @@ export const DRAGOVER_COMMAND: LexicalCommand<DragEvent> =
   createCommand('DRAGOVER_COMMAND');
 export const DRAGEND_COMMAND: LexicalCommand<DragEvent> =
   createCommand('DRAGEND_COMMAND');
-export const COPY_COMMAND: LexicalCommand<ClipboardEvent | KeyboardEvent> =
-  createCommand('COPY_COMMAND');
-export const CUT_COMMAND: LexicalCommand<ClipboardEvent | KeyboardEvent> =
-  createCommand('CUT_COMMAND');
+export const COPY_COMMAND: LexicalCommand<
+  ClipboardEvent | KeyboardEvent | null
+> = createCommand('COPY_COMMAND');
+export const CUT_COMMAND: LexicalCommand<
+  ClipboardEvent | KeyboardEvent | null
+> = createCommand('CUT_COMMAND');
 export const CLEAR_EDITOR_COMMAND: LexicalCommand<void> = createCommand(
   'CLEAR_EDITOR_COMMAND',
 );

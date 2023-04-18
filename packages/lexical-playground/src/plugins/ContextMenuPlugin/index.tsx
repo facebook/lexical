@@ -6,16 +6,21 @@
  *
  */
 
-import type {LexicalNode} from 'lexical';
+import {
+  COPY_COMMAND,
+  CUT_COMMAND,
+  PASTE_COMMAND,
+  type LexicalNode,
+} from 'lexical';
 
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   LexicalContextMenuPlugin,
   MenuOption,
 } from '@lexical/react/LexicalContextMenuPlugin';
-import {useCallback, useMemo, useState} from 'react';
+import {useCallback, useMemo} from 'react';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 
 function ContextMenuItem({
   index,
@@ -44,7 +49,11 @@ function ContextMenuItem({
       aria-selected={isSelected}
       id={'typeahead-item-' + index}
       onMouseEnter={onMouseEnter}
-      onClick={onClick}>
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onClick();
+      }}>
       <span className="text">{option.title}</span>
     </li>
   );
@@ -68,7 +77,9 @@ function ContextMenu({
           <ContextMenuItem
             index={i}
             isSelected={selectedItemIndex === i}
-            onClick={() => onOptionClick(option, i)}
+            onClick={(e) => {
+              onOptionClick(option, i);
+            }}
             onMouseEnter={() => onOptionMouseEnter(i)}
             key={option.key}
             option={option}
@@ -81,11 +92,11 @@ function ContextMenu({
 
 export class ContextMenuOption extends MenuOption {
   title: string;
-  onSelect: (targetNode: LexicalNode | null) => void;
+  onSelect: (targetNode: LexicalNode | null, close: () => void) => void;
   constructor(
     title: string,
     options: {
-      onSelect: (targetNode: LexicalNode | null) => void;
+      onSelect: (targetNode: LexicalNode | null, close: () => void) => void;
     },
   ) {
     super(title);
@@ -98,12 +109,60 @@ export default function ContextMenuPlugin(): JSX.Element {
   const [editor] = useLexicalComposerContext();
 
   const options = useMemo(() => {
+    // if (isCopy(keyCode, event.shiftKey, event.metaKey, event.ctrlKey)) {
+    //   editor.dispatchCommand(COPY_COMMAND, event);
+    //   return;
+    // }
+    // if (isCut(keyCode, event.shiftKey, event.metaKey, event.ctrlKey)) {
+    //   editor.dispatchCommand(CUT_COMMAND, event);
+    //   return;
+    // }
+    // if (isPaste(keyCode, event.shiftKey, event.metaKey, event.ctrlKey)) {
+    //   editor.dispatchCommand(PASTE_COMMAND, event);
+    //   return;
+    // }
+
     return [
+      new ContextMenuOption(`Copy`, {
+        onSelect: (_node, close) => {
+          editor.dispatchCommand(COPY_COMMAND, null);
+          close();
+        },
+      }),
+      new ContextMenuOption(`Cut`, {
+        onSelect: (_node, close) => {
+          editor.dispatchCommand(CUT_COMMAND, null);
+          close();
+        },
+      }),
+      new ContextMenuOption(`Paste`, {
+        onSelect: (_node, close) => {
+          navigator.clipboard.read().then(
+            async (...args) => {
+              const data = new DataTransfer();
+              console.log(...args);
+
+              const items = await navigator.clipboard.read();
+              const item = items[0];
+              console.log({item});
+
+              for (const type of item.types) {
+                const dataString = await (await item.getType(type)).text();
+                data.setData(type, dataString);
+              }
+
+              console.log(data);
+
+              editor.dispatchCommand(PASTE_COMMAND, data);
+
+              // close();
+            },
+            (err) => console.log(err),
+          );
+        },
+      }),
       new ContextMenuOption('Dismiss', {
         onSelect: () => 'selected dismiss',
-      }),
-      new ContextMenuOption(`Do something`, {
-        onSelect: () => 'selected do something',
       }),
     ];
   }, []);
@@ -115,8 +174,7 @@ export default function ContextMenuPlugin(): JSX.Element {
       closeMenu: () => void,
     ) => {
       editor.update(() => {
-        selectedOption.onSelect(targetNode);
-        // closeMenu();
+        selectedOption.onSelect(targetNode, closeMenu);
       });
     },
     [editor],
@@ -140,13 +198,18 @@ export default function ContextMenuPlugin(): JSX.Element {
       ) =>
         anchorElementRef.current
           ? ReactDOM.createPortal(
+              // eslint-disable-next-line jsx-a11y/no-static-element-interactions
               <div
                 className="typeahead-popover auto-embed-menu"
                 style={{
                   marginLeft: anchorElementRef.current.style.width,
                   width: 200,
                 }}
-                ref={setMenuRef}>
+                ref={setMenuRef}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                }}>
                 <ContextMenu
                   options={options}
                   selectedItemIndex={selectedIndex}

@@ -37,6 +37,7 @@ import {
   LexicalEditor,
   LexicalNode,
   NodeSelection,
+  PasteCommandType,
   RangeSelection,
   SELECTION_CHANGE_COMMAND,
   SerializedTextNode,
@@ -91,6 +92,7 @@ export function $insertDataTransferForPlainText(
     selection.insertRawText(text);
   }
 }
+
 export function $insertDataTransferForRichText(
   dataTransfer: DataTransfer,
   selection: RangeSelection | GridSelection,
@@ -114,6 +116,8 @@ export function $insertDataTransferForRichText(
   }
 
   const htmlString = dataTransfer.getData('text/html');
+  console.log({htmlString});
+
   if (htmlString) {
     try {
       const parser = new DOMParser();

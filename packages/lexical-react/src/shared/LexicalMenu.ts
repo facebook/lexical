@@ -284,7 +284,7 @@ export function LexicalMenu<TOption extends MenuOption>({
   }, [matchingString]);
 
   const selectOptionAndCleanUp = useCallback(
-    (selectedEntry: TOption) => {
+    (selectedEntry: TOption, event: KeyboardEvent | null) => {
       editor.update(() => {
         const textNodeContainingQuery =
           resolution.match != null && shouldSplitNodeWithQuery
@@ -420,7 +420,7 @@ export function LexicalMenu<TOption extends MenuOption>({
           }
           event.preventDefault();
           event.stopImmediatePropagation();
-          selectOptionAndCleanUp(options[selectedIndex]);
+          selectOptionAndCleanUp(options[selectedIndex], event);
           return true;
         },
         COMMAND_PRIORITY_LOW,
@@ -439,7 +439,7 @@ export function LexicalMenu<TOption extends MenuOption>({
             event.preventDefault();
             event.stopImmediatePropagation();
           }
-          selectOptionAndCleanUp(options[selectedIndex]);
+          selectOptionAndCleanUp(options[selectedIndex], event);
           return true;
         },
         COMMAND_PRIORITY_LOW,

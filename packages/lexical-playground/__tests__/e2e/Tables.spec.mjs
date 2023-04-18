@@ -1707,7 +1707,8 @@ test.describe('Tables', () => {
     });
   });
 
-  test('Background color to cell', async ({page, isPlainText}) => {
+  test('Background color to cell', async ({page, isPlainText, isCollab}) => {
+    await initialize({isCollab, page});
     test.skip(isPlainText);
     if (IS_COLLAB) {
       // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
@@ -1738,15 +1739,14 @@ test.describe('Tables', () => {
       `,
     );
   });
-});
 
-test('Cell merge feature disabled', async ({page, isPlainText, isCollab}) => {
-  await initialize({isCollab, page, tableCellMerge: false});
-  test.skip(isPlainText);
+  test('Cell merge feature disabled', async ({page, isPlainText, isCollab}) => {
+    await initialize({isCollab, page, tableCellMerge: false});
+    test.skip(isPlainText);
 
-  await focusEditor(page);
-  await pasteFromClipboard(page, {
-    'text/html': `<div dir="ltr">
+    await focusEditor(page);
+    await pasteFromClipboard(page, {
+      'text/html': `<div dir="ltr">
       <table>
          <tbody>
             <tr>
@@ -1776,66 +1776,67 @@ test('Cell merge feature disabled', async ({page, isPlainText, isCollab}) => {
          </tbody>
       </table>
    </div>`,
+    });
+
+    await page.pause();
+
+    await assertHTML(
+      page,
+      html`
+        <table class="PlaygroundEditorTheme__table">
+          <tr>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">Hello world</span>
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell"><br /></td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">a</span>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td class="PlaygroundEditorTheme__tableCell"><br /></td>
+            <td class="PlaygroundEditorTheme__tableCell"><br /></td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">b</span>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">c</span>
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">d</span>
+              </p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p
+                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">e</span>
+              </p>
+            </td>
+          </tr>
+        </table>
+      `,
+    );
   });
-
-  await page.pause();
-
-  await assertHTML(
-    page,
-    html`
-      <table class="PlaygroundEditorTheme__table">
-        <tr>
-          <td class="PlaygroundEditorTheme__tableCell">
-            <p
-              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="ltr">
-              <span data-lexical-text="true">Hello world</span>
-            </p>
-          </td>
-          <td class="PlaygroundEditorTheme__tableCell"><br /></td>
-          <td class="PlaygroundEditorTheme__tableCell">
-            <p
-              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="ltr">
-              <span data-lexical-text="true">a</span>
-            </p>
-          </td>
-        </tr>
-        <tr>
-          <td class="PlaygroundEditorTheme__tableCell"><br /></td>
-          <td class="PlaygroundEditorTheme__tableCell"><br /></td>
-          <td class="PlaygroundEditorTheme__tableCell">
-            <p
-              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="ltr">
-              <span data-lexical-text="true">b</span>
-            </p>
-          </td>
-        </tr>
-        <tr>
-          <td class="PlaygroundEditorTheme__tableCell">
-            <p
-              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="ltr">
-              <span data-lexical-text="true">c</span>
-            </p>
-          </td>
-          <td class="PlaygroundEditorTheme__tableCell">
-            <p
-              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="ltr">
-              <span data-lexical-text="true">d</span>
-            </p>
-          </td>
-          <td class="PlaygroundEditorTheme__tableCell">
-            <p
-              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="ltr">
-              <span data-lexical-text="true">e</span>
-            </p>
-          </td>
-        </tr>
-      </table>
-    `,
-  );
 });

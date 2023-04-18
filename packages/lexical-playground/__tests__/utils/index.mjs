@@ -42,6 +42,7 @@ export async function initialize({
   isCharLimitUtf8,
   isMaxLength,
   showNestedEditorTreeView,
+  tableCellMerge,
 }) {
   const appSettings = {};
   appSettings.isRichText = IS_RICH_TEXT;
@@ -58,6 +59,9 @@ export async function initialize({
   appSettings.isCharLimit = !!isCharLimit;
   appSettings.isCharLimitUtf8 = !!isCharLimitUtf8;
   appSettings.isMaxLength = !!isMaxLength;
+  if (tableCellMerge !== undefined) {
+    appSettings.tableCellMerge = tableCellMerge;
+  }
 
   const urlParams = appSettingsToURLParams(appSettings);
   const url = `http://localhost:${E2E_PORT}/${

@@ -10,5 +10,4 @@
 type Props = $ReadOnly<{
   hasCellMerge?: boolean,
 }>;
-
 declare export function TablePlugin(props: Props): null;

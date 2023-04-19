@@ -169,8 +169,8 @@ export class LinkNode extends ElementNode {
       if (!SUPPORTED_URL_PROTOCOLS.has(parsedUrl.protocol)) {
         return 'about:blank';
       }
-    } catch (e) {
-      return 'https://';
+    } catch {
+      return url;
     }
     return url;
   }

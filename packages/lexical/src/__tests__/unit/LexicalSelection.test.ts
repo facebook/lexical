@@ -7,105 +7,322 @@
  */
 
 import {$createLinkNode} from '@lexical/link';
-import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  LexicalEditor,
+  RangeSelection,
+} from 'lexical';
 
 import {initializeUnitTest} from '../utils';
 
 describe('LexicalSelection tests', () => {
   initializeUnitTest((testEnv) => {
-    test('Can insert text after an inline element, using insertText', async () => {
-      const {editor, container} = testEnv;
+    describe('Inserting text either side of inline elements', () => {
+      const setup = async (
+        mode: 'start-of-paragraph' | 'mid-paragraph' | 'end-of-paragraph',
+      ) => {
+        const {container, editor} = testEnv;
 
-      if (!container) {
-        throw new Error('Expected container to be truthy');
-      }
-
-      await editor.update(() => {
-        const root = $getRoot();
-        if (root.getFirstChild() !== null) {
-          throw new Error('Expected root to be childless');
+        if (!container) {
+          throw new Error('Expected container to be truthy');
         }
 
-        // Set up a paragraph holding a link side-by-side with a text node
-        root.append(
-          $createParagraphNode().append(
-            $createLinkNode('https://', {}).append($createTextNode('a')),
-            $createTextNode('b'),
-          ),
-        );
-      });
+        await editor.update(() => {
+          const root = $getRoot();
+          if (root.getFirstChild() !== null) {
+            throw new Error('Expected root to be childless');
+          }
 
-      expect(container.innerHTML).toBe(
-        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><a href="https://" dir="ltr"><span data-lexical-text="true">a</span></a><span data-lexical-text="true">b</span></p></div>',
-      );
+          const paragraph = $createParagraphNode();
+          if (mode === 'start-of-paragraph') {
+            paragraph.append(
+              $createLinkNode('https://', {}).append($createTextNode('a')),
+              $createTextNode('b'),
+            );
+          } else if (mode === 'mid-paragraph') {
+            paragraph.append(
+              $createTextNode('a'),
+              $createLinkNode('https://', {}).append($createTextNode('b')),
+              $createTextNode('c'),
+            );
+          } else {
+            paragraph.append(
+              $createTextNode('a'),
+              $createLinkNode('https://', {}).append($createTextNode('b')),
+            );
+          }
 
-      await editor.update(() => {
-        const paragraph = $getRoot().getFirstChildOrThrow();
-        const textNode = paragraph.getLastChildOrThrow();
+          root.append(paragraph);
+        });
 
-        // Place the cursor between the link and the text node by selecting the
-        // start of the text node
-        const selection = textNode.select(0, 0);
+        const expectation =
+          mode === 'start-of-paragraph'
+            ? '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><a href="https://" dir="ltr"><span data-lexical-text="true">a</span></a><span data-lexical-text="true">b</span></p></div>'
+            : mode === 'mid-paragraph'
+            ? '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">a</span><a href="https://" dir="ltr"><span data-lexical-text="true">b</span></a><span data-lexical-text="true">c</span></p></div>'
+            : '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">a</span><a href="https://" dir="ltr"><span data-lexical-text="true">b</span></a></p></div>';
 
-        // Insert text (mirroring what LexicalClipboard does when pasting inline
-        // plain text)
-        selection.insertText('x');
-      });
+        expect(container.innerHTML).toBe(expectation);
 
-      expect(container.innerHTML).toBe(
-        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><a href="https://" dir="ltr"><span data-lexical-text="true">a</span></a><span data-lexical-text="true">xb</span></p></div>',
-      );
-    });
+        return {container, editor};
+      };
 
-    // Fails: https://github.com/facebook/lexical/issues/4295
-    test('Can insert text after an inline element, using insertNodes', async () => {
-      const {editor, container} = testEnv;
-
-      if (!container) {
-        throw new Error('Expected container to be truthy');
-      }
-
-      await editor.update(() => {
-        const root = $getRoot();
-        if (root.getFirstChild() !== null) {
-          throw new Error('Expected root to be childless');
+      const insertTextOrNodes = (
+        selection: RangeSelection,
+        method: 'insertText' | 'insertNodes',
+      ) => {
+        if (method === 'insertText') {
+          // Insert text (mirroring what LexicalClipboard does when pasting
+          // inline plain text)
+          selection.insertText('x');
+        } else {
+          // Insert a paragraph bearing a single text node (mirroring what
+          // LexicalClipboard does when pasting inline rich text)
+          selection.insertNodes([
+            $createParagraphNode().append($createTextNode('x')),
+          ]);
         }
+      };
 
-        // Set up a paragraph holding a link side-by-side with a text node
-        root.append(
-          $createParagraphNode().append(
-            $createLinkNode('https://', {}).append($createTextNode('a')),
-            $createTextNode('b'),
-          ),
-        );
+      describe('Inserting text before inline elements', () => {
+        describe('Start-of-paragraph inline elements', () => {
+          const insertText = async ({
+            container,
+            editor,
+            method,
+          }: {
+            container: HTMLDivElement;
+            editor: LexicalEditor;
+            method: 'insertText' | 'insertNodes';
+          }) => {
+            await editor.update(() => {
+              const paragraph = $getRoot().getFirstChildOrThrow();
+              const linkNode = paragraph.getFirstChildOrThrow();
+
+              // Place the cursor at the start of the link node
+              // For review: is there a way to select "outside" of the link
+              // node?
+              const selection = linkNode.select(0, 0);
+              insertTextOrNodes(selection, method);
+            });
+
+            expect(container.innerHTML).toBe(
+              '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">x</span><a href="https://" dir="ltr"><span data-lexical-text="true">a</span></a><span data-lexical-text="true">b</span></p></div>',
+            );
+          };
+
+          test('Can insert text before a start-of-paragraph inline element, using insertText', async () => {
+            const {container, editor} = await setup('start-of-paragraph');
+
+            await insertText({container, editor, method: 'insertText'});
+          });
+
+          // Fails: https://github.com/facebook/lexical/issues/4295
+          test('Can insert text before a start-of-paragraph inline element, using insertNodes', async () => {
+            const {container, editor} = await setup('start-of-paragraph');
+
+            await insertText({container, editor, method: 'insertNodes'});
+          });
+        });
+
+        describe('Mid-paragraph inline elements', () => {
+          const insertText = async ({
+            container,
+            editor,
+            method,
+          }: {
+            container: HTMLDivElement;
+            editor: LexicalEditor;
+            method: 'insertText' | 'insertNodes';
+          }) => {
+            await editor.update(() => {
+              const paragraph = $getRoot().getFirstChildOrThrow();
+              const textNode = paragraph.getFirstChildOrThrow();
+
+              // Place the cursor between the link and the first text node by
+              // selecting the end of the text node
+              const selection = textNode.select(1, 1);
+              insertTextOrNodes(selection, method);
+            });
+
+            expect(container.innerHTML).toBe(
+              '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">ax</span><a href="https://" dir="ltr"><span data-lexical-text="true">b</span></a><span data-lexical-text="true">c</span></p></div>',
+            );
+          };
+
+          test('Can insert text before a mid-paragraph inline element, using insertText', async () => {
+            const {container, editor} = await setup('mid-paragraph');
+
+            await insertText({container, editor, method: 'insertText'});
+          });
+
+          test('Can insert text before a mid-paragraph inline element, using insertNodes', async () => {
+            const {container, editor} = await setup('mid-paragraph');
+
+            await insertText({container, editor, method: 'insertNodes'});
+          });
+        });
+
+        describe('End-of-paragraph inline elements', () => {
+          const insertText = async ({
+            container,
+            editor,
+            method,
+          }: {
+            container: HTMLDivElement;
+            editor: LexicalEditor;
+            method: 'insertText' | 'insertNodes';
+          }) => {
+            await editor.update(() => {
+              const paragraph = $getRoot().getFirstChildOrThrow();
+              const textNode = paragraph.getFirstChildOrThrow();
+
+              // Place the cursor before the link element by selecting the end
+              // of the text node
+              const selection = textNode.select(1, 1);
+              insertTextOrNodes(selection, method);
+            });
+
+            expect(container.innerHTML).toBe(
+              '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">ax</span><a href="https://" dir="ltr"><span data-lexical-text="true">b</span></a></p></div>',
+            );
+          };
+
+          test('Can insert text before an end-of-paragraph inline element, using insertText', async () => {
+            const {container, editor} = await setup('end-of-paragraph');
+
+            await insertText({container, editor, method: 'insertText'});
+          });
+
+          test('Can insert text before an end-of-paragraph inline element, using insertNodes', async () => {
+            const {container, editor} = await setup('end-of-paragraph');
+
+            await insertText({container, editor, method: 'insertNodes'});
+          });
+        });
       });
 
-      expect(container.innerHTML).toBe(
-        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><a href="https://" dir="ltr"><span data-lexical-text="true">a</span></a><span data-lexical-text="true">b</span></p></div>',
-      );
+      describe('Inserting text after inline elements', () => {
+        describe('Start-of-paragraph inline elements', () => {
+          const insertText = async ({
+            container,
+            editor,
+            method,
+          }: {
+            container: HTMLDivElement;
+            editor: LexicalEditor;
+            method: 'insertText' | 'insertNodes';
+          }) => {
+            await editor.update(() => {
+              const paragraph = $getRoot().getFirstChildOrThrow();
+              const textNode = paragraph.getLastChildOrThrow();
 
-      await editor.update(() => {
-        const paragraph = $getRoot().getFirstChildOrThrow();
-        const textNode = paragraph.getLastChildOrThrow();
+              // Place the cursor between the link and the last text node by
+              // selecting the start of the text node
+              const selection = textNode.select(0, 0);
+              insertTextOrNodes(selection, method);
+            });
 
-        // Place the cursor between the link and the text node by selecting the
-        // start of the text node
-        const selection = textNode.select(0, 0);
+            expect(container.innerHTML).toBe(
+              '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><a href="https://" dir="ltr"><span data-lexical-text="true">a</span></a><span data-lexical-text="true">xb</span></p></div>',
+            );
+          };
 
-        // Insert a paragraph bearing a single text node (mirroring what
-        // LexicalClipboard does when pasting inline rich text)
-        selection.insertNodes([
-          $createParagraphNode().append($createTextNode('x')),
-        ]);
+          test('Can insert text after a start-of-paragraph inline element, using insertText', async () => {
+            const {container, editor} = await setup('start-of-paragraph');
+
+            await insertText({container, editor, method: 'insertText'});
+          });
+
+          // Fails: https://github.com/facebook/lexical/issues/4295
+          test('Can insert text after a start-of-paragraph inline element, using insertNodes', async () => {
+            const {container, editor} = await setup('start-of-paragraph');
+
+            await insertText({container, editor, method: 'insertNodes'});
+          });
+        });
+
+        describe('Mid-paragraph inline elements', () => {
+          const insertText = async ({
+            container,
+            editor,
+            method,
+          }: {
+            container: HTMLDivElement;
+            editor: LexicalEditor;
+            method: 'insertText' | 'insertNodes';
+          }) => {
+            await editor.update(() => {
+              const paragraph = $getRoot().getFirstChildOrThrow();
+              const textNode = paragraph.getLastChildOrThrow();
+
+              // Place the cursor between the link and the last text node by
+              // selecting the start of the text node
+              const selection = textNode.select(0, 0);
+              insertTextOrNodes(selection, method);
+            });
+
+            expect(container.innerHTML).toBe(
+              '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">a</span><a href="https://" dir="ltr"><span data-lexical-text="true">b</span></a><span data-lexical-text="true">xc</span></p></div>',
+            );
+          };
+
+          test('Can insert text after a mid-paragraph inline element, using insertText', async () => {
+            const {container, editor} = await setup('mid-paragraph');
+
+            await insertText({container, editor, method: 'insertText'});
+          });
+
+          // Fails: https://github.com/facebook/lexical/issues/4295
+          test('Can insert text after a mid-paragraph inline element, using insertNodes', async () => {
+            const {container, editor} = await setup('mid-paragraph');
+
+            await insertText({container, editor, method: 'insertNodes'});
+          });
+        });
+
+        describe('End-of-paragraph inline elements', () => {
+          const insertText = async ({
+            container,
+            editor,
+            method,
+          }: {
+            container: HTMLDivElement;
+            editor: LexicalEditor;
+            method: 'insertText' | 'insertNodes';
+          }) => {
+            await editor.update(() => {
+              const paragraph = $getRoot().getFirstChildOrThrow();
+              const linkNode = paragraph.getLastChildOrThrow();
+
+              // Place the cursor at the end of the link element
+              // For review: not sure if there's a better way to select
+              // "outside" of the link element.
+              const selection = linkNode.select(1, 1);
+              insertTextOrNodes(selection, method);
+            });
+
+            expect(container.innerHTML).toBe(
+              '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">a</span><a href="https://" dir="ltr"><span data-lexical-text="true">b</span></a><span data-lexical-text="true">x</span></p></div>',
+            );
+          };
+
+          test('Can insert text after an end-of-paragraph inline element, using insertText', async () => {
+            const {container, editor} = await setup('end-of-paragraph');
+
+            await insertText({container, editor, method: 'insertText'});
+          });
+
+          // Fails: https://github.com/facebook/lexical/issues/4295
+          test('Can insert text after an end-of-paragraph inline element, using insertNodes', async () => {
+            const {container, editor} = await setup('end-of-paragraph');
+
+            await insertText({container, editor, method: 'insertNodes'});
+          });
+        });
       });
-
-      // Expected: As with the equivalent 'using insertText' test above, the 'x'
-      // should be inserted after the link.
-      //
-      // Observed: the whole line becomes inserted into the link.
-      expect(container.innerHTML).toBe(
-        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><a href="https://" dir="ltr"><span data-lexical-text="true">a</span></a><span data-lexical-text="true">xb</span></p></div>',
-      );
     });
   });
 });

@@ -1503,7 +1503,7 @@ export class RangeSelection implements BaseSelection {
             }
             const children = element.getChildren();
             const childrenLength = children.length;
-            if ($isElementNode(target) && !target.isInline()) {
+            if ($isElementNode(target) && target.canInsertTextAfter()) {
               let firstChild = target.getFirstChild();
               for (let s = 0; s < childrenLength; s++) {
                 const child = children[s];

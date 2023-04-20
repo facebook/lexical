@@ -1,3 +1,22 @@
+## 0.10.0 (2023-04-18)
+
+### Breaking Changes
+
+@lexical/link will now sanitize anchor tag hrefs before rendering them to the DOM. This provides a measure of protection against XSS attacks
+that rely on inlining javascript in that attribute. However, it means that links using less common protocols will now be sanitized (converted to about:blank),
+which will be a breaking change for any existing links.
+
+Like most other node-based logic in Lexical, the sanitization logic can be overriden by overriding LinkNode using the Node Overrides API and replacing it with a node that implements the sanitizeUrl method differently.
+
+**Fixes CVE-2023-30792**
+
+- Table feature: background color (#4345) Gerard Rovira
+- Add @react/LexicalClickableLinkPlugin (#4316) Gerard Rovira
+- TablePlugin feature: cell merge (#4343) Gerard Rovira
+- Ban javascript URLs in @lexical/link (#4342) Acy Watson
+- Table Cell Background Color (#4306) Gerard Rovira
+- ExportDOM in Debug Tree View (#4307) Ivaylo Pavlov
+
 ## 0.9.2 (2023-04-14)
 
 - Update codes.json (#4320) Gerard Rovira

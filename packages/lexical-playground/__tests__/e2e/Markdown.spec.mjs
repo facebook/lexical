@@ -388,124 +388,124 @@ test.describe('Markdown', () => {
       `,
       text: '# ',
     },
-    // {
-    //   html: html`
-    //     <h2><br /></h2>
-    //   `,
-    //   text: '## ',
-    // },
-    // {
-    //   html: html`
-    //     <ol>
-    //       <li value="1"><br /></li>
-    //     </ol>
-    //   `,
-    //   text: '1. ',
-    // },
-    // {
-    //   html: html`
-    //     <ol start="25">
-    //       <li value="25"><br /></li>
-    //     </ol>
-    //   `,
-    //   text: '25. ',
-    // },
-    // {
-    //   html: html`
-    //     <ol>
-    //       <li value="1">
-    //         <ol>
-    //           <li value="1"><br /></li>
-    //         </ol>
-    //       </li>
-    //     </ol>
-    //   `,
-    //   text: '    1. ',
-    // },
-    // {
-    //   html: html`
-    //     <ul>
-    //       <li value="1"><br /></li>
-    //     </ul>
-    //   `,
-    //   text: '- ',
-    // },
-    // {
-    //   html: html`
-    //     <ul>
-    //       <li value="1">
-    //         <ul>
-    //           <li value="1"><br /></li>
-    //         </ul>
-    //       </li>
-    //     </ul>
-    //   `,
-    //   text: '    - ',
-    // },
-    // {
-    //   html: html`
-    //     <ul>
-    //       <li value="1"><br /></li>
-    //     </ul>
-    //   `,
-    //   text: '* ',
-    // },
-    // {
-    //   html: html`
-    //     <ul>
-    //       <li value="1">
-    //         <ul>
-    //           <li value="1"><br /></li>
-    //         </ul>
-    //       </li>
-    //     </ul>
-    //   `,
-    //   text: '    * ',
-    // },
-    // {
-    //   html: html`
-    //     <ul>
-    //       <li value="1">
-    //         <ul>
-    //           <li value="1"><br /></li>
-    //         </ul>
-    //       </li>
-    //     </ul>
-    //   `,
-    //   text: '      * ',
-    // },
-    // {
-    //   html: html`
-    //     <ul>
-    //       <li value="1">
-    //         <ul>
-    //           <li value="1">
-    //             <ul>
-    //               <li value="1">
-    //                 <br />
-    //               </li>
-    //             </ul>
-    //           </li>
-    //         </ul>
-    //       </li>
-    //     </ul>
-    //   `,
-    //   text: '        * ',
-    // },
-    // {
-    //   html: html`
-    //     <hr class="" contenteditable="false" data-lexical-decorator="true" />
-    //     <p><br /></p>
-    //   `,
-    //   text: '--- ',
-    // },
-    // {
-    //   html: html`
-    //     <hr class="" contenteditable="false" data-lexical-decorator="true" />
-    //     <p><br /></p>
-    //   `,
-    //   text: '*** ',
-    // },
+    {
+      html: html`
+        <h2><br /></h2>
+      `,
+      text: '## ',
+    },
+    {
+      html: html`
+        <ol>
+          <li value="1"><br /></li>
+        </ol>
+      `,
+      text: '1. ',
+    },
+    {
+      html: html`
+        <ol start="25">
+          <li value="25"><br /></li>
+        </ol>
+      `,
+      text: '25. ',
+    },
+    {
+      html: html`
+        <ol>
+          <li value="1">
+            <ol>
+              <li value="1"><br /></li>
+            </ol>
+          </li>
+        </ol>
+      `,
+      text: '    1. ',
+    },
+    {
+      html: html`
+        <ul>
+          <li value="1"><br /></li>
+        </ul>
+      `,
+      text: '- ',
+    },
+    {
+      html: html`
+        <ul>
+          <li value="1">
+            <ul>
+              <li value="1"><br /></li>
+            </ul>
+          </li>
+        </ul>
+      `,
+      text: '    - ',
+    },
+    {
+      html: html`
+        <ul>
+          <li value="1"><br /></li>
+        </ul>
+      `,
+      text: '* ',
+    },
+    {
+      html: html`
+        <ul>
+          <li value="1">
+            <ul>
+              <li value="1"><br /></li>
+            </ul>
+          </li>
+        </ul>
+      `,
+      text: '    * ',
+    },
+    {
+      html: html`
+        <ul>
+          <li value="1">
+            <ul>
+              <li value="1"><br /></li>
+            </ul>
+          </li>
+        </ul>
+      `,
+      text: '      * ',
+    },
+    {
+      html: html`
+        <ul>
+          <li value="1">
+            <ul>
+              <li value="1">
+                <ul>
+                  <li value="1">
+                    <br />
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      `,
+      text: '        * ',
+    },
+    {
+      html: html`
+        <hr class="" contenteditable="false" data-lexical-decorator="true" />
+        <p><br /></p>
+      `,
+      text: '--- ',
+    },
+    {
+      html: html`
+        <hr class="" contenteditable="false" data-lexical-decorator="true" />
+        <p><br /></p>
+      `,
+      text: '*** ',
+    },
   ];
 
   const SIMPLE_TEXT_FORMAT_SHORTCUTS = [

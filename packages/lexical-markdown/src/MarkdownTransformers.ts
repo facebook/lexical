@@ -110,6 +110,7 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
       if (firstChild !== null) {
         firstChild.insertBefore(listItem);
       } else {
+        // should never happen, but let's handle gracefully, just in case.
         nextNode.append(listItem);
       }
       parentNode.remove();

@@ -1366,7 +1366,7 @@ test.describe('CopyAndPaste', () => {
     });
   });
 
-  test('Copy list of a different type and paste into list on an existing item - should normalize to same type.', async ({
+  test('Copy list of a different type and paste into list on an existing item - should merge the lists.', async ({
     page,
     isPlainText,
     isCollab,
@@ -1491,14 +1491,14 @@ test.describe('CopyAndPaste', () => {
               <li
                 value="3"
                 class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem">
-                <ul class="PlaygroundEditorTheme__ul">
+                <ol class="PlaygroundEditorTheme__ol3">
                   <li
                     value="1"
                     class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
                     dir="ltr">
                     <span data-lexical-text="true">five</span>
                   </li>
-                </ul>
+                </ol>
               </li>
             </ul>
           </li>

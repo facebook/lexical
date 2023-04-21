@@ -30,7 +30,7 @@ import {
 
 import {$createListItemNode, $isListItemNode, ListItemNode} from '.';
 import {updateChildrenListItemValue} from './formatList';
-import {$getListDepth, isNestedListNode, wrapInListItem} from './utils';
+import {$getListDepth, wrapInListItem} from './utils';
 
 export type SerializedListNode = Spread<
   {
@@ -80,16 +80,6 @@ export class ListNode extends ElementNode {
     const writable = this.getWritable();
     writable.__listType = type;
     writable.__tag = type === 'number' ? 'ol' : 'ul';
-    const children = this.getChildren();
-    for (let i = 0; i < children.length; i++) {
-      const child = children[i];
-      if ($isListItemNode(child) && isNestedListNode(child)) {
-        const nestedList = child.getFirstChild<ListNode>();
-        if (nestedList !== null) {
-          nestedList.setListType(type);
-        }
-      }
-    }
   }
 
   getListType(): ListType {

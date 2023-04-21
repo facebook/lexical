@@ -220,10 +220,6 @@ export class ListItemNode extends ElementNode {
     // Attempt to merge if the list is of the same type.
 
     if ($isListNode(node)) {
-      const listNodeType = listNode.getListType();
-      if (node.getListType() !== listNodeType) {
-        node.setListType(listNodeType);
-      }
       let child = node;
       const children = node.getChildren<ListNode>();
 

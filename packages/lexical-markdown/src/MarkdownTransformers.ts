@@ -109,8 +109,10 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
       const firstChild = nextNode.getFirstChild();
       if (firstChild !== null) {
         firstChild.insertBefore(listItem);
-        parentNode.remove();
+      } else {
+        nextNode.append(listItem);
       }
+      parentNode.remove();
     } else if (
       $isListNode(previousNode) &&
       previousNode.getListType() === listType

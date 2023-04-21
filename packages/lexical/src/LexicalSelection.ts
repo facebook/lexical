@@ -2081,6 +2081,15 @@ export class RangeSelection implements BaseSelection {
           possibleNode.remove();
         }
         return;
+      } else if (
+        !isBackward &&
+        $isElementNode(possibleNode) &&
+        $isElementNode(anchorNode) &&
+        anchorNode.isEmpty()
+      ) {
+        anchorNode.remove();
+        possibleNode.selectStart();
+        return;
       }
       this.modify('extend', isBackward, 'character');
 

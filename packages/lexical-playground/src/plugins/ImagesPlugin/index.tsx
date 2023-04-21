@@ -24,6 +24,7 @@ import {
   DROP_COMMAND,
   LexicalCommand,
   LexicalEditor,
+  $getRoot,
 } from 'lexical';
 import {useEffect, useRef, useState} from 'react';
 import * as React from 'react';
@@ -222,6 +223,9 @@ export default function ImagesPlugin({
         (payload) => {
           const imageNode = $createImageNode(payload);
           $insertNodes([imageNode]);
+          imageNode.__caption.update(() => {
+            $getRoot().append($createParagraphNode()).selectEnd();
+          });
           if ($isRootOrShadowRoot(imageNode.getParentOrThrow())) {
             $wrapNodeInElement(imageNode, $createParagraphNode).selectEnd();
           }

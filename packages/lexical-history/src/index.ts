@@ -47,7 +47,6 @@ const DELETE_CHARACTER_AFTER_SELECTION = 4;
 export type HistoryStateEntry = {
   editor: LexicalEditor;
   editorState: EditorState;
-  undoSelection?: RangeSelection | NodeSelection | GridSelection | null;
 };
 export type HistoryState = {
   current: null | HistoryStateEntry;
@@ -374,12 +373,9 @@ function undo(editor: LexicalEditor, historyState: HistoryState): void {
     historyState.current = historyStateEntry || null;
 
     if (historyStateEntry) {
-      historyStateEntry.editor.setEditorState(
-        historyStateEntry.editorState.clone(historyStateEntry.undoSelection),
-        {
-          tag: 'historic',
-        },
-      );
+      historyStateEntry.editor.setEditorState(historyStateEntry.editorState, {
+        tag: 'historic',
+      });
     }
   }
 }
@@ -446,8 +442,9 @@ export function registerHistory(
       if (current !== null) {
         undoStack.push({
           ...current,
-          undoSelection: prevEditorState.read($getSelection),
+          // undoSelection: prevEditorState.read($getSelection),
         });
+        console.info(undoStack);
         editor.dispatchCommand(CAN_UNDO_COMMAND, true);
       }
     } else if (mergeAction === DISCARD_HISTORY_CANDIDATE) {

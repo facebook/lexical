@@ -100,7 +100,7 @@
   margin-top: 8px;
   margin-bottom: 8px;
   tab-size: 2;
-  /* white-space: pre; */
+  white-space: nowrap;
   overflow-x: auto;
   position: relative;
 }

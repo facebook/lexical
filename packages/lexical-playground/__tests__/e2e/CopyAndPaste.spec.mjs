@@ -1455,9 +1455,9 @@ test.describe('CopyAndPaste', () => {
 
     const clipboard = await copyToClipboard(page);
 
-    await page.keyboard.press('ArrowUp');
-    await page.keyboard.press('ArrowUp');
-    await page.keyboard.press('ArrowUp');
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('ArrowLeft');
     await page.keyboard.press('Backspace');
 
     await pasteFromClipboard(page, clipboard);

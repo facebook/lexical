@@ -7,19 +7,10 @@
  *
  */
 
-import type {
-  EditorState,
-  GridSelection,
-  LexicalEditor,
-  LexicalNode,
-  NodeKey,
-  NodeSelection,
-  RangeSelection,
-} from 'lexical';
+import type {EditorState, LexicalEditor, LexicalNode, NodeKey} from 'lexical';
 
 import {mergeRegister} from '@lexical/utils';
 import {
-  $getSelection,
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
@@ -442,9 +433,7 @@ export function registerHistory(
       if (current !== null) {
         undoStack.push({
           ...current,
-          // undoSelection: prevEditorState.read($getSelection),
         });
-        console.info(undoStack);
         editor.dispatchCommand(CAN_UNDO_COMMAND, true);
       }
     } else if (mergeAction === DISCARD_HISTORY_CANDIDATE) {

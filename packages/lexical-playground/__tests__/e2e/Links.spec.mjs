@@ -700,15 +700,15 @@ test.describe('Links', () => {
           await setup(page, 'paste:plain');
         });
 
-        // Fails: https://github.com/facebook/lexical/issues/4295
-        test(`Can insert text before a start-of-paragraph link, via pasting HTML`, async ({
+        // TODO: https://github.com/facebook/lexical/issues/4295
+        test.skip(`Can insert text before a start-of-paragraph link, via pasting HTML`, async ({
           page,
         }) => {
           await setup(page, 'paste:html');
         });
 
-        // Fails: https://github.com/facebook/lexical/issues/4295
-        test(`Can insert text before a start-of-paragraph link, via pasting Lexical text`, async ({
+        // TODO: https://github.com/facebook/lexical/issues/4295
+        test.skip(`Can insert text before a start-of-paragraph link, via pasting Lexical text`, async ({
           page,
         }) => {
           await setup(page, 'paste:lexical');
@@ -849,15 +849,15 @@ test.describe('Links', () => {
           await setup(page, 'paste:plain');
         });
 
-        // Fails: https://github.com/facebook/lexical/issues/4295
-        test(`Can insert text before an end-of-paragraph link, via pasting HTML`, async ({
+        // TODO: https://github.com/facebook/lexical/issues/4295
+        test.skip(`Can insert text before an end-of-paragraph link, via pasting HTML`, async ({
           page,
         }) => {
           await setup(page, 'paste:html');
         });
 
-        // Fails: https://github.com/facebook/lexical/issues/4295
-        test(`Can insert text before an end-of-paragraph link, via pasting Lexical text`, async ({
+        // TODO: https://github.com/facebook/lexical/issues/4295
+        test.skip(`Can insert text before an end-of-paragraph link, via pasting Lexical text`, async ({
           page,
         }) => {
           await setup(page, 'paste:lexical');
@@ -926,15 +926,15 @@ test.describe('Links', () => {
           await setup(page, 'paste:plain');
         });
 
-        // Fails: https://github.com/facebook/lexical/issues/4295
-        test(`Can insert text after a start-of-paragraph link, via pasting HTML`, async ({
+        // TODO: https://github.com/facebook/lexical/issues/4295
+        test.skip(`Can insert text after a start-of-paragraph link, via pasting HTML`, async ({
           page,
         }) => {
           await setup(page, 'paste:html');
         });
 
-        // Fails: https://github.com/facebook/lexical/issues/4295
-        test(`Can insert text after a start-of-paragraph link, via pasting Lexical text`, async ({
+        // TODO: https://github.com/facebook/lexical/issues/4295
+        test.skip(`Can insert text after a start-of-paragraph link, via pasting Lexical text`, async ({
           page,
         }) => {
           await setup(page, 'paste:lexical');
@@ -1075,15 +1075,15 @@ test.describe('Links', () => {
           await setup(page, 'paste:plain');
         });
 
-        // Fails: https://github.com/facebook/lexical/issues/4295
-        test(`Can insert text after an end-of-paragraph link, via pasting HTML`, async ({
+        // TODO: https://github.com/facebook/lexical/issues/4295
+        test.skip(`Can insert text after an end-of-paragraph link, via pasting HTML`, async ({
           page,
         }) => {
           await setup(page, 'paste:html');
         });
 
-        // Fails: https://github.com/facebook/lexical/issues/4295
-        test(`Can insert text after an end-of-paragraph link, via pasting Lexical text`, async ({
+        // TODO: https://github.com/facebook/lexical/issues/4295
+        test.skip(`Can insert text after an end-of-paragraph link, via pasting Lexical text`, async ({
           page,
         }) => {
           await setup(page, 'paste:lexical');

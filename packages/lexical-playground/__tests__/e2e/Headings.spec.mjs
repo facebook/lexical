@@ -64,9 +64,8 @@ test.describe('Headings', () => {
     page,
     isCollab,
   }) => {
-    test.fixme(isCollab && IS_LINUX, 'Flaky on Linux + Collab');
-    throw new Error(`collab: ${isCollab} linux: ${IS_LINUX}`);
-    // eslint-disable-next-line no-unreachable
+    // Flaky on Linux + Collab #3915
+    test.skip(isCollab && IS_LINUX);
     await focusEditor(page);
 
     await click(page, '.block-controls');

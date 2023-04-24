@@ -79,7 +79,8 @@ function $appendNodesToHTML(
   parentElement: HTMLElement | DocumentFragment,
   selection: RangeSelection | NodeSelection | GridSelection | null = null,
 ): boolean {
-  let shouldInclude = selection != null ? currentNode.isSelected() : true;
+  let shouldInclude =
+    selection != null ? currentNode.isSelected(selection) : true;
   const shouldExclude =
     $isElementNode(currentNode) && currentNode.excludeFromCopy('html');
   let target = currentNode;

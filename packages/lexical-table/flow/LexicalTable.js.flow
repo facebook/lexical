@@ -18,7 +18,12 @@ import type {
   LexicalCommand,
 } from 'lexical';
 
-import {ElementNode} from 'lexical';
+import {
+  ElementNode,
+  deprecated_GridCellNode,
+  deprecated_GridRowNode,
+  deprecated_GridNode,
+} from 'lexical';
 
 /**
  * LexicalTableCellNode
@@ -33,7 +38,10 @@ export const TableCellHeaderStates = {
 
 export type TableCellHeaderState = $Values<typeof TableCellHeaderStates>;
 
-declare export class TableCellNode extends ElementNode {
+declare export class TableCellNode extends deprecated_GridCellNode {
+  __headerState: TableCellHeaderState;
+  __width?: number;
+  __backgroundColor: null | string;
   static getType(): string;
   static clone(node: TableCellNode): TableCellNode;
   constructor(
@@ -42,7 +50,6 @@ declare export class TableCellNode extends ElementNode {
     width?: ?number,
     key?: NodeKey,
   ): void;
-  __headerState: TableCellHeaderState;
   createDOM(config: EditorConfig): HTMLElement;
   updateDOM(prevNode: TableCellNode, dom: HTMLElement): boolean;
   insertNewAfter(
@@ -54,6 +61,8 @@ declare export class TableCellNode extends ElementNode {
   getHeaderStyles(): TableCellHeaderState;
   setWidth(width: number): ?number;
   getWidth(): ?number;
+  getBackgroundColor(): null | string;
+  setBackgroundColor(newBackgroundColor: null | string): void;
   toggleHeaderStyle(headerState: TableCellHeaderState): TableCellNode;
   hasHeader(): boolean;
   updateDOM(prevNode: TableCellNode): boolean;
@@ -73,7 +82,7 @@ declare export function $isTableCellNode(
  * LexicalTableNode
  */
 
-declare export class TableNode extends ElementNode {
+declare export class TableNode extends deprecated_GridNode {
   static getType(): string;
   static clone(node: TableNode): TableNode;
   constructor(grid: ?Grid, key?: NodeKey): void;
@@ -102,7 +111,7 @@ declare export function $isTableNode(
  * LexicalTableRowNode
  */
 
-declare export class TableRowNode extends ElementNode {
+declare export class TableRowNode extends deprecated_GridRowNode {
   static getType(): string;
   static clone(node: TableRowNode): TableRowNode;
   constructor(height?: ?number, key?: NodeKey): void;
@@ -211,6 +220,16 @@ declare export function $deleteTableColumn(
   tableNode: TableNode,
   targetIndex: number,
 ): TableNode;
+
+declare export function $insertTableRow__EXPERIMENTAL(
+  insertAfter: boolean,
+): void;
+declare export function $insertTableColumn__EXPERIMENTAL(
+  insertAfter: boolean,
+): void;
+declare export function $deleteTableRow__EXPERIMENTAL(): void;
+declare export function $deleteTableColumn__EXPERIMENTAL(): void;
+declare export function $unmergeCell(): void;
 
 /**
  * LexicalTableSelection.js

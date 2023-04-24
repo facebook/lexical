@@ -42,6 +42,8 @@ export async function initialize({
   isCharLimitUtf8,
   isMaxLength,
   showNestedEditorTreeView,
+  tableCellMerge,
+  tableCellBackgroundColor,
 }) {
   const appSettings = {};
   appSettings.isRichText = IS_RICH_TEXT;
@@ -58,6 +60,12 @@ export async function initialize({
   appSettings.isCharLimit = !!isCharLimit;
   appSettings.isCharLimitUtf8 = !!isCharLimitUtf8;
   appSettings.isMaxLength = !!isMaxLength;
+  if (tableCellMerge !== undefined) {
+    appSettings.tableCellMerge = tableCellMerge;
+  }
+  if (tableCellBackgroundColor !== undefined) {
+    appSettings.tableCellBackgroundColor = tableCellBackgroundColor;
+  }
 
   const urlParams = appSettingsToURLParams(appSettings);
   const url = `http://localhost:${E2E_PORT}/${
@@ -824,6 +832,11 @@ export async function deleteTableColumns(page) {
 export async function deleteTable(page) {
   await click(page, '.table-cell-action-button-container');
   await click(page, '.item[data-test-id="table-delete"]');
+}
+
+export async function setBackgroundColor(page) {
+  await click(page, '.table-cell-action-button-container');
+  await click(page, '.item[data-test-id="table-background-color"]');
 }
 
 export async function enableCompositionKeyEvents(page) {

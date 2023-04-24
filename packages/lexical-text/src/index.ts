@@ -327,6 +327,7 @@ export function registerLexicalTextEntity<T extends TextNode>(
       }
 
       const replacementNode = createNode(nodeToReplace);
+      replacementNode.setFormat(nodeToReplace.getFormat());
       nodeToReplace.replace(replacementNode);
 
       if (currentNode == null) {

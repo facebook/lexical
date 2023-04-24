@@ -85,12 +85,14 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
   }
 
   static importJSON(serializedNode: SerializedTableCellNode): TableCellNode {
+    const colSpan = serializedNode.colSpan || 1;
+    const rowSpan = serializedNode.rowSpan || 1;
     const cellNode = $createTableCellNode(
       serializedNode.headerState,
-      serializedNode.colSpan,
+      colSpan,
       serializedNode.width || undefined,
     );
-    cellNode.__rowSpan = serializedNode.rowSpan;
+    cellNode.__rowSpan = rowSpan;
     cellNode.__backgroundColor = serializedNode.backgroundColor || null;
     return cellNode;
   }

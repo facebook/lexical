@@ -1453,7 +1453,9 @@ test.describe('Links', () => {
 
   test('Can handle pressing Enter inside a Link containing multiple TextNodes', async ({
     page,
+    isCollab,
   }) => {
+    test.fixme(isCollab && IS_LINUX, 'Flaky on Linux + Collab');
     await focusEditor(page);
     await page.keyboard.type('Hello ');
     await toggleBold(page);

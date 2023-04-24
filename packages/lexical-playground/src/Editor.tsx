@@ -126,7 +126,7 @@ export default function Editor(): JSX.Element {
         setIsSmallWidthViewport(isNextSmallWidthViewport);
       }
     };
-
+    updateViewPortWidth();
     window.addEventListener('resize', updateViewPortWidth);
 
     return () => {

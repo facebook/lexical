@@ -171,10 +171,6 @@ export class YouTubeNode extends DecoratorBlockNode {
       />
     );
   }
-
-  isInline(): false {
-    return false;
-  }
 }
 
 export function $createYouTubeNode(videoID: string): YouTubeNode {

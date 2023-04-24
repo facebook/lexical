@@ -44,6 +44,14 @@ export type SerializedLinkNode = Spread<
   Spread<LinkAttributes, SerializedElementNode>
 >;
 
+const SUPPORTED_URL_PROTOCOLS = new Set([
+  'http:',
+  'https:',
+  'mailto:',
+  'sms:',
+  'tel:',
+]);
+
 /** @noInheritDoc */
 export class LinkNode extends ElementNode {
   /** @internal */
@@ -78,7 +86,7 @@ export class LinkNode extends ElementNode {
 
   createDOM(config: EditorConfig): HTMLAnchorElement {
     const element = document.createElement('a');
-    element.href = this.__url;
+    element.href = this.sanitizeUrl(this.__url);
     if (this.__target !== null) {
       element.target = this.__target;
     }
@@ -152,6 +160,19 @@ export class LinkNode extends ElementNode {
     node.setIndent(serializedNode.indent);
     node.setDirection(serializedNode.direction);
     return node;
+  }
+
+  sanitizeUrl(url: string): string {
+    try {
+      const parsedUrl = new URL(url);
+      // eslint-disable-next-line no-script-url
+      if (!SUPPORTED_URL_PROTOCOLS.has(parsedUrl.protocol)) {
+        return 'about:blank';
+      }
+    } catch {
+      return url;
+    }
+    return url;
   }
 
   exportJSON(): SerializedLinkNode | SerializedAutoLinkNode {

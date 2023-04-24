@@ -205,6 +205,18 @@ describe('LexicalLinkNode tests', () => {
       });
     });
 
+    test('LinkNode.createDOM() sanitizes javascript: URLs', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        // eslint-disable-next-line no-script-url
+        const linkNode = new LinkNode('javascript:alert(0)');
+        expect(linkNode.createDOM(editorConfig).outerHTML).toBe(
+          '<a href="about:blank" class="my-link-class"></a>',
+        );
+      });
+    });
+
     test('LinkNode.updateDOM()', async () => {
       const {editor} = testEnv;
 

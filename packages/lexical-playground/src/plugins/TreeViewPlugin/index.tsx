@@ -15,6 +15,7 @@ export default function TreeViewPlugin(): JSX.Element {
   return (
     <TreeView
       viewClassName="tree-view-output"
+      treeTypeButtonClassName="debug-treetype-button"
       timeTravelPanelClassName="debug-timetravel-panel"
       timeTravelButtonClassName="debug-timetravel-button"
       timeTravelPanelSliderClassName="debug-timetravel-panel-slider"

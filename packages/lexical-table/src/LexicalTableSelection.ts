@@ -37,9 +37,12 @@ import {
   getTableGrid,
 } from './LexicalTableSelectionHelpers';
 
+export const BACKGROUND_COLOR = 'background-color';
+export const BACKGROUND_IMAGE = 'background-image';
 export type Cell = {
   elem: HTMLElement;
   highlighted: boolean;
+  hasBackgroundColor: boolean;
   x: number;
   y: number;
 };
@@ -150,6 +153,7 @@ export class TableSelection {
   }
 
   clearHighlight() {
+    const editor = this.editor;
     this.isHighlightingCells = false;
     this.anchorX = -1;
     this.anchorY = -1;
@@ -164,29 +168,30 @@ export class TableSelection {
 
     this.enableHighlightStyle();
 
-    this.editor.update(() => {
+    editor.update(() => {
       const tableNode = $getNodeByKey(this.tableNodeKey);
 
       if (!$isTableNode(tableNode)) {
         throw new Error('Expected TableNode.');
       }
 
-      const tableElement = this.editor.getElementByKey(this.tableNodeKey);
+      const tableElement = editor.getElementByKey(this.tableNodeKey);
 
       if (!tableElement) {
         throw new Error('Expected to find TableElement in DOM');
       }
 
       const grid = getTableGrid(tableElement);
-      $updateDOMForSelection(grid, null);
+      $updateDOMForSelection(editor, grid, null);
       $setSelection(null);
-      this.editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+      editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
     });
   }
 
   enableHighlightStyle() {
-    this.editor.update(() => {
-      const tableElement = this.editor.getElementByKey(this.tableNodeKey);
+    const editor = this.editor;
+    editor.update(() => {
+      const tableElement = editor.getElementByKey(this.tableNodeKey);
 
       if (!tableElement) {
         throw new Error('Expected to find TableElement in DOM');
@@ -198,8 +203,9 @@ export class TableSelection {
   }
 
   disableHighlightStyle() {
-    this.editor.update(() => {
-      const tableElement = this.editor.getElementByKey(this.tableNodeKey);
+    const editor = this.editor;
+    editor.update(() => {
+      const tableElement = editor.getElementByKey(this.tableNodeKey);
 
       if (!tableElement) {
         throw new Error('Expected to find TableElement in DOM');
@@ -212,24 +218,26 @@ export class TableSelection {
 
   updateTableGridSelection(selection: GridSelection | null) {
     if (selection != null && selection.gridKey === this.tableNodeKey) {
+      const editor = this.editor;
       this.gridSelection = selection;
       this.isHighlightingCells = true;
       this.disableHighlightStyle();
-      $updateDOMForSelection(this.grid, this.gridSelection);
+      $updateDOMForSelection(editor, this.grid, this.gridSelection);
     } else if (selection == null) {
       this.clearHighlight();
     }
   }
 
   setFocusCellForSelection(cell: Cell, ignoreStart = false) {
-    this.editor.update(() => {
+    const editor = this.editor;
+    editor.update(() => {
       const tableNode = $getNodeByKey(this.tableNodeKey);
 
       if (!$isTableNode(tableNode)) {
         throw new Error('Expected TableNode.');
       }
 
-      const tableElement = this.editor.getElementByKey(this.tableNodeKey);
+      const tableElement = editor.getElementByKey(this.tableNodeKey);
 
       if (!tableElement) {
         throw new Error('Expected to find TableElement in DOM');
@@ -240,7 +248,7 @@ export class TableSelection {
       this.focusCell = cell;
 
       if (this.anchorCell !== null) {
-        const domSelection = getDOMSelection(this.editor._window);
+        const domSelection = getDOMSelection(editor._window);
         // Collapse the selection
         if (domSelection) {
           domSelection.setBaseAndExtent(
@@ -287,9 +295,9 @@ export class TableSelection {
 
           $setSelection(this.gridSelection);
 
-          this.editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+          editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
 
-          $updateDOMForSelection(this.grid, this.gridSelection);
+          $updateDOMForSelection(editor, this.grid, this.gridSelection);
         }
       }
     });
@@ -340,7 +348,8 @@ export class TableSelection {
   }
 
   clearText() {
-    this.editor.update(() => {
+    const editor = this.editor;
+    editor.update(() => {
       const tableNode = $getNodeByKey(this.tableNodeKey);
 
       if (!$isTableNode(tableNode)) {
@@ -378,11 +387,11 @@ export class TableSelection {
         }
       });
 
-      $updateDOMForSelection(this.grid, null);
+      $updateDOMForSelection(editor, this.grid, null);
 
       $setSelection(null);
 
-      this.editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+      editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
     });
   }
 }

@@ -14,6 +14,7 @@ import type {Cursor} from './SyncCursors';
 import type {LexicalEditor, NodeKey} from 'lexical';
 import type {Doc} from 'yjs';
 
+import {Klass, LexicalNode} from 'lexical';
 import invariant from 'shared/invariant';
 import {XmlText} from 'yjs';
 
@@ -38,7 +39,9 @@ export type Binding = {
   id: string;
   nodeProperties: Map<string, Array<string>>;
   root: CollabElementNode;
+  excludedProperties: ExcludedProperties;
 };
+export type ExcludedProperties = Map<Klass<LexicalNode>, Set<string>>;
 
 export function createBinding(
   editor: LexicalEditor,
@@ -46,6 +49,7 @@ export function createBinding(
   id: string,
   doc: Doc | null | undefined,
   docMap: Map<string, Doc>,
+  excludedProperties?: ExcludedProperties,
 ): Binding {
   invariant(
     doc !== undefined && doc !== null,
@@ -66,6 +70,7 @@ export function createBinding(
     doc,
     docMap,
     editor,
+    excludedProperties: excludedProperties || new Map(),
     id,
     nodeProperties: new Map(),
     root,

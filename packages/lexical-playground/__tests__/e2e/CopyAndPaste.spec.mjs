@@ -1366,6 +1366,168 @@ test.describe('CopyAndPaste', () => {
     });
   });
 
+  test('Copy list of a different type and paste into list on an existing item - should merge the lists.', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    await page.keyboard.type('- one');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('two');
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('a');
+
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+
+    await page.keyboard.type('1. four');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('five');
+    await page.keyboard.press('Tab');
+
+    await page.keyboard.press('ArrowUp');
+
+    await moveToLineBeginning(page);
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.up('Shift');
+
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            value="1"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">one</span>
+          </li>
+          <li
+            value="2"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem">
+            <ul class="PlaygroundEditorTheme__ul">
+              <li
+                value="1"
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">two</span>
+              </li>
+              <li
+                value="2"
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">a</span>
+              </li>
+            </ul>
+          </li>
+        </ul>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <ol class="PlaygroundEditorTheme__ol1">
+          <li
+            value="1"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">four</span>
+          </li>
+          <li
+            value="2"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem">
+            <ol class="PlaygroundEditorTheme__ol2">
+              <li
+                value="1"
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">five</span>
+              </li>
+            </ol>
+          </li>
+        </ol>
+      `,
+    );
+
+    const clipboard = await copyToClipboard(page);
+
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('Backspace');
+
+    await pasteFromClipboard(page, clipboard);
+
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul">
+          <li
+            value="1"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">one</span>
+          </li>
+          <li
+            value="2"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem">
+            <ul class="PlaygroundEditorTheme__ul">
+              <li
+                value="1"
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">two</span>
+              </li>
+              <li
+                value="2"
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">four</span>
+              </li>
+              <li
+                value="3"
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem">
+                <ol class="PlaygroundEditorTheme__ol3">
+                  <li
+                    value="1"
+                    class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+                    dir="ltr">
+                    <span data-lexical-text="true">five</span>
+                  </li>
+                </ol>
+              </li>
+            </ul>
+          </li>
+        </ul>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <ol class="PlaygroundEditorTheme__ol1">
+          <li
+            value="1"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">four</span>
+          </li>
+          <li
+            value="2"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem">
+            <ol class="PlaygroundEditorTheme__ol2">
+              <li
+                value="1"
+                class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+                dir="ltr">
+                <span data-lexical-text="true">five</span>
+              </li>
+            </ol>
+          </li>
+        </ol>
+      `,
+    );
+  });
+
   test('Copy and paste two paragraphs into list on an existing item', async ({
     page,
     isPlainText,

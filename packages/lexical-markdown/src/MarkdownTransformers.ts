@@ -101,10 +101,23 @@ const LIST_INDENT_SIZE = 4;
 const listReplace = (listType: ListType): ElementTransformer['replace'] => {
   return (parentNode, children, match) => {
     const previousNode = parentNode.getPreviousSibling();
+    const nextNode = parentNode.getNextSibling();
     const listItem = $createListItemNode(
       listType === 'check' ? match[3] === 'x' : undefined,
     );
-    if ($isListNode(previousNode) && previousNode.getListType() === listType) {
+    if ($isListNode(nextNode) && nextNode.getListType() === listType) {
+      const firstChild = nextNode.getFirstChild();
+      if (firstChild !== null) {
+        firstChild.insertBefore(listItem);
+      } else {
+        // should never happen, but let's handle gracefully, just in case.
+        nextNode.append(listItem);
+      }
+      parentNode.remove();
+    } else if (
+      $isListNode(previousNode) &&
+      previousNode.getListType() === listType
+    ) {
       previousNode.append(listItem);
       parentNode.remove();
     } else {

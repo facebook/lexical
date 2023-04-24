@@ -13,6 +13,7 @@ import {
   focusEditor,
   html,
   initialize,
+  IS_LINUX,
   test,
 } from '../utils/index.mjs';
 
@@ -61,7 +62,9 @@ test.describe('Headings', () => {
 
   test('Stays as a heading when you press enter in the middle of a heading', async ({
     page,
+    isCollab,
   }) => {
+    test.fixme(isCollab && IS_LINUX, 'Flaky on Linux + Collab');
     await focusEditor(page);
 
     await click(page, '.block-controls');

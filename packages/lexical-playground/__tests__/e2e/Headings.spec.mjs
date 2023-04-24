@@ -60,10 +60,12 @@ test.describe('Headings', () => {
     );
   });
 
-  test('Stays as a heading when you press enter in the middle of a heading', async ({
+  test(`Stays as a heading when you press enter in the middle of a heading: ${IS_LINUX}`, async ({
     page,
     isCollab,
   }) => {
+    throw new Error();
+    // eslint-disable-next-line no-unreachable
     test.fixme(isCollab && IS_LINUX, 'Flaky on Linux + Collab');
     await focusEditor(page);
 

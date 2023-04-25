@@ -6,7 +6,7 @@
  *
  */
 
-import type {LexicalEditor, NodeKey} from 'lexical';
+import type {ElementFormatType, LexicalEditor, NodeKey} from 'lexical';
 
 import {
   $createCodeNode,
@@ -402,7 +402,7 @@ export default function ToolbarPlugin(): JSX.Element {
   const [canRedo, setCanRedo] = useState(false);
   const [modal, showModal] = useModal();
   const [isRTL, setIsRTL] = useState(false);
-  const [alignment, setAlignment] = useState<string>('');
+  const [alignment, setAlignment] = useState<ElementFormatType>('');
   const [codeLanguage, setCodeLanguage] = useState<string>('');
   const [isEditable, setIsEditable] = useState(() => editor.isEditable());
 

@@ -46,6 +46,7 @@ import {
   $findMatchingParent,
   $getNearestBlockElementAncestorOrThrow,
   $getNearestNodeOfType,
+  getSelectionFormat,
   mergeRegister,
 } from '@lexical/utils';
 import {
@@ -156,7 +157,6 @@ function dropDownActiveClass(active: boolean) {
 function BlockFormatDropDown({
   editor,
   blockType,
-  rootType,
   disabled = false,
 }: {
   blockType: keyof typeof blockTypeToBlockName;
@@ -402,6 +402,7 @@ export default function ToolbarPlugin(): JSX.Element {
   const [canRedo, setCanRedo] = useState(false);
   const [modal, showModal] = useModal();
   const [isRTL, setIsRTL] = useState(false);
+  const [alignment, setAlignment] = useState<string>('');
   const [codeLanguage, setCodeLanguage] = useState<string>('');
   const [isEditable, setIsEditable] = useState(() => editor.isEditable());
 
@@ -433,6 +434,9 @@ export default function ToolbarPlugin(): JSX.Element {
       setIsSuperscript(selection.hasFormat('superscript'));
       setIsCode(selection.hasFormat('code'));
       setIsRTL($isParentElementRTL(selection));
+
+      // Update selection alignment
+      setAlignment(getSelectionFormat(selection));
 
       // Update links
       const node = getSelectedNode(selection);
@@ -1001,7 +1005,7 @@ export default function ToolbarPlugin(): JSX.Element {
           onClick={() => {
             activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'left');
           }}
-          className="item">
+          className={'item ' + dropDownActiveClass(alignment === 'left')}>
           <i className="icon left-align" />
           <span className="text">Left Align</span>
         </DropDownItem>
@@ -1009,7 +1013,7 @@ export default function ToolbarPlugin(): JSX.Element {
           onClick={() => {
             activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center');
           }}
-          className="item">
+          className={'item ' + dropDownActiveClass(alignment === 'center')}>
           <i className="icon center-align" />
           <span className="text">Center Align</span>
         </DropDownItem>
@@ -1017,7 +1021,7 @@ export default function ToolbarPlugin(): JSX.Element {
           onClick={() => {
             activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'right');
           }}
-          className="item">
+          className={'item ' + dropDownActiveClass(alignment === 'right')}>
           <i className="icon right-align" />
           <span className="text">Right Align</span>
         </DropDownItem>
@@ -1025,7 +1029,7 @@ export default function ToolbarPlugin(): JSX.Element {
           onClick={() => {
             activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'justify');
           }}
-          className="item">
+          className={'item ' + dropDownActiveClass(alignment === 'justify')}>
           <i className="icon justify-align" />
           <span className="text">Justify Align</span>
         </DropDownItem>

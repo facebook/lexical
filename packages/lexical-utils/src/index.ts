@@ -21,10 +21,12 @@ import {
   $splitNode,
   DEPRECATED_$isGridSelection,
   EditorState,
+  ElementFormatType,
   ElementNode,
   Klass,
   LexicalEditor,
   LexicalNode,
+  RangeSelection,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -482,8 +484,8 @@ export function $insertNodeToNearestRoot<T extends LexicalNode>(node: T): T {
 /**
  * Wraps the node into another node created from a createElementNode function, eg. $createParagraphNode
  * @param node - Node to be wrapped.
- * @param createElementNode - Creates a new lexcial element to wrap the to-be-wrapped node and returns it.
- * @returns A new lexcial element with the previous node appended within (as a child, including its children).
+ * @param createElementNode - Creates a new lexical element to wrap the to-be-wrapped node and returns it.
+ * @returns A new lexical element with the previous node appended within (as a child, including its children).
  */
 export function $wrapNodeInElement(
   node: LexicalNode,
@@ -510,4 +512,27 @@ export function isHTMLAnchorElement(x: Node): x is HTMLAnchorElement {
 export function isHTMLElement(x: Node | EventTarget): x is HTMLElement {
   // @ts-ignore-next-line - strict check on nodeType here should filter out non-Element EventTarget implementors
   return x.nodeType === 1;
+}
+
+/**
+ * @param selection - A range selection.
+ * @returns The common element format type that every node in the range selection inherits from its parent.
+ */
+export function getSelectionFormat(
+  selection: RangeSelection,
+): ElementFormatType {
+  const nodes = selection.getNodes();
+  const nodeFormats: ElementFormatType[] = [];
+
+  for (const node of nodes) {
+    const parent = node.getParent();
+
+    if (parent) {
+      nodeFormats.push(parent.getFormatType());
+    }
+  }
+
+  return nodeFormats.filter(Boolean).some((format) => format !== nodeFormats[0])
+    ? ''
+    : nodeFormats[0];
 }

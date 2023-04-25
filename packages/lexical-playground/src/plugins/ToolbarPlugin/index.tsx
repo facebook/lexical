@@ -78,6 +78,7 @@ import {$createStickyNode} from '../../nodes/StickyNode';
 import DropDown, {DropDownItem} from '../../ui/DropDown';
 import DropdownColorPicker from '../../ui/DropdownColorPicker';
 import {getSelectedNode} from '../../utils/getSelectedNode';
+import {getSelectionFormat} from '../../utils/getSelectionFormat';
 import {sanitizeUrl} from '../../utils/url';
 import {EmbedConfigs} from '../AutoEmbedPlugin';
 import {INSERT_COLLAPSIBLE_COMMAND} from '../CollapsiblePlugin';
@@ -434,6 +435,9 @@ export default function ToolbarPlugin(): JSX.Element {
       setIsCode(selection.hasFormat('code'));
       setIsRTL($isParentElementRTL(selection));
 
+      // Update alignment
+      setAlignment(getSelectionFormat(selection));
+
       // Update links
       const node = getSelectedNode(selection);
       const parent = node.getParent();
@@ -441,11 +445,6 @@ export default function ToolbarPlugin(): JSX.Element {
         setIsLink(true);
       } else {
         setIsLink(false);
-      }
-
-      // Update alignment
-      if (parent) {
-        setAlignment(parent.getFormatType());
       }
 
       const tableNode = $findMatchingParent(node, $isTableNode);

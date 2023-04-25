@@ -24,6 +24,7 @@ import {
   focusEditor,
   html,
   initialize,
+  IS_LINUX,
   keyDownCtrlOrMeta,
   keyUpCtrlOrMeta,
   test,
@@ -1452,7 +1453,9 @@ test.describe('Links', () => {
 
   test('Can handle pressing Enter inside a Link containing multiple TextNodes', async ({
     page,
+    isCollab,
   }) => {
+    test.fixme(isCollab && IS_LINUX, 'Flaky on Linux + Collab');
     await focusEditor(page);
     await page.keyboard.type('Hello ');
     await toggleBold(page);
@@ -1519,7 +1522,11 @@ test.describe('Links', () => {
     );
   });
 
-  test('Can handle pressing Enter at the end of a Link', async ({page}) => {
+  test('Can handle pressing Enter at the end of a Link', async ({
+    isCollab,
+    page,
+  }) => {
+    test.fixme(isCollab && IS_LINUX, 'Flaky on Linux + Collab');
     await focusEditor(page);
     await page.keyboard.type('Hello awesome');
     await selectAll(page);

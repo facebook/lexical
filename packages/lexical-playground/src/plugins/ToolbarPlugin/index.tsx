@@ -46,7 +46,6 @@ import {
   $findMatchingParent,
   $getNearestBlockElementAncestorOrThrow,
   $getNearestNodeOfType,
-  getSelectionFormat,
   mergeRegister,
 } from '@lexical/utils';
 import {
@@ -435,9 +434,6 @@ export default function ToolbarPlugin(): JSX.Element {
       setIsCode(selection.hasFormat('code'));
       setIsRTL($isParentElementRTL(selection));
 
-      // Update selection alignment
-      setAlignment(getSelectionFormat(selection));
-
       // Update links
       const node = getSelectedNode(selection);
       const parent = node.getParent();
@@ -445,6 +441,11 @@ export default function ToolbarPlugin(): JSX.Element {
         setIsLink(true);
       } else {
         setIsLink(false);
+      }
+
+      // Update alignment
+      if (parent) {
+        setAlignment(parent.getFormatType());
       }
 
       const tableNode = $findMatchingParent(node, $isTableNode);

@@ -21,12 +21,10 @@ import {
   $splitNode,
   DEPRECATED_$isGridSelection,
   EditorState,
-  ElementFormatType,
   ElementNode,
   Klass,
   LexicalEditor,
   LexicalNode,
-  RangeSelection,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -512,32 +510,4 @@ export function isHTMLAnchorElement(x: Node): x is HTMLAnchorElement {
 export function isHTMLElement(x: Node | EventTarget): x is HTMLElement {
   // @ts-ignore-next-line - strict check on nodeType here should filter out non-Element EventTarget implementors
   return x.nodeType === 1;
-}
-
-/**
- * @param selection - A range selection.
- * @returns The common element format type that every node in the range selection inherits from its parent.
- */
-export function getSelectionFormat(
-  selection: RangeSelection,
-): ElementFormatType {
-  const nodes = selection.getNodes();
-  const nodeFormats: ElementFormatType[] = [];
-
-  for (const node of nodes) {
-    const parent = node.getParent();
-
-    if (parent) {
-      nodeFormats.push(parent.getFormatType());
-    }
-  }
-
-  return (
-    nodeFormats
-      // filter empty strings
-      .filter(Boolean)
-      .some((format) => format !== nodeFormats[0])
-      ? ''
-      : nodeFormats[0]
-  );
 }

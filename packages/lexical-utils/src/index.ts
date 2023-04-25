@@ -532,7 +532,12 @@ export function getSelectionFormat(
     }
   }
 
-  return nodeFormats.filter(Boolean).some((format) => format !== nodeFormats[0])
-    ? ''
-    : nodeFormats[0];
+  return (
+    nodeFormats
+      // filter empty strings
+      .filter(Boolean)
+      .some((format) => format !== nodeFormats[0])
+      ? ''
+      : nodeFormats[0]
+  );
 }

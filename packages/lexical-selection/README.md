@@ -110,3 +110,13 @@ export function $shouldOverrideDefaultCharacterSelection(
   isBackward: boolean,
 ): boolean;
 ```
+
+#### `$getBlocksFormat`
+
+Returns the format common to all the block-level nodes in the selection
+
+```ts
+export function $getBlocksFormat(
+    selection: RangeSelection,
+): ElementFormatType;
+```

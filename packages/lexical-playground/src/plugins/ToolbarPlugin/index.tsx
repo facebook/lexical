@@ -36,6 +36,7 @@ import {
   HeadingTagType,
 } from '@lexical/rich-text';
 import {
+  $getBlocksFormat,
   $getSelectionStyleValueForProperty,
   $isParentElementRTL,
   $patchStyleText,
@@ -78,7 +79,6 @@ import {$createStickyNode} from '../../nodes/StickyNode';
 import DropDown, {DropDownItem} from '../../ui/DropDown';
 import DropdownColorPicker from '../../ui/DropdownColorPicker';
 import {getSelectedNode} from '../../utils/getSelectedNode';
-import {getSelectionFormat} from '../../utils/getSelectionFormat';
 import {sanitizeUrl} from '../../utils/url';
 import {EmbedConfigs} from '../AutoEmbedPlugin';
 import {INSERT_COLLAPSIBLE_COMMAND} from '../CollapsiblePlugin';
@@ -402,7 +402,7 @@ export default function ToolbarPlugin(): JSX.Element {
   const [canRedo, setCanRedo] = useState(false);
   const [modal, showModal] = useModal();
   const [isRTL, setIsRTL] = useState(false);
-  const [alignment, setAlignment] = useState<ElementFormatType>('');
+  const [selectionFormat, setSelectionFormat] = useState<ElementFormatType>('');
   const [codeLanguage, setCodeLanguage] = useState<string>('');
   const [isEditable, setIsEditable] = useState(() => editor.isEditable());
 
@@ -435,8 +435,8 @@ export default function ToolbarPlugin(): JSX.Element {
       setIsCode(selection.hasFormat('code'));
       setIsRTL($isParentElementRTL(selection));
 
-      // Update alignment
-      setAlignment(getSelectionFormat(selection));
+      // Update selection format
+      setSelectionFormat($getBlocksFormat(selection));
 
       // Update links
       const node = getSelectedNode(selection);
@@ -1005,7 +1005,7 @@ export default function ToolbarPlugin(): JSX.Element {
           onClick={() => {
             activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'left');
           }}
-          className={'item ' + dropDownActiveClass(alignment === 'left')}>
+          className={'item ' + dropDownActiveClass(selectionFormat === 'left')}>
           <i className="icon left-align" />
           <span className="text">Left Align</span>
         </DropDownItem>
@@ -1013,7 +1013,9 @@ export default function ToolbarPlugin(): JSX.Element {
           onClick={() => {
             activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center');
           }}
-          className={'item ' + dropDownActiveClass(alignment === 'center')}>
+          className={
+            'item ' + dropDownActiveClass(selectionFormat === 'center')
+          }>
           <i className="icon center-align" />
           <span className="text">Center Align</span>
         </DropDownItem>
@@ -1021,7 +1023,9 @@ export default function ToolbarPlugin(): JSX.Element {
           onClick={() => {
             activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'right');
           }}
-          className={'item ' + dropDownActiveClass(alignment === 'right')}>
+          className={
+            'item ' + dropDownActiveClass(selectionFormat === 'right')
+          }>
           <i className="icon right-align" />
           <span className="text">Right Align</span>
         </DropDownItem>
@@ -1029,7 +1033,9 @@ export default function ToolbarPlugin(): JSX.Element {
           onClick={() => {
             activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'justify');
           }}
-          className={'item ' + dropDownActiveClass(alignment === 'justify')}>
+          className={
+            'item ' + dropDownActiveClass(selectionFormat === 'justify')
+          }>
           <i className="icon justify-align" />
           <span className="text">Justify Align</span>
         </DropDownItem>

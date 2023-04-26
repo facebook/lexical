@@ -515,6 +515,16 @@ export default function ToolbarPlugin(): JSX.Element {
       editor.registerEditableListener((editable) => {
         setIsEditable(editable);
       }),
+      activeEditor.registerRootListener((rootElement) => {
+        if (rootElement) {
+          rootElement.addEventListener('keydown', (event) => {
+            const {code, ctrlKey, metaKey, altKey} = event;
+            if (code === 'KeyK' && !altKey && (metaKey || ctrlKey)) {
+              insertLink();
+            }
+          });
+        }
+      }),
       activeEditor.registerUpdateListener(({editorState}) => {
         editorState.read(() => {
           $updateToolbar();

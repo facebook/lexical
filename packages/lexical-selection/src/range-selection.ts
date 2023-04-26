@@ -17,7 +17,6 @@ import type {
   TextNode,
 } from 'lexical';
 
-import {$isDecoratorBlockNode} from '@lexical/react/LexicalDecoratorBlockNode';
 import {$getNearestBlockElementAncestorOrThrow} from '@lexical/utils';
 import {
   $getAdjacentNode,
@@ -587,12 +586,8 @@ export function $getBlocksFormat(selection: RangeSelection): ElementFormatType {
   const formatSet = new Set<ElementFormatType>();
 
   for (const node of nodes) {
-    if ($isDecoratorBlockNode(node)) {
-      formatSet.add(node.getFormatType());
-    } else {
-      const element = $getNearestBlockElementAncestorOrThrow(node);
-      formatSet.add(element.getFormatType());
-    }
+    const element = $getNearestBlockElementAncestorOrThrow(node);
+    formatSet.add(element.getFormatType());
   }
 
   return formatSet.size === 1 ? formatSet.values().next().value : '';

@@ -7,7 +7,6 @@
  */
 
 import type {
-  ElementFormatType,
   ElementNode,
   GridSelection,
   LexicalNode,
@@ -17,7 +16,6 @@ import type {
   TextNode,
 } from 'lexical';
 
-import {$getNearestBlockElementAncestorOrThrow} from '@lexical/utils';
 import {
   $getAdjacentNode,
   $getPreviousSelection,
@@ -574,21 +572,4 @@ export function $getSelectionStyleValueForProperty(
   }
 
   return styleValue === null ? defaultValue : styleValue;
-}
-
-/**
- * Returns the format common to all block-level nodes in the selection.
- * @param selection - The selected blocks whose format to find.
- * @returns The format common to all the selected blocks.
- */
-export function $getBlocksFormat(selection: RangeSelection): ElementFormatType {
-  const nodes = selection.getNodes();
-  const formatSet = new Set<ElementFormatType>();
-
-  for (const node of nodes) {
-    const element = $getNearestBlockElementAncestorOrThrow(node);
-    formatSet.add(element.getFormatType());
-  }
-
-  return formatSet.size === 1 ? formatSet.values().next().value : '';
 }

@@ -36,7 +36,6 @@ import {
   HeadingTagType,
 } from '@lexical/rich-text';
 import {
-  $getBlocksFormat,
   $getSelectionStyleValueForProperty,
   $isParentElementRTL,
   $patchStyleText,
@@ -79,6 +78,7 @@ import {$createStickyNode} from '../../nodes/StickyNode';
 import DropDown, {DropDownItem} from '../../ui/DropDown';
 import DropdownColorPicker from '../../ui/DropdownColorPicker';
 import {getSelectedNode} from '../../utils/getSelectedNode';
+import {getSelectionFormat} from '../../utils/getSelectionFormat';
 import {sanitizeUrl} from '../../utils/url';
 import {EmbedConfigs} from '../AutoEmbedPlugin';
 import {INSERT_COLLAPSIBLE_COMMAND} from '../CollapsiblePlugin';
@@ -408,97 +408,100 @@ export default function ToolbarPlugin(): JSX.Element {
 
   const $updateToolbar = useCallback(() => {
     const selection = $getSelection();
-    if ($isRangeSelection(selection)) {
-      const anchorNode = selection.anchor.getNode();
-      let element =
-        anchorNode.getKey() === 'root'
-          ? anchorNode
-          : $findMatchingParent(anchorNode, (e) => {
-              const parent = e.getParent();
-              return parent !== null && $isRootOrShadowRoot(parent);
-            });
 
-      if (element === null) {
-        element = anchorNode.getTopLevelElementOrThrow();
-      }
-
-      const elementKey = element.getKey();
-      const elementDOM = activeEditor.getElementByKey(elementKey);
-
-      // Update text format
-      setIsBold(selection.hasFormat('bold'));
-      setIsItalic(selection.hasFormat('italic'));
-      setIsUnderline(selection.hasFormat('underline'));
-      setIsStrikethrough(selection.hasFormat('strikethrough'));
-      setIsSubscript(selection.hasFormat('subscript'));
-      setIsSuperscript(selection.hasFormat('superscript'));
-      setIsCode(selection.hasFormat('code'));
-      setIsRTL($isParentElementRTL(selection));
-
+    if (selection != null) {
       // Update selection format
-      setSelectionFormat($getBlocksFormat(selection));
+      setSelectionFormat(getSelectionFormat(selection));
 
-      // Update links
-      const node = getSelectedNode(selection);
-      const parent = node.getParent();
-      if ($isLinkNode(parent) || $isLinkNode(node)) {
-        setIsLink(true);
-      } else {
-        setIsLink(false);
-      }
+      if ($isRangeSelection(selection)) {
+        const anchorNode = selection.anchor.getNode();
+        let element =
+          anchorNode.getKey() === 'root'
+            ? anchorNode
+            : $findMatchingParent(anchorNode, (e) => {
+                const parent = e.getParent();
+                return parent !== null && $isRootOrShadowRoot(parent);
+              });
 
-      const tableNode = $findMatchingParent(node, $isTableNode);
-      if ($isTableNode(tableNode)) {
-        setRootType('table');
-      } else {
-        setRootType('root');
-      }
+        if (element === null) {
+          element = anchorNode.getTopLevelElementOrThrow();
+        }
 
-      if (elementDOM !== null) {
-        setSelectedElementKey(elementKey);
-        if ($isListNode(element)) {
-          const parentList = $getNearestNodeOfType<ListNode>(
-            anchorNode,
-            ListNode,
-          );
-          const type = parentList
-            ? parentList.getListType()
-            : element.getListType();
-          setBlockType(type);
+        const elementKey = element.getKey();
+        const elementDOM = activeEditor.getElementByKey(elementKey);
+
+        // Update text format
+        setIsBold(selection.hasFormat('bold'));
+        setIsItalic(selection.hasFormat('italic'));
+        setIsUnderline(selection.hasFormat('underline'));
+        setIsStrikethrough(selection.hasFormat('strikethrough'));
+        setIsSubscript(selection.hasFormat('subscript'));
+        setIsSuperscript(selection.hasFormat('superscript'));
+        setIsCode(selection.hasFormat('code'));
+        setIsRTL($isParentElementRTL(selection));
+
+        // Update links
+        const node = getSelectedNode(selection);
+        const parent = node.getParent();
+        if ($isLinkNode(parent) || $isLinkNode(node)) {
+          setIsLink(true);
         } else {
-          const type = $isHeadingNode(element)
-            ? element.getTag()
-            : element.getType();
-          if (type in blockTypeToBlockName) {
-            setBlockType(type as keyof typeof blockTypeToBlockName);
-          }
-          if ($isCodeNode(element)) {
-            const language =
-              element.getLanguage() as keyof typeof CODE_LANGUAGE_MAP;
-            setCodeLanguage(
-              language ? CODE_LANGUAGE_MAP[language] || language : '',
+          setIsLink(false);
+        }
+
+        const tableNode = $findMatchingParent(node, $isTableNode);
+        if ($isTableNode(tableNode)) {
+          setRootType('table');
+        } else {
+          setRootType('root');
+        }
+
+        if (elementDOM !== null) {
+          setSelectedElementKey(elementKey);
+          if ($isListNode(element)) {
+            const parentList = $getNearestNodeOfType<ListNode>(
+              anchorNode,
+              ListNode,
             );
-            return;
+            const type = parentList
+              ? parentList.getListType()
+              : element.getListType();
+            setBlockType(type);
+          } else {
+            const type = $isHeadingNode(element)
+              ? element.getTag()
+              : element.getType();
+            if (type in blockTypeToBlockName) {
+              setBlockType(type as keyof typeof blockTypeToBlockName);
+            }
+            if ($isCodeNode(element)) {
+              const language =
+                element.getLanguage() as keyof typeof CODE_LANGUAGE_MAP;
+              setCodeLanguage(
+                language ? CODE_LANGUAGE_MAP[language] || language : '',
+              );
+              return;
+            }
           }
         }
+        // Handle buttons
+        setFontSize(
+          $getSelectionStyleValueForProperty(selection, 'font-size', '15px'),
+        );
+        setFontColor(
+          $getSelectionStyleValueForProperty(selection, 'color', '#000'),
+        );
+        setBgColor(
+          $getSelectionStyleValueForProperty(
+            selection,
+            'background-color',
+            '#fff',
+          ),
+        );
+        setFontFamily(
+          $getSelectionStyleValueForProperty(selection, 'font-family', 'Arial'),
+        );
       }
-      // Handle buttons
-      setFontSize(
-        $getSelectionStyleValueForProperty(selection, 'font-size', '15px'),
-      );
-      setFontColor(
-        $getSelectionStyleValueForProperty(selection, 'color', '#000'),
-      );
-      setBgColor(
-        $getSelectionStyleValueForProperty(
-          selection,
-          'background-color',
-          '#fff',
-        ),
-      );
-      setFontFamily(
-        $getSelectionStyleValueForProperty(selection, 'font-family', 'Arial'),
-      );
     }
   }, [activeEditor]);
 

@@ -309,6 +309,7 @@ test.describe('Selection', () => {
           <span data-lexical-text="true">abc</span>
         </p>
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
       `,
     );
   });

@@ -686,10 +686,6 @@ i.prettier-error {
   border-radius: 4px;
 }
 
-.ContentEditable__root .PlaygroundEditorTheme__link {
-  pointer-events: none;
-}
-
 .mention:focus {
   box-shadow: rgb(180 213 255) 0px 0px 0px 2px;
   outline: none;
@@ -1365,6 +1361,21 @@ button.action-button:disabled {
 }
 
 .debug-timetravel-button:hover {
+  text-decoration: underline;
+}
+
+.debug-treetype-button {
+  border: 0;
+  padding: 0;
+  font-size: 12px;
+  top: 10px;
+  right: 85px;
+  position: absolute;
+  background: none;
+  color: #fff;
+}
+
+.debug-treetype-button:hover {
   text-decoration: underline;
 }
 

@@ -375,8 +375,14 @@ declare export class LexicalNode {
   ): boolean;
   remove(preserveEmptyParent?: boolean): void;
   replace<N: LexicalNode>(replaceWith: N): N;
-  insertAfter(nodeToInsert: LexicalNode): LexicalNode;
-  insertBefore(nodeToInsert: LexicalNode): LexicalNode;
+  insertAfter(
+    nodeToInsert: LexicalNode,
+    restoreSelection?: boolean,
+  ): LexicalNode;
+  insertBefore(
+    nodeToInsert: LexicalNode,
+    restoreSelection?: boolean,
+  ): LexicalNode;
   selectPrevious(anchorOffset?: number, focusOffset?: number): RangeSelection;
   selectNext(anchorOffset?: number, focusOffset?: number): RangeSelection;
   markDirty(): void;
@@ -552,6 +558,9 @@ declare export function DEPRECATED_$computeGridMap(
   cellA: deprecated_GridCellNode,
   cellB: deprecated_GridCellNode,
 ): [GridMapType, GridMapValueType, GridMapValueType];
+declare export function DEPRECATED_$getNodeTriplet(
+  source: PointType | LexicalNode | deprecated_GridCellNode,
+): [deprecated_GridCellNode, deprecated_GridRowNode, deprecated_GridNode];
 
 /**
  * LexicalTextNode
@@ -800,6 +809,9 @@ declare export class deprecated_GridCellNode extends ElementNode {
   constructor(colSpan: number): void;
   getRowSpan(): number;
   getColSpan(): number;
+  setColSpan(colSpan: number): this;
+  getRowSpan(): number;
+  setRowSpan(rowSpan: number): this;
 }
 
 declare export function DEPRECATED_$isGridCellNode(
@@ -842,7 +854,7 @@ declare export function $getNearestRootOrShadowRoot(
   node: LexicalNode,
 ): RootNode | ElementNode;
 declare export function $isRootOrShadowRoot(
-  node: LexicalNode,
+  node: ?LexicalNode,
 ): boolean %checks(node instanceof RootNode || node instanceof ElementNode);
 declare export function $hasAncestor(
   child: LexicalNode,

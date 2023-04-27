@@ -67,14 +67,30 @@ function TextFormatFloatingToolbar({
     editor.dispatchCommand(INSERT_INLINE_COMMAND, undefined);
   };
 
+  const movementThreshold = 5; // Set a threshold for minimum movement in pixels
+
+  let initialPosition = {x: 0, y: 0};
+
+  function mouseDownListener(e: MouseEvent) {
+    initialPosition = {x: e.clientX, y: e.clientY};
+  }
+
   function mouseMoveListener(e: MouseEvent) {
     if (
       popupCharStylesEditorRef?.current &&
       (e.buttons === 1 || e.buttons === 3)
     ) {
-      popupCharStylesEditorRef.current.style.pointerEvents = 'none';
+      const distanceMoved = Math.sqrt(
+        Math.pow(e.clientX - initialPosition.x, 2) +
+          Math.pow(e.clientY - initialPosition.y, 2),
+      );
+
+      if (distanceMoved > movementThreshold) {
+        popupCharStylesEditorRef.current.style.pointerEvents = 'none';
+      }
     }
   }
+
   function mouseUpListener(e: MouseEvent) {
     if (popupCharStylesEditorRef?.current) {
       popupCharStylesEditorRef.current.style.pointerEvents = 'auto';
@@ -83,10 +99,12 @@ function TextFormatFloatingToolbar({
 
   useEffect(() => {
     if (popupCharStylesEditorRef?.current) {
+      document.addEventListener('mousedown', mouseDownListener);
       document.addEventListener('mousemove', mouseMoveListener);
       document.addEventListener('mouseup', mouseUpListener);
 
       return () => {
+        document.removeEventListener('mousedown', mouseDownListener);
         document.removeEventListener('mousemove', mouseMoveListener);
         document.removeEventListener('mouseup', mouseUpListener);
       };

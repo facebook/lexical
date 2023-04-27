@@ -12,8 +12,8 @@ import {ElementNode} from './LexicalElementNode';
 
 export type SerializedGridCellNode = Spread<
   {
-    colSpan: number;
-    rowSpan: number;
+    colSpan?: number;
+    rowSpan?: number;
   },
   SerializedElementNode
 >;

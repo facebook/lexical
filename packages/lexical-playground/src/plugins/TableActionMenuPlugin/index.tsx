@@ -6,7 +6,11 @@
  *
  */
 
-import type {DEPRECATED_GridCellNode, ElementNode} from 'lexical';
+import type {
+  DEPRECATED_GridCellNode,
+  ElementNode,
+  LexicalEditor,
+} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import useLexicalEditable from '@lexical/react/useLexicalEditable';
@@ -44,6 +48,9 @@ import * as React from 'react';
 import {ReactPortal, useCallback, useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 import invariant from 'shared/invariant';
+
+import useModal from '../../hooks/useModal';
+import ColorPicker from '../../ui/ColorPicker';
 
 function computeSelectionCount(selection: GridSelection): {
   columns: number;
@@ -134,10 +141,30 @@ function $selectLastDescendant(node: ElementNode): void {
   }
 }
 
+function currentCellBackgroundColor(editor: LexicalEditor): null | string {
+  return editor.getEditorState().read(() => {
+    const selection = $getSelection();
+    if (
+      $isRangeSelection(selection) ||
+      DEPRECATED_$isGridSelection(selection)
+    ) {
+      const [cell] = DEPRECATED_$getNodeTriplet(selection.anchor);
+      if ($isTableCellNode(cell)) {
+        return cell.getBackgroundColor();
+      }
+    }
+    return null;
+  });
+}
+
 type TableCellActionMenuProps = Readonly<{
   contextRef: {current: null | HTMLElement};
   onClose: () => void;
   setIsMenuOpen: (isOpen: boolean) => void;
+  showColorPickerModal: (
+    title: string,
+    showModal: (onClose: () => void) => JSX.Element,
+  ) => void;
   tableCellNode: TableCellNode;
   cellMerge: boolean;
 }>;
@@ -148,6 +175,7 @@ function TableActionMenu({
   setIsMenuOpen,
   contextRef,
   cellMerge,
+  showColorPickerModal,
 }: TableCellActionMenuProps) {
   const [editor] = useLexicalComposerContext();
   const dropDownRef = useRef<HTMLDivElement | null>(null);
@@ -158,6 +186,9 @@ function TableActionMenu({
   });
   const [canMergeCells, setCanMergeCells] = useState(false);
   const [canUnmergeCell, setCanUnmergeCell] = useState(false);
+  const [backgroundColor, setBackgroundColor] = useState(
+    () => currentCellBackgroundColor(editor) || '',
+  );
 
   useEffect(() => {
     return editor.registerMutationListener(TableCellNode, (nodeMutations) => {
@@ -168,6 +199,7 @@ function TableActionMenu({
         editor.getEditorState().read(() => {
           updateTableCellNode(tableCellNode.getLatest());
         });
+        setBackgroundColor(currentCellBackgroundColor(editor) || '');
       }
     });
   }, [editor, tableCellNode]);
@@ -410,6 +442,24 @@ function TableActionMenu({
     });
   }, [editor, tableCellNode, clearTableSelection, onClose]);
 
+  const handleCellBackgroundColor = useCallback(
+    (value: string) => {
+      editor.update(() => {
+        const selection = $getSelection();
+        if (
+          $isRangeSelection(selection) ||
+          DEPRECATED_$isGridSelection(selection)
+        ) {
+          const [cell] = DEPRECATED_$getNodeTriplet(selection.anchor);
+          if ($isTableCellNode(cell)) {
+            cell.setBackgroundColor(value);
+          }
+        }
+      });
+    },
+    [editor],
+  );
+
   let mergeCellButton: null | JSX.Element = null;
   if (cellMerge) {
     if (canMergeCells) {
@@ -441,12 +491,21 @@ function TableActionMenu({
       onClick={(e) => {
         e.stopPropagation();
       }}>
-      {mergeCellButton !== null && (
-        <>
-          {mergeCellButton}
-          <hr />
-        </>
-      )}
+      {mergeCellButton}
+      <button
+        className="item"
+        onClick={() =>
+          showColorPickerModal('Cell background color', () => (
+            <ColorPicker
+              color={backgroundColor}
+              onChange={handleCellBackgroundColor}
+            />
+          ))
+        }
+        data-test-id="table-background-color">
+        <span className="text">Background color</span>
+      </button>
+      <hr />
       <button
         className="item"
         onClick={() => insertTableRowAtSelection(false)}
@@ -552,6 +611,8 @@ function TableCellActionMenuContainer({
     null,
   );
 
+  const [colorPickerModal, showColorPickerModal] = useModal();
+
   const moveMenu = useCallback(() => {
     const menu = menuButtonRef.current;
     const selection = $getSelection();
@@ -650,6 +711,7 @@ function TableCellActionMenuContainer({
             ref={menuRootRef}>
             <i className="chevron-down" />
           </button>
+          {colorPickerModal}
           {isMenuOpen && (
             <TableActionMenu
               contextRef={menuRootRef}
@@ -657,6 +719,7 @@ function TableCellActionMenuContainer({
               onClose={() => setIsMenuOpen(false)}
               tableCellNode={tableCellNode}
               cellMerge={cellMerge}
+              showColorPickerModal={showColorPickerModal}
             />
           )}
         </>

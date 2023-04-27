@@ -10,6 +10,7 @@ import {AutoFocusPlugin} from '@lexical/react/LexicalAutoFocusPlugin';
 import {CharacterLimitPlugin} from '@lexical/react/LexicalCharacterLimitPlugin';
 import {CheckListPlugin} from '@lexical/react/LexicalCheckListPlugin';
 import {ClearEditorPlugin} from '@lexical/react/LexicalClearEditorPlugin';
+import LexicalClickableLinkPlugin from '@lexical/react/LexicalClickableLinkPlugin';
 import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
 import LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary';
 import {HashtagPlugin} from '@lexical/react/LexicalHashtagPlugin';
@@ -20,6 +21,7 @@ import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {TabIndentationPlugin} from '@lexical/react/LexicalTabIndentationPlugin';
 import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
+import useLexicalEditable from '@lexical/react/useLexicalEditable';
 import * as React from 'react';
 import {useEffect, useState} from 'react';
 import {CAN_USE_DOM} from 'shared/canUseDOM';
@@ -32,7 +34,6 @@ import ActionsPlugin from './plugins/ActionsPlugin';
 import AutocompletePlugin from './plugins/AutocompletePlugin';
 import AutoEmbedPlugin from './plugins/AutoEmbedPlugin';
 import AutoLinkPlugin from './plugins/AutoLinkPlugin';
-import ClickableLinkPlugin from './plugins/ClickableLinkPlugin';
 import CodeActionMenuPlugin from './plugins/CodeActionMenuPlugin';
 import CodeHighlightPlugin from './plugins/CodeHighlightPlugin';
 import CollapsiblePlugin from './plugins/CollapsiblePlugin';
@@ -85,8 +86,11 @@ export default function Editor(): JSX.Element {
       isRichText,
       showTreeView,
       showTableOfContents,
+      tableCellMerge,
+      tableCellBackgroundColor,
     },
   } = useSettings();
+  const isEditable = useLexicalEditable();
   const text = isCollab
     ? 'Enter some collaborative rich text...'
     : isRichText
@@ -122,7 +126,7 @@ export default function Editor(): JSX.Element {
         setIsSmallWidthViewport(isNextSmallWidthViewport);
       }
     };
-
+    updateViewPortWidth();
     window.addEventListener('resize', updateViewPortWidth);
 
     return () => {
@@ -180,7 +184,10 @@ export default function Editor(): JSX.Element {
             <ListPlugin />
             <CheckListPlugin />
             <ListMaxIndentLevelPlugin maxDepth={7} />
-            <TablePlugin />
+            <TablePlugin
+              hasCellMerge={tableCellMerge}
+              hasCellBackgroundColor={tableCellBackgroundColor}
+            />
             <TableCellResizer />
             <NewTablePlugin cellEditorConfig={cellEditorConfig}>
               <AutoFocusPlugin />
@@ -195,7 +202,7 @@ export default function Editor(): JSX.Element {
               <HistoryPlugin />
               <ImagesPlugin captionsEnabled={false} />
               <LinkPlugin />
-              <ClickableLinkPlugin />
+              <LexicalClickableLinkPlugin />
               <FloatingTextFormatToolbarPlugin />
             </NewTablePlugin>
             <ImagesPlugin />
@@ -204,7 +211,7 @@ export default function Editor(): JSX.Element {
             <TwitterPlugin />
             <YouTubePlugin />
             <FigmaPlugin />
-            <ClickableLinkPlugin />
+            {!isEditable && <LexicalClickableLinkPlugin />}
             <HorizontalRulePlugin />
             <EquationsPlugin />
             <ExcalidrawPlugin />

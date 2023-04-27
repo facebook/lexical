@@ -122,7 +122,7 @@ export default function ImageResizer({
 
   const setEndCursor = () => {
     if (editorRootElement !== null) {
-      editorRootElement.style.setProperty('cursor', 'default');
+      editorRootElement.style.setProperty('cursor', 'text');
     }
     if (document.body !== null) {
       document.body.style.setProperty('cursor', 'default');

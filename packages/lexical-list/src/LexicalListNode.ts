@@ -69,6 +69,12 @@ export class ListNode extends ElementNode {
     return this.__tag;
   }
 
+  setListType(type: ListType): void {
+    const writable = this.getWritable();
+    writable.__listType = type;
+    writable.__tag = type === 'number' ? 'ol' : 'ul';
+  }
+
   getListType(): ListType {
     return this.__listType;
   }

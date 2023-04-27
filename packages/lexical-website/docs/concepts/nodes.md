@@ -60,8 +60,9 @@ be assigning a property to a node that is a function, Symbol, Map, Set, or any o
 than the built-ins. `null`, `undefined`, `number`, `string`, `boolean`, `{}` and `[]` are all types of property that can be
 assigned to node.
 
-By convention, we prefix properties with `__` (double underscore) so that it makes it clear that these properties are private
-and their access should be avoided directly. We opted for `__` instead of `_` because of the fact that some build tooling
+Using private properties is not recommended. If that's the case, node must override the `clone` method to include those properties.
+
+By convention, we prefix properties with `__` (double underscore) so that it makes it clear that their access should be avoided directly. We opted for `__` instead of `_` because of the fact that some build tooling
 mangles and minifies single `_` prefixed properties to improve code size. However, this breaks down if you're exposing a node
 to be extended outside of your build.
 

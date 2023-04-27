@@ -189,6 +189,10 @@ export class LexicalNode {
     );
   }
 
+  /**
+   * Clone the node. It doesn't work with private properties,
+   * so if a node has any, it should override this method.
+   */
   clone(): this {
     const clone = Object.create(Object.getPrototypeOf(this));
     for (const prop in this) {

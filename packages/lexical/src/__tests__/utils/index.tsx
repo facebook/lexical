@@ -214,10 +214,6 @@ export class TestShadowRootNode extends ElementNode {
     return 'test_shadow_root';
   }
 
-  static clone(node: TestShadowRootNode) {
-    return new TestElementNode(node.__key);
-  }
-
   static importJSON(
     serializedNode: SerializedTestShadowRootNode,
   ): TestShadowRootNode {

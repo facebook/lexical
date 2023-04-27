@@ -76,8 +76,8 @@ import type {NodeKey} from 'lexical';
 class MyCustomNode extends SomeOtherNode {
   __foo: string;
 
-  constructor(foo: string, key?: NodeKey) {
-    super(key);
+  constructor(foo: string) {
+    super();
     this.__foo = foo;
   }
 
@@ -112,8 +112,8 @@ class MyCustomNode extends SomeOtherNode {
     return 'custom-node';
   }
 
-  constructor(foo: string, key?: NodeKey) {
-    super(key);
+  constructor(foo: string) {
+    super();
     this.__foo = foo;
   }
 
@@ -186,8 +186,8 @@ export function $isCustomParagraphNode(node: ?LexicalNode): boolean {
 export class ColoredNode extends TextNode {
   __color: string;
 
-  constructor(text: string, color: string, key?: NodeKey): void {
-    super(text, key);
+  constructor(text: string, color: string): void {
+    super(text);
     this.__color = color;
   }
 
@@ -233,8 +233,8 @@ export class VideoNode extends DecoratorNode<ReactNode> {
     return 'video';
   }
 
-  constructor(id: string, key?: NodeKey) {
-    super(key);
+  constructor(id: string) {
+    super();
     this.__id = id;
   }
 

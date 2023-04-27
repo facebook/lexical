@@ -10,7 +10,6 @@
 import type {
   EditorConfig,
   LexicalNode,
-  NodeKey,
   RangeSelection,
   SerializedElementNode,
 } from 'lexical';
@@ -31,11 +30,6 @@ export class OverflowNode extends ElementNode {
 
   static importDOM(): null {
     return null;
-  }
-
-  constructor(key?: NodeKey) {
-    super(key);
-    this.__type = 'overflow';
   }
 
   exportJSON(): SerializedElementNode {

@@ -12,7 +12,6 @@ import type {
   DOMConversionOutput,
   EditorConfig,
   LexicalNode,
-  NodeKey,
   ParagraphNode,
   RangeSelection,
   SerializedElementNode,
@@ -87,8 +86,8 @@ export class CodeNode extends ElementNode {
     return 'code';
   }
 
-  constructor(language?: string | null | undefined, key?: NodeKey) {
-    super(key);
+  constructor(language?: string | null | undefined) {
+    super();
     this.__language = mapToPrismLanguage(language);
   }
 

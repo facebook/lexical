@@ -16,7 +16,6 @@ import type {
   DOMConversionMap,
   DOMConversionOutput,
   DOMExportOutput,
-  NodeKey,
   SerializedLexicalNode,
 } from '../LexicalNode';
 import type {
@@ -285,8 +284,8 @@ export class TextNode extends LexicalNode {
     return 'text';
   }
 
-  constructor(text: string, key?: NodeKey) {
-    super(key);
+  constructor(text: string) {
+    super();
     this.__text = text;
     this.__format = 0;
     this.__style = '';

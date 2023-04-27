@@ -13,7 +13,6 @@ import type {
   EditorConfig,
   LexicalEditor,
   LexicalNode,
-  NodeKey,
   SerializedGridCellNode,
   Spread,
 } from 'lexical';
@@ -83,9 +82,8 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
     headerState = TableCellHeaderStates.NO_STATUS,
     colSpan = 1,
     width?: number,
-    key?: NodeKey,
   ) {
-    super(colSpan, key);
+    super(colSpan);
     this.__headerState = headerState;
     this.__width = width;
   }

@@ -123,9 +123,8 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     showCaption?: boolean,
     caption?: LexicalEditor,
     captionsEnabled?: boolean,
-    key?: NodeKey,
   ) {
-    super(key);
+    super();
     this.__src = src;
     this.__altText = altText;
     this.__maxWidth = maxWidth;
@@ -229,7 +228,6 @@ export function $createImageNode({
       showCaption,
       caption,
       captionsEnabled,
-      key,
     ),
   );
 }

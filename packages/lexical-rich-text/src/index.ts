@@ -16,7 +16,6 @@ import type {
   LexicalCommand,
   LexicalEditor,
   LexicalNode,
-  NodeKey,
   ParagraphNode,
   PasteCommandType,
   RangeSelection,
@@ -113,10 +112,6 @@ export class QuoteNode extends ElementNode {
     return 'quote';
   }
 
-  constructor(key?: NodeKey) {
-    super(key);
-  }
-
   // View
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -192,8 +187,8 @@ export class HeadingNode extends ElementNode {
     return 'heading';
   }
 
-  constructor(tag: HeadingTagType, key?: NodeKey) {
-    super(key);
+  constructor(tag: HeadingTagType) {
+    super();
     this.__tag = tag;
   }
 

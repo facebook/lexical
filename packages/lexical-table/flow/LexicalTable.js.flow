@@ -39,7 +39,6 @@ declare export class TableCellNode extends ElementNode {
     headerState?: TableCellHeaderState,
     colSpan?: number,
     width?: ?number,
-    key?: NodeKey,
   ): void;
   __headerState: TableCellHeaderState;
   createDOM(config: EditorConfig): HTMLElement;
@@ -74,7 +73,7 @@ declare export function $isTableCellNode(
 
 declare export class TableNode extends ElementNode {
   static getType(): string;
-  constructor(grid: ?Grid, key?: NodeKey): void;
+  constructor(grid: ?Grid): void;
   createDOM(config: EditorConfig): HTMLElement;
   updateDOM(prevNode: TableNode, dom: HTMLElement): boolean;
   insertNewAfter(selection: RangeSelection): null | ParagraphNode | TableNode;
@@ -102,7 +101,7 @@ declare export function $isTableNode(
 
 declare export class TableRowNode extends ElementNode {
   static getType(): string;
-  constructor(height?: ?number, key?: NodeKey): void;
+  constructor(height?: ?number): void;
   createDOM(config: EditorConfig): HTMLElement;
   updateDOM(prevNode: TableRowNode, dom: HTMLElement): boolean;
   setHeight(height: number): ?number;
@@ -223,7 +222,7 @@ declare export class TableSelection {
   startY: number;
   nodeKey: string;
   editor: LexicalEditor;
-  constructor(editor: LexicalEditor, nodeKey: string): void;
+  constructor(editor: LexicalEditor): void;
   getGrid(): Grid;
   removeListeners(): void;
   trackTableGrid(): void;

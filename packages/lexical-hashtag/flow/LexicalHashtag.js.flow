@@ -20,7 +20,7 @@ declare export class HashtagNode extends TextNode {
   static getType(): string;
   // $FlowFixMe
   static importJSON(serializedNode: SerializedTextNode): HashtagNode;
-  constructor(text: string, key?: NodeKey): void;
+  constructor(text: string): void;
   createDOM(config: EditorConfig): HTMLElement;
   canInsertTextBefore(): boolean;
   isTextEntity(): true;

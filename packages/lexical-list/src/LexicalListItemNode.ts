@@ -14,7 +14,6 @@ import type {
   EditorThemeClasses,
   GridSelection,
   LexicalNode,
-  NodeKey,
   NodeSelection,
   ParagraphNode,
   RangeSelection,
@@ -65,8 +64,8 @@ export class ListItemNode extends ElementNode {
     return 'listitem';
   }
 
-  constructor(value?: number, checked?: boolean, key?: NodeKey) {
-    super(key);
+  constructor(value?: number, checked?: boolean) {
+    super();
     this.__value = value === undefined ? 1 : value;
     this.__checked = checked;
   }

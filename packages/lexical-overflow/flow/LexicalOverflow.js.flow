@@ -16,7 +16,7 @@ import type {
 import {ElementNode} from 'lexical';
 declare export class OverflowNode extends ElementNode {
   static getType(): string;
-  constructor(key?: NodeKey): void;
+  constructor(): void;
   createDOM(config: EditorConfig): HTMLElement;
   updateDOM(prevNode: OverflowNode, dom: HTMLElement): boolean;
   insertNewAfter(selection: RangeSelection): null | LexicalNode;

@@ -13,7 +13,6 @@ import type {
   EditorConfig,
   LexicalEditor,
   LexicalNode,
-  NodeKey,
   SerializedLexicalNode,
   Spread,
 } from 'lexical';
@@ -67,8 +66,8 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
     };
   }
 
-  constructor(data = '[]', key?: NodeKey) {
-    super(key);
+  constructor(data = '[]') {
+    super();
     this.__data = data;
   }
 

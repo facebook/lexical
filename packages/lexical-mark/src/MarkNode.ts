@@ -10,7 +10,6 @@ import type {
   EditorConfig,
   GridSelection,
   LexicalNode,
-  NodeKey,
   NodeSelection,
   RangeSelection,
   SerializedElementNode,
@@ -65,8 +64,8 @@ export class MarkNode extends ElementNode {
     };
   }
 
-  constructor(ids: Array<string>, key?: NodeKey) {
-    super(key);
+  constructor(ids: Array<string>) {
+    super();
     this.__ids = ids || [];
   }
 

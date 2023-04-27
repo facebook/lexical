@@ -14,7 +14,6 @@ import {
   type DOMExportOutput,
   type EditorConfig,
   type LexicalNode,
-  type NodeKey,
   type SerializedTextNode,
   $applyNodeReplacement,
   TextNode,
@@ -60,8 +59,8 @@ export class MentionNode extends TextNode {
     return node;
   }
 
-  constructor(mentionName: string, text?: string, key?: NodeKey) {
-    super(text ?? mentionName, key);
+  constructor(mentionName: string, text?: string) {
+    super(text ?? mentionName);
     this.__mention = mentionName;
   }
 

@@ -9,7 +9,6 @@
 import type {
   EditorConfig,
   LexicalNode,
-  NodeKey,
   SerializedTextNode,
   Spread,
 } from 'lexical';
@@ -30,8 +29,8 @@ export class EmojiNode extends TextNode {
     return 'emoji';
   }
 
-  constructor(className: string, text: string, key?: NodeKey) {
-    super(text, key);
+  constructor(className: string, text: string) {
+    super(text);
     this.__className = className;
   }
 

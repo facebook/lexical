@@ -12,7 +12,6 @@ import {
   DOMConversionOutput,
   DOMExportOutput,
   LexicalNode,
-  NodeKey,
   SerializedLexicalNode,
   Spread,
 } from 'lexical';
@@ -94,8 +93,8 @@ export class PollNode extends DecoratorNode<JSX.Element> {
     return node;
   }
 
-  constructor(question: string, options: Options, key?: NodeKey) {
-    super(key);
+  constructor(question: string, options: Options) {
+    super();
     this.__question = question;
     this.__options = options;
   }

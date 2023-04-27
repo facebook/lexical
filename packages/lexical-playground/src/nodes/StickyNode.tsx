@@ -10,7 +10,6 @@ import type {
   EditorConfig,
   LexicalEditor,
   LexicalNode,
-  NodeKey,
   SerializedEditor,
   SerializedLexicalNode,
   Spread,
@@ -68,9 +67,8 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
     y: number,
     color: 'pink' | 'yellow',
     caption?: LexicalEditor,
-    key?: NodeKey,
   ) {
-    super(key);
+    super();
     this.__x = x;
     this.__y = y;
     this.__caption = caption || createEditor();

@@ -16,7 +16,6 @@ import {
   DOMConversionOutput,
   EditorConfig,
   LexicalNode,
-  NodeKey,
   SerializedElementNode,
 } from 'lexical';
 
@@ -49,8 +48,8 @@ export class TableRowNode extends DEPRECATED_GridRowNode {
     return $createTableRowNode(serializedNode.height);
   }
 
-  constructor(height?: number, key?: NodeKey) {
-    super(key);
+  constructor(height?: number) {
+    super();
     this.__height = height;
   }
 

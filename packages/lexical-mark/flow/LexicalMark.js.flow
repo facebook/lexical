@@ -21,7 +21,7 @@ export type SerializedMarkNode = SerializedElementNode & {
 
 declare export class MarkNode extends ElementNode {
   __ids: Array<string>;
-  constructor(ids: Array<string>, key?: NodeKey): void;
+  constructor(ids: Array<string>): void;
 
   hasID(id: string): boolean;
   getIDs(): Array<string>;

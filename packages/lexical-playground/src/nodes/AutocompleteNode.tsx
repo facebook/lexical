@@ -8,12 +8,7 @@
 
 import type {Spread} from 'lexical';
 
-import {
-  DecoratorNode,
-  EditorConfig,
-  NodeKey,
-  SerializedLexicalNode,
-} from 'lexical';
+import {DecoratorNode, EditorConfig, SerializedLexicalNode} from 'lexical';
 import * as React from 'react';
 
 import {useSharedAutocompleteContext} from '../context/SharedAutocompleteContext';
@@ -58,8 +53,8 @@ export class AutocompleteNode extends DecoratorNode<JSX.Element | null> {
     };
   }
 
-  constructor(uuid: string, key?: NodeKey) {
-    super(key);
+  constructor(uuid: string) {
+    super();
     this.__uuid = uuid;
   }
 

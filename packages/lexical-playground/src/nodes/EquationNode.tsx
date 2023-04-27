@@ -11,7 +11,6 @@ import type {
   DOMConversionOutput,
   EditorConfig,
   LexicalNode,
-  NodeKey,
   SerializedLexicalNode,
   Spread,
 } from 'lexical';
@@ -57,8 +56,8 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
     return 'equation';
   }
 
-  constructor(equation: string, inline?: boolean, key?: NodeKey) {
-    super(key);
+  constructor(equation: string, inline?: boolean) {
+    super();
     this.__equation = equation;
     this.__inline = inline ?? false;
   }

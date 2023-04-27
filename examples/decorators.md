@@ -12,8 +12,8 @@ export class VideoNode extends DecoratorNode {
     return 'video';
   }
 
-  constructor(url: string, key?: NodeKey) {
-    super(key);
+  constructor(url: string) {
+    super();
     this.__url = url;
   }
 

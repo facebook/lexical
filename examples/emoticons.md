@@ -32,10 +32,6 @@ import {TextNode} from 'lexical';
 
 export class EmoticonNode extends TextNode {
 
-  constructor(text, key) {
-    super(text, key);
-  }
-
   ...
 }
 ```
@@ -48,8 +44,8 @@ import {TextNode} from 'lexical';
 export class EmoticonNode extends TextNode {
   __className;
 
-  constructor(className, text, key) {
-    super(text, key);
+  constructor(className, text) {
+    super(text);
     this.__className = className;
   }
 
@@ -75,8 +71,8 @@ export class EmoticonNode extends TextNode {
     return 'emoticon';
   }
 
-  constructor(className, text, key) {
-    super(text, key);
+  constructor(className, text) {
+    super(text);
     this.__className = className;
   }
 
@@ -100,8 +96,8 @@ export class EmoticonNode extends TextNode {
     return 'emoticon';
   }
 
-  constructor(className, text, key) {
-    super(text, key);
+  constructor(className, text) {
+    super(text);
     this.__className = className;
   }
 

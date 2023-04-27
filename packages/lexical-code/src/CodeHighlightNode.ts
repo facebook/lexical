@@ -10,7 +10,6 @@ import type {
   EditorConfig,
   EditorThemeClasses,
   LexicalNode,
-  NodeKey,
   SerializedTextNode,
   Spread,
 } from 'lexical';
@@ -108,12 +107,8 @@ export class CodeHighlightNode extends TextNode {
   /** @internal */
   __highlightType: string | null | undefined;
 
-  constructor(
-    text: string,
-    highlightType?: string | null | undefined,
-    key?: NodeKey,
-  ) {
-    super(text, key);
+  constructor(text: string, highlightType?: string | null | undefined) {
+    super(text);
     this.__highlightType = highlightType;
   }
 

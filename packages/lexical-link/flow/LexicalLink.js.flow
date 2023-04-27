@@ -27,7 +27,7 @@ declare export class LinkNode extends ElementNode {
   __rel: null | string;
   __title: null | string;
   static getType(): string;
-  constructor(url: string, attributes?: LinkAttributes, key?: NodeKey): void;
+  constructor(url: string, attributes?: LinkAttributes): void;
   createDOM(config: EditorConfig): HTMLElement;
   updateDOM(
     prevNode: LinkNode,

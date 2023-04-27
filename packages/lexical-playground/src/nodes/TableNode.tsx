@@ -13,7 +13,6 @@ import type {
   EditorConfig,
   LexicalEditor,
   LexicalNode,
-  NodeKey,
   SerializedLexicalNode,
   Spread,
 } from 'lexical';
@@ -220,8 +219,8 @@ export class TableNode extends DecoratorNode<JSX.Element> {
     return {element: exportTableCellsToHTML(this.__rows)};
   }
 
-  constructor(rows?: Rows, key?: NodeKey) {
-    super(key);
+  constructor(rows?: Rows) {
+    super();
     this.__rows = rows || [];
   }
 

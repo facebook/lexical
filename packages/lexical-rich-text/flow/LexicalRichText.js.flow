@@ -21,7 +21,6 @@ import {ElementNode} from 'lexical';
 declare export var DRAG_DROP_PASTE: LexicalCommand<Array<File>>;
 declare export class QuoteNode extends ElementNode {
   static getType(): string;
-  constructor(key?: NodeKey): void;
   createDOM(config: EditorConfig): HTMLElement;
   updateDOM(prevNode: QuoteNode, dom: HTMLElement): boolean;
   insertNewAfter(): ParagraphNode;
@@ -35,7 +34,7 @@ export type HeadingTagType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 declare export class HeadingNode extends ElementNode {
   __tag: HeadingTagType;
   static getType(): string;
-  constructor(tag: HeadingTagType, key?: NodeKey): void;
+  constructor(tag: HeadingTagType): void;
   getTag(): HeadingTagType;
   createDOM(config: EditorConfig): HTMLElement;
   updateDOM(prevNode: HeadingNode, dom: HTMLElement): boolean;

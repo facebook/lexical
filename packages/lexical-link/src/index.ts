@@ -14,7 +14,6 @@ import type {
   GridSelection,
   LexicalCommand,
   LexicalNode,
-  NodeKey,
   NodeSelection,
   RangeSelection,
   SerializedElementNode,
@@ -59,8 +58,8 @@ export class LinkNode extends ElementNode {
     return 'link';
   }
 
-  constructor(url: string, attributes: LinkAttributes = {}, key?: NodeKey) {
-    super(key);
+  constructor(url: string, attributes: LinkAttributes = {}) {
+    super();
     const {target = null, rel = null, title = null} = attributes;
     this.__url = url;
     this.__target = target;

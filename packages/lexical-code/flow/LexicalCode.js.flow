@@ -21,7 +21,7 @@ import {ElementNode, TextNode} from 'lexical';
 
 declare export class CodeNode extends ElementNode {
   static getType(): string;
-  constructor(language: ?string, key?: NodeKey): void;
+  constructor(language: ?string): void;
   createDOM(config: EditorConfig): HTMLElement;
   updateDOM(prevNode: CodeNode, dom: HTMLElement): boolean;
   insertNewAfter(
@@ -51,7 +51,7 @@ declare export function getCodeLanguages(): Array<string>;
 
 declare export class CodeHighlightNode extends TextNode {
   __highlightType: ?string;
-  constructor(text: string, highlightType?: string, key?: NodeKey): void;
+  constructor(text: string, highlightType?: string): void;
   static getType(): string;
   // $FlowFixMe
   createDOM(config: EditorConfig): HTMLElement;

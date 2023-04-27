@@ -201,7 +201,7 @@ export class LexicalNode {
     return clone;
   }
 
-  constructor(key?: NodeKey) {
+  constructor(key?: 'root') {
     // @ts-expect-error
     this.__type = this.constructor.getType();
     this.__parent = null;

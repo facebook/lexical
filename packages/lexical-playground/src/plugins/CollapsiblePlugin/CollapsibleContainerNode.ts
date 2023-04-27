@@ -14,7 +14,6 @@ import {
   ElementNode,
   LexicalEditor,
   LexicalNode,
-  NodeKey,
   SerializedElementNode,
   Spread,
 } from 'lexical';
@@ -39,8 +38,8 @@ export function convertDetailsElement(
 export class CollapsibleContainerNode extends ElementNode {
   __open: boolean;
 
-  constructor(open: boolean, key?: NodeKey) {
-    super(key);
+  constructor(open: boolean) {
+    super();
     this.__open = open;
   }
 

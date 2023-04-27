@@ -6,12 +6,7 @@
  *
  */
 
-import type {
-  EditorConfig,
-  LexicalNode,
-  NodeKey,
-  SerializedTextNode,
-} from 'lexical';
+import type {EditorConfig, LexicalNode, SerializedTextNode} from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
 import {$applyNodeReplacement, TextNode} from 'lexical';
@@ -20,10 +15,6 @@ import {$applyNodeReplacement, TextNode} from 'lexical';
 export class HashtagNode extends TextNode {
   static getType(): string {
     return 'hashtag';
-  }
-
-  constructor(text: string, key?: NodeKey) {
-    super(text, key);
   }
 
   createDOM(config: EditorConfig): HTMLElement {

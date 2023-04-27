@@ -174,8 +174,8 @@ export class TweetNode extends DecoratorBlockNode {
     return {element};
   }
 
-  constructor(id: string, format?: ElementFormatType, key?: NodeKey) {
-    super(format, key);
+  constructor(id: string, format?: ElementFormatType) {
+    super(format);
     this.__id = id;
   }
 

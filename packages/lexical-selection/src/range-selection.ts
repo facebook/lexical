@@ -457,7 +457,7 @@ export function $moveCharacter(
 }
 
 /**
- * Expands the current Selection to cover all of the content in the editor.
+ * Expands the current Selection to cover all the content in the editor.
  * @param selection - The current selection.
  */
 export function $selectAll(selection: RangeSelection): void {

@@ -16,7 +16,6 @@ import {$getNodeByKey, ElementFormatType, NodeKey} from 'lexical';
 import * as React from 'react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
-import DropDown, {DropDownItem} from '../../ui/DropDown';
 import {$isCodeBlockNode, CodeBlockMode} from './index';
 import {getModeLoader} from './loader';
 import {modes} from './modes';
@@ -191,23 +190,25 @@ export default function CodeBlockComponent({
       format={format}
       nodeKey={nodeKey}>
       <div className={'code-block-toolbar'}>
-        {/* TODO: refactor this quick temporary dropdown extracted from ToolbarPlugin */}
-        <DropDown
-          buttonClassName="toolbar-item code-language"
-          buttonLabel={modes[mode as keyof typeof modes] || 'None'}
-          buttonAriaLabel="Select language">
-          {Object.entries({none: 'None', ...modes}).map(([key, label]) => (
-            <DropDownItem
-              className={`item ${
-                key === mode ? 'active dropdown-item-active' : ''
-              }`}
-              onClick={() => changeMode(key as CodeBlockMode)}
-              key={key}>
-              <span className="text">{label}</span>
-            </DropDownItem>
-          ))}
-        </DropDown>
-        <div className={'toolbar-spacer'} />
+        <div>
+          <label htmlFor="code-block-language-select">
+            Select code language:
+          </label>
+          <select
+            value={mode}
+            onChange={(event) =>
+              changeMode(event.target.value as CodeBlockMode)
+            }
+            name={'Code block language'}
+            id="code-block-language-select">
+            {Object.entries({none: 'None', ...modes}).map(([key, label]) => (
+              <option value={key} key={key}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <span className={'toolbar-spacer'} />
         <button className="menu-item" onClick={handleCopy} aria-label="copy">
           {copying ? 'Copied to clipboard' : 'Copy'}
         </button>

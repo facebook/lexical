@@ -36,14 +36,15 @@ export interface ImagePayload {
   maxWidth?: number;
   showCaption?: boolean;
   src: string;
+  title?: string;
   width?: number;
   captionsEnabled?: boolean;
 }
 
 function convertImageElement(domNode: Node): null | DOMConversionOutput {
   if (domNode instanceof HTMLImageElement) {
-    const {alt: altText, src, width, height} = domNode;
-    const node = $createImageNode({altText, height, src, width});
+    const {alt: altText, src, title, width, height} = domNode;
+    const node = $createImageNode({altText, height, src, title, width});
     return {node};
   }
   return null;
@@ -52,6 +53,7 @@ function convertImageElement(domNode: Node): null | DOMConversionOutput {
 export type SerializedImageNode = Spread<
   {
     altText: string;
+    title: string;
     caption: SerializedEditor;
     height?: number;
     maxWidth: number;
@@ -65,6 +67,7 @@ export type SerializedImageNode = Spread<
 export class ImageNode extends DecoratorNode<JSX.Element> {
   __src: string;
   __altText: string;
+  __title: string;
   __width: 'inherit' | number;
   __height: 'inherit' | number;
   __maxWidth: number;
@@ -82,6 +85,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
       node.__src,
       node.__altText,
       node.__maxWidth,
+      node.__title,
       node.__width,
       node.__height,
       node.__showCaption,
@@ -92,7 +96,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
   }
 
   static importJSON(serializedNode: SerializedImageNode): ImageNode {
-    const {altText, height, width, maxWidth, caption, src, showCaption} =
+    const {altText, title, height, width, maxWidth, caption, src, showCaption} =
       serializedNode;
     const node = $createImageNode({
       altText,
@@ -100,6 +104,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
       maxWidth,
       showCaption,
       src,
+      title,
       width,
     });
     const nestedEditor = node.__caption;
@@ -116,6 +121,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     element.setAttribute('alt', this.__altText);
     element.setAttribute('width', this.__width.toString());
     element.setAttribute('height', this.__height.toString());
+    element.setAttribute('title', this.__title);
     return {element};
   }
 
@@ -132,6 +138,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     src: string,
     altText: string,
     maxWidth: number,
+    title?: string,
     width?: 'inherit' | number,
     height?: 'inherit' | number,
     showCaption?: boolean,
@@ -142,6 +149,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     super(key);
     this.__src = src;
     this.__altText = altText;
+    this.__title = title || '';
     this.__maxWidth = maxWidth;
     this.__width = width || 'inherit';
     this.__height = height || 'inherit';
@@ -158,6 +166,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
       maxWidth: this.__maxWidth,
       showCaption: this.__showCaption,
       src: this.getSrc(),
+      title: this.getTitle(),
       type: 'image',
       version: 1,
       width: this.__width === 'inherit' ? 0 : this.__width,
@@ -202,12 +211,17 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     return this.__altText;
   }
 
+  getTitle(): string {
+    return this.__title;
+  }
+
   decorate(): JSX.Element {
     return (
       <Suspense fallback={null}>
         <ImageComponent
           src={this.__src}
           altText={this.__altText}
+          title={this.__title}
           width={this.__width}
           height={this.__height}
           maxWidth={this.__maxWidth}
@@ -224,6 +238,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
 
 export function $createImageNode({
   altText,
+  title,
   height,
   maxWidth = 500,
   captionsEnabled,
@@ -238,6 +253,7 @@ export function $createImageNode({
       src,
       altText,
       maxWidth,
+      title,
       width,
       height,
       showCaption,

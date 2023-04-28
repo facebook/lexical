@@ -1,0 +1,8 @@
+.code-block-toolbar {
+  width: 100%;
+  display: flex;
+}
+
+.toolbar-spacer {
+  flex-grow: 1;
+}

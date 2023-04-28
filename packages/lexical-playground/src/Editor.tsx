@@ -34,8 +34,7 @@ import ActionsPlugin from './plugins/ActionsPlugin';
 import AutocompletePlugin from './plugins/AutocompletePlugin';
 import AutoEmbedPlugin from './plugins/AutoEmbedPlugin';
 import AutoLinkPlugin from './plugins/AutoLinkPlugin';
-import CodeActionMenuPlugin from './plugins/CodeActionMenuPlugin';
-import CodeHighlightPlugin from './plugins/CodeHighlightPlugin';
+import CodeBlockPlugin from './plugins/CodeBlockPlugin';
 import CollapsiblePlugin from './plugins/CollapsiblePlugin';
 import CommentPlugin from './plugins/CommentPlugin';
 import ComponentPickerPlugin from './plugins/ComponentPickerPlugin';
@@ -180,7 +179,6 @@ export default function Editor(): JSX.Element {
               ErrorBoundary={LexicalErrorBoundary}
             />
             <MarkdownShortcutPlugin />
-            <CodeHighlightPlugin />
             <ListPlugin />
             <CheckListPlugin />
             <ListMaxIndentLevelPlugin maxDepth={7} />
@@ -208,6 +206,7 @@ export default function Editor(): JSX.Element {
             <ImagesPlugin />
             <LinkPlugin />
             <PollPlugin />
+            <CodeBlockPlugin />
             <TwitterPlugin />
             <YouTubePlugin />
             <FigmaPlugin />
@@ -221,7 +220,6 @@ export default function Editor(): JSX.Element {
             {floatingAnchorElem && !isSmallWidthViewport && (
               <>
                 <DraggableBlockPlugin anchorElem={floatingAnchorElem} />
-                <CodeActionMenuPlugin anchorElem={floatingAnchorElem} />
                 <FloatingLinkEditorPlugin anchorElem={floatingAnchorElem} />
                 <TableCellActionMenuPlugin
                   anchorElem={floatingAnchorElem}

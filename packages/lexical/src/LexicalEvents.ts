@@ -14,6 +14,7 @@ import type {TextNode} from './nodes/LexicalTextNode';
 import {
   CAN_USE_BEFORE_INPUT,
   IS_APPLE_WEBKIT,
+  IS_CHROME,
   IS_FIREFOX,
   IS_IOS,
   IS_SAFARI,
@@ -237,7 +238,8 @@ function $shouldPreventDefaultAndInsertText(
     anchorNode.getFormat() !== selection.format ||
     anchorNode.getStyle() !== selection.style ||
     // One last set of heuristics to check against.
-    $shouldInsertTextAfterOrBeforeTextNode(selection, anchorNode)
+    $shouldInsertTextAfterOrBeforeTextNode(selection, anchorNode) ||
+    (IS_CHROME && anchorNode.getTextContent().includes('\t'))
   );
 }
 

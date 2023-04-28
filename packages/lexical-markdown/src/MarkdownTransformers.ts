@@ -9,7 +9,7 @@
 import type {ListType} from '@lexical/list';
 import type {HeadingTagType} from '@lexical/rich-text';
 
-// import {$createCodeNode, $isCodeNode, CodeNode} from '@lexical/code';
+import {$createCodeNode, $isCodeNode, CodeNode} from '@lexical/code';
 import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
 import {
   $createListItemNode,
@@ -223,7 +223,7 @@ export const QUOTE: ElementTransformer = {
   },
   type: 'element',
 };
-/*
+
 export const CODE: ElementTransformer = {
   dependencies: [CodeNode],
   export: (node: LexicalNode) => {
@@ -245,7 +245,6 @@ export const CODE: ElementTransformer = {
   }),
   type: 'element',
 };
- */
 
 export const UNORDERED_LIST: ElementTransformer = {
   dependencies: [ListNode, ListItemNode],

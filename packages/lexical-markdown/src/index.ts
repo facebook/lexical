@@ -24,7 +24,7 @@ import {
   BOLD_STAR,
   BOLD_UNDERSCORE,
   CHECK_LIST,
-  CODE,
+  // CODE,
   HEADING,
   HIGHLIGHT,
   INLINE_CODE,
@@ -40,7 +40,7 @@ import {
 const ELEMENT_TRANSFORMERS: Array<ElementTransformer> = [
   HEADING,
   QUOTE,
-  CODE,
+  // CODE,
   UNORDERED_LIST,
   ORDERED_LIST,
 ];
@@ -94,7 +94,7 @@ export {
   BOLD_STAR,
   BOLD_UNDERSCORE,
   CHECK_LIST,
-  CODE,
+  // CODE,
   ELEMENT_TRANSFORMERS,
   ElementTransformer,
   HEADING,

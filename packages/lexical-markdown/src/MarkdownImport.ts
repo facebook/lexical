@@ -6,7 +6,7 @@
  *
  */
 
-import type {CodeNode} from '@lexical/code';
+// import type {CodeNode} from '@lexical/code';
 import type {
   ElementTransformer,
   TextFormatTransformer,
@@ -15,7 +15,7 @@ import type {
 } from '@lexical/markdown';
 import type {LexicalNode, TextNode} from 'lexical';
 
-import {$createCodeNode} from '@lexical/code';
+// import {$createCodeNode} from '@lexical/code';
 import {$isListItemNode, $isListNode} from '@lexical/list';
 import {$isQuoteNode} from '@lexical/rich-text';
 import {$findMatchingParent} from '@lexical/utils';
@@ -34,7 +34,7 @@ import {IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from 'shared/environment';
 import {PUNCTUATION_OR_SPACE, transformersByType} from './utils';
 
 const MARKDOWN_EMPTY_LINE_REG_EXP = /^\s{0,3}$/;
-const CODE_BLOCK_REG_EXP = /^```(\w{1,10})?\s?$/;
+// const CODE_BLOCK_REG_EXP = /^```(\w{1,10})?\s?$/;
 type TextFormatTransformersIndex = Readonly<{
   fullMatchRegExpByTag: Readonly<Record<string, RegExp>>;
   openTagsRegExp: RegExp;
@@ -61,12 +61,15 @@ export function createMarkdownImport(
       // is ignored for further processing
       // TODO:
       // Abstract it to be dynamic as other transformers (add multiline match option)
+
+      /* TODO: uncomment after fixing @lexical/code
       const [codeBlockNode, shiftedIndex] = importCodeBlock(lines, i, root);
 
       if (codeBlockNode != null) {
         i = shiftedIndex;
         continue;
       }
+       */
 
       importBlocks(
         lineText,
@@ -78,7 +81,7 @@ export function createMarkdownImport(
     }
 
     // Removing empty paragraphs as md does not really
-    // allow empty lines and uses them as dilimiter
+    // allow empty lines and uses them as delimiter
     const children = root.getChildren();
     for (const child of children) {
       if (isEmptyParagraph(child)) {
@@ -167,6 +170,7 @@ function importBlocks(
   }
 }
 
+/*
 function importCodeBlock(
   lines: Array<string>,
   startLineIndex: number,
@@ -195,6 +199,7 @@ function importCodeBlock(
 
   return [null, startLineIndex];
 }
+*/
 
 // Processing text content and replaces text format tags.
 // It takes outermost tag match and its content, creates text node with

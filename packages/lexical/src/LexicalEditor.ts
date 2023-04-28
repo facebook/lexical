@@ -130,6 +130,10 @@ export type EditorThemeClasses = {
     base?: EditorThemeClassName;
     focus?: EditorThemeClassName;
   };
+  codeBlock?: {
+    base?: EditorThemeClassName;
+    focus?: EditorThemeClassName;
+  };
   indent?: EditorThemeClassName;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;

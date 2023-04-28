@@ -2040,6 +2040,7 @@ export class RangeSelection implements BaseSelection {
   }
 
   deleteCharacter(isBackward: boolean): void {
+    const wasCollapsed = this.isCollapsed();
     if (this.isCollapsed()) {
       const anchor = this.anchor;
       const focus = this.focus;
@@ -2122,7 +2123,6 @@ export class RangeSelection implements BaseSelection {
         }
       }
     }
-    const wasCollapsed = this.isCollapsed();
     this.removeText();
     if (
       isBackward &&

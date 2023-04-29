@@ -312,7 +312,7 @@ test.describe('CodeBlock', () => {
     }
   });
 
-  test('Can maintain indent when creating new lines', async ({
+  test.only('Can maintain indent when creating new lines', async ({
     page,
     isRichText,
     isPlainText,
@@ -325,6 +325,7 @@ test.describe('CodeBlock', () => {
     await click(page, 'button:has-text("Indent")');
     await page.keyboard.type('alert(2);');
     await page.keyboard.press('Enter');
+    await page.pause();
     await assertHTML(
       page,
       html`

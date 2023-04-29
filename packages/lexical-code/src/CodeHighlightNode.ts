@@ -204,6 +204,10 @@ export class CodeHighlightNode extends TextNode {
   createParentElementNode(): ElementNode {
     return $createCodeNode();
   }
+
+  canContainTabs(): boolean {
+    return true;
+  }
 }
 
 function getHighlightThemeClass(

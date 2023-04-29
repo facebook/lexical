@@ -8,13 +8,8 @@
 
 import type {TextNode} from '.';
 import type {LexicalEditor} from './LexicalEditor';
-import type {
-  GridSelection,
-  NodeSelection,
-  RangeSelection,
-} from './LexicalSelection';
 
-import {IS_FIREFOX} from 'shared/environment';
+import {IS_CHROME, IS_FIREFOX} from 'shared/environment';
 
 import {
   $getSelection,
@@ -25,6 +20,13 @@ import {
   $setSelection,
 } from '.';
 import {DOM_TEXT_TYPE} from './LexicalConstants';
+import {
+  GridSelection,
+  internalCreateRangeSelection,
+  internalResolveSelectionPoints,
+  NodeSelection,
+  RangeSelection,
+} from './LexicalSelection';
 import {updateEditor} from './LexicalUpdates';
 import {
   $getNearestNodeFromDOMNode,
@@ -102,6 +104,7 @@ function shouldUpdateTextNodeFromMutation(
   targetDOM: Node,
   targetNode: TextNode,
 ): boolean {
+  return true;
   if ($isRangeSelection(selection)) {
     const anchorNode = selection.anchor.getNode();
     if (
@@ -120,11 +123,20 @@ export function $flushMutations(
   observer: MutationObserver,
 ): void {
   isProcessingMutations = true;
-  const shouldFlushTextMutations =
-    performance.now() - lastTextEntryTimeStamp > TEXT_MUTATION_VARIANCE;
+  // Delete this?
+  // const shouldFlushTextMutations =
+  //   performance.now() - lastTextEntryTimeStamp > TEXT_MUTATION_VARIANCE;
+  console.info(
+    performance.now(),
+    lastTextEntryTimeStamp,
+    performance.now() - lastTextEntryTimeStamp,
+    performance.now() - lastTextEntryTimeStamp > TEXT_MUTATION_VARIANCE,
+  );
+  const shouldFlushTextMutations = true;
 
   try {
     updateEditor(editor, () => {
+      debugger;
       const selection = $getSelection() || getLastSelection(editor);
       const badDOMTargets = new Map();
       const rootElement = editor.getRootElement();
@@ -136,6 +148,7 @@ export function $flushMutations(
       let possibleTextForFirefoxPaste = '';
 
       for (let i = 0; i < mutations.length; i++) {
+        // debugger;
         const mutation = mutations[i];
         const type = mutation.type;
         const targetDOM = mutation.target;
@@ -185,7 +198,7 @@ export function $flushMutations(
               (addedDOM.nodeName !== 'BR' ||
                 !isManagedLineBreak(addedDOM, parentDOM, editor))
             ) {
-              if (IS_FIREFOX) {
+              if (IS_FIREFOX || IS_CHROME) {
                 const possibleText =
                   (addedDOM as HTMLElement).innerText || addedDOM.nodeValue;
 
@@ -299,8 +312,35 @@ export function $flushMutations(
           $setSelection(selection);
         }
 
-        if (IS_FIREFOX && isFirefoxClipboardEvents(editor)) {
-          selection.insertRawText(possibleTextForFirefoxPaste);
+        if ((IS_FIREFOX && isFirefoxClipboardEvents(editor)) || IS_CHROME) {
+          console.info('insert', possibleTextForFirefoxPaste);
+          const domSelection = document.getSelection();
+          const anchorDOM = domSelection.anchorNode;
+          const focusDOM = domSelection.focusNode;
+          const anchorOffset = domSelection.anchorOffset;
+          const focusOffset = domSelection.focusOffset;
+          const resolvedSelectionPoints = internalResolveSelectionPoints(
+            anchorDOM,
+            anchorOffset,
+            focusDOM,
+            focusOffset,
+            editor,
+            selection,
+          );
+          if (resolvedSelectionPoints !== null) {
+            const [resolvedAnchorPoint, resolvedFocusPoint] =
+              resolvedSelectionPoints;
+            if (!resolvedAnchorPoint.getNode().isComposing()) {
+              const currentSelection = new RangeSelection(
+                resolvedAnchorPoint,
+                resolvedFocusPoint,
+                !$isRangeSelection(selection) ? 0 : selection.format,
+                !$isRangeSelection(selection) ? '' : selection.style,
+              );
+              debugger;
+              currentSelection.insertRawText(possibleTextForFirefoxPaste);
+            }
+          }
         }
       }
     });

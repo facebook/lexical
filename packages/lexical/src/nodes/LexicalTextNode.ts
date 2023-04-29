@@ -703,10 +703,6 @@ export class TextNode extends LexicalNode {
     return true;
   }
 
-  canContainTabs(): boolean {
-    return false;
-  }
-
   splitText(...splitOffsets: Array<number>): Array<TextNode> {
     errorOnReadOnly();
     const self = this.getLatest();

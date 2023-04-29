@@ -552,6 +552,7 @@ export function createUID(): string {
 
 export function getAnchorTextFromDOM(anchorNode: Node): null | string {
   if (anchorNode.nodeType === DOM_TEXT_TYPE) {
+    console.info('textcontent', anchorNode.textContent);
     return anchorNode.nodeValue;
   }
   return null;
@@ -562,6 +563,7 @@ export function $updateSelectedTextFromDOM(
   editor: LexicalEditor,
   data?: string,
 ): void {
+  debugger;
   // Update the text content with the latest composition text
   const domSelection = getDOMSelection(editor._window);
   if (domSelection === null) {
@@ -573,7 +575,8 @@ export function $updateSelectedTextFromDOM(
     let textContent = getAnchorTextFromDOM(anchorNode);
     const node = $getNearestNodeFromDOMNode(anchorNode);
     if (textContent !== null && $isTextNode(node)) {
-      if (node.canContainTabs()) {
+      // Delete
+      if (true) {
         const hasTabCharacter = textContent.includes('\t');
 
         // At present, this condition is primarily used for code highlights when
@@ -601,10 +604,18 @@ export function $updateSelectedTextFromDOM(
             insertionOffset,
             textContent.length,
           );
+          console.info({
+            selectionOffset,
+            insertionOffset,
+            beforeInsertion,
+            afterInsertion,
+            data,
+            textContent,
+          });
 
-          textContent = `${beforeInsertion}${data}${afterInsertion}`;
-          anchorOffset += selectionOffset;
-          focusOffset += selectionOffset;
+          // textContent = `${beforeInsertion}${data}${afterInsertion}`;
+          // anchorOffset += selectionOffset;
+          // focusOffset += selectionOffset;
         }
       }
 
@@ -636,6 +647,7 @@ export function $updateTextNodeFromDOMContent(
   focusOffset: null | number,
   compositionEnd: boolean,
 ): void {
+  debugger;
   let node = textNode;
 
   if (node.isAttached() && (compositionEnd || !node.isDirty())) {

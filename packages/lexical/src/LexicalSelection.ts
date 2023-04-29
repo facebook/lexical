@@ -922,6 +922,8 @@ export class RangeSelection implements BaseSelection {
       invariant(false, 'insertText: first node is not a text node');
     }
     const firstNodeText = firstNode.getTextContent();
+    console.info(firstNodeText);
+    debugger;
     const firstNodeTextLength = firstNodeText.length;
     const firstNodeParent = firstNode.getParentOrThrow();
     const lastIndex = selectedNodesLength - 1;
@@ -2518,7 +2520,7 @@ function normalizeSelectionPointsForBoundaries(
   }
 }
 
-function internalResolveSelectionPoints(
+export function internalResolveSelectionPoints(
   anchorDOM: null | Node,
   anchorOffset: number,
   focusDOM: null | Node,

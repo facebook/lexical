@@ -532,7 +532,7 @@ export class ElementNode extends LexicalNode {
     return null;
   }
   canInsertTab(): boolean {
-    return false;
+    return true;
   }
   canIndent(): boolean {
     return true;

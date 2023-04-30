@@ -30,7 +30,7 @@ test.describe('Auto Links', () => {
     test.skip(isPlainText);
     await focusEditor(page);
     await page.keyboard.type(
-      'Hello http://example.com and https://example.com/path?with=query#and-hash and www.example.com',
+      'Hello http://example.com and https://example.com/path?with=query#and-hash and www.example.com and www.example.com/avatar.png',
     );
     await assertHTML(
       page,
@@ -49,6 +49,10 @@ test.describe('Auto Links', () => {
           <span data-lexical-text="true">and</span>
           <a href="https://www.example.com" dir="ltr">
             <span data-lexical-text="true">www.example.com</span>
+          </a>
+          <span data-lexical-text="true">and</span>
+          <a href="https://www.example.com/avatar.png" dir="ltr">
+            <span data-lexical-text="true">www.example.com/avatar.png</span>
           </a>
         </p>
       `,

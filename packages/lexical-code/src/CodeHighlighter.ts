@@ -130,7 +130,7 @@ export function getStartOfCodeInLine(anchor: LexicalNode): {
   previousSiblings.push(anchor);
   while (previousSiblings.length > 0) {
     const node = previousSiblings.pop();
-    if ($isCodeHighlightNode(node)) {
+    if ($isCodeHighlightNode(node) || $isCodeTabNode(node)) {
       const text = node.getTextContent();
       const offset = findFirstNotSpaceOrTabCharAtText(text, true);
       if (offset !== -1) {
@@ -178,7 +178,7 @@ export function getEndOfCodeInLine(anchor: LexicalNode): {
   nextSiblings.unshift(anchor);
   while (nextSiblings.length > 0) {
     const node = nextSiblings.shift();
-    if ($isCodeHighlightNode(node)) {
+    if ($isCodeHighlightNode(node) || $isCodeTabNode(node)) {
       const text = node.getTextContent();
       const offset = findFirstNotSpaceOrTabCharAtText(text, false);
       if (offset !== -1) {
@@ -515,7 +515,7 @@ function handleMultilineIndent(type: LexicalCommand<void>): boolean {
     }
   }
   const linesLength = lines.length;
-  // 1. If multiple lines selected: indent
+  // 1. If multiple lines selected: indent/outdent
   if (linesLength > 1) {
     for (let i = 0; i < linesLength; i++) {
       const line = lines[i];
@@ -530,13 +530,17 @@ function handleMultilineIndent(type: LexicalCommand<void>): boolean {
           firstOfLine = getFirstCodeNodeOfLine(firstOfLine);
         }
         if (firstOfLine !== null) {
-          firstOfLine.insertBefore($createCodeTabNode());
+          if (type === INDENT_CONTENT_COMMAND) {
+            firstOfLine.insertBefore($createCodeTabNode());
+          } else if ($isCodeTabNode(firstOfLine)) {
+            firstOfLine.remove();
+          }
         }
       }
     }
     return true;
   }
-  // 2. If entire line selected: indent
+  // 2. If entire line selected: indent/outdent
   const firstNode = nodes[0];
   invariant(
     $isCodeHighlightNode(firstNode) || $isCodeTabNode(firstNode),
@@ -563,11 +567,19 @@ function handleMultilineIndent(type: LexicalCommand<void>): boolean {
     selectionLast.key === lastOfLine.getKey() &&
     selectionLast.offset === lastOfLine.getTextContentSize()
   ) {
-    firstOfLine.insertBefore($createCodeTabNode());
+    if (type === INDENT_CONTENT_COMMAND) {
+      firstOfLine.insertBefore($createCodeTabNode());
+    } else if ($isCodeTabNode(firstOfLine)) {
+      firstOfLine.remove();
+    }
     return true;
   }
-  // 3. Else: tab
-  selection.insertNodes([$createCodeTabNode()]);
+  // 3. Else: tab/outdent
+  if (type === INDENT_CONTENT_COMMAND) {
+    selection.insertNodes([$createCodeTabNode()]);
+  } else if ($isCodeTabNode(firstOfLine)) {
+    firstOfLine.remove();
+  }
   return true;
 }
 
@@ -709,7 +721,10 @@ function handleMoveTo(
   const focusNode = focus.getNode();
   const isMoveToStart = type === MOVE_TO_START;
 
-  if (!$isCodeHighlightNode(anchorNode) || !$isCodeHighlightNode(focusNode)) {
+  if (
+    !($isCodeHighlightNode(anchorNode) || $isCodeTabNode(anchorNode)) ||
+    !($isCodeHighlightNode(focusNode) || $isCodeTabNode(focusNode))
+  ) {
     return false;
   }
 

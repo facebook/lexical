@@ -67,44 +67,37 @@ function TextFormatFloatingToolbar({
     editor.dispatchCommand(INSERT_INLINE_COMMAND, undefined);
   };
 
-  const movementThreshold = 5; // Set a threshold for minimum movement in pixels
-
-  let initialPosition = {x: 0, y: 0};
-
-  function mouseDownListener(e: MouseEvent) {
-    initialPosition = {x: e.clientX, y: e.clientY};
-  }
-
   function mouseMoveListener(e: MouseEvent) {
     if (
       popupCharStylesEditorRef?.current &&
       (e.buttons === 1 || e.buttons === 3)
     ) {
-      const distanceMoved = Math.sqrt(
-        Math.pow(e.clientX - initialPosition.x, 2) +
-          Math.pow(e.clientY - initialPosition.y, 2),
-      );
+      if (popupCharStylesEditorRef.current.style.pointerEvents !== 'none') {
+        const x = e.clientX;
+        const y = e.clientY;
+        const elementUnderMouse = document.elementFromPoint(x, y);
 
-      if (distanceMoved > movementThreshold) {
-        popupCharStylesEditorRef.current.style.pointerEvents = 'none';
+        if (!popupCharStylesEditorRef.current.contains(elementUnderMouse)) {
+          // Mouse is not over the target element => not a normal click, but probably a drag
+          popupCharStylesEditorRef.current.style.pointerEvents = 'none';
+        }
       }
     }
   }
-
   function mouseUpListener(e: MouseEvent) {
     if (popupCharStylesEditorRef?.current) {
-      popupCharStylesEditorRef.current.style.pointerEvents = 'auto';
+      if (popupCharStylesEditorRef.current.style.pointerEvents !== 'auto') {
+        popupCharStylesEditorRef.current.style.pointerEvents = 'auto';
+      }
     }
   }
 
   useEffect(() => {
     if (popupCharStylesEditorRef?.current) {
-      document.addEventListener('mousedown', mouseDownListener);
       document.addEventListener('mousemove', mouseMoveListener);
       document.addEventListener('mouseup', mouseUpListener);
 
       return () => {
-        document.removeEventListener('mousedown', mouseDownListener);
         document.removeEventListener('mousemove', mouseMoveListener);
         document.removeEventListener('mouseup', mouseUpListener);
       };

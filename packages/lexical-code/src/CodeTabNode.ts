@@ -42,7 +42,7 @@ export class CodeTabNode extends TabNode {
   createDOM(config: EditorConfig): HTMLElement {
     const span = super.createDOM(config);
     // TODO pass through theme
-    span.style.wordSpacing = '15px';
+    span.style.letterSpacing = '15px';
     const text = span.firstChild;
     if (text !== null) {
       span.replaceChild(document.createTextNode(' '), text);

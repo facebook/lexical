@@ -19,6 +19,7 @@ import type {
   Spread,
 } from 'lexical';
 import type {CodeHighlightNode} from '@lexical/code';
+import {$isCodeHighlightNode, $isCodeTabNode} from '@lexical/code';
 
 import 'prismjs/components/prism-clike';
 import 'prismjs/components/prism-javascript';
@@ -40,13 +41,11 @@ import {
   $applyNodeReplacement,
   $createLineBreakNode,
   $createParagraphNode,
-  $getSelection,
-  $isRangeSelection,
   ElementNode,
 } from 'lexical';
 import {
   $createCodeHighlightNode,
-  getFirstCodeHighlightNodeOfLine,
+  getFirstCodeNodeOfLine,
 } from './CodeHighlightNode';
 import * as Prism from 'prismjs';
 
@@ -242,35 +241,29 @@ export class CodeNode extends ElementNode {
     // spaces of the current line. Create a new line that has all those
     // tabs and spaces, such that leading indentation is preserved.
     const anchor = selection.anchor.getNode();
-    const firstNode = getFirstCodeHighlightNodeOfLine(anchor);
-    if (firstNode != null) {
-      let leadingWhitespace = 0;
-      const firstNodeText = firstNode.getTextContent();
-      while (
-        leadingWhitespace < firstNodeText.length &&
-        /[\t ]/.test(firstNodeText[leadingWhitespace])
-      ) {
-        leadingWhitespace += 1;
-      }
-      if (leadingWhitespace > 0) {
-        const whitespace = firstNodeText.substring(0, leadingWhitespace);
-        const indentedChild = $createCodeHighlightNode(whitespace);
-        anchor.insertAfter(indentedChild);
-        selection.insertNodes([$createLineBreakNode()]);
-        indentedChild.select();
-        return indentedChild;
+    if ($isCodeHighlightNode(anchor) || $isCodeTabNode(anchor)) {
+      const firstNode = getFirstCodeNodeOfLine(anchor);
+      if (firstNode != null) {
+        let leadingWhitespace = 0;
+        const firstNodeText = firstNode.getTextContent();
+        while (
+          leadingWhitespace < firstNodeText.length &&
+          / /.test(firstNodeText[leadingWhitespace])
+        ) {
+          leadingWhitespace += 1;
+        }
+        if (leadingWhitespace > 0) {
+          const whitespace = firstNodeText.substring(0, leadingWhitespace);
+          const indentedChild = $createCodeHighlightNode(whitespace);
+          anchor.insertAfter(indentedChild);
+          selection.insertNodes([$createLineBreakNode()]);
+          indentedChild.select();
+          return indentedChild;
+        }
       }
     }
 
     return null;
-  }
-
-  canInsertTab(): boolean {
-    const selection = $getSelection();
-    if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
-      return false;
-    }
-    return true;
   }
 
   canIndent(): false {

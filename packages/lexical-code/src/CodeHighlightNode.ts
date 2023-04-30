@@ -10,6 +10,7 @@ import type {
   EditorConfig,
   EditorThemeClasses,
   LexicalNode,
+  LineBreakNode,
   NodeKey,
   SerializedTextNode,
   Spread,
@@ -34,15 +35,11 @@ import {
   addClassNamesToElement,
   removeClassNamesFromElement,
 } from '@lexical/utils';
-import {
-  $applyNodeReplacement,
-  $isLineBreakNode,
-  ElementNode,
-  TextNode,
-} from 'lexical';
+import {$applyNodeReplacement, ElementNode, TextNode} from 'lexical';
 import * as Prism from 'prismjs';
 
 import {$createCodeNode} from './CodeNode';
+import {$isCodeTabNode, CodeTabNode} from './CodeTabNode';
 
 export const DEFAULT_CODE_LANGUAGE = 'javascript';
 
@@ -231,40 +228,26 @@ export function $isCodeHighlightNode(
   return node instanceof CodeHighlightNode;
 }
 
-export function getFirstCodeHighlightNodeOfLine(
-  anchor: LexicalNode,
-): CodeHighlightNode | null | undefined {
-  let currentNode = null;
-  const previousSiblings = anchor.getPreviousSiblings();
-  previousSiblings.push(anchor);
-  while (previousSiblings.length > 0) {
-    const node = previousSiblings.pop();
-    if ($isCodeHighlightNode(node)) {
-      currentNode = node;
-    }
-    if ($isLineBreakNode(node)) {
-      break;
-    }
+export function getFirstCodeNodeOfLine(
+  anchor: CodeHighlightNode | CodeTabNode | LineBreakNode,
+): null | CodeHighlightNode | CodeTabNode | LineBreakNode {
+  let previousNode = anchor;
+  let node: null | LexicalNode = anchor;
+  while ($isCodeHighlightNode(node) || $isCodeTabNode(node)) {
+    previousNode = node;
+    node = node.getPreviousSibling();
   }
-
-  return currentNode;
+  return previousNode;
 }
 
-export function getLastCodeHighlightNodeOfLine(
-  anchor: LexicalNode,
-): CodeHighlightNode | null | undefined {
-  let currentNode = null;
-  const nextSiblings = anchor.getNextSiblings();
-  nextSiblings.unshift(anchor);
-  while (nextSiblings.length > 0) {
-    const node = nextSiblings.shift();
-    if ($isCodeHighlightNode(node)) {
-      currentNode = node;
-    }
-    if ($isLineBreakNode(node)) {
-      break;
-    }
+export function getLastCodeNodeOfLine(
+  anchor: CodeHighlightNode | CodeTabNode | LineBreakNode,
+): null | CodeHighlightNode | CodeTabNode | LineBreakNode {
+  let nextNode = anchor;
+  let node: null | LexicalNode = anchor;
+  while ($isCodeHighlightNode(node) || $isCodeTabNode(node)) {
+    nextNode = node;
+    node = node.getNextSibling();
   }
-
-  return currentNode;
+  return nextNode;
 }

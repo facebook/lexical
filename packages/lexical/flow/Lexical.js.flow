@@ -732,7 +732,6 @@ declare export class ElementNode extends LexicalNode {
     selection: RangeSelection,
     restoreSelection?: boolean,
   ): null | LexicalNode;
-  canInsertTab(): boolean;
   canIndent(): boolean;
   collapseAtStart(selection: RangeSelection): boolean;
   excludeFromCopy(destination: 'clone' | 'html'): boolean;

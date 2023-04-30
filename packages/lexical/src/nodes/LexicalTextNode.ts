@@ -65,6 +65,7 @@ import {
   toggleTextFormatType,
 } from '../LexicalUtils';
 import {$createLineBreakNode} from './LexicalLineBreakNode';
+import {$createTabNode} from './LexicalTabNode';
 
 export type SerializedTextNode = Spread<
   {
@@ -703,10 +704,6 @@ export class TextNode extends LexicalNode {
     return true;
   }
 
-  canContainTabs(): boolean {
-    return false;
-  }
-
   splitText(...splitOffsets: Array<number>): Array<TextNode> {
     errorOnReadOnly();
     const self = this.getLatest();
@@ -954,14 +951,21 @@ function convertTextDOMNode(
   _parent?: Node,
   preformatted?: boolean,
 ): DOMConversionOutput {
-  let textContent = domNode.textContent || '';
-  if (!preformatted && /\n/.test(textContent)) {
-    textContent = textContent.replace(/\r?\n/gm, ' ');
-    if (textContent.trim().length === 0) {
-      return {node: null};
+  const textContent = domNode.textContent || '';
+  const parts = textContent.split(/(\r?\n|\t)/);
+  const nodes = [];
+  const length = parts.length;
+  for (let i = 0; i < length; i++) {
+    const part = parts[i];
+    if (part === '\n' || part === '\r\n') {
+      nodes.push($createLineBreakNode());
+    } else if (part === '\t') {
+      nodes.push($createTabNode());
+    } else {
+      nodes.push($createTextNode(part));
     }
   }
-  return {node: $createTextNode(textContent)};
+  return {node: nodes};
 }
 
 const nodeNameToTextFormat: Record<string, TextFormatType> = {

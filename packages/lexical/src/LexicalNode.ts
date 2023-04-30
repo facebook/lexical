@@ -141,7 +141,7 @@ type NodeName = string;
 export type DOMConversionOutput = {
   after?: (childLexicalNodes: Array<LexicalNode>) => Array<LexicalNode>;
   forChild?: DOMChildConversion;
-  node: LexicalNode | null;
+  node: null | LexicalNode | Array<LexicalNode>;
   preformatted?: boolean;
 };
 

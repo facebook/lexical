@@ -83,14 +83,6 @@ describe('LexicalQuoteNode tests', () => {
       );
     });
 
-    test('QuoteNode.canInsertTab()', async () => {
-      const {editor} = testEnv;
-      await editor.update(() => {
-        const quoteNode = $createQuoteNode();
-        expect(quoteNode.canInsertTab()).toBe(false);
-      });
-    });
-
     test('$createQuoteNode()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {

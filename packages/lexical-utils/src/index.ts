@@ -223,7 +223,7 @@ export function $getNearestNodeOfType<T extends ElementNode>(
 }
 
 /**
- *Returns the element node of the nearest ancestor, otherwise throws an error.
+ * Returns the element node of the nearest ancestor, otherwise throws an error.
  * @param startNode - The starting node of the search
  * @returns The ancestor node found
  */

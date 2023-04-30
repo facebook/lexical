@@ -1644,7 +1644,6 @@ hr.selected {
   cursor: text;
   display: block;
   position: relative;
-  tab-size: 1;
   outline: 0px;
   padding: 0;
   user-select: text;

@@ -384,6 +384,7 @@ function patchStyleConversion(
     const fontWeight = node.style.fontWeight;
     const textDecoration = node.style.textDecoration;
     const textDecorationLine = node.style.textDecorationLine;
+    const textAlign = node.style.textAlign;
 
     return {
       ...originalOutput,
@@ -398,6 +399,7 @@ function patchStyleConversion(
             fontWeight ? `font-weight: ${fontWeight}` : null, // bold
             textDecoration ? `text-decoration: ${textDecoration}` : null, // underline
             textDecorationLine ? `text-decoration-line: ${textDecorationLine}` : null, // strikethrough
+            textAlign ? `text-align: ${textAlign}` : null, // alignment
           ]
             .filter((value) => value != null)
             .join('; ');

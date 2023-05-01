@@ -409,7 +409,7 @@ export default function ToolbarPlugin(): JSX.Element {
   const $updateToolbar = useCallback(() => {
     const selection = $getSelection();
 
-    if (selection != null) {
+    if (selection !== null) {
       // Update selection format
       setSelectionFormat(getSelectionFormat(selection));
 

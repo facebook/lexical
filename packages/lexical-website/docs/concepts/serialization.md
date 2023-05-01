@@ -310,8 +310,8 @@ const initialConfig: InitialConfigType = {
     theme: editorThemeClasses,
     onError: (error: any) => console.log(error),
     nodes: [
-      ExtentedTextNode,
-      { replace: TextNode, with: (node: TextNode) => new ExtentedTextNode(node.__text, node.__key) },
+      ExtendedTextNode,
+      { replace: TextNode, with: (node: TextNode) => new ExtendedTextNode(node.__text, node.__key) },
       ListNode,
       ListItemNode,   
     ]
@@ -331,7 +331,7 @@ import {
   SerializedTextNode
 } from 'lexical';
 
-export class ExtentedTextNode extends TextNode {
+export class ExtendedTextNode extends TextNode {
   constructor(text: string, key?: NodeKey) {
     super(text, key);
   }
@@ -340,8 +340,8 @@ export class ExtentedTextNode extends TextNode {
     return 'extended-text';
   }
 
-  static clone(node: ExtentedTextNode): ExtentedTextNode {
-    return new ExtentedTextNode(node.__text, node.__key);
+  static clone(node: ExtendedTextNode): ExtendedTextNode {
+    return new ExtendedTextNode(node.__text, node.__key);
   }
 
   static importDOM(): DOMConversionMap | null {

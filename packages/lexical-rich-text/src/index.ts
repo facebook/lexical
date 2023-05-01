@@ -34,7 +34,6 @@ import {
   $shouldOverrideDefaultCharacterSelection,
 } from '@lexical/selection';
 import {
-  $getNearestBlockElementAncestor,
   $getNearestBlockElementAncestorOrThrow,
   addClassNamesToElement,
   mergeRegister,
@@ -486,14 +485,18 @@ function handleIndentAndOutdent(
     }
   }
   // 3. Else: tab
+  const parentBlocks = [];
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
-    const parentBlock = $getNearestBlockElementAncestor(node);
-    if (parentBlock === null || handled.has(parentBlock)) {
+    const parentBlock = $getNearestBlockElementAncestorOrThrow(node);
+    if (handled.has(parentBlock)) {
       continue;
     }
     handled.add(parentBlock);
-    insertTab(parentBlock);
+    parentBlocks.push(parentBlock);
+  }
+  for (let i = 0; i < parentBlocks.length; i++) {
+    insertTab(parentBlocks[i]);
   }
   return handled.size > 0;
 }

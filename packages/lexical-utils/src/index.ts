@@ -223,21 +223,6 @@ export function $getNearestNodeOfType<T extends ElementNode>(
 }
 
 /**
- * Returns the element node of the nearest ancestor, otherwise returns null.
- * @param startNode - The starting node of the search
- * @returns The ancestor node found
- */
-export function $getNearestBlockElementAncestor(
-  startNode: LexicalNode,
-): null | ElementNode {
-  const blockNode = $findMatchingParent(
-    startNode,
-    (node) => $isElementNode(node) && !node.isInline(),
-  );
-  return $isElementNode(blockNode) ? blockNode : null;
-}
-
-/**
  * Returns the element node of the nearest ancestor, otherwise throws an error.
  * @param startNode - The starting node of the search
  * @returns The ancestor node found
@@ -245,7 +230,10 @@ export function $getNearestBlockElementAncestor(
 export function $getNearestBlockElementAncestorOrThrow(
   startNode: LexicalNode,
 ): ElementNode {
-  const blockNode = $getNearestBlockElementAncestor(startNode);
+  const blockNode = $findMatchingParent(
+    startNode,
+    (node) => $isElementNode(node) && !node.isInline(),
+  );
   if (!$isElementNode(blockNode)) {
     invariant(
       false,

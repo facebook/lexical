@@ -508,7 +508,7 @@ function handleMultilineIndent(type: LexicalCommand<void>): boolean {
       return false;
     }
     if ($isLineBreakNode(node)) {
-      if (i === 0 && lastLine.length > 0) {
+      if (i !== 0 && lastLine.length > 0) {
         lastLine = [];
         lines.push(lastLine);
       }

@@ -318,6 +318,23 @@ describe('LexicalCodeNode tests', () => {
       );
     });
 
+    test('can indent at the start of the second line', async () => {
+      const {editor} = testEnv;
+      registerRichText(editor);
+      registerCodeHighlighting(editor);
+      await editor.update(() => {
+        const root = $getRoot();
+        const code = $createCodeNode();
+        root.append(code);
+        code.selectStart();
+        $getSelection().insertRawText('hello\n');
+      });
+      await editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
+      expect(testEnv.innerHTML)
+        .toBe(`<code spellcheck="false" data-highlight-language="javascript" dir="ltr" data-gutter="1
+2"><span data-lexical-text="true">hello</span><br><span style="letter-spacing: 15px;" data-lexical-text="true"> </span></code>`);
+    });
+
     test('can outdent at arbitrary points in the line (with tabs)', async () => {
       const {editor} = testEnv;
       registerRichText(editor);

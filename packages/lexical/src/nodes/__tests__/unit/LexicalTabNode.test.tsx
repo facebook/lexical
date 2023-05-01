@@ -190,6 +190,25 @@ hello	world</span>`,
       );
     });
 
+    test('elements tabs when selection is not at the start and overlaps another tab', async () => {
+      const {editor} = testEnv;
+      registerRichText(editor);
+      await editor.update(() => {
+        $getSelection().insertRawText('hello\tworld');
+        const root = $getRoot();
+        const firstTextNode = root.getFirstDescendant();
+        const lastTextNode = root.getLastDescendant();
+        const selection = $createRangeSelection();
+        selection.anchor.set(firstTextNode.getKey(), 'hell'.length, 'text');
+        selection.focus.set(lastTextNode.getKey(), 'wo'.length, 'text');
+        $setSelection(selection);
+      });
+      await editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
+      expect(testEnv.innerHTML).toBe(
+        '<p dir="ltr"><span data-lexical-text="true">hell</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">rld</span></p>',
+      );
+    });
+
     test('can type between two (leaf nodes) canInsertBeforeAfter false', async () => {
       const {editor} = testEnv;
       await editor.update(() => {

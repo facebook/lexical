@@ -508,8 +508,10 @@ function handleMultilineIndent(type: LexicalCommand<void>): boolean {
       return false;
     }
     if ($isLineBreakNode(node)) {
-      lastLine = [];
-      lines.push(lastLine);
+      if (i === 0 && lastLine.length > 0) {
+        lastLine = [];
+        lines.push(lastLine);
+      }
     } else {
       lastLine.push(node);
     }
@@ -543,7 +545,9 @@ function handleMultilineIndent(type: LexicalCommand<void>): boolean {
   // 2. If entire line selected: indent/outdent
   const firstNode = nodes[0];
   invariant(
-    $isCodeHighlightNode(firstNode) || $isCodeTabNode(firstNode),
+    $isCodeHighlightNode(firstNode) ||
+      $isCodeTabNode(firstNode) ||
+      $isLineBreakNode(firstNode),
     'Expected selection firstNode to be CodeHighlightNode or CodeTabNode',
   );
   const firstOfLine = getFirstCodeNodeOfLine(firstNode);

@@ -380,11 +380,9 @@ function patchStyleConversion(
 
     const backgroundColor = node.style.backgroundColor;
     const color = node.style.color;
-    const fontStyle = node.style.fontStyle;
+    const fontFamily = node.style.fontFamily;
     const fontWeight = node.style.fontWeight;
     const textDecoration = node.style.textDecoration;
-    const textDecorationLine = node.style.textDecorationLine;
-    const textAlign = node.style.textAlign;
 
     return {
       ...originalOutput,
@@ -393,13 +391,11 @@ function patchStyleConversion(
         const result = originalForChild(lexicalNode, parent);
         if ($isTextNode(result)) {
           const style = [
-            backgroundColor ? `background-color: ${backgroundColor}` : null, // background color
-            color ? `color: ${color}` : null, // color
-            fontStyle ? `font-style: ${fontStyle}` : null, // italic
-            fontWeight ? `font-weight: ${fontWeight}` : null, // bold
-            textDecoration ? `text-decoration: ${textDecoration}` : null, // underline
-            textDecorationLine ? `text-decoration-line: ${textDecorationLine}` : null, // strikethrough
-            textAlign ? `text-align: ${textAlign}` : null, // alignment
+            backgroundColor ? `background-color: ${backgroundColor}` : null,
+            color ? `color: ${color}` : null,
+            fontFamily ? `font-family: ${fontFamily}` : null,
+            fontWeight ? `font-weight: ${fontWeight}` : null,
+            textDecoration ? `text-decoration: ${textDecoration}` : null,
           ]
             .filter((value) => value != null)
             .join('; ');

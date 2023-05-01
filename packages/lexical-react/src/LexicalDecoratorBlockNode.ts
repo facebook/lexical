@@ -52,7 +52,7 @@ export class DecoratorBlockNode extends DecoratorNode<JSX.Element> {
     self.__format = format;
   }
 
-  getFormatType(): ElementFormatType {
+  getFormat(): ElementFormatType {
     const latest = this.getLatest();
     return latest.__format;
   }

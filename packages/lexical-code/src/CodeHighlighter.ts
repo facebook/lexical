@@ -645,8 +645,15 @@ function handleShiftLines(
     return false;
   }
 
-  const start = getFirstCodeNodeOfLine(anchorNode);
-  const end = getLastCodeNodeOfLine(focusNode);
+  let start;
+  let end;
+  if (anchorNode.isBefore(focusNode)) {
+    start = getFirstCodeNodeOfLine(anchorNode);
+    end = getLastCodeNodeOfLine(focusNode);
+  } else {
+    start = getFirstCodeNodeOfLine(focusNode);
+    end = getLastCodeNodeOfLine(anchorNode);
+  }
   if (start == null || end == null) {
     return false;
   }

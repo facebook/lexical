@@ -839,6 +839,16 @@ export async function setBackgroundColor(page) {
   await click(page, '.item[data-test-id="table-background-color"]');
 }
 
+export async function makeVertical(page) {
+  await click(page, '.table-cell-action-button-container');
+  await click(page, '.item[data-test-id="table-cell-vertical"]');
+}
+
+export async function makeHorizontal(page) {
+  await click(page, '.table-cell-action-button-container');
+  await click(page, '.item[data-test-id="table-cell-horizontal"]');
+}
+
 export async function enableCompositionKeyEvents(page) {
   const targetPage = IS_COLLAB ? await page.frame('left') : page;
   await targetPage.evaluate(() => {

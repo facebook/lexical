@@ -31,6 +31,8 @@ import {
   insertTableColumnBefore,
   insertTableRowBelow,
   IS_COLLAB,
+  makeHorizontal,
+  makeVertical,
   mergeTableCells,
   pasteFromClipboard,
   SAMPLE_IMAGE_URL,
@@ -1879,6 +1881,56 @@ test.describe('Tables', () => {
             </td>
           </tr>
         </table>
+      `,
+    );
+  });
+
+  test('Change Cell writing mode', async ({page, isPlainText, isCollab}) => {
+    await initialize({isCollab, page});
+    test.skip(isPlainText);
+    if (IS_COLLAB) {
+      // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
+      page.setViewportSize({height: 1000, width: 3000});
+    }
+
+    await focusEditor(page);
+
+    await insertTable(page, 1, 1);
+    await makeVertical(page);
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <table class="PlaygroundEditorTheme__table">
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              style="writing-mode: vertical-rl">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+          </tr>
+        </table>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+
+    await makeHorizontal(page);
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <table class="PlaygroundEditorTheme__table">
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              style="writing-mode: horizontal-tb">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+          </tr>
+        </table>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
       `,
     );
   });

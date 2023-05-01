@@ -42,6 +42,7 @@ export type SerializedTableCellNode = Spread<
     headerState: TableCellHeaderState;
     width?: number;
     backgroundColor?: null | string;
+    writingMode?: null | string;
   },
   SerializedGridCellNode
 >;
@@ -54,6 +55,8 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
   __width?: number;
   /** @internal */
   __backgroundColor: null | string;
+  /** @internal */
+  __writingMode: null | string;
 
   static getType(): string {
     return 'tablecell';
@@ -68,6 +71,7 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
     );
     cellNode.__rowSpan = node.__rowSpan;
     cellNode.__backgroundColor = node.__backgroundColor;
+    cellNode.__writingMode = node.__writingMode;
     return cellNode;
   }
 
@@ -92,6 +96,7 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
     );
     cellNode.__rowSpan = serializedNode.rowSpan;
     cellNode.__backgroundColor = serializedNode.backgroundColor || null;
+    cellNode.__writingMode = serializedNode.writingMode || null;
     return cellNode;
   }
 
@@ -105,6 +110,7 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
     this.__headerState = headerState;
     this.__width = width;
     this.__backgroundColor = null;
+    this.__writingMode = null;
   }
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -123,6 +129,9 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
     }
     if (this.__backgroundColor !== null) {
       element.style.backgroundColor = this.__backgroundColor;
+    }
+    if (this.__writingMode !== null) {
+      element.style.writingMode = this.__writingMode;
     }
 
     addClassNamesToElement(
@@ -161,6 +170,10 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
       } else if (this.hasHeader()) {
         element_.style.backgroundColor = '#f2f3f5';
       }
+      const writingMode = this.getWritingMode();
+      if (writingMode !== null) {
+        element_.style.writingMode = writingMode;
+      }
     }
 
     return {
@@ -175,6 +188,7 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
       headerState: this.__headerState,
       type: 'tablecell',
       width: this.getWidth(),
+      writingMode: this.getWritingMode(),
     };
   }
 
@@ -210,6 +224,14 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
     this.getWritable().__backgroundColor = newBackgroundColor;
   }
 
+  getWritingMode(): null | string {
+    return this.getLatest().__writingMode;
+  }
+
+  setWritingMode(newWritingMode: null | string): void {
+    this.getWritable().__writingMode = newWritingMode;
+  }
+
   toggleHeaderStyle(headerStateToToggle: TableCellHeaderState): TableCellNode {
     const self = this.getWritable();
 
@@ -236,7 +258,8 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
       prevNode.__width !== this.__width ||
       prevNode.__colSpan !== this.__colSpan ||
       prevNode.__rowSpan !== this.__rowSpan ||
-      prevNode.__backgroundColor !== this.__backgroundColor
+      prevNode.__backgroundColor !== this.__backgroundColor ||
+      prevNode.__writingMode !== this.__writingMode
     );
   }
 
@@ -273,6 +296,11 @@ export function convertTableCellNodeElement(
   const backgroundColor = domNode_.style.backgroundColor;
   if (backgroundColor !== '') {
     tableCellNode.__backgroundColor = backgroundColor;
+  }
+
+  const writingMode = domNode_.style.writingMode;
+  if (writingMode !== '') {
+    tableCellNode.__writingMode = writingMode;
   }
 
   return {

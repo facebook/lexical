@@ -157,6 +157,22 @@ function currentCellBackgroundColor(editor: LexicalEditor): null | string {
   });
 }
 
+function currentCellWritingMode(editor: LexicalEditor): null | string {
+  return editor.getEditorState().read(() => {
+    const selection = $getSelection();
+    if (
+      $isRangeSelection(selection) ||
+      DEPRECATED_$isGridSelection(selection)
+    ) {
+      const [cell] = DEPRECATED_$getNodeTriplet(selection.anchor);
+      if ($isTableCellNode(cell)) {
+        return cell.getWritingMode();
+      }
+    }
+    return null;
+  });
+}
+
 type TableCellActionMenuProps = Readonly<{
   contextRef: {current: null | HTMLElement};
   onClose: () => void;
@@ -189,6 +205,9 @@ function TableActionMenu({
   const [backgroundColor, setBackgroundColor] = useState(
     () => currentCellBackgroundColor(editor) || '',
   );
+  const [writingMode, setWritingMode] = useState(
+    () => currentCellWritingMode(editor) || '',
+  );
 
   useEffect(() => {
     return editor.registerMutationListener(TableCellNode, (nodeMutations) => {
@@ -200,6 +219,7 @@ function TableActionMenu({
           updateTableCellNode(tableCellNode.getLatest());
         });
         setBackgroundColor(currentCellBackgroundColor(editor) || '');
+        setWritingMode(currentCellWritingMode(editor) || '');
       }
     });
   }, [editor, tableCellNode]);
@@ -460,6 +480,24 @@ function TableActionMenu({
     [editor],
   );
 
+  const handleCellWritingMode = useCallback(
+    (value: string) => {
+      editor.update(() => {
+        const selection = $getSelection();
+        if (
+          $isRangeSelection(selection) ||
+          DEPRECATED_$isGridSelection(selection)
+        ) {
+          const [cell] = DEPRECATED_$getNodeTriplet(selection.anchor);
+          if ($isTableCellNode(cell)) {
+            cell.setWritingMode(value);
+          }
+        }
+      });
+    },
+    [editor],
+  );
+
   let mergeCellButton: null | JSX.Element = null;
   if (cellMerge) {
     if (canMergeCells) {
@@ -481,6 +519,27 @@ function TableActionMenu({
         </button>
       );
     }
+  }
+
+  let writingModeButton: null | JSX.Element = null;
+  if (writingMode === 'vertical-rl') {
+    writingModeButton = (
+      <button
+        className="item"
+        onClick={() => handleCellWritingMode('horizontal-tb')}
+        data-test-id="table-cell-horizontal">
+        <span className="text">Make horizontal</span>
+      </button>
+    );
+  } else {
+    writingModeButton = (
+      <button
+        className="item"
+        onClick={() => handleCellWritingMode('vertical-rl')}
+        data-test-id="table-cell-vertical">
+        <span className="text">Make vertical</span>
+      </button>
+    );
   }
 
   return createPortal(
@@ -505,6 +564,7 @@ function TableActionMenu({
         data-test-id="table-background-color">
         <span className="text">Background color</span>
       </button>
+      {writingModeButton}
       <hr />
       <button
         className="item"

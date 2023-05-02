@@ -11,6 +11,7 @@ import type {
   CommandPayloadType,
   DOMConversionMap,
   DOMConversionOutput,
+  DOMExportOutput,
   EditorConfig,
   ElementFormatType,
   LexicalCommand,
@@ -138,6 +139,31 @@ export class QuoteNode extends ElementNode {
         conversion: convertBlockquoteElement,
         priority: 0,
       }),
+    };
+  }
+
+  exportDOM(editor: LexicalEditor): DOMExportOutput {
+    const {element} = super.exportDOM(editor);
+
+    if (element && this.isEmpty()) {
+      element.append(document.createElement('br'));
+    }
+    if (element) {
+      const formatType = this.getFormatType();
+      element.style.textAlign = formatType;
+
+      const direction = this.getDirection();
+      if (direction) {
+        element.dir = direction;
+      }
+      const indent = this.getIndent();
+      if (indent > 0) {
+        element.style.textIndent = `${indent * 20}px`;
+      }
+    }
+
+    return {
+      element,
     };
   }
 
@@ -280,6 +306,32 @@ export class HeadingNode extends ElementNode {
       },
     };
   }
+
+  exportDOM(editor: LexicalEditor): DOMExportOutput {
+    const {element} = super.exportDOM(editor);
+
+    if (element && this.isEmpty()) {
+      element.append(document.createElement('br'));
+    }
+    if (element) {
+      const formatType = this.getFormatType();
+      element.style.textAlign = formatType;
+
+      const direction = this.getDirection();
+      if (direction) {
+        element.dir = direction;
+      }
+      const indent = this.getIndent();
+      if (indent > 0) {
+        element.style.textIndent = `${indent * 20}px`;
+      }
+    }
+
+    return {
+      element,
+    };
+  }
+
   static importJSON(serializedNode: SerializedHeadingNode): HeadingNode {
     const node = $createHeadingNode(serializedNode.tag);
     node.setFormat(serializedNode.format);

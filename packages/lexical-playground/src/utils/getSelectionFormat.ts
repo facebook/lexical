@@ -6,8 +6,8 @@
  *
  */
 import {$isDecoratorBlockNode} from '@lexical/react/LexicalDecoratorBlockNode';
-import {$getNearestBlockElementAncestorOrThrow} from '@lexical/utils';
 import {
+  $isElementNode,
   ElementFormatType,
   GridSelection,
   NodeSelection,

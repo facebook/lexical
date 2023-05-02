@@ -18,8 +18,12 @@ import type {
   SerializedElementNode,
   Spread,
 } from 'lexical';
-import type {CodeHighlightNode} from '@lexical/code';
-import {$isCodeHighlightNode, $isCodeTabNode} from '@lexical/code';
+import type {CodeHighlightNode, CodeTabNode} from '@lexical/code';
+import {
+  $isCodeHighlightNode,
+  $isCodeTabNode,
+  $createCodeTabNode,
+} from '@lexical/code';
 
 import 'prismjs/components/prism-clike';
 import 'prismjs/components/prism-javascript';
@@ -218,7 +222,7 @@ export class CodeNode extends ElementNode {
   insertNewAfter(
     selection: RangeSelection,
     restoreSelection = true,
-  ): null | ParagraphNode | CodeHighlightNode {
+  ): null | ParagraphNode | CodeHighlightNode | CodeTabNode {
     const children = this.getChildren();
     const childrenLength = children.length;
 
@@ -240,26 +244,40 @@ export class CodeNode extends ElementNode {
     // If the selection is within the codeblock, find all leading tabs and
     // spaces of the current line. Create a new line that has all those
     // tabs and spaces, such that leading indentation is preserved.
-    const anchor = selection.anchor.getNode();
-    if ($isCodeHighlightNode(anchor) || $isCodeTabNode(anchor)) {
-      const firstNode = getFirstCodeNodeOfLine(anchor);
-      if (firstNode != null) {
-        let leadingWhitespace = 0;
-        const firstNodeText = firstNode.getTextContent();
-        while (
-          leadingWhitespace < firstNodeText.length &&
-          / /.test(firstNodeText[leadingWhitespace])
-        ) {
-          leadingWhitespace += 1;
+    const anchor = selection.anchor;
+    const focus = selection.focus;
+    const firstPoint = anchor.isBefore(focus) ? anchor : focus;
+    const firstSelectionNode = firstPoint.getNode();
+    if (
+      $isCodeHighlightNode(firstSelectionNode) ||
+      $isCodeTabNode(firstSelectionNode)
+    ) {
+      let node = getFirstCodeNodeOfLine(firstSelectionNode);
+      const insertNodes = [];
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        if ($isCodeTabNode(node)) {
+          insertNodes.push($createCodeTabNode());
+          node = node.getNextSibling();
+        } else if ($isCodeHighlightNode(node)) {
+          let spaces = 0;
+          const text = node.getTextContent();
+          const textSize = node.getTextContentSize();
+          for (; spaces < textSize && text[spaces] === ' '; spaces++);
+          if (spaces !== 0) {
+            insertNodes.push($createCodeHighlightNode(' '.repeat(spaces)));
+          }
+          if (spaces !== textSize) {
+            break;
+          }
+          node = node.getNextSibling();
+        } else {
+          break;
         }
-        if (leadingWhitespace > 0) {
-          const whitespace = firstNodeText.substring(0, leadingWhitespace);
-          const indentedChild = $createCodeHighlightNode(whitespace);
-          anchor.insertAfter(indentedChild);
-          selection.insertNodes([$createLineBreakNode()]);
-          indentedChild.select();
-          return indentedChild;
-        }
+      }
+      if (insertNodes.length > 0) {
+        selection.insertNodes([$createLineBreakNode(), ...insertNodes]);
+        return insertNodes[insertNodes.length - 1];
       }
     }
 

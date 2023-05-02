@@ -360,7 +360,7 @@ test.describe('CodeBlock', () => {
             ;
           </span>
           <br />
-          <span data-lexical-text="true"></span>
+          <span style="letter-spacing: 15px" data-lexical-text="true"></span>
           <span
             class="PlaygroundEditorTheme__tokenFunction"
             data-lexical-text="true">
@@ -387,7 +387,7 @@ test.describe('CodeBlock', () => {
             ;
           </span>
           <br />
-          <span data-lexical-text="true"></span>
+          <span style="letter-spacing: 15px" data-lexical-text="true"></span>
         </code>
       `,
     );

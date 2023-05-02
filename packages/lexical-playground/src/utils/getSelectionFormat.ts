@@ -22,7 +22,7 @@ export function getSelectionFormat(
 
   for (const node of nodes) {
     if ($isDecoratorBlockNode(node)) {
-      formatSet.add(node.getFormatType());
+      formatSet.add(node.getFormat());
     } else {
       const element = $getNearestBlockElementAncestorOrThrow(node);
       formatSet.add(element.getFormatType());

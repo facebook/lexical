@@ -21,11 +21,11 @@ export function getSelectionFormat(
   const formatSet = new Set<ElementFormatType>();
 
   for (const node of nodes) {
-    if ($isDecoratorBlockNode(node)) {
+    const topNode = node.getTopLevelElementOrThrow();
+    if ($isDecoratorBlockNode(topNode)) {
       formatSet.add(node.getFormat());
-    } else {
-      const element = $getNearestBlockElementAncestorOrThrow(node);
-      formatSet.add(element.getFormatType());
+    } else if ($isElementNode(topNode)) {
+      formatSet.add(topNode.getFormatType());
     }
   }
 

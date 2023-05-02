@@ -58,12 +58,12 @@ describe('Markdown', () => {
       md: '- Hello\n- world',
     },
     {
-      html: '<ul><li value="1"><span>Level 1</span></li><li value="2" ><ul><li value="1" style=\'text-indent: 20px;\'><span>Level 2</span></li><li value="2" style=\'text-indent: 20px;\'><ul><li value="1" style=\'text-indent: 40px;\'><span>Level 3</span></li></ul></li></ul></li></ul><p><span>Hello world</span></p>',
+      html: '<ul><li value="1"><span>Level 1</span></li><li value="2" ><ul><li value="1" style="text-indent: 20px;"><span>Level 2</span></li><li value="2" style="text-indent: 20px;"><ul><li value="1" style="text-indent: 40px;"><span>Level 3</span></li></ul></li></ul></li></ul><p><span>Hello world</span></p>',
       md: '- Level 1\n    - Level 2\n        - Level 3\n\nHello world',
     },
     {
       // Import only: export will use "-" instead of "*"
-      html: '<ul><li value="1"><span>Level 1</span></li><li value="2"><ul><li value="1" style=\'text-indent: 20px;\'><span>Level 2</span></li><li value="2" style=\'text-indent: 20px;\'><ul><li value="1" style=\'text-indent: 40px;\'><span>Level 3</span></li></ul></li></ul></li></ul><p><span>Hello world</span></p>',
+      html: '<ul><li value="1"><span>Level 1</span></li><li value="2"><ul><li value="1" style="text-indent: 20px;"><span>Level 2</span></li><li value="2" style="text-indent: 20px;"><ul><li value="1" style="text-indent: 40px;"><span>Level 3</span></li></ul></li></ul></li></ul><p><span>Hello world</span></p>',
       md: '* Level 1\n    * Level 2\n        * Level 3\n\nHello world',
       skipExport: true,
     },

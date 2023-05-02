@@ -6,6 +6,7 @@
  *
  */
 
+import {createEmptyHistoryState, registerHistory} from '@lexical/history';
 import {useLexicalComposerContext} from '@lexical/react/src/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/src/LexicalContentEditable';
 import LexicalErrorBoundary from '@lexical/react/src/LexicalErrorBoundary';
@@ -14,7 +15,9 @@ import {RichTextPlugin} from '@lexical/react/src/LexicalRichTextPlugin';
 import {$createQuoteNode} from '@lexical/rich-text/src';
 import {$setBlocksType} from '@lexical/selection/src';
 import {
+  $createNodeSelection,
   $createRangeSelection,
+  $isNodeSelection,
   CAN_REDO_COMMAND,
   CAN_UNDO_COMMAND,
   CLEAR_HISTORY_COMMAND,
@@ -25,7 +28,7 @@ import {
   SerializedTextNode,
   UNDO_COMMAND,
 } from 'lexical/src';
-import {TestComposer} from 'lexical/src/__tests__/utils';
+import {createTestEditor, TestComposer} from 'lexical/src/__tests__/utils';
 import {$getRoot, $setSelection} from 'lexical/src/LexicalUtils';
 import {$createParagraphNode} from 'lexical/src/nodes/LexicalParagraphNode';
 import {$createTextNode} from 'lexical/src/nodes/LexicalTextNode';
@@ -264,6 +267,50 @@ describe('LexicalHistory tests', () => {
 
     expect(canRedo).toBe(false);
     expect(canUndo).toBe(true);
+  });
+
+  test('undoStack selection points to the same editor', async () => {
+    const editor_ = createTestEditor({namespace: 'parent'});
+    const sharedHistory = createEmptyHistoryState();
+    registerHistory(editor_, sharedHistory, 1000);
+    await editor_.update(() => {
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+      root.append(paragraph);
+    });
+    await editor_.update(() => {
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+      root.append(paragraph);
+      const nodeSelection = $createNodeSelection();
+      nodeSelection.add(paragraph.getKey());
+      $setSelection(nodeSelection);
+    });
+    const nestedEditor = createTestEditor({namespace: 'nested'});
+    await nestedEditor.update(
+      () => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        root.append(paragraph);
+        paragraph.selectEnd();
+      },
+      {
+        tag: 'history-merge',
+      },
+    );
+    nestedEditor._parentEditor = editor_;
+    registerHistory(nestedEditor, sharedHistory, 1000);
+
+    await nestedEditor.update(() => {
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+      root.append(paragraph);
+      paragraph.selectEnd();
+    });
+
+    expect(sharedHistory.undoStack.length).toBe(2);
+    await editor_.dispatchCommand(UNDO_COMMAND, undefined);
+    expect($isNodeSelection(editor_.getEditorState()._selection)).toBe(true);
   });
 });
 

@@ -648,13 +648,14 @@ test.describe('Links', () => {
          */
         const setup = async (page, insertMethod) => {
           await focusEditor(page);
-          await page.keyboard.type('a');
+          await page.keyboard.type('ab');
 
           // Turn 'a' into a link
+          await moveLeft(page, 'b'.length);
           await selectCharacters(page, 'left', 1);
           await click(page, '.link');
 
-          // Paste some text at the left-hand edge of the link
+          // Insert a character directly before the link
           await moveLeft(page, 1);
           if (insertMethod === 'type') {
             await page.keyboard.type('x');
@@ -683,6 +684,7 @@ test.describe('Links', () => {
                   rel="noopener">
                   <span data-lexical-text="true">a</span>
                 </a>
+                <span data-lexical-text="true">b</span>
               </p>
             `,
           );
@@ -729,7 +731,7 @@ test.describe('Links', () => {
           await selectCharacters(page, 'left', 1);
           await click(page, '.link');
 
-          // Paste some text at the left-hand edge of the link
+          // Insert a character directly before the link
           await moveLeft(page, 1);
           if (insertMethod === 'type') {
             await page.keyboard.type('x');
@@ -796,14 +798,13 @@ test.describe('Links', () => {
          */
         const setup = async (page, insertMethod) => {
           await focusEditor(page);
-          await page.keyboard.type('a');
+          await page.keyboard.type('ab');
 
-          // Turn 'a' into a link
-          await moveLeft(page, 1);
+          // Turn 'b' into a link
           await selectCharacters(page, 'left', 1);
           await click(page, '.link');
 
-          // Paste some text at the left-hand edge of the link
+          // Insert a character directly before the link
           await moveLeft(page, 1);
           if (insertMethod === 'type') {
             await page.keyboard.type('x');
@@ -824,13 +825,13 @@ test.describe('Links', () => {
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
                 dir="ltr">
-                <span data-lexical-text="true">x</span>
+                <span data-lexical-text="true">ax</span>
                 <a
                   class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
                   dir="ltr"
                   href="https://"
                   rel="noopener">
-                  <span data-lexical-text="true">a</span>
+                  <span data-lexical-text="true">b</span>
                 </a>
               </p>
             `,
@@ -873,14 +874,14 @@ test.describe('Links', () => {
          */
         const setup = async (page, insertMethod) => {
           await focusEditor(page);
-          await page.keyboard.type('a');
+          await page.keyboard.type('ab');
 
           // Turn 'a' into a link
-          await moveLeft(page, 'a'.length);
+          await moveLeft(page, 'b'.length);
           await selectCharacters(page, 'left', 1);
           await click(page, '.link');
 
-          // Type a character at the right-hand edge of the link
+          // Insert a character directly after the link
           await moveRight(page, 1);
           if (insertMethod === 'type') {
             await page.keyboard.type('x');
@@ -908,7 +909,7 @@ test.describe('Links', () => {
                   rel="noopener">
                   <span data-lexical-text="true">a</span>
                 </a>
-                <span data-lexical-text="true">x</span>
+                <span data-lexical-text="true">xb</span>
               </p>
             `,
           );
@@ -955,7 +956,7 @@ test.describe('Links', () => {
           await selectCharacters(page, 'left', 1);
           await click(page, '.link');
 
-          // Paste some text at the right-hand edge of the link
+          // Insert a character directly after the link
           await moveRight(page, 1);
           if (insertMethod === 'type') {
             await page.keyboard.type('x');
@@ -1024,14 +1025,13 @@ test.describe('Links', () => {
          */
         const setup = async (page, insertMethod) => {
           await focusEditor(page);
-          await page.keyboard.type('a');
+          await page.keyboard.type('ab');
 
-          // Turn 'a' into a link
-          await moveLeft(page, 'a'.length);
+          // Turn 'b' into a link
           await selectCharacters(page, 'left', 1);
           await click(page, '.link');
 
-          // Type a character at the right-hand edge of the link
+          // Insert a character directly after the link
           await moveRight(page, 1);
           if (insertMethod === 'type') {
             await page.keyboard.type('x');
@@ -1052,12 +1052,13 @@ test.describe('Links', () => {
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
                 dir="ltr">
+                <span data-lexical-text="true">a</span>
                 <a
                   class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
                   dir="ltr"
                   href="https://"
                   rel="noopener">
-                  <span data-lexical-text="true">a</span>
+                  <span data-lexical-text="true">b</span>
                 </a>
                 <span data-lexical-text="true">x</span>
               </p>

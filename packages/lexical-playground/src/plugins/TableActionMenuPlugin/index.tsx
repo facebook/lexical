@@ -14,6 +14,7 @@ import type {
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import useLexicalEditable from '@lexical/react/useLexicalEditable';
+import {getStyleObjectFromCSS} from '@lexical/selection';
 import {
   $deleteTableColumn__EXPERIMENTAL,
   $deleteTableRow__EXPERIMENTAL,
@@ -25,6 +26,7 @@ import {
   $insertTableRow__EXPERIMENTAL,
   $isTableCellNode,
   $isTableRowNode,
+  $patchCellStyle,
   $unmergeCell,
   getTableSelectionFromTableElement,
   HTMLTableElementWithWithTableSelectionState,
@@ -157,7 +159,9 @@ function currentCellBackgroundColor(editor: LexicalEditor): null | string {
   });
 }
 
-function currentCellWritingMode(editor: LexicalEditor): null | string {
+function currentCellStyle(
+  editor: LexicalEditor,
+): Record<string, string> | null {
   return editor.getEditorState().read(() => {
     const selection = $getSelection();
     if (
@@ -166,7 +170,9 @@ function currentCellWritingMode(editor: LexicalEditor): null | string {
     ) {
       const [cell] = DEPRECATED_$getNodeTriplet(selection.anchor);
       if ($isTableCellNode(cell)) {
-        return cell.getWritingMode();
+        const css = cell.getStyle();
+        const style = getStyleObjectFromCSS(css);
+        return style;
       }
     }
     return null;
@@ -205,9 +211,7 @@ function TableActionMenu({
   const [backgroundColor, setBackgroundColor] = useState(
     () => currentCellBackgroundColor(editor) || '',
   );
-  const [writingMode, setWritingMode] = useState(
-    () => currentCellWritingMode(editor) || '',
-  );
+  const [style, setStyle] = useState(() => currentCellStyle(editor));
 
   useEffect(() => {
     return editor.registerMutationListener(TableCellNode, (nodeMutations) => {
@@ -219,7 +223,7 @@ function TableActionMenu({
           updateTableCellNode(tableCellNode.getLatest());
         });
         setBackgroundColor(currentCellBackgroundColor(editor) || '');
-        setWritingMode(currentCellWritingMode(editor) || '');
+        setStyle(currentCellStyle(editor));
       }
     });
   }, [editor, tableCellNode]);
@@ -480,8 +484,8 @@ function TableActionMenu({
     [editor],
   );
 
-  const handleCellWritingMode = useCallback(
-    (value: string) => {
+  const applyCellStyle = useCallback(
+    (styles: Record<string, string>) => {
       editor.update(() => {
         const selection = $getSelection();
         if (
@@ -490,7 +494,7 @@ function TableActionMenu({
         ) {
           const [cell] = DEPRECATED_$getNodeTriplet(selection.anchor);
           if ($isTableCellNode(cell)) {
-            cell.setWritingMode(value);
+            $patchCellStyle([cell], styles);
           }
         }
       });
@@ -522,11 +526,11 @@ function TableActionMenu({
   }
 
   let writingModeButton: null | JSX.Element = null;
-  if (writingMode === 'vertical-rl') {
+  if (style?.['writing-mode'] === 'vertical-rl') {
     writingModeButton = (
       <button
         className="item"
-        onClick={() => handleCellWritingMode('horizontal-tb')}
+        onClick={() => applyCellStyle({'writing-mode': 'horizontal-tb'})}
         data-test-id="table-cell-horizontal">
         <span className="text">Make horizontal</span>
       </button>
@@ -535,7 +539,7 @@ function TableActionMenu({
     writingModeButton = (
       <button
         className="item"
-        onClick={() => handleCellWritingMode('vertical-rl')}
+        onClick={() => applyCellStyle({'writing-mode': 'vertical-rl'})}
         data-test-id="table-cell-vertical">
         <span className="text">Make vertical</span>
       </button>

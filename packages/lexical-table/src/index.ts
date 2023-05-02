@@ -53,6 +53,7 @@ export {
   $insertTableColumn__EXPERIMENTAL,
   $insertTableRow,
   $insertTableRow__EXPERIMENTAL,
+  $patchCellStyle,
   $removeTableRowAtIndex,
   $unmergeCell,
 } from './LexicalTableUtils';

@@ -138,6 +138,8 @@
   position: relative;
   cursor: default;
   outline: none;
+  height: inherit;
+  overflow: hidden;
 }
 .PlaygroundEditorTheme__tableCellSortedIndicator {
   display: block;

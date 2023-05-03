@@ -48,7 +48,6 @@ import {
   $getRoot,
   $getSelection,
   $insertNodes,
-  $isBlockElementNode,
   $isDecoratorNode,
   $isElementNode,
   $isNodeSelection,
@@ -76,6 +75,7 @@ import {
   INDENT_CONTENT_COMMAND,
   INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
+  INSERT_TAB_COMMAND,
   isSelectionCapturedInDecoratorInput,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
@@ -433,72 +433,29 @@ export function eventFiles(
   return [hasFiles, Array.from(dataTransfer.files), hasContent];
 }
 
-// TODO replace with LexicalSelection util (PR not merged yet)
-function $getBlockNodes(nodes: Array<LexicalNode>): Array<ElementNode> {
-  const blockNodes = [];
-  for (let i = 0; i < nodes.length; i++) {
-    const node = nodes[i];
-    if ($isBlockElementNode(node)) {
-      blockNodes.push(node);
-    }
-  }
-  return blockNodes;
-}
-
 function handleIndentAndOutdent(
-  insertTab: (node: LexicalNode) => void,
   indentOrOutdent: (block: ElementNode) => void,
 ): boolean {
   const selection = $getSelection();
   if (!$isRangeSelection(selection)) {
     return false;
   }
-  const handled = new Set();
+  const alreadyHandled = new Set();
   const nodes = selection.getNodes();
-  const blockNodes = $getBlockNodes(nodes);
-  // 1. If selection spans across block nodes: indent
-  for (let i = 0; i < blockNodes.length; i++) {
-    const blockNode = blockNodes[i];
-    if (blockNode.canIndent()) {
-      indentOrOutdent(blockNode);
-      handled.add(blockNode);
-    }
-  }
-  if (handled.size > 0) {
-    return true;
-  }
-  // 2. If first (anchor/focus) is at block start: indent
-  const anchor = selection.anchor;
-  const focus = selection.focus;
-  const first = focus.isBefore(anchor) ? focus : anchor;
-  const firstNode = first.getNode();
-  const firstBlock = $getNearestBlockElementAncestorOrThrow(firstNode);
-  if (firstBlock.canIndent()) {
-    const firstBlockKey = firstBlock.getKey();
-    let selectionAtStart = $createRangeSelection();
-    selectionAtStart.anchor.set(firstBlockKey, 0, 'element');
-    selectionAtStart.focus.set(firstBlockKey, 0, 'element');
-    selectionAtStart = $normalizeSelection__EXPERIMENTAL(selectionAtStart);
-    if (selectionAtStart.anchor.is(first)) {
-      indentOrOutdent(firstBlock);
-      return true;
-    }
-  }
-  // 3. Else: tab
-  const parentBlocks = [];
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
-    const parentBlock = $getNearestBlockElementAncestorOrThrow(node);
-    if (handled.has(parentBlock)) {
+    const key = node.getKey();
+    if (alreadyHandled.has(key)) {
       continue;
     }
-    handled.add(parentBlock);
-    parentBlocks.push(parentBlock);
+    const parentBlock = $getNearestBlockElementAncestorOrThrow(node);
+    const parentKey = parentBlock.getKey();
+    if (parentBlock.canIndent() && !alreadyHandled.has(parentKey)) {
+      alreadyHandled.add(parentKey);
+      indentOrOutdent(parentBlock);
+    }
   }
-  for (let i = 0; i < parentBlocks.length; i++) {
-    insertTab(parentBlocks[i]);
-  }
-  return handled.size > 0;
+  return alreadyHandled.size > 0;
 }
 
 function $isTargetWithinDecorator(target: HTMLElement): boolean {
@@ -660,34 +617,32 @@ export function registerRichText(editor: LexicalEditor): () => void {
       COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
+      INSERT_TAB_COMMAND,
+      () => {
+        $insertNodes([$createTabNode()]);
+        return true;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerCommand(
       INDENT_CONTENT_COMMAND,
       () => {
-        return handleIndentAndOutdent(
-          () => {
-            $insertNodes([$createTabNode()]);
-          },
-          (block) => {
-            const indent = block.getIndent();
-            block.setIndent(indent + 1);
-          },
-        );
+        return handleIndentAndOutdent((block) => {
+          const indent = block.getIndent();
+          block.setIndent(indent + 1);
+        });
       },
       COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       OUTDENT_CONTENT_COMMAND,
       () => {
-        return handleIndentAndOutdent(
-          (block) => {
-            // TODO implement a transform to prevent this
-          },
-          (block) => {
-            const indent = block.getIndent();
-            if (indent > 0) {
-              block.setIndent(indent - 1);
-            }
-          },
-        );
+        return handleIndentAndOutdent((block) => {
+          const indent = block.getIndent();
+          if (indent > 0) {
+            block.setIndent(indent - 1);
+          }
+        });
       },
       COMMAND_PRIORITY_EDITOR,
     ),

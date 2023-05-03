@@ -11,6 +11,7 @@ import {
   $isCodeTabNode,
   registerCodeHighlighting,
 } from '@lexical/code';
+import {registerTabIndentation} from '@lexical/react/LexicalTabIndentationPlugin';
 import {registerRichText} from '@lexical/rich-text';
 import {$dfs} from '@lexical/utils';
 import {
@@ -22,14 +23,15 @@ import {
   $getSelection,
   $isRangeSelection,
   $setSelection,
-  INDENT_CONTENT_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
-  OUTDENT_CONTENT_COMMAND,
+  KEY_TAB_COMMAND,
 } from 'lexical';
 import {
   initializeUnitTest,
   KeyboardEventMock,
+  shiftTabKeyboardEvent,
+  tabKeyboardEvent,
 } from 'lexical/src/__tests__/utils';
 
 const editorConfig = Object.freeze({
@@ -160,6 +162,7 @@ describe('LexicalCodeNode tests', () => {
     test('can tab with collapsed selection', async () => {
       const {editor} = testEnv;
       registerRichText(editor);
+      registerTabIndentation(editor);
       registerCodeHighlighting(editor);
       await editor.update(() => {
         const root = $getRoot();
@@ -168,7 +171,7 @@ describe('LexicalCodeNode tests', () => {
         code.selectStart();
         $getSelection().insertText('function');
       });
-      await editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
+      await editor.dispatchCommand(KEY_TAB_COMMAND, tabKeyboardEvent());
       expect(testEnv.innerHTML).toBe(
         '<code spellcheck="false" data-highlight-language="javascript" dir="ltr" data-gutter="1"><span data-lexical-text="true">function</span><span style="letter-spacing: 15px;" data-lexical-text="true"> </span></code>',
       );
@@ -195,6 +198,7 @@ describe('LexicalCodeNode tests', () => {
     test('can tab with non-collapsed selection', async () => {
       const {editor} = testEnv;
       registerRichText(editor);
+      registerTabIndentation(editor);
       registerCodeHighlighting(editor);
       await editor.update(() => {
         const root = $getRoot();
@@ -208,7 +212,7 @@ describe('LexicalCodeNode tests', () => {
         const codeText = $getRoot().getFirstDescendant();
         codeText.select(1, 'function'.length);
       });
-      await editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
+      await editor.dispatchCommand(KEY_TAB_COMMAND, tabKeyboardEvent());
       expect(testEnv.innerHTML).toBe(
         '<code spellcheck="false" data-highlight-language="javascript" dir="ltr" data-gutter="1"><span data-lexical-text="true">f</span><span style="letter-spacing: 15px;" data-lexical-text="true"> </span></code>',
       );
@@ -217,6 +221,7 @@ describe('LexicalCodeNode tests', () => {
     test('can indent/outdent one line by selecting all line (with tabs)', async () => {
       const {editor} = testEnv;
       registerRichText(editor);
+      registerTabIndentation(editor);
       registerCodeHighlighting(editor);
       await editor.update(() => {
         const root = $getRoot();
@@ -230,7 +235,7 @@ describe('LexicalCodeNode tests', () => {
         const codeText = $getRoot().getFirstDescendant();
         codeText.select(0, 'function'.length);
       });
-      await editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
+      await editor.dispatchCommand(KEY_TAB_COMMAND, tabKeyboardEvent());
       expect(testEnv.innerHTML).toBe(
         '<code spellcheck="false" data-highlight-language="javascript" dir="ltr" data-gutter="1"><span style="letter-spacing: 15px;" data-lexical-text="true"> </span><span data-lexical-text="true">function</span></code>',
       );
@@ -243,7 +248,7 @@ describe('LexicalCodeNode tests', () => {
         selection.anchor.set(codeTab.getKey(), 0, 'text');
         selection.focus.set(codeText.getKey(), 'function'.length, 'text');
       });
-      await editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
+      await editor.dispatchCommand(KEY_TAB_COMMAND, shiftTabKeyboardEvent());
       expect(testEnv.innerHTML).toBe(
         '<code spellcheck="false" data-highlight-language="javascript" dir="ltr" data-gutter="1"><span data-lexical-text="true">function</span></code>',
       );
@@ -252,6 +257,7 @@ describe('LexicalCodeNode tests', () => {
     test('can indent/outdent with collapsed selection at start of line (with tabs)', async () => {
       const {editor} = testEnv;
       registerRichText(editor);
+      registerTabIndentation(editor);
       registerCodeHighlighting(editor);
       await editor.update(() => {
         const root = $getRoot();
@@ -265,7 +271,7 @@ describe('LexicalCodeNode tests', () => {
         const codeText = $getRoot().getFirstDescendant();
         codeText.select(0, 0);
       });
-      await editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
+      await editor.dispatchCommand(KEY_TAB_COMMAND, tabKeyboardEvent());
       expect(testEnv.innerHTML).toBe(
         '<code spellcheck="false" data-highlight-language="javascript" dir="ltr" data-gutter="1"><span style="letter-spacing: 15px;" data-lexical-text="true"> </span><span data-lexical-text="true">function</span></code>',
       );
@@ -279,7 +285,7 @@ describe('LexicalCodeNode tests', () => {
         selection.focus.set(codeText.getKey(), 0, 'text');
         $setSelection(selection);
       });
-      await editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
+      await editor.dispatchCommand(KEY_TAB_COMMAND, shiftTabKeyboardEvent());
       expect(testEnv.innerHTML).toBe(
         '<code spellcheck="false" data-highlight-language="javascript" dir="ltr" data-gutter="1"><span data-lexical-text="true">function</span></code>',
       );
@@ -288,6 +294,7 @@ describe('LexicalCodeNode tests', () => {
     test('can indent/outdent multiline (with tabs)', async () => {
       const {editor} = testEnv;
       registerRichText(editor);
+      registerTabIndentation(editor);
       registerCodeHighlighting(editor);
       await editor.update(() => {
         const root = $getRoot();
@@ -305,13 +312,13 @@ describe('LexicalCodeNode tests', () => {
         selection.focus.set(lastCodeText.getKey(), 1, 'text');
         $setSelection(selection);
       });
-      await editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
+      await editor.dispatchCommand(KEY_TAB_COMMAND, tabKeyboardEvent());
       expect(testEnv.innerHTML).toBe(
         `<code spellcheck="false" data-highlight-language="javascript" dir="ltr" data-gutter="1
 2"><span style="letter-spacing: 15px;" data-lexical-text="true"> </span><span data-lexical-text="true">hello</span><span style="letter-spacing: 15px;" data-lexical-text="true"> </span><span data-lexical-text="true">world</span><br><span style="letter-spacing: 15px;" data-lexical-text="true"> </span><span data-lexical-text="true">hello</span><span style="letter-spacing: 15px;" data-lexical-text="true"> </span><span data-lexical-text="true">world</span></code>`,
       );
 
-      await editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
+      await editor.dispatchCommand(KEY_TAB_COMMAND, shiftTabKeyboardEvent());
       expect(testEnv.innerHTML).toBe(
         `<code spellcheck="false" data-highlight-language="javascript" dir="ltr" data-gutter="1
 2"><span data-lexical-text="true">hello</span><span style="letter-spacing: 15px;" data-lexical-text="true"> </span><span data-lexical-text="true">world</span><br><span data-lexical-text="true">hello</span><span style="letter-spacing: 15px;" data-lexical-text="true"> </span><span data-lexical-text="true">world</span></code>`,
@@ -321,6 +328,7 @@ describe('LexicalCodeNode tests', () => {
     test('can indent at the start of the second line', async () => {
       const {editor} = testEnv;
       registerRichText(editor);
+      registerTabIndentation(editor);
       registerCodeHighlighting(editor);
       await editor.update(() => {
         const root = $getRoot();
@@ -329,7 +337,7 @@ describe('LexicalCodeNode tests', () => {
         code.selectStart();
         $getSelection().insertRawText('hello\n');
       });
-      await editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
+      await editor.dispatchCommand(KEY_TAB_COMMAND, tabKeyboardEvent());
       expect(testEnv.innerHTML)
         .toBe(`<code spellcheck="false" data-highlight-language="javascript" dir="ltr" data-gutter="1
 2"><span data-lexical-text="true">hello</span><br><span style="letter-spacing: 15px;" data-lexical-text="true"> </span></code>`);
@@ -338,6 +346,7 @@ describe('LexicalCodeNode tests', () => {
     test('can outdent at arbitrary points in the line (with tabs)', async () => {
       const {editor} = testEnv;
       registerRichText(editor);
+      registerTabIndentation(editor);
       registerCodeHighlighting(editor);
       await editor.update(() => {
         const root = $getRoot();
@@ -351,7 +360,7 @@ describe('LexicalCodeNode tests', () => {
         const codeText = $getRoot().getLastDescendant();
         codeText.select(1, 1);
       });
-      await editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
+      await editor.dispatchCommand(KEY_TAB_COMMAND, shiftTabKeyboardEvent());
       expect(testEnv.innerHTML).toBe(
         '<code spellcheck="false" data-highlight-language="javascript" dir="ltr" data-gutter="1"><span data-lexical-text="true">hello</span></code>',
       );
@@ -360,6 +369,7 @@ describe('LexicalCodeNode tests', () => {
     test('code blocks can shift lines (with tab)', async () => {
       const {editor} = testEnv;
       registerRichText(editor);
+      registerTabIndentation(editor);
       registerCodeHighlighting(editor);
       await editor.update(() => {
         const root = $getRoot();
@@ -379,6 +389,7 @@ describe('LexicalCodeNode tests', () => {
     test('code blocks can shift multiple lines (with tab)', async () => {
       const {editor} = testEnv;
       registerRichText(editor);
+      registerTabIndentation(editor);
       registerCodeHighlighting(editor);
       await editor.update(() => {
         const root = $getRoot();

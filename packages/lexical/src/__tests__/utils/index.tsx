@@ -592,6 +592,9 @@ export class KeyboardEventMock extends EventMock implements KeyboardEvent {
   metaKey: boolean;
   repeat: boolean;
   shiftKey: boolean;
+  constructor(type: void | string) {
+    super();
+  }
   getModifierState(keyArg: string): boolean {
     throw new Error('Method not implemented.');
   }
@@ -625,4 +628,14 @@ export class KeyboardEventMock extends EventMock implements KeyboardEvent {
   ): void {
     throw new Error('Method not implemented.');
   }
+}
+
+export function tabKeyboardEvent() {
+  return new KeyboardEventMock('keydown');
+}
+
+export function shiftTabKeyboardEvent() {
+  const keyboardEvent = new KeyboardEventMock('keydown');
+  keyboardEvent.shiftKey = true;
+  return keyboardEvent;
 }

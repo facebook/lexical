@@ -11,6 +11,7 @@ import {
   $insertDataTransferForRichText,
 } from '@lexical/clipboard';
 import {$createListItemNode, $createListNode} from '@lexical/list';
+import {registerTabIndentation} from '@lexical/react/LexicalTabIndentationPlugin';
 import {$createHeadingNode, registerRichText} from '@lexical/rich-text';
 import {
   $createParagraphNode,
@@ -22,7 +23,7 @@ import {
   $insertNodes,
   $isRangeSelection,
   $setSelection,
-  INDENT_CONTENT_COMMAND,
+  KEY_TAB_COMMAND,
 } from 'lexical';
 
 import {
@@ -111,12 +112,16 @@ hello	world</span>`,
     test('element indents when selection at the start of the block', async () => {
       const {editor} = testEnv;
       registerRichText(editor);
+      registerTabIndentation(editor);
       await editor.update(() => {
         const selection = $getSelection();
         selection.insertText('foo');
         $getRoot().selectStart();
       });
-      await editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
+      await editor.dispatchCommand(
+        KEY_TAB_COMMAND,
+        new KeyboardEvent('keydown'),
+      );
       expect(testEnv.innerHTML).toBe(
         '<p dir="ltr" style="padding-inline-start: calc(1 * 40px);"><span data-lexical-text="true">foo</span></p>',
       );
@@ -125,6 +130,7 @@ hello	world</span>`,
     test('elements indent when selection spans across multiple blocks', async () => {
       const {editor} = testEnv;
       registerRichText(editor);
+      registerTabIndentation(editor);
       await editor.update(() => {
         const root = $getRoot();
         const paragraph = root.getFirstChild();
@@ -144,7 +150,10 @@ hello	world</span>`,
         selection.anchor.set(listItemText.getKey(), 1, 'text');
         $setSelection(selection);
       });
-      await editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
+      await editor.dispatchCommand(
+        KEY_TAB_COMMAND,
+        new KeyboardEvent('keydown'),
+      );
       expect(testEnv.innerHTML).toBe(
         '<p dir="ltr" style="padding-inline-start: calc(1 * 40px);"><span data-lexical-text="true">foo</span></p><h1 dir="ltr" style="padding-inline-start: calc(1 * 40px);"><span data-lexical-text="true">bar</span></h1><ol><li value="1"><ol><li value="1" dir="ltr"><span data-lexical-text="true">xyz</span></li></ol></li></ol>',
       );
@@ -153,10 +162,14 @@ hello	world</span>`,
     test('element tabs when selection is not at the start (1)', async () => {
       const {editor} = testEnv;
       registerRichText(editor);
+      registerTabIndentation(editor);
       await editor.update(() => {
         $getSelection().insertText('foo');
       });
-      await editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
+      await editor.dispatchCommand(
+        KEY_TAB_COMMAND,
+        new KeyboardEvent('keydown'),
+      );
       expect(testEnv.innerHTML).toBe(
         '<p dir="ltr"><span data-lexical-text="true">foo</span><span data-lexical-text="true">\t</span></p>',
       );
@@ -165,12 +178,16 @@ hello	world</span>`,
     test('element tabs when selection is not at the start (2)', async () => {
       const {editor} = testEnv;
       registerRichText(editor);
+      registerTabIndentation(editor);
       await editor.update(() => {
         $getSelection().insertText('foo');
         const textNode = $getRoot().getLastDescendant();
         textNode.select(1, 1);
       });
-      await editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
+      await editor.dispatchCommand(
+        KEY_TAB_COMMAND,
+        new KeyboardEvent('keydown'),
+      );
       expect(testEnv.innerHTML).toBe(
         '<p dir="ltr"><span data-lexical-text="true">f</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">oo</span></p>',
       );
@@ -179,12 +196,16 @@ hello	world</span>`,
     test('element tabs when selection is not at the start (3)', async () => {
       const {editor} = testEnv;
       registerRichText(editor);
+      registerTabIndentation(editor);
       await editor.update(() => {
         $getSelection().insertText('foo');
         const textNode = $getRoot().getLastDescendant();
         textNode.select(1, 2);
       });
-      await editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
+      await editor.dispatchCommand(
+        KEY_TAB_COMMAND,
+        new KeyboardEvent('keydown'),
+      );
       expect(testEnv.innerHTML).toBe(
         '<p dir="ltr"><span data-lexical-text="true">f</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">o</span></p>',
       );
@@ -193,6 +214,7 @@ hello	world</span>`,
     test('elements tabs when selection is not at the start and overlaps another tab', async () => {
       const {editor} = testEnv;
       registerRichText(editor);
+      registerTabIndentation(editor);
       await editor.update(() => {
         $getSelection().insertRawText('hello\tworld');
         const root = $getRoot();
@@ -203,7 +225,10 @@ hello	world</span>`,
         selection.focus.set(lastTextNode.getKey(), 'wo'.length, 'text');
         $setSelection(selection);
       });
-      await editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
+      await editor.dispatchCommand(
+        KEY_TAB_COMMAND,
+        new KeyboardEvent('keydown'),
+      );
       expect(testEnv.innerHTML).toBe(
         '<p dir="ltr"><span data-lexical-text="true">hell</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">rld</span></p>',
       );

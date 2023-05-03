@@ -69,13 +69,14 @@ export default function LexicalClickableLinkPlugin({
                 ? target
                 : domGetParent(target, isHTMLAnchorElement)
             ) as HTMLAnchorElement;
-            url = a.href;
-            urlTarget = a.target;
+            // domGetParent can return null
+            url = a?.href;
+            urlTarget = a?.target;
           }
         }
       });
 
-      if (url === null || url === '') {
+      if (!url) {
         return;
       }
 

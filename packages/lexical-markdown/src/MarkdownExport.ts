@@ -161,6 +161,11 @@ function exportTextFormat(
       if (!hasFormat(nextNode, format)) {
         output += tag;
       }
+    } else if (transformer.escapeCharacters && applied.size === 0) {
+      output = output.replaceAll(
+        tag,
+        `${transformer.escapeCharacters[0]}${tag}`,
+      );
     }
   }
 

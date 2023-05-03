@@ -239,8 +239,33 @@ function importTextFormatTransformers(
     }
   }
 
-  currentNode.setTextContent(match[2]);
   const transformer = textFormatTransformersIndex.transformersByTag[match[1]];
+  let escapedChars = 0;
+  for (const char of transformer.escapeCharacters ?? []) {
+    if (
+      leadingNode &&
+      leadingNode.getTextContent().indexOf(char) ===
+        leadingNode.getTextContent().length - char.length
+    ) {
+      escapedChars += char.length;
+      leadingNode.setTextContent(
+        leadingNode
+          .getTextContent()
+          .substring(0, leadingNode.getTextContent().length - char.length),
+      );
+    }
+  }
+
+  if (escapedChars > 0) {
+    currentNode.setTextContent(
+      `${match[1]}${match[2].substring(0, match[2].length - escapedChars)}${
+        match[1]
+      }`,
+    );
+    return;
+  } else {
+    currentNode.setTextContent(match[2]);
+  }
 
   if (transformer) {
     for (const format of transformer.format) {

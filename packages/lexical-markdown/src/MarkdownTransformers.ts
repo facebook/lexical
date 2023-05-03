@@ -61,6 +61,7 @@ export type ElementTransformer = {
 };
 
 export type TextFormatTransformer = Readonly<{
+  escapeCharacters?: ReadonlyArray<string>;
   format: ReadonlyArray<TextFormatType>;
   tag: string;
   intraword?: boolean;
@@ -321,12 +322,14 @@ export const STRIKETHROUGH: TextFormatTransformer = {
 };
 
 export const ITALIC_STAR: TextFormatTransformer = {
+  escapeCharacters: ['\\'],
   format: ['italic'],
   tag: '*',
   type: 'text-format',
 };
 
 export const ITALIC_UNDERSCORE: TextFormatTransformer = {
+  escapeCharacters: ['\\'],
   format: ['italic'],
   intraword: false,
   tag: '_',

@@ -80,6 +80,10 @@ describe('Markdown', () => {
       md: '*Hello* world',
     },
     {
+      html: '<p><span>*Hello* world</span></p>',
+      md: '\\*Hello\\* world',
+    },
+    {
       html: '<p><b><strong>Hello</strong></b><span> world</span></p>',
       md: '**Hello** world',
     },

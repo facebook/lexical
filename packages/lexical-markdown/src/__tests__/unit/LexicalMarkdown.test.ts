@@ -84,6 +84,42 @@ describe('Markdown', () => {
       md: '\\*Hello\\* world',
     },
     {
+      html: '<p><span>**Hello** world</span></p>',
+      md: '\\*\\*Hello\\*\\* world',
+    },
+    {
+      // Import only - import will insert both *s, so export will escape both
+      html: '<p><span>*Hello* world</span></p>',
+      md: '*Hello\\* world',
+      skipExport: true,
+    },
+    {
+      // Import only - import will insert both *s, so export will escape both
+      html: '<p><span>*Hello* world</span></p>',
+      md: '\\*Hello* world',
+      skipExport: true,
+    },
+    {
+      html: '<p><span>_Hello_ world</span></p>',
+      md: '\\_Hello\\_ world',
+    },
+    {
+      html: '<p><span>__Hello__ world</span></p>',
+      md: '\\_\\_Hello\\_\\_ world',
+    },
+    {
+      // Import only - import will insert both _s, so export will escape both
+      html: '<p><span>_Hello_ world</span></p>',
+      md: '_Hello\\_ world',
+      skipExport: true,
+    },
+    {
+      // Import only - import will insert both _s, so export will escape both
+      html: '<p><span>_Hello_ world</span></p>',
+      md: '\\_Hello_ world',
+      skipExport: true,
+    },
+    {
       html: '<p><b><strong>Hello</strong></b><span> world</span></p>',
       md: '**Hello** world',
     },

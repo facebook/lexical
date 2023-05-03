@@ -45,6 +45,7 @@ export function ContentEditable({
   style,
   tabIndex,
   'data-testid': testid,
+  ...rest
 }: Props): JSX.Element {
   const [editor] = useLexicalComposerContext();
   const [isEditable, setEditable] = useState(false);
@@ -65,6 +66,7 @@ export function ContentEditable({
 
   return (
     <div
+      {...rest}
       aria-activedescendant={!isEditable ? undefined : ariaActiveDescendant}
       aria-autocomplete={!isEditable ? 'none' : ariaAutoComplete}
       aria-controls={!isEditable ? undefined : ariaControls}

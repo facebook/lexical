@@ -242,7 +242,7 @@ export function getFirstCodeNodeOfLine(
 
 export function getLastCodeNodeOfLine(
   anchor: CodeHighlightNode | CodeTabNode | LineBreakNode,
-): null | CodeHighlightNode | CodeTabNode | LineBreakNode {
+): CodeHighlightNode | CodeTabNode | LineBreakNode {
   let nextNode = anchor;
   let node: null | LexicalNode = anchor;
   while ($isCodeHighlightNode(node) || $isCodeTabNode(node)) {

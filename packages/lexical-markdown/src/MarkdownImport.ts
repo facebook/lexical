@@ -242,30 +242,33 @@ function importTextFormatTransformers(
   const transformer = textFormatTransformersIndex.transformersByTag[match[1]];
   let escapedChars = 0;
   for (const char of transformer.escapeCharacters ?? []) {
-    if (
-      leadingNode &&
-      leadingNode.getTextContent().indexOf(char) ===
-        leadingNode.getTextContent().length - char.length
-    ) {
-      escapedChars += char.length;
+    let found = false;
+    if (leadingNode && leadingNode.getTextContent().endsWith(char)) {
+      found = true;
       leadingNode.setTextContent(
         leadingNode
           .getTextContent()
           .substring(0, leadingNode.getTextContent().length - char.length),
       );
     }
+
+    if (match[2].endsWith(char)) {
+      found = true;
+      currentNode.setTextContent(
+        `${match[1]}${match[2].substring(0, match[2].length - char.length)}${
+          match[1]
+        }`,
+      );
+    }
+
+    if (found) escapedChars += char.length;
   }
 
   if (escapedChars > 0) {
-    currentNode.setTextContent(
-      `${match[1]}${match[2].substring(0, match[2].length - escapedChars)}${
-        match[1]
-      }`,
-    );
     return;
-  } else {
-    currentNode.setTextContent(match[2]);
   }
+
+  currentNode.setTextContent(match[2]);
 
   if (transformer) {
     for (const format of transformer.format) {

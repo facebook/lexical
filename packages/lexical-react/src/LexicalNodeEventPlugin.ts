@@ -12,6 +12,7 @@ import {
   type LexicalEditor,
   type LexicalNode,
   type NodeKey,
+  $nodesOfType,
 } from 'lexical';
 import {useRef} from 'react';
 import useLayoutEffect from 'shared/useLayoutEffect';
@@ -35,29 +36,62 @@ export function NodeEventPlugin({
   listenerRef.current = eventListener;
 
   useLayoutEffect(() => {
-    const registedElements: WeakSet<HTMLElement> = new WeakSet();
+    const registeredElements: WeakSet<HTMLElement> = new WeakSet();
+    const listeners: Map<HTMLElement, (event: Event) => void> = new Map();
 
-    return editor.registerMutationListener(nodeType, (mutations) => {
-      editor.getEditorState().read(() => {
-        for (const [key, mutation] of mutations) {
-          const element: null | HTMLElement = editor.getElementByKey(key);
+    const addElementListener = (element: HTMLElement, key: NodeKey) => {
+      registeredElements.add(element);
 
-          if (
-            // Updated might be a move, so that might mean a new DOM element
-            // is created. In this case, we need to add and event listener too.
-            (mutation === 'created' || mutation === 'updated') &&
-            element !== null &&
-            !registedElements.has(element)
-          ) {
-            registedElements.add(element);
-            element.addEventListener(eventType, (event: Event) => {
-              listenerRef.current(event, editor, key);
-            });
-          }
+      const listener = (event: Event) => {
+        listenerRef.current(event, editor, key);
+      };
+
+      element.addEventListener(eventType, listener);
+      listeners.set(element, listener);
+    };
+
+    editor.getEditorState().read(() => {
+      for (const node of $nodesOfType(nodeType)) {
+        const key = node.getKey();
+        const element = editor.getElementByKey(key);
+
+        if (element === null || registeredElements.has(element)) {
+          continue;
         }
-      });
+
+        addElementListener(element, key);
+      }
     });
-    // wW intentionally don't respect changes to eventType.
+
+    const removeMutationListener = editor.registerMutationListener(
+      nodeType,
+      (mutations) => {
+        editor.getEditorState().read(() => {
+          for (const [key, mutation] of mutations) {
+            const element: null | HTMLElement = editor.getElementByKey(key);
+
+            if (
+              // "updated" might represent a moved node, in which case a new DOM
+              // element is created. That requires us to add an event listener too.
+              (mutation === 'created' || mutation === 'updated') &&
+              element !== null &&
+              !registeredElements.has(element)
+            ) {
+              addElementListener(element, key);
+            }
+          }
+        });
+      },
+    );
+
+    return () => {
+      for (const [element, listener] of listeners) {
+        element.removeEventListener(eventType, listener);
+      }
+
+      removeMutationListener();
+    };
+    // We intentionally don't respect changes to eventType.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor, nodeType]);
 

@@ -186,7 +186,7 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
       ...super.exportJSON(),
       backgroundColor: this.getBackgroundColor(),
       headerState: this.__headerState,
-      style: this.getStystyle(),
+      style: this.getStyle(),
       type: 'tablecell',
       width: this.getWidth(),
     };

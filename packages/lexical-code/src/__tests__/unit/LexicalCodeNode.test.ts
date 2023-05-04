@@ -8,6 +8,7 @@
 
 import {
   $createCodeNode,
+  $isCodeHighlightNode,
   $isCodeTabNode,
   registerCodeHighlighting,
 } from '@lexical/code';
@@ -21,14 +22,18 @@ import {
   $getNodeByKey,
   $getRoot,
   $getSelection,
+  $isLineBreakNode,
   $isRangeSelection,
   $setSelection,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
   KEY_TAB_COMMAND,
+  MOVE_TO_END,
+  MOVE_TO_START,
 } from 'lexical';
 import {
   initializeUnitTest,
+  invariant,
   KeyboardEventMock,
   shiftTabKeyboardEvent,
   tabKeyboardEvent,
@@ -40,6 +45,8 @@ const editorConfig = Object.freeze({
     code: 'my-code-class',
   },
 });
+
+const SPACES4 = ' '.repeat(4);
 
 describe('LexicalCodeNode tests', () => {
   initializeUnitTest((testEnv) => {
@@ -418,6 +425,422 @@ describe('LexicalCodeNode tests', () => {
         .toBe(`<code spellcheck="false" data-highlight-language="javascript" dir="ltr" data-gutter="1
 2
 3"><span data-lexical-text="true">mno</span><span style="letter-spacing: 15px;" data-lexical-text="true"> </span><span data-lexical-text="true">pqr</span><br><span data-lexical-text="true">abc</span><span style="letter-spacing: 15px;" data-lexical-text="true"> </span><span data-lexical-text="true">def</span><br><span data-lexical-text="true">ghi</span><span style="letter-spacing: 15px;" data-lexical-text="true"> </span><span data-lexical-text="true">jkl</span></code>`);
+    });
+
+    describe('arrows', () => {
+      for (const moveTo of ['start', 'end']) {
+        for (const tabOrSpaces of ['tab', 'spaces']) {
+          // eslint-disable-next-line no-inner-declarations
+          function testMoveTo(
+            name: string,
+            $beforeFn: () => void,
+            $afterFn: () => void,
+            only = false,
+          ) {
+            // eslint-disable-next-line no-only-tests/no-only-tests
+            const test_ = only ? test.only : test;
+            test_(`${moveTo} ${tabOrSpaces}: ${name}`, async () => {
+              const {editor} = testEnv;
+              registerRichText(editor);
+              registerTabIndentation(editor);
+              registerCodeHighlighting(editor);
+              await editor.update(() => {
+                const root = $getRoot();
+                const code = $createCodeNode();
+                root.append(code);
+                code.selectStart();
+                const selection = $getSelection();
+                if (tabOrSpaces === 'tab') {
+                  selection.insertRawText('\t\tfunction foo\n\t\tfunction bar');
+                } else {
+                  selection.insertRawText(
+                    `${SPACES4}function foo\n${SPACES4}function bar`,
+                  );
+                }
+              });
+              await editor.update(() => {
+                $beforeFn();
+              });
+              if (moveTo === 'start') {
+                await editor.dispatchCommand(
+                  MOVE_TO_START,
+                  new KeyboardEventMock('keydown'),
+                );
+              } else {
+                await editor.dispatchCommand(
+                  MOVE_TO_END,
+                  new KeyboardEventMock('keydown'),
+                );
+              }
+              await editor.update(() => {
+                $afterFn();
+              });
+            });
+          }
+
+          testMoveTo(
+            'caret at start of line (first line)',
+            () => {
+              const code = $getRoot().getFirstChild();
+              code.selectStart();
+            },
+            () => {
+              const selection = $getSelection();
+              invariant(
+                $isRangeSelection(selection),
+                'Expected selection to be RangeSelection',
+              );
+              expect(selection.isCollapsed()).toBe(true);
+              if (moveTo === 'start') {
+                if (tabOrSpaces === 'tab') {
+                  expect($isCodeTabNode(selection.anchor.getNode())).toBe(true);
+                  expect(
+                    $isCodeHighlightNode(
+                      selection.anchor.getNode().getNextSibling(),
+                    ),
+                  ).toBe(true);
+                  expect(selection.anchor.offset).toBe(1);
+                } else {
+                  expect(selection.anchor.getNode().getTextContent()).toBe(
+                    SPACES4,
+                  );
+                  expect(selection.anchor.offset).toBe(4);
+                }
+              } else {
+                expect(selection.anchor.getNode().getTextContent()).toBe(
+                  ' foo',
+                );
+                expect(selection.anchor.offset).toBe(' foo'.length);
+              }
+            },
+          );
+
+          testMoveTo(
+            'caret at start of line (second line)',
+            () => {
+              const nodes = $dfs();
+              const linebreak = nodes.filter((dfsNode) =>
+                $isLineBreakNode(dfsNode.node),
+              )[0].node;
+              linebreak.selectNext(0, 0);
+            },
+            () => {
+              const selection = $getSelection();
+              invariant(
+                $isRangeSelection(selection),
+                'Expected selection to be RangeSelection',
+              );
+              expect(selection.isCollapsed()).toBe(true);
+              if (moveTo === 'start') {
+                if (tabOrSpaces === 'tab') {
+                  expect($isCodeTabNode(selection.anchor.getNode())).toBe(true);
+                  expect(
+                    $isCodeHighlightNode(
+                      selection.anchor.getNode().getNextSibling(),
+                    ),
+                  ).toBe(true);
+                  expect(selection.anchor.offset).toBe(1);
+                } else {
+                  expect(selection.anchor.getNode().getTextContent()).toBe(
+                    SPACES4,
+                  );
+                  expect(selection.anchor.offset).toBe(4);
+                }
+              } else {
+                expect(selection.anchor.getNode().getTextContent()).toBe(
+                  ' bar',
+                );
+                expect(selection.anchor.offset).toBe(' bar'.length);
+              }
+            },
+          );
+
+          testMoveTo(
+            'caret immediately before code (first line)',
+            () => {
+              const code = $getRoot().getFirstChild();
+              if (tabOrSpaces === 'tab') {
+                const firstTab = code.getFirstChild();
+                firstTab.getNextSibling().selectNext(0, 0);
+              } else {
+                code.getFirstChild().select(4, 4);
+              }
+            },
+            () => {
+              const selection = $getSelection();
+              invariant(
+                $isRangeSelection(selection),
+                'Expected selection to be RangeSelection',
+              );
+              expect(selection.isCollapsed()).toBe(true);
+              if (moveTo === 'start') {
+                const code = $getRoot().getFirstChild();
+                const firstChild = code.getFirstChild();
+                expect(selection.anchor.getNode().is(firstChild)).toBe(true);
+                expect(selection.anchor.offset).toBe(0);
+              } else {
+                expect(selection.anchor.getNode().getTextContent()).toBe(
+                  ' foo',
+                );
+                expect(selection.anchor.offset).toBe(' foo'.length);
+              }
+            },
+          );
+
+          testMoveTo(
+            'caret immediately before code (second line)',
+            () => {
+              const nodes = $dfs();
+              const linebreak = nodes.filter((dfsNode) =>
+                $isLineBreakNode(dfsNode.node),
+              )[0].node;
+              if (tabOrSpaces === 'tab') {
+                const firstTab = linebreak.getNextSibling();
+                firstTab.selectNext();
+              } else {
+                linebreak.selectNext(4, 4);
+              }
+            },
+            () => {
+              const selection = $getSelection();
+              invariant(
+                $isRangeSelection(selection),
+                'Expected selection to be RangeSelection',
+              );
+              expect(selection.isCollapsed()).toBe(true);
+              if (moveTo === 'start') {
+                const nodes = $dfs();
+                const linebreak = nodes.filter((dfsNode) =>
+                  $isLineBreakNode(dfsNode.node),
+                )[0].node;
+                const tabOrSpace = linebreak.getNextSibling();
+                expect(selection.anchor.getNode().is(tabOrSpace)).toBe(true);
+                expect(selection.anchor.offset).toBe(0);
+              } else {
+                expect(selection.anchor.getNode().getTextContent()).toBe(
+                  ' bar',
+                );
+                expect(selection.anchor.offset).toBe(' bar'.length);
+              }
+            },
+          );
+
+          testMoveTo(
+            'caret in between space (first line)',
+            () => {
+              const code = $getRoot().getFirstChild();
+              if (tabOrSpaces === 'tab') {
+                const firstTab = code.getFirstChild();
+                firstTab.selectNext(0, 0);
+              } else {
+                code.getFirstChild().select(2, 2);
+              }
+            },
+            () => {
+              const selection = $getSelection();
+              invariant(
+                $isRangeSelection(selection),
+                'Expected selection to be RangeSelection',
+              );
+              expect(selection.isCollapsed()).toBe(true);
+              if (moveTo === 'start') {
+                if (tabOrSpaces === 'tab') {
+                  expect($isCodeTabNode(selection.anchor.getNode())).toBe(true);
+                  expect(
+                    $isCodeHighlightNode(
+                      selection.anchor.getNode().getNextSibling(),
+                    ),
+                  ).toBe(true);
+                  expect(selection.anchor.offset).toBe(1);
+                } else {
+                  expect(selection.anchor.getNode().getTextContent()).toBe(
+                    SPACES4,
+                  );
+                  expect(selection.anchor.offset).toBe(4);
+                }
+              } else {
+                expect(selection.anchor.getNode().getTextContent()).toBe(
+                  ' foo',
+                );
+                expect(selection.anchor.offset).toBe(' foo'.length);
+              }
+            },
+          );
+
+          testMoveTo(
+            'caret in between space (second line)',
+            () => {
+              const nodes = $dfs();
+              const linebreak = nodes.filter((dfsNode) =>
+                $isLineBreakNode(dfsNode.node),
+              )[0].node;
+              if (tabOrSpaces === 'tab') {
+                const firstTab = linebreak.getNextSibling();
+                firstTab.selectNext(0, 0);
+              } else {
+                linebreak.selectNext(2, 2);
+              }
+            },
+            () => {
+              const selection = $getSelection();
+              invariant(
+                $isRangeSelection(selection),
+                'Expected selection to be RangeSelection',
+              );
+              expect(selection.isCollapsed()).toBe(true);
+              if (moveTo === 'start') {
+                if (tabOrSpaces === 'tab') {
+                  expect($isCodeTabNode(selection.anchor.getNode())).toBe(true);
+                  expect(
+                    $isCodeHighlightNode(
+                      selection.anchor.getNode().getNextSibling(),
+                    ),
+                  ).toBe(true);
+                  expect(selection.anchor.offset).toBe(1);
+                } else {
+                  expect(selection.anchor.getNode().getTextContent()).toBe(
+                    SPACES4,
+                  );
+                  expect(selection.anchor.offset).toBe(4);
+                }
+              } else {
+                expect(selection.anchor.getNode().getTextContent()).toBe(
+                  ' bar',
+                );
+                expect(selection.anchor.offset).toBe(' bar'.length);
+              }
+            },
+          );
+
+          testMoveTo(
+            'caret in between code',
+            () => {
+              const nodes = $dfs();
+              const codeHighlight = nodes.filter((dfsNode) =>
+                $isCodeHighlightNode(dfsNode.node),
+              )[tabOrSpaces === 'tab' ? 0 : 1].node;
+              const index = codeHighlight.getTextContent().indexOf('tion');
+              codeHighlight.select(index, index);
+            },
+            () => {
+              const selection = $getSelection();
+              invariant(
+                $isRangeSelection(selection),
+                'Expected selection to be RangeSelection',
+              );
+              expect(selection.isCollapsed()).toBe(true);
+              if (moveTo === 'start') {
+                if (tabOrSpaces === 'tab') {
+                  expect($isCodeTabNode(selection.anchor.getNode())).toBe(true);
+                  expect(
+                    $isCodeHighlightNode(
+                      selection.anchor.getNode().getNextSibling(),
+                    ),
+                  ).toBe(true);
+                  expect(selection.anchor.offset).toBe(1);
+                } else {
+                  expect(selection.anchor.getNode().getTextContent()).toBe(
+                    SPACES4,
+                  );
+                  expect(selection.anchor.offset).toBe(4);
+                }
+              } else {
+                expect(selection.anchor.getNode().getTextContent()).toBe(
+                  ' foo',
+                );
+                expect(selection.anchor.offset).toBe(' foo'.length);
+              }
+            },
+          );
+
+          testMoveTo(
+            'caret in between code (after space)',
+            () => {
+              const nodes = $dfs();
+              const codeHighlight = nodes.filter((dfsNode) =>
+                $isCodeHighlightNode(dfsNode.node),
+              )[tabOrSpaces === 'tab' ? 1 : 2].node;
+              const index = codeHighlight.getTextContent().indexOf('oo');
+              codeHighlight.select(index, index);
+            },
+            () => {
+              const selection = $getSelection();
+              invariant(
+                $isRangeSelection(selection),
+                'Expected selection to be RangeSelection',
+              );
+              expect(selection.isCollapsed()).toBe(true);
+              if (moveTo === 'start') {
+                if (tabOrSpaces === 'tab') {
+                  expect($isCodeTabNode(selection.anchor.getNode())).toBe(true);
+                  expect(
+                    $isCodeHighlightNode(
+                      selection.anchor.getNode().getNextSibling(),
+                    ),
+                  ).toBe(true);
+                  expect(selection.anchor.offset).toBe(1);
+                } else {
+                  expect(selection.anchor.getNode().getTextContent()).toBe(
+                    SPACES4,
+                  );
+                  expect(selection.anchor.offset).toBe(4);
+                }
+              } else {
+                expect(selection.anchor.getNode().getTextContent()).toBe(
+                  ' foo',
+                );
+                expect(selection.anchor.offset).toBe(' foo'.length);
+              }
+            },
+          );
+
+          testMoveTo(
+            'non-collapsed multi-line selection',
+            () => {
+              const nodes = $dfs();
+              const codeHighlightDFSNodes = nodes.filter((dfsNode) =>
+                $isCodeHighlightNode(dfsNode.node),
+              );
+              const secondCodeHighlight = codeHighlightDFSNodes[1].node;
+              const lastCodeHighlight =
+                codeHighlightDFSNodes[codeHighlightDFSNodes.length - 1].node;
+              const selection = $createRangeSelection();
+              selection.anchor.set(lastCodeHighlight.getKey(), 1, 'text');
+              selection.focus.set(secondCodeHighlight.getKey(), 1, 'text');
+              $setSelection(selection);
+            },
+            () => {
+              const selection = $getSelection();
+              invariant(
+                $isRangeSelection(selection),
+                'Expected selection to be RangeSelection',
+              );
+              expect(selection.isCollapsed()).toBe(true);
+              if (moveTo === 'start') {
+                if (tabOrSpaces === 'tab') {
+                  expect($isCodeTabNode(selection.anchor.getNode())).toBe(true);
+                  expect(
+                    $isCodeHighlightNode(
+                      selection.anchor.getNode().getNextSibling(),
+                    ),
+                  ).toBe(true);
+                  expect(selection.anchor.offset).toBe(1);
+                } else {
+                  expect(selection.anchor.getNode().getTextContent()).toBe(
+                    SPACES4,
+                  );
+                  expect(selection.anchor.offset).toBe(4);
+                }
+              } else {
+                expect(selection.anchor.getNode().getTextContent()).toBe(
+                  ' foo',
+                );
+                expect(selection.anchor.offset).toBe(' foo'.length);
+              }
+            },
+          );
+        }
+      }
     });
   });
 });

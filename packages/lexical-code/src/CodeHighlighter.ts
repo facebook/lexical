@@ -146,8 +146,22 @@ export function getStartOfCodeInLine(
   if (lastNonBlank !== null) {
     return lastNonBlank;
   }
-  // last is non null: spaces or tabs ahead of anchor
-  if (anchor.getTextContent()[offset] !== ' ') {
+  // Spaces, tabs or nothing ahead of anchor
+  let codeCharacterAtAnchorOffset = null;
+  if (offset < anchor.getTextContentSize()) {
+    if ($isCodeHighlightNode(anchor)) {
+      codeCharacterAtAnchorOffset = anchor.getTextContent()[offset];
+    }
+  } else {
+    const nextSibling = anchor.getNextSibling();
+    if ($isCodeHighlightNode(nextSibling)) {
+      codeCharacterAtAnchorOffset = nextSibling.getTextContent()[0];
+    }
+  }
+  if (
+    codeCharacterAtAnchorOffset !== null &&
+    codeCharacterAtAnchorOffset !== ' '
+  ) {
     // Borderline whitespace and code, move to line beginning
     return last;
   } else {

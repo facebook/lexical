@@ -951,15 +951,19 @@ function convertTextDOMNode(
   _parent?: Node,
   preformatted?: boolean,
 ): DOMConversionOutput {
-  const textContent = domNode.textContent || '';
-  const parts = textContent.split(/(\r?\n|\t)/);
+  let textContent = domNode.textContent || '';
+  if (!preformatted && /\n/.test(textContent)) {
+    textContent = textContent.replace(/\r?\n/gm, ' ');
+    if (textContent.trim().length === 0) {
+      return {node: null};
+    }
+  }
+  const parts = textContent.split(/(\t)/);
   const nodes = [];
   const length = parts.length;
   for (let i = 0; i < length; i++) {
     const part = parts[i];
-    if (part === '\n' || part === '\r\n') {
-      nodes.push($createLineBreakNode());
-    } else if (part === '\t') {
+    if (part === '\t') {
       nodes.push($createTabNode());
     } else {
       nodes.push($createTextNode(part));

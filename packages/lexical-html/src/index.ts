@@ -180,7 +180,6 @@ function $createNodesFromDOM(
 
   let currentLexicalNode = null;
   const transformFunction = getConversionFunction(node, editor);
-  // here
   const transformOutput = transformFunction
     ? transformFunction(node as HTMLElement, undefined, preformatted)
     : null;

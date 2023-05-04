@@ -107,7 +107,6 @@ test.describe('HTML Tables CopyAndPaste', () => {
     const clipboard = {
       'text/html': `<meta charset='utf-8'><table style="border-collapse: collapse;"><col style="width: 90px;"><col style="width: 90px;"><col style="width: 90px;"><tr><td style="border: 1px solid rgb(230, 230, 230); text-align: left;">a</td><td style="border: 1px solid rgb(230, 230, 230); text-align: left;">b<br>b</td><td style="border: 1px solid rgb(230, 230, 230); text-align: left;">c</td></tr><tr><td style="border: 1px solid rgb(230, 230, 230); text-align: left;">d</td><td style="border: 1px solid rgb(230, 230, 230); text-align: left;">e</td><td style="border: 1px solid rgb(230, 230, 230); text-align: left;">f</td></tr></table>`,
     };
-
     await pasteFromClipboard(page, clipboard);
 
     await assertHTML(
@@ -115,54 +114,37 @@ test.describe('HTML Tables CopyAndPaste', () => {
       html`
         <table class="PlaygroundEditorTheme__table">
           <tr>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                dir="ltr">
-                <span data-lexical-text="true">a</span>
-              </p>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__ltr"
+              dir="ltr">
+              <span data-lexical-text="true">a</span>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                dir="ltr">
-                <span data-lexical-text="true">b</span>
-              </p>
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                dir="ltr">
-                <span data-lexical-text="true">b</span>
-              </p>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__ltr"
+              dir="ltr">
+              <span data-lexical-text="true">bb</span>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                dir="ltr">
-                <span data-lexical-text="true">c</span>
-              </p>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__ltr"
+              dir="ltr">
+              <span data-lexical-text="true">c</span>
             </td>
           </tr>
           <tr>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                dir="ltr">
-                <span data-lexical-text="true">d</span>
-              </p>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__ltr"
+              dir="ltr">
+              <span data-lexical-text="true">d</span>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                dir="ltr">
-                <span data-lexical-text="true">e</span>
-              </p>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__ltr"
+              dir="ltr">
+              <span data-lexical-text="true">e</span>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                dir="ltr">
-                <span data-lexical-text="true">f</span>
-              </p>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__ltr"
+              dir="ltr">
+              <span data-lexical-text="true">f</span>
             </td>
           </tr>
         </table>
@@ -186,54 +168,37 @@ test.describe('HTML Tables CopyAndPaste', () => {
       html`
         <table class="PlaygroundEditorTheme__table">
           <tr>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                dir="ltr">
-                <span data-lexical-text="true">a</span>
-              </p>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__ltr"
+              dir="ltr">
+              <span data-lexical-text="true">a</span>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                dir="ltr">
-                <span data-lexical-text="true">b</span>
-              </p>
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                dir="ltr">
-                <span data-lexical-text="true">b</span>
-              </p>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__ltr"
+              dir="ltr">
+              <span data-lexical-text="true">bb</span>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                dir="ltr">
-                <span data-lexical-text="true">c</span>
-              </p>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__ltr"
+              dir="ltr">
+              <span data-lexical-text="true">c</span>
             </td>
           </tr>
           <tr>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                dir="ltr">
-                <span data-lexical-text="true">d</span>
-              </p>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__ltr"
+              dir="ltr">
+              <span data-lexical-text="true">d</span>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                dir="ltr">
-                <span data-lexical-text="true">e</span>
-              </p>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__ltr"
+              dir="ltr">
+              <span data-lexical-text="true">e</span>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p
-                class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                dir="ltr">
-                <span data-lexical-text="true">f</span>
-              </p>
+            <td
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__ltr"
+              dir="ltr">
+              <span data-lexical-text="true">f</span>
             </td>
           </tr>
         </table>

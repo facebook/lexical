@@ -92,7 +92,6 @@ test.describe('HTML CopyAndPaste', () => {
     });
 
     const paragraphs = page.locator('div[contenteditable="true"] > p');
-    await page.pause();
     await expect(paragraphs).toHaveCount(4);
 
     // Explicitly checking inner text, since regular assertHTML will prettify it and strip all

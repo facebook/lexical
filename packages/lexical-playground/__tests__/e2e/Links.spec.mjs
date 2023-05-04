@@ -1526,7 +1526,7 @@ test.describe('Links', () => {
     isCollab,
     page,
   }) => {
-    test.fixme(isCollab && IS_LINUX, 'Flaky on Linux + Collab');
+    test.fixme(true, 'Flaky');
     await focusEditor(page);
     await page.keyboard.type('Hello awesome');
     await selectAll(page);

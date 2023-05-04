@@ -44,7 +44,6 @@ test.describe('HTML Lists CopyAndPaste', () => {
     });
 
     await selectFromAlignDropdown(page, '.indent');
-    await page.pause();
 
     await assertHTML(
       page,

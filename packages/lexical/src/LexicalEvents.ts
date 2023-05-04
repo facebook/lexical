@@ -375,44 +375,42 @@ function onClick(event: PointerEvent, editor: LexicalEditor): void {
     const domSelection = getDOMSelection(editor._window);
     const lastSelection = $getPreviousSelection();
 
-    if ($isRangeSelection(selection)) {
-      const anchor = selection.anchor;
-      const anchorNode = anchor.getNode();
+    if (domSelection) {
+      if ($isRangeSelection(selection)) {
+        const anchor = selection.anchor;
+        const anchorNode = anchor.getNode();
 
-      if (
-        domSelection &&
-        anchor.type === 'element' &&
-        anchor.offset === 0 &&
-        selection.isCollapsed() &&
-        !$isRootNode(anchorNode) &&
-        $getRoot().getChildrenSize() === 1 &&
-        anchorNode.getTopLevelElementOrThrow().isEmpty() &&
-        lastSelection !== null &&
-        selection.is(lastSelection)
-      ) {
-        domSelection.removeAllRanges();
-        selection.dirty = true;
-      }
-    } else if (domSelection && $isNodeSelection(selection)) {
-      // This is used to update the selection on touch devices when the user
-      // clicks on text after a node selection.
-      if (event.pointerType === 'touch') {
-        const domAnchor = domSelection.anchorNode;
-        // If the user is attempting to click selection back onto text, then
-        // we should attempt create a range selection.
-        // When we click on an empty paragraph node or the end of a paragraph that ends
-        // with an image/poll, the nodeType will be ELEMENT_NODE
-        const allowedNodeType = [DOM_ELEMENT_TYPE, DOM_TEXT_TYPE];
         if (
-          domAnchor !== null &&
-          allowedNodeType.includes(domAnchor.nodeType)
+          anchor.type === 'element' &&
+          anchor.offset === 0 &&
+          selection.isCollapsed() &&
+          !$isRootNode(anchorNode) &&
+          $getRoot().getChildrenSize() === 1 &&
+          anchorNode.getTopLevelElementOrThrow().isEmpty() &&
+          lastSelection !== null &&
+          selection.is(lastSelection)
         ) {
-          const newSelection = internalCreateRangeSelection(
-            lastSelection,
-            domSelection,
-            editor,
-          );
-          $setSelection(newSelection);
+          domSelection.removeAllRanges();
+          selection.dirty = true;
+        }
+      } else if (event.pointerType === 'touch') {
+        // This is used to update the selection on touch devices when the user clicks on text after a
+        // node selection. See isSelectionChangeFromMouseDown for the inverse
+        const domAnchorNode = domSelection.anchorNode;
+        if (domAnchorNode !== null) {
+          const nodeType = domAnchorNode.nodeType;
+          // If the user is attempting to click selection back onto text, then
+          // we should attempt create a range selection.
+          // When we click on an empty paragraph node or the end of a paragraph that ends
+          // with an image/poll, the nodeType will be ELEMENT_NODE
+          if (nodeType === DOM_ELEMENT_TYPE || nodeType === DOM_TEXT_TYPE) {
+            const newSelection = internalCreateRangeSelection(
+              lastSelection,
+              domSelection,
+              editor,
+            );
+            $setSelection(newSelection);
+          }
         }
       }
     }

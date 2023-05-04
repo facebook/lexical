@@ -147,6 +147,7 @@ declare export function $isCodeTabNode(
 
 declare export class CodeTabNode extends TabNode {
   static getType(): string;
+  // $FlowFixMe
   static clone(node: CodeTabNode): CodeTabNode;
   static importJSON(_serializedTabNode: SerializedCodeTabNode): CodeTabNode;
   exportJSON(): SerializedTabNode;

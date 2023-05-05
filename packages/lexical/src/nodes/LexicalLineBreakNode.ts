@@ -9,7 +9,6 @@
 import type {
   DOMConversionMap,
   DOMConversionOutput,
-  NodeKey,
   SerializedLexicalNode,
 } from '../LexicalNode';
 
@@ -22,14 +21,6 @@ export type SerializedLineBreakNode = SerializedLexicalNode;
 export class LineBreakNode extends LexicalNode {
   static getType(): string {
     return 'linebreak';
-  }
-
-  static clone(node: LineBreakNode): LineBreakNode {
-    return new LineBreakNode(node.__key);
-  }
-
-  constructor(key?: NodeKey) {
-    super(key);
   }
 
   getTextContent(): '\n' {

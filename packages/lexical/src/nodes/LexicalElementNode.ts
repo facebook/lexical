@@ -73,7 +73,7 @@ export class ElementNode extends LexicalNode {
   /** @internal */
   __dir: 'ltr' | 'rtl' | null;
 
-  constructor(key?: NodeKey) {
+  constructor(key?: 'root') {
     super(key);
     this.__first = null;
     this.__last = null;

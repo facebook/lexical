@@ -15,7 +15,6 @@ import type {
   EditorConfig,
   LexicalEditor,
   LexicalNode,
-  NodeKey,
   SerializedElementNode,
 } from 'lexical';
 
@@ -41,10 +40,6 @@ export class TableNode extends DEPRECATED_GridNode {
     return 'table';
   }
 
-  static clone(node: TableNode): TableNode {
-    return new TableNode(node.__key);
-  }
-
   static importDOM(): DOMConversionMap | null {
     return {
       table: (_node: Node) => ({
@@ -56,10 +51,6 @@ export class TableNode extends DEPRECATED_GridNode {
 
   static importJSON(_serializedNode: SerializedTableNode): TableNode {
     return $createTableNode();
-  }
-
-  constructor(key?: NodeKey) {
-    super(key);
   }
 
   exportJSON(): SerializedElementNode {

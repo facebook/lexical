@@ -10,7 +10,6 @@ import type {
   EditorConfig,
   LexicalEditor,
   LexicalNode,
-  NodeKey,
   SerializedEditor,
   SerializedLexicalNode,
   Spread,
@@ -48,15 +47,6 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
     return 'sticky';
   }
 
-  static clone(node: StickyNode): StickyNode {
-    return new StickyNode(
-      node.__x,
-      node.__y,
-      node.__color,
-      node.__caption,
-      node.__key,
-    );
-  }
   static importJSON(serializedNode: SerializedStickyNode): StickyNode {
     const stickyNode = new StickyNode(
       serializedNode.xOffset,
@@ -77,9 +67,8 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
     y: number,
     color: 'pink' | 'yellow',
     caption?: LexicalEditor,
-    key?: NodeKey,
   ) {
-    super(key);
+    super();
     this.__x = x;
     this.__y = y;
     this.__caption = caption || createEditor();

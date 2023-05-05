@@ -14,7 +14,6 @@ import type {
   GridSelection,
   LexicalCommand,
   LexicalNode,
-  NodeKey,
   NodeSelection,
   RangeSelection,
   SerializedElementNode,
@@ -67,16 +66,8 @@ export class LinkNode extends ElementNode {
     return 'link';
   }
 
-  static clone(node: LinkNode): LinkNode {
-    return new LinkNode(
-      node.__url,
-      {rel: node.__rel, target: node.__target, title: node.__title},
-      node.__key,
-    );
-  }
-
-  constructor(url: string, attributes: LinkAttributes = {}, key?: NodeKey) {
-    super(key);
+  constructor(url: string, attributes: LinkAttributes = {}) {
+    super();
     const {target = null, rel = null, title = null} = attributes;
     this.__url = url;
     this.__target = target;
@@ -325,14 +316,6 @@ export type SerializedAutoLinkNode = SerializedLinkNode;
 export class AutoLinkNode extends LinkNode {
   static getType(): string {
     return 'autolink';
-  }
-
-  static clone(node: AutoLinkNode): AutoLinkNode {
-    return new AutoLinkNode(
-      node.__url,
-      {rel: node.__rel, target: node.__target, title: node.__title},
-      node.__key,
-    );
   }
 
   static importJSON(serializedNode: SerializedAutoLinkNode): AutoLinkNode {

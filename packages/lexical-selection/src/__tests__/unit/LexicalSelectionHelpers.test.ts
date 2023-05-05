@@ -31,6 +31,7 @@ import {
   createTestEditor,
   TestDecoratorNode,
 } from 'lexical/src/__tests__/utils';
+import {$setNodeKey} from 'lexical/src/LexicalUtils';
 
 import {setAnchorPoint, setFocusPoint} from '../utils';
 
@@ -59,7 +60,8 @@ function createParagraphWithNodes(editor, nodes) {
 
   for (let i = 0; i < nodes.length; i++) {
     const {text, key, mergeable} = nodes[i];
-    const textNode = new TextNode(text, key);
+    const textNode = new TextNode(text);
+    $setNodeKey(textNode, key);
     nodeMap.set(key, textNode);
 
     if (!mergeable) {

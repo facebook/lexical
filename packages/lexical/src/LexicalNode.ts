@@ -7,6 +7,7 @@
  */
 
 /* eslint-disable no-constant-condition */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import type {EditorConfig, LexicalEditor} from './LexicalEditor';
 import type {
   GridSelection,
@@ -171,7 +172,7 @@ export class LexicalNode {
 
   // Flow doesn't support abstract classes unfortunately, so we can't _force_
   // subclasses of Node to implement statics. All subclasses of Node should have
-  // a static getType and clone method though. We define getType and clone here so we can call it
+  // a static getType method though. We define getType here so we can call it
   // on any  Node, and we throw this error by default since the subclass should provide
   // their own implementation.
   /**
@@ -189,20 +190,18 @@ export class LexicalNode {
   }
 
   /**
-   * Clones this node, creating a new node with a different key
-   * and adding it to the EditorState (but not attaching it anywhere!). All nodes must
-   * implement this method.
-   *
+   * Clone the node. It doesn't work with private properties,
+   * so if a node has any, it should override this method.
    */
-  static clone(_data: unknown): LexicalNode {
-    invariant(
-      false,
-      'LexicalNode: Node %s does not implement .clone().',
-      this.name,
-    );
+  clone(): this {
+    const clone = Object.create(Object.getPrototypeOf(this));
+    for (const prop in this) {
+      clone[prop] = this[prop];
+    }
+    return clone;
   }
 
-  constructor(key?: NodeKey) {
+  constructor(key?: 'root') {
     // @ts-expect-error
     this.__type = this.constructor.getType();
     this.__parent = null;
@@ -672,7 +671,6 @@ export class LexicalNode {
     const key = this.__key;
     // Ensure we get the latest node from pending state
     const latestNode = this.getLatest();
-    const parent = latestNode.__parent;
     const cloneNotNeeded = editor._cloneNotNeeded;
     const selection = $getSelection();
     if (selection !== null) {
@@ -683,27 +681,8 @@ export class LexicalNode {
       internalMarkNodeAsDirty(latestNode);
       return latestNode;
     }
-    const constructor = latestNode.constructor;
-    // @ts-expect-error
-    const mutableNode = constructor.clone(latestNode);
-    mutableNode.__parent = parent;
-    mutableNode.__next = latestNode.__next;
-    mutableNode.__prev = latestNode.__prev;
-    if ($isElementNode(latestNode) && $isElementNode(mutableNode)) {
-      mutableNode.__first = latestNode.__first;
-      mutableNode.__last = latestNode.__last;
-      mutableNode.__size = latestNode.__size;
-      mutableNode.__indent = latestNode.__indent;
-      mutableNode.__format = latestNode.__format;
-      mutableNode.__dir = latestNode.__dir;
-    } else if ($isTextNode(latestNode) && $isTextNode(mutableNode)) {
-      mutableNode.__format = latestNode.__format;
-      mutableNode.__style = latestNode.__style;
-      mutableNode.__mode = latestNode.__mode;
-      mutableNode.__detail = latestNode.__detail;
-    }
+    const mutableNode = latestNode.clone();
     cloneNotNeeded.add(key);
-    mutableNode.__key = key;
     internalMarkNodeAsDirty(mutableNode);
     // Update reference in node map
     nodeMap.set(key, mutableNode);

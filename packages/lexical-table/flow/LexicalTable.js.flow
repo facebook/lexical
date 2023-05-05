@@ -43,12 +43,10 @@ declare export class TableCellNode extends deprecated_GridCellNode {
   __width?: number;
   __backgroundColor: null | string;
   static getType(): string;
-  static clone(node: TableCellNode): TableCellNode;
   constructor(
     headerState?: TableCellHeaderState,
     colSpan?: number,
     width?: ?number,
-    key?: NodeKey,
   ): void;
   createDOM(config: EditorConfig): HTMLElement;
   updateDOM(prevNode: TableCellNode, dom: HTMLElement): boolean;
@@ -84,8 +82,7 @@ declare export function $isTableCellNode(
 
 declare export class TableNode extends deprecated_GridNode {
   static getType(): string;
-  static clone(node: TableNode): TableNode;
-  constructor(grid: ?Grid, key?: NodeKey): void;
+  constructor(grid: ?Grid): void;
   createDOM(config: EditorConfig): HTMLElement;
   updateDOM(prevNode: TableNode, dom: HTMLElement): boolean;
   insertNewAfter(selection: RangeSelection): null | ParagraphNode | TableNode;
@@ -113,8 +110,7 @@ declare export function $isTableNode(
 
 declare export class TableRowNode extends deprecated_GridRowNode {
   static getType(): string;
-  static clone(node: TableRowNode): TableRowNode;
-  constructor(height?: ?number, key?: NodeKey): void;
+  constructor(height?: ?number): void;
   createDOM(config: EditorConfig): HTMLElement;
   updateDOM(prevNode: TableRowNode, dom: HTMLElement): boolean;
   setHeight(height: number): ?number;
@@ -245,7 +241,7 @@ declare export class TableSelection {
   startY: number;
   nodeKey: string;
   editor: LexicalEditor;
-  constructor(editor: LexicalEditor, nodeKey: string): void;
+  constructor(editor: LexicalEditor): void;
   getGrid(): Grid;
   removeListeners(): void;
   trackTableGrid(): void;

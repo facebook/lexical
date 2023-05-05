@@ -107,10 +107,6 @@ export class HorizontalRuleNode extends DecoratorNode<JSX.Element> {
     return 'horizontalrule';
   }
 
-  static clone(node: HorizontalRuleNode): HorizontalRuleNode {
-    return new HorizontalRuleNode(node.__key);
-  }
-
   static importJSON(
     serializedNode: SerializedHorizontalRuleNode,
   ): HorizontalRuleNode {

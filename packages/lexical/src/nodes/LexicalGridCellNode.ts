@@ -6,12 +6,7 @@
  *
  */
 
-import type {
-  LexicalNode,
-  NodeKey,
-  SerializedElementNode,
-  Spread,
-} from 'lexical';
+import type {LexicalNode, SerializedElementNode, Spread} from 'lexical';
 
 import {ElementNode} from './LexicalElementNode';
 
@@ -29,8 +24,8 @@ export class DEPRECATED_GridCellNode extends ElementNode {
   __colSpan: number;
   __rowSpan: number;
 
-  constructor(colSpan: number, key?: NodeKey) {
-    super(key);
+  constructor(colSpan: number) {
+    super();
     this.__colSpan = colSpan;
     this.__rowSpan = 1;
   }

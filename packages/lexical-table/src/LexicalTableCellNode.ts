@@ -13,7 +13,6 @@ import type {
   EditorConfig,
   LexicalEditor,
   LexicalNode,
-  NodeKey,
   SerializedGridCellNode,
   Spread,
 } from 'lexical';
@@ -59,18 +58,6 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
     return 'tablecell';
   }
 
-  static clone(node: TableCellNode): TableCellNode {
-    const cellNode = new TableCellNode(
-      node.__headerState,
-      node.__colSpan,
-      node.__width,
-      node.__key,
-    );
-    cellNode.__rowSpan = node.__rowSpan;
-    cellNode.__backgroundColor = node.__backgroundColor;
-    return cellNode;
-  }
-
   static importDOM(): DOMConversionMap | null {
     return {
       td: (node: Node) => ({
@@ -101,9 +88,8 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
     headerState = TableCellHeaderStates.NO_STATUS,
     colSpan = 1,
     width?: number,
-    key?: NodeKey,
   ) {
-    super(colSpan, key);
+    super(colSpan);
     this.__headerState = headerState;
     this.__width = width;
     this.__backgroundColor = null;

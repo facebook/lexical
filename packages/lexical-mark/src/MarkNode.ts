@@ -10,7 +10,6 @@ import type {
   EditorConfig,
   GridSelection,
   LexicalNode,
-  NodeKey,
   NodeSelection,
   RangeSelection,
   SerializedElementNode,
@@ -44,10 +43,6 @@ export class MarkNode extends ElementNode {
     return 'mark';
   }
 
-  static clone(node: MarkNode): MarkNode {
-    return new MarkNode(Array.from(node.__ids), node.__key);
-  }
-
   static importDOM(): null {
     return null;
   }
@@ -69,8 +64,8 @@ export class MarkNode extends ElementNode {
     };
   }
 
-  constructor(ids: Array<string>, key?: NodeKey) {
-    super(key);
+  constructor(ids: Array<string>) {
+    super();
     this.__ids = ids || [];
   }
 

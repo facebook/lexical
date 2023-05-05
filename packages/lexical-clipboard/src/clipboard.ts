@@ -7,11 +7,7 @@
  */
 
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
-import {
-  $addNodeStyle,
-  $cloneWithProperties,
-  $sliceSelectedTextNodeContent,
-} from '@lexical/selection';
+import {$addNodeStyle, $sliceSelectedTextNodeContent} from '@lexical/selection';
 import {$findMatchingParent} from '@lexical/utils';
 import {
   $createParagraphNode,
@@ -389,7 +385,7 @@ function $appendNodesToJSON(
   let target = currentNode;
 
   if (selection !== null) {
-    let clone = $cloneWithProperties<LexicalNode>(currentNode);
+    let clone = currentNode.clone();
     clone =
       $isTextNode(clone) && selection != null
         ? $sliceSelectedTextNodeContent(selection, clone)

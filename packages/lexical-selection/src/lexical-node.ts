@@ -6,7 +6,6 @@
  *
  */
 import type {
-  ElementNode,
   GridSelection,
   LexicalEditor,
   LexicalNode,
@@ -34,62 +33,6 @@ import {
   getStyleObjectFromRawCSS,
 } from './utils';
 
-function $updateElementNodeProperties<T extends ElementNode>(
-  target: T,
-  source: ElementNode,
-): T {
-  target.__first = source.__first;
-  target.__last = source.__last;
-  target.__size = source.__size;
-  target.__format = source.__format;
-  target.__indent = source.__indent;
-  target.__dir = source.__dir;
-  return target;
-}
-
-function $updateTextNodeProperties<T extends TextNode>(
-  target: T,
-  source: TextNode,
-): T {
-  target.__format = source.__format;
-  target.__style = source.__style;
-  target.__mode = source.__mode;
-  target.__detail = source.__detail;
-  return target;
-}
-
-/**
- * Returns a copy of a node, but generates a new key for the copy.
- * @param node - The node to be cloned.
- * @returns The clone of the node.
- */
-export function $cloneWithProperties<T extends LexicalNode>(node: T): T {
-  const latest = node.getLatest();
-  const constructor = latest.constructor;
-  // @ts-expect-error
-  const clone: T = constructor.clone(latest);
-  clone.__parent = latest.__parent;
-  clone.__next = latest.__next;
-  clone.__prev = latest.__prev;
-
-  if ($isElementNode(latest) && $isElementNode(clone)) {
-    return $updateElementNodeProperties(clone, latest);
-  }
-
-  if ($isTextNode(latest) && $isTextNode(clone)) {
-    return $updateTextNodeProperties(clone, latest);
-  }
-
-  return clone;
-}
-
-/**
- * Generally used to append text content to HTML and JSON. Grabs the text content and "slices"
- * it to be generated into the new TextNode.
- * @param selection - The selection containing the node whose TextNode is to be edited.
- * @param textNode - The TextNode to be edited.
- * @returns The updated TextNode.
- */
 export function $sliceSelectedTextNodeContent(
   selection: RangeSelection | GridSelection | NodeSelection,
   textNode: TextNode,

@@ -30,10 +30,6 @@ class TestNode extends LexicalNode {
     return 'test';
   }
 
-  static clone(node: TestNode) {
-    return new TestNode(node.__key);
-  }
-
   createDOM() {
     return document.createElement('div');
   }
@@ -75,25 +71,15 @@ describe('LexicalNode tests', () => {
         const {editor} = testEnv;
 
         await editor.update(() => {
-          const node = new LexicalNode('__custom_key__');
+          const node = new LexicalNode('root');
           expect(node.__type).toBe('node');
-          expect(node.__key).toBe('__custom_key__');
+          expect(node.__key).toBe('root');
           expect(node.__parent).toBe(null);
         });
 
         await editor.getEditorState().read(() => {
           expect(() => new LexicalNode()).toThrow();
-          expect(() => new LexicalNode('__custom_key__')).toThrow();
-        });
-      });
-
-      test('LexicalNode.clone()', async () => {
-        const {editor} = testEnv;
-
-        await editor.update(() => {
-          const node = new LexicalNode('__custom_key__');
-
-          expect(() => node.clone()).toThrow();
+          expect(() => new LexicalNode('root')).toThrow();
         });
       });
 
@@ -101,7 +87,7 @@ describe('LexicalNode tests', () => {
         const {editor} = testEnv;
 
         await editor.update(() => {
-          const node = new LexicalNode('__custom_key__');
+          const node = new LexicalNode();
           expect(node.getType()).toEqual(node.__type);
         });
       });
@@ -111,7 +97,7 @@ describe('LexicalNode tests', () => {
         let node;
 
         await editor.update(() => {
-          node = new LexicalNode('__custom_key__');
+          node = new LexicalNode();
         });
 
         await editor.getEditorState().read(() => {
@@ -128,7 +114,7 @@ describe('LexicalNode tests', () => {
         let node;
 
         await editor.update(() => {
-          node = new LexicalNode('__custom_key__');
+          node = new LexicalNode();
         });
 
         await editor.getEditorState().read(() => {

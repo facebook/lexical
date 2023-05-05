@@ -23,7 +23,6 @@ import {
   ElementNode,
   LexicalEditor,
   LexicalNode,
-  NodeKey,
   SerializedElementNode,
   Spread,
 } from 'lexical';
@@ -58,14 +57,8 @@ export class ListNode extends ElementNode {
     return 'list';
   }
 
-  static clone(node: ListNode): ListNode {
-    const listType = node.__listType || TAG_TO_LIST_TYPE[node.__tag];
-
-    return new ListNode(listType, node.__start, node.__key);
-  }
-
-  constructor(listType: ListType, start: number, key?: NodeKey) {
-    super(key);
+  constructor(listType: ListType, start: number) {
+    super();
     const _listType = TAG_TO_LIST_TYPE[listType] || listType;
     this.__listType = _listType;
     this.__tag = _listType === 'number' ? 'ol' : 'ul';

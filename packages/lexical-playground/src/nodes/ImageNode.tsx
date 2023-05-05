@@ -77,20 +77,6 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     return 'image';
   }
 
-  static clone(node: ImageNode): ImageNode {
-    return new ImageNode(
-      node.__src,
-      node.__altText,
-      node.__maxWidth,
-      node.__width,
-      node.__height,
-      node.__showCaption,
-      node.__caption,
-      node.__captionsEnabled,
-      node.__key,
-    );
-  }
-
   static importJSON(serializedNode: SerializedImageNode): ImageNode {
     const {altText, height, width, maxWidth, caption, src, showCaption} =
       serializedNode;
@@ -137,9 +123,8 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     showCaption?: boolean,
     caption?: LexicalEditor,
     captionsEnabled?: boolean,
-    key?: NodeKey,
   ) {
-    super(key);
+    super();
     this.__src = src;
     this.__altText = altText;
     this.__maxWidth = maxWidth;
@@ -243,7 +228,6 @@ export function $createImageNode({
       showCaption,
       caption,
       captionsEnabled,
-      key,
     ),
   );
 }

@@ -334,9 +334,9 @@ declare export class LexicalNode {
   __next: null | NodeKey;
   __prev: null | NodeKey;
   static getType(): string;
-  static clone(data: $FlowFixMe): LexicalNode;
+  clone(): this;
   static importDOM(): DOMConversionMap | null;
-  constructor(key?: NodeKey): void;
+  constructor(key?: 'root'): void;
   exportDOM(editor: LexicalEditor): DOMExportOutput;
   exportJSON(): SerializedLexicalNode;
   getType(): string;
@@ -583,8 +583,7 @@ declare export class TextNode extends LexicalNode {
   __mode: 0 | 1 | 2 | 3;
   __detail: number;
   static getType(): string;
-  static clone(node: $FlowFixMe): TextNode;
-  constructor(text: string, key?: NodeKey): void;
+  constructor(text: string): void;
   getFormat(): number;
   getStyle(): string;
   isComposing(): boolean;
@@ -642,8 +641,6 @@ declare export function $isTextNode(
 
 declare export class LineBreakNode extends LexicalNode {
   static getType(): string;
-  static clone(node: LineBreakNode): LineBreakNode;
-  constructor(key?: NodeKey): void;
   getTextContent(): '\n';
   createDOM(): HTMLElement;
   updateDOM(): false;
@@ -664,7 +661,6 @@ declare export function $isLineBreakNode(
 declare export class RootNode extends ElementNode {
   __cachedText: null | string;
   static getType(): string;
-  static clone(): RootNode;
   constructor(): void;
   getTextContent(): string;
   select(_anchorOffset?: number, _focusOffset?: number): RangeSelection;
@@ -698,7 +694,7 @@ declare export class ElementNode extends LexicalNode {
   __format: number;
   __indent: number;
   __dir: 'ltr' | 'rtl' | null;
-  constructor(key?: NodeKey): void;
+  constructor(key?: 'root'): void;
   getFormat(): number;
   getFormatType(): ElementFormatType;
   getIndent(): number;
@@ -766,7 +762,6 @@ declare export function $isElementNode(
  */
 
 declare export class DecoratorNode<X> extends LexicalNode {
-  constructor(key?: NodeKey): void;
   decorate(editor: LexicalEditor, config: EditorConfig): X;
   isIsolated(): boolean;
   isInline(): boolean;
@@ -781,8 +776,6 @@ declare export function $isDecoratorNode(
  */
 declare export class ParagraphNode extends ElementNode {
   static getType(): string;
-  static clone(node: ParagraphNode): ParagraphNode;
-  constructor(key?: NodeKey): void;
   createDOM(config: EditorConfig): HTMLElement;
   updateDOM(prevNode: ParagraphNode, dom: HTMLElement): boolean;
   insertNewAfter(): ParagraphNode;
@@ -813,7 +806,8 @@ declare export class deprecated_GridCellNode extends ElementNode {
   __colSpan: number;
   __rowSpan: number;
 
-  constructor(colSpan: number, key?: NodeKey): void;
+  constructor(colSpan: number): void;
+  getRowSpan(): number;
   getColSpan(): number;
   setColSpan(colSpan: number): this;
   getRowSpan(): number;

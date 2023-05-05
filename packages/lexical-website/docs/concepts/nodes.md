@@ -60,8 +60,9 @@ be assigning a property to a node that is a function, Symbol, Map, Set, or any o
 than the built-ins. `null`, `undefined`, `number`, `string`, `boolean`, `{}` and `[]` are all types of property that can be
 assigned to node.
 
-By convention, we prefix properties with `__` (double underscore) so that it makes it clear that these properties are private
-and their access should be avoided directly. We opted for `__` instead of `_` because of the fact that some build tooling
+Using private properties is not recommended. If that's the case, node must override the `clone` method to include those properties.
+
+By convention, we prefix properties with `__` (double underscore) so that it makes it clear that their access should be avoided directly. We opted for `__` instead of `_` because of the fact that some build tooling
 mangles and minifies single `_` prefixed properties to improve code size. However, this breaks down if you're exposing a node
 to be extended outside of your build.
 
@@ -75,8 +76,8 @@ import type {NodeKey} from 'lexical';
 class MyCustomNode extends SomeOtherNode {
   __foo: string;
 
-  constructor(foo: string, key?: NodeKey) {
-    super(key);
+  constructor(foo: string) {
+    super();
     this.__foo = foo;
   }
 
@@ -97,10 +98,9 @@ class MyCustomNode extends SomeOtherNode {
 }
 ```
 
-Lastly, all nodes should have both a `static getType()` method and a `static clone()` method.
+Lastly, all nodes should have a `static getType()` method.
 Lexical uses the type to be able to reconstruct a node back with its associated class prototype
-during deserialization (important for copy + paste!). Lexical uses cloning to ensure consistency
-between creation of new `EditorState` snapshots.
+during deserialization (important for copy + paste!).
 
 Expanding on the example above with these methods:
 
@@ -112,12 +112,8 @@ class MyCustomNode extends SomeOtherNode {
     return 'custom-node';
   }
 
-  static clone(node: MyCustomNode): MyCustomNode {
-    return new MyCustomNode(node.__foo, node.__key);
-  }
-
-  constructor(foo: string, key?: NodeKey) {
-    super(key);
+  constructor(foo: string) {
+    super();
     this.__foo = foo;
   }
 
@@ -156,10 +152,6 @@ export class CustomParagraph extends ElementNode {
     return 'custom-paragraph';
   }
 
-  static clone(node: ParagraphNode): ParagraphNode {
-    return new CustomParagraph(node.__key);
-  }
-
   createDOM(): HTMLElement {
     // Define the DOM element here
     const dom = document.createElement('p');
@@ -194,17 +186,13 @@ export function $isCustomParagraphNode(node: ?LexicalNode): boolean {
 export class ColoredNode extends TextNode {
   __color: string;
 
-  constructor(text: string, color: string, key?: NodeKey): void {
-    super(text, key);
+  constructor(text: string, color: string): void {
+    super(text);
     this.__color = color;
   }
 
   static getType(): string {
     return 'colored';
-  }
-
-  static clone(node: ColoredNode): ColoredNode {
-    return new ColoredNode(node.__text, node.__color, node.__key);
   }
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -245,12 +233,8 @@ export class VideoNode extends DecoratorNode<ReactNode> {
     return 'video';
   }
 
-  static clone(node: VideoNode): VideoNode {
-    return new VideoNode(node.__id, node.__key);
-  }
-
-  constructor(id: string, key?: NodeKey) {
-    super(key);
+  constructor(id: string) {
+    super();
     this.__id = id;
   }
 

@@ -13,7 +13,6 @@ import type {
   EditorConfig,
   LexicalEditor,
   LexicalNode,
-  NodeKey,
   SerializedLexicalNode,
   Spread,
 } from 'lexical';
@@ -195,10 +194,6 @@ export class TableNode extends DecoratorNode<JSX.Element> {
     return 'tablesheet';
   }
 
-  static clone(node: TableNode): TableNode {
-    return new TableNode(Array.from(node.__rows), node.__key);
-  }
-
   static importJSON(serializedNode: SerializedTableNode): TableNode {
     return $createTableNode(serializedNode.rows);
   }
@@ -224,8 +219,8 @@ export class TableNode extends DecoratorNode<JSX.Element> {
     return {element: exportTableCellsToHTML(this.__rows)};
   }
 
-  constructor(rows?: Rows, key?: NodeKey) {
-    super(key);
+  constructor(rows?: Rows) {
+    super();
     this.__rows = rows || [];
   }
 

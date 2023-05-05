@@ -79,10 +79,10 @@ describe('LexicalUtils#splitNode', () => {
       expectedHtml:
         '<ul>' +
         '<li><span>Before</span></li>' +
-        '<li><ul><li style="text-indent: 20px;"><span>Hello</span></li></ul></li>' +
+        '<li><ul><li><span>Hello</span></li></ul></li>' +
         '</ul>' +
         '<ul>' +
-        '<li><ul><li style="text-indent: 20px;"><span>world</span></li></ul></li>' +
+        '<li><ul><li><span>world</span></li></ul></li>' +
         '<li><span>After</span></li>' +
         '</ul>',
       initialHtml:

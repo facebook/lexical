@@ -10,11 +10,9 @@ import type {ListNode} from './';
 import type {
   DOMConversionMap,
   DOMConversionOutput,
-  DOMExportOutput,
   EditorConfig,
   EditorThemeClasses,
   GridSelection,
-  LexicalEditor,
   LexicalNode,
   NodeKey,
   NodeSelection,
@@ -122,29 +120,6 @@ export class ListItemNode extends ElementNode {
         conversion: convertListItemElement,
         priority: 0,
       }),
-    };
-  }
-
-  exportDOM(editor: LexicalEditor): DOMExportOutput {
-    const {element} = super.exportDOM(editor);
-
-    if (element) {
-      const formatType = this.getFormatType();
-      element.style.textAlign = formatType;
-
-      const direction = this.getDirection();
-      if (direction) {
-        element.dir = direction;
-      }
-
-      const indent = this.getIndent();
-      if (indent > 0) {
-        element.style.textIndent = `${indent * 20}px`;
-      }
-    }
-
-    return {
-      element,
     };
   }
 

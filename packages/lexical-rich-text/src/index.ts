@@ -156,10 +156,6 @@ export class QuoteNode extends ElementNode {
       if (direction) {
         element.dir = direction;
       }
-      const indent = this.getIndent();
-      if (indent > 0) {
-        element.style.textIndent = `${indent * 20}px`;
-      }
     }
 
     return {
@@ -320,10 +316,6 @@ export class HeadingNode extends ElementNode {
       const direction = this.getDirection();
       if (direction) {
         element.dir = direction;
-      }
-      const indent = this.getIndent();
-      if (indent > 0) {
-        element.style.textIndent = `${indent * 20}px`;
       }
     }
 

@@ -348,19 +348,47 @@ export class ExtendedTextNode extends TextNode {
     const importers = TextNode.importDOM();
     return {
       ...importers,
+      code: () => ({
+        conversion: patchStyleConversion(importers?.code),
+        priority: 1
+      }),
+      em: () => ({
+        conversion: patchStyleConversion(importers?.em),
+        priority: 1
+      }),
+      i: () => ({
+        conversion: patchStyleConversion(importers?.i),
+        priority: 1
+      }),
+      s: () => ({
+        conversion: patchStyleConversion(importers?.s),
+        priority: 1
+      }),
       span: () => ({
         conversion: patchStyleConversion(importers?.span),
         priority: 1
-      })
+      }),
+      strong: () => ({
+        conversion: patchStyleConversion(importers?.strong),
+        priority: 1
+      }),
+      sub: () => ({
+        conversion: patchStyleConversion(importers?.sub),
+        priority: 1
+      }),
+      sup: () => ({
+        conversion: patchStyleConversion(importers?.sup),
+        priority: 1
+      }),
+      u: () => ({
+        conversion: patchStyleConversion(importers?.u),
+        priority: 1
+      }),
     };
   }
 
   static importJSON(serializedNode: SerializedTextNode): TextNode {
     return TextNode.importJSON(serializedNode);
-  }
-
-  exportJSON(): SerializedTextNode {
-    return super.exportJSON();
   }
 }
 

@@ -115,6 +115,14 @@ React wrapper for `@lexical/table` that adds support for tables
 <TablePlugin />
 ```
 
+### `LexicalTabIndentationPlugin`
+
+Plugin that allows tab indentation in combination with `@lexical/rich-text`.
+
+```jsx
+<TabIndentationPlugin />
+```
+
 ### `LexicalAutoLinkPlugin`
 
 Plugin will convert text into links based on passed matchers list. In example below whenever user types url-like string it will automaticaly convert it into a link node

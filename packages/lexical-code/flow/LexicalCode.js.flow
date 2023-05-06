@@ -15,40 +15,59 @@ import type {
   RangeSelection,
   EditorThemeClasses,
   LexicalEditor,
+  LineBreakNode,
+  SerializedElementNode,
+  SerializedTabNode,
 } from 'lexical';
 
-import {ElementNode, TextNode} from 'lexical';
+import {ElementNode, TextNode, TabNode} from 'lexical';
 
-declare export class CodeNode extends ElementNode {
-  static getType(): string;
-  static clone(node: CodeNode): CodeNode;
-  constructor(language: ?string, key?: NodeKey): void;
-  createDOM(config: EditorConfig): HTMLElement;
-  updateDOM(prevNode: CodeNode, dom: HTMLElement): boolean;
-  insertNewAfter(
-    selection: RangeSelection,
-    restoreSelection?: boolean,
-  ): null | ParagraphNode | CodeHighlightNode;
-  canInsertTab(): boolean;
-  collapseAtStart(): true;
-  setLanguage(language: string): void;
-  getLanguage(): string | void;
+/**
+ *  CodeHighlighter
+ */
+declare export function getEndOfCodeInLine(
+  anchor: CodeHighlightNode | CodeTabNode,
+): CodeHighlightNode | CodeTabNode;
+
+declare export function getStartOfCodeInLine(
+  anchor: CodeHighlightNode | CodeTabNode,
+  offset: number,
+): null | {
+  node: CodeHighlightNode | CodeTabNode | LineBreakNode,
+  offset: number,
+};
+
+type TokenContent = string | Token | (string | Token)[];
+export interface Token {
+  type: string;
+  content: TokenContent;
 }
-declare export function $createCodeNode(language: ?string): CodeNode;
-declare export function $isCodeNode(
+export interface Tokenizer {
+  defaultLanguage: string;
+  tokenize(code: string, language?: string): (string | Token)[];
+}
+declare export var PrismTokenizer: Tokenizer;
+
+declare export function registerCodeHighlighting(
+  editor: LexicalEditor,
+  tokenizer?: Tokenizer,
+): () => void;
+
+/**
+ * CodeHighlightNode
+ */
+
+declare export function $createCodeHighlightNode(
+  text: string,
+  highlightType?: string,
+): CodeHighlightNode;
+
+declare export function $isCodeHighlightNode(
   node: ?LexicalNode,
-): boolean %checks(node instanceof CodeNode);
+): boolean %checks(node instanceof CodeHighlightNode);
 
-declare export function getFirstCodeHighlightNodeOfLine(
-  anchor: LexicalNode,
-): ?CodeHighlightNode;
-
-declare export function getLastCodeHighlightNodeOfLine(
-  anchor: LexicalNode,
-): ?CodeHighlightNode;
-
-declare export function getDefaultCodeLanguage(): string;
-declare export function getCodeLanguages(): Array<string>;
+declare export var CODE_LANGUAGE_FRIENDLY_NAME_MAP: {[string]: string};
+declare export var CODE_LANGUAGE_MAP: {[string]: string};
 
 declare export class CodeHighlightNode extends TextNode {
   __highlightType: ?string;
@@ -66,29 +85,76 @@ declare export class CodeHighlightNode extends TextNode {
   setFormat(format: number): this;
 }
 
-type TokenContent = string | Token | (string | Token)[];
-export interface Token {
-  type: string;
-  content: TokenContent;
-}
-export interface Tokenizer {
-  defaultLanguage: string;
-  tokenize(code: string, language?: string): (string | Token)[];
-}
+declare export var DEFAULT_CODE_LANGUAGE: string;
 
-declare function getHighlightThemeClass(
-  theme: EditorThemeClasses,
-  highlightType: ?string,
-): ?string;
-declare export function $createCodeHighlightNode(
-  text: string,
-  highlightType?: string,
-): CodeHighlightNode;
-declare export function $isCodeHighlightNode(
+declare export var getCodeLanguages: () => Array<string>;
+declare export var getDefaultCodeLanguage: () => string;
+
+declare export function getFirstCodeNodeOfLine(
+  anchor: CodeHighlightNode | CodeTabNode | LineBreakNode,
+): null | CodeHighlightNode | CodeTabNode | LineBreakNode;
+
+declare export function getLanguageFriendlyName(lang: string): string;
+
+declare export function getLastCodeNodeOfLine(
+  anchor: CodeHighlightNode | CodeTabNode | LineBreakNode,
+): CodeHighlightNode | CodeTabNode | LineBreakNode;
+
+declare export function normalizeCodeLang(lang: string): string;
+
+/**
+ * CodeNode
+ */
+
+export type SerializedCodeNode = {
+  ...SerializedElementNode,
+  language: string | null | void,
+};
+
+declare export function $createCodeNode(language: ?string): CodeNode;
+
+declare export function $isCodeNode(
   node: ?LexicalNode,
-): boolean %checks(node instanceof CodeHighlightNode);
+): boolean %checks(node instanceof CodeNode);
 
-declare export function registerCodeHighlighting(
-  editor: LexicalEditor,
-  tokenizer?: Tokenizer,
-): () => void;
+declare export class CodeNode extends ElementNode {
+  __language: string | null | void;
+  static getType(): string;
+  static clone(node: CodeNode): CodeNode;
+  constructor(language: ?string, key?: NodeKey): void;
+  createDOM(config: EditorConfig): HTMLElement;
+  updateDOM(prevNode: CodeNode, dom: HTMLElement): boolean;
+  insertNewAfter(
+    selection: RangeSelection,
+    restoreSelection?: boolean,
+  ): null | ParagraphNode | CodeHighlightNode | CodeTabNode;
+  collapseAtStart(): true;
+  setLanguage(language: string): void;
+  getLanguage(): string | void;
+}
+
+/**
+ * CodeTabNode
+ */
+
+export type SerializedCodeTabNode = SerializedTabNode;
+
+declare export function $createCodeTabNode(): CodeTabNode;
+
+declare export function $isCodeTabNode(
+  node: LexicalNode | null | void,
+): boolean %checks(node instanceof CodeTabNode);
+
+declare export class CodeTabNode extends TabNode {
+  static getType(): string;
+  // $FlowFixMe
+  static clone(node: CodeTabNode): CodeTabNode;
+  static importJSON(_serializedTabNode: SerializedCodeTabNode): CodeTabNode;
+  exportJSON(): SerializedTabNode;
+  createDOM(config: EditorConfig): HTMLElement;
+  updateDOM(
+    prevNode: TextNode,
+    dom: HTMLElement,
+    config: EditorConfig,
+  ): boolean;
+}

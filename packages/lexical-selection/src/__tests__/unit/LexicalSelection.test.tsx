@@ -1082,15 +1082,15 @@ describe('LexicalSelection tests', () => {
       },
       {
         expectedHTML:
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">AB\tEFG</span></p></div>',
+          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">ABD</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">EFG</span></p></div>',
         expectedSelection: {
-          anchorOffset: 2,
+          anchorOffset: 3,
           anchorPath: [0, 0, 0],
-          focusOffset: 2,
+          focusOffset: 3,
           focusPath: [0, 0, 0],
         },
         inputs: [
-          pastePlain('ABD	EFG'),
+          pastePlain('ABD\tEFG'),
           moveBackward(5),
           insertText('C'),
           moveBackward(1),

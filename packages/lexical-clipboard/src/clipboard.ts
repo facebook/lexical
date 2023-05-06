@@ -15,6 +15,7 @@ import {
 import {$findMatchingParent} from '@lexical/utils';
 import {
   $createParagraphNode,
+  $createTabNode,
   $getRoot,
   $getSelection,
   $isDecoratorNode,
@@ -130,13 +131,16 @@ export function $insertDataTransferForRichText(
   const text = dataTransfer.getData('text/plain');
   if (text != null) {
     if ($isRangeSelection(selection)) {
-      const lines = text.split(/\r?\n/);
-      const linesLength = lines.length;
-
-      for (let i = 0; i < linesLength; i++) {
-        selection.insertText(lines[i]);
-        if (i < linesLength - 1) {
+      const parts = text.split(/(\r?\n|\t)/);
+      const partsLength = parts.length;
+      for (let i = 0; i < partsLength; i++) {
+        const part = parts[i];
+        if (part === '\n' || part === '\r\n') {
           selection.insertParagraph();
+        } else if (part === '\t') {
+          selection.insertNodes([$createTabNode()]);
+        } else {
+          selection.insertText(part);
         }
       }
     } else {

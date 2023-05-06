@@ -36,6 +36,7 @@ import {DecoratorNode} from './nodes/LexicalDecoratorNode';
 import {LineBreakNode} from './nodes/LexicalLineBreakNode';
 import {ParagraphNode} from './nodes/LexicalParagraphNode';
 import {RootNode} from './nodes/LexicalRootNode';
+import {TabNode} from './nodes/LexicalTabNode';
 
 export type Spread<T1, T2> = Omit<T2, keyof T1> & T1;
 
@@ -382,6 +383,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
     RootNode,
     TextNode,
     LineBreakNode,
+    TabNode,
     ParagraphNode,
     ...(config.nodes || []),
   ];

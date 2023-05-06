@@ -11,6 +11,10 @@ import type {
   LexicalCommand,
   LexicalEditor,
   LexicalNode,
+  RangeSelection,
+  NodeSelection,
+  LineBreakNode,
+  GridSelection,
   NodeKey,
 } from 'lexical';
 
@@ -38,15 +42,20 @@ import {
   $getNodeByKey,
   $getSelection,
   $isLineBreakNode,
+  $createTabNode,
   $isRangeSelection,
   $isTextNode,
   COMMAND_PRIORITY_LOW,
+  INSERT_TAB_COMMAND,
   INDENT_CONTENT_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
+  TabNode,
   MOVE_TO_END,
   MOVE_TO_START,
+  $insertNodes,
   OUTDENT_CONTENT_COMMAND,
+  KEY_TAB_COMMAND,
   TextNode,
 } from 'lexical';
 
@@ -55,11 +64,13 @@ import {
   $isCodeHighlightNode,
   CodeHighlightNode,
   DEFAULT_CODE_LANGUAGE,
-  getFirstCodeHighlightNodeOfLine,
-  getLastCodeHighlightNodeOfLine,
+  getFirstCodeNodeOfLine,
+  getLastCodeNodeOfLine,
 } from './CodeHighlightNode';
 
 import {$isCodeNode, CodeNode} from './CodeNode';
+import invariant from 'shared/invariant';
+import {CodeTabNode, $createCodeTabNode, $isCodeTabNode} from './CodeTabNode';
 
 type TokenContent = string | Token | (string | Token)[];
 
@@ -83,132 +94,128 @@ export const PrismTokenizer: Tokenizer = {
   },
 };
 
-function isSpaceOrTabChar(char: string): boolean {
-  return char === ' ' || char === '\t';
-}
-
-function findFirstNotSpaceOrTabCharAtText(
-  text: string,
-  isForward: boolean,
-): number {
-  const length = text.length;
-  let offset = -1;
-
-  if (isForward) {
-    for (let i = 0; i < length; i++) {
-      const char = text[i];
-      if (!isSpaceOrTabChar(char)) {
-        offset = i;
+export function getStartOfCodeInLine(
+  anchor: CodeHighlightNode | CodeTabNode,
+  offset: number,
+): null | {
+  node: CodeHighlightNode | CodeTabNode | LineBreakNode;
+  offset: number;
+} {
+  let last: null | {
+    node: CodeHighlightNode | CodeTabNode | LineBreakNode;
+    offset: number;
+  } = null;
+  let lastNonBlank: null | {node: CodeHighlightNode; offset: number} = null;
+  let node: null | CodeHighlightNode | CodeTabNode | LineBreakNode = anchor;
+  let nodeOffset = offset;
+  let nodeTextContent = anchor.getTextContent();
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    if (nodeOffset === 0) {
+      node = node.getPreviousSibling();
+      if (node === null) {
         break;
       }
+      invariant(
+        $isCodeHighlightNode(node) ||
+          $isCodeTabNode(node) ||
+          $isLineBreakNode(node),
+        'Expected a valid Code Node: CodeHighlightNode, CodeTabNode, LineBreakNode',
+      );
+      if ($isLineBreakNode(node)) {
+        last = {
+          node,
+          offset: 1,
+        };
+        break;
+      }
+      nodeOffset = Math.max(0, node.getTextContentSize() - 1);
+      nodeTextContent = node.getTextContent();
+    } else {
+      nodeOffset--;
+    }
+    const character = nodeTextContent[nodeOffset];
+    if ($isCodeHighlightNode(node) && character !== ' ') {
+      lastNonBlank = {
+        node,
+        offset: nodeOffset,
+      };
+    }
+  }
+  // lastNonBlank !== null: anchor in the middle of code; move to line beginning
+  if (lastNonBlank !== null) {
+    return lastNonBlank;
+  }
+  // Spaces, tabs or nothing ahead of anchor
+  let codeCharacterAtAnchorOffset = null;
+  if (offset < anchor.getTextContentSize()) {
+    if ($isCodeHighlightNode(anchor)) {
+      codeCharacterAtAnchorOffset = anchor.getTextContent()[offset];
     }
   } else {
-    for (let i = length - 1; i > -1; i--) {
-      const char = text[i];
-      if (!isSpaceOrTabChar(char)) {
-        offset = i;
-        break;
-      }
+    const nextSibling = anchor.getNextSibling();
+    if ($isCodeHighlightNode(nextSibling)) {
+      codeCharacterAtAnchorOffset = nextSibling.getTextContent()[0];
     }
   }
-
-  return offset;
+  if (
+    codeCharacterAtAnchorOffset !== null &&
+    codeCharacterAtAnchorOffset !== ' '
+  ) {
+    // Borderline whitespace and code, move to line beginning
+    return last;
+  } else {
+    const nextNonBlank = findNextNonBlankInLine(anchor, offset);
+    if (nextNonBlank !== null) {
+      return nextNonBlank;
+    } else {
+      return last;
+    }
+  }
 }
 
-export function getStartOfCodeInLine(anchor: LexicalNode): {
-  node: TextNode | null;
-  offset: number;
-} {
-  let currentNode = null;
-  let currentNodeOffset = -1;
-  const previousSiblings = anchor.getPreviousSiblings();
-  previousSiblings.push(anchor);
-  while (previousSiblings.length > 0) {
-    const node = previousSiblings.pop();
-    if ($isCodeHighlightNode(node)) {
-      const text = node.getTextContent();
-      const offset = findFirstNotSpaceOrTabCharAtText(text, true);
-      if (offset !== -1) {
-        currentNode = node;
-        currentNodeOffset = offset;
+function findNextNonBlankInLine(
+  anchor: LexicalNode,
+  offset: number,
+): null | {node: CodeHighlightNode; offset: number} {
+  let node: null | LexicalNode = anchor;
+  let nodeOffset = offset;
+  let nodeTextContent = anchor.getTextContent();
+  let nodeTextContentSize = anchor.getTextContentSize();
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    if (!$isCodeHighlightNode(node) || nodeOffset === nodeTextContentSize) {
+      node = node.getNextSibling();
+      if (node === null || $isLineBreakNode(node)) {
+        return null;
       }
-    }
-    if ($isLineBreakNode(node)) {
-      break;
-    }
-  }
-
-  if (currentNode === null) {
-    const nextSiblings = anchor.getNextSiblings();
-    while (nextSiblings.length > 0) {
-      const node = nextSiblings.shift();
       if ($isCodeHighlightNode(node)) {
-        const text = node.getTextContent();
-        const offset = findFirstNotSpaceOrTabCharAtText(text, true);
-        if (offset !== -1) {
-          currentNode = node;
-          currentNodeOffset = offset;
-          break;
-        }
-      }
-      if ($isLineBreakNode(node)) {
-        break;
+        nodeOffset = 0;
+        nodeTextContent = node.getTextContent();
+        nodeTextContentSize = node.getTextContentSize();
       }
     }
+    if ($isCodeHighlightNode(node)) {
+      if (nodeTextContent[nodeOffset] !== ' ') {
+        return {
+          node,
+          offset: nodeOffset,
+        };
+      }
+      nodeOffset++;
+    }
   }
-
-  return {
-    node: currentNode,
-    offset: currentNodeOffset,
-  };
 }
 
-export function getEndOfCodeInLine(anchor: LexicalNode): {
-  node: TextNode | null;
-  offset: number;
-} {
-  let currentNode = null;
-  let currentNodeOffset = -1;
-  const nextSiblings = anchor.getNextSiblings();
-  nextSiblings.unshift(anchor);
-  while (nextSiblings.length > 0) {
-    const node = nextSiblings.shift();
-    if ($isCodeHighlightNode(node)) {
-      const text = node.getTextContent();
-      const offset = findFirstNotSpaceOrTabCharAtText(text, false);
-      if (offset !== -1) {
-        currentNode = node;
-        currentNodeOffset = offset + 1;
-      }
-    }
-    if ($isLineBreakNode(node)) {
-      break;
-    }
-  }
-
-  if (currentNode === null) {
-    const previousSiblings = anchor.getPreviousSiblings();
-    while (previousSiblings.length > 0) {
-      const node = previousSiblings.pop();
-      if ($isCodeHighlightNode(node)) {
-        const text = node.getTextContent();
-        const offset = findFirstNotSpaceOrTabCharAtText(text, false);
-        if (offset !== -1) {
-          currentNode = node;
-          currentNodeOffset = offset + 1;
-          break;
-        }
-      }
-      if ($isLineBreakNode(node)) {
-        break;
-      }
-    }
-  }
-
-  return {
-    node: currentNode,
-    offset: currentNodeOffset,
-  };
+export function getEndOfCodeInLine(
+  anchor: CodeHighlightNode | CodeTabNode,
+): CodeHighlightNode | CodeTabNode {
+  const lastNode = getLastCodeNodeOfLine(anchor);
+  invariant(
+    !$isLineBreakNode(lastNode),
+    'Unexpected lineBreakNode in getEndOfCodeInLine',
+  );
+  return lastNode;
 }
 
 function textNodeTransform(
@@ -326,14 +333,16 @@ function getHighlightNodes(tokens: (string | Token)[]): LexicalNode[] {
 
   tokens.forEach((token) => {
     if (typeof token === 'string') {
-      const partials = token.split('\n');
-      for (let i = 0; i < partials.length; i++) {
-        const text = partials[i];
-        if (text.length) {
-          nodes.push($createCodeHighlightNode(text));
-        }
-        if (i < partials.length - 1) {
+      const partials = token.split(/(\n|\t)/);
+      const partialsLength = partials.length;
+      for (let i = 0; i < partialsLength; i++) {
+        const part = partials[i];
+        if (part === '\n' || part === '\r\n') {
           nodes.push($createLineBreakNode());
+        } else if (part === '\t') {
+          nodes.push($createCodeTabNode());
+        } else if (part.length > 0) {
+          nodes.push($createCodeHighlightNode(part));
         }
       }
     } else {
@@ -469,78 +478,180 @@ function getDiffRange(
 }
 
 function isEqual(nodeA: LexicalNode, nodeB: LexicalNode): boolean {
-  // Only checking for code higlight nodes and linebreaks. If it's regular text node
+  // Only checking for code higlight nodes, tabs and linebreaks. If it's regular text node
   // returning false so that it's transformed into code highlight node
-  if ($isCodeHighlightNode(nodeA) && $isCodeHighlightNode(nodeB)) {
-    return (
+  return (
+    ($isCodeHighlightNode(nodeA) &&
+      $isCodeHighlightNode(nodeB) &&
       nodeA.__text === nodeB.__text &&
-      nodeA.__highlightType === nodeB.__highlightType
-    );
-  }
+      nodeA.__highlightType === nodeB.__highlightType) ||
+    ($isCodeTabNode(nodeA) && $isCodeTabNode(nodeB)) ||
+    ($isLineBreakNode(nodeA) && $isLineBreakNode(nodeB))
+  );
+}
 
-  if ($isLineBreakNode(nodeA) && $isLineBreakNode(nodeB)) {
+function $isSelectionInCode(
+  selection: null | RangeSelection | NodeSelection | GridSelection,
+): boolean {
+  if (!$isRangeSelection(selection)) {
+    return false;
+  }
+  const anchorNode = selection.anchor.getNode();
+  const focusNode = selection.focus.getNode();
+  if (anchorNode.is(focusNode) && $isCodeNode(anchorNode)) {
     return true;
   }
+  const anchorParent = anchorNode.getParent();
+  return $isCodeNode(anchorParent) && anchorParent.is(focusNode.getParent());
+}
 
-  return false;
+function $getCodeLines(
+  selection: RangeSelection,
+): Array<Array<CodeHighlightNode | CodeTabNode>> {
+  const nodes = selection.getNodes();
+  const lines: Array<Array<CodeHighlightNode | CodeTabNode>> = [[]];
+  if (nodes.length === 1 && $isCodeNode(nodes[0])) {
+    return lines;
+  }
+  let lastLine: Array<CodeHighlightNode | CodeTabNode> = lines[0];
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+    invariant(
+      $isCodeHighlightNode(node) ||
+        $isCodeTabNode(node) ||
+        $isLineBreakNode(node),
+      'Expected selection to be inside CodeBlock and consisting of CodeHighlightNode, CodeTabNode and LineBreakNode',
+    );
+    if ($isLineBreakNode(node)) {
+      if (i !== 0 && lastLine.length > 0) {
+        lastLine = [];
+        lines.push(lastLine);
+      }
+    } else {
+      lastLine.push(node);
+    }
+  }
+  return lines;
+}
+
+function handleTab(shiftKey: boolean): null | LexicalCommand<void> {
+  const selection = $getSelection();
+  if (!$isRangeSelection(selection) || !$isSelectionInCode(selection)) {
+    return null;
+  }
+  const indentOrOutdent = !shiftKey
+    ? INDENT_CONTENT_COMMAND
+    : OUTDENT_CONTENT_COMMAND;
+  const tabOrOutdent = !shiftKey ? INSERT_TAB_COMMAND : OUTDENT_CONTENT_COMMAND;
+  // 1. If multiple lines selected: indent/outdent
+  const codeLines = $getCodeLines(selection);
+  if (codeLines.length > 1) {
+    return indentOrOutdent;
+  }
+  // 2. If entire line selected: indent/outdent
+  const selectionNodes = selection.getNodes();
+  const firstNode = selectionNodes[0];
+  invariant(
+    $isCodeNode(firstNode) ||
+      $isCodeHighlightNode(firstNode) ||
+      $isCodeTabNode(firstNode) ||
+      $isLineBreakNode(firstNode),
+    'Expected selection firstNode to be CodeHighlightNode or CodeTabNode',
+  );
+  if ($isCodeNode(firstNode)) {
+    return indentOrOutdent;
+  }
+  const firstOfLine = getFirstCodeNodeOfLine(firstNode);
+  const lastOfLine = getLastCodeNodeOfLine(firstNode);
+  const anchor = selection.anchor;
+  const focus = selection.focus;
+  let selectionFirst;
+  let selectionLast;
+  if (focus.isBefore(anchor)) {
+    selectionFirst = focus;
+    selectionLast = anchor;
+  } else {
+    selectionFirst = anchor;
+    selectionLast = focus;
+  }
+  if (
+    firstOfLine !== null &&
+    lastOfLine !== null &&
+    selectionFirst.key === firstOfLine.getKey() &&
+    selectionFirst.offset === 0 &&
+    selectionLast.key === lastOfLine.getKey() &&
+    selectionLast.offset === lastOfLine.getTextContentSize()
+  ) {
+    return indentOrOutdent;
+  }
+  // 3. Else: tab/outdent
+  return tabOrOutdent;
 }
 
 function handleMultilineIndent(type: LexicalCommand<void>): boolean {
   const selection = $getSelection();
-
-  if (!$isRangeSelection(selection) || selection.isCollapsed()) {
+  if (!$isRangeSelection(selection) || !$isSelectionInCode(selection)) {
     return false;
   }
-
-  // Only run multiline indent logic on selections exclusively composed of code highlights and linebreaks
-  const nodes = selection.getNodes();
-  for (let i = 0; i < nodes.length; i++) {
-    const node = nodes[i];
-    if (!$isCodeHighlightNode(node) && !$isLineBreakNode(node)) {
-      return false;
-    }
-  }
-  const startOfLine = getFirstCodeHighlightNodeOfLine(nodes[0]);
-
-  if (startOfLine != null) {
-    doIndent(startOfLine, type);
-  }
-
-  for (let i = 1; i < nodes.length; i++) {
-    const node = nodes[i];
-    if ($isLineBreakNode(nodes[i - 1]) && $isCodeHighlightNode(node)) {
-      doIndent(node, type);
-    }
-  }
-
-  return true;
-}
-
-function doIndent(node: CodeHighlightNode, type: LexicalCommand<void>) {
-  const text = node.getTextContent();
-  if (type === INDENT_CONTENT_COMMAND) {
-    // If the codeblock node doesn't start with whitespace, we don't want to
-    // naively prepend a '\t'; Prism will then mangle all of our nodes when
-    // it separates the whitespace from the first non-whitespace node. This
-    // will lead to selection bugs when indenting lines that previously
-    // didn't start with a whitespace character
-    if (text.length > 0 && /\s/.test(text[0])) {
-      node.setTextContent('\t' + text);
-    } else {
-      const indentNode = $createCodeHighlightNode('\t');
-      node.insertBefore(indentNode);
-    }
-  } else {
-    if (text.indexOf('\t') === 0) {
-      // Same as above - if we leave empty text nodes lying around, the resulting
-      // selection will be mangled
-      if (text.length === 1) {
-        node.remove();
-      } else {
-        node.setTextContent(text.substring(1));
+  const codeLines = $getCodeLines(selection);
+  const codeLinesLength = codeLines.length;
+  // Multiple lines selection
+  if (codeLines.length > 1) {
+    for (let i = 0; i < codeLinesLength; i++) {
+      const line = codeLines[i];
+      if (line.length > 0) {
+        let firstOfLine:
+          | null
+          | CodeHighlightNode
+          | CodeTabNode
+          | LineBreakNode = line[0];
+        // First and last lines might not be complete
+        if (i === 0) {
+          firstOfLine = getFirstCodeNodeOfLine(firstOfLine);
+        }
+        if (firstOfLine !== null) {
+          if (type === INDENT_CONTENT_COMMAND) {
+            firstOfLine.insertBefore($createCodeTabNode());
+          } else if ($isCodeTabNode(firstOfLine)) {
+            firstOfLine.remove();
+          }
+        }
       }
     }
+    return true;
   }
+  // Just one line
+  const selectionNodes = selection.getNodes();
+  const firstNode = selectionNodes[0];
+  invariant(
+    $isCodeNode(firstNode) ||
+      $isCodeHighlightNode(firstNode) ||
+      $isCodeTabNode(firstNode) ||
+      $isLineBreakNode(firstNode),
+    'Expected selection firstNode to be CodeHighlightNode or CodeTabNode',
+  );
+  if ($isCodeNode(firstNode)) {
+    // CodeNode is empty
+    if (type === INDENT_CONTENT_COMMAND) {
+      selection.insertNodes([$createCodeTabNode()]);
+    }
+    return true;
+  }
+  const firstOfLine = getFirstCodeNodeOfLine(firstNode);
+  invariant(
+    firstOfLine !== null,
+    'Expected getFirstCodeNodeOfLine to return a valid Code Node',
+  );
+  if (type === INDENT_CONTENT_COMMAND) {
+    if ($isLineBreakNode(firstOfLine)) {
+      firstOfLine.insertAfter($createCodeTabNode());
+    } else {
+      firstOfLine.insertBefore($createCodeTabNode());
+    }
+  } else if ($isCodeTabNode(firstOfLine)) {
+    firstOfLine.remove();
+  }
+  return true;
 }
 
 function handleShiftLines(
@@ -563,7 +674,11 @@ function handleShiftLines(
   const arrowIsUp = type === KEY_ARROW_UP_COMMAND;
 
   // Ensure the selection is within the codeblock
-  if (!$isCodeHighlightNode(anchorNode) || !$isCodeHighlightNode(focusNode)) {
+  if (
+    !$isSelectionInCode(selection) ||
+    !($isCodeHighlightNode(anchorNode) || $isCodeTabNode(anchorNode)) ||
+    !($isCodeHighlightNode(focusNode) || $isCodeTabNode(focusNode))
+  ) {
     return false;
   }
   if (!event.altKey) {
@@ -598,8 +713,15 @@ function handleShiftLines(
     return false;
   }
 
-  const start = getFirstCodeHighlightNodeOfLine(anchorNode);
-  const end = getLastCodeHighlightNodeOfLine(focusNode);
+  let start;
+  let end;
+  if (anchorNode.isBefore(focusNode)) {
+    start = getFirstCodeNodeOfLine(anchorNode);
+    end = getLastCodeNodeOfLine(focusNode);
+  } else {
+    start = getFirstCodeNodeOfLine(focusNode);
+    end = getLastCodeNodeOfLine(anchorNode);
+  }
   if (start == null || end == null) {
     return false;
   }
@@ -607,7 +729,11 @@ function handleShiftLines(
   const range = start.getNodesBetween(end);
   for (let i = 0; i < range.length; i++) {
     const node = range[i];
-    if (!$isCodeHighlightNode(node) && !$isLineBreakNode(node)) {
+    if (
+      !$isCodeHighlightNode(node) &&
+      !$isCodeTabNode(node) &&
+      !$isLineBreakNode(node)
+    ) {
       return false;
     }
   }
@@ -631,9 +757,14 @@ function handleShiftLines(
     return true;
   }
 
-  const maybeInsertionPoint = arrowIsUp
-    ? getFirstCodeHighlightNodeOfLine(sibling)
-    : getLastCodeHighlightNodeOfLine(sibling);
+  const maybeInsertionPoint =
+    $isCodeHighlightNode(sibling) ||
+    $isCodeTabNode(sibling) ||
+    $isLineBreakNode(sibling)
+      ? arrowIsUp
+        ? getFirstCodeNodeOfLine(sibling)
+        : getLastCodeNodeOfLine(sibling)
+      : null;
   let insertionPoint =
     maybeInsertionPoint != null ? maybeInsertionPoint : sibling;
   linebreak.remove();
@@ -669,27 +800,46 @@ function handleMoveTo(
   const focusNode = focus.getNode();
   const isMoveToStart = type === MOVE_TO_START;
 
-  if (!$isCodeHighlightNode(anchorNode) || !$isCodeHighlightNode(focusNode)) {
+  if (
+    !($isCodeHighlightNode(anchorNode) || $isCodeTabNode(anchorNode)) ||
+    !($isCodeHighlightNode(focusNode) || $isCodeTabNode(focusNode))
+  ) {
     return false;
   }
 
-  let node;
-  let offset;
-
   if (isMoveToStart) {
-    ({node, offset} = getStartOfCodeInLine(focusNode));
+    const start = getStartOfCodeInLine(focusNode, focus.offset);
+    if (start !== null) {
+      const {node, offset} = start;
+      if ($isLineBreakNode(node)) {
+        node.selectNext(0, 0);
+      } else {
+        selection.setTextNodeRange(node, offset, node, offset);
+      }
+    } else {
+      focusNode.getParentOrThrow().selectStart();
+    }
   } else {
-    ({node, offset} = getEndOfCodeInLine(focusNode));
-  }
-
-  if (node !== null && offset !== -1) {
-    selection.setTextNodeRange(node, offset, node, offset);
+    const node = getEndOfCodeInLine(focusNode);
+    node.select();
   }
 
   event.preventDefault();
   event.stopPropagation();
 
   return true;
+}
+
+function tabNodeTransform(node: TabNode): void {
+  if ($isCodeNode(node.getParent())) {
+    node.replace($createCodeTabNode());
+  }
+}
+
+function codeTabNodeTransform(node: CodeTabNode): void {
+  if (!$isCodeNode(node.getParent())) {
+    node.replace($createTabNode());
+  }
 }
 
 export function registerCodeHighlighting(
@@ -727,6 +877,37 @@ export function registerCodeHighlighting(
     ),
     editor.registerNodeTransform(CodeHighlightNode, (node) =>
       textNodeTransform(node, editor, tokenizer as Tokenizer),
+    ),
+    editor.registerNodeTransform(TabNode, (node) => {
+      tabNodeTransform(node);
+    }),
+    editor.registerNodeTransform(CodeTabNode, (node) => {
+      codeTabNodeTransform(node);
+    }),
+    editor.registerCommand(
+      KEY_TAB_COMMAND,
+      (event) => {
+        const command = handleTab(event.shiftKey);
+        if (command === null) {
+          return false;
+        }
+        event.preventDefault();
+        editor.dispatchCommand(command, undefined);
+        return true;
+      },
+      COMMAND_PRIORITY_LOW,
+    ),
+    editor.registerCommand(
+      INSERT_TAB_COMMAND,
+      () => {
+        const selection = $getSelection();
+        if (!$isSelectionInCode(selection)) {
+          return false;
+        }
+        $insertNodes([$createCodeTabNode()]);
+        return true;
+      },
+      COMMAND_PRIORITY_LOW,
     ),
     editor.registerCommand(
       INDENT_CONTENT_COMMAND,

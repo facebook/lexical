@@ -531,9 +531,6 @@ export class ElementNode extends LexicalNode {
   ): null | LexicalNode {
     return null;
   }
-  canInsertTab(): boolean {
-    return false;
-  }
   canIndent(): boolean {
     return true;
   }

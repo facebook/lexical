@@ -187,7 +187,10 @@ function $createNodesFromDOM(
 
   if (transformOutput !== null) {
     postTransform = transformOutput.after;
-    currentLexicalNode = transformOutput.node;
+    const transformNodes = transformOutput.node;
+    currentLexicalNode = Array.isArray(transformNodes)
+      ? transformNodes[transformNodes.length - 1]
+      : transformNodes;
 
     if (currentLexicalNode !== null) {
       for (const [, forChildFunction] of forChildMap) {
@@ -202,7 +205,11 @@ function $createNodesFromDOM(
       }
 
       if (currentLexicalNode) {
-        lexicalNodes.push(currentLexicalNode);
+        lexicalNodes.push(
+          ...(Array.isArray(transformNodes)
+            ? transformNodes
+            : [currentLexicalNode]),
+        );
       }
     }
 

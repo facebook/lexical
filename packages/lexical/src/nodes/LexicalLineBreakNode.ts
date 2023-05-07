@@ -6,6 +6,7 @@
  *
  */
 
+import {DOM_TEXT_TYPE} from '../LexicalConstants';
 import type {
   DOMConversionMap,
   DOMConversionOutput,
@@ -48,11 +49,25 @@ export class LineBreakNode extends LexicalNode {
     return {
       br: (node: Node) => {
         const parentElement = node.parentElement;
+        debugger;
         // If the <br> is the only child, then skip including it
+        let firstChild;
+        let lastChild;
         if (
-          parentElement != null &&
-          parentElement.firstChild === node &&
-          parentElement.lastChild === node
+          parentElement !== null &&
+          ((firstChild = parentElement.firstChild) === node ||
+            ((firstChild as Text).nextSibling === node &&
+              (firstChild as Text).nodeType === DOM_TEXT_TYPE &&
+              ((firstChild as Text).textContent || '').match(
+                // todo compile
+                /^[\s|\r?\n|\t]+$/,
+              ) !== null)) &&
+          ((lastChild = parentElement.lastChild) === node ||
+            ((lastChild as Text).previousSibling === node &&
+              (lastChild as Text).nodeType === DOM_TEXT_TYPE &&
+              ((lastChild as Text).textContent || '').match(
+                /^[\s|\r?\n|\t]+$/,
+              ) !== null))
         ) {
           return null;
         }
@@ -83,6 +98,7 @@ function convertLineBreakElement(node: Node): DOMConversionOutput {
 }
 
 export function $createLineBreakNode(): LineBreakNode {
+  debugger;
   return $applyNodeReplacement(new LineBreakNode());
 }
 

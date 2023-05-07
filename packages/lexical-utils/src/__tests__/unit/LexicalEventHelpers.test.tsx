@@ -11,6 +11,7 @@ import {HashtagNode} from '@lexical/hashtag';
 import {AutoLinkNode, LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
 import {OverflowNode} from '@lexical/overflow';
+import {AutoFocusPlugin} from '@lexical/react/src/LexicalAutoFocusPlugin';
 import {useLexicalComposerContext} from '@lexical/react/src/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/src/LexicalContentEditable';
 import LexicalErrorBoundary from '@lexical/react/src/LexicalErrorBoundary';
@@ -26,6 +27,7 @@ import {initializeClipboard, TestComposer} from 'lexical/src/__tests__/utils';
 import * as React from 'react';
 import {createRoot} from 'react-dom/client';
 import * as ReactTestUtils from 'react-dom/test-utils';
+import {$getSelection} from 'lexical';
 
 jest.mock('shared/environment', () => {
   const originalModule = jest.requireActual('shared/environment');
@@ -153,6 +155,7 @@ describe('LexicalEventHelpers', () => {
             placeholder={null}
             ErrorBoundary={LexicalErrorBoundary}
           />
+          <AutoFocusPlugin />
           <TestPlugin />
         </TestComposer>
       );
@@ -162,12 +165,16 @@ describe('LexicalEventHelpers', () => {
       createRoot(container).render(<TestBase />);
     });
 
-    editor.getRootElement().focus();
+    // editor.getRootElement().focus();
 
-    await Promise.resolve().then();
+    // await Promise.resolve().then();
 
     // Focus first element
-    setNativeSelectionWithPaths(editor.getRootElement(), [0, 0], 0, [0, 0], 0);
+    // await setNativeSelectionWithPaths(editor.getRootElement(), [0], 0, [0], 0);
+    await editor.getEditorState().read(() => {
+      console.info(editor.getEditorState()._nodeMap);
+      console.info($getSelection());
+    });
   }
 
   async function update(fn) {
@@ -411,6 +418,282 @@ describe('LexicalEventHelpers', () => {
 
           // Validate HTML matches
           expect(container.innerHTML).toBe(testUnit.expectedHTML);
+        });
+      });
+    });
+
+    describe.only('W3 spacing', () => {
+      const suite = [
+        {
+          expectedHTML:
+            '<p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">hello world</span></p>',
+          inputs: [pasteHTML('<span>hello world</span>')],
+          name: 'inline hello world',
+        },
+        {
+          expectedHTML:
+            '<p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">hello world</span></p>',
+          inputs: [pasteHTML('<span>    hello  </span>world  ')],
+          name: 'inline hello world (2)',
+        },
+        {
+          // MS Office got it right
+          expectedHTML:
+            '<p class="editor-paragraph" dir="ltr"><span data-lexical-text="true"> hello world</span></p>',
+          inputs: [
+            pasteHTML(' <span style="white-space: pre"> hello </span> world  '),
+          ],
+          name: 'pre + inline (inline collapses with pre)',
+        },
+        {
+          expectedHTML:
+            '<p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">  a b</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">c  </span></p>',
+          inputs: [pasteHTML('<p style="white-space: pre">  a b\tc  </p>')],
+          name: 'white-space: pre (1) (no touchy)',
+        },
+        {
+          expectedHTML:
+            '<p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">a b c</span></p>',
+          inputs: [pasteHTML('<p>\ta\tb  <span>c\t</span>\t</p>')],
+          name: 'tabs are collapsed',
+        },
+        {
+          expectedHTML:
+            '<p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">hello world</span></p>',
+          inputs: [
+            pasteHTML(`
+              <div>
+                hello
+                world
+              </div>
+            `),
+          ],
+          name: 'remove beginning + end spaces on the block',
+        },
+        {
+          expectedHTML:
+            '<p class="editor-paragraph" dir="ltr"><strong class="editor-text-bold" data-lexical-text="true">hello world</strong></p>',
+          inputs: [
+            pasteHTML(`
+              <div>
+                <strong>
+                  hello
+                  world
+                </strong>
+              </div>
+          `),
+          ],
+          name: 'remove beginning + end spaces on the block (2)',
+        },
+        {
+          expectedHTML:
+            '<p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">a </span><strong class="editor-text-bold" data-lexical-text="true">b</strong><span data-lexical-text="true"> c</span></p>',
+          inputs: [
+            pasteHTML(`
+              <div>
+                a
+                <strong>b</strong>
+                c
+              </div>
+          `),
+          ],
+          name: 'remove beginning + end spaces on the block + anonymous inlines collapsible rules',
+        },
+        {
+          expectedHTML:
+            '<p class="editor-paragraph" dir="ltr"><strong class="editor-text-bold" data-lexical-text="true">a </strong><span data-lexical-text="true">b</span></p>',
+          inputs: [pasteHTML('<div><strong>a </strong>b</div>')],
+          name: 'collapsibles and neighbors (1)',
+        },
+        {
+          expectedHTML:
+            '<p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">a</span><strong class="editor-text-bold" data-lexical-text="true"> b</strong></p>',
+          inputs: [pasteHTML('<div>a<strong> b</strong></div>')],
+          name: 'collapsibles and neighbors (2)',
+        },
+        {
+          expectedHTML:
+            '<p class="editor-paragraph" dir="ltr"><strong class="editor-text-bold" data-lexical-text="true">a </strong><span data-lexical-text="true">b</span></p>',
+          inputs: [pasteHTML('<div><strong>a </strong><span></span>b</div>')],
+          name: 'collapsibles and neighbors (3)',
+        },
+        {
+          expectedHTML:
+            '<p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">a</span><strong class="editor-text-bold" data-lexical-text="true"> b</strong></p>',
+          inputs: [pasteHTML('<div>a<span></span><strong> b</strong></div>')],
+          name: 'collapsibles and neighbors (4)',
+        },
+        {
+          expectedHTML: '<p class="editor-paragraph"><br></p>',
+          inputs: [
+            pasteHTML(`
+              <p>
+              </p>
+          `),
+          ],
+          name: 'empty block',
+        },
+        {
+          expectedHTML:
+            '<p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">a</span></p>',
+          inputs: [pasteHTML('<span> </span><span>a</span>')],
+          name: 'redundant inline at start',
+        },
+        {
+          expectedHTML:
+            '<p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">a</span></p>',
+          inputs: [pasteHTML('<span>a</span><span> </span>')],
+          name: 'redundant inline at end',
+        },
+        {
+          expectedHTML:
+            '<p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">a</span></p><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">b</span></p>',
+          inputs: [
+            pasteHTML(`
+            <div>
+              <p>
+                a
+              </p>
+              <p>
+                b
+              </p>
+            </div>
+            `),
+          ],
+          name: 'collapsible spaces with nested structures',
+        },
+        // TODO no proper support for divs #4465
+        // {
+        //   expectedHTML:
+        //     '<p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">a</span></p><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">b</span></p>',
+        //   inputs: [
+        //     pasteHTML(`
+        //     <div>
+        //     <div>
+        //     a
+        //     </div>
+        //     <div>
+        //     b
+        //     </div>
+        //     </div>
+        //     `),
+        //   ],
+        //   name: 'collapsible spaces with nested structures (2)',
+        // },
+        {
+          expectedHTML:
+            '<p class="editor-paragraph" dir="ltr"><strong class="editor-text-bold" data-lexical-text="true">a b</strong></p>',
+          inputs: [
+            pasteHTML(`
+            <div>
+              <strong>
+                a
+              </strong>
+              <strong>
+                b
+              </strong>
+            </div>
+            `),
+          ],
+          name: 'collapsible spaces with nested structures (3)',
+        },
+        {
+          expectedHTML:
+            '<p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">a</span><br><span data-lexical-text="true">b</span></p>',
+          inputs: [
+            pasteHTML(`
+            <p>
+            a
+            <br>
+            b
+            </p>
+            `),
+          ],
+          name: 'forced line break should remain',
+        },
+        {
+          expectedHTML:
+            '<p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">a</span><br><span data-lexical-text="true">b</span></p>',
+          inputs: [
+            pasteHTML(`
+            <p>
+            a
+            \t<br>\t
+            b
+            </p>
+            `),
+          ],
+          name: 'forced line break with tabs',
+        },
+        // The 3 below are not correct, they're missing the first \n -> <br> but that's a fault with
+        // the implementation of DOMParser, it works correctly in Safari
+        {
+          expectedHTML:
+            '<code class="editor-code" spellcheck="false" dir="ltr"><span data-lexical-text="true">a</span><br><span data-lexical-text="true">b</span><br><br></code>',
+          inputs: [pasteHTML(`<pre>\na\r\nb\r\n</pre>`)],
+          name: 'pre (no touchy) (1)',
+        },
+        {
+          expectedHTML:
+            '<code class="editor-code" spellcheck="false" dir="ltr"><span data-lexical-text="true">a</span><br><span data-lexical-text="true">b</span><br><br></code>',
+          inputs: [
+            pasteHTML(`
+              <pre>\na\r\nb\r\n</pre>
+          `),
+          ],
+          name: 'pre (no touchy) (2)',
+        },
+        {
+          expectedHTML:
+            '<p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">a</span><br><span data-lexical-text="true">b</span><br><br></p>',
+          inputs: [
+            pasteHTML(`<span style="white-space: pre">\na\r\nb\r\n</span>`),
+          ],
+          name: 'white-space: pre (no touchy) (2)',
+        },
+        {
+          expectedHTML:
+            '<p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">paragraph1</span></p><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">paragraph2</span></p>',
+          inputs: [
+            pasteHTML(
+              '\n<p class="p1">paragraph1</p>\n<p class="p1">paragraph2</p>\n',
+            ),
+          ],
+          name: 'two Apple Notes paragraphs',
+        },
+        {
+          expectedHTML:
+            '<p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">line 1</span><br><span data-lexical-text="true">line 2</span></p><p class="editor-paragraph"><br></p><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">paragraph 1</span></p><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">paragraph 2</span></p>',
+          inputs: [
+            pasteHTML(
+              '\n<p class="p1">line 1<br>\nline 2</p>\n<p class="p2"><br></p>\n<p class="p1">paragraph 1</p>\n<p class="p1">paragraph 2</p>\n',
+            ),
+          ],
+          name: 'two Apple Notes lines + two paragraphs separated by an empty paragraph',
+        },
+        {
+          expectedHTML:
+            '<p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">line 1</span><br><span data-lexical-text="true">line 2</span></p><p class="editor-paragraph"><br></p><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">paragraph 1</span></p><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">paragraph 2</span></p>',
+          inputs: [
+            pasteHTML(
+              '\n<p class="p1">line 1<br>\nline 2</p>\n<p class="p2">\n<br>\n</p>\n<p class="p1">paragraph 1</p>\n<p class="p1">paragraph 2</p>\n',
+            ),
+          ],
+          name: 'two lines + two paragraphs separated by an empty paragraph (2)',
+        },
+      ];
+
+      suite.forEach((testUnit, i) => {
+        const name = testUnit.name || 'Test case';
+
+        // eslint-disable-next-line no-only-tests/no-only-tests, dot-notation
+        const test_ = testUnit['only'] ? test.only : test;
+        test_(name + ` (#${i + 1})`, async () => {
+          await applySelectionInputs(testUnit.inputs, update, editor);
+          console.info(editor.getEditorState()._nodeMap);
+
+          // Validate HTML matches
+          expect(container.firstChild.innerHTML).toBe(testUnit.expectedHTML);
         });
       });
     });

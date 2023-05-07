@@ -31,6 +31,8 @@ import invariant from 'shared/invariant';
 import {
   COMPOSITION_SUFFIX,
   DETAIL_TYPE_TO_DETAIL,
+  DOM_ELEMENT_TYPE,
+  DOM_TEXT_TYPE,
   IS_BOLD,
   IS_CODE,
   IS_DIRECTIONLESS,
@@ -460,10 +462,6 @@ export class TextNode extends LexicalNode {
       }),
       b: () => ({
         conversion: convertBringAttentionToElement,
-        priority: 0,
-      }),
-      br: () => ({
-        conversion: convertLineBreakToElement,
         priority: 0,
       }),
       code: () => ({
@@ -923,12 +921,6 @@ function convertSpanElement(domNode: Node): DOMConversionOutput {
   };
 }
 
-function convertLineBreakToElement(): DOMConversionOutput {
-  return {
-    node: $createLineBreakNode(),
-  };
-}
-
 function convertBringAttentionToElement(domNode: Node): DOMConversionOutput {
   // domNode is a <b> since we matched it by nodeName
   const b = domNode as HTMLElement;
@@ -946,30 +938,198 @@ function convertBringAttentionToElement(domNode: Node): DOMConversionOutput {
   };
 }
 
+// todo cache getComputedStyle
 function convertTextDOMNode(
   domNode: Node,
-  _parent?: Node,
-  preformatted?: boolean,
+  _parent?: Node, // do we need?
+  preformatted?: boolean, // do we need?
 ): DOMConversionOutput {
-  let textContent = domNode.textContent || '';
-  if (!preformatted && /\n/.test(textContent)) {
-    textContent = textContent.replace(/\r?\n/gm, ' ');
-    if (textContent.trim().length === 0) {
-      return {node: null};
+  const domNode_ = domNode as Text;
+  const parentDom = domNode.parentElement;
+  invariant(
+    parentDom !== null,
+    'Expected parentElement of Text not to be null',
+  );
+  let textContent = domNode_.textContent || '';
+  console.info('convert', textContent);
+  debugger;
+  // TODO consider: for large trees, perhaps a less fidelity, parent-only option may suffice
+  const computedStyle = getComputedStyle(parentDom);
+  const whitespaceStyle =
+    computedStyle.whiteSpace || parentDom.style.whiteSpace;
+  // No collapse and preserve segment break for pre, pre-wrap and pre-line
+  if (whitespaceStyle.startsWith('pre') || parentDom.nodeName === 'PRE') {
+    // Ignore
+    const parts = textContent.split(/(\r?\n|\t)/);
+    const nodes: Array<LexicalNode> = [];
+    const length = parts.length;
+    for (let i = 0; i < length; i++) {
+      const part = parts[i];
+      if (part === '\n' || part === '\r\n') {
+        nodes.push($createLineBreakNode());
+      } else if (part === '\t') {
+        nodes.push($createTabNode());
+      } else if (part !== '') {
+        nodes.push($createTextNode(part));
+      }
+    }
+    return {node: nodes};
+  }
+  // TODO compile regex
+  textContent = textContent
+    .replace(/\r?\n|\t/gm, ' ')
+    .replace('\r', '')
+    .replace(/\s+/g, ' ');
+  if (textContent === '') {
+    return {node: null};
+  }
+  if (textContent[0] === ' ') {
+    // traverse backward while display starts with inline
+    // if content contains new line or tab -> stop and (see below); other elements can borrow from this one
+    // if can find another inline that doesn't end with space, keep
+    // (see below continued) ... check if it's also last space; if it is don't remove -> check next rule
+    let previousText: null | Text = domNode_;
+    let isStartOfLine = true;
+    while (
+      previousText !== null &&
+      (previousText = findPreviousTextInLine(previousText)) !== null
+    ) {
+      const previousTextContent = previousText.textContent || '';
+      if (previousTextContent.length > 0) {
+        // todo compile regex
+        if (previousTextContent.match(/(?:\s|\r?\n|\t)$/)) {
+          textContent = textContent.slice(1);
+        }
+        isStartOfLine = false;
+        break;
+      }
+    }
+    if (isStartOfLine) {
+      textContent = textContent.slice(1);
     }
   }
-  const parts = textContent.split(/(\t)/);
-  const nodes = [];
-  const length = parts.length;
-  for (let i = 0; i < length; i++) {
-    const part = parts[i];
-    if (part === '\t') {
-      nodes.push($createTabNode());
-    } else {
-      nodes.push($createTextNode(part));
+  if (textContent[textContent.length - 1] === ' ') {
+    // traverse forward while display inline, if next inline needs a space, don't delete
+    let nextText: null | Text = domNode_;
+    let isEndOfLine = true;
+    while (
+      nextText !== null &&
+      (nextText = findNextTextInLine(nextText)) !== null
+    ) {
+      console.info(domNode.textContent, '<->', nextText.textContent);
+      const nextTextContent = (nextText.textContent || '').replace(
+        /^[\s|\r?\n|\t]+/,
+        '',
+      );
+      if (nextTextContent.length > 0) {
+        isEndOfLine = false;
+        break;
+        // // if (nextTextContent.match(/^(?:\s|\r?\n|\t)/)) {
+        // console.info(`surprise  "${nextTextContent}"`);
+        // textContent = textContent.slice(0, textContent.length - 1);
+        // // }
+        // console.info(isEndOfLine);
+        // break;
+      }
+    }
+    if (isEndOfLine) {
+      textContent = textContent.slice(0, textContent.length - 1);
     }
   }
-  return {node: nodes};
+
+  // if (!preformatted && /\n/.test(textContent)) {
+  //   textContent = textContent.replace(/\r?\n/gm, ' ');
+  //   if (textContent.trim().length === 0) {
+  //     return {node: null};
+  //   }
+  // }
+  // const parts = textContent.split(/(\t)/);
+  // const nodes = [];
+  // const length = parts.length;
+  // for (let i = 0; i < length; i++) {
+  //   const part = parts[i];
+  //   if (part === '\t') {
+  //     nodes.push($createTabNode());
+  //   } else {
+  //     nodes.push($createTextNode(part));
+  //   }
+  // }
+  console.info(`result "${textContent}"`);
+  if (textContent === '') {
+    return {node: null};
+  }
+  return {node: $createTextNode(textContent)};
+}
+
+const inlineParents =
+  /^(a|abbr|acronym|b|cite|code|del|em|i|ins|kbd|label|output|q|ruby|s|samp|span|strong|sub|sup|time|u|tt|var)$/i;
+
+function findPreviousTextInLine(text: Text): null | Text {
+  let node: Node = text;
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    let previousSibling: null | Node;
+    while ((previousSibling = node.previousSibling) === null) {
+      const parentElement = node.parentElement;
+      if (parentElement === null) {
+        return null;
+      }
+      node = parentElement;
+    }
+    node = previousSibling;
+    if (node.nodeType === DOM_ELEMENT_TYPE) {
+      const display = getComputedStyle(node as Element).display || '';
+      if (
+        (display === '' && node.nodeName.match(inlineParents) === null) ||
+        (display !== '' && !display.startsWith('inline'))
+      ) {
+        return null;
+      }
+    }
+    let lastDescendant: null | Node = node;
+    while ((lastDescendant = node.lastChild) !== null) {
+      node = lastDescendant;
+    }
+    if (node.nodeType === DOM_TEXT_TYPE) {
+      return node as Text;
+    } else if (node.nodeName === 'BR') {
+      return null;
+    }
+  }
+}
+
+function findNextTextInLine(text: Text): null | Text {
+  let node: Node = text;
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    let nextSibling: null | Node;
+    while ((nextSibling = node.nextSibling) === null) {
+      const parentElement = node.parentElement;
+      if (parentElement === null) {
+        return null;
+      }
+      node = parentElement;
+    }
+    node = nextSibling;
+    if (node.nodeType === DOM_ELEMENT_TYPE) {
+      const display = getComputedStyle(node as Element).display || '';
+      if (
+        (display === '' && node.nodeName.match(inlineParents) === null) ||
+        (display !== '' && !display.startsWith('inline'))
+      ) {
+        return null;
+      }
+    }
+    let lastDescendant: null | Node = node;
+    while ((lastDescendant = node.firstChild) !== null) {
+      node = lastDescendant;
+    }
+    if (node.nodeType === DOM_TEXT_TYPE) {
+      return node as Text;
+    } else if (node.nodeName === 'BR') {
+      return null;
+    }
+  }
 }
 
 const nodeNameToTextFormat: Record<string, TextFormatType> = {

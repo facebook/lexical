@@ -140,6 +140,8 @@ export function createRectsFromDOMRange(
   //sort rects from top left to bottom right.
   selectionRects.sort((a, b) => {
     const top = a.top - b.top;
+    // Some rects match position closely, but not perfectly,
+    // so we give a 3px tolerance.
     if (Math.abs(top) <= 3) {
       return a.left - b.left;
     }

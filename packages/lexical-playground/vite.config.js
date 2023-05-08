@@ -136,6 +136,7 @@ const moduleResolution = [
   'LexicalCollaborationPlugin',
   'LexicalHistoryPlugin',
   'LexicalTypeaheadMenuPlugin',
+  'LexicalNodeMenuPlugin',
   'LexicalTablePlugin',
   'LexicalLinkPlugin',
   'LexicalListPlugin',

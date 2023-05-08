@@ -87,6 +87,10 @@
       "@lexical/react/LexicalTypeaheadMenuPlugin": [
         "packages/lexical-react/src/LexicalTypeaheadMenuPlugin.tsx"
       ],
+      "@lexical/react/LexicalNodeMenuPlugin": [
+        "packages/lexical-react/src/LexicalNodeMenuPlugin.tsx"
+      ],
+
       "@lexical/react/LexicalHistoryPlugin": [
         "./packages/lexical-react/src/LexicalHistoryPlugin.ts"
       ],

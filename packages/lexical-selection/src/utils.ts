@@ -150,7 +150,7 @@ export function createRectsFromDOMRange(
   let prevRect;
   for (let i = 0; i < selectionRectsLength; i++) {
     const selectionRect = selectionRects[i];
-    // Exclude a rects that overlap preceding Rects in the sorted list.
+    // Exclude rects that overlap preceding Rects in the sorted list.
     const isOverlappingRect =
       prevRect &&
       prevRect.top <= selectionRect.top &&

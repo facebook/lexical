@@ -130,22 +130,35 @@ export function $insertDataTransferForRichText(
   // instead of single paragraph with linebreaks.
   const text = dataTransfer.getData('text/plain');
   if (text != null) {
-    if ($isRangeSelection(selection)) {
-      const parts = text.split(/(\r?\n|\t)/);
-      const partsLength = parts.length;
-      for (let i = 0; i < partsLength; i++) {
-        const part = parts[i];
-        if (part === '\n' || part === '\r\n') {
-          selection.insertParagraph();
-        } else if (part === '\t') {
-          selection.insertNodes([$createTabNode()]);
-        } else {
-          selection.insertText(part);
-        }
+    $pasteMultilineText(selection, text);
+  }
+
+  // Webkit-specific: Supports read 'text/uri-list' in clipboard.
+  const uriListString = dataTransfer.getData('text/uri-list');
+  if (uriListString != null) {
+    $pasteMultilineText(selection, uriListString);
+  }
+}
+
+function $pasteMultilineText(
+  selection: RangeSelection | GridSelection,
+  text: string,
+) {
+  if ($isRangeSelection(selection)) {
+    const parts = text.split(/(\r?\n|\t)/);
+    const partsLength = parts.length;
+    for (let i = 0; i < partsLength; i++) {
+      const part = parts[i];
+      if (part === '\n' || part === '\r\n') {
+        selection.insertParagraph();
+      } else if (part === '\t') {
+        selection.insertNodes([$createTabNode()]);
+      } else {
+        selection.insertText(part);
       }
-    } else {
-      selection.insertRawText(text);
     }
+  } else {
+    selection.insertRawText(text);
   }
 }
 

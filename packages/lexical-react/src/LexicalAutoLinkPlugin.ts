@@ -17,13 +17,7 @@ import {
 } from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {mergeRegister} from '@lexical/utils';
-import {
-  $createTextNode,
-  $isElementNode,
-  $isLineBreakNode,
-  $isTextNode,
-  TextNode,
-} from 'lexical';
+import {$isTextNode, TextNode} from 'lexical';
 import {useEffect} from 'react';
 import invariant from 'shared/invariant';
 
@@ -42,7 +36,7 @@ export type LinkMatcher = (text: string) => LinkMatcherResult | null;
 export function createLinkMatcherWithRegExp(
   regExp: RegExp,
   urlTransformer: (text: string) => string = (text) => text,
-) {
+): LinkMatcher {
   return (text: string) => {
     const match = regExp.exec(text);
     if (match === null) return null;
@@ -50,7 +44,7 @@ export function createLinkMatcherWithRegExp(
       index: match.index,
       length: match[0].length,
       text: match[0],
-      url: urlTransformer(text),
+      url: urlTransformer(match[0]),
     };
   };
 }
@@ -70,64 +64,104 @@ function findFirstMatch(
   return null;
 }
 
-const PUNCTUATION_OR_SPACE = /[,;\s]/;
+function getPrefixTextSiblings(node: LexicalNode) {
+  const prevSiblings = node.getPreviousSiblings().reverse();
+  const result: TextNode[] = [];
 
-function isSeparator(char: string): boolean {
-  return PUNCTUATION_OR_SPACE.test(char);
-}
-
-function endsWithSeparator(textContent: string): boolean {
-  return isSeparator(textContent[textContent.length - 1]);
-}
-
-function startsWithSeparator(textContent: string): boolean {
-  return isSeparator(textContent[0]);
-}
-
-function isPreviousNodeValid(node: LexicalNode): boolean {
-  let previousNode = node.getPreviousSibling();
-  if ($isElementNode(previousNode)) {
-    previousNode = previousNode.getLastDescendant();
+  for (let i = 0; i < prevSiblings.length; i++) {
+    const sibling = prevSiblings[i];
+    if ($isTextNode(sibling) && sibling.isSimpleText()) {
+      result.push(sibling);
+    } else {
+      break;
+    }
   }
-  return (
-    previousNode === null ||
-    $isLineBreakNode(previousNode) ||
-    ($isTextNode(previousNode) &&
-      endsWithSeparator(previousNode.getTextContent()))
-  );
+  return {
+    nodes: result.reverse(),
+    textContent: result.map((n) => n.getTextContent()).join(''),
+  };
 }
 
-function isNextNodeValid(node: LexicalNode): boolean {
-  let nextNode = node.getNextSibling();
-  if ($isElementNode(nextNode)) {
-    nextNode = nextNode.getFirstDescendant();
+function getSuffixTextSiblings(node: LexicalNode) {
+  const nextSiblings = node.getNextSiblings();
+  const result: TextNode[] = [];
+
+  for (let i = 0; i < nextSiblings.length; i++) {
+    const sibling = nextSiblings[i];
+    if ($isTextNode(sibling) && sibling.isSimpleText()) {
+      result.push(sibling);
+    } else {
+      break;
+    }
   }
-  return (
-    nextNode === null ||
-    $isLineBreakNode(nextNode) ||
-    ($isTextNode(nextNode) && startsWithSeparator(nextNode.getTextContent()))
-  );
+  return {
+    nodes: result,
+    textContent: result.map((n) => n.getTextContent()).join(''),
+  };
 }
 
-function isContentAroundIsValid(
-  matchStart: number,
-  matchEnd: number,
-  text: string,
-  node: TextNode,
-): boolean {
-  const contentBeforeIsValid =
-    matchStart > 0
-      ? isSeparator(text[matchStart - 1])
-      : isPreviousNodeValid(node);
-  if (!contentBeforeIsValid) {
-    return false;
+function splitNodes(
+  nodes: TextNode[],
+  index: number,
+  length: number,
+): {
+  prevRemainingNodes: TextNode[];
+  splittedNodes: TextNode[];
+  nextRemainingNodes: TextNode[];
+} {
+  const endIndex = index + length;
+  const nodesLength = nodes.length;
+
+  const prevRemainingNodes: TextNode[] = [];
+  const splittedNodes: TextNode[] = [];
+  const nextRemainingNodes: TextNode[] = [];
+  let totalTextLength = 0;
+  for (let i = 0; i < nodesLength; i++) {
+    const child = nodes[i];
+    const childText = child.getTextContent();
+    const childTextLength = childText.length;
+    const prevTotalTextLength = totalTextLength;
+    totalTextLength = prevTotalTextLength + childTextLength;
+
+    if (totalTextLength <= index) {
+      prevRemainingNodes.push(child);
+    } else if (prevTotalTextLength >= endIndex) {
+      nextRemainingNodes.push(child);
+    } else if (prevTotalTextLength >= index && totalTextLength <= endIndex) {
+      splittedNodes.push(child);
+    } else {
+      if (prevTotalTextLength < index) {
+        const [prevRemainingNode, splittedNode] = child.splitText(
+          index - prevTotalTextLength,
+        );
+        prevRemainingNodes.push(prevRemainingNode);
+        if (splittedNode) {
+          splittedNodes.push(splittedNode);
+        }
+      } else if (totalTextLength > endIndex) {
+        const [splittedNode, nextRemainingNode] = child.splitText(
+          endIndex - prevTotalTextLength,
+        );
+        splittedNodes.push(splittedNode);
+        if (nextRemainingNode) {
+          nextRemainingNodes.push(nextRemainingNode);
+        }
+      }
+    }
+  }
+  return {nextRemainingNodes, prevRemainingNodes, splittedNodes};
+}
+
+function replaceWithChildren(node: ElementNode): Array<LexicalNode> {
+  const children = node.getChildren();
+  const childrenLength = children.length;
+
+  for (let j = childrenLength - 1; j >= 0; j--) {
+    node.insertAfter(children[j]);
   }
 
-  const contentAfterIsValid =
-    matchEnd < text.length
-      ? isSeparator(text[matchEnd])
-      : isNextNodeValid(node);
-  return contentAfterIsValid;
+  node.remove();
+  return children.map((child) => child.getLatest());
 }
 
 function handleLinkCreation(
@@ -136,84 +170,61 @@ function handleLinkCreation(
   onChange: ChangeHandler,
 ): void {
   const nodeText = node.getTextContent();
-  let text = nodeText;
-  let invalidMatchEnd = 0;
-  let remainingTextNode = node;
-  let match;
+  const {nodes: prefixNodes, textContent: prefixText} =
+    getPrefixTextSiblings(node);
+  const {nodes: suffixNodes, textContent: suffixText} =
+    getSuffixTextSiblings(node);
+
+  const targetNodes = [...prefixNodes, node, ...suffixNodes];
+  let text = prefixText + nodeText + suffixText;
+  let remainingTextNodes = targetNodes;
+  let match: LinkMatcherResult | null;
 
   while ((match = findFirstMatch(text, matchers)) && match !== null) {
     const matchStart = match.index;
     const matchLength = match.length;
-    const matchEnd = matchStart + matchLength;
-    const isValid = isContentAroundIsValid(
-      invalidMatchEnd + matchStart,
-      invalidMatchEnd + matchEnd,
-      nodeText,
-      node,
+
+    const {prevRemainingNodes, splittedNodes, nextRemainingNodes} = splitNodes(
+      remainingTextNodes,
+      matchStart,
+      matchLength,
     );
 
-    if (isValid) {
-      let linkTextNode;
-      if (invalidMatchEnd + matchStart === 0) {
-        [linkTextNode, remainingTextNode] = remainingTextNode.splitText(
-          invalidMatchEnd + matchLength,
-        );
-      } else {
-        [, linkTextNode, remainingTextNode] = remainingTextNode.splitText(
-          invalidMatchEnd + matchStart,
-          invalidMatchEnd + matchStart + matchLength,
-        );
+    const linkNode = $createAutoLinkNode(match.url, match.attributes);
+    splittedNodes.forEach((textNode, i) => {
+      if (i === 0) {
+        textNode.insertAfter(linkNode);
       }
-      const linkNode = $createAutoLinkNode(match.url, match.attributes);
-      const textNode = $createTextNode(match.text);
-      textNode.setFormat(linkTextNode.getFormat());
-      textNode.setDetail(linkTextNode.getDetail());
       linkNode.append(textNode);
-      linkTextNode.replace(linkNode);
-      onChange(match.url, null);
-      invalidMatchEnd = 0;
-    } else {
-      invalidMatchEnd += matchEnd;
-    }
+    });
+    prevRemainingNodes.forEach((textNode) => {
+      linkNode.insertBefore(textNode);
+    });
+    nextRemainingNodes
+      .slice()
+      .reverse()
+      .forEach((textNode) => {
+        linkNode.insertAfter(textNode);
+      });
 
-    text = text.substring(matchEnd);
+    onChange(match.url, null);
+
+    remainingTextNodes = nextRemainingNodes;
+    text = text.substring(matchStart + matchLength);
   }
 }
 
-function handleLinkEdit(
+function handleUpdateUrl(
   linkNode: AutoLinkNode,
-  matchers: Array<LinkMatcher>,
+  match: LinkMatcherResult | null,
   onChange: ChangeHandler,
-): void {
-  // Check children are simple text
-  const children = linkNode.getChildren();
-  const childrenLength = children.length;
-  for (let i = 0; i < childrenLength; i++) {
-    const child = children[i];
-    if (!$isTextNode(child) || !child.isSimpleText()) {
-      replaceWithChildren(linkNode);
-      onChange(null, linkNode.getURL());
-      return;
-    }
-  }
-
-  // Check text content fully matches
-  const text = linkNode.getTextContent();
-  const match = findFirstMatch(text, matchers);
-  if (match === null || match.text !== text) {
-    replaceWithChildren(linkNode);
-    onChange(null, linkNode.getURL());
-    return;
-  }
-
-  // Check neighbors
-  if (!isPreviousNodeValid(linkNode) || !isNextNodeValid(linkNode)) {
-    replaceWithChildren(linkNode);
-    onChange(null, linkNode.getURL());
-    return;
-  }
-
+) {
   const url = linkNode.getURL();
+
+  if (match === null) {
+    onChange(null, url);
+    return;
+  }
   if (url !== match.url) {
     linkNode.setURL(match.url);
     onChange(match.url, url);
@@ -234,40 +245,189 @@ function handleLinkEdit(
   }
 }
 
-// Bad neighbours are edits in neighbor nodes that make AutoLinks incompatible.
-// Given the creation preconditions, these can only be simple text nodes.
-function handleBadNeighbors(
+function handleLinkEdit(
   textNode: TextNode,
   matchers: Array<LinkMatcher>,
   onChange: ChangeHandler,
 ): void {
-  const previousSibling = textNode.getPreviousSibling();
-  const nextSibling = textNode.getNextSibling();
-  const text = textNode.getTextContent();
-
-  if ($isAutoLinkNode(previousSibling) && !startsWithSeparator(text)) {
-    previousSibling.append(textNode);
-    handleLinkEdit(previousSibling, matchers, onChange);
-    onChange(null, previousSibling.getURL());
+  const linkNode = textNode.getParent();
+  if (!$isAutoLinkNode(linkNode)) {
+    return;
   }
 
-  if ($isAutoLinkNode(nextSibling) && !endsWithSeparator(text)) {
-    replaceWithChildren(nextSibling);
-    handleLinkEdit(nextSibling, matchers, onChange);
-    onChange(null, nextSibling.getURL());
+  // Check children are simple text
+  const children = linkNode.getChildren();
+  const childrenTextNodes: TextNode[] = [];
+  const childrenLength = children.length;
+  for (let i = 0; i < childrenLength; i++) {
+    const child = children[i];
+    if (!$isTextNode(child) || !child.isSimpleText()) {
+      replaceWithChildren(linkNode);
+      handleUpdateUrl(linkNode, null, onChange);
+      return;
+    }
+    childrenTextNodes.push(child);
   }
+
+  const {nodes: prefixNodes, textContent: prefixText} =
+    getPrefixTextSiblings(linkNode);
+  const {nodes: suffixNodes, textContent: suffixText} =
+    getSuffixTextSiblings(linkNode);
+
+  const text = prefixText + linkNode.getTextContent() + suffixText;
+  const match = findFirstMatch(text, matchers);
+  if (!match) {
+    replaceWithChildren(linkNode);
+    handleUpdateUrl(linkNode, null, onChange);
+    return;
+  }
+
+  const matchStart = match.index;
+  const matchLength = match.length;
+
+  const {prevRemainingNodes, splittedNodes, nextRemainingNodes} = splitNodes(
+    [...prefixNodes, ...childrenTextNodes, ...suffixNodes],
+    matchStart,
+    matchLength,
+  );
+  prevRemainingNodes.forEach((node) => {
+    if (linkNode.isParentOf(node)) {
+      linkNode.insertBefore(node);
+    }
+  });
+
+  nextRemainingNodes.reverse().forEach((node) => {
+    if (linkNode.isParentOf(node)) {
+      linkNode.insertAfter(node);
+    }
+  });
+
+  if (linkNode.getTextContent() !== match.text) {
+    linkNode.splice(0, linkNode.getChildrenSize(), splittedNodes);
+  }
+
+  handleUpdateUrl(linkNode, match, onChange);
 }
 
-function replaceWithChildren(node: ElementNode): Array<LexicalNode> {
-  const children = node.getChildren();
-  const childrenLength = children.length;
+function handleNeighbors(
+  textNode: TextNode,
+  matchers: Array<LinkMatcher>,
+  onChange: ChangeHandler,
+): void {
+  const prevSiblings = textNode.getPreviousSiblings();
+  const nextSiblings = textNode.getNextSiblings();
+  const prevLinkNode = prevSiblings.findLast($isAutoLinkNode);
+  const nextLinkNode = nextSiblings.find($isAutoLinkNode);
 
-  for (let j = childrenLength - 1; j >= 0; j--) {
-    node.insertAfter(children[j]);
+  if (!prevLinkNode && !nextLinkNode) {
+    return;
   }
 
-  node.remove();
-  return children.map((child) => child.getLatest());
+  if (prevLinkNode) {
+    const children = prevLinkNode.getChildren();
+    const childrenTextNodes: TextNode[] = [];
+    const childrenLength = children.length;
+    for (let i = 0; i < childrenLength; i++) {
+      const child = children[i];
+      if (!$isTextNode(child) || !child.isSimpleText()) {
+        replaceWithChildren(prevLinkNode);
+        handleUpdateUrl(prevLinkNode, null, onChange);
+        return;
+      }
+      childrenTextNodes.push(child);
+    }
+    const {nodes: suffixNodes, textContent: suffixText} =
+      getSuffixTextSiblings(prevLinkNode);
+    const text = prevLinkNode.getTextContent() + suffixText;
+    const match = findFirstMatch(text, matchers);
+    if (match !== null) {
+      const matchStart = match.index;
+      const matchLength = match.length;
+
+      if (match.text === text) {
+        suffixNodes.forEach((node) => {
+          prevLinkNode.append(node);
+        });
+      } else {
+        const {prevRemainingNodes, splittedNodes, nextRemainingNodes} =
+          splitNodes(
+            childrenTextNodes.concat(suffixNodes),
+            matchStart,
+            matchLength,
+          );
+
+        prevRemainingNodes.forEach((node) => {
+          if (prevLinkNode.isParentOf(node)) {
+            prevLinkNode.insertBefore(node);
+          }
+        });
+
+        nextRemainingNodes.reverse().forEach((node) => {
+          if (prevLinkNode.isParentOf(node)) {
+            prevLinkNode.insertAfter(node);
+          }
+        });
+
+        if (prevLinkNode.getTextContent() !== match.text) {
+          prevLinkNode.splice(0, prevLinkNode.getChildrenSize(), splittedNodes);
+        }
+      }
+      handleUpdateUrl(prevLinkNode, match, onChange);
+    }
+  }
+
+  if (nextLinkNode) {
+    const children = nextLinkNode.getChildren();
+    const childrenTextNodes: TextNode[] = [];
+    const childrenLength = children.length;
+    for (let i = 0; i < childrenLength; i++) {
+      const child = children[i];
+      if (!$isTextNode(child) || !child.isSimpleText()) {
+        replaceWithChildren(nextLinkNode);
+        handleUpdateUrl(nextLinkNode, null, onChange);
+        return;
+      }
+      childrenTextNodes.push(child);
+    }
+    const {nodes: prefixNodes, textContent: prefixText} =
+      getPrefixTextSiblings(nextLinkNode);
+    const text = prefixText + nextLinkNode.getTextContent();
+    const match = findFirstMatch(text, matchers);
+    if (match !== null) {
+      const matchStart = match.index;
+      const matchLength = match.length;
+
+      if (match.text === text) {
+        prefixNodes.reverse().forEach((node) => {
+          nextLinkNode.splice(0, 0, [node]);
+        });
+      } else {
+        const {prevRemainingNodes, splittedNodes, nextRemainingNodes} =
+          splitNodes(
+            prefixNodes.concat(childrenTextNodes),
+            matchStart,
+            matchLength,
+          );
+
+        prevRemainingNodes.forEach((node) => {
+          if (nextLinkNode.isParentOf(node)) {
+            nextLinkNode.insertBefore(node);
+          }
+        });
+
+        nextRemainingNodes.reverse().forEach((node) => {
+          if (nextLinkNode.isParentOf(node)) {
+            nextLinkNode.insertAfter(node);
+          }
+        });
+
+        if (nextLinkNode.getTextContent() !== match.text) {
+          nextLinkNode.splice(0, nextLinkNode.getChildrenSize(), splittedNodes);
+        }
+      }
+      handleUpdateUrl(nextLinkNode, match, onChange);
+    }
+  }
 }
 
 function useAutoLink(
@@ -291,21 +451,21 @@ function useAutoLink(
 
     return mergeRegister(
       editor.registerNodeTransform(TextNode, (textNode: TextNode) => {
-        const parent = textNode.getParentOrThrow();
-        const previous = textNode.getPreviousSibling();
-        if ($isAutoLinkNode(parent)) {
-          handleLinkEdit(parent, matchers, onChangeWrapped);
-        } else if (!$isLinkNode(parent)) {
-          if (
-            textNode.isSimpleText() &&
-            (startsWithSeparator(textNode.getTextContent()) ||
-              !$isAutoLinkNode(previous))
-          ) {
-            handleLinkCreation(textNode, matchers, onChangeWrapped);
-          }
-
-          handleBadNeighbors(textNode, matchers, onChangeWrapped);
+        if (!textNode.isSimpleText()) {
+          return;
         }
+        const parent = textNode.getParentOrThrow();
+        const parentIsAutoLink = $isAutoLinkNode(parent);
+        if (!parentIsAutoLink && $isLinkNode(parent)) {
+          return;
+        }
+
+        if (parentIsAutoLink) {
+          handleLinkEdit(textNode, matchers, onChangeWrapped);
+        } else {
+          handleLinkCreation(textNode, matchers, onChangeWrapped);
+        }
+        handleNeighbors(textNode, matchers, onChangeWrapped);
       }),
     );
   }, [editor, matchers, onChange]);

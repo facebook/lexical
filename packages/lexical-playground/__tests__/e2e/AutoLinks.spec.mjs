@@ -12,6 +12,8 @@ import {
   moveToLineBeginning,
   moveToLineEnd,
   selectAll,
+  toggleBold,
+  toggleUnderline,
 } from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
@@ -30,7 +32,7 @@ test.describe('Auto Links', () => {
     test.skip(isPlainText);
     await focusEditor(page);
     await page.keyboard.type(
-      'Hello http://example.com and https://example.com/path?with=query#and-hash and www.example.com and www.example.com/avatar.png',
+      'Hello http://example.com and https://example.com/path?with=query#and-hash and www.example.com and https://www.test.example/avatar.png',
     );
     await assertHTML(
       page,
@@ -51,8 +53,10 @@ test.describe('Auto Links', () => {
             <span data-lexical-text="true">www.example.com</span>
           </a>
           <span data-lexical-text="true">and</span>
-          <a href="https://www.example.com/avatar.png" dir="ltr">
-            <span data-lexical-text="true">www.example.com/avatar.png</span>
+          <a href="https://www.test.example/avatar.png" dir="ltr">
+            <span data-lexical-text="true">
+              https://www.test.example/avatar.png
+            </span>
           </a>
         </p>
       `,
@@ -61,13 +65,47 @@ test.describe('Auto Links', () => {
     );
   });
 
-  test('Can destruct links if add non-spacing text in front or right after it', async ({
+  test('Can convert url-like text composed of multiple text nodes into links', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+
+    await page.keyboard.type('https://');
+    await toggleUnderline(page);
+    await page.keyboard.type('www');
+    await toggleUnderline(page);
+    await page.keyboard.type('.');
+    await toggleBold(page);
+    await page.keyboard.type('example');
+    await toggleBold(page);
+    await page.keyboard.type('.com');
+    await assertHTML(
+      page,
+      html`
+        <p dir="ltr">
+          <a dir="ltr" href="https://www.example.com">
+            <span data-lexical-text="true">https://</span>
+            <span data-lexical-text="true">www</span>
+            <span data-lexical-text="true">.</span>
+            <strong data-lexical-text="true">example</strong>
+            <span data-lexical-text="true">.com</span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  test('Auto-link remains unchanged when non-url-forming text is added front or after', async ({
     page,
     isPlainText,
   }) => {
     test.skip(isPlainText);
     const htmlWithLink = html`
-      <p dir="ltr">
+      <p>
         <a href="http://example.com" dir="ltr">
           <span data-lexical-text="true">http://example.com</span>
         </a>
@@ -76,15 +114,29 @@ test.describe('Auto Links', () => {
 
     await focusEditor(page);
     await page.keyboard.type('http://example.com');
-    await assertHTML(page, htmlWithLink, undefined, {ignoreClasses: true});
+    await assertHTML(
+      page,
+      html`
+        <p dir="ltr">
+          <a href="http://example.com" dir="ltr">
+            <span data-lexical-text="true">http://example.com</span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
 
     // Add non-url text after the link
     await page.keyboard.type('!');
     await assertHTML(
       page,
       html`
-        <p dir="ltr">
-          <span data-lexical-text="true">http://example.com!</span>
+        <p>
+          <a dir="ltr" href="http://example.com">
+            <span data-lexical-text="true">http://example.com</span>
+          </a>
+          <span data-lexical-text="true">!</span>
         </p>
       `,
       undefined,
@@ -99,8 +151,11 @@ test.describe('Auto Links', () => {
     await assertHTML(
       page,
       html`
-        <p dir="ltr">
-          <span data-lexical-text="true">!http://example.com</span>
+        <p>
+          <span data-lexical-text="true">!</span>
+          <a dir="ltr" href="http://example.com">
+            <span data-lexical-text="true">http://example.com</span>
+          </a>
         </p>
       `,
       undefined,
@@ -253,6 +308,80 @@ test.describe('Auto Links', () => {
           <span data-lexical-text="true"></span>
           <a href="https://4.com/" dir="ltr">
             <span data-lexical-text="true">https://4.com/</span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  test('Can destruct link when changed to non-url-forming text', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type('http://example.com');
+    await assertHTML(
+      page,
+      html`
+        <p dir="ltr">
+          <a href="http://example.com" dir="ltr">
+            <span data-lexical-text="true">http://example.com</span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+    await moveLeft(page, 3);
+    await page.keyboard.type('.');
+    await assertHTML(
+      page,
+      html`
+        <p dir="ltr">
+          <span data-lexical-text="true">http://example..com</span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  test('Can create links if the text resulting from splitting the text of the AutoLinkNode url-like', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await pasteFromClipboard(page, {
+      'text/plain': 'www.exampletest.example',
+    });
+    await assertHTML(
+      page,
+      html`
+        <p>
+          <a dir="ltr" href="https://www.exampletest.example">
+            <span data-lexical-text="true">www.exampletest.example</span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+    await moveLeft(page, 12);
+    await page.keyboard.type(' ');
+    await assertHTML(
+      page,
+      html`
+        <p>
+          <a dir="ltr" href="https://www.example">
+            <span data-lexical-text="true">www.example</span>
+          </a>
+          <span data-lexical-text="true"></span>
+          <a dir="ltr" href="https://test.example">
+            <span data-lexical-text="true">test.example</span>
           </a>
         </p>
       `,

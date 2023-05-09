@@ -15,6 +15,7 @@ import type {
 import type {ElementNode, LexicalEditor, TextNode} from 'lexical';
 
 import {$isCodeNode} from '@lexical/code';
+import {$isAutoLinkNode} from '@lexical/link';
 import {
   $createRangeSelection,
   $getSelection,
@@ -74,13 +75,86 @@ function runElementTransformers(
   return false;
 }
 
+// Extracts and returns all adjacent TextNodes preceding the given node.
+// In case of an AutoLinkNode, the function also extracts its internal TextNodes.
+// The extraction stops at the first non-TextNode or non-AutoLinkNode sibling.
+function getAdjacentPrevTextNodesWithAutoLinkNodes(node: TextNode) {
+  const prevSiblings = node.getPreviousSiblings().reverse();
+  const result: TextNode[] = [];
+
+  for (let i = 0; i < prevSiblings.length; i++) {
+    const sibling = prevSiblings[i];
+
+    if ($isTextNode(sibling) && sibling.isSimpleText()) {
+      result.push(sibling);
+    } else if ($isAutoLinkNode(sibling)) {
+      result.push(...sibling.getAllTextNodes());
+    } else {
+      break;
+    }
+  }
+
+  return {
+    nodes: result.reverse(),
+    textContent: result.map((n) => n.getTextContent()).join(''),
+  };
+}
+
+function extractNodes(
+  nodes: TextNode[],
+  index: number,
+  length: number,
+): TextNode[] {
+  const endIndex = index + length;
+  const result: TextNode[] = [];
+
+  let totalTextLength = 0;
+  for (const node of nodes) {
+    const childText = node.getTextContent();
+    const childTextLength = childText.length;
+    const prevTotalTextLength = totalTextLength;
+
+    totalTextLength += childTextLength;
+
+    if (totalTextLength <= index || prevTotalTextLength >= endIndex) {
+      continue;
+    }
+
+    if (prevTotalTextLength >= index && totalTextLength <= endIndex) {
+      result.push(node);
+      continue;
+    }
+
+    if (prevTotalTextLength < index) {
+      const [, splittedNode] = node.splitText(index - prevTotalTextLength);
+      if (splittedNode) {
+        result.push(splittedNode);
+      }
+      continue;
+    }
+
+    if (totalTextLength > endIndex) {
+      const [splittedNode] = node.splitText(endIndex - prevTotalTextLength);
+      result.push(splittedNode);
+    }
+  }
+
+  return result;
+}
+
 function runTextMatchTransformers(
   anchorNode: TextNode,
   anchorOffset: number,
   transformersByTrigger: Readonly<Record<string, Array<TextMatchTransformer>>>,
 ): boolean {
   let textContent = anchorNode.getTextContent();
-  const lastChar = textContent[anchorOffset - 1];
+
+  const {nodes: prevNodes, textContent: prevTextContent} =
+    getAdjacentPrevTextNodesWithAutoLinkNodes(anchorNode);
+  const nodes = prevNodes.concat(anchorNode);
+  textContent = prevTextContent + textContent;
+  const offset = prevTextContent.length + anchorOffset;
+  const lastChar = textContent[offset - 1];
   const transformers = transformersByTrigger[lastChar];
 
   if (transformers == null) {
@@ -89,8 +163,8 @@ function runTextMatchTransformers(
 
   // If typing in the middle of content, remove the tail to do
   // reg exp match up to a string end (caret position)
-  if (anchorOffset < textContent.length) {
-    textContent = textContent.slice(0, anchorOffset);
+  if (offset < textContent.length) {
+    textContent = textContent.slice(0, offset);
   }
 
   for (const transformer of transformers) {
@@ -101,13 +175,19 @@ function runTextMatchTransformers(
     }
 
     const startIndex = match.index || 0;
-    const endIndex = startIndex + match[0].length;
-    let replaceNode;
 
-    if (startIndex === 0) {
-      [replaceNode] = anchorNode.splitText(endIndex);
-    } else {
-      [, replaceNode] = anchorNode.splitText(startIndex, endIndex);
+    // The first matched node is the replace target, others are removed
+    const matchedNodes = extractNodes(nodes, startIndex, match[0].length);
+    const replaceNode = matchedNodes.shift();
+    if (!replaceNode) {
+      continue;
+    }
+    matchedNodes.forEach((node) => node.remove());
+
+    // If replaceNode is a child of an AutoLinkNode, it is taken out of the AutoLinkNode's children
+    const parentNode = replaceNode.getParent();
+    if ($isAutoLinkNode(parentNode)) {
+      parentNode.insertAfter(replaceNode);
     }
 
     replaceNode.selectNext(0, 0);

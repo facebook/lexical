@@ -86,7 +86,8 @@ export function $insertDataTransferForPlainText(
   dataTransfer: DataTransfer,
   selection: RangeSelection | GridSelection,
 ): void {
-  const text = dataTransfer.getData('text/plain');
+  const text =
+    dataTransfer.getData('text/plain') || dataTransfer.getData('text/uri-list');
 
   if (text != null) {
     selection.insertRawText(text);
@@ -128,7 +129,9 @@ export function $insertDataTransferForRichText(
 
   // Multi-line plain text in rich text mode pasted as separate paragraphs
   // instead of single paragraph with linebreaks.
-  const text = dataTransfer.getData('text/plain');
+  // Webkit-specific: Supports read 'text/uri-list' in clipboard.
+  const text =
+    dataTransfer.getData('text/plain') || dataTransfer.getData('text/uri-list');
   if (text != null) {
     if ($isRangeSelection(selection)) {
       const parts = text.split(/(\r?\n|\t)/);

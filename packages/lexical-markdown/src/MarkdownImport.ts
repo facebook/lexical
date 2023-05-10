@@ -119,14 +119,21 @@ function importBlocks(
   elementNode.append(textNode);
   rootNode.append(elementNode);
 
+  let isMatched = false
+
   for (const {regExp, replace} of elementTransformers) {
     const match = lineText.match(regExp);
 
     if (match) {
+      isMatched = true
       textNode.setTextContent(lineText.slice(match[0].length));
       replace(elementNode, [textNode], match, true);
       break;
     }
+  }
+
+  if (!isMatched) {
+    elementNode.select(0, 0)
   }
 
   importTextFormatTransformers(

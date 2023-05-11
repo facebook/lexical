@@ -601,30 +601,32 @@ function useMenuAnchorRef(
     const rootElement = editor.getRootElement();
     const containerDiv = anchorElementRef.current;
     const menuEle = containerDiv.firstChild as Element;
-    if (rootElement !== null && resolution !== null && menuEle !== null) {
+    if (rootElement !== null && resolution !== null) {
       const {left, top, width, height} = resolution.getRect();
-      const menuRect = menuEle.getBoundingClientRect();
-      const menuHeight = menuRect.height;
-      const menuWidth = menuRect.width;
+      containerDiv.style.top = `${top + window.pageYOffset}px`;
+      containerDiv.style.left = `${left + window.pageXOffset}px`;
+      if (menuEle !== null) {
+        const menuRect = menuEle.getBoundingClientRect();
+        const menuHeight = menuRect.height;
+        const menuWidth = menuRect.width;
 
-      const rootElementRect = rootElement.getBoundingClientRect();
+        const rootElementRect = rootElement.getBoundingClientRect();
 
-      if (left + menuWidth > rootElementRect.right) {
-        containerDiv.style.left = `${left - menuWidth + window.pageXOffset}px`;
-      } else {
-        containerDiv.style.left = `${left + window.pageXOffset}px`;
-      }
-
-      if (
-        (top + menuHeight > window.innerHeight ||
-          top + menuHeight > rootElementRect.bottom) &&
-        top - rootElementRect.top > menuHeight
-      ) {
-        containerDiv.style.top = `${
-          top - menuHeight + window.pageYOffset - (height + 10)
-        }px`;
-      } else {
-        containerDiv.style.top = `${top + window.pageYOffset}px`;
+        if (left + menuWidth > rootElementRect.right) {
+          containerDiv.style.left = `${
+            left - menuWidth + window.pageXOffset
+          }px`;
+        }
+        const margin = 10;
+        if (
+          (top + menuHeight > window.innerHeight ||
+            top + menuHeight > rootElementRect.bottom) &&
+          top - rootElementRect.top > menuHeight
+        ) {
+          containerDiv.style.top = `${
+            top - menuHeight + window.pageYOffset - (height + margin)
+          }px`;
+        }
       }
 
       containerDiv.style.height = `${height}px`;

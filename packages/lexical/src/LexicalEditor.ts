@@ -36,6 +36,7 @@ import {DecoratorNode} from './nodes/LexicalDecoratorNode';
 import {LineBreakNode} from './nodes/LexicalLineBreakNode';
 import {ParagraphNode} from './nodes/LexicalParagraphNode';
 import {RootNode} from './nodes/LexicalRootNode';
+import {TabNode} from './nodes/LexicalTabNode';
 
 export type Spread<T1, T2> = Omit<T2, keyof T1> & T1;
 
@@ -382,6 +383,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
     RootNode,
     TextNode,
     LineBreakNode,
+    TabNode,
     ParagraphNode,
     ...(config.nodes || []),
   ];
@@ -603,9 +605,7 @@ export class LexicalEditor {
 
     this._onError = onError;
     this._htmlConversions = htmlConversions;
-    // We don't actually make use of the `editable` argument above.
-    // Doing so, causes e2e tests around the lock to fail.
-    this._editable = true;
+    this._editable = editable;
     this._headless = parentEditor !== null && parentEditor._headless;
     this._window = null;
     this._blockCursorElement = null;

@@ -11,6 +11,12 @@ import type {CreateEditorArgs, LexicalEditor} from 'lexical';
 
 import {createEditor} from 'lexical';
 
+/**
+ * Generates a headless editor that allows lexical to be used without the need for a DOM, eg in Node.js.
+ * Throws an error when unsupported metehods are used.
+ * @param editorConfig - The optional lexical editor configuration.
+ * @returns - The configured headless editor.
+ */
 export function createHeadlessEditor(
   editorConfig?: CreateEditorArgs,
 ): LexicalEditor {

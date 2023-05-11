@@ -11,9 +11,16 @@ import type {
   InsertTableCommandPayload,
   TableSelection,
 } from '@lexical/table';
+import type {
+  DEPRECATED_GridCellNode,
+  ElementNode,
+  LexicalNode,
+  NodeKey,
+} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
+  $createTableCellNode,
   $createTableNodeWithDimensions,
   $isTableNode,
   applyTableHandlers,
@@ -22,21 +29,36 @@ import {
   TableNode,
   TableRowNode,
 } from '@lexical/table';
+import {$insertNodeToNearestRoot} from '@lexical/utils';
 import {
-  $createParagraphNode,
   $getNodeByKey,
-  $getSelection,
-  $isRangeSelection,
-  $isRootOrShadowRoot,
+  $isTextNode,
   $nodesOfType,
   COMMAND_PRIORITY_EDITOR,
-  ElementNode,
-  NodeKey,
+  DEPRECATED_$computeGridMap,
+  DEPRECATED_$getNodeTriplet,
+  DEPRECATED_$isGridRowNode,
 } from 'lexical';
 import {useEffect} from 'react';
 import invariant from 'shared/invariant';
 
-export function TablePlugin(): JSX.Element | null {
+// TODO extract to utils
+function $insertFirst(parent: ElementNode, node: LexicalNode): void {
+  const firstChild = parent.getFirstChild();
+  if (firstChild !== null) {
+    firstChild.insertBefore(node);
+  } else {
+    parent.append(node);
+  }
+}
+
+export function TablePlugin({
+  hasCellMerge = true,
+  hasCellBackgroundColor = true,
+}: {
+  hasCellMerge?: boolean;
+  hasCellBackgroundColor?: boolean;
+}): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
@@ -50,42 +72,16 @@ export function TablePlugin(): JSX.Element | null {
     return editor.registerCommand<InsertTableCommandPayload>(
       INSERT_TABLE_COMMAND,
       ({columns, rows, includeHeaders}) => {
-        const selection = $getSelection();
+        const tableNode = $createTableNodeWithDimensions(
+          Number(rows),
+          Number(columns),
+          includeHeaders,
+        );
+        $insertNodeToNearestRoot(tableNode);
 
-        if (!$isRangeSelection(selection)) {
-          return true;
-        }
-
-        const focus = selection.focus;
-        const focusNode = focus.getNode();
-
-        if (focusNode !== null) {
-          const tableNode = $createTableNodeWithDimensions(
-            Number(rows),
-            Number(columns),
-            includeHeaders,
-          );
-
-          if ($isRootOrShadowRoot(focusNode)) {
-            const target = focusNode.getChildAtIndex(focus.offset);
-
-            if (target !== null) {
-              target.insertBefore(tableNode);
-            } else {
-              focusNode.append(tableNode);
-            }
-
-            tableNode.insertBefore($createParagraphNode());
-          } else {
-            const topLevelNode = focusNode.getTopLevelElementOrThrow();
-            topLevelNode.insertAfter(tableNode);
-          }
-
-          tableNode.insertAfter($createParagraphNode());
-          const firstCell = tableNode
-            .getFirstChildOrThrow<ElementNode>()
-            .getFirstChildOrThrow<ElementNode>();
-          firstCell.select();
+        const firstDescendant = tableNode.getFirstDescendant();
+        if ($isTextNode(firstDescendant)) {
+          firstDescendant.select();
         }
 
         return true;
@@ -155,6 +151,71 @@ export function TablePlugin(): JSX.Element | null {
       }
     };
   }, [editor]);
+
+  // Unmerge cells when the feature isn't enabled
+  useEffect(() => {
+    if (hasCellMerge) {
+      return;
+    }
+    return editor.registerNodeTransform(TableCellNode, (node) => {
+      if (node.getColSpan() > 1 || node.getRowSpan() > 1) {
+        // When we have rowSpan we have to map the entire Table to understand where the new Cells
+        // fit best; let's analyze all Cells at once to save us from further transform iterations
+        const [, , gridNode] = DEPRECATED_$getNodeTriplet(node);
+        const [gridMap] = DEPRECATED_$computeGridMap(gridNode, node, node);
+        // TODO this function expects Tables to be normalized. Look into this once it exists
+        const rowsCount = gridMap.length;
+        const columnsCount = gridMap[0].length;
+        let row = gridNode.getFirstChild();
+        invariant(
+          DEPRECATED_$isGridRowNode(row),
+          'Expected TableNode first child to be a RowNode',
+        );
+        const unmerged = [];
+        for (let i = 0; i < rowsCount; i++) {
+          if (i !== 0) {
+            row = row.getNextSibling();
+            invariant(
+              DEPRECATED_$isGridRowNode(row),
+              'Expected TableNode first child to be a RowNode',
+            );
+          }
+          let lastRowCell: null | DEPRECATED_GridCellNode = null;
+          for (let j = 0; j < columnsCount; j++) {
+            const cellMap = gridMap[i][j];
+            const cell = cellMap.cell;
+            if (cellMap.startRow === i && cellMap.startColumn === j) {
+              lastRowCell = cell;
+              unmerged.push(cell);
+            } else if (cell.getColSpan() > 1 || cell.getRowSpan() > 1) {
+              const newCell = $createTableCellNode(cell.__headerState);
+              if (lastRowCell !== null) {
+                lastRowCell.insertAfter(newCell);
+              } else {
+                $insertFirst(row, newCell);
+              }
+            }
+          }
+        }
+        for (const cell of unmerged) {
+          cell.setColSpan(1);
+          cell.setRowSpan(1);
+        }
+      }
+    });
+  }, [editor, hasCellMerge]);
+
+  // Remove cell background color when feature is disabled
+  useEffect(() => {
+    if (hasCellBackgroundColor) {
+      return;
+    }
+    return editor.registerNodeTransform(TableCellNode, (node) => {
+      if (node.getBackgroundColor() !== null) {
+        node.setBackgroundColor(null);
+      }
+    });
+  }, [editor, hasCellBackgroundColor, hasCellMerge]);
 
   return null;
 }

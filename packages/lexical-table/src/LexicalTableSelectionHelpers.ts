@@ -37,6 +37,7 @@ import {
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
   DEPRECATED_$createGridSelection,
+  DEPRECATED_$isGridNode,
   DEPRECATED_$isGridSelection,
   FOCUS_COMMAND,
   FORMAT_TEXT_COMMAND,
@@ -49,6 +50,7 @@ import {
   KEY_TAB_COMMAND,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
+import invariant from 'shared/invariant';
 
 import {$isTableCellNode} from './LexicalTableCellNode';
 import {TableSelection} from './LexicalTableSelection';
@@ -141,21 +143,29 @@ export function applyTableHandlers(
 
   // Clear selection when clicking outside of dom.
   const mouseDownCallback = (event: MouseEvent) => {
-    isMouseDown = true;
-
     if (event.button !== 0) {
       return;
     }
 
     editor.update(() => {
       const selection = $getSelection();
-
-      if (
-        DEPRECATED_$isGridSelection(selection) &&
-        selection.gridKey === tableSelection.tableNodeKey &&
-        rootElement.contains(event.target as Node)
-      ) {
-        return tableSelection.clearHighlight();
+      const target = event.target;
+      if (target instanceof Node) {
+        if (
+          DEPRECATED_$isGridSelection(selection) &&
+          selection.gridKey === tableSelection.tableNodeKey &&
+          rootElement.contains(target)
+        ) {
+          return tableSelection.clearHighlight();
+        }
+        // TODO Revise this logic; the UX selection boundaries and nested editors
+        const node = $getNearestNodeFromDOMNode(target);
+        if (
+          node !== null &&
+          $findMatchingParent(node, DEPRECATED_$isGridNode)
+        ) {
+          isMouseDown = true;
+        }
       }
     });
   };
@@ -167,7 +177,7 @@ export function applyTableHandlers(
   );
 
   const mouseUpCallback = (event: MouseEvent) => {
-    if (isMouseDown) {
+    if (isMouseDown && !doesTargetContainText(event.target as Node)) {
       event.preventDefault();
       event.stopPropagation();
     }
@@ -176,15 +186,11 @@ export function applyTableHandlers(
   };
 
   window.addEventListener('mouseup', mouseUpCallback);
-
   tableSelection.listenersToRemove.add(() =>
     window.removeEventListener('mouseup', mouseUpCallback),
   );
 
-  tableSelection.listenersToRemove.add(() =>
-    tableElement.addEventListener('mouseup', mouseUpCallback),
-  );
-
+  tableElement.addEventListener('mouseup', mouseUpCallback);
   tableSelection.listenersToRemove.add(() =>
     tableElement.removeEventListener('mouseup', mouseUpCallback),
   );
@@ -900,7 +906,7 @@ export function applyTableHandlers(
 
             isRangeSelectionHijacked = true;
             $setSelection(modifiedSelection);
-            $addHighlightStyleToTable(tableSelection);
+            $addHighlightStyleToTable(editor, tableSelection);
 
             return true;
           } else if (selectionIsInsideTable) {
@@ -962,13 +968,13 @@ export function applyTableHandlers(
           tableSelection.hasHijackedSelectionStyles &&
           !tableNode.isSelected()
         ) {
-          $removeHighlightStyleToTable(tableSelection);
+          $removeHighlightStyleToTable(editor, tableSelection);
           isRangeSelectionHijacked = false;
         } else if (
           !tableSelection.hasHijackedSelectionStyles &&
           tableNode.isSelected()
         ) {
-          $addHighlightStyleToTable(tableSelection);
+          $addHighlightStyleToTable(editor, tableSelection);
         }
 
         return false;
@@ -1019,6 +1025,19 @@ export function getCellFromTarget(node: Node): Cell | null {
   return null;
 }
 
+export function doesTargetContainText(node: Node): boolean {
+  const currentNode: ParentNode | Node | null = node;
+
+  if (currentNode !== null) {
+    const nodeName = currentNode.nodeName;
+
+    if (nodeName === 'SPAN') {
+      return true;
+    }
+  }
+  return false;
+}
+
 export function getTableGrid(tableElement: HTMLElement): Grid {
   const cells: Cells = [];
   const grid = {
@@ -1038,6 +1057,7 @@ export function getTableGrid(tableElement: HTMLElement): Grid {
       const elem = currentNode as HTMLElement;
       const cell = {
         elem,
+        hasBackgroundColor: elem.style.backgroundColor !== '',
         highlighted: false,
         x,
         y,
@@ -1090,6 +1110,7 @@ export function getTableGrid(tableElement: HTMLElement): Grid {
 }
 
 export function $updateDOMForSelection(
+  editor: LexicalEditor,
   grid: Grid,
   selection: GridSelection | RangeSelection | null,
 ): Array<Cell> {
@@ -1100,14 +1121,11 @@ export function $updateDOMForSelection(
 
     if (selectedCellNodes.has(lexicalNode)) {
       cell.highlighted = true;
-      elem.style.setProperty('background-color', 'rgb(172, 206, 247)');
-      elem.style.setProperty('caret-color', 'transparent');
+      $addHighlightToDOM(editor, cell);
       highlightedCells.push(cell);
     } else {
       cell.highlighted = false;
-      elem.style.removeProperty('background-color');
-      elem.style.removeProperty('caret-color');
-
+      $removeHighlightFromDOM(editor, cell);
       if (!elem.getAttribute('style')) {
         elem.removeAttribute('style');
       }
@@ -1147,23 +1165,26 @@ export function $forEachGridCell(
   }
 }
 
-export function $addHighlightStyleToTable(tableSelection: TableSelection) {
+export function $addHighlightStyleToTable(
+  editor: LexicalEditor,
+  tableSelection: TableSelection,
+) {
   tableSelection.disableHighlightStyle();
   $forEachGridCell(tableSelection.grid, (cell) => {
-    const elem = cell.elem;
     cell.highlighted = true;
-    elem.style.setProperty('background-color', 'rgb(172, 206, 247)');
-    elem.style.setProperty('caret-color', 'transparent');
+    $addHighlightToDOM(editor, cell);
   });
 }
 
-export function $removeHighlightStyleToTable(tableSelection: TableSelection) {
+export function $removeHighlightStyleToTable(
+  editor: LexicalEditor,
+  tableSelection: TableSelection,
+) {
   tableSelection.enableHighlightStyle();
   $forEachGridCell(tableSelection.grid, (cell) => {
     const elem = cell.elem;
     cell.highlighted = false;
-    elem.style.removeProperty('background-color');
-    elem.style.removeProperty('caret-color');
+    $removeHighlightFromDOM(editor, cell);
 
     if (!elem.getAttribute('style')) {
       elem.removeAttribute('style');
@@ -1307,4 +1328,39 @@ function selectTableCellNode(tableCell: TableCellNode) {
   } else {
     tableCell.selectEnd();
   }
+}
+
+const BROWSER_BLUE_RGB = '172,206,247';
+function $addHighlightToDOM(editor: LexicalEditor, cell: Cell): void {
+  const element = cell.elem;
+  const node = $getNearestNodeFromDOMNode(element);
+  invariant(
+    $isTableCellNode(node),
+    'Expected to find LexicalNode from Table Cell DOMNode',
+  );
+  const backgroundColor = node.getBackgroundColor();
+  if (backgroundColor === null) {
+    element.style.setProperty('background-color', `rgb(${BROWSER_BLUE_RGB})`);
+  } else {
+    element.style.setProperty(
+      'background-image',
+      `linear-gradient(to right, rgba(${BROWSER_BLUE_RGB},0.85), rgba(${BROWSER_BLUE_RGB},0.85))`,
+    );
+  }
+  element.style.setProperty('caret-color', 'transparent');
+}
+
+function $removeHighlightFromDOM(editor: LexicalEditor, cell: Cell): void {
+  const element = cell.elem;
+  const node = $getNearestNodeFromDOMNode(element);
+  invariant(
+    $isTableCellNode(node),
+    'Expected to find LexicalNode from Table Cell DOMNode',
+  );
+  const backgroundColor = node.getBackgroundColor();
+  if (backgroundColor === null) {
+    element.style.removeProperty('background-color');
+  }
+  element.style.removeProperty('background-image');
+  element.style.removeProperty('caret-color');
 }

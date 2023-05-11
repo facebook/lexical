@@ -126,8 +126,6 @@ function TweetComponent({
 export type SerializedTweetNode = Spread<
   {
     id: string;
-    type: 'tweet';
-    version: 1;
   },
   SerializedDecoratorBlockNode
 >;
@@ -211,10 +209,6 @@ export class TweetNode extends DecoratorBlockNode {
         tweetID={this.__id}
       />
     );
-  }
-
-  isInline(): false {
-    return false;
   }
 }
 

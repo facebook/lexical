@@ -42,6 +42,8 @@ export async function initialize({
   isCharLimitUtf8,
   isMaxLength,
   showNestedEditorTreeView,
+  tableCellMerge,
+  tableCellBackgroundColor,
 }) {
   const appSettings = {};
   appSettings.isRichText = IS_RICH_TEXT;
@@ -58,6 +60,12 @@ export async function initialize({
   appSettings.isCharLimit = !!isCharLimit;
   appSettings.isCharLimitUtf8 = !!isCharLimitUtf8;
   appSettings.isMaxLength = !!isMaxLength;
+  if (tableCellMerge !== undefined) {
+    appSettings.tableCellMerge = tableCellMerge;
+  }
+  if (tableCellBackgroundColor !== undefined) {
+    appSettings.tableCellBackgroundColor = tableCellBackgroundColor;
+  }
 
   const urlParams = appSettingsToURLParams(appSettings);
   const url = `http://localhost:${E2E_PORT}/${
@@ -66,7 +74,7 @@ export async function initialize({
 
   // Having more horizontal space prevents redundant text wraps for tests
   // which affects CMD+ArrowRight/Left navigation
-  page.setViewportSize({height: 1000, width: isCollab ? 2000 : 1000});
+  page.setViewportSize({height: 1000, width: isCollab ? 2500 : 1250});
   await page.goto(url);
 
   await exposeLexicalEditor(page);
@@ -712,6 +720,11 @@ export async function selectFromAlignDropdown(page, selector) {
   await click(page, '.dropdown ' + selector);
 }
 
+export async function selectFromTableDropdown(page, selector) {
+  await click(page, '.toolbar-item[aria-label="Open table toolkit"]');
+  await click(page, '.dropdown ' + selector);
+}
+
 export async function insertTable(page, rows = 2, columns = 3) {
   let leftFrame = page;
   if (IS_COLLAB) {
@@ -732,6 +745,10 @@ export async function insertTable(page, rows = 2, columns = 3) {
     page,
     'div[data-test-id="table-model-confirm-insert"] > .Button__root',
   );
+}
+
+export async function insertCollapsible(page) {
+  await selectFromInsertDropdown(page, '.item .caret-right');
 }
 
 export async function selectCellsFromTableCords(
@@ -762,7 +779,7 @@ export async function selectCellsFromTableCords(
   await firstRowFirstColumnCell.click(
     // This is a test runner quirk. Chrome seems to need two clicks to focus on the
     // content editable cell before dragging, but Firefox treats it as a double click event.
-    E2E_BROWSER !== 'firefox' ? {clickCount: 2} : {},
+    E2E_BROWSER === 'chromium' ? {clickCount: 2} : {},
   );
 
   await dragMouse(
@@ -797,6 +814,11 @@ export async function mergeTableCells(page) {
   await click(page, '.item[data-test-id="table-merge-cells"]');
 }
 
+export async function unmergeTableCell(page) {
+  await click(page, '.table-cell-action-button-container');
+  await click(page, '.item[data-test-id="table-unmerge-cells"]');
+}
+
 export async function deleteTableRows(page) {
   await click(page, '.table-cell-action-button-container');
   await click(page, '.item[data-test-id="table-delete-rows"]');
@@ -810,6 +832,11 @@ export async function deleteTableColumns(page) {
 export async function deleteTable(page) {
   await click(page, '.table-cell-action-button-container');
   await click(page, '.item[data-test-id="table-delete"]');
+}
+
+export async function setBackgroundColor(page) {
+  await click(page, '.table-cell-action-button-container');
+  await click(page, '.item[data-test-id="table-background-color"]');
 }
 
 export async function enableCompositionKeyEvents(page) {

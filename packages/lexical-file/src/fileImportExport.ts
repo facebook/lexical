@@ -12,6 +12,10 @@ import {CLEAR_HISTORY_COMMAND} from 'lexical';
 
 import {version} from '../package.json';
 
+/**
+ * Takes a file and inputs its content into the editor state as an input field.
+ * @param editor - The lexical editor.
+ */
 export function importFile(editor: LexicalEditor) {
   readTextFileFromSystem((text) => {
     const json = JSON.parse(text);
@@ -53,6 +57,12 @@ type DocumentJSON = {
   version: typeof version;
 };
 
+/**
+ * Generates a .lexical file to be downloaded by the browser containing the current editor state.
+ * @param editor - The lexical editor.
+ * @param config - An object that optionally contains fileName and source. fileName defaults to
+ * the current date (as a string) and source defaults to lexical.
+ */
 export function exportFile(
   editor: LexicalEditor,
   config: Readonly<{

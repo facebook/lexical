@@ -101,10 +101,23 @@ const LIST_INDENT_SIZE = 4;
 const listReplace = (listType: ListType): ElementTransformer['replace'] => {
   return (parentNode, children, match) => {
     const previousNode = parentNode.getPreviousSibling();
+    const nextNode = parentNode.getNextSibling();
     const listItem = $createListItemNode(
       listType === 'check' ? match[3] === 'x' : undefined,
     );
-    if ($isListNode(previousNode) && previousNode.getListType() === listType) {
+    if ($isListNode(nextNode) && nextNode.getListType() === listType) {
+      const firstChild = nextNode.getFirstChild();
+      if (firstChild !== null) {
+        firstChild.insertBefore(listItem);
+      } else {
+        // should never happen, but let's handle gracefully, just in case.
+        nextNode.append(listItem);
+      }
+      parentNode.remove();
+    } else if (
+      $isListNode(previousNode) &&
+      previousNode.getListType() === listType
+    ) {
       previousNode.append(listItem);
       parentNode.remove();
     } else {
@@ -330,7 +343,10 @@ export const LINK: TextMatchTransformer = {
     if (!$isLinkNode(node)) {
       return null;
     }
-    const linkContent = `[${node.getTextContent()}](${node.getURL()})`;
+    const title = node.getTitle();
+    const linkContent = title
+      ? `[${node.getTextContent()}](${node.getURL()} "${title}")`
+      : `[${node.getTextContent()}](${node.getURL()})`;
     const firstChild = node.getFirstChild();
     // Add text styles only if link has single text node inside. If it's more
     // then one we ignore it as markdown does not support nested styles for links
@@ -340,11 +356,13 @@ export const LINK: TextMatchTransformer = {
       return linkContent;
     }
   },
-  importRegExp: /(?:\[([^[]+)\])(?:\(([^()]+)\))/,
-  regExp: /(?:\[([^[]+)\])(?:\(([^()]+)\))$/,
+  importRegExp:
+    /(?:\[([^[]+)\])(?:\((?:([^()\s]+)(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))/,
+  regExp:
+    /(?:\[([^[]+)\])(?:\((?:([^()\s]+)(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))$/,
   replace: (textNode, match) => {
-    const [, linkText, linkUrl] = match;
-    const linkNode = $createLinkNode(linkUrl);
+    const [, linkText, linkUrl, linkTitle] = match;
+    const linkNode = $createLinkNode(linkUrl, {title: linkTitle});
     const linkTextNode = $createTextNode(linkText);
     linkTextNode.setFormat(textNode.getFormat());
     linkNode.append(linkTextNode);

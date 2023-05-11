@@ -325,6 +325,7 @@ test.describe('CodeBlock', () => {
     await click(page, 'button:has-text("Indent")');
     await page.keyboard.type('alert(2);');
     await page.keyboard.press('Enter');
+    await page.keyboard.type(';');
     await assertHTML(
       page,
       html`
@@ -360,7 +361,7 @@ test.describe('CodeBlock', () => {
             ;
           </span>
           <br />
-          <span data-lexical-text="true"></span>
+          <span style="letter-spacing: 15px" data-lexical-text="true"></span>
           <span
             class="PlaygroundEditorTheme__tokenFunction"
             data-lexical-text="true">
@@ -387,7 +388,12 @@ test.describe('CodeBlock', () => {
             ;
           </span>
           <br />
-          <span data-lexical-text="true"></span>
+          <span style="letter-spacing: 15px" data-lexical-text="true"></span>
+          <span
+            class="PlaygroundEditorTheme__tokenPunctuation"
+            data-lexical-text="true">
+            ;
+          </span>
         </code>
       `,
     );
@@ -441,7 +447,7 @@ test.describe('CodeBlock', () => {
             {
           </span>
           <br />
-          <span data-lexical-text="true"></span>
+          <span style="letter-spacing: 15px" data-lexical-text="true"></span>
           <span
             class="PlaygroundEditorTheme__tokenFunction"
             data-lexical-text="true">
@@ -484,11 +490,12 @@ test.describe('CodeBlock', () => {
       html`
         <code
           class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
-          spellcheck="false"
           dir="ltr"
+          spellcheck="false"
           data-gutter="123"
           data-highlight-language="javascript">
-          <span data-lexical-text="true"></span>
+          <span style="letter-spacing: 15px" data-lexical-text="true"></span>
+          <span style="letter-spacing: 15px" data-lexical-text="true"></span>
           <span
             class="PlaygroundEditorTheme__tokenAttr"
             data-lexical-text="true">
@@ -513,7 +520,9 @@ test.describe('CodeBlock', () => {
             {
           </span>
           <br />
-          <span data-lexical-text="true"></span>
+          <span style="letter-spacing: 15px" data-lexical-text="true"></span>
+          <span style="letter-spacing: 15px" data-lexical-text="true"></span>
+          <span style="letter-spacing: 15px" data-lexical-text="true"></span>
           <span
             class="PlaygroundEditorTheme__tokenFunction"
             data-lexical-text="true">
@@ -535,7 +544,8 @@ test.describe('CodeBlock', () => {
             ;
           </span>
           <br />
-          <span data-lexical-text="true"></span>
+          <span style="letter-spacing: 15px" data-lexical-text="true"></span>
+          <span style="letter-spacing: 15px" data-lexical-text="true"></span>
           <span
             class="PlaygroundEditorTheme__tokenPunctuation"
             data-lexical-text="true">
@@ -553,11 +563,11 @@ test.describe('CodeBlock', () => {
       html`
         <code
           class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
-          spellcheck="false"
           dir="ltr"
+          spellcheck="false"
           data-gutter="123"
           data-highlight-language="javascript">
-          <span data-lexical-text="true"></span>
+          <span style="letter-spacing: 15px" data-lexical-text="true"></span>
           <span
             class="PlaygroundEditorTheme__tokenAttr"
             data-lexical-text="true">
@@ -582,7 +592,8 @@ test.describe('CodeBlock', () => {
             {
           </span>
           <br />
-          <span data-lexical-text="true"></span>
+          <span style="letter-spacing: 15px" data-lexical-text="true"></span>
+          <span style="letter-spacing: 15px" data-lexical-text="true"></span>
           <span
             class="PlaygroundEditorTheme__tokenFunction"
             data-lexical-text="true">
@@ -604,7 +615,7 @@ test.describe('CodeBlock', () => {
             ;
           </span>
           <br />
-          <span data-lexical-text="true"></span>
+          <span style="letter-spacing: 15px" data-lexical-text="true"></span>
           <span
             class="PlaygroundEditorTheme__tokenPunctuation"
             data-lexical-text="true">
@@ -1080,61 +1091,61 @@ test.describe('CodeBlock', () => {
         spellcheck="false"
         data-gutter="12"
         data-highlight-language="javascript">
+        <span style="letter-spacing: 15px" data-lexical-text="true"></span>
         <span data-lexical-text="true">a b</span>
         <br />
+        <span style="letter-spacing: 15px" data-lexical-text="true"></span>
         <span data-lexical-text="true">c d</span>
       </code>
     `,
     );
 
-    await selectCharacters(page, 'left', 13);
+    await selectCharacters(page, 'left', 11);
     await assertSelection(page, {
-      anchorOffset: 6,
-      anchorPath: [0, 2, 0],
+      anchorOffset: 5,
+      anchorPath: [0, 4, 0],
+      focusOffset: 1,
+      focusPath: [0, 1, 0],
+    });
+
+    await moveToStart(page);
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [0, 0, 0],
       focusOffset: 0,
       focusPath: [0, 0, 0],
     });
 
-    await moveToStart(page);
-    await assertSelection(page, {
-      anchorOffset: 2,
-      anchorPath: [0, 0, 0],
-      focusOffset: 2,
-      focusPath: [0, 0, 0],
-    });
-
     await moveToEnd(page);
     await assertSelection(page, {
       anchorOffset: 5,
-      anchorPath: [0, 0, 0],
+      anchorPath: [0, 1, 0],
       focusOffset: 5,
-      focusPath: [0, 0, 0],
+      focusPath: [0, 1, 0],
     });
 
     await moveToStart(page);
     await assertSelection(page, {
-      anchorOffset: 2,
-      anchorPath: [0, 0, 0],
-      focusOffset: 2,
-      focusPath: [0, 0, 0],
+      anchorOffset: 1,
+      anchorPath: [0, 1, 0],
+      focusOffset: 1,
+      focusPath: [0, 1, 0],
     });
 
     await selectCharacters(page, 'right', 11);
     await assertSelection(page, {
-      anchorOffset: 2,
-      anchorPath: [0, 0, 0],
-      focusOffset: 6,
-      focusPath: [0, 2, 0],
+      anchorOffset: 1,
+      anchorPath: [0, 1, 0],
+      focusOffset: 5,
+      focusPath: [0, 4, 0],
     });
 
     await moveToEnd(page);
     await assertSelection(page, {
       anchorOffset: 5,
-      anchorPath: [0, 2, 0],
+      anchorPath: [0, 4, 0],
       focusOffset: 5,
-      focusPath: [0, 2, 0],
+      focusPath: [0, 4, 0],
     });
-
-    await page.pause();
   });
 });

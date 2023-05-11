@@ -35,6 +35,15 @@ function getDOMIndexWithinParent(node: ChildNode): [ParentNode, number] {
   return [parent, Array.from(parent.childNodes).indexOf(node)];
 }
 
+/**
+ * Creates a selection range for the DOM.
+ * @param editor - The lexical editor.
+ * @param anchorNode - The anchor node of a selection.
+ * @param _anchorOffset - The amount of space offset from the anchor to the focus.
+ * @param focusNode - The current focus.
+ * @param _focusOffset - The amount of space offset from the focus to the anchor.
+ * @returns The range of selection for the DOM that was created.
+ */
 export function createDOMRange(
   editor: LexicalEditor,
   anchorNode: LexicalNode,
@@ -106,6 +115,12 @@ export function createDOMRange(
   return range;
 }
 
+/**
+ * Creates DOMRects, generally used to help the editor find a specific location on the screen.
+ * @param editor - The lexical editor
+ * @param range - A fragment of a document that can contain nodes and parts of text nodes.
+ * @returns The selectionRects as an array.
+ */
 export function createRectsFromDOMRange(
   editor: LexicalEditor,
   range: Range,
@@ -122,26 +137,29 @@ export function createRectsFromDOMRange(
     parseFloat(computedStyle.paddingRight);
   const selectionRects = Array.from(range.getClientRects());
   let selectionRectsLength = selectionRects.length;
+  //sort rects from top left to bottom right.
+  selectionRects.sort((a, b) => {
+    const top = a.top - b.top;
+    // Some rects match position closely, but not perfectly,
+    // so we give a 3px tolerance.
+    if (Math.abs(top) <= 3) {
+      return a.left - b.left;
+    }
+    return top;
+  });
   let prevRect;
-
   for (let i = 0; i < selectionRectsLength; i++) {
     const selectionRect = selectionRects[i];
-    // Exclude a rect that is the exact same as the last rect. getClientRects() can return
-    // the same rect twice for some elements. A more sophisticated thing to do here is to
-    // merge all the rects together into a set of rects that don't overlap, so we don't
-    // generate backgrounds that are too dark.
-    const isDuplicateRect =
+    // Exclude rects that overlap preceding Rects in the sorted list.
+    const isOverlappingRect =
       prevRect &&
-      prevRect.top === selectionRect.top &&
-      prevRect.left === selectionRect.left &&
-      prevRect.width === selectionRect.width &&
-      prevRect.height === selectionRect.height;
-
+      prevRect.top <= selectionRect.top &&
+      prevRect.top + prevRect.height > selectionRect.top &&
+      prevRect.left + prevRect.width > selectionRect.left;
     // Exclude selections that span the entire element
     const selectionSpansElement =
       selectionRect.width + rootPadding === rootRect.width;
-
-    if (isDuplicateRect || selectionSpansElement) {
+    if (isOverlappingRect || selectionSpansElement) {
       selectionRects.splice(i--, 1);
       selectionRectsLength--;
       continue;
@@ -151,6 +169,11 @@ export function createRectsFromDOMRange(
   return selectionRects;
 }
 
+/**
+ * Creates an object containing all the styles and their values provided in the CSS string.
+ * @param css - The CSS string of styles and their values.
+ * @returns The styleObject containing all the styles and their values.
+ */
 export function getStyleObjectFromRawCSS(css: string): Record<string, string> {
   const styleObject: Record<string, string> = {};
   const styles = css.split(';');
@@ -165,6 +188,11 @@ export function getStyleObjectFromRawCSS(css: string): Record<string, string> {
   return styleObject;
 }
 
+/**
+ * Given a CSS string, returns an object from the style cache.
+ * @param css - The CSS property as a string.
+ * @returns The value of the given CSS property.
+ */
 export function getStyleObjectFromCSS(css: string): Record<string, string> {
   let value = CSS_TO_STYLES.get(css);
   if (value === undefined) {
@@ -174,6 +202,11 @@ export function getStyleObjectFromCSS(css: string): Record<string, string> {
   return value;
 }
 
+/**
+ * Gets the CSS styles from the style object.
+ * @param styles - The style object containing the styles to get.
+ * @returns A string containing the CSS styles and their values.
+ */
 export function getCSSFromStyleObject(styles: Record<string, string>): string {
   let css = '';
 

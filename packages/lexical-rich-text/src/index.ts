@@ -11,6 +11,7 @@ import type {
   CommandPayloadType,
   DOMConversionMap,
   DOMConversionOutput,
+  DOMExportOutput,
   EditorConfig,
   ElementFormatType,
   LexicalCommand,
@@ -42,10 +43,12 @@ import {
   $applyNodeReplacement,
   $createParagraphNode,
   $createRangeSelection,
+  $createTabNode,
   $getAdjacentNode,
   $getNearestNodeFromDOMNode,
   $getRoot,
   $getSelection,
+  $insertNodes,
   $isDecoratorNode,
   $isElementNode,
   $isNodeSelection,
@@ -73,6 +76,8 @@ import {
   INDENT_CONTENT_COMMAND,
   INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
+  INSERT_TAB_COMMAND,
+  isSelectionCapturedInDecoratorInput,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
@@ -96,8 +101,6 @@ import {
 export type SerializedHeadingNode = Spread<
   {
     tag: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
-    type: 'heading';
-    version: 1;
   },
   SerializedElementNode
 >;
@@ -106,13 +109,7 @@ export const DRAG_DROP_PASTE: LexicalCommand<Array<File>> = createCommand(
   'DRAG_DROP_PASTE_FILE',
 );
 
-export type SerializedQuoteNode = Spread<
-  {
-    type: 'quote';
-    version: 1;
-  },
-  SerializedElementNode
->;
+export type SerializedQuoteNode = SerializedElementNode;
 
 /** @noInheritDoc */
 export class QuoteNode extends ElementNode {
@@ -145,6 +142,27 @@ export class QuoteNode extends ElementNode {
         conversion: convertBlockquoteElement,
         priority: 0,
       }),
+    };
+  }
+
+  exportDOM(editor: LexicalEditor): DOMExportOutput {
+    const {element} = super.exportDOM(editor);
+
+    if (element && this.isEmpty()) {
+      element.append(document.createElement('br'));
+    }
+    if (element) {
+      const formatType = this.getFormatType();
+      element.style.textAlign = formatType;
+
+      const direction = this.getDirection();
+      if (direction) {
+        element.dir = direction;
+      }
+    }
+
+    return {
+      element,
     };
   }
 
@@ -287,6 +305,28 @@ export class HeadingNode extends ElementNode {
       },
     };
   }
+
+  exportDOM(editor: LexicalEditor): DOMExportOutput {
+    const {element} = super.exportDOM(editor);
+
+    if (element && this.isEmpty()) {
+      element.append(document.createElement('br'));
+    }
+    if (element) {
+      const formatType = this.getFormatType();
+      element.style.textAlign = formatType;
+
+      const direction = this.getDirection();
+      if (direction) {
+        element.dir = direction;
+      }
+    }
+
+    return {
+      element,
+    };
+  }
+
   static importJSON(serializedNode: SerializedHeadingNode): HeadingNode {
     const node = $createHeadingNode(serializedNode.tag);
     node.setFormat(serializedNode.format);
@@ -438,16 +478,14 @@ export function eventFiles(
 }
 
 function handleIndentAndOutdent(
-  insertTab: (node: LexicalNode) => void,
   indentOrOutdent: (block: ElementNode) => void,
-): void {
+): boolean {
   const selection = $getSelection();
   if (!$isRangeSelection(selection)) {
-    return;
+    return false;
   }
   const alreadyHandled = new Set();
   const nodes = selection.getNodes();
-
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
     const key = node.getKey();
@@ -456,14 +494,12 @@ function handleIndentAndOutdent(
     }
     const parentBlock = $getNearestBlockElementAncestorOrThrow(node);
     const parentKey = parentBlock.getKey();
-    if (parentBlock.canInsertTab()) {
-      insertTab(node);
-      alreadyHandled.add(key);
-    } else if (parentBlock.canIndent() && !alreadyHandled.has(parentKey)) {
+    if (parentBlock.canIndent() && !alreadyHandled.has(parentKey)) {
       alreadyHandled.add(parentKey);
       indentOrOutdent(parentBlock);
     }
   }
+  return alreadyHandled.size > 0;
 }
 
 function $isTargetWithinDecorator(target: HTMLElement): boolean {
@@ -625,44 +661,32 @@ export function registerRichText(editor: LexicalEditor): () => void {
       COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
+      INSERT_TAB_COMMAND,
+      () => {
+        $insertNodes([$createTabNode()]);
+        return true;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerCommand(
       INDENT_CONTENT_COMMAND,
       () => {
-        handleIndentAndOutdent(
-          () => {
-            editor.dispatchCommand(CONTROLLED_TEXT_INSERTION_COMMAND, '\t');
-          },
-          (block) => {
-            const indent = block.getIndent();
-            if (indent !== 10) {
-              block.setIndent(indent + 1);
-            }
-          },
-        );
-        return true;
+        return handleIndentAndOutdent((block) => {
+          const indent = block.getIndent();
+          block.setIndent(indent + 1);
+        });
       },
       COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
       OUTDENT_CONTENT_COMMAND,
       () => {
-        handleIndentAndOutdent(
-          (node) => {
-            if ($isTextNode(node)) {
-              const textContent = node.getTextContent();
-              const character = textContent[textContent.length - 1];
-              if (character === '\t') {
-                editor.dispatchCommand(DELETE_CHARACTER_COMMAND, true);
-              }
-            }
-          },
-          (block) => {
-            const indent = block.getIndent();
-            if (indent !== 0) {
-              block.setIndent(indent - 1);
-            }
-          },
-        );
-        return true;
+        return handleIndentAndOutdent((block) => {
+          const indent = block.getIndent();
+          if (indent > 0) {
+            block.setIndent(indent - 1);
+          }
+        });
       },
       COMMAND_PRIORITY_EDITOR,
     ),
@@ -978,6 +1002,11 @@ export function registerRichText(editor: LexicalEditor): () => void {
         if (files.length > 0 && !hasTextContent) {
           editor.dispatchCommand(DRAG_DROP_PASTE, files);
           return true;
+        }
+
+        // if inputs then paste within the input ignore creating a new node on paste event
+        if (isSelectionCapturedInDecoratorInput(event.target as Node)) {
+          return false;
         }
 
         const selection = $getSelection();

@@ -37,8 +37,6 @@ export type SerializedListNode = Spread<
     listType: ListType;
     start: number;
     tag: ListNodeTagType;
-    type: 'list';
-    version: 1;
   },
   SerializedElementNode
 >;
@@ -76,6 +74,12 @@ export class ListNode extends ElementNode {
 
   getTag(): ListNodeTagType {
     return this.__tag;
+  }
+
+  setListType(type: ListType): void {
+    const writable = this.getWritable();
+    writable.__listType = type;
+    writable.__tag = type === 'number' ? 'ol' : 'ul';
   }
 
   getListType(): ListType {

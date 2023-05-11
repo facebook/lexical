@@ -438,6 +438,16 @@ i.horizontal-rule {
   background-image: url(images/icons/bg-color.svg);
 }
 
+.icon.table {
+  background-color: #6c757d;
+  mask-image: url(images/icons/table.svg);
+  -webkit-mask-image: url(images/icons/table.svg);
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+  mask-size: contain;
+  -webkit-mask-size: contain;
+}
+
 i.image {
   background-image: url(images/icons/file-image.svg);
 }
@@ -600,6 +610,20 @@ i.prettier-error {
   width: 35px;
   vertical-align: -0.25em;
   position: absolute;
+  right: 30px;
+  top: 0;
+  bottom: 0;
+  cursor: pointer;
+}
+
+.link-editor div.link-trash {
+  background-image: url(images/icons/trash.svg);
+  background-size: 16px;
+  background-position: center;
+  background-repeat: no-repeat;
+  width: 35px;
+  vertical-align: -0.25em;
+  position: absolute;
   right: 0;
   top: 0;
   bottom: 0;
@@ -662,83 +686,9 @@ i.prettier-error {
   border-radius: 4px;
 }
 
-.ContentEditable__root .PlaygroundEditorTheme__link {
-  pointer-events: none;
-}
-
 .mention:focus {
   box-shadow: rgb(180 213 255) 0px 0px 0px 2px;
   outline: none;
-}
-
-#block-controls {
-  display: block;
-  position: absolute;
-  right: 10px;
-  width: 32px;
-  height: 32px;
-  box-sizing: border-box;
-  box-shadow: rgba(0, 0, 0, 0.1) 0px 1px 2px 0px;
-  top: 16px;
-  z-index: 10;
-  border-radius: 8px;
-  border: 1px solid rgb(206, 208, 212);
-  overflow: hidden;
-}
-
-#block-controls button {
-  border: 1px solid white;
-  background-color: #fff;
-  display: block;
-  transition: background-color 0.1s ease;
-  cursor: pointer;
-  outline: none;
-  border-radius: 8px;
-  padding: 3px;
-}
-
-#block-controls button:hover {
-  background-color: #efefef;
-}
-
-#block-controls button:focus-visible {
-  border-color: blue;
-}
-
-#block-controls span.block-type {
-  background-size: contain;
-  display: block;
-  width: 18px;
-  height: 18px;
-  margin: 2px;
-}
-
-#block-controls span.block-type.paragraph {
-  background-image: url(images/icons/text-paragraph.svg);
-}
-
-#block-controls span.block-type.h1 {
-  background-image: url(images/icons/type-h1.svg);
-}
-
-#block-controls span.block-type.h2 {
-  background-image: url(images/icons/type-h2.svg);
-}
-
-#block-controls span.block-type.quote {
-  background-image: url(images/icons/chat-square-quote.svg);
-}
-
-#block-controls span.block-type.ul {
-  background-image: url(images/icons/list-ul.svg);
-}
-
-#block-controls span.block-type.ol {
-  background-image: url(images/icons/list-ol.svg);
-}
-
-#block-controls span.block-type.code {
-  background-image: url(images/icons/code.svg);
 }
 
 .characters-limit {
@@ -1344,6 +1294,21 @@ button.action-button:disabled {
   text-decoration: underline;
 }
 
+.debug-treetype-button {
+  border: 0;
+  padding: 0;
+  font-size: 12px;
+  top: 10px;
+  right: 85px;
+  position: absolute;
+  background: none;
+  color: #fff;
+}
+
+.debug-treetype-button:hover {
+  text-decoration: underline;
+}
+
 .connecting {
   font-size: 15px;
   color: #999;
@@ -1679,7 +1644,6 @@ hr.selected {
   cursor: text;
   display: block;
   position: relative;
-  tab-size: 1;
   outline: 0px;
   padding: 0;
   user-select: text;

@@ -49,9 +49,7 @@ import {isNestedListNode} from './utils';
 export type SerializedListItemNode = Spread<
   {
     checked: boolean | undefined;
-    type: 'listitem';
     value: number;
-    version: 1;
   },
   SerializedElementNode
 >;
@@ -128,9 +126,6 @@ export class ListItemNode extends ElementNode {
   static importJSON(serializedNode: SerializedListItemNode): ListItemNode {
     const node = new ListItemNode(serializedNode.value, serializedNode.checked);
     node.setFormat(serializedNode.format);
-    //setIndent is overridden here with logic that doesn't need
-    //to run during deserialization
-    node.getWritable().__indent = serializedNode.indent;
     node.setDirection(serializedNode.direction);
     return node;
   }
@@ -224,7 +219,7 @@ export class ListItemNode extends ElementNode {
 
     // Attempt to merge if the list is of the same type.
 
-    if ($isListNode(node) && node.getListType() === listNode.getListType()) {
+    if ($isListNode(node)) {
       let child = node;
       const children = node.getChildren<ListNode>();
 

@@ -9,6 +9,7 @@
 import type {ExcalidrawElementFragment} from './ExcalidrawModal';
 import type {NodeKey} from 'lexical';
 
+import {AppState, BinaryFiles} from '@excalidraw/excalidraw/types/types';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
 import {mergeRegister} from '@lexical/utils';
@@ -123,15 +124,25 @@ export default function ExcalidrawComponent({
     });
   }, [editor, nodeKey]);
 
-  const setData = (newData: ReadonlyArray<ExcalidrawElementFragment>) => {
+  const setData = (
+    els: ReadonlyArray<ExcalidrawElementFragment>,
+    aps: Partial<AppState>,
+    fls: BinaryFiles,
+  ) => {
     if (!editor.isEditable()) {
       return;
     }
     return editor.update(() => {
       const node = $getNodeByKey(nodeKey);
       if ($isExcalidrawNode(node)) {
-        if (newData.length > 0) {
-          node.setData(JSON.stringify(newData));
+        if (els.length > 0 || Object.keys(fls).length > 0) {
+          node.setData(
+            JSON.stringify({
+              appState: aps,
+              elements: els,
+              files: fls,
+            }),
+          );
         } else {
           node.remove();
         }
@@ -150,19 +161,27 @@ export default function ExcalidrawComponent({
     }, 200);
   };
 
-  const elements = useMemo(() => JSON.parse(data), [data]);
+  const {
+    elements = [],
+    files = {},
+    appState = {},
+  } = useMemo(() => JSON.parse(data), [data]);
+
   return (
     <>
       <ExcalidrawModal
         initialElements={elements}
+        initialFiles={files}
+        initialAppState={appState}
         isShown={isModalOpen}
         onDelete={deleteNode}
-        onSave={(newData) => {
+        onClose={() => setModalOpen(false)}
+        onSave={(els, aps, fls) => {
           editor.setEditable(true);
-          setData(newData);
+          setData(els, aps, fls);
           setModalOpen(false);
         }}
-        closeOnClickOutside={true}
+        closeOnClickOutside={false}
       />
       {elements.length > 0 && (
         <button
@@ -172,6 +191,8 @@ export default function ExcalidrawComponent({
             imageContainerRef={imageContainerRef}
             className="image"
             elements={elements}
+            files={files}
+            appState={appState}
           />
           {(isSelected || isResizing) && (
             <ImageResizer

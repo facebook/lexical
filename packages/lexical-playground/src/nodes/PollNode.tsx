@@ -63,8 +63,6 @@ export type SerializedPollNode = Spread<
   {
     question: string;
     options: Options;
-    type: 'poll';
-    version: 1;
   },
   SerializedLexicalNode
 >;

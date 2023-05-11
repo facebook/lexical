@@ -1,3 +1,121 @@
+## 0.10.0 (2023-04-18)
+
+### Breaking Changes
+
+@lexical/link will now sanitize anchor tag hrefs before rendering them to the DOM. This provides a measure of protection against XSS attacks
+that rely on inlining javascript in that attribute. However, it means that links using less common protocols will now be sanitized (converted to about:blank),
+which will be a breaking change for any existing links.
+
+Like most other node-based logic in Lexical, the sanitization logic can be overriden by overriding LinkNode using the Node Overrides API and replacing it with a node that implements the sanitizeUrl method differently.
+
+**Fixes CVE-2023-30792**
+
+- Table feature: background color (#4345) Gerard Rovira
+- Add @react/LexicalClickableLinkPlugin (#4316) Gerard Rovira
+- TablePlugin feature: cell merge (#4343) Gerard Rovira
+- Ban javascript URLs in @lexical/link (#4342) Acy Watson
+- Table Cell Background Color (#4306) Gerard Rovira
+- ExportDOM in Debug Tree View (#4307) Ivaylo Pavlov
+
+## 0.9.2 (2023-04-14)
+
+- Update codes.json (#4320) Gerard Rovira
+- Missing table types (#4302) Gerard Rovira
+- Fix cursor changing to default when resizing image (#4317) (#4318) Mohit Singh Chauhan
+- Persist files and scene state in Excalidraw plugin (#4299) Ivaylo Pavlov
+- Fix crash on prettier formatting fail (#4310) Syed Umar Anis
+- YouTube embed: use more privacy-friendly youtube-nocookie.com instead of youtube.com (#4282) Alessio Gravili
+- Fix flowtypes for insertBefore/after (#4245) Maksim Horbachevsky
+- Fix excluded property imports (#4287) Acy Watson
+- Allow excluding specific properties from collab syncing via plugin (#4275) Acy Watson
+- Update tables.md (#4278) Gerard Rovira
+- Refactor Check for mention match function (#4277) Aleksandr Kiliushin
+- Replace canExtractContents with ShadowRoot check (#4276) Gerard Rovira
+- Ignore script nodes in HTML deserialization (#4249) Acy Watson
+- Fix Clear Formatting (Fixes #4188) (#4204) Ivaylo Pavlov
+- Add try catch around katex renderer (#4260) John Flockton
+- last table row delete throwing error (#4270) Aman Bansal
+- Upgrade Flow to 0.2 (#4264) Gerard Rovira
+- Cell merge backwards compatiblity 2 (#4268) Gerard Rovira
+- Cell merge backwards compatiblity (#4267) Gerard Rovira
+- fix get text selectRect error (#4263) yjh
+- Loosen node and version types (#4143) John Flockton
+- Bugfix: Comment popup closes when cursor hovers over table (#4228) Ben Carleton
+- isEditable is true on first render even if editor initiated with false (#4251) Aman Bansal
+- Fix TableCellNode import/exportJSON (#4259) Gerard Rovira
+- Flow: table missing methods (#4261) Gerard Rovira
+- Fix insertTableColumn when rowSpan > 1 (#4258) Gerard Rovira
+- Bugfix: Floating tool bar not responsive in tables (#4237) Ben Carleton
+- pasting text on input was creating a new paragraph node instead of ad… (#4246) Aman Bansal
+- Excalidraw Component fixes (#4252) Ivaylo Pavlov
+- Preserve content with merging cells (#4242) Gerard Rovira
+- Support select all for node selection (#4233) Maksim Horbachevsky
+- Fix TypeaheadMenuPlugin scrollIntoView to not rely on external class (#4238) Dragoș Străinu
+- Ignore __indent in list deserialization (#4241) Acy Watson
+- Revise Excalidraw dependency (#4234) Gerard Rovira
+- Table toolbar foundation (#4182) Gerard Rovira
+- Restore MD selection (#4232) Gerard Rovira
+- Fixed `aria-label` typo (#4229) Hao Luo
+- Export $hasUpdateTag (#4216) Alma Madsen
+- Fix incorrect placement of Auto Embed (#4192) wangqi
+- Fix bad selection shift at boundary (#4219) Gerard Rovira
+- Improve Documentation - multiple modules (#4166) Harry Sanders
+- Unmerge cell (#4212) Gerard Rovira
+- Only allow numbers in TablePlugin row / column number input (#4201) Alessio Gravili
+- Create fragment attached to the doc (#4186) Maksim Horbachevsky
+- Add a title to the link node to support titles in markdown (#4161) themagickoala
+- Fix table insertion (#4180) Gerard Rovira
+- added trash button to floatingLinkEditor plugin to toggle the link to… (#4209) Aman Bansal
+- Delete unused LinkPreview.css (#4200) Alessio Gravili
+- Use 'padding' shorthand CSS rule (#4198) Alessio Gravili
+- Add missing flow file (#4193) Maksim Horbachevsky
+
+## v0.9.1 (2023-03-24)
+
+- Explicit E2E_BROWSER on E2E runs (#4179) Gerard Rovira
+- Fix tables Webkit e2e (#4175) Gerard Rovira
+- Remove unused convertToMarkdown file (#4169) themagickoala
+- Improve markdown transformers (#3886) Godefroy
+- Iterate through the live NodeList instead of copying to an array in $generateNodesFromDOM (#4164) Acy Watson
+- Bump Excalidraw to v0.14.2 (#4153) Ivaylo Pavlov
+- Fix table stealing selectionchange (#4162) Gerard Rovira
+- Improve Documentation #2845 - lexical/selection (#4140) Harry Sanders
+- UX: Floating link editor: better positioning (#4158) Alessio Gravili
+- DecoratorNode not disabling placeholder at root (#4147) Harry Sanders
+- Color picker - fixes #4127 (#4146) Harry Sanders
+- Validate against infinite loop in ListItemNode.setIndent (#4120) Acy Watson
+- Paste merged celled table (#4116) Gerard Rovira
+- Add md import/export tests, fix numbered lists pasting (#4123) Maksim Horbachevsky
+- Bump webpack from 5.75.0 to 5.76.0 (#4128) dependabot[bot]
+- fix: drag-over event on windows (#4125) 子瞻 Luci
+- Remove link preview (#4122) John Flockton
+- Add a function to create a LinkMatcher based on a RegExp (#3972) Karibash
+- Revise padding for smaller res (#4112) Gerard Rovira
+- Catch failures in parseEditorState (#4109) Acy Watson
+- Improve Documentation #2845 - lexical/list (#4107) Harry Sanders
+- Fix tables Collab E2E (#4117) Gerard Rovira
+- Fix ShadowRoot + X insertNode (#4115) Gerard Rovira
+- Overflow of logos of action items in Lexical Playground (#4096) 7gaurab_khanal
+- Remove columns w/ span support (#4093) Gerard Rovira
+- Remove rows w/ span support (#4078) Gerard Rovira
+- Table insert column w/ span support (#4074) Gerard Rovira
+- Table insert row w/ span support (#4063) Gerard Rovira
+- Use broader return types in `HorizontalRuleNode` (#4097) Chris Montrois
+- Add focus tag to editor.focus (#4092) Dragoș Străinu
+- Improve Documentation #2845 - lexical/utils (#4047) Harry Sanders
+- Fix toolbars that shouldn't appear in certain cases (#4077) Warren19
+- Fixed reference to old `addUpdateListener` method in transforms doc (#4094) Kevin Ansfield
+- Pass tags to onChange for LexicalOnChangePlugin (#4091) Dragoș Străinu
+- Fix tables E2E (#4090) John Flockton
+- Change default indent to 40px (#4025) EgonBolton
+- Update CODEOWNERS (#4089) John Flockton
+- Updated InsertTableDialog UX (#4082) Brandon
+- Export getNearestEditorFromDOMNode (#4079) Gerard Rovira
+- Fix unresponsive resize handle in Safari (#4081) Brandon
+- Sticky toolbar to assist in editing large content (#4076) Brandon
+- Fix table RangeSelection test (#4061) Gerard Rovira
+- Trim table e2e assert (#4060) Gerard Rovira
+
 ## v0.9.0 (2023-03-08)
 
 - deprecate $wrapNodes (#4059) Acy Watson

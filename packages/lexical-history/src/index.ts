@@ -7,19 +7,10 @@
  *
  */
 
-import type {
-  EditorState,
-  GridSelection,
-  LexicalEditor,
-  LexicalNode,
-  NodeKey,
-  NodeSelection,
-  RangeSelection,
-} from 'lexical';
+import type {EditorState, LexicalEditor, LexicalNode, NodeKey} from 'lexical';
 
 import {mergeRegister} from '@lexical/utils';
 import {
-  $getSelection,
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
@@ -47,7 +38,6 @@ const DELETE_CHARACTER_AFTER_SELECTION = 4;
 export type HistoryStateEntry = {
   editor: LexicalEditor;
   editorState: EditorState;
-  undoSelection?: RangeSelection | NodeSelection | GridSelection | null;
 };
 export type HistoryState = {
   current: null | HistoryStateEntry;
@@ -374,12 +364,9 @@ function undo(editor: LexicalEditor, historyState: HistoryState): void {
     historyState.current = historyStateEntry || null;
 
     if (historyStateEntry) {
-      historyStateEntry.editor.setEditorState(
-        historyStateEntry.editorState.clone(historyStateEntry.undoSelection),
-        {
-          tag: 'historic',
-        },
-      );
+      historyStateEntry.editor.setEditorState(historyStateEntry.editorState, {
+        tag: 'historic',
+      });
     }
   }
 }
@@ -390,6 +377,15 @@ function clearHistory(historyState: HistoryState) {
   historyState.current = null;
 }
 
+/**
+ * Registers necessary listeners to manage undo/redo history stack and related editor commands.
+ * It returns `unregister` callback that cleans up all listeners and should be called on editor unmount.
+ * @param editor - The lexical editor.
+ * @param historyState - The history state, containing the current state and the undo/redo stack.
+ * @param delay - The time (in milliseconds) the editor should delay generating a new history stack,
+ * instead of merging the current changes with the current stack.
+ * @returns The listeners cleanup callback function.
+ */
 export function registerHistory(
   editor: LexicalEditor,
   historyState: HistoryState,
@@ -437,7 +433,6 @@ export function registerHistory(
       if (current !== null) {
         undoStack.push({
           ...current,
-          undoSelection: prevEditorState.read($getSelection),
         });
         editor.dispatchCommand(CAN_UNDO_COMMAND, true);
       }
@@ -498,6 +493,10 @@ export function registerHistory(
   };
 }
 
+/**
+ * Creates an empty history state.
+ * @returns - The empty history state, as an object.
+ */
 export function createEmptyHistoryState(): HistoryState {
   return {
     current: null,

@@ -99,8 +99,6 @@
   margin: 0;
   margin-top: 8px;
   margin-bottom: 8px;
-  tab-size: 2;
-  /* white-space: pre; */
   overflow-x: auto;
   position: relative;
 }

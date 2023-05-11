@@ -15,18 +15,14 @@ import type {
 } from 'lexical';
 import {ElementNode, LexicalNode} from 'lexical';
 
-export type SerializedMarkNode = {
-  ...SerializedElementNode,
+export type SerializedMarkNode = SerializedElementNode & {
   ids: Array<string>,
-  type: 'mark',
-  version: 1,
-  ...
 };
 
 declare export class MarkNode extends ElementNode {
   __ids: Array<string>;
 
-  static clone(node: MarkNode): MarkNode;
+  static clone(node: this): MarkNode;
   constructor(ids: Array<string>, key?: NodeKey): void;
 
   hasID(id: string): boolean;

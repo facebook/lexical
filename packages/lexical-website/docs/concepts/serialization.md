@@ -205,8 +205,6 @@ Here's an example of `exportJSON` for the `HeadingNode`:
 export type SerializedHeadingNode = Spread<
   {
     tag: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
-    type: 'heading';
-    version: 1;
   },
   SerializedElementNode
 >;
@@ -279,7 +277,6 @@ export type SerializedTextNodeV1 = Spread<
     mode: TextModeType;
     style: string;
     text: string;
-    version: 1,
   },
   SerializedLexicalNode
 >;

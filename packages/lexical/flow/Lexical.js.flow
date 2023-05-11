@@ -36,6 +36,7 @@ declare export var KEY_BACKSPACE_COMMAND: LexicalCommand<KeyboardEvent>;
 declare export var KEY_ESCAPE_COMMAND: LexicalCommand<KeyboardEvent>;
 declare export var KEY_DELETE_COMMAND: LexicalCommand<KeyboardEvent>;
 declare export var KEY_TAB_COMMAND: LexicalCommand<KeyboardEvent>;
+declare export var INSERT_TAB_COMMAND: LexicalCommand<void>;
 declare export var KEY_MODIFIER_COMMAND: LexicalCommand<KeyboardEvent>;
 declare export var INDENT_CONTENT_COMMAND: LexicalCommand<void>;
 declare export var OUTDENT_CONTENT_COMMAND: LexicalCommand<void>;
@@ -100,7 +101,7 @@ type RegisteredNode = {
   klass: Class<LexicalNode>,
   transforms: Set<Transform<LexicalNode>>,
 };
-type Transform<T> = (node: T) => void;
+export type Transform<T> = (node: T) => void;
 
 type DOMConversionCache = Map<
   string,
@@ -320,7 +321,7 @@ type NodeName = string;
 export type DOMConversionOutput = {
   after?: (childLexicalNodes: Array<LexicalNode>) => Array<LexicalNode>,
   forChild?: DOMChildConversion,
-  node: LexicalNode | null,
+  node: null | LexicalNode | Array<LexicalNode>,
 };
 export type DOMExportOutput = {
   after?: (generatedElement: ?HTMLElement) => ?HTMLElement,
@@ -375,8 +376,14 @@ declare export class LexicalNode {
   ): boolean;
   remove(preserveEmptyParent?: boolean): void;
   replace<N: LexicalNode>(replaceWith: N): N;
-  insertAfter(nodeToInsert: LexicalNode): LexicalNode;
-  insertBefore(nodeToInsert: LexicalNode): LexicalNode;
+  insertAfter(
+    nodeToInsert: LexicalNode,
+    restoreSelection?: boolean,
+  ): LexicalNode;
+  insertBefore(
+    nodeToInsert: LexicalNode,
+    restoreSelection?: boolean,
+  ): LexicalNode;
   selectPrevious(anchorOffset?: number, focusOffset?: number): RangeSelection;
   selectNext(anchorOffset?: number, focusOffset?: number): RangeSelection;
   markDirty(): void;
@@ -541,6 +548,20 @@ declare export function $insertNodes(
   nodes: Array<LexicalNode>,
   selectStart?: boolean,
 ): boolean;
+export type GridMapValueType = {
+  cell: deprecated_GridCellNode,
+  startRow: number,
+  startColumn: number,
+};
+export type GridMapType = Array<Array<GridMapValueType>>;
+declare export function DEPRECATED_$computeGridMap(
+  grid: deprecated_GridNode,
+  cellA: deprecated_GridCellNode,
+  cellB: deprecated_GridCellNode,
+): [GridMapType, GridMapValueType, GridMapValueType];
+declare export function DEPRECATED_$getNodeTriplet(
+  source: PointType | LexicalNode | deprecated_GridCellNode,
+): [deprecated_GridCellNode, deprecated_GridRowNode, deprecated_GridNode];
 
 /**
  * LexicalTextNode
@@ -615,6 +636,27 @@ declare export function $createTextNode(text?: string): TextNode;
 declare export function $isTextNode(
   node: ?LexicalNode,
 ): boolean %checks(node instanceof TextNode);
+
+/**
+ * LexicalTabNode
+ */
+
+export type SerializedTabNode = SerializedTextNode;
+
+declare export function $createTabNode(): TabNode;
+
+declare export function $isTabNode(
+  node: LexicalNode | null | void,
+): boolean %checks(node instanceof TabNode);
+
+declare export class TabNode extends TextNode {
+  static getType(): string;
+  static clone(node: TabNode): TabNode;
+  constructor(key?: NodeKey): void;
+  static importDOM(): DOMConversionMap | null;
+  static importJSON(serializedTabNode: SerializedTabNode): TabNode;
+  exportJSON(): SerializedTabNode;
+}
 
 /**
  * LexicalLineBreakNode
@@ -712,7 +754,6 @@ declare export class ElementNode extends LexicalNode {
     selection: RangeSelection,
     restoreSelection?: boolean,
   ): null | LexicalNode;
-  canInsertTab(): boolean;
   canIndent(): boolean;
   collapseAtStart(selection: RangeSelection): boolean;
   excludeFromCopy(destination: 'clone' | 'html'): boolean;
@@ -791,8 +832,13 @@ declare export function DEPRECATED_$isGridRowNode(
 
 declare export class deprecated_GridCellNode extends ElementNode {
   __colSpan: number;
+  __rowSpan: number;
 
   constructor(colSpan: number, key?: NodeKey): void;
+  getColSpan(): number;
+  setColSpan(colSpan: number): this;
+  getRowSpan(): number;
+  setRowSpan(rowSpan: number): this;
 }
 
 declare export function DEPRECATED_$isGridCellNode(
@@ -835,7 +881,7 @@ declare export function $getNearestRootOrShadowRoot(
   node: LexicalNode,
 ): RootNode | ElementNode;
 declare export function $isRootOrShadowRoot(
-  node: LexicalNode,
+  node: ?LexicalNode,
 ): boolean %checks(node instanceof RootNode || node instanceof ElementNode);
 declare export function $hasAncestor(
   child: LexicalNode,
@@ -891,19 +937,21 @@ export type SerializedElementNode = {
 
 export type SerializedParagraphNode = {
   ...SerializedElementNode,
-  type: 'paragraph',
   ...
 };
 
 export type SerializedLineBreakNode = {
   ...SerializedLexicalNode,
-  type: 'linebreak',
+  ...
+};
+
+export type SerializedDecoratorNode = {
+  ...SerializedLexicalNode,
   ...
 };
 
 export type SerializedRootNode = {
   ...SerializedElementNode,
-  type: 'root',
   ...
 };
 

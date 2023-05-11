@@ -6,6 +6,7 @@
 .*/npm/.*
 .*/.tempUserDataDir/.*
 .*/node_modules/.*
+.*/libdefs/.*
 
 [include]
 ./packages/
@@ -69,6 +70,7 @@ module.name_mapper='^@lexical/react/LexicalTableOfContents' -> '<PROJECT_ROOT>/p
 module.name_mapper='^@lexical/react/LexicalAutoFormatterPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalAutoFormatterPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalCharacterLimitPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalCharacterLimitPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalClearEditorPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalClearEditorPlugin.js.flow'
+module.name_mapper='^@lexical/react/LexicalClickableLinkPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalClickableLinkPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalCollaborationContext' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalCollaborationContext.js.flow'
 module.name_mapper='^@lexical/react/LexicalCollaborationPlugin' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalCollaborationPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalTablePlugin' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalTablePlugin.js.flow'
@@ -112,7 +114,7 @@ suppress_type=$FixMe
 suppress_type=$FlowExpectedError
 
 [libs]
-./libdefs/
+./libdefs/yjs.js
 ./scripts/flow/environment.js
 ./flow-typed/yjs.js
 ./flow-typed/prism.js
@@ -120,3 +122,6 @@ suppress_type=$FlowExpectedError
 [strict]
 nonstrict-import
 unclear-type
+
+[version]
+^0.203.0

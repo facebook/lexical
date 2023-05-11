@@ -205,16 +205,6 @@ describe('LexicalListNode tests', () => {
       });
     });
 
-    test('ListNode.canInsertTab()', async () => {
-      const {editor} = testEnv;
-
-      await editor.update(() => {
-        const listNode = $createListNode('bullet', 1);
-
-        expect(listNode.canInsertTab()).toBe(false);
-      });
-    });
-
     test('ListNode.append() should properly transform a ListItemNode', async () => {
       const {editor} = testEnv;
 

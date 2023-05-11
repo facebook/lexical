@@ -87,6 +87,10 @@
       "@lexical/react/LexicalTypeaheadMenuPlugin": [
         "packages/lexical-react/src/LexicalTypeaheadMenuPlugin.tsx"
       ],
+      "@lexical/react/LexicalNodeMenuPlugin": [
+        "packages/lexical-react/src/LexicalNodeMenuPlugin.tsx"
+      ],
+
       "@lexical/react/LexicalHistoryPlugin": [
         "./packages/lexical-react/src/LexicalHistoryPlugin.ts"
       ],
@@ -119,6 +123,9 @@
       ],
       "@lexical/react/LexicalClearEditorPlugin": [
         "./packages/lexical-react/src/LexicalClearEditorPlugin.ts"
+      ],
+      "@lexical/react/LexicalClickableLinkPlugin": [
+        "./packages/lexical-react/src/LexicalClickableLinkPlugin.tsx"
       ],
       "@lexical/react/LexicalCollaborationContext": [
         "./packages/lexical-react/src/LexicalCollaborationContext.ts"

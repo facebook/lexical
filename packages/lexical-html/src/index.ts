@@ -122,7 +122,9 @@ function $appendNodesToHTML(
   }
 
   if (shouldInclude && !shouldExclude) {
-    element.append(fragment);
+    if (element instanceof HTMLElement) {
+      element.append(fragment);
+    }
     parentElement.append(element);
 
     if (after) {

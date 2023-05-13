@@ -58,7 +58,6 @@ export class LineBreakNode extends LexicalNode {
             ((firstChild as Text).nextSibling === node &&
               (firstChild as Text).nodeType === DOM_TEXT_TYPE &&
               ((firstChild as Text).textContent || '').match(
-                // todo compile
                 /^[\s|\r?\n|\t]+$/,
               ) !== null)) &&
           ((lastChild = parentElement.lastChild) === node ||

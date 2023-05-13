@@ -123,8 +123,8 @@ export type DOMConversion<T extends HTMLElement = HTMLElement> = {
 
 export type DOMConversionFn<T extends HTMLElement = HTMLElement> = (
   element: T,
-  parent?: Node,
-  preformatted?: boolean,
+  getCachedComputedStyle: (domElement: Element) => CSSStyleDeclaration,
+  findCachedParentDOMNode: (domNode: Node, nodeName: string) => null | Node,
 ) => DOMConversionOutput | null;
 
 export type DOMChildConversion = (
@@ -142,7 +142,6 @@ export type DOMConversionOutput = {
   after?: (childLexicalNodes: Array<LexicalNode>) => Array<LexicalNode>;
   forChild?: DOMChildConversion;
   node: null | LexicalNode | Array<LexicalNode>;
-  preformatted?: boolean;
 };
 
 export type DOMExportOutput = {
@@ -838,7 +837,6 @@ export class LexicalNode {
    * @param includeChildren - Whether or not to transfer the children of this node to the replacing node.
    * */
   replace<N extends LexicalNode>(replaceWith: N, includeChildren?: boolean): N {
-    debugger;
     errorOnReadOnly();
     let selection = $getSelection();
     if (selection !== null) selection = selection.clone();

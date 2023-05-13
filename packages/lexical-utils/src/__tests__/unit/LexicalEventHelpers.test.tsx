@@ -20,14 +20,12 @@ import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {
   applySelectionInputs,
   pasteHTML,
-  setNativeSelectionWithPaths,
 } from '@lexical/selection/src/__tests__/utils';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
 import {initializeClipboard, TestComposer} from 'lexical/src/__tests__/utils';
 import * as React from 'react';
 import {createRoot} from 'react-dom/client';
 import * as ReactTestUtils from 'react-dom/test-utils';
-import {$getSelection} from 'lexical';
 
 jest.mock('shared/environment', () => {
   const originalModule = jest.requireActual('shared/environment');
@@ -163,17 +161,6 @@ describe('LexicalEventHelpers', () => {
 
     ReactTestUtils.act(() => {
       createRoot(container).render(<TestBase />);
-    });
-
-    // editor.getRootElement().focus();
-
-    // await Promise.resolve().then();
-
-    // Focus first element
-    // await setNativeSelectionWithPaths(editor.getRootElement(), [0], 0, [0], 0);
-    await editor.getEditorState().read(() => {
-      console.info(editor.getEditorState()._nodeMap);
-      console.info($getSelection());
     });
   }
 
@@ -422,7 +409,7 @@ describe('LexicalEventHelpers', () => {
       });
     });
 
-    describe.only('W3 spacing', () => {
+    describe('W3 spacing', () => {
       const suite = [
         {
           expectedHTML:
@@ -690,7 +677,6 @@ describe('LexicalEventHelpers', () => {
         const test_ = testUnit['only'] ? test.only : test;
         test_(name + ` (#${i + 1})`, async () => {
           await applySelectionInputs(testUnit.inputs, update, editor);
-          console.info(editor.getEditorState()._nodeMap);
 
           // Validate HTML matches
           expect(container.firstChild.innerHTML).toBe(testUnit.expectedHTML);

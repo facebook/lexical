@@ -938,11 +938,10 @@ function convertBringAttentionToElement(domNode: Node): DOMConversionOutput {
   };
 }
 
-// todo cache getComputedStyle
 function convertTextDOMNode(
   domNode: Node,
-  _parent?: Node, // do we need?
-  preformatted?: boolean, // do we need?
+  getCachedComputedStyle: (domElement: Element) => CSSStyleDeclaration,
+  findCachedParentDOMNode: (domNode_: Node, nodeName: string) => null | Node,
 ): DOMConversionOutput {
   const domNode_ = domNode as Text;
   const parentDom = domNode.parentElement;
@@ -951,15 +950,14 @@ function convertTextDOMNode(
     'Expected parentElement of Text not to be null',
   );
   let textContent = domNode_.textContent || '';
-  console.info('convert', textContent);
-  debugger;
-  // TODO consider: for large trees, perhaps a less fidelity, parent-only option may suffice
-  const computedStyle = getComputedStyle(parentDom);
+  const computedStyle = getCachedComputedStyle(parentDom);
   const whitespaceStyle =
     computedStyle.whiteSpace || parentDom.style.whiteSpace;
   // No collapse and preserve segment break for pre, pre-wrap and pre-line
-  if (whitespaceStyle.startsWith('pre') || parentDom.nodeName === 'PRE') {
-    // Ignore
+  if (
+    whitespaceStyle.startsWith('pre') ||
+    findCachedParentDOMNode(domNode_, 'PRE') !== null
+  ) {
     const parts = textContent.split(/(\r?\n|\t)/);
     const nodes: Array<LexicalNode> = [];
     const length = parts.length;
@@ -975,7 +973,6 @@ function convertTextDOMNode(
     }
     return {node: nodes};
   }
-  // TODO compile regex
   textContent = textContent
     .replace(/\r?\n|\t/gm, ' ')
     .replace('\r', '')
@@ -984,15 +981,17 @@ function convertTextDOMNode(
     return {node: null};
   }
   if (textContent[0] === ' ') {
-    // traverse backward while display starts with inline
-    // if content contains new line or tab -> stop and (see below); other elements can borrow from this one
-    // if can find another inline that doesn't end with space, keep
-    // (see below continued) ... check if it's also last space; if it is don't remove -> check next rule
+    // Traverse backward while in the same line. If content contains new line or tab -> pontential
+    // delete, other elements can borrow from this one. Deletion depends on whether it's also the
+    // last space (see next condition: textContent[textContent.length - 1] === ' '))
     let previousText: null | Text = domNode_;
     let isStartOfLine = true;
     while (
       previousText !== null &&
-      (previousText = findPreviousTextInLine(previousText)) !== null
+      (previousText = findPreviousTextInLine(
+        previousText,
+        getCachedComputedStyle,
+      )) !== null
     ) {
       const previousTextContent = previousText.textContent || '';
       if (previousTextContent.length > 0) {
@@ -1009,14 +1008,13 @@ function convertTextDOMNode(
     }
   }
   if (textContent[textContent.length - 1] === ' ') {
-    // traverse forward while display inline, if next inline needs a space, don't delete
+    // Traverse forward while in the same line, preserve if next inline will require a space
     let nextText: null | Text = domNode_;
     let isEndOfLine = true;
     while (
       nextText !== null &&
-      (nextText = findNextTextInLine(nextText)) !== null
+      (nextText = findNextTextInLine(nextText, getCachedComputedStyle)) !== null
     ) {
-      console.info(domNode.textContent, '<->', nextText.textContent);
       const nextTextContent = (nextText.textContent || '').replace(
         /^[\s|\r?\n|\t]+/,
         '',
@@ -1024,47 +1022,27 @@ function convertTextDOMNode(
       if (nextTextContent.length > 0) {
         isEndOfLine = false;
         break;
-        // // if (nextTextContent.match(/^(?:\s|\r?\n|\t)/)) {
-        // console.info(`surprise  "${nextTextContent}"`);
-        // textContent = textContent.slice(0, textContent.length - 1);
-        // // }
-        // console.info(isEndOfLine);
-        // break;
       }
     }
     if (isEndOfLine) {
       textContent = textContent.slice(0, textContent.length - 1);
     }
   }
-
-  // if (!preformatted && /\n/.test(textContent)) {
-  //   textContent = textContent.replace(/\r?\n/gm, ' ');
-  //   if (textContent.trim().length === 0) {
-  //     return {node: null};
-  //   }
-  // }
-  // const parts = textContent.split(/(\t)/);
-  // const nodes = [];
-  // const length = parts.length;
-  // for (let i = 0; i < length; i++) {
-  //   const part = parts[i];
-  //   if (part === '\t') {
-  //     nodes.push($createTabNode());
-  //   } else {
-  //     nodes.push($createTextNode(part));
-  //   }
-  // }
-  console.info(`result "${textContent}"`);
   if (textContent === '') {
     return {node: null};
   }
   return {node: $createTextNode(textContent)};
 }
 
-const inlineParents =
-  /^(a|abbr|acronym|b|cite|code|del|em|i|ins|kbd|label|output|q|ruby|s|samp|span|strong|sub|sup|time|u|tt|var)$/i;
+const inlineParents = new RegExp(
+  /^(a|abbr|acronym|b|cite|code|del|em|i|ins|kbd|label|output|q|ruby|s|samp|span|strong|sub|sup|time|u|tt|var)$/,
+  'i',
+);
 
-function findPreviousTextInLine(text: Text): null | Text {
+function findPreviousTextInLine(
+  text: Text,
+  getCachedComputedStyle: (domElement: Element) => CSSStyleDeclaration,
+): null | Text {
   let node: Node = text;
   // eslint-disable-next-line no-constant-condition
   while (true) {
@@ -1078,7 +1056,7 @@ function findPreviousTextInLine(text: Text): null | Text {
     }
     node = previousSibling;
     if (node.nodeType === DOM_ELEMENT_TYPE) {
-      const display = getComputedStyle(node as Element).display || '';
+      const display = getCachedComputedStyle(node as Element).display || '';
       if (
         (display === '' && node.nodeName.match(inlineParents) === null) ||
         (display !== '' && !display.startsWith('inline'))
@@ -1098,7 +1076,10 @@ function findPreviousTextInLine(text: Text): null | Text {
   }
 }
 
-function findNextTextInLine(text: Text): null | Text {
+function findNextTextInLine(
+  text: Text,
+  getCachedComputedStyle: (domElement: Element) => CSSStyleDeclaration,
+): null | Text {
   let node: Node = text;
   // eslint-disable-next-line no-constant-condition
   while (true) {
@@ -1112,7 +1093,7 @@ function findNextTextInLine(text: Text): null | Text {
     }
     node = nextSibling;
     if (node.nodeType === DOM_ELEMENT_TYPE) {
-      const display = getComputedStyle(node as Element).display || '';
+      const display = getCachedComputedStyle(node as Element).display || '';
       if (
         (display === '' && node.nodeName.match(inlineParents) === null) ||
         (display !== '' && !display.startsWith('inline'))

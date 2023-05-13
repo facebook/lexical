@@ -6,7 +6,6 @@
  *
  */
 
-import {DOM_TEXT_TYPE} from '../LexicalConstants';
 import type {
   DOMConversionMap,
   DOMConversionOutput,
@@ -14,6 +13,7 @@ import type {
   SerializedLexicalNode,
 } from '../LexicalNode';
 
+import {DOM_TEXT_TYPE} from '../LexicalConstants';
 import {LexicalNode} from '../LexicalNode';
 import {$applyNodeReplacement} from '../LexicalUtils';
 
@@ -49,7 +49,6 @@ export class LineBreakNode extends LexicalNode {
     return {
       br: (node: Node) => {
         const parentElement = node.parentElement;
-        debugger;
         // If the <br> is the only child, then skip including it
         let firstChild;
         let lastChild;
@@ -98,7 +97,6 @@ function convertLineBreakElement(node: Node): DOMConversionOutput {
 }
 
 export function $createLineBreakNode(): LineBreakNode {
-  debugger;
   return $applyNodeReplacement(new LineBreakNode());
 }
 

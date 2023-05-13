@@ -100,28 +100,26 @@ export function $insertDataTransferForRichText(
 ): void {
   const lexicalString = dataTransfer.getData('application/x-lexical-editor');
 
-  // if (lexicalString) {
-  //   try {
-  //     const payload = JSON.parse(lexicalString);
-  //     if (
-  //       payload.namespace === editor._config.namespace &&
-  //       Array.isArray(payload.nodes)
-  //     ) {
-  //       const nodes = $generateNodesFromSerializedNodes(payload.nodes);
-  //       return $insertGeneratedNodes(editor, nodes, selection);
-  //     }
-  //   } catch {
-  //     // Fail silently.
-  //   }
-  // }
+  if (lexicalString) {
+    try {
+      const payload = JSON.parse(lexicalString);
+      if (
+        payload.namespace === editor._config.namespace &&
+        Array.isArray(payload.nodes)
+      ) {
+        const nodes = $generateNodesFromSerializedNodes(payload.nodes);
+        return $insertGeneratedNodes(editor, nodes, selection);
+      }
+    } catch {
+      // Fail silently.
+    }
+  }
 
   const htmlString = dataTransfer.getData('text/html');
-  debugger;
   if (htmlString) {
     try {
       const parser = new DOMParser();
       const dom = parser.parseFromString(htmlString, 'text/html');
-      console.info(dom.body.innerHTML);
       const nodes = $generateNodesFromDOM(editor, dom);
       return $insertGeneratedNodes(editor, nodes, selection);
     } catch {
@@ -188,7 +186,6 @@ function $basicInsertStrategy(
   // Wrap text and inline nodes in paragraph nodes so we have all blocks at the top-level
   const topLevelBlocks = [];
   let currentBlock = null;
-  console.info('insert', nodes);
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
 
@@ -221,9 +218,6 @@ function $basicInsertStrategy(
   }
 
   if ($isRangeSelection(selection)) {
-    console.info('clipboard');
-    console.info(selection);
-    console.info(topLevelBlocks);
     selection.insertNodes(topLevelBlocks);
   } else if (DEPRECATED_$isGridSelection(selection)) {
     // If there's an active grid selection and a non grid is pasted, add to the anchor.
@@ -596,20 +590,10 @@ function $copyToClipboardEvent(
     plainString = selection.getTextContent();
   }
   if (htmlString !== null) {
-    clipboardData.setData(
-      'text/html',
-      `<div>
-      <div>
-      a
-      </div>
-      <div>
-      b
-      </div>
-      </div>`,
-    );
+    clipboardData.setData('text/html', htmlString);
   }
   if (lexicalString !== null) {
-    // clipboardData.setData('application/x-lexical-editor', lexicalString);
+    clipboardData.setData('application/x-lexical-editor', lexicalString);
   }
   clipboardData.setData('text/plain', plainString);
   return true;

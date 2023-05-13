@@ -23,6 +23,7 @@ import {
   $sliceSelectedTextNodeContent,
 } from '@lexical/selection';
 import {$getRoot, $isElementNode, $isTextNode} from 'lexical';
+import invariant from 'shared/invariant';
 
 /**
  * How you parse your html string to get a document is left up to you. In the browser you can use the native
@@ -165,12 +166,69 @@ function getConversionFunction(
 
 const IGNORE_TAGS = new Set(['STYLE', 'SCRIPT']);
 
+function getCachedComputedStyle(): (element: Element) => CSSStyleDeclaration {
+  const cache = new WeakMap<Element, CSSStyleDeclaration>();
+  return (element: Element) => {
+    const cached = cache.get(element);
+    if (cached !== undefined) {
+      return cached;
+    }
+    const browserComputedStyle = getComputedStyle(element);
+    cache.set(element, browserComputedStyle);
+    return browserComputedStyle;
+  };
+}
+
+function findCachedParentDOMNode(): (
+  node: Node,
+  nodeName: string,
+) => null | Node {
+  const cache = new WeakMap<Node, Map<string, null | Node>>();
+  function cacheGet(node: Node, nodeName: string): undefined | null | Node {
+    const cacheNodeName = cache.get(node);
+    if (cacheNodeName !== undefined) {
+      return cacheNodeName.get(nodeName);
+    }
+  }
+  function cacheSet(
+    node: Node,
+    nodeName: string,
+    parentNode: null | Node,
+  ): void {
+    let cacheNodeName = cache.get(node);
+    if (cacheNodeName === undefined) {
+      cacheNodeName = new Map<string, null | Node>();
+      cache.set(node, cacheNodeName);
+    }
+    cacheNodeName.set(nodeName, parentNode);
+  }
+  return (node: Node, nodeName: string) => {
+    let parent = node.parentNode;
+    const visited = [node, parent];
+    while (
+      parent !== null &&
+      parent.nodeName !== nodeName &&
+      cacheGet(node, nodeName) === undefined
+    ) {
+      parent = parent.parentNode;
+      visited.push(parent);
+    }
+    for (let i = 0; i < visited.length - 1; i++) {
+      const visitedNode = visited[i];
+      invariant(visitedNode !== null, 'Only last node can be null');
+      cacheSet(visitedNode, nodeName, parent);
+    }
+    return parent;
+  };
+}
+
 function $createNodesFromDOM(
   node: Node,
   editor: LexicalEditor,
   forChildMap: Map<string, DOMChildConversion> = new Map(),
   parentLexicalNode?: LexicalNode | null | undefined,
-  preformatted = false,
+  getComputedStyle = getCachedComputedStyle(),
+  findParentDOMNode = findCachedParentDOMNode(),
 ): Array<LexicalNode> {
   let lexicalNodes: Array<LexicalNode> = [];
 
@@ -181,7 +239,11 @@ function $createNodesFromDOM(
   let currentLexicalNode = null;
   const transformFunction = getConversionFunction(node, editor);
   const transformOutput = transformFunction
-    ? transformFunction(node as HTMLElement, undefined, preformatted)
+    ? transformFunction(
+        node as HTMLElement,
+        getComputedStyle,
+        findParentDOMNode,
+      )
     : null;
   let postTransform = null;
 
@@ -230,8 +292,8 @@ function $createNodesFromDOM(
         editor,
         new Map(forChildMap),
         currentLexicalNode,
-        preformatted ||
-          (transformOutput && transformOutput.preformatted) === true,
+        getComputedStyle,
+        findParentDOMNode,
       ),
     );
   }

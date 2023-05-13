@@ -435,7 +435,6 @@ export function setNativeSelectionWithPaths(
 ) {
   const anchorNode = getNodeFromPath(anchorPath, rootElement);
   const focusNode = getNodeFromPath(focusPath, rootElement);
-  console.info('an', anchorNode, focusNode);
   setNativeSelection(anchorNode, anchorOffset, focusNode, focusOffset);
 }
 

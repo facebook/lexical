@@ -1469,7 +1469,6 @@ export class RangeSelection implements BaseSelection {
             target.isEmpty() &&
             target.canReplaceWith(node)
           ) {
-            console.info('replace', target.getType(), node.getType());
             target.replace(node);
             target = node;
             didReplaceOrMerge = true;

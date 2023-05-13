@@ -271,7 +271,7 @@ export function $createVideoNode(id: string): VideoNode {
   return new VideoNode(id);
 }
 
-export function $isVideoNode(node: ?LexicalNode): boolean {
+export function $isVideoNode(node?: LexicalNode): boolean {
   return node instanceof VideoNode;
 }
 ```

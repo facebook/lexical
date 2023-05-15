@@ -988,9 +988,10 @@ function convertTextDOMNode(
     let isStartOfLine = true;
     while (
       previousText !== null &&
-      (previousText = findPreviousTextInLine(
+      (previousText = findTextInLine(
         previousText,
         getCachedComputedStyle,
+        false,
       )) !== null
     ) {
       const previousTextContent = previousText.textContent || '';
@@ -1013,7 +1014,8 @@ function convertTextDOMNode(
     let isEndOfLine = true;
     while (
       nextText !== null &&
-      (nextText = findNextTextInLine(nextText, getCachedComputedStyle)) !== null
+      (nextText = findTextInLine(nextText, getCachedComputedStyle, true)) !==
+        null
     ) {
       const nextTextContent = (nextText.textContent || '').replace(
         /^[\s|\r?\n|\t]+/,
@@ -1039,22 +1041,25 @@ const inlineParents = new RegExp(
   'i',
 );
 
-function findPreviousTextInLine(
+function findTextInLine(
   text: Text,
   getCachedComputedStyle: (domElement: Element) => CSSStyleDeclaration,
+  forward: boolean,
 ): null | Text {
   let node: Node = text;
   // eslint-disable-next-line no-constant-condition
   while (true) {
-    let previousSibling: null | Node;
-    while ((previousSibling = node.previousSibling) === null) {
+    let sibling: null | Node;
+    while (
+      (sibling = forward ? node.nextSibling : node.previousSibling) === null
+    ) {
       const parentElement = node.parentElement;
       if (parentElement === null) {
         return null;
       }
       node = parentElement;
     }
-    node = previousSibling;
+    node = sibling;
     if (node.nodeType === DOM_ELEMENT_TYPE) {
       const display = getCachedComputedStyle(node as Element).display || '';
       if (
@@ -1064,46 +1069,9 @@ function findPreviousTextInLine(
         return null;
       }
     }
-    let lastDescendant: null | Node = node;
-    while ((lastDescendant = node.lastChild) !== null) {
-      node = lastDescendant;
-    }
-    if (node.nodeType === DOM_TEXT_TYPE) {
-      return node as Text;
-    } else if (node.nodeName === 'BR') {
-      return null;
-    }
-  }
-}
-
-function findNextTextInLine(
-  text: Text,
-  getCachedComputedStyle: (domElement: Element) => CSSStyleDeclaration,
-): null | Text {
-  let node: Node = text;
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
-    let nextSibling: null | Node;
-    while ((nextSibling = node.nextSibling) === null) {
-      const parentElement = node.parentElement;
-      if (parentElement === null) {
-        return null;
-      }
-      node = parentElement;
-    }
-    node = nextSibling;
-    if (node.nodeType === DOM_ELEMENT_TYPE) {
-      const display = getCachedComputedStyle(node as Element).display || '';
-      if (
-        (display === '' && node.nodeName.match(inlineParents) === null) ||
-        (display !== '' && !display.startsWith('inline'))
-      ) {
-        return null;
-      }
-    }
-    let lastDescendant: null | Node = node;
-    while ((lastDescendant = node.firstChild) !== null) {
-      node = lastDescendant;
+    let descendant: null | Node = node;
+    while ((descendant = forward ? node.firstChild : node.lastChild) !== null) {
+      node = descendant;
     }
     if (node.nodeType === DOM_TEXT_TYPE) {
       return node as Text;

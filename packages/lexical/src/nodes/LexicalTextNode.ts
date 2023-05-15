@@ -996,7 +996,6 @@ function convertTextDOMNode(
     ) {
       const previousTextContent = previousText.textContent || '';
       if (previousTextContent.length > 0) {
-        // todo compile regex
         if (previousTextContent.match(/(?:\s|\r?\n|\t)$/)) {
           textContent = textContent.slice(1);
         }

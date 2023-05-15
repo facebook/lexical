@@ -56,8 +56,9 @@ function runElementTransformers(
     return false;
   }
 
-  for (const {regExp, replace} of elementTransformers) {
-    const match = textContent.match(regExp);
+  for (const {matcher, regExp, replace} of elementTransformers) {
+    // use matcher function is provided
+    const match = matcher ? matcher(textContent) : textContent.match(regExp);
 
     if (match && match[0].length === anchorOffset) {
       const nextSiblings = anchorNode.getNextSiblings();
@@ -94,14 +95,28 @@ function runTextMatchTransformers(
   }
 
   for (const transformer of transformers) {
-    const match = textContent.match(transformer.regExp);
-
-    if (match === null) {
-      continue;
+    let match,
+      startIndex: number,
+      endIndex: number,
+      matchText: RegExpMatchArray | Array<string>;
+    if (transformer.matcher) {
+      match = transformer.matcher(textContent);
+      if (match === null) {
+        continue;
+      }
+      startIndex = match.index || 0;
+      endIndex = startIndex + match.matchText[0].length;
+      matchText = match.matchText;
+    } else {
+      match = textContent.match(transformer.regExp);
+      if (match === null) {
+        continue;
+      }
+      startIndex = match.index || 0;
+      endIndex = startIndex + match[0].length;
+      matchText = match;
     }
 
-    const startIndex = match.index || 0;
-    const endIndex = startIndex + match[0].length;
     let replaceNode;
 
     if (startIndex === 0) {
@@ -111,7 +126,7 @@ function runTextMatchTransformers(
     }
 
     replaceNode.selectNext(0, 0);
-    transformer.replace(replaceNode, match);
+    transformer.replace(replaceNode, matchText);
     return true;
   }
 

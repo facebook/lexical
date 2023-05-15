@@ -50,6 +50,7 @@ export type ElementTransformer = {
     // eslint-disable-next-line no-shadow
     traverseChildren: (node: ElementNode) => string,
   ) => string | null;
+  matcher?: (textContent: string) => Array<string>;
   regExp: RegExp;
   replace: (
     parentNode: ElementNode,
@@ -77,8 +78,9 @@ export type TextMatchTransformer = Readonly<{
     exportFormat: (node: TextNode, textContent: string) => string,
   ) => string | null;
   importRegExp: RegExp;
+  matcher?: (textContent: string) => {index: number; matchText: Array<string>};
   regExp: RegExp;
-  replace: (node: TextNode, match: RegExpMatchArray) => void;
+  replace: (node: TextNode, match: Array<string>) => void;
   trigger: string;
   type: 'text-match';
 }>;

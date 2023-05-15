@@ -119,9 +119,9 @@ function importBlocks(
   elementNode.append(textNode);
   rootNode.append(elementNode);
 
-  for (const {regExp, replace} of elementTransformers) {
-    const match = lineText.match(regExp);
-
+  for (const {matcher, regExp, replace} of elementTransformers) {
+    // use matcher function is provided
+    const match = matcher ? matcher(lineText) : lineText.match(regExp);
     if (match) {
       textNode.setTextContent(lineText.slice(match[0].length));
       replace(elementNode, [textNode], match, true);

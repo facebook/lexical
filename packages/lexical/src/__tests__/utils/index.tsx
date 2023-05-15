@@ -18,7 +18,7 @@ import type {
   SerializedTextNode,
 } from 'lexical';
 
-import {CodeHighlightNode, CodeNode} from '@lexical/code';
+import {CodeHighlightNode, CodeNode, CodeTabNode} from '@lexical/code';
 import {HashtagNode} from '@lexical/hashtag';
 import {AutoLinkNode, LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
@@ -44,6 +44,7 @@ type TestEnv = {
   container: HTMLDivElement | null;
   editor: LexicalEditor | null;
   outerHTML: string;
+  innerHTML: string;
 };
 
 export function initializeUnitTest(
@@ -53,7 +54,9 @@ export function initializeUnitTest(
   const testEnv: TestEnv = {
     container: null,
     editor: null,
-
+    get innerHTML() {
+      return this.container.firstChild.innerHTML;
+    },
     get outerHTML() {
       return this.container.innerHTML;
     },
@@ -419,6 +422,7 @@ const DEFAULT_NODES = [
   ListItemNode,
   QuoteNode,
   CodeNode,
+  CodeTabNode,
   TableNode,
   TableCellNode,
   TableRowNode,
@@ -498,4 +502,140 @@ export function $assertRangeSelection(selection): RangeSelection {
     throw new Error(`Expected RangeSelection, got ${selection}`);
   }
   return selection;
+}
+
+export function invariant(cond?: boolean, message?: string): asserts cond {
+  if (cond) {
+    return;
+  }
+  throw new Error(`Invariant: ${message}`);
+}
+
+export class DataTransferMock implements DataTransfer {
+  _data: Map<string, string> = new Map();
+  dropEffect: 'none' | 'copy' | 'link' | 'move';
+  effectAllowed:
+    | 'none'
+    | 'copy'
+    | 'copyLink'
+    | 'copyMove'
+    | 'link'
+    | 'linkMove'
+    | 'move'
+    | 'all'
+    | 'uninitialized';
+  readonly files: FileList;
+  readonly items: DataTransferItemList;
+  readonly types: ReadonlyArray<string>;
+  clearData(format?: string): void {
+    //
+  }
+  getData(dataType): string {
+    return this._data.get(dataType) || '';
+  }
+  setData(format: string, data: string): void {
+    this._data.set(format, data);
+  }
+  setDragImage(image: Element, x: number, y: number): void {
+    //
+  }
+}
+
+export class EventMock implements Event {
+  bubbles: boolean;
+  cancelBubble: boolean;
+  cancelable: boolean;
+  composed: boolean;
+  currentTarget: EventTarget | null;
+  defaultPrevented: boolean;
+  eventPhase: number;
+  isTrusted: boolean;
+  returnValue: boolean;
+  srcElement: EventTarget | null;
+  target: EventTarget | null;
+  timeStamp: number;
+  type: string;
+  composedPath(): EventTarget[] {
+    throw new Error('Method not implemented.');
+  }
+  initEvent(
+    type: string,
+    bubbles?: boolean | undefined,
+    cancelable?: boolean | undefined,
+  ): void {
+    throw new Error('Method not implemented.');
+  }
+  stopImmediatePropagation(): void {
+    return;
+  }
+  stopPropagation(): void {
+    return;
+  }
+  NONE: 0;
+  CAPTURING_PHASE: 1;
+  AT_TARGET: 2;
+  BUBBLING_PHASE: 3;
+  preventDefault() {
+    return;
+  }
+}
+
+export class KeyboardEventMock extends EventMock implements KeyboardEvent {
+  altKey: boolean;
+  charCode: number;
+  code: string;
+  ctrlKey: boolean;
+  isComposing: boolean;
+  key: string;
+  keyCode: number;
+  location: number;
+  metaKey: boolean;
+  repeat: boolean;
+  shiftKey: boolean;
+  constructor(type: void | string) {
+    super();
+  }
+  getModifierState(keyArg: string): boolean {
+    throw new Error('Method not implemented.');
+  }
+  initKeyboardEvent(
+    typeArg: string,
+    bubblesArg?: boolean | undefined,
+    cancelableArg?: boolean | undefined,
+    viewArg?: Window | null | undefined,
+    keyArg?: string | undefined,
+    locationArg?: number | undefined,
+    ctrlKey?: boolean | undefined,
+    altKey?: boolean | undefined,
+    shiftKey?: boolean | undefined,
+    metaKey?: boolean | undefined,
+  ): void {
+    throw new Error('Method not implemented.');
+  }
+  DOM_KEY_LOCATION_STANDARD: 0;
+  DOM_KEY_LOCATION_LEFT: 1;
+  DOM_KEY_LOCATION_RIGHT: 2;
+  DOM_KEY_LOCATION_NUMPAD: 3;
+  detail: number;
+  view: Window | null;
+  which: number;
+  initUIEvent(
+    typeArg: string,
+    bubblesArg?: boolean | undefined,
+    cancelableArg?: boolean | undefined,
+    viewArg?: Window | null | undefined,
+    detailArg?: number | undefined,
+  ): void {
+    throw new Error('Method not implemented.');
+  }
+}
+
+export function tabKeyboardEvent() {
+  return new KeyboardEventMock('keydown');
+}
+
+export function shiftTabKeyboardEvent() {
+  const keyboardEvent = new KeyboardEventMock('keydown');
+  keyboardEvent.shiftKey = true;
+  return keyboardEvent;
 }

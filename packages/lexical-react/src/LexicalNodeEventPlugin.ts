@@ -6,15 +6,14 @@
  *
  */
 
+import type {Klass, LexicalEditor, LexicalNode, NodeKey} from 'lexical';
+
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {
-  type Klass,
-  type LexicalEditor,
-  type LexicalNode,
-  type NodeKey,
-} from 'lexical';
-import {useRef} from 'react';
-import useLayoutEffect from 'shared/useLayoutEffect';
+import {$findMatchingParent} from '@lexical/utils';
+import {$getNearestNodeFromDOMNode} from 'lexical';
+import {useEffect, useRef} from 'react';
+
+const capturedEvents = new Set<string>(['mouseenter', 'mouseleave']);
 
 export function NodeEventPlugin({
   nodeType,
@@ -34,30 +33,39 @@ export function NodeEventPlugin({
 
   listenerRef.current = eventListener;
 
-  useLayoutEffect(() => {
-    const registedElements: WeakSet<HTMLElement> = new WeakSet();
+  useEffect(() => {
+    const isCaptured = capturedEvents.has(eventType);
 
-    return editor.registerMutationListener(nodeType, (mutations) => {
-      editor.getEditorState().read(() => {
-        for (const [key, mutation] of mutations) {
-          const element: null | HTMLElement = editor.getElementByKey(key);
-
-          if (
-            // Updated might be a move, so that might mean a new DOM element
-            // is created. In this case, we need to add and event listener too.
-            (mutation === 'created' || mutation === 'updated') &&
-            element !== null &&
-            !registedElements.has(element)
-          ) {
-            registedElements.add(element);
-            element.addEventListener(eventType, (event: Event) => {
-              listenerRef.current(event, editor, key);
-            });
+    const onEvent = (event: Event) => {
+      editor.update(() => {
+        const nearestNode = $getNearestNodeFromDOMNode(event.target as Element);
+        if (nearestNode !== null) {
+          const targetNode = isCaptured
+            ? nearestNode instanceof nodeType
+              ? nearestNode
+              : null
+            : $findMatchingParent(
+                nearestNode,
+                (node) => node instanceof nodeType,
+              );
+          if (targetNode !== null) {
+            listenerRef.current(event, editor, targetNode.getKey());
+            return;
           }
         }
       });
+    };
+
+    return editor.registerRootListener((rootElement, prevRootElement) => {
+      if (rootElement) {
+        rootElement.addEventListener(eventType, onEvent, isCaptured);
+      }
+
+      if (prevRootElement) {
+        prevRootElement.removeEventListener(eventType, onEvent, isCaptured);
+      }
     });
-    // wW intentionally don't respect changes to eventType.
+    // We intentionally don't respect changes to eventType.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor, nodeType]);
 

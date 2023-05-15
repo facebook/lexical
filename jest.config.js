@@ -67,6 +67,8 @@ module.exports = {
           '<rootDir>/packages/lexical-react/src/LexicalListPlugin.ts',
         '^@lexical/react/LexicalPlainTextPlugin$':
           '<rootDir>/packages/lexical-react/src/LexicalPlainTextPlugin.ts',
+        '^@lexical/react/LexicalTabIndentationPlugin$':
+          '<rootDir>/packages/lexical-react/src/LexicalTabIndentationPlugin.tsx',
         '^@lexical/react/LexicalTablePlugin$':
           '<rootDir>/packages/lexical-react/src/LexicalTablePlugin.ts',
         '^@lexical/react/useLexicalCanShowPlaceholder$':

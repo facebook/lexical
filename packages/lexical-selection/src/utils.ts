@@ -137,26 +137,29 @@ export function createRectsFromDOMRange(
     parseFloat(computedStyle.paddingRight);
   const selectionRects = Array.from(range.getClientRects());
   let selectionRectsLength = selectionRects.length;
+  //sort rects from top left to bottom right.
+  selectionRects.sort((a, b) => {
+    const top = a.top - b.top;
+    // Some rects match position closely, but not perfectly,
+    // so we give a 3px tolerance.
+    if (Math.abs(top) <= 3) {
+      return a.left - b.left;
+    }
+    return top;
+  });
   let prevRect;
-
   for (let i = 0; i < selectionRectsLength; i++) {
     const selectionRect = selectionRects[i];
-    // Exclude a rect that is the exact same as the last rect. getClientRects() can return
-    // the same rect twice for some elements. A more sophisticated thing to do here is to
-    // merge all the rects together into a set of rects that don't overlap, so we don't
-    // generate backgrounds that are too dark.
-    const isDuplicateRect =
+    // Exclude rects that overlap preceding Rects in the sorted list.
+    const isOverlappingRect =
       prevRect &&
-      prevRect.top === selectionRect.top &&
-      prevRect.left === selectionRect.left &&
-      prevRect.width === selectionRect.width &&
-      prevRect.height === selectionRect.height;
-
+      prevRect.top <= selectionRect.top &&
+      prevRect.top + prevRect.height > selectionRect.top &&
+      prevRect.left + prevRect.width > selectionRect.left;
     // Exclude selections that span the entire element
     const selectionSpansElement =
       selectionRect.width + rootPadding === rootRect.width;
-
-    if (isDuplicateRect || selectionSpansElement) {
+    if (isOverlappingRect || selectionSpansElement) {
       selectionRects.splice(i--, 1);
       selectionRectsLength--;
       continue;

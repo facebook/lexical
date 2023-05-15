@@ -112,5 +112,17 @@
   "110": "Anchor not found in Grid",
   "111": "Focus not found in Grid",
   "112": "Stack.length > 0; can't be undefined",
-  "113": "Lexical node does not exist in active editor state. Avoid using the same node references between nested closures from editorState.read/editor.update."
+  "113": "Lexical node does not exist in active editor state. Avoid using the same node references between nested closures from editorState.read/editor.update.",
+  "114": "Expected to find a parent GridCellNode",
+  "115": "Expected GridCellNode to have a parent GridRowNode",
+  "116": "Expected GridRowNode to have a parent GridNode",
+  "117": "Invalid indent value.",
+  "118": "Expected a RangeSelection or GridSelection",
+  "119": "focusEndRow is not a GridRowNode",
+  "120": "Expected firstTable child to be a row",
+  "121": "Expected row nextSibling to be a row",
+  "122": "Expected nextRowNode not to be null",
+  "123": "Expected GridNode childAtIndex(%s) to be RowNode",
+  "124": "Unexpected empty cell",
+  "125": "Expected row next sibling to be a row"
 }

@@ -6,20 +6,25 @@
  *
  */
 
+const SUPPORTED_URL_PROTOCOLS = new Set([
+  'http:',
+  'https:',
+  'mailto:',
+  'sms:',
+  'tel:',
+]);
+
 export function sanitizeUrl(url: string): string {
-  /** A pattern that matches safe  URLs. */
-  const SAFE_URL_PATTERN =
-    /^(?:(?:https?|mailto|ftp|tel|file|sms):|[^&:/?#]*(?:[/?#]|$))/gi;
-
-  /** A pattern that matches safe data URLs. */
-  const DATA_URL_PATTERN =
-    /^data:(?:image\/(?:bmp|gif|jpeg|jpg|png|tiff|webp)|video\/(?:mpeg|mp4|ogg|webm)|audio\/(?:mp3|oga|ogg|opus));base64,[a-z0-9+/]+=*$/i;
-
-  url = String(url).trim();
-
-  if (url.match(SAFE_URL_PATTERN) || url.match(DATA_URL_PATTERN)) return url;
-
-  return 'https://';
+  try {
+    const parsedUrl = new URL(url);
+    // eslint-disable-next-line no-script-url
+    if (!SUPPORTED_URL_PROTOCOLS.has(parsedUrl.protocol)) {
+      return 'about:blank';
+    }
+  } catch {
+    return url;
+  }
+  return url;
 }
 
 // Source: https://stackoverflow.com/a/8234912/2013580

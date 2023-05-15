@@ -50,6 +50,7 @@ import {
   KEY_TAB_COMMAND,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
+import invariant from 'shared/invariant';
 
 import {$isTableCellNode} from './LexicalTableCellNode';
 import {TableSelection} from './LexicalTableSelection';
@@ -905,7 +906,7 @@ export function applyTableHandlers(
 
             isRangeSelectionHijacked = true;
             $setSelection(modifiedSelection);
-            $addHighlightStyleToTable(tableSelection);
+            $addHighlightStyleToTable(editor, tableSelection);
 
             return true;
           } else if (selectionIsInsideTable) {
@@ -967,13 +968,13 @@ export function applyTableHandlers(
           tableSelection.hasHijackedSelectionStyles &&
           !tableNode.isSelected()
         ) {
-          $removeHighlightStyleToTable(tableSelection);
+          $removeHighlightStyleToTable(editor, tableSelection);
           isRangeSelectionHijacked = false;
         } else if (
           !tableSelection.hasHijackedSelectionStyles &&
           tableNode.isSelected()
         ) {
-          $addHighlightStyleToTable(tableSelection);
+          $addHighlightStyleToTable(editor, tableSelection);
         }
 
         return false;
@@ -1056,6 +1057,7 @@ export function getTableGrid(tableElement: HTMLElement): Grid {
       const elem = currentNode as HTMLElement;
       const cell = {
         elem,
+        hasBackgroundColor: elem.style.backgroundColor !== '',
         highlighted: false,
         x,
         y,
@@ -1108,6 +1110,7 @@ export function getTableGrid(tableElement: HTMLElement): Grid {
 }
 
 export function $updateDOMForSelection(
+  editor: LexicalEditor,
   grid: Grid,
   selection: GridSelection | RangeSelection | null,
 ): Array<Cell> {
@@ -1118,14 +1121,11 @@ export function $updateDOMForSelection(
 
     if (selectedCellNodes.has(lexicalNode)) {
       cell.highlighted = true;
-      elem.style.setProperty('background-color', 'rgb(172, 206, 247)');
-      elem.style.setProperty('caret-color', 'transparent');
+      $addHighlightToDOM(editor, cell);
       highlightedCells.push(cell);
     } else {
       cell.highlighted = false;
-      elem.style.removeProperty('background-color');
-      elem.style.removeProperty('caret-color');
-
+      $removeHighlightFromDOM(editor, cell);
       if (!elem.getAttribute('style')) {
         elem.removeAttribute('style');
       }
@@ -1165,23 +1165,26 @@ export function $forEachGridCell(
   }
 }
 
-export function $addHighlightStyleToTable(tableSelection: TableSelection) {
+export function $addHighlightStyleToTable(
+  editor: LexicalEditor,
+  tableSelection: TableSelection,
+) {
   tableSelection.disableHighlightStyle();
   $forEachGridCell(tableSelection.grid, (cell) => {
-    const elem = cell.elem;
     cell.highlighted = true;
-    elem.style.setProperty('background-color', 'rgb(172, 206, 247)');
-    elem.style.setProperty('caret-color', 'transparent');
+    $addHighlightToDOM(editor, cell);
   });
 }
 
-export function $removeHighlightStyleToTable(tableSelection: TableSelection) {
+export function $removeHighlightStyleToTable(
+  editor: LexicalEditor,
+  tableSelection: TableSelection,
+) {
   tableSelection.enableHighlightStyle();
   $forEachGridCell(tableSelection.grid, (cell) => {
     const elem = cell.elem;
     cell.highlighted = false;
-    elem.style.removeProperty('background-color');
-    elem.style.removeProperty('caret-color');
+    $removeHighlightFromDOM(editor, cell);
 
     if (!elem.getAttribute('style')) {
       elem.removeAttribute('style');
@@ -1325,4 +1328,39 @@ function selectTableCellNode(tableCell: TableCellNode) {
   } else {
     tableCell.selectEnd();
   }
+}
+
+const BROWSER_BLUE_RGB = '172,206,247';
+function $addHighlightToDOM(editor: LexicalEditor, cell: Cell): void {
+  const element = cell.elem;
+  const node = $getNearestNodeFromDOMNode(element);
+  invariant(
+    $isTableCellNode(node),
+    'Expected to find LexicalNode from Table Cell DOMNode',
+  );
+  const backgroundColor = node.getBackgroundColor();
+  if (backgroundColor === null) {
+    element.style.setProperty('background-color', `rgb(${BROWSER_BLUE_RGB})`);
+  } else {
+    element.style.setProperty(
+      'background-image',
+      `linear-gradient(to right, rgba(${BROWSER_BLUE_RGB},0.85), rgba(${BROWSER_BLUE_RGB},0.85))`,
+    );
+  }
+  element.style.setProperty('caret-color', 'transparent');
+}
+
+function $removeHighlightFromDOM(editor: LexicalEditor, cell: Cell): void {
+  const element = cell.elem;
+  const node = $getNearestNodeFromDOMNode(element);
+  invariant(
+    $isTableCellNode(node),
+    'Expected to find LexicalNode from Table Cell DOMNode',
+  );
+  const backgroundColor = node.getBackgroundColor();
+  if (backgroundColor === null) {
+    element.style.removeProperty('background-color');
+  }
+  element.style.removeProperty('background-image');
+  element.style.removeProperty('caret-color');
 }

@@ -23,7 +23,6 @@ import {
   $sliceSelectedTextNodeContent,
 } from '@lexical/selection';
 import {$getRoot, $isElementNode, $isTextNode} from 'lexical';
-import invariant from 'shared/invariant';
 
 /**
  * How you parse your html string to get a document is left up to you. In the browser you can use the native
@@ -166,59 +165,58 @@ function getConversionFunction(
 
 const IGNORE_TAGS = new Set(['STYLE', 'SCRIPT']);
 
-function getCachedComputedStyle(): (element: Element) => CSSStyleDeclaration {
-  const cache = new WeakMap<Element, CSSStyleDeclaration>();
-  return (element: Element) => {
-    const cached = cache.get(element);
-    if (cached !== undefined) {
-      return cached;
-    }
-    const browserComputedStyle = getComputedStyle(element);
-    cache.set(element, browserComputedStyle);
-    return browserComputedStyle;
-  };
-}
-
-function findCachedParentDOMNode(): (
+export type FindCachedParentDOMNode = (
   node: Node,
-  nodeName: string,
-) => null | Node {
-  const cache = new WeakMap<Node, Map<string, null | Node>>();
-  function cacheGet(node: Node, nodeName: string): undefined | null | Node {
-    const cacheNodeName = cache.get(node);
-    if (cacheNodeName !== undefined) {
-      return cacheNodeName.get(nodeName);
+  searchFn: FindCachedParentDOMNodeSearchFn,
+) => null | Node;
+export type FindCachedParentDOMNodeSearchFn = (node: Node) => boolean;
+
+function findCachedParentDOMNode(): FindCachedParentDOMNode {
+  const cache = new WeakMap<
+    Node,
+    WeakMap<FindCachedParentDOMNodeSearchFn, null | Node>
+  >();
+  function cacheGet(
+    node: Node,
+    searchFn: FindCachedParentDOMNodeSearchFn,
+  ): undefined | null | Node {
+    const cacheNode = cache.get(node);
+    if (cacheNode !== undefined) {
+      return cacheNode.get(searchFn);
     }
   }
   function cacheSet(
     node: Node,
-    nodeName: string,
+    searchFn: FindCachedParentDOMNodeSearchFn,
     parentNode: null | Node,
   ): void {
-    let cacheNodeName = cache.get(node);
-    if (cacheNodeName === undefined) {
-      cacheNodeName = new Map<string, null | Node>();
-      cache.set(node, cacheNodeName);
+    let cacheNode = cache.get(node);
+    if (cacheNode === undefined) {
+      cacheNode = new WeakMap<FindCachedParentDOMNodeSearchFn, null | Node>();
+      cache.set(node, cacheNode);
     }
-    cacheNodeName.set(nodeName, parentNode);
+    cacheNode.set(searchFn, parentNode);
   }
-  return (node: Node, nodeName: string) => {
+  return (node: Node, searchFn: FindCachedParentDOMNodeSearchFn) => {
     let parent = node.parentNode;
-    const visited = [node, parent];
+    let cached;
+    if ((cached = cacheGet(node, searchFn)) !== undefined) {
+      return cached;
+    }
+    const visited = [node];
     while (
       parent !== null &&
-      parent.nodeName !== nodeName &&
-      cacheGet(node, nodeName) === undefined
+      (cached = cacheGet(parent, searchFn)) === undefined &&
+      !searchFn(parent)
     ) {
-      parent = parent.parentNode;
       visited.push(parent);
+      parent = parent.parentNode;
     }
-    for (let i = 0; i < visited.length - 1; i++) {
-      const visitedNode = visited[i];
-      invariant(visitedNode !== null, 'Only last node can be null');
-      cacheSet(visitedNode, nodeName, parent);
+    const resultNode = cached === undefined ? parent : cached;
+    for (let i = 0; i < visited.length; i++) {
+      cacheSet(visited[i], searchFn, resultNode);
     }
-    return parent;
+    return resultNode;
   };
 }
 
@@ -227,7 +225,6 @@ function $createNodesFromDOM(
   editor: LexicalEditor,
   forChildMap: Map<string, DOMChildConversion> = new Map(),
   parentLexicalNode?: LexicalNode | null | undefined,
-  getComputedStyle = getCachedComputedStyle(),
   findParentDOMNode = findCachedParentDOMNode(),
 ): Array<LexicalNode> {
   let lexicalNodes: Array<LexicalNode> = [];
@@ -239,11 +236,7 @@ function $createNodesFromDOM(
   let currentLexicalNode = null;
   const transformFunction = getConversionFunction(node, editor);
   const transformOutput = transformFunction
-    ? transformFunction(
-        node as HTMLElement,
-        getComputedStyle,
-        findParentDOMNode,
-      )
+    ? transformFunction(node as HTMLElement, findParentDOMNode)
     : null;
   let postTransform = null;
 
@@ -292,7 +285,6 @@ function $createNodesFromDOM(
         editor,
         new Map(forChildMap),
         currentLexicalNode,
-        getComputedStyle,
         findParentDOMNode,
       ),
     );

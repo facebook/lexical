@@ -7,6 +7,8 @@
  * @flow strict
  */
 
+import type {FindCachedParentDOMNode} from '@lexical/html';
+
 /**
  * LexicalCommands
  */
@@ -308,7 +310,7 @@ export type DOMConversion = {
 };
 export type DOMConversionFn = (
   element: Node,
-  parent?: Node,
+  findCachedParentDOMNode: FindCachedParentDOMNode,
 ) => DOMConversionOutput;
 export type DOMChildConversion = (
   lexicalNode: LexicalNode,

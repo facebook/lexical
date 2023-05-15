@@ -13,6 +13,7 @@ import type {
   NodeSelection,
   RangeSelection,
 } from './LexicalSelection';
+import type {FindCachedParentDOMNode} from '@lexical/html';
 import type {Klass} from 'lexical';
 
 import invariant from 'shared/invariant';
@@ -123,8 +124,7 @@ export type DOMConversion<T extends HTMLElement = HTMLElement> = {
 
 export type DOMConversionFn<T extends HTMLElement = HTMLElement> = (
   element: T,
-  getCachedComputedStyle: (domElement: Element) => CSSStyleDeclaration,
-  findCachedParentDOMNode: (domNode: Node, nodeName: string) => null | Node,
+  findCachedParentDOMNode: FindCachedParentDOMNode,
 ) => DOMConversionOutput | null;
 
 export type DOMChildConversion = (

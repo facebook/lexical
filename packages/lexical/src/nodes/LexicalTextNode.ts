@@ -24,6 +24,7 @@ import type {
   NodeSelection,
   RangeSelection,
 } from '../LexicalSelection';
+import type {FindCachedParentDOMNode} from '@lexical/html';
 
 import {IS_FIREFOX} from 'shared/environment';
 import invariant from 'shared/invariant';
@@ -938,10 +939,17 @@ function convertBringAttentionToElement(domNode: Node): DOMConversionOutput {
   };
 }
 
+export function findCachedParentDOMNodePreSearch(node: Node): boolean {
+  return (
+    node.nodeName === 'PRE' ||
+    (node.nodeType === DOM_ELEMENT_TYPE &&
+      (node as HTMLElement).style.whiteSpace.startsWith('pre'))
+  );
+}
+
 function convertTextDOMNode(
   domNode: Node,
-  getCachedComputedStyle: (domElement: Element) => CSSStyleDeclaration,
-  findCachedParentDOMNode: (domNode_: Node, nodeName: string) => null | Node,
+  findCachedParentDOMNode: FindCachedParentDOMNode,
 ): DOMConversionOutput {
   const domNode_ = domNode as Text;
   const parentDom = domNode.parentElement;
@@ -950,13 +958,9 @@ function convertTextDOMNode(
     'Expected parentElement of Text not to be null',
   );
   let textContent = domNode_.textContent || '';
-  const computedStyle = getCachedComputedStyle(parentDom);
-  const whitespaceStyle =
-    computedStyle.whiteSpace || parentDom.style.whiteSpace;
   // No collapse and preserve segment break for pre, pre-wrap and pre-line
   if (
-    whitespaceStyle.startsWith('pre') ||
-    findCachedParentDOMNode(domNode_, 'PRE') !== null
+    findCachedParentDOMNode(domNode_, findCachedParentDOMNodePreSearch) !== null
   ) {
     const parts = textContent.split(/(\r?\n|\t)/);
     const nodes: Array<LexicalNode> = [];
@@ -988,11 +992,7 @@ function convertTextDOMNode(
     let isStartOfLine = true;
     while (
       previousText !== null &&
-      (previousText = findTextInLine(
-        previousText,
-        getCachedComputedStyle,
-        false,
-      )) !== null
+      (previousText = findTextInLine(previousText, false)) !== null
     ) {
       const previousTextContent = previousText.textContent || '';
       if (previousTextContent.length > 0) {
@@ -1013,8 +1013,7 @@ function convertTextDOMNode(
     let isEndOfLine = true;
     while (
       nextText !== null &&
-      (nextText = findTextInLine(nextText, getCachedComputedStyle, true)) !==
-        null
+      (nextText = findTextInLine(nextText, true)) !== null
     ) {
       const nextTextContent = (nextText.textContent || '').replace(
         /^[\s|\r?\n|\t]+/,
@@ -1040,11 +1039,7 @@ const inlineParents = new RegExp(
   'i',
 );
 
-function findTextInLine(
-  text: Text,
-  getCachedComputedStyle: (domElement: Element) => CSSStyleDeclaration,
-  forward: boolean,
-): null | Text {
+function findTextInLine(text: Text, forward: boolean): null | Text {
   let node: Node = text;
   // eslint-disable-next-line no-constant-condition
   while (true) {
@@ -1060,7 +1055,7 @@ function findTextInLine(
     }
     node = sibling;
     if (node.nodeType === DOM_ELEMENT_TYPE) {
-      const display = getCachedComputedStyle(node as Element).display || '';
+      const display = (node as HTMLElement).style.display;
       if (
         (display === '' && node.nodeName.match(inlineParents) === null) ||
         (display !== '' && !display.startsWith('inline'))

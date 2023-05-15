@@ -35,13 +35,16 @@ export function $generateNodesFromDOM(
 ): Array<LexicalNode> {
   let lexicalNodes: Array<LexicalNode> = [];
   const elements = dom.body ? dom.body.childNodes : [];
+  const findCachedParentDOMNode = createCachedParentDOMNode();
 
   for (let i = 0; i < elements.length; i++) {
     const element = elements[i];
-
     if (!IGNORE_TAGS.has(element.nodeName)) {
-      const lexicalNode = $createNodesFromDOM(element, editor);
-
+      const lexicalNode = $createNodesFromDOM(
+        element,
+        editor,
+        findCachedParentDOMNode,
+      );
       if (lexicalNode !== null) {
         lexicalNodes = lexicalNodes.concat(lexicalNode);
       }
@@ -171,7 +174,7 @@ export type FindCachedParentDOMNode = (
 ) => null | Node;
 export type FindCachedParentDOMNodeSearchFn = (node: Node) => boolean;
 
-function findCachedParentDOMNode(): FindCachedParentDOMNode {
+function createCachedParentDOMNode(): FindCachedParentDOMNode {
   const cache = new WeakMap<
     Node,
     WeakMap<FindCachedParentDOMNodeSearchFn, null | Node>
@@ -223,9 +226,9 @@ function findCachedParentDOMNode(): FindCachedParentDOMNode {
 function $createNodesFromDOM(
   node: Node,
   editor: LexicalEditor,
+  findCachedParentDOMNode: FindCachedParentDOMNode,
   forChildMap: Map<string, DOMChildConversion> = new Map(),
   parentLexicalNode?: LexicalNode | null | undefined,
-  findParentDOMNode = findCachedParentDOMNode(),
 ): Array<LexicalNode> {
   let lexicalNodes: Array<LexicalNode> = [];
 
@@ -236,7 +239,7 @@ function $createNodesFromDOM(
   let currentLexicalNode = null;
   const transformFunction = getConversionFunction(node, editor);
   const transformOutput = transformFunction
-    ? transformFunction(node as HTMLElement, findParentDOMNode)
+    ? transformFunction(node as HTMLElement, findCachedParentDOMNode)
     : null;
   let postTransform = null;
 
@@ -283,9 +286,9 @@ function $createNodesFromDOM(
       ...$createNodesFromDOM(
         children[i],
         editor,
+        findCachedParentDOMNode,
         new Map(forChildMap),
         currentLexicalNode,
-        findParentDOMNode,
       ),
     );
   }

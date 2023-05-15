@@ -246,7 +246,7 @@ export default function DropDown({
         initialPosition.current =
           button.getBoundingClientRect().top + 40 + window.scrollY;
       }
-    }, 10);
+    }, 500);
   }, [buttonRef]);
 
   return (

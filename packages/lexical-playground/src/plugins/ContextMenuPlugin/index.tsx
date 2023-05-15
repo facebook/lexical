@@ -8,14 +8,14 @@
 
 import type {LexicalNode} from 'lexical';
 
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   LexicalContextMenuPlugin,
   MenuOption,
 } from '@lexical/react/LexicalContextMenuPlugin';
-import {useCallback, useMemo, useState} from 'react';
+import {useCallback, useMemo} from 'react';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 
 function ContextMenuItem({
   index,
@@ -103,7 +103,7 @@ export default function ContextMenuPlugin(): JSX.Element {
         onSelect: () => 'selected dismiss',
       }),
       new ContextMenuOption(`Do something`, {
-        onSelect: () => 'selected do something',
+        onSelect: () => alert('You selected "Do something"'),
       }),
     ];
   }, []);
@@ -111,12 +111,12 @@ export default function ContextMenuPlugin(): JSX.Element {
   const onSelectOption = useCallback(
     (
       selectedOption: ContextMenuOption,
-      targetNode: LexicalNode,
+      targetNode: LexicalNode | null,
       closeMenu: () => void,
     ) => {
       editor.update(() => {
         selectedOption.onSelect(targetNode);
-        // closeMenu();
+        closeMenu();
       });
     },
     [editor],
@@ -124,8 +124,6 @@ export default function ContextMenuPlugin(): JSX.Element {
 
   return (
     <LexicalContextMenuPlugin
-      onClose={() => {}}
-      onOpen={() => {}}
       options={options}
       onSelectOption={onSelectOption}
       menuRenderFn={(

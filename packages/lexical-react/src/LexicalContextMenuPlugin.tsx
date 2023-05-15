@@ -8,7 +8,7 @@
 import type {MenuRenderFn, MenuResolution} from './shared/LexicalMenu';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {TextNode} from 'lexical';
+import {LexicalNode} from 'lexical';
 import {
   MutableRefObject,
   ReactPortal,
@@ -33,10 +33,10 @@ export type ContextMenuRenderFn<TOption extends MenuOption> = (
   },
 ) => ReactPortal | JSX.Element | null;
 
-export type NodeMenuPluginProps<TOption extends MenuOption> = {
+export type LexicalContextMenuPluginProps<TOption extends MenuOption> = {
   onSelectOption: (
     option: TOption,
-    textNodeContainingQuery: TextNode | null,
+    textNodeContainingQuery: LexicalNode | null,
     closeMenu: () => void,
     matchingString: string,
   ) => void;
@@ -54,7 +54,7 @@ export function LexicalContextMenuPlugin<TOption extends MenuOption>({
   onSelectOption,
   menuRenderFn: contextMenuRenderFn,
   anchorClassName,
-}: NodeMenuPluginProps<TOption>): JSX.Element | null {
+}: LexicalContextMenuPluginProps<TOption>): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   const [resolution, setResolution] = useState<MenuResolution | null>(null);
   const menuRef = React.useRef<HTMLElement | null>(null);

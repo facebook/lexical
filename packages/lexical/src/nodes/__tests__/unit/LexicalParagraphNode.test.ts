@@ -121,16 +121,6 @@ describe('LexicalParagraphNode tests', () => {
       );
     });
 
-    test('ParagraphNode.canInsertTab()', async () => {
-      const {editor} = testEnv;
-
-      await editor.update(() => {
-        const paragraphNode = new ParagraphNode();
-
-        expect(paragraphNode.canInsertTab()).toBe(false);
-      });
-    });
-
     test('$createParagraphNode()', async () => {
       const {editor} = testEnv;
 

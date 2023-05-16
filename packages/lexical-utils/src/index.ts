@@ -223,7 +223,7 @@ export function $getNearestNodeOfType<T extends ElementNode>(
 }
 
 /**
- *Returns the element node of the nearest ancestor, otherwise throws an error.
+ * Returns the element node of the nearest ancestor, otherwise throws an error.
  * @param startNode - The starting node of the search
  * @returns The ancestor node found
  */
@@ -234,7 +234,6 @@ export function $getNearestBlockElementAncestorOrThrow(
     startNode,
     (node) => $isElementNode(node) && !node.isInline(),
   );
-
   if (!$isElementNode(blockNode)) {
     invariant(
       false,
@@ -242,7 +241,6 @@ export function $getNearestBlockElementAncestorOrThrow(
       startNode.__key,
     );
   }
-
   return blockNode;
 }
 

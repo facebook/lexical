@@ -15,6 +15,7 @@ import {
 import {$findMatchingParent} from '@lexical/utils';
 import {
   $createParagraphNode,
+  $createTabNode,
   $getRoot,
   $getSelection,
   $isDecoratorNode,
@@ -86,7 +87,8 @@ export function $insertDataTransferForPlainText(
   dataTransfer: DataTransfer,
   selection: RangeSelection | GridSelection,
 ): void {
-  const text = dataTransfer.getData('text/plain');
+  const text =
+    dataTransfer.getData('text/plain') || dataTransfer.getData('text/uri-list');
 
   if (text != null) {
     selection.insertRawText(text);
@@ -131,16 +133,21 @@ export function $insertDataTransferForRichText(
 
   // Multi-line plain text in rich text mode pasted as separate paragraphs
   // instead of single paragraph with linebreaks.
-  const text = dataTransfer.getData('text/plain');
+  // Webkit-specific: Supports read 'text/uri-list' in clipboard.
+  const text =
+    dataTransfer.getData('text/plain') || dataTransfer.getData('text/uri-list');
   if (text != null) {
     if ($isRangeSelection(selection)) {
-      const lines = text.split(/\r?\n/);
-      const linesLength = lines.length;
-
-      for (let i = 0; i < linesLength; i++) {
-        selection.insertText(lines[i]);
-        if (i < linesLength - 1) {
+      const parts = text.split(/(\r?\n|\t)/);
+      const partsLength = parts.length;
+      for (let i = 0; i < partsLength; i++) {
+        const part = parts[i];
+        if (part === '\n' || part === '\r\n') {
           selection.insertParagraph();
+        } else if (part === '\t') {
+          selection.insertNodes([$createTabNode()]);
+        } else {
+          selection.insertText(part);
         }
       }
     } else {

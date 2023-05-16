@@ -6,18 +6,17 @@
  *
  */
 
-import {
-  COPY_COMMAND,
-  CUT_COMMAND,
-  PASTE_COMMAND,
-  type LexicalNode,
-} from 'lexical';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   LexicalContextMenuPlugin,
   MenuOption,
 } from '@lexical/react/LexicalContextMenuPlugin';
+import {
+  type LexicalNode,
+  COPY_COMMAND,
+  CUT_COMMAND,
+  PASTE_COMMAND,
+} from 'lexical';
 import {useCallback, useMemo} from 'react';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
@@ -77,7 +76,7 @@ function ContextMenu({
           <ContextMenuItem
             index={i}
             isSelected={selectedItemIndex === i}
-            onClick={(e) => {
+            onClick={() => {
               onOptionClick(option, i);
             }}
             onMouseEnter={() => onOptionMouseEnter(i)}
@@ -170,11 +169,12 @@ export default function ContextMenuPlugin(): JSX.Element {
   const onSelectOption = useCallback(
     (
       selectedOption: ContextMenuOption,
-      targetNode: LexicalNode,
+      targetNode: LexicalNode | null,
       closeMenu: () => void,
     ) => {
       editor.update(() => {
         selectedOption.onSelect(targetNode, closeMenu);
+        closeMenu();
       });
     },
     [editor],
@@ -182,8 +182,6 @@ export default function ContextMenuPlugin(): JSX.Element {
 
   return (
     <LexicalContextMenuPlugin
-      onClose={() => {}}
-      onOpen={() => {}}
       options={options}
       onSelectOption={onSelectOption}
       menuRenderFn={(

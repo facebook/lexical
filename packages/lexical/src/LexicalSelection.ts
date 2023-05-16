@@ -72,6 +72,7 @@ import {
   scrollIntoViewIfNeeded,
   toggleTextFormatType,
 } from './LexicalUtils';
+import {$createTabNode} from './nodes/LexicalTabNode';
 
 export type TextPointType = {
   _selection: RangeSelection | GridSelection;
@@ -879,23 +880,20 @@ export class RangeSelection implements BaseSelection {
   }
 
   insertRawText(text: string): void {
-    const parts = text.split(/\r?\n/);
-    if (parts.length === 1) {
-      this.insertText(text);
-    } else {
-      const nodes = [];
-      const length = parts.length;
-      for (let i = 0; i < length; i++) {
-        const part = parts[i];
-        if (part !== '') {
-          nodes.push($createTextNode(part));
-        }
-        if (i !== length - 1) {
-          nodes.push($createLineBreakNode());
-        }
+    const parts = text.split(/(\r?\n|\t)/);
+    const nodes = [];
+    const length = parts.length;
+    for (let i = 0; i < length; i++) {
+      const part = parts[i];
+      if (part === '\n' || part === '\r\n') {
+        nodes.push($createLineBreakNode());
+      } else if (part === '\t') {
+        nodes.push($createTabNode());
+      } else {
+        nodes.push($createTextNode(part));
       }
-      this.insertNodes(nodes);
     }
+    this.insertNodes(nodes);
   }
 
   insertText(text: string): void {
@@ -904,7 +902,6 @@ export class RangeSelection implements BaseSelection {
     const isBefore = this.isCollapsed() || anchor.isBefore(focus);
     const format = this.format;
     const style = this.style;
-
     if (isBefore && anchor.type === 'element') {
       $transferStartingElementPointToTextPoint(anchor, focus, format, style);
     } else if (!isBefore && focus.type === 'element') {
@@ -937,7 +934,11 @@ export class RangeSelection implements BaseSelection {
           firstNode.getNextSibling() === null))
     ) {
       let nextSibling = firstNode.getNextSibling<TextNode>();
-      if (!$isTextNode(nextSibling) || $isTokenOrSegmented(nextSibling)) {
+      if (
+        !$isTextNode(nextSibling) ||
+        !nextSibling.canInsertTextBefore() ||
+        $isTokenOrSegmented(nextSibling)
+      ) {
         nextSibling = $createTextNode();
         nextSibling.setFormat(format);
         if (!firstNodeParent.canInsertTextAfter()) {
@@ -2040,6 +2041,7 @@ export class RangeSelection implements BaseSelection {
   }
 
   deleteCharacter(isBackward: boolean): void {
+    const wasCollapsed = this.isCollapsed();
     if (this.isCollapsed()) {
       const anchor = this.anchor;
       const focus = this.focus;
@@ -2079,6 +2081,15 @@ export class RangeSelection implements BaseSelection {
         } else {
           possibleNode.remove();
         }
+        return;
+      } else if (
+        !isBackward &&
+        $isElementNode(possibleNode) &&
+        $isElementNode(anchorNode) &&
+        anchorNode.isEmpty()
+      ) {
+        anchorNode.remove();
+        possibleNode.selectStart();
         return;
       }
       this.modify('extend', isBackward, 'character');
@@ -2122,7 +2133,6 @@ export class RangeSelection implements BaseSelection {
         }
       }
     }
-    const wasCollapsed = this.isCollapsed();
     this.removeText();
     if (
       isBackward &&
@@ -2575,7 +2585,7 @@ function internalResolveSelectionPoints(
   return [resolvedAnchorPoint, resolvedFocusPoint];
 }
 
-function $isBlockElementNode(
+export function $isBlockElementNode(
   node: LexicalNode | null | undefined,
 ): node is ElementNode {
   return $isElementNode(node) && !node.isInline();

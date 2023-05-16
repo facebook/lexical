@@ -7,4 +7,10 @@
  * @flow strict
  */
 
+import type {LexicalEditor} from 'lexical';
+
+declare export function registerTabIndentation(
+  editor: LexicalEditor,
+): () => void;
+
 declare export function TabIndentationPlugin(): null;

@@ -36,6 +36,7 @@ declare export var KEY_BACKSPACE_COMMAND: LexicalCommand<KeyboardEvent>;
 declare export var KEY_ESCAPE_COMMAND: LexicalCommand<KeyboardEvent>;
 declare export var KEY_DELETE_COMMAND: LexicalCommand<KeyboardEvent>;
 declare export var KEY_TAB_COMMAND: LexicalCommand<KeyboardEvent>;
+declare export var INSERT_TAB_COMMAND: LexicalCommand<void>;
 declare export var KEY_MODIFIER_COMMAND: LexicalCommand<KeyboardEvent>;
 declare export var INDENT_CONTENT_COMMAND: LexicalCommand<void>;
 declare export var OUTDENT_CONTENT_COMMAND: LexicalCommand<void>;
@@ -100,7 +101,7 @@ type RegisteredNode = {
   klass: Class<LexicalNode>,
   transforms: Set<Transform<LexicalNode>>,
 };
-type Transform<T> = (node: T) => void;
+export type Transform<T> = (node: T) => void;
 
 type DOMConversionCache = Map<
   string,
@@ -320,7 +321,7 @@ type NodeName = string;
 export type DOMConversionOutput = {
   after?: (childLexicalNodes: Array<LexicalNode>) => Array<LexicalNode>,
   forChild?: DOMChildConversion,
-  node: LexicalNode | null,
+  node: null | LexicalNode | Array<LexicalNode>,
 };
 export type DOMExportOutput = {
   after?: (generatedElement: ?HTMLElement) => ?HTMLElement,
@@ -637,6 +638,27 @@ declare export function $isTextNode(
 ): boolean %checks(node instanceof TextNode);
 
 /**
+ * LexicalTabNode
+ */
+
+export type SerializedTabNode = SerializedTextNode;
+
+declare export function $createTabNode(): TabNode;
+
+declare export function $isTabNode(
+  node: LexicalNode | null | void,
+): boolean %checks(node instanceof TabNode);
+
+declare export class TabNode extends TextNode {
+  static getType(): string;
+  static clone(node: TabNode): TabNode;
+  constructor(key?: NodeKey): void;
+  static importDOM(): DOMConversionMap | null;
+  static importJSON(serializedTabNode: SerializedTabNode): TabNode;
+  exportJSON(): SerializedTabNode;
+}
+
+/**
  * LexicalLineBreakNode
  */
 
@@ -732,7 +754,6 @@ declare export class ElementNode extends LexicalNode {
     selection: RangeSelection,
     restoreSelection?: boolean,
   ): null | LexicalNode;
-  canInsertTab(): boolean;
   canIndent(): boolean;
   collapseAtStart(selection: RangeSelection): boolean;
   excludeFromCopy(destination: 'clone' | 'html'): boolean;

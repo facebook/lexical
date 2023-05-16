@@ -76,6 +76,8 @@ export const KEY_DELETE_COMMAND: LexicalCommand<KeyboardEvent> =
   createCommand('KEY_DELETE_COMMAND');
 export const KEY_TAB_COMMAND: LexicalCommand<KeyboardEvent> =
   createCommand('KEY_TAB_COMMAND');
+export const INSERT_TAB_COMMAND: LexicalCommand<void> =
+  createCommand('INSERT_TAB_COMMAND');
 export const INDENT_CONTENT_COMMAND: LexicalCommand<void> = createCommand(
   'INDENT_CONTENT_COMMAND',
 );

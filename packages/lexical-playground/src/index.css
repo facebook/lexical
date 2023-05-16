@@ -691,76 +691,6 @@ i.prettier-error {
   outline: none;
 }
 
-#block-controls {
-  display: block;
-  position: absolute;
-  right: 10px;
-  width: 32px;
-  height: 32px;
-  box-sizing: border-box;
-  box-shadow: rgba(0, 0, 0, 0.1) 0px 1px 2px 0px;
-  top: 16px;
-  z-index: 10;
-  border-radius: 8px;
-  border: 1px solid rgb(206, 208, 212);
-  overflow: hidden;
-}
-
-#block-controls button {
-  border: 1px solid white;
-  background-color: #fff;
-  display: block;
-  transition: background-color 0.1s ease;
-  cursor: pointer;
-  outline: none;
-  border-radius: 8px;
-  padding: 3px;
-}
-
-#block-controls button:hover {
-  background-color: #efefef;
-}
-
-#block-controls button:focus-visible {
-  border-color: blue;
-}
-
-#block-controls span.block-type {
-  background-size: contain;
-  display: block;
-  width: 18px;
-  height: 18px;
-  margin: 2px;
-}
-
-#block-controls span.block-type.paragraph {
-  background-image: url(images/icons/text-paragraph.svg);
-}
-
-#block-controls span.block-type.h1 {
-  background-image: url(images/icons/type-h1.svg);
-}
-
-#block-controls span.block-type.h2 {
-  background-image: url(images/icons/type-h2.svg);
-}
-
-#block-controls span.block-type.quote {
-  background-image: url(images/icons/chat-square-quote.svg);
-}
-
-#block-controls span.block-type.ul {
-  background-image: url(images/icons/list-ul.svg);
-}
-
-#block-controls span.block-type.ol {
-  background-image: url(images/icons/list-ol.svg);
-}
-
-#block-controls span.block-type.code {
-  background-image: url(images/icons/code.svg);
-}
-
 .characters-limit {
   color: #888;
   font-size: 12px;
@@ -1714,7 +1644,6 @@ hr.selected {
   cursor: text;
   display: block;
   position: relative;
-  tab-size: 1;
   outline: 0px;
   padding: 0;
   user-select: text;

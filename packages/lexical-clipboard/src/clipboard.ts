@@ -38,7 +38,6 @@ import {
   LexicalEditor,
   LexicalNode,
   NodeSelection,
-  PasteCommandType,
   RangeSelection,
   SELECTION_CHANGE_COMMAND,
   SerializedTextNode,
@@ -118,7 +117,6 @@ export function $insertDataTransferForRichText(
   }
 
   const htmlString = dataTransfer.getData('text/html');
-  console.log({htmlString});
 
   if (htmlString) {
     try {
@@ -600,5 +598,6 @@ function $copyToClipboardEvent(
     clipboardData.setData('application/x-lexical-editor', lexicalString);
   }
   clipboardData.setData('text/plain', plainString);
+
   return true;
 }

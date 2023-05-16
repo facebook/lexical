@@ -136,35 +136,41 @@ export default function ContextMenuPlugin(): JSX.Element {
       }),
       new ContextMenuOption(`Paste`, {
         onSelect: (_node, close) => {
-          navigator.clipboard.read().then(
-            async (...args) => {
-              const data = new DataTransfer();
-              console.log(...args);
+          navigator.clipboard.read().then(async (...args) => {
+            const data = new DataTransfer();
 
-              const items = await navigator.clipboard.read();
-              const item = items[0];
-              console.log({item});
+            const items = await navigator.clipboard.read();
+            const item = items[0];
 
-              for (const type of item.types) {
-                const dataString = await (await item.getType(type)).text();
-                data.setData(type, dataString);
-              }
+            const permission = await navigator.permissions.query({
+              // @ts-ignore These types are incorrect.
+              name: 'clipboard-read',
+            });
+            if (permission.state === 'denied') {
+              alert('Not allowed to paste from clipboard.');
+              return;
+            }
 
-              console.log(data);
+            for (const type of item.types) {
+              const dataString = await (await item.getType(type)).text();
+              data.setData(type, dataString);
+            }
 
-              editor.dispatchCommand(PASTE_COMMAND, data);
+            const event = new ClipboardEvent('paste', {
+              clipboardData: data,
+            });
 
-              // close();
-            },
-            (err) => console.log(err),
-          );
+            editor.dispatchCommand(PASTE_COMMAND, event);
+
+            close();
+          });
         },
       }),
       new ContextMenuOption('Dismiss', {
         onSelect: () => 'selected dismiss',
       }),
     ];
-  }, []);
+  }, [editor]);
 
   const onSelectOption = useCallback(
     (
@@ -201,6 +207,7 @@ export default function ContextMenuPlugin(): JSX.Element {
                 className="typeahead-popover auto-embed-menu"
                 style={{
                   marginLeft: anchorElementRef.current.style.width,
+                  userSelect: 'none',
                   width: 200,
                 }}
                 ref={setMenuRef}

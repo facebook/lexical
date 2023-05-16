@@ -439,8 +439,6 @@ function onPasteForRichText(
         clipboardData = event.clipboardData;
       }
 
-      console.log({clipboardData});
-
       if (
         clipboardData != null &&
         ($isRangeSelection(selection) || DEPRECATED_$isGridSelection(selection))
@@ -536,12 +534,12 @@ export function registerRichText(editor: LexicalEditor): () => void {
     editor.registerCommand(
       CLICK_COMMAND,
       (payload) => {
-        // const selection = $getSelection();
-        // if ($isNodeSelection(selection)) {
-        //   selection.clear();
-        //   return true;
-        // }
-        // return false;
+        const selection = $getSelection();
+        if ($isNodeSelection(selection)) {
+          selection.clear();
+          return true;
+        }
+        return false;
       },
       0,
     ),
@@ -1033,7 +1031,6 @@ export function registerRichText(editor: LexicalEditor): () => void {
         }
 
         const selection = $getSelection();
-        console.log({selection});
         if (
           $isRangeSelection(selection) ||
           DEPRECATED_$isGridSelection(selection)

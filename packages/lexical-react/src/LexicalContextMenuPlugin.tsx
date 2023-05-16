@@ -102,26 +102,9 @@ export function LexicalContextMenuPlugin<TOption extends MenuOption>({
       ) {
         closeNodeMenu();
       }
-
-      if (
-        menuRef.current != null &&
-        menuRef.current.contains(event.target as Node)
-      ) {
-        console.log('inside menu');
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        event.stopPropagation();
-      }
     },
     [closeNodeMenu, resolution],
   );
-
-  const handleMenuClick = useCallback((event: MouseEvent) => {
-    // console.log('menu click');
-    // event.preventDefault();
-    // event.stopImmediatePropagation();
-    // event.stopPropagation();
-  }, []);
 
   useEffect(() => {
     const editorElement = editor.getRootElement();
@@ -136,15 +119,6 @@ export function LexicalContextMenuPlugin<TOption extends MenuOption>({
     document.addEventListener('click', handleClick);
     return () => document.removeEventListener('click', handleClick);
   }, [editor, handleClick]);
-
-  useEffect(() => {
-    const menuElement = menuRef.current;
-    console.log({menuElement});
-    if (menuElement) {
-      menuElement.addEventListener('click', handleMenuClick);
-      return () => menuElement.removeEventListener('click', handleMenuClick);
-    }
-  }, [editor, handleMenuClick, resolution]);
 
   return resolution === null || editor === null ? null : (
     <LexicalMenu
@@ -166,18 +140,3 @@ export function LexicalContextMenuPlugin<TOption extends MenuOption>({
 }
 
 export {MenuOption, MenuRenderFn, MenuResolution};
-
-export async function getTypeFromObject(
-  clipboardData: DataTransfer | ClipboardItem,
-  type: string,
-): Promise<string> {
-  try {
-    return clipboardData instanceof DataTransfer
-      ? clipboardData.getData(type)
-      : clipboardData instanceof ClipboardItem
-      ? await clipboardData.getType(type)
-      : '';
-  } catch {
-    return '';
-  }
-}

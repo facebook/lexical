@@ -101,7 +101,7 @@ type RegisteredNode = {
   klass: Class<LexicalNode>,
   transforms: Set<Transform<LexicalNode>>,
 };
-type Transform<T> = (node: T) => void;
+export type Transform<T> = (node: T) => void;
 
 type DOMConversionCache = Map<
   string,

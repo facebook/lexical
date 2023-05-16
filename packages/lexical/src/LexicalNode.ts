@@ -149,7 +149,7 @@ export type DOMExportOutput = {
   after?: (
     generatedElement: HTMLElement | null | undefined,
   ) => HTMLElement | null | undefined;
-  element: HTMLElement | null;
+  element: HTMLElement | Text | null;
 };
 
 export type NodeKey = string;

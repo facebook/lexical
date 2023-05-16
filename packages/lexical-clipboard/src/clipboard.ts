@@ -93,7 +93,6 @@ export function $insertDataTransferForPlainText(
     selection.insertRawText(text);
   }
 }
-
 export function $insertDataTransferForRichText(
   dataTransfer: DataTransfer,
   selection: RangeSelection | GridSelection,
@@ -117,7 +116,6 @@ export function $insertDataTransferForRichText(
   }
 
   const htmlString = dataTransfer.getData('text/html');
-
   if (htmlString) {
     try {
       const parser = new DOMParser();
@@ -598,6 +596,5 @@ function $copyToClipboardEvent(
     clipboardData.setData('application/x-lexical-editor', lexicalString);
   }
   clipboardData.setData('text/plain', plainString);
-
   return true;
 }

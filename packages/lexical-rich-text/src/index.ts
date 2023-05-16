@@ -413,19 +413,10 @@ export function $isHeadingNode(
   return node instanceof HeadingNode;
 }
 
-export function isDataTransfer(
-  payload: PasteCommandType,
-): payload is DataTransfer {
-  return payload instanceof DataTransfer;
-}
-
 function onPasteForRichText(
   event: CommandPayloadType<typeof PASTE_COMMAND>,
   editor: LexicalEditor,
 ): void {
-  if (!isDataTransfer(event)) {
-    event.preventDefault();
-  }
   editor.update(
     () => {
       const selection = $getSelection();
@@ -433,8 +424,6 @@ function onPasteForRichText(
 
       if (event instanceof InputEvent || event instanceof KeyboardEvent) {
         clipboardData = null;
-      } else if (isDataTransfer(event)) {
-        clipboardData = event;
       } else {
         clipboardData = event.clipboardData;
       }
@@ -471,13 +460,11 @@ async function onCutForRichText(
 // in certain ocassions, we want to know whether it was a file transfer, as opposed to text. We
 // control this with the first boolean flag.
 export function eventFiles(
-  event: DragEvent | PasteCommandType | DataTransfer,
+  event: DragEvent | PasteCommandType,
 ): [boolean, Array<File>, boolean] {
   let dataTransfer: null | DataTransfer = null;
 
-  if (event instanceof DataTransfer) {
-    dataTransfer = event;
-  } else if (event instanceof DragEvent) {
+  if (event instanceof DragEvent) {
     dataTransfer = event.dataTransfer;
   } else if (event instanceof ClipboardEvent) {
     dataTransfer = event.clipboardData;
@@ -1023,10 +1010,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
         }
 
         // if inputs then paste within the input ignore creating a new node on paste event
-        if (
-          !isDataTransfer(event) &&
-          isSelectionCapturedInDecoratorInput(event.target as Node)
-        ) {
+        if (isSelectionCapturedInDecoratorInput(event.target as Node)) {
           return false;
         }
 

@@ -48,11 +48,7 @@ function ContextMenuItem({
       aria-selected={isSelected}
       id={'typeahead-item-' + index}
       onMouseEnter={onMouseEnter}
-      onClick={(event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        onClick();
-      }}>
+      onClick={onClick}>
       <span className="text">{option.title}</span>
     </li>
   );
@@ -76,9 +72,7 @@ function ContextMenu({
           <ContextMenuItem
             index={i}
             isSelected={selectedItemIndex === i}
-            onClick={() => {
-              onOptionClick(option, i);
-            }}
+            onClick={() => onOptionClick(option, i)}
             onMouseEnter={() => onOptionMouseEnter(i)}
             key={option.key}
             option={option}
@@ -108,19 +102,6 @@ export default function ContextMenuPlugin(): JSX.Element {
   const [editor] = useLexicalComposerContext();
 
   const options = useMemo(() => {
-    // if (isCopy(keyCode, event.shiftKey, event.metaKey, event.ctrlKey)) {
-    //   editor.dispatchCommand(COPY_COMMAND, event);
-    //   return;
-    // }
-    // if (isCut(keyCode, event.shiftKey, event.metaKey, event.ctrlKey)) {
-    //   editor.dispatchCommand(CUT_COMMAND, event);
-    //   return;
-    // }
-    // if (isPaste(keyCode, event.shiftKey, event.metaKey, event.ctrlKey)) {
-    //   editor.dispatchCommand(PASTE_COMMAND, event);
-    //   return;
-    // }
-
     return [
       new ContextMenuOption(`Copy`, {
         onSelect: (_node, close) => {
@@ -210,11 +191,7 @@ export default function ContextMenuPlugin(): JSX.Element {
                   userSelect: 'none',
                   width: 200,
                 }}
-                ref={setMenuRef}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                }}>
+                ref={setMenuRef}>
                 <ContextMenu
                   options={options}
                   selectedItemIndex={selectedIndex}

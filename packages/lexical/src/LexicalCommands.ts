@@ -8,11 +8,7 @@
 
 import type {ElementFormatType, LexicalCommand, TextFormatType} from 'lexical';
 
-export type PasteCommandType =
-  | ClipboardEvent
-  | InputEvent
-  | KeyboardEvent
-  | DataTransfer;
+export type PasteCommandType = ClipboardEvent | InputEvent | KeyboardEvent;
 
 export function createCommand<T>(type?: string): LexicalCommand<T> {
   return __DEV__ ? {type} : {};

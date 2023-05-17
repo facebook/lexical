@@ -48,7 +48,6 @@ function $garbageCollectDetachedDeepChildNodes(
   let child = node.getFirstChild();
 
   while (child !== null) {
-    const nextChild = child.getNextSibling();
     const childKey = child.__key;
     // TODO Revise condition below, redundant? LexicalNode already cleans up children when moving Nodes
     if (child.__parent === parentKey) {
@@ -70,7 +69,7 @@ function $garbageCollectDetachedDeepChildNodes(
       }
       nodeMapDelete.push(childKey);
     }
-    child = nextChild;
+    child = child.getNextSibling();
   }
 }
 

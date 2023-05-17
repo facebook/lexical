@@ -47,6 +47,7 @@ function $garbageCollectDetachedDeepChildNodes(
   let child = node.getFirstChild();
 
   while (child !== null) {
+    const nextChild = child.getNextSibling();
     const childKey = child.__key;
     if (child !== undefined && child.__parent === parentKey) {
       if ($isElementNode(child)) {
@@ -66,7 +67,7 @@ function $garbageCollectDetachedDeepChildNodes(
       }
       nodeMap.delete(childKey);
     }
-    child = child.isAttached() ? child.getNextSibling() : null;
+    child = nextChild;
   }
 }
 
@@ -79,21 +80,8 @@ export function $garbageCollectDetachedNodes(
   const prevNodeMap = prevEditorState._nodeMap;
   const nodeMap = editorState._nodeMap;
 
-  for (const nodeKey of dirtyLeaves) {
-    const node = nodeMap.get(nodeKey);
-
-    if (node !== undefined && !node.isAttached()) {
-      if (!prevNodeMap.has(nodeKey)) {
-        dirtyLeaves.delete(nodeKey);
-      }
-
-      nodeMap.delete(nodeKey);
-    }
-  }
-
   for (const [nodeKey] of dirtyElements) {
     const node = nodeMap.get(nodeKey);
-
     if (node !== undefined) {
       // Garbage collect node and its children if they exist
       if (!node.isAttached()) {
@@ -106,15 +94,23 @@ export function $garbageCollectDetachedNodes(
             dirtyElements,
           );
         }
-
         // If we have created a node and it was dereferenced, then also
         // remove it from out dirty nodes Set.
         if (!prevNodeMap.has(nodeKey)) {
           dirtyElements.delete(nodeKey);
         }
-
         nodeMap.delete(nodeKey);
       }
+    }
+  }
+
+  for (const nodeKey of dirtyLeaves) {
+    const node = nodeMap.get(nodeKey);
+    if (node !== undefined && !node.isAttached()) {
+      if (!prevNodeMap.has(nodeKey)) {
+        dirtyLeaves.delete(nodeKey);
+      }
+      nodeMap.delete(nodeKey);
     }
   }
 }

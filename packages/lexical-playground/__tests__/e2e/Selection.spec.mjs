@@ -440,4 +440,39 @@ test.describe('Selection', () => {
       `,
     );
   });
+
+  test('Can adjust tripple click selection', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+
+    await page.keyboard.type('Paragraph 1');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Paragraph 2');
+    await page
+      .locator('div[contenteditable="true"] > p')
+      .first()
+      .click({clickCount: 3});
+
+    await click(page, '.block-controls');
+    await click(page, '.dropdown .item:has(.icon.h1)');
+
+    await assertHTML(
+      page,
+      html`
+        <h1
+          class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Paragraph 1</span>
+        </h1>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Paragraph 2</span>
+        </p>
+      `,
+    );
+  });
 });

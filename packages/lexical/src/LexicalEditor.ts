@@ -212,13 +212,13 @@ export type CommandListener<P> = (payload: P, editor: LexicalEditor) => boolean;
 
 export type EditableListener = (editable: boolean) => void;
 
-export type CommandListenerPriority = 0 | 1 | 2 | 3 | 4;
+export type CommandListenerPriority = number;
 
 export const COMMAND_PRIORITY_EDITOR = 0;
-export const COMMAND_PRIORITY_LOW = 1;
-export const COMMAND_PRIORITY_NORMAL = 2;
-export const COMMAND_PRIORITY_HIGH = 3;
-export const COMMAND_PRIORITY_CRITICAL = 4;
+export const COMMAND_PRIORITY_LOW = 100;
+export const COMMAND_PRIORITY_NORMAL = 200;
+export const COMMAND_PRIORITY_HIGH = 300;
+export const COMMAND_PRIORITY_CRITICAL = 400;
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export type LexicalCommand<TPayload> = {

@@ -51,7 +51,7 @@ export function useYjsCollaboration(
   cursorsContainerRef?: CursorsContainerRef,
   initialEditorState?: InitialEditorStateType,
   excludedProperties?: ExcludedProperties,
-  arbitraryAwarenessData?: Map<string, string>,
+  awarenessFields?: Map<string, string>,
 ): [JSX.Element, Binding] {
   const isReloadingDoc = useRef(false);
   const [doc, setDoc] = useState(docMap.get(id));
@@ -117,7 +117,7 @@ export function useYjsCollaboration(
       name,
       color,
       document.activeElement === editor.getRootElement(),
-      arbitraryAwarenessData || new Map(),
+      awarenessFields || new Map(),
     );
 
     const onProviderDocReload = (ydoc: Doc) => {
@@ -183,7 +183,7 @@ export function useYjsCollaboration(
     name,
     provider,
     shouldBootstrap,
-    arbitraryAwarenessData,
+    awarenessFields,
   ]);
   const cursorsContainer = useMemo(() => {
     const ref = (element: null | HTMLElement) => {
@@ -228,7 +228,7 @@ export function useYjsFocusTracking(
   provider: Provider,
   name: string,
   color: string,
-  arbitraryAwarenessData?: Map<string, string>,
+  awarenessFields?: Map<string, string>,
 ) {
   useEffect(() => {
     return mergeRegister(
@@ -240,7 +240,7 @@ export function useYjsFocusTracking(
             name,
             color,
             true,
-            arbitraryAwarenessData || new Map(),
+            awarenessFields || new Map(),
           );
           return false;
         },
@@ -254,14 +254,14 @@ export function useYjsFocusTracking(
             name,
             color,
             false,
-            arbitraryAwarenessData || new Map(),
+            awarenessFields || new Map(),
           );
           return false;
         },
         COMMAND_PRIORITY_EDITOR,
       ),
     );
-  }, [color, editor, name, provider, arbitraryAwarenessData]);
+  }, [color, editor, name, provider, awarenessFields]);
 }
 
 export function useYjsHistory(

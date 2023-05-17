@@ -51,7 +51,8 @@ export function useYjsCollaboration(
   cursorsContainerRef?: CursorsContainerRef,
   initialEditorState?: InitialEditorStateType,
   excludedProperties?: ExcludedProperties,
-  awarenessFields?: Map<string, string>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  awarenessFields?: Map<string, any>,
 ): [JSX.Element, Binding] {
   const isReloadingDoc = useRef(false);
   const [doc, setDoc] = useState(docMap.get(id));
@@ -228,7 +229,8 @@ export function useYjsFocusTracking(
   provider: Provider,
   name: string,
   color: string,
-  awarenessFields?: Map<string, string>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  awarenessFields?: Map<string, any>,
 ) {
   useEffect(() => {
     return mergeRegister(

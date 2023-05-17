@@ -20,7 +20,8 @@ export type UserState = {
   focusing: boolean;
   focusPos: null | RelativePosition;
   name: string;
-  awarenessFields: Map<string, string>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  awarenessFields: Map<string, any>;
 };
 export const CONNECTED_COMMAND: LexicalCommand<boolean> =
   createCommand('CONNECTED_COMMAND');
@@ -74,7 +75,8 @@ export function initLocalState(
   name: string,
   color: string,
   focusing: boolean,
-  awarenessFields: Map<string, string>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  awarenessFields: Map<string, any>,
 ): void {
   provider.awareness.setLocalState({
     anchorPos: null,
@@ -91,7 +93,8 @@ export function setLocalStateFocus(
   name: string,
   color: string,
   focusing: boolean,
-  awarenessFields: Map<string, string>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  awarenessFields: Map<string, any>,
 ): void {
   const {awareness} = provider;
   let localState = awareness.getLocalState();

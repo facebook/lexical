@@ -34,7 +34,8 @@ type Props = {
   cursorsContainerRef?: CursorsContainerRef;
   initialEditorState?: InitialEditorStateType;
   excludedProperties?: ExcludedProperties;
-  awarenessFields?: Map<string, string>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  awarenessFields?: Map<string, any>;
 };
 
 export function CollaborationPlugin({

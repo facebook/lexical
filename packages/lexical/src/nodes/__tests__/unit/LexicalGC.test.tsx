@@ -81,7 +81,7 @@ describe('LexicalGC tests', () => {
        *     T   TE    T
        *        T  T
        */
-      test(`RootNode.clear() with a complex tree, element ${i} deleted first`, async () => {
+      test(`RootNode.clear() with a complex tree, element ${i} node first`, async () => {
         const {editor} = testEnv;
         await editor.update(() => {
           const testElement = $createTestElementNode(); // 1

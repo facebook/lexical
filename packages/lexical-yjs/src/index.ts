@@ -20,6 +20,7 @@ export type UserState = {
   focusing: boolean;
   focusPos: null | RelativePosition;
   name: string;
+  arbitraryAwarenessData: Map<string, string>;
 };
 export const CONNECTED_COMMAND: LexicalCommand<boolean> =
   createCommand('CONNECTED_COMMAND');
@@ -73,9 +74,11 @@ export function initLocalState(
   name: string,
   color: string,
   focusing: boolean,
+  arbitraryAwarenessData: Map<string, string>,
 ): void {
   provider.awareness.setLocalState({
     anchorPos: null,
+    arbitraryAwarenessData: arbitraryAwarenessData,
     color,
     focusPos: null,
     focusing: focusing,
@@ -88,6 +91,7 @@ export function setLocalStateFocus(
   name: string,
   color: string,
   focusing: boolean,
+  arbitraryAwarenessData: Map<string, string>,
 ): void {
   const {awareness} = provider;
   let localState = awareness.getLocalState();
@@ -95,6 +99,7 @@ export function setLocalStateFocus(
   if (localState === null) {
     localState = {
       anchorPos: null,
+      arbitraryAwarenessData: arbitraryAwarenessData,
       color,
       focusPos: null,
       focusing: focusing,

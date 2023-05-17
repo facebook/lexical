@@ -49,7 +49,7 @@ function $garbageCollectDetachedDeepChildNodes(
   while (child !== null) {
     const nextChild = child.getNextSibling();
     const childKey = child.__key;
-    if (child !== undefined && child.__parent === parentKey) {
+    if (child.__parent === parentKey) {
       if ($isElementNode(child)) {
         $garbageCollectDetachedDeepChildNodes(
           child,

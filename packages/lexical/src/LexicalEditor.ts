@@ -212,13 +212,56 @@ export type CommandListener<P> = (payload: P, editor: LexicalEditor) => boolean;
 
 export type EditableListener = (editable: boolean) => void;
 
-export type CommandListenerPriority = number;
+export type CommandListenerPriority =
+  | 0
+  | 1
+  | 2
+  | 3
+  | 4
+  | 5
+  | 6
+  | 7
+  | 8
+  | 9
+  | 10
+  | 11
+  | 12
+  | 13
+  | 14
+  | 15
+  | 16
+  | 17
+  | 18
+  | 19
+  | 20;
 
-export const COMMAND_PRIORITY_EDITOR = 0;
-export const COMMAND_PRIORITY_LOW = 100;
-export const COMMAND_PRIORITY_NORMAL = 200;
-export const COMMAND_PRIORITY_HIGH = 300;
-export const COMMAND_PRIORITY_CRITICAL = 400;
+export const COMMAND_PRIORITY_0 = 0;
+export const COMMAND_PRIORITY_1 = 1;
+export const COMMAND_PRIORITY_2 = 2;
+export const COMMAND_PRIORITY_3 = 3;
+export const COMMAND_PRIORITY_4 = 4;
+export const COMMAND_PRIORITY_5 = 5;
+export const COMMAND_PRIORITY_6 = 6;
+export const COMMAND_PRIORITY_7 = 7;
+export const COMMAND_PRIORITY_8 = 8;
+export const COMMAND_PRIORITY_9 = 9;
+export const COMMAND_PRIORITY_10 = 10;
+export const COMMAND_PRIORITY_11 = 11;
+export const COMMAND_PRIORITY_12 = 12;
+export const COMMAND_PRIORITY_13 = 13;
+export const COMMAND_PRIORITY_14 = 14;
+export const COMMAND_PRIORITY_15 = 15;
+export const COMMAND_PRIORITY_16 = 16;
+export const COMMAND_PRIORITY_17 = 17;
+export const COMMAND_PRIORITY_18 = 18;
+export const COMMAND_PRIORITY_19 = 19;
+export const COMMAND_PRIORITY_20 = 20;
+
+export const COMMAND_PRIORITY_EDITOR = COMMAND_PRIORITY_0;
+export const COMMAND_PRIORITY_LOW = COMMAND_PRIORITY_5;
+export const COMMAND_PRIORITY_NORMAL = COMMAND_PRIORITY_10;
+export const COMMAND_PRIORITY_HIGH = COMMAND_PRIORITY_15;
+export const COMMAND_PRIORITY_CRITICAL = COMMAND_PRIORITY_20;
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export type LexicalCommand<TPayload> = {
@@ -250,7 +293,7 @@ export type CommandPayloadType<TCommand extends LexicalCommand<unknown>> =
 
 type Commands = Map<
   LexicalCommand<unknown>,
-  Array<Set<CommandListener<unknown>>>
+  Map<number, Set<CommandListener<unknown>>>
 >;
 type Listeners = {
   decorator: Set<DecoratorListener>;
@@ -724,13 +767,16 @@ export class LexicalEditor {
     const commandsMap = this._commands;
 
     if (!commandsMap.has(command)) {
-      commandsMap.set(command, [
-        new Set(),
-        new Set(),
-        new Set(),
-        new Set(),
-        new Set(),
-      ]);
+      commandsMap.set(
+        command,
+        new Map([
+          [0, new Set()],
+          [5, new Set()],
+          [10, new Set()],
+          [15, new Set()],
+          [20, new Set()],
+        ]),
+      );
     }
 
     const listenersInPriorityOrder = commandsMap.get(command);
@@ -743,13 +789,18 @@ export class LexicalEditor {
       );
     }
 
-    const listeners = listenersInPriorityOrder[priority];
+    if (!listenersInPriorityOrder.has(priority)) {
+      listenersInPriorityOrder.set(priority, new Set());
+    }
+    const listeners = listenersInPriorityOrder.get(priority) as Set<
+      CommandListener<unknown>
+    >;
     listeners.add(listener as CommandListener<unknown>);
     return () => {
       listeners.delete(listener as CommandListener<unknown>);
 
       if (
-        listenersInPriorityOrder.every(
+        Array.from(listenersInPriorityOrder.values()).every(
           (listenersSet) => listenersSet.size === 0,
         )
       ) {

@@ -1572,13 +1572,13 @@ describe('LexicalEditor tests', () => {
       new Map([
         [
           command,
-          [
-            new Set([commandListener, commandListenerTwo]),
-            new Set(),
-            new Set(),
-            new Set(),
-            new Set(),
-          ],
+          new Map([
+            [0, new Set([commandListener, commandListenerTwo])],
+            [5, new Set()],
+            [10, new Set()],
+            [15, new Set()],
+            [20, new Set()],
+          ]),
         ],
       ]),
     );
@@ -1589,13 +1589,13 @@ describe('LexicalEditor tests', () => {
       new Map([
         [
           command,
-          [
-            new Set([commandListenerTwo]),
-            new Set(),
-            new Set(),
-            new Set(),
-            new Set(),
-          ],
+          new Map([
+            [0, new Set([commandListenerTwo])],
+            [5, new Set()],
+            [10, new Set()],
+            [15, new Set()],
+            [20, new Set()],
+          ]),
         ],
       ]),
     );

@@ -703,14 +703,14 @@ export function triggerCommandListeners<
 
   const editors = getEditorsToPropagate(editor);
 
-  for (let i = 4; i >= 0; i--) {
+  for (let i = 20; i >= 0; i--) {
     for (let e = 0; e < editors.length; e++) {
       const currentEditor = editors[e];
       const commandListeners = currentEditor._commands;
       const listenerInPriorityOrder = commandListeners.get(type);
 
       if (listenerInPriorityOrder !== undefined) {
-        const listenersSet = listenerInPriorityOrder[i];
+        const listenersSet = listenerInPriorityOrder.get(i);
 
         if (listenersSet !== undefined) {
           const listeners = Array.from(listenersSet);

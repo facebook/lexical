@@ -20,7 +20,7 @@ import {LexicalComposer} from '../../LexicalComposer';
 import {ContentEditable} from '../../LexicalContentEditable';
 import {RichTextPlugin} from '../../LexicalRichTextPlugin';
 
-function Editor({doc, provider, setEditor}) {
+function Editor({doc, provider, setEditor, awarenessFields}) {
   const context = useCollaborationContext();
 
   const [editor] = useLexicalComposerContext();
@@ -37,6 +37,7 @@ function Editor({doc, provider, setEditor}) {
         id="main"
         providerFactory={() => provider}
         shouldBootstrap={true}
+        awarenessFields={awarenessFields}
       />
       <RichTextPlugin
         contentEditable={<ContentEditable />}
@@ -150,7 +151,7 @@ class Client {
     this._connected = false;
   }
 
-  start(rootContainer) {
+  start(rootContainer, awarenessFields?) {
     const container = document.createElement('div');
     const reactRoot = createRoot(container);
     this._container = container;
@@ -172,6 +173,7 @@ class Client {
             provider={this}
             doc={this._doc}
             setEditor={(editor) => (this._editor = editor)}
+            awarenessFields={awarenessFields}
           />
         </LexicalComposer>,
       );

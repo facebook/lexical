@@ -281,4 +281,35 @@ describe('Collaboration', () => {
     client1.stop();
     client2.stop();
   });
+
+  it('Should allow the passing of arbitrary awareness data', async () => {
+    const connector = createTestConnection();
+
+    const client1 = connector.createClient('1');
+    const client2 = connector.createClient('2');
+
+    const awarenessFields1 = {
+      foo: 'foo',
+      uuid: Math.floor(Math.random() * 10000),
+    };
+    const awarenessFields2 = {
+      bar: 'bar',
+      uuid: Math.floor(Math.random() * 10000),
+    };
+
+    client1.start(container, awarenessFields1);
+    client2.start(container, awarenessFields2);
+
+    await expectCorrectInitialContent(client1, client2);
+
+    expect(client1.awareness.getLocalState().awarenessFields).toEqual(
+      awarenessFields1,
+    );
+    expect(client2.awareness.getLocalState().awarenessFields).toEqual(
+      awarenessFields2,
+    );
+
+    client1.stop();
+    client2.stop();
+  });
 });

@@ -35,7 +35,7 @@ type Props = {
   initialEditorState?: InitialEditorStateType;
   excludedProperties?: ExcludedProperties;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  awarenessFields?: Map<string, any>;
+  awarenessFields?: object;
 };
 
 export function CollaborationPlugin({

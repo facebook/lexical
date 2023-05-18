@@ -52,7 +52,7 @@ export function useYjsCollaboration(
   initialEditorState?: InitialEditorStateType,
   excludedProperties?: ExcludedProperties,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  awarenessFields?: Map<string, any>,
+  awarenessFields?: object,
 ): [JSX.Element, Binding] {
   const isReloadingDoc = useRef(false);
   const [doc, setDoc] = useState(docMap.get(id));
@@ -118,7 +118,7 @@ export function useYjsCollaboration(
       name,
       color,
       document.activeElement === editor.getRootElement(),
-      awarenessFields || new Map(),
+      awarenessFields || {},
     );
 
     const onProviderDocReload = (ydoc: Doc) => {
@@ -230,7 +230,7 @@ export function useYjsFocusTracking(
   name: string,
   color: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  awarenessFields?: Map<string, any>,
+  awarenessFields?: object,
 ) {
   useEffect(() => {
     return mergeRegister(
@@ -242,7 +242,7 @@ export function useYjsFocusTracking(
             name,
             color,
             true,
-            awarenessFields || new Map(),
+            awarenessFields || {},
           );
           return false;
         },
@@ -256,7 +256,7 @@ export function useYjsFocusTracking(
             name,
             color,
             false,
-            awarenessFields || new Map(),
+            awarenessFields || {},
           );
           return false;
         },

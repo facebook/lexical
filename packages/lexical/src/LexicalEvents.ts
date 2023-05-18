@@ -392,6 +392,20 @@ function onClick(event: PointerEvent, editor: LexicalEditor): void {
         ) {
           domSelection.removeAllRanges();
           selection.dirty = true;
+        } else if (event.detail === 3 && !selection.isCollapsed()) {
+          // Tripple click causing selection to overflow into the nearest element. In that
+          // case visually it looks like a single element content is selected, focus node
+          // is actually at the beginning of the next element (if present) and any manipulations
+          // with selection (formatting) are affecting second element as well
+          const focus = selection.focus;
+          const focusNode = focus.getNode();
+          if (anchorNode !== focusNode) {
+            if ($isElementNode(anchorNode)) {
+              anchorNode.select(0);
+            } else {
+              anchorNode.getParentOrThrow().select(0);
+            }
+          }
         }
       } else if (event.pointerType === 'touch') {
         // This is used to update the selection on touch devices when the user clicks on text after a

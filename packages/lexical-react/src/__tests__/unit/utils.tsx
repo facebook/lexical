@@ -8,6 +8,7 @@
 
 import {useLexicalComposerContext} from '@lexical/react/src/LexicalComposerContext';
 import LexicalErrorBoundary from '@lexical/react/src/LexicalErrorBoundary';
+import {UserState} from '@lexical/yjs/src/index';
 import {LexicalEditor} from 'lexical';
 import * as React from 'react';
 import {createRoot, Root} from 'react-dom/client';
@@ -63,12 +64,11 @@ class Client {
   _listeners: Map<string, Set<(data: unknown) => void>>;
   _updates: Uint8Array[];
   awareness: {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    getLocalState(): any;
-    getStates(): void;
+    getLocalState: () => UserState | null;
+    getStates: () => Map<number, UserState>;
     off(): void;
     on(): void;
-    setLocalState(state): void;
+    setLocalState: (state: UserState) => void;
   };
 
   constructor(id, connection) {
@@ -93,7 +93,9 @@ class Client {
       },
 
       getStates() {
-        return [[0, this._awarenessState]];
+        const states: Map<number, UserState> = new Map();
+        states[0] = this._awarenessState as UserState;
+        return states;
       },
 
       off() {

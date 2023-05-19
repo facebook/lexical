@@ -148,10 +148,9 @@ export class QuoteNode extends ElementNode {
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const {element} = super.exportDOM(editor);
 
-    if (element && this.isEmpty()) {
-      element.append(document.createElement('br'));
-    }
-    if (element) {
+    if (element instanceof HTMLElement) {
+      if (this.isEmpty()) element.append(document.createElement('br'));
+
       const formatType = this.getFormatType();
       element.style.textAlign = formatType;
 
@@ -309,10 +308,9 @@ export class HeadingNode extends ElementNode {
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const {element} = super.exportDOM(editor);
 
-    if (element && this.isEmpty()) {
-      element.append(document.createElement('br'));
-    }
-    if (element) {
+    if (element instanceof HTMLElement) {
+      if (this.isEmpty()) element.append(document.createElement('br'));
+
       const formatType = this.getFormatType();
       element.style.textAlign = formatType;
 

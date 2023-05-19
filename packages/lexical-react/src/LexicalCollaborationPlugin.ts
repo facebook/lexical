@@ -34,6 +34,8 @@ type Props = {
   cursorsContainerRef?: CursorsContainerRef;
   initialEditorState?: InitialEditorStateType;
   excludedProperties?: ExcludedProperties;
+  // `awarenessData` parameter allows arbitrary data to be added to the awareness.
+  awarenessData?: object;
 };
 
 export function CollaborationPlugin({
@@ -45,6 +47,7 @@ export function CollaborationPlugin({
   cursorsContainerRef,
   initialEditorState,
   excludedProperties,
+  awarenessData,
 }: Props): JSX.Element {
   const collabContext = useCollaborationContext(username, cursorColor);
 
@@ -80,12 +83,13 @@ export function CollaborationPlugin({
     cursorsContainerRef,
     initialEditorState,
     excludedProperties,
+    awarenessData,
   );
 
   collabContext.clientID = binding.clientID;
 
   useYjsHistory(editor, binding);
-  useYjsFocusTracking(editor, provider, name, color);
+  useYjsFocusTracking(editor, provider, name, color, awarenessData);
 
   return cursors;
 }

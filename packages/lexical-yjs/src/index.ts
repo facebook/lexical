@@ -78,7 +78,7 @@ export function initLocalState(
 ): void {
   provider.awareness.setLocalState({
     anchorPos: null,
-    awarenessData: awarenessData,
+    awarenessData,
     color,
     focusPos: null,
     focusing: focusing,
@@ -99,7 +99,7 @@ export function setLocalStateFocus(
   if (localState === null) {
     localState = {
       anchorPos: null,
-      awarenessData: awarenessData,
+      awarenessData,
       color,
       focusPos: null,
       focusing: focusing,

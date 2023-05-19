@@ -30,5 +30,3 @@ export {
 } from './CodeHighlightNode';
 export type {SerializedCodeNode} from './CodeNode';
 export {$createCodeNode, $isCodeNode, CodeNode} from './CodeNode';
-export type {SerializedCodeTabNode} from './CodeTabNode';
-export {$createCodeTabNode, $isCodeTabNode, CodeTabNode} from './CodeTabNode';

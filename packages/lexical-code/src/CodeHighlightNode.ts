@@ -14,6 +14,7 @@ import type {
   NodeKey,
   SerializedTextNode,
   Spread,
+  TabNode,
 } from 'lexical';
 
 import 'prismjs/components/prism-clike';
@@ -35,11 +36,15 @@ import {
   addClassNamesToElement,
   removeClassNamesFromElement,
 } from '@lexical/utils';
-import {$applyNodeReplacement, ElementNode, TextNode} from 'lexical';
+import {
+  $applyNodeReplacement,
+  $isTabNode,
+  ElementNode,
+  TextNode,
+} from 'lexical';
 import * as Prism from 'prismjs';
 
 import {$createCodeNode} from './CodeNode';
-import {$isCodeTabNode, CodeTabNode} from './CodeTabNode';
 
 export const DEFAULT_CODE_LANGUAGE = 'javascript';
 
@@ -229,11 +234,11 @@ export function $isCodeHighlightNode(
 }
 
 export function getFirstCodeNodeOfLine(
-  anchor: CodeHighlightNode | CodeTabNode | LineBreakNode,
-): null | CodeHighlightNode | CodeTabNode | LineBreakNode {
+  anchor: CodeHighlightNode | TabNode | LineBreakNode,
+): null | CodeHighlightNode | TabNode | LineBreakNode {
   let previousNode = anchor;
   let node: null | LexicalNode = anchor;
-  while ($isCodeHighlightNode(node) || $isCodeTabNode(node)) {
+  while ($isCodeHighlightNode(node) || $isTabNode(node)) {
     previousNode = node;
     node = node.getPreviousSibling();
   }
@@ -241,11 +246,11 @@ export function getFirstCodeNodeOfLine(
 }
 
 export function getLastCodeNodeOfLine(
-  anchor: CodeHighlightNode | CodeTabNode | LineBreakNode,
-): CodeHighlightNode | CodeTabNode | LineBreakNode {
+  anchor: CodeHighlightNode | TabNode | LineBreakNode,
+): CodeHighlightNode | TabNode | LineBreakNode {
   let nextNode = anchor;
   let node: null | LexicalNode = anchor;
-  while ($isCodeHighlightNode(node) || $isCodeTabNode(node)) {
+  while ($isCodeHighlightNode(node) || $isTabNode(node)) {
     nextNode = node;
     node = node.getNextSibling();
   }

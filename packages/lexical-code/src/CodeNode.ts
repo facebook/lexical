@@ -17,13 +17,9 @@ import type {
   RangeSelection,
   SerializedElementNode,
   Spread,
+  TabNode,
 } from 'lexical';
-import type {CodeHighlightNode, CodeTabNode} from '@lexical/code';
-import {
-  $isCodeHighlightNode,
-  $isCodeTabNode,
-  $createCodeTabNode,
-} from '@lexical/code';
+import type {CodeHighlightNode} from '@lexical/code';
 
 import 'prismjs/components/prism-clike';
 import 'prismjs/components/prism-javascript';
@@ -46,8 +42,11 @@ import {
   $createLineBreakNode,
   $createParagraphNode,
   ElementNode,
+  $isTabNode,
+  $createTabNode,
 } from 'lexical';
 import {
+  $isCodeHighlightNode,
   $createCodeHighlightNode,
   getFirstCodeNodeOfLine,
 } from './CodeHighlightNode';
@@ -222,7 +221,7 @@ export class CodeNode extends ElementNode {
   insertNewAfter(
     selection: RangeSelection,
     restoreSelection = true,
-  ): null | ParagraphNode | CodeHighlightNode | CodeTabNode {
+  ): null | ParagraphNode | CodeHighlightNode | TabNode {
     const children = this.getChildren();
     const childrenLength = children.length;
 
@@ -250,14 +249,14 @@ export class CodeNode extends ElementNode {
     const firstSelectionNode = firstPoint.getNode();
     if (
       $isCodeHighlightNode(firstSelectionNode) ||
-      $isCodeTabNode(firstSelectionNode)
+      $isTabNode(firstSelectionNode)
     ) {
       let node = getFirstCodeNodeOfLine(firstSelectionNode);
       const insertNodes = [];
       // eslint-disable-next-line no-constant-condition
       while (true) {
-        if ($isCodeTabNode(node)) {
-          insertNodes.push($createCodeTabNode());
+        if ($isTabNode(node)) {
+          insertNodes.push($createTabNode());
           node = node.getNextSibling();
         } else if ($isCodeHighlightNode(node)) {
           let spaces = 0;

@@ -18,22 +18,23 @@ import type {
   LineBreakNode,
   SerializedElementNode,
   SerializedTabNode,
+  TabNode,
 } from 'lexical';
 
-import {ElementNode, TextNode, TabNode} from 'lexical';
+import {ElementNode, TextNode} from 'lexical';
 
 /**
  *  CodeHighlighter
  */
 declare export function getEndOfCodeInLine(
-  anchor: CodeHighlightNode | CodeTabNode,
-): CodeHighlightNode | CodeTabNode;
+  anchor: CodeHighlightNode | TabNode,
+): CodeHighlightNode | TabNode;
 
 declare export function getStartOfCodeInLine(
-  anchor: CodeHighlightNode | CodeTabNode,
+  anchor: CodeHighlightNode | TabNode,
   offset: number,
 ): null | {
-  node: CodeHighlightNode | CodeTabNode | LineBreakNode,
+  node: CodeHighlightNode | TabNode | LineBreakNode,
   offset: number,
 };
 
@@ -91,14 +92,14 @@ declare export var getCodeLanguages: () => Array<string>;
 declare export var getDefaultCodeLanguage: () => string;
 
 declare export function getFirstCodeNodeOfLine(
-  anchor: CodeHighlightNode | CodeTabNode | LineBreakNode,
-): null | CodeHighlightNode | CodeTabNode | LineBreakNode;
+  anchor: CodeHighlightNode | TabNode | LineBreakNode,
+): null | CodeHighlightNode | TabNode | LineBreakNode;
 
 declare export function getLanguageFriendlyName(lang: string): string;
 
 declare export function getLastCodeNodeOfLine(
-  anchor: CodeHighlightNode | CodeTabNode | LineBreakNode,
-): CodeHighlightNode | CodeTabNode | LineBreakNode;
+  anchor: CodeHighlightNode | TabNode | LineBreakNode,
+): CodeHighlightNode | TabNode | LineBreakNode;
 
 declare export function normalizeCodeLang(lang: string): string;
 
@@ -127,34 +128,8 @@ declare export class CodeNode extends ElementNode {
   insertNewAfter(
     selection: RangeSelection,
     restoreSelection?: boolean,
-  ): null | ParagraphNode | CodeHighlightNode | CodeTabNode;
+  ): null | ParagraphNode | CodeHighlightNode | TabNode;
   collapseAtStart(): true;
   setLanguage(language: string): void;
   getLanguage(): string | void;
-}
-
-/**
- * CodeTabNode
- */
-
-export type SerializedCodeTabNode = SerializedTabNode;
-
-declare export function $createCodeTabNode(): CodeTabNode;
-
-declare export function $isCodeTabNode(
-  node: LexicalNode | null | void,
-): boolean %checks(node instanceof CodeTabNode);
-
-declare export class CodeTabNode extends TabNode {
-  static getType(): string;
-  // $FlowFixMe
-  static clone(node: CodeTabNode): CodeTabNode;
-  static importJSON(_serializedTabNode: SerializedCodeTabNode): CodeTabNode;
-  exportJSON(): SerializedTabNode;
-  createDOM(config: EditorConfig): HTMLElement;
-  updateDOM(
-    prevNode: TextNode,
-    dom: HTMLElement,
-    config: EditorConfig,
-  ): boolean;
 }

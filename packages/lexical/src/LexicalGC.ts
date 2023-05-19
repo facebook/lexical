@@ -109,9 +109,8 @@ export function $garbageCollectDetachedNodes(
       }
     }
   }
-  const nodeMapDeleteLength = nodeMapDelete.length;
-  for (let i = 0; i < nodeMapDeleteLength; i++) {
-    nodeMap.delete(nodeMapDelete[i]);
+  for (const nodeKey of nodeMapDelete) {
+    nodeMap.delete(nodeKey);
   }
 
   for (const nodeKey of dirtyLeaves) {

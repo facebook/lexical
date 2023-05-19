@@ -15,6 +15,7 @@ import {
 
 import {
   $createTestElementNode,
+  generatePermutations,
   initializeUnitTest,
 } from '../../../__tests__/utils';
 
@@ -52,7 +53,7 @@ describe('LexicalGC tests', () => {
     });
 
     for (let i = 0; i < 3; i++) {
-      test(`RootNode.clear() with a child and three subchildren, subchild ${i} deleted first`, async () => {
+      test(`RootNode.clear() with a child and three subchildren, subchild ${i} removed first`, async () => {
         const {editor} = testEnv;
         await editor.update(() => {
           const text1 = $createTextNode('foo'); // 1
@@ -70,18 +71,23 @@ describe('LexicalGC tests', () => {
           subchild.remove();
           root.clear();
         });
-        expect(editor.getEditorState()._nodeMap.size).toBe(1);
+        expect(editor.getEditorState()._nodeMap.size).toEqual(1);
       });
     }
 
-    for (let i = 0; i < 7; i++) {
+    const permutations2 = generatePermutations<string>(
+      ['1', '2', '3', '4', '5', '6'],
+      2,
+    );
+    for (let i = 0; i < permutations2.length; i++) {
+      const removeKeys = permutations2[i];
       /**
        *          R
        *          P
        *     T   TE    T
        *        T  T
        */
-      test(`RootNode.clear() with a complex tree, element ${i} node first`, async () => {
+      test(`RootNode.clear() with a complex tree, nodes ${removeKeys.toString()} removed first`, async () => {
         const {editor} = testEnv;
         await editor.update(() => {
           const testElement = $createTestElementNode(); // 1
@@ -96,11 +102,13 @@ describe('LexicalGC tests', () => {
         });
         expect(editor.getEditorState()._nodeMap.size).toBe(7);
         await editor.update(() => {
-          const node = $getNodeByKey('1');
-          node.remove();
+          for (const key of removeKeys) {
+            const node = $getNodeByKey(String(key));
+            node.remove();
+          }
           $getRoot().clear();
         });
-        expect(editor.getEditorState()._nodeMap.size).toBe(1);
+        expect(editor.getEditorState()._nodeMap.size).toEqual(1);
       });
     }
   });

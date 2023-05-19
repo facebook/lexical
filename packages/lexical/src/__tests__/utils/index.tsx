@@ -639,3 +639,33 @@ export function shiftTabKeyboardEvent() {
   keyboardEvent.shiftKey = true;
   return keyboardEvent;
 }
+
+export function generatePermutations<T>(
+  values: T[],
+  maxLength = values.length,
+): T[][] {
+  if (maxLength > values.length) {
+    throw new Error('maxLength over values.length');
+  }
+  const result: T[][] = [];
+  const current: T[] = [];
+  const seen = new Set();
+  (function permutationsImpl() {
+    if (current.length > maxLength) {
+      return;
+    }
+    result.push(current.slice());
+    for (let i = 0; i < values.length; i++) {
+      const key = values[i];
+      if (seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+      current.push(key);
+      permutationsImpl();
+      seen.delete(key);
+      current.pop();
+    }
+  })();
+  return result;
+}

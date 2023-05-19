@@ -42,13 +42,14 @@ function $garbageCollectDetachedDeepChildNodes(
   parentKey: NodeKey,
   prevNodeMap: NodeMap,
   nodeMap: NodeMap,
+  nodeMapDelete: Array<NodeKey>,
   dirtyNodes: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
 ): void {
   let child = node.getFirstChild();
 
   while (child !== null) {
-    const nextChild = child.getNextSibling();
     const childKey = child.__key;
+    // TODO Revise condition below, redundant? LexicalNode already cleans up children when moving Nodes
     if (child.__parent === parentKey) {
       if ($isElementNode(child)) {
         $garbageCollectDetachedDeepChildNodes(
@@ -56,6 +57,7 @@ function $garbageCollectDetachedDeepChildNodes(
           childKey,
           prevNodeMap,
           nodeMap,
+          nodeMapDelete,
           dirtyNodes,
         );
       }
@@ -65,9 +67,9 @@ function $garbageCollectDetachedDeepChildNodes(
       if (!prevNodeMap.has(childKey)) {
         dirtyNodes.delete(childKey);
       }
-      nodeMap.delete(childKey);
+      nodeMapDelete.push(childKey);
     }
-    child = nextChild;
+    child = child.getNextSibling();
   }
 }
 
@@ -79,6 +81,9 @@ export function $garbageCollectDetachedNodes(
 ): void {
   const prevNodeMap = prevEditorState._nodeMap;
   const nodeMap = editorState._nodeMap;
+  // Store dirtyElements in a queue for later deletion; deleting dirty subtrees too early will
+  // hinder accessing .__next on child nodes
+  const nodeMapDelete: Array<NodeKey> = [];
 
   for (const [nodeKey] of dirtyElements) {
     const node = nodeMap.get(nodeKey);
@@ -91,6 +96,7 @@ export function $garbageCollectDetachedNodes(
             nodeKey,
             prevNodeMap,
             nodeMap,
+            nodeMapDelete,
             dirtyElements,
           );
         }
@@ -99,9 +105,12 @@ export function $garbageCollectDetachedNodes(
         if (!prevNodeMap.has(nodeKey)) {
           dirtyElements.delete(nodeKey);
         }
-        nodeMap.delete(nodeKey);
+        nodeMapDelete.push(nodeKey);
       }
     }
+  }
+  for (const nodeKey of nodeMapDelete) {
+    nodeMap.delete(nodeKey);
   }
 
   for (const nodeKey of dirtyLeaves) {

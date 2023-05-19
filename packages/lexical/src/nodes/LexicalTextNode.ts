@@ -24,8 +24,8 @@ import type {
   NodeSelection,
   RangeSelection,
 } from '../LexicalSelection';
-import type {FindCachedParentDOMNode} from '@lexical/html';
 
+import {$findParentDOMNode} from '@lexical/html';
 import {IS_FIREFOX} from 'shared/environment';
 import invariant from 'shared/invariant';
 
@@ -939,7 +939,7 @@ function convertBringAttentionToElement(domNode: Node): DOMConversionOutput {
   };
 }
 
-export function findCachedParentDOMNodePreSearch(node: Node): boolean {
+export function findParentDOMNodePreSearch(node: Node): boolean {
   return (
     node.nodeName === 'PRE' ||
     (node.nodeType === DOM_ELEMENT_TYPE &&
@@ -947,10 +947,7 @@ export function findCachedParentDOMNodePreSearch(node: Node): boolean {
   );
 }
 
-function convertTextDOMNode(
-  domNode: Node,
-  findCachedParentDOMNode: FindCachedParentDOMNode,
-): DOMConversionOutput {
+function convertTextDOMNode(domNode: Node): DOMConversionOutput {
   const domNode_ = domNode as Text;
   const parentDom = domNode.parentElement;
   invariant(
@@ -959,9 +956,7 @@ function convertTextDOMNode(
   );
   let textContent = domNode_.textContent || '';
   // No collapse and preserve segment break for pre, pre-wrap and pre-line
-  if (
-    findCachedParentDOMNode(domNode_, findCachedParentDOMNodePreSearch) !== null
-  ) {
+  if ($findParentDOMNode(domNode_, findParentDOMNodePreSearch) !== null) {
     const parts = textContent.split(/(\r?\n|\t)/);
     const nodes: Array<LexicalNode> = [];
     const length = parts.length;

@@ -288,25 +288,25 @@ describe('Collaboration', () => {
     const client1 = connector.createClient('1');
     const client2 = connector.createClient('2');
 
-    const awarenessFields1 = {
+    const awarenessData1 = {
       foo: 'foo',
       uuid: Math.floor(Math.random() * 10000),
     };
-    const awarenessFields2 = {
+    const awarenessData2 = {
       bar: 'bar',
       uuid: Math.floor(Math.random() * 10000),
     };
 
-    client1.start(container, awarenessFields1);
-    client2.start(container, awarenessFields2);
+    client1.start(container, awarenessData1);
+    client2.start(container, awarenessData2);
 
     await expectCorrectInitialContent(client1, client2);
 
-    expect(client1.awareness.getLocalState().awarenessFields).toEqual(
-      awarenessFields1,
+    expect(client1.awareness.getLocalState().awarenessData).toEqual(
+      awarenessData1,
     );
-    expect(client2.awareness.getLocalState().awarenessFields).toEqual(
-      awarenessFields2,
+    expect(client2.awareness.getLocalState().awarenessData).toEqual(
+      awarenessData2,
     );
 
     client1.stop();

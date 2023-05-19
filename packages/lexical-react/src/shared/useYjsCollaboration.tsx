@@ -51,8 +51,7 @@ export function useYjsCollaboration(
   cursorsContainerRef?: CursorsContainerRef,
   initialEditorState?: InitialEditorStateType,
   excludedProperties?: ExcludedProperties,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  awarenessFields?: object,
+  awarenessData?: object,
 ): [JSX.Element, Binding] {
   const isReloadingDoc = useRef(false);
   const [doc, setDoc] = useState(docMap.get(id));
@@ -118,7 +117,7 @@ export function useYjsCollaboration(
       name,
       color,
       document.activeElement === editor.getRootElement(),
-      awarenessFields || {},
+      awarenessData || {},
     );
 
     const onProviderDocReload = (ydoc: Doc) => {
@@ -184,7 +183,7 @@ export function useYjsCollaboration(
     name,
     provider,
     shouldBootstrap,
-    awarenessFields,
+    awarenessData,
   ]);
   const cursorsContainer = useMemo(() => {
     const ref = (element: null | HTMLElement) => {
@@ -229,21 +228,14 @@ export function useYjsFocusTracking(
   provider: Provider,
   name: string,
   color: string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  awarenessFields?: object,
+  awarenessData?: object,
 ) {
   useEffect(() => {
     return mergeRegister(
       editor.registerCommand(
         FOCUS_COMMAND,
         () => {
-          setLocalStateFocus(
-            provider,
-            name,
-            color,
-            true,
-            awarenessFields || {},
-          );
+          setLocalStateFocus(provider, name, color, true, awarenessData || {});
           return false;
         },
         COMMAND_PRIORITY_EDITOR,
@@ -251,19 +243,13 @@ export function useYjsFocusTracking(
       editor.registerCommand(
         BLUR_COMMAND,
         () => {
-          setLocalStateFocus(
-            provider,
-            name,
-            color,
-            false,
-            awarenessFields || {},
-          );
+          setLocalStateFocus(provider, name, color, false, awarenessData || {});
           return false;
         },
         COMMAND_PRIORITY_EDITOR,
       ),
     );
-  }, [color, editor, name, provider, awarenessFields]);
+  }, [color, editor, name, provider, awarenessData]);
 }
 
 export function useYjsHistory(

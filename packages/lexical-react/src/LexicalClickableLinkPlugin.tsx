@@ -18,16 +18,16 @@ import {
 } from 'lexical';
 import {useEffect} from 'react';
 
-function domGetParent(
-  node: Node,
-  predicate: (predicateNode: Node) => boolean,
-): null | Node {
-  let parent = node.parentNode;
-  while (parent != null) {
-    if (predicate(parent)) {
-      return parent;
+function findMatchingDOM<T extends Node>(
+  startNode: Node,
+  predicate: (node: Node) => node is T,
+): T | null {
+  let node: Node | null = startNode;
+  while (node != null) {
+    if (predicate(node)) {
+      return node;
     }
-    parent = parent.parentNode;
+    node = node.parentNode;
   }
   return null;
 }
@@ -64,13 +64,11 @@ export default function LexicalClickableLinkPlugin({
             url = maybeLinkNode.getURL();
             urlTarget = maybeLinkNode.getTarget();
           } else {
-            const a = (
-              isHTMLAnchorElement(target)
-                ? target
-                : domGetParent(target, isHTMLAnchorElement)
-            ) as HTMLAnchorElement;
-            url = a.href;
-            urlTarget = a.target;
+            const a = findMatchingDOM(target, isHTMLAnchorElement);
+            if (a !== null) {
+              url = a.href;
+              urlTarget = a.target;
+            }
           }
         }
       });

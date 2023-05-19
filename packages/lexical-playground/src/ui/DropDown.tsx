@@ -211,9 +211,7 @@ export default function DropDown({
           const {top} = button.getBoundingClientRect();
           const newPosition = top + button.offsetHeight + dropDownPadding;
           if (newPosition !== dropDown.getBoundingClientRect().top) {
-            dropDown.style.top = `${
-              top + button.offsetHeight + dropDownPadding
-            }px`;
+            dropDown.style.top = `${newPosition}px`;
           }
         }
       }

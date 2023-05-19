@@ -23,7 +23,7 @@ type DropDownContextType = {
 
 const DropDownContext = React.createContext<DropDownContextType | null>(null);
 
-const ToolBarHeight = 44;
+const dropDownPadding = 4;
 
 export function DropDownItem({
   children,
@@ -68,17 +68,14 @@ function DropDownItems({
   children,
   dropDownRef,
   onClose,
-  initialPosition,
 }: {
   children: React.ReactNode;
   dropDownRef: React.Ref<HTMLDivElement>;
   onClose: () => void;
-  initialPosition: React.RefObject<number>;
 }) {
   const [items, setItems] = useState<React.RefObject<HTMLButtonElement>[]>();
   const [highlightedItem, setHighlightedItem] =
     useState<React.RefObject<HTMLButtonElement>>();
-  const [isFixed, setIsFixed] = useState(true);
 
   const registerItem = useCallback(
     (itemRef: React.RefObject<HTMLButtonElement>) => {
@@ -129,39 +126,9 @@ function DropDownItems({
     }
   }, [items, highlightedItem]);
 
-  useEffect(() => {
-    const checkDropDownPosition = () => {
-      if (typeof dropDownRef !== 'function' && dropDownRef && initialPosition) {
-        const dropDownCurrent = dropDownRef.current;
-        const initialPositionCurrent = initialPosition.current;
-        if (dropDownCurrent && initialPositionCurrent !== null) {
-          const dropDownPosition = window.scrollY + ToolBarHeight;
-          const shouldFixedPosition =
-            dropDownPosition >= initialPositionCurrent;
-          setIsFixed(shouldFixedPosition);
-        }
-      }
-    };
-
-    window.addEventListener('scroll', checkDropDownPosition);
-
-    return () => {
-      window.removeEventListener('scroll', checkDropDownPosition);
-    };
-  }, [initialPosition, dropDownRef]);
-
   return (
     <DropDownContext.Provider value={contextValue}>
-      <div
-        className="dropdown"
-        style={{
-          position: isFixed ? 'fixed' : 'absolute',
-          top: isFixed
-            ? ToolBarHeight
-            : initialPosition.current || ToolBarHeight,
-        }}
-        ref={dropDownRef}
-        onKeyDown={handleKeyDown}>
+      <div className="dropdown" ref={dropDownRef} onKeyDown={handleKeyDown}>
         {children}
       </div>
     </DropDownContext.Provider>
@@ -189,8 +156,6 @@ export default function DropDown({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [showDropDown, setShowDropDown] = useState(false);
 
-  const initialPosition = useRef(0);
-
   const handleClose = () => {
     setShowDropDown(false);
     if (buttonRef && buttonRef.current) {
@@ -204,7 +169,7 @@ export default function DropDown({
 
     if (showDropDown && button !== null && dropDown !== null) {
       const {top, left} = button.getBoundingClientRect();
-      dropDown.style.top = `${top + 40}px`;
+      dropDown.style.top = `${top + button.offsetHeight + dropDownPadding}px`;
       dropDown.style.left = `${Math.min(
         left,
         window.innerWidth - dropDown.offsetWidth - 20,
@@ -238,19 +203,31 @@ export default function DropDown({
   }, [dropDownRef, buttonRef, showDropDown, stopCloseOnClickSelf]);
 
   useEffect(() => {
-    // Asynchronously extract the dropdown initial position. This prevents incorrect 'top' values
-    // when not all elements have finished rendering, for example img element.
-    setTimeout(() => {
-      const button = buttonRef.current;
-      if (button) {
-        initialPosition.current =
-          button.getBoundingClientRect().top + 40 + window.scrollY;
+    const handleButtonPositionUpdate = () => {
+      if (showDropDown) {
+        const button = buttonRef.current;
+        const dropDown = dropDownRef.current;
+        if (button !== null && dropDown !== null) {
+          const {top} = button.getBoundingClientRect();
+          const newPosition = top + button.offsetHeight + dropDownPadding;
+          if (newPosition !== dropDown.getBoundingClientRect().top) {
+            dropDown.style.top = `${
+              top + button.offsetHeight + dropDownPadding
+            }px`;
+          }
+        }
       }
-    }, 500);
-  }, [buttonRef]);
+    };
+
+    document.addEventListener('scroll', handleButtonPositionUpdate);
+
+    return () => {
+      document.removeEventListener('scroll', handleButtonPositionUpdate);
+    };
+  }, [buttonRef, dropDownRef, showDropDown]);
 
   return (
-    <div>
+    <>
       <button
         disabled={disabled}
         aria-label={buttonAriaLabel || buttonLabel}
@@ -266,14 +243,11 @@ export default function DropDown({
 
       {showDropDown &&
         createPortal(
-          <DropDownItems
-            dropDownRef={dropDownRef}
-            onClose={handleClose}
-            initialPosition={initialPosition}>
+          <DropDownItems dropDownRef={dropDownRef} onClose={handleClose}>
             {children}
           </DropDownItems>,
           document.body,
         )}
-    </div>
+    </>
   );
 }

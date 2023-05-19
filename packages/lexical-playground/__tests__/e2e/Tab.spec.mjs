@@ -66,7 +66,7 @@ test.describe('Tab', () => {
           spellcheck="false"
           data-gutter="1"
           data-highlight-language="javascript">
-          <span style="letter-spacing: 15px" data-lexical-text="true"></span>
+          <span data-lexical-text="true"></span>
           <span
             class="PlaygroundEditorTheme__tokenAttr"
             data-lexical-text="true">

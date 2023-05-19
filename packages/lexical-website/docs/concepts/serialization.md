@@ -356,14 +356,6 @@ export class ExtendedTextNode extends TextNode {
         conversion: patchStyleConversion(importers?.em),
         priority: 1
       }),
-      i: () => ({
-        conversion: patchStyleConversion(importers?.i),
-        priority: 1
-      }),
-      s: () => ({
-        conversion: patchStyleConversion(importers?.s),
-        priority: 1
-      }),
       span: () => ({
         conversion: patchStyleConversion(importers?.span),
         priority: 1
@@ -378,10 +370,6 @@ export class ExtendedTextNode extends TextNode {
       }),
       sup: () => ({
         conversion: patchStyleConversion(importers?.sup),
-        priority: 1
-      }),
-      u: () => ({
-        conversion: patchStyleConversion(importers?.u),
         priority: 1
       }),
     };
@@ -410,6 +398,7 @@ function patchStyleConversion(
     const color = node.style.color;
     const fontFamily = node.style.fontFamily;
     const fontWeight = node.style.fontWeight;
+    const fontSize = node.style.fontSize;
     const textDecoration = node.style.textDecoration;
 
     return {
@@ -423,6 +412,7 @@ function patchStyleConversion(
             color ? `color: ${color}` : null,
             fontFamily ? `font-family: ${fontFamily}` : null,
             fontWeight ? `font-weight: ${fontWeight}` : null,
+            fontSize ? `font-size: ${fontSize}` : null,
             textDecoration ? `text-decoration: ${textDecoration}` : null,
           ]
             .filter((value) => value != null)

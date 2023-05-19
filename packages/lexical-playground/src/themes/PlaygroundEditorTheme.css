@@ -101,6 +101,7 @@
   margin-bottom: 8px;
   overflow-x: auto;
   position: relative;
+  tab-size: 4;
 }
 .PlaygroundEditorTheme__code:before {
   content: attr(data-gutter);

@@ -8,7 +8,7 @@
 
 import type {Klass, LexicalNode} from 'lexical';
 
-import {CodeHighlightNode, CodeNode, CodeTabNode} from '@lexical/code';
+import {CodeHighlightNode, CodeNode} from '@lexical/code';
 import {HashtagNode} from '@lexical/hashtag';
 import {AutoLinkNode, LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
@@ -67,7 +67,6 @@ const PlaygroundNodes: Array<Klass<LexicalNode>> = [
   CollapsibleContainerNode,
   CollapsibleContentNode,
   CollapsibleTitleNode,
-  CodeTabNode,
 ];
 
 export default PlaygroundNodes;

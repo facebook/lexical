@@ -63,7 +63,8 @@ class Client {
   _listeners: Map<string, Set<(data: unknown) => void>>;
   _updates: Uint8Array[];
   awareness: {
-    getLocalState(): void;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    getLocalState(): any;
     getStates(): void;
     off(): void;
     on(): void;

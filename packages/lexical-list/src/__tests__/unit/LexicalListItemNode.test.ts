@@ -1300,12 +1300,8 @@ describe('LexicalListItemNode tests', () => {
                 <ul>
                   <li value="1">
                     <ul>
-                      <li value="1">
-                        <ul>
-                          <li value="1" dir="ltr">
-                            <span data-lexical-text="true">one</span>
-                          </li>
-                        </ul>
+                      <li value="1" dir="ltr">
+                        <span data-lexical-text="true">one</span>
                       </li>
                     </ul>
                   </li>
@@ -1323,7 +1319,7 @@ describe('LexicalListItemNode tests', () => {
         });
 
         await editor.update(() => {
-          expect(listItemNode1.getIndent()).toBe(0);
+          expect(listItemNode1.getIndent()).toBe(1);
         });
 
         expectHtmlToBeEqual(

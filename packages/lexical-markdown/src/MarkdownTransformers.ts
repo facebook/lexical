@@ -132,7 +132,7 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
     listItem.select(0, 0);
     const indent = Math.floor(match[1].length / LIST_INDENT_SIZE);
     if (indent) {
-      listItem.setIndent(indent);
+      listItem.setIndent(indent + 1);
     }
   };
 };

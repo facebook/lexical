@@ -2727,7 +2727,7 @@ describe('LexicalSelection tests', () => {
         });
       });
       expect(element.innerHTML).toStrictEqual(
-        `<h1><span data-lexical-text="true">1</span></h1><h1 style="padding-inline-start: calc(1 * 40px);"><span data-lexical-text="true">1.1</span></h1>`,
+        `<h1 style="padding-inline-start: calc(1 * 40px);"><span data-lexical-text="true">1</span></h1><h1 style="padding-inline-start: calc(2 * 40px);"><span data-lexical-text="true">1.1</span></h1>`,
       );
     });
 
@@ -2766,7 +2766,7 @@ describe('LexicalSelection tests', () => {
         });
       });
       expect(element.innerHTML).toStrictEqual(
-        `<h1 style="padding-inline-start: calc(1 * 40px);"><span data-lexical-text="true">1.1</span></h1>`,
+        `<h1 style="padding-inline-start: calc(2 * 40px);"><span data-lexical-text="true">1.1</span></h1>`,
       );
     });
   });

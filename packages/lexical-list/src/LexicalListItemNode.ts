@@ -354,7 +354,7 @@ export class ListItemNode extends ElementNode {
     }
     // ListItemNode should always have a ListNode for a parent.
     let listNodeParent = parent.getParentOrThrow();
-    let indentLevel = 0;
+    let indentLevel = 1;
     while ($isListItemNode(listNodeParent)) {
       listNodeParent = listNodeParent.getParentOrThrow().getParentOrThrow();
       indentLevel++;

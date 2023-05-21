@@ -185,7 +185,7 @@ function createListOrMerge(node: ElementNode, listType: ListType): ListNode {
   const nextSibling = node.getNextSibling();
   const listItem = $createListItemNode();
   listItem.setFormat(node.getFormatType());
-  listItem.setIndent(node.getIndent());
+  const indent = node.getIndent();
   append(listItem, node.getChildren());
 
   if (
@@ -200,6 +200,7 @@ function createListOrMerge(node: ElementNode, listType: ListType): ListNode {
       append(previousSibling, nextSibling.getChildren());
       nextSibling.remove();
     }
+    listItem.setIndent(indent);
     return previousSibling;
   } else if (
     $isListNode(nextSibling) &&
@@ -207,12 +208,14 @@ function createListOrMerge(node: ElementNode, listType: ListType): ListNode {
   ) {
     nextSibling.getFirstChildOrThrow().insertBefore(listItem);
     node.remove();
+    listItem.setIndent(indent);
     return nextSibling;
   } else {
     const list = $createListNode(listType);
     list.append(listItem);
     node.replace(list);
     updateChildrenListItemValue(list);
+    listItem.setIndent(indent);
     return list;
   }
 }

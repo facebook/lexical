@@ -838,7 +838,8 @@ export function registerRichText(editor: LexicalEditor): () => void {
           !$isRootNode(anchorNode)
         ) {
           const element = $getNearestBlockElementAncestorOrThrow(anchorNode);
-          if (element.getIndent() > 0) {
+          // element.__indent is used because indent in listItem starts from 1
+          if (element.getIndent() > 0 && element.__indent !== 0) {
             return editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
           }
         }

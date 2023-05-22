@@ -1149,7 +1149,9 @@ test.describe('Nested List', () => {
     await assertHTML(
       page,
       html`
-        <p dir="ltr"><span data-lexical-text="true">a</span></p>
+        <p dir="ltr" style="padding-inline-start: calc(40px)">
+          <span data-lexical-text="true">a</span>
+        </p>
       `,
       undefined,
       {ignoreClasses: true},
@@ -1188,7 +1190,9 @@ test.describe('Nested List', () => {
             <span data-lexical-text="true">a</span>
           </li>
         </ul>
-        <p dir="ltr"><span data-lexical-text="true">b</span></p>
+        <p dir="ltr" style="padding-inline-start: calc(40px)">
+          <span data-lexical-text="true">b</span>
+        </p>
       `,
       undefined,
       {ignoreClasses: true},
@@ -1233,7 +1237,9 @@ test.describe('Nested List', () => {
             <span data-lexical-text="true">a</span>
           </li>
         </ul>
-        <p dir="ltr"><span data-lexical-text="true">b</span></p>
+        <p dir="ltr" style="padding-inline-start: calc(40px)">
+          <span data-lexical-text="true">b</span>
+        </p>
         <ul>
           <li value="1" dir="ltr">
             <span data-lexical-text="true">c</span>

@@ -148,7 +148,7 @@ export class QuoteNode extends ElementNode {
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const {element} = super.exportDOM(editor);
 
-    if (element instanceof HTMLElement) {
+    if (element && element instanceof HTMLElement) {
       if (this.isEmpty()) element.append(document.createElement('br'));
 
       const formatType = this.getFormatType();

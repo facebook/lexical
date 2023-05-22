@@ -47,6 +47,8 @@ export type LexicalContextMenuPluginProps<TOption extends MenuOption> = {
   anchorClassName?: string;
 };
 
+const PRE_PORTAL_DIV_SIZE = 1;
+
 export function LexicalContextMenuPlugin<TOption extends MenuOption>({
   options,
   onClose,
@@ -86,7 +88,13 @@ export function LexicalContextMenuPlugin<TOption extends MenuOption>({
     (event: MouseEvent) => {
       event.preventDefault();
       openNodeMenu({
-        getRect: () => new DOMRect(event.clientX, event.clientY, 1, 1),
+        getRect: () =>
+          new DOMRect(
+            event.clientX,
+            event.clientY,
+            PRE_PORTAL_DIV_SIZE,
+            PRE_PORTAL_DIV_SIZE,
+          ),
       });
     },
     [openNodeMenu],

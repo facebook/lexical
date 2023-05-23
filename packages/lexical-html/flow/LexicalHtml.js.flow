@@ -17,6 +17,12 @@ import type {
   GridSelection,
 } from 'lexical';
 
+export type FindCachedParentDOMNode = (
+  node: Node,
+  searchFn: FindCachedParentDOMNodeSearchFn,
+) => null | Node;
+export type FindCachedParentDOMNodeSearchFn = (node: Node) => boolean;
+
 declare export function $generateHtmlFromNodes(
   editor: LexicalEditor,
   selection?: RangeSelection | NodeSelection | GridSelection | null,

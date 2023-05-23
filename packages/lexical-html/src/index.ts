@@ -33,15 +33,12 @@ export function $generateNodesFromDOM(
   editor: LexicalEditor,
   dom: Document,
 ): Array<LexicalNode> {
-  let lexicalNodes: Array<LexicalNode> = [];
   const elements = dom.body ? dom.body.childNodes : [];
-
+  let lexicalNodes: Array<LexicalNode> = [];
   for (let i = 0; i < elements.length; i++) {
     const element = elements[i];
-
     if (!IGNORE_TAGS.has(element.nodeName)) {
       const lexicalNode = $createNodesFromDOM(element, editor);
-
       if (lexicalNode !== null) {
         lexicalNodes = lexicalNodes.concat(lexicalNode);
       }
@@ -170,7 +167,6 @@ function $createNodesFromDOM(
   editor: LexicalEditor,
   forChildMap: Map<string, DOMChildConversion> = new Map(),
   parentLexicalNode?: LexicalNode | null | undefined,
-  preformatted = false,
 ): Array<LexicalNode> {
   let lexicalNodes: Array<LexicalNode> = [];
 
@@ -181,7 +177,7 @@ function $createNodesFromDOM(
   let currentLexicalNode = null;
   const transformFunction = getConversionFunction(node, editor);
   const transformOutput = transformFunction
-    ? transformFunction(node as HTMLElement, undefined, preformatted)
+    ? transformFunction(node as HTMLElement)
     : null;
   let postTransform = null;
 
@@ -230,8 +226,6 @@ function $createNodesFromDOM(
         editor,
         new Map(forChildMap),
         currentLexicalNode,
-        preformatted ||
-          (transformOutput && transformOutput.preformatted) === true,
       ),
     );
   }

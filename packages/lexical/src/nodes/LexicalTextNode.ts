@@ -31,6 +31,8 @@ import invariant from 'shared/invariant';
 import {
   COMPOSITION_SUFFIX,
   DETAIL_TYPE_TO_DETAIL,
+  DOM_ELEMENT_TYPE,
+  DOM_TEXT_TYPE,
   IS_BOLD,
   IS_CODE,
   IS_DIRECTIONLESS,
@@ -460,10 +462,6 @@ export class TextNode extends LexicalNode {
       }),
       b: () => ({
         conversion: convertBringAttentionToElement,
-        priority: 0,
-      }),
-      br: () => ({
-        conversion: convertLineBreakToElement,
         priority: 0,
       }),
       code: () => ({
@@ -923,12 +921,6 @@ function convertSpanElement(domNode: Node): DOMConversionOutput {
   };
 }
 
-function convertLineBreakToElement(): DOMConversionOutput {
-  return {
-    node: $createLineBreakNode(),
-  };
-}
-
 function convertBringAttentionToElement(domNode: Node): DOMConversionOutput {
   // domNode is a <b> since we matched it by nodeName
   const b = domNode as HTMLElement;
@@ -946,30 +938,156 @@ function convertBringAttentionToElement(domNode: Node): DOMConversionOutput {
   };
 }
 
-function convertTextDOMNode(
-  domNode: Node,
-  _parent?: Node,
-  preformatted?: boolean,
-): DOMConversionOutput {
-  let textContent = domNode.textContent || '';
-  if (!preformatted && /\n/.test(textContent)) {
-    textContent = textContent.replace(/\r?\n/gm, ' ');
-    if (textContent.trim().length === 0) {
-      return {node: null};
+const preParentCache = new WeakMap<Node, null | Node>();
+
+function isNodePre(node: Node): boolean {
+  return (
+    node.nodeName === 'PRE' ||
+    (node.nodeType === DOM_ELEMENT_TYPE &&
+      (node as HTMLElement).style.whiteSpace.startsWith('pre'))
+  );
+}
+
+export function findParentPreDOMNode(node: Node) {
+  let cached;
+  let parent = node.parentNode;
+  const visited = [node];
+  while (
+    parent !== null &&
+    (cached = preParentCache.get(parent)) === undefined &&
+    !isNodePre(parent)
+  ) {
+    visited.push(parent);
+    parent = parent.parentNode;
+  }
+  const resultNode = cached === undefined ? parent : cached;
+  for (let i = 0; i < visited.length; i++) {
+    preParentCache.set(visited[i], resultNode);
+  }
+  return resultNode;
+}
+
+function convertTextDOMNode(domNode: Node): DOMConversionOutput {
+  const domNode_ = domNode as Text;
+  const parentDom = domNode.parentElement;
+  invariant(
+    parentDom !== null,
+    'Expected parentElement of Text not to be null',
+  );
+  let textContent = domNode_.textContent || '';
+  // No collapse and preserve segment break for pre, pre-wrap and pre-line
+  if (findParentPreDOMNode(domNode_) !== null) {
+    const parts = textContent.split(/(\r?\n|\t)/);
+    const nodes: Array<LexicalNode> = [];
+    const length = parts.length;
+    for (let i = 0; i < length; i++) {
+      const part = parts[i];
+      if (part === '\n' || part === '\r\n') {
+        nodes.push($createLineBreakNode());
+      } else if (part === '\t') {
+        nodes.push($createTabNode());
+      } else if (part !== '') {
+        nodes.push($createTextNode(part));
+      }
+    }
+    return {node: nodes};
+  }
+  textContent = textContent
+    .replace(/\r?\n|\t/gm, ' ')
+    .replace('\r', '')
+    .replace(/\s+/g, ' ');
+  if (textContent === '') {
+    return {node: null};
+  }
+  if (textContent[0] === ' ') {
+    // Traverse backward while in the same line. If content contains new line or tab -> pontential
+    // delete, other elements can borrow from this one. Deletion depends on whether it's also the
+    // last space (see next condition: textContent[textContent.length - 1] === ' '))
+    let previousText: null | Text = domNode_;
+    let isStartOfLine = true;
+    while (
+      previousText !== null &&
+      (previousText = findTextInLine(previousText, false)) !== null
+    ) {
+      const previousTextContent = previousText.textContent || '';
+      if (previousTextContent.length > 0) {
+        if (previousTextContent.match(/(?:\s|\r?\n|\t)$/)) {
+          textContent = textContent.slice(1);
+        }
+        isStartOfLine = false;
+        break;
+      }
+    }
+    if (isStartOfLine) {
+      textContent = textContent.slice(1);
     }
   }
-  const parts = textContent.split(/(\t)/);
-  const nodes = [];
-  const length = parts.length;
-  for (let i = 0; i < length; i++) {
-    const part = parts[i];
-    if (part === '\t') {
-      nodes.push($createTabNode());
-    } else {
-      nodes.push($createTextNode(part));
+  if (textContent[textContent.length - 1] === ' ') {
+    // Traverse forward while in the same line, preserve if next inline will require a space
+    let nextText: null | Text = domNode_;
+    let isEndOfLine = true;
+    while (
+      nextText !== null &&
+      (nextText = findTextInLine(nextText, true)) !== null
+    ) {
+      const nextTextContent = (nextText.textContent || '').replace(
+        /^[\s|\r?\n|\t]+/,
+        '',
+      );
+      if (nextTextContent.length > 0) {
+        isEndOfLine = false;
+        break;
+      }
+    }
+    if (isEndOfLine) {
+      textContent = textContent.slice(0, textContent.length - 1);
     }
   }
-  return {node: nodes};
+  if (textContent === '') {
+    return {node: null};
+  }
+  return {node: $createTextNode(textContent)};
+}
+
+const inlineParents = new RegExp(
+  /^(a|abbr|acronym|b|cite|code|del|em|i|ins|kbd|label|output|q|ruby|s|samp|span|strong|sub|sup|time|u|tt|var)$/,
+  'i',
+);
+
+function findTextInLine(text: Text, forward: boolean): null | Text {
+  let node: Node = text;
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    let sibling: null | Node;
+    while (
+      (sibling = forward ? node.nextSibling : node.previousSibling) === null
+    ) {
+      const parentElement = node.parentElement;
+      if (parentElement === null) {
+        return null;
+      }
+      node = parentElement;
+    }
+    node = sibling;
+    if (node.nodeType === DOM_ELEMENT_TYPE) {
+      const display = (node as HTMLElement).style.display;
+      if (
+        (display === '' && node.nodeName.match(inlineParents) === null) ||
+        (display !== '' && !display.startsWith('inline'))
+      ) {
+        return null;
+      }
+    }
+    let descendant: null | Node = node;
+    while ((descendant = forward ? node.firstChild : node.lastChild) !== null) {
+      node = descendant;
+    }
+    if (node.nodeType === DOM_TEXT_TYPE) {
+      return node as Text;
+    } else if (node.nodeName === 'BR') {
+      return null;
+    }
+  }
 }
 
 const nodeNameToTextFormat: Record<string, TextFormatType> = {

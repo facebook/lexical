@@ -318,7 +318,7 @@ export function $isCodeNode(
 }
 
 function convertPreElement(domNode: Node): DOMConversionOutput {
-  return {node: $createCodeNode(), preformatted: true};
+  return {node: $createCodeNode()};
 }
 
 function convertDivElement(domNode: Node): DOMConversionOutput {
@@ -339,12 +339,11 @@ function convertDivElement(domNode: Node): DOMConversionOutput {
       return childLexicalNodes;
     },
     node: isCode ? $createCodeNode() : null,
-    preformatted: isCode,
   };
 }
 
 function convertTableElement(): DOMConversionOutput {
-  return {node: $createCodeNode(), preformatted: true};
+  return {node: $createCodeNode()};
 }
 
 function convertCodeNoop(): DOMConversionOutput {

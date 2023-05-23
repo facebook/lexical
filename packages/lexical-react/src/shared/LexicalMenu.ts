@@ -12,6 +12,7 @@ import {
   $getSelection,
   $isRangeSelection,
   COMMAND_PRIORITY_LOW,
+  CommandListenerPriority,
   createCommand,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
@@ -260,6 +261,7 @@ export function LexicalMenu<TOption extends MenuOption>({
   menuRenderFn,
   onSelectOption,
   shouldSplitNodeWithQuery = false,
+  keyboardPriority = COMMAND_PRIORITY_LOW,
 }: {
   close: () => void;
   editor: LexicalEditor;
@@ -267,6 +269,7 @@ export function LexicalMenu<TOption extends MenuOption>({
   resolution: MenuResolution;
   options: Array<TOption>;
   shouldSplitNodeWithQuery?: boolean;
+  keyboardPriority?: CommandListenerPriority;
   menuRenderFn: MenuRenderFn<TOption>;
   onSelectOption: (
     option: TOption,
@@ -375,7 +378,7 @@ export function LexicalMenu<TOption extends MenuOption>({
           }
           return true;
         },
-        COMMAND_PRIORITY_LOW,
+        keyboardPriority,
       ),
       editor.registerCommand<KeyboardEvent>(
         KEY_ARROW_UP_COMMAND,
@@ -394,7 +397,7 @@ export function LexicalMenu<TOption extends MenuOption>({
           }
           return true;
         },
-        COMMAND_PRIORITY_LOW,
+        keyboardPriority,
       ),
       editor.registerCommand<KeyboardEvent>(
         KEY_ESCAPE_COMMAND,
@@ -405,7 +408,7 @@ export function LexicalMenu<TOption extends MenuOption>({
           close();
           return true;
         },
-        COMMAND_PRIORITY_LOW,
+        keyboardPriority,
       ),
       editor.registerCommand<KeyboardEvent>(
         KEY_TAB_COMMAND,
@@ -423,7 +426,7 @@ export function LexicalMenu<TOption extends MenuOption>({
           selectOptionAndCleanUp(options[selectedIndex]);
           return true;
         },
-        COMMAND_PRIORITY_LOW,
+        keyboardPriority,
       ),
       editor.registerCommand(
         KEY_ENTER_COMMAND,
@@ -442,7 +445,7 @@ export function LexicalMenu<TOption extends MenuOption>({
           selectOptionAndCleanUp(options[selectedIndex]);
           return true;
         },
-        COMMAND_PRIORITY_LOW,
+        keyboardPriority,
       ),
     );
   }, [

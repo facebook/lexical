@@ -184,7 +184,7 @@ test.describe('HTML Tables CopyAndPaste', () => {
       page,
       html`
         <table class="PlaygroundEditorTheme__table">
-          <tr>
+          <tr style="height: 21px">
             <td class="PlaygroundEditorTheme__tableCell">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
@@ -212,7 +212,7 @@ test.describe('HTML Tables CopyAndPaste', () => {
               </p>
             </td>
           </tr>
-          <tr>
+          <tr style="height: 21px">
             <td class="PlaygroundEditorTheme__tableCell">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"

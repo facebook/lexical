@@ -123,8 +123,6 @@ export type DOMConversion<T extends HTMLElement = HTMLElement> = {
 
 export type DOMConversionFn<T extends HTMLElement = HTMLElement> = (
   element: T,
-  parent?: Node,
-  preformatted?: boolean,
 ) => DOMConversionOutput | null;
 
 export type DOMChildConversion = (
@@ -142,7 +140,6 @@ export type DOMConversionOutput = {
   after?: (childLexicalNodes: Array<LexicalNode>) => Array<LexicalNode>;
   forChild?: DOMChildConversion;
   node: null | LexicalNode | Array<LexicalNode>;
-  preformatted?: boolean;
 };
 
 export type DOMExportOutput = {

@@ -481,6 +481,7 @@ export function useMenuAnchorRef(
   const positionMenu = useCallback(() => {
     const rootElement = editor.getRootElement();
     const containerDiv = anchorElementRef.current;
+
     const menuEle = containerDiv.firstChild as Element;
     if (rootElement !== null && resolution !== null) {
       const {left, top, width, height} = resolution.getRect();

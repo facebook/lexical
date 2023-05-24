@@ -1048,7 +1048,9 @@ test.describe('CodeBlock', () => {
         </code>
       `,
       name: 'Multiline <code>',
-      pastedHTML: `<meta charset='utf-8'><code>1\n2</code>`,
+      // TODO This is not correct. This resembles how Lexical exports code right now but
+      // semantically it should be wrapped in a pre
+      pastedHTML: `<meta charset='utf-8'><code>1<br>2</code>`,
     },
   ];
 

@@ -719,5 +719,41 @@ test.describe('Composition', () => {
 
       expect(isFloatingToolbarDisplayed).toEqual(true);
     });
+
+    test('Typing after mention with IME should not break it', async ({
+      page,
+      browserName,
+      isPlainText,
+    }) => {
+      await focusEditor(page);
+
+      await page.keyboard.type('Luke');
+      await waitForSelector(page, '#typeahead-menu ul li');
+      await page.keyboard.press('Enter');
+
+      await page.pause();
+      await page.keyboard.imeSetComposition('ｓ', 0, 1);
+      await page.keyboard.imeSetComposition('す', 0, 1);
+      await page.keyboard.imeSetComposition('すｓ', 0, 2);
+      await page.keyboard.imeSetComposition('すｓｈ', 0, 3);
+      await page.keyboard.imeSetComposition('すｓｈ', 0, 4);
+
+      await assertHTML(
+        page,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span
+              class="mention"
+              style="background-color: rgba(24, 119, 232, 0.2)"
+              data-lexical-text="true">
+              Luke Skywalker
+            </span>
+            <span data-lexical-text="true">すｓｈ​</span>
+          </p>
+        `,
+      );
+    });
   });
 });

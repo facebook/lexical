@@ -644,9 +644,8 @@ export function $updateTextNodeFromDOMContent(
         (compositionKey !== null &&
           nodeKey === compositionKey &&
           !isComposing) ||
-        // Check if character was added at the start, and we need
-        // to clear this input from occurring as that action wasn't
-        // permitted.
+        // Check if character was added at the start or boundaries when not insertable, and we need
+        // to clear this input from occurring as that action wasn't permitted.
         ($isRangeSelection(prevSelection) &&
           ((parent !== null &&
             !parent.canInsertTextBefore() &&

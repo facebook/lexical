@@ -32,6 +32,7 @@ import {
   DEPRECATED_GridCellNode,
   DEPRECATED_GridNode,
   DEPRECATED_GridRowNode,
+  SELECTION_CHANGE_COMMAND,
   TextNode,
 } from '.';
 import {DOM_ELEMENT_TYPE, TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
@@ -2080,6 +2081,8 @@ export class RangeSelection implements BaseSelection {
           $setSelection(nodeSelection);
         } else {
           possibleNode.remove();
+          const editor = getActiveEditor();
+          editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
         }
         return;
       } else if (

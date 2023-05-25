@@ -50,7 +50,6 @@ import {
   $getSelection,
   $insertNodes,
   $isDecoratorNode,
-  $isElementNode,
   $isNodeSelection,
   $isRangeSelection,
   $isRootNode,
@@ -713,14 +712,6 @@ export function registerRichText(editor: LexicalEditor): () => void {
             !possibleNode.isInline()
           ) {
             possibleNode.selectPrevious();
-            event.preventDefault();
-            return true;
-          } else if (
-            $isElementNode(possibleNode) &&
-            !possibleNode.isInline() &&
-            !possibleNode.canBeEmpty()
-          ) {
-            possibleNode.select();
             event.preventDefault();
             return true;
           }

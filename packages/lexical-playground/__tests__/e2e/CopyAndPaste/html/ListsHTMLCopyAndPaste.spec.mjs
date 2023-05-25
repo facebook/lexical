@@ -6,7 +6,6 @@
  *
  */
 
-import {moveLeft} from '../../../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
   assertSelection,
@@ -375,7 +374,6 @@ test.describe('HTML Lists CopyAndPaste', () => {
     await page.keyboard.press('Enter');
     await page.keyboard.press('Enter');
     await page.keyboard.press('ArrowUp');
-    await moveLeft(page, 4);
     await page.keyboard.press('ArrowUp');
     await page.keyboard.press('ArrowUp');
     await pasteFromClipboard(page, {

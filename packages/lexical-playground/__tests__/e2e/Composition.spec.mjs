@@ -552,7 +552,11 @@ test.describe('Composition', () => {
       browserName,
       isPlainText,
     }) => {
+      // We don't yet support FF.
+      test.skip(browserName === 'firefox');
+
       await focusEditor(page);
+      await enableCompositionKeyEvents(page);
 
       await page.keyboard.type('Luke');
       await waitForSelector(page, '#typeahead-menu ul li');

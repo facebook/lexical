@@ -635,6 +635,7 @@ export function $updateTextNodeFromDOMContent(
       }
       const parent = node.getParent();
       const prevSelection = $getPreviousSelection();
+      const prevTextContentSize = node.getTextContentSize();
       const compositionKey = $getCompositionKey();
       const nodeKey = node.getKey();
 
@@ -643,13 +644,18 @@ export function $updateTextNodeFromDOMContent(
         (compositionKey !== null &&
           nodeKey === compositionKey &&
           !isComposing) ||
-        // Check if character was added at the start, and we need
-        // to clear this input from occurring as that action wasn't
-        // permitted.
-        (parent !== null &&
-          $isRangeSelection(prevSelection) &&
-          !parent.canInsertTextBefore() &&
-          prevSelection.anchor.offset === 0)
+        // Check if character was added at the start or boundaries when not insertable, and we need
+        // to clear this input from occurring as that action wasn't permitted.
+        ($isRangeSelection(prevSelection) &&
+          ((parent !== null &&
+            !parent.canInsertTextBefore() &&
+            prevSelection.anchor.offset === 0) ||
+            (prevSelection.anchor.key === textNode.__key &&
+              prevSelection.anchor.offset === 0 &&
+              !node.canInsertTextBefore()) ||
+            (prevSelection.focus.key === textNode.__key &&
+              prevSelection.focus.offset === prevTextContentSize &&
+              !node.canInsertTextAfter())))
       ) {
         node.markDirty();
         return;

@@ -1,3 +1,13 @@
+## 0.11.1 (2023-05-26)
+
+- Fire selection change on decorator delete (#4555) Acy Watson
+- Fix flow (#4549) Gerard Rovira
+- Add key to portal to avoid decorator component remounting (#4554) Maksim Horbachevsky
+- Mutations to respect canInsertBeforeAfter (#4553) Gerard Rovira
+- Arrow up selection fix #4536 (#4544) Maksim Horbachevsky
+- Max length recalculation. Fix #4542 (#4543) Maksim Horbachevsky
+- Fix update-changelog not finishing (#4537) Gerard Rovira
+
 ## 0.11.0 (2023-05-23)
 
 - Tame wild white spaces (#4467) Gerard Rovira

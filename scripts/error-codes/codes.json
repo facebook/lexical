@@ -124,5 +124,11 @@
   "122": "Expected nextRowNode not to be null",
   "123": "Expected GridNode childAtIndex(%s) to be RowNode",
   "124": "Unexpected empty cell",
-  "125": "Expected row next sibling to be a row"
+  "125": "Expected row next sibling to be a row",
+  "126": "TabNode does not support setTextContent",
+  "127": "TabNode does not support setDetail",
+  "128": "TabNode does not support setMode",
+  "129": "Expected parentElement of Text not to be null",
+  "130": "LexicalNode: Node %s does not match the serialized type. Check if .exportJSON() is implemented and it is returning the correct type.",
+  "131": "Expected to find LexicalNode from Table Cell DOMNode"
 }

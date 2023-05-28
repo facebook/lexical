@@ -187,6 +187,12 @@ function FloatingLinkEditor({
     }
   };
 
+  const handleLinkClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    if (!(event.ctrlKey || event.metaKey)) {
+      event.preventDefault();
+    }
+  };
+
   return (
     <div ref={editorRef} className="link-editor">
       {!isLink ? null : isEditMode ? (
@@ -227,6 +233,7 @@ function FloatingLinkEditor({
           <a
             href={sanitizeUrl(linkUrl)}
             target="_blank"
+            onClick={handleLinkClick}
             rel="noopener noreferrer">
             {linkUrl}
           </a>

@@ -20,6 +20,7 @@ import {
   assertHTML,
   assertSelection,
   click,
+  expect,
   focus,
   focusEditor,
   html,
@@ -2033,6 +2034,52 @@ test.describe('Links', () => {
       undefined,
       {ignoreClasses: true},
     );
+  });
+
+  test('Can open a link in new tab with Ctrl+Click or Command+Click', async ({
+    context,
+    page,
+  }) => {
+    const linkText = 'facebook.com';
+    await focusEditor(page);
+    await page.keyboard.type('Hello');
+    await selectAll(page);
+
+    // Link
+    await click(page, '.link');
+
+    await selectAll(page);
+    await setURL(page, linkText);
+
+    const link = await page.getByRole('link', {name: `https://${linkText}`});
+
+    // Verify link behavior without Ctrl+Click
+    const [newPageOpened] = await Promise.all([
+      context.waitForEvent('page', {timeout: 2000}).catch((error) => null),
+      link.click(),
+    ]);
+    expect(newPageOpened).toBeFalsy();
+
+    // Verify link behavior with Shift+Click
+    const [newPageOpenedShiftClick] = await Promise.all([
+      context.waitForEvent('page', {timeout: 2000}).catch((error) => null),
+      link.click({modifiers: ['Shift']}),
+    ]);
+    expect(newPageOpenedShiftClick).toBeFalsy();
+
+    // Verify link behavior with Ctrl+Click
+    const [newPageOpenedCtrlClick] = await Promise.all([
+      context.waitForEvent('page'),
+      link.click({modifiers: ['Control']}),
+    ]);
+    expect(newPageOpenedCtrlClick).toBeTruthy();
+
+    // Verify link behavior with Command+Click
+    const [newPageOpenedCommandClick] = await Promise.all([
+      context.waitForEvent('page'),
+      link.click({modifiers: ['Meta']}),
+    ]);
+    expect(newPageOpenedCommandClick).toBeTruthy();
   });
 });
 

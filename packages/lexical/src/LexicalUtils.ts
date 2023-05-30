@@ -1014,6 +1014,14 @@ export function getCachedClassNameArray(
   classNamesTheme: EditorThemeClasses,
   classNameThemeType: string,
 ): Array<string> {
+  if (classNamesTheme.__lexicalClassNameCache === undefined) {
+    classNamesTheme.__lexicalClassNameCache = {};
+  }
+  const classNamesCache = classNamesTheme.__lexicalClassNameCache;
+  const cachedClassNames = classNamesCache[classNameThemeType];
+  if (cachedClassNames !== undefined) {
+    return cachedClassNames;
+  }
   const classNames = classNamesTheme[classNameThemeType];
   // As we're using classList, we need
   // to handle className tokens that have spaces.
@@ -1022,7 +1030,7 @@ export function getCachedClassNameArray(
   // applied to classList.add()/remove().
   if (typeof classNames === 'string') {
     const classNamesArr = classNames.split(' ');
-    classNamesTheme[classNameThemeType] = classNamesArr;
+    classNamesCache[classNameThemeType] = classNamesArr;
     return classNamesArr;
   }
   return classNames;

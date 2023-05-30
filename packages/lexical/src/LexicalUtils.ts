@@ -1010,10 +1010,15 @@ export function isSelectAll(
   return keyCode === 65 && controlOrMeta(metaKey, ctrlKey);
 }
 
+const classNameCache = new Map<string, Array<string>>();
+
 export function getCachedClassNameArray(
   classNamesTheme: EditorThemeClasses,
   classNameThemeType: string,
 ): Array<string> {
+  if (classNameCache.has(classNameThemeType)) {
+    return classNameCache.get(classNameThemeType) as Array<string>;
+  }
   const classNames = classNamesTheme[classNameThemeType];
   // As we're using classList, we need
   // to handle className tokens that have spaces.
@@ -1022,7 +1027,7 @@ export function getCachedClassNameArray(
   // applied to classList.add()/remove().
   if (typeof classNames === 'string') {
     const classNamesArr = classNames.split(' ');
-    classNamesTheme[classNameThemeType] = classNamesArr;
+    classNameCache.set(classNameThemeType, classNamesArr);
     return classNamesArr;
   }
   return classNames;

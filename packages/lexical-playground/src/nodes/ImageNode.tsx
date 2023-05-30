@@ -53,7 +53,7 @@ function convertImageElement(domNode: Node): null | DOMConversionOutput {
 export type SerializedImageNode = Spread<
   {
     altText: string;
-    title: string;
+    title?: string;
     caption: SerializedEditor;
     height?: number;
     maxWidth: number;

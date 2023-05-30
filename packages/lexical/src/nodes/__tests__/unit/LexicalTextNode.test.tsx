@@ -641,7 +641,7 @@ describe('LexicalTextNode tests', () => {
       await update(() => {
         const textNode = $createTextNode(contents);
         textNode.setFormat(format);
-        const element = textNode.createDOM(editorConfig);
+        const element = textNode.createDOM(editorConfig, editor);
 
         expect(element.outerHTML).toBe(expectedHTML);
       });
@@ -659,7 +659,7 @@ describe('LexicalTextNode tests', () => {
             const textNode = $createTextNode(contents);
             textNode.setFormat(format);
             paragraphNode.append(textNode);
-            const element = textNode.createDOM(editorConfig);
+            const element = textNode.createDOM(editorConfig, editor);
 
             expect(element.outerHTML).toBe(expectedHTML);
           });
@@ -751,14 +751,14 @@ describe('LexicalTextNode tests', () => {
           const prevTextNode = $createTextNode(prevText);
           prevTextNode.setMode(prevMode as TextModeType);
           prevTextNode.setFormat(prevFormat);
-          const element = prevTextNode.createDOM(editorConfig);
+          const element = prevTextNode.createDOM(editorConfig, editor);
           const textNode = $createTextNode(nextText);
           textNode.setMode(nextMode as TextModeType);
           textNode.setFormat(nextFormat);
 
-          expect(textNode.updateDOM(prevTextNode, element, editorConfig)).toBe(
-            result,
-          );
+          expect(
+            textNode.updateDOM(prevTextNode, element, editorConfig, editor),
+          ).toBe(result);
           // Only need to bother about DOM element contents if updateDOM()
           // returns false.
           if (!result) {

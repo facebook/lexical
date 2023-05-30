@@ -582,7 +582,7 @@ function reconcileNode(
   }
 
   // Update node. If it returns true, we need to unmount and re-create the node
-  if (nextNode.updateDOM(prevNode, dom, activeEditorConfig)) {
+  if (nextNode.updateDOM(prevNode, dom, activeEditorConfig, activeEditor)) {
     const replacementDOM = createNode(key, null, null);
 
     if (parentDOM === null) {

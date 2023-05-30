@@ -8,6 +8,7 @@
 
 import type {
   EditorConfig,
+  LexicalEditor,
   LexicalNode,
   NodeKey,
   SerializedTextNode,
@@ -39,9 +40,9 @@ export class EmojiNode extends TextNode {
     this.__className = className;
   }
 
-  createDOM(config: EditorConfig): HTMLElement {
+  createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement {
     const dom = document.createElement('span');
-    const inner = super.createDOM(config);
+    const inner = super.createDOM(config, editor);
     dom.className = this.__className;
     inner.className = 'emoji-inner';
     dom.appendChild(inner);
@@ -52,12 +53,13 @@ export class EmojiNode extends TextNode {
     prevNode: TextNode,
     dom: HTMLElement,
     config: EditorConfig,
+    editor: LexicalEditor,
   ): boolean {
     const inner = dom.firstChild;
     if (inner === null) {
       return true;
     }
-    super.updateDOM(prevNode, inner as HTMLElement, config);
+    super.updateDOM(prevNode, inner as HTMLElement, config, editor);
     return false;
   }
 

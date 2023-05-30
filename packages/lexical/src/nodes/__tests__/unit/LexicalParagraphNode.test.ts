@@ -63,14 +63,17 @@ describe('LexicalParagraphNode tests', () => {
       await editor.update(() => {
         const paragraphNode = new ParagraphNode();
 
-        expect(paragraphNode.createDOM(editorConfig).outerHTML).toBe(
+        expect(paragraphNode.createDOM(editorConfig, editor).outerHTML).toBe(
           '<p class="my-paragraph-class"></p>',
         );
         expect(
-          paragraphNode.createDOM({
-            namespace: '',
-            theme: {},
-          }).outerHTML,
+          paragraphNode.createDOM(
+            {
+              namespace: '',
+              theme: {},
+            },
+            editor,
+          ).outerHTML,
         ).toBe('<p></p>');
       });
     });
@@ -80,7 +83,7 @@ describe('LexicalParagraphNode tests', () => {
 
       await editor.update(() => {
         const paragraphNode = new ParagraphNode();
-        const domElement = paragraphNode.createDOM(editorConfig);
+        const domElement = paragraphNode.createDOM(editorConfig, editor);
 
         expect(domElement.outerHTML).toBe('<p class="my-paragraph-class"></p>');
 

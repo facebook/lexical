@@ -8,6 +8,7 @@
 
 import type {
   EditorConfig,
+  LexicalEditor,
   LexicalNode,
   NodeKey,
   SerializedTextNode,
@@ -30,8 +31,8 @@ export class HashtagNode extends TextNode {
     super(text, key);
   }
 
-  createDOM(config: EditorConfig): HTMLElement {
-    const element = super.createDOM(config);
+  createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement {
+    const element = super.createDOM(config, editor);
     addClassNamesToElement(element, config.theme.hashtag);
     return element;
   }

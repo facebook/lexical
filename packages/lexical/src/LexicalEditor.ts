@@ -548,6 +548,8 @@ export class LexicalEditor {
   _editable: boolean;
   /** @internal */
   _blockCursorElement: null | HTMLDivElement;
+  /** @internal */
+  _classNameCache: Map<string, Array<string>>;
 
   /** @internal */
   constructor(
@@ -609,6 +611,7 @@ export class LexicalEditor {
     this._headless = parentEditor !== null && parentEditor._headless;
     this._window = null;
     this._blockCursorElement = null;
+    this._classNameCache = new Map<string, Array<string>>();
   }
 
   /**
@@ -913,7 +916,11 @@ export class LexicalEditor {
     const prevRootElement = this._rootElement;
 
     if (nextRootElement !== prevRootElement) {
-      const classNames = getCachedClassNameArray(this._config.theme, 'root');
+      const classNames = getCachedClassNameArray(
+        this._config.theme,
+        'root',
+        this,
+      );
       const pendingEditorState = this._pendingEditorState || this._editorState;
       this._rootElement = nextRootElement;
       resetEditor(this, prevRootElement, nextRootElement, pendingEditorState);

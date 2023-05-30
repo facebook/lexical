@@ -9,6 +9,7 @@
 import type {
   EditorConfig,
   EditorThemeClasses,
+  LexicalEditor,
   LexicalNode,
   LineBreakNode,
   NodeKey,
@@ -136,8 +137,8 @@ export class CodeHighlightNode extends TextNode {
     return self.__highlightType;
   }
 
-  createDOM(config: EditorConfig): HTMLElement {
-    const element = super.createDOM(config);
+  createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement {
+    const element = super.createDOM(config, editor);
     const className = getHighlightThemeClass(
       config.theme,
       this.__highlightType,
@@ -150,8 +151,9 @@ export class CodeHighlightNode extends TextNode {
     prevNode: CodeHighlightNode,
     dom: HTMLElement,
     config: EditorConfig,
+    editor: LexicalEditor,
   ): boolean {
-    const update = super.updateDOM(prevNode, dom, config);
+    const update = super.updateDOM(prevNode, dom, config, editor);
     const prevClassName = getHighlightThemeClass(
       config.theme,
       prevNode.__highlightType,

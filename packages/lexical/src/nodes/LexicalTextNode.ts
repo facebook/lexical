@@ -130,10 +130,11 @@ function setTextThemeClassNames(
   nextFormat: number,
   dom: HTMLElement,
   textClassNames: TextNodeThemeClasses,
+  editor: LexicalEditor,
 ): void {
   const domClassList = dom.classList;
   // Firstly we handle the base theme.
-  let classNames = getCachedClassNameArray(textClassNames, 'base');
+  let classNames = getCachedClassNameArray(textClassNames, 'base', editor);
   if (classNames !== undefined) {
     domClassList.add(...classNames);
   }
@@ -145,6 +146,7 @@ function setTextThemeClassNames(
   classNames = getCachedClassNameArray(
     textClassNames,
     'underlineStrikethrough',
+    editor,
   );
   let hasUnderlineStrikethrough = false;
   const prevUnderlineStrikethrough =
@@ -166,7 +168,7 @@ function setTextThemeClassNames(
   for (const key in TEXT_TYPE_TO_FORMAT) {
     const format = key;
     const flag = TEXT_TYPE_TO_FORMAT[format];
-    classNames = getCachedClassNameArray(textClassNames, key);
+    classNames = getCachedClassNameArray(textClassNames, key, editor);
     if (classNames !== undefined) {
       if (nextFormat & flag) {
         if (
@@ -255,6 +257,7 @@ function createTextInnerDOM(
   format: number,
   text: string,
   config: EditorConfig,
+  editor: LexicalEditor,
 ): void {
   setTextContent(text, innerDOM, node);
   const theme = config.theme;
@@ -262,7 +265,14 @@ function createTextInnerDOM(
   const textClassNames = theme.text;
 
   if (textClassNames !== undefined) {
-    setTextThemeClassNames(innerTag, 0, format, innerDOM, textClassNames);
+    setTextThemeClassNames(
+      innerTag,
+      0,
+      format,
+      innerDOM,
+      textClassNames,
+      editor,
+    );
   }
 }
 
@@ -367,7 +377,7 @@ export class TextNode extends LexicalNode {
 
   // View
 
-  createDOM(config: EditorConfig): HTMLElement {
+  createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement {
     const format = this.__format;
     const outerTag = getElementOuterTag(this, format);
     const innerTag = getElementInnerTag(this, format);
@@ -379,7 +389,7 @@ export class TextNode extends LexicalNode {
       dom.appendChild(innerDOM);
     }
     const text = this.__text;
-    createTextInnerDOM(innerDOM, this, innerTag, format, text, config);
+    createTextInnerDOM(innerDOM, this, innerTag, format, text, config, editor);
     const style = this.__style;
     if (style !== '') {
       dom.style.cssText = style;
@@ -391,6 +401,7 @@ export class TextNode extends LexicalNode {
     prevNode: TextNode,
     dom: HTMLElement,
     config: EditorConfig,
+    editor: LexicalEditor,
   ): boolean {
     const nextText = this.__text;
     const prevFormat = prevNode.__format;
@@ -419,6 +430,7 @@ export class TextNode extends LexicalNode {
         nextFormat,
         nextText,
         config,
+        editor,
       );
       dom.replaceChild(nextInnerDOM, prevInnerDOM);
       return false;
@@ -444,6 +456,7 @@ export class TextNode extends LexicalNode {
         nextFormat,
         innerDOM,
         textClassNames,
+        editor,
       );
     }
     const prevStyle = prevNode.__style;

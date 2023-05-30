@@ -758,6 +758,7 @@ export class LexicalNode {
     _prevNode: unknown,
     _dom: HTMLElement,
     _config: EditorConfig,
+    _editor: LexicalEditor,
   ): boolean {
     invariant(false, 'updateDOM: base method not extended');
   }

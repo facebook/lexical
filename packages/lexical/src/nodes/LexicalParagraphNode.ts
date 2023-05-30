@@ -37,9 +37,13 @@ export class ParagraphNode extends ElementNode {
 
   // View
 
-  createDOM(config: EditorConfig): HTMLElement {
+  createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement {
     const dom = document.createElement('p');
-    const classNames = getCachedClassNameArray(config.theme, 'paragraph');
+    const classNames = getCachedClassNameArray(
+      config.theme,
+      'paragraph',
+      editor,
+    );
     if (classNames !== undefined) {
       const domClassList = dom.classList;
       domClassList.add(...classNames);

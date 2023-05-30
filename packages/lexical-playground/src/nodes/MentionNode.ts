@@ -13,6 +13,7 @@ import {
   type DOMConversionOutput,
   type DOMExportOutput,
   type EditorConfig,
+  type LexicalEditor,
   type LexicalNode,
   type NodeKey,
   type SerializedTextNode,
@@ -77,8 +78,8 @@ export class MentionNode extends TextNode {
     };
   }
 
-  createDOM(config: EditorConfig): HTMLElement {
-    const dom = super.createDOM(config);
+  createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement {
+    const dom = super.createDOM(config, editor);
     dom.style.cssText = mentionStyle;
     dom.className = 'mention';
     return dom;

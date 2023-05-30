@@ -6,7 +6,12 @@
  *
  */
 
-import type {EditorConfig, LexicalNode, SerializedTextNode} from 'lexical';
+import type {
+  EditorConfig,
+  LexicalEditor,
+  LexicalNode,
+  SerializedTextNode,
+} from 'lexical';
 
 import {TextNode} from 'lexical';
 
@@ -38,8 +43,8 @@ export class KeywordNode extends TextNode {
     };
   }
 
-  createDOM(config: EditorConfig): HTMLElement {
-    const dom = super.createDOM(config);
+  createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement {
+    const dom = super.createDOM(config, editor);
     dom.style.cursor = 'default';
     dom.className = 'keyword';
     return dom;

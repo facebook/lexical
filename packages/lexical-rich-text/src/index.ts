@@ -701,10 +701,16 @@ export function registerRichText(editor: LexicalEditor): () => void {
               const anchorNodeTopElement = anchorNode.getTopLevelElement();
               const focusNode = selection.focus.getNode().getTopLevelElement();
 
+              if (!focusNode || !anchorNodeTopElement) {
+                return false;
+              }
+              const focusNodeTopElement = focusNode.getTopLevelElement();
+              if (!focusNodeTopElement) {
+                return false;
+              }
+
               // treat text nodes as normal
-              const previousSibling = focusNode
-                .getTopLevelElement()
-                .getPreviousSibling();
+              const previousSibling = focusNodeTopElement.getPreviousSibling();
               if ($isTextNode(focusNode) && $isTextNode(previousSibling)) {
                 return false;
               }
@@ -797,10 +803,16 @@ export function registerRichText(editor: LexicalEditor): () => void {
               const anchorNodeTopElement = anchorNode.getTopLevelElement();
               const focusNode = selection.focus.getNode().getTopLevelElement();
 
+              if (!focusNode || !anchorNodeTopElement) {
+                return false;
+              }
+              const focusNodeTopElement = focusNode.getTopLevelElement();
+              if (!focusNodeTopElement) {
+                return false;
+              }
+
               // treat text nodes as normal
-              const nextSibling = focusNode
-                .getTopLevelElement()
-                .getNextSibling();
+              const nextSibling = focusNodeTopElement.getNextSibling();
               if ($isTextNode(focusNode) && $isTextNode(nextSibling)) {
                 return false;
               }

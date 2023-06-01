@@ -707,6 +707,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
         } else if ($isRangeSelection(selection)) {
           const possibleNode = $getAdjacentNode(selection.focus, true);
           if (
+            !event.shiftKey &&
             $isDecoratorNode(possibleNode) &&
             !possibleNode.isIsolated() &&
             !possibleNode.isInline()
@@ -739,6 +740,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
           }
           const possibleNode = $getAdjacentNode(selection.focus, false);
           if (
+            !event.shiftKey &&
             $isDecoratorNode(possibleNode) &&
             !possibleNode.isIsolated() &&
             !possibleNode.isInline()

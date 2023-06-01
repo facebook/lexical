@@ -5275,7 +5275,7 @@ var eventType = /* @__PURE__ */ new Map([
   ["click", "mouse"],
   ["dblclick", "mouse"],
   ["mousedown", "mouse"],
-  ["mouseeenter", "mouse"],
+  ["mouseenter", "mouse"],
   ["mouseleave", "mouse"],
   ["mousemove", "mouse"],
   ["mouseout", "mouse"],

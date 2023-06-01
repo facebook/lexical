@@ -709,12 +709,8 @@ export function registerRichText(editor: LexicalEditor): () => void {
                 return false;
               }
 
-              // treat text nodes as normal
-              const previousSibling = focusNodeTopElement.getPreviousSibling();
-              if ($isTextNode(focusNode) && $isTextNode(previousSibling)) {
-                return false;
-              }
               // if on or about to move to decorator node selection, select the entire current node using root node offsets
+              const previousSibling = focusNodeTopElement.getPreviousSibling();
               if (
                 $isDecoratorNode(anchorNodeTopElement) ||
                 $isDecoratorNode(previousSibling)
@@ -811,12 +807,8 @@ export function registerRichText(editor: LexicalEditor): () => void {
                 return false;
               }
 
-              // treat text nodes as normal
-              const nextSibling = focusNodeTopElement.getNextSibling();
-              if ($isTextNode(focusNode) && $isTextNode(nextSibling)) {
-                return false;
-              }
               // if on or about to move to decorator node selection, select the entire current node using root node offsets
+              const nextSibling = focusNodeTopElement.getNextSibling();
               if (
                 $isDecoratorNode(anchorNodeTopElement) ||
                 $isDecoratorNode(nextSibling)
@@ -853,7 +845,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
               }
             }
 
-            // if using the root node, simply add the card below
+            // if using the root node, simply add the node below
             if ($isRootNode(anchorNode)) {
               const offset = selection.focus.offset;
               if (

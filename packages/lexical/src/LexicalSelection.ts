@@ -3117,7 +3117,8 @@ export function $insertNodes(
   nodes: Array<LexicalNode>,
   selectStart?: boolean,
 ): boolean {
-  let selection = $getSelection();
+  let selection = $getSelection() || $getPreviousSelection();
+
   if (selection === null) {
     selection = $getRoot().selectEnd();
   }

@@ -10,6 +10,7 @@
 import {$cloneWithProperties} from '@lexical/selection';
 import {
   $createParagraphNode,
+  $getPreviousSelection,
   $getRoot,
   $getSelection,
   $isElementNode,
@@ -430,7 +431,8 @@ export function $restoreEditorState(
  * @returns The node after its insertion
  */
 export function $insertNodeToNearestRoot<T extends LexicalNode>(node: T): T {
-  const selection = $getSelection();
+  const selection = $getSelection() || $getPreviousSelection();
+
   if ($isRangeSelection(selection)) {
     const {focus} = selection;
     const focusNode = focus.getNode();

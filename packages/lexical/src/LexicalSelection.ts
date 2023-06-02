@@ -2379,14 +2379,23 @@ function internalResolveSelectionPoint(
           const descendant = moveSelectionToEnd
             ? child.getLastDescendant()
             : child.getFirstDescendant();
-          if (descendant === null) {
-            resolvedElement = child;
-            resolvedOffset = 0;
-          } else {
+          if (descendant !== null) {
             child = descendant;
-            resolvedElement = $isElementNode(child)
-              ? child
-              : child.getParentOrThrow();
+            if ($isElementNode(child) || $isDecoratorNode(child)) {
+              resolvedElement = child.getParentOrThrow();
+              if (moveSelectionToEnd && $isElementNode(resolvedElement)) {
+                resolvedOffset = resolvedElement.getChildrenSize();
+              } else {
+                resolvedOffset = 0;
+              }
+            } else {
+              resolvedElement = child;
+              if (moveSelectionToEnd) {
+                resolvedOffset = child.getTextContentSize();
+              } else {
+                resolvedOffset = 0;
+              }
+            }
           }
         }
         if ($isTextNode(child)) {

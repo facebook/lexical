@@ -50,7 +50,6 @@ import {
   $getSelection,
   $insertNodes,
   $isDecoratorNode,
-  $isElementNode,
   $isNodeSelection,
   $isRangeSelection,
   $isRootNode,
@@ -706,19 +705,12 @@ export function registerRichText(editor: LexicalEditor): () => void {
         } else if ($isRangeSelection(selection)) {
           const possibleNode = $getAdjacentNode(selection.focus, true);
           if (
+            !event.shiftKey &&
             $isDecoratorNode(possibleNode) &&
             !possibleNode.isIsolated() &&
             !possibleNode.isInline()
           ) {
             possibleNode.selectPrevious();
-            event.preventDefault();
-            return true;
-          } else if (
-            $isElementNode(possibleNode) &&
-            !possibleNode.isInline() &&
-            !possibleNode.canBeEmpty()
-          ) {
-            possibleNode.select();
             event.preventDefault();
             return true;
           }
@@ -746,6 +738,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
           }
           const possibleNode = $getAdjacentNode(selection.focus, false);
           if (
+            !event.shiftKey &&
             $isDecoratorNode(possibleNode) &&
             !possibleNode.isIsolated() &&
             !possibleNode.isInline()

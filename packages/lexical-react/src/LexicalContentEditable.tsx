@@ -82,6 +82,7 @@ export function ContentEditable({
       aria-labelledby={ariaLabelledBy}
       aria-multiline={ariaMultiline}
       aria-owns={!isEditable ? undefined : ariaOwns}
+      aria-readonly={!isEditable ? true : undefined}
       aria-required={ariaRequired}
       autoCapitalize={autoCapitalize}
       className={className}
@@ -89,7 +90,7 @@ export function ContentEditable({
       data-testid={testid}
       id={id}
       ref={ref}
-      role={!isEditable ? undefined : role}
+      role={role}
       spellCheck={spellCheck}
       style={style}
       tabIndex={tabIndex}

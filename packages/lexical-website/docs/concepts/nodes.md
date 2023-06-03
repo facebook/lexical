@@ -230,7 +230,7 @@ export function $createColoredNode(text: string, color: string): ColoredNode {
   return new ColoredNode(text, color);
 }
 
-export function $isColoredNode(node: LexicalNode | null | undefined): boolean {
+export function $isColoredNode(node: LexicalNode | null | undefined): node is ColoredNode {
   return node instanceof ColoredNode;
 }
 ```
@@ -271,7 +271,7 @@ export function $createVideoNode(id: string): VideoNode {
   return new VideoNode(id);
 }
 
-export function $isVideoNode(node: LexicalNode | null | undefined): boolean {
+export function $isVideoNode(node: LexicalNode | null | undefined): node is VideoNode {
   return node instanceof VideoNode;
 }
 ```

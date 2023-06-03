@@ -183,7 +183,7 @@ export function $createCustomParagraphNode(): ParagraphNode {
   return new CustomParagraph();
 }
 
-export function $isCustomParagraphNode(node: LexicalNode | null | undefined): boolean {
+export function $isCustomParagraphNode(node: LexicalNode | null | undefined): node is CustomParagraph  {
   return node instanceof CustomParagraph;
 }
 ```

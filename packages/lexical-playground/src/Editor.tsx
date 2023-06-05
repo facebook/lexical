@@ -6,12 +6,14 @@
  *
  */
 
+import {HocuspocusProvider} from '@hocuspocus/provider';
 import {AutoFocusPlugin} from '@lexical/react/LexicalAutoFocusPlugin';
 import {CharacterLimitPlugin} from '@lexical/react/LexicalCharacterLimitPlugin';
 import {CheckListPlugin} from '@lexical/react/LexicalCheckListPlugin';
 import {ClearEditorPlugin} from '@lexical/react/LexicalClearEditorPlugin';
 import LexicalClickableLinkPlugin from '@lexical/react/LexicalClickableLinkPlugin';
 import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary';
 import {HashtagPlugin} from '@lexical/react/LexicalHashtagPlugin';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
@@ -22,11 +24,12 @@ import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {TabIndentationPlugin} from '@lexical/react/LexicalTabIndentationPlugin';
 import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
 import useLexicalEditable from '@lexical/react/useLexicalEditable';
+import {type Provider} from '@lexical/yjs';
 import * as React from 'react';
 import {useEffect, useState} from 'react';
 import {CAN_USE_DOM} from 'shared/canUseDOM';
+import * as Y from 'yjs';
 
-import {createWebsocketProvider} from './collaboration';
 import {useSettings} from './context/SettingsContext';
 import {useSharedHistoryContext} from './context/SharedHistoryContext';
 import TableCellNodes from './nodes/TableCellNodes';
@@ -70,11 +73,7 @@ import PlaygroundEditorTheme from './themes/PlaygroundEditorTheme';
 import ContentEditable from './ui/ContentEditable';
 import Placeholder from './ui/Placeholder';
 
-const skipCollaborationInit =
-  // @ts-ignore
-  window.parent != null && window.parent.frames.right === window;
-
-export default function Editor(): JSX.Element {
+export default function Editor({noteId}: {noteId: string}): JSX.Element {
   const {historyState} = useSharedHistoryContext();
   const {
     settings: {
@@ -159,15 +158,12 @@ export default function Editor(): JSX.Element {
         />
         {isRichText ? (
           <>
-            {isCollab ? (
-              <CollaborationPlugin
-                id="main"
-                providerFactory={createWebsocketProvider}
-                shouldBootstrap={!skipCollaborationInit}
-              />
-            ) : (
-              <HistoryPlugin externalHistoryState={historyState} />
-            )}
+            <CollaborationPlugin
+              id={noteId}
+              providerFactory={createWebsocketProvider}
+              shouldBootstrap={true}
+            />
+            <ListenerPlugin />
             <RichTextPlugin
               contentEditable={
                 <div className="editor-scroller">
@@ -256,4 +252,33 @@ export default function Editor(): JSX.Element {
       {showTreeView && <TreeViewPlugin />}
     </>
   );
+}
+
+function ListenerPlugin() {
+  const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    return editor.registerTextContentListener(() =>
+      // eslint-disable-next-line no-console
+      console.log('You should not see this message when switching documents!'),
+    );
+  }, [editor]);
+
+  return null;
+}
+
+function createWebsocketProvider(
+  id: string,
+  yjsDocMap: Map<string, Y.Doc>,
+): Provider {
+  const doc = new Y.Doc();
+  yjsDocMap.set(id, doc);
+
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  return new HocuspocusProvider({
+    document: doc,
+    name: `test-${id}`,
+    url: `ws://localhost:7398`,
+  });
 }

@@ -95,6 +95,8 @@ export function useYjsCollaboration(
     };
 
     const onAwarenessUpdate = () => {
+      // eslint-disable-next-line no-console
+      console.log('onAwarenessUpdate > syncCursorPositions');
       syncCursorPositions(binding, provider);
     };
 
@@ -107,6 +109,8 @@ export function useYjsCollaboration(
       const origin = transaction.origin;
       if (origin !== binding) {
         const isFromUndoManger = origin instanceof UndoManager;
+        // eslint-disable-next-line no-console
+        console.log('onYjsTreeChanges > syncYjsChangesToLexical');
         syncYjsChangesToLexical(binding, provider, events, isFromUndoManger);
       }
     };

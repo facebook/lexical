@@ -113,6 +113,8 @@ function prepopulatedRichText() {
 }
 
 function App(): JSX.Element {
+  const [activeNote, setActiveNote] = React.useState('1');
+
   const {
     settings: {isCollab, emptyEditor, measureTypingPerf},
   } = useSettings();
@@ -142,7 +144,9 @@ function App(): JSX.Element {
               </a>
             </header>
             <div className="editor-shell">
-              <Editor />
+              <button onClick={() => setActiveNote('1')}>Note 1</button>
+              <button onClick={() => setActiveNote('2')}>Note 2</button>
+              <Editor key={activeNote} noteId={activeNote} />
             </div>
             <Settings />
             {isDevPlayground ? <DocsPlugin /> : null}

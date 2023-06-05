@@ -131,7 +131,6 @@ type RootElementEvents = Array<
     Record<string, unknown> | ((event: Event, editor: LexicalEditor) => void),
   ]
 >;
-const IS_DESKTOP_SAFARI = IS_SAFARI && !IS_IOS;
 const PASS_THROUGH_COMMAND = Object.freeze({});
 const ANDROID_COMPOSITION_LATENCY = 30;
 const rootElementEvents: RootElementEvents = [
@@ -166,7 +165,6 @@ let unprocessedBeforeInputData: null | string = null;
 let rootElementsRegistered = 0;
 let isSelectionChangeFromDOMUpdate = false;
 let isSelectionChangeFromMouseDown = false;
-let isInsertLineBreak = false;
 let isFirefoxEndingComposition = false;
 let collapsedSelectionFormat: [number, string, number, NodeKey, number] = [
   0,
@@ -637,16 +635,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
       case 'insertParagraph': {
         // Used for Android
         $setCompositionKey(null);
-
-        // Some browsers do not provide the type "insertLineBreak".
-        // So instead, we need to infer it from the keyboard event.
-        if (isInsertLineBreak) {
-          isInsertLineBreak = false;
-          dispatchCommand(editor, INSERT_LINE_BREAK_COMMAND, false);
-        } else {
-          dispatchCommand(editor, INSERT_PARAGRAPH_COMMAND, undefined);
-        }
-
+        dispatchCommand(editor, INSERT_PARAGRAPH_COMMAND, undefined);
         break;
       }
 
@@ -949,16 +938,13 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
   } else if (isMoveDown(keyCode, ctrlKey, metaKey)) {
     dispatchCommand(editor, KEY_ARROW_DOWN_COMMAND, event);
   } else if (isLineBreak(keyCode, shiftKey)) {
-    isInsertLineBreak = IS_DESKTOP_SAFARI;
     dispatchCommand(editor, KEY_ENTER_COMMAND, event);
   } else if (isSpace(keyCode)) {
     dispatchCommand(editor, KEY_SPACE_COMMAND, event);
   } else if (isOpenLineBreak(keyCode, ctrlKey)) {
     event.preventDefault();
-    isInsertLineBreak = IS_DESKTOP_SAFARI;
     dispatchCommand(editor, INSERT_LINE_BREAK_COMMAND, true);
   } else if (isParagraph(keyCode, shiftKey)) {
-    isInsertLineBreak = false;
     dispatchCommand(editor, KEY_ENTER_COMMAND, event);
   } else if (isDeleteBackward(keyCode, altKey, metaKey, ctrlKey)) {
     if (isBackspace(keyCode)) {

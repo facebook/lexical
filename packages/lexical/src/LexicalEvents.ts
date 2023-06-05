@@ -131,6 +131,7 @@ type RootElementEvents = Array<
     Record<string, unknown> | ((event: Event, editor: LexicalEditor) => void),
   ]
 >;
+const IS_DESKTOP_SAFARI = IS_SAFARI && !IS_IOS;
 const PASS_THROUGH_COMMAND = Object.freeze({});
 const ANDROID_COMPOSITION_LATENCY = 30;
 const rootElementEvents: RootElementEvents = [
@@ -948,13 +949,13 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
   } else if (isMoveDown(keyCode, ctrlKey, metaKey)) {
     dispatchCommand(editor, KEY_ARROW_DOWN_COMMAND, event);
   } else if (isLineBreak(keyCode, shiftKey)) {
-    isInsertLineBreak = true;
+    isInsertLineBreak = IS_DESKTOP_SAFARI;
     dispatchCommand(editor, KEY_ENTER_COMMAND, event);
   } else if (isSpace(keyCode)) {
     dispatchCommand(editor, KEY_SPACE_COMMAND, event);
   } else if (isOpenLineBreak(keyCode, ctrlKey)) {
     event.preventDefault();
-    isInsertLineBreak = true;
+    isInsertLineBreak = IS_DESKTOP_SAFARI;
     dispatchCommand(editor, INSERT_LINE_BREAK_COMMAND, true);
   } else if (isParagraph(keyCode, shiftKey)) {
     isInsertLineBreak = false;

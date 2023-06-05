@@ -639,8 +639,8 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
 
         // Safari does not provide the type "insertLineBreak".
         // So instead, we need to infer it from the keyboard event.
-        // For iOS we keep original even type to allow auto-capitalization without
-        // creating linebreaks
+        // We do not apply this logic to iOS to allow newline auto-capitalization
+        // work without creating linebreaks when pressing Enter
         if (isInsertLineBreak && (IS_SAFARI || IS_APPLE_WEBKIT) && !IS_IOS) {
           isInsertLineBreak = false;
           dispatchCommand(editor, INSERT_LINE_BREAK_COMMAND, false);

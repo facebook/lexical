@@ -94,6 +94,7 @@ import {
   CAN_USE_BEFORE_INPUT,
   IS_APPLE_WEBKIT,
   IS_IOS,
+  IS_SAFARI,
 } from 'shared/environment';
 
 export type SerializedHeadingNode = Spread<
@@ -863,7 +864,13 @@ export function registerRichText(editor: LexicalEditor): () => void {
           // the default behavior. This ensures that the iOS can
           // intercept that we're actually inserting a paragraph,
           // and autocomplete, autocapitalize etc work as intended.
-          if ((IS_IOS || IS_APPLE_WEBKIT) && CAN_USE_BEFORE_INPUT) {
+          // This can also cause a strange performance issue in
+          // Safari, where there is a noticeable pause due to
+          // preventing the key down of enter.
+          if (
+            (IS_IOS || IS_SAFARI || IS_APPLE_WEBKIT) &&
+            CAN_USE_BEFORE_INPUT
+          ) {
             return false;
           }
           event.preventDefault();

@@ -637,9 +637,11 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
         // Used for Android
         $setCompositionKey(null);
 
-        // Some browsers do not provide the type "insertLineBreak".
+        // Safari does not provide the type "insertLineBreak".
         // So instead, we need to infer it from the keyboard event.
-        if (isInsertLineBreak) {
+        // We do not apply this logic to iOS to allow newline auto-capitalization
+        // work without creating linebreaks when pressing Enter
+        if (isInsertLineBreak && !IS_IOS) {
           isInsertLineBreak = false;
           dispatchCommand(editor, INSERT_LINE_BREAK_COMMAND, false);
         } else {

@@ -10,7 +10,7 @@ import './setupEnv';
 import './index.css';
 
 import * as React from 'react';
-import {createRoot} from 'react-dom/client';
+import { createRoot } from 'react-dom/client';
 
 import App from './App';
 
@@ -28,7 +28,7 @@ const showErrorOverlay = (err: Event) => {
 };
 
 window.addEventListener('error', showErrorOverlay);
-window.addEventListener('unhandledrejection', ({reason}) =>
+window.addEventListener('unhandledrejection', ({ reason }) =>
   showErrorOverlay(reason),
 );
 

@@ -44,6 +44,15 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
+/**
+ * Returns the *currently selected* Lexical content as an HTML string, relying on the
+ * logic defined in the exportDOM methods on the LexicalNode classes. Note that
+ * this will not return the HTML content of the entire editor (unless all the content is included
+ * in the current selection).
+ *
+ * @param editor - LexicalEditor instance to get HTML content from
+ * @returns a string of HTML content
+ */
 export function $getHtmlContent(editor: LexicalEditor): string {
   const selection = $getSelection();
 
@@ -62,8 +71,15 @@ export function $getHtmlContent(editor: LexicalEditor): string {
   return $generateHtmlFromNodes(editor, selection);
 }
 
-// TODO 0.6.0 Return a blank string instead
-// TODO 0.6.0 Rename to $getJSON
+/**
+ * Returns the *currently selected* Lexical content as a JSON string, relying on the
+ * logic defined in the exportJSON methods on the LexicalNode classes. Note that
+ * this will not return the JSON content of the entire editor (unless all the content is included
+ * in the current selection).
+ *
+ * @param editor  - LexicalEditor instance to get the JSON content from
+ * @returns
+ */
 export function $getLexicalContent(editor: LexicalEditor): null | string {
   const selection = $getSelection();
 
@@ -82,6 +98,14 @@ export function $getLexicalContent(editor: LexicalEditor): null | string {
   return JSON.stringify($generateJSONFromSelectedNodes(editor, selection));
 }
 
+/**
+ * Attempts to insert content of the mime-types text/plain or text/uri-list from
+ * the provided DataTransfer object into the editor at the provided selection.
+ * text/uri-list is only used if text/plain is not also provided.
+ *
+ * @param dataTransfer an object conforming to the [DataTransfer interface] (https://html.spec.whatwg.org/multipage/dnd.html#the-datatransfer-interface)
+ * @param selection the selection to use as the insertion point for the content in the DataTransfer object
+ */
 export function $insertDataTransferForPlainText(
   dataTransfer: DataTransfer,
   selection: RangeSelection | GridSelection,
@@ -93,6 +117,16 @@ export function $insertDataTransferForPlainText(
     selection.insertRawText(text);
   }
 }
+
+/**
+ * Attempts to insert content of the mime-types application/x-lexical-editor, text/html,
+ * text/plain, or text/uri-list (in descending order of priority) from the provided DataTransfer
+ * object into the editor at the provided selection.
+ *
+ * @param dataTransfer an object conforming to the [DataTransfer interface] (https://html.spec.whatwg.org/multipage/dnd.html#the-datatransfer-interface)
+ * @param selection the selection to use as the insertion point for the content in the DataTransfer object
+ * @param editor the LexicalEditor the content is being inserted into.
+ */
 export function $insertDataTransferForRichText(
   dataTransfer: DataTransfer,
   selection: RangeSelection | GridSelection,
@@ -152,11 +186,21 @@ export function $insertDataTransferForRichText(
   }
 }
 
+/**
+ * Inserts Lexical nodes into the editor using different strategies depending on
+ * some simple selection-based heuristics. If you're looking for a generic way to
+ * to insert nodes into the editor at a specific selection point, you probably want
+ * {@link lexical.$insertNodes}
+ *
+ * @param editor LexicalEditor instance to insert the nodes into.
+ * @param nodes The nodes to insert.
+ * @param selection The selection to insert the nodes into.
+ */
 export function $insertGeneratedNodes(
   editor: LexicalEditor,
   nodes: Array<LexicalNode>,
   selection: RangeSelection | GridSelection,
-) {
+): void {
   const isSelectionInsideOfGrid =
     DEPRECATED_$isGridSelection(selection) ||
     ($findMatchingParent(selection.anchor.getNode(), (n) =>
@@ -457,6 +501,13 @@ function $appendNodesToJSON(
 }
 
 // TODO why $ function with Editor instance?
+/**
+ * Gets the Lexical JSON of the nodes inside the provided Selection.
+ *
+ * @param editor LexicalEditor to get the JSON content from.
+ * @param selection Selection to get the JSON content from.
+ * @returns an object with the editor namespace and a list of serializable nodes as JavaScript objects.
+ */
 export function $generateJSONFromSelectedNodes<
   SerializedNode extends BaseSerializedNode,
 >(
@@ -479,6 +530,14 @@ export function $generateJSONFromSelectedNodes<
   };
 }
 
+/**
+ * This method takes an array of objects conforming to the BaseSeralizedNode interface and returns
+ * an Array containing instances of the corresponding LexicalNode classes registered on the editor.
+ * Normally, you'd get an Array of BaseSerialized nodes from {@link $generateJSONFromSelectedNodes}
+ *
+ * @param serializedNodes an Array of objects conforming to the BaseSerializedNode interface.
+ * @returns an Array of Lexical Node objects.
+ */
 export function $generateNodesFromSerializedNodes(
   serializedNodes: Array<BaseSerializedNode>,
 ): Array<LexicalNode> {
@@ -499,6 +558,15 @@ let clipboardEventTimeout: null | number = null;
 
 // TODO custom selection
 // TODO potentially have a node customizable version for plain text
+/**
+ * Copies the content of the current selection to the clipboard in
+ * text/plain, text/html, and application/x-lexical-editor (Lexical JSON)
+ * formats.
+ *
+ * @param editor the LexicalEditor instance to copy content from
+ * @param event the native browser ClipboardEvent to add the content to.
+ * @returns
+ */
 export async function copyToClipboard(
   editor: LexicalEditor,
   event: null | ClipboardEvent,

@@ -55,9 +55,9 @@ function ErrorFinder() {
     if (adj !== null) {
       description = description.replace('%s', adj);
     }
-    const noon = params.get('n');
-    if (noon !== null) {
-      description = description.replace('%s', noon);
+    const noun = params.get('n');
+    if (noun !== null) {
+      description = description.replace('%s', noun);
     }
     return {code, description};
   }, []);

@@ -12,14 +12,11 @@
 // template literal strings. The messages will be replaced with error codes
 // during build.
 
-function formatProdErrorMessage(code, adj, noun) {
+function formatProdErrorMessage(code) {
   const params = new URLSearchParams();
   params.append('code', code);
-  if (adj != null) {
-    params.append('a', adj);
-  }
-  if (noun != null) {
-    params.append('n', noun);
+  for (let i = 1; i < arguments.length; i++) {
+    params.append('v', arguments[i]);
   }
   throw Error(
     `Minified Lexical error #${code}; visit https://lexical.dev/docs/error?${params} for the full message or ` +

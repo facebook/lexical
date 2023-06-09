@@ -51,13 +51,8 @@ function ErrorFinder() {
     if (description === undefined) {
       return null;
     }
-    const adj = params.get('a');
-    if (adj !== null) {
-      description = description.replace('%s', adj);
-    }
-    const noun = params.get('n');
-    if (noun !== null) {
-      description = description.replace('%s', noun);
+    for (const value of params.getAll('v')) {
+      description = description.replace('%s', value);
     }
     return {code, description};
   }, []);

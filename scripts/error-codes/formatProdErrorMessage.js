@@ -13,7 +13,7 @@
 // during build.
 
 function formatProdErrorMessage(code, adj, noon) {
-  const params = URLSearchParams();
+  const params = new URLSearchParams();
   params.append('code', code);
   if (adj != null) {
     params.append('a', adj);

@@ -13,15 +13,16 @@
 // during build.
 
 function formatProdErrorMessage(code, adj, noon) {
-  let url = `https://lexical.dev/docs/error?code=${code}`;
+  const params = URLSearchParams();
+  params.append('code', code);
   if (adj != null) {
-    url += `&a=${decodeURIComponent(adj)}`;
+    params.append('a', adj);
   }
   if (noon != null) {
-    url += `&n=${decodeURIComponent(noon)}`;
+    params.append('n', noon);
   }
   throw Error(
-    `Minified Lexical error #${code}; visit ${url} for the full message or ` +
+    `Minified Lexical error #${code}; visit https://lexical.dev/docs/error?${params} for the full message or ` +
       'use the non-minified dev environment for full errors and additional ' +
       'helpful warnings.',
   );

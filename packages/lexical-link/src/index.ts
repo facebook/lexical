@@ -71,22 +71,29 @@ export class LinkNode extends ElementNode {
     return new LinkNode(
       node.__url,
       {rel: node.__rel, target: node.__target, title: node.__title},
+      node.__extraProtocols,
       node.__key,
     );
   }
 
-  constructor(url: string, attributes: LinkAttributes = {}, key?: NodeKey) {
+  constructor(
+    url: string,
+    attributes: LinkAttributes = {},
+    extraProtocols: Set<string> = new Set(),
+    key?: NodeKey,
+  ) {
     super(key);
     const {target = null, rel = null, title = null} = attributes;
     this.__url = url;
     this.__target = target;
     this.__rel = rel;
     this.__title = title;
+    this.__extraProtocols = extraProtocols;
   }
 
   createDOM(config: EditorConfig): HTMLAnchorElement {
     const element = document.createElement('a');
-    element.href = this.sanitizeUrl(this.__url);
+    element.href = this.sanitizeUrl(this.__url, this.__extraProtocols);
     if (this.__target !== null) {
       element.target = this.__target;
     }
@@ -162,11 +169,14 @@ export class LinkNode extends ElementNode {
     return node;
   }
 
-  sanitizeUrl(url: string): string {
+  sanitizeUrl(url: string, extraProtocols: Set<string>): string {
     try {
       const parsedUrl = new URL(url);
       // eslint-disable-next-line no-script-url
-      if (!SUPPORTED_URL_PROTOCOLS.has(parsedUrl.protocol)) {
+      if (
+        !SUPPORTED_URL_PROTOCOLS.has(parsedUrl.protocol) &&
+        !extraProtocols.has(parsedUrl.protocol)
+      ) {
         return 'about:blank';
       }
     } catch {
@@ -303,8 +313,9 @@ function convertAnchorElement(domNode: Node): DOMConversionOutput {
 export function $createLinkNode(
   url: string,
   attributes?: LinkAttributes,
+  extraProtocols?: Set<string>,
 ): LinkNode {
-  return $applyNodeReplacement(new LinkNode(url, attributes));
+  return $applyNodeReplacement(new LinkNode(url, attributes, extraProtocols));
 }
 
 /**
@@ -419,6 +430,7 @@ export const TOGGLE_LINK_COMMAND: LexicalCommand<
 export function toggleLink(
   url: null | string,
   attributes: LinkAttributes = {},
+  extraProtocols?: Set<string>,
 ): void {
   const {target, title} = attributes;
   const rel = attributes.rel === undefined ? 'noopener' : attributes.rel;
@@ -499,7 +511,7 @@ export function toggleLink(
 
       if (!parent.is(prevParent)) {
         prevParent = parent;
-        linkNode = $createLinkNode(url, {rel, target});
+        linkNode = $createLinkNode(url, {rel, target}, extraProtocols);
 
         if ($isLinkNode(parent)) {
           if (node.getPreviousSibling() === null) {

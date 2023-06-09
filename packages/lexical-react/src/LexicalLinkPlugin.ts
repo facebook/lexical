@@ -20,9 +20,10 @@ import {useEffect} from 'react';
 
 type Props = {
   validateUrl?: (url: string) => boolean;
+  extraProtocols?: Set<string>;
 };
 
-export function LinkPlugin({validateUrl}: Props): null {
+export function LinkPlugin({validateUrl, extraProtocols}: Props): null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
@@ -38,13 +39,13 @@ export function LinkPlugin({validateUrl}: Props): null {
             return true;
           } else if (typeof payload === 'string') {
             if (validateUrl === undefined || validateUrl(payload)) {
-              toggleLink(payload);
+              toggleLink(payload, {}, extraProtocols);
               return true;
             }
             return false;
           } else {
             const {url, target, rel, title} = payload;
-            toggleLink(url, {rel, target, title});
+            toggleLink(url, {rel, target, title}, extraProtocols);
             return true;
           }
         },

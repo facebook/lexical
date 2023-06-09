@@ -383,8 +383,8 @@ function isGoogleDocsTitle(domNode: Node): boolean {
   return false;
 }
 
-function convertHeadingElement(domNode: Node): DOMConversionOutput {
-  const nodeName = domNode.nodeName.toLowerCase();
+function convertHeadingElement(element: HTMLElement): DOMConversionOutput {
+  const nodeName = element.nodeName.toLowerCase();
   let node = null;
   if (
     nodeName === 'h1' ||
@@ -395,12 +395,18 @@ function convertHeadingElement(domNode: Node): DOMConversionOutput {
     nodeName === 'h6'
   ) {
     node = $createHeadingNode(nodeName);
+    if (element.style) {
+      node.setFormat(element.style.textAlign as ElementFormatType);
+    }
   }
   return {node};
 }
 
-function convertBlockquoteElement(): DOMConversionOutput {
+function convertBlockquoteElement(element: HTMLElement): DOMConversionOutput {
   const node = $createQuoteNode();
+  if (element.style) {
+    node.setFormat(element.style.textAlign as ElementFormatType);
+  }
   return {node};
 }
 

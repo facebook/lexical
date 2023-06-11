@@ -29,6 +29,7 @@ import {CAN_USE_DOM} from 'shared/canUseDOM';
 import {createWebsocketProvider} from './collaboration';
 import {useSettings} from './context/SettingsContext';
 import {useSharedHistoryContext} from './context/SharedHistoryContext';
+import {ExcalidrawNode} from './nodes/ExcalidrawNode';
 import TableCellNodes from './nodes/TableCellNodes';
 import ActionsPlugin from './plugins/ActionsPlugin';
 import AutocompletePlugin from './plugins/AutocompletePlugin';
@@ -74,6 +75,12 @@ import Placeholder from './ui/Placeholder';
 const skipCollaborationInit =
   // @ts-ignore
   window.parent != null && window.parent.frames.right === window;
+
+const excludedCollaborationProps = new Map();
+excludedCollaborationProps.set(
+  ExcalidrawNode,
+  new Set<string>(['__showModal']),
+);
 
 export default function Editor(): JSX.Element {
   const {historyState} = useSharedHistoryContext();
@@ -167,6 +174,7 @@ export default function Editor(): JSX.Element {
                 id="main"
                 providerFactory={createWebsocketProvider}
                 shouldBootstrap={!skipCollaborationInit}
+                excludedProperties={excludedCollaborationProps}
               />
             ) : (
               <HistoryPlugin externalHistoryState={historyState} />

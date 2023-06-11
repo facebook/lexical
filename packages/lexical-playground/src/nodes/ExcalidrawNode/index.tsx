@@ -39,8 +39,7 @@ function convertExcalidrawElement(
 ): DOMConversionOutput | null {
   const excalidrawData = domNode.getAttribute('data-lexical-excalidraw-json');
   if (excalidrawData) {
-    const node = $createExcalidrawNode();
-    node.__data = excalidrawData;
+    const node = $createExcalidrawNode(excalidrawData);
     return {
       node,
     };
@@ -50,13 +49,14 @@ function convertExcalidrawElement(
 
 export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
   __data: string;
+  __showModal: boolean;
 
   static getType(): string {
     return 'excalidraw';
   }
 
   static clone(node: ExcalidrawNode): ExcalidrawNode {
-    return new ExcalidrawNode(node.__data, node.__key);
+    return new ExcalidrawNode(node.__data, node.__showModal, node.__key);
   }
 
   static importJSON(serializedNode: SerializedExcalidrawNode): ExcalidrawNode {
@@ -71,9 +71,10 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
     };
   }
 
-  constructor(data = '[]', key?: NodeKey) {
+  constructor(data = '[]', showModal = false, key?: NodeKey) {
     super(key);
     this.__data = data;
+    this.__showModal = showModal;
   }
 
   // View
@@ -123,17 +124,30 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
     self.__data = data;
   }
 
+  renderModal(visibility: boolean): void {
+    const self = this.getWritable();
+    self.__showModal = visibility;
+  }
+
   decorate(editor: LexicalEditor, config: EditorConfig): JSX.Element {
     return (
       <Suspense fallback={null}>
-        <ExcalidrawComponent nodeKey={this.getKey()} data={this.__data} />
+        <ExcalidrawComponent
+          nodeKey={this.getKey()}
+          data={this.__data}
+          isModalOpen={this.__showModal}
+          renderModal={(visibility: boolean) => this.renderModal(visibility)}
+        />
       </Suspense>
     );
   }
 }
 
-export function $createExcalidrawNode(): ExcalidrawNode {
-  return new ExcalidrawNode();
+export function $createExcalidrawNode(
+  data = '[]',
+  showModal = false,
+): ExcalidrawNode {
+  return new ExcalidrawNode(data, showModal);
 }
 
 export function $isExcalidrawNode(

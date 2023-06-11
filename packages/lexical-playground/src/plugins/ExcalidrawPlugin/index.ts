@@ -38,7 +38,7 @@ export default function ExcalidrawPlugin(): null {
     return editor.registerCommand(
       INSERT_EXCALIDRAW_COMMAND,
       () => {
-        const excalidrawNode = $createExcalidrawNode();
+        const excalidrawNode = $createExcalidrawNode('[]', true);
 
         $insertNodes([excalidrawNode]);
         if ($isRootOrShadowRoot(excalidrawNode.getParentOrThrow())) {

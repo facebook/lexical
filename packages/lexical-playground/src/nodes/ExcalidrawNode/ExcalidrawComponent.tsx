@@ -33,20 +33,32 @@ import ExcalidrawModal from './ExcalidrawModal';
 export default function ExcalidrawComponent({
   nodeKey,
   data,
+  isModalOpen,
+  renderModal,
 }: {
   data: string;
   nodeKey: NodeKey;
+  isModalOpen: boolean;
+  renderModal: (visibility: boolean) => void;
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
-  const [isModalOpen, setModalOpen] = useState<boolean>(
-    data === '[]' && editor.isEditable(),
-  );
   const imageContainerRef = useRef<HTMLImageElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const captionButtonRef = useRef<HTMLButtonElement | null>(null);
   const [isSelected, setSelected, clearSelection] =
     useLexicalNodeSelection(nodeKey);
   const [isResizing, setIsResizing] = useState<boolean>(false);
+
+  const setModalOpen = useCallback(
+    (show: boolean) => {
+      editor.update(() => {
+        if (editor.isEditable()) {
+          renderModal(show);
+        }
+      });
+    },
+    [editor, renderModal],
+  );
 
   const onDelete = useCallback(
     (event: KeyboardEvent) => {

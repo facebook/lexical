@@ -395,7 +395,7 @@ function convertHeadingElement(element: HTMLElement): DOMConversionOutput {
     nodeName === 'h6'
   ) {
     node = $createHeadingNode(nodeName);
-    if (element.style) {
+    if (element.style !== null) {
       node.setFormat(element.style.textAlign as ElementFormatType);
     }
   }
@@ -404,7 +404,7 @@ function convertHeadingElement(element: HTMLElement): DOMConversionOutput {
 
 function convertBlockquoteElement(element: HTMLElement): DOMConversionOutput {
   const node = $createQuoteNode();
-  if (element.style) {
+  if (element.style !== null) {
     node.setFormat(element.style.textAlign as ElementFormatType);
   }
   return {node};

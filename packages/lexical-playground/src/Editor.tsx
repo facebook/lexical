@@ -6,7 +6,10 @@
  *
  */
 
-import {HocuspocusProvider} from '@hocuspocus/provider';
+import {
+  HocuspocusProvider,
+  HocuspocusProviderWebsocket,
+} from '@hocuspocus/provider';
 import {AutoFocusPlugin} from '@lexical/react/LexicalAutoFocusPlugin';
 import {CharacterLimitPlugin} from '@lexical/react/LexicalCharacterLimitPlugin';
 import {CheckListPlugin} from '@lexical/react/LexicalCheckListPlugin';
@@ -267,6 +270,11 @@ function ListenerPlugin() {
   return null;
 }
 
+const socket = new HocuspocusProviderWebsocket({
+  connect: false,
+  url: `ws://localhost:7398`,
+});
+
 function createWebsocketProvider(
   id: string,
   yjsDocMap: Map<string, Y.Doc>,
@@ -279,6 +287,6 @@ function createWebsocketProvider(
   return new HocuspocusProvider({
     document: doc,
     name: `test-${id}`,
-    url: `ws://localhost:7398`,
+    websocketProvider: socket,
   });
 }

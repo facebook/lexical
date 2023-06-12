@@ -13,6 +13,7 @@ const {SQLite} = require('@hocuspocus/extension-sqlite');
 
 const server = Server.configure({
   address: '127.0.0.1',
+  debounce: 0,
   extensions: [new Logger(), new SQLite()],
   name: 'hocuspocus-fra1-01',
   port: 7398,

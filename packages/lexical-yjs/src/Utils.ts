@@ -47,15 +47,12 @@ const baseExcludedProperties = new Set<string>([
   '__next',
   '__prev',
 ]);
-
 const elementExcludedProperties = new Set<string>([
   '__first',
   '__last',
   '__size',
 ]);
-
 const rootExcludedProperties = new Set<string>(['__cachedText']);
-
 const textExcludedProperties = new Set<string>(['__text']);
 
 function isExcludedProperty(
@@ -71,12 +68,11 @@ function isExcludedProperty(
     if (textExcludedProperties.has(name)) {
       return true;
     }
-  } else if ($isRootNode(node)) {
-    if (rootExcludedProperties.has(name)) {
-      return true;
-    }
   } else if ($isElementNode(node)) {
-    if (elementExcludedProperties.has(name)) {
+    if (
+      elementExcludedProperties.has(name) ||
+      ($isRootNode(node) && rootExcludedProperties.has(name))
+    ) {
       return true;
     }
   }

@@ -11,17 +11,17 @@ import * as React from 'react';
 
 export type Props = $ReadOnly<{
   ...Partial<HTMLDivElement>,
-  ariaActiveDescendant?: HTMLDivElement['aria-activedescendant'],
-  ariaAutoComplete?: HTMLDivElement['aria-autocomplete'],
-  ariaControls?: HTMLDivElement['aria-controls'],
-  ariaDescribedBy?: HTMLDivElement['aria-describedby'],
-  ariaExpanded?: HTMLDivElement['aria-expanded'],
-  ariaLabel?: HTMLDivElement['aria-label'],
-  ariaLabelledBy?: HTMLDivElement['aria-labelledby'],
-  ariaMultiline?: HTMLDivElement['aria-multiline'],
-  ariaOwns?: HTMLDivElement['aria-owns'],
-  ariaRequired?: HTMLDivElement['aria-required'],
-  autoCapitalize?: HTMLDivElement['autocapitalize'],
+  ariaActiveDescendant?: string,
+  ariaAutoComplete?: string,
+  ariaControls?: string,
+  ariaDescribedBy?: string,
+  ariaExpanded?: boolean,
+  ariaLabel?: string,
+  ariaLabelledBy?: string,
+  ariaMultiline?: boolean,
+  ariaOwns?: string,
+  ariaRequired?: boolean,
+  autoCapitalize?: boolean,
   'data-testid'?: string | null,
   ...
 }>;

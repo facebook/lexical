@@ -309,6 +309,19 @@ function handleLinkEdit(
   handleUpdateUrl(linkNode, match, onChange);
 }
 
+function findLast<T, U extends T>(
+  array: T[],
+  predicate: (value: T) => value is U,
+): U | undefined {
+  for (let i = array.length - 1; i >= 0; i--) {
+    const item = array[i];
+    if (predicate(item)) {
+      return item;
+    }
+  }
+  return undefined;
+}
+
 function handleNeighbors(
   textNode: TextNode,
   matchers: Array<LinkMatcher>,
@@ -316,7 +329,7 @@ function handleNeighbors(
 ): void {
   const prevSiblings = textNode.getPreviousSiblings();
   const nextSiblings = textNode.getNextSiblings();
-  const prevLinkNode = prevSiblings.findLast($isAutoLinkNode);
+  const prevLinkNode = findLast(prevSiblings, $isAutoLinkNode);
   const nextLinkNode = nextSiblings.find($isAutoLinkNode);
 
   if (!prevLinkNode && !nextLinkNode) {

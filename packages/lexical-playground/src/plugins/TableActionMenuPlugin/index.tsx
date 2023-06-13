@@ -225,21 +225,37 @@ function TableActionMenu({
   useEffect(() => {
     const menuButtonElement = contextRef.current;
     const dropDownElement = dropDownRef.current;
+    const rootElement = editor.getRootElement();
 
-    if (menuButtonElement != null && dropDownElement != null) {
+    if (
+      menuButtonElement != null &&
+      dropDownElement != null &&
+      rootElement != null
+    ) {
+      const rootEleRect = rootElement.getBoundingClientRect();
       const menuButtonRect = menuButtonElement.getBoundingClientRect();
-
       dropDownElement.style.opacity = '1';
+      const dropDownElementRect = dropDownElement.getBoundingClientRect();
+      const margin = 5;
+      let leftPosition = menuButtonRect.right + margin;
+      if (
+        leftPosition + dropDownElementRect.width > window.innerWidth ||
+        leftPosition + dropDownElementRect.width > rootEleRect.right
+      ) {
+        const position =
+          menuButtonRect.left - dropDownElementRect.width - margin;
+        leftPosition = (position < 0 ? margin : position) + window.pageXOffset;
+      }
+      dropDownElement.style.left = `${leftPosition + window.pageXOffset}px`;
 
-      dropDownElement.style.left = `${
-        menuButtonRect.left + menuButtonRect.width + window.pageXOffset + 5
-      }px`;
-
-      dropDownElement.style.top = `${
-        menuButtonRect.top + window.pageYOffset
-      }px`;
+      let topPosition = menuButtonRect.top;
+      if (topPosition + dropDownElementRect.height > window.innerHeight) {
+        const position = menuButtonRect.bottom - dropDownElementRect.height;
+        topPosition = (position < 0 ? margin : position) + window.pageYOffset;
+      }
+      dropDownElement.style.top = `${topPosition + +window.pageYOffset}px`;
     }
-  }, [contextRef, dropDownRef]);
+  }, [contextRef, dropDownRef, editor]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

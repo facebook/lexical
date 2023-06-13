@@ -101,7 +101,7 @@ type RegisteredNode = {
   klass: Class<LexicalNode>,
   transforms: Set<Transform<LexicalNode>>,
 };
-type Transform<T> = (node: T) => void;
+export type Transform<T> = (node: T) => void;
 
 type DOMConversionCache = Map<
   string,
@@ -306,10 +306,7 @@ export type DOMConversion = {
   conversion: DOMConversionFn,
   priority: 0 | 1 | 2 | 3 | 4,
 };
-export type DOMConversionFn = (
-  element: Node,
-  parent?: Node,
-) => DOMConversionOutput;
+export type DOMConversionFn = (element: Node) => DOMConversionOutput;
 export type DOMChildConversion = (
   lexicalNode: LexicalNode,
   parentLexicalNode: ?LexicalNode | null,

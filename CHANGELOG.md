@@ -1,3 +1,65 @@
+## 0.11.1 (2023-05-26)
+
+- Fire selection change on decorator delete (#4555) Acy Watson
+- Fix flow (#4549) Gerard Rovira
+- Add key to portal to avoid decorator component remounting (#4554) Maksim Horbachevsky
+- Mutations to respect canInsertBeforeAfter (#4553) Gerard Rovira
+- Arrow up selection fix #4536 (#4544) Maksim Horbachevsky
+- Max length recalculation. Fix #4542 (#4543) Maksim Horbachevsky
+- Fix update-changelog not finishing (#4537) Gerard Rovira
+
+## 0.11.0 (2023-05-23)
+
+- Tame wild white spaces (#4467) Gerard Rovira
+- Auto embed fix #4530 (#4535) Maksim Horbachevsky
+- Basic Context Menu (behind Switch) (#4285) Tyler Bainbridge
+- Allow importing width and height from table cell and DOM nodes (#4521) Kristian Ignatov
+- Add HTML deserialization recipe to docs (#4432) Ivaylo Pavlov
+- Fix clickable link plugin #4514 (#4519) Maksim Horbachevsky
+- Allow arbitrary awareness fields in Collaboration plugin (#4507) Attila
+- Make tabs flexible in code (#4520) Gerard Rovira
+- Fix GC memory leak (2) (#4513) Gerard Rovira
+- Adjust selection after triple click (#4512) Maksim Horbachevsky
+- Fix GC memory leak (#4510) Gerard Rovira
+- TypeAheadMenu and TableActionMenu rendered off screen fixed. (#4301) Shubhankerism
+- Fix Flow types (#4485) Gerard Rovira
+- Add texturi-list support in clipboard. (#4478) xinyuan0801
+- Sanitize url (#4483) Acy Watson
+- exportDOM methods for HeadingNode, QuoteNode (#4445) Ivaylo Pavlov
+- Tests for inserting text either side of an inline element (#4346) Jamie Birch
+- Improve rect deduplication (#4471) Acy Watson
+- Sanitize floatingLinkEditor (#4462) Acy Watson
+- Generalize Menu Logic (#4284) Tyler Bainbridge
+- Event delegation for NoteEventPlugin (#4424) Maksim Horbachevsky
+- Tab support (#4436) Gerard Rovira
+- Handle empty element deletion (#4380) Maksim Horbachevsky
+- Select all adjustments (#4425) Maksim Horbachevsky
+- Add documentation for TabIndentationPlugin (#4453) Filip Palmqvist
+- Disable flaky test (#4455) Gerard Rovira
+- fix attach event listeners to initial nodes (#4454) Ante Sepic
+- Revisit touch devices (#4441) Gerard Rovira
+- Allow to pass all possible attributes to a content editable div (#4450) Leks Kazimirchuk
+- Fix text click selection on touch devices #3098 (#4395) Ibrahim El-bastawisi
+- Updated Toolbar Plugin to Add keyboard shortcut for adding hyperlinks (#4413) AnuragBalhra
+- simplify logic for the fix Improve responsiveness of the floating text format toolbar buttons (#4431) Alessio Gravili
+- Remove unused styles (#4426) Georgii Dolzhykov
+- Fix HistoryPlugin selection out of sync (#4390) Gerard Rovira
+- Split test files and skip flaky tests in linux  collab (#4394) Acy Watson
+- Optional colrowSpan serialization (#4344) Gerard Rovira
+- Fix list merging (#4386) Acy Watson
+- Fix markdown list merging (#4387) Acy Watson
+- Use provided selection when serializing to HTML (#4392) Acy Watson
+- Flow table bg color types (#4400) Gerard Rovira
+- Add docs for list package (#4393) Acy Watson
+- Make DecoratorBlockNode.isInline return false (#4383) EgonBolton
+- Setting initial state of isSmallWidthViewport (#4398) Ebad
+- Improve responsiveness of the floating text format toolbar buttons (#4298) Brandon
+- Collapsible enhancements (#4257) Maksim Horbachevsky
+- Inherit format for text entity node (#4382) Maksim Horbachevsky
+- Fall back to url if parser fails (#4364) Acy Watson
+- Change MarkNodeclone node arg type to this (#4363) Giovanni Cappellotto
+- 0.10.0 (#4349) Acy Watson
+
 ## 0.10.0 (2023-04-18)
 
 ### Breaking Changes

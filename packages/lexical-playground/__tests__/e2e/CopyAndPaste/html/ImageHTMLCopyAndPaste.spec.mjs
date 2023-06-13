@@ -33,8 +33,8 @@ test.describe('HTML Image CopyAndPaste', () => {
     await page.keyboard.type('An image');
     await moveLeft(page, 'image'.length);
     await pasteFromClipboard(page, clipboard);
-    await page.keyboard.type(' inline ');
     await sleepInsertImage();
+    await page.keyboard.type(' inline ');
 
     await assertHTML(
       page,

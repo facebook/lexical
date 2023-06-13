@@ -79,7 +79,7 @@ function isExcludedProperty(
 
   const nodeKlass = node.constructor as Klass<LexicalNode>;
   const excludedProperties = binding.excludedProperties.get(nodeKlass);
-  return excludedProperties == null || !excludedProperties.has(name);
+  return excludedProperties != null && excludedProperties.has(name);
 }
 
 export function getIndexOfYjsNode(

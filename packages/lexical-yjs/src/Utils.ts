@@ -21,6 +21,7 @@ import {
   $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
+  $isRootNode,
   $isTextNode,
   createEditor,
   Klass,
@@ -40,17 +41,50 @@ import {
 } from './CollabLineBreakNode';
 import {$createCollabTextNode, CollabTextNode} from './CollabTextNode';
 
-const excludedProperties: Set<string> = new Set([
+const baseExcludedProperties = new Set<string>([
   '__key',
   '__parent',
-  '__cachedText',
-  '__text',
-  '__size',
   '__next',
   '__prev',
+]);
+
+const elementExcludedProperties = new Set<string>([
   '__first',
   '__last',
+  '__size',
 ]);
+
+const rootExcludedProperties = new Set<string>(['__cachedText']);
+
+const textExcludedProperties = new Set<string>(['__text']);
+
+function isExcludedProperty(
+  name: string,
+  node: LexicalNode,
+  binding: Binding,
+): boolean {
+  if (baseExcludedProperties.has(name)) {
+    return true;
+  }
+
+  if ($isTextNode(node)) {
+    if (textExcludedProperties.has(name)) {
+      return true;
+    }
+  } else if ($isRootNode(node)) {
+    if (rootExcludedProperties.has(name)) {
+      return true;
+    }
+  } else if ($isElementNode(node)) {
+    if (elementExcludedProperties.has(name)) {
+      return true;
+    }
+  }
+
+  const nodeKlass = node.constructor as Klass<LexicalNode>;
+  const excludedProperties = binding.excludedProperties.get(nodeKlass);
+  return excludedProperties == null || !excludedProperties.has(name);
+}
 
 export function getIndexOfYjsNode(
   yjsParentNode: YjsNode,
@@ -240,20 +274,9 @@ export function syncPropertiesFromYjs(
 
   for (let i = 0; i < properties.length; i++) {
     const property = properties[i];
-
-    if (excludedProperties.has(property)) {
+    if (isExcludedProperty(property, lexicalNode, binding)) {
       continue;
     }
-    const additionalExcludedProperties = binding.excludedProperties.get(
-      lexicalNode.constructor as Klass<LexicalNode>,
-    );
-    if (
-      additionalExcludedProperties !== undefined &&
-      additionalExcludedProperties.has(property)
-    ) {
-      continue;
-    }
-
     const prevValue = lexicalNode[property];
     let nextValue =
       sharedType instanceof YMap
@@ -295,15 +318,8 @@ export function syncPropertiesFromLexical(
   const nodeProperties = binding.nodeProperties;
   let properties = nodeProperties.get(type);
   if (properties === undefined) {
-    const additionalExlcudedProperties = binding.excludedProperties.get(
-      nextLexicalNode.constructor as Klass<LexicalNode>,
-    );
     properties = Object.keys(nextLexicalNode).filter((property) => {
-      return (
-        !excludedProperties.has(property) ||
-        (additionalExlcudedProperties &&
-          !additionalExlcudedProperties.has(property))
-      );
+      return !isExcludedProperty(property, nextLexicalNode, binding);
     });
     nodeProperties.set(type, properties);
   }

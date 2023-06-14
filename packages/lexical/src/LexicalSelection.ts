@@ -1101,7 +1101,10 @@ export class RangeSelection implements BaseSelection {
             lastNode.replace(textNode);
             lastNode = textNode;
           }
-          lastNode = (lastNode as TextNode).spliceText(0, endOffset, '');
+          // if we're using a root selection, the last node should not be mutated (ignore offset as offset is the root offset)
+          if (this.anchor.key !== 'root' && this.focus.key !== 'root') {
+            lastNode = (lastNode as TextNode).spliceText(0, endOffset, '');
+          }
           markedNodeKeysForKeep.add(lastNode.__key);
         } else {
           const lastNodeParent = lastNode.getParentOrThrow();

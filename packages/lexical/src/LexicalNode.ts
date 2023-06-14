@@ -144,8 +144,8 @@ export type DOMConversionOutput = {
 
 export type DOMExportOutput = {
   after?: (
-    generatedElement: HTMLElement | null | undefined,
-  ) => HTMLElement | null | undefined;
+    generatedElement: HTMLElement | Text | null | undefined,
+  ) => HTMLElement | Text | null | undefined;
   element: HTMLElement | Text | null;
 };
 

@@ -28,6 +28,7 @@ import {
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
+  $normalizeSelection__EXPERIMENTAL,
   $setCompositionKey,
   BLUR_COMMAND,
   CLICK_COMMAND,
@@ -1019,7 +1020,8 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
         event.preventDefault();
         editor.update(() => {
           const root = $getRoot();
-          root.select(0, root.getChildrenSize());
+          const selection = root.select(0, root.getChildrenSize());
+          $setSelection($normalizeSelection__EXPERIMENTAL(selection));
         });
       }
     }

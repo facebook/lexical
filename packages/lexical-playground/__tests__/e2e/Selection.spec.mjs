@@ -31,6 +31,7 @@ import {
   insertSampleImage,
   insertTable,
   insertYouTubeEmbed,
+  IS_LINUX,
   IS_MAC,
   keyDownCtrlOrMeta,
   keyUpCtrlOrMeta,
@@ -479,7 +480,8 @@ test.describe('Selection', () => {
   });
 
   test('Select all from Node selection #4658', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
+    // TODO selectAll is bad for Linux #4665
+    test.skip(isPlainText || IS_LINUX);
 
     await insertYouTubeEmbed(page, YOUTUBE_SAMPLE_URL);
     await page.keyboard.type('abcdefg');

@@ -104,8 +104,6 @@ test.describe('Regression test #4661', () => {
       true,
     );
 
-    // await moveDown(page, 1);
-    // await moveRight(page, 1);
     await insertTableColumnAfter(page);
 
     await assertHTML(

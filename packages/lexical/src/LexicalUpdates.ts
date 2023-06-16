@@ -590,6 +590,8 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
     }
   }
 
+  if (tags.has('omit-listeners')) return;
+
   if (mutatedNodes !== null) {
     triggerMutationListeners(
       editor,

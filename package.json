@@ -14,7 +14,6 @@
   "engineStrict": true,
   "scripts": {
     "start": "cross-env NODE_ENV=development concurrently \"npm:collab\" \"npm run dev --prefix packages/lexical-playground\"",
-    "collab-server": "node ./server.js",
     "start:website": "npm run start --prefix packages/lexical-website -- --port 3001",
     "start:playground": "npm run start-test-server",
     "dev": "npm run dev --prefix packages/lexical-playground",
@@ -173,10 +172,6 @@
     }
   },
   "dependencies": {
-    "@hocuspocus/extension-logger": "^2.1.0",
-    "@hocuspocus/extension-sqlite": "^2.1.0",
-    "@hocuspocus/provider": "^2.1.0",
-    "@hocuspocus/server": "^2.1.0",
     "@types/katex": "^0.14.0",
     "yjs": "^13.5.42"
   },

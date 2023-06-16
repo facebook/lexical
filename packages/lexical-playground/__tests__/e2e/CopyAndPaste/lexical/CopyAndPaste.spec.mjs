@@ -20,6 +20,7 @@ import {
   focusEditor,
   html,
   initialize,
+  insertYouTubeEmbed,
   IS_LINUX,
   pasteFromClipboard,
   test,
@@ -852,6 +853,54 @@ test.describe('CopyAndPaste', () => {
           dir="ltr">
           <span data-lexical-text="true">And text below</span>
         </p>
+      `,
+    );
+  });
+
+  test('Pasting a decorator node on a blank line inserts before the line', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    // copying and pasting the node is easier than creating the clipboard data
+    const TEST_URL = 'https://www.youtube-nocookie.com/embed/jNQXAC9IVRw';
+    await focusEditor(page);
+    await insertYouTubeEmbed(page, TEST_URL);
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('Meta+C');
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('Meta+V');
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <div contenteditable="false" data-lexical-decorator="true">
+          <div class="PlaygroundEditorTheme__embedBlock">
+            <iframe
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen=""
+              frameborder="0"
+              height="315"
+              src="https://www.youtube-nocookie.com/embed/jNQXAC9IVRw"
+              title="YouTube video"
+              width="560"></iframe>
+          </div>
+        </div>
+        <div contenteditable="false" data-lexical-decorator="true">
+          <div class="PlaygroundEditorTheme__embedBlock">
+            <iframe
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen=""
+              frameborder="0"
+              height="315"
+              src="https://www.youtube-nocookie.com/embed/jNQXAC9IVRw"
+              title="YouTube video"
+              width="560"></iframe>
+          </div>
+        </div>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
       `,
     );
   });

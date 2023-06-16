@@ -498,7 +498,10 @@ test.describe('Selection', () => {
     );
   });
 
-  test('Select all (DecoratorNode at start)', async ({page, isPlainText}) => {
+  test('Select all (DecoratorNode at start) #4670', async ({
+    page,
+    isPlainText,
+  }) => {
     // TODO selectAll is bad for Linux #4665
     test.skip(isPlainText || IS_LINUX);
 

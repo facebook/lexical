@@ -497,4 +497,25 @@ test.describe('Selection', () => {
       `,
     );
   });
+
+  test('Select all (DecoratorNode at start)', async ({page, isPlainText}) => {
+    // TODO selectAll is bad for Linux #4665
+    test.skip(isPlainText || IS_LINUX);
+
+    await insertYouTubeEmbed(page, YOUTUBE_SAMPLE_URL);
+    // Delete empty paragraph in front
+    await moveLeft(page, 2);
+    await page.keyboard.press('Backspace');
+    await moveRight(page, 2);
+    await page.keyboard.type('abcdefg');
+
+    await selectAll(page);
+    await page.keyboard.press('Backspace');
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+  });
 });

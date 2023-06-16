@@ -8,6 +8,7 @@
 
 import {useLexicalComposerContext} from '@lexical/react/src/LexicalComposerContext';
 import LexicalErrorBoundary from '@lexical/react/src/LexicalErrorBoundary';
+import {UserState} from '@lexical/yjs/src/index';
 import {LexicalEditor} from 'lexical';
 import * as React from 'react';
 import {createRoot, Root} from 'react-dom/client';
@@ -20,7 +21,7 @@ import {LexicalComposer} from '../../LexicalComposer';
 import {ContentEditable} from '../../LexicalContentEditable';
 import {RichTextPlugin} from '../../LexicalRichTextPlugin';
 
-function Editor({doc, provider, setEditor}) {
+function Editor({doc, provider, setEditor, awarenessData}) {
   const context = useCollaborationContext();
 
   const [editor] = useLexicalComposerContext();
@@ -37,6 +38,7 @@ function Editor({doc, provider, setEditor}) {
         id="main"
         providerFactory={() => provider}
         shouldBootstrap={true}
+        awarenessData={awarenessData}
       />
       <RichTextPlugin
         contentEditable={<ContentEditable />}
@@ -62,11 +64,11 @@ class Client {
   _listeners: Map<string, Set<(data: unknown) => void>>;
   _updates: Uint8Array[];
   awareness: {
-    getLocalState(): void;
-    getStates(): void;
+    getLocalState: () => UserState | null;
+    getStates: () => Map<number, UserState>;
     off(): void;
     on(): void;
-    setLocalState(state): void;
+    setLocalState: (state: UserState) => void;
   };
 
   constructor(id, connection) {
@@ -91,7 +93,9 @@ class Client {
       },
 
       getStates() {
-        return [[0, this._awarenessState]];
+        const states: Map<number, UserState> = new Map();
+        states[0] = this._awarenessState as UserState;
+        return states;
       },
 
       off() {
@@ -150,7 +154,7 @@ class Client {
     this._connected = false;
   }
 
-  start(rootContainer) {
+  start(rootContainer, awarenessData?) {
     const container = document.createElement('div');
     const reactRoot = createRoot(container);
     this._container = container;
@@ -172,6 +176,7 @@ class Client {
             provider={this}
             doc={this._doc}
             setEditor={(editor) => (this._editor = editor)}
+            awarenessData={awarenessData}
           />
         </LexicalComposer>,
       );

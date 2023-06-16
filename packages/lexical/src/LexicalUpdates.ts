@@ -433,7 +433,10 @@ function handleDEVOnlyPendingUpdateGuarantees(
   };
 }
 
-export function commitPendingUpdates(editor: LexicalEditor): void {
+export function commitPendingUpdates(
+  editor: LexicalEditor,
+  recoveryEditorState?: EditorState,
+): void {
   const pendingEditorState = editor._pendingEditorState;
   const rootElement = editor._rootElement;
   const shouldSkipDOM = editor._headless || rootElement === null;
@@ -491,7 +494,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
         initMutationObserver(editor);
         editor._dirtyType = FULL_RECONCILE;
         isAttemptingToRecoverFromReconcilerError = true;
-        commitPendingUpdates(editor);
+        commitPendingUpdates(editor, currentEditorState);
         isAttemptingToRecoverFromReconcilerError = false;
       } else {
         // To avoid a possible situation of infinite loops, lets throw
@@ -593,14 +596,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   if (tags.has('omit-listeners')) return;
 
   if (mutatedNodes !== null) {
-    triggerMutationListeners(
-      editor,
-      currentEditorState,
-      pendingEditorState,
-      mutatedNodes,
-      tags,
-      dirtyLeaves,
-    );
+    triggerMutationListeners(editor, mutatedNodes, tags, dirtyLeaves);
   }
   if (
     !$isRangeSelection(pendingSelection) &&
@@ -619,13 +615,22 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
     triggerListeners('decorator', editor, true, pendingDecorators);
   }
 
-  triggerTextContentListeners(editor, currentEditorState, pendingEditorState);
+  // If reconciler fails, we reset whole editor (so current editor state becomes empty)
+  // and attempt to re-render pendingEditorState. If that goes through we trigger
+  // listeners, but instead use recoverEditorState which is current editor state before reset
+  // This specifically important for collab that relies on prevEditorState from update
+  // listener to calculate delta of changed nodes/properties
+  triggerTextContentListeners(
+    editor,
+    recoveryEditorState || currentEditorState,
+    pendingEditorState,
+  );
   triggerListeners('update', editor, true, {
     dirtyElements,
     dirtyLeaves,
     editorState: pendingEditorState,
     normalizedNodes,
-    prevEditorState: currentEditorState,
+    prevEditorState: recoveryEditorState || currentEditorState,
     tags,
   });
   triggerDeferredUpdateCallbacks(editor, deferred);
@@ -647,8 +652,6 @@ function triggerTextContentListeners(
 
 function triggerMutationListeners(
   editor: LexicalEditor,
-  currentEditorState: EditorState,
-  pendingEditorState: EditorState,
   mutatedNodes: MutatedNodes,
   updateTags: Set<string>,
   dirtyLeaves: Set<string>,

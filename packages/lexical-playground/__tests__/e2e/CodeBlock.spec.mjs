@@ -361,7 +361,7 @@ test.describe('CodeBlock', () => {
             ;
           </span>
           <br />
-          <span style="letter-spacing: 15px" data-lexical-text="true"></span>
+          <span data-lexical-text="true"></span>
           <span
             class="PlaygroundEditorTheme__tokenFunction"
             data-lexical-text="true">
@@ -388,7 +388,7 @@ test.describe('CodeBlock', () => {
             ;
           </span>
           <br />
-          <span style="letter-spacing: 15px" data-lexical-text="true"></span>
+          <span data-lexical-text="true"></span>
           <span
             class="PlaygroundEditorTheme__tokenPunctuation"
             data-lexical-text="true">
@@ -447,7 +447,7 @@ test.describe('CodeBlock', () => {
             {
           </span>
           <br />
-          <span style="letter-spacing: 15px" data-lexical-text="true"></span>
+          <span data-lexical-text="true"></span>
           <span
             class="PlaygroundEditorTheme__tokenFunction"
             data-lexical-text="true">
@@ -494,8 +494,8 @@ test.describe('CodeBlock', () => {
           spellcheck="false"
           data-gutter="123"
           data-highlight-language="javascript">
-          <span style="letter-spacing: 15px" data-lexical-text="true"></span>
-          <span style="letter-spacing: 15px" data-lexical-text="true"></span>
+          <span data-lexical-text="true"></span>
+          <span data-lexical-text="true"></span>
           <span
             class="PlaygroundEditorTheme__tokenAttr"
             data-lexical-text="true">
@@ -520,9 +520,9 @@ test.describe('CodeBlock', () => {
             {
           </span>
           <br />
-          <span style="letter-spacing: 15px" data-lexical-text="true"></span>
-          <span style="letter-spacing: 15px" data-lexical-text="true"></span>
-          <span style="letter-spacing: 15px" data-lexical-text="true"></span>
+          <span data-lexical-text="true"></span>
+          <span data-lexical-text="true"></span>
+          <span data-lexical-text="true"></span>
           <span
             class="PlaygroundEditorTheme__tokenFunction"
             data-lexical-text="true">
@@ -544,8 +544,8 @@ test.describe('CodeBlock', () => {
             ;
           </span>
           <br />
-          <span style="letter-spacing: 15px" data-lexical-text="true"></span>
-          <span style="letter-spacing: 15px" data-lexical-text="true"></span>
+          <span data-lexical-text="true"></span>
+          <span data-lexical-text="true"></span>
           <span
             class="PlaygroundEditorTheme__tokenPunctuation"
             data-lexical-text="true">
@@ -567,7 +567,7 @@ test.describe('CodeBlock', () => {
           spellcheck="false"
           data-gutter="123"
           data-highlight-language="javascript">
-          <span style="letter-spacing: 15px" data-lexical-text="true"></span>
+          <span data-lexical-text="true"></span>
           <span
             class="PlaygroundEditorTheme__tokenAttr"
             data-lexical-text="true">
@@ -592,8 +592,8 @@ test.describe('CodeBlock', () => {
             {
           </span>
           <br />
-          <span style="letter-spacing: 15px" data-lexical-text="true"></span>
-          <span style="letter-spacing: 15px" data-lexical-text="true"></span>
+          <span data-lexical-text="true"></span>
+          <span data-lexical-text="true"></span>
           <span
             class="PlaygroundEditorTheme__tokenFunction"
             data-lexical-text="true">
@@ -615,7 +615,7 @@ test.describe('CodeBlock', () => {
             ;
           </span>
           <br />
-          <span style="letter-spacing: 15px" data-lexical-text="true"></span>
+          <span data-lexical-text="true"></span>
           <span
             class="PlaygroundEditorTheme__tokenPunctuation"
             data-lexical-text="true">
@@ -1048,7 +1048,9 @@ test.describe('CodeBlock', () => {
         </code>
       `,
       name: 'Multiline <code>',
-      pastedHTML: `<meta charset='utf-8'><code>1\n2</code>`,
+      // TODO This is not correct. This resembles how Lexical exports code right now but
+      // semantically it should be wrapped in a pre
+      pastedHTML: `<meta charset='utf-8'><code>1<br>2</code>`,
     },
   ];
 
@@ -1091,10 +1093,10 @@ test.describe('CodeBlock', () => {
         spellcheck="false"
         data-gutter="12"
         data-highlight-language="javascript">
-        <span style="letter-spacing: 15px" data-lexical-text="true"></span>
+        <span data-lexical-text="true"></span>
         <span data-lexical-text="true">a b</span>
         <br />
-        <span style="letter-spacing: 15px" data-lexical-text="true"></span>
+        <span data-lexical-text="true"></span>
         <span data-lexical-text="true">c d</span>
       </code>
     `,

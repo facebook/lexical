@@ -51,6 +51,7 @@ export function useYjsCollaboration(
   cursorsContainerRef?: CursorsContainerRef,
   initialEditorState?: InitialEditorStateType,
   excludedProperties?: ExcludedProperties,
+  awarenessData?: object,
 ): [JSX.Element, Binding] {
   const isReloadingDoc = useRef(false);
   const isLoadingDoc = useRef(true);
@@ -124,6 +125,7 @@ export function useYjsCollaboration(
       name,
       color,
       document.activeElement === editor.getRootElement(),
+      awarenessData || {},
     );
 
     const onProviderDocReload = (ydoc: Doc) => {
@@ -189,6 +191,7 @@ export function useYjsCollaboration(
     name,
     provider,
     shouldBootstrap,
+    awarenessData,
   ]);
   const cursorsContainer = useMemo(() => {
     const ref = (element: null | HTMLElement) => {
@@ -233,13 +236,14 @@ export function useYjsFocusTracking(
   provider: Provider,
   name: string,
   color: string,
+  awarenessData?: object,
 ) {
   useEffect(() => {
     return mergeRegister(
       editor.registerCommand(
         FOCUS_COMMAND,
         () => {
-          setLocalStateFocus(provider, name, color, true);
+          setLocalStateFocus(provider, name, color, true, awarenessData || {});
           return false;
         },
         COMMAND_PRIORITY_EDITOR,
@@ -247,13 +251,13 @@ export function useYjsFocusTracking(
       editor.registerCommand(
         BLUR_COMMAND,
         () => {
-          setLocalStateFocus(provider, name, color, false);
+          setLocalStateFocus(provider, name, color, false, awarenessData || {});
           return false;
         },
         COMMAND_PRIORITY_EDITOR,
       ),
     );
-  }, [color, editor, name, provider]);
+  }, [color, editor, name, provider, awarenessData]);
 }
 
 export function useYjsHistory(

@@ -24,6 +24,7 @@ import {
   IS_LINUX,
   pasteFromClipboard,
   test,
+  YOUTUBE_SAMPLE_URL,
 } from '../../../utils/index.mjs';
 
 test.describe('CopyAndPaste', () => {
@@ -864,13 +865,12 @@ test.describe('CopyAndPaste', () => {
     test.skip(isPlainText);
 
     // copying and pasting the node is easier than creating the clipboard data
-    const TEST_URL = 'https://www.youtube-nocookie.com/embed/jNQXAC9IVRw';
     await focusEditor(page);
-    await insertYouTubeEmbed(page, TEST_URL);
-    await page.keyboard.press('ArrowLeft');
-    await page.keyboard.press('Meta+C');
-    await page.keyboard.press('ArrowRight');
-    await page.keyboard.press('Meta+V');
+    await insertYouTubeEmbed(page, YOUTUBE_SAMPLE_URL);
+    await page.keyboard.press('ArrowLeft'); // this selects the node
+    await copyToClipboard(page);
+    await page.keyboard.press('ArrowRight'); // this moves to a new line (empty paragraph node)
+    await pasteFromClipboard(page);
 
     await assertHTML(
       page,

@@ -19,6 +19,7 @@
     "@docusaurus/theme-search-algolia": "^2.0.1",
     "@mdx-js/react": "^1.6.21",
     "@radix-ui/react-tabs": "^0.1.5",
+    "@vercel/analytics": "^1.0.1",
     "clsx": "^1.1.1",
     "docusaurus-plugin-typedoc": "^0.17.5",
     "prism-react-renderer": "^1.2.1",

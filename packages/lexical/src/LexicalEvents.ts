@@ -79,6 +79,7 @@ import {
   $getNodeByKey,
   $isSelectionCapturedInDecorator,
   $isTokenOrSegmented,
+  $selectAll,
   $setSelection,
   $shouldInsertTextAfterOrBeforeTextNode,
   $updateSelectedTextFromDOM,
@@ -637,9 +638,11 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
         // Used for Android
         $setCompositionKey(null);
 
-        // Some browsers do not provide the type "insertLineBreak".
+        // Safari does not provide the type "insertLineBreak".
         // So instead, we need to infer it from the keyboard event.
-        if (isInsertLineBreak) {
+        // We do not apply this logic to iOS to allow newline auto-capitalization
+        // work without creating linebreaks when pressing Enter
+        if (isInsertLineBreak && !IS_IOS) {
           isInsertLineBreak = false;
           dispatchCommand(editor, INSERT_LINE_BREAK_COMMAND, false);
         } else {
@@ -1016,10 +1019,15 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
       } else if (isSelectAll(keyCode, metaKey, ctrlKey)) {
         event.preventDefault();
         editor.update(() => {
-          const root = $getRoot();
-          root.select(0, root.getChildrenSize());
+          $selectAll();
         });
       }
+      // FF does it well (no need to override behavior)
+    } else if (!IS_FIREFOX && isSelectAll(keyCode, metaKey, ctrlKey)) {
+      event.preventDefault();
+      editor.update(() => {
+        $selectAll();
+      });
     }
   }
 

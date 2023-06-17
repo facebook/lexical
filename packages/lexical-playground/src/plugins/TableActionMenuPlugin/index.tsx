@@ -360,11 +360,13 @@ function TableActionMenu({
   const insertTableColumnAtSelection = useCallback(
     (shouldInsertAfter: boolean) => {
       editor.update(() => {
-        $insertTableColumn__EXPERIMENTAL(shouldInsertAfter);
+        for (let i = 0; i < selectionCounts.columns; i++) {
+          $insertTableColumn__EXPERIMENTAL(shouldInsertAfter);
+        }
         onClose();
       });
     },
-    [editor, onClose],
+    [editor, onClose, selectionCounts.columns],
   );
 
   const deleteTableRowAtSelection = useCallback(() => {

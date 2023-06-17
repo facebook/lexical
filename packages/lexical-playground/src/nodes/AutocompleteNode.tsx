@@ -39,7 +39,7 @@ export class AutocompleteNode extends DecoratorNode<JSX.Element | null> {
   __uuid: string;
 
   static clone(node: AutocompleteNode): AutocompleteNode {
-    return new AutocompleteNode(node.__key);
+    return new AutocompleteNode(node.__uuid, node.__key);
   }
 
   static getType(): 'autocomplete' {

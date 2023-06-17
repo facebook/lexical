@@ -11,10 +11,14 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import HomepageExamples from '@site/src/components/HomepageExamples';
 import HomepageFeatures from '@site/src/components/HomepageFeatures';
 import Layout from '@theme/Layout';
+import {inject} from '@vercel/analytics';
 import clsx from 'clsx';
 import React from 'react';
 
 import styles from './styles.module.css';
+
+// activate analytics
+inject();
 
 function HomepageHeader() {
   const {siteConfig} = useDocusaurusContext();

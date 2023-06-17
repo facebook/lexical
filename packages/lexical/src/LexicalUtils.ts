@@ -57,6 +57,7 @@ import {
 } from './LexicalConstants';
 import {LexicalEditor} from './LexicalEditor';
 import {flushRootMutations} from './LexicalMutations';
+import {$normalizeSelection} from './LexicalNormalization';
 import {
   errorOnInfiniteTransforms,
   errorOnReadOnly,
@@ -1008,6 +1009,12 @@ export function isSelectAll(
   ctrlKey: boolean,
 ): boolean {
   return keyCode === 65 && controlOrMeta(metaKey, ctrlKey);
+}
+
+export function $selectAll(): void {
+  const root = $getRoot();
+  const selection = root.select(0, root.getChildrenSize());
+  $setSelection($normalizeSelection(selection));
 }
 
 export function getCachedClassNameArray(

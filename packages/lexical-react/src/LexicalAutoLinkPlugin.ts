@@ -17,7 +17,7 @@ import {
 } from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {mergeRegister} from '@lexical/utils';
-import {$isTextNode, TextNode} from 'lexical';
+import {$isLineBreakNode, $isTextNode, TextNode} from 'lexical';
 import {useEffect} from 'react';
 import invariant from 'shared/invariant';
 
@@ -261,6 +261,10 @@ function handleLinkEdit(
   const childrenLength = children.length;
   for (let i = 0; i < childrenLength; i++) {
     const child = children[i];
+    if (i === childrenLength - 1 && $isLineBreakNode(child)) {
+      linkNode.insertAfter(child);
+      return;
+    }
     if (!$isTextNode(child) || !child.isSimpleText()) {
       replaceWithChildren(linkNode);
       handleUpdateUrl(linkNode, null, onChange);
@@ -463,7 +467,7 @@ function useAutoLink(
     };
 
     return mergeRegister(
-      editor.registerNodeTransform(TextNode, (textNode: TextNode) => {
+      editor.registerNodeTransform(TextNode, (textNode: TextNode, ...a) => {
         if (!textNode.isSimpleText()) {
           return;
         }

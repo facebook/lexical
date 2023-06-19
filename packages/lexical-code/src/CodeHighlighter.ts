@@ -269,7 +269,7 @@ function updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
     });
   }
   const codeElementHeight = parseInt(getComputedStyle(codeElement).height, 10);
-  codeElement.setAttribute('data-previous-height', `${codeElementHeight}`);
+  codeElement.setAttribute('data-previous-height', `${codeElementHeight || 0}`);
   codeElement.setAttribute('data-gutter', gutter);
 }
 

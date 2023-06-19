@@ -256,6 +256,31 @@ function updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
       gutter += '\n' + ++count;
     }
   }
+
+  // the above logic for calculating lines of code works fine if the
+  // code container has `whitespace: nowrap`, so no need to recalculate it
+  if (codeElement.style.whiteSpace !== 'nowrap') {
+    requestAnimationFrame(() => {
+      reCalculateLineNumberForCodeBlock(codeElement, count);
+    });
+  }
+  codeElement.setAttribute('data-gutter', gutter);
+}
+
+function reCalculateLineNumberForCodeBlock(
+  codeElement: HTMLElement,
+  currentTotalLineCount: number,
+) {
+  const codeElementHeight = parseInt(getComputedStyle(codeElement).height);
+  const beforePsuedoElementHeight = parseInt(
+    getComputedStyle(codeElement, ':before').height,
+  );
+  const heightPerLine = beforePsuedoElementHeight / currentTotalLineCount;
+  const totalLineNumbers = Math.round(codeElementHeight / heightPerLine);
+  let gutter = '1';
+  for (let count = 1; count < totalLineNumbers; ) {
+    gutter += '\n' + ++count;
+  }
   codeElement.setAttribute('data-gutter', gutter);
 }
 

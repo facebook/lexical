@@ -243,7 +243,10 @@ function updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
   const children = node.getChildren();
   const childrenLength = children.length;
   // @ts-ignore: internal field
-  if (childrenLength === codeElement.__cachedChildrenLength) {
+  if (
+    childrenLength === codeElement.__cachedChildrenLength &&
+    !isLinesOfCodeRecalculationNeeded(codeElement)
+  ) {
     // Avoid updating the attribute if the children length hasn't changed.
     return;
   }
@@ -261,13 +264,15 @@ function updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
   // code container has `whitespace: nowrap`, so no need to recalculate it
   if (codeElement.style.whiteSpace !== 'nowrap') {
     requestAnimationFrame(() => {
-      reCalculateLineNumberForCodeBlock(codeElement, count);
+      reCalculateLinesOfCodeForCodeBlock(codeElement, count);
     });
   }
+  const codeElementHeight = parseInt(getComputedStyle(codeElement).height);
+  codeElement.setAttribute('data-previous-height', `${codeElementHeight}`);
   codeElement.setAttribute('data-gutter', gutter);
 }
 
-function reCalculateLineNumberForCodeBlock(
+function reCalculateLinesOfCodeForCodeBlock(
   codeElement: HTMLElement,
   currentTotalLineCount: number,
 ) {
@@ -282,6 +287,22 @@ function reCalculateLineNumberForCodeBlock(
     gutter += '\n' + ++count;
   }
   codeElement.setAttribute('data-gutter', gutter);
+}
+
+function isLinesOfCodeRecalculationNeeded(codeElement: HTMLElement): boolean {
+  if (codeElement.style.whiteSpace === 'nowrap') {
+    return false;
+  }
+  const codeElementCurrentHeight = parseInt(
+    getComputedStyle(codeElement).height,
+  );
+  const codeElementPreviousHeight = parseInt(
+    codeElement.getAttribute('data-previous-height') || '0',
+  );
+  if (codeElementPreviousHeight !== codeElementCurrentHeight) {
+    return true;
+  }
+  return false;
 }
 
 // Using `skipTransforms` to prevent extra transforms since reformatting the code

@@ -242,8 +242,9 @@ function updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
   }
   const children = node.getChildren();
   const childrenLength = children.length;
-  // @ts-ignore: internal field
+
   if (
+    // @ts-ignore: internal field
     childrenLength === codeElement.__cachedChildrenLength &&
     !isLinesOfCodeRecalculationNeeded(codeElement)
   ) {
@@ -267,7 +268,7 @@ function updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
       reCalculateLinesOfCodeForCodeBlock(codeElement, count);
     });
   }
-  const codeElementHeight = parseInt(getComputedStyle(codeElement).height);
+  const codeElementHeight = parseInt(getComputedStyle(codeElement).height, 10);
   codeElement.setAttribute('data-previous-height', `${codeElementHeight}`);
   codeElement.setAttribute('data-gutter', gutter);
 }
@@ -276,9 +277,10 @@ function reCalculateLinesOfCodeForCodeBlock(
   codeElement: HTMLElement,
   currentTotalLineCount: number,
 ) {
-  const codeElementHeight = parseInt(getComputedStyle(codeElement).height);
+  const codeElementHeight = parseInt(getComputedStyle(codeElement).height, 10);
   const beforePsuedoElementHeight = parseInt(
     getComputedStyle(codeElement, ':before').height,
+    10,
   );
   const heightPerLine = beforePsuedoElementHeight / currentTotalLineCount;
   const totalLineNumbers = Math.round(codeElementHeight / heightPerLine);
@@ -295,9 +297,11 @@ function isLinesOfCodeRecalculationNeeded(codeElement: HTMLElement): boolean {
   }
   const codeElementCurrentHeight = parseInt(
     getComputedStyle(codeElement).height,
+    10,
   );
   const codeElementPreviousHeight = parseInt(
     codeElement.getAttribute('data-previous-height') || '0',
+    10,
   );
   if (codeElementPreviousHeight !== codeElementCurrentHeight) {
     return true;

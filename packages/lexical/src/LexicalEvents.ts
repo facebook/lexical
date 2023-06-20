@@ -79,6 +79,7 @@ import {
   $getNodeByKey,
   $isSelectionCapturedInDecorator,
   $isTokenOrSegmented,
+  $selectAll,
   $setSelection,
   $shouldInsertTextAfterOrBeforeTextNode,
   $updateSelectedTextFromDOM,
@@ -1018,10 +1019,15 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
       } else if (isSelectAll(keyCode, metaKey, ctrlKey)) {
         event.preventDefault();
         editor.update(() => {
-          const root = $getRoot();
-          root.select(0, root.getChildrenSize());
+          $selectAll();
         });
       }
+      // FF does it well (no need to override behavior)
+    } else if (!IS_FIREFOX && isSelectAll(keyCode, metaKey, ctrlKey)) {
+      event.preventDefault();
+      editor.update(() => {
+        $selectAll();
+      });
     }
   }
 

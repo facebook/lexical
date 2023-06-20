@@ -131,6 +131,7 @@ export async function moveToParagraphEnd(page) {
 }
 
 export async function selectAll(page) {
+  // TODO Normalize #4665
   if (E2E_BROWSER === 'firefox' && IS_LINUX) {
     await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');

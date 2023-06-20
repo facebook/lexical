@@ -39,6 +39,7 @@ import {
   $getNearestBlockElementAncestorOrThrow,
   addClassNamesToElement,
   mergeRegister,
+  objectKlassEquals,
 } from '@lexical/utils';
 import {
   $applyNodeReplacement,
@@ -447,7 +448,10 @@ async function onCutForRichText(
   event: CommandPayloadType<typeof CUT_COMMAND>,
   editor: LexicalEditor,
 ): Promise<void> {
-  await copyToClipboard(editor, event instanceof ClipboardEvent ? event : null);
+  await copyToClipboard(
+    editor,
+    objectKlassEquals(event, ClipboardEvent) ? (event as ClipboardEvent) : null,
+  );
   editor.update(() => {
     const selection = $getSelection();
     if ($isRangeSelection(selection)) {
@@ -987,7 +991,12 @@ export function registerRichText(editor: LexicalEditor): () => void {
     editor.registerCommand(
       COPY_COMMAND,
       (event) => {
-        copyToClipboard(editor, event instanceof ClipboardEvent ? event : null);
+        copyToClipboard(
+          editor,
+          objectKlassEquals(event, ClipboardEvent)
+            ? (event as ClipboardEvent)
+            : null,
+        );
         return true;
       },
       COMMAND_PRIORITY_EDITOR,

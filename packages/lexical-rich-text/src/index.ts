@@ -838,13 +838,13 @@ export function registerRichText(editor: LexicalEditor): () => void {
           !$isRootNode(anchorNode)
         ) {
           const element = $getNearestBlockElementAncestorOrThrow(anchorNode);
-          // element.__indent is used because indent in listItem starts from 1
-          if (
-            (element.__indent !== 0 && element.getIndent() > 0) ||
-            (element.__indent === 0 && element.getIndent() > 1)
-          ) {
-            return editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
-          }
+          // we trigger DELETE_CHARACTER_COMMAND if we can't outdent the element
+          const indent = element.getIndent();
+          const outdentCommand = editor.dispatchCommand(
+            OUTDENT_CONTENT_COMMAND,
+            undefined,
+          );
+          if (indent !== element.getIndent()) return outdentCommand;
         }
         return editor.dispatchCommand(DELETE_CHARACTER_COMMAND, true);
       },

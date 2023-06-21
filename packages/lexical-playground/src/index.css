@@ -789,9 +789,11 @@ i.prettier-error {
   .dropdown-button-text {
     display: none !important;
   }
+
   .font-size .dropdown-button-text {
     display: flex !important;
   }
+
   .code-language .dropdown-button-text {
     display: flex !important;
   }
@@ -861,6 +863,7 @@ i.prettier-error {
     opacity: 0;
     transform: translateX(-200px);
   }
+
   100% {
     opacity: 1;
     transform: translateX(0);
@@ -1056,6 +1059,79 @@ i.prettier-error {
   cursor: nw-resize;
 }
 
+.editor-shell span.inline-editor-image {
+  cursor: default;
+  display: inline-block;
+  position: relative;
+  z-index: 1;
+}
+
+.editor-shell .inline-editor-image img {
+  max-width: 100%;
+  cursor: default;
+}
+
+.editor-shell .inline-editor-image img.focused {
+  outline: 2px solid rgb(60, 132, 244);
+}
+
+.editor-shell .inline-editor-image img.focused.draggable {
+  cursor: grab;
+}
+
+.editor-shell .inline-editor-image img.focused.draggable:active {
+  cursor: grabbing;
+}
+
+.editor-shell .inline-editor-image .image-caption-container .tree-view-output {
+  margin: 0;
+  border-radius: 0;
+}
+
+.editor-shell .inline-editor-image.position-full {
+  margin: 1em 0 1em 0;
+}
+
+.editor-shell .inline-editor-image.position-left {
+  float: left;
+  width: 50%;
+  margin: 1em 1em 0 0;
+}
+
+.editor-shell .inline-editor-image.position-right {
+  float: right;
+  width: 50%;
+  margin: 1em 0 0 1em;
+}
+
+.editor-shell .inline-editor-image .image-edit-button {
+  display: block;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 6px 8px;
+  margin: 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 5px;
+  background-color: rgba(0, 0, 0, 0.5);
+  min-width: 60px;
+  color: #fff;
+  cursor: pointer;
+  user-select: none;
+}
+
+.editor-shell .inline-editor-image .image-edit-button:hover {
+  background-color: rgba(60, 132, 244, 0.5);
+}
+
+.editor-shell .inline-editor-image .image-caption-container {
+  display: block;
+  background-color: #f4f4f4;
+  min-width: 100%;
+  color: #000;
+  overflow: hidden;
+}
+
 .emoji {
   color: transparent;
   caret-color: rgb(5, 5, 5);
@@ -1236,6 +1312,7 @@ i.chevron-down {
 .action-button-mic.active {
   animation: mic-pulsate-color 3s infinite;
 }
+
 button.action-button:disabled {
   opacity: 0.6;
   background: #eee;
@@ -1246,9 +1323,11 @@ button.action-button:disabled {
   0% {
     background-color: #ffdcdc;
   }
+
   50% {
     background-color: #ff8585;
   }
+
   100% {
     background-color: #ffdcdc;
   }
@@ -1569,24 +1648,29 @@ button.action-button:disabled {
 .github-corner:hover .octo-arm {
   animation: octocat-wave 560ms ease-in-out;
 }
+
 @keyframes octocat-wave {
   0%,
   100% {
     transform: rotate(0);
   }
+
   20%,
   60% {
     transform: rotate(-25deg);
   }
+
   40%,
   80% {
     transform: rotate(10deg);
   }
 }
+
 @media (max-width: 500px) {
   .github-corner:hover .octo-arm {
     animation: none;
   }
+
   .github-corner .octo-arm {
     animation: octocat-wave 560ms ease-in-out;
   }

@@ -1128,6 +1128,7 @@ const preParentCache = new WeakMap<Node, null | Node>();
 function isNodePre(node: Node): boolean {
   return (
     node.nodeName === 'PRE' ||
+    node.nodeName === 'CODE' ||
     (node.nodeType === DOM_ELEMENT_TYPE &&
       (node as HTMLElement).style.whiteSpace.startsWith('pre'))
   );

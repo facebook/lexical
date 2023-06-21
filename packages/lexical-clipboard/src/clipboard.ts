@@ -42,7 +42,11 @@ import {
   SELECTION_CHANGE_COMMAND,
   SerializedTextNode,
 } from 'lexical';
+import {CAN_USE_DOM} from 'shared/canUseDOM';
 import invariant from 'shared/invariant';
+
+const getDOMSelection = (targetWindow: Window | null): Selection | null =>
+  CAN_USE_DOM ? (targetWindow || window).getSelection() : null;
 
 /**
  * Returns the *currently selected* Lexical content as an HTML string, relying on the
@@ -587,7 +591,7 @@ export async function copyToClipboard(
   const rootElement = editor.getRootElement();
   const windowDocument =
     editor._window == null ? window.document : editor._window.document;
-  const domSelection = windowDocument.getSelection();
+  const domSelection = getDOMSelection(editor._window);
   if (rootElement === null || domSelection === null) {
     return false;
   }
@@ -634,7 +638,7 @@ function $copyToClipboardEvent(
   editor: LexicalEditor,
   event: ClipboardEvent,
 ): boolean {
-  const domSelection = window.getSelection();
+  const domSelection = getDOMSelection(editor._window);
   if (!domSelection) {
     return false;
   }

@@ -329,7 +329,11 @@ export function $isCodeNode(
 }
 
 function convertPreElement(domNode: Node): DOMConversionOutput {
-  return {node: $createCodeNode()};
+  let language;
+  if (isHTMLElement(domNode)) {
+    language = domNode.getAttribute(LANGUAGE_DATA_ATTRIBUTE);
+  }
+  return {node: $createCodeNode(language)};
 }
 
 function convertDivElement(domNode: Node): DOMConversionOutput {

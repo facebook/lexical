@@ -868,9 +868,9 @@ test.describe('CopyAndPaste', () => {
     await focusEditor(page);
     await insertYouTubeEmbed(page, YOUTUBE_SAMPLE_URL);
     await page.keyboard.press('ArrowLeft'); // this selects the node
-    await copyToClipboard(page);
+    const clipboard = await copyToClipboard(page);
     await page.keyboard.press('ArrowRight'); // this moves to a new line (empty paragraph node)
-    await pasteFromClipboard(page);
+    await pasteFromClipboard(page, clipboard);
 
     await assertHTML(
       page,

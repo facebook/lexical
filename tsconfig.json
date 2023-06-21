@@ -90,7 +90,9 @@
       "@lexical/react/LexicalNodeMenuPlugin": [
         "packages/lexical-react/src/LexicalNodeMenuPlugin.tsx"
       ],
-
+      "@lexical/react/LexicalContextMenuPlugin": [
+        "packages/lexical-react/src/LexicalContextMenuPlugin.tsx"
+      ],
       "@lexical/react/LexicalHistoryPlugin": [
         "./packages/lexical-react/src/LexicalHistoryPlugin.ts"
       ],

@@ -20,6 +20,8 @@ import {
   SerializedElementNode,
 } from 'lexical';
 
+import {PIXEL_VALUE_REG_EXP} from './constants';
+
 export type SerializedTableRowNode = Spread<
   {
     height: number;
@@ -106,7 +108,14 @@ export class TableRowNode extends DEPRECATED_GridRowNode {
 }
 
 export function convertTableRowElement(domNode: Node): DOMConversionOutput {
-  return {node: $createTableRowNode()};
+  const domNode_ = domNode as HTMLTableCellElement;
+  let height: number | undefined = undefined;
+
+  if (PIXEL_VALUE_REG_EXP.test(domNode_.style.height)) {
+    height = parseFloat(domNode_.style.height);
+  }
+
+  return {node: $createTableRowNode(height)};
 }
 
 export function $createTableRowNode(height?: number): TableRowNode {

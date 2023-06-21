@@ -18,7 +18,7 @@ import type {
   SerializedTextNode,
 } from 'lexical';
 
-import {CodeHighlightNode, CodeNode, CodeTabNode} from '@lexical/code';
+import {CodeHighlightNode, CodeNode} from '@lexical/code';
 import {HashtagNode} from '@lexical/hashtag';
 import {AutoLinkNode, LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
@@ -422,7 +422,6 @@ const DEFAULT_NODES = [
   ListItemNode,
   QuoteNode,
   CodeNode,
-  CodeTabNode,
   TableNode,
   TableCellNode,
   TableRowNode,
@@ -638,4 +637,34 @@ export function shiftTabKeyboardEvent() {
   const keyboardEvent = new KeyboardEventMock('keydown');
   keyboardEvent.shiftKey = true;
   return keyboardEvent;
+}
+
+export function generatePermutations<T>(
+  values: T[],
+  maxLength = values.length,
+): T[][] {
+  if (maxLength > values.length) {
+    throw new Error('maxLength over values.length');
+  }
+  const result: T[][] = [];
+  const current: T[] = [];
+  const seen = new Set();
+  (function permutationsImpl() {
+    if (current.length > maxLength) {
+      return;
+    }
+    result.push(current.slice());
+    for (let i = 0; i < values.length; i++) {
+      const key = values[i];
+      if (seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+      current.push(key);
+      permutationsImpl();
+      seen.delete(key);
+      current.pop();
+    }
+  })();
+  return result;
 }

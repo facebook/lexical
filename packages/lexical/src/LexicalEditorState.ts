@@ -64,7 +64,7 @@ function exportNodeToJSON<SerializedNode>(node: LexicalNode): SerializedNode {
   if (serializedNode.type !== nodeClass.getType()) {
     invariant(
       false,
-      'LexicalNode: Node %s does not implement .exportJSON().',
+      'LexicalNode: Node %s does not match the serialized type. Check if .exportJSON() is implemented and it is returning the correct type.',
       nodeClass.name,
     );
   }

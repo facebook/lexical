@@ -31,6 +31,8 @@ import invariant from 'shared/invariant';
 import {
   COMPOSITION_SUFFIX,
   DETAIL_TYPE_TO_DETAIL,
+  DOM_ELEMENT_TYPE,
+  DOM_TEXT_TYPE,
   IS_BOLD,
   IS_CODE,
   IS_DIRECTIONLESS,
@@ -299,64 +301,137 @@ export class TextNode extends LexicalNode {
     this.__detail = 0;
   }
 
+  /**
+   * Returns a 32-bit integer that represents the TextFormatTypes currently applied to the
+   * TextNode. You probably don't want to use this method directly - consider using TextNode.hasFormat instead.
+   *
+   * @returns a number representing the format of the text node.
+   */
   getFormat(): number {
     const self = this.getLatest();
     return self.__format;
   }
 
+  /**
+   * Returns a 32-bit integer that represents the TextDetailTypes currently applied to the
+   * TextNode. You probably don't want to use this method directly - consider using TextNode.isDirectionless
+   * or TextNode.isUnmergeable instead.
+   *
+   * @returns a number representing the detail of the text node.
+   */
   getDetail(): number {
     const self = this.getLatest();
     return self.__detail;
   }
 
+  /**
+   * Returns the mode (TextModeType) of the TextNode, which may be "normal", "token", or "segmented"
+   *
+   * @returns TextModeType.
+   */
   getMode(): TextModeType {
     const self = this.getLatest();
     return TEXT_TYPE_TO_MODE[self.__mode];
   }
 
+  /**
+   * Returns the styles currently applied to the node. This is analogous to CSSText in the DOM.
+   *
+   * @returns CSSText-like string of styles applied to the underlying DOM node.
+   */
   getStyle(): string {
     const self = this.getLatest();
     return self.__style;
   }
 
+  /**
+   * Returns whether or not the node is in "token" mode. TextNodes in token mode can be navigated through character-by-character
+   * with a RangeSelection, but are deleted as a single entity (not invdividually by character).
+   *
+   * @returns true if the node is in token mode, false otherwise.
+   */
   isToken(): boolean {
     const self = this.getLatest();
     return self.__mode === IS_TOKEN;
   }
 
+  /**
+   *
+   * @returns true if Lexical detects that an IME or other 3rd-party script is attempting to
+   * mutate the TextNode, false otherwise.
+   */
   isComposing(): boolean {
     return this.__key === $getCompositionKey();
   }
 
+  /**
+   * Returns whether or not the node is in "segemented" mode. TextNodes in segemented mode can be navigated through character-by-character
+   * with a RangeSelection, but are deleted in space-delimited "segments".
+   *
+   * @returns true if the node is in segmented mode, false otherwise.
+   */
   isSegmented(): boolean {
     const self = this.getLatest();
     return self.__mode === IS_SEGMENTED;
   }
-
+  /**
+   * Returns whether or not the node is "directionless". Directionless nodes don't respect changes between RTL and LTR modes.
+   *
+   * @returns true if the node is directionless, false otherwise.
+   */
   isDirectionless(): boolean {
     const self = this.getLatest();
     return (self.__detail & IS_DIRECTIONLESS) !== 0;
   }
-
+  /**
+   * Returns whether or not the node is unmergeable. In some scenarios, Lexical tries to merge
+   * adjacent TextNodes into a single TextNode. If a TextNode is unmergeable, this won't happen.
+   *
+   * @returns true if the node is unmergeable, false otherwise.
+   */
   isUnmergeable(): boolean {
     const self = this.getLatest();
     return (self.__detail & IS_UNMERGEABLE) !== 0;
   }
 
+  /**
+   * Returns whether or not the node has the provided format applied. Use this with the human-readable TextFormatType
+   * string values to get the format of a TextNode.
+   *
+   * @param type - the TextFormatType to check for.
+   *
+   * @returns true if the node has the provided format, false otherwise.
+   */
   hasFormat(type: TextFormatType): boolean {
     const formatFlag = TEXT_TYPE_TO_FORMAT[type];
     return (this.getFormat() & formatFlag) !== 0;
   }
 
+  /**
+   * Returns whether or not the node is simple text. Simple text is defined as a TextNode that has the string type "text"
+   * (i.e., not a subclass) and has no mode applied to it (i.e., not segmented or token).
+   *
+   * @returns true if the node is simple text, false otherwise.
+   */
   isSimpleText(): boolean {
     return this.__type === 'text' && this.__mode === 0;
   }
 
+  /**
+   * Returns the text content of the node as a string.
+   *
+   * @returns a string representing the text content of the node.
+   */
   getTextContent(): string {
     const self = this.getLatest();
     return self.__text;
   }
 
+  /**
+   * Returns the format flags applied to the node as a 32-bit integer.
+   *
+   * @returns a number representing the TextFormatTypes applied to the node.
+   */
   getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number {
     const self = this.getLatest();
     const format = self.__format;
@@ -462,10 +537,6 @@ export class TextNode extends LexicalNode {
         conversion: convertBringAttentionToElement,
         priority: 0,
       }),
-      br: () => ({
-        conversion: convertLineBreakToElement,
-        priority: 0,
-      }),
       code: () => ({
         conversion: convertTextFormatElement,
         priority: 0,
@@ -563,7 +634,16 @@ export class TextNode extends LexicalNode {
     return;
   }
 
-  // TODO 0.5 This should just be a `string`.
+  /**
+   * Sets the node format to the provided TextFormatType or 32-bit integer. Note that the TextFormatType
+   * version of the argument can only specify one format and doing so will remove all other formats that
+   * may be applied to the node. For toggling behavior, consider using {@link TextNode.toggleFormat}
+   *
+   * @param format - TextFormatType or 32-bit integer representing the node format.
+   *
+   * @returns this TextNode.
+   * // TODO 0.12 This should just be a `string`.
+   */
   setFormat(format: TextFormatType | number): this {
     const self = this.getWritable();
     self.__format =
@@ -571,7 +651,17 @@ export class TextNode extends LexicalNode {
     return self;
   }
 
-  // TODO 0.5 This should just be a `string`.
+  /**
+   * Sets the node detail to the provided TextDetailType or 32-bit integer. Note that the TextDetailType
+   * version of the argument can only specify one detail value and doing so will remove all other detail values that
+   * may be applied to the node. For toggling behavior, consider using {@link TextNode.toggleDirectionless}
+   * or {@link TextNode.togglerUnmergeable}
+   *
+   * @param detail - TextDetailType or 32-bit integer representing the node detail.
+   *
+   * @returns this TextNode.
+   * // TODO 0.12 This should just be a `string`.
+   */
   setDetail(detail: TextDetailType | number): this {
     const self = this.getWritable();
     self.__detail =
@@ -579,29 +669,60 @@ export class TextNode extends LexicalNode {
     return self;
   }
 
+  /**
+   * Sets the node style to the provided CSSText-like string. Set this property as you
+   * would an HTMLElement style attribute to apply inline styles to the underlying DOM Element.
+   *
+   * @param style - CSSText to be applied to the underlying HTMLElement.
+   *
+   * @returns this TextNode.
+   */
   setStyle(style: string): this {
     const self = this.getWritable();
     self.__style = style;
     return self;
   }
 
+  /**
+   * Applies the provided format to this TextNode if it's not present. Removes it if it is present.
+   * Prefer using this method to turn specific formats on and off.
+   *
+   * @param type - TextFormatType to toggle.
+   *
+   * @returns this TextNode.
+   */
   toggleFormat(type: TextFormatType): this {
     const formatFlag = TEXT_TYPE_TO_FORMAT[type];
     return this.setFormat(this.getFormat() ^ formatFlag);
   }
 
+  /**
+   * Toggles the directionless detail value of the node. Prefer using this method over setDetail.
+   *
+   * @returns this TextNode.
+   */
   toggleDirectionless(): this {
     const self = this.getWritable();
     self.__detail ^= IS_DIRECTIONLESS;
     return self;
   }
 
+  /**
+   * Toggles the unmergeable detail value of the node. Prefer using this method over setDetail.
+   *
+   * @returns this TextNode.
+   */
   toggleUnmergeable(): this {
     const self = this.getWritable();
     self.__detail ^= IS_UNMERGEABLE;
     return self;
   }
 
+  /**
+   * Sets the mode of the node.
+   *
+   * @returns this TextNode.
+   */
   setMode(type: TextModeType): this {
     const mode = TEXT_MODE_TO_TYPE[type];
     if (this.__mode === mode) {
@@ -612,6 +733,13 @@ export class TextNode extends LexicalNode {
     return self;
   }
 
+  /**
+   * Sets the text content of the node.
+   *
+   * @param text - the string to set as the text value of the node.
+   *
+   * @returns this TextNode.
+   */
   setTextContent(text: string): this {
     if (this.__text === text) {
       return this;
@@ -621,6 +749,14 @@ export class TextNode extends LexicalNode {
     return self;
   }
 
+  /**
+   * Sets the current Lexical selection to be a RangeSelection with anchor and focus on this TextNode at the provided offsets.
+   *
+   * @param _anchorOffset - the offset at which the Selection anchor will be placed.
+   * @param _focusOffset - the offset at which the Selection focus will be placed.
+   *
+   * @returns the new RangeSelection.
+   */
   select(_anchorOffset?: number, _focusOffset?: number): RangeSelection {
     errorOnReadOnly();
     let anchorOffset = _anchorOffset;
@@ -662,6 +798,17 @@ export class TextNode extends LexicalNode {
     return selection;
   }
 
+  /**
+   * Inserts the provided text into this TextNode at the provided offset, deleting the number of characters
+   * specified. Can optionally calculate a new selection after the operation is complete.
+   *
+   * @param offset - the offset at which the splice operation should begin.
+   * @param delCount - the number of characters to delete, starting from the offset.
+   * @param newText - the text to insert into the TextNode at the offset.
+   * @param moveSelection - optional, whether or not to move selection to the end of the inserted substring.
+   *
+   * @returns this TextNode.
+   */
   spliceText(
     offset: number,
     delCount: number,
@@ -696,14 +843,36 @@ export class TextNode extends LexicalNode {
     return writableSelf;
   }
 
+  /**
+   * This method is meant to be overriden by TextNode subclasses to control the behavior of those nodes
+   * when a user event would cause text to be inserted before them in the editor. If true, Lexical will attempt
+   * to insert text into this node. If false, it will insert the text in a new sibling node.
+   *
+   * @returns true if text can be inserted before the node, false otherwise.
+   */
   canInsertTextBefore(): boolean {
     return true;
   }
 
+  /**
+   * This method is meant to be overriden by TextNode subclasses to control the behavior of those nodes
+   * when a user event would cause text to be inserted after them in the editor. If true, Lexical will attempt
+   * to insert text into this node. If false, it will insert the text in a new sibling node.
+   *
+   * @returns true if text can be inserted after the node, false otherwise.
+   */
   canInsertTextAfter(): boolean {
     return true;
   }
 
+  /**
+   * Splits this TextNode at the provided character offsets, forming new TextNodes from the substrings
+   * formed by the split, and inserting those new TextNodes into the editor, replacing the one that was split.
+   *
+   * @param splitOffsets - rest param of the text content character offsets at which this node should be split.
+   *
+   * @returns an Array containing the newly-created TextNodes.
+   */
   splitText(...splitOffsets: Array<number>): Array<TextNode> {
     errorOnReadOnly();
     const self = this.getLatest();
@@ -823,6 +992,13 @@ export class TextNode extends LexicalNode {
     return splitNodes;
   }
 
+  /**
+   * Merges the target TextNode into this TextNode, removing the target node.
+   *
+   * @param target - the TextNode to merge into this one.
+   *
+   * @returns this TextNode.
+   */
   mergeWithSibling(target: TextNode): TextNode {
     const isBefore = target === this.getPreviousSibling();
     if (!isBefore && target !== this.getNextSibling()) {
@@ -873,6 +1049,13 @@ export class TextNode extends LexicalNode {
     return writableSelf;
   }
 
+  /**
+   * This method is meant to be overriden by TextNode subclasses to control the behavior of those nodes
+   * when used with the registerLexicalTextEntity function. If you're using registerLexicalTextEntity, the
+   * node class that you create and replace matched text with should return true from this method.
+   *
+   * @returns true if the node is to be treated as a "text entity", false otherwise.
+   */
   isTextEntity(): boolean {
     return false;
   }
@@ -923,12 +1106,6 @@ function convertSpanElement(domNode: Node): DOMConversionOutput {
   };
 }
 
-function convertLineBreakToElement(): DOMConversionOutput {
-  return {
-    node: $createLineBreakNode(),
-  };
-}
-
 function convertBringAttentionToElement(domNode: Node): DOMConversionOutput {
   // domNode is a <b> since we matched it by nodeName
   const b = domNode as HTMLElement;
@@ -946,30 +1123,157 @@ function convertBringAttentionToElement(domNode: Node): DOMConversionOutput {
   };
 }
 
-function convertTextDOMNode(
-  domNode: Node,
-  _parent?: Node,
-  preformatted?: boolean,
-): DOMConversionOutput {
-  let textContent = domNode.textContent || '';
-  if (!preformatted && /\n/.test(textContent)) {
-    textContent = textContent.replace(/\r?\n/gm, ' ');
-    if (textContent.trim().length === 0) {
-      return {node: null};
+const preParentCache = new WeakMap<Node, null | Node>();
+
+function isNodePre(node: Node): boolean {
+  return (
+    node.nodeName === 'PRE' ||
+    node.nodeName === 'CODE' ||
+    (node.nodeType === DOM_ELEMENT_TYPE &&
+      (node as HTMLElement).style.whiteSpace.startsWith('pre'))
+  );
+}
+
+export function findParentPreDOMNode(node: Node) {
+  let cached;
+  let parent = node.parentNode;
+  const visited = [node];
+  while (
+    parent !== null &&
+    (cached = preParentCache.get(parent)) === undefined &&
+    !isNodePre(parent)
+  ) {
+    visited.push(parent);
+    parent = parent.parentNode;
+  }
+  const resultNode = cached === undefined ? parent : cached;
+  for (let i = 0; i < visited.length; i++) {
+    preParentCache.set(visited[i], resultNode);
+  }
+  return resultNode;
+}
+
+function convertTextDOMNode(domNode: Node): DOMConversionOutput {
+  const domNode_ = domNode as Text;
+  const parentDom = domNode.parentElement;
+  invariant(
+    parentDom !== null,
+    'Expected parentElement of Text not to be null',
+  );
+  let textContent = domNode_.textContent || '';
+  // No collapse and preserve segment break for pre, pre-wrap and pre-line
+  if (findParentPreDOMNode(domNode_) !== null) {
+    const parts = textContent.split(/(\r?\n|\t)/);
+    const nodes: Array<LexicalNode> = [];
+    const length = parts.length;
+    for (let i = 0; i < length; i++) {
+      const part = parts[i];
+      if (part === '\n' || part === '\r\n') {
+        nodes.push($createLineBreakNode());
+      } else if (part === '\t') {
+        nodes.push($createTabNode());
+      } else if (part !== '') {
+        nodes.push($createTextNode(part));
+      }
+    }
+    return {node: nodes};
+  }
+  textContent = textContent
+    .replace(/\r?\n|\t/gm, ' ')
+    .replace('\r', '')
+    .replace(/\s+/g, ' ');
+  if (textContent === '') {
+    return {node: null};
+  }
+  if (textContent[0] === ' ') {
+    // Traverse backward while in the same line. If content contains new line or tab -> pontential
+    // delete, other elements can borrow from this one. Deletion depends on whether it's also the
+    // last space (see next condition: textContent[textContent.length - 1] === ' '))
+    let previousText: null | Text = domNode_;
+    let isStartOfLine = true;
+    while (
+      previousText !== null &&
+      (previousText = findTextInLine(previousText, false)) !== null
+    ) {
+      const previousTextContent = previousText.textContent || '';
+      if (previousTextContent.length > 0) {
+        if (previousTextContent.match(/(?:\s|\r?\n|\t)$/)) {
+          textContent = textContent.slice(1);
+        }
+        isStartOfLine = false;
+        break;
+      }
+    }
+    if (isStartOfLine) {
+      textContent = textContent.slice(1);
     }
   }
-  const parts = textContent.split(/(\t)/);
-  const nodes = [];
-  const length = parts.length;
-  for (let i = 0; i < length; i++) {
-    const part = parts[i];
-    if (part === '\t') {
-      nodes.push($createTabNode());
-    } else {
-      nodes.push($createTextNode(part));
+  if (textContent[textContent.length - 1] === ' ') {
+    // Traverse forward while in the same line, preserve if next inline will require a space
+    let nextText: null | Text = domNode_;
+    let isEndOfLine = true;
+    while (
+      nextText !== null &&
+      (nextText = findTextInLine(nextText, true)) !== null
+    ) {
+      const nextTextContent = (nextText.textContent || '').replace(
+        /^[\s|\r?\n|\t]+/,
+        '',
+      );
+      if (nextTextContent.length > 0) {
+        isEndOfLine = false;
+        break;
+      }
+    }
+    if (isEndOfLine) {
+      textContent = textContent.slice(0, textContent.length - 1);
     }
   }
-  return {node: nodes};
+  if (textContent === '') {
+    return {node: null};
+  }
+  return {node: $createTextNode(textContent)};
+}
+
+const inlineParents = new RegExp(
+  /^(a|abbr|acronym|b|cite|code|del|em|i|ins|kbd|label|output|q|ruby|s|samp|span|strong|sub|sup|time|u|tt|var)$/,
+  'i',
+);
+
+function findTextInLine(text: Text, forward: boolean): null | Text {
+  let node: Node = text;
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    let sibling: null | Node;
+    while (
+      (sibling = forward ? node.nextSibling : node.previousSibling) === null
+    ) {
+      const parentElement = node.parentElement;
+      if (parentElement === null) {
+        return null;
+      }
+      node = parentElement;
+    }
+    node = sibling;
+    if (node.nodeType === DOM_ELEMENT_TYPE) {
+      const display = (node as HTMLElement).style.display;
+      if (
+        (display === '' && node.nodeName.match(inlineParents) === null) ||
+        (display !== '' && !display.startsWith('inline'))
+      ) {
+        return null;
+      }
+    }
+    let descendant: null | Node = node;
+    while ((descendant = forward ? node.firstChild : node.lastChild) !== null) {
+      node = descendant;
+    }
+    if (node.nodeType === DOM_TEXT_TYPE) {
+      return node as Text;
+    } else if (node.nodeName === 'BR') {
+      return null;
+    }
+  }
 }
 
 const nodeNameToTextFormat: Record<string, TextFormatType> = {

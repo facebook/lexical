@@ -42,13 +42,17 @@ export default function ErrorCodePage() {
 
 function ErrorFinder() {
   const error = useMemo(() => {
-    const code = new URLSearchParams(window.location.search).get('code');
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
     if (code === null) {
       return null;
     }
-    const description = codes[code];
+    let description = codes[code];
     if (description === undefined) {
       return null;
+    }
+    for (const value of params.getAll('v')) {
+      description = description.replace('%s', value);
     }
     return {code, description};
   }, []);

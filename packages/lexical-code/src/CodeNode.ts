@@ -10,6 +10,7 @@
 import type {
   DOMConversionMap,
   DOMConversionOutput,
+  DOMExportOutput,
   EditorConfig,
   LexicalNode,
   NodeKey,
@@ -17,13 +18,9 @@ import type {
   RangeSelection,
   SerializedElementNode,
   Spread,
+  TabNode,
 } from 'lexical';
-import type {CodeHighlightNode, CodeTabNode} from '@lexical/code';
-import {
-  $isCodeHighlightNode,
-  $isCodeTabNode,
-  $createCodeTabNode,
-} from '@lexical/code';
+import type {CodeHighlightNode} from '@lexical/code';
 
 import 'prismjs/components/prism-clike';
 import 'prismjs/components/prism-javascript';
@@ -46,8 +43,11 @@ import {
   $createLineBreakNode,
   $createParagraphNode,
   ElementNode,
+  $isTabNode,
+  $createTabNode,
 } from 'lexical';
 import {
+  $isCodeHighlightNode,
   $createCodeHighlightNode,
   getFirstCodeNodeOfLine,
 } from './CodeHighlightNode';
@@ -126,6 +126,16 @@ export class CodeNode extends ElementNode {
       dom.removeAttribute(LANGUAGE_DATA_ATTRIBUTE);
     }
     return false;
+  }
+
+  exportDOM(): DOMExportOutput {
+    const element = document.createElement('code');
+    element.setAttribute('spellcheck', 'false');
+    const language = this.getLanguage();
+    if (language) {
+      element.setAttribute(LANGUAGE_DATA_ATTRIBUTE, language);
+    }
+    return {element};
   }
 
   static importDOM(): DOMConversionMap | null {
@@ -222,7 +232,7 @@ export class CodeNode extends ElementNode {
   insertNewAfter(
     selection: RangeSelection,
     restoreSelection = true,
-  ): null | ParagraphNode | CodeHighlightNode | CodeTabNode {
+  ): null | ParagraphNode | CodeHighlightNode | TabNode {
     const children = this.getChildren();
     const childrenLength = children.length;
 
@@ -250,14 +260,14 @@ export class CodeNode extends ElementNode {
     const firstSelectionNode = firstPoint.getNode();
     if (
       $isCodeHighlightNode(firstSelectionNode) ||
-      $isCodeTabNode(firstSelectionNode)
+      $isTabNode(firstSelectionNode)
     ) {
       let node = getFirstCodeNodeOfLine(firstSelectionNode);
       const insertNodes = [];
       // eslint-disable-next-line no-constant-condition
       while (true) {
-        if ($isCodeTabNode(node)) {
-          insertNodes.push($createCodeTabNode());
+        if ($isTabNode(node)) {
+          insertNodes.push($createTabNode());
           node = node.getNextSibling();
         } else if ($isCodeHighlightNode(node)) {
           let spaces = 0;
@@ -319,7 +329,11 @@ export function $isCodeNode(
 }
 
 function convertPreElement(domNode: Node): DOMConversionOutput {
-  return {node: $createCodeNode(), preformatted: true};
+  let language;
+  if (isHTMLElement(domNode)) {
+    language = domNode.getAttribute(LANGUAGE_DATA_ATTRIBUTE);
+  }
+  return {node: $createCodeNode(language)};
 }
 
 function convertDivElement(domNode: Node): DOMConversionOutput {
@@ -340,12 +354,11 @@ function convertDivElement(domNode: Node): DOMConversionOutput {
       return childLexicalNodes;
     },
     node: isCode ? $createCodeNode() : null,
-    preformatted: isCode,
   };
 }
 
 function convertTableElement(): DOMConversionOutput {
-  return {node: $createCodeNode(), preformatted: true};
+  return {node: $createCodeNode()};
 }
 
 function convertCodeNoop(): DOMConversionOutput {

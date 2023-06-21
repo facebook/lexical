@@ -35,9 +35,11 @@ import {
   $shouldOverrideDefaultCharacterSelection,
 } from '@lexical/selection';
 import {
+  $findMatchingParent,
   $getNearestBlockElementAncestorOrThrow,
   addClassNamesToElement,
   mergeRegister,
+  objectKlassEquals,
 } from '@lexical/utils';
 import {
   $applyNodeReplacement,
@@ -382,8 +384,8 @@ function isGoogleDocsTitle(domNode: Node): boolean {
   return false;
 }
 
-function convertHeadingElement(domNode: Node): DOMConversionOutput {
-  const nodeName = domNode.nodeName.toLowerCase();
+function convertHeadingElement(element: HTMLElement): DOMConversionOutput {
+  const nodeName = element.nodeName.toLowerCase();
   let node = null;
   if (
     nodeName === 'h1' ||
@@ -394,12 +396,18 @@ function convertHeadingElement(domNode: Node): DOMConversionOutput {
     nodeName === 'h6'
   ) {
     node = $createHeadingNode(nodeName);
+    if (element.style !== null) {
+      node.setFormat(element.style.textAlign as ElementFormatType);
+    }
   }
   return {node};
 }
 
-function convertBlockquoteElement(): DOMConversionOutput {
+function convertBlockquoteElement(element: HTMLElement): DOMConversionOutput {
   const node = $createQuoteNode();
+  if (element.style !== null) {
+    node.setFormat(element.style.textAlign as ElementFormatType);
+  }
   return {node};
 }
 
@@ -442,7 +450,10 @@ async function onCutForRichText(
   event: CommandPayloadType<typeof CUT_COMMAND>,
   editor: LexicalEditor,
 ): Promise<void> {
-  await copyToClipboard(editor, event instanceof ClipboardEvent ? event : null);
+  await copyToClipboard(
+    editor,
+    objectKlassEquals(event, ClipboardEvent) ? (event as ClipboardEvent) : null,
+  );
   editor.update(() => {
     const selection = $getSelection();
     if ($isRangeSelection(selection)) {
@@ -629,8 +640,14 @@ export function registerRichText(editor: LexicalEditor): () => void {
         }
         const nodes = selection.getNodes();
         for (const node of nodes) {
-          const element = $getNearestBlockElementAncestorOrThrow(node);
-          element.setFormat(format);
+          const element = $findMatchingParent(
+            node,
+            (parentNode) =>
+              $isElementNode(parentNode) && !parentNode.isInline(),
+          );
+          if (element !== null) {
+            element.setFormat(format);
+          }
         }
         return true;
       },
@@ -708,19 +725,12 @@ export function registerRichText(editor: LexicalEditor): () => void {
         } else if ($isRangeSelection(selection)) {
           const possibleNode = $getAdjacentNode(selection.focus, true);
           if (
+            !event.shiftKey &&
             $isDecoratorNode(possibleNode) &&
             !possibleNode.isIsolated() &&
             !possibleNode.isInline()
           ) {
             possibleNode.selectPrevious();
-            event.preventDefault();
-            return true;
-          } else if (
-            $isElementNode(possibleNode) &&
-            !possibleNode.isInline() &&
-            !possibleNode.canBeEmpty()
-          ) {
-            possibleNode.select();
             event.preventDefault();
             return true;
           }
@@ -748,6 +758,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
           }
           const possibleNode = $getAdjacentNode(selection.focus, false);
           if (
+            !event.shiftKey &&
             $isDecoratorNode(possibleNode) &&
             !possibleNode.isIsolated() &&
             !possibleNode.isInline()
@@ -986,7 +997,12 @@ export function registerRichText(editor: LexicalEditor): () => void {
     editor.registerCommand(
       COPY_COMMAND,
       (event) => {
-        copyToClipboard(editor, event instanceof ClipboardEvent ? event : null);
+        copyToClipboard(
+          editor,
+          objectKlassEquals(event, ClipboardEvent)
+            ? (event as ClipboardEvent)
+            : null,
+        );
         return true;
       },
       COMMAND_PRIORITY_EDITOR,

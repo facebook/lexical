@@ -55,9 +55,11 @@ function $insertFirst(parent: ElementNode, node: LexicalNode): void {
 export function TablePlugin({
   hasCellMerge = true,
   hasCellBackgroundColor = true,
+  hasTabHandler = true,
 }: {
   hasCellMerge?: boolean;
   hasCellBackgroundColor?: boolean;
+  hasTabHandler?: boolean;
 }): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
 
@@ -103,6 +105,7 @@ export function TablePlugin({
           tableNode,
           tableElement,
           editor,
+          hasTabHandler,
         );
         tableSelections.set(nodeKey, tableSelection);
       }

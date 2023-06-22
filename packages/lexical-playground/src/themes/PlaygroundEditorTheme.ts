@@ -100,6 +100,7 @@ const theme: EditorThemeClasses = {
   tableCellSortedIndicator: 'PlaygroundEditorTheme__tableCellSortedIndicator',
   tableResizeRuler: 'PlaygroundEditorTheme__tableCellResizeRuler',
   tableSelected: 'PlaygroundEditorTheme__tableSelected',
+  tableSelection: 'PlaygroundEditorTheme__tableSelection',
   text: {
     bold: 'PlaygroundEditorTheme__textBold',
     code: 'PlaygroundEditorTheme__textCode',

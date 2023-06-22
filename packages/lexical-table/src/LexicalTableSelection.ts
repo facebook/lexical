@@ -14,6 +14,10 @@ import type {
 } from 'lexical';
 
 import {
+  addClassNamesToElement,
+  removeClassNamesFromElement,
+} from '@lexical/utils';
+import {
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
@@ -37,8 +41,6 @@ import {
   getTableGrid,
 } from './LexicalTableSelectionHelpers';
 
-export const BACKGROUND_COLOR = 'background-color';
-export const BACKGROUND_IMAGE = 'background-image';
 export type Cell = {
   elem: HTMLElement;
   highlighted: boolean;
@@ -197,6 +199,10 @@ export class TableSelection {
         throw new Error('Expected to find TableElement in DOM');
       }
 
+      removeClassNamesFromElement(
+        tableElement,
+        editor._config.theme.tableSelection,
+      );
       tableElement.classList.remove('disable-selection');
       this.hasHijackedSelectionStyles = false;
     });
@@ -211,7 +217,7 @@ export class TableSelection {
         throw new Error('Expected to find TableElement in DOM');
       }
 
-      tableElement.classList.add('disable-selection');
+      addClassNamesToElement(tableElement, editor._config.theme.tableSelection);
       this.hasHijackedSelectionStyles = true;
     });
   }

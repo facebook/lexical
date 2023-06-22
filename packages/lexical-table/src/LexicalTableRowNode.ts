@@ -81,7 +81,7 @@ export class TableRowNode extends DEPRECATED_GridRowNode {
   }
 
   isShadowRoot(): boolean {
-    return true;
+    return false;
   }
 
   setHeight(height: number): number | null | undefined {

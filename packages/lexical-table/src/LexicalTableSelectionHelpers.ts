@@ -29,7 +29,6 @@ import {
   $isRangeSelection,
   $setSelection,
   COMMAND_PRIORITY_CRITICAL,
-  COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_HIGH,
   CONTROLLED_TEXT_INSERTION_COMMAND,
   DELETE_CHARACTER_COMMAND,
@@ -433,7 +432,7 @@ export function applyTableHandlers(
 
           return true;
         },
-        COMMAND_PRIORITY_EDITOR,
+        COMMAND_PRIORITY_CRITICAL,
       ),
     );
   }

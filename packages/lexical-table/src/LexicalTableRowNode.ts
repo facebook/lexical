@@ -80,10 +80,6 @@ export class TableRowNode extends DEPRECATED_GridRowNode {
     return element;
   }
 
-  isShadowRoot(): boolean {
-    return false;
-  }
-
   setHeight(height: number): number | null | undefined {
     const self = this.getWritable();
     self.__height = height;

@@ -64,7 +64,7 @@ test.describe('Links', () => {
           dir="ltr">
           <a
             href="https://"
-            rel="noopener"
+            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
             dir="ltr">
             <span data-lexical-text="true">Hello</span>
@@ -91,7 +91,7 @@ test.describe('Links', () => {
           dir="ltr">
           <a
             href="https://facebook.com"
-            rel="noopener"
+            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
             dir="ltr">
             <span data-lexical-text="true">Hello</span>
@@ -201,7 +201,7 @@ test.describe('Links', () => {
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
             dir="ltr"
             href="https://"
-            rel="noopener">
+            rel="noreferrer">
             <span data-lexical-text="true">abc</span>
             <strong
               class="PlaygroundEditorTheme__textBold"
@@ -230,7 +230,7 @@ test.describe('Links', () => {
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
             dir="ltr"
             href="https://facebook.com"
-            rel="noopener">
+            rel="noreferrer">
             <span data-lexical-text="true">abc</span>
             <strong
               class="PlaygroundEditorTheme__textBold"
@@ -321,7 +321,7 @@ test.describe('Links', () => {
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
             dir="ltr"
             href="https://"
-            rel="noopener">
+            rel="noreferrer">
             <span data-lexical-text="true">abc</span>
             <strong
               class="PlaygroundEditorTheme__textBold"
@@ -350,7 +350,7 @@ test.describe('Links', () => {
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
             dir="ltr"
             href="https://facebook.com"
-            rel="noopener">
+            rel="noreferrer">
             <span data-lexical-text="true">abc</span>
             <strong
               class="PlaygroundEditorTheme__textBold"
@@ -393,7 +393,7 @@ test.describe('Links', () => {
               class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
               dir="ltr"
               href="https://"
-              rel="noopener">
+              rel="noreferrer">
               <span data-lexical-text="true">hello</span>
             </a>
           </li>
@@ -413,7 +413,7 @@ test.describe('Links', () => {
               class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
               dir="ltr"
               href="https://"
-              rel="noopener">
+              rel="noreferrer">
               <span data-lexical-text="true">hello</span>
             </a>
           </li>
@@ -444,7 +444,7 @@ test.describe('Links', () => {
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
             dir="ltr"
             href="https://"
-            rel="noopener">
+            rel="noreferrer">
             <span data-lexical-text="true">abc</span>
           </a>
           <span data-lexical-text="true">def</span>
@@ -465,7 +465,7 @@ test.describe('Links', () => {
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
             dir="ltr"
             href="https://"
-            rel="noopener">
+            rel="noreferrer">
             <span data-lexical-text="true">ab</span>
           </a>
         </p>
@@ -476,7 +476,7 @@ test.describe('Links', () => {
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
             dir="ltr"
             href="https://"
-            rel="noopener">
+            rel="noreferrer">
             <span data-lexical-text="true">c</span>
           </a>
           <span data-lexical-text="true">def</span>
@@ -497,14 +497,14 @@ test.describe('Links', () => {
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
             dir="ltr"
             href="https://"
-            rel="noopener">
+            rel="noreferrer">
             <span data-lexical-text="true">ab</span>
           </a>
           <a
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
             dir="ltr"
             href="https://"
-            rel="noopener">
+            rel="noreferrer">
             <span data-lexical-text="true">c</span>
           </a>
           <span data-lexical-text="true">def</span>
@@ -532,7 +532,7 @@ test.describe('Links', () => {
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
             dir="ltr"
             href="https://"
-            rel="noopener">
+            rel="noreferrer">
             <span data-lexical-text="true">abc</span>
           </a>
           <span data-lexical-text="true"></span>
@@ -607,7 +607,7 @@ test.describe('Links', () => {
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
             dir="ltr"
             href="https://"
-            rel="noopener">
+            rel="noreferrer">
             <span data-lexical-text="true">a</span>
           </a>
           <span data-lexical-text="true">a</span>
@@ -681,7 +681,7 @@ test.describe('Links', () => {
                   class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
                   dir="ltr"
                   href="https://"
-                  rel="noopener">
+                  rel="noreferrer">
                   <span data-lexical-text="true">a</span>
                 </a>
                 <span data-lexical-text="true">b</span>
@@ -757,7 +757,7 @@ test.describe('Links', () => {
                   class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
                   dir="ltr"
                   href="https://"
-                  rel="noopener">
+                  rel="noreferrer">
                   <span data-lexical-text="true">b</span>
                 </a>
                 <span data-lexical-text="true">c</span>
@@ -830,7 +830,7 @@ test.describe('Links', () => {
                   class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
                   dir="ltr"
                   href="https://"
-                  rel="noopener">
+                  rel="noreferrer">
                   <span data-lexical-text="true">b</span>
                 </a>
               </p>
@@ -906,7 +906,7 @@ test.describe('Links', () => {
                   class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
                   dir="ltr"
                   href="https://"
-                  rel="noopener">
+                  rel="noreferrer">
                   <span data-lexical-text="true">a</span>
                 </a>
                 <span data-lexical-text="true">xb</span>
@@ -982,7 +982,7 @@ test.describe('Links', () => {
                   class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
                   dir="ltr"
                   href="https://"
-                  rel="noopener">
+                  rel="noreferrer">
                   <span data-lexical-text="true">b</span>
                 </a>
                 <span data-lexical-text="true">xc</span>
@@ -1057,7 +1057,7 @@ test.describe('Links', () => {
                   class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
                   dir="ltr"
                   href="https://"
-                  rel="noopener">
+                  rel="noreferrer">
                   <span data-lexical-text="true">b</span>
                 </a>
                 <span data-lexical-text="true">x</span>
@@ -1167,7 +1167,7 @@ test.describe('Links', () => {
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
             dir="ltr"
             href="https://"
-            rel="noopener">
+            rel="noreferrer">
             <span data-lexical-text="true">abc</span>
             <strong
               class="PlaygroundEditorTheme__textBold"
@@ -1199,7 +1199,7 @@ test.describe('Links', () => {
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
             dir="ltr"
             href="https://"
-            rel="noopener">
+            rel="noreferrer">
             <span data-lexical-text="true">abc</span>
             <strong
               class="PlaygroundEditorTheme__textBold"
@@ -1248,7 +1248,7 @@ test.describe('Links', () => {
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
             dir="ltr"
             href="https://"
-            rel="noopener">
+            rel="noreferrer">
             <span data-lexical-text="true">${linkText}</span>
           </a>
         </p>
@@ -1275,7 +1275,7 @@ test.describe('Links', () => {
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
             dir="ltr"
             href="https://"
-            rel="noopener">
+            rel="noreferrer">
             <span data-lexical-text="true">This is the</span>
             <strong
               class="PlaygroundEditorTheme__textBold"
@@ -1304,7 +1304,7 @@ test.describe('Links', () => {
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
             dir="ltr"
             href="https://"
-            rel="noopener">
+            rel="noreferrer">
             <span data-lexical-text="true">This is the</span>
             <strong
               class="PlaygroundEditorTheme__textBold"
@@ -1341,7 +1341,7 @@ test.describe('Links', () => {
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
             dir="ltr"
             href="https://"
-            rel="noopener">
+            rel="noreferrer">
             <span data-lexical-text="true">${linkText}</span>
           </a>
         </p>
@@ -1369,7 +1369,7 @@ test.describe('Links', () => {
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
             dir="ltr"
             href="https://"
-            rel="noopener">
+            rel="noreferrer">
             <span data-lexical-text="true">This is a</span>
             <strong
               class="PlaygroundEditorTheme__textBold"
@@ -1400,7 +1400,7 @@ test.describe('Links', () => {
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
             dir="ltr"
             href="https://"
-            rel="noopener">
+            rel="noreferrer">
             <span data-lexical-text="true">This is the</span>
             <strong
               class="PlaygroundEditorTheme__textBold"
@@ -1429,7 +1429,7 @@ test.describe('Links', () => {
       class=\"PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr\"
       dir=\"ltr\"
       href=\"https://\"
-      rel=\"noopener\">
+      rel=\"noreferrer\">
       <span data-lexical-text=\"true\">A link</span>
     </a>
   </p>`,
@@ -1447,7 +1447,7 @@ test.describe('Links', () => {
       class=\"PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr\"
       dir=\"ltr\"
       href=\"https://facebook.com\"
-      rel=\"noopener\">
+      rel=\"noreferrer\">
       <span data-lexical-text=\"true\">A link</span>
     </a>
   </p>`,
@@ -1478,7 +1478,7 @@ test.describe('Links', () => {
           dir="ltr">
           <a
             href="https://"
-            rel="noopener"
+            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
             dir="ltr">
             <span data-lexical-text="true">An Awesome Website</span>
@@ -1501,7 +1501,7 @@ test.describe('Links', () => {
           <span data-lexical-text="true">Hey, check this out:</span>
           <a
             href="https://"
-            rel="noopener"
+            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
             dir="ltr">
             <span data-lexical-text="true">An Awesome Website</span>
@@ -1543,7 +1543,7 @@ test.describe('Links', () => {
           <span data-lexical-text="true">This is an</span>
           <a
             href="https://"
-            rel="noopener"
+            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
             dir="ltr">
             <span data-lexical-text="true">Awesome Website</span>
@@ -1568,7 +1568,7 @@ test.describe('Links', () => {
           <span data-lexical-text="true">This is an</span>
           <a
             href="https://"
-            rel="noopener"
+            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
             dir="ltr">
             <span data-lexical-text="true">Awesome Website</span>
@@ -1612,7 +1612,7 @@ test.describe('Links', () => {
           <span data-lexical-text="true">Hello</span>
           <a
             href="https://"
-            rel="noopener"
+            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
             dir="ltr">
             <span data-lexical-text="true">world</span>
@@ -1647,7 +1647,7 @@ test.describe('Links', () => {
           <span data-lexical-text="true">Hello</span>
           <a
             href="https://facebook.com"
-            rel="noopener"
+            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
             dir="ltr">
             <span data-lexical-text="true">world</span>
@@ -1726,7 +1726,7 @@ test.describe('Links', () => {
           <span data-lexical-text="true">Hello</span>
           <a
             href="https://"
-            rel="noopener"
+            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
             dir="ltr">
             <span data-lexical-text="true">world</span>
@@ -1762,7 +1762,7 @@ test.describe('Links', () => {
           <span data-lexical-text="true">Hello</span>
           <a
             href="https://facebook.com"
-            rel="noopener"
+            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
             dir="ltr">
             <span data-lexical-text="true">world</span>
@@ -1829,7 +1829,7 @@ test.describe('Links', () => {
           <span data-lexical-text="true">Hello</span>
           <a
             href="https://"
-            rel="noopener"
+            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
             dir="ltr">
             <span data-lexical-text="true">world</span>
@@ -1852,7 +1852,7 @@ test.describe('Links', () => {
           <span data-lexical-text="true">Hello</span>
           <a
             href="https://"
-            rel="noopener"
+            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
             dir="ltr">
             <span data-lexical-text="true">world</span>
@@ -1878,17 +1878,17 @@ test.describe('Links', () => {
       page,
       html`
         <p dir="ltr">
-          <a dir="ltr" href="https://" rel="noopener">
+          <a dir="ltr" href="https://" rel="noreferrer">
             <span data-lexical-text="true">Hello world</span>
           </a>
         </p>
         <p dir="ltr">
-          <a dir="ltr" href="https://" rel="noopener">
+          <a dir="ltr" href="https://" rel="noreferrer">
             <span data-lexical-text="true">Hello world</span>
           </a>
         </p>
         <p dir="ltr">
-          <a dir="ltr" href="https://" rel="noopener">
+          <a dir="ltr" href="https://" rel="noreferrer">
             <span data-lexical-text="true">Hello world</span>
           </a>
         </p>
@@ -1915,12 +1915,12 @@ test.describe('Links', () => {
       page,
       html`
         <p dir="ltr">
-          <a dir="ltr" href="https://" rel="noopener">
+          <a dir="ltr" href="https://" rel="noreferrer">
             <span data-lexical-text="true">Hello</span>
           </a>
         </p>
         <p dir="ltr">
-          <a dir="ltr" href="https://" rel="noopener">
+          <a dir="ltr" href="https://" rel="noreferrer">
             <span data-lexical-text="true">awesome</span>
           </a>
           <span data-lexical-text="true">world</span>
@@ -1956,12 +1956,12 @@ test.describe('Links', () => {
       page,
       html`
         <p dir="ltr">
-          <a dir="ltr" href="https://" rel="noopener">
+          <a dir="ltr" href="https://" rel="noreferrer">
             <span data-lexical-text="true">Hello</span>
           </a>
         </p>
         <p dir="ltr">
-          <a dir="ltr" href="https://" rel="noopener">
+          <a dir="ltr" href="https://" rel="noreferrer">
             <strong data-lexical-text="true">awe</strong>
             <span data-lexical-text="true">some</span>
           </a>
@@ -1991,7 +1991,7 @@ test.describe('Links', () => {
       html`
         <p><br /></p>
         <p dir="ltr">
-          <a dir="ltr" href="https://" rel="noopener">
+          <a dir="ltr" href="https://" rel="noreferrer">
             <span data-lexical-text="true">Hello awesome</span>
           </a>
           <span data-lexical-text="true">world</span>
@@ -2022,7 +2022,7 @@ test.describe('Links', () => {
       page,
       html`
         <p dir="ltr">
-          <a dir="ltr" href="https://" rel="noopener">
+          <a dir="ltr" href="https://" rel="noreferrer">
             <span data-lexical-text="true">Hello awesome</span>
           </a>
         </p>

@@ -129,7 +129,7 @@ export class CodeNode extends ElementNode {
   }
 
   exportDOM(): DOMExportOutput {
-    const element = document.createElement('code');
+    const element = document.createElement('pre');
     element.setAttribute('spellcheck', 'false');
     const language = this.getLanguage();
     if (language) {

@@ -719,6 +719,7 @@ export class RangeSelection implements BaseSelection {
     if ($isElementNode(lastNode)) {
       let lastNodeDescendant =
         lastNode.getDescendantByIndex<ElementNode>(endOffset);
+      // console.log(`lastNodeDescendant`, lastNodeDescendant)
       // We don't want to over-select, as node selection infers the child before
       // the last descendant, not including that descendant.
       if (
@@ -730,6 +731,8 @@ export class RangeSelection implements BaseSelection {
       }
       lastNode = lastNodeDescendant != null ? lastNodeDescendant : lastNode;
     }
+
+    // console.log(`lastNodeDescendant`, lastNode)
 
     let nodes: Array<LexicalNode>;
 
@@ -745,6 +748,7 @@ export class RangeSelection implements BaseSelection {
     if (!isCurrentlyReadOnlyMode()) {
       this._cachedNodes = nodes;
     }
+    // console.log(`nodes`, nodes)
     return nodes;
   }
 
@@ -1101,8 +1105,8 @@ export class RangeSelection implements BaseSelection {
             lastNode.replace(textNode);
             lastNode = textNode;
           }
-          // if we're using a root selection, the last node should not be mutated (ignore offset as offset is the root offset)
-          if (this.anchor.key !== 'root' && this.focus.key !== 'root') {
+          // root node selections only select whole nodes, so no text splices is necessary
+          if (!$isRootNode(endPoint.getNode())) {
             lastNode = (lastNode as TextNode).spliceText(0, endOffset, '');
           }
           markedNodeKeysForKeep.add(lastNode.__key);

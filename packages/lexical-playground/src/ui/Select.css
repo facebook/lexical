@@ -1,0 +1,34 @@
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-color: transparent;
+  border: none;
+  padding: 0 1em 0 0;
+  margin: 0;
+  font-family: inherit;
+  font-size: inherit;
+  cursor: inherit;
+  line-height: inherit;
+
+  z-index: 1;
+  outline: none;
+}
+
+:root {
+  --select-border: #393939;
+  --select-focus: #101484;
+  --select-arrow: var(--select-border);
+}
+
+.select {
+  min-width: 160px;
+  max-width: 290px;
+  border: 1px solid var(--select-border);
+  border-radius: 0.25em;
+  padding: 0.25em 0.5em;
+  font-size: 1rem;
+  cursor: pointer;
+  line-height: 1.4;
+  background: linear-gradient(to bottom, #ffffff 0%, #e5e5e5 100%);
+}

@@ -90,6 +90,7 @@ import {
   InsertImageDialog,
   InsertImagePayload,
 } from '../ImagesPlugin';
+import {InsertInlineImageDialog} from '../InlineImagePlugin';
 import {InsertPollDialog} from '../PollPlugin';
 import {InsertNewTableDialog, InsertTableDialog} from '../TablePlugin';
 
@@ -899,6 +900,19 @@ export default function ToolbarPlugin(): JSX.Element {
               className="item">
               <i className="icon image" />
               <span className="text">Image</span>
+            </DropDownItem>
+            <DropDownItem
+              onClick={() => {
+                showModal('Insert Inline Image', (onClose) => (
+                  <InsertInlineImageDialog
+                    activeEditor={activeEditor}
+                    onClose={onClose}
+                  />
+                ));
+              }}
+              className="item">
+              <i className="icon image" />
+              <span className="text">Inline Image</span>
             </DropDownItem>
             <DropDownItem
               onClick={() =>

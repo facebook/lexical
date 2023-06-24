@@ -202,6 +202,54 @@ async function retryAsync(page, fn, attempts) {
   }
 }
 
+export async function assertIsGridSelection(page, coordinates) {
+  const gridKey = await page.evaluate(() => {
+    const editor = window.lexicalEditor;
+    const editorState = editor.getEditorState();
+    const selection = editorState._selection;
+    return selection.gridKey;
+  });
+
+  expect(gridKey).not.toBeUndefined();
+}
+
+export async function assertGridSelectionCoordinates(page, coordinates) {
+  const {_anchor, _focus} = await page.evaluate(() => {
+    const editor = window.lexicalEditor;
+    const editorState = editor.getEditorState();
+    const selection = editorState._selection;
+    const anchorElement = editor.getElementByKey(selection.anchor.key);
+    const focusElement = editor.getElementByKey(selection.focus.key);
+    return {
+      _anchor: {
+        x: anchorElement._cell?.x,
+        y: anchorElement._cell?.y,
+      },
+      _focus: {
+        x: focusElement._cell?.x,
+        y: focusElement._cell?.y,
+      },
+    };
+  });
+
+  if (coordinates.anchor) {
+    if (coordinates.anchor.x !== undefined) {
+      expect(_anchor.x).toEqual(coordinates.anchor.x);
+    }
+    if (coordinates.anchor.y !== undefined) {
+      expect(_anchor.y).toEqual(coordinates.anchor.y);
+    }
+  }
+  if (coordinates.focus) {
+    if (coordinates.focus.x !== undefined) {
+      expect(_focus.x).toEqual(coordinates.focus.x);
+    }
+    if (coordinates.focus.y !== undefined) {
+      expect(_focus.y).toEqual(coordinates.focus.y);
+    }
+  }
+}
+
 async function assertSelectionOnPageOrFrame(page, expected) {
   // Assert the selection of the editor matches the snapshot
   const selection = await page.evaluate(() => {

@@ -848,21 +848,21 @@ export class LexicalEditor {
   }
 
   /**
+   * Used to assert that a certain node is registered, usually by plugins to ensure nodes that they
+   * depend on have been registered.
+   * @returns True if the editor has registered the provided node type, false otherwise.
+   */
+  hasNode<T extends Klass<LexicalNode>>(node: T): boolean {
+    return this._nodes.has(node.getType());
+  }
+
+  /**
    * Used to assert that certain nodes are registered, usually by plugins to ensure nodes that they
    * depend on have been registered.
    * @returns True if the editor has registered all of the provided node types, false otherwise.
    */
   hasNodes<T extends Klass<LexicalNode>>(nodes: Array<T>): boolean {
-    for (let i = 0; i < nodes.length; i++) {
-      const klass = nodes[i];
-      const type = klass.getType();
-
-      if (!this._nodes.has(type)) {
-        return false;
-      }
-    }
-
-    return true;
+    return nodes.every(this.hasNode);
   }
 
   /**

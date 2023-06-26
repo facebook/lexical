@@ -498,7 +498,7 @@ export function useMenuAnchorRef(
 
         if (left + menuWidth > rootElementRect.right) {
           containerDiv.style.left = `${
-            left - menuWidth + window.pageXOffset
+            rootElementRect.right - menuWidth + window.pageXOffset
           }px`;
         }
         const margin = 10;

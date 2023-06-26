@@ -156,7 +156,7 @@ export function applyTableHandlers(
           selection.gridKey === tableSelection.tableNodeKey &&
           rootElement.contains(target)
         ) {
-          return tableSelection.clearHighlight();
+          tableSelection.clearHighlight();
         }
         // TODO Revise this logic; the UX selection boundaries and nested editors
         const node = $getNearestNodeFromDOMNode(target);

@@ -341,18 +341,22 @@ export function $insertTableColumn__EXPERIMENTAL(insertAfter = true): void {
     $isRangeSelection(selection) || DEPRECATED_$isGridSelection(selection),
     'Expected a RangeSelection or GridSelection',
   );
+  const anchor = selection.anchor.getNode();
   const focus = selection.focus.getNode();
+  const [anchorCell] = DEPRECATED_$getNodeTriplet(anchor);
   const [focusCell, , grid] = DEPRECATED_$getNodeTriplet(focus);
-  const [gridMap, focusCellMap] = DEPRECATED_$computeGridMap(
+  const [gridMap, focusCellMap, anchorCellMap] = DEPRECATED_$computeGridMap(
     grid,
     focusCell,
-    focusCell,
+    anchorCell,
   );
   const rowCount = gridMap.length;
-  const {startColumn: focusStartColumn} = focusCellMap;
+  const startColumn = insertAfter
+    ? Math.max(focusCellMap.startColumn, anchorCellMap.startColumn)
+    : Math.min(focusCellMap.startColumn, anchorCellMap.startColumn);
   const insertAfterColumn = insertAfter
-    ? focusStartColumn + focusCell.__colSpan - 1
-    : focusStartColumn - 1;
+    ? startColumn + focusCell.__colSpan - 1
+    : startColumn - 1;
   const gridFirstChild = grid.getFirstChild();
   invariant(
     DEPRECATED_$isGridRowNode(gridFirstChild),

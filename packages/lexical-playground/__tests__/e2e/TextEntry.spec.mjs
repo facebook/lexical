@@ -127,7 +127,7 @@ test.describe('TextEntry', () => {
     await page.keyboard.type('Hello ');
     await toggleBold(page);
     await page.keyboard.type('world');
-    await moveLeft(page, 5, 200);
+    await moveLeft(page, 5);
     await page.keyboard.press('Enter');
 
     await assertHTML(

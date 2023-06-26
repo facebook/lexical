@@ -387,6 +387,11 @@ export function registerMarkdownShortcuts(
         return;
       }
 
+      // If editor is still composing (i.e. backticks) we must wait before the user confirms the key
+      if (editor.isComposing()) {
+        return;
+      }
+
       const selection = editorState.read($getSelection);
       const prevSelection = prevEditorState.read($getSelection);
 
@@ -406,7 +411,7 @@ export function registerMarkdownShortcuts(
       if (
         !$isTextNode(anchorNode) ||
         !dirtyLeaves.has(anchorKey) ||
-        (anchorOffset !== 1 && anchorOffset !== prevSelection.anchor.offset + 1)
+        (anchorOffset !== 1 && anchorOffset > prevSelection.anchor.offset + 1)
       ) {
         return;
       }

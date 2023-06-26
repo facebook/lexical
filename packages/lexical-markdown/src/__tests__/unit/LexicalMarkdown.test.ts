@@ -140,16 +140,12 @@ describe('Markdown', () => {
       skipExport: true,
     },
     {
-      // Import only: export will have extra <pre> wrapper
-      html: '<code spellcheck="false"><span>Code</span></code>',
+      html: '<pre spellcheck="false"><span>Code</span></pre>',
       md: '```\nCode\n```',
-      skipExport: true,
     },
     {
-      // Export only: due to extra <pre> wrapper
-      html: '<code spellcheck="false"><pre><span>Code</span></pre></code>',
+      html: '<pre spellcheck="false"><span>Code</span></pre>',
       md: '```\nCode\n```',
-      skipImport: true,
     },
     {
       // Import only: extra empty lines will be removed for export

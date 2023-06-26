@@ -55,7 +55,7 @@ function $insertFirst(parent: ElementNode, node: LexicalNode): void {
 export function TablePlugin({
   hasCellMerge = true,
   hasCellBackgroundColor = true,
-  hasTabHandler = true,
+  hasTabHandler = false,
 }: {
   hasCellMerge?: boolean;
   hasCellBackgroundColor?: boolean;

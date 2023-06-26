@@ -60,6 +60,10 @@ export class ParagraphNode extends ElementNode {
         conversion: convertParagraphElement,
         priority: 0,
       }),
+      div: (node: Node) => ({
+        conversion: convertParagraphElement,
+        priority: 0,
+      }),
     };
   }
 

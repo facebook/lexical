@@ -862,7 +862,7 @@ export class LexicalEditor {
    * @returns True if the editor has registered all of the provided node types, false otherwise.
    */
   hasNodes<T extends Klass<LexicalNode>>(nodes: Array<T>): boolean {
-    return nodes.every(this.hasNode);
+    return nodes.every(this.hasNode.bind(this));
   }
 
   /**

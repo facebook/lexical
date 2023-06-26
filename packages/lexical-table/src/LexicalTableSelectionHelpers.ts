@@ -94,14 +94,10 @@ export function applyTableHandlers(
 
       const onMouseMove = (moveEvent: MouseEvent) => {
         const focusCell = getCellFromTarget(moveEvent.target as Node);
-        if (focusCell === null) {
-          return;
-        }
-
         if (
-          tableSelection.anchorX !== focusCell.x ||
-          tableSelection.anchorY !== focusCell.y ||
-          tableSelection.isHighlightingCells
+          focusCell !== null &&
+          (tableSelection.anchorX !== focusCell.x ||
+            tableSelection.anchorY !== focusCell.y)
         ) {
           moveEvent.preventDefault();
           tableSelection.setFocusCellForSelection(focusCell);

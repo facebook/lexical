@@ -153,13 +153,10 @@ export function TablePlugin({
         tableSelection.removeListeners();
       }
     };
-  }, [editor]);
+  }, [editor, hasTabHandler]);
 
   // Unmerge cells when the feature isn't enabled
   useEffect(() => {
-    if (hasCellMerge) {
-      return;
-    }
     return editor.registerNodeTransform(TableCellNode, (node) => {
       if (node.getColSpan() > 1 || node.getRowSpan() > 1) {
         // When we have rowSpan we have to map the entire Table to understand where the new Cells

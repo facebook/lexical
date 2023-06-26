@@ -974,39 +974,43 @@ function $handleArrowKey(
     }
 
     const anchorCellDom = editor.getElementByKey(anchorCellNode.__key);
-    const anchorDom = editor.getElementByKey(anchor.key);
-    if (anchorDom == null || anchorCellDom == null) {
+    const anchorDOM = editor.getElementByKey(anchor.key);
+    if (anchorDOM == null || anchorCellDom == null) {
       return false;
     }
 
-    // Todo: use util
-    const domSelection = window.getSelection();
-    if (domSelection == null || domSelection.rangeCount === 0) {
-      return false;
-    }
+    let edgeSelectionRect;
+    if (anchor.type === 'element') {
+      edgeSelectionRect = anchorDOM.getBoundingClientRect();
+    } else {
+      const domSelection = window.getSelection();
+      if (domSelection === null || domSelection.rangeCount === 0) {
+        return false;
+      }
 
-    const range = domSelection.getRangeAt(0);
-    const rangeRect = range.getBoundingClientRect();
+      const range = domSelection.getRangeAt(0);
+      edgeSelectionRect = range.getBoundingClientRect();
+    }
 
     const edgeChild =
       direction === 'up'
         ? anchorCellNode.getFirstChild()
         : anchorCellNode.getLastChild();
-
     if (edgeChild == null) {
       return false;
     }
 
-    const edgeChildDom = editor.getElementByKey(edgeChild.__key);
-    if (edgeChildDom == null) {
+    const edgeChildDOM = editor.getElementByKey(edgeChild.__key);
+
+    if (edgeChildDOM == null) {
       return false;
     }
 
-    const edgeRect = edgeChildDom.getBoundingClientRect();
+    const edgeRect = edgeChildDOM.getBoundingClientRect();
     const isExiting =
       direction === 'up'
-        ? edgeRect.top > rangeRect.top - rangeRect.height
-        : rangeRect.bottom + rangeRect.height > edgeRect.bottom;
+        ? edgeRect.top > edgeSelectionRect.top - edgeSelectionRect.height
+        : edgeSelectionRect.bottom + edgeSelectionRect.height > edgeRect.bottom;
 
     if (isExiting) {
       stopEvent(event);

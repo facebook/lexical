@@ -90,7 +90,7 @@ async function exposeLexicalEditor(page) {
   await leftFrame.waitForSelector('.tree-view-output pre');
   await leftFrame.evaluate(() => {
     window.lexicalEditor = document.querySelector(
-      '.tree-view-output pre',
+      '[data-lexical-editor="true"]',
     ).__lexicalEditor;
   });
 }
@@ -202,22 +202,16 @@ async function retryAsync(page, fn, attempts) {
   }
 }
 
-export async function assertIsGridSelection(page, coordinates) {
-  const gridKey = await page.evaluate(() => {
-    const editor = window.lexicalEditor;
-    const editorState = editor.getEditorState();
-    const selection = editorState._selection;
-    return selection.gridKey;
-  });
-
-  expect(gridKey).not.toBeUndefined();
-}
-
 export async function assertGridSelectionCoordinates(page, coordinates) {
-  const {_anchor, _focus} = await page.evaluate(() => {
+  const pageOrFrame = IS_COLLAB ? await page.frame('left') : page;
+
+  const {_anchor, _focus} = await pageOrFrame.evaluate(() => {
     const editor = window.lexicalEditor;
     const editorState = editor.getEditorState();
     const selection = editorState._selection;
+    if (!selection.gridKey) {
+      throw new Error('Expected grid selection');
+    }
     const anchorElement = editor.getElementByKey(selection.anchor.key);
     const focusElement = editor.getElementByKey(selection.focus.key);
     return {

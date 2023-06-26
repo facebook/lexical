@@ -8,7 +8,6 @@
 
 import {
   assertGridSelectionCoordinates,
-  assertIsGridSelection,
   click,
   focusEditor,
   initialize,
@@ -46,8 +45,6 @@ test.describe('Regression test #4697', () => {
       false,
       false,
     );
-
-    await assertIsGridSelection(page);
 
     await assertGridSelectionCoordinates(page, {
       anchor: {x: 2, y: 1},

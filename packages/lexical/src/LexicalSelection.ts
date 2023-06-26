@@ -719,7 +719,6 @@ export class RangeSelection implements BaseSelection {
     if ($isElementNode(lastNode)) {
       let lastNodeDescendant =
         lastNode.getDescendantByIndex<ElementNode>(endOffset);
-      // console.log(`lastNodeDescendant`, lastNodeDescendant)
       // We don't want to over-select, as node selection infers the child before
       // the last descendant, not including that descendant.
       if (
@@ -731,8 +730,6 @@ export class RangeSelection implements BaseSelection {
       }
       lastNode = lastNodeDescendant != null ? lastNodeDescendant : lastNode;
     }
-
-    // console.log(`lastNodeDescendant`, lastNode)
 
     let nodes: Array<LexicalNode>;
 
@@ -748,7 +745,6 @@ export class RangeSelection implements BaseSelection {
     if (!isCurrentlyReadOnlyMode()) {
       this._cachedNodes = nodes;
     }
-    // console.log(`nodes`, nodes)
     return nodes;
   }
 

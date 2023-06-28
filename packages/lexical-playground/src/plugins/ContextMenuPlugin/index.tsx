@@ -11,7 +11,6 @@ import {
   LexicalContextMenuPlugin,
   MenuOption,
 } from '@lexical/react/LexicalContextMenuPlugin';
-import {$findMatchingParent} from '@lexical/utils';
 import {
   type LexicalNode,
   $getSelection,
@@ -175,11 +174,11 @@ export default function ContextMenuPlugin(): JSX.Element {
           const selection = $getSelection();
           if ($isRangeSelection(selection)) {
             const currentNode = selection.anchor.getNode();
+            const ancestorNodeWithRootAsParent = currentNode
+              .getParents()
+              .at(-2);
 
-            const parentNode = $findMatchingParent(currentNode, (node) => {
-              return node.__parent === 'root';
-            });
-            parentNode?.remove();
+            ancestorNodeWithRootAsParent?.remove();
           }
         },
       }),

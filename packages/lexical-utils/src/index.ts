@@ -524,7 +524,7 @@ export function objectKlassEquals<T>(
   object: unknown,
   objectClass: ObjectKlass<T>,
 ): boolean {
-  return typeof object === 'object'
+  return object !== null
     ? Object.getPrototypeOf(object).constructor.name === objectClass.name
     : false;
 }

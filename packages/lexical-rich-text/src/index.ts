@@ -852,6 +852,12 @@ export function registerRichText(editor: LexicalEditor): () => void {
           if (element.getIndent() > 0) {
             return editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
           }
+          if (
+            $isRootNode(anchorNode.getParent()) &&
+            !anchorNode.getPreviousSibling()
+          ) {
+            selection.format = 0;
+          }
         }
         return editor.dispatchCommand(DELETE_CHARACTER_COMMAND, true);
       },

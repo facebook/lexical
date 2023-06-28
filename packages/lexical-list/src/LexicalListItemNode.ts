@@ -124,7 +124,9 @@ export class ListItemNode extends ElementNode {
   }
 
   static importJSON(serializedNode: SerializedListItemNode): ListItemNode {
-    const node = new ListItemNode(serializedNode.value, serializedNode.checked);
+    const node = $applyNodeReplacement<ListItemNode>(
+      new ListItemNode(serializedNode.value, serializedNode.checked),
+    );
     node.setFormat(serializedNode.format);
     node.setDirection(serializedNode.direction);
     return node;

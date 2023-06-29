@@ -36,6 +36,13 @@ export const LEXICAL_IMAGE_BASE64 =
 export const YOUTUBE_SAMPLE_URL =
   'https://www.youtube-nocookie.com/embed/jNQXAC9IVRw';
 
+function wrapAndSlowDown(method, delay) {
+  return async function () {
+    await new Promise((resolve) => setTimeout(resolve, delay));
+    return method.apply(this, arguments);
+  };
+}
+
 export async function initialize({
   page,
   isCollab,
@@ -47,6 +54,13 @@ export async function initialize({
   tableCellMerge,
   tableCellBackgroundColor,
 }) {
+  // Tests with legacy events often fail to register keypress, so
+  // slowing it down to reduce flakiness
+  if (LEGACY_EVENTS) {
+    page.keyboard.type = wrapAndSlowDown(page.keyboard.type, 50);
+    page.keyboard.press = wrapAndSlowDown(page.keyboard.press, 50);
+  }
+
   const appSettings = {};
   appSettings.isRichText = IS_RICH_TEXT;
   appSettings.emptyEditor = true;

@@ -125,6 +125,9 @@
   width: calc(100% - 25px);
   margin: 30px 0;
 }
+.PlaygroundEditorTheme__tableSelection *::selection {
+  background-color: transparent;
+}
 .PlaygroundEditorTheme__tableSelected {
   outline: 2px solid rgb(60, 132, 244);
 }
@@ -135,7 +138,6 @@
   text-align: start;
   padding: 6px 8px;
   position: relative;
-  cursor: default;
   outline: none;
 }
 .PlaygroundEditorTheme__tableCellSortedIndicator {

@@ -146,6 +146,7 @@ export default function ImageResizer({
     const controlWrapper = controlWrapperRef.current;
 
     if (image !== null && controlWrapper !== null) {
+      event.preventDefault();
       const {width, height} = image.getBoundingClientRect();
       const positioning = positioningRef.current;
       positioning.startWidth = width;

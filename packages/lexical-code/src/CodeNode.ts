@@ -12,6 +12,7 @@ import type {
   DOMConversionOutput,
   DOMExportOutput,
   EditorConfig,
+  LexicalEditor,
   LexicalNode,
   NodeKey,
   ParagraphNode,
@@ -45,6 +46,7 @@ import {
   ElementNode,
   $isTabNode,
   $createTabNode,
+  $isLineBreakNode,
 } from 'lexical';
 import {
   $isCodeHighlightNode,
@@ -128,12 +130,19 @@ export class CodeNode extends ElementNode {
     return false;
   }
 
-  exportDOM(): DOMExportOutput {
-    const element = document.createElement('code');
-    element.setAttribute('spellcheck', 'false');
-    const language = this.getLanguage();
-    if (language) {
-      element.setAttribute(LANGUAGE_DATA_ATTRIBUTE, language);
+  exportDOM(editor: LexicalEditor): DOMExportOutput {
+    const {element} = super.exportDOM(editor);
+    if (element) {
+      const children = this.getChildren();
+      const childrenLength = children.length;
+      let gutter = '1';
+      let count = 1;
+      for (let i = 0; i < childrenLength; i++) {
+        if ($isLineBreakNode(children[i])) {
+          gutter += '\n' + ++count;
+        }
+      }
+      element.setAttribute('data-gutter', gutter);
     }
     return {element};
   }

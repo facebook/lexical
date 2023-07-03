@@ -161,6 +161,10 @@ export default function ExcalidrawComponent({
     }, 200);
   };
 
+  const openModal = useCallback(() => {
+    setModalOpen(true);
+  }, []);
+
   const {
     elements = [],
     files = {},
@@ -194,6 +198,15 @@ export default function ExcalidrawComponent({
             files={files}
             appState={appState}
           />
+          {isSelected && (
+            <div
+              className="image-edit-button"
+              role="button"
+              tabIndex={0}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={openModal}
+            />
+          )}
           {(isSelected || isResizing) && (
             <ImageResizer
               buttonRef={captionButtonRef}

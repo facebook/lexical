@@ -65,10 +65,10 @@ function findFirstMatch(
 }
 
 function getPrefixTextSiblings(node: LexicalNode) {
-  const prevSiblings = node.getPreviousSiblings().reverse();
+  const prevSiblings = node.getPreviousSiblings();
   const result: TextNode[] = [];
 
-  for (let i = 0; i < prevSiblings.length; i++) {
+  for (let i = prevSiblings.length - 1; i >= 0; i--) {
     const sibling = prevSiblings[i];
     if ($isTextNode(sibling) && sibling.isSimpleText()) {
       result.push(sibling);
@@ -161,7 +161,7 @@ function replaceWithChildren(node: ElementNode): Array<LexicalNode> {
   }
 
   node.remove();
-  return children.map((child) => child.getLatest());
+  return children.map((child) => child.getWritable());
 }
 
 function handleLinkCreation(
@@ -316,7 +316,7 @@ function handleLinkEdit(
 function findLast<T, U extends T>(
   array: T[],
   predicate: (value: T) => value is U,
-): U | undefined {
+): U | null {
   for (let i = array.length - 1; i >= 0; i--) {
     const item = array[i];
     if (predicate(item)) {

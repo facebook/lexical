@@ -328,10 +328,13 @@ function codeNodeTransform(
   );
 }
 
-function getHighlightNodes(tokens: (string | Token)[]): LexicalNode[] {
+function getHighlightNodes(
+  tokens: Array<string | Token>,
+  type?: string,
+): LexicalNode[] {
   const nodes: LexicalNode[] = [];
 
-  tokens.forEach((token) => {
+  for (const token of tokens) {
     if (typeof token === 'string') {
       const partials = token.split(/(\n|\t)/);
       const partialsLength = partials.length;
@@ -342,24 +345,18 @@ function getHighlightNodes(tokens: (string | Token)[]): LexicalNode[] {
         } else if (part === '\t') {
           nodes.push($createTabNode());
         } else if (part.length > 0) {
-          nodes.push($createCodeHighlightNode(part));
+          nodes.push($createCodeHighlightNode(part, type));
         }
       }
     } else {
       const {content} = token;
       if (typeof content === 'string') {
-        nodes.push($createCodeHighlightNode(content, token.type));
-      } else if (
-        Array.isArray(content) &&
-        content.length === 1 &&
-        typeof content[0] === 'string'
-      ) {
-        nodes.push($createCodeHighlightNode(content[0], token.type));
+        nodes.push(...getHighlightNodes([content], token.type));
       } else if (Array.isArray(content)) {
         nodes.push(...getHighlightNodes(content));
       }
     }
-  });
+  }
 
   return nodes;
 }

@@ -104,17 +104,33 @@
   tab-size: 2;
 }
 .PlaygroundEditorTheme__code:before {
-  content: attr(data-gutter);
+  content: '';
   position: absolute;
   background-color: #eee;
   left: 0;
   top: 0;
+  bottom: 0;
   border-right: 1px solid #ccc;
   padding: 8px;
-  color: #777;
   white-space: pre-wrap;
   text-align: right;
   min-width: 25px;
+  counter-reset: line-number;
+}
+.PlaygroundEditorTheme__code > span:first-child,
+.PlaygroundEditorTheme__code > br:first-child,
+.PlaygroundEditorTheme__code > br + span,
+.PlaygroundEditorTheme__code > br + br {
+  counter-increment: line-number;
+}
+.PlaygroundEditorTheme__code > span:first-child:before,
+.PlaygroundEditorTheme__code > br + span:before {
+  color: #777;
+  content: counter(line-number);
+  user-select: none;
+  position: absolute;
+  left: 5px;
+  width: 50px;
 }
 .PlaygroundEditorTheme__table {
   border-collapse: collapse;

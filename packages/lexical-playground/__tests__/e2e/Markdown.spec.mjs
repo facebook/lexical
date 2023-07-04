@@ -103,7 +103,7 @@ test.describe('Markdown', () => {
     },
     {
       expectation:
-        '<code class="PlaygroundEditorTheme__code" spellcheck="false" data-gutter="1" data-highlight-language="javascript"><br></code>',
+        '<code class="PlaygroundEditorTheme__code" spellcheck="false" data-highlight-language="javascript"><br></code>',
       importExpectation: '',
       isBlockTest: true,
       markdownImport: '',
@@ -906,8 +906,7 @@ test.describe('Markdown', () => {
           class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
           spellcheck="false"
           dir="ltr"
-          data-highlight-language="markdown"
-          data-gutter="12">
+          data-highlight-language="markdown">
           <span data-lexical-text="true">Hello</span>
           <br />
           <span
@@ -1144,8 +1143,7 @@ const TYPED_MARKDOWN_HTML = html`
     class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
     spellcheck="false"
     dir="ltr"
-    data-highlight-language="sql"
-    data-gutter="1">
+    data-highlight-language="sql">
     <span data-lexical-text="true">Code block</span>
   </code>
   <p
@@ -1461,8 +1459,7 @@ const IMPORTED_MARKDOWN_HTML = html`
     class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
     spellcheck="false"
     dir="ltr"
-    data-highlight-language="javascript"
-    data-gutter="123">
+    data-highlight-language="javascript">
     <span class="PlaygroundEditorTheme__tokenComment" data-lexical-text="true">
       // Some comments
     </span>

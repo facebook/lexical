@@ -98,7 +98,6 @@ test.describe('Identation', () => {
           class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
           dir="ltr"
           spellcheck="false"
-          data-gutter="1"
           data-highlight-language="javascript">
           <span data-lexical-text="true">code</span>
         </code>
@@ -175,7 +174,6 @@ test.describe('Identation', () => {
           class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
           dir="ltr"
           spellcheck="false"
-          data-gutter="1"
           data-highlight-language="javascript">
           <span data-lexical-text="true">code</span>
         </code>
@@ -267,7 +265,6 @@ test.describe('Identation', () => {
           class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
           dir="ltr"
           spellcheck="false"
-          data-gutter="1"
           data-highlight-language="javascript">
           <span data-lexical-text="true">code</span>
         </code>
@@ -353,7 +350,6 @@ test.describe('Identation', () => {
           class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
           dir="ltr"
           spellcheck="false"
-          data-gutter="1"
           data-highlight-language="javascript">
           <span data-lexical-text="true">code</span>
         </code>
@@ -433,7 +429,6 @@ test.describe('Identation', () => {
           class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
           dir="ltr"
           spellcheck="false"
-          data-gutter="1"
           data-highlight-language="javascript">
           <span data-lexical-text="true">code</span>
         </code>

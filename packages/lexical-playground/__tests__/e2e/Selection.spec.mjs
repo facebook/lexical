@@ -144,8 +144,7 @@ test.describe('Selection', () => {
           class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
           spellcheck="false"
           dir="ltr"
-          data-highlight-language="javascript"
-          data-gutter="1">
+          data-highlight-language="javascript">
           <span data-lexical-text="true">Line2</span>
         </code>
       `,

@@ -323,7 +323,7 @@ function findLast<T, U extends T>(
       return item;
     }
   }
-  return undefined;
+  return null;
 }
 
 function handleNeighbors(

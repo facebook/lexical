@@ -176,3 +176,12 @@ In order to use `LexicalTableOfContents`, you need to pass a callback function i
   }}
 </LexicalTableOfContents>
 ```
+
+### `LexicalEditorRefPlugin`
+
+Allows you to get a ref to the underlying editor instance outside of LexicalComposer, which is convenient when you want to interact with the editor
+from a separate part of your application.
+```jsx
+  const editorRef = useRef(null);
+  <LexicalEditorRefPlugin editorRef={ref}>
+```

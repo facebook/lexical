@@ -82,7 +82,7 @@ export default function CommunityContributors() {
             <a
               href="https://github.com/facebook/lexical/graphs/contributors"
               target="_blank"
-              rel="noopener">
+              rel="noreferrer">
               <Translate
                 id="pages.community.contributors.gitHubLink"
                 description="Link to GitHub's contribute page for the repository">
@@ -108,7 +108,7 @@ export default function CommunityContributors() {
                   className="avatar__name"
                   href={link}
                   target="_blank"
-                  rel="noopener">
+                  rel="noreferrer">
                   {name}
                 </a>
               </div>

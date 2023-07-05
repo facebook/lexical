@@ -48,7 +48,6 @@ test.describe('CodeActionMenu', () => {
           class=\"PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr\"
           dir=\"ltr\"
           spellcheck=\"false\"
-          data-gutter=\"123\"
           data-highlight-language=\"javascript\">
           <span data-lexical-text=\"true\"></span>
           <span class=\"PlaygroundEditorTheme__tokenAttr\" data-lexical-text=\"true\">
@@ -116,7 +115,6 @@ test.describe('CodeActionMenu', () => {
           class=\"PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr\"
           dir=\"ltr\"
           spellcheck=\"false\"
-          data-gutter=\"12345\"
           data-highlight-language=\"javascript\">
           <span data-lexical-text=\"true\"></span>
           <span class=\"PlaygroundEditorTheme__tokenAttr\" data-lexical-text=\"true\">

@@ -11,7 +11,7 @@ import type {RangeSelection} from 'lexical';
 
 import {CodeNode} from '@lexical/code';
 import {createHeadlessEditor} from '@lexical/headless';
-import {$generateHtmlFromNodes} from '@lexical/html';
+import {$generateHtmlFromNodes, $generateHtmlFromRoot} from '@lexical/html';
 import {LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
@@ -149,5 +149,38 @@ describe('HTML', () => {
     });
 
     expect(html).toBe('<p><span>Hello</span></p><p><span>World</span></p>');
+  });
+
+  test(`[Lexical Root -> HTML]: New added node or modification from root should serialize entire editor state`, () => {
+    const editor = createHeadlessEditor({
+      nodes: [
+        HeadingNode,
+        ListNode,
+        ListItemNode,
+        QuoteNode,
+        CodeNode,
+        LinkNode,
+      ],
+    });
+
+    let html = '';
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const p1 = $createParagraphNode();
+        const text1 = $createTextNode('Hello');
+        p1.append(text1);
+        root.append(p1);
+        // Root
+        // - ParagraphNode
+        // -- TextNode "Hello"
+
+        html = $generateHtmlFromRoot(editor, root);
+      },
+      {
+        discrete: true,
+      },
+    );
+    expect(html).toBe('<p><span>Hello</span></p>');
   });
 });

@@ -16,6 +16,7 @@ import type {
   LexicalNode,
   NodeSelection,
   RangeSelection,
+  RootNode,
 } from 'lexical';
 
 import {
@@ -46,6 +47,20 @@ export function $generateNodesFromDOM(
   }
 
   return lexicalNodes;
+}
+
+export function $generateHtmlFromRoot(
+  editor: LexicalEditor,
+  root: RootNode,
+): string {
+  const container = document.createElement('div');
+  const topLevelChildren = root.getChildren();
+
+  for (let i = 0; i < topLevelChildren.length; i++) {
+    const topLevelNode = topLevelChildren[i];
+    $appendNodesToHTML(editor, topLevelNode, container, null);
+  }
+  return container.innerHTML;
 }
 
 export function $generateHtmlFromNodes(

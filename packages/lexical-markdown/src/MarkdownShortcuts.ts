@@ -149,17 +149,17 @@ function runTextMatchTransformers(
 ): boolean {
   let textContent = anchorNode.getTextContent();
 
+  const lastChar = textContent[anchorOffset - 1];
+  const transformers = transformersByTrigger[lastChar];
+  if (transformers == null) {
+    return false;
+  }
+
   const {nodes: prevNodes, textContent: prevTextContent} =
     getAdjacentPrevTextNodesWithAutoLinkNodes(anchorNode);
   const nodes = prevNodes.concat(anchorNode);
   textContent = prevTextContent + textContent;
   const offset = prevTextContent.length + anchorOffset;
-  const lastChar = textContent[offset - 1];
-  const transformers = transformersByTrigger[lastChar];
-
-  if (transformers == null) {
-    return false;
-  }
 
   // If typing in the middle of content, remove the tail to do
   // reg exp match up to a string end (caret position)

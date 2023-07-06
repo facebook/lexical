@@ -28,3 +28,20 @@ import {UNDO_COMMAND, REDO_COMMAND} from 'lexical';
   <Button onClick={() => editor.dispatchCommand(REDO_COMMAND)}>Redo</Button>
 </Toolbar>;
 ```
+
+### Merging history
+
+Every `editor.update()` call creates a new history entry by default. More about that [here](https://lexical.dev/docs/concepts/editor-state#updating-state).  
+If an update should be merged with existing history state (eg. instead of counting as a seperate step in an undo stack), `history-merge` tag should be passed.  
+
+```ts
+editor.update(
+  () => {
+    // update body
+  },
+  {
+    tag: 'history-merge', // prevent this action from being recorded in the undo stack
+  },
+);
+```
+Note that [Node transforms](https://lexical.dev/docs/concepts/transforms) merge history by default and do not create any new history entries.

@@ -244,6 +244,11 @@ function $transferStartingElementPointToTextPoint(
     element.append(target);
   } else {
     placementNode.insertBefore(target);
+    // fix the end point offset if it refers to the same element as start,
+    // as we've now inserted another element before it.
+    if (end.type === 'element' && end.key === start.key) {
+      end.set(end.key, end.offset + 1, 'element');
+    }
   }
   // Transfer the element point to a text point.
   if (start.is(end)) {

@@ -15,7 +15,8 @@ import {
   RangeSelection,
 } from 'lexical';
 
-import {initializeUnitTest} from '../utils';
+import {$createTestDecoratorNode, initializeUnitTest} from '../utils';
+import { $createRangeSelection } from 'lexical/src';
 
 describe('LexicalSelection tests', () => {
   initializeUnitTest((testEnv) => {
@@ -321,6 +322,46 @@ describe('LexicalSelection tests', () => {
 
           //   await insertText({container, editor, method: 'insertNodes'});
           // });
+        });
+
+        describe('transferStartingElementPointToTextPoint', () => {
+          test('transferStartingElementPointToTextPoint', async () => {
+            const {container, editor} = testEnv;
+
+            if (!container) {
+              throw new Error('Expected container to be truthy');
+            }
+
+            await editor.update(() => {
+              const root = $getRoot();
+              if (root.getFirstChild() !== null) {
+                throw new Error('Expected root to be childless');
+              }
+
+              const paragraph = $createParagraphNode();
+              const text = $createTextNode('Text');
+              const image = $createTestDecoratorNode();
+              paragraph.append(
+                text,
+                image,
+              );
+
+              root.append(paragraph);
+
+              expect(root.getTextContent()).toEqual('TextHello world');
+
+              const decoratorIndexInParent = image.getIndexWithinParent();
+              const paragraphKey = paragraph.getKey();
+
+              const selection = $createRangeSelection();
+              selection.anchor.set(paragraphKey, decoratorIndexInParent, 'element');
+              selection.focus.set(paragraphKey, decoratorIndexInParent + 1, 'element');
+
+              selection.insertText('A');
+
+              expect(root.getTextContent()).toEqual('TextA');
+            });
+          });
         });
       });
     });

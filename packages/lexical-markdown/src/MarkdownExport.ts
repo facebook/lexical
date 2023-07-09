@@ -24,9 +24,13 @@ import {
 
 import {transformersByType} from './utils';
 
+export type ExportOptions = Readonly<{
+  node?: ElementNode;
+}>;
+
 export function createMarkdownExport(
   transformers: Array<Transformer>,
-): (node?: ElementNode) => string {
+): (exportOptions?: ExportOptions) => string {
   const byType = transformersByType(transformers);
 
   // Export only uses text formats that are responsible for single format
@@ -35,7 +39,8 @@ export function createMarkdownExport(
     (transformer) => transformer.format.length === 1,
   );
 
-  return (node) => {
+  return (exportOptions) => {
+    const {node} = exportOptions || {};
     const output = [];
     const children = (node || $getRoot()).getChildren();
 

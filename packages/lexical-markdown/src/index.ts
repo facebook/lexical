@@ -7,13 +7,14 @@
  *
  */
 
+import type {ExportOptions} from './MarkdownExport';
+import type {ImportOptions} from './MarkdownImport';
 import type {
   ElementTransformer,
   TextFormatTransformer,
   TextMatchTransformer,
   Transformer,
 } from './MarkdownTransformers';
-import type {ElementNode} from 'lexical';
 
 import {createMarkdownExport} from './MarkdownExport';
 import {createMarkdownImport} from './MarkdownImport';
@@ -72,18 +73,18 @@ const TRANSFORMERS: Array<Transformer> = [
 function $convertFromMarkdownString(
   markdown: string,
   transformers: Array<Transformer> = TRANSFORMERS,
-  node?: ElementNode,
+  importOptions?: ImportOptions,
 ): void {
   const importMarkdown = createMarkdownImport(transformers);
-  return importMarkdown(markdown, node);
+  return importMarkdown(markdown, importOptions);
 }
 
 function $convertToMarkdownString(
   transformers: Array<Transformer> = TRANSFORMERS,
-  node?: ElementNode,
+  exportOptions?: ExportOptions,
 ): string {
   const exportMarkdown = createMarkdownExport(transformers);
-  return exportMarkdown(node);
+  return exportMarkdown(exportOptions);
 }
 
 export {
@@ -97,8 +98,10 @@ export {
   CODE,
   ELEMENT_TRANSFORMERS,
   ElementTransformer,
+  ExportOptions,
   HEADING,
   HIGHLIGHT,
+  ImportOptions,
   INLINE_CODE,
   ITALIC_STAR,
   ITALIC_UNDERSCORE,

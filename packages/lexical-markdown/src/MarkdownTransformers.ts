@@ -276,6 +276,24 @@ export const ORDERED_LIST: ElementTransformer = {
   type: 'element',
 };
 
+/*
+// Removing empty paragraphs as md does not really
+// allow empty lines and uses them as dilimiter
+export const EMPTY_LINE: ElementTransformer = {
+  dependencies: [ParagraphNode],
+  export: () => null,
+  regExp: /^\s{0,3}$/,
+  replace: (node) => {
+    if (!$isParagraphNode(node)) {
+      return null;
+    }
+
+    node.remove();
+  },
+  type: 'element',
+};
+*/
+
 export const INLINE_CODE: TextFormatTransformer = {
   format: ['code'],
   tag: '`',

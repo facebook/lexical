@@ -1258,11 +1258,7 @@ export function $addUpdateTag(tag: string): void {
 
 export function $maybeMoveChildrenSelectionToParent(
   parentNode: LexicalNode,
-  offset = 0,
 ): RangeSelection | NodeSelection | GridSelection | null {
-  if (offset !== 0) {
-    invariant(false, 'TODO');
-  }
   const selection = $getSelection();
   if (!$isRangeSelection(selection) || !$isElementNode(parentNode)) {
     return selection;

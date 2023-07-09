@@ -219,13 +219,12 @@ export default function InlineImageComponent({
         event.preventDefault();
         const node = $getNodeByKey(nodeKey);
         if ($isInlineImageNode(node)) {
-          node?.remove();
+          node.remove();
         }
-        setSelected(false);
       }
       return false;
     },
-    [isSelected, nodeKey, setSelected],
+    [isSelected, nodeKey],
   );
 
   const onEnter = useCallback(

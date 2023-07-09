@@ -26,6 +26,7 @@ import {
 } from '.';
 import {
   $getSelection,
+  $isNodeSelection,
   $isRangeSelection,
   $moveSelectionPointToEnd,
   $updateElementSelectionOnCreateDeleteNode,
@@ -92,6 +93,12 @@ export function removeNode(
       );
       selectionMoved = true;
     }
+  } else if (
+    $isNodeSelection(selection) &&
+    restoreSelection &&
+    nodeToRemove.isSelected()
+  ) {
+    nodeToRemove.selectPrevious();
   }
 
   if ($isRangeSelection(selection) && restoreSelection && !selectionMoved) {

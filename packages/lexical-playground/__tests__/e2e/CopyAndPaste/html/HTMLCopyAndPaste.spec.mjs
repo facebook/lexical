@@ -159,7 +159,6 @@ test.describe('HTML CopyAndPaste', () => {
             {
           </span>
           <br />
-          <span data-lexical-text="true"></span>
           <span
             class="PlaygroundEditorTheme__tokenAttr"
             data-lexical-text="true">

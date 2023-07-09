@@ -20,7 +20,7 @@ declare export var INSERT_LINE_BREAK_COMMAND: LexicalCommand<boolean>;
 declare export var INSERT_PARAGRAPH_COMMAND: LexicalCommand<void>;
 declare export var CONTROLLED_TEXT_INSERTION_COMMAND: LexicalCommand<string>;
 declare export var PASTE_COMMAND: LexicalCommand<ClipboardEvent>;
-declare export var REMOVE_TEXT_COMMAND: LexicalCommand<void>;
+declare export var REMOVE_TEXT_COMMAND: LexicalCommand<InputEvent | null>;
 declare export var DELETE_WORD_COMMAND: LexicalCommand<boolean>;
 declare export var DELETE_LINE_COMMAND: LexicalCommand<boolean>;
 declare export var FORMAT_TEXT_COMMAND: LexicalCommand<TextFormatType>;
@@ -45,8 +45,12 @@ declare export var FORMAT_ELEMENT_COMMAND: LexicalCommand<ElementFormatType>;
 declare export var DRAGSTART_COMMAND: LexicalCommand<DragEvent>;
 declare export var DRAGOVER_COMMAND: LexicalCommand<DragEvent>;
 declare export var DRAGEND_COMMAND: LexicalCommand<DragEvent>;
-declare export var COPY_COMMAND: LexicalCommand<ClipboardEvent>;
-declare export var CUT_COMMAND: LexicalCommand<ClipboardEvent>;
+declare export var COPY_COMMAND: LexicalCommand<
+  ClipboardEvent | KeyboardEvent | null,
+>;
+declare export var CUT_COMMAND: LexicalCommand<
+  ClipboardEvent | KeyboardEvent | null,
+>;
 declare export var CLEAR_EDITOR_COMMAND: LexicalCommand<void>;
 declare export var CLEAR_HISTORY_COMMAND: LexicalCommand<void>;
 declare export var CAN_REDO_COMMAND: LexicalCommand<boolean>;

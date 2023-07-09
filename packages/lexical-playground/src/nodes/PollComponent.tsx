@@ -157,11 +157,10 @@ export default function PollComponent({
         if ($isPollNode(node)) {
           node.remove();
         }
-        setSelected(false);
       }
       return false;
     },
-    [isSelected, nodeKey, setSelected],
+    [isSelected, nodeKey],
   );
 
   useEffect(() => {

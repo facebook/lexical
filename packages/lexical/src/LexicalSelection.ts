@@ -1542,7 +1542,6 @@ export class RangeSelection implements BaseSelection {
       const node = nodes[i];
       if (
         !$isRootOrShadowRoot(target) &&
-        !$isDecoratorNode(target) &&
         $isElementNode(node) &&
         !node.isInline()
       ) {

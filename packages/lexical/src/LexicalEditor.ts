@@ -951,6 +951,10 @@ export class LexicalEditor {
           nextRootElement.classList.add(...classNames);
         }
       } else {
+        // If content editable is unmounted we'll reset editor state back to original
+        // (or pending) editor state since there will be no reconciliation
+        this._editorState = pendingEditorState;
+        this._pendingEditorState = null;
         this._window = null;
       }
 

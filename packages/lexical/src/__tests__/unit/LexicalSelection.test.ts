@@ -9,6 +9,7 @@
 import {$createLinkNode} from '@lexical/link';
 import {
   $createParagraphNode,
+  $createRangeSelection,
   $createTextNode,
   $getRoot,
   LexicalEditor,
@@ -16,7 +17,6 @@ import {
 } from 'lexical';
 
 import {$createTestDecoratorNode, initializeUnitTest} from '../utils';
-import { $createRangeSelection } from 'lexical/src';
 
 describe('LexicalSelection tests', () => {
   initializeUnitTest((testEnv) => {
@@ -341,10 +341,7 @@ describe('LexicalSelection tests', () => {
               const paragraph = $createParagraphNode();
               const text = $createTextNode('Text');
               const image = $createTestDecoratorNode();
-              paragraph.append(
-                text,
-                image,
-              );
+              paragraph.append(text, image);
 
               root.append(paragraph);
 
@@ -354,8 +351,16 @@ describe('LexicalSelection tests', () => {
               const paragraphKey = paragraph.getKey();
 
               const selection = $createRangeSelection();
-              selection.anchor.set(paragraphKey, decoratorIndexInParent, 'element');
-              selection.focus.set(paragraphKey, decoratorIndexInParent + 1, 'element');
+              selection.anchor.set(
+                paragraphKey,
+                decoratorIndexInParent,
+                'element',
+              );
+              selection.focus.set(
+                paragraphKey,
+                decoratorIndexInParent + 1,
+                'element',
+              );
 
               selection.insertText('A');
 

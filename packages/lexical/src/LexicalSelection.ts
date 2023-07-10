@@ -251,7 +251,7 @@ function $transferStartingElementPointToTextPoint(
     if (
       end.type === 'element' &&
       end.key === start.key &&
-      start.offset !== end.offset
+      end.offset !== start.offset
     ) {
       end.set(end.key, end.offset + 1, 'element');
     }

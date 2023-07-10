@@ -9,12 +9,12 @@
 import {$createLinkNode} from '@lexical/link';
 import {
   $createParagraphNode,
+  $createRangeSelection,
   $createTextNode,
   $getRoot,
   LexicalEditor,
   RangeSelection,
 } from 'lexical';
-import {$createRangeSelection} from 'lexical/src';
 
 import {$createTestDecoratorNode, initializeUnitTest} from '../utils';
 

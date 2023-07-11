@@ -1,6 +1,5 @@
 ## v0.11.2 (2023-07-11)
 
-- v0.11.2 Gerard Rovira
 - Flow key down command (#4766) Gerard Rovira
 - Fixes broken trunk (#4763) Maksim Horbachevsky
 - Fix $transferStartingElementPointToTextPoint() (#4756) amyworrall

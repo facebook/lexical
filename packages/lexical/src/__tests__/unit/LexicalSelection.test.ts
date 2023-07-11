@@ -15,7 +15,6 @@ import {
   LexicalEditor,
   RangeSelection,
 } from 'lexical';
-import {$createRangeSelection} from 'lexical/src';
 
 import {$createTestDecoratorNode, initializeUnitTest} from '../utils';
 

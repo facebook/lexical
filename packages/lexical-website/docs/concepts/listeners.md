@@ -115,7 +115,7 @@ removeEditableListener();
 
 ## `registerDecoratorListener`
 
-Get notified when a the editor's decorator object changes. The decorator object contains
+Get notified when the editor's decorator object changes. The decorator object contains
 all `DecoratorNode` keys -> their decorated value. This is primarily used with external
 UI frameworks.
 

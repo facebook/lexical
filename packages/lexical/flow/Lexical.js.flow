@@ -26,6 +26,7 @@ declare export var DELETE_LINE_COMMAND: LexicalCommand<boolean>;
 declare export var FORMAT_TEXT_COMMAND: LexicalCommand<TextFormatType>;
 declare export var UNDO_COMMAND: LexicalCommand<void>;
 declare export var REDO_COMMAND: LexicalCommand<void>;
+declare export var KEY_DOWN_COMMAND: LexicalCommand<KeyboardEvent>;
 declare export var KEY_ARROW_RIGHT_COMMAND: LexicalCommand<KeyboardEvent>;
 declare export var KEY_ARROW_LEFT_COMMAND: LexicalCommand<KeyboardEvent>;
 declare export var KEY_ARROW_UP_COMMAND: LexicalCommand<KeyboardEvent>;

@@ -22,7 +22,7 @@ export function EditorRefPlugin({
   editorRef,
 }: {
   editorRef: React.RefCallback<LexicalEditor> | MutableRefObject<LexicalEditor>;
-}): JSX.Element {
+}): null {
   const [editor] = useLexicalComposerContext();
   if (typeof editorRef === 'function') {
     editorRef(editor);

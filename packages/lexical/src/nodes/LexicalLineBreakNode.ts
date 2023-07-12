@@ -58,13 +58,13 @@ export class LineBreakNode extends LexicalNode {
             ((firstChild as Text).nextSibling === node &&
               (firstChild as Text).nodeType === DOM_TEXT_TYPE &&
               ((firstChild as Text).textContent || '').match(
-                /^[\s|\r?\n|\t]+$/,
+                /^( |\t|\r?\n)+$/,
               ) !== null)) &&
           ((lastChild = parentElement.lastChild) === node ||
             ((lastChild as Text).previousSibling === node &&
               (lastChild as Text).nodeType === DOM_TEXT_TYPE &&
               ((lastChild as Text).textContent || '').match(
-                /^[\s|\r?\n|\t]+$/,
+                /^( |\t|\r?\n)+$/,
               ) !== null))
         ) {
           return null;

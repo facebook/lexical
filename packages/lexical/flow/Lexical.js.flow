@@ -81,8 +81,8 @@ type DecoratorListener = (decorator: {
   [NodeKey]: any,
 }) => void;
 type RootListener = (
-  element: null | HTMLElement,
-  element: null | HTMLElement,
+  rootElement: null | HTMLElement,
+  prevRootElement: null | HTMLElement,
 ) => void;
 type TextContentListener = (text: string) => void;
 type ErrorHandler = (error: Error) => void;

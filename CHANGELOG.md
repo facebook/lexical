@@ -1,5 +1,7 @@
 ## v0.11.2 (2023-07-11)
 
+- Update listeners.md (#4768) mohammadreza490
+- Reset editor state when setting null root (#4762) Maksim Horbachevsky
 - Flow key down command (#4766) Gerard Rovira
 - Fixes broken trunk (#4763) Maksim Horbachevsky
 - Fix $transferStartingElementPointToTextPoint() (#4756) amyworrall

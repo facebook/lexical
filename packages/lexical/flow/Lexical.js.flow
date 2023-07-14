@@ -477,6 +477,7 @@ declare export class RangeSelection implements BaseSelection {
   applyDOMRange(range: StaticRange): void;
   clone(): RangeSelection;
   toggleFormat(format: TextFormatType): void;
+  setStyle(style: string): void;
   hasFormat(type: TextFormatType): boolean;
   insertText(text: string): void;
   insertRawText(text: string): void;

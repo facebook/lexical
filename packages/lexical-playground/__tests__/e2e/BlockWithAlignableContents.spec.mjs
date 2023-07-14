@@ -15,9 +15,9 @@ import {
   insertYouTubeEmbed,
   selectFromAlignDropdown,
   test,
+  YOUTUBE_SAMPLE_URL,
 } from '../utils/index.mjs';
 
-const TEST_URL = 'https://www.youtube-nocookie.com/embed/jNQXAC9IVRw';
 test.describe('BlockWithAlignableContents', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
 
@@ -38,7 +38,7 @@ test.describe('BlockWithAlignableContents', () => {
         </p>
       `,
     );
-    await insertYouTubeEmbed(page, TEST_URL);
+    await insertYouTubeEmbed(page, YOUTUBE_SAMPLE_URL);
     await assertHTML(
       page,
       html`
@@ -54,7 +54,7 @@ test.describe('BlockWithAlignableContents', () => {
               allowfullscreen=""
               frameborder="0"
               height="315"
-              src="${TEST_URL}"
+              src="${YOUTUBE_SAMPLE_URL}"
               title="YouTube video"
               width="560"></iframe>
           </div>
@@ -71,7 +71,7 @@ test.describe('BlockWithAlignableContents', () => {
     test.skip(isPlainText);
     await focusEditor(page);
     await page.keyboard.type('Hello world');
-    await insertYouTubeEmbed(page, TEST_URL);
+    await insertYouTubeEmbed(page, YOUTUBE_SAMPLE_URL);
     await assertHTML(
       page,
       html`
@@ -87,7 +87,7 @@ test.describe('BlockWithAlignableContents', () => {
               allowfullscreen=""
               frameborder="0"
               height="315"
-              src="${TEST_URL}"
+              src="${YOUTUBE_SAMPLE_URL}"
               title="YouTube video"
               width="560"></iframe>
           </div>
@@ -115,7 +115,7 @@ test.describe('BlockWithAlignableContents', () => {
               allowfullscreen=""
               frameborder="0"
               height="315"
-              src="${TEST_URL}"
+              src="${YOUTUBE_SAMPLE_URL}"
               title="YouTube video"
               width="560"></iframe>
           </div>

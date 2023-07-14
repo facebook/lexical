@@ -264,7 +264,8 @@ test.describe('HTML Tables CopyAndPaste', () => {
       page,
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-        <table class="PlaygroundEditorTheme__table disable-selection">
+        <table
+          class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection">
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"

@@ -45,19 +45,17 @@ function HorizontalRuleComponent({nodeKey}: {nodeKey: NodeKey}) {
     useLexicalNodeSelection(nodeKey);
 
   const onDelete = useCallback(
-    (payload: KeyboardEvent) => {
+    (event: KeyboardEvent) => {
       if (isSelected && $isNodeSelection($getSelection())) {
-        const event: KeyboardEvent = payload;
         event.preventDefault();
         const node = $getNodeByKey(nodeKey);
         if ($isHorizontalRuleNode(node)) {
           node.remove();
         }
-        setSelected(false);
       }
       return false;
     },
-    [isSelected, nodeKey, setSelected],
+    [isSelected, nodeKey],
   );
 
   useEffect(() => {

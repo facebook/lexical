@@ -129,7 +129,7 @@ export class CodeNode extends ElementNode {
   }
 
   exportDOM(): DOMExportOutput {
-    const element = document.createElement('code');
+    const element = document.createElement('pre');
     element.setAttribute('spellcheck', 'false');
     const language = this.getLanguage();
     if (language) {
@@ -329,7 +329,11 @@ export function $isCodeNode(
 }
 
 function convertPreElement(domNode: Node): DOMConversionOutput {
-  return {node: $createCodeNode()};
+  let language;
+  if (isHTMLElement(domNode)) {
+    language = domNode.getAttribute(LANGUAGE_DATA_ATTRIBUTE);
+  }
+  return {node: $createCodeNode(language)};
 }
 
 function convertDivElement(domNode: Node): DOMConversionOutput {

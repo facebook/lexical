@@ -79,6 +79,7 @@ import {
   $getNodeByKey,
   $isSelectionCapturedInDecorator,
   $isTokenOrSegmented,
+  $selectAll,
   $setSelection,
   $shouldInsertTextAfterOrBeforeTextNode,
   $updateSelectedTextFromDOM,
@@ -659,7 +660,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
 
       case 'deleteByComposition': {
         if ($canRemoveText(anchorNode, focusNode)) {
-          dispatchCommand(editor, REMOVE_TEXT_COMMAND, undefined);
+          dispatchCommand(editor, REMOVE_TEXT_COMMAND, event);
         }
 
         break;
@@ -667,7 +668,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
 
       case 'deleteByDrag':
       case 'deleteByCut': {
-        dispatchCommand(editor, REMOVE_TEXT_COMMAND, undefined);
+        dispatchCommand(editor, REMOVE_TEXT_COMMAND, event);
         break;
       }
 
@@ -1018,10 +1019,15 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
       } else if (isSelectAll(keyCode, metaKey, ctrlKey)) {
         event.preventDefault();
         editor.update(() => {
-          const root = $getRoot();
-          root.select(0, root.getChildrenSize());
+          $selectAll();
         });
       }
+      // FF does it well (no need to override behavior)
+    } else if (!IS_FIREFOX && isSelectAll(keyCode, metaKey, ctrlKey)) {
+      event.preventDefault();
+      editor.update(() => {
+        $selectAll();
+      });
     }
   }
 

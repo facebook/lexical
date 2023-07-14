@@ -4,6 +4,20 @@ sidebar_position: 2
 
 # Getting Started with React
 
+## Video Tutorials
+
+For a detailed walkthrough of setting up a basic editor with Lexical in React, check out these videos:
+
+[Getting Started with Lexical & React](https://www.youtube.com/watch?v=qIqxvk2qcmo)
+
+[Themes, Nodes, and Rich Text](https://www.youtube.com/watch?v=pIBUFYd9zJY)
+
+[Headings, Lists, Toolbar](https://www.youtube.com/watch?v=5sRh_WXw0WI)
+
+[Creating Nodes and Plugins](https://www.youtube.com/watch?v=abZNazybzvs)
+
+## Code Sample
+
 Install `lexical` and `@lexical/react`:
 
 ```
@@ -65,7 +79,7 @@ function onError(error) {
 
 function Editor() {
   const initialConfig = {
-    namespace: 'MyEditor', 
+    namespace: 'MyEditor',
     theme,
     onError,
   };

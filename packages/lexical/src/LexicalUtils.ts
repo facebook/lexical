@@ -57,6 +57,7 @@ import {
 } from './LexicalConstants';
 import {LexicalEditor} from './LexicalEditor';
 import {flushRootMutations} from './LexicalMutations';
+import {$normalizeSelection} from './LexicalNormalization';
 import {
   errorOnInfiniteTransforms,
   errorOnReadOnly,
@@ -1010,6 +1011,12 @@ export function isSelectAll(
   return keyCode === 65 && controlOrMeta(metaKey, ctrlKey);
 }
 
+export function $selectAll(): void {
+  const root = $getRoot();
+  const selection = root.select(0, root.getChildrenSize());
+  $setSelection($normalizeSelection(selection));
+}
+
 export function getCachedClassNameArray(
   classNamesTheme: EditorThemeClasses,
   classNameThemeType: string,
@@ -1251,11 +1258,7 @@ export function $addUpdateTag(tag: string): void {
 
 export function $maybeMoveChildrenSelectionToParent(
   parentNode: LexicalNode,
-  offset = 0,
 ): RangeSelection | NodeSelection | GridSelection | null {
-  if (offset !== 0) {
-    invariant(false, 'TODO');
-  }
   const selection = $getSelection();
   if (!$isRangeSelection(selection) || !$isElementNode(parentNode)) {
     return selection;

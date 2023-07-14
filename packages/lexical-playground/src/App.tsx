@@ -137,7 +137,7 @@ function App(): JSX.Element {
         <TableContext>
           <SharedAutocompleteContext>
             <header>
-              <a href="https://lexical.dev" target="_blank" rel="noopener">
+              <a href="https://lexical.dev" target="_blank" rel="noreferrer">
                 <img src={logo} alt="Lexical Logo" />
               </a>
             </header>

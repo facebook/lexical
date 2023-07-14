@@ -12,7 +12,7 @@ import {
   $cloneWithProperties,
   $sliceSelectedTextNodeContent,
 } from '@lexical/selection';
-import {$findMatchingParent} from '@lexical/utils';
+import {$findMatchingParent, objectKlassEquals} from '@lexical/utils';
 import {
   $createParagraphNode,
   $createTabNode,
@@ -42,7 +42,11 @@ import {
   SELECTION_CHANGE_COMMAND,
   SerializedTextNode,
 } from 'lexical';
+import {CAN_USE_DOM} from 'shared/canUseDOM';
 import invariant from 'shared/invariant';
+
+const getDOMSelection = (targetWindow: Window | null): Selection | null =>
+  CAN_USE_DOM ? (targetWindow || window).getSelection() : null;
 
 /**
  * Returns the *currently selected* Lexical content as an HTML string, relying on the
@@ -585,13 +589,15 @@ export async function copyToClipboard(
   }
 
   const rootElement = editor.getRootElement();
-  const domSelection = document.getSelection();
+  const windowDocument =
+    editor._window == null ? window.document : editor._window.document;
+  const domSelection = getDOMSelection(editor._window);
   if (rootElement === null || domSelection === null) {
     return false;
   }
-  const element = document.createElement('span');
+  const element = windowDocument.createElement('span');
   element.style.cssText = 'position: fixed; top: -1000px;';
-  element.append(document.createTextNode('#'));
+  element.append(windowDocument.createTextNode('#'));
   rootElement.append(element);
   const range = new Range();
   range.setStart(element, 0);
@@ -602,13 +608,13 @@ export async function copyToClipboard(
     const removeListener = editor.registerCommand(
       COPY_COMMAND,
       (secondEvent) => {
-        if (secondEvent instanceof ClipboardEvent) {
+        if (objectKlassEquals(secondEvent, ClipboardEvent)) {
           removeListener();
           if (clipboardEventTimeout !== null) {
             window.clearTimeout(clipboardEventTimeout);
             clipboardEventTimeout = null;
           }
-          resolve($copyToClipboardEvent(editor, secondEvent));
+          resolve($copyToClipboardEvent(editor, secondEvent as ClipboardEvent));
         }
         // Block the entire copy flow while we wait for the next ClipboardEvent
         return true;
@@ -622,7 +628,7 @@ export async function copyToClipboard(
       clipboardEventTimeout = null;
       resolve(false);
     }, EVENT_LATENCY);
-    document.execCommand('copy');
+    windowDocument.execCommand('copy');
     element.remove();
   });
 }
@@ -632,7 +638,7 @@ function $copyToClipboardEvent(
   editor: LexicalEditor,
   event: ClipboardEvent,
 ): boolean {
-  const domSelection = window.getSelection();
+  const domSelection = getDOMSelection(editor._window);
   if (!domSelection) {
     return false;
   }

@@ -168,7 +168,7 @@ test.describe('Auto Links', () => {
       page,
       html`
         <p dir="ltr">
-          <a href="https://" dir="ltr" rel="noopener">
+          <a href="https://" dir="ltr" rel="noreferrer">
             <span data-lexical-text="true">hm</span>
           </a>
         </p>
@@ -183,7 +183,7 @@ test.describe('Auto Links', () => {
       page,
       html`
         <p dir="ltr">
-          <a href="https://" dir="ltr" rel="noopener">
+          <a href="https://" dir="ltr" rel="noreferrer">
             <span data-lexical-text="true">https://facebook.com</span>
           </a>
         </p>

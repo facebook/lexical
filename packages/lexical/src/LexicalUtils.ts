@@ -954,19 +954,40 @@ export function isMoveToEnd(
 export function isMoveUp(
   keyCode: number,
   ctrlKey: boolean,
+  altKey: boolean,
   metaKey: boolean,
 ): boolean {
-  return isArrowUp(keyCode) && !ctrlKey && !metaKey;
+  return isArrowUp(keyCode) && !ctrlKey && !altKey && !metaKey;
 }
 
 export function isMoveDown(
   keyCode: number,
   ctrlKey: boolean,
+  altKey: boolean,
   metaKey: boolean,
 ): boolean {
-  return isArrowDown(keyCode) && !ctrlKey && !metaKey;
+  return isArrowDown(keyCode) && !ctrlKey && !altKey && !metaKey;
 }
 
+export function isBlockMoveUp(
+  keyCode: number,
+  ctrlKey: boolean,
+  shiftKey: boolean,
+  altKey: boolean,
+  metaKey: boolean,
+): boolean {
+  return isArrowUp(keyCode) && !ctrlKey && !shiftKey && altKey && !metaKey;
+}
+
+export function isBlockMoveDown(
+  keyCode: number,
+  ctrlKey: boolean,
+  shiftKey: boolean,
+  altKey: boolean,
+  metaKey: boolean,
+): boolean {
+  return isArrowDown(keyCode) && !ctrlKey && !shiftKey && altKey && !metaKey;
+}
 export function isModifier(
   ctrlKey: boolean,
   shiftKey: boolean,

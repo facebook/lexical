@@ -18,6 +18,7 @@ import type {
   LexicalEditor,
   LexicalNode,
   NodeKey,
+  NodeSelection,
   ParagraphNode,
   PasteCommandType,
   RangeSelection,
@@ -48,6 +49,7 @@ import {
   $createTabNode,
   $getAdjacentNode,
   $getNearestNodeFromDOMNode,
+  $getNodeByKey,
   $getRoot,
   $getSelection,
   $insertNodes,
@@ -88,6 +90,7 @@ import {
   KEY_DELETE_COMMAND,
   KEY_ENTER_COMMAND,
   KEY_ESCAPE_COMMAND,
+  MOVE_BLOCK_COMMAND,
   OUTDENT_CONTENT_COMMAND,
   PASTE_COMMAND,
   REMOVE_TEXT_COMMAND,
@@ -1034,6 +1037,55 @@ export function registerRichText(editor: LexicalEditor): () => void {
           return true;
         }
 
+        return false;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerCommand<KeyboardEvent>(
+      MOVE_BLOCK_COMMAND,
+      (event) => {
+        const selection = $getSelection() as
+          | NodeSelection
+          | RangeSelection
+          | null;
+        const direction = event.keyCode === 38 ? 'UP' : 'DOWN';
+        const topLevelNodeKeys = editor
+          .getEditorState()
+          .read(() => $getRoot().getChildrenKeys());
+        let neighbour_key = null;
+        let current_block_key = null;
+        let node: LexicalNode | null = null;
+        if (!selection) return false;
+        if ($isRangeSelection(selection)) node = selection.anchor.getNode();
+        else if ($isNodeSelection(selection)) {
+          const nodes: LexicalNode[] | null = selection.getNodes();
+          if (nodes && nodes.length > 0) node = nodes[0];
+        } else return false;
+
+        while (node && !$isRootNode(node.getParent()))
+          node = node.getParent() as LexicalNode;
+        if (node) current_block_key = node.getKey();
+        if (!current_block_key) return false;
+        for (let idx = 0; idx < topLevelNodeKeys.length; idx++) {
+          const key = topLevelNodeKeys[idx];
+          if (key === current_block_key) {
+            if (direction === 'UP' && idx !== 0)
+              neighbour_key = topLevelNodeKeys[idx - 1];
+            else if (
+              direction === 'DOWN' &&
+              idx !== topLevelNodeKeys.length - 1
+            )
+              neighbour_key = topLevelNodeKeys[idx + 1];
+            break;
+          }
+        }
+        if (current_block_key && neighbour_key) {
+          const current_block = $getNodeByKey(current_block_key) as LexicalNode;
+          const target_block = $getNodeByKey(neighbour_key) as LexicalNode;
+          if (direction === 'UP') target_block.insertBefore(current_block);
+          else target_block.insertAfter(current_block);
+          return true;
+        }
         return false;
       },
       COMMAND_PRIORITY_EDITOR,

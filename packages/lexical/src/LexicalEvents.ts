@@ -56,6 +56,7 @@ import {
   KEY_ESCAPE_COMMAND,
   KEY_SPACE_COMMAND,
   KEY_TAB_COMMAND,
+  MOVE_BLOCK_COMMAND,
   MOVE_TO_END,
   MOVE_TO_START,
   PASTE_COMMAND,
@@ -93,6 +94,8 @@ import {
   getNearestEditorFromDOMNode,
   getWindow,
   isBackspace,
+  isBlockMoveDown,
+  isBlockMoveUp,
   isBold,
   isCopy,
   isCut,
@@ -946,9 +949,9 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
     dispatchCommand(editor, KEY_ARROW_LEFT_COMMAND, event);
   } else if (isMoveToStart(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
     dispatchCommand(editor, MOVE_TO_START, event);
-  } else if (isMoveUp(keyCode, ctrlKey, metaKey)) {
+  } else if (isMoveUp(keyCode, ctrlKey, altKey, metaKey)) {
     dispatchCommand(editor, KEY_ARROW_UP_COMMAND, event);
-  } else if (isMoveDown(keyCode, ctrlKey, metaKey)) {
+  } else if (isMoveDown(keyCode, ctrlKey, altKey, metaKey)) {
     dispatchCommand(editor, KEY_ARROW_DOWN_COMMAND, event);
   } else if (isLineBreak(keyCode, shiftKey)) {
     isInsertLineBreak = true;
@@ -1007,6 +1010,11 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
   } else if (isRedo(keyCode, shiftKey, metaKey, ctrlKey)) {
     event.preventDefault();
     dispatchCommand(editor, REDO_COMMAND, undefined);
+  } else if (
+    isBlockMoveUp(keyCode, ctrlKey, shiftKey, altKey, metaKey) ||
+    isBlockMoveDown(keyCode, ctrlKey, shiftKey, altKey, metaKey)
+  ) {
+    dispatchCommand(editor, MOVE_BLOCK_COMMAND, event);
   } else {
     const prevSelection = editor._editorState._selection;
     if ($isNodeSelection(prevSelection)) {

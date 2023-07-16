@@ -47,6 +47,7 @@ import EmojisPlugin from './plugins/EmojisPlugin';
 import EquationsPlugin from './plugins/EquationsPlugin';
 import ExcalidrawPlugin from './plugins/ExcalidrawPlugin';
 import FigmaPlugin from './plugins/FigmaPlugin';
+import FindPlugin from './plugins/FindPlugin';
 import FloatingLinkEditorPlugin from './plugins/FloatingLinkEditorPlugin';
 import FloatingTextFormatToolbarPlugin from './plugins/FloatingTextFormatToolbarPlugin';
 import ImagesPlugin from './plugins/ImagesPlugin';
@@ -151,7 +152,7 @@ export default function Editor(): JSX.Element {
         <ComponentPickerPlugin />
         <EmojiPickerPlugin />
         <AutoEmbedPlugin />
-
+        <FindPlugin />
         <MentionsPlugin />
         <EmojisPlugin />
         <HashtagPlugin />

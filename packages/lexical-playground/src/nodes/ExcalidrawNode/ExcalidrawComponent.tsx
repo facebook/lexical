@@ -57,12 +57,11 @@ export default function ExcalidrawComponent({
           if ($isExcalidrawNode(node)) {
             node.remove();
           }
-          setSelected(false);
         });
       }
       return false;
     },
-    [editor, isSelected, nodeKey, setSelected],
+    [editor, isSelected, nodeKey],
   );
 
   // Set editor to readOnly if excalidraw is open to prevent unwanted changes

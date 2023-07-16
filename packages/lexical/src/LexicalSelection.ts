@@ -244,6 +244,17 @@ function $transferStartingElementPointToTextPoint(
     element.append(target);
   } else {
     placementNode.insertBefore(target);
+    // Fix the end point offset if it refers to the same element as start,
+    // as we've now inserted another element before it. Note that we only
+    // do it if selection is not collapsed as otherwise it'll transfer
+    // both focus and anchor to the text node below
+    if (
+      end.type === 'element' &&
+      end.key === start.key &&
+      end.offset !== start.offset
+    ) {
+      end.set(end.key, end.offset + 1, 'element');
+    }
   }
   // Transfer the element point to a text point.
   if (start.is(end)) {
@@ -2372,7 +2383,7 @@ function moveNativeSelection(
   direction: 'backward' | 'forward' | 'left' | 'right',
   granularity: 'character' | 'word' | 'lineboundary',
 ): void {
-  // @ts-expect-error Selection.modify() method applies a change to the current selection or cursor position,
+  // Selection.modify() method applies a change to the current selection or cursor position,
   // but is still non-standard in some browsers.
   domSelection.modify(alter, direction, granularity);
 }

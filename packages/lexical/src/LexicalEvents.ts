@@ -660,7 +660,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
 
       case 'deleteByComposition': {
         if ($canRemoveText(anchorNode, focusNode)) {
-          dispatchCommand(editor, REMOVE_TEXT_COMMAND, undefined);
+          dispatchCommand(editor, REMOVE_TEXT_COMMAND, event);
         }
 
         break;
@@ -668,7 +668,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
 
       case 'deleteByDrag':
       case 'deleteByCut': {
-        dispatchCommand(editor, REMOVE_TEXT_COMMAND, undefined);
+        dispatchCommand(editor, REMOVE_TEXT_COMMAND, event);
         break;
       }
 

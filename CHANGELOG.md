@@ -1,3 +1,66 @@
+## v0.11.2 (2023-07-11)
+
+- Update listeners.md (#4768) mohammadreza490
+- Reset editor state when setting null root (#4762) Maksim Horbachevsky
+- Flow key down command (#4766) Gerard Rovira
+- Fixes broken trunk (#4763) Maksim Horbachevsky
+- Fix $transferStartingElementPointToTextPoint() (#4756) amyworrall
+- Add video links to Getting Started docs (#4752) Acy Watson
+- Fix missing token type (#4751) Maksim Horbachevsky
+- Add selection adjustments for node removal (#4745) Maksim Horbachevsky
+- Allow preventing text drag (#4749) Maksim Horbachevsky
+- Add EditorRef plugin (#4747) Acy Watson
+- Fix flowtypes for cut/copy commands (#4746) Maksim Horbachevsky
+- Add RangeSelection docs (#4742) Acy Watson
+- Fix multi-line token parsing (#4741) Maksim Horbachevsky
+- Fix code block export (#4702) Maksim Horbachevsky
+- Remove instanceof checks in onPasteForPlainText (#4737) Acy Watson
+- Context Menu Options Added (#4713) Shubhankerism
+- Show excalidraw edit button (#4731) Ibrahim El-bastawisi
+- Fixed drop down buttons to prevent sumbit (#4727) Ou7law007
+- Improve md error message (#4710) Acy Watson
+- Fix: Use $createListItemNode within importJSON to override on deserialization (#4717) Kazu
+- Image resizer fix (#4722) Maksim Horbachevsky
+- Keeping local comments and sharedCommentsArray orders in sync (#4721) Ebad
+- Table selection keyboard controls (#4689) Maksim Horbachevsky
+- correction : line 47 - create -> update (#4704) Abhishek Kumar
+- Allow table selection when cells are already selected (#4699) Peter Cook Bulukin
+- Swap noopener for noreferrer (#4690) Adam Conrad
+- Additional fix for editor._window in lexical-clipboard (#4686) Xinzi Zhou
+- Preserving language and indentation of code block when serialized/deserialized (#4682) Ebad
+- Remove outdated examples (#4684) John Flockton
+- Remove delay from flakey E2E test (#4676) John Flockton
+- Fix dropdown menu position in playground when scroll (#4496) Xinyuan Wang
+- feat: playground inline image plugin (#4423) Anthony Bouch
+- Override selectall on RangeSelection (#4671) Gerard Rovira
+- Normalize select all on NodeSelection (#4664) Gerard Rovira
+- Add columns next to selection (#4663) Peter Cook Bulukin
+- Fix clipboard if content editable is in an iframe. (#4649) Xinzi Zhou
+- Fix reconciler recovery listeners (#4654) Maksim Horbachevsky
+- Check for specific excluded props (#4655) Maksim Horbachevsky
+- Fix ContentEditable Flow types (#4652) Gerard Rovira
+- Import alignment for Heading and Blockquote (#4625) Ivaylo Pavlov
+- Add missing ExportDOM to CodeNode (#4637) Ivaylo Pavlov
+- Add error formating params (#4629) Maksim Horbachevsky
+- Add clipboard documentation (#4631) Acy Watson
+- Add error formating params (#4627) Maksim Horbachevsky
+- Fix issue with syncing yjs changes to Lexical (#4621) Ebad
+- fix issue with dead keys (i.e. backticks) when converting markdown (#4620) Michel Bongard
+- Don't throw error on format element (#4611) John Flockton
+- fix: freeze get style object in DEV env to avoid mutations (#4616) Jatin Ranka
+- TextNode docs (#4606) Acy Watson
+- Fix iOS newline insertion (#4603) Maksim Horbachevsky
+- Add vercel analytics script (#4604) Acy Watson
+- mouseenter event typo fix (#4588) raghvendra
+- Update nodes.md (#4598) navanshu
+- Fix MenuTypeahead position (#4597) Aleksandr Kiliushin
+- Fix uuid bug in `AutocompleteNode.clone()` (#4592) Scott Driggers
+- use selection from state in insertNodeToNearestRoot and insertNodes (#4570) Calvin Leung
+- Allow native shift+arrow selection work over decorator nodes (#4584) John Flockton
+- Fix a11y for ContentEditable (#4580) Max Shypko
+- Another approach to fixing the className cache (#4582) Acy Watson
+- Better Error Message for exportJSON type (#4556) Hao Luo
+
 ## 0.11.1 (2023-05-26)
 
 - Fire selection change on decorator delete (#4555) Acy Watson

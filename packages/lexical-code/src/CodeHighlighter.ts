@@ -353,7 +353,7 @@ function getHighlightNodes(
       if (typeof content === 'string') {
         nodes.push(...getHighlightNodes([content], token.type));
       } else if (Array.isArray(content)) {
-        nodes.push(...getHighlightNodes(content));
+        nodes.push(...getHighlightNodes(content, token.type));
       }
     }
   }

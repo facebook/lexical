@@ -149,8 +149,10 @@ function useOnChange(
 }
 
 function FindTextEntries() {
-  // const [canSubmitFind, setCanSubmitFind] = useState(false);
-  // const [canSubmitReplace, setCanSubmitReplace] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [canSubmitFind, setCanSubmitFind] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [canSubmitReplace, setCanSubmitReplace] = useState(false);
   const [findText, setFindText] = useState('');
   const [replaceText, setReplaceText] = useState('');
   const editorRef = useRef<LexicalEditor>(null);

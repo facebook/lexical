@@ -56,7 +56,6 @@ import {
   KEY_ESCAPE_COMMAND,
   KEY_SPACE_COMMAND,
   KEY_TAB_COMMAND,
-  MOVE_BLOCK_COMMAND,
   MOVE_TO_END,
   MOVE_TO_START,
   PASTE_COMMAND,
@@ -94,8 +93,6 @@ import {
   getNearestEditorFromDOMNode,
   getWindow,
   isBackspace,
-  isBlockMoveDown,
-  isBlockMoveUp,
   isBold,
   isCopy,
   isCut,
@@ -1010,11 +1007,6 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
   } else if (isRedo(keyCode, shiftKey, metaKey, ctrlKey)) {
     event.preventDefault();
     dispatchCommand(editor, REDO_COMMAND, undefined);
-  } else if (
-    isBlockMoveUp(keyCode, ctrlKey, shiftKey, altKey, metaKey) ||
-    isBlockMoveDown(keyCode, ctrlKey, shiftKey, altKey, metaKey)
-  ) {
-    dispatchCommand(editor, MOVE_BLOCK_COMMAND, event);
   } else {
     const prevSelection = editor._editorState._selection;
     if ($isNodeSelection(prevSelection)) {

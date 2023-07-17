@@ -111,5 +111,3 @@ export const BLUR_COMMAND: LexicalCommand<FocusEvent> =
   createCommand('BLUR_COMMAND');
 export const KEY_MODIFIER_COMMAND: LexicalCommand<KeyboardEvent> =
   createCommand('KEY_MODIFIER_COMMAND');
-export const MOVE_BLOCK_COMMAND: LexicalCommand<KeyboardEvent> =
-  createCommand('MOVE_BLOCK_COMMAND');

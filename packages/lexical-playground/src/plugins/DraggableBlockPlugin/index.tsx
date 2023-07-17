@@ -14,11 +14,20 @@ import {
   $getNearestNodeFromDOMNode,
   $getNodeByKey,
   $getRoot,
+  $getSelection,
+  $isNodeSelection,
+  $isRangeSelection,
+  $isRootNode,
   COMMAND_PRIORITY_HIGH,
   COMMAND_PRIORITY_LOW,
+  createCommand,
   DRAGOVER_COMMAND,
   DROP_COMMAND,
+  LexicalCommand,
   LexicalEditor,
+  LexicalNode,
+  NodeSelection,
+  RangeSelection,
 } from 'lexical';
 import * as React from 'react';
 import {DragEvent as ReactDragEvent, useEffect, useRef, useState} from 'react';
@@ -39,6 +48,29 @@ const Upward = -1;
 const Indeterminate = 0;
 
 let prevIndex = Infinity;
+
+export function isBlockMoveUp(
+  keyCode: number,
+  ctrlKey: boolean,
+  shiftKey: boolean,
+  altKey: boolean,
+  metaKey: boolean,
+): boolean {
+  return keyCode === 38 && !ctrlKey && !shiftKey && altKey && !metaKey;
+}
+
+export function isBlockMoveDown(
+  keyCode: number,
+  ctrlKey: boolean,
+  shiftKey: boolean,
+  altKey: boolean,
+  metaKey: boolean,
+): boolean {
+  return keyCode === 40 && !ctrlKey && !shiftKey && altKey && !metaKey;
+}
+
+export const MOVE_BLOCK_COMMAND: LexicalCommand<KeyboardEvent> =
+  createCommand('MOVE_BLOCK_COMMAND');
 
 function getCurrentIndex(keysLength: number): number {
   if (keysLength === 0) {
@@ -328,6 +360,77 @@ function useDraggableBlockMenu(
       ),
     );
   }, [anchorElem, editor]);
+
+  useEffect(() => {
+    const keyDownHandler = (event: KeyboardEvent) => {
+      const {keyCode, shiftKey, ctrlKey, metaKey, altKey} = event;
+      if (
+        isBlockMoveUp(keyCode, ctrlKey, shiftKey, altKey, metaKey) ||
+        isBlockMoveDown(keyCode, ctrlKey, shiftKey, altKey, metaKey)
+      ) {
+        editor.dispatchCommand(MOVE_BLOCK_COMMAND, event);
+      }
+    };
+    const removeRootListener = editor.registerRootListener(
+      (rootElement, prevRootElement) => {
+        rootElement?.addEventListener('keydown', keyDownHandler);
+        prevRootElement?.removeEventListener('keydown', keyDownHandler);
+      },
+    );
+
+    return () => {
+      editor.registerCommand<KeyboardEvent>(
+        MOVE_BLOCK_COMMAND,
+        (event) => {
+          const selection = $getSelection() as
+            | NodeSelection
+            | RangeSelection
+            | null;
+          const direction = event.keyCode === 38 ? 'UP' : 'DOWN';
+          const topLevelNodeKeys = getTopLevelNodeKeys(editor);
+          let neighbour_key = null;
+          let current_block_key = null;
+          let node: LexicalNode | null = null;
+          if (!selection) return false;
+          if ($isRangeSelection(selection)) node = selection.anchor.getNode();
+          else if ($isNodeSelection(selection)) {
+            const nodes: LexicalNode[] | null = selection.getNodes();
+            if (nodes && nodes.length > 0) node = nodes[0];
+          } else return false;
+
+          while (node && !$isRootNode(node.getParent()))
+            node = node.getParent() as LexicalNode;
+          if (node) current_block_key = node.getKey();
+          if (!current_block_key) return false;
+          for (let idx = 0; idx < topLevelNodeKeys.length; idx++) {
+            const key = topLevelNodeKeys[idx];
+            if (key === current_block_key) {
+              if (direction === 'UP' && idx !== 0)
+                neighbour_key = topLevelNodeKeys[idx - 1];
+              else if (
+                direction === 'DOWN' &&
+                idx !== topLevelNodeKeys.length - 1
+              )
+                neighbour_key = topLevelNodeKeys[idx + 1];
+              break;
+            }
+          }
+          if (current_block_key && neighbour_key) {
+            const current_block = $getNodeByKey(
+              current_block_key,
+            ) as LexicalNode;
+            const target_block = $getNodeByKey(neighbour_key) as LexicalNode;
+            if (direction === 'UP') target_block.insertBefore(current_block);
+            else target_block.insertAfter(current_block);
+            return true;
+          }
+          return false;
+        },
+        COMMAND_PRIORITY_HIGH,
+      );
+      removeRootListener();
+    };
+  }, [editor]);
 
   function onDragStart(event: ReactDragEvent<HTMLDivElement>): void {
     const dataTransfer = event.dataTransfer;

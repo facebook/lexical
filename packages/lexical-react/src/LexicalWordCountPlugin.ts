@@ -118,17 +118,26 @@ function getWordCountOfTextNode(text: string): number {
   return wordCountOfTextNode;
 }
 
-export default function WordCountPlugin(): [string[], number] {
+type textNodeKeyToTextNodeCount = Map<NodeKey, number>;
+
+export default function WordCountPlugin(): [
+  textNodeKeyToTextNodeCount,
+  number,
+] {
   const [editor] = useLexicalComposerContext();
   const [wordCount, setWordCount] = useState(0);
-  const [textNodesKeys, setTextNodesKeys] = useState<NodeKey[]>([]);
+  const [
+    textNodeKeyToTextNodeWordCountMap,
+    setTextNodeKeyToTextNodeWordCountMap,
+  ] = useState<textNodeKeyToTextNodeCount>(new Map());
 
   useEffect(() => {
     // Set the intital wordCount state when the plugin is loaded for the first time
     editor.getEditorState().read(() => {
       const root = $getRoot();
       const children = root.getChildren();
-      const initialTextNodesKeys: NodeKey[] = [];
+      const initialTextNodeKeyToTextNodeWordCountMap: textNodeKeyToTextNodeCount =
+        new Map();
       let initialWordCount = 0;
       for (const child of children) {
         if ($isParagraphNode(child)) {
@@ -137,14 +146,19 @@ export default function WordCountPlugin(): [string[], number] {
             const text = textNode.getTextContent();
             const wordCountOfTextNode = getWordCountOfTextNode(text);
             initialWordCount += wordCountOfTextNode;
-            initialTextNodesKeys.push(textNode.getKey());
+            initialTextNodeKeyToTextNodeWordCountMap.set(
+              textNode.getKey(),
+              wordCountOfTextNode,
+            );
           }
         }
       }
-      setTextNodesKeys(initialTextNodesKeys);
+      setTextNodeKeyToTextNodeWordCountMap(
+        initialTextNodeKeyToTextNodeWordCountMap,
+      );
       setWordCount(initialWordCount);
     });
   }, [editor]);
 
-  return [textNodesKeys, wordCount];
+  return [textNodeKeyToTextNodeWordCountMap, wordCount];
 }

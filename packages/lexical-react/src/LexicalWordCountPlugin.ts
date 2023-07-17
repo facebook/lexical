@@ -7,7 +7,14 @@
  */
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$getRoot, $isParagraphNode, NodeKey, TextNode} from 'lexical';
+import {
+  $getNodeByKey,
+  $getRoot,
+  $isParagraphNode,
+  NodeKey,
+  NodeMutation,
+  TextNode,
+} from 'lexical';
 import {useEffect, useState} from 'react';
 
 const PUNCTUATION = [
@@ -132,32 +139,63 @@ export default function WordCountPlugin(): [
   ] = useState<textNodeKeyToTextNodeCount>(new Map());
 
   useEffect(() => {
-    // Set the intital wordCount state when the plugin is loaded for the first time
+    const currentTextNodeKeyToTextNodeWordCountMap: textNodeKeyToTextNodeCount =
+      new Map();
+    let currentWordCount = 0;
+
+    // Set the intital state for wordCount and textNodeKeyToTextNodeWordCountMap when the plugin is loaded for the first time
     editor.getEditorState().read(() => {
       const root = $getRoot();
       const children = root.getChildren();
-      const initialTextNodeKeyToTextNodeWordCountMap: textNodeKeyToTextNodeCount =
-        new Map();
-      let initialWordCount = 0;
       for (const child of children) {
         if ($isParagraphNode(child)) {
           const textNodes: TextNode[] = child.getAllTextNodes();
           for (const textNode of textNodes) {
             const text = textNode.getTextContent();
             const wordCountOfTextNode = getWordCountOfTextNode(text);
-            initialWordCount += wordCountOfTextNode;
-            initialTextNodeKeyToTextNodeWordCountMap.set(
+            currentWordCount += wordCountOfTextNode;
+            currentTextNodeKeyToTextNodeWordCountMap.set(
               textNode.getKey(),
               wordCountOfTextNode,
             );
           }
         }
       }
+
       setTextNodeKeyToTextNodeWordCountMap(
-        initialTextNodeKeyToTextNodeWordCountMap,
+        currentTextNodeKeyToTextNodeWordCountMap,
       );
-      setWordCount(initialWordCount);
+      setWordCount(currentWordCount);
     });
+
+    // Listen to updates to text node mutations and update the state
+    const removeTextNodeMutationListener = editor.registerMutationListener(
+      TextNode,
+      (mutatedNodes: Map<string, NodeMutation>) => {
+        editor.getEditorState().read(() => {
+          for (const [nodeKey, mutation] of mutatedNodes) {
+            if (mutation === 'created') {
+              const textNode = $getNodeByKey(nodeKey);
+              if (textNode !== null) {
+                const textContent = textNode.getTextContent();
+                const wordCountOfTextNode = getWordCountOfTextNode(textContent);
+                currentTextNodeKeyToTextNodeWordCountMap.set(
+                  nodeKey,
+                  wordCountOfTextNode,
+                );
+                currentWordCount += wordCountOfTextNode;
+              }
+            }
+          }
+          setTextNodeKeyToTextNodeWordCountMap(
+            currentTextNodeKeyToTextNodeWordCountMap,
+          );
+          setWordCount(currentWordCount);
+        });
+      },
+    );
+
+    return removeTextNodeMutationListener;
   }, [editor]);
 
   return [textNodeKeyToTextNodeWordCountMap, wordCount];

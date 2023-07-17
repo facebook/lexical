@@ -99,23 +99,23 @@ function getWordCountOfTextNode(text: string): number {
 
   // eslint-disable-next-line no-misleading-character-class
   const regex = new RegExp(common + '[' + cjk + jp + kr + ']', 'g');
-  let finalTextWords: string[] = [];
+  let wordCountOfTextNode = 0;
   words.forEach((word: string) => {
-    // Stores the matached charecters so we can treat them as seperate words (as per the grammer of these langaues)
-    const charecterWords = [];
+    // Stores the count of matached charecters so we can treat them as seperate words (as per the grammer of these langaues)
+    let singleCharecterWordsCount = 0;
     let matched;
     do {
       matched = regex.exec(word);
-      if (matched) charecterWords.push(matched[0]);
+      if (matched) singleCharecterWordsCount++;
     } while (matched);
-    if (charecterWords.length === 0) {
-      finalTextWords.push(word);
+    if (singleCharecterWordsCount === 0) {
+      wordCountOfTextNode++;
     } else {
-      finalTextWords = finalTextWords.concat(charecterWords);
+      wordCountOfTextNode += singleCharecterWordsCount;
     }
   });
 
-  return finalTextWords.length;
+  return wordCountOfTextNode;
 }
 
 export default function WordCountPlugin(): [string[], number] {

@@ -185,6 +185,22 @@ export default function WordCountPlugin(): [
                 );
                 currentWordCount += wordCountOfTextNode;
               }
+            } else if (mutation === 'updated') {
+              const textNode = $getNodeByKey(nodeKey);
+              if (textNode !== null) {
+                const textContent = textNode.getTextContent();
+                const oldWordCountOfTextNode =
+                  currentTextNodeKeyToTextNodeWordCountMap.get(nodeKey);
+                const updatedWordCountOfTextNode =
+                  getWordCountOfTextNode(textContent);
+                currentTextNodeKeyToTextNodeWordCountMap.set(
+                  nodeKey,
+                  updatedWordCountOfTextNode,
+                );
+                if (oldWordCountOfTextNode !== undefined)
+                  currentWordCount -= oldWordCountOfTextNode;
+                currentWordCount += updatedWordCountOfTextNode;
+              }
             }
           }
           setTextNodeKeyToTextNodeWordCountMap(

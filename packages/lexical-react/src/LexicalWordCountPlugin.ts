@@ -201,6 +201,12 @@ export default function WordCountPlugin(): [
                   currentWordCount -= oldWordCountOfTextNode;
                 currentWordCount += updatedWordCountOfTextNode;
               }
+            } else if (mutation === 'destroyed') {
+              const wordCountOfTextNode =
+                currentTextNodeKeyToTextNodeWordCountMap.get(nodeKey);
+              if (wordCountOfTextNode !== undefined)
+                currentWordCount -= wordCountOfTextNode;
+              currentTextNodeKeyToTextNodeWordCountMap.delete(nodeKey);
             }
           }
           setTextNodeKeyToTextNodeWordCountMap(

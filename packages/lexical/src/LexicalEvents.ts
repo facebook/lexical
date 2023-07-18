@@ -344,6 +344,25 @@ function onSelectionChange(
         let hasTextNodes = false;
 
         const nodes = selection.getNodes();
+
+        if (
+          selection.getTextContent().startsWith('\n') &&
+          selection.getTextContent().endsWith('\n')
+        ) {
+          nodes.shift();
+          nodes.pop();
+        } else if (
+          selection.getTextContent().startsWith('\n') &&
+          !selection.getTextContent().endsWith('\n')
+        ) {
+          nodes.shift();
+        } else if (
+          !selection.getTextContent().startsWith('\n') &&
+          selection.getTextContent().endsWith('\n')
+        ) {
+          nodes.pop();
+        }
+
         const nodesLength = nodes.length;
         for (let i = 0; i < nodesLength; i++) {
           const node = nodes[i];

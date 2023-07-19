@@ -1,3 +1,14 @@
+## v0.11.3 (2023-07-18)
+
+- RFC Add prev editor state for mutation listener (#4796) Maksim Horbachevsky
+- Fix  Cant convert paragraph into a header if the first child of the paragraph is a LineBreakNode (#4776) Naveen
+- Add setStyle to Flow types (#4780) Acy Watson
+- Fix width reflow in columns when resizing tables (#4775) Karam Qaoud
+- package.lock (#4769) Gerard Rovira
+- Remove duplicate declaration (#4772) Roman Gafiatullin
+- fix Return LexicalEditorRefPlugin as valid JSX (#4771) Thomas Sauques
+- Update TS to 5.1.x (#4695) Georgii Dolzhykov
+
 ## v0.11.2 (2023-07-11)
 
 - Update listeners.md (#4768) mohammadreza490

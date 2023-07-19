@@ -10,7 +10,6 @@ Lexical tries to make theming straight-forward, by providing a way of passing a 
 const exampleTheme = {
   ltr: 'ltr',
   rtl: 'rtl',
-  placeholder: 'editor-placeholder',
   paragraph: 'editor-paragraph',
 };
 ```
@@ -47,14 +46,21 @@ passing it as a property of the `initialConfig` to `<LexicalComposer>`, like sho
 
 ```jsx
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
+import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
+import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {exampleTheme} from './exampleTheme';
+import LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary';
 
 const initialConfig = {namespace: 'MyEditor', theme: exampleTheme};
 
 export default function Editor() {
   return (
     <LexicalComposer initialConfig={initialConfig}>
-      <div className="editor-container">...</div>
+      <PlainTextPlugin
+        contentEditable={<ContentEditable />}
+        placeholder={<div className="editor-placeholder">Enter some text...</div>}
+        ErrorBoundary={LexicalErrorBoundary}
+      />
     </LexicalComposer>
   );
 }
@@ -77,7 +83,6 @@ Many of the Lexical's core nodes also accept theming properties. Here's a more c
 const exampleTheme = {
   ltr: 'ltr',
   rtl: 'rtl',
-  placeholder: 'editor-placeholder',
   paragraph: 'editor-paragraph',
   quote: 'editor-quote',
   heading: {

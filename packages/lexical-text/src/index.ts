@@ -251,8 +251,8 @@ export function registerLexicalTextEntity<T extends TextNode>(
           if (diff > 0) {
             const concatText = text.slice(0, diff);
             const newTextContent = previousText + concatText;
-            prevSibling.select();
             prevSibling.setTextContent(newTextContent);
+            prevSibling.select();
 
             if (diff === text.length) {
               node.remove();

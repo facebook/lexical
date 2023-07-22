@@ -347,20 +347,6 @@ function onSelectionChange(
         const nodes = selection.getNodes();
         if (
           selection.getTextContent().startsWith('\n') &&
-          selection.getTextContent().endsWith('\n') &&
-          ((anchorNode.getTextContentSize() === anchor.offset &&
-            focus.offset === 0) ||
-            (focusNode.getTextContentSize() === focus.offset &&
-              anchor.offset === 0))
-        ) {
-          if ($isTextNode(nodes[0])) {
-            nodes.shift();
-          }
-          if ($isTextNode(nodes[nodes.length - 1])) {
-            nodes.pop();
-          }
-        } else if (
-          selection.getTextContent().startsWith('\n') &&
           !selection.getTextContent().endsWith('\n') &&
           (anchorNode.getTextContentSize() === anchor.offset ||
             focusNode.getTextContentSize() === focus.offset) &&

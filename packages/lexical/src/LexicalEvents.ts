@@ -353,6 +353,13 @@ function onSelectionChange(
           $isTextNode(nodes[0])
         ) {
           nodes.shift();
+        } else if (
+          !selection.getTextContent().startsWith('\n') &&
+          selection.getTextContent().endsWith('\n') &&
+          (anchor.offset === 0 || focus.offset === 0) &&
+          $isTextNode(nodes[nodes.length - 1])
+        ) {
+          nodes.pop();
         }
 
         const nodesLength = nodes.length;

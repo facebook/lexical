@@ -10,7 +10,7 @@ import type {EditorState, LexicalEditor} from 'lexical';
 
 import {createRectsFromDOMRange} from '@lexical/selection';
 import {mergeRegister} from '@lexical/utils';
-import {$getSelection, $isRangeSelection} from 'lexical';
+import {$getSelection, $isRangeSelection, TextNode} from 'lexical';
 import {v4 as uuidv4} from 'uuid';
 
 const mutationObserverConfig = {

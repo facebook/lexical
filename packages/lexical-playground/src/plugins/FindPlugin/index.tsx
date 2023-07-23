@@ -392,6 +392,7 @@ export default function FindPlugin(): JSX.Element {
                   }
                   if (oldNode?.getTextContent()?.indexOf(findText) === 0) {
                     // oldNode.setStyle('background-color: yellow;'); // TODO: Wrap with MarkNode here
+                    oldNode.select();
                     lexicalMarkSelection(mainEditor);
                   }
                   if (oldNode?.getTextContent()?.length > 0) {

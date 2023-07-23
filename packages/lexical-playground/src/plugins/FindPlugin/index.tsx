@@ -45,6 +45,7 @@ import CommentEditorTheme from '../../themes/CommentEditorTheme';
 import Button from '../../ui/Button';
 import ContentEditable from '../../ui/ContentEditable';
 import Placeholder from '../../ui/Placeholder';
+import {lexicalMarkSelection} from './helpers';
 
 export const FIND_TEXT_COMMAND: LexicalCommand<string | RegExp> =
   createCommand('FIND_TEXT_COMMAND');
@@ -390,7 +391,8 @@ export default function FindPlugin(): JSX.Element {
                     );
                   }
                   if (oldNode?.getTextContent()?.indexOf(findText) === 0) {
-                    oldNode.setStyle('background-color: yellow;'); // TODO: Wrap with MarkNode here
+                    // oldNode.setStyle('background-color: yellow;'); // TODO: Wrap with MarkNode here
+                    lexicalMarkSelection(mainEditor);
                   }
                   if (oldNode?.getTextContent()?.length > 0) {
                     indexingS = newNode?.getTextContent()?.indexOf(findText);

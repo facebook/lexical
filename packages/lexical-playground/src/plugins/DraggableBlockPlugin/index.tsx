@@ -59,6 +59,7 @@ function getBlockElement(
   anchorElem: HTMLElement,
   editor: LexicalEditor,
   event: MouseEvent,
+  useEdgeAsDefault = false,
 ): HTMLElement | null {
   const anchorElementRect = anchorElem.getBoundingClientRect();
   const topLevelNodeKeys = getTopLevelNodeKeys(editor);
@@ -66,6 +67,30 @@ function getBlockElement(
   let blockElem: HTMLElement | null = null;
 
   editor.getEditorState().read(() => {
+    if (useEdgeAsDefault) {
+      const [firstNode, lastNode] = [
+        editor.getElementByKey(topLevelNodeKeys[0]),
+        editor.getElementByKey(topLevelNodeKeys[topLevelNodeKeys.length - 1]),
+      ];
+
+      const [firstNodeRect, lastNodeRect] = [
+        firstNode?.getBoundingClientRect(),
+        lastNode?.getBoundingClientRect(),
+      ];
+
+      if (firstNodeRect && lastNodeRect) {
+        if (event.y < firstNodeRect.top) {
+          blockElem = firstNode;
+        } else if (event.y > lastNodeRect.bottom) {
+          blockElem = lastNode;
+        }
+
+        if (blockElem) {
+          return;
+        }
+      }
+    }
+
     let index = getCurrentIndex(topLevelNodeKeys.length);
     let direction = Indeterminate;
 
@@ -260,7 +285,7 @@ function useDraggableBlockMenu(
       if (!isHTMLElement(target)) {
         return false;
       }
-      const targetBlockElem = getBlockElement(anchorElem, editor, event);
+      const targetBlockElem = getBlockElement(anchorElem, editor, event, true);
       const targetLineElem = targetLineRef.current;
       if (targetBlockElem === null || targetLineElem === null) {
         return false;
@@ -288,7 +313,7 @@ function useDraggableBlockMenu(
       if (!isHTMLElement(target)) {
         return false;
       }
-      const targetBlockElem = getBlockElement(anchorElem, editor, event);
+      const targetBlockElem = getBlockElement(anchorElem, editor, event, true);
       if (!targetBlockElem) {
         return false;
       }

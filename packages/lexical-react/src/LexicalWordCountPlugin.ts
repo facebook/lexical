@@ -18,6 +18,8 @@ import {
 } from 'lexical';
 import {useEffect, useState} from 'react';
 
+import {MentionNode} from './../../lexical-playground/src/nodes/MentionNode';
+
 const PUNCTUATION = [
   ',',
   '，',
@@ -218,6 +220,52 @@ export default function WordCountPlugin(): [
       },
     );
 
+    const removeMentionNodeMutationListener = editor.registerMutationListener(
+      MentionNode,
+      (mutatedNodes: Map<string, NodeMutation>) => {
+        editor.getEditorState().read(() => {
+          for (const [nodeKey, mutation] of mutatedNodes) {
+            if (mutation === 'created') {
+              const mentionNode = $getNodeByKey(nodeKey);
+              if (mentionNode !== null) {
+                const textContent = mentionNode.getTextContent();
+                const wordCountOfMentionNodeText =
+                  getWordCountOfTextNode(textContent);
+                currentTextNodeKeyToTextNodeWordCountMap.set(
+                  nodeKey,
+                  wordCountOfMentionNodeText,
+                );
+                currentWordCount += wordCountOfMentionNodeText;
+              }
+            } else if (mutation === 'updated') {
+              const mentionNode = $getNodeByKey(nodeKey);
+              if (mentionNode !== null) {
+                const textContent = mentionNode.getTextContent();
+                const oldWordCountOfMentionNodeText =
+                  currentTextNodeKeyToTextNodeWordCountMap.get(nodeKey);
+                const updatedWordCountOfMentionNodeText =
+                  getWordCountOfTextNode(textContent);
+                currentTextNodeKeyToTextNodeWordCountMap.set(
+                  nodeKey,
+                  updatedWordCountOfMentionNodeText,
+                );
+                if (oldWordCountOfMentionNodeText !== undefined)
+                  currentWordCount -= oldWordCountOfMentionNodeText;
+                currentWordCount += updatedWordCountOfMentionNodeText;
+              }
+            } else if (mutation === 'destroyed') {
+              const wordCountOfMentionNodeText =
+                currentTextNodeKeyToTextNodeWordCountMap.get(nodeKey);
+              if (wordCountOfMentionNodeText !== undefined)
+                currentWordCount -= wordCountOfMentionNodeText;
+              currentTextNodeKeyToTextNodeWordCountMap.delete(nodeKey);
+            }
+          }
+          setWordCount(currentWordCount);
+        });
+      },
+    );
+
     const removeHashtagNodeMutationListener = editor.registerMutationListener(
       HashtagNode,
       (mutatedNodes: Map<string, NodeMutation>) => {
@@ -238,6 +286,7 @@ export default function WordCountPlugin(): [
 
     return () => {
       removeTextNodeMutationListener();
+      removeMentionNodeMutationListener();
       removeHashtagNodeMutationListener();
     };
   }, [editor]);

@@ -2839,8 +2839,7 @@ export function internalCreateRangeSelection(
       (eventType === 'click' &&
         windowEvent &&
         (windowEvent as InputEvent).detail === 3) ||
-      eventType === 'drop' ||
-      eventType === undefined);
+      eventType === 'drop');
   let anchorDOM, focusDOM, anchorOffset, focusOffset;
 
   if (!$isRangeSelection(lastSelection) || useDOMSelection) {

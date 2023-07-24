@@ -6,6 +6,7 @@
  *
  */
 
+import {HashtagNode} from '@lexical/hashtag';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $getNodeByKey,
@@ -72,7 +73,7 @@ const PUNCTUATION = [
 
 // Got from https://github.com/byn9826/words-count/blob/master/src/globalWordsCount.js
 function getWordCountOfTextNode(text: string): number {
-  if (text.length === 0 || text.trim() === '') return 0;
+  if (text.length === 0 || text.trim().length === 0) return 0;
 
   // Change punctuation to empty space
   const punctuationRegex = new RegExp('\\' + PUNCTUATION.join(' '), 'g');
@@ -217,7 +218,28 @@ export default function WordCountPlugin(): [
       },
     );
 
-    return removeTextNodeMutationListener;
+    const removeHashtagNodeMutationListener = editor.registerMutationListener(
+      HashtagNode,
+      (mutatedNodes: Map<string, NodeMutation>) => {
+        editor.getEditorState().read(() => {
+          for (const [nodeKey, mutation] of mutatedNodes) {
+            if (mutation === 'created') {
+              currentWordCount++;
+              currentTextNodeKeyToTextNodeWordCountMap.set(nodeKey, 1);
+            } else if (mutation === 'destroyed') {
+              currentWordCount--;
+              currentTextNodeKeyToTextNodeWordCountMap.delete(nodeKey);
+            }
+          }
+          setWordCount(currentWordCount);
+        });
+      },
+    );
+
+    return () => {
+      removeTextNodeMutationListener();
+      removeHashtagNodeMutationListener();
+    };
   }, [editor]);
 
   return [textNodeKeyToTextNodeWordCountMap, wordCount];

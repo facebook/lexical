@@ -13,3 +13,4 @@ sidebar_position: 4
 - iOS 11+ (Safari)
 - iPad OS 13+ (Safari)
 - Android Chrome 72+
+- IE 11+

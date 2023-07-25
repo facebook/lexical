@@ -30,6 +30,7 @@
   },
   "devDependencies": {
     "buffer": "^6.0.3",
+    "tailwindcss": "^3.3.3",
     "webpack": "^5.76.0"
   },
   "browserslist": {

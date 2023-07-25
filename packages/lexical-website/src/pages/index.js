@@ -6,6 +6,8 @@
  *
  */
 
+import '../css/tailwind.css';
+
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import HomepageExamples from '@site/src/components/HomepageExamples';

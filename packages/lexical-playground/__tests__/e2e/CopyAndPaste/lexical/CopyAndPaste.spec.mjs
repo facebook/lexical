@@ -829,6 +829,29 @@ test.describe('CopyAndPaste', () => {
     );
   });
 
+  test('Copy paste html divs', async ({page, isPlainText}) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await pasteFromClipboard(page, {
+      'text/html': '<div>a</div><div>b</div>',
+    });
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">a</span>
+        </p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">b</span>
+        </p>
+      `,
+    );
+  });
+
   test('Copy + paste multi-line plain text into rich text produces separate paragraphs', async ({
     page,
     isPlainText,

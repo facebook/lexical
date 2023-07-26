@@ -829,7 +829,7 @@ test.describe('CopyAndPaste', () => {
     );
   });
 
-  test('Copy paste html divs', async ({page, isPlainText}) => {
+  test('Copy + paste html divs', async ({page, isPlainText}) => {
     test.skip(isPlainText);
     await focusEditor(page);
     await pasteFromClipboard(page, {

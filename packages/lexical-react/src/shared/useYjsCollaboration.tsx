@@ -26,6 +26,8 @@ import {
   $getRoot,
   $getSelection,
   BLUR_COMMAND,
+  CAN_REDO_COMMAND,
+  CAN_UNDO_COMMAND,
   COMMAND_PRIORITY_EDITOR,
   FOCUS_COMMAND,
   REDO_COMMAND,
@@ -292,6 +294,35 @@ export function useYjsHistory(
   const clearHistory = useCallback(() => {
     undoManager.clear();
   }, [undoManager]);
+
+  // Exposing undo and redo states
+  const [canUndo, setCanUndo] = React.useState(
+    undoManager.undoStack.length > 0,
+  );
+  const [canRedo, setCanRedo] = React.useState(
+    undoManager.redoStack.length > 0,
+  );
+  React.useEffect(() => {
+    editor.dispatchCommand(CAN_UNDO_COMMAND, canUndo);
+  }, [canUndo, editor]);
+  React.useEffect(() => {
+    editor.dispatchCommand(CAN_REDO_COMMAND, canRedo);
+  }, [canRedo, editor]);
+  React.useEffect(() => {
+    const updateUndoRedoStates = () => {
+      setCanUndo(undoManager.undoStack.length > 0);
+      setCanRedo(undoManager.redoStack.length > 0);
+    };
+    undoManager.on('stack-item-added', updateUndoRedoStates);
+    undoManager.on('stack-item-popped', updateUndoRedoStates);
+    undoManager.on('stack-cleared', updateUndoRedoStates);
+    return () => {
+      undoManager.off('stack-item-added', updateUndoRedoStates);
+      undoManager.off('stack-item-popped', updateUndoRedoStates);
+      undoManager.off('stack-cleared', updateUndoRedoStates);
+    };
+  }, [undoManager]);
+
   return clearHistory;
 }
 

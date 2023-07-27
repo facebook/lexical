@@ -55,6 +55,37 @@ function getTopLevelNodeKeys(editor: LexicalEditor): string[] {
   return editor.getEditorState().read(() => $getRoot().getChildrenKeys());
 }
 
+function getCollapsedMargins(elem: HTMLElement): {
+  marginTop: number;
+  marginBottom: number;
+} {
+  const getMargin = (
+    element: Element | null,
+    margin: 'marginTop' | 'marginBottom',
+  ): number =>
+    element ? parseFloat(window.getComputedStyle(element)[margin]) : 0;
+
+  const {marginTop, marginBottom} = window.getComputedStyle(elem);
+  const prevElemSiblingMarginBottom = getMargin(
+    elem.previousElementSibling,
+    'marginBottom',
+  );
+  const nextElemSiblingMarginTop = getMargin(
+    elem.nextElementSibling,
+    'marginTop',
+  );
+  const collapsedTopMargin = Math.max(
+    parseFloat(marginTop),
+    prevElemSiblingMarginBottom,
+  );
+  const collapsedBottomMargin = Math.max(
+    parseFloat(marginBottom),
+    nextElemSiblingMarginTop,
+  );
+
+  return {marginBottom: collapsedBottomMargin, marginTop: collapsedTopMargin};
+}
+
 function getBlockElement(
   anchorElem: HTMLElement,
   editor: LexicalEditor,
@@ -102,13 +133,13 @@ function getBlockElement(
       }
       const point = new Point(event.x, event.y);
       const domRect = Rect.fromDOM(elem);
-      const {marginTop, marginBottom} = window.getComputedStyle(elem);
+      const {marginTop, marginBottom} = getCollapsedMargins(elem);
 
       const rect = domRect.generateNewRect({
-        bottom: domRect.bottom + parseFloat(marginBottom),
+        bottom: domRect.bottom + marginBottom,
         left: anchorElementRect.left,
         right: anchorElementRect.right,
-        top: domRect.top - parseFloat(marginTop),
+        top: domRect.top - marginTop,
       });
 
       const {
@@ -192,18 +223,17 @@ function setTargetLine(
   mouseY: number,
   anchorElem: HTMLElement,
 ) {
-  const targetStyle = window.getComputedStyle(targetBlockElem);
   const {top: targetBlockElemTop, height: targetBlockElemHeight} =
     targetBlockElem.getBoundingClientRect();
   const {top: anchorTop, width: anchorWidth} =
     anchorElem.getBoundingClientRect();
 
+  const {marginTop, marginBottom} = getCollapsedMargins(targetBlockElem);
   let lineTop = targetBlockElemTop;
-  // At the bottom of the target
-  if (mouseY - targetBlockElemTop > targetBlockElemHeight / 2) {
-    lineTop += targetBlockElemHeight + parseFloat(targetStyle.marginBottom);
+  if (mouseY >= targetBlockElemTop) {
+    lineTop += targetBlockElemHeight + marginBottom / 2;
   } else {
-    lineTop -= parseFloat(targetStyle.marginTop);
+    lineTop -= marginTop / 2;
   }
 
   const top = lineTop - anchorTop - TARGET_LINE_HALF_HEIGHT;
@@ -324,9 +354,8 @@ function useDraggableBlockMenu(
       if (targetNode === draggedNode) {
         return true;
       }
-      const {top, height} = targetBlockElem.getBoundingClientRect();
-      const shouldInsertAfter = pageY - top > height / 2;
-      if (shouldInsertAfter) {
+      const targetBlockElemTop = targetBlockElem.getBoundingClientRect().top;
+      if (pageY >= targetBlockElemTop) {
         targetNode.insertAfter(draggedNode);
       } else {
         targetNode.insertBefore(draggedNode);

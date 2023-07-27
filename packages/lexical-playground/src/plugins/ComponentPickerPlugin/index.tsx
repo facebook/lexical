@@ -125,37 +125,30 @@ export default function ComponentPickerMenuPlugin(): JSX.Element {
       return options;
     }
 
-    const fullTableRegex = new RegExp(/^([1-9]|10)x([1-9]|10)$/);
-    const partialTableRegex = new RegExp(/^([1-9]|10)x?$/);
+    const fullTableRegex = /^([1-9]|10)x([1-9]|10)$/;
+    const partialTableRegex = /^([1-9]|10)x?$/;
 
-    const fullTableMatch = fullTableRegex.exec(queryString);
-    const partialTableMatch = partialTableRegex.exec(queryString);
-
-    if (fullTableMatch) {
-      const [rows, columns] = fullTableMatch[0]
-        .split('x')
-        .map((n: string) => parseInt(n, 10));
+    if (fullTableRegex.test(queryString)) {
+      const [rows, columns] = queryString.split('x');
 
       options.push(
         new ComponentPickerOption(`${rows}x${columns} Table`, {
           icon: <i className="icon table" />,
           keywords: ['table'],
           onSelect: () =>
-            // @ts-ignore Correct types, but since they're dynamic TS doesn't like it.
             editor.dispatchCommand(INSERT_TABLE_COMMAND, {columns, rows}),
         }),
       );
-    } else if (partialTableMatch) {
-      const rows = parseInt(partialTableMatch[0], 10);
+    } else if (partialTableRegex.test(queryString)) {
+      const rows = String(parseInt(queryString, 10));
 
       options.push(
-        ...Array.from({length: 5}, (_, i) => i + 1).map(
+        ...[1, 2, 3, 4, 5].map(String).map(
           (columns) =>
             new ComponentPickerOption(`${rows}x${columns} Table`, {
               icon: <i className="icon table" />,
               keywords: ['table'],
               onSelect: () =>
-                // @ts-ignore Correct types, but since they're dynamic TS doesn't like it.
                 editor.dispatchCommand(INSERT_TABLE_COMMAND, {columns, rows}),
             }),
         ),
@@ -178,7 +171,7 @@ export default function ComponentPickerMenuPlugin(): JSX.Element {
             }
           }),
       }),
-      ...Array.from({length: 3}, (_, i) => i + 1).map(
+      ...([1, 2, 3] as const).map(
         (n) =>
           new ComponentPickerOption(`Heading ${n}`, {
             icon: <i className={`icon h${n}`} />,
@@ -187,10 +180,7 @@ export default function ComponentPickerMenuPlugin(): JSX.Element {
               editor.update(() => {
                 const selection = $getSelection();
                 if ($isRangeSelection(selection)) {
-                  $setBlocksType(selection, () =>
-                    // @ts-ignore Correct types, but since they're dynamic TS doesn't like it.
-                    $createHeadingNode(`h${n}`),
-                  );
+                  $setBlocksType(selection, () => $createHeadingNode(`h${n}`));
                 }
               }),
           }),
@@ -325,30 +315,26 @@ export default function ComponentPickerMenuPlugin(): JSX.Element {
         onSelect: () =>
           editor.dispatchCommand(INSERT_COLLAPSIBLE_COMMAND, undefined),
       }),
-      ...['left', 'center', 'right', 'justify'].map(
+      ...(['left', 'center', 'right', 'justify'] as const).map(
         (alignment) =>
           new ComponentPickerOption(`Align ${alignment}`, {
             icon: <i className={`icon ${alignment}-align`} />,
             keywords: ['align', 'justify', alignment],
             onSelect: () =>
-              // @ts-ignore Correct types, but since they're dynamic TS doesn't like it.
               editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, alignment),
           }),
       ),
     ];
 
-    const dynamicOptions = getDynamicOptions();
-
     return queryString
       ? [
-          ...dynamicOptions,
+          ...getDynamicOptions(),
           ...baseOptions.filter((option) => {
-            return new RegExp(queryString, 'gi').exec(option.title) ||
-              option.keywords != null
-              ? option.keywords.some((keyword) =>
-                  new RegExp(queryString, 'gi').exec(keyword),
-                )
-              : false;
+            const regex = new RegExp(queryString, 'i');
+            return (
+              regex.test(option.title) ||
+              option.keywords?.some((keyword) => regex.test(keyword))
+            );
           }),
         ]
       : baseOptions;
@@ -362,9 +348,7 @@ export default function ComponentPickerMenuPlugin(): JSX.Element {
       matchingString: string,
     ) => {
       editor.update(() => {
-        if (nodeToRemove) {
-          nodeToRemove.remove();
-        }
+        nodeToRemove?.remove();
         selectedOption.onSelect(matchingString);
         closeMenu();
       });

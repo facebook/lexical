@@ -13,6 +13,7 @@ import {LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {$getRoot, $insertNodes} from 'lexical';
+import {$createParagraphNode, $getSelection} from 'lexical/src';
 
 import {
   $convertFromMarkdownString,
@@ -21,6 +22,7 @@ import {
   TextMatchTransformer,
   TRANSFORMERS,
 } from '../..';
+import {generateHtmlFromMarked} from './utils';
 
 describe('Markdown', () => {
   type Input = Array<{
@@ -29,6 +31,72 @@ describe('Markdown', () => {
     skipExport?: true;
     skipImport?: true;
   }>;
+
+  it('should escape a literal asterisk when using an external markdown parser', () => {
+    const editor = createHeadlessEditor({
+      nodes: [
+        HeadingNode,
+        ListNode,
+        ListItemNode,
+        QuoteNode,
+        CodeNode,
+        LinkNode,
+      ],
+    });
+
+    let htmlFromMarked: string = '';
+    editor.update(() => {
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+      root.append(paragraph);
+      paragraph.select();
+      $getSelection()?.insertText(`a*1.5 + b*0.15`);
+      const md = $convertToMarkdownString(TRANSFORMERS);
+      htmlFromMarked = generateHtmlFromMarked(md);
+    });
+
+    expect(htmlFromMarked).toBe('<p>a*1.5 + b*0.15</p>');
+  });
+
+  it('should escape a literal asterisk when using the Lexical markdown import strategy', () => {
+    const editor = createHeadlessEditor({
+      nodes: [
+        HeadingNode,
+        ListNode,
+        ListItemNode,
+        QuoteNode,
+        CodeNode,
+        LinkNode,
+      ],
+    });
+
+    let md: string = '';
+    editor.update(() => {
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+      root.append(paragraph);
+      paragraph.select();
+      $getSelection()?.insertText(`a*1.5 + b*0.15`);
+      md = $convertToMarkdownString(TRANSFORMERS);
+    });
+
+    editor.update(
+      () =>
+        $convertFromMarkdownString(md, [
+          ...TRANSFORMERS,
+          HIGHLIGHT_TEXT_MATCH_IMPORT,
+        ]),
+      {
+        discrete: true,
+      },
+    );
+
+    expect(
+      editor.getEditorState().read(() => $generateHtmlFromNodes(editor)),
+    ).toBe(
+      `<p><span>a</span><span>*</span><span>1.5 + b</span><span>*</span><span>0.15</span></p>`,
+    );
+  });
 
   const URL = 'https://lexical.dev';
 

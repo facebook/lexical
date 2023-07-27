@@ -27,7 +27,12 @@ import {
 import invariant from 'shared/invariant';
 
 import {TRANSFORMERS} from '.';
+import {escapedMarkdownTags} from './MarkdownImport';
 import {indexBy, PUNCTUATION_OR_SPACE, transformersByType} from './utils';
+
+function isEscapedTag(nodeKey?: string) {
+  return [...escapedMarkdownTags.values()].find((key) => key === nodeKey);
+}
 
 function runElementTransformers(
   parentNode: ElementNode,
@@ -185,7 +190,7 @@ function runTextFormatTransformers(
         break;
       }
 
-      if ($isTextNode(sibling)) {
+      if ($isTextNode(sibling) && !isEscapedTag(sibling.getKey())) {
         const siblingTextContent = sibling.getTextContent();
         openNode = sibling;
         openTagStartIndex = getOpenTagStartIndex(

@@ -38,8 +38,11 @@ const CODE_BLOCK_REG_EXP = /^```(\w{1,10})?\s?$/;
 type TextFormatTransformersIndex = Readonly<{
   fullMatchRegExpByTag: Readonly<Record<string, RegExp>>;
   openTagsRegExp: RegExp;
+  escapedTagsRegExp: RegExp;
   transformersByTag: Readonly<Record<string, TextFormatTransformer>>;
 }>;
+
+export const escapedMarkdownTags = new Set<string>();
 
 export function createMarkdownImport(
   transformers: Array<Transformer>,
@@ -135,6 +138,13 @@ function importBlocks(
     textMatchTransformers,
   );
 
+  const formattedTextNodes = elementNode
+    .getChildren()
+    .filter((child) => $isTextNode(child)) as TextNode[];
+
+  for (const formattedTextNode of formattedTextNodes)
+    importEscapedTags(formattedTextNode, textFormatTransformersIndex);
+
   // If no transformer found and we left with original paragraph node
   // can check if its content can be appended to the previous node
   // if it's a paragraph, quote or list
@@ -165,6 +175,54 @@ function importBlocks(
       }
     }
   }
+}
+
+function importEscapedTags(
+  textNode: TextNode,
+  textFormatTransformersIndex: TextFormatTransformersIndex,
+  remainingNodes: TextNode[] = [],
+): TextNode[] {
+  const text = textNode.getTextContent();
+  const firstMatch = textFormatTransformersIndex.escapedTagsRegExp.exec(text);
+  const secondMatch = textFormatTransformersIndex.escapedTagsRegExp.exec(text);
+  const match = firstMatch || secondMatch;
+
+  if (!match) return [...remainingNodes, textNode];
+
+  const start = match.index || 0;
+  const end = start + match[0].length;
+
+  let tagNode, leftTextNode, rightTextNode;
+
+  if (start === 0) {
+    [tagNode, rightTextNode] = textNode.splitText(end);
+  } else {
+    [leftTextNode, tagNode, rightTextNode] = textNode.splitText(start, end);
+  }
+
+  const tag = tagNode.getTextContent().replace('\\', '');
+  tagNode.setTextContent(tag);
+  tagNode.setMode('segmented');
+  escapedMarkdownTags.add(tagNode.getKey());
+
+  if (leftTextNode)
+    remainingNodes = [
+      ...importEscapedTags(
+        leftTextNode,
+        textFormatTransformersIndex,
+        remainingNodes,
+      ),
+    ];
+  if (rightTextNode)
+    remainingNodes = [
+      ...importEscapedTags(
+        rightTextNode,
+        textFormatTransformersIndex,
+        remainingNodes,
+      ),
+    ];
+
+  return remainingNodes;
 }
 
 function importCodeBlock(
@@ -213,7 +271,7 @@ function importTextFormatTransformers(
 
   if (!match) {
     // Once text format processing is done run text match transformers, as it
-    // only can span within single text node (unline formats that can cover multiple nodes)
+    // only can span within single text node (unlike formats that can cover multiple nodes)
     importTextMatchTransformers(textNode, textMatchTransformers);
     return;
   }
@@ -387,15 +445,43 @@ function createTextFormatTransformersIndex(
     }
   }
 
+  const TAGS = ['`', '=', '\\*', '_', '~'];
+
   return {
-    // Reg exp to find open tag + content + close tag
-    fullMatchRegExpByTag,
-    // Reg exp to find opening tags
-    openTagsRegExp: new RegExp(
+    
+    // Reg exp to find escaped tags (e.g. \*, \~, \`, etc.)
+escapedTagsRegExp: new RegExp(
       (IS_SAFARI || IS_IOS || IS_APPLE_WEBKIT ? '' : `${escapeRegExp}`) +
-        '(' +
-        openTagsRegExp.join('|') +
-        ')',
+        TAGS.reduce(
+          (prev, curr, index, arr) =>
+            prev +
+            '(' +
+            `\\\\${curr}` +
+            ')' +
+            (index !== arr.length - 1 ? '|' : ''),
+          '',
+        ),
+      'g',
+    ),
+    
+    
+// Reg exp to find open tag + content + close tag
+fullMatchRegExpByTag,
+    
+    // Reg exp to find opening tags
+openTagsRegExp: new RegExp(
+      (IS_SAFARI || IS_IOS || IS_APPLE_WEBKIT ? '' : `${escapeRegExp}`) +
+        // do not allow the regex to match a tag (e.g: *,_,~,=) preceded by a backslash, (e.g. \* or \_),
+        // because those tags should be escaped and treated as normal text, not as markdown formatting
+        openTagsRegExp.reduce(
+          (prev, curr, index, arr) =>
+            prev +
+            '(' +
+            `(?<!\\\\)${curr}` +
+            ')' +
+            (index !== arr.length - 1 ? '|' : ''),
+          '',
+        ),
       'g',
     ),
     transformersByTag,

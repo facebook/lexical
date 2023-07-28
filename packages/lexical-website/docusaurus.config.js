@@ -62,6 +62,16 @@ const config = {
         watch: process.env.TYPEDOC_WATCH === 'true',
       },
     ],
+    async function tailwindcss() {
+      return {
+        configurePostCss(postcssOptions) {
+          postcssOptions.plugins.push(require('tailwindcss'));
+          postcssOptions.plugins.push(require('autoprefixer'));
+          return postcssOptions;
+        },
+        name: 'docusaurus-tailwindcss',
+      };
+    },
   ],
   presets: [
     [

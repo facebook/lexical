@@ -296,22 +296,16 @@ export function useYjsHistory(
   }, [undoManager]);
 
   // Exposing undo and redo states
-  const [canUndo, setCanUndo] = React.useState(
-    undoManager.undoStack.length > 0,
-  );
-  const [canRedo, setCanRedo] = React.useState(
-    undoManager.redoStack.length > 0,
-  );
-  React.useEffect(() => {
-    editor.dispatchCommand(CAN_UNDO_COMMAND, canUndo);
-  }, [canUndo, editor]);
-  React.useEffect(() => {
-    editor.dispatchCommand(CAN_REDO_COMMAND, canRedo);
-  }, [canRedo, editor]);
   React.useEffect(() => {
     const updateUndoRedoStates = () => {
-      setCanUndo(undoManager.undoStack.length > 0);
-      setCanRedo(undoManager.redoStack.length > 0);
+      editor.dispatchCommand(
+        CAN_UNDO_COMMAND,
+        undoManager.undoStack.length > 0,
+      );
+      editor.dispatchCommand(
+        CAN_REDO_COMMAND,
+        undoManager.redoStack.length > 0,
+      );
     };
     undoManager.on('stack-item-added', updateUndoRedoStates);
     undoManager.on('stack-item-popped', updateUndoRedoStates);
@@ -321,7 +315,7 @@ export function useYjsHistory(
       undoManager.off('stack-item-popped', updateUndoRedoStates);
       undoManager.off('stack-cleared', updateUndoRedoStates);
     };
-  }, [undoManager]);
+  }, [editor, undoManager]);
 
   return clearHistory;
 }

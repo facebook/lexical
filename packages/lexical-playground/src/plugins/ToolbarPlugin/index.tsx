@@ -91,6 +91,7 @@ import {
   InsertImagePayload,
 } from '../ImagesPlugin';
 import {InsertInlineImageDialog} from '../InlineImagePlugin';
+import {INSERT_PAGE_BREAK} from '../PageBreakPlugin';
 import {InsertPollDialog} from '../PollPlugin';
 import {InsertNewTableDialog, InsertTableDialog} from '../TablePlugin';
 
@@ -887,6 +888,14 @@ export default function ToolbarPlugin(): JSX.Element {
               className="item">
               <i className="icon horizontal-rule" />
               <span className="text">Horizontal Rule</span>
+            </DropDownItem>
+            <DropDownItem
+              onClick={() => {
+                activeEditor.dispatchCommand(INSERT_PAGE_BREAK, undefined);
+              }}
+              className="item">
+              <i className="icon page-break" />
+              <span className="text">Page Break</span>
             </DropDownItem>
             <DropDownItem
               onClick={() => {

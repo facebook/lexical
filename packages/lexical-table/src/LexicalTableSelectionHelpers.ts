@@ -6,6 +6,7 @@
  *
  */
 
+import type {TableCellNode} from './LexicalTableCellNode';
 import type {TableNode} from './LexicalTableNode';
 import type {Cell, Cells, Grid} from './LexicalTableSelection';
 import type {
@@ -18,7 +19,6 @@ import type {
   TextFormatType,
 } from 'lexical';
 
-import {$isTableNode, TableCellNode} from '@lexical/table';
 import {$findMatchingParent} from '@lexical/utils';
 import {
   $createParagraphNode,
@@ -50,6 +50,7 @@ import {
 import invariant from 'shared/invariant';
 
 import {$isTableCellNode} from './LexicalTableCellNode';
+import {$isTableNode} from './LexicalTableNode';
 import {TableSelection} from './LexicalTableSelection';
 
 const LEXICAL_ELEMENT_KEY = '__lexicalTableSelection';

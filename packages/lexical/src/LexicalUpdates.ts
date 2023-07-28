@@ -594,7 +594,13 @@ export function commitPendingUpdates(
   }
 
   if (mutatedNodes !== null) {
-    triggerMutationListeners(editor, mutatedNodes, tags, dirtyLeaves);
+    triggerMutationListeners(
+      editor,
+      mutatedNodes,
+      tags,
+      dirtyLeaves,
+      currentEditorState,
+    );
   }
   if (
     !$isRangeSelection(pendingSelection) &&
@@ -653,6 +659,7 @@ function triggerMutationListeners(
   mutatedNodes: MutatedNodes,
   updateTags: Set<string>,
   dirtyLeaves: Set<string>,
+  prevEditorState: EditorState,
 ): void {
   const listeners = Array.from(editor._listeners.mutation);
   const listenersLength = listeners.length;
@@ -663,6 +670,7 @@ function triggerMutationListeners(
     if (mutatedNodesByType !== undefined) {
       listener(mutatedNodesByType, {
         dirtyLeaves,
+        prevEditorState,
         updateTags,
       });
     }

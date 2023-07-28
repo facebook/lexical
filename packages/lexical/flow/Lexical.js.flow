@@ -88,7 +88,11 @@ type TextContentListener = (text: string) => void;
 type ErrorHandler = (error: Error) => void;
 export type MutationListener = (
   nodes: Map<NodeKey, NodeMutation>,
-  {updateTags: Set<string>, dirtyLeaves: Set<string>},
+  {
+    updateTags: Set<string>,
+    dirtyLeaves: Set<string>,
+    prevEditorState: EditorState,
+  },
 ) => void;
 export type EditableListener = (editable: boolean) => void;
 type Listeners = {

@@ -1180,10 +1180,7 @@ function convertTextDOMNode(domNode: Node): DOMConversionOutput {
     }
     return {node: nodes};
   }
-  textContent = textContent
-    .replace(/\r?\n|\t/gm, ' ')
-    .replace('\r', '')
-    .replace(/\s+/g, ' ');
+  textContent = textContent.replace(/\r/g, '').replace(/[ \t\n]+/g, ' ');
   if (textContent === '') {
     return {node: null};
   }
@@ -1199,7 +1196,7 @@ function convertTextDOMNode(domNode: Node): DOMConversionOutput {
     ) {
       const previousTextContent = previousText.textContent || '';
       if (previousTextContent.length > 0) {
-        if (previousTextContent.match(/(?:\s|\r?\n|\t)$/)) {
+        if (/[ \t\n]$/.test(previousTextContent)) {
           textContent = textContent.slice(1);
         }
         isStartOfLine = false;
@@ -1219,7 +1216,7 @@ function convertTextDOMNode(domNode: Node): DOMConversionOutput {
       (nextText = findTextInLine(nextText, true)) !== null
     ) {
       const nextTextContent = (nextText.textContent || '').replace(
-        /^[\s|\r?\n|\t]+/,
+        /^( |\t|\r?\n)+/,
         '',
       );
       if (nextTextContent.length > 0) {

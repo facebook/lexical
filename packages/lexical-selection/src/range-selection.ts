@@ -24,6 +24,7 @@ import {
   $isDecoratorNode,
   $isElementNode,
   $isLeafNode,
+  $isLineBreakNode,
   $isRangeSelection,
   $isRootNode,
   $isRootOrShadowRoot,
@@ -92,7 +93,10 @@ function isBlock(node: LexicalNode): boolean {
 
   const firstChild = node.getFirstChild();
   const isLeafElement =
-    firstChild === null || $isTextNode(firstChild) || firstChild.isInline();
+    firstChild === null ||
+    $isLineBreakNode(firstChild) ||
+    $isTextNode(firstChild) ||
+    firstChild.isInline();
 
   return !node.isInline() && node.canBeEmpty() !== false && isLeafElement;
 }

@@ -8,15 +8,12 @@
 
 import Translate from '@docusaurus/Translate';
 import CommunityHeaderSvg from '@site/static/img/community-header.svg';
-import clsx from 'clsx';
 import React from 'react';
-
-import styles from './styles.module.css';
 
 export default function CommunityHeader() {
   return (
-    <div className="row">
-      <div className={clsx('col col--6', styles.textContainer)}>
+    <div className="grid items-center gap-8 lg:grid-cols-2">
+      <div className="flex flex-col">
         <h1>
           <Translate
             id="pages.community.header.title"
@@ -24,6 +21,7 @@ export default function CommunityHeader() {
             We're here to help
           </Translate>
         </h1>
+
         <p>
           <Translate
             id="pages.community.header.subtext"
@@ -34,9 +32,8 @@ export default function CommunityHeader() {
           </Translate>
         </p>
       </div>
-      <div className="col col--6">
-        <CommunityHeaderSvg />
-      </div>
+
+      <CommunityHeaderSvg />
     </div>
   );
 }

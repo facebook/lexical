@@ -56,6 +56,10 @@ export class ParagraphNode extends ElementNode {
 
   static importDOM(): DOMConversionMap | null {
     return {
+      div: (node: Node) => ({
+        conversion: () => ({node: $createParagraphNode()}),
+        priority: 0,
+      }),
       p: (node: Node) => ({
         conversion: convertParagraphElement,
         priority: 0,

@@ -20,7 +20,6 @@ import {
   DecoratorNode,
   DOMConversionMap,
   DOMConversionOutput,
-  DOMExportOutput,
   KEY_BACKSPACE_COMMAND,
   KEY_DELETE_COMMAND,
   LexicalNode,
@@ -126,10 +125,6 @@ export class PageBreakNode extends DecoratorNode<JSX.Element> {
       type: this.getType(),
       version: 1,
     };
-  }
-
-  exportDOM(): DOMExportOutput {
-    return {element: this.createDOM()};
   }
 
   createDOM(): HTMLElement {

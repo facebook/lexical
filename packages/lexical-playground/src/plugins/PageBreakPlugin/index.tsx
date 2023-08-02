@@ -35,9 +35,8 @@ export default function PageBreakPlugin(): JSX.Element | null {
         () => {
           const selection = $getSelection();
 
-          if (!$isRangeSelection(selection)) {
-            return false;
-          }
+          if (!$isRangeSelection(selection)) return false;
+          
 
           const focusNode = selection.focus.getNode();
           if (focusNode !== null) {

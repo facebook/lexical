@@ -41,6 +41,7 @@ import {INSERT_COLLAPSIBLE_COMMAND} from '../CollapsiblePlugin';
 import {InsertEquationDialog} from '../EquationsPlugin';
 import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawPlugin';
 import {INSERT_IMAGE_COMMAND, InsertImageDialog} from '../ImagesPlugin';
+import {INSERT_PAGE_BREAK} from '../PageBreakPlugin';
 import {InsertPollDialog} from '../PollPlugin';
 import {InsertNewTableDialog, InsertTableDialog} from '../TablePlugin';
 
@@ -264,6 +265,11 @@ export default function ComponentPickerMenuPlugin(): JSX.Element {
         keywords: ['horizontal rule', 'divider', 'hr'],
         onSelect: () =>
           editor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND, undefined),
+      }),
+      new ComponentPickerOption('Page Break', {
+        icon: <i className="icon page-break" />,
+        keywords: ['page break', 'divider'],
+        onSelect: () => editor.dispatchCommand(INSERT_PAGE_BREAK, undefined),
       }),
       new ComponentPickerOption('Excalidraw', {
         icon: <i className="icon diagram-2" />,

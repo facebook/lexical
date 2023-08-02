@@ -561,6 +561,11 @@ i.prettier-error {
   background-image: url(images/icons/prettier-error.svg);
 }
 
+i.page-break,
+.icon.page-break {
+  background-image: url(images/icons/scissors.svg);
+}
+
 .link-editor .button.active,
 .toolbar .button.active {
   background-color: rgb(223, 232, 250);

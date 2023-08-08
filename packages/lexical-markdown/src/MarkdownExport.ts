@@ -6,20 +6,23 @@
  *
  */
 
-import type {
-  ElementTransformer,
-  TextFormatTransformer,
-  TextMatchTransformer,
-  Transformer,
+import {
+  type ElementTransformer,
+  type TextFormatTransformer,
+  type TextMatchTransformer,
+  type Transformer,
+  LINK,
 } from '@lexical/markdown';
-import type {ElementNode, LexicalNode, TextFormatType, TextNode} from 'lexical';
-
 import {
   $getRoot,
   $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
   $isTextNode,
+  ElementNode,
+  LexicalNode,
+  TextFormatType,
+  TextNode,
 } from 'lexical';
 
 import {transformersByType} from './utils';
@@ -140,6 +143,15 @@ function exportTextFormat(
   let output = frozenString;
 
   const applied = new Set();
+
+  // Before adding the markdown tags to formatted text nodes
+  // escape any tags that are part of the text content
+  const TAGS = ['`', '=', '*', '_', '~'];
+  TAGS.forEach((tag) => {
+    if (node.hasFormat('code') || output.match(LINK.regExp)) return;
+    const outputWithEscapedTag = output.replaceAll(tag, `\\${tag}`);
+    output = outputWithEscapedTag;
+  });
 
   for (const transformer of textTransformers) {
     const format = transformer.format[0];

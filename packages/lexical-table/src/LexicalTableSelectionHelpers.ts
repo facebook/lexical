@@ -627,11 +627,12 @@ export function getTableGrid(tableElement: HTMLElement): Grid {
       // @ts-expect-error: internal field
       currentNode._cell = cell;
 
-      if (cells[y] === undefined) {
-        cells[y] = [];
+      let row = cells[y];
+      if (row === undefined) {
+        row = cells[y] = [];
       }
 
-      cells[y][x] = cell;
+      row[x] = cell;
     } else {
       const child = currentNode.firstChild;
 
@@ -707,9 +708,15 @@ export function $forEachGridCell(
 
   for (let y = 0; y < cells.length; y++) {
     const row = cells[y];
+    if (!row) {
+      continue;
+    }
 
     for (let x = 0; x < row.length; x++) {
       const cell = row[x];
+      if (!cell) {
+        continue;
+      }
       const lexicalNode = $getNearestNodeFromDOMNode(cell.elem);
 
       if (lexicalNode !== null) {

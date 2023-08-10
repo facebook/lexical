@@ -95,6 +95,8 @@ export const COPY_COMMAND: LexicalCommand<
 export const CUT_COMMAND: LexicalCommand<
   ClipboardEvent | KeyboardEvent | null
 > = createCommand('CUT_COMMAND');
+export const SELECT_ALL_COMMAND: LexicalCommand<KeyboardEvent> =
+  createCommand('SELECT_ALL_COMMAND');
 export const CLEAR_EDITOR_COMMAND: LexicalCommand<void> = createCommand(
   'CLEAR_EDITOR_COMMAND',
 );

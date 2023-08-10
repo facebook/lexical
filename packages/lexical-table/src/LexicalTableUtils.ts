@@ -621,7 +621,7 @@ export function $unmergeCell(): void {
     for (let i = 1; i < rowSpan; i++) {
       const currentRow = startRow + i;
       const currentRowMap = map[currentRow];
-      currentRowNode = row.getNextSibling();
+      currentRowNode = (currentRowNode ?? row).getNextSibling();
       invariant(
         DEPRECATED_$isGridRowNode(currentRowNode),
         'Expected row next sibling to be a row',

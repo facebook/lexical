@@ -90,7 +90,9 @@ export class TableNode extends DEPRECATED_GridNode {
           const newElement = tableElement.cloneNode() as ParentNode;
           const colGroup = document.createElement('colgroup');
           const tBody = document.createElement('tbody');
-          tBody.append(...tableElement.children);
+          if (tableElement instanceof HTMLElement) {
+            tBody.append(...tableElement.children);
+          }
           const firstRow = this.getFirstChildOrThrow<TableRowNode>();
 
           if (!$isTableRowNode(firstRow)) {

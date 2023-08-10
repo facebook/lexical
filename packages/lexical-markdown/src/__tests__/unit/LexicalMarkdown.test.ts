@@ -165,6 +165,11 @@ describe('Markdown', () => {
       md: `Hello [world](${URL})! Hello $world$! [Hello](${URL}) world! Hello $world$!`,
       skipExport: true,
     },
+    // We should not render non-link markdown as a link
+    {
+      html: '<p><span>![alt text](https://lexical.dev/image.jpeg)</span></p>',
+      md: '![alt text](https://lexical.dev/image.jpeg)',
+    },
   ];
 
   const HIGHLIGHT_TEXT_MATCH_IMPORT: TextMatchTransformer = {

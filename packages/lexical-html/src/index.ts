@@ -22,6 +22,7 @@ import {
   $cloneWithProperties,
   $sliceSelectedTextNodeContent,
 } from '@lexical/selection';
+import {isHTMLElement} from '@lexical/utils';
 import {$getRoot, $isElementNode, $isTextNode} from 'lexical';
 
 /**
@@ -119,7 +120,7 @@ function $appendNodesToHTML(
   }
 
   if (shouldInclude && !shouldExclude) {
-    if (element instanceof HTMLElement) {
+    if (isHTMLElement(element)) {
       element.append(fragment);
     }
     parentElement.append(element);

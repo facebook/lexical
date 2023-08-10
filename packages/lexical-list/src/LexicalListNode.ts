@@ -143,7 +143,7 @@ export class ListNode extends ElementNode {
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const {element} = super.exportDOM(editor);
-    if (element && element instanceof HTMLElement) {
+    if (element && isHTMLElement(element)) {
       if (this.__start !== 1) {
         element.setAttribute('start', String(this.__start));
       }

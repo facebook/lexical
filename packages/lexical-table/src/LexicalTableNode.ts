@@ -19,7 +19,7 @@ import type {
   SerializedElementNode,
 } from 'lexical';
 
-import {addClassNamesToElement} from '@lexical/utils';
+import {addClassNamesToElement, isHTMLElement} from '@lexical/utils';
 import {
   $applyNodeReplacement,
   $getNearestNodeFromDOMNode,
@@ -90,7 +90,7 @@ export class TableNode extends DEPRECATED_GridNode {
           const newElement = tableElement.cloneNode() as ParentNode;
           const colGroup = document.createElement('colgroup');
           const tBody = document.createElement('tbody');
-          if (tableElement instanceof HTMLElement) {
+          if (isHTMLElement(tableElement)) {
             tBody.append(...tableElement.children);
           }
           const firstRow = this.getFirstChildOrThrow<TableRowNode>();

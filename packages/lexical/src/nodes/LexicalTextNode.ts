@@ -1081,6 +1081,9 @@ function convertSpanElement(domNode: Node): DOMConversionOutput {
       if (!$isTextNode(lexicalNode)) {
         return lexicalNode;
       }
+
+      lexicalNode.setStyle(span.style.cssText)
+
       if (hasBoldFontWeight) {
         lexicalNode.toggleFormat('bold');
       }
@@ -1116,6 +1119,8 @@ function convertBringAttentionToElement(domNode: Node): DOMConversionOutput {
       if ($isTextNode(lexicalNode) && !hasNormalFontWeight) {
         lexicalNode.toggleFormat('bold');
       }
+
+      lexicalNode.setStyle(b.style.cssText)
 
       return lexicalNode;
     },
@@ -1283,7 +1288,7 @@ const nodeNameToTextFormat: Record<string, TextFormatType> = {
   u: 'underline',
 };
 
-function convertTextFormatElement(domNode: Node): DOMConversionOutput {
+function convertTextFormatElement(domNode: Node & { style: { cssText: string } }): DOMConversionOutput {
   const format = nodeNameToTextFormat[domNode.nodeName.toLowerCase()];
   if (format === undefined) {
     return {node: null};
@@ -1293,6 +1298,8 @@ function convertTextFormatElement(domNode: Node): DOMConversionOutput {
       if ($isTextNode(lexicalNode) && !lexicalNode.hasFormat(format)) {
         lexicalNode.toggleFormat(format);
       }
+
+      lexicalNode.setStyle(domNode.style.cssText)
 
       return lexicalNode;
     },

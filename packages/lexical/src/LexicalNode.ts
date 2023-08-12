@@ -26,6 +26,7 @@ import {
 } from '.';
 import {
   $getSelection,
+  $isNodeSelection,
   $isRangeSelection,
   $moveSelectionPointToEnd,
   $updateElementSelectionOnCreateDeleteNode,
@@ -92,6 +93,12 @@ export function removeNode(
       );
       selectionMoved = true;
     }
+  } else if (
+    $isNodeSelection(selection) &&
+    restoreSelection &&
+    nodeToRemove.isSelected()
+  ) {
+    nodeToRemove.selectPrevious();
   }
 
   if ($isRangeSelection(selection) && restoreSelection && !selectionMoved) {
@@ -123,8 +130,6 @@ export type DOMConversion<T extends HTMLElement = HTMLElement> = {
 
 export type DOMConversionFn<T extends HTMLElement = HTMLElement> = (
   element: T,
-  parent?: Node,
-  preformatted?: boolean,
 ) => DOMConversionOutput | null;
 
 export type DOMChildConversion = (
@@ -141,8 +146,7 @@ type NodeName = string;
 export type DOMConversionOutput = {
   after?: (childLexicalNodes: Array<LexicalNode>) => Array<LexicalNode>;
   forChild?: DOMChildConversion;
-  node: LexicalNode | null;
-  preformatted?: boolean;
+  node: null | LexicalNode | Array<LexicalNode>;
 };
 
 export type DOMExportOutput = {

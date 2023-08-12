@@ -25,7 +25,7 @@ async function updateChangelog() {
       `git --no-pager log --oneline ${previousReleaseHash}...HEAD~1 --pretty=format:\"- %s %an\"`,
     )
   ).stdout
-    .replace(/"/g, '\\"')
+    .replace(/[^a-zA-Z0-9()\n \-,\.#]/g, '')
     .trim();
   const tmpFilePath = './changelog-tmp';
   await exec(`echo "${header}\n" >> ${tmpFilePath}`);

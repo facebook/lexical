@@ -101,14 +101,6 @@ describe('LexicalHeadingNode tests', () => {
       );
     });
 
-    test('HeadingNode.canInsertTab()', async () => {
-      const {editor} = testEnv;
-      await editor.update(() => {
-        const headingNode = new HeadingNode('h1');
-        expect(headingNode.canInsertTab()).toBe(false);
-      });
-    });
-
     test('$createHeadingNode()', async () => {
       const {editor} = testEnv;
       await editor.update(() => {

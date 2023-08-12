@@ -32,6 +32,7 @@ import {
   DEPRECATED_GridCellNode,
   DEPRECATED_GridNode,
   DEPRECATED_GridRowNode,
+  SELECTION_CHANGE_COMMAND,
   TextNode,
 } from '.';
 import {DOM_ELEMENT_TYPE, TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
@@ -72,6 +73,7 @@ import {
   scrollIntoViewIfNeeded,
   toggleTextFormatType,
 } from './LexicalUtils';
+import {$createTabNode} from './nodes/LexicalTabNode';
 
 export type TextPointType = {
   _selection: RangeSelection | GridSelection;
@@ -242,6 +244,17 @@ function $transferStartingElementPointToTextPoint(
     element.append(target);
   } else {
     placementNode.insertBefore(target);
+    // Fix the end point offset if it refers to the same element as start,
+    // as we've now inserted another element before it. Note that we only
+    // do it if selection is not collapsed as otherwise it'll transfer
+    // both focus and anchor to the text node below
+    if (
+      end.type === 'element' &&
+      end.key === start.key &&
+      end.offset !== start.offset
+    ) {
+      end.set(end.key, end.offset + 1, 'element');
+    }
   }
   // Transfer the element point to a text point.
   if (start.is(end)) {
@@ -672,6 +685,12 @@ export class RangeSelection implements BaseSelection {
     focus._selection = this;
   }
 
+  /**
+   * Used to check if the provided selections is equal to this one by value,
+   * inluding anchor, focus, format, and style properties.
+   * @param selection - the Selection to compare this one to.
+   * @returns true if the Selections are equal, false otherwise.
+   */
   is(
     selection: null | RangeSelection | NodeSelection | GridSelection,
   ): boolean {
@@ -686,14 +705,31 @@ export class RangeSelection implements BaseSelection {
     );
   }
 
+  /**
+   * Returns whether the Selection is "backwards", meaning the focus
+   * logically precedes the anchor in the EditorState.
+   * @returns true if the Selection is backwards, false otherwise.
+   */
   isBackward(): boolean {
     return this.focus.isBefore(this.anchor);
   }
 
+  /**
+   * Returns whether the Selection is "collapsed", meaning the anchor and focus are
+   * the same node and have the same offset.
+   *
+   * @returns true if the Selection is collapsed, false otherwise.
+   */
   isCollapsed(): boolean {
     return this.anchor.is(this.focus);
   }
 
+  /**
+   * Gets all the nodes in the Selection. Uses caching to make it generally suitable
+   * for use in hot paths.
+   *
+   * @returns an Array containing all the nodes in the Selection
+   */
   getNodes(): Array<LexicalNode> {
     const cachedNodes = this._cachedNodes;
     if (cachedNodes !== null) {
@@ -746,6 +782,14 @@ export class RangeSelection implements BaseSelection {
     return nodes;
   }
 
+  /**
+   * Sets this Selection to be of type "text" at the provided anchor and focus values.
+   *
+   * @param anchorNode - the anchor node to set on the Selection
+   * @param anchorOffset - the offset to set on the Selection
+   * @param focusNode - the focus node to set on the Selection
+   * @param focusOffset - the focus offset to set on the Selection
+   */
   setTextNodeRange(
     anchorNode: TextNode,
     anchorOffset: number,
@@ -758,6 +802,11 @@ export class RangeSelection implements BaseSelection {
     this.dirty = true;
   }
 
+  /**
+   * Gets the (plain) text content of all the nodes in the selection.
+   *
+   * @returns a string representing the text content of all the nodes in the Selection
+   */
   getTextContent(): string {
     const nodes = this.getNodes();
     if (nodes.length === 0) {
@@ -820,6 +869,12 @@ export class RangeSelection implements BaseSelection {
     return textContent;
   }
 
+  /**
+   * Attempts to map a DOM selection range onto this Lexical Selection,
+   * setting the anchor, focus, and type accordingly
+   *
+   * @param range a DOM Selection range conforming to the StaticRange interface.
+   */
   applyDOMRange(range: StaticRange): void {
     const editor = getActiveEditor();
     const currentEditorState = editor.getEditorState();
@@ -851,6 +906,11 @@ export class RangeSelection implements BaseSelection {
     this._cachedNodes = null;
   }
 
+  /**
+   * Creates a new RangeSelection, copying over all the property values from this one.
+   *
+   * @returns a new RangeSelection with the same property values as this one.
+   */
   clone(): RangeSelection {
     const anchor = this.anchor;
     const focus = this.focus;
@@ -863,48 +923,73 @@ export class RangeSelection implements BaseSelection {
     return selection;
   }
 
+  /**
+   * Toggles the provided format on all the TextNodes in the Selection.
+   *
+   * @param format a string TextFormatType to toggle on the TextNodes in the selection
+   */
   toggleFormat(format: TextFormatType): void {
     this.format = toggleTextFormatType(this.format, format, null);
     this.dirty = true;
   }
 
+  /**
+   * Sets the value of the style property on the Selection
+   *
+   * @param style - the style to set at the value of the style property.
+   */
   setStyle(style: string): void {
     this.style = style;
     this.dirty = true;
   }
 
+  /**
+   * Returns whether the provided TextFormatType is present on the Selection. This will be true if any node in the Selection
+   * has the specified format.
+   *
+   * @param type the TextFormatType to check for.
+   * @returns true if the provided format is currently toggled on on the Selection, false otherwise.
+   */
   hasFormat(type: TextFormatType): boolean {
     const formatFlag = TEXT_TYPE_TO_FORMAT[type];
     return (this.format & formatFlag) !== 0;
   }
 
+  /**
+   * Attempts to insert the provided text into the EditorState at the current Selection.
+   * converts tabs, newlines, and carriage returns into LexicalNodes.
+   *
+   * @param text the text to insert into the Selection
+   */
   insertRawText(text: string): void {
-    const parts = text.split(/\r?\n/);
-    if (parts.length === 1) {
-      this.insertText(text);
-    } else {
-      const nodes = [];
-      const length = parts.length;
-      for (let i = 0; i < length; i++) {
-        const part = parts[i];
-        if (part !== '') {
-          nodes.push($createTextNode(part));
-        }
-        if (i !== length - 1) {
-          nodes.push($createLineBreakNode());
-        }
+    const parts = text.split(/(\r?\n|\t)/);
+    const nodes = [];
+    const length = parts.length;
+    for (let i = 0; i < length; i++) {
+      const part = parts[i];
+      if (part === '\n' || part === '\r\n') {
+        nodes.push($createLineBreakNode());
+      } else if (part === '\t') {
+        nodes.push($createTabNode());
+      } else {
+        nodes.push($createTextNode(part));
       }
-      this.insertNodes(nodes);
     }
+    this.insertNodes(nodes);
   }
 
+  /**
+   * Attempts to insert the provided text into the EditorState at the current Selection as a new
+   * Lexical TextNode, according to a series of insertion heuristics based on the selection type and position.
+   *
+   * @param text the text to insert into the Selection
+   */
   insertText(text: string): void {
     const anchor = this.anchor;
     const focus = this.focus;
     const isBefore = this.isCollapsed() || anchor.isBefore(focus);
     const format = this.format;
     const style = this.style;
-
     if (isBefore && anchor.type === 'element') {
       $transferStartingElementPointToTextPoint(anchor, focus, format, style);
     } else if (!isBefore && focus.type === 'element') {
@@ -937,7 +1022,11 @@ export class RangeSelection implements BaseSelection {
           firstNode.getNextSibling() === null))
     ) {
       let nextSibling = firstNode.getNextSibling<TextNode>();
-      if (!$isTextNode(nextSibling) || $isTokenOrSegmented(nextSibling)) {
+      if (
+        !$isTextNode(nextSibling) ||
+        !nextSibling.canInsertTextBefore() ||
+        $isTokenOrSegmented(nextSibling)
+      ) {
         nextSibling = $createTextNode();
         nextSibling.setFormat(format);
         if (!firstNodeParent.canInsertTextAfter()) {
@@ -1214,10 +1303,19 @@ export class RangeSelection implements BaseSelection {
     }
   }
 
+  /**
+   * Removes the text in the Selection, adjusting the EditorState accordingly.
+   */
   removeText(): void {
     this.insertText('');
   }
 
+  /**
+   * Applies the provided format to the TextNodes in the Selection, splitting or
+   * merging nodes as necessary.
+   *
+   * @param formatType the format type to apply to the nodes in the Selection.
+   */
   formatText(formatType: TextFormatType): void {
     if (this.isCollapsed()) {
       this.toggleFormat(formatType);
@@ -1342,6 +1440,15 @@ export class RangeSelection implements BaseSelection {
     this.format = firstNextFormat | lastNextFormat;
   }
 
+  /**
+   * Attempts to "intelligently" insert an arbitrary list of Lexical nodes into the EditorState at the
+   * current Selection according to a set of heuristics that determine how surrounding nodes
+   * should be changed, replaced, or moved to accomodate the incoming ones.
+   *
+   * @param nodes - the nodes to insert
+   * @param selectStart - whether or not to select the start after the insertion.
+   * @returns true if the nodes were inserted successfully, false otherwise.
+   */
   insertNodes(nodes: Array<LexicalNode>, selectStart?: boolean): boolean {
     // If there is a range selected remove the text in it
     if (!this.isCollapsed()) {
@@ -1548,7 +1655,11 @@ export class RangeSelection implements BaseSelection {
       if ($isElementNode(target) && !target.isInline()) {
         lastNode = node;
         if ($isDecoratorNode(node) && !node.isInline()) {
-          target = target.insertAfter(node, false);
+          if (nodes.length === 1 && target.canBeEmpty() && target.isEmpty()) {
+            target = target.insertBefore(node, false);
+          } else {
+            target = target.insertAfter(node, false);
+          }
         } else if (!$isElementNode(node)) {
           const firstChild = target.getFirstChild();
           if (firstChild !== null) {
@@ -1716,6 +1827,9 @@ export class RangeSelection implements BaseSelection {
     return true;
   }
 
+  /**
+   * Inserts a new ParagraphNode into the EditorState at the current Selection
+   */
   insertParagraph(): void {
     if (!this.isCollapsed()) {
       this.removeText();
@@ -1826,6 +1940,12 @@ export class RangeSelection implements BaseSelection {
     }
   }
 
+  /**
+   * Inserts a logical linebreak, which may be a new LineBreakNode or a new ParagraphNode, into the EditorState at the
+   * current Selection.
+   *
+   * @param selectStart whether or not to select the start of the insertion range after the operation completes.
+   */
   insertLineBreak(selectStart?: boolean): void {
     const lineBreakNode = $createLineBreakNode();
     const anchor = this.anchor;
@@ -1844,10 +1964,22 @@ export class RangeSelection implements BaseSelection {
     }
   }
 
+  /**
+   * Returns the character-based offsets of the Selection, accounting for non-text Points
+   * by using the children size or text content.
+   *
+   * @returns the character offsets for the Selection
+   */
   getCharacterOffsets(): [number, number] {
     return getCharacterOffsets(this);
   }
 
+  /**
+   * Extracts the nodes in the Selection, splitting nodes where necessary
+   * to get offset-level precision.
+   *
+   * @returns The nodes in the Selection
+   */
   extract(): Array<LexicalNode> {
     const selectedNodes = this.getNodes();
     const selectedNodesLength = selectedNodes.length;
@@ -1897,6 +2029,15 @@ export class RangeSelection implements BaseSelection {
     return selectedNodes;
   }
 
+  /**
+   * Modifies the Selection according to the parameters and a set of heuristics that account for
+   * various node types. Can be used to safely move or extend selection by one logical "unit" without
+   * dealing explicitly with all the possible node types.
+   *
+   * @param alter the type of modification to perform
+   * @param isBackward whether or not selection is backwards
+   * @param granularity the granularity at which to apply the modification
+   */
   modify(
     alter: 'move' | 'extend',
     isBackward: boolean,
@@ -2039,7 +2180,14 @@ export class RangeSelection implements BaseSelection {
     }
   }
 
+  /**
+   * Performs one logical character deletion operation on the EditorState based on the current Selection.
+   * Handles different node types.
+   *
+   * @param isBackward whether or not the selection is backwards.
+   */
   deleteCharacter(isBackward: boolean): void {
+    const wasCollapsed = this.isCollapsed();
     if (this.isCollapsed()) {
       const anchor = this.anchor;
       const focus = this.focus;
@@ -2078,7 +2226,18 @@ export class RangeSelection implements BaseSelection {
           $setSelection(nodeSelection);
         } else {
           possibleNode.remove();
+          const editor = getActiveEditor();
+          editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
         }
+        return;
+      } else if (
+        !isBackward &&
+        $isElementNode(possibleNode) &&
+        $isElementNode(anchorNode) &&
+        anchorNode.isEmpty()
+      ) {
+        anchorNode.remove();
+        possibleNode.selectStart();
         return;
       }
       this.modify('extend', isBackward, 'character');
@@ -2122,7 +2281,6 @@ export class RangeSelection implements BaseSelection {
         }
       }
     }
-    const wasCollapsed = this.isCollapsed();
     this.removeText();
     if (
       isBackward &&
@@ -2142,6 +2300,12 @@ export class RangeSelection implements BaseSelection {
     }
   }
 
+  /**
+   * Performs one logical line deletion operation on the EditorState based on the current Selection.
+   * Handles different node types.
+   *
+   * @param isBackward whether or not the selection is backwards.
+   */
   deleteLine(isBackward: boolean): void {
     if (this.isCollapsed()) {
       if (this.anchor.type === 'text') {
@@ -2159,6 +2323,12 @@ export class RangeSelection implements BaseSelection {
     this.removeText();
   }
 
+  /**
+   * Performs one logical word deletion operation on the EditorState based on the current Selection.
+   * Handles different node types.
+   *
+   * @param isBackward whether or not the selection is backwards.
+   */
   deleteWord(isBackward: boolean): void {
     if (this.isCollapsed()) {
       this.modify('extend', isBackward, 'word');
@@ -2217,7 +2387,7 @@ function moveNativeSelection(
   direction: 'backward' | 'forward' | 'left' | 'right',
   granularity: 'character' | 'word' | 'lineboundary',
 ): void {
-  // @ts-expect-error Selection.modify() method applies a change to the current selection or cursor position,
+  // Selection.modify() method applies a change to the current selection or cursor position,
   // but is still non-standard in some browsers.
   domSelection.modify(alter, direction, granularity);
 }
@@ -2575,7 +2745,7 @@ function internalResolveSelectionPoints(
   return [resolvedAnchorPoint, resolvedFocusPoint];
 }
 
-function $isBlockElementNode(
+export function $isBlockElementNode(
   node: LexicalNode | null | undefined,
 ): node is ElementNode {
   return $isElementNode(node) && !node.isInline();
@@ -3104,7 +3274,8 @@ export function $insertNodes(
   nodes: Array<LexicalNode>,
   selectStart?: boolean,
 ): boolean {
-  let selection = $getSelection();
+  let selection = $getSelection() || $getPreviousSelection();
+
   if (selection === null) {
     selection = $getRoot().selectEnd();
   }

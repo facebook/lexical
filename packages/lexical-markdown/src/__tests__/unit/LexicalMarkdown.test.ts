@@ -140,16 +140,12 @@ describe('Markdown', () => {
       skipExport: true,
     },
     {
-      // Import only: export will have extra <pre> wrapper
-      html: '<code spellcheck="false"><span>Code</span></code>',
+      html: '<pre spellcheck="false"><span>Code</span></pre>',
       md: '```\nCode\n```',
-      skipExport: true,
     },
     {
-      // Export only: due to extra <pre> wrapper
-      html: '<code spellcheck="false"><pre><span>Code</span></pre></code>',
+      html: '<pre spellcheck="false"><span>Code</span></pre>',
       md: '```\nCode\n```',
-      skipImport: true,
     },
     {
       // Import only: extra empty lines will be removed for export
@@ -168,6 +164,11 @@ describe('Markdown', () => {
       html: '<p><span>Hello </span><a href="https://lexical.dev"><span>world</span></a><span>! Hello </span><mark><span>$world$</span></mark><span>! </span><a href="https://lexical.dev"><span>Hello</span></a><span> world! Hello </span><mark><span>$world$</span></mark><span>!</span></p>',
       md: `Hello [world](${URL})! Hello $world$! [Hello](${URL}) world! Hello $world$!`,
       skipExport: true,
+    },
+    // We should not render non-link markdown as a link
+    {
+      html: '<p><span>![alt text](https://lexical.dev/image.jpeg)</span></p>',
+      md: '![alt text](https://lexical.dev/image.jpeg)',
     },
   ];
 

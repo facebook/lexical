@@ -135,10 +135,12 @@ export class TableNode extends DEPRECATED_GridNode {
       const row = cells[y];
 
       if (row == null) {
-        throw new Error(`Row not found at y:${y}`);
+        continue;
       }
 
-      const x = row.findIndex(({elem}) => {
+      const x = row.findIndex((cell) => {
+        if (!cell) return;
+        const {elem} = cell;
         const cellNode = $getNearestNodeFromDOMNode(elem);
         return cellNode === tableCellNode;
       });

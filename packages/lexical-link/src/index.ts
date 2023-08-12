@@ -421,7 +421,7 @@ export function toggleLink(
   attributes: LinkAttributes = {},
 ): void {
   const {target, title} = attributes;
-  const rel = attributes.rel === undefined ? 'noopener' : attributes.rel;
+  const rel = attributes.rel === undefined ? 'noreferrer' : attributes.rel;
   const selection = $getSelection();
 
   if (!$isRangeSelection(selection)) {

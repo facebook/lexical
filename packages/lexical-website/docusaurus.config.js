@@ -62,6 +62,16 @@ const config = {
         watch: process.env.TYPEDOC_WATCH === 'true',
       },
     ],
+    async function tailwindcss() {
+      return {
+        configurePostCss(postcssOptions) {
+          postcssOptions.plugins.push(require('tailwindcss'));
+          postcssOptions.plugins.push(require('autoprefixer'));
+          return postcssOptions;
+        },
+        name: 'docusaurus-tailwindcss',
+      };
+    },
   ],
   presets: [
     [
@@ -181,12 +191,7 @@ const config = {
             sidebarId: 'api',
             type: 'docSidebar',
           },
-          {
-            label: 'Demos',
-            position: 'left',
-            sidebarId: 'demos',
-            type: 'docSidebar',
-          },
+
           {label: 'Community', position: 'left', to: '/community'},
           {
             href: GITHUB_REPO_URL,

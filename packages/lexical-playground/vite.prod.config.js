@@ -136,6 +136,8 @@ const moduleResolution = [
   'LexicalCollaborationPlugin',
   'LexicalHistoryPlugin',
   'LexicalTypeaheadMenuPlugin',
+  'LexicalNodeMenuPlugin',
+  'LexicalContextMenuPlugin',
   'LexicalTablePlugin',
   'LexicalLinkPlugin',
   'LexicalListPlugin',
@@ -146,7 +148,8 @@ const moduleResolution = [
   'LexicalAutoEmbedPlugin',
   'LexicalOnChangePlugin',
   'LexicalNodeEventPlugin',
-  'LexicalTabIndentationPlugin'
+  'LexicalTabIndentationPlugin',
+  'LexicalEditorRefPlugin'
 ].forEach((module) => {
   let resolvedPath = path.resolve(`../lexical-react/dist/${module}.js`);
   moduleResolution.push({

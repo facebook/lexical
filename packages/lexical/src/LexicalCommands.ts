@@ -33,9 +33,8 @@ export const CONTROLLED_TEXT_INSERTION_COMMAND: LexicalCommand<
 > = createCommand('CONTROLLED_TEXT_INSERTION_COMMAND');
 export const PASTE_COMMAND: LexicalCommand<PasteCommandType> =
   createCommand('PASTE_COMMAND');
-export const REMOVE_TEXT_COMMAND: LexicalCommand<void> = createCommand(
-  'REMOVE_TEXT_COMMAND',
-);
+export const REMOVE_TEXT_COMMAND: LexicalCommand<InputEvent | null> =
+  createCommand('REMOVE_TEXT_COMMAND');
 export const DELETE_WORD_COMMAND: LexicalCommand<boolean> = createCommand(
   'DELETE_WORD_COMMAND',
 );
@@ -72,6 +71,8 @@ export const KEY_DELETE_COMMAND: LexicalCommand<KeyboardEvent> =
   createCommand('KEY_DELETE_COMMAND');
 export const KEY_TAB_COMMAND: LexicalCommand<KeyboardEvent> =
   createCommand('KEY_TAB_COMMAND');
+export const INSERT_TAB_COMMAND: LexicalCommand<void> =
+  createCommand('INSERT_TAB_COMMAND');
 export const INDENT_CONTENT_COMMAND: LexicalCommand<void> = createCommand(
   'INDENT_CONTENT_COMMAND',
 );
@@ -88,10 +89,14 @@ export const DRAGOVER_COMMAND: LexicalCommand<DragEvent> =
   createCommand('DRAGOVER_COMMAND');
 export const DRAGEND_COMMAND: LexicalCommand<DragEvent> =
   createCommand('DRAGEND_COMMAND');
-export const COPY_COMMAND: LexicalCommand<ClipboardEvent | KeyboardEvent> =
-  createCommand('COPY_COMMAND');
-export const CUT_COMMAND: LexicalCommand<ClipboardEvent | KeyboardEvent> =
-  createCommand('CUT_COMMAND');
+export const COPY_COMMAND: LexicalCommand<
+  ClipboardEvent | KeyboardEvent | null
+> = createCommand('COPY_COMMAND');
+export const CUT_COMMAND: LexicalCommand<
+  ClipboardEvent | KeyboardEvent | null
+> = createCommand('CUT_COMMAND');
+export const SELECT_ALL_COMMAND: LexicalCommand<KeyboardEvent> =
+  createCommand('SELECT_ALL_COMMAND');
 export const CLEAR_EDITOR_COMMAND: LexicalCommand<void> = createCommand(
   'CLEAR_EDITOR_COMMAND',
 );

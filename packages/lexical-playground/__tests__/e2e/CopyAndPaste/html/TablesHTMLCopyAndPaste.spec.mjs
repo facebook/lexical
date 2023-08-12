@@ -107,7 +107,6 @@ test.describe('HTML Tables CopyAndPaste', () => {
     const clipboard = {
       'text/html': `<meta charset='utf-8'><table style="border-collapse: collapse;"><col style="width: 90px;"><col style="width: 90px;"><col style="width: 90px;"><tr><td style="border: 1px solid rgb(230, 230, 230); text-align: left;">a</td><td style="border: 1px solid rgb(230, 230, 230); text-align: left;">b<br>b</td><td style="border: 1px solid rgb(230, 230, 230); text-align: left;">c</td></tr><tr><td style="border: 1px solid rgb(230, 230, 230); text-align: left;">d</td><td style="border: 1px solid rgb(230, 230, 230); text-align: left;">e</td><td style="border: 1px solid rgb(230, 230, 230); text-align: left;">f</td></tr></table>`,
     };
-
     await pasteFromClipboard(page, clipboard);
 
     await assertHTML(
@@ -185,7 +184,7 @@ test.describe('HTML Tables CopyAndPaste', () => {
       page,
       html`
         <table class="PlaygroundEditorTheme__table">
-          <tr>
+          <tr style="height: 21px">
             <td class="PlaygroundEditorTheme__tableCell">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
@@ -213,7 +212,7 @@ test.describe('HTML Tables CopyAndPaste', () => {
               </p>
             </td>
           </tr>
-          <tr>
+          <tr style="height: 21px">
             <td class="PlaygroundEditorTheme__tableCell">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
@@ -265,7 +264,8 @@ test.describe('HTML Tables CopyAndPaste', () => {
       page,
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-        <table class="PlaygroundEditorTheme__table disable-selection">
+        <table
+          class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection">
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"

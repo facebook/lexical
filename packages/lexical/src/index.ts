@@ -86,6 +86,7 @@ export {
   INDENT_CONTENT_COMMAND,
   INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
+  INSERT_TAB_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
@@ -104,6 +105,7 @@ export {
   PASTE_COMMAND,
   REDO_COMMAND,
   REMOVE_TEXT_COMMAND,
+  SELECT_ALL_COMMAND,
   SELECTION_CHANGE_COMMAND,
   UNDO_COMMAND,
 } from './LexicalCommands';
@@ -124,6 +126,7 @@ export {
   $getSelection,
   $getTextContent,
   $insertNodes,
+  $isBlockElementNode,
   $isNodeSelection,
   $isRangeSelection,
   DEPRECATED_$computeGridMap,
@@ -147,6 +150,7 @@ export {
   $isLeafNode,
   $isRootOrShadowRoot,
   $nodesOfType,
+  $selectAll,
   $setCompositionKey,
   $setSelection,
   $splitNode,
@@ -181,4 +185,6 @@ export {
   ParagraphNode,
 } from './nodes/LexicalParagraphNode';
 export {$isRootNode, RootNode} from './nodes/LexicalRootNode';
+export type {SerializedTabNode} from './nodes/LexicalTabNode';
+export {$createTabNode, $isTabNode, TabNode} from './nodes/LexicalTabNode';
 export {$createTextNode, $isTextNode, TextNode} from './nodes/LexicalTextNode';

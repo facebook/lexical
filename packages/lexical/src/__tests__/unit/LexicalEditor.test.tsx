@@ -796,50 +796,6 @@ describe('LexicalEditor tests', () => {
     );
   });
 
-  it('Should be able to recover from a reconciliation error', async () => {
-    const errorListener = jest.fn();
-    init(errorListener);
-    editor.update(() => {
-      const root = $getRoot();
-
-      if (root.getFirstChild() === null) {
-        const paragraph = $createParagraphNode();
-        const text = $createTextNode('This works!');
-        root.append(paragraph);
-        paragraph.append(text);
-      }
-    });
-
-    // Wait for update to complete
-    await Promise.resolve().then();
-
-    expect(container.innerHTML).toBe(
-      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">This works!</span></p></div>',
-    );
-
-    expect(errorListener).toHaveBeenCalledTimes(0);
-    editor.update(() => {
-      const root = $getRoot();
-      root
-        .getFirstChild<ElementNode>()
-        .getFirstChild<TextNode>()
-        .setTextContent('Foo');
-    });
-
-    expect(errorListener).toHaveBeenCalledTimes(0);
-
-    // This is an intentional bug, to trigger the recovery
-    editor._editorState._nodeMap = null;
-
-    // Wait for update to complete
-    await Promise.resolve().then();
-
-    expect(errorListener).toHaveBeenCalledTimes(1);
-    expect(container.innerHTML).toBe(
-      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="ltr"><span data-lexical-text="true">Foo</span></p></div>',
-    );
-  });
-
   it('Should be able to handle a change in root element', async () => {
     const rootListener = jest.fn();
     const updateListener = jest.fn();
@@ -2267,5 +2223,43 @@ describe('LexicalEditor tests', () => {
       expect(onError).not.toHaveBeenCalled();
       removeTransform();
     });
+  });
+
+  it('recovers from reconciler failure and trigger proper prev editor state', async () => {
+    const updateListener = jest.fn();
+    const textListener = jest.fn();
+    const onError = jest.fn();
+    const updateError = new Error('Failed updateDOM');
+
+    init(onError);
+
+    editor.registerUpdateListener(updateListener);
+    editor.registerTextContentListener(textListener);
+
+    await update(() => {
+      $getRoot().append(
+        $createParagraphNode().append($createTextNode('Hello')),
+      );
+    });
+
+    // Cause reconciler error in update dom, so that it attempts to fallback by
+    // reseting editor and rerendering whole content
+    jest.spyOn(ParagraphNode.prototype, 'updateDOM').mockImplementation(() => {
+      throw updateError;
+    });
+
+    const editorState = editor.getEditorState();
+
+    editor.registerUpdateListener(updateListener);
+
+    await update(() => {
+      $getRoot().append(
+        $createParagraphNode().append($createTextNode('world')),
+      );
+    });
+
+    expect(onError).toBeCalledWith(updateError);
+    expect(textListener).toBeCalledWith('Hello\n\nworld');
+    expect(updateListener.mock.lastCall[0].prevEditorState).toBe(editorState);
   });
 });

@@ -4,16 +4,6 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- *
  */
 
-.image {
-  display: flex;
-  justify-content: center;
-  align-content: center;
-}
-
-.image svg {
-  height: 100px;
-  width: 100px;
-}
+export const PIXEL_VALUE_REG_EXP = /^(\d+(?:\.\d+)?)px$/;

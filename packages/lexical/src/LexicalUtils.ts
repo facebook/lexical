@@ -57,6 +57,7 @@ import {
 } from './LexicalConstants';
 import {LexicalEditor} from './LexicalEditor';
 import {flushRootMutations} from './LexicalMutations';
+import {$normalizeSelection} from './LexicalNormalization';
 import {
   errorOnInfiniteTransforms,
   errorOnReadOnly,
@@ -573,41 +574,6 @@ export function $updateSelectedTextFromDOM(
     let textContent = getAnchorTextFromDOM(anchorNode);
     const node = $getNearestNodeFromDOMNode(anchorNode);
     if (textContent !== null && $isTextNode(node)) {
-      if (node.canContainTabs()) {
-        const hasTabCharacter = textContent.includes('\t');
-
-        // At present, this condition is primarily used for code highlights when
-        // grouped together in lines (divs). If a code highlight includes a tab,
-        // the newly typed character may be missing from the DOM's textContent.
-
-        // Let's take an example. If a LinedCodeNode looked roughly like this:
-        // <code><div><codeHighlight /><codeHighlight /></div></code>,
-        // the following could occur when using tabs:
-
-        // a. /tconst --type--> 'd' at offset 1 --get--> /tconst
-        //    - Missing 'd'
-        // b. /tconst --type--> 'd' at offset 3 --get--> /tcondst
-        //    --type--> 'd' at offset 3 --get--> /tcondst
-        //    - Missing second 'd'
-
-        // In these cases, we can fix the problem by manually inserting the
-        // newly typed character where we know it should have been.
-
-        if (data && data.length > 0 && hasTabCharacter) {
-          const selectionOffset = data.length;
-          const insertionOffset = anchorOffset + selectionOffset - 1;
-          const beforeInsertion = textContent.slice(0, insertionOffset);
-          const afterInsertion = textContent.slice(
-            insertionOffset,
-            textContent.length,
-          );
-
-          textContent = `${beforeInsertion}${data}${afterInsertion}`;
-          anchorOffset += selectionOffset;
-          focusOffset += selectionOffset;
-        }
-      }
-
       // Data is intentionally truthy, as we check for boolean, null and empty string.
       if (textContent === COMPOSITION_SUFFIX && data) {
         const offset = data.length;
@@ -670,6 +636,7 @@ export function $updateTextNodeFromDOMContent(
       }
       const parent = node.getParent();
       const prevSelection = $getPreviousSelection();
+      const prevTextContentSize = node.getTextContentSize();
       const compositionKey = $getCompositionKey();
       const nodeKey = node.getKey();
 
@@ -678,13 +645,18 @@ export function $updateTextNodeFromDOMContent(
         (compositionKey !== null &&
           nodeKey === compositionKey &&
           !isComposing) ||
-        // Check if character was added at the start, and we need
-        // to clear this input from occurring as that action wasn't
-        // permitted.
-        (parent !== null &&
-          $isRangeSelection(prevSelection) &&
-          !parent.canInsertTextBefore() &&
-          prevSelection.anchor.offset === 0)
+        // Check if character was added at the start or boundaries when not insertable, and we need
+        // to clear this input from occurring as that action wasn't permitted.
+        ($isRangeSelection(prevSelection) &&
+          ((parent !== null &&
+            !parent.canInsertTextBefore() &&
+            prevSelection.anchor.offset === 0) ||
+            (prevSelection.anchor.key === textNode.__key &&
+              prevSelection.anchor.offset === 0 &&
+              !node.canInsertTextBefore()) ||
+            (prevSelection.focus.key === textNode.__key &&
+              prevSelection.focus.offset === prevTextContentSize &&
+              !node.canInsertTextAfter())))
       ) {
         node.markDirty();
         return;
@@ -1039,10 +1011,24 @@ export function isSelectAll(
   return keyCode === 65 && controlOrMeta(metaKey, ctrlKey);
 }
 
+export function $selectAll(): void {
+  const root = $getRoot();
+  const selection = root.select(0, root.getChildrenSize());
+  $setSelection($normalizeSelection(selection));
+}
+
 export function getCachedClassNameArray(
   classNamesTheme: EditorThemeClasses,
   classNameThemeType: string,
 ): Array<string> {
+  if (classNamesTheme.__lexicalClassNameCache === undefined) {
+    classNamesTheme.__lexicalClassNameCache = {};
+  }
+  const classNamesCache = classNamesTheme.__lexicalClassNameCache;
+  const cachedClassNames = classNamesCache[classNameThemeType];
+  if (cachedClassNames !== undefined) {
+    return cachedClassNames;
+  }
   const classNames = classNamesTheme[classNameThemeType];
   // As we're using classList, we need
   // to handle className tokens that have spaces.
@@ -1051,7 +1037,7 @@ export function getCachedClassNameArray(
   // applied to classList.add()/remove().
   if (typeof classNames === 'string') {
     const classNamesArr = classNames.split(' ');
-    classNamesTheme[classNameThemeType] = classNamesArr;
+    classNamesCache[classNameThemeType] = classNamesArr;
     return classNamesArr;
   }
   return classNames;
@@ -1272,11 +1258,7 @@ export function $addUpdateTag(tag: string): void {
 
 export function $maybeMoveChildrenSelectionToParent(
   parentNode: LexicalNode,
-  offset = 0,
 ): RangeSelection | NodeSelection | GridSelection | null {
-  if (offset !== 0) {
-    invariant(false, 'TODO');
-  }
   const selection = $getSelection();
   if (!$isRangeSelection(selection) || !$isElementNode(parentNode)) {
     return selection;

@@ -33,6 +33,15 @@ export const SAMPLE_LANDSCAPE_IMAGE_URL =
     : '/assets/landscape.21352c66.jpg';
 export const LEXICAL_IMAGE_BASE64 =
   'data:image/png;base64,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';
+export const YOUTUBE_SAMPLE_URL =
+  'https://www.youtube-nocookie.com/embed/jNQXAC9IVRw';
+
+function wrapAndSlowDown(method, delay) {
+  return async function () {
+    await new Promise((resolve) => setTimeout(resolve, delay));
+    return method.apply(this, arguments);
+  };
+}
 
 export async function initialize({
   page,
@@ -45,6 +54,13 @@ export async function initialize({
   tableCellMerge,
   tableCellBackgroundColor,
 }) {
+  // Tests with legacy events often fail to register keypress, so
+  // slowing it down to reduce flakiness
+  if (LEGACY_EVENTS) {
+    page.keyboard.type = wrapAndSlowDown(page.keyboard.type, 50);
+    page.keyboard.press = wrapAndSlowDown(page.keyboard.press, 50);
+  }
+
   const appSettings = {};
   appSettings.isRichText = IS_RICH_TEXT;
   appSettings.emptyEditor = true;
@@ -88,7 +104,7 @@ async function exposeLexicalEditor(page) {
   await leftFrame.waitForSelector('.tree-view-output pre');
   await leftFrame.evaluate(() => {
     window.lexicalEditor = document.querySelector(
-      '.tree-view-output pre',
+      '[data-lexical-editor="true"]',
     ).__lexicalEditor;
   });
 }
@@ -197,6 +213,48 @@ async function retryAsync(page, fn, attempts) {
     }
     attempts--;
     await sleep(500);
+  }
+}
+
+export async function assertGridSelectionCoordinates(page, coordinates) {
+  const pageOrFrame = IS_COLLAB ? await page.frame('left') : page;
+
+  const {_anchor, _focus} = await pageOrFrame.evaluate(() => {
+    const editor = window.lexicalEditor;
+    const editorState = editor.getEditorState();
+    const selection = editorState._selection;
+    if (!selection.gridKey) {
+      throw new Error('Expected grid selection');
+    }
+    const anchorElement = editor.getElementByKey(selection.anchor.key);
+    const focusElement = editor.getElementByKey(selection.focus.key);
+    return {
+      _anchor: {
+        x: anchorElement._cell?.x,
+        y: anchorElement._cell?.y,
+      },
+      _focus: {
+        x: focusElement._cell?.x,
+        y: focusElement._cell?.y,
+      },
+    };
+  });
+
+  if (coordinates.anchor) {
+    if (coordinates.anchor.x !== undefined) {
+      expect(_anchor.x).toEqual(coordinates.anchor.x);
+    }
+    if (coordinates.anchor.y !== undefined) {
+      expect(_anchor.y).toEqual(coordinates.anchor.y);
+    }
+  }
+  if (coordinates.focus) {
+    if (coordinates.focus.x !== undefined) {
+      expect(_focus.x).toEqual(coordinates.focus.x);
+    }
+    if (coordinates.focus.y !== undefined) {
+      expect(_focus.y).toEqual(coordinates.focus.y);
+    }
   }
 }
 
@@ -776,11 +834,7 @@ export async function selectCellsFromTableCords(
   );
 
   // Focus on inside the iFrame or the boundingBox() below returns null.
-  await firstRowFirstColumnCell.click(
-    // This is a test runner quirk. Chrome seems to need two clicks to focus on the
-    // content editable cell before dragging, but Firefox treats it as a double click event.
-    E2E_BROWSER === 'chromium' ? {clickCount: 2} : {},
-  );
+  await firstRowFirstColumnCell.click();
 
   await dragMouse(
     page,

@@ -10,21 +10,21 @@
 import type {LexicalCommand, LexicalEditor, NodeKey, TextNode} from 'lexical';
 import * as React from 'react';
 
-export type QueryMatch = {
+export type MenuTextMatch = {
   leadOffset: number,
   matchingString: string,
   replaceableString: string,
 };
 
-export type Resolution = {
-  match: QueryMatch,
+export type MenuResolution = {
+  match?: MenuTextMatch,
   getRect: () => ClientRect,
 };
 
 export const PUNCTUATION: string =
   '\\.,\\+\\*\\?\\$\\@\\|#{}\\(\\)\\^\\-\\[\\]\\\\/!%\'"~=<>_:;';
 
-declare export class TypeaheadOption {
+declare export class MenuOption {
   key: string;
   ref: {current: HTMLElement | null};
   constructor(key: string): void;
@@ -33,7 +33,7 @@ declare export class TypeaheadOption {
 
 declare export var SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND: LexicalCommand<{
   index: number,
-  option: TypeaheadOption,
+  option: MenuOption,
 }>;
 
 export type MenuRenderFn<TOption> = (
@@ -63,7 +63,7 @@ export type TypeaheadMenuPluginProps<TOption> = {
   options: Array<TOption>,
   menuRenderFn: MenuRenderFn<TOption>,
   triggerFn: TriggerFn,
-  onOpen?: (resolution: Resolution) => void,
+  onOpen?: (resolution: MenuResolution) => void,
   onClose?: () => void,
   anchorClassName?: string,
 };
@@ -71,27 +71,8 @@ export type TypeaheadMenuPluginProps<TOption> = {
 export type TriggerFn = (
   text: string,
   editor: LexicalEditor,
-) => QueryMatch | null;
+) => MenuTextMatch | null;
 
 declare export function LexicalTypeaheadMenuPlugin<TOption>(
   options: TypeaheadMenuPluginProps<TOption>,
-): React.MixedElement | null;
-
-type NodeMenuPluginProps<TOption> = {
-  onSelectOption: (
-    option: TOption,
-    textNodeContainingQuery: TextNode | null,
-    closeMenu: () => void,
-    matchingString: string,
-  ) => void,
-  options: Array<TOption>,
-  nodeKey: NodeKey | null,
-  onClose?: () => void,
-  onOpen?: (resolution: Resolution) => void,
-  menuRenderFn: MenuRenderFn<TOption>,
-  anchorClassName?: string,
-};
-
-declare export function LexicalNodeMenuPlugin<TOption>(
-  options: NodeMenuPluginProps<TOption>,
 ): React.MixedElement | null;

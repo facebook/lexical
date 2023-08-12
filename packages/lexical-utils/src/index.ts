@@ -10,6 +10,7 @@
 import {$cloneWithProperties} from '@lexical/selection';
 import {
   $createParagraphNode,
+  $getPreviousSelection,
   $getRoot,
   $getSelection,
   $isElementNode,
@@ -223,7 +224,7 @@ export function $getNearestNodeOfType<T extends ElementNode>(
 }
 
 /**
- *Returns the element node of the nearest ancestor, otherwise throws an error.
+ * Returns the element node of the nearest ancestor, otherwise throws an error.
  * @param startNode - The starting node of the search
  * @returns The ancestor node found
  */
@@ -234,7 +235,6 @@ export function $getNearestBlockElementAncestorOrThrow(
     startNode,
     (node) => $isElementNode(node) && !node.isInline(),
   );
-
   if (!$isElementNode(blockNode)) {
     invariant(
       false,
@@ -242,7 +242,6 @@ export function $getNearestBlockElementAncestorOrThrow(
       startNode.__key,
     );
   }
-
   return blockNode;
 }
 
@@ -432,7 +431,8 @@ export function $restoreEditorState(
  * @returns The node after its insertion
  */
 export function $insertNodeToNearestRoot<T extends LexicalNode>(node: T): T {
-  const selection = $getSelection();
+  const selection = $getSelection() || $getPreviousSelection();
+
   if ($isRangeSelection(selection)) {
     const {focus} = selection;
     const focusNode = focus.getNode();
@@ -510,4 +510,21 @@ export function isHTMLAnchorElement(x: Node): x is HTMLAnchorElement {
 export function isHTMLElement(x: Node | EventTarget): x is HTMLElement {
   // @ts-ignore-next-line - strict check on nodeType here should filter out non-Element EventTarget implementors
   return x.nodeType === 1;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ObjectKlass<T> = new (...args: any[]) => T;
+
+/**
+ * @param object = The instance of the type
+ * @param objectClass = The class of the type
+ * @returns Whether the object is has the same Klass of the objectClass, ignoring the difference across window (e.g. different iframs)
+ */
+export function objectKlassEquals<T>(
+  object: unknown,
+  objectClass: ObjectKlass<T>,
+): boolean {
+  return object !== null
+    ? Object.getPrototypeOf(object).constructor.name === objectClass.name
+    : false;
 }

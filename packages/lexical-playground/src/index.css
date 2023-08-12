@@ -561,6 +561,11 @@ i.prettier-error {
   background-image: url(images/icons/prettier-error.svg);
 }
 
+i.page-break,
+.icon.page-break {
+  background-image: url(images/icons/scissors.svg);
+}
+
 .link-editor .button.active,
 .toolbar .button.active {
   background-color: rgb(223, 232, 250);
@@ -691,76 +696,6 @@ i.prettier-error {
   outline: none;
 }
 
-#block-controls {
-  display: block;
-  position: absolute;
-  right: 10px;
-  width: 32px;
-  height: 32px;
-  box-sizing: border-box;
-  box-shadow: rgba(0, 0, 0, 0.1) 0px 1px 2px 0px;
-  top: 16px;
-  z-index: 10;
-  border-radius: 8px;
-  border: 1px solid rgb(206, 208, 212);
-  overflow: hidden;
-}
-
-#block-controls button {
-  border: 1px solid white;
-  background-color: #fff;
-  display: block;
-  transition: background-color 0.1s ease;
-  cursor: pointer;
-  outline: none;
-  border-radius: 8px;
-  padding: 3px;
-}
-
-#block-controls button:hover {
-  background-color: #efefef;
-}
-
-#block-controls button:focus-visible {
-  border-color: blue;
-}
-
-#block-controls span.block-type {
-  background-size: contain;
-  display: block;
-  width: 18px;
-  height: 18px;
-  margin: 2px;
-}
-
-#block-controls span.block-type.paragraph {
-  background-image: url(images/icons/text-paragraph.svg);
-}
-
-#block-controls span.block-type.h1 {
-  background-image: url(images/icons/type-h1.svg);
-}
-
-#block-controls span.block-type.h2 {
-  background-image: url(images/icons/type-h2.svg);
-}
-
-#block-controls span.block-type.quote {
-  background-image: url(images/icons/chat-square-quote.svg);
-}
-
-#block-controls span.block-type.ul {
-  background-image: url(images/icons/list-ul.svg);
-}
-
-#block-controls span.block-type.ol {
-  background-image: url(images/icons/list-ol.svg);
-}
-
-#block-controls span.block-type.code {
-  background-image: url(images/icons/code.svg);
-}
-
 .characters-limit {
   color: #888;
   font-size: 12px;
@@ -859,9 +794,11 @@ i.prettier-error {
   .dropdown-button-text {
     display: none !important;
   }
+
   .font-size .dropdown-button-text {
     display: flex !important;
   }
+
   .code-language .dropdown-button-text {
     display: flex !important;
   }
@@ -931,6 +868,7 @@ i.prettier-error {
     opacity: 0;
     transform: translateX(-200px);
   }
+
   100% {
     opacity: 1;
     transform: translateX(0);
@@ -1069,6 +1007,27 @@ i.prettier-error {
   background-color: rgba(60, 132, 244, 0.5);
 }
 
+.editor-shell .editor-image .image-edit-button {
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  border-radius: 5px;
+  background-image: url(/src/images/icons/pencil-fill.svg);
+  background-size: 16px;
+  background-position: center;
+  background-repeat: no-repeat;
+  width: 35px;
+  height: 35px;
+  vertical-align: -0.25em;
+  position: absolute;
+  right: 4px;
+  top: 4px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.editor-shell .editor-image .image-edit-button:hover {
+  background-color: rgba(60, 132, 244, 0.1);
+}
+
 .editor-shell .editor-image .image-resizer {
   display: block;
   width: 7px;
@@ -1124,6 +1083,79 @@ i.prettier-error {
   top: -6px;
   left: -6px;
   cursor: nw-resize;
+}
+
+.editor-shell span.inline-editor-image {
+  cursor: default;
+  display: inline-block;
+  position: relative;
+  z-index: 1;
+}
+
+.editor-shell .inline-editor-image img {
+  max-width: 100%;
+  cursor: default;
+}
+
+.editor-shell .inline-editor-image img.focused {
+  outline: 2px solid rgb(60, 132, 244);
+}
+
+.editor-shell .inline-editor-image img.focused.draggable {
+  cursor: grab;
+}
+
+.editor-shell .inline-editor-image img.focused.draggable:active {
+  cursor: grabbing;
+}
+
+.editor-shell .inline-editor-image .image-caption-container .tree-view-output {
+  margin: 0;
+  border-radius: 0;
+}
+
+.editor-shell .inline-editor-image.position-full {
+  margin: 1em 0 1em 0;
+}
+
+.editor-shell .inline-editor-image.position-left {
+  float: left;
+  width: 50%;
+  margin: 1em 1em 0 0;
+}
+
+.editor-shell .inline-editor-image.position-right {
+  float: right;
+  width: 50%;
+  margin: 1em 0 0 1em;
+}
+
+.editor-shell .inline-editor-image .image-edit-button {
+  display: block;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 6px 8px;
+  margin: 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 5px;
+  background-color: rgba(0, 0, 0, 0.5);
+  min-width: 60px;
+  color: #fff;
+  cursor: pointer;
+  user-select: none;
+}
+
+.editor-shell .inline-editor-image .image-edit-button:hover {
+  background-color: rgba(60, 132, 244, 0.5);
+}
+
+.editor-shell .inline-editor-image .image-caption-container {
+  display: block;
+  background-color: #f4f4f4;
+  min-width: 100%;
+  color: #000;
+  overflow: hidden;
 }
 
 .emoji {
@@ -1240,23 +1272,6 @@ i.prettier-error {
   background-image: url(images/icons/plug-fill.svg);
 }
 
-table.disable-selection {
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  -khtml-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-}
-
-table.disable-selection span::selection {
-  background-color: transparent;
-}
-
-table.disable-selection br::selection {
-  background-color: transparent;
-}
-
 .table-cell-action-button-container {
   position: absolute;
   top: 0;
@@ -1306,6 +1321,7 @@ i.chevron-down {
 .action-button-mic.active {
   animation: mic-pulsate-color 3s infinite;
 }
+
 button.action-button:disabled {
   opacity: 0.6;
   background: #eee;
@@ -1316,9 +1332,11 @@ button.action-button:disabled {
   0% {
     background-color: #ffdcdc;
   }
+
   50% {
     background-color: #ff8585;
   }
+
   100% {
     background-color: #ffdcdc;
   }
@@ -1639,24 +1657,29 @@ button.action-button:disabled {
 .github-corner:hover .octo-arm {
   animation: octocat-wave 560ms ease-in-out;
 }
+
 @keyframes octocat-wave {
   0%,
   100% {
     transform: rotate(0);
   }
+
   20%,
   60% {
     transform: rotate(-25deg);
   }
+
   40%,
   80% {
     transform: rotate(10deg);
   }
 }
+
 @media (max-width: 500px) {
   .github-corner:hover .octo-arm {
     animation: none;
   }
+
   .github-corner .octo-arm {
     animation: octocat-wave 560ms ease-in-out;
   }
@@ -1714,7 +1737,6 @@ hr.selected {
   cursor: text;
   display: block;
   position: relative;
-  tab-size: 1;
   outline: 0px;
   padding: 0;
   user-select: text;

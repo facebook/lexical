@@ -20,12 +20,13 @@ declare export var INSERT_LINE_BREAK_COMMAND: LexicalCommand<boolean>;
 declare export var INSERT_PARAGRAPH_COMMAND: LexicalCommand<void>;
 declare export var CONTROLLED_TEXT_INSERTION_COMMAND: LexicalCommand<string>;
 declare export var PASTE_COMMAND: LexicalCommand<ClipboardEvent>;
-declare export var REMOVE_TEXT_COMMAND: LexicalCommand<void>;
+declare export var REMOVE_TEXT_COMMAND: LexicalCommand<InputEvent | null>;
 declare export var DELETE_WORD_COMMAND: LexicalCommand<boolean>;
 declare export var DELETE_LINE_COMMAND: LexicalCommand<boolean>;
 declare export var FORMAT_TEXT_COMMAND: LexicalCommand<TextFormatType>;
 declare export var UNDO_COMMAND: LexicalCommand<void>;
 declare export var REDO_COMMAND: LexicalCommand<void>;
+declare export var KEY_DOWN_COMMAND: LexicalCommand<KeyboardEvent>;
 declare export var KEY_ARROW_RIGHT_COMMAND: LexicalCommand<KeyboardEvent>;
 declare export var KEY_ARROW_LEFT_COMMAND: LexicalCommand<KeyboardEvent>;
 declare export var KEY_ARROW_UP_COMMAND: LexicalCommand<KeyboardEvent>;
@@ -36,6 +37,7 @@ declare export var KEY_BACKSPACE_COMMAND: LexicalCommand<KeyboardEvent>;
 declare export var KEY_ESCAPE_COMMAND: LexicalCommand<KeyboardEvent>;
 declare export var KEY_DELETE_COMMAND: LexicalCommand<KeyboardEvent>;
 declare export var KEY_TAB_COMMAND: LexicalCommand<KeyboardEvent>;
+declare export var INSERT_TAB_COMMAND: LexicalCommand<void>;
 declare export var KEY_MODIFIER_COMMAND: LexicalCommand<KeyboardEvent>;
 declare export var INDENT_CONTENT_COMMAND: LexicalCommand<void>;
 declare export var OUTDENT_CONTENT_COMMAND: LexicalCommand<void>;
@@ -44,8 +46,12 @@ declare export var FORMAT_ELEMENT_COMMAND: LexicalCommand<ElementFormatType>;
 declare export var DRAGSTART_COMMAND: LexicalCommand<DragEvent>;
 declare export var DRAGOVER_COMMAND: LexicalCommand<DragEvent>;
 declare export var DRAGEND_COMMAND: LexicalCommand<DragEvent>;
-declare export var COPY_COMMAND: LexicalCommand<ClipboardEvent>;
-declare export var CUT_COMMAND: LexicalCommand<ClipboardEvent>;
+declare export var COPY_COMMAND: LexicalCommand<
+  ClipboardEvent | KeyboardEvent | null,
+>;
+declare export var CUT_COMMAND: LexicalCommand<
+  ClipboardEvent | KeyboardEvent | null,
+>;
 declare export var CLEAR_EDITOR_COMMAND: LexicalCommand<void>;
 declare export var CLEAR_HISTORY_COMMAND: LexicalCommand<void>;
 declare export var CAN_REDO_COMMAND: LexicalCommand<boolean>;
@@ -75,14 +81,18 @@ type DecoratorListener = (decorator: {
   [NodeKey]: any,
 }) => void;
 type RootListener = (
-  element: null | HTMLElement,
-  element: null | HTMLElement,
+  rootElement: null | HTMLElement,
+  prevRootElement: null | HTMLElement,
 ) => void;
 type TextContentListener = (text: string) => void;
 type ErrorHandler = (error: Error) => void;
 export type MutationListener = (
   nodes: Map<NodeKey, NodeMutation>,
-  {updateTags: Set<string>, dirtyLeaves: Set<string>},
+  {
+    updateTags: Set<string>,
+    dirtyLeaves: Set<string>,
+    prevEditorState: EditorState,
+  },
 ) => void;
 export type EditableListener = (editable: boolean) => void;
 type Listeners = {
@@ -100,7 +110,7 @@ type RegisteredNode = {
   klass: Class<LexicalNode>,
   transforms: Set<Transform<LexicalNode>>,
 };
-type Transform<T> = (node: T) => void;
+export type Transform<T> = (node: T) => void;
 
 type DOMConversionCache = Map<
   string,
@@ -305,10 +315,7 @@ export type DOMConversion = {
   conversion: DOMConversionFn,
   priority: 0 | 1 | 2 | 3 | 4,
 };
-export type DOMConversionFn = (
-  element: Node,
-  parent?: Node,
-) => DOMConversionOutput;
+export type DOMConversionFn = (element: Node) => DOMConversionOutput;
 export type DOMChildConversion = (
   lexicalNode: LexicalNode,
   parentLexicalNode: ?LexicalNode | null,
@@ -320,7 +327,7 @@ type NodeName = string;
 export type DOMConversionOutput = {
   after?: (childLexicalNodes: Array<LexicalNode>) => Array<LexicalNode>,
   forChild?: DOMChildConversion,
-  node: LexicalNode | null,
+  node: null | LexicalNode | Array<LexicalNode>,
 };
 export type DOMExportOutput = {
   after?: (generatedElement: ?HTMLElement) => ?HTMLElement,
@@ -474,6 +481,7 @@ declare export class RangeSelection implements BaseSelection {
   applyDOMRange(range: StaticRange): void;
   clone(): RangeSelection;
   toggleFormat(format: TextFormatType): void;
+  setStyle(style: string): void;
   hasFormat(type: TextFormatType): boolean;
   insertText(text: string): void;
   insertRawText(text: string): void;
@@ -637,6 +645,27 @@ declare export function $isTextNode(
 ): boolean %checks(node instanceof TextNode);
 
 /**
+ * LexicalTabNode
+ */
+
+export type SerializedTabNode = SerializedTextNode;
+
+declare export function $createTabNode(): TabNode;
+
+declare export function $isTabNode(
+  node: LexicalNode | null | void,
+): boolean %checks(node instanceof TabNode);
+
+declare export class TabNode extends TextNode {
+  static getType(): string;
+  static clone(node: TabNode): TabNode;
+  constructor(key?: NodeKey): void;
+  static importDOM(): DOMConversionMap | null;
+  static importJSON(serializedTabNode: SerializedTabNode): TabNode;
+  exportJSON(): SerializedTabNode;
+}
+
+/**
  * LexicalLineBreakNode
  */
 
@@ -732,7 +761,6 @@ declare export class ElementNode extends LexicalNode {
     selection: RangeSelection,
     restoreSelection?: boolean,
   ): null | LexicalNode;
-  canInsertTab(): boolean;
   canIndent(): boolean;
   collapseAtStart(selection: RangeSelection): boolean;
   excludeFromCopy(destination: 'clone' | 'html'): boolean;

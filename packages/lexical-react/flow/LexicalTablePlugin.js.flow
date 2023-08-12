@@ -10,5 +10,6 @@
 type Props = $ReadOnly<{
   hasCellMerge?: boolean,
   hasCellBackgroundColor?: boolean,
+  hasTabHandler?: boolean,
 }>;
 declare export function TablePlugin(props: Props): null;

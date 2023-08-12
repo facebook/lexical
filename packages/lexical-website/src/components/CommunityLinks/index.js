@@ -8,11 +8,9 @@
 
 import Link from '@docusaurus/Link';
 import Translate from '@docusaurus/Translate';
-import clsx from 'clsx';
 import React from 'react';
 
 import ImageSwitcher from '../ImageSwitcher';
-import styles from './styles.module.css';
 
 const links = [
   {
@@ -89,12 +87,16 @@ const links = [
 
 function CommunityLink({title, url, description, image}) {
   return (
-    <div className="row">
-      <div className={clsx('col col--4', styles.image)}>{image}</div>
-      <div className="col col--8">
+    <div className="grid gap-4 lg:grid-cols-[min-content_auto] lg:gap-20 lg:pl-20">
+      <div className="flex h-24 w-24 justify-center overflow-hidden">
+        {image}
+      </div>
+
+      <div>
         <Link to={url}>
           <h2>{title}</h2>
         </Link>
+
         <p>{description}</p>
       </div>
     </div>
@@ -105,7 +107,7 @@ export default function CommunityLinks() {
   return (
     <div>
       {links.map((link, index) => (
-        <div key={index} className="margin-vert--md">
+        <div key={index} className="mb-4">
           <CommunityLink {...link} />
         </div>
       ))}

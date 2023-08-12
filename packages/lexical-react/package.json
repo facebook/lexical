@@ -9,6 +9,169 @@
   ],
   "license": "MIT",
   "version": "0.12.0",
+  "type": "module",
+  "exports": {
+    "./LexicalAutoEmbedPlugin": {
+      "require": "./dist/cjs/LexicalAutoEmbedPlugin.js",
+      "import": "./dist/esm/LexicalAutoEmbedPlugin.js"
+    },
+    "./LexicalComposerContext": {
+      "require": "./dist/cjs/LexicalComposerContext.js",
+      "import": "./dist/esm/LexicalComposerContext.js"
+    },
+    "./LexicalListPlugin": {
+      "require": "./dist/cjs/LexicalListPlugin.js",
+      "import": "./dist/esm/LexicalListPlugin.js"
+    },
+    "./LexicalTreeView": {
+      "require": "./dist/cjs/LexicalTreeView.js",
+      "import": "./dist/esm/LexicalTreeView.js"
+    },
+    "./LexicalAutoFocusPlugin": {
+      "require": "./dist/cjs/LexicalAutoFocusPlugin.js",
+      "import": "./dist/esm/LexicalAutoFocusPlugin.js"
+    },
+    "./LexicalContentEditable": {
+      "require": "./dist/cjs/LexicalContentEditable.js",
+      "import": "./dist/esm/LexicalContentEditable.js"
+    },
+    "./LexicalMarkdownShortcutPlugin": {
+      "require": "./dist/cjs/LexicalMarkdownShortcutPlugin.js",
+      "import": "./dist/esm/LexicalMarkdownShortcutPlugin.js"
+    },
+    "./LexicalTypeaheadMenuPlugin": {
+      "require": "./dist/cjs/LexicalTypeaheadMenuPlugin.js",
+      "import": "./dist/esm/LexicalTypeaheadMenuPlugin.js"
+    },
+    "./LexicalAutoLinkPlugin": {
+      "require": "./dist/cjs/LexicalAutoLinkPlugin.js",
+      "import": "./dist/esm/LexicalAutoLinkPlugin.js"
+    },
+    "./LexicalContextMenuPlugin": {
+      "require": "./dist/cjs/LexicalContextMenuPlugin.js",
+      "import": "./dist/esm/LexicalContextMenuPlugin.js"
+    },
+    "./LexicalNestedComposer": {
+      "require": "./dist/cjs/LexicalNestedComposer.js",
+      "import": "./dist/esm/LexicalNestedComposer.js"
+    },
+    "./LexicalBlockWithAlignableContents": {
+      "require": "./dist/cjs/LexicalBlockWithAlignableContents.js",
+      "import": "./dist/esm/LexicalBlockWithAlignableContents.js"
+    },
+    "./LexicalDecoratorBlockNode": {
+      "require": "./dist/cjs/LexicalDecoratorBlockNode.js",
+      "import": "./dist/esm/LexicalDecoratorBlockNode.js"
+    },
+    "./LexicalNodeEventPlugin": {
+      "require": "./dist/cjs/LexicalNodeEventPlugin.js",
+      "import": "./dist/esm/LexicalNodeEventPlugin.js"
+    },
+    "./LexicalCharacterLimitPlugin": {
+      "require": "./dist/cjs/LexicalCharacterLimitPlugin.js",
+      "import": "./dist/esm/LexicalCharacterLimitPlugin.js"
+    },
+    "./LexicalEditorRefPlugin": {
+      "require": "./dist/cjs/LexicalEditorRefPlugin.js",
+      "import": "./dist/esm/LexicalEditorRefPlugin.js"
+    },
+    "./LexicalNodeMenuPlugin": {
+      "require": "./dist/cjs/LexicalNodeMenuPlugin.js",
+      "import": "./dist/esm/LexicalNodeMenuPlugin.js"
+    },
+    "./useLexicalEditable": {
+      "require": "./dist/cjs/useLexicalEditable.js",
+      "import": "./dist/esm/useLexicalEditable.js"
+    },
+    "./LexicalCheckListPlugin": {
+      "require": "./dist/cjs/LexicalCheckListPlugin.js",
+      "import": "./dist/esm/LexicalCheckListPlugin.js"
+    },
+    "./LexicalErrorBoundary": {
+      "require": "./dist/cjs/LexicalErrorBoundary.js",
+      "import": "./dist/esm/LexicalErrorBoundary.js"
+    },
+    "./LexicalOnChangePlugin": {
+      "require": "./dist/cjs/LexicalOnChangePlugin.js",
+      "import": "./dist/esm/LexicalOnChangePlugin.js"
+    },
+    "./useLexicalIsTextContentEmpty": {
+      "require": "./dist/cjs/useLexicalIsTextContentEmpty.js",
+      "import": "./dist/esm/useLexicalIsTextContentEmpty.js"
+    },
+    "./LexicalClearEditorPlugin": {
+      "require": "./dist/cjs/LexicalClearEditorPlugin.js",
+      "import": "./dist/esm/LexicalClearEditorPlugin.js"
+    },
+    "./LexicalHashtagPlugin": {
+      "require": "./dist/cjs/LexicalHashtagPlugin.js",
+      "import": "./dist/esm/LexicalHashtagPlugin.js"
+    },
+    "./LexicalPlainTextPlugin": {
+      "require": "./dist/cjs/LexicalPlainTextPlugin.js",
+      "import": "./dist/esm/LexicalPlainTextPlugin.js"
+    },
+    "./useLexicalNodeSelection": {
+      "require": "./dist/cjs/useLexicalNodeSelection.js",
+      "import": "./dist/esm/useLexicalNodeSelection.js"
+    },
+    "./LexicalClickableLinkPlugin": {
+      "require": "./dist/cjs/LexicalClickableLinkPlugin.js",
+      "import": "./dist/esm/LexicalClickableLinkPlugin.js"
+    },
+    "./LexicalHistoryPlugin": {
+      "require": "./dist/cjs/LexicalHistoryPlugin.js",
+      "import": "./dist/esm/LexicalHistoryPlugin.js"
+    },
+    "./LexicalRichTextPlugin": {
+      "require": "./dist/cjs/LexicalRichTextPlugin.js",
+      "import": "./dist/esm/LexicalRichTextPlugin.js"
+    },
+    "./useLexicalSubscription": {
+      "require": "./dist/cjs/useLexicalSubscription.js",
+      "import": "./dist/esm/useLexicalSubscription.js"
+    },
+    "./LexicalCollaborationContext": {
+      "require": "./dist/cjs/LexicalCollaborationContext.js",
+      "import": "./dist/esm/LexicalCollaborationContext.js"
+    },
+    "./LexicalHorizontalRuleNode": {
+      "require": "./dist/cjs/LexicalHorizontalRuleNode.js",
+      "import": "./dist/esm/LexicalHorizontalRuleNode.js"
+    },
+    "./LexicalTabIndentationPlugin": {
+      "require": "./dist/cjs/LexicalTabIndentationPlugin.js",
+      "import": "./dist/esm/LexicalTabIndentationPlugin.js"
+    },
+    "./useLexicalTextEntity": {
+      "require": "./dist/cjs/useLexicalTextEntity.js",
+      "import": "./dist/esm/useLexicalTextEntity.js"
+    },
+    "./LexicalCollaborationPlugin": {
+      "require": "./dist/cjs/LexicalCollaborationPlugin.js",
+      "import": "./dist/esm/LexicalCollaborationPlugin.js"
+    },
+    "./LexicalHorizontalRulePlugin": {
+      "require": "./dist/cjs/LexicalHorizontalRulePlugin.js",
+      "import": "./dist/esm/LexicalHorizontalRulePlugin.js"
+    },
+    "./LexicalTableOfContents": {
+      "require": "./dist/cjs/LexicalTableOfContents.js",
+      "import": "./dist/esm/LexicalTableOfContents.js"
+    },
+    "./LexicalComposer": {
+      "require": "./dist/cjs/LexicalComposer.js",
+      "import": "./dist/esm/LexicalComposer.js"
+    },
+    "./LexicalLinkPlugin": {
+      "require": "./dist/cjs/LexicalLinkPlugin.js",
+      "import": "./dist/esm/LexicalLinkPlugin.js"
+    },
+    "./LexicalTablePlugin": {
+      "require": "./dist/cjs/LexicalTablePlugin.js",
+      "import": "./dist/esm/LexicalTablePlugin.js"
+    }
+  },
   "dependencies": {
     "@lexical/clipboard": "0.12.0",
     "@lexical/code": "0.12.0",

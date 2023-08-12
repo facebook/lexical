@@ -8,4 +8,4 @@
 
 'use strict';
 
-module.exports = require('./dist/LexicalMark.js');
+module.exports = require('./dist/cjs/LexicalFile.js');

@@ -6,4 +6,6 @@
  *
  */
 
-module.exports = require('./dist/cjs/LexicalYjs.js');
+import LexicalDragon from './dist/esm/LexicalDragon.js';
+
+export default LexicalDragon;

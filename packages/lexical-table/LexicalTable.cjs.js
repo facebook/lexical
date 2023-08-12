@@ -6,4 +6,6 @@
  *
  */
 
-module.exports = require('./dist/cjs/LexicalYjs.js');
+'use strict';
+
+module.exports = require('./dist/cjs/LexicalTable.js');

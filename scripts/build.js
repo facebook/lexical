@@ -251,17 +251,34 @@ async function build(name, inputFile, outputPath, outputFile, isProd) {
     // This ensures PrismJS imports get included in the bundle
     treeshake: isWWW || name !== 'Lexical Code' ? 'smallest' : undefined,
   };
-  const outputOptions = {
-    esModule: false,
-    exports: 'auto',
-    externalLiveBindings: false,
-    file: outputFile,
-    format: 'cjs', // change between es and cjs modules
-    freeze: false,
-    interop: false,
-  };
+  const outputOptions = [
+    {
+      // Common options
+      esModule: true,
+      exports: 'auto',
+      externalLiveBindings: false,
+      // CJS specific
+      file: outputFile.replace('.js', '.cjs.js'),
+      format: 'cjs',
+      freeze: false,
+      interop: false,
+    },
+    {
+      // Common options
+      esModule: true,
+      exports: 'auto',
+      externalLiveBindings: false,
+      // ESM specific
+      file: outputFile.replace('.js', '.esm.js'),
+      format: 'es',
+      freeze: false,
+      interop: false,
+    },
+  ];
   const result = await rollup.rollup(inputOptions);
-  await result.write(outputOptions);
+  for (let output of outputOptions) {
+    await result.write(output);
+  }
 }
 
 function getComment() {
@@ -593,16 +610,31 @@ async function moveTSDeclarationFilesIntoDist(packageName, outputPath) {
 }
 
 function buildForkModule(outputPath, outputFileName) {
-  const lines = [
+  // For CJS
+  const cjsLines = [
     getComment(),
     `'use strict'`,
-    `const ${outputFileName} = process.env.NODE_ENV === 'development' ? require('./${outputFileName}.dev.js') : require('./${outputFileName}.prod.js')`,
+    `const ${outputFileName} = process.env.NODE_ENV === 'development' ? require('./${outputFileName}.dev.cjs.js') : require('./${outputFileName}.prod.cjs.js')`,
     `module.exports = ${outputFileName};`,
   ];
-  const fileContent = lines.join('\n');
+  const cjsContent = cjsLines.join('\n');
   fs.outputFileSync(
-    path.resolve(path.join(`${outputPath}${outputFileName}.js`)),
-    fileContent,
+    path.resolve(path.join(`${outputPath}${outputFileName}.cjs.js`)),
+    cjsContent,
+  );
+
+  // For ESM
+  const esmLines = [
+    getComment(),
+    `import devModule from './${outputFileName}.dev.esm.js';`,
+    `import prodModule from './${outputFileName}.prod.esm.js';`,
+    `const ${outputFileName} = process.env.NODE_ENV === 'development' ? devModule : prodModule;`,
+    `export default ${outputFileName};`,
+  ];
+  const esmContent = esmLines.join('\n');
+  fs.outputFileSync(
+    path.resolve(path.join(`${outputPath}${outputFileName}.esm.js`)),
+    esmContent,
   );
 }
 

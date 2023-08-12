@@ -9,7 +9,12 @@
   ],
   "license": "MIT",
   "version": "0.12.0",
-  "main": "LexicalHeadless.js",
+  "main": "LexicalHeadless.cjs.js",
+  "module": "LexicalHeadless.esm.js",
+  "exports": {
+    "import": "./LexicalHeadless.esm.js",
+    "require": "./LexicalHeadless.cjs.js"
+  },
   "peerDependencies": {
     "lexical": "0.12.0"
   },

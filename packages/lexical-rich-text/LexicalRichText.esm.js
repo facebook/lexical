@@ -6,6 +6,6 @@
  *
  */
 
-'use strict';
+import LexicalRichText from './dist/esm/LexicalRichText.js';
 
-module.exports = require('./dist/LexicalYjs.js');
+export default LexicalRichText;

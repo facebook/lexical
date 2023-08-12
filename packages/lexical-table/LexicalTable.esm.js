@@ -6,6 +6,6 @@
  *
  */
 
-'use strict';
+import LexicalTable from './dist/esm/LexicalTable.js';
 
-module.exports = require('./dist/LexicalText.js');
+export default LexicalTable;

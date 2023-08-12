@@ -6,6 +6,6 @@
  *
  */
 
-'use strict';
+import LexicalText from './dist/esm/LexicalText.js';
 
-module.exports = require('./dist/LexicalLink.js');
+export default LexicalText;

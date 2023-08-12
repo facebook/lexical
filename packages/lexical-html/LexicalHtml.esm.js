@@ -6,6 +6,6 @@
  *
  */
 
-'use strict';
+import LexicalHtml from './dist/esm/LexicalHtml.js';
 
-module.exports = require('./dist/LexicalRichText.js');
+export default LexicalHtml;

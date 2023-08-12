@@ -10,7 +10,12 @@
   ],
   "license": "MIT",
   "version": "0.12.0",
-  "main": "LexicalText.js",
+  "main": "dist/LexicalText.cjs.js",
+  "module": "dist/LexicalText.esm.js",
+  "exports": {
+    "import": "./dist/LexicalText.esm.js",
+    "require": "./dist/LexicalText.cjs.js"
+  },
   "peerDependencies": {
     "lexical": "0.12.0"
   },

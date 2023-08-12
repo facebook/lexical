@@ -6,6 +6,6 @@
  *
  */
 
-'use strict';
+import LexicalHeadless from './dist/esm/LexicalHeadless.js';
 
-module.exports = require('./dist/LexicalHtml.js');
+export default LexicalHeadless;

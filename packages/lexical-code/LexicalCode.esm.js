@@ -6,6 +6,6 @@
  *
  */
 
-'use strict';
+import LexicalCode from './dist/esm/LexicalCode.js';
 
-module.exports = require('./dist/LexicalHistory.js');
+export default LexicalCode;

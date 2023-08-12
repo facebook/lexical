@@ -6,4 +6,6 @@
  *
  */
 
-module.exports = require('./dist/cjs/LexicalYjs.js');
+import LexicalClipboard from './dist/esm/LexicalClipboard.js';
+
+export default LexicalClipboard;

@@ -9,7 +9,12 @@
   ],
   "license": "MIT",
   "version": "0.12.0",
-  "main": "LexicalMark.js",
+  "main": "LexicalMark.cjs.js",
+  "module": "LexicalMark.esm.js",
+  "exports": {
+    "import": "./LexicalMark.esm.js",
+    "require": "./LexicalMark.cjs.js"
+  },
   "peerDependencies": {
     "lexical": "0.12.0"
   },

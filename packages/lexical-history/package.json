@@ -9,7 +9,12 @@
   ],
   "license": "MIT",
   "version": "0.12.0",
-  "main": "LexicalHistory.js",
+  "main": "LexicalHistory.cjs.js",
+  "module": "LexicalHistory.esm.js",
+  "exports": {
+    "import": "./LexicalHistory.esm.js",
+    "require": "./LexicalHistory.cjs.js"
+  },
   "peerDependencies": {
     "lexical": "0.12.0"
   },

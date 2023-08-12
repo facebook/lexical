@@ -8,7 +8,12 @@
   ],
   "license": "MIT",
   "version": "0.12.0",
-  "main": "LexicalPlainText.js",
+  "main": "LexicalPlainText.cjs.js",
+  "module": "LexicalPlainText.esm.js",
+  "exports": {
+    "import": "./LexicalPlainText.esm.js",
+    "require": "./LexicalPlainText.cjs.js"
+  },
   "peerDependencies": {
     "lexical": "0.12.0",
     "@lexical/utils": "0.12.0",

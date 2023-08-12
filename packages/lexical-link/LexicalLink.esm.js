@@ -6,6 +6,6 @@
  *
  */
 
-'use strict';
+import LexicalLink from './dist/esm/LexicalLink.js';
 
-module.exports = require('./dist/LexicalHashtag.js');
+export default LexicalLink;

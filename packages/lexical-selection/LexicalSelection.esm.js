@@ -6,6 +6,6 @@
  *
  */
 
-'use strict';
+import LexicalSelection from './dist/esm/LexicalSelection.js';
 
-module.exports = require('./dist/LexicalSelection.js');
+export default LexicalSelection;

@@ -6,4 +6,6 @@
  *
  */
 
-module.exports = require('./dist/cjs/LexicalYjs.js');
+import LexicalOffset from './dist/esm/LexicalOffset.js';
+
+export default LexicalOffset;

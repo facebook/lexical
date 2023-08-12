@@ -6,6 +6,6 @@
  *
  */
 
-'use strict';
+import LexicalUtils from './dist/esm/LexicalUtils.js';
 
-module.exports = require('./dist/LexicalPlainText.js');
+export default LexicalUtils;

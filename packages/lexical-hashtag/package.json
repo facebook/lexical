@@ -9,7 +9,12 @@
   ],
   "license": "MIT",
   "version": "0.12.0",
-  "main": "LexicalHashtag.js",
+  "main": "LexicalHashtag.cjs.js",
+  "module": "LexicalHashtag.esm.js",
+  "exports": {
+    "import": "./LexicalHashtag.esm.js",
+    "require": "./LexicalHashtag.cjs.js"
+  },
   "peerDependencies": {
     "lexical": "0.12.0"
   },

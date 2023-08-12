@@ -6,6 +6,6 @@
  *
  */
 
-'use strict';
+import LexicalOverflow from './dist/esm/LexicalOverflow.js';
 
-module.exports = require('./dist/LexicalOffset.js');
+export default LexicalOverflow;

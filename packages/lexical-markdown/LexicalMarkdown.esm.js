@@ -6,4 +6,6 @@
  *
  */
 
-module.exports = require('./dist/cjs/LexicalYjs.js');
+import LexicalMarkdown from './dist/esm/LexicalMarkdown.js';
+
+export default LexicalMarkdown;

@@ -6,4 +6,6 @@
  *
  */
 
-module.exports = require('./dist/cjs/LexicalYjs.js');
+import LexicalHistory from './dist/esm/LexicalHistory.js';
+
+export default LexicalHistory;

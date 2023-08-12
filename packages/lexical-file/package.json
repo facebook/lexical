@@ -11,7 +11,12 @@
   ],
   "license": "MIT",
   "version": "0.12.0",
-  "main": "LexicalFile.js",
+  "main": "LexicalFile.cjs.js",
+  "module": "LexicalFile.esm.js",
+  "exports": {
+    "import": "./LexicalFile.esm.js",
+    "require": "./LexicalFile.cjs.js"
+  },
   "peerDependencies": {
     "lexical": "0.12.0"
   },

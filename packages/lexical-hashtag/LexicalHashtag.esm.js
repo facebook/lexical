@@ -6,4 +6,6 @@
  *
  */
 
-module.exports = require('./dist/cjs/LexicalYjs.js');
+import LexicalHashtag from './dist/esm/LexicalHashtag.js';
+
+export default LexicalHashtag;

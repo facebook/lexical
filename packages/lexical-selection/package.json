@@ -10,7 +10,12 @@
   ],
   "license": "MIT",
   "version": "0.12.0",
-  "main": "LexicalSelection.js",
+  "main": "dist/LexicalSelection.cjs.js",
+  "module": "dist/LexicalSelection.esm.js",
+  "exports": {
+    "import": "./dist/LexicalSelection.esm.js",
+    "require": "./dist/LexicalSelection.cjs.js"
+  },
   "peerDependencies": {
     "lexical": "0.12.0"
   },

@@ -9,7 +9,12 @@
   ],
   "license": "MIT",
   "version": "0.12.0",
-  "main": "LexicalOverflow.js",
+  "main": "LexicalOverflow.cjs.js",
+  "module": "LexicalOverflow.esm.js",
+  "exports": {
+    "import": "./LexicalOverflow.esm.js",
+    "require": "./LexicalOverflow.cjs.js"
+  },
   "peerDependencies": {
     "lexical": "0.12.0"
   },

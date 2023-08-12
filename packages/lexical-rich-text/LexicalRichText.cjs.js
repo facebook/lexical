@@ -8,4 +8,4 @@
 
 'use strict';
 
-module.exports = require('./dist/LexicalClipboard.js');
+module.exports = require('./dist/cjs/LexicalRichText.js');

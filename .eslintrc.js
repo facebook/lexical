@@ -48,6 +48,12 @@ module.exports = {
       },
     },
     {
+      files: ['packages/*/*.esm.js'],
+      parserOptions: {
+        sourceType: 'module',
+      },
+    },
+    {
       // node scripts should be console logging so don't lint against that
       files: ['scripts/**/*.js'],
       rules: {

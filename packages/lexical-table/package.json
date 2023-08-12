@@ -9,7 +9,12 @@
   ],
   "license": "MIT",
   "version": "0.12.0",
-  "main": "LexicalTable.js",
+  "main": "LexicalTable.cjs.js",
+  "module": "LexicalTable.esm.js",
+  "exports": {
+    "import": "./LexicalTable.esm.js",
+    "require": "./LexicalTable.cjs.js"
+  },
   "peerDependencies": {
     "lexical": "0.12.0"
   },

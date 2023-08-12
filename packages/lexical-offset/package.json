@@ -9,7 +9,12 @@
   ],
   "license": "MIT",
   "version": "0.12.0",
-  "main": "LexicalOffset.js",
+  "main": "LexicalOffset.cjs.js",
+  "module": "LexicalOffset.esm.js",
+  "exports": {
+    "import": "./LexicalOffset.esm.js",
+    "require": "./LexicalOffset.cjs.js"
+  },
   "peerDependencies": {
     "lexical": "0.12.0"
   },

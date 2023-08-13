@@ -9,11 +9,11 @@
   ],
   "license": "MIT",
   "version": "0.12.0",
-  "main": "dist/LexicalUtils.cjs.js",
-  "module": "dist/LexicalUtils.esm.js",
+  "main": "LexicalUtils.cjs.js",
+  "module": "LexicalUtils.esm.js",
   "exports": {
-    "import": "./dist/LexicalUtils.esm.js",
-    "require": "./dist/LexicalUtils.cjs.js"
+    "import": "./LexicalUtils.esm.js",
+    "require": "./LexicalUtils.cjs.js"
   },
   "peerDependencies": {
     "lexical": "0.12.0"

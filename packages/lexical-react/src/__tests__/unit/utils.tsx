@@ -6,8 +6,8 @@
  *
  */
 
-import {useLexicalComposerContext} from '@lexical/react/src/LexicalComposerContext';
-import LexicalErrorBoundary from '@lexical/react/src/LexicalErrorBoundary';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary';
 import {UserState} from '@lexical/yjs/src/index';
 import {LexicalEditor} from 'lexical';
 import * as React from 'react';

@@ -30,7 +30,7 @@
     "tsc-watch": "tsc -w",
     "collab": "cross-env HOST=localhost PORT=1234 npx y-websocket-server",
     "validation": "npx ts-node --cwdMode packages/lexical-playground/src/server/validation.ts",
-    "test-unit": "jest --selectProjects unit --testPathPattern",
+    "test-unit": "cross-env NODE_ENV=development jest --selectProjects unit --testPathPattern",
     "test-unit-watch": "npm run test-unit -- --watch --coverage=''",
     "test-e2e-chromium": "cross-env E2E_BROWSER=chromium playwright test --project=\"chromium\"",
     "test-e2e-firefox": "cross-env E2E_BROWSER=firefox playwright test --project=\"firefox\"",
@@ -177,13 +177,13 @@
   },
   "size-limit": [
     {
-      "path": "packages/lexical/dist/Lexical.js"
+      "path": "packages/lexical/dist/Lexical.esm.js"
     },
     {
-      "path": "packages/lexical-rich-text/dist/LexicalRichText.js"
+      "path": "packages/lexical-rich-text/dist/LexicalRichText.esm.js"
     },
     {
-      "path": "packages/lexical-plain-text/dist/LexicalPlainText.js"
+      "path": "packages/lexical-plain-text/dist/LexicalPlainText.esm.js"
     }
   ]
 }

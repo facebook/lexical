@@ -11,6 +11,7 @@ import {
   focusEditor,
   initialize,
   insertTable,
+  locate,
   mergeTableCells,
   selectCellsFromTableCords,
   test,
@@ -43,7 +44,7 @@ test.describe('Regression test #4876', () => {
 
     await unmergeTableCell(page);
 
-    const tableRow = await page.locator('tr');
+    const tableRow = await locate(page, 'tr');
     expect(await tableRow.count()).toBe(4);
     for (let i = 0; i < 4; i++) {
       const tableCells = tableRow.nth(i).locator('th, td');

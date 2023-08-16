@@ -185,12 +185,29 @@ export class QuoteNode extends ElementNode {
 
   // Mutation
 
-  insertNewAfter(_: RangeSelection, restoreSelection?: boolean): ParagraphNode {
-    const newBlock = $createParagraphNode();
-    const direction = this.getDirection();
-    newBlock.setDirection(direction);
-    this.insertAfter(newBlock, restoreSelection);
-    return newBlock;
+  insertNewAfter(
+    _: RangeSelection,
+    restoreSelection?: boolean,
+  ): null | ParagraphNode {
+    const children = this.getChildren();
+    const childrenLength = children.length;
+
+    if (
+      childrenLength >= 2 &&
+      children[childrenLength - 1].getTextContent() === '\n' &&
+      children[childrenLength - 2].getTextContent() === '\n' &&
+      _.isCollapsed() &&
+      _.anchor.key === this.__key &&
+      _.anchor.offset === childrenLength
+    ) {
+      children[childrenLength - 1].remove();
+      children[childrenLength - 2].remove();
+      const newBlock = $createParagraphNode();
+      this.insertAfter(newBlock, restoreSelection);
+      return newBlock;
+    }
+
+    return null;
   }
 
   collapseAtStart(): true {

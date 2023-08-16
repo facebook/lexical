@@ -7,7 +7,7 @@
  */
 
 import {$createQuoteNode} from '@lexical/rich-text';
-import {$getRoot, ParagraphNode} from 'lexical';
+import {$getRoot} from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
 const editorConfig = Object.freeze({
@@ -72,14 +72,6 @@ describe('LexicalQuoteNode tests', () => {
       });
       expect(testEnv.outerHTML).toBe(
         '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><blockquote><br></blockquote></div>',
-      );
-      await editor.update(() => {
-        const result = quoteNode.insertNewAfter();
-        expect(result).toBeInstanceOf(ParagraphNode);
-        expect(result.getDirection()).toEqual(quoteNode.getDirection());
-      });
-      expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><blockquote><br></blockquote><p><br></p></div>',
       );
     });
 

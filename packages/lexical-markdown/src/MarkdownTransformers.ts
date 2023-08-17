@@ -50,6 +50,9 @@ export type ElementTransformer = {
     // eslint-disable-next-line no-shadow
     traverseChildren: (node: ElementNode) => string,
   ) => string | null;
+  // This property will be considered as 1 by default.
+  getNumberOfLines?: (lines: Array<string>, startLineIndex: number) => number;
+  getChildrenFromLines? :(lines: Array<string>) => Array<LexicalNode>
   regExp: RegExp;
   replace: (
     parentNode: ElementNode,
@@ -83,7 +86,7 @@ export type TextMatchTransformer = Readonly<{
   type: 'text-match';
 }>;
 
-const createBlockNode = (
+export const createBlockNode = (
   createNode: (match: Array<string>) => ElementNode,
 ): ElementTransformer['replace'] => {
   return (parentNode, children, match) => {
@@ -239,7 +242,19 @@ export const CODE: ElementTransformer = {
       '```'
     );
   },
-  regExp: /^```(\w{1,10})?\s/,
+  getNumberOfLines: (lines, startLineIndex) => {
+    const CODE_BLOCK_REG_EXP = /^```(\w{1,10})?\s?$/;
+    let endLineIndex = startLineIndex;
+    const linesLength = lines.length;
+    while (++endLineIndex < linesLength) {
+      const closeMatch = lines[endLineIndex].match(CODE_BLOCK_REG_EXP);
+      if (closeMatch) {
+        return endLineIndex - startLineIndex;
+      }
+    }
+    return 1;
+  },
+  regExp: /^```(\w{1,10})?\s?$/,
   replace: createBlockNode((match) => {
     return $createCodeNode(match ? match[1] : undefined);
   }),

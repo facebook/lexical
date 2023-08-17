@@ -57,15 +57,38 @@ export function createMarkdownImport(
 
     for (let i = 0; i < linesLength; i++) {
       const lineText = lines[i];
-      // Codeblocks are processed first as anything inside such block
-      // is ignored for further processing
-      // TODO:
-      // Abstract it to be dynamic as other transformers (add multiline match option)
-      const [codeBlockNode, shiftedIndex] = importCodeBlock(lines, i, root);
-
-      if (codeBlockNode != null) {
-        i = shiftedIndex;
-        continue;
+      // handle multi line parser like Codeblocks
+      let isMatched = false;
+      for (const elementTransformer of byType.element) {
+        if (elementTransformer.getNumberOfLines) {
+          const match = lineText.match(elementTransformer.regExp)
+          const numberOfLines = elementTransformer.getNumberOfLines(lines, i)
+          if (i + numberOfLines >= lines.length) {
+            continue
+          }
+          if (match) {
+            const textNode = $createTextNode(
+              lines.slice(i + 1, i + numberOfLines).join('\n'),
+            )
+            const elementNode = $createParagraphNode()
+            elementNode.append(textNode)
+            root.append(elementNode)
+            if (elementTransformer.getChildrenFromLines) {
+              /**
+               * The default is to turn all lines into a textNode, here it turns multiple lines into multiple ParagraphNodes before adding TextNode.
+               */
+              elementTransformer.replace(elementNode, elementTransformer.getChildrenFromLines(lines.slice(i + 1, i + numberOfLines)), match, true)
+            } else {
+              elementTransformer.replace(elementNode, [textNode], match, true)
+            }
+            i += numberOfLines
+            isMatched = true
+            break
+          }
+        }
+      }
+      if (isMatched) {
+        continue
       }
 
       importBlocks(
@@ -123,7 +146,8 @@ function importBlocks(
     const match = lineText.match(regExp);
 
     if (match) {
-      textNode.setTextContent(lineText.slice(match[0].length));
+      const textContent = lineText.slice(match[0].length)
+      textNode.setTextContent(textContent);
       replace(elementNode, [textNode], match, true);
       break;
     }

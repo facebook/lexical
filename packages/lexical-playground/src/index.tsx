@@ -14,7 +14,7 @@ import {createRoot} from 'react-dom/client';
 
 import App from './App';
 
-// Handle runtime errors
+// Handle runtime errors.
 const showErrorOverlay = (err: Event) => {
   const ErrorOverlay = customElements.get('vite-error-overlay');
   if (!ErrorOverlay) {

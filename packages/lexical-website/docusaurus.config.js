@@ -16,6 +16,7 @@ const importPlugin = require('remark-import-partial');
 
 const TITLE = 'Lexical';
 const GITHUB_REPO_URL = 'https://github.com/facebook/lexical'; // TODO: Update when repo name updated
+const IOS_GITHUB_REPO_URL = 'https://github.com/facebook/lexical-ios';
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -184,8 +185,18 @@ const config = {
 
           {label: 'Community', position: 'left', to: '/community'},
           {
+            href: 'https://facebook.github.io/lexical-ios/',
+            label: 'iOS',
+            position: 'left',
+          },
+          {
             href: GITHUB_REPO_URL,
             label: 'GitHub',
+            position: 'right',
+          },
+          {
+            href: IOS_GITHUB_REPO_URL,
+            label: 'iOS GitHub',
             position: 'right',
           },
         ],

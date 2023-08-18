@@ -201,7 +201,7 @@ test.describe('HTML Links CopyAndPaste', () => {
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
             dir="ltr"
             value="1">
-            <span data-lexical-text="true">â..ï¸.Â Line 1Â</span>
+            <span data-lexical-text="true">â..ï¸.Â&nbsp;Line 1Â&nbsp;</span>
             <a
               class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
               dir="ltr"
@@ -216,7 +216,7 @@ test.describe('HTML Links CopyAndPaste', () => {
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
             dir="ltr"
             value="2">
-            <span data-lexical-text="true">â..ï¸.Â Line 2.</span>
+            <span data-lexical-text="true">â..ï¸.Â&nbsp;Line 2.</span>
           </li>
         </ul>
       `,

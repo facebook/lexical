@@ -12,13 +12,12 @@ import Layout from '@theme/Layout';
 import React, {useMemo} from 'react';
 
 import codes from '../../../../../../scripts/error-codes/codes.json';
-import styles from './styles.module.css';
 
 export default function ErrorCodePage() {
   const {siteConfig} = useDocusaurusContext();
   return (
     <Layout description={siteConfig.tagline}>
-      <div className="container padding-top--md padding-bottom--lg">
+      <div className="flex flex-col pb-8 pt-4">
         <h1>Error Code</h1>
         <p>
           In the minified production build of Lexical, we avoid sending down
@@ -61,7 +60,9 @@ function ErrorFinder() {
     return (
       <>
         <h2>Error code #{error.code}</h2>
-        <div className={styles.errorContainer}>{error.description}</div>
+        <div className="bg-[#ffbaba] p-4 text-[#a70000]">
+          {error.description}
+        </div>
       </>
     );
   } else {

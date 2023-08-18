@@ -21,7 +21,9 @@ import * as React from 'react';
 export function EditorRefPlugin({
   editorRef,
 }: {
-  editorRef: React.RefCallback<LexicalEditor> | MutableRefObject<LexicalEditor>;
+  editorRef:
+    | React.RefCallback<LexicalEditor>
+    | MutableRefObject<LexicalEditor | null | undefined>;
 }): null {
   const [editor] = useLexicalComposerContext();
   if (typeof editorRef === 'function') {

@@ -1,3 +1,20 @@
+## v0.12.0 (2023-08-09)
+
+### Breaking Changes
+
+#4818 moves "select all" behavior to the SELECT_ALL command, meaning anyone using setRootElement directly (i.e., not using PlainTextPlugin or RichTextPlugin or their underlying functions) would need to wire up command listeners for SELECT_ALL_COMMAND in order to preserve the default "select all" behavior after this version.
+
+- Extract "select all" behavior to new `SELECT_ALL_COMMAND` (#4818) Chris Montrois
+- Paste decorators before empty text nodes (#4672) Steve Larson
+- Added "Page Break" to Lexical Playground (#4842) Dias Kappassov
+- fix editor ref types and use EditorRefPlugin in the playground (#4852) Anton Kostiuchkov
+- Expand react docs (#4845) Acy Watson
+- Port lexical.dev to Tailwind (#4827) Awjin
+- Stop collapsing non-collapsible whitespace on paste (#4770) Brian Birtles
+- feat(playground): add support for collapsed margins in draggable block (#4823) Mathieu Métral
+- feat(playground): add support for drop block on empty area (#4811) Mathieu Métral
+- docs: remove placeholder property from exampleTheme (#4802) Karam Qaoud%
+
 ## v0.11.3 (2023-07-18)
 
 - RFC Add prev editor state for mutation listener (#4796) Maksim Horbachevsky

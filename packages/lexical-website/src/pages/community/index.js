@@ -19,23 +19,14 @@ export default function Community() {
   return (
     <Layout description={siteConfig.tagline}>
       <main>
-        <div className="container">
-          <div className="row">
-            <div className="col col--8 col--offset-2">
-              <section className="margin-vert--xl">
-                <CommunityHeader />
-              </section>
-              <section className="margin-vert--xl">
-                <CommunityLinks />
-              </section>
-              <section className="margin-vert--xl">
-                <CommunityContributors />
-              </section>
-              <section className="margin-vert--xl">
-                <CommunityHowToContribute />
-              </section>
-            </div>
-          </div>
+        <div className="mx-auto my-20 flex max-w-[55rem] flex-col gap-16 px-4">
+          <CommunityHeader />
+
+          <CommunityLinks />
+
+          <CommunityContributors />
+
+          <CommunityHowToContribute />
         </div>
       </main>
     </Layout>

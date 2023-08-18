@@ -59,6 +59,7 @@ import {
   $isRootNode,
   $isTextNode,
   $normalizeSelection__EXPERIMENTAL,
+  $selectAll,
   $setSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_EDITOR,
@@ -93,6 +94,7 @@ import {
   OUTDENT_CONTENT_COMMAND,
   PASTE_COMMAND,
   REMOVE_TEXT_COMMAND,
+  SELECT_ALL_COMMAND,
 } from 'lexical';
 import caretFromPoint from 'shared/caretFromPoint';
 import {
@@ -988,6 +990,15 @@ export function registerRichText(editor: LexicalEditor): () => void {
             event.preventDefault();
           }
         }
+        return true;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerCommand(
+      SELECT_ALL_COMMAND,
+      () => {
+        $selectAll();
+
         return true;
       },
       COMMAND_PRIORITY_EDITOR,

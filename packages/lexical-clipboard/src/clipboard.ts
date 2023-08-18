@@ -16,6 +16,7 @@ import {$findMatchingParent, objectKlassEquals} from '@lexical/utils';
 import {
   $createParagraphNode,
   $createTabNode,
+  $createTextNode,
   $getRoot,
   $getSelection,
   $isDecoratorNode,
@@ -34,6 +35,7 @@ import {
   DEPRECATED_$isGridSelection,
   DEPRECATED_GridNode,
   GridSelection,
+  INSERT_NODES_COMMAND,
   isSelectionWithinEditor,
   LexicalEditor,
   LexicalNode,
@@ -146,7 +148,8 @@ export function $insertDataTransferForRichText(
         Array.isArray(payload.nodes)
       ) {
         const nodes = $generateNodesFromSerializedNodes(payload.nodes);
-        return $insertGeneratedNodes(editor, nodes, selection);
+        editor.dispatchCommand(INSERT_NODES_COMMAND, {nodes, selection});
+        return;
       }
     } catch {
       // Fail silently.
@@ -159,7 +162,8 @@ export function $insertDataTransferForRichText(
       const parser = new DOMParser();
       const dom = parser.parseFromString(htmlString, 'text/html');
       const nodes = $generateNodesFromDOM(editor, dom);
-      return $insertGeneratedNodes(editor, nodes, selection);
+      editor.dispatchCommand(INSERT_NODES_COMMAND, {nodes, selection});
+      return;
     } catch {
       // Fail silently.
     }
@@ -172,18 +176,22 @@ export function $insertDataTransferForRichText(
     dataTransfer.getData('text/plain') || dataTransfer.getData('text/uri-list');
   if (text != null) {
     if ($isRangeSelection(selection)) {
+      let lastParagraphNode = $createParagraphNode();
+      const nodes: Array<LexicalNode> = [lastParagraphNode];
       const parts = text.split(/(\r?\n|\t)/);
       const partsLength = parts.length;
       for (let i = 0; i < partsLength; i++) {
         const part = parts[i];
         if (part === '\n' || part === '\r\n') {
-          selection.insertParagraph();
+          lastParagraphNode = $createParagraphNode();
+          nodes.push(lastParagraphNode);
         } else if (part === '\t') {
-          selection.insertNodes([$createTabNode()]);
+          lastParagraphNode.append($createTabNode());
         } else {
-          selection.insertText(part);
+          lastParagraphNode.append($createTextNode(part));
         }
       }
+      editor.dispatchCommand(INSERT_NODES_COMMAND, {nodes, selection});
     } else {
       selection.insertRawText(text);
     }

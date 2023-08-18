@@ -6,9 +6,20 @@
  *
  */
 
-import type {ElementFormatType, LexicalCommand, TextFormatType} from 'lexical';
+import type {
+  ElementFormatType,
+  GridSelection,
+  LexicalCommand,
+  LexicalNode,
+  RangeSelection,
+  TextFormatType,
+} from 'lexical';
 
 export type PasteCommandType = ClipboardEvent | InputEvent | KeyboardEvent;
+export type InsertNodesCommandType = {
+  nodes: LexicalNode[];
+  selection: GridSelection | RangeSelection;
+};
 
 export function createCommand<T>(type?: string): LexicalCommand<T> {
   return __DEV__ ? {type} : {};
@@ -33,6 +44,8 @@ export const CONTROLLED_TEXT_INSERTION_COMMAND: LexicalCommand<
 > = createCommand('CONTROLLED_TEXT_INSERTION_COMMAND');
 export const PASTE_COMMAND: LexicalCommand<PasteCommandType> =
   createCommand('PASTE_COMMAND');
+export const INSERT_NODES_COMMAND: LexicalCommand<InsertNodesCommandType> =
+  createCommand('INSERT_NODES_COMMAND');
 export const REMOVE_TEXT_COMMAND: LexicalCommand<InputEvent | null> =
   createCommand('REMOVE_TEXT_COMMAND');
 export const DELETE_WORD_COMMAND: LexicalCommand<boolean> = createCommand(

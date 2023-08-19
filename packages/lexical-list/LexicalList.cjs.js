@@ -7,5 +7,4 @@
  */
 
 'use strict';
-
-module.exports = require('./dist/cjs/LexicalList.js');
+module.exports = require('./dist/LexicalList.cjs.js');

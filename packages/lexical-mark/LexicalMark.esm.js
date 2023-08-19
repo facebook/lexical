@@ -6,6 +6,6 @@
  *
  */
 
-import LexicalMark from './dist/esm/LexicalMark.js';
+import LexicalMark from './dist/LexicalMark.esm.js';
 
 export default LexicalMark;

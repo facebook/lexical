@@ -6,6 +6,6 @@
  *
  */
 
-import LexicalUtils from './dist/esm/LexicalUtils.js';
+import LexicalUtils from './dist/LexicalUtils.esm.js';
 
 export default LexicalUtils;

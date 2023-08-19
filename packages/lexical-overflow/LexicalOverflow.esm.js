@@ -6,6 +6,6 @@
  *
  */
 
-import LexicalOverflow from './dist/esm/LexicalOverflow.js';
+import LexicalOverflow from './dist/LexicalOverflow.esm.js';
 
 export default LexicalOverflow;

@@ -6,6 +6,6 @@
  *
  */
 
-import LexicalHeadless from './dist/esm/LexicalHeadless.js';
+import LexicalHeadless from './dist/LexicalHeadless.esm.js';
 
 export default LexicalHeadless;

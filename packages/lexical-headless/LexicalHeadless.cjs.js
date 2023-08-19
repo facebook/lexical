@@ -8,4 +8,4 @@
 
 'use strict';
 
-module.exports = require('./dist/cjs/LexicalHeadless.js');
+module.exports = require('./dist/LexicalHeadless.cjs.js');

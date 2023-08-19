@@ -6,6 +6,6 @@
  *
  */
 
-import LexicalHashtag from './dist/esm/LexicalHashtag.js';
+import LexicalHashtag from './dist/LexicalHashtag.esm.js';
 
 export default LexicalHashtag;

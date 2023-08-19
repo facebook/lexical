@@ -6,6 +6,6 @@
  *
  */
 
-import LexicalLink from './dist/esm/LexicalLink.js';
+import LexicalLink from './dist/LexicalLink.esm.js';
 
 export default LexicalLink;

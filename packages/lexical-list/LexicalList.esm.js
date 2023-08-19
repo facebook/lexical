@@ -6,6 +6,6 @@
  *
  */
 
-import LexicalList from './dist/esm/LexicalList.js';
+import LexicalList from './dist/LexicalList.esm.js';
 
 export default LexicalList;

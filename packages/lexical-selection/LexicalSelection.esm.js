@@ -6,6 +6,6 @@
  *
  */
 
-import LexicalSelection from './dist/esm/LexicalSelection.js';
+import LexicalSelection from './dist/LexicalSelection.esm.js';
 
 export default LexicalSelection;

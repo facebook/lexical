@@ -6,6 +6,6 @@
  *
  */
 
-import LexicalCode from './dist/esm/LexicalCode.js';
+import LexicalCode from './dist/LexicalCode.esm.js';
 
 export default LexicalCode;

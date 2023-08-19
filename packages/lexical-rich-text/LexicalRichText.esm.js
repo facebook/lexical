@@ -6,6 +6,6 @@
  *
  */
 
-import LexicalRichText from './dist/esm/LexicalRichText.js';
+import LexicalRichText from './dist/LexicalRichText.esm.js';
 
 export default LexicalRichText;

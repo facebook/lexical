@@ -6,6 +6,6 @@
  *
  */
 
-import LexicalClipboard from './dist/esm/LexicalClipboard.js';
+import LexicalClipboard from './dist/LexicalClipboard.esm.js';
 
 export default LexicalClipboard;

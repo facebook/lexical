@@ -6,6 +6,6 @@
  *
  */
 
-import LexicalHtml from './dist/esm/LexicalHtml.js';
+import LexicalHtml from './dist/LexicalHtml.esm.js';
 
 export default LexicalHtml;

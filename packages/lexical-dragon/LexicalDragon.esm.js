@@ -6,6 +6,6 @@
  *
  */
 
-import LexicalDragon from './dist/esm/LexicalDragon.js';
+import LexicalDragon from './dist/LexicalDragon.esm.js';
 
 export default LexicalDragon;

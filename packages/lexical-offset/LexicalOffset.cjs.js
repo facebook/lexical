@@ -8,4 +8,4 @@
 
 'use strict';
 
-module.exports = require('./dist/cjs/LexicalOffset.js');
+module.exports = require('./dist/LexicalOffset.cjs.js');

@@ -6,6 +6,6 @@
  *
  */
 
-import LexicalYjs from './dist/esm/LexicalYjs.js';
+import LexicalYjs from './dist/LexicalYjs.esm.js';
 
 export default LexicalYjs;

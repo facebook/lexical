@@ -6,6 +6,6 @@
  *
  */
 
-import LexicalPlainText from './dist/esm/LexicalPlainText.js';
+import LexicalPlainText from './dist/LexicalPlainText.esm.js';
 
 export default LexicalPlainText;

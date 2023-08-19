@@ -6,6 +6,6 @@
  *
  */
 
-import LexicalFile from './dist/esm/LexicalFile.js';
+import LexicalFile from './dist/LexicalFile.esm.js';
 
 export default LexicalFile;

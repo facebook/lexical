@@ -6,6 +6,6 @@
  *
  */
 
-import LexicalTable from './dist/esm/LexicalTable.js';
+import LexicalTable from './dist/LexicalTable.esm.js';
 
 export default LexicalTable;

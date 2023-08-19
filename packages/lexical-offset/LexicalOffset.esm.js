@@ -6,6 +6,6 @@
  *
  */
 
-import LexicalOffset from './dist/esm/LexicalOffset.js';
+import LexicalOffset from './dist/LexicalOffset.esm.js';
 
 export default LexicalOffset;

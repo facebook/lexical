@@ -6,6 +6,6 @@
  *
  */
 
-import LexicalHistory from './dist/esm/LexicalHistory.js';
+import LexicalHistory from './dist/LexicalHistory.esm.js';
 
 export default LexicalHistory;

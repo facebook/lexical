@@ -8,4 +8,4 @@
 
 'use strict';
 
-module.exports = require('./dist/cjs/LexicalHashtag.js');
+module.exports = require('./dist/LexicalHashtag.cjs.js');

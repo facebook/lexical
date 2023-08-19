@@ -6,6 +6,6 @@
  *
  */
 
-import LexicalMarkdown from './dist/esm/LexicalMarkdown.js';
+import LexicalMarkdown from './dist/LexicalMarkdown.esm.js';
 
 export default LexicalMarkdown;

@@ -258,7 +258,7 @@ async function build(name, inputFile, outputPath, outputFile, isProd) {
       exports: 'auto',
       externalLiveBindings: false,
       // CJS specific
-      file: outputFile.replace('.js', '.cjs.js'),
+      file: outputFile.replace('.js', '.cjs'),
       format: 'cjs',
       freeze: false,
       interop: false,
@@ -269,7 +269,7 @@ async function build(name, inputFile, outputPath, outputFile, isProd) {
       exports: 'auto',
       externalLiveBindings: false,
       // ESM specific
-      file: outputFile.replace('.js', '.esm.js'),
+      file: outputFile.replace('.js', '.mjs'),
       format: 'es',
       freeze: false,
       interop: false,
@@ -614,26 +614,26 @@ function buildForkModule(outputPath, outputFileName) {
   const cjsLines = [
     getComment(),
     `'use strict'`,
-    `const ${outputFileName} = process.env.NODE_ENV === 'development' ? require('./${outputFileName}.dev.cjs.js') : require('./${outputFileName}.prod.cjs.js')`,
+    `const ${outputFileName} = process.env.NODE_ENV === 'development' ? require('./${outputFileName}.dev.cjs') : require('./${outputFileName}.prod.cjs')`,
     `module.exports = ${outputFileName};`,
   ];
   const cjsContent = cjsLines.join('\n');
   fs.outputFileSync(
-    path.resolve(path.join(`${outputPath}${outputFileName}.cjs.js`)),
+    path.resolve(path.join(`${outputPath}${outputFileName}.cjs`)),
     cjsContent,
   );
 
   // For ESM
   const esmLines = [
     getComment(),
-    `import devModule from './${outputFileName}.dev.esm.js';`,
-    `import prodModule from './${outputFileName}.prod.esm.js';`,
+    `import devModule from './${outputFileName}.dev.mjs';`,
+    `import prodModule from './${outputFileName}.prod.mjs';`,
     `const ${outputFileName} = process.env.NODE_ENV === 'development' ? devModule : prodModule;`,
     `export default ${outputFileName};`,
   ];
   const esmContent = esmLines.join('\n');
   fs.outputFileSync(
-    path.resolve(path.join(`${outputPath}${outputFileName}.esm.js`)),
+    path.resolve(path.join(`${outputPath}${outputFileName}.mjs`)),
     esmContent,
   );
 }

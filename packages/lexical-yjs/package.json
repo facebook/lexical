@@ -12,11 +12,11 @@
   ],
   "license": "MIT",
   "version": "0.12.0",
-  "main": "LexicalYjs.cjs.js",
-  "module": "LexicalYjs.esm.js",
+  "main": "LexicalYjs.cjs",
+  "module": "LexicalYjs.mjs",
   "exports": {
-    "import": "./LexicalYjs.esm.js",
-    "require": "./LexicalYjs.cjs.js"
+    "import": "./LexicalYjs.mjs",
+    "require": "./LexicalYjs.cjs"
   },
   "dependencies": {
     "@lexical/offset": "0.12.0"

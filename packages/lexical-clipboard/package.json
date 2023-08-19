@@ -10,11 +10,10 @@
   ],
   "license": "MIT",
   "version": "0.12.0",
-  "main": "LexicalClipboard.cjs.js",
-  "module": "LexicalClipboard.esm.js",
+  "main": "LexicalClipboard.cjs",
   "exports": {
-    "import": "./LexicalClipboard.esm.js",
-    "require": "./LexicalClipboard.cjs.js"
+    "import": "./LexicalClipboard.mjs",
+    "require": "./LexicalClipboard.cjs"
   },
   "peerDependencies": {
     "lexical": "0.12.0"

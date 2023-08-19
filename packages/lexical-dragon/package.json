@@ -10,11 +10,10 @@
   ],
   "license": "MIT",
   "version": "0.12.0",
-  "main": "LexicalDragon.cjs.js",
-  "module": "LexicalDragon.esm.js",
+  "main": "LexicalDragon.cjs",
   "exports": {
-    "import": "./LexicalDragon.esm.js",
-    "require": "./LexicalDragon.cjs.js"
+    "import": "./LexicalDragon.mjs",
+    "require": "./LexicalDragon.cjs"
   },
   "peerDependencies": {
     "lexical": "0.12.0"

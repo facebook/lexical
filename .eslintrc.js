@@ -48,7 +48,7 @@ module.exports = {
       },
     },
     {
-      files: ['packages/*/*.esm.js'],
+      files: ['packages/*/*.mjs'],
       parserOptions: {
         sourceType: 'module',
       },

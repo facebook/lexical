@@ -177,22 +177,22 @@
   },
   "size-limit": [
     {
-      "path": "packages/lexical/dist/Lexical.esm.js"
+      "path": "packages/lexical/dist/Lexical.mjs"
     },
     {
-      "path": "packages/lexical-rich-text/dist/LexicalRichText.esm.js"
+      "path": "packages/lexical-rich-text/dist/LexicalRichText.mjs"
     },
     {
-      "path": "packages/lexical-plain-text/dist/LexicalPlainText.esm.js"
+      "path": "packages/lexical-plain-text/dist/LexicalPlainText.mjs"
     },
     {
-      "path": "packages/lexical/dist/Lexical.cjs.js"
+      "path": "packages/lexical/dist/Lexical.cjs"
     },
     {
-      "path": "packages/lexical-rich-text/dist/LexicalRichText.cjs.js"
+      "path": "packages/lexical-rich-text/dist/LexicalRichText.cjs"
     },
     {
-      "path": "packages/lexical-plain-text/dist/LexicalPlainText.cjs.js"
+      "path": "packages/lexical-plain-text/dist/LexicalPlainText.cjs"
     }
   ]
 }

@@ -6,4 +6,4 @@
  *
  */
 
-module.exports = require('./dist/LexicalYjs.cjs.js');
+module.exports = require('./dist/LexicalYjs.cjs');

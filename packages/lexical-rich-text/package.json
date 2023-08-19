@@ -8,11 +8,10 @@
   ],
   "license": "MIT",
   "version": "0.12.0",
-  "main": "LexicalRichText.cjs.js",
-  "module": "LexicalRichText.esm.js",
+  "main": "LexicalRichText.cjs",
   "exports": {
-    "import": "./LexicalRichText.esm.js",
-    "require": "./LexicalRichText.cjs.js"
+    "import": "./LexicalRichText.mjs",
+    "require": "./LexicalRichText.cjs"
   },
   "peerDependencies": {
     "lexical": "0.12.0",

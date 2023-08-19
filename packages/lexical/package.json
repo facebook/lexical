@@ -10,11 +10,10 @@
   ],
   "license": "MIT",
   "version": "0.12.0",
-  "main": "Lexical.cjs.js",
-  "module": "Lexical.esm.js",
+  "main": "Lexical.cjs",
   "exports": {
-    "import": "./Lexical.esm.js",
-    "require": "./Lexical.cjs.js"
+    "import": "./Lexical.mjs",
+    "require": "./Lexical.cjs"
   },
   "repository": {
     "type": "git",

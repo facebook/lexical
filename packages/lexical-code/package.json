@@ -9,11 +9,10 @@
   ],
   "license": "MIT",
   "version": "0.12.0",
-  "main": "LexicalCode.cjs.js",
-  "module": "LexicalCode.esm.js",
+  "main": "LexicalCode.cjs",
   "exports": {
-    "import": "./LexicalCode.esm.js",
-    "require": "./LexicalCode.cjs.js"
+    "import": "./LexicalCode.mjs",
+    "require": "./LexicalCode.cjs"
   },
   "peerDependencies": {
     "lexical": "0.12.0"

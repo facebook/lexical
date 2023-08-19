@@ -9,11 +9,10 @@
   ],
   "license": "MIT",
   "version": "0.12.0",
-  "main": "LexicalMarkdown.cjs.js",
-  "module": "LexicalMarkdown.esm.js",
+  "main": "LexicalMarkdown.cjs",
   "exports": {
-    "import": "./LexicalMarkdown.esm.js",
-    "require": "./LexicalMarkdown.cjs.js"
+    "import": "./LexicalMarkdown.mjs",
+    "require": "./LexicalMarkdown.cjs"
   },
   "peerDependencies": {
     "lexical": "0.12.0"

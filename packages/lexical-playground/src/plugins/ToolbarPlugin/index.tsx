@@ -6,7 +6,7 @@
  *
  */
 
-import type {LexicalEditor, NodeKey} from 'lexical';
+import type {ElementFormatType, LexicalEditor, NodeKey} from 'lexical';
 
 import {
   $createCodeNode,
@@ -80,6 +80,7 @@ import {$createStickyNode} from '../../nodes/StickyNode';
 import DropDown, {DropDownItem} from '../../ui/DropDown';
 import DropdownColorPicker from '../../ui/DropdownColorPicker';
 import {getSelectedNode} from '../../utils/getSelectedNode';
+import {getSelectionFormat} from '../../utils/getSelectionFormat';
 import {sanitizeUrl} from '../../utils/url';
 import {EmbedConfigs} from '../AutoEmbedPlugin';
 import {INSERT_COLLAPSIBLE_COMMAND} from '../CollapsiblePlugin';
@@ -160,7 +161,6 @@ function dropDownActiveClass(active: boolean) {
 function BlockFormatDropDown({
   editor,
   blockType,
-  rootType,
   disabled = false,
 }: {
   blockType: keyof typeof blockTypeToBlockName;
@@ -406,99 +406,106 @@ export default function ToolbarPlugin(): JSX.Element {
   const [canRedo, setCanRedo] = useState(false);
   const [modal, showModal] = useModal();
   const [isRTL, setIsRTL] = useState(false);
+  const [selectionFormat, setSelectionFormat] = useState<ElementFormatType>('');
   const [codeLanguage, setCodeLanguage] = useState<string>('');
   const [isEditable, setIsEditable] = useState(() => editor.isEditable());
 
   const $updateToolbar = useCallback(() => {
     const selection = $getSelection();
-    if ($isRangeSelection(selection)) {
-      const anchorNode = selection.anchor.getNode();
-      let element =
-        anchorNode.getKey() === 'root'
-          ? anchorNode
-          : $findMatchingParent(anchorNode, (e) => {
-              const parent = e.getParent();
-              return parent !== null && $isRootOrShadowRoot(parent);
-            });
 
-      if (element === null) {
-        element = anchorNode.getTopLevelElementOrThrow();
-      }
+    if (selection !== null) {
+      // Update selection format
+      setSelectionFormat(getSelectionFormat(selection));
 
-      const elementKey = element.getKey();
-      const elementDOM = activeEditor.getElementByKey(elementKey);
+      if ($isRangeSelection(selection)) {
+        const anchorNode = selection.anchor.getNode();
+        let element =
+          anchorNode.getKey() === 'root'
+            ? anchorNode
+            : $findMatchingParent(anchorNode, (e) => {
+                const parent = e.getParent();
+                return parent !== null && $isRootOrShadowRoot(parent);
+              });
 
-      // Update text format
-      setIsBold(selection.hasFormat('bold'));
-      setIsItalic(selection.hasFormat('italic'));
-      setIsUnderline(selection.hasFormat('underline'));
-      setIsStrikethrough(selection.hasFormat('strikethrough'));
-      setIsSubscript(selection.hasFormat('subscript'));
-      setIsSuperscript(selection.hasFormat('superscript'));
-      setIsCode(selection.hasFormat('code'));
-      setIsRTL($isParentElementRTL(selection));
+        if (element === null) {
+          element = anchorNode.getTopLevelElementOrThrow();
+        }
 
-      // Update links
-      const node = getSelectedNode(selection);
-      const parent = node.getParent();
-      if ($isLinkNode(parent) || $isLinkNode(node)) {
-        setIsLink(true);
-      } else {
-        setIsLink(false);
-      }
+        const elementKey = element.getKey();
+        const elementDOM = activeEditor.getElementByKey(elementKey);
 
-      const tableNode = $findMatchingParent(node, $isTableNode);
-      if ($isTableNode(tableNode)) {
-        setRootType('table');
-      } else {
-        setRootType('root');
-      }
+        // Update text format
+        setIsBold(selection.hasFormat('bold'));
+        setIsItalic(selection.hasFormat('italic'));
+        setIsUnderline(selection.hasFormat('underline'));
+        setIsStrikethrough(selection.hasFormat('strikethrough'));
+        setIsSubscript(selection.hasFormat('subscript'));
+        setIsSuperscript(selection.hasFormat('superscript'));
+        setIsCode(selection.hasFormat('code'));
+        setIsRTL($isParentElementRTL(selection));
 
-      if (elementDOM !== null) {
-        setSelectedElementKey(elementKey);
-        if ($isListNode(element)) {
-          const parentList = $getNearestNodeOfType<ListNode>(
-            anchorNode,
-            ListNode,
-          );
-          const type = parentList
-            ? parentList.getListType()
-            : element.getListType();
-          setBlockType(type);
+        // Update links
+        const node = getSelectedNode(selection);
+        const parent = node.getParent();
+        if ($isLinkNode(parent) || $isLinkNode(node)) {
+          setIsLink(true);
         } else {
-          const type = $isHeadingNode(element)
-            ? element.getTag()
-            : element.getType();
-          if (type in blockTypeToBlockName) {
-            setBlockType(type as keyof typeof blockTypeToBlockName);
-          }
-          if ($isCodeNode(element)) {
-            const language =
-              element.getLanguage() as keyof typeof CODE_LANGUAGE_MAP;
-            setCodeLanguage(
-              language ? CODE_LANGUAGE_MAP[language] || language : '',
+          setIsLink(false);
+        }
+
+        const tableNode = $findMatchingParent(node, $isTableNode);
+        if ($isTableNode(tableNode)) {
+          setRootType('table');
+        } else {
+          setRootType('root');
+        }
+
+        if (elementDOM !== null) {
+          setSelectedElementKey(elementKey);
+          if ($isListNode(element)) {
+            const parentList = $getNearestNodeOfType<ListNode>(
+              anchorNode,
+              ListNode,
             );
-            return;
+            const type = parentList
+              ? parentList.getListType()
+              : element.getListType();
+            setBlockType(type);
+          } else {
+            const type = $isHeadingNode(element)
+              ? element.getTag()
+              : element.getType();
+            if (type in blockTypeToBlockName) {
+              setBlockType(type as keyof typeof blockTypeToBlockName);
+            }
+            if ($isCodeNode(element)) {
+              const language =
+                element.getLanguage() as keyof typeof CODE_LANGUAGE_MAP;
+              setCodeLanguage(
+                language ? CODE_LANGUAGE_MAP[language] || language : '',
+              );
+              return;
+            }
           }
         }
+        // Handle buttons
+        setFontSize(
+          $getSelectionStyleValueForProperty(selection, 'font-size', '15px'),
+        );
+        setFontColor(
+          $getSelectionStyleValueForProperty(selection, 'color', '#000'),
+        );
+        setBgColor(
+          $getSelectionStyleValueForProperty(
+            selection,
+            'background-color',
+            '#fff',
+          ),
+        );
+        setFontFamily(
+          $getSelectionStyleValueForProperty(selection, 'font-family', 'Arial'),
+        );
       }
-      // Handle buttons
-      setFontSize(
-        $getSelectionStyleValueForProperty(selection, 'font-size', '15px'),
-      );
-      setFontColor(
-        $getSelectionStyleValueForProperty(selection, 'color', '#000'),
-      );
-      setBgColor(
-        $getSelectionStyleValueForProperty(
-          selection,
-          'background-color',
-          '#fff',
-        ),
-      );
-      setFontFamily(
-        $getSelectionStyleValueForProperty(selection, 'font-family', 'Arial'),
-      );
     }
   }, [activeEditor]);
 
@@ -1046,7 +1053,7 @@ export default function ToolbarPlugin(): JSX.Element {
           onClick={() => {
             activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'left');
           }}
-          className="item">
+          className={'item ' + dropDownActiveClass(selectionFormat === 'left')}>
           <i className="icon left-align" />
           <span className="text">Left Align</span>
         </DropDownItem>
@@ -1054,7 +1061,9 @@ export default function ToolbarPlugin(): JSX.Element {
           onClick={() => {
             activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center');
           }}
-          className="item">
+          className={
+            'item ' + dropDownActiveClass(selectionFormat === 'center')
+          }>
           <i className="icon center-align" />
           <span className="text">Center Align</span>
         </DropDownItem>
@@ -1062,7 +1071,9 @@ export default function ToolbarPlugin(): JSX.Element {
           onClick={() => {
             activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'right');
           }}
-          className="item">
+          className={
+            'item ' + dropDownActiveClass(selectionFormat === 'right')
+          }>
           <i className="icon right-align" />
           <span className="text">Right Align</span>
         </DropDownItem>
@@ -1070,7 +1081,9 @@ export default function ToolbarPlugin(): JSX.Element {
           onClick={() => {
             activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'justify');
           }}
-          className="item">
+          className={
+            'item ' + dropDownActiveClass(selectionFormat === 'justify')
+          }>
           <i className="icon justify-align" />
           <span className="text">Justify Align</span>
         </DropDownItem>

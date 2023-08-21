@@ -400,6 +400,10 @@ export type NodeMap = Map<NodeKey, LexicalNode>;
  * LexicalSelection
  */
 
+declare export function $isBlockElementNode(
+  node: ?LexicalNode,
+): boolean %checks(node instanceof ElementNode);
+
 interface BaseSelection {
   clone(): BaseSelection;
   dirty: boolean;

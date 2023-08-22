@@ -702,7 +702,7 @@ export function triggerCommandListeners<
 >(
   editor: LexicalEditor,
   type: TCommand,
-  payload: CommandPayloadType<TCommand>,
+  payload?: CommandPayloadType<TCommand>,
 ): boolean {
   if (editor._updating === false || activeEditor !== editor) {
     let returnVal = false;

@@ -878,7 +878,7 @@ export class LexicalEditor {
    */
   dispatchCommand<TCommand extends LexicalCommand<unknown>>(
     type: TCommand,
-    payload: CommandPayloadType<TCommand>,
+    payload?: CommandPayloadType<TCommand>,
   ): boolean {
     return dispatchCommand(this, type, payload);
   }

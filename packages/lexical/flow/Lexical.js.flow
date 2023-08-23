@@ -26,6 +26,7 @@ declare export var DELETE_LINE_COMMAND: LexicalCommand<boolean>;
 declare export var FORMAT_TEXT_COMMAND: LexicalCommand<TextFormatType>;
 declare export var UNDO_COMMAND: LexicalCommand<void>;
 declare export var REDO_COMMAND: LexicalCommand<void>;
+declare export var KEY_DOWN_COMMAND: LexicalCommand<KeyboardEvent>;
 declare export var KEY_ARROW_RIGHT_COMMAND: LexicalCommand<KeyboardEvent>;
 declare export var KEY_ARROW_LEFT_COMMAND: LexicalCommand<KeyboardEvent>;
 declare export var KEY_ARROW_UP_COMMAND: LexicalCommand<KeyboardEvent>;
@@ -80,14 +81,18 @@ type DecoratorListener = (decorator: {
   [NodeKey]: any,
 }) => void;
 type RootListener = (
-  element: null | HTMLElement,
-  element: null | HTMLElement,
+  rootElement: null | HTMLElement,
+  prevRootElement: null | HTMLElement,
 ) => void;
 type TextContentListener = (text: string) => void;
 type ErrorHandler = (error: Error) => void;
 export type MutationListener = (
   nodes: Map<NodeKey, NodeMutation>,
-  {updateTags: Set<string>, dirtyLeaves: Set<string>},
+  {
+    updateTags: Set<string>,
+    dirtyLeaves: Set<string>,
+    prevEditorState: EditorState,
+  },
 ) => void;
 export type EditableListener = (editable: boolean) => void;
 type Listeners = {
@@ -395,6 +400,10 @@ export type NodeMap = Map<NodeKey, LexicalNode>;
  * LexicalSelection
  */
 
+declare export function $isBlockElementNode(
+  node: ?LexicalNode,
+): boolean %checks(node instanceof ElementNode);
+
 interface BaseSelection {
   clone(): BaseSelection;
   dirty: boolean;
@@ -476,6 +485,7 @@ declare export class RangeSelection implements BaseSelection {
   applyDOMRange(range: StaticRange): void;
   clone(): RangeSelection;
   toggleFormat(format: TextFormatType): void;
+  setStyle(style: string): void;
   hasFormat(type: TextFormatType): boolean;
   insertText(text: string): void;
   insertRawText(text: string): void;

@@ -205,7 +205,11 @@ export type TextContentListener = (text: string) => void;
 
 export type MutationListener = (
   nodes: Map<NodeKey, NodeMutation>,
-  payload: {updateTags: Set<string>; dirtyLeaves: Set<string>},
+  payload: {
+    updateTags: Set<string>;
+    dirtyLeaves: Set<string>;
+    prevEditorState: EditorState;
+  },
 ) => void;
 
 export type CommandListener<P> = (payload: P, editor: LexicalEditor) => boolean;
@@ -951,6 +955,10 @@ export class LexicalEditor {
           nextRootElement.classList.add(...classNames);
         }
       } else {
+        // If content editable is unmounted we'll reset editor state back to original
+        // (or pending) editor state since there will be no reconciliation
+        this._editorState = pendingEditorState;
+        this._pendingEditorState = null;
         this._window = null;
       }
 

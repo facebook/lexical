@@ -119,10 +119,10 @@
 .PlaygroundEditorTheme__table {
   border-collapse: collapse;
   border-spacing: 0;
-  max-width: 100%;
   overflow-y: scroll;
+  overflow-x: scroll;
   table-layout: fixed;
-  width: calc(100% - 25px);
+  width: max-content;
   margin: 30px 0;
 }
 .PlaygroundEditorTheme__tableSelection *::selection {
@@ -133,6 +133,7 @@
 }
 .PlaygroundEditorTheme__tableCell {
   border: 1px solid #bbb;
+  width: 75px;
   min-width: 75px;
   vertical-align: top;
   text-align: start;

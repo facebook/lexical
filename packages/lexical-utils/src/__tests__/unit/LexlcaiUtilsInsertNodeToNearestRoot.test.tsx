@@ -9,8 +9,12 @@
 import type {LexicalEditor, LexicalNode} from 'lexical';
 
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
-import {$getRoot, $isElementNode, $setSelection} from 'lexical';
-import {$createRangeSelection} from 'lexical/src';
+import {
+  $createRangeSelection,
+  $getRoot,
+  $isElementNode,
+  $setSelection,
+} from 'lexical';
 import {
   $createTestDecoratorNode,
   createTestEditor,

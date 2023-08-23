@@ -350,10 +350,10 @@ export class CommentStore {
                       | undefined);
 
               if (Array.isArray(insert)) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 insert
                   .slice()
                   .reverse()
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   .forEach((map: YMap<any>) => {
                     const id = map.get('id');
                     const type = map.get('type');
@@ -365,7 +365,6 @@ export class CommentStore {
                             map
                               .get('comments')
                               .toArray()
-                              // eslint-disable-next-line @typescript-eslint/no-explicit-any
                               .map(
                                 (
                                   innerComment: Map<

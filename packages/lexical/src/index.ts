@@ -105,6 +105,7 @@ export {
   PASTE_COMMAND,
   REDO_COMMAND,
   REMOVE_TEXT_COMMAND,
+  SELECT_ALL_COMMAND,
   SELECTION_CHANGE_COMMAND,
   UNDO_COMMAND,
 } from './LexicalCommands';
@@ -149,6 +150,7 @@ export {
   $isLeafNode,
   $isRootOrShadowRoot,
   $nodesOfType,
+  $selectAll,
   $setCompositionKey,
   $setSelection,
   $splitNode,

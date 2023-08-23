@@ -49,7 +49,7 @@ export type Cell = {
   y: number;
 };
 
-export type Cells = Array<Array<Cell>>;
+export type Cells = Array<Array<Cell | undefined> | undefined>;
 
 export type Grid = {
   cells: Cells;

@@ -38,6 +38,7 @@ import {
   $findMatchingParent,
   $getNearestBlockElementAncestorOrThrow,
   addClassNamesToElement,
+  isHTMLElement,
   mergeRegister,
   objectKlassEquals,
 } from '@lexical/utils';
@@ -152,10 +153,9 @@ export class QuoteNode extends ElementNode {
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const {element} = super.exportDOM(editor);
 
-    if (element && this.isEmpty()) {
-      element.append(document.createElement('br'));
-    }
-    if (element) {
+    if (element && isHTMLElement(element)) {
+      if (this.isEmpty()) element.append(document.createElement('br'));
+
       const formatType = this.getFormatType();
       element.style.textAlign = formatType;
 
@@ -313,10 +313,9 @@ export class HeadingNode extends ElementNode {
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const {element} = super.exportDOM(editor);
 
-    if (element && this.isEmpty()) {
-      element.append(document.createElement('br'));
-    }
-    if (element) {
+    if (element && isHTMLElement(element)) {
+      if (this.isEmpty()) element.append(document.createElement('br'));
+
       const formatType = this.getFormatType();
       element.style.textAlign = formatType;
 

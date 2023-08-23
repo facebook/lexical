@@ -266,7 +266,10 @@ function createTextInnerDOM(
   }
 }
 
-function wrapElementWith(element: HTMLElement, tag: string): HTMLElement {
+function wrapElementWith(
+  element: HTMLElement | Text,
+  tag: string,
+): HTMLElement {
   const el = document.createElement(tag);
   el.appendChild(element);
   return el;

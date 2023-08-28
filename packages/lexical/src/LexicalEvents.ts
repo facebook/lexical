@@ -334,8 +334,8 @@ function onSelectionChange(
             selection.format = anchorNode.getFormat();
             selection.style = anchorNode.getStyle();
           } else if (anchor.type === 'element') {
-            selection.format = 0;
-            selection.style = '';
+            selection.format = lastFormat;
+            selection.style = lastStyle;
           }
         }
       } else {

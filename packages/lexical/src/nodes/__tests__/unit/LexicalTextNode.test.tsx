@@ -335,6 +335,18 @@ describe('LexicalTextNode tests', () => {
     });
   });
 
+  describe('code format', () => {
+    test('disables spellcheck for code format', async () => {
+      await update(() => {
+        const textNode = $createTextNode('My code node');
+        textNode.setFormat('code');
+        const textElement = editor.getElementByKey(textNode.getKey());
+
+        expect(textElement.spellcheck).toBeFalsy();
+      });
+    });
+  });
+
   describe('select()', () => {
     test.each([
       [

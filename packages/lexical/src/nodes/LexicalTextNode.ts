@@ -451,7 +451,7 @@ export class TextNode extends LexicalNode {
     const dom = document.createElement(tag);
     let innerDOM = dom;
     if (this.hasFormat('code')) {
-      dom.spellcheck = false;
+      dom.setAttribute('spellcheck', 'false');
     }
     if (outerTag !== null) {
       innerDOM = document.createElement(innerTag);

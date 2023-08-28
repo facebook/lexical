@@ -335,18 +335,6 @@ describe('LexicalTextNode tests', () => {
     });
   });
 
-  describe('code format', () => {
-    test('disables spellcheck for code format', async () => {
-      await update(() => {
-        const textNode = $createTextNode('My code node');
-        textNode.setFormat('code');
-        const textElement = editor.getElementByKey(textNode.getKey());
-
-        expect(textElement.spellcheck).toBeFalsy();
-      });
-    });
-  });
-
   describe('select()', () => {
     test.each([
       [
@@ -604,7 +592,7 @@ describe('LexicalTextNode tests', () => {
         'code',
         IS_CODE,
         'My text node',
-        '<code><span class="my-code-class">My text node</span></code>',
+        '<code spellcheck="false"><span class="my-code-class">My text node</span></code>',
       ],
       [
         'underline + strikethrough',
@@ -617,13 +605,13 @@ describe('LexicalTextNode tests', () => {
         'code + italic',
         IS_CODE | IS_ITALIC,
         'My text node',
-        '<code><em class="my-code-class my-italic-class">My text node</em></code>',
+        '<code spellcheck="false"><em class="my-code-class my-italic-class">My text node</em></code>',
       ],
       [
         'code + underline + strikethrough',
         IS_CODE | IS_UNDERLINE | IS_STRIKETHROUGH,
         'My text node',
-        '<code><span class="my-underline-strikethrough-class my-code-class">' +
+        '<code spellcheck="false"><span class="my-underline-strikethrough-class my-code-class">' +
           'My text node</span></code>',
       ],
       [
@@ -636,7 +624,7 @@ describe('LexicalTextNode tests', () => {
         'code + underline + strikethrough + bold + italic',
         IS_CODE | IS_UNDERLINE | IS_STRIKETHROUGH | IS_BOLD | IS_ITALIC,
         'My text node',
-        '<code><strong class="my-underline-strikethrough-class my-bold-class my-code-class my-italic-class">My text node</strong></code>',
+        '<code spellcheck="false"><strong class="my-underline-strikethrough-class my-bold-class my-code-class my-italic-class">My text node</strong></code>',
       ],
       [
         'code + underline + strikethrough + bold + italic + highlight',
@@ -647,7 +635,7 @@ describe('LexicalTextNode tests', () => {
           IS_ITALIC |
           IS_HIGHLIGHT,
         'My text node',
-        '<code><strong class="my-underline-strikethrough-class my-bold-class my-code-class my-highlight-class my-italic-class">My text node</strong></code>',
+        '<code spellcheck="false"><strong class="my-underline-strikethrough-class my-bold-class my-code-class my-highlight-class my-italic-class">My text node</strong></code>',
       ],
     ])('%s text format type', async (_type, format, contents, expectedHTML) => {
       await update(() => {

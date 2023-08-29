@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {$isTableCellNode} from '@lexical/table';
 import {
   $createRangeSelection,
   $createTextNode,
@@ -322,7 +321,10 @@ export function $patchStyleTable(
   const focus = formatSelection.focus;
 
   selection.getNodes().forEach((cellNode) => {
-    if ($isTableCellNode(cellNode) && cellNode.getTextContentSize() !== 0) {
+    if (
+      cellNode.getType() === 'tablecell' &&
+      cellNode.getTextContentSize() !== 0
+    ) {
       anchor.set(cellNode.getKey(), 0, 'element');
       focus.set(cellNode.getKey(), cellNode.getChildrenSize(), 'element');
       $patchStyleText(formatSelection, patch);

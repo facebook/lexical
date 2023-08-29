@@ -6,8 +6,6 @@
  *
  */
 
-import type {ElementFormatType, LexicalEditor, NodeKey} from 'lexical';
-
 import {
   $createCodeNode,
   $isCodeNode,
@@ -38,6 +36,7 @@ import {
 import {
   $getSelectionStyleValueForProperty,
   $isParentElementRTL,
+  $patchStyleTable,
   $patchStyleText,
   $setBlocksType,
 } from '@lexical/selection';
@@ -48,8 +47,7 @@ import {
   $getNearestNodeOfType,
   mergeRegister,
 } from '@lexical/utils';
-import {
-  $createParagraphNode,
+import { $createParagraphNode,
   $getNodeByKey,
   $getRoot,
   $getSelection,
@@ -62,10 +60,11 @@ import {
   COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_NORMAL,
   DEPRECATED_$isGridSelection,
-  FORMAT_ELEMENT_COMMAND,
+ElementFormatType, FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
   INDENT_CONTENT_COMMAND,
   KEY_MODIFIER_COMMAND,
+LexicalEditor, NodeKey,
   OUTDENT_CONTENT_COMMAND,
   REDO_COMMAND,
   SELECTION_CHANGE_COMMAND,
@@ -668,6 +667,9 @@ export default function ToolbarPlugin(): JSX.Element {
         const selection = $getSelection();
         if ($isRangeSelection(selection)) {
           $patchStyleText(selection, styles);
+        } else if (DEPRECATED_$isGridSelection(selection)) {
+          $patchStyleTable(selection, styles);
+          activeEditor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
         }
       });
     },

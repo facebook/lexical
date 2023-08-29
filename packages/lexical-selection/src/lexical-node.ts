@@ -5,7 +5,18 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {
+import {$isTableCellNode} from '@lexical/table';
+import {
+  $createRangeSelection,
+  $createTextNode,
+  $getNodeByKey,
+  $getPreviousSelection,
+  $isElementNode,
+  $isRangeSelection,
+  $isRootNode,
+  $isTextNode,
+  $setSelection,
+  DEPRECATED_$isGridSelection,
   ElementNode,
   GridSelection,
   LexicalEditor,
@@ -14,17 +25,6 @@ import type {
   Point,
   RangeSelection,
   TextNode,
-} from 'lexical';
-
-import {
-  $createTextNode,
-  $getNodeByKey,
-  $getPreviousSelection,
-  $isElementNode,
-  $isRangeSelection,
-  $isRootNode,
-  $isTextNode,
-  DEPRECATED_$isGridSelection,
 } from 'lexical';
 
 import {CSS_TO_STYLES} from './constants';
@@ -302,6 +302,34 @@ function $patchStyle(
   const newCSSText = getCSSFromStyleObject(newStyles);
   target.setStyle(newCSSText);
   CSS_TO_STYLES.set(newCSSText, newStyles);
+}
+
+/**
+ * Applies the provided styles to the TextNodes in the provided GridSelection
+ * by iterating it and converting it into RangeSelection.
+ * Will update partially selected TextNodes by splitting the TextNode and applying
+ * the styles to the appropriate one.
+ * @param selection - The selected node(s) to update.
+ * @param patch - The patch to apply, which can include multiple styles. { CSSProperty: value }
+ */
+export function $patchStyleTable(
+  selection: GridSelection,
+  patch: Record<string, string | null>,
+): void {
+  const formatSelection = $createRangeSelection();
+
+  const anchor = formatSelection.anchor;
+  const focus = formatSelection.focus;
+
+  selection.getNodes().forEach((cellNode) => {
+    if ($isTableCellNode(cellNode) && cellNode.getTextContentSize() !== 0) {
+      anchor.set(cellNode.getKey(), 0, 'element');
+      focus.set(cellNode.getKey(), cellNode.getChildrenSize(), 'element');
+      $patchStyleText(formatSelection, patch);
+    }
+  });
+
+  $setSelection(selection);
 }
 
 /**

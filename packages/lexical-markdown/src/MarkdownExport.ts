@@ -164,6 +164,9 @@ function exportTextFormat(
     }
   }
 
+  // Escape the dollar symbols to avoid being recognized as replacement patterns,
+  output = output.replaceAll('$', '$$$$');
+
   // Replace trimmed version of textContent ensuring surrounding whitespace is not modified
   return textContent.replace(frozenString, output);
 }

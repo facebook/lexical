@@ -98,7 +98,7 @@ function OnChangePlugin({ onChange }) {
   // Wrap our listener in useEffect to handle the teardown and avoid stale references.
   useEffect(() => {
     // most listeners return a teardown function that can be called to clean them up.
-    return editor.registerUpdateListener((editorState) => {
+    return editor.registerUpdateListener(({editorState}) => {
       // call onChange here to pass the latest state up to the parent.
       onChange(editorState);
     });
@@ -113,7 +113,7 @@ Now, we can implement this in our editor and save the EditorState in a React sta
 function OnChangePlugin({ onChange }) {
   const [editor] = useLexicalComposerContext();
   useEffect(() => {
-    return editor.registerUpdateListener((editorState) => {
+    return editor.registerUpdateListener(({editorState}) => {
       onChange(editorState);
     });
   }, [editor, onChange]);
@@ -148,7 +148,7 @@ Ok, so now we're saving the EditorState object in a React state variable, but we
 function OnChangePlugin({ onChange }) {
   const [editor] = useLexicalComposerContext();
   useEffect(() => {
-    return editor.registerUpdateListener((editorState) => {
+    return editor.registerUpdateListener(({editorState}) => {
       onChange(editorState);
     });
   }, [editor, onChange]);

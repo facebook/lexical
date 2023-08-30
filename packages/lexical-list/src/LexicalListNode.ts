@@ -150,6 +150,10 @@ export class ListNode extends ElementNode {
       if (this.__listType === 'check') {
         element.setAttribute('__lexicalListType', 'check');
       }
+      const direction = this.getDirection();
+      if (direction) {
+        element.dir = direction;
+      }
     }
     return {
       element,

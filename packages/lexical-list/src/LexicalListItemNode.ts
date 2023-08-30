@@ -10,9 +10,11 @@ import type {ListNode} from './';
 import type {
   DOMConversionMap,
   DOMConversionOutput,
+  DOMExportOutput,
   EditorConfig,
   EditorThemeClasses,
   GridSelection,
+  LexicalEditor,
   LexicalNode,
   NodeKey,
   NodeSelection,
@@ -100,6 +102,19 @@ export class ListItemNode extends ElementNode {
     $setListItemThemeClassNames(dom, config.theme, this);
 
     return false;
+  }
+
+  exportDOM(editor: LexicalEditor): DOMExportOutput {
+    const {element} = super.exportDOM(editor);
+    if (element && isHTMLElement(element)) {
+      const direction = this.getDirection();
+      if (direction) {
+        element.dir = direction;
+      }
+    }
+    return {
+      element,
+    };
   }
 
   static transform(): (node: LexicalNode) => void {

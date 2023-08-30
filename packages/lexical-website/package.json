@@ -20,16 +20,17 @@
     "@mdx-js/react": "^1.6.21",
     "@radix-ui/react-tabs": "^0.1.5",
     "@vercel/analytics": "^1.0.1",
-    "clsx": "^1.1.1",
-    "docusaurus-plugin-typedoc": "^0.17.5",
+    "docusaurus-plugin-typedoc": "^0.19.2",
     "prism-react-renderer": "^1.2.1",
     "react": "^18.0.0-alpha-64931821a-20210808",
     "react-dom": "^18.0.0-alpha-64931821a-20210808",
     "remark-import-partial": "0.0.2",
-    "typedoc-plugin-markdown": "^3.13.4"
+    "typedoc-plugin-markdown": "^3.15.3"
   },
   "devDependencies": {
     "buffer": "^6.0.3",
+    "prettier-plugin-tailwindcss": "^0.4.1",
+    "tailwindcss": "^3.3.3",
     "webpack": "^5.76.0"
   },
   "browserslist": {

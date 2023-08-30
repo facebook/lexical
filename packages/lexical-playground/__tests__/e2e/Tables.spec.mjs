@@ -283,6 +283,7 @@ test.describe('Tables', () => {
     page,
     isPlainText,
     isCollab,
+    browserName,
   }) => {
     await initialize({isCollab, page});
     test.skip(isPlainText);
@@ -308,6 +309,10 @@ test.describe('Tables', () => {
 
     await page.keyboard.down('Shift');
     await page.keyboard.press('ArrowRight');
+    // Firefox range selection spans across cells after two arrow key press
+    if (browserName === 'firefox') {
+      await page.keyboard.press('ArrowRight');
+    }
     await page.keyboard.press('ArrowDown');
     await page.keyboard.up('Shift');
 
@@ -801,6 +806,7 @@ test.describe('Tables', () => {
     page,
     isPlainText,
     isCollab,
+    browserName,
   }) => {
     await initialize({isCollab, page});
     test.skip(isPlainText);
@@ -814,6 +820,10 @@ test.describe('Tables', () => {
 
     await page.keyboard.down('Shift');
     await page.keyboard.press('ArrowRight');
+    // Firefox range selection spans across cells after two arrow key press
+    if (browserName === 'firefox') {
+      await page.keyboard.press('ArrowRight');
+    }
     await page.keyboard.press('ArrowDown');
     await page.keyboard.up('Shift');
 
@@ -1301,7 +1311,8 @@ test.describe('Tables', () => {
       page,
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-        <table class="PlaygroundEditorTheme__table disable-selection">
+        <table
+          class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection">
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"

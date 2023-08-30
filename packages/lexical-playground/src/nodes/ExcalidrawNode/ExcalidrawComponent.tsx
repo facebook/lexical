@@ -57,12 +57,11 @@ export default function ExcalidrawComponent({
           if ($isExcalidrawNode(node)) {
             node.remove();
           }
-          setSelected(false);
         });
       }
       return false;
     },
-    [editor, isSelected, nodeKey, setSelected],
+    [editor, isSelected, nodeKey],
   );
 
   // Set editor to readOnly if excalidraw is open to prevent unwanted changes
@@ -161,6 +160,10 @@ export default function ExcalidrawComponent({
     }, 200);
   };
 
+  const openModal = useCallback(() => {
+    setModalOpen(true);
+  }, []);
+
   const {
     elements = [],
     files = {},
@@ -194,6 +197,15 @@ export default function ExcalidrawComponent({
             files={files}
             appState={appState}
           />
+          {isSelected && (
+            <div
+              className="image-edit-button"
+              role="button"
+              tabIndex={0}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={openModal}
+            />
+          )}
           {(isSelected || isResizing) && (
             <ImageResizer
               buttonRef={captionButtonRef}

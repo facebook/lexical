@@ -36,6 +36,13 @@ export const LEXICAL_IMAGE_BASE64 =
 export const YOUTUBE_SAMPLE_URL =
   'https://www.youtube-nocookie.com/embed/jNQXAC9IVRw';
 
+function wrapAndSlowDown(method, delay) {
+  return async function () {
+    await new Promise((resolve) => setTimeout(resolve, delay));
+    return method.apply(this, arguments);
+  };
+}
+
 export async function initialize({
   page,
   isCollab,
@@ -47,6 +54,13 @@ export async function initialize({
   tableCellMerge,
   tableCellBackgroundColor,
 }) {
+  // Tests with legacy events often fail to register keypress, so
+  // slowing it down to reduce flakiness
+  if (LEGACY_EVENTS) {
+    page.keyboard.type = wrapAndSlowDown(page.keyboard.type, 50);
+    page.keyboard.press = wrapAndSlowDown(page.keyboard.press, 50);
+  }
+
   const appSettings = {};
   appSettings.isRichText = IS_RICH_TEXT;
   appSettings.emptyEditor = true;
@@ -90,7 +104,7 @@ async function exposeLexicalEditor(page) {
   await leftFrame.waitForSelector('.tree-view-output pre');
   await leftFrame.evaluate(() => {
     window.lexicalEditor = document.querySelector(
-      '.tree-view-output pre',
+      '[data-lexical-editor="true"]',
     ).__lexicalEditor;
   });
 }
@@ -202,22 +216,16 @@ async function retryAsync(page, fn, attempts) {
   }
 }
 
-export async function assertIsGridSelection(page, coordinates) {
-  const gridKey = await page.evaluate(() => {
-    const editor = window.lexicalEditor;
-    const editorState = editor.getEditorState();
-    const selection = editorState._selection;
-    return selection.gridKey;
-  });
-
-  expect(gridKey).not.toBeUndefined();
-}
-
 export async function assertGridSelectionCoordinates(page, coordinates) {
-  const {_anchor, _focus} = await page.evaluate(() => {
+  const pageOrFrame = IS_COLLAB ? await page.frame('left') : page;
+
+  const {_anchor, _focus} = await pageOrFrame.evaluate(() => {
     const editor = window.lexicalEditor;
     const editorState = editor.getEditorState();
     const selection = editorState._selection;
+    if (!selection.gridKey) {
+      throw new Error('Expected grid selection');
+    }
     const anchorElement = editor.getElementByKey(selection.anchor.key);
     const focusElement = editor.getElementByKey(selection.focus.key);
     return {
@@ -509,6 +517,14 @@ export async function waitForSelector(page, selector, options) {
   } else {
     await page.waitForSelector(selector, options);
   }
+}
+
+export async function locate(page, selector) {
+  let leftFrame = page;
+  if (IS_COLLAB) {
+    leftFrame = await page.frame('left');
+  }
+  return await leftFrame.locator(selector);
 }
 
 export async function selectorBoundingBox(page, selector) {
@@ -826,11 +842,7 @@ export async function selectCellsFromTableCords(
   );
 
   // Focus on inside the iFrame or the boundingBox() below returns null.
-  await firstRowFirstColumnCell.click(
-    // This is a test runner quirk. Chrome seems to need two clicks to focus on the
-    // content editable cell before dragging, but Firefox treats it as a double click event.
-    E2E_BROWSER === 'chromium' ? {clickCount: 2} : {},
-  );
+  await firstRowFirstColumnCell.click();
 
   await dragMouse(
     page,

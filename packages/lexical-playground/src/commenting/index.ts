@@ -350,51 +350,53 @@ export class CommentStore {
                       | undefined);
 
               if (Array.isArray(insert)) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                insert.forEach((map: YMap<any>) => {
-                  const id = map.get('id');
-                  const type = map.get('type');
+                insert
+                  .slice()
+                  .reverse()
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  .forEach((map: YMap<any>) => {
+                    const id = map.get('id');
+                    const type = map.get('type');
 
-                  const commentOrThread =
-                    type === 'thread'
-                      ? createThread(
-                          map.get('quote'),
-                          map
-                            .get('comments')
-                            .toArray()
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            .map(
-                              (
-                                innerComment: Map<
-                                  string,
-                                  string | number | boolean
-                                >,
-                              ) =>
-                                createComment(
-                                  innerComment.get('content') as string,
-                                  innerComment.get('author') as string,
-                                  innerComment.get('id') as string,
-                                  innerComment.get('timeStamp') as number,
-                                  innerComment.get('deleted') as boolean,
-                                ),
-                            ),
-                          id,
-                        )
-                      : createComment(
-                          map.get('content'),
-                          map.get('author'),
-                          id,
-                          map.get('timeStamp'),
-                          map.get('deleted'),
-                        );
-                  this._withLocalTransaction(() => {
-                    this.addComment(
-                      commentOrThread,
-                      parentThread as Thread,
-                      offset,
-                    );
+                    const commentOrThread =
+                      type === 'thread'
+                        ? createThread(
+                            map.get('quote'),
+                            map
+                              .get('comments')
+                              .toArray()
+                              .map(
+                                (
+                                  innerComment: Map<
+                                    string,
+                                    string | number | boolean
+                                  >,
+                                ) =>
+                                  createComment(
+                                    innerComment.get('content') as string,
+                                    innerComment.get('author') as string,
+                                    innerComment.get('id') as string,
+                                    innerComment.get('timeStamp') as number,
+                                    innerComment.get('deleted') as boolean,
+                                  ),
+                              ),
+                            id,
+                          )
+                        : createComment(
+                            map.get('content'),
+                            map.get('author'),
+                            id,
+                            map.get('timeStamp'),
+                            map.get('deleted'),
+                          );
+                    this._withLocalTransaction(() => {
+                      this.addComment(
+                        commentOrThread,
+                        parentThread as Thread,
+                        offset,
+                      );
+                    });
                   });
-                });
               } else if (typeof retain === 'number') {
                 offset += retain;
               } else if (typeof del === 'number') {

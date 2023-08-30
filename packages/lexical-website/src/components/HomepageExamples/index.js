@@ -8,10 +8,7 @@
 
 import Link from '@docusaurus/Link';
 import * as Tabs from '@radix-ui/react-tabs';
-import clsx from 'clsx';
 import React, {useState} from 'react';
-
-import styles from './styles.module.css';
 
 const EXAMPLES = [
   {
@@ -65,49 +62,49 @@ export default function HomepageExamples() {
       value={activeItemID}
       orientation="horizontal"
       onValueChange={setActiveItemID}>
-      <div className="container">
-        <Tabs.List asChild={true} className="pills" loop={true}>
-          <ul>
-            {EXAMPLES.map(({id, label}) => (
-              <Tabs.Trigger asChild={true} value={id} key={id}>
-                <li
-                  className={clsx(
-                    'pills__item',
-                    activeItemID === id && 'pills__item--active',
-                  )}
-                  tabIndex={0}
-                  role="tab">
-                  {label}
-                </li>
-              </Tabs.Trigger>
-            ))}
-          </ul>
-        </Tabs.List>
-        {EXAMPLES.map(({id, content, src}) => (
-          <Tabs.Content asChild={true} value={id} key={id}>
-            <div className="row">
-              <div className="col col--4">
-                {content}
-                <div>
-                  <Link
-                    className="button button--primary margin-top--md"
-                    to="/docs/intro">
-                    Get Started
-                  </Link>
-                </div>
-              </div>
-              <div className="col col--8">
-                <iframe
-                  className={styles.codesandbox}
-                  src={src}
-                  title="lexical-plain-text-example"
-                  sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
-                />
+      <Tabs.List asChild={true} className="flex gap-1 pl-0" loop={true}>
+        <ul>
+          {EXAMPLES.map(({id, label}) => (
+            <Tabs.Trigger asChild={true} value={id} key={id}>
+              <li
+                className={`cursor-pointer list-none rounded-md px-4 py-1 font-bold transition-colors hover:bg-[#f2f2f2] ${
+                  activeItemID === id && 'pills__item--active'
+                }`}
+                tabIndex={0}
+                role="tab">
+                {label}
+              </li>
+            </Tabs.Trigger>
+          ))}
+        </ul>
+      </Tabs.List>
+
+      {EXAMPLES.map(({id, content, src}) => (
+        <Tabs.Content asChild={true} value={id} key={id}>
+          <div className="grid gap-6 lg:grid-cols-[1fr_2fr]">
+            <div className="flex flex-col gap-6">
+              <div>{content}</div>
+
+              <div>
+                <Link
+                  className="whitespace-nowrap rounded-md bg-blue-500 px-6 py-2 text-sm font-bold text-white transition-opacity hover:text-white hover:no-underline hover:opacity-90"
+                  to="/docs/intro">
+                  Get Started
+                </Link>
               </div>
             </div>
-          </Tabs.Content>
-        ))}
-      </div>
+
+            <div>
+              <iframe
+                className="h-[500px] w-full overflow-hidden"
+                src={src}
+                title="lexical-plain-text-example"
+                sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+              />
+            </div>
+          </div>
+        </Tabs.Content>
+      ))}
     </Tabs.Root>
   );
 }

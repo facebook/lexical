@@ -26,6 +26,7 @@ import {
 } from '.';
 import {
   $getSelection,
+  $isNodeSelection,
   $isRangeSelection,
   $moveSelectionPointToEnd,
   $updateElementSelectionOnCreateDeleteNode,
@@ -92,6 +93,12 @@ export function removeNode(
       );
       selectionMoved = true;
     }
+  } else if (
+    $isNodeSelection(selection) &&
+    restoreSelection &&
+    nodeToRemove.isSelected()
+  ) {
+    nodeToRemove.selectPrevious();
   }
 
   if ($isRangeSelection(selection) && restoreSelection && !selectionMoved) {
@@ -144,9 +151,9 @@ export type DOMConversionOutput = {
 
 export type DOMExportOutput = {
   after?: (
-    generatedElement: HTMLElement | null | undefined,
-  ) => HTMLElement | null | undefined;
-  element: HTMLElement | null;
+    generatedElement: HTMLElement | Text | null | undefined,
+  ) => HTMLElement | Text | null | undefined;
+  element: HTMLElement | Text | null;
 };
 
 export type NodeKey = string;

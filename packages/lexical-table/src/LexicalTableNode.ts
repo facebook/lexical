@@ -19,7 +19,7 @@ import type {
   SerializedElementNode,
 } from 'lexical';
 
-import {addClassNamesToElement} from '@lexical/utils';
+import {addClassNamesToElement, isHTMLElement} from '@lexical/utils';
 import {
   $applyNodeReplacement,
   $getNearestNodeFromDOMNode,
@@ -90,7 +90,9 @@ export class TableNode extends DEPRECATED_GridNode {
           const newElement = tableElement.cloneNode() as ParentNode;
           const colGroup = document.createElement('colgroup');
           const tBody = document.createElement('tbody');
-          tBody.append(...tableElement.children);
+          if (isHTMLElement(tableElement)) {
+            tBody.append(...tableElement.children);
+          }
           const firstRow = this.getFirstChildOrThrow<TableRowNode>();
 
           if (!$isTableRowNode(firstRow)) {
@@ -135,10 +137,12 @@ export class TableNode extends DEPRECATED_GridNode {
       const row = cells[y];
 
       if (row == null) {
-        throw new Error(`Row not found at y:${y}`);
+        continue;
       }
 
-      const x = row.findIndex(({elem}) => {
+      const x = row.findIndex((cell) => {
+        if (!cell) return;
+        const {elem} = cell;
         const cellNode = $getNearestNodeFromDOMNode(elem);
         return cellNode === tableCellNode;
       });

@@ -6,7 +6,7 @@
  *
  */
 
-import type {LexicalEditor, NodeKey} from 'lexical';
+import type {ElementFormatType, LexicalEditor, NodeKey} from 'lexical';
 
 import {
   $createCodeNode,
@@ -53,6 +53,7 @@ import {
   $getNodeByKey,
   $getRoot,
   $getSelection,
+  $isElementNode,
   $isRangeSelection,
   $isRootOrShadowRoot,
   $isTextNode,
@@ -91,6 +92,8 @@ import {
   InsertImagePayload,
 } from '../ImagesPlugin';
 import {InsertInlineImageDialog} from '../InlineImagePlugin';
+import InsertLayoutDialog from '../LayoutPlugin/InsertLayoutDialog';
+import {INSERT_PAGE_BREAK} from '../PageBreakPlugin';
 import {InsertPollDialog} from '../PollPlugin';
 import {InsertNewTableDialog, InsertTableDialog} from '../TablePlugin';
 
@@ -150,6 +153,27 @@ const FONT_SIZE_OPTIONS: [string, string][] = [
   ['19px', '19px'],
   ['20px', '20px'],
 ];
+
+const ELEMENT_FORMAT_OPTIONS: {
+  [key: string]: {icon: string; name: string};
+} = {
+  center: {
+    icon: 'center-align',
+    name: 'Center Align',
+  },
+  justify: {
+    icon: 'justify-align',
+    name: 'Justify Align',
+  },
+  left: {
+    icon: 'left-align',
+    name: 'Left Align',
+  },
+  right: {
+    icon: 'right-align',
+    name: 'Right Align',
+  },
+};
 
 function dropDownActiveClass(active: boolean) {
   if (active) return 'active dropdown-item-active';
@@ -379,6 +403,77 @@ function FontDropDown({
   );
 }
 
+function ElementFormatDropdown({
+  editor,
+  value,
+  isRTL,
+  disabled = false,
+}: {
+  editor: LexicalEditor;
+  value: ElementFormatType;
+  isRTL: boolean;
+  disabled: boolean;
+}) {
+  return (
+    <DropDown
+      disabled={disabled}
+      buttonLabel={ELEMENT_FORMAT_OPTIONS[value].name}
+      buttonIconClassName={`icon ${ELEMENT_FORMAT_OPTIONS[value].icon}`}
+      buttonClassName="toolbar-item spaced alignment"
+      buttonAriaLabel="Formatting options for text alignment">
+      <DropDownItem
+        onClick={() => {
+          editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'left');
+        }}
+        className="item">
+        <i className="icon left-align" />
+        <span className="text">Left Align</span>
+      </DropDownItem>
+      <DropDownItem
+        onClick={() => {
+          editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center');
+        }}
+        className="item">
+        <i className="icon center-align" />
+        <span className="text">Center Align</span>
+      </DropDownItem>
+      <DropDownItem
+        onClick={() => {
+          editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'right');
+        }}
+        className="item">
+        <i className="icon right-align" />
+        <span className="text">Right Align</span>
+      </DropDownItem>
+      <DropDownItem
+        onClick={() => {
+          editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'justify');
+        }}
+        className="item">
+        <i className="icon justify-align" />
+        <span className="text">Justify Align</span>
+      </DropDownItem>
+      <Divider />
+      <DropDownItem
+        onClick={() => {
+          editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
+        }}
+        className="item">
+        <i className={'icon ' + (isRTL ? 'indent' : 'outdent')} />
+        <span className="text">Outdent</span>
+      </DropDownItem>
+      <DropDownItem
+        onClick={() => {
+          editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
+        }}
+        className="item">
+        <i className={'icon ' + (isRTL ? 'outdent' : 'indent')} />
+        <span className="text">Indent</span>
+      </DropDownItem>
+    </DropDown>
+  );
+}
+
 export default function ToolbarPlugin(): JSX.Element {
   const [editor] = useLexicalComposerContext();
   const [activeEditor, setActiveEditor] = useState(editor);
@@ -393,6 +488,7 @@ export default function ToolbarPlugin(): JSX.Element {
   const [fontColor, setFontColor] = useState<string>('#000');
   const [bgColor, setBgColor] = useState<string>('#fff');
   const [fontFamily, setFontFamily] = useState<string>('Arial');
+  const [elementFormat, setElementFormat] = useState<ElementFormatType>('left');
   const [isLink, setIsLink] = useState(false);
   const [isBold, setIsBold] = useState(false);
   const [isItalic, setIsItalic] = useState(false);
@@ -497,6 +593,11 @@ export default function ToolbarPlugin(): JSX.Element {
       );
       setFontFamily(
         $getSelectionStyleValueForProperty(selection, 'font-family', 'Arial'),
+      );
+      setElementFormat(
+        ($isElementNode(node)
+          ? node.getFormatType()
+          : parent?.getFormatType()) || 'left',
       );
     }
   }, [activeEditor]);
@@ -890,6 +991,14 @@ export default function ToolbarPlugin(): JSX.Element {
             </DropDownItem>
             <DropDownItem
               onClick={() => {
+                activeEditor.dispatchCommand(INSERT_PAGE_BREAK, undefined);
+              }}
+              className="item">
+              <i className="icon page-break" />
+              <span className="text">Page Break</span>
+            </DropDownItem>
+            <DropDownItem
+              onClick={() => {
                 showModal('Insert Image', (onClose) => (
                   <InsertImageDialog
                     activeEditor={activeEditor}
@@ -975,6 +1084,19 @@ export default function ToolbarPlugin(): JSX.Element {
               <i className="icon poll" />
               <span className="text">Poll</span>
             </DropDownItem>
+            <DropDownItem
+              onClick={() => {
+                showModal('Insert Columns Layout', (onClose) => (
+                  <InsertLayoutDialog
+                    activeEditor={activeEditor}
+                    onClose={onClose}
+                  />
+                ));
+              }}
+              className="item">
+              <i className="icon columns" />
+              <span className="text">Columns Layout</span>
+            </DropDownItem>
 
             <DropDownItem
               onClick={() => {
@@ -1027,62 +1149,12 @@ export default function ToolbarPlugin(): JSX.Element {
         </>
       )}
       <Divider />
-      <DropDown
+      <ElementFormatDropdown
         disabled={!isEditable}
-        buttonLabel="Align"
-        buttonIconClassName="icon left-align"
-        buttonClassName="toolbar-item spaced alignment"
-        buttonAriaLabel="Formatting options for text alignment">
-        <DropDownItem
-          onClick={() => {
-            activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'left');
-          }}
-          className="item">
-          <i className="icon left-align" />
-          <span className="text">Left Align</span>
-        </DropDownItem>
-        <DropDownItem
-          onClick={() => {
-            activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center');
-          }}
-          className="item">
-          <i className="icon center-align" />
-          <span className="text">Center Align</span>
-        </DropDownItem>
-        <DropDownItem
-          onClick={() => {
-            activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'right');
-          }}
-          className="item">
-          <i className="icon right-align" />
-          <span className="text">Right Align</span>
-        </DropDownItem>
-        <DropDownItem
-          onClick={() => {
-            activeEditor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'justify');
-          }}
-          className="item">
-          <i className="icon justify-align" />
-          <span className="text">Justify Align</span>
-        </DropDownItem>
-        <Divider />
-        <DropDownItem
-          onClick={() => {
-            activeEditor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
-          }}
-          className="item">
-          <i className={'icon ' + (isRTL ? 'indent' : 'outdent')} />
-          <span className="text">Outdent</span>
-        </DropDownItem>
-        <DropDownItem
-          onClick={() => {
-            activeEditor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
-          }}
-          className="item">
-          <i className={'icon ' + (isRTL ? 'outdent' : 'indent')} />
-          <span className="text">Indent</span>
-        </DropDownItem>
-      </DropDown>
+        value={elementFormat}
+        editor={editor}
+        isRTL={isRTL}
+      />
 
       {modal}
     </div>

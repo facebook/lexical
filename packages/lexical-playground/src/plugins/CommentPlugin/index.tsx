@@ -31,6 +31,7 @@ import {ClearEditorPlugin} from '@lexical/react/LexicalClearEditorPlugin';
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {EditorRefPlugin} from '@lexical/react/LexicalEditorRefPlugin';
 import LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {OnChangePlugin} from '@lexical/react/LexicalOnChangePlugin';
@@ -117,23 +118,6 @@ function AddCommentBox({
       </button>
     </div>
   );
-}
-
-function EditorRefPlugin({
-  editorRef,
-}: {
-  editorRef: {current: null | LexicalEditor};
-}): null {
-  const [editor] = useLexicalComposerContext();
-
-  useLayoutEffect(() => {
-    editorRef.current = editor;
-    return () => {
-      editorRef.current = null;
-    };
-  }, [editor, editorRef]);
-
-  return null;
 }
 
 function EscapeHandlerPlugin({

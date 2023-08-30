@@ -712,6 +712,72 @@ export function registerRichText(editor: LexicalEditor): () => void {
       KEY_ARROW_UP_COMMAND,
       (event) => {
         const selection = $getSelection();
+        if (event.shiftKey) {
+          if ($isRangeSelection(selection)) {
+            const anchorNode = selection.anchor.getNode();
+
+            if (!$isRootNode(anchorNode)) {
+              const anchorNodeTopElement = anchorNode.getTopLevelElement();
+              const focusNode = selection.focus.getNode().getTopLevelElement();
+
+              if (!focusNode || !anchorNodeTopElement) {
+                return false;
+              }
+              const focusNodeTopElement = focusNode.getTopLevelElement();
+              if (!focusNodeTopElement) {
+                return false;
+              }
+
+              // if on or about to move to decorator node selection, select the entire current node using root node offsets
+              const previousSibling = focusNodeTopElement.getPreviousSibling();
+              if (
+                $isDecoratorNode(anchorNodeTopElement) ||
+                $isDecoratorNode(previousSibling)
+              ) {
+                // if at the start of the line, treat that line/node as not selected
+                if (selection.anchor.offset === 0) {
+                  selection.focus.set(
+                    'root',
+                    focusNode.getIndexWithinParent() - 1,
+                    'element',
+                  );
+                  selection.anchor.set(
+                    'root',
+                    anchorNodeTopElement.getIndexWithinParent(),
+                    'element',
+                  );
+                } else {
+                  selection.focus.set(
+                    'root',
+                    focusNode.getIndexWithinParent(),
+                    'element',
+                  );
+                  selection.anchor.set(
+                    'root',
+                    anchorNodeTopElement.getIndexWithinParent() + 1,
+                    'element',
+                  );
+                }
+                event.preventDefault();
+                return true;
+              }
+            }
+
+            // if using the root node, simply add the card above
+            if ($isRootNode(anchorNode)) {
+              const offset = selection.focus.offset;
+              if (offset > 0) {
+                selection.focus.set(
+                  'root',
+                  selection.focus.offset - 1,
+                  'element',
+                );
+              }
+              event.preventDefault();
+              return true;
+            }
+          }
+        }
         if (
           $isNodeSelection(selection) &&
           !$isTargetWithinDecorator(event.target as HTMLElement)
@@ -744,6 +810,80 @@ export function registerRichText(editor: LexicalEditor): () => void {
       KEY_ARROW_DOWN_COMMAND,
       (event) => {
         const selection = $getSelection();
+
+        if (event.shiftKey) {
+          if ($isRangeSelection(selection)) {
+            const anchorNode = selection.anchor.getNode();
+
+            if (!$isRootNode(anchorNode)) {
+              const anchorNodeTopElement = anchorNode.getTopLevelElement();
+              const focusNode = selection.focus.getNode().getTopLevelElement();
+
+              if (!focusNode || !anchorNodeTopElement) {
+                return false;
+              }
+              const focusNodeTopElement = focusNode.getTopLevelElement();
+              if (!focusNodeTopElement) {
+                return false;
+              }
+
+              // if on or about to move to decorator node selection, select the entire current node using root node offsets
+              const nextSibling = focusNodeTopElement.getNextSibling();
+              if (
+                $isDecoratorNode(anchorNodeTopElement) ||
+                $isDecoratorNode(nextSibling)
+              ) {
+                // if at end of a line, treat it as if that line/node is not selected
+                if (
+                  selection.anchor.offset ===
+                  anchorNodeTopElement.getTextContentSize()
+                ) {
+                  selection.anchor.set(
+                    'root',
+                    anchorNodeTopElement.getIndexWithinParent() + 1,
+                    'element',
+                  );
+                  selection.focus.set(
+                    'root',
+                    focusNode.getIndexWithinParent() + 2,
+                    'element',
+                  );
+                } else {
+                  selection.anchor.set(
+                    'root',
+                    anchorNodeTopElement.getIndexWithinParent(),
+                    'element',
+                  );
+                  selection.focus.set(
+                    'root',
+                    focusNode.getIndexWithinParent() + 1,
+                    'element',
+                  );
+                }
+                event.preventDefault();
+                return true;
+              }
+            }
+
+            // if using the root node, simply add the node below
+            if ($isRootNode(anchorNode)) {
+              const offset = selection.focus.offset;
+              if (
+                offset <=
+                anchorNode.getLastChildOrThrow().getIndexWithinParent()
+              ) {
+                selection.focus.set(
+                  'root',
+                  selection.focus.offset + 1,
+                  'element',
+                );
+              }
+              event.preventDefault();
+              return true;
+            }
+          }
+        }
+
         if ($isNodeSelection(selection)) {
           // If selection is on a node, let's try and move selection
           // back to being a range selection.

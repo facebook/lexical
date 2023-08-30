@@ -60,6 +60,7 @@ describe('LexicalTabNode tests', () => {
 
     test('can paste plain text with tabs and newlines in rich text', async () => {
       const {editor} = testEnv;
+      registerRichText(editor);
       const dataTransfer = new DataTransferMock();
       dataTransfer.setData('text/plain', 'hello\tworld\nhello\tworld');
       await editor.update(() => {
@@ -94,6 +95,7 @@ describe('LexicalTabNode tests', () => {
 
     test('can paste HTML with tabs and new lines (2)', async () => {
       const {editor} = testEnv;
+      registerRichText(editor);
       const dataTransfer = new DataTransferMock();
       // GDoc 2-liner hello\tworld (like previous test)
       dataTransfer.setData(

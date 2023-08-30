@@ -119,6 +119,9 @@ function exportChildren(
       output.push(
         exportChildren(child, textTransformersIndex, textMatchTransformers),
       );
+      output.push(
+        '\n'
+      )
     } else if ($isDecoratorNode(child)) {
       output.push(child.getTextContent());
     }

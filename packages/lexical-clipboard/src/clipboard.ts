@@ -35,7 +35,7 @@ import {
   DEPRECATED_$isGridSelection,
   DEPRECATED_GridNode,
   GridSelection,
-  INSERT_NODES_COMMAND,
+  INSERT_PASTED_NODES_COMMAND,
   isSelectionWithinEditor,
   LexicalEditor,
   LexicalNode,
@@ -148,7 +148,7 @@ export function $insertDataTransferForRichText(
         Array.isArray(payload.nodes)
       ) {
         const nodes = $generateNodesFromSerializedNodes(payload.nodes);
-        editor.dispatchCommand(INSERT_NODES_COMMAND, {nodes, selection});
+        editor.dispatchCommand(INSERT_PASTED_NODES_COMMAND, {nodes, selection});
         return;
       }
     } catch {
@@ -162,7 +162,7 @@ export function $insertDataTransferForRichText(
       const parser = new DOMParser();
       const dom = parser.parseFromString(htmlString, 'text/html');
       const nodes = $generateNodesFromDOM(editor, dom);
-      editor.dispatchCommand(INSERT_NODES_COMMAND, {nodes, selection});
+      editor.dispatchCommand(INSERT_PASTED_NODES_COMMAND, {nodes, selection});
       return;
     } catch {
       // Fail silently.
@@ -191,7 +191,7 @@ export function $insertDataTransferForRichText(
           lastParagraphNode.append($createTextNode(part));
         }
       }
-      editor.dispatchCommand(INSERT_NODES_COMMAND, {nodes, selection});
+      editor.dispatchCommand(INSERT_PASTED_NODES_COMMAND, {nodes, selection});
     } else {
       selection.insertRawText(text);
     }

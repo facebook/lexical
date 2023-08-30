@@ -79,8 +79,8 @@ import {
   FORMAT_TEXT_COMMAND,
   INDENT_CONTENT_COMMAND,
   INSERT_LINE_BREAK_COMMAND,
-  INSERT_NODES_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
+  INSERT_PASTED_NODES_COMMAND,
   INSERT_TAB_COMMAND,
   isSelectionCapturedInDecoratorInput,
   KEY_ARROW_DOWN_COMMAND,
@@ -1052,7 +1052,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
       COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand(
-      INSERT_NODES_COMMAND,
+      INSERT_PASTED_NODES_COMMAND,
       ({nodes, selection}) => {
         $insertGeneratedNodes(editor, nodes, selection);
         return true;

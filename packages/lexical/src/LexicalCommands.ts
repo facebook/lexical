@@ -44,8 +44,8 @@ export const CONTROLLED_TEXT_INSERTION_COMMAND: LexicalCommand<
 > = createCommand('CONTROLLED_TEXT_INSERTION_COMMAND');
 export const PASTE_COMMAND: LexicalCommand<PasteCommandType> =
   createCommand('PASTE_COMMAND');
-export const INSERT_NODES_COMMAND: LexicalCommand<InsertNodesCommandType> =
-  createCommand('INSERT_NODES_COMMAND');
+export const INSERT_PASTED_NODES_COMMAND: LexicalCommand<InsertNodesCommandType> =
+  createCommand('INSERT_PASTED_NODES_COMMAND');
 export const REMOVE_TEXT_COMMAND: LexicalCommand<InputEvent | null> =
   createCommand('REMOVE_TEXT_COMMAND');
 export const DELETE_WORD_COMMAND: LexicalCommand<boolean> = createCommand(

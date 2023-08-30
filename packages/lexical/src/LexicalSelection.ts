@@ -238,9 +238,8 @@ function $transferStartingElementPointToTextPoint(
   const target = $isRootNode(element)
     ? $createParagraphNode().append(textNode)
     : textNode;
-  // inherits format and style from selection
-  // textNode.setFormat(format);
-  // textNode.setStyle(style);
+  textNode.setFormat(format);
+  textNode.setStyle(style);
   if (placementNode === null) {
     element.append(target);
   } else {

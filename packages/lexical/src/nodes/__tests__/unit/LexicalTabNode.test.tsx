@@ -106,7 +106,7 @@ describe('LexicalTabNode tests', () => {
         $insertDataTransferForRichText(dataTransfer, selection, editor);
       });
       expect(testEnv.innerHTML).toBe(
-        '<p dir="ltr"><span data-lexical-text="true">Hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span></p><p dir="ltr"><span data-lexical-text="true">Hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span></p>',
+        '<p dir="ltr"><span style="font-size: 11pt; font-family: Arial; color: rgb(0, 0, 0);" data-lexical-text="true">Hello</span><span data-lexical-text="true">        </span><span style="font-size: 11pt; font-family: Arial; color: rgb(0, 0, 0);" data-lexical-text="true">world</span></p><p dir="ltr"><span style="font-size: 11pt; font-family: Arial; color: rgb(0, 0, 0);" data-lexical-text="true">Hello</span><span data-lexical-text="true">   </span><span style="font-size: 11pt; font-family: Arial; color: rgb(0, 0, 0);" data-lexical-text="true">world</span></p>',
       );
     });
 

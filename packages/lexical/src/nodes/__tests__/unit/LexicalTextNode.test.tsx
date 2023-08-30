@@ -6,6 +6,7 @@
  *
  */
 
+import {$generateHtmlFromNodes,$generateNodesFromDOM} from '@lexical/html';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -797,5 +798,23 @@ describe('LexicalTextNode tests', () => {
     });
 
     expect(getEditorStateTextContent(editor.getEditorState())).toBe('123');
+  });
+
+  test('importDOM()', async () => {
+    const html = `<p><strong style="font-family: Arial;">Hello</strong><span style="color: blue;">World</span></p>`;
+    let generated = '';
+    await update(() => {
+      const nodes = $generateNodesFromDOM(
+        editor,
+        new DOMParser().parseFromString(html, 'text/html'),
+      );
+      $getRoot().clear();
+      $getRoot().append(...nodes);
+      generated = $generateHtmlFromNodes(editor);
+    });
+
+    expect(generated).toBe(
+      `<p><strong class="my-bold-class" style="font-family: Arial;">Hello</strong><span style="color: blue;">World</span></p>`,
+    );
   });
 });

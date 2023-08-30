@@ -80,11 +80,11 @@ describe('Markdown', () => {
       md: '*Hello* world',
     },
     {
-      html: '<p><b><strong>Hello</strong></b><span> world</span></p>',
+      html: '<p><strong>Hello</strong><span> world</span></p>',
       md: '**Hello** world',
     },
     {
-      html: '<p><i><b><strong>Hello</strong></b></i><span> world</span></p>',
+      html: '<p><i><strong>Hello</strong></i><span> world</span></p>',
       md: '***Hello*** world',
     },
     {
@@ -108,11 +108,11 @@ describe('Markdown', () => {
       md: '[Hello](https://lexical.dev "Title with \\" escaped character") world',
     },
     {
-      html: '<p><span>Hello </span><s><i><b><strong>world</strong></b></i></s><span>!</span></p>',
+      html: '<p><span>Hello </span><s><i><strong>world</strong></i></s><span>!</span></p>',
       md: 'Hello ~~***world***~~!',
     },
     {
-      html: '<p><i><em>Hello </em></i><i><b><strong>world</strong></b></i><i><em>!</em></i></p>',
+      html: '<p><i><em>Hello </em></i><i><strong>world</strong></i><i><em>!</em></i></p>',
       md: '*Hello **world**!*',
     },
     {
@@ -123,19 +123,19 @@ describe('Markdown', () => {
     },
     {
       // Import only: export will use * instead of _ due to registered transformers order
-      html: '<p><b><strong>Hello</strong></b><span> world</span></p>',
+      html: '<p><strong>Hello</strong><span> world</span></p>',
       md: '__Hello__ world',
       skipExport: true,
     },
     {
       // Import only: export will use * instead of _ due to registered transformers order
-      html: '<p><i><b><strong>Hello</strong></b></i><span> world</span></p>',
+      html: '<p><i><strong>Hello</strong></i><span> world</span></p>',
       md: '___Hello___ world',
       skipExport: true,
     },
     {
       // Import only: export will use * instead of _ due to registered transformers order
-      html: '<p><span>Hello </span><s><i><b><strong>world</strong></b></i></s><span>!</span></p>',
+      html: '<p><span>Hello </span><s><i><strong>world</strong></i></s><span>!</span></p>',
       md: 'Hello ~~__*world*__~~!',
       skipExport: true,
     },

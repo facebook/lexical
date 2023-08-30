@@ -598,7 +598,10 @@ export class TextNode extends LexicalNode {
     // even if it's semantically incorrect to have to resort to using
     // <b>, <u>, <s>, <i> elements.
     if (element !== null) {
-      if (this.hasFormat('bold')) {
+      if (
+        this.hasFormat('bold') &&
+        !['B', 'STRONG'].includes((element as HTMLElement).tagName)
+      ) {
         element = wrapElementWith(element, 'b');
       }
       if (this.hasFormat('italic')) {
@@ -1064,6 +1067,8 @@ export class TextNode extends LexicalNode {
   }
 }
 
+const ALLOWED_CSS_PROPERTIES = ['font-family', 'font-size', 'float', 'color'];
+
 function convertSpanElement(domNode: Node): DOMConversionOutput {
   // domNode is a <span> since we matched it by nodeName
   const span = domNode as HTMLSpanElement;
@@ -1079,10 +1084,15 @@ function convertSpanElement(domNode: Node): DOMConversionOutput {
   // Google Docs uses span tags + vertical-align to specify subscript and superscript
   const verticalAlign = span.style.verticalAlign;
 
+  const style = filterStyleAttribute(domNode as HTMLElement);
+
   return {
     forChild: (lexicalNode) => {
       if (!$isTextNode(lexicalNode)) {
         return lexicalNode;
+      }
+      if (style) {
+        lexicalNode.setStyle(style);
       }
       if (hasBoldFontWeight) {
         lexicalNode.toggleFormat('bold');
@@ -1114,10 +1124,14 @@ function convertBringAttentionToElement(domNode: Node): DOMConversionOutput {
   const b = domNode as HTMLElement;
   // Google Docs wraps all copied HTML in a <b> with font-weight normal
   const hasNormalFontWeight = b.style.fontWeight === 'normal';
+  const style = filterStyleAttribute(domNode as HTMLElement);
   return {
     forChild: (lexicalNode) => {
       if ($isTextNode(lexicalNode) && !hasNormalFontWeight) {
         lexicalNode.toggleFormat('bold');
+      }
+      if (style) {
+        lexicalNode.setStyle(style);
       }
 
       return lexicalNode;
@@ -1276,6 +1290,7 @@ function findTextInLine(text: Text, forward: boolean): null | Text {
 }
 
 const nodeNameToTextFormat: Record<string, TextFormatType> = {
+  b: 'bold',
   code: 'code',
   em: 'italic',
   i: 'italic',
@@ -1286,8 +1301,35 @@ const nodeNameToTextFormat: Record<string, TextFormatType> = {
   u: 'underline',
 };
 
+/**
+ * Filter out style attributes and allow only whitelisted css properties
+ */
+function filterStyleAttribute(domNode: HTMLElement): string | undefined {
+  // Get style attribute from DOM node
+  const styles = (domNode as HTMLElement).getAttribute('style') || '';
+
+  if (!styles) return undefined;
+
+  // Convert style attribute to dictionary of CSS properties
+  const styleMap = Object.assign(
+    {},
+    ...styles.split(';').map((style) => {
+      const [property, value] = style.split(/\s?:\s?/);
+      return {[property]: value};
+    }),
+  );
+
+  // Pick allowed CSS properties from whitelist and join the string back together
+  return Object.entries(styleMap)
+    .filter(([property]) => ALLOWED_CSS_PROPERTIES.includes(property))
+    .map(([property, value]) => [property, value].join(': '))
+    .join('; ');
+}
+
 function convertTextFormatElement(domNode: Node): DOMConversionOutput {
   const format = nodeNameToTextFormat[domNode.nodeName.toLowerCase()];
+  const style = filterStyleAttribute(domNode as HTMLElement);
+
   if (format === undefined) {
     return {node: null};
   }
@@ -1295,6 +1337,10 @@ function convertTextFormatElement(domNode: Node): DOMConversionOutput {
     forChild: (lexicalNode) => {
       if ($isTextNode(lexicalNode) && !lexicalNode.hasFormat(format)) {
         lexicalNode.toggleFormat(format);
+      }
+
+      if (style) {
+        lexicalNode.setStyle(style);
       }
 
       return lexicalNode;

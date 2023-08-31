@@ -6,7 +6,7 @@
  *
  */
 
-import {CodeNode} from '@lexical/code';
+import {CodeHighlightNode, CodeNode} from '@lexical/code';
 import {createHeadlessEditor} from '@lexical/headless';
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import {LinkNode} from '@lexical/link';
@@ -28,6 +28,7 @@ describe('Markdown', () => {
     md: string;
     skipExport?: true;
     skipImport?: true;
+    exportMd?: string;
   }>;
 
   const URL = 'https://lexical.dev';
@@ -170,6 +171,11 @@ describe('Markdown', () => {
       html: '<p><span>![alt text](https://lexical.dev/image.jpeg)</span></p>',
       md: '![alt text](https://lexical.dev/image.jpeg)',
     },
+    {
+      html: '<pre spellcheck="false"><span>a = b + c</span></pre>',
+      md: ['```', 'a = b + c'].join('\n'),
+      exportMd: ['```', 'a = b + c', '```'].join('\n'),
+    },
   ];
 
   const HIGHLIGHT_TEXT_MATCH_IMPORT: TextMatchTransformer = {
@@ -194,6 +200,8 @@ describe('Markdown', () => {
           QuoteNode,
           CodeNode,
           LinkNode,
+          CodeNode,
+          CodeHighlightNode
         ],
       });
 
@@ -214,7 +222,7 @@ describe('Markdown', () => {
     });
   }
 
-  for (const {html, md, skipExport} of IMPORT_AND_EXPORT) {
+  for (const {html, md, exportMd, skipExport} of IMPORT_AND_EXPORT) {
     if (skipExport) {
       continue;
     }
@@ -248,7 +256,7 @@ describe('Markdown', () => {
         editor
           .getEditorState()
           .read(() => $convertToMarkdownString(TRANSFORMERS)),
-      ).toBe(md);
+      ).toBe(exportMd ?? md);
     });
   }
 });

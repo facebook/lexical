@@ -252,7 +252,7 @@ export const CODE: ElementTransformer = {
         return endLineIndex - startLineIndex;
       }
     }
-    return 1;
+    return endLineIndex - startLineIndex;
   },
   regExp: /^```(\w{1,10})?\s?$/,
   replace: createBlockNode((match) => {

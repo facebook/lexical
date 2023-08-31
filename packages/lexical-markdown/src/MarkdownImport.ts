@@ -63,7 +63,7 @@ export function createMarkdownImport(
         if (elementTransformer.getNumberOfLines) {
           const match = lineText.match(elementTransformer.regExp)
           const numberOfLines = elementTransformer.getNumberOfLines(lines, i)
-          if (i + numberOfLines >= lines.length) {
+          if (i + numberOfLines > lines.length) {
             continue
           }
           if (match) {

@@ -20,6 +20,7 @@ import {
 } from 'shared/environment';
 
 import {
+  $createTextNode,
   $getPreviousSelection,
   $getRoot,
   $getSelection,
@@ -27,6 +28,7 @@ import {
   $isNodeSelection,
   $isRangeSelection,
   $isRootNode,
+  $isTabNode,
   $isTextNode,
   $setCompositionKey,
   BLUR_COMMAND,
@@ -495,6 +497,19 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
   ) {
     return;
   } else if (inputType === 'insertCompositionText') {
+    // fix an issue where the compoisition text is not inputted
+    // when the anchor node is a tab node.
+    updateEditor(editor, () => {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        const anchorNode = selection.anchor.getNode();
+        if ($isTabNode(anchorNode)) {
+          const textContent = anchorNode.getTextContent();
+          const textNode = $createTextNode(textContent);
+          anchorNode.replace(textNode);
+        }
+      }
+    });
     return;
   }
 

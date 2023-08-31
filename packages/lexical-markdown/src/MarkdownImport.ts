@@ -25,7 +25,7 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
-  $isParagraphNode,
+  $isParagraphNode, $isRootNode,
   $isTextNode,
   ElementNode,
 } from 'lexical';
@@ -41,77 +41,84 @@ type TextFormatTransformersIndex = Readonly<{
   transformersByTag: Readonly<Record<string, TextFormatTransformer>>;
 }>;
 
+function parseMarkdownString(
+  parentNode: ElementNode,
+  lines: string[],
+  byType: Readonly<{
+    element: Array<ElementTransformer>;
+    textFormat: Array<TextFormatTransformer>;
+    textMatch: Array<TextMatchTransformer>;
+  }>): void {
+  const linesLength = lines.length;
+  const textFormatTransformersIndex = createTextFormatTransformersIndex(
+    byType.textFormat,
+  );
+  for (let i = 0; i < linesLength;) {
+    const lineText = lines[i];
+    // handle multi line parser like Codeblocks
+    let isMatched = false;
+    for (const elementTransformer of byType.element) {
+      const match = lineText.match(elementTransformer.regExp)
+      if (elementTransformer.getNumberOfLines) {
+        const numberOfLines = elementTransformer.getNumberOfLines(lines, i)
+        if (i + numberOfLines > lines.length) {
+          continue
+        }
+        if (match) {
+          const elementNode = $createParagraphNode()
+          parentNode.append(elementNode)
+          parseMarkdownString(elementNode, lines.slice(i + 1, i + numberOfLines), byType)
+          elementTransformer.replace(
+            elementNode,
+            elementNode.getChildren(),
+            match,
+            true
+          )
+          i += numberOfLines
+          /**
+           * only add one line if next line is the close mark
+           * just like
+           * ``` of code block
+           * ::: of tip block
+           */
+          if (i < linesLength &&
+            (elementTransformer.closeRegExp && lines[i].match(elementTransformer.closeRegExp)
+              || lines[i].match(elementTransformer.regExp)
+            )) {
+            i++
+          }
+          isMatched = true
+          break
+        }
+      }
+    }
+    if (isMatched) {
+      continue
+    }
+    importBlocks(
+      lineText,
+      parentNode,
+      byType.element,
+      textFormatTransformersIndex,
+      byType.textMatch,
+    )
+    i++
+  }
+}
+
 export function createMarkdownImport(
   transformers: Array<Transformer>,
 ): (markdownString: string, node?: ElementNode) => void {
   const byType = transformersByType(transformers);
-  const textFormatTransformersIndex = createTextFormatTransformersIndex(
-    byType.textFormat,
-  );
+
 
   return (markdownString, node) => {
     const lines = markdownString.split('\n');
-    const linesLength = lines.length;
     const root = node || $getRoot();
     root.clear();
 
-    for (let i = 0; i < linesLength; ) {
-      const lineText = lines[i];
-      // handle multi line parser like Codeblocks
-      let isMatched = false;
-      for (const elementTransformer of byType.element) {
-        if (elementTransformer.getNumberOfLines) {
-          const match = lineText.match(elementTransformer.regExp)
-          const numberOfLines = elementTransformer.getNumberOfLines(lines, i)
-          if (i + numberOfLines > lines.length) {
-            continue
-          }
-          if (match) {
-            const textNode = $createTextNode(
-              lines.slice(i + 1, i + numberOfLines).join('\n'),
-            )
-            const elementNode = $createParagraphNode()
-            elementNode.append(textNode)
-            root.append(elementNode)
-            if (elementTransformer.getChildrenFromLines) {
-              /**
-               * The default is to turn all lines into a textNode, here it turns multiple lines into multiple ParagraphNodes before adding TextNode.
-               */
-              elementTransformer.replace(elementNode, elementTransformer.getChildrenFromLines(lines.slice(i + 1, i + numberOfLines)), match, true)
-            } else {
-              elementTransformer.replace(elementNode, [textNode], match, true)
-            }
-            i += numberOfLines
-            /**
-             * only add one line if next line is the close mark
-             * just like
-             * ``` of code block
-             * ::: of tip block
-             */
-            if (i < linesLength &&
-              (elementTransformer.closeRegExp && lines[i].match(elementTransformer.closeRegExp)
-               || lines[i].match(elementTransformer.regExp)
-              )) {
-              i ++
-            }
-            isMatched = true
-            break
-          }
-        }
-      }
-      if (isMatched) {
-        continue
-      }
+    parseMarkdownString(root, lines, byType)
 
-      importBlocks(
-        lineText,
-        root,
-        byType.element,
-        textFormatTransformersIndex,
-        byType.textMatch,
-      );
-      i++
-    }
 
     // Removing empty paragraphs as md does not really
     // allow empty lines and uses them as dilimiter
@@ -144,16 +151,23 @@ function isEmptyParagraph(node: LexicalNode): boolean {
 
 function importBlocks(
   lineText: string,
-  rootNode: ElementNode,
+  parentNode: ElementNode,
   elementTransformers: Array<ElementTransformer>,
   textFormatTransformersIndex: TextFormatTransformersIndex,
   textMatchTransformers: Array<TextMatchTransformer>,
 ) {
   const lineTextTrimmed = lineText.trim();
   const textNode = $createTextNode(lineTextTrimmed);
-  const elementNode = $createParagraphNode();
-  elementNode.append(textNode);
-  rootNode.append(elementNode);
+  let currentParentNode
+  if ($isRootNode(parentNode)) {
+    const elementNode = $createParagraphNode();
+    elementNode.append(textNode);
+    parentNode.append(elementNode)
+    currentParentNode = elementNode
+  } else {
+    parentNode.append(textNode);
+    currentParentNode = parentNode
+  }
 
   for (const {regExp, replace} of elementTransformers) {
     const match = lineText.match(regExp);
@@ -161,7 +175,7 @@ function importBlocks(
     if (match) {
       const textContent = lineText.slice(match[0].length)
       textNode.setTextContent(textContent);
-      replace(elementNode, [textNode], match, true);
+      replace(currentParentNode, [textNode], match, true);
       break;
     }
   }
@@ -175,8 +189,8 @@ function importBlocks(
   // If no transformer found and we left with original paragraph node
   // can check if its content can be appended to the previous node
   // if it's a paragraph, quote or list
-  if (elementNode.isAttached() && lineTextTrimmed.length > 0) {
-    const previousNode = elementNode.getPreviousSibling();
+  if (currentParentNode.isAttached() && lineTextTrimmed.length > 0) {
+    const previousNode = currentParentNode.getPreviousSibling();
     if (
       $isParagraphNode(previousNode) ||
       $isQuoteNode(previousNode) ||
@@ -196,9 +210,9 @@ function importBlocks(
       if (targetNode != null && targetNode.getTextContentSize() > 0) {
         targetNode.splice(targetNode.getChildrenSize(), 0, [
           $createLineBreakNode(),
-          ...elementNode.getChildren(),
+          ...currentParentNode.getChildren(),
         ]);
-        elementNode.remove();
+        currentParentNode.remove();
       }
     }
   }
@@ -430,9 +444,9 @@ function createTextFormatTransformersIndex(
     // Reg exp to find opening tags
     openTagsRegExp: new RegExp(
       (IS_SAFARI || IS_IOS || IS_APPLE_WEBKIT ? '' : `${escapeRegExp}`) +
-        '(' +
-        openTagsRegExp.join('|') +
-        ')',
+      '(' +
+      openTagsRegExp.join('|') +
+      ')',
       'g',
     ),
     transformersByTag,

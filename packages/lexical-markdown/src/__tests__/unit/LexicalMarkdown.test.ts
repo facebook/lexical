@@ -145,10 +145,6 @@ describe('Markdown', () => {
       md: '```\nCode\n```',
     },
     {
-      html: '<pre spellcheck="false"><span>Code</span></pre>',
-      md: '```\nCode\n```',
-    },
-    {
       // Import only: extra empty lines will be removed for export
       html: '<p><span>Hello</span></p><p><span>world</span></p>',
       md: ['Hello', '', '', '', 'world'].join('\n'),
@@ -172,9 +168,9 @@ describe('Markdown', () => {
       md: '![alt text](https://lexical.dev/image.jpeg)',
     },
     {
+      exportMd: ['```', 'a = b + c', '```'].join('\n'),
       html: '<pre spellcheck="false"><span>a = b + c</span></pre>',
       md: ['```', 'a = b + c'].join('\n'),
-      exportMd: ['```', 'a = b + c', '```'].join('\n'),
     },
   ];
 

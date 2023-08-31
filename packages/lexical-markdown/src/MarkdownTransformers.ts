@@ -54,6 +54,12 @@ export type ElementTransformer = {
   getNumberOfLines?: (lines: Array<string>, startLineIndex: number) => number;
   getChildrenFromLines? :(lines: Array<string>) => Array<LexicalNode>
   regExp: RegExp;
+  /**
+   * using for check close mark
+   * ``` of code block
+   * ::: of tip block
+   */
+  closeRegExp?: RegExp
   replace: (
     parentNode: ElementNode,
     children: Array<LexicalNode>,

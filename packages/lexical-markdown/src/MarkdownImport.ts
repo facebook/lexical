@@ -55,7 +55,7 @@ export function createMarkdownImport(
     const root = node || $getRoot();
     root.clear();
 
-    for (let i = 0; i < linesLength; i++) {
+    for (let i = 0; i < linesLength; ) {
       const lineText = lines[i];
       // handle multi line parser like Codeblocks
       let isMatched = false;
@@ -82,6 +82,18 @@ export function createMarkdownImport(
               elementTransformer.replace(elementNode, [textNode], match, true)
             }
             i += numberOfLines
+            /**
+             * only add one line if next line is the close mark
+             * just like
+             * ``` of code block
+             * ::: of tip block
+             */
+            if (i < linesLength &&
+              (elementTransformer.closeRegExp && lines[i].match(elementTransformer.closeRegExp)
+               || lines[i].match(elementTransformer.regExp)
+              )) {
+              i ++
+            }
             isMatched = true
             break
           }
@@ -98,6 +110,7 @@ export function createMarkdownImport(
         textFormatTransformersIndex,
         byType.textMatch,
       );
+      i++
     }
 
     // Removing empty paragraphs as md does not really

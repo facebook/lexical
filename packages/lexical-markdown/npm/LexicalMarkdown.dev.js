@@ -69,25 +69,34 @@ function createMarkdownExport(transformers) {
 }
 function exportTopLevelElements(node, elementTransformers, textTransformersIndex, textMatchTransformers) {
   for (const transformer of elementTransformers) {
-    const result = transformer.export(node, _node => exportChildren(_node, textTransformersIndex, textMatchTransformers));
+    const result = transformer.export(node, _node => exportChildren(_node, elementTransformers, textTransformersIndex, textMatchTransformers));
     if (result != null) {
       return result;
     }
   }
   if (lexical.$isElementNode(node)) {
-    return exportChildren(node, textTransformersIndex, textMatchTransformers);
+    return exportChildren(node, elementTransformers, textTransformersIndex, textMatchTransformers);
   } else if (lexical.$isDecoratorNode(node)) {
     return node.getTextContent();
   } else {
     return null;
   }
 }
-function exportChildren(node, textTransformersIndex, textMatchTransformers) {
+function exportChildren(node, elementTransformers, textTransformersIndex, textMatchTransformers) {
   const output = [];
   const children = node.getChildren();
   mainLoop: for (const child of children) {
+    if (lexical.$isElementNode(child)) {
+      for (const transformer of elementTransformers) {
+        const result = transformer.export(child, _node => exportChildren(_node, elementTransformers, textTransformersIndex, textMatchTransformers));
+        if (result != null) {
+          output.push(result);
+          continue mainLoop;
+        }
+      }
+    }
     for (const transformer of textMatchTransformers) {
-      const result = transformer.export(child, parentNode => exportChildren(parentNode, textTransformersIndex, textMatchTransformers), (textNode, textContent) => exportTextFormat(textNode, textContent, textTransformersIndex));
+      const result = transformer.export(child, parentNode => exportChildren(parentNode, elementTransformers, textTransformersIndex, textMatchTransformers), (textNode, textContent) => exportTextFormat(textNode, textContent, textTransformersIndex));
       if (result != null) {
         output.push(result);
         continue mainLoop;
@@ -98,7 +107,7 @@ function exportChildren(node, textTransformersIndex, textMatchTransformers) {
     } else if (lexical.$isTextNode(child)) {
       output.push(exportTextFormat(child, child.getTextContent(), textTransformersIndex));
     } else if (lexical.$isElementNode(child)) {
-      output.push(exportChildren(child, textTransformersIndex, textMatchTransformers));
+      output.push(exportChildren(child, elementTransformers, textTransformersIndex, textMatchTransformers));
       // don't need a line break after the last child
       if (children.indexOf(child) !== children.length - 1) {
         output.push('\n');

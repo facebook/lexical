@@ -1,0 +1,263 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict
+ */
+
+import type {
+  EditorConfig,
+  LexicalNode,
+  NodeKey,
+  ParagraphNode,
+  RangeSelection,
+  LexicalEditor,
+  TextFormatType,
+  LexicalCommand,
+} from 'lexical';
+
+import {
+  ElementNode,
+  deprecated_GridCellNode,
+  deprecated_GridRowNode,
+  deprecated_GridNode,
+} from 'lexical';
+
+/**
+ * LexicalTableCellNode
+ */
+
+export const TableCellHeaderStates = {
+  NO_STATUS: 0,
+  ROW: 1,
+  COLUMN: 2,
+  BOTH: 3,
+};
+
+export type TableCellHeaderState = $Values<typeof TableCellHeaderStates>;
+
+declare export class TableCellNode extends deprecated_GridCellNode {
+  __headerState: TableCellHeaderState;
+  __width?: number;
+  __backgroundColor: null | string;
+  static getType(): string;
+  static clone(node: TableCellNode): TableCellNode;
+  constructor(
+    headerState?: TableCellHeaderState,
+    colSpan?: number,
+    width?: ?number,
+    key?: NodeKey,
+  ): void;
+  createDOM(config: EditorConfig): HTMLElement;
+  updateDOM(prevNode: TableCellNode, dom: HTMLElement): boolean;
+  insertNewAfter(
+    selection: RangeSelection,
+  ): null | ParagraphNode | TableCellNode;
+  collapseAtStart(): true;
+  getTag(): string;
+  setHeaderStyles(headerState: TableCellHeaderState): TableCellHeaderState;
+  getHeaderStyles(): TableCellHeaderState;
+  setWidth(width: number): ?number;
+  getWidth(): ?number;
+  getBackgroundColor(): null | string;
+  setBackgroundColor(newBackgroundColor: null | string): void;
+  toggleHeaderStyle(headerState: TableCellHeaderState): TableCellNode;
+  hasHeader(): boolean;
+  updateDOM(prevNode: TableCellNode): boolean;
+  collapseAtStart(): true;
+  canBeEmpty(): false;
+}
+declare export function $createTableCellNode(
+  headerState: TableCellHeaderState,
+  colSpan?: number,
+  width?: ?number,
+): TableCellNode;
+declare export function $isTableCellNode(
+  node: ?LexicalNode,
+): boolean %checks(node instanceof TableCellNode);
+
+/**
+ * LexicalTableNode
+ */
+
+declare export class TableNode extends deprecated_GridNode {
+  static getType(): string;
+  static clone(node: TableNode): TableNode;
+  constructor(grid: ?Grid, key?: NodeKey): void;
+  createDOM(config: EditorConfig): HTMLElement;
+  updateDOM(prevNode: TableNode, dom: HTMLElement): boolean;
+  insertNewAfter(selection: RangeSelection): null | ParagraphNode | TableNode;
+  collapseAtStart(): true;
+  getCordsFromCellNode(
+    tableCellNode: TableCellNode,
+    grid: Grid,
+  ): {x: number, y: number};
+  getCellFromCords(x: number, y: number, grid: Grid): ?Cell;
+  getCellFromCordsOrThrow(x: number, y: number, grid: Grid): Cell;
+  getCellNodeFromCords(x: number, y: number, grid: Grid): ?TableCellNode;
+  getCellNodeFromCordsOrThrow(x: number, y: number, grid: Grid): TableCellNode;
+  setGrid(grid: ?Grid): TableNode;
+  getGrid(): ?Grid;
+  canSelectBefore(): true;
+}
+declare export function $createTableNode(): TableNode;
+declare export function $isTableNode(
+  node: ?LexicalNode,
+): boolean %checks(node instanceof TableNode);
+
+/**
+ * LexicalTableRowNode
+ */
+
+declare export class TableRowNode extends deprecated_GridRowNode {
+  static getType(): string;
+  static clone(node: TableRowNode): TableRowNode;
+  constructor(height?: ?number, key?: NodeKey): void;
+  createDOM(config: EditorConfig): HTMLElement;
+  updateDOM(prevNode: TableRowNode, dom: HTMLElement): boolean;
+  setHeight(height: number): ?number;
+  getHeight(): ?number;
+  insertNewAfter(
+    selection: RangeSelection,
+  ): null | ParagraphNode | TableRowNode;
+  collapseAtStart(): true;
+}
+declare export function $createTableRowNode(): TableRowNode;
+declare export function $isTableRowNode(
+  node: ?LexicalNode,
+): boolean %checks(node instanceof TableRowNode);
+
+/**
+ * LexicalTableSelectionHelpers
+ */
+
+export type Cell = {
+  elem: HTMLElement,
+  highlighted: boolean,
+  x: number,
+  y: number,
+};
+
+export type Cells = Array<Array<Cell>>;
+
+export type Grid = {
+  cells: Cells,
+  columns: number,
+  rows: number,
+};
+
+declare export function applyTableHandlers(
+  tableNode: TableNode,
+  tableElement: HTMLElement,
+  editor: LexicalEditor,
+): TableSelection;
+
+declare export function $getElementGridForTableNode(
+  editor: LexicalEditor,
+  tableNode: TableNode,
+): Grid;
+
+declare export function getTableSelectionFromTableElement(
+  tableElement: HTMLElement,
+): TableSelection;
+
+declare export function getCellFromTarget(node: Node): Cell | null;
+
+/**
+ * LexicalTableUtils
+ */
+
+declare export function $createTableNodeWithDimensions(
+  rowCount: number,
+  columnCount: number,
+  includeHeaders?: boolean,
+): TableNode;
+
+declare export function $getTableCellNodeFromLexicalNode(
+  startingNode: LexicalNode,
+): TableCellNode | null;
+
+declare export function $getTableRowNodeFromTableCellNodeOrThrow(
+  startingNode: LexicalNode,
+): TableRowNode;
+
+declare export function $getTableNodeFromLexicalNodeOrThrow(
+  startingNode: LexicalNode,
+): TableNode;
+
+declare export function $getTableRowIndexFromTableCellNode(
+  tableCellNode: TableCellNode,
+): number;
+
+declare export function $getTableColumnIndexFromTableCellNode(
+  tableCellNode: TableCellNode,
+): number;
+
+declare export function $removeTableRowAtIndex(
+  tableNode: TableNode,
+  indexToDelete: number,
+): TableNode;
+
+declare export function $insertTableRow(
+  tableNode: TableNode,
+  targetIndex: number,
+  shouldInsertAfter?: boolean,
+  rowCount: number,
+  grid: Grid,
+): TableNode;
+
+declare export function $insertTableColumn(
+  tableNode: TableNode,
+  targetIndex: number,
+  shouldInsertAfter?: boolean,
+  columnCount: number,
+  grid: Grid,
+): TableNode;
+
+declare export function $deleteTableColumn(
+  tableNode: TableNode,
+  targetIndex: number,
+): TableNode;
+
+declare export function $insertTableRow__EXPERIMENTAL(
+  insertAfter: boolean,
+): void;
+declare export function $insertTableColumn__EXPERIMENTAL(
+  insertAfter: boolean,
+): void;
+declare export function $deleteTableRow__EXPERIMENTAL(): void;
+declare export function $deleteTableColumn__EXPERIMENTAL(): void;
+declare export function $unmergeCell(): void;
+
+/**
+ * LexicalTableSelection.js
+ */
+declare export class TableSelection {
+  currentX: number;
+  currentY: number;
+  listenersToRemove: Set<() => void>;
+  grid: Grid;
+  isHighlightingCells: boolean;
+  isMouseDown: boolean;
+  startX: number;
+  startY: number;
+  nodeKey: string;
+  editor: LexicalEditor;
+  constructor(editor: LexicalEditor, nodeKey: string): void;
+  getGrid(): Grid;
+  removeListeners(): void;
+  trackTableGrid(): void;
+  clearHighlight(): void;
+  setFocusCellForSelection(cell: Cell): void;
+  setAnchorCellForSelection(cell: Cell): void;
+  formatCells(type: TextFormatType): void;
+  clearText(): void;
+}
+
+declare export var INSERT_TABLE_COMMAND: LexicalCommand<{
+  rows: string,
+  columns: string,
+  includeHeaders?: boolean,
+}>;

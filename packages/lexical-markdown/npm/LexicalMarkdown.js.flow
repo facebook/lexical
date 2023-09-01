@@ -1,0 +1,100 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict
+ */
+
+import type {
+  LexicalEditor,
+  LexicalNode,
+  ElementNode,
+  TextFormatType,
+  TextNode,
+} from 'lexical';
+
+export type Transformer =
+  | ElementTransformer
+  | TextFormatTransformer
+  | TextMatchTransformer;
+
+export type ElementTransformer = {
+  dependencies: Array<Class<LexicalNode>>,
+  export: (
+    node: LexicalNode,
+    traverseChildren: (node: ElementNode) => string,
+  ) => string | null,
+  regExp: RegExp,
+  replace: (
+    parentNode: ElementNode,
+    children: Array<LexicalNode>,
+    match: Array<string>,
+    isImport: boolean,
+  ) => void,
+  type: 'element',
+};
+
+export type TextFormatTransformer = $ReadOnly<{
+  format: $ReadOnlyArray<TextFormatType>,
+  tag: string,
+  intraword?: boolean,
+  type: 'text-format',
+}>;
+
+export type TextMatchTransformer = $ReadOnly<{
+  dependencies: Array<Class<LexicalNode>>,
+  export: (
+    node: LexicalNode,
+    exportChildren: (node: ElementNode) => string,
+    exportFormat: (node: TextNode, textContent: string) => string,
+  ) => string | null,
+  importRegExp: RegExp,
+  regExp: RegExp,
+  replace: (node: TextNode, match: RegExp$matchResult) => void,
+  trigger: string,
+  type: 'text-match',
+}>;
+// TODO:
+// transformers should be required argument, breaking change
+declare export function registerMarkdownShortcuts(
+  editor: LexicalEditor,
+  transformers?: Array<Transformer>,
+): () => void;
+
+// TODO:
+// transformers should be required argument, breaking change
+declare export function $convertFromMarkdownString(
+  markdown: string,
+  transformers?: Array<Transformer>,
+): void;
+
+// TODO:
+// transformers should be required argument, breaking change
+declare export function $convertToMarkdownString(
+  transformers?: Array<Transformer>,
+): string;
+
+declare export var BOLD_ITALIC_STAR: TextFormatTransformer;
+declare export var BOLD_ITALIC_UNDERSCORE: TextFormatTransformer;
+declare export var BOLD_STAR: TextFormatTransformer;
+declare export var BOLD_UNDERSCORE: TextFormatTransformer;
+declare export var INLINE_CODE: TextFormatTransformer;
+declare export var ITALIC_STAR: TextFormatTransformer;
+declare export var ITALIC_UNDERSCORE: TextFormatTransformer;
+declare export var STRIKETHROUGH: TextFormatTransformer;
+
+declare export var UNORDERED_LIST: ElementTransformer;
+declare export var CODE: ElementTransformer;
+declare export var HEADING: ElementTransformer;
+declare export var ORDERED_LIST: ElementTransformer;
+declare export var QUOTE: ElementTransformer;
+declare export var CHECK_LIST: ElementTransformer;
+
+declare export var LINK: TextMatchTransformer;
+
+declare export var TRANSFORMERS: Array<Transformer>;
+declare export var ELEMENT_TRANSFORMERS: Array<ElementTransformer>;
+declare export var TEXT_FORMAT_TRANSFORMERS: Array<TextFormatTransformer>;
+declare export var TEXT_MATCH_TRANSFORMERS: Array<TextFormatTransformer>;

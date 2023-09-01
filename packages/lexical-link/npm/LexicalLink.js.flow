@@ -1,0 +1,86 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict
+ */
+import type {
+  DOMConversionMap,
+  EditorConfig,
+  LexicalNode,
+  NodeKey,
+  RangeSelection,
+  LexicalCommand,
+} from 'lexical';
+import {addClassNamesToElement} from '@lexical/utils';
+import {$isElementNode, ElementNode} from 'lexical';
+export type LinkAttributes = {
+  rel?: null | string,
+  target?: null | string,
+  title?: null | string,
+};
+declare export class LinkNode extends ElementNode {
+  __url: string;
+  __target: null | string;
+  __rel: null | string;
+  __title: null | string;
+  static getType(): string;
+  static clone(node: LinkNode): LinkNode;
+  constructor(url: string, attributes?: LinkAttributes, key?: NodeKey): void;
+  createDOM(config: EditorConfig): HTMLElement;
+  updateDOM(
+    prevNode: LinkNode,
+    dom: HTMLElement,
+    config: EditorConfig,
+  ): boolean;
+  static importDOM(): DOMConversionMap | null;
+  getURL(): string;
+  setURL(url: string): void;
+  getTarget(): null | string;
+  setTarget(target: null | string): void;
+  getRel(): null | string;
+  setRel(rel: null | string): void;
+  getTitle(): null | string;
+  setTitle(title: null | string): void;
+  insertNewAfter(
+    selection: RangeSelection,
+    restoreSelection?: boolean,
+  ): null | ElementNode;
+  canInsertTextBefore(): false;
+  canInsertTextAfter(): false;
+  canBeEmpty(): false;
+  isInline(): true;
+}
+declare export function $createLinkNode(
+  url: string,
+  attributes?: LinkAttributes,
+): LinkNode;
+declare export function $isLinkNode(
+  node: ?LexicalNode,
+): boolean %checks(node instanceof LinkNode);
+declare export class AutoLinkNode extends LinkNode {
+  static getType(): string;
+  // $FlowFixMe clone method inheritance
+  static clone(node: AutoLinkNode): AutoLinkNode;
+  insertNewAfter(
+    selection: RangeSelection,
+    restoreSelection?: boolean,
+  ): null | ElementNode;
+}
+declare export function $createAutoLinkNode(
+  url: string,
+  attributes?: LinkAttributes,
+): AutoLinkNode;
+declare export function $isAutoLinkNode(
+  node: ?LexicalNode,
+): boolean %checks(node instanceof AutoLinkNode);
+
+declare export var TOGGLE_LINK_COMMAND: LexicalCommand<
+  string | {url: string, ...LinkAttributes} | null,
+>;
+declare export function toggleLink(
+  url: null | string,
+  attributes: LinkAttributes,
+): void;

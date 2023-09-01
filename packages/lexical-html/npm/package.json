@@ -1,0 +1,24 @@
+{
+  "name": "@lexical/html",
+  "description": "This package contains HTML helpers and functionality for Lexical.",
+  "keywords": [
+    "lexical",
+    "editor",
+    "rich-text",
+    "html"
+  ],
+  "license": "MIT",
+  "version": "0.12.0",
+  "main": "LexicalHtml.js",
+  "peerDependencies": {
+    "lexical": "0.12.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/facebook/lexical",
+    "directory": "packages/lexical-html"
+  },
+  "dependencies": {
+    "@lexical/selection": "0.12.0"
+  }
+}

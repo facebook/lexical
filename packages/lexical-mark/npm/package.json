@@ -1,0 +1,24 @@
+{
+  "name": "@lexical/mark",
+  "description": "This package contains helpers and nodes for wrapping content in marks for Lexical.",
+  "keywords": [
+    "lexical",
+    "editor",
+    "rich-text",
+    "mark"
+  ],
+  "license": "MIT",
+  "version": "0.12.0",
+  "main": "LexicalMark.js",
+  "peerDependencies": {
+    "lexical": "0.12.0"
+  },
+  "dependencies": {
+    "@lexical/utils": "0.12.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/facebook/lexical",
+    "directory": "packages/lexical-mark"
+  }
+}

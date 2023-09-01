@@ -1,0 +1,22 @@
+{
+  "name": "@lexical/selection",
+  "description": "This package contains utilities and helpers for handling Lexical selection.",
+  "keywords": [
+    "lexical",
+    "editor",
+    "rich-text",
+    "list",
+    "selection"
+  ],
+  "license": "MIT",
+  "version": "0.12.0",
+  "main": "LexicalSelection.js",
+  "peerDependencies": {
+    "lexical": "0.12.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/facebook/lexical",
+    "directory": "packages/lexical-selection"
+  }
+}

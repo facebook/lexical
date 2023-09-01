@@ -1,0 +1,32 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict
+ */
+
+import type {LinkAttributes} from '@lexical/link';
+
+type ChangeHandler = (url: string | null, prevUrl: string | null) => void;
+
+type LinkMatcherResult = {
+  attributes?: LinkAttributes,
+  index: number,
+  length: number,
+  text: string,
+  url: string,
+};
+
+export type LinkMatcher = (text: string) => LinkMatcherResult | null;
+
+declare export function createLinkMatcherWithRegExp(
+  regExp: RegExp,
+  urlTransformer?: (text: string) => string,
+): LinkMatcher;
+
+declare export function AutoLinkPlugin(props: {
+  matchers: Array<LinkMatcher>,
+  onChange?: ChangeHandler,
+}): React$Node;

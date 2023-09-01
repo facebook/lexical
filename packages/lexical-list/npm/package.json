@@ -1,0 +1,24 @@
+{
+  "name": "@lexical/list",
+  "description": "This package provides the list feature for Lexical.",
+  "keywords": [
+    "lexical",
+    "editor",
+    "rich-text",
+    "list"
+  ],
+  "license": "MIT",
+  "version": "0.12.0",
+  "main": "LexicalList.js",
+  "peerDependencies": {
+    "lexical": "0.12.0"
+  },
+  "dependencies": {
+    "@lexical/utils": "0.12.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/facebook/lexical",
+    "directory": "packages/lexical-list"
+  }
+}

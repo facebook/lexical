@@ -1,0 +1,41 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict
+ */
+
+import type {
+  EditorThemeClasses,
+  LexicalEditor,
+  LexicalNode,
+  EditorState,
+} from 'lexical';
+
+export type InitialEditorStateType =
+  | null
+  | string
+  | EditorState
+  | ((editor: LexicalEditor) => void);
+
+export type InitialConfigType = $ReadOnly<{
+  editor__DEPRECATED?: LexicalEditor | null,
+  editable?: boolean,
+  namespace: string,
+  nodes?: $ReadOnlyArray<
+    | Class<LexicalNode>
+    | {replace: Class<LexicalNode>, with: (node: LexicalNode) => LexicalNode},
+  >,
+  theme?: EditorThemeClasses,
+  editorState?: InitialEditorStateType,
+  onError: (error: Error, editor: LexicalEditor) => void,
+}>;
+
+type Props = {
+  initialConfig: InitialConfigType,
+  children: React$Node,
+};
+
+declare export function LexicalComposer(Props): React$MixedElement;

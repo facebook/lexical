@@ -185,12 +185,13 @@ describe('Markdown Collapsed', () => {
 
   const IMPORT_AND_EXPORT: Input = [
     {
-      html: '<details open="false"><summary><span>Hello world</span></summary><div data-lexical-collapsible-content="true"><p><span>111</span><br><span>222</span></p><blockquote><span>3333</span></blockquote></div></details>',
-      md: '# > Hello world\n111\n222\n> 3333\n#'
+      html: '<details open="true"><summary><span>Hello world</span></summary><div data-lexical-collapsible-content="true"><p><span>111</span><br><span>222</span></p><blockquote><span>3333</span></blockquote></div></details>',
+      md: '#>> Hello world\n111\n222\n> 3333\n#'
     },
     {
-      html: '<details open="false"><summary><span>Hello world</span></summary><div data-lexical-collapsible-content="true"><p><span>111</span><br><span>222</span></p><details open="false"><summary><span>3333</span></summary><div data-lexical-collapsible-content="true"></div></details></div></details>',
-      md: '#> Hello world\n111\n222\n##> 3333\n##\n#'
+      html: '<details open="true"><summary><span>Hello world</span></summary><div data-lexical-collapsible-content="true"><p><span>111</span><br><span>222</span></p><details open="true"><summary><span>333</span></summary><div data-lexical-collapsible-content="true"></div></details></div></details>',
+      md: '#>> Hello world\n111\n222\n##>> 333\n##\n#',
+      exportMd: '#>> Hello world\n111\n222\n#>> 333\n\n#\n#',
     },
   ];
 
@@ -200,24 +201,52 @@ describe('Markdown Collapsed', () => {
       continue;
     }
 
-    it(`can import "${md.replace(/\n/g, '\\n')}"`, () => {
+    it(`can import "${md.replace(/\n/g, 'n')}"`, () => {
       const editor = createEditor();
 
       editor.update(
         () =>
-          $convertFromMarkdownString(md, [
-            DETAILS,
-            ...TRANSFORMERS,
-            HIGHLIGHT_TEXT_MATCH_IMPORT,
-          ]),
+          $convertFromMarkdownString(md, T),
+        {
+          discrete: true,
+        },
+      );
+
+      const j = editor.getEditorState().read(() => JSON.stringify(exportNodeToJSON($getRoot(), ['type', 'text', 'children']), null, 2))
+      console.log("j", j);
+
+      expect(
+        editor.getEditorState().read(() => $generateHtmlFromNodes(editor)),
+      ).toBe(html);
+    });
+  }
+
+  for (const {html, md, exportMd, skipExport} of IMPORT_AND_EXPORT) {
+    if (skipExport) {
+      continue;
+    }
+
+    it(`can export "${md.replace(/\n/g, 'n')}"`, () => {
+      const editor = createEditor();
+
+      editor.update(
+        () => {
+          const parser = new DOMParser();
+          const dom = parser.parseFromString(html, 'text/html');
+          const nodes = $generateNodesFromDOM(editor, dom);
+          $getRoot().select();
+          $insertNodes(nodes);
+        },
         {
           discrete: true,
         },
       );
 
       expect(
-        editor.getEditorState().read(() => $generateHtmlFromNodes(editor)),
-      ).toBe(html);
+        editor
+          .getEditorState()
+          .read(() => $convertToMarkdownString(T)),
+      ).toBe(exportMd ?? md);
     });
   }
 

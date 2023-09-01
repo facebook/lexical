@@ -430,3 +430,12 @@
 .PlaygroundEditorTheme__embedBlockFocus {
   outline: 2px solid rgb(60, 132, 244);
 }
+.PlaygroundEditorTheme__layoutContaner {
+  display: grid;
+  gap: 10px;
+  margin: 10px 0;
+}
+.PlaygroundEditorTheme__layoutItem {
+  border: 1px dashed #ddd;
+  padding: 8px 16px;
+}

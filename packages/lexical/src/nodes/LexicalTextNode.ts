@@ -266,7 +266,10 @@ function createTextInnerDOM(
   }
 }
 
-function wrapElementWith(element: HTMLElement, tag: string): HTMLElement {
+function wrapElementWith(
+  element: HTMLElement | Text,
+  tag: string,
+): HTMLElement {
   const el = document.createElement(tag);
   el.appendChild(element);
   return el;
@@ -447,6 +450,9 @@ export class TextNode extends LexicalNode {
     const tag = outerTag === null ? innerTag : outerTag;
     const dom = document.createElement(tag);
     let innerDOM = dom;
+    if (this.hasFormat('code')) {
+      dom.setAttribute('spellcheck', 'false');
+    }
     if (outerTag !== null) {
       innerDOM = document.createElement(innerTag);
       dom.appendChild(innerDOM);

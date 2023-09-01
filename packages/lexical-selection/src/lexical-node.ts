@@ -64,20 +64,19 @@ function $updateTextNodeProperties<T extends TextNode>(
  * @returns The clone of the node.
  */
 export function $cloneWithProperties<T extends LexicalNode>(node: T): T {
-  const latest = node.getLatest();
-  const constructor = latest.constructor;
+  const constructor = node.constructor;
   // @ts-expect-error
-  const clone: T = constructor.clone(latest);
-  clone.__parent = latest.__parent;
-  clone.__next = latest.__next;
-  clone.__prev = latest.__prev;
+  const clone: T = constructor.clone(node);
+  clone.__parent = node.__parent;
+  clone.__next = node.__next;
+  clone.__prev = node.__prev;
 
-  if ($isElementNode(latest) && $isElementNode(clone)) {
-    return $updateElementNodeProperties(clone, latest);
+  if ($isElementNode(node) && $isElementNode(clone)) {
+    return $updateElementNodeProperties(clone, node);
   }
 
-  if ($isTextNode(latest) && $isTextNode(clone)) {
-    return $updateTextNodeProperties(clone, latest);
+  if ($isTextNode(node) && $isTextNode(clone)) {
+    return $updateTextNodeProperties(clone, node);
   }
 
   return clone;
@@ -202,7 +201,7 @@ export function trimTextContentFromAnchor(
       // TODO: should this be handled in core?
       text = '\n\n';
     }
-    const currentNodeSize = currentNode.getTextContentSize();
+    const currentNodeSize = text.length;
 
     if (!$isTextNode(currentNode) || remaining >= currentNodeSize) {
       const parent = currentNode.getParent();

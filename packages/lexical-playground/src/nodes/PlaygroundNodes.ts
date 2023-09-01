@@ -29,6 +29,8 @@ import {FigmaNode} from './FigmaNode';
 import {ImageNode} from './ImageNode';
 import {InlineImageNode} from './InlineImageNode';
 import {KeywordNode} from './KeywordNode';
+import {LayoutContainerNode} from './LayoutContainerNode';
+import {LayoutItemNode} from './LayoutItemNode';
 import {MentionNode} from './MentionNode';
 import {PageBreakNode} from './PageBreakNode';
 import {PollNode} from './PollNode';
@@ -71,6 +73,8 @@ const PlaygroundNodes: Array<Klass<LexicalNode>> = [
   CollapsibleContentNode,
   CollapsibleTitleNode,
   PageBreakNode,
+  LayoutContainerNode,
+  LayoutItemNode,
 ];
 
 export default PlaygroundNodes;

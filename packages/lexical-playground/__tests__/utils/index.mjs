@@ -519,6 +519,14 @@ export async function waitForSelector(page, selector, options) {
   }
 }
 
+export async function locate(page, selector) {
+  let leftFrame = page;
+  if (IS_COLLAB) {
+    leftFrame = await page.frame('left');
+  }
+  return await leftFrame.locator(selector);
+}
+
 export async function selectorBoundingBox(page, selector) {
   let leftFrame = page;
   if (IS_COLLAB) {

@@ -528,3 +528,37 @@ export function objectKlassEquals<T>(
     ? Object.getPrototypeOf(object).constructor.name === objectClass.name
     : false;
 }
+
+/**
+ * Filter the nodes
+ * @param nodes Array of nodes that needs to be filtered
+ * @param filterFn A filter function that returns node if the current node satisfies the condition otherwise null
+ * @returns Array of filtered nodes
+ */
+
+export function $filter<T>(
+  nodes: Array<LexicalNode>,
+  filterFn: (node: LexicalNode) => null | T,
+): Array<T> {
+  const result: T[] = [];
+  for (let i = 0; i < nodes.length; i++) {
+    const node = filterFn(nodes[i]);
+    if (node !== null) {
+      result.push(node);
+    }
+  }
+  return result;
+}
+/**
+ * Appends the node before the first child of the parent node
+ * @param parent A parent node
+ * @param node Node that needs to be appended
+ */
+export function $insertFirst(parent: ElementNode, node: LexicalNode): void {
+  const firstChild = parent.getFirstChild();
+  if (firstChild !== null) {
+    firstChild.insertBefore(node);
+  } else {
+    parent.append(node);
+  }
+}

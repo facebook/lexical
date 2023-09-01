@@ -99,6 +99,9 @@ function exportChildren(
 
         if (result != null) {
           output.push(result);
+          if (children.indexOf(child) !== children.length - 1) {
+            output.push('\n')
+          }
           continue mainLoop
         }
       }

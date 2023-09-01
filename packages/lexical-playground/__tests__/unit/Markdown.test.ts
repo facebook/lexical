@@ -193,6 +193,11 @@ describe('Markdown Collapsed', () => {
       md: '#>> Hello world\n111\n222\n##>> 333\n##\n#',
       exportMd: '#>> Hello world\n111\n222\n#>> 333\n\n#\n#',
     },
+    {
+      html: '<details open="true"><summary><span>Hello world</span></summary><div data-lexical-collapsible-content="true"><h3><span>111</span></h3><details open="true"><summary><span>222</span></summary><div data-lexical-collapsible-content="true"></div></details></div></details>',
+      md: '#>> Hello world\n### 111\n##>> 222\n##\n#',
+      exportMd: '#>> Hello world\n### 111\n#>> 222\n\n#\n#',
+    },
   ];
 
 

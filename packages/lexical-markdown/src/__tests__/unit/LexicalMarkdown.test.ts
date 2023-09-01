@@ -6,7 +6,7 @@
  *
  */
 
-import {CodeNode} from '@lexical/code';
+import {CodeHighlightNode, CodeNode} from '@lexical/code';
 import {createHeadlessEditor} from '@lexical/headless';
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import {LinkNode} from '@lexical/link';
@@ -28,6 +28,7 @@ describe('Markdown', () => {
     md: string;
     skipExport?: true;
     skipImport?: true;
+    exportMd?: string;
   }>;
 
   const URL = 'https://lexical.dev';
@@ -39,6 +40,7 @@ describe('Markdown', () => {
     {html: '<h4><span>Hello world</span></h4>', md: '#### Hello world'},
     {html: '<h5><span>Hello world</span></h5>', md: '##### Hello world'},
     {html: '<h6><span>Hello world</span></h6>', md: '###### Hello world'},
+    {html: '<p><span>line1</span><br><span>line2</span></p>', md: 'line1\nline2'},
     {
       // Multiline paragraphs
       html: '<p><span>Hello</span><br><span>world</span><br><span>!</span></p>',
@@ -144,10 +146,6 @@ describe('Markdown', () => {
       md: '```\nCode\n```',
     },
     {
-      html: '<pre spellcheck="false"><span>Code</span></pre>',
-      md: '```\nCode\n```',
-    },
-    {
       // Import only: extra empty lines will be removed for export
       html: '<p><span>Hello</span></p><p><span>world</span></p>',
       md: ['Hello', '', '', '', 'world'].join('\n'),
@@ -164,6 +162,16 @@ describe('Markdown', () => {
       html: '<p><span>Hello </span><a href="https://lexical.dev"><span>world</span></a><span>! Hello </span><mark><span>$world$</span></mark><span>! </span><a href="https://lexical.dev"><span>Hello</span></a><span> world! Hello </span><mark><span>$world$</span></mark><span>!</span></p>',
       md: `Hello [world](${URL})! Hello $world$! [Hello](${URL}) world! Hello $world$!`,
       skipExport: true,
+    },
+    // We should not render non-link markdown as a link
+    {
+      html: '<p><span>![alt text](https://lexical.dev/image.jpeg)</span></p>',
+      md: '![alt text](https://lexical.dev/image.jpeg)',
+    },
+    {
+      exportMd: ['```', 'a = b + c', '```'].join('\n'),
+      html: '<pre spellcheck="false"><span>a = b + c</span></pre>',
+      md: ['```', 'a = b + c'].join('\n'),
     },
   ];
 
@@ -189,6 +197,8 @@ describe('Markdown', () => {
           QuoteNode,
           CodeNode,
           LinkNode,
+          CodeNode,
+          CodeHighlightNode
         ],
       });
 
@@ -209,7 +219,7 @@ describe('Markdown', () => {
     });
   }
 
-  for (const {html, md, skipExport} of IMPORT_AND_EXPORT) {
+  for (const {html, md, exportMd, skipExport} of IMPORT_AND_EXPORT) {
     if (skipExport) {
       continue;
     }
@@ -243,7 +253,7 @@ describe('Markdown', () => {
         editor
           .getEditorState()
           .read(() => $convertToMarkdownString(TRANSFORMERS)),
-      ).toBe(md);
+      ).toBe(exportMd ?? md);
     });
   }
 });

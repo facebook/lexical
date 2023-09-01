@@ -119,6 +119,12 @@ function exportChildren(
       output.push(
         exportChildren(child, textTransformersIndex, textMatchTransformers),
       );
+      // don't need a line break after the last child
+      if (children.indexOf(child) !== children.length - 1) {
+        output.push(
+          '\n'
+        )
+      }
     } else if ($isDecoratorNode(child)) {
       output.push(child.getTextContent());
     }

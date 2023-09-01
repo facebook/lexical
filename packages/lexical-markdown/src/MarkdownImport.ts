@@ -29,6 +29,7 @@ import {
   $isTextNode,
   ElementNode,
 } from 'lexical';
+import {exportNodeToJSON} from 'lexical/src/LexicalEditorState';
 import {IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from 'shared/environment';
 
 import {PUNCTUATION_OR_SPACE, transformersByType} from './utils';
@@ -41,7 +42,7 @@ type TextFormatTransformersIndex = Readonly<{
   transformersByTag: Readonly<Record<string, TextFormatTransformer>>;
 }>;
 
-function parseMarkdownString(
+export function parseMarkdownString(
   parentNode: ElementNode,
   lines: string[],
   byType: Readonly<{
@@ -69,8 +70,8 @@ function parseMarkdownString(
           parentNode.append(elementNode)
           parseMarkdownString(elementNode, lines.slice(i + 1, i + numberOfLines), byType)
           elementTransformer.replace(
-            elementNode,
-            elementNode.getChildren(),
+            parentNode.getLastChild() as ElementNode,
+            (parentNode.getLastChild() as ElementNode).getChildren(),
             match,
             true
           )
@@ -158,16 +159,9 @@ function importBlocks(
 ) {
   const lineTextTrimmed = lineText.trim();
   const textNode = $createTextNode(lineTextTrimmed);
-  let currentParentNode
-  if ($isRootNode(parentNode)) {
-    const elementNode = $createParagraphNode();
-    elementNode.append(textNode);
-    parentNode.append(elementNode)
-    currentParentNode = elementNode
-  } else {
-    parentNode.append(textNode);
-    currentParentNode = parentNode
-  }
+  const elementNode = $createParagraphNode();
+  elementNode.append(textNode);
+  parentNode.append(elementNode)
 
   for (const {regExp, replace} of elementTransformers) {
     const match = lineText.match(regExp);
@@ -175,7 +169,7 @@ function importBlocks(
     if (match) {
       const textContent = lineText.slice(match[0].length)
       textNode.setTextContent(textContent);
-      replace(currentParentNode, [textNode], match, true);
+      replace(elementNode, [textNode], match, true);
       break;
     }
   }
@@ -189,8 +183,8 @@ function importBlocks(
   // If no transformer found and we left with original paragraph node
   // can check if its content can be appended to the previous node
   // if it's a paragraph, quote or list
-  if (currentParentNode.isAttached() && lineTextTrimmed.length > 0) {
-    const previousNode = currentParentNode.getPreviousSibling();
+  if (elementNode.isAttached() && lineTextTrimmed.length > 0) {
+    const previousNode = elementNode.getPreviousSibling();
     if (
       $isParagraphNode(previousNode) ||
       $isQuoteNode(previousNode) ||
@@ -210,9 +204,9 @@ function importBlocks(
       if (targetNode != null && targetNode.getTextContentSize() > 0) {
         targetNode.splice(targetNode.getChildrenSize(), 0, [
           $createLineBreakNode(),
-          ...currentParentNode.getChildren(),
+          ...elementNode.getChildren(),
         ]);
-        currentParentNode.remove();
+        elementNode.remove();
       }
     }
   }

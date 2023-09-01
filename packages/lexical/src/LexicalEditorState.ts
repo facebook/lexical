@@ -56,8 +56,17 @@ export function createEmptyEditorState(): EditorState {
   return new EditorState(new Map([['root', $createRootNode()]]));
 }
 
-function exportNodeToJSON<SerializedNode>(node: LexicalNode): SerializedNode {
+export function exportNodeToJSON<SerializedNode>(node: LexicalNode, keys?: string[]): SerializedNode {
   const serializedNode = node.exportJSON();
+  if (keys) {
+    // 遍历serializedNode的key，然后不存在keys中的就删除
+    for (const key in serializedNode) {
+      if (!keys.includes(key)) {
+        // @ts-ignore
+        delete serializedNode[key];
+      }
+    }
+  }
   const nodeClass = node.constructor;
 
   // @ts-expect-error TODO Replace Class utility type with InstanceType
@@ -85,7 +94,7 @@ function exportNodeToJSON<SerializedNode>(node: LexicalNode): SerializedNode {
 
     for (let i = 0; i < children.length; i++) {
       const child = children[i];
-      const serializedChildNode = exportNodeToJSON(child);
+      const serializedChildNode = exportNodeToJSON(child, keys);
       serializedChildren.push(serializedChildNode);
     }
   }

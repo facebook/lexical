@@ -40,6 +40,7 @@ describe('Markdown', () => {
     {html: '<h4><span>Hello world</span></h4>', md: '#### Hello world'},
     {html: '<h5><span>Hello world</span></h5>', md: '##### Hello world'},
     {html: '<h6><span>Hello world</span></h6>', md: '###### Hello world'},
+    {html: '<p><span>line1</span><br><span>line2</span></p>', md: 'line1\nline2'},
     {
       // Multiline paragraphs
       html: '<p><span>Hello</span><br><span>world</span><br><span>!</span></p>',

@@ -672,7 +672,6 @@ export default function ToolbarPlugin(): JSX.Element {
           $patchStyleText(selection, styles);
         } else if (DEPRECATED_$isGridSelection(selection)) {
           $patchStyleTable(selection, styles);
-          activeEditor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
         }
       });
     },

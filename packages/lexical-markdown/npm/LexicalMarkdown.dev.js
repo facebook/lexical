@@ -91,6 +91,9 @@ function exportChildren(node, elementTransformers, textTransformersIndex, textMa
         const result = transformer.export(child, _node => exportChildren(_node, elementTransformers, textTransformersIndex, textMatchTransformers));
         if (result != null) {
           output.push(result);
+          if (children.indexOf(child) !== children.length - 1) {
+            output.push('\n');
+          }
           continue mainLoop;
         }
       }

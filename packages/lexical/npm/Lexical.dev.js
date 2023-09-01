@@ -4375,6 +4375,9 @@ class TextNode extends LexicalNode {
     const tag = outerTag === null ? innerTag : outerTag;
     const dom = document.createElement(tag);
     let innerDOM = dom;
+    if (this.hasFormat('code')) {
+      dom.setAttribute('spellcheck', 'false');
+    }
     if (outerTag !== null) {
       innerDOM = document.createElement(innerTag);
       dom.appendChild(innerDOM);
@@ -6022,7 +6025,10 @@ class RangeSelection {
             lastNode.replace(textNode);
             lastNode = textNode;
           }
-          lastNode = lastNode.spliceText(0, endOffset, '');
+          // root node selections only select whole nodes, so no text splice is necessary
+          if (!$isRootNode(endPoint.getNode())) {
+            lastNode = lastNode.spliceText(0, endOffset, '');
+          }
           markedNodeKeysForKeep.add(lastNode.__key);
         } else {
           const lastNodeParent = lastNode.getParentOrThrow();

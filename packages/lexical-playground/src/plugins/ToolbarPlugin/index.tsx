@@ -92,6 +92,7 @@ import {
   InsertImagePayload,
 } from '../ImagesPlugin';
 import {InsertInlineImageDialog} from '../InlineImagePlugin';
+import InsertLayoutDialog from '../LayoutPlugin/InsertLayoutDialog';
 import {INSERT_PAGE_BREAK} from '../PageBreakPlugin';
 import {InsertPollDialog} from '../PollPlugin';
 import {InsertNewTableDialog, InsertTableDialog} from '../TablePlugin';
@@ -1082,6 +1083,19 @@ export default function ToolbarPlugin(): JSX.Element {
               className="item">
               <i className="icon poll" />
               <span className="text">Poll</span>
+            </DropDownItem>
+            <DropDownItem
+              onClick={() => {
+                showModal('Insert Columns Layout', (onClose) => (
+                  <InsertLayoutDialog
+                    activeEditor={activeEditor}
+                    onClose={onClose}
+                  />
+                ));
+              }}
+              className="item">
+              <i className="icon columns" />
+              <span className="text">Columns Layout</span>
             </DropDownItem>
 
             <DropDownItem

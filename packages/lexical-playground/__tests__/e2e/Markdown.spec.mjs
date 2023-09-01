@@ -1359,15 +1359,15 @@ const IMPORTED_MARKDOWN_HTML = html`
       class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
       dir="ltr">
       <span data-lexical-text="true">Create a list with</span>
-      <code data-lexical-text="true">
+      <code spellcheck="false" data-lexical-text="true">
         <span class="PlaygroundEditorTheme__textCode">+</span>
       </code>
       <span data-lexical-text="true">,</span>
-      <code data-lexical-text="true">
+      <code spellcheck="false" data-lexical-text="true">
         <span class="PlaygroundEditorTheme__textCode">-</span>
       </code>
       <span data-lexical-text="true">, or</span>
-      <code data-lexical-text="true">
+      <code spellcheck="false" data-lexical-text="true">
         <span class="PlaygroundEditorTheme__textCode">*</span>
       </code>
     </li>
@@ -1409,7 +1409,7 @@ const IMPORTED_MARKDOWN_HTML = html`
       <span data-lexical-text="true">
         Oredered lists started with numbers as
       </span>
-      <code data-lexical-text="true">
+      <code spellcheck="false" data-lexical-text="true">
         <span class="PlaygroundEditorTheme__textCode">1.</span>
       </code>
     </li>
@@ -1443,11 +1443,11 @@ const IMPORTED_MARKDOWN_HTML = html`
     class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
     dir="ltr">
     <span data-lexical-text="true">Inline</span>
-    <code data-lexical-text="true">
+    <code spellcheck="false" data-lexical-text="true">
       <span class="PlaygroundEditorTheme__textCode">code</span>
     </code>
     <span data-lexical-text="true">format which also</span>
-    <code data-lexical-text="true">
+    <code spellcheck="false" data-lexical-text="true">
       <span class="PlaygroundEditorTheme__textCode">
         preserves **_~~any markdown-like~~_** text
       </span>

@@ -90,7 +90,7 @@ describe('Markdown', () => {
       md: '***Hello*** world',
     },
     {
-      html: '<p><code><span>Hello</span></code><span> world</span></p>',
+      html: '<p><code spellcheck="false"><span>Hello</span></code><span> world</span></p>',
       md: '`Hello` world',
     },
     {

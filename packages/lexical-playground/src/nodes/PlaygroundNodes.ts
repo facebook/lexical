@@ -28,6 +28,7 @@ import {ExcalidrawNode} from './ExcalidrawNode';
 import {FigmaNode} from './FigmaNode';
 import {ImageNode} from './ImageNode';
 import {InlineImageNode} from './InlineImageNode';
+import {InsertVariableNode} from './InsertVariableNode';
 import {KeywordNode} from './KeywordNode';
 import {LayoutContainerNode} from './LayoutContainerNode';
 import {LayoutItemNode} from './LayoutItemNode';
@@ -62,6 +63,7 @@ const PlaygroundNodes: Array<Klass<LexicalNode>> = [
   EmojiNode,
   ExcalidrawNode,
   EquationNode,
+  InsertVariableNode,
   AutocompleteNode,
   KeywordNode,
   HorizontalRuleNode,

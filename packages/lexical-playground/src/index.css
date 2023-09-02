@@ -1700,6 +1700,7 @@ button.toolbar-item.active i {
 .editor-equation {
   cursor: default;
   user-select: none;
+  background-color: orange;
 }
 
 .editor-equation.focused {

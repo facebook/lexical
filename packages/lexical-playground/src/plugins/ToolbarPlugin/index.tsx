@@ -92,6 +92,7 @@ import {
   InsertImagePayload,
 } from '../ImagesPlugin';
 import {InsertInlineImageDialog} from '../InlineImagePlugin';
+import {InsertVariableDialog} from '../InsertVariablePlugin';
 import InsertLayoutDialog from '../LayoutPlugin/InsertLayoutDialog';
 import {INSERT_PAGE_BREAK} from '../PageBreakPlugin';
 import {InsertPollDialog} from '../PollPlugin';
@@ -615,11 +616,19 @@ export default function ToolbarPlugin(): JSX.Element {
   }, [editor, $updateToolbar]);
 
   useEffect(() => {
+    // const k = editor._nodes.get('insert_variable')?.klass;
+
+    // editor.registerMutationListener(k, console.log);
+    // console.log('t', editor.getElementByKey('12')?.textContent);
+
+    editor.registerUpdateListener(console.log);
+
     return mergeRegister(
       editor.registerEditableListener((editable) => {
         setIsEditable(editable);
       }),
       activeEditor.registerUpdateListener(({editorState}) => {
+        // console.log('editorState', editorState);
         editorState.read(() => {
           $updateToolbar();
         });
@@ -1110,6 +1119,19 @@ export default function ToolbarPlugin(): JSX.Element {
               className="item">
               <i className="icon equation" />
               <span className="text">Equation</span>
+            </DropDownItem>
+            <DropDownItem
+              onClick={() => {
+                showModal('Insert Variable', (onClose) => (
+                  <InsertVariableDialog
+                    activeEditor={activeEditor}
+                    onClose={onClose}
+                  />
+                ));
+              }}
+              className="item">
+              <i className="icon diagram-2" />
+              <span className="text">Insert Variable</span>
             </DropDownItem>
             <DropDownItem
               onClick={() => {

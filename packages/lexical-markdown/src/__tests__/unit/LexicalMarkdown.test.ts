@@ -92,6 +92,10 @@ describe('Markdown', () => {
       md: '`Hello` world',
     },
     {
+      html: "<p><code><span>H$$el$'lo$</span></code><span> world</span></p>",
+      md: "`H$$el$'lo$` world",
+    },
+    {
       html: '<p><s><span>Hello</span></s><span> world</span></p>',
       md: '~~Hello~~ world',
     },

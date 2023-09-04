@@ -8,5 +8,8 @@
       "source.fixAll.eslint",
       "source.fixAll.format"
     ]
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
   }
 }

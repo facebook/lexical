@@ -8,7 +8,7 @@
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import * as React from 'react';
-import {useCallback, useImperativeHandle, useRef,useState} from 'react';
+import {useCallback, useImperativeHandle, useRef, useState} from 'react';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
 export type Props = {

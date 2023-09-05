@@ -113,7 +113,8 @@ function exportChildren(node, elementTransformers, textTransformersIndex, textMa
       output.push(exportChildren(child, elementTransformers, textTransformersIndex, textMatchTransformers));
       // don't need a line break after the last child
       if (children.indexOf(child) !== children.length - 1) {
-        output.push('\n');
+        // Insert two line breaks to create a space between two paragraphs or other elements, as required by Markdown syntax.
+        output.push('\n', '\n');
       }
     } else if (lexical.$isDecoratorNode(child)) {
       output.push(child.getTextContent());

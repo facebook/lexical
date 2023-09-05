@@ -139,8 +139,9 @@ function exportChildren(
       );
       // don't need a line break after the last child
       if (children.indexOf(child) !== children.length - 1) {
+        // Insert two line breaks to create a space between two paragraphs or other elements, as required by Markdown syntax.
         output.push(
-          '\n'
+          '\n','\n'
         )
       }
     } else if ($isDecoratorNode(child)) {

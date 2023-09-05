@@ -130,5 +130,6 @@
   "128": "TabNode does not support setMode",
   "129": "Expected parentElement of Text not to be null",
   "130": "LexicalNode: Node %s does not match the serialized type. Check if .exportJSON() is implemented and it is returning the correct type.",
-  "131": "Expected to find LexicalNode from Table Cell DOMNode"
+  "131": "Expected to find LexicalNode from Table Cell DOMNode",
+  "132": "Expected TextNode createDOM to always return a HTMLElement"
 }

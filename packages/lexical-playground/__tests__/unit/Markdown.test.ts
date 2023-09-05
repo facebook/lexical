@@ -373,3 +373,40 @@ describe('parseMarkdownString', () => {
     })
   }
 })
+
+
+describe('exportFromState', () => {
+  it('can export multiline', () => {
+    const editor = createEditor()
+
+    editor.update(
+      () => {
+        const root = $getRoot()
+        const collapsibleContainerNode = $createCollapsibleContainerNode(true)
+        const collapsibleTitleNode = $createCollapsibleTitleNode()
+        const collapsibleContentNode = $createCollapsibleContentNode()
+        collapsibleContainerNode.append(collapsibleTitleNode, collapsibleContentNode)
+        root.append(collapsibleContainerNode)
+
+        collapsibleTitleNode.append($createTextNode('aaaaa'))
+        collapsibleContentNode.append(
+          $createParagraphNode().append($createTextNode('bbbbb')),
+          $createParagraphNode().append($createTextNode('ccccc'))
+        )
+      },
+      {
+        discrete: true,
+      },
+    );
+
+    expect(
+      editor
+        .getEditorState()
+        .read(() => $convertToMarkdownString(T)),
+    ).toBe('#>> aaaaa\n' +
+      'bbbbb\n' +
+      '\n' +
+      'ccccc\n' +
+      '#');
+  })
+})

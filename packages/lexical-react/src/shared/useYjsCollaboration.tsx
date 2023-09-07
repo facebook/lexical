@@ -295,7 +295,6 @@ export function useYjsHistory(
     undoManager.clear();
   }, [undoManager]);
 
-
   // Exposing undo and redo states
   React.useEffect(() => {
     const updateUndoRedoStates = () => {

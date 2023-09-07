@@ -19,6 +19,7 @@ import {
   createEditor,
   EditorState,
   EditorThemeClasses,
+  HTMLConfig,
   Klass,
   LexicalEditor,
   LexicalNode,
@@ -45,6 +46,7 @@ export type InitialConfigType = Readonly<{
   editable?: boolean;
   theme?: EditorThemeClasses;
   editorState?: InitialEditorStateType;
+  html?: HTMLConfig;
 }>;
 
 type Props = {
@@ -62,6 +64,7 @@ export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
         nodes,
         onError,
         editorState: initialEditorState,
+        html,
       } = initialConfig;
 
       const context: LexicalComposerContextType = createLexicalComposerContext(
@@ -74,6 +77,7 @@ export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
       if (editor === null) {
         const newEditor = createEditor({
           editable: initialConfig.editable,
+          html,
           namespace,
           nodes,
           onError: (error) => onError(error, newEditor),

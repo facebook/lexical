@@ -16,6 +16,7 @@ export type {
   EditableListener,
   EditorConfig,
   EditorThemeClasses,
+  HTMLConfig,
   Klass,
   LexicalCommand,
   LexicalEditor,

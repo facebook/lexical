@@ -94,6 +94,8 @@ function $appendNodesToHTML(
   const children = $isElementNode(target) ? target.getChildren() : [];
   const registeredNode = editor._nodes.get(target.getType());
   let exportOutput;
+
+  // Use HTMLConfig overrides, if available.
   if (registeredNode && registeredNode.exportDOM !== undefined) {
     exportOutput = registeredNode.exportDOM(editor, target);
   } else {

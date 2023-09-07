@@ -154,6 +154,14 @@ export type LexicalNodeReplacement = {
     node: InstanceType<T>,
   ) => LexicalNode;
   withKlass?: Klass<LexicalNode>;
+}
+
+export type HTMLConfig = {
+  export?: Map<
+    Klass<LexicalNode>,
+    (editor: LexicalEditor, target: LexicalNode) => DOMExportOutput
+  >;
+  import?: DOMConversionMap;
 };
 
 export type CreateEditorArgs = {
@@ -165,10 +173,7 @@ export type CreateEditorArgs = {
   parentEditor?: LexicalEditor;
   editable?: boolean;
   theme?: EditorThemeClasses;
-  html?: {
-    export?: Map<Klass<LexicalNode>, () => DOMExportOutput>;
-    import?: DOMConversionMap;
-  };
+  html?: HTMLConfig;
 };
 
 export type RegisteredNodes = Map<string, RegisteredNode>;
@@ -411,9 +416,9 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
     ParagraphNode,
     ...(config.nodes || []),
   ];
-  const onError = config.onError;
+  const {onError, html} = config;
   const isEditable = config.editable !== undefined ? config.editable : true;
-  let registeredNodes;
+  let registeredNodes: Map<string, RegisteredNode>;
 
   if (editorConfig === undefined && activeEditor !== null) {
     registeredNodes = activeEditor._nodes;
@@ -479,11 +484,12 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
       }
       const type = klass.getType();
       const transform = klass.transform();
-      const transforms = new Set();
+      const transforms = new Set<Transform<LexicalNode>>();
       if (transform !== null) {
         transforms.add(transform);
       }
       registeredNodes.set(type, {
+        exportDOM: html && html.export ? html.export.get(klass) : undefined,
         klass,
         replace,
         replaceWithKlass,
@@ -491,7 +497,6 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
       });
     }
   }
-  const {html} = config;
   const editor = new LexicalEditor(
     editorState,
     parentEditor,

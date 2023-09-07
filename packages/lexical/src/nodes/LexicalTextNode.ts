@@ -25,7 +25,6 @@ import type {
   RangeSelection,
 } from '../LexicalSelection';
 
-import {isHTMLElement} from '@lexical/utils';
 import {IS_FIREFOX} from 'shared/environment';
 import invariant from 'shared/invariant';
 
@@ -65,6 +64,7 @@ import {
   $setCompositionKey,
   getCachedClassNameArray,
   internalMarkSiblingsAsDirty,
+  isHTMLElement,
   toggleTextFormatType,
 } from '../LexicalUtils';
 import {$createLineBreakNode} from './LexicalLineBreakNode';

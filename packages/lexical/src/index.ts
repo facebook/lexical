@@ -155,6 +155,8 @@ export {
   $setSelection,
   $splitNode,
   getNearestEditorFromDOMNode,
+  isHTMLAnchorElement,
+  isHTMLElement,
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
 } from './LexicalUtils';

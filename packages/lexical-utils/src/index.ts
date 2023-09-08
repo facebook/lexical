@@ -23,13 +23,15 @@ import {
   DEPRECATED_$isGridSelection,
   EditorState,
   ElementNode,
+  isHTMLAnchorElement,
+  isHTMLElement,
   Klass,
   LexicalEditor,
   LexicalNode,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
-export {$splitNode};
+export {$splitNode, isHTMLAnchorElement, isHTMLElement};
 
 export type DFSNode = Readonly<{
   depth: number;
@@ -493,23 +495,6 @@ export function $wrapNodeInElement(
   node.replace(elementNode);
   elementNode.append(node);
   return elementNode;
-}
-
-/**
- * @param x - The element being tested
- * @returns Returns true if x is an HTML anchor tag, false otherwise
- */
-export function isHTMLAnchorElement(x: Node): x is HTMLAnchorElement {
-  return isHTMLElement(x) && x.tagName === 'A';
-}
-
-/**
- * @param x - The element being testing
- * @returns Returns true if x is an HTML element, false otherwise.
- */
-export function isHTMLElement(x: Node | EventTarget): x is HTMLElement {
-  // @ts-ignore-next-line - strict check on nodeType here should filter out non-Element EventTarget implementors
-  return x.nodeType === 1;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

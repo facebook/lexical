@@ -131,6 +131,7 @@ export {
   $isRangeSelection,
   DEPRECATED_$computeGridMap,
   DEPRECATED_$createGridSelection,
+  DEPRECATED_$getGridCellNodeRect,
   DEPRECATED_$getNodeTriplet,
   DEPRECATED_$isGridSelection,
 } from './LexicalSelection';

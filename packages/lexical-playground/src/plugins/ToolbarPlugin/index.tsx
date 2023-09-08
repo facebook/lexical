@@ -36,7 +36,6 @@ import {
 import {
   $getSelectionStyleValueForProperty,
   $isParentElementRTL,
-  $patchStyleTable,
   $patchStyleText,
   $setBlocksType,
 } from '@lexical/selection';
@@ -668,10 +667,11 @@ export default function ToolbarPlugin(): JSX.Element {
     (styles: Record<string, string>) => {
       activeEditor.update(() => {
         const selection = $getSelection();
-        if ($isRangeSelection(selection)) {
+        if (
+          $isRangeSelection(selection) ||
+          DEPRECATED_$isGridSelection(selection)
+        ) {
           $patchStyleText(selection, styles);
-        } else if (DEPRECATED_$isGridSelection(selection)) {
-          $patchStyleTable(selection, styles);
         }
       });
     },

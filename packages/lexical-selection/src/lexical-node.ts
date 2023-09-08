@@ -14,7 +14,9 @@ import {
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
+  $normalizeSelection__EXPERIMENTAL,
   $setSelection,
+  DEPRECATED_$isGridCellNode,
   DEPRECATED_$isGridSelection,
   ElementNode,
   GridSelection,
@@ -304,37 +306,6 @@ function $patchStyle(
 }
 
 /**
- * Applies the provided styles to the TextNodes in the provided GridSelection
- * by iterating it and converting it into RangeSelection.
- * Will update partially selected TextNodes by splitting the TextNode and applying
- * the styles to the appropriate one.
- * @param selection - The selected node(s) to update.
- * @param patch - The patch to apply, which can include multiple styles. { CSSProperty: value }
- */
-export function $patchStyleTable(
-  selection: GridSelection,
-  patch: Record<string, string | null>,
-): void {
-  const formatSelection = $createRangeSelection();
-
-  const anchor = formatSelection.anchor;
-  const focus = formatSelection.focus;
-
-  selection.getNodes().forEach((cellNode) => {
-    if (
-      cellNode.getType() === 'tablecell' &&
-      cellNode.getTextContentSize() !== 0
-    ) {
-      anchor.set(cellNode.getKey(), 0, 'element');
-      focus.set(cellNode.getKey(), cellNode.getChildrenSize(), 'element');
-      $patchStyleText(formatSelection, patch);
-    }
-  });
-
-  $setSelection(selection);
-}
-
-/**
  * Applies the provided styles to the TextNodes in the provided Selection.
  * Will update partially selected TextNodes by splitting the TextNode and applying
  * the styles to the appropriate one.
@@ -342,11 +313,35 @@ export function $patchStyleTable(
  * @param patch - The patch to apply, which can include multiple styles. { CSSProperty: value }
  */
 export function $patchStyleText(
-  selection: RangeSelection,
+  selection: RangeSelection | GridSelection,
   patch: Record<string, string | null>,
 ): void {
   const selectedNodes = selection.getNodes();
   const selectedNodesLength = selectedNodes.length;
+
+  if (DEPRECATED_$isGridSelection(selection)) {
+    const cellSelection = $createRangeSelection();
+    const cellSelectionAnchor = cellSelection.anchor;
+    const cellSelectionFocus = cellSelection.focus;
+    for (let i = 0; i < selectedNodesLength; i++) {
+      const node = selectedNodes[i];
+      if (DEPRECATED_$isGridCellNode(node)) {
+        cellSelectionAnchor.set(node.getKey(), 0, 'element');
+        cellSelectionFocus.set(
+          node.getKey(),
+          node.getChildrenSize(),
+          'element',
+        );
+        $patchStyleText(
+          $normalizeSelection__EXPERIMENTAL(cellSelection),
+          patch,
+        );
+      }
+    }
+    $setSelection(selection);
+    return;
+  }
+
   const lastIndex = selectedNodesLength - 1;
   let firstNode = selectedNodes[0];
   let lastNode = selectedNodes[lastIndex];

@@ -1,3 +1,8 @@
+## v0.12.2 (2023-09-08)
+
+- Move isHTMLElement into core (#4977) Gerard Rovira
+- 0.12.1 (#4978) Acy Watson
+
 ## v0.12.1 (2023-09-07)
 
 - Fix: font colors do not apply to text within table cells (#4934) Tahir Shakir

@@ -8,18 +8,18 @@
     "markdown"
   ],
   "license": "MIT",
-  "version": "0.12.1",
+  "version": "0.12.2",
   "main": "LexicalMarkdown.js",
   "peerDependencies": {
-    "lexical": "0.12.1"
+    "lexical": "0.12.2"
   },
   "dependencies": {
-    "@lexical/utils": "0.12.1",
-    "@lexical/code": "0.12.1",
-    "@lexical/text": "0.12.1",
-    "@lexical/rich-text": "0.12.1",
-    "@lexical/list": "0.12.1",
-    "@lexical/link": "0.12.1"
+    "@lexical/utils": "0.12.2",
+    "@lexical/code": "0.12.2",
+    "@lexical/text": "0.12.2",
+    "@lexical/rich-text": "0.12.2",
+    "@lexical/list": "0.12.2",
+    "@lexical/link": "0.12.2"
   },
   "repository": {
     "type": "git",

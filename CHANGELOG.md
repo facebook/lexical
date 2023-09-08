@@ -1,3 +1,30 @@
+## v0.12.1 (2023-09-07)
+
+- Fix: font colors do not apply to text within table cells (#4934) Tahir Shakir
+- fix #4526 (#4910) xyyjk
+- fix: dispatching undo & redo states for collaboration; fixing up Point.getNode not a function (#4956) Nadine Nguyen
+- Retain TextNode whitespace on export (#4969) Gerard Rovira
+- Revert "Fix: fixes regex in YouTube AutoEmbedPlugin (#4916)" (#4966) Ivaylo Pavlov
+- Fix: fixes regex in YouTube AutoEmbedPlugin (#4916) Rajat
+- refactor: moved functions to `@lexical/utils` (#4923) Rajat
+- refactor: remove redundant styles from floating text format plugin (#4938) VelociRaptor
+- :bug: Fixed range selection splicing text (#4659) Steve Larson
+- Added extra Yjs information to collaboration docs (#4951) Steven Fabre
+- fix: disable spellcheck for code format (#4927) VelociRaptor
+- Add column layout plugin example (#4937) Maksim Horbachevsky
+- docs: fix example in getting-started/react (#4935) Mike
+- Fix: MaxLengthPlugin crashes when the limit is reached and enter is pressed (#4871) Hansu Kim
+- chore: prefer viewBox to width/height on SVG images (#4921) VelociRaptor
+- Adds ElementFormatDropdown to the Toolbar plugin (#4904) itaquito
+- Add iOS information to the website (#4899) amyworrall
+- fix: Only append fragment when element is HTMLElement (#4490) lsbyerley
+- Table unmerge (#4877) Peter Cook Bulukin
+- Revert "Updated link markdown regex (#4461)" (#4896) Gerard Rovira
+- Add missing flow def (#4889) Maksim Horbachevsky
+- Handle undefined rows and columns in table utils after cell merge (#4874) Peter Cook Bulukin
+- Updated link markdown regex (#4461) Ronald Langeveld
+- Fix: Pressing enter now doesnot delete ImageNode from the ListItemNode (#4866) Takumi Uchida
+
 ## v0.12.0 (2023-08-09)
 
 ### Breaking Changes

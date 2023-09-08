@@ -1,5 +1,7 @@
 ## v0.12.1 (2023-09-07)
 
+- Fix: font colors do not apply to text within table cells (#4934) Tahir Shakir
+- fix #4526 (#4910) xyyjk
 - fix: dispatching undo & redo states for collaboration; fixing up Point.getNode not a function (#4956) Nadine Nguyen
 - Retain TextNode whitespace on export (#4969) Gerard Rovira
 - Revert "Fix: fixes regex in YouTube AutoEmbedPlugin (#4916)" (#4966) Ivaylo Pavlov

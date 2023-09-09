@@ -23,7 +23,7 @@ import {
   $isRootNode,
   $isTextNode,
   ElementNode,
-} from '.';
+} from './index';
 import {
   $getSelection,
   $isNodeSelection,

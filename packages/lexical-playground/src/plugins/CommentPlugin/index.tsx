@@ -250,7 +250,7 @@ function CommentInputBox({
             correctedLeft = 10;
           }
           boxElem.style.left = `${correctedLeft}px`;
-          boxElem.style.top = `${bottom + 20}px`;
+          boxElem.style.top = `${bottom + 20 + (window.pageYOffset || document.documentElement.scrollTop)}px`;
           const selectionRectsLength = selectionRects.length;
           const {container} = selectionState;
           const elements: Array<HTMLSpanElement> = selectionState.elements;

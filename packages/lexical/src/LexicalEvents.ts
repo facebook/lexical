@@ -323,9 +323,10 @@ function onSelectionChange(
           collapsedSelectionFormat;
 
         if (
-          currentTimeStamp < timeStamp + 200 &&
-          anchor.offset === lastOffset &&
-          anchor.key === lastKey
+          (currentTimeStamp < timeStamp + 200 &&
+            anchor.offset === lastOffset &&
+            anchor.key === lastKey) ||
+          anchor.type === 'element'
         ) {
           selection.format = lastFormat;
           selection.style = lastStyle;
@@ -333,9 +334,6 @@ function onSelectionChange(
           if (anchor.type === 'text') {
             selection.format = anchorNode.getFormat();
             selection.style = anchorNode.getStyle();
-          } else if (anchor.type === 'element') {
-            selection.format = lastFormat;
-            selection.style = lastStyle;
           }
         }
       } else {

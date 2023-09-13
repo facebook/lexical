@@ -133,7 +133,7 @@ test.describe('Clear All Formatting', () => {
 
     await clearEditor(page);
 
-    await page.keyboard.type('Luke');
+    await page.keyboard.type('@Luke');
 
     await waitForSelector(page, '#typeahead-menu ul li');
     await assertHTML(
@@ -142,7 +142,7 @@ test.describe('Clear All Formatting', () => {
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr">
-          <span data-lexical-text="true">Luke</span>
+          <span data-lexical-text="true">@Luke</span>
         </p>
       `,
     );

@@ -1490,6 +1490,7 @@ export class RangeSelection implements BaseSelection {
     let target: ElementNode | TextNode | DecoratorNode<unknown> | LexicalNode =
       anchorNode;
 
+    // SOBRESCRIBE TARGET, QUE SE USA PARA...
     if (anchor.type === 'element') {
       const element = anchor.getNode();
       const placementNode = element.getChildAtIndex<ElementNode>(
@@ -1514,6 +1515,7 @@ export class RangeSelection implements BaseSelection {
       const textContent = anchorNode.getTextContent();
       const textContentLength = textContent.length;
       if (anchorOffset === 0 && textContentLength !== 0) {
+        // 4
         const prevSibling = anchorNode.getPreviousSibling();
         if (prevSibling !== null) {
           target = prevSibling;
@@ -1546,6 +1548,8 @@ export class RangeSelection implements BaseSelection {
     // Time to insert the nodes!
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i];
+
+      // Acá solo se maneja el primer nodo, combinandolo
       if (
         !$isRootOrShadowRoot(target) &&
         !$isDecoratorNode(target) &&
@@ -1580,6 +1584,8 @@ export class RangeSelection implements BaseSelection {
             didReplaceOrMerge = true;
             continue;
           }
+
+          // << ACÁ EMPIEZA >>
           // We may have a node tree where there are many levels, for example with
           // lists and tables. So let's find the first descendant to try and merge
           // with. So if we have the target:
@@ -1600,13 +1606,14 @@ export class RangeSelection implements BaseSelection {
           //   Text (2)
           //   Text (5)
           //
-
           const firstDescendant = node.getFirstDescendant();
           if ($isLeafNode(firstDescendant)) {
+            // las siguientes 3 lineas, la definición de firstDescendant y el comentario de arriba lo podría reemplazar por un getFirstSelectedBlock
             let element = firstDescendant.getParentOrThrow();
             while (element.isInline()) {
               element = element.getParentOrThrow();
             }
+
             const children = element.getChildren();
             const childrenLength = children.length;
             if ($isElementNode(target)) {
@@ -1633,6 +1640,8 @@ export class RangeSelection implements BaseSelection {
               continue;
             }
           }
+
+          // << ACÁ TERMINA >>
         }
         if ($isTextNode(target)) {
           if (topLevelElement === null) {
@@ -1651,8 +1660,10 @@ export class RangeSelection implements BaseSelection {
           'insertNodes: cannot insert a non-element into a root node',
         );
       }
+
       didReplaceOrMerge = false;
       if ($isElementNode(target) && !target.isInline()) {
+        // A-1/3 target es un bloque
         lastNode = node;
         if ($isDecoratorNode(node) && !node.isInline()) {
           if (nodes.length === 1 && target.canBeEmpty() && target.isEmpty()) {
@@ -1688,6 +1699,7 @@ export class RangeSelection implements BaseSelection {
           }
         }
       } else if (
+        // A-2/3 target es casi cualquier cosa? no estoy seguro, está difícil
         !$isElementNode(node) ||
         ($isElementNode(node) && node.isInline()) ||
         ($isDecoratorNode(target) && !target.isInline())
@@ -1718,6 +1730,7 @@ export class RangeSelection implements BaseSelection {
           target = target.insertAfter(node, false);
         }
       } else {
+        // A-3/3 target es un inline
         const nextTarget: ElementNode = target.getParentOrThrow();
         // if we're inserting an Element after a LineBreak, we want to move the target to the parent
         // and remove the LineBreak so we don't have empty space.
@@ -1731,6 +1744,7 @@ export class RangeSelection implements BaseSelection {
       }
     }
 
+    // De acá al final todo tiene que ver con la selección, excepto la última parte donde se insertan los siblings obtenidos al principio (osea los nextsiblings del focus node).
     if (selectStart) {
       // Handle moving selection to start for all nodes
       if ($isTextNode(startingNode)) {
@@ -1768,12 +1782,14 @@ export class RangeSelection implements BaseSelection {
           lastChild.selectNext();
         }
       }
+      // Acá se insertan los hermanos obtenidos al principio al final de los nodos insertados
       if (siblings.length !== 0) {
         const originalTarget = target;
         for (let i = siblings.length - 1; i >= 0; i--) {
           const sibling = siblings[i];
           const prevParent = sibling.getParentOrThrow();
           if (
+            // condition (6)
             $isElementNode(target) &&
             !$isBlockElementNode(sibling) &&
             !(
@@ -1783,6 +1799,7 @@ export class RangeSelection implements BaseSelection {
             )
           ) {
             if (originalTarget === target) {
+              // 3
               target.append(sibling);
             } else {
               target.insertBefore(sibling);

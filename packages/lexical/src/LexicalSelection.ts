@@ -1845,35 +1845,6 @@ export class RangeSelection implements BaseSelection {
     return true;
   }
 
-  splitInline() {
-    const pointNode = this.anchor.getNode();
-    if (!$isTextNode(pointNode)) return;
-    const [beforeNode] = pointNode.splitText(this.anchor.offset);
-    const newElement = pointNode.getParentOrThrow().insertNewAfter(this, false);
-    if ($isElementNode(newElement)) {
-      newElement.append(...beforeNode.getNextSiblings());
-    }
-  }
-
-  splitBlock() {
-    const pointNode = this.anchor.getNode();
-    const block = $getAncestor(pointNode, $isBlock);
-    if (!block || !pointNode) return;
-    if (pointNode.getParentOrThrow().isInline()) {
-      this.splitInline();
-    }
-    const newBlock = block.insertNewAfter(this, false);
-    if (!$isElementNode(newBlock)) return;
-    if (this.anchor.type === 'text') {
-      const {offset} = this.anchor;
-      const before = pointNode.splitText(offset)[0];
-      const siblings = before.getNextSiblings();
-      const nodesToAppend = offset === 0 ? [before, ...siblings] : siblings;
-      newBlock.append(...nodesToAppend);
-    }
-    newBlock.selectStart();
-  }
-
   /**
    * Inserts a new ParagraphNode into the EditorState at the current Selection
    */
@@ -1881,7 +1852,7 @@ export class RangeSelection implements BaseSelection {
     if (!this.isCollapsed()) {
       this.removeText();
     }
-    this.splitBlock();
+    splitBlock(this.anchor, this);
   }
 
   /**
@@ -3334,4 +3305,31 @@ export function DEPRECATED_$getNodeTriplet(
     'Expected GridRowNode to have a parent GridNode',
   );
   return [cell, row, grid];
+}
+
+function splitBlock(point: PointType, selection: RangeSelection) {
+  const pointNode = point.getNode();
+  if ($isElementNode(pointNode)) {
+    const newBlock = pointNode.insertNewAfter(selection, false);
+    if (newBlock) newBlock.select();
+    return;
+  }
+
+  const splitElement = (element: ElementNode) => {
+    const before = pointNode.splitText(point.offset)[0];
+    const siblings = before.getNextSiblings();
+    const nodesToAppend = point.offset === 0 ? [before, ...siblings] : siblings;
+    const newElement = element.insertNewAfter(selection, false);
+    if (newElement) {
+      newElement.append(...nodesToAppend);
+      newElement.selectStart();
+    }
+  };
+
+  if (pointNode.getParentOrThrow().isInline()) {
+    splitElement(pointNode.getParentOrThrow());
+  }
+
+  const block = $getAncestor(pointNode, $isBlock);
+  if (block) splitElement(block);
 }

@@ -770,7 +770,6 @@ const createBlockNode = createNode => {
     const node = createNode(match);
     node.append(...children);
     parentNode.replace(node);
-    node.select(0, 0);
   };
 };
 
@@ -800,7 +799,6 @@ const listReplace = listType => {
       parentNode.replace(list$1);
     }
     listItem.append(...children);
-    listItem.select(0, 0);
     const indent = Math.floor(match[1].length / LIST_INDENT_SIZE);
     if (indent) {
       listItem.setIndent(indent);
@@ -864,7 +862,6 @@ const QUOTE = {
       const previousNode = parentNode.getPreviousSibling();
       if (richText.$isQuoteNode(previousNode)) {
         previousNode.splice(previousNode.getChildrenSize(), 0, [lexical.$createLineBreakNode(), ...children]);
-        previousNode.select(0, 0);
         parentNode.remove();
         return;
       }
@@ -872,7 +869,6 @@ const QUOTE = {
     const node = richText.$createQuoteNode();
     node.append(...children);
     parentNode.replace(node);
-    node.select(0, 0);
   },
   type: 'element'
 };

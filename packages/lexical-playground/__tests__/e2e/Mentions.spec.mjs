@@ -35,7 +35,11 @@ test.describe('Mentions', () => {
       focusPath: [0, 0, 0],
     });
 
-    await waitForSelector(page, '#typeahead-menu ul li');
+    await waitForSelector(
+      page,
+      '#typeahead-menu ul li:has-text("Luke Skywalker")',
+    );
+
     await assertHTML(
       page,
       html`
@@ -107,7 +111,11 @@ test.describe('Mentions', () => {
       focusPath: [0, 0, 0],
     });
 
-    await waitForSelector(page, '#typeahead-menu ul li');
+    await waitForSelector(
+      page,
+      '#typeahead-menu ul li:has-text("Luke Skywalker")',
+    );
+
     await assertHTML(
       page,
       html`
@@ -198,7 +206,11 @@ test.describe('Mentions', () => {
       focusPath: [0, 0, 0],
     });
 
-    await waitForSelector(page, '#typeahead-menu ul li');
+    await waitForSelector(
+      page,
+      '#typeahead-menu ul li:has-text("Luke Skywalker")',
+    );
+
     await assertHTML(
       page,
       html`
@@ -270,7 +282,11 @@ test.describe('Mentions', () => {
       focusPath: [0, 0, 0],
     });
 
-    await waitForSelector(page, '#typeahead-menu ul li');
+    await waitForSelector(
+      page,
+      '#typeahead-menu ul li:has-text("Luke Skywalker")',
+    );
+
     await assertHTML(
       page,
       html`
@@ -342,7 +358,11 @@ test.describe('Mentions', () => {
       focusPath: [0, 0, 0],
     });
 
-    await waitForSelector(page, '#typeahead-menu ul li');
+    await waitForSelector(
+      page,
+      '#typeahead-menu ul li:has-text("Luke Skywalker")',
+    );
+
     await assertHTML(
       page,
       html`
@@ -437,7 +457,11 @@ test.describe('Mentions', () => {
 
     await page.keyboard.type('@Luke');
 
-    await waitForSelector(page, '#typeahead-menu ul li');
+    await waitForSelector(
+      page,
+      '#typeahead-menu ul li:has-text("Luke Skywalker")',
+    );
+
     await assertHTML(
       page,
       html`
@@ -513,7 +537,10 @@ test.describe('Mentions', () => {
       focusPath: [0, 0, 0],
     });
 
-    await waitForSelector(page, '#typeahead-menu ul li');
+    await waitForSelector(
+      page,
+      '#typeahead-menu ul li:has-text("Luke Skywalker")',
+    );
     await page.keyboard.press('Enter');
 
     await waitForSelector(page, '.mention');
@@ -522,7 +549,10 @@ test.describe('Mentions', () => {
 
     await page.keyboard.type('@Luke');
 
-    await waitForSelector(page, '#typeahead-menu ul li');
+    await waitForSelector(
+      page,
+      '#typeahead-menu ul li:has-text("Luke Skywalker")',
+    );
     await page.keyboard.press('Enter');
 
     await waitForSelector(page, '.mention:nth-child(1)');
@@ -531,7 +561,10 @@ test.describe('Mentions', () => {
 
     await page.keyboard.type('@Luke');
 
-    await waitForSelector(page, '#typeahead-menu ul li');
+    await waitForSelector(
+      page,
+      '#typeahead-menu ul li:has-text("Luke Skywalker")',
+    );
     await page.keyboard.press('Enter');
 
     await waitForSelector(page, '.mention:nth-child(3)');
@@ -540,7 +573,10 @@ test.describe('Mentions', () => {
 
     await page.keyboard.type('@Luke');
 
-    await waitForSelector(page, '#typeahead-menu ul li');
+    await waitForSelector(
+      page,
+      '#typeahead-menu ul li:has-text("Luke Skywalker")',
+    );
     await page.keyboard.press('Enter');
 
     await waitForSelector(page, '.mention:nth-child(5)');
@@ -822,7 +858,10 @@ test.describe('Mentions', () => {
       focusPath: [0, 0, 0],
     });
 
-    await waitForSelector(page, '#typeahead-menu ul li');
+    await waitForSelector(
+      page,
+      '#typeahead-menu ul li:has-text("Luke Skywalker")',
+    );
     await page.keyboard.press('Enter');
 
     await waitForSelector(page, '.mention');

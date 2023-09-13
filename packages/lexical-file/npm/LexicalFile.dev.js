@@ -8,7 +8,7 @@
 
 var lexical = require('lexical');
 
-var version = "0.12.0";
+var version = "0.12.2";
 
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.

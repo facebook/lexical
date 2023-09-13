@@ -6,8 +6,8 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import { $splitNode, EditorState, ElementNode, Klass, LexicalEditor, LexicalNode } from 'lexical';
-export { $splitNode };
+import { $splitNode, EditorState, ElementNode, isHTMLAnchorElement, isHTMLElement, Klass, LexicalEditor, LexicalNode } from 'lexical';
+export { $splitNode, isHTMLAnchorElement, isHTMLElement };
 export type DFSNode = Readonly<{
     depth: number;
     node: LexicalNode;
@@ -147,16 +147,6 @@ export declare function $insertNodeToNearestRoot<T extends LexicalNode>(node: T)
  * @returns A new lexcial element with the previous node appended within (as a child, including its children).
  */
 export declare function $wrapNodeInElement(node: LexicalNode, createElementNode: () => ElementNode): ElementNode;
-/**
- * @param x - The element being tested
- * @returns Returns true if x is an HTML anchor tag, false otherwise
- */
-export declare function isHTMLAnchorElement(x: Node): x is HTMLAnchorElement;
-/**
- * @param x - The element being testing
- * @returns Returns true if x is an HTML element, false otherwise.
- */
-export declare function isHTMLElement(x: Node | EventTarget): x is HTMLElement;
 type ObjectKlass<T> = new (...args: any[]) => T;
 /**
  * @param object = The instance of the type
@@ -164,3 +154,16 @@ type ObjectKlass<T> = new (...args: any[]) => T;
  * @returns Whether the object is has the same Klass of the objectClass, ignoring the difference across window (e.g. different iframs)
  */
 export declare function objectKlassEquals<T>(object: unknown, objectClass: ObjectKlass<T>): boolean;
+/**
+ * Filter the nodes
+ * @param nodes Array of nodes that needs to be filtered
+ * @param filterFn A filter function that returns node if the current node satisfies the condition otherwise null
+ * @returns Array of filtered nodes
+ */
+export declare function $filter<T>(nodes: Array<LexicalNode>, filterFn: (node: LexicalNode) => null | T): Array<T>;
+/**
+ * Appends the node before the first child of the parent node
+ * @param parent A parent node
+ * @param node Node that needs to be appended
+ */
+export declare function $insertFirst(parent: ElementNode, node: LexicalNode): void;

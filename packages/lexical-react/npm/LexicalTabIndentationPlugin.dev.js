@@ -18,22 +18,10 @@ var react = require('react');
  * LICENSE file in the root directory of this source tree.
  *
  */
-
-// TODO Move to @lexical/utils
-function $filter(nodes, filterFn) {
-  const result = [];
-  for (let i = 0; i < nodes.length; i++) {
-    const node = filterFn(nodes[i]);
-    if (node !== null) {
-      result.push(node);
-    }
-  }
-  return result;
-}
 function indentOverTab(selection) {
   // const handled = new Set();
   const nodes = selection.getNodes();
-  const canIndentBlockNodes = $filter(nodes, node => {
+  const canIndentBlockNodes = utils.$filter(nodes, node => {
     if (lexical.$isBlockElementNode(node) && node.canIndent()) {
       return node;
     }

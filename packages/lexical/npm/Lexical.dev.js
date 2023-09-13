@@ -6,8 +6,6 @@
  */
 'use strict';
 
-var utils = require('@lexical/utils');
-
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -1531,6 +1529,23 @@ function $getChildrenRecursively(node) {
     }
   }
   return nodes;
+}
+
+/**
+ * @param x - The element being tested
+ * @returns Returns true if x is an HTML anchor tag, false otherwise
+ */
+function isHTMLAnchorElement(x) {
+  return isHTMLElement(x) && x.tagName === 'A';
+}
+
+/**
+ * @param x - The element being testing
+ * @returns Returns true if x is an HTML element, false otherwise.
+ */
+function isHTMLElement(x) {
+  // @ts-ignore-next-line - strict check on nodeType here should filter out non-Element EventTarget implementors
+  return x.nodeType === 1;
 }
 
 /**
@@ -4505,23 +4520,24 @@ class TextNode extends LexicalNode {
     let {
       element
     } = super.exportDOM(editor);
-
+    if (!(element !== null && isHTMLElement(element))) {
+      throw Error(`Expected TextNode createDOM to always return a HTMLElement`);
+    }
+    element.style.whiteSpace = 'pre-wrap';
     // This is the only way to properly add support for most clients,
     // even if it's semantically incorrect to have to resort to using
     // <b>, <u>, <s>, <i> elements.
-    if (element !== null) {
-      if (this.hasFormat('bold')) {
-        element = wrapElementWith(element, 'b');
-      }
-      if (this.hasFormat('italic')) {
-        element = wrapElementWith(element, 'i');
-      }
-      if (this.hasFormat('strikethrough')) {
-        element = wrapElementWith(element, 's');
-      }
-      if (this.hasFormat('underline')) {
-        element = wrapElementWith(element, 'u');
-      }
+    if (this.hasFormat('bold')) {
+      element = wrapElementWith(element, 'b');
+    }
+    if (this.hasFormat('italic')) {
+      element = wrapElementWith(element, 'i');
+    }
+    if (this.hasFormat('strikethrough')) {
+      element = wrapElementWith(element, 's');
+    }
+    if (this.hasFormat('underline')) {
+      element = wrapElementWith(element, 'u');
     }
     return {
       element
@@ -5421,6 +5437,51 @@ class NodeSelection {
 function $isRangeSelection(x) {
   return x instanceof RangeSelection;
 }
+function DEPRECATED_$getGridCellNodeRect(GridCellNode) {
+  const [CellNode,, GridNode] = DEPRECATED_$getNodeTriplet(GridCellNode);
+  const rows = GridNode.getChildren();
+  const rowCount = rows.length;
+  const columnCount = rows[0].getChildren().length;
+
+  // Create a matrix of the same size as the table to track the position of each cell
+  const cellMatrix = new Array(rowCount);
+  for (let i = 0; i < rowCount; i++) {
+    cellMatrix[i] = new Array(columnCount);
+  }
+  for (let rowIndex = 0; rowIndex < rowCount; rowIndex++) {
+    const row = rows[rowIndex];
+    const cells = row.getChildren();
+    let columnIndex = 0;
+    for (let cellIndex = 0; cellIndex < cells.length; cellIndex++) {
+      // Find the next available position in the matrix, skip the position of merged cells
+      while (cellMatrix[rowIndex][columnIndex]) {
+        columnIndex++;
+      }
+      const cell = cells[cellIndex];
+      const rowSpan = cell.__rowSpan || 1;
+      const colSpan = cell.__colSpan || 1;
+
+      // Put the cell into the corresponding position in the matrix
+      for (let i = 0; i < rowSpan; i++) {
+        for (let j = 0; j < colSpan; j++) {
+          cellMatrix[rowIndex + i][columnIndex + j] = cell;
+        }
+      }
+
+      // Return to the original index, row span and column span of the cell.
+      if (CellNode === cell) {
+        return {
+          colSpan,
+          columnIndex,
+          rowIndex,
+          rowSpan
+        };
+      }
+      columnIndex += colSpan;
+    }
+  }
+  return null;
+}
 class GridSelection {
   constructor(gridKey, anchor, focus) {
     this.gridKey = gridKey;
@@ -5474,21 +5535,25 @@ class GridSelection {
   // TODO Deprecate this method. It's confusing when used with colspan|rowspan
   getShape() {
     const anchorCellNode = $getNodeByKey(this.anchor.key);
-    if (!(anchorCellNode !== null)) {
-      throw Error(`getNodes: expected to find AnchorNode`);
+    if (!DEPRECATED_$isGridCellNode(anchorCellNode)) {
+      throw Error(`Expected GridSelection anchor to be (or a child of) GridCellNode`);
     }
-    const anchorCellNodeIndex = anchorCellNode.getIndexWithinParent();
-    const anchorCelRoweIndex = anchorCellNode.getParentOrThrow().getIndexWithinParent();
+    const anchorCellNodeRect = DEPRECATED_$getGridCellNodeRect(anchorCellNode);
+    if (!(anchorCellNodeRect !== null)) {
+      throw Error(`getCellRect: expected to find AnchorNode`);
+    }
     const focusCellNode = $getNodeByKey(this.focus.key);
-    if (!(focusCellNode !== null)) {
-      throw Error(`getNodes: expected to find FocusNode`);
+    if (!DEPRECATED_$isGridCellNode(focusCellNode)) {
+      throw Error(`Expected GridSelection focus to be (or a child of) GridCellNode`);
     }
-    const focusCellNodeIndex = focusCellNode.getIndexWithinParent();
-    const focusCellRowIndex = focusCellNode.getParentOrThrow().getIndexWithinParent();
-    const startX = Math.min(anchorCellNodeIndex, focusCellNodeIndex);
-    const stopX = Math.max(anchorCellNodeIndex, focusCellNodeIndex);
-    const startY = Math.min(anchorCelRoweIndex, focusCellRowIndex);
-    const stopY = Math.max(anchorCelRoweIndex, focusCellRowIndex);
+    const focusCellNodeRect = DEPRECATED_$getGridCellNodeRect(focusCellNode);
+    if (!(focusCellNodeRect !== null)) {
+      throw Error(`getCellRect: expected to find focusCellNode`);
+    }
+    const startX = Math.min(anchorCellNodeRect.columnIndex, focusCellNodeRect.columnIndex);
+    const stopX = Math.max(anchorCellNodeRect.columnIndex, focusCellNodeRect.columnIndex);
+    const startY = Math.min(anchorCellNodeRect.rowIndex, focusCellNodeRect.rowIndex);
+    const stopY = Math.max(anchorCellNodeRect.rowIndex, focusCellNodeRect.rowIndex);
     return {
       fromX: Math.min(startX, stopX),
       fromY: Math.min(startY, stopY),
@@ -9138,7 +9203,7 @@ class ParagraphNode extends ElementNode {
     const {
       element
     } = super.exportDOM(editor);
-    if (element && utils.isHTMLElement(element)) {
+    if (element && isHTMLElement(element)) {
       if (this.isEmpty()) element.append(document.createElement('br'));
       const formatType = this.getFormatType();
       element.style.textAlign = formatType;
@@ -10108,6 +10173,7 @@ exports.DELETE_LINE_COMMAND = DELETE_LINE_COMMAND;
 exports.DELETE_WORD_COMMAND = DELETE_WORD_COMMAND;
 exports.DEPRECATED_$computeGridMap = DEPRECATED_$computeGridMap;
 exports.DEPRECATED_$createGridSelection = DEPRECATED_$createGridSelection;
+exports.DEPRECATED_$getGridCellNodeRect = DEPRECATED_$getGridCellNodeRect;
 exports.DEPRECATED_$getNodeTriplet = DEPRECATED_$getNodeTriplet;
 exports.DEPRECATED_$isGridCellNode = DEPRECATED_$isGridCellNode;
 exports.DEPRECATED_$isGridNode = DEPRECATED_$isGridNode;
@@ -10158,5 +10224,7 @@ exports.UNDO_COMMAND = UNDO_COMMAND;
 exports.createCommand = createCommand;
 exports.createEditor = createEditor;
 exports.getNearestEditorFromDOMNode = getNearestEditorFromDOMNode;
+exports.isHTMLAnchorElement = isHTMLAnchorElement;
+exports.isHTMLElement = isHTMLElement;
 exports.isSelectionCapturedInDecoratorInput = isSelectionCapturedInDecoratorInput;
 exports.isSelectionWithinEditor = isSelectionWithinEditor;

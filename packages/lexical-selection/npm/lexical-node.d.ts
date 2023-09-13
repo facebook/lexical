@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type { GridSelection, LexicalEditor, LexicalNode, NodeSelection, Point, RangeSelection, TextNode } from 'lexical';
+import { GridSelection, LexicalEditor, LexicalNode, NodeSelection, Point, RangeSelection, TextNode } from 'lexical';
 /**
  * Returns a copy of a node, but generates a new key for the copy.
  * @param node - The node to be cloned.
@@ -47,4 +47,4 @@ export declare function $addNodeStyle(node: TextNode): void;
  * @param selection - The selected node(s) to update.
  * @param patch - The patch to apply, which can include multiple styles. { CSSProperty: value }
  */
-export declare function $patchStyleText(selection: RangeSelection, patch: Record<string, string | null>): void;
+export declare function $patchStyleText(selection: RangeSelection | GridSelection, patch: Record<string, string | null>): void;

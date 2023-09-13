@@ -85,6 +85,12 @@ export type GridSelectionShape = {
     toX: number;
     toY: number;
 };
+export declare function DEPRECATED_$getGridCellNodeRect(GridCellNode: DEPRECATED_GridCellNode): {
+    rowIndex: number;
+    columnIndex: number;
+    rowSpan: number;
+    colSpan: number;
+} | null;
 export declare class GridSelection implements BaseSelection {
     gridKey: NodeKey;
     anchor: PointType;

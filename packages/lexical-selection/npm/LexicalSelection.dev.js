@@ -428,6 +428,21 @@ function $patchStyle(target, patch) {
 function $patchStyleText(selection, patch) {
   const selectedNodes = selection.getNodes();
   const selectedNodesLength = selectedNodes.length;
+  if (lexical.DEPRECATED_$isGridSelection(selection)) {
+    const cellSelection = lexical.$createRangeSelection();
+    const cellSelectionAnchor = cellSelection.anchor;
+    const cellSelectionFocus = cellSelection.focus;
+    for (let i = 0; i < selectedNodesLength; i++) {
+      const node = selectedNodes[i];
+      if (lexical.DEPRECATED_$isGridCellNode(node)) {
+        cellSelectionAnchor.set(node.getKey(), 0, 'element');
+        cellSelectionFocus.set(node.getKey(), node.getChildrenSize(), 'element');
+        $patchStyleText(lexical.$normalizeSelection__EXPERIMENTAL(cellSelection), patch);
+      }
+    }
+    lexical.$setSelection(selection);
+    return;
+  }
   const lastIndex = selectedNodesLength - 1;
   let firstNode = selectedNodes[0];
   let lastNode = selectedNodes[lastIndex];

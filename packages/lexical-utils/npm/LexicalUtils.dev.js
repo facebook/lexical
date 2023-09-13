@@ -401,23 +401,6 @@ function $wrapNodeInElement(node, createElementNode) {
   return elementNode;
 }
 
-/**
- * @param x - The element being tested
- * @returns Returns true if x is an HTML anchor tag, false otherwise
- */
-function isHTMLAnchorElement(x) {
-  return isHTMLElement(x) && x.tagName === 'A';
-}
-
-/**
- * @param x - The element being testing
- * @returns Returns true if x is an HTML element, false otherwise.
- */
-function isHTMLElement(x) {
-  // @ts-ignore-next-line - strict check on nodeType here should filter out non-Element EventTarget implementors
-  return x.nodeType === 1;
-}
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 
 /**
@@ -429,17 +412,50 @@ function objectKlassEquals(object, objectClass) {
   return object !== null ? Object.getPrototypeOf(object).constructor.name === objectClass.name : false;
 }
 
+/**
+ * Filter the nodes
+ * @param nodes Array of nodes that needs to be filtered
+ * @param filterFn A filter function that returns node if the current node satisfies the condition otherwise null
+ * @returns Array of filtered nodes
+ */
+
+function $filter(nodes, filterFn) {
+  const result = [];
+  for (let i = 0; i < nodes.length; i++) {
+    const node = filterFn(nodes[i]);
+    if (node !== null) {
+      result.push(node);
+    }
+  }
+  return result;
+}
+/**
+ * Appends the node before the first child of the parent node
+ * @param parent A parent node
+ * @param node Node that needs to be appended
+ */
+function $insertFirst(parent, node) {
+  const firstChild = parent.getFirstChild();
+  if (firstChild !== null) {
+    firstChild.insertBefore(node);
+  } else {
+    parent.append(node);
+  }
+}
+
 exports.$splitNode = lexical.$splitNode;
+exports.isHTMLAnchorElement = lexical.isHTMLAnchorElement;
+exports.isHTMLElement = lexical.isHTMLElement;
 exports.$dfs = $dfs;
+exports.$filter = $filter;
 exports.$findMatchingParent = $findMatchingParent;
 exports.$getNearestBlockElementAncestorOrThrow = $getNearestBlockElementAncestorOrThrow;
 exports.$getNearestNodeOfType = $getNearestNodeOfType;
+exports.$insertFirst = $insertFirst;
 exports.$insertNodeToNearestRoot = $insertNodeToNearestRoot;
 exports.$restoreEditorState = $restoreEditorState;
 exports.$wrapNodeInElement = $wrapNodeInElement;
 exports.addClassNamesToElement = addClassNamesToElement;
-exports.isHTMLAnchorElement = isHTMLAnchorElement;
-exports.isHTMLElement = isHTMLElement;
 exports.isMimeType = isMimeType;
 exports.mediaFileReader = mediaFileReader;
 exports.mergeRegister = mergeRegister;

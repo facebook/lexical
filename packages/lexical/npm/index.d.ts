@@ -19,9 +19,9 @@ export { BLUR_COMMAND, CAN_REDO_COMMAND, CAN_UNDO_COMMAND, CLEAR_EDITOR_COMMAND,
 export { COMMAND_PRIORITY_CRITICAL, COMMAND_PRIORITY_EDITOR, COMMAND_PRIORITY_HIGH, COMMAND_PRIORITY_LOW, COMMAND_PRIORITY_NORMAL, createEditor, } from './LexicalEditor';
 export type { EventHandler } from './LexicalEvents';
 export { $normalizeSelection as $normalizeSelection__EXPERIMENTAL } from './LexicalNormalization';
-export { $createNodeSelection, $createRangeSelection, $getPreviousSelection, $getSelection, $getTextContent, $insertNodes, $isBlockElementNode, $isNodeSelection, $isRangeSelection, DEPRECATED_$computeGridMap, DEPRECATED_$createGridSelection, DEPRECATED_$getNodeTriplet, DEPRECATED_$isGridSelection, } from './LexicalSelection';
+export { $createNodeSelection, $createRangeSelection, $getPreviousSelection, $getSelection, $getTextContent, $insertNodes, $isBlockElementNode, $isNodeSelection, $isRangeSelection, DEPRECATED_$computeGridMap, DEPRECATED_$createGridSelection, DEPRECATED_$getGridCellNodeRect, DEPRECATED_$getNodeTriplet, DEPRECATED_$isGridSelection, } from './LexicalSelection';
 export { $parseSerializedNode } from './LexicalUpdates';
-export { $addUpdateTag, $applyNodeReplacement, $copyNode, $getAdjacentNode, $getNearestNodeFromDOMNode, $getNearestRootOrShadowRoot, $getNodeByKey, $getRoot, $hasAncestor, $hasUpdateTag, $isInlineElementOrDecoratorNode, $isLeafNode, $isRootOrShadowRoot, $nodesOfType, $selectAll, $setCompositionKey, $setSelection, $splitNode, getNearestEditorFromDOMNode, isSelectionCapturedInDecoratorInput, isSelectionWithinEditor, } from './LexicalUtils';
+export { $addUpdateTag, $applyNodeReplacement, $copyNode, $getAdjacentNode, $getNearestNodeFromDOMNode, $getNearestRootOrShadowRoot, $getNodeByKey, $getRoot, $hasAncestor, $hasUpdateTag, $isInlineElementOrDecoratorNode, $isLeafNode, $isRootOrShadowRoot, $nodesOfType, $selectAll, $setCompositionKey, $setSelection, $splitNode, getNearestEditorFromDOMNode, isHTMLAnchorElement, isHTMLElement, isSelectionCapturedInDecoratorInput, isSelectionWithinEditor, } from './LexicalUtils';
 export { $isDecoratorNode, DecoratorNode } from './nodes/LexicalDecoratorNode';
 export { $isElementNode, ElementNode } from './nodes/LexicalElementNode';
 export { DEPRECATED_$isGridCellNode, DEPRECATED_GridCellNode, } from './nodes/LexicalGridCellNode';

@@ -19,16 +19,6 @@ var react = require('react');
  * LICENSE file in the root directory of this source tree.
  *
  */
-
-// TODO extract to utils
-function $insertFirst(parent, node) {
-  const firstChild = parent.getFirstChild();
-  if (firstChild !== null) {
-    firstChild.insertBefore(node);
-  } else {
-    parent.append(node);
-  }
-}
 function TablePlugin({
   hasCellMerge = true,
   hasCellBackgroundColor = true,
@@ -142,7 +132,7 @@ function TablePlugin({
               if (lastRowCell !== null) {
                 lastRowCell.insertAfter(newCell);
               } else {
-                $insertFirst(row, newCell);
+                utils.$insertFirst(row, newCell);
               }
             }
           }

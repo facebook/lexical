@@ -114,3 +114,13 @@ export declare function getDOMSelection(targetWindow: null | Window): null | Sel
 export declare function $splitNode(node: ElementNode, offset: number): [ElementNode | null, ElementNode];
 export declare function $findMatchingParent(startingNode: LexicalNode, findFn: (node: LexicalNode) => boolean): LexicalNode | null;
 export declare function $getChildrenRecursively(node: LexicalNode): Array<LexicalNode>;
+/**
+ * @param x - The element being tested
+ * @returns Returns true if x is an HTML anchor tag, false otherwise
+ */
+export declare function isHTMLAnchorElement(x: Node): x is HTMLAnchorElement;
+/**
+ * @param x - The element being testing
+ * @returns Returns true if x is an HTML element, false otherwise.
+ */
+export declare function isHTMLElement(x: Node | EventTarget): x is HTMLElement;

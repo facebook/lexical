@@ -161,6 +161,22 @@ function useYjsHistory(editor, binding) {
   const clearHistory = React.useCallback(() => {
     undoManager.clear();
   }, [undoManager]);
+
+  // Exposing undo and redo states
+  React.useEffect(() => {
+    const updateUndoRedoStates = () => {
+      editor.dispatchCommand(lexical.CAN_UNDO_COMMAND, undoManager.undoStack.length > 0);
+      editor.dispatchCommand(lexical.CAN_REDO_COMMAND, undoManager.redoStack.length > 0);
+    };
+    undoManager.on('stack-item-added', updateUndoRedoStates);
+    undoManager.on('stack-item-popped', updateUndoRedoStates);
+    undoManager.on('stack-cleared', updateUndoRedoStates);
+    return () => {
+      undoManager.off('stack-item-added', updateUndoRedoStates);
+      undoManager.off('stack-item-popped', updateUndoRedoStates);
+      undoManager.off('stack-cleared', updateUndoRedoStates);
+    };
+  }, [editor, undoManager]);
   return clearHistory;
 }
 function initializeEditor(editor, initialEditorState) {

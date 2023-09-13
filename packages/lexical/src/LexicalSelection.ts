@@ -12,6 +12,7 @@ import type {NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextFormatType} from './nodes/LexicalTextNode';
 
+import {$getAncestor, $isBlock} from '@lexical/utils';
 import invariant from 'shared/invariant';
 
 import {
@@ -1844,6 +1845,35 @@ export class RangeSelection implements BaseSelection {
     return true;
   }
 
+  splitInline() {
+    const pointNode = this.anchor.getNode();
+    if (!$isTextNode(pointNode)) return;
+    const [beforeNode] = pointNode.splitText(this.anchor.offset);
+    const newElement = pointNode.getParentOrThrow().insertNewAfter(this, false);
+    if ($isElementNode(newElement)) {
+      newElement.append(...beforeNode.getNextSiblings());
+    }
+  }
+
+  splitBlock() {
+    const pointNode = this.anchor.getNode();
+    const block = $getAncestor(pointNode, $isBlock);
+    if (!block || !pointNode) return;
+    if (pointNode.getParentOrThrow().isInline()) {
+      this.splitInline();
+    }
+    const newBlock = block.insertNewAfter(this, false);
+    if (!$isElementNode(newBlock)) return;
+    if (this.anchor.type === 'text') {
+      const {offset} = this.anchor;
+      const before = pointNode.splitText(offset)[0];
+      const siblings = before.getNextSiblings();
+      const nodesToAppend = offset === 0 ? [before, ...siblings] : siblings;
+      newBlock.append(...nodesToAppend);
+    }
+    newBlock.selectStart();
+  }
+
   /**
    * Inserts a new ParagraphNode into the EditorState at the current Selection
    */
@@ -1851,110 +1881,7 @@ export class RangeSelection implements BaseSelection {
     if (!this.isCollapsed()) {
       this.removeText();
     }
-    const anchor = this.anchor;
-    const anchorOffset = anchor.offset;
-    let currentElement;
-    let nodesToMove = [];
-    let siblingsToMove: Array<LexicalNode> = [];
-    if (anchor.type === 'text') {
-      const anchorNode = anchor.getNode();
-      nodesToMove = anchorNode.getNextSiblings().reverse();
-      currentElement = anchorNode.getParentOrThrow();
-      const isInline = currentElement.isInline();
-      const textContentLength = isInline
-        ? currentElement.getTextContentSize()
-        : anchorNode.getTextContentSize();
-      if (anchorOffset === 0) {
-        nodesToMove.push(anchorNode);
-      } else {
-        if (isInline) {
-          // For inline nodes, we want to move all the siblings to the new paragraph
-          // if selection is at the end, we just move the siblings. Otherwise, we also
-          // split the text node and add that and it's siblings below.
-          siblingsToMove = currentElement.getNextSiblings();
-        }
-        if (anchorOffset !== textContentLength) {
-          if (!isInline || anchorOffset !== anchorNode.getTextContentSize()) {
-            const [, splitNode] = anchorNode.splitText(anchorOffset);
-            nodesToMove.push(splitNode);
-          }
-        }
-      }
-    } else {
-      currentElement = anchor.getNode();
-      if ($isRootOrShadowRoot(currentElement)) {
-        const paragraph = $createParagraphNode();
-        const child = currentElement.getChildAtIndex(anchorOffset);
-        paragraph.select();
-        if (child !== null) {
-          child.insertBefore(paragraph, false);
-        } else {
-          currentElement.append(paragraph);
-        }
-        return;
-      }
-      nodesToMove = currentElement.getChildren().slice(anchorOffset).reverse();
-    }
-    const nodesToMoveLength = nodesToMove.length;
-    if (
-      anchorOffset === 0 &&
-      nodesToMoveLength > 0 &&
-      currentElement.isInline()
-    ) {
-      const parent = currentElement.getParentOrThrow();
-      const newElement = parent.insertNewAfter(this, false);
-      if ($isElementNode(newElement)) {
-        const children = parent.getChildren();
-        for (let i = 0; i < children.length; i++) {
-          newElement.append(children[i]);
-        }
-      }
-      return;
-    }
-    const newElement = currentElement.insertNewAfter(this, false);
-    if (newElement === null) {
-      // Handle as a line break insertion
-      this.insertLineBreak();
-    } else if ($isElementNode(newElement)) {
-      // If we're at the beginning of the current element, move the new element to be before the current element
-      const currentElementFirstChild = currentElement.getFirstChild();
-      const isBeginning =
-        anchorOffset === 0 &&
-        (currentElement.is(anchor.getNode()) ||
-          (currentElementFirstChild &&
-            currentElementFirstChild.is(anchor.getNode())));
-      if (isBeginning && nodesToMoveLength > 0) {
-        currentElement.insertBefore(newElement);
-        return;
-      }
-      let firstChild = null;
-      const siblingsToMoveLength = siblingsToMove.length;
-      const parent = newElement.getParentOrThrow();
-      // For inline elements, we append the siblings to the parent.
-      if (siblingsToMoveLength > 0) {
-        for (let i = 0; i < siblingsToMoveLength; i++) {
-          const siblingToMove = siblingsToMove[i];
-          parent.append(siblingToMove);
-        }
-      }
-      if (nodesToMoveLength !== 0) {
-        for (let i = 0; i < nodesToMoveLength; i++) {
-          const nodeToMove = nodesToMove[i];
-          if (firstChild === null) {
-            newElement.append(nodeToMove);
-          } else {
-            firstChild.insertBefore(nodeToMove);
-          }
-          firstChild = nodeToMove;
-        }
-      }
-      if (!newElement.canBeEmpty() && newElement.getChildrenSize() === 0) {
-        newElement.selectPrevious();
-        newElement.remove();
-      } else {
-        newElement.selectStart();
-      }
-    }
+    this.splitBlock();
   }
 
   /**

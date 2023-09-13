@@ -20,7 +20,11 @@ import type {
   SerializedElementNode,
 } from 'lexical';
 
-import {addClassNamesToElement, isHTMLAnchorElement} from '@lexical/utils';
+import {
+  $getAncestor,
+  addClassNamesToElement,
+  isHTMLAnchorElement,
+} from '@lexical/utils';
 import {
   $applyNodeReplacement,
   $getSelection,
@@ -450,9 +454,7 @@ export function toggleLink(
       const firstNode = nodes[0];
       // if the first node is a LinkNode or if its
       // parent is a LinkNode, we update the URL, target and rel.
-      const linkNode = $isLinkNode(firstNode)
-        ? firstNode
-        : $getLinkAncestor(firstNode);
+      const linkNode = $getAncestor(firstNode, $isLinkNode);
       if (linkNode !== null) {
         linkNode.setURL(url);
         if (target !== undefined) {
@@ -533,21 +535,4 @@ export function toggleLink(
       }
     });
   }
-}
-
-function $getLinkAncestor(node: LexicalNode): null | LexicalNode {
-  return $getAncestor(node, $isLinkNode);
-}
-
-function $getAncestor<NodeType extends LexicalNode = LexicalNode>(
-  node: LexicalNode,
-  predicate: (ancestor: LexicalNode) => ancestor is NodeType,
-): null | LexicalNode {
-  let parent: null | LexicalNode = node;
-  while (
-    parent !== null &&
-    (parent = parent.getParent()) !== null &&
-    !predicate(parent)
-  );
-  return parent;
 }

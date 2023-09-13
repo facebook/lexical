@@ -16,6 +16,7 @@ import type {
   TextNode,
 } from 'lexical';
 
+import {$getAncestor, $isBlock} from '@lexical/utils';
 import {
   $getAdjacentNode,
   $getPreviousSelection,
@@ -24,7 +25,6 @@ import {
   $isDecoratorNode,
   $isElementNode,
   $isLeafNode,
-  $isLineBreakNode,
   $isRangeSelection,
   $isRootNode,
   $isRootOrShadowRoot,
@@ -58,24 +58,15 @@ export function $setBlocksType(
   }
 
   const nodes = selection.getNodes();
-  let maybeBlock = selection.anchor.getNode().getParentOrThrow();
-
-  if (nodes.indexOf(maybeBlock) === -1) {
-    nodes.push(maybeBlock);
-  }
-
-  if (maybeBlock.isInline()) {
-    maybeBlock = maybeBlock.getParentOrThrow();
-
-    if (nodes.indexOf(maybeBlock) === -1) {
-      nodes.push(maybeBlock);
-    }
+  const firstSelectedBlock = $getAncestor(selection.anchor.getNode(), $isBlock);
+  if (firstSelectedBlock && nodes.indexOf(firstSelectedBlock) === -1) {
+    nodes.push(firstSelectedBlock);
   }
 
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
 
-    if (!isBlock(node)) {
+    if (!$isBlock(node)) {
       continue;
     }
 
@@ -84,21 +75,6 @@ export function $setBlocksType(
     targetElement.setIndent(node.getIndent());
     node.replace(targetElement, true);
   }
-}
-
-function isBlock(node: LexicalNode): boolean {
-  if (!$isElementNode(node) || $isRootOrShadowRoot(node)) {
-    return false;
-  }
-
-  const firstChild = node.getFirstChild();
-  const isLeafElement =
-    firstChild === null ||
-    $isLineBreakNode(firstChild) ||
-    $isTextNode(firstChild) ||
-    firstChild.isInline();
-
-  return !node.isInline() && node.canBeEmpty() !== false && isLeafElement;
 }
 
 function isPointAttached(point: Point): boolean {

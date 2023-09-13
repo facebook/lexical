@@ -5,7 +5,19 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {
+import {
+  $createRangeSelection,
+  $createTextNode,
+  $getNodeByKey,
+  $getPreviousSelection,
+  $isElementNode,
+  $isRangeSelection,
+  $isRootNode,
+  $isTextNode,
+  $normalizeSelection__EXPERIMENTAL,
+  $setSelection,
+  DEPRECATED_$isGridCellNode,
+  DEPRECATED_$isGridSelection,
   ElementNode,
   GridSelection,
   LexicalEditor,
@@ -14,17 +26,6 @@ import type {
   Point,
   RangeSelection,
   TextNode,
-} from 'lexical';
-
-import {
-  $createTextNode,
-  $getNodeByKey,
-  $getPreviousSelection,
-  $isElementNode,
-  $isRangeSelection,
-  $isRootNode,
-  $isTextNode,
-  DEPRECATED_$isGridSelection,
 } from 'lexical';
 
 import {CSS_TO_STYLES} from './constants';
@@ -311,11 +312,35 @@ function $patchStyle(
  * @param patch - The patch to apply, which can include multiple styles. { CSSProperty: value }
  */
 export function $patchStyleText(
-  selection: RangeSelection,
+  selection: RangeSelection | GridSelection,
   patch: Record<string, string | null>,
 ): void {
   const selectedNodes = selection.getNodes();
   const selectedNodesLength = selectedNodes.length;
+
+  if (DEPRECATED_$isGridSelection(selection)) {
+    const cellSelection = $createRangeSelection();
+    const cellSelectionAnchor = cellSelection.anchor;
+    const cellSelectionFocus = cellSelection.focus;
+    for (let i = 0; i < selectedNodesLength; i++) {
+      const node = selectedNodes[i];
+      if (DEPRECATED_$isGridCellNode(node)) {
+        cellSelectionAnchor.set(node.getKey(), 0, 'element');
+        cellSelectionFocus.set(
+          node.getKey(),
+          node.getChildrenSize(),
+          'element',
+        );
+        $patchStyleText(
+          $normalizeSelection__EXPERIMENTAL(cellSelection),
+          patch,
+        );
+      }
+    }
+    $setSelection(selection);
+    return;
+  }
+
   const lastIndex = selectedNodesLength - 1;
   let firstNode = selectedNodes[0];
   let lastNode = selectedNodes[lastIndex];

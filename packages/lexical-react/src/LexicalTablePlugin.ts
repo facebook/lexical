@@ -11,12 +11,7 @@ import type {
   InsertTableCommandPayload,
   TableSelection,
 } from '@lexical/table';
-import type {
-  DEPRECATED_GridCellNode,
-  ElementNode,
-  LexicalNode,
-  NodeKey,
-} from 'lexical';
+import type {DEPRECATED_GridCellNode, NodeKey} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
@@ -29,7 +24,7 @@ import {
   TableNode,
   TableRowNode,
 } from '@lexical/table';
-import {$insertNodeToNearestRoot} from '@lexical/utils';
+import {$insertFirst, $insertNodeToNearestRoot} from '@lexical/utils';
 import {
   $getNodeByKey,
   $isTextNode,
@@ -41,16 +36,6 @@ import {
 } from 'lexical';
 import {useEffect} from 'react';
 import invariant from 'shared/invariant';
-
-// TODO extract to utils
-function $insertFirst(parent: ElementNode, node: LexicalNode): void {
-  const firstChild = parent.getFirstChild();
-  if (firstChild !== null) {
-    firstChild.insertBefore(node);
-  } else {
-    parent.append(node);
-  }
-}
 
 export function TablePlugin({
   hasCellMerge = true,

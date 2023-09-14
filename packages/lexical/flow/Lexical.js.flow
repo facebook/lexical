@@ -586,6 +586,7 @@ export type TextFormatType =
   | 'underline'
   | 'strikethrough'
   | 'italic'
+  | 'highlight'
   | 'code'
   | 'subscript'
   | 'superscript';

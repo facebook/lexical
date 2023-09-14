@@ -16,7 +16,7 @@ import type {
   TextNode,
 } from 'lexical';
 
-import {$getAncestor, $isBlock} from '@lexical/utils';
+import {$getAncestor, INTERNAL_$isBlock} from '@lexical/utils';
 import {
   $getAdjacentNode,
   $getPreviousSelection,
@@ -58,7 +58,10 @@ export function $setBlocksType(
   }
 
   const nodes = selection.getNodes();
-  const firstSelectedBlock = $getAncestor(selection.anchor.getNode(), $isBlock);
+  const firstSelectedBlock = $getAncestor(
+    selection.anchor.getNode(),
+    INTERNAL_$isBlock,
+  );
   if (firstSelectedBlock && nodes.indexOf(firstSelectedBlock) === -1) {
     nodes.push(firstSelectedBlock);
   }
@@ -66,7 +69,7 @@ export function $setBlocksType(
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
 
-    if (!$isBlock(node)) {
+    if (!INTERNAL_$isBlock(node)) {
       continue;
     }
 

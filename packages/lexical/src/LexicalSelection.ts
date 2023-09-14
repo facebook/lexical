@@ -12,7 +12,7 @@ import type {NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextFormatType} from './nodes/LexicalTextNode';
 
-import {$getAncestor, $isBlock} from '@lexical/utils';
+import {$getAncestor, INTERNAL_$isBlock} from '@lexical/utils';
 import invariant from 'shared/invariant';
 
 import {
@@ -1528,7 +1528,7 @@ export class RangeSelection implements BaseSelection {
    * @returns true if the nodes were inserted successfully, false otherwise.
    */
   insertNodes(nodes: Array<LexicalNode>, selectStart?: boolean): boolean {
-    const firstBlock = $getAncestor(this.anchor.getNode(), $isBlock)!;
+    const firstBlock = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
     const lastBlock = this.insertParagraph()!;
     let currentBlock = firstBlock;
     nodes.forEach((node) => {
@@ -3038,7 +3038,7 @@ function splitBlock(point: PointType, selection: RangeSelection) {
   }
 
   pointNode = point.getNode();
-  const block = $getAncestor(pointNode, $isBlock);
+  const block = $getAncestor(pointNode, INTERNAL_$isBlock);
   if (block) return splitElement(block);
   return null;
 }

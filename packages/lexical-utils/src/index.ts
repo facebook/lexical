@@ -549,7 +549,11 @@ export function $insertFirst(parent: ElementNode, node: LexicalNode): void {
   }
 }
 
-export function $isBlock(node: LexicalNode): node is ElementNode {
+/**
+ * This function is for internal use of the library.
+ * Please do not use it as it may change in the future.
+ */
+export function INTERNAL_$isBlock(node: LexicalNode): node is ElementNode {
   if (!$isElementNode(node) || $isRootOrShadowRoot(node)) {
     return false;
   }

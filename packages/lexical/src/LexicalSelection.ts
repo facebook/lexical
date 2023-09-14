@@ -1038,19 +1038,19 @@ export class RangeSelection implements BaseSelection {
    */
   insertRawText(text: string): void {
     const parts = text.split(/(\r?\n|\t)/);
-    const paragraph = $createParagraphNode();
+    const nodes = [];
     const length = parts.length;
     for (let i = 0; i < length; i++) {
       const part = parts[i];
       if (part === '\n' || part === '\r\n') {
-        paragraph.append($createLineBreakNode());
+        nodes.push($createLineBreakNode());
       } else if (part === '\t') {
-        paragraph.append($createTabNode());
+        nodes.push($createTabNode());
       } else {
-        paragraph.append($createTextNode(part));
+        nodes.push($createTextNode(part));
       }
     }
-    this.insertNodes([paragraph]);
+    this.insertNodes(nodes);
   }
 
   /**
@@ -1528,6 +1528,9 @@ export class RangeSelection implements BaseSelection {
    * @returns true if the nodes were inserted successfully, false otherwise.
    */
   insertNodes(nodes: Array<LexicalNode>, selectStart?: boolean): boolean {
+    if (!$isElementNode(nodes[0])) {
+      return this.insertNodes([$createParagraphNode().append(...nodes)]);
+    }
     const firstBlock = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
     const lastBlock = this.insertParagraph()!;
     let currentBlock = firstBlock;
@@ -1537,7 +1540,6 @@ export class RangeSelection implements BaseSelection {
         currentBlock = node;
       }
     });
-    if (!$isElementNode(nodes[0])) return false;
     const prevLast =
       nodes.length > 1 || firstBlock.isEmpty() ? currentBlock : firstBlock;
     mergeBlocks(firstBlock, nodes[0]);
@@ -3016,6 +3018,11 @@ function splitBlock(point: PointType, selection: RangeSelection) {
     if (newBlock) newBlock.select();
     return newBlock;
   }
+
+  // if ("__highlightType" in pointNode) {
+  //   pointNode.splitText(point.offset);
+  //   return pointNode;
+  // }
 
   const splitElement = (element: ElementNode) => {
     const {offset} = point;

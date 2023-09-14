@@ -154,7 +154,7 @@ export type LexicalNodeReplacement = {
     node: InstanceType<T>,
   ) => LexicalNode;
   withKlass?: Klass<LexicalNode>;
-}
+};
 
 export type HTMLConfig = {
   export?: Map<

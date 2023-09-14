@@ -276,7 +276,7 @@ export type LexicalNodeReplacement = {
   replace: Class<LexicalNode>,
   with: (node: LexicalNode) => LexicalNode,
   withKlass?: Class<LexicalNode>,
-}
+};
 
 export type HTMLConfig = {
   export?: Map<

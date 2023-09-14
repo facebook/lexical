@@ -38,6 +38,7 @@ import {createRef} from 'react';
 import {createRoot} from 'react-dom/client';
 import * as ReactTestUtils from 'react-dom/test-utils';
 
+import {LexicalNodeReplacement} from '../../LexicalEditor';
 import {resetRandomKey} from '../../LexicalUtils';
 
 type TestEnv = {
@@ -468,16 +469,7 @@ export function createTestEditor(
     editorState?: EditorState;
     theme?: EditorThemeClasses;
     parentEditor?: LexicalEditor;
-    nodes?: ReadonlyArray<
-      | Klass<LexicalNode>
-      | {
-          replace: Klass<LexicalNode>;
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          with: <T extends {new (...args: any): any}>(
-            node: InstanceType<T>,
-          ) => LexicalNode;
-        }
-    >;
+    nodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>;
     onError?: (error: Error) => void;
     disableEvents?: boolean;
     readOnly?: boolean;

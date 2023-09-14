@@ -6,15 +6,10 @@
  *
  */
 
-import type {
-  LexicalCommand,
-  LexicalEditor,
-  LexicalNode,
-  RangeSelection,
-} from 'lexical';
+import type {LexicalCommand, LexicalEditor, RangeSelection} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$getNearestBlockElementAncestorOrThrow} from '@lexical/utils';
+import {$filter, $getNearestBlockElementAncestorOrThrow} from '@lexical/utils';
 import {
   $createRangeSelection,
   $getSelection,
@@ -28,21 +23,6 @@ import {
   OUTDENT_CONTENT_COMMAND,
 } from 'lexical';
 import {useEffect} from 'react';
-
-// TODO Move to @lexical/utils
-function $filter<T>(
-  nodes: Array<LexicalNode>,
-  filterFn: (node: LexicalNode) => null | T,
-): Array<T> {
-  const result: T[] = [];
-  for (let i = 0; i < nodes.length; i++) {
-    const node = filterFn(nodes[i]);
-    if (node !== null) {
-      result.push(node);
-    }
-  }
-  return result;
-}
 
 function indentOverTab(selection: RangeSelection): boolean {
   // const handled = new Set();

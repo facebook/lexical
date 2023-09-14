@@ -13,7 +13,13 @@ import {
   createLexicalComposerContext,
   LexicalComposerContext,
 } from '@lexical/react/LexicalComposerContext';
-import {EditorThemeClasses, Klass, LexicalEditor, LexicalNode} from 'lexical';
+import {
+  EditorThemeClasses,
+  Klass,
+  LexicalEditor,
+  LexicalNode,
+  LexicalNodeReplacement,
+} from 'lexical';
 import * as React from 'react';
 import {ReactNode, useContext, useEffect, useMemo, useRef} from 'react';
 import invariant from 'shared/invariant';
@@ -28,7 +34,7 @@ export function LexicalNestedComposer({
   children: ReactNode;
   initialEditor: LexicalEditor;
   initialTheme?: EditorThemeClasses;
-  initialNodes?: ReadonlyArray<Klass<LexicalNode>>;
+  initialNodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>;
   skipCollabChecks?: true;
 }): JSX.Element {
   const wasCollabPreviouslyReadyRef = useRef(false);
@@ -69,12 +75,21 @@ export function LexicalNestedComposer({
           });
         }
       } else {
-        for (const klass of initialNodes) {
-          const type = klass.getType();
-          initialEditor._nodes.set(type, {
+        for (let klass of initialNodes) {
+          let replace = null;
+          let replaceWithKlass = null;
+
+          if (typeof klass !== 'function') {
+            const options = klass;
+            klass = options.replace;
+            replace = options.with;
+            replaceWithKlass = options.withKlass || null;
+          }
+
+          initialEditor._nodes.set(klass.getType(), {
             klass,
-            replace: null,
-            replaceWithKlass: null,
+            replace,
+            replaceWithKlass,
             transforms: new Set(),
           });
         }

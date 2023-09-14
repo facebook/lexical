@@ -19,7 +19,11 @@ import type {
 } from './LexicalElementNode';
 import type {RangeSelection} from 'lexical';
 
-import {$applyNodeReplacement, getCachedClassNameArray} from '../LexicalUtils';
+import {
+  $applyNodeReplacement,
+  getCachedClassNameArray,
+  isHTMLElement,
+} from '../LexicalUtils';
 import {ElementNode} from './LexicalElementNode';
 import {$isTextNode} from './LexicalTextNode';
 
@@ -66,10 +70,9 @@ export class ParagraphNode extends ElementNode {
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const {element} = super.exportDOM(editor);
 
-    if (element && this.isEmpty()) {
-      element.append(document.createElement('br'));
-    }
-    if (element) {
+    if (element && isHTMLElement(element)) {
+      if (this.isEmpty()) element.append(document.createElement('br'));
+
       const formatType = this.getFormatType();
       element.style.textAlign = formatType;
 

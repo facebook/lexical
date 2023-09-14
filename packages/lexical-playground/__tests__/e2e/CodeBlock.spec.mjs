@@ -1019,7 +1019,7 @@ test.describe('CodeBlock', () => {
     {
       expectedHTML: html`
         <p class="PlaygroundEditorTheme__paragraph">
-          <code data-lexical-text="true">
+          <code spellcheck="false" data-lexical-text="true">
             <span class="PlaygroundEditorTheme__textCode">12</span>
           </code>
         </p>

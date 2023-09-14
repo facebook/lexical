@@ -311,9 +311,9 @@ const initialConfig: InitialConfigType = {
     onError: (error: any) => console.log(error),
     nodes: [
       ExtendedTextNode,
-      { replace: TextNode, with: (node: TextNode) => new ExtendedTextNode(node.__text, node.__key) },
+      { replace: TextNode, with: (node: TextNode) => new ExtendedTextNode(node.__text) },
       ListNode,
-      ListItemNode,   
+      ListItemNode,
     ]
   };
 ```
@@ -378,6 +378,13 @@ export class ExtendedTextNode extends TextNode {
   static importJSON(serializedNode: SerializedTextNode): TextNode {
     return TextNode.importJSON(serializedNode);
   }
+
+  isSimpleText() {
+    return (
+      (this.__type === 'text' || this.__type === 'extended-text') &&
+      this.__mode === 0
+    );
+  }
 }
 
 function patchStyleConversion(
@@ -385,7 +392,7 @@ function patchStyleConversion(
 ): (node: HTMLElement) => DOMConversionOutput | null {
   return (node) => {
     const original = originalDOMConverter?.(node);
-    if (!original) {    
+    if (!original) {
       return null;
     }
     const originalOutput = original.conversion(node);

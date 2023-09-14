@@ -3019,9 +3019,12 @@ function splitBlock(point: PointType, selection: RangeSelection) {
     return newBlock;
   }
 
-  // if ("__highlightType" in pointNode) {
-  //   pointNode.splitText(point.offset);
-  //   return pointNode;
+  // if ('__highlightType' in pointNode) {
+  // selection.insertLineBreak();
+  // const [codeHighlight_firstPart, text] = pointNode.splitText(point.offset);
+  // const codeHighlightNode = $createCodeHighlightNode(text.getTextContent());
+  // codeHighlight_firstPart.insertAfter(codeHighlightNode);
+  // return codeHighlightNode;
   // }
 
   const splitElement = (element: ElementNode) => {

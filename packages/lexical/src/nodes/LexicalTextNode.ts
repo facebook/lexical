@@ -91,7 +91,8 @@ export type TextFormatType =
   | 'highlight'
   | 'code'
   | 'subscript'
-  | 'superscript';
+  | 'superscript'
+  | 'highlight';
 
 export type TextModeType = 'normal' | 'token' | 'segmented';
 

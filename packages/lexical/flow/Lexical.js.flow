@@ -585,7 +585,8 @@ export type TextFormatType =
   | 'italic'
   | 'code'
   | 'subscript'
-  | 'superscript';
+  | 'superscript'
+  | 'highlight';
 type TextModeType = 'normal' | 'token' | 'segmented';
 
 declare export class TextNode extends LexicalNode {

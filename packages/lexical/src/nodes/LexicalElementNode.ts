@@ -528,7 +528,7 @@ export class ElementNode extends LexicalNode {
   insertNewAfter(
     selection: RangeSelection,
     restoreSelection?: boolean,
-  ): null | ElementNode {
+  ): null | LexicalNode {
     return null;
   }
   canIndent(): boolean {

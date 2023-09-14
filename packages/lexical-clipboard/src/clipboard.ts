@@ -16,6 +16,7 @@ import {$findMatchingParent, objectKlassEquals} from '@lexical/utils';
 import {
   $createParagraphNode,
   $createTabNode,
+  $createTextNode,
   $getRoot,
   $getSelection,
   $isDecoratorNode,
@@ -172,18 +173,22 @@ export function $insertDataTransferForRichText(
     dataTransfer.getData('text/plain') || dataTransfer.getData('text/uri-list');
   if (text != null) {
     if ($isRangeSelection(selection)) {
+      let lastParagraphNode = $createParagraphNode();
+      const nodes: Array<LexicalNode> = [lastParagraphNode];
       const parts = text.split(/(\r?\n|\t)/);
       const partsLength = parts.length;
       for (let i = 0; i < partsLength; i++) {
         const part = parts[i];
         if (part === '\n' || part === '\r\n') {
-          selection.insertParagraph();
+          lastParagraphNode = $createParagraphNode();
+          nodes.push(lastParagraphNode);
         } else if (part === '\t') {
-          selection.insertNodes([$createTabNode()]);
+          lastParagraphNode.append($createTabNode());
         } else {
-          selection.insertText(part);
+          lastParagraphNode.append($createTextNode(part));
         }
       }
+      selection.insertNodes(nodes);
     } else {
       selection.insertRawText(text);
     }

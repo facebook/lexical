@@ -142,22 +142,20 @@ export type EditorConfig = {
   theme: EditorThemeClasses;
 };
 
+export type LexicalNodeReplacement = {
+  replace: Klass<LexicalNode>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  with: <T extends {new (...args: any): any}>(
+    node: InstanceType<T>,
+  ) => LexicalNode;
+  withKlass?: Klass<LexicalNode>;
+};
+
 export type CreateEditorArgs = {
   disableEvents?: boolean;
   editorState?: EditorState;
   namespace?: string;
-  nodes?: ReadonlyArray<
-    | Klass<LexicalNode>
-    | {
-        replace: Klass<LexicalNode>;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        with: <T extends {new (...args: any): any}>(
-          node: InstanceType<T>,
-        ) => LexicalNode;
-
-        withKlass?: Klass<LexicalNode>;
-      }
-  >;
+  nodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>;
   onError?: ErrorHandler;
   parentEditor?: LexicalEditor;
   editable?: boolean;
@@ -401,14 +399,14 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
     registeredNodes = new Map();
     for (let i = 0; i < nodes.length; i++) {
       let klass = nodes[i];
-      let replacementClass = null;
-      let replacementKlass = null;
+      let replace = null;
+      let replaceWithKlass = null;
 
       if (typeof klass !== 'function') {
         const options = klass;
         klass = options.replace;
-        replacementClass = options.with;
-        replacementKlass = options.withKlass ? options.withKlass : null;
+        replace = options.with;
+        replaceWithKlass = options.withKlass || null;
       }
       // Ensure custom nodes implement required methods.
       if (__DEV__) {
@@ -465,8 +463,8 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
       }
       registeredNodes.set(type, {
         klass,
-        replace: replacementClass,
-        replaceWithKlass: replacementKlass,
+        replace,
+        replaceWithKlass,
         transforms,
       });
     }

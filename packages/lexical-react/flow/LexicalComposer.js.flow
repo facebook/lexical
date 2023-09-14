@@ -12,6 +12,7 @@ import type {
   LexicalEditor,
   LexicalNode,
   EditorState,
+  LexicalNodeReplacement,
 } from 'lexical';
 
 export type InitialEditorStateType =
@@ -24,10 +25,7 @@ export type InitialConfigType = $ReadOnly<{
   editor__DEPRECATED?: LexicalEditor | null,
   editable?: boolean,
   namespace: string,
-  nodes?: $ReadOnlyArray<
-    | Class<LexicalNode>
-    | {replace: Class<LexicalNode>, with: (node: LexicalNode) => LexicalNode},
-  >,
+  nodes?: $ReadOnlyArray<Class<LexicalNode> | LexicalNodeReplacement>,
   theme?: EditorThemeClasses,
   editorState?: InitialEditorStateType,
   onError: (error: Error, editor: LexicalEditor) => void,

@@ -22,7 +22,7 @@ import {
   initialize,
   pasteFromClipboard,
   test,
-} from '../utils/index.mjs';
+} from '../utils';
 
 async function toggleCodeBlock(page) {
   await click(page, '.block-controls');

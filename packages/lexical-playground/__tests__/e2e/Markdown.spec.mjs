@@ -31,7 +31,7 @@ import {
   SAMPLE_IMAGE_URL,
   test,
   waitForSelector,
-} from '../utils/index.mjs';
+} from '../utils';
 
 async function checkHTMLExpectationsIncludingUndoRedo(
   page,

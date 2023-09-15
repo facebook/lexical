@@ -15,7 +15,7 @@ import {
   initialize,
   selectFromAlignDropdown,
   test,
-} from '../utils/index.mjs';
+} from '../utils';
 
 test.describe('Element format', () => {
   test.beforeEach(({isCollab, isPlainText, page}) => {

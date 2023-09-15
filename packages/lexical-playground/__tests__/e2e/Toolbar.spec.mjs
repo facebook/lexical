@@ -27,7 +27,7 @@ import {
   selectFromAlignDropdown,
   selectFromInsertDropdown,
   test,
-} from '../utils/index.mjs';
+} from '../utils';
 
 test.describe('Toolbar', () => {
   test.beforeEach(({isCollab, page}) =>

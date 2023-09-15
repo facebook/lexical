@@ -17,7 +17,7 @@ import {
   html,
   initialize,
   test,
-} from '../../utils/index.mjs';
+} from '../../utils';
 
 test(`Headings - stays as a heading when you press enter in the middle of a heading`, async ({
   page,

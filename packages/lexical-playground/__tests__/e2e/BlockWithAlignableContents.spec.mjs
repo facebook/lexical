@@ -16,7 +16,7 @@ import {
   selectFromAlignDropdown,
   test,
   YOUTUBE_SAMPLE_URL,
-} from '../utils/index.mjs';
+} from '../utils';
 
 test.describe('BlockWithAlignableContents', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));

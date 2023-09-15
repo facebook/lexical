@@ -39,7 +39,7 @@ import {
   setBackgroundColor,
   test,
   unmergeTableCell,
-} from '../utils/index.mjs';
+} from '../utils';
 
 async function fillTablePartiallyWithText(page) {
   await page.keyboard.type('a');

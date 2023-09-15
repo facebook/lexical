@@ -21,7 +21,7 @@ import {
   initialize,
   pasteFromClipboard,
   test,
-} from '../utils/index.mjs';
+} from '../utils';
 
 test.describe('Auto Links', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));

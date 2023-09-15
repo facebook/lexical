@@ -17,7 +17,7 @@ import {
   sleep,
   test,
   waitForSelector,
-} from '../utils/index.mjs';
+} from '../utils';
 
 test.use({acceptDownloads: true});
 test.describe('File', () => {

@@ -17,7 +17,7 @@ import {
   insertTableColumnBefore,
   selectCellsFromTableCords,
   test,
-} from '../utils/index.mjs';
+} from '../utils';
 
 test.describe('Regression test #4661', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));

@@ -15,7 +15,7 @@ import {
   initialize,
   test,
   textContent,
-} from '../utils/index.mjs';
+} from '../utils';
 
 test.describe('Placeholder', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));

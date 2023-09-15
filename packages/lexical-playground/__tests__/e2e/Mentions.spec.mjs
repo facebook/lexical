@@ -20,7 +20,7 @@ import {
   IS_WINDOWS,
   test,
   waitForSelector,
-} from '../utils/index.mjs';
+} from '../utils';
 
 test.describe('Mentions', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));

@@ -14,7 +14,7 @@ import {
   html,
   initialize,
   test,
-} from '../utils/index.mjs';
+} from '../utils';
 
 async function validateContent(page) {
   await assertHTML(

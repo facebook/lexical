@@ -15,7 +15,7 @@ import {
   initialize,
   insertTable,
   test,
-} from '../utils/index.mjs';
+} from '../utils';
 
 test.describe('Identation', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));

@@ -14,7 +14,7 @@ import {
   initialize,
   selectFromAlignDropdown,
   test,
-} from '../utils/index.mjs';
+} from '../utils';
 
 async function toggleBulletList(page) {
   await click(page, '.block-controls');

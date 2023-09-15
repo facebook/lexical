@@ -19,7 +19,7 @@ import {
   initialize,
   test,
   waitForSelector,
-} from '../utils/index.mjs';
+} from '../utils';
 
 test.describe('Regression test #231', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));

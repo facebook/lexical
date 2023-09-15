@@ -14,7 +14,7 @@ import {
   mergeTableCells,
   selectCellsFromTableCords,
   test,
-} from '../utils/index.mjs';
+} from '../utils';
 
 test.describe('Regression test #4872', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));

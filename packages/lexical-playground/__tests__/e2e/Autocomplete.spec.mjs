@@ -6,14 +6,7 @@
  *
  */
 
-import {
-  assertHTML,
-  focusEditor,
-  html,
-  initialize,
-  sleep,
-  test,
-} from '../utils/index.mjs';
+import {assertHTML, focusEditor, html, initialize, sleep, test} from '../utils';
 
 test.describe('Autocomplete', () => {
   test.beforeEach(({isCollab, page}) =>

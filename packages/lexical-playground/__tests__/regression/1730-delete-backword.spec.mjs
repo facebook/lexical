@@ -14,7 +14,7 @@ import {
   initialize,
   IS_MAC,
   test,
-} from '../utils/index.mjs';
+} from '../utils';
 
 test.describe('Regression test #1730', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));

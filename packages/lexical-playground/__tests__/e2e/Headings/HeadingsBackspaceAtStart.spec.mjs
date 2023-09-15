@@ -14,7 +14,7 @@ import {
   html,
   initialize,
   test,
-} from '../../utils/index.mjs';
+} from '../../utils';
 
 test('Headings - stays as a heading when you backspace at the start of a heading with no previous sibling nodes present', async ({
   page,

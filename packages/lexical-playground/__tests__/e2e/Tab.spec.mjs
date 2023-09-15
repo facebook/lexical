@@ -6,13 +6,7 @@
  *
  */
 
-import {
-  assertHTML,
-  focusEditor,
-  html,
-  initialize,
-  test,
-} from '../utils/index.mjs';
+import {assertHTML, focusEditor, html, initialize, test} from '../utils';
 
 test.describe('Tab', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));

@@ -6,14 +6,7 @@
  *
  */
 
-import {
-  assertHTML,
-  click,
-  focusEditor,
-  html,
-  initialize,
-  test,
-} from '../utils/index.mjs';
+import {assertHTML, click, focusEditor, html, initialize, test} from '../utils';
 
 test.describe('Clear', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));

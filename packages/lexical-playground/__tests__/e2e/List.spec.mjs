@@ -35,7 +35,7 @@ import {
   selectFromFormatDropdown,
   test,
   waitForSelector,
-} from '../utils/index.mjs';
+} from '../utils';
 
 async function toggleBulletList(page) {
   await click(page, '.block-controls');

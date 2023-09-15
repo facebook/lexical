@@ -23,7 +23,7 @@ import {
   selectFromInsertDropdown,
   test,
   waitForSelector,
-} from '../utils/index.mjs';
+} from '../utils';
 
 test.describe('HorizontalRule', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));

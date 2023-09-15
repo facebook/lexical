@@ -24,7 +24,7 @@ import {
   initialize,
   IS_WINDOWS,
   test,
-} from '../utils/index.mjs';
+} from '../utils';
 
 async function typeParagraphs(page) {
   await focusEditor(page);

@@ -25,7 +25,7 @@ import {
   pasteFromClipboard,
   test,
   YOUTUBE_SAMPLE_URL,
-} from '../../../utils/index.mjs';
+} from '../../../utils';
 
 test.describe('CopyAndPaste', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));

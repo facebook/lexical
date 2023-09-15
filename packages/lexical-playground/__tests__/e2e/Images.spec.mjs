@@ -28,7 +28,7 @@ import {
   selectorBoundingBox,
   test,
   waitForSelector,
-} from '../utils/index.mjs';
+} from '../utils';
 
 test.describe('Images', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));

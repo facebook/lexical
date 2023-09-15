@@ -16,7 +16,7 @@ import {
   keyUpCtrlOrAlt,
   keyUpCtrlOrMeta,
   sleep,
-} from '../utils/index.mjs';
+} from '../utils';
 
 export async function moveToLineBeginning(page) {
   if (IS_MAC) {

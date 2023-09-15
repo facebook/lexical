@@ -13,7 +13,7 @@ import {
   html,
   initialize,
   test,
-} from '../../utils/index.mjs';
+} from '../../utils';
 
 test('Headings - changes to a paragraph when you press enter at the end of a heading', async ({
   page,

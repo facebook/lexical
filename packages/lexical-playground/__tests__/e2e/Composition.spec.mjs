@@ -25,7 +25,7 @@ import {
   keyUpCtrlOrMeta,
   test,
   waitForSelector,
-} from '../utils/index.mjs';
+} from '../utils';
 
 test.use({launchOptions: {slowMo: 50}});
 test.describe('Composition', () => {

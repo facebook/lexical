@@ -19,7 +19,7 @@ import {
   html,
   initialize,
   test,
-} from '../utils/index.mjs';
+} from '../utils';
 
 test.describe('Emoticons', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));

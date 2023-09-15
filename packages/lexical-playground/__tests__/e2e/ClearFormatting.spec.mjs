@@ -24,7 +24,7 @@ import {
   selectFromColorPicker,
   test,
   waitForSelector,
-} from '../utils/index.mjs';
+} from '../utils';
 
 test.describe('Clear All Formatting', () => {
   test.beforeEach(({isPlainText, isCollab, page}) => {

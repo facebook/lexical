@@ -29,7 +29,7 @@ import {
   keyUpCtrlOrMeta,
   pasteFromClipboard,
   test,
-} from '../utils/index.mjs';
+} from '../utils';
 
 test.beforeEach(({isPlainText}) => {
   test.skip(isPlainText);

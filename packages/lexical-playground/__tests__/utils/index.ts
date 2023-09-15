@@ -742,11 +742,19 @@ export function prettifyHTML(
   }
 
   return prettier
-    .format(output, {
-      bracketSameLine: true,
-      htmlWhitespaceSensitivity: 'ignore',
-      parser: 'html',
-    })
+    .format(
+      output,
+      Object.assign(
+        {
+          bracketSameLine: true,
+          htmlWhitespaceSensitivity: 'ignore',
+          parser: 'html',
+          plugins: ['prettier-plugin-organize-attributes'],
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {attributeGroups: ['$DEFAULT', '^data-'], attributeSort: 'ASC'} as any,
+      ),
+    )
     .trim();
 }
 

@@ -1529,24 +1529,20 @@ export class RangeSelection implements BaseSelection {
    */
   insertNodes(nodes: Array<LexicalNode>, selectStart?: boolean): boolean {
     const pointNode = this.anchor.getNode();
-    if ($isElementNode(pointNode) && pointNode.getChildrenSize() > 0) {
-      const lineBreakNode = $createLineBreakNode();
-      // pointNode.splice(this.anchor.offset, 0, [lineBreakNode]);
-      pointNode.append(lineBreakNode);
-      pointNode.insertAfter(
-        $createParagraphNode().append('A'),
-        false,
-      ) as ElementNode;
-      // if (newBlock) newBlock.select();
-      // pointNode.append($createTextNode("hello world"))
-      // pointNode.append(lineBreakNode);
-      // $getRoot().select()
-      // lineBreakNode.selectPrevious();
-      // lineBreakNode.selectNext();
-      // pointNode.select()
-      pointNode.select(this.anchor.offset + 1, this.anchor.offset + 1);
+
+    if (
+      nodes.length === 1 &&
+      $isLineBreakNode(nodes[0]) &&
+      $isElementNode(pointNode)
+    ) {
+      const {offset} = this.anchor;
+      const paragraphOrCode = pointNode;
+      const node = nodes[0];
+      paragraphOrCode.splice(offset, 0, [node]);
+      paragraphOrCode.select(offset + 1, offset + 1);
       return true;
     }
+
     if (!$isElementNode(nodes[0])) {
       return this.insertNodes([$createParagraphNode().append(...nodes)]);
     }

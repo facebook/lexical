@@ -55,6 +55,9 @@ interface AppSettings {
   tableCellBackgroundColor: boolean;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ClipboardData = Record<string, any>;
+
 export async function initialize({
   page,
   isCollab,
@@ -430,7 +433,7 @@ export async function copyToClipboard(page: Page) {
 
 async function pasteFromClipboardPageOrFrame(
   pageOrFrame: Page | Frame,
-  clipboardData: Record<string, string>,
+  clipboardData: ClipboardData,
 ) {
   const canUseBeforeInput = supportsBeforeInput(pageOrFrame);
   await pageOrFrame.evaluate(
@@ -504,7 +507,7 @@ async function pasteFromClipboardPageOrFrame(
 
 export async function pasteFromClipboard(
   page: Page,
-  clipboardData: Record<string, string>,
+  clipboardData: ClipboardData,
 ) {
   if (IS_COLLAB) {
     const leftFrame = page.frame('left');

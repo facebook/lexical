@@ -14,7 +14,7 @@ import {
   initialize,
   LEGACY_EVENTS,
   test,
-} from '../utils/index.mjs';
+} from '../utils';
 
 test.describe('Events', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));

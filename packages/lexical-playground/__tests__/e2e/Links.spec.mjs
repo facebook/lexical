@@ -15,7 +15,7 @@ import {
   selectAll,
   selectCharacters,
   toggleBold,
-} from '../keyboardShortcuts/index.mjs';
+} from '../keyboardShortcuts';
 import {
   assertHTML,
   assertSelection,
@@ -28,7 +28,7 @@ import {
   keyDownCtrlOrMeta,
   keyUpCtrlOrMeta,
   test,
-} from '../utils/index.mjs';
+} from '../utils';
 
 test.beforeEach(({isPlainText}) => {
   test.skip(isPlainText);

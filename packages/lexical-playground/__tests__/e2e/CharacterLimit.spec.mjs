@@ -10,7 +10,7 @@ import {
   moveToEditorBeginning,
   moveToLineBeginning,
   pressBackspace,
-} from '../keyboardShortcuts/index.mjs';
+} from '../keyboardShortcuts';
 import {
   assertHTML,
   assertSelection,
@@ -18,7 +18,7 @@ import {
   initialize,
   repeat,
   test,
-} from '../utils/index.mjs';
+} from '../utils';
 
 function testSuite(charset) {
   test('displays overflow on text', async ({page, isCollab}) => {

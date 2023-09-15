@@ -14,7 +14,7 @@ import {
   pasteFromClipboard,
   selectCellsFromTableCords,
   test,
-} from '../../../utils/index.mjs';
+} from '../../../utils';
 
 test.describe('HTML Tables CopyAndPaste', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));

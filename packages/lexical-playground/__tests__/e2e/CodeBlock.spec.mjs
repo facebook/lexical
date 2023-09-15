@@ -12,7 +12,7 @@ import {
   moveToStart,
   selectAll,
   selectCharacters,
-} from '../keyboardShortcuts/index.mjs';
+} from '../keyboardShortcuts';
 import {
   assertHTML,
   assertSelection,
@@ -22,7 +22,7 @@ import {
   initialize,
   pasteFromClipboard,
   test,
-} from '../utils/index.mjs';
+} from '../utils';
 
 async function toggleCodeBlock(page) {
   await click(page, '.block-controls');

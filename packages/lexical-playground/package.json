@@ -36,7 +36,10 @@
     "yjs": ">=13.5.42"
   },
   "devDependencies": {
+    "@playwright/test": "^1.38.0",
     "@types/lodash-es": "^4.14.182",
+    "@types/node": "^20.6.1",
+    "@types/uuid": "^9.0.4",
     "@vitejs/plugin-react": "^1.0.7",
     "vite": "^2.8.0",
     "vite-plugin-replace": "0.1.1"

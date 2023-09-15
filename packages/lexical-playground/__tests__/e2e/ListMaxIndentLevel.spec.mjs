@@ -6,7 +6,7 @@
  *
  */
 
-import {selectAll} from '../keyboardShortcuts/index.mjs';
+import {selectAll} from '../keyboardShortcuts';
 import {
   assertHTML,
   click,
@@ -14,7 +14,7 @@ import {
   initialize,
   selectFromAlignDropdown,
   test,
-} from '../utils/index.mjs';
+} from '../utils';
 
 async function toggleBulletList(page) {
   await click(page, '.block-controls');

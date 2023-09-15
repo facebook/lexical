@@ -13,7 +13,7 @@ import {
   html,
   initialize,
   test,
-} from '../utils/index.mjs';
+} from '../utils';
 
 test.describe('Regression test #1113', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));

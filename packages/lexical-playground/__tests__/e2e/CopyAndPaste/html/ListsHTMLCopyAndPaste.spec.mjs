@@ -6,7 +6,7 @@
  *
  */
 
-import {moveLeft} from '../../../keyboardShortcuts/index.mjs';
+import {moveLeft} from '../../../keyboardShortcuts';
 import {
   assertHTML,
   assertSelection,
@@ -17,7 +17,7 @@ import {
   pasteFromClipboard,
   selectFromAlignDropdown,
   test,
-} from '../../../utils/index.mjs';
+} from '../../../utils';
 
 test.describe('HTML Lists CopyAndPaste', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));

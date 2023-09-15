@@ -6,19 +6,8 @@
  *
  */
 
-import {
-  moveToLineEnd,
-  selectAll,
-  selectCharacters,
-} from '../keyboardShortcuts/index.mjs';
-import {
-  assertHTML,
-  click,
-  focusEditor,
-  html,
-  initialize,
-  test,
-} from '../utils/index.mjs';
+import {moveToLineEnd, selectAll, selectCharacters} from '../keyboardShortcuts';
+import {assertHTML, click, focusEditor, html, initialize, test} from '../utils';
 
 test.describe('Regression test #1083', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));

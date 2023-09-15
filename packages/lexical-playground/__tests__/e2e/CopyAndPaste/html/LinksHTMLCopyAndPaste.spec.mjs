@@ -14,7 +14,7 @@ import {
   moveToLineBeginning,
   moveToNextWord,
   selectAll,
-} from '../../../keyboardShortcuts/index.mjs';
+} from '../../../keyboardShortcuts';
 import {
   assertHTML,
   assertSelection,
@@ -26,7 +26,7 @@ import {
   initialize,
   pasteFromClipboard,
   test,
-} from '../../../utils/index.mjs';
+} from '../../../utils';
 
 test.describe('HTML Links CopyAndPaste', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));

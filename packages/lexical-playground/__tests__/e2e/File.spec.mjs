@@ -6,7 +6,7 @@
  *
  */
 
-import {selectAll, toggleBold} from '../keyboardShortcuts/index.mjs';
+import {selectAll, toggleBold} from '../keyboardShortcuts';
 import {
   assertHTML,
   click,
@@ -17,7 +17,7 @@ import {
   sleep,
   test,
   waitForSelector,
-} from '../utils/index.mjs';
+} from '../utils';
 
 test.use({acceptDownloads: true});
 test.describe('File', () => {

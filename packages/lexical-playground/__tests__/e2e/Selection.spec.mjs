@@ -15,7 +15,7 @@ import {
   moveToPrevWord,
   pressShiftEnter,
   selectAll,
-} from '../keyboardShortcuts/index.mjs';
+} from '../keyboardShortcuts';
 import {
   assertHTML,
   assertSelection,
@@ -36,7 +36,7 @@ import {
   selectFromFormatDropdown,
   sleep,
   test,
-} from '../utils/index.mjs';
+} from '../utils';
 
 test.describe('Selection', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));

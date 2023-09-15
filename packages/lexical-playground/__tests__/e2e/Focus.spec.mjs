@@ -6,14 +6,7 @@
  *
  */
 
-import {
-  click,
-  evaluate,
-  expect,
-  focusEditor,
-  initialize,
-  test,
-} from '../utils/index.mjs';
+import {click, evaluate, expect, focusEditor, initialize, test} from '../utils';
 
 test.describe('Focus', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));

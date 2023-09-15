@@ -8,7 +8,7 @@
 
 import {expect} from '@playwright/test';
 
-import {moveLeft} from '../keyboardShortcuts/index.mjs';
+import {moveLeft} from '../keyboardShortcuts';
 import {
   assertHTML,
   assertSelection,
@@ -28,7 +28,7 @@ import {
   selectorBoundingBox,
   test,
   waitForSelector,
-} from '../utils/index.mjs';
+} from '../utils';
 
 test.describe('Images', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));

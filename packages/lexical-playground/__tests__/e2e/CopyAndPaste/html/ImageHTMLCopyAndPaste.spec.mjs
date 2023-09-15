@@ -6,7 +6,7 @@
  *
  */
 
-import {moveLeft, undo} from '../../../keyboardShortcuts/index.mjs';
+import {moveLeft, undo} from '../../../keyboardShortcuts';
 import {
   assertHTML,
   focusEditor,
@@ -16,7 +16,7 @@ import {
   pasteFromClipboard,
   sleepInsertImage,
   test,
-} from '../../../utils/index.mjs';
+} from '../../../utils';
 
 test.describe('HTML Image CopyAndPaste', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));

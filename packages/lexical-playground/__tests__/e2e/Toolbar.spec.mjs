@@ -12,7 +12,7 @@ import {
   toggleBold,
   toggleItalic,
   toggleUnderline,
-} from '../keyboardShortcuts/index.mjs';
+} from '../keyboardShortcuts';
 import {
   assertHTML,
   click,
@@ -27,7 +27,7 @@ import {
   selectFromAlignDropdown,
   selectFromInsertDropdown,
   test,
-} from '../utils/index.mjs';
+} from '../utils';
 
 test.describe('Toolbar', () => {
   test.beforeEach(({isCollab, page}) =>

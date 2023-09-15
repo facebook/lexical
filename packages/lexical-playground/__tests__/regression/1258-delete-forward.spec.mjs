@@ -6,10 +6,7 @@
  *
  */
 
-import {
-  deleteForward,
-  moveToLineBeginning,
-} from '../keyboardShortcuts/index.mjs';
+import {deleteForward, moveToLineBeginning} from '../keyboardShortcuts';
 import {
   assertHTML,
   focusEditor,
@@ -17,7 +14,7 @@ import {
   initialize,
   IS_MAC,
   test,
-} from '../utils/index.mjs';
+} from '../utils';
 
 test.describe('Regression test #1258', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));

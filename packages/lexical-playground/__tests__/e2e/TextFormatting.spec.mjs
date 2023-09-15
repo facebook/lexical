@@ -15,7 +15,7 @@ import {
   toggleBold,
   toggleItalic,
   toggleUnderline,
-} from '../keyboardShortcuts/index.mjs';
+} from '../keyboardShortcuts';
 import {
   assertHTML,
   assertSelection,
@@ -29,7 +29,7 @@ import {
   SAMPLE_IMAGE_URL,
   test,
   waitForSelector,
-} from '../utils/index.mjs';
+} from '../utils';
 
 test.describe('TextFormatting', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));

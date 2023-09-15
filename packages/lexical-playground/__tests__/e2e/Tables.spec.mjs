@@ -13,7 +13,7 @@ import {
   moveToEditorBeginning,
   pressBackspace,
   selectAll,
-} from '../keyboardShortcuts/index.mjs';
+} from '../keyboardShortcuts';
 import {
   assertHTML,
   assertSelection,
@@ -39,7 +39,7 @@ import {
   setBackgroundColor,
   test,
   unmergeTableCell,
-} from '../utils/index.mjs';
+} from '../utils';
 
 async function fillTablePartiallyWithText(page) {
   await page.keyboard.type('a');

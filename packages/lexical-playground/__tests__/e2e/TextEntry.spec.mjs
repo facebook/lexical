@@ -12,7 +12,7 @@ import {
   selectAll,
   selectCharacters,
   toggleBold,
-} from '../keyboardShortcuts/index.mjs';
+} from '../keyboardShortcuts';
 import {
   assertHTML,
   assertSelection,
@@ -22,7 +22,7 @@ import {
   keyDownCtrlOrAlt,
   keyUpCtrlOrAlt,
   test,
-} from '../utils/index.mjs';
+} from '../utils';
 
 test.describe('TextEntry', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));

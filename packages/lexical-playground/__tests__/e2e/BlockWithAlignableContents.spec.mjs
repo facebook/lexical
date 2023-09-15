@@ -6,7 +6,7 @@
  *
  */
 
-import {selectAll} from '../keyboardShortcuts/index.mjs';
+import {selectAll} from '../keyboardShortcuts';
 import {
   assertHTML,
   focusEditor,
@@ -15,7 +15,7 @@ import {
   insertYouTubeEmbed,
   selectFromAlignDropdown,
   test,
-} from '../utils/index.mjs';
+} from '../utils';
 
 const TEST_URL = 'https://www.youtube-nocookie.com/embed/jNQXAC9IVRw';
 test.describe('BlockWithAlignableContents', () => {

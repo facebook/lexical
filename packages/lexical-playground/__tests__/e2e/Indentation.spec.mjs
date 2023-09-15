@@ -6,7 +6,7 @@
  *
  */
 
-import {selectAll} from '../keyboardShortcuts/index.mjs';
+import {selectAll} from '../keyboardShortcuts';
 import {
   assertHTML,
   click,
@@ -15,7 +15,7 @@ import {
   initialize,
   insertTable,
   test,
-} from '../utils/index.mjs';
+} from '../utils';
 
 test.describe('Identation', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));

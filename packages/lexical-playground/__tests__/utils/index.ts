@@ -6,12 +6,12 @@
  *
  */
 
-import {expect, test as base} from '@playwright/test';
+import {expect, Frame, Page, test as base} from '@playwright/test';
 import prettier from 'prettier';
 import {URLSearchParams} from 'url';
 import {v4 as uuidv4} from 'uuid';
 
-import {selectAll} from '../keyboardShortcuts/index.mjs';
+import {selectAll} from '../keyboardShortcuts';
 
 export const E2E_PORT = process.env.E2E_PORT || 3000;
 export const E2E_BROWSER = process.env.E2E_BROWSER;
@@ -34,6 +34,21 @@ export const SAMPLE_LANDSCAPE_IMAGE_URL =
 export const LEXICAL_IMAGE_BASE64 =
   'data:image/png;base64,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';
 
+interface AppSettings {
+  isRichText: boolean;
+  emptyEditor: boolean;
+  disableBeforeInput: boolean;
+  isCollab?: boolean;
+  collabId?: string;
+  showNestedEditorTreeView: boolean;
+  isAutocomplete: boolean;
+  isCharLimit: boolean;
+  isCharLimitUtf8: boolean;
+  isMaxLength: boolean;
+  tableCellMerge: boolean;
+  tableCellBackgroundColor: boolean;
+}
+
 export async function initialize({
   page,
   isCollab,
@@ -44,28 +59,31 @@ export async function initialize({
   showNestedEditorTreeView,
   tableCellMerge,
   tableCellBackgroundColor,
+}: {
+  page: Page;
+  isCollab: boolean;
+  isAutocomplete?: boolean;
+  isCharLimit?: boolean;
+  isCharLimitUtf8?: boolean;
+  isMaxLength?: boolean;
+  showNestedEditorTreeView: boolean;
+  tableCellMerge: boolean;
+  tableCellBackgroundColor: boolean;
 }) {
-  const appSettings = {};
-  appSettings.isRichText = IS_RICH_TEXT;
-  appSettings.emptyEditor = true;
-  appSettings.disableBeforeInput = LEGACY_EVENTS;
-  if (isCollab) {
-    appSettings.isCollab = isCollab;
-    appSettings.collabId = uuidv4();
-  }
-  if (showNestedEditorTreeView === undefined) {
-    appSettings.showNestedEditorTreeView = true;
-  }
-  appSettings.isAutocomplete = !!isAutocomplete;
-  appSettings.isCharLimit = !!isCharLimit;
-  appSettings.isCharLimitUtf8 = !!isCharLimitUtf8;
-  appSettings.isMaxLength = !!isMaxLength;
-  if (tableCellMerge !== undefined) {
-    appSettings.tableCellMerge = tableCellMerge;
-  }
-  if (tableCellBackgroundColor !== undefined) {
-    appSettings.tableCellBackgroundColor = tableCellBackgroundColor;
-  }
+  const appSettings: AppSettings = {
+    collabId: isCollab ? uuidv4() : undefined,
+    disableBeforeInput: LEGACY_EVENTS,
+    emptyEditor: true,
+    isAutocomplete: !!isAutocomplete,
+    isCharLimit: !!isCharLimit,
+    isCharLimitUtf8: !!isCharLimitUtf8,
+    isCollab,
+    isMaxLength: !!isMaxLength,
+    isRichText: IS_RICH_TEXT,
+    showNestedEditorTreeView: showNestedEditorTreeView === undefined,
+    tableCellBackgroundColor,
+    tableCellMerge,
+  };
 
   const urlParams = appSettingsToURLParams(appSettings);
   const url = `http://localhost:${E2E_PORT}/${
@@ -80,16 +98,18 @@ export async function initialize({
   await exposeLexicalEditor(page);
 }
 
-async function exposeLexicalEditor(page) {
+async function exposeLexicalEditor(page: Page) {
   let leftFrame = page;
   if (IS_COLLAB) {
     leftFrame = await page.frame('left');
   }
   await leftFrame.waitForSelector('.tree-view-output pre');
   await leftFrame.evaluate(() => {
-    window.lexicalEditor = document.querySelector(
-      '.tree-view-output pre',
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    (window as any).lexicalEditor = (
+      document.querySelector('.tree-view-output pre') as any
     ).__lexicalEditor;
+    /* eslint-enable @typescript-eslint/no-explicit-any */
   });
 }
 
@@ -105,7 +125,7 @@ export const test = base.extend({
 
 export {expect} from '@playwright/test';
 
-function appSettingsToURLParams(appSettings) {
+function appSettingsToURLParams(appSettings: AppSettings) {
   const params = new URLSearchParams();
   Object.entries(appSettings).forEach(([setting, value]) => {
     params.append(setting, value);
@@ -113,23 +133,26 @@ function appSettingsToURLParams(appSettings) {
   return params;
 }
 
-export async function repeat(times, cb) {
+export async function repeat(
+  times: number,
+  cb: (...args: unknown[]) => unknown,
+) {
   for (let i = 0; i < times; i++) {
     await cb();
   }
 }
 
-export async function clickSelectors(page, selectors) {
+export async function clickSelectors(page: Page, selectors: string[]) {
   for (let i = 0; i < selectors.length; i++) {
     await click(page, selectors[i]);
   }
 }
 
 async function assertHTMLOnPageOrFrame(
-  pageOrFrame,
-  expectedHtml,
-  ignoreClasses,
-  ignoreInlineStyles,
+  pageOrFrame: Page | Frame,
+  expectedHtml: string,
+  ignoreClasses: boolean,
+  ignoreInlineStyles: boolean,
 ) {
   const actualHtml = await pageOrFrame.innerHTML('div[contenteditable="true"]');
   const actual = prettifyHTML(actualHtml.replace(/\n/gm, ''), {
@@ -144,13 +167,14 @@ async function assertHTMLOnPageOrFrame(
 }
 
 export async function assertHTML(
-  page,
-  expectedHtml,
+  page: Page,
+  expectedHtml: string,
   expectedHtmlFrameRight = expectedHtml,
   {ignoreClasses = false, ignoreInlineStyles = false} = {},
 ) {
   if (IS_COLLAB) {
-    const withRetry = async (fn) => await retryAsync(page, fn, 5);
+    const withRetry = async (fn: (...args: unknown[]) => unknown) =>
+      await retryAsync(fn, 5);
     await Promise.all([
       withRetry(async () => {
         const leftFrame = await page.frame('left');
@@ -181,7 +205,10 @@ export async function assertHTML(
   }
 }
 
-async function retryAsync(page, fn, attempts) {
+async function retryAsync(
+  fn: (...args: unknown[]) => unknown,
+  attempts: number,
+) {
   while (attempts > 0) {
     let failed = false;
     try {
@@ -200,12 +227,20 @@ async function retryAsync(page, fn, attempts) {
   }
 }
 
-async function assertSelectionOnPageOrFrame(page, expected) {
+async function assertSelectionOnPageOrFrame(
+  page: Page,
+  expected: {
+    anchorOffset: number | number[];
+    anchorPath: number[];
+    focusOffset: number | number[];
+    focusPath: number[];
+  },
+) {
   // Assert the selection of the editor matches the snapshot
   const selection = await page.evaluate(() => {
     const rootElement = document.querySelector('div[contenteditable="true"]');
 
-    const getPathFromNode = (node) => {
+    const getPathFromNode = (node: Node | null) => {
       const path = [];
       if (node === rootElement) {
         return [];
@@ -215,7 +250,7 @@ async function assertSelectionOnPageOrFrame(page, expected) {
         if (parent === null || node === rootElement) {
           break;
         }
-        path.push(Array.from(parent.childNodes).indexOf(node));
+        path.push(Array.from(parent.childNodes).indexOf(node as ChildNode));
         node = parent;
       }
       return path.reverse();
@@ -249,7 +284,15 @@ async function assertSelectionOnPageOrFrame(page, expected) {
   }
 }
 
-export async function assertSelection(page, expected) {
+export async function assertSelection(
+  page: Page,
+  expected: {
+    anchorOffset: number | number[];
+    anchorPath: number[];
+    focusOffset: number | number[];
+    focusPath: number[];
+  },
+) {
   if (IS_COLLAB) {
     const frame = await page.frame('left');
     await assertSelectionOnPageOrFrame(frame, expected);
@@ -258,7 +301,7 @@ export async function assertSelection(page, expected) {
   }
 }
 
-export async function isMac(page) {
+export async function isMac(page: Page) {
   return page.evaluate(
     () =>
       typeof window !== 'undefined' &&
@@ -266,7 +309,7 @@ export async function isMac(page) {
   );
 }
 
-export async function supportsBeforeInput(page) {
+export async function supportsBeforeInput(page: Page) {
   return page.evaluate(() => {
     if ('InputEvent' in window) {
       return 'getTargetRanges' in new window.InputEvent('input');
@@ -275,7 +318,7 @@ export async function supportsBeforeInput(page) {
   });
 }
 
-export async function keyDownCtrlOrMeta(page) {
+export async function keyDownCtrlOrMeta(page: Page) {
   if (await isMac(page)) {
     await page.keyboard.down('Meta');
   } else {
@@ -283,7 +326,7 @@ export async function keyDownCtrlOrMeta(page) {
   }
 }
 
-export async function keyUpCtrlOrMeta(page) {
+export async function keyUpCtrlOrMeta(page: Page) {
   if (await isMac(page)) {
     await page.keyboard.up('Meta');
   } else {
@@ -291,7 +334,7 @@ export async function keyUpCtrlOrMeta(page) {
   }
 }
 
-export async function keyDownCtrlOrAlt(page) {
+export async function keyDownCtrlOrAlt(page: Page) {
   if (await isMac(page)) {
     await page.keyboard.down('Alt');
   } else {
@@ -299,7 +342,7 @@ export async function keyDownCtrlOrAlt(page) {
   }
 }
 
-export async function keyUpCtrlOrAlt(page) {
+export async function keyUpCtrlOrAlt(page: Page) {
   if (await isMac(page)) {
     await page.keyboard.up('Alt');
   } else {
@@ -307,14 +350,14 @@ export async function keyUpCtrlOrAlt(page) {
   }
 }
 
-async function copyToClipboardPageOrFrame(pageOrFrame) {
+async function copyToClipboardPageOrFrame(pageOrFrame: Page | Frame) {
   return await pageOrFrame.evaluate(() => {
     const clipboardData = {};
     const editor = document.querySelector('div[contenteditable="true"]');
     const copyEvent = new ClipboardEvent('copy');
     Object.defineProperty(copyEvent, 'clipboardData', {
       value: {
-        setData(type, value) {
+        setData(type: string, value: string) {
           clipboardData[type] = value;
         },
       },
@@ -324,7 +367,7 @@ async function copyToClipboardPageOrFrame(pageOrFrame) {
   });
 }
 
-export async function copyToClipboard(page) {
+export async function copyToClipboard(page: Page) {
   if (IS_COLLAB) {
     const leftFrame = await page.frame('left');
     return await copyToClipboardPageOrFrame(leftFrame);
@@ -333,7 +376,10 @@ export async function copyToClipboard(page) {
   }
 }
 
-async function pasteFromClipboardPageOrFrame(pageOrFrame, clipboardData) {
+async function pasteFromClipboardPageOrFrame(
+  pageOrFrame: Page | Frame,
+  clipboardData: Record<string, string>,
+) {
   const canUseBeforeInput = supportsBeforeInput(pageOrFrame);
   await pageOrFrame.evaluate(
     async ({
@@ -356,7 +402,7 @@ async function pasteFromClipboardPageOrFrame(pageOrFrame, clipboardData) {
       if (files.length > 0) {
         eventClipboardData = {
           files,
-          getData(type, value) {
+          getData(type) {
             return _clipboardData[type];
           },
           types: [...Object.keys(_clipboardData), 'Files'],
@@ -364,7 +410,7 @@ async function pasteFromClipboardPageOrFrame(pageOrFrame, clipboardData) {
       } else {
         eventClipboardData = {
           files,
-          getData(type, value) {
+          getData(type) {
             return _clipboardData[type];
           },
           types: Object.keys(_clipboardData),
@@ -409,7 +455,7 @@ export async function pasteFromClipboard(page, clipboardData) {
   }
 }
 
-export async function sleep(delay) {
+export async function sleep(delay: number) {
   await new Promise((resolve) => setTimeout(resolve, delay));
 }
 
@@ -418,7 +464,10 @@ export async function sleepInsertImage(count = 1) {
   return await sleep(1000 * count);
 }
 
-export async function focusEditor(page, parentSelector = '.editor-shell') {
+export async function focusEditor(
+  page: Page,
+  parentSelector = '.editor-shell',
+) {
   const selector = `${parentSelector} div[contenteditable="true"]`;
   if (IS_COLLAB) {
     await page.waitForSelector('iframe[name="left"]');
@@ -435,24 +484,20 @@ export async function focusEditor(page, parentSelector = '.editor-shell') {
   }
 }
 
-export async function getHTML(page, selector = 'div[contenteditable="true"]') {
+export async function getHTML(
+  page: Page,
+  selector = 'div[contenteditable="true"]',
+) {
   const pageOrFrame = IS_COLLAB ? await page.frame('left') : page;
   const element = await pageOrFrame.locator(selector);
   return element.innerHTML();
 }
 
-export async function getEditorElement(page, parentSelector = '.editor-shell') {
-  const selector = `${parentSelector} div[contenteditable="true"]`;
-
-  if (IS_COLLAB) {
-    const leftFrame = await page.frame('left');
-    return leftFrame.locator(selector);
-  } else {
-    return page.locator(selector);
-  }
-}
-
-export async function waitForSelector(page, selector, options) {
+export async function waitForSelector(
+  page: Page,
+  selector: string,
+  options: Parameters<Frame['waitForSelector']>[1],
+) {
   if (IS_COLLAB) {
     const leftFrame = await page.frame('left');
     await leftFrame.waitForSelector(selector, options);
@@ -461,7 +506,7 @@ export async function waitForSelector(page, selector, options) {
   }
 }
 
-export async function selectorBoundingBox(page, selector) {
+export async function selectorBoundingBox(page: Page, selector: string) {
   let leftFrame = page;
   if (IS_COLLAB) {
     leftFrame = await page.frame('left');
@@ -470,7 +515,11 @@ export async function selectorBoundingBox(page, selector) {
   return await node.boundingBox();
 }
 
-export async function click(page, selector, options) {
+export async function click(
+  page: Page,
+  selector: string,
+  options?: Parameters<Frame['click']>[1],
+) {
   if (IS_COLLAB) {
     const leftFrame = await page.frame('left');
     await leftFrame.waitForSelector(selector, options);
@@ -481,7 +530,11 @@ export async function click(page, selector, options) {
   }
 }
 
-export async function focus(page, selector, options) {
+export async function focus(
+  page: Page,
+  selector: string,
+  options?: Parameters<Frame['focus']>[1],
+) {
   if (IS_COLLAB) {
     const leftFrame = await page.frame('left');
     await leftFrame.focus(selector, options);
@@ -490,7 +543,11 @@ export async function focus(page, selector, options) {
   }
 }
 
-export async function selectOption(page, selector, options) {
+export async function selectOption(
+  page: Page,
+  selector: string,
+  options: Parameters<Frame['selectOptions']>[1],
+) {
   if (IS_COLLAB) {
     const leftFrame = await page.frame('left');
     await leftFrame.selectOption(selector, options);
@@ -499,7 +556,11 @@ export async function selectOption(page, selector, options) {
   }
 }
 
-export async function textContent(page, selector, options) {
+export async function textContent(
+  page: Page,
+  selector: string,
+  options?: Parameters<Frame['textContent']>[1],
+) {
   if (IS_COLLAB) {
     const leftFrame = await page.frame('left');
     return await leftFrame.textContent(selector, options);
@@ -508,7 +569,11 @@ export async function textContent(page, selector, options) {
   }
 }
 
-export async function evaluate(page, fn, args) {
+export async function evaluate(
+  page: Page,
+  fn: (...params: unknown[]) => unknown,
+  args?: unknown,
+) {
   if (IS_COLLAB) {
     const leftFrame = await page.frame('left');
     return await leftFrame.evaluate(fn, args);
@@ -517,13 +582,13 @@ export async function evaluate(page, fn, args) {
   }
 }
 
-export async function clearEditor(page) {
+export async function clearEditor(page: Page) {
   await selectAll(page);
   await page.keyboard.press('Backspace');
   await page.keyboard.press('Backspace');
 }
 
-export async function insertSampleImage(page, modifier) {
+export async function insertSampleImage(page: Page, modifier: string) {
   await selectFromInsertDropdown(page, '.image');
   if (modifier === 'alt') {
     await page.keyboard.down('Alt');
@@ -534,7 +599,11 @@ export async function insertSampleImage(page, modifier) {
   }
 }
 
-export async function insertUrlImage(page, url, altText) {
+export async function insertUrlImage(
+  page: Page,
+  url: string,
+  altText?: string,
+) {
   await selectFromInsertDropdown(page, '.image');
   await click(page, 'button[data-test-id="image-modal-option-url"]');
   await focus(page, 'input[data-test-id="image-modal-url-input"]');
@@ -546,7 +615,11 @@ export async function insertUrlImage(page, url, altText) {
   await click(page, 'button[data-test-id="image-modal-confirm-btn"]');
 }
 
-export async function insertUploadImage(page, files, altText) {
+export async function insertUploadImage(
+  page: Page,
+  files: File[],
+  altText?: string,
+) {
   await selectFromInsertDropdown(page, '.image');
   await click(page, 'button[data-test-id="image-modal-option-file"]');
 
@@ -563,7 +636,7 @@ export async function insertUploadImage(page, files, altText) {
   await click(page, 'button[data-test-id="image-modal-file-upload-btn"]');
 }
 
-export async function insertYouTubeEmbed(page, url) {
+export async function insertYouTubeEmbed(page: Page, url: string) {
   await selectFromInsertDropdown(page, '.youtube');
   await focus(page, 'input[data-test-id="youtube-video-embed-modal-url"]');
   await page.keyboard.type(url);
@@ -573,11 +646,11 @@ export async function insertYouTubeEmbed(page, url) {
   );
 }
 
-export async function insertHorizontalRule(page) {
+export async function insertHorizontalRule(page: Page) {
   await selectFromInsertDropdown(page, '.horizontal-rule');
 }
 
-export async function insertImageCaption(page, caption) {
+export async function insertImageCaption(page: Page, caption: string) {
   await click(page, '.editor-image img');
   await click(page, '.image-caption-button');
   await waitForSelector(page, '.editor-image img.focused', {
@@ -587,15 +660,15 @@ export async function insertImageCaption(page, caption) {
   await page.keyboard.type(caption);
 }
 
-export async function mouseMoveToSelector(page, selector) {
+export async function mouseMoveToSelector(page: Page, selector: string) {
   const {x, width, y, height} = await selectorBoundingBox(page, selector);
   await page.mouse.move(x + width / 2, y + height / 2);
 }
 
 export async function dragMouse(
-  page,
-  fromBoundingBox,
-  toBoundingBox,
+  page: Page,
+  fromBoundingBox: DOMRect,
+  toBoundingBox: DOMRect,
   positionStart = 'middle',
   positionEnd = 'middle',
   mouseUp = true,
@@ -630,8 +703,8 @@ export async function dragMouse(
 }
 
 export async function dragImage(
-  page,
-  toSelector,
+  page: Page,
+  toSelector: string,
   positionStart = 'middle',
   positionEnd = 'middle',
 ) {
@@ -644,8 +717,11 @@ export async function dragImage(
   );
 }
 
-export function prettifyHTML(string, {ignoreClasses, ignoreInlineStyles} = {}) {
-  let output = string;
+export function prettifyHTML(
+  input: string,
+  {ignoreClasses = false, ignoreInlineStyles = false} = {},
+) {
+  let output = input;
 
   if (ignoreClasses) {
     output = output.replace(/\sclass="([^"]*)"/g, '');
@@ -668,7 +744,7 @@ export function prettifyHTML(string, {ignoreClasses, ignoreInlineStyles} = {}) {
 
 // This function does not suppose to do anything, it's only used as a trigger
 // for prettier auto-formatting (https://prettier.io/blog/2020/08/24/2.1.0.html#api)
-export function html(partials, ...params) {
+export function html(partials: TemplateStringsArray, ...params: unknown[]) {
   let output = '';
   for (let i = 0; i < partials.length; i++) {
     output += partials[i];
@@ -679,7 +755,10 @@ export function html(partials, ...params) {
   return output;
 }
 
-export async function selectFromAdditionalStylesDropdown(page, selector) {
+export async function selectFromAdditionalStylesDropdown(
+  page: Page,
+  selector: string,
+) {
   await click(
     page,
     '.toolbar-item[aria-label="Formatting options for additional text styles"]',
@@ -687,16 +766,16 @@ export async function selectFromAdditionalStylesDropdown(page, selector) {
   await click(page, '.dropdown ' + selector);
 }
 
-export async function selectFromBackgroundColorPicker(page) {
+export async function selectFromBackgroundColorPicker(page: Page) {
   await click(page, '.toolbar-item[aria-label="Formatting background color"]');
   await click(page, '.color-picker-basic-color button:first-child'); //Defaulted to red
 }
 
-export async function selectFromColorPicker(page) {
+export async function selectFromColorPicker(page: Page) {
   await click(page, '.toolbar-item[aria-label="Formatting text color"]');
   await click(page, '.color-picker-basic-color button:first-child'); //Defaulted to red
 }
-export async function selectFromFormatDropdown(page, selector) {
+export async function selectFromFormatDropdown(page: Page, selector: string) {
   await click(
     page,
     '.toolbar-item[aria-label="Formatting options for text style"]',
@@ -704,7 +783,7 @@ export async function selectFromFormatDropdown(page, selector) {
   await click(page, '.dropdown ' + selector);
 }
 
-export async function selectFromInsertDropdown(page, selector) {
+export async function selectFromInsertDropdown(page: Page, selector: string) {
   await click(
     page,
     '.toolbar-item[aria-label="Insert specialized editor node"]',
@@ -712,7 +791,7 @@ export async function selectFromInsertDropdown(page, selector) {
   await click(page, '.dropdown ' + selector);
 }
 
-export async function selectFromAlignDropdown(page, selector) {
+export async function selectFromAlignDropdown(page: Page, selector: string) {
   await click(
     page,
     '.toolbar-item[aria-label="Formatting options for text alignment"]',
@@ -720,12 +799,7 @@ export async function selectFromAlignDropdown(page, selector) {
   await click(page, '.dropdown ' + selector);
 }
 
-export async function selectFromTableDropdown(page, selector) {
-  await click(page, '.toolbar-item[aria-label="Open table toolkit"]');
-  await click(page, '.dropdown ' + selector);
-}
-
-export async function insertTable(page, rows = 2, columns = 3) {
+export async function insertTable(page: Page, rows = 2, columns = 3) {
   let leftFrame = page;
   if (IS_COLLAB) {
     leftFrame = await page.frame('left');
@@ -747,14 +821,14 @@ export async function insertTable(page, rows = 2, columns = 3) {
   );
 }
 
-export async function insertCollapsible(page) {
+export async function insertCollapsible(page: Page) {
   await selectFromInsertDropdown(page, '.item .caret-right');
 }
 
 export async function selectCellsFromTableCords(
-  page,
-  firstCords,
-  secondCords,
+  page: Page,
+  firstCords: {x: number; y: number},
+  secondCords: {x: number; y: number},
   isFirstHeader = false,
   isSecondHeader = false,
 ) {
@@ -789,57 +863,42 @@ export async function selectCellsFromTableCords(
   );
 }
 
-export async function insertTableRowAbove(page) {
-  await click(page, '.table-cell-action-button-container');
-  await click(page, '.item[data-test-id="table-insert-row-above"]');
-}
-
-export async function insertTableRowBelow(page) {
+export async function insertTableRowBelow(page: Page) {
   await click(page, '.table-cell-action-button-container');
   await click(page, '.item[data-test-id="table-insert-row-below"]');
 }
 
-export async function insertTableColumnBefore(page) {
+export async function insertTableColumnBefore(page: Page) {
   await click(page, '.table-cell-action-button-container');
   await click(page, '.item[data-test-id="table-insert-column-before"]');
 }
 
-export async function insertTableColumnAfter(page) {
-  await click(page, '.table-cell-action-button-container');
-  await click(page, '.item[data-test-id="table-insert-column-after"]');
-}
-
-export async function mergeTableCells(page) {
+export async function mergeTableCells(page: Page) {
   await click(page, '.table-cell-action-button-container');
   await click(page, '.item[data-test-id="table-merge-cells"]');
 }
 
-export async function unmergeTableCell(page) {
+export async function unmergeTableCell(page: Page) {
   await click(page, '.table-cell-action-button-container');
   await click(page, '.item[data-test-id="table-unmerge-cells"]');
 }
 
-export async function deleteTableRows(page) {
+export async function deleteTableRows(page: Page) {
   await click(page, '.table-cell-action-button-container');
   await click(page, '.item[data-test-id="table-delete-rows"]');
 }
 
-export async function deleteTableColumns(page) {
+export async function deleteTableColumns(page: Page) {
   await click(page, '.table-cell-action-button-container');
   await click(page, '.item[data-test-id="table-delete-columns"]');
 }
 
-export async function deleteTable(page) {
-  await click(page, '.table-cell-action-button-container');
-  await click(page, '.item[data-test-id="table-delete"]');
-}
-
-export async function setBackgroundColor(page) {
+export async function setBackgroundColor(page: Page) {
   await click(page, '.table-cell-action-button-container');
   await click(page, '.item[data-test-id="table-background-color"]');
 }
 
-export async function enableCompositionKeyEvents(page) {
+export async function enableCompositionKeyEvents(page: Page) {
   const targetPage = IS_COLLAB ? await page.frame('left') : page;
   await targetPage.evaluate(() => {
     window.addEventListener(
@@ -859,27 +918,21 @@ export async function enableCompositionKeyEvents(page) {
   });
 }
 
-export async function pressToggleBold(page) {
+export async function pressToggleBold(page: Page) {
   await keyDownCtrlOrMeta(page);
   await page.keyboard.press('b');
   await keyUpCtrlOrMeta(page);
 }
 
-export async function pressToggleItalic(page) {
-  await keyDownCtrlOrMeta(page);
-  await page.keyboard.press('b');
-  await keyUpCtrlOrMeta(page);
-}
-
-export async function pressToggleUnderline(page) {
+export async function pressToggleUnderline(page: Page) {
   await keyDownCtrlOrMeta(page);
   await page.keyboard.press('u');
   await keyUpCtrlOrMeta(page);
 }
 
 export async function dragDraggableMenuTo(
-  page,
-  toSelector,
+  page: Page,
+  toSelector: string,
   positionStart = 'middle',
   positionEnd = 'middle',
 ) {

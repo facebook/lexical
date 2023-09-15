@@ -6,7 +6,7 @@
  *
  */
 
-import {paste} from '../keyboardShortcuts/index.mjs';
+import {paste} from '../keyboardShortcuts';
 import {
   assertHTML,
   click,
@@ -18,7 +18,7 @@ import {
   pasteFromClipboard,
   test,
   waitForSelector,
-} from '../utils/index.mjs';
+} from '../utils';
 
 test.describe('CodeActionMenu', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));

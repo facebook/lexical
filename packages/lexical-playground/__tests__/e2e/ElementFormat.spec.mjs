@@ -6,7 +6,7 @@
  *
  */
 
-import {moveLeft} from '../keyboardShortcuts/index.mjs';
+import {moveLeft} from '../keyboardShortcuts';
 import {
   assertHTML,
   click,
@@ -15,7 +15,7 @@ import {
   initialize,
   selectFromAlignDropdown,
   test,
-} from '../utils/index.mjs';
+} from '../utils';
 
 test.describe('Element format', () => {
   test.beforeEach(({isCollab, isPlainText, page}) => {

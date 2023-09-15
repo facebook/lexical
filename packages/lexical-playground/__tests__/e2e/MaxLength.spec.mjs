@@ -15,7 +15,7 @@ import {
   initialize,
   pasteFromClipboard,
   test,
-} from '../utils/index.mjs';
+} from '../utils';
 
 test.describe('MaxLength', () => {
   test.use({isMaxLength: true});

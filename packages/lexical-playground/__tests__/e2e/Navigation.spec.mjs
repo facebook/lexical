@@ -17,14 +17,14 @@ import {
   moveToPrevWord,
   selectCharacters,
   toggleBold,
-} from '../keyboardShortcuts/index.mjs';
+} from '../keyboardShortcuts';
 import {
   assertSelection,
   focusEditor,
   initialize,
   IS_WINDOWS,
   test,
-} from '../utils/index.mjs';
+} from '../utils';
 
 async function typeParagraphs(page) {
   await focusEditor(page);

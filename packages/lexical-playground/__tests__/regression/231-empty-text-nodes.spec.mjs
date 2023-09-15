@@ -6,11 +6,7 @@
  *
  */
 
-import {
-  moveLeft,
-  moveRight,
-  pressBackspace,
-} from '../keyboardShortcuts/index.mjs';
+import {moveLeft, moveRight, pressBackspace} from '../keyboardShortcuts';
 import {
   assertHTML,
   assertSelection,
@@ -19,7 +15,7 @@ import {
   initialize,
   test,
   waitForSelector,
-} from '../utils/index.mjs';
+} from '../utils';
 
 test.describe('Regression test #231', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));

@@ -11,7 +11,7 @@ import {
   moveToLineEnd,
   pressBackspace,
   selectCharacters,
-} from '../keyboardShortcuts/index.mjs';
+} from '../keyboardShortcuts';
 import {
   assertHTML,
   assertSelection,
@@ -19,7 +19,7 @@ import {
   html,
   initialize,
   test,
-} from '../utils/index.mjs';
+} from '../utils';
 
 test.describe('Emoticons', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));

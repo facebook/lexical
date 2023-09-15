@@ -11,7 +11,7 @@ import {
   moveToLineBeginning,
   pressBackspace,
   selectAll,
-} from '../keyboardShortcuts/index.mjs';
+} from '../keyboardShortcuts';
 import {
   assertHTML,
   assertSelection,
@@ -23,7 +23,7 @@ import {
   selectFromInsertDropdown,
   test,
   waitForSelector,
-} from '../utils/index.mjs';
+} from '../utils';
 
 test.describe('HorizontalRule', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));

@@ -11,7 +11,7 @@ import {
   moveToLineEnd,
   selectAll,
   selectCharacters,
-} from '../../../keyboardShortcuts/index.mjs';
+} from '../../../keyboardShortcuts';
 import {
   assertHTML,
   assertSelection,
@@ -23,7 +23,7 @@ import {
   IS_WINDOWS,
   pasteFromClipboard,
   test,
-} from '../../../utils/index.mjs';
+} from '../../../utils';
 
 test.describe('Lists CopyAndPaste', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));

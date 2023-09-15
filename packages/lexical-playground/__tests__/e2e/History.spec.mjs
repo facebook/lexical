@@ -12,7 +12,7 @@ import {
   redo,
   toggleBold,
   undo,
-} from '../keyboardShortcuts/index.mjs';
+} from '../keyboardShortcuts';
 import {
   assertHTML,
   assertSelection,
@@ -22,7 +22,7 @@ import {
   initialize,
   sleep,
   test,
-} from '../utils/index.mjs';
+} from '../utils';
 
 test.describe('History', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));

@@ -6,14 +6,8 @@
  *
  */
 
-import {undo} from '../keyboardShortcuts/index.mjs';
-import {
-  assertHTML,
-  focusEditor,
-  html,
-  initialize,
-  test,
-} from '../utils/index.mjs';
+import {undo} from '../keyboardShortcuts';
+import {assertHTML, focusEditor, html, initialize, test} from '../utils';
 
 test.describe('Regression test #1055', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));

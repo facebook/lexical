@@ -14,7 +14,7 @@ import {
   initialize,
   IS_MAC,
   test,
-} from '../utils/index.mjs';
+} from '../utils';
 
 const supportsTranspose = IS_MAC && E2E_BROWSER !== 'firefox';
 

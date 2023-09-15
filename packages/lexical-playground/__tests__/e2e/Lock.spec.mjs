@@ -8,7 +8,7 @@
 
 import {expect} from '@playwright/test';
 
-import {click, focusEditor, initialize, test} from '../utils/index.mjs';
+import {click, focusEditor, initialize, test} from '../utils';
 
 test.describe('Lock', () => {
   test.beforeEach(({isCollab, page}) =>

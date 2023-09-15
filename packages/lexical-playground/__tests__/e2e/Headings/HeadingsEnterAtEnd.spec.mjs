@@ -6,10 +6,7 @@
  *
  */
 
-import {
-  moveRight,
-  moveToEditorBeginning,
-} from '../../keyboardShortcuts/index.mjs';
+import {moveRight, moveToEditorBeginning} from '../../keyboardShortcuts';
 import {
   assertHTML,
   click,
@@ -17,7 +14,7 @@ import {
   html,
   initialize,
   test,
-} from '../../utils/index.mjs';
+} from '../../utils';
 
 test(`Headings - stays as a heading when you press enter in the middle of a heading`, async ({
   page,

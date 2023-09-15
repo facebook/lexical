@@ -1570,7 +1570,40 @@ export class RangeSelection implements BaseSelection {
     if (!this.isCollapsed()) {
       this.removeText();
     }
-    return splitBlock(this.anchor, this);
+
+    const point = this.anchor;
+    let pointNode = point.getNode();
+    if ($isElementNode(pointNode)) {
+      // TO-DO: InsertNewAfter should return 'null | this' instead of 'null | LexicalNode'
+      const newBlock = pointNode.insertNewAfter(this, false) as ElementNode;
+      if (newBlock) newBlock.select();
+      return newBlock;
+    }
+
+    const splitElement = (element: ElementNode) => {
+      const {offset} = point;
+      const parent = pointNode.getParentOrThrow();
+      const x = parent.isInline() ? parent : pointNode;
+      const firstToAppend = offset === 0 ? x : pointNode.splitText(offset)[0];
+      const siblings = firstToAppend.getNextSiblings();
+      const nodesToAppend =
+        offset === 0 ? [firstToAppend, ...siblings] : siblings;
+      const newElement = element.insertNewAfter(this, false) as ElementNode;
+      if (newElement) {
+        newElement.append(...nodesToAppend);
+        newElement.selectStart();
+      }
+      return newElement;
+    };
+
+    if (pointNode.getParentOrThrow().isInline()) {
+      splitElement(pointNode.getParentOrThrow());
+    }
+
+    pointNode = point.getNode();
+    const block = $getAncestor(pointNode, INTERNAL_$isBlock);
+    if (block) return splitElement(block);
+    return null;
   }
 
   /**
@@ -3009,41 +3042,6 @@ export function DEPRECATED_$getNodeTriplet(
     'Expected GridRowNode to have a parent GridNode',
   );
   return [cell, row, grid];
-}
-
-function splitBlock(point: PointType, selection: RangeSelection) {
-  let pointNode = point.getNode();
-  if ($isElementNode(pointNode)) {
-    // TO-DO: InsertNewAfter should return 'null | this' instead of 'null | LexicalNode'
-    const newBlock = pointNode.insertNewAfter(selection, false) as ElementNode;
-    if (newBlock) newBlock.select();
-    return newBlock;
-  }
-
-  const splitElement = (element: ElementNode) => {
-    const {offset} = point;
-    const parent = pointNode.getParentOrThrow();
-    const x = parent.isInline() ? parent : pointNode;
-    const firstToAppend = offset === 0 ? x : pointNode.splitText(offset)[0];
-    const siblings = firstToAppend.getNextSiblings();
-    const nodesToAppend =
-      offset === 0 ? [firstToAppend, ...siblings] : siblings;
-    const newElement = element.insertNewAfter(selection, false) as ElementNode;
-    if (newElement) {
-      newElement.append(...nodesToAppend);
-      newElement.selectStart();
-    }
-    return newElement;
-  };
-
-  if (pointNode.getParentOrThrow().isInline()) {
-    splitElement(pointNode.getParentOrThrow());
-  }
-
-  pointNode = point.getNode();
-  const block = $getAncestor(pointNode, INTERNAL_$isBlock);
-  if (block) return splitElement(block);
-  return null;
 }
 
 function mergeBlocks(firstBlock: ElementNode, secondBlock: ElementNode) {

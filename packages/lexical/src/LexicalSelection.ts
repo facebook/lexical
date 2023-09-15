@@ -1530,7 +1530,6 @@ export class RangeSelection implements BaseSelection {
   insertNodes(nodes: Array<LexicalNode>, selectStart?: boolean): boolean {
     const pointNode = this.anchor.getNode();
 
-    // nodes = [linebreak], anchor.type = "element"
     if (
       nodes.length === 1 &&
       $isLineBreakNode(nodes[0]) &&
@@ -1563,6 +1562,7 @@ export class RangeSelection implements BaseSelection {
     const prevLast =
       nodes.length > 1 || firstBlock.isEmpty() ? currentBlock : firstBlock;
     mergeBlocks(firstBlock, nextFirst);
+    prevLast.selectEnd();
     mergeBlocks(prevLast, lastBlock);
     return true;
   }

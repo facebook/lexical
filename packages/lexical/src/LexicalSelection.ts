@@ -1580,21 +1580,7 @@ export class RangeSelection implements BaseSelection {
    * @param selectStart whether or not to select the start of the insertion range after the operation completes.
    */
   insertLineBreak(selectStart?: boolean): void {
-    const lineBreakNode = $createLineBreakNode();
-    const anchor = this.anchor;
-    if (anchor.type === 'element') {
-      const element = anchor.getNode();
-      if ($isRootNode(element)) {
-        this.insertParagraph();
-      }
-    }
-    if (selectStart) {
-      this.insertNodes([lineBreakNode], true);
-    } else {
-      if (this.insertNodes([lineBreakNode])) {
-        lineBreakNode.selectNext(0, 0);
-      }
-    }
+    this.insertNodes([$createLineBreakNode()]);
   }
 
   /**

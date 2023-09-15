@@ -6,49 +6,50 @@
  *
  */
 import {
+  assertGridSelectionCoordinates,
   click,
-  expect,
   focusEditor,
   initialize,
   insertTable,
-  locate,
   mergeTableCells,
   selectCellsFromTableCords,
   test,
-  unmergeTableCell,
 } from '../utils';
 
-test.describe('Regression test #4876', () => {
+test.describe('Regression test #4872', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
-  test('unmerging cells should add cells to correct rows', async ({
+  test('merging two full rows does not break table selection', async ({
     page,
     isPlainText,
-    isCollab,
   }) => {
     test.skip(isPlainText);
 
     await focusEditor(page);
 
-    await insertTable(page, 4, 4);
+    await insertTable(page, 5, 5);
 
     await click(page, '.PlaygroundEditorTheme__tableCell');
     await selectCellsFromTableCords(
       page,
       {x: 0, y: 1},
-      {x: 1, y: 3},
+      {x: 4, y: 2},
       true,
       false,
     );
 
     await mergeTableCells(page);
 
-    await unmergeTableCell(page);
+    await selectCellsFromTableCords(
+      page,
+      {x: 1, y: 4},
+      {x: 2, y: 4},
+      false,
+      false,
+    );
 
-    const tableRow = await locate(page, 'tr');
-    expect(await tableRow.count()).toBe(4);
-    for (let i = 0; i < 4; i++) {
-      const tableCells = tableRow.nth(i).locator('th, td');
-      expect(await tableCells.count()).toBe(4);
-    }
+    await assertGridSelectionCoordinates(page, {
+      anchor: {x: 1, y: 4},
+      focus: {x: 2, y: 4},
+    });
   });
 });

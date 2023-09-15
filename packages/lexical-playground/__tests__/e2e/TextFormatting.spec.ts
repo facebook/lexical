@@ -569,7 +569,6 @@ test.describe('TextFormatting', () => {
   test(`Can select multiple text parts and format them with shortcuts`, async ({
     page,
     isPlainText,
-    browserName,
   }) => {
     test.skip(isPlainText);
 

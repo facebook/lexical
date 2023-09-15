@@ -25,9 +25,6 @@ test.describe('Keyboard shortcuts', () => {
 
   test('handles "insertTranspose" event from Control+T on MAC', async ({
     page,
-    context,
-    isPlainText,
-    browserName,
   }) => {
     test.skip(!supportsTranspose);
 

@@ -58,7 +58,7 @@ test.describe('Mutations', () => {
     await validateContent(page);
 
     // Remove the paragraph
-    await await evaluate(page, () => {
+    await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
       const paragraph = rootElement.firstChild;
 
@@ -67,7 +67,7 @@ test.describe('Mutations', () => {
     await validateContent(page);
 
     // Remove the paragraph content
-    await await evaluate(page, () => {
+    await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
       const paragraph = rootElement.firstChild;
 
@@ -76,7 +76,7 @@ test.describe('Mutations', () => {
     await validateContent(page);
 
     // Remove the first text
-    await await evaluate(page, () => {
+    await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
       const firstTextNode = rootElement.firstChild.firstChild;
 
@@ -85,7 +85,7 @@ test.describe('Mutations', () => {
     await validateContent(page);
 
     // Remove the first text contents
-    await await evaluate(page, () => {
+    await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
       const firstTextNode = rootElement.firstChild.firstChild;
 
@@ -94,7 +94,7 @@ test.describe('Mutations', () => {
     await validateContent(page);
 
     // Remove the second text
-    await await evaluate(page, () => {
+    await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
       const secondTextNode = rootElement.firstChild.firstChild.nextSibling;
 
@@ -103,7 +103,7 @@ test.describe('Mutations', () => {
     await validateContent(page);
 
     // Remove the third text
-    await await evaluate(page, () => {
+    await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
       const thirdTextNode =
         rootElement.firstChild.firstChild.nextSibling.nextSibling;
@@ -113,7 +113,7 @@ test.describe('Mutations', () => {
     await validateContent(page);
 
     // Remove the forth text
-    await await evaluate(page, () => {
+    await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
       const forthTextNode =
         rootElement.firstChild.firstChild.nextSibling.nextSibling.nextSibling;
@@ -123,7 +123,7 @@ test.describe('Mutations', () => {
     await validateContent(page);
 
     // Move last to first
-    await await evaluate(page, () => {
+    await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
       const paragraph = rootElement.firstChild;
       const firstTextNode = paragraph.firstChild;
@@ -135,7 +135,7 @@ test.describe('Mutations', () => {
     await validateContent(page);
 
     // Reverse sort all the children
-    await await evaluate(page, () => {
+    await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
       const paragraph = rootElement.firstChild;
       const firstTextNode = paragraph.firstChild;
@@ -151,7 +151,7 @@ test.describe('Mutations', () => {
     await validateContent(page);
 
     // Adding additional nodes to root
-    await await evaluate(page, () => {
+    await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
       const span = document.createElement('span');
       const span2 = document.createElement('span');
@@ -163,7 +163,7 @@ test.describe('Mutations', () => {
     await validateContent(page);
 
     // Adding additional nodes to paragraph
-    await await evaluate(page, () => {
+    await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
       const paragraph = rootElement.firstChild;
       const firstTextNode = paragraph.firstChild;
@@ -177,7 +177,7 @@ test.describe('Mutations', () => {
     await validateContent(page);
 
     // Adding additional nodes to text nodes
-    await await evaluate(page, () => {
+    await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
       const paragraph = rootElement.firstChild;
       const firstTextNode = paragraph.firstChild;
@@ -189,7 +189,7 @@ test.describe('Mutations', () => {
     await validateContent(page);
 
     // Replace text nodes on text nodes #1
-    await await evaluate(page, () => {
+    await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
       const paragraph = rootElement.firstChild;
       const firstTextNode = paragraph.firstChild;
@@ -199,7 +199,7 @@ test.describe('Mutations', () => {
     await validateContent(page);
 
     // Replace text nodes on line break #2
-    await await evaluate(page, () => {
+    await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
       const paragraph = rootElement.firstChild;
       const firstTextNode = paragraph.firstChild;
@@ -209,7 +209,7 @@ test.describe('Mutations', () => {
     await validateContent(page);
 
     // Update text content, this should work :)
-    await await evaluate(page, () => {
+    await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
       const paragraph = rootElement.firstChild;
       const firstTextNode = paragraph.firstChild;

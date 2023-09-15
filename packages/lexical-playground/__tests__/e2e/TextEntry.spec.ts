@@ -286,10 +286,7 @@ test.describe('TextEntry', () => {
     }
   });
 
-  test(`Can delete characters after they're typed`, async ({
-    page,
-    isRichText,
-  }) => {
+  test(`Can delete characters after they're typed`, async ({page}) => {
     await focusEditor(page);
     const text = 'Delete some of these characters.';
     const backspacedText = 'Delete some of these characte';
@@ -316,10 +313,7 @@ test.describe('TextEntry', () => {
     });
   });
 
-  test(`Can type characters, and select and replace a part`, async ({
-    page,
-    isRichText,
-  }) => {
+  test(`Can type characters, and select and replace a part`, async ({page}) => {
     await focusEditor(page);
     await page.keyboard.type('Hello foobar.');
 
@@ -372,11 +366,7 @@ test.describe('TextEntry', () => {
     });
   });
 
-  test(`Can select and delete a word`, async ({
-    page,
-    browserName,
-    isRichText,
-  }) => {
+  test(`Can select and delete a word`, async ({page, browserName}) => {
     await focusEditor(page);
     const text = 'Delete some of these characters.';
     const backspacedText = 'Delete some of these ';

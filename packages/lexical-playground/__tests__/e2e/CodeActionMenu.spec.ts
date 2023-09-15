@@ -45,38 +45,38 @@ test.describe('CodeActionMenu', () => {
       page,
       `
         <code
-          class=\"PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr\"
-          dir=\"ltr\"
-          spellcheck=\"false\"
-          data-gutter=\"123\"
-          data-highlight-language=\"javascript\">
-          <span data-lexical-text=\"true\"></span>
-          <span class=\"PlaygroundEditorTheme__tokenAttr\" data-lexical-text=\"true\">
+          class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+          dir="ltr"
+          spellcheck="false"
+          data-gutter="123"
+          data-highlight-language="javascript">
+          <span data-lexical-text="true"></span>
+          <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
             const
           </span>
-          <span data-lexical-text=\"true\">a</span>
-          <span class=\"PlaygroundEditorTheme__tokenOperator\" data-lexical-text=\"true\">
+          <span data-lexical-text="true">a</span>
+          <span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">
             =
           </span>
-          <span data-lexical-text=\"true\"></span>
-          <span class=\"PlaygroundEditorTheme__tokenSelector\" data-lexical-text=\"true\">
+          <span data-lexical-text="true"></span>
+          <span class="PlaygroundEditorTheme__tokenSelector" data-lexical-text="true">
             'Hello'
           </span>
           <br />
-          <span data-lexical-text=\"true\"></span>
-          <span class=\"PlaygroundEditorTheme__tokenAttr\" data-lexical-text=\"true\">
+          <span data-lexical-text="true"></span>
+          <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
             const
           </span>
-          <span data-lexical-text=\"true\">b</span>
-          <span class=\"PlaygroundEditorTheme__tokenOperator\" data-lexical-text=\"true\">
+          <span data-lexical-text="true">b</span>
+          <span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">
             =
           </span>
-          <span data-lexical-text=\"true\"></span>
-          <span class=\"PlaygroundEditorTheme__tokenSelector\" data-lexical-text=\"true\">
+          <span data-lexical-text="true"></span>
+          <span class="PlaygroundEditorTheme__tokenSelector" data-lexical-text="true">
             'World'
           </span>
           <br />
-          <span data-lexical-text=\"true\"></span>
+          <span data-lexical-text="true"></span>
         </code>
       `,
     );
@@ -113,65 +113,65 @@ test.describe('CodeActionMenu', () => {
       page,
       `
           <code
-          class=\"PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr\"
-          dir=\"ltr\"
-          spellcheck=\"false\"
-          data-gutter=\"12345\"
-          data-highlight-language=\"javascript\">
-          <span data-lexical-text=\"true\"></span>
-          <span class=\"PlaygroundEditorTheme__tokenAttr\" data-lexical-text=\"true\">
+          class="PlaygroundEditorTheme__code PlaygroundEditorTheme__ltr"
+          dir="ltr"
+          spellcheck="false"
+          data-gutter="12345"
+          data-highlight-language="javascript">
+          <span data-lexical-text="true"></span>
+          <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
             const
           </span>
-          <span data-lexical-text=\"true\">a</span>
-          <span class=\"PlaygroundEditorTheme__tokenOperator\" data-lexical-text=\"true\">
+          <span data-lexical-text="true">a</span>
+          <span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">
             =
           </span>
-          <span data-lexical-text=\"true\"></span>
-          <span class=\"PlaygroundEditorTheme__tokenSelector\" data-lexical-text=\"true\">
+          <span data-lexical-text="true"></span>
+          <span class="PlaygroundEditorTheme__tokenSelector" data-lexical-text="true">
             'Hello'
           </span>
           <br />
-          <span data-lexical-text=\"true\"></span>
-          <span class=\"PlaygroundEditorTheme__tokenAttr\" data-lexical-text=\"true\">
+          <span data-lexical-text="true"></span>
+          <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
             const
           </span>
-          <span data-lexical-text=\"true\">b</span>
-          <span class=\"PlaygroundEditorTheme__tokenOperator\" data-lexical-text=\"true\">
+          <span data-lexical-text="true">b</span>
+          <span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">
             =
           </span>
-          <span data-lexical-text=\"true\"></span>
-          <span class=\"PlaygroundEditorTheme__tokenSelector\" data-lexical-text=\"true\">
+          <span data-lexical-text="true"></span>
+          <span class="PlaygroundEditorTheme__tokenSelector" data-lexical-text="true">
             'World'
           </span>
           <br />
-          <span data-lexical-text=\"true\"></span>
-          <span class=\"PlaygroundEditorTheme__tokenAttr\" data-lexical-text=\"true\">
+          <span data-lexical-text="true"></span>
+          <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
             const
           </span>
-          <span data-lexical-text=\"true\">a</span>
-          <span class=\"PlaygroundEditorTheme__tokenOperator\" data-lexical-text=\"true\">
+          <span data-lexical-text="true">a</span>
+          <span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">
             =
           </span>
-          <span data-lexical-text=\"true\"></span>
-          <span class=\"PlaygroundEditorTheme__tokenSelector\" data-lexical-text=\"true\">
+          <span data-lexical-text="true"></span>
+          <span class="PlaygroundEditorTheme__tokenSelector" data-lexical-text="true">
             'Hello'
           </span>
           <br />
-          <span data-lexical-text=\"true\"></span>
-          <span class=\"PlaygroundEditorTheme__tokenAttr\" data-lexical-text=\"true\">
+          <span data-lexical-text="true"></span>
+          <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
             const
           </span>
-          <span data-lexical-text=\"true\">b</span>
-          <span class=\"PlaygroundEditorTheme__tokenOperator\" data-lexical-text=\"true\">
+          <span data-lexical-text="true">b</span>
+          <span class="PlaygroundEditorTheme__tokenOperator" data-lexical-text="true">
             =
           </span>
-          <span data-lexical-text=\"true\"></span>
-          <span class=\"PlaygroundEditorTheme__tokenSelector\" data-lexical-text=\"true\">
+          <span data-lexical-text="true"></span>
+          <span class="PlaygroundEditorTheme__tokenSelector" data-lexical-text="true">
             'World'
           </span>
           <br />
-          <span data-lexical-text=\"true\"></span>
-        </code>
+          <span data-lexical-text="true"></span>
+        </code> 
       `,
     );
   });

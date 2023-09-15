@@ -240,12 +240,7 @@ test.describe('CopyAndPaste', () => {
     }
   });
 
-  test(`Copy and paste heading`, async ({
-    isPlainText,
-    isCollab,
-    page,
-    browserName,
-  }) => {
+  test(`Copy and paste heading`, async ({isPlainText, isCollab, page}) => {
     test.fixme(isCollab && IS_LINUX, 'Flaky on Linux + Collab');
     test.skip(isPlainText);
 

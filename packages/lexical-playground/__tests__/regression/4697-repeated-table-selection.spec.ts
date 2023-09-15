@@ -5,52 +5,49 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+
 import {
   assertGridSelectionCoordinates,
   click,
   focusEditor,
   initialize,
   insertTable,
-  mergeTableCells,
   selectCellsFromTableCords,
   test,
 } from '../utils';
 
-test.describe('Regression test #4872', () => {
+test.describe('Regression test #4697', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
-  test('merging two full rows does not break table selection', async ({
+  test('repeated table selection results in grid selection', async ({
     page,
     isPlainText,
-    isCollab,
   }) => {
     test.skip(isPlainText);
 
     await focusEditor(page);
 
-    await insertTable(page, 5, 5);
+    await insertTable(page, 4, 4);
 
     await click(page, '.PlaygroundEditorTheme__tableCell');
     await selectCellsFromTableCords(
       page,
-      {x: 0, y: 1},
-      {x: 4, y: 2},
-      true,
+      {x: 1, y: 1},
+      {x: 2, y: 2},
+      false,
       false,
     );
 
-    await mergeTableCells(page);
-
     await selectCellsFromTableCords(
       page,
-      {x: 1, y: 4},
-      {x: 2, y: 4},
+      {x: 2, y: 1},
+      {x: 2, y: 2},
       false,
       false,
     );
 
     await assertGridSelectionCoordinates(page, {
-      anchor: {x: 1, y: 4},
-      focus: {x: 2, y: 4},
+      anchor: {x: 2, y: 1},
+      focus: {x: 2, y: 2},
     });
   });
 });

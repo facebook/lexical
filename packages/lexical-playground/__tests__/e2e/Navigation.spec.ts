@@ -764,21 +764,6 @@ test.describe('Keyboard Navigation', () => {
             focusPath: [0, 4, 0],
           });
         }
-      } else if (!IS_WINDOWS) {
-        await assertSelection(page, {
-          anchorOffset: 1,
-          anchorPath: [0, 4, 0],
-          focusOffset: 1,
-          focusPath: [0, 4, 0],
-        });
-        // 6 right
-        await moveToNextWord(page);
-        await assertSelection(page, {
-          anchorOffset: 3,
-          anchorPath: [0, 4, 0],
-          focusOffset: 3,
-          focusPath: [0, 4, 0],
-        });
       } else {
         // 6 right
         await moveToNextWord(page);

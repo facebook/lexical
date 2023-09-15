@@ -22,7 +22,6 @@ test.describe('Identation', () => {
 
   test(`Can create content and indent and outdent it all`, async ({
     page,
-    browserName,
     isPlainText,
     isCollab,
   }) => {

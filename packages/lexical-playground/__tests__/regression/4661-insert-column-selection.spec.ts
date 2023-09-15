@@ -24,7 +24,6 @@ test.describe('Regression test #4661', () => {
   test('inserting 2 columns before inserts before selection', async ({
     page,
     isPlainText,
-    isCollab,
   }) => {
     test.skip(isPlainText);
 
@@ -87,7 +86,6 @@ test.describe('Regression test #4661', () => {
   test('inserting 2 columns after inserts after selection', async ({
     page,
     isPlainText,
-    isCollab,
   }) => {
     test.skip(isPlainText);
 

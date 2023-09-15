@@ -5,23 +5,24 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import {
-  assertGridSelectionCoordinates,
   click,
+  expect,
   focusEditor,
   initialize,
   insertTable,
+  locate,
+  mergeTableCells,
   selectCellsFromTableCords,
   test,
+  unmergeTableCell,
 } from '../utils';
 
-test.describe('Regression test #4697', () => {
+test.describe('Regression test #4876', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
-  test('repeated table selection results in grid selection', async ({
+  test('unmerging cells should add cells to correct rows', async ({
     page,
     isPlainText,
-    isCollab,
   }) => {
     test.skip(isPlainText);
 
@@ -32,23 +33,21 @@ test.describe('Regression test #4697', () => {
     await click(page, '.PlaygroundEditorTheme__tableCell');
     await selectCellsFromTableCords(
       page,
-      {x: 1, y: 1},
-      {x: 2, y: 2},
-      false,
-      false,
-    );
-
-    await selectCellsFromTableCords(
-      page,
-      {x: 2, y: 1},
-      {x: 2, y: 2},
-      false,
+      {x: 0, y: 1},
+      {x: 1, y: 3},
+      true,
       false,
     );
 
-    await assertGridSelectionCoordinates(page, {
-      anchor: {x: 2, y: 1},
-      focus: {x: 2, y: 2},
-    });
+    await mergeTableCells(page);
+
+    await unmergeTableCell(page);
+
+    const tableRow = await locate(page, 'tr');
+    expect(await tableRow.count()).toBe(4);
+    for (let i = 0; i < 4; i++) {
+      const tableCells = tableRow.nth(i).locator('th, td');
+      expect(await tableCells.count()).toBe(4);
+    }
   });
 });

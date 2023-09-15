@@ -582,7 +582,6 @@ test.describe('Images', () => {
   test('Select image, then select text - EditorState._selection updates with mousedown #2901', async ({
     page,
     isPlainText,
-    browserName,
     isCollab,
   }) => {
     // This test is flaky in collab #3915
@@ -607,7 +606,7 @@ test.describe('Images', () => {
     );
     await dragMouse(page, textBoundingBox, textBoundingBox, 'start', 'middle');
 
-    const lexicalSelection = await evaluate(page, (editor) => {
+    const lexicalSelection = await evaluate(page, () => {
       return window.lexicalEditor._editorState._selection;
     });
     expect(lexicalSelection.anchor).toBeTruthy();

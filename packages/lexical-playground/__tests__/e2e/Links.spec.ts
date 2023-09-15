@@ -1423,14 +1423,14 @@ test.describe('Links', () => {
     await assertHTML(
       page,
       `<p
-    class=\"PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr\"
-    dir=\"ltr\">
+    class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+    dir="ltr">
     <a
-      class=\"PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr\"
-      dir=\"ltr\"
-      href=\"https://\"
-      rel=\"noreferrer\">
-      <span data-lexical-text=\"true\">A link</span>
+      class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+      dir="ltr"
+      href="https://"
+      rel="noreferrer">
+      <span data-lexical-text="true">A link</span>
     </a>
   </p>`,
     );
@@ -1441,14 +1441,14 @@ test.describe('Links', () => {
     await assertHTML(
       page,
       `<p
-    class=\"PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr\"
-    dir=\"ltr\">
+    class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+    dir="ltr">
     <a
-      class=\"PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr\"
-      dir=\"ltr\"
-      href=\"https://facebook.com\"
-      rel=\"noreferrer\">
-      <span data-lexical-text=\"true\">A link</span>
+      class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+      dir="ltr"
+      href="https://facebook.com"
+      rel="noreferrer">
+      <span data-lexical-text="true">A link</span>
     </a>
   </p>`,
     );
@@ -1811,7 +1811,6 @@ test.describe('Links', () => {
 
   test(`Can convert part of a text node into a link and change block type`, async ({
     page,
-    browserName,
   }) => {
     await focusEditor(page);
     await page.keyboard.type('Hello world');
@@ -2002,10 +2001,7 @@ test.describe('Links', () => {
     );
   });
 
-  test('Can handle pressing Enter at the end of a Link', async ({
-    isCollab,
-    page,
-  }) => {
+  test('Can handle pressing Enter at the end of a Link', async ({page}) => {
     test.fixme(true, 'Flaky');
     await focusEditor(page);
     await page.keyboard.type('Hello awesome');

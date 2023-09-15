@@ -1528,6 +1528,25 @@ export class RangeSelection implements BaseSelection {
    * @returns true if the nodes were inserted successfully, false otherwise.
    */
   insertNodes(nodes: Array<LexicalNode>, selectStart?: boolean): boolean {
+    const pointNode = this.anchor.getNode();
+    if ($isElementNode(pointNode) && pointNode.getChildrenSize() > 0) {
+      const lineBreakNode = $createLineBreakNode();
+      // pointNode.splice(this.anchor.offset, 0, [lineBreakNode]);
+      pointNode.append(lineBreakNode);
+      pointNode.insertAfter(
+        $createParagraphNode().append('A'),
+        false,
+      ) as ElementNode;
+      // if (newBlock) newBlock.select();
+      // pointNode.append($createTextNode("hello world"))
+      // pointNode.append(lineBreakNode);
+      // $getRoot().select()
+      // lineBreakNode.selectPrevious();
+      // lineBreakNode.selectNext();
+      // pointNode.select()
+      pointNode.select(this.anchor.offset + 1, this.anchor.offset + 1);
+      return true;
+    }
     if (!$isElementNode(nodes[0])) {
       return this.insertNodes([$createParagraphNode().append(...nodes)]);
     }
@@ -1555,25 +1574,6 @@ export class RangeSelection implements BaseSelection {
     if (!this.isCollapsed()) {
       this.removeText();
     }
-
-    const pointNode = this.anchor.getNode();
-    const {offset} = this.anchor;
-    if ('__highlightType' in pointNode) {
-      const codeHighlightNode = pointNode;
-      const lineBreakNode = $createLineBreakNode();
-      const [, text] = codeHighlightNode.splitText(offset);
-      if (offset === 0) {
-        codeHighlightNode.insertBefore(lineBreakNode);
-      } else {
-        codeHighlightNode.insertAfter(lineBreakNode);
-        if (text) lineBreakNode.insertAfter(text);
-        const codeNode = codeHighlightNode.getParentOrThrow();
-        const index = codeHighlightNode.getIndexWithinParent() + 2;
-        codeNode.select(index, index);
-      }
-      return null;
-    }
-
     return splitBlock(this.anchor, this);
   }
 

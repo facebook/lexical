@@ -56,28 +56,17 @@ test.describe('Auto scroll while typing', () => {
       selector: '.editor-container',
     },
   ].forEach((testCase) => {
-    [true, false].forEach((isSoftLineBreak) => {
-      test(`${testCase.name}${
-        isSoftLineBreak ? ' (soft line break)' : ''
-      }`, async ({page, isPlainText, browserName}) => {
-        test.skip(isPlainText || isSoftLineBreak);
-        await focusEditor(page);
-        await addScroll(page, testCase.selector);
+    test(testCase.name, async ({page, isPlainText}) => {
+      test.skip(isPlainText);
+      await focusEditor(page);
+      await addScroll(page, testCase.selector);
 
-        for (let i = 0; i < 15; i++) {
-          await page.keyboard.type('Hello');
+      for (let i = 0; i < 15; i++) {
+        await page.keyboard.type('Hello');
+        await page.keyboard.press('Enter');
 
-          if (isSoftLineBreak) {
-            await page.keyboard.down('Shift');
-            await page.keyboard.press('Enter');
-            await page.keyboard.up('Shift');
-          } else {
-            await page.keyboard.press('Enter');
-          }
-
-          expect(await isCaretVisible(page, testCase.selector)).toBe(true);
-        }
-      });
+        expect(await isCaretVisible(page, testCase.selector)).toBe(true);
+      }
     });
   });
 });

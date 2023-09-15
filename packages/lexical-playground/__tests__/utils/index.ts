@@ -6,6 +6,8 @@
  *
  */
 
+import type {PageFunction} from 'playwright-core/types/structs';
+
 import {expect, Frame, Page, test as base} from '@playwright/test';
 import prettier from 'prettier';
 import {URLSearchParams} from 'url';
@@ -580,10 +582,10 @@ export async function textContent(
   }
 }
 
-export async function evaluate(
+export async function evaluate<R, Arg>(
   page: Page,
-  fn: (...params: unknown[]) => unknown,
-  args?: unknown,
+  fn: PageFunction<Arg, R>,
+  args?: Arg,
 ) {
   if (IS_COLLAB) {
     const leftFrame = page.frame('left');

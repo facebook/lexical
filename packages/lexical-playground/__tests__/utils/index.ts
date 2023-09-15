@@ -567,7 +567,7 @@ export function locate(page: Page, selector: string) {
 export async function waitForSelector(
   page: Page,
   selector: string,
-  options: Parameters<Frame['waitForSelector']>[1],
+  options?: Parameters<Frame['waitForSelector']>[1],
 ) {
   if (IS_COLLAB) {
     const leftFrame = page.frame('left');

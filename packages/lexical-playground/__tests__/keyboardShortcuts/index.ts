@@ -208,7 +208,7 @@ export async function moveDown(
 export async function pressBackspace(
   page: Page,
   numCharacters = 1,
-  delayMs: number,
+  delayMs?: number,
 ) {
   await pressKeyTimes(page, 'Backspace', numCharacters, delayMs);
 }

@@ -1530,6 +1530,7 @@ export class RangeSelection implements BaseSelection {
   insertNodes(nodes: Array<LexicalNode>, selectStart?: boolean): boolean {
     const pointNode = this.anchor.getNode();
 
+    // nodes = [linebreak], anchor.type = "element"
     if (
       nodes.length === 1 &&
       $isLineBreakNode(nodes[0]) &&
@@ -1543,28 +1544,31 @@ export class RangeSelection implements BaseSelection {
       return true;
     }
 
-    if (!$isElementNode(nodes[0])) {
-      return this.insertNodes([$createParagraphNode().append(...nodes)]);
-    }
     const firstBlock = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
-    const lastBlock = this.insertParagraph()!;
     let currentBlock = firstBlock;
-    nodes.forEach((node) => {
-      if ($isElementNode(node)) {
-        currentBlock.insertAfter(node);
-        currentBlock = node;
-      }
-    });
+    const lastBlock = this.insertParagraph()!;
+    let nextFirst = nodes[0] as ElementNode;
+    if (!$isElementNode(nodes[0])) {
+      currentBlock = firstBlock.insertNewAfter(this) as ElementNode;
+      nextFirst = currentBlock;
+      currentBlock.append(...nodes);
+    } else {
+      nodes.forEach((node) => {
+        if ($isElementNode(node)) {
+          currentBlock.insertAfter(node);
+          currentBlock = node;
+        }
+      });
+    }
     const prevLast =
       nodes.length > 1 || firstBlock.isEmpty() ? currentBlock : firstBlock;
-    mergeBlocks(firstBlock, nodes[0]);
+    mergeBlocks(firstBlock, nextFirst);
     mergeBlocks(prevLast, lastBlock);
     return true;
   }
 
   /**
    * Inserts a new ParagraphNode into the EditorState at the current Selection
-   * TO-DO: this should be a splitBlock method.
    */
   insertParagraph() {
     if (!this.isCollapsed()) {

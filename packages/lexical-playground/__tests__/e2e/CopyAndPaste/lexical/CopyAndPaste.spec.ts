@@ -723,21 +723,12 @@ test.describe('CopyAndPaste', () => {
           focusPath: [],
         });
       } else {
-        if (browserName === 'firefox') {
-          await assertSelection(page, {
-            anchorOffset: 0,
-            anchorPath: [0, 0, 0],
-            focusOffset: 3,
-            focusPath: [1, 5, 0],
-          });
-        } else {
-          await assertSelection(page, {
-            anchorOffset: 0,
-            anchorPath: [0, 0, 0],
-            focusOffset: 4,
-            focusPath: [1, 5, 0],
-          });
-        }
+        await assertSelection(page, {
+          anchorOffset: 0,
+          anchorPath: [0, 0, 0],
+          focusOffset: 4,
+          focusPath: [1, 5, 0],
+        });
       }
     } else {
       if (browserName === 'firefox') {

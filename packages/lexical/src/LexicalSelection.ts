@@ -1555,6 +1555,25 @@ export class RangeSelection implements BaseSelection {
     if (!this.isCollapsed()) {
       this.removeText();
     }
+
+    const pointNode = this.anchor.getNode();
+    const {offset} = this.anchor;
+    if ('__highlightType' in pointNode) {
+      const codeHighlightNode = pointNode;
+      const lineBreakNode = $createLineBreakNode();
+      const [, text] = codeHighlightNode.splitText(offset);
+      if (offset === 0) {
+        codeHighlightNode.insertBefore(lineBreakNode);
+      } else {
+        codeHighlightNode.insertAfter(lineBreakNode);
+        if (text) lineBreakNode.insertAfter(text);
+        const codeNode = codeHighlightNode.getParentOrThrow();
+        const index = codeHighlightNode.getIndexWithinParent() + 2;
+        codeNode.select(index, index);
+      }
+      return null;
+    }
+
     return splitBlock(this.anchor, this);
   }
 
@@ -3018,14 +3037,6 @@ function splitBlock(point: PointType, selection: RangeSelection) {
     if (newBlock) newBlock.select();
     return newBlock;
   }
-
-  // if ('__highlightType' in pointNode) {
-  // selection.insertLineBreak();
-  // const [codeHighlight_firstPart, text] = pointNode.splitText(point.offset);
-  // const codeHighlightNode = $createCodeHighlightNode(text.getTextContent());
-  // codeHighlight_firstPart.insertAfter(codeHighlightNode);
-  // return codeHighlightNode;
-  // }
 
   const splitElement = (element: ElementNode) => {
     const {offset} = point;

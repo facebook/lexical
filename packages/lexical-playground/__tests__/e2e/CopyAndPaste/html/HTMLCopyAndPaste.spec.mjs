@@ -7,7 +7,7 @@
  */
 import {expect} from '@playwright/test';
 
-import {moveToPrevWord} from '../../../keyboardShortcuts/index.mjs';
+import {moveToPrevWord} from '../../../keyboardShortcuts';
 import {
   assertHTML,
   assertSelection,

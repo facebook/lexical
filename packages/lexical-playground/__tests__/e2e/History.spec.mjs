@@ -12,7 +12,7 @@ import {
   redo,
   toggleBold,
   undo,
-} from '../keyboardShortcuts/index.mjs';
+} from '../keyboardShortcuts';
 import {
   assertHTML,
   assertSelection,

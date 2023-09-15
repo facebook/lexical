@@ -6,7 +6,7 @@
  *
  */
 
-import {moveToEditorBeginning} from '../keyboardShortcuts/index.mjs';
+import {moveToEditorBeginning} from '../keyboardShortcuts';
 import {
   assertHTML,
   assertSelection,

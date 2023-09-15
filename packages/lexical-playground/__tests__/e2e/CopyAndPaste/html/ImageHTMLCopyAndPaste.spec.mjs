@@ -6,7 +6,7 @@
  *
  */
 
-import {moveLeft, undo} from '../../../keyboardShortcuts/index.mjs';
+import {moveLeft, undo} from '../../../keyboardShortcuts';
 import {
   assertHTML,
   focusEditor,

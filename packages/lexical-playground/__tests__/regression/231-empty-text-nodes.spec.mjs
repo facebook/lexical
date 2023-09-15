@@ -6,11 +6,7 @@
  *
  */
 
-import {
-  moveLeft,
-  moveRight,
-  pressBackspace,
-} from '../keyboardShortcuts/index.mjs';
+import {moveLeft, moveRight, pressBackspace} from '../keyboardShortcuts';
 import {
   assertHTML,
   assertSelection,

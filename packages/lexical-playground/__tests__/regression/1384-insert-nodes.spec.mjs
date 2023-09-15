@@ -6,7 +6,7 @@
  *
  */
 
-import {selectCharacters} from '../keyboardShortcuts/index.mjs';
+import {selectCharacters} from '../keyboardShortcuts';
 import {
   assertHTML,
   copyToClipboard,

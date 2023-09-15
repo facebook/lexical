@@ -12,7 +12,7 @@ import {
   toggleBold,
   toggleItalic,
   toggleUnderline,
-} from '../keyboardShortcuts/index.mjs';
+} from '../keyboardShortcuts';
 import {
   assertHTML,
   click,

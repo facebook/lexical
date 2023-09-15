@@ -6,11 +6,7 @@
  *
  */
 
-import {
-  moveToLineEnd,
-  selectAll,
-  selectCharacters,
-} from '../keyboardShortcuts/index.mjs';
+import {moveToLineEnd, selectAll, selectCharacters} from '../keyboardShortcuts';
 import {assertHTML, click, focusEditor, html, initialize, test} from '../utils';
 
 test.describe('Regression test #1083', () => {

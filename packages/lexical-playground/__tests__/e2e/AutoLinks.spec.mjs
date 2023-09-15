@@ -12,7 +12,7 @@ import {
   moveToLineBeginning,
   moveToLineEnd,
   selectAll,
-} from '../keyboardShortcuts/index.mjs';
+} from '../keyboardShortcuts';
 import {
   assertHTML,
   click,

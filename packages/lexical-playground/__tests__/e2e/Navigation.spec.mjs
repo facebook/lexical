@@ -17,7 +17,7 @@ import {
   moveToPrevWord,
   selectCharacters,
   toggleBold,
-} from '../keyboardShortcuts/index.mjs';
+} from '../keyboardShortcuts';
 import {
   assertSelection,
   focusEditor,

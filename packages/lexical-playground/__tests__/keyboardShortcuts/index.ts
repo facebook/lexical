@@ -6,6 +6,8 @@
  *
  */
 
+import {Page} from '@playwright/test';
+
 import {
   E2E_BROWSER,
   evaluate,
@@ -18,7 +20,7 @@ import {
   sleep,
 } from '../utils';
 
-export async function moveToLineBeginning(page) {
+export async function moveToLineBeginning(page: Page) {
   if (IS_MAC) {
     await keyDownCtrlOrMeta(page);
     await page.keyboard.press('ArrowLeft');
@@ -28,7 +30,7 @@ export async function moveToLineBeginning(page) {
   }
 }
 
-export async function moveToLineEnd(page) {
+export async function moveToLineEnd(page: Page) {
   if (IS_MAC) {
     await keyDownCtrlOrMeta(page);
     await page.keyboard.press('ArrowRight');
@@ -38,7 +40,7 @@ export async function moveToLineEnd(page) {
   }
 }
 
-export async function moveToEditorBeginning(page) {
+export async function moveToEditorBeginning(page: Page) {
   if (IS_MAC) {
     await keyDownCtrlOrMeta(page);
     await page.keyboard.press('ArrowUp');
@@ -51,7 +53,7 @@ export async function moveToEditorBeginning(page) {
   }
 }
 
-export async function moveToEditorEnd(page) {
+export async function moveToEditorEnd(page: Page) {
   if (IS_MAC) {
     await keyDownCtrlOrMeta(page);
     await page.keyboard.press('ArrowDown');
@@ -64,19 +66,19 @@ export async function moveToEditorEnd(page) {
   }
 }
 
-export async function moveToPrevWord(page) {
+export async function moveToPrevWord(page: Page) {
   await keyDownCtrlOrAlt(page);
   await page.keyboard.press('ArrowLeft');
   await keyUpCtrlOrAlt(page);
 }
 
-export async function moveToNextWord(page) {
+export async function moveToNextWord(page: Page) {
   await keyDownCtrlOrAlt(page);
   await page.keyboard.press('ArrowRight');
   await keyUpCtrlOrAlt(page);
 }
 
-export async function extendToNextWord(page) {
+export async function extendToNextWord(page: Page) {
   await page.keyboard.down('Shift');
   await keyDownCtrlOrAlt(page);
   await page.keyboard.press('ArrowRight');
@@ -84,33 +86,25 @@ export async function extendToNextWord(page) {
   await page.keyboard.up('Shift');
 }
 
-export async function deleteNextWord(page) {
+export async function deleteNextWord(page: Page) {
   await keyDownCtrlOrAlt(page);
   await page.keyboard.press('Delete');
   await keyUpCtrlOrAlt(page);
 }
 
-export async function deleteBackward(page) {
-  if (IS_MAC) {
-    await page.keyboard.down('Control');
-    await page.keyboard.press('h');
-    await page.keyboard.up('Control');
-  } else {
-    await page.keyboard.press('Backspace');
-  }
+export async function deleteBackward(page: Page) {
+  await page.keyboard.down('Control');
+  await page.keyboard.press('h');
+  await page.keyboard.up('Control');
 }
 
-export async function deleteForward(page) {
-  if (IS_MAC) {
-    await page.keyboard.down('Control');
-    await page.keyboard.press('d');
-    await page.keyboard.up('Control');
-  } else {
-    await page.keyboard.press('Delete');
-  }
+export async function deleteForward(page: Page) {
+  await page.keyboard.down('Control');
+  await page.keyboard.press('d');
+  await page.keyboard.up('Control');
 }
 
-export async function moveToParagraphBeginning(page) {
+export async function moveToParagraphBeginning(page: Page) {
   if (IS_MAC) {
     await keyDownCtrlOrAlt(page);
     await page.keyboard.press('ArrowUp');
@@ -120,7 +114,7 @@ export async function moveToParagraphBeginning(page) {
   }
 }
 
-export async function moveToParagraphEnd(page) {
+export async function moveToParagraphEnd(page: Page) {
   if (IS_MAC) {
     await keyDownCtrlOrAlt(page);
     await page.keyboard.press('ArrowDown');
@@ -130,18 +124,20 @@ export async function moveToParagraphEnd(page) {
   }
 }
 
-export async function selectAll(page) {
-  // TODO Normalize #4665
+export async function selectAll(page: Page) {
   if (E2E_BROWSER === 'firefox' && IS_LINUX) {
     await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
       const selection = window.getSelection();
-      selection.setBaseAndExtent(
-        rootElement,
-        0,
-        rootElement,
-        rootElement.childNodes.length,
-      );
+
+      if (rootElement) {
+        selection?.setBaseAndExtent(
+          rootElement,
+          0,
+          rootElement,
+          rootElement.childNodes.length,
+        );
+      }
     });
   } else {
     await keyDownCtrlOrMeta(page);
@@ -150,13 +146,13 @@ export async function selectAll(page) {
   }
 }
 
-export async function undo(page) {
+export async function undo(page: Page) {
   await keyDownCtrlOrMeta(page);
   await page.keyboard.press('z');
   await keyUpCtrlOrMeta(page);
 }
 
-export async function redo(page) {
+export async function redo(page: Page) {
   if (IS_MAC) {
     await page.keyboard.down('Meta');
     await page.keyboard.down('Shift');
@@ -170,83 +166,89 @@ export async function redo(page) {
   }
 }
 
-export async function moveLeft(page, numCharacters = 1, delayMs) {
+async function pressKeyTimes(
+  page: Page,
+  key: string,
+  numCharacters = 1,
+  delayMs?: number,
+) {
   for (let i = 0; i < numCharacters; i++) {
     if (delayMs !== undefined) {
       await sleep(delayMs);
     }
-    await page.keyboard.press('ArrowLeft');
+
+    await page.keyboard.press(key);
   }
 }
 
-export async function moveRight(page, numCharacters = 1, delayMs) {
-  for (let i = 0; i < numCharacters; i++) {
-    if (delayMs !== undefined) {
-      await sleep(delayMs);
-    }
-    await page.keyboard.press('ArrowRight');
-  }
+export async function moveLeft(
+  page: Page,
+  numCharacters = 1,
+  delayMs?: number,
+) {
+  await pressKeyTimes(page, 'ArrowLeft', numCharacters, delayMs);
 }
 
-export async function moveUp(page, numCharacters = 1, delayMs) {
-  for (let i = 0; i < numCharacters; i++) {
-    if (delayMs !== undefined) {
-      await sleep(delayMs);
-    }
-    await page.keyboard.press('ArrowUp');
-  }
+export async function moveRight(
+  page: Page,
+  numCharacters = 1,
+  delayMs?: number,
+) {
+  await pressKeyTimes(page, 'ArrowRight', numCharacters, delayMs);
 }
 
-export async function moveDown(page, numCharacters = 1, delayMs) {
-  for (let i = 0; i < numCharacters; i++) {
-    if (delayMs !== undefined) {
-      await sleep(delayMs);
-    }
-    await page.keyboard.press('ArrowDown');
-  }
+export async function moveDown(
+  page: Page,
+  numCharacters = 1,
+  delayMs?: number,
+) {
+  await pressKeyTimes(page, 'ArrowDown', numCharacters, delayMs);
 }
 
-export async function pressBackspace(page, numCharacters = 1, delayMs) {
-  for (let i = 0; i < numCharacters; i++) {
-    if (delayMs !== undefined) {
-      await sleep(delayMs);
-    }
-    await page.keyboard.press('Backspace');
-  }
+export async function pressBackspace(
+  page: Page,
+  numCharacters = 1,
+  delayMs: number,
+) {
+  await pressKeyTimes(page, 'Backspace', numCharacters, delayMs);
 }
 
-export async function selectCharacters(page, direction, numCharacters = 1) {
+export async function selectCharacters(
+  page: Page,
+  direction: 'left' | 'right',
+  numCharacters = 1,
+) {
   const moveFunction = direction === 'left' ? moveLeft : moveRight;
   await page.keyboard.down('Shift');
   await moveFunction(page, numCharacters);
   await page.keyboard.up('Shift');
 }
 
-export async function toggleBold(page) {
+export async function toggleBold(page: Page) {
   await keyDownCtrlOrMeta(page);
   await page.keyboard.press('b');
   await keyUpCtrlOrMeta(page);
 }
 
-export async function toggleUnderline(page) {
+export async function toggleUnderline(page: Page) {
   await keyDownCtrlOrMeta(page);
   await page.keyboard.press('u');
   await keyUpCtrlOrMeta(page);
 }
 
-export async function toggleItalic(page) {
+export async function toggleItalic(page: Page) {
   await keyDownCtrlOrMeta(page);
   await page.keyboard.press('i');
   await keyUpCtrlOrMeta(page);
 }
 
-export async function pressShiftEnter(page) {
+export async function pressShiftEnter(page: Page) {
   await page.keyboard.down('Shift');
   await page.keyboard.press('Enter');
   await page.keyboard.up('Shift');
 }
 
-export async function moveToStart(page) {
+export async function moveToStart(page: Page) {
   if (IS_MAC) {
     await page.keyboard.down('Meta');
     await page.keyboard.press('ArrowLeft');
@@ -258,7 +260,7 @@ export async function moveToStart(page) {
   }
 }
 
-export async function moveToEnd(page) {
+export async function moveToEnd(page: Page) {
   if (IS_MAC) {
     await page.keyboard.down('Meta');
     await page.keyboard.press('ArrowRight');
@@ -270,7 +272,7 @@ export async function moveToEnd(page) {
   }
 }
 
-export async function paste(page) {
+export async function paste(page: Page) {
   await keyDownCtrlOrMeta(page);
   await page.keyboard.press('KeyV');
   await keyUpCtrlOrMeta(page);

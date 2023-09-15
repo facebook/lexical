@@ -13,7 +13,7 @@ import {
   selectCharacters,
   toggleUnderline,
   undo,
-} from '../keyboardShortcuts/index.mjs';
+} from '../keyboardShortcuts';
 import {
   assertHTML,
   assertSelection,

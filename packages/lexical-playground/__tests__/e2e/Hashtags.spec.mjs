@@ -10,7 +10,7 @@ import {
   deleteNextWord,
   moveLeft,
   moveToEditorBeginning,
-} from '../keyboardShortcuts/index.mjs';
+} from '../keyboardShortcuts';
 import {
   assertHTML,
   assertSelection,

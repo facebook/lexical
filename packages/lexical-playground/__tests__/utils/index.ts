@@ -40,7 +40,9 @@ interface AppSettings {
   disableBeforeInput: boolean;
   isCollab?: boolean;
   collabId?: string;
+  isPlainText?: boolean;
   showNestedEditorTreeView: boolean;
+  legacyEvents?: boolean;
   isAutocomplete: boolean;
   isCharLimit: boolean;
   isCharLimitUtf8: boolean;
@@ -92,16 +94,16 @@ export async function initialize({
 
   // Having more horizontal space prevents redundant text wraps for tests
   // which affects CMD+ArrowRight/Left navigation
-  page.setViewportSize({height: 1000, width: isCollab ? 2500 : 1250});
+  await page.setViewportSize({height: 1000, width: isCollab ? 2500 : 1250});
   await page.goto(url);
 
   await exposeLexicalEditor(page);
 }
 
 async function exposeLexicalEditor(page: Page) {
-  let leftFrame = page;
+  let leftFrame: Page | Frame = page;
   if (IS_COLLAB) {
-    leftFrame = await page.frame('left');
+    leftFrame = page.frame('left');
   }
   await leftFrame.waitForSelector('.tree-view-output pre');
   await leftFrame.evaluate(() => {
@@ -113,7 +115,7 @@ async function exposeLexicalEditor(page: Page) {
   });
 }
 
-export const test = base.extend({
+export const test = base.extend<AppSettings>({
   isCharLimit: false,
   isCharLimitUtf8: false,
   isCollab: IS_COLLAB,
@@ -177,7 +179,7 @@ export async function assertHTML(
       await retryAsync(fn, 5);
     await Promise.all([
       withRetry(async () => {
-        const leftFrame = await page.frame('left');
+        const leftFrame = page.frame('left');
         return assertHTMLOnPageOrFrame(
           leftFrame,
           expectedHtml,
@@ -186,7 +188,7 @@ export async function assertHTML(
         );
       }),
       withRetry(async () => {
-        const rightFrame = await page.frame('right');
+        const rightFrame = page.frame('right');
         return assertHTMLOnPageOrFrame(
           rightFrame,
           expectedHtmlFrameRight,
@@ -228,7 +230,7 @@ async function retryAsync(
 }
 
 async function assertSelectionOnPageOrFrame(
-  page: Page,
+  page: Page | Frame,
   expected: {
     anchorOffset: number | number[];
     anchorPath: number[];
@@ -294,7 +296,7 @@ export async function assertSelection(
   },
 ) {
   if (IS_COLLAB) {
-    const frame = await page.frame('left');
+    const frame = page.frame('left');
     await assertSelectionOnPageOrFrame(frame, expected);
   } else {
     await assertSelectionOnPageOrFrame(page, expected);
@@ -309,8 +311,8 @@ export async function isMac(page: Page) {
   );
 }
 
-export async function supportsBeforeInput(page: Page) {
-  return page.evaluate(() => {
+export async function supportsBeforeInput(pageOrFrame: Page | Frame) {
+  return pageOrFrame.evaluate(() => {
     if ('InputEvent' in window) {
       return 'getTargetRanges' in new window.InputEvent('input');
     }
@@ -369,7 +371,7 @@ async function copyToClipboardPageOrFrame(pageOrFrame: Page | Frame) {
 
 export async function copyToClipboard(page: Page) {
   if (IS_COLLAB) {
-    const leftFrame = await page.frame('left');
+    const leftFrame = page.frame('left');
     return await copyToClipboardPageOrFrame(leftFrame);
   } else {
     return await copyToClipboardPageOrFrame(page);
@@ -398,7 +400,11 @@ async function pasteFromClipboardPageOrFrame(
           files.push(new File([blob], 'file', {type}));
         }
       }
-      let eventClipboardData;
+      let eventClipboardData: {
+        files: File[];
+        getData: (type: string) => string;
+        types: string[];
+      };
       if (files.length > 0) {
         eventClipboardData = {
           files,
@@ -446,9 +452,12 @@ async function pasteFromClipboardPageOrFrame(
   );
 }
 
-export async function pasteFromClipboard(page, clipboardData) {
+export async function pasteFromClipboard(
+  page: Page,
+  clipboardData: Record<string, string>,
+) {
   if (IS_COLLAB) {
-    const leftFrame = await page.frame('left');
+    const leftFrame = page.frame('left');
     await pasteFromClipboardPageOrFrame(leftFrame, clipboardData);
   } else {
     await pasteFromClipboardPageOrFrame(page, clipboardData);
@@ -472,7 +481,8 @@ export async function focusEditor(
   if (IS_COLLAB) {
     await page.waitForSelector('iframe[name="left"]');
     const leftFrame = page.frame('left');
-    if ((await leftFrame.$$('.loading').length) !== 0) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (((await leftFrame.$$('.loading')) as any).length !== 0) {
       await leftFrame.waitForSelector('.loading', {
         state: 'detached',
       });
@@ -488,8 +498,8 @@ export async function getHTML(
   page: Page,
   selector = 'div[contenteditable="true"]',
 ) {
-  const pageOrFrame = IS_COLLAB ? await page.frame('left') : page;
-  const element = await pageOrFrame.locator(selector);
+  const pageOrFrame = IS_COLLAB ? page.frame('left') : page;
+  const element = pageOrFrame.locator(selector);
   return element.innerHTML();
 }
 
@@ -499,7 +509,7 @@ export async function waitForSelector(
   options: Parameters<Frame['waitForSelector']>[1],
 ) {
   if (IS_COLLAB) {
-    const leftFrame = await page.frame('left');
+    const leftFrame = page.frame('left');
     await leftFrame.waitForSelector(selector, options);
   } else {
     await page.waitForSelector(selector, options);
@@ -507,11 +517,11 @@ export async function waitForSelector(
 }
 
 export async function selectorBoundingBox(page: Page, selector: string) {
-  let leftFrame = page;
+  let leftFrame: Page | Frame = page;
   if (IS_COLLAB) {
-    leftFrame = await page.frame('left');
+    leftFrame = page.frame('left');
   }
-  const node = await leftFrame.locator(selector);
+  const node = leftFrame.locator(selector);
   return await node.boundingBox();
 }
 
@@ -521,7 +531,7 @@ export async function click(
   options?: Parameters<Frame['click']>[1],
 ) {
   if (IS_COLLAB) {
-    const leftFrame = await page.frame('left');
+    const leftFrame = page.frame('left');
     await leftFrame.waitForSelector(selector, options);
     await leftFrame.click(selector, options);
   } else {
@@ -536,7 +546,7 @@ export async function focus(
   options?: Parameters<Frame['focus']>[1],
 ) {
   if (IS_COLLAB) {
-    const leftFrame = await page.frame('left');
+    const leftFrame = page.frame('left');
     await leftFrame.focus(selector, options);
   } else {
     await page.focus(selector, options);
@@ -546,10 +556,10 @@ export async function focus(
 export async function selectOption(
   page: Page,
   selector: string,
-  options: Parameters<Frame['selectOptions']>[1],
+  options: Parameters<Frame['selectOption']>[1],
 ) {
   if (IS_COLLAB) {
-    const leftFrame = await page.frame('left');
+    const leftFrame = page.frame('left');
     await leftFrame.selectOption(selector, options);
   } else {
     await page.selectOption(selector, options);
@@ -562,7 +572,7 @@ export async function textContent(
   options?: Parameters<Frame['textContent']>[1],
 ) {
   if (IS_COLLAB) {
-    const leftFrame = await page.frame('left');
+    const leftFrame = page.frame('left');
     return await leftFrame.textContent(selector, options);
   } else {
     return await page.textContent(selector, options);
@@ -575,7 +585,7 @@ export async function evaluate(
   args?: unknown,
 ) {
   if (IS_COLLAB) {
-    const leftFrame = await page.frame('left');
+    const leftFrame = page.frame('left');
     return await leftFrame.evaluate(fn, args);
   } else {
     return await page.evaluate(fn, args);
@@ -617,13 +627,13 @@ export async function insertUrlImage(
 
 export async function insertUploadImage(
   page: Page,
-  files: File[],
+  files: string[],
   altText?: string,
 ) {
   await selectFromInsertDropdown(page, '.image');
   await click(page, 'button[data-test-id="image-modal-option-file"]');
 
-  const frame = IS_COLLAB ? await page.frame('left') : page;
+  const frame = IS_COLLAB ? page.frame('left') : page;
   await frame.setInputFiles(
     'input[data-test-id="image-modal-file-upload"]',
     files,
@@ -667,8 +677,8 @@ export async function mouseMoveToSelector(page: Page, selector: string) {
 
 export async function dragMouse(
   page: Page,
-  fromBoundingBox: DOMRect,
-  toBoundingBox: DOMRect,
+  fromBoundingBox: {x: number; y: number; width: number; height: number},
+  toBoundingBox: {x: number; y: number; width: number; height: number},
   positionStart = 'middle',
   positionEnd = 'middle',
   mouseUp = true,
@@ -733,8 +743,6 @@ export function prettifyHTML(
 
   return prettier
     .format(output, {
-      attributeGroups: ['$DEFAULT', '^data-'],
-      attributeSort: 'ASC',
       bracketSameLine: true,
       htmlWhitespaceSensitivity: 'ignore',
       parser: 'html',
@@ -800,9 +808,9 @@ export async function selectFromAlignDropdown(page: Page, selector: string) {
 }
 
 export async function insertTable(page: Page, rows = 2, columns = 3) {
-  let leftFrame = page;
+  let leftFrame: Page | Frame = page;
   if (IS_COLLAB) {
-    leftFrame = await page.frame('left');
+    leftFrame = page.frame('left');
   }
   await selectFromInsertDropdown(page, '.item .table');
   if (rows !== null) {
@@ -832,18 +840,18 @@ export async function selectCellsFromTableCords(
   isFirstHeader = false,
   isSecondHeader = false,
 ) {
-  let leftFrame = page;
+  let leftFrame: Page | Frame = page;
   if (IS_COLLAB) {
     await focusEditor(page);
-    leftFrame = await page.frame('left');
+    leftFrame = page.frame('left');
   }
 
-  const firstRowFirstColumnCell = await leftFrame.locator(
+  const firstRowFirstColumnCell = leftFrame.locator(
     `table:first-of-type > tr:nth-child(${firstCords.y + 1}) > ${
       isFirstHeader ? 'th' : 'td'
     }:nth-child(${firstCords.x + 1})`,
   );
-  const secondRowSecondCell = await leftFrame.locator(
+  const secondRowSecondCell = leftFrame.locator(
     `table:first-of-type > tr:nth-child(${secondCords.y + 1}) > ${
       isSecondHeader ? 'th' : 'td'
     }:nth-child(${secondCords.x + 1})`,
@@ -899,7 +907,7 @@ export async function setBackgroundColor(page: Page) {
 }
 
 export async function enableCompositionKeyEvents(page: Page) {
-  const targetPage = IS_COLLAB ? await page.frame('left') : page;
+  const targetPage = IS_COLLAB ? page.frame('left') : page;
   await targetPage.evaluate(() => {
     window.addEventListener(
       'compositionstart',

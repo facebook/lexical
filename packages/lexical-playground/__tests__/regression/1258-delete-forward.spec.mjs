@@ -6,10 +6,7 @@
  *
  */
 
-import {
-  deleteForward,
-  moveToLineBeginning,
-} from '../keyboardShortcuts/index.mjs';
+import {deleteForward, moveToLineBeginning} from '../keyboardShortcuts';
 import {
   assertHTML,
   focusEditor,

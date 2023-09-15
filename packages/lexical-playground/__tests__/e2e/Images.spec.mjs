@@ -8,7 +8,7 @@
 
 import {expect} from '@playwright/test';
 
-import {moveLeft} from '../keyboardShortcuts/index.mjs';
+import {moveLeft} from '../keyboardShortcuts';
 import {
   assertHTML,
   assertSelection,

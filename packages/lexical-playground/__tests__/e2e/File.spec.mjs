@@ -6,7 +6,7 @@
  *
  */
 
-import {selectAll, toggleBold} from '../keyboardShortcuts/index.mjs';
+import {selectAll, toggleBold} from '../keyboardShortcuts';
 import {
   assertHTML,
   click,

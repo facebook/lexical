@@ -6,7 +6,7 @@
  *
  */
 
-import {paste} from '../keyboardShortcuts/index.mjs';
+import {paste} from '../keyboardShortcuts';
 import {
   assertHTML,
   click,

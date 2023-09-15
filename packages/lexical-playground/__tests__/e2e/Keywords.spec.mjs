@@ -6,11 +6,7 @@
  *
  */
 
-import {
-  moveLeft,
-  moveToPrevWord,
-  toggleBold,
-} from '../keyboardShortcuts/index.mjs';
+import {moveLeft, moveToPrevWord, toggleBold} from '../keyboardShortcuts';
 import {
   assertHTML,
   assertSelection,

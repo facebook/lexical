@@ -1576,31 +1576,13 @@ export class RangeSelection implements BaseSelection {
 
     const point = this.anchor;
     const pointNode = point.getNode();
-    const pointParent = pointNode.getParentOrThrow();
-
-    if ($isElementNode(pointNode)) {
-      // TO-DO: InsertNewAfter should return 'null | this' instead of 'null | LexicalNode'
-      const newBlock = pointNode.insertNewAfter(this, false) as ElementNode;
-      if (newBlock) newBlock.select();
-      return newBlock;
-    }
-
-    const split = pointNode.splitText(point.offset);
-    // TO-DO: splitText should return [undefined, TextNode] if offset is 0 (breaking change)
-    let after: LexicalNode | null = point.offset === 0 ? split[0] : split[1];
-    if (pointParent.isInline()) {
-      const newBlock = pointParent.insertNewAfter(this, false) as ElementNode;
-      if (after) {
-        newBlock.append(after, ...after.getNextSiblings());
-      }
-      after = pointParent;
-    }
+    const firstToAppend = splitBlock(this);
 
     const block = $getAncestor(pointNode, INTERNAL_$isBlock);
     if (block) {
       const newBlock = block.insertNewAfter(this, false) as ElementNode;
-      if (after) {
-        newBlock.append(after, ...after.getNextSiblings());
+      if (firstToAppend) {
+        newBlock.append(firstToAppend, ...firstToAppend.getNextSiblings());
       }
       newBlock.selectStart();
     }
@@ -3042,6 +3024,29 @@ export function DEPRECATED_$getNodeTriplet(
     'Expected GridRowNode to have a parent GridNode',
   );
   return [cell, row, grid];
+}
+
+function splitBlock(selection: RangeSelection) {
+  const point = selection.anchor;
+  const pointNode = point.getNode();
+  const pointParent = pointNode.getParentOrThrow();
+
+  if (!$isTextNode(pointNode)) return null;
+  const split = pointNode.splitText(point.offset);
+  // TO-DO: splitText should return [undefined, TextNode] if offset is 0 (breaking change)
+  let firstToAppend: LexicalNode | null =
+    point.offset === 0 ? split[0] : split[1];
+  if (pointParent.isInline()) {
+    const newBlock = pointParent.insertNewAfter(
+      selection,
+      false,
+    ) as ElementNode;
+    if (firstToAppend) {
+      newBlock.append(firstToAppend, ...firstToAppend.getNextSiblings());
+    }
+    firstToAppend = pointParent;
+  }
+  return firstToAppend;
 }
 
 function mergeBlocks(firstBlock: ElementNode, secondBlock: ElementNode) {

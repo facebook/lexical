@@ -1038,19 +1038,19 @@ export class RangeSelection implements BaseSelection {
    */
   insertRawText(text: string): void {
     const parts = text.split(/(\r?\n|\t)/);
-    const nodes = [];
+    const paragraph = $createParagraphNode();
     const length = parts.length;
     for (let i = 0; i < length; i++) {
       const part = parts[i];
       if (part === '\n' || part === '\r\n') {
-        nodes.push($createLineBreakNode());
+        paragraph.append($createLineBreakNode());
       } else if (part === '\t') {
-        nodes.push($createTabNode());
+        paragraph.append($createTabNode());
       } else {
-        nodes.push($createTextNode(part));
+        paragraph.append($createTextNode(part));
       }
     }
-    this.insertNodes(nodes);
+    this.insertNodes([paragraph]);
   }
 
   /**
@@ -1547,20 +1547,19 @@ export class RangeSelection implements BaseSelection {
     let currentBlock = firstBlock;
     const lastBlock = this.insertParagraph()!;
     let nextFirst = nodes[0] as ElementNode;
-    if (!$isElementNode(nodes[0])) {
-      currentBlock = firstBlock.insertNewAfter(this) as ElementNode;
+    if (!INTERNAL_$isBlock(nodes[0])) {
+      currentBlock = firstBlock.insertNewAfter(this, true) as ElementNode;
       nextFirst = currentBlock;
       currentBlock.append(...nodes);
     } else {
       nodes.forEach((node) => {
         if ($isElementNode(node)) {
-          currentBlock.insertAfter(node);
+          currentBlock.insertAfter(node, true);
           currentBlock = node;
         }
       });
     }
-    const prevLast =
-      nodes.length > 1 || firstBlock.isEmpty() ? currentBlock : firstBlock;
+    const prevLast = nodes.length > 1 ? currentBlock : firstBlock;
     mergeBlocks(firstBlock, nextFirst);
     prevLast.selectEnd();
     mergeBlocks(prevLast, lastBlock);
@@ -1576,7 +1575,9 @@ export class RangeSelection implements BaseSelection {
     }
 
     const point = this.anchor;
-    let pointNode = point.getNode();
+    const pointNode = point.getNode();
+    const pointParent = pointNode.getParentOrThrow();
+
     if ($isElementNode(pointNode)) {
       // TO-DO: InsertNewAfter should return 'null | this' instead of 'null | LexicalNode'
       const newBlock = pointNode.insertNewAfter(this, false) as ElementNode;
@@ -1584,30 +1585,25 @@ export class RangeSelection implements BaseSelection {
       return newBlock;
     }
 
-    const splitElement = (element: ElementNode) => {
-      const {offset} = point;
-      const parent = pointNode.getParentOrThrow();
-      const x = parent.isInline() ? parent : pointNode;
-      const firstToAppend = offset === 0 ? x : pointNode.splitText(offset)[0];
-      const siblings = firstToAppend.getNextSiblings();
-      const nodesToAppend =
-        offset === 0 ? [firstToAppend, ...siblings] : siblings;
-      const newElement = element.insertNewAfter(this, false) as ElementNode;
-      if (newElement) {
-        newElement.append(...nodesToAppend);
-        newElement.selectStart();
+    const split = pointNode.splitText(point.offset);
+    // TO-DO: splitText should return [undefined, TextNode] if offset is 0 (breaking change)
+    let after: LexicalNode | null = point.offset === 0 ? split[0] : split[1];
+    if (pointParent.isInline()) {
+      const newBlock = pointParent.insertNewAfter(this, false) as ElementNode;
+      if (after) {
+        newBlock.append(after, ...after.getNextSiblings());
       }
-      return newElement;
-    };
-
-    if (pointNode.getParentOrThrow().isInline()) {
-      splitElement(pointNode.getParentOrThrow());
+      after = pointParent;
     }
 
-    pointNode = point.getNode();
     const block = $getAncestor(pointNode, INTERNAL_$isBlock);
-    if (block) return splitElement(block);
-    return null;
+    if (block) {
+      const newBlock = block.insertNewAfter(this, false) as ElementNode;
+      if (after) {
+        newBlock.append(after, ...after.getNextSiblings());
+      }
+      newBlock.selectStart();
+    }
   }
 
   /**
@@ -3049,10 +3045,6 @@ export function DEPRECATED_$getNodeTriplet(
 }
 
 function mergeBlocks(firstBlock: ElementNode, secondBlock: ElementNode) {
-  if (firstBlock.isEmpty()) {
-    firstBlock.remove();
-    return;
-  }
   secondBlock.getChildren().forEach((child: LexicalNode) => {
     firstBlock.append(child);
   });

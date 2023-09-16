@@ -27,13 +27,13 @@ test.describe('Events', () => {
     await page.keyboard.type('i');
     await evaluate(page, () => {
       const editable = document.querySelector('[contenteditable="true"]');
-      const span = editable.querySelector('span');
-      const textNode = span.firstChild;
+      const span = editable?.querySelector('span');
+      const textNode = span?.firstChild;
       function singleRangeFn(
-        startContainer,
-        startOffset,
-        endContainer,
-        endOffset,
+        startContainer: Node,
+        startOffset: number,
+        endContainer: Node,
+        endOffset: number,
       ) {
         return () => [
           new StaticRange({
@@ -44,6 +44,11 @@ test.describe('Events', () => {
           }),
         ];
       }
+
+      if (!textNode) {
+        return;
+      }
+
       const character = 'S'; // S for space because the space itself gets trimmed in the assertHTML
       const replacementCharacter = 'I';
       const dataTransfer = new DataTransfer();
@@ -61,14 +66,21 @@ test.describe('Events', () => {
         textNode,
         1,
       );
-      const replacementBeforeInputEvent = new InputEvent('beforeinput', {
-        bubbles: true,
-        cancelable: true,
-        clipboardData: dataTransfer,
-        data: replacementCharacter,
-        dataTransfer,
-        inputType: 'insertReplacementText',
-      });
+      const replacementBeforeInputEvent = new InputEvent(
+        'beforeinput',
+        Object.assign(
+          {
+            bubbles: true,
+            cancelable: true,
+            data: replacementCharacter,
+            dataTransfer,
+            inputType: 'insertReplacementText',
+          },
+          {
+            clipboardData: dataTransfer,
+          },
+        ),
+      );
       replacementBeforeInputEvent.getTargetRanges = singleRangeFn(
         textNode,
         0,
@@ -81,10 +93,10 @@ test.describe('Events', () => {
         data: character,
         inputType: 'insertText',
       });
-      editable.dispatchEvent(characterBeforeInputEvent);
+      editable?.dispatchEvent(characterBeforeInputEvent);
       textNode.textContent += character;
-      editable.dispatchEvent(replacementBeforeInputEvent);
-      editable.dispatchEvent(characterInputEvent);
+      editable?.dispatchEvent(replacementBeforeInputEvent);
+      editable?.dispatchEvent(characterInputEvent);
     });
 
     await assertHTML(
@@ -101,7 +113,6 @@ test.describe('Events', () => {
 
   test('Add period with double-space after emoji (MacOS specific) #3953', async ({
     page,
-    isPlainText,
   }) => {
     if (LEGACY_EVENTS) {
       return;
@@ -124,14 +135,14 @@ test.describe('Events', () => {
 
     await evaluate(page, () => {
       const editable = document.querySelector('[contenteditable="true"]');
-      const spans = editable.querySelectorAll('span');
+      const spans = editable?.querySelectorAll('span') || [];
       const lastSpan = spans[spans.length - 1];
       const lastSpanTextNode = lastSpan.firstChild;
       function singleRangeFn(
-        startContainer,
-        startOffset,
-        endContainer,
-        endOffset,
+        startContainer: Node,
+        startOffset: number,
+        endContainer: Node,
+        endOffset: number,
       ) {
         return () => [
           new StaticRange({
@@ -142,6 +153,11 @@ test.describe('Events', () => {
           }),
         ];
       }
+
+      if (!lastSpanTextNode) {
+        return;
+      }
+
       const characterBeforeInputEvent = new InputEvent('beforeinput', {
         bubbles: true,
         cancelable: true,
@@ -156,7 +172,7 @@ test.describe('Events', () => {
       );
       // We don't do textNode.textContent += character; intentionally; if the code prevents default
       // Lexical should add it via controlled mode.
-      editable.dispatchEvent(characterBeforeInputEvent);
+      editable?.dispatchEvent(characterBeforeInputEvent);
     });
     await page.pause();
 

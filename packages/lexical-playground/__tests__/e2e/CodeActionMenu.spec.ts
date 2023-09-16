@@ -94,12 +94,16 @@ test.describe('CodeActionMenu', () => {
       const copiedText = await evaluate(page, () => {
         let text = null;
 
-        navigator.clipboard._writeText = navigator.clipboard.writeText;
-        navigator.clipboard.writeText = function (data) {
+        /* eslint-disable @typescript-eslint/no-explicit-any */
+        (navigator.clipboard as any)._writeText = navigator.clipboard.writeText;
+        navigator.clipboard.writeText = async function (data): Promise<void> {
           text = data;
-          this._writeText(data);
+          (this as any)._writeText(data);
         };
-        document.querySelector('button[aria-label=copy]').click();
+        /* eslint-enable @typescript-eslint/no-explicit-any */
+        (
+          document.querySelector('button[aria-label=copy]') as HTMLButtonElement
+        )?.click();
 
         return text;
       });
@@ -295,7 +299,8 @@ test.describe('CodeActionMenu', () => {
     expect(errorTips).toBeTruthy();
 
     const tips = await evaluate(page, () => {
-      return document.querySelector('pre.code-error-tips').innerText;
+      return (document.querySelector('pre.code-error-tips') as HTMLPreElement)
+        ?.innerText;
     });
 
     expect(tips).toBe(

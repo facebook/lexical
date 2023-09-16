@@ -6,7 +6,7 @@
  *
  */
 
-import {expect} from '@playwright/test';
+import {expect, Page} from '@playwright/test';
 
 import {
   moveLeft,
@@ -37,28 +37,28 @@ import {
   waitForSelector,
 } from '../utils';
 
-async function toggleBulletList(page) {
+async function toggleBulletList(page: Page) {
   await click(page, '.block-controls');
   await click(page, '.dropdown .icon.bullet-list');
 }
 
-async function toggleNumberedList(page) {
+async function toggleNumberedList(page: Page) {
   await click(page, '.block-controls');
   await click(page, '.dropdown .icon.numbered-list');
 }
 
-async function toggleCheckList(page) {
+async function toggleCheckList(page: Page) {
   await click(page, '.block-controls');
   await click(page, '.dropdown .icon.check-list');
 }
 
-async function clickIndentButton(page, times = 1) {
+async function clickIndentButton(page: Page, times = 1) {
   for (let i = 0; i < times; i++) {
     await selectFromAlignDropdown(page, '.indent');
   }
 }
 
-async function clickOutdentButton(page, times = 1) {
+async function clickOutdentButton(page: Page, times = 1) {
   for (let i = 0; i < times; i++) {
     await selectFromAlignDropdown(page, '.outdent');
   }
@@ -1011,7 +1011,6 @@ test.describe('Nested List', () => {
 
   test(`Should NOT merge selected nodes into existing list siblings of a different type when formatting to a list`, async ({
     page,
-    isCollab,
   }) => {
     await focusEditor(page);
 
@@ -1410,13 +1409,16 @@ test.describe('Nested List', () => {
     await page.keyboard.press('Backspace');
     await page.keyboard.type('f');
 
-    const assertCheckCount = async (checkCount, uncheckCount) => {
-      const pageOrFrame = await (isCollab ? page.frame('left') : page);
+    const assertCheckCount = async (
+      checkCount: number,
+      uncheckCount: number,
+    ) => {
+      const pageOrFrame = isCollab ? page.frame('left') : page;
       await expect(
-        pageOrFrame.locator('li[role="checkbox"][aria-checked="true"]'),
+        pageOrFrame!.locator('li[role="checkbox"][aria-checked="true"]'),
       ).toHaveCount(checkCount);
       await expect(
-        pageOrFrame.locator('li[role="checkbox"][aria-checked="false"]'),
+        pageOrFrame!.locator('li[role="checkbox"][aria-checked="false"]'),
       ).toHaveCount(uncheckCount);
     };
 

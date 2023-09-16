@@ -6,35 +6,39 @@
  *
  */
 
+import {Page} from '@playwright/test';
+
 import {evaluate, expect, focusEditor, initialize, test} from '../utils';
 
 test.describe('Auto scroll while typing', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
-  async function addScroll(page, selector_) {
+  async function addScroll(page: Page, selector_: string) {
     await evaluate(
       page,
       (selector) => {
-        const element = document.querySelector(selector);
-        element.style.overflow = 'auto';
-        element.style.maxHeight = '200px';
+        const element = document.querySelector(selector) as HTMLElement | null;
+        if (element) {
+          element.style.overflow = 'auto';
+          element.style.maxHeight = '200px';
+        }
       },
       selector_,
     );
   }
 
-  async function isCaretVisible(page, selector_) {
+  async function isCaretVisible(page: Page, selector_: string) {
     return await evaluate(
       page,
       (selector) => {
         const selection = document.getSelection();
-        const range = selection.getRangeAt(0);
+        const range = selection?.getRangeAt(0);
         const element = document.createElement('span');
         element.innerHTML = '|';
-        range.insertNode(element);
+        range?.insertNode(element);
         const selectionRect = element.getBoundingClientRect();
-        element.parentNode.removeChild(element);
+        element.parentNode?.removeChild(element);
         const containerRect = document
-          .querySelector(selector)
+          .querySelector(selector)!
           .getBoundingClientRect();
 
         return (

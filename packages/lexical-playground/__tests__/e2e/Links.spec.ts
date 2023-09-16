@@ -6,6 +6,8 @@
  *
  */
 
+import {Page} from '@playwright/test';
+
 import {
   deleteBackward,
   moveLeft,
@@ -30,6 +32,8 @@ import {
   pasteFromClipboard,
   test,
 } from '../utils';
+
+type InsertMethod = 'type' | 'paste:plain' | 'paste:html' | 'paste:lexical';
 
 test.beforeEach(({isPlainText}) => {
   test.skip(isPlainText);
@@ -642,11 +646,7 @@ test.describe('Links', () => {
 
     test.describe('Inserting text before links', () => {
       test.describe('Start-of-paragraph links', () => {
-        /**
-         * @param {import('@playwright/test').Page} page
-         * @param {'type' | 'paste:plain' | 'paste:html' | 'paste:lexical'} insertMethod
-         */
-        const setup = async (page, insertMethod) => {
+        const setup = async (page: Page, insertMethod: InsertMethod) => {
           await focusEditor(page);
           await page.keyboard.type('ab');
 
@@ -718,11 +718,7 @@ test.describe('Links', () => {
       });
 
       test.describe('Mid-paragraph links', () => {
-        /**
-         * @param {import('@playwright/test').Page} page
-         * @param {'type' | 'paste:plain' | 'paste:html' | 'paste:lexical'} insertMethod
-         */
-        const setup = async (page, insertMethod) => {
+        const setup = async (page: Page, insertMethod: InsertMethod) => {
           await focusEditor(page);
           await page.keyboard.type('abc');
 
@@ -792,11 +788,7 @@ test.describe('Links', () => {
       });
 
       test.describe('End-of-paragraph links', () => {
-        /**
-         * @param {import('@playwright/test').Page} page
-         * @param {'type' | 'paste:plain' | 'paste:html' | 'paste:lexical'} insertMethod
-         */
-        const setup = async (page, insertMethod) => {
+        const setup = async (page: Page, insertMethod: InsertMethod) => {
           await focusEditor(page);
           await page.keyboard.type('ab');
 
@@ -868,11 +860,7 @@ test.describe('Links', () => {
 
     test.describe('Inserting text after links', () => {
       test.describe('Start-of-paragraph links', () => {
-        /**
-         * @param {import('@playwright/test').Page} page
-         * @param {'type' | 'paste:plain' | 'paste:html' | 'paste:lexical'} insertMethod
-         */
-        const setup = async (page, insertMethod) => {
+        const setup = async (page: Page, insertMethod: InsertMethod) => {
           await focusEditor(page);
           await page.keyboard.type('ab');
 
@@ -943,11 +931,7 @@ test.describe('Links', () => {
       });
 
       test.describe('Mid-paragraph links', () => {
-        /**
-         * @param {import('@playwright/test').Page} page
-         * @param {'type' | 'paste:plain' | 'paste:html' | 'paste:lexical'} insertMethod
-         */
-        const setup = async (page, insertMethod) => {
+        const setup = async (page: Page, insertMethod: InsertMethod) => {
           await focusEditor(page);
           await page.keyboard.type('abc');
 
@@ -1019,11 +1003,7 @@ test.describe('Links', () => {
       });
 
       test.describe('End-of-paragraph links', () => {
-        /**
-         * @param {import('@playwright/test').Page} page
-         * @param {'type' | 'paste:plain' | 'paste:html' | 'paste:lexical'} insertMethod
-         */
-        const setup = async (page, insertMethod) => {
+        const setup = async (page: Page, insertMethod: InsertMethod) => {
           await focusEditor(page);
           await page.keyboard.type('ab');
 
@@ -2032,7 +2012,7 @@ test.describe('Links', () => {
   });
 });
 
-async function setURL(page, url) {
+async function setURL(page: Page, url: string) {
   await click(page, '.link-edit');
   await focus(page, '.link-input');
   await page.keyboard.type(url);

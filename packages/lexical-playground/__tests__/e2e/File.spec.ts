@@ -103,7 +103,7 @@ test.describe('File', () => {
     );
 
     page.on('filechooser', (fileChooser) => {
-      fileChooser.setFiles([filePath]);
+      fileChooser.setFiles([filePath || '']);
     });
     await click(page, '.action-button.import');
     await sleep(200);

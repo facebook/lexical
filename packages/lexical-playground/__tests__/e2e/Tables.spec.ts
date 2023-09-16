@@ -6,6 +6,8 @@
  *
  */
 
+import {Frame, Page} from '@playwright/test';
+
 import {
   moveDown,
   moveLeft,
@@ -41,7 +43,7 @@ import {
   unmergeTableCell,
 } from '../utils';
 
-async function fillTablePartiallyWithText(page) {
+async function fillTablePartiallyWithText(page: Page) {
   await page.keyboard.type('a');
   await page.keyboard.press('ArrowRight');
   await page.keyboard.press('b');
@@ -293,14 +295,14 @@ test.describe('Tables', () => {
 
     await fillTablePartiallyWithText(page);
 
-    let p = page;
+    let p: Page | Frame = page;
 
     if (IS_COLLAB) {
       await focusEditor(page);
-      p = await page.frame('left');
+      p = page.frame('left')!;
     }
 
-    const firstRowFirstColumnCellBoundingBox = await p.locator(
+    const firstRowFirstColumnCellBoundingBox = p.locator(
       'table:first-of-type > tr:nth-child(1) > th:nth-child(1)',
     );
 

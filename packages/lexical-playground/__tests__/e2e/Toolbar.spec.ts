@@ -82,8 +82,10 @@ test.describe('Toolbar', () => {
     // Delete image
     // TODO Revisit the a11y side of NestedEditors
     await evaluate(page, () => {
-      const p = document.querySelector('[contenteditable="true"] p');
-      document.getSelection().setBaseAndExtent(p, 0, p, 0);
+      const p = document.querySelector(
+        '[contenteditable="true"] p',
+      ) as HTMLElement;
+      document.getSelection()?.setBaseAndExtent(p, 0, p, 0);
     });
     await selectAll(page);
     await page.keyboard.press('Delete');

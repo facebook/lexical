@@ -6,6 +6,8 @@
  *
  */
 
+import {Page} from '@playwright/test';
+
 import {
   moveLeft,
   moveRight,
@@ -34,10 +36,10 @@ import {
 } from '../utils';
 
 async function checkHTMLExpectationsIncludingUndoRedo(
-  page,
-  forwardHTML,
-  undoHTML,
-  isCollab,
+  page: Page,
+  forwardHTML: string,
+  undoHTML: string,
+  isCollab: boolean,
 ) {
   await assertHTML(page, forwardHTML);
   if (isCollab || undoHTML === 'none') {
@@ -213,7 +215,7 @@ test.describe('Markdown', () => {
   for (let i = 0; i < count; ++i) {
     const markdownText = triggersAndExpectations[i].markdownText;
 
-    if (triggersAndExpectations[i].isBlockTest === false) {
+    if (!triggersAndExpectations[i].isBlockTest) {
       test(`Should create stylized (e.g. BIUS) text from plain text using a markdown shortcut e.g. ${markdownText}`, async ({
         page,
         isPlainText,
@@ -291,18 +293,18 @@ test.describe('Markdown', () => {
         // Trigger markdown.
         await page.keyboard.type(' ');
 
-        await assertHTML(page, triggersAndExpectations[i].stylizedExpectation);
+        await assertHTML(page, triggersAndExpectations[i].expectation);
 
         await checkHTMLExpectationsIncludingUndoRedo(
           page,
-          triggersAndExpectations[i].stylizedExpectation,
-          triggersAndExpectations[i].stylizedUndoHTML,
+          triggersAndExpectations[i].expectation,
+          triggersAndExpectations[i].undoHTML,
           isCollab,
         );
       });
     }
 
-    if (triggersAndExpectations[i].isBlockTest === true) {
+    if (triggersAndExpectations[i].isBlockTest) {
       test(`Should test markdown with the (${markdownText}) trigger. Should include undo and redo.`, async ({
         page,
         isPlainText,
@@ -331,7 +333,6 @@ test.describe('Markdown', () => {
       test(`Should test importing markdown (${markdownText}) trigger.`, async ({
         page,
         isPlainText,
-        isCollab,
       }) => {
         test.skip(isPlainText);
         await focusEditor(page);
@@ -355,10 +356,10 @@ test.describe('Markdown', () => {
 });
 
 async function assertMarkdownImportExport(
-  page,
-  textToImport,
-  expectedHTML,
-  ignoreClasses,
+  page: Page,
+  textToImport: string,
+  expectedHTML: string,
+  ignoreClasses?: boolean,
 ) {
   // Clear the editor from previous content
   await clearEditor(page);
@@ -680,10 +681,7 @@ test.describe('Markdown', () => {
   });
 
   SIMPLE_TEXT_FORMAT_SHORTCUTS.forEach((testCase) => {
-    test(`can convert "${testCase.text}" shortcut`, async ({
-      page,
-      isCollab,
-    }) => {
+    test(`can convert "${testCase.text}" shortcut`, async ({page}) => {
       await focusEditor(page);
       await page.keyboard.type(testCase.text, {
         delay: LEGACY_EVENTS ? 50 : 0,

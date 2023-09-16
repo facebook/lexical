@@ -20,7 +20,7 @@ import {
   test,
 } from '../utils';
 
-function testSuite(charset) {
+function testSuite(charset: string) {
   test('displays overflow on text', async ({page, isCollab}) => {
     test.skip(isCollab);
     await page.focus('div[contenteditable="true"]');

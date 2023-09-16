@@ -6,6 +6,8 @@
  *
  */
 
+import {Page} from '@playwright/test';
+
 import {
   moveToEditorBeginning,
   moveToEnd,
@@ -24,7 +26,7 @@ import {
   test,
 } from '../utils';
 
-async function toggleCodeBlock(page) {
+async function toggleCodeBlock(page: Page) {
   await click(page, '.block-controls');
   await click(page, '.dropdown .icon.code');
 }

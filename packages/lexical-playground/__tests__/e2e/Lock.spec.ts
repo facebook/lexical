@@ -24,12 +24,12 @@ test.describe('Lock', () => {
     } text...`;
     const pageOrFrame = isCollab ? page.frame('left') : page;
     await focusEditor(page);
-    expect(await pageOrFrame.innerHTML('.editor-container')).toContain(
+    expect(await pageOrFrame!.innerHTML('.editor-container')).toContain(
       placeholder,
     );
 
     await click(page, '.action-button.lock');
-    expect(await pageOrFrame.innerHTML('.editor-container')).toContain(
+    expect(await pageOrFrame!.innerHTML('.editor-container')).toContain(
       placeholder,
     );
   });

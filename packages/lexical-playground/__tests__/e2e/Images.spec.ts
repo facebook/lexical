@@ -143,7 +143,6 @@ test.describe('Images', () => {
             <br />
           </p>
         `,
-        true,
       );
     }
 
@@ -400,7 +399,7 @@ test.describe('Images', () => {
 
     await insertUploadImage(
       page,
-      'packages/lexical-playground/src/images/yellow-flower-small.jpg',
+      ['packages/lexical-playground/src/images/yellow-flower-small.jpg'],
       'a pretty yellow flower :)',
     );
 
@@ -604,10 +603,17 @@ test.describe('Images', () => {
       page,
       'span[data-lexical-text="true"]',
     );
-    await dragMouse(page, textBoundingBox, textBoundingBox, 'start', 'middle');
+    await dragMouse(
+      page,
+      textBoundingBox || undefined,
+      textBoundingBox || undefined,
+      'start',
+      'middle',
+    );
 
     const lexicalSelection = await evaluate(page, () => {
-      return window.lexicalEditor._editorState._selection;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return (window as any).lexicalEditor._editorState._selection;
     });
     expect(lexicalSelection.anchor).toBeTruthy();
     expect(lexicalSelection.focus).toBeTruthy();

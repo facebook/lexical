@@ -16,6 +16,21 @@ import {
   test,
 } from '../utils';
 
+function paste(): (target: Element, text: string) => void {
+  const dataTransfer = new DataTransfer();
+  return (target: Element, text: string): void => {
+    dataTransfer.setData('text/plain', text);
+    target.dispatchEvent(
+      new ClipboardEvent('paste', {
+        bubbles: true,
+        cancelable: true,
+        clipboardData: dataTransfer,
+      }),
+    );
+    dataTransfer.clearData();
+  };
+}
+
 test.describe('Extensions', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   test(`document.execCommand("insertText")`, async ({page}) => {
@@ -57,25 +72,11 @@ test.describe('Extensions', () => {
     await evaluate(
       page,
       () => {
-        function paste() {
-          const dataTransfer = new DataTransfer();
-          function dispatchPaste(target, text) {
-            dataTransfer.setData('text/plain', text);
-            target.dispatchEvent(
-              new ClipboardEvent('paste', {
-                bubbles: true,
-                cancelable: true,
-                clipboardData: dataTransfer,
-              }),
-            );
-            dataTransfer.clearData();
-          }
-          return dispatchPaste;
-        }
-
         const editor = document.querySelector('div[contenteditable="true"]');
         const dispatchPaste = paste();
-        dispatchPaste(editor, 'foo');
+        if (editor) {
+          dispatchPaste(editor, 'foo');
+        }
       },
       [],
     );
@@ -97,25 +98,11 @@ test.describe('Extensions', () => {
     });
 
     await evaluate(page, () => {
-      function paste() {
-        const dataTransfer = new DataTransfer();
-        function dispatchPaste(target, text) {
-          dataTransfer.setData('text/plain', text);
-          target.dispatchEvent(
-            new ClipboardEvent('paste', {
-              bubbles: true,
-              cancelable: true,
-              clipboardData: dataTransfer,
-            }),
-          );
-          dataTransfer.clearData();
-        }
-        return dispatchPaste;
-      }
-
       const editor = document.querySelector('div[contenteditable="true"]');
       const dispatchPaste = paste();
-      dispatchPaste(editor, 'bar');
+      if (editor) {
+        dispatchPaste(editor, 'bar');
+      }
     });
     await assertHTML(
       page,
@@ -145,7 +132,7 @@ test.describe('Extensions', () => {
       const editor = document.querySelector('div[contenteditable="true"]');
       const dataTransfer = new DataTransfer();
       dataTransfer.setData('text/plain', 'foo');
-      editor.dispatchEvent(
+      editor?.dispatchEvent(
         new ClipboardEvent('paste', {
           bubbles: true,
           cancelable: true,
@@ -216,15 +203,20 @@ test.describe('Extensions', () => {
         const editor = document.querySelector('div[contenteditable="true"]');
         const selection = window.getSelection();
         const secondParagraphTextNode =
-          editor.firstChild.nextSibling.firstChild.firstChild;
-        selection.setBaseAndExtent(
+          editor?.firstChild?.nextSibling?.firstChild?.firstChild;
+
+        if (!secondParagraphTextNode) {
+          return;
+        }
+
+        selection?.setBaseAndExtent(
           secondParagraphTextNode,
           0,
           secondParagraphTextNode,
           3,
         );
 
-        await new Promise((resolve) => {
+        await new Promise<void>((resolve) => {
           setTimeout(() => {
             document.execCommand('insertText', false, 'and');
             resolve();

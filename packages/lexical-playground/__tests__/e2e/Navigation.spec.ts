@@ -6,6 +6,8 @@
  *
  */
 
+import {Page} from '@playwright/test';
+
 import {
   moveToEditorBeginning,
   moveToEditorEnd,
@@ -26,7 +28,7 @@ import {
   test,
 } from '../utils';
 
-async function typeParagraphs(page) {
+async function typeParagraphs(page: Page) {
   await focusEditor(page);
   await page.keyboard.type(
     'Lorem Ipsum is simply dummy text of the printing and typesetting industry.',

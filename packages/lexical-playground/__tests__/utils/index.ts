@@ -42,17 +42,17 @@ interface AppSettings {
   isRichText: boolean;
   emptyEditor: boolean;
   disableBeforeInput: boolean;
-  isCollab?: boolean;
+  isCollab: boolean;
   collabId?: string;
-  isPlainText?: boolean;
+  isPlainText: boolean;
   showNestedEditorTreeView: boolean;
-  legacyEvents?: boolean;
+  legacyEvents: boolean;
   isAutocomplete: boolean;
   isCharLimit: boolean;
   isCharLimitUtf8: boolean;
   isMaxLength: boolean;
   tableCellMerge: boolean;
-  tableCellBackgroundColor: boolean;
+  tableCellBackgroundColor?: boolean;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -60,13 +60,13 @@ type ClipboardData = Record<string, any>;
 
 export async function initialize({
   page,
-  isCollab,
-  isAutocomplete,
-  isCharLimit,
-  isCharLimitUtf8,
-  isMaxLength,
+  isCollab = false,
+  isAutocomplete = false,
+  isCharLimit = false,
+  isCharLimitUtf8 = false,
+  isMaxLength = false,
   showNestedEditorTreeView,
-  tableCellMerge,
+  tableCellMerge = false,
   tableCellBackgroundColor,
 }: {
   page: Page;
@@ -79,15 +79,15 @@ export async function initialize({
   tableCellMerge?: boolean;
   tableCellBackgroundColor?: boolean;
 }) {
-  const appSettings: AppSettings = {
+  const appSettings: Omit<AppSettings, 'isPlainText' | 'legacyEvents'> = {
     collabId: isCollab ? uuidv4() : undefined,
     disableBeforeInput: LEGACY_EVENTS,
     emptyEditor: true,
-    isAutocomplete: !!isAutocomplete,
-    isCharLimit: !!isCharLimit,
-    isCharLimitUtf8: !!isCharLimitUtf8,
+    isAutocomplete,
+    isCharLimit,
+    isCharLimitUtf8,
     isCollab,
-    isMaxLength: !!isMaxLength,
+    isMaxLength,
     isRichText: IS_RICH_TEXT,
     showNestedEditorTreeView: showNestedEditorTreeView === undefined,
     tableCellBackgroundColor,
@@ -110,7 +110,7 @@ export async function initialize({
 async function exposeLexicalEditor(page: Page) {
   let leftFrame: Page | Frame = page;
   if (IS_COLLAB) {
-    leftFrame = page.frame('left');
+    leftFrame = page.frame('left')!;
   }
   await leftFrame.waitForSelector('.tree-view-output pre');
   await leftFrame.evaluate(() => {
@@ -134,10 +134,12 @@ export const test = base.extend<AppSettings>({
 
 export {expect} from '@playwright/test';
 
-function appSettingsToURLParams(appSettings: AppSettings) {
+function appSettingsToURLParams(
+  appSettings: Omit<AppSettings, 'isPlainText' | 'legacyEvents'>,
+) {
   const params = new URLSearchParams();
   Object.entries(appSettings).forEach(([setting, value]) => {
-    params.append(setting, value);
+    params.append(setting, String(value));
   });
   return params;
 }
@@ -186,7 +188,7 @@ export async function assertHTML(
       await retryAsync(fn, 5);
     await Promise.all([
       withRetry(async () => {
-        const leftFrame = page.frame('left');
+        const leftFrame = page.frame('left')!;
         return assertHTMLOnPageOrFrame(
           leftFrame,
           expectedHtml,
@@ -195,7 +197,7 @@ export async function assertHTML(
         );
       }),
       withRetry(async () => {
-        const rightFrame = page.frame('right');
+        const rightFrame = page.frame('right')!;
         return assertHTMLOnPageOrFrame(
           rightFrame,
           expectedHtmlFrameRight,
@@ -242,7 +244,7 @@ export async function assertGridSelectionCoordinates(
 ) {
   const pageOrFrame = IS_COLLAB ? page.frame('left') : page;
 
-  const {_anchor, _focus} = await pageOrFrame.evaluate(() => {
+  const {_anchor, _focus} = await pageOrFrame!.evaluate(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const editor = (window as any).lexicalEditor;
     const editorState = editor.getEditorState();
@@ -312,7 +314,7 @@ async function assertSelectionOnPageOrFrame(
     };
 
     const {anchorNode, anchorOffset, focusNode, focusOffset} =
-      window.getSelection();
+      window.getSelection()!;
 
     return {
       anchorOffset,
@@ -349,7 +351,7 @@ export async function assertSelection(
   },
 ) {
   if (IS_COLLAB) {
-    const frame = page.frame('left');
+    const frame = page.frame('left')!;
     await assertSelectionOnPageOrFrame(frame, expected);
   } else {
     await assertSelectionOnPageOrFrame(page, expected);
@@ -407,7 +409,7 @@ export async function keyUpCtrlOrAlt(page: Page) {
 
 async function copyToClipboardPageOrFrame(pageOrFrame: Page | Frame) {
   return await pageOrFrame.evaluate<ClipboardData>(() => {
-    const clipboardData = {};
+    const clipboardData: ClipboardData = {};
     const editor = document.querySelector('div[contenteditable="true"]');
     const copyEvent = new ClipboardEvent('copy');
     Object.defineProperty(copyEvent, 'clipboardData', {
@@ -417,14 +419,14 @@ async function copyToClipboardPageOrFrame(pageOrFrame: Page | Frame) {
         },
       },
     });
-    editor.dispatchEvent(copyEvent);
+    editor?.dispatchEvent(copyEvent);
     return clipboardData;
   });
 }
 
 export async function copyToClipboard(page: Page) {
   if (IS_COLLAB) {
-    const leftFrame = page.frame('left');
+    const leftFrame = page.frame('left')!;
     return await copyToClipboardPageOrFrame(leftFrame);
   } else {
     return await copyToClipboardPageOrFrame(page);
@@ -484,9 +486,9 @@ async function pasteFromClipboardPageOrFrame(
       Object.defineProperty(pasteEvent, 'clipboardData', {
         value: eventClipboardData,
       });
-      editor.dispatchEvent(pasteEvent);
+      editor?.dispatchEvent(pasteEvent);
       if (!pasteEvent.defaultPrevented) {
-        if (_canUseBeforeInput) {
+        if (await _canUseBeforeInput) {
           const inputEvent = new InputEvent('beforeinput', {
             bubbles: true,
             cancelable: true,
@@ -497,7 +499,7 @@ async function pasteFromClipboardPageOrFrame(
           Object.defineProperty(inputEvent, 'dataTransfer', {
             value: eventClipboardData,
           });
-          editor.dispatchEvent(inputEvent);
+          editor?.dispatchEvent(inputEvent);
         }
       }
     },
@@ -510,7 +512,7 @@ export async function pasteFromClipboard(
   clipboardData: ClipboardData,
 ) {
   if (IS_COLLAB) {
-    const leftFrame = page.frame('left');
+    const leftFrame = page.frame('left')!;
     await pasteFromClipboardPageOrFrame(leftFrame, clipboardData);
   } else {
     await pasteFromClipboardPageOrFrame(page, clipboardData);
@@ -533,7 +535,7 @@ export async function focusEditor(
   const selector = `${parentSelector} div[contenteditable="true"]`;
   if (IS_COLLAB) {
     await page.waitForSelector('iframe[name="left"]');
-    const leftFrame = page.frame('left');
+    const leftFrame = page.frame('left')!;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (((await leftFrame.$$('.loading')) as any).length !== 0) {
       await leftFrame.waitForSelector('.loading', {
@@ -552,14 +554,14 @@ export async function getHTML(
   selector = 'div[contenteditable="true"]',
 ) {
   const pageOrFrame = IS_COLLAB ? page.frame('left') : page;
-  const element = pageOrFrame.locator(selector);
+  const element = pageOrFrame!.locator(selector);
   return element.innerHTML();
 }
 
 export function locate(page: Page, selector: string) {
   let leftFrame: Page | Frame = page;
   if (IS_COLLAB) {
-    leftFrame = page.frame('left');
+    leftFrame = page.frame('left')!;
   }
   return leftFrame.locator(selector);
 }
@@ -567,10 +569,10 @@ export function locate(page: Page, selector: string) {
 export async function waitForSelector(
   page: Page,
   selector: string,
-  options?: Parameters<Frame['waitForSelector']>[1],
+  options: Parameters<Frame['waitForSelector']>[1] = {},
 ) {
   if (IS_COLLAB) {
-    const leftFrame = page.frame('left');
+    const leftFrame = page.frame('left')!;
     await leftFrame.waitForSelector(selector, options);
   } else {
     await page.waitForSelector(selector, options);
@@ -580,7 +582,7 @@ export async function waitForSelector(
 export async function selectorBoundingBox(page: Page, selector: string) {
   let leftFrame: Page | Frame = page;
   if (IS_COLLAB) {
-    leftFrame = page.frame('left');
+    leftFrame = page.frame('left')!;
   }
   const node = leftFrame.locator(selector);
   return await node.boundingBox();
@@ -592,7 +594,7 @@ export async function click(
   options?: Parameters<Frame['click']>[1],
 ) {
   if (IS_COLLAB) {
-    const leftFrame = page.frame('left');
+    const leftFrame = page.frame('left')!;
     await leftFrame.waitForSelector(selector, options);
     await leftFrame.click(selector, options);
   } else {
@@ -607,7 +609,7 @@ export async function focus(
   options?: Parameters<Frame['focus']>[1],
 ) {
   if (IS_COLLAB) {
-    const leftFrame = page.frame('left');
+    const leftFrame = page.frame('left')!;
     await leftFrame.focus(selector, options);
   } else {
     await page.focus(selector, options);
@@ -620,7 +622,7 @@ export async function selectOption(
   options: Parameters<Frame['selectOption']>[1],
 ) {
   if (IS_COLLAB) {
-    const leftFrame = page.frame('left');
+    const leftFrame = page.frame('left')!;
     await leftFrame.selectOption(selector, options);
   } else {
     await page.selectOption(selector, options);
@@ -633,7 +635,7 @@ export async function textContent(
   options?: Parameters<Frame['textContent']>[1],
 ) {
   if (IS_COLLAB) {
-    const leftFrame = page.frame('left');
+    const leftFrame = page.frame('left')!;
     return await leftFrame.textContent(selector, options);
   } else {
     return await page.textContent(selector, options);
@@ -643,10 +645,10 @@ export async function textContent(
 export async function evaluate<R, Arg>(
   page: Page,
   fn: PageFunction<Arg, R>,
-  args?: Arg,
+  args: Arg = undefined as Arg,
 ) {
   if (IS_COLLAB) {
-    const leftFrame = page.frame('left');
+    const leftFrame = page.frame('left')!;
     return await leftFrame.evaluate(fn, args);
   } else {
     return await page.evaluate(fn, args);
@@ -695,7 +697,7 @@ export async function insertUploadImage(
   await click(page, 'button[data-test-id="image-modal-option-file"]');
 
   const frame = IS_COLLAB ? page.frame('left') : page;
-  await frame.setInputFiles(
+  await frame!.setInputFiles(
     'input[data-test-id="image-modal-file-upload"]',
     files,
   );
@@ -732,14 +734,29 @@ export async function insertImageCaption(page: Page, caption: string) {
 }
 
 export async function mouseMoveToSelector(page: Page, selector: string) {
-  const {x, width, y, height} = await selectorBoundingBox(page, selector);
+  const {
+    x = 0,
+    width = 0,
+    y = 0,
+    height = 0,
+  } = (await selectorBoundingBox(page, selector)) || {};
   await page.mouse.move(x + width / 2, y + height / 2);
 }
 
 export async function dragMouse(
   page: Page,
-  fromBoundingBox: {x: number; y: number; width: number; height: number},
-  toBoundingBox: {x: number; y: number; width: number; height: number},
+  fromBoundingBox: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } = {height: 0, width: 0, x: 0, y: 0},
+  toBoundingBox: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } = {height: 0, width: 0, x: 0, y: 0},
   positionStart = 'middle',
   positionEnd = 'middle',
   mouseUp = true,
@@ -781,8 +798,8 @@ export async function dragImage(
 ) {
   await dragMouse(
     page,
-    await selectorBoundingBox(page, '.editor-image img'),
-    await selectorBoundingBox(page, toSelector),
+    (await selectorBoundingBox(page, '.editor-image img')) || undefined,
+    (await selectorBoundingBox(page, toSelector)) || undefined,
     positionStart,
     positionEnd,
   );
@@ -879,7 +896,7 @@ export async function selectFromAlignDropdown(page: Page, selector: string) {
 export async function insertTable(page: Page, rows = 2, columns = 3) {
   let leftFrame: Page | Frame = page;
   if (IS_COLLAB) {
-    leftFrame = page.frame('left');
+    leftFrame = page.frame('left')!;
   }
   await selectFromInsertDropdown(page, '.item .table');
   if (rows !== null) {
@@ -912,7 +929,7 @@ export async function selectCellsFromTableCords(
   let leftFrame: Page | Frame = page;
   if (IS_COLLAB) {
     await focusEditor(page);
-    leftFrame = page.frame('left');
+    leftFrame = page.frame('left')!;
   }
 
   const firstRowFirstColumnCell = leftFrame.locator(
@@ -935,8 +952,8 @@ export async function selectCellsFromTableCords(
 
   await dragMouse(
     page,
-    await firstRowFirstColumnCell.boundingBox(),
-    await secondRowSecondCell.boundingBox(),
+    (await firstRowFirstColumnCell.boundingBox()) || undefined,
+    (await secondRowSecondCell.boundingBox()) || undefined,
   );
 }
 
@@ -982,11 +999,11 @@ export async function setBackgroundColor(page: Page) {
 
 export async function enableCompositionKeyEvents(page: Page) {
   const targetPage = IS_COLLAB ? page.frame('left') : page;
-  await targetPage.evaluate(() => {
+  await targetPage!.evaluate(() => {
     window.addEventListener(
       'compositionstart',
       () => {
-        document.activeElement.dispatchEvent(
+        document.activeElement?.dispatchEvent(
           new KeyboardEvent('keydown', {
             bubbles: true,
             cancelable: true,
@@ -1020,8 +1037,8 @@ export async function dragDraggableMenuTo(
 ) {
   await dragMouse(
     page,
-    await selectorBoundingBox(page, '.draggable-block-menu'),
-    await selectorBoundingBox(page, toSelector),
+    (await selectorBoundingBox(page, '.draggable-block-menu')) || undefined,
+    (await selectorBoundingBox(page, toSelector)) || undefined,
     positionStart,
     positionEnd,
   );

@@ -6,6 +6,8 @@
  *
  */
 
+import {Page} from '@playwright/test';
+
 import {
   assertHTML,
   assertSelection,
@@ -16,7 +18,7 @@ import {
   test,
 } from '../utils';
 
-async function validateContent(page) {
+async function validateContent(page: Page) {
   await assertHTML(
     page,
     html`
@@ -60,45 +62,51 @@ test.describe('Mutations', () => {
     // Remove the paragraph
     await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
-      const paragraph = rootElement.firstChild;
+      const paragraph = rootElement?.firstChild;
 
-      paragraph.remove();
+      paragraph?.remove();
     });
     await validateContent(page);
 
     // Remove the paragraph content
     await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
-      const paragraph = rootElement.firstChild;
+      const paragraph = rootElement?.firstChild;
 
-      paragraph.textContent = '';
+      if (paragraph) {
+        paragraph.textContent = '';
+      }
     });
     await validateContent(page);
 
     // Remove the first text
     await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
-      const firstTextNode = rootElement.firstChild.firstChild;
+      const firstTextNode = rootElement?.firstChild?.firstChild;
 
-      firstTextNode.remove();
+      firstTextNode?.remove();
     });
     await validateContent(page);
 
     // Remove the first text contents
     await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
-      const firstTextNode = rootElement.firstChild.firstChild;
+      const firstTextNode = rootElement?.firstChild?.firstChild;
 
-      firstTextNode.textContent = '';
+      if (firstTextNode) {
+        firstTextNode.textContent = '';
+      }
     });
     await validateContent(page);
 
     // Remove the second text
     await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
-      const secondTextNode = rootElement.firstChild.firstChild.nextSibling;
+      const secondTextNode = rootElement?.firstChild?.firstChild?.nextSibling;
 
-      secondTextNode.remove();
+      if (secondTextNode) {
+        secondTextNode.remove();
+      }
     });
     await validateContent(page);
 
@@ -106,9 +114,11 @@ test.describe('Mutations', () => {
     await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
       const thirdTextNode =
-        rootElement.firstChild.firstChild.nextSibling.nextSibling;
+        rootElement?.firstChild?.firstChild?.nextSibling?.nextSibling;
 
-      thirdTextNode.remove();
+      if (thirdTextNode) {
+        thirdTextNode.remove();
+      }
     });
     await validateContent(page);
 
@@ -116,37 +126,54 @@ test.describe('Mutations', () => {
     await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
       const forthTextNode =
-        rootElement.firstChild.firstChild.nextSibling.nextSibling.nextSibling;
+        rootElement?.firstChild?.firstChild?.nextSibling?.nextSibling
+          ?.nextSibling;
 
-      forthTextNode.remove();
+      if (forthTextNode) {
+        forthTextNode.remove();
+      }
     });
     await validateContent(page);
 
     // Move last to first
     await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
-      const paragraph = rootElement.firstChild;
-      const firstTextNode = paragraph.firstChild;
+      const paragraph = rootElement?.firstChild;
+      const firstTextNode = paragraph?.firstChild;
       const forthTextNode =
-        paragraph.firstChild.nextSibling.nextSibling.nextSibling;
+        paragraph?.firstChild?.nextSibling?.nextSibling?.nextSibling;
 
-      paragraph.insertBefore(forthTextNode, firstTextNode);
+      if (paragraph && forthTextNode && firstTextNode) {
+        paragraph.insertBefore(forthTextNode, firstTextNode);
+      }
     });
     await validateContent(page);
 
     // Reverse sort all the children
     await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
-      const paragraph = rootElement.firstChild;
-      const firstTextNode = paragraph.firstChild;
-      const secondTextNode = paragraph.firstChild.nextSibling;
-      const thirdTextNode = paragraph.firstChild.nextSibling.nextSibling;
+      const paragraph = rootElement?.firstChild;
+      const firstTextNode = paragraph?.firstChild;
+      const secondTextNode = paragraph?.firstChild?.nextSibling;
+      const thirdTextNode = paragraph?.firstChild?.nextSibling?.nextSibling;
       const forthTextNode =
-        paragraph.firstChild.nextSibling.nextSibling.nextSibling;
+        paragraph?.firstChild?.nextSibling?.nextSibling?.nextSibling;
 
-      paragraph.insertBefore(forthTextNode, firstTextNode);
-      paragraph.insertBefore(thirdTextNode, firstTextNode);
-      paragraph.insertBefore(secondTextNode, firstTextNode);
+      if (!firstTextNode) {
+        return;
+      }
+
+      if (forthTextNode) {
+        paragraph?.insertBefore(forthTextNode, firstTextNode);
+      }
+
+      if (thirdTextNode) {
+        paragraph?.insertBefore(thirdTextNode, firstTextNode);
+      }
+
+      if (secondTextNode) {
+        paragraph?.insertBefore(secondTextNode, firstTextNode);
+      }
     });
     await validateContent(page);
 
@@ -156,64 +183,70 @@ test.describe('Mutations', () => {
       const span = document.createElement('span');
       const span2 = document.createElement('span');
       const text = document.createTextNode('123');
-      rootElement.appendChild(span);
-      rootElement.appendChild(span2);
-      rootElement.appendChild(text);
+      rootElement?.appendChild(span);
+      rootElement?.appendChild(span2);
+      rootElement?.appendChild(text);
     });
     await validateContent(page);
 
     // Adding additional nodes to paragraph
     await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
-      const paragraph = rootElement.firstChild;
-      const firstTextNode = paragraph.firstChild;
+      const paragraph = rootElement?.firstChild;
+      const firstTextNode = paragraph?.firstChild;
       const span = document.createElement('span');
       const span2 = document.createElement('span');
       const text = document.createTextNode('123');
-      paragraph.appendChild(span);
-      paragraph.appendChild(text);
-      paragraph.insertBefore(span2, firstTextNode);
+      paragraph?.appendChild(span);
+      paragraph?.appendChild(text);
+
+      if (firstTextNode) {
+        paragraph?.insertBefore(span2, firstTextNode);
+      }
     });
     await validateContent(page);
 
     // Adding additional nodes to text nodes
     await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
-      const paragraph = rootElement.firstChild;
-      const firstTextNode = paragraph.firstChild;
+      const paragraph = rootElement?.firstChild;
+      const firstTextNode = paragraph?.firstChild;
       const span = document.createElement('span');
       const text = document.createTextNode('123');
-      firstTextNode.appendChild(span);
-      firstTextNode.appendChild(text);
+      firstTextNode?.appendChild(span);
+      firstTextNode?.appendChild(text);
     });
     await validateContent(page);
 
     // Replace text nodes on text nodes #1
     await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
-      const paragraph = rootElement.firstChild;
-      const firstTextNode = paragraph.firstChild;
+      const paragraph = rootElement?.firstChild;
+      const firstTextNode = paragraph?.firstChild;
       const text = document.createTextNode('123');
-      firstTextNode.firstChild.replaceWith(text);
+      firstTextNode?.firstChild?.replaceWith(text);
     });
     await validateContent(page);
 
     // Replace text nodes on line break #2
     await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
-      const paragraph = rootElement.firstChild;
-      const firstTextNode = paragraph.firstChild;
+      const paragraph = rootElement?.firstChild;
+      const firstTextNode = paragraph?.firstChild;
       const br = document.createElement('br');
-      firstTextNode.firstChild.replaceWith(br);
+      firstTextNode?.firstChild?.replaceWith(br);
     });
     await validateContent(page);
 
     // Update text content, this should work :)
     await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
-      const paragraph = rootElement.firstChild;
-      const firstTextNode = paragraph.firstChild;
-      firstTextNode.firstChild.nodeValue = 'Bonjour ';
+      const paragraph = rootElement?.firstChild;
+      const firstTextNode = paragraph?.firstChild;
+
+      if (firstTextNode?.firstChild) {
+        firstTextNode.firstChild.nodeValue = 'Bonjour ';
+      }
     });
     await assertHTML(
       page,

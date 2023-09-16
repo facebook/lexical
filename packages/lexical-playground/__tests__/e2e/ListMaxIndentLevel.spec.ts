@@ -6,6 +6,8 @@
  *
  */
 
+import {Page} from '@playwright/test';
+
 import {selectAll} from '../keyboardShortcuts';
 import {
   assertHTML,
@@ -16,12 +18,12 @@ import {
   test,
 } from '../utils';
 
-async function toggleBulletList(page) {
+async function toggleBulletList(page: Page) {
   await click(page, '.block-controls');
   await click(page, '.dropdown .icon.bullet-list');
 }
 
-async function clickIndentButton(page, times = 1) {
+async function clickIndentButton(page: Page, times = 1) {
   for (let i = 0; i < times; i++) {
     await selectFromAlignDropdown(page, '.indent');
   }

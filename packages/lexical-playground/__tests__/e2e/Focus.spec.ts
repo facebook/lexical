@@ -6,6 +6,8 @@
  *
  */
 
+import {LexicalEditor} from 'lexical';
+
 import {click, evaluate, expect, focusEditor, initialize, test} from '../utils';
 
 test.describe('Focus', () => {
@@ -31,9 +33,14 @@ test.describe('Focus', () => {
     test.skip(isCollab);
     const getInternalSelection = async () =>
       await evaluate(page, () => {
-        return document
-          .querySelector(`div[contenteditable="true"]`)
-          .__lexicalEditor.getEditorState()._selection;
+        return (
+          /* eslint-disable @typescript-eslint/no-explicit-any */
+          (
+            (document.querySelector(`div[contenteditable="true"]`) as any)
+              .__lexicalEditor as LexicalEditor
+          ).getEditorState()._selection
+          /* eslint-enable @typescript-eslint/no-explicit-any */
+        );
       });
     await focusEditor(page);
     await page.keyboard.type('Hello world');

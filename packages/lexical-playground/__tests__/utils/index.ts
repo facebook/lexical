@@ -406,7 +406,7 @@ export async function keyUpCtrlOrAlt(page: Page) {
 }
 
 async function copyToClipboardPageOrFrame(pageOrFrame: Page | Frame) {
-  return await pageOrFrame.evaluate(() => {
+  return await pageOrFrame.evaluate<ClipboardData>(() => {
     const clipboardData = {};
     const editor = document.querySelector('div[contenteditable="true"]');
     const copyEvent = new ClipboardEvent('copy');
@@ -659,7 +659,7 @@ export async function clearEditor(page: Page) {
   await page.keyboard.press('Backspace');
 }
 
-export async function insertSampleImage(page: Page, modifier: string) {
+export async function insertSampleImage(page: Page, modifier?: string) {
   await selectFromInsertDropdown(page, '.image');
   if (modifier === 'alt') {
     await page.keyboard.down('Alt');

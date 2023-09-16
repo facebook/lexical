@@ -93,15 +93,23 @@ export async function deleteNextWord(page: Page) {
 }
 
 export async function deleteBackward(page: Page) {
-  await page.keyboard.down('Control');
-  await page.keyboard.press('h');
-  await page.keyboard.up('Control');
+  if (IS_MAC) {
+    await page.keyboard.down('Control');
+    await page.keyboard.press('h');
+    await page.keyboard.up('Control');
+  } else {
+    await page.keyboard.press('Backspace');
+  }
 }
 
 export async function deleteForward(page: Page) {
-  await page.keyboard.down('Control');
-  await page.keyboard.press('d');
-  await page.keyboard.up('Control');
+  if (IS_MAC) {
+    await page.keyboard.down('Control');
+    await page.keyboard.press('d');
+    await page.keyboard.up('Control');
+  } else {
+    await page.keyboard.press('Delete');
+  }
 }
 
 export async function moveToParagraphBeginning(page: Page) {

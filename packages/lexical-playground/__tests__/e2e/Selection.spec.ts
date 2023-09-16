@@ -6,6 +6,8 @@
  *
  */
 
+import {LexicalEditor} from 'lexical';
+
 import {
   deleteBackward,
   deleteForward,
@@ -57,7 +59,7 @@ test.describe('Selection', () => {
     await evaluate(page, () => {
       const editorElement = document.querySelector(
         'div[contenteditable="true"]',
-      );
+      ) as HTMLElement;
       return editorElement.blur();
     });
     expect(await editorHasFocus()).toEqual(false);
@@ -71,14 +73,19 @@ test.describe('Selection', () => {
     browserName,
   }) => {
     test.skip(isPlainText);
-    const hasSelection = async (parentSelector) =>
+    const hasSelection = async (parentSelector: string) =>
       await evaluate(
         page,
         (_parentSelector) => {
           return (
-            document
-              .querySelector(`${_parentSelector} > .tree-view-output pre`)
-              .__lexicalEditor.getEditorState()._selection !== null
+            (
+              (
+                document.querySelector(
+                  `${_parentSelector} > .tree-view-output pre`,
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                ) as any
+              ).__lexicalEditor as LexicalEditor
+            ).getEditorState()._selection !== null
           );
         },
         parentSelector,
@@ -479,7 +486,10 @@ test.describe('Selection', () => {
     );
   });
 
-  test('Select all from Node selection #4658', async ({page, isPlainText}) => {
+  test('Can select all from Node selection #4658', async ({
+    page,
+    isPlainText,
+  }) => {
     // TODO selectAll is bad for Linux #4665
     test.skip(isPlainText || IS_LINUX);
 

@@ -16,21 +16,6 @@ import {
   test,
 } from '../utils';
 
-function paste(): (target: Element, text: string) => void {
-  const dataTransfer = new DataTransfer();
-  return (target: Element, text: string): void => {
-    dataTransfer.setData('text/plain', text);
-    target.dispatchEvent(
-      new ClipboardEvent('paste', {
-        bubbles: true,
-        cancelable: true,
-        clipboardData: dataTransfer,
-      }),
-    );
-    dataTransfer.clearData();
-  };
-}
-
 test.describe('Extensions', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   test(`document.execCommand("insertText")`, async ({page}) => {
@@ -72,6 +57,21 @@ test.describe('Extensions', () => {
     await evaluate(
       page,
       () => {
+        function paste(): (target: Element, text: string) => void {
+          const dataTransfer = new DataTransfer();
+          return (target: Element, text: string): void => {
+            dataTransfer.setData('text/plain', text);
+            target.dispatchEvent(
+              new ClipboardEvent('paste', {
+                bubbles: true,
+                cancelable: true,
+                clipboardData: dataTransfer,
+              }),
+            );
+            dataTransfer.clearData();
+          };
+        }
+
         const editor = document.querySelector('div[contenteditable="true"]');
         const dispatchPaste = paste();
         if (editor) {
@@ -98,6 +98,21 @@ test.describe('Extensions', () => {
     });
 
     await evaluate(page, () => {
+      function paste(): (target: Element, text: string) => void {
+        const dataTransfer = new DataTransfer();
+        return (target: Element, text: string): void => {
+          dataTransfer.setData('text/plain', text);
+          target.dispatchEvent(
+            new ClipboardEvent('paste', {
+              bubbles: true,
+              cancelable: true,
+              clipboardData: dataTransfer,
+            }),
+          );
+          dataTransfer.clearData();
+        };
+      }
+
       const editor = document.querySelector('div[contenteditable="true"]');
       const dispatchPaste = paste();
       if (editor) {

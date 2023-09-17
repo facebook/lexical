@@ -1038,19 +1038,19 @@ export class RangeSelection implements BaseSelection {
    */
   insertRawText(text: string): void {
     const parts = text.split(/(\r?\n|\t)/);
-    const paragraph = $createParagraphNode();
+    const nodes = [];
     const length = parts.length;
     for (let i = 0; i < length; i++) {
       const part = parts[i];
       if (part === '\n' || part === '\r\n') {
-        paragraph.append($createLineBreakNode());
+        nodes.push($createLineBreakNode());
       } else if (part === '\t') {
-        paragraph.append($createTabNode());
+        nodes.push($createTabNode());
       } else {
-        paragraph.append($createTextNode(part));
+        nodes.push($createTextNode(part));
       }
     }
-    this.insertNodes([paragraph]);
+    this.insertNodes(nodes);
   }
 
   /**
@@ -1528,41 +1528,31 @@ export class RangeSelection implements BaseSelection {
    * @returns true if the nodes were inserted successfully, false otherwise.
    */
   insertNodes(nodes: Array<LexicalNode>, selectStart?: boolean): boolean {
-    const pointNode = this.anchor.getNode();
-
-    if (
-      nodes.length === 1 &&
-      $isLineBreakNode(nodes[0]) &&
-      $isElementNode(pointNode)
-    ) {
-      const {offset} = this.anchor;
-      const paragraphOrCode = pointNode;
-      const node = nodes[0];
-      paragraphOrCode.splice(offset, 0, [node]);
-      paragraphOrCode.select(offset + 1, offset + 1);
-      return true;
+    if (!this.isCollapsed()) {
+      this.removeText();
     }
-
+    const firstToAppend = splitBlock(this);
+    const nodesToAppend = firstToAppend
+      ? [firstToAppend, ...firstToAppend.getNextSiblings()]
+      : null;
     const firstBlock = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
     let currentBlock = firstBlock;
-    const lastBlock = this.insertParagraph()!;
-    let nextFirst = nodes[0] as ElementNode;
-    if (!INTERNAL_$isBlock(nodes[0])) {
-      currentBlock = firstBlock.insertNewAfter(this, true) as ElementNode;
-      nextFirst = currentBlock;
-      currentBlock.append(...nodes);
+
+    nodes.forEach((node) => {
+      if (INTERNAL_$isBlock(node)) {
+        currentBlock = currentBlock.insertNewAfter(this, true) as ElementNode;
+      } else if (firstToAppend) {
+        firstToAppend.insertBefore(node);
+      } else {
+        currentBlock.append(node);
+      }
+    });
+    if (nodesToAppend) {
+      currentBlock.append(...nodesToAppend);
+      firstToAppend!.selectPrevious();
     } else {
-      nodes.forEach((node) => {
-        if ($isElementNode(node)) {
-          currentBlock.insertAfter(node, true);
-          currentBlock = node;
-        }
-      });
+      currentBlock.selectEnd();
     }
-    const prevLast = nodes.length > 1 ? currentBlock : firstBlock;
-    mergeBlocks(firstBlock, nextFirst);
-    prevLast.selectEnd();
-    mergeBlocks(prevLast, lastBlock);
     return true;
   }
 
@@ -3029,13 +3019,15 @@ export function DEPRECATED_$getNodeTriplet(
 function splitBlock(selection: RangeSelection) {
   const point = selection.anchor;
   const pointNode = point.getNode();
+  if (!$isTextNode(pointNode)) {
+    return pointNode.getChildAtIndex(point.offset);
+  }
   const pointParent = pointNode.getParentOrThrow();
 
-  if (!$isTextNode(pointNode)) return null;
   const split = pointNode.splitText(point.offset);
   // TO-DO: splitText should return [undefined, TextNode] if offset is 0 (breaking change)
   let firstToAppend: LexicalNode | null =
-    point.offset === 0 ? split[0] : split[1];
+    (point.offset === 0 ? split[0] : split[1]) || split[0].getNextSibling();
   if (pointParent.isInline()) {
     const newBlock = pointParent.insertNewAfter(
       selection,
@@ -3047,11 +3039,4 @@ function splitBlock(selection: RangeSelection) {
     firstToAppend = pointParent;
   }
   return firstToAppend;
-}
-
-function mergeBlocks(firstBlock: ElementNode, secondBlock: ElementNode) {
-  secondBlock.getChildren().forEach((child: LexicalNode) => {
-    firstBlock.append(child);
-  });
-  secondBlock.remove();
 }

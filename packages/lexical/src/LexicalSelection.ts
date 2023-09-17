@@ -1528,27 +1528,22 @@ export class RangeSelection implements BaseSelection {
    * @returns true if the nodes were inserted successfully, false otherwise.
    */
   insertNodes(nodes: Array<LexicalNode>, selectStart?: boolean): boolean {
-    if (!this.isCollapsed()) {
-      this.removeText();
+    const i = RemoveTextAndSplitBlock(this);
+    if (this.anchor.key === 'root') {
+      const paragraph = $createParagraphNode();
+      $getRoot().append(paragraph);
+      paragraph.select();
     }
-    const firstToAppend = splitBlock(this);
-    const nodesToAppend = firstToAppend
-      ? [firstToAppend, ...firstToAppend.getNextSiblings()]
-      : null;
     const firstBlock = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
+    const firstToAppend = firstBlock.getChildAtIndex(i);
     let currentBlock = firstBlock;
 
     nodes.forEach((node, index) => {
       if ($isElementNode(node) && !node.isInline()) {
-        if (index === 0) {
-          if (currentBlock.isEmpty()) {
-            currentBlock = currentBlock.replace(node) as ElementNode;
-          } else {
-            const start = firstToAppend
-              ? firstToAppend.getIndexWithinParent()
-              : 0;
-            currentBlock.splice(start, 0, node.getChildren());
-          }
+        if (index === 0 && currentBlock.isEmpty()) {
+          currentBlock = currentBlock.replace(node) as ElementNode;
+        } else if (index === 0) {
+          currentBlock.splice(i, 0, node.getChildren());
         } else {
           currentBlock = currentBlock.insertAfter(node) as ElementNode;
         }
@@ -1558,8 +1553,10 @@ export class RangeSelection implements BaseSelection {
         currentBlock.append(node);
       }
     });
-    if (nodesToAppend) {
-      currentBlock.append(...nodesToAppend);
+    if (firstToAppend) {
+      if (currentBlock !== firstBlock) {
+        currentBlock.append(firstToAppend, ...firstToAppend.getNextSiblings());
+      }
       firstToAppend!.selectPrevious();
     } else {
       currentBlock.selectEnd();
@@ -1571,22 +1568,19 @@ export class RangeSelection implements BaseSelection {
    * Inserts a new ParagraphNode into the EditorState at the current Selection
    */
   insertParagraph() {
-    if (!this.isCollapsed()) {
-      this.removeText();
+    const index = RemoveTextAndSplitBlock(this);
+    if (this.anchor.key === 'root') {
+      const paragraph = $createParagraphNode();
+      $getRoot().append(paragraph);
+      paragraph.select();
     }
-
-    const point = this.anchor;
-    const pointNode = point.getNode();
-    const firstToAppend = splitBlock(this);
-
-    const block = $getAncestor(pointNode, INTERNAL_$isBlock);
-    if (block) {
-      const newBlock = block.insertNewAfter(this, false) as ElementNode;
-      if (firstToAppend) {
-        newBlock.append(firstToAppend, ...firstToAppend.getNextSiblings());
-      }
-      newBlock.selectStart();
+    const block = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
+    const firstToAppend = block.getChildAtIndex(index);
+    const newBlock = block.insertNewAfter(this, false) as ElementNode;
+    if (firstToAppend) {
+      newBlock.append(firstToAppend, ...firstToAppend.getNextSiblings());
     }
+    newBlock.selectStart();
   }
 
   /**
@@ -3027,27 +3021,37 @@ export function DEPRECATED_$getNodeTriplet(
   return [cell, row, grid];
 }
 
-function splitBlock(selection: RangeSelection) {
+function RemoveTextAndSplitBlock(selection: RangeSelection) {
+  if (!selection.isCollapsed()) {
+    selection.removeText();
+  }
   const point = selection.anchor;
   const pointNode = point.getNode();
   if (!$isTextNode(pointNode)) {
-    return pointNode.getChildAtIndex(point.offset);
+    return point.offset;
   }
-  const pointParent = pointNode.getParentOrThrow();
+  const pointParent = pointNode.getParent();
+
+  if (!pointParent) {
+    const paragraph = $createParagraphNode();
+    $getRoot().append(paragraph);
+    paragraph.select();
+    return 0;
+  }
 
   const split = pointNode.splitText(point.offset);
   // TO-DO: splitText should return [undefined, TextNode] if offset is 0 (breaking change)
-  let firstToAppend: LexicalNode | null =
-    (point.offset === 0 ? split[0] : split[1]) || split[0].getNextSibling();
+  const x = point.offset === 0 ? 0 : 1;
+  const index = split[0].getIndexWithinParent() + x;
+
+  if (!pointParent.isInline()) return index;
+
   if (pointParent.isInline()) {
-    const newBlock = pointParent.insertNewAfter(
-      selection,
-      false,
-    ) as ElementNode;
+    const newBlock = pointParent.insertNewAfter(selection) as ElementNode;
+    const firstToAppend = pointParent.getChildAtIndex(index);
     if (firstToAppend) {
       newBlock.append(firstToAppend, ...firstToAppend.getNextSiblings());
     }
-    firstToAppend = pointParent;
   }
-  return firstToAppend;
+  return pointParent.getIndexWithinParent();
 }

@@ -583,7 +583,7 @@ test.describe('CopyAndPaste', () => {
         anchorOffset: 1,
         anchorPath: [1, 5, 0],
         focusOffset: 1,
-        focusPath: [0, 2, 0],
+        focusPath: [0, 1, 0],
       });
     } else {
       await assertSelection(page, {

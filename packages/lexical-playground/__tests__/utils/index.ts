@@ -55,8 +55,20 @@ interface AppSettings {
   tableCellBackgroundColor?: boolean;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 type ClipboardData = Record<string, any>;
+type FunctionWithArguments = (...args: any[]) => any;
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
+function wrapAndSlowDown<T extends FunctionWithArguments>(
+  method: T,
+  delay: number,
+) {
+  return async function (this: ThisParameterType<T>, ...args: Parameters<T>) {
+    await new Promise((resolve) => setTimeout(resolve, delay));
+    return method.apply(this, args);
+  };
+}
 
 export async function initialize({
   page,
@@ -66,7 +78,7 @@ export async function initialize({
   isCharLimitUtf8 = false,
   isMaxLength = false,
   showNestedEditorTreeView,
-  tableCellMerge = false,
+  tableCellMerge,
   tableCellBackgroundColor,
 }: {
   page: Page;
@@ -79,17 +91,27 @@ export async function initialize({
   tableCellMerge?: boolean;
   tableCellBackgroundColor?: boolean;
 }) {
-  const appSettings: Omit<AppSettings, 'isPlainText' | 'legacyEvents'> = {
+  // Tests with legacy events often fail to register keypress, so
+  // slowing it down to reduce flakiness
+  if (LEGACY_EVENTS) {
+    page.keyboard.type = wrapAndSlowDown(page.keyboard.type, 50);
+    page.keyboard.press = wrapAndSlowDown(page.keyboard.press, 50);
+  }
+
+  const appSettings: Partial<
+    Omit<AppSettings, 'isPlainText' | 'legacyEvents'>
+  > = {
     collabId: isCollab ? uuidv4() : undefined,
     disableBeforeInput: LEGACY_EVENTS,
     emptyEditor: true,
     isAutocomplete,
     isCharLimit,
     isCharLimitUtf8,
-    isCollab,
+    isCollab: isCollab || undefined,
     isMaxLength,
     isRichText: IS_RICH_TEXT,
-    showNestedEditorTreeView: showNestedEditorTreeView === undefined,
+    showNestedEditorTreeView:
+      showNestedEditorTreeView === undefined ? true : undefined,
     tableCellBackgroundColor,
     tableCellMerge,
   };
@@ -135,11 +157,13 @@ export const test = base.extend<AppSettings>({
 export {expect} from '@playwright/test';
 
 function appSettingsToURLParams(
-  appSettings: Omit<AppSettings, 'isPlainText' | 'legacyEvents'>,
+  appSettings: Partial<Omit<AppSettings, 'isPlainText' | 'legacyEvents'>>,
 ) {
   const params = new URLSearchParams();
   Object.entries(appSettings).forEach(([setting, value]) => {
-    params.append(setting, String(value));
+    if (typeof value !== 'undefined') {
+      params.append(setting, String(value));
+    }
   });
   return params;
 }

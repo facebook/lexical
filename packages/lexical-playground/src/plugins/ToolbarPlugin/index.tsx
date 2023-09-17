@@ -70,7 +70,7 @@ import {
   SELECTION_CHANGE_COMMAND,
   UNDO_COMMAND,
 } from 'lexical';
-import {useCallback, useEffect, useState} from 'react';
+import {Dispatch, useCallback, useEffect, useState} from 'react';
 import * as React from 'react';
 import {IS_APPLE} from 'shared/environment';
 
@@ -380,7 +380,11 @@ function FontDropDown({
   );
 }
 
-export default function ToolbarPlugin(): JSX.Element {
+export default function ToolbarPlugin({
+  setIsLinkEditMode,
+}: {
+  setIsLinkEditMode: Dispatch<boolean>;
+}): JSX.Element {
   const [editor] = useLexicalComposerContext();
   const [activeEditor, setActiveEditor] = useState(editor);
   const [blockType, setBlockType] =
@@ -552,6 +556,11 @@ export default function ToolbarPlugin(): JSX.Element {
 
         if (code === 'KeyK' && (ctrlKey || metaKey)) {
           event.preventDefault();
+          if (!isLink) {
+            setIsLinkEditMode(true);
+          } else {
+            setIsLinkEditMode(false);
+          }
           return activeEditor.dispatchCommand(
             TOGGLE_LINK_COMMAND,
             sanitizeUrl('https://'),
@@ -561,7 +570,7 @@ export default function ToolbarPlugin(): JSX.Element {
       },
       COMMAND_PRIORITY_NORMAL,
     );
-  }, [activeEditor, isLink]);
+  }, [activeEditor, isLink, setIsLinkEditMode]);
 
   const applyStyleText = useCallback(
     (styles: Record<string, string>) => {

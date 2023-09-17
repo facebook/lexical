@@ -1538,9 +1538,20 @@ export class RangeSelection implements BaseSelection {
     const firstBlock = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
     let currentBlock = firstBlock;
 
-    nodes.forEach((node) => {
-      if (INTERNAL_$isBlock(node)) {
-        currentBlock = currentBlock.insertNewAfter(this, true) as ElementNode;
+    nodes.forEach((node, index) => {
+      if ($isElementNode(node) && !node.isInline()) {
+        if (index === 0) {
+          if (currentBlock.isEmpty()) {
+            currentBlock = currentBlock.replace(node) as ElementNode;
+          } else {
+            const start = firstToAppend
+              ? firstToAppend.getIndexWithinParent()
+              : 0;
+            currentBlock.splice(start, 0, node.getChildren());
+          }
+        } else {
+          currentBlock = currentBlock.insertAfter(node) as ElementNode;
+        }
       } else if (firstToAppend) {
         firstToAppend.insertBefore(node);
       } else {

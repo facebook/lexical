@@ -49,6 +49,18 @@ const FeatureList = [
     ),
     title: 'Fast',
   },
+  {
+    Svg: require('@site/static/img/feature-cross-platform.svg').default,
+    description: (
+      <Translate
+        id="page.home.features.crossplatform"
+        description="short description of why Lexical is cross platform (web/iOS)">
+        Lexical is available as a JavaScript framework for use in web browsers,
+        as well as a Swift framework for native iOS development.
+      </Translate>
+    ),
+    title: 'Cross Platform',
+  },
 ];
 
 function Feature({Svg, title, description}) {

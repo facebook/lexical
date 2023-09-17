@@ -6,6 +6,8 @@
  *
  */
 
+import type {LexicalEditor, NodeKey} from 'lexical';
+
 import {
   $createCodeNode,
   $isCodeNode,
@@ -51,7 +53,6 @@ import {
   $getNodeByKey,
   $getRoot,
   $getSelection,
-  $isElementNode,
   $isRangeSelection,
   $isRootOrShadowRoot,
   $isTextNode,
@@ -60,13 +61,10 @@ import {
   COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_NORMAL,
   DEPRECATED_$isGridSelection,
-  ElementFormatType,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
   INDENT_CONTENT_COMMAND,
   KEY_MODIFIER_COMMAND,
-  LexicalEditor,
-  NodeKey,
   OUTDENT_CONTENT_COMMAND,
   REDO_COMMAND,
   SELECTION_CHANGE_COMMAND,
@@ -93,7 +91,6 @@ import {
   InsertImagePayload,
 } from '../ImagesPlugin';
 import {InsertInlineImageDialog} from '../InlineImagePlugin';
-import InsertLayoutDialog from '../LayoutPlugin/InsertLayoutDialog';
 import {INSERT_PAGE_BREAK} from '../PageBreakPlugin';
 import {InsertPollDialog} from '../PollPlugin';
 import {InsertNewTableDialog, InsertTableDialog} from '../TablePlugin';
@@ -154,27 +151,6 @@ const FONT_SIZE_OPTIONS: [string, string][] = [
   ['19px', '19px'],
   ['20px', '20px'],
 ];
-
-const ELEMENT_FORMAT_OPTIONS: {
-  [key: string]: {icon: string; name: string};
-} = {
-  center: {
-    icon: 'center-align',
-    name: 'Center Align',
-  },
-  justify: {
-    icon: 'justify-align',
-    name: 'Justify Align',
-  },
-  left: {
-    icon: 'left-align',
-    name: 'Left Align',
-  },
-  right: {
-    icon: 'right-align',
-    name: 'Right Align',
-  },
-};
 
 function dropDownActiveClass(active: boolean) {
   if (active) return 'active dropdown-item-active';
@@ -404,7 +380,11 @@ function FontDropDown({
   );
 }
 
-export default function ToolbarPlugin(): JSX.Element {
+export default function ToolbarPlugin({
+  setIsLinkEditMode,
+}: {
+  setIsLinkEditMode: Dispatch<boolean>;
+}): JSX.Element {
   const [editor] = useLexicalComposerContext();
   const [activeEditor, setActiveEditor] = useState(editor);
   const [blockType, setBlockType] =
@@ -418,7 +398,6 @@ export default function ToolbarPlugin(): JSX.Element {
   const [fontColor, setFontColor] = useState<string>('#000');
   const [bgColor, setBgColor] = useState<string>('#fff');
   const [fontFamily, setFontFamily] = useState<string>('Arial');
-  const [elementFormat, setElementFormat] = useState<ElementFormatType>('left');
   const [isLink, setIsLink] = useState(false);
   const [isBold, setIsBold] = useState(false);
   const [isItalic, setIsItalic] = useState(false);
@@ -524,11 +503,6 @@ export default function ToolbarPlugin(): JSX.Element {
       setFontFamily(
         $getSelectionStyleValueForProperty(selection, 'font-family', 'Arial'),
       );
-      setElementFormat(
-        ($isElementNode(node)
-          ? node.getFormatType()
-          : parent?.getFormatType()) || 'left',
-      );
     }
   }, [activeEditor]);
 
@@ -602,10 +576,7 @@ export default function ToolbarPlugin(): JSX.Element {
     (styles: Record<string, string>) => {
       activeEditor.update(() => {
         const selection = $getSelection();
-        if (
-          $isRangeSelection(selection) ||
-          DEPRECATED_$isGridSelection(selection)
-        ) {
+        if ($isRangeSelection(selection)) {
           $patchStyleText(selection, styles);
         }
       });
@@ -1022,19 +993,6 @@ export default function ToolbarPlugin(): JSX.Element {
               <i className="icon poll" />
               <span className="text">Poll</span>
             </DropDownItem>
-            <DropDownItem
-              onClick={() => {
-                showModal('Insert Columns Layout', (onClose) => (
-                  <InsertLayoutDialog
-                    activeEditor={activeEditor}
-                    onClose={onClose}
-                  />
-                ));
-              }}
-              className="item">
-              <i className="icon columns" />
-              <span className="text">Columns Layout</span>
-            </DropDownItem>
 
             <DropDownItem
               onClick={() => {
@@ -1143,7 +1101,6 @@ export default function ToolbarPlugin(): JSX.Element {
           <span className="text">Indent</span>
         </DropDownItem>
       </DropDown>
-
 
       {modal}
     </div>

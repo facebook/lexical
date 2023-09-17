@@ -106,7 +106,7 @@ export default function Editor(): JSX.Element {
     useState<HTMLDivElement | null>(null);
   const [isSmallWidthViewport, setIsSmallWidthViewport] =
     useState<boolean>(false);
-  const [isLinkEditMode, setIsLinkEditMode] = useState(false);
+  const [isLinkEditMode, setIsLinkEditMode] = useState<boolean>(false);
 
   const onRef = (_floatingAnchorElem: HTMLDivElement) => {
     if (_floatingAnchorElem !== null) {

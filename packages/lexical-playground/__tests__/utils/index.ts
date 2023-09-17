@@ -72,11 +72,11 @@ function wrapAndSlowDown<T extends FunctionWithArguments>(
 
 export async function initialize({
   page,
-  isCollab = false,
-  isAutocomplete = false,
-  isCharLimit = false,
-  isCharLimitUtf8 = false,
-  isMaxLength = false,
+  isCollab,
+  isAutocomplete,
+  isCharLimit,
+  isCharLimitUtf8,
+  isMaxLength,
   showNestedEditorTreeView,
   tableCellMerge,
   tableCellBackgroundColor,
@@ -100,21 +100,28 @@ export async function initialize({
 
   const appSettings: Partial<
     Omit<AppSettings, 'isPlainText' | 'legacyEvents'>
-  > = {
-    collabId: isCollab ? uuidv4() : undefined,
-    disableBeforeInput: LEGACY_EVENTS,
-    emptyEditor: true,
-    isAutocomplete,
-    isCharLimit,
-    isCharLimitUtf8,
-    isCollab: isCollab || undefined,
-    isMaxLength,
-    isRichText: IS_RICH_TEXT,
-    showNestedEditorTreeView:
-      showNestedEditorTreeView === undefined ? true : undefined,
-    tableCellBackgroundColor,
-    tableCellMerge,
-  };
+  > = {};
+
+  appSettings.isRichText = IS_RICH_TEXT;
+  appSettings.emptyEditor = true;
+  appSettings.disableBeforeInput = LEGACY_EVENTS;
+  if (isCollab) {
+    appSettings.isCollab = isCollab;
+    appSettings.collabId = uuidv4();
+  }
+  if (showNestedEditorTreeView === undefined) {
+    appSettings.showNestedEditorTreeView = true;
+  }
+  appSettings.isAutocomplete = !!isAutocomplete;
+  appSettings.isCharLimit = !!isCharLimit;
+  appSettings.isCharLimitUtf8 = !!isCharLimitUtf8;
+  appSettings.isMaxLength = !!isMaxLength;
+  if (tableCellMerge !== undefined) {
+    appSettings.tableCellMerge = tableCellMerge;
+  }
+  if (tableCellBackgroundColor !== undefined) {
+    appSettings.tableCellBackgroundColor = tableCellBackgroundColor;
+  }
 
   const urlParams = appSettingsToURLParams(appSettings);
   const url = `http://localhost:${E2E_PORT}/${

@@ -3036,9 +3036,9 @@ function RemoveTextAndSplitBlock(selection: RangeSelection) {
 
   if (!pointParent.isInline()) return index;
 
-  const newBlock = pointParent.insertNewAfter(selection) as ElementNode;
   const firstToAppend = pointParent.getChildAtIndex(index);
   if (firstToAppend) {
+    const newBlock = pointParent.insertNewAfter(selection) as ElementNode;
     newBlock.append(firstToAppend, ...firstToAppend.getNextSiblings());
   }
   return pointParent.getIndexWithinParent() + x;

@@ -3030,7 +3030,7 @@ function RemoveTextAndSplitBlock(selection: RangeSelection) {
   }
 
   const split = pointNode.splitText(point.offset);
-  // TO-DO: splitText should return [undefined, TextNode] if offset is 0 (breaking change)
+  // TO-DO: splitText should return [undefined, TextNode] if offset is 0
   const x = point.offset === 0 ? 0 : 1;
   const index = split[0].getIndexWithinParent() + x;
 
@@ -3041,5 +3041,5 @@ function RemoveTextAndSplitBlock(selection: RangeSelection) {
   if (firstToAppend) {
     newBlock.append(firstToAppend, ...firstToAppend.getNextSiblings());
   }
-  return pointParent.getIndexWithinParent();
+  return pointParent.getIndexWithinParent() + x;
 }

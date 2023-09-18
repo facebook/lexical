@@ -341,7 +341,7 @@ export class NodeSelection implements BaseSelection {
     // Do nothing?
   }
 
-  insertNodes(nodes: Array<LexicalNode>, selectStart?: boolean): boolean {
+  insertNodes(nodes: Array<LexicalNode>) {
     const selectedNodes = this.getNodes();
     const selectedNodesLength = selectedNodes.length;
     const lastSelectedNode = selectedNodes[selectedNodesLength - 1];
@@ -353,13 +353,11 @@ export class NodeSelection implements BaseSelection {
       const index = lastSelectedNode.getIndexWithinParent() + 1;
       selectionAtEnd = lastSelectedNode.getParentOrThrow().select(index, index);
     }
-    selectionAtEnd.insertNodes(nodes, selectStart);
+    selectionAtEnd.insertNodes(nodes);
     // Remove selected nodes
     for (let i = 0; i < selectedNodesLength; i++) {
       selectedNodes[i].remove();
     }
-
-    return true;
   }
 
   getNodes(): Array<LexicalNode> {
@@ -526,12 +524,12 @@ export class GridSelection implements BaseSelection {
     // Do nothing?
   }
 
-  insertNodes(nodes: Array<LexicalNode>, selectStart?: boolean): boolean {
+  insertNodes(nodes: Array<LexicalNode>) {
     const focusNode = this.focus.getNode();
     const selection = $normalizeSelection(
       focusNode.select(0, focusNode.getChildrenSize()),
     );
-    return selection.insertNodes(nodes, selectStart);
+    selection.insertNodes(nodes);
   }
 
   // TODO Deprecate this method. It's confusing when used with colspan|rowspan
@@ -1524,10 +1522,8 @@ export class RangeSelection implements BaseSelection {
    * should be changed, replaced, or moved to accomodate the incoming ones.
    *
    * @param nodes - the nodes to insert
-   * @param selectStart - whether or not to select the start after the insertion.
-   * @returns true if the nodes were inserted successfully, false otherwise.
    */
-  insertNodes(nodes: Array<LexicalNode>, selectStart?: boolean): boolean {
+  insertNodes(nodes: Array<LexicalNode>) {
     const i = RemoveTextAndSplitBlock(this);
     if (this.anchor.key === 'root') {
       const paragraph = $createParagraphNode();
@@ -1561,7 +1557,6 @@ export class RangeSelection implements BaseSelection {
     } else {
       currentBlock.selectEnd();
     }
-    return true;
   }
 
   /**
@@ -1586,10 +1581,8 @@ export class RangeSelection implements BaseSelection {
   /**
    * Inserts a logical linebreak, which may be a new LineBreakNode or a new ParagraphNode, into the EditorState at the
    * current Selection.
-   *
-   * @param selectStart whether or not to select the start of the insertion range after the operation completes.
    */
-  insertLineBreak(selectStart?: boolean): void {
+  insertLineBreak(): void {
     this.insertNodes([$createLineBreakNode()]);
   }
 
@@ -2899,16 +2892,13 @@ export function updateDOMSelection(
   markSelectionChangeFromDOMUpdate();
 }
 
-export function $insertNodes(
-  nodes: Array<LexicalNode>,
-  selectStart?: boolean,
-): boolean {
+export function $insertNodes(nodes: Array<LexicalNode>) {
   let selection = $getSelection() || $getPreviousSelection();
 
   if (selection === null) {
     selection = $getRoot().selectEnd();
   }
-  return selection.insertNodes(nodes, selectStart);
+  selection.insertNodes(nodes);
 }
 
 export function $getTextContent(): string {
@@ -3046,12 +3036,10 @@ function RemoveTextAndSplitBlock(selection: RangeSelection) {
 
   if (!pointParent.isInline()) return index;
 
-  if (pointParent.isInline()) {
-    const newBlock = pointParent.insertNewAfter(selection) as ElementNode;
-    const firstToAppend = pointParent.getChildAtIndex(index);
-    if (firstToAppend) {
-      newBlock.append(firstToAppend, ...firstToAppend.getNextSiblings());
-    }
+  const newBlock = pointParent.insertNewAfter(selection) as ElementNode;
+  const firstToAppend = pointParent.getChildAtIndex(index);
+  if (firstToAppend) {
+    newBlock.append(firstToAppend, ...firstToAppend.getNextSiblings());
   }
   return pointParent.getIndexWithinParent();
 }

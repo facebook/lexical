@@ -202,7 +202,7 @@ export function registerPlainText(editor: LexicalEditor): () => void {
           return false;
         }
 
-        selection.insertLineBreak(selectStart);
+        selection.insertLineBreak();
         return true;
       },
       COMMAND_PRIORITY_EDITOR,

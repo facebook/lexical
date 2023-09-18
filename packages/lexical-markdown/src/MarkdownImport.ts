@@ -157,7 +157,14 @@ function importBlocks(
   textFormatTransformersIndex: TextFormatTransformersIndex,
   textMatchTransformers: Array<TextMatchTransformer>,
 ) {
-  const lineTextTrimmed = lineText.trim();
+  // it has to be trimEnd, otherwise it will remove the space at the beginning of the line
+  // for example ```html
+  // <style>
+  //   .markdown-body {
+  // 	 }
+  // </style>
+  // ```
+  const lineTextTrimmed = lineText.trimEnd();
   const textNode = $createTextNode(lineTextTrimmed);
   const elementNode = $createParagraphNode();
   elementNode.append(textNode);

@@ -52,6 +52,9 @@ export type ElementTransformer = {
   ) => string | null;
   // This property will be considered as 1 by default.
   getNumberOfLines?: (lines: Array<string>, startLineIndex: number) => number;
+  /**
+   * @deprecated
+   */
   getChildrenFromLines? :(lines: Array<string>) => Array<LexicalNode>
   regExp: RegExp;
   /**
@@ -373,6 +376,10 @@ export const LINK: TextMatchTransformer = {
       return linkContent;
     }
   },
+  // Excluding the case of image syntax
+  // trying to add (?:^|[^!]) to exclude image syntax
+  // This will affect the link length.
+  // Change `Hello[word](link)` to `Hell[word](link)`. The "o" is removed.
   importRegExp:
     /(?:\[([^[]+)\])(?:\((?:([^()\s]+)(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))/,
   regExp:

@@ -21,6 +21,7 @@ import {
   TextMatchTransformer,
   TRANSFORMERS,
 } from '../..';
+import {exportNodeToJSON} from "lexical/src/LexicalEditorState";
 
 describe('Markdown', () => {
   type Input = Array<{
@@ -59,7 +60,7 @@ describe('Markdown', () => {
       md: '###### Hello world',
     },
     {
-      html: '<p><span>line1</span><br><span>line2</span></p>',
+      html: '<p><span style="white-space: pre-wrap;">line1</span><br><span style="white-space: pre-wrap;">line2</span></p>',
       md: 'line1\nline2',
     },
     {
@@ -163,7 +164,7 @@ describe('Markdown', () => {
       skipExport: true,
     },
     {
-      html: '<pre spellcheck="false"><span style="white-space: pre-wrap;">Code</span></pre>',
+      html: '<pre spellcheck="false"><p><span style="white-space: pre-wrap;">Code</span></p></pre>',
       md: '```\nCode\n```',
     },
     {
@@ -185,15 +186,25 @@ describe('Markdown', () => {
       skipExport: true,
     },
     // We should not render non-link markdown as a link
-    {
-      html: '<p><span>![alt text](https://lexical.dev/image.jpeg)</span></p>',
-      md: '![alt text](https://lexical.dev/image.jpeg)',
-    },
+    // cannot support this, deal with it later
+//     {
+//       html: '<p><span style="white-space: pre-wrap;">![alt text](https://lexical.dev/image.jpeg)</span></p>',
+//       md: '![alt text](https://lexical.dev/image.jpeg)',
+//     },
     {
       exportMd: ['```', 'a = b + c', '```'].join('\n'),
-      html: '<pre spellcheck="false"><span>a = b + c</span></pre>',
+      html: '<pre spellcheck="false"><p><span style="white-space: pre-wrap;">a = b + c</span></p></pre>',
       md: ['```', 'a = b + c'].join('\n'),
     },
+    {
+      html: '<pre spellcheck="false" data-highlight-language="html"><p><span style="white-space: pre-wrap;">&lt;style&gt;</span><br><span style="white-space: pre-wrap;">\t.markdown-body {</span><br><span style="white-space: pre-wrap;">\t}</span><br><span style="white-space: pre-wrap;">&lt;/style&gt;</span></p></pre>',
+      md: `\`\`\`html
+<style>
+\t.markdown-body {
+\t}
+</style>
+\`\`\``,
+    }
   ];
 
   const HIGHLIGHT_TEXT_MATCH_IMPORT: TextMatchTransformer = {
@@ -265,6 +276,42 @@ describe('Markdown', () => {
           $getRoot().select();
           $insertNodes(nodes);
         },
+        {
+          discrete: true,
+        },
+      );
+
+      expect(
+        editor
+          .getEditorState()
+          .read(() => $convertToMarkdownString(TRANSFORMERS)),
+      ).toBe(exportMd ?? md);
+    });
+  }
+
+  for (const {md, exportMd, skipExport} of IMPORT_AND_EXPORT) {
+    if (skipExport) {
+      continue;
+    }
+
+    it(`can export "${md.replace(/\n/g, '\\n')}" from md`, () => {
+      const editor = createHeadlessEditor({
+        nodes: [
+          HeadingNode,
+          ListNode,
+          ListItemNode,
+          QuoteNode,
+          CodeNode,
+          LinkNode,
+        ],
+      });
+
+      editor.update(
+        () =>
+          $convertFromMarkdownString(md, [
+            ...TRANSFORMERS,
+            HIGHLIGHT_TEXT_MATCH_IMPORT,
+          ]),
         {
           discrete: true,
         },

@@ -925,6 +925,17 @@ export function registerCodeHighlighting(
         const anchorNode = selection.anchor.getNode();
         if ($isCodeHighlightNode(anchorNode) || $isCodeNode(anchorNode)) {
           selection.insertLineBreak();
+          if ($isCodeNode(anchorNode)) return true;
+          const firstOfLine = getFirstCodeNodeOfLine(anchorNode);
+          let count = 0;
+          let current = firstOfLine;
+          while ($isTabNode(current)) {
+            count++;
+            current = current.getNextSibling();
+          }
+          for (let i = 0; i < count; i++) {
+            selection.insertNodes([$createTabNode()]);
+          }
           return true;
         }
         return false;

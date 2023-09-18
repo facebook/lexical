@@ -1533,29 +1533,40 @@ export class RangeSelection implements BaseSelection {
     const firstBlock = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
     const firstToAppend = firstBlock.getChildAtIndex(i);
     let currentBlock = firstBlock;
+    nodes = firstToAppend
+      ? [...nodes, firstToAppend, ...firstToAppend.getNextSiblings()]
+      : nodes;
+    let firstBlockFlag: ElementNode | null = null;
 
     nodes.forEach((node, index) => {
       if ($isElementNode(node) && !node.isInline()) {
         if (index === 0 && currentBlock.isEmpty()) {
           currentBlock = currentBlock.replace(node) as ElementNode;
-        } else if (index === 0) {
-          currentBlock.splice(i, 0, node.getChildren());
         } else {
           currentBlock = currentBlock.insertAfter(node) as ElementNode;
+          firstBlockFlag = firstBlockFlag ?? currentBlock;
         }
-      } else if (firstToAppend) {
-        firstToAppend.insertBefore(node);
       } else {
         currentBlock.append(node);
       }
     });
-    if (firstToAppend) {
-      if (currentBlock !== firstBlock) {
-        currentBlock.append(firstToAppend, ...firstToAppend.getNextSiblings());
+
+    if (firstBlockFlag) {
+      if (firstBlock.isEmpty()) firstBlock.remove();
+      else {
+        (firstBlockFlag as ElementNode).selectStart();
+        const {key, offset, type} = this.anchor;
+        firstBlock.selectEnd();
+        this.anchor.set(key, offset, type);
+        this.removeText();
       }
+    }
+
+    if (firstToAppend) {
       firstToAppend!.selectPrevious();
     } else {
-      currentBlock.selectEnd();
+      const lastBlock = currentBlock.isAttached() ? currentBlock : firstBlock;
+      lastBlock.selectEnd();
     }
   }
 

@@ -923,7 +923,12 @@ export function registerCodeHighlighting(
           return false;
         }
         const anchorNode = selection.anchor.getNode();
-        if ($isCodeHighlightNode(anchorNode) || $isCodeNode(anchorNode)) {
+        if (
+          $isCodeHighlightNode(anchorNode) ||
+          $isCodeNode(anchorNode) ||
+          $isTabNode(anchorNode) ||
+          $isLineBreakNode(anchorNode)
+        ) {
           selection.insertLineBreak();
           if ($isCodeNode(anchorNode)) return true;
           const firstOfLine = getFirstCodeNodeOfLine(anchorNode);

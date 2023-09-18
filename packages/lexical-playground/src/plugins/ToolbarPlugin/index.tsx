@@ -506,7 +506,10 @@ export default function ToolbarPlugin(): JSX.Element {
   const [isEditable, setIsEditable] = useState(() => editor.isEditable());
 
   const $updateToolbar = useCallback(() => {
+    // Not getting here if toolbar updated while table cells selected
+
     const selection = $getSelection();
+
     if ($isRangeSelection(selection)) {
       const anchorNode = selection.anchor.getNode();
       let element =

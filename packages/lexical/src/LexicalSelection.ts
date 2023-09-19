@@ -1524,62 +1524,40 @@ export class RangeSelection implements BaseSelection {
    * @param nodes - the nodes to insert
    */
   insertNodes(nodes: Array<LexicalNode>) {
-    const i = RemoveTextAndSplitBlock(this);
-    if (this.anchor.key === 'root') {
-      const paragraph = $createParagraphNode();
-      $getRoot().append(paragraph);
-      paragraph.select();
-    }
-    const firstBlock = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
-    const firstToAppend = firstBlock.getChildAtIndex(i);
+    let firstBlock = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
+    this.insertParagraph();
+    if (!firstBlock) firstBlock = this.anchor.getNode() as ElementNode; // this happens if anchor was root
     let currentBlock = firstBlock;
-    nodes = firstToAppend
-      ? [...nodes, firstToAppend, ...firstToAppend.getNextSiblings()]
-      : nodes;
-    let firstBlockFlag: ElementNode | null = null;
+    const lastBlock = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
 
-    nodes.forEach((node, index) => {
+    nodes.forEach((node) => {
       if ($isElementNode(node) && !node.isInline()) {
-        if (index === 0 && currentBlock.isEmpty()) {
-          currentBlock = currentBlock.replace(node) as ElementNode;
-        } else {
-          currentBlock = currentBlock.insertAfter(node) as ElementNode;
-          firstBlockFlag = firstBlockFlag ?? currentBlock;
+        const isFirstBlock = currentBlock === firstBlock;
+        currentBlock = currentBlock.insertAfter(node) as ElementNode;
+        if (isFirstBlock) {
+          mergeBlocks(firstBlock, currentBlock, this);
         }
       } else {
         currentBlock.append(node);
       }
     });
 
-    if (firstBlockFlag) {
-      if (firstBlock.isEmpty()) firstBlock.remove();
-      else {
-        (firstBlockFlag as ElementNode).selectStart();
-        const {key, offset, type} = this.anchor;
-        firstBlock.selectEnd();
-        this.anchor.set(key, offset, type);
-        this.removeText();
-      }
-    }
-
-    if (firstToAppend) {
-      firstToAppend!.selectPrevious();
-    } else {
-      const lastBlock = currentBlock.isAttached() ? currentBlock : firstBlock;
-      lastBlock.selectEnd();
-    }
+    const prevLast = currentBlock.isAttached() ? currentBlock : firstBlock;
+    if (firstBlock === lastBlock) return;
+    mergeBlocks(prevLast, lastBlock, this);
   }
 
   /**
    * Inserts a new ParagraphNode into the EditorState at the current Selection
    */
   insertParagraph() {
-    const index = RemoveTextAndSplitBlock(this);
     if (this.anchor.key === 'root') {
       const paragraph = $createParagraphNode();
       $getRoot().append(paragraph);
       paragraph.select();
+      return;
     }
+    const index = RemoveTextAndSplitBlock(this);
     const block = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
     const firstToAppend = block.getChildAtIndex(index);
     const newBlock = block.insertNewAfter(this, false) as ElementNode;
@@ -3022,6 +3000,22 @@ export function DEPRECATED_$getNodeTriplet(
   return [cell, row, grid];
 }
 
+function mergeBlocks(
+  firstBlock: ElementNode,
+  secondBlock: ElementNode,
+  selection: RangeSelection,
+) {
+  if (firstBlock.isEmpty()) {
+    firstBlock.remove();
+    return;
+  }
+  secondBlock.selectStart();
+  const {key, offset, type} = selection.anchor;
+  firstBlock.selectEnd();
+  selection.anchor.set(key, offset, type);
+  selection.removeText();
+}
+
 function RemoveTextAndSplitBlock(selection: RangeSelection) {
   if (!selection.isCollapsed()) {
     selection.removeText();
@@ -3041,7 +3035,6 @@ function RemoveTextAndSplitBlock(selection: RangeSelection) {
   }
 
   const split = pointNode.splitText(point.offset);
-  // TO-DO: splitText should return [undefined, TextNode] if offset is 0
   const x = point.offset === 0 ? 0 : 1;
   const index = split[0].getIndexWithinParent() + x;
 

@@ -1572,8 +1572,11 @@ export class RangeSelection implements BaseSelection {
     const prevLast = lastInsertedBlock!.isAttached()
       ? lastInsertedBlock!
       : firstBlock;
-    // const lastNode = nodes.at(-1)!;
-    // if ($isElementNode(lastNode) && !lastNode.isInline()) return;
+    if (
+      !$isRootNode(prevLast.getParent()) &&
+      $isRootNode(lastBlock.getParent())
+    )
+      return;
     mergeBlocks(prevLast, lastBlock, this);
   }
 
@@ -3055,7 +3058,7 @@ function RemoveTextAndSplitBlock(selection: RangeSelection) {
   const x = point.offset === 0 ? 0 : 1;
   const index = split[0].getIndexWithinParent() + x;
 
-  if (!pointParent.isInline()) return index;
+  if (!pointParent.isInline() || index === 0) return index;
 
   const firstToAppend = pointParent.getChildAtIndex(index);
   if (firstToAppend) {

@@ -155,13 +155,12 @@ const FONT_SIZE_OPTIONS: [string, string][] = [
 ];
 
 const ELEMENT_FORMAT_OPTIONS: {
-  [key in ElementFormatType]: {icon: string; iconRTL: string; name: string};
+  [key in Exclude<ElementFormatType, ''>]: {
+    icon: string;
+    iconRTL: string;
+    name: string;
+  };
 } = {
-  '': {
-    icon: 'Align',
-    iconRTL: 'Align',
-    name: 'Align',
-  },
   center: {
     icon: 'center-align',
     iconRTL: 'right-align',
@@ -433,7 +432,7 @@ function ElementFormatDropdown({
   isRTL: boolean;
   disabled: boolean;
 }) {
-  const formatOption = ELEMENT_FORMAT_OPTIONS[value];
+  const formatOption = ELEMENT_FORMAT_OPTIONS[value || 'left'];
 
   return (
     <DropDown

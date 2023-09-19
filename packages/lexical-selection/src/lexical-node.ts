@@ -21,6 +21,7 @@ import {
   $getNodeByKey,
   $getPreviousSelection,
   $isElementNode,
+  $isParagraphNode,
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
@@ -165,8 +166,15 @@ export function trimTextContentFromAnchor(
 
   if ($isElementNode(currentNode)) {
     const descendantNode = currentNode.getDescendantByIndex(anchor.offset);
+
     if (descendantNode !== null) {
       currentNode = descendantNode;
+    }
+
+    if (descendantNode === null && $isParagraphNode(currentNode)) {
+      const emptyTextNode = $createTextNode('');
+      currentNode.append(emptyTextNode);
+      currentNode = emptyTextNode;
     }
   }
 

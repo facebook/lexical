@@ -1553,6 +1553,8 @@ export class RangeSelection implements BaseSelection {
       second: ElementNode,
       selection: RangeSelection,
     ) {
+      // TO-DO: we have to reason generic behavior that is
+      // not hacks around list-items and codeblock.
       if (
         first.isEmpty() &&
         $isRootNode(first.getParent()) &&
@@ -1567,6 +1569,7 @@ export class RangeSelection implements BaseSelection {
         first.remove();
         return;
       }
+
       second.selectStart();
       const {key, offset, type} = selection.anchor;
       first.selectEnd();
@@ -1585,7 +1588,8 @@ export class RangeSelection implements BaseSelection {
       : firstBlock;
     if (
       !$isRootNode(prevLast.getParent()) &&
-      $isRootNode(lastBlock.getParent())
+      $isRootNode(lastBlock.getParent()) &&
+      !lastBlock.isEmpty()
     )
       return;
     mergeBlocks(prevLast, lastBlock, this);

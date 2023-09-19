@@ -1524,34 +1524,56 @@ export class RangeSelection implements BaseSelection {
    * @param nodes - the nodes to insert
    */
   insertNodes(nodes: Array<LexicalNode>) {
-    let firstBlock = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
+    if (this.anchor.key === 'root') this.insertParagraph();
+    const firstBlock = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
     const lastBlock = this.insertParagraph();
-    if (!firstBlock) firstBlock = this.anchor.getNode() as ElementNode; // this happens if anchor was root
-    let currentBlock = firstBlock;
-    let firstInsertionBlock: ElementNode | null = null;
+    let firstInsertedBlock: ElementNode | null = null;
+    let lastInsertedBlock: ElementNode | null = null;
 
+    let currentBlock = firstBlock;
     nodes.forEach((node) => {
       if ($isElementNode(node) && !node.isInline()) {
-        firstInsertionBlock = firstInsertionBlock || node;
-        currentBlock = currentBlock.insertAfter(node) as ElementNode;
+        lastInsertedBlock = $getAncestor(
+          node.getLastDescendant() ?? node,
+          INTERNAL_$isBlock,
+        )!;
+        firstInsertedBlock =
+          firstInsertedBlock ??
+          $getAncestor(node.getFirstDescendant() ?? node, INTERNAL_$isBlock)!;
+        currentBlock.insertAfter(node) as ElementNode;
+        currentBlock = lastInsertedBlock;
       } else {
         currentBlock.append(node);
       }
     });
 
-    if (firstInsertionBlock) {
-      if (firstBlock.isEmpty() && $isRootNode(firstBlock.getParent()))
-        firstBlock.remove();
-      else mergeBlocks(firstBlock, firstInsertionBlock, this);
+    function mergeBlocks(
+      first: ElementNode,
+      second: ElementNode,
+      selection: RangeSelection,
+    ) {
+      if (first.isEmpty() && $isRootNode(first.getParent())) {
+        first.remove();
+        return;
+      }
+      second.selectStart();
+      const {key, offset, type} = selection.anchor;
+      first.selectEnd();
+      selection.anchor.set(key, offset, type);
+      selection.removeText();
     }
-    const prevLast = currentBlock.isAttached() ? currentBlock : firstBlock;
-    const lastNode = nodes.at(-1)!;
-    if (
-      firstBlock === lastBlock &&
-      $isElementNode(lastNode) &&
-      !lastNode.isInline()
-    )
+
+    if (!firstInsertedBlock) {
+      mergeBlocks(firstBlock, lastBlock, this);
       return;
+    }
+
+    mergeBlocks(firstBlock, firstInsertedBlock, this);
+    const prevLast = lastInsertedBlock!.isAttached()
+      ? lastInsertedBlock!
+      : firstBlock;
+    // const lastNode = nodes.at(-1)!;
+    // if ($isElementNode(lastNode) && !lastNode.isInline()) return;
     mergeBlocks(prevLast, lastBlock, this);
   }
 
@@ -3009,18 +3031,6 @@ export function DEPRECATED_$getNodeTriplet(
     'Expected GridRowNode to have a parent GridNode',
   );
   return [cell, row, grid];
-}
-
-function mergeBlocks(
-  firstBlock: ElementNode,
-  secondBlock: ElementNode,
-  selection: RangeSelection,
-) {
-  secondBlock.selectStart();
-  const {key, offset, type} = selection.anchor;
-  firstBlock.selectEnd();
-  selection.anchor.set(key, offset, type);
-  selection.removeText();
 }
 
 function RemoveTextAndSplitBlock(selection: RangeSelection) {

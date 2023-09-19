@@ -64,6 +64,10 @@ describe('Markdown', () => {
       md: 'line1\nline2',
     },
     {
+      html: '<p><span style="white-space: pre-wrap;">line1</span><br><span style="white-space: pre-wrap;">line2</span></p><p><span style="white-space: pre-wrap;">line3</span><br><span style="white-space: pre-wrap;">line4</span></p>',
+      md: 'line1\nline2\n\nline3\nline4',
+    },
+    {
       // Multiline paragraphs
       html: '<p><span style="white-space: pre-wrap;">Hello</span><br><span style="white-space: pre-wrap;">world</span><br><span style="white-space: pre-wrap;">!</span></p>',
       md: ['Hello', 'world', '!'].join('\n'),

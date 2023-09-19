@@ -24,10 +24,10 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
-  $getSelection,
+  $getSelection, $isElementNode,
   $isParagraphNode, $isRootNode,
   $isTextNode,
-  ElementNode,
+  ElementNode, ParagraphNode,
 } from 'lexical';
 import {exportNodeToJSON} from 'lexical/src/LexicalEditorState';
 import {IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from 'shared/environment';
@@ -107,6 +107,17 @@ export function parseMarkdownString(
   }
 }
 
+function clearEmptyParagraph(node: ElementNode) {
+  const children = node.getChildren();
+  for (const child of children) {
+    if (isEmptyParagraph(child)) {
+      child.remove();
+    } else if ($isElementNode(child)) {
+      clearEmptyParagraph(child);
+    }
+  }
+}
+
 export function createMarkdownImport(
   transformers: Array<Transformer>,
 ): (markdownString: string, node?: ElementNode) => void {
@@ -123,12 +134,7 @@ export function createMarkdownImport(
 
     // Removing empty paragraphs as md does not really
     // allow empty lines and uses them as dilimiter
-    const children = root.getChildren();
-    for (const child of children) {
-      if (isEmptyParagraph(child)) {
-        child.remove();
-      }
-    }
+    clearEmptyParagraph(root);
 
     if ($getSelection() !== null) {
       root.selectEnd();

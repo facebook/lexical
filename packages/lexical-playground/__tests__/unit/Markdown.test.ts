@@ -181,20 +181,19 @@ describe('Markdown Collapsed', () => {
     exportMd?: string;
   }>;
 
-  const URL = 'https://lexical.dev';
-
   const IMPORT_AND_EXPORT: Input = [
     {
-      html: '<details open="true"><summary><span>Hello world</span></summary><div data-lexical-collapsible-content="true"><p><span>111</span><br><span>222</span></p><blockquote><span>3333</span></blockquote></div></details>',
+      exportMd: '#>> Hello world\n111\n222\n\n> 3333\n#',
+      html: '<details open="true"><summary><span style="white-space: pre-wrap;">Hello world</span></summary><div data-lexical-collapsible-content="true"><p><span style="white-space: pre-wrap;">111</span><br><span style="white-space: pre-wrap;">222</span></p><blockquote><span style="white-space: pre-wrap;">3333</span></blockquote></div></details>',
       md: '#>> Hello world\n111\n222\n> 3333\n#'
     },
     {
-      html: '<details open="true"><summary><span>Hello world</span></summary><div data-lexical-collapsible-content="true"><p><span>111</span><br><span>222</span></p><details open="true"><summary><span>333</span></summary><div data-lexical-collapsible-content="true"></div></details></div></details>',
+      html: '<details open="true"><summary><span style="white-space: pre-wrap;">Hello world</span></summary><div data-lexical-collapsible-content="true"><p><span style="white-space: pre-wrap;">111</span><br><span style="white-space: pre-wrap;">222</span></p><details open="true"><summary><span style="white-space: pre-wrap;">333</span></summary><div data-lexical-collapsible-content="true"></div></details></div></details>',
       md: '#>> Hello world\n111\n222\n##>> 333\n##\n#',
-      exportMd: '#>> Hello world\n111\n222\n#>> 333\n\n#\n#',
+      exportMd: '#>> Hello world\n111\n222\n\n#>> 333\n\n#\n#',
     },
     {
-      html: '<details open="true"><summary><span>Hello world</span></summary><div data-lexical-collapsible-content="true"><h3><span>111</span></h3><details open="true"><summary><span>222</span></summary><div data-lexical-collapsible-content="true"></div></details></div></details>',
+      html: '<details open="true"><summary><span style="white-space: pre-wrap;">Hello world</span></summary><div data-lexical-collapsible-content="true"><h3><span style="white-space: pre-wrap;">111</span></h3><details open="true"><summary><span style="white-space: pre-wrap;">222</span></summary><div data-lexical-collapsible-content="true"></div></details></div></details>',
       md: '#>> Hello world\n### 111\n##>> 222\n##\n#',
       exportMd: '#>> Hello world\n### 111\n#>> 222\n\n#\n#',
     },
@@ -218,7 +217,6 @@ describe('Markdown Collapsed', () => {
       );
 
       const j = editor.getEditorState().read(() => JSON.stringify(exportNodeToJSON($getRoot(), ['type', 'text', 'children']), null, 2))
-      console.log("j", j);
 
       expect(
         editor.getEditorState().read(() => $generateHtmlFromNodes(editor)),
@@ -368,7 +366,6 @@ describe('parseMarkdownString', () => {
       );
 
       const j = editor.getEditorState().read(() => JSON.stringify(exportNodeToJSON($getRoot(), ['type', 'text', 'children']), null, 2))
-      console.log("j", j);
       expect(j).toBe(json)
     })
   }
@@ -379,6 +376,7 @@ describe('exportFromState', () => {
   it('can export multiline', () => {
     const editor = createEditor()
 
+    // 1. prepare container node state
     editor.update(
       () => {
         const root = $getRoot()
@@ -399,14 +397,32 @@ describe('exportFromState', () => {
       },
     );
 
-    expect(
-      editor
-        .getEditorState()
-        .read(() => $convertToMarkdownString(T)),
-    ).toBe('#>> aaaaa\n' +
+    // 2. export to markdown
+    const md = editor
+      .getEditorState()
+      .read(() => $convertToMarkdownString(T))
+
+    expect(md)
+    .toBe('#>> aaaaa\n' +
       'bbbbb\n' +
       '\n' +
       'ccccc\n' +
       '#');
+
+    // 3. export to json
+    const json = editor.getEditorState().read(() => JSON.stringify(exportNodeToJSON($getRoot(), ['type', 'text', 'children']), null, 2))
+
+    // 4. ensure that the JSON exported from the state and imported by Markdown matches the above example.
+    const editor2 = createEditor()
+    editor2.update(
+      () => {
+        $convertFromMarkdownString(md, T)
+      },
+      {
+        discrete: true,
+      },
+    );
+    const json2 = editor2.getEditorState().read(() => JSON.stringify(exportNodeToJSON($getRoot(), ['type', 'text', 'children']), null, 2))
+    expect(json2).toBe(json)
   })
 })

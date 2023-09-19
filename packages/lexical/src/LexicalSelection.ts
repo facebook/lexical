@@ -1525,37 +1525,47 @@ export class RangeSelection implements BaseSelection {
    */
   insertNodes(nodes: Array<LexicalNode>) {
     let firstBlock = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
-    this.insertParagraph();
+    const lastBlock = this.insertParagraph();
     if (!firstBlock) firstBlock = this.anchor.getNode() as ElementNode; // this happens if anchor was root
     let currentBlock = firstBlock;
-    const lastBlock = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
+    let firstInsertionBlock: ElementNode | null = null;
 
     nodes.forEach((node) => {
       if ($isElementNode(node) && !node.isInline()) {
-        const isFirstBlock = currentBlock === firstBlock;
+        firstInsertionBlock = firstInsertionBlock || node;
         currentBlock = currentBlock.insertAfter(node) as ElementNode;
-        if (isFirstBlock) {
-          mergeBlocks(firstBlock, currentBlock, this);
-        }
       } else {
         currentBlock.append(node);
       }
     });
 
+    if (firstInsertionBlock) {
+      if (firstBlock.isEmpty() && $isRootNode(firstBlock.getParent()))
+        firstBlock.remove();
+      else mergeBlocks(firstBlock, firstInsertionBlock, this);
+    }
     const prevLast = currentBlock.isAttached() ? currentBlock : firstBlock;
-    if (firstBlock === lastBlock) return;
+    const lastNode = nodes.at(-1)!;
+    if (
+      firstBlock === lastBlock &&
+      $isElementNode(lastNode) &&
+      !lastNode.isInline()
+    )
+      return;
     mergeBlocks(prevLast, lastBlock, this);
   }
 
   /**
    * Inserts a new ParagraphNode into the EditorState at the current Selection
+   *
+   * @returns the newly inserted node.
    */
-  insertParagraph() {
+  insertParagraph(): ElementNode {
     if (this.anchor.key === 'root') {
       const paragraph = $createParagraphNode();
       $getRoot().append(paragraph);
       paragraph.select();
-      return;
+      return paragraph;
     }
     const index = RemoveTextAndSplitBlock(this);
     const block = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
@@ -1565,6 +1575,7 @@ export class RangeSelection implements BaseSelection {
       newBlock.append(firstToAppend, ...firstToAppend.getNextSiblings());
     }
     newBlock.selectStart();
+    return newBlock;
   }
 
   /**
@@ -3005,10 +3016,6 @@ function mergeBlocks(
   secondBlock: ElementNode,
   selection: RangeSelection,
 ) {
-  if (firstBlock.isEmpty()) {
-    firstBlock.remove();
-    return;
-  }
   secondBlock.selectStart();
   const {key, offset, type} = selection.anchor;
   firstBlock.selectEnd();

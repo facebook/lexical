@@ -1525,6 +1525,7 @@ export class RangeSelection implements BaseSelection {
    */
   insertNodes(nodes: Array<LexicalNode>) {
     if (this.anchor.key === 'root') this.insertParagraph();
+    this.removeText();
     const firstBlock = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
     const lastBlock = this.insertParagraph();
     let firstInsertedBlock: ElementNode | null = null;
@@ -1552,7 +1553,17 @@ export class RangeSelection implements BaseSelection {
       second: ElementNode,
       selection: RangeSelection,
     ) {
-      if (first.isEmpty() && $isRootNode(first.getParent())) {
+      if (
+        first.isEmpty() &&
+        $isRootNode(first.getParent()) &&
+        !('__language' in first)
+      ) {
+        first.remove();
+        return;
+      }
+      if ('__language' in second && !('__language' in first)) {
+        second.select();
+        selection.insertRawText(first.getTextContent());
         first.remove();
         return;
       }

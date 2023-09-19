@@ -6,8 +6,6 @@
  *
  */
 
-import type {ElementFormatType, LexicalEditor, NodeKey} from 'lexical';
-
 import {
   $createCodeNode,
   $isCodeNode,
@@ -62,10 +60,13 @@ import {
   COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_NORMAL,
   DEPRECATED_$isGridSelection,
+  ElementFormatType,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
   INDENT_CONTENT_COMMAND,
   KEY_MODIFIER_COMMAND,
+  LexicalEditor,
+  NodeKey,
   OUTDENT_CONTENT_COMMAND,
   REDO_COMMAND,
   SELECTION_CHANGE_COMMAND,
@@ -667,7 +668,10 @@ export default function ToolbarPlugin(): JSX.Element {
     (styles: Record<string, string>) => {
       activeEditor.update(() => {
         const selection = $getSelection();
-        if ($isRangeSelection(selection)) {
+        if (
+          $isRangeSelection(selection) ||
+          DEPRECATED_$isGridSelection(selection)
+        ) {
           $patchStyleText(selection, styles);
         }
       });

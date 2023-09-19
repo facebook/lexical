@@ -262,13 +262,13 @@ test.describe('Lists CopyAndPaste', () => {
             value="1"
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
             dir="ltr">
-            <span data-lexical-text="true">three</span>
+            <span data-lexical-text="true">two</span>
           </li>
           <li
             value="2"
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
             dir="ltr">
-            <span data-lexical-text="true">two</span>
+            <span data-lexical-text="true">three</span>
           </li>
         </ul>
         <p
@@ -534,10 +534,10 @@ test.describe('Lists CopyAndPaste', () => {
             dir="ltr">
             <span data-lexical-text="true">five</span>
           </li>
-          <li value="5" class="PlaygroundEditorTheme__listItem">
-            <span data-lexical-text="true">45</span>
-          </li>
         </ul>
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span data-lexical-text="true">45</span>
+        </p>
       `,
     );
   });

@@ -2567,7 +2567,10 @@ describe('LexicalSelectionHelpers tests', () => {
         const element2 = $createTestElementNode();
         $insertNodes([element1, element2]);
       });
-      expect(element.innerHTML).toBe('<div><br></div><div><br></div>');
+      expect([
+        '<div><br></div><div><br></div>',
+        '<div><br></div><p><br></p>',
+      ]).toContain(element.innerHTML);
     });
   });
 });

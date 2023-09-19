@@ -1541,8 +1541,7 @@ export class RangeSelection implements BaseSelection {
         firstInsertedBlock =
           firstInsertedBlock ??
           $getAncestor(node.getFirstDescendant() ?? node, INTERNAL_$isBlock)!;
-        currentBlock.insertAfter(node) as ElementNode;
-        currentBlock = lastInsertedBlock;
+        currentBlock = currentBlock.insertAfter(node) as ElementNode;
       } else {
         currentBlock.append(node);
       }

@@ -138,69 +138,7 @@ export function getScrollParent(
   return document.body;
 }
 
-function isTriggerVisibleInNearestScrollContainer(
-  targetElement: HTMLElement,
-  containerElement: HTMLElement,
-): boolean {
-  const tRect = targetElement.getBoundingClientRect();
-  const cRect = containerElement.getBoundingClientRect();
-  return tRect.top > cRect.top && tRect.top < cRect.bottom;
-}
-
-// Reposition the menu on scroll, window resize, and element resize.
-export function useDynamicPositioning(
-  resolution: MenuResolution | null,
-  targetElement: HTMLElement | null,
-  onReposition: () => void,
-  onVisibilityChange?: (isInView: boolean) => void,
-) {
-  const [editor] = useLexicalComposerContext();
-  useEffect(() => {
-    if (targetElement != null && resolution != null) {
-      const rootElement = editor.getRootElement();
-      const rootScrollParent =
-        rootElement != null
-          ? getScrollParent(rootElement, false)
-          : document.body;
-      let ticking = false;
-      let previousIsInView = isTriggerVisibleInNearestScrollContainer(
-        targetElement,
-        rootScrollParent,
-      );
-      const handleScroll = function () {
-        if (!ticking) {
-          window.requestAnimationFrame(function () {
-            onReposition();
-            ticking = false;
-          });
-          ticking = true;
-        }
-        const isInView = isTriggerVisibleInNearestScrollContainer(
-          targetElement,
-          rootScrollParent,
-        );
-        if (isInView !== previousIsInView) {
-          previousIsInView = isInView;
-          if (onVisibilityChange != null) {
-            onVisibilityChange(isInView);
-          }
-        }
-      };
-      const resizeObserver = new ResizeObserver(onReposition);
-      window.addEventListener('resize', onReposition);
-      document.addEventListener('scroll', handleScroll, {
-        capture: true,
-        passive: true,
-      });
-      resizeObserver.observe(targetElement);
-      return () => {
-        resizeObserver.unobserve(targetElement);
-        window.removeEventListener('resize', onReposition);
-        document.removeEventListener('scroll', handleScroll);
-      };
-    }
-  }, [targetElement, editor, onVisibilityChange, onReposition, resolution]);
-}
+export {useDynamicPositioning} from './shared/LexicalMenu';
 
 export const SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND: LexicalCommand<{
   index: number;

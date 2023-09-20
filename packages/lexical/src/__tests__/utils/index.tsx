@@ -6,24 +6,16 @@
  *
  */
 
-import type {
-  EditorState,
-  EditorThemeClasses,
-  Klass,
-  LexicalEditor,
-  LexicalNode,
-  RangeSelection,
-  SerializedElementNode,
-  SerializedLexicalNode,
-  SerializedTextNode,
-} from 'lexical';
-
 import {CodeHighlightNode, CodeNode} from '@lexical/code';
 import {HashtagNode} from '@lexical/hashtag';
 import {AutoLinkNode, LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
 import {OverflowNode} from '@lexical/overflow';
 import {LexicalComposer} from '@lexical/react/src/LexicalComposer';
+import {
+  createLexicalComposerContext,
+  LexicalComposerContext,
+} from '@lexical/react/src/LexicalComposerContext';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
 import {
@@ -33,12 +25,23 @@ import {
   ElementNode,
   TextNode,
 } from 'lexical';
+import {
+  EditorState,
+  EditorThemeClasses,
+  Klass,
+  LexicalEditor,
+  LexicalNode,
+  RangeSelection,
+  SerializedElementNode,
+  SerializedLexicalNode,
+  SerializedTextNode,
+} from 'lexical/src';
 import * as React from 'react';
 import {createRef} from 'react';
 import {createRoot} from 'react-dom/client';
 import * as ReactTestUtils from 'react-dom/test-utils';
 
-import {LexicalNodeReplacement} from '../../LexicalEditor';
+import {CreateEditorArgs, LexicalNodeReplacement} from '../../LexicalEditor';
 import {resetRandomKey} from '../../LexicalUtils';
 
 type TestEnv = {
@@ -50,7 +53,8 @@ type TestEnv = {
 
 export function initializeUnitTest(
   runTests: (testEnv: TestEnv) => void,
-  editorConfig = {},
+  editorConfig: CreateEditorArgs = {namespace: 'test', theme: {}},
+  plugins?: React.ReactNode,
 ) {
   const testEnv: TestEnv = {
     container: null,
@@ -84,17 +88,27 @@ export function initializeUnitTest(
     };
 
     const Editor = () => {
-      testEnv.editor = useLexicalEditor(ref);
-      return <div ref={ref} contentEditable={true} />;
+      const editor = useLexicalEditor(ref);
+      testEnv.editor = editor;
+      const context = createLexicalComposerContext(
+        null,
+        editorConfig?.theme ?? {},
+      );
+      return (
+        <LexicalComposerContext.Provider value={[editor, context]}>
+          <div ref={ref} contentEditable={true} />
+          {plugins}
+        </LexicalComposerContext.Provider>
+      );
     };
 
     ReactTestUtils.act(() => {
-      createRoot(testEnv.container).render(<Editor />);
+      createRoot(testEnv.container as HTMLElement).render(<Editor />);
     });
   });
 
   afterEach(() => {
-    document.body.removeChild(testEnv.container);
+    document.body.removeChild(testEnv.container as HTMLElement);
     testEnv.container = null;
   });
 
@@ -442,8 +456,8 @@ const DEFAULT_NODES = [
 
 export function TestComposer({
   config = {
-    nodes: [],
-    theme: {},
+    nodes: Klass,
+    theme: EditorThemeClasses,
   },
   children,
 }) {

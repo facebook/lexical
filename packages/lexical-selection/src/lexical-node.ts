@@ -11,7 +11,6 @@ import {
   $getNodeByKey,
   $getPreviousSelection,
   $isElementNode,
-  $isParagraphNode,
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
@@ -167,19 +166,19 @@ export function trimTextContentFromAnchor(
 
   if ($isElementNode(currentNode)) {
     const descendantNode = currentNode.getDescendantByIndex(anchor.offset);
-
     if (descendantNode !== null) {
       currentNode = descendantNode;
-    }
-
-    if (descendantNode === null && $isParagraphNode(currentNode)) {
-      const emptyTextNode = $createTextNode('');
-      currentNode.append(emptyTextNode);
-      currentNode = emptyTextNode;
     }
   }
 
   while (remaining > 0 && currentNode !== null) {
+    if ($isElementNode(currentNode)) {
+      const lastDescendant: null | LexicalNode =
+        currentNode.getLastDescendant();
+      if (lastDescendant !== null) {
+        currentNode = lastDescendant;
+      }
+    }
     let nextNode: LexicalNode | null = currentNode.getPreviousSibling();
     let additionalElementWhitespace = 0;
     if (nextNode === null) {
@@ -196,11 +195,7 @@ export function trimTextContentFromAnchor(
       }
       if (parent !== null) {
         additionalElementWhitespace = parent.isInline() ? 0 : 2;
-        if ($isElementNode(parentSibling)) {
-          nextNode = parentSibling.getLastDescendant();
-        } else {
-          nextNode = parentSibling;
-        }
+        nextNode = parentSibling;
       }
     }
     let text = currentNode.getTextContent();

@@ -117,25 +117,16 @@ function getDynamicOptions(editor: LexicalEditor, queryString: string) {
     return options;
   }
 
-  const fullTableRegex = /^([1-9]|10)x([1-9]|10)$/;
-  const partialTableRegex = /^([1-9]|10)x?$/;
+  const tableMatch = queryString.match(/^([1-9]\d?)(?:x([1-9]\d?)?)?$/);
 
-  if (fullTableRegex.test(queryString)) {
-    const [rows, columns] = queryString.split('x');
-
-    options.push(
-      new ComponentPickerOption(`${rows}x${columns} Table`, {
-        icon: <i className="icon table" />,
-        keywords: ['table'],
-        onSelect: () =>
-          editor.dispatchCommand(INSERT_TABLE_COMMAND, {columns, rows}),
-      }),
-    );
-  } else if (partialTableRegex.test(queryString)) {
-    const rows = String(parseInt(queryString, 10));
+  if (tableMatch !== null) {
+    const rows = tableMatch[1];
+    const colOptions = tableMatch[2]
+      ? [tableMatch[2]]
+      : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(String);
 
     options.push(
-      ...[1, 2, 3, 4, 5].map(String).map(
+      ...colOptions.map(
         (columns) =>
           new ComponentPickerOption(`${rows}x${columns} Table`, {
             icon: <i className="icon table" />,
@@ -340,7 +331,7 @@ export default function ComponentPickerMenuPlugin(): JSX.Element {
             const regex = new RegExp(queryString, 'i');
             return (
               regex.test(option.title) ||
-              option.keywords?.some((keyword) => regex.test(keyword))
+              option.keywords.some((keyword) => regex.test(keyword))
             );
           }),
         ]

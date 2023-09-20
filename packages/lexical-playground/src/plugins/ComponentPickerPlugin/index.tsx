@@ -324,18 +324,20 @@ export default function ComponentPickerMenuPlugin(): JSX.Element {
   const options = useMemo(() => {
     const baseOptions = getBaseOptions(editor, showModal);
 
-    return queryString
-      ? [
-          ...getDynamicOptions(editor, queryString),
-          ...baseOptions.filter((option) => {
-            const regex = new RegExp(queryString, 'i');
-            return (
-              regex.test(option.title) ||
-              option.keywords.some((keyword) => regex.test(keyword))
-            );
-          }),
-        ]
-      : baseOptions;
+    if (!queryString) {
+      return baseOptions;
+    }
+
+    const regex = new RegExp(queryString, 'i');
+
+    return [
+      ...getDynamicOptions(editor, queryString),
+      ...baseOptions.filter(
+        (option) =>
+          regex.test(option.title) ||
+          option.keywords.some((keyword) => regex.test(keyword)),
+      ),
+    ];
   }, [editor, queryString, showModal]);
 
   const onSelectOption = useCallback(

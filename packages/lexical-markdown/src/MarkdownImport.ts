@@ -66,9 +66,18 @@ export function parseMarkdownString(
           continue
         }
         if (match) {
-          const elementNode = $createParagraphNode()
-          parentNode.append(elementNode)
-          parseMarkdownString(elementNode, lines.slice(i + 1, i + numberOfLines), byType)
+          if (elementTransformer.recursivelyParse) {
+            const elementNode = $createParagraphNode()
+            parentNode.append(elementNode)
+            parseMarkdownString(elementNode, lines.slice(i + 1, i + numberOfLines), byType)
+          } else {
+            const textNode = $createTextNode(
+              lines.slice(i + 1, i + numberOfLines).join('\n'),
+            )
+            const elementNode = $createParagraphNode()
+            elementNode.append(textNode)
+            parentNode.append(elementNode)
+          }
           elementTransformer.replace(
             parentNode.getLastChild() as ElementNode,
             (parentNode.getLastChild() as ElementNode).getChildren(),

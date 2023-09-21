@@ -70,6 +70,7 @@ export type ElementTransformer = {
     isImport: boolean,
   ) => void;
   type: 'element';
+  recursivelyParse?: boolean;
 };
 
 export type TextFormatTransformer = Readonly<{

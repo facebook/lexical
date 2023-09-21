@@ -168,7 +168,7 @@ describe('Markdown', () => {
       skipExport: true,
     },
     {
-      html: '<pre spellcheck="false"><p><span style="white-space: pre-wrap;">Code</span></p></pre>',
+      html: '<pre spellcheck="false"><span style="white-space: pre-wrap;">Code</span></pre>',
       md: '```\nCode\n```',
     },
     {
@@ -197,18 +197,31 @@ describe('Markdown', () => {
 //     },
     {
       exportMd: ['```', 'a = b + c', '```'].join('\n'),
-      html: '<pre spellcheck="false"><p><span style="white-space: pre-wrap;">a = b + c</span></p></pre>',
+      html: '<pre spellcheck="false"><span style="white-space: pre-wrap;">a = b + c</span></pre>',
       md: ['```', 'a = b + c'].join('\n'),
     },
     {
-      html: '<pre spellcheck="false" data-highlight-language="html"><p><span style="white-space: pre-wrap;">&lt;style&gt;</span><br><span style="white-space: pre-wrap;">\t.markdown-body {</span><br><span style="white-space: pre-wrap;">\t}</span><br><span style="white-space: pre-wrap;">&lt;/style&gt;</span></p></pre>',
+      html: '<pre spellcheck="false" data-highlight-language="html"><span style="white-space: pre-wrap;">&lt;style&gt;\n' +
+        '\t.markdown-body {\n' +
+        '\t}\n' +
+        '&lt;/style&gt;</span></pre>',
       md: `\`\`\`html
 <style>
 \t.markdown-body {
 \t}
 </style>
 \`\`\``,
-    }
+    },
+    {
+      html: '<blockquote><a href="https://lexical.dev"><span style="white-space: pre-wrap;">hello</span></a></blockquote>',
+      md: `> [hello](${URL})`,
+    },
+    {
+      html: '<pre spellcheck="false" data-highlight-language="markdown"><span style="white-space: pre-wrap;"># Hello</span></pre>',
+      md: `\`\`\`markdown
+# Hello
+\`\`\``,
+    },
   ];
 
   const HIGHLIGHT_TEXT_MATCH_IMPORT: TextMatchTransformer = {

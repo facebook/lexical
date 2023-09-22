@@ -11,7 +11,11 @@ import {useLexicalComposerContext} from '@lexical/react/src/LexicalComposerConte
 import {ContentEditable} from '@lexical/react/src/LexicalContentEditable';
 import LexicalErrorBoundary from '@lexical/react/src/LexicalErrorBoundary';
 import {RichTextPlugin} from '@lexical/react/src/LexicalRichTextPlugin';
-import {LexicalEditor} from 'lexical/src';
+import {
+  INDENT_CONTENT_COMMAND,
+  LexicalEditor,
+  OUTDENT_CONTENT_COMMAND,
+} from 'lexical/src';
 import {
   expectHtmlToBeEqual,
   html,
@@ -21,7 +25,10 @@ import * as React from 'react';
 import {createRoot} from 'react-dom/client';
 import * as ReactTestUtils from 'react-dom/test-utils';
 
-import {INSERT_UNORDERED_LIST_COMMAND} from '../../../../lexical-list/src/index';
+import {
+  INSERT_UNORDERED_LIST_COMMAND,
+  REMOVE_LIST_COMMAND,
+} from '../../../../lexical-list/src/index';
 
 describe('@lexical/list tests', () => {
   let container: HTMLDivElement | null = null;
@@ -53,6 +60,7 @@ describe('@lexical/list tests', () => {
     }
 
     return (
+      //@ts-ignore-next-line
       <TestComposer config={{nodes: [ListNode, ListItemNode], theme: {}}}>
         <RichTextPlugin
           contentEditable={<ContentEditable />}
@@ -76,6 +84,113 @@ describe('@lexical/list tests', () => {
       await editor.update(() => {
         editor.focus();
         editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined);
+      });
+    });
+
+    expectHtmlToBeEqual(
+      container?.innerHTML || '',
+      html`
+        <div
+          contenteditable="true"
+          role="textbox"
+          spellcheck="true"
+          style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+          data-lexical-editor="true">
+          <ul>
+            <li value="1">
+              <br />
+            </li>
+          </ul>
+        </div>
+      `,
+    );
+
+    await ReactTestUtils.act(async () => {
+      await editor.update(() => {
+        editor.focus();
+        editor.dispatchCommand(REMOVE_LIST_COMMAND, undefined);
+      });
+    });
+
+    expectHtmlToBeEqual(
+      container?.innerHTML || '',
+      html`
+        <div
+          contenteditable="true"
+          role="textbox"
+          spellcheck="true"
+          style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+          data-lexical-editor="true">
+          <p>
+            <br />
+          </p>
+        </div>
+        <div class="editor-placeholder">Enter some text...</div>
+      `,
+    );
+  });
+
+  test('Can create a list and indent/outdent it', async () => {
+    ReactTestUtils.act(() => {
+      reactRoot.render(<Test key="MegaSeeds, Morty!" />);
+    });
+
+    await ReactTestUtils.act(async () => {
+      await editor.update(() => {
+        editor.focus();
+        editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined);
+      });
+    });
+
+    expectHtmlToBeEqual(
+      container?.innerHTML || '',
+      html`
+        <div
+          contenteditable="true"
+          role="textbox"
+          spellcheck="true"
+          style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+          data-lexical-editor="true">
+          <ul>
+            <li value="1">
+              <br />
+            </li>
+          </ul>
+        </div>
+      `,
+    );
+
+    await ReactTestUtils.act(async () => {
+      await editor.update(() => {
+        editor.focus();
+        editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
+      });
+    });
+
+    expectHtmlToBeEqual(
+      container?.innerHTML || '',
+      html`
+        <div
+          contenteditable="true"
+          role="textbox"
+          spellcheck="true"
+          style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+          data-lexical-editor="true">
+          <ul>
+            <li value="1">
+              <ul>
+                <li value="1"><br /></li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      `,
+    );
+
+    await ReactTestUtils.act(async () => {
+      await editor.update(() => {
+        editor.focus();
+        editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
       });
     });
 

@@ -12,7 +12,11 @@ import {ContentEditable} from '@lexical/react/src/LexicalContentEditable';
 import LexicalErrorBoundary from '@lexical/react/src/LexicalErrorBoundary';
 import {RichTextPlugin} from '@lexical/react/src/LexicalRichTextPlugin';
 import {LexicalEditor} from 'lexical/src';
-import {TestComposer} from 'lexical/src/__tests__/utils';
+import {
+  expectHtmlToBeEqual,
+  html,
+  TestComposer,
+} from 'lexical/src/__tests__/utils';
 import * as React from 'react';
 import {createRoot} from 'react-dom/client';
 import * as ReactTestUtils from 'react-dom/test-utils';
@@ -75,8 +79,22 @@ describe('@lexical/list tests', () => {
       });
     });
 
-    expect(container?.innerHTML).toBe(
-      '<div contenteditable="true" role="textbox" spellcheck="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><ul><li value="1"><br></li></ul></div>',
+    expectHtmlToBeEqual(
+      container?.innerHTML || '',
+      html`
+        <div
+          contenteditable="true"
+          role="textbox"
+          spellcheck="true"
+          style="user-select: text; white-space: pre-wrap; word-break: break-word;"
+          data-lexical-editor="true">
+          <ul>
+            <li value="1">
+              <br />
+            </li>
+          </ul>
+        </div>
+      `,
     );
   });
 });

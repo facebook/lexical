@@ -18,6 +18,7 @@ import {
 } from '@lexical/react/src/LexicalComposerContext';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
+import {expect} from '@playwright/test';
 import {
   $isRangeSelection,
   createEditor,
@@ -36,6 +37,7 @@ import {
   SerializedLexicalNode,
   SerializedTextNode,
 } from 'lexical/src';
+import prettier from 'prettier';
 import * as React from 'react';
 import {createRef} from 'react';
 import {createRoot} from 'react-dom/client';
@@ -456,8 +458,8 @@ const DEFAULT_NODES = [
 
 export function TestComposer({
   config = {
-    nodes: Klass,
-    theme: EditorThemeClasses,
+    nodes: [],
+    theme: {},
   },
   children,
 }) {
@@ -673,4 +675,28 @@ export function generatePermutations<T>(
     }
   })();
   return result;
+}
+
+// This tag function is just used to trigger prettier auto-formatting.
+// (https://prettier.io/blog/2020/08/24/2.1.0.html#api)
+export function html(
+  partials: TemplateStringsArray,
+  ...params: string[]
+): string {
+  let output = '';
+  for (let i = 0; i < partials.length; i++) {
+    output += partials[i];
+    if (i < partials.length - 1) {
+      output += params[i];
+    }
+  }
+  return output;
+}
+
+export function expectHtmlToBeEqual(expected: string, actual: string): void {
+  expect(prettifyHtml(expected)).toBe(prettifyHtml(actual));
+}
+
+export function prettifyHtml(s: string): string {
+  return prettier.format(s.replace(/\n/g, ''), {parser: 'html'});
 }

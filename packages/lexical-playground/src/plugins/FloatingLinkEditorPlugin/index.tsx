@@ -20,7 +20,6 @@ import {
   GridSelection,
   KEY_ESCAPE_COMMAND,
   LexicalEditor,
-  LexicalNode,
   NodeSelection,
   RangeSelection,
   SELECTION_CHANGE_COMMAND,
@@ -270,41 +269,21 @@ function useFloatingLinkEditorToolbar(
   const [activeEditor, setActiveEditor] = useState(editor);
   const [isLink, setIsLink] = useState(false);
 
-  const getLinkElements = (
-    selection: RangeSelection,
-  ): Array<LexicalNode | null> => {
-    const node = getSelectedNode(selection);
-    const linkParent = $findMatchingParent(node, $isLinkNode);
-    const autoLinkParent = $findMatchingParent(node, $isAutoLinkNode);
-
-    return [linkParent, autoLinkParent];
-  };
-  const updateToolbar = useCallback(() => {
-    const selection = $getSelection();
-    if ($isRangeSelection(selection)) {
-      const [linkParent, autoLinkParent] = getLinkElements(selection);
-      // We don't want this menu to open for auto links.
-      if (linkParent != null && autoLinkParent == null) {
-        setIsLink(true);
-      } else {
-        setIsLink(false);
-      }
-    }
-  }, []);
-  const openLinkInNewTab = useCallback((_payload: MouseEvent) => {
-    const selection = $getSelection();
-    if ($isRangeSelection(selection)) {
-      const [linkParent, autoLinkParent] = getLinkElements(selection);
-      const url = linkParent?.__url || autoLinkParent?.__url;
-      if (
-        (linkParent != null || autoLinkParent != null) &&
-        (_payload?.metaKey || _payload?.ctrlKey)
-      ) {
-        window.open(url, '_blank');
-      }
-    }
-  }, []);
   useEffect(() => {
+    function updateToolbar() {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        const node = getSelectedNode(selection);
+        const linkParent = $findMatchingParent(node, $isLinkNode);
+        const autoLinkParent = $findMatchingParent(node, $isAutoLinkNode);
+        // We don't want this menu to open for auto links.
+        if (linkParent !== null && autoLinkParent === null) {
+          setIsLink(true);
+        } else {
+          setIsLink(false);
+        }
+      }
+    }
     return mergeRegister(
       editor.registerUpdateListener(({editorState}) => {
         editorState.read(() => {
@@ -322,14 +301,22 @@ function useFloatingLinkEditorToolbar(
       ),
       editor.registerCommand(
         CLICK_COMMAND,
-        (_payload, newEditor) => {
-          openLinkInNewTab(_payload);
+        (payload) => {
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            const node = getSelectedNode(selection);
+            const linkNode = $findMatchingParent(node, $isLinkNode);
+            if ($isLinkNode(linkNode) && (payload.metaKey || payload.ctrlKey)) {
+              window.open(linkNode.getURL(), '_blank');
+              return true;
+            }
+          }
           return false;
         },
-        COMMAND_PRIORITY_CRITICAL,
+        COMMAND_PRIORITY_LOW,
       ),
     );
-  }, [editor, updateToolbar, openLinkInNewTab]);
+  }, [editor]);
 
   return createPortal(
     <FloatingLinkEditor

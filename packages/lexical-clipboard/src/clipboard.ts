@@ -232,8 +232,8 @@ function $basicInsertStrategy(
   selection: RangeSelection | GridSelection,
 ) {
   // Wrap text and inline nodes in paragraph nodes so we have all blocks at the top-level
-  const topLevelBlocks = [];
-  let currentBlock = null;
+  const topLevelBlocks = [] as LexicalNode[];
+  let currentBlock: LexicalNode | null = null;
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
 
@@ -545,19 +545,19 @@ export function $generateJSONFromSelectedNodes<
 export function $generateNodesFromSerializedNodes(
   serializedNodes: Array<BaseSerializedNode>,
 ): Array<LexicalNode> {
-  const nodes = [];
+  const nodes = [] as Array<LexicalNode>;
   for (let i = 0; i < serializedNodes.length; i++) {
     const serializedNode = serializedNodes[i];
     const node = $parseSerializedNode(serializedNode);
     if ($isTextNode(node)) {
       $addNodeStyle(node);
-    }
+    } // currently typescript is reading nodes as never. Adding the type assertion as Array<LexicalNode> takes care of the error.     
     nodes.push(node);
   }
   return nodes;
 }
 
-const EVENT_LATENCY = 50;
+const EVENT_LATENCY = 50;        
 let clipboardEventTimeout: null | number = null;
 
 // TODO custom selection

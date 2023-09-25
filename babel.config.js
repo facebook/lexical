@@ -14,14 +14,13 @@ module.exports = {
       require('./scripts/error-codes/transform-error-messages'),
       {noMinify: true},
     ],
+    '@babel/plugin-proposal-optional-catch-binding',
   ],
   presets: [
     [
       '@babel/preset-env',
       {
-        targets: {
-          node: 'current',
-        },
+        targets: 'es2019',
       },
     ],
     '@babel/preset-react',

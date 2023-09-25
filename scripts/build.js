@@ -204,6 +204,7 @@ async function build(name, inputFile, outputPath, outputFile, isProd) {
             require('./error-codes/transform-error-messages'),
             {noMinify: !isProd},
           ],
+          '@babel/plugin-proposal-optional-catch-binding',
         ],
         presets: [
           [

@@ -232,7 +232,7 @@ function $basicInsertStrategy(
   selection: RangeSelection | GridSelection,
 ) {
   // Wrap text and inline nodes in paragraph nodes so we have all blocks at the top-level
-  const topLevelBlocks = [] as LexicalNode[];
+  const topLevelBlocks: Array<LexicalNode> = [];
   let currentBlock: LexicalNode | null = null;
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];

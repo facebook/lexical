@@ -545,7 +545,7 @@ export function $generateJSONFromSelectedNodes<
 export function $generateNodesFromSerializedNodes(
   serializedNodes: Array<BaseSerializedNode>,
 ): Array<LexicalNode> {
-  const nodes = [] as Array<LexicalNode>;
+  const nodes: Array<LexicalNode> = [];
   for (let i = 0; i < serializedNodes.length; i++) {
     const serializedNode = serializedNodes[i];
     const node = $parseSerializedNode(serializedNode);

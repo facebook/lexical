@@ -397,12 +397,12 @@ function initializeConversionCache(
  * @returns a LexicalEditor instance
  */
 export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
-  const config = editorConfig || {};
+  const config = editorConfig ?? {};
   const activeEditor = internalGetActiveEditor();
-  const theme = config.theme || {};
+  const theme = config.theme ?? {};
   const parentEditor =
-    editorConfig === undefined ? activeEditor : config.parentEditor || null;
-  const disableEvents = config.disableEvents || false;
+    editorConfig === undefined ? activeEditor : config.parentEditor ?? null;
+  const disableEvents = config.disableEvents ?? false;
   const editorState = createEmptyEditorState();
   const namespace =
     config.namespace ||
@@ -414,7 +414,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
     LineBreakNode,
     TabNode,
     ParagraphNode,
-    ...(config.nodes || []),
+    ...(config.nodes ?? []),
   ];
   const {onError, html} = config;
   const isEditable = config.editable !== undefined ? config.editable : true;
@@ -433,7 +433,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
         const options = klass;
         klass = options.replace;
         replace = options.with;
-        replaceWithKlass = options.withKlass || null;
+        replaceWithKlass = options.withKlass ?? null;
       }
       // Ensure custom nodes implement required methods.
       if (__DEV__) {
@@ -1026,7 +1026,7 @@ export class LexicalEditor {
     const tags = this._updateTags;
     const tag = options !== undefined ? options.tag : null;
 
-    if (pendingEditorState !== null && !pendingEditorState.isEmpty()) {
+    if (pendingEditorState?.isEmpty() === false) {
       if (tag != null) {
         tags.add(tag);
       }

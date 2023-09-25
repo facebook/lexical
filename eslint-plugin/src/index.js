@@ -13,14 +13,10 @@ const rules = require('./rules');
 module.exports = {
   configs: {
     all: {
-      rules: {
-        'lexical/no-optional-chaining': 'error',
-      },
+      rules: {},
     },
     recommended: {
-      rules: {
-        'lexical/no-optional-chaining': 'error',
-      },
+      rules: {},
     },
   },
   rules,

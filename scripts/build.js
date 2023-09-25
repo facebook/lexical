@@ -205,6 +205,8 @@ async function build(name, inputFile, outputPath, outputFile, isProd) {
             {noMinify: !isProd},
           ],
           '@babel/plugin-transform-optional-catch-binding',
+          '@babel/plugin-transform-optional-chaining',
+          '@babel/plugin-transform-nullish-coalescing-operator',
         ],
         presets: [
           [

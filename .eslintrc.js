@@ -89,9 +89,6 @@ module.exports = {
         'packages/lexical-playground/**',
         'packages/lexical-devtools/**',
       ],
-      rules: {
-        'lexical/no-optional-chaining': OFF,
-      },
     },
   ],
 

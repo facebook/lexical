@@ -129,7 +129,7 @@ describe('LexicalEditor tests', () => {
     return Promise.resolve().then();
   }
 
-  it('Should be create and editor with an initial editor state', async () => {
+  it('Should create an editor with an initial editor state', async () => {
     const rootElement = document.createElement('div');
 
     container.appendChild(rootElement);
@@ -2089,7 +2089,7 @@ describe('LexicalEditor tests', () => {
   });
 
   describe('node replacement', () => {
-    it('should works correctly', async () => {
+    it('should work correctly', async () => {
       const onError = jest.fn();
 
       const newEditor = createTestEditor({

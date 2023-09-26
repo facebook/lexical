@@ -6,7 +6,27 @@
  *
  */
 
-import type {
+import {CodeHighlightNode, CodeNode} from '@lexical/code';
+import {HashtagNode} from '@lexical/hashtag';
+import {AutoLinkNode, LinkNode} from '@lexical/link';
+import {ListItemNode, ListNode} from '@lexical/list';
+import {OverflowNode} from '@lexical/overflow';
+import {LexicalComposer} from '@lexical/react/src/LexicalComposer';
+import {
+  createLexicalComposerContext,
+  LexicalComposerContext,
+} from '@lexical/react/src/LexicalComposerContext';
+import {HeadingNode, QuoteNode} from '@lexical/rich-text';
+import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
+import {expect} from '@playwright/test';
+import {
+  $isRangeSelection,
+  createEditor,
+  DecoratorNode,
+  ElementNode,
+  TextNode,
+} from 'lexical';
+import {
   EditorState,
   EditorThemeClasses,
   Klass,
@@ -16,29 +36,14 @@ import type {
   SerializedElementNode,
   SerializedLexicalNode,
   SerializedTextNode,
-} from 'lexical';
-
-import {CodeHighlightNode, CodeNode} from '@lexical/code';
-import {HashtagNode} from '@lexical/hashtag';
-import {AutoLinkNode, LinkNode} from '@lexical/link';
-import {ListItemNode, ListNode} from '@lexical/list';
-import {OverflowNode} from '@lexical/overflow';
-import {LexicalComposer} from '@lexical/react/src/LexicalComposer';
-import {HeadingNode, QuoteNode} from '@lexical/rich-text';
-import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
-import {
-  $isRangeSelection,
-  createEditor,
-  DecoratorNode,
-  ElementNode,
-  TextNode,
-} from 'lexical';
+} from 'lexical/src';
+import prettier from 'prettier';
 import * as React from 'react';
 import {createRef} from 'react';
 import {createRoot} from 'react-dom/client';
 import * as ReactTestUtils from 'react-dom/test-utils';
 
-import {LexicalNodeReplacement} from '../../LexicalEditor';
+import {CreateEditorArgs, LexicalNodeReplacement} from '../../LexicalEditor';
 import {resetRandomKey} from '../../LexicalUtils';
 
 type TestEnv = {
@@ -50,7 +55,8 @@ type TestEnv = {
 
 export function initializeUnitTest(
   runTests: (testEnv: TestEnv) => void,
-  editorConfig = {},
+  editorConfig: CreateEditorArgs = {namespace: 'test', theme: {}},
+  plugins?: React.ReactNode,
 ) {
   const testEnv: TestEnv = {
     container: null,
@@ -84,17 +90,27 @@ export function initializeUnitTest(
     };
 
     const Editor = () => {
-      testEnv.editor = useLexicalEditor(ref);
-      return <div ref={ref} contentEditable={true} />;
+      const editor = useLexicalEditor(ref);
+      testEnv.editor = editor;
+      const context = createLexicalComposerContext(
+        null,
+        editorConfig?.theme ?? {},
+      );
+      return (
+        <LexicalComposerContext.Provider value={[editor, context]}>
+          <div ref={ref} contentEditable={true} />
+          {plugins}
+        </LexicalComposerContext.Provider>
+      );
     };
 
     ReactTestUtils.act(() => {
-      createRoot(testEnv.container).render(<Editor />);
+      createRoot(testEnv.container as HTMLElement).render(<Editor />);
     });
   });
 
   afterEach(() => {
-    document.body.removeChild(testEnv.container);
+    document.body.removeChild(testEnv.container as HTMLElement);
     testEnv.container = null;
   });
 
@@ -659,4 +675,28 @@ export function generatePermutations<T>(
     }
   })();
   return result;
+}
+
+// This tag function is just used to trigger prettier auto-formatting.
+// (https://prettier.io/blog/2020/08/24/2.1.0.html#api)
+export function html(
+  partials: TemplateStringsArray,
+  ...params: string[]
+): string {
+  let output = '';
+  for (let i = 0; i < partials.length; i++) {
+    output += partials[i];
+    if (i < partials.length - 1) {
+      output += params[i];
+    }
+  }
+  return output;
+}
+
+export function expectHtmlToBeEqual(expected: string, actual: string): void {
+  expect(prettifyHtml(expected)).toBe(prettifyHtml(actual));
+}
+
+export function prettifyHtml(s: string): string {
+  return prettier.format(s.replace(/\n/g, ''), {parser: 'html'});
 }

@@ -12,6 +12,7 @@
     "typeRoots": ["node_modules/@types", "libdefs/globals"],
     "skipLibCheck": true,
     "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
 
     "paths": {
       "lexical": ["./packages/lexical/src/"],
@@ -193,7 +194,7 @@
   },
   "include": ["./libdefs", "./packages"],
   "exclude": [
-    "**/__tests__/**",
+    "**/src/**/__tests__/**",
     "**/dist/**",
     "**/npm/**",
     "**/node_modules/**",

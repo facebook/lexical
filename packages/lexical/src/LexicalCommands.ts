@@ -19,6 +19,9 @@ export const SELECTION_CHANGE_COMMAND: LexicalCommand<void> = createCommand(
 );
 export const CLICK_COMMAND: LexicalCommand<MouseEvent> =
   createCommand('CLICK_COMMAND');
+export const CONTEXT_MENU_COMMAND: LexicalCommand<MouseEvent> = createCommand(
+  'CONTEXT_MENU_COMMAND',
+);
 export const DELETE_CHARACTER_COMMAND: LexicalCommand<boolean> = createCommand(
   'DELETE_CHARACTER_COMMAND',
 );

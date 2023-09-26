@@ -31,9 +31,11 @@ import {
   $getNodeByKey,
   $getSelection,
   $isNodeSelection,
+  $isRangeSelection,
   $setSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
+  CONTEXT_MENU_COMMAND,
   DRAGSTART_COMMAND,
   KEY_BACKSPACE_COMMAND,
   KEY_DELETE_COMMAND,
@@ -224,7 +226,7 @@ export default function ImageComponent({
       ),
       editor.registerCommand<MouseEvent>(
         CLICK_COMMAND,
-        (payload) => {
+        (payload: MouseEvent) => {
           const event = payload;
 
           if (isResizing) {
@@ -240,6 +242,25 @@ export default function ImageComponent({
             return true;
           }
 
+          return false;
+        },
+        COMMAND_PRIORITY_LOW,
+      ),
+      editor.registerCommand<MouseEvent>(
+        CONTEXT_MENU_COMMAND,
+        (payload: MouseEvent) => {
+          const event = payload;
+          const latestSelection = $getSelection();
+          const domElement = event.target as HTMLElement;
+
+          if (
+            domElement.tagName === 'IMG' &&
+            $isRangeSelection(latestSelection) &&
+            latestSelection.getNodes().length === 1
+          ) {
+            clearSelection();
+            setSelected(true);
+          }
           return false;
         },
         COMMAND_PRIORITY_LOW,

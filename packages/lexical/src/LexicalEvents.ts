@@ -393,17 +393,35 @@ function onClick(event: PointerEvent, editor: LexicalEditor): void {
           domSelection.removeAllRanges();
           selection.dirty = true;
         } else if (event.detail === 3 && !selection.isCollapsed()) {
-          // Tripple click causing selection to overflow into the nearest element. In that
+          // Triple click causing selection to overflow into the nearest element. In that
           // case visually it looks like a single element content is selected, focus node
           // is actually at the beginning of the next element (if present) and any manipulations
           // with selection (formatting) are affecting second element as well
-          const focus = selection.focus;
-          const focusNode = focus.getNode();
-          if (anchorNode !== focusNode) {
-            if ($isElementNode(anchorNode)) {
-              anchorNode.select(0);
-            } else {
-              anchorNode.getParentOrThrow().select(0);
+
+          const anchorParentElement =
+            domSelection.anchorNode && domSelection.anchorNode.parentElement;
+          const focusParentElement =
+            domSelection.focusNode && domSelection.focusNode.parentElement;
+
+          if (anchorParentElement && focusParentElement) {
+            // We need to normalize the selection to the nearest parent element that is a container
+            // that gets selected by triple-click, so closest element that's not a span or link
+            const normalizedAnchorElement =
+              anchorParentElement.closest(':not(span, a)');
+            const normalizedFocusElement =
+              focusParentElement.closest(':not(span, a)');
+
+            if (
+              normalizedAnchorElement &&
+              normalizedAnchorElement !== normalizedFocusElement
+            ) {
+              // use DOM range because paragraphNode.select(0) results in a selection that
+              // visually appears to cover the link+text but can't have block-level formatting applied.
+              // FIXME: needs a deeper fix?
+              const range = document.createRange();
+              range.selectNodeContents(normalizedAnchorElement);
+              domSelection.removeAllRanges();
+              domSelection.addRange(range);
             }
           }
         }

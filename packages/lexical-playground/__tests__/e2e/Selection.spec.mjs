@@ -444,7 +444,7 @@ test.describe('Selection', () => {
     );
   });
 
-  test('Can adjust tripple click selection', async ({
+  test('Can adjust triple click selection', async ({
     page,
     isPlainText,
     isCollab,
@@ -469,6 +469,94 @@ test.describe('Selection', () => {
           class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
           dir="ltr">
           <span data-lexical-text="true">Paragraph 1</span>
+        </h1>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Paragraph 2</span>
+        </p>
+      `,
+    );
+  });
+
+  test('Can select whole paragraph with triple click', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+
+    await focusEditor(page);
+    await page.keyboard.type('Paragraph for selection');
+    await page
+      .locator('div[contenteditable="true"] > p')
+      .first()
+      .click({clickCount: 3});
+
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [0, 0, 0],
+      focusOffset: 23,
+      focusPath: [0, 0, 0],
+    });
+  });
+
+  test('Can select whole paragraph with triple click when first child is link #5045', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+
+    await focusEditor(page);
+    await pasteFromClipboard(page, {
+      'text/html': `<a href="https://test.com">Paragraph</a> for selection`,
+    });
+
+    await page
+      .locator('div[contenteditable="true"] > p')
+      .first()
+      .click({clickCount: 3});
+
+    await assertSelection(page, {
+      anchorOffset: 0, // at beginning of link
+      anchorPath: [0, 0, 0, 0],
+      focusOffset: 14, // offset for text node after link
+      focusPath: [0, 1, 0],
+    });
+  });
+
+  test('Can adjust triple click selection when first child is link #5045', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+
+    await pasteFromClipboard(page, {
+      'text/html': `<a href="https://test.com">Paragraph</a> 1`,
+    });
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Paragraph 2');
+    await page
+      .locator('div[contenteditable="true"] > p')
+      .first()
+      .click({clickCount: 3});
+
+    await click(page, '.block-controls');
+    await click(page, '.dropdown .item:has(.icon.h1)');
+
+    await assertHTML(
+      page,
+      html`
+        <h1 class="PlaygroundEditorTheme__h1">
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://test.com">
+            <span data-lexical-text="true">Paragraph</span>
+          </a>
+          <span data-lexical-text="true">1</span>
         </h1>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"

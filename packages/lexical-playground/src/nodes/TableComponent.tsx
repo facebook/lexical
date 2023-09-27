@@ -1717,10 +1717,10 @@ export default function TableComponent({
 
   return (
     <div
-    style={{
-      position: 'relative',
-      width: (tableRef.current?.clientWidth || 0) + 'px',
-    }}>
+      style={{
+        position: 'relative',
+        width: (tableRef.current?.offsetWidth || 0) + 'px',
+      }}>
       <table
         className={`${theme.table} ${isSelected ? theme.tableSelected : ''}`}
         ref={tableRef}

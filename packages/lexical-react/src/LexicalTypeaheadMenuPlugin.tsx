@@ -46,7 +46,7 @@ function getTextUpToAnchor(selection: RangeSelection): string | null {
 }
 
 function tryToPositionRange(leadOffset: number, range: Range, editorWindow: Window): boolean {
-  const domSelection = _window.getSelection();
+  const domSelection = editorWindow.getSelection();
   if (domSelection === null || !domSelection.isCollapsed) {
     return false;
   }
@@ -236,8 +236,8 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
   useEffect(() => {
     const updateListener = () => {
       editor.getEditorState().read(() => {
-        const _window = editor._window ?? window;
-        const range = _window.document.createRange();
+        const editorWindow = editor._window ?? window;
+        const range = editorWindow.document.createRange();
         const selection = $getSelection();
         const text = getQueryTextForSearch(editor);
 
@@ -258,7 +258,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
           match !== null &&
           !isSelectionOnEntityBoundary(editor, match.leadOffset)
         ) {
-          const isRangePositioned = tryToPositionRange(match.leadOffset, range, _window);
+          const isRangePositioned = tryToPositionRange(match.leadOffset, range, editorWindow);
           if (isRangePositioned !== null) {
             startTransition(() =>
               openTypeahead({

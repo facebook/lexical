@@ -174,7 +174,7 @@ export function trimTextContentFromAnchor(
   while (remaining > 0 && currentNode !== null) {
     if ($isElementNode(currentNode)) {
       const lastDescendant: null | LexicalNode =
-        currentNode.getLastDescendant();
+        currentNode.getLastDescendant<LexicalNode>();
       if (lastDescendant !== null) {
         currentNode = lastDescendant;
       }

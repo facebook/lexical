@@ -222,6 +222,22 @@ describe('Markdown', () => {
 # Hello
 \`\`\``,
     },
+    {
+    exportMd: `\`\`\`
+# Hello1
+\`\`\`
+
+\`\`\`
+# Hello2
+\`\`\``,
+      html: '<pre spellcheck="false"><span style="white-space: pre-wrap;"># Hello1</span></pre><pre spellcheck="false"><span style="white-space: pre-wrap;"># Hello2</span></pre>',
+      md: `\`\`\`
+# Hello1
+\`\`\`
+\`\`\`
+# Hello2
+\`\`\``
+    },
   ];
 
   const HIGHLIGHT_TEXT_MATCH_IMPORT: TextMatchTransformer = {

@@ -234,6 +234,7 @@ export const QUOTE: ElementTransformer = {
 };
 
 export const CODE: ElementTransformer = {
+  closeRegExp: /^```$/,
   dependencies: [CodeNode],
   export: (node: LexicalNode) => {
     if (!$isCodeNode(node)) {

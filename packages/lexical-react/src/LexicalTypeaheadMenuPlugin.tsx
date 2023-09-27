@@ -45,7 +45,7 @@ function getTextUpToAnchor(selection: RangeSelection): string | null {
   return anchorNode.getTextContent().slice(0, anchorOffset);
 }
 
-function tryToPositionRange(leadOffset: number, range: Range, _window: Window): boolean {
+function tryToPositionRange(leadOffset: number, range: Range, editorWindow: Window): boolean {
   const domSelection = _window.getSelection();
   if (domSelection === null || !domSelection.isCollapsed) {
     return false;

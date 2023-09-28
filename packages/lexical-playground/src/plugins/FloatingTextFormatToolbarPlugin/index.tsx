@@ -124,9 +124,14 @@ function TextFormatFloatingToolbar({
     ) {
       const rangeRect = getDOMRangeRect(nativeSelection, rootElement);
 
-      setFloatingElemPosition(rangeRect, popupCharStylesEditorElem, anchorElem);
+      setFloatingElemPosition(
+        rangeRect,
+        popupCharStylesEditorElem,
+        anchorElem,
+        isLink,
+      );
     }
-  }, [editor, anchorElem]);
+  }, [editor, anchorElem, isLink]);
 
   useEffect(() => {
     const scrollerElem = anchorElem.parentElement;
@@ -355,7 +360,7 @@ function useFloatingTextFormatToolbar(
     );
   }, [editor, updatePopup]);
 
-  if (!isText || isLink) {
+  if (!isText) {
     return null;
   }
 

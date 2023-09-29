@@ -435,10 +435,11 @@ function onPasteForRichText(
     () => {
       const selection = $getSelection();
       const clipboardData =
-        event instanceof InputEvent || event instanceof KeyboardEvent
+        objectKlassEquals(event, InputEvent) ||
+        objectKlassEquals(event, KeyboardEvent)
           ? null
-          : event.clipboardData;
-      if (clipboardData != null && selection !== null) {
+          : (event as ClipboardEvent).clipboardData;
+      if (clipboardData != null && $isRangeSelection(selection)) {
         $insertDataTransferForRichText(clipboardData, selection, editor);
       }
     },
@@ -473,10 +474,10 @@ export function eventFiles(
   event: DragEvent | PasteCommandType,
 ): [boolean, Array<File>, boolean] {
   let dataTransfer: null | DataTransfer = null;
-  if (event instanceof DragEvent) {
-    dataTransfer = event.dataTransfer;
-  } else if (event instanceof ClipboardEvent) {
-    dataTransfer = event.clipboardData;
+  if (objectKlassEquals(event, DragEvent)) {
+    dataTransfer = (event as DragEvent).dataTransfer;
+  } else if (objectKlassEquals(event, ClipboardEvent)) {
+    dataTransfer = (event as ClipboardEvent).clipboardData;
   }
 
   if (dataTransfer === null) {

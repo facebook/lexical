@@ -1069,9 +1069,9 @@ export class RangeSelection implements BaseSelection {
     const format = this.format;
     const style = this.style;
     if (isBefore && anchor.type === 'element') {
-      $transferStartingElementPointToTextPoint(anchor, focus, format, style);
+      $transferStartingElementPointToTextPoint(anchor, focus, 0, style); // reset format for new text
     } else if (!isBefore && focus.type === 'element') {
-      $transferStartingElementPointToTextPoint(focus, anchor, format, style);
+      $transferStartingElementPointToTextPoint(focus, anchor, 0, style); // reset format for new text
     }
     const selectedNodes = this.getNodes();
     const selectedNodesLength = selectedNodes.length;
@@ -1182,29 +1182,25 @@ export class RangeSelection implements BaseSelection {
 
       if (
         startOffset === endOffset &&
-        (firstNodeFormat !== format || firstNodeStyle !== style)
+        (firstNodeFormat !== format || firstNodeStyle !== style) &&
+        firstNode.getTextContent() !== ''
       ) {
-        if (firstNode.getTextContent() === '') {
-          firstNode.setFormat(format);
-          firstNode.setStyle(style);
+        const textNode = $createTextNode(text);
+        textNode.setFormat(format);
+        textNode.setStyle(style);
+        textNode.select();
+        if (startOffset === 0) {
+          firstNode.insertBefore(textNode, false);
         } else {
-          const textNode = $createTextNode(text);
-          textNode.setFormat(format);
-          textNode.setStyle(style);
-          textNode.select();
-          if (startOffset === 0) {
-            firstNode.insertBefore(textNode, false);
-          } else {
-            const [targetNode] = firstNode.splitText(startOffset);
-            targetNode.insertAfter(textNode, false);
-          }
-          // When composing, we need to adjust the anchor offset so that
-          // we correctly replace that right range.
-          if (textNode.isComposing() && this.anchor.type === 'text') {
-            this.anchor.offset -= text.length;
-          }
-          return;
+          const [targetNode] = firstNode.splitText(startOffset);
+          targetNode.insertAfter(textNode, false);
         }
+        // When composing, we need to adjust the anchor offset so that
+        // we correctly replace that right range.
+        if (textNode.isComposing() && this.anchor.type === 'text') {
+          this.anchor.offset -= text.length;
+        }
+        return;
       }
       const delCount = endOffset - startOffset;
 

@@ -343,18 +343,22 @@ export const LINK: TextMatchTransformer = {
     if (!$isLinkNode(node)) {
       return null;
     }
-    const title = node.getTitle();
-    const linkContent = title
-      ? `[${node.getTextContent()}](${node.getURL()} "${title}")`
-      : `[${node.getTextContent()}](${node.getURL()})`;
+
     const firstChild = node.getFirstChild();
+    let textContent = node.getTextContent();
+
     // Add text styles only if link has single text node inside. If it's more
     // then one we ignore it as markdown does not support nested styles for links
     if (node.getChildrenSize() === 1 && $isTextNode(firstChild)) {
-      return exportFormat(firstChild, linkContent);
-    } else {
-      return linkContent;
+      textContent = exportFormat(firstChild, textContent);
     }
+
+    const title = node.getTitle();
+    const url = node.getURL();
+
+    return title
+      ? `[${textContent}](${url} "${title}")`
+      : `[${textContent}](${url})`;
   },
   importRegExp:
     /(?:\[([^[]+)\])(?:\((?:([^()\s]+)(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))/,

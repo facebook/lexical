@@ -515,6 +515,12 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
 
       if ($isRangeSelection(selection)) {
         // Used for handling backspace in Android.
+        const isAndroidDevice = !!navigator.userAgent.match(/Android/i);
+
+        if (isAndroidDevice) {
+          $setCompositionKey(selection.anchor.key);
+        }
+
         if (
           isPossiblyAndroidKeyPress(event.timeStamp) &&
           editor.isComposing() &&

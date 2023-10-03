@@ -89,6 +89,9 @@ const config = {
           remarkPlugins: [importPlugin],
           sidebarPath: require.resolve('./sidebars.js'),
         },
+        gtag: {
+          trackingID: 'G-7C6YYBYBBT',
+        },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
         },

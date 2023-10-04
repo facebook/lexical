@@ -73,7 +73,7 @@ import {
   scrollIntoViewIfNeeded,
   toggleTextFormatType,
 } from './LexicalUtils';
-import {$createTabNode} from './nodes/LexicalTabNode';
+import {$createTabNode, $isTabNode} from './nodes/LexicalTabNode';
 
 export type TextPointType = {
   _selection: RangeSelection | GridSelection;
@@ -1205,6 +1205,15 @@ export class RangeSelection implements BaseSelection {
           }
           return;
         }
+      } else if ($isTabNode(firstNode)) {
+        // We don't need to check for delCount because there is only the entire selected node case
+        // that can hit here for content size 1 and with canInsertTextBeforeAfter false
+        const textNode = $createTextNode(text);
+        textNode.setFormat(format);
+        textNode.setStyle(style);
+        textNode.select();
+        firstNode.replace(textNode);
+        return;
       }
       const delCount = endOffset - startOffset;
 

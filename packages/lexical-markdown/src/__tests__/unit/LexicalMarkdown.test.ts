@@ -130,8 +130,12 @@ describe('Markdown', () => {
       md: 'Hello ~~***world***~~!',
     },
     {
-      html: '<p><i><em style="white-space: pre-wrap;">Hello </em></i><i><b><strong style="white-space: pre-wrap;">world</strong></b></i><i><em style="white-space: pre-wrap;">!</em></i></p>',
-      md: '*Hello **world**!*',
+      html: '<p><i><em style="white-space: pre-wrap;">Hello</em></i><span style="white-space: pre-wrap;"> </span><i><b><strong style="white-space: pre-wrap;">world</strong></b></i><i><em style="white-space: pre-wrap;">!</em></i></p>',
+      md: '*Hello* ***world****!*',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">he</span><b><strong style="white-space: pre-wrap;">llo</strong></b><i><b><strong style="white-space: pre-wrap;">wor</strong></b></i><i><em style="white-space: pre-wrap;">ld</em></i><span style="white-space: pre-wrap;">!</span></p>',
+      md: 'he**llo*****wor****ld*!',
     },
     {
       // Import only: export will use * instead of _ due to registered transformers order

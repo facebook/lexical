@@ -36,6 +36,7 @@ import {
   $isImageNode,
   ImageNode,
   ImagePayload,
+  UpdateImagePayload,
 } from '../../nodes/ImageNode';
 import Button from '../../ui/Button';
 import {DialogActions, DialogButtonsList} from '../../ui/Dialog';
@@ -49,6 +50,8 @@ const getDOMSelection = (targetWindow: Window | null): Selection | null =>
 
 export const INSERT_IMAGE_COMMAND: LexicalCommand<InsertImagePayload> =
   createCommand('INSERT_IMAGE_COMMAND');
+export const UPDATE_IMAGE_COMMAND: LexicalCommand<UpdateImagePayload> =
+  createCommand('UPDATE_IMAGE_COMMAND');
 
 export function InsertImageUriDialogBody({
   onClick,
@@ -226,6 +229,15 @@ export default function ImagesPlugin({
             $wrapNodeInElement(imageNode, $createParagraphNode).selectEnd();
           }
 
+          return true;
+        },
+        COMMAND_PRIORITY_EDITOR,
+      ),
+      editor.registerCommand<UpdateImagePayload>(
+        UPDATE_IMAGE_COMMAND,
+        (payload: UpdateImagePayload) => {
+          const {node, inline, position, rotation} = payload;
+          node?.setAttributes({inline, position, rotation});
           return true;
         },
         COMMAND_PRIORITY_EDITOR,

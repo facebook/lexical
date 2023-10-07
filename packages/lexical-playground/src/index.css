@@ -1121,17 +1121,17 @@ i.page-break,
   border-radius: 0;
 }
 
-.editor-shell .inline-editor-image.position-full {
+.editor-shell .editor-image.position-full {
   margin: 1em 0 1em 0;
 }
 
-.editor-shell .inline-editor-image.position-left {
+.editor-shell .editor-image.position-left {
   float: left;
   width: 50%;
   margin: 1em 1em 0 0;
 }
 
-.editor-shell .inline-editor-image.position-right {
+.editor-shell .editor-image.position-right {
   float: right;
   width: 50%;
   margin: 1em 0 0 1em;

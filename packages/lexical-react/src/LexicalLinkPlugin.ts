@@ -65,8 +65,8 @@ export function LinkPlugin({validateUrl}: Props): null {
               }
               const clipboardText = (
                 event as ClipboardEvent
-              ).clipboardData.getData('text');
-              if (!validateUrl(clipboardText)) {
+              ).clipboardData?.getData('text');
+              if (!clipboardText || !validateUrl(clipboardText)) {
                 return false;
               }
               // If we select nodes that are elements then avoid applying the link.

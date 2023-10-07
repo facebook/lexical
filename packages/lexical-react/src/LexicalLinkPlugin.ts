@@ -58,15 +58,16 @@ export function LinkPlugin({validateUrl}: Props): null {
               if (
                 !$isRangeSelection(selection) ||
                 selection.isCollapsed() ||
-                !objectKlassEquals(event, ClipboardEvent) ||
-                (event as ClipboardEvent).clipboardData == null
+                  !objectKlassEquals(event, ClipboardEvent)
               ) {
                 return false;
               }
-              const clipboardText = (
-                event as ClipboardEvent
-              ).clipboardData?.getData('text');
-              if (!clipboardText || !validateUrl(clipboardText)) {
+              const clipboardEvent = event as ClipboardEvent
+              if (clipboardEvent.clipboardData == null) {
+                return false;
+              }
+              const clipboardText = clipboardEvent.clipboardData.getData('text');
+              if (!validateUrl(clipboardText)) {
                 return false;
               }
               // If we select nodes that are elements then avoid applying the link.

@@ -6,7 +6,7 @@
  *
  */
 
-import type { ImageNode, Position } from '../../nodes/ImageNode';
+import type {ImageNode, Position} from '../../nodes/ImageNode';
 
 import {
   $createCodeNode,
@@ -544,7 +544,6 @@ function ImageAlignDropdown({
   disabled: boolean;
   inline: boolean;
 }) {
-  
   const inlineAwareAlignment = (position: Position | ElementFormatType) => {
     return inline
       ? editor.dispatchCommand(UPDATE_IMAGE_COMMAND, {
@@ -556,17 +555,21 @@ function ImageAlignDropdown({
           FORMAT_ELEMENT_COMMAND,
           position as ElementFormatType,
         );
-  }
+  };
 
   // To reuse the autocomplete icons
-  if (value === 'full') { 
-    value = 'justify' 
+  if (value === 'full') {
+    value = 'justify';
   }
 
   return (
     <DropDown
       disabled={disabled}
-      buttonLabel={inline && value === 'justify' ? 'Full Width' : ELEMENT_FORMAT_OPTIONS[value].name}
+      buttonLabel={
+        inline && value === 'justify'
+          ? 'Full Width'
+          : ELEMENT_FORMAT_OPTIONS[value].name
+      }
       buttonIconClassName={`icon ${ELEMENT_FORMAT_OPTIONS[value].icon}`}
       buttonClassName="toolbar-item spaced alignment"
       buttonAriaLabel="Formatting options for text alignment">
@@ -576,12 +579,14 @@ function ImageAlignDropdown({
         <i className="icon left-align" />
         <span className="text">Left Align</span>
       </DropDownItem>
-      {!inline && <DropDownItem
-        onClick={() => inlineAwareAlignment('center')}
-        className="item">
-        <i className="icon center-align" />
-        <span className="text">Center Align</span>
-      </DropDownItem>}
+      {!inline && (
+        <DropDownItem
+          onClick={() => inlineAwareAlignment('center')}
+          className="item">
+          <i className="icon center-align" />
+          <span className="text">Center Align</span>
+        </DropDownItem>
+      )}
       <DropDownItem
         onClick={() => inlineAwareAlignment('right')}
         className="item">
@@ -589,16 +594,24 @@ function ImageAlignDropdown({
         <span className="text">Right Align</span>
       </DropDownItem>
       <DropDownItem
-        onClick={() => inline ? inlineAwareAlignment('full'): inlineAwareAlignment('justify')}
+        onClick={() =>
+          inline
+            ? inlineAwareAlignment('full')
+            : inlineAwareAlignment('justify')
+        }
         className="item">
         <i className="icon justify-align" />
-        <span className="text">{inline ? 'Full Width': 'Justify Align'}</span>
+        <span className="text">{inline ? 'Full Width' : 'Justify Align'}</span>
       </DropDownItem>
     </DropDown>
   );
 }
 
-export default function ToolbarPlugin(): JSX.Element {
+export default function ToolbarPlugin({
+  setIsLinkEditMode,
+}: {
+  setIsLinkEditMode: Dispatch<boolean>;
+}): JSX.Element {
   const [editor] = useLexicalComposerContext();
   const [activeEditor, setActiveEditor] = useState(editor);
   const [blockType, setBlockType] =
@@ -933,9 +946,8 @@ export default function ToolbarPlugin(): JSX.Element {
             buttonLabel={'Image'}
             buttonIconClassName={`icon image`}
             buttonClassName="toolbar-item spaced alignment"
-            buttonAriaLabel="Image"
-            >
-            <DropDownItem className="item" onClick={()=>{}}>
+            buttonAriaLabel="Image">
+            <DropDownItem className="item" onClick={() => {}}>
               <i className="icon image" />
               <span className="text">Image</span>
             </DropDownItem>
@@ -953,7 +965,11 @@ export default function ToolbarPlugin(): JSX.Element {
               });
             }}
           />
-          <label htmlFor="inlineImage" style={{color: '#777', fontSize: '16px', margin: '2px'}}>Inline</label>
+          <label
+            htmlFor="inlineImage"
+            style={{color: '#777', fontSize: '16px', margin: '2px'}}>
+            Inline
+          </label>
           <Divider />
           <ImageAlignDropdown
             disabled={!isEditable}

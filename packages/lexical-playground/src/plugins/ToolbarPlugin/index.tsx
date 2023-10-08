@@ -94,7 +94,6 @@ import {
   InsertImagePayload,
   UPDATE_IMAGE_COMMAND,
 } from '../ImagesPlugin';
-import {InsertInlineImageDialog} from '../InlineImagePlugin';
 import InsertLayoutDialog from '../LayoutPlugin/InsertLayoutDialog';
 import {INSERT_PAGE_BREAK} from '../PageBreakPlugin';
 import {InsertPollDialog} from '../PollPlugin';
@@ -845,11 +844,13 @@ export default function ToolbarPlugin({
           <input
             id="inlineImage"
             type="checkbox"
-            checked={selectedNode?.getInline() || false}
+            checked={selectedNode?.isInline() || false}
             onChange={(e) => {
+              const aaa = !selectedNode?.isInline();
               activeEditor.dispatchCommand(UPDATE_IMAGE_COMMAND, {
-                inline: !selectedNode?.getInline(),
+                inline: aaa,
                 node: selectedNode,
+                position: 'left',
               });
             }}
           />
@@ -862,7 +863,7 @@ export default function ToolbarPlugin({
             <DropDownItem
               onClick={() => {
                 // eslint-disable-next-line no-unused-expressions
-                selectedNode?.getInline()
+                selectedNode?.isInline()
                   ? activeEditor.dispatchCommand(UPDATE_IMAGE_COMMAND, {
                       inline: true,
                       node: selectedNode,
@@ -877,18 +878,28 @@ export default function ToolbarPlugin({
               <i className="icon left-align" />
               <span className="text">Left Align</span>
             </DropDownItem>
-            {/* <DropDownItem
-        onClick={() => {
-          editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center');
-        }}
-        className="item">
-        <i className="icon center-align" />
-        <span className="text">Center Align</span>
-      </DropDownItem> */}
             <DropDownItem
               onClick={() => {
                 // eslint-disable-next-line no-unused-expressions
-                selectedNode?.getInline()
+                selectedNode?.isInline()
+                  ? activeEditor.dispatchCommand(UPDATE_IMAGE_COMMAND, {
+                      inline: true,
+                      node: selectedNode,
+                      position: 'center',
+                    })
+                  : activeEditor.dispatchCommand(
+                      FORMAT_ELEMENT_COMMAND,
+                      'center',
+                    );
+              }}
+              className="item">
+              <i className="icon center-align" />
+              <span className="text">Center Align</span>
+            </DropDownItem>
+            <DropDownItem
+              onClick={() => {
+                // eslint-disable-next-line no-unused-expressions
+                selectedNode?.isInline()
                   ? activeEditor.dispatchCommand(UPDATE_IMAGE_COMMAND, {
                       inline: true,
                       node: selectedNode,
@@ -1180,19 +1191,6 @@ export default function ToolbarPlugin({
                   className="item">
                   <i className="icon image" />
                   <span className="text">Image</span>
-                </DropDownItem>
-                <DropDownItem
-                  onClick={() => {
-                    showModal('Insert Inline Image', (onClose) => (
-                      <InsertInlineImageDialog
-                        activeEditor={activeEditor}
-                        onClose={onClose}
-                      />
-                    ));
-                  }}
-                  className="item">
-                  <i className="icon image" />
-                  <span className="text">Inline Image</span>
                 </DropDownItem>
                 <DropDownItem
                   onClick={() =>

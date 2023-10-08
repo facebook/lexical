@@ -42,15 +42,15 @@ export interface ImagePayload {
   captionsEnabled?: boolean;
   position?: Position;
   inline?: boolean;
-  rotation?: string;
 }
 
 export interface UpdateImagePayload {
   inline: boolean;
   node?: ImageNode;
   position?: Position;
-  rotation?: string;
 }
+
+const DEFAULT_MAX_IMAGE_WIDTH = 500;
 
 function convertImageElement(domNode: Node): null | DOMConversionOutput {
   if (domNode instanceof HTMLImageElement) {
@@ -66,13 +66,12 @@ export type SerializedImageNode = Spread<
     altText: string;
     caption: SerializedEditor;
     height?: number;
-    maxWidth: number;
+    maxWidth?: number;
     showCaption: boolean;
     src: string;
     width?: number;
     position?: Position;
     inline?: boolean;
-    rotation?: string;
   },
   SerializedLexicalNode
 >;
@@ -82,14 +81,13 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
   __altText: string;
   __width: 'inherit' | number;
   __height: 'inherit' | number;
-  __maxWidth: number;
+  __maxWidth: number | undefined;
   __showCaption: boolean;
   __caption: LexicalEditor;
   // Captions cannot yet be used within editor cells
   __captionsEnabled: boolean;
   __position: Position;
   __inline: boolean;
-  __rotation: string;
 
   static getType(): string {
     return 'image';
@@ -102,7 +100,6 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
       node.__maxWidth,
       node.__position,
       node.__inline,
-      node.__rotation,
       node.__width,
       node.__height,
       node.__showCaption,
@@ -120,7 +117,6 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
       maxWidth,
       inline,
       position,
-      rotation,
       caption,
       src,
       showCaption,
@@ -131,7 +127,6 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
       inline,
       maxWidth,
       position,
-      rotation,
       showCaption,
       src,
       width,
@@ -159,9 +154,6 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     if (this.__position) {
       element.setAttribute('data-lexical-image-position', this.__position);
     }
-    if (this.__rotation) {
-      element.setAttribute('data-lexical-image-rotation', this.__rotation);
-    }
     return {element};
   }
 
@@ -177,10 +169,9 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
   constructor(
     src: string,
     altText: string,
-    maxWidth: number,
+    maxWidth?: number,
     position?: Position,
     inline?: boolean,
-    rotation?: string,
     width?: 'inherit' | number,
     height?: 'inherit' | number,
     showCaption?: boolean,
@@ -194,7 +185,6 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     this.__maxWidth = maxWidth;
     this.__position = position;
     this.__inline = inline || false;
-    this.__rotation = rotation || '';
     this.__width = width || 'inherit';
     this.__height = height || 'inherit';
     this.__showCaption = showCaption || false;
@@ -210,7 +200,6 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
       inline: this.__inline,
       maxWidth: this.__maxWidth,
       position: this.__position,
-      rotation: this.__rotation,
       showCaption: this.__showCaption,
       src: this.getSrc(),
       type: 'image',
@@ -237,35 +226,39 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     return this.__position;
   }
 
-  getInline(): boolean {
+  getSrc(): string {
+    return this.__src;
+  }
+
+  getAltText(): string {
+    return this.__altText;
+  }
+
+  isInline(): boolean {
     return this.__inline;
   }
-
-  getRotation(): string | undefined {
-    return this.__rotation;
-  }
-
   setAttributes({
     inline,
     position,
-    rotation,
   }: {
     inline: boolean;
     position?: Position;
-    rotation?: string;
   }): void {
     const writable = this.getWritable();
     if (inline !== undefined) {
       writable.__inline = inline;
     }
-    if (position !== undefined) {
-      writable.__position = position;
+    if (!inline) {
+      position = undefined;
+      writable.__maxWidth = DEFAULT_MAX_IMAGE_WIDTH;
     }
-    if (rotation !== undefined) {
-      writable.__rotation = rotation || '';
+    writable.__position = position;
+    if (position === 'full') {
+      writable.__height = 'inherit';
+      writable.__width = 'inherit';
+      writable.__maxWidth = undefined;
     }
   }
-  // View
 
   createDOM(config: EditorConfig): HTMLElement {
     const span = document.createElement('span');
@@ -286,21 +279,18 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     config: EditorConfig,
   ): false {
     const position = this.__position;
-    if (position !== prevNode.__position) {
-      const className = `${config.theme.image} position-${position}`;
+    const inline = this.__inline;
+    if (inline !== prevNode.__inline || position !== prevNode.__position) {
+      const theme = config.theme;
+      let className = `${theme.image}`;
+      if (position) {
+        className += ` position-${position}`;
+      }
       if (className !== undefined) {
         dom.className = className;
       }
     }
     return false;
-  }
-
-  getSrc(): string {
-    return this.__src;
-  }
-
-  getAltText(): string {
-    return this.__altText;
   }
 
   decorate(): JSX.Element {
@@ -313,12 +303,11 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
           height={this.__height}
           inline={this.__inline} // is this needed?
           maxWidth={this.__maxWidth}
-          rotation={this.__rotation}
           nodeKey={this.getKey()}
           showCaption={this.__showCaption}
           caption={this.__caption}
           captionsEnabled={this.__captionsEnabled}
-          resizable={true}
+          resizable={this.__position !== 'full'}
           position={this.__position}
         />
       </Suspense>
@@ -329,10 +318,9 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
 export function $createImageNode({
   altText,
   height,
-  maxWidth = 500,
+  maxWidth = DEFAULT_MAX_IMAGE_WIDTH,
   inline = false,
   position,
-  rotation = '',
   captionsEnabled,
   src,
   width,
@@ -347,7 +335,6 @@ export function $createImageNode({
       maxWidth,
       position,
       inline,
-      rotation,
       width,
       height,
       showCaption,

@@ -50,7 +50,6 @@ import FigmaPlugin from './plugins/FigmaPlugin';
 import FloatingLinkEditorPlugin from './plugins/FloatingLinkEditorPlugin';
 import FloatingTextFormatToolbarPlugin from './plugins/FloatingTextFormatToolbarPlugin';
 import ImagesPlugin from './plugins/ImagesPlugin';
-import InlineImagePlugin from './plugins/InlineImagePlugin';
 import KeywordsPlugin from './plugins/KeywordsPlugin';
 import {LayoutPlugin} from './plugins/LayoutPlugin/LayoutPlugin';
 import LinkPlugin from './plugins/LinkPlugin';
@@ -213,7 +212,6 @@ export default function Editor(): JSX.Element {
               <FloatingTextFormatToolbarPlugin />
             </NewTablePlugin>
             <ImagesPlugin />
-            <InlineImagePlugin />
             <LinkPlugin />
             <PollPlugin />
             <TwitterPlugin />

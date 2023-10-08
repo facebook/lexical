@@ -236,8 +236,8 @@ export default function ImagesPlugin({
       editor.registerCommand<UpdateImagePayload>(
         UPDATE_IMAGE_COMMAND,
         (payload: UpdateImagePayload) => {
-          const {node, inline, position, rotation} = payload;
-          node?.setAttributes({inline, position, rotation});
+          const {node, inline, position} = payload;
+          node?.setAttributes({inline, position});
           return true;
         },
         COMMAND_PRIORITY_EDITOR,

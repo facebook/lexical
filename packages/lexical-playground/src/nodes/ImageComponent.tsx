@@ -6,7 +6,7 @@
  *
  */
 
-import type {Position} from './InlineImageNode';
+import type {Position} from './ImageNode';
 import type {
   BaseSelection,
   LexicalCommand,
@@ -86,15 +86,13 @@ function LazyImage({
   height,
   maxWidth,
   position,
-  rotation,
 }: {
   altText: string;
   className: string | null;
   height: 'inherit' | number;
   imageRef: {current: null | HTMLImageElement};
-  maxWidth: number;
+  maxWidth?: number;
   position: Position;
-  rotation: string;
   src: string;
   width: 'inherit' | number;
 }): JSX.Element {
@@ -110,7 +108,6 @@ function LazyImage({
         display: 'block', // if inline
         height,
         maxWidth,
-        transform: `rotate(${rotation})`,
         width,
       }}
       draggable="false"
@@ -127,7 +124,6 @@ export default function ImageComponent({
   maxWidth,
   inline,
   position,
-  rotation,
   resizable,
   showCaption,
   caption,
@@ -137,9 +133,8 @@ export default function ImageComponent({
   caption: LexicalEditor;
   height: 'inherit' | number;
   inline: boolean;
-  maxWidth: number;
+  maxWidth?: number;
   position: Position;
-  rotation: string;
   nodeKey: NodeKey;
   resizable: boolean;
   showCaption: boolean;
@@ -397,7 +392,6 @@ export default function ImageComponent({
             height={height}
             maxWidth={maxWidth}
             position={position}
-            rotation={rotation}
           />
         </div>
         {showCaption && (

@@ -103,7 +103,7 @@ function LazyImage({
       src={src}
       alt={altText}
       ref={imageRef}
-      data-position={position} // if 'inline'
+      data-position={position} // if inline
       style={{
         display: 'block', // if inline
         height,
@@ -122,7 +122,6 @@ export default function ImageComponent({
   width,
   height,
   maxWidth,
-  inline,
   position,
   resizable,
   showCaption,
@@ -132,7 +131,6 @@ export default function ImageComponent({
   altText: string;
   caption: LexicalEditor;
   height: 'inherit' | number;
-  inline: boolean;
   maxWidth?: number;
   position: Position;
   nodeKey: NodeKey;

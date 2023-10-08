@@ -448,7 +448,9 @@ i.horizontal-rule {
   -webkit-mask-size: contain;
 }
 
+button.toolbar-item .image,
 i.image {
+  opacity: 0.6;
   background-image: url(images/icons/file-image.svg);
 }
 

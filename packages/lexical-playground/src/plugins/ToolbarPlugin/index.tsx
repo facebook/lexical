@@ -6,6 +6,8 @@
  *
  */
 
+import type { ImageNode, Position } from '../../nodes/ImageNode';
+
 import {
   $createCodeNode,
   $isCodeNode,
@@ -529,11 +531,74 @@ function ElementFormatDropdown({
   );
 }
 
-export default function ToolbarPlugin({
-  setIsLinkEditMode,
+function ImageAlignDropdown({
+  editor,
+  node,
+  value,
+  inline,
+  disabled,
 }: {
-  setIsLinkEditMode: Dispatch<boolean>;
-}): JSX.Element {
+  editor: LexicalEditor;
+  node: ImageNode;
+  value: Position | ElementFormatType;
+  disabled: boolean;
+  inline: boolean;
+}) {
+  
+  const inlineAwareAlignment = (position: Position | ElementFormatType) => {
+    return inline
+      ? editor.dispatchCommand(UPDATE_IMAGE_COMMAND, {
+          inline,
+          node,
+          position: position as Position,
+        })
+      : editor.dispatchCommand(
+          FORMAT_ELEMENT_COMMAND,
+          position as ElementFormatType,
+        );
+  }
+
+  // To reuse the autocomplete icons
+  if (value === 'full') { 
+    value = 'justify' 
+  }
+
+  return (
+    <DropDown
+      disabled={disabled}
+      buttonLabel={inline && value === 'justify' ? 'Full Width' : ELEMENT_FORMAT_OPTIONS[value].name}
+      buttonIconClassName={`icon ${ELEMENT_FORMAT_OPTIONS[value].icon}`}
+      buttonClassName="toolbar-item spaced alignment"
+      buttonAriaLabel="Formatting options for text alignment">
+      <DropDownItem
+        onClick={() => inlineAwareAlignment('left')}
+        className="item">
+        <i className="icon left-align" />
+        <span className="text">Left Align</span>
+      </DropDownItem>
+      {!inline && <DropDownItem
+        onClick={() => inlineAwareAlignment('center')}
+        className="item">
+        <i className="icon center-align" />
+        <span className="text">Center Align</span>
+      </DropDownItem>}
+      <DropDownItem
+        onClick={() => inlineAwareAlignment('right')}
+        className="item">
+        <i className="icon right-align" />
+        <span className="text">Right Align</span>
+      </DropDownItem>
+      <DropDownItem
+        onClick={() => inline ? inlineAwareAlignment('full'): inlineAwareAlignment('justify')}
+        className="item">
+        <i className="icon justify-align" />
+        <span className="text">{inline ? 'Full Width': 'Justify Align'}</span>
+      </DropDownItem>
+    </DropDown>
+  );
+}
+
+export default function ToolbarPlugin(): JSX.Element {
   const [editor] = useLexicalComposerContext();
   const [activeEditor, setActiveEditor] = useState(editor);
   const [blockType, setBlockType] =
@@ -841,92 +906,62 @@ export default function ToolbarPlugin({
     <div className="toolbar">
       {selectedNode?.getType() === 'image' ? (
         <>
+          <button
+            disabled={!canUndo || !isEditable}
+            onClick={() => {
+              activeEditor.dispatchCommand(UNDO_COMMAND, undefined);
+            }}
+            title={IS_APPLE ? 'Undo (⌘Z)' : 'Undo (Ctrl+Z)'}
+            type="button"
+            className="toolbar-item spaced"
+            aria-label="Undo">
+            <i className="format undo" />
+          </button>
+          <button
+            disabled={!canRedo || !isEditable}
+            onClick={() => {
+              activeEditor.dispatchCommand(REDO_COMMAND, undefined);
+            }}
+            title={IS_APPLE ? 'Redo (⌘Y)' : 'Redo (Ctrl+Y)'}
+            type="button"
+            className="toolbar-item"
+            aria-label="Redo">
+            <i className="format redo" />
+          </button>
+          <Divider />
+          <DropDown
+            buttonLabel={'Image'}
+            buttonIconClassName={`icon image`}
+            buttonClassName="toolbar-item spaced alignment"
+            buttonAriaLabel="Image"
+            >
+            <DropDownItem className="item" onClick={()=>{}}>
+              <i className="icon image" />
+              <span className="text">Image</span>
+            </DropDownItem>
+          </DropDown>
+          <Divider />
           <input
             id="inlineImage"
             type="checkbox"
             checked={selectedNode?.isInline() || false}
-            onChange={(e) => {
-              const aaa = !selectedNode?.isInline();
+            onChange={() => {
               activeEditor.dispatchCommand(UPDATE_IMAGE_COMMAND, {
-                inline: aaa,
+                inline: !selectedNode?.isInline(),
                 node: selectedNode,
                 position: 'left',
               });
             }}
           />
-          <label htmlFor="inlineImage">Inline</label>
-          <DropDown
-            buttonLabel={selectedNode.getPosition()}
-            buttonIconClassName={`icon ${selectedNode.getPosition()}`}
-            buttonClassName="toolbar-item spaced alignment"
-            buttonAriaLabel="Formatting options for text alignment">
-            <DropDownItem
-              onClick={() => {
-                // eslint-disable-next-line no-unused-expressions
-                selectedNode?.isInline()
-                  ? activeEditor.dispatchCommand(UPDATE_IMAGE_COMMAND, {
-                      inline: true,
-                      node: selectedNode,
-                      position: 'left',
-                    })
-                  : activeEditor.dispatchCommand(
-                      FORMAT_ELEMENT_COMMAND,
-                      'left',
-                    );
-              }}
-              className="item">
-              <i className="icon left-align" />
-              <span className="text">Left Align</span>
-            </DropDownItem>
-            <DropDownItem
-              onClick={() => {
-                // eslint-disable-next-line no-unused-expressions
-                selectedNode?.isInline()
-                  ? activeEditor.dispatchCommand(UPDATE_IMAGE_COMMAND, {
-                      inline: true,
-                      node: selectedNode,
-                      position: 'center',
-                    })
-                  : activeEditor.dispatchCommand(
-                      FORMAT_ELEMENT_COMMAND,
-                      'center',
-                    );
-              }}
-              className="item">
-              <i className="icon center-align" />
-              <span className="text">Center Align</span>
-            </DropDownItem>
-            <DropDownItem
-              onClick={() => {
-                // eslint-disable-next-line no-unused-expressions
-                selectedNode?.isInline()
-                  ? activeEditor.dispatchCommand(UPDATE_IMAGE_COMMAND, {
-                      inline: true,
-                      node: selectedNode,
-                      position: 'right',
-                    })
-                  : activeEditor.dispatchCommand(
-                      FORMAT_ELEMENT_COMMAND,
-                      'right',
-                    );
-              }}
-              className="item">
-              <i className="icon right-align" />
-              <span className="text">Right Align</span>
-            </DropDownItem>
-            <DropDownItem
-              onClick={() => {
-                activeEditor.dispatchCommand(UPDATE_IMAGE_COMMAND, {
-                  inline: true,
-                  node: selectedNode,
-                  position: 'full',
-                });
-              }}
-              className="item">
-              <i className="icon justify-align" />
-              <span className="text">Full Width</span>
-            </DropDownItem>
-          </DropDown>
+          <label htmlFor="inlineImage" style={{color: '#777', fontSize: '16px', margin: '2px'}}>Inline</label>
+          <Divider />
+          <ImageAlignDropdown
+            disabled={!isEditable}
+            node={selectedNode}
+            inline={selectedNode?.isInline()}
+            value={selectedNode.getPosition() || 'left'}
+            editor={editor}
+          />
         </>
       ) : (
         <>

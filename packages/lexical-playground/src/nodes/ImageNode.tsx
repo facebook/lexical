@@ -237,6 +237,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
   isInline(): boolean {
     return this.__inline;
   }
+
   setAttributes({
     inline,
     position,
@@ -262,8 +263,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
 
   createDOM(config: EditorConfig): HTMLElement {
     const span = document.createElement('span');
-    const theme = config.theme;
-    let className = `${theme.image}`;
+    let className = config.theme.image;
     if (this.__position) {
       className += ` position-${this.__position}`;
     }
@@ -281,8 +281,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     const position = this.__position;
     const inline = this.__inline;
     if (inline !== prevNode.__inline || position !== prevNode.__position) {
-      const theme = config.theme;
-      let className = `${theme.image}`;
+      let className = config.theme.image;
       if (position) {
         className += ` position-${position}`;
       }
@@ -301,7 +300,6 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
           altText={this.__altText}
           width={this.__width}
           height={this.__height}
-          inline={this.__inline} // is this needed?
           maxWidth={this.__maxWidth}
           nodeKey={this.getKey()}
           showCaption={this.__showCaption}

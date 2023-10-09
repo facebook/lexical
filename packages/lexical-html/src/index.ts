@@ -92,7 +92,17 @@ function $appendNodesToHTML(
     target = clone;
   }
   const children = $isElementNode(target) ? target.getChildren() : [];
-  const {element, after} = target.exportDOM(editor);
+  const registeredNode = editor._nodes.get(target.getType());
+  let exportOutput;
+
+  // Use HTMLConfig overrides, if available.
+  if (registeredNode && registeredNode.exportDOM !== undefined) {
+    exportOutput = registeredNode.exportDOM(editor, target);
+  } else {
+    exportOutput = target.exportDOM(editor);
+  }
+
+  const {element, after} = exportOutput;
 
   if (!element) {
     return false;

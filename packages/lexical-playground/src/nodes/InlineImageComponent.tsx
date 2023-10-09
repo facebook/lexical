@@ -395,7 +395,10 @@ export default function InlineImageComponent({
             <LexicalNestedComposer initialEditor={caption}>
               <AutoFocusPlugin />
               <LinkPlugin />
-              <FloatingLinkEditorPlugin />
+              <FloatingLinkEditorPlugin
+                isLinkEditMode={false}
+                setIsLinkEditMode={() => {}}
+              />
               <FloatingTextFormatToolbarPlugin />
               <RichTextPlugin
                 contentEditable={

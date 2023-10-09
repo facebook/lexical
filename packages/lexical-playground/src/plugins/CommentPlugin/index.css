@@ -51,7 +51,7 @@ i.add-comment {
 
 .CommentPlugin_CommentInputBox {
   display: block;
-  position: fixed;
+  position: absolute;
   width: 250px;
   min-height: 80px;
   background-color: #fff;

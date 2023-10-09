@@ -19,6 +19,7 @@ import {
   useYjsCollaboration,
   useYjsFocusTracking,
   useYjsHistory,
+  YjsCollaborationOptions,
 } from './shared/useYjsCollaboration';
 
 type Props = {
@@ -36,6 +37,7 @@ type Props = {
   excludedProperties?: ExcludedProperties;
   // `awarenessData` parameter allows arbitrary data to be added to the awareness.
   awarenessData?: object;
+  options?: YjsCollaborationOptions;
 };
 
 export function CollaborationPlugin({
@@ -48,6 +50,7 @@ export function CollaborationPlugin({
   initialEditorState,
   excludedProperties,
   awarenessData,
+  options,
 }: Props): JSX.Element {
   const collabContext = useCollaborationContext(username, cursorColor);
 
@@ -84,6 +87,7 @@ export function CollaborationPlugin({
     initialEditorState,
     excludedProperties,
     awarenessData,
+    options,
   );
 
   collabContext.clientID = binding.clientID;

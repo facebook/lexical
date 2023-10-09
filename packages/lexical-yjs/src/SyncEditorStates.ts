@@ -84,6 +84,7 @@ export function syncYjsChangesToLexical(
   provider: Provider,
   events: Array<YEvent<YText>>,
   isFromUndoManger: boolean,
+  fallbackToSelection: boolean = true,
 ): void {
   const editor = binding.editor;
   const currentEditorState = editor._editorState;
@@ -151,7 +152,11 @@ export function syncYjsChangesToLexical(
                 }
 
                 // Fallback
-                $getRoot().selectEnd();
+                if (fallbackToSelection) $getRoot().selectEnd();
+                else {
+                  // If we don't want to fallback to a selection, we need to clear the selection
+                  $setSelection(null);
+                }
               }
             }
           }

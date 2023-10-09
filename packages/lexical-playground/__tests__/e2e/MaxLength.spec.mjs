@@ -129,4 +129,42 @@ test.describe('MaxLength', () => {
       `,
     );
   });
+
+  test(`paste with empty paragraph in between #3773`, async ({page}) => {
+    await focusEditor(page);
+    await pasteFromClipboard(page, {
+      'text/plain':
+        'lorem ipsum dolor sit amet, consectetuer \n\nadipiscing elit\n\n',
+    });
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">lorem ipsum dolor sit amet, co</span>
+        </p>
+      `,
+    );
+  });
+
+  test(`paste with empty paragraph at end #3773`, async ({page}) => {
+    await focusEditor(page);
+    await pasteFromClipboard(page, {
+      'text/plain':
+        'lorem ipsum dolor sit amet, consectetuer adipiscing elit\n\n',
+    });
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">lorem ipsum dolor sit amet, co</span>
+        </p>
+      `,
+    );
+  });
 });

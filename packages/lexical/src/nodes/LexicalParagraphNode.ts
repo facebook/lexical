@@ -19,9 +19,11 @@ import type {
 } from './LexicalElementNode';
 import type {RangeSelection} from 'lexical';
 
-import {isHTMLElement} from '@lexical/utils';
-
-import {$applyNodeReplacement, getCachedClassNameArray} from '../LexicalUtils';
+import {
+  $applyNodeReplacement,
+  getCachedClassNameArray,
+  isHTMLElement,
+} from '../LexicalUtils';
 import {ElementNode} from './LexicalElementNode';
 import {$isTextNode} from './LexicalTextNode';
 

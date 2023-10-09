@@ -16,9 +16,11 @@ export type {
   EditableListener,
   EditorConfig,
   EditorThemeClasses,
+  HTMLConfig,
   Klass,
   LexicalCommand,
   LexicalEditor,
+  LexicalNodeReplacement,
   MutationListener,
   NodeMutation,
   SerializedEditor,
@@ -131,6 +133,7 @@ export {
   $isRangeSelection,
   DEPRECATED_$computeGridMap,
   DEPRECATED_$createGridSelection,
+  DEPRECATED_$getGridCellNodeRect,
   DEPRECATED_$getNodeTriplet,
   DEPRECATED_$isGridSelection,
 } from './LexicalSelection';
@@ -155,6 +158,8 @@ export {
   $setSelection,
   $splitNode,
   getNearestEditorFromDOMNode,
+  isHTMLAnchorElement,
+  isHTMLElement,
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
 } from './LexicalUtils';

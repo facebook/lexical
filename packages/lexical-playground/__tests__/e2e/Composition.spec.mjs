@@ -437,7 +437,7 @@ test.describe('Composition', () => {
       await focusEditor(page);
       await enableCompositionKeyEvents(page);
 
-      await page.keyboard.type('Luke');
+      await page.keyboard.type('@Luke');
       await waitForSelector(page, '#typeahead-menu ul li');
       await page.keyboard.press('Enter');
 
@@ -491,7 +491,7 @@ test.describe('Composition', () => {
       await focusEditor(page);
       await enableCompositionKeyEvents(page);
 
-      await page.keyboard.type('Luke');
+      await page.keyboard.type('@Luke');
       await waitForSelector(page, '#typeahead-menu ul li');
       await page.keyboard.press('Enter');
 
@@ -558,7 +558,7 @@ test.describe('Composition', () => {
       await focusEditor(page);
       await enableCompositionKeyEvents(page);
 
-      await page.keyboard.type('Luke');
+      await page.keyboard.type('@Luke');
       await waitForSelector(page, '#typeahead-menu ul li');
       await page.keyboard.press('Enter');
 

@@ -81,8 +81,9 @@ function syncEvent(binding: Binding, event: any): void {
 
 export interface YjsCollaborationOptions {
   /**
-   * If true, if we can't recover the selection from Yjs, we will set the selection
-   * to the end of the document. If false, we will clear the selection.
+   * When we can't recover the selection from Yjs,
+   * - if true, we will set the selection to the end of the document.
+   * - otherwise, we will clear the selection.
    * Default: true
    */
   fallbackToSelection?: boolean;

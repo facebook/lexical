@@ -84,7 +84,7 @@ export interface YjsCollaborationOptions {
    * When we can't recover the selection from Yjs,
    * - if true, we will set the selection to the end of the document.
    * - otherwise, we will clear the selection.
-   * Default: true
+   * @default true
    */
   fallbackToSelection?: boolean;
 }

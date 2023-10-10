@@ -60,16 +60,16 @@ describe('Markdown', () => {
     {
       // Multiline paragraphs
       html: '<p><span style="white-space: pre-wrap;">Hello</span><br><span style="white-space: pre-wrap;">world</span><br><span style="white-space: pre-wrap;">!</span></p>',
-      md: ['Hello', 'world', '!'].join('\n'),
+      md: ['Hello  ', 'world  ', '!'].join('\n'),
     },
     {
       html: '<blockquote><span style="white-space: pre-wrap;">Hello</span><br><span style="white-space: pre-wrap;">world!</span></blockquote>',
-      md: '> Hello\n> world!',
+      md: '> Hello  \n> world!',
     },
     {
       // Miltiline list items
       html: '<ul><li value="1"><span style="white-space: pre-wrap;">Hello</span></li><li value="2"><span style="white-space: pre-wrap;">world</span><br><span style="white-space: pre-wrap;">!</span><br><span style="white-space: pre-wrap;">!</span></li></ul>',
-      md: '- Hello\n- world\n!\n!',
+      md: '- Hello\n- world  \n!  \n!',
     },
     {
       html: '<ul><li value="1"><span style="white-space: pre-wrap;">Hello</span></li><li value="2"><span style="white-space: pre-wrap;">world</span></li></ul>',
@@ -174,7 +174,7 @@ describe('Markdown', () => {
     {
       // Import only: multiline quote will be prefixed with ">" on each line during export
       html: '<blockquote><span style="white-space: pre-wrap;">Hello</span><br><span style="white-space: pre-wrap;">world</span><br><span style="white-space: pre-wrap;">!</span></blockquote>',
-      md: '> Hello\nworld\n!',
+      md: '> Hello  \nworld  \n!',
       skipExport: true,
     },
     {

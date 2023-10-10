@@ -28,7 +28,6 @@ import {
   QuoteNode,
 } from '@lexical/rich-text';
 import {
-  $createLineBreakNode,
   $createTextNode,
   $isTextNode,
   ElementNode,
@@ -206,10 +205,7 @@ export const QUOTE: ElementTransformer = {
     if (isImport) {
       const previousNode = parentNode.getPreviousSibling();
       if ($isQuoteNode(previousNode)) {
-        previousNode.splice(previousNode.getChildrenSize(), 0, [
-          $createLineBreakNode(),
-          ...children,
-        ]);
+        previousNode.splice(previousNode.getChildrenSize(), 0, children);
         previousNode.select(0, 0);
         parentNode.remove();
         return;

@@ -13,6 +13,7 @@ import type {TextNode} from './nodes/LexicalTextNode';
 
 import {
   CAN_USE_BEFORE_INPUT,
+  IS_ANDROID,
   IS_APPLE_WEBKIT,
   IS_FIREFOX,
   IS_IOS,
@@ -515,9 +516,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
 
       if ($isRangeSelection(selection)) {
         // Used for handling backspace in Android.
-        const isAndroidDevice = !!navigator.userAgent.match(/Android/i);
-
-        if (isAndroidDevice) {
+        if (IS_ANDROID) {
           $setCompositionKey(selection.anchor.key);
         }
 

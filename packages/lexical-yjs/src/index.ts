@@ -114,4 +114,5 @@ export {syncCursorPositions} from './SyncCursors';
 export {
   syncLexicalUpdateToYjs,
   syncYjsChangesToLexical,
+  YjsCollaborationOptions,
 } from './SyncEditorStates';

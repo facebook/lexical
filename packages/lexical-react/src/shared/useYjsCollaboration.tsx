@@ -6,7 +6,12 @@
  *
  */
 
-import type {Binding, ExcludedProperties, Provider} from '@lexical/yjs';
+import type {
+  Binding,
+  ExcludedProperties,
+  Provider,
+  YjsCollaborationOptions,
+} from '@lexical/yjs';
 import type {LexicalEditor} from 'lexical';
 
 import {mergeRegister} from '@lexical/utils';
@@ -41,9 +46,6 @@ import {Doc, Transaction, UndoManager, YEvent} from 'yjs';
 import {InitialEditorStateType} from '../LexicalComposer';
 
 export type CursorsContainerRef = React.MutableRefObject<HTMLElement | null>;
-export type YjsCollaborationOptions = {
-  fallbackToSelection?: boolean;
-};
 
 export function useYjsCollaboration(
   editor: LexicalEditor,
@@ -57,7 +59,7 @@ export function useYjsCollaboration(
   initialEditorState?: InitialEditorStateType,
   excludedProperties?: ExcludedProperties,
   awarenessData?: object,
-  {fallbackToSelection}: YjsCollaborationOptions = {},
+  options?: YjsCollaborationOptions,
 ): [JSX.Element, Binding] {
   const isReloadingDoc = useRef(false);
   const [doc, setDoc] = useState(docMap.get(id));
@@ -119,7 +121,7 @@ export function useYjsCollaboration(
           provider,
           events,
           isFromUndoManger,
-          fallbackToSelection,
+          options,
         );
       }
     };
@@ -196,7 +198,7 @@ export function useYjsCollaboration(
     provider,
     shouldBootstrap,
     awarenessData,
-    fallbackToSelection,
+    options,
   ]);
   const cursorsContainer = useMemo(() => {
     const ref = (element: null | HTMLElement) => {

@@ -79,12 +79,21 @@ function syncEvent(binding: Binding, event: any): void {
   }
 }
 
+export interface YjsCollaborationOptions {
+  /**
+   * If true, if we can't recover the selection from Yjs, we will set the selection
+   * to the end of the document. If false, we will clear the selection.
+   * Default: true
+   */
+  fallbackToSelection?: boolean;
+}
+
 export function syncYjsChangesToLexical(
   binding: Binding,
   provider: Provider,
   events: Array<YEvent<YText>>,
   isFromUndoManger: boolean,
-  fallbackToSelection: boolean = true,
+  {fallbackToSelection = true}: YjsCollaborationOptions = {},
 ): void {
   const editor = binding.editor;
   const currentEditorState = editor._editorState;

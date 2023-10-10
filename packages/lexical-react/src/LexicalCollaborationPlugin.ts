@@ -10,7 +10,11 @@ import type {Doc} from 'yjs';
 
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {ExcludedProperties, Provider} from '@lexical/yjs';
+import {
+  ExcludedProperties,
+  Provider,
+  YjsCollaborationOptions,
+} from '@lexical/yjs';
 import {useEffect, useMemo} from 'react';
 
 import {InitialEditorStateType} from './LexicalComposer';
@@ -19,7 +23,6 @@ import {
   useYjsCollaboration,
   useYjsFocusTracking,
   useYjsHistory,
-  YjsCollaborationOptions,
 } from './shared/useYjsCollaboration';
 
 type Props = {

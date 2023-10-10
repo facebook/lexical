@@ -13,6 +13,7 @@ import {
   $patchStyleText,
 } from '@lexical/selection';
 import {
+  $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
   $getNodeByKey,
@@ -2371,6 +2372,30 @@ describe('LexicalSelectionHelpers tests', () => {
           '<p dir="ltr"><a href="https://" dir="ltr"><span data-lexical-text="true">link</span></a><span data-lexical-text="true">foo</span></p>',
         );
       });
+    });
+
+    test('can insert a linebreak node before an inline element node', async () => {
+      const editor = createTestEditor();
+      const element = document.createElement('div');
+      editor.setRootElement(element);
+
+      await editor.update(() => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        root.append(paragraph);
+        const link = $createLinkNode('https://lexical.dev/');
+        paragraph.append(link);
+        const text = $createTextNode('Lexical');
+        link.append(text);
+        text.select(0, 0);
+
+        $insertNodes([$createLineBreakNode()]);
+      });
+
+      // TODO #5109 ElementNode should have a way to control when other nodes can be inserted inside
+      expect(element.innerHTML).toBe(
+        '<p><a href="https://lexical.dev/" dir="ltr"><br><span data-lexical-text="true">Lexical</span></a></p>',
+      );
     });
   });
 

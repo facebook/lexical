@@ -7,7 +7,12 @@
  */
 
 import type {EditorState, SerializedEditorState} from './LexicalEditorState';
-import type {DOMConversion, NodeKey} from './LexicalNode';
+import type {
+  DOMConversion,
+  DOMConversionMap,
+  DOMExportOutput,
+  NodeKey,
+} from './LexicalNode';
 
 import invariant from 'shared/invariant';
 
@@ -151,6 +156,14 @@ export type LexicalNodeReplacement = {
   withKlass?: Klass<LexicalNode>;
 };
 
+export type HTMLConfig = {
+  export?: Map<
+    Klass<LexicalNode>,
+    (editor: LexicalEditor, target: LexicalNode) => DOMExportOutput
+  >;
+  import?: DOMConversionMap;
+};
+
 export type CreateEditorArgs = {
   disableEvents?: boolean;
   editorState?: EditorState;
@@ -160,6 +173,7 @@ export type CreateEditorArgs = {
   parentEditor?: LexicalEditor;
   editable?: boolean;
   theme?: EditorThemeClasses;
+  html?: HTMLConfig;
 };
 
 export type RegisteredNodes = Map<string, RegisteredNode>;
@@ -169,6 +183,10 @@ export type RegisteredNode = {
   transforms: Set<Transform<LexicalNode>>;
   replace: null | ((node: LexicalNode) => LexicalNode);
   replaceWithKlass: null | Klass<LexicalNode>;
+  exportDOM?: (
+    editor: LexicalEditor,
+    targetNode: LexicalNode,
+  ) => DOMExportOutput;
 };
 
 export type Transform<T extends LexicalNode> = (node: T) => void;
@@ -330,9 +348,24 @@ export function resetEditor(
   }
 }
 
-function initializeConversionCache(nodes: RegisteredNodes): DOMConversionCache {
+function initializeConversionCache(
+  nodes: RegisteredNodes,
+  additionalConversions?: DOMConversionMap,
+): DOMConversionCache {
   const conversionCache = new Map();
   const handledConversions = new Set();
+  const addConversionsToCache = (map: DOMConversionMap) => {
+    Object.keys(map).forEach((key) => {
+      let currentCache = conversionCache.get(key);
+
+      if (currentCache === undefined) {
+        currentCache = [];
+        conversionCache.set(key, currentCache);
+      }
+
+      currentCache.push(map[key]);
+    });
+  };
   nodes.forEach((node) => {
     const importDOM =
       node.klass.importDOM != null
@@ -347,18 +380,12 @@ function initializeConversionCache(nodes: RegisteredNodes): DOMConversionCache {
     const map = importDOM();
 
     if (map !== null) {
-      Object.keys(map).forEach((key) => {
-        let currentCache = conversionCache.get(key);
-
-        if (currentCache === undefined) {
-          currentCache = [];
-          conversionCache.set(key, currentCache);
-        }
-
-        currentCache.push(map[key]);
-      });
+      addConversionsToCache(map);
     }
   });
+  if (additionalConversions) {
+    addConversionsToCache(additionalConversions);
+  }
   return conversionCache;
 }
 
@@ -389,9 +416,9 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
     ParagraphNode,
     ...(config.nodes || []),
   ];
-  const onError = config.onError;
+  const {onError, html} = config;
   const isEditable = config.editable !== undefined ? config.editable : true;
-  let registeredNodes;
+  let registeredNodes: Map<string, RegisteredNode>;
 
   if (editorConfig === undefined && activeEditor !== null) {
     registeredNodes = activeEditor._nodes;
@@ -457,11 +484,12 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
       }
       const type = klass.getType();
       const transform = klass.transform();
-      const transforms = new Set();
+      const transforms = new Set<Transform<LexicalNode>>();
       if (transform !== null) {
         transforms.add(transform);
       }
       registeredNodes.set(type, {
+        exportDOM: html && html.export ? html.export.get(klass) : undefined,
         klass,
         replace,
         replaceWithKlass,
@@ -469,7 +497,6 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
       });
     }
   }
-
   const editor = new LexicalEditor(
     editorState,
     parentEditor,
@@ -480,7 +507,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
       theme,
     },
     onError ? onError : console.error,
-    initializeConversionCache(registeredNodes),
+    initializeConversionCache(registeredNodes, html ? html.import : undefined),
     isEditable,
   );
 

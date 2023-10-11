@@ -161,7 +161,7 @@ declare export function $getElementGridForTableNode(
 
 declare export function getTableSelectionFromTableElement(
   tableElement: HTMLElement,
-): TableSelection;
+): null | TableSelection;
 
 declare export function getCellFromTarget(node: Node): Cell | null;
 

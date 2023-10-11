@@ -278,6 +278,14 @@ export type LexicalNodeReplacement = {
   withKlass?: Class<LexicalNode>,
 };
 
+export type HTMLConfig = {
+  export?: Map<
+    Class<LexicalNode>,
+    (editor: LexicalEditor, target: LexicalNode) => DOMExportOutput,
+  >,
+  import?: DOMConversionMap,
+};
+
 declare export function createEditor(editorConfig?: {
   editorState?: EditorState,
   namespace: string,
@@ -287,6 +295,7 @@ declare export function createEditor(editorConfig?: {
   onError: (error: Error) => void,
   disableEvents?: boolean,
   editable?: boolean,
+  html?: HTMLConfig,
 }): LexicalEditor;
 
 /**
@@ -583,6 +592,7 @@ export type TextFormatType =
   | 'underline'
   | 'strikethrough'
   | 'italic'
+  | 'highlight'
   | 'code'
   | 'subscript'
   | 'superscript';

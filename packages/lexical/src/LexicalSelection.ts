@@ -1533,12 +1533,12 @@ export class RangeSelection implements BaseSelection {
     nodes.forEach((node) => {
       if ($isElementNode(node) && !node.isInline()) {
         lastInsertedBlock = $getAncestor(
-          node.getLastDescendant() ?? node,
+          node.getLastDescendant() || node,
           INTERNAL_$isBlock,
         )!;
         firstInsertedBlock =
-          firstInsertedBlock ??
-          $getAncestor(node.getFirstDescendant() ?? node, INTERNAL_$isBlock)!;
+          firstInsertedBlock ||
+          $getAncestor(node.getFirstDescendant() || node, INTERNAL_$isBlock)!;
         currentBlock = currentBlock.insertAfter(node) as ElementNode;
       } else {
         currentBlock.append(node);

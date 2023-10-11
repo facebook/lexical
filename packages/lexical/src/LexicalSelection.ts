@@ -1731,7 +1731,7 @@ export class RangeSelection implements BaseSelection {
         );
       }
       didReplaceOrMerge = false;
-      if ($isElementNode(target) && !target.isInline()) {
+      if ($isElementNode(target) && (i === 0 || !target.isInline())) {
         lastNode = node;
         if ($isDecoratorNode(node) && !node.isInline()) {
           if (nodes.length === 1 && target.canBeEmpty() && target.isEmpty()) {

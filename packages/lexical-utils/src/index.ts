@@ -298,7 +298,7 @@ type Func = () => void;
  * ```
  * In this case, useEffect is returning the function returned by mergeRegister as a cleanup
  * function to be executed after either the useEffect runs again (due to one of its dependencies
- * updating) or the compenent it resides in unmounts.
+ * updating) or the component it resides in unmounts.
  * Note the functions don't neccesarily need to be in an array as all arguements
  * are considered to be the func argument and spread from there.
  * @param func - An array of functions meant to be executed by the returned function.

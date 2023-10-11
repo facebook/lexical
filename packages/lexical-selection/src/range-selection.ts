@@ -517,7 +517,7 @@ export function $getSelectionStyleValueForProperty(
   const endOffset = isBackward ? focus.offset : anchor.offset;
   const endNode = isBackward ? focus.getNode() : anchor.getNode();
 
-  if (selection.style !== '') {
+  if (selection.isCollapsed() && selection.style !== '') {
     const css = selection.style;
     const styleObject = getStyleObjectFromCSS(css);
 

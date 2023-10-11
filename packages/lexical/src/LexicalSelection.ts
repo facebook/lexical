@@ -70,7 +70,7 @@ import {
   scrollIntoViewIfNeeded,
   toggleTextFormatType,
 } from './LexicalUtils';
-import {$createTabNode} from './nodes/LexicalTabNode';
+import {$createTabNode, $isTabNode} from './nodes/LexicalTabNode';
 
 export type TextPointType = {
   _selection: RangeSelection | GridSelection;
@@ -241,17 +241,6 @@ function $transferStartingElementPointToTextPoint(
     element.append(target);
   } else {
     placementNode.insertBefore(target);
-    // Fix the end point offset if it refers to the same element as start,
-    // as we've now inserted another element before it. Note that we only
-    // do it if selection is not collapsed as otherwise it'll transfer
-    // both focus and anchor to the text node below
-    if (
-      end.type === 'element' &&
-      end.key === start.key &&
-      end.offset !== start.offset
-    ) {
-      end.set(end.key, end.offset + 1, 'element');
-    }
   }
   // Transfer the element point to a text point.
   if (start.is(end)) {
@@ -1200,6 +1189,15 @@ export class RangeSelection implements BaseSelection {
           }
           return;
         }
+      } else if ($isTabNode(firstNode)) {
+        // We don't need to check for delCount because there is only the entire selected node case
+        // that can hit here for content size 1 and with canInsertTextBeforeAfter false
+        const textNode = $createTextNode(text);
+        textNode.setFormat(format);
+        textNode.setStyle(style);
+        textNode.select();
+        firstNode.replace(textNode);
+        return;
       }
       const delCount = endOffset - startOffset;
 

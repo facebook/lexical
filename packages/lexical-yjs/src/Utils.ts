@@ -180,7 +180,6 @@ export function getOrInitCollabNodeFromSharedType(
   | CollabTextNode
   | CollabLineBreakNode
   | CollabDecoratorNode {
-  // @ts-expect-error: internal field
   const collabNode = sharedType._collabNode;
 
   if (collabNode === undefined) {

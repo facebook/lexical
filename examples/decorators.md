@@ -71,7 +71,7 @@ function VideoPlugin(): ReactNode {
     // Similar with command listener, which returns unlisten callback
     const removeListener = editor.registerCommand(
       INSERT_VIDEO_COMMAND,
-      (payload) => {
+      (url) => {
         // Adding custom command that will be handled by this plugin
         editor.update(() => {
           $insertNodes([$createVideoNode(url)]);

@@ -115,5 +115,3 @@ export {
   TRANSFORMERS,
   UNORDERED_LIST,
 };
-
-export {createBlockNode} from './MarkdownTransformers';

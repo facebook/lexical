@@ -56,10 +56,16 @@ export function createEmptyEditorState(): EditorState {
   return new EditorState(new Map([['root', $createRootNode()]]));
 }
 
+/**
+ *
+ * @param node
+ * @param keys
+ *  this keys will be kept in the serialized node, the rest will be deleted
+ *  and this will be useful when we debug EditorState with json
+ */
 export function exportNodeToJSON<SerializedNode>(node: LexicalNode, keys?: string[]): SerializedNode {
   const serializedNode = node.exportJSON();
   if (keys) {
-    // 遍历serializedNode的key，然后不存在keys中的就删除
     for (const key in serializedNode) {
       if (!keys.includes(key)) {
         // @ts-ignore

@@ -596,7 +596,7 @@ function buildForkModule(outputPath, outputFileName) {
   const lines = [
     getComment(),
     `'use strict'`,
-    `const ${outputFileName} = ['development', 'test'].includes(process.env.NODE_ENV) ? require('./${outputFileName}.dev.js') : require('./${outputFileName}.prod.js')`,
+    `const ${outputFileName} = process.env.NODE_ENV === 'development' ? require('./${outputFileName}.dev.js') : require('./${outputFileName}.prod.js')`,
     `module.exports = ${outputFileName};`,
   ];
   const fileContent = lines.join('\n');

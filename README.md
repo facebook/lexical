@@ -141,8 +141,8 @@ is handled for you.
 
 An Editor State is the underlying data model that represents what you want to show on the DOM. Editor States contain two parts:
 
-- a Lexical node tree
-- a Lexical selection object
+- a Lexical node tree.
+- a Lexical selection object.
 
 Editor States are immutable once created, and in order to create one, you must do so via `editor.update(() => {...})`. However, you
 can also "hook" into an existing update using node transforms or command handlers – which are invoked as part of an existing update

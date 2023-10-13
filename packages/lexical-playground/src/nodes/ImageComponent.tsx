@@ -236,15 +236,20 @@ export default function ImageComponent({
 
   const onRightClick = useCallback(
     (event: MouseEvent): void => {
-      const latestSelection = $getSelection();
-      const domElement = event.target as HTMLElement;
-      if (
-        domElement.tagName === 'IMG' &&
-        $isRangeSelection(latestSelection) &&
-        latestSelection.getNodes().length === 1
-      ) {
-        editor.dispatchCommand(RIGHT_CLICK_IMAGE_COMMAND, event as MouseEvent);
-      }
+      editor.getEditorState().read(() => {
+        const latestSelection = $getSelection();
+        const domElement = event.target as HTMLElement;
+        if (
+          domElement.tagName === 'IMG' &&
+          $isRangeSelection(latestSelection) &&
+          latestSelection.getNodes().length === 1
+        ) {
+          editor.dispatchCommand(
+            RIGHT_CLICK_IMAGE_COMMAND,
+            event as MouseEvent,
+          );
+        }
+      });
     },
     [editor],
   );

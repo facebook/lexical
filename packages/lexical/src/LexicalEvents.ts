@@ -31,7 +31,6 @@ import {
   $setCompositionKey,
   BLUR_COMMAND,
   CLICK_COMMAND,
-  CONTEXT_MENU_COMMAND,
   CONTROLLED_TEXT_INSERTION_COMMAND,
   COPY_COMMAND,
   CUT_COMMAND,
@@ -141,7 +140,6 @@ const rootElementEvents: RootElementEvents = [
   ['compositionend', onCompositionEnd],
   ['input', onInput],
   ['click', onClick],
-  ['contextmenu', PASS_THROUGH_COMMAND],
   ['cut', PASS_THROUGH_COMMAND],
   ['copy', PASS_THROUGH_COMMAND],
   ['dragstart', PASS_THROUGH_COMMAND],
@@ -1168,13 +1166,6 @@ export function addRootElementEvents(
             stopLexicalPropagation(event);
             if (editor.isEditable()) {
               switch (eventName) {
-                case 'contextmenu':
-                  return dispatchCommand(
-                    editor,
-                    CONTEXT_MENU_COMMAND,
-                    event as MouseEvent,
-                  );
-
                 case 'cut':
                   return dispatchCommand(
                     editor,

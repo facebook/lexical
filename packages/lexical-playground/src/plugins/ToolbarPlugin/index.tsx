@@ -6,7 +6,7 @@
  *
  */
 
-import type {ImageNode, Position} from '../../nodes/ImageNode';
+import type {Position} from '../../nodes/ImageNode';
 
 import {
   $createCodeNode,
@@ -69,6 +69,7 @@ import {
   INDENT_CONTENT_COMMAND,
   KEY_MODIFIER_COMMAND,
   LexicalEditor,
+  LexicalNode,
   NodeKey,
   OUTDENT_CONTENT_COMMAND,
   REDO_COMMAND,
@@ -539,7 +540,7 @@ function ImageAlignDropdown({
   disabled,
 }: {
   editor: LexicalEditor;
-  node: ImageNode;
+  node: LexicalNode;
   value: Position | ElementFormatType;
   disabled: boolean;
   inline: boolean;
@@ -568,9 +569,11 @@ function ImageAlignDropdown({
       buttonLabel={
         inline && value === 'justify'
           ? 'Full Width'
-          : ELEMENT_FORMAT_OPTIONS[value].name
+          : ELEMENT_FORMAT_OPTIONS[value || 'left'].name
       }
-      buttonIconClassName={`icon ${ELEMENT_FORMAT_OPTIONS[value].icon}`}
+      buttonIconClassName={`icon ${
+        ELEMENT_FORMAT_OPTIONS[value || 'left'].icon
+      }`}
       buttonClassName="toolbar-item spaced alignment"
       buttonAriaLabel="Formatting options for text alignment">
       <DropDownItem
@@ -640,7 +643,7 @@ export default function ToolbarPlugin({
   const [isRTL, setIsRTL] = useState(false);
   const [codeLanguage, setCodeLanguage] = useState<string>('');
   const [isEditable, setIsEditable] = useState(() => editor.isEditable());
-  const [selectedNode, setSelectedNode] = useState<ImageNode | null>(null);
+  const [selectedNode, setSelectedNode] = useState<LexicalNode | null>(null);
 
   const $updateToolbar = useCallback(() => {
     const selection = $getSelection();

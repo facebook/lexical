@@ -46,7 +46,7 @@ export interface ImagePayload {
 
 export interface UpdateImagePayload {
   inline: boolean;
-  node?: ImageNode;
+  node?: LexicalNode;
   position?: Position;
 }
 

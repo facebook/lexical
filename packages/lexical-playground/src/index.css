@@ -954,6 +954,7 @@ i.page-break,
   display: inline-block;
   position: relative;
   user-select: none;
+  z-index: 1;
 }
 
 .editor-shell .editor-image img {

@@ -103,9 +103,8 @@ function LazyImage({
       src={src}
       alt={altText}
       ref={imageRef}
-      data-position={position} // if inline
+      data-position={position}
       style={{
-        display: 'block', // if inline
         height,
         maxWidth,
         width,

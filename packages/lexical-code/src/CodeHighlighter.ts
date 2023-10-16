@@ -58,7 +58,6 @@ import {
   TextNode,
   $isTabNode,
   TabNode,
-  INSERT_PARAGRAPH_COMMAND,
 } from 'lexical';
 
 import {
@@ -912,39 +911,6 @@ export function registerCodeHighlighting(
     editor.registerCommand(
       MOVE_TO_START,
       (payload): boolean => handleMoveTo(MOVE_TO_START, payload),
-      COMMAND_PRIORITY_LOW,
-    ),
-    editor.registerCommand(
-      INSERT_PARAGRAPH_COMMAND,
-      () => {
-        const selection = $getSelection();
-
-        if (!$isRangeSelection(selection)) {
-          return false;
-        }
-        const anchorNode = selection.anchor.getNode();
-        if (
-          $isCodeHighlightNode(anchorNode) ||
-          $isCodeNode(anchorNode) ||
-          $isTabNode(anchorNode) ||
-          $isLineBreakNode(anchorNode)
-        ) {
-          selection.insertLineBreak();
-          if ($isCodeNode(anchorNode)) return true;
-          const firstOfLine = getFirstCodeNodeOfLine(anchorNode);
-          let count = 0;
-          let current = firstOfLine;
-          while ($isTabNode(current)) {
-            count++;
-            current = current.getNextSibling();
-          }
-          for (let i = 0; i < count; i++) {
-            selection.insertNodes([$createTabNode()]);
-          }
-          return true;
-        }
-        return false;
-      },
       COMMAND_PRIORITY_LOW,
     ),
   );

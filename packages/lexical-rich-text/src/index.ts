@@ -466,7 +466,7 @@ async function onCutForRichText(
 }
 
 // Clipboard may contain files that we aren't allowed to read. While the event is arguably useless,
-// in certain ocassions, we want to know whether it was a file transfer, as opposed to text. We
+// in certain occasions, we want to know whether it was a file transfer, as opposed to text. We
 // control this with the first boolean flag.
 export function eventFiles(
   event: DragEvent | PasteCommandType,

@@ -25,6 +25,7 @@ import {
   $isRootNode,
   $isTextNode,
   $setSelection,
+  DecoratorNode,
   DEPRECATED_$isGridCellNode,
   DEPRECATED_$isGridNode,
   DEPRECATED_$isGridRowNode,
@@ -1526,19 +1527,21 @@ export class RangeSelection implements BaseSelection {
     this.removeText();
     const firstBlock = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
     const lastBlock = this.insertParagraph();
-    let firstInsertedBlock: ElementNode | null = null;
-    let lastInsertedBlock: ElementNode | null = null;
+    let firstInsertedBlock: ElementNode | DecoratorNode<unknown> | null = null;
+    let lastInsertedBlock: ElementNode | DecoratorNode<unknown> | null = null;
 
     let currentBlock = firstBlock;
     nodes.forEach((node) => {
-      if ($isElementNode(node) && !node.isInline()) {
-        lastInsertedBlock = $getAncestor(
-          node.getLastDescendant() || node,
-          INTERNAL_$isBlock,
-        )!;
+      if (!node.isInline()) {
+        const x = $isElementNode(node)
+          ? node.getLastDescendant() || node
+          : node;
+        lastInsertedBlock = $getAncestor(x, INTERNAL_$isBlock);
+        const y = $isElementNode(node)
+          ? node.getFirstDescendant() || node
+          : node;
         firstInsertedBlock =
-          firstInsertedBlock ||
-          $getAncestor(node.getFirstDescendant() || node, INTERNAL_$isBlock)!;
+          firstInsertedBlock || $getAncestor(y, INTERNAL_$isBlock)!;
         currentBlock = currentBlock.insertAfter(node) as ElementNode;
       } else {
         currentBlock.append(node);
@@ -1546,10 +1549,19 @@ export class RangeSelection implements BaseSelection {
     });
 
     function mergeBlocks(
-      first: ElementNode,
-      second: ElementNode,
+      first: ElementNode | DecoratorNode<unknown>,
+      second: ElementNode | DecoratorNode<unknown>,
       selection: RangeSelection,
     ) {
+      if (
+        $isDecoratorNode(second) &&
+        $isElementNode(first) &&
+        first.isEmpty()
+      ) {
+        first.remove();
+        return;
+      }
+      if ($isDecoratorNode(first) || $isDecoratorNode(second)) return;
       // TO-DO: we have to reason generic behavior that is
       // not hacks around list-items and codeblock.
       if (
@@ -1600,7 +1612,7 @@ export class RangeSelection implements BaseSelection {
   insertParagraph(): ElementNode {
     if (this.anchor.key === 'root') {
       const paragraph = $createParagraphNode();
-      $getRoot().append(paragraph);
+      $getRoot().splice(this.anchor.offset, 0, [paragraph]);
       paragraph.select();
       return paragraph;
     }

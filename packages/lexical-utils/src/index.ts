@@ -13,6 +13,7 @@ import {
   $getPreviousSelection,
   $getRoot,
   $getSelection,
+  $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
   $isNodeSelection,
@@ -554,6 +555,9 @@ export function $insertFirst(parent: ElementNode, node: LexicalNode): void {
  * Please do not use it as it may change in the future.
  */
 export function INTERNAL_$isBlock(node: LexicalNode): node is ElementNode {
+  if ($isDecoratorNode(node) && !node.isInline()) {
+    return true;
+  }
   if (!$isElementNode(node) || $isRootOrShadowRoot(node)) {
     return false;
   }

@@ -12,6 +12,7 @@ import {
   $getSelection,
   $isRangeSelection,
   COMMAND_PRIORITY_LOW,
+  CommandListenerPriority,
   createCommand,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
@@ -260,6 +261,7 @@ export function LexicalMenu<TOption extends MenuOption>({
   menuRenderFn,
   onSelectOption,
   shouldSplitNodeWithQuery = false,
+  commandPriority = COMMAND_PRIORITY_LOW,
 }: {
   close: () => void;
   editor: LexicalEditor;
@@ -274,6 +276,7 @@ export function LexicalMenu<TOption extends MenuOption>({
     closeMenu: () => void,
     matchingString: string,
   ) => void;
+  commandPriority?: CommandListenerPriority;
 }): JSX.Element | null {
   const [selectedIndex, setHighlightedIndex] = useState<null | number>(null);
 
@@ -345,10 +348,10 @@ export function LexicalMenu<TOption extends MenuOption>({
 
           return false;
         },
-        COMMAND_PRIORITY_LOW,
+        commandPriority,
       ),
     );
-  }, [editor, updateSelectedIndex]);
+  }, [editor, updateSelectedIndex, commandPriority]);
 
   useEffect(() => {
     return mergeRegister(
@@ -375,7 +378,7 @@ export function LexicalMenu<TOption extends MenuOption>({
           }
           return true;
         },
-        COMMAND_PRIORITY_LOW,
+        commandPriority,
       ),
       editor.registerCommand<KeyboardEvent>(
         KEY_ARROW_UP_COMMAND,
@@ -394,7 +397,7 @@ export function LexicalMenu<TOption extends MenuOption>({
           }
           return true;
         },
-        COMMAND_PRIORITY_LOW,
+        commandPriority,
       ),
       editor.registerCommand<KeyboardEvent>(
         KEY_ESCAPE_COMMAND,
@@ -405,7 +408,7 @@ export function LexicalMenu<TOption extends MenuOption>({
           close();
           return true;
         },
-        COMMAND_PRIORITY_LOW,
+        commandPriority,
       ),
       editor.registerCommand<KeyboardEvent>(
         KEY_TAB_COMMAND,
@@ -423,7 +426,7 @@ export function LexicalMenu<TOption extends MenuOption>({
           selectOptionAndCleanUp(options[selectedIndex]);
           return true;
         },
-        COMMAND_PRIORITY_LOW,
+        commandPriority,
       ),
       editor.registerCommand(
         KEY_ENTER_COMMAND,
@@ -442,7 +445,7 @@ export function LexicalMenu<TOption extends MenuOption>({
           selectOptionAndCleanUp(options[selectedIndex]);
           return true;
         },
-        COMMAND_PRIORITY_LOW,
+        commandPriority,
       ),
     );
   }, [
@@ -452,6 +455,7 @@ export function LexicalMenu<TOption extends MenuOption>({
     options,
     selectedIndex,
     updateSelectedIndex,
+    commandPriority,
   ]);
 
   const listItemProps = useMemo(

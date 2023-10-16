@@ -1529,10 +1529,12 @@ export class RangeSelection implements BaseSelection {
     const lastBlock = this.insertParagraph();
     let firstInsertedBlock: ElementNode | DecoratorNode<unknown> | null = null;
     let lastInsertedBlock: ElementNode | DecoratorNode<unknown> | null = null;
-
     let currentBlock = firstBlock;
     nodes.forEach((node) => {
-      if (!node.isInline()) {
+      if (
+        ($isElementNode(node) || $isDecoratorNode(node)) &&
+        !node.isInline()
+      ) {
         const x = $isElementNode(node)
           ? node.getLastDescendant() || node
           : node;

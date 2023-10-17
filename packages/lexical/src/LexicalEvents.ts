@@ -13,6 +13,7 @@ import type {TextNode} from './nodes/LexicalTextNode';
 
 import {
   CAN_USE_BEFORE_INPUT,
+  IS_ANDROID,
   IS_APPLE_WEBKIT,
   IS_FIREFOX,
   IS_IOS,
@@ -64,7 +65,7 @@ import {
   SELECTION_CHANGE_COMMAND,
   UNDO_COMMAND,
 } from '.';
-import {KEY_MODIFIER_COMMAND} from './LexicalCommands';
+import {KEY_MODIFIER_COMMAND, SELECT_ALL_COMMAND} from './LexicalCommands';
 import {
   COMPOSITION_START_CHAR,
   DOM_ELEMENT_TYPE,
@@ -79,7 +80,6 @@ import {
   $getNodeByKey,
   $isSelectionCapturedInDecorator,
   $isTokenOrSegmented,
-  $selectAll,
   $setSelection,
   $shouldInsertTextAfterOrBeforeTextNode,
   $updateSelectedTextFromDOM,
@@ -534,6 +534,10 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
 
       if ($isRangeSelection(selection)) {
         // Used for handling backspace in Android.
+        if (IS_ANDROID) {
+          $setCompositionKey(selection.anchor.key);
+        }
+
         if (
           isPossiblyAndroidKeyPress(event.timeStamp) &&
           editor.isComposing() &&
@@ -1036,16 +1040,12 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
         dispatchCommand(editor, CUT_COMMAND, event);
       } else if (isSelectAll(keyCode, metaKey, ctrlKey)) {
         event.preventDefault();
-        editor.update(() => {
-          $selectAll();
-        });
+        dispatchCommand(editor, SELECT_ALL_COMMAND, event);
       }
       // FF does it well (no need to override behavior)
     } else if (!IS_FIREFOX && isSelectAll(keyCode, metaKey, ctrlKey)) {
       event.preventDefault();
-      editor.update(() => {
-        $selectAll();
-      });
+      dispatchCommand(editor, SELECT_ALL_COMMAND, event);
     }
   }
 

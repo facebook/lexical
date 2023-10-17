@@ -1,3 +1,63 @@
+## v0.12.2 (2023-09-08)
+
+- Move isHTMLElement into core (#4977) Gerard Rovira
+- 0.12.1 (#4978) Acy Watson
+
+## v0.12.1 (2023-09-07)
+
+- Fix: font colors do not apply to text within table cells (#4934) Tahir Shakir
+- fix #4526 (#4910) xyyjk
+- fix: dispatching undo & redo states for collaboration; fixing up Point.getNode not a function (#4956) Nadine Nguyen
+- Retain TextNode whitespace on export (#4969) Gerard Rovira
+- Revert "Fix: fixes regex in YouTube AutoEmbedPlugin (#4916)" (#4966) Ivaylo Pavlov
+- Fix: fixes regex in YouTube AutoEmbedPlugin (#4916) Rajat
+- refactor: moved functions to `@lexical/utils` (#4923) Rajat
+- refactor: remove redundant styles from floating text format plugin (#4938) VelociRaptor
+- :bug: Fixed range selection splicing text (#4659) Steve Larson
+- Added extra Yjs information to collaboration docs (#4951) Steven Fabre
+- fix: disable spellcheck for code format (#4927) VelociRaptor
+- Add column layout plugin example (#4937) Maksim Horbachevsky
+- docs: fix example in getting-started/react (#4935) Mike
+- Fix: MaxLengthPlugin crashes when the limit is reached and enter is pressed (#4871) Hansu Kim
+- chore: prefer viewBox to width/height on SVG images (#4921) VelociRaptor
+- Adds ElementFormatDropdown to the Toolbar plugin (#4904) itaquito
+- Add iOS information to the website (#4899) amyworrall
+- fix: Only append fragment when element is HTMLElement (#4490) lsbyerley
+- Table unmerge (#4877) Peter Cook Bulukin
+- Revert "Updated link markdown regex (#4461)" (#4896) Gerard Rovira
+- Add missing flow def (#4889) Maksim Horbachevsky
+- Handle undefined rows and columns in table utils after cell merge (#4874) Peter Cook Bulukin
+- Updated link markdown regex (#4461) Ronald Langeveld
+- Fix: Pressing enter now doesnot delete ImageNode from the ListItemNode (#4866) Takumi Uchida
+
+## v0.12.0 (2023-08-09)
+
+### Breaking Changes
+
+#4818 moves "select all" behavior to the SELECT_ALL command, meaning anyone using setRootElement directly (i.e., not using PlainTextPlugin or RichTextPlugin or their underlying functions) would need to wire up command listeners for SELECT_ALL_COMMAND in order to preserve the default "select all" behavior after this version.
+
+- Extract "select all" behavior to new `SELECT_ALL_COMMAND` (#4818) Chris Montrois
+- Paste decorators before empty text nodes (#4672) Steve Larson
+- Added "Page Break" to Lexical Playground (#4842) Dias Kappassov
+- fix editor ref types and use EditorRefPlugin in the playground (#4852) Anton Kostiuchkov
+- Expand react docs (#4845) Acy Watson
+- Port lexical.dev to Tailwind (#4827) Awjin
+- Stop collapsing non-collapsible whitespace on paste (#4770) Brian Birtles
+- feat(playground): add support for collapsed margins in draggable block (#4823) Mathieu Métral
+- feat(playground): add support for drop block on empty area (#4811) Mathieu Métral
+- docs: remove placeholder property from exampleTheme (#4802) Karam Qaoud%
+
+## v0.11.3 (2023-07-18)
+
+- RFC Add prev editor state for mutation listener (#4796) Maksim Horbachevsky
+- Fix  Cant convert paragraph into a header if the first child of the paragraph is a LineBreakNode (#4776) Naveen
+- Add setStyle to Flow types (#4780) Acy Watson
+- Fix width reflow in columns when resizing tables (#4775) Karam Qaoud
+- package.lock (#4769) Gerard Rovira
+- Remove duplicate declaration (#4772) Roman Gafiatullin
+- fix Return LexicalEditorRefPlugin as valid JSX (#4771) Thomas Sauques
+- Update TS to 5.1.x (#4695) Georgii Dolzhykov
+
 ## v0.11.2 (2023-07-11)
 
 - Update listeners.md (#4768) mohammadreza490

@@ -67,52 +67,42 @@ export default function CommunityContributors() {
           Contributors
         </Translate>
       </h2>
-      <div className="row">
-        <div className="col col--9">
-          <p>
-            <Translate
-              id="pages.community.contributors.subtext"
-              description="The descriptive text of the header section of the community page">
-              Lexical development is led by small team at Meta. It also receives
-              contributions from people all over the world. Here are just a few
-              members.
-            </Translate>
-          </p>
-          <p>
-            <a
-              href="https://github.com/facebook/lexical/graphs/contributors"
-              target="_blank"
-              rel="noreferrer">
-              <Translate
-                id="pages.community.contributors.gitHubLink"
-                description="Link to GitHub's contribute page for the repository">
-                See the rest of the contributors on Github.
-              </Translate>
-            </a>
-          </p>
-        </div>
-      </div>
-      <div className="row">
+
+      <p>
+        <Translate
+          id="pages.community.contributors.subtext"
+          description="The descriptive text of the header section of the community page">
+          Lexical development is led by small team at Meta. It also receives
+          contributions from people all over the world. Here are just a few
+          members.
+        </Translate>
+      </p>
+
+      <p>
+        <a
+          href="https://github.com/facebook/lexical/graphs/contributors"
+          target="_blank"
+          rel="noreferrer">
+          <Translate
+            id="pages.community.contributors.gitHubLink"
+            description="Link to GitHub's contribute page for the repository">
+            See the rest of the contributors on Github.
+          </Translate>
+        </a>
+      </p>
+
+      <div className="mt-12 flex flex-wrap items-stretch gap-10">
         {CONTRIBUTORS.map(({name, imageUrl, link}, index) => (
-          <div className="col col--3 margin-top--lg" key={index}>
-            <div className="avatar avatar--vertical text--center">
-              <div>
-                <img
-                  class="avatar__photo avatar__photo--xl"
-                  alt={name}
-                  src={imageUrl}
-                />
-              </div>
-              <div className="margin-top--xs">
-                <a
-                  className="avatar__name"
-                  href={link}
-                  target="_blank"
-                  rel="noreferrer">
-                  {name}
-                </a>
-              </div>
-            </div>
+          <div key={index} className="flex w-44 flex-col items-center gap-2">
+            <img className="w-24 rounded-full" alt={name} src={imageUrl} />
+
+            <a
+              href={link}
+              target="_blank"
+              rel="noreferrer"
+              className="text-center font-bold">
+              {name}
+            </a>
           </div>
         ))}
       </div>

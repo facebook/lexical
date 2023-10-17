@@ -144,7 +144,6 @@ describe('LexicalSelection tests', () => {
               },
               listitem: 'editor-listitem',
               paragraph: 'editor-paragraph',
-              placeholder: 'editor-placeholder',
               quote: 'editor-quote',
               text: {
                 bold: 'editor-text-bold',

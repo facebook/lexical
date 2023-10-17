@@ -38,6 +38,7 @@ import {
   $findMatchingParent,
   $getNearestBlockElementAncestorOrThrow,
   addClassNamesToElement,
+  isHTMLElement,
   mergeRegister,
   objectKlassEquals,
 } from '@lexical/utils';
@@ -58,6 +59,7 @@ import {
   $isRootNode,
   $isTextNode,
   $normalizeSelection__EXPERIMENTAL,
+  $selectAll,
   $setSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_EDITOR,
@@ -91,6 +93,7 @@ import {
   OUTDENT_CONTENT_COMMAND,
   PASTE_COMMAND,
   REMOVE_TEXT_COMMAND,
+  SELECT_ALL_COMMAND,
 } from 'lexical';
 import caretFromPoint from 'shared/caretFromPoint';
 import {
@@ -150,10 +153,9 @@ export class QuoteNode extends ElementNode {
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const {element} = super.exportDOM(editor);
 
-    if (element && this.isEmpty()) {
-      element.append(document.createElement('br'));
-    }
-    if (element) {
+    if (element && isHTMLElement(element)) {
+      if (this.isEmpty()) element.append(document.createElement('br'));
+
       const formatType = this.getFormatType();
       element.style.textAlign = formatType;
 
@@ -311,10 +313,9 @@ export class HeadingNode extends ElementNode {
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const {element} = super.exportDOM(editor);
 
-    if (element && this.isEmpty()) {
-      element.append(document.createElement('br'));
-    }
-    if (element) {
+    if (element && isHTMLElement(element)) {
+      if (this.isEmpty()) element.append(document.createElement('br'));
+
       const formatType = this.getFormatType();
       element.style.textAlign = formatType;
 
@@ -465,7 +466,7 @@ async function onCutForRichText(
 }
 
 // Clipboard may contain files that we aren't allowed to read. While the event is arguably useless,
-// in certain ocassions, we want to know whether it was a file transfer, as opposed to text. We
+// in certain occasions, we want to know whether it was a file transfer, as opposed to text. We
 // control this with the first boolean flag.
 export function eventFiles(
   event: DragEvent | PasteCommandType,
@@ -986,6 +987,15 @@ export function registerRichText(editor: LexicalEditor): () => void {
             event.preventDefault();
           }
         }
+        return true;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerCommand(
+      SELECT_ALL_COMMAND,
+      () => {
+        $selectAll();
+
         return true;
       },
       COMMAND_PRIORITY_EDITOR,

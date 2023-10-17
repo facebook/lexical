@@ -65,6 +65,15 @@ export class TabNode extends TextNode {
     invariant(false, 'TabNode does not support setTextContent');
   }
 
+  spliceText(
+    _offset: number,
+    _delCount: number,
+    _newText: string,
+    _moveSelection?: boolean | undefined,
+  ): TextNode {
+    invariant(false, 'TabNode does not support spliceText');
+  }
+
   setDetail(_detail: TextDetailType | number): this {
     invariant(false, 'TabNode does not support setDetail');
   }

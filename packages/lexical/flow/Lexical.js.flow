@@ -88,7 +88,11 @@ type TextContentListener = (text: string) => void;
 type ErrorHandler = (error: Error) => void;
 export type MutationListener = (
   nodes: Map<NodeKey, NodeMutation>,
-  {updateTags: Set<string>, dirtyLeaves: Set<string>},
+  {
+    updateTags: Set<string>,
+    dirtyLeaves: Set<string>,
+    prevEditorState: EditorState,
+  },
 ) => void;
 export type EditableListener = (editable: boolean) => void;
 type Listeners = {
@@ -268,18 +272,30 @@ export const COMMAND_PRIORITY_NORMAL = 2;
 export const COMMAND_PRIORITY_HIGH = 3;
 export const COMMAND_PRIORITY_CRITICAL = 4;
 
+export type LexicalNodeReplacement = {
+  replace: Class<LexicalNode>,
+  with: (node: LexicalNode) => LexicalNode,
+  withKlass?: Class<LexicalNode>,
+};
+
+export type HTMLConfig = {
+  export?: Map<
+    Class<LexicalNode>,
+    (editor: LexicalEditor, target: LexicalNode) => DOMExportOutput,
+  >,
+  import?: DOMConversionMap,
+};
+
 declare export function createEditor(editorConfig?: {
   editorState?: EditorState,
   namespace: string,
   theme?: EditorThemeClasses,
   parentEditor?: LexicalEditor,
-  nodes?: $ReadOnlyArray<
-    | Class<LexicalNode>
-    | {replace: Class<LexicalNode>, with: (node: LexicalNode) => LexicalNode},
-  >,
+  nodes?: $ReadOnlyArray<Class<LexicalNode> | LexicalNodeReplacement>,
   onError: (error: Error) => void,
   disableEvents?: boolean,
   editable?: boolean,
+  html?: HTMLConfig,
 }): LexicalEditor;
 
 /**
@@ -395,6 +411,10 @@ export type NodeMap = Map<NodeKey, LexicalNode>;
 /**
  * LexicalSelection
  */
+
+declare export function $isBlockElementNode(
+  node: ?LexicalNode,
+): boolean %checks(node instanceof ElementNode);
 
 interface BaseSelection {
   clone(): BaseSelection;
@@ -575,6 +595,7 @@ export type TextFormatType =
   | 'underline'
   | 'strikethrough'
   | 'italic'
+  | 'highlight'
   | 'code'
   | 'subscript'
   | 'superscript';

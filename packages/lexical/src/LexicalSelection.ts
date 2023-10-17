@@ -73,7 +73,7 @@ import {
   scrollIntoViewIfNeeded,
   toggleTextFormatType,
 } from './LexicalUtils';
-import {$createTabNode} from './nodes/LexicalTabNode';
+import {$createTabNode, $isTabNode} from './nodes/LexicalTabNode';
 
 export type TextPointType = {
   _selection: RangeSelection | GridSelection;
@@ -244,17 +244,6 @@ function $transferStartingElementPointToTextPoint(
     element.append(target);
   } else {
     placementNode.insertBefore(target);
-    // Fix the end point offset if it refers to the same element as start,
-    // as we've now inserted another element before it. Note that we only
-    // do it if selection is not collapsed as otherwise it'll transfer
-    // both focus and anchor to the text node below
-    if (
-      end.type === 'element' &&
-      end.key === start.key &&
-      end.offset !== start.offset
-    ) {
-      end.set(end.key, end.offset + 1, 'element');
-    }
   }
   // Transfer the element point to a text point.
   if (start.is(end)) {
@@ -405,6 +394,64 @@ export type GridSelectionShape = {
   toY: number;
 };
 
+export function DEPRECATED_$getGridCellNodeRect(
+  GridCellNode: DEPRECATED_GridCellNode,
+): {
+  rowIndex: number;
+  columnIndex: number;
+  rowSpan: number;
+  colSpan: number;
+} | null {
+  const [CellNode, , GridNode] = DEPRECATED_$getNodeTriplet(GridCellNode);
+  const rows = GridNode.getChildren();
+  const rowCount = rows.length;
+  const columnCount = rows[0].getChildren().length;
+
+  // Create a matrix of the same size as the table to track the position of each cell
+  const cellMatrix = new Array(rowCount);
+  for (let i = 0; i < rowCount; i++) {
+    cellMatrix[i] = new Array(columnCount);
+  }
+
+  for (let rowIndex = 0; rowIndex < rowCount; rowIndex++) {
+    const row = rows[rowIndex];
+    const cells = row.getChildren();
+    let columnIndex = 0;
+
+    for (let cellIndex = 0; cellIndex < cells.length; cellIndex++) {
+      // Find the next available position in the matrix, skip the position of merged cells
+      while (cellMatrix[rowIndex][columnIndex]) {
+        columnIndex++;
+      }
+
+      const cell = cells[cellIndex];
+      const rowSpan = cell.__rowSpan || 1;
+      const colSpan = cell.__colSpan || 1;
+
+      // Put the cell into the corresponding position in the matrix
+      for (let i = 0; i < rowSpan; i++) {
+        for (let j = 0; j < colSpan; j++) {
+          cellMatrix[rowIndex + i][columnIndex + j] = cell;
+        }
+      }
+
+      // Return to the original index, row span and column span of the cell.
+      if (CellNode === cell) {
+        return {
+          colSpan,
+          columnIndex,
+          rowIndex,
+          rowSpan,
+        };
+      }
+
+      columnIndex += colSpan;
+    }
+  }
+
+  return null;
+}
+
 export class GridSelection implements BaseSelection {
   gridKey: NodeKey;
   anchor: PointType;
@@ -482,24 +529,44 @@ export class GridSelection implements BaseSelection {
   // TODO Deprecate this method. It's confusing when used with colspan|rowspan
   getShape(): GridSelectionShape {
     const anchorCellNode = $getNodeByKey(this.anchor.key);
-    invariant(anchorCellNode !== null, 'getNodes: expected to find AnchorNode');
-    const anchorCellNodeIndex = anchorCellNode.getIndexWithinParent();
-    const anchorCelRoweIndex = anchorCellNode
-      .getParentOrThrow()
-      .getIndexWithinParent();
+    invariant(
+      DEPRECATED_$isGridCellNode(anchorCellNode),
+      'Expected GridSelection anchor to be (or a child of) GridCellNode',
+    );
+    const anchorCellNodeRect = DEPRECATED_$getGridCellNodeRect(anchorCellNode);
+    invariant(
+      anchorCellNodeRect !== null,
+      'getCellRect: expected to find AnchorNode',
+    );
 
     const focusCellNode = $getNodeByKey(this.focus.key);
-    invariant(focusCellNode !== null, 'getNodes: expected to find FocusNode');
-    const focusCellNodeIndex = focusCellNode.getIndexWithinParent();
-    const focusCellRowIndex = focusCellNode
-      .getParentOrThrow()
-      .getIndexWithinParent();
+    invariant(
+      DEPRECATED_$isGridCellNode(focusCellNode),
+      'Expected GridSelection focus to be (or a child of) GridCellNode',
+    );
+    const focusCellNodeRect = DEPRECATED_$getGridCellNodeRect(focusCellNode);
+    invariant(
+      focusCellNodeRect !== null,
+      'getCellRect: expected to find focusCellNode',
+    );
 
-    const startX = Math.min(anchorCellNodeIndex, focusCellNodeIndex);
-    const stopX = Math.max(anchorCellNodeIndex, focusCellNodeIndex);
+    const startX = Math.min(
+      anchorCellNodeRect.columnIndex,
+      focusCellNodeRect.columnIndex,
+    );
+    const stopX = Math.max(
+      anchorCellNodeRect.columnIndex,
+      focusCellNodeRect.columnIndex,
+    );
 
-    const startY = Math.min(anchorCelRoweIndex, focusCellRowIndex);
-    const stopY = Math.max(anchorCelRoweIndex, focusCellRowIndex);
+    const startY = Math.min(
+      anchorCellNodeRect.rowIndex,
+      focusCellNodeRect.rowIndex,
+    );
+    const stopY = Math.max(
+      anchorCellNodeRect.rowIndex,
+      focusCellNodeRect.rowIndex,
+    );
 
     return {
       fromX: Math.min(startX, stopX),
@@ -1127,6 +1194,15 @@ export class RangeSelection implements BaseSelection {
           }
           return;
         }
+      } else if ($isTabNode(firstNode)) {
+        // We don't need to check for delCount because there is only the entire selected node case
+        // that can hit here for content size 1 and with canInsertTextBeforeAfter false
+        const textNode = $createTextNode(text);
+        textNode.setFormat(format);
+        textNode.setStyle(style);
+        textNode.select();
+        firstNode.replace(textNode);
+        return;
       }
       const delCount = endOffset - startOffset;
 
@@ -1188,7 +1264,10 @@ export class RangeSelection implements BaseSelection {
             lastNode.replace(textNode);
             lastNode = textNode;
           }
-          lastNode = (lastNode as TextNode).spliceText(0, endOffset, '');
+          // root node selections only select whole nodes, so no text splice is necessary
+          if (!$isRootNode(endPoint.getNode())) {
+            lastNode = (lastNode as TextNode).spliceText(0, endOffset, '');
+          }
           markedNodeKeysForKeep.add(lastNode.__key);
         } else {
           const lastNodeParent = lastNode.getParentOrThrow();
@@ -1652,10 +1731,14 @@ export class RangeSelection implements BaseSelection {
         );
       }
       didReplaceOrMerge = false;
-      if ($isElementNode(target) && !target.isInline()) {
+      if ($isElementNode(target) && (i === 0 || !target.isInline())) {
         lastNode = node;
         if ($isDecoratorNode(node) && !node.isInline()) {
-          target = target.insertAfter(node, false);
+          if (nodes.length === 1 && target.canBeEmpty() && target.isEmpty()) {
+            target = target.insertBefore(node, false);
+          } else {
+            target = target.insertAfter(node, false);
+          }
         } else if (!$isElementNode(node)) {
           const firstChild = target.getFirstChild();
           if (firstChild !== null) {

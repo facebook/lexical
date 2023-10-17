@@ -4,16 +4,15 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *
- *
  */
 
-.image {
-  display: flex;
-  justify-content: center;
-  align-content: center;
-}
+/* eslint-disable strict */
 
-.image svg {
-  height: 100px;
-  width: 100px;
-}
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: ['src/**/*.{js,jsx,ts,tsx}'],
+  plugins: [],
+  theme: {
+    extend: {},
+  },
+};

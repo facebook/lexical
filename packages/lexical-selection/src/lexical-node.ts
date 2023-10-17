@@ -5,7 +5,19 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {
+import {
+  $createRangeSelection,
+  $createTextNode,
+  $getNodeByKey,
+  $getPreviousSelection,
+  $isElementNode,
+  $isRangeSelection,
+  $isRootNode,
+  $isTextNode,
+  $normalizeSelection__EXPERIMENTAL,
+  $setSelection,
+  DEPRECATED_$isGridCellNode,
+  DEPRECATED_$isGridSelection,
   ElementNode,
   GridSelection,
   LexicalEditor,
@@ -14,17 +26,6 @@ import type {
   Point,
   RangeSelection,
   TextNode,
-} from 'lexical';
-
-import {
-  $createTextNode,
-  $getNodeByKey,
-  $getPreviousSelection,
-  $isElementNode,
-  $isRangeSelection,
-  $isRootNode,
-  $isTextNode,
-  DEPRECATED_$isGridSelection,
 } from 'lexical';
 
 import {CSS_TO_STYLES} from './constants';
@@ -64,20 +65,19 @@ function $updateTextNodeProperties<T extends TextNode>(
  * @returns The clone of the node.
  */
 export function $cloneWithProperties<T extends LexicalNode>(node: T): T {
-  const latest = node.getLatest();
-  const constructor = latest.constructor;
+  const constructor = node.constructor;
   // @ts-expect-error
-  const clone: T = constructor.clone(latest);
-  clone.__parent = latest.__parent;
-  clone.__next = latest.__next;
-  clone.__prev = latest.__prev;
+  const clone: T = constructor.clone(node);
+  clone.__parent = node.__parent;
+  clone.__next = node.__next;
+  clone.__prev = node.__prev;
 
-  if ($isElementNode(latest) && $isElementNode(clone)) {
-    return $updateElementNodeProperties(clone, latest);
+  if ($isElementNode(node) && $isElementNode(clone)) {
+    return $updateElementNodeProperties(clone, node);
   }
 
-  if ($isTextNode(latest) && $isTextNode(clone)) {
-    return $updateTextNodeProperties(clone, latest);
+  if ($isTextNode(node) && $isTextNode(clone)) {
+    return $updateTextNodeProperties(clone, node);
   }
 
   return clone;
@@ -172,6 +172,13 @@ export function trimTextContentFromAnchor(
   }
 
   while (remaining > 0 && currentNode !== null) {
+    if ($isElementNode(currentNode)) {
+      const lastDescendant: null | LexicalNode =
+        currentNode.getLastDescendant<LexicalNode>();
+      if (lastDescendant !== null) {
+        currentNode = lastDescendant;
+      }
+    }
     let nextNode: LexicalNode | null = currentNode.getPreviousSibling();
     let additionalElementWhitespace = 0;
     if (nextNode === null) {
@@ -188,11 +195,7 @@ export function trimTextContentFromAnchor(
       }
       if (parent !== null) {
         additionalElementWhitespace = parent.isInline() ? 0 : 2;
-        if ($isElementNode(parentSibling)) {
-          nextNode = parentSibling.getLastDescendant();
-        } else {
-          nextNode = parentSibling;
-        }
+        nextNode = parentSibling;
       }
     }
     let text = currentNode.getTextContent();
@@ -202,7 +205,7 @@ export function trimTextContentFromAnchor(
       // TODO: should this be handled in core?
       text = '\n\n';
     }
-    const currentNodeSize = currentNode.getTextContentSize();
+    const currentNodeSize = text.length;
 
     if (!$isTextNode(currentNode) || remaining >= currentNodeSize) {
       const parent = currentNode.getParent();
@@ -312,11 +315,35 @@ function $patchStyle(
  * @param patch - The patch to apply, which can include multiple styles. { CSSProperty: value }
  */
 export function $patchStyleText(
-  selection: RangeSelection,
+  selection: RangeSelection | GridSelection,
   patch: Record<string, string | null>,
 ): void {
   const selectedNodes = selection.getNodes();
   const selectedNodesLength = selectedNodes.length;
+
+  if (DEPRECATED_$isGridSelection(selection)) {
+    const cellSelection = $createRangeSelection();
+    const cellSelectionAnchor = cellSelection.anchor;
+    const cellSelectionFocus = cellSelection.focus;
+    for (let i = 0; i < selectedNodesLength; i++) {
+      const node = selectedNodes[i];
+      if (DEPRECATED_$isGridCellNode(node)) {
+        cellSelectionAnchor.set(node.getKey(), 0, 'element');
+        cellSelectionFocus.set(
+          node.getKey(),
+          node.getChildrenSize(),
+          'element',
+        );
+        $patchStyleText(
+          $normalizeSelection__EXPERIMENTAL(cellSelection),
+          patch,
+        );
+      }
+    }
+    $setSelection(selection);
+    return;
+  }
+
   const lastIndex = selectedNodesLength - 1;
   let firstNode = selectedNodes[0];
   let lastNode = selectedNodes[lastIndex];

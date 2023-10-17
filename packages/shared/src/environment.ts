@@ -40,6 +40,9 @@ export const IS_IOS: boolean =
   /iPad|iPhone|iPod/.test(navigator.userAgent) &&
   !window.MSStream;
 
+export const IS_ANDROID: boolean =
+  CAN_USE_DOM && /Android/.test(navigator.userAgent);
+
 // Keep these in case we need to use them in the future.
 // export const IS_WINDOWS: boolean = CAN_USE_DOM && /Win/.test(navigator.platform);
 export const IS_CHROME: boolean =

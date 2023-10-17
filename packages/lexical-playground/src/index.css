@@ -468,6 +468,10 @@ i.poll {
   background-image: url(images/icons/card-checklist.svg);
 }
 
+i.columns {
+  background-image: url(images/icons/3-columns.svg);
+}
+
 i.tweet {
   background-image: url(images/icons/tweet.svg);
 }
@@ -481,14 +485,17 @@ i.left-align {
   background-image: url(images/icons/text-left.svg);
 }
 
+.icon.center-align,
 i.center-align {
   background-image: url(images/icons/text-center.svg);
 }
 
+.icon.right-align,
 i.right-align {
   background-image: url(images/icons/text-right.svg);
 }
 
+.icon.justify-align,
 i.justify-align {
   background-image: url(images/icons/justify.svg);
 }
@@ -559,6 +566,11 @@ i.prettier {
 
 i.prettier-error {
   background-image: url(images/icons/prettier-error.svg);
+}
+
+i.page-break,
+.icon.page-break {
+  background-image: url(images/icons/scissors.svg);
 }
 
 .link-editor .button.active,
@@ -706,7 +718,7 @@ i.prettier-error {
 }
 
 .dropdown {
-  z-index: 10;
+  z-index: 100;
   display: block;
   position: fixed;
   box-shadow: 0 12px 28px 0 rgba(0, 0, 0, 0.2), 0 2px 4px 0 rgba(0, 0, 0, 0.1),
@@ -1429,7 +1441,7 @@ button.action-button:disabled {
   z-index: 2;
 }
 
-.toolbar button.toolbar-item {
+button.toolbar-item {
   border: 0;
   display: flex;
   background: none;
@@ -1442,15 +1454,15 @@ button.action-button:disabled {
   justify-content: space-between;
 }
 
-.toolbar button.toolbar-item:disabled {
+button.toolbar-item:disabled {
   cursor: not-allowed;
 }
 
-.toolbar button.toolbar-item.spaced {
+button.toolbar-item.spaced {
   margin-right: 2px;
 }
 
-.toolbar button.toolbar-item i.format {
+button.toolbar-item i.format {
   background-size: contain;
   display: inline-block;
   height: 18px;
@@ -1460,26 +1472,26 @@ button.action-button:disabled {
   opacity: 0.6;
 }
 
-.toolbar button.toolbar-item:disabled .icon,
-.toolbar button.toolbar-item:disabled .text,
-.toolbar button.toolbar-item:disabled i.format,
-.toolbar button.toolbar-item:disabled .chevron-down {
+button.toolbar-item:disabled .icon,
+button.toolbar-item:disabled .text,
+button.toolbar-item:disabled i.format,
+button.toolbar-item:disabled .chevron-down {
   opacity: 0.2;
 }
 
-.toolbar button.toolbar-item.active {
+button.toolbar-item.active {
   background-color: rgba(223, 232, 250, 0.3);
 }
 
-.toolbar button.toolbar-item.active i {
+button.toolbar-item.active i {
   opacity: 1;
 }
 
-.toolbar .toolbar-item:hover:not([disabled]) {
+.toolbar-item:hover:not([disabled]) {
   background-color: #eee;
 }
 
-.toolbar .toolbar-item.font-family .text {
+.toolbar-item.font-family .text {
   display: block;
   max-width: 40px;
 }
@@ -1511,7 +1523,8 @@ button.action-button:disabled {
   background-size: contain;
 }
 
-.toolbar i.chevron-down {
+.toolbar i.chevron-down,
+.toolbar-item i.chevron-down {
   margin-top: 3px;
   width: 16px;
   height: 16px;
@@ -1761,4 +1774,10 @@ hr.selected {
   to {
     visibility: hidden;
   }
+}
+
+.dialog-dropdown {
+  background-color: #eee !important;
+  margin-bottom: 10px;
+  width: 100%;
 }

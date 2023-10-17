@@ -662,7 +662,6 @@ export function $createCollabElementNode(
   type: string,
 ): CollabElementNode {
   const collabNode = new CollabElementNode(xmlText, parent, type);
-  // @ts-expect-error: internal field
   xmlText._collabNode = collabNode;
   return collabNode;
 }

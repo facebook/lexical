@@ -6,6 +6,7 @@
  *
  */
 
+import type {TableCellNode} from './LexicalTableCellNode';
 import type {TableNode} from './LexicalTableNode';
 import type {Cell, Cells, Grid} from './LexicalTableSelection';
 import type {
@@ -18,7 +19,6 @@ import type {
   TextFormatType,
 } from 'lexical';
 
-import {$isTableNode, TableCellNode} from '@lexical/table';
 import {$findMatchingParent} from '@lexical/utils';
 import {
   $createParagraphNode,
@@ -50,6 +50,7 @@ import {
 import invariant from 'shared/invariant';
 
 import {$isTableCellNode} from './LexicalTableCellNode';
+import {$isTableNode} from './LexicalTableNode';
 import {TableSelection} from './LexicalTableSelection';
 
 const LEXICAL_ELEMENT_KEY = '__lexicalTableSelection';
@@ -626,11 +627,12 @@ export function getTableGrid(tableElement: HTMLElement): Grid {
       // @ts-expect-error: internal field
       currentNode._cell = cell;
 
-      if (cells[y] === undefined) {
-        cells[y] = [];
+      let row = cells[y];
+      if (row === undefined) {
+        row = cells[y] = [];
       }
 
-      cells[y][x] = cell;
+      row[x] = cell;
     } else {
       const child = currentNode.firstChild;
 
@@ -706,9 +708,15 @@ export function $forEachGridCell(
 
   for (let y = 0; y < cells.length; y++) {
     const row = cells[y];
+    if (!row) {
+      continue;
+    }
 
     for (let x = 0; x < row.length; x++) {
       const cell = row[x];
+      if (!cell) {
+        continue;
+      }
       const lexicalNode = $getNearestNodeFromDOMNode(cell.elem);
 
       if (lexicalNode !== null) {

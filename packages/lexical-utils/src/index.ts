@@ -23,13 +23,15 @@ import {
   DEPRECATED_$isGridSelection,
   EditorState,
   ElementNode,
+  isHTMLAnchorElement,
+  isHTMLElement,
   Klass,
   LexicalEditor,
   LexicalNode,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
-export {$splitNode};
+export {$splitNode, isHTMLAnchorElement, isHTMLElement};
 
 export type DFSNode = Readonly<{
   depth: number;
@@ -295,7 +297,7 @@ type Func = () => void;
  * ```
  * In this case, useEffect is returning the function returned by mergeRegister as a cleanup
  * function to be executed after either the useEffect runs again (due to one of its dependencies
- * updating) or the compenent it resides in unmounts.
+ * updating) or the component it resides in unmounts.
  * Note the functions don't neccesarily need to be in an array as all arguements
  * are considered to be the func argument and spread from there.
  * @param func - An array of functions meant to be executed by the returned function.
@@ -482,8 +484,8 @@ export function $insertNodeToNearestRoot<T extends LexicalNode>(node: T): T {
 /**
  * Wraps the node into another node created from a createElementNode function, eg. $createParagraphNode
  * @param node - Node to be wrapped.
- * @param createElementNode - Creates a new lexcial element to wrap the to-be-wrapped node and returns it.
- * @returns A new lexcial element with the previous node appended within (as a child, including its children).
+ * @param createElementNode - Creates a new lexical element to wrap the to-be-wrapped node and returns it.
+ * @returns A new lexical element with the previous node appended within (as a child, including its children).
  */
 export function $wrapNodeInElement(
   node: LexicalNode,
@@ -493,23 +495,6 @@ export function $wrapNodeInElement(
   node.replace(elementNode);
   elementNode.append(node);
   return elementNode;
-}
-
-/**
- * @param x - The element being tested
- * @returns Returns true if x is an HTML anchor tag, false otherwise
- */
-export function isHTMLAnchorElement(x: Node): x is HTMLAnchorElement {
-  return isHTMLElement(x) && x.tagName === 'A';
-}
-
-/**
- * @param x - The element being testing
- * @returns Returns true if x is an HTML element, false otherwise.
- */
-export function isHTMLElement(x: Node | EventTarget): x is HTMLElement {
-  // @ts-ignore-next-line - strict check on nodeType here should filter out non-Element EventTarget implementors
-  return x.nodeType === 1;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -527,4 +512,38 @@ export function objectKlassEquals<T>(
   return object !== null
     ? Object.getPrototypeOf(object).constructor.name === objectClass.name
     : false;
+}
+
+/**
+ * Filter the nodes
+ * @param nodes Array of nodes that needs to be filtered
+ * @param filterFn A filter function that returns node if the current node satisfies the condition otherwise null
+ * @returns Array of filtered nodes
+ */
+
+export function $filter<T>(
+  nodes: Array<LexicalNode>,
+  filterFn: (node: LexicalNode) => null | T,
+): Array<T> {
+  const result: T[] = [];
+  for (let i = 0; i < nodes.length; i++) {
+    const node = filterFn(nodes[i]);
+    if (node !== null) {
+      result.push(node);
+    }
+  }
+  return result;
+}
+/**
+ * Appends the node before the first child of the parent node
+ * @param parent A parent node
+ * @param node Node that needs to be appended
+ */
+export function $insertFirst(parent: ElementNode, node: LexicalNode): void {
+  const firstChild = parent.getFirstChild();
+  if (firstChild !== null) {
+    firstChild.insertBefore(node);
+  } else {
+    parent.append(node);
+  }
 }

@@ -24,6 +24,7 @@ import {
   $isDecoratorNode,
   $isElementNode,
   $isLeafNode,
+  $isLineBreakNode,
   $isRangeSelection,
   $isRootNode,
   $isRootOrShadowRoot,
@@ -92,7 +93,10 @@ function isBlock(node: LexicalNode): boolean {
 
   const firstChild = node.getFirstChild();
   const isLeafElement =
-    firstChild === null || $isTextNode(firstChild) || firstChild.isInline();
+    firstChild === null ||
+    $isLineBreakNode(firstChild) ||
+    $isTextNode(firstChild) ||
+    firstChild.isInline();
 
   return !node.isInline() && node.canBeEmpty() !== false && isLeafElement;
 }
@@ -534,7 +538,7 @@ export function $getSelectionStyleValueForProperty(
   const endOffset = isBackward ? focus.offset : anchor.offset;
   const endNode = isBackward ? focus.getNode() : anchor.getNode();
 
-  if (selection.style !== '') {
+  if (selection.isCollapsed() && selection.style !== '') {
     const css = selection.style;
     const styleObject = getStyleObjectFromCSS(css);
 

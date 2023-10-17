@@ -64,6 +64,7 @@ import {
   $setCompositionKey,
   getCachedClassNameArray,
   internalMarkSiblingsAsDirty,
+  isHTMLElement,
   toggleTextFormatType,
 } from '../LexicalUtils';
 import {$createLineBreakNode} from './LexicalLineBreakNode';
@@ -266,7 +267,10 @@ function createTextInnerDOM(
   }
 }
 
-function wrapElementWith(element: HTMLElement, tag: string): HTMLElement {
+function wrapElementWith(
+  element: HTMLElement | Text,
+  tag: string,
+): HTMLElement {
   const el = document.createElement(tag);
   el.appendChild(element);
   return el;
@@ -447,6 +451,9 @@ export class TextNode extends LexicalNode {
     const tag = outerTag === null ? innerTag : outerTag;
     const dom = document.createElement(tag);
     let innerDOM = dom;
+    if (this.hasFormat('code')) {
+      dom.setAttribute('spellcheck', 'false');
+    }
     if (outerTag !== null) {
       innerDOM = document.createElement(innerTag);
       dom.appendChild(innerDOM);
@@ -590,23 +597,25 @@ export class TextNode extends LexicalNode {
   // HTML content and not have the ability to use CSS classes.
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     let {element} = super.exportDOM(editor);
-
+    invariant(
+      element !== null && isHTMLElement(element),
+      'Expected TextNode createDOM to always return a HTMLElement',
+    );
+    element.style.whiteSpace = 'pre-wrap';
     // This is the only way to properly add support for most clients,
     // even if it's semantically incorrect to have to resort to using
     // <b>, <u>, <s>, <i> elements.
-    if (element !== null) {
-      if (this.hasFormat('bold')) {
-        element = wrapElementWith(element, 'b');
-      }
-      if (this.hasFormat('italic')) {
-        element = wrapElementWith(element, 'i');
-      }
-      if (this.hasFormat('strikethrough')) {
-        element = wrapElementWith(element, 's');
-      }
-      if (this.hasFormat('underline')) {
-        element = wrapElementWith(element, 'u');
-      }
+    if (this.hasFormat('bold')) {
+      element = wrapElementWith(element, 'b');
+    }
+    if (this.hasFormat('italic')) {
+      element = wrapElementWith(element, 'i');
+    }
+    if (this.hasFormat('strikethrough')) {
+      element = wrapElementWith(element, 's');
+    }
+    if (this.hasFormat('underline')) {
+      element = wrapElementWith(element, 'u');
     }
 
     return {
@@ -1177,10 +1186,7 @@ function convertTextDOMNode(domNode: Node): DOMConversionOutput {
     }
     return {node: nodes};
   }
-  textContent = textContent
-    .replace(/\r?\n|\t/gm, ' ')
-    .replace('\r', '')
-    .replace(/\s+/g, ' ');
+  textContent = textContent.replace(/\r/g, '').replace(/[ \t\n]+/g, ' ');
   if (textContent === '') {
     return {node: null};
   }
@@ -1196,7 +1202,7 @@ function convertTextDOMNode(domNode: Node): DOMConversionOutput {
     ) {
       const previousTextContent = previousText.textContent || '';
       if (previousTextContent.length > 0) {
-        if (previousTextContent.match(/(?:\s|\r?\n|\t)$/)) {
+        if (/[ \t\n]$/.test(previousTextContent)) {
           textContent = textContent.slice(1);
         }
         isStartOfLine = false;
@@ -1216,7 +1222,7 @@ function convertTextDOMNode(domNode: Node): DOMConversionOutput {
       (nextText = findTextInLine(nextText, true)) !== null
     ) {
       const nextTextContent = (nextText.textContent || '').replace(
-        /^[\s|\r?\n|\t]+/,
+        /^( |\t|\r?\n)+/,
         '',
       );
       if (nextTextContent.length > 0) {

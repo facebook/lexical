@@ -9,9 +9,10 @@ const VERTICAL_GAP = 10;
 const HORIZONTAL_OFFSET = 5;
 
 export function setFloatingElemPosition(
-  targetRect: ClientRect | null,
+  targetRect: DOMRect | null,
   floatingElem: HTMLElement,
   anchorElem: HTMLElement,
+  isLink: boolean = false,
   verticalGap: number = VERTICAL_GAP,
   horizontalOffset: number = HORIZONTAL_OFFSET,
 ): void {
@@ -31,7 +32,11 @@ export function setFloatingElemPosition(
   let left = targetRect.left - horizontalOffset;
 
   if (top < editorScrollerRect.top) {
-    top += floatingElemRect.height + targetRect.height + verticalGap * 2;
+    // adjusted height for link element if the element is at top
+    top +=
+      floatingElemRect.height +
+      targetRect.height +
+      verticalGap * (isLink ? 9 : 2);
   }
 
   if (left + floatingElemRect.width > editorScrollerRect.right) {

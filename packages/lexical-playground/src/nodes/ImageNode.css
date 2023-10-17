@@ -22,7 +22,6 @@
   width: calc(100% - 20px);
   white-space: pre-wrap;
   word-break: break-word;
-  tab-size: 1;
 }
 
 .ImageNode__placeholder {

@@ -14,9 +14,11 @@ import type {
   EditorConfig,
   LexicalNode,
   NodeKey,
+  ParagraphNode,
   RangeSelection,
   SerializedElementNode,
   Spread,
+  TabNode,
 } from 'lexical';
 
 import 'prismjs/components/prism-clike';
@@ -39,9 +41,18 @@ import {
   $applyNodeReplacement,
   $createLineBreakNode,
   $createParagraphNode,
+  $createTabNode,
+  $isLineBreakNode,
+  $isTabNode,
   ElementNode,
 } from 'lexical';
 import * as Prism from 'prismjs';
+import {
+  $createCodeHighlightNode,
+  $isCodeHighlightNode,
+  CodeHighlightNode,
+  getFirstCodeNodeOfLine,
+} from './CodeHighlightNode';
 
 export type SerializedCodeNode = Spread<
   {
@@ -222,10 +233,73 @@ export class CodeNode extends ElementNode {
   insertNewAfter(
     selection: RangeSelection,
     restoreSelection = true,
-  ): null | CodeNode {
-    const newCodeNode = $createCodeNode(this.__language);
-    this.insertAfter(newCodeNode, restoreSelection);
-    return newCodeNode;
+  ): null | ParagraphNode | CodeHighlightNode | TabNode {
+    const children = this.getChildren();
+    const childrenLength = children.length;
+
+    if (
+      childrenLength >= 2 &&
+      children[childrenLength - 1].getTextContent() === '\n' &&
+      children[childrenLength - 2].getTextContent() === '\n' &&
+      selection.isCollapsed() &&
+      selection.anchor.key === this.__key &&
+      selection.anchor.offset === childrenLength
+    ) {
+      children[childrenLength - 1].remove();
+      children[childrenLength - 2].remove();
+      const newElement = $createParagraphNode();
+      this.insertAfter(newElement, restoreSelection);
+      return newElement;
+    }
+
+    // If the selection is within the codeblock, find all leading tabs and
+    // spaces of the current line. Create a new line that has all those
+    // tabs and spaces, such that leading indentation is preserved.
+    const anchor = selection.anchor;
+    const focus = selection.focus;
+    const firstPoint = anchor.isBefore(focus) ? anchor : focus;
+    const firstSelectionNode = firstPoint.getNode();
+    if (
+      $isCodeHighlightNode(firstSelectionNode) ||
+      $isTabNode(firstSelectionNode)
+    ) {
+      let node = getFirstCodeNodeOfLine(firstSelectionNode);
+      const insertNodes = [];
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        if ($isTabNode(node)) {
+          insertNodes.push($createTabNode());
+          node = node.getNextSibling();
+        } else if ($isCodeHighlightNode(node)) {
+          let spaces = 0;
+          const text = node.getTextContent();
+          const textSize = node.getTextContentSize();
+          for (; spaces < textSize && text[spaces] === ' '; spaces++);
+          if (spaces !== 0) {
+            insertNodes.push($createCodeHighlightNode(' '.repeat(spaces)));
+          }
+          if (spaces !== textSize) {
+            break;
+          }
+          node = node.getNextSibling();
+        } else {
+          break;
+        }
+      }
+      const nodesToInsert = [$createLineBreakNode(), ...insertNodes];
+      selection.insertNodes(nodesToInsert);
+      const last = nodesToInsert.at(-1)!;
+      if (!$isLineBreakNode(last)) {
+        last.select();
+      }
+    }
+    if ($isCodeNode(firstSelectionNode)) {
+      const { offset } = selection.anchor;
+      firstSelectionNode.splice(offset, 0, [$createLineBreakNode()]);
+      firstSelectionNode.select(offset + 1, offset + 1);
+    }
+
+    return null;
   }
 
   canIndent(): false {

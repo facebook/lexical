@@ -1524,86 +1524,49 @@ export class RangeSelection implements BaseSelection {
    */
   insertNodes(nodes: Array<LexicalNode>) {
     if (this.anchor.key === 'root') this.insertParagraph();
-    this.removeText();
+    const index = RemoveTextAndSplitBlock(this);
     const firstBlock = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
-    const lastBlock = this.insertParagraph();
-    let firstInsertedBlock: ElementNode | DecoratorNode<unknown> | null = null;
-    let lastInsertedBlock: ElementNode | DecoratorNode<unknown> | null = null;
+    const firstToAppend = firstBlock.getChildAtIndex(index);
+    const nodesToInsert = firstToAppend
+      ? [nodes, firstToAppend, ...firstToAppend.getNextSiblings()].flat()
+      : nodes;
+    const last = nodes.at(-1);
+    const nodeToSelect = $isElementNode(last) ? last.getLastDescendant() || last : last;
     let currentBlock = firstBlock;
-    nodes.forEach((node) => {
+    let alreadyInsertBlock = false;
+    nodesToInsert.forEach((node) => {
       if (
         ($isElementNode(node) || $isDecoratorNode(node)) &&
         !node.isInline()
       ) {
-        const x = $isElementNode(node)
-          ? node.getLastDescendant() || node
-          : node;
-        lastInsertedBlock = $getAncestor(x, INTERNAL_$isBlock);
-        const y = $isElementNode(node)
-          ? node.getFirstDescendant() || node
-          : node;
-        firstInsertedBlock =
-          firstInsertedBlock || $getAncestor(y, INTERNAL_$isBlock)!;
+        if (
+          !alreadyInsertBlock &&
+          INTERNAL_$isBlock(node) &&
+          $isElementNode(node) &&
+          !firstBlock.isEmpty()
+        ) {
+          firstBlock.append(...node.getChildren());
+          alreadyInsertBlock = true;
+          return;
+        }
         currentBlock = currentBlock.insertAfter(node) as ElementNode;
+        if (firstBlock.isEmpty()) {
+          firstBlock.remove();
+        }
       } else {
+        if ($isDecoratorNode(currentBlock)) {
+          currentBlock = this.insertParagraph();
+        }
         currentBlock.append(node);
       }
     });
-
-    function mergeBlocks(
-      first: ElementNode | DecoratorNode<unknown>,
-      second: ElementNode | DecoratorNode<unknown>,
-      selection: RangeSelection,
-    ) {
-      if (
-        $isDecoratorNode(second) &&
-        $isElementNode(first) &&
-        first.isEmpty()
-      ) {
-        first.remove();
-        return;
-      }
-      if ($isDecoratorNode(first) || $isDecoratorNode(second)) return;
-      // TO-DO: we have to reason generic behavior that is
-      // not hacks around list-items and codeblock.
-      if (
-        first.isEmpty() &&
-        $isRootNode(first.getParent()) &&
-        !('__language' in first)
-      ) {
-        first.remove();
-        return;
-      }
-      if ('__language' in second && !('__language' in first)) {
-        second.select();
-        selection.insertRawText(first.getTextContent());
-        first.remove();
-        return;
-      }
-
-      second.selectStart();
-      const {key, offset, type} = selection.anchor;
-      first.selectEnd();
-      selection.anchor.set(key, offset, type);
-      selection.removeText();
+    if ($isTextNode(nodeToSelect)) {
+      nodeToSelect.select();
+    } else if ($isElementNode(nodeToSelect)) {
+      nodeToSelect.selectEnd();
+    } else if ($isDecoratorNode(nodeToSelect)) {
+      nodeToSelect.selectNext();
     }
-
-    if (!firstInsertedBlock) {
-      mergeBlocks(firstBlock, lastBlock, this);
-      return;
-    }
-
-    mergeBlocks(firstBlock, firstInsertedBlock, this);
-    const prevLast = lastInsertedBlock!.isAttached()
-      ? lastInsertedBlock!
-      : firstBlock;
-    if (
-      !$isRootNode(prevLast.getParent()) &&
-      $isRootNode(lastBlock.getParent()) &&
-      !lastBlock.isEmpty()
-    )
-      return;
-    mergeBlocks(prevLast, lastBlock, this);
   }
 
   /**
@@ -1621,12 +1584,18 @@ export class RangeSelection implements BaseSelection {
     const index = RemoveTextAndSplitBlock(this);
     const block = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
     const firstToAppend = block.getChildAtIndex(index);
-    const newBlock = block.insertNewAfter(this, false) as ElementNode;
-    if (firstToAppend) {
-      newBlock.append(firstToAppend, ...firstToAppend.getNextSiblings());
+    const nodesToInsert = firstToAppend
+      ? [firstToAppend, ...firstToAppend.getNextSiblings()]
+      : [];
+    const newBlock = block.insertNewAfter(this, false) as ElementNode | null;
+    if (newBlock) {
+      newBlock.append(...nodesToInsert);
+      newBlock.selectStart();
+      return newBlock;
+    } else {
+      // this means that block is CodeNode.
+      return block;
     }
-    newBlock.selectStart();
-    return newBlock;
   }
 
   /**

@@ -1526,24 +1526,27 @@ export class RangeSelection implements BaseSelection {
     if (this.anchor.key === 'root') this.insertParagraph();
     const firstBlock = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
 
-    const notInline = (node: LexicalNode) =>
-      ($isElementNode(node) || $isDecoratorNode(node)) && !node.isInline();
-    const isMergeable = (node: LexicalNode) =>
-      $isElementNode(node) && INTERNAL_$isBlock(node) && !node.isEmpty() && $isElementNode(firstBlock) && !firstBlock.isEmpty();
-
-    const firstNotInline = nodes.find(notInline);
-
+    // case where we insert inside a code block
     if ('__language' in firstBlock) {
-      // TO-DO
+      const index = RemoveTextAndSplitBlock(this);
+      firstBlock.splice(index, 0, nodes);
+      (nodes.at(-1) as TextNode).select();
       return;
     }
 
+    const notInline = (node: LexicalNode) =>
+      ($isElementNode(node) || $isDecoratorNode(node)) && !node.isInline();
+    const isMergeable = (node: LexicalNode) =>
+      $isElementNode(node) &&
+      INTERNAL_$isBlock(node) &&
+      !node.isEmpty() &&
+      $isElementNode(firstBlock) &&
+      !firstBlock.isEmpty();
+
+    const firstNotInline = nodes.find(notInline);
+
     const insertedParagraph = this.insertParagraph();
 
-    // const last = nodes.at(-1);
-    // const nodeToSelect = $isElementNode(last)
-    //   ? last.getLastDescendant() || last
-    //   : last;
     let currentBlock = firstBlock;
     nodes.forEach((node) => {
       if (node === firstNotInline && isMergeable(node)) {
@@ -1560,13 +1563,11 @@ export class RangeSelection implements BaseSelection {
     }
     if ($isElementNode(firstBlock) && firstBlock.isEmpty()) firstBlock.remove();
 
-    // if ($isTextNode(nodeToSelect)) {
-    //   nodeToSelect.select();
-    // } else if ($isElementNode(nodeToSelect)) {
-    //   nodeToSelect.selectEnd();
-    // } else if ($isDecoratorNode(nodeToSelect)) {
-    //   nodeToSelect.selectNext();
-    // }
+    if ($isDecoratorNode(currentBlock)) {
+      currentBlock.selectNext();
+    } else {
+      currentBlock.selectEnd();
+    }
   }
 
   /**

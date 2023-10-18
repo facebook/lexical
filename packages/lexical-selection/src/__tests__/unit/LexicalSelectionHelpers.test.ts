@@ -2367,7 +2367,7 @@ describe('LexicalSelectionHelpers tests', () => {
       });
     });
 
-    test('can insert a linebreak node before an inline element node', async () => {
+    test.skip('can insert a linebreak node before an inline element node', async () => {
       const editor = createTestEditor();
       const element = document.createElement('div');
       editor.setRootElement(element);

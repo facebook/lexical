@@ -38,7 +38,7 @@
   "devDependencies": {
     "@types/lodash-es": "^4.14.182",
     "@vitejs/plugin-react": "^1.0.7",
-    "vite": "^2.8.0",
+    "vite": "^2.9.16",
     "vite-plugin-replace": "0.1.1"
   }
 }

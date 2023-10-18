@@ -255,8 +255,7 @@ export class CodeNode extends ElementNode {
     // If the selection is within the codeblock, find all leading tabs and
     // spaces of the current line. Create a new line that has all those
     // tabs and spaces, such that leading indentation is preserved.
-    const anchor = selection.anchor;
-    const focus = selection.focus;
+    const { anchor, focus } = selection;
     const firstPoint = anchor.isBefore(focus) ? anchor : focus;
     const firstSelectionNode = firstPoint.getNode();
     if (
@@ -286,11 +285,19 @@ export class CodeNode extends ElementNode {
           break;
         }
       }
+      const split = firstSelectionNode.splitText(anchor.offset)[0];
+      const textAfter = anchor.offset === 0 ? split : split.getNextSibling();
+      const x = anchor.offset === 0 ? 1 : 2;
+      if (textAfter) insertNodes.push(textAfter);
       const nodesToInsert = [$createLineBreakNode(), ...insertNodes];
-      selection.insertNodes(nodesToInsert);
+      const codeNode = firstSelectionNode.getParentOrThrow();
+      const index = firstSelectionNode.getIndexWithinParent() + x
+      codeNode.splice(index, 0, nodesToInsert);
       const last = nodesToInsert.at(-1)!;
       if (!$isLineBreakNode(last)) {
-        last.select();
+        last.select(0, 0);
+      } else {
+        codeNode.select(index, index);
       }
     }
     if ($isCodeNode(firstSelectionNode)) {

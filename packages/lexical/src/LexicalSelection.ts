@@ -1524,49 +1524,49 @@ export class RangeSelection implements BaseSelection {
    */
   insertNodes(nodes: Array<LexicalNode>) {
     if (this.anchor.key === 'root') this.insertParagraph();
-    const index = RemoveTextAndSplitBlock(this);
     const firstBlock = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
-    const firstToAppend = firstBlock.getChildAtIndex(index);
-    const nodesToInsert = firstToAppend
-      ? [nodes, firstToAppend, ...firstToAppend.getNextSiblings()].flat()
-      : nodes;
-    const last = nodes.at(-1);
-    const nodeToSelect = $isElementNode(last) ? last.getLastDescendant() || last : last;
+
+    const notInline = (node: LexicalNode) =>
+      ($isElementNode(node) || $isDecoratorNode(node)) && !node.isInline();
+    const isMergeable = (node: LexicalNode) =>
+      $isElementNode(node) && INTERNAL_$isBlock(node) && !node.isEmpty() && $isElementNode(firstBlock) && !firstBlock.isEmpty();
+
+    const firstNotInline = nodes.find(notInline);
+
+    if ('__language' in firstBlock) {
+      // TO-DO
+      return;
+    }
+
+    const insertedParagraph = this.insertParagraph();
+
+    // const last = nodes.at(-1);
+    // const nodeToSelect = $isElementNode(last)
+    //   ? last.getLastDescendant() || last
+    //   : last;
     let currentBlock = firstBlock;
-    let alreadyInsertBlock = false;
-    nodesToInsert.forEach((node) => {
-      if (
-        ($isElementNode(node) || $isDecoratorNode(node)) &&
-        !node.isInline()
-      ) {
-        if (
-          !alreadyInsertBlock &&
-          INTERNAL_$isBlock(node) &&
-          $isElementNode(node) &&
-          !firstBlock.isEmpty()
-        ) {
-          firstBlock.append(...node.getChildren());
-          alreadyInsertBlock = true;
-          return;
-        }
+    nodes.forEach((node) => {
+      if (node === firstNotInline && isMergeable(node)) {
+        currentBlock.append(...node.getChildren());
+      } else if (notInline(node)) {
         currentBlock = currentBlock.insertAfter(node) as ElementNode;
-        if (firstBlock.isEmpty()) {
-          firstBlock.remove();
-        }
       } else {
-        if ($isDecoratorNode(currentBlock)) {
-          currentBlock = this.insertParagraph();
-        }
         currentBlock.append(node);
       }
     });
-    if ($isTextNode(nodeToSelect)) {
-      nodeToSelect.select();
-    } else if ($isElementNode(nodeToSelect)) {
-      nodeToSelect.selectEnd();
-    } else if ($isDecoratorNode(nodeToSelect)) {
-      nodeToSelect.selectNext();
+    if (insertedParagraph && $isElementNode(currentBlock)) {
+      currentBlock.append(...insertedParagraph.getChildren());
+      insertedParagraph.remove();
     }
+    if ($isElementNode(firstBlock) && firstBlock.isEmpty()) firstBlock.remove();
+
+    // if ($isTextNode(nodeToSelect)) {
+    //   nodeToSelect.select();
+    // } else if ($isElementNode(nodeToSelect)) {
+    //   nodeToSelect.selectEnd();
+    // } else if ($isDecoratorNode(nodeToSelect)) {
+    //   nodeToSelect.selectNext();
+    // }
   }
 
   /**
@@ -1574,7 +1574,7 @@ export class RangeSelection implements BaseSelection {
    *
    * @returns the newly inserted node.
    */
-  insertParagraph(): ElementNode {
+  insertParagraph(): ElementNode | null {
     if (this.anchor.key === 'root') {
       const paragraph = $createParagraphNode();
       $getRoot().splice(this.anchor.offset, 0, [paragraph]);
@@ -1592,10 +1592,9 @@ export class RangeSelection implements BaseSelection {
       newBlock.append(...nodesToInsert);
       newBlock.selectStart();
       return newBlock;
-    } else {
-      // this means that block is CodeNode.
-      return block;
     }
+    // if newBlock is null, it means that block is of type CodeNode.
+    return null;
   }
 
   /**

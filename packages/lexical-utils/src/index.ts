@@ -22,6 +22,7 @@ import {
   $isTextNode,
   $setSelection,
   $splitNode,
+  DecoratorNode,
   DEPRECATED_$isGridSelection,
   EditorState,
   ElementNode,
@@ -554,7 +555,9 @@ export function $insertFirst(parent: ElementNode, node: LexicalNode): void {
  * This function is for internal use of the library.
  * Please do not use it as it may change in the future.
  */
-export function INTERNAL_$isBlock(node: LexicalNode): node is ElementNode {
+export function INTERNAL_$isBlock(
+  node: LexicalNode,
+): node is ElementNode | DecoratorNode<unknown> {
   if ($isDecoratorNode(node) && !node.isInline()) {
     return true;
   }

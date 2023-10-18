@@ -210,7 +210,10 @@ test.describe('HTML CopyAndPaste', () => {
         html`
           <hr class="" contenteditable="false" data-lexical-decorator="true" />
           <hr class="" contenteditable="false" data-lexical-decorator="true" />
-          <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+          <div
+            class="PlaygroundEditorTheme__blockCursor"
+            contenteditable="false"
+            data-lexical-cursor="true"></div>
         `,
       );
     }
@@ -232,7 +235,6 @@ test.describe('HTML CopyAndPaste', () => {
           <span data-lexical-text="true">Text between HRs</span>
         </p>
         <hr class="" contenteditable="false" data-lexical-decorator="true" />
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
       `,
     );
     await assertSelection(page, {

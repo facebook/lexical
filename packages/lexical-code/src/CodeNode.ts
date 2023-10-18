@@ -42,7 +42,6 @@ import {
   $createLineBreakNode,
   $createParagraphNode,
   $createTabNode,
-  $isLineBreakNode,
   $isTabNode,
   ElementNode,
 } from 'lexical';
@@ -255,7 +254,7 @@ export class CodeNode extends ElementNode {
     // If the selection is within the codeblock, find all leading tabs and
     // spaces of the current line. Create a new line that has all those
     // tabs and spaces, such that leading indentation is preserved.
-    const { anchor, focus } = selection;
+    const {anchor, focus} = selection;
     const firstPoint = anchor.isBefore(focus) ? anchor : focus;
     const firstSelectionNode = firstPoint.getNode();
     if (
@@ -286,22 +285,16 @@ export class CodeNode extends ElementNode {
         }
       }
       const split = firstSelectionNode.splitText(anchor.offset)[0];
-      const textAfter = anchor.offset === 0 ? split : split.getNextSibling();
-      const x = anchor.offset === 0 ? 1 : 2;
-      if (textAfter) insertNodes.push(textAfter);
-      const nodesToInsert = [$createLineBreakNode(), ...insertNodes];
+      const x = anchor.offset === 0 ? 0 : 1;
+      const index = split.getIndexWithinParent() + x;
       const codeNode = firstSelectionNode.getParentOrThrow();
-      const index = firstSelectionNode.getIndexWithinParent() + x
+      const nodesToInsert = [$createLineBreakNode(), ...insertNodes];
       codeNode.splice(index, 0, nodesToInsert);
-      const last = nodesToInsert.at(-1)!;
-      if (!$isLineBreakNode(last)) {
-        last.select(0, 0);
-      } else {
-        codeNode.select(index, index);
-      }
+      if (anchor.offset === 0) split.selectPrevious();
+      else split.getNextSibling()!.selectNext(0, 0);
     }
     if ($isCodeNode(firstSelectionNode)) {
-      const { offset } = selection.anchor;
+      const {offset} = selection.anchor;
       firstSelectionNode.splice(offset, 0, [$createLineBreakNode()]);
       firstSelectionNode.select(offset + 1, offset + 1);
     }

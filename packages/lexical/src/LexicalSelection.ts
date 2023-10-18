@@ -25,7 +25,6 @@ import {
   $isRootNode,
   $isTextNode,
   $setSelection,
-  DecoratorNode,
   DEPRECATED_$isGridCellNode,
   DEPRECATED_$isGridNode,
   DEPRECATED_$isGridRowNode,
@@ -57,6 +56,7 @@ import {
   $getNodeByKey,
   $getRoot,
   $hasAncestor,
+  $isRootOrShadowRoot,
   $isTokenOrSegmented,
   $setCompositionKey,
   doesContainGrapheme,
@@ -1523,6 +1523,7 @@ export class RangeSelection implements BaseSelection {
    * @param nodes - the nodes to insert
    */
   insertNodes(nodes: Array<LexicalNode>) {
+    if (nodes.length === 0) return;
     if (this.anchor.key === 'root') this.insertParagraph();
     const firstBlock = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
 
@@ -1541,11 +1542,19 @@ export class RangeSelection implements BaseSelection {
       INTERNAL_$isBlock(node) &&
       !node.isEmpty() &&
       $isElementNode(firstBlock) &&
-      !firstBlock.isEmpty();
+      (!firstBlock.isEmpty() ||
+        !$isRootOrShadowRoot(firstBlock.getParentOrThrow()));
 
     const firstNotInline = nodes.find(notInline);
 
-    const insertedParagraph = this.insertParagraph();
+    const shouldInsert = !$isElementNode(firstBlock) || !firstBlock.isEmpty();
+    const insertedParagraph = shouldInsert ? this.insertParagraph() : null;
+
+    const last = nodes.at(-1)!;
+    const nodeToSelect = $isElementNode(last)
+      ? last.getLastDescendant() || last
+      : last;
+    const nodeToSelectSize = nodeToSelect.getTextContentSize();
 
     let currentBlock = firstBlock;
     nodes.forEach((node) => {
@@ -1557,17 +1566,19 @@ export class RangeSelection implements BaseSelection {
         currentBlock.append(node);
       }
     });
-    if (insertedParagraph && $isElementNode(currentBlock)) {
+
+    if (!nodeToSelect.select) nodeToSelect.selectNext(0, 0);
+    else nodeToSelect.select(nodeToSelectSize, nodeToSelectSize);
+
+    if (
+      insertedParagraph &&
+      $isElementNode(currentBlock) &&
+      INTERNAL_$isBlock(currentBlock)
+    ) {
       currentBlock.append(...insertedParagraph.getChildren());
       insertedParagraph.remove();
     }
     if ($isElementNode(firstBlock) && firstBlock.isEmpty()) firstBlock.remove();
-
-    if ($isDecoratorNode(currentBlock)) {
-      currentBlock.selectNext();
-    } else {
-      currentBlock.selectEnd();
-    }
   }
 
   /**

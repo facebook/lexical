@@ -900,7 +900,10 @@ test.describe('CopyAndPaste', () => {
               width="560"></iframe>
           </div>
         </div>
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <div
+          class="PlaygroundEditorTheme__blockCursor"
+          contenteditable="false"
+          data-lexical-cursor="true"></div>
       `,
     );
   });

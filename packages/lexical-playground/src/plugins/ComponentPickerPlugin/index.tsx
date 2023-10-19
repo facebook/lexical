@@ -42,6 +42,7 @@ import {INSERT_COLLAPSIBLE_COMMAND} from '../CollapsiblePlugin';
 import {InsertEquationDialog} from '../EquationsPlugin';
 import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawPlugin';
 import {INSERT_IMAGE_COMMAND, InsertImageDialog} from '../ImagesPlugin';
+import InsertLayoutDialog from '../LayoutPlugin/InsertLayoutDialog';
 import {INSERT_PAGE_BREAK} from '../PageBreakPlugin';
 import {InsertPollDialog} from '../PollPlugin';
 import {InsertNewTableDialog, InsertTableDialog} from '../TablePlugin';
@@ -299,6 +300,14 @@ function getBaseOptions(editor: LexicalEditor, showModal: ShowModal) {
       keywords: ['collapse', 'collapsible', 'toggle'],
       onSelect: () =>
         editor.dispatchCommand(INSERT_COLLAPSIBLE_COMMAND, undefined),
+    }),
+    new ComponentPickerOption('Columns Layout', {
+      icon: <i className="icon columns" />,
+      keywords: ['columns', 'layout', 'grid'],
+      onSelect: () =>
+        showModal('Insert Columns Layout', (onClose) => (
+          <InsertLayoutDialog activeEditor={editor} onClose={onClose} />
+        )),
     }),
     ...(['left', 'center', 'right', 'justify'] as const).map(
       (alignment) =>

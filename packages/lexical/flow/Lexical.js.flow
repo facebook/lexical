@@ -505,7 +505,7 @@ declare export class RangeSelection implements BaseSelection {
   formatText(formatType: TextFormatType): void;
   insertNodes(nodes: Array<LexicalNode>): void;
   insertParagraph(): void;
-  insertLineBreak(): void;
+  insertLineBreak(selectStart?: boolean): void;
   getCharacterOffsets(): [number, number];
   extract(): Array<LexicalNode>;
   modify(

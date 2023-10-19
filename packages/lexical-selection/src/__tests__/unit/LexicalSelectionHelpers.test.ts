@@ -195,12 +195,12 @@ describe('LexicalSelectionHelpers tests', () => {
 
       // insertLineBreak
       setupTestCase((selection, element) => {
-        selection.insertLineBreak();
+        selection.insertLineBreak(true);
 
         expect(selection.anchor).toEqual(
           expect.objectContaining({
             key: element.getKey(),
-            offset: 1,
+            offset: 0,
             type: 'element',
           }),
         );
@@ -208,7 +208,7 @@ describe('LexicalSelectionHelpers tests', () => {
         expect(selection.focus).toEqual(
           expect.objectContaining({
             key: element.getKey(),
-            offset: 1,
+            offset: 0,
             type: 'element',
           }),
         );
@@ -777,12 +777,12 @@ describe('LexicalSelectionHelpers tests', () => {
 
       // insertLineBreak
       setupTestCase((selection, element) => {
-        selection.insertLineBreak();
+        selection.insertLineBreak(true);
 
         expect(selection.anchor).toEqual(
           expect.objectContaining({
             key: element.getKey(),
-            offset: 1,
+            offset: 0,
             type: 'element',
           }),
         );
@@ -790,7 +790,7 @@ describe('LexicalSelectionHelpers tests', () => {
         expect(selection.focus).toEqual(
           expect.objectContaining({
             key: element.getKey(),
-            offset: 1,
+            offset: 0,
             type: 'element',
           }),
         );
@@ -932,7 +932,7 @@ describe('LexicalSelectionHelpers tests', () => {
         expect(selection.anchor).toEqual(
           expect.objectContaining({
             key: element.getKey(),
-            offset: 1,
+            offset: 0,
             type: 'element',
           }),
         );
@@ -940,7 +940,7 @@ describe('LexicalSelectionHelpers tests', () => {
         expect(selection.focus).toEqual(
           expect.objectContaining({
             key: element.getKey(),
-            offset: 1,
+            offset: 0,
             type: 'element',
           }),
         );
@@ -1396,12 +1396,12 @@ describe('LexicalSelectionHelpers tests', () => {
 
       // insertLineBreak
       setupTestCase((selection, element) => {
-        selection.insertLineBreak();
+        selection.insertLineBreak(true);
 
         expect(selection.anchor).toEqual(
           expect.objectContaining({
             key: element.getKey(),
-            offset: 1,
+            offset: 0,
             type: 'element',
           }),
         );
@@ -1409,7 +1409,7 @@ describe('LexicalSelectionHelpers tests', () => {
         expect(selection.focus).toEqual(
           expect.objectContaining({
             key: element.getKey(),
-            offset: 1,
+            offset: 0,
             type: 'element',
           }),
         );
@@ -1550,7 +1550,7 @@ describe('LexicalSelectionHelpers tests', () => {
         expect(selection.anchor).toEqual(
           expect.objectContaining({
             key: element.getKey(),
-            offset: 1,
+            offset: 0,
             type: 'element',
           }),
         );
@@ -1558,7 +1558,7 @@ describe('LexicalSelectionHelpers tests', () => {
         expect(selection.focus).toEqual(
           expect.objectContaining({
             key: element.getKey(),
-            offset: 1,
+            offset: 0,
             type: 'element',
           }),
         );
@@ -1707,12 +1707,12 @@ describe('LexicalSelectionHelpers tests', () => {
 
       // insertLineBreak
       setupTestCase((selection, element) => {
-        selection.insertLineBreak();
+        selection.insertLineBreak(true);
 
         expect(selection.anchor).toEqual(
           expect.objectContaining({
             key: element.getKey(),
-            offset: 1,
+            offset: 0,
             type: 'element',
           }),
         );
@@ -1720,7 +1720,7 @@ describe('LexicalSelectionHelpers tests', () => {
         expect(selection.focus).toEqual(
           expect.objectContaining({
             key: element.getKey(),
-            offset: 1,
+            offset: 0,
             type: 'element',
           }),
         );

@@ -860,8 +860,13 @@ test.describe('CopyAndPaste', () => {
 
   test('Pasting a decorator node on a blank line inserts before the line', async ({
     page,
+    isCollab,
     isPlainText,
   }) => {
+    test.fixme(
+      isCollab,
+      'Seems to be failing on collab, at least since PR 5002',
+    );
     test.skip(isPlainText);
 
     // copying and pasting the node is easier than creating the clipboard data

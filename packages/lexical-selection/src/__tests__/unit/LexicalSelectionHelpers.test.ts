@@ -1932,7 +1932,7 @@ describe('LexicalSelectionHelpers tests', () => {
         );
       });
 
-      test('a heading node with a child text node and a disjoint sibling text node should throw', async () => {
+      test('a heading node with a child text node and a disjoint sibling text node', async () => {
         const editor = createTestEditor();
 
         const element = document.createElement('div');
@@ -2111,7 +2111,7 @@ describe('LexicalSelectionHelpers tests', () => {
         );
       });
 
-      test('a heading node with a child text node and a disjoint sibling text node should throw', async () => {
+      test('a heading node with a child text node and a disjoint sibling text node', async () => {
         const editor = createTestEditor();
 
         const element = document.createElement('div');

@@ -1585,6 +1585,12 @@ export class RangeSelection implements BaseSelection {
       insertedParagraph.remove();
     }
     if ($isElementNode(firstBlock) && firstBlock.isEmpty()) firstBlock.remove();
+
+    const lastChild = $isElementNode(firstBlock)
+      ? firstBlock.getLastChild()
+      : null;
+    if ($isLineBreakNode(lastChild) && currentBlock !== firstBlock)
+      lastChild.remove();
   }
 
   /**

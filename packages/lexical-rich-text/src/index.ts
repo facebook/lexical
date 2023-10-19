@@ -664,7 +664,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
         if (!$isRangeSelection(selection)) {
           return false;
         }
-        selection.insertLineBreak();
+        selection.insertLineBreak(selectStart);
         return true;
       },
       COMMAND_PRIORITY_EDITOR,

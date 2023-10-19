@@ -1625,8 +1625,15 @@ export class RangeSelection implements BaseSelection {
    * Inserts a logical linebreak, which may be a new LineBreakNode or a new ParagraphNode, into the EditorState at the
    * current Selection.
    */
-  insertLineBreak(): void {
-    this.insertNodes([$createLineBreakNode()]);
+  insertLineBreak(selectStart?: boolean): void {
+    const lineBreak = $createLineBreakNode();
+    this.insertNodes([lineBreak]);
+    // this is used in MacOS with the command 'ctrl-O' (openLineBreak)
+    if (selectStart) {
+      const parent = lineBreak.getParentOrThrow();
+      const index = lineBreak.getIndexWithinParent();
+      parent.select(index, index);
+    }
   }
 
   /**

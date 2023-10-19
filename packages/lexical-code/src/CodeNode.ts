@@ -42,21 +42,14 @@ import {
   $applyNodeReplacement,
   $createLineBreakNode,
   $createParagraphNode,
-  $createTabNode,
-  $isTabNode,
-  $isTextNode,
   ElementNode,
   $isTabNode,
   $createTabNode,
+  $isTextNode,
 } from 'lexical';
 import {
   $isCodeHighlightNode,
   $createCodeHighlightNode,
-  getFirstCodeNodeOfLine,
-
-  $createCodeHighlightNode,
-  $isCodeHighlightNode,
-  CodeHighlightNode,
   getFirstCodeNodeOfLine,
 } from './CodeHighlightNode';
 import * as Prism from 'prismjs';

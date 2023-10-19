@@ -1573,9 +1573,6 @@ export class RangeSelection implements BaseSelection {
       }
     });
 
-    if (!nodeToSelect.select) nodeToSelect.selectNext(0, 0);
-    else nodeToSelect.select(nodeToSelectSize, nodeToSelectSize);
-
     if (
       insertedParagraph &&
       $isElementNode(currentBlock) &&
@@ -1585,6 +1582,9 @@ export class RangeSelection implements BaseSelection {
       insertedParagraph.remove();
     }
     if ($isElementNode(firstBlock) && firstBlock.isEmpty()) firstBlock.remove();
+
+    if (!nodeToSelect.select) nodeToSelect.selectNext(0, 0);
+    else nodeToSelect.select(nodeToSelectSize, nodeToSelectSize);
 
     const lastChild = $isElementNode(firstBlock)
       ? firstBlock.getLastChild()

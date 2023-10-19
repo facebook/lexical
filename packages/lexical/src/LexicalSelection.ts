@@ -1534,7 +1534,9 @@ export class RangeSelection implements BaseSelection {
       } else {
         const index = RemoveTextAndSplitBlock(this);
         firstBlock.splice(index, 0, nodes);
-        (nodes.at(-1) as TextNode).select();
+        const last = nodes.at(-1)!;
+        if (last.select) last.select();
+        else last.selectNext(0, 0);
       }
       return;
     }

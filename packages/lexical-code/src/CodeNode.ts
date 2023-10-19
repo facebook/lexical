@@ -20,6 +20,7 @@ import type {
   Spread,
   TabNode,
 } from 'lexical';
+import type {CodeHighlightNode} from '@lexical/code';
 
 import 'prismjs/components/prism-clike';
 import 'prismjs/components/prism-javascript';
@@ -45,14 +46,20 @@ import {
   $isTabNode,
   $isTextNode,
   ElementNode,
+  $isTabNode,
+  $createTabNode,
 } from 'lexical';
-import * as Prism from 'prismjs';
 import {
+  $isCodeHighlightNode,
+  $createCodeHighlightNode,
+  getFirstCodeNodeOfLine,
+
   $createCodeHighlightNode,
   $isCodeHighlightNode,
   CodeHighlightNode,
   getFirstCodeNodeOfLine,
 } from './CodeHighlightNode';
+import * as Prism from 'prismjs';
 
 export type SerializedCodeNode = Spread<
   {

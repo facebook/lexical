@@ -578,6 +578,25 @@ i.page-break,
   background-color: rgb(223, 232, 250);
 }
 
+.link-editor .link-wrapper {
+  width: 100%;
+  justify-content: space-between;
+  margin: 8px 0;
+  position: relative;
+}
+.link-editor .link-label {
+  display: block;
+  width: calc(100% - 75px);
+  box-sizing: border-box;
+  margin: 0px 12px -8px 12px;
+  padding: 0px 12px;
+  font-size: 15px;
+  color: rgb(5, 5, 5);
+  border: 0;
+  outline: 0;
+  position: relative;
+  font-family: inherit;
+}
 .link-editor .link-input {
   display: block;
   width: calc(100% - 75px);

@@ -23,8 +23,10 @@ import type {
 import {addClassNamesToElement, isHTMLAnchorElement} from '@lexical/utils';
 import {
   $applyNodeReplacement,
+  $createTextNode,
   $getSelection,
   $isElementNode,
+  $isParagraphNode,
   $isRangeSelection,
   createCommand,
   ElementNode,
@@ -427,7 +429,17 @@ export function toggleLink(
   if (!$isRangeSelection(selection)) {
     return;
   }
-  const nodes = selection.extract();
+  let nodes = selection.extract();
+
+  if(nodes.length === 1){
+    const node = nodes[0];
+    if($isParagraphNode(node)){
+      const textNode = $createTextNode('aaaaaaaaaa');
+      node.append(textNode);
+      nodes = [textNode]
+    }
+  }
+
 
   if (url === null) {
     // Remove LinkNodes

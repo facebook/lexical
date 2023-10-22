@@ -13,6 +13,7 @@ import {$findMatchingParent, mergeRegister} from '@lexical/utils';
 import {
   $getSelection,
   $isRangeSelection,
+  $isTextNode,
   CLICK_COMMAND,
   COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_HIGH,
@@ -49,7 +50,9 @@ function FloatingLinkEditor({
 }): JSX.Element {
   const editorRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [linkText, setLinkText] = useState('');
   const [linkUrl, setLinkUrl] = useState('');
+  const [editedLinkText, setEditedLinkText] = useState('');
   const [editedLinkUrl, setEditedLinkUrl] = useState('https://');
   const [lastSelection, setLastSelection] = useState<
     RangeSelection | GridSelection | NodeSelection | null
@@ -61,10 +64,17 @@ function FloatingLinkEditor({
       const node = getSelectedNode(selection);
       const parent = node.getParent();
       if ($isLinkNode(parent)) {
+        if($isTextNode(node)) {
+          setLinkText(node.getTextContent());
+        }
         setLinkUrl(parent.getURL());
       } else if ($isLinkNode(node)) {
+        if($isTextNode(node.getChildren()[0])) {
+          setLinkText(node.getChildren()[0].getTextContent());
+        }
         setLinkUrl(node.getURL());
       } else {
+        setLinkText('');
         setLinkUrl('');
       }
     }
@@ -196,39 +206,60 @@ function FloatingLinkEditor({
     <div ref={editorRef} className="link-editor">
       {!isLink ? null : isLinkEditMode ? (
         <>
-          <input
-            ref={inputRef}
-            className="link-input"
-            value={editedLinkUrl}
-            onChange={(event) => {
-              setEditedLinkUrl(event.target.value);
-            }}
-            onKeyDown={(event) => {
-              monitorInputInteraction(event);
-            }}
-          />
-          <div>
-            <div
-              className="link-cancel"
-              role="button"
-              tabIndex={0}
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={() => {
-                setIsLinkEditMode(false);
+          <div className="link-wrapper">
+            <div className="link-label">Text</div>
+            <input
+              ref={inputRef}
+              className="link-input"
+              value={editedLinkText}
+              onChange={(event) => {
+                setEditedLinkText(event.target.value);
+              }}
+              onKeyDown={(event) => {
+                monitorInputInteraction(event);
               }}
             />
-
-            <div
-              className="link-confirm"
-              role="button"
-              tabIndex={0}
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={handleLinkSubmission}
+            <div className="link-label">Link</div>
+            <input
+              ref={inputRef}
+              className="link-input"
+              value={editedLinkUrl}
+              onChange={(event) => {
+                setEditedLinkUrl(event.target.value);
+              }}
+              onKeyDown={(event) => {
+                monitorInputInteraction(event);
+              }}
             />
+            <div>
+              <div
+                className="link-cancel"
+                role="button"
+                tabIndex={0}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => {
+                  setIsLinkEditMode(false);
+                }}
+              />
+
+              <div
+                className="link-confirm"
+                role="button"
+                tabIndex={0}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={handleLinkSubmission}
+              />
+            </div>
           </div>
         </>
       ) : (
+        <>
         <div className="link-view">
+          <div>
+            <div>Text</div>
+            <div>{linkText}</div>
+            <div>Link</div>
+          </div>
           <a
             href={sanitizeUrl(linkUrl)}
             target="_blank"
@@ -242,6 +273,7 @@ function FloatingLinkEditor({
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => {
               setEditedLinkUrl(linkUrl);
+              setEditedLinkText(linkText);
               setIsLinkEditMode(true);
             }}
           />
@@ -255,6 +287,7 @@ function FloatingLinkEditor({
             }}
           />
         </div>
+        </>
       )}
     </div>
   );

@@ -116,6 +116,14 @@ describe('Markdown', () => {
       md: '`Hello` world',
     },
     {
+      html: '<p><a href="https://lexical.dev"><code spellcheck="false" style="white-space: pre-wrap;"><span>XXX</span></code></a><span style="white-space: pre-wrap;"> world</span></p>',
+      md: '[`XXX`](https://lexical.dev) world',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">Hello </span><a href="https://lexical.dev"><code spellcheck="false" style="white-space: pre-wrap;"><span>XXX</span></code></a><span style="white-space: pre-wrap;"> world</span></p>',
+      md: 'Hello [`XXX`](https://lexical.dev) world',
+    },
+    {
       html: '<p><s><span style="white-space: pre-wrap;">Hello</span></s><span style="white-space: pre-wrap;"> world</span></p>',
       md: '~~Hello~~ world',
     },

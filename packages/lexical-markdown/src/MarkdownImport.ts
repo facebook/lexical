@@ -17,6 +17,8 @@ import type {LexicalNode, TextNode} from 'lexical';
 
 import {$createCodeNode} from '@lexical/code';
 import {$isListItemNode, $isListNode, ListItemNode} from '@lexical/list';
+import {$createLinkNode} from '@lexical/link';
+import {LINK} from '@lexical/markdown';
 import {$isQuoteNode} from '@lexical/rich-text';
 import {$findMatchingParent} from '@lexical/utils';
 import {
@@ -209,6 +211,40 @@ function importTextFormatTransformers(
   textMatchTransformers: Array<TextMatchTransformer>,
 ) {
   const textContent = textNode.getTextContent();
+
+  // Look for links first.
+  const linkMatch = LINK.importRegExp.exec(textContent);
+  if (linkMatch) {
+    // If the link is the whole text node, then replace it and return.
+    // Else, split the match from previous and subsequent text nodes
+    // (if any) and recurse.
+    if (linkMatch.index === 0 && linkMatch[0].length === textContent.length) {
+      const [, linkText, linkUrl, linkTitle] = linkMatch;
+      const linkNode = $createLinkNode(linkUrl, {title: linkTitle});
+      const linkTextNode = $createTextNode(linkText);
+      linkNode.append(linkTextNode);
+      textNode.replace(linkNode);
+      importTextFormatTransformers(
+        linkTextNode,
+        textFormatTransformersIndex,
+        textMatchTransformers,
+      );
+    } else {
+      const nodes = textNode.splitText(
+        linkMatch.index,
+        linkMatch.index + linkMatch[0].length,
+      );
+      for (const node of nodes) {
+        importTextFormatTransformers(
+          node,
+          textFormatTransformersIndex,
+          textMatchTransformers,
+        );
+      }
+    }
+    return;
+  }
+
   const match = findOutermostMatch(textContent, textFormatTransformersIndex);
 
   if (!match) {

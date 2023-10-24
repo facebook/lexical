@@ -216,7 +216,7 @@ function $wrapOverflowedNodes(offset: number): void {
           $setSelection(previousSelection);
         }
 
-        mergePrevious(overflowNode);
+        mergeNext(overflowNode);
       }
     }
   }
@@ -241,23 +241,40 @@ function $unwrapNode(node: OverflowNode): LexicalNode | null {
   return childrenLength > 0 ? children[childrenLength - 1] : null;
 }
 
-export function mergePrevious(overflowNode: OverflowNode): void {
-  const previousNode = overflowNode.getPreviousSibling();
+export function mergeNext(overflowNode: OverflowNode): void {
+  const paragraph = overflowNode.getParent();
+  let paragraphNextSibling;
 
-  if (!$isOverflowNode(previousNode)) {
-    return;
+  if (paragraph !== undefined && paragraph !== null) {
+    paragraphNextSibling = paragraph.getNextSibling();
   }
 
-  const firstChild = overflowNode.getFirstChild();
-  const previousNodeChildren = previousNode.getChildren();
-  const previousNodeChildrenLength = previousNodeChildren.length;
-
-  if (firstChild === null) {
-    overflowNode.append(...previousNodeChildren);
+  let nextOverflowNode;
+  const formerOverflowNode = overflowNode.getNextSibling();
+  if ($isOverflowNode(paragraphNextSibling)) {
+    // Check if next parent sibling is overflow node (cause of the bug)
+    nextOverflowNode = paragraphNextSibling;
+  } else if ($isOverflowNode(formerOverflowNode)) {
+    // If next parent sibling is not overflow node check if the overflow node is not in current parent node (normal use)
+    nextOverflowNode = formerOverflowNode;
   } else {
-    for (let i = 0; i < previousNodeChildrenLength; i++) {
-      firstChild.insertBefore(previousNodeChildren[i]);
-    }
+    return; // There's no overflow node and thus no merging is required
+  }
+
+  const nextOverflowNodeChildren = nextOverflowNode.getChildren();
+  const nextOverflowNodeChildrenLength = nextOverflowNodeChildren.length;
+  const overflowNodeFirstChild = overflowNode.getFirstChild();
+  let overflowNodeFirstChildLength;
+
+  if (overflowNodeFirstChild === null || overflowNodeFirstChild === undefined) {
+    overflowNodeFirstChildLength = 0;
+  } else {
+    overflowNodeFirstChildLength =
+      overflowNodeFirstChild.getTextContent().length + 1;
+  }
+
+  for (let i = 0; i < nextOverflowNodeChildrenLength; i++) {
+    overflowNode.append(nextOverflowNodeChildren[i]);
   }
 
   const selection = $getSelection();
@@ -268,26 +285,26 @@ export function mergePrevious(overflowNode: OverflowNode): void {
     const focus = selection.focus;
     const focusNode = anchor.getNode();
 
-    if (anchorNode.is(previousNode)) {
+    if (anchorNode.is(overflowNode)) {
       anchor.set(overflowNode.getKey(), anchor.offset, 'element');
-    } else if (anchorNode.is(overflowNode)) {
+    } else if (anchorNode.is(nextOverflowNode)) {
       anchor.set(
         overflowNode.getKey(),
-        previousNodeChildrenLength + anchor.offset,
+        overflowNodeFirstChildLength + anchor.offset,
         'element',
       );
     }
 
-    if (focusNode.is(previousNode)) {
+    if (focusNode.is(overflowNode)) {
       focus.set(overflowNode.getKey(), focus.offset, 'element');
-    } else if (focusNode.is(overflowNode)) {
+    } else if (focusNode.is(nextOverflowNode)) {
       focus.set(
         overflowNode.getKey(),
-        previousNodeChildrenLength + focus.offset,
+        overflowNodeFirstChildLength + focus.offset,
         'element',
       );
     }
   }
 
-  previousNode.remove();
+  nextOverflowNode.remove();
 }

@@ -24,7 +24,7 @@ import {
 } from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
-import {mergePrevious} from '../../shared/useCharacterLimit';
+import {mergeNext} from '../../shared/useCharacterLimit';
 
 describe('LexicalNodeHelpers tests', () => {
   initializeUnitTest(
@@ -77,12 +77,13 @@ describe('LexicalNodeHelpers tests', () => {
 
           await editor.update(() => {
             const paragraph = $getRoot().getFirstChild<ParagraphNode>();
-            const overflowRight = $getNodeByKey<OverflowNode>(overflowRightKey);
+            const overflowLeft = $getNodeByKey<OverflowNode>(overflowLeftKey);
 
-            mergePrevious(overflowRight);
+            mergeNext(overflowLeft);
 
             expect(paragraph.getChildrenSize()).toBe(1);
             expect($isOverflowNode(paragraph.getFirstChild())).toBe(true);
+            expect(paragraph.getFirstChild().getTextContent().length).toBe(2);
 
             const selection = $getSelection();
 
@@ -94,9 +95,9 @@ describe('LexicalNodeHelpers tests', () => {
               return;
             }
 
-            expect(selection.anchor.key).toBe(overflowRightKey);
+            expect(selection.anchor.key).toBe(overflowLeftKey);
             expect(selection.anchor.offset).toBe(0);
-            expect(selection.focus.key).toBe(overflowRightKey);
+            expect(selection.focus.key).toBe(overflowLeftKey);
             expect(selection.anchor.offset).toBe(0);
           });
         });
@@ -134,12 +135,13 @@ describe('LexicalNodeHelpers tests', () => {
           await editor.update(() => {
             const paragraph = $getRoot().getFirstChild<ParagraphNode>();
 
-            const overflowRight = $getNodeByKey<OverflowNode>(overflowRightKey);
+            const overflowLeft = $getNodeByKey<OverflowNode>(overflowLeftKey);
 
-            mergePrevious(overflowRight);
+            mergeNext(overflowLeft);
 
             expect(paragraph.getChildrenSize()).toBe(1);
             expect($isOverflowNode(paragraph.getFirstChild())).toBe(true);
+            expect(paragraph.getFirstChild().getTextContent().length).toBe(4);
 
             const selection = $getSelection();
 
@@ -202,12 +204,13 @@ describe('LexicalNodeHelpers tests', () => {
 
           await editor.update(() => {
             const paragraph = $getRoot().getFirstChild<ParagraphNode>();
-            const overflowRight = $getNodeByKey<OverflowNode>(overflowRightKey);
+            const overflowLeft = $getNodeByKey<OverflowNode>(overflowLeftKey);
 
-            mergePrevious(overflowRight);
+            mergeNext(overflowLeft);
 
             expect(paragraph.getChildrenSize()).toBe(1);
             expect($isOverflowNode(paragraph.getFirstChild())).toBe(true);
+            expect(paragraph.getFirstChild().getTextContent().length).toBe(4);
 
             const selection = $getSelection();
 

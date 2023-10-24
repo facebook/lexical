@@ -63,10 +63,7 @@ function testSuite(charset) {
         <p class="PlaygroundEditorTheme__paragraph">
           <span data-lexical-text="true">01234</span>
           <span class="PlaygroundEditorTheme__characterLimit">
-            <span data-lexical-text="true">5</span>
-          </span>
-          <span class="PlaygroundEditorTheme__characterLimit">
-            <span data-lexical-text="true">6789</span>
+            <span data-lexical-text="true">56789</span>
           </span>
         </p>
       `,

@@ -1135,8 +1135,6 @@ function convertBringAttentionToElement(domNode: Node): DOMConversionOutput {
 const preParentCache = new WeakMap<Node, null | Node>();
 
 function isNodePre(node: Node): boolean {
-  const test = 'test';
-  test.startsWith('t');
   return (
     node.nodeName === 'PRE' ||
     (node.nodeType === DOM_ELEMENT_TYPE &&

@@ -45,7 +45,7 @@ export default function positionNodeOnRange(
       const rect = rects[i];
       // Try to reuse the previously created Node when possible, no need to
       // remove/create on the most common case reposition case
-      const rectNode = lastNodes[i] ?? document.createElement('div');
+      const rectNode = lastNodes[i] || document.createElement('div');
       const rectNodeStyle = rectNode.style;
       if (rectNodeStyle.position !== 'absolute') {
         rectNodeStyle.position = 'absolute';

@@ -22,6 +22,7 @@ import {
   copyToClipboard,
   deleteTableColumns,
   deleteTableRows,
+  dragMouse,
   focusEditor,
   html,
   initialize,
@@ -1960,5 +1961,74 @@ test.describe('Tables', () => {
         </table>
       `,
     );
+  });
+  test('Select upper table cells with another table inside #4647', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    await initialize({isCollab, page});
+    test.skip(isPlainText);
+    if (IS_COLLAB) {
+      // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
+      page.setViewportSize({height: 1000, width: 3000});
+    }
+
+    await focusEditor(page);
+
+    await insertTable(page, 2, 2);
+    await insertTable(page, 2, 2);
+
+    const start = await page
+      .locator('.PlaygroundEditorTheme__tableCell > p')
+      .first();
+    await start.click();
+    const end = await page.locator(
+      '.ContentEditable__root > table > tr:nth-child(2) > td > .PlaygroundEditorTheme__paragraph',
+    );
+    await dragMouse(page, await start.boundingBox(), await end.boundingBox());
+
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [1, 0, 0],
+      focusOffset: 0,
+      focusPath: [1, 1, 1],
+    });
+  });
+
+  test('Select inside table cells with another table inside and drag outside #4647', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    await initialize({isCollab, page});
+    test.skip(isPlainText);
+    if (IS_COLLAB) {
+      // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
+      page.setViewportSize({height: 1000, width: 3000});
+    }
+
+    await focusEditor(page);
+
+    await insertTable(page, 2, 2);
+    await insertTable(page, 2, 2);
+
+    const start = await page
+      .locator(
+        '.PlaygroundEditorTheme__tableCell > .PlaygroundEditorTheme__table > tr > th > .PlaygroundEditorTheme__paragraph',
+      )
+      .first();
+    await start.click();
+    const end = await page.locator(
+      '.ContentEditable__root > table > tr:nth-child(2) > td > .PlaygroundEditorTheme__paragraph',
+    );
+    await dragMouse(page, await start.boundingBox(), await end.boundingBox());
+
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [1, 0, 0, 1, 0, 0],
+      focusOffset: 0,
+      focusPath: [1, 1, 1],
+    });
   });
 });

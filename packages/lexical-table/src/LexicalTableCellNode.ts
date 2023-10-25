@@ -37,7 +37,7 @@ export const TableCellHeaderStates = {
 };
 
 export type TableCellHeaderState =
-  (typeof TableCellHeaderStates)[keyof typeof TableCellHeaderStates];
+  typeof TableCellHeaderStates[keyof typeof TableCellHeaderStates];
 
 export type SerializedTableCellNode = Spread<
   {

@@ -7,7 +7,6 @@
  */
 
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
-import {$isQuoteNode} from '@lexical/rich-text';
 import {
   $addNodeStyle,
   $cloneWithProperties,
@@ -240,7 +239,7 @@ function $basicInsertStrategy(
 
     const isLineBreakNode = $isLineBreakNode(node);
 
-    if (i === 0 && $isQuoteNode(selection.anchor.getNode())) {
+    if (i === 0 && $isElementNode(selection.anchor.getNode())) {
       currentBlock = selection.anchor.getNode();
     }
 

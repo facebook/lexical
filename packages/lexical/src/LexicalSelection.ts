@@ -1523,8 +1523,12 @@ export class RangeSelection implements BaseSelection {
    * @param nodes - the nodes to insert
    */
   insertNodes(nodes: Array<LexicalNode>) {
-    if (nodes.length === 0) return;
-    if (this.anchor.key === 'root') this.insertParagraph();
+    if (nodes.length === 0) {
+      return;
+    }
+    if (this.anchor.key === 'root') {
+      this.insertParagraph();
+    }
     const firstBlock = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
 
     // case where we insert inside a code block
@@ -1535,8 +1539,9 @@ export class RangeSelection implements BaseSelection {
         const index = removeTextAndSplitBlock(this);
         firstBlock.splice(index, 0, nodes);
         const last = nodes.at(-1)!;
-        if (last.select) last.select();
-        else last.selectNext(0, 0);
+        if (last.select) {
+          last.select();
+        } else last.selectNext(0, 0);
       }
       return;
     }
@@ -1581,16 +1586,22 @@ export class RangeSelection implements BaseSelection {
       currentBlock.append(...insertedParagraph.getChildren());
       insertedParagraph.remove();
     }
-    if ($isElementNode(firstBlock) && firstBlock.isEmpty()) firstBlock.remove();
+    if ($isElementNode(firstBlock) && firstBlock.isEmpty()) {
+      firstBlock.remove();
+    }
 
-    if (!nodeToSelect.select) nodeToSelect.selectNext(0, 0);
-    else nodeToSelect.select(nodeToSelectSize, nodeToSelectSize);
+    if (!nodeToSelect.select) {
+      nodeToSelect.selectNext(0, 0);
+    } else {
+      nodeToSelect.select(nodeToSelectSize, nodeToSelectSize);
+    }
 
     const lastChild = $isElementNode(firstBlock)
       ? firstBlock.getLastChild()
       : null;
-    if ($isLineBreakNode(lastChild) && currentBlock !== firstBlock)
+    if ($isLineBreakNode(lastChild) && currentBlock !== firstBlock) {
       lastChild.remove();
+    }
   }
 
   /**
@@ -3083,7 +3094,9 @@ function removeTextAndSplitBlock(selection: RangeSelection): number {
   const x = point.offset === 0 ? 0 : 1;
   const index = split[0].getIndexWithinParent() + x;
 
-  if (!pointParent.isInline() || index === 0) return index;
+  if (!pointParent.isInline() || index === 0) {
+    return index;
+  }
 
   const firstToAppend = pointParent.getChildAtIndex(index);
   if (firstToAppend) {

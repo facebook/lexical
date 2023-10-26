@@ -173,7 +173,9 @@ export function $insertDataTransferForRichText(
   if (text != null) {
     if ($isRangeSelection(selection)) {
       const parts = text.split(/(\r?\n|\t)/);
-      if (parts.at(-1) === '') parts.pop();
+      if (parts.at(-1) === '') {
+        parts.pop();
+      }
       for (let i = 0; i < parts.length; i++) {
         const part = parts[i];
         if (part === '\n' || part === '\r\n') {

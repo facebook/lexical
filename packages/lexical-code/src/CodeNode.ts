@@ -289,9 +289,13 @@ export class CodeNode extends ElementNode {
       const nodesToInsert = [$createLineBreakNode(), ...insertNodes];
       codeNode.splice(index, 0, nodesToInsert);
       const last = insertNodes.at(-1);
-      if (last) last.select();
-      else if (anchor.offset === 0) split.selectPrevious();
-      else split.getNextSibling()!.selectNext(0, 0);
+      if (last) {
+        last.select();
+      } else if (anchor.offset === 0) {
+        split.selectPrevious();
+      } else {
+        split.getNextSibling()!.selectNext(0, 0);
+      }
     }
     if ($isCodeNode(firstSelectionNode)) {
       const {offset} = selection.anchor;

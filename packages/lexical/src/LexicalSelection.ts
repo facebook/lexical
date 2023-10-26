@@ -1532,7 +1532,7 @@ export class RangeSelection implements BaseSelection {
       if ('__language' in nodes[0]) {
         this.insertText(nodes[0].getTextContent());
       } else {
-        const index = RemoveTextAndSplitBlock(this);
+        const index = removeTextAndSplitBlock(this);
         firstBlock.splice(index, 0, nodes);
         const last = nodes.at(-1)!;
         if (last.select) last.select();
@@ -1605,7 +1605,7 @@ export class RangeSelection implements BaseSelection {
       paragraph.select();
       return paragraph;
     }
-    const index = RemoveTextAndSplitBlock(this);
+    const index = removeTextAndSplitBlock(this);
     const block = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
     const firstToAppend = block.getChildAtIndex(index);
     const nodesToInsert = firstToAppend
@@ -3061,7 +3061,7 @@ export function DEPRECATED_$getNodeTriplet(
   return [cell, row, grid];
 }
 
-function RemoveTextAndSplitBlock(selection: RangeSelection) {
+function removeTextAndSplitBlock(selection: RangeSelection): number {
   if (!selection.isCollapsed()) {
     selection.removeText();
   }

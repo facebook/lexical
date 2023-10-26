@@ -1563,7 +1563,7 @@ export class RangeSelection implements BaseSelection {
     const nodeToSelectSize = nodeToSelect.getTextContentSize();
 
     let currentBlock = firstBlock;
-    nodes.forEach((node) => {
+    for (const node of nodes) {
       if (node === firstNotInline && isMergeable(node)) {
         currentBlock.append(...node.getChildren());
       } else if (notInline(node)) {
@@ -1571,7 +1571,7 @@ export class RangeSelection implements BaseSelection {
       } else {
         currentBlock.append(node);
       }
-    });
+    }
 
     if (
       insertedParagraph &&

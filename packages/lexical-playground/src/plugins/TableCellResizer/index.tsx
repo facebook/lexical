@@ -206,13 +206,29 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
             throw new Error('Expected table row');
           }
 
-          const tableCells = tableRow.getChildren();
+          const rowCells = tableRow.getChildren();
+          const rowCellsSpan = rowCells.map((cell) => cell.getColSpan());
 
-          if (tableColumnIndex >= tableCells.length || tableColumnIndex < 0) {
+          const aggregatedRowSpans = rowCellsSpan.reduce(
+            (rowSpans, cellSpan) => {
+              const previousCell = rowSpans.at(-1) ?? 0;
+              rowSpans.push(previousCell + cellSpan);
+              return rowSpans;
+            },
+            [],
+          );
+          const rowColumnIndexWithSpan = aggregatedRowSpans.findIndex(
+            (cellSpan: number) => cellSpan > tableColumnIndex,
+          );
+
+          if (
+            rowColumnIndexWithSpan >= rowCells.length ||
+            rowColumnIndexWithSpan < 0
+          ) {
             throw new Error('Expected table cell to be inside of table row.');
           }
 
-          const tableCell = tableCells[tableColumnIndex];
+          const tableCell = rowCells[rowColumnIndexWithSpan];
 
           if (!$isTableCellNode(tableCell)) {
             throw new Error('Expected table cell');

@@ -388,6 +388,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
   }, [activeCell, draggingDirection, mouseCurrentPos]);
 
   const resizerStyles = getResizers();
+
   return (
     <div ref={resizerRef}>
       {activeCell != null && !isSelectingGrid && (

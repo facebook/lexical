@@ -225,9 +225,9 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
     [activeCell, editor],
   );
 
-  const toggleResize = useCallback(
-    (direction: MouseDraggingDirection): MouseEventHandler<HTMLDivElement> =>
-      (event) => {
+  const mouseUpHandler = useCallback(
+    (direction: MouseDraggingDirection) => {
+      const handler = (event: MouseEvent) => {
         event.preventDefault();
         event.stopPropagation();
 
@@ -235,16 +235,15 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
           throw new Error('TableCellResizer: Expected active cell.');
         }
 
-        if (draggingDirection === direction && mouseStartPosRef.current) {
+        if (mouseStartPosRef.current) {
           const {x, y} = mouseStartPosRef.current;
 
           if (activeCell === null) {
             return;
           }
 
-          const {height, width} = activeCell.elem.getBoundingClientRect();
-
           if (isHeightChanging(direction)) {
+            const height = activeCell.elem.getBoundingClientRect().height;
             const heightChange = Math.abs(event.clientY - y);
 
             const isShrinking = direction === 'bottom' && y > event.clientY;
@@ -256,6 +255,11 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
               ),
             );
           } else {
+            const computedStyle = getComputedStyle(activeCell.elem);
+            let width = activeCell.elem.clientWidth; // width with padding
+            width -=
+              parseFloat(computedStyle.paddingLeft) +
+              parseFloat(computedStyle.paddingRight);
             const widthChange = Math.abs(event.clientX - x);
 
             const isShrinking = direction === 'right' && x > event.clientX;
@@ -269,14 +273,32 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
           }
 
           resetState();
-        } else {
-          mouseStartPosRef.current = {
-            x: event.clientX,
-            y: event.clientY,
-          };
-          updateMouseCurrentPos(mouseStartPosRef.current);
-          updateDraggingDirection(direction);
+          document.removeEventListener('mouseup', handler);
         }
+      };
+      return handler;
+    },
+    [activeCell, resetState, updateColumnWidth, updateRowHeight],
+  );
+
+  const toggleResize = useCallback(
+    (direction: MouseDraggingDirection): MouseEventHandler<HTMLDivElement> =>
+      (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (!activeCell) {
+          throw new Error('TableCellResizer: Expected active cell.');
+        }
+
+        mouseStartPosRef.current = {
+          x: event.clientX,
+          y: event.clientY,
+        };
+        updateMouseCurrentPos(mouseStartPosRef.current);
+        updateDraggingDirection(direction);
+
+        document.addEventListener('mouseup', mouseUpHandler(direction));
       },
     [
       activeCell,
@@ -284,6 +306,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
       resetState,
       updateColumnWidth,
       updateRowHeight,
+      mouseUpHandler,
     ],
   );
 
@@ -349,7 +372,6 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
   }, [activeCell, draggingDirection, mouseCurrentPos]);
 
   const resizerStyles = getResizers();
-
   return (
     <div ref={resizerRef}>
       {activeCell != null && !isSelectingGrid && (
@@ -358,13 +380,11 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
             className="TableCellResizer__resizer TableCellResizer__ui"
             style={resizerStyles.right || undefined}
             onMouseDown={toggleResize('right')}
-            onMouseUp={toggleResize('right')}
           />
           <div
             className="TableCellResizer__resizer TableCellResizer__ui"
             style={resizerStyles.bottom || undefined}
             onMouseDown={toggleResize('bottom')}
-            onMouseUp={toggleResize('bottom')}
           />
         </>
       )}

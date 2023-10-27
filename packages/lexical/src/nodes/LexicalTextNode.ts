@@ -1138,6 +1138,8 @@ function isNodePre(node: Node): boolean {
   return (
     node.nodeName === 'PRE' ||
     (node.nodeType === DOM_ELEMENT_TYPE &&
+      (node as HTMLElement).style !== undefined &&
+      (node as HTMLElement).style.whiteSpace !== undefined &&
       (node as HTMLElement).style.whiteSpace.startsWith('pre'))
   );
 }

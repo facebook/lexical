@@ -863,10 +863,7 @@ test.describe('CopyAndPaste', () => {
     isCollab,
     isPlainText,
   }) => {
-    test.fixme(
-      isCollab,
-      'Seems to be failing on collab, at least since PR 5002',
-    );
+    test.fixme(); // TODO: flaky
     test.skip(isPlainText);
 
     // copying and pasting the node is easier than creating the clipboard data

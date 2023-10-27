@@ -503,7 +503,7 @@ declare export class RangeSelection implements BaseSelection {
   insertRawText(text: string): void;
   removeText(): void;
   formatText(formatType: TextFormatType): void;
-  insertNodes(nodes: Array<LexicalNode>, selectStart?: boolean): boolean;
+  insertNodes(nodes: Array<LexicalNode>): void;
   insertParagraph(): void;
   insertLineBreak(selectStart?: boolean): void;
   getCharacterOffsets(): [number, number];
@@ -567,10 +567,7 @@ declare export function $getPreviousSelection():
   | RangeSelection
   | NodeSelection
   | GridSelection;
-declare export function $insertNodes(
-  nodes: Array<LexicalNode>,
-  selectStart?: boolean,
-): boolean;
+declare export function $insertNodes(nodes: Array<LexicalNode>): void;
 export type GridMapValueType = {
   cell: deprecated_GridCellNode,
   startRow: number,

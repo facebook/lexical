@@ -45,6 +45,7 @@ import {
   ElementNode,
   $isTabNode,
   $createTabNode,
+  $isTextNode,
 } from 'lexical';
 import {
   $isCodeHighlightNode,
@@ -254,14 +255,10 @@ export class CodeNode extends ElementNode {
     // If the selection is within the codeblock, find all leading tabs and
     // spaces of the current line. Create a new line that has all those
     // tabs and spaces, such that leading indentation is preserved.
-    const anchor = selection.anchor;
-    const focus = selection.focus;
+    const {anchor, focus} = selection;
     const firstPoint = anchor.isBefore(focus) ? anchor : focus;
     const firstSelectionNode = firstPoint.getNode();
-    if (
-      $isCodeHighlightNode(firstSelectionNode) ||
-      $isTabNode(firstSelectionNode)
-    ) {
+    if ($isTextNode(firstSelectionNode)) {
       let node = getFirstCodeNodeOfLine(firstSelectionNode);
       const insertNodes = [];
       // eslint-disable-next-line no-constant-condition
@@ -285,10 +282,25 @@ export class CodeNode extends ElementNode {
           break;
         }
       }
-      if (insertNodes.length > 0) {
-        selection.insertNodes([$createLineBreakNode(), ...insertNodes]);
-        return insertNodes[insertNodes.length - 1];
+      const split = firstSelectionNode.splitText(anchor.offset)[0];
+      const x = anchor.offset === 0 ? 0 : 1;
+      const index = split.getIndexWithinParent() + x;
+      const codeNode = firstSelectionNode.getParentOrThrow();
+      const nodesToInsert = [$createLineBreakNode(), ...insertNodes];
+      codeNode.splice(index, 0, nodesToInsert);
+      const last = insertNodes.at(-1);
+      if (last) {
+        last.select();
+      } else if (anchor.offset === 0) {
+        split.selectPrevious();
+      } else {
+        split.getNextSibling()!.selectNext(0, 0);
       }
+    }
+    if ($isCodeNode(firstSelectionNode)) {
+      const {offset} = selection.anchor;
+      firstSelectionNode.splice(offset, 0, [$createLineBreakNode()]);
+      firstSelectionNode.select(offset + 1, offset + 1);
     }
 
     return null;

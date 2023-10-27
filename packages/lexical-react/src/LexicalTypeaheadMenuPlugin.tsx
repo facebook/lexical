@@ -18,6 +18,8 @@ import {
   $getSelection,
   $isRangeSelection,
   $isTextNode,
+  COMMAND_PRIORITY_LOW,
+  CommandListenerPriority,
   createCommand,
   LexicalCommand,
   LexicalEditor,
@@ -200,6 +202,7 @@ export type TypeaheadMenuPluginProps<TOption extends MenuOption> = {
   onOpen?: (resolution: MenuResolution) => void;
   onClose?: () => void;
   anchorClassName?: string;
+  commandPriority?: CommandListenerPriority;
 };
 
 export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
@@ -211,6 +214,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
   menuRenderFn,
   triggerFn,
   anchorClassName,
+  commandPriority = COMMAND_PRIORITY_LOW,
 }: TypeaheadMenuPluginProps<TOption>): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   const [resolution, setResolution] = useState<MenuResolution | null>(null);
@@ -305,6 +309,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
       menuRenderFn={menuRenderFn}
       shouldSplitNodeWithQuery={true}
       onSelectOption={onSelectOption}
+      commandPriority={commandPriority}
     />
   );
 }

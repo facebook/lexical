@@ -8,7 +8,11 @@
 import type {MenuRenderFn, MenuResolution} from './shared/LexicalMenu';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {LexicalNode} from 'lexical';
+import {
+  COMMAND_PRIORITY_LOW,
+  CommandListenerPriority,
+  LexicalNode,
+} from 'lexical';
 import {
   MutableRefObject,
   ReactPortal,
@@ -45,6 +49,7 @@ export type LexicalContextMenuPluginProps<TOption extends MenuOption> = {
   onOpen?: (resolution: MenuResolution) => void;
   menuRenderFn: ContextMenuRenderFn<TOption>;
   anchorClassName?: string;
+  commandPriority?: CommandListenerPriority;
 };
 
 const PRE_PORTAL_DIV_SIZE = 1;
@@ -56,6 +61,7 @@ export function LexicalContextMenuPlugin<TOption extends MenuOption>({
   onSelectOption,
   menuRenderFn: contextMenuRenderFn,
   anchorClassName,
+  commandPriority = COMMAND_PRIORITY_LOW,
 }: LexicalContextMenuPluginProps<TOption>): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   const [resolution, setResolution] = useState<MenuResolution | null>(null);
@@ -143,6 +149,7 @@ export function LexicalContextMenuPlugin<TOption extends MenuOption>({
         })
       }
       onSelectOption={onSelectOption}
+      commandPriority={commandPriority}
     />
   );
 }

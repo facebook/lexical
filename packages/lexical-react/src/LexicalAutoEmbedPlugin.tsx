@@ -5,7 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {LexicalNode, MutationListener} from 'lexical';
+import type {
+  CommandListenerPriority,
+  LexicalNode,
+  MutationListener,
+} from 'lexical';
 
 import {$isLinkNode, AutoLinkNode, LinkNode} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
@@ -19,6 +23,7 @@ import {
   $getNodeByKey,
   $getSelection,
   COMMAND_PRIORITY_EDITOR,
+  COMMAND_PRIORITY_LOW,
   createCommand,
   LexicalCommand,
   LexicalEditor,
@@ -78,6 +83,7 @@ type LexicalAutoEmbedPluginProps<TEmbedConfig extends EmbedConfig> = {
     dismissFn: () => void,
   ) => Array<AutoEmbedOption>;
   menuRenderFn: MenuRenderFn<AutoEmbedOption>;
+  menuCommandPriority?: CommandListenerPriority;
 };
 
 export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
@@ -85,6 +91,7 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
   onOpenEmbedModalForConfig,
   getMenuOptions,
   menuRenderFn,
+  menuCommandPriority = COMMAND_PRIORITY_LOW,
 }: LexicalAutoEmbedPluginProps<TEmbedConfig>): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
 
@@ -223,6 +230,7 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
       onSelectOption={onSelectOption}
       options={options}
       menuRenderFn={menuRenderFn}
+      commandPriority={menuCommandPriority}
     />
   ) : null;
 }

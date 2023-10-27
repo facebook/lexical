@@ -240,7 +240,7 @@ export function useDynamicPositioning(
       return () => {
         resizeObserver.unobserve(targetElement);
         window.removeEventListener('resize', onReposition);
-        document.removeEventListener('scroll', handleScroll);
+        document.removeEventListener('scroll', handleScroll, true);
       };
     }
   }, [targetElement, editor, onVisibilityChange, onReposition, resolution]);

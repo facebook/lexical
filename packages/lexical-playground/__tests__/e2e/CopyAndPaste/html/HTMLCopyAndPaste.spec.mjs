@@ -208,7 +208,6 @@ test.describe('HTML CopyAndPaste', () => {
       await assertHTML(
         page,
         html`
-          <p class="PlaygroundEditorTheme__paragraph"><br /></p>
           <hr class="" contenteditable="false" data-lexical-decorator="true" />
           <hr class="" contenteditable="false" data-lexical-decorator="true" />
           <div
@@ -229,7 +228,6 @@ test.describe('HTML CopyAndPaste', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         <hr class="" contenteditable="false" data-lexical-decorator="true" />
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
@@ -241,9 +239,9 @@ test.describe('HTML CopyAndPaste', () => {
     );
     await assertSelection(page, {
       anchorOffset: 16,
-      anchorPath: [2, 0, 0],
+      anchorPath: [1, 0, 0],
       focusOffset: 16,
-      focusPath: [2, 0, 0],
+      focusPath: [1, 0, 0],
     });
   });
 

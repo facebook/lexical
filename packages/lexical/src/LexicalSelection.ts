@@ -12,6 +12,7 @@ import type {NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextFormatType} from './nodes/LexicalTextNode';
 
+import {$getAncestor, INTERNAL_$isBlock} from '@lexical/utils';
 import invariant from 'shared/invariant';
 
 import {
@@ -20,12 +21,10 @@ import {
   $createTextNode,
   $isDecoratorNode,
   $isElementNode,
-  $isLeafNode,
   $isLineBreakNode,
   $isRootNode,
   $isTextNode,
   $setSelection,
-  DecoratorNode,
   DEPRECATED_$isGridCellNode,
   DEPRECATED_$isGridNode,
   DEPRECATED_$isGridRowNode,
@@ -60,7 +59,6 @@ import {
   $isRootOrShadowRoot,
   $isTokenOrSegmented,
   $setCompositionKey,
-  $splitNode,
   doesContainGrapheme,
   getDOMSelection,
   getDOMTextNode,
@@ -73,7 +71,7 @@ import {
   scrollIntoViewIfNeeded,
   toggleTextFormatType,
 } from './LexicalUtils';
-import {$createTabNode} from './nodes/LexicalTabNode';
+import {$createTabNode, $isTabNode} from './nodes/LexicalTabNode';
 
 export type TextPointType = {
   _selection: RangeSelection | GridSelection;
@@ -244,17 +242,6 @@ function $transferStartingElementPointToTextPoint(
     element.append(target);
   } else {
     placementNode.insertBefore(target);
-    // Fix the end point offset if it refers to the same element as start,
-    // as we've now inserted another element before it. Note that we only
-    // do it if selection is not collapsed as otherwise it'll transfer
-    // both focus and anchor to the text node below
-    if (
-      end.type === 'element' &&
-      end.key === start.key &&
-      end.offset !== start.offset
-    ) {
-      end.set(end.key, end.offset + 1, 'element');
-    }
   }
   // Transfer the element point to a text point.
   if (start.is(end)) {
@@ -344,7 +331,7 @@ export class NodeSelection implements BaseSelection {
     // Do nothing?
   }
 
-  insertNodes(nodes: Array<LexicalNode>, selectStart?: boolean): boolean {
+  insertNodes(nodes: Array<LexicalNode>) {
     const selectedNodes = this.getNodes();
     const selectedNodesLength = selectedNodes.length;
     const lastSelectedNode = selectedNodes[selectedNodesLength - 1];
@@ -356,13 +343,11 @@ export class NodeSelection implements BaseSelection {
       const index = lastSelectedNode.getIndexWithinParent() + 1;
       selectionAtEnd = lastSelectedNode.getParentOrThrow().select(index, index);
     }
-    selectionAtEnd.insertNodes(nodes, selectStart);
+    selectionAtEnd.insertNodes(nodes);
     // Remove selected nodes
     for (let i = 0; i < selectedNodesLength; i++) {
       selectedNodes[i].remove();
     }
-
-    return true;
   }
 
   getNodes(): Array<LexicalNode> {
@@ -404,6 +389,64 @@ export type GridSelectionShape = {
   toX: number;
   toY: number;
 };
+
+export function DEPRECATED_$getGridCellNodeRect(
+  GridCellNode: DEPRECATED_GridCellNode,
+): {
+  rowIndex: number;
+  columnIndex: number;
+  rowSpan: number;
+  colSpan: number;
+} | null {
+  const [CellNode, , GridNode] = DEPRECATED_$getNodeTriplet(GridCellNode);
+  const rows = GridNode.getChildren();
+  const rowCount = rows.length;
+  const columnCount = rows[0].getChildren().length;
+
+  // Create a matrix of the same size as the table to track the position of each cell
+  const cellMatrix = new Array(rowCount);
+  for (let i = 0; i < rowCount; i++) {
+    cellMatrix[i] = new Array(columnCount);
+  }
+
+  for (let rowIndex = 0; rowIndex < rowCount; rowIndex++) {
+    const row = rows[rowIndex];
+    const cells = row.getChildren();
+    let columnIndex = 0;
+
+    for (let cellIndex = 0; cellIndex < cells.length; cellIndex++) {
+      // Find the next available position in the matrix, skip the position of merged cells
+      while (cellMatrix[rowIndex][columnIndex]) {
+        columnIndex++;
+      }
+
+      const cell = cells[cellIndex];
+      const rowSpan = cell.__rowSpan || 1;
+      const colSpan = cell.__colSpan || 1;
+
+      // Put the cell into the corresponding position in the matrix
+      for (let i = 0; i < rowSpan; i++) {
+        for (let j = 0; j < colSpan; j++) {
+          cellMatrix[rowIndex + i][columnIndex + j] = cell;
+        }
+      }
+
+      // Return to the original index, row span and column span of the cell.
+      if (CellNode === cell) {
+        return {
+          colSpan,
+          columnIndex,
+          rowIndex,
+          rowSpan,
+        };
+      }
+
+      columnIndex += colSpan;
+    }
+  }
+
+  return null;
+}
 
 export class GridSelection implements BaseSelection {
   gridKey: NodeKey;
@@ -471,35 +514,55 @@ export class GridSelection implements BaseSelection {
     // Do nothing?
   }
 
-  insertNodes(nodes: Array<LexicalNode>, selectStart?: boolean): boolean {
+  insertNodes(nodes: Array<LexicalNode>) {
     const focusNode = this.focus.getNode();
     const selection = $normalizeSelection(
       focusNode.select(0, focusNode.getChildrenSize()),
     );
-    return selection.insertNodes(nodes, selectStart);
+    selection.insertNodes(nodes);
   }
 
   // TODO Deprecate this method. It's confusing when used with colspan|rowspan
   getShape(): GridSelectionShape {
     const anchorCellNode = $getNodeByKey(this.anchor.key);
-    invariant(anchorCellNode !== null, 'getNodes: expected to find AnchorNode');
-    const anchorCellNodeIndex = anchorCellNode.getIndexWithinParent();
-    const anchorCelRoweIndex = anchorCellNode
-      .getParentOrThrow()
-      .getIndexWithinParent();
+    invariant(
+      DEPRECATED_$isGridCellNode(anchorCellNode),
+      'Expected GridSelection anchor to be (or a child of) GridCellNode',
+    );
+    const anchorCellNodeRect = DEPRECATED_$getGridCellNodeRect(anchorCellNode);
+    invariant(
+      anchorCellNodeRect !== null,
+      'getCellRect: expected to find AnchorNode',
+    );
 
     const focusCellNode = $getNodeByKey(this.focus.key);
-    invariant(focusCellNode !== null, 'getNodes: expected to find FocusNode');
-    const focusCellNodeIndex = focusCellNode.getIndexWithinParent();
-    const focusCellRowIndex = focusCellNode
-      .getParentOrThrow()
-      .getIndexWithinParent();
+    invariant(
+      DEPRECATED_$isGridCellNode(focusCellNode),
+      'Expected GridSelection focus to be (or a child of) GridCellNode',
+    );
+    const focusCellNodeRect = DEPRECATED_$getGridCellNodeRect(focusCellNode);
+    invariant(
+      focusCellNodeRect !== null,
+      'getCellRect: expected to find focusCellNode',
+    );
 
-    const startX = Math.min(anchorCellNodeIndex, focusCellNodeIndex);
-    const stopX = Math.max(anchorCellNodeIndex, focusCellNodeIndex);
+    const startX = Math.min(
+      anchorCellNodeRect.columnIndex,
+      focusCellNodeRect.columnIndex,
+    );
+    const stopX = Math.max(
+      anchorCellNodeRect.columnIndex,
+      focusCellNodeRect.columnIndex,
+    );
 
-    const startY = Math.min(anchorCelRoweIndex, focusCellRowIndex);
-    const stopY = Math.max(anchorCelRoweIndex, focusCellRowIndex);
+    const startY = Math.min(
+      anchorCellNodeRect.rowIndex,
+      focusCellNodeRect.rowIndex,
+    );
+    const stopY = Math.max(
+      anchorCellNodeRect.rowIndex,
+      focusCellNodeRect.rowIndex,
+    );
 
     return {
       fromX: Math.min(startX, stopX),
@@ -1127,6 +1190,15 @@ export class RangeSelection implements BaseSelection {
           }
           return;
         }
+      } else if ($isTabNode(firstNode)) {
+        // We don't need to check for delCount because there is only the entire selected node case
+        // that can hit here for content size 1 and with canInsertTextBeforeAfter false
+        const textNode = $createTextNode(text);
+        textNode.setFormat(format);
+        textNode.setStyle(style);
+        textNode.select();
+        firstNode.replace(textNode);
+        return;
       }
       const delCount = endOffset - startOffset;
 
@@ -1188,7 +1260,10 @@ export class RangeSelection implements BaseSelection {
             lastNode.replace(textNode);
             lastNode = textNode;
           }
-          lastNode = (lastNode as TextNode).spliceText(0, endOffset, '');
+          // root node selections only select whole nodes, so no text splice is necessary
+          if (!$isRootNode(endPoint.getNode())) {
+            lastNode = (lastNode as TextNode).spliceText(0, endOffset, '');
+          }
           markedNodeKeysForKeep.add(lastNode.__key);
         } else {
           const lastNodeParent = lastNode.getParentOrThrow();
@@ -1446,521 +1521,129 @@ export class RangeSelection implements BaseSelection {
    * should be changed, replaced, or moved to accomodate the incoming ones.
    *
    * @param nodes - the nodes to insert
-   * @param selectStart - whether or not to select the start after the insertion.
-   * @returns true if the nodes were inserted successfully, false otherwise.
    */
-  insertNodes(nodes: Array<LexicalNode>, selectStart?: boolean): boolean {
-    // If there is a range selected remove the text in it
-    if (!this.isCollapsed()) {
-      const selectionEnd = this.isBackward() ? this.anchor : this.focus;
-
-      const nextSibling = selectionEnd.getNode().getNextSibling();
-      const nextSiblingKey = nextSibling ? nextSibling.getKey() : null;
-
-      const prevSibling = selectionEnd.getNode().getPreviousSibling();
-      const prevSiblingKey = prevSibling ? prevSibling.getKey() : null;
-
-      this.removeText();
-
-      // If the selection has been moved to an adjacent inline element, create
-      // a temporary text node that we can insert the nodes after.
-      if (this.isCollapsed() && this.focus.type === 'element') {
-        let textNode;
-
-        if (this.focus.key === nextSiblingKey && this.focus.offset === 0) {
-          textNode = $createTextNode();
-          this.focus.getNode().insertBefore(textNode);
-        } else if (
-          this.focus.key === prevSiblingKey &&
-          this.focus.offset === this.focus.getNode().getChildrenSize()
-        ) {
-          textNode = $createTextNode();
-          this.focus.getNode().insertAfter(textNode);
-        }
-
-        if (textNode) {
-          this.focus.set(textNode.__key, 0, 'text');
-          this.anchor.set(textNode.__key, 0, 'text');
-        }
-      }
+  insertNodes(nodes: Array<LexicalNode>) {
+    if (nodes.length === 0) {
+      return;
     }
-    const anchor = this.anchor;
-    const anchorOffset = anchor.offset;
-    const anchorNode = anchor.getNode();
-    let target: ElementNode | TextNode | DecoratorNode<unknown> | LexicalNode =
-      anchorNode;
+    if (this.anchor.key === 'root') {
+      this.insertParagraph();
+    }
+    const firstBlock = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
 
-    if (anchor.type === 'element') {
-      const element = anchor.getNode();
-      const placementNode = element.getChildAtIndex<ElementNode>(
-        anchorOffset - 1,
-      );
-      if (placementNode === null) {
-        target = element;
+    // case where we insert inside a code block
+    if ('__language' in firstBlock) {
+      if ('__language' in nodes[0]) {
+        this.insertText(nodes[0].getTextContent());
       } else {
-        target = placementNode;
+        const index = removeTextAndSplitBlock(this);
+        firstBlock.splice(index, 0, nodes);
+        const last = nodes.at(-1)!;
+        if (last.select) {
+          last.select();
+        } else last.selectNext(0, 0);
       }
+      return;
     }
-    const siblings = [];
 
-    // Get all remaining text node siblings in this element so we can
-    // append them after the last node we're inserting.
-    const nextSiblings = anchorNode.getNextSiblings();
-    const topLevelElement = $isRootOrShadowRoot(anchorNode)
-      ? null
-      : anchorNode.getTopLevelElementOrThrow();
+    const notInline = (node: LexicalNode) =>
+      ($isElementNode(node) || $isDecoratorNode(node)) && !node.isInline();
+    const isMergeable = (node: LexicalNode) =>
+      $isElementNode(node) &&
+      INTERNAL_$isBlock(node) &&
+      !node.isEmpty() &&
+      $isElementNode(firstBlock) &&
+      (!firstBlock.isEmpty() ||
+        !$isRootOrShadowRoot(firstBlock.getParentOrThrow()));
 
-    if ($isTextNode(anchorNode)) {
-      const textContent = anchorNode.getTextContent();
-      const textContentLength = textContent.length;
-      if (anchorOffset === 0 && textContentLength !== 0) {
-        const prevSibling = anchorNode.getPreviousSibling();
-        if (prevSibling !== null) {
-          target = prevSibling;
-        } else {
-          target = anchorNode.getParentOrThrow();
-        }
-        siblings.push(anchorNode);
-      } else if (anchorOffset === textContentLength) {
-        target = anchorNode;
-      } else if (anchorNode.isToken()) {
-        // Do nothing if we're inside a token node
-        return false;
+    const firstNotInline = nodes.find(notInline);
+
+    const shouldInsert = !$isElementNode(firstBlock) || !firstBlock.isEmpty();
+    const insertedParagraph = shouldInsert ? this.insertParagraph() : null;
+
+    const last = nodes.at(-1)!;
+    const nodeToSelect = $isElementNode(last)
+      ? last.getLastDescendant() || last
+      : last;
+    const nodeToSelectSize = nodeToSelect.getTextContentSize();
+
+    let currentBlock = firstBlock;
+    for (const node of nodes) {
+      if (node === firstNotInline && isMergeable(node)) {
+        currentBlock.append(...node.getChildren());
+      } else if (notInline(node)) {
+        currentBlock = currentBlock.insertAfter(node) as ElementNode;
       } else {
-        // If we started with a range selected grab the danglingText after the
-        // end of the selection and put it on our siblings array so we can
-        // append it after the last node we're inserting
-        let danglingText;
-        [target, danglingText] = anchorNode.splitText(anchorOffset);
-        siblings.push(danglingText);
-      }
-    }
-    const startingNode = target;
-
-    siblings.push(...nextSiblings);
-
-    const firstNode = nodes[0];
-    let didReplaceOrMerge = false;
-    let lastNode = null;
-
-    // Time to insert the nodes!
-    for (let i = 0; i < nodes.length; i++) {
-      const node = nodes[i];
-      if (
-        !$isRootOrShadowRoot(target) &&
-        !$isDecoratorNode(target) &&
-        $isElementNode(node) &&
-        !node.isInline()
-      ) {
-        // -----
-        // Heuristics for the replacement or merging of elements
-        // -----
-
-        // If we have an incoming element node as the first node, then we'll need
-        // see if we can merge any descendant leaf nodes into our existing target.
-        // We can do this by finding the first descendant in our node and then we can
-        // pluck it and its parent (siblings included) out and insert them directly
-        // into our target. We only do this for the first node, as we are only
-        // interested in merging with the anchor, which is our target.
-        //
-        // If we apply either the replacement or merging heuristics, we need to be
-        // careful that we're not trying to insert a non-element node into a root node,
-        // so we check if the target's parent after this logic is the root node and if
-        // so we trigger an invariant to ensure this problem is caught in development
-        // and fixed accordingly.
-
-        if (node.is(firstNode)) {
-          if (
-            $isElementNode(target) &&
-            target.isEmpty() &&
-            target.canReplaceWith(node)
-          ) {
-            target.replace(node);
-            target = node;
-            didReplaceOrMerge = true;
-            continue;
-          }
-          // We may have a node tree where there are many levels, for example with
-          // lists and tables. So let's find the first descendant to try and merge
-          // with. So if we have the target:
-          //
-          // Paragraph (1)
-          //   Text (2)
-          //
-          // and we are trying to insert:
-          //
-          // ListNode (3)
-          //   ListItemNode (4)
-          //     Text (5)
-          //   ListItemNode (6)
-          //
-          // The result would be:
-          //
-          // Paragraph (1)
-          //   Text (2)
-          //   Text (5)
-          //
-
-          const firstDescendant = node.getFirstDescendant();
-          if ($isLeafNode(firstDescendant)) {
-            let element = firstDescendant.getParentOrThrow();
-            while (element.isInline()) {
-              element = element.getParentOrThrow();
-            }
-            const children = element.getChildren();
-            const childrenLength = children.length;
-            if ($isElementNode(target)) {
-              let firstChild = target.getFirstChild();
-              for (let s = 0; s < childrenLength; s++) {
-                const child = children[s];
-                if (firstChild === null) {
-                  target.append(child);
-                } else {
-                  firstChild.insertAfter(child);
-                }
-                firstChild = child;
-              }
-            } else {
-              for (let s = childrenLength - 1; s >= 0; s--) {
-                target.insertAfter(children[s]);
-              }
-              target = target.getParentOrThrow();
-            }
-            lastNode = children[childrenLength - 1];
-            element.remove();
-            didReplaceOrMerge = true;
-            if (element.is(node)) {
-              continue;
-            }
-          }
-        }
-        if ($isTextNode(target)) {
-          if (topLevelElement === null) {
-            invariant(false, 'insertNode: topLevelElement is root node');
-          }
-          target = topLevelElement;
-        }
-      } else if (
-        didReplaceOrMerge &&
-        !$isElementNode(node) &&
-        !$isDecoratorNode(node) &&
-        $isRootOrShadowRoot(target.getParent<ElementNode>())
-      ) {
-        invariant(
-          false,
-          'insertNodes: cannot insert a non-element into a root node',
-        );
-      }
-      didReplaceOrMerge = false;
-      if ($isElementNode(target) && !target.isInline()) {
-        lastNode = node;
-        if ($isDecoratorNode(node) && !node.isInline()) {
-          if (nodes.length === 1 && target.canBeEmpty() && target.isEmpty()) {
-            target = target.insertBefore(node, false);
-          } else {
-            target = target.insertAfter(node, false);
-          }
-        } else if (!$isElementNode(node)) {
-          const firstChild = target.getFirstChild();
-          if (firstChild !== null) {
-            firstChild.insertBefore(node);
-          } else {
-            target.append(node);
-          }
-          target = node;
-        } else {
-          if (!node.canBeEmpty() && node.isEmpty()) {
-            continue;
-          }
-          if ($isRootNode(target)) {
-            const placementNode = target.getChildAtIndex(anchorOffset);
-            if (placementNode !== null) {
-              placementNode.insertBefore(node);
-            } else {
-              target.append(node);
-            }
-            target = node;
-          } else if (node.isInline()) {
-            target.append(node);
-            target = node;
-          } else {
-            target = target.insertAfter(node, false);
-          }
-        }
-      } else if (
-        !$isElementNode(node) ||
-        ($isElementNode(node) && node.isInline()) ||
-        ($isDecoratorNode(target) && !target.isInline())
-      ) {
-        lastNode = node;
-        // when pasting top level node in the middle of paragraph
-        // we need to split paragraph instead of placing it inline
-        if (
-          $isRangeSelection(this) &&
-          $isDecoratorNode(node) &&
-          ($isElementNode(target) || $isTextNode(target)) &&
-          !node.isInline()
-        ) {
-          let splitNode: ElementNode;
-          let splitOffset: number;
-
-          if ($isTextNode(target)) {
-            splitNode = target.getParentOrThrow();
-            const [textNode] = target.splitText(anchorOffset);
-            splitOffset = textNode.getIndexWithinParent() + 1;
-          } else {
-            splitNode = target;
-            splitOffset = anchorOffset;
-          }
-          const [, rightTree] = $splitNode(splitNode, splitOffset);
-          target = rightTree.insertBefore(node);
-        } else {
-          target = target.insertAfter(node, false);
-        }
-      } else {
-        const nextTarget: ElementNode = target.getParentOrThrow();
-        // if we're inserting an Element after a LineBreak, we want to move the target to the parent
-        // and remove the LineBreak so we don't have empty space.
-        if ($isLineBreakNode(target)) {
-          target.remove();
-        }
-        target = nextTarget;
-        // Re-try again with the target being the parent
-        i--;
-        continue;
+        currentBlock.append(node);
       }
     }
 
-    if (selectStart) {
-      // Handle moving selection to start for all nodes
-      if ($isTextNode(startingNode)) {
-        startingNode.select();
-      } else {
-        const prevSibling = target.getPreviousSibling();
-        if ($isTextNode(prevSibling)) {
-          prevSibling.select();
-        } else {
-          const index = target.getIndexWithinParent();
-          target.getParentOrThrow().select(index, index);
-        }
-      }
+    if (
+      insertedParagraph &&
+      $isElementNode(currentBlock) &&
+      INTERNAL_$isBlock(currentBlock)
+    ) {
+      currentBlock.append(...insertedParagraph.getChildren());
+      insertedParagraph.remove();
+    }
+    if ($isElementNode(firstBlock) && firstBlock.isEmpty()) {
+      firstBlock.remove();
     }
 
-    if ($isElementNode(target)) {
-      // If the last node to be inserted was a text node,
-      // then we should attempt to move selection to that.
-      const lastChild = $isTextNode(lastNode)
-        ? lastNode
-        : $isElementNode(lastNode) && lastNode.isInline()
-        ? lastNode.getLastDescendant()
-        : target.getLastDescendant();
-      if (!selectStart) {
-        // Handle moving selection to end for elements
-        if (lastChild === null) {
-          target.select();
-        } else if ($isTextNode(lastChild)) {
-          if (lastChild.getTextContent() === '') {
-            lastChild.selectPrevious();
-          } else {
-            lastChild.select();
-          }
-        } else {
-          lastChild.selectNext();
-        }
-      }
-      if (siblings.length !== 0) {
-        const originalTarget = target;
-        for (let i = siblings.length - 1; i >= 0; i--) {
-          const sibling = siblings[i];
-          const prevParent = sibling.getParentOrThrow();
-          if (
-            $isElementNode(target) &&
-            !$isBlockElementNode(sibling) &&
-            !(
-              $isDecoratorNode(sibling) &&
-              // Note: We are only looking for decorators that are inline and not isolated.
-              (!sibling.isInline() || sibling.isIsolated())
-            )
-          ) {
-            if (originalTarget === target) {
-              target.append(sibling);
-            } else {
-              target.insertBefore(sibling);
-            }
-            target = sibling;
-          } else if (!$isElementNode(target) && !$isBlockElementNode(sibling)) {
-            target.insertBefore(sibling);
-            target = sibling;
-          } else {
-            if ($isElementNode(sibling) && !sibling.canInsertAfter(target)) {
-              // @ts-ignore The clone method does exist on the constructor.
-              const prevParentClone = prevParent.constructor.clone(prevParent);
-              if (!$isElementNode(prevParentClone)) {
-                invariant(
-                  false,
-                  'insertNodes: cloned parent clone is not an element',
-                );
-              }
-              prevParentClone.append(sibling);
-              target.insertAfter(prevParentClone);
-            } else {
-              target.insertAfter(sibling);
-            }
-          }
-          // Check if the prev parent is empty, as it might need
-          // removing.
-          if (prevParent.isEmpty() && !prevParent.canBeEmpty()) {
-            prevParent.remove();
-          }
-        }
-      }
-    } else if (!selectStart) {
-      // Handle moving selection to end for other nodes
-      if ($isTextNode(target)) {
-        target.select();
-      } else {
-        const element = target.getParentOrThrow();
-        const index = target.getIndexWithinParent() + 1;
-        element.select(index, index);
-      }
+    if (!nodeToSelect.select) {
+      nodeToSelect.selectNext(0, 0);
+    } else {
+      nodeToSelect.select(nodeToSelectSize, nodeToSelectSize);
     }
-    return true;
+
+    const lastChild = $isElementNode(firstBlock)
+      ? firstBlock.getLastChild()
+      : null;
+    if ($isLineBreakNode(lastChild) && currentBlock !== firstBlock) {
+      lastChild.remove();
+    }
   }
 
   /**
    * Inserts a new ParagraphNode into the EditorState at the current Selection
+   *
+   * @returns the newly inserted node.
    */
-  insertParagraph(): void {
-    if (!this.isCollapsed()) {
-      this.removeText();
+  insertParagraph(): ElementNode | null {
+    if (this.anchor.key === 'root') {
+      const paragraph = $createParagraphNode();
+      $getRoot().splice(this.anchor.offset, 0, [paragraph]);
+      paragraph.select();
+      return paragraph;
     }
-    const anchor = this.anchor;
-    const anchorOffset = anchor.offset;
-    let currentElement;
-    let nodesToMove = [];
-    let siblingsToMove: Array<LexicalNode> = [];
-    if (anchor.type === 'text') {
-      const anchorNode = anchor.getNode();
-      nodesToMove = anchorNode.getNextSiblings().reverse();
-      currentElement = anchorNode.getParentOrThrow();
-      const isInline = currentElement.isInline();
-      const textContentLength = isInline
-        ? currentElement.getTextContentSize()
-        : anchorNode.getTextContentSize();
-      if (anchorOffset === 0) {
-        nodesToMove.push(anchorNode);
-      } else {
-        if (isInline) {
-          // For inline nodes, we want to move all the siblings to the new paragraph
-          // if selection is at the end, we just move the siblings. Otherwise, we also
-          // split the text node and add that and it's siblings below.
-          siblingsToMove = currentElement.getNextSiblings();
-        }
-        if (anchorOffset !== textContentLength) {
-          if (!isInline || anchorOffset !== anchorNode.getTextContentSize()) {
-            const [, splitNode] = anchorNode.splitText(anchorOffset);
-            nodesToMove.push(splitNode);
-          }
-        }
-      }
-    } else {
-      currentElement = anchor.getNode();
-      if ($isRootOrShadowRoot(currentElement)) {
-        const paragraph = $createParagraphNode();
-        const child = currentElement.getChildAtIndex(anchorOffset);
-        paragraph.select();
-        if (child !== null) {
-          child.insertBefore(paragraph, false);
-        } else {
-          currentElement.append(paragraph);
-        }
-        return;
-      }
-      nodesToMove = currentElement.getChildren().slice(anchorOffset).reverse();
+    const index = removeTextAndSplitBlock(this);
+    const block = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
+    const firstToAppend = block.getChildAtIndex(index);
+    const nodesToInsert = firstToAppend
+      ? [firstToAppend, ...firstToAppend.getNextSiblings()]
+      : [];
+    const newBlock = block.insertNewAfter(this, false) as ElementNode | null;
+    if (newBlock) {
+      newBlock.append(...nodesToInsert);
+      newBlock.selectStart();
+      return newBlock;
     }
-    const nodesToMoveLength = nodesToMove.length;
-    if (
-      anchorOffset === 0 &&
-      nodesToMoveLength > 0 &&
-      currentElement.isInline()
-    ) {
-      const parent = currentElement.getParentOrThrow();
-      const newElement = parent.insertNewAfter(this, false);
-      if ($isElementNode(newElement)) {
-        const children = parent.getChildren();
-        for (let i = 0; i < children.length; i++) {
-          newElement.append(children[i]);
-        }
-      }
-      return;
-    }
-    const newElement = currentElement.insertNewAfter(this, false);
-    if (newElement === null) {
-      // Handle as a line break insertion
-      this.insertLineBreak();
-    } else if ($isElementNode(newElement)) {
-      // If we're at the beginning of the current element, move the new element to be before the current element
-      const currentElementFirstChild = currentElement.getFirstChild();
-      const isBeginning =
-        anchorOffset === 0 &&
-        (currentElement.is(anchor.getNode()) ||
-          (currentElementFirstChild &&
-            currentElementFirstChild.is(anchor.getNode())));
-      if (isBeginning && nodesToMoveLength > 0) {
-        currentElement.insertBefore(newElement);
-        return;
-      }
-      let firstChild = null;
-      const siblingsToMoveLength = siblingsToMove.length;
-      const parent = newElement.getParentOrThrow();
-      // For inline elements, we append the siblings to the parent.
-      if (siblingsToMoveLength > 0) {
-        for (let i = 0; i < siblingsToMoveLength; i++) {
-          const siblingToMove = siblingsToMove[i];
-          parent.append(siblingToMove);
-        }
-      }
-      if (nodesToMoveLength !== 0) {
-        for (let i = 0; i < nodesToMoveLength; i++) {
-          const nodeToMove = nodesToMove[i];
-          if (firstChild === null) {
-            newElement.append(nodeToMove);
-          } else {
-            firstChild.insertBefore(nodeToMove);
-          }
-          firstChild = nodeToMove;
-        }
-      }
-      if (!newElement.canBeEmpty() && newElement.getChildrenSize() === 0) {
-        newElement.selectPrevious();
-        newElement.remove();
-      } else {
-        newElement.selectStart();
-      }
-    }
+    // if newBlock is null, it means that block is of type CodeNode.
+    return null;
   }
 
   /**
    * Inserts a logical linebreak, which may be a new LineBreakNode or a new ParagraphNode, into the EditorState at the
    * current Selection.
-   *
-   * @param selectStart whether or not to select the start of the insertion range after the operation completes.
    */
   insertLineBreak(selectStart?: boolean): void {
-    const lineBreakNode = $createLineBreakNode();
-    const anchor = this.anchor;
-    if (anchor.type === 'element') {
-      const element = anchor.getNode();
-      if ($isRootNode(element)) {
-        this.insertParagraph();
-      }
-    }
+    const lineBreak = $createLineBreakNode();
+    this.insertNodes([lineBreak]);
+    // this is used in MacOS with the command 'ctrl-O' (openLineBreak)
     if (selectStart) {
-      this.insertNodes([lineBreakNode], true);
-    } else {
-      if (this.insertNodes([lineBreakNode])) {
-        lineBreakNode.selectNext(0, 0);
-      }
+      const parent = lineBreak.getParentOrThrow();
+      const index = lineBreak.getIndexWithinParent();
+      parent.select(index, index);
     }
   }
 
@@ -3270,16 +2953,13 @@ export function updateDOMSelection(
   markSelectionChangeFromDOMUpdate();
 }
 
-export function $insertNodes(
-  nodes: Array<LexicalNode>,
-  selectStart?: boolean,
-): boolean {
+export function $insertNodes(nodes: Array<LexicalNode>) {
   let selection = $getSelection() || $getPreviousSelection();
 
   if (selection === null) {
     selection = $getRoot().selectEnd();
   }
-  return selection.insertNodes(nodes, selectStart);
+  selection.insertNodes(nodes);
 }
 
 export function $getTextContent(): string {
@@ -3390,4 +3070,38 @@ export function DEPRECATED_$getNodeTriplet(
     'Expected GridRowNode to have a parent GridNode',
   );
   return [cell, row, grid];
+}
+
+function removeTextAndSplitBlock(selection: RangeSelection): number {
+  if (!selection.isCollapsed()) {
+    selection.removeText();
+  }
+  const point = selection.anchor;
+  const pointNode = point.getNode();
+  if (!$isTextNode(pointNode)) {
+    return point.offset;
+  }
+  const pointParent = pointNode.getParent();
+
+  if (!pointParent) {
+    const paragraph = $createParagraphNode();
+    $getRoot().append(paragraph);
+    paragraph.select();
+    return 0;
+  }
+
+  const split = pointNode.splitText(point.offset);
+  const x = point.offset === 0 ? 0 : 1;
+  const index = split[0].getIndexWithinParent() + x;
+
+  if (!pointParent.isInline() || index === 0) {
+    return index;
+  }
+
+  const firstToAppend = pointParent.getChildAtIndex(index);
+  if (firstToAppend) {
+    const newBlock = pointParent.insertNewAfter(selection) as ElementNode;
+    newBlock.append(firstToAppend, ...firstToAppend.getNextSiblings());
+  }
+  return pointParent.getIndexWithinParent() + x;
 }

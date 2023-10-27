@@ -20,7 +20,11 @@ import type {
   SerializedElementNode,
 } from 'lexical';
 
-import {addClassNamesToElement, isHTMLAnchorElement} from '@lexical/utils';
+import {
+  $getAncestor,
+  addClassNamesToElement,
+  isHTMLAnchorElement,
+} from '@lexical/utils';
 import {
   $applyNodeReplacement,
   $getSelection,
@@ -224,23 +228,16 @@ export class LinkNode extends ElementNode {
   }
 
   insertNewAfter(
-    selection: RangeSelection,
+    _: RangeSelection,
     restoreSelection = true,
   ): null | ElementNode {
-    const element = this.getParentOrThrow().insertNewAfter(
-      selection,
-      restoreSelection,
-    );
-    if ($isElementNode(element)) {
-      const linkNode = $createLinkNode(this.__url, {
-        rel: this.__rel,
-        target: this.__target,
-        title: this.__title,
-      });
-      element.append(linkNode);
-      return linkNode;
-    }
-    return null;
+    const linkNode = $createLinkNode(this.__url, {
+      rel: this.__rel,
+      target: this.__target,
+      title: this.__title,
+    });
+    this.insertAfter(linkNode, restoreSelection);
+    return linkNode;
   }
 
   canInsertTextBefore(): false {
@@ -283,7 +280,7 @@ function convertAnchorElement(domNode: Node): DOMConversionOutput {
   let node = null;
   if (isHTMLAnchorElement(domNode)) {
     const content = domNode.textContent;
-    if (content !== null && content !== '') {
+    if ((content !== null && content !== '') || domNode.children.length > 0) {
       node = $createLinkNode(domNode.getAttribute('href') || '', {
         rel: domNode.getAttribute('rel'),
         target: domNode.getAttribute('target'),
@@ -450,9 +447,7 @@ export function toggleLink(
       const firstNode = nodes[0];
       // if the first node is a LinkNode or if its
       // parent is a LinkNode, we update the URL, target and rel.
-      const linkNode = $isLinkNode(firstNode)
-        ? firstNode
-        : $getLinkAncestor(firstNode);
+      const linkNode = $getAncestor(firstNode, $isLinkNode);
       if (linkNode !== null) {
         linkNode.setURL(url);
         if (target !== undefined) {
@@ -533,21 +528,4 @@ export function toggleLink(
       }
     });
   }
-}
-
-function $getLinkAncestor(node: LexicalNode): null | LexicalNode {
-  return $getAncestor(node, $isLinkNode);
-}
-
-function $getAncestor<NodeType extends LexicalNode = LexicalNode>(
-  node: LexicalNode,
-  predicate: (ancestor: LexicalNode) => ancestor is NodeType,
-): null | LexicalNode {
-  let parent: null | LexicalNode = node;
-  while (
-    parent !== null &&
-    (parent = parent.getParent()) !== null &&
-    !predicate(parent)
-  );
-  return parent;
 }

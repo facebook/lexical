@@ -390,27 +390,23 @@ test.describe('HTML Lists CopyAndPaste', () => {
             dir="ltr">
             <span data-lexical-text="true">one</span>
           </li>
-          <li
-            value="2"
-            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
-            dir="ltr">
-            <span data-lexical-text="true">two</span>
-          </li>
         </ul>
         <hr class="" contenteditable="false" data-lexical-decorator="true" />
-        <div
-          class="PlaygroundEditorTheme__blockCursor"
-          contenteditable="false"
-          data-lexical-cursor="true"></div>
         <ul class="PlaygroundEditorTheme__ul">
           <li
-            value="1"
+            class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            value="1">
+            <span data-lexical-text="true">two</span>
+          </li>
+          <li
+            value="2"
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
             dir="ltr">
             <span data-lexical-text="true">three</span>
           </li>
           <li
-            value="2"
+            value="3"
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
             dir="ltr">
             <span data-lexical-text="true">four</span>

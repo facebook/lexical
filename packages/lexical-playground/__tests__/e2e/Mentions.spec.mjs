@@ -27,22 +27,26 @@ test.describe('Mentions', () => {
 
   test(`Can enter the Luke Skywalker mention`, async ({page}) => {
     await focusEditor(page);
-    await page.keyboard.type('Luke');
+    await page.keyboard.type('@Luke');
     await assertSelection(page, {
-      anchorOffset: 4,
+      anchorOffset: 5,
       anchorPath: [0, 0, 0],
-      focusOffset: 4,
+      focusOffset: 5,
       focusPath: [0, 0, 0],
     });
 
-    await waitForSelector(page, '#typeahead-menu ul li');
+    await waitForSelector(
+      page,
+      '#typeahead-menu ul li:has-text("Luke Skywalker")',
+    );
+
     await assertHTML(
       page,
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr">
-          <span data-lexical-text="true">Luke</span>
+          <span data-lexical-text="true">@Luke</span>
         </p>
       `,
     );
@@ -99,22 +103,26 @@ test.describe('Mentions', () => {
     page,
   }) => {
     await focusEditor(page);
-    await page.keyboard.type('Luke');
+    await page.keyboard.type('@Luke');
     await assertSelection(page, {
-      anchorOffset: 4,
+      anchorOffset: 5,
       anchorPath: [0, 0, 0],
-      focusOffset: 4,
+      focusOffset: 5,
       focusPath: [0, 0, 0],
     });
 
-    await waitForSelector(page, '#typeahead-menu ul li');
+    await waitForSelector(
+      page,
+      '#typeahead-menu ul li:has-text("Luke Skywalker")',
+    );
+
     await assertHTML(
       page,
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr">
-          <span data-lexical-text="true">Luke</span>
+          <span data-lexical-text="true">@Luke</span>
         </p>
       `,
     );
@@ -190,22 +198,26 @@ test.describe('Mentions', () => {
     page,
   }) => {
     await focusEditor(page);
-    await page.keyboard.type('Luke');
+    await page.keyboard.type('@Luke');
     await assertSelection(page, {
-      anchorOffset: 4,
+      anchorOffset: 5,
       anchorPath: [0, 0, 0],
-      focusOffset: 4,
+      focusOffset: 5,
       focusPath: [0, 0, 0],
     });
 
-    await waitForSelector(page, '#typeahead-menu ul li');
+    await waitForSelector(
+      page,
+      '#typeahead-menu ul li:has-text("Luke Skywalker")',
+    );
+
     await assertHTML(
       page,
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr">
-          <span data-lexical-text="true">Luke</span>
+          <span data-lexical-text="true">@Luke</span>
         </p>
       `,
     );
@@ -262,22 +274,26 @@ test.describe('Mentions', () => {
     page,
   }) => {
     await focusEditor(page);
-    await page.keyboard.type('Luke');
+    await page.keyboard.type('@Luke');
     await assertSelection(page, {
-      anchorOffset: 4,
+      anchorOffset: 5,
       anchorPath: [0, 0, 0],
-      focusOffset: 4,
+      focusOffset: 5,
       focusPath: [0, 0, 0],
     });
 
-    await waitForSelector(page, '#typeahead-menu ul li');
+    await waitForSelector(
+      page,
+      '#typeahead-menu ul li:has-text("Luke Skywalker")',
+    );
+
     await assertHTML(
       page,
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr">
-          <span data-lexical-text="true">Luke</span>
+          <span data-lexical-text="true">@Luke</span>
         </p>
       `,
     );
@@ -334,22 +350,26 @@ test.describe('Mentions', () => {
     page,
   }) => {
     await focusEditor(page);
-    await page.keyboard.type('Luke');
+    await page.keyboard.type('@Luke');
     await assertSelection(page, {
-      anchorOffset: 4,
+      anchorOffset: 5,
       anchorPath: [0, 0, 0],
-      focusOffset: 4,
+      focusOffset: 5,
       focusPath: [0, 0, 0],
     });
 
-    await waitForSelector(page, '#typeahead-menu ul li');
+    await waitForSelector(
+      page,
+      '#typeahead-menu ul li:has-text("Luke Skywalker")',
+    );
+
     await assertHTML(
       page,
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr">
-          <span data-lexical-text="true">Luke</span>
+          <span data-lexical-text="true">@Luke</span>
         </p>
       `,
     );
@@ -435,16 +455,20 @@ test.describe('Mentions', () => {
       focusPath: [0, 0, 0],
     });
 
-    await page.keyboard.type('Luke');
+    await page.keyboard.type('@Luke');
 
-    await waitForSelector(page, '#typeahead-menu ul li');
+    await waitForSelector(
+      page,
+      '#typeahead-menu ul li:has-text("Luke Skywalker")',
+    );
+
     await assertHTML(
       page,
       html`
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr">
-          <span data-lexical-text="true">abc Luke def</span>
+          <span data-lexical-text="true">abc @Luke def</span>
         </p>
       `,
     );
@@ -505,42 +529,54 @@ test.describe('Mentions', () => {
     browserName,
   }) => {
     await focusEditor(page);
-    await page.keyboard.type('Luke');
+    await page.keyboard.type('@Luke');
     await assertSelection(page, {
-      anchorOffset: 4,
+      anchorOffset: 5,
       anchorPath: [0, 0, 0],
-      focusOffset: 4,
+      focusOffset: 5,
       focusPath: [0, 0, 0],
     });
 
-    await waitForSelector(page, '#typeahead-menu ul li');
+    await waitForSelector(
+      page,
+      '#typeahead-menu ul li:has-text("Luke Skywalker")',
+    );
     await page.keyboard.press('Enter');
 
     await waitForSelector(page, '.mention');
 
     await page.keyboard.type(' ');
 
-    await page.keyboard.type('Luke');
+    await page.keyboard.type('@Luke');
 
-    await waitForSelector(page, '#typeahead-menu ul li');
+    await waitForSelector(
+      page,
+      '#typeahead-menu ul li:has-text("Luke Skywalker")',
+    );
     await page.keyboard.press('Enter');
 
     await waitForSelector(page, '.mention:nth-child(1)');
 
     await page.keyboard.type(' ');
 
-    await page.keyboard.type('Luke');
+    await page.keyboard.type('@Luke');
 
-    await waitForSelector(page, '#typeahead-menu ul li');
+    await waitForSelector(
+      page,
+      '#typeahead-menu ul li:has-text("Luke Skywalker")',
+    );
     await page.keyboard.press('Enter');
 
     await waitForSelector(page, '.mention:nth-child(3)');
 
     await page.keyboard.type(' ');
 
-    await page.keyboard.type('Luke');
+    await page.keyboard.type('@Luke');
 
-    await waitForSelector(page, '#typeahead-menu ul li');
+    await waitForSelector(
+      page,
+      '#typeahead-menu ul li:has-text("Luke Skywalker")',
+    );
     await page.keyboard.press('Enter');
 
     await waitForSelector(page, '.mention:nth-child(5)');
@@ -814,15 +850,18 @@ test.describe('Mentions', () => {
     page,
   }) => {
     await focusEditor(page);
-    await page.keyboard.type('Luke');
+    await page.keyboard.type('@Luke');
     await assertSelection(page, {
-      anchorOffset: 4,
+      anchorOffset: 5,
       anchorPath: [0, 0, 0],
-      focusOffset: 4,
+      focusOffset: 5,
       focusPath: [0, 0, 0],
     });
 
-    await waitForSelector(page, '#typeahead-menu ul li');
+    await waitForSelector(
+      page,
+      '#typeahead-menu ul li:has-text("Luke Skywalker")',
+    );
     await page.keyboard.press('Enter');
 
     await waitForSelector(page, '.mention');

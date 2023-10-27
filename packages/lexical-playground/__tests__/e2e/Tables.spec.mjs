@@ -400,7 +400,7 @@ test.describe('Tables', () => {
         </table>
         <p><br /></p>
       `,
-      {ignoreClasses: true},
+      {ignoreClasses: true, ignoreInlineStyles: true},
     );
   });
 

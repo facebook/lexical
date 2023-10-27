@@ -179,8 +179,10 @@ export function $insertDataTransferForRichText(
       let lastParagraphNode = $createParagraphNode();
       const nodes: Array<LexicalNode> = [lastParagraphNode];
       const parts = text.split(/(\r?\n|\t)/);
-      const partsLength = parts.length;
-      for (let i = 0; i < partsLength; i++) {
+      if (parts.at(-1) === '') {
+        parts.pop();
+      }
+      for (let i = 0; i < parts.length; i++) {
         const part = parts[i];
         if (part === '\n' || part === '\r\n') {
           lastParagraphNode = $createParagraphNode();

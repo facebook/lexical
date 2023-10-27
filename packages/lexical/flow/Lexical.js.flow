@@ -272,18 +272,30 @@ export const COMMAND_PRIORITY_NORMAL = 2;
 export const COMMAND_PRIORITY_HIGH = 3;
 export const COMMAND_PRIORITY_CRITICAL = 4;
 
+export type LexicalNodeReplacement = {
+  replace: Class<LexicalNode>,
+  with: (node: LexicalNode) => LexicalNode,
+  withKlass?: Class<LexicalNode>,
+};
+
+export type HTMLConfig = {
+  export?: Map<
+    Class<LexicalNode>,
+    (editor: LexicalEditor, target: LexicalNode) => DOMExportOutput,
+  >,
+  import?: DOMConversionMap,
+};
+
 declare export function createEditor(editorConfig?: {
   editorState?: EditorState,
   namespace: string,
   theme?: EditorThemeClasses,
   parentEditor?: LexicalEditor,
-  nodes?: $ReadOnlyArray<
-    | Class<LexicalNode>
-    | {replace: Class<LexicalNode>, with: (node: LexicalNode) => LexicalNode},
-  >,
+  nodes?: $ReadOnlyArray<Class<LexicalNode> | LexicalNodeReplacement>,
   onError: (error: Error) => void,
   disableEvents?: boolean,
   editable?: boolean,
+  html?: HTMLConfig,
 }): LexicalEditor;
 
 /**
@@ -491,7 +503,7 @@ declare export class RangeSelection implements BaseSelection {
   insertRawText(text: string): void;
   removeText(): void;
   formatText(formatType: TextFormatType): void;
-  insertNodes(nodes: Array<LexicalNode>, selectStart?: boolean): boolean;
+  insertNodes(nodes: Array<LexicalNode>): void;
   insertParagraph(): void;
   insertLineBreak(selectStart?: boolean): void;
   getCharacterOffsets(): [number, number];
@@ -555,10 +567,7 @@ declare export function $getPreviousSelection():
   | RangeSelection
   | NodeSelection
   | GridSelection;
-declare export function $insertNodes(
-  nodes: Array<LexicalNode>,
-  selectStart?: boolean,
-): boolean;
+declare export function $insertNodes(nodes: Array<LexicalNode>): void;
 export type GridMapValueType = {
   cell: deprecated_GridCellNode,
   startRow: number,
@@ -583,6 +592,7 @@ export type TextFormatType =
   | 'underline'
   | 'strikethrough'
   | 'italic'
+  | 'highlight'
   | 'code'
   | 'subscript'
   | 'superscript';

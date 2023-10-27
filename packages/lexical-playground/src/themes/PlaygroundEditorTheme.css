@@ -187,7 +187,7 @@
   width: 20px;
   background-color: #eee;
   height: 100%;
-  right: 0;
+  right: -25px;
   animation: table-controls 0.2s ease;
   border: 0;
   cursor: pointer;
@@ -429,4 +429,13 @@
 }
 .PlaygroundEditorTheme__embedBlockFocus {
   outline: 2px solid rgb(60, 132, 244);
+}
+.PlaygroundEditorTheme__layoutContaner {
+  display: grid;
+  gap: 10px;
+  margin: 10px 0;
+}
+.PlaygroundEditorTheme__layoutItem {
+  border: 1px dashed #ddd;
+  padding: 8px 16px;
 }

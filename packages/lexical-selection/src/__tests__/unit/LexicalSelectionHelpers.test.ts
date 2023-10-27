@@ -13,6 +13,7 @@ import {
   $patchStyleText,
 } from '@lexical/selection';
 import {
+  $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
   $getNodeByKey,
@@ -906,21 +907,20 @@ describe('LexicalSelectionHelpers tests', () => {
       // insertParagraph
       setupTestCase((selection, element) => {
         selection.insertParagraph();
-        const firstChild = element;
 
         expect(selection.anchor).toEqual(
           expect.objectContaining({
-            key: firstChild.getKey(),
+            key: 'a',
             offset: 0,
-            type: 'element',
+            type: 'text',
           }),
         );
 
         expect(selection.focus).toEqual(
           expect.objectContaining({
-            key: firstChild.getKey(),
+            key: 'a',
             offset: 0,
-            type: 'element',
+            type: 'text',
           }),
         );
       });
@@ -1079,22 +1079,21 @@ describe('LexicalSelectionHelpers tests', () => {
 
       // insertLineBreak
       setupTestCase((selection, element) => {
-        selection.insertLineBreak(true);
-        const thirdChild = $getNodeByKey('c');
+        selection.insertLineBreak();
 
         expect(selection.anchor).toEqual(
           expect.objectContaining({
-            key: thirdChild.getKey(),
-            offset: 1,
-            type: 'text',
+            key: element.getKey(),
+            offset: 4,
+            type: 'element',
           }),
         );
 
         expect(selection.focus).toEqual(
           expect.objectContaining({
-            key: thirdChild.getKey(),
-            offset: 1,
-            type: 'text',
+            key: element.getKey(),
+            offset: 4,
+            type: 'element',
           }),
         );
       });
@@ -1526,11 +1525,10 @@ describe('LexicalSelectionHelpers tests', () => {
       // insertParagraph
       setupTestCase((selection, element) => {
         selection.insertParagraph();
-        const firstChild = element.getFirstChild();
 
         expect(selection.anchor).toEqual(
           expect.objectContaining({
-            key: firstChild.getKey(),
+            key: 'b',
             offset: 0,
             type: 'text',
           }),
@@ -1538,7 +1536,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
         expect(selection.focus).toEqual(
           expect.objectContaining({
-            key: firstChild.getKey(),
+            key: 'b',
             offset: 0,
             type: 'text',
           }),
@@ -1934,7 +1932,7 @@ describe('LexicalSelectionHelpers tests', () => {
         );
       });
 
-      test('a heading node with a child text node and a disjoint sibling text node should throw', async () => {
+      test('a heading node with a child text node and a disjoint sibling text node', async () => {
         const editor = createTestEditor();
 
         const element = document.createElement('div');
@@ -1970,13 +1968,11 @@ describe('LexicalSelectionHelpers tests', () => {
             return;
           }
 
-          expect(() => {
-            selection.insertNodes([heading, $createTextNode('bar')]);
-          }).toThrow();
+          selection.insertNodes([heading, $createTextNode('bar')]);
         });
 
         expect(element.innerHTML).toBe(
-          '<h1 dir="ltr"><span data-lexical-text="true">foo</span></h1>',
+          '<h1 dir="ltr"><span data-lexical-text="true">foobar</span></h1>',
         );
       });
     });
@@ -2115,7 +2111,7 @@ describe('LexicalSelectionHelpers tests', () => {
         );
       });
 
-      test('a heading node with a child text node and a disjoint sibling text node should throw', async () => {
+      test('a heading node with a child text node and a disjoint sibling text node', async () => {
         const editor = createTestEditor();
 
         const element = document.createElement('div');
@@ -2154,13 +2150,11 @@ describe('LexicalSelectionHelpers tests', () => {
             return;
           }
 
-          expect(() => {
-            selection.insertNodes([heading, $createTextNode('bar')]);
-          }).toThrow();
+          selection.insertNodes([heading, $createTextNode('bar')]);
         });
 
         expect(element.innerHTML).toBe(
-          '<p dir="ltr"><span data-lexical-text="true">Existing text...foo</span></p>',
+          '<p dir="ltr"><span data-lexical-text="true">Existing text...foobar</span></p>',
         );
       });
 
@@ -2372,6 +2366,30 @@ describe('LexicalSelectionHelpers tests', () => {
         );
       });
     });
+
+    test.skip('can insert a linebreak node before an inline element node', async () => {
+      const editor = createTestEditor();
+      const element = document.createElement('div');
+      editor.setRootElement(element);
+
+      await editor.update(() => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        root.append(paragraph);
+        const link = $createLinkNode('https://lexical.dev/');
+        paragraph.append(link);
+        const text = $createTextNode('Lexical');
+        link.append(text);
+        text.select(0, 0);
+
+        $insertNodes([$createLineBreakNode()]);
+      });
+
+      // TODO #5109 ElementNode should have a way to control when other nodes can be inserted inside
+      expect(element.innerHTML).toBe(
+        '<p><a href="https://lexical.dev/" dir="ltr"><br><span data-lexical-text="true">Lexical</span></a></p>',
+      );
+    });
   });
 
   describe('can insert block element nodes correctly', () => {
@@ -2574,7 +2592,10 @@ describe('LexicalSelectionHelpers tests', () => {
         const element2 = $createTestElementNode();
         $insertNodes([element1, element2]);
       });
-      expect(element.innerHTML).toBe('<div><br></div><div><br></div>');
+      expect([
+        '<div><br></div><div><br></div>',
+        '<div><br></div><p><br></p>',
+      ]).toContain(element.innerHTML);
     });
   });
 });

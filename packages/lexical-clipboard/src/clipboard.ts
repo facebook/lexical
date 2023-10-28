@@ -16,12 +16,9 @@ import {$findMatchingParent, objectKlassEquals} from '@lexical/utils';
 import {
   $createParagraphNode,
   $createTabNode,
-  $createTextNode,
   $getRoot,
   $getSelection,
-  $isDecoratorNode,
   $isElementNode,
-  $isLineBreakNode,
   $isRangeSelection,
   $isTextNode,
   $parseSerializedNode,
@@ -35,7 +32,6 @@ import {
   DEPRECATED_$isGridSelection,
   DEPRECATED_GridNode,
   GridSelection,
-  INSERT_PASTED_NODES_COMMAND,
   isSelectionWithinEditor,
   LexicalEditor,
   LexicalNode,
@@ -148,8 +144,7 @@ export function $insertDataTransferForRichText(
         Array.isArray(payload.nodes)
       ) {
         const nodes = $generateNodesFromSerializedNodes(payload.nodes);
-        editor.dispatchCommand(INSERT_PASTED_NODES_COMMAND, {nodes, selection});
-        return;
+        return $insertGeneratedNodes(editor, nodes, selection);
       }
     } catch {
       // Fail silently.
@@ -162,8 +157,7 @@ export function $insertDataTransferForRichText(
       const parser = new DOMParser();
       const dom = parser.parseFromString(htmlString, 'text/html');
       const nodes = $generateNodesFromDOM(editor, dom);
-      editor.dispatchCommand(INSERT_PASTED_NODES_COMMAND, {nodes, selection});
-      return;
+      return $insertGeneratedNodes(editor, nodes, selection);
     } catch {
       // Fail silently.
     }
@@ -176,8 +170,6 @@ export function $insertDataTransferForRichText(
     dataTransfer.getData('text/plain') || dataTransfer.getData('text/uri-list');
   if (text != null) {
     if ($isRangeSelection(selection)) {
-      let lastParagraphNode = $createParagraphNode();
-      const nodes: Array<LexicalNode> = [lastParagraphNode];
       const parts = text.split(/(\r?\n|\t)/);
       if (parts.at(-1) === '') {
         parts.pop();
@@ -185,15 +177,13 @@ export function $insertDataTransferForRichText(
       for (let i = 0; i < parts.length; i++) {
         const part = parts[i];
         if (part === '\n' || part === '\r\n') {
-          lastParagraphNode = $createParagraphNode();
-          nodes.push(lastParagraphNode);
+          selection.insertParagraph();
         } else if (part === '\t') {
-          lastParagraphNode.append($createTabNode());
+          selection.insertNodes([$createTabNode()]);
         } else {
-          lastParagraphNode.append($createTextNode(part));
+          selection.insertText(part);
         }
       }
-      editor.dispatchCommand(INSERT_PASTED_NODES_COMMAND, {nodes, selection});
     } else {
       selection.insertRawText(text);
     }
@@ -233,60 +223,8 @@ export function $insertGeneratedNodes(
     return;
   }
 
-  $basicInsertStrategy(nodes, selection);
+  selection.insertNodes(nodes);
   return;
-}
-
-function $basicInsertStrategy(
-  nodes: LexicalNode[],
-  selection: RangeSelection | GridSelection,
-) {
-  // Wrap text and inline nodes in paragraph nodes so we have all blocks at the top-level
-  const topLevelBlocks = [];
-  let currentBlock = null;
-  for (let i = 0; i < nodes.length; i++) {
-    const node = nodes[i];
-
-    const isLineBreakNode = $isLineBreakNode(node);
-
-    if (
-      isLineBreakNode ||
-      ($isDecoratorNode(node) && node.isInline()) ||
-      ($isElementNode(node) && node.isInline()) ||
-      $isTextNode(node) ||
-      node.isParentRequired()
-    ) {
-      if (currentBlock === null) {
-        currentBlock = node.createParentElementNode();
-        topLevelBlocks.push(currentBlock);
-        // In the case of LineBreakNode, we just need to
-        // add an empty ParagraphNode to the topLevelBlocks.
-        if (isLineBreakNode) {
-          continue;
-        }
-      }
-
-      if (currentBlock !== null) {
-        currentBlock.append(node);
-      }
-    } else {
-      topLevelBlocks.push(node);
-      currentBlock = null;
-    }
-  }
-
-  if ($isRangeSelection(selection)) {
-    selection.insertNodes(topLevelBlocks);
-  } else if (DEPRECATED_$isGridSelection(selection)) {
-    // If there's an active grid selection and a non grid is pasted, add to the anchor.
-    const anchorCell = selection.anchor.getNode();
-
-    if (!DEPRECATED_$isGridCellNode(anchorCell)) {
-      invariant(false, 'Expected Grid Cell in Grid Selection');
-    }
-
-    anchorCell.append(...topLevelBlocks);
-  }
 }
 
 function $mergeGridNodesStrategy(

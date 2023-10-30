@@ -1558,14 +1558,25 @@ export class RangeSelection implements BaseSelection {
 
     const firstNotInline = nodes.find(notInline);
 
-    const shouldInsert = !$isElementNode(firstBlock) || !firstBlock.isEmpty();
-    const insertedParagraph = shouldInsert ? this.insertParagraph() : null;
-
     const last = nodes.at(-1)!;
     const nodeToSelect = $isElementNode(last)
       ? last.getLastDescendant() || last
       : last;
     const nodeToSelectSize = nodeToSelect.getTextContentSize();
+
+    if (!firstNotInline) {
+      const index = removeTextAndSplitBlock(this);
+      firstBlock.splice(index, 0, nodes);
+      if (!nodeToSelect.select) {
+        nodeToSelect.selectNext(0, 0);
+      } else {
+        nodeToSelect.select(nodeToSelectSize, nodeToSelectSize);
+      }
+      return;
+    }
+
+    const shouldInsert = !$isElementNode(firstBlock) || !firstBlock.isEmpty();
+    const insertedParagraph = shouldInsert ? this.insertParagraph() : null;
 
     let currentBlock = firstBlock;
     for (const node of nodes) {
@@ -1574,6 +1585,7 @@ export class RangeSelection implements BaseSelection {
       } else if (notInline(node)) {
         currentBlock = currentBlock.insertAfter(node) as ElementNode;
       } else {
+        currentBlock = currentBlock.insertNewAfter(undefined, true);
         currentBlock.append(node);
       }
     }
@@ -1589,7 +1601,6 @@ export class RangeSelection implements BaseSelection {
     if ($isElementNode(firstBlock) && firstBlock.isEmpty()) {
       firstBlock.remove();
     }
-
     if (!nodeToSelect.select) {
       nodeToSelect.selectNext(0, 0);
     } else {

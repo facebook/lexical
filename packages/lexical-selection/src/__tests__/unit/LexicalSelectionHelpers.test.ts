@@ -1972,7 +1972,7 @@ describe('LexicalSelectionHelpers tests', () => {
         });
 
         expect(element.innerHTML).toBe(
-          '<h1 dir="ltr"><span data-lexical-text="true">foobar</span></h1>',
+          '<h1 dir="ltr"><span data-lexical-text="true">foo</span></h1><p dir="ltr"><span data-lexical-text="true">bar</span></p>',
         );
       });
     });
@@ -2154,7 +2154,7 @@ describe('LexicalSelectionHelpers tests', () => {
         });
 
         expect(element.innerHTML).toBe(
-          '<p dir="ltr"><span data-lexical-text="true">Existing text...foobar</span></p>',
+          '<p dir="ltr"><span data-lexical-text="true">Existing text...foo</span></p><p dir="ltr"><span data-lexical-text="true">bar</span></p>',
         );
       });
 

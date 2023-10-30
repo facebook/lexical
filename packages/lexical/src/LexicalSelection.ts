@@ -1579,14 +1579,18 @@ export class RangeSelection implements BaseSelection {
     const insertedParagraph = shouldInsert ? this.insertParagraph() : null;
 
     let currentBlock = firstBlock;
+    let currentWrapper = null;
     for (const node of nodes) {
       if (node === firstNotInline && isMergeable(node)) {
         currentBlock.append(...node.getChildren());
       } else if (notInline(node)) {
+        currentWrapper = null;
         currentBlock = currentBlock.insertAfter(node) as ElementNode;
       } else {
-        currentBlock = currentBlock.insertNewAfter(undefined, true);
-        currentBlock.append(node);
+        currentWrapper = currentWrapper
+          ? currentWrapper
+          : currentBlock.insertNewAfter(undefined, true);
+        currentWrapper.append(node);
       }
     }
 

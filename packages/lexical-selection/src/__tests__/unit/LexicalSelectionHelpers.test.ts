@@ -15,6 +15,7 @@ import {
 import {
   $createLineBreakNode,
   $createParagraphNode,
+  $createRangeSelection,
   $createTextNode,
   $getNodeByKey,
   $getRoot,
@@ -22,6 +23,7 @@ import {
   $insertNodes,
   $isNodeSelection,
   $isRangeSelection,
+  $setSelection,
   RangeSelection,
   TextNode,
 } from 'lexical';
@@ -30,6 +32,7 @@ import {
   $createTestElementNode,
   $createTestShadowRootNode,
   createTestEditor,
+  createTestHeadlessEditor,
   TestDecoratorNode,
 } from 'lexical/src/__tests__/utils';
 
@@ -2668,6 +2671,35 @@ describe('insertNodes', () => {
         '<span data-lexical-decorator="true" contenteditable="false"></span>' +
         '<p dir="ltr"><span data-lexical-text="true">Text after</span></p>',
     );
+  });
+
+  it('can insert when previous selection was null', async () => {
+    const editor = createTestHeadlessEditor();
+    await editor.update(() => {
+      const selection = $createRangeSelection();
+      selection.anchor.set('root', 0, 'element');
+      selection.focus.set('root', 0, 'element');
+
+      selection.insertNodes([
+        $createParagraphNode().append($createTextNode('Text')),
+      ]);
+
+      expect($getRoot().getTextContent()).toBe('Text');
+
+      $setSelection(null);
+    });
+    await editor.update(() => {
+      const selection = $createRangeSelection();
+      const text = $getRoot().getLastDescendant();
+      selection.anchor.set(text.getKey(), 0, 'text');
+      selection.focus.set(text.getKey(), 0, 'text');
+
+      selection.insertNodes([
+        $createParagraphNode().append($createTextNode('Before ')),
+      ]);
+
+      expect($getRoot().getTextContent()).toBe('Before Text');
+    });
   });
 });
 

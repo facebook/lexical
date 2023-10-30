@@ -8,6 +8,7 @@
 
 import {CodeHighlightNode, CodeNode} from '@lexical/code';
 import {HashtagNode} from '@lexical/hashtag';
+import {createHeadlessEditor} from '@lexical/headless';
 import {AutoLinkNode, LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
 import {OverflowNode} from '@lexical/overflow';
@@ -502,6 +503,15 @@ export function createTestEditor(
     nodes: DEFAULT_NODES.concat(customNodes),
   });
   return editor;
+}
+
+export function createTestHeadlessEditor(): LexicalEditor {
+  return createHeadlessEditor({
+    namespace: '',
+    onError: (error) => {
+      throw error;
+    },
+  });
 }
 
 export function $assertRangeSelection(selection): RangeSelection {

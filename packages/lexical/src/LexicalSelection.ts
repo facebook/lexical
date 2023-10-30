@@ -1522,12 +1522,18 @@ export class RangeSelection implements BaseSelection {
    *
    * @param nodes - the nodes to insert
    */
-  insertNodes(nodes: Array<LexicalNode>) {
+  insertNodes(nodes: Array<LexicalNode>): void {
     if (nodes.length === 0) {
       return;
     }
     if (this.anchor.key === 'root') {
       this.insertParagraph();
+      const selection = $getSelection();
+      invariant(
+        $isRangeSelection(selection),
+        'Expected RangeSelection after insertParagraph',
+      );
+      return selection.insertNodes(nodes);
     }
     const firstBlock = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
 

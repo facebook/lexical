@@ -211,7 +211,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
 
           const aggregatedRowSpans = rowCellsSpan.reduce(
             (rowSpans, cellSpan) => {
-              const previousCell = rowSpans.at(-1) ?? 0;
+              const previousCell = rowSpans[rowSpans.length - 1] ?? 0;
               rowSpans.push(previousCell + cellSpan);
               return rowSpans;
             },

@@ -288,7 +288,7 @@ export class CodeNode extends ElementNode {
       const codeNode = firstSelectionNode.getParentOrThrow();
       const nodesToInsert = [$createLineBreakNode(), ...insertNodes];
       codeNode.splice(index, 0, nodesToInsert);
-      const last = insertNodes.at(-1);
+      const last = insertNodes[insertNodes.length - 1];
       if (last) {
         last.select();
       } else if (anchor.offset === 0) {

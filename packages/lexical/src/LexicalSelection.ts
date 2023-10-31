@@ -1544,7 +1544,7 @@ export class RangeSelection implements BaseSelection {
       } else {
         const index = removeTextAndSplitBlock(this);
         firstBlock.splice(index, 0, nodes);
-        const last = nodes.at(-1)!;
+        const last = nodes[nodes.length - 1]!;
         if (last.select) {
           last.select();
         } else last.selectNext(0, 0);
@@ -1567,7 +1567,7 @@ export class RangeSelection implements BaseSelection {
     const shouldInsert = !$isElementNode(firstBlock) || !firstBlock.isEmpty();
     const insertedParagraph = shouldInsert ? this.insertParagraph() : null;
 
-    const last = nodes.at(-1)!;
+    const last = nodes[nodes.length - 1]!;
     const nodeToSelect = $isElementNode(last)
       ? last.getLastDescendant() || last
       : last;

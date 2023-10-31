@@ -2701,6 +2701,24 @@ describe('insertNodes', () => {
       expect($getRoot().getTextContent()).toBe('Before Text');
     });
   });
+
+  it('can insert when before empty text node', async () => {
+    const editor = createTestEditor();
+    const element = document.createElement('div');
+    editor.setRootElement(element);
+
+    await editor.update(() => {
+      // Empty text node to test empty text split
+      const emptyTextNode = $createTextNode('');
+      $getRoot().append(
+        $createParagraphNode().append(emptyTextNode, $createTextNode('text')),
+      );
+      emptyTextNode.select(0, 0);
+      $getSelection().insertNodes([$createTextNode('foo')]);
+
+      expect($getRoot().getTextContent()).toBe('footext');
+    });
+  });
 });
 
 describe('$patchStyleText', () => {

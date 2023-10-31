@@ -3097,6 +3097,9 @@ function removeTextAndSplitBlock(selection: RangeSelection): number {
   }
 
   const split = pointNode.splitText(point.offset);
+  if (split.length === 0) {
+    return 0;
+  }
   const x = point.offset === 0 ? 0 : 1;
   const index = split[0].getIndexWithinParent() + x;
 

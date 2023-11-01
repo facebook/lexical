@@ -47,11 +47,12 @@ import {
 import {isNestedListNode} from './utils';
 
 export type SerializedListItemNode = Spread<
-  {
-    checked: boolean | undefined;
-    value: number;
-  },
-  SerializedElementNode
+    {
+      checked: boolean | undefined;
+      value: number;
+      style: string;
+    },
+    SerializedElementNode
 >;
 
 /** @noInheritDoc */
@@ -60,6 +61,8 @@ export class ListItemNode extends ElementNode {
   __value: number;
   /** @internal */
   __checked?: boolean;
+  /** @internal */
+  __style: string;
 
   static getType(): string {
     return 'listitem';
@@ -73,6 +76,7 @@ export class ListItemNode extends ElementNode {
     super(key);
     this.__value = value === undefined ? 1 : value;
     this.__checked = checked;
+    this.__style = '';
   }
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -83,13 +87,17 @@ export class ListItemNode extends ElementNode {
     }
     element.value = this.__value;
     $setListItemThemeClassNames(element, config.theme, this);
+    const style = this.__style;
+    if (style !== '') {
+      element.style.cssText = style;
+    }
     return element;
   }
 
   updateDOM(
-    prevNode: ListItemNode,
-    dom: HTMLElement,
-    config: EditorConfig,
+      prevNode: ListItemNode,
+      dom: HTMLElement,
+      config: EditorConfig,
   ): boolean {
     const parent = this.getParent();
     if ($isListNode(parent) && parent.getListType() === 'check') {
@@ -98,8 +106,29 @@ export class ListItemNode extends ElementNode {
     // @ts-expect-error - this is always HTMLListItemElement
     dom.value = this.__value;
     $setListItemThemeClassNames(dom, config.theme, this);
+    const prevStyle = prevNode.__style;
+    const nextStyle = this.__style;
+    if (prevStyle !== nextStyle) {
+      dom.style.cssText = nextStyle;
+    }
 
     return false;
+  }
+
+  setStyle(style: string): this {
+    const self = this.getWritable();
+    self.__style = style;
+    return self;
+  }
+
+  /**
+   * Returns the styles currently applied to the node. This is analogous to CSSText in the DOM.
+   *
+   * @returns CSSText-like string of styles applied to the underlying DOM node.
+   */
+  getStyle(): string {
+    const self = this.getLatest();
+    return self.__style;
   }
 
   static transform(): (node: LexicalNode) => void {
@@ -136,6 +165,7 @@ export class ListItemNode extends ElementNode {
     return {
       ...super.exportJSON(),
       checked: this.getChecked(),
+      style: this.getStyle(),
       type: 'listitem',
       value: this.getValue(),
       version: 1,
@@ -159,8 +189,8 @@ export class ListItemNode extends ElementNode {
   }
 
   replace<N extends LexicalNode>(
-    replaceWithNode: N,
-    includeChildren?: boolean,
+      replaceWithNode: N,
+      includeChildren?: boolean,
   ): N {
     if ($isListItemNode(replaceWithNode)) {
       return super.replace(replaceWithNode);
@@ -201,8 +231,8 @@ export class ListItemNode extends ElementNode {
 
     if (!$isListNode(listNode)) {
       invariant(
-        false,
-        'insertAfter: list node is not parent of list item node',
+          false,
+          'insertAfter: list node is not parent of list item node',
       );
     }
 
@@ -255,10 +285,10 @@ export class ListItemNode extends ElementNode {
     super.remove(preserveEmptyParent);
 
     if (
-      prevSibling &&
-      nextSibling &&
-      isNestedListNode(prevSibling) &&
-      isNestedListNode(nextSibling)
+        prevSibling &&
+        nextSibling &&
+        isNestedListNode(prevSibling) &&
+        isNestedListNode(nextSibling)
     ) {
       mergeLists(prevSibling.getFirstChild(), nextSibling.getFirstChild());
       nextSibling.remove();
@@ -272,11 +302,11 @@ export class ListItemNode extends ElementNode {
   }
 
   insertNewAfter(
-    _: RangeSelection,
-    restoreSelection = true,
+      _: RangeSelection,
+      restoreSelection = true,
   ): ListItemNode | ParagraphNode {
     const newElement = $createListItemNode(
-      this.__checked == null ? undefined : false,
+        this.__checked == null ? undefined : false,
     );
     this.insertAfter(newElement, restoreSelection);
 
@@ -367,8 +397,8 @@ export class ListItemNode extends ElementNode {
 
   setIndent(indent: number): this {
     invariant(
-      typeof indent === 'number' && indent > -1,
-      'Invalid indent value.',
+        typeof indent === 'number' && indent > -1,
+        'Invalid indent value.',
     );
     let currentIndent = this.getIndent();
     while (currentIndent !== indent) {
@@ -410,8 +440,8 @@ export class ListItemNode extends ElementNode {
   }
 
   extractWithChild(
-    child: LexicalNode,
-    selection: RangeSelection | NodeSelection | GridSelection,
+      child: LexicalNode,
+      selection: RangeSelection | NodeSelection | GridSelection,
   ): boolean {
     if (!$isRangeSelection(selection)) {
       return false;
@@ -421,9 +451,9 @@ export class ListItemNode extends ElementNode {
     const focusNode = selection.focus.getNode();
 
     return (
-      this.isParentOf(anchorNode) &&
-      this.isParentOf(focusNode) &&
-      this.getTextContent().length === selection.getTextContent().length
+        this.isParentOf(anchorNode) &&
+        this.isParentOf(focusNode) &&
+        this.getTextContent().length === selection.getTextContent().length
     );
   }
 
@@ -437,9 +467,9 @@ export class ListItemNode extends ElementNode {
 }
 
 function $setListItemThemeClassNames(
-  dom: HTMLElement,
-  editorThemeClasses: EditorThemeClasses,
-  node: ListItemNode,
+    dom: HTMLElement,
+    editorThemeClasses: EditorThemeClasses,
+    node: ListItemNode,
 ): void {
   const classesToAdd = [];
   const classesToRemove = [];
@@ -459,7 +489,7 @@ function $setListItemThemeClassNames(
   if (listTheme) {
     const parentNode = node.getParent();
     const isCheckList =
-      $isListNode(parentNode) && parentNode.getListType() === 'check';
+        $isListNode(parentNode) && parentNode.getListType() === 'check';
     const checked = node.getChecked();
 
     if (!isCheckList || checked) {
@@ -472,7 +502,7 @@ function $setListItemThemeClassNames(
 
     if (isCheckList) {
       classesToAdd.push(
-        checked ? listTheme.listitemChecked : listTheme.listitemUnchecked,
+          checked ? listTheme.listitemChecked : listTheme.listitemUnchecked,
       );
     }
   }
@@ -497,10 +527,10 @@ function $setListItemThemeClassNames(
 }
 
 function updateListItemChecked(
-  dom: HTMLElement,
-  listItemNode: ListItemNode,
-  prevListItemNode: ListItemNode | null,
-  listNode: ListNode,
+    dom: HTMLElement,
+    listItemNode: ListItemNode,
+    prevListItemNode: ListItemNode | null,
+    listNode: ListNode,
 ): void {
   // Only add attributes for leaf list items
   if ($isListNode(listItemNode.getFirstChild())) {
@@ -512,12 +542,12 @@ function updateListItemChecked(
     dom.setAttribute('tabIndex', '-1');
 
     if (
-      !prevListItemNode ||
-      listItemNode.__checked !== prevListItemNode.__checked
+        !prevListItemNode ||
+        listItemNode.__checked !== prevListItemNode.__checked
     ) {
       dom.setAttribute(
-        'aria-checked',
-        listItemNode.getChecked() ? 'true' : 'false',
+          'aria-checked',
+          listItemNode.getChecked() ? 'true' : 'false',
       );
     }
   }
@@ -525,7 +555,7 @@ function updateListItemChecked(
 
 function convertListItemElement(domNode: Node): DOMConversionOutput {
   const checked =
-    isHTMLElement(domNode) && domNode.getAttribute('aria-checked') === 'true';
+      isHTMLElement(domNode) && domNode.getAttribute('aria-checked') === 'true';
   return {node: $createListItemNode(checked)};
 }
 
@@ -544,7 +574,7 @@ export function $createListItemNode(checked?: boolean): ListItemNode {
  * @returns true if the node is a ListItemNode, false otherwise.
  */
 export function $isListItemNode(
-  node: LexicalNode | null | undefined,
+    node: LexicalNode | null | undefined,
 ): node is ListItemNode {
   return node instanceof ListItemNode;
 }

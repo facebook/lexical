@@ -1250,6 +1250,7 @@ describe('LexicalListItemNode tests', () => {
         expect(listItemNode.__type).toEqual(createdListItemNode.__type);
         expect(listItemNode.__parent).toEqual(createdListItemNode.__parent);
         expect(listItemNode.__key).not.toEqual(createdListItemNode.__key);
+        expect(listItemNode.__style).not.toEqual(createdListItemNode.__style);
       });
     });
 

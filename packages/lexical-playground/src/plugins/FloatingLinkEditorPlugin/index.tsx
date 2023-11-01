@@ -60,12 +60,9 @@ function FloatingLinkEditor({
     if ($isRangeSelection(selection)) {
       const node = getSelectedNode(selection);
       const linkParent = $findMatchingParent(node, $isLinkNode);
-      const autoLinkParent = $findMatchingParent(node, $isAutoLinkNode);
 
       if (linkParent) {
         setLinkUrl(linkParent.getURL());
-      } else if (autoLinkParent) {
-        setLinkUrl(autoLinkParent.getURL());
       } else if ($isLinkNode(node)) {
         setLinkUrl(node.getURL());
       } else {

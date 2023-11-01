@@ -152,7 +152,7 @@ const FONT_SIZE_OPTIONS: [string, string][] = [
   ['17px', '17px'],
   ['18px', '18px'],
   ['19px', '19px'],
-  ['40px', '40px'],
+  ['20px', '20px'],
 ];
 
 const ELEMENT_FORMAT_OPTIONS: {

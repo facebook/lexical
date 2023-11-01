@@ -29,7 +29,7 @@ export const IS_FIREFOX: boolean =
 
 export const CAN_USE_BEFORE_INPUT: boolean =
   CAN_USE_DOM && 'InputEvent' in window && !documentMode
-    ? 'getTargetRanges' in new window.InputEvent('input')
+    ? typeof window.InputEvent.prototype.getTargetRanges === 'function'
     : false;
 
 export const IS_SAFARI: boolean =

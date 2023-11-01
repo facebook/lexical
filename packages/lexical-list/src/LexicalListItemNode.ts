@@ -50,6 +50,7 @@ export type SerializedListItemNode = Spread<
   {
     checked: boolean | undefined;
     value: number;
+    style: string;
   },
   SerializedElementNode
 >;
@@ -60,6 +61,8 @@ export class ListItemNode extends ElementNode {
   __value: number;
   /** @internal */
   __checked?: boolean;
+  /** @internal */
+  __style: string;
 
   static getType(): string {
     return 'listitem';
@@ -73,6 +76,7 @@ export class ListItemNode extends ElementNode {
     super(key);
     this.__value = value === undefined ? 1 : value;
     this.__checked = checked;
+    this.__style = '';
   }
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -83,6 +87,10 @@ export class ListItemNode extends ElementNode {
     }
     element.value = this.__value;
     $setListItemThemeClassNames(element, config.theme, this);
+    const style = this.__style;
+    if (style !== '') {
+      element.style.cssText = style;
+    }
     return element;
   }
 
@@ -98,8 +106,29 @@ export class ListItemNode extends ElementNode {
     // @ts-expect-error - this is always HTMLListItemElement
     dom.value = this.__value;
     $setListItemThemeClassNames(dom, config.theme, this);
+    const prevStyle = prevNode.__style;
+    const nextStyle = this.__style;
+    if (prevStyle !== nextStyle) {
+      dom.style.cssText = nextStyle;
+    }
 
     return false;
+  }
+
+  setStyle(style: string): this {
+    const self = this.getWritable();
+    self.__style = style;
+    return self;
+  }
+
+  /**
+   * Returns the styles currently applied to the node. This is analogous to CSSText in the DOM.
+   *
+   * @returns CSSText-like string of styles applied to the underlying DOM node.
+   */
+  getStyle(): string {
+    const self = this.getLatest();
+    return self.__style;
   }
 
   static transform(): (node: LexicalNode) => void {
@@ -136,6 +165,7 @@ export class ListItemNode extends ElementNode {
     return {
       ...super.exportJSON(),
       checked: this.getChecked(),
+      style: this.getStyle(),
       type: 'listitem',
       value: this.getValue(),
       version: 1,

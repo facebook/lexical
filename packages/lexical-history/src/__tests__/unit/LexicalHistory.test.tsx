@@ -6,7 +6,12 @@
  *
  */
 
-import {createEmptyHistoryState, registerHistory} from '@lexical/history';
+import {
+  type HistoryChangeCommandPayload,
+  createEmptyHistoryState,
+  HISTORY_CHANGE_COMMAND,
+  registerHistory,
+} from '@lexical/history';
 import {useLexicalComposerContext} from '@lexical/react/src/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/src/LexicalContentEditable';
 import LexicalErrorBoundary from '@lexical/react/src/LexicalErrorBoundary';
@@ -114,6 +119,40 @@ describe('LexicalHistory tests', () => {
 
     expect(canRedo).toBe(false);
     expect(canUndo).toBe(false);
+  });
+
+  test('LexicalHistory: HISTORY_CHANGE_COMMAND is triggered after content change', async () => {
+    let historyChangePayload: HistoryChangeCommandPayload = null;
+
+    ReactTestUtils.act(() => {
+      reactRoot.render(<Test key="smth" />);
+    });
+
+    editor.registerCommand<HistoryChangeCommandPayload>(
+      HISTORY_CHANGE_COMMAND,
+      (payload) => {
+        historyChangePayload = payload;
+        return false;
+      },
+      COMMAND_PRIORITY_CRITICAL,
+    );
+
+    // Wait for update to complete
+    await Promise.resolve().then();
+
+    await ReactTestUtils.act(async () => {
+      await editor.update(() => {
+        const root = $getRoot();
+        const paragraph = createParagraphNode('foo');
+        root.append(paragraph);
+      });
+    });
+
+    expect(historyChangePayload?.mergeAction).toBeDefined();
+    expect(historyChangePayload?.editor).toBeDefined();
+    expect(historyChangePayload?.editorState).toBeDefined();
+    expect(historyChangePayload?.historyState).toBeDefined();
+    expect(historyChangePayload?.tags).toBeDefined();
   });
 
   test('LexicalHistory.Redo after Quote Node', async () => {

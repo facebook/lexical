@@ -7,7 +7,13 @@
  *
  */
 
-import type {EditorState, LexicalEditor, LexicalNode, NodeKey} from 'lexical';
+import type {
+  EditorState,
+  LexicalCommand,
+  LexicalEditor,
+  LexicalNode,
+  NodeKey,
+} from 'lexical';
 
 import {mergeRegister} from '@lexical/utils';
 import {
@@ -19,6 +25,7 @@ import {
   CLEAR_EDITOR_COMMAND,
   CLEAR_HISTORY_COMMAND,
   COMMAND_PRIORITY_EDITOR,
+  createCommand,
   REDO_COMMAND,
   UNDO_COMMAND,
 } from 'lexical';
@@ -46,6 +53,17 @@ export type HistoryState = {
 };
 
 type IntentionallyMarkedAsDirtyElement = boolean;
+
+export type HistoryChangeCommandPayload = {
+  mergeAction: MergeAction;
+  editor: LexicalEditor;
+  editorState: EditorState;
+  historyState: HistoryState;
+  tags: Set<string>;
+};
+
+export const HISTORY_CHANGE_COMMAND: LexicalCommand<HistoryChangeCommandPayload> =
+  createCommand('HISTORY_CHANGE_COMMAND');
 
 function getDirtyNodes(
   editorState: EditorState,
@@ -445,6 +463,14 @@ export function registerHistory(
       editor,
       editorState,
     };
+
+    editor.dispatchCommand(HISTORY_CHANGE_COMMAND, {
+      editor,
+      editorState,
+      historyState,
+      mergeAction,
+      tags,
+    });
   };
 
   const unregisterCommandListener = mergeRegister(

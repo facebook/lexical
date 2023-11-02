@@ -21,6 +21,7 @@ import {
   $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
+  $isParagraphNode,
   $isRangeSelection,
   $isTextNode,
   $parseSerializedNode,
@@ -238,7 +239,6 @@ function $basicInsertStrategy(
   let currentBlock = null;
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
-
     const isLineBreakNode = $isLineBreakNode(node);
 
     if (
@@ -254,7 +254,10 @@ function $basicInsertStrategy(
           topLevelBlocks.push(currentBlock);
           continue;
         }
-        if ($isElementNode(selection.anchor.getNode())) {
+        if (
+          $isElementNode(selection.anchor.getNode()) &&
+          !$isParagraphNode(selection.anchor.getNode())
+        ) {
           topLevelBlocks.push(node);
         } else {
           currentBlock = node.createParentElementNode();

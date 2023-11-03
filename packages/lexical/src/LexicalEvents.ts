@@ -164,7 +164,7 @@ let lastKeyDownTimeStamp = 0;
 let lastKeyCode = 0;
 let lastBeforeInputInsertTextTimeStamp = 0;
 let unprocessedBeforeInputData: null | string = null;
-let rootElementsRegistered = 0;
+const rootElementsRegistered = new WeakMap();
 let isSelectionChangeFromDOMUpdate = false;
 let isSelectionChangeFromMouseDown = false;
 let isInsertLineBreak = false;
@@ -1182,12 +1182,13 @@ export function addRootElementEvents(
 ): void {
   // We only want to have a single global selectionchange event handler, shared
   // between all editor instances.
-  if (rootElementsRegistered === 0) {
-    const doc = rootElement.ownerDocument;
+  const doc = rootElement.ownerDocument;
+  const refs = rootElementsRegistered.get(doc) ?? 0;
+  if (!refs) {
     doc.addEventListener('selectionchange', onDocumentSelectionChange);
   }
+  rootElementsRegistered.set(doc, refs + 1);
 
-  rootElementsRegistered++;
   // @ts-expect-error: internal field
   rootElement.__lexicalEditor = editor;
   const removeHandles = getRootElementRemoveHandles(rootElement);
@@ -1286,13 +1287,13 @@ export function addRootElementEvents(
 }
 
 export function removeRootElementEvents(rootElement: HTMLElement): void {
-  if (rootElementsRegistered !== 0) {
-    rootElementsRegistered--;
-
+  const doc = rootElement.ownerDocument;
+  const refs = rootElementsRegistered.get(doc) ?? 0;
+  if (refs) {
     // We only want to have a single global selectionchange event handler, shared
     // between all editor instances.
-    if (rootElementsRegistered === 0) {
-      const doc = rootElement.ownerDocument;
+    rootElementsRegistered.set(doc, refs - 1);
+    if (refs === 1) {
       doc.removeEventListener('selectionchange', onDocumentSelectionChange);
     }
   }

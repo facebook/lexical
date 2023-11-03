@@ -494,7 +494,7 @@ export function toggleLink(
 
       if (!parent.is(prevParent)) {
         prevParent = parent;
-        linkNode = $createLinkNode(url, {rel, target});
+        linkNode = $createLinkNode(url, {rel, target, title});
 
         if ($isLinkNode(parent)) {
           if (node.getPreviousSibling() === null) {

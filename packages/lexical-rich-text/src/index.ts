@@ -361,7 +361,9 @@ export class HeadingNode extends ElementNode {
     newElement.setDirection(direction);
     this.insertAfter(newElement, restoreSelection);
     if (anchorOffet === 0 && !this.isEmpty() && selection) {
-      this.replace($createParagraphNode(), restoreSelection);
+      const paragraph = $createParagraphNode();
+      paragraph.select();
+      this.replace(paragraph, true);
     }
     return newElement;
   }

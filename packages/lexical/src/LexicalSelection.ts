@@ -1577,7 +1577,7 @@ export class RangeSelection implements BaseSelection {
     }
 
     // CASE 3: At least 1 element of the array is not inline
-    const blocks = $basicInsertStrategy(nodes, this);
+    const blocks = $wrapInlineNodes(nodes, this);
     const isMergeable = (node: LexicalNode) =>
       $isElementNode(node) &&
       INTERNAL_$isBlock(node) &&
@@ -1586,24 +1586,19 @@ export class RangeSelection implements BaseSelection {
       (!firstBlock.isEmpty() ||
         !$isRootOrShadowRoot(firstBlock.getParentOrThrow()));
 
-    const shouldInsert = !$isElementNode(firstBlock) || !firstBlock.isEmpty();
-    const insertedParagraph = shouldInsert ? this.insertParagraph() : null;
-
+    const insertedParagraph =
+      !isMergeable(blocks[0]) || blocks[1] ? this.insertParagraph() : null;
+    const index = insertedParagraph ? 0 : removeTextAndSplitBlock(this);
     let currentBlock = firstBlock;
     for (const node of blocks) {
       if (node === firstNotInline && isMergeable(node)) {
-        currentBlock.append(...node.getChildren());
+        currentBlock.splice(index, 0, node.getChildren());
       } else {
         currentBlock = currentBlock.insertAfter(node) as ElementNode;
       }
     }
 
-    if (
-      insertedParagraph &&
-      $isElementNode(currentBlock) &&
-      INTERNAL_$isBlock(currentBlock)
-    ) {
-      currentBlock.append(...insertedParagraph.getChildren());
+    if (insertedParagraph && insertedParagraph.isEmpty()) {
       insertedParagraph.remove();
     }
     if ($isElementNode(firstBlock) && firstBlock.isEmpty()) {
@@ -1611,6 +1606,14 @@ export class RangeSelection implements BaseSelection {
     }
 
     restoreSelection();
+
+    // To understand this take a look at the test "can wrap post-linebreak nodes into new element"
+    const lastChild = $isElementNode(firstBlock)
+      ? firstBlock.getLastChild()
+      : null;
+    if ($isLineBreakNode(lastChild) && currentBlock !== firstBlock) {
+      lastChild.remove();
+    }
   }
 
   /**
@@ -3118,7 +3121,7 @@ function removeTextAndSplitBlock(selection: RangeSelection): number {
   return pointParent.getIndexWithinParent() + x;
 }
 
-function $basicInsertStrategy(
+function $wrapInlineNodes(
   nodes: LexicalNode[],
   selection: RangeSelection | GridSelection,
 ) {

@@ -1537,7 +1537,7 @@ export class RangeSelection implements BaseSelection {
     }
     const firstBlock = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
 
-    // case where we insert inside a code block
+    // CASE 1: insert inside a code block
     if ('__language' in firstBlock) {
       if ('__language' in nodes[0]) {
         this.insertText(nodes[0].getTextContent());
@@ -1552,8 +1552,31 @@ export class RangeSelection implements BaseSelection {
       return;
     }
 
+    // CASE 2: All elements of the array are inline
     const notInline = (node: LexicalNode) =>
       ($isElementNode(node) || $isDecoratorNode(node)) && !node.isInline();
+
+    const last = nodes[nodes.length - 1]!;
+    const nodeToSelect = $isElementNode(last)
+      ? last.getLastDescendant() || last
+      : last;
+    const nodeToSelectSize = nodeToSelect.getTextContentSize();
+    const firstNotInline = nodes.find(notInline);
+    function restoreSelection() {
+      if (nodeToSelect.select) {
+        nodeToSelect.select(nodeToSelectSize, nodeToSelectSize);
+      } else {
+        nodeToSelect.selectNext(0, 0);
+      }
+    }
+    if (!firstNotInline) {
+      const index = removeTextAndSplitBlock(this);
+      firstBlock.splice(index, 0, nodes);
+      restoreSelection();
+      return;
+    }
+
+    // CASE 3: At least 1 element of the array is not inline
     const isMergeable = (node: LexicalNode) =>
       $isElementNode(node) &&
       INTERNAL_$isBlock(node) &&
@@ -1562,16 +1585,8 @@ export class RangeSelection implements BaseSelection {
       (!firstBlock.isEmpty() ||
         !$isRootOrShadowRoot(firstBlock.getParentOrThrow()));
 
-    const firstNotInline = nodes.find(notInline);
-
     const shouldInsert = !$isElementNode(firstBlock) || !firstBlock.isEmpty();
     const insertedParagraph = shouldInsert ? this.insertParagraph() : null;
-
-    const last = nodes[nodes.length - 1]!;
-    const nodeToSelect = $isElementNode(last)
-      ? last.getLastDescendant() || last
-      : last;
-    const nodeToSelectSize = nodeToSelect.getTextContentSize();
 
     let currentBlock = firstBlock;
     for (const node of nodes) {
@@ -1596,11 +1611,7 @@ export class RangeSelection implements BaseSelection {
       firstBlock.remove();
     }
 
-    if (!nodeToSelect.select) {
-      nodeToSelect.selectNext(0, 0);
-    } else {
-      nodeToSelect.select(nodeToSelectSize, nodeToSelectSize);
-    }
+    restoreSelection();
 
     const lastChild = $isElementNode(firstBlock)
       ? firstBlock.getLastChild()

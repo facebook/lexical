@@ -519,6 +519,7 @@ export class GridSelection implements BaseSelection {
     const selection = $normalizeSelection(
       focusNode.select(0, focusNode.getChildrenSize()),
     );
+    const blocks = '';
     selection.insertNodes(nodes);
   }
 
@@ -1577,6 +1578,7 @@ export class RangeSelection implements BaseSelection {
     }
 
     // CASE 3: At least 1 element of the array is not inline
+    const blocks = $basicInsertStrategy(nodes, this);
     const isMergeable = (node: LexicalNode) =>
       $isElementNode(node) &&
       INTERNAL_$isBlock(node) &&
@@ -1589,7 +1591,7 @@ export class RangeSelection implements BaseSelection {
     const insertedParagraph = shouldInsert ? this.insertParagraph() : null;
 
     let currentBlock = firstBlock;
-    for (const node of nodes) {
+    for (const node of blocks) {
       if (node === firstNotInline && isMergeable(node)) {
         currentBlock.append(...node.getChildren());
       } else if (notInline(node)) {
@@ -3124,4 +3126,58 @@ function removeTextAndSplitBlock(selection: RangeSelection): number {
     newBlock.append(firstToAppend, ...firstToAppend.getNextSiblings());
   }
   return pointParent.getIndexWithinParent() + x;
+}
+
+function $basicInsertStrategy(
+  nodes: LexicalNode[],
+  selection: RangeSelection | GridSelection,
+) {
+  // Wrap text and inline nodes in paragraph nodes so we have all blocks at the top-level
+  const topLevelBlocks = [];
+  let currentBlock = null;
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+
+    const isLineBreakNode = $isLineBreakNode(node);
+
+    if (
+      isLineBreakNode ||
+      ($isDecoratorNode(node) && node.isInline()) ||
+      ($isElementNode(node) && node.isInline()) ||
+      $isTextNode(node) ||
+      node.isParentRequired()
+    ) {
+      if (currentBlock === null) {
+        currentBlock = node.createParentElementNode();
+        topLevelBlocks.push(currentBlock);
+        // In the case of LineBreakNode, we just need to
+        // add an empty ParagraphNode to the topLevelBlocks.
+        if (isLineBreakNode) {
+          continue;
+        }
+      }
+
+      if (currentBlock !== null) {
+        currentBlock.append(node);
+      }
+    } else {
+      topLevelBlocks.push(node);
+      currentBlock = null;
+    }
+  }
+
+  return topLevelBlocks;
+
+  // if ($isRangeSelection(selection)) {
+  //   selection.insertNodes(topLevelBlocks);
+  // } else if (DEPRECATED_$isGridSelection(selection)) {
+  //   // If there's an active grid selection and a non grid is pasted, add to the anchor.
+  //   const anchorCell = selection.anchor.getNode();
+
+  //   if (!DEPRECATED_$isGridCellNode(anchorCell)) {
+  //     invariant(false, 'Expected Grid Cell in Grid Selection');
+  //   }
+
+  //   anchorCell.append(...topLevelBlocks);
+  // }
 }

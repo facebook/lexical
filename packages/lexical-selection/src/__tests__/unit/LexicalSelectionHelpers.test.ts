@@ -1934,50 +1934,6 @@ describe('LexicalSelectionHelpers tests', () => {
           '<h1 dir="ltr"><span data-lexical-text="true">foo</span></h1>',
         );
       });
-
-      test('a heading node with a child text node and a disjoint sibling text node', async () => {
-        const editor = createTestEditor();
-
-        const element = document.createElement('div');
-
-        editor.setRootElement(element);
-
-        await editor.update(() => {
-          const root = $getRoot();
-
-          const paragraph = $createParagraphNode();
-          root.append(paragraph);
-
-          setAnchorPoint({
-            key: paragraph.getKey(),
-            offset: 0,
-            type: 'element',
-          });
-
-          setFocusPoint({
-            key: paragraph.getKey(),
-            offset: 0,
-            type: 'element',
-          });
-
-          const heading = $createHeadingNode('h1');
-          const child = $createTextNode('foo');
-
-          heading.append(child);
-
-          const selection = $getSelection();
-
-          if (!$isRangeSelection(selection)) {
-            return;
-          }
-
-          selection.insertNodes([heading, $createTextNode('bar')]);
-        });
-
-        expect(element.innerHTML).toBe(
-          '<h1 dir="ltr"><span data-lexical-text="true">foobar</span></h1>',
-        );
-      });
     });
 
     describe('with a paragraph node selected on some existing text', () => {
@@ -2111,53 +2067,6 @@ describe('LexicalSelectionHelpers tests', () => {
 
         expect(element.innerHTML).toBe(
           '<p dir="ltr"><span data-lexical-text="true">Existing text...foo</span></p>',
-        );
-      });
-
-      test('a heading node with a child text node and a disjoint sibling text node', async () => {
-        const editor = createTestEditor();
-
-        const element = document.createElement('div');
-
-        editor.setRootElement(element);
-
-        await editor.update(() => {
-          const root = $getRoot();
-
-          const paragraph = $createParagraphNode();
-          const text = $createTextNode('Existing text...');
-
-          paragraph.append(text);
-          root.append(paragraph);
-
-          setAnchorPoint({
-            key: text.getKey(),
-            offset: 16,
-            type: 'text',
-          });
-
-          setFocusPoint({
-            key: text.getKey(),
-            offset: 16,
-            type: 'text',
-          });
-
-          const heading = $createHeadingNode('h1');
-          const child = $createTextNode('foo');
-
-          heading.append(child);
-
-          const selection = $getSelection();
-
-          if (!$isRangeSelection(selection)) {
-            return;
-          }
-
-          selection.insertNodes([heading, $createTextNode('bar')]);
-        });
-
-        expect(element.innerHTML).toBe(
-          '<p dir="ltr"><span data-lexical-text="true">Existing text...foobar</span></p>',
         );
       });
 

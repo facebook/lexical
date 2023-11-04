@@ -519,7 +519,6 @@ export class GridSelection implements BaseSelection {
     const selection = $normalizeSelection(
       focusNode.select(0, focusNode.getChildrenSize()),
     );
-    const blocks = '';
     selection.insertNodes(nodes);
   }
 
@@ -1594,10 +1593,8 @@ export class RangeSelection implements BaseSelection {
     for (const node of blocks) {
       if (node === firstNotInline && isMergeable(node)) {
         currentBlock.append(...node.getChildren());
-      } else if (notInline(node)) {
-        currentBlock = currentBlock.insertAfter(node) as ElementNode;
       } else {
-        currentBlock.append(node);
+        currentBlock = currentBlock.insertAfter(node) as ElementNode;
       }
     }
 
@@ -1614,13 +1611,6 @@ export class RangeSelection implements BaseSelection {
     }
 
     restoreSelection();
-
-    const lastChild = $isElementNode(firstBlock)
-      ? firstBlock.getLastChild()
-      : null;
-    if ($isLineBreakNode(lastChild) && currentBlock !== firstBlock) {
-      lastChild.remove();
-    }
   }
 
   /**

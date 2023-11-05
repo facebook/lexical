@@ -79,11 +79,13 @@ export function applyTableHandlers(
   attachTableSelectionToTableElement(tableElement, tableSelection);
 
   tableElement.addEventListener('mousedown', (event: MouseEvent) => {
-    setTimeout(() => {
-      if (event.button !== 0) {
-        return;
-      }
+    if (event.button !== 0) {
+      return;
+    }
 
+    let onMouseMove: ((moveEvent: MouseEvent) => void) | undefined;
+
+    const timeoutId = setTimeout(() => {
       if (!editorWindow) {
         return;
       }
@@ -94,12 +96,7 @@ export function applyTableHandlers(
         tableSelection.setAnchorCellForSelection(anchorCell);
       }
 
-      const onMouseUp = () => {
-        editorWindow.removeEventListener('mouseup', onMouseUp);
-        editorWindow.removeEventListener('mousemove', onMouseMove);
-      };
-
-      const onMouseMove = (moveEvent: MouseEvent) => {
+      onMouseMove = (moveEvent: MouseEvent) => {
         const focusCell = getCellFromTarget(moveEvent.target as Node);
         if (
           focusCell !== null &&
@@ -111,9 +108,19 @@ export function applyTableHandlers(
         }
       };
 
-      editorWindow.addEventListener('mouseup', onMouseUp);
       editorWindow.addEventListener('mousemove', onMouseMove);
     }, 0);
+
+    const onMouseUp = () => {
+      clearTimeout(timeoutId);
+
+      editorWindow.removeEventListener('mouseup', onMouseUp);
+      if (onMouseMove) {
+        editorWindow.removeEventListener('mousemove', onMouseMove);
+      }
+    };
+
+    editorWindow.addEventListener('mouseup', onMouseUp);
   });
 
   // Clear selection when clicking outside of dom.

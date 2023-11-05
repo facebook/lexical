@@ -25,6 +25,7 @@ import {
   $isRootNode,
   $isTextNode,
   $setSelection,
+  DecoratorNode,
   DEPRECATED_$isGridCellNode,
   DEPRECATED_$isGridNode,
   DEPRECATED_$isGridRowNode,
@@ -1561,7 +1562,6 @@ export class RangeSelection implements BaseSelection {
       ? last.getLastDescendant() || last
       : last;
     const nodeToSelectSize = nodeToSelect.getTextContentSize();
-    const firstNotInline = nodes.find(notInline);
     function restoreSelection() {
       if (nodeToSelect.select) {
         nodeToSelect.select(nodeToSelectSize, nodeToSelectSize);
@@ -1569,7 +1569,7 @@ export class RangeSelection implements BaseSelection {
         nodeToSelect.selectNext(0, 0);
       }
     }
-    if (!firstNotInline) {
+    if (!nodes.some(notInline)) {
       const index = removeTextAndSplitBlock(this);
       firstBlock.splice(index, 0, nodes);
       restoreSelection();
@@ -1586,19 +1586,23 @@ export class RangeSelection implements BaseSelection {
       (!firstBlock.isEmpty() ||
         !$isRootOrShadowRoot(firstBlock.getParentOrThrow()));
 
-    const insertedParagraph =
-      !isMergeable(blocks[0]) || blocks[1] ? this.insertParagraph() : null;
-    const index = insertedParagraph ? 0 : removeTextAndSplitBlock(this);
+    const shouldInsert = !$isElementNode(firstBlock) || !firstBlock.isEmpty();
+    const insertedParagraph = shouldInsert ? this.insertParagraph() : null;
     let currentBlock = firstBlock;
     for (const node of blocks) {
-      if (node === firstNotInline && isMergeable(node)) {
-        currentBlock.splice(index, 0, node.getChildren());
+      if (node === blocks[0] && isMergeable(node)) {
+        currentBlock.append(...node.getChildren());
       } else {
         currentBlock = currentBlock.insertAfter(node) as ElementNode;
       }
     }
 
-    if (insertedParagraph && insertedParagraph.isEmpty()) {
+    if (
+      insertedParagraph &&
+      $isElementNode(currentBlock) &&
+      INTERNAL_$isBlock(currentBlock)
+    ) {
+      currentBlock.append(...insertedParagraph.getChildren());
       insertedParagraph.remove();
     }
     if ($isElementNode(firstBlock) && firstBlock.isEmpty()) {
@@ -3121,12 +3125,9 @@ function removeTextAndSplitBlock(selection: RangeSelection): number {
   return pointParent.getIndexWithinParent() + x;
 }
 
-function $wrapInlineNodes(
-  nodes: LexicalNode[],
-  selection: RangeSelection | GridSelection,
-) {
+function $wrapInlineNodes(nodes: LexicalNode[]) {
   // Wrap text and inline nodes in paragraph nodes so we have all blocks at the top-level
-  const topLevelBlocks = [];
+  const topLevelBlocks: Array<ElementNode | DecoratorNode<unknown>> = [];
   let currentBlock = null;
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
@@ -3154,23 +3155,10 @@ function $wrapInlineNodes(
         currentBlock.append(node);
       }
     } else {
-      topLevelBlocks.push(node);
+      topLevelBlocks.push(node as ElementNode | DecoratorNode<unknown>);
       currentBlock = null;
     }
   }
 
   return topLevelBlocks;
-
-  // if ($isRangeSelection(selection)) {
-  //   selection.insertNodes(topLevelBlocks);
-  // } else if (DEPRECATED_$isGridSelection(selection)) {
-  //   // If there's an active grid selection and a non grid is pasted, add to the anchor.
-  //   const anchorCell = selection.anchor.getNode();
-
-  //   if (!DEPRECATED_$isGridCellNode(anchorCell)) {
-  //     invariant(false, 'Expected Grid Cell in Grid Selection');
-  //   }
-
-  //   anchorCell.append(...topLevelBlocks);
-  // }
 }

@@ -1571,7 +1571,6 @@ export class RangeSelection implements BaseSelection {
     const nodeToSelect = $isElementNode(last)
       ? last.getLastDescendant() || last
       : last;
-    const nodeToSelectSize = nodeToSelect.getTextContentSize();
 
     let currentBlock = firstBlock;
     for (const node of nodes) {
@@ -1596,11 +1595,7 @@ export class RangeSelection implements BaseSelection {
       firstBlock.remove();
     }
 
-    if (!nodeToSelect.select) {
-      nodeToSelect.selectNext(0, 0);
-    } else {
-      nodeToSelect.select(nodeToSelectSize, nodeToSelectSize);
-    }
+    nodeToSelect.selectEnd();
 
     const lastChild = $isElementNode(firstBlock)
       ? firstBlock.getLastChild()

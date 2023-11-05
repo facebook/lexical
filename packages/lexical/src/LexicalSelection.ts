@@ -1577,7 +1577,7 @@ export class RangeSelection implements BaseSelection {
     }
 
     // CASE 3: At least 1 element of the array is not inline
-    const blocks = $wrapInlineNodes(nodes, this);
+    const blocks = $wrapInlineNodes(nodes);
     const isMergeable = (node: LexicalNode) =>
       $isElementNode(node) &&
       INTERNAL_$isBlock(node) &&

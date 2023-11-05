@@ -1536,6 +1536,10 @@ export class RangeSelection implements BaseSelection {
       return selection.insertNodes(nodes);
     }
     const firstBlock = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
+    const last = nodes[nodes.length - 1]!;
+    const nodeToSelect = $isElementNode(last)
+      ? last.getLastDescendant() || last
+      : last;
 
     // case where we insert inside a code block
     if ('__language' in firstBlock) {
@@ -1544,10 +1548,7 @@ export class RangeSelection implements BaseSelection {
       } else {
         const index = removeTextAndSplitBlock(this);
         firstBlock.splice(index, 0, nodes);
-        const last = nodes[nodes.length - 1]!;
-        if (last.select) {
-          last.select();
-        } else last.selectNext(0, 0);
+        nodeToSelect.selectEnd();
       }
       return;
     }
@@ -1566,11 +1567,6 @@ export class RangeSelection implements BaseSelection {
 
     const shouldInsert = !$isElementNode(firstBlock) || !firstBlock.isEmpty();
     const insertedParagraph = shouldInsert ? this.insertParagraph() : null;
-
-    const last = nodes[nodes.length - 1]!;
-    const nodeToSelect = $isElementNode(last)
-      ? last.getLastDescendant() || last
-      : last;
 
     let currentBlock = firstBlock;
     for (const node of nodes) {

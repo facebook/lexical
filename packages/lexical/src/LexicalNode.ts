@@ -1032,7 +1032,7 @@ export class LexicalNode {
       const lastNode = this.getLastDescendant();
       return lastNode ? lastNode.selectEnd() : this.select();
     }
-    return this.selectNext();
+    return this.selectNext(0, 0);
   }
 
   selectStart(): RangeSelection {

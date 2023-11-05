@@ -337,28 +337,6 @@ export class ElementNode extends LexicalNode {
     }
     return selection;
   }
-  selectStart(): RangeSelection {
-    const firstNode = this.getFirstDescendant();
-    if ($isElementNode(firstNode) || $isTextNode(firstNode)) {
-      return firstNode.select(0, 0);
-    }
-    // Decorator or LineBreak
-    if (firstNode !== null) {
-      return firstNode.selectPrevious();
-    }
-    return this.select(0, 0);
-  }
-  selectEnd(): RangeSelection {
-    const lastNode = this.getLastDescendant();
-    if ($isElementNode(lastNode) || $isTextNode(lastNode)) {
-      return lastNode.select();
-    }
-    // Decorator or LineBreak
-    if (lastNode !== null) {
-      return lastNode.selectNext();
-    }
-    return this.select();
-  }
   clear(): this {
     const writableSelf = this.getWritable();
     const children = this.getChildren();

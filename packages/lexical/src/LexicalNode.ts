@@ -1024,6 +1024,27 @@ export class LexicalNode {
     return $createParagraphNode();
   }
 
+  selectEnd(): RangeSelection {
+    if ($isTextNode(this)) {
+      const size = this.getTextContentSize();
+      return this.select(size, size);
+    } else if ($isElementNode(this)) {
+      const lastNode = this.getLastDescendant();
+      return lastNode ? lastNode.selectEnd() : this.select();
+    }
+    return this.selectNext();
+  }
+
+  selectStart(): RangeSelection {
+    if ($isTextNode(this)) {
+      return this.select(0, 0);
+    } else if ($isElementNode(this)) {
+      const firstNode = this.getFirstDescendant();
+      return firstNode ? firstNode.selectStart() : this.select();
+    }
+    return this.selectPrevious();
+  }
+
   /**
    * Moves selection to the previous sibling of this node, at the specified offsets.
    *

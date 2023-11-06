@@ -652,11 +652,24 @@ export default function ToolbarPlugin({
       setFontFamily(
         $getSelectionStyleValueForProperty(selection, 'font-family', 'Arial'),
       );
-      setElementFormat(
-        ($isElementNode(node)
-          ? node.getFormatType()
-          : parent?.getFormatType()) || 'left',
-      );
+      if ($isLinkNode(parent)) {
+        // If node is a link, we need to fetch the parent paragraph node to set format
+        const matchingParent = $findMatchingParent(
+          node,
+          (parentNode) => $isElementNode(parentNode) && !parentNode.isInline(),
+        );
+        setElementFormat(
+          ($isElementNode(matchingParent)
+            ? matchingParent.getFormatType()
+            : parent?.getFormatType()) || 'left',
+        );
+      } else {
+        setElementFormat(
+          ($isElementNode(node)
+            ? node.getFormatType()
+            : parent?.getFormatType()) || 'left',
+        );
+      }
     }
   }, [activeEditor]);
 

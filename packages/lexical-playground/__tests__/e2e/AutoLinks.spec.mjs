@@ -12,6 +12,8 @@ import {
   moveToLineBeginning,
   moveToLineEnd,
   selectAll,
+  selectCharacters,
+  toggleBold,
 } from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
@@ -250,6 +252,55 @@ test.describe('Auto Links', () => {
           <a href="https://4.com/" dir="ltr">
             <span data-lexical-text="true">https://4.com/</span>
           </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  test('Can convert url-like text with formatting into links', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type('Hellohttp://example.com and more');
+
+    // Add bold formatting to com
+    await moveToLineBeginning(page);
+    await moveRight(page, 20);
+    await selectCharacters(page, 'right', 3);
+    await toggleBold(page);
+
+    await assertHTML(
+      page,
+      html`
+        <p dir="ltr">
+          <span data-lexical-text="true">Hellohttp://example.</span>
+          <strong data-lexical-text="true">com</strong>
+          <span data-lexical-text="true">and more</span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+
+    // Add space before formatted link text
+    await moveToLineBeginning(page);
+    await moveRight(page, 5);
+    await page.keyboard.type(' ');
+
+    await assertHTML(
+      page,
+      html`
+        <p dir="ltr">
+          <span data-lexical-text="true">Hello</span>
+          <a href="http://example.com" dir="ltr">
+            <span data-lexical-text="true">http://example.</span>
+            <strong data-lexical-text="true">com</strong>
+          </a>
+          <span data-lexical-text="true">and more</span>
         </p>
       `,
       undefined,

@@ -87,7 +87,7 @@ function Editor() {
 ```
 
 Now that we have a simple editor in React, the next thing we might want to do is access the content of the editor to, for instance,
-save it in a database. We can do this via the an [update listener](https://lexical.dev/docs/concepts/listeners#registerupdatelistener), which will execute every time the editor state changes and provide us with the latest state. In React, we typically use the plugin system to set up listeners like this, since it provides us easy access to the LexicalEditor instance via a React Context. So, let's write our own plugin that notifies us when the editor updates.
+save it in a database. We can do this via an [update listener](https://lexical.dev/docs/concepts/listeners#registerupdatelistener), which will execute every time the editor state changes and provide us with the latest state. In React, we typically use the plugin system to set up listeners like this, since it provides us easy access to the LexicalEditor instance via a React Context. So, let's write our own plugin that notifies us when the editor updates.
 
 ```jsx
 // When the editor changes, you can get notified via the

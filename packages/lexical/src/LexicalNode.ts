@@ -899,6 +899,22 @@ export class LexicalNode {
   }
 
   /**
+   * Insert a series of nodes after this LexicalNode (as next siblings)
+   *
+   * @param firstNodeToInsert - The first node to insert after this one.
+   * @param lastNodeToInsert - The last node to insert after this one. Must be a
+   * later sibling of FirstNode. If not provided, it will be its last sibling.
+   * @param restoreSelection - Whether or not to attempt to resolve the
+   * selection to the appropriate place after the operation is complete.
+   *
+   * */
+  insertRangeAfter(
+    firstToInsert: LexicalNode,
+    lastToInsert?: LexicalNode,
+    restoreSelection = true,
+  ): void {}
+
+  /**
    * Inserts a node after this LexicalNode (as the next sibling).
    *
    * @param nodeToInsert - The node to insert after this one.

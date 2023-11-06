@@ -25,7 +25,6 @@ import {
   $isRootNode,
   $isTextNode,
   $setSelection,
-  DecoratorNode,
   DEPRECATED_$isGridCellNode,
   DEPRECATED_$isGridNode,
   DEPRECATED_$isGridRowNode,
@@ -1577,7 +1576,7 @@ export class RangeSelection implements BaseSelection {
     }
 
     // CASE 3: At least 1 element of the array is not inline
-    const blocks = $wrapInlineNodes(nodes);
+    const blocks = $wrapInlineNodes(nodes).getChildren();
     const isMergeable = (node: LexicalNode) =>
       $isElementNode(node) &&
       INTERNAL_$isBlock(node) &&
@@ -3126,8 +3125,10 @@ function removeTextAndSplitBlock(selection: RangeSelection): number {
 }
 
 function $wrapInlineNodes(nodes: LexicalNode[]) {
-  // Wrap text and inline nodes in paragraph nodes so we have all blocks at the top-level
-  const topLevelBlocks: Array<ElementNode | DecoratorNode<unknown>> = [];
+  // We temporarily insert the topLevelNodes into an arbitrary ElementNode,
+  // since insertAfter does not work on nodes that have no parent (TO-DO: fix that).
+  const virtualRoot = $createParagraphNode();
+
   let currentBlock = null;
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
@@ -3143,7 +3144,7 @@ function $wrapInlineNodes(nodes: LexicalNode[]) {
     ) {
       if (currentBlock === null) {
         currentBlock = node.createParentElementNode();
-        topLevelBlocks.push(currentBlock);
+        virtualRoot.append(currentBlock);
         // In the case of LineBreakNode, we just need to
         // add an empty ParagraphNode to the topLevelBlocks.
         if (isLineBreakNode) {
@@ -3155,10 +3156,10 @@ function $wrapInlineNodes(nodes: LexicalNode[]) {
         currentBlock.append(node);
       }
     } else {
-      topLevelBlocks.push(node as ElementNode | DecoratorNode<unknown>);
+      virtualRoot.append(node);
       currentBlock = null;
     }
   }
 
-  return topLevelBlocks;
+  return virtualRoot;
 }

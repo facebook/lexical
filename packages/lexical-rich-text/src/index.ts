@@ -638,8 +638,6 @@ export function registerRichText(editor: LexicalEditor): () => void {
     editor.registerCommand<ElementFormatType>(
       FORMAT_ELEMENT_COMMAND,
       (format) => {
-        // Register command listener here
-
         const selection = $getSelection();
         if (!$isRangeSelection(selection) && !$isNodeSelection(selection)) {
           return false;

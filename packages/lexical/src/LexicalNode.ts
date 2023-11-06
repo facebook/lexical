@@ -901,18 +901,39 @@ export class LexicalNode {
   /**
    * Insert a series of nodes after this LexicalNode (as next siblings)
    *
-   * @param firstNodeToInsert - The first node to insert after this one.
-   * @param lastNodeToInsert - The last node to insert after this one. Must be a
+   * @param firstToInsert - The first node to insert after this one.
+   * @param lastToInsert - The last node to insert after this one. Must be a
    * later sibling of FirstNode. If not provided, it will be its last sibling.
-   * @param restoreSelection - Whether or not to attempt to resolve the
-   * selection to the appropriate place after the operation is complete.
+   *
+   * @returns true if the operation was successful (when lastToInsert
+   * is a later sibling of firstToInsert), false otherwise.
    *
    * */
   insertRangeAfter(
     firstToInsert: LexicalNode,
     lastToInsert?: LexicalNode,
-    restoreSelection = true,
-  ): void {}
+  ): boolean {
+    const lastToInsert2 =
+      lastToInsert || firstToInsert.getParentOrThrow().getLastChild()!;
+    let current = firstToInsert;
+    let size = 1;
+    console.log('insertRangeAfter', firstToInsert, lastToInsert2)
+    while (current !== lastToInsert2) {
+      if (!current.getNextSibling()) {
+        return false;
+      }
+      current = current.getNextSibling()!;
+      size++;
+    }
+
+    for (let i = 0; i < size; i++) {
+      console.log('this', this, 'current', current)
+      const previousSibling = current.getPreviousSibling();
+      this.insertAfter(current, true);
+      current = previousSibling!;
+    }
+    return true;
+  }
 
   /**
    * Inserts a node after this LexicalNode (as the next sibling).

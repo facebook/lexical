@@ -1587,34 +1587,35 @@ export class RangeSelection implements BaseSelection {
 
     const shouldInsert = !$isElementNode(firstBlock) || !firstBlock.isEmpty();
     const insertedParagraph = shouldInsert ? this.insertParagraph() : null;
-    let currentBlock = firstBlock;
-    for (const node of blocks) {
-      if (node === blocks[0] && isMergeable(node)) {
-        currentBlock.append(...node.getChildren());
-      } else {
-        currentBlock = currentBlock.insertAfter(node) as ElementNode;
-      }
+    const lastToInsert = blocks[blocks.length - 1];
+    let firstToInsert = blocks[0];
+    console.log('isMergeable', blocks, isMergeable(firstToInsert), firstToInsert);
+    if (isMergeable(firstToInsert)) {
+      lastToInsert.append(...firstToInsert.getChildren());
+      firstToInsert = blocks[1];
     }
+    console.log('firstToInsert', firstToInsert);
+    firstBlock.insertRangeAfter(firstToInsert);
 
     if (
       insertedParagraph &&
-      $isElementNode(currentBlock) &&
-      INTERNAL_$isBlock(currentBlock)
+      $isElementNode(lastToInsert) &&
+      INTERNAL_$isBlock(lastToInsert)
     ) {
-      currentBlock.append(...insertedParagraph.getChildren());
+      lastToInsert.append(...insertedParagraph.getChildren());
       insertedParagraph.remove();
     }
     if ($isElementNode(firstBlock) && firstBlock.isEmpty()) {
       firstBlock.remove();
     }
 
-    restoreSelection();
+    // restoreSelection();
 
     // To understand this take a look at the test "can wrap post-linebreak nodes into new element"
     const lastChild = $isElementNode(firstBlock)
       ? firstBlock.getLastChild()
       : null;
-    if ($isLineBreakNode(lastChild) && currentBlock !== firstBlock) {
+    if ($isLineBreakNode(lastChild) && lastToInsert !== firstBlock) {
       lastChild.remove();
     }
   }

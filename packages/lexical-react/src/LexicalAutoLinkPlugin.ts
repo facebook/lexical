@@ -19,8 +19,11 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {mergeRegister} from '@lexical/utils';
 import {
   $createTextNode,
+  $getSelection,
   $isElementNode,
   $isLineBreakNode,
+  $isNodeSelection,
+  $isRangeSelection,
   $isTextNode,
   TextNode,
 } from 'lexical';
@@ -228,10 +231,23 @@ function createAutoLinkNode(
       }
       offset += currentNodeLength;
     }
+    const selection = $getSelection();
+    const selectedTextNode = selection
+      ? selection.getNodes().find($isTextNode)
+      : undefined;
     const textNode = $createTextNode(firstLinkTextNode.getTextContent());
     textNode.setFormat(firstLinkTextNode.getFormat());
     textNode.setDetail(firstLinkTextNode.getDetail());
     linkNode.append(textNode, ...linkNodes);
+    // it does not preserve caret position if caret was at the first text node
+    // so we need to restore caret position
+    if (selectedTextNode && selectedTextNode === firstLinkTextNode) {
+      if ($isRangeSelection(selection)) {
+        textNode.select(selection.anchor.offset, selection.focus.offset);
+      } else if ($isNodeSelection(selection)) {
+        textNode.select(0, textNode.getTextContent().length);
+      }
+    }
     firstLinkTextNode.replace(linkNode);
     return remainingTextNode;
   }

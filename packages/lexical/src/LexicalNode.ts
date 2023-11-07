@@ -916,21 +916,18 @@ export class LexicalNode {
     const lastToInsert2 =
       lastToInsert || firstToInsert.getParentOrThrow().getLastChild()!;
     let current = firstToInsert;
-    let size = 1;
-    console.log('insertRangeAfter', firstToInsert, lastToInsert2)
+    const nodestToInsert = [firstToInsert];
     while (current !== lastToInsert2) {
       if (!current.getNextSibling()) {
         return false;
       }
       current = current.getNextSibling()!;
-      size++;
+      nodestToInsert.push(current);
     }
 
-    for (let i = 0; i < size; i++) {
-      console.log('this', this, 'current', current)
-      const previousSibling = current.getPreviousSibling();
-      this.insertAfter(current, true);
-      current = previousSibling!;
+    let currentNode: LexicalNode = this;
+    for (const node of nodestToInsert) {
+        currentNode = currentNode.insertAfter(node);
     }
     return true;
   }

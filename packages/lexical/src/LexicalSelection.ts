@@ -1589,12 +1589,10 @@ export class RangeSelection implements BaseSelection {
     const insertedParagraph = shouldInsert ? this.insertParagraph() : null;
     const lastToInsert = blocks[blocks.length - 1];
     let firstToInsert = blocks[0];
-    console.log('isMergeable', blocks, isMergeable(firstToInsert), firstToInsert);
     if (isMergeable(firstToInsert)) {
-      lastToInsert.append(...firstToInsert.getChildren());
+      firstBlock.append(...firstToInsert.getChildren());
       firstToInsert = blocks[1];
     }
-    console.log('firstToInsert', firstToInsert);
     firstBlock.insertRangeAfter(firstToInsert);
 
     if (
@@ -1609,7 +1607,7 @@ export class RangeSelection implements BaseSelection {
       firstBlock.remove();
     }
 
-    // restoreSelection();
+    restoreSelection();
 
     // To understand this take a look at the test "can wrap post-linebreak nodes into new element"
     const lastChild = $isElementNode(firstBlock)

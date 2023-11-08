@@ -56,7 +56,6 @@ import {
   $getNodeByKey,
   $getRoot,
   $hasAncestor,
-  $isRootOrShadowRoot,
   $isTokenOrSegmented,
   $setCompositionKey,
   doesContainGrapheme,
@@ -1577,13 +1576,14 @@ export class RangeSelection implements BaseSelection {
 
     // CASE 3: At least 1 element of the array is not inline
     const blocks = $wrapInlineNodes(nodes).getChildren();
+    const isLI = (node: LexicalNode) =>
+      '__value' in node && '__checked' in node;
     const isMergeable = (node: LexicalNode) =>
       $isElementNode(node) &&
       INTERNAL_$isBlock(node) &&
       !node.isEmpty() &&
       $isElementNode(firstBlock) &&
-      (!firstBlock.isEmpty() ||
-        !$isRootOrShadowRoot(firstBlock.getParentOrThrow()));
+      (!firstBlock.isEmpty() || isLI(firstBlock));
 
     const shouldInsert = !$isElementNode(firstBlock) || !firstBlock.isEmpty();
     const insertedParagraph = shouldInsert ? this.insertParagraph() : null;
@@ -1593,14 +1593,17 @@ export class RangeSelection implements BaseSelection {
       firstBlock.append(...firstToInsert.getChildren());
       firstToInsert = blocks[1];
     }
-    firstBlock.insertRangeAfter(firstToInsert);
+    if (firstToInsert) {
+      firstBlock.insertRangeAfter(firstToInsert);
+    }
+    const lastInsertedBlock = $getAncestor(nodeToSelect, INTERNAL_$isBlock)!;
 
     if (
       insertedParagraph &&
       $isElementNode(lastToInsert) &&
-      INTERNAL_$isBlock(lastToInsert)
+      (isLI(insertedParagraph) || INTERNAL_$isBlock(lastToInsert))
     ) {
-      lastToInsert.append(...insertedParagraph.getChildren());
+      lastInsertedBlock.append(...insertedParagraph.getChildren());
       insertedParagraph.remove();
     }
     if ($isElementNode(firstBlock) && firstBlock.isEmpty()) {

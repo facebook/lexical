@@ -905,31 +905,26 @@ export class LexicalNode {
    * @param lastToInsert - The last node to insert after this one. Must be a
    * later sibling of FirstNode. If not provided, it will be its last sibling.
    *
-   * @returns true if the operation was successful (when lastToInsert
-   * is a later sibling of firstToInsert), false otherwise.
    *
    * */
-  insertRangeAfter(
-    firstToInsert: LexicalNode,
-    lastToInsert?: LexicalNode,
-  ): boolean {
+  insertRangeAfter(firstToInsert: LexicalNode, lastToInsert?: LexicalNode) {
     const lastToInsert2 =
       lastToInsert || firstToInsert.getParentOrThrow().getLastChild()!;
     let current = firstToInsert;
     const nodestToInsert = [firstToInsert];
     while (current !== lastToInsert2) {
-      if (!current.getNextSibling()) {
-        return false;
-      }
+      invariant(
+        !current.getNextSibling(),
+        'insertRangeAfter: lastToInsert must be a later sibling of firstToInsert',
+      );
       current = current.getNextSibling()!;
       nodestToInsert.push(current);
     }
 
     let currentNode: LexicalNode = this;
     for (const node of nodestToInsert) {
-        currentNode = currentNode.insertAfter(node);
+      currentNode = currentNode.insertAfter(node);
     }
-    return true;
   }
 
   /**

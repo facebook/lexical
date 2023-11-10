@@ -661,7 +661,7 @@ export default function ToolbarPlugin({
         );
       }
 
-      // If matchinParent is a valid node, pass it's format type
+      // If matchingParent is a valid node, pass it's format type
       setElementFormat(
         $isElementNode(matchingParent)
           ? matchingParent.getFormatType()

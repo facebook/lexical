@@ -2031,4 +2031,252 @@ test.describe('Tables', () => {
       focusPath: [1, 1, 1],
     });
   });
+
+  test('Select nested table in table with keys #4647', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    await initialize({isCollab, page});
+    test.skip(isPlainText);
+    if (IS_COLLAB) {
+      // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
+      page.setViewportSize({height: 1000, width: 3000});
+    }
+
+    await focusEditor(page);
+
+    await insertTable(page, 2, 2);
+    await insertTable(page, 2, 2);
+
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('ArrowRight');
+
+    await assertHTML(
+      page,
+      html`
+        <p><br /></p>
+        <table>
+          <tr>
+            <th>
+              <p><br /></p>
+              <table>
+                <tr>
+                  <th
+                    style="
+                  background-color: rgb(172, 206, 247);
+                  caret-color: transparent;
+                ">
+                    <p><br /></p>
+                  </th>
+                  <th
+                    style="
+                  background-color: rgb(172, 206, 247);
+                  caret-color: transparent;
+                ">
+                    <p><br /></p>
+                  </th>
+                </tr>
+                <tr>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                </tr>
+              </table>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p><br /></p>
+      `,
+      html`
+        <p><br /></p>
+        <table>
+          <tr>
+            <th>
+              <p><br /></p>
+              <table>
+                <tr>
+                  <th
+                    style="
+                    background-color: rgb(172, 206, 247);
+                    caret-color: transparent;
+                  ">
+                    <p><br /></p>
+                  </th>
+                  <th
+                    style="
+                    background-color: rgb(172, 206, 247);
+                    caret-color: transparent;
+                  ">
+                    <p><br /></p>
+                  </th>
+                </tr>
+                <tr>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                </tr>
+              </table>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p><br /></p>
+      `,
+      {ignoreClasses: true},
+    );
+  });
+  test('Select from nested table in table to parent table with keys #4647', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    await initialize({isCollab, page});
+    test.skip(isPlainText);
+    if (IS_COLLAB) {
+      // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
+      page.setViewportSize({height: 1000, width: 3000});
+    }
+
+    await focusEditor(page);
+
+    await insertTable(page, 2, 2);
+    await insertTable(page, 2, 2);
+
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowRight');
+
+    await assertHTML(
+      page,
+      html`
+        <p><br /></p>
+        <table>
+          <tr>
+            <th>
+              <p><br /></p>
+              <table>
+                <tr>
+                  <th
+                    style="
+                  background-color: rgb(172, 206, 247);
+                  caret-color: transparent;
+                ">
+                    <p><br /></p>
+                  </th>
+                  <th
+                    style="
+                  background-color: rgb(172, 206, 247);
+                  caret-color: transparent;
+                ">
+                    <p><br /></p>
+                  </th>
+                </tr>
+                <tr>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                </tr>
+              </table>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p><br /></p>
+      `,
+      html`
+        <p><br /></p>
+        <table>
+          <tr>
+            <th>
+              <p><br /></p>
+              <table>
+                <tr>
+                  <th
+                    style="
+                    background-color: rgb(172, 206, 247);
+                    caret-color: transparent;
+                  ">
+                    <p><br /></p>
+                  </th>
+                  <th
+                    style="
+                    background-color: rgb(172, 206, 247);
+                    caret-color: transparent;
+                  ">
+                    <p><br /></p>
+                  </th>
+                </tr>
+                <tr>
+                  <th>
+                    <p><br /></p>
+                  </th>
+                  <td>
+                    <p><br /></p>
+                  </td>
+                </tr>
+              </table>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p><br /></p>
+      `,
+      {ignoreClasses: true},
+    );
+  });
 });

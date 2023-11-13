@@ -976,6 +976,22 @@ function $handleArrowKey(
     ) {
       return false;
     }
+    const anchorCellTable = $findTableNode(anchorCellNode);
+    if (anchorCellTable !== tableNode && anchorCellTable != null) {
+      const anchorCellTableElement = editor.getElementByKey(
+        anchorCellTable.getKey(),
+      );
+      if (anchorCellTableElement != null) {
+        tableSelection.grid = getTableGrid(anchorCellTableElement);
+        return $handleArrowKey(
+          editor,
+          event,
+          direction,
+          anchorCellTable,
+          tableSelection,
+        );
+      }
+    }
 
     const anchorCellDom = editor.getElementByKey(anchorCellNode.__key);
     const anchorDOM = editor.getElementByKey(anchor.key);
@@ -1054,20 +1070,37 @@ function $handleArrowKey(
       focus.getNode(),
       $isTableCellNode,
     );
-    if (!$isTableCellNode(anchorCellNode) || !$isTableCellNode(focusCellNode)) {
+
+    const [tableNodeFromSelection] = selection.getNodes();
+    const tableElement = editor.getElementByKey(
+      tableNodeFromSelection.getKey(),
+    );
+    if (
+      !$isTableCellNode(anchorCellNode) ||
+      !$isTableCellNode(focusCellNode) ||
+      !$isTableNode(tableNodeFromSelection) ||
+      tableElement == null
+    ) {
       return false;
     }
+    tableSelection.updateTableGridSelection(selection);
+
+    const grid = getTableGrid(tableElement);
+    const cordsAnchor = tableNode.getCordsFromCellNode(anchorCellNode, grid);
+    const anchorCell = tableNode.getCellFromCordsOrThrow(
+      cordsAnchor.x,
+      cordsAnchor.y,
+      grid,
+    );
+    tableSelection.setAnchorCellForSelection(anchorCell);
 
     stopEvent(event);
 
     if (event.shiftKey) {
-      const cords = tableNode.getCordsFromCellNode(
-        focusCellNode,
-        tableSelection.grid,
-      );
+      const cords = tableNode.getCordsFromCellNode(focusCellNode, grid);
       return adjustFocusNodeInDirection(
         tableSelection,
-        tableNode,
+        tableNodeFromSelection,
         cords.x,
         cords.y,
         direction,

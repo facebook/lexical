@@ -367,7 +367,7 @@ export class AutoLinkNode extends LinkNode {
     );
     if ($isElementNode(element)) {
       const linkNode = $createAutoLinkNode(this.__url, {
-        rel: this._rel,
+        rel: this.__rel,
         target: this.__target,
         title: this.__title,
       });

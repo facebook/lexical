@@ -590,8 +590,11 @@ export function $deleteTableColumn__EXPERIMENTAL(): void {
 
 function $moveSelectionToCell(cell: DEPRECATED_GridCellNode): void {
   const firstDescendant = cell.getFirstDescendant();
-  invariant(firstDescendant !== null, 'Unexpected empty cell');
-  firstDescendant.getParentOrThrow().selectStart();
+  if (firstDescendant == null) {
+    cell.selectStart();
+  } else {
+    firstDescendant.getParentOrThrow().selectStart();
+  }
 }
 
 function $insertFirst(parent: ElementNode, node: LexicalNode): void {

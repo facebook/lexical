@@ -304,10 +304,6 @@ editor.registerUpdateListener(({editorState}) => {
 });
 ```
 
-### Creating custom Lexical nodes
-
-- [Creating custom decorator nodes](https://github.com/facebook/lexical/blob/main/examples/decorators.md)
-
 ## Contributing to Lexical
 
 1. Clone this repository

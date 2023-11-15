@@ -164,7 +164,7 @@ const ELEMENT_FORMAT_OPTIONS: {
 } = {
   center: {
     icon: 'center-align',
-    iconRTL: 'right-align',
+    iconRTL: 'center-align',
     name: 'Center Align',
   },
   end: {

@@ -881,6 +881,11 @@ export async function unmergeTableCell(page) {
   await click(page, '.item[data-test-id="table-unmerge-cells"]');
 }
 
+export async function toggleColumnHeader(page) {
+  await click(page, '.table-cell-action-button-container');
+  await click(page, '.item[data-test-id="table-column-header"]');
+}
+
 export async function deleteTableRows(page) {
   await click(page, '.table-cell-action-button-container');
   await click(page, '.item[data-test-id="table-delete-rows"]');

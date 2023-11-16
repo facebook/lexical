@@ -38,6 +38,7 @@ import {
   selectFromAdditionalStylesDropdown,
   setBackgroundColor,
   test,
+  toggleColumnHeader,
   unmergeTableCell,
 } from '../utils/index.mjs';
 
@@ -1958,6 +1959,100 @@ test.describe('Tables', () => {
             </td>
           </tr>
         </table>
+      `,
+    );
+  });
+
+  test('Add column header after merging cells #4378', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    await initialize({isCollab, page});
+    test.skip(isPlainText);
+    if (IS_COLLAB) {
+      // The contextual menu positioning needs fixing (it's hardcoded to show on the right side)
+      page.setViewportSize({height: 1000, width: 3000});
+    }
+
+    await focusEditor(page);
+
+    await insertTable(page, 4, 4);
+    await selectCellsFromTableCords(
+      page,
+      {x: 1, y: 2},
+      {x: 3, y: 3},
+      false,
+      false,
+    );
+    await mergeTableCells(page);
+    await selectCellsFromTableCords(
+      page,
+      {x: 3, y: 1},
+      {x: 3, y: 1},
+      false,
+      false,
+    );
+    await toggleColumnHeader(page);
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <table class="PlaygroundEditorTheme__table">
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <td
+              class="PlaygroundEditorTheme__tableCell"
+              colspan="3"
+              rowspan="2">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+          </tr>
+        </table>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
       `,
     );
   });

@@ -1281,7 +1281,7 @@ export class RangeSelection implements BaseSelection {
             lastNode = textNode;
           }
           // root node selections only select whole nodes, so no text splice is necessary
-          if (!$isRootNode(endPoint.getNode())) {
+          if (!$isRootNode(endPoint.getNode()) && endPoint.type === 'text') {
             lastNode = (lastNode as TextNode).spliceText(0, endOffset, '');
           }
           markedNodeKeysForKeep.add(lastNode.__key);

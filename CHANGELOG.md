@@ -1,3 +1,89 @@
+## v0.12.3 (2023-11-17)
+
+- Its a journey (#5242) Acy Watson
+- Fixed column header on merged cells (#5230) Illia Olenchenko
+- Remove codeowners to prevent unnecessary pings (#5236) John Flockton
+- Fixed delete removing link node text when on linebreak (#5146) Steve Larson
+- Fix row deletion if previous row is empty (#5231) Illia Olenchenko
+- Remove unnecessary link from README.md (#5232) John Flockton
+- chore(deps-dev) bump tough-cookie from 4.1.2 to 4.1.3 (#5134) dependabotbot
+- chore(deps) bump sidewayformula from 3.0.0 to 3.0.1 (#5132) dependabotbot
+- chore(deps-dev) bump semver from 5.7.1 to 5.7.2 (#5131) dependabotbot
+- chore(deps) bump postcss from 8.4.27 to 8.4.31 (#5130) dependabotbot
+- chore(deps) bump http-cache-semantics from 4.1.0 to 4.1.1 (#5129) dependabotbot
+- chore(deps-dev) bump vite from 2.9.13 to 2.9.16 (#5133) dependabotbot
+- Fixes grid selection to be aware of nested tables (#5166) Illia Olenchenko
+- Bug Align list item do not change the export DOM (#5160) trinhvinhtruong96
+- Fix iconRTL for center alignment (#5227) Ivaylo Pavlov
+- refactor(playground) clean up settings (#5225) Aron Griffis
+- fix Make autolinks working for formatted text (#5214) Konstantin Kovalev
+- Fix touple typo to make it correctly tuple (#5229) Julian French
+- Fix lexical-link typo srelrel (#5221) Bob Ippolito
+- Fix alignment for links in Toolbar (#5209) Tahir Shakir
+- Update Modal.tsx (#5203) Bradley Dirheimer
+- fix Heading.insertNewAfter (#5198) GermanJablo
+- Link title is correctly applied through the command (#5191) Petyo Ivanov
+- Improved LexicalMenu positioning relative to text (#5187) Steve Larson
+- fixed issue 5181 where link address is not shown if comment is set in (#5188) Tong Xi
+- Fix at() transpilation (#5180) Gerard Rovira
+- Fix insertNodes when anchor point is blank TextNode (#5179) Gerard Rovira
+- Add playwright-report to gitignore (#5173) GermanJablo
+- Fix insertNodes after selection swap (#5175) Gerard Rovira
+- Range utils (#5153) Gerard Rovira
+- Fix insertNodes and insertParagraph (#5002) GermanJablo
+- Add Optional Chaining to isNodePre Method (#5157) Nick J Moss
+- Table resize handle getting stuck fix (#5169) Alex Reznik
+- Updated package-lock.json versions with npm audit fix. (#5125) Matthew Hutter
+- Fix formatting selected table cells (#5168) Tahir Shakir
+- Update index.tsx (#5165) Bradley Dirheimer
+- Add commandPriority option to LexicalMenu and dependent components (#5123) huw
+- chore(deps) bump babeltraverse from 7.18.6 to 7.23.2 (#5155) dependabotbot
+- Updated insertTableColumn with batching (#5145) Illia Olenchenko
+- Add Columns Layout to Typeahead menu (#5136) Ivaylo Pavlov
+- TableResizer cell calculation based on cellspans (#5141) Illia Olenchenko
+- Update anchor selection if split by patching style (#5087) Ruslan Piliuta
+- chore(deps) bump excalidrawexcalidraw from 0.14.2 to 0.15.3 (#5135) dependabotbot
+- Consolidate docs across the repo (#5121) Ivaylo Pavlov
+- Fix right click select images (#5056) Ben Carleton
+- fix fix android backspace bug (#5077) Cristopher Solis
+- fix(lexical-rich-text) correct comment typo (#5116) Xuan
+- docs fix typo in decorators.md (#5113) Can Rau
+- Fix insertNodes insert position at start of inline ElementNode (#5110) Gerard Rovira
+- Revert Fix transferStartingElementPointToTextPoint() #4756  (#5094) John Flockton
+- chore add typedefs for collab nodes and remove unused members (#5071) VelociRaptor
+- Fix tab replacement composition crash (#5066) Gerard Rovira
+- Fix getting style via getSelectionStyleValueForProperty when selection is collapsed (#5082) Ruslan Piliuta
+- Set up GA4 for website (#5078) Paul OShannessy
+- chore fix typo (#5074) Alessio Gravili
+- Fix integrity (#5068) Gerard Rovira
+- fix(playground-text-format-toolbar) dont hide toolbar if current node is a paragraph (#4850) Mathieu Mtral
+- Fix ToolbarPlugin paste error with start, end format (#5019) Hansu Kim
+- Fixfloating formatter #5021 (#5041) Shubham Jadhav
+- fix  Add column shortcut gets hidden when mouse leave the table #4857 (#5058) Sathish
+- Allow LexicalTypeaheadMenuPlugin to work when inside an iframe (#5044) Lester Tay
+- MaxLength handle empty ElementNode (#5029) Gerard Rovira
+- Playground embed twitter support x.com (#5060) su
+- Port List e2e test to unit tests (#5030) Acy Watson
+- Playground refactor component picker plugin (#4836) Georgii Dolzhykov
+- Transpile optional catch binding (#5048) Gerard Rovira
+- Nit Floating toolbar (#5038) Gerard Rovira
+- feat LexicalClickableLinkPlugin should support ctrl click mode #4565 (#4839) Sathish
+- fix(Playground) CMD K improvements (#5013) Rajat
+- chore fix typo in lexical-utils docs (#5022) Bruno Bonamin
+- Update setFloatingElemPositionForLinkEditor.ts (#5028) Bradley Dirheimer
+- Update setFloatingElemPosition.ts (#5027) Bradley Dirheimer
+- Fix pasting text that ends with an empty paragraph is ignored when the MaxLengthPlugin is enabled (#5020) Hansu Kim
+- Fix event handler removal in useDynamicPositioning, remove dupe code (#5024) Georgii Dolzhykov
+- fix LinkNode.importDOM should support all node content (#5010) Rajat
+- Allow overriding HTML serialization behavior from the editor config. (#4254) Acy Watson
+- Fix TextNode override in Serialization  Deserialization doc (#5006) Giacomo Randazzo
+- Fix getTableSelectionFromTableElement flow (#5005) Gerard Rovira
+- Add highlight to format types (#5001) Gerard Rovira
+- Add nodes replacement support for nested composer (#4992) Maksim Horbachevsky
+- Remove capital letter mentions (#4991) Acy Watson
+- Fix comment plugin selection rect top position (#4988) vonsa
+- fix(lexicalhtml) missing lexicalutils dependency (#4984) liuwei
+
 ## v0.12.2 (2023-09-08)
 
 - Move isHTMLElement into core (#4977) Gerard Rovira

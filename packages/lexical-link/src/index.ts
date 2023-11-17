@@ -20,11 +20,7 @@ import type {
   SerializedElementNode,
 } from 'lexical';
 
-import {
-  $getAncestor,
-  addClassNamesToElement,
-  isHTMLAnchorElement,
-} from '@lexical/utils';
+import {addClassNamesToElement, isHTMLAnchorElement} from '@lexical/utils';
 import {
   $applyNodeReplacement,
   $getSelection,
@@ -528,4 +524,15 @@ export function toggleLink(
       }
     });
   }
+}
+
+function $getAncestor<NodeType extends LexicalNode = LexicalNode>(
+  node: LexicalNode,
+  predicate: (ancestor: LexicalNode) => ancestor is NodeType,
+) {
+  let parent = node;
+  while (parent !== null && parent.getParent() !== null && !predicate(parent)) {
+    parent = parent.getParentOrThrow();
+  }
+  return predicate(parent) ? parent : null;
 }

@@ -1,7 +1,7 @@
 ## v0.12.4 (2023-11-17)
 
+- Fix @lexical/utils import (#5245) Gerard Rovira
 - v0.12.3 (#5244) Acy Watson
-- v0.12.3 Lexical GitHub Actions Bot
 
 ## v0.12.3 (2023-11-17)
 

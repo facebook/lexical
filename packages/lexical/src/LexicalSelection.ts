@@ -12,7 +12,6 @@ import type {NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextFormatType} from './nodes/LexicalTextNode';
 
-import {$getAncestor, INTERNAL_$isBlock} from '@lexical/utils';
 import invariant from 'shared/invariant';
 
 import {
@@ -50,6 +49,7 @@ import {
 import {
   $findMatchingParent,
   $getAdjacentNode,
+  $getAncestor,
   $getChildrenRecursively,
   $getCompositionKey,
   $getNearestRootOrShadowRoot,
@@ -65,6 +65,7 @@ import {
   getElementByKeyOrThrow,
   getNodeFromDOM,
   getTextNodeOffset,
+  INTERNAL_$isBlock,
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
   removeDOMBlockCursorElement,

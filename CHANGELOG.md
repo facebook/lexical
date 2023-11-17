@@ -1,3 +1,8 @@
+## v0.12.4 (2023-11-17)
+
+- v0.12.3 (#5244) Acy Watson
+- v0.12.3 Lexical GitHub Actions Bot
+
 ## v0.12.3 (2023-11-17)
 
 - Its a journey (#5242) Acy Watson

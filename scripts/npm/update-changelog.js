@@ -30,7 +30,6 @@ async function updateChangelog() {
   await exec(
     `cat ./CHANGELOG.md >> ${tmpFilePath} && mv ${tmpFilePath} ./CHANGELOG.md`,
   );
-  await exec(`git commit --amend --no-edit`);
 }
 
 if (!isPrerelease) {

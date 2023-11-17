@@ -17,12 +17,9 @@ const isPrerelease = process.env.npm_package_version.indexOf('-') !== -1;
 async function updateChangelog() {
   const date = (await exec(`git show --format=%as | head -1`)).stdout.trim();
   const header = `## v${process.env.npm_package_version} (${date})`;
-  const previousReleaseHash = (
-    await exec(`git log -n 1 origin/latest --pretty=format:"%H"`)
-  ).stdout.trim();
   const changelogContent = (
     await exec(
-      `git --no-pager log --oneline ${previousReleaseHash}...HEAD~1 --pretty=format:\"- %s %an\"`,
+      `git --no-pager log --oneline ${process.env.LATEST_RELEASE}...HEAD~1 --pretty=format:\"- %s %an\"`,
     )
   ).stdout
     .replace(/[^a-zA-Z0-9()\n \-,\.#]/g, '')

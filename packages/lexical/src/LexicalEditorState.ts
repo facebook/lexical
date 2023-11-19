@@ -56,8 +56,23 @@ export function createEmptyEditorState(): EditorState {
   return new EditorState(new Map([['root', $createRootNode()]]));
 }
 
-function exportNodeToJSON<SerializedNode>(node: LexicalNode): SerializedNode {
+/**
+ *
+ * @param node
+ * @param keys
+ *  this keys will be kept in the serialized node, the rest will be deleted
+ *  and this will be useful when we debug EditorState with json
+ */
+export function exportNodeToJSON<SerializedNode>(node: LexicalNode, keys?: string[]): SerializedNode {
   const serializedNode = node.exportJSON();
+  if (keys) {
+    for (const key in serializedNode) {
+      if (!keys.includes(key)) {
+        // @ts-ignore
+        delete serializedNode[key];
+      }
+    }
+  }
   const nodeClass = node.constructor;
 
   // @ts-expect-error TODO Replace Class utility type with InstanceType
@@ -85,7 +100,7 @@ function exportNodeToJSON<SerializedNode>(node: LexicalNode): SerializedNode {
 
     for (let i = 0; i < children.length; i++) {
       const child = children[i];
-      const serializedChildNode = exportNodeToJSON(child);
+      const serializedChildNode = exportNodeToJSON(child, keys);
       serializedChildren.push(serializedChildNode);
     }
   }

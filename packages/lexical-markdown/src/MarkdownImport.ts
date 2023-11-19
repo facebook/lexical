@@ -24,7 +24,7 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
-  $getSelection,
+  $getSelection, $isElementNode,
   $isParagraphNode,
   $isTextNode,
   ElementNode,
@@ -41,50 +41,116 @@ type TextFormatTransformersIndex = Readonly<{
   transformersByTag: Readonly<Record<string, TextFormatTransformer>>;
 }>;
 
+export function parseMarkdownString(
+  parentNode: ElementNode,
+  lines: string[],
+  byType: Readonly<{
+    element: Array<ElementTransformer>;
+    textFormat: Array<TextFormatTransformer>;
+    textMatch: Array<TextMatchTransformer>;
+  }>): void {
+  const linesLength = lines.length;
+  const textFormatTransformersIndex = createTextFormatTransformersIndex(
+    byType.textFormat,
+  );
+  for (let i = 0; i < linesLength;) {
+    const lineText = lines[i];
+    // handle multi line parser like Codeblocks
+    let isMatched = false;
+    for (const elementTransformer of byType.element) {
+      const match = lineText.match(elementTransformer.regExp)
+      if (elementTransformer.getNumberOfLines) {
+        const numberOfLines = elementTransformer.getNumberOfLines(lines, i)
+        if (i + numberOfLines > lines.length) {
+          continue
+        }
+        if (match) {
+          if (elementTransformer.recursivelyParse) {
+            const elementNode = $createParagraphNode()
+            parentNode.append(elementNode)
+            parseMarkdownString(elementNode, lines.slice(i + 1, i + numberOfLines), byType)
+          } else {
+            const textNode = $createTextNode(
+              lines.slice(i + 1, i + numberOfLines).join('\n'),
+            )
+            const elementNode = $createParagraphNode()
+            elementNode.append(textNode)
+            parentNode.append(elementNode)
+          }
+          elementTransformer.replace(
+            parentNode.getLastChild() as ElementNode,
+            (parentNode.getLastChild() as ElementNode).getChildren(),
+            match,
+            true
+          )
+          i += numberOfLines
+          /**
+           * only add one line if next line is the close mark
+           * just like
+           * ``` of code block
+           * ::: of tip block
+           *
+           * delete the line `lines[i].match(elementTransformer.regExp`
+           * ```
+           * code
+           * ```
+           * ```
+           * code
+           * ```
+           * when next line is ``` the code block will be parsed
+           */
+          if (i < linesLength &&
+            (elementTransformer.closeRegExp && lines[i].match(elementTransformer.closeRegExp)
+            )) {
+            i++
+          }
+          isMatched = true
+          break
+        }
+      }
+    }
+    if (isMatched) {
+      continue
+    }
+    importBlocks(
+      lineText,
+      parentNode,
+      byType.element,
+      textFormatTransformersIndex,
+      byType.textMatch,
+    )
+    i++
+  }
+}
+
+function clearEmptyParagraph(node: ElementNode) {
+  const children = node.getChildren();
+  for (const child of children) {
+    if (isEmptyParagraph(child)) {
+      child.remove();
+    } else if ($isElementNode(child)) {
+      clearEmptyParagraph(child);
+    }
+  }
+}
+
 export function createMarkdownImport(
   transformers: Array<Transformer>,
 ): (markdownString: string, node?: ElementNode) => void {
   const byType = transformersByType(transformers);
-  const textFormatTransformersIndex = createTextFormatTransformersIndex(
-    byType.textFormat,
-  );
+
 
   return (markdownString, node) => {
     const lines = markdownString.split('\n');
-    const linesLength = lines.length;
     const root = node || $getRoot();
     root.clear();
 
-    for (let i = 0; i < linesLength; i++) {
-      const lineText = lines[i];
-      // Codeblocks are processed first as anything inside such block
-      // is ignored for further processing
-      // TODO:
-      // Abstract it to be dynamic as other transformers (add multiline match option)
-      const [codeBlockNode, shiftedIndex] = importCodeBlock(lines, i, root);
+    parseMarkdownString(root, lines, byType)
 
-      if (codeBlockNode != null) {
-        i = shiftedIndex;
-        continue;
-      }
-
-      importBlocks(
-        lineText,
-        root,
-        byType.element,
-        textFormatTransformersIndex,
-        byType.textMatch,
-      );
-    }
 
     // Removing empty paragraphs as md does not really
     // allow empty lines and uses them as dilimiter
-    const children = root.getChildren();
-    for (const child of children) {
-      if (isEmptyParagraph(child)) {
-        child.remove();
-      }
-    }
+    clearEmptyParagraph(root);
 
     if ($getSelection() !== null) {
       root.selectEnd();
@@ -108,22 +174,30 @@ function isEmptyParagraph(node: LexicalNode): boolean {
 
 function importBlocks(
   lineText: string,
-  rootNode: ElementNode,
+  parentNode: ElementNode,
   elementTransformers: Array<ElementTransformer>,
   textFormatTransformersIndex: TextFormatTransformersIndex,
   textMatchTransformers: Array<TextMatchTransformer>,
 ) {
-  const lineTextTrimmed = lineText.trim();
+  // it has to be trimEnd, otherwise it will remove the space at the beginning of the line
+  // for example ```html
+  // <style>
+  //   .markdown-body {
+  // 	 }
+  // </style>
+  // ```
+  const lineTextTrimmed = lineText.trimEnd();
   const textNode = $createTextNode(lineTextTrimmed);
   const elementNode = $createParagraphNode();
   elementNode.append(textNode);
-  rootNode.append(elementNode);
+  parentNode.append(elementNode)
 
   for (const {regExp, replace} of elementTransformers) {
     const match = lineText.match(regExp);
 
     if (match) {
-      textNode.setTextContent(lineText.slice(match[0].length));
+      const textContent = lineText.slice(match[0].length)
+      textNode.setTextContent(textContent);
       replace(elementNode, [textNode], match, true);
       break;
     }
@@ -393,9 +467,9 @@ function createTextFormatTransformersIndex(
     // Reg exp to find opening tags
     openTagsRegExp: new RegExp(
       (IS_SAFARI || IS_IOS || IS_APPLE_WEBKIT ? '' : `${escapeRegExp}`) +
-        '(' +
-        openTagsRegExp.join('|') +
-        ')',
+      '(' +
+      openTagsRegExp.join('|') +
+      ')',
       'g',
     ),
     transformersByTag,

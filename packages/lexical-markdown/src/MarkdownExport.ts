@@ -64,7 +64,7 @@ function exportTopLevelElements(
 ): string | null {
   for (const transformer of elementTransformers) {
     const result = transformer.export(node, (_node) =>
-      exportChildren(_node, textTransformersIndex, textMatchTransformers),
+      exportChildren(_node, elementTransformers, textTransformersIndex, textMatchTransformers),
     );
 
     if (result != null) {
@@ -73,7 +73,7 @@ function exportTopLevelElements(
   }
 
   if ($isElementNode(node)) {
-    return exportChildren(node, textTransformersIndex, textMatchTransformers);
+    return exportChildren(node, elementTransformers, textTransformersIndex, textMatchTransformers);
   } else if ($isDecoratorNode(node)) {
     return node.getTextContent();
   } else {
@@ -83,6 +83,7 @@ function exportTopLevelElements(
 
 function exportChildren(
   node: ElementNode,
+  elementTransformers: Array<ElementTransformer>,
   textTransformersIndex: Array<TextFormatTransformer>,
   textMatchTransformers: Array<TextMatchTransformer>,
 ): string {
@@ -90,12 +91,29 @@ function exportChildren(
   const children = node.getChildren();
 
   mainLoop: for (const child of children) {
+    if ($isElementNode(child)) {
+      for (const transformer of elementTransformers) {
+        const result = transformer.export(child, (_node) =>
+          exportChildren(_node, elementTransformers, textTransformersIndex, textMatchTransformers),
+        );
+
+        if (result != null) {
+          output.push(result);
+          if (children.indexOf(child) !== children.length - 1) {
+            output.push('\n')
+          }
+          continue mainLoop
+        }
+      }
+    }
+
     for (const transformer of textMatchTransformers) {
       const result = transformer.export(
         child,
         (parentNode) =>
           exportChildren(
             parentNode,
+            elementTransformers,
             textTransformersIndex,
             textMatchTransformers,
           ),
@@ -117,8 +135,15 @@ function exportChildren(
       );
     } else if ($isElementNode(child)) {
       output.push(
-        exportChildren(child, textTransformersIndex, textMatchTransformers),
+        exportChildren(child, elementTransformers, textTransformersIndex, textMatchTransformers),
       );
+      // don't need a line break after the last child
+      if (children.indexOf(child) !== children.length - 1) {
+        // Insert two line breaks to create a space between two paragraphs or other elements, as required by Markdown syntax.
+        output.push(
+          '\n','\n'
+        )
+      }
     } else if ($isDecoratorNode(child)) {
       output.push(child.getTextContent());
     }

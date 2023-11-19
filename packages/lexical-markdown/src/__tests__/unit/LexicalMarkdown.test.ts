@@ -6,7 +6,7 @@
  *
  */
 
-import {CodeNode} from '@lexical/code';
+import {CodeHighlightNode, CodeNode} from '@lexical/code';
 import {createHeadlessEditor} from '@lexical/headless';
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import {LinkNode} from '@lexical/link';
@@ -21,6 +21,7 @@ import {
   TextMatchTransformer,
   TRANSFORMERS,
 } from '../..';
+import {exportNodeToJSON} from "lexical/src/LexicalEditorState";
 
 describe('Markdown', () => {
   type Input = Array<{
@@ -28,6 +29,7 @@ describe('Markdown', () => {
     md: string;
     skipExport?: true;
     skipImport?: true;
+    exportMd?: string;
   }>;
 
   const URL = 'https://lexical.dev';
@@ -56,6 +58,14 @@ describe('Markdown', () => {
     {
       html: '<h6><span style="white-space: pre-wrap;">Hello world</span></h6>',
       md: '###### Hello world',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">line1</span><br><span style="white-space: pre-wrap;">line2</span></p>',
+      md: 'line1\nline2',
+    },
+    {
+      html: '<p><span style="white-space: pre-wrap;">line1</span><br><span style="white-space: pre-wrap;">line2</span></p><p><span style="white-space: pre-wrap;">line3</span><br><span style="white-space: pre-wrap;">line4</span></p>',
+      md: 'line1\nline2\n\nline3\nline4',
     },
     {
       // Multiline paragraphs
@@ -162,10 +172,6 @@ describe('Markdown', () => {
       md: '```\nCode\n```',
     },
     {
-      html: '<pre spellcheck="false"><span style="white-space: pre-wrap;">Code</span></pre>',
-      md: '```\nCode\n```',
-    },
-    {
       // Import only: extra empty lines will be removed for export
       html: '<p><span style="white-space: pre-wrap;">Hello</span></p><p><span style="white-space: pre-wrap;">world</span></p>',
       md: ['Hello', '', '', '', 'world'].join('\n'),
@@ -182,6 +188,55 @@ describe('Markdown', () => {
       html: '<p><span style="white-space: pre-wrap;">Hello </span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">world</span></a><span style="white-space: pre-wrap;">! Hello </span><mark style="white-space: pre-wrap;"><span>$world$</span></mark><span style="white-space: pre-wrap;">! </span><a href="https://lexical.dev"><span style="white-space: pre-wrap;">Hello</span></a><span style="white-space: pre-wrap;"> world! Hello </span><mark style="white-space: pre-wrap;"><span>$world$</span></mark><span style="white-space: pre-wrap;">!</span></p>',
       md: `Hello [world](${URL})! Hello $world$! [Hello](${URL}) world! Hello $world$!`,
       skipExport: true,
+    },
+    // We should not render non-link markdown as a link
+    // cannot support this, deal with it later
+//     {
+//       html: '<p><span style="white-space: pre-wrap;">![alt text](https://lexical.dev/image.jpeg)</span></p>',
+//       md: '![alt text](https://lexical.dev/image.jpeg)',
+//     },
+    {
+      exportMd: ['```', 'a = b + c', '```'].join('\n'),
+      html: '<pre spellcheck="false"><span style="white-space: pre-wrap;">a = b + c</span></pre>',
+      md: ['```', 'a = b + c'].join('\n'),
+    },
+    {
+      html: '<pre spellcheck="false" data-highlight-language="html"><span style="white-space: pre-wrap;">&lt;style&gt;\n' +
+        '\t.markdown-body {\n' +
+        '\t}\n' +
+        '&lt;/style&gt;</span></pre>',
+      md: `\`\`\`html
+<style>
+\t.markdown-body {
+\t}
+</style>
+\`\`\``,
+    },
+    {
+      html: '<blockquote><a href="https://lexical.dev"><span style="white-space: pre-wrap;">hello</span></a></blockquote>',
+      md: `> [hello](${URL})`,
+    },
+    {
+      html: '<pre spellcheck="false" data-highlight-language="markdown"><span style="white-space: pre-wrap;"># Hello</span></pre>',
+      md: `\`\`\`markdown
+# Hello
+\`\`\``,
+    },
+    {
+    exportMd: `\`\`\`
+# Hello1
+\`\`\`
+
+\`\`\`
+# Hello2
+\`\`\``,
+      html: '<pre spellcheck="false"><span style="white-space: pre-wrap;"># Hello1</span></pre><pre spellcheck="false"><span style="white-space: pre-wrap;"># Hello2</span></pre>',
+      md: `\`\`\`
+# Hello1
+\`\`\`
+\`\`\`
+# Hello2
+\`\`\``
     },
   ];
 
@@ -207,6 +262,8 @@ describe('Markdown', () => {
           QuoteNode,
           CodeNode,
           LinkNode,
+          CodeNode,
+          CodeHighlightNode,
         ],
       });
 
@@ -227,7 +284,7 @@ describe('Markdown', () => {
     });
   }
 
-  for (const {html, md, skipExport} of IMPORT_AND_EXPORT) {
+  for (const {html, md, exportMd, skipExport} of IMPORT_AND_EXPORT) {
     if (skipExport) {
       continue;
     }
@@ -261,7 +318,43 @@ describe('Markdown', () => {
         editor
           .getEditorState()
           .read(() => $convertToMarkdownString(TRANSFORMERS)),
-      ).toBe(md);
+      ).toBe(exportMd ?? md);
+    });
+  }
+
+  for (const {md, exportMd, skipExport} of IMPORT_AND_EXPORT) {
+    if (skipExport) {
+      continue;
+    }
+
+    it(`can export "${md.replace(/\n/g, '\\n')}" from md`, () => {
+      const editor = createHeadlessEditor({
+        nodes: [
+          HeadingNode,
+          ListNode,
+          ListItemNode,
+          QuoteNode,
+          CodeNode,
+          LinkNode,
+        ],
+      });
+
+      editor.update(
+        () =>
+          $convertFromMarkdownString(md, [
+            ...TRANSFORMERS,
+            HIGHLIGHT_TEXT_MATCH_IMPORT,
+          ]),
+        {
+          discrete: true,
+        },
+      );
+
+      expect(
+        editor
+          .getEditorState()
+          .read(() => $convertToMarkdownString(TRANSFORMERS)),
+      ).toBe(exportMd ?? md);
     });
   }
 });

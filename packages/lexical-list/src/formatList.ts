@@ -129,6 +129,7 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
           if (
             $isElementNode(node) &&
             node.isEmpty() &&
+            !$isListItemNode(node) &&
             !handled.has(node.getKey())
           ) {
             createListOrMerge(node, listType);

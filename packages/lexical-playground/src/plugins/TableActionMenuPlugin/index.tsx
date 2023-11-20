@@ -479,6 +479,17 @@ function TableActionMenu({
           if ($isTableCellNode(cell)) {
             cell.setBackgroundColor(value);
           }
+
+          if (DEPRECATED_$isGridSelection(selection)) {
+            const nodes = selection.getNodes();
+
+            for (let i = 0; i < nodes.length; i++) {
+              const node = nodes[i];
+              if (DEPRECATED_$isGridCellNode(node)) {
+                node.setBackgroundColor(value);
+              }
+            }
+          }
         }
       });
     },

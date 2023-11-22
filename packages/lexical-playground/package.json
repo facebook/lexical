@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@excalidraw/excalidraw": "^0.15.3",
+    "@excalidraw/excalidraw": "^0.17.0",
     "@lexical/clipboard": "0.12.4",
     "@lexical/code": "0.12.4",
     "@lexical/file": "0.12.4",

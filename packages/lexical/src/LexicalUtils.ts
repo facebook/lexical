@@ -162,10 +162,11 @@ export function getNearestEditorFromDOMNode(
 }
 
 export function getTextDirection(text: string): 'ltr' | 'rtl' | null {
-  if (RTL_REGEX.test(text)) {
+  const textWithoutEmojis = text.replace(/[^\p{L}\p{N}\p{P}\p{Z}^$\n]/gu, '');
+  if (RTL_REGEX.test(textWithoutEmojis)) {
     return 'rtl';
   }
-  if (LTR_REGEX.test(text)) {
+  if (LTR_REGEX.test(textWithoutEmojis)) {
     return 'ltr';
   }
   return null;

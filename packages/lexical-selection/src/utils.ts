@@ -181,7 +181,7 @@ export function getStyleObjectFromRawCSS(css: string): Record<string, string> {
   for (const style of styles) {
     if (style !== '') {
       const [key, value] = style.split(/:([^]+)/); // split on first colon
-      if(key && value) {
+      if (key && value) {
         styleObject[key.trim()] = value.trim();
       }
     }

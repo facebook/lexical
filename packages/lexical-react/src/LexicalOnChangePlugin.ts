@@ -9,15 +9,18 @@
 import type {EditorState, LexicalEditor} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {debounce} from 'lodash-es';
 import useLayoutEffect from 'shared/useLayoutEffect';
 
 export function OnChangePlugin({
   ignoreHistoryMergeTagChange = true,
   ignoreSelectionChange = false,
+  debounceTime = 0,
   onChange,
 }: {
   ignoreHistoryMergeTagChange?: boolean;
   ignoreSelectionChange?: boolean;
+  debounceTime?: number;
   onChange: (
     editorState: EditorState,
     editor: LexicalEditor,
@@ -40,7 +43,13 @@ export function OnChangePlugin({
             return;
           }
 
-          onChange(editorState, editor, tags);
+          if (debounceTime) {
+            const debouncedOnChange = debounce(onChange, debounceTime);
+
+            debouncedOnChange(editorState, editor, tags);
+          } else {
+            onChange(editorState, editor, tags);
+          }
         },
       );
     }

@@ -73,7 +73,7 @@ function findFirstMatch(
   return null;
 }
 
-const PUNCTUATION_OR_SPACE = /[.,;\s]/;
+const PUNCTUATION_OR_SPACE = /[,;\s]/;
 
 function isSeparator(char: string): boolean {
   return PUNCTUATION_OR_SPACE.test(char);

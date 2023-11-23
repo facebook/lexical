@@ -307,4 +307,100 @@ test.describe('Auto Links', () => {
       {ignoreClasses: true},
     );
   });
+
+  test(`Does not convert bad URLs into links`, async ({page, isPlainText}) => {
+    const badUrls = [
+      'http://',
+      'http://.',
+      'http://..',
+      'http://../',
+      'http://?',
+      'http://??',
+      'http://??/',
+      'http://#',
+      'http://##',
+      'http://##/',
+      '//',
+      '//a',
+      '///a',
+      '///',
+      'http:///a',
+      'rdar://1234',
+      'h://test',
+      ':// should fail',
+      'http://foo.bar/foo(bar)baz quux',
+      'http://-error-.invalid/',
+      'http://-a.b.co',
+      'http://a.b-.co',
+      'http://ex..ample.com',
+      'http://example..com',
+      'http://example-.com',
+      'http://-example.com',
+    ];
+
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type(badUrls.join(' '));
+
+    await assertHTML(
+      page,
+      html`
+        <p dir="ltr">
+          <span data-lexical-text="true">${badUrls.join(' ')}</span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  test('Does convert good complex URLs into links', async ({
+    page,
+    isPlainText,
+  }) => {
+    const goodUrls = [
+      'http://foo.com/blah_blah',
+      'http://foo.com/blah_blah/',
+      'http://www.example.com/wpstyle/?p=364',
+      'https://www.example.com/foo/?bar=baz&inga=42&quux',
+      'http://foo.com/something?after=parens',
+      'http://jlo.mp',
+      'http://1337.net',
+      'http://a.b-c.de',
+      // // Include IPs and localhost
+      'http://localhost',
+      'http://localhost:3000',
+      'http://192.168.1.1',
+      'http://192.168.1.1:3000',
+      'http://example.com',
+      'http://example.com/path/to/resource?query=string#fragment',
+      'https://username:password@example.com',
+      'http://example.com/path/to/page.html?query=string#fragment',
+      'https://example.com#anchor',
+      'http://abcdefghij.com',
+    ];
+
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type(goodUrls.join(' ') + ' ');
+
+    let expectedHTML = '';
+    for (const url of goodUrls) {
+      expectedHTML += `
+          <a href="${url.replaceAll(/&/g, '&amp;')}" dir="ltr">
+            <span data-lexical-text="true">${url.replace(/&/g, '&amp;')}</span>
+          </a>
+          <span data-lexical-text="true"></span>
+      `;
+    }
+
+    await assertHTML(
+      page,
+      html`
+        <p dir="ltr">${expectedHTML}</p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
 });

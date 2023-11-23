@@ -8,11 +8,7 @@
 
 /* eslint-disable no-constant-condition */
 import type {EditorConfig, LexicalEditor} from './LexicalEditor';
-import type {
-  GridSelection,
-  NodeSelection,
-  RangeSelection,
-} from './LexicalSelection';
+import type {BaseSelection, RangeSelection} from './LexicalSelection';
 import type {Klass} from 'lexical';
 
 import invariant from 'shared/invariant';
@@ -263,9 +259,7 @@ export class LexicalNode {
    *
    * @param selection - The selection that we want to determine if the node is in.
    */
-  isSelected(
-    selection?: null | RangeSelection | NodeSelection | GridSelection,
-  ): boolean {
+  isSelected(selection?: null | BaseSelection): boolean {
     const targetSelection = selection || $getSelection();
     if (targetSelection == null) {
       return false;
@@ -680,7 +674,7 @@ export class LexicalNode {
     const cloneNotNeeded = editor._cloneNotNeeded;
     const selection = $getSelection();
     if (selection !== null) {
-      selection._cachedNodes = null;
+      selection.setCachedNodes(null);
     }
     if (cloneNotNeeded.has(key)) {
       // Transforms clear the dirty node set on each iteration to keep track on newly dirty nodes

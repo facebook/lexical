@@ -7,11 +7,10 @@
  */
 
 import type {
+  BaseSelection,
   EditorConfig,
-  GridSelection,
   LexicalNode,
   NodeKey,
-  NodeSelection,
   RangeSelection,
   SerializedElementNode,
   Spread,
@@ -182,7 +181,7 @@ export class MarkNode extends ElementNode {
 
   extractWithChild(
     child: LexicalNode,
-    selection: RangeSelection | NodeSelection | GridSelection,
+    selection: BaseSelection,
     destination: 'clone' | 'html',
   ): boolean {
     if (!$isRangeSelection(selection) || destination === 'html') {

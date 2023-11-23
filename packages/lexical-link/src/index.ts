@@ -8,14 +8,13 @@
  */
 
 import type {
+  BaseSelection,
   DOMConversionMap,
   DOMConversionOutput,
   EditorConfig,
-  GridSelection,
   LexicalCommand,
   LexicalNode,
   NodeKey,
-  NodeSelection,
   RangeSelection,
   SerializedElementNode,
 } from 'lexical';
@@ -254,7 +253,7 @@ export class LinkNode extends ElementNode {
 
   extractWithChild(
     child: LexicalNode,
-    selection: RangeSelection | NodeSelection | GridSelection,
+    selection: BaseSelection,
     destination: 'clone' | 'html',
   ): boolean {
     if (!$isRangeSelection(selection)) {

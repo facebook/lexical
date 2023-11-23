@@ -21,8 +21,7 @@ import type {
 import type {EditorState} from './LexicalEditorState';
 import type {LexicalNode, NodeKey, NodeMap} from './LexicalNode';
 import type {
-  GridSelection,
-  NodeSelection,
+  BaseSelection,
   PointType,
   RangeSelection,
 } from './LexicalSelection';
@@ -465,9 +464,7 @@ export function internalGetRoot(editorState: EditorState): RootNode {
   return editorState._nodeMap.get('root') as RootNode;
 }
 
-export function $setSelection(
-  selection: null | RangeSelection | NodeSelection | GridSelection,
-): void {
+export function $setSelection(selection: null | BaseSelection): void {
   errorOnReadOnly();
   const editorState = getActiveEditorState();
   if (selection !== null) {
@@ -480,7 +477,7 @@ export function $setSelection(
       }
     }
     selection.dirty = true;
-    selection._cachedNodes = null;
+    selection.setCachedNodes(null);
   }
   editorState._selection = selection;
 }
@@ -1258,7 +1255,7 @@ export function $addUpdateTag(tag: string): void {
 
 export function $maybeMoveChildrenSelectionToParent(
   parentNode: LexicalNode,
-): RangeSelection | NodeSelection | GridSelection | null {
+): BaseSelection | null {
   const selection = $getSelection();
   if (!$isRangeSelection(selection) || !$isElementNode(parentNode)) {
     return selection;
@@ -1430,7 +1427,7 @@ export function removeDOMBlockCursorElement(
 export function updateDOMBlockCursorElement(
   editor: LexicalEditor,
   rootElement: HTMLElement,
-  nextSelection: null | RangeSelection | NodeSelection | GridSelection,
+  nextSelection: null | BaseSelection,
 ): void {
   let blockCursorElement = editor._blockCursorElement;
 

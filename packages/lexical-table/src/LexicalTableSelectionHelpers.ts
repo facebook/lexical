@@ -10,11 +10,11 @@ import type {TableCellNode} from './LexicalTableCellNode';
 import type {TableNode} from './LexicalTableNode';
 import type {Cell, Cells, Grid} from './LexicalTableSelection';
 import type {
+  BaseSelection,
   GridSelection,
   LexicalCommand,
   LexicalEditor,
   LexicalNode,
-  NodeSelection,
   RangeSelection,
   TextFormatType,
 } from 'lexical';
@@ -875,7 +875,7 @@ const adjustFocusNodeInDirection = (
 };
 
 function $isSelectionInTable(
-  selection: null | GridSelection | RangeSelection | NodeSelection,
+  selection: null | BaseSelection,
   tableNode: TableNode,
 ): boolean {
   if ($isRangeSelection(selection) || DEPRECATED_$isGridSelection(selection)) {

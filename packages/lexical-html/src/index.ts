@@ -8,14 +8,12 @@
  */
 
 import type {
+  BaseSelection,
   DOMChildConversion,
   DOMConversion,
   DOMConversionFn,
-  GridSelection,
   LexicalEditor,
   LexicalNode,
-  NodeSelection,
-  RangeSelection,
 } from 'lexical';
 
 import {
@@ -51,7 +49,7 @@ export function $generateNodesFromDOM(
 
 export function $generateHtmlFromNodes(
   editor: LexicalEditor,
-  selection?: RangeSelection | NodeSelection | GridSelection | null,
+  selection?: BaseSelection | null,
 ): string {
   if (typeof document === 'undefined' || typeof window === 'undefined') {
     throw new Error(
@@ -75,7 +73,7 @@ function $appendNodesToHTML(
   editor: LexicalEditor,
   currentNode: LexicalNode,
   parentElement: HTMLElement | DocumentFragment,
-  selection: RangeSelection | NodeSelection | GridSelection | null = null,
+  selection: BaseSelection | null = null,
 ): boolean {
   let shouldInclude =
     selection != null ? currentNode.isSelected(selection) : true;

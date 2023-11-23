@@ -304,19 +304,14 @@ declare export function createEditor(editorConfig?: {
 
 export interface EditorState {
   _nodeMap: NodeMap;
-  _selection: null | RangeSelection | NodeSelection | GridSelection;
+  _selection: null | BaseSelection;
   _flushSync: boolean;
   _readOnly: boolean;
-  constructor(
-    nodeMap: NodeMap,
-    selection?: RangeSelection | NodeSelection | GridSelection | null,
-  ): void;
+  constructor(nodeMap: NodeMap, selection?: BaseSelection | null): void;
   isEmpty(): boolean;
   read<V>(callbackFn: () => V): V;
   toJSON(): SerializedEditorState;
-  clone(
-    selection?: RangeSelection | NodeSelection | GridSelection | null,
-  ): EditorState;
+  clone(selection?: BaseSelection | null): EditorState;
 }
 
 /**
@@ -423,7 +418,7 @@ interface BaseSelection {
   getNodes(): Array<LexicalNode>;
   getTextContent(): string;
   insertRawText(text: string): void;
-  is(selection: null | RangeSelection | NodeSelection | GridSelection): boolean;
+  is(selection: null | BaseSelection): boolean;
 }
 export type GridSelectionShape = {
   fromX: number,
@@ -437,7 +432,7 @@ declare export class GridSelection implements BaseSelection {
   focus: PointType;
   dirty: boolean;
   constructor(gridKey: NodeKey, anchor: PointType, focus: PointType): void;
-  is(selection: null | RangeSelection | NodeSelection | GridSelection): boolean;
+  is(selection: null | BaseSelection): boolean;
   set(gridKey: NodeKey, anchorCellKey: NodeKey, focusCellKey: NodeKey): void;
   clone(): GridSelection;
   getCharacterOffsets(): [number, number];
@@ -459,7 +454,7 @@ declare export class NodeSelection implements BaseSelection {
   _nodes: Set<NodeKey>;
   dirty: boolean;
   constructor(objects: Set<NodeKey>): void;
-  is(selection: null | RangeSelection | NodeSelection | GridSelection): boolean;
+  is(selection: null | BaseSelection): boolean;
   add(key: NodeKey): void;
   delete(key: NodeKey): void;
   clear(): void;
@@ -482,7 +477,7 @@ declare export class RangeSelection implements BaseSelection {
   dirty: boolean;
   format: number;
   constructor(anchor: PointType, focus: PointType, format: number): void;
-  is(selection: null | RangeSelection | GridSelection | NodeSelection): boolean;
+  is(selection: null | BaseSelection): boolean;
   isBackward(): boolean;
   isCollapsed(): boolean;
   getNodes(): Array<LexicalNode>;
@@ -557,16 +552,8 @@ declare export function DEPRECATED_$createGridSelection(): GridSelection;
 declare export function $isRangeSelection(
   x: ?mixed,
 ): boolean %checks(x instanceof RangeSelection);
-declare export function $getSelection():
-  | null
-  | RangeSelection
-  | NodeSelection
-  | GridSelection;
-declare export function $getPreviousSelection():
-  | null
-  | RangeSelection
-  | NodeSelection
-  | GridSelection;
+declare export function $getSelection(): null | BaseSelection;
+declare export function $getPreviousSelection(): null | BaseSelection;
 declare export function $insertNodes(nodes: Array<LexicalNode>): void;
 export type GridMapValueType = {
   cell: deprecated_GridCellNode,
@@ -625,7 +612,7 @@ declare export class TextNode extends LexicalNode {
     config: EditorConfig,
   ): boolean;
   selectionTransform(
-    prevSelection: null | RangeSelection | NodeSelection | GridSelection,
+    prevSelection: null | BaseSelection,
     nextSelection: RangeSelection,
   ): void;
   setFormat(format: number): this;
@@ -783,7 +770,7 @@ declare export class ElementNode extends LexicalNode {
   canInsertAfter(node: LexicalNode): boolean;
   extractWithChild(
     child: LexicalNode,
-    selection: RangeSelection | NodeSelection | GridSelection,
+    selection: BaseSelection,
     destination: 'clone' | 'html',
   ): boolean;
   canBeEmpty(): boolean;
@@ -885,9 +872,7 @@ declare export function $isLeafNode(
 declare export function $setCompositionKey(
   compositionKey: null | NodeKey,
 ): void;
-declare export function $setSelection(
-  selection: null | RangeSelection | NodeSelection | GridSelection,
-): void;
+declare export function $setSelection(selection: null | BaseSelection): void;
 declare export function $nodesOfType<T: LexicalNode>(klass: Class<T>): Array<T>;
 declare export function $getAdjacentNode(
   focus: Point,

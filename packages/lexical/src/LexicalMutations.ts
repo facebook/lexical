@@ -8,11 +8,7 @@
 
 import type {TextNode} from '.';
 import type {LexicalEditor} from './LexicalEditor';
-import type {
-  GridSelection,
-  NodeSelection,
-  RangeSelection,
-} from './LexicalSelection';
+import type {BaseSelection} from './LexicalSelection';
 
 import {IS_FIREFOX} from 'shared/environment';
 
@@ -68,9 +64,7 @@ function isManagedLineBreak(
   );
 }
 
-function getLastSelection(
-  editor: LexicalEditor,
-): null | RangeSelection | NodeSelection | GridSelection {
+function getLastSelection(editor: LexicalEditor): null | BaseSelection {
   return editor.getEditorState().read(() => {
     const selection = $getSelection();
     return selection !== null ? selection.clone() : null;
@@ -98,7 +92,7 @@ function handleTextMutation(
 }
 
 function shouldUpdateTextNodeFromMutation(
-  selection: null | RangeSelection | GridSelection | NodeSelection,
+  selection: null | BaseSelection,
   targetDOM: Node,
   targetNode: TextNode,
 ): boolean {

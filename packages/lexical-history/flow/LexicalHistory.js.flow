@@ -17,7 +17,7 @@ import type {
 export type HistoryStateEntry = {
   editor: LexicalEditor,
   editorState: EditorState,
-  undoSelection?: RangeSelection | NodeSelection | GridSelection | null,
+  undoSelection?: BaseSelection | null,
 };
 export type HistoryState = {
   current: null | HistoryStateEntry,

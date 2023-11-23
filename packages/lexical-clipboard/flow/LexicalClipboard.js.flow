@@ -58,7 +58,7 @@ declare export function $generateJSONFromSelectedNodes<
   SerializedNode: BaseSerializedNode,
 >(
   editor: LexicalEditor,
-  selection: RangeSelection | NodeSelection | GridSelection | null,
+  selection: BaseSelection | null,
 ): {
   namespace: string,
   nodes: Array<SerializedNode>,

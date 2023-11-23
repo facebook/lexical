@@ -269,7 +269,10 @@ export interface BaseSelection {
   getNodes(): Array<LexicalNode>;
   getTextContent(): string;
   insertRawText(text: string): void;
-  is(selection: null | RangeSelection | NodeSelection | GridSelection): boolean;
+  is(selection: null | BaseSelection): boolean;
+  insertNodes(nodes: Array<LexicalNode>): void;
+  getCachedNodes(): null | Array<LexicalNode>; // TODO implement in all selections
+  setCachedNodes(nodes: null | Array<LexicalNode>): void; // TODO implement in all selections
 }
 
 export class NodeSelection implements BaseSelection {
@@ -283,9 +286,15 @@ export class NodeSelection implements BaseSelection {
     this._cachedNodes = null;
   }
 
-  is(
-    selection: null | RangeSelection | NodeSelection | GridSelection,
-  ): boolean {
+  getCachedNodes(): LexicalNode[] | null {
+    return this._cachedNodes;
+  }
+
+  setCachedNodes(nodes: LexicalNode[] | null): void {
+    this._cachedNodes = nodes;
+  }
+
+  is(selection: null | BaseSelection): boolean {
     if (!$isNodeSelection(selection)) {
       return false;
     }
@@ -466,9 +475,15 @@ export class GridSelection implements BaseSelection {
     focus._selection = this;
   }
 
-  is(
-    selection: null | RangeSelection | NodeSelection | GridSelection,
-  ): boolean {
+  getCachedNodes(): LexicalNode[] | null {
+    return this._cachedNodes;
+  }
+
+  setCachedNodes(nodes: LexicalNode[] | null): void {
+    this._cachedNodes = nodes;
+  }
+
+  is(selection: null | BaseSelection): boolean {
     if (!DEPRECATED_$isGridSelection(selection)) {
       return false;
     }
@@ -769,15 +784,21 @@ export class RangeSelection implements BaseSelection {
     focus._selection = this;
   }
 
+  getCachedNodes(): LexicalNode[] | null {
+    return this._cachedNodes;
+  }
+
+  setCachedNodes(nodes: LexicalNode[] | null): void {
+    this._cachedNodes = nodes;
+  }
+
   /**
    * Used to check if the provided selections is equal to this one by value,
    * inluding anchor, focus, format, and style properties.
    * @param selection - the Selection to compare this one to.
    * @returns true if the Selections are equal, false otherwise.
    */
-  is(
-    selection: null | RangeSelection | NodeSelection | GridSelection,
-  ): boolean {
+  is(selection: null | BaseSelection): boolean {
     if (!$isRangeSelection(selection)) {
       return false;
     }
@@ -2362,7 +2383,7 @@ function resolveSelectionPointOnBoundary(
 function normalizeSelectionPointsForBoundaries(
   anchor: PointType,
   focus: PointType,
-  lastSelection: null | RangeSelection | NodeSelection | GridSelection,
+  lastSelection: null | BaseSelection,
 ): void {
   if (anchor.type === 'text' && focus.type === 'text') {
     const isBackward = anchor.isBefore(focus);
@@ -2404,7 +2425,7 @@ function internalResolveSelectionPoints(
   focusDOM: null | Node,
   focusOffset: number,
   editor: LexicalEditor,
-  lastSelection: null | RangeSelection | NodeSelection | GridSelection,
+  lastSelection: null | BaseSelection,
 ): null | [PointType, PointType] {
   if (
     anchorDOM === null ||
@@ -2503,7 +2524,7 @@ export function DEPRECATED_$createGridSelection(): GridSelection {
 
 export function internalCreateSelection(
   editor: LexicalEditor,
-): null | RangeSelection | NodeSelection | GridSelection {
+): null | BaseSelection {
   const currentEditorState = editor.getEditorState();
   const lastSelection = currentEditorState._selection;
   const domSelection = getDOMSelection(editor._window);
@@ -2519,7 +2540,7 @@ export function internalCreateSelection(
 }
 
 export function internalCreateRangeSelection(
-  lastSelection: null | RangeSelection | NodeSelection | GridSelection,
+  lastSelection: null | BaseSelection,
   domSelection: Selection | null,
   editor: LexicalEditor,
 ): null | RangeSelection {
@@ -2597,20 +2618,12 @@ export function internalCreateRangeSelection(
   );
 }
 
-export function $getSelection():
-  | null
-  | RangeSelection
-  | NodeSelection
-  | GridSelection {
+export function $getSelection(): null | BaseSelection {
   const editorState = getActiveEditorState();
   return editorState._selection;
 }
 
-export function $getPreviousSelection():
-  | null
-  | RangeSelection
-  | NodeSelection
-  | GridSelection {
+export function $getPreviousSelection(): null | BaseSelection {
   const editor = getActiveEditor();
   return editor._editorState._selection;
 }
@@ -2820,8 +2833,8 @@ export function adjustPointOffsetForMergedSibling(
 }
 
 export function updateDOMSelection(
-  prevSelection: RangeSelection | NodeSelection | GridSelection | null,
-  nextSelection: RangeSelection | NodeSelection | GridSelection | null,
+  prevSelection: BaseSelection | null,
+  nextSelection: BaseSelection | null,
   editor: LexicalEditor,
   domSelection: Selection,
   tags: Set<string>,

@@ -269,6 +269,7 @@ export interface BaseSelection {
   getNodes(): Array<LexicalNode>;
   getTextContent(): string;
   insertRawText(text: string): void;
+  insertText(text: string): void;
   is(selection: null | BaseSelection): boolean;
   insertNodes(nodes: Array<LexicalNode>): void;
   getCachedNodes(): null | Array<LexicalNode>; // TODO implement in all selections
@@ -2621,6 +2622,12 @@ export function internalCreateRangeSelection(
 export function $getSelection(): null | BaseSelection {
   const editorState = getActiveEditorState();
   return editorState._selection;
+}
+
+export function $getRangeSelection(): null | RangeSelection {
+  const selection = $getSelection();
+  const isRange = $isRangeSelection(selection);
+  return isRange ? selection : null;
 }
 
 export function $getPreviousSelection(): null | BaseSelection {

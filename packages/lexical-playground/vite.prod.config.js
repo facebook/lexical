@@ -160,6 +160,9 @@ const moduleResolution = [
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  define: {
+    "process.env.IS_PREACT": process.env.IS_PREACT,
+  },
   plugins: [
     replaceCodePlugin({
       replacements: [

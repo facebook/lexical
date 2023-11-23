@@ -1024,8 +1024,7 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
         event.preventDefault();
         dispatchCommand(editor, SELECT_ALL_COMMAND, event);
       }
-      // FF does it well (no need to override behavior)
-    } else if (!IS_FIREFOX && isSelectAll(keyCode, metaKey, ctrlKey)) {
+    } else if (isSelectAll(keyCode, metaKey, ctrlKey)) {
       event.preventDefault();
       dispatchCommand(editor, SELECT_ALL_COMMAND, event);
     }

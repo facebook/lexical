@@ -8,9 +8,9 @@
  */
 
 import type {
+  BaseSelection,
   GridSelection,
   LexicalEditor,
-  NodeSelection,
   RangeSelection,
   LexicalNode,
 } from 'lexical';

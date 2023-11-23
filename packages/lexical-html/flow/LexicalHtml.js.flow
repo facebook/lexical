@@ -8,13 +8,11 @@
  */
 
 import type {
+  BaseSelection,
   LexicalEditor,
   LexicalNode,
   EditorState,
   EditorThemeClasses,
-  RangeSelection,
-  NodeSelection,
-  GridSelection,
 } from 'lexical';
 
 export type FindCachedParentDOMNode = (

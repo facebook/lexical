@@ -6,13 +6,7 @@
  *
  * @flow strict
  */
-import type {
-  EditorState,
-  GridSelection,
-  LexicalEditor,
-  NodeSelection,
-  RangeSelection,
-} from 'lexical';
+import type {EditorState, BaseSelection, LexicalEditor} from 'lexical';
 
 export type HistoryStateEntry = {
   editor: LexicalEditor,

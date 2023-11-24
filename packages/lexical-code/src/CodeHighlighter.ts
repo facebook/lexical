@@ -12,10 +12,9 @@ import type {
   LexicalEditor,
   LexicalNode,
   RangeSelection,
-  NodeSelection,
   LineBreakNode,
-  GridSelection,
   NodeKey,
+  BaseSelection,
 } from 'lexical';
 
 import * as Prism from 'prismjs';
@@ -487,9 +486,7 @@ function isEqual(nodeA: LexicalNode, nodeB: LexicalNode): boolean {
   );
 }
 
-function $isSelectionInCode(
-  selection: null | RangeSelection | NodeSelection | GridSelection,
-): boolean {
+function $isSelectionInCode(selection: null | BaseSelection): boolean {
   if (!$isRangeSelection(selection)) {
     return false;
   }

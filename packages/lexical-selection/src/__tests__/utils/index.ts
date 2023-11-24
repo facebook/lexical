@@ -13,6 +13,7 @@ import {
   $isRangeSelection,
   $isTextNode,
 } from 'lexical';
+import {$getRangeSelection} from 'lexical/src';
 
 Object.defineProperty(HTMLElement.prototype, 'contentEditable', {
   get() {
@@ -866,12 +867,12 @@ export async function applySelectionInputs(inputs, update, editor) {
 }
 
 export function setAnchorPoint(point) {
-  let selection = $getSelection();
+  const selection = $getRangeSelection();
 
   if (selection === null) {
     const dummyTextNode = $createTextNode();
     dummyTextNode.select();
-    selection = $getSelection();
+    return setAnchorPoint(point);
   }
 
   if ($isNodeSelection(selection)) {
@@ -885,12 +886,12 @@ export function setAnchorPoint(point) {
 }
 
 export function setFocusPoint(point) {
-  let selection = $getSelection();
+  const selection = $getRangeSelection();
 
   if (selection === null) {
     const dummyTextNode = $createTextNode();
     dummyTextNode.select();
-    selection = $getSelection();
+    return setFocusPoint(point);
   }
 
   if ($isNodeSelection(selection)) {

@@ -25,6 +25,7 @@ import {
   $isTextNode,
   $parseSerializedNode,
   $setSelection,
+  BaseSelection,
   COMMAND_PRIORITY_CRITICAL,
   COPY_COMMAND,
   DEPRECATED_$createGridSelection,
@@ -37,7 +38,6 @@ import {
   isSelectionWithinEditor,
   LexicalEditor,
   LexicalNode,
-  NodeSelection,
   RangeSelection,
   SELECTION_CHANGE_COMMAND,
   SerializedTextNode,
@@ -435,7 +435,7 @@ function exportNodeToJSON<T extends LexicalNode>(node: T): BaseSerializedNode {
 
 function $appendNodesToJSON(
   editor: LexicalEditor,
-  selection: RangeSelection | NodeSelection | GridSelection | null,
+  selection: BaseSelection | null,
   currentNode: LexicalNode,
   targetArray: Array<BaseSerializedNode> = [],
 ): boolean {
@@ -518,7 +518,7 @@ export function $generateJSONFromSelectedNodes<
   SerializedNode extends BaseSerializedNode,
 >(
   editor: LexicalEditor,
-  selection: RangeSelection | NodeSelection | GridSelection | null,
+  selection: BaseSelection | null,
 ): {
   namespace: string;
   nodes: Array<SerializedNode>;

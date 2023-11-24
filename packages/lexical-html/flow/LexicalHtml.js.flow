@@ -8,13 +8,11 @@
  */
 
 import type {
+  BaseSelection,
   LexicalEditor,
   LexicalNode,
   EditorState,
   EditorThemeClasses,
-  RangeSelection,
-  NodeSelection,
-  GridSelection,
 } from 'lexical';
 
 export type FindCachedParentDOMNode = (
@@ -25,7 +23,7 @@ export type FindCachedParentDOMNodeSearchFn = (node: Node) => boolean;
 
 declare export function $generateHtmlFromNodes(
   editor: LexicalEditor,
-  selection?: RangeSelection | NodeSelection | GridSelection | null,
+  selection?: BaseSelection | null,
 ): string;
 
 declare export function $generateNodesFromDOM(

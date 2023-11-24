@@ -19,9 +19,8 @@ import {$rootTextContent} from '@lexical/text';
 import {
   $createParagraphNode,
   $createTextNode,
+  $getRangeSelection,
   $getRoot,
-  $getSelection,
-  $isNodeSelection,
 } from 'lexical';
 import * as React from 'react';
 import {createRoot} from 'react-dom/client';
@@ -170,9 +169,9 @@ describe('LexicalNodeHelpers tests', () => {
       await editor.getEditorState().read(() => {
         expect($rootTextContent()).toBe('foo');
 
-        const selection = $getSelection();
+        const selection = $getRangeSelection();
 
-        if ($isNodeSelection(selection)) {
+        if (selection == null) {
           return;
         }
 

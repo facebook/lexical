@@ -981,10 +981,12 @@ export class LexicalNode {
     let current = firstToInsert;
     const nodestToInsert = [firstToInsert];
     while (current !== lastToInsert2) {
-      invariant(
-        !current.getNextSibling(),
-        'insertRangeAfter: lastToInsert must be a later sibling of firstToInsert',
-      );
+      if (!current.getNextSibling()) {
+        invariant(
+          false,
+          'insertRangeAfter: lastToInsert must be a later sibling of firstToInsert',
+        );
+      }
       current = current.getNextSibling()!;
       nodestToInsert.push(current);
     }

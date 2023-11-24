@@ -7,6 +7,7 @@
  */
 
 import type {
+  BaseSelection,
   EditorState,
   ElementNode,
   GridSelection,
@@ -638,7 +639,7 @@ function printSelectedCharsLine({
   isSelected: boolean;
   node: LexicalNode;
   nodeKeyDisplay: string;
-  selection: GridSelection | NodeSelection | RangeSelection | null;
+  selection: BaseSelection | null;
   typeDisplay: string;
 }) {
   // No selection or node is not selected.

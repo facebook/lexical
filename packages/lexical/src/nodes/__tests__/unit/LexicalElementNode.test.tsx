@@ -8,9 +8,8 @@
 
 import {
   $createTextNode,
+  $getRangeSelection,
   $getRoot,
-  $getSelection,
-  $isNodeSelection,
   ElementNode,
   LexicalNode,
   TextNode,
@@ -96,7 +95,8 @@ describe('LexicalElementNode tests', () => {
         // If you broke this test, you changed the public interface of a
         // serialized Lexical Core Node. Please ensure the correct adapter
         // logic is in place in the corresponding importJSON  method
-        // to accomodate these changes.
+        // to accomodate these changes.import { $getRangeSelection } from 'lexical/src';
+
         expect(node.exportJSON()).toStrictEqual({
           children: [],
           direction: null,
@@ -564,10 +564,10 @@ describe('LexicalElementNode tests', () => {
         await update(() => {
           expect(block.getTextContent()).toEqual(testCase.expectedText);
 
-          const selection = $getSelection();
+          const selection = $getRangeSelection();
           const expectedSelection = testCase.expectedSelection();
 
-          if ($isNodeSelection(selection)) {
+          if (selection == null) {
             return;
           }
 

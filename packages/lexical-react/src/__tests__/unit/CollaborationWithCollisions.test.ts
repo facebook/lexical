@@ -13,10 +13,7 @@ import {
   $getRoot,
   $isTextNode,
   $setSelection,
-  GridSelection,
   LexicalNode,
-  NodeSelection,
-  RangeSelection,
 } from 'lexical';
 
 import {
@@ -49,7 +46,7 @@ const $createSelectionByPath = ({
   anchorPath: Array<number>;
   focusOffset: number;
   focusPath: Array<number>;
-}): GridSelection | NodeSelection | RangeSelection => {
+}): BaseSelection => {
   const selection = $createRangeSelection();
   const root = $getRoot();
 

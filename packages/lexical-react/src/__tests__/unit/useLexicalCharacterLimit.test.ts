@@ -15,8 +15,8 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getNodeByKey,
+  $getRangeSelection,
   $getRoot,
-  $getSelection,
   $isNodeSelection,
   LexicalEditor,
   NodeKey,
@@ -84,7 +84,7 @@ describe('LexicalNodeHelpers tests', () => {
             expect(paragraph.getChildrenSize()).toBe(1);
             expect($isOverflowNode(paragraph.getFirstChild())).toBe(true);
 
-            const selection = $getSelection();
+            const selection = $getRangeSelection();
 
             if (selection === null) {
               throw new Error('Lost selection');
@@ -141,7 +141,7 @@ describe('LexicalNodeHelpers tests', () => {
             expect(paragraph.getChildrenSize()).toBe(1);
             expect($isOverflowNode(paragraph.getFirstChild())).toBe(true);
 
-            const selection = $getSelection();
+            const selection = $getRangeSelection();
 
             if (selection === null) {
               throw new Error('Lost selection');
@@ -191,7 +191,7 @@ describe('LexicalNodeHelpers tests', () => {
 
             overflowLeft.select(1, 1);
 
-            const selection = $getSelection();
+            const selection = $getRangeSelection();
 
             if ($isNodeSelection(selection)) {
               return;
@@ -209,7 +209,7 @@ describe('LexicalNodeHelpers tests', () => {
             expect(paragraph.getChildrenSize()).toBe(1);
             expect($isOverflowNode(paragraph.getFirstChild())).toBe(true);
 
-            const selection = $getSelection();
+            const selection = $getRangeSelection();
 
             if (selection === null) {
               throw new Error('Lost selection');

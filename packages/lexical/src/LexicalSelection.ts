@@ -272,8 +272,8 @@ export interface BaseSelection {
   insertText(text: string): void;
   is(selection: null | BaseSelection): boolean;
   insertNodes(nodes: Array<LexicalNode>): void;
-  getCachedNodes(): null | Array<LexicalNode>; // TODO implement in all selections
-  setCachedNodes(nodes: null | Array<LexicalNode>): void; // TODO implement in all selections
+  getCachedNodes(): null | Array<LexicalNode>;
+  setCachedNodes(nodes: null | Array<LexicalNode>): void;
 }
 
 export class NodeSelection implements BaseSelection {

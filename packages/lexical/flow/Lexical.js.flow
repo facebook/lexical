@@ -411,7 +411,7 @@ declare export function $isBlockElementNode(
   node: ?LexicalNode,
 ): boolean %checks(node instanceof ElementNode);
 
-interface BaseSelection {
+export interface BaseSelection {
   clone(): BaseSelection;
   dirty: boolean;
   extract(): Array<LexicalNode>;
@@ -419,6 +419,10 @@ interface BaseSelection {
   getTextContent(): string;
   insertRawText(text: string): void;
   is(selection: null | BaseSelection): boolean;
+  insertText(text: string): void;
+  insertNodes(nodes: Array<LexicalNode>): void;
+  getCachedNodes(): null | Array<LexicalNode>;
+  setCachedNodes(nodes: null | Array<LexicalNode>): void;
 }
 export type GridSelectionShape = {
   fromX: number,
@@ -444,6 +448,9 @@ declare export class GridSelection implements BaseSelection {
   getShape(): GridSelectionShape;
   getNodes(): Array<LexicalNode>;
   getTextContent(): string;
+  insertNodes(nodes: Array<LexicalNode>): void;
+  getCachedNodes(): null | Array<LexicalNode>;
+  setCachedNodes(nodes: null | Array<LexicalNode>): void;
 }
 
 declare export function DEPRECATED_$isGridSelection(
@@ -465,6 +472,9 @@ declare export class NodeSelection implements BaseSelection {
   insertText(): void;
   getNodes(): Array<LexicalNode>;
   getTextContent(): string;
+  insertNodes(nodes: Array<LexicalNode>): void;
+  getCachedNodes(): null | Array<LexicalNode>;
+  setCachedNodes(nodes: null | Array<LexicalNode>): void;
 }
 
 declare export function $isNodeSelection(
@@ -511,6 +521,9 @@ declare export class RangeSelection implements BaseSelection {
   deleteCharacter(isBackward: boolean): void;
   deleteLine(isBackward: boolean): void;
   deleteWord(isBackward: boolean): void;
+  insertNodes(nodes: Array<LexicalNode>): void;
+  getCachedNodes(): null | Array<LexicalNode>;
+  setCachedNodes(nodes: null | Array<LexicalNode>): void;
 }
 export type TextPoint = TextPointType;
 type TextPointType = {

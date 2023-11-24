@@ -13,7 +13,6 @@ import type {
   GridSelection,
   LexicalEditor,
   LexicalNode,
-  NodeSelection,
   RangeSelection,
 } from 'lexical';
 
@@ -25,6 +24,7 @@ import {
   $getRoot,
   $getSelection,
   $isElementNode,
+  $isNodeSelection,
   $isRangeSelection,
   $isTextNode,
   COMMAND_PRIORITY_HIGH,
@@ -368,7 +368,8 @@ function printRangeSelection(selection: RangeSelection): string {
   return res;
 }
 
-function printNodeSelection(selection: NodeSelection): string {
+function printNodeSelection(selection: BaseSelection): string {
+  if (!$isNodeSelection(selection)) return '';
   return `: node\n  └ [${Array.from(selection._nodes).join(', ')}]`;
 }
 

@@ -13,6 +13,7 @@ import {
   $getRoot,
   $isTextNode,
   $setSelection,
+  BaseSelection,
   LexicalNode,
 } from 'lexical';
 

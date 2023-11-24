@@ -907,7 +907,75 @@ export class LexicalNode {
    *
    *
    * */
-  insertRangeAfter(firstToInsert: LexicalNode, lastToInsert?: LexicalNode) {
+  insertRangeAfter(
+    firstToInsert: LexicalNode,
+    lastToInsert?: LexicalNode,
+    restoreSel = true,
+  ) {
+    function insertAfter(
+      node: LexicalNode,
+      nodeToInsert: LexicalNode,
+      restoreSelection = true,
+    ) {
+      errorOnReadOnly();
+      errorOnInsertTextNodeOnRoot(node, nodeToInsert);
+      const writableSelf = node.getWritable();
+      const writableNodeToInsert = nodeToInsert.getWritable();
+      const oldParent = writableNodeToInsert.getParent();
+      const selection = $getSelection();
+      let elementAnchorSelectionOnNode = false;
+      let elementFocusSelectionOnNode = false;
+      if (oldParent !== null) {
+        // TODO: this is O(n), can we improve?
+        const oldIndex = nodeToInsert.getIndexWithinParent();
+        removeFromParent(writableNodeToInsert);
+        if ($isRangeSelection(selection)) {
+          const oldParentKey = oldParent.__key;
+          const anchor = selection.anchor;
+          const focus = selection.focus;
+          elementAnchorSelectionOnNode =
+            anchor.type === 'element' &&
+            anchor.key === oldParentKey &&
+            anchor.offset === oldIndex + 1;
+          elementFocusSelectionOnNode =
+            focus.type === 'element' &&
+            focus.key === oldParentKey &&
+            focus.offset === oldIndex + 1;
+        }
+      }
+      const nextSibling = node.getNextSibling();
+      const writableParent = node.getParentOrThrow().getWritable();
+      const insertKey = writableNodeToInsert.__key;
+      const nextKey = writableSelf.__next;
+      if (nextSibling === null) {
+        writableParent.__last = insertKey;
+      } else {
+        const writableNextSibling = nextSibling.getWritable();
+        writableNextSibling.__prev = insertKey;
+      }
+      writableParent.__size++;
+      writableSelf.__next = insertKey;
+      writableNodeToInsert.__next = nextKey;
+      writableNodeToInsert.__prev = writableSelf.__key;
+      writableNodeToInsert.__parent = writableSelf.__parent;
+      if (restoreSelection && $isRangeSelection(selection)) {
+        const index = node.getIndexWithinParent();
+        $updateElementSelectionOnCreateDeleteNode(
+          selection,
+          writableParent,
+          index + 1,
+        );
+        const writableParentKey = writableParent.__key;
+        if (elementAnchorSelectionOnNode) {
+          selection.anchor.set(writableParentKey, index + 2, 'element');
+        }
+        if (elementFocusSelectionOnNode) {
+          selection.focus.set(writableParentKey, index + 2, 'element');
+        }
+      }
+      return nodeToInsert;
+    }
+
     const lastToInsert2 =
       lastToInsert || firstToInsert.getParentOrThrow().getLastChild()!;
     let current = firstToInsert;
@@ -925,7 +993,7 @@ export class LexicalNode {
 
     let currentNode: LexicalNode = this;
     for (const node of nodestToInsert) {
-      currentNode = currentNode.insertAfter(node);
+      currentNode = insertAfter(currentNode, node, restoreSel);
     }
   }
 
@@ -937,62 +1005,7 @@ export class LexicalNode {
    * selection to the appropriate place after the operation is complete.
    * */
   insertAfter(nodeToInsert: LexicalNode, restoreSelection = true): LexicalNode {
-    errorOnReadOnly();
-    errorOnInsertTextNodeOnRoot(this, nodeToInsert);
-    const writableSelf = this.getWritable();
-    const writableNodeToInsert = nodeToInsert.getWritable();
-    const oldParent = writableNodeToInsert.getParent();
-    const selection = $getSelection();
-    let elementAnchorSelectionOnNode = false;
-    let elementFocusSelectionOnNode = false;
-    if (oldParent !== null) {
-      // TODO: this is O(n), can we improve?
-      const oldIndex = nodeToInsert.getIndexWithinParent();
-      removeFromParent(writableNodeToInsert);
-      if ($isRangeSelection(selection)) {
-        const oldParentKey = oldParent.__key;
-        const anchor = selection.anchor;
-        const focus = selection.focus;
-        elementAnchorSelectionOnNode =
-          anchor.type === 'element' &&
-          anchor.key === oldParentKey &&
-          anchor.offset === oldIndex + 1;
-        elementFocusSelectionOnNode =
-          focus.type === 'element' &&
-          focus.key === oldParentKey &&
-          focus.offset === oldIndex + 1;
-      }
-    }
-    const nextSibling = this.getNextSibling();
-    const writableParent = this.getParentOrThrow().getWritable();
-    const insertKey = writableNodeToInsert.__key;
-    const nextKey = writableSelf.__next;
-    if (nextSibling === null) {
-      writableParent.__last = insertKey;
-    } else {
-      const writableNextSibling = nextSibling.getWritable();
-      writableNextSibling.__prev = insertKey;
-    }
-    writableParent.__size++;
-    writableSelf.__next = insertKey;
-    writableNodeToInsert.__next = nextKey;
-    writableNodeToInsert.__prev = writableSelf.__key;
-    writableNodeToInsert.__parent = writableSelf.__parent;
-    if (restoreSelection && $isRangeSelection(selection)) {
-      const index = this.getIndexWithinParent();
-      $updateElementSelectionOnCreateDeleteNode(
-        selection,
-        writableParent,
-        index + 1,
-      );
-      const writableParentKey = writableParent.__key;
-      if (elementAnchorSelectionOnNode) {
-        selection.anchor.set(writableParentKey, index + 2, 'element');
-      }
-      if (elementFocusSelectionOnNode) {
-        selection.focus.set(writableParentKey, index + 2, 'element');
-      }
-    }
+    this.insertRangeAfter(nodeToInsert, nodeToInsert, restoreSelection);
     return nodeToInsert;
   }
 

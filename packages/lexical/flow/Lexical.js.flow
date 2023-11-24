@@ -420,17 +420,32 @@ export interface BaseSelection {
   insertRawText(text: string): void;
   is(selection: null | BaseSelection): boolean;
   insertText(text: string): void;
+}
+
+declare export class PointSelection implements BaseSelection {
+  anchor: PointType;
+  focus: PointType;
+  dirty: boolean;
+  constructor(anchor: PointType, focus: PointType): void;
+  clone(): PointSelection;
+  extract(): Array<LexicalNode>;
+  getNodes(): Array<LexicalNode>;
+  getTextContent(): string;
+  insertRawText(text: string): void;
+  is(selection: null | BaseSelection): boolean;
+  insertText(text: string): void;
   insertNodes(nodes: Array<LexicalNode>): void;
   getCachedNodes(): null | Array<LexicalNode>;
   setCachedNodes(nodes: null | Array<LexicalNode>): void;
 }
+
 export type GridSelectionShape = {
   fromX: number,
   fromY: number,
   toX: number,
   toY: number,
 };
-declare export class GridSelection implements BaseSelection {
+declare export class GridSelection extends PointSelection {
   gridKey: NodeKey;
   anchor: PointType;
   focus: PointType;
@@ -456,6 +471,10 @@ declare export class GridSelection implements BaseSelection {
 declare export function DEPRECATED_$isGridSelection(
   x: ?mixed,
 ): boolean %checks(x instanceof GridSelection);
+
+declare export function $isPointSelection(
+  x: ?mixed,
+): boolean %checks(x instanceof PointSelection);
 
 declare export class NodeSelection implements BaseSelection {
   _nodes: Set<NodeKey>;

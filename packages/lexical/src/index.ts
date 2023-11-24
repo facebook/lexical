@@ -48,6 +48,7 @@ export type {
   GridSelectionShape,
   NodeSelection,
   Point,
+  PointSelection,
   RangeSelection,
   TextPointType as TextPoint,
 } from './LexicalSelection';
@@ -131,6 +132,7 @@ export {
   $insertNodes,
   $isBlockElementNode,
   $isNodeSelection,
+  $isPointSelection,
   $isRangeSelection,
   DEPRECATED_$computeGridMap,
   DEPRECATED_$createGridSelection,

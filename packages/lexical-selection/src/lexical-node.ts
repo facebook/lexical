@@ -11,6 +11,7 @@ import {
   $getNodeByKey,
   $getPreviousSelection,
   $isElementNode,
+  $isPointSelection,
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
@@ -20,10 +21,10 @@ import {
   DEPRECATED_$isGridCellNode,
   DEPRECATED_$isGridSelection,
   ElementNode,
-  GridSelection,
   LexicalEditor,
   LexicalNode,
   Point,
+  PointSelection,
   RangeSelection,
   TextNode,
 } from 'lexical';
@@ -98,7 +99,7 @@ export function $sliceSelectedTextNodeContent(
     textNode.isSelected() &&
     !textNode.isSegmented() &&
     !textNode.isToken() &&
-    ($isRangeSelection(selection) || DEPRECATED_$isGridSelection(selection))
+    $isPointSelection(selection)
   ) {
     const anchorNode = selection.anchor.getNode();
     const focusNode = selection.focus.getNode();
@@ -315,7 +316,7 @@ function $patchStyle(
  * @param patch - The patch to apply, which can include multiple styles. { CSSProperty: value }
  */
 export function $patchStyleText(
-  selection: RangeSelection | GridSelection,
+  selection: PointSelection,
   patch: Record<string, string | null>,
 ): void {
   const selectedNodes = selection.getNodes();
@@ -349,7 +350,7 @@ export function $patchStyleText(
   let lastNode = selectedNodes[lastIndex];
 
   if (selection.isCollapsed()) {
-    $patchStyle(selection, patch);
+    $patchStyle(selection as RangeSelection, patch);
     return;
   }
 

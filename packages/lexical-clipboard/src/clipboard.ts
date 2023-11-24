@@ -21,6 +21,7 @@ import {
   $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
+  $isPointSelection,
   $isRangeSelection,
   $isTextNode,
   $parseSerializedNode,
@@ -112,7 +113,7 @@ export function $getLexicalContent(editor: LexicalEditor): null | string {
  */
 export function $insertDataTransferForPlainText(
   dataTransfer: DataTransfer,
-  selection: RangeSelection | GridSelection,
+  selection: BaseSelection,
 ): void {
   const text =
     dataTransfer.getData('text/plain') || dataTransfer.getData('text/uri-list');
@@ -133,7 +134,7 @@ export function $insertDataTransferForPlainText(
  */
 export function $insertDataTransferForRichText(
   dataTransfer: DataTransfer,
-  selection: RangeSelection | GridSelection,
+  selection: BaseSelection,
   editor: LexicalEditor,
 ): void {
   const lexicalString = dataTransfer.getData('application/x-lexical-editor');
@@ -205,13 +206,16 @@ export function $insertDataTransferForRichText(
 export function $insertGeneratedNodes(
   editor: LexicalEditor,
   nodes: Array<LexicalNode>,
-  selection: RangeSelection | GridSelection,
+  selection: BaseSelection,
 ): void {
+  const isGridSelection = DEPRECATED_$isGridSelection(selection);
+  const isRangeSelection = $isRangeSelection(selection);
   const isSelectionInsideOfGrid =
-    DEPRECATED_$isGridSelection(selection) ||
-    ($findMatchingParent(selection.anchor.getNode(), (n) =>
-      DEPRECATED_$isGridCellNode(n),
-    ) !== null &&
+    isGridSelection ||
+    (isRangeSelection &&
+      $findMatchingParent(selection.anchor.getNode(), (n) =>
+        DEPRECATED_$isGridCellNode(n),
+      ) !== null &&
       $findMatchingParent(selection.focus.getNode(), (n) =>
         DEPRECATED_$isGridCellNode(n),
       ) !== null);
@@ -229,10 +233,7 @@ export function $insertGeneratedNodes(
   return;
 }
 
-function $basicInsertStrategy(
-  nodes: LexicalNode[],
-  selection: RangeSelection | GridSelection,
-) {
+function $basicInsertStrategy(nodes: LexicalNode[], selection: BaseSelection) {
   // Wrap text and inline nodes in paragraph nodes so we have all blocks at the top-level
   const topLevelBlocks = [];
   let currentBlock = null;
@@ -269,7 +270,7 @@ function $basicInsertStrategy(
 
   if ($isRangeSelection(selection)) {
     selection.insertNodes(topLevelBlocks);
-  } else if (DEPRECATED_$isGridSelection(selection)) {
+  } else if ($isPointSelection(selection)) {
     // If there's an active grid selection and a non grid is pasted, add to the anchor.
     const anchorCell = selection.anchor.getNode();
 

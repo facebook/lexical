@@ -55,6 +55,7 @@ import {
   $isDecoratorNode,
   $isElementNode,
   $isNodeSelection,
+  $isPointSelection,
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
@@ -70,7 +71,6 @@ import {
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
-  DEPRECATED_$isGridSelection,
   DRAGOVER_COMMAND,
   DRAGSTART_COMMAND,
   DROP_COMMAND,
@@ -439,10 +439,7 @@ function onPasteForRichText(
         event instanceof InputEvent || event instanceof KeyboardEvent
           ? null
           : event.clipboardData;
-      if (
-        clipboardData != null &&
-        ($isRangeSelection(selection) || DEPRECATED_$isGridSelection(selection))
-      ) {
+      if (clipboardData != null && $isPointSelection(selection)) {
         $insertDataTransferForRichText(clipboardData, selection, editor);
       }
     },
@@ -585,16 +582,11 @@ export function registerRichText(editor: LexicalEditor): () => void {
         const selection = $getSelection();
 
         if (typeof eventOrText === 'string') {
-          if ($isRangeSelection(selection)) {
+          if ($isPointSelection(selection)) {
             selection.insertText(eventOrText);
-          } else if (DEPRECATED_$isGridSelection(selection)) {
-            // TODO: Insert into the first cell & clear selection.
           }
         } else {
-          if (
-            !$isRangeSelection(selection) &&
-            !DEPRECATED_$isGridSelection(selection)
-          ) {
+          if (!$isPointSelection(selection)) {
             return false;
           }
 
@@ -1041,10 +1033,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
         }
 
         const selection = $getSelection();
-        if (
-          $isRangeSelection(selection) ||
-          DEPRECATED_$isGridSelection(selection)
-        ) {
+        if ($isPointSelection(selection)) {
           onPasteForRichText(event, editor);
           return true;
         }

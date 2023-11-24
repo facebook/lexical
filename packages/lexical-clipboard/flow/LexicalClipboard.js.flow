@@ -9,8 +9,8 @@
 
 import type {
   BaseSelection,
-  GridSelection,
   LexicalEditor,
+  PointSelection,
   RangeSelection,
   LexicalNode,
 } from 'lexical';
@@ -21,7 +21,7 @@ import type {
 
 declare export function $insertDataTransferForRichText(
   dataTransfer: DataTransfer,
-  selection: RangeSelection | GridSelection,
+  selection: PointSelection,
   editor: LexicalEditor,
 ): void;
 
@@ -33,7 +33,7 @@ declare export function $getLexicalContent(
 declare export function $insertGeneratedNodes(
   editor: LexicalEditor,
   nodes: Array<LexicalNode>,
-  selection: RangeSelection | GridSelection,
+  selection: PointSelection,
 ): void;
 /*
  * Plain Text

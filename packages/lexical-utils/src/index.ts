@@ -15,12 +15,12 @@ import {
   $getSelection,
   $isElementNode,
   $isNodeSelection,
+  $isPointSelection,
   $isRangeSelection,
   $isRootOrShadowRoot,
   $isTextNode,
   $setSelection,
   $splitNode,
-  DEPRECATED_$isGridSelection,
   EditorState,
   ElementNode,
   Klass,
@@ -438,7 +438,7 @@ export function $insertNodeToNearestRoot<T extends LexicalNode>(node: T): T {
       rightTree.selectStart();
     }
   } else {
-    if ($isNodeSelection(selection) || DEPRECATED_$isGridSelection(selection)) {
+    if ($isNodeSelection(selection) || $isPointSelection(selection)) {
       const nodes = selection.getNodes();
       nodes[nodes.length - 1].getTopLevelElementOrThrow().insertAfter(node);
     } else {

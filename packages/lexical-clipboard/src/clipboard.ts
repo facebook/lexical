@@ -158,6 +158,19 @@ export function $insertDataTransferForRichText(
     try {
       const parser = new DOMParser();
       const dom = parser.parseFromString(htmlString, 'text/html');
+
+      // strip any style attributes from pasted text/html content
+      const removeStyleAttributes = (element: HTMLElement) => {
+        element.removeAttribute('style');
+        for(const child of el.childNodes) {
+          if (child instanceof HTMLElement) {
+            removeStyles(child as HTMLElement)
+          }
+        }
+      }  
+      const body = dom.querySelector('body')
+      if (body) { removeStyles(body) }
+      
       const nodes = $generateNodesFromDOM(editor, dom);
       return $insertGeneratedNodes(editor, nodes, selection);
     } catch {

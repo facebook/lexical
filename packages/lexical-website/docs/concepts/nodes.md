@@ -1,5 +1,3 @@
-
-
 # Nodes
 
 ## Base Nodes
@@ -271,7 +269,13 @@ export function $createVideoNode(id: string): VideoNode {
   return new VideoNode(id);
 }
 
-export function $isVideoNode(node: LexicalNode | null | undefined): node is VideoNode {
+export function $isVideoNode(
+  node: LexicalNode | null | undefined,
+): node is VideoNode {
   return node instanceof VideoNode;
 }
 ```
+
+Using `useDecorators`, `PlainTextPlugin` and `RichTextPlugin` execute `React.createPortal(reactDecorator, element)` for each `DecoratorNode`,
+where the `reactDecorator` is what is returned by `DecoratorNode.prototype.decorate`,
+and the `element` is an `HTMLElement` returned by `DecoratorNode.prototype.createDOM`.

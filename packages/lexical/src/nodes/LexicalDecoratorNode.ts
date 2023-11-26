@@ -20,6 +20,9 @@ export class DecoratorNode<T> extends LexicalNode {
     super(key);
   }
 
+  /**
+   * The returned value is added to the LexicalEditor._decorators
+   */
   decorate(editor: LexicalEditor, config: EditorConfig): T {
     invariant(false, 'decorate: base method not extended');
   }

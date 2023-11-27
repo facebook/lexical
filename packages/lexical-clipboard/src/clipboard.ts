@@ -15,6 +15,7 @@ import {
 import {$findMatchingParent, objectKlassEquals} from '@lexical/utils';
 import {
   $createParagraphNode,
+  $createRangeSelection,
   $createTabNode,
   $getRoot,
   $getSelection,
@@ -29,17 +30,14 @@ import {
   BaseSelection,
   COMMAND_PRIORITY_CRITICAL,
   COPY_COMMAND,
-  DEPRECATED_$createGridSelection,
   DEPRECATED_$isGridCellNode,
   DEPRECATED_$isGridNode,
   DEPRECATED_$isGridRowNode,
-  DEPRECATED_$isGridSelection,
   DEPRECATED_GridNode,
-  GridSelection,
   isSelectionWithinEditor,
   LexicalEditor,
   LexicalNode,
-  RangeSelection,
+  PointSelection,
   SELECTION_CHANGE_COMMAND,
   SerializedTextNode,
 } from 'lexical';
@@ -208,17 +206,17 @@ export function $insertGeneratedNodes(
   nodes: Array<LexicalNode>,
   selection: BaseSelection,
 ): void {
-  const isGridSelection = DEPRECATED_$isGridSelection(selection);
+  const isPointSelection = $isPointSelection(selection);
   const isRangeSelection = $isRangeSelection(selection);
   const isSelectionInsideOfGrid =
-    isGridSelection ||
     (isRangeSelection &&
       $findMatchingParent(selection.anchor.getNode(), (n) =>
         DEPRECATED_$isGridCellNode(n),
       ) !== null &&
       $findMatchingParent(selection.focus.getNode(), (n) =>
         DEPRECATED_$isGridCellNode(n),
-      ) !== null);
+      ) !== null) ||
+    (isPointSelection && !isRangeSelection);
 
   if (
     isSelectionInsideOfGrid &&
@@ -284,7 +282,7 @@ function $basicInsertStrategy(nodes: LexicalNode[], selection: BaseSelection) {
 
 function $mergeGridNodesStrategy(
   nodes: LexicalNode[],
-  selection: RangeSelection | GridSelection,
+  selection: PointSelection,
   isFromLexical: boolean,
   editor: LexicalEditor,
 ) {
@@ -392,9 +390,10 @@ function $mergeGridNodesStrategy(
   }
 
   if (newAnchorCellKey && newFocusCellKey) {
-    const newGridSelection = DEPRECATED_$createGridSelection();
-    newGridSelection.set(gridNode.getKey(), newAnchorCellKey, newFocusCellKey);
-    $setSelection(newGridSelection);
+    const rangeSelection = $createRangeSelection();
+    rangeSelection.anchor.set(newAnchorCellKey, 0, 'element');
+    rangeSelection.focus.set(newFocusCellKey, 0, 'element');
+    $setSelection(rangeSelection);
     editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
   }
 }

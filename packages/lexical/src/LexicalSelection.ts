@@ -368,14 +368,6 @@ export class NodeSelection implements BaseSelection {
     this._cachedNodes = null;
   }
 
-  getCachedNodes(): LexicalNode[] | null {
-    return this._cachedNodes;
-  }
-
-  setCachedNodes(nodes: LexicalNode[] | null): void {
-    this._cachedNodes = nodes;
-  }
-
   is(selection: null | BaseSelection): boolean {
     if (!$isNodeSelection(selection)) {
       return false;

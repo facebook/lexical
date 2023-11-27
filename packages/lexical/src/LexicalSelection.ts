@@ -268,6 +268,7 @@ export interface BaseSelection {
   extract(): Array<LexicalNode>;
   getNodes(): Array<LexicalNode>;
   getTextContent(): string;
+  insertText(text: string): void;
   insertRawText(text: string): void;
   is(selection: null | BaseSelection): boolean;
   insertNodes(nodes: Array<LexicalNode>): void;

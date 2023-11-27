@@ -39,6 +39,7 @@ import {
   $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
+  $isPointSelection,
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
@@ -477,7 +478,9 @@ export function $setSelection(selection: null | BaseSelection): void {
       }
     }
     selection.dirty = true;
-    selection.setCachedNodes(null);
+    if ($isPointSelection(selection)) {
+      selection.setCachedNodes(null);
+    }
   }
   editorState._selection = selection;
 }

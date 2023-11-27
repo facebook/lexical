@@ -342,8 +342,8 @@ export type DOMConversionOutput = {
   node: null | LexicalNode | Array<LexicalNode>,
 };
 export type DOMExportOutput = {
-  after?: (generatedElement: ?HTMLElement) => ?HTMLElement,
-  element?: HTMLElement | null,
+  after?: (generatedElement: ?HTMLElement) => ?HTMLElement | DocumentFragment,
+  element?: HTMLElement | DocumentFragment | null,
 };
 export type NodeKey = string;
 declare export class LexicalNode {

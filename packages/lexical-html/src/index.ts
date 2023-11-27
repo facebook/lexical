@@ -130,14 +130,20 @@ function $appendNodesToHTML(
   }
 
   if (shouldInclude && !shouldExclude) {
-    if (isHTMLElement(element)) {
+    if (isHTMLElement(element) || element instanceof DocumentFragment) {
       element.append(fragment);
     }
     parentElement.append(element);
 
     if (after) {
       const newElement = after.call(target, element);
-      if (newElement) element.replaceWith(newElement);
+      if (newElement) {
+        if (element instanceof DocumentFragment) {
+          element.replaceChildren(newElement);
+        } else {
+          element.replaceWith(newElement);
+        }
+      }
     }
   } else {
     parentElement.append(fragment);

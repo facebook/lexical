@@ -151,9 +151,9 @@ export type DOMConversionOutput = {
 
 export type DOMExportOutput = {
   after?: (
-    generatedElement: HTMLElement | Text | null | undefined,
-  ) => HTMLElement | Text | null | undefined;
-  element: HTMLElement | Text | null;
+    generatedElement: HTMLElement | DocumentFragment | Text | null | undefined,
+  ) => HTMLElement | DocumentFragment | Text | null | undefined;
+  element: HTMLElement | DocumentFragment | Text | null;
 };
 
 export type NodeKey = string;

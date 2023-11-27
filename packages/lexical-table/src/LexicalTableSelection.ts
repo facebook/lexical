@@ -6,12 +6,7 @@
  *
  */
 
-import type {
-  GridSelection,
-  LexicalEditor,
-  NodeKey,
-  TextFormatType,
-} from 'lexical';
+import type {LexicalEditor, NodeKey, TextFormatType} from 'lexical';
 
 import {
   addClassNamesToElement,
@@ -27,13 +22,16 @@ import {
   $getSelection,
   $isElementNode,
   $setSelection,
-  DEPRECATED_$createGridSelection,
-  DEPRECATED_$isGridSelection,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import {CAN_USE_DOM} from 'shared/canUseDOM';
 import invariant from 'shared/invariant';
 
+import {
+  type GridSelection,
+  DEPRECATED_$createGridSelection,
+  DEPRECATED_$isGridSelection,
+} from './LexicalGridSelection';
 import {$isTableCellNode} from './LexicalTableCellNode';
 import {$isTableNode} from './LexicalTableNode';
 import {

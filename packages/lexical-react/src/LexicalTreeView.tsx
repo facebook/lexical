@@ -10,7 +10,6 @@ import type {
   BaseSelection,
   EditorState,
   ElementNode,
-  GridSelection,
   LexicalEditor,
   LexicalNode,
   PointSelection,
@@ -20,6 +19,7 @@ import type {
 import {$generateHtmlFromNodes} from '@lexical/html';
 import {$isLinkNode, LinkNode} from '@lexical/link';
 import {$isMarkNode} from '@lexical/mark';
+import {DEPRECATED_$isGridSelection, GridSelection} from '@lexical/table';
 import {mergeRegister} from '@lexical/utils';
 import {
   $getRoot,
@@ -29,7 +29,6 @@ import {
   $isRangeSelection,
   $isTextNode,
   COMMAND_PRIORITY_HIGH,
-  DEPRECATED_$isGridSelection,
   LexicalCommand,
 } from 'lexical';
 import * as React from 'react';

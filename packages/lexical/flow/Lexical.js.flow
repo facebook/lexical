@@ -439,39 +439,6 @@ declare export class PointSelection implements BaseSelection {
   setCachedNodes(nodes: null | Array<LexicalNode>): void;
 }
 
-export type GridSelectionShape = {
-  fromX: number,
-  fromY: number,
-  toX: number,
-  toY: number,
-};
-declare export class GridSelection extends PointSelection {
-  gridKey: NodeKey;
-  anchor: PointType;
-  focus: PointType;
-  dirty: boolean;
-  constructor(gridKey: NodeKey, anchor: PointType, focus: PointType): void;
-  is(selection: null | BaseSelection): boolean;
-  set(gridKey: NodeKey, anchorCellKey: NodeKey, focusCellKey: NodeKey): void;
-  clone(): GridSelection;
-  getCharacterOffsets(): [number, number];
-  extract(): Array<LexicalNode>;
-  insertRawText(): void;
-  insertText(): void;
-  isCollapsed(): false;
-  isBackward(): boolean;
-  getShape(): GridSelectionShape;
-  getNodes(): Array<LexicalNode>;
-  getTextContent(): string;
-  insertNodes(nodes: Array<LexicalNode>): void;
-  getCachedNodes(): null | Array<LexicalNode>;
-  setCachedNodes(nodes: null | Array<LexicalNode>): void;
-}
-
-declare export function DEPRECATED_$isGridSelection(
-  x: ?mixed,
-): boolean %checks(x instanceof GridSelection);
-
 declare export function $isPointSelection(
   x: ?mixed,
 ): boolean %checks(x instanceof PointSelection);
@@ -566,7 +533,7 @@ type ElementPointType = {
   set: (key: NodeKey, offset: number, type: 'text' | 'element') => void,
 };
 export type Point = PointType;
-type PointType = TextPointType | ElementPointType;
+export type PointType = TextPointType | ElementPointType;
 declare class _Point {
   key: NodeKey;
   offset: number;
@@ -580,7 +547,6 @@ declare class _Point {
 
 declare export function $createRangeSelection(): RangeSelection;
 declare export function $createNodeSelection(): NodeSelection;
-declare export function DEPRECATED_$createGridSelection(): GridSelection;
 declare export function $isRangeSelection(
   x: ?mixed,
 ): boolean %checks(x instanceof RangeSelection);

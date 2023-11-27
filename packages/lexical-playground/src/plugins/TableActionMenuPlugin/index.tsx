@@ -26,7 +26,9 @@ import {
   $isTableCellNode,
   $isTableRowNode,
   $unmergeCell,
+  DEPRECATED_$isGridSelection,
   getTableSelectionFromTableElement,
+  GridSelection,
   HTMLTableElementWithWithTableSelectionState,
   TableCellHeaderStates,
   TableCellNode,
@@ -41,8 +43,6 @@ import {
   $isTextNode,
   DEPRECATED_$getNodeTriplet,
   DEPRECATED_$isGridCellNode,
-  DEPRECATED_$isGridSelection,
-  GridSelection,
 } from 'lexical';
 import * as React from 'react';
 import {ReactPortal, useCallback, useEffect, useRef, useState} from 'react';

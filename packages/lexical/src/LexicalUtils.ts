@@ -1555,25 +1555,6 @@ export function $findMatchingParent(
   return null;
 }
 
-export function $getChildrenRecursively(node: LexicalNode): Array<LexicalNode> {
-  const nodes = [];
-  const stack = [node];
-  while (stack.length > 0) {
-    const currentNode = stack.pop();
-    invariant(
-      currentNode !== undefined,
-      "Stack.length > 0; can't be undefined",
-    );
-    if ($isElementNode(currentNode)) {
-      stack.unshift(...currentNode.getChildren());
-    }
-    if (currentNode !== node) {
-      nodes.push(currentNode);
-    }
-  }
-  return nodes;
-}
-
 /**
  * @param x - The element being tested
  * @returns Returns true if x is an HTML anchor tag, false otherwise

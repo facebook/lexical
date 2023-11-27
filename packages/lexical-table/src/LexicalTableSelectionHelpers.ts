@@ -6,12 +6,12 @@
  *
  */
 
+import type {GridSelection} from './LexicalGridSelection';
 import type {TableCellNode} from './LexicalTableCellNode';
 import type {TableNode} from './LexicalTableNode';
 import type {Cell, Cells, Grid} from './LexicalTableSelection';
 import type {
   BaseSelection,
-  GridSelection,
   LexicalCommand,
   LexicalEditor,
   LexicalNode,
@@ -34,7 +34,6 @@ import {
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
-  DEPRECATED_$isGridSelection,
   FOCUS_COMMAND,
   FORMAT_TEXT_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
@@ -49,6 +48,7 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
+import {DEPRECATED_$isGridSelection} from './LexicalGridSelection';
 import {$isTableCellNode} from './LexicalTableCellNode';
 import {$isTableNode} from './LexicalTableNode';
 import {TableSelection} from './LexicalTableSelection';

@@ -44,11 +44,9 @@ export type {
   ElementPointType as ElementPoint,
   GridMapType,
   GridMapValueType,
-  GridSelection,
-  GridSelectionShape,
   NodeSelection,
   Point,
-  PointSelection,
+  PointType,
   RangeSelection,
   TextPointType as TextPoint,
 } from './LexicalSelection';
@@ -124,6 +122,7 @@ export type {EventHandler} from './LexicalEvents';
 export {$normalizeSelection as $normalizeSelection__EXPERIMENTAL} from './LexicalNormalization';
 export {
   $createNodeSelection,
+  $createPoint,
   $createRangeSelection,
   $getPreviousSelection,
   $getRangeSelection,
@@ -135,12 +134,11 @@ export {
   $isPointSelection,
   $isRangeSelection,
   DEPRECATED_$computeGridMap,
-  DEPRECATED_$createGridSelection,
   DEPRECATED_$getGridCellNodeRect,
   DEPRECATED_$getNodeTriplet,
-  DEPRECATED_$isGridSelection,
+  PointSelection,
 } from './LexicalSelection';
-export {$parseSerializedNode} from './LexicalUpdates';
+export {$parseSerializedNode, isCurrentlyReadOnlyMode} from './LexicalUpdates';
 export {
   $addUpdateTag,
   $applyNodeReplacement,

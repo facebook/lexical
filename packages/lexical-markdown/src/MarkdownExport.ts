@@ -14,6 +14,7 @@ import type {
 } from '@lexical/markdown';
 import type {ElementNode, LexicalNode, TextFormatType, TextNode} from 'lexical';
 
+import {$isLinkNode} from '@lexical/link';
 import {
   $getRoot,
   $isDecoratorNode,
@@ -176,7 +177,7 @@ function getTextSibling(node: TextNode, backward: boolean): TextNode | null {
   if (!sibling) {
     const parent = node.getParentOrThrow();
 
-    if (parent.isInline()) {
+    if (parent.isInline() && !$isLinkNode(parent)) {
       sibling = backward
         ? parent.getPreviousSibling()
         : parent.getNextSibling();
@@ -185,7 +186,7 @@ function getTextSibling(node: TextNode, backward: boolean): TextNode | null {
 
   while (sibling) {
     if ($isElementNode(sibling)) {
-      if (!sibling.isInline()) {
+      if (!sibling.isInline() || $isLinkNode(sibling)) {
         break;
       }
 

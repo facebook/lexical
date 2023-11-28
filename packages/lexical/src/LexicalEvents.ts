@@ -539,6 +539,11 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
             selection.format = anchorNode.getFormat();
             selection.style = anchorNode.getStyle();
           }
+          const selectedText = selection.anchor.getNode().getTextContent();
+          if (selectedText.length <= 1) {
+            event.preventDefault();
+            dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);
+          }
         } else {
           event.preventDefault();
           dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);

@@ -276,6 +276,6 @@ export function $isVideoNode(
 }
 ```
 
-Using `useDecorators`, `PlainTextPlugin` and `RichTextPlugin` execute `React.createPortal(reactDecorator, element)` for each `DecoratorNode`,
+Using `useDecorators`, `PlainTextPlugin` and `RichTextPlugin` executes `React.createPortal(reactDecorator, element)` for each `DecoratorNode`,
 where the `reactDecorator` is what is returned by `DecoratorNode.prototype.decorate`,
 and the `element` is an `HTMLElement` returned by `DecoratorNode.prototype.createDOM`.

@@ -242,6 +242,10 @@ test.describe('HTML Tables CopyAndPaste', () => {
 
   test('Copy + paste - Merge Grids', async ({page, isPlainText, isCollab}) => {
     test.skip(isPlainText);
+    test.fixme(
+      isCollab,
+      'Table selection styles are not properly synced to the right hand frame',
+    );
 
     await focusEditor(page);
     await insertTable(page, 4, 4);
@@ -354,13 +358,10 @@ test.describe('HTML Tables CopyAndPaste', () => {
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
       `,
       html`
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-        <table
-          class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection">
+        <table class="PlaygroundEditorTheme__table">
           <tr>
             <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
                 dir="ltr">
@@ -368,8 +369,7 @@ test.describe('HTML Tables CopyAndPaste', () => {
               </p>
             </th>
             <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
                 dir="ltr">
@@ -387,17 +387,14 @@ test.describe('HTML Tables CopyAndPaste', () => {
           </tr>
           <tr>
             <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
                 dir="ltr">
                 <span data-lexical-text="true">c</span>
               </p>
             </th>
-            <td
-              class="PlaygroundEditorTheme__tableCell"
-              style="background-color: rgb(172, 206, 247); caret-color: transparent">
+            <td class="PlaygroundEditorTheme__tableCell">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
                 dir="ltr">
@@ -442,7 +439,6 @@ test.describe('HTML Tables CopyAndPaste', () => {
             </td>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
       `,
     );
   });

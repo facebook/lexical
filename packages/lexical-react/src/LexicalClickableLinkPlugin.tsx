@@ -61,7 +61,7 @@ export default function LexicalClickableLinkPlugin({
             $isElementNode,
           );
           if ($isLinkNode(maybeLinkNode)) {
-            url = maybeLinkNode.getURL();
+            url = maybeLinkNode.sanitizeUrl(maybeLinkNode.getURL());
             urlTarget = maybeLinkNode.getTarget();
           } else {
             const a = findMatchingDOM(target, isHTMLAnchorElement);

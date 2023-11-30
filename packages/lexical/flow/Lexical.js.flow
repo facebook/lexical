@@ -102,7 +102,7 @@ type Listeners = {
   root: Set<RootListener>,
   update: Set<UpdateListener>,
 };
-type CommandListener<P> = (payload: P, editor: LexicalEditor) => boolean;
+export type CommandListener<P> = (payload: P, editor: LexicalEditor) => boolean;
 // $FlowFixMe[unclear-type]
 type Commands = Map<LexicalCommand<any>, Array<Set<CommandListener<any>>>>;
 type RegisteredNodes = Map<string, RegisteredNode>;

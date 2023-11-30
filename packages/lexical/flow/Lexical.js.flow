@@ -914,6 +914,14 @@ declare export function $copyNode(
 ): [ElementNode, ElementNode];
 
 /**
+ * LexicalNormalization
+ */
+
+declare export function $normalizeSelection__EXPERIMENTAL(
+  selection: RangeSelection,
+): RangeSelection;
+
+/**
  * Serialization/Deserialization
  * */
 

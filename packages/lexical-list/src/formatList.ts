@@ -10,10 +10,10 @@ import {$getNearestNodeOfType} from '@lexical/utils';
 import {
   $createParagraphNode,
   $getSelection,
+  $INTERNAL_isPointSelection,
   $isElementNode,
   $isLeafNode,
   $isParagraphNode,
-  $isPointSelection,
   $isRangeSelection,
   $isRootOrShadowRoot,
   ElementNode,
@@ -94,7 +94,7 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
   editor.update(() => {
     const selection = $getSelection();
 
-    if ($isPointSelection(selection)) {
+    if ($INTERNAL_isPointSelection(selection)) {
       const nodes = selection.getNodes();
       const anchor = selection.anchor;
       const anchorNode = anchor.getNode();

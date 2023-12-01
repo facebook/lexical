@@ -11,9 +11,9 @@ import type {
   EditorState,
   ElementNode,
   GridSelection,
+  INTERNAL_PointSelection,
   LexicalEditor,
   LexicalNode,
-  PointSelection,
   RangeSelection,
 } from 'lexical';
 
@@ -724,7 +724,7 @@ function prettifyHTML(node: Element, level: number) {
 
 function $getSelectionStartEnd(
   node: LexicalNode,
-  selection: PointSelection,
+  selection: INTERNAL_PointSelection,
 ): [number, number] {
   const anchor = selection.anchor;
   const focus = selection.focus;

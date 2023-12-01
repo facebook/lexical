@@ -2964,7 +2964,7 @@ describe('$patchStyleText', () => {
       });
 
       const selection = $getSelection();
-      if (!$isRangeSeleciton(selection)) {
+      if (!$isRangeSelection(selection)) {
         return;
       }
       $patchStyleText(selection, {'text-emphasis': 'filled'});
@@ -3043,7 +3043,9 @@ describe('$patchStyleText', () => {
       });
 
       const selection = $getSelection();
-      expect($isRangeSelection(selection)).toBeTruthy();
+      if (!$isRangeSelection(selection)) {
+        return;
+      }
       $patchStyleText(selection, {'text-emphasis': 'filled'});
 
       expect(

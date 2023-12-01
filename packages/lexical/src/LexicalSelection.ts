@@ -1556,6 +1556,7 @@ export class RangeSelection implements BaseSelection {
       return selection.insertNodes(nodes);
     }
     const firstBlock = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
+    const last = nodes[nodes.length - 1]!;
 
     // CASE 1: insert inside a code block
     if ('__language' in firstBlock) {
@@ -1564,10 +1565,7 @@ export class RangeSelection implements BaseSelection {
       } else {
         const index = removeTextAndSplitBlock(this);
         firstBlock.splice(index, 0, nodes);
-        const last = nodes[nodes.length - 1]!;
-        if (last.select) {
-          last.select();
-        } else last.selectNext(0, 0);
+        last.selectEnd();
       }
       return;
     }
@@ -1576,22 +1574,13 @@ export class RangeSelection implements BaseSelection {
     const notInline = (node: LexicalNode) =>
       ($isElementNode(node) || $isDecoratorNode(node)) && !node.isInline();
 
-    const last = nodes[nodes.length - 1]!;
     const nodeToSelect = $isElementNode(last)
       ? last.getLastDescendant() || last
       : last;
-    const nodeToSelectSize = nodeToSelect.getTextContentSize();
-    function restoreSelection() {
-      if (nodeToSelect.select) {
-        nodeToSelect.select(nodeToSelectSize, nodeToSelectSize);
-      } else {
-        nodeToSelect.selectNext(0, 0);
-      }
-    }
     if (!nodes.some(notInline)) {
       const index = removeTextAndSplitBlock(this);
       firstBlock.splice(index, 0, nodes);
-      restoreSelection();
+      nodeToSelect.selectEnd();
       return;
     }
 
@@ -1631,7 +1620,7 @@ export class RangeSelection implements BaseSelection {
       firstBlock.remove();
     }
 
-    restoreSelection();
+    nodeToSelect.selectEnd();
 
     // To understand this take a look at the test "can wrap post-linebreak nodes into new element"
     const lastChild = $isElementNode(firstBlock)

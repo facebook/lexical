@@ -1024,6 +1024,14 @@ export class LexicalNode {
     return $createParagraphNode();
   }
 
+  selectStart(): RangeSelection {
+    return this.selectPrevious();
+  }
+
+  selectEnd(): RangeSelection {
+    return this.selectNext(0, 0);
+  }
+
   /**
    * Moves selection to the previous sibling of this node, at the specified offsets.
    *

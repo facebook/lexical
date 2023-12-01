@@ -632,7 +632,7 @@ describe('LexicalEventHelpers', () => {
         },
         {
           expectedHTML:
-            '<p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">a</span><br><span data-lexical-text="true">b</span><br><br></p>',
+            '<p class="editor-paragraph" dir="ltr"><br><span data-lexical-text="true">a</span><br><span data-lexical-text="true">b</span><br><br></p>',
           inputs: [
             pasteHTML(`<span style="white-space: pre">\na\r\nb\r\n</span>`),
           ],

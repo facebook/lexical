@@ -207,7 +207,13 @@ export function toggleTextFormatType(
   }
   if (alignWithFormat === null || alignWithFormat & activeFormat) {
     // Add the state flag.
-    return format | activeFormat;
+    let newFormat = format | activeFormat;
+    if (type === 'subscript') {
+      newFormat &= ~TEXT_TYPE_TO_FORMAT['superscript'];
+    } else if (type === 'superscript') {
+      newFormat &= ~TEXT_TYPE_TO_FORMAT['subscript'];
+    }
+    return newFormat;
   }
   return format;
 }

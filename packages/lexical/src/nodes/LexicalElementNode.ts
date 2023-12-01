@@ -337,6 +337,14 @@ export class ElementNode extends LexicalNode {
     }
     return selection;
   }
+  selectStart(): RangeSelection {
+    const firstNode = this.getFirstDescendant();
+    return firstNode ? firstNode.selectStart() : this.select();
+  }
+  selectEnd(): RangeSelection {
+    const lastNode = this.getLastDescendant();
+    return lastNode ? lastNode.selectEnd() : this.select();
+  }
   clear(): this {
     const writableSelf = this.getWritable();
     const children = this.getChildren();

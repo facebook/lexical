@@ -1024,25 +1024,12 @@ export class LexicalNode {
     return $createParagraphNode();
   }
 
-  selectEnd(): RangeSelection {
-    if ($isTextNode(this)) {
-      const size = this.getTextContentSize();
-      return this.select(size, size);
-    } else if ($isElementNode(this)) {
-      const lastNode = this.getLastDescendant();
-      return lastNode ? lastNode.selectEnd() : this.select();
-    }
-    return this.selectNext(0, 0);
+  selectStart(): RangeSelection {
+    return this.selectPrevious();
   }
 
-  selectStart(): RangeSelection {
-    if ($isTextNode(this)) {
-      return this.select(0, 0);
-    } else if ($isElementNode(this)) {
-      const firstNode = this.getFirstDescendant();
-      return firstNode ? firstNode.selectStart() : this.select();
-    }
-    return this.selectPrevious();
+  selectEnd(): RangeSelection {
+    return this.selectNext(0, 0);
   }
 
   /**

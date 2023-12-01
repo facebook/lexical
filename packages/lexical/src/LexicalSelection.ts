@@ -2650,12 +2650,6 @@ export function $getSelection(): null | BaseSelection {
   return editorState._selection;
 }
 
-export function $getRangeSelection(): null | RangeSelection {
-  const selection = $getSelection();
-  const isRange = $isRangeSelection(selection);
-  return isRange ? selection : null;
-}
-
 export function $getPreviousSelection(): null | BaseSelection {
   const editor = getActiveEditor();
   return editor._editorState._selection;

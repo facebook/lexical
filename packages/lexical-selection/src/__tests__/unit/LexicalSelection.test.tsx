@@ -23,17 +23,14 @@ import {$createTableNodeWithDimensions} from '@lexical/table';
 import {
   $createLineBreakNode,
   $createParagraphNode,
+  $createRangeSelection,
   $createTextNode,
   $getRoot,
   $getSelection,
   $isRangeSelection,
+  $setSelection,
   ParagraphNode,
 } from 'lexical';
-import {
-  $createRangeSelection,
-  $getRangeSelection,
-  $setSelection,
-} from 'lexical/src';
 import {
   $assertRangeSelection,
   $createTestDecoratorNode,
@@ -1687,9 +1684,9 @@ describe('LexicalSelection tests', () => {
                 // Note: line break can't be selected by the DOM
                 const linebreak = $createLineBreakNode();
 
-                const selection = $getRangeSelection();
+                const selection = $getSelection();
 
-                if (selection == null) {
+                if (!$isRangeSelection(selection)) {
                   return;
                 }
 
@@ -1745,9 +1742,9 @@ describe('LexicalSelection tests', () => {
           listNode.insertAfter(paragraph);
           listItemNode.remove();
 
-          const selection = $getRangeSelection();
+          const selection = $getSelection();
 
-          if (selection == null) {
+          if (!$isRangeSelection(selection)) {
             return;
           }
 
@@ -1828,9 +1825,9 @@ describe('LexicalSelection tests', () => {
           // Assert
           const expectedKey = link.getKey();
 
-          const selection = $getRangeSelection();
+          const selection = $getSelection();
 
-          if (selection == null) {
+          if (!$isRangeSelection(selection)) {
             return;
           }
 
@@ -1857,9 +1854,9 @@ describe('LexicalSelection tests', () => {
         // Note: line break can't be selected by the DOM
         const linebreak = $createLineBreakNode();
 
-        const selection = $getRangeSelection();
+        const selection = $getSelection();
 
-        if (selection == null) {
+        if (!$isRangeSelection(selection)) {
           return;
         }
 
@@ -1970,9 +1967,9 @@ describe('LexicalSelection tests', () => {
 
               paragraph.append(textNode1, decorator, textNode2);
 
-              const selection = $getRangeSelection();
+              const selection = $getSelection();
 
-              if (selection == null) {
+              if (!$isRangeSelection(selection)) {
                 return;
               }
 
@@ -2184,9 +2181,9 @@ describe('LexicalSelection tests', () => {
         await testEditor.update(() => {
           const {key, offset} = testCase.fn();
 
-          const selection = $getRangeSelection();
+          const selection = $getSelection();
 
-          if (selection == null) {
+          if (!$isRangeSelection(selection)) {
             return;
           }
 

@@ -39,7 +39,7 @@ import {
   markSelectionChangeFromDOMUpdate,
 } from './LexicalEvents';
 import {getIsProcesssingMutations} from './LexicalMutations';
-import {LexicalNode} from './LexicalNode';
+import {insertRangeAfter, LexicalNode} from './LexicalNode';
 import {$normalizeSelection} from './LexicalNormalization';
 import {
   getActiveEditor,
@@ -1615,7 +1615,7 @@ export class RangeSelection implements BaseSelection {
       firstToInsert = blocks[1];
     }
     if (firstToInsert) {
-      firstBlock.insertRangeAfter(firstToInsert);
+      insertRangeAfter(firstBlock, firstToInsert);
     }
     const lastInsertedBlock = $getAncestor(nodeToSelect, INTERNAL_$isBlock)!;
 

@@ -721,6 +721,8 @@ export function prettifyHTML(string, {ignoreClasses, ignoreInlineStyles} = {}) {
     output = output.replace(/\sstyle="([^"]*)"/g, '');
   }
 
+  output = output.replace(/\s__playwright_target__="[^"]+"/, '');
+
   return prettier
     .format(output, {
       attributeGroups: ['$DEFAULT', '^data-'],
@@ -879,6 +881,11 @@ export async function mergeTableCells(page) {
 export async function unmergeTableCell(page) {
   await click(page, '.table-cell-action-button-container');
   await click(page, '.item[data-test-id="table-unmerge-cells"]');
+}
+
+export async function toggleColumnHeader(page) {
+  await click(page, '.table-cell-action-button-container');
+  await click(page, '.item[data-test-id="table-column-header"]');
 }
 
 export async function deleteTableRows(page) {

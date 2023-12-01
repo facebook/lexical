@@ -61,6 +61,16 @@ type Props = {
   ) => void;
 };
 
+export const useCallbackRefState = () => {
+  const [refValue, setRefValue] =
+    React.useState<ExcalidrawImperativeAPI | null>(null);
+  const refCallback = React.useCallback(
+    (value: ExcalidrawImperativeAPI | null) => setRefValue(value),
+    [],
+  );
+  return [refValue, refCallback] as const;
+};
+
 /**
  * @explorer-desc
  * A component which renders a modal with Excalidraw (a painting app)
@@ -77,7 +87,7 @@ export default function ExcalidrawModal({
   onClose,
 }: Props): ReactPortal | null {
   const excaliDrawModelRef = useRef<HTMLDivElement | null>(null);
-  const excaliDrawSceneRef = useRef<ExcalidrawImperativeAPI>(null);
+  const [excalidrawAPI, excalidrawAPIRefCallback] = useCallbackRefState();
   const [discardModalOpen, setDiscardModalOpen] = useState(false);
   const [elements, setElements] =
     useState<ReadonlyArray<ExcalidrawElementFragment>>(initialElements);
@@ -139,7 +149,7 @@ export default function ExcalidrawModal({
 
   const save = () => {
     if (elements.filter((el) => !el.isDeleted).length > 0) {
-      const appState = excaliDrawSceneRef?.current?.getAppState();
+      const appState = excalidrawAPI?.getAppState();
       // We only need a subset of the state
       const partialState: Partial<AppState> = {
         exportBackground: appState.exportBackground,
@@ -212,12 +222,6 @@ export default function ExcalidrawModal({
     setFiles(fls);
   };
 
-  // This is a hacky work-around for Excalidraw + Vite.
-  // In DEV, Vite pulls this in fine, in prod it doesn't. It seems
-  // like a module resolution issue with ESM vs CJS?
-  const _Excalidraw =
-    Excalidraw.$$typeof != null ? Excalidraw : Excalidraw.default;
-
   return createPortal(
     <div className="ExcalidrawModal__overlay" role="dialog">
       <div
@@ -226,9 +230,9 @@ export default function ExcalidrawModal({
         tabIndex={-1}>
         <div className="ExcalidrawModal__row">
           {discardModalOpen && <ShowDiscardDialog />}
-          <_Excalidraw
+          <Excalidraw
             onChange={onChange}
-            ref={excaliDrawSceneRef}
+            excalidrawAPI={excalidrawAPIRefCallback}
             initialData={{
               appState: initialAppState || {isLoading: false},
               elements: initialElements,

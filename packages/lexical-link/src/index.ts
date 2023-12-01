@@ -20,11 +20,7 @@ import type {
   SerializedElementNode,
 } from 'lexical';
 
-import {
-  $getAncestor,
-  addClassNamesToElement,
-  isHTMLAnchorElement,
-} from '@lexical/utils';
+import {addClassNamesToElement, isHTMLAnchorElement} from '@lexical/utils';
 import {
   $applyNodeReplacement,
   $getSelection,
@@ -367,7 +363,7 @@ export class AutoLinkNode extends LinkNode {
     );
     if ($isElementNode(element)) {
       const linkNode = $createAutoLinkNode(this.__url, {
-        rel: this._rel,
+        rel: this.__rel,
         target: this.__target,
         title: this.__title,
       });
@@ -528,4 +524,15 @@ export function toggleLink(
       }
     });
   }
+}
+
+function $getAncestor<NodeType extends LexicalNode = LexicalNode>(
+  node: LexicalNode,
+  predicate: (ancestor: LexicalNode) => ancestor is NodeType,
+) {
+  let parent = node;
+  while (parent !== null && parent.getParent() !== null && !predicate(parent)) {
+    parent = parent.getParentOrThrow();
+  }
+  return predicate(parent) ? parent : null;
 }

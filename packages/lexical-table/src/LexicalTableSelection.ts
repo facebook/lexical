@@ -222,7 +222,7 @@ export class TableSelection {
     });
   }
 
-  updateTableGridSelection(selection: GridSelection | null) {
+  updateTableGridSelection(selection: GridSelection | null): void {
     if (selection != null && selection.gridKey === this.tableNodeKey) {
       const editor = this.editor;
       this.gridSelection = selection;
@@ -231,6 +231,9 @@ export class TableSelection {
       $updateDOMForSelection(editor, this.grid, this.gridSelection);
     } else if (selection == null) {
       this.clearHighlight();
+    } else {
+      this.tableNodeKey = selection.gridKey;
+      this.updateTableGridSelection(selection);
     }
   }
 
@@ -320,7 +323,10 @@ export class TableSelection {
 
       if ($isTableCellNode(anchorTableCellNode)) {
         const anchorNodeKey = anchorTableCellNode.getKey();
-        this.gridSelection = DEPRECATED_$createGridSelection();
+        this.gridSelection =
+          this.gridSelection != null
+            ? this.gridSelection.clone()
+            : DEPRECATED_$createGridSelection();
         this.anchorCellNodeKey = anchorNodeKey;
       }
     });

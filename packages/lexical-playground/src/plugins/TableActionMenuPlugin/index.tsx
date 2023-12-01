@@ -432,6 +432,13 @@ function TableActionMenu({
         $getTableColumnIndexFromTableCellNode(tableCellNode);
 
       const tableRows = tableNode.getChildren();
+      const maxRowsLength = Math.max(
+        ...tableRows.map((row) => row.getChildren().length),
+      );
+
+      if (tableColumnIndex >= maxRowsLength || tableColumnIndex < 0) {
+        throw new Error('Expected table cell to be inside of table row.');
+      }
 
       for (let r = 0; r < tableRows.length; r++) {
         const tableRow = tableRows[r];
@@ -441,9 +448,9 @@ function TableActionMenu({
         }
 
         const tableCells = tableRow.getChildren();
-
-        if (tableColumnIndex >= tableCells.length || tableColumnIndex < 0) {
-          throw new Error('Expected table cell to be inside of table row.');
+        if (tableColumnIndex >= tableCells.length) {
+          // if cell is outside of bounds for the current row (for example various merge cell cases) we shouldn't highlight it
+          continue;
         }
 
         const tableCell = tableCells[tableColumnIndex];
@@ -471,6 +478,17 @@ function TableActionMenu({
           const [cell] = DEPRECATED_$getNodeTriplet(selection.anchor);
           if ($isTableCellNode(cell)) {
             cell.setBackgroundColor(value);
+          }
+
+          if (DEPRECATED_$isGridSelection(selection)) {
+            const nodes = selection.getNodes();
+
+            for (let i = 0; i < nodes.length; i++) {
+              const node = nodes[i];
+              if (DEPRECATED_$isGridCellNode(node)) {
+                node.setBackgroundColor(value);
+              }
+            }
           }
         }
       });
@@ -598,7 +616,10 @@ function TableActionMenu({
           row header
         </span>
       </button>
-      <button className="item" onClick={() => toggleTableColumnIsHeader()}>
+      <button
+        className="item"
+        onClick={() => toggleTableColumnIsHeader()}
+        data-test-id="table-column-header">
         <span className="text">
           {(tableCellNode.__headerState & TableCellHeaderStates.COLUMN) ===
           TableCellHeaderStates.COLUMN

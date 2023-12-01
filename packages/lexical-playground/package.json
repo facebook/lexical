@@ -1,6 +1,6 @@
 {
   "name": "lexical-playground",
-  "version": "0.12.2",
+  "version": "0.12.4",
   "private": true,
   "scripts": {
     "dev": "vite --host",
@@ -10,23 +10,23 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@excalidraw/excalidraw": "^0.15.3",
-    "@lexical/clipboard": "0.12.2",
-    "@lexical/code": "0.12.2",
-    "@lexical/file": "0.12.2",
-    "@lexical/hashtag": "0.12.2",
-    "@lexical/link": "0.12.2",
-    "@lexical/list": "0.12.2",
-    "@lexical/mark": "0.12.2",
-    "@lexical/overflow": "0.12.2",
-    "@lexical/plain-text": "0.12.2",
-    "@lexical/react": "0.12.2",
-    "@lexical/rich-text": "0.12.2",
-    "@lexical/selection": "0.12.2",
-    "@lexical/table": "0.12.2",
-    "@lexical/utils": "0.12.2",
+    "@excalidraw/excalidraw": "^0.17.0",
+    "@lexical/clipboard": "0.12.4",
+    "@lexical/code": "0.12.4",
+    "@lexical/file": "0.12.4",
+    "@lexical/hashtag": "0.12.4",
+    "@lexical/link": "0.12.4",
+    "@lexical/list": "0.12.4",
+    "@lexical/mark": "0.12.4",
+    "@lexical/overflow": "0.12.4",
+    "@lexical/plain-text": "0.12.4",
+    "@lexical/react": "0.12.4",
+    "@lexical/rich-text": "0.12.4",
+    "@lexical/selection": "0.12.4",
+    "@lexical/table": "0.12.4",
+    "@lexical/utils": "0.12.4",
     "katex": "^0.15.2",
-    "lexical": "0.12.2",
+    "lexical": "0.12.4",
     "lodash-es": "^4.17.21",
     "prettier": "^2.3.2",
     "react": "^18.2.0",
@@ -38,7 +38,7 @@
   "devDependencies": {
     "@types/lodash-es": "^4.14.182",
     "@vitejs/plugin-react": "^1.0.7",
-    "vite": "^2.8.0",
+    "vite": "^2.9.16",
     "vite-plugin-replace": "0.1.1"
   }
 }

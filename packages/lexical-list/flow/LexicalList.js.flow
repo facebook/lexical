@@ -51,6 +51,8 @@ declare export class ListItemNode extends ElementNode {
   canInsertAfter(node: LexicalNode): boolean;
   canReplaceWith(replacement: LexicalNode): boolean;
   canMergeWith(node: LexicalNode): boolean;
+  getValue(): number;
+  setValue(value: number): void;
   getChecked(): boolean | void;
   setChecked(boolean): this;
   toggleChecked(): void;

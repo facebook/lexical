@@ -164,7 +164,7 @@ const ELEMENT_FORMAT_OPTIONS: {
 } = {
   center: {
     icon: 'center-align',
-    iconRTL: 'right-align',
+    iconRTL: 'center-align',
     name: 'Center Align',
   },
   end: {
@@ -652,10 +652,22 @@ export default function ToolbarPlugin({
       setFontFamily(
         $getSelectionStyleValueForProperty(selection, 'font-family', 'Arial'),
       );
+      let matchingParent;
+      if ($isLinkNode(parent)) {
+        // If node is a link, we need to fetch the parent paragraph node to set format
+        matchingParent = $findMatchingParent(
+          node,
+          (parentNode) => $isElementNode(parentNode) && !parentNode.isInline(),
+        );
+      }
+
+      // If matchingParent is a valid node, pass it's format type
       setElementFormat(
-        ($isElementNode(node)
+        $isElementNode(matchingParent)
+          ? matchingParent.getFormatType()
+          : $isElementNode(node)
           ? node.getFormatType()
-          : parent?.getFormatType()) || 'left',
+          : parent?.getFormatType() || 'left',
       );
     }
   }, [activeEditor]);

@@ -12,7 +12,6 @@ import type {NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextFormatType} from './nodes/LexicalTextNode';
 
-import {$getAncestor, INTERNAL_$isBlock} from '@lexical/utils';
 import invariant from 'shared/invariant';
 
 import {
@@ -40,7 +39,7 @@ import {
   markSelectionChangeFromDOMUpdate,
 } from './LexicalEvents';
 import {getIsProcesssingMutations} from './LexicalMutations';
-import {LexicalNode} from './LexicalNode';
+import {insertRangeAfter, LexicalNode} from './LexicalNode';
 import {$normalizeSelection} from './LexicalNormalization';
 import {
   getActiveEditor,
@@ -50,13 +49,13 @@ import {
 import {
   $findMatchingParent,
   $getAdjacentNode,
+  $getAncestor,
   $getChildrenRecursively,
   $getCompositionKey,
   $getNearestRootOrShadowRoot,
   $getNodeByKey,
   $getRoot,
   $hasAncestor,
-  $isRootOrShadowRoot,
   $isTokenOrSegmented,
   $setCompositionKey,
   doesContainGrapheme,
@@ -65,6 +64,7 @@ import {
   getElementByKeyOrThrow,
   getNodeFromDOM,
   getTextNodeOffset,
+  INTERNAL_$isBlock,
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
   removeDOMBlockCursorElement,
@@ -607,6 +607,26 @@ export class GridSelection implements BaseSelection {
       DEPRECATED_$isGridNode(gridNode),
       'Expected tableNode to have a parent GridNode',
     );
+
+    const focusCellGrid = focusCell.getParents()[1];
+    if (focusCellGrid !== gridNode) {
+      if (!gridNode.isParentOf(focusCell)) {
+        // focus is on higher Grid level than anchor
+        const gridParent = gridNode.getParent();
+        invariant(gridParent != null, 'Expected gridParent to have a parent');
+        this.set(this.gridKey, gridParent.getKey(), focusCell.getKey());
+      } else {
+        // anchor is on higher Grid level than focus
+        const focusCellParent = focusCellGrid.getParent();
+        invariant(
+          focusCellParent != null,
+          'Expected focusCellParent to have a parent',
+        );
+        this.set(this.gridKey, focusCell.getKey(), focusCellParent.getKey());
+      }
+      return this.getNodes();
+    }
+
     // TODO Mapping the whole Grid every time not efficient. We need to compute the entire state only
     // once (on load) and iterate on it as updates occur. However, to do this we need to have the
     // ability to store a state. Killing GridSelection and moving the logic to the plugin would make
@@ -1261,7 +1281,7 @@ export class RangeSelection implements BaseSelection {
             lastNode = textNode;
           }
           // root node selections only select whole nodes, so no text splice is necessary
-          if (!$isRootNode(endPoint.getNode())) {
+          if (!$isRootNode(endPoint.getNode()) && endPoint.type === 'text') {
             lastNode = (lastNode as TextNode).spliceText(0, endOffset, '');
           }
           markedNodeKeysForKeep.add(lastNode.__key);
@@ -1537,54 +1557,63 @@ export class RangeSelection implements BaseSelection {
     }
     const firstBlock = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
     const last = nodes[nodes.length - 1]!;
-    const nodeToSelect = $isElementNode(last)
-      ? last.getLastDescendant() || last
-      : last;
 
-    // case where we insert inside a code block
+    // CASE 1: insert inside a code block
     if ('__language' in firstBlock) {
       if ('__language' in nodes[0]) {
         this.insertText(nodes[0].getTextContent());
       } else {
         const index = removeTextAndSplitBlock(this);
         firstBlock.splice(index, 0, nodes);
-        nodeToSelect.selectEnd();
+        last.selectEnd();
       }
       return;
     }
 
+    // CASE 2: All elements of the array are inline
     const notInline = (node: LexicalNode) =>
       ($isElementNode(node) || $isDecoratorNode(node)) && !node.isInline();
+
+    const nodeToSelect = $isElementNode(last)
+      ? last.getLastDescendant() || last
+      : last;
+    if (!nodes.some(notInline)) {
+      const index = removeTextAndSplitBlock(this);
+      firstBlock.splice(index, 0, nodes);
+      nodeToSelect.selectEnd();
+      return;
+    }
+
+    // CASE 3: At least 1 element of the array is not inline
+    const blocks = $wrapInlineNodes(nodes).getChildren();
+    const isLI = (node: LexicalNode) =>
+      '__value' in node && '__checked' in node;
     const isMergeable = (node: LexicalNode) =>
       $isElementNode(node) &&
       INTERNAL_$isBlock(node) &&
       !node.isEmpty() &&
       $isElementNode(firstBlock) &&
-      (!firstBlock.isEmpty() ||
-        !$isRootOrShadowRoot(firstBlock.getParentOrThrow()));
-
-    const firstNotInline = nodes.find(notInline);
+      (!firstBlock.isEmpty() || isLI(firstBlock));
 
     const shouldInsert = !$isElementNode(firstBlock) || !firstBlock.isEmpty();
     const insertedParagraph = shouldInsert ? this.insertParagraph() : null;
-
-    let currentBlock = firstBlock;
-    for (const node of nodes) {
-      if (node === firstNotInline && isMergeable(node)) {
-        currentBlock.append(...node.getChildren());
-      } else if (notInline(node)) {
-        currentBlock = currentBlock.insertAfter(node) as ElementNode;
-      } else {
-        currentBlock.append(node);
-      }
+    const lastToInsert = blocks[blocks.length - 1];
+    let firstToInsert = blocks[0];
+    if (isMergeable(firstToInsert)) {
+      firstBlock.append(...firstToInsert.getChildren());
+      firstToInsert = blocks[1];
     }
+    if (firstToInsert) {
+      insertRangeAfter(firstBlock, firstToInsert);
+    }
+    const lastInsertedBlock = $getAncestor(nodeToSelect, INTERNAL_$isBlock)!;
 
     if (
       insertedParagraph &&
-      $isElementNode(currentBlock) &&
-      INTERNAL_$isBlock(currentBlock)
+      $isElementNode(lastToInsert) &&
+      (isLI(insertedParagraph) || INTERNAL_$isBlock(lastToInsert))
     ) {
-      currentBlock.append(...insertedParagraph.getChildren());
+      lastInsertedBlock.append(...insertedParagraph.getChildren());
       insertedParagraph.remove();
     }
     if ($isElementNode(firstBlock) && firstBlock.isEmpty()) {
@@ -1593,10 +1622,11 @@ export class RangeSelection implements BaseSelection {
 
     nodeToSelect.selectEnd();
 
+    // To understand this take a look at the test "can wrap post-linebreak nodes into new element"
     const lastChild = $isElementNode(firstBlock)
       ? firstBlock.getLastChild()
       : null;
-    if ($isLineBreakNode(lastChild) && currentBlock !== firstBlock) {
+    if ($isLineBreakNode(lastChild) && lastToInsert !== firstBlock) {
       lastChild.remove();
     }
   }
@@ -3104,4 +3134,44 @@ function removeTextAndSplitBlock(selection: RangeSelection): number {
     newBlock.append(firstToAppend, ...firstToAppend.getNextSiblings());
   }
   return pointParent.getIndexWithinParent() + x;
+}
+
+function $wrapInlineNodes(nodes: LexicalNode[]) {
+  // We temporarily insert the topLevelNodes into an arbitrary ElementNode,
+  // since insertAfter does not work on nodes that have no parent (TO-DO: fix that).
+  const virtualRoot = $createParagraphNode();
+
+  let currentBlock = null;
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+
+    const isLineBreakNode = $isLineBreakNode(node);
+
+    if (
+      isLineBreakNode ||
+      ($isDecoratorNode(node) && node.isInline()) ||
+      ($isElementNode(node) && node.isInline()) ||
+      $isTextNode(node) ||
+      node.isParentRequired()
+    ) {
+      if (currentBlock === null) {
+        currentBlock = node.createParentElementNode();
+        virtualRoot.append(currentBlock);
+        // In the case of LineBreakNode, we just need to
+        // add an empty ParagraphNode to the topLevelBlocks.
+        if (isLineBreakNode) {
+          continue;
+        }
+      }
+
+      if (currentBlock !== null) {
+        currentBlock.append(node);
+      }
+    } else {
+      virtualRoot.append(node);
+      currentBlock = null;
+    }
+  }
+
+  return virtualRoot;
 }

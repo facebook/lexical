@@ -1596,7 +1596,7 @@ export class RangeSelection implements BaseSelection {
     const notInline = (node: LexicalNode) =>
       ($isElementNode(node) || $isDecoratorNode(node)) && !node.isInline();
 
-    const nodeToSelect = $isElementNode(last)
+    let nodeToSelect = $isElementNode(last)
       ? last.getLastDescendant() || last
       : last;
     if (!nodes.some(notInline)) {
@@ -1608,6 +1608,7 @@ export class RangeSelection implements BaseSelection {
 
     // CASE 3: At least 1 element of the array is not inline
     const blocks = $wrapInlineNodes(nodes).getChildren();
+    nodeToSelect = blocks[blocks.length - 1];
     const isLI = (node: LexicalNode) =>
       '__value' in node && '__checked' in node;
     const isMergeable = (node: LexicalNode) =>

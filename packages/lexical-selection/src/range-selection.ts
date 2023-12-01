@@ -9,10 +9,10 @@
 import type {
   DecoratorNode,
   ElementNode,
+  INTERNAL_PointSelection,
   LexicalNode,
   NodeKey,
   Point,
-  PointSelection,
   RangeSelection,
   TextNode,
 } from 'lexical';
@@ -41,7 +41,7 @@ import {getStyleObjectFromCSS} from './utils';
  * @param createElement - The function that creates the node. eg. $createParagraphNode.
  */
 export function $setBlocksType(
-  selection: PointSelection,
+  selection: INTERNAL_PointSelection,
   createElement: () => ElementNode,
 ): void {
   if (selection.anchor.key === 'root') {
@@ -108,7 +108,7 @@ function $removeParentEmptyElements(startingNode: ElementNode): void {
  * @param wrappingElement - An element to append the wrapped selection and its children to.
  */
 export function $wrapNodes(
-  selection: PointSelection,
+  selection: INTERNAL_PointSelection,
   createElement: () => ElementNode,
   wrappingElement: null | ElementNode = null,
 ): void {
@@ -194,7 +194,7 @@ export function $wrapNodes(
  * @returns
  */
 export function $wrapNodesImpl(
-  selection: PointSelection,
+  selection: INTERNAL_PointSelection,
   nodes: LexicalNode[],
   nodesLength: number,
   createElement: () => ElementNode,

@@ -19,10 +19,10 @@ import {
   $createTabNode,
   $getRoot,
   $getSelection,
+  $INTERNAL_isPointSelection,
   $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
-  $isPointSelection,
   $isRangeSelection,
   $isTextNode,
   $parseSerializedNode,
@@ -34,10 +34,10 @@ import {
   DEPRECATED_$isGridNode,
   DEPRECATED_$isGridRowNode,
   DEPRECATED_GridNode,
+  INTERNAL_PointSelection,
   isSelectionWithinEditor,
   LexicalEditor,
   LexicalNode,
-  PointSelection,
   SELECTION_CHANGE_COMMAND,
   SerializedTextNode,
 } from 'lexical';
@@ -206,7 +206,7 @@ export function $insertGeneratedNodes(
   nodes: Array<LexicalNode>,
   selection: BaseSelection,
 ): void {
-  const isPointSelection = $isPointSelection(selection);
+  const isPointSelection = $INTERNAL_isPointSelection(selection);
   const isRangeSelection = $isRangeSelection(selection);
   const isSelectionInsideOfGrid =
     (isRangeSelection &&
@@ -268,7 +268,7 @@ function $basicInsertStrategy(nodes: LexicalNode[], selection: BaseSelection) {
 
   if ($isRangeSelection(selection)) {
     selection.insertNodes(topLevelBlocks);
-  } else if ($isPointSelection(selection)) {
+  } else if ($INTERNAL_isPointSelection(selection)) {
     // If there's an active grid selection and a non grid is pasted, add to the anchor.
     const anchorCell = selection.anchor.getNode();
 
@@ -282,7 +282,7 @@ function $basicInsertStrategy(nodes: LexicalNode[], selection: BaseSelection) {
 
 function $mergeGridNodesStrategy(
   nodes: LexicalNode[],
-  selection: PointSelection,
+  selection: INTERNAL_PointSelection,
   isFromLexical: boolean,
   editor: LexicalEditor,
 ) {

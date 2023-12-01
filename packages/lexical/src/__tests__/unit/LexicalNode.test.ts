@@ -6,9 +6,15 @@
  *
  */
 
-import {$getRoot, ParagraphNode, TextNode} from 'lexical';
+import {
+  $getRoot,
+  $getSelection,
+  $isRangeSelection,
+  ParagraphNode,
+  TextNode,
+} from 'lexical';
 
-import {$createRangeSelection, $getRangeSelection} from '../..';
+import {$createRangeSelection} from '../..';
 import {LexicalNode} from '../../LexicalNode';
 import {$createParagraphNode} from '../../nodes/LexicalParagraphNode';
 import {$createTextNode} from '../../nodes/LexicalTextNode';
@@ -178,11 +184,11 @@ describe('LexicalNode tests', () => {
 
         await editor.update(() => {
           textNode.select(0, 0);
-          const selection = $getRangeSelection();
+          const selection = $getSelection();
 
           expect(selection).not.toBe(null);
 
-          if (selection == null) {
+          if (!$isRangeSelection(selection)) {
             return;
           }
 
@@ -197,9 +203,9 @@ describe('LexicalNode tests', () => {
         await Promise.resolve().then();
 
         await editor.update(() => {
-          const selection = $getRangeSelection();
+          const selection = $getSelection();
 
-          if (selection == null) {
+          if (!$isRangeSelection(selection)) {
             return;
           }
 

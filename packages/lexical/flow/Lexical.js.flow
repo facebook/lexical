@@ -422,12 +422,12 @@ export interface BaseSelection {
   insertText(text: string): void;
 }
 
-declare export class PointSelection implements BaseSelection {
+declare export class INTERNAL_PointSelection implements BaseSelection {
   anchor: PointType;
   focus: PointType;
   dirty: boolean;
   constructor(anchor: PointType, focus: PointType): void;
-  clone(): PointSelection;
+  clone(): INTERNAL_PointSelection;
   extract(): Array<LexicalNode>;
   getNodes(): Array<LexicalNode>;
   getTextContent(): string;
@@ -439,9 +439,9 @@ declare export class PointSelection implements BaseSelection {
   setCachedNodes(nodes: null | Array<LexicalNode>): void;
 }
 
-declare export function $isPointSelection(
+declare export function $INTERNAL_isPointSelection(
   x: ?mixed,
-): boolean %checks(x instanceof PointSelection);
+): boolean %checks(x instanceof INTERNAL_PointSelection);
 
 declare export class NodeSelection implements BaseSelection {
   _nodes: Set<NodeKey>;
@@ -467,7 +467,7 @@ declare export function $isNodeSelection(
   x: ?mixed,
 ): boolean %checks(x instanceof NodeSelection);
 
-declare export class RangeSelection implements BaseSelection {
+declare export class RangeSelection extends INTERNAL_PointSelection {
   anchor: PointType;
   focus: PointType;
   dirty: boolean;

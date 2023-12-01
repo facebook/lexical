@@ -36,10 +36,10 @@ import {
   $createTextNode,
   $getPreviousSelection,
   $getSelection,
+  $INTERNAL_isPointSelection,
   $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
-  $isPointSelection,
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
@@ -478,7 +478,7 @@ export function $setSelection(selection: null | BaseSelection): void {
       }
     }
     selection.dirty = true;
-    if ($isPointSelection(selection)) {
+    if ($INTERNAL_isPointSelection(selection)) {
       selection.setCachedNodes(null);
     }
   }

@@ -19,10 +19,10 @@ import {
   DEPRECATED_$isGridNode,
   DEPRECATED_$isGridRowNode,
   GridMapValueType,
+  INTERNAL_PointSelection,
   isCurrentlyReadOnlyMode,
   LexicalNode,
   NodeKey,
-  PointSelection,
   PointType,
 } from 'lexical';
 import invariant from 'shared/invariant';
@@ -34,7 +34,7 @@ export type GridSelectionShape = {
   toY: number;
 };
 
-export class GridSelection extends PointSelection {
+export class GridSelection extends INTERNAL_PointSelection {
   gridKey: NodeKey;
 
   constructor(gridKey: NodeKey, anchor: PointType, focus: PointType) {

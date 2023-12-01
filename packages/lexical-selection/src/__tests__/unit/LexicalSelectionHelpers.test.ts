@@ -18,11 +18,9 @@ import {
   $createRangeSelection,
   $createTextNode,
   $getNodeByKey,
-  $getRangeSelection,
   $getRoot,
   $getSelection,
   $insertNodes,
-  $isNodeSelection,
   $isRangeSelection,
   $setSelection,
   RangeSelection,
@@ -309,9 +307,9 @@ describe('LexicalSelectionHelpers tests', () => {
       await Promise.resolve().then();
 
       editor.getEditorState().read(() => {
-        const selection = $getRangeSelection();
+        const selection = $getSelection();
 
-        if ($isNodeSelection(selection) || selection == null) {
+        if (!$isRangeSelection(selection)) {
           return;
         }
 
@@ -385,13 +383,9 @@ describe('LexicalSelectionHelpers tests', () => {
       await Promise.resolve().then();
 
       editor.getEditorState().read(() => {
-        const selection = $getRangeSelection();
+        const selection = $getSelection();
 
-        if ($isNodeSelection(selection)) {
-          return;
-        }
-
-        if ($isNodeSelection(selection)) {
+        if (!$isRangeSelection(selection)) {
           return;
         }
 
@@ -450,13 +444,9 @@ describe('LexicalSelectionHelpers tests', () => {
       await Promise.resolve().then();
 
       editor.getEditorState().read(() => {
-        const selection = $getRangeSelection();
+        const selection = $getSelection();
 
-        if ($isNodeSelection(selection)) {
-          return;
-        }
-
-        if ($isNodeSelection(selection)) {
+        if (!$isRangeSelection(selection)) {
           return;
         }
 
@@ -520,9 +510,9 @@ describe('LexicalSelectionHelpers tests', () => {
       await Promise.resolve().then();
 
       editor.getEditorState().read(() => {
-        const selection = $getRangeSelection();
+        const selection = $getSelection();
 
-        if ($isNodeSelection(selection)) {
+        if (!$isRangeSelection(selection)) {
           return;
         }
 
@@ -596,9 +586,9 @@ describe('LexicalSelectionHelpers tests', () => {
       await Promise.resolve().then();
 
       editor.getEditorState().read(() => {
-        const selection = $getRangeSelection();
+        const selection = $getSelection();
 
-        if ($isNodeSelection(selection) || selection == null) {
+        if (!$isRangeSelection(selection)) {
           return;
         }
 
@@ -672,9 +662,9 @@ describe('LexicalSelectionHelpers tests', () => {
       await Promise.resolve().then();
 
       editor.getEditorState().read(() => {
-        const selection = $getRangeSelection();
+        const selection = $getSelection();
 
-        if ($isNodeSelection(selection)) {
+        if (!$isRangeSelection(selection)) {
           return;
         }
 
@@ -1180,9 +1170,9 @@ describe('LexicalSelectionHelpers tests', () => {
       await Promise.resolve().then();
 
       editor.getEditorState().read(() => {
-        const selection = $getRangeSelection();
+        const selection = $getSelection();
 
-        if ($isNodeSelection(selection)) {
+        if (!$isRangeSelection(selection)) {
           return;
         }
 
@@ -1251,9 +1241,9 @@ describe('LexicalSelectionHelpers tests', () => {
       await Promise.resolve().then();
 
       editor.getEditorState().read(() => {
-        const selection = $getRangeSelection();
+        const selection = $getSelection();
 
-        if ($isNodeSelection(selection)) {
+        if (!$isRangeSelection(selection)) {
           return;
         }
 
@@ -1315,7 +1305,10 @@ describe('LexicalSelectionHelpers tests', () => {
             offset: 0,
             type: 'text',
           });
-          const selection = $getRangeSelection();
+          const selection = $getSelection();
+          if (!$isRangeSelection(selection)) {
+            return;
+          }
           cb(selection, element);
         });
       };
@@ -1487,7 +1480,10 @@ describe('LexicalSelectionHelpers tests', () => {
             offset: 1,
             type: 'element',
           });
-          const selection = $getRangeSelection();
+          const selection = $getSelection();
+          if (!$isRangeSelection(selection)) {
+            return;
+          }
           cb(selection, element);
         });
       };
@@ -1639,7 +1635,10 @@ describe('LexicalSelectionHelpers tests', () => {
             offset: 1,
             type: 'text',
           });
-          const selection = $getRangeSelection();
+          const selection = $getSelection();
+          if (!$isRangeSelection(selection)) {
+            return;
+          }
           cb(selection, element);
         });
       };
@@ -1793,7 +1792,7 @@ describe('LexicalSelectionHelpers tests', () => {
             type: 'element',
           });
 
-          const selection = $getRangeSelection();
+          const selection = $getSelection();
 
           if (!$isRangeSelection(selection)) {
             return;
@@ -1831,7 +1830,7 @@ describe('LexicalSelectionHelpers tests', () => {
             offset: 0,
             type: 'element',
           });
-          const selection = $getRangeSelection();
+          const selection = $getSelection();
 
           if (!$isRangeSelection(selection)) {
             return;
@@ -1875,7 +1874,7 @@ describe('LexicalSelectionHelpers tests', () => {
           const link = $createLinkNode('https://');
           link.append($createTextNode('ello worl'));
 
-          const selection = $getRangeSelection();
+          const selection = $getSelection();
 
           if (!$isRangeSelection(selection)) {
             return;
@@ -1923,7 +1922,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
           heading.append(child);
 
-          const selection = $getRangeSelection();
+          const selection = $getSelection();
 
           if (!$isRangeSelection(selection)) {
             return;
@@ -1966,7 +1965,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
           heading.append(child);
 
-          const selection = $getRangeSelection();
+          const selection = $getSelection();
 
           if (!$isRangeSelection(selection)) {
             return;
@@ -2010,7 +2009,7 @@ describe('LexicalSelectionHelpers tests', () => {
             type: 'text',
           });
 
-          const selection = $getRangeSelection();
+          const selection = $getSelection();
 
           if (!$isRangeSelection(selection)) {
             return;
@@ -2051,7 +2050,7 @@ describe('LexicalSelectionHelpers tests', () => {
             type: 'text',
           });
 
-          const selection = $getRangeSelection();
+          const selection = $getSelection();
 
           if (!$isRangeSelection(selection)) {
             return;
@@ -2101,7 +2100,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
           heading.append(child);
 
-          const selection = $getRangeSelection();
+          const selection = $getSelection();
 
           if (!$isRangeSelection(selection)) {
             return;
@@ -2148,7 +2147,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
           heading.append(child);
 
-          const selection = $getRangeSelection();
+          const selection = $getSelection();
 
           if (!$isRangeSelection(selection)) {
             return;
@@ -2199,7 +2198,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
           insertedParagraph.append(insertedTextB, insertedTextC, insertedTextD);
 
-          const selection = $getRangeSelection();
+          const selection = $getSelection();
 
           if (!$isRangeSelection(selection)) {
             return;
@@ -2263,7 +2262,7 @@ describe('LexicalSelectionHelpers tests', () => {
             type: 'text',
           });
 
-          const selection = $getRangeSelection();
+          const selection = $getSelection();
 
           if (!$isRangeSelection(selection)) {
             return;
@@ -2310,7 +2309,7 @@ describe('LexicalSelectionHelpers tests', () => {
             type: 'text',
           });
 
-          const selection = $getRangeSelection();
+          const selection = $getSelection();
 
           if (!$isRangeSelection(selection)) {
             return;
@@ -2357,7 +2356,7 @@ describe('LexicalSelectionHelpers tests', () => {
             type: 'text',
           });
 
-          const selection = $getRangeSelection();
+          const selection = $getSelection();
 
           if (!$isRangeSelection(selection)) {
             return;
@@ -2429,7 +2428,7 @@ describe('LexicalSelectionHelpers tests', () => {
           const paragraphToInsert = $createParagraphNode();
           paragraphToInsert.append($createTextNode('foo'));
 
-          const selection = $getRangeSelection();
+          const selection = $getSelection();
 
           if (!$isRangeSelection(selection)) {
             return;
@@ -2479,7 +2478,7 @@ describe('LexicalSelectionHelpers tests', () => {
           const paragraphToInsert = $createParagraphNode();
           paragraphToInsert.append($createTextNode('foo'));
 
-          const selection = $getRangeSelection();
+          const selection = $getSelection();
 
           if (!$isRangeSelection(selection)) {
             return;
@@ -2529,7 +2528,7 @@ describe('LexicalSelectionHelpers tests', () => {
           const paragraphToInsert = $createParagraphNode();
           paragraphToInsert.append($createTextNode('foo'));
 
-          const selection = $getRangeSelection();
+          const selection = $getSelection();
 
           if (!$isRangeSelection(selection)) {
             return;
@@ -2633,7 +2632,8 @@ describe('extract', () => {
         type: 'text',
       });
 
-      const selection = $getRangeSelection();
+      const selection = $getSelection();
+      expect($isRangeSelection(selection)).toBeTruthy();
 
       expect(selection.extract()).toEqual([text]);
     });
@@ -2715,7 +2715,9 @@ describe('insertNodes', () => {
         $createParagraphNode().append(emptyTextNode, $createTextNode('text')),
       );
       emptyTextNode.select(0, 0);
-      $getRangeSelection().insertNodes([$createTextNode('foo')]);
+      const selection = $getSelection();
+      expect($isRangeSelection(selection)).toBeTruthy();
+      selection.insertNodes([$createTextNode('foo')]);
 
       expect($getRoot().getTextContent()).toBe('footext');
     });
@@ -2763,7 +2765,10 @@ describe('$patchStyleText', () => {
         type: 'text',
       });
 
-      const selection = $getRangeSelection() as RangeSelection;
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
+        return;
+      }
       $patchStyleText(selection, {'text-emphasis': 'filled'});
     });
 
@@ -2813,7 +2818,10 @@ describe('$patchStyleText', () => {
         type: 'text',
       });
 
-      const selection = $getRangeSelection() as RangeSelection;
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
+        return;
+      }
       $patchStyleText(selection, {'text-emphasis': 'filled'});
     });
 
@@ -2859,7 +2867,10 @@ describe('$patchStyleText', () => {
         type: 'element',
       });
 
-      const selection = $getRangeSelection() as RangeSelection;
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
+        return;
+      }
       $patchStyleText(selection, {'text-emphasis': 'filled'});
     });
 
@@ -2909,7 +2920,10 @@ describe('$patchStyleText', () => {
         type: 'text',
       });
 
-      const selection = $getRangeSelection() as RangeSelection;
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
+        return;
+      }
       $patchStyleText(selection, {'text-emphasis': 'filled'});
     });
 
@@ -2949,7 +2963,10 @@ describe('$patchStyleText', () => {
         type: 'element',
       });
 
-      const selection = $getRangeSelection() as RangeSelection;
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
+        return;
+      }
       $patchStyleText(selection, {'text-emphasis': 'filled'});
     });
 
@@ -2987,7 +3004,10 @@ describe('$patchStyleText', () => {
         type: 'text',
       });
 
-      const selection = $getRangeSelection() as RangeSelection;
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
+        return;
+      }
       $patchStyleText(selection, {'text-emphasis': 'filled'});
       $patchStyleText(selection, {'text-emphasis': null});
     });
@@ -3022,7 +3042,10 @@ describe('$patchStyleText', () => {
         type: 'text',
       });
 
-      const selection = $getRangeSelection() as RangeSelection;
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
+        return;
+      }
       $patchStyleText(selection, {'text-emphasis': 'filled'});
 
       expect(
@@ -3070,7 +3093,10 @@ describe('$patchStyleText', () => {
 
       // First fetch the initial style -- this will cause the CSS cache to be
       // populated with an empty string pointing to an empty style object.
-      const selection = $getRangeSelection() as RangeSelection;
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
+        return;
+      }
       $getSelectionStyleValueForProperty(selection, 'color', '');
 
       // Now when we set the style, we should _not_ touch the previously created

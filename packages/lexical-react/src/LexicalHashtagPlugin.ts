@@ -6,11 +6,10 @@
  *
  */
 
-import type {TextNode} from 'lexical';
-
 import {$createHashtagNode, HashtagNode} from '@lexical/hashtag';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalTextEntity} from '@lexical/react/useLexicalTextEntity';
+import {type TextNode, $getNodeByKey, $isTextNode} from 'lexical';
 import {useCallback, useEffect} from 'react';
 
 function getHashtagRegexStringChars(): Readonly<{
@@ -255,6 +254,30 @@ export function HashtagPlugin(): JSX.Element | null {
     if (!editor.hasNodes([HashtagNode])) {
       throw new Error('HashtagPlugin: HashtagNode not registered on editor');
     }
+  }, [editor]);
+
+  useEffect(() => {
+    return editor.registerMutationListener(HashtagNode, (mutations) => {
+      mutations.forEach((mutation, key) => {
+        if (mutation === 'updated') {
+          editor.update(() => {
+            const node = $getNodeByKey(key);
+            if (!node) {
+              return;
+            }
+
+            const nextSibling = node.getNextSibling();
+            if (
+              $isTextNode(nextSibling) &&
+              nextSibling.getTextContent().startsWith('#')
+            ) {
+              nextSibling.setTextContent(` ${nextSibling.getTextContent()}`);
+              nextSibling.select(2, 2);
+            }
+          });
+        }
+      });
+    });
   }, [editor]);
 
   const createHashtagNode = useCallback((textNode: TextNode): HashtagNode => {

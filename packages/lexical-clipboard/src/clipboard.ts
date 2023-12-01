@@ -34,10 +34,10 @@ import {
   DEPRECATED_$isGridNode,
   DEPRECATED_$isGridRowNode,
   DEPRECATED_GridNode,
+  INTERNAL_PointSelection,
   isSelectionWithinEditor,
   LexicalEditor,
   LexicalNode,
-  PointSelection,
   SELECTION_CHANGE_COMMAND,
   SerializedTextNode,
 } from 'lexical';
@@ -206,7 +206,7 @@ export function $insertGeneratedNodes(
   nodes: Array<LexicalNode>,
   selection: BaseSelection,
 ): void {
-  const isPointSelection = $isPointSelection(selection);
+  const isPointSelection = $INTERNAL_isPointSelection(selection);
   const isRangeSelection = $isRangeSelection(selection);
   const isSelectionInsideOfGrid =
     (isRangeSelection &&
@@ -282,7 +282,7 @@ function $basicInsertStrategy(nodes: LexicalNode[], selection: BaseSelection) {
 
 function $mergeGridNodesStrategy(
   nodes: LexicalNode[],
-  selection: PointSelection,
+  selection: INTERNAL_PointSelection,
   isFromLexical: boolean,
   editor: LexicalEditor,
 ) {

@@ -422,12 +422,12 @@ export interface BaseSelection {
   insertText(text: string): void;
 }
 
-declare export class PointSelection implements BaseSelection {
+declare export class INTERNAL_PointSelection implements BaseSelection {
   anchor: PointType;
   focus: PointType;
   dirty: boolean;
   constructor(anchor: PointType, focus: PointType): void;
-  clone(): PointSelection;
+  clone(): INTERNAL_PointSelection;
   extract(): Array<LexicalNode>;
   getNodes(): Array<LexicalNode>;
   getTextContent(): string;
@@ -445,7 +445,7 @@ export type GridSelectionShape = {
   toX: number,
   toY: number,
 };
-declare export class GridSelection extends PointSelection {
+declare export class GridSelection extends INTERNAL_PointSelection {
   gridKey: NodeKey;
   anchor: PointType;
   focus: PointType;
@@ -472,9 +472,9 @@ declare export function DEPRECATED_$isGridSelection(
   x: ?mixed,
 ): boolean %checks(x instanceof GridSelection);
 
-declare export function $isPointSelection(
+declare export function $INTERNAL_isPointSelection(
   x: ?mixed,
-): boolean %checks(x instanceof PointSelection);
+): boolean %checks(x instanceof INTERNAL_PointSelection);
 
 declare export class NodeSelection implements BaseSelection {
   _nodes: Set<NodeKey>;

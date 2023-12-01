@@ -75,7 +75,7 @@ import {
 import {$createTabNode, $isTabNode} from './nodes/LexicalTabNode';
 
 export type TextPointType = {
-  _selection: PointSelection;
+  _selection: INTERNAL_PointSelection;
   getNode: () => TextNode;
   is: (point: PointType) => boolean;
   isBefore: (point: PointType) => boolean;
@@ -86,7 +86,7 @@ export type TextPointType = {
 };
 
 export type ElementPointType = {
-  _selection: PointSelection;
+  _selection: INTERNAL_PointSelection;
   getNode: () => ElementNode;
   is: (point: PointType) => boolean;
   isBefore: (point: PointType) => boolean;
@@ -109,7 +109,7 @@ export class Point {
   key: NodeKey;
   offset: number;
   type: 'text' | 'element';
-  _selection: PointSelection | null;
+  _selection: INTERNAL_PointSelection | null;
 
   constructor(key: NodeKey, offset: number, type: 'text' | 'element') {
     this._selection = null;
@@ -274,7 +274,11 @@ export interface BaseSelection {
   insertNodes(nodes: Array<LexicalNode>): void;
 }
 
-export class PointSelection implements BaseSelection {
+/**
+ * This class is being used only for internal use case of migration GridSelection outside of core package.
+ * DO NOT USE THIS CLASS DIRECTLY.
+ */
+export abstract class INTERNAL_PointSelection implements BaseSelection {
   anchor: PointType;
   focus: PointType;
   dirty: boolean;
@@ -297,7 +301,7 @@ export class PointSelection implements BaseSelection {
   }
 
   is(selection: null | BaseSelection): boolean {
-    if (!$isPointSelection(selection)) {
+    if (!$INTERNAL_isPointSelection(selection)) {
       return false;
     }
     return this.anchor.is(selection.anchor) && this.focus.is(selection.focus);
@@ -307,35 +311,21 @@ export class PointSelection implements BaseSelection {
     return false;
   }
 
-  clone(): PointSelection {
-    return new PointSelection(this.anchor, this.focus);
-  }
-
-  getNodes(): Array<LexicalNode> {
-    // Needs to be implemented in class
-    return [];
-  }
-
-  getTextContent(): string {
-    // Needs to be implemented in class
-    return '';
-  }
-
   extract(): Array<LexicalNode> {
     return this.getNodes();
   }
 
-  insertText(text: string): void {
-    // Needs to be implemented in class
-  }
+  abstract clone(): INTERNAL_PointSelection;
 
-  insertRawText(text: string): void {
-    // Needs to be implemented in class
-  }
+  abstract getNodes(): Array<LexicalNode>;
 
-  insertNodes(nodes: Array<LexicalNode>) {
-    // Needs to be implemented in class
-  }
+  abstract getTextContent(): string;
+
+  abstract insertText(text: string): void;
+
+  abstract insertRawText(text: string): void;
+
+  abstract insertNodes(nodes: Array<LexicalNode>): void;
 
   /**
    * Returns whether the Selection is "backwards", meaning the focus
@@ -467,8 +457,10 @@ export function $isRangeSelection(x: unknown): x is RangeSelection {
   return x instanceof RangeSelection;
 }
 
-export function $isPointSelection(x: unknown): x is PointSelection {
-  return x instanceof PointSelection;
+export function $INTERNAL_isPointSelection(
+  x: unknown,
+): x is INTERNAL_PointSelection {
+  return x instanceof INTERNAL_PointSelection;
 }
 
 export type GridSelectionShape = {
@@ -536,7 +528,7 @@ export function DEPRECATED_$getGridCellNodeRect(
   return null;
 }
 
-export class GridSelection extends PointSelection {
+export class GridSelection extends INTERNAL_PointSelection {
   gridKey: NodeKey;
 
   constructor(gridKey: NodeKey, anchor: PointType, focus: PointType) {
@@ -821,7 +813,7 @@ export function DEPRECATED_$isGridSelection(x: unknown): x is GridSelection {
   return x instanceof GridSelection;
 }
 
-export class RangeSelection extends PointSelection {
+export class RangeSelection extends INTERNAL_PointSelection {
   format: number;
   style: string;
 
@@ -2109,7 +2101,9 @@ function getCharacterOffset(point: PointType): number {
     : 0;
 }
 
-function getCharacterOffsets(selection: PointSelection): [number, number] {
+function getCharacterOffsets(
+  selection: INTERNAL_PointSelection,
+): [number, number] {
   const anchor = selection.anchor;
   const focus = selection.focus;
   if (
@@ -2640,12 +2634,6 @@ export function internalCreateRangeSelection(
 export function $getSelection(): null | BaseSelection {
   const editorState = getActiveEditorState();
   return editorState._selection;
-}
-
-export function $getRangeSelection(): null | RangeSelection {
-  const selection = $getSelection();
-  const isRange = $isRangeSelection(selection);
-  return isRange ? selection : null;
 }
 
 export function $getPreviousSelection(): null | BaseSelection {

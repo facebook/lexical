@@ -19,10 +19,10 @@ import {
   $createTabNode,
   $getRoot,
   $getSelection,
+  $INTERNAL_isPointSelection,
   $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
-  $isPointSelection,
   $isRangeSelection,
   $isTextNode,
   $parseSerializedNode,
@@ -268,7 +268,7 @@ function $basicInsertStrategy(nodes: LexicalNode[], selection: BaseSelection) {
 
   if ($isRangeSelection(selection)) {
     selection.insertNodes(topLevelBlocks);
-  } else if ($isPointSelection(selection)) {
+  } else if ($INTERNAL_isPointSelection(selection)) {
     // If there's an active grid selection and a non grid is pasted, add to the anchor.
     const anchorCell = selection.anchor.getNode();
 

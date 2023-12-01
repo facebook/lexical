@@ -14,8 +14,6 @@ import {
   $getRoot,
   $getSelection,
   $isElementNode,
-  $isNodeSelection,
-  $isPointSelection,
   $isRangeSelection,
   $isRootOrShadowRoot,
   $isTextNode,
@@ -438,7 +436,7 @@ export function $insertNodeToNearestRoot<T extends LexicalNode>(node: T): T {
       rightTree.selectStart();
     }
   } else {
-    if ($isNodeSelection(selection) || $isPointSelection(selection)) {
+    if (selection != null) {
       const nodes = selection.getNodes();
       nodes[nodes.length - 1].getTopLevelElementOrThrow().insertAfter(node);
     } else {

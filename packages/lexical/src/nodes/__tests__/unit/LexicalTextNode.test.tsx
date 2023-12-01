@@ -10,9 +10,10 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getNodeByKey,
-  $getRangeSelection,
   $getRoot,
+  $getSelection,
   $isNodeSelection,
+  $isRangeSelection,
   ElementNode,
   ParagraphNode,
   TextFormatType,
@@ -121,7 +122,7 @@ describe('LexicalTextNode tests', () => {
         // If you broke this test, you changed the public interface of a
         // serialized Lexical Core Node. Please ensure the correct adapter
         // logic is in place in the corresponding importJSON  method
-        // to accomodate these changes.import { $getRangeSelection } from 'lexical/src';
+        // to accomodate these changes.
 
         expect(node.exportJSON()).toStrictEqual({
           detail: 0,
@@ -779,10 +780,10 @@ describe('LexicalTextNode tests', () => {
       paragraph.append(textNode1, textNode2, textNode3);
       textNode2.select();
 
-      const selection = $getRangeSelection();
+      const selection = $getSelection();
       textNode2.mergeWithSibling(textNode1);
 
-      if (selection == null) {
+      if (!$isRangeSelection(selection)) {
         return;
       }
 

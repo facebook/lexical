@@ -9,8 +9,9 @@
 import {
   $createParagraphNode,
   $createTextNode,
-  $getRangeSelection,
   $getRoot,
+  $getSelection,
+  $isRangeSelection,
   $isRootNode,
   ElementNode,
   TextNode,
@@ -142,9 +143,9 @@ describe('LexicalRootNode tests', () => {
 
       await editor.update(() => {
         const root = $getRoot();
-        const selection = $getRangeSelection();
+        const selection = $getSelection();
 
-        if (selection == null) {
+        if (!$isRangeSelection(selection)) {
           return;
         }
 
@@ -172,9 +173,9 @@ describe('LexicalRootNode tests', () => {
 
       await editor.update(() => {
         const root = $getRoot();
-        const selection = $getRangeSelection();
+        const selection = $getSelection();
 
-        if (selection == null) {
+        if (!$isRangeSelection(selection)) {
           return;
         }
 

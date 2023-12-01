@@ -8,8 +8,9 @@
 
 import {
   $createTextNode,
-  $getRangeSelection,
   $getRoot,
+  $getSelection,
+  $isRangeSelection,
   ElementNode,
   LexicalNode,
   TextNode,
@@ -564,10 +565,10 @@ describe('LexicalElementNode tests', () => {
         await update(() => {
           expect(block.getTextContent()).toEqual(testCase.expectedText);
 
-          const selection = $getRangeSelection();
+          const selection = $getSelection();
           const expectedSelection = testCase.expectedSelection();
 
-          if (selection == null) {
+          if (!$isRangeSelection(selection)) {
             return;
           }
 

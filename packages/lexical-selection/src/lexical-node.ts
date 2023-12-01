@@ -16,13 +16,13 @@ import {
   $isTextNode,
   $normalizeSelection__EXPERIMENTAL,
   $setSelection,
+  BaseSelection,
   DEPRECATED_$isGridCellNode,
   DEPRECATED_$isGridSelection,
   ElementNode,
   GridSelection,
   LexicalEditor,
   LexicalNode,
-  NodeSelection,
   Point,
   RangeSelection,
   TextNode,
@@ -91,7 +91,7 @@ export function $cloneWithProperties<T extends LexicalNode>(node: T): T {
  * @returns The updated TextNode.
  */
 export function $sliceSelectedTextNodeContent(
-  selection: RangeSelection | GridSelection | NodeSelection,
+  selection: BaseSelection,
   textNode: TextNode,
 ): LexicalNode {
   if (

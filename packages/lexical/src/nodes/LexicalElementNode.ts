@@ -8,8 +8,7 @@
 
 import type {NodeKey, SerializedLexicalNode} from '../LexicalNode';
 import type {
-  GridSelection,
-  NodeSelection,
+  BaseSelection,
   PointType,
   RangeSelection,
 } from '../LexicalSelection';
@@ -565,7 +564,7 @@ export class ElementNode extends LexicalNode {
   }
   extractWithChild(
     child: LexicalNode,
-    selection: RangeSelection | NodeSelection | GridSelection | null,
+    selection: BaseSelection | null,
     destination: 'clone' | 'html',
   ): boolean {
     return false;

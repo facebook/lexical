@@ -23,14 +23,14 @@ import {$createTableNodeWithDimensions} from '@lexical/table';
 import {
   $createLineBreakNode,
   $createParagraphNode,
+  $createRangeSelection,
   $createTextNode,
   $getRoot,
   $getSelection,
-  $isNodeSelection,
   $isRangeSelection,
+  $setSelection,
   ParagraphNode,
 } from 'lexical';
-import {$createRangeSelection, $setSelection} from 'lexical/src';
 import {
   $assertRangeSelection,
   $createTestDecoratorNode,
@@ -1686,7 +1686,7 @@ describe('LexicalSelection tests', () => {
 
                 const selection = $getSelection();
 
-                if ($isNodeSelection(selection)) {
+                if (!$isRangeSelection(selection)) {
                   return;
                 }
 
@@ -1744,7 +1744,7 @@ describe('LexicalSelection tests', () => {
 
           const selection = $getSelection();
 
-          if ($isNodeSelection(selection)) {
+          if (!$isRangeSelection(selection)) {
             return;
           }
 
@@ -1827,7 +1827,7 @@ describe('LexicalSelection tests', () => {
 
           const selection = $getSelection();
 
-          if ($isNodeSelection(selection)) {
+          if (!$isRangeSelection(selection)) {
             return;
           }
 
@@ -1856,7 +1856,7 @@ describe('LexicalSelection tests', () => {
 
         const selection = $getSelection();
 
-        if ($isNodeSelection(selection)) {
+        if (!$isRangeSelection(selection)) {
           return;
         }
 
@@ -1969,7 +1969,7 @@ describe('LexicalSelection tests', () => {
 
               const selection = $getSelection();
 
-              if ($isNodeSelection(selection)) {
+              if (!$isRangeSelection(selection)) {
                 return;
               }
 
@@ -2183,7 +2183,7 @@ describe('LexicalSelection tests', () => {
 
           const selection = $getSelection();
 
-          if ($isNodeSelection(selection)) {
+          if (!$isRangeSelection(selection)) {
             return;
           }
 

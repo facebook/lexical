@@ -13,6 +13,7 @@ import {
   $getRoot,
   $getSelection,
   $isNodeSelection,
+  $isRangeSelection,
   ElementNode,
   ParagraphNode,
   TextFormatType,
@@ -122,6 +123,7 @@ describe('LexicalTextNode tests', () => {
         // serialized Lexical Core Node. Please ensure the correct adapter
         // logic is in place in the corresponding importJSON  method
         // to accomodate these changes.
+
         expect(node.exportJSON()).toStrictEqual({
           detail: 0,
           format: 0,
@@ -781,7 +783,7 @@ describe('LexicalTextNode tests', () => {
       const selection = $getSelection();
       textNode2.mergeWithSibling(textNode1);
 
-      if ($isNodeSelection(selection)) {
+      if (!$isRangeSelection(selection)) {
         return;
       }
 

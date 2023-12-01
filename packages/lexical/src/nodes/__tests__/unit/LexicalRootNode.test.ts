@@ -11,7 +11,7 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
-  $isNodeSelection,
+  $isRangeSelection,
   $isRootNode,
   ElementNode,
   TextNode,
@@ -145,7 +145,7 @@ describe('LexicalRootNode tests', () => {
         const root = $getRoot();
         const selection = $getSelection();
 
-        if ($isNodeSelection(selection)) {
+        if (!$isRangeSelection(selection)) {
           return;
         }
 
@@ -175,7 +175,7 @@ describe('LexicalRootNode tests', () => {
         const root = $getRoot();
         const selection = $getSelection();
 
-        if ($isNodeSelection(selection)) {
+        if (!$isRangeSelection(selection)) {
           return;
         }
 

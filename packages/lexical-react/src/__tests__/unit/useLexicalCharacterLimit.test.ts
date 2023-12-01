@@ -18,6 +18,7 @@ import {
   $getRoot,
   $getSelection,
   $isNodeSelection,
+  $isRangeSelection,
   LexicalEditor,
   NodeKey,
   ParagraphNode,
@@ -86,7 +87,7 @@ describe('LexicalNodeHelpers tests', () => {
 
             const selection = $getSelection();
 
-            if (selection === null) {
+            if (!$isRangeSelection(selection)) {
               throw new Error('Lost selection');
             }
 
@@ -143,7 +144,7 @@ describe('LexicalNodeHelpers tests', () => {
 
             const selection = $getSelection();
 
-            if (selection === null) {
+            if (!$isRangeSelection(selection)) {
               throw new Error('Lost selection');
             }
 
@@ -193,7 +194,7 @@ describe('LexicalNodeHelpers tests', () => {
 
             const selection = $getSelection();
 
-            if ($isNodeSelection(selection)) {
+            if (!$isRangeSelection(selection)) {
               return;
             }
 
@@ -211,7 +212,7 @@ describe('LexicalNodeHelpers tests', () => {
 
             const selection = $getSelection();
 
-            if (selection === null) {
+            if (!$isRangeSelection(selection)) {
               throw new Error('Lost selection');
             }
 

@@ -10,7 +10,7 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
-  $isNodeSelection,
+  $isRangeSelection,
   ElementNode,
   LexicalNode,
   TextNode,
@@ -97,6 +97,7 @@ describe('LexicalElementNode tests', () => {
         // serialized Lexical Core Node. Please ensure the correct adapter
         // logic is in place in the corresponding importJSON  method
         // to accomodate these changes.
+
         expect(node.exportJSON()).toStrictEqual({
           children: [],
           direction: null,
@@ -567,7 +568,7 @@ describe('LexicalElementNode tests', () => {
           const selection = $getSelection();
           const expectedSelection = testCase.expectedSelection();
 
-          if ($isNodeSelection(selection)) {
+          if (!$isRangeSelection(selection)) {
             return;
           }
 

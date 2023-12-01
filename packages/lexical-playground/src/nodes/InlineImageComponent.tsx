@@ -6,13 +6,7 @@
  *
  */
 import type {Position} from './InlineImageNode';
-import type {
-  GridSelection,
-  LexicalEditor,
-  NodeKey,
-  NodeSelection,
-  RangeSelection,
-} from 'lexical';
+import type {BaseSelection, LexicalEditor, NodeKey} from 'lexical';
 
 import './InlineImageNode.css';
 
@@ -207,9 +201,7 @@ export default function InlineImageComponent({
   const [isSelected, setSelected, clearSelection] =
     useLexicalNodeSelection(nodeKey);
   const [editor] = useLexicalComposerContext();
-  const [selection, setSelection] = useState<
-    RangeSelection | NodeSelection | GridSelection | null
-  >(null);
+  const [selection, setSelection] = useState<BaseSelection | null>(null);
   const activeEditorRef = useRef<LexicalEditor | null>(null);
 
   const onDelete = useCallback(

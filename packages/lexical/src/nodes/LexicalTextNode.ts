@@ -19,11 +19,7 @@ import type {
   NodeKey,
   SerializedLexicalNode,
 } from '../LexicalNode';
-import type {
-  GridSelection,
-  NodeSelection,
-  RangeSelection,
-} from '../LexicalSelection';
+import type {BaseSelection, RangeSelection} from '../LexicalSelection';
 
 import {IS_FIREFOX} from 'shared/environment';
 import invariant from 'shared/invariant';
@@ -637,7 +633,7 @@ export class TextNode extends LexicalNode {
 
   // Mutators
   selectionTransform(
-    prevSelection: null | RangeSelection | NodeSelection | GridSelection,
+    prevSelection: null | BaseSelection,
     nextSelection: RangeSelection,
   ): void {
     return;

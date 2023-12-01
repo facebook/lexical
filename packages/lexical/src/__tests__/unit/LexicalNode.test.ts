@@ -9,7 +9,7 @@
 import {
   $getRoot,
   $getSelection,
-  $isNodeSelection,
+  $isRangeSelection,
   ParagraphNode,
   TextNode,
 } from 'lexical';
@@ -188,7 +188,7 @@ describe('LexicalNode tests', () => {
 
           expect(selection).not.toBe(null);
 
-          if ($isNodeSelection(selection)) {
+          if (!$isRangeSelection(selection)) {
             return;
           }
 
@@ -205,7 +205,7 @@ describe('LexicalNode tests', () => {
         await editor.update(() => {
           const selection = $getSelection();
 
-          if ($isNodeSelection(selection)) {
+          if (!$isRangeSelection(selection)) {
             return;
           }
 

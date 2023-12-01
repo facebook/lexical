@@ -8,15 +8,14 @@
 
 import type {ListNode} from './';
 import type {
+  BaseSelection,
   DOMConversionMap,
   DOMConversionOutput,
   DOMExportOutput,
   EditorConfig,
   EditorThemeClasses,
-  GridSelection,
   LexicalNode,
   NodeKey,
-  NodeSelection,
   ParagraphNode,
   RangeSelection,
   SerializedElementNode,
@@ -419,10 +418,7 @@ export class ListItemNode extends ElementNode {
     return $isParagraphNode(node) || $isListItemNode(node);
   }
 
-  extractWithChild(
-    child: LexicalNode,
-    selection: RangeSelection | NodeSelection | GridSelection,
-  ): boolean {
+  extractWithChild(child: LexicalNode, selection: BaseSelection): boolean {
     if (!$isRangeSelection(selection)) {
       return false;
     }

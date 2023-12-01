@@ -307,6 +307,7 @@ function useFloatingLinkEditorToolbar(
           if ($isRangeSelection(selection)) {
             const node = getSelectedNode(selection);
             const linkNode = $findMatchingParent(node, $isLinkNode);
+            // Point on conflict
             if ($isLinkNode(linkNode) && (payload.metaKey || payload.ctrlKey)) {
               window.open(linkNode.getURL(), '_blank');
               return true;

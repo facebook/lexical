@@ -1596,19 +1596,17 @@ export class RangeSelection implements BaseSelection {
     const notInline = (node: LexicalNode) =>
       ($isElementNode(node) || $isDecoratorNode(node)) && !node.isInline();
 
-    let nodeToSelect = $isElementNode(last)
-      ? last.getLastDescendant() || last
-      : last;
     if (!nodes.some(notInline)) {
       const index = removeTextAndSplitBlock(this);
       firstBlock.splice(index, 0, nodes);
-      nodeToSelect.selectEnd();
+      last.selectEnd();
       return;
     }
 
     // CASE 3: At least 1 element of the array is not inline
-    const blocks = $wrapInlineNodes(nodes).getChildren();
-    nodeToSelect = blocks[blocks.length - 1];
+    const blocksParent = $wrapInlineNodes(nodes);
+    const nodeToSelect = blocksParent.getLastDescendant()!;
+    const blocks = blocksParent.getChildren();
     const isLI = (node: LexicalNode) =>
       '__value' in node && '__checked' in node;
     const isMergeable = (node: LexicalNode) =>

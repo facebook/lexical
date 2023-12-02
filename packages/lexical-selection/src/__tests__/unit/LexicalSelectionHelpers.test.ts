@@ -7,7 +7,7 @@
  */
 
 import {$createLinkNode} from '@lexical/link';
-import {$createHeadingNode} from '@lexical/rich-text';
+import {$createHeadingNode, $isHeadingNode} from '@lexical/rich-text';
 import {
   $getSelectionStyleValueForProperty,
   $patchStyleText,
@@ -21,6 +21,7 @@ import {
   $getRoot,
   $getSelection,
   $insertNodes,
+  $isParagraphNode,
   $isRangeSelection,
   $setSelection,
   RangeSelection,
@@ -2629,6 +2630,33 @@ describe('insertNodes', () => {
       selection.insertNodes([$createTextNode('foo')]);
 
       expect($getRoot().getTextContent()).toBe('footext');
+    });
+  });
+
+  it('last node is LineBreakNode', async () => {
+    const editor = createTestEditor();
+    const element = document.createElement('div');
+    editor.setRootElement(element);
+
+    await editor.update(() => {
+      // Empty text node to test empty text split
+      const paragraph = $createParagraphNode();
+      $getRoot().append(paragraph);
+      const selection = paragraph.select();
+      expect($isRangeSelection(selection)).toBeTruthy();
+
+      const newHeading = $createHeadingNode('h1').append(
+        $createTextNode('heading'),
+      );
+      selection.insertNodes([newHeading, $createLineBreakNode()]);
+    });
+    editor.getEditorState().read(() => {
+      expect(element.innerHTML).toBe(
+        '<h1 dir="ltr"><span data-lexical-text="true">heading</span></h1><p><br></p>',
+      );
+      const selectedNode = ($getSelection() as RangeSelection).anchor.getNode();
+      expect($isParagraphNode(selectedNode)).toBeTruthy();
+      expect($isHeadingNode(selectedNode.getPreviousSibling())).toBeTruthy();
     });
   });
 });

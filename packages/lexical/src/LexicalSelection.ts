@@ -1596,18 +1596,17 @@ export class RangeSelection implements BaseSelection {
     const notInline = (node: LexicalNode) =>
       ($isElementNode(node) || $isDecoratorNode(node)) && !node.isInline();
 
-    const nodeToSelect = $isElementNode(last)
-      ? last.getLastDescendant() || last
-      : last;
     if (!nodes.some(notInline)) {
       const index = removeTextAndSplitBlock(this);
       firstBlock.splice(index, 0, nodes);
-      nodeToSelect.selectEnd();
+      last.selectEnd();
       return;
     }
 
     // CASE 3: At least 1 element of the array is not inline
-    const blocks = $wrapInlineNodes(nodes).getChildren();
+    const blocksParent = $wrapInlineNodes(nodes);
+    const nodeToSelect = blocksParent.getLastDescendant()!;
+    const blocks = blocksParent.getChildren();
     const isLI = (node: LexicalNode) =>
       '__value' in node && '__checked' in node;
     const isMergeable = (node: LexicalNode) =>
@@ -1632,7 +1631,7 @@ export class RangeSelection implements BaseSelection {
 
     if (
       insertedParagraph &&
-      $isElementNode(lastToInsert) &&
+      $isElementNode(lastInsertedBlock) &&
       (isLI(insertedParagraph) || INTERNAL_$isBlock(lastToInsert))
     ) {
       lastInsertedBlock.append(...insertedParagraph.getChildren());
@@ -1648,7 +1647,7 @@ export class RangeSelection implements BaseSelection {
     const lastChild = $isElementNode(firstBlock)
       ? firstBlock.getLastChild()
       : null;
-    if ($isLineBreakNode(lastChild) && lastToInsert !== firstBlock) {
+    if ($isLineBreakNode(lastChild) && lastInsertedBlock !== firstBlock) {
       lastChild.remove();
     }
   }

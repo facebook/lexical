@@ -7,7 +7,7 @@
  */
 
 import {$createLinkNode} from '@lexical/link';
-import {$createHeadingNode,$isHeadingNode} from '@lexical/rich-text';
+import {$createHeadingNode, $isHeadingNode} from '@lexical/rich-text';
 import {
   $getSelectionStyleValueForProperty,
   $patchStyleText,

@@ -1631,7 +1631,7 @@ export class RangeSelection implements BaseSelection {
 
     if (
       insertedParagraph &&
-      $isElementNode(lastToInsert) &&
+      $isElementNode(lastInsertedBlock) &&
       (isLI(insertedParagraph) || INTERNAL_$isBlock(lastToInsert))
     ) {
       lastInsertedBlock.append(...insertedParagraph.getChildren());
@@ -1647,7 +1647,7 @@ export class RangeSelection implements BaseSelection {
     const lastChild = $isElementNode(firstBlock)
       ? firstBlock.getLastChild()
       : null;
-    if ($isLineBreakNode(lastChild) && lastToInsert !== firstBlock) {
+    if ($isLineBreakNode(lastChild) && lastInsertedBlock !== firstBlock) {
       lastChild.remove();
     }
   }

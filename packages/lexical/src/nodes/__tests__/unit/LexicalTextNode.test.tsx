@@ -33,6 +33,8 @@ import {
   IS_CODE,
   IS_HIGHLIGHT,
   IS_ITALIC,
+  IS_SUBSCRIPT,
+  IS_SUPERSCRIPT,
   IS_STRIKETHROUGH,
   IS_UNDERLINE,
 } from '../../../LexicalConstants';

@@ -302,6 +302,58 @@ describe('LexicalTextNode tests', () => {
     },
   );
 
+  test('setting subscript clears superscript', async () => {
+    await update(() => {
+      const paragraphNode = $createParagraphNode();
+      const textNode = $createTextNode('Hello World');
+      paragraphNode.append(textNode);
+      $getRoot().append(paragraphNode);
+      textNode.toggleFormat('superscript');
+      textNode.toggleFormat('subscript');
+      expect(textNode.hasFormat('subscript')).toBe(true);
+      expect(textNode.hasFormat('superscript')).toBe(false);
+    });
+  });
+
+  test('setting superscript clears subscript', async () => {
+    await update(() => {
+      const paragraphNode = $createParagraphNode();
+      const textNode = $createTextNode('Hello World');
+      paragraphNode.append(textNode);
+      $getRoot().append(paragraphNode);
+      textNode.toggleFormat('subscript');
+      textNode.toggleFormat('superscript');
+      expect(textNode.hasFormat('superscript')).toBe(true);
+      expect(textNode.hasFormat('subscript')).toBe(false);
+    });
+  });
+
+  test('clearing subscript does not set superscript', async () => {
+    await update(() => {
+      const paragraphNode = $createParagraphNode();
+      const textNode = $createTextNode('Hello World');
+      paragraphNode.append(textNode);
+      $getRoot().append(paragraphNode);
+      textNode.toggleFormat('subscript');
+      textNode.toggleFormat('subscript');
+      expect(textNode.hasFormat('subscript')).toBe(false);
+      expect(textNode.hasFormat('superscript')).toBe(false);
+    });
+  });
+
+  test('clearing superscript does not set subscript', async () => {
+    await update(() => {
+      const paragraphNode = $createParagraphNode();
+      const textNode = $createTextNode('Hello World');
+      paragraphNode.append(textNode);
+      $getRoot().append(paragraphNode);
+      textNode.toggleFormat('superscript');
+      textNode.toggleFormat('superscript');
+      expect(textNode.hasFormat('superscript')).toBe(false);
+      expect(textNode.hasFormat('subscript')).toBe(false);
+    });
+  });
+
   test('selectPrevious()', async () => {
     await update(() => {
       const paragraphNode = $createParagraphNode();

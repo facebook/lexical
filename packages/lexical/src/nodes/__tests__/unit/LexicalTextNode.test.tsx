@@ -227,6 +227,18 @@ describe('LexicalTextNode tests', () => {
       (node) => node.toggleFormat('code'),
     ],
     [
+      'subscript',
+      IS_SUBSCRIPT,
+      (node) => node.hasFormat('subscript'),
+      (node) => node.toggleFormat('subscript'),
+    ],
+    [
+      'superscript',
+      IS_SUPERSCRIPT,
+      (node) => node.hasFormat('superscript'),
+      (node) => node.toggleFormat('superscript'),
+    ],
+    [
       'highlight',
       IS_HIGHLIGHT,
       (node) => node.hasFormat('highlight'),

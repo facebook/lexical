@@ -702,13 +702,8 @@ export class TextNode extends LexicalNode {
    * @returns this TextNode.
    */
   toggleFormat(type: TextFormatType): this {
-    const formatFlag = TEXT_TYPE_TO_FORMAT[type];
-    let newFormat = this.getFormat() ^ formatFlag;
-    if (type === 'subscript') {
-      newFormat &= ~TEXT_TYPE_TO_FORMAT['superscript'];
-    } else if (type === 'superscript') {
-      newFormat &= ~TEXT_TYPE_TO_FORMAT['subscript'];
-    }
+    const format = this.getFormat();
+    const newFormat = toggleTextFormatType(format, type, null);
     return this.setFormat(newFormat);
   }
 

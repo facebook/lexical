@@ -53,7 +53,7 @@ export function addClassNamesToElement(
 ): void {
   classNames.forEach((className) => {
     if (typeof className === 'string') {
-      const classesToAdd = className.split(/\s+/);
+      const classesToAdd = className.split(/\s+/).filter((n) => n !== '');
       element.classList.add(...classesToAdd);
     }
   });

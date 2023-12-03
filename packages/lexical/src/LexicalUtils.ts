@@ -196,26 +196,16 @@ export function toggleTextFormatType(
   alignWithFormat: null | number,
 ): number {
   const activeFormat = TEXT_TYPE_TO_FORMAT[type];
-  const isStateFlagPresent = format & activeFormat;
-
-  if (
-    isStateFlagPresent &&
-    (alignWithFormat === null || (alignWithFormat & activeFormat) === 0)
-  ) {
-    // Remove the state flag.
-    return format ^ activeFormat;
+  if (format & activeFormat === alignWithFormat & activeFormat) {
+    return format;
   }
-  if (alignWithFormat === null || alignWithFormat & activeFormat) {
-    // Add the state flag.
-    let newFormat = format | activeFormat;
-    if (type === 'subscript') {
-      newFormat &= ~TEXT_TYPE_TO_FORMAT['superscript'];
-    } else if (type === 'superscript') {
-      newFormat &= ~TEXT_TYPE_TO_FORMAT['subscript'];
-    }
-    return newFormat;
+  let newFormat = format ^ activeFormat;
+  if (type === 'subscript') {
+    newFormat &= ~TEXT_TYPE_TO_FORMAT.superscript;
+  } else if (type === 'superscript') {
+    newFormat &= ~TEXT_TYPE_TO_FORMAT.subscript;
   }
-  return format;
+  return newFormat;
 }
 
 export function $isLeafNode(

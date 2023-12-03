@@ -196,7 +196,8 @@ export function toggleTextFormatType(
   alignWithFormat: null | number,
 ): number {
   const activeFormat = TEXT_TYPE_TO_FORMAT[type];
-  if (format & activeFormat === alignWithFormat & activeFormat) {
+  if (alignWithFormat !== null &&
+      (format & activeFormat) === (alignWithFormat & activeFormat)) {
     return format;
   }
   let newFormat = format ^ activeFormat;

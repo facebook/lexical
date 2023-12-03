@@ -1033,7 +1033,7 @@ export function getCachedClassNameArray(
   // className tokens to an array that can be
   // applied to classList.add()/remove().
   if (typeof classNames === 'string') {
-    const classNamesArr = classNames.split(' ');
+    const classNamesArr = classNames.split(/\s+/);
     classNamesCache[classNameThemeType] = classNamesArr;
     return classNamesArr;
   }
@@ -1393,7 +1393,7 @@ function createBlockCursorElement(editorConfig: EditorConfig): HTMLDivElement {
   let blockCursorTheme = theme.blockCursor;
   if (blockCursorTheme !== undefined) {
     if (typeof blockCursorTheme === 'string') {
-      const classNamesArr = blockCursorTheme.split(' ');
+      const classNamesArr = blockCursorTheme.split(/\s+/);
       // @ts-expect-error: intentional
       blockCursorTheme = theme.blockCursor = classNamesArr;
     }

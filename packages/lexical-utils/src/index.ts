@@ -53,7 +53,7 @@ export function addClassNamesToElement(
 ): void {
   classNames.forEach((className) => {
     if (typeof className === 'string') {
-      const classesToAdd = className.split(' ').filter((n) => n !== '');
+      const classesToAdd = className.split(/\s+/);
       element.classList.add(...classesToAdd);
     }
   });
@@ -73,7 +73,7 @@ export function removeClassNamesFromElement(
 ): void {
   classNames.forEach((className) => {
     if (typeof className === 'string') {
-      element.classList.remove(...className.split(' '));
+      element.classList.remove(...className.split(/\s+/));
     }
   });
 }

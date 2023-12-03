@@ -231,7 +231,7 @@ function setListThemeClassNames(
     }
 
     if (listLevelClassName !== undefined) {
-      const listItemClasses = listLevelClassName.split(' ');
+      const listItemClasses = listLevelClassName.split(/\s+/);
       classesToAdd.push(...listItemClasses);
       for (let i = 0; i < listLevelsClassNames.length; i++) {
         if (i !== normalizedListDepth) {
@@ -241,7 +241,7 @@ function setListThemeClassNames(
     }
 
     if (nestedListClassName !== undefined) {
-      const nestedListItemClasses = nestedListClassName.split(' ');
+      const nestedListItemClasses = nestedListClassName.split(/\s+/);
 
       if (listDepth > 1) {
         classesToAdd.push(...nestedListItemClasses);

@@ -458,7 +458,7 @@ function $setListItemThemeClassNames(
   }
 
   if (listItemClassName !== undefined) {
-    const listItemClasses = listItemClassName.split(' ');
+    const listItemClasses = listItemClassName.split(/\s+/);
     classesToAdd.push(...listItemClasses);
   }
 
@@ -484,7 +484,7 @@ function $setListItemThemeClassNames(
   }
 
   if (nestedListItemClassName !== undefined) {
-    const nestedListItemClasses = nestedListItemClassName.split(' ');
+    const nestedListItemClasses = nestedListItemClassName.split(/\s+/);
 
     if (node.getChildren().some((child) => $isListNode(child))) {
       classesToAdd.push(...nestedListItemClasses);

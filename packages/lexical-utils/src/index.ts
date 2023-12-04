@@ -53,7 +53,7 @@ export function addClassNamesToElement(
 ): void {
   classNames.forEach((className) => {
     if (typeof className === 'string') {
-      const classesToAdd = className.split(/\s+/).filter((n) => n !== '');
+      const classesToAdd = splitClasses(className);
       element.classList.add(...classesToAdd);
     }
   });
@@ -73,9 +73,23 @@ export function removeClassNamesFromElement(
 ): void {
   classNames.forEach((className) => {
     if (typeof className === 'string') {
-      element.classList.remove(...className.split(/\s+/));
+      element.classList.remove(...splitClasses(className));
     }
   });
+}
+
+/**
+ * Takes a string of classNames and splits into an array of strings,
+ * ignoring any empty strings.
+ * eg. splitClasses('active small') will return ['active', 'small']
+ * @param classNames - A string of class names
+ * @returns An array of strings of class names
+ */
+export function splitClasses(classNames: string): Array<string> {
+  if (typeof classNames === 'string') {
+    return classNames.split(/\s+/).filter((n) => n !== '');
+  }
+  return [];
 }
 
 /**

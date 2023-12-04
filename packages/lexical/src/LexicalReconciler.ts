@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import type {
   EditorConfig,
   LexicalEditor,
@@ -16,6 +15,7 @@ import type {
 import type {NodeKey, NodeMap} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 
+import {splitClasses} from '@lexical/utils';
 import invariant from 'shared/invariant';
 
 import {
@@ -368,7 +368,7 @@ function reconcileBlockDirection(element: ElementNode, dom: HTMLElement): void {
       // Remove the old theme classes if they exist
       if (previousDirectionTheme !== undefined) {
         if (typeof previousDirectionTheme === 'string') {
-          const classNamesArr = previousDirectionTheme.split(/\s+/);
+          const classNamesArr = splitClasses(previousDirectionTheme);
           previousDirectionTheme = theme[previousDirection] = classNamesArr;
         }
 
@@ -386,7 +386,7 @@ function reconcileBlockDirection(element: ElementNode, dom: HTMLElement): void {
         // Apply the new theme classes if they exist
         if (nextDirectionTheme !== undefined) {
           if (typeof nextDirectionTheme === 'string') {
-            const classNamesArr = nextDirectionTheme.split(/\s+/);
+            const classNamesArr = splitClasses(nextDirectionTheme);
             // @ts-expect-error: intentional
             nextDirectionTheme = theme[direction] = classNamesArr;
           }

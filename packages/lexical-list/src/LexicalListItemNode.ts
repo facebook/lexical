@@ -26,6 +26,7 @@ import {
   addClassNamesToElement,
   isHTMLElement,
   removeClassNamesFromElement,
+  splitClasses,
 } from '@lexical/utils';
 import {
   $applyNodeReplacement,
@@ -458,7 +459,7 @@ function $setListItemThemeClassNames(
   }
 
   if (listItemClassName !== undefined) {
-    const listItemClasses = listItemClassName.split(/\s+/);
+    const listItemClasses = splitClasses(listItemClassName);
     classesToAdd.push(...listItemClasses);
   }
 
@@ -484,7 +485,7 @@ function $setListItemThemeClassNames(
   }
 
   if (nestedListItemClassName !== undefined) {
-    const nestedListItemClasses = nestedListItemClassName.split(/\s+/);
+    const nestedListItemClasses = splitClasses(nestedListItemClassName);
 
     if (node.getChildren().some((child) => $isListNode(child))) {
       classesToAdd.push(...nestedListItemClasses);

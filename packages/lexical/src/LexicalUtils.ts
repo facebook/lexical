@@ -28,6 +28,7 @@ import type {
 import type {RootNode} from './nodes/LexicalRootNode';
 import type {TextFormatType, TextNode} from './nodes/LexicalTextNode';
 
+import {splitClasses} from '@lexical/utils';
 import {CAN_USE_DOM} from 'shared/canUseDOM';
 import {IS_APPLE, IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from 'shared/environment';
 import invariant from 'shared/invariant';
@@ -1033,7 +1034,7 @@ export function getCachedClassNameArray(
   // className tokens to an array that can be
   // applied to classList.add()/remove().
   if (typeof classNames === 'string') {
-    const classNamesArr = classNames.split(/\s+/);
+    const classNamesArr = splitClasses(classNames);
     classNamesCache[classNameThemeType] = classNamesArr;
     return classNamesArr;
   }
@@ -1393,7 +1394,7 @@ function createBlockCursorElement(editorConfig: EditorConfig): HTMLDivElement {
   let blockCursorTheme = theme.blockCursor;
   if (blockCursorTheme !== undefined) {
     if (typeof blockCursorTheme === 'string') {
-      const classNamesArr = blockCursorTheme.split(/\s+/);
+      const classNamesArr = splitClasses(blockCursorTheme);
       // @ts-expect-error: intentional
       blockCursorTheme = theme.blockCursor = classNamesArr;
     }

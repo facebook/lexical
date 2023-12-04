@@ -10,6 +10,7 @@ import {
   addClassNamesToElement,
   isHTMLElement,
   removeClassNamesFromElement,
+  splitClasses,
 } from '@lexical/utils';
 import {
   $applyNodeReplacement,
@@ -231,7 +232,7 @@ function setListThemeClassNames(
     }
 
     if (listLevelClassName !== undefined) {
-      const listItemClasses = listLevelClassName.split(/\s+/);
+      const listItemClasses = splitClasses(listLevelClassName);
       classesToAdd.push(...listItemClasses);
       for (let i = 0; i < listLevelsClassNames.length; i++) {
         if (i !== normalizedListDepth) {
@@ -241,7 +242,7 @@ function setListThemeClassNames(
     }
 
     if (nestedListClassName !== undefined) {
-      const nestedListItemClasses = nestedListClassName.split(/\s+/);
+      const nestedListItemClasses = splitClasses(nestedListClassName);
 
       if (listDepth > 1) {
         classesToAdd.push(...nestedListItemClasses);

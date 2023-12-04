@@ -21,6 +21,7 @@ import {
   $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
+  $isParagraphNode,
   $isRootNode,
   $isTextNode,
   $setSelection,
@@ -2047,7 +2048,12 @@ export class RangeSelection implements BaseSelection {
       // to delete its parent element. Otherwise text content will be deleted but empty
       // parent node will remain
       const endPoint = isBackward ? this.focus : this.anchor;
-      if (endPoint.offset === 0) {
+      const topLevel = endPoint.getNode().getTopLevelElement();
+      const next = topLevel && topLevel.getNextSibling();
+      if (
+        endPoint.offset === 0 &&
+        ($isTextNode(next) || $isParagraphNode(next))
+      ) {
         this.modify('extend', isBackward, 'character');
       }
     }

@@ -11,7 +11,6 @@ import type {NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextNode} from './nodes/LexicalTextNode';
 
-import {$isRootTextContentEmpty} from '@lexical/text';
 import {
   CAN_USE_BEFORE_INPUT,
   IS_ANDROID,
@@ -324,6 +323,10 @@ function onSelectionChange(
         const [lastFormat, lastStyle, lastOffset, lastKey, timeStamp] =
           collapsedSelectionFormat;
 
+        const root = $getRoot();
+        const isRootTextContentEmpty =
+          editor.isComposing() === false && root.getTextContent() === '';
+
         if (
           currentTimeStamp < timeStamp + 200 &&
           anchor.offset === lastOffset &&
@@ -335,10 +338,7 @@ function onSelectionChange(
           if (anchor.type === 'text') {
             selection.format = anchorNode.getFormat();
             selection.style = anchorNode.getStyle();
-          } else if (
-            anchor.type === 'element' &&
-            !$isRootTextContentEmpty(editor.isComposing(), false)
-          ) {
+          } else if (anchor.type === 'element' && !isRootTextContentEmpty) {
             selection.format = 0;
             selection.style = '';
           }

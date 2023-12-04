@@ -1019,6 +1019,14 @@ export class LexicalNode {
     return $createParagraphNode();
   }
 
+  selectStart(): RangeSelection {
+    return this.selectPrevious();
+  }
+
+  selectEnd(): RangeSelection {
+    return this.selectNext(0, 0);
+  }
+
   /**
    * Moves selection to the previous sibling of this node, at the specified offsets.
    *
@@ -1095,5 +1103,38 @@ function errorOnTypeKlassMismatch(
       klass.name,
       editorKlass.name,
     );
+  }
+}
+
+/**
+ * Insert a series of nodes after this LexicalNode (as next siblings)
+ *
+ * @param firstToInsert - The first node to insert after this one.
+ * @param lastToInsert - The last node to insert after this one. Must be a
+ * later sibling of FirstNode. If not provided, it will be its last sibling.
+ */
+export function insertRangeAfter(
+  node: LexicalNode,
+  firstToInsert: LexicalNode,
+  lastToInsert?: LexicalNode,
+) {
+  const lastToInsert2 =
+    lastToInsert || firstToInsert.getParentOrThrow().getLastChild()!;
+  let current = firstToInsert;
+  const nodesToInsert = [firstToInsert];
+  while (current !== lastToInsert2) {
+    if (!current.getNextSibling()) {
+      invariant(
+        false,
+        'insertRangeAfter: lastToInsert must be a later sibling of firstToInsert',
+      );
+    }
+    current = current.getNextSibling()!;
+    nodesToInsert.push(current);
+  }
+
+  let currentNode: LexicalNode = node;
+  for (const nodeToInsert of nodesToInsert) {
+    currentNode = currentNode.insertAfter(nodeToInsert);
   }
 }

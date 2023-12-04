@@ -803,6 +803,15 @@ export class TextNode extends LexicalNode {
     return selection;
   }
 
+  selectStart(): RangeSelection {
+    return this.select(0, 0);
+  }
+
+  selectEnd(): RangeSelection {
+    const size = this.getTextContentSize();
+    return this.select(size, size);
+  }
+
   /**
    * Inserts the provided text into this TextNode at the provided offset, deleting the number of characters
    * specified. Can optionally calculate a new selection after the operation is complete.

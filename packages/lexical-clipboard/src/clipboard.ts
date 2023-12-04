@@ -18,10 +18,7 @@ import {
   $createTabNode,
   $getRoot,
   $getSelection,
-  $INTERNAL_isPointSelection,
-  $isDecoratorNode,
   $isElementNode,
-  $isLineBreakNode,
   $isRangeSelection,
   $isTextNode,
   $parseSerializedNode,
@@ -229,57 +226,8 @@ export function $insertGeneratedNodes(
     return;
   }
 
-  $basicInsertStrategy(nodes, selection);
+  selection.insertNodes(nodes);
   return;
-}
-
-function $basicInsertStrategy(nodes: LexicalNode[], selection: BaseSelection) {
-  // Wrap text and inline nodes in paragraph nodes so we have all blocks at the top-level
-  const topLevelBlocks = [];
-  let currentBlock = null;
-  for (let i = 0; i < nodes.length; i++) {
-    const node = nodes[i];
-
-    const isLineBreakNode = $isLineBreakNode(node);
-
-    if (
-      isLineBreakNode ||
-      ($isDecoratorNode(node) && node.isInline()) ||
-      ($isElementNode(node) && node.isInline()) ||
-      $isTextNode(node) ||
-      node.isParentRequired()
-    ) {
-      if (currentBlock === null) {
-        currentBlock = node.createParentElementNode();
-        topLevelBlocks.push(currentBlock);
-        // In the case of LineBreakNode, we just need to
-        // add an empty ParagraphNode to the topLevelBlocks.
-        if (isLineBreakNode) {
-          continue;
-        }
-      }
-
-      if (currentBlock !== null) {
-        currentBlock.append(node);
-      }
-    } else {
-      topLevelBlocks.push(node);
-      currentBlock = null;
-    }
-  }
-
-  if ($isRangeSelection(selection)) {
-    selection.insertNodes(topLevelBlocks);
-  } else if ($INTERNAL_isPointSelection(selection)) {
-    // If there's an active grid selection and a non grid is pasted, add to the anchor.
-    const anchorCell = selection.anchor.getNode();
-
-    if (!DEPRECATED_$isGridCellNode(anchorCell)) {
-      invariant(false, 'Expected Grid Cell in Grid Selection');
-    }
-
-    anchorCell.append(...topLevelBlocks);
-  }
 }
 
 function $mergeGridNodesStrategy(

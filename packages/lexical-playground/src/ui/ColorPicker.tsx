@@ -15,7 +15,7 @@ import TextInput from './TextInput';
 
 interface ColorPickerProps {
   color: string;
-  onChange?: (color: string) => void;
+  onChange?: (value: string, skipHistoryStack: boolean) => void;
 }
 
 const basicColors = [
@@ -45,6 +45,7 @@ export default function ColorPicker({
 }: Readonly<ColorPickerProps>): JSX.Element {
   const [selfColor, setSelfColor] = useState(transformColor('hex', color));
   const [inputColor, setInputColor] = useState(color);
+  const [skipHistoryStack, setSkipHistoryStack] = useState(false);
   const innerDivRef = useRef(null);
 
   const saturationPosition = useMemo(
@@ -81,6 +82,10 @@ export default function ColorPicker({
     setInputColor(newColor.hex);
   };
 
+  const onSkipHistoryStack = (value: boolean) => {
+    setSkipHistoryStack(value);
+  };
+
   const onMoveHue = ({x}: Position) => {
     const newHsv = {...selfColor.hsv, h: (x / WIDTH) * 360};
     const newColor = transformColor('hsv', newHsv);
@@ -92,10 +97,10 @@ export default function ColorPicker({
   useEffect(() => {
     // Check if the dropdown is actually active
     if (innerDivRef.current !== null && onChange) {
-      onChange(selfColor.hex);
+      onChange(selfColor.hex, skipHistoryStack);
       setInputColor(selfColor.hex);
     }
-  }, [selfColor, onChange]);
+  }, [selfColor, onChange, skipHistoryStack]);
 
   useEffect(() => {
     if (color === undefined) return;
@@ -126,6 +131,7 @@ export default function ColorPicker({
       <MoveWrapper
         className="color-picker-saturation"
         style={{backgroundColor: `hsl(${selfColor.hsv.h}, 100%, 50%)`}}
+        updateSkipHistoryFlag={onSkipHistoryStack}
         onChange={onMoveSaturation}>
         <div
           className="color-picker-saturation_cursor"
@@ -136,7 +142,10 @@ export default function ColorPicker({
           }}
         />
       </MoveWrapper>
-      <MoveWrapper className="color-picker-hue" onChange={onMoveHue}>
+      <MoveWrapper
+        className="color-picker-hue"
+        onChange={onMoveHue}
+        updateSkipHistoryFlag={onSkipHistoryStack}>
         <div
           className="color-picker-hue_cursor"
           style={{
@@ -161,12 +170,20 @@ export interface Position {
 interface MoveWrapperProps {
   className?: string;
   style?: React.CSSProperties;
+  updateSkipHistoryFlag: (value: boolean) => void;
   onChange: (position: Position) => void;
   children: JSX.Element;
 }
 
-function MoveWrapper({className, style, onChange, children}: MoveWrapperProps) {
+function MoveWrapper({
+  className,
+  style,
+  updateSkipHistoryFlag,
+  onChange,
+  children,
+}: MoveWrapperProps) {
   const divRef = useRef<HTMLDivElement>(null);
+  const [dragged, setDragged] = useState(false);
 
   const move = (e: React.MouseEvent | MouseEvent): void => {
     if (divRef.current) {
@@ -186,14 +203,21 @@ function MoveWrapper({className, style, onChange, children}: MoveWrapperProps) {
     move(e);
 
     const onMouseMove = (_e: MouseEvent): void => {
+      setDragged(true);
+      updateSkipHistoryFlag(true);
       move(_e);
     };
 
     const onMouseUp = (_e: MouseEvent): void => {
+      if (dragged) {
+        updateSkipHistoryFlag(false);
+      }
+
       document.removeEventListener('mousemove', onMouseMove, false);
       document.removeEventListener('mouseup', onMouseUp, false);
 
       move(_e);
+      setDragged(false);
     };
 
     document.addEventListener('mousemove', onMouseMove, false);

@@ -110,7 +110,7 @@ export function $getLexicalContent(editor: LexicalEditor): null | string {
  */
 export function $insertDataTransferForPlainText(
   dataTransfer: DataTransfer,
-  selection: RangeSelection | GridSelection,
+  selection: BaseSelection,
 ): void {
   const text =
     dataTransfer.getData('text/plain') || dataTransfer.getData('text/uri-list');
@@ -131,7 +131,7 @@ export function $insertDataTransferForPlainText(
  */
 export function $insertDataTransferForRichText(
   dataTransfer: DataTransfer,
-  selection: RangeSelection | GridSelection,
+  selection: BaseSelection,
   editor: LexicalEditor,
 ): void {
   const lexicalString = dataTransfer.getData('application/x-lexical-editor');
@@ -203,13 +203,16 @@ export function $insertDataTransferForRichText(
 export function $insertGeneratedNodes(
   editor: LexicalEditor,
   nodes: Array<LexicalNode>,
-  selection: RangeSelection | GridSelection,
+  selection: BaseSelection,
 ): void {
+  const isGridSelection = DEPRECATED_$isGridSelection(selection);
+  const isRangeSelection = $isRangeSelection(selection);
   const isSelectionInsideOfGrid =
-    DEPRECATED_$isGridSelection(selection) ||
-    ($findMatchingParent(selection.anchor.getNode(), (n) =>
-      DEPRECATED_$isGridCellNode(n),
-    ) !== null &&
+    isGridSelection ||
+    (isRangeSelection &&
+      $findMatchingParent(selection.anchor.getNode(), (n) =>
+        DEPRECATED_$isGridCellNode(n),
+      ) !== null &&
       $findMatchingParent(selection.focus.getNode(), (n) =>
         DEPRECATED_$isGridCellNode(n),
       ) !== null);

@@ -51,6 +51,7 @@ import {
   $getNodeByKey,
   $getRoot,
   $getSelection,
+  $INTERNAL_isPointSelection,
   $isElementNode,
   $isRangeSelection,
   $isRootOrShadowRoot,
@@ -59,7 +60,6 @@ import {
   CAN_UNDO_COMMAND,
   COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_NORMAL,
-  DEPRECATED_$isGridSelection,
   ElementFormatType,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
@@ -213,10 +213,7 @@ function BlockFormatDropDown({
   const formatParagraph = () => {
     editor.update(() => {
       const selection = $getSelection();
-      if (
-        $isRangeSelection(selection) ||
-        DEPRECATED_$isGridSelection(selection)
-      ) {
+      if ($INTERNAL_isPointSelection(selection)) {
         $setBlocksType(selection, () => $createParagraphNode());
       }
     });
@@ -226,10 +223,7 @@ function BlockFormatDropDown({
     if (blockType !== headingSize) {
       editor.update(() => {
         const selection = $getSelection();
-        if (
-          $isRangeSelection(selection) ||
-          DEPRECATED_$isGridSelection(selection)
-        ) {
+        if ($INTERNAL_isPointSelection(selection)) {
           $setBlocksType(selection, () => $createHeadingNode(headingSize));
         }
       });
@@ -264,10 +258,7 @@ function BlockFormatDropDown({
     if (blockType !== 'quote') {
       editor.update(() => {
         const selection = $getSelection();
-        if (
-          $isRangeSelection(selection) ||
-          DEPRECATED_$isGridSelection(selection)
-        ) {
+        if ($INTERNAL_isPointSelection(selection)) {
           $setBlocksType(selection, () => $createQuoteNode());
         }
       });
@@ -279,10 +270,7 @@ function BlockFormatDropDown({
       editor.update(() => {
         let selection = $getSelection();
 
-        if (
-          $isRangeSelection(selection) ||
-          DEPRECATED_$isGridSelection(selection)
-        ) {
+        if ($INTERNAL_isPointSelection(selection)) {
           if (selection.isCollapsed()) {
             $setBlocksType(selection, () => $createCodeNode());
           } else {
@@ -382,10 +370,7 @@ function FontDropDown({
     (option: string) => {
       editor.update(() => {
         const selection = $getSelection();
-        if (
-          $isRangeSelection(selection) ||
-          DEPRECATED_$isGridSelection(selection)
-        ) {
+        if ($INTERNAL_isPointSelection(selection)) {
           $patchStyleText(selection, {
             [style]: option,
           });
@@ -742,10 +727,7 @@ export default function ToolbarPlugin({
     (styles: Record<string, string>) => {
       activeEditor.update(() => {
         const selection = $getSelection();
-        if (
-          $isRangeSelection(selection) ||
-          DEPRECATED_$isGridSelection(selection)
-        ) {
+        if ($INTERNAL_isPointSelection(selection)) {
           $patchStyleText(selection, styles);
         }
       });

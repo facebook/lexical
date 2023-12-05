@@ -74,7 +74,7 @@ import {
 import {$createTabNode, $isTabNode} from './nodes/LexicalTabNode';
 
 export type TextPointType = {
-  _selection: RangeSelection | GridSelection;
+  _selection: INTERNAL_PointSelection;
   getNode: () => TextNode;
   is: (point: PointType) => boolean;
   isBefore: (point: PointType) => boolean;
@@ -85,7 +85,7 @@ export type TextPointType = {
 };
 
 export type ElementPointType = {
-  _selection: RangeSelection | GridSelection;
+  _selection: INTERNAL_PointSelection;
   getNode: () => ElementNode;
   is: (point: PointType) => boolean;
   isBefore: (point: PointType) => boolean;
@@ -108,7 +108,7 @@ export class Point {
   key: NodeKey;
   offset: number;
   type: 'text' | 'element';
-  _selection: RangeSelection | GridSelection | null;
+  _selection: INTERNAL_PointSelection | null;
 
   constructor(key: NodeKey, offset: number, type: 'text' | 'element') {
     this._selection = null;
@@ -165,7 +165,7 @@ export class Point {
         $setCompositionKey(key);
       }
       if (selection !== null) {
-        selection._cachedNodes = null;
+        selection.setCachedNodes(null);
         selection.dirty = true;
       }
     }
@@ -267,12 +267,85 @@ export interface BaseSelection {
   extract(): Array<LexicalNode>;
   getNodes(): Array<LexicalNode>;
   getTextContent(): string;
-  insertRawText(text: string): void;
   insertText(text: string): void;
+  insertRawText(text: string): void;
   is(selection: null | BaseSelection): boolean;
   insertNodes(nodes: Array<LexicalNode>): void;
   getCachedNodes(): null | Array<LexicalNode>;
   setCachedNodes(nodes: null | Array<LexicalNode>): void;
+}
+
+/**
+ * This class is being used only for internal use case of migration GridSelection outside of core package.
+ * DO NOT USE THIS CLASS DIRECTLY.
+ */
+export abstract class INTERNAL_PointSelection implements BaseSelection {
+  anchor: PointType;
+  focus: PointType;
+  dirty: boolean;
+  _cachedNodes: Array<LexicalNode> | null;
+
+  constructor(anchor: PointType, focus: PointType) {
+    this.anchor = anchor;
+    this.focus = focus;
+    anchor._selection = this;
+    focus._selection = this;
+    this._cachedNodes = null;
+    this.dirty = false;
+  }
+  getCachedNodes(): LexicalNode[] | null {
+    return this._cachedNodes;
+  }
+
+  setCachedNodes(nodes: LexicalNode[] | null): void {
+    this._cachedNodes = nodes;
+  }
+
+  is(selection: null | BaseSelection): boolean {
+    if (!$INTERNAL_isPointSelection(selection)) {
+      return false;
+    }
+    return this.anchor.is(selection.anchor) && this.focus.is(selection.focus);
+  }
+
+  isCollapsed(): boolean {
+    return false;
+  }
+
+  extract(): Array<LexicalNode> {
+    return this.getNodes();
+  }
+
+  abstract clone(): INTERNAL_PointSelection;
+
+  abstract getNodes(): Array<LexicalNode>;
+
+  abstract getTextContent(): string;
+
+  abstract insertText(text: string): void;
+
+  abstract insertRawText(text: string): void;
+
+  abstract insertNodes(nodes: Array<LexicalNode>): void;
+
+  /**
+   * Returns whether the Selection is "backwards", meaning the focus
+   * logically precedes the anchor in the EditorState.
+   * @returns true if the Selection is backwards, false otherwise.
+   */
+  isBackward(): boolean {
+    return this.focus.isBefore(this.anchor);
+  }
+
+  /**
+   * Returns the character-based offsets of the Selection, accounting for non-text Points
+   * by using the children size or text content.
+   *
+   * @returns the character offsets for the Selection
+   */
+  getCharacterOffsets(): [number, number] {
+    return getCharacterOffsets(this);
+  }
 }
 
 export class NodeSelection implements BaseSelection {
@@ -393,6 +466,12 @@ export function $isRangeSelection(x: unknown): x is RangeSelection {
   return x instanceof RangeSelection;
 }
 
+export function $INTERNAL_isPointSelection(
+  x: unknown,
+): x is INTERNAL_PointSelection {
+  return x instanceof INTERNAL_PointSelection;
+}
+
 export type GridSelectionShape = {
   fromX: number;
   fromY: number;
@@ -458,21 +537,12 @@ export function DEPRECATED_$getGridCellNodeRect(
   return null;
 }
 
-export class GridSelection implements BaseSelection {
+export class GridSelection extends INTERNAL_PointSelection {
   gridKey: NodeKey;
-  anchor: PointType;
-  focus: PointType;
-  dirty: boolean;
-  _cachedNodes: Array<LexicalNode> | null;
 
   constructor(gridKey: NodeKey, anchor: PointType, focus: PointType) {
+    super(anchor, focus);
     this.gridKey = gridKey;
-    this.anchor = anchor;
-    this.focus = focus;
-    this.dirty = false;
-    this._cachedNodes = null;
-    anchor._selection = this;
-    focus._selection = this;
   }
 
   getCachedNodes(): LexicalNode[] | null {
@@ -508,14 +578,6 @@ export class GridSelection implements BaseSelection {
 
   isCollapsed(): boolean {
     return false;
-  }
-
-  isBackward(): boolean {
-    return this.focus.isBefore(this.anchor);
-  }
-
-  getCharacterOffsets(): [number, number] {
-    return getCharacterOffsets(this);
   }
 
   extract(): Array<LexicalNode> {
@@ -760,13 +822,9 @@ export function DEPRECATED_$isGridSelection(x: unknown): x is GridSelection {
   return x instanceof GridSelection;
 }
 
-export class RangeSelection implements BaseSelection {
-  anchor: PointType;
-  focus: PointType;
-  dirty: boolean;
+export class RangeSelection extends INTERNAL_PointSelection {
   format: number;
   style: string;
-  _cachedNodes: null | Array<LexicalNode>;
 
   constructor(
     anchor: PointType,
@@ -774,14 +832,9 @@ export class RangeSelection implements BaseSelection {
     format: number,
     style: string,
   ) {
-    this.anchor = anchor;
-    this.focus = focus;
-    this.dirty = false;
+    super(anchor, focus);
     this.format = format;
     this.style = style;
-    this._cachedNodes = null;
-    anchor._selection = this;
-    focus._selection = this;
   }
 
   getCachedNodes(): LexicalNode[] | null {
@@ -808,15 +861,6 @@ export class RangeSelection implements BaseSelection {
       this.format === selection.format &&
       this.style === selection.style
     );
-  }
-
-  /**
-   * Returns whether the Selection is "backwards", meaning the focus
-   * logically precedes the anchor in the EditorState.
-   * @returns true if the Selection is backwards, false otherwise.
-   */
-  isBackward(): boolean {
-    return this.focus.isBefore(this.anchor);
   }
 
   /**
@@ -1696,16 +1740,6 @@ export class RangeSelection implements BaseSelection {
   }
 
   /**
-   * Returns the character-based offsets of the Selection, accounting for non-text Points
-   * by using the children size or text content.
-   *
-   * @returns the character offsets for the Selection
-   */
-  getCharacterOffsets(): [number, number] {
-    return getCharacterOffsets(this);
-  }
-
-  /**
    * Extracts the nodes in the Selection, splitting nodes where necessary
    * to get offset-level precision.
    *
@@ -2085,7 +2119,7 @@ function getCharacterOffset(point: PointType): number {
 }
 
 function getCharacterOffsets(
-  selection: RangeSelection | GridSelection,
+  selection: INTERNAL_PointSelection,
 ): [number, number] {
   const anchor = selection.anchor;
   const focus = selection.focus;
@@ -2529,14 +2563,10 @@ export function internalCreateSelection(
   const lastSelection = currentEditorState._selection;
   const domSelection = getDOMSelection(editor._window);
 
-  if (
-    $isNodeSelection(lastSelection) ||
-    DEPRECATED_$isGridSelection(lastSelection)
-  ) {
-    return lastSelection.clone();
+  if ($isRangeSelection(lastSelection) || lastSelection == null) {
+    return internalCreateRangeSelection(lastSelection, domSelection, editor);
   }
-
-  return internalCreateRangeSelection(lastSelection, domSelection, editor);
+  return lastSelection.clone();
 }
 
 export function internalCreateRangeSelection(

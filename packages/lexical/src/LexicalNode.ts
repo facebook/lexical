@@ -22,6 +22,7 @@ import {
 } from '.';
 import {
   $getSelection,
+  $INTERNAL_isPointSelection,
   $isNodeSelection,
   $isRangeSelection,
   $moveSelectionPointToEnd,
@@ -673,7 +674,7 @@ export class LexicalNode {
     const parent = latestNode.__parent;
     const cloneNotNeeded = editor._cloneNotNeeded;
     const selection = $getSelection();
-    if (selection !== null) {
+    if ($INTERNAL_isPointSelection(selection)) {
       selection.setCachedNodes(null);
     }
     if (cloneNotNeeded.has(key)) {

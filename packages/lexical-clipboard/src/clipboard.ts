@@ -14,29 +14,22 @@ import {
 } from '@lexical/selection';
 import {$findMatchingParent, objectKlassEquals} from '@lexical/utils';
 import {
-  $createParagraphNode,
   $createRangeSelection,
   $createTabNode,
   $getRoot,
   $getSelection,
-  $INTERNAL_isPointSelection,
   $isElementNode,
   $isRangeSelection,
   $isTextNode,
   $parseSerializedNode,
-  $setSelection,
   BaseSelection,
   COMMAND_PRIORITY_CRITICAL,
   COPY_COMMAND,
   DEPRECATED_$isGridCellNode,
   DEPRECATED_$isGridNode,
-  DEPRECATED_$isGridRowNode,
-  DEPRECATED_GridNode,
-  INTERNAL_PointSelection,
   isSelectionWithinEditor,
   LexicalEditor,
   LexicalNode,
-  SELECTION_CHANGE_COMMAND,
   SerializedTextNode,
 } from 'lexical';
 import {CAN_USE_DOM} from 'shared/canUseDOM';
@@ -204,147 +197,37 @@ export function $insertGeneratedNodes(
   nodes: Array<LexicalNode>,
   selection: BaseSelection,
 ): void {
-  const isPointSelection = $INTERNAL_isPointSelection(selection);
+  const [anchor, focus] = selection.getStartEndPoints();
   const isRangeSelection = $isRangeSelection(selection);
-  const isSelectionInsideOfGrid =
-    (isRangeSelection &&
-      $findMatchingParent(selection.anchor.getNode(), (n) =>
-        DEPRECATED_$isGridCellNode(n),
-      ) !== null &&
-      $findMatchingParent(selection.focus.getNode(), (n) =>
-        DEPRECATED_$isGridCellNode(n),
-      ) !== null) ||
-    (isPointSelection && !isRangeSelection);
+  const isRangeInsideGrid =
+    isRangeSelection &&
+    $findMatchingParent(selection.anchor.getNode(), (n) =>
+      DEPRECATED_$isGridCellNode(n),
+    ) !== null &&
+    $findMatchingParent(selection.focus.getNode(), (n) =>
+      DEPRECATED_$isGridCellNode(n),
+    ) !== null;
 
+  if (isRangeInsideGrid) {
+    selection.mergeGridNodesStrategy(nodes, editor);
+    return;
+  }
   if (
-    isSelectionInsideOfGrid &&
+    anchor != null &&
+    focus != null &&
+    !isRangeSelection &&
     nodes.length === 1 &&
     DEPRECATED_$isGridNode(nodes[0])
   ) {
-    $mergeGridNodesStrategy(nodes, selection, false, editor);
+    const rangeSelection = $createRangeSelection();
+    rangeSelection.anchor.set(anchor.key, 0, 'element');
+    rangeSelection.focus.set(focus.key, 0, 'element');
+    rangeSelection.mergeGridNodesStrategy(nodes, editor);
     return;
   }
 
   selection.insertNodes(nodes);
   return;
-}
-
-function $mergeGridNodesStrategy(
-  nodes: LexicalNode[],
-  selection: INTERNAL_PointSelection,
-  isFromLexical: boolean,
-  editor: LexicalEditor,
-) {
-  if (nodes.length !== 1 || !DEPRECATED_$isGridNode(nodes[0])) {
-    invariant(false, '$mergeGridNodesStrategy: Expected Grid insertion.');
-  }
-
-  const newGrid = nodes[0];
-  const newGridRows = newGrid.getChildren();
-  const newColumnCount = newGrid
-    .getFirstChildOrThrow<DEPRECATED_GridNode>()
-    .getChildrenSize();
-  const newRowCount = newGrid.getChildrenSize();
-  const gridCellNode = $findMatchingParent(selection.anchor.getNode(), (n) =>
-    DEPRECATED_$isGridCellNode(n),
-  );
-  const gridRowNode =
-    gridCellNode &&
-    $findMatchingParent(gridCellNode, (n) => DEPRECATED_$isGridRowNode(n));
-  const gridNode =
-    gridRowNode &&
-    $findMatchingParent(gridRowNode, (n) => DEPRECATED_$isGridNode(n));
-
-  if (
-    !DEPRECATED_$isGridCellNode(gridCellNode) ||
-    !DEPRECATED_$isGridRowNode(gridRowNode) ||
-    !DEPRECATED_$isGridNode(gridNode)
-  ) {
-    invariant(
-      false,
-      '$mergeGridNodesStrategy: Expected selection to be inside of a Grid.',
-    );
-  }
-
-  const startY = gridRowNode.getIndexWithinParent();
-  const stopY = Math.min(
-    gridNode.getChildrenSize() - 1,
-    startY + newRowCount - 1,
-  );
-  const startX = gridCellNode.getIndexWithinParent();
-  const stopX = Math.min(
-    gridRowNode.getChildrenSize() - 1,
-    startX + newColumnCount - 1,
-  );
-  const fromX = Math.min(startX, stopX);
-  const fromY = Math.min(startY, stopY);
-  const toX = Math.max(startX, stopX);
-  const toY = Math.max(startY, stopY);
-  const gridRowNodes = gridNode.getChildren();
-  let newRowIdx = 0;
-  let newAnchorCellKey;
-  let newFocusCellKey;
-
-  for (let r = fromY; r <= toY; r++) {
-    const currentGridRowNode = gridRowNodes[r];
-
-    if (!DEPRECATED_$isGridRowNode(currentGridRowNode)) {
-      invariant(false, 'getNodes: expected to find GridRowNode');
-    }
-
-    const newGridRowNode = newGridRows[newRowIdx];
-
-    if (!DEPRECATED_$isGridRowNode(newGridRowNode)) {
-      invariant(false, 'getNodes: expected to find GridRowNode');
-    }
-
-    const gridCellNodes = currentGridRowNode.getChildren();
-    const newGridCellNodes = newGridRowNode.getChildren();
-    let newColumnIdx = 0;
-
-    for (let c = fromX; c <= toX; c++) {
-      const currentGridCellNode = gridCellNodes[c];
-
-      if (!DEPRECATED_$isGridCellNode(currentGridCellNode)) {
-        invariant(false, 'getNodes: expected to find GridCellNode');
-      }
-
-      const newGridCellNode = newGridCellNodes[newColumnIdx];
-
-      if (!DEPRECATED_$isGridCellNode(newGridCellNode)) {
-        invariant(false, 'getNodes: expected to find GridCellNode');
-      }
-
-      if (r === fromY && c === fromX) {
-        newAnchorCellKey = currentGridCellNode.getKey();
-      } else if (r === toY && c === toX) {
-        newFocusCellKey = currentGridCellNode.getKey();
-      }
-
-      const originalChildren = currentGridCellNode.getChildren();
-      newGridCellNode.getChildren().forEach((child) => {
-        if ($isTextNode(child)) {
-          const paragraphNode = $createParagraphNode();
-          paragraphNode.append(child);
-          currentGridCellNode.append(child);
-        } else {
-          currentGridCellNode.append(child);
-        }
-      });
-      originalChildren.forEach((n) => n.remove());
-      newColumnIdx++;
-    }
-
-    newRowIdx++;
-  }
-
-  if (newAnchorCellKey && newFocusCellKey) {
-    const rangeSelection = $createRangeSelection();
-    rangeSelection.anchor.set(newAnchorCellKey, 0, 'element');
-    rangeSelection.focus.set(newFocusCellKey, 0, 'element');
-    $setSelection(rangeSelection);
-    editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
-  }
 }
 
 export interface BaseSerializedNode {

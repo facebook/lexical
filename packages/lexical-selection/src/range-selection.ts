@@ -7,9 +7,9 @@
  */
 
 import type {
+  BaseSelection,
   DecoratorNode,
   ElementNode,
-  INTERNAL_PointSelection,
   LexicalNode,
   NodeKey,
   Point,
@@ -26,12 +26,14 @@ import {
   $isElementNode,
   $isLeafNode,
   $isLineBreakNode,
+  $isNodeSelection,
   $isRangeSelection,
   $isRootNode,
   $isRootOrShadowRoot,
   $isTextNode,
   $setSelection,
 } from 'lexical';
+import invariant from 'shared/invariant';
 
 import {getStyleObjectFromCSS} from './utils';
 
@@ -41,10 +43,16 @@ import {getStyleObjectFromCSS} from './utils';
  * @param createElement - The function that creates the node. eg. $createParagraphNode.
  */
 export function $setBlocksType(
-  selection: INTERNAL_PointSelection,
+  selection: BaseSelection | null,
   createElement: () => ElementNode,
 ): void {
-  if (selection.anchor.key === 'root') {
+  if (selection == null || $isNodeSelection(selection)) {
+    return;
+  }
+  const [anchor] = selection.getStartEndPoints();
+
+  invariant(anchor != null, 'Anchor should be defined');
+  if (anchor.key === 'root') {
     const element = createElement();
     const root = $getRoot();
     const firstChild = root.getFirstChild();
@@ -59,10 +67,7 @@ export function $setBlocksType(
   }
 
   const nodes = selection.getNodes();
-  const firstSelectedBlock = $getAncestor(
-    selection.anchor.getNode(),
-    INTERNAL_$isBlock,
-  );
+  const firstSelectedBlock = $getAncestor(anchor.getNode(), INTERNAL_$isBlock);
   if (firstSelectedBlock && nodes.indexOf(firstSelectedBlock) === -1) {
     nodes.push(firstSelectedBlock);
   }
@@ -108,13 +113,16 @@ function $removeParentEmptyElements(startingNode: ElementNode): void {
  * @param wrappingElement - An element to append the wrapped selection and its children to.
  */
 export function $wrapNodes(
-  selection: INTERNAL_PointSelection,
+  selection: BaseSelection,
   createElement: () => ElementNode,
   wrappingElement: null | ElementNode = null,
 ): void {
+  const [anchor, focus] = selection.getStartEndPoints();
+  if ($isNodeSelection(selection) || anchor == null || focus == null) {
+    return;
+  }
   const nodes = selection.getNodes();
   const nodesLength = nodes.length;
-  const anchor = selection.anchor;
 
   if (
     nodesLength === 0 ||
@@ -194,7 +202,7 @@ export function $wrapNodes(
  * @returns
  */
 export function $wrapNodesImpl(
-  selection: INTERNAL_PointSelection,
+  selection: BaseSelection,
   nodes: LexicalNode[],
   nodesLength: number,
   createElement: () => ElementNode,

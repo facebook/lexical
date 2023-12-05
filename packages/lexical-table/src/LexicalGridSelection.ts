@@ -19,7 +19,6 @@ import {
   DEPRECATED_$isGridNode,
   DEPRECATED_$isGridRowNode,
   GridMapValueType,
-  INTERNAL_PointSelection,
   isCurrentlyReadOnlyMode,
   LexicalNode,
   NodeKey,
@@ -34,12 +33,34 @@ export type GridSelectionShape = {
   toY: number;
 };
 
-export class GridSelection extends INTERNAL_PointSelection {
+export class GridSelection implements BaseSelection {
   gridKey: NodeKey;
+  anchor: PointType;
+  focus: PointType;
+  _cachedNodes: Array<LexicalNode> | null;
+  dirty: boolean;
 
   constructor(gridKey: NodeKey, anchor: PointType, focus: PointType) {
-    super(anchor, focus);
+    this.anchor = anchor;
+    this.focus = focus;
+    anchor._selection = this;
+    focus._selection = this;
+    this._cachedNodes = null;
+    this.dirty = false;
     this.gridKey = gridKey;
+  }
+
+  getStartEndPoints(): [PointType, PointType] {
+    return [this.anchor, this.focus];
+  }
+
+  /**
+   * Returns whether the Selection is "backwards", meaning the focus
+   * logically precedes the anchor in the EditorState.
+   * @returns true if the Selection is backwards, false otherwise.
+   */
+  isBackward(): boolean {
+    return this.focus.isBefore(this.anchor);
   }
 
   getCachedNodes(): LexicalNode[] | null {

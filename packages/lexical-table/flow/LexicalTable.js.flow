@@ -25,7 +25,6 @@ import {
   deprecated_GridCellNode,
   deprecated_GridRowNode,
   deprecated_GridNode,
-  PointSelection,
 } from 'lexical';
 
 /**
@@ -275,7 +274,7 @@ export type GridSelectionShape = {
   toX: number,
   toY: number,
 };
-declare export class GridSelection extends PointSelection {
+declare export class GridSelection implements BaseSelection {
   gridKey: NodeKey;
   anchor: PointType;
   focus: PointType;
@@ -294,6 +293,7 @@ declare export class GridSelection extends PointSelection {
   getNodes(): Array<LexicalNode>;
   getTextContent(): string;
   insertNodes(nodes: Array<LexicalNode>): void;
+  getStartEndPoints(): [PointType | null, PointType | null];
   getCachedNodes(): null | Array<LexicalNode>;
   setCachedNodes(nodes: null | Array<LexicalNode>): void;
 }

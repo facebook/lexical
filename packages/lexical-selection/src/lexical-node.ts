@@ -8,10 +8,11 @@
 import {
   $createRangeSelection,
   $createTextNode,
+  $getCharacterOffsets,
   $getNodeByKey,
   $getPreviousSelection,
-  $INTERNAL_isPointSelection,
   $isElementNode,
+  $isNodeSelection,
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
@@ -20,7 +21,6 @@ import {
   BaseSelection,
   DEPRECATED_$isGridCellNode,
   ElementNode,
-  INTERNAL_PointSelection,
   LexicalEditor,
   LexicalNode,
   Point,
@@ -94,20 +94,22 @@ export function $sliceSelectedTextNodeContent(
   selection: BaseSelection,
   textNode: TextNode,
 ): LexicalNode {
+  const [anchor, focus] = selection.getStartEndPoints();
   if (
     textNode.isSelected() &&
     !textNode.isSegmented() &&
     !textNode.isToken() &&
-    $INTERNAL_isPointSelection(selection)
+    anchor != null &&
+    focus != null
   ) {
-    const anchorNode = selection.anchor.getNode();
-    const focusNode = selection.focus.getNode();
+    const isBackward = selection.isBackward();
+    const anchorNode = anchor.getNode();
+    const focusNode = focus.getNode();
     const isAnchor = textNode.is(anchorNode);
     const isFocus = textNode.is(focusNode);
 
     if (isAnchor || isFocus) {
-      const isBackward = selection.isBackward();
-      const [anchorOffset, focusOffset] = selection.getCharacterOffsets();
+      const [anchorOffset, focusOffset] = $getCharacterOffsets(selection);
       const isSame = anchorNode.is(focusNode);
       const isFirst = textNode.is(isBackward ? focusNode : anchorNode);
       const isLast = textNode.is(isBackward ? anchorNode : focusNode);
@@ -315,9 +317,12 @@ function $patchStyle(
  * @param patch - The patch to apply, which can include multiple styles. { CSSProperty: value }
  */
 export function $patchStyleText(
-  selection: INTERNAL_PointSelection,
+  selection: BaseSelection,
   patch: Record<string, string | null>,
 ): void {
+  if ($isNodeSelection(selection)) {
+    return;
+  }
   const selectedNodes = selection.getNodes();
   const selectedNodesLength = selectedNodes.length;
 

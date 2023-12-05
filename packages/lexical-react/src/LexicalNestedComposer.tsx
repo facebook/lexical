@@ -68,6 +68,7 @@ export function LexicalNestedComposer({
         ));
         for (const [type, entry] of parentNodes) {
           initialEditor._nodes.set(type, {
+            exportDOM: entry.exportDOM,
             klass: entry.klass,
             replace: entry.replace,
             replaceWithKlass: entry.replaceWithKlass,
@@ -85,8 +86,9 @@ export function LexicalNestedComposer({
             replace = options.with;
             replaceWithKlass = options.withKlass || null;
           }
-
+          const registeredKlass = initialEditor._nodes.get(klass.getType());
           initialEditor._nodes.set(klass.getType(), {
+            exportDOM: registeredKlass ? registeredKlass.exportDOM : undefined,
             klass,
             replace,
             replaceWithKlass,

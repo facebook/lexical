@@ -721,6 +721,8 @@ export function prettifyHTML(string, {ignoreClasses, ignoreInlineStyles} = {}) {
     output = output.replace(/\sstyle="([^"]*)"/g, '');
   }
 
+  output = output.replace(/\s__playwright_target__="[^"]+"/, '');
+
   return prettier
     .format(output, {
       attributeGroups: ['$DEFAULT', '^data-'],

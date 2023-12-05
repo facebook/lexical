@@ -35,6 +35,8 @@ import {
   IS_HIGHLIGHT,
   IS_ITALIC,
   IS_STRIKETHROUGH,
+  IS_SUBSCRIPT,
+  IS_SUPERSCRIPT,
   IS_UNDERLINE,
 } from '../../../LexicalConstants';
 import {
@@ -229,6 +231,18 @@ describe('LexicalTextNode tests', () => {
       (node) => node.toggleFormat('code'),
     ],
     [
+      'subscript',
+      IS_SUBSCRIPT,
+      (node) => node.hasFormat('subscript'),
+      (node) => node.toggleFormat('subscript'),
+    ],
+    [
+      'superscript',
+      IS_SUPERSCRIPT,
+      (node) => node.hasFormat('superscript'),
+      (node) => node.toggleFormat('superscript'),
+    ],
+    [
       'highlight',
       IS_HIGHLIGHT,
       (node) => node.hasFormat('highlight'),
@@ -289,6 +303,58 @@ describe('LexicalTextNode tests', () => {
       });
     },
   );
+
+  test('setting subscript clears superscript', async () => {
+    await update(() => {
+      const paragraphNode = $createParagraphNode();
+      const textNode = $createTextNode('Hello World');
+      paragraphNode.append(textNode);
+      $getRoot().append(paragraphNode);
+      textNode.toggleFormat('superscript');
+      textNode.toggleFormat('subscript');
+      expect(textNode.hasFormat('subscript')).toBe(true);
+      expect(textNode.hasFormat('superscript')).toBe(false);
+    });
+  });
+
+  test('setting superscript clears subscript', async () => {
+    await update(() => {
+      const paragraphNode = $createParagraphNode();
+      const textNode = $createTextNode('Hello World');
+      paragraphNode.append(textNode);
+      $getRoot().append(paragraphNode);
+      textNode.toggleFormat('subscript');
+      textNode.toggleFormat('superscript');
+      expect(textNode.hasFormat('superscript')).toBe(true);
+      expect(textNode.hasFormat('subscript')).toBe(false);
+    });
+  });
+
+  test('clearing subscript does not set superscript', async () => {
+    await update(() => {
+      const paragraphNode = $createParagraphNode();
+      const textNode = $createTextNode('Hello World');
+      paragraphNode.append(textNode);
+      $getRoot().append(paragraphNode);
+      textNode.toggleFormat('subscript');
+      textNode.toggleFormat('subscript');
+      expect(textNode.hasFormat('subscript')).toBe(false);
+      expect(textNode.hasFormat('superscript')).toBe(false);
+    });
+  });
+
+  test('clearing superscript does not set subscript', async () => {
+    await update(() => {
+      const paragraphNode = $createParagraphNode();
+      const textNode = $createTextNode('Hello World');
+      paragraphNode.append(textNode);
+      $getRoot().append(paragraphNode);
+      textNode.toggleFormat('superscript');
+      textNode.toggleFormat('superscript');
+      expect(textNode.hasFormat('superscript')).toBe(false);
+      expect(textNode.hasFormat('subscript')).toBe(false);
+    });
+  });
 
   test('selectPrevious()', async () => {
     await update(() => {

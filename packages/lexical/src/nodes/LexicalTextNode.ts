@@ -689,7 +689,8 @@ export class TextNode extends LexicalNode {
   }
 
   /**
-   * Applies the provided format to this TextNode if it's not present. Removes it if it is present.
+   * Applies the provided format to this TextNode if it's not present. Removes it if it's present.
+   * The subscript and superscript formats are mutually exclusive.
    * Prefer using this method to turn specific formats on and off.
    *
    * @param type - TextFormatType to toggle.
@@ -697,8 +698,9 @@ export class TextNode extends LexicalNode {
    * @returns this TextNode.
    */
   toggleFormat(type: TextFormatType): this {
-    const formatFlag = TEXT_TYPE_TO_FORMAT[type];
-    return this.setFormat(this.getFormat() ^ formatFlag);
+    const format = this.getFormat();
+    const newFormat = toggleTextFormatType(format, type, null);
+    return this.setFormat(newFormat);
   }
 
   /**

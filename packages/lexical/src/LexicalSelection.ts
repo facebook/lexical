@@ -39,7 +39,7 @@ import {
   markSelectionChangeFromDOMUpdate,
 } from './LexicalEvents';
 import {getIsProcesssingMutations} from './LexicalMutations';
-import {LexicalNode} from './LexicalNode';
+import {insertRangeAfter, LexicalNode} from './LexicalNode';
 import {$normalizeSelection} from './LexicalNormalization';
 import {
   getActiveEditor,
@@ -56,7 +56,6 @@ import {
   $getNodeByKey,
   $getRoot,
   $hasAncestor,
-  $isRootOrShadowRoot,
   $isTokenOrSegmented,
   $setCompositionKey,
   doesContainGrapheme,
@@ -272,6 +271,8 @@ export interface BaseSelection {
   insertRawText(text: string): void;
   is(selection: null | BaseSelection): boolean;
   insertNodes(nodes: Array<LexicalNode>): void;
+  getCachedNodes(): null | Array<LexicalNode>;
+  setCachedNodes(nodes: null | Array<LexicalNode>): void;
 }
 
 /**
@@ -356,6 +357,14 @@ export class NodeSelection implements BaseSelection {
     this.dirty = false;
     this._nodes = objects;
     this._cachedNodes = null;
+  }
+
+  getCachedNodes(): LexicalNode[] | null {
+    return this._cachedNodes;
+  }
+
+  setCachedNodes(nodes: LexicalNode[] | null): void {
+    this._cachedNodes = nodes;
   }
 
   is(selection: null | BaseSelection): boolean {
@@ -534,14 +543,6 @@ export class GridSelection extends INTERNAL_PointSelection {
   constructor(gridKey: NodeKey, anchor: PointType, focus: PointType) {
     super(anchor, focus);
     this.gridKey = gridKey;
-  }
-
-  getCachedNodes(): LexicalNode[] | null {
-    return this._cachedNodes;
-  }
-
-  setCachedNodes(nodes: LexicalNode[] | null): void {
-    this._cachedNodes = nodes;
   }
 
   is(selection: null | BaseSelection): boolean {
@@ -1605,76 +1606,76 @@ export class RangeSelection extends INTERNAL_PointSelection {
       return selection.insertNodes(nodes);
     }
     const firstBlock = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
+    const last = nodes[nodes.length - 1]!;
 
-    // case where we insert inside a code block
+    // CASE 1: insert inside a code block
     if ('__language' in firstBlock) {
       if ('__language' in nodes[0]) {
         this.insertText(nodes[0].getTextContent());
       } else {
         const index = removeTextAndSplitBlock(this);
         firstBlock.splice(index, 0, nodes);
-        const last = nodes[nodes.length - 1]!;
-        if (last.select) {
-          last.select();
-        } else last.selectNext(0, 0);
+        last.selectEnd();
       }
       return;
     }
 
+    // CASE 2: All elements of the array are inline
     const notInline = (node: LexicalNode) =>
       ($isElementNode(node) || $isDecoratorNode(node)) && !node.isInline();
+
+    if (!nodes.some(notInline)) {
+      const index = removeTextAndSplitBlock(this);
+      firstBlock.splice(index, 0, nodes);
+      last.selectEnd();
+      return;
+    }
+
+    // CASE 3: At least 1 element of the array is not inline
+    const blocksParent = $wrapInlineNodes(nodes);
+    const nodeToSelect = blocksParent.getLastDescendant()!;
+    const blocks = blocksParent.getChildren();
+    const isLI = (node: LexicalNode) =>
+      '__value' in node && '__checked' in node;
     const isMergeable = (node: LexicalNode) =>
       $isElementNode(node) &&
       INTERNAL_$isBlock(node) &&
       !node.isEmpty() &&
       $isElementNode(firstBlock) &&
-      (!firstBlock.isEmpty() ||
-        !$isRootOrShadowRoot(firstBlock.getParentOrThrow()));
-
-    const firstNotInline = nodes.find(notInline);
+      (!firstBlock.isEmpty() || isLI(firstBlock));
 
     const shouldInsert = !$isElementNode(firstBlock) || !firstBlock.isEmpty();
     const insertedParagraph = shouldInsert ? this.insertParagraph() : null;
-
-    const last = nodes[nodes.length - 1]!;
-    const nodeToSelect = $isElementNode(last)
-      ? last.getLastDescendant() || last
-      : last;
-    const nodeToSelectSize = nodeToSelect.getTextContentSize();
-
-    let currentBlock = firstBlock;
-    for (const node of nodes) {
-      if (node === firstNotInline && isMergeable(node)) {
-        currentBlock.append(...node.getChildren());
-      } else if (notInline(node)) {
-        currentBlock = currentBlock.insertAfter(node) as ElementNode;
-      } else {
-        currentBlock.append(node);
-      }
+    const lastToInsert = blocks[blocks.length - 1];
+    let firstToInsert = blocks[0];
+    if (isMergeable(firstToInsert)) {
+      firstBlock.append(...firstToInsert.getChildren());
+      firstToInsert = blocks[1];
     }
+    if (firstToInsert) {
+      insertRangeAfter(firstBlock, firstToInsert);
+    }
+    const lastInsertedBlock = $getAncestor(nodeToSelect, INTERNAL_$isBlock)!;
 
     if (
       insertedParagraph &&
-      $isElementNode(currentBlock) &&
-      INTERNAL_$isBlock(currentBlock)
+      $isElementNode(lastInsertedBlock) &&
+      (isLI(insertedParagraph) || INTERNAL_$isBlock(lastToInsert))
     ) {
-      currentBlock.append(...insertedParagraph.getChildren());
+      lastInsertedBlock.append(...insertedParagraph.getChildren());
       insertedParagraph.remove();
     }
     if ($isElementNode(firstBlock) && firstBlock.isEmpty()) {
       firstBlock.remove();
     }
 
-    if (!nodeToSelect.select) {
-      nodeToSelect.selectNext(0, 0);
-    } else {
-      nodeToSelect.select(nodeToSelectSize, nodeToSelectSize);
-    }
+    nodeToSelect.selectEnd();
 
+    // To understand this take a look at the test "can wrap post-linebreak nodes into new element"
     const lastChild = $isElementNode(firstBlock)
       ? firstBlock.getLastChild()
       : null;
-    if ($isLineBreakNode(lastChild) && currentBlock !== firstBlock) {
+    if ($isLineBreakNode(lastChild) && lastInsertedBlock !== firstBlock) {
       lastChild.remove();
     }
   }
@@ -3160,4 +3161,44 @@ function removeTextAndSplitBlock(selection: RangeSelection): number {
     newBlock.append(firstToAppend, ...firstToAppend.getNextSiblings());
   }
   return pointParent.getIndexWithinParent() + x;
+}
+
+function $wrapInlineNodes(nodes: LexicalNode[]) {
+  // We temporarily insert the topLevelNodes into an arbitrary ElementNode,
+  // since insertAfter does not work on nodes that have no parent (TO-DO: fix that).
+  const virtualRoot = $createParagraphNode();
+
+  let currentBlock = null;
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+
+    const isLineBreakNode = $isLineBreakNode(node);
+
+    if (
+      isLineBreakNode ||
+      ($isDecoratorNode(node) && node.isInline()) ||
+      ($isElementNode(node) && node.isInline()) ||
+      $isTextNode(node) ||
+      node.isParentRequired()
+    ) {
+      if (currentBlock === null) {
+        currentBlock = node.createParentElementNode();
+        virtualRoot.append(currentBlock);
+        // In the case of LineBreakNode, we just need to
+        // add an empty ParagraphNode to the topLevelBlocks.
+        if (isLineBreakNode) {
+          continue;
+        }
+      }
+
+      if (currentBlock !== null) {
+        currentBlock.append(node);
+      }
+    } else {
+      virtualRoot.append(node);
+      currentBlock = null;
+    }
+  }
+
+  return virtualRoot;
 }

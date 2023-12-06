@@ -10,6 +10,7 @@ import type {
   BaseSelection,
   EditorState,
   ElementNode,
+  INTERNAL_PointSelection,
   LexicalEditor,
   LexicalNode,
   RangeSelection,

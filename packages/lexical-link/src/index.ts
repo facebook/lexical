@@ -416,7 +416,7 @@ export function toggleLink(
   const rel = attributes.rel === undefined ? 'noreferrer' : attributes.rel;
   const selection = $getSelection();
 
-  if (!$isRangeSelection(selection)) {
+  if (!$isRangeSelection(selection) || selection.isCollapsed()) {
     return;
   }
   const nodes = selection.extract();

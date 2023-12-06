@@ -385,6 +385,14 @@ export class ExtendedTextNode extends TextNode {
       this.__mode === 0
     );
   }
+
+  exportJSON(): SerializedTextNode {
+    return {
+      ...super.exportJSON(),
+      type: 'extended-text',
+      version: 1,
+    }
+  }
 }
 
 function patchStyleConversion(

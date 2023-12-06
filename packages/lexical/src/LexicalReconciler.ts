@@ -643,8 +643,9 @@ function reconcileNode(
     nextNode.__cachedText !== editorTextContent
   ) {
     // Cache the latest text content.
-    nextNode = nextNode.getWritable();
-    nextNode.__cachedText = editorTextContent;
+    const nextRootNode = nextNode.getWritable();
+    nextRootNode.__cachedText = editorTextContent;
+    nextNode = nextRootNode;
   }
 
   if (__DEV__) {

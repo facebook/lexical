@@ -11,12 +11,14 @@ import {
   $createTextNode,
   $getNodeByKey,
   $getRoot,
+  $isElementNode,
   LexicalEditor,
   NodeKey,
 } from 'lexical';
 import {
   $createTestElementNode,
   initializeUnitTest,
+  invariant,
 } from 'lexical/src/__tests__/utils';
 
 import {$dfs} from '../..';
@@ -173,6 +175,7 @@ describe('LexicalNodeHelpers tests', () => {
         const block2 = $getNodeByKey(block2Key);
 
         const block3 = $createTestElementNode();
+        invariant($isElementNode(block1));
 
         block1.append(block3);
 

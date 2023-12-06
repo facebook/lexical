@@ -6,7 +6,7 @@
  *
  */
 
-import type {LexicalNode} from 'lexical';
+import type {LexicalNode, Spread} from 'lexical';
 
 import invariant from 'shared/invariant';
 
@@ -124,6 +124,10 @@ export function $getAllListItems(node: ListNode): Array<ListItemNode> {
   return listItemNodes;
 }
 
+const NestedListNodeBrand: unique symbol = Symbol.for(
+  '@lexical/NestedListNodeBrand',
+);
+
 /**
  * Checks to see if the passed node is a ListItemNode and has a ListNode as a child.
  * @param node - The node to be checked.
@@ -131,7 +135,10 @@ export function $getAllListItems(node: ListNode): Array<ListItemNode> {
  */
 export function isNestedListNode(
   node: LexicalNode | null | undefined,
-): boolean {
+): node is Spread<
+  {getFirstChild(): ListNode; [NestedListNodeBrand]: never},
+  ListItemNode
+> {
   return $isListItemNode(node) && $isListNode(node.getFirstChild());
 }
 

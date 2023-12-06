@@ -21,7 +21,9 @@ import {
   $getRoot,
   $getSelection,
   $insertNodes,
+  $isElementNode,
   $isRangeSelection,
+  $isTextNode,
   $setSelection,
   KEY_TAB_COMMAND,
 } from 'lexical';
@@ -135,6 +137,7 @@ describe('LexicalTabNode tests', () => {
       await editor.update(() => {
         const root = $getRoot();
         const paragraph = root.getFirstChild();
+        invariant($isElementNode(paragraph));
         const heading = $createHeadingNode('h1');
         const list = $createListNode('number');
         const listItem = $createListItemNode();
@@ -183,6 +186,7 @@ describe('LexicalTabNode tests', () => {
       await editor.update(() => {
         $getSelection().insertText('foo');
         const textNode = $getRoot().getLastDescendant();
+        invariant($isTextNode(textNode));
         textNode.select(1, 1);
       });
       await editor.dispatchCommand(
@@ -201,6 +205,7 @@ describe('LexicalTabNode tests', () => {
       await editor.update(() => {
         $getSelection().insertText('foo');
         const textNode = $getRoot().getLastDescendant();
+        invariant($isTextNode(textNode));
         textNode.select(1, 2);
       });
       await editor.dispatchCommand(

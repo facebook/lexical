@@ -8,6 +8,7 @@
 
 import type {
   EditorConfig,
+  KlassConstructor,
   LexicalEditor,
   Spread,
   TextNodeThemeClasses,
@@ -274,6 +275,7 @@ function wrapElementWith(
 
 /** @noInheritDoc */
 export class TextNode extends LexicalNode {
+  ['constructor']!: KlassConstructor<typeof TextNode>;
   __text: string;
   /** @internal */
   __format: number;

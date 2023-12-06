@@ -161,7 +161,7 @@ function getConversionFunction(
       if (
         domConversion !== null &&
         (currentConversion === null ||
-          currentConversion.priority < domConversion.priority)
+          (currentConversion.priority || 0) < (domConversion.priority || 0))
       ) {
         currentConversion = domConversion;
       }

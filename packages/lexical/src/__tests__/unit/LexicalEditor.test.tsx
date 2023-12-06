@@ -429,7 +429,7 @@ describe('LexicalEditor tests', () => {
         const child = paragraph.getLastDescendant();
 
         if (
-          child !== null &&
+          $isTextNode(child) &&
           child.hasFormat('bold') &&
           !child.hasFormat('italic')
         ) {

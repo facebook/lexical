@@ -12,7 +12,10 @@ import {createHeadlessEditor} from '@lexical/headless';
 import {AutoLinkNode, LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
 import {OverflowNode} from '@lexical/overflow';
-import {LexicalComposer} from '@lexical/react/src/LexicalComposer';
+import {
+  InitialConfigType,
+  LexicalComposer,
+} from '@lexical/react/src/LexicalComposer';
 import {
   createLexicalComposerContext,
   LexicalComposerContext,
@@ -434,7 +437,7 @@ export function $createTestDecoratorNode(): TestDecoratorNode {
   return new TestDecoratorNode();
 }
 
-const DEFAULT_NODES = [
+const DEFAULT_NODES: NonNullable<InitialConfigType['nodes']> = [
   HeadingNode,
   ListNode,
   ListItemNode,
@@ -463,6 +466,9 @@ export function TestComposer({
     theme: {},
   },
   children,
+}: {
+  config?: Omit<InitialConfigType, 'onError' | 'namespace'>;
+  children: React.ComponentProps<typeof LexicalComposer>['children'];
 }) {
   const customNodes = config.nodes;
   return (

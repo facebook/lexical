@@ -640,7 +640,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
         for (const node of nodes) {
           const element = $findMatchingParent(
             node,
-            (parentNode) =>
+            (parentNode): parentNode is ElementNode =>
               $isElementNode(parentNode) && !parentNode.isInline(),
           );
           if (element !== null) {

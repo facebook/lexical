@@ -30,6 +30,7 @@ import {
   HTMLTableElementWithWithTableSelectionState,
   TableCellHeaderStates,
   TableCellNode,
+  TableRowNode,
 } from '@lexical/table';
 import {
   $createParagraphNode,
@@ -431,7 +432,7 @@ function TableActionMenu({
       const tableColumnIndex =
         $getTableColumnIndexFromTableCellNode(tableCellNode);
 
-      const tableRows = tableNode.getChildren();
+      const tableRows = tableNode.getChildren<TableRowNode>();
       const maxRowsLength = Math.max(
         ...tableRows.map((row) => row.getChildren().length),
       );
@@ -485,7 +486,7 @@ function TableActionMenu({
 
             for (let i = 0; i < nodes.length; i++) {
               const node = nodes[i];
-              if (DEPRECATED_$isGridCellNode(node)) {
+              if ($isTableCellNode(node)) {
                 node.setBackgroundColor(value);
               }
             }

@@ -1,3 +1,30 @@
+## v0.12.5 (2023-12-06)
+
+- Make subscript and superscript text formats mutually exclusive (#5317) Gry Ogam
+- PR 2 5276 PointSelection instead of GridRangeSelections (#5281) Illia Olenchenko
+- keep selection style when clicking empty editor (#5292) kyoyoung keum
+- Fix insertNodes bugs (#5325) GermanJablo
+- PR 1 Swap instance selection for BaseSelection in most cases (#5280) Illia Olenchenko
+- selectEndstart as a method of LexicalNode instead of ElementNode (#5205) GermanJablo
+- Make insertRangeAfter private (#5323) Gerard Rovira
+- Improvements in insertNodes (#5201) GermanJablo
+- Export CommandListener Flow (#5315) Gerard Rovira
+- Add 2 missing flow exports (#5314) Gerard Rovira
+- URL sanitization ClickableLinkPlugin (#5302) Yeison Daza
+- fix backspace in Android not deleting first character (#5282) Kiran Dash
+- docs improve DecoratorNode docs (#5284) Miroslav Petrov
+- Fixing nested collapsible section chevron (#5300) Ebad
+- Support HTML export overrides from config for nested editors. (#5267) Acy Watson
+- Revert Fix Autolink plugin URL recognition failures (#5275) (#5295) Acy Watson
+- Fix Autolink plugin URL recognition failures (#5275) Chinmay Disale
+- Move to new Excalidraw APIs for 0.17 update (#5277) Ivaylo Pavlov
+- Fix Resolve Cannot read properties of undefined (reading trim) issue in getSelectionStyleValueForProperty (#5271) Yeison Daza
+- Fix The number in a numbered list gets duplicated (#5253) trinhvinhtruong96
+- Fix Apply background color to multiple selected cells (#5258) Joo Hee Paige Kim
+- packagelock (#5247) Gerard Rovira
+- v0.12.4 (#5246) Gerard Rovira
+- v0.12.4 Lexical GitHub Actions Bot
+
 ## v0.12.4 (2023-11-17)
 
 - Fix @lexical/utils import (#5245) Gerard Rovira

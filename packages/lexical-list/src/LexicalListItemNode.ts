@@ -108,6 +108,7 @@ export class ListItemNode extends ElementNode {
       const parent = node.getParent();
       if ($isListNode(parent)) {
         updateChildrenListItemValue(parent);
+        invariant($isListItemNode(node), 'node is not a ListItemNode');
         if (parent.getListType() !== 'check' && node.getChecked() != null) {
           node.setChecked(undefined);
         }
@@ -194,6 +195,10 @@ export class ListItemNode extends ElementNode {
       replaceWithNode.insertAfter(newList);
     }
     if (includeChildren) {
+      invariant(
+        $isElementNode(replaceWithNode),
+        'includeChildren should only be true for ElementNodes',
+      );
       this.getChildren().forEach((child: LexicalNode) => {
         replaceWithNode.append(child);
       });

@@ -17,6 +17,7 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $createTableCellNode,
   $createTableNodeWithDimensions,
+  $isTableCellNode,
   $isTableNode,
   applyTableHandlers,
   INSERT_TABLE_COMMAND,
@@ -176,6 +177,10 @@ export function TablePlugin({
               lastRowCell = cell;
               unmerged.push(cell);
             } else if (cell.getColSpan() > 1 || cell.getRowSpan() > 1) {
+              invariant(
+                $isTableCellNode(cell),
+                'Expected TableNode cell to be a TableCellNode',
+              );
               const newCell = $createTableCellNode(cell.__headerState);
               if (lastRowCell !== null) {
                 lastRowCell.insertAfter(newCell);

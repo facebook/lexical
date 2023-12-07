@@ -6,6 +6,7 @@
  *
  */
 
+import type {KlassConstructor} from '../LexicalEditor';
 import type {
   DOMConversionMap,
   DOMConversionOutput,
@@ -21,6 +22,7 @@ export type SerializedLineBreakNode = SerializedLexicalNode;
 
 /** @noInheritDoc */
 export class LineBreakNode extends LexicalNode {
+  ['constructor']!: KlassConstructor<typeof LineBreakNode>;
   static getType(): string {
     return 'linebreak';
   }

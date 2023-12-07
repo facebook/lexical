@@ -131,14 +131,14 @@ export class ParagraphNode extends ElementNode {
       if (nextSibling !== null) {
         this.selectNext();
         this.remove();
-        return true;
+      } else {
+        const prevSibling = this.getPreviousSibling();
+        if (prevSibling !== null) {
+          this.selectPrevious();
+          this.remove();
+        }
       }
-      const prevSibling = this.getPreviousSibling();
-      if (prevSibling !== null) {
-        this.selectPrevious();
-        this.remove();
-        return true;
-      }
+      return true;
     }
     return false;
   }

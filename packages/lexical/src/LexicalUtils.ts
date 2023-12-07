@@ -1592,6 +1592,17 @@ export function isHTMLElement(x: Node | EventTarget): x is HTMLElement {
 }
 
 /**
+ * @param x - The element being testing
+ * @returns Returns true if x is a document fragment, false otherwise.
+ */
+export function isDocumentFragment(
+  x: Node | EventTarget,
+): x is DocumentFragment {
+  // @ts-ignore-next-line - strict check on nodeType here should filter out non-Element EventTarget implementors
+  return x.nodeType === 11;
+}
+
+/**
  * This function is for internal use of the library.
  * Please do not use it as it may change in the future.
  */

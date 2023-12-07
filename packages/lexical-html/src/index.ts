@@ -22,7 +22,7 @@ import {
   $cloneWithProperties,
   $sliceSelectedTextNodeContent,
 } from '@lexical/selection';
-import {isHTMLElement} from '@lexical/utils';
+import {isDocumentFragment, isHTMLElement} from '@lexical/utils';
 import {$getRoot, $isElementNode, $isTextNode} from 'lexical';
 
 /**
@@ -130,7 +130,7 @@ function $appendNodesToHTML(
   }
 
   if (shouldInclude && !shouldExclude) {
-    if (isHTMLElement(element) || element instanceof DocumentFragment) {
+    if (isHTMLElement(element) || isDocumentFragment(element)) {
       element.append(fragment);
     }
     parentElement.append(element);
@@ -138,7 +138,7 @@ function $appendNodesToHTML(
     if (after) {
       const newElement = after.call(target, element);
       if (newElement) {
-        if (element instanceof DocumentFragment) {
+        if (isDocumentFragment(element)) {
           element.replaceChildren(newElement);
         } else {
           element.replaceWith(newElement);

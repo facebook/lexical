@@ -6,7 +6,7 @@
  *
  */
 
-import type {LexicalEditor} from '../LexicalEditor';
+import type {KlassConstructor, LexicalEditor} from '../LexicalEditor';
 import type {NodeKey} from '../LexicalNode';
 
 import {EditorConfig} from 'lexical';
@@ -16,6 +16,7 @@ import {LexicalNode} from '../LexicalNode';
 
 /** @noInheritDoc */
 export class DecoratorNode<T> extends LexicalNode {
+  ['constructor']!: KlassConstructor<typeof DecoratorNode<T>>;
   constructor(key?: NodeKey) {
     super(key);
   }

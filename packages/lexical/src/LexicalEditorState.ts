@@ -13,7 +13,7 @@ import type {SerializedRootNode} from './nodes/LexicalRootNode';
 
 import invariant from 'shared/invariant';
 
-import {$isElementNode} from '.';
+import {$isElementNode, SerializedElementNode} from '.';
 import {readEditorState} from './LexicalUpdates';
 import {$getRoot} from './LexicalUtils';
 import {$createRootNode} from './nodes/LexicalRootNode';
@@ -52,11 +52,12 @@ export function createEmptyEditorState(): EditorState {
   return new EditorState(new Map([['root', $createRootNode()]]));
 }
 
-function exportNodeToJSON<SerializedNode>(node: LexicalNode): SerializedNode {
+function exportNodeToJSON<SerializedNode extends SerializedLexicalNode>(
+  node: LexicalNode,
+): SerializedNode {
   const serializedNode = node.exportJSON();
   const nodeClass = node.constructor;
 
-  // @ts-expect-error TODO Replace Class utility type with InstanceType
   if (serializedNode.type !== nodeClass.getType()) {
     invariant(
       false,
@@ -65,10 +66,9 @@ function exportNodeToJSON<SerializedNode>(node: LexicalNode): SerializedNode {
     );
   }
 
-  // @ts-expect-error TODO Replace Class utility type with InstanceType
-  const serializedChildren = serializedNode.children;
-
   if ($isElementNode(node)) {
+    const serializedChildren = (serializedNode as SerializedElementNode)
+      .children;
     if (!Array.isArray(serializedChildren)) {
       invariant(
         false,

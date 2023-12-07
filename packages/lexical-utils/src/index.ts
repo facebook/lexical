@@ -261,10 +261,19 @@ export type DOMNodeToLexicalConversionMap = Record<
  * @param findFn - A testing function that returns true if the current node satisfies the testing parameters.
  * @returns A parent node that matches the findFn parameters, or null if one wasn't found.
  */
-export function $findMatchingParent(
+export const $findMatchingParent: {
+  <T extends LexicalNode>(
+    startingNode: LexicalNode,
+    findFn: (node: LexicalNode) => node is T,
+  ): T | null;
+  (
+    startingNode: LexicalNode,
+    findFn: (node: LexicalNode) => boolean,
+  ): LexicalNode | null;
+} = (
   startingNode: LexicalNode,
   findFn: (node: LexicalNode) => boolean,
-): LexicalNode | null {
+): LexicalNode | null => {
   let curr: ElementNode | LexicalNode | null = startingNode;
 
   while (curr !== $getRoot() && curr != null) {
@@ -276,7 +285,7 @@ export function $findMatchingParent(
   }
 
   return null;
-}
+};
 
 /**
  * Attempts to resolve nested element nodes of the same type into a single node of that type.
@@ -379,6 +388,7 @@ export function $restoreEditorState(
   for (const [key, node] of editorState._nodeMap) {
     const clone = $cloneWithProperties(node);
     if ($isTextNode(clone)) {
+      invariant($isTextNode(node), 'Expected node be a TextNode');
       clone.__text = node.__text;
     }
     nodeMap.set(key, clone);

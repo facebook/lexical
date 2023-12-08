@@ -15,7 +15,6 @@ import {
 import {$findMatchingParent, objectKlassEquals} from '@lexical/utils';
 import {
   $createParagraphNode,
-  $createRangeSelection,
   $createTabNode,
   $getRoot,
   $getSelection,
@@ -28,6 +27,7 @@ import {
   BaseSelection,
   COMMAND_PRIORITY_CRITICAL,
   COPY_COMMAND,
+  DEPRECATED_$createGridSelection,
   DEPRECATED_$isGridCellNode,
   DEPRECATED_$isGridNode,
   DEPRECATED_$isGridRowNode,
@@ -339,10 +339,9 @@ function $mergeGridNodesStrategy(
   }
 
   if (newAnchorCellKey && newFocusCellKey) {
-    const rangeSelection = $createRangeSelection();
-    rangeSelection.anchor.set(newAnchorCellKey, 0, 'element');
-    rangeSelection.focus.set(newFocusCellKey, 0, 'element');
-    $setSelection(rangeSelection);
+    const newGridSelection = DEPRECATED_$createGridSelection();
+    newGridSelection.set(gridNode.getKey(), newAnchorCellKey, newFocusCellKey);
+    $setSelection(newGridSelection);
     editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
   }
 }

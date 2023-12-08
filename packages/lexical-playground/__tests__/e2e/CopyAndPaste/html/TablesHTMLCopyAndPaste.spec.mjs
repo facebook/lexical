@@ -244,7 +244,7 @@ test.describe('HTML Tables CopyAndPaste', () => {
     test.skip(isPlainText);
     test.fixme(
       isCollab,
-      'Table selection styles are not properly synced to the right hand frame',
+      'Table selection styles are not properly selected/deselected',
     );
 
     await focusEditor(page);
@@ -290,11 +290,13 @@ test.describe('HTML Tables CopyAndPaste', () => {
               </p>
             </th>
             <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </th>
             <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </th>
           </tr>
@@ -317,40 +319,58 @@ test.describe('HTML Tables CopyAndPaste', () => {
                 <span data-lexical-text="true">d</span>
               </p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
+            <td
+              class="PlaygroundEditorTheme__tableCell"
+              style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-          </tr>
-          <tr>
-            <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </th>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td class="PlaygroundEditorTheme__tableCell">
-              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-            </td>
-            <td class="PlaygroundEditorTheme__tableCell">
+            <td
+              class="PlaygroundEditorTheme__tableCell"
+              style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </td>
           </tr>
           <tr>
             <th
-              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </th>
-            <td class="PlaygroundEditorTheme__tableCell">
+            <td
+              class="PlaygroundEditorTheme__tableCell"
+              style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
+            <td
+              class="PlaygroundEditorTheme__tableCell"
+              style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </td>
-            <td class="PlaygroundEditorTheme__tableCell">
+            <td
+              class="PlaygroundEditorTheme__tableCell"
+              style="background-color: rgb(172, 206, 247); caret-color: transparent">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+          </tr>
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
+              style="background-color: rgb(172, 206, 247); caret-color: transparent">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <td
+              class="PlaygroundEditorTheme__tableCell"
+              style="background-color: rgb(172, 206, 247); caret-color: transparent">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td
+              class="PlaygroundEditorTheme__tableCell"
+              style="background-color: rgb(172, 206, 247); caret-color: transparent">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
+            <td
+              class="PlaygroundEditorTheme__tableCell"
+              style="background-color: rgb(172, 206, 247); caret-color: transparent">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </td>
           </tr>
@@ -358,6 +378,7 @@ test.describe('HTML Tables CopyAndPaste', () => {
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
       `,
       html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
         <table class="PlaygroundEditorTheme__table">
           <tr>
             <th
@@ -439,6 +460,7 @@ test.describe('HTML Tables CopyAndPaste', () => {
             </td>
           </tr>
         </table>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
       `,
     );
   });

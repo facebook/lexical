@@ -19,7 +19,6 @@ import {
   $setSelection,
   BaseSelection,
   DEPRECATED_$isGridCellNode,
-  DEPRECATED_$isGridSelection,
   ElementNode,
   INTERNAL_PointSelection,
   LexicalEditor,
@@ -328,7 +327,7 @@ export function $patchStyleText(
   const selectedNodes = selection.getNodes();
   const selectedNodesLength = selectedNodes.length;
 
-  if (DEPRECATED_$isGridSelection(selection)) {
+  if (!$isRangeSelection(selection)) {
     const cellSelection = $createRangeSelection();
     const cellSelectionAnchor = cellSelection.anchor;
     const cellSelectionFocus = cellSelection.focus;

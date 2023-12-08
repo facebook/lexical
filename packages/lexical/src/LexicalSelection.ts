@@ -545,14 +545,6 @@ export class GridSelection extends INTERNAL_PointSelection {
     this.gridKey = gridKey;
   }
 
-  getCachedNodes(): LexicalNode[] | null {
-    return this._cachedNodes;
-  }
-
-  setCachedNodes(nodes: LexicalNode[] | null): void {
-    this._cachedNodes = nodes;
-  }
-
   is(selection: null | BaseSelection): boolean {
     if (!DEPRECATED_$isGridSelection(selection)) {
       return false;
@@ -839,14 +831,6 @@ export class RangeSelection extends INTERNAL_PointSelection {
     super(anchor, focus);
     this.format = format;
     this.style = style;
-  }
-
-  getCachedNodes(): LexicalNode[] | null {
-    return this._cachedNodes;
-  }
-
-  setCachedNodes(nodes: LexicalNode[] | null): void {
-    this._cachedNodes = nodes;
   }
 
   /**

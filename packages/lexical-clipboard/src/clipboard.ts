@@ -18,6 +18,7 @@ import {
   $createTabNode,
   $getRoot,
   $getSelection,
+  $INTERNAL_isPointSelection,
   $isElementNode,
   $isRangeSelection,
   $isTextNode,
@@ -30,13 +31,11 @@ import {
   DEPRECATED_$isGridCellNode,
   DEPRECATED_$isGridNode,
   DEPRECATED_$isGridRowNode,
-  DEPRECATED_$isGridSelection,
   DEPRECATED_GridNode,
-  GridSelection,
+  INTERNAL_PointSelection,
   isSelectionWithinEditor,
   LexicalEditor,
   LexicalNode,
-  RangeSelection,
   SELECTION_CHANGE_COMMAND,
   SerializedElementNode,
   SerializedTextNode,
@@ -206,17 +205,17 @@ export function $insertGeneratedNodes(
   nodes: Array<LexicalNode>,
   selection: BaseSelection,
 ): void {
-  const isGridSelection = DEPRECATED_$isGridSelection(selection);
+  const isPointSelection = $INTERNAL_isPointSelection(selection);
   const isRangeSelection = $isRangeSelection(selection);
   const isSelectionInsideOfGrid =
-    isGridSelection ||
     (isRangeSelection &&
       $findMatchingParent(selection.anchor.getNode(), (n) =>
         DEPRECATED_$isGridCellNode(n),
       ) !== null &&
       $findMatchingParent(selection.focus.getNode(), (n) =>
         DEPRECATED_$isGridCellNode(n),
-      ) !== null);
+      ) !== null) ||
+    (isPointSelection && !isRangeSelection);
 
   if (
     isSelectionInsideOfGrid &&
@@ -233,7 +232,7 @@ export function $insertGeneratedNodes(
 
 function $mergeGridNodesStrategy(
   nodes: LexicalNode[],
-  selection: RangeSelection | GridSelection,
+  selection: INTERNAL_PointSelection,
   isFromLexical: boolean,
   editor: LexicalEditor,
 ) {

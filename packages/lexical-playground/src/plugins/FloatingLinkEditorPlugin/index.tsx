@@ -66,6 +66,9 @@ function FloatingLinkEditor({
       } else {
         setLinkUrl('');
       }
+      if (isLinkEditMode) {
+        setEditedLinkUrl(linkUrl);
+      }
     }
     const editorElem = editorRef.current;
     const nativeSelection = window.getSelection();
@@ -101,7 +104,7 @@ function FloatingLinkEditor({
     }
 
     return true;
-  }, [anchorElem, editor, setIsLinkEditMode]);
+  }, [anchorElem, editor, setIsLinkEditMode, isLinkEditMode, linkUrl]);
 
   useEffect(() => {
     const scrollerElem = anchorElem.parentElement;

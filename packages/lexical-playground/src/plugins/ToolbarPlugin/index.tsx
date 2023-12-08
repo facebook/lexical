@@ -707,15 +707,15 @@ export default function ToolbarPlugin({
 
         if (code === 'KeyK' && (ctrlKey || metaKey)) {
           event.preventDefault();
+          let url: string | null;
           if (!isLink) {
             setIsLinkEditMode(true);
+            url = sanitizeUrl('https://');
           } else {
             setIsLinkEditMode(false);
+            url = null;
           }
-          return activeEditor.dispatchCommand(
-            TOGGLE_LINK_COMMAND,
-            sanitizeUrl('https://'),
-          );
+          return activeEditor.dispatchCommand(TOGGLE_LINK_COMMAND, url);
         }
         return false;
       },

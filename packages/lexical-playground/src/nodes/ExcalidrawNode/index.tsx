@@ -22,10 +22,7 @@ import {DecoratorNode} from 'lexical';
 import * as React from 'react';
 import {Suspense} from 'react';
 
-const ExcalidrawComponent = React.lazy(
-  // @ts-ignore
-  () => import('./ExcalidrawComponent'),
-);
+const ExcalidrawComponent = React.lazy(() => import('./ExcalidrawComponent'));
 
 export type SerializedExcalidrawNode = Spread<
   {

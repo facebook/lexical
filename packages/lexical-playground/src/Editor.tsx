@@ -72,7 +72,7 @@ import ContentEditable from './ui/ContentEditable';
 import Placeholder from './ui/Placeholder';
 
 const skipCollaborationInit =
-  // @ts-ignore
+  // @ts-expect-error
   window.parent != null && window.parent.frames.right === window;
 
 export default function Editor(): JSX.Element {

@@ -49,7 +49,7 @@ function SpeechToTextPlugin(): null {
   const [editor] = useLexicalComposerContext();
   const [isEnabled, setIsEnabled] = useState<boolean>(false);
   const SpeechRecognition =
-    // @ts-ignore
+    // @ts-expect-error missing type
     window.SpeechRecognition || window.webkitSpeechRecognition;
   const recognition = useRef<typeof SpeechRecognition | null>(null);
   const report = useReport();

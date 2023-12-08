@@ -90,8 +90,7 @@ const validateEditorState = async (
 };
 
 const server = http.createServer(async (req, res) => {
-  // @ts-ignore
-  const pathname = url.parse(req.url).pathname;
+  const pathname = url.parse(req.url!).pathname;
   const {method} = req;
   res.setHeader('Content-Type', 'application/json');
   res.setHeader('Access-Control-Allow-Origin', '*');

@@ -6,7 +6,7 @@
  *
  */
 
-import type {LexicalEditor} from './LexicalEditor';
+import type {LexicalCommand, LexicalEditor} from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
 import type {NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
@@ -1872,11 +1872,13 @@ export class RangeSelection implements BaseSelection {
     }
 
     if (newAnchorCellKey && newFocusCellKey) {
-      const rangeSelection = $createRangeSelection();
-      rangeSelection.anchor.set(newAnchorCellKey, 0, 'element');
-      rangeSelection.focus.set(newFocusCellKey, 0, 'element');
-      $setSelection(rangeSelection);
-      editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+      editor.dispatchCommand<
+        LexicalCommand<{node: LexicalNode; anchorKey: string; focusKey: string}>
+      >(SELECTION_CHANGE_COMMAND, {
+        anchorKey: newAnchorCellKey,
+        focusKey: newFocusCellKey,
+        node: gridNode,
+      });
     }
   }
 }

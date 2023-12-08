@@ -23,17 +23,16 @@ import {
   $isRangeSelection,
   $isTextNode,
   $parseSerializedNode,
-  $setSelection,
   BaseSelection,
   COMMAND_PRIORITY_CRITICAL,
   COPY_COMMAND,
-  DEPRECATED_$createGridSelection,
   DEPRECATED_$isGridCellNode,
   DEPRECATED_$isGridNode,
   DEPRECATED_$isGridRowNode,
   DEPRECATED_GridNode,
   INTERNAL_PointSelection,
   isSelectionWithinEditor,
+  LexicalCommand,
   LexicalEditor,
   LexicalNode,
   SELECTION_CHANGE_COMMAND,
@@ -339,10 +338,13 @@ function $mergeGridNodesStrategy(
   }
 
   if (newAnchorCellKey && newFocusCellKey) {
-    const newGridSelection = DEPRECATED_$createGridSelection();
-    newGridSelection.set(gridNode.getKey(), newAnchorCellKey, newFocusCellKey);
-    $setSelection(newGridSelection);
-    editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+    editor.dispatchCommand<
+      LexicalCommand<{node: LexicalNode; anchorKey: string; focusKey: string}>
+    >(SELECTION_CHANGE_COMMAND, {
+      anchorKey: newAnchorCellKey,
+      focusKey: newFocusCellKey,
+      node: gridNode,
+    });
   }
 }
 

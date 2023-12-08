@@ -34,6 +34,7 @@ import {
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
+  DEPRECATED_$isGridNode,
   FOCUS_COMMAND,
   FORMAT_TEXT_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
@@ -48,7 +49,10 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
-import {DEPRECATED_$isGridSelection} from './LexicalGridSelection';
+import {
+  DEPRECATED_$createGridSelection,
+  DEPRECATED_$isGridSelection,
+} from './LexicalGridSelection';
 import {$isTableCellNode} from './LexicalTableCellNode';
 import {$isTableNode} from './LexicalTableNode';
 import {TableSelection} from './LexicalTableSelection';
@@ -459,7 +463,28 @@ export function applyTableHandlers(
   tableSelection.listenersToRemove.add(
     editor.registerCommand(
       SELECTION_CHANGE_COMMAND,
-      () => {
+      (
+        selectionPayload: {
+          node: LexicalNode;
+          anchorKey: string;
+          focusKey: string;
+        } | null,
+      ) => {
+        if (
+          selectionPayload != null &&
+          DEPRECATED_$isGridNode(selectionPayload.node) &&
+          selectionPayload.anchorKey &&
+          selectionPayload.focusKey
+        ) {
+          const newGridSelection = DEPRECATED_$createGridSelection();
+          newGridSelection.set(
+            selectionPayload.node.getKey(),
+            selectionPayload.anchorKey,
+            selectionPayload.focusKey,
+          );
+          $setSelection(newGridSelection);
+        }
+
         const selection = $getSelection();
         const prevSelection = $getPreviousSelection();
 

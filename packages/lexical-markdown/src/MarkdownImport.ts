@@ -41,15 +41,21 @@ type TextFormatTransformersIndex = Readonly<{
   transformersByTag: Readonly<Record<string, TextFormatTransformer>>;
 }>;
 
+export type ImportOptions = Readonly<{
+  node?: ElementNode;
+  stripEmptyLines?: boolean;
+}>;
+
 export function createMarkdownImport(
   transformers: Array<Transformer>,
-): (markdownString: string, node?: ElementNode) => void {
+): (markdownString: string, importOptions?: ImportOptions) => void {
   const byType = transformersByType(transformers);
   const textFormatTransformersIndex = createTextFormatTransformersIndex(
     byType.textFormat,
   );
 
-  return (markdownString, node) => {
+  return (markdownString, importOptions) => {
+    const {node, stripEmptyLines} = importOptions || {};
     const lines = markdownString.split('\n');
     const linesLength = lines.length;
     const root = node || $getRoot();
@@ -77,12 +83,14 @@ export function createMarkdownImport(
       );
     }
 
-    // Removing empty paragraphs as md does not really
-    // allow empty lines and uses them as dilimiter
-    const children = root.getChildren();
-    for (const child of children) {
-      if (isEmptyParagraph(child)) {
-        child.remove();
+    // Removing empty paragraphs if desired, this is the default
+    // as md does not really allow empty lines and uses them as dilimiter
+    if (stripEmptyLines === undefined || stripEmptyLines) {
+      const children = root.getChildren();
+      for (const child of children) {
+        if (isEmptyParagraph(child)) {
+          child.remove();
+        }
       }
     }
 

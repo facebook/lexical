@@ -13,6 +13,8 @@ import * as React from 'react';
 
 import TextInput from './TextInput';
 
+let skipAddingToHistoryStack = false;
+
 interface ColorPickerProps {
   color: string;
   onChange?: (value: string, skipHistoryStack: boolean) => void;
@@ -45,7 +47,6 @@ export default function ColorPicker({
 }: Readonly<ColorPickerProps>): JSX.Element {
   const [selfColor, setSelfColor] = useState(transformColor('hex', color));
   const [inputColor, setInputColor] = useState(color);
-  const [skipHistoryStack, setSkipHistoryStack] = useState(false);
   const innerDivRef = useRef(null);
 
   const saturationPosition = useMemo(
@@ -83,7 +84,7 @@ export default function ColorPicker({
   };
 
   const onSkipHistoryStack = (value: boolean) => {
-    setSkipHistoryStack(value);
+    skipAddingToHistoryStack = value;
   };
 
   const onMoveHue = ({x}: Position) => {
@@ -97,10 +98,10 @@ export default function ColorPicker({
   useEffect(() => {
     // Check if the dropdown is actually active
     if (innerDivRef.current !== null && onChange) {
-      onChange(selfColor.hex, skipHistoryStack);
+      onChange(selfColor.hex, skipAddingToHistoryStack);
       setInputColor(selfColor.hex);
     }
-  }, [selfColor, onChange, skipHistoryStack]);
+  }, [selfColor, onChange]);
 
   useEffect(() => {
     if (color === undefined) return;

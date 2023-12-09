@@ -83,10 +83,6 @@ export default function ColorPicker({
     setInputColor(newColor.hex);
   };
 
-  const onSkipHistoryStack = (value: boolean) => {
-    skipAddingToHistoryStack = value;
-  };
-
   const onMoveHue = ({x}: Position) => {
     const newHsv = {...selfColor.hsv, h: (x / WIDTH) * 360};
     const newColor = transformColor('hsv', newHsv);
@@ -132,7 +128,6 @@ export default function ColorPicker({
       <MoveWrapper
         className="color-picker-saturation"
         style={{backgroundColor: `hsl(${selfColor.hsv.h}, 100%, 50%)`}}
-        updateSkipHistoryFlag={onSkipHistoryStack}
         onChange={onMoveSaturation}>
         <div
           className="color-picker-saturation_cursor"
@@ -143,10 +138,7 @@ export default function ColorPicker({
           }}
         />
       </MoveWrapper>
-      <MoveWrapper
-        className="color-picker-hue"
-        onChange={onMoveHue}
-        updateSkipHistoryFlag={onSkipHistoryStack}>
+      <MoveWrapper className="color-picker-hue" onChange={onMoveHue}>
         <div
           className="color-picker-hue_cursor"
           style={{
@@ -171,20 +163,13 @@ export interface Position {
 interface MoveWrapperProps {
   className?: string;
   style?: React.CSSProperties;
-  updateSkipHistoryFlag: (value: boolean) => void;
   onChange: (position: Position) => void;
   children: JSX.Element;
 }
 
-function MoveWrapper({
-  className,
-  style,
-  updateSkipHistoryFlag,
-  onChange,
-  children,
-}: MoveWrapperProps) {
+function MoveWrapper({className, style, onChange, children}: MoveWrapperProps) {
   const divRef = useRef<HTMLDivElement>(null);
-  const [dragged, setDragged] = useState(false);
+  const draggedRef = useRef(false);
 
   const move = (e: React.MouseEvent | MouseEvent): void => {
     if (divRef.current) {
@@ -204,21 +189,21 @@ function MoveWrapper({
     move(e);
 
     const onMouseMove = (_e: MouseEvent): void => {
-      setDragged(true);
-      updateSkipHistoryFlag(true);
+      draggedRef.current = true;
+      skipAddingToHistoryStack = true;
       move(_e);
     };
 
     const onMouseUp = (_e: MouseEvent): void => {
-      if (dragged) {
-        updateSkipHistoryFlag(false);
+      if (draggedRef.current) {
+        skipAddingToHistoryStack = false;
       }
 
       document.removeEventListener('mousemove', onMouseMove, false);
       document.removeEventListener('mouseup', onMouseUp, false);
 
       move(_e);
-      setDragged(false);
+      draggedRef.current = false;
     };
 
     document.addEventListener('mousemove', onMouseMove, false);

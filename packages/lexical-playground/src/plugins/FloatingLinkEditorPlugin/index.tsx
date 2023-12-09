@@ -172,6 +172,14 @@ function FloatingLinkEditor({
     }
   }, [isLinkEditMode, isLink]);
 
+    useEffect(() => {
+    if (!isLinkEditMode) {
+      setEditedLinkUrl('https://');
+    } else {
+      setEditedLinkUrl(linkUrl);
+    }
+  }, [isLinkEditMode, linkUrl]);
+
   const monitorInputInteraction = (
     event: React.KeyboardEvent<HTMLInputElement>,
   ) => {

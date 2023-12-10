@@ -19,18 +19,18 @@ import type {
   RegisteredNodes,
   Spread,
 } from './LexicalEditor';
-import type { EditorState } from './LexicalEditorState';
-import type { LexicalNode, NodeKey, NodeMap } from './LexicalNode';
+import type {EditorState} from './LexicalEditorState';
+import type {LexicalNode, NodeKey, NodeMap} from './LexicalNode';
 import type {
   BaseSelection,
   PointType,
   RangeSelection,
 } from './LexicalSelection';
-import type { RootNode } from './nodes/LexicalRootNode';
-import type { TextFormatType, TextNode } from './nodes/LexicalTextNode';
+import type {RootNode} from './nodes/LexicalRootNode';
+import type {TextFormatType, TextNode} from './nodes/LexicalTextNode';
 
-import { CAN_USE_DOM } from 'shared/canUseDOM';
-import { IS_APPLE, IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI } from 'shared/environment';
+import {CAN_USE_DOM} from 'shared/canUseDOM';
+import {IS_APPLE, IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from 'shared/environment';
 import invariant from 'shared/invariant';
 
 import {
@@ -55,9 +55,9 @@ import {
   RTL_REGEX,
   TEXT_TYPE_TO_FORMAT,
 } from './LexicalConstants';
-import { LexicalEditor } from './LexicalEditor';
-import { flushRootMutations } from './LexicalMutations';
-import { $normalizeSelection } from './LexicalNormalization';
+import {LexicalEditor} from './LexicalEditor';
+import {flushRootMutations} from './LexicalMutations';
+import {$normalizeSelection} from './LexicalNormalization';
 import {
   errorOnInfiniteTransforms,
   errorOnReadOnly,

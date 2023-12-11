@@ -15,6 +15,7 @@ import type {
 import type {ElementNode, LexicalEditor, TextNode} from 'lexical';
 
 import {$isCodeNode} from '@lexical/code';
+import {$isHashtagNode} from '@lexical/hashtag';
 import {
   $createRangeSelection,
   $getSelection,
@@ -407,14 +408,18 @@ export function registerMarkdownShortcuts(
       }
 
       const anchorKey = selection.anchor.key;
-      const anchorOffset = selection.anchor.offset;
-
       const anchorNode = editorState._nodeMap.get(anchorKey);
+      if (!$isTextNode(anchorNode) || !dirtyLeaves.has(anchorKey)) {
+        return;
+      }
 
+      const anchorOffset = selection.anchor.offset;
+      const prevAnchorKey = prevSelection.anchor.key;
+      const prevAnchorNode = prevEditorState._nodeMap.get(prevAnchorKey);
       if (
-        !$isTextNode(anchorNode) ||
-        !dirtyLeaves.has(anchorKey) ||
-        (anchorOffset !== 1 && anchorOffset > prevSelection.anchor.offset + 1)
+        anchorOffset !== 1 &&
+        anchorOffset > prevSelection.anchor.offset + 1 &&
+        !$isHashtagNode(prevAnchorNode)
       ) {
         return;
       }

@@ -571,8 +571,8 @@ export function $getSelectionStyleValueForProperty(
 export function INTERNAL_$isBlock(
   node: LexicalNode,
 ): node is ElementNode | DecoratorNode<unknown> {
-  if ($isDecoratorNode(node) && !node.isInline()) {
-    return true;
+  if ($isDecoratorNode(node)) {
+    return false;
   }
   if (!$isElementNode(node) || $isRootOrShadowRoot(node)) {
     return false;

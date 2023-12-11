@@ -21,10 +21,7 @@ import {$applyNodeReplacement, DecoratorNode, DOMExportOutput} from 'lexical';
 import * as React from 'react';
 import {Suspense} from 'react';
 
-const EquationComponent = React.lazy(
-  // @ts-ignore
-  () => import('./EquationComponent'),
-);
+const EquationComponent = React.lazy(() => import('./EquationComponent'));
 
 export type SerializedEquationNode = Spread<
   {

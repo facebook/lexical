@@ -20,6 +20,7 @@ import {
   $isTableRowNode,
   DEPRECATED_$isGridSelection,
   getCellFromTarget,
+  TableCellNode,
 } from '@lexical/table';
 import {
   $getNearestNodeFromDOMNode,
@@ -206,11 +207,11 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
             throw new Error('Expected table row');
           }
 
-          const rowCells = tableRow.getChildren();
+          const rowCells = tableRow.getChildren<TableCellNode>();
           const rowCellsSpan = rowCells.map((cell) => cell.getColSpan());
 
           const aggregatedRowSpans = rowCellsSpan.reduce(
-            (rowSpans, cellSpan) => {
+            (rowSpans: number[], cellSpan) => {
               const previousCell = rowSpans[rowSpans.length - 1] ?? 0;
               rowSpans.push(previousCell + cellSpan);
               return rowSpans;
@@ -316,14 +317,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
 
         document.addEventListener('mouseup', mouseUpHandler(direction));
       },
-    [
-      activeCell,
-      draggingDirection,
-      resetState,
-      updateColumnWidth,
-      updateRowHeight,
-      mouseUpHandler,
-    ],
+    [activeCell, mouseUpHandler],
   );
 
   const getResizers = useCallback(() => {

@@ -12,7 +12,7 @@ import type {
   PointType,
   RangeSelection,
 } from '../LexicalSelection';
-import type {Spread} from 'lexical';
+import type {KlassConstructor, Spread} from 'lexical';
 
 import invariant from 'shared/invariant';
 
@@ -59,6 +59,7 @@ export type ElementFormatType =
 
 /** @noInheritDoc */
 export class ElementNode extends LexicalNode {
+  ['constructor']!: KlassConstructor<typeof ElementNode>;
   /** @internal */
   __first: null | NodeKey;
   /** @internal */

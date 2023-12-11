@@ -36,6 +36,7 @@ import {
   LexicalEditor,
   LexicalNode,
   SELECTION_CHANGE_COMMAND,
+  SerializedElementNode,
   SerializedTextNode,
 } from 'lexical';
 import {CAN_USE_DOM} from 'shared/canUseDOM';
@@ -358,7 +359,6 @@ function exportNodeToJSON<T extends LexicalNode>(node: T): BaseSerializedNode {
   const serializedNode = node.exportJSON();
   const nodeClass = node.constructor;
 
-  // @ts-expect-error TODO Replace Class utility type with InstanceType
   if (serializedNode.type !== nodeClass.getType()) {
     invariant(
       false,
@@ -367,10 +367,9 @@ function exportNodeToJSON<T extends LexicalNode>(node: T): BaseSerializedNode {
     );
   }
 
-  // @ts-expect-error TODO Replace Class utility type with InstanceType
-  const serializedChildren = serializedNode.children;
-
   if ($isElementNode(node)) {
+    const serializedChildren = (serializedNode as SerializedElementNode)
+      .children;
     if (!Array.isArray(serializedChildren)) {
       invariant(
         false,

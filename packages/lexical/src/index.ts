@@ -18,6 +18,7 @@ export type {
   EditorThemeClasses,
   HTMLConfig,
   Klass,
+  KlassConstructor,
   LexicalCommand,
   LexicalEditor,
   LexicalNodeReplacement,

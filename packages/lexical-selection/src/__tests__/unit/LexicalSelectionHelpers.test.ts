@@ -21,6 +21,7 @@ import {
   $getRoot,
   $getSelection,
   $insertNodes,
+  $isElementNode,
   $isParagraphNode,
   $isRangeSelection,
   $setSelection,
@@ -33,6 +34,7 @@ import {
   $createTestShadowRootNode,
   createTestEditor,
   createTestHeadlessEditor,
+  invariant,
   TestDecoratorNode,
 } from 'lexical/src/__tests__/utils';
 
@@ -2571,7 +2573,9 @@ describe('insertNodes', () => {
     });
 
     await editor.update(() => {
-      const selection = $getRoot().getFirstChild().select();
+      const selectionNode = $getRoot().getFirstChild();
+      invariant($isElementNode(selectionNode));
+      const selection = selectionNode.select();
       selection.insertNodes([
         $createParagraphNode().append($createTextNode('Text before')),
       ]);

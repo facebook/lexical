@@ -21,9 +21,11 @@ import {
   $getNodeByKey,
   $getRoot,
   $getSelection,
+  $isElementNode,
   $isLineBreakNode,
   $isRangeSelection,
   $isTabNode,
+  $isTextNode,
   $setSelection,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
@@ -217,6 +219,7 @@ describe('LexicalCodeNode tests', () => {
       // TODO consolidate editor.update - there's some bad logic in updateAndRetainSelection
       await editor.update(() => {
         const codeText = $getRoot().getFirstDescendant();
+        invariant($isTextNode(codeText));
         codeText.select(1, 'function'.length);
       });
       await editor.dispatchCommand(KEY_TAB_COMMAND, tabKeyboardEvent());
@@ -240,6 +243,7 @@ describe('LexicalCodeNode tests', () => {
       // TODO consolidate editor.update - there's some bad logic in updateAndRetainSelection
       await editor.update(() => {
         const codeText = $getRoot().getFirstDescendant();
+        invariant($isTextNode(codeText));
         codeText.select(0, 'function'.length);
       });
       await editor.dispatchCommand(KEY_TAB_COMMAND, tabKeyboardEvent());
@@ -276,6 +280,7 @@ describe('LexicalCodeNode tests', () => {
       // TODO consolidate editor.update - there's some bad logic in updateAndRetainSelection
       await editor.update(() => {
         const codeText = $getRoot().getFirstDescendant();
+        invariant($isTextNode(codeText));
         codeText.select(0, 0);
       });
       await editor.dispatchCommand(KEY_TAB_COMMAND, tabKeyboardEvent());
@@ -365,6 +370,7 @@ describe('LexicalCodeNode tests', () => {
       // TODO consolidate editor.update - there's some bad logic in updateAndRetainSelection
       await editor.update(() => {
         const codeText = $getRoot().getLastDescendant();
+        invariant($isTextNode(codeText));
         codeText.select(1, 1);
       });
       await editor.dispatchCommand(KEY_TAB_COMMAND, shiftTabKeyboardEvent());
@@ -482,6 +488,7 @@ describe('LexicalCodeNode tests', () => {
             'caret at start of line (first line)',
             () => {
               const code = $getRoot().getFirstChild();
+              invariant($isElementNode(code));
               code.selectStart();
             },
             () => {
@@ -559,11 +566,13 @@ describe('LexicalCodeNode tests', () => {
             'caret immediately before code (first line)',
             () => {
               const code = $getRoot().getFirstChild();
+              invariant($isElementNode(code));
+              const firstChild = code.getFirstChild();
+              invariant($isTextNode(firstChild));
               if (tabOrSpaces === 'tab') {
-                const firstTab = code.getFirstChild();
-                firstTab.getNextSibling().selectNext(0, 0);
+                firstChild.getNextSibling().selectNext(0, 0);
               } else {
-                code.getFirstChild().select(4, 4);
+                firstChild.select(4, 4);
               }
             },
             () => {
@@ -575,6 +584,7 @@ describe('LexicalCodeNode tests', () => {
               expect(selection.isCollapsed()).toBe(true);
               if (moveTo === 'start') {
                 const code = $getRoot().getFirstChild();
+                invariant($isElementNode(code));
                 const firstChild = code.getFirstChild();
                 expect(selection.anchor.getNode().is(firstChild)).toBe(true);
                 expect(selection.anchor.offset).toBe(0);
@@ -629,11 +639,13 @@ describe('LexicalCodeNode tests', () => {
             'caret in between space (first line)',
             () => {
               const code = $getRoot().getFirstChild();
+              invariant($isElementNode(code));
+              const firstChild = code.getFirstChild();
+              invariant($isTextNode(firstChild));
               if (tabOrSpaces === 'tab') {
-                const firstTab = code.getFirstChild();
-                firstTab.selectNext(0, 0);
+                firstChild.selectNext(0, 0);
               } else {
-                code.getFirstChild().select(2, 2);
+                firstChild.select(2, 2);
               }
             },
             () => {
@@ -720,6 +732,7 @@ describe('LexicalCodeNode tests', () => {
                 $isCodeHighlightNode(dfsNode.node),
               )[tabOrSpaces === 'tab' ? 0 : 1].node;
               const index = codeHighlight.getTextContent().indexOf('tion');
+              invariant($isTextNode(codeHighlight));
               codeHighlight.select(index, index);
             },
             () => {
@@ -761,6 +774,7 @@ describe('LexicalCodeNode tests', () => {
                 $isCodeHighlightNode(dfsNode.node),
               )[tabOrSpaces === 'tab' ? 1 : 2].node;
               const index = codeHighlight.getTextContent().indexOf('oo');
+              invariant($isTextNode(codeHighlight));
               codeHighlight.select(index, index);
             },
             () => {

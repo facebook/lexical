@@ -32,6 +32,7 @@ import {
   $isTextNode,
   $setSelection,
 } from 'lexical';
+import invariant from 'shared/invariant';
 
 import {getStyleObjectFromCSS} from './utils';
 
@@ -73,6 +74,7 @@ export function $setBlocksType(
     if (!INTERNAL_$isBlock(node)) {
       continue;
     }
+    invariant($isElementNode(node), 'Expected block node to be an ElementNode');
 
     const targetElement = createElement();
     targetElement.setFormat(node.getFormatType());
@@ -286,6 +288,10 @@ export function $wrapNodesImpl(
         $removeParentEmptyElements(parent);
       }
     } else if (emptyElements.has(node.getKey())) {
+      invariant(
+        $isElementNode(node),
+        'Expected node in emptyElements to be an ElementNode',
+      );
       const targetElement = createElement();
       targetElement.setFormat(node.getFormatType());
       targetElement.setIndent(node.getIndent());

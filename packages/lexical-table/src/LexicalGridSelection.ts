@@ -91,6 +91,10 @@ export class GridSelection extends INTERNAL_PointSelection {
 
   insertNodes(nodes: Array<LexicalNode>) {
     const focusNode = this.focus.getNode();
+    invariant(
+      $isElementNode(focusNode),
+      'Expected GridSelection focus to be an ElementNode',
+    );
     const selection = $normalizeSelection__EXPERIMENTAL(
       focusNode.select(0, focusNode.getChildrenSize()),
     );

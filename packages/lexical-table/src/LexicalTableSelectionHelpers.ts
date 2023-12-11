@@ -461,7 +461,11 @@ export function applyTableHandlers(
   }
 
   tableSelection.listenersToRemove.add(
-    editor.registerCommand(
+    editor.registerCommand<{
+      node: LexicalNode;
+      anchorKey: string;
+      focusKey: string;
+    }>(
       SELECTION_CHANGE_COMMAND,
       (
         selectionPayload: {

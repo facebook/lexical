@@ -27,6 +27,7 @@ import {
   html,
   initialize,
   insertCollapsible,
+  insertHorizontalRule,
   insertImageCaption,
   insertSampleImage,
   insertTable,
@@ -518,6 +519,42 @@ test.describe('Selection', () => {
       page,
       html`
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+  });
+
+  test('Can use block controls on selections including decorator nodes #5371', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+
+    await page.keyboard.type('Some text');
+    await insertHorizontalRule(page);
+    await page.keyboard.type('More text');
+    await selectAll(page);
+
+    await click(page, '.block-controls');
+    await click(page, '.dropdown .icon.h1');
+
+    await assertHTML(
+      page,
+      html`
+        <h1
+          class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Some text</span>
+        </h1>
+        <hr
+          class="selected"
+          contenteditable="false"
+          data-lexical-decorator="true" />
+        <h1
+          class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">More text</span>
+        </h1>
       `,
     );
   });

@@ -503,7 +503,7 @@ declare export function $isNodeSelection(
   x: ?mixed,
 ): boolean %checks(x instanceof NodeSelection);
 
-declare export class RangeSelection implements BaseSelection {
+declare export class RangeSelection extends INTERNAL_PointSelection {
   anchor: PointType;
   focus: PointType;
   dirty: boolean;

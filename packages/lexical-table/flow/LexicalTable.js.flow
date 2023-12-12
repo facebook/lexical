@@ -297,8 +297,8 @@ declare export class GridSelection implements BaseSelection {
   setCachedNodes(nodes: null | Array<LexicalNode>): void;
 }
 
-declare export function DEPRECATED_$isGridSelection(
+declare export function $isGridSelection(
   x: ?mixed,
 ): boolean %checks(x instanceof GridSelection);
 
-declare export function DEPRECATED_$createGridSelection(): GridSelection;
+declare export function $createGridSelection(): GridSelection;

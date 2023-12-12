@@ -51,7 +51,7 @@ export class GridSelection extends INTERNAL_PointSelection {
   }
 
   is(selection: null | BaseSelection): boolean {
-    if (!DEPRECATED_$isGridSelection(selection)) {
+    if (!$isGridSelection(selection)) {
       return false;
     }
     return (
@@ -319,11 +319,11 @@ export class GridSelection extends INTERNAL_PointSelection {
   }
 }
 
-export function DEPRECATED_$isGridSelection(x: unknown): x is GridSelection {
+export function $isGridSelection(x: unknown): x is GridSelection {
   return x instanceof GridSelection;
 }
 
-export function DEPRECATED_$createGridSelection(): GridSelection {
+export function $createGridSelection(): GridSelection {
   const anchor = $createPoint('root', 0, 'element');
   const focus = $createPoint('root', 0, 'element');
   return new GridSelection('root', anchor, focus);

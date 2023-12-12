@@ -20,7 +20,7 @@ import type {
 import {$generateHtmlFromNodes} from '@lexical/html';
 import {$isLinkNode, LinkNode} from '@lexical/link';
 import {$isMarkNode} from '@lexical/mark';
-import {DEPRECATED_$isGridSelection, GridSelection} from '@lexical/table';
+import {$isGridSelection, GridSelection} from '@lexical/table';
 import {mergeRegister} from '@lexical/utils';
 import {
   $getRoot,
@@ -428,7 +428,7 @@ function generateContent(
       ? ': null'
       : $isRangeSelection(selection)
       ? printRangeSelection(selection)
-      : DEPRECATED_$isGridSelection(selection)
+      : $isGridSelection(selection)
       ? printGridSelection(selection)
       : printNodeSelection(selection);
   });

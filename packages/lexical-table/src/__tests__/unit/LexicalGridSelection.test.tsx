@@ -6,7 +6,7 @@
  *
  */
 
-import {DEPRECATED_$createGridSelection} from '@lexical/table';
+import {$createGridSelection} from '@lexical/table';
 import {
   type LexicalEditor,
   $createParagraphNode,
@@ -90,7 +90,7 @@ describe('grid selection', () => {
     await update(() => {
       const paragraph = $createParagraphNode();
       originalText = $createTextNode('Hello world');
-      const selection = DEPRECATED_$createGridSelection();
+      const selection = $createGridSelection();
       selection.set(
         originalText.getKey(),
         originalText.getKey(),

@@ -55,10 +55,7 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
-import {
-  DEPRECATED_$createGridSelection,
-  DEPRECATED_$isGridSelection,
-} from './LexicalGridSelection';
+import {$createGridSelection, $isGridSelection} from './LexicalGridSelection';
 import {$isTableCellNode} from './LexicalTableCellNode';
 import {$isTableNode} from './LexicalTableNode';
 import {TableSelection} from './LexicalTableSelection';
@@ -130,7 +127,7 @@ export function applyTableHandlers(
       const selection = $getSelection();
       const target = event.target as Node;
       if (
-        DEPRECATED_$isGridSelection(selection) &&
+        $isGridSelection(selection) &&
         selection.gridKey === tableSelection.tableNodeKey &&
         rootElement.contains(target)
       ) {
@@ -186,7 +183,7 @@ export function applyTableHandlers(
       KEY_ESCAPE_COMMAND,
       (event) => {
         const selection = $getSelection();
-        if (DEPRECATED_$isGridSelection(selection)) {
+        if ($isGridSelection(selection)) {
           const focusCellNode = $findMatchingParent(
             selection.focus.getNode(),
             $isTableCellNode,
@@ -211,7 +208,7 @@ export function applyTableHandlers(
       return false;
     }
 
-    if (DEPRECATED_$isGridSelection(selection)) {
+    if ($isGridSelection(selection)) {
       tableSelection.clearText();
 
       return true;
@@ -305,7 +302,7 @@ export function applyTableHandlers(
       return false;
     }
 
-    if (DEPRECATED_$isGridSelection(selection)) {
+    if ($isGridSelection(selection)) {
       event.preventDefault();
       event.stopPropagation();
       tableSelection.clearText();
@@ -351,7 +348,7 @@ export function applyTableHandlers(
           return false;
         }
 
-        if (DEPRECATED_$isGridSelection(selection)) {
+        if ($isGridSelection(selection)) {
           tableSelection.formatCells(payload);
 
           return true;
@@ -382,7 +379,7 @@ export function applyTableHandlers(
           return false;
         }
 
-        if (DEPRECATED_$isGridSelection(selection)) {
+        if ($isGridSelection(selection)) {
           tableSelection.clearHighlight();
 
           return false;
@@ -590,7 +587,7 @@ export function applyTableHandlers(
           newRowIdx++;
         }
         if (newAnchorCellKey && newFocusCellKey) {
-          const newGridSelection = DEPRECATED_$createGridSelection();
+          const newGridSelection = $createGridSelection();
           newGridSelection.set(
             nodes[0].getKey(),
             newAnchorCellKey,
@@ -654,19 +651,18 @@ export function applyTableHandlers(
         if (
           selection &&
           !selection.is(prevSelection) &&
-          (DEPRECATED_$isGridSelection(selection) ||
-            DEPRECATED_$isGridSelection(prevSelection)) &&
+          ($isGridSelection(selection) || $isGridSelection(prevSelection)) &&
           tableSelection.gridSelection &&
           !tableSelection.gridSelection.is(prevSelection)
         ) {
           if (
-            DEPRECATED_$isGridSelection(selection) &&
+            $isGridSelection(selection) &&
             selection.gridKey === tableSelection.tableNodeKey
           ) {
             tableSelection.updateTableGridSelection(selection);
           } else if (
-            !DEPRECATED_$isGridSelection(selection) &&
-            DEPRECATED_$isGridSelection(prevSelection) &&
+            !$isGridSelection(selection) &&
+            $isGridSelection(prevSelection) &&
             prevSelection.gridKey === tableSelection.tableNodeKey
           ) {
             tableSelection.updateTableGridSelection(null);
@@ -1026,7 +1022,7 @@ function $isSelectionInTable(
   selection: null | BaseSelection,
   tableNode: TableNode,
 ): boolean {
-  if ($isRangeSelection(selection) || DEPRECATED_$isGridSelection(selection)) {
+  if ($isRangeSelection(selection) || $isGridSelection(selection)) {
     const isAnchorInside = tableNode.isParentOf(selection.anchor.getNode());
     const isFocusInside = tableNode.isParentOf(selection.focus.getNode());
 
@@ -1208,7 +1204,7 @@ function $handleArrowKey(
 
       return true;
     }
-  } else if (DEPRECATED_$isGridSelection(selection)) {
+  } else if ($isGridSelection(selection)) {
     const {anchor, focus} = selection;
     const anchorCellNode = $findMatchingParent(
       anchor.getNode(),

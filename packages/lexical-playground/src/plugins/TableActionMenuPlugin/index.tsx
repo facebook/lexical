@@ -23,10 +23,12 @@ import {
   $getTableRowIndexFromTableCellNode,
   $insertTableColumn__EXPERIMENTAL,
   $insertTableRow__EXPERIMENTAL,
+  $isGridSelection,
   $isTableCellNode,
   $isTableRowNode,
   $unmergeCell,
   getTableSelectionFromTableElement,
+  GridSelection,
   HTMLTableElementWithWithTableSelectionState,
   TableCellHeaderStates,
   TableCellNode,
@@ -42,8 +44,6 @@ import {
   $isTextNode,
   DEPRECATED_$getNodeTriplet,
   DEPRECATED_$isGridCellNode,
-  DEPRECATED_$isGridSelection,
-  GridSelection,
 } from 'lexical';
 import * as React from 'react';
 import {ReactPortal, useCallback, useEffect, useRef, useState} from 'react';
@@ -110,9 +110,8 @@ function $canUnmerge(): boolean {
   const selection = $getSelection();
   if (
     ($isRangeSelection(selection) && !selection.isCollapsed()) ||
-    (DEPRECATED_$isGridSelection(selection) &&
-      !selection.anchor.is(selection.focus)) ||
-    (!$isRangeSelection(selection) && !DEPRECATED_$isGridSelection(selection))
+    ($isGridSelection(selection) && !selection.anchor.is(selection.focus)) ||
+    (!$isRangeSelection(selection) && !$isGridSelection(selection))
   ) {
     return false;
   }
@@ -145,10 +144,7 @@ function $selectLastDescendant(node: ElementNode): void {
 function currentCellBackgroundColor(editor: LexicalEditor): null | string {
   return editor.getEditorState().read(() => {
     const selection = $getSelection();
-    if (
-      $isRangeSelection(selection) ||
-      DEPRECATED_$isGridSelection(selection)
-    ) {
+    if ($isRangeSelection(selection) || $isGridSelection(selection)) {
       const [cell] = DEPRECATED_$getNodeTriplet(selection.anchor);
       if ($isTableCellNode(cell)) {
         return cell.getBackgroundColor();
@@ -209,7 +205,7 @@ function TableActionMenu({
     editor.getEditorState().read(() => {
       const selection = $getSelection();
       // Merge cells
-      if (DEPRECATED_$isGridSelection(selection)) {
+      if ($isGridSelection(selection)) {
         const currentSelectionCounts = computeSelectionCount(selection);
         updateSelectionCounts(computeSelectionCount(selection));
         setCanMergeCells(
@@ -304,7 +300,7 @@ function TableActionMenu({
   const mergeTableCellsAtSelection = () => {
     editor.update(() => {
       const selection = $getSelection();
-      if (DEPRECATED_$isGridSelection(selection)) {
+      if ($isGridSelection(selection)) {
         const {columns, rows} = computeSelectionCount(selection);
         const nodes = selection.getNodes();
         let firstCell: null | DEPRECATED_GridCellNode = null;
@@ -472,16 +468,13 @@ function TableActionMenu({
     (value: string) => {
       editor.update(() => {
         const selection = $getSelection();
-        if (
-          $isRangeSelection(selection) ||
-          DEPRECATED_$isGridSelection(selection)
-        ) {
+        if ($isRangeSelection(selection) || $isGridSelection(selection)) {
           const [cell] = DEPRECATED_$getNodeTriplet(selection.anchor);
           if ($isTableCellNode(cell)) {
             cell.setBackgroundColor(value);
           }
 
-          if (DEPRECATED_$isGridSelection(selection)) {
+          if ($isGridSelection(selection)) {
             const nodes = selection.getNodes();
 
             for (let i = 0; i < nodes.length; i++) {

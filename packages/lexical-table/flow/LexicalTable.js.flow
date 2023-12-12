@@ -8,10 +8,12 @@
  */
 
 import type {
+  BaseSelection,
   EditorConfig,
   LexicalNode,
   NodeKey,
   ParagraphNode,
+  PointType,
   RangeSelection,
   LexicalEditor,
   TextFormatType,
@@ -261,3 +263,42 @@ declare export var INSERT_TABLE_COMMAND: LexicalCommand<{
   columns: string,
   includeHeaders?: boolean,
 }>;
+
+/**
+ * LexicalGridSelection.ts
+ */
+
+export type GridSelectionShape = {
+  fromX: number,
+  fromY: number,
+  toX: number,
+  toY: number,
+};
+declare export class GridSelection implements BaseSelection {
+  gridKey: NodeKey;
+  anchor: PointType;
+  focus: PointType;
+  dirty: boolean;
+  constructor(gridKey: NodeKey, anchor: PointType, focus: PointType): void;
+  is(selection: null | BaseSelection): boolean;
+  set(gridKey: NodeKey, anchorCellKey: NodeKey, focusCellKey: NodeKey): void;
+  clone(): GridSelection;
+  getCharacterOffsets(): [number, number];
+  extract(): Array<LexicalNode>;
+  insertRawText(): void;
+  insertText(): void;
+  isCollapsed(): false;
+  isBackward(): boolean;
+  getShape(): GridSelectionShape;
+  getNodes(): Array<LexicalNode>;
+  getTextContent(): string;
+  insertNodes(nodes: Array<LexicalNode>): void;
+  getCachedNodes(): null | Array<LexicalNode>;
+  setCachedNodes(nodes: null | Array<LexicalNode>): void;
+}
+
+declare export function $isGridSelection(
+  x: ?mixed,
+): boolean %checks(x instanceof GridSelection);
+
+declare export function $createGridSelection(): GridSelection;

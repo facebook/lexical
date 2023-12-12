@@ -650,7 +650,8 @@ export function $updateTextNodeFromDOMContent(
             prevSelection.anchor.offset === 0) ||
             (prevSelection.anchor.key === textNode.__key &&
               prevSelection.anchor.offset === 0 &&
-              !node.canInsertTextBefore()) ||
+              !node.canInsertTextBefore() &&
+              !isComposing) ||
             (prevSelection.focus.key === textNode.__key &&
               prevSelection.focus.offset === prevTextContentSize &&
               !node.canInsertTextAfter())))

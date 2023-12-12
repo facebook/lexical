@@ -6,7 +6,7 @@
  *
  */
 
-import type {LexicalCommand, LexicalEditor} from './LexicalEditor';
+import type {LexicalEditor} from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
 import type {NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
@@ -1774,121 +1774,6 @@ export class RangeSelection implements BaseSelection {
 
   getStartEndPoints(): [PointType | null, PointType | null] {
     return [this.anchor, this.focus];
-  }
-
-  mergeGridNodesStrategy(nodes: LexicalNode[], editor: LexicalEditor) {
-    if (nodes.length !== 1 || !DEPRECATED_$isGridNode(nodes[0])) {
-      invariant(false, '$mergeGridNodesStrategy: Expected Grid insertion.');
-    }
-
-    const newGrid = nodes[0];
-    const newGridRows = newGrid.getChildren();
-    const newColumnCount = newGrid
-      .getFirstChildOrThrow<DEPRECATED_GridNode>()
-      .getChildrenSize();
-    const newRowCount = newGrid.getChildrenSize();
-    const gridCellNode = $findMatchingParent(this.anchor.getNode(), (n) =>
-      DEPRECATED_$isGridCellNode(n),
-    );
-    const gridRowNode =
-      gridCellNode &&
-      $findMatchingParent(gridCellNode, (n) => DEPRECATED_$isGridRowNode(n));
-    const gridNode =
-      gridRowNode &&
-      $findMatchingParent(gridRowNode, (n) => DEPRECATED_$isGridNode(n));
-
-    if (
-      !DEPRECATED_$isGridCellNode(gridCellNode) ||
-      !DEPRECATED_$isGridRowNode(gridRowNode) ||
-      !DEPRECATED_$isGridNode(gridNode)
-    ) {
-      invariant(
-        false,
-        '$mergeGridNodesStrategy: Expected selection to be inside of a Grid.',
-      );
-    }
-
-    const startY = gridRowNode.getIndexWithinParent();
-    const stopY = Math.min(
-      gridNode.getChildrenSize() - 1,
-      startY + newRowCount - 1,
-    );
-    const startX = gridCellNode.getIndexWithinParent();
-    const stopX = Math.min(
-      gridRowNode.getChildrenSize() - 1,
-      startX + newColumnCount - 1,
-    );
-    const fromX = Math.min(startX, stopX);
-    const fromY = Math.min(startY, stopY);
-    const toX = Math.max(startX, stopX);
-    const toY = Math.max(startY, stopY);
-    const gridRowNodes = gridNode.getChildren();
-    let newRowIdx = 0;
-    let newAnchorCellKey;
-    let newFocusCellKey;
-
-    for (let r = fromY; r <= toY; r++) {
-      const currentGridRowNode = gridRowNodes[r];
-
-      if (!DEPRECATED_$isGridRowNode(currentGridRowNode)) {
-        invariant(false, 'getNodes: expected to find GridRowNode');
-      }
-
-      const newGridRowNode = newGridRows[newRowIdx];
-
-      if (!DEPRECATED_$isGridRowNode(newGridRowNode)) {
-        invariant(false, 'getNodes: expected to find GridRowNode');
-      }
-
-      const gridCellNodes = currentGridRowNode.getChildren();
-      const newGridCellNodes = newGridRowNode.getChildren();
-      let newColumnIdx = 0;
-
-      for (let c = fromX; c <= toX; c++) {
-        const currentGridCellNode = gridCellNodes[c];
-
-        if (!DEPRECATED_$isGridCellNode(currentGridCellNode)) {
-          invariant(false, 'getNodes: expected to find GridCellNode');
-        }
-
-        const newGridCellNode = newGridCellNodes[newColumnIdx];
-
-        if (!DEPRECATED_$isGridCellNode(newGridCellNode)) {
-          invariant(false, 'getNodes: expected to find GridCellNode');
-        }
-
-        if (r === fromY && c === fromX) {
-          newAnchorCellKey = currentGridCellNode.getKey();
-        } else if (r === toY && c === toX) {
-          newFocusCellKey = currentGridCellNode.getKey();
-        }
-
-        const originalChildren = currentGridCellNode.getChildren();
-        newGridCellNode.getChildren().forEach((child) => {
-          if ($isTextNode(child)) {
-            const paragraphNode = $createParagraphNode();
-            paragraphNode.append(child);
-            currentGridCellNode.append(child);
-          } else {
-            currentGridCellNode.append(child);
-          }
-        });
-        originalChildren.forEach((n) => n.remove());
-        newColumnIdx++;
-      }
-
-      newRowIdx++;
-    }
-
-    if (newAnchorCellKey && newFocusCellKey) {
-      editor.dispatchCommand<
-        LexicalCommand<{node: LexicalNode; anchorKey: string; focusKey: string}>
-      >(SELECTION_CHANGE_COMMAND, {
-        anchorKey: newAnchorCellKey,
-        focusKey: newFocusCellKey,
-        node: gridNode,
-      });
-    }
   }
 }
 

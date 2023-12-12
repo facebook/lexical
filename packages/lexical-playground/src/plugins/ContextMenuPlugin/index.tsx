@@ -124,7 +124,7 @@ export default function ContextMenuPlugin(): JSX.Element {
             const item = items[0];
 
             const permission = await navigator.permissions.query({
-              // @ts-ignore These types are incorrect.
+              // @ts-expect-error These types are incorrect.
               name: 'clipboard-read',
             });
             if (permission.state === 'denied') {
@@ -149,7 +149,7 @@ export default function ContextMenuPlugin(): JSX.Element {
         onSelect: (_node) => {
           navigator.clipboard.read().then(async (...args) => {
             const permission = await navigator.permissions.query({
-              // @ts-ignore These types are incorrect.
+              // @ts-expect-error These types are incorrect.
               name: 'clipboard-read',
             });
 

@@ -417,7 +417,7 @@ export function DEPRECATED_$getGridCellNodeRect(
   colSpan: number;
 } | null {
   const [CellNode, , GridNode] = DEPRECATED_$getNodeTriplet(GridCellNode);
-  const rows = GridNode.getChildren();
+  const rows = GridNode.getChildren<DEPRECATED_GridRowNode>();
   const rowCount = rows.length;
   const columnCount = rows[0].getChildren().length;
 
@@ -429,7 +429,7 @@ export function DEPRECATED_$getGridCellNodeRect(
 
   for (let rowIndex = 0; rowIndex < rowCount; rowIndex++) {
     const row = rows[rowIndex];
-    const cells = row.getChildren();
+    const cells = row.getChildren<DEPRECATED_GridCellNode>();
     let columnIndex = 0;
 
     for (let cellIndex = 0; cellIndex < cells.length; cellIndex++) {
@@ -1278,7 +1278,7 @@ export class RangeSelection implements BaseSelection {
     const last = nodes[nodes.length - 1]!;
 
     // CASE 1: insert inside a code block
-    if ('__language' in firstBlock) {
+    if ('__language' in firstBlock && $isElementNode(firstBlock)) {
       if ('__language' in nodes[0]) {
         this.insertText(nodes[0].getTextContent());
       } else {
@@ -1294,6 +1294,10 @@ export class RangeSelection implements BaseSelection {
       ($isElementNode(node) || $isDecoratorNode(node)) && !node.isInline();
 
     if (!nodes.some(notInline)) {
+      invariant(
+        $isElementNode(firstBlock),
+        "Expected 'firstBlock' to be an ElementNode",
+      );
       const index = removeTextAndSplitBlock(this);
       firstBlock.splice(index, 0, nodes);
       last.selectEnd();
@@ -1306,7 +1310,7 @@ export class RangeSelection implements BaseSelection {
     const blocks = blocksParent.getChildren();
     const isLI = (node: LexicalNode) =>
       '__value' in node && '__checked' in node;
-    const isMergeable = (node: LexicalNode) =>
+    const isMergeable = (node: LexicalNode): node is ElementNode =>
       $isElementNode(node) &&
       INTERNAL_$isBlock(node) &&
       !node.isEmpty() &&
@@ -1318,6 +1322,10 @@ export class RangeSelection implements BaseSelection {
     const lastToInsert = blocks[blocks.length - 1];
     let firstToInsert = blocks[0];
     if (isMergeable(firstToInsert)) {
+      invariant(
+        $isElementNode(firstBlock),
+        "Expected 'firstBlock' to be an ElementNode",
+      );
       firstBlock.append(...firstToInsert.getChildren());
       firstToInsert = blocks[1];
     }
@@ -1363,6 +1371,7 @@ export class RangeSelection implements BaseSelection {
     }
     const index = removeTextAndSplitBlock(this);
     const block = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
+    invariant($isElementNode(block), 'Expected ancestor to be an ElementNode');
     const firstToAppend = block.getChildAtIndex(index);
     const nodesToInsert = firstToAppend
       ? [firstToAppend, ...firstToAppend.getNextSiblings()]

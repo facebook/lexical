@@ -72,7 +72,7 @@ export class GridSelection implements BaseSelection {
   }
 
   is(selection: null | BaseSelection): boolean {
-    if (!DEPRECATED_$isGridSelection(selection)) {
+    if (!$isGridSelection(selection)) {
       return false;
     }
     return (
@@ -112,6 +112,10 @@ export class GridSelection implements BaseSelection {
 
   insertNodes(nodes: Array<LexicalNode>) {
     const focusNode = this.focus.getNode();
+    invariant(
+      $isElementNode(focusNode),
+      'Expected GridSelection focus to be an ElementNode',
+    );
     const selection = $normalizeSelection__EXPERIMENTAL(
       focusNode.select(0, focusNode.getChildrenSize()),
     );
@@ -336,11 +340,11 @@ export class GridSelection implements BaseSelection {
   }
 }
 
-export function DEPRECATED_$isGridSelection(x: unknown): x is GridSelection {
+export function $isGridSelection(x: unknown): x is GridSelection {
   return x instanceof GridSelection;
 }
 
-export function DEPRECATED_$createGridSelection(): GridSelection {
+export function $createGridSelection(): GridSelection {
   const anchor = $createPoint('root', 0, 'element');
   const focus = $createPoint('root', 0, 'element');
   return new GridSelection('root', anchor, focus);

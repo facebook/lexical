@@ -19,6 +19,7 @@ import {
   IS_IOS,
   IS_SAFARI,
 } from 'shared/environment';
+import invariant from 'shared/invariant';
 
 import {
   $getPreviousSelection,
@@ -336,6 +337,10 @@ function onSelectionChange(
           selection.style = lastStyle;
         } else {
           if (anchor.type === 'text') {
+            invariant(
+              $isTextNode(anchorNode),
+              'Point.getNode() must return TextNode when type is text',
+            );
             selection.format = anchorNode.getFormat();
             selection.style = anchorNode.getStyle();
           } else if (anchor.type === 'element' && !isRootTextContentEmpty) {
@@ -541,6 +546,10 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
             const anchorNode = selection.anchor.getNode();
             anchorNode.markDirty();
             selection.format = anchorNode.getFormat();
+            invariant(
+              $isTextNode(anchorNode),
+              'Anchor node must be a TextNode',
+            );
             selection.style = anchorNode.getStyle();
           }
           const selectedText = selection.anchor.getNode().getTextContent();
@@ -856,7 +865,7 @@ function onCompositionStart(
         anchor.type === 'element' ||
         !selection.isCollapsed() ||
         node.getFormat() !== selection.format ||
-        node.getStyle() !== selection.style
+        ($isTextNode(node) && node.getStyle() !== selection.style)
       ) {
         // We insert a zero width character, ready for the composition
         // to get inserted into the new node we create. If

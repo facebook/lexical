@@ -27,6 +27,7 @@ import {
   RangeSelection,
   TextNode,
 } from 'lexical';
+import invariant from 'shared/invariant';
 
 import {CSS_TO_STYLES} from './constants';
 import {
@@ -145,8 +146,13 @@ export function $isAtNodeEnd(point: Point): boolean {
   if (point.type === 'text') {
     return point.offset === point.getNode().getTextContentSize();
   }
+  const node = point.getNode();
+  invariant(
+    $isElementNode(node),
+    'isAtNodeEnd: node must be a TextNode or ElementNode',
+  );
 
-  return point.offset === point.getNode().getChildrenSize();
+  return point.offset === node.getChildrenSize();
 }
 
 /**

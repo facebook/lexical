@@ -9,7 +9,7 @@
 /* eslint-disable no-constant-condition */
 import type {EditorConfig, LexicalEditor} from './LexicalEditor';
 import type {BaseSelection, RangeSelection} from './LexicalSelection';
-import type {Klass} from 'lexical';
+import type {Klass, KlassConstructor} from 'lexical';
 
 import invariant from 'shared/invariant';
 
@@ -121,7 +121,7 @@ export function removeNode(
 
 export type DOMConversion<T extends HTMLElement = HTMLElement> = {
   conversion: DOMConversionFn<T>;
-  priority: 0 | 1 | 2 | 3 | 4;
+  priority?: 0 | 1 | 2 | 3 | 4;
 };
 
 export type DOMConversionFn<T extends HTMLElement = HTMLElement> = (
@@ -155,8 +155,8 @@ export type DOMExportOutput = {
 export type NodeKey = string;
 
 export class LexicalNode {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [x: string]: any;
+  // Allow us to look up the type including static props
+  ['constructor']!: KlassConstructor<typeof LexicalNode>;
   /** @internal */
   __type: string;
   /** @internal */
@@ -202,8 +202,10 @@ export class LexicalNode {
     );
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  static importDOM?: () => DOMConversionMap<any> | null;
+
   constructor(key?: NodeKey) {
-    // @ts-expect-error
     this.__type = this.constructor.getType();
     this.__parent = null;
     this.__prev = null;
@@ -213,11 +215,7 @@ export class LexicalNode {
     if (__DEV__) {
       if (this.__type !== 'root') {
         errorOnReadOnly();
-        errorOnTypeKlassMismatch(
-          this.__type,
-          // @ts-expect-error
-          this.constructor,
-        );
+        errorOnTypeKlassMismatch(this.__type, this.constructor);
       }
     }
   }
@@ -228,6 +226,14 @@ export class LexicalNode {
    */
   getType(): string {
     return this.__type;
+  }
+
+  isInline(): boolean {
+    invariant(
+      false,
+      'LexicalNode: Node %s does not implement .isInline().',
+      this.constructor.name,
+    );
   }
 
   /**
@@ -341,11 +347,15 @@ export class LexicalNode {
    * non-root ancestor of this node, or null if none is found. See {@link lexical!$isRootOrShadowRoot}
    * for more information on which Elements comprise "roots".
    */
-  getTopLevelElement(): ElementNode | this | null {
+  getTopLevelElement(): ElementNode | null {
     let node: ElementNode | this | null = this;
     while (node !== null) {
-      const parent: ElementNode | this | null = node.getParent();
+      const parent: ElementNode | null = node.getParent();
       if ($isRootOrShadowRoot(parent)) {
+        invariant(
+          $isElementNode(node),
+          'Children of root nodes must be elements',
+        );
         return node;
       }
       node = parent;
@@ -358,7 +368,7 @@ export class LexicalNode {
    * non-root ancestor of this node, or throws if none is found. See {@link lexical!$isRootOrShadowRoot}
    * for more information on which Elements comprise "roots".
    */
-  getTopLevelElementOrThrow(): ElementNode | this {
+  getTopLevelElementOrThrow(): ElementNode {
     const parent = this.getTopLevelElement();
     if (parent === null) {
       invariant(
@@ -682,7 +692,6 @@ export class LexicalNode {
       return latestNode;
     }
     const constructor = latestNode.constructor;
-    // @ts-expect-error
     const mutableNode = constructor.clone(latestNode);
     mutableNode.__parent = parent;
     mutableNode.__next = latestNode.__next;
@@ -706,6 +715,7 @@ export class LexicalNode {
     // Update reference in node map
     nodeMap.set(key, mutableNode);
 
+    // @ts-expect-error
     return mutableNode;
   }
 
@@ -871,6 +881,10 @@ export class LexicalNode {
     writableReplaceWith.__parent = parentKey;
     writableParent.__size = size;
     if (includeChildren) {
+      invariant(
+        $isElementNode(this) && $isElementNode(writableReplaceWith),
+        'includeChildren should only be true for ElementNodes',
+      );
       this.getChildren().forEach((child: LexicalNode) => {
         writableReplaceWith.append(child);
       });

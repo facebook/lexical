@@ -12,10 +12,7 @@ import type {LexicalCommand} from 'lexical';
 import {createCommand} from 'lexical';
 
 export type {GridSelection, GridSelectionShape} from './LexicalGridSelection';
-export {
-  DEPRECATED_$createGridSelection,
-  DEPRECATED_$isGridSelection,
-} from './LexicalGridSelection';
+export {$createGridSelection, $isGridSelection} from './LexicalGridSelection';
 export type {SerializedTableCellNode} from './LexicalTableCellNode';
 export {
   $createTableCellNode,

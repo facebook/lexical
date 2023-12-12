@@ -12,9 +12,8 @@ import {
   $cloneWithProperties,
   $sliceSelectedTextNodeContent,
 } from '@lexical/selection';
-import {$findMatchingParent, objectKlassEquals} from '@lexical/utils';
+import {objectKlassEquals} from '@lexical/utils';
 import {
-  $createRangeSelection,
   $createTabNode,
   $getRoot,
   $getSelection,
@@ -25,11 +24,11 @@ import {
   BaseSelection,
   COMMAND_PRIORITY_CRITICAL,
   COPY_COMMAND,
-  DEPRECATED_$isGridCellNode,
-  DEPRECATED_$isGridNode,
   isSelectionWithinEditor,
   LexicalEditor,
   LexicalNode,
+  SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
+  SerializedElementNode,
   SerializedTextNode,
 } from 'lexical';
 import {CAN_USE_DOM} from 'shared/canUseDOM';
@@ -197,36 +196,14 @@ export function $insertGeneratedNodes(
   nodes: Array<LexicalNode>,
   selection: BaseSelection,
 ): void {
-  const [anchor, focus] = selection.getStartEndPoints();
-  const isRangeSelection = $isRangeSelection(selection);
-  const isRangeInsideGrid =
-    isRangeSelection &&
-    $findMatchingParent(selection.anchor.getNode(), (n) =>
-      DEPRECATED_$isGridCellNode(n),
-    ) !== null &&
-    $findMatchingParent(selection.focus.getNode(), (n) =>
-      DEPRECATED_$isGridCellNode(n),
-    ) !== null;
-
-  if (isRangeInsideGrid) {
-    selection.mergeGridNodesStrategy(nodes, editor);
-    return;
-  }
   if (
-    anchor != null &&
-    focus != null &&
-    !isRangeSelection &&
-    nodes.length === 1 &&
-    DEPRECATED_$isGridNode(nodes[0])
+    !editor.dispatchCommand(SELECTION_INSERT_CLIPBOARD_NODES_COMMAND, {
+      nodes,
+      selection,
+    })
   ) {
-    const rangeSelection = $createRangeSelection();
-    rangeSelection.anchor.set(anchor.key, 0, 'element');
-    rangeSelection.focus.set(focus.key, 0, 'element');
-    rangeSelection.mergeGridNodesStrategy(nodes, editor);
-    return;
+    selection.insertNodes(nodes);
   }
-
-  selection.insertNodes(nodes);
   return;
 }
 
@@ -240,7 +217,6 @@ function exportNodeToJSON<T extends LexicalNode>(node: T): BaseSerializedNode {
   const serializedNode = node.exportJSON();
   const nodeClass = node.constructor;
 
-  // @ts-expect-error TODO Replace Class utility type with InstanceType
   if (serializedNode.type !== nodeClass.getType()) {
     invariant(
       false,
@@ -249,10 +225,9 @@ function exportNodeToJSON<T extends LexicalNode>(node: T): BaseSerializedNode {
     );
   }
 
-  // @ts-expect-error TODO Replace Class utility type with InstanceType
-  const serializedChildren = serializedNode.children;
-
   if ($isElementNode(node)) {
+    const serializedChildren = (serializedNode as SerializedElementNode)
+      .children;
     if (!Array.isArray(serializedChildren)) {
       invariant(
         false,

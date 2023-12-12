@@ -29,8 +29,8 @@ import invariant from 'shared/invariant';
 
 import {
   type GridSelection,
-  DEPRECATED_$createGridSelection,
-  DEPRECATED_$isGridSelection,
+  $createGridSelection,
+  $isGridSelection,
 } from './LexicalGridSelection';
 import {$isTableCellNode} from './LexicalTableCellNode';
 import {$isTableNode} from './LexicalTableNode';
@@ -291,7 +291,7 @@ export class TableSelection {
           const focusNodeKey = focusTableCellNode.getKey();
 
           this.gridSelection =
-            this.gridSelection.clone() || DEPRECATED_$createGridSelection();
+            this.gridSelection.clone() || $createGridSelection();
 
           this.focusCellNodeKey = focusNodeKey;
           this.gridSelection.set(
@@ -324,7 +324,7 @@ export class TableSelection {
         this.gridSelection =
           this.gridSelection != null
             ? this.gridSelection.clone()
-            : DEPRECATED_$createGridSelection();
+            : $createGridSelection();
         this.anchorCellNodeKey = anchorNodeKey;
       }
     });
@@ -334,7 +334,7 @@ export class TableSelection {
     this.editor.update(() => {
       const selection = $getSelection();
 
-      if (!DEPRECATED_$isGridSelection(selection)) {
+      if (!$isGridSelection(selection)) {
         invariant(false, 'Expected grid selection');
       }
 
@@ -368,7 +368,7 @@ export class TableSelection {
 
       const selection = $getSelection();
 
-      if (!DEPRECATED_$isGridSelection(selection)) {
+      if (!$isGridSelection(selection)) {
         invariant(false, 'Expected grid selection');
       }
 

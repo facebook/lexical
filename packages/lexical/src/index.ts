@@ -18,6 +18,7 @@ export type {
   EditorThemeClasses,
   HTMLConfig,
   Klass,
+  KlassConstructor,
   LexicalCommand,
   LexicalEditor,
   LexicalNodeReplacement,
@@ -108,6 +109,7 @@ export {
   REMOVE_TEXT_COMMAND,
   SELECT_ALL_COMMAND,
   SELECTION_CHANGE_COMMAND,
+  SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
   UNDO_COMMAND,
 } from './LexicalCommands';
 export {

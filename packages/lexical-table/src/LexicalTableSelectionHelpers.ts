@@ -12,6 +12,7 @@ import type {TableNode} from './LexicalTableNode';
 import type {Cell, Cells, Grid} from './LexicalTableSelection';
 import type {
   BaseSelection,
+  DEPRECATED_GridNode,
   LexicalCommand,
   LexicalEditor,
   LexicalNode,
@@ -25,8 +26,10 @@ import {
   $getNearestNodeFromDOMNode,
   $getPreviousSelection,
   $getSelection,
+  $INTERNAL_isPointSelection,
   $isElementNode,
   $isRangeSelection,
+  $isTextNode,
   $setSelection,
   COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_HIGH,
@@ -34,7 +37,9 @@ import {
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
+  DEPRECATED_$isGridCellNode,
   DEPRECATED_$isGridNode,
+  DEPRECATED_$isGridRowNode,
   FOCUS_COMMAND,
   FORMAT_TEXT_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
@@ -46,6 +51,7 @@ import {
   KEY_ESCAPE_COMMAND,
   KEY_TAB_COMMAND,
   SELECTION_CHANGE_COMMAND,
+  SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -461,34 +467,147 @@ export function applyTableHandlers(
   }
 
   tableSelection.listenersToRemove.add(
-    editor.registerCommand<{
-      node: LexicalNode;
-      anchorKey: string;
-      focusKey: string;
-    }>(
-      SELECTION_CHANGE_COMMAND,
-      (
-        selectionPayload: {
-          node: LexicalNode;
-          anchorKey: string;
-          focusKey: string;
-        } | null,
-      ) => {
+    editor.registerCommand(
+      SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
+      (selectionPayload) => {
+        const {nodes, selection} = selectionPayload;
+        const isPointSelection = $INTERNAL_isPointSelection(selection);
+        const isRangeSelection = $isRangeSelection(selection);
+        const isSelectionInsideOfGrid =
+          (isRangeSelection &&
+            $findMatchingParent(selection.anchor.getNode(), (n) =>
+              DEPRECATED_$isGridCellNode(n),
+            ) !== null &&
+            $findMatchingParent(selection.focus.getNode(), (n) =>
+              DEPRECATED_$isGridCellNode(n),
+            ) !== null) ||
+          (isPointSelection && !isRangeSelection);
+
         if (
-          selectionPayload != null &&
-          DEPRECATED_$isGridNode(selectionPayload.node) &&
-          selectionPayload.anchorKey &&
-          selectionPayload.focusKey
+          nodes.length !== 1 ||
+          !DEPRECATED_$isGridNode(nodes[0]) ||
+          !isSelectionInsideOfGrid
         ) {
+          return false;
+        }
+        const {anchor} = selection;
+
+        const newGrid = nodes[0];
+        const newGridRows = newGrid.getChildren();
+        const newColumnCount = newGrid
+          .getFirstChildOrThrow<DEPRECATED_GridNode>()
+          .getChildrenSize();
+        const newRowCount = newGrid.getChildrenSize();
+        const gridCellNode = $findMatchingParent(anchor.getNode(), (n) =>
+          DEPRECATED_$isGridCellNode(n),
+        );
+        const gridRowNode =
+          gridCellNode &&
+          $findMatchingParent(gridCellNode, (n) =>
+            DEPRECATED_$isGridRowNode(n),
+          );
+        const gridNode =
+          gridRowNode &&
+          $findMatchingParent(gridRowNode, (n) => DEPRECATED_$isGridNode(n));
+
+        if (
+          !DEPRECATED_$isGridCellNode(gridCellNode) ||
+          !DEPRECATED_$isGridRowNode(gridRowNode) ||
+          !DEPRECATED_$isGridNode(gridNode)
+        ) {
+          return false;
+        }
+
+        const startY = gridRowNode.getIndexWithinParent();
+        const stopY = Math.min(
+          gridNode.getChildrenSize() - 1,
+          startY + newRowCount - 1,
+        );
+        const startX = gridCellNode.getIndexWithinParent();
+        const stopX = Math.min(
+          gridRowNode.getChildrenSize() - 1,
+          startX + newColumnCount - 1,
+        );
+        const fromX = Math.min(startX, stopX);
+        const fromY = Math.min(startY, stopY);
+        const toX = Math.max(startX, stopX);
+        const toY = Math.max(startY, stopY);
+        const gridRowNodes = gridNode.getChildren();
+        let newRowIdx = 0;
+        let newAnchorCellKey;
+        let newFocusCellKey;
+
+        for (let r = fromY; r <= toY; r++) {
+          const currentGridRowNode = gridRowNodes[r];
+
+          if (!DEPRECATED_$isGridRowNode(currentGridRowNode)) {
+            return false;
+          }
+
+          const newGridRowNode = newGridRows[newRowIdx];
+
+          if (!DEPRECATED_$isGridRowNode(newGridRowNode)) {
+            return false;
+          }
+
+          const gridCellNodes = currentGridRowNode.getChildren();
+          const newGridCellNodes = newGridRowNode.getChildren();
+          let newColumnIdx = 0;
+
+          for (let c = fromX; c <= toX; c++) {
+            const currentGridCellNode = gridCellNodes[c];
+
+            if (!DEPRECATED_$isGridCellNode(currentGridCellNode)) {
+              return false;
+            }
+
+            const newGridCellNode = newGridCellNodes[newColumnIdx];
+
+            if (!DEPRECATED_$isGridCellNode(newGridCellNode)) {
+              return false;
+            }
+
+            if (r === fromY && c === fromX) {
+              newAnchorCellKey = currentGridCellNode.getKey();
+            } else if (r === toY && c === toX) {
+              newFocusCellKey = currentGridCellNode.getKey();
+            }
+
+            const originalChildren = currentGridCellNode.getChildren();
+            newGridCellNode.getChildren().forEach((child) => {
+              if ($isTextNode(child)) {
+                const paragraphNode = $createParagraphNode();
+                paragraphNode.append(child);
+                currentGridCellNode.append(child);
+              } else {
+                currentGridCellNode.append(child);
+              }
+            });
+            originalChildren.forEach((n) => n.remove());
+            newColumnIdx++;
+          }
+
+          newRowIdx++;
+        }
+        if (newAnchorCellKey && newFocusCellKey) {
           const newGridSelection = DEPRECATED_$createGridSelection();
           newGridSelection.set(
-            selectionPayload.node.getKey(),
-            selectionPayload.anchorKey,
-            selectionPayload.focusKey,
+            nodes[0].getKey(),
+            newAnchorCellKey,
+            newFocusCellKey,
           );
           $setSelection(newGridSelection);
         }
+        return true;
+      },
+      COMMAND_PRIORITY_CRITICAL,
+    ),
+  );
 
+  tableSelection.listenersToRemove.add(
+    editor.registerCommand(
+      SELECTION_CHANGE_COMMAND,
+      () => {
         const selection = $getSelection();
         const prevSelection = $getPreviousSelection();
 

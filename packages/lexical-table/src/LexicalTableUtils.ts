@@ -23,7 +23,7 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
-import {DEPRECATED_$isGridSelection, InsertTableCommandPayloadHeaders} from '.';
+import {$isGridSelection, InsertTableCommandPayloadHeaders} from '.';
 import {
   $createTableCellNode,
   $isTableCellNode,
@@ -230,7 +230,7 @@ export function $insertTableRow(
 export function $insertTableRow__EXPERIMENTAL(insertAfter = true): void {
   const selection = $getSelection();
   invariant(
-    $isRangeSelection(selection) || DEPRECATED_$isGridSelection(selection),
+    $isRangeSelection(selection) || $isGridSelection(selection),
     'Expected a RangeSelection or GridSelection',
   );
   const focus = selection.focus.getNode();
@@ -342,7 +342,7 @@ export function $insertTableColumn(
 export function $insertTableColumn__EXPERIMENTAL(insertAfter = true): void {
   const selection = $getSelection();
   invariant(
-    $isRangeSelection(selection) || DEPRECATED_$isGridSelection(selection),
+    $isRangeSelection(selection) || $isGridSelection(selection),
     'Expected a RangeSelection or GridSelection',
   );
   const anchor = selection.anchor.getNode();
@@ -447,7 +447,7 @@ export function $deleteTableColumn(
 export function $deleteTableRow__EXPERIMENTAL(): void {
   const selection = $getSelection();
   invariant(
-    $isRangeSelection(selection) || DEPRECATED_$isGridSelection(selection),
+    $isRangeSelection(selection) || $isGridSelection(selection),
     'Expected a RangeSelection or GridSelection',
   );
   const anchor = selection.anchor.getNode();
@@ -523,7 +523,7 @@ export function $deleteTableRow__EXPERIMENTAL(): void {
 export function $deleteTableColumn__EXPERIMENTAL(): void {
   const selection = $getSelection();
   invariant(
-    $isRangeSelection(selection) || DEPRECATED_$isGridSelection(selection),
+    $isRangeSelection(selection) || $isGridSelection(selection),
     'Expected a RangeSelection or GridSelection',
   );
   const anchor = selection.anchor.getNode();
@@ -608,7 +608,7 @@ function $insertFirst(parent: ElementNode, node: LexicalNode): void {
 export function $unmergeCell(): void {
   const selection = $getSelection();
   invariant(
-    $isRangeSelection(selection) || DEPRECATED_$isGridSelection(selection),
+    $isRangeSelection(selection) || $isGridSelection(selection),
     'Expected a RangeSelection or GridSelection',
   );
   const anchor = selection.anchor.getNode();

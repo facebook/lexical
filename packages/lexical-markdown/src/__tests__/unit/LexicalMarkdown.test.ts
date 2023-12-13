@@ -183,6 +183,12 @@ describe('Markdown', () => {
       md: `Hello [world](${URL})! Hello $world$! [Hello](${URL}) world! Hello $world$!`,
       skipExport: true,
     },
+    {
+      // Export only: import will use $...$ to transform <span /> to <mark /> due to HIGHLIGHT_TEXT_MATCH_IMPORT
+      html: "<p><span style='white-space: pre-wrap;'>$$H$&e$`l$'lo</span></p>",
+      md: "$$H$&e$`l$'lo",
+      skipImport: true,
+    },
   ];
 
   const HIGHLIGHT_TEXT_MATCH_IMPORT: TextMatchTransformer = {

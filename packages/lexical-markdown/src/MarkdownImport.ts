@@ -303,11 +303,11 @@ function importTextMatchTransformers(
           endIndex,
         );
       }
-      if (leftTextNode) {
-        importTextMatchTransformers(leftTextNode, textMatchTransformers);
-      }
       if (rightTextNode) {
-        textNode = rightTextNode;
+        importTextMatchTransformers(rightTextNode, textMatchTransformers);
+      }
+      if (leftTextNode) {
+        textNode = leftTextNode;
       }
       transformer.replace(replaceNode, match);
       continue mainLoop;

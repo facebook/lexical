@@ -802,6 +802,10 @@ i.page-break,
     display: none !important;
   }
 
+  .dialog-dropdown > .dropdown-button-text {
+    display: flex !important;
+  }
+
   .font-size .dropdown-button-text {
     display: flex !important;
   }

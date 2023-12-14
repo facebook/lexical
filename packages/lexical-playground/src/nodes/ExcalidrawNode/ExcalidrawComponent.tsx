@@ -153,11 +153,23 @@ export default function ExcalidrawComponent({
     setIsResizing(true);
   };
 
-  const onResizeEnd = () => {
+  const onResizeEnd = (
+    nextWidth: 'inherit' | number,
+    nextHeight: 'inherit' | number,
+  ) => {
     // Delay hiding the resize bars for click case
     setTimeout(() => {
       setIsResizing(false);
     }, 200);
+
+    editor.update(() => {
+      const node = $getNodeByKey(nodeKey);
+
+      if ($isExcalidrawNode(node)) {
+        node.setWidth(nextWidth);
+        node.setHeight(nextHeight);
+      }
+    });
   };
 
   const openModal = useCallback(() => {

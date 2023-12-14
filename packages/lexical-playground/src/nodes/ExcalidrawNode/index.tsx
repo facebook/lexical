@@ -27,6 +27,8 @@ const ExcalidrawComponent = React.lazy(() => import('./ExcalidrawComponent'));
 export type SerializedExcalidrawNode = Spread<
   {
     data: string;
+    width: number | 'inherit';
+    height: number | 'inherit';
   },
   SerializedLexicalNode
 >;
@@ -47,6 +49,8 @@ function convertExcalidrawElement(
 
 export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
   __data: string;
+  __width: number | 'inherit';
+  __height: number | 'inherit';
 
   static getType(): string {
     return 'excalidraw';
@@ -63,14 +67,18 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
   exportJSON(): SerializedExcalidrawNode {
     return {
       data: this.__data,
+      height: this.__height,
       type: 'excalidraw',
       version: 1,
+      width: this.__width,
     };
   }
 
   constructor(data = '[]', key?: NodeKey) {
     super(key);
     this.__data = data;
+    this.__width = 'inherit';
+    this.__height = 'inherit';
   }
 
   // View
@@ -78,6 +86,12 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
     const span = document.createElement('span');
     const theme = config.theme;
     const className = theme.image;
+
+    span.style.width =
+      this.__width === 'inherit' ? 'inherit' : `${this.__width}px`;
+    span.style.height =
+      this.__height === 'inherit' ? 'inherit' : `${this.__height}px`;
+
     if (className !== undefined) {
       span.className = className;
     }
@@ -104,6 +118,9 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const element = document.createElement('span');
+
+    element.style.display = 'inline-block';
+
     const content = editor.getElementByKey(this.getKey());
     if (content !== null) {
       const svg = content.querySelector('svg');
@@ -111,6 +128,12 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
         element.innerHTML = svg.outerHTML;
       }
     }
+
+    element.style.width =
+      this.__width === 'inherit' ? 'inherit' : `${this.__width}px`;
+    element.style.height =
+      this.__height === 'inherit' ? 'inherit' : `${this.__height}px`;
+
     element.setAttribute('data-lexical-excalidraw-json', this.__data);
     return {element};
   }
@@ -118,6 +141,16 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
   setData(data: string): void {
     const self = this.getWritable();
     self.__data = data;
+  }
+
+  setWidth(width: number | 'inherit'): void {
+    const self = this.getWritable();
+    self.__width = width;
+  }
+
+  setHeight(height: number | 'inherit'): void {
+    const self = this.getWritable();
+    self.__height = height;
   }
 
   decorate(editor: LexicalEditor, config: EditorConfig): JSX.Element {

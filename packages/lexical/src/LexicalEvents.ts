@@ -432,6 +432,7 @@ function onClick(event: PointerEvent, editor: LexicalEditor): void {
               lastSelection,
               domSelection,
               editor,
+              event,
             );
             $setSelection(newSelection);
           }
@@ -1110,6 +1111,7 @@ function onDocumentSelectionChange(event: Event): void {
         lastSelection,
         domSelection,
         nextActiveEditor,
+        event,
       );
       $setSelection(newSelection);
     });

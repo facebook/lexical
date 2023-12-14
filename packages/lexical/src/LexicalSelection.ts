@@ -2265,7 +2265,12 @@ export function internalCreateSelection(
   const domSelection = getDOMSelection(editor._window);
 
   if ($isRangeSelection(lastSelection) || lastSelection == null) {
-    return internalCreateRangeSelection(lastSelection, domSelection, editor);
+    return internalCreateRangeSelection(
+      lastSelection,
+      domSelection,
+      editor,
+      null,
+    );
   }
   return lastSelection.clone();
 }
@@ -2274,6 +2279,7 @@ export function internalCreateRangeSelection(
   lastSelection: null | BaseSelection,
   domSelection: Selection | null,
   editor: LexicalEditor,
+  event: UIEvent | Event | null,
 ): null | RangeSelection {
   const windowObj = editor._window;
   if (windowObj === null) {
@@ -2293,7 +2299,7 @@ export function internalCreateRangeSelection(
   // reconciliation unless there are dirty nodes that need
   // reconciling.
 
-  const windowEvent = windowObj.event;
+  const windowEvent = event || windowObj.event;
   const eventType = windowEvent ? windowEvent.type : undefined;
   const isSelectionChange = eventType === 'selectionchange';
   const useDOMSelection =

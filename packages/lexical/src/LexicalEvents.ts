@@ -558,6 +558,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
             dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);
           }
         } else {
+          $setCompositionKey(null);
           event.preventDefault();
           dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);
         }

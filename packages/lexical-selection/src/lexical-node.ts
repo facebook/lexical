@@ -19,7 +19,6 @@ import {
   $setSelection,
   BaseSelection,
   DEPRECATED_$isGridCellNode,
-  DEPRECATED_$isGridSelection,
   ElementNode,
   INTERNAL_PointSelection,
   LexicalEditor,
@@ -28,6 +27,7 @@ import {
   RangeSelection,
   TextNode,
 } from 'lexical';
+import invariant from 'shared/invariant';
 
 import {CSS_TO_STYLES} from './constants';
 import {
@@ -144,8 +144,13 @@ export function $isAtNodeEnd(point: Point): boolean {
   if (point.type === 'text') {
     return point.offset === point.getNode().getTextContentSize();
   }
+  const node = point.getNode();
+  invariant(
+    $isElementNode(node),
+    'isAtNodeEnd: node must be a TextNode or ElementNode',
+  );
 
-  return point.offset === point.getNode().getChildrenSize();
+  return point.offset === node.getChildrenSize();
 }
 
 /**
@@ -322,7 +327,7 @@ export function $patchStyleText(
   const selectedNodes = selection.getNodes();
   const selectedNodesLength = selectedNodes.length;
 
-  if (DEPRECATED_$isGridSelection(selection)) {
+  if (!$isRangeSelection(selection)) {
     const cellSelection = $createRangeSelection();
     const cellSelectionAnchor = cellSelection.anchor;
     const cellSelectionFocus = cellSelection.focus;

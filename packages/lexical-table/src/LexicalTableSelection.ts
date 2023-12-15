@@ -6,12 +6,7 @@
  *
  */
 
-import type {
-  GridSelection,
-  LexicalEditor,
-  NodeKey,
-  TextFormatType,
-} from 'lexical';
+import type {LexicalEditor, NodeKey, TextFormatType} from 'lexical';
 
 import {
   addClassNamesToElement,
@@ -27,13 +22,16 @@ import {
   $getSelection,
   $isElementNode,
   $setSelection,
-  DEPRECATED_$createGridSelection,
-  DEPRECATED_$isGridSelection,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import {CAN_USE_DOM} from 'shared/canUseDOM';
 import invariant from 'shared/invariant';
 
+import {
+  type GridSelection,
+  $createGridSelection,
+  $isGridSelection,
+} from './LexicalGridSelection';
 import {$isTableCellNode} from './LexicalTableCellNode';
 import {$isTableNode} from './LexicalTableNode';
 import {
@@ -293,7 +291,7 @@ export class TableSelection {
           const focusNodeKey = focusTableCellNode.getKey();
 
           this.gridSelection =
-            this.gridSelection.clone() || DEPRECATED_$createGridSelection();
+            this.gridSelection.clone() || $createGridSelection();
 
           this.focusCellNodeKey = focusNodeKey;
           this.gridSelection.set(
@@ -326,7 +324,7 @@ export class TableSelection {
         this.gridSelection =
           this.gridSelection != null
             ? this.gridSelection.clone()
-            : DEPRECATED_$createGridSelection();
+            : $createGridSelection();
         this.anchorCellNodeKey = anchorNodeKey;
       }
     });
@@ -336,7 +334,7 @@ export class TableSelection {
     this.editor.update(() => {
       const selection = $getSelection();
 
-      if (!DEPRECATED_$isGridSelection(selection)) {
+      if (!$isGridSelection(selection)) {
         invariant(false, 'Expected grid selection');
       }
 
@@ -370,7 +368,7 @@ export class TableSelection {
 
       const selection = $getSelection();
 
-      if (!DEPRECATED_$isGridSelection(selection)) {
+      if (!$isGridSelection(selection)) {
         invariant(false, 'Expected grid selection');
       }
 

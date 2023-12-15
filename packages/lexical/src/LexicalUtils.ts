@@ -17,6 +17,7 @@ import type {
   NodeMutation,
   RegisteredNode,
   RegisteredNodes,
+  Spread,
 } from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
 import type {LexicalNode, NodeKey, NodeMap} from './LexicalNode';
@@ -649,7 +650,8 @@ export function $updateTextNodeFromDOMContent(
             prevSelection.anchor.offset === 0) ||
             (prevSelection.anchor.key === textNode.__key &&
               prevSelection.anchor.offset === 0 &&
-              !node.canInsertTextBefore()) ||
+              !node.canInsertTextBefore() &&
+              !isComposing) ||
             (prevSelection.focus.key === textNode.__key &&
               prevSelection.focus.offset === prevTextContentSize &&
               !node.canInsertTextAfter())))
@@ -1318,14 +1320,23 @@ export function $getNearestRootOrShadowRoot(
   return parent;
 }
 
-export function $isRootOrShadowRoot(node: null | LexicalNode): boolean {
+const ShadowRootNodeBrand: unique symbol = Symbol.for(
+  '@lexical/ShadowRootNodeBrand',
+);
+type ShadowRootNode = Spread<
+  {isShadowRoot(): true; [ShadowRootNodeBrand]: never},
+  ElementNode
+>;
+export function $isRootOrShadowRoot(
+  node: null | LexicalNode,
+): node is RootNode | ShadowRootNode {
   return $isRootNode(node) || ($isElementNode(node) && node.isShadowRoot());
 }
 
 export function $copyNode<T extends LexicalNode>(node: T): T {
-  // @ts-ignore
   const copy = node.constructor.clone(node);
   $setNodeKey(copy, null);
+  // @ts-expect-error
   return copy;
 }
 
@@ -1333,7 +1344,7 @@ export function $applyNodeReplacement<N extends LexicalNode>(
   node: LexicalNode,
 ): N {
   const editor = getActiveEditor();
-  const nodeType = (node.constructor as Klass<LexicalNode>).getType();
+  const nodeType = node.constructor.getType();
   const registeredNode = editor._nodes.get(nodeType);
   if (registeredNode === undefined) {
     invariant(
@@ -1501,9 +1512,9 @@ export function $splitNode(
     'Can not call $splitNode() on root element',
   );
 
-  const recurse = (
-    currentNode: LexicalNode,
-  ): [ElementNode, ElementNode, LexicalNode] => {
+  const recurse = <T extends LexicalNode>(
+    currentNode: T,
+  ): [ElementNode, ElementNode, T] => {
     const parent = currentNode.getParentOrThrow();
     const isParentRoot = $isRootOrShadowRoot(parent);
     // The node we start split from (leaf) is moved, but its recursive
@@ -1514,12 +1525,13 @@ export function $splitNode(
         : $copyNode(currentNode);
 
     if (isParentRoot) {
+      invariant(
+        $isElementNode(currentNode) && $isElementNode(nodeToMove),
+        'Children of a root must be ElementNode',
+      );
+
       currentNode.insertAfter(nodeToMove);
-      return [
-        currentNode as ElementNode,
-        nodeToMove as ElementNode,
-        nodeToMove,
-      ];
+      return [currentNode, nodeToMove, nodeToMove];
     } else {
       const [leftTree, rightTree, newParent] = recurse(parent);
       const nextSiblings = currentNode.getNextSiblings();
@@ -1549,25 +1561,6 @@ export function $findMatchingParent(
   }
 
   return null;
-}
-
-export function $getChildrenRecursively(node: LexicalNode): Array<LexicalNode> {
-  const nodes = [];
-  const stack = [node];
-  while (stack.length > 0) {
-    const currentNode = stack.pop();
-    invariant(
-      currentNode !== undefined,
-      "Stack.length > 0; can't be undefined",
-    );
-    if ($isElementNode(currentNode)) {
-      stack.unshift(...currentNode.getChildren());
-    }
-    if (currentNode !== node) {
-      nodes.push(currentNode);
-    }
-  }
-  return nodes;
 }
 
 /**

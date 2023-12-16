@@ -592,7 +592,12 @@ export function registerRichText(editor: LexicalEditor): () => void {
 
           const dataTransfer = eventOrText.dataTransfer;
           if (dataTransfer != null) {
-            $insertDataTransferForRichText(dataTransfer, selection, editor);
+            $insertDataTransferForRichText(
+              dataTransfer,
+              selection,
+              editor,
+              eventOrText,
+            );
           } else if ($isRangeSelection(selection)) {
             const data = eventOrText.data;
             if (data) {

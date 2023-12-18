@@ -1797,7 +1797,7 @@ export function $getCharacterOffsets(
   selection: BaseSelection,
 ): [number, number] {
   const [anchor, focus] = selection.getStartEndPoints();
-  if (anchor == null || focus == null) {
+  if (anchor === null || focus === null) {
     return [0, 0];
   }
   if (

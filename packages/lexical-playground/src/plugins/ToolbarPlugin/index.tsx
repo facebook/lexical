@@ -263,7 +263,7 @@ function BlockFormatDropDown({
       editor.update(() => {
         let selection = $getSelection();
 
-        if (selection != null) {
+        if (selection !== null) {
           if (selection.isCollapsed()) {
             $setBlocksType(selection, () => $createCodeNode());
           } else {
@@ -363,7 +363,7 @@ function FontDropDown({
     (option: string) => {
       editor.update(() => {
         const selection = $getSelection();
-        if (selection != null) {
+        if (selection !== null) {
           $patchStyleText(selection, {
             [style]: option,
           });
@@ -720,7 +720,7 @@ export default function ToolbarPlugin({
     (styles: Record<string, string>) => {
       activeEditor.update(() => {
         const selection = $getSelection();
-        if (selection != null) {
+        if (selection !== null) {
           $patchStyleText(selection, styles);
         }
       });

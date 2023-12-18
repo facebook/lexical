@@ -26,7 +26,6 @@ import {
   $isElementNode,
   $isLeafNode,
   $isLineBreakNode,
-  $isNodeSelection,
   $isRangeSelection,
   $isRootNode,
   $isRootOrShadowRoot,
@@ -46,13 +45,12 @@ export function $setBlocksType(
   selection: BaseSelection | null,
   createElement: () => ElementNode,
 ): void {
-  if (selection == null || $isNodeSelection(selection)) {
+  if (selection === null) {
     return;
   }
   const [anchor] = selection.getStartEndPoints();
 
-  invariant(anchor != null, 'Anchor should be defined');
-  if (anchor.key === 'root') {
+  if (anchor !== null && anchor.key === 'root') {
     const element = createElement();
     const root = $getRoot();
     const firstChild = root.getFirstChild();
@@ -67,7 +65,8 @@ export function $setBlocksType(
   }
 
   const nodes = selection.getNodes();
-  const firstSelectedBlock = $getAncestor(anchor.getNode(), INTERNAL_$isBlock);
+  const firstSelectedBlock =
+    anchor !== null ? $getAncestor(anchor.getNode(), INTERNAL_$isBlock) : false;
   if (firstSelectedBlock && nodes.indexOf(firstSelectedBlock) === -1) {
     nodes.push(firstSelectedBlock);
   }
@@ -118,18 +117,16 @@ export function $wrapNodes(
   createElement: () => ElementNode,
   wrappingElement: null | ElementNode = null,
 ): void {
-  const [anchor, focus] = selection.getStartEndPoints();
-  if ($isNodeSelection(selection) || anchor == null || focus == null) {
-    return;
-  }
+  const [anchor] = selection.getStartEndPoints();
   const nodes = selection.getNodes();
   const nodesLength = nodes.length;
 
   if (
-    nodesLength === 0 ||
-    (nodesLength === 1 &&
-      anchor.type === 'element' &&
-      anchor.getNode().getChildrenSize() === 0)
+    anchor !== null &&
+    (nodesLength === 0 ||
+      (nodesLength === 1 &&
+        anchor.type === 'element' &&
+        anchor.getNode().getChildrenSize() === 0))
   ) {
     const target =
       anchor.type === 'text'

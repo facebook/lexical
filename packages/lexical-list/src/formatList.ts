@@ -93,7 +93,7 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
   editor.update(() => {
     const selection = $getSelection();
 
-    if (selection != null) {
+    if (selection !== null) {
       const nodes = selection.getNodes();
       const [anchor] = selection.getStartEndPoints();
       invariant(anchor != null, 'insertList: anchor should be defined');

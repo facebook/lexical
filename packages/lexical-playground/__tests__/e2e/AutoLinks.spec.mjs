@@ -259,7 +259,7 @@ test.describe('Auto Links', () => {
     );
   });
 
-  test('Handles invalid autolink and valid in a row', async ({
+  test('Handles autolink following an invalid autolink', async ({
     page,
     isPlainText,
   }) => {

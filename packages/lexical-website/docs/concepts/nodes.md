@@ -147,14 +147,14 @@ As mentioned above, Lexical exposes three base nodes that can be extended.
 Below is an example of how you might extend `ElementNode`:
 
 ```js
-import {ElementNode} from 'lexical';
+import {ElementNode, LexicalNode} from 'lexical';
 
 export class CustomParagraph extends ElementNode {
   static getType(): string {
     return 'custom-paragraph';
   }
 
-  static clone(node: ParagraphNode): ParagraphNode {
+  static clone(node: CustomParagraph): CustomParagraph {
     return new CustomParagraph(node.__key);
   }
 
@@ -177,7 +177,7 @@ your custom `ElementNode` so that others can easily consume and validate nodes
 are that of your custom node. Here's how you might do this for the above example:
 
 ```js
-export function $createCustomParagraphNode(): ParagraphNode {
+export function $createCustomParagraphNode(): CustomParagraph {
   return new CustomParagraph();
 }
 

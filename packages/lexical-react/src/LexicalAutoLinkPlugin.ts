@@ -260,7 +260,10 @@ function handleLinkCreation(
   onChange: ChangeHandler,
 ): void {
   let currentNodes = [...nodes];
-  let text = currentNodes.map((node) => node.getTextContent()).join('');
+  const initialText = currentNodes
+    .map((node) => node.getTextContent())
+    .join('');
+  let text = initialText;
   let match;
   let invalidMatchEnd = 0;
 
@@ -271,7 +274,7 @@ function handleLinkCreation(
     const isValid = isContentAroundIsValid(
       invalidMatchEnd + matchStart,
       invalidMatchEnd + matchEnd,
-      text,
+      initialText,
       currentNodes,
     );
 

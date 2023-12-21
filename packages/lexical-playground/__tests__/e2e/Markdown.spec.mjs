@@ -957,6 +957,72 @@ test.describe('Markdown', () => {
     );
   });
 
+  test('can import several text match transformers in a same line (#5385)', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type(
+      '```markdown [link](https://lexical.dev)[link](https://lexical.dev)![Yellow flower in tilt shift lens](' +
+        SAMPLE_IMAGE_URL +
+        ')just text in between$1$',
+    );
+    await click(page, '.action-button .markdown');
+    await waitForSelector(page, '.editor-image img');
+    await waitForSelector(page, '.editor-equation');
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://lexical.dev">
+            <span data-lexical-text="true">link</span>
+          </a>
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://lexical.dev">
+            <span data-lexical-text="true">link</span>
+          </a>
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true">
+            <div draggable="false">
+              <img
+                src="${SAMPLE_IMAGE_URL}"
+                alt="Yellow flower in tilt shift lens"
+                draggable="false"
+                style="height: inherit; max-width: 800px; width: inherit" />
+            </div>
+          </span>
+          <span data-lexical-text="true">just text in between</span>
+          <span
+            class="editor-equation"
+            contenteditable="false"
+            data-lexical-decorator="true">
+            <img src="#" alt="" />
+            <span role="button" tabindex="-1">
+              <span class="katex">
+                <span class="katex-html" aria-hidden="true">
+                  <span class="base">
+                    <span class="strut" style="height: 0.6444em;"></span>
+                    <span class="mord">1</span>
+                  </span>
+                </span>
+              </span>
+            </span>
+            <img src="#" alt="" />
+          </span>
+          <br />
+        </p>
+      `,
+    );
+  });
+
   test('can adjust selection after text match transformer', async ({page}) => {
     await focusEditor(page);
     await page.keyboard.type('Hello  world');

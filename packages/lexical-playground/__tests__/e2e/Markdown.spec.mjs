@@ -861,7 +861,7 @@ test.describe('Markdown', () => {
     await assertHTML(page, TYPED_MARKDOWN_HTML);
   });
 
-  test('itraword text format', async ({page}) => {
+  test('intraword text format', async ({page}) => {
     await focusEditor(page);
     await page.keyboard.type('he_llo_ world');
     await assertHTML(

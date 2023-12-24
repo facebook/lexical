@@ -271,13 +271,14 @@ export default function CollapsiblePlugin(): null {
         () => {
           editor.update(() => {
             const title = $createCollapsibleTitleNode();
+            const paragraph = $createParagraphNode();
             $insertNodeToNearestRoot(
               $createCollapsibleContainerNode(true).append(
-                title.append($createParagraphNode()),
+                title.append(paragraph),
                 $createCollapsibleContentNode().append($createParagraphNode()),
               ),
             );
-            title.select();
+            paragraph.select();
           });
           return true;
         },

@@ -8,6 +8,7 @@
 
 import type {LexicalNode, Spread} from 'lexical';
 
+import {$findMatchingParent} from 'packages/lexical/src/LexicalUtils';
 import invariant from 'shared/invariant';
 
 import {
@@ -147,20 +148,13 @@ export function isNestedListNode(
  * @param node - Node to start the search.
  * @returns The first ListItemNode found, or null if none exist.
  */
-// TODO: rewrite with $findMatchingParent or *nodeOfType
 export function findNearestListItemNode(
   node: LexicalNode,
 ): ListItemNode | null {
-  let currentNode: LexicalNode | null = node;
-
-  while (currentNode !== null) {
-    if ($isListItemNode(currentNode)) {
-      return currentNode;
-    }
-    currentNode = currentNode.getParent();
-  }
-
-  return null;
+  const matchingParent = $findMatchingParent(node, (parent) =>
+    $isListItemNode(parent),
+  );
+  return matchingParent as ListItemNode | null;
 }
 
 /**

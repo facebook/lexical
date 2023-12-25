@@ -8,7 +8,7 @@
 
 import type {LexicalNode, Spread} from 'lexical';
 
-import {$findMatchingParent} from 'packages/lexical/src/LexicalUtils';
+import {$findMatchingParent} from '@lexical/utils';
 import invariant from 'shared/invariant';
 
 import {

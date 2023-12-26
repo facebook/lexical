@@ -72,7 +72,7 @@ won't be reflected in editor. See "Update state" below for proper ways of updati
 
 :::tip
 
-For a deep dive into how state updates works, check out [this blog post](https://dio.la/article/lexical-state-updates) by Lexical contributor [@DaniGuardiola](https://twitter.com/daniguardio_la).
+For a deep dive into how state updates work, check out [this blog post](https://dio.la/article/lexical-state-updates) by Lexical contributor [@DaniGuardiola](https://twitter.com/daniguardio_la).
 
 :::
 

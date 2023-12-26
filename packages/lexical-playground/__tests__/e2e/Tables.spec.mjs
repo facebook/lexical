@@ -1442,7 +1442,9 @@ test.describe('Tables', () => {
             </th>
           </tr>
           <tr>
-            <td class="PlaygroundEditorTheme__tableCell"><br /></td>
+            <td class="PlaygroundEditorTheme__tableCell">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </td>
           </tr>
           <tr>
             <th

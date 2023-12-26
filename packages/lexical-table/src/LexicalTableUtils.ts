@@ -249,7 +249,11 @@ export function $insertTableRow__EXPERIMENTAL(insertAfter = true): void {
     for (let i = 0; i < columnCount; i++) {
       const {cell, startRow} = focusEndRowMap[i];
       if (startRow + cell.__rowSpan - 1 <= focusEndRow) {
-        newRow.append($createTableCellNode(TableCellHeaderStates.NO_STATUS));
+        newRow.append(
+          $createTableCellNode(TableCellHeaderStates.NO_STATUS).append(
+            $createParagraphNode(),
+          ),
+        );
       } else {
         cell.setRowSpan(cell.__rowSpan + 1);
       }
@@ -266,7 +270,11 @@ export function $insertTableRow__EXPERIMENTAL(insertAfter = true): void {
     for (let i = 0; i < columnCount; i++) {
       const {cell, startRow} = focusStartRowMap[i];
       if (startRow === focusStartRow) {
-        newRow.append($createTableCellNode(TableCellHeaderStates.NO_STATUS));
+        newRow.append(
+          $createTableCellNode(TableCellHeaderStates.NO_STATUS).append(
+            $createParagraphNode(),
+          ),
+        );
       } else {
         cell.setRowSpan(cell.__rowSpan + 1);
       }

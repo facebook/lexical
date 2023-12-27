@@ -38,7 +38,7 @@ import {
   markCollapsedSelectionFormat,
   markSelectionChangeFromDOMUpdate,
 } from './LexicalEvents';
-import {getIsProcesssingMutations} from './LexicalMutations';
+import {getIsProcessingMutations} from './LexicalMutations';
 import {insertRangeAfter, LexicalNode} from './LexicalNode';
 import {
   getActiveEditor,
@@ -2303,7 +2303,7 @@ export function internalCreateRangeSelection(
   const eventType = windowEvent ? windowEvent.type : undefined;
   const isSelectionChange = eventType === 'selectionchange';
   const useDOMSelection =
-    !getIsProcesssingMutations() &&
+    !getIsProcessingMutations() &&
     (isSelectionChange ||
       eventType === 'beforeinput' ||
       eventType === 'compositionstart' ||

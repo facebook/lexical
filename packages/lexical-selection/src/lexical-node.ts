@@ -96,7 +96,7 @@ export function $sliceSelectedTextNodeContent(
   textNode: TextNode,
 ): LexicalNode {
   if (
-    textNode.isSelected() &&
+    textNode.isSelected(selection) &&
     !textNode.isSegmented() &&
     !textNode.isToken() &&
     $INTERNAL_isPointSelection(selection)

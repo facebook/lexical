@@ -724,13 +724,16 @@ export default function ToolbarPlugin({
   }, [activeEditor, isLink, setIsLinkEditMode]);
 
   const applyStyleText = useCallback(
-    (styles: Record<string, string>) => {
-      activeEditor.update(() => {
-        const selection = $getSelection();
-        if ($INTERNAL_isPointSelection(selection)) {
-          $patchStyleText(selection, styles);
-        }
-      });
+    (styles: Record<string, string>, skipHistoryStack?: boolean) => {
+      activeEditor.update(
+        () => {
+          const selection = $getSelection();
+          if ($INTERNAL_isPointSelection(selection)) {
+            $patchStyleText(selection, styles);
+          }
+        },
+        skipHistoryStack ? {tag: 'historic'} : {},
+      );
     },
     [activeEditor],
   );
@@ -779,15 +782,15 @@ export default function ToolbarPlugin({
   }, [activeEditor]);
 
   const onFontColorSelect = useCallback(
-    (value: string) => {
-      applyStyleText({color: value});
+    (value: string, skipHistoryStack: boolean) => {
+      applyStyleText({color: value}, skipHistoryStack);
     },
     [applyStyleText],
   );
 
   const onBgColorSelect = useCallback(
-    (value: string) => {
-      applyStyleText({'background-color': value});
+    (value: string, skipHistoryStack: boolean) => {
+      applyStyleText({'background-color': value}, skipHistoryStack);
     },
     [applyStyleText],
   );

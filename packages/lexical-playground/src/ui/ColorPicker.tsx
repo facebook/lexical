@@ -13,9 +13,11 @@ import * as React from 'react';
 
 import TextInput from './TextInput';
 
+let skipAddingToHistoryStack = false;
+
 interface ColorPickerProps {
   color: string;
-  onChange?: (color: string) => void;
+  onChange?: (value: string, skipHistoryStack: boolean) => void;
 }
 
 const basicColors = [
@@ -92,7 +94,7 @@ export default function ColorPicker({
   useEffect(() => {
     // Check if the dropdown is actually active
     if (innerDivRef.current !== null && onChange) {
-      onChange(selfColor.hex);
+      onChange(selfColor.hex, skipAddingToHistoryStack);
       setInputColor(selfColor.hex);
     }
   }, [selfColor, onChange]);
@@ -167,6 +169,7 @@ interface MoveWrapperProps {
 
 function MoveWrapper({className, style, onChange, children}: MoveWrapperProps) {
   const divRef = useRef<HTMLDivElement>(null);
+  const draggedRef = useRef(false);
 
   const move = (e: React.MouseEvent | MouseEvent): void => {
     if (divRef.current) {
@@ -186,14 +189,21 @@ function MoveWrapper({className, style, onChange, children}: MoveWrapperProps) {
     move(e);
 
     const onMouseMove = (_e: MouseEvent): void => {
+      draggedRef.current = true;
+      skipAddingToHistoryStack = true;
       move(_e);
     };
 
     const onMouseUp = (_e: MouseEvent): void => {
+      if (draggedRef.current) {
+        skipAddingToHistoryStack = false;
+      }
+
       document.removeEventListener('mousemove', onMouseMove, false);
       document.removeEventListener('mouseup', onMouseUp, false);
 
       move(_e);
+      draggedRef.current = false;
     };
 
     document.addEventListener('mousemove', onMouseMove, false);

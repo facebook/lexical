@@ -38,7 +38,7 @@ import {
   markCollapsedSelectionFormat,
   markSelectionChangeFromDOMUpdate,
 } from './LexicalEvents';
-import {getIsProcesssingMutations} from './LexicalMutations';
+import {getIsProcessingMutations} from './LexicalMutations';
 import {insertRangeAfter, LexicalNode} from './LexicalNode';
 import {
   getActiveEditor,
@@ -2265,7 +2265,12 @@ export function internalCreateSelection(
   const domSelection = getDOMSelection(editor._window);
 
   if ($isRangeSelection(lastSelection) || lastSelection == null) {
-    return internalCreateRangeSelection(lastSelection, domSelection, editor);
+    return internalCreateRangeSelection(
+      lastSelection,
+      domSelection,
+      editor,
+      null,
+    );
   }
   return lastSelection.clone();
 }
@@ -2274,6 +2279,7 @@ export function internalCreateRangeSelection(
   lastSelection: null | BaseSelection,
   domSelection: Selection | null,
   editor: LexicalEditor,
+  event: UIEvent | Event | null,
 ): null | RangeSelection {
   const windowObj = editor._window;
   if (windowObj === null) {
@@ -2293,11 +2299,11 @@ export function internalCreateRangeSelection(
   // reconciliation unless there are dirty nodes that need
   // reconciling.
 
-  const windowEvent = windowObj.event;
+  const windowEvent = event || windowObj.event;
   const eventType = windowEvent ? windowEvent.type : undefined;
   const isSelectionChange = eventType === 'selectionchange';
   const useDOMSelection =
-    !getIsProcesssingMutations() &&
+    !getIsProcessingMutations() &&
     (isSelectionChange ||
       eventType === 'beforeinput' ||
       eventType === 'compositionstart' ||
@@ -2847,37 +2853,59 @@ function removeTextAndSplitBlock(selection: RangeSelection): number {
   if (!selection.isCollapsed()) {
     selection.removeText();
   }
-  const point = selection.anchor;
-  const pointNode = point.getNode();
-  if (!$isTextNode(pointNode)) {
-    return point.offset;
-  }
-  const pointParent = pointNode.getParent();
 
-  if (!pointParent) {
+  const anchor = selection.anchor;
+  let node = anchor.getNode();
+  let offset = anchor.offset;
+
+  while (!INTERNAL_$isBlock(node)) {
+    [node, offset] = splitNodeAtPoint(node, offset);
+  }
+
+  return offset;
+}
+
+function splitNodeAtPoint(
+  node: LexicalNode,
+  offset: number,
+): [parent: ElementNode, offset: number] {
+  const parent = node.getParent();
+  if (!parent) {
     const paragraph = $createParagraphNode();
     $getRoot().append(paragraph);
     paragraph.select();
-    return 0;
+    return [$getRoot(), 0];
   }
 
-  const split = pointNode.splitText(point.offset);
-  if (split.length === 0) {
-    return 0;
-  }
-  const x = point.offset === 0 ? 0 : 1;
-  const index = split[0].getIndexWithinParent() + x;
+  if ($isTextNode(node)) {
+    const split = node.splitText(offset);
+    if (split.length === 0) {
+      return [parent, node.getIndexWithinParent()];
+    }
+    const x = offset === 0 ? 0 : 1;
+    const index = split[0].getIndexWithinParent() + x;
 
-  if (!pointParent.isInline() || index === 0) {
-    return index;
+    return [parent, index];
   }
 
-  const firstToAppend = pointParent.getChildAtIndex(index);
+  if (!$isElementNode(node) || offset === 0) {
+    return [parent, node.getIndexWithinParent()];
+  }
+
+  const firstToAppend = node.getChildAtIndex(offset);
   if (firstToAppend) {
-    const newBlock = pointParent.insertNewAfter(selection) as ElementNode;
-    newBlock.append(firstToAppend, ...firstToAppend.getNextSiblings());
+    const insertPoint = new RangeSelection(
+      $createPoint(node.__key, offset, 'element'),
+      $createPoint(node.__key, offset, 'element'),
+      0,
+      '',
+    );
+    const newElement = node.insertNewAfter(insertPoint) as ElementNode | null;
+    if (newElement) {
+      newElement.append(firstToAppend, ...firstToAppend.getNextSiblings());
+    }
   }
-  return pointParent.getIndexWithinParent() + x;
+  return [parent, node.getIndexWithinParent() + 1];
 }
 
 function $wrapInlineNodes(nodes: LexicalNode[]) {

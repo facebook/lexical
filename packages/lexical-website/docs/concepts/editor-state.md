@@ -70,6 +70,12 @@ won't be reflected in editor. See "Update state" below for proper ways of updati
 
 ## Updating state
 
+:::tip
+
+For a deep dive into how state updates work, check out [this blog post](https://dio.la/article/lexical-state-updates) by Lexical contributor [@DaniGuardiola](https://twitter.com/daniguardio_la).
+
+:::
+
 The most common way to update the editor is to use `editor.update()`. Calling this function
 requires a function to be passed in that will provide access to mutate the underlying
 editor state. When starting a fresh update, the current editor state is cloned and

@@ -432,6 +432,7 @@ function onClick(event: PointerEvent, editor: LexicalEditor): void {
               lastSelection,
               domSelection,
               editor,
+              event,
             );
             $setSelection(newSelection);
           }
@@ -558,6 +559,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
             dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);
           }
         } else {
+          $setCompositionKey(null);
           event.preventDefault();
           dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);
         }
@@ -1110,6 +1112,7 @@ function onDocumentSelectionChange(event: Event): void {
         lastSelection,
         domSelection,
         nextActiveEditor,
+        event,
       );
       $setSelection(newSelection);
     });

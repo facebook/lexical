@@ -293,21 +293,16 @@ function importTextMatchTransformers(
 
       const startIndex = match.index || 0;
       const endIndex = startIndex + match[0].length;
-      let replaceNode, leftTextNode, rightTextNode;
+      let replaceNode, newTextNode;
 
       if (startIndex === 0) {
         [replaceNode, textNode] = textNode.splitText(endIndex);
       } else {
-        [leftTextNode, replaceNode, rightTextNode] = textNode.splitText(
-          startIndex,
-          endIndex,
-        );
+        [, replaceNode, newTextNode] = textNode.splitText(startIndex, endIndex);
       }
-      if (leftTextNode) {
-        importTextMatchTransformers(leftTextNode, textMatchTransformers);
-      }
-      if (rightTextNode) {
-        textNode = rightTextNode;
+
+      if (newTextNode) {
+        importTextMatchTransformers(newTextNode, textMatchTransformers);
       }
       transformer.replace(replaceNode, match);
       continue mainLoop;

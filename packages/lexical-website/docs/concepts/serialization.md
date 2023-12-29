@@ -103,7 +103,7 @@ type DOMConversion = {
   priority: 0 | 1 | 2 | 3 | 4;
 };
 
-type DOMConversionFn = (element: Node) => DOMConversionOutput | null;
+type DOMConversionFn = (element: HTMLElement) => DOMConversionOutput | null;
 
 type DOMConversionOutput = {
   after?: (childLexicalNodes: Array<LexicalNode>) => Array<LexicalNode>;

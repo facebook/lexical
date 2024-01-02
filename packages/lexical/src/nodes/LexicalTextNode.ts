@@ -1192,7 +1192,14 @@ function convertTextDOMNode(domNode: Node): DOMConversionOutput {
       } else if (part === '\t') {
         nodes.push($createTabNode());
       } else if (part !== '') {
-        nodes.push($createTextNode(part));
+        const node = $createTextNode(part);
+        if (parentDom.style.color !== '') {
+          node.setStyle(`color: ${parentDom.style.color}`);
+        }
+        if (parentDom.style.backgroundColor !== '') {
+          node.setStyle(`background-color: ${parentDom.style.backgroundColor}`);
+        }
+        nodes.push(node);
       }
     }
     return {node: nodes};

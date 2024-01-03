@@ -1,0 +1,38 @@
+.font-size-input {
+  font-weight: bold;
+  font-size: 14px;
+  color: #777;
+  border-radius: 5px;
+  border-color: grey;
+  height: 21px;
+  margin-top: 5px;
+  padding: 2px 4px;
+  text-align: center;
+  vertical-align: middle;
+  width: 20px;
+  align-items: center;
+}
+
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.add-icon {
+  background-image: url(../../images/icons/add-sign.svg);
+  background-repeat: no-repeat;
+  background-position: center;
+  margin-left: 5px;
+}
+
+.minus-icon {
+  background-image: url(../../images/icons/minus-sign.svg);
+  background-repeat: no-repeat;
+  background-position: center;
+  margin-right: 5px;
+}
+
+#font-size-btn {
+  padding: 0px;
+}

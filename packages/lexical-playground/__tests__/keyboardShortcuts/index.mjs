@@ -124,7 +124,7 @@ export async function moveToParagraphEnd(page) {
   if (IS_MAC) {
     await keyDownCtrlOrAlt(page);
     await page.keyboard.press('ArrowDown');
-    await keyUpCtrlOrMeta(page);
+    await keyUpCtrlOrAlt(page);
   } else {
     await page.keyboard.press('End');
   }

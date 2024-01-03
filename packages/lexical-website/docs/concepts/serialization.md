@@ -395,6 +395,14 @@ export class ExtendedTextNode extends TextNode {
   }
 }
 
+export function $createExtendedTextNode(text: string, className: string): ExtendedTextNode {
+	return new ExtendedTextNode(text, className);
+}
+
+export function $isExtendedTextNode(node: lexical.LexicalNode | null | undefined): node is ExtendedTextNode {
+	return node instanceof ExtendedTextNode;
+}
+
 function patchStyleConversion(
   originalDOMConverter?: (node: HTMLElement) => DOMConversion | null
 ): (node: HTMLElement) => DOMConversionOutput | null {

@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import {$isCodeHighlightNode} from '@lexical/code';
 import {
   $createRangeSelection,
   $createTextNode,
@@ -292,14 +293,19 @@ export function $addNodeStyle(node: TextNode): void {
 
 function $patchStyle(
   target: TextNode | RangeSelection,
-  patch: Record<string, string | null>,
+  patch: Record<
+    string,
+    string | null | ((currentStyleValue: string | null) => string)
+  >,
 ): void {
   const prevStyles = getStyleObjectFromCSS(
     'getStyle' in target ? target.getStyle() : target.style,
   );
   const newStyles = Object.entries(patch).reduce<Record<string, string>>(
     (styles, [key, value]) => {
-      if (value === null) {
+      if (value instanceof Function) {
+        styles[key] = value(prevStyles[key]);
+      } else if (value === null) {
         delete styles[key];
       } else {
         styles[key] = value;
@@ -320,9 +326,13 @@ function $patchStyle(
  * @param selection - The selected node(s) to update.
  * @param patch - The patch to apply, which can include multiple styles. { CSSProperty: value }
  */
+
 export function $patchStyleText(
   selection: INTERNAL_PointSelection,
-  patch: Record<string, string | null>,
+  patch: Record<
+    string,
+    string | null | ((currentStyleValue: string | null) => string)
+  >,
 ): void {
   const selectedNodes = selection.getNodes();
   const selectedNodesLength = selectedNodes.length;
@@ -333,7 +343,7 @@ export function $patchStyleText(
     const cellSelectionFocus = cellSelection.focus;
     for (let i = 0; i < selectedNodesLength; i++) {
       const node = selectedNodes[i];
-      if (DEPRECATED_$isGridCellNode(node)) {
+      if (DEPRECATED_$isGridCellNode(node) && !$isCodeHighlightNode(node)) {
         cellSelectionAnchor.set(node.getKey(), 0, 'element');
         cellSelectionFocus.set(
           node.getKey(),
@@ -349,7 +359,6 @@ export function $patchStyleText(
     $setSelection(selection);
     return;
   }
-
   const lastIndex = selectedNodesLength - 1;
   let firstNode = selectedNodes[0];
   let lastNode = selectedNodes[lastIndex];
@@ -387,7 +396,7 @@ export function $patchStyleText(
 
   // This is the case where we only selected a single node
   if (selectedNodes.length === 1) {
-    if ($isTextNode(firstNode)) {
+    if ($isTextNode(firstNode) && !$isCodeHighlightNode(firstNode)) {
       startOffset =
         startType === 'element'
           ? 0
@@ -422,7 +431,8 @@ export function $patchStyleText(
   } else {
     if (
       $isTextNode(firstNode) &&
-      startOffset < firstNode.getTextContentSize()
+      startOffset < firstNode.getTextContentSize() &&
+      !$isCodeHighlightNode(firstNode)
     ) {
       if (startOffset !== 0) {
         // the entire first node isn't selected, so split it
@@ -434,7 +444,7 @@ export function $patchStyleText(
       $patchStyle(firstNode as TextNode, patch);
     }
 
-    if ($isTextNode(lastNode)) {
+    if ($isTextNode(lastNode) && !$isCodeHighlightNode(lastNode)) {
       const lastNodeText = lastNode.getTextContent();
       const lastNodeTextLength = lastNodeText.length;
 
@@ -463,6 +473,7 @@ export function $patchStyleText(
 
       if (
         $isTextNode(selectedNode) &&
+        !$isCodeHighlightNode(selectedNode) &&
         selectedNodeKey !== firstNode.getKey() &&
         selectedNodeKey !== lastNode.getKey() &&
         !selectedNode.isToken()

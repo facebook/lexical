@@ -479,6 +479,7 @@ export function useMenuAnchorRef(
   resolution: MenuResolution | null,
   setResolution: (r: MenuResolution | null) => void,
   className?: string,
+  anchorElementContainer?: HTMLElement,
 ): MutableRefObject<HTMLElement> {
   const [editor] = useLexicalComposerContext();
   const anchorElementRef = useRef<HTMLElement>(document.createElement('div'));
@@ -487,14 +488,21 @@ export function useMenuAnchorRef(
     const rootElement = editor.getRootElement();
     const containerDiv = anchorElementRef.current;
 
+    let anchorElementPosition = {left: 0, top: 0};
+    if (anchorElementContainer) {
+      anchorElementPosition = anchorElementContainer.getBoundingClientRect();
+    }
+
     const menuEle = containerDiv.firstChild as HTMLElement;
     if (rootElement !== null && resolution !== null) {
       const {left, top, width, height} = resolution.getRect();
       const anchorHeight = anchorElementRef.current.offsetHeight; // use to position under anchor
       containerDiv.style.top = `${
-        top + window.pageYOffset + anchorHeight + 3
+        top + window.pageYOffset + anchorHeight + 3 - anchorElementPosition.top
       }px`;
-      containerDiv.style.left = `${left + window.pageXOffset}px`;
+      containerDiv.style.left = `${
+        left + window.pageXOffset - anchorElementPosition.left
+      }px`;
       containerDiv.style.height = `${height}px`;
       containerDiv.style.width = `${width}px`;
       if (menuEle !== null) {
@@ -507,7 +515,10 @@ export function useMenuAnchorRef(
 
         if (left + menuWidth > rootElementRect.right) {
           containerDiv.style.left = `${
-            rootElementRect.right - menuWidth + window.pageXOffset
+            rootElementRect.right -
+            menuWidth +
+            window.pageXOffset -
+            anchorElementPosition.left
           }px`;
         }
         if (
@@ -516,7 +527,11 @@ export function useMenuAnchorRef(
           top - rootElementRect.top > menuHeight
         ) {
           containerDiv.style.top = `${
-            top - menuHeight + window.pageYOffset - height
+            top -
+            menuHeight +
+            window.pageYOffset -
+            height -
+            anchorElementPosition.top
           }px`;
         }
       }
@@ -530,12 +545,12 @@ export function useMenuAnchorRef(
         containerDiv.setAttribute('role', 'listbox');
         containerDiv.style.display = 'block';
         containerDiv.style.position = 'absolute';
-        document.body.append(containerDiv);
+        (anchorElementContainer || document.body).append(containerDiv);
       }
       anchorElementRef.current = containerDiv;
       rootElement.setAttribute('aria-controls', 'typeahead-menu');
     }
-  }, [editor, resolution, className]);
+  }, [editor, resolution, className, anchorElementContainer]);
 
   useEffect(() => {
     const rootElement = editor.getRootElement();

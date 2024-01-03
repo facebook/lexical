@@ -158,7 +158,7 @@ export default function FontSize({
   };
 
   const handleButtonClick = (updateType: updateFontSizeType) => {
-    if (selectionFontSize !== '') {
+    if (inputValue !== '') {
       const nextFontSize = calculateNextFontSize(
         Number(inputValue),
         updateType,

@@ -139,17 +139,14 @@ export {
   DEPRECATED_$getNodeTriplet,
   INTERNAL_PointSelection,
 } from './LexicalSelection';
-export {
-  $parseSerializedNode,
-  getActiveEditor,
-  getActiveEditorState,
-  isCurrentlyReadOnlyMode,
-} from './LexicalUpdates';
+export {$parseSerializedNode, isCurrentlyReadOnlyMode} from './LexicalUpdates';
 export {
   $addUpdateTag,
   $applyNodeReplacement,
   $copyNode,
   $getAdjacentNode,
+  $getEditor,
+  $getEditorState,
   $getNearestNodeFromDOMNode,
   $getNearestRootOrShadowRoot,
   $getNodeByKey,

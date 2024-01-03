@@ -855,12 +855,6 @@ declare export function DEPRECATED_$isGridCellNode(
 ): node is deprecated_GridCellNode;
 
 /**
- * LexicalUpdates
- */
-declare export function getActiveEditor(): LexicalEditor;
-declare export function getActiveEditorState(): EditorState;
-
-/**
  * LexicalUtils
  */
 export type EventHandler = (event: Event, editor: LexicalEditor) => void;
@@ -901,6 +895,8 @@ declare export function $copyNode(
   node: ElementNode,
   offset: number,
 ): [ElementNode, ElementNode];
+declare export function $getEditor(): LexicalEditor;
+declare export function $getEditorState(): EditorState;
 
 /**
  * LexicalNormalization

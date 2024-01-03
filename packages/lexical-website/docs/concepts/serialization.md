@@ -328,7 +328,8 @@ import {
   DOMConversionOutput,
   NodeKey,
   TextNode,
-  SerializedTextNode
+  SerializedTextNode,
+  LexicalNode
 } from 'lexical';
 
 export class ExtendedTextNode extends TextNode {
@@ -395,11 +396,11 @@ export class ExtendedTextNode extends TextNode {
   }
 }
 
-export function $createExtendedTextNode(text: string, className: string): ExtendedTextNode {
+export function $createExtendedTextNode(text: string): ExtendedTextNode {
 	return new ExtendedTextNode(text, className);
 }
 
-export function $isExtendedTextNode(node: lexical.LexicalNode | null | undefined): node is ExtendedTextNode {
+export function $isExtendedTextNode(node: LexicalNode | null | undefined): node is ExtendedTextNode {
 	return node instanceof ExtendedTextNode;
 }
 

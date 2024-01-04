@@ -5,13 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-/**
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- *
- */
 
 import './fontSize.css';
 
@@ -44,6 +37,12 @@ export default function FontSize({
 }) {
   const [inputValue, setInputValue] = React.useState<string>(selectionFontSize);
 
+  /**
+   * Calculates the new font size based on the update type.
+   * @param currentFontSize - The current font size
+   * @param updateType - The type of change, either increment or decrement
+   * @returns the next font size
+   */
   const calculateNextFontSize = (
     currentFontSize: number,
     updateType: updateFontSizeType | null,
@@ -105,6 +104,9 @@ export default function FontSize({
     }
     return updatedFontSize;
   };
+  /**
+   * Patches the selection with the updated font size.
+   */
 
   const updateFontSizeInSelection = React.useCallback(
     (newFontSize: string | null, updateType: updateFontSizeType | null) => {

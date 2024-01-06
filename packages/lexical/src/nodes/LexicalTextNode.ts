@@ -442,7 +442,7 @@ export class TextNode extends LexicalNode {
 
   // View
 
-  createDOM(config: EditorConfig): HTMLElement {
+  createDOM(config: EditorConfig, editor?: LexicalEditor): HTMLElement {
     const format = this.__format;
     const outerTag = getElementOuterTag(this, format);
     const innerTag = getElementInnerTag(this, format);

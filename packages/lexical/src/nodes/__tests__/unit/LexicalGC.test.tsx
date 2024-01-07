@@ -70,7 +70,7 @@ describe('LexicalGC tests', () => {
           const root = $getRoot();
           const firstChild = root.getFirstChild();
           invariant($isElementNode(firstChild));
-          const subchild = firstChild.getChildAtIndex(i);
+          const subchild = firstChild.getChildAtIndex(i)!;
           expect(subchild.getTextContent()).toBe(['foo', 'bar', 'zzz'][i]);
           subchild.remove();
           root.clear();
@@ -107,7 +107,7 @@ describe('LexicalGC tests', () => {
         expect(editor.getEditorState()._nodeMap.size).toBe(7);
         await editor.update(() => {
           for (const key of removeKeys) {
-            const node = $getNodeByKey(String(key));
+            const node = $getNodeByKey(String(key))!;
             node.remove();
           }
           $getRoot().clear();

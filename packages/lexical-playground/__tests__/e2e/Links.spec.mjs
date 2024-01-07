@@ -1653,8 +1653,8 @@ test.describe('Links', () => {
       });
     } else {
       await assertSelection(page, {
-        anchorOffset: 6,
-        anchorPath: [0, 0, 0],
+        anchorOffset: 0,
+        anchorPath: [0, 1],
         focusOffset: 5,
         focusPath: [0, 1, 0, 0],
       });
@@ -1690,7 +1690,7 @@ test.describe('Links', () => {
     } else {
       await assertSelection(page, {
         anchorOffset: 0,
-        anchorPath: [0, 1],
+        anchorPath: [0, 1, 0, 0],
         focusOffset: 5,
         focusPath: [0, 1, 0, 0],
       });
@@ -1767,12 +1767,19 @@ test.describe('Links', () => {
         focusOffset: 0,
         focusPath: [0, 1, 0, 0],
       });
-    } else {
+    } else if (browserName === 'chromium') {
       await assertSelection(page, {
         anchorOffset: 5,
         anchorPath: [0, 1, 0, 0],
         focusOffset: 6,
         focusPath: [0, 0, 0],
+      });
+    } else {
+      await assertSelection(page, {
+        anchorOffset: 5,
+        anchorPath: [0, 1, 0, 0],
+        focusOffset: 0,
+        focusPath: [0, 1],
       });
     }
 
@@ -1803,12 +1810,19 @@ test.describe('Links', () => {
         focusOffset: 0,
         focusPath: [0, 1, 0, 0],
       });
-    } else {
+    } else if (browserName === 'chromium') {
       await assertSelection(page, {
         anchorOffset: 5,
         anchorPath: [0, 1, 0, 0],
         focusOffset: 0,
         focusPath: [0, 1],
+      });
+    } else {
+      await assertSelection(page, {
+        anchorOffset: 5,
+        anchorPath: [0, 1, 0, 0],
+        focusOffset: 0,
+        focusPath: [0, 1, 0, 0],
       });
     }
 

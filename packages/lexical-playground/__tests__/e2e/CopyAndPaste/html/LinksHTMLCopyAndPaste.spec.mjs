@@ -67,6 +67,7 @@ test.describe('HTML Links CopyAndPaste', () => {
     await selectAll(page);
 
     await click(page, '.link');
+    await click(page, '.link-confirm');
 
     await assertHTML(
       page,
@@ -268,6 +269,7 @@ test.describe('HTML Links CopyAndPaste', () => {
     await page.keyboard.type('Link text');
     await selectAll(page);
     await click(page, '.link');
+    await click(page, '.link-confirm');
     await moveRight(page, 1);
     await moveLeft(page, 4);
 
@@ -308,6 +310,7 @@ test.describe('HTML Links CopyAndPaste', () => {
     await page.keyboard.type('Link text');
     await selectAll(page);
     await click(page, '.link');
+    await click(page, '.link-confirm');
     await moveRight(page, 1);
     await moveLeft(page, 4);
 
@@ -353,6 +356,7 @@ test.describe('HTML Links CopyAndPaste', () => {
     await page.keyboard.type('Link text');
     await selectAll(page);
     await click(page, '.link');
+    await click(page, '.link-confirm');
     await moveRight(page, 1);
     await moveLeft(page, 4);
 
@@ -399,6 +403,7 @@ test.describe('HTML Links CopyAndPaste', () => {
     await page.keyboard.type('Link text');
     await selectAll(page);
     await click(page, '.link');
+    await click(page, '.link-confirm');
     await moveRight(page, 1);
     await moveLeft(page, 4);
 

@@ -215,7 +215,6 @@ export default function Editor(): JSX.Element {
                 />
                 <FloatingTextFormatToolbarPlugin
                   anchorElem={floatingAnchorElem}
-                  setIsLinkEditMode={setIsLinkEditMode}
                 />
               </>
             )}

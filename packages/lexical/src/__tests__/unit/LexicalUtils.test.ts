@@ -46,7 +46,7 @@ describe('LexicalUtils tests', () => {
 
     test('scheduleMicroTask(): promise', async () => {
       jest.resetModules();
-      // @ts-expect-error
+      // @ts-ignore
       window.queueMicrotask = undefined;
 
       let flag = false;

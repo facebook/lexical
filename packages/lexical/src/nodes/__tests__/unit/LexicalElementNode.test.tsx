@@ -38,7 +38,7 @@ describe('LexicalElementNode tests', () => {
 
   afterEach(() => {
     document.body.removeChild(container);
-    // @ts-expect-error
+    // @ts-ignore
     container = null;
   });
 
@@ -48,7 +48,6 @@ describe('LexicalElementNode tests', () => {
   }
 
   function useLexicalEditor(rootElementRef: React.RefObject<HTMLDivElement>) {
-    // @ts-ignore
     const editor = React.useMemo(() => createTestEditor(), []);
 
     useEffect(() => {

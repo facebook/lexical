@@ -442,7 +442,7 @@ export class TextNode extends LexicalNode {
 
   /**
    *
-   * @returns true if the text node can be formatted, false otherwise.
+   * @returns true if the text node supports font styling, false otherwise.
    */
   isStylable(): boolean {
     return true;

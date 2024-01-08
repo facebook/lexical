@@ -136,10 +136,6 @@ export class CodeHighlightNode extends TextNode {
     return self.__highlightType;
   }
 
-  /**
-   *
-   * @returns true if the codehighlight node can be formatted, false otherwise.
-   */
   isStylable(): boolean {
     return false;
   }

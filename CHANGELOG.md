@@ -1,3 +1,44 @@
+## v0.12.6 (2024-01-08)
+
+- Fix floating link editor on inline image caption (#5460) wnhlee
+- Revert Inserting hyperlink through toolbar doesnt open floating editor in edit mode (#5456) Acy Watson
+- Fix TextNode#createDOM types allow editor parameter in subclasses (#5425) Georgii Dolzhykov
+- docs fix outdated importDOM types in docs (#5431) Georgii Dolzhykov
+- Bug Editing a link and changing selection shows wrong link value (#5352) Syed Umar Anis
+- fix Reset compositionKey when backspacing a selection on Android where anchor and focus keys are different (#5389) Aman Harwara
+- Bug Fix added a fix for discarding multiple color picker entries on drag (#5335) Bhavya Karia
+- Remove duplicated test codes (#5429) wnhlee
+- Inserting hyperlink through toolbar doesnt open floating editor in edit mode (#5372) Syed Umar Anis
+- fix adding missing argument for sliceSelectedTextContent (#5380) Nadine Nguyen
+- Fixed a small typo (#5427) frankdiw
+- Fix insertNodes when inserting into inline elements (#5394) Brian Birtles
+- Add link to state update blog (#5423) Acy Watson
+- canInsertTextAfter exception for composition (#5378) Gerard Rovira
+- Fix insert image to new inserted table row in playground report error (#5417) frankdiw
+-  Refactored findNearestListItemNode using findMatchingParent (#5419) Ajay Prakash PP
+- docs correct custom node examples (#5407) Naseem Ali
+- Fixed the error when CollapsibleTitleNode type enter key (#5416) frankdiw
+- dropdown text visibility problem fixed for medium and smaller screens (#5382) Recep ifti
+- Fix convertFromMarkdownString breakdown due to no parent (#5393) wnhlee
+- Fix bug on window.event conflict (#5391) Henry Boisgibault
+- Fix typo on test title (#5399) wnhlee
+- fix typo Contaner - Container (#5410) Philippe de Reynal
+- fix logical error in description of insertBefore parameter (#5400) spirobel
+- Featureexcalidraw resize (#5383) Recep ifti
+- Flow fix RangeSelection extends (#5377) Gerard Rovira
+- Fixed for #5162, The beginning of a TextNode with canInsertTextBefore false in  (#5363) matsuyama-k1
+- PR 4 remove GridSelection from lexical core (#5293) Illia Olenchenko
+- PR 3 Removed edge-cases of GridSelection (#5291) Illia Olenchenko
+- Clear link using key shortcut bug (#5354) Syed Umar Anis
+- refactor(playground) kill ts-ignore (#5342) Aron Griffis
+- Automatic release on merge (#5347) Acy Watson
+- Improve TypeScript types by removing k string any from LexicalNode (#5223) Bob Ippolito
+- Support other formats in Collapsible Title (#5328) Ivaylo Pavlov
+- docs added exportJSON function to the ExtendedTextNode plugin code (#5338) 
+- v0.12.5 (#5343) Acy Watson
+- Fix path alias typo (#5340) wnhlee
+- v0.12.5 Lexical GitHub Actions Bot
+
 ## v0.12.5 (2023-12-06)
 
 - Make subscript and superscript text formats mutually exclusive (#5317) Gry Ogam

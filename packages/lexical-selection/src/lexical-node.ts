@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {$isCodeHighlightNode} from '@lexical/code';
 import {
   $createRangeSelection,
   $createTextNode,
@@ -342,7 +341,7 @@ export function $patchStyleText(
     const cellSelectionFocus = cellSelection.focus;
     for (let i = 0; i < selectedNodesLength; i++) {
       const node = selectedNodes[i];
-      if (DEPRECATED_$isGridCellNode(node) && !$isCodeHighlightNode(node)) {
+      if (DEPRECATED_$isGridCellNode(node)) {
         cellSelectionAnchor.set(node.getKey(), 0, 'element');
         cellSelectionFocus.set(
           node.getKey(),
@@ -396,7 +395,7 @@ export function $patchStyleText(
 
   // This is the case where we only selected a single node
   if (selectedNodes.length === 1) {
-    if ($isTextNode(firstNode) && !$isCodeHighlightNode(firstNode)) {
+    if ($isTextNode(firstNode) && firstNode.isStylable()) {
       startOffset =
         startType === 'element'
           ? 0
@@ -432,7 +431,7 @@ export function $patchStyleText(
     if (
       $isTextNode(firstNode) &&
       startOffset < firstNode.getTextContentSize() &&
-      !$isCodeHighlightNode(firstNode)
+      firstNode.isStylable()
     ) {
       if (startOffset !== 0) {
         // the entire first node isn't selected, so split it
@@ -444,7 +443,7 @@ export function $patchStyleText(
       $patchStyle(firstNode as TextNode, patch);
     }
 
-    if ($isTextNode(lastNode) && !$isCodeHighlightNode(lastNode)) {
+    if ($isTextNode(lastNode) && lastNode.isStylable()) {
       const lastNodeText = lastNode.getTextContent();
       const lastNodeTextLength = lastNodeText.length;
 
@@ -473,7 +472,7 @@ export function $patchStyleText(
 
       if (
         $isTextNode(selectedNode) &&
-        !$isCodeHighlightNode(selectedNode) &&
+        selectedNode.isStylable() &&
         selectedNodeKey !== firstNode.getKey() &&
         selectedNodeKey !== lastNode.getKey() &&
         !selectedNode.isToken()

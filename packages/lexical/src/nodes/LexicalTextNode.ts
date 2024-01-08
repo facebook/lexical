@@ -440,6 +440,14 @@ export class TextNode extends LexicalNode {
     return toggleTextFormatType(format, type, alignWithFormat);
   }
 
+  /**
+   *
+   * @returns true if the text node can be formatted, false otherwise.
+   */
+  isStylable(): boolean {
+    return true;
+  }
+
   // View
 
   createDOM(config: EditorConfig): HTMLElement {

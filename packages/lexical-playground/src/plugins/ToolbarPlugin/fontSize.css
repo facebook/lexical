@@ -21,17 +21,20 @@ input[type='number']::-webkit-inner-spin-button {
   background-image: url(../../images/icons/add-sign.svg);
   background-repeat: no-repeat;
   background-position: center;
-  margin-left: 5px;
 }
 
 .minus-icon {
   background-image: url(../../images/icons/minus-sign.svg);
   background-repeat: no-repeat;
   background-position: center;
-  margin-right: 5px;
 }
 
-button.font-decrement,
+button.font-decrement {
+  padding: 0px;
+  margin-right: 3px;
+}
+
 button.font-increment {
   padding: 0px;
+  margin-left: 3px;
 }

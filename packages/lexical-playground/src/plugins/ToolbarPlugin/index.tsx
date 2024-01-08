@@ -886,6 +886,7 @@ export default function ToolbarPlugin({
             value={fontFamily}
             editor={editor}
           />
+          <Divider />
           <FontSize
             selectionFontSize={fontSize.slice(0, -2)}
             editor={editor}

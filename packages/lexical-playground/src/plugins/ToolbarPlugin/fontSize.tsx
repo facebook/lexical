@@ -185,7 +185,7 @@ export default function FontSize({
             Number(inputValue) <= MIN_ALLOWED_FONT_SIZE)
         }
         onClick={() => handleButtonClick(updateFontSizeType.decrement)}
-        className="toolbar-item spaced font-decrement">
+        className="toolbar-item font-decrement">
         <i className="format minus-icon" />
       </button>
 
@@ -208,7 +208,7 @@ export default function FontSize({
             Number(inputValue) >= MAX_ALLOWED_FONT_SIZE)
         }
         onClick={() => handleButtonClick(updateFontSizeType.increment)}
-        className="toolbar-item spaced font-increment">
+        className="toolbar-item font-increment">
         <i className="format add-icon" />
       </button>
     </>

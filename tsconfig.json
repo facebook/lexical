@@ -193,7 +193,7 @@
   },
   "include": ["./libdefs", "./packages"],
   "exclude": [
-    "**/__tests__/**",
+    "**/lexical-*/src/__tests__/**",
     "**/dist/**",
     "**/npm/**",
     "**/node_modules/**",

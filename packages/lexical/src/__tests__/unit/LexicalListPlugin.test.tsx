@@ -22,7 +22,7 @@ import {
   TestComposer,
 } from 'lexical/src/__tests__/utils';
 import * as React from 'react';
-import {createRoot} from 'react-dom/client';
+import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'react-dom/test-utils';
 
 import {
@@ -31,8 +31,8 @@ import {
 } from '../../../../lexical-list/src/index';
 
 describe('@lexical/list tests', () => {
-  let container: HTMLDivElement | null = null;
-  let reactRoot;
+  let container: HTMLDivElement;
+  let reactRoot: Root;
 
   beforeEach(() => {
     container = document.createElement('div');
@@ -41,9 +41,8 @@ describe('@lexical/list tests', () => {
   });
 
   afterEach(() => {
-    if (container !== null) {
-      document.body.removeChild(container);
-    }
+    container.remove();
+    // @ts-ignore
     container = null;
 
     jest.restoreAllMocks();
@@ -88,7 +87,7 @@ describe('@lexical/list tests', () => {
     });
 
     expectHtmlToBeEqual(
-      container?.innerHTML || '',
+      container.innerHTML,
       html`
         <div
           contenteditable="true"
@@ -113,7 +112,7 @@ describe('@lexical/list tests', () => {
     });
 
     expectHtmlToBeEqual(
-      container?.innerHTML || '',
+      container.innerHTML,
       html`
         <div
           contenteditable="true"
@@ -143,7 +142,7 @@ describe('@lexical/list tests', () => {
     });
 
     expectHtmlToBeEqual(
-      container?.innerHTML || '',
+      container.innerHTML,
       html`
         <div
           contenteditable="true"
@@ -168,7 +167,7 @@ describe('@lexical/list tests', () => {
     });
 
     expectHtmlToBeEqual(
-      container?.innerHTML || '',
+      container.innerHTML,
       html`
         <div
           contenteditable="true"
@@ -195,7 +194,7 @@ describe('@lexical/list tests', () => {
     });
 
     expectHtmlToBeEqual(
-      container?.innerHTML || '',
+      container.innerHTML,
       html`
         <div
           contenteditable="true"

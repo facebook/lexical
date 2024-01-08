@@ -6,10 +6,16 @@
  *
  */
 
-import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  ParagraphNode,
+  TextNode,
+} from 'lexical';
 
 import {EditorState} from '../../LexicalEditorState';
-import {$createRootNode} from '../../nodes/LexicalRootNode';
+import {$createRootNode, RootNode} from '../../nodes/LexicalRootNode';
 import {initializeUnitTest} from '../utils';
 
 describe('LexicalEditorState tests', () => {
@@ -33,14 +39,14 @@ describe('LexicalEditorState tests', () => {
         $getRoot().append(paragraph);
       });
 
-      let root = null;
-      let paragraph = null;
-      let text = null;
+      let root!: RootNode;
+      let paragraph!: ParagraphNode;
+      let text!: TextNode;
 
       editor.getEditorState().read(() => {
         root = $getRoot();
-        paragraph = root.getFirstChild();
-        text = paragraph.getFirstChild();
+        paragraph = root.getFirstChild()!;
+        text = paragraph.getFirstChild()!;
       });
 
       expect(root).toEqual({
@@ -112,7 +118,7 @@ describe('LexicalEditorState tests', () => {
       // Remove the first node, which should cause a GC for everything
 
       await editor.update(() => {
-        $getRoot().getFirstChild().remove();
+        $getRoot().getFirstChild()!.remove();
       });
 
       expect(editor.getEditorState()._nodeMap).toEqual(

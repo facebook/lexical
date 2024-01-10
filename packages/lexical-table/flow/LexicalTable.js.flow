@@ -78,7 +78,7 @@ declare export function $createTableCellNode(
 ): TableCellNode;
 declare export function $isTableCellNode(
   node: ?LexicalNode,
-): boolean %checks(node instanceof TableCellNode);
+): node is TableCellNode;
 
 /**
  * LexicalTableNode
@@ -107,7 +107,7 @@ declare export class TableNode extends deprecated_GridNode {
 declare export function $createTableNode(): TableNode;
 declare export function $isTableNode(
   node: ?LexicalNode,
-): boolean %checks(node instanceof TableNode);
+): node is TableNode;
 
 /**
  * LexicalTableRowNode
@@ -129,7 +129,7 @@ declare export class TableRowNode extends deprecated_GridRowNode {
 declare export function $createTableRowNode(): TableRowNode;
 declare export function $isTableRowNode(
   node: ?LexicalNode,
-): boolean %checks(node instanceof TableRowNode);
+): node is TableRowNode;
 
 /**
  * LexicalTableSelectionHelpers
@@ -299,6 +299,6 @@ declare export class GridSelection implements BaseSelection {
 
 declare export function $isGridSelection(
   x: ?mixed,
-): boolean %checks(x instanceof GridSelection);
+): x is GridSelection;
 
 declare export function $createGridSelection(): GridSelection;

@@ -1319,7 +1319,10 @@ export class RangeSelection extends INTERNAL_PointSelection {
       );
       return selection.insertNodes(nodes);
     }
-    const firstBlock = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
+
+    const firstPoint = this.isBackward() ? this.focus : this.anchor;
+    const firstBlock = $getAncestor(firstPoint.getNode(), INTERNAL_$isBlock)!;
+
     const last = nodes[nodes.length - 1]!;
 
     // CASE 1: insert inside a code block

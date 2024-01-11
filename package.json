@@ -142,7 +142,7 @@
     "eslint-plugin-react-hooks": "^4.2.0",
     "eslint-plugin-simple-import-sort": "^7.0.0",
     "eslint-plugin-sort-keys-fix": "^1.1.2",
-    "flow-bin": "^0.203.1",
+    "flow-bin": "^0.226.0",
     "fs-extra": "^10.0.0",
     "gen-flow-files": "^0.4.11",
     "glob": "^7.2.0",

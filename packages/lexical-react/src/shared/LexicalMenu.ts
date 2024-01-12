@@ -536,7 +536,7 @@ export function useMenuAnchorRef(
       anchorElementRef.current = containerDiv;
       rootElement.setAttribute('aria-controls', 'typeahead-menu');
     }
-  }, [editor, resolution, className]);
+  }, [editor, resolution, className, parent]);
 
   useEffect(() => {
     const rootElement = editor.getRootElement();

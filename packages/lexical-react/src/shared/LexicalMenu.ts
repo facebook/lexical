@@ -479,6 +479,7 @@ export function useMenuAnchorRef(
   resolution: MenuResolution | null,
   setResolution: (r: MenuResolution | null) => void,
   className?: string,
+  parent: HTMLElement = document.body,
 ): MutableRefObject<HTMLElement> {
   const [editor] = useLexicalComposerContext();
   const anchorElementRef = useRef<HTMLElement>(document.createElement('div'));
@@ -530,7 +531,7 @@ export function useMenuAnchorRef(
         containerDiv.setAttribute('role', 'listbox');
         containerDiv.style.display = 'block';
         containerDiv.style.position = 'absolute';
-        document.body.append(containerDiv);
+        parent.append(containerDiv);
       }
       anchorElementRef.current = containerDiv;
       rootElement.setAttribute('aria-controls', 'typeahead-menu');

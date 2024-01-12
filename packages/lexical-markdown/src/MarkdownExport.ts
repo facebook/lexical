@@ -26,7 +26,7 @@ import {transformersByType} from './utils';
 
 export function createMarkdownExport(
   transformers: Array<Transformer>,
-): (node?: ElementNode) => string {
+): (node?: ElementNode, shouldUseDoubleLineDelimiter?: boolean) => string {
   const byType = transformersByType(transformers);
 
   // Export only uses text formats that are responsible for single format
@@ -35,7 +35,7 @@ export function createMarkdownExport(
     (transformer) => transformer.format.length === 1,
   );
 
-  return (node) => {
+  return (node, shouldUseDoubleLineDelimiter = true) => {
     const output = [];
     const children = (node || $getRoot()).getChildren();
 
@@ -52,7 +52,7 @@ export function createMarkdownExport(
       }
     }
 
-    return output.join('\n\n');
+    return output.join(shouldUseDoubleLineDelimiter ? '\n\n' : '\n');
   };
 }
 

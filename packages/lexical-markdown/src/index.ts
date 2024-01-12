@@ -73,17 +73,19 @@ function $convertFromMarkdownString(
   markdown: string,
   transformers: Array<Transformer> = TRANSFORMERS,
   node?: ElementNode,
+  shouldRemoveEmptyLines?: boolean,
 ): void {
   const importMarkdown = createMarkdownImport(transformers);
-  return importMarkdown(markdown, node);
+  return importMarkdown(markdown, node, shouldRemoveEmptyLines);
 }
 
 function $convertToMarkdownString(
   transformers: Array<Transformer> = TRANSFORMERS,
   node?: ElementNode,
+  shouldUseDoubleLineDelimiter?: boolean,
 ): string {
   const exportMarkdown = createMarkdownExport(transformers);
-  return exportMarkdown(node);
+  return exportMarkdown(node, shouldUseDoubleLineDelimiter);
 }
 
 export {

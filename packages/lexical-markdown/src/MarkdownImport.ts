@@ -43,13 +43,17 @@ type TextFormatTransformersIndex = Readonly<{
 
 export function createMarkdownImport(
   transformers: Array<Transformer>,
-): (markdownString: string, node?: ElementNode) => void {
+): (
+  markdownString: string,
+  node?: ElementNode,
+  shouldRemoveEmptyLines?: boolean,
+) => void {
   const byType = transformersByType(transformers);
   const textFormatTransformersIndex = createTextFormatTransformersIndex(
     byType.textFormat,
   );
 
-  return (markdownString, node) => {
+  return (markdownString, node, shouldRemoveEmptyLines = true) => {
     const lines = markdownString.split('\n');
     const linesLength = lines.length;
     const root = node || $getRoot();
@@ -78,11 +82,14 @@ export function createMarkdownImport(
     }
 
     // Removing empty paragraphs as md does not really
-    // allow empty lines and uses them as dilimiter
-    const children = root.getChildren();
-    for (const child of children) {
-      if (isEmptyParagraph(child)) {
-        child.remove();
+    // allow empty lines and uses them as delimiter
+    // but providing an option to keep them
+    if (shouldRemoveEmptyLines) {
+      const children = root.getChildren();
+      for (const child of children) {
+        if (isEmptyParagraph(child)) {
+          child.remove();
+        }
       }
     }
 

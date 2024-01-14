@@ -91,13 +91,11 @@ export function LayoutPlugin(): null {
                 );
               }
             } else if (itemsCount < prevItemsCount) {
-              for (let i = prevItemsCount; i < itemsCount; i++) {
+              for (let i = prevItemsCount - 1; i >= itemsCount; i--) {
                 const layoutItem = container.getChildAtIndex<LexicalNode>(i);
 
                 if ($isLayoutItemNode(layoutItem)) {
-                  for (const child of layoutItem.getChildren<LexicalNode>()) {
-                    container.insertAfter(child);
-                  }
+                  layoutItem.remove();
                 }
               }
             }

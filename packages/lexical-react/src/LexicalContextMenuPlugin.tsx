@@ -50,6 +50,7 @@ export type LexicalContextMenuPluginProps<TOption extends MenuOption> = {
   menuRenderFn: ContextMenuRenderFn<TOption>;
   anchorClassName?: string;
   commandPriority?: CommandListenerPriority;
+  parent?: HTMLElement;
 };
 
 const PRE_PORTAL_DIV_SIZE = 1;
@@ -62,6 +63,7 @@ export function LexicalContextMenuPlugin<TOption extends MenuOption>({
   menuRenderFn: contextMenuRenderFn,
   anchorClassName,
   commandPriority = COMMAND_PRIORITY_LOW,
+  parent,
 }: LexicalContextMenuPluginProps<TOption>): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   const [resolution, setResolution] = useState<MenuResolution | null>(null);
@@ -71,6 +73,7 @@ export function LexicalContextMenuPlugin<TOption extends MenuOption>({
     resolution,
     setResolution,
     anchorClassName,
+    parent,
   );
 
   const closeNodeMenu = useCallback(() => {

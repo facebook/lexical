@@ -1,0 +1,40 @@
+.font-size-input {
+  font-weight: bold;
+  font-size: 14px;
+  color: #777;
+  border-radius: 5px;
+  border-color: grey;
+  height: 21px;
+  margin-top: 5px;
+  padding: 2px 4px;
+  text-align: center;
+  width: 20px;
+}
+
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.add-icon {
+  background-image: url(../../images/icons/add-sign.svg);
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.minus-icon {
+  background-image: url(../../images/icons/minus-sign.svg);
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+button.font-decrement {
+  padding: 0px;
+  margin-right: 3px;
+}
+
+button.font-increment {
+  padding: 0px;
+  margin-left: 3px;
+}

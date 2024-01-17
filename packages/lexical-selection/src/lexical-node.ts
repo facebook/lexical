@@ -292,14 +292,19 @@ export function $addNodeStyle(node: TextNode): void {
 
 function $patchStyle(
   target: TextNode | RangeSelection,
-  patch: Record<string, string | null>,
+  patch: Record<
+    string,
+    string | null | ((currentStyleValue: string | null) => string)
+  >,
 ): void {
   const prevStyles = getStyleObjectFromCSS(
     'getStyle' in target ? target.getStyle() : target.style,
   );
   const newStyles = Object.entries(patch).reduce<Record<string, string>>(
     (styles, [key, value]) => {
-      if (value === null) {
+      if (value instanceof Function) {
+        styles[key] = value(prevStyles[key]);
+      } else if (value === null) {
         delete styles[key];
       } else {
         styles[key] = value;
@@ -318,11 +323,14 @@ function $patchStyle(
  * Will update partially selected TextNodes by splitting the TextNode and applying
  * the styles to the appropriate one.
  * @param selection - The selected node(s) to update.
- * @param patch - The patch to apply, which can include multiple styles. { CSSProperty: value }
+ * @param patch - The patch to apply, which can include multiple styles. { CSSProperty: value }. Can also accept a function that returns the new property value.
  */
 export function $patchStyleText(
   selection: INTERNAL_PointSelection,
-  patch: Record<string, string | null>,
+  patch: Record<
+    string,
+    string | null | ((currentStyleValue: string | null) => string)
+  >,
 ): void {
   const selectedNodes = selection.getNodes();
   const selectedNodesLength = selectedNodes.length;
@@ -387,7 +395,7 @@ export function $patchStyleText(
 
   // This is the case where we only selected a single node
   if (selectedNodes.length === 1) {
-    if ($isTextNode(firstNode)) {
+    if ($isTextNode(firstNode) && firstNode.canHaveFormat()) {
       startOffset =
         startType === 'element'
           ? 0
@@ -422,7 +430,8 @@ export function $patchStyleText(
   } else {
     if (
       $isTextNode(firstNode) &&
-      startOffset < firstNode.getTextContentSize()
+      startOffset < firstNode.getTextContentSize() &&
+      firstNode.canHaveFormat()
     ) {
       if (startOffset !== 0) {
         // the entire first node isn't selected, so split it
@@ -434,7 +443,7 @@ export function $patchStyleText(
       $patchStyle(firstNode as TextNode, patch);
     }
 
-    if ($isTextNode(lastNode)) {
+    if ($isTextNode(lastNode) && lastNode.canHaveFormat()) {
       const lastNodeText = lastNode.getTextContent();
       const lastNodeTextLength = lastNodeText.length;
 
@@ -463,6 +472,7 @@ export function $patchStyleText(
 
       if (
         $isTextNode(selectedNode) &&
+        selectedNode.canHaveFormat() &&
         selectedNodeKey !== firstNode.getKey() &&
         selectedNodeKey !== lastNode.getKey() &&
         !selectedNode.isToken()

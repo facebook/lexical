@@ -97,6 +97,7 @@ import InsertLayoutDialog from '../LayoutPlugin/InsertLayoutDialog';
 import {INSERT_PAGE_BREAK} from '../PageBreakPlugin';
 import {InsertPollDialog} from '../PollPlugin';
 import {InsertTableDialog} from '../TablePlugin';
+import FontSize from './fontSize';
 
 const blockTypeToBlockName = {
   bullet: 'Bulleted List',
@@ -883,11 +884,11 @@ export default function ToolbarPlugin({
             value={fontFamily}
             editor={editor}
           />
-          <FontDropDown
-            disabled={!isEditable}
-            style={'font-size'}
-            value={fontSize}
+          <Divider />
+          <FontSize
+            selectionFontSize={fontSize.slice(0, -2)}
             editor={editor}
+            disabled={!isEditable}
           />
           <Divider />
           <button

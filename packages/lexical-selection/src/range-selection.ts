@@ -7,7 +7,6 @@
  */
 
 import type {
-  DecoratorNode,
   ElementNode,
   INTERNAL_PointSelection,
   LexicalNode,
@@ -568,9 +567,7 @@ export function $getSelectionStyleValueForProperty(
  * This function is for internal use of the library.
  * Please do not use it as it may change in the future.
  */
-export function INTERNAL_$isBlock(
-  node: LexicalNode,
-): node is ElementNode | DecoratorNode<unknown> {
+export function INTERNAL_$isBlock(node: LexicalNode): node is ElementNode {
   if ($isDecoratorNode(node)) {
     return false;
   }

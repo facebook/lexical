@@ -6,20 +6,15 @@
  *
  */
 import {
-  $createRangeSelection,
   $createTextNode,
   $getCharacterOffsets,
   $getNodeByKey,
   $getPreviousSelection,
   $isElementNode,
-  $isNodeSelection,
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
-  $normalizeSelection__EXPERIMENTAL,
-  $setSelection,
   BaseSelection,
-  DEPRECATED_$isGridCellNode,
   ElementNode,
   LexicalEditor,
   LexicalNode,
@@ -326,32 +321,10 @@ export function $patchStyleText(
   selection: BaseSelection,
   patch: Record<string, string | null>,
 ): void {
-  if ($isNodeSelection(selection)) {
-    return;
-  }
   const selectedNodes = selection.getNodes();
   const selectedNodesLength = selectedNodes.length;
-
-  if (!$isRangeSelection(selection)) {
-    const cellSelection = $createRangeSelection();
-    const cellSelectionAnchor = cellSelection.anchor;
-    const cellSelectionFocus = cellSelection.focus;
-    for (let i = 0; i < selectedNodesLength; i++) {
-      const node = selectedNodes[i];
-      if (DEPRECATED_$isGridCellNode(node)) {
-        cellSelectionAnchor.set(node.getKey(), 0, 'element');
-        cellSelectionFocus.set(
-          node.getKey(),
-          node.getChildrenSize(),
-          'element',
-        );
-        $patchStyleText(
-          $normalizeSelection__EXPERIMENTAL(cellSelection),
-          patch,
-        );
-      }
-    }
-    $setSelection(selection);
+  const [anchor, focus] = selection.getStartEndPoints();
+  if (anchor === null || focus === null) {
     return;
   }
 
@@ -364,8 +337,6 @@ export function $patchStyleText(
     return;
   }
 
-  const anchor = selection.anchor;
-  const focus = selection.focus;
   const firstNodeText = firstNode.getTextContent();
   const firstNodeTextLength = firstNodeText.length;
   const focusOffset = focus.offset;
@@ -456,7 +427,7 @@ export function $patchStyleText(
         [lastNode] = lastNode.splitText(endOffset);
       }
 
-      if (endOffset !== 0) {
+      if (endOffset !== 0 || endType === 'element') {
         $patchStyle(lastNode as TextNode, patch);
       }
     }

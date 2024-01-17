@@ -427,7 +427,7 @@ test.describe('TextFormatting', () => {
     });
   });
 
-  test(`Can select text and change the font-size`, async ({
+  test(`Can select text and increase the font-size`, async ({
     page,
     isPlainText,
   }) => {
@@ -445,8 +445,7 @@ test.describe('TextFormatting', () => {
       focusPath: [0, 0, 0],
     });
 
-    await click(page, '.font-size');
-    await click(page, 'button:has-text("10px")');
+    await click(page, '.font-increment');
 
     await assertHTML(
       page,
@@ -455,7 +454,7 @@ test.describe('TextFormatting', () => {
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr">
           <span data-lexical-text="true">Hello</span>
-          <span style="font-size: 10px;" data-lexical-text="true">world</span>
+          <span style="font-size: 17px;" data-lexical-text="true">world</span>
           <span data-lexical-text="true">!</span>
         </p>
       `,
@@ -467,6 +466,101 @@ test.describe('TextFormatting', () => {
       focusOffset: 5,
       focusPath: [0, 1, 0],
     });
+  });
+
+  test(`Can select text with different size and increase the font-size relatively`, async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+    await page.keyboard.type('Hello world!');
+    await selectCharacters(page, 'left', 6);
+    await click(page, '.font-increment');
+    await moveRight(page, 6);
+    await selectCharacters(page, 'left', 12);
+    await click(page, '.font-increment');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span style="font-size: 17px;" data-lexical-text="true">Hello</span>
+          <span style="font-size: 19px;" data-lexical-text="true">world!</span>
+        </p>
+      `,
+    );
+  });
+
+  test(`Can select text and decrease the font-size`, async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+    await page.keyboard.type('Hello world!');
+    await moveLeft(page);
+    await selectCharacters(page, 'left', 5);
+
+    await assertSelection(page, {
+      anchorOffset: 11,
+      anchorPath: [0, 0, 0],
+      focusOffset: 6,
+      focusPath: [0, 0, 0],
+    });
+
+    await click(page, '.font-decrement');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Hello</span>
+          <span style="font-size: 13px;" data-lexical-text="true">world</span>
+          <span data-lexical-text="true">!</span>
+        </p>
+      `,
+    );
+
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [0, 1, 0],
+      focusOffset: 5,
+      focusPath: [0, 1, 0],
+    });
+  });
+
+  test(`Can select text with different size and decrease the font-size relatively`, async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+    await page.keyboard.type('Hello world!');
+    await selectCharacters(page, 'left', 6);
+    await click(page, '.font-decrement');
+    await moveRight(page, 6);
+    await selectCharacters(page, 'left', 12);
+    await click(page, '.font-decrement');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span style="font-size: 13px;" data-lexical-text="true">Hello</span>
+          <span style="font-size: 12px;" data-lexical-text="true">world!</span>
+        </p>
+      `,
+    );
   });
 
   test(`Can select text and change the font-size and font-family`, async ({
@@ -488,8 +582,7 @@ test.describe('TextFormatting', () => {
       focusPath: [0, 0, 0],
     });
 
-    await click(page, '.font-size');
-    await click(page, 'button:has-text("10px")');
+    await click(page, '.font-increment');
 
     await assertHTML(
       page,
@@ -498,7 +591,7 @@ test.describe('TextFormatting', () => {
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr">
           <span data-lexical-text="true">Hello</span>
-          <span style="font-size: 10px;" data-lexical-text="true">world</span>
+          <span style="font-size: 17px;" data-lexical-text="true">world</span>
           <span data-lexical-text="true">!</span>
         </p>
       `,
@@ -522,7 +615,7 @@ test.describe('TextFormatting', () => {
           dir="ltr">
           <span data-lexical-text="true">Hello</span>
           <span
-            style="font-size: 10px; font-family: Georgia;"
+            style="font-size: 17px; font-family: Georgia;"
             data-lexical-text="true">
             world
           </span>
@@ -538,8 +631,7 @@ test.describe('TextFormatting', () => {
       focusPath: [0, 1, 0],
     });
 
-    await click(page, '.font-size');
-    await click(page, 'button:has-text("20px")');
+    await click(page, '.font-decrement');
 
     await assertHTML(
       page,
@@ -549,7 +641,7 @@ test.describe('TextFormatting', () => {
           dir="ltr">
           <span data-lexical-text="true">Hello</span>
           <span
-            style="font-size: 20px; font-family: Georgia;"
+            style="font-size: 15px; font-family: Georgia;"
             data-lexical-text="true">
             world
           </span>
@@ -564,6 +656,77 @@ test.describe('TextFormatting', () => {
       focusOffset: 5,
       focusPath: [0, 1, 0],
     });
+  });
+
+  test(`Can select text and update font size by entering the value`, async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+    await page.keyboard.type('Hello world!');
+    await moveLeft(page);
+    await selectCharacters(page, 'left', 5);
+
+    await assertSelection(page, {
+      anchorOffset: 11,
+      anchorPath: [0, 0, 0],
+      focusOffset: 6,
+      focusPath: [0, 0, 0],
+    });
+
+    await page.locator('.font-size-input').fill('20');
+    await page.keyboard.press('Enter');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Hello</span>
+          <span style="font-size: 20px;" data-lexical-text="true">world</span>
+          <span data-lexical-text="true">!</span>
+        </p>
+      `,
+    );
+
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [0, 1, 0],
+      focusOffset: 5,
+      focusPath: [0, 1, 0],
+    });
+  });
+
+  test(`Can select text with different size and update font size by entering the value`, async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+    await page.keyboard.type('Hello world!');
+    await selectCharacters(page, 'left', 6);
+    await click(page, '.font-decrement');
+    await moveRight(page, 6);
+    await selectCharacters(page, 'left', 12);
+    await page.locator('.font-size-input').fill('20');
+    await page.keyboard.press('Enter');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span style="font-size: 20px;" data-lexical-text="true">
+            Hello world!
+          </span>
+        </p>
+      `,
+    );
   });
 
   test(`Can select multiple text parts and format them with shortcuts`, async ({

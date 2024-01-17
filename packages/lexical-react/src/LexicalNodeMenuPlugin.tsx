@@ -43,6 +43,7 @@ export type NodeMenuPluginProps<TOption extends MenuOption> = {
   menuRenderFn: MenuRenderFn<TOption>;
   anchorClassName?: string;
   commandPriority?: CommandListenerPriority;
+  parent?: HTMLElement;
 };
 
 export function LexicalNodeMenuPlugin<TOption extends MenuOption>({
@@ -54,6 +55,7 @@ export function LexicalNodeMenuPlugin<TOption extends MenuOption>({
   menuRenderFn,
   anchorClassName,
   commandPriority = COMMAND_PRIORITY_LOW,
+  parent,
 }: NodeMenuPluginProps<TOption>): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   const [resolution, setResolution] = useState<MenuResolution | null>(null);
@@ -61,6 +63,7 @@ export function LexicalNodeMenuPlugin<TOption extends MenuOption>({
     resolution,
     setResolution,
     anchorClassName,
+    parent,
   );
 
   const closeNodeMenu = useCallback(() => {

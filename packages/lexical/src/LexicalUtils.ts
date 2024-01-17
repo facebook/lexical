@@ -654,7 +654,8 @@ export function $updateTextNodeFromDOMContent(
               !isComposing) ||
             (prevSelection.focus.key === textNode.__key &&
               prevSelection.focus.offset === prevTextContentSize &&
-              !node.canInsertTextAfter())))
+              !node.canInsertTextAfter() &&
+              !isComposing)))
       ) {
         node.markDirty();
         return;

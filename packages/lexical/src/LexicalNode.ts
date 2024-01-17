@@ -976,7 +976,7 @@ export class LexicalNode {
   /**
    * Inserts a node before this LexicalNode (as the previous sibling).
    *
-   * @param nodeToInsert - The node to insert after this one.
+   * @param nodeToInsert - The node to insert before this one.
    * @param restoreSelection - Whether or not to attempt to resolve the
    * selection to the appropriate place after the operation is complete.
    * */

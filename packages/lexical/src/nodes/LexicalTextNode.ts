@@ -444,7 +444,7 @@ export class TextNode extends LexicalNode {
    *
    * @returns true if the text node supports font styling, false otherwise.
    */
-  isStylable(): boolean {
+  canHaveFormat(): boolean {
     return true;
   }
 

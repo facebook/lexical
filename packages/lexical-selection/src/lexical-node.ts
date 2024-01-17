@@ -395,7 +395,7 @@ export function $patchStyleText(
 
   // This is the case where we only selected a single node
   if (selectedNodes.length === 1) {
-    if ($isTextNode(firstNode) && firstNode.isStylable()) {
+    if ($isTextNode(firstNode) && firstNode.canHaveFormat()) {
       startOffset =
         startType === 'element'
           ? 0
@@ -431,7 +431,7 @@ export function $patchStyleText(
     if (
       $isTextNode(firstNode) &&
       startOffset < firstNode.getTextContentSize() &&
-      firstNode.isStylable()
+      firstNode.canHaveFormat()
     ) {
       if (startOffset !== 0) {
         // the entire first node isn't selected, so split it
@@ -443,7 +443,7 @@ export function $patchStyleText(
       $patchStyle(firstNode as TextNode, patch);
     }
 
-    if ($isTextNode(lastNode) && lastNode.isStylable()) {
+    if ($isTextNode(lastNode) && lastNode.canHaveFormat()) {
       const lastNodeText = lastNode.getTextContent();
       const lastNodeTextLength = lastNodeText.length;
 
@@ -472,7 +472,7 @@ export function $patchStyleText(
 
       if (
         $isTextNode(selectedNode) &&
-        selectedNode.isStylable() &&
+        selectedNode.canHaveFormat() &&
         selectedNodeKey !== firstNode.getKey() &&
         selectedNodeKey !== lastNode.getKey() &&
         !selectedNode.isToken()

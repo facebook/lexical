@@ -725,10 +725,11 @@ function $getSelectionStartEnd(
   node: LexicalNode,
   selection: BaseSelection,
 ): [number, number] {
-  const [anchor, focus] = selection.getStartEndPoints();
-  if ($isNodeSelection(selection) || anchor == null || focus == null) {
+  const anchorAndFocus = selection.getStartEndPoints();
+  if ($isNodeSelection(selection) || anchorAndFocus === null) {
     return [-1, -1];
   }
+  const [anchor, focus] = anchorAndFocus;
   const textContent = node.getTextContent();
   const textLength = textContent.length;
 

@@ -467,7 +467,7 @@ export function applyTableHandlers(
       SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
       (selectionPayload) => {
         const {nodes, selection} = selectionPayload;
-        const [anchor, focus] = selection.getStartEndPoints();
+        const anchorAndFocus = selection.getStartEndPoints();
         const isGridSelection = $isGridSelection(selection);
         const isRangeSelection = $isRangeSelection(selection);
         const isSelectionInsideOfGrid =
@@ -484,11 +484,11 @@ export function applyTableHandlers(
           nodes.length !== 1 ||
           !DEPRECATED_$isGridNode(nodes[0]) ||
           !isSelectionInsideOfGrid ||
-          anchor == null ||
-          focus == null
+          anchorAndFocus === null
         ) {
           return false;
         }
+        const [anchor] = anchorAndFocus;
 
         const newGrid = nodes[0];
         const newGridRows = newGrid.getChildren();

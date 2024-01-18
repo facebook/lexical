@@ -95,8 +95,12 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
 
     if (selection !== null) {
       const nodes = selection.getNodes();
-      const [anchor] = selection.getStartEndPoints();
-      invariant(anchor != null, 'insertList: anchor should be defined');
+      const anchorAndFocus = selection.getStartEndPoints();
+      invariant(
+        anchorAndFocus !== null,
+        'insertList: anchor should be defined',
+      );
+      const [anchor] = anchorAndFocus;
       const anchorNode = anchor.getNode();
       const anchorNodeParent = anchorNode.getParent();
 

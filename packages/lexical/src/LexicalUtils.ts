@@ -1623,11 +1623,3 @@ export function $getAncestor<NodeType extends LexicalNode = LexicalNode>(
 export function $getEditor(): LexicalEditor {
   return getActiveEditor();
 }
-
-/**
- * Utility function for accessing current active editor's internal state.
- * @returns Current active editor's state
- */
-export function $getEditorState(): EditorState {
-  return getActiveEditorState();
-}

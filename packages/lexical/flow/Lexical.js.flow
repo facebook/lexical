@@ -896,7 +896,6 @@ declare export function $copyNode(
   offset: number,
 ): [ElementNode, ElementNode];
 declare export function $getEditor(): LexicalEditor;
-declare export function $getEditorState(): EditorState;
 
 /**
  * LexicalNormalization

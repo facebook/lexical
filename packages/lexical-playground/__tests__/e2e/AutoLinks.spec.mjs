@@ -260,6 +260,29 @@ test.describe('Auto Links', () => {
     );
   });
 
+  test('Handles autolink following an invalid autolink', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type('Hellohttps://example.com https://example.com');
+
+    await assertHTML(
+      page,
+      html`
+        <p dir="ltr">
+          <span data-lexical-text="true">Hellohttps://example.com</span>
+          <a href="https://example.com" dir="ltr">
+            <span data-lexical-text="true">https://example.com</span>
+          </a>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
   test('Can convert url-like text with formatting into links', async ({
     page,
     isPlainText,

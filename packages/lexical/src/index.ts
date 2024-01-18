@@ -146,7 +146,6 @@ export {
   $copyNode,
   $getAdjacentNode,
   $getEditor,
-  $getEditorState,
   $getNearestNodeFromDOMNode,
   $getNearestRootOrShadowRoot,
   $getNodeByKey,

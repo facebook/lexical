@@ -438,7 +438,7 @@ function onPasteForRichText(
         event instanceof InputEvent || event instanceof KeyboardEvent
           ? null
           : event.clipboardData;
-      if (clipboardData != null && selection != null) {
+      if (clipboardData != null && selection !== null) {
         $insertDataTransferForRichText(clipboardData, selection, editor);
       }
     },
@@ -581,11 +581,11 @@ export function registerRichText(editor: LexicalEditor): () => void {
         const selection = $getSelection();
 
         if (typeof eventOrText === 'string') {
-          if (!$isNodeSelection(selection) && selection != null) {
+          if (selection !== null) {
             selection.insertText(eventOrText);
           }
         } else {
-          if ($isNodeSelection(selection) || selection == null) {
+          if (selection === null) {
             return false;
           }
 
@@ -1032,7 +1032,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
         }
 
         const selection = $getSelection();
-        if (selection != null) {
+        if (selection !== null) {
           onPasteForRichText(event, editor);
           return true;
         }

@@ -683,7 +683,7 @@ export class LexicalNode {
     const parent = latestNode.__parent;
     const cloneNotNeeded = editor._cloneNotNeeded;
     const selection = $getSelection();
-    if (selection != null) {
+    if (selection !== null) {
       selection.setCachedNodes(null);
     }
     if (cloneNotNeeded.has(key)) {

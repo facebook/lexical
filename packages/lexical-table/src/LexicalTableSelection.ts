@@ -221,7 +221,7 @@ export class TableSelection {
   }
 
   updateTableGridSelection(selection: GridSelection | null): void {
-    if (selection != null && selection.gridKey === this.tableNodeKey) {
+    if (selection !== null && selection.gridKey === this.tableNodeKey) {
       const editor = this.editor;
       this.gridSelection = selection;
       this.isHighlightingCells = true;

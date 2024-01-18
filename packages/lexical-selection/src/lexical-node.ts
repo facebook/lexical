@@ -90,14 +90,14 @@ export function $sliceSelectedTextNodeContent(
   selection: BaseSelection,
   textNode: TextNode,
 ): LexicalNode {
-  const [anchor, focus] = selection.getStartEndPoints();
+  const anchorAndFocus = selection.getStartEndPoints();
   if (
     textNode.isSelected(selection) &&
     !textNode.isSegmented() &&
     !textNode.isToken() &&
-    anchor != null &&
-    focus != null
+    anchorAndFocus !== null
   ) {
+    const [anchor, focus] = anchorAndFocus;
     const isBackward = selection.isBackward();
     const anchorNode = anchor.getNode();
     const focusNode = focus.getNode();
@@ -331,10 +331,11 @@ export function $patchStyleText(
 ): void {
   const selectedNodes = selection.getNodes();
   const selectedNodesLength = selectedNodes.length;
-  const [anchor, focus] = selection.getStartEndPoints();
-  if (anchor === null || focus === null) {
+  const anchorAndFocus = selection.getStartEndPoints();
+  if (anchorAndFocus === null) {
     return;
   }
+  const [anchor, focus] = anchorAndFocus;
 
   const lastIndex = selectedNodesLength - 1;
   let firstNode = selectedNodes[0];

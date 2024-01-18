@@ -121,7 +121,7 @@ export default function FontSize({
       editor.update(() => {
         if (editor.isEditable()) {
           const selection = $getSelection();
-          if (selection && selection !== null) {
+          if (selection !== null) {
             $patchStyleText(selection, {
               'font-size': newFontSize || getNextFontSize,
             });

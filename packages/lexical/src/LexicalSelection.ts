@@ -271,7 +271,7 @@ export interface BaseSelection {
   insertRawText(text: string): void;
   is(selection: null | BaseSelection): boolean;
   insertNodes(nodes: Array<LexicalNode>): void;
-  getStartEndPoints(): [PointType | null, PointType | null];
+  getStartEndPoints(): null | [PointType, PointType];
   isCollapsed(): boolean;
   isBackward(): boolean;
   getCachedNodes(): LexicalNode[] | null;
@@ -314,8 +314,8 @@ export class NodeSelection implements BaseSelection {
     return false;
   }
 
-  getStartEndPoints(): [null, null] {
-    return [null, null];
+  getStartEndPoints(): null {
+    return null;
   }
 
   add(key: NodeKey): void {
@@ -1775,7 +1775,7 @@ export class RangeSelection implements BaseSelection {
     return this.focus.isBefore(this.anchor);
   }
 
-  getStartEndPoints(): [PointType | null, PointType | null] {
+  getStartEndPoints(): null | [PointType, PointType] {
     return [this.anchor, this.focus];
   }
 }
@@ -1799,10 +1799,11 @@ function getCharacterOffset(point: PointType): number {
 export function $getCharacterOffsets(
   selection: BaseSelection,
 ): [number, number] {
-  const [anchor, focus] = selection.getStartEndPoints();
-  if (anchor === null || focus === null) {
+  const anchorAndFocus = selection.getStartEndPoints();
+  if (anchorAndFocus === null) {
     return [0, 0];
   }
+  const [anchor, focus] = anchorAndFocus;
   if (
     anchor.type === 'element' &&
     focus.type === 'element' &&

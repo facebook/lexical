@@ -47,7 +47,8 @@ export function $setBlocksType(
   if (selection === null) {
     return;
   }
-  const [anchor] = selection.getStartEndPoints() ?? [null];
+  const anchorAndFocus = selection.getStartEndPoints();
+  const anchor = anchorAndFocus ? anchorAndFocus[0] : null;
 
   if (anchor !== null && anchor.key === 'root') {
     const element = createElement();
@@ -116,7 +117,8 @@ export function $wrapNodes(
   createElement: () => ElementNode,
   wrappingElement: null | ElementNode = null,
 ): void {
-  const [anchor] = selection.getStartEndPoints() ?? [null];
+  const anchorAndFocus = selection.getStartEndPoints();
+  const anchor = anchorAndFocus ? anchorAndFocus[0] : null;
   const nodes = selection.getNodes();
   const nodesLength = nodes.length;
 

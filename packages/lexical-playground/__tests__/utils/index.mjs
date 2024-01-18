@@ -548,7 +548,7 @@ export async function click(page, selector, options) {
 
 export async function focus(page, selector, options) {
   const frame = IS_COLLAB ? await page.frame('left') : page;
-  frame.focus(selector, options);
+  await frame.focus(selector, options);
 }
 
 export async function fill(page, selector, value) {

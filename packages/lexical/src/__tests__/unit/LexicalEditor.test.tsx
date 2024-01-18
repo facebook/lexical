@@ -6,6 +6,7 @@
  *
  */
 
+import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import {useLexicalComposerContext} from '@lexical/react/src/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/src/LexicalContentEditable';
 import LexicalErrorBoundary from '@lexical/react/src/LexicalErrorBoundary';
@@ -2185,5 +2186,106 @@ describe('LexicalEditor tests', () => {
     expect(onError).toBeCalledWith(updateError);
     expect(textListener).toBeCalledWith('Hello\n\nworld');
     expect(updateListener.mock.lastCall[0].prevEditorState).toBe(editorState);
+  });
+
+  describe('html config', () => {
+    it('should work correctly', async () => {
+      const onError = jest.fn();
+
+      const newEditor = createTestEditor({
+        html: {
+          export: new Map([
+            [TextNode, () => ({element: document.createElement('figure')})],
+          ]),
+          import: {
+            figure: () => ({
+              conversion: () => ({node: $createTextNode('yolo')}),
+              priority: 4,
+            }),
+          },
+        },
+        onError: onError,
+      });
+
+      newEditor.setRootElement(container);
+
+      newEditor.update(() => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const text = $createTextNode();
+        root.append(paragraph);
+        paragraph.append(text);
+
+        const selection = $createNodeSelection();
+        selection.add(text.getKey());
+
+        const html = $generateHtmlFromNodes(newEditor, selection);
+        expect(html).toBe('<figure></figure>');
+
+        const parser = new DOMParser();
+        const dom = parser.parseFromString(html, 'text/html');
+        const node = $generateNodesFromDOM(newEditor, dom)[0];
+
+        expect(node).toEqual({
+          __detail: 0,
+          __format: 0,
+          __key: node.getKey(),
+          __mode: 0,
+          __next: null,
+          __parent: null,
+          __prev: null,
+          __style: '',
+          __text: 'yolo',
+          __type: 'text',
+        });
+      });
+
+      expect(onError).not.toHaveBeenCalled();
+    });
+
+    it('can utilize the methods of the target node in export callback', async () => {
+      const onError = jest.fn();
+
+      const newEditor = createTestEditor({
+        html: {
+          export: new Map([
+            [
+              TextNode,
+              (_, target: TextNode) => {
+                if (target.hasFormat('bold')) {
+                  return {element: document.createElement('bar')};
+                }
+
+                return {element: document.createElement('foo')};
+              },
+            ],
+          ]),
+        },
+        onError: onError,
+      });
+
+      newEditor.setRootElement(container);
+
+      newEditor.update(() => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const text = $createTextNode();
+        root.append(paragraph);
+        paragraph.append(text);
+
+        const selection = $createNodeSelection();
+        selection.add(text.getKey());
+
+        const htmlFoo = $generateHtmlFromNodes(newEditor, selection);
+        expect(htmlFoo).toBe('<foo></foo>');
+
+        text.toggleFormat('bold');
+
+        const htmlBar = $generateHtmlFromNodes(newEditor, selection);
+        expect(htmlBar).toBe('<bar></bar>');
+      });
+
+      expect(onError).not.toHaveBeenCalled();
+    });
   });
 });

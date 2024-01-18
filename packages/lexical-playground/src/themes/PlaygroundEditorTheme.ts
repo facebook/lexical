@@ -66,6 +66,7 @@ const theme: EditorThemeClasses = {
   layoutItem: 'PlaygroundEditorTheme__layoutItem',
   link: 'PlaygroundEditorTheme__link',
   list: {
+    checklist: 'PlaygroundEditorTheme__checklist',
     listitem: 'PlaygroundEditorTheme__listItem',
     listitemChecked: 'PlaygroundEditorTheme__listItemChecked',
     listitemUnchecked: 'PlaygroundEditorTheme__listItemUnchecked',

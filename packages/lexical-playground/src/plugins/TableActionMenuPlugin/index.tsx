@@ -495,6 +495,7 @@ function TableActionMenu({
     if (canMergeCells) {
       mergeCellButton = (
         <button
+          type="button"
           className="item"
           onClick={() => mergeTableCellsAtSelection()}
           data-test-id="table-merge-cells">
@@ -504,6 +505,7 @@ function TableActionMenu({
     } else if (canUnmergeCell) {
       mergeCellButton = (
         <button
+          type="button"
           className="item"
           onClick={() => unmergeTableCellsAtSelection()}
           data-test-id="table-unmerge-cells">
@@ -523,6 +525,7 @@ function TableActionMenu({
       }}>
       {mergeCellButton}
       <button
+        type="button"
         className="item"
         onClick={() =>
           showColorPickerModal('Cell background color', () => (
@@ -537,6 +540,7 @@ function TableActionMenu({
       </button>
       <hr />
       <button
+        type="button"
         className="item"
         onClick={() => insertTableRowAtSelection(false)}
         data-test-id="table-insert-row-above">
@@ -547,6 +551,7 @@ function TableActionMenu({
         </span>
       </button>
       <button
+        type="button"
         className="item"
         onClick={() => insertTableRowAtSelection(true)}
         data-test-id="table-insert-row-below">
@@ -558,6 +563,7 @@ function TableActionMenu({
       </button>
       <hr />
       <button
+        type="button"
         className="item"
         onClick={() => insertTableColumnAtSelection(false)}
         data-test-id="table-insert-column-before">
@@ -570,6 +576,7 @@ function TableActionMenu({
         </span>
       </button>
       <button
+        type="button"
         className="item"
         onClick={() => insertTableColumnAtSelection(true)}
         data-test-id="table-insert-column-after">
@@ -583,25 +590,31 @@ function TableActionMenu({
       </button>
       <hr />
       <button
+        type="button"
         className="item"
         onClick={() => deleteTableColumnAtSelection()}
         data-test-id="table-delete-columns">
         <span className="text">Delete column</span>
       </button>
       <button
+        type="button"
         className="item"
         onClick={() => deleteTableRowAtSelection()}
         data-test-id="table-delete-rows">
         <span className="text">Delete row</span>
       </button>
       <button
+        type="button"
         className="item"
         onClick={() => deleteTableAtSelection()}
         data-test-id="table-delete">
         <span className="text">Delete table</span>
       </button>
       <hr />
-      <button className="item" onClick={() => toggleTableRowIsHeader()}>
+      <button
+        type="button"
+        className="item"
+        onClick={() => toggleTableRowIsHeader()}>
         <span className="text">
           {(tableCellNode.__headerState & TableCellHeaderStates.ROW) ===
           TableCellHeaderStates.ROW
@@ -611,6 +624,7 @@ function TableActionMenu({
         </span>
       </button>
       <button
+        type="button"
         className="item"
         onClick={() => toggleTableColumnIsHeader()}
         data-test-id="table-column-header">
@@ -736,6 +750,7 @@ function TableCellActionMenuContainer({
       {tableCellNode != null && (
         <>
           <button
+            type="button"
             className="table-cell-action-button chevron-down"
             onClick={(e) => {
               e.stopPropagation();

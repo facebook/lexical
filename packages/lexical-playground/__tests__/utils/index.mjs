@@ -541,23 +541,19 @@ export async function selectorBoundingBox(page, selector) {
 }
 
 export async function click(page, selector, options) {
-  if (IS_COLLAB) {
-    const leftFrame = await page.frame('left');
-    await leftFrame.waitForSelector(selector, options);
-    await leftFrame.click(selector, options);
-  } else {
-    await page.waitForSelector(selector, options);
-    await page.click(selector, options);
-  }
+  const frame = IS_COLLAB ? await page.frame('left') : page;
+  await frame.waitForSelector(selector, options);
+  await frame.click(selector, options);
 }
 
 export async function focus(page, selector, options) {
-  if (IS_COLLAB) {
-    const leftFrame = await page.frame('left');
-    await leftFrame.focus(selector, options);
-  } else {
-    await page.focus(selector, options);
-  }
+  const frame = IS_COLLAB ? await page.frame('left') : page;
+  await frame.focus(selector, options);
+}
+
+export async function fill(page, selector, value) {
+  const frame = IS_COLLAB ? await page.frame('left') : page;
+  await frame.locator(selector).fill(value);
 }
 
 export async function selectOption(page, selector, options) {

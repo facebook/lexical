@@ -22,6 +22,7 @@ import {
   click,
   evaluate,
   expect,
+  fill,
   focusEditor,
   html,
   initialize,
@@ -676,7 +677,7 @@ test.describe('TextFormatting', () => {
       focusPath: [0, 0, 0],
     });
 
-    await page.locator('.font-size-input').fill('20');
+    await fill(page, '.font-size-input', '20');
     await page.keyboard.press('Enter');
 
     await assertHTML(
@@ -712,7 +713,7 @@ test.describe('TextFormatting', () => {
     await click(page, '.font-decrement');
     await moveRight(page, 6);
     await selectCharacters(page, 'left', 12);
-    await page.locator('.font-size-input').fill('20');
+    await fill(page, '.font-size-input', '20');
     await page.keyboard.press('Enter');
 
     await assertHTML(

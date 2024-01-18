@@ -14,7 +14,7 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getSelection,
-  $INTERNAL_isPointSelection,
+  $isRangeSelection,
   DEPRECATED_$computeGridMap,
   DEPRECATED_$getNodeTriplet,
   DEPRECATED_$isGridRowNode,
@@ -23,7 +23,7 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
-import {InsertTableCommandPayloadHeaders} from '.';
+import {$isGridSelection, InsertTableCommandPayloadHeaders} from '.';
 import {
   $createTableCellNode,
   $isTableCellNode,
@@ -230,8 +230,8 @@ export function $insertTableRow(
 export function $insertTableRow__EXPERIMENTAL(insertAfter = true): void {
   const selection = $getSelection();
   invariant(
-    $INTERNAL_isPointSelection(selection),
-    'Expected a INTERNAL_PointSelection',
+    $isRangeSelection(selection) || $isGridSelection(selection),
+    'Expected a RangeSelection or GridSelection',
   );
   const focus = selection.focus.getNode();
   const [focusCell, , grid] = DEPRECATED_$getNodeTriplet(focus);
@@ -349,7 +349,10 @@ export function $insertTableColumn(
 
 export function $insertTableColumn__EXPERIMENTAL(insertAfter = true): void {
   const selection = $getSelection();
-  invariant($INTERNAL_isPointSelection(selection), 'Expected a PointSeleciton');
+  invariant(
+    $isRangeSelection(selection) || $isGridSelection(selection),
+    'Expected a RangeSelection or GridSelection',
+  );
   const anchor = selection.anchor.getNode();
   const focus = selection.focus.getNode();
   const [anchorCell] = DEPRECATED_$getNodeTriplet(anchor);
@@ -452,8 +455,8 @@ export function $deleteTableColumn(
 export function $deleteTableRow__EXPERIMENTAL(): void {
   const selection = $getSelection();
   invariant(
-    $INTERNAL_isPointSelection(selection),
-    'Expected a INTERNAL_PointSelection',
+    $isRangeSelection(selection) || $isGridSelection(selection),
+    'Expected a RangeSelection or GridSelection',
   );
   const anchor = selection.anchor.getNode();
   const focus = selection.focus.getNode();
@@ -528,8 +531,8 @@ export function $deleteTableRow__EXPERIMENTAL(): void {
 export function $deleteTableColumn__EXPERIMENTAL(): void {
   const selection = $getSelection();
   invariant(
-    $INTERNAL_isPointSelection(selection),
-    'Expected a INTERNAL_PointSelection',
+    $isRangeSelection(selection) || $isGridSelection(selection),
+    'Expected a RangeSelection or GridSelection',
   );
   const anchor = selection.anchor.getNode();
   const focus = selection.focus.getNode();
@@ -613,8 +616,8 @@ function $insertFirst(parent: ElementNode, node: LexicalNode): void {
 export function $unmergeCell(): void {
   const selection = $getSelection();
   invariant(
-    $INTERNAL_isPointSelection(selection),
-    'Expected a INTERNAL_PointSelection',
+    $isRangeSelection(selection) || $isGridSelection(selection),
+    'Expected a RangeSelection or GridSelection',
   );
   const anchor = selection.anchor.getNode();
   const [cell, row, grid] = DEPRECATED_$getNodeTriplet(anchor);

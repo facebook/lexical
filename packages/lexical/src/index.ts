@@ -126,18 +126,17 @@ export {
   $createNodeSelection,
   $createPoint,
   $createRangeSelection,
+  $getCharacterOffsets,
   $getPreviousSelection,
   $getSelection,
   $getTextContent,
   $insertNodes,
-  $INTERNAL_isPointSelection,
   $isBlockElementNode,
   $isNodeSelection,
   $isRangeSelection,
   DEPRECATED_$computeGridMap,
   DEPRECATED_$getGridCellNodeRect,
   DEPRECATED_$getNodeTriplet,
-  INTERNAL_PointSelection,
 } from './LexicalSelection';
 export {$parseSerializedNode, isCurrentlyReadOnlyMode} from './LexicalUpdates';
 export {

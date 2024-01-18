@@ -9,11 +9,7 @@
 import './fontSize.css';
 
 import {$patchStyleText} from '@lexical/selection';
-import {
-  $getSelection,
-  $INTERNAL_isPointSelection,
-  LexicalEditor,
-} from 'lexical';
+import {$getSelection, LexicalEditor} from 'lexical';
 import * as React from 'react';
 
 const MIN_ALLOWED_FONT_SIZE = 8;
@@ -125,7 +121,7 @@ export default function FontSize({
       editor.update(() => {
         if (editor.isEditable()) {
           const selection = $getSelection();
-          if (selection && $INTERNAL_isPointSelection(selection)) {
+          if (selection !== null) {
             $patchStyleText(selection, {
               'font-size': newFontSize || getNextFontSize,
             });

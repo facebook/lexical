@@ -26,7 +26,6 @@ import {
   $getNearestNodeFromDOMNode,
   $getPreviousSelection,
   $getSelection,
-  $INTERNAL_isPointSelection,
   $isElementNode,
   $isRangeSelection,
   $isTextNode,
@@ -468,7 +467,8 @@ export function applyTableHandlers(
       SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
       (selectionPayload) => {
         const {nodes, selection} = selectionPayload;
-        const isPointSelection = $INTERNAL_isPointSelection(selection);
+        const anchorAndFocus = selection.getStartEndPoints();
+        const isGridSelection = $isGridSelection(selection);
         const isRangeSelection = $isRangeSelection(selection);
         const isSelectionInsideOfGrid =
           (isRangeSelection &&
@@ -478,16 +478,17 @@ export function applyTableHandlers(
             $findMatchingParent(selection.focus.getNode(), (n) =>
               DEPRECATED_$isGridCellNode(n),
             ) !== null) ||
-          (isPointSelection && !isRangeSelection);
+          isGridSelection;
 
         if (
           nodes.length !== 1 ||
           !DEPRECATED_$isGridNode(nodes[0]) ||
-          !isSelectionInsideOfGrid
+          !isSelectionInsideOfGrid ||
+          anchorAndFocus === null
         ) {
           return false;
         }
-        const {anchor} = selection;
+        const [anchor] = anchorAndFocus;
 
         const newGrid = nodes[0];
         const newGridRows = newGrid.getChildren();

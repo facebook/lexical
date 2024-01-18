@@ -425,27 +425,6 @@ export interface BaseSelection {
   setCachedNodes(nodes: null | Array<LexicalNode>): void;
 }
 
-declare export class INTERNAL_PointSelection implements BaseSelection {
-  anchor: PointType;
-  focus: PointType;
-  dirty: boolean;
-  constructor(anchor: PointType, focus: PointType): void;
-  clone(): INTERNAL_PointSelection;
-  extract(): Array<LexicalNode>;
-  getNodes(): Array<LexicalNode>;
-  getTextContent(): string;
-  insertRawText(text: string): void;
-  is(selection: null | BaseSelection): boolean;
-  insertText(text: string): void;
-  insertNodes(nodes: Array<LexicalNode>): void;
-  getCachedNodes(): null | Array<LexicalNode>;
-  setCachedNodes(nodes: null | Array<LexicalNode>): void;
-}
-
-declare export function $INTERNAL_isPointSelection(
-  x: ?mixed,
-): x is INTERNAL_PointSelection;
-
 declare export class NodeSelection implements BaseSelection {
   _nodes: Set<NodeKey>;
   dirty: boolean;
@@ -470,7 +449,7 @@ declare export function $isNodeSelection(
   x: ?mixed,
 ): x is NodeSelection;
 
-declare export class RangeSelection extends INTERNAL_PointSelection {
+declare export class RangeSelection implements BaseSelection {
   anchor: PointType;
   focus: PointType;
   dirty: boolean;

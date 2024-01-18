@@ -72,7 +72,7 @@ import {
 import {$createTabNode, $isTabNode} from './nodes/LexicalTabNode';
 
 export type TextPointType = {
-  _selection: INTERNAL_PointSelection;
+  _selection: BaseSelection;
   getNode: () => TextNode;
   is: (point: PointType) => boolean;
   isBefore: (point: PointType) => boolean;
@@ -83,7 +83,7 @@ export type TextPointType = {
 };
 
 export type ElementPointType = {
-  _selection: INTERNAL_PointSelection;
+  _selection: BaseSelection;
   getNode: () => ElementNode;
   is: (point: PointType) => boolean;
   isBefore: (point: PointType) => boolean;
@@ -106,7 +106,7 @@ export class Point {
   key: NodeKey;
   offset: number;
   type: 'text' | 'element';
-  _selection: INTERNAL_PointSelection | null;
+  _selection: BaseSelection | null;
 
   constructor(key: NodeKey, offset: number, type: 'text' | 'element') {
     this._selection = null;
@@ -260,8 +260,10 @@ function $setPointValues(
 }
 
 export interface BaseSelection {
-  clone(): BaseSelection;
+  _cachedNodes: Array<LexicalNode> | null;
   dirty: boolean;
+
+  clone(): BaseSelection;
   extract(): Array<LexicalNode>;
   getNodes(): Array<LexicalNode>;
   getTextContent(): string;
@@ -269,92 +271,22 @@ export interface BaseSelection {
   insertRawText(text: string): void;
   is(selection: null | BaseSelection): boolean;
   insertNodes(nodes: Array<LexicalNode>): void;
-  getCachedNodes(): null | Array<LexicalNode>;
-  setCachedNodes(nodes: null | Array<LexicalNode>): void;
-}
-
-/**
- * This class is being used only for internal use case of migration GridSelection outside of core package.
- * DO NOT USE THIS CLASS DIRECTLY.
- */
-export abstract class INTERNAL_PointSelection implements BaseSelection {
-  anchor: PointType;
-  focus: PointType;
-  dirty: boolean;
-  _cachedNodes: Array<LexicalNode> | null;
-
-  constructor(anchor: PointType, focus: PointType) {
-    this.anchor = anchor;
-    this.focus = focus;
-    anchor._selection = this;
-    focus._selection = this;
-    this._cachedNodes = null;
-    this.dirty = false;
-  }
-  getCachedNodes(): LexicalNode[] | null {
-    return this._cachedNodes;
-  }
-
-  setCachedNodes(nodes: LexicalNode[] | null): void {
-    this._cachedNodes = nodes;
-  }
-
-  is(selection: null | BaseSelection): boolean {
-    if (!$INTERNAL_isPointSelection(selection)) {
-      return false;
-    }
-    return this.anchor.is(selection.anchor) && this.focus.is(selection.focus);
-  }
-
-  isCollapsed(): boolean {
-    return false;
-  }
-
-  extract(): Array<LexicalNode> {
-    return this.getNodes();
-  }
-
-  abstract clone(): INTERNAL_PointSelection;
-
-  abstract getNodes(): Array<LexicalNode>;
-
-  abstract getTextContent(): string;
-
-  abstract insertText(text: string): void;
-
-  abstract insertRawText(text: string): void;
-
-  abstract insertNodes(nodes: Array<LexicalNode>): void;
-
-  /**
-   * Returns whether the Selection is "backwards", meaning the focus
-   * logically precedes the anchor in the EditorState.
-   * @returns true if the Selection is backwards, false otherwise.
-   */
-  isBackward(): boolean {
-    return this.focus.isBefore(this.anchor);
-  }
-
-  /**
-   * Returns the character-based offsets of the Selection, accounting for non-text Points
-   * by using the children size or text content.
-   *
-   * @returns the character offsets for the Selection
-   */
-  getCharacterOffsets(): [number, number] {
-    return getCharacterOffsets(this);
-  }
+  getStartEndPoints(): null | [PointType, PointType];
+  isCollapsed(): boolean;
+  isBackward(): boolean;
+  getCachedNodes(): LexicalNode[] | null;
+  setCachedNodes(nodes: LexicalNode[] | null): void;
 }
 
 export class NodeSelection implements BaseSelection {
   _nodes: Set<NodeKey>;
+  _cachedNodes: Array<LexicalNode> | null;
   dirty: boolean;
-  _cachedNodes: null | Array<LexicalNode>;
 
   constructor(objects: Set<NodeKey>) {
-    this.dirty = false;
-    this._nodes = objects;
     this._cachedNodes = null;
+    this._nodes = objects;
+    this.dirty = false;
   }
 
   getCachedNodes(): LexicalNode[] | null {
@@ -372,6 +304,18 @@ export class NodeSelection implements BaseSelection {
     const a: Set<NodeKey> = this._nodes;
     const b: Set<NodeKey> = selection._nodes;
     return a.size === b.size && Array.from(a).every((key) => b.has(key));
+  }
+
+  isCollapsed(): boolean {
+    return false;
+  }
+
+  isBackward(): boolean {
+    return false;
+  }
+
+  getStartEndPoints(): null {
+    return null;
   }
 
   add(key: NodeKey): void {
@@ -464,12 +408,6 @@ export function $isRangeSelection(x: unknown): x is RangeSelection {
   return x instanceof RangeSelection;
 }
 
-export function $INTERNAL_isPointSelection(
-  x: unknown,
-): x is INTERNAL_PointSelection {
-  return x instanceof INTERNAL_PointSelection;
-}
-
 export function DEPRECATED_$getGridCellNodeRect(
   GridCellNode: DEPRECATED_GridCellNode,
 ): {
@@ -528,9 +466,13 @@ export function DEPRECATED_$getGridCellNodeRect(
   return null;
 }
 
-export class RangeSelection extends INTERNAL_PointSelection {
+export class RangeSelection implements BaseSelection {
   format: number;
   style: string;
+  anchor: PointType;
+  focus: PointType;
+  _cachedNodes: Array<LexicalNode> | null;
+  dirty: boolean;
 
   constructor(
     anchor: PointType,
@@ -538,9 +480,22 @@ export class RangeSelection extends INTERNAL_PointSelection {
     format: number,
     style: string,
   ) {
-    super(anchor, focus);
+    this.anchor = anchor;
+    this.focus = focus;
+    anchor._selection = this;
+    focus._selection = this;
+    this._cachedNodes = null;
     this.format = format;
     this.style = style;
+    this.dirty = false;
+  }
+
+  getCachedNodes(): LexicalNode[] | null {
+    return this._cachedNodes;
+  }
+
+  setCachedNodes(nodes: LexicalNode[] | null): void {
+    this._cachedNodes = nodes;
   }
 
   /**
@@ -664,7 +619,7 @@ export class RangeSelection extends INTERNAL_PointSelection {
     const anchor = this.anchor;
     const focus = this.focus;
     const isBefore = anchor.isBefore(focus);
-    const [anchorOffset, focusOffset] = getCharacterOffsets(this);
+    const [anchorOffset, focusOffset] = $getCharacterOffsets(this);
     let textContent = '';
     let prevWasElement = true;
     for (let i = 0; i < nodes.length; i++) {
@@ -1463,7 +1418,7 @@ export class RangeSelection extends INTERNAL_PointSelection {
     const focus = this.focus;
     let firstNode = selectedNodes[0];
     let lastNode = selectedNodes[lastIndex];
-    const [anchorOffset, focusOffset] = getCharacterOffsets(this);
+    const [anchorOffset, focusOffset] = $getCharacterOffsets(this);
 
     if (selectedNodesLength === 0) {
       return [];
@@ -1810,6 +1765,19 @@ export class RangeSelection extends INTERNAL_PointSelection {
     }
     this.removeText();
   }
+
+  /**
+   * Returns whether the Selection is "backwards", meaning the focus
+   * logically precedes the anchor in the EditorState.
+   * @returns true if the Selection is backwards, false otherwise.
+   */
+  isBackward(): boolean {
+    return this.focus.isBefore(this.anchor);
+  }
+
+  getStartEndPoints(): null | [PointType, PointType] {
+    return [this.anchor, this.focus];
+  }
 }
 
 export function $isNodeSelection(x: unknown): x is NodeSelection {
@@ -1828,11 +1796,14 @@ function getCharacterOffset(point: PointType): number {
     : 0;
 }
 
-function getCharacterOffsets(
-  selection: INTERNAL_PointSelection,
+export function $getCharacterOffsets(
+  selection: BaseSelection,
 ): [number, number] {
-  const anchor = selection.anchor;
-  const focus = selection.focus;
+  const anchorAndFocus = selection.getStartEndPoints();
+  if (anchorAndFocus === null) {
+    return [0, 0];
+  }
+  const [anchor, focus] = anchorAndFocus;
   if (
     anchor.type === 'element' &&
     focus.type === 'element' &&

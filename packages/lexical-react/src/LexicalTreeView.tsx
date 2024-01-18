@@ -10,7 +10,6 @@ import type {
   BaseSelection,
   EditorState,
   ElementNode,
-  INTERNAL_PointSelection,
   LexicalEditor,
   LexicalNode,
   RangeSelection,
@@ -724,10 +723,13 @@ function prettifyHTML(node: Element, level: number) {
 
 function $getSelectionStartEnd(
   node: LexicalNode,
-  selection: INTERNAL_PointSelection,
+  selection: BaseSelection,
 ): [number, number] {
-  const anchor = selection.anchor;
-  const focus = selection.focus;
+  const anchorAndFocus = selection.getStartEndPoints();
+  if ($isNodeSelection(selection) || anchorAndFocus === null) {
+    return [-1, -1];
+  }
+  const [anchor, focus] = anchorAndFocus;
   const textContent = node.getTextContent();
   const textLength = textContent.length;
 

@@ -6,21 +6,16 @@
  *
  */
 import {
-  $createRangeSelection,
   $createTextNode,
+  $getCharacterOffsets,
   $getNodeByKey,
   $getPreviousSelection,
-  $INTERNAL_isPointSelection,
   $isElementNode,
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
-  $normalizeSelection__EXPERIMENTAL,
-  $setSelection,
   BaseSelection,
-  DEPRECATED_$isGridCellNode,
   ElementNode,
-  INTERNAL_PointSelection,
   LexicalEditor,
   LexicalNode,
   Point,
@@ -95,20 +90,22 @@ export function $sliceSelectedTextNodeContent(
   selection: BaseSelection,
   textNode: TextNode,
 ): LexicalNode {
+  const anchorAndFocus = selection.getStartEndPoints();
   if (
     textNode.isSelected(selection) &&
     !textNode.isSegmented() &&
     !textNode.isToken() &&
-    $INTERNAL_isPointSelection(selection)
+    anchorAndFocus !== null
   ) {
-    const anchorNode = selection.anchor.getNode();
-    const focusNode = selection.focus.getNode();
+    const [anchor, focus] = anchorAndFocus;
+    const isBackward = selection.isBackward();
+    const anchorNode = anchor.getNode();
+    const focusNode = focus.getNode();
     const isAnchor = textNode.is(anchorNode);
     const isFocus = textNode.is(focusNode);
 
     if (isAnchor || isFocus) {
-      const isBackward = selection.isBackward();
-      const [anchorOffset, focusOffset] = selection.getCharacterOffsets();
+      const [anchorOffset, focusOffset] = $getCharacterOffsets(selection);
       const isSame = anchorNode.is(focusNode);
       const isFirst = textNode.is(isBackward ? focusNode : anchorNode);
       const isLast = textNode.is(isBackward ? anchorNode : focusNode);
@@ -326,7 +323,7 @@ function $patchStyle(
  * @param patch - The patch to apply, which can include multiple styles. { CSSProperty: value }. Can also accept a function that returns the new property value.
  */
 export function $patchStyleText(
-  selection: INTERNAL_PointSelection,
+  selection: BaseSelection,
   patch: Record<
     string,
     string | null | ((currentStyleValue: string | null) => string)
@@ -334,29 +331,11 @@ export function $patchStyleText(
 ): void {
   const selectedNodes = selection.getNodes();
   const selectedNodesLength = selectedNodes.length;
-
-  if (!$isRangeSelection(selection)) {
-    const cellSelection = $createRangeSelection();
-    const cellSelectionAnchor = cellSelection.anchor;
-    const cellSelectionFocus = cellSelection.focus;
-    for (let i = 0; i < selectedNodesLength; i++) {
-      const node = selectedNodes[i];
-      if (DEPRECATED_$isGridCellNode(node)) {
-        cellSelectionAnchor.set(node.getKey(), 0, 'element');
-        cellSelectionFocus.set(
-          node.getKey(),
-          node.getChildrenSize(),
-          'element',
-        );
-        $patchStyleText(
-          $normalizeSelection__EXPERIMENTAL(cellSelection),
-          patch,
-        );
-      }
-    }
-    $setSelection(selection);
+  const anchorAndFocus = selection.getStartEndPoints();
+  if (anchorAndFocus === null) {
     return;
   }
+  const [anchor, focus] = anchorAndFocus;
 
   const lastIndex = selectedNodesLength - 1;
   let firstNode = selectedNodes[0];
@@ -367,8 +346,6 @@ export function $patchStyleText(
     return;
   }
 
-  const anchor = selection.anchor;
-  const focus = selection.focus;
   const firstNodeText = firstNode.getTextContent();
   const firstNodeTextLength = firstNodeText.length;
   const focusOffset = focus.offset;
@@ -460,7 +437,7 @@ export function $patchStyleText(
         [lastNode] = lastNode.splitText(endOffset);
       }
 
-      if (endOffset !== 0) {
+      if (endOffset !== 0 || endType === 'element') {
         $patchStyle(lastNode as TextNode, patch);
       }
     }

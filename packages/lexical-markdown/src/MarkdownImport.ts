@@ -79,14 +79,17 @@ export function createMarkdownImport(
 
     // Removing empty paragraphs as md does not really
     // allow empty lines and uses them as delimiter
-    // this should be done only for the nodes that can be empty
-    if (root.canBeEmpty()) {
-      const children = root.getChildren();
-      for (const child of children) {
-        if (isEmptyParagraph(child)) {
-          child.remove();
-        }
+    const children = root.getChildren();
+    for (const child of children) {
+      if (isEmptyParagraph(child)) {
+        child.remove();
       }
+    }
+
+    // When removing empty paragraphs makes the nodes empty that
+    // can not be empty, an empty paragraph should be appended.
+    if (root.isEmpty() && !root.canBeEmpty()) {
+      root.append($createParagraphNode());
     }
 
     if ($getSelection() !== null) {

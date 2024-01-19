@@ -79,7 +79,7 @@ export function createMarkdownImport(
 
     // Removing empty paragraphs as md does not really
     // allow empty lines and uses them as delimiter
-    // this should be done only for the node whose parent can be empty
+    // this should be done only for the node that can be empty
     if (root.canBeEmpty()) {
       const children = root.getChildren();
       for (const child of children) {

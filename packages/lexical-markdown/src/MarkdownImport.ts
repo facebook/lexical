@@ -18,6 +18,7 @@ import type {LexicalNode, TextNode} from 'lexical';
 import {$createCodeNode} from '@lexical/code';
 import {$isListItemNode, $isListNode, ListItemNode} from '@lexical/list';
 import {$isQuoteNode} from '@lexical/rich-text';
+import {$isTableCellNode} from '@lexical/table';
 import {$findMatchingParent} from '@lexical/utils';
 import {
   $createLineBreakNode,
@@ -78,11 +79,14 @@ export function createMarkdownImport(
     }
 
     // Removing empty paragraphs as md does not really
-    // allow empty lines and uses them as dilimiter
+    // allow empty lines and uses them as delimiter
     const children = root.getChildren();
-    for (const child of children) {
-      if (isEmptyParagraph(child)) {
-        child.remove();
+    // TableCellNodes should keep an empty paragraph child
+    if (!$isTableCellNode(root)) {
+      for (const child of children) {
+        if (isEmptyParagraph(child)) {
+          child.remove();
+        }
       }
     }
 

@@ -18,7 +18,6 @@ import type {LexicalNode, TextNode} from 'lexical';
 import {$createCodeNode} from '@lexical/code';
 import {$isListItemNode, $isListNode, ListItemNode} from '@lexical/list';
 import {$isQuoteNode} from '@lexical/rich-text';
-import {$isTableCellNode} from '@lexical/table';
 import {$findMatchingParent} from '@lexical/utils';
 import {
   $createLineBreakNode,
@@ -82,7 +81,7 @@ export function createMarkdownImport(
     // allow empty lines and uses them as delimiter
     const children = root.getChildren();
     // TableCellNodes should keep an empty paragraph child
-    if (!$isTableCellNode(root)) {
+    if (root.canBeEmpty()) {
       for (const child of children) {
         if (isEmptyParagraph(child)) {
           child.remove();

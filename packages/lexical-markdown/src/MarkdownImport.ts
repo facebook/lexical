@@ -79,9 +79,9 @@ export function createMarkdownImport(
 
     // Removing empty paragraphs as md does not really
     // allow empty lines and uses them as delimiter
-    const children = root.getChildren();
-    // TableCellNodes should keep an empty paragraph child
+    // this should be done only for the node whose parent can be empty
     if (root.canBeEmpty()) {
+      const children = root.getChildren();
       for (const child of children) {
         if (isEmptyParagraph(child)) {
           child.remove();

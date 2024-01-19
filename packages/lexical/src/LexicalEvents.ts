@@ -304,6 +304,8 @@ function onSelectionChange(
     if ($isRangeSelection(selection)) {
       const anchor = selection.anchor;
       const anchorNode = anchor.getNode();
+      const focus = selection.focus;
+      const focusNode = focus.getNode();
 
       if (selection.isCollapsed()) {
         // Badly interpreted range selection when collapsed - #1482
@@ -351,8 +353,24 @@ function onSelectionChange(
       } else {
         let combinedFormat = IS_ALL_FORMATTING;
         let hasTextNodes = false;
-
         const nodes = selection.getNodes();
+        if (
+          selection.getTextContent().startsWith('\n') &&
+          !selection.getTextContent().endsWith('\n') &&
+          (anchorNode.getTextContentSize() === anchor.offset ||
+            focusNode.getTextContentSize() === focus.offset) &&
+          $isTextNode(nodes[0])
+        ) {
+          nodes.shift();
+        } else if (
+          !selection.getTextContent().startsWith('\n') &&
+          selection.getTextContent().endsWith('\n') &&
+          (anchor.offset === 0 || focus.offset === 0) &&
+          $isTextNode(nodes[nodes.length - 1])
+        ) {
+          nodes.pop();
+        }
+
         const nodesLength = nodes.length;
         for (let i = 0; i < nodesLength; i++) {
           const node = nodes[i];

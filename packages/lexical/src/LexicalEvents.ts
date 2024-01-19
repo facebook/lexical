@@ -304,8 +304,6 @@ function onSelectionChange(
     if ($isRangeSelection(selection)) {
       const anchor = selection.anchor;
       const anchorNode = anchor.getNode();
-      const focus = selection.focus;
-      const focusNode = focus.getNode();
 
       if (selection.isCollapsed()) {
         // Badly interpreted range selection when collapsed - #1482
@@ -351,30 +349,34 @@ function onSelectionChange(
           }
         }
       } else {
+        const anchorKey = anchor.key;
+        const focus = selection.focus;
+        const focusKey = focus.key;
+        const nodes = selection.getNodes();
+        const nodesLength = nodes.length;
+        const isBackward = selection.isBackward();
+        const startOffset = isBackward ? focusOffset : anchorOffset;
+        const endOffset = isBackward ? anchorOffset : focusOffset;
+        const startKey = isBackward ? focusKey : anchorKey;
+        const endKey = isBackward ? anchorKey : focusKey;
         let combinedFormat = IS_ALL_FORMATTING;
         let hasTextNodes = false;
-        const nodes = selection.getNodes();
-        if (
-          selection.getTextContent().startsWith('\n') &&
-          !selection.getTextContent().endsWith('\n') &&
-          (anchorNode.getTextContentSize() === anchor.offset ||
-            focusNode.getTextContentSize() === focus.offset) &&
-          $isTextNode(nodes[0])
-        ) {
-          nodes.shift();
-        } else if (
-          !selection.getTextContent().startsWith('\n') &&
-          selection.getTextContent().endsWith('\n') &&
-          (anchor.offset === 0 || focus.offset === 0) &&
-          $isTextNode(nodes[nodes.length - 1])
-        ) {
-          nodes.pop();
-        }
-
-        const nodesLength = nodes.length;
         for (let i = 0; i < nodesLength; i++) {
           const node = nodes[i];
-          if ($isTextNode(node)) {
+          const textContentSize = node.getTextContentSize();
+          if (
+            $isTextNode(node) &&
+            textContentSize !== 0 &&
+            // Exclude empty text nodes at boundaries resulting from user's selection
+            !(
+              (i === 0 &&
+                node.__key === startKey &&
+                startOffset === textContentSize) ||
+              (i === nodesLength - 1 &&
+                node.__key === endKey &&
+                endOffset === 0)
+            )
+          ) {
             // TODO: what about style?
             hasTextNodes = true;
             combinedFormat &= node.getFormat();

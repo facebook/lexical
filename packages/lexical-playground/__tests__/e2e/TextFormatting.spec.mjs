@@ -1213,4 +1213,32 @@ test.describe('TextFormatting', () => {
       `,
     );
   });
+
+  test('Multiline selection format ignores new lines', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    let leftFrame = page;
+    if (isCollab) {
+      leftFrame = await page.frame('left');
+    }
+    await focusEditor(page);
+
+    await page.keyboard.type('Fist');
+    await page.keyboard.press('Enter');
+    await toggleUnderline(page);
+    await page.keyboard.type('Second');
+    await page.pause();
+
+    await moveLeft(page, 'Second'.length + 1);
+    await page.pause();
+    await selectCharacters(page, 'right', 'Second'.length + 1);
+    await page.pause();
+
+    await expect(
+      leftFrame.locator('.toolbar-item[title^="Underline"]'),
+    ).toHaveClass(/active/);
+  });
 });

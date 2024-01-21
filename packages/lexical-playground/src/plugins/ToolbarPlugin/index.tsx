@@ -1015,25 +1015,6 @@ export default function ToolbarPlugin({
             </DropDownItem>
           </DropDown>
           <Divider />
-          {rootType === 'table' && (
-            <>
-              <DropDown
-                disabled={!isEditable}
-                buttonClassName="toolbar-item spaced"
-                buttonLabel="Table"
-                buttonAriaLabel="Open table toolkit"
-                buttonIconClassName="icon table secondary">
-                <DropDownItem
-                  onClick={() => {
-                    /**/
-                  }}
-                  className="item">
-                  <span className="text">TODO</span>
-                </DropDownItem>
-              </DropDown>
-              <Divider />
-            </>
-          )}
           <DropDown
             disabled={!isEditable}
             buttonClassName="toolbar-item spaced"

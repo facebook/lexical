@@ -43,8 +43,6 @@ export type {
 export type {
   BaseSelection,
   ElementPointType as ElementPoint,
-  GridMapType,
-  GridMapValueType,
   NodeSelection,
   Point,
   PointType,
@@ -134,9 +132,6 @@ export {
   $isBlockElementNode,
   $isNodeSelection,
   $isRangeSelection,
-  DEPRECATED_$computeGridMap,
-  DEPRECATED_$getGridCellNodeRect,
-  DEPRECATED_$getNodeTriplet,
 } from './LexicalSelection';
 export {$parseSerializedNode, isCurrentlyReadOnlyMode} from './LexicalUpdates';
 export {
@@ -166,18 +161,6 @@ export {
 } from './LexicalUtils';
 export {$isDecoratorNode, DecoratorNode} from './nodes/LexicalDecoratorNode';
 export {$isElementNode, ElementNode} from './nodes/LexicalElementNode';
-export {
-  DEPRECATED_$isGridCellNode,
-  DEPRECATED_GridCellNode,
-} from './nodes/LexicalGridCellNode';
-export {
-  DEPRECATED_$isGridNode,
-  DEPRECATED_GridNode,
-} from './nodes/LexicalGridNode';
-export {
-  DEPRECATED_$isGridRowNode,
-  DEPRECATED_GridRowNode,
-} from './nodes/LexicalGridRowNode';
 export type {SerializedLineBreakNode} from './nodes/LexicalLineBreakNode';
 export {
   $createLineBreakNode,

@@ -22,9 +22,6 @@ import type {
 
 import {
   ElementNode,
-  deprecated_GridCellNode,
-  deprecated_GridRowNode,
-  deprecated_GridNode,
 } from 'lexical';
 
 /**
@@ -40,7 +37,7 @@ export const TableCellHeaderStates = {
 
 export type TableCellHeaderState = $Values<typeof TableCellHeaderStates>;
 
-declare export class TableCellNode extends deprecated_GridCellNode {
+declare export class TableCellNode extends GridCellNode {
   __headerState: TableCellHeaderState;
   __width?: number;
   __backgroundColor: null | string;
@@ -84,7 +81,7 @@ declare export function $isTableCellNode(
  * LexicalTableNode
  */
 
-declare export class TableNode extends deprecated_GridNode {
+declare export class TableNode extends GridNode {
   static getType(): string;
   static clone(node: TableNode): TableNode;
   constructor(grid: ?Grid, key?: NodeKey): void;
@@ -113,7 +110,7 @@ declare export function $isTableNode(
  * LexicalTableRowNode
  */
 
-declare export class TableRowNode extends deprecated_GridRowNode {
+declare export class TableRowNode extends GridRowNode {
   static getType(): string;
   static clone(node: TableRowNode): TableRowNode;
   constructor(height?: ?number, key?: NodeKey): void;

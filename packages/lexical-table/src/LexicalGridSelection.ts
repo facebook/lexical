@@ -13,18 +13,18 @@ import {
   $isElementNode,
   $normalizeSelection__EXPERIMENTAL,
   BaseSelection,
-  DEPRECATED_$computeGridMap,
-  DEPRECATED_$getGridCellNodeRect,
-  DEPRECATED_$isGridCellNode,
-  DEPRECATED_$isGridNode,
-  DEPRECATED_$isGridRowNode,
-  GridMapValueType,
   isCurrentlyReadOnlyMode,
   LexicalNode,
   NodeKey,
   PointType,
 } from 'lexical';
 import invariant from 'shared/invariant';
+
+import {$isGridCellNode} from './LexicalGridCellNode';
+import {$isGridNode} from './LexicalGridNode';
+import {$isGridRowNode} from './LexicalGridRowNode';
+import {GridMapValueType} from './LexicalTableSelection';
+import {$computeGridMap, $getGridCellNodeRect} from './LexicalTableUtils';
 
 export type GridSelectionShape = {
   fromX: number;
@@ -126,10 +126,10 @@ export class GridSelection implements BaseSelection {
   getShape(): GridSelectionShape {
     const anchorCellNode = $getNodeByKey(this.anchor.key);
     invariant(
-      DEPRECATED_$isGridCellNode(anchorCellNode),
+      $isGridCellNode(anchorCellNode),
       'Expected GridSelection anchor to be (or a child of) GridCellNode',
     );
-    const anchorCellNodeRect = DEPRECATED_$getGridCellNodeRect(anchorCellNode);
+    const anchorCellNodeRect = $getGridCellNodeRect(anchorCellNode);
     invariant(
       anchorCellNodeRect !== null,
       'getCellRect: expected to find AnchorNode',
@@ -137,10 +137,10 @@ export class GridSelection implements BaseSelection {
 
     const focusCellNode = $getNodeByKey(this.focus.key);
     invariant(
-      DEPRECATED_$isGridCellNode(focusCellNode),
+      $isGridCellNode(focusCellNode),
       'Expected GridSelection focus to be (or a child of) GridCellNode',
     );
-    const focusCellNodeRect = DEPRECATED_$getGridCellNodeRect(focusCellNode);
+    const focusCellNodeRect = $getGridCellNodeRect(focusCellNode);
     invariant(
       focusCellNodeRect !== null,
       'getCellRect: expected to find focusCellNode',
@@ -180,31 +180,25 @@ export class GridSelection implements BaseSelection {
 
     const anchorNode = this.anchor.getNode();
     const focusNode = this.focus.getNode();
-    const anchorCell = $findMatchingParent(
-      anchorNode,
-      DEPRECATED_$isGridCellNode,
-    );
+    const anchorCell = $findMatchingParent(anchorNode, $isGridCellNode);
     // todo replace with triplet
-    const focusCell = $findMatchingParent(
-      focusNode,
-      DEPRECATED_$isGridCellNode,
-    );
+    const focusCell = $findMatchingParent(focusNode, $isGridCellNode);
     invariant(
-      DEPRECATED_$isGridCellNode(anchorCell),
+      $isGridCellNode(anchorCell),
       'Expected GridSelection anchor to be (or a child of) GridCellNode',
     );
     invariant(
-      DEPRECATED_$isGridCellNode(focusCell),
+      $isGridCellNode(focusCell),
       'Expected GridSelection focus to be (or a child of) GridCellNode',
     );
     const anchorRow = anchorCell.getParent();
     invariant(
-      DEPRECATED_$isGridRowNode(anchorRow),
+      $isGridRowNode(anchorRow),
       'Expected anchorCell to have a parent GridRowNode',
     );
     const gridNode = anchorRow.getParent();
     invariant(
-      DEPRECATED_$isGridNode(gridNode),
+      $isGridNode(gridNode),
       'Expected tableNode to have a parent GridNode',
     );
 
@@ -231,7 +225,7 @@ export class GridSelection implements BaseSelection {
     // once (on load) and iterate on it as updates occur. However, to do this we need to have the
     // ability to store a state. Killing GridSelection and moving the logic to the plugin would make
     // this possible.
-    const [map, cellAMap, cellBMap] = DEPRECATED_$computeGridMap(
+    const [map, cellAMap, cellBMap] = $computeGridMap(
       gridNode,
       anchorCell,
       focusCell,
@@ -313,7 +307,7 @@ export class GridSelection implements BaseSelection {
         const {cell} = map[i][j];
         const currentRow = cell.getParent();
         invariant(
-          DEPRECATED_$isGridRowNode(currentRow),
+          $isGridRowNode(currentRow),
           'Expected GridCellNode parent to be a GridRowNode',
         );
         if (currentRow !== lastRow) {

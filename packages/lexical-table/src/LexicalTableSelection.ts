@@ -39,6 +39,13 @@ import {
   getTableGrid,
 } from './LexicalTableSelectionHelpers';
 
+export type GridMapValueType = {
+  cell: GridCellNode;
+  startRow: number;
+  startColumn: number;
+};
+export type GridMapType = Array<Array<GridMapValueType>>;
+
 export type Cell = {
   elem: HTMLElement;
   highlighted: boolean;

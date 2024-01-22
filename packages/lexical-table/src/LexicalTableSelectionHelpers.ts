@@ -12,7 +12,6 @@ import type {TableNode} from './LexicalTableNode';
 import type {Cell, Cells, Grid} from './LexicalTableSelection';
 import type {
   BaseSelection,
-  DEPRECATED_GridNode,
   LexicalCommand,
   LexicalEditor,
   LexicalNode,
@@ -36,9 +35,6 @@ import {
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
-  DEPRECATED_$isGridCellNode,
-  DEPRECATED_$isGridNode,
-  DEPRECATED_$isGridRowNode,
   FOCUS_COMMAND,
   FORMAT_TEXT_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
@@ -473,16 +469,16 @@ export function applyTableHandlers(
         const isSelectionInsideOfGrid =
           (isRangeSelection &&
             $findMatchingParent(selection.anchor.getNode(), (n) =>
-              DEPRECATED_$isGridCellNode(n),
+              $isGridCellNode(n),
             ) !== null &&
             $findMatchingParent(selection.focus.getNode(), (n) =>
-              DEPRECATED_$isGridCellNode(n),
+              $isGridCellNode(n),
             ) !== null) ||
           isGridSelection;
 
         if (
           nodes.length !== 1 ||
-          !DEPRECATED_$isGridNode(nodes[0]) ||
+          !$isGridNode(nodes[0]) ||
           !isSelectionInsideOfGrid ||
           anchorAndFocus === null
         ) {
@@ -493,25 +489,23 @@ export function applyTableHandlers(
         const newGrid = nodes[0];
         const newGridRows = newGrid.getChildren();
         const newColumnCount = newGrid
-          .getFirstChildOrThrow<DEPRECATED_GridNode>()
+          .getFirstChildOrThrow<GridNode>()
           .getChildrenSize();
         const newRowCount = newGrid.getChildrenSize();
         const gridCellNode = $findMatchingParent(anchor.getNode(), (n) =>
-          DEPRECATED_$isGridCellNode(n),
+          $isGridCellNode(n),
         );
         const gridRowNode =
           gridCellNode &&
-          $findMatchingParent(gridCellNode, (n) =>
-            DEPRECATED_$isGridRowNode(n),
-          );
+          $findMatchingParent(gridCellNode, (n) => $isGridRowNode(n));
         const gridNode =
           gridRowNode &&
-          $findMatchingParent(gridRowNode, (n) => DEPRECATED_$isGridNode(n));
+          $findMatchingParent(gridRowNode, (n) => $isGridNode(n));
 
         if (
-          !DEPRECATED_$isGridCellNode(gridCellNode) ||
-          !DEPRECATED_$isGridRowNode(gridRowNode) ||
-          !DEPRECATED_$isGridNode(gridNode)
+          !$isGridCellNode(gridCellNode) ||
+          !$isGridRowNode(gridRowNode) ||
+          !$isGridNode(gridNode)
         ) {
           return false;
         }
@@ -538,13 +532,13 @@ export function applyTableHandlers(
         for (let r = fromY; r <= toY; r++) {
           const currentGridRowNode = gridRowNodes[r];
 
-          if (!DEPRECATED_$isGridRowNode(currentGridRowNode)) {
+          if (!$isGridRowNode(currentGridRowNode)) {
             return false;
           }
 
           const newGridRowNode = newGridRows[newRowIdx];
 
-          if (!DEPRECATED_$isGridRowNode(newGridRowNode)) {
+          if (!$isGridRowNode(newGridRowNode)) {
             return false;
           }
 
@@ -555,13 +549,13 @@ export function applyTableHandlers(
           for (let c = fromX; c <= toX; c++) {
             const currentGridCellNode = gridCellNodes[c];
 
-            if (!DEPRECATED_$isGridCellNode(currentGridCellNode)) {
+            if (!$isGridCellNode(currentGridCellNode)) {
               return false;
             }
 
             const newGridCellNode = newGridCellNodes[newColumnIdx];
 
-            if (!DEPRECATED_$isGridCellNode(newGridCellNode)) {
+            if (!$isGridCellNode(newGridCellNode)) {
               return false;
             }
 

@@ -13,7 +13,7 @@ import type {
   Spread,
 } from 'lexical';
 
-import {ElementNode} from './LexicalElementNode';
+import {ElementNode} from 'lexical';
 
 export type SerializedGridCellNode = Spread<
   {
@@ -24,7 +24,7 @@ export type SerializedGridCellNode = Spread<
 >;
 
 /** @noInheritDoc */
-export class DEPRECATED_GridCellNode extends ElementNode {
+export class GridCellNode extends ElementNode {
   /** @internal */
   __colSpan: number;
   __rowSpan: number;
@@ -62,8 +62,8 @@ export class DEPRECATED_GridCellNode extends ElementNode {
   }
 }
 
-export function DEPRECATED_$isGridCellNode(
-  node: DEPRECATED_GridCellNode | LexicalNode | null | undefined,
-): node is DEPRECATED_GridCellNode {
-  return node instanceof DEPRECATED_GridCellNode;
+export function $isGridCellNode(
+  node: GridCellNode | LexicalNode | null | undefined,
+): node is GridCellNode {
+  return node instanceof GridCellNode;
 }

@@ -24,12 +24,6 @@ import {
   $isRootNode,
   $isTextNode,
   $setSelection,
-  DEPRECATED_$isGridCellNode,
-  DEPRECATED_$isGridNode,
-  DEPRECATED_$isGridRowNode,
-  DEPRECATED_GridCellNode,
-  DEPRECATED_GridNode,
-  DEPRECATED_GridRowNode,
   SELECTION_CHANGE_COMMAND,
   TextNode,
 } from '.';
@@ -46,7 +40,6 @@ import {
   isCurrentlyReadOnlyMode,
 } from './LexicalUpdates';
 import {
-  $findMatchingParent,
   $getAdjacentNode,
   $getAncestor,
   $getCompositionKey,
@@ -94,13 +87,6 @@ export type ElementPointType = {
 };
 
 export type PointType = TextPointType | ElementPointType;
-
-export type GridMapValueType = {
-  cell: DEPRECATED_GridCellNode;
-  startRow: number;
-  startColumn: number;
-};
-export type GridMapType = Array<Array<GridMapValueType>>;
 
 export class Point {
   key: NodeKey;
@@ -406,64 +392,6 @@ export class NodeSelection implements BaseSelection {
 
 export function $isRangeSelection(x: unknown): x is RangeSelection {
   return x instanceof RangeSelection;
-}
-
-export function DEPRECATED_$getGridCellNodeRect(
-  GridCellNode: DEPRECATED_GridCellNode,
-): {
-  rowIndex: number;
-  columnIndex: number;
-  rowSpan: number;
-  colSpan: number;
-} | null {
-  const [CellNode, , GridNode] = DEPRECATED_$getNodeTriplet(GridCellNode);
-  const rows = GridNode.getChildren<DEPRECATED_GridRowNode>();
-  const rowCount = rows.length;
-  const columnCount = rows[0].getChildren().length;
-
-  // Create a matrix of the same size as the table to track the position of each cell
-  const cellMatrix = new Array(rowCount);
-  for (let i = 0; i < rowCount; i++) {
-    cellMatrix[i] = new Array(columnCount);
-  }
-
-  for (let rowIndex = 0; rowIndex < rowCount; rowIndex++) {
-    const row = rows[rowIndex];
-    const cells = row.getChildren<DEPRECATED_GridCellNode>();
-    let columnIndex = 0;
-
-    for (let cellIndex = 0; cellIndex < cells.length; cellIndex++) {
-      // Find the next available position in the matrix, skip the position of merged cells
-      while (cellMatrix[rowIndex][columnIndex]) {
-        columnIndex++;
-      }
-
-      const cell = cells[cellIndex];
-      const rowSpan = cell.__rowSpan || 1;
-      const colSpan = cell.__colSpan || 1;
-
-      // Put the cell into the corresponding position in the matrix
-      for (let i = 0; i < rowSpan; i++) {
-        for (let j = 0; j < colSpan; j++) {
-          cellMatrix[rowIndex + i][columnIndex + j] = cell;
-        }
-      }
-
-      // Return to the original index, row span and column span of the cell.
-      if (CellNode === cell) {
-        return {
-          colSpan,
-          columnIndex,
-          rowIndex,
-          rowSpan,
-        };
-      }
-
-      columnIndex += colSpan;
-    }
-  }
-
-  return null;
 }
 
 export class RangeSelection implements BaseSelection {
@@ -2719,108 +2647,6 @@ export function $getTextContent(): string {
     return '';
   }
   return selection.getTextContent();
-}
-
-export function DEPRECATED_$computeGridMap(
-  grid: DEPRECATED_GridNode,
-  cellA: DEPRECATED_GridCellNode,
-  cellB: DEPRECATED_GridCellNode,
-): [GridMapType, GridMapValueType, GridMapValueType] {
-  const tableMap: GridMapType = [];
-  let cellAValue: null | GridMapValueType = null;
-  let cellBValue: null | GridMapValueType = null;
-  function write(
-    startRow: number,
-    startColumn: number,
-    cell: DEPRECATED_GridCellNode,
-  ) {
-    const value = {
-      cell,
-      startColumn,
-      startRow,
-    };
-    const rowSpan = cell.__rowSpan;
-    const colSpan = cell.__colSpan;
-    for (let i = 0; i < rowSpan; i++) {
-      if (tableMap[startRow + i] === undefined) {
-        tableMap[startRow + i] = [];
-      }
-      for (let j = 0; j < colSpan; j++) {
-        tableMap[startRow + i][startColumn + j] = value;
-      }
-    }
-    if (cellA.is(cell)) {
-      cellAValue = value;
-    }
-    if (cellB.is(cell)) {
-      cellBValue = value;
-    }
-  }
-  function isEmpty(row: number, column: number) {
-    return tableMap[row] === undefined || tableMap[row][column] === undefined;
-  }
-
-  const gridChildren = grid.getChildren();
-  for (let i = 0; i < gridChildren.length; i++) {
-    const row = gridChildren[i];
-    invariant(
-      DEPRECATED_$isGridRowNode(row),
-      'Expected GridNode children to be GridRowNode',
-    );
-    const rowChildren = row.getChildren();
-    let j = 0;
-    for (const cell of rowChildren) {
-      invariant(
-        DEPRECATED_$isGridCellNode(cell),
-        'Expected GridRowNode children to be GridCellNode',
-      );
-      while (!isEmpty(i, j)) {
-        j++;
-      }
-      write(i, j, cell);
-      j += cell.__colSpan;
-    }
-  }
-  invariant(cellAValue !== null, 'Anchor not found in Grid');
-  invariant(cellBValue !== null, 'Focus not found in Grid');
-  return [tableMap, cellAValue, cellBValue];
-}
-
-export function DEPRECATED_$getNodeTriplet(
-  source: PointType | LexicalNode | DEPRECATED_GridCellNode,
-): [DEPRECATED_GridCellNode, DEPRECATED_GridRowNode, DEPRECATED_GridNode] {
-  let cell: DEPRECATED_GridCellNode;
-  if (source instanceof DEPRECATED_GridCellNode) {
-    cell = source;
-  } else if (source instanceof LexicalNode) {
-    const cell_ = $findMatchingParent(source, DEPRECATED_$isGridCellNode);
-    invariant(
-      DEPRECATED_$isGridCellNode(cell_),
-      'Expected to find a parent GridCellNode',
-    );
-    cell = cell_;
-  } else {
-    const cell_ = $findMatchingParent(
-      source.getNode(),
-      DEPRECATED_$isGridCellNode,
-    );
-    invariant(
-      DEPRECATED_$isGridCellNode(cell_),
-      'Expected to find a parent GridCellNode',
-    );
-    cell = cell_;
-  }
-  const row = cell.getParent();
-  invariant(
-    DEPRECATED_$isGridRowNode(row),
-    'Expected GridCellNode to have a parent GridRowNode',
-  );
-  const grid = row.getParent();
-  invariant(
-    DEPRECATED_$isGridNode(grid),
-    'Expected GridRowNode to have a parent GridNode',
-  );
-  return [cell, row, grid];
 }
 
 function removeTextAndSplitBlock(selection: RangeSelection): number {

@@ -678,6 +678,10 @@ export async function dragMouse(
   await page.mouse.move(fromX, fromY);
   await page.mouse.down();
 
+  // Defer dragMouse continuation past the mouse down
+  // event handler, deferred via setTimeout.
+  await sleep(0);
+
   let toX = toBoundingBox.x;
   let toY = toBoundingBox.y;
   if (positionEnd === 'middle') {

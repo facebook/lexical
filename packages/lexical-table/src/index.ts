@@ -7,10 +7,6 @@
  *
  */
 
-import type {LexicalCommand} from 'lexical';
-
-import {createCommand} from 'lexical';
-
 export type {GridSelection, GridSelectionShape} from './LexicalGridSelection';
 export {$createGridSelection, $isGridSelection} from './LexicalGridSelection';
 export type {SerializedTableCellNode} from './LexicalTableCellNode';
@@ -20,6 +16,11 @@ export {
   TableCellHeaderStates,
   TableCellNode,
 } from './LexicalTableCellNode';
+export type {
+  InsertTableCommandPayload,
+  InsertTableCommandPayloadHeaders,
+} from './LexicalTableCommands';
+export {INSERT_TABLE_COMMAND} from './LexicalTableCommands';
 export type {SerializedTableNode} from './LexicalTableNode';
 export {
   $createTableNode,
@@ -61,19 +62,3 @@ export {
   $removeTableRowAtIndex,
   $unmergeCell,
 } from './LexicalTableUtils';
-
-export type InsertTableCommandPayloadHeaders =
-  | Readonly<{
-      rows: boolean;
-      columns: boolean;
-    }>
-  | boolean;
-
-export type InsertTableCommandPayload = Readonly<{
-  columns: string;
-  rows: string;
-  includeHeaders?: InsertTableCommandPayloadHeaders;
-}>;
-
-export const INSERT_TABLE_COMMAND: LexicalCommand<InsertTableCommandPayload> =
-  createCommand('INSERT_TABLE_COMMAND');

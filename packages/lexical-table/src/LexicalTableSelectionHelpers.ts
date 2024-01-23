@@ -50,6 +50,9 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
+import {$isGridCellNode} from './LexicalGridCellNode';
+import {$isGridNode, GridNode} from './LexicalGridNode';
+import {$isGridRowNode} from './LexicalGridRowNode';
 import {$createGridSelection, $isGridSelection} from './LexicalGridSelection';
 import {$isTableCellNode} from './LexicalTableCellNode';
 import {$isTableNode} from './LexicalTableNode';

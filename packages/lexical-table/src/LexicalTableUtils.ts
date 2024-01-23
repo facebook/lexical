@@ -6,24 +6,27 @@
  *
  */
 
-import type {Grid} from './LexicalTableSelection';
-import type {ElementNode, GridMapType, GridRowNode} from 'lexical';
+import type {
+  Grid,
+  GridMapType,
+  GridMapValueType,
+} from './LexicalTableSelection';
+import type {ElementNode, PointType} from 'lexical';
 
 import {$findMatchingParent} from '@lexical/utils';
 import {
-  $computeGridMap,
   $createParagraphNode,
   $createTextNode,
-  $getNodeTriplet,
   $getSelection,
-  $isGridRowNode,
   $isRangeSelection,
-  GridCellNode,
   LexicalNode,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
 import {$isGridSelection, InsertTableCommandPayloadHeaders} from '.';
+import {$isGridCellNode, GridCellNode} from './LexicalGridCellNode';
+import {$isGridNode, GridNode} from './LexicalGridNode';
+import {$isGridRowNode, GridRowNode} from './LexicalGridRowNode';
 import {
   $createTableCellNode,
   $isTableCellNode,
@@ -732,7 +735,7 @@ export function $getNodeTriplet(
   let cell: GridCellNode;
   if (source instanceof GridCellNode) {
     cell = source;
-  } else if (source instanceof LexicalNode) {
+  } else if ('__type' in source) {
     const cell_ = $findMatchingParent(source, $isGridCellNode);
     invariant($isGridCellNode(cell_), 'Expected to find a parent GridCellNode');
     cell = cell_;
@@ -754,14 +757,14 @@ export function $getNodeTriplet(
   return [cell, row, grid];
 }
 
-export function $getGridCellNodeRect(GridCellNode: GridCellNode): {
+export function $getGridCellNodeRect(gridCellNode: GridCellNode): {
   rowIndex: number;
   columnIndex: number;
   rowSpan: number;
   colSpan: number;
 } | null {
-  const [CellNode, , GridNode] = $getNodeTriplet(GridCellNode);
-  const rows = GridNode.getChildren<GridRowNode>();
+  const [CellNode, , gridNode] = $getNodeTriplet(gridCellNode);
+  const rows = gridNode.getChildren<GridRowNode>();
   const rowCount = rows.length;
   const columnCount = rows[0].getChildren().length;
 

@@ -27,6 +27,7 @@ import {
 import {CAN_USE_DOM} from 'shared/canUseDOM';
 import invariant from 'shared/invariant';
 
+import {GridCellNode} from './LexicalGridCellNode';
 import {
   type GridSelection,
   $createGridSelection,

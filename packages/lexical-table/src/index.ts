@@ -11,6 +11,9 @@ import type {LexicalCommand} from 'lexical';
 
 import {createCommand} from 'lexical';
 
+export {$isGridCellNode, GridCellNode} from './LexicalGridCellNode';
+export {$isGridNode, GridNode} from './LexicalGridNode';
+export {$isGridRowNode, GridRowNode} from './LexicalGridRowNode';
 export type {GridSelection, GridSelectionShape} from './LexicalGridSelection';
 export {$createGridSelection, $isGridSelection} from './LexicalGridSelection';
 export type {SerializedTableCellNode} from './LexicalTableCellNode';
@@ -42,10 +45,13 @@ export {
   getTableSelectionFromTableElement,
 } from './LexicalTableSelectionHelpers';
 export {
+  $computeGridMap,
   $createTableNodeWithDimensions,
   $deleteTableColumn,
   $deleteTableColumn__EXPERIMENTAL,
   $deleteTableRow__EXPERIMENTAL,
+  $getGridCellNodeRect,
+  $getNodeTriplet,
   $getTableCellNodeFromLexicalNode,
   $getTableColumnIndexFromTableCellNode,
   $getTableNodeFromLexicalNodeOrThrow,

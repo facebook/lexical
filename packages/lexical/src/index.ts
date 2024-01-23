@@ -53,7 +53,6 @@ export type {
   ElementFormatType,
   SerializedElementNode,
 } from './nodes/LexicalElementNode';
-export type {SerializedGridCellNode} from './nodes/LexicalGridCellNode';
 export type {SerializedRootNode} from './nodes/LexicalRootNode';
 export type {
   SerializedTextNode,

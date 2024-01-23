@@ -14,7 +14,6 @@ import type {
   LexicalEditor,
   LexicalNode,
   NodeKey,
-  SerializedGridCellNode,
   Spread,
 } from 'lexical';
 
@@ -27,7 +26,7 @@ import {
 } from 'lexical';
 
 import {PIXEL_VALUE_REG_EXP} from './constants';
-import {GridCellNode} from './LexicalGridCellNode';
+import {GridCellNode, SerializedGridCellNode} from './LexicalGridCellNode';
 
 export const TableCellHeaderStates = {
   BOTH: 3,

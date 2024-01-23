@@ -6,7 +6,7 @@
  *
  */
 
-import type {GridMapType, GridMapValueType} from './LexicalGridSelection';
+import type {TableMapType, TableMapValueType} from './LexicalTableSelection';
 import type {ElementNode, PointType} from 'lexical';
 
 import {$findMatchingParent} from '@lexical/utils';
@@ -20,7 +20,6 @@ import {
 import invariant from 'shared/invariant';
 
 import {InsertTableCommandPayloadHeaders} from '.';
-import {$isGridSelection} from './LexicalGridSelection';
 import {
   $createTableCellNode,
   $isTableCellNode,
@@ -34,6 +33,7 @@ import {
   $isTableRowNode,
   TableRowNode,
 } from './LexicalTableRowNode';
+import {$isTableSelection} from './LexicalTableSelection';
 
 export function $createTableNodeWithDimensions(
   rowCount: number,
@@ -228,12 +228,12 @@ export function $insertTableRow(
 export function $insertTableRow__EXPERIMENTAL(insertAfter = true): void {
   const selection = $getSelection();
   invariant(
-    $isRangeSelection(selection) || $isGridSelection(selection),
+    $isRangeSelection(selection) || $isTableSelection(selection),
     'Expected a RangeSelection or GridSelection',
   );
   const focus = selection.focus.getNode();
   const [focusCell, , grid] = $getNodeTriplet(focus);
-  const [gridMap, focusCellMap] = $computeGridMap(grid, focusCell, focusCell);
+  const [gridMap, focusCellMap] = $computeTableMap(grid, focusCell, focusCell);
   const columnCount = gridMap[0].length;
   const {startRow: focusStartRow} = focusCellMap;
   if (insertAfter) {
@@ -344,14 +344,14 @@ export function $insertTableColumn(
 export function $insertTableColumn__EXPERIMENTAL(insertAfter = true): void {
   const selection = $getSelection();
   invariant(
-    $isRangeSelection(selection) || $isGridSelection(selection),
+    $isRangeSelection(selection) || $isTableSelection(selection),
     'Expected a RangeSelection or GridSelection',
   );
   const anchor = selection.anchor.getNode();
   const focus = selection.focus.getNode();
   const [anchorCell] = $getNodeTriplet(anchor);
   const [focusCell, , grid] = $getNodeTriplet(focus);
-  const [gridMap, focusCellMap, anchorCellMap] = $computeGridMap(
+  const [gridMap, focusCellMap, anchorCellMap] = $computeTableMap(
     grid,
     focusCell,
     anchorCell,
@@ -449,14 +449,14 @@ export function $deleteTableColumn(
 export function $deleteTableRow__EXPERIMENTAL(): void {
   const selection = $getSelection();
   invariant(
-    $isRangeSelection(selection) || $isGridSelection(selection),
+    $isRangeSelection(selection) || $isTableSelection(selection),
     'Expected a RangeSelection or GridSelection',
   );
   const anchor = selection.anchor.getNode();
   const focus = selection.focus.getNode();
   const [anchorCell, , grid] = $getNodeTriplet(anchor);
   const [focusCell] = $getNodeTriplet(focus);
-  const [gridMap, anchorCellMap, focusCellMap] = $computeGridMap(
+  const [gridMap, anchorCellMap, focusCellMap] = $computeTableMap(
     grid,
     anchorCell,
     focusCell,
@@ -525,14 +525,14 @@ export function $deleteTableRow__EXPERIMENTAL(): void {
 export function $deleteTableColumn__EXPERIMENTAL(): void {
   const selection = $getSelection();
   invariant(
-    $isRangeSelection(selection) || $isGridSelection(selection),
+    $isRangeSelection(selection) || $isTableSelection(selection),
     'Expected a RangeSelection or GridSelection',
   );
   const anchor = selection.anchor.getNode();
   const focus = selection.focus.getNode();
   const [anchorCell, , grid] = $getNodeTriplet(anchor);
   const [focusCell] = $getNodeTriplet(focus);
-  const [gridMap, anchorCellMap, focusCellMap] = $computeGridMap(
+  const [gridMap, anchorCellMap, focusCellMap] = $computeTableMap(
     grid,
     anchorCell,
     focusCell,
@@ -610,7 +610,7 @@ function $insertFirst(parent: ElementNode, node: LexicalNode): void {
 export function $unmergeCell(): void {
   const selection = $getSelection();
   invariant(
-    $isRangeSelection(selection) || $isGridSelection(selection),
+    $isRangeSelection(selection) || $isTableSelection(selection),
     'Expected a RangeSelection or GridSelection',
   );
   const anchor = selection.anchor.getNode();
@@ -624,7 +624,7 @@ export function $unmergeCell(): void {
     cell.setColSpan(1);
   }
   if (rowSpan > 1) {
-    const [map, cellMap] = $computeGridMap(grid, cell, cell);
+    const [map, cellMap] = $computeTableMap(grid, cell, cell);
     const {startColumn, startRow} = cellMap;
     let currentRowNode;
     for (let i = 1; i < rowSpan; i++) {
@@ -665,14 +665,14 @@ export function $unmergeCell(): void {
   }
 }
 
-export function $computeGridMap(
+export function $computeTableMap(
   grid: TableNode,
   cellA: TableCellNode,
   cellB: TableCellNode,
-): [GridMapType, GridMapValueType, GridMapValueType] {
-  const tableMap: GridMapType = [];
-  let cellAValue: null | GridMapValueType = null;
-  let cellBValue: null | GridMapValueType = null;
+): [TableMapType, TableMapValueType, TableMapValueType] {
+  const tableMap: TableMapType = [];
+  let cellAValue: null | TableMapValueType = null;
+  let cellBValue: null | TableMapValueType = null;
   function write(startRow: number, startColumn: number, cell: TableCellNode) {
     const value = {
       cell,
@@ -760,7 +760,7 @@ export function $getNodeTriplet(
   return [cell, row, grid];
 }
 
-export function $getGridCellNodeRect(tableCellNode: TableCellNode): {
+export function $getTableCellNodeRect(tableCellNode: TableCellNode): {
   rowIndex: number;
   columnIndex: number;
   rowSpan: number;

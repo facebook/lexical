@@ -126,9 +126,9 @@ export class TableNode extends ElementNode {
 
   getCordsFromCellNode(
     tableCellNode: TableCellNode,
-    grid: TableDOMTable,
+    table: TableDOMTable,
   ): {x: number; y: number} {
-    const {rows, cells} = grid;
+    const {rows, cells} = table;
 
     for (let y = 0; y < rows; y++) {
       const row = cells[y];
@@ -155,9 +155,9 @@ export class TableNode extends ElementNode {
   getCellFromCords(
     x: number,
     y: number,
-    grid: TableDOMTable,
+    table: TableDOMTable,
   ): TableDOMCell | null {
-    const {cells} = grid;
+    const {cells} = table;
 
     const row = cells[y];
 
@@ -177,9 +177,9 @@ export class TableNode extends ElementNode {
   getCellFromCordsOrThrow(
     x: number,
     y: number,
-    grid: TableDOMTable,
+    table: TableDOMTable,
   ): TableDOMCell {
-    const cell = this.getCellFromCords(x, y, grid);
+    const cell = this.getCellFromCords(x, y, table);
 
     if (!cell) {
       throw new Error('Cell not found at cords.');
@@ -191,9 +191,9 @@ export class TableNode extends ElementNode {
   getCellNodeFromCords(
     x: number,
     y: number,
-    grid: TableDOMTable,
+    table: TableDOMTable,
   ): TableCellNode | null {
-    const cell = this.getCellFromCords(x, y, grid);
+    const cell = this.getCellFromCords(x, y, table);
 
     if (cell == null) {
       return null;
@@ -211,9 +211,9 @@ export class TableNode extends ElementNode {
   getCellNodeFromCordsOrThrow(
     x: number,
     y: number,
-    grid: TableDOMTable,
+    table: TableDOMTable,
   ): TableCellNode {
-    const node = this.getCellNodeFromCords(x, y, grid);
+    const node = this.getCellNodeFromCords(x, y, table);
 
     if (!node) {
       throw new Error('Node at cords not TableCellNode.');

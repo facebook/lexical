@@ -23,37 +23,37 @@ import invariant from 'shared/invariant';
 import {$isTableCellNode, TableCellNode} from './LexicalTableCellNode';
 import {$isTableNode} from './LexicalTableNode';
 import {$isTableRowNode} from './LexicalTableRowNode';
-import {$computeGridMap, $getGridCellNodeRect} from './LexicalTableUtils';
+import {$computeTableMap, $getTableCellNodeRect} from './LexicalTableUtils';
 
-export type GridSelectionShape = {
+export type TableSelectionShape = {
   fromX: number;
   fromY: number;
   toX: number;
   toY: number;
 };
 
-export type GridMapValueType = {
+export type TableMapValueType = {
   cell: TableCellNode;
   startRow: number;
   startColumn: number;
 };
-export type GridMapType = Array<Array<GridMapValueType>>;
+export type TableMapType = Array<Array<TableMapValueType>>;
 
-export class GridSelection implements BaseSelection {
-  gridKey: NodeKey;
+export class TableSelection implements BaseSelection {
+  tableKey: NodeKey;
   anchor: PointType;
   focus: PointType;
   _cachedNodes: Array<LexicalNode> | null;
   dirty: boolean;
 
-  constructor(gridKey: NodeKey, anchor: PointType, focus: PointType) {
+  constructor(tableKey: NodeKey, anchor: PointType, focus: PointType) {
     this.anchor = anchor;
     this.focus = focus;
     anchor._selection = this;
     focus._selection = this;
     this._cachedNodes = null;
     this.dirty = false;
-    this.gridKey = gridKey;
+    this.tableKey = tableKey;
   }
 
   getStartEndPoints(): [PointType, PointType] {
@@ -78,26 +78,26 @@ export class GridSelection implements BaseSelection {
   }
 
   is(selection: null | BaseSelection): boolean {
-    if (!$isGridSelection(selection)) {
+    if (!$isTableSelection(selection)) {
       return false;
     }
     return (
-      this.gridKey === selection.gridKey &&
+      this.tableKey === selection.tableKey &&
       this.anchor.is(selection.anchor) &&
       this.focus.is(selection.focus)
     );
   }
 
-  set(gridKey: NodeKey, anchorCellKey: NodeKey, focusCellKey: NodeKey): void {
+  set(tableKey: NodeKey, anchorCellKey: NodeKey, focusCellKey: NodeKey): void {
     this.dirty = true;
-    this.gridKey = gridKey;
+    this.tableKey = tableKey;
     this.anchor.key = anchorCellKey;
     this.focus.key = focusCellKey;
     this._cachedNodes = null;
   }
 
-  clone(): GridSelection {
-    return new GridSelection(this.gridKey, this.anchor, this.focus);
+  clone(): TableSelection {
+    return new TableSelection(this.tableKey, this.anchor, this.focus);
   }
 
   isCollapsed(): boolean {
@@ -120,7 +120,7 @@ export class GridSelection implements BaseSelection {
     const focusNode = this.focus.getNode();
     invariant(
       $isElementNode(focusNode),
-      'Expected GridSelection focus to be an ElementNode',
+      'Expected TableSelection focus to be an ElementNode',
     );
     const selection = $normalizeSelection__EXPERIMENTAL(
       focusNode.select(0, focusNode.getChildrenSize()),
@@ -129,13 +129,13 @@ export class GridSelection implements BaseSelection {
   }
 
   // TODO Deprecate this method. It's confusing when used with colspan|rowspan
-  getShape(): GridSelectionShape {
+  getShape(): TableSelectionShape {
     const anchorCellNode = $getNodeByKey(this.anchor.key);
     invariant(
       $isTableCellNode(anchorCellNode),
-      'Expected GridSelection anchor to be (or a child of) GridCellNode',
+      'Expected TableSelection anchor to be (or a child of) TableCellNode',
     );
-    const anchorCellNodeRect = $getGridCellNodeRect(anchorCellNode);
+    const anchorCellNodeRect = $getTableCellNodeRect(anchorCellNode);
     invariant(
       anchorCellNodeRect !== null,
       'getCellRect: expected to find AnchorNode',
@@ -144,9 +144,9 @@ export class GridSelection implements BaseSelection {
     const focusCellNode = $getNodeByKey(this.focus.key);
     invariant(
       $isTableCellNode(focusCellNode),
-      'Expected GridSelection focus to be (or a child of) GridCellNode',
+      'Expected TableSelection focus to be (or a child of) TableCellNode',
     );
-    const focusCellNodeRect = $getGridCellNodeRect(focusCellNode);
+    const focusCellNodeRect = $getTableCellNodeRect(focusCellNode);
     invariant(
       focusCellNodeRect !== null,
       'getCellRect: expected to find focusCellNode',
@@ -191,30 +191,30 @@ export class GridSelection implements BaseSelection {
     const focusCell = $findMatchingParent(focusNode, $isTableCellNode);
     invariant(
       $isTableCellNode(anchorCell),
-      'Expected GridSelection anchor to be (or a child of) GridCellNode',
+      'Expected TableSelection anchor to be (or a child of) TableCellNode',
     );
     invariant(
       $isTableCellNode(focusCell),
-      'Expected GridSelection focus to be (or a child of) GridCellNode',
+      'Expected TableSelection focus to be (or a child of) TableCellNode',
     );
     const anchorRow = anchorCell.getParent();
     invariant(
       $isTableRowNode(anchorRow),
-      'Expected anchorCell to have a parent GridRowNode',
+      'Expected anchorCell to have a parent TableRowNode',
     );
-    const gridNode = anchorRow.getParent();
+    const tableNode = anchorRow.getParent();
     invariant(
-      $isTableNode(gridNode),
-      'Expected tableNode to have a parent GridNode',
+      $isTableNode(tableNode),
+      'Expected tableNode to have a parent TableNode',
     );
 
     const focusCellGrid = focusCell.getParents()[1];
-    if (focusCellGrid !== gridNode) {
-      if (!gridNode.isParentOf(focusCell)) {
+    if (focusCellGrid !== tableNode) {
+      if (!tableNode.isParentOf(focusCell)) {
         // focus is on higher Grid level than anchor
-        const gridParent = gridNode.getParent();
+        const gridParent = tableNode.getParent();
         invariant(gridParent != null, 'Expected gridParent to have a parent');
-        this.set(this.gridKey, gridParent.getKey(), focusCell.getKey());
+        this.set(this.tableKey, gridParent.getKey(), focusCell.getKey());
       } else {
         // anchor is on higher Grid level than focus
         const focusCellParent = focusCellGrid.getParent();
@@ -222,17 +222,17 @@ export class GridSelection implements BaseSelection {
           focusCellParent != null,
           'Expected focusCellParent to have a parent',
         );
-        this.set(this.gridKey, focusCell.getKey(), focusCellParent.getKey());
+        this.set(this.tableKey, focusCell.getKey(), focusCellParent.getKey());
       }
       return this.getNodes();
     }
 
     // TODO Mapping the whole Grid every time not efficient. We need to compute the entire state only
     // once (on load) and iterate on it as updates occur. However, to do this we need to have the
-    // ability to store a state. Killing GridSelection and moving the logic to the plugin would make
+    // ability to store a state. Killing TableSelection and moving the logic to the plugin would make
     // this possible.
-    const [map, cellAMap, cellBMap] = $computeGridMap(
-      gridNode,
+    const [map, cellAMap, cellBMap] = $computeTableMap(
+      tableNode,
       anchorCell,
       focusCell,
     );
@@ -251,7 +251,7 @@ export class GridSelection implements BaseSelection {
     let exploredMinRow = minRow;
     let exploredMaxColumn = minColumn;
     let exploredMaxRow = minRow;
-    function expandBoundary(mapValue: GridMapValueType): void {
+    function expandBoundary(mapValue: TableMapValueType): void {
       const {
         cell,
         startColumn: cellStartColumn,
@@ -306,7 +306,7 @@ export class GridSelection implements BaseSelection {
       }
     }
 
-    const nodes: Array<LexicalNode> = [gridNode];
+    const nodes: Array<LexicalNode> = [tableNode];
     let lastRow = null;
     for (let i = minRow; i <= maxRow; i++) {
       for (let j = minColumn; j <= maxColumn; j++) {
@@ -314,7 +314,7 @@ export class GridSelection implements BaseSelection {
         const currentRow = cell.getParent();
         invariant(
           $isTableRowNode(currentRow),
-          'Expected GridCellNode parent to be a GridRowNode',
+          'Expected TableCellNode parent to be a TableRowNode',
         );
         if (currentRow !== lastRow) {
           nodes.push(currentRow);
@@ -340,14 +340,14 @@ export class GridSelection implements BaseSelection {
   }
 }
 
-export function $isGridSelection(x: unknown): x is GridSelection {
-  return x instanceof GridSelection;
+export function $isTableSelection(x: unknown): x is TableSelection {
+  return x instanceof TableSelection;
 }
 
-export function $createGridSelection(): GridSelection {
+export function $createTableSelection(): TableSelection {
   const anchor = $createPoint('root', 0, 'element');
   const focus = $createPoint('root', 0, 'element');
-  return new GridSelection('root', anchor, focus);
+  return new TableSelection('root', anchor, focus);
 }
 
 export function $getChildrenRecursively(node: LexicalNode): Array<LexicalNode> {

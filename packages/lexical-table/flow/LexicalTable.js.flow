@@ -37,7 +37,7 @@ export const TableCellHeaderStates = {
 
 export type TableCellHeaderState = $Values<typeof TableCellHeaderStates>;
 
-declare export class TableCellNode extends GridCellNode {
+declare export class TableCellNode extends TableCellNode {
   __headerState: TableCellHeaderState;
   __width?: number;
   __backgroundColor: null | string;
@@ -81,24 +81,22 @@ declare export function $isTableCellNode(
  * LexicalTableNode
  */
 
-declare export class TableNode extends GridNode {
+declare export class TableNode extends TableNode {
   static getType(): string;
   static clone(node: TableNode): TableNode;
-  constructor(grid: ?Grid, key?: NodeKey): void;
+  constructor(key?: NodeKey): void;
   createDOM(config: EditorConfig): HTMLElement;
   updateDOM(prevNode: TableNode, dom: HTMLElement): boolean;
   insertNewAfter(selection: RangeSelection): null | ParagraphNode | TableNode;
   collapseAtStart(): true;
   getCordsFromCellNode(
     tableCellNode: TableCellNode,
-    grid: Grid,
+    table: TableDOMTable,
   ): {x: number, y: number};
-  getCellFromCords(x: number, y: number, grid: Grid): ?Cell;
-  getCellFromCordsOrThrow(x: number, y: number, grid: Grid): Cell;
-  getCellNodeFromCords(x: number, y: number, grid: Grid): ?TableCellNode;
-  getCellNodeFromCordsOrThrow(x: number, y: number, grid: Grid): TableCellNode;
-  setGrid(grid: ?Grid): TableNode;
-  getGrid(): ?Grid;
+  getCellFromCords(x: number, y: number, table: TableDOMTable): ?Cell;
+  getCellFromCordsOrThrow(x: number, y: number, table: TableDOMTable): Cell;
+  getCellNodeFromCords(x: number, y: number, table: TableDOMTable): ?TableCellNode;
+  getCellNodeFromCordsOrThrow(x: number, y: number, table: TableDOMTable): TableCellNode;
   canSelectBefore(): true;
 }
 declare export function $createTableNode(): TableNode;
@@ -110,7 +108,7 @@ declare export function $isTableNode(
  * LexicalTableRowNode
  */
 
-declare export class TableRowNode extends GridRowNode {
+declare export class TableRowNode extends TableRowNode {
   static getType(): string;
   static clone(node: TableRowNode): TableRowNode;
   constructor(height?: ?number, key?: NodeKey): void;
@@ -156,7 +154,7 @@ declare export function applyTableHandlers(
 declare export function $getElementForTableNode(
   editor: LexicalEditor,
   tableNode: TableNode,
-): Grid;
+): TableDOMTable;
 
 declare export function getTableObserverFromTableElement(
   tableElement: HTMLElement,
@@ -204,7 +202,7 @@ declare export function $insertTableRow(
   targetIndex: number,
   shouldInsertAfter?: boolean,
   rowCount: number,
-  grid: Grid,
+  table: TableDOMTable,
 ): TableNode;
 
 declare export function $insertTableColumn(
@@ -212,7 +210,7 @@ declare export function $insertTableColumn(
   targetIndex: number,
   shouldInsertAfter?: boolean,
   columnCount: number,
-  grid: Grid,
+  table: TableDOMTable,
 ): TableNode;
 
 declare export function $deleteTableColumn(
@@ -235,16 +233,16 @@ declare export function $deleteTableColumn__EXPERIMENTAL(): void;
 declare export function $unmergeCell(): void;
 
 declare export function $computeGridMap(
-  grid: GridNode,
-  cellA: GridCellNode,
-  cellB: GridCellNode,
-): [GridMapType, GridMapValueType, GridMapValueType];
+  table: TableNode,
+  cellA: TableCellNode,
+  cellB: TableCellNode,
+): [TableMapType, TableMapValueType, TableMapValueType];
 
 declare export function $getNodeTriplet(
-  source: PointType | LexicalNode | GridCellNode,
-): [GridCellNode, GridRowNode, GridNode];
+  source: PointType | LexicalNode | TableCellNode,
+): [TableCellNode, TableRowNode, TableNode];
 
-declare export function $getGridCellNodeRect(gridCellNode: GridCellNode): {
+declare export function $getTableCellNodeRect(tableCellNode: TableCellNode): {
   rowIndex: number;
   columnIndex: number;
   rowSpan: number;
@@ -258,7 +256,7 @@ declare export class TableObserver {
   currentX: number;
   currentY: number;
   listenersToRemove: Set<() => void>;
-  grid: Grid;
+  table: TableDOMTable;
   isHighlightingCells: boolean;
   isMouseDown: boolean;
   startX: number;
@@ -266,9 +264,9 @@ declare export class TableObserver {
   nodeKey: string;
   editor: LexicalEditor;
   constructor(editor: LexicalEditor, nodeKey: string): void;
-  getGrid(): Grid;
+  getTable(): TableDOMTable;
   removeListeners(): void;
-  trackTableGrid(): void;
+  trackTable(): void;
   clearHighlight(): void;
   setFocusCellForSelection(cell: Cell): void;
   setAnchorCellForSelection(cell: Cell): void;
@@ -277,31 +275,31 @@ declare export class TableObserver {
 }
 
 /**
- * LexicalGridSelection.ts
+ * LexicalTableSelection.ts
  */
 
-export type GridSelectionShape = {
+export type TableSelectionShape = {
   fromX: number,
   fromY: number,
   toX: number,
   toY: number,
 };
-declare export class GridSelection implements BaseSelection {
-  gridKey: NodeKey;
+declare export class TableSelection implements BaseSelection {
+  tableKey: NodeKey;
   anchor: PointType;
   focus: PointType;
   dirty: boolean;
-  constructor(gridKey: NodeKey, anchor: PointType, focus: PointType): void;
+  constructor(tableKey: NodeKey, anchor: PointType, focus: PointType): void;
   is(selection: null | BaseSelection): boolean;
-  set(gridKey: NodeKey, anchorCellKey: NodeKey, focusCellKey: NodeKey): void;
-  clone(): GridSelection;
+  set(tableKey: NodeKey, anchorCellKey: NodeKey, focusCellKey: NodeKey): void;
+  clone(): TableSelection;
   getCharacterOffsets(): [number, number];
   extract(): Array<LexicalNode>;
   insertRawText(): void;
   insertText(): void;
   isCollapsed(): false;
   isBackward(): boolean;
-  getShape(): GridSelectionShape;
+  getShape(): TableSelectionShape;
   getNodes(): Array<LexicalNode>;
   getTextContent(): string;
   insertNodes(nodes: Array<LexicalNode>): void;
@@ -310,36 +308,44 @@ declare export class GridSelection implements BaseSelection {
   setCachedNodes(nodes: null | Array<LexicalNode>): void;
 }
 
-declare export function $isGridSelection(
+declare export function $isTableSelection(
   x: ?mixed,
-): x is GridSelection;
+): x is TableSelection;
 
-declare export function $createGridSelection(): GridSelection;
+declare export function $createTableSelection(): TableSelection;
 
 /**
- * Grid
+ * TableNode
  */
 
-export type GridMapValueType = {
-  cell: GridCellNode,
+export type TableMapValueType = {
+  cell: TableCellNode,
   startRow: number,
   startColumn: number,
 };
-export type GridMapType = Array<Array<GridMapValueType>>;
+export type TableMapType = Array<Array<TableMapValueType>>;
 
-declare export class GridNode extends ElementNode {}
+declare export class TableNode extends ElementNode {}
 
-declare export function $isGridNode(
+declare export function $isTableNode(
   node: ?LexicalNode,
-): node is GridNode;
+): node is TableNode;
 
-declare export class GridRowNode extends ElementNode {}
+/**
+ * TableRowNode
+ */
 
-declare export function $isGridRowNode(
+declare export class TableRowNode extends ElementNode {}
+
+declare export function $isTableRowNode(
   node: ?LexicalNode,
-): node is GridRowNode;
+): node is TableRowNode;
 
-declare export class GridCellNode extends ElementNode {
+/**
+ * TableCellNode
+ */
+
+declare export class TableCellNode extends ElementNode {
   __colSpan: number;
   __rowSpan: number;
 
@@ -350,9 +356,9 @@ declare export class GridCellNode extends ElementNode {
   setRowSpan(rowSpan: number): this;
 }
 
-declare export function $isGridCellNode(
+declare export function $isTableCellNode(
   node: ?LexicalNode,
-): node is GridCellNode;
+): node is TableCellNode;
 
 /**
  * LexicalTableCommands

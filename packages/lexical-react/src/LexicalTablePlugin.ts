@@ -7,7 +7,6 @@
  */
 
 import type {
-  GridCellNode,
   HTMLTableElementWithWithTableSelectionState,
   InsertTableCommandPayload,
   TableSelection,
@@ -20,9 +19,9 @@ import {
   $createTableCellNode,
   $createTableNodeWithDimensions,
   $getNodeTriplet,
-  $isGridRowNode,
   $isTableCellNode,
   $isTableNode,
+  $isTableRowNode,
   applyTableHandlers,
   INSERT_TABLE_COMMAND,
   TableCellNode,
@@ -158,7 +157,7 @@ export function TablePlugin({
         const columnsCount = gridMap[0].length;
         let row = gridNode.getFirstChild();
         invariant(
-          $isGridRowNode(row),
+          $isTableRowNode(row),
           'Expected TableNode first child to be a RowNode',
         );
         const unmerged = [];
@@ -166,11 +165,11 @@ export function TablePlugin({
           if (i !== 0) {
             row = row.getNextSibling();
             invariant(
-              $isGridRowNode(row),
+              $isTableRowNode(row),
               'Expected TableNode first child to be a RowNode',
             );
           }
-          let lastRowCell: null | GridCellNode = null;
+          let lastRowCell: null | TableCellNode = null;
           for (let j = 0; j < columnsCount; j++) {
             const cellMap = gridMap[i][j];
             const cell = cellMap.cell;

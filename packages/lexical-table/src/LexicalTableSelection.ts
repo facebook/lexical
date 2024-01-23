@@ -27,13 +27,12 @@ import {
 import {CAN_USE_DOM} from 'shared/canUseDOM';
 import invariant from 'shared/invariant';
 
-import {GridCellNode} from './LexicalGridCellNode';
 import {
   type GridSelection,
   $createGridSelection,
   $isGridSelection,
 } from './LexicalGridSelection';
-import {$isTableCellNode} from './LexicalTableCellNode';
+import {$isTableCellNode, TableCellNode} from './LexicalTableCellNode';
 import {$isTableNode} from './LexicalTableNode';
 import {
   $updateDOMForSelection,
@@ -41,7 +40,7 @@ import {
 } from './LexicalTableSelectionHelpers';
 
 export type GridMapValueType = {
-  cell: GridCellNode;
+  cell: TableCellNode;
   startRow: number;
   startColumn: number;
 };

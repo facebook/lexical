@@ -50,12 +50,10 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
-import {$isGridCellNode} from './LexicalGridCellNode';
-import {$isGridNode, GridNode} from './LexicalGridNode';
-import {$isGridRowNode} from './LexicalGridRowNode';
 import {$createGridSelection, $isGridSelection} from './LexicalGridSelection';
 import {$isTableCellNode} from './LexicalTableCellNode';
 import {$isTableNode} from './LexicalTableNode';
+import {$isTableRowNode} from './LexicalTableRowNode';
 import {TableSelection} from './LexicalTableSelection';
 
 const LEXICAL_ELEMENT_KEY = '__lexicalTableSelection';
@@ -472,16 +470,16 @@ export function applyTableHandlers(
         const isSelectionInsideOfGrid =
           (isRangeSelection &&
             $findMatchingParent(selection.anchor.getNode(), (n) =>
-              $isGridCellNode(n),
+              $isTableCellNode(n),
             ) !== null &&
             $findMatchingParent(selection.focus.getNode(), (n) =>
-              $isGridCellNode(n),
+              $isTableCellNode(n),
             ) !== null) ||
           isGridSelection;
 
         if (
           nodes.length !== 1 ||
-          !$isGridNode(nodes[0]) ||
+          !$isTableNode(nodes[0]) ||
           !isSelectionInsideOfGrid ||
           anchorAndFocus === null
         ) {
@@ -492,23 +490,23 @@ export function applyTableHandlers(
         const newGrid = nodes[0];
         const newGridRows = newGrid.getChildren();
         const newColumnCount = newGrid
-          .getFirstChildOrThrow<GridNode>()
+          .getFirstChildOrThrow<TableNode>()
           .getChildrenSize();
         const newRowCount = newGrid.getChildrenSize();
         const gridCellNode = $findMatchingParent(anchor.getNode(), (n) =>
-          $isGridCellNode(n),
+          $isTableCellNode(n),
         );
         const gridRowNode =
           gridCellNode &&
-          $findMatchingParent(gridCellNode, (n) => $isGridRowNode(n));
+          $findMatchingParent(gridCellNode, (n) => $isTableRowNode(n));
         const gridNode =
           gridRowNode &&
-          $findMatchingParent(gridRowNode, (n) => $isGridNode(n));
+          $findMatchingParent(gridRowNode, (n) => $isTableNode(n));
 
         if (
-          !$isGridCellNode(gridCellNode) ||
-          !$isGridRowNode(gridRowNode) ||
-          !$isGridNode(gridNode)
+          !$isTableCellNode(gridCellNode) ||
+          !$isTableRowNode(gridRowNode) ||
+          !$isTableNode(gridNode)
         ) {
           return false;
         }
@@ -535,13 +533,13 @@ export function applyTableHandlers(
         for (let r = fromY; r <= toY; r++) {
           const currentGridRowNode = gridRowNodes[r];
 
-          if (!$isGridRowNode(currentGridRowNode)) {
+          if (!$isTableRowNode(currentGridRowNode)) {
             return false;
           }
 
           const newGridRowNode = newGridRows[newRowIdx];
 
-          if (!$isGridRowNode(newGridRowNode)) {
+          if (!$isTableRowNode(newGridRowNode)) {
             return false;
           }
 
@@ -552,13 +550,13 @@ export function applyTableHandlers(
           for (let c = fromX; c <= toX; c++) {
             const currentGridCellNode = gridCellNodes[c];
 
-            if (!$isGridCellNode(currentGridCellNode)) {
+            if (!$isTableCellNode(currentGridCellNode)) {
               return false;
             }
 
             const newGridCellNode = newGridCellNodes[newColumnIdx];
 
-            if (!$isGridCellNode(newGridCellNode)) {
+            if (!$isTableCellNode(newGridCellNode)) {
               return false;
             }
 

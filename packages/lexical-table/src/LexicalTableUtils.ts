@@ -6,11 +6,7 @@
  *
  */
 
-import type {
-  Grid,
-  GridMapType,
-  GridMapValueType,
-} from './LexicalTableSelection';
+import type {GridMapType, GridMapValueType} from './LexicalGridSelection';
 import type {ElementNode, PointType} from 'lexical';
 
 import {$findMatchingParent} from '@lexical/utils';
@@ -32,6 +28,7 @@ import {
   TableCellNode,
 } from './LexicalTableCellNode';
 import {$createTableNode, $isTableNode, TableNode} from './LexicalTableNode';
+import {TableDOMTable} from './LexicalTableObserver';
 import {
   $createTableRowNode,
   $isTableRowNode,
@@ -134,15 +131,15 @@ export type TableCellSiblings = {
 
 export function $getTableCellSiblingsFromTableCellNode(
   tableCellNode: TableCellNode,
-  grid: Grid,
+  table: TableDOMTable,
 ): TableCellSiblings {
   const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
-  const {x, y} = tableNode.getCordsFromCellNode(tableCellNode, grid);
+  const {x, y} = tableNode.getCordsFromCellNode(tableCellNode, table);
   return {
-    above: tableNode.getCellNodeFromCords(x, y - 1, grid),
-    below: tableNode.getCellNodeFromCords(x, y + 1, grid),
-    left: tableNode.getCellNodeFromCords(x - 1, y, grid),
-    right: tableNode.getCellNodeFromCords(x + 1, y, grid),
+    above: tableNode.getCellNodeFromCords(x, y - 1, table),
+    below: tableNode.getCellNodeFromCords(x, y + 1, table),
+    left: tableNode.getCellNodeFromCords(x - 1, y, table),
+    right: tableNode.getCellNodeFromCords(x + 1, y, table),
   };
 }
 
@@ -166,7 +163,7 @@ export function $insertTableRow(
   targetIndex: number,
   shouldInsertAfter = true,
   rowCount: number,
-  grid: Grid,
+  table: TableDOMTable,
 ): TableNode {
   const tableRows = tableNode.getChildren();
 
@@ -192,7 +189,7 @@ export function $insertTableRow(
 
         const {above, below} = $getTableCellSiblingsFromTableCellNode(
           tableCellFromTargetRow,
-          grid,
+          table,
         );
 
         let headerState = TableCellHeaderStates.NO_STATUS;
@@ -290,7 +287,7 @@ export function $insertTableColumn(
   targetIndex: number,
   shouldInsertAfter = true,
   columnCount: number,
-  grid: Grid,
+  table: TableDOMTable,
 ): TableNode {
   const tableRows = tableNode.getChildren();
 
@@ -311,7 +308,7 @@ export function $insertTableColumn(
 
         const {left, right} = $getTableCellSiblingsFromTableCellNode(
           targetCell,
-          grid,
+          table,
         );
 
         let headerState = TableCellHeaderStates.NO_STATUS;

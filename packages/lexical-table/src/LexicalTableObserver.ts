@@ -32,21 +32,11 @@ import {
   $createGridSelection,
   $isGridSelection,
 } from './LexicalGridSelection';
-import {$isTableCellNode, TableCellNode} from './LexicalTableCellNode';
+import {$isTableCellNode} from './LexicalTableCellNode';
 import {$isTableNode} from './LexicalTableNode';
-import {
-  $updateDOMForSelection,
-  getTableGrid,
-} from './LexicalTableSelectionHelpers';
+import {$updateDOMForSelection, getTable} from './LexicalTableSelectionHelpers';
 
-export type GridMapValueType = {
-  cell: TableCellNode;
-  startRow: number;
-  startColumn: number;
-};
-export type GridMapType = Array<Array<GridMapValueType>>;
-
-export type Cell = {
+export type TableDOMCell = {
   elem: HTMLElement;
   highlighted: boolean;
   hasBackgroundColor: boolean;
@@ -54,10 +44,10 @@ export type Cell = {
   y: number;
 };
 
-export type Cells = Array<Array<Cell | undefined> | undefined>;
+export type TableDOMRows = Array<Array<TableDOMCell | undefined> | undefined>;
 
-export type Grid = {
-  cells: Cells;
+export type TableDOMTable = {
+  cells: TableDOMRows;
   columns: number;
   rows: number;
 };
@@ -65,17 +55,17 @@ export type Grid = {
 const getDOMSelection = (targetWindow: Window | null): Selection | null =>
   CAN_USE_DOM ? (targetWindow || window).getSelection() : null;
 
-export class TableSelection {
+export class TableObserver {
   focusX: number;
   focusY: number;
   listenersToRemove: Set<() => void>;
-  grid: Grid;
+  table: TableDOMTable;
   isHighlightingCells: boolean;
   anchorX: number;
   anchorY: number;
   tableNodeKey: NodeKey;
-  anchorCell: Cell | null;
-  focusCell: Cell | null;
+  anchorCell: TableDOMCell | null;
+  focusCell: TableDOMCell | null;
   anchorCellNodeKey: NodeKey | null;
   focusCellNodeKey: NodeKey | null;
   editor: LexicalEditor;
@@ -91,7 +81,7 @@ export class TableSelection {
     this.listenersToRemove = new Set();
     this.tableNodeKey = tableNodeKey;
     this.editor = editor;
-    this.grid = {
+    this.table = {
       cells: [],
       columns: 0,
       rows: 0,
@@ -102,11 +92,11 @@ export class TableSelection {
     this.anchorCell = null;
     this.focusCell = null;
     this.hasHijackedSelectionStyles = false;
-    this.trackTableGrid();
+    this.trackTable();
   }
 
-  getGrid(): Grid {
-    return this.grid;
+  getTable(): TableDOMTable {
+    return this.table;
   }
 
   removeListeners() {
@@ -115,7 +105,7 @@ export class TableSelection {
     );
   }
 
-  trackTableGrid() {
+  trackTable() {
     const observer = new MutationObserver((records) => {
       this.editor.update(() => {
         let gridNeedsRedraw = false;
@@ -141,7 +131,7 @@ export class TableSelection {
           throw new Error('Expected to find TableElement in DOM');
         }
 
-        this.grid = getTableGrid(tableElement);
+        this.table = getTable(tableElement);
       });
     });
     this.editor.update(() => {
@@ -151,7 +141,7 @@ export class TableSelection {
         throw new Error('Expected to find TableElement in DOM');
       }
 
-      this.grid = getTableGrid(tableElement);
+      this.table = getTable(tableElement);
       observer.observe(tableElement, {
         childList: true,
         subtree: true,
@@ -188,7 +178,7 @@ export class TableSelection {
         throw new Error('Expected to find TableElement in DOM');
       }
 
-      const grid = getTableGrid(tableElement);
+      const grid = getTable(tableElement);
       $updateDOMForSelection(editor, grid, null);
       $setSelection(null);
       editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
@@ -233,7 +223,7 @@ export class TableSelection {
       this.gridSelection = selection;
       this.isHighlightingCells = true;
       this.disableHighlightStyle();
-      $updateDOMForSelection(editor, this.grid, this.gridSelection);
+      $updateDOMForSelection(editor, this.table, this.gridSelection);
     } else if (selection == null) {
       this.clearHighlight();
     } else {
@@ -242,7 +232,7 @@ export class TableSelection {
     }
   }
 
-  setFocusCellForSelection(cell: Cell, ignoreStart = false) {
+  setFocusCellForSelection(cell: TableDOMCell, ignoreStart = false) {
     const editor = this.editor;
     editor.update(() => {
       const tableNode = $getNodeByKey(this.tableNodeKey);
@@ -311,13 +301,13 @@ export class TableSelection {
 
           editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
 
-          $updateDOMForSelection(editor, this.grid, this.gridSelection);
+          $updateDOMForSelection(editor, this.table, this.gridSelection);
         }
       }
     });
   }
 
-  setAnchorCellForSelection(cell: Cell) {
+  setAnchorCellForSelection(cell: TableDOMCell) {
     this.isHighlightingCells = false;
     this.anchorCell = cell;
     this.anchorX = cell.x;
@@ -381,7 +371,7 @@ export class TableSelection {
 
       const selectedNodes = selection.getNodes().filter($isTableCellNode);
 
-      if (selectedNodes.length === this.grid.columns * this.grid.rows) {
+      if (selectedNodes.length === this.table.columns * this.table.rows) {
         tableNode.selectPrevious();
         // Delete entire table
         tableNode.remove();
@@ -404,7 +394,7 @@ export class TableSelection {
         }
       });
 
-      $updateDOMForSelection(editor, this.grid, null);
+      $updateDOMForSelection(editor, this.table, null);
 
       $setSelection(null);
 

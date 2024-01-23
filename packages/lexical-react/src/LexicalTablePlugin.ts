@@ -9,7 +9,7 @@
 import type {
   HTMLTableElementWithWithTableSelectionState,
   InsertTableCommandPayload,
-  TableSelection,
+  TableObserver,
 } from '@lexical/table';
 import type {NodeKey} from 'lexical';
 
@@ -79,7 +79,7 @@ export function TablePlugin({
   }, [editor]);
 
   useEffect(() => {
-    const tableSelections = new Map<NodeKey, TableSelection>();
+    const tableSelections = new Map<NodeKey, TableObserver>();
 
     const initializeTableNode = (tableNode: TableNode) => {
       const nodeKey = tableNode.getKey();

@@ -291,19 +291,19 @@ function useFloatingLinkEditorToolbar(
   const [activeEditor, setActiveEditor] = useState(editor);
   const [isLink, setIsLink] = useState(false);
 
-  const updateToolbar = useCallback(() => {
-    const selection = $getSelection();
-    if ($isRangeSelection(selection)) {
-      const node = getSelectedNode(selection);
-      const linkParent = $findMatchingParent(node, $isLinkNode);
-      const autoLinkParent = $findMatchingParent(node, $isAutoLinkNode);
-
-      // We don't want this menu to open for auto links.
-      if (linkParent != null || autoLinkParent != null) {
-        setIsLink(true);
-      } else {
-        setIsLink(false);
-
+  useEffect(() => {
+    function updateToolbar() {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        const node = getSelectedNode(selection);
+        const linkParent = $findMatchingParent(node, $isLinkNode);
+        const autoLinkParent = $findMatchingParent(node, $isAutoLinkNode);
+        // We don't want this menu to open for auto links.
+        if (linkParent !== null && autoLinkParent === null) {
+          setIsLink(true);
+        } else {
+          setIsLink(false);
+        }
       }
     }
     return mergeRegister(

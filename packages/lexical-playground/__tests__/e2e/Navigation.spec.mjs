@@ -23,6 +23,7 @@ import {
   focusEditor,
   initialize,
   IS_WINDOWS,
+  keyUpCtrlOrAlt,
   test,
 } from '../utils/index.mjs';
 
@@ -305,6 +306,7 @@ test.describe('Keyboard Navigation', () => {
     });
     // 5 left
     await moveToPrevWord(page);
+    await keyUpCtrlOrAlt(page);
     await assertSelection(page, {
       anchorOffset: 0,
       anchorPath: [0, 0, 0],
@@ -574,6 +576,7 @@ test.describe('Keyboard Navigation', () => {
       });
       // 5 left
       await moveToPrevWord(page);
+      await keyUpCtrlOrAlt(page);
       await assertSelection(page, {
         anchorOffset: 0,
         anchorPath: [0, 0, 0],

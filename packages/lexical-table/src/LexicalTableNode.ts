@@ -20,9 +20,12 @@ import type {
 } from 'lexical';
 
 import {addClassNamesToElement, isHTMLElement} from '@lexical/utils';
-import {$applyNodeReplacement, $getNearestNodeFromDOMNode} from 'lexical';
+import {
+  $applyNodeReplacement,
+  $getNearestNodeFromDOMNode,
+  ElementNode,
+} from 'lexical';
 
-import {GridNode} from './LexicalGridNode';
 import {$isTableCellNode} from './LexicalTableCellNode';
 import {$isTableRowNode, TableRowNode} from './LexicalTableRowNode';
 import {getTableGrid} from './LexicalTableSelectionHelpers';
@@ -30,7 +33,7 @@ import {getTableGrid} from './LexicalTableSelectionHelpers';
 export type SerializedTableNode = SerializedElementNode;
 
 /** @noInheritDoc */
-export class TableNode extends GridNode {
+export class TableNode extends ElementNode {
   /** @internal */
   __grid?: Grid;
 

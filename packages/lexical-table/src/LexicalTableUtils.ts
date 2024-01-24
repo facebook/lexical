@@ -23,10 +23,8 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
-import {$isGridSelection, InsertTableCommandPayloadHeaders} from '.';
-import {$isGridCellNode, GridCellNode} from './LexicalGridCellNode';
-import {$isGridNode, GridNode} from './LexicalGridNode';
-import {$isGridRowNode, GridRowNode} from './LexicalGridRowNode';
+import {InsertTableCommandPayloadHeaders} from '.';
+import {$isGridSelection} from './LexicalGridSelection';
 import {
   $createTableCellNode,
   $isTableCellNode,
@@ -259,8 +257,8 @@ export function $insertTableRow__EXPERIMENTAL(insertAfter = true): void {
     }
     const focusEndRowNode = grid.getChildAtIndex(focusEndRow);
     invariant(
-      $isGridRowNode(focusEndRowNode),
-      'focusEndRow is not a GridRowNode',
+      $isTableRowNode(focusEndRowNode),
+      'focusEndRow is not a TableRowNode',
     );
     focusEndRowNode.insertAfter(newRow);
   } else {
@@ -280,8 +278,8 @@ export function $insertTableRow__EXPERIMENTAL(insertAfter = true): void {
     }
     const focusStartRowNode = grid.getChildAtIndex(focusStartRow);
     invariant(
-      $isGridRowNode(focusStartRowNode),
-      'focusEndRow is not a GridRowNode',
+      $isTableRowNode(focusStartRowNode),
+      'focusEndRow is not a TableRowNode',
     );
     focusStartRowNode.insertBefore(newRow);
   }
@@ -370,10 +368,10 @@ export function $insertTableColumn__EXPERIMENTAL(insertAfter = true): void {
     : startColumn - 1;
   const gridFirstChild = grid.getFirstChild();
   invariant(
-    $isGridRowNode(gridFirstChild),
+    $isTableRowNode(gridFirstChild),
     'Expected firstTable child to be a row',
   );
-  let firstInsertedCell: null | GridCellNode = null;
+  let firstInsertedCell: null | TableCellNode = null;
   function $createTableCellNodeForInsertTableColumn() {
     const cell = $createTableCellNode(TableCellHeaderStates.NO_STATUS).append(
       $createParagraphNode(),
@@ -383,12 +381,12 @@ export function $insertTableColumn__EXPERIMENTAL(insertAfter = true): void {
     }
     return cell;
   }
-  let loopRow: GridRowNode = gridFirstChild;
+  let loopRow: TableRowNode = gridFirstChild;
   rowLoop: for (let i = 0; i < rowCount; i++) {
     if (i !== 0) {
       const currentRow = loopRow.getNextSibling();
       invariant(
-        $isGridRowNode(currentRow),
+        $isTableRowNode(currentRow),
         'Expected row nextSibling to be a row',
       );
       loopRow = currentRow;
@@ -404,7 +402,7 @@ export function $insertTableColumn__EXPERIMENTAL(insertAfter = true): void {
       startRow: currentStartRow,
     } = rowMap[insertAfterColumn];
     if (currentStartColumn + currentCell.__colSpan - 1 <= insertAfterColumn) {
-      let insertAfterCell: GridCellNode = currentCell;
+      let insertAfterCell: TableCellNode = currentCell;
       let insertAfterCellRowStart = currentStartRow;
       let prevCellIndex = insertAfterColumn;
       while (insertAfterCellRowStart !== i && insertAfterCell.__rowSpan > 1) {
@@ -476,7 +474,9 @@ export function $deleteTableRow__EXPERIMENTAL(): void {
   }
   const columnCount = gridMap[0].length;
   const nextRow = gridMap[focusEndRow + 1];
-  const nextRowNode: null | GridRowNode = grid.getChildAtIndex(focusEndRow + 1);
+  const nextRowNode: null | TableRowNode = grid.getChildAtIndex(
+    focusEndRow + 1,
+  );
   for (let row = focusEndRow; row >= anchorStartRow; row--) {
     for (let column = columnCount - 1; column >= 0; column--) {
       const {
@@ -509,7 +509,7 @@ export function $deleteTableRow__EXPERIMENTAL(): void {
     }
     const rowNode = grid.getChildAtIndex(row);
     invariant(
-      $isGridRowNode(rowNode),
+      $isTableRowNode(rowNode),
       'Expected GridNode childAtIndex(%s) to be RowNode',
       String(row),
     );
@@ -592,7 +592,7 @@ export function $deleteTableColumn__EXPERIMENTAL(): void {
   }
 }
 
-function $moveSelectionToCell(cell: GridCellNode): void {
+function $moveSelectionToCell(cell: TableCellNode): void {
   const firstDescendant = cell.getFirstDescendant();
   if (firstDescendant == null) {
     cell.selectStart();
@@ -635,10 +635,10 @@ export function $unmergeCell(): void {
       const currentRowMap = map[currentRow];
       currentRowNode = (currentRowNode || row).getNextSibling();
       invariant(
-        $isGridRowNode(currentRowNode),
+        $isTableRowNode(currentRowNode),
         'Expected row next sibling to be a row',
       );
-      let insertAfterCell: null | GridCellNode = null;
+      let insertAfterCell: null | TableCellNode = null;
       for (let column = 0; column < startColumn; column++) {
         const currentCellMap = currentRowMap[column];
         const currentCell = currentCellMap.cell;
@@ -669,14 +669,14 @@ export function $unmergeCell(): void {
 }
 
 export function $computeGridMap(
-  grid: GridNode,
-  cellA: GridCellNode,
-  cellB: GridCellNode,
+  grid: TableNode,
+  cellA: TableCellNode,
+  cellB: TableCellNode,
 ): [GridMapType, GridMapValueType, GridMapValueType] {
   const tableMap: GridMapType = [];
   let cellAValue: null | GridMapValueType = null;
   let cellBValue: null | GridMapValueType = null;
-  function write(startRow: number, startColumn: number, cell: GridCellNode) {
+  function write(startRow: number, startColumn: number, cell: TableCellNode) {
     const value = {
       cell,
       startColumn,
@@ -707,15 +707,15 @@ export function $computeGridMap(
   for (let i = 0; i < gridChildren.length; i++) {
     const row = gridChildren[i];
     invariant(
-      $isGridRowNode(row),
-      'Expected GridNode children to be GridRowNode',
+      $isTableRowNode(row),
+      'Expected GridNode children to be TableRowNode',
     );
     const rowChildren = row.getChildren();
     let j = 0;
     for (const cell of rowChildren) {
       invariant(
-        $isGridCellNode(cell),
-        'Expected GridRowNode children to be GridCellNode',
+        $isTableCellNode(cell),
+        'Expected TableRowNode children to be TableCellNode',
       );
       while (!isEmpty(i, j)) {
         j++;
@@ -730,41 +730,47 @@ export function $computeGridMap(
 }
 
 export function $getNodeTriplet(
-  source: PointType | LexicalNode | GridCellNode,
-): [GridCellNode, GridRowNode, GridNode] {
-  let cell: GridCellNode;
-  if (source instanceof GridCellNode) {
+  source: PointType | LexicalNode | TableCellNode,
+): [TableCellNode, TableRowNode, TableNode] {
+  let cell: TableCellNode;
+  if (source instanceof TableCellNode) {
     cell = source;
   } else if ('__type' in source) {
-    const cell_ = $findMatchingParent(source, $isGridCellNode);
-    invariant($isGridCellNode(cell_), 'Expected to find a parent GridCellNode');
+    const cell_ = $findMatchingParent(source, $isTableCellNode);
+    invariant(
+      $isTableCellNode(cell_),
+      'Expected to find a parent TableCellNode',
+    );
     cell = cell_;
   } else {
-    const cell_ = $findMatchingParent(source.getNode(), $isGridCellNode);
-    invariant($isGridCellNode(cell_), 'Expected to find a parent GridCellNode');
+    const cell_ = $findMatchingParent(source.getNode(), $isTableCellNode);
+    invariant(
+      $isTableCellNode(cell_),
+      'Expected to find a parent TableCellNode',
+    );
     cell = cell_;
   }
   const row = cell.getParent();
   invariant(
-    $isGridRowNode(row),
-    'Expected GridCellNode to have a parent GridRowNode',
+    $isTableRowNode(row),
+    'Expected TableCellNode to have a parent TableRowNode',
   );
   const grid = row.getParent();
   invariant(
-    $isGridNode(grid),
-    'Expected GridRowNode to have a parent GridNode',
+    $isTableNode(grid),
+    'Expected TableRowNode to have a parent GridNode',
   );
   return [cell, row, grid];
 }
 
-export function $getGridCellNodeRect(gridCellNode: GridCellNode): {
+export function $getGridCellNodeRect(tableCellNode: TableCellNode): {
   rowIndex: number;
   columnIndex: number;
   rowSpan: number;
   colSpan: number;
 } | null {
-  const [CellNode, , gridNode] = $getNodeTriplet(gridCellNode);
-  const rows = gridNode.getChildren<GridRowNode>();
+  const [cellNode, , gridNode] = $getNodeTriplet(tableCellNode);
+  const rows = gridNode.getChildren<TableRowNode>();
   const rowCount = rows.length;
   const columnCount = rows[0].getChildren().length;
 
@@ -776,7 +782,7 @@ export function $getGridCellNodeRect(gridCellNode: GridCellNode): {
 
   for (let rowIndex = 0; rowIndex < rowCount; rowIndex++) {
     const row = rows[rowIndex];
-    const cells = row.getChildren<GridCellNode>();
+    const cells = row.getChildren<TableCellNode>();
     let columnIndex = 0;
 
     for (let cellIndex = 0; cellIndex < cells.length; cellIndex++) {
@@ -797,7 +803,7 @@ export function $getGridCellNodeRect(gridCellNode: GridCellNode): {
       }
 
       // Return to the original index, row span and column span of the cell.
-      if (CellNode === cell) {
+      if (cellNode === cell) {
         return {
           colSpan,
           columnIndex,

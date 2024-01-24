@@ -20,9 +20,9 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
-import {$isGridCellNode} from './LexicalGridCellNode';
-import {$isGridNode} from './LexicalGridNode';
-import {$isGridRowNode} from './LexicalGridRowNode';
+import {$isTableCellNode} from './LexicalTableCellNode';
+import {$isTableNode} from './LexicalTableNode';
+import {$isTableRowNode} from './LexicalTableRowNode';
 import {GridMapValueType} from './LexicalTableSelection';
 import {$computeGridMap, $getGridCellNodeRect} from './LexicalTableUtils';
 
@@ -126,7 +126,7 @@ export class GridSelection implements BaseSelection {
   getShape(): GridSelectionShape {
     const anchorCellNode = $getNodeByKey(this.anchor.key);
     invariant(
-      $isGridCellNode(anchorCellNode),
+      $isTableCellNode(anchorCellNode),
       'Expected GridSelection anchor to be (or a child of) GridCellNode',
     );
     const anchorCellNodeRect = $getGridCellNodeRect(anchorCellNode);
@@ -137,7 +137,7 @@ export class GridSelection implements BaseSelection {
 
     const focusCellNode = $getNodeByKey(this.focus.key);
     invariant(
-      $isGridCellNode(focusCellNode),
+      $isTableCellNode(focusCellNode),
       'Expected GridSelection focus to be (or a child of) GridCellNode',
     );
     const focusCellNodeRect = $getGridCellNodeRect(focusCellNode);
@@ -180,25 +180,25 @@ export class GridSelection implements BaseSelection {
 
     const anchorNode = this.anchor.getNode();
     const focusNode = this.focus.getNode();
-    const anchorCell = $findMatchingParent(anchorNode, $isGridCellNode);
+    const anchorCell = $findMatchingParent(anchorNode, $isTableCellNode);
     // todo replace with triplet
-    const focusCell = $findMatchingParent(focusNode, $isGridCellNode);
+    const focusCell = $findMatchingParent(focusNode, $isTableCellNode);
     invariant(
-      $isGridCellNode(anchorCell),
+      $isTableCellNode(anchorCell),
       'Expected GridSelection anchor to be (or a child of) GridCellNode',
     );
     invariant(
-      $isGridCellNode(focusCell),
+      $isTableCellNode(focusCell),
       'Expected GridSelection focus to be (or a child of) GridCellNode',
     );
     const anchorRow = anchorCell.getParent();
     invariant(
-      $isGridRowNode(anchorRow),
+      $isTableRowNode(anchorRow),
       'Expected anchorCell to have a parent GridRowNode',
     );
     const gridNode = anchorRow.getParent();
     invariant(
-      $isGridNode(gridNode),
+      $isTableNode(gridNode),
       'Expected tableNode to have a parent GridNode',
     );
 
@@ -307,7 +307,7 @@ export class GridSelection implements BaseSelection {
         const {cell} = map[i][j];
         const currentRow = cell.getParent();
         invariant(
-          $isGridRowNode(currentRow),
+          $isTableRowNode(currentRow),
           'Expected GridCellNode parent to be a GridRowNode',
         );
         if (currentRow !== lastRow) {

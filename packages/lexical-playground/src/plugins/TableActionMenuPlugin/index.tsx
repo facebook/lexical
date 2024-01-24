@@ -20,13 +20,11 @@ import {
   $getTableRowIndexFromTableCellNode,
   $insertTableColumn__EXPERIMENTAL,
   $insertTableRow__EXPERIMENTAL,
-  $isGridCellNode,
   $isGridSelection,
   $isTableCellNode,
   $isTableRowNode,
   $unmergeCell,
   getTableSelectionFromTableElement,
-  GridCellNode,
   GridSelection,
   HTMLTableElementWithWithTableSelectionState,
   TableCellHeaderStates,
@@ -116,7 +114,7 @@ function $canUnmerge(): boolean {
   return cell.__colSpan > 1 || cell.__rowSpan > 1;
 }
 
-function $cellContainsEmptyParagraph(cell: GridCellNode): boolean {
+function $cellContainsEmptyParagraph(cell: TableCellNode): boolean {
   if (cell.getChildrenSize() !== 1) {
     return false;
   }
@@ -300,10 +298,10 @@ function TableActionMenu({
       if ($isGridSelection(selection)) {
         const {columns, rows} = computeSelectionCount(selection);
         const nodes = selection.getNodes();
-        let firstCell: null | GridCellNode = null;
+        let firstCell: null | TableCellNode = null;
         for (let i = 0; i < nodes.length; i++) {
           const node = nodes[i];
-          if ($isGridCellNode(node)) {
+          if ($isTableCellNode(node)) {
             if (firstCell === null) {
               node.setColSpan(columns).setRowSpan(rows);
               firstCell = node;
@@ -315,7 +313,7 @@ function TableActionMenu({
               ) {
                 firstChild.remove();
               }
-            } else if ($isGridCellNode(firstCell)) {
+            } else if ($isTableCellNode(firstCell)) {
               const isEmpty = $cellContainsEmptyParagraph(node);
               if (!isEmpty) {
                 firstCell.append(...node.getChildren());

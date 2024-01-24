@@ -14,13 +14,13 @@ import {
   DOMConversionMap,
   DOMConversionOutput,
   EditorConfig,
+  ElementNode,
   LexicalNode,
   NodeKey,
   SerializedElementNode,
 } from 'lexical';
 
 import {PIXEL_VALUE_REG_EXP} from './constants';
-import {GridRowNode} from './LexicalGridRowNode';
 
 export type SerializedTableRowNode = Spread<
   {
@@ -30,7 +30,7 @@ export type SerializedTableRowNode = Spread<
 >;
 
 /** @noInheritDoc */
-export class TableRowNode extends GridRowNode {
+export class TableRowNode extends ElementNode {
   /** @internal */
   __height?: number;
 

@@ -24,23 +24,23 @@ export {INSERT_TABLE_COMMAND} from './LexicalTableCommands';
 export type {SerializedTableNode} from './LexicalTableNode';
 export {
   $createTableNode,
-  $getElementGridForTableNode,
+  $getElementForTableNode,
   $isTableNode,
   TableNode,
 } from './LexicalTableNode';
+export type {TableDOMCell} from './LexicalTableObserver';
+export {TableObserver} from './LexicalTableObserver';
 export type {SerializedTableRowNode} from './LexicalTableRowNode';
 export {
   $createTableRowNode,
   $isTableRowNode,
   TableRowNode,
 } from './LexicalTableRowNode';
-export type {Cell} from './LexicalTableSelection';
-export {TableSelection} from './LexicalTableSelection';
 export type {HTMLTableElementWithWithTableSelectionState} from './LexicalTableSelectionHelpers';
 export {
   applyTableHandlers,
   getCellFromTarget,
-  getTableSelectionFromTableElement,
+  getTableObserverFromTableElement,
 } from './LexicalTableSelectionHelpers';
 export {
   $computeGridMap,

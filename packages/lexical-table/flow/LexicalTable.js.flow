@@ -132,16 +132,16 @@ declare export function $isTableRowNode(
  * LexicalTableSelectionHelpers
  */
 
-export type Cell = {
+export type TableDOMCell = {
   elem: HTMLElement,
   highlighted: boolean,
   x: number,
   y: number,
 };
 
-export type Cells = Array<Array<Cell>>;
+export type TableDOMRows = Array<Array<TableDOMCell>>;
 
-export type Grid = {
+export type TableDOMTable = {
   cells: Cells,
   columns: number,
   rows: number,
@@ -151,16 +151,16 @@ declare export function applyTableHandlers(
   tableNode: TableNode,
   tableElement: HTMLElement,
   editor: LexicalEditor,
-): TableSelection;
+): TableObserver;
 
-declare export function $getElementGridForTableNode(
+declare export function $getElementForTableNode(
   editor: LexicalEditor,
   tableNode: TableNode,
 ): Grid;
 
-declare export function getTableSelectionFromTableElement(
+declare export function getTableObserverFromTableElement(
   tableElement: HTMLElement,
-): null | TableSelection;
+): null | TableObserver;
 
 declare export function getCellFromTarget(node: Node): Cell | null;
 
@@ -252,9 +252,9 @@ declare export function $getGridCellNodeRect(gridCellNode: GridCellNode): {
 } | null;
 
 /**
- * LexicalTableSelection.js
+ * LexicalTableObserver.js
  */
-declare export class TableSelection {
+declare export class TableObserver {
   currentX: number;
   currentY: number;
   listenersToRemove: Set<() => void>;
@@ -275,12 +275,6 @@ declare export class TableSelection {
   formatCells(type: TextFormatType): void;
   clearText(): void;
 }
-
-declare export var INSERT_TABLE_COMMAND: LexicalCommand<{
-  rows: string,
-  columns: string,
-  includeHeaders?: boolean,
-}>;
 
 /**
  * LexicalGridSelection.ts
@@ -359,3 +353,22 @@ declare export class GridCellNode extends ElementNode {
 declare export function $isGridCellNode(
   node: ?LexicalNode,
 ): node is GridCellNode;
+
+/**
+ * LexicalTableCommands
+ */
+
+export type InsertTableCommandPayloadHeaders =
+  | $ReadOnly<{
+      rows: boolean;
+      columns: boolean;
+    }>
+  | boolean;
+
+export type InsertTableCommandPayload = $ReadOnly<{
+  columns: string;
+  rows: string;
+  includeHeaders?: InsertTableCommandPayloadHeaders;
+}>;
+
+declare export var INSERT_TABLE_COMMAND: LexicalCommand<InsertTableCommandPayload>;

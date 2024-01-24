@@ -9,7 +9,7 @@
 import type {GridSelection} from './LexicalGridSelection';
 import type {TableCellNode} from './LexicalTableCellNode';
 import type {TableNode} from './LexicalTableNode';
-import type {Cell, Cells, Grid} from './LexicalTableSelection';
+import type {TableDOMCell, TableDOMRows} from './LexicalTableObserver';
 import type {
   BaseSelection,
   LexicalCommand,
@@ -53,8 +53,8 @@ import invariant from 'shared/invariant';
 import {$createGridSelection, $isGridSelection} from './LexicalGridSelection';
 import {$isTableCellNode} from './LexicalTableCellNode';
 import {$isTableNode} from './LexicalTableNode';
+import {TableDOMTable, TableObserver} from './LexicalTableObserver';
 import {$isTableRowNode} from './LexicalTableRowNode';
-import {TableSelection} from './LexicalTableSelection';
 
 const LEXICAL_ELEMENT_KEY = '__lexicalTableSelection';
 
@@ -63,17 +63,17 @@ export function applyTableHandlers(
   tableElement: HTMLTableElementWithWithTableSelectionState,
   editor: LexicalEditor,
   hasTabHandler: boolean,
-): TableSelection {
+): TableObserver {
   const rootElement = editor.getRootElement();
 
   if (rootElement === null) {
     throw new Error('No root element.');
   }
 
-  const tableSelection = new TableSelection(editor, tableNode.getKey());
+  const tableObserver = new TableObserver(editor, tableNode.getKey());
   const editorWindow = editor._window || window;
 
-  attachTableSelectionToTableElement(tableElement, tableSelection);
+  attachTableObserverToTableElement(tableElement, tableObserver);
 
   tableElement.addEventListener('mousedown', (event: MouseEvent) => {
     setTimeout(() => {
@@ -88,7 +88,7 @@ export function applyTableHandlers(
       const anchorCell = getCellFromTarget(event.target as Node);
       if (anchorCell !== null) {
         stopEvent(event);
-        tableSelection.setAnchorCellForSelection(anchorCell);
+        tableObserver.setAnchorCellForSelection(anchorCell);
       }
 
       const onMouseUp = () => {
@@ -100,11 +100,11 @@ export function applyTableHandlers(
         const focusCell = getCellFromTarget(moveEvent.target as Node);
         if (
           focusCell !== null &&
-          (tableSelection.anchorX !== focusCell.x ||
-            tableSelection.anchorY !== focusCell.y)
+          (tableObserver.anchorX !== focusCell.x ||
+            tableObserver.anchorY !== focusCell.y)
         ) {
           moveEvent.preventDefault();
-          tableSelection.setFocusCellForSelection(focusCell);
+          tableObserver.setFocusCellForSelection(focusCell);
         }
       };
 
@@ -124,57 +124,56 @@ export function applyTableHandlers(
       const target = event.target as Node;
       if (
         $isGridSelection(selection) &&
-        selection.gridKey === tableSelection.tableNodeKey &&
+        selection.gridKey === tableObserver.tableNodeKey &&
         rootElement.contains(target)
       ) {
-        tableSelection.clearHighlight();
+        tableObserver.clearHighlight();
       }
     });
   };
 
   editorWindow.addEventListener('mousedown', mouseDownCallback);
 
-  tableSelection.listenersToRemove.add(() =>
+  tableObserver.listenersToRemove.add(() =>
     editorWindow.removeEventListener('mousedown', mouseDownCallback),
   );
 
-  tableSelection.listenersToRemove.add(
+  tableObserver.listenersToRemove.add(
     editor.registerCommand<KeyboardEvent>(
       KEY_ARROW_DOWN_COMMAND,
       (event) =>
-        $handleArrowKey(editor, event, 'down', tableNode, tableSelection),
+        $handleArrowKey(editor, event, 'down', tableNode, tableObserver),
       COMMAND_PRIORITY_HIGH,
     ),
   );
 
-  tableSelection.listenersToRemove.add(
+  tableObserver.listenersToRemove.add(
     editor.registerCommand<KeyboardEvent>(
       KEY_ARROW_UP_COMMAND,
-      (event) =>
-        $handleArrowKey(editor, event, 'up', tableNode, tableSelection),
+      (event) => $handleArrowKey(editor, event, 'up', tableNode, tableObserver),
       COMMAND_PRIORITY_HIGH,
     ),
   );
 
-  tableSelection.listenersToRemove.add(
+  tableObserver.listenersToRemove.add(
     editor.registerCommand<KeyboardEvent>(
       KEY_ARROW_LEFT_COMMAND,
       (event) =>
-        $handleArrowKey(editor, event, 'backward', tableNode, tableSelection),
+        $handleArrowKey(editor, event, 'backward', tableNode, tableObserver),
       COMMAND_PRIORITY_HIGH,
     ),
   );
 
-  tableSelection.listenersToRemove.add(
+  tableObserver.listenersToRemove.add(
     editor.registerCommand<KeyboardEvent>(
       KEY_ARROW_RIGHT_COMMAND,
       (event) =>
-        $handleArrowKey(editor, event, 'forward', tableNode, tableSelection),
+        $handleArrowKey(editor, event, 'forward', tableNode, tableObserver),
       COMMAND_PRIORITY_HIGH,
     ),
   );
 
-  tableSelection.listenersToRemove.add(
+  tableObserver.listenersToRemove.add(
     editor.registerCommand<KeyboardEvent>(
       KEY_ESCAPE_COMMAND,
       (event) => {
@@ -205,7 +204,7 @@ export function applyTableHandlers(
     }
 
     if ($isGridSelection(selection)) {
-      tableSelection.clearText();
+      tableObserver.clearText();
 
       return true;
     } else if ($isRangeSelection(selection)) {
@@ -228,7 +227,7 @@ export function applyTableHandlers(
         (isFocusInside && !isAnchorInside);
 
       if (selectionContainsPartialTable) {
-        tableSelection.clearText();
+        tableObserver.clearText();
         return true;
       }
 
@@ -281,7 +280,7 @@ export function applyTableHandlers(
 
   [DELETE_WORD_COMMAND, DELETE_LINE_COMMAND, DELETE_CHARACTER_COMMAND].forEach(
     (command) => {
-      tableSelection.listenersToRemove.add(
+      tableObserver.listenersToRemove.add(
         editor.registerCommand(
           command,
           deleteTextHandler(command),
@@ -301,7 +300,7 @@ export function applyTableHandlers(
     if ($isGridSelection(selection)) {
       event.preventDefault();
       event.stopPropagation();
-      tableSelection.clearText();
+      tableObserver.clearText();
 
       return true;
     } else if ($isRangeSelection(selection)) {
@@ -318,7 +317,7 @@ export function applyTableHandlers(
     return false;
   };
 
-  tableSelection.listenersToRemove.add(
+  tableObserver.listenersToRemove.add(
     editor.registerCommand<KeyboardEvent>(
       KEY_BACKSPACE_COMMAND,
       deleteCellHandler,
@@ -326,7 +325,7 @@ export function applyTableHandlers(
     ),
   );
 
-  tableSelection.listenersToRemove.add(
+  tableObserver.listenersToRemove.add(
     editor.registerCommand<KeyboardEvent>(
       KEY_DELETE_COMMAND,
       deleteCellHandler,
@@ -334,7 +333,7 @@ export function applyTableHandlers(
     ),
   );
 
-  tableSelection.listenersToRemove.add(
+  tableObserver.listenersToRemove.add(
     editor.registerCommand<TextFormatType>(
       FORMAT_TEXT_COMMAND,
       (payload) => {
@@ -345,7 +344,7 @@ export function applyTableHandlers(
         }
 
         if ($isGridSelection(selection)) {
-          tableSelection.formatCells(payload);
+          tableObserver.formatCells(payload);
 
           return true;
         } else if ($isRangeSelection(selection)) {
@@ -365,7 +364,7 @@ export function applyTableHandlers(
     ),
   );
 
-  tableSelection.listenersToRemove.add(
+  tableObserver.listenersToRemove.add(
     editor.registerCommand(
       CONTROLLED_TEXT_INSERTION_COMMAND,
       (payload) => {
@@ -376,7 +375,7 @@ export function applyTableHandlers(
         }
 
         if ($isGridSelection(selection)) {
-          tableSelection.clearHighlight();
+          tableObserver.clearHighlight();
 
           return false;
         } else if ($isRangeSelection(selection)) {
@@ -397,7 +396,7 @@ export function applyTableHandlers(
   );
 
   if (hasTabHandler) {
-    tableSelection.listenersToRemove.add(
+    tableObserver.listenersToRemove.add(
       editor.registerCommand<KeyboardEvent>(
         KEY_TAB_COMMAND,
         (event) => {
@@ -419,11 +418,11 @@ export function applyTableHandlers(
 
           const currentCords = tableNode.getCordsFromCellNode(
             tableCellNode,
-            tableSelection.grid,
+            tableObserver.table,
           );
 
-          selectGridNodeInDirection(
-            tableSelection,
+          selectTableNodeInDirection(
+            tableObserver,
             tableNode,
             currentCords.x,
             currentCords.y,
@@ -437,7 +436,7 @@ export function applyTableHandlers(
     );
   }
 
-  tableSelection.listenersToRemove.add(
+  tableObserver.listenersToRemove.add(
     editor.registerCommand(
       FOCUS_COMMAND,
       (payload) => {
@@ -447,19 +446,21 @@ export function applyTableHandlers(
     ),
   );
 
-  function getCellFromCellNode(tableCellNode: TableCellNode): Cell {
+  function getObserverCellFromCellNode(
+    tableCellNode: TableCellNode,
+  ): TableDOMCell {
     const currentCords = tableNode.getCordsFromCellNode(
       tableCellNode,
-      tableSelection.grid,
+      tableObserver.table,
     );
     return tableNode.getCellFromCordsOrThrow(
       currentCords.x,
       currentCords.y,
-      tableSelection.grid,
+      tableObserver.table,
     );
   }
 
-  tableSelection.listenersToRemove.add(
+  tableObserver.listenersToRemove.add(
     editor.registerCommand(
       SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
       (selectionPayload) => {
@@ -597,7 +598,7 @@ export function applyTableHandlers(
     ),
   );
 
-  tableSelection.listenersToRemove.add(
+  tableObserver.listenersToRemove.add(
     editor.registerCommand(
       SELECTION_CHANGE_COMMAND,
       () => {
@@ -628,16 +629,16 @@ export function applyTableHandlers(
               'element',
             );
             $setSelection(newSelection);
-            $addHighlightStyleToTable(editor, tableSelection);
+            $addHighlightStyleToTable(editor, tableObserver);
           } else if (isWithinTable) {
             // Handle case when selection spans across multiple cells but still
             // has range selection, then we convert it into grid selection
             if (!anchorCellNode.is(focusCellNode)) {
-              tableSelection.setAnchorCellForSelection(
-                getCellFromCellNode(anchorCellNode),
+              tableObserver.setAnchorCellForSelection(
+                getObserverCellFromCellNode(anchorCellNode),
               );
-              tableSelection.setFocusCellForSelection(
-                getCellFromCellNode(focusCellNode),
+              tableObserver.setFocusCellForSelection(
+                getObserverCellFromCellNode(focusCellNode),
                 true,
               );
             }
@@ -648,34 +649,34 @@ export function applyTableHandlers(
           selection &&
           !selection.is(prevSelection) &&
           ($isGridSelection(selection) || $isGridSelection(prevSelection)) &&
-          tableSelection.gridSelection &&
-          !tableSelection.gridSelection.is(prevSelection)
+          tableObserver.gridSelection &&
+          !tableObserver.gridSelection.is(prevSelection)
         ) {
           if (
             $isGridSelection(selection) &&
-            selection.gridKey === tableSelection.tableNodeKey
+            selection.gridKey === tableObserver.tableNodeKey
           ) {
-            tableSelection.updateTableGridSelection(selection);
+            tableObserver.updateTableGridSelection(selection);
           } else if (
             !$isGridSelection(selection) &&
             $isGridSelection(prevSelection) &&
-            prevSelection.gridKey === tableSelection.tableNodeKey
+            prevSelection.gridKey === tableObserver.tableNodeKey
           ) {
-            tableSelection.updateTableGridSelection(null);
+            tableObserver.updateTableGridSelection(null);
           }
           return false;
         }
 
         if (
-          tableSelection.hasHijackedSelectionStyles &&
+          tableObserver.hasHijackedSelectionStyles &&
           !tableNode.isSelected()
         ) {
-          $removeHighlightStyleToTable(editor, tableSelection);
+          $removeHighlightStyleToTable(editor, tableObserver);
         } else if (
-          !tableSelection.hasHijackedSelectionStyles &&
+          !tableObserver.hasHijackedSelectionStyles &&
           tableNode.isSelected()
         ) {
-          $addHighlightStyleToTable(editor, tableSelection);
+          $addHighlightStyleToTable(editor, tableObserver);
         }
 
         return false;
@@ -684,26 +685,26 @@ export function applyTableHandlers(
     ),
   );
 
-  return tableSelection;
+  return tableObserver;
 }
 
 export type HTMLTableElementWithWithTableSelectionState = HTMLTableElement &
-  Record<typeof LEXICAL_ELEMENT_KEY, TableSelection>;
+  Record<typeof LEXICAL_ELEMENT_KEY, TableObserver>;
 
-export function attachTableSelectionToTableElement(
+export function attachTableObserverToTableElement(
   tableElement: HTMLTableElementWithWithTableSelectionState,
-  tableSelection: TableSelection,
+  tableObserver: TableObserver,
 ) {
-  tableElement[LEXICAL_ELEMENT_KEY] = tableSelection;
+  tableElement[LEXICAL_ELEMENT_KEY] = tableObserver;
 }
 
-export function getTableSelectionFromTableElement(
+export function getTableObserverFromTableElement(
   tableElement: HTMLTableElementWithWithTableSelectionState,
-): TableSelection | null {
+): TableObserver | null {
   return tableElement[LEXICAL_ELEMENT_KEY];
 }
 
-export function getCellFromTarget(node: Node): Cell | null {
+export function getCellFromTarget(node: Node): TableDOMCell | null {
   let currentNode: ParentNode | Node | null = node;
 
   while (currentNode != null) {
@@ -739,8 +740,8 @@ export function doesTargetContainText(node: Node): boolean {
   return false;
 }
 
-export function getTableGrid(tableElement: HTMLElement): Grid {
-  const cells: Cells = [];
+export function getTable(tableElement: HTMLElement): TableDOMTable {
+  const cells: TableDOMRows = [];
   const grid = {
     cells,
     columns: 0,
@@ -813,11 +814,11 @@ export function getTableGrid(tableElement: HTMLElement): Grid {
 
 export function $updateDOMForSelection(
   editor: LexicalEditor,
-  grid: Grid,
+  table: TableDOMTable,
   selection: GridSelection | RangeSelection | null,
 ) {
   const selectedCellNodes = new Set(selection ? selection.getNodes() : []);
-  $forEachGridCell(grid, (cell, lexicalNode) => {
+  $forEachTableCell(table, (cell, lexicalNode) => {
     const elem = cell.elem;
 
     if (selectedCellNodes.has(lexicalNode)) {
@@ -833,10 +834,10 @@ export function $updateDOMForSelection(
   });
 }
 
-export function $forEachGridCell(
-  grid: Grid,
+export function $forEachTableCell(
+  grid: TableDOMTable,
   cb: (
-    cell: Cell,
+    cell: TableDOMCell,
     lexicalNode: LexicalNode,
     cords: {
       x: number;
@@ -871,10 +872,10 @@ export function $forEachGridCell(
 
 export function $addHighlightStyleToTable(
   editor: LexicalEditor,
-  tableSelection: TableSelection,
+  tableSelection: TableObserver,
 ) {
   tableSelection.disableHighlightStyle();
-  $forEachGridCell(tableSelection.grid, (cell) => {
+  $forEachTableCell(tableSelection.table, (cell) => {
     cell.highlighted = true;
     $addHighlightToDOM(editor, cell);
   });
@@ -882,10 +883,10 @@ export function $addHighlightStyleToTable(
 
 export function $removeHighlightStyleToTable(
   editor: LexicalEditor,
-  tableSelection: TableSelection,
+  tableObserver: TableObserver,
 ) {
-  tableSelection.enableHighlightStyle();
-  $forEachGridCell(tableSelection.grid, (cell) => {
+  tableObserver.enableHighlightStyle();
+  $forEachTableCell(tableObserver.table, (cell) => {
     const elem = cell.elem;
     cell.highlighted = false;
     $removeHighlightFromDOM(editor, cell);
@@ -898,8 +899,8 @@ export function $removeHighlightStyleToTable(
 
 type Direction = 'backward' | 'forward' | 'up' | 'down';
 
-const selectGridNodeInDirection = (
-  tableSelection: TableSelection,
+const selectTableNodeInDirection = (
+  tableObserver: TableObserver,
   tableNode: TableNode,
   x: number,
   y: number,
@@ -910,22 +911,22 @@ const selectGridNodeInDirection = (
   switch (direction) {
     case 'backward':
     case 'forward':
-      if (x !== (isForward ? tableSelection.grid.columns - 1 : 0)) {
+      if (x !== (isForward ? tableObserver.table.columns - 1 : 0)) {
         selectTableCellNode(
           tableNode.getCellNodeFromCordsOrThrow(
             x + (isForward ? 1 : -1),
             y,
-            tableSelection.grid,
+            tableObserver.table,
           ),
           isForward,
         );
       } else {
-        if (y !== (isForward ? tableSelection.grid.rows - 1 : 0)) {
+        if (y !== (isForward ? tableObserver.table.rows - 1 : 0)) {
           selectTableCellNode(
             tableNode.getCellNodeFromCordsOrThrow(
-              isForward ? 0 : tableSelection.grid.columns - 1,
+              isForward ? 0 : tableObserver.table.columns - 1,
               y + (isForward ? 1 : -1),
-              tableSelection.grid,
+              tableObserver.table,
             ),
             isForward,
           );
@@ -941,7 +942,7 @@ const selectGridNodeInDirection = (
     case 'up':
       if (y !== 0) {
         selectTableCellNode(
-          tableNode.getCellNodeFromCordsOrThrow(x, y - 1, tableSelection.grid),
+          tableNode.getCellNodeFromCordsOrThrow(x, y - 1, tableObserver.table),
           false,
         );
       } else {
@@ -951,9 +952,9 @@ const selectGridNodeInDirection = (
       return true;
 
     case 'down':
-      if (y !== tableSelection.grid.rows - 1) {
+      if (y !== tableObserver.table.rows - 1) {
         selectTableCellNode(
-          tableNode.getCellNodeFromCordsOrThrow(x, y + 1, tableSelection.grid),
+          tableNode.getCellNodeFromCordsOrThrow(x, y + 1, tableObserver.table),
           true,
         );
       } else {
@@ -967,7 +968,7 @@ const selectGridNodeInDirection = (
 };
 
 const adjustFocusNodeInDirection = (
-  tableSelection: TableSelection,
+  tableObserver: TableObserver,
   tableNode: TableNode,
   x: number,
   y: number,
@@ -978,12 +979,12 @@ const adjustFocusNodeInDirection = (
   switch (direction) {
     case 'backward':
     case 'forward':
-      if (x !== (isForward ? tableSelection.grid.columns - 1 : 0)) {
-        tableSelection.setFocusCellForSelection(
+      if (x !== (isForward ? tableObserver.table.columns - 1 : 0)) {
+        tableObserver.setFocusCellForSelection(
           tableNode.getCellFromCordsOrThrow(
             x + (isForward ? 1 : -1),
             y,
-            tableSelection.grid,
+            tableObserver.table,
           ),
         );
       }
@@ -991,8 +992,8 @@ const adjustFocusNodeInDirection = (
       return true;
     case 'up':
       if (y !== 0) {
-        tableSelection.setFocusCellForSelection(
-          tableNode.getCellFromCordsOrThrow(x, y - 1, tableSelection.grid),
+        tableObserver.setFocusCellForSelection(
+          tableNode.getCellFromCordsOrThrow(x, y - 1, tableObserver.table),
         );
 
         return true;
@@ -1000,9 +1001,9 @@ const adjustFocusNodeInDirection = (
         return false;
       }
     case 'down':
-      if (y !== tableSelection.grid.rows - 1) {
-        tableSelection.setFocusCellForSelection(
-          tableNode.getCellFromCordsOrThrow(x, y + 1, tableSelection.grid),
+      if (y !== tableObserver.table.rows - 1) {
+        tableObserver.setFocusCellForSelection(
+          tableNode.getCellFromCordsOrThrow(x, y + 1, tableObserver.table),
         );
 
         return true;
@@ -1037,7 +1038,7 @@ function selectTableCellNode(tableCell: TableCellNode, fromStart: boolean) {
 }
 
 const BROWSER_BLUE_RGB = '172,206,247';
-function $addHighlightToDOM(editor: LexicalEditor, cell: Cell): void {
+function $addHighlightToDOM(editor: LexicalEditor, cell: TableDOMCell): void {
   const element = cell.elem;
   const node = $getNearestNodeFromDOMNode(element);
   invariant(
@@ -1056,7 +1057,10 @@ function $addHighlightToDOM(editor: LexicalEditor, cell: Cell): void {
   element.style.setProperty('caret-color', 'transparent');
 }
 
-function $removeHighlightFromDOM(editor: LexicalEditor, cell: Cell): void {
+function $removeHighlightFromDOM(
+  editor: LexicalEditor,
+  cell: TableDOMCell,
+): void {
   const element = cell.elem;
   const node = $getNearestNodeFromDOMNode(element);
   invariant(
@@ -1086,7 +1090,7 @@ function $handleArrowKey(
   event: KeyboardEvent,
   direction: Direction,
   tableNode: TableNode,
-  tableSelection: TableSelection,
+  tableObserver: TableObserver,
 ): boolean {
   const selection = $getSelection();
 
@@ -1122,13 +1126,13 @@ function $handleArrowKey(
         anchorCellTable.getKey(),
       );
       if (anchorCellTableElement != null) {
-        tableSelection.grid = getTableGrid(anchorCellTableElement);
+        tableObserver.table = getTable(anchorCellTableElement);
         return $handleArrowKey(
           editor,
           event,
           direction,
           anchorCellTable,
-          tableSelection,
+          tableObserver,
         );
       }
     }
@@ -1177,20 +1181,20 @@ function $handleArrowKey(
 
       const cords = tableNode.getCordsFromCellNode(
         anchorCellNode,
-        tableSelection.grid,
+        tableObserver.table,
       );
 
       if (event.shiftKey) {
         const cell = tableNode.getCellFromCordsOrThrow(
           cords.x,
           cords.y,
-          tableSelection.grid,
+          tableObserver.table,
         );
-        tableSelection.setAnchorCellForSelection(cell);
-        tableSelection.setFocusCellForSelection(cell, true);
+        tableObserver.setAnchorCellForSelection(cell);
+        tableObserver.setFocusCellForSelection(cell, true);
       } else {
-        return selectGridNodeInDirection(
-          tableSelection,
+        return selectTableNodeInDirection(
+          tableObserver,
           tableNode,
           cords.x,
           cords.y,
@@ -1223,23 +1227,23 @@ function $handleArrowKey(
     ) {
       return false;
     }
-    tableSelection.updateTableGridSelection(selection);
+    tableObserver.updateTableGridSelection(selection);
 
-    const grid = getTableGrid(tableElement);
+    const grid = getTable(tableElement);
     const cordsAnchor = tableNode.getCordsFromCellNode(anchorCellNode, grid);
     const anchorCell = tableNode.getCellFromCordsOrThrow(
       cordsAnchor.x,
       cordsAnchor.y,
       grid,
     );
-    tableSelection.setAnchorCellForSelection(anchorCell);
+    tableObserver.setAnchorCellForSelection(anchorCell);
 
     stopEvent(event);
 
     if (event.shiftKey) {
       const cords = tableNode.getCordsFromCellNode(focusCellNode, grid);
       return adjustFocusNodeInDirection(
-        tableSelection,
+        tableObserver,
         tableNodeFromSelection,
         cords.x,
         cords.y,

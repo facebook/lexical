@@ -7,7 +7,6 @@
  */
 
 import type {TableCellNode} from './LexicalTableCellNode';
-import type {Cell, Grid} from './LexicalTableSelection';
 import type {
   DOMConversionMap,
   DOMConversionOutput,
@@ -27,16 +26,14 @@ import {
 } from 'lexical';
 
 import {$isTableCellNode} from './LexicalTableCellNode';
+import {TableDOMCell, TableDOMTable} from './LexicalTableObserver';
 import {$isTableRowNode, TableRowNode} from './LexicalTableRowNode';
-import {getTableGrid} from './LexicalTableSelectionHelpers';
+import {getTable} from './LexicalTableSelectionHelpers';
 
 export type SerializedTableNode = SerializedElementNode;
 
 /** @noInheritDoc */
 export class TableNode extends ElementNode {
-  /** @internal */
-  __grid?: Grid;
-
   static getType(): string {
     return 'table';
   }
@@ -129,7 +126,7 @@ export class TableNode extends ElementNode {
 
   getCordsFromCellNode(
     tableCellNode: TableCellNode,
-    grid: Grid,
+    grid: TableDOMTable,
   ): {x: number; y: number} {
     const {rows, cells} = grid;
 
@@ -155,7 +152,11 @@ export class TableNode extends ElementNode {
     throw new Error('Cell not found in table.');
   }
 
-  getCellFromCords(x: number, y: number, grid: Grid): Cell | null {
+  getCellFromCords(
+    x: number,
+    y: number,
+    grid: TableDOMTable,
+  ): TableDOMCell | null {
     const {cells} = grid;
 
     const row = cells[y];
@@ -173,7 +174,11 @@ export class TableNode extends ElementNode {
     return cell;
   }
 
-  getCellFromCordsOrThrow(x: number, y: number, grid: Grid): Cell {
+  getCellFromCordsOrThrow(
+    x: number,
+    y: number,
+    grid: TableDOMTable,
+  ): TableDOMCell {
     const cell = this.getCellFromCords(x, y, grid);
 
     if (!cell) {
@@ -183,7 +188,11 @@ export class TableNode extends ElementNode {
     return cell;
   }
 
-  getCellNodeFromCords(x: number, y: number, grid: Grid): TableCellNode | null {
+  getCellNodeFromCords(
+    x: number,
+    y: number,
+    grid: TableDOMTable,
+  ): TableCellNode | null {
     const cell = this.getCellFromCords(x, y, grid);
 
     if (cell == null) {
@@ -199,7 +208,11 @@ export class TableNode extends ElementNode {
     return null;
   }
 
-  getCellNodeFromCordsOrThrow(x: number, y: number, grid: Grid): TableCellNode {
+  getCellNodeFromCordsOrThrow(
+    x: number,
+    y: number,
+    grid: TableDOMTable,
+  ): TableCellNode {
     const node = this.getCellNodeFromCords(x, y, grid);
 
     if (!node) {
@@ -218,17 +231,17 @@ export class TableNode extends ElementNode {
   }
 }
 
-export function $getElementGridForTableNode(
+export function $getElementForTableNode(
   editor: LexicalEditor,
   tableNode: TableNode,
-): Grid {
+): TableDOMTable {
   const tableElement = editor.getElementByKey(tableNode.getKey());
 
   if (tableElement == null) {
     throw new Error('Table Element Not Found');
   }
 
-  return getTableGrid(tableElement);
+  return getTable(tableElement);
 }
 
 export function convertTableElement(_domNode: Node): DOMConversionOutput {

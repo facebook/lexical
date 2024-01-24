@@ -24,7 +24,7 @@ import {
   $isTableCellNode,
   $isTableRowNode,
   $unmergeCell,
-  getTableSelectionFromTableElement,
+  getTableObserverFromTableElement,
   GridSelection,
   HTMLTableElementWithWithTableSelectionState,
   TableCellHeaderStates,
@@ -278,7 +278,7 @@ function TableActionMenu({
           throw new Error('Expected to find tableElement in DOM');
         }
 
-        const tableSelection = getTableSelectionFromTableElement(tableElement);
+        const tableSelection = getTableObserverFromTableElement(tableElement);
         if (tableSelection !== null) {
           tableSelection.clearHighlight();
         }

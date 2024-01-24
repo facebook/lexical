@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {Cell} from '@lexical/table';
+import type {TableDOMCell} from '@lexical/table';
 import type {LexicalEditor} from 'lexical';
 
 import './index.css';
@@ -59,7 +59,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
   const [mouseCurrentPos, updateMouseCurrentPos] =
     useState<MousePosition | null>(null);
 
-  const [activeCell, updateActiveCell] = useState<Cell | null>(null);
+  const [activeCell, updateActiveCell] = useState<TableDOMCell | null>(null);
   const [isSelectingGrid, updateIsSelectingGrid] = useState<boolean>(false);
   const [draggingDirection, updateDraggingDirection] =
     useState<MouseDraggingDirection | null>(null);

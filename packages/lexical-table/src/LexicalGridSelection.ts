@@ -20,10 +20,9 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
-import {$isTableCellNode} from './LexicalTableCellNode';
+import {$isTableCellNode, TableCellNode} from './LexicalTableCellNode';
 import {$isTableNode} from './LexicalTableNode';
 import {$isTableRowNode} from './LexicalTableRowNode';
-import {GridMapValueType} from './LexicalTableSelection';
 import {$computeGridMap, $getGridCellNodeRect} from './LexicalTableUtils';
 
 export type GridSelectionShape = {
@@ -32,6 +31,13 @@ export type GridSelectionShape = {
   toX: number;
   toY: number;
 };
+
+export type GridMapValueType = {
+  cell: TableCellNode;
+  startRow: number;
+  startColumn: number;
+};
+export type GridMapType = Array<Array<GridMapValueType>>;
 
 export class GridSelection implements BaseSelection {
   gridKey: NodeKey;

@@ -7,7 +7,11 @@
  */
 
 import {$createParagraphNode, $getRoot, TextNode} from 'lexical';
-import {initializeUnitTest} from 'lexical/src/__tests__/utils';
+import {
+  expectHtmlToBeEqual,
+  html,
+  initializeUnitTest,
+} from 'lexical/src/__tests__/utils';
 
 import {
   $createListItemNode,
@@ -15,7 +19,6 @@ import {
   ListItemNode,
   ListNode,
 } from '../..';
-import {expectHtmlToBeEqual, html} from '../utils';
 
 const editorConfig = Object.freeze({
   namespace: '',

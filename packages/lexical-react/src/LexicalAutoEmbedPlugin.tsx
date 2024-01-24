@@ -5,20 +5,25 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {LexicalNode, MutationListener} from 'lexical';
+import type {
+  CommandListenerPriority,
+  LexicalNode,
+  MutationListener,
+} from 'lexical';
 
 import {$isLinkNode, AutoLinkNode, LinkNode} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   LexicalNodeMenuPlugin,
+  MenuOption,
   MenuRenderFn,
-  TypeaheadOption,
-} from '@lexical/react/LexicalTypeaheadMenuPlugin';
+} from '@lexical/react/LexicalNodeMenuPlugin';
 import {mergeRegister} from '@lexical/utils';
 import {
   $getNodeByKey,
   $getSelection,
   COMMAND_PRIORITY_EDITOR,
+  COMMAND_PRIORITY_LOW,
   createCommand,
   LexicalCommand,
   LexicalEditor,
@@ -54,7 +59,7 @@ export const URL_MATCHER =
 export const INSERT_EMBED_COMMAND: LexicalCommand<EmbedConfig['type']> =
   createCommand('INSERT_EMBED_COMMAND');
 
-export class AutoEmbedOption extends TypeaheadOption {
+export class AutoEmbedOption extends MenuOption {
   title: string;
   onSelect: (targetNode: LexicalNode | null) => void;
   constructor(
@@ -78,6 +83,7 @@ type LexicalAutoEmbedPluginProps<TEmbedConfig extends EmbedConfig> = {
     dismissFn: () => void,
   ) => Array<AutoEmbedOption>;
   menuRenderFn: MenuRenderFn<AutoEmbedOption>;
+  menuCommandPriority?: CommandListenerPriority;
 };
 
 export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
@@ -85,6 +91,7 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
   onOpenEmbedModalForConfig,
   getMenuOptions,
   menuRenderFn,
+  menuCommandPriority = COMMAND_PRIORITY_LOW,
 }: LexicalAutoEmbedPluginProps<TEmbedConfig>): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
 
@@ -129,7 +136,7 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
         if (
           mutation === 'created' &&
           updateTags.has('paste') &&
-          dirtyLeaves.size === 1
+          dirtyLeaves.size <= 3
         ) {
           checkIfLinkNodeIsEmbeddable(key);
         } else if (key === nodeKey) {
@@ -223,6 +230,7 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
       onSelectOption={onSelectOption}
       options={options}
       menuRenderFn={menuRenderFn}
+      commandPriority={menuCommandPriority}
     />
   ) : null;
 }

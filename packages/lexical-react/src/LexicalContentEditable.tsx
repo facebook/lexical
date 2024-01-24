@@ -45,6 +45,7 @@ export function ContentEditable({
   style,
   tabIndex,
   'data-testid': testid,
+  ...rest
 }: Props): JSX.Element {
   const [editor] = useLexicalComposerContext();
   const [isEditable, setEditable] = useState(false);
@@ -65,6 +66,7 @@ export function ContentEditable({
 
   return (
     <div
+      {...rest}
       aria-activedescendant={!isEditable ? undefined : ariaActiveDescendant}
       aria-autocomplete={!isEditable ? 'none' : ariaAutoComplete}
       aria-controls={!isEditable ? undefined : ariaControls}
@@ -80,6 +82,7 @@ export function ContentEditable({
       aria-labelledby={ariaLabelledBy}
       aria-multiline={ariaMultiline}
       aria-owns={!isEditable ? undefined : ariaOwns}
+      aria-readonly={!isEditable ? true : undefined}
       aria-required={ariaRequired}
       autoCapitalize={autoCapitalize}
       className={className}
@@ -87,7 +90,7 @@ export function ContentEditable({
       data-testid={testid}
       id={id}
       ref={ref}
-      role={!isEditable ? undefined : role}
+      role={role}
       spellCheck={spellCheck}
       style={style}
       tabIndex={tabIndex}

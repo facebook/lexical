@@ -122,10 +122,6 @@ export class FigmaNode extends DecoratorBlockNode {
       />
     );
   }
-
-  isInline(): false {
-    return false;
-  }
 }
 
 export function $createFigmaNode(documentID: string): FigmaNode {

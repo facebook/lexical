@@ -44,7 +44,7 @@ An Editor State is the underlying data model that represents what you want to sh
 - a Lexical node tree
 - a Lexical selection object
 
-Editor States are immutable once created, and in order to create one, you must do so via `editor.update(() => {...})`. However, you
+Editor States are immutable once created, and in order to update one, you must do so via `editor.update(() => {...})`. However, you
 can also "hook" into an existing update using node transforms or command handlers – which are invoked as part of an existing update
 workflow to prevent cascading/water-falling of updates. You can retrieve the current editor state using `editor.getEditorState()`.
 

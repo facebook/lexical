@@ -433,7 +433,10 @@ function handleDEVOnlyPendingUpdateGuarantees(
   };
 }
 
-export function commitPendingUpdates(editor: LexicalEditor): void {
+export function commitPendingUpdates(
+  editor: LexicalEditor,
+  recoveryEditorState?: EditorState,
+): void {
   const pendingEditorState = editor._pendingEditorState;
   const rootElement = editor._rootElement;
   const shouldSkipDOM = editor._headless || rootElement === null;
@@ -491,7 +494,7 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
         initMutationObserver(editor);
         editor._dirtyType = FULL_RECONCILE;
         isAttemptingToRecoverFromReconcilerError = true;
-        commitPendingUpdates(editor);
+        commitPendingUpdates(editor, currentEditorState);
         isAttemptingToRecoverFromReconcilerError = false;
       } else {
         // To avoid a possible situation of infinite loops, lets throw
@@ -593,11 +596,10 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
   if (mutatedNodes !== null) {
     triggerMutationListeners(
       editor,
-      currentEditorState,
-      pendingEditorState,
       mutatedNodes,
       tags,
       dirtyLeaves,
+      currentEditorState,
     );
   }
   if (
@@ -617,13 +619,22 @@ export function commitPendingUpdates(editor: LexicalEditor): void {
     triggerListeners('decorator', editor, true, pendingDecorators);
   }
 
-  triggerTextContentListeners(editor, currentEditorState, pendingEditorState);
+  // If reconciler fails, we reset whole editor (so current editor state becomes empty)
+  // and attempt to re-render pendingEditorState. If that goes through we trigger
+  // listeners, but instead use recoverEditorState which is current editor state before reset
+  // This specifically important for collab that relies on prevEditorState from update
+  // listener to calculate delta of changed nodes/properties
+  triggerTextContentListeners(
+    editor,
+    recoveryEditorState || currentEditorState,
+    pendingEditorState,
+  );
   triggerListeners('update', editor, true, {
     dirtyElements,
     dirtyLeaves,
     editorState: pendingEditorState,
     normalizedNodes,
-    prevEditorState: currentEditorState,
+    prevEditorState: recoveryEditorState || currentEditorState,
     tags,
   });
   triggerDeferredUpdateCallbacks(editor, deferred);
@@ -645,11 +656,10 @@ function triggerTextContentListeners(
 
 function triggerMutationListeners(
   editor: LexicalEditor,
-  currentEditorState: EditorState,
-  pendingEditorState: EditorState,
   mutatedNodes: MutatedNodes,
   updateTags: Set<string>,
   dirtyLeaves: Set<string>,
+  prevEditorState: EditorState,
 ): void {
   const listeners = Array.from(editor._listeners.mutation);
   const listenersLength = listeners.length;
@@ -660,6 +670,7 @@ function triggerMutationListeners(
     if (mutatedNodesByType !== undefined) {
       listener(mutatedNodesByType, {
         dirtyLeaves,
+        prevEditorState,
         updateTags,
       });
     }
@@ -854,7 +865,7 @@ function beginUpdate(
   try {
     if (editorStateWasCloned) {
       if (editor._headless) {
-        if (currentEditorState._selection != null) {
+        if (currentEditorState._selection !== null) {
           pendingEditorState._selection = currentEditorState._selection.clone();
         }
       } else {

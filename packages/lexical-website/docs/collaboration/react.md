@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # React
 
-Below is an example of a basic plain text editor using `lexical`, `@lexical/react`, and `yjs`
+Below is an example of a basic plain text editor using `lexical`, `@lexical/react`, and [`yjs`](https://github.com/yjs/yjs)
 
 ```jsx
 import {$getRoot, $createParagraphNode, $createTextNode} from 'lexical';
@@ -68,3 +68,13 @@ function Editor() {
   );
 }
 ```
+
+## Yjs providers
+
+Setting up the communication between clients, managing awareness information, and storing shared data for offline usage is quite a hassle. Providers manage all that for you and are the perfect starting point for your collaborative app.
+
+- [y-webrtc](https://github.com/yjs/y-webrtc)
+- [y-websocket](https://github.com/yjs/y-websocket)
+- [y-indexeddb](https://github.com/yjs/y-indexeddb)
+- [@liveblocks/yjs](https://liveblocks.io/docs/api-reference/liveblocks-yjs)
+

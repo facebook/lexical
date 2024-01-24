@@ -21,7 +21,7 @@ the valid CSS properties (i.e., kebab-case).
 
 ```ts
 export function $patchStyleText(
-  selection: RangeSelection | GridSelection,
+  selection: BaseSelection,
   patch: {
     [key: string]: string;
   },

@@ -46,6 +46,7 @@ describe('LexicalUtils tests', () => {
 
     test('scheduleMicroTask(): promise', async () => {
       jest.resetModules();
+      // @ts-ignore
       window.queueMicrotask = undefined;
 
       let flag = false;
@@ -96,7 +97,7 @@ describe('LexicalUtils tests', () => {
 
     test('isSelectionWithinEditor()', async () => {
       const {editor} = testEnv;
-      let textNode;
+      let textNode: TextNode;
 
       await editor.update(() => {
         const root = $getRoot();
@@ -107,7 +108,7 @@ describe('LexicalUtils tests', () => {
       });
 
       await editor.update(() => {
-        const domSelection = window.getSelection();
+        const domSelection = window.getSelection()!;
 
         expect(
           isSelectionWithinEditor(
@@ -121,7 +122,7 @@ describe('LexicalUtils tests', () => {
       });
 
       await editor.update(() => {
-        const domSelection = window.getSelection();
+        const domSelection = window.getSelection()!;
 
         expect(
           isSelectionWithinEditor(
@@ -183,8 +184,8 @@ describe('LexicalUtils tests', () => {
 
     test('$getNodeByKey', async () => {
       const {editor} = testEnv;
-      let paragraphNode;
-      let textNode;
+      let paragraphNode: ParagraphNode;
+      let textNode: TextNode;
 
       await editor.update(() => {
         const rootNode = $getRoot();
@@ -206,7 +207,7 @@ describe('LexicalUtils tests', () => {
 
     test('$nodesOfType', async () => {
       const {editor} = testEnv;
-      const paragraphKeys = [];
+      const paragraphKeys: string[] = [];
 
       const $paragraphKeys = () =>
         $nodesOfType(ParagraphNode).map((node) => node.getKey());

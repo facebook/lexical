@@ -8,14 +8,14 @@
 
 import type {ListNode} from './';
 import type {
+  BaseSelection,
   DOMConversionMap,
   DOMConversionOutput,
+  DOMExportOutput,
   EditorConfig,
   EditorThemeClasses,
-  GridSelection,
   LexicalNode,
   NodeKey,
-  NodeSelection,
   ParagraphNode,
   RangeSelection,
   SerializedElementNode,
@@ -34,6 +34,7 @@ import {
   $isParagraphNode,
   $isRangeSelection,
   ElementNode,
+  LexicalEditor,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -107,6 +108,7 @@ export class ListItemNode extends ElementNode {
       const parent = node.getParent();
       if ($isListNode(parent)) {
         updateChildrenListItemValue(parent);
+        invariant($isListItemNode(node), 'node is not a ListItemNode');
         if (parent.getListType() !== 'check' && node.getChecked() != null) {
           node.setChecked(undefined);
         }
@@ -124,10 +126,20 @@ export class ListItemNode extends ElementNode {
   }
 
   static importJSON(serializedNode: SerializedListItemNode): ListItemNode {
-    const node = new ListItemNode(serializedNode.value, serializedNode.checked);
+    const node = $createListItemNode();
+    node.setChecked(serializedNode.checked);
+    node.setValue(serializedNode.value);
     node.setFormat(serializedNode.format);
     node.setDirection(serializedNode.direction);
     return node;
+  }
+
+  exportDOM(editor: LexicalEditor): DOMExportOutput {
+    const element = this.createDOM(editor._config);
+    element.style.textAlign = this.getFormatType();
+    return {
+      element,
+    };
   }
 
   exportJSON(): SerializedListItemNode {
@@ -183,6 +195,10 @@ export class ListItemNode extends ElementNode {
       replaceWithNode.insertAfter(newList);
     }
     if (includeChildren) {
+      invariant(
+        $isElementNode(replaceWithNode),
+        'includeChildren should only be true for ElementNodes',
+      );
       this.getChildren().forEach((child: LexicalNode) => {
         replaceWithNode.append(child);
       });
@@ -219,7 +235,7 @@ export class ListItemNode extends ElementNode {
 
     // Attempt to merge if the list is of the same type.
 
-    if ($isListNode(node) && node.getListType() === listNode.getListType()) {
+    if ($isListNode(node)) {
       let child = node;
       const children = node.getChildren<ListNode>();
 
@@ -407,10 +423,7 @@ export class ListItemNode extends ElementNode {
     return $isParagraphNode(node) || $isListItemNode(node);
   }
 
-  extractWithChild(
-    child: LexicalNode,
-    selection: RangeSelection | NodeSelection | GridSelection,
-  ): boolean {
+  extractWithChild(child: LexicalNode, selection: BaseSelection): boolean {
     if (!$isRangeSelection(selection)) {
       return false;
     }

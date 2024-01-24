@@ -18,6 +18,7 @@ npm
 .docusaurus
 e2e-screenshots
 test-results
+playwright-report
 
 npm-debug.log*
 
@@ -27,5 +28,11 @@ npm-debug.log*
 !.vscode/launch.json
 !.vscode/extensions.json
 !.vscode/*.code-snippets
+
+.idea/**/workspace.xml
+.idea/**/tasks.xml
+.idea/**/usage.statistics.xml
+.idea/**/dictionaries
+.idea/**/shelf
 
 .idea

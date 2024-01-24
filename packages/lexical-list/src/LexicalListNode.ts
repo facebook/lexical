@@ -76,6 +76,12 @@ export class ListNode extends ElementNode {
     return this.__tag;
   }
 
+  setListType(type: ListType): void {
+    const writable = this.getWritable();
+    writable.__listType = type;
+    writable.__tag = type === 'number' ? 'ol' : 'ul';
+  }
+
   getListType(): ListType {
     return this.__listType;
   }
@@ -137,7 +143,7 @@ export class ListNode extends ElementNode {
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const {element} = super.exportDOM(editor);
-    if (element) {
+    if (element && isHTMLElement(element)) {
       if (this.__start !== 1) {
         element.setAttribute('start', String(this.__start));
       }
@@ -215,6 +221,7 @@ function setListThemeClassNames(
     const listClassName = listTheme[node.__tag];
     let nestedListClassName;
     const nestedListTheme = listTheme.nested;
+    const checklistClassName = listTheme.checklist;
 
     if (nestedListTheme !== undefined && nestedListTheme.list) {
       nestedListClassName = nestedListTheme.list;
@@ -222,6 +229,10 @@ function setListThemeClassNames(
 
     if (listClassName !== undefined) {
       classesToAdd.push(listClassName);
+    }
+
+    if (checklistClassName !== undefined && node.__listType === 'check') {
+      classesToAdd.push(checklistClassName);
     }
 
     if (listLevelClassName !== undefined) {

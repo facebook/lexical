@@ -7,27 +7,28 @@
  */
 
 import type {
-  EditorConfig,
+  BaseSelection,
   EditorState,
   ElementNode,
-  GridSelection,
   LexicalEditor,
   LexicalNode,
-  NodeSelection,
   RangeSelection,
+  TextNode,
 } from 'lexical';
 
+import {$generateHtmlFromNodes} from '@lexical/html';
 import {$isLinkNode, LinkNode} from '@lexical/link';
 import {$isMarkNode} from '@lexical/mark';
+import {$isTableSelection, TableSelection} from '@lexical/table';
 import {mergeRegister} from '@lexical/utils';
 import {
   $getRoot,
   $getSelection,
   $isElementNode,
+  $isNodeSelection,
   $isRangeSelection,
   $isTextNode,
   COMMAND_PRIORITY_HIGH,
-  DEPRECATED_$isGridSelection,
   LexicalCommand,
 } from 'lexical';
 import * as React from 'react';
@@ -52,6 +53,7 @@ const SYMBOLS: Record<string, string> = Object.freeze({
 });
 
 export function TreeView({
+  treeTypeButtonClassName,
   timeTravelButtonClassName,
   timeTravelPanelSliderClassName,
   timeTravelPanelButtonClassName,
@@ -60,6 +62,7 @@ export function TreeView({
   editor,
 }: {
   editor: LexicalEditor;
+  treeTypeButtonClassName: string;
   timeTravelButtonClassName: string;
   timeTravelPanelButtonClassName: string;
   timeTravelPanelClassName: string;
@@ -71,6 +74,7 @@ export function TreeView({
   >([]);
   const [content, setContent] = useState<string>('');
   const [timeTravelEnabled, setTimeTravelEnabled] = useState(false);
+  const [showExportDOM, setShowExportDOM] = useState(false);
   const playingIndexRef = useRef(0);
   const treeElementRef = useRef<HTMLPreElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -83,13 +87,7 @@ export function TreeView({
 
   const generateTree = useCallback(
     (editorState: EditorState) => {
-      const treeText = generateContent(
-        editor.getEditorState(),
-        editor._config,
-        commandsLog,
-        editor._compositionKey,
-        editor._editable,
-      );
+      const treeText = generateContent(editor, commandsLog, showExportDOM);
 
       setContent(treeText);
 
@@ -100,24 +98,16 @@ export function TreeView({
         ]);
       }
     },
-    [commandsLog, editor, timeTravelEnabled],
+    [commandsLog, editor, timeTravelEnabled, showExportDOM],
   );
 
   useEffect(() => {
     const editorState = editor.getEditorState();
 
-    if (!showLimited && editorState._nodeMap.size > 1000) {
-      setContent(
-        generateContent(
-          editorState,
-          editor._config,
-          commandsLog,
-          editor._compositionKey,
-          editor._editable,
-        ),
-      );
+    if (!showLimited && editorState._nodeMap.size < 1000) {
+      setContent(generateContent(editor, commandsLog, showExportDOM));
     }
-  }, [commandsLog, editor, showLimited]);
+  }, [commandsLog, editor, showLimited, showExportDOM]);
 
   useEffect(() => {
     return mergeRegister(
@@ -132,17 +122,18 @@ export function TreeView({
         generateTree(editorState);
       }),
       editor.registerEditableListener(() => {
-        const treeText = generateContent(
-          editor.getEditorState(),
-          editor._config,
-          commandsLog,
-          editor._compositionKey,
-          editor._editable,
-        );
+        const treeText = generateContent(editor, commandsLog, showExportDOM);
         setContent(treeText);
       }),
     );
-  }, [commandsLog, editor, isLimited, generateTree, showLimited]);
+  }, [
+    commandsLog,
+    editor,
+    showExportDOM,
+    isLimited,
+    generateTree,
+    showLimited,
+  ]);
 
   const totalEditorStates = timeStampedEditorStates.length;
 
@@ -223,6 +214,14 @@ export function TreeView({
             Show full tree
           </button>
         </div>
+      ) : null}
+      {!showLimited ? (
+        <button
+          onClick={() => setShowExportDOM(!showExportDOM)}
+          className={treeTypeButtonClassName}
+          type="button">
+          {showExportDOM ? 'Tree' : 'Export DOM'}
+        </button>
       ) : null}
       {!timeTravelEnabled &&
         (showLimited || !isLimited) &&
@@ -369,21 +368,33 @@ function printRangeSelection(selection: RangeSelection): string {
   return res;
 }
 
-function printNodeSelection(selection: NodeSelection): string {
+function printNodeSelection(selection: BaseSelection): string {
+  if (!$isNodeSelection(selection)) return '';
   return `: node\n  └ [${Array.from(selection._nodes).join(', ')}]`;
 }
 
-function printGridSelection(selection: GridSelection): string {
-  return `: grid\n  └ { grid: ${selection.gridKey}, anchorCell: ${selection.anchor.key}, focusCell: ${selection.focus.key} }`;
+function printTableSelection(selection: TableSelection): string {
+  return `: table\n  └ { table: ${selection.tableKey}, anchorCell: ${selection.anchor.key}, focusCell: ${selection.focus.key} }`;
 }
 
 function generateContent(
-  editorState: EditorState,
-  editorConfig: EditorConfig,
+  editor: LexicalEditor,
   commandsLog: ReadonlyArray<LexicalCommand<unknown> & {payload: unknown}>,
-  compositionKey: null | string,
-  editable: boolean,
+  exportDOM: boolean,
 ): string {
+  const editorState = editor.getEditorState();
+  const editorConfig = editor._config;
+  const compositionKey = editor._compositionKey;
+  const editable = editor._editable;
+
+  if (exportDOM) {
+    let htmlString = '';
+    editorState.read(() => {
+      htmlString = printPrettyHTML($generateHtmlFromNodes(editor));
+    });
+    return htmlString;
+  }
+
   let res = ' root\n';
 
   const selectionString = editorState.read(() => {
@@ -416,8 +427,8 @@ function generateContent(
       ? ': null'
       : $isRangeSelection(selection)
       ? printRangeSelection(selection)
-      : DEPRECATED_$isGridSelection(selection)
-      ? printGridSelection(selection)
+      : $isTableSelection(selection)
+      ? printTableSelection(selection)
       : printNodeSelection(selection);
   });
 
@@ -508,30 +519,30 @@ function printNode(node: LexicalNode) {
 }
 
 const FORMAT_PREDICATES = [
-  (node: LexicalNode | RangeSelection) => node.hasFormat('bold') && 'Bold',
-  (node: LexicalNode | RangeSelection) => node.hasFormat('code') && 'Code',
-  (node: LexicalNode | RangeSelection) => node.hasFormat('italic') && 'Italic',
-  (node: LexicalNode | RangeSelection) =>
+  (node: TextNode | RangeSelection) => node.hasFormat('bold') && 'Bold',
+  (node: TextNode | RangeSelection) => node.hasFormat('code') && 'Code',
+  (node: TextNode | RangeSelection) => node.hasFormat('italic') && 'Italic',
+  (node: TextNode | RangeSelection) =>
     node.hasFormat('strikethrough') && 'Strikethrough',
-  (node: LexicalNode | RangeSelection) =>
+  (node: TextNode | RangeSelection) =>
     node.hasFormat('subscript') && 'Subscript',
-  (node: LexicalNode | RangeSelection) =>
+  (node: TextNode | RangeSelection) =>
     node.hasFormat('superscript') && 'Superscript',
-  (node: LexicalNode | RangeSelection) =>
+  (node: TextNode | RangeSelection) =>
     node.hasFormat('underline') && 'Underline',
 ];
 
 const DETAIL_PREDICATES = [
-  (node: LexicalNode) => node.isDirectionless() && 'Directionless',
-  (node: LexicalNode) => node.isUnmergeable() && 'Unmergeable',
+  (node: TextNode) => node.isDirectionless() && 'Directionless',
+  (node: TextNode) => node.isUnmergeable() && 'Unmergeable',
 ];
 
 const MODE_PREDICATES = [
-  (node: LexicalNode) => node.isToken() && 'Token',
-  (node: LexicalNode) => node.isSegmented() && 'Segmented',
+  (node: TextNode) => node.isToken() && 'Token',
+  (node: TextNode) => node.isSegmented() && 'Segmented',
 ];
 
-function printAllTextNodeProperties(node: LexicalNode) {
+function printAllTextNodeProperties(node: TextNode) {
   return [
     printFormatProperties(node),
     printDetailProperties(node),
@@ -551,7 +562,7 @@ function printAllLinkNodeProperties(node: LinkNode) {
     .join(', ');
 }
 
-function printDetailProperties(nodeOrSelection: LexicalNode) {
+function printDetailProperties(nodeOrSelection: TextNode) {
   let str = DETAIL_PREDICATES.map((predicate) => predicate(nodeOrSelection))
     .filter(Boolean)
     .join(', ')
@@ -564,7 +575,7 @@ function printDetailProperties(nodeOrSelection: LexicalNode) {
   return str;
 }
 
-function printModeProperties(nodeOrSelection: LexicalNode) {
+function printModeProperties(nodeOrSelection: TextNode) {
   let str = MODE_PREDICATES.map((predicate) => predicate(nodeOrSelection))
     .filter(Boolean)
     .join(', ')
@@ -577,7 +588,7 @@ function printModeProperties(nodeOrSelection: LexicalNode) {
   return str;
 }
 
-function printFormatProperties(nodeOrSelection: LexicalNode | RangeSelection) {
+function printFormatProperties(nodeOrSelection: TextNode | RangeSelection) {
   let str = FORMAT_PREDICATES.map((predicate) => predicate(nodeOrSelection))
     .filter(Boolean)
     .join(', ')
@@ -629,7 +640,7 @@ function printSelectedCharsLine({
   isSelected: boolean;
   node: LexicalNode;
   nodeKeyDisplay: string;
-  selection: GridSelection | NodeSelection | RangeSelection | null;
+  selection: BaseSelection | null;
   typeDisplay: string;
 }) {
   // No selection or node is not selected.
@@ -686,12 +697,39 @@ function printSelectedCharsLine({
   );
 }
 
+function printPrettyHTML(str: string) {
+  const div = document.createElement('div');
+  div.innerHTML = str.trim();
+  return prettifyHTML(div, 0).innerHTML;
+}
+
+function prettifyHTML(node: Element, level: number) {
+  const indentBefore = new Array(level++ + 1).join('  ');
+  const indentAfter = new Array(level - 1).join('  ');
+  let textNode;
+
+  for (let i = 0; i < node.children.length; i++) {
+    textNode = document.createTextNode('\n' + indentBefore);
+    node.insertBefore(textNode, node.children[i]);
+    prettifyHTML(node.children[i], level);
+    if (node.lastElementChild === node.children[i]) {
+      textNode = document.createTextNode('\n' + indentAfter);
+      node.appendChild(textNode);
+    }
+  }
+
+  return node;
+}
+
 function $getSelectionStartEnd(
   node: LexicalNode,
-  selection: RangeSelection | GridSelection,
+  selection: BaseSelection,
 ): [number, number] {
-  const anchor = selection.anchor;
-  const focus = selection.focus;
+  const anchorAndFocus = selection.getStartEndPoints();
+  if ($isNodeSelection(selection) || anchorAndFocus === null) {
+    return [-1, -1];
+  }
+  const [anchor, focus] = anchorAndFocus;
   const textContent = node.getTextContent();
   const textLength = textContent.length;
 

@@ -20,18 +20,11 @@ import {
   $createTextNode,
   $isDecoratorNode,
   $isElementNode,
-  $isLeafNode,
   $isLineBreakNode,
   $isRootNode,
   $isTextNode,
   $setSelection,
-  DecoratorNode,
-  DEPRECATED_$isGridCellNode,
-  DEPRECATED_$isGridNode,
-  DEPRECATED_$isGridRowNode,
-  DEPRECATED_GridCellNode,
-  DEPRECATED_GridNode,
-  DEPRECATED_GridRowNode,
+  SELECTION_CHANGE_COMMAND,
   TextNode,
 } from '.';
 import {DOM_ELEMENT_TYPE, TEXT_TYPE_TO_FORMAT} from './LexicalConstants';
@@ -39,42 +32,40 @@ import {
   markCollapsedSelectionFormat,
   markSelectionChangeFromDOMUpdate,
 } from './LexicalEvents';
-import {getIsProcesssingMutations} from './LexicalMutations';
-import {LexicalNode} from './LexicalNode';
-import {$normalizeSelection} from './LexicalNormalization';
+import {getIsProcessingMutations} from './LexicalMutations';
+import {insertRangeAfter, LexicalNode} from './LexicalNode';
 import {
   getActiveEditor,
   getActiveEditorState,
   isCurrentlyReadOnlyMode,
 } from './LexicalUpdates';
 import {
-  $findMatchingParent,
   $getAdjacentNode,
-  $getChildrenRecursively,
+  $getAncestor,
   $getCompositionKey,
   $getNearestRootOrShadowRoot,
   $getNodeByKey,
   $getRoot,
   $hasAncestor,
-  $isRootOrShadowRoot,
   $isTokenOrSegmented,
   $setCompositionKey,
-  $splitNode,
   doesContainGrapheme,
   getDOMSelection,
   getDOMTextNode,
   getElementByKeyOrThrow,
   getNodeFromDOM,
   getTextNodeOffset,
+  INTERNAL_$isBlock,
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
   removeDOMBlockCursorElement,
   scrollIntoViewIfNeeded,
   toggleTextFormatType,
 } from './LexicalUtils';
+import {$createTabNode, $isTabNode} from './nodes/LexicalTabNode';
 
 export type TextPointType = {
-  _selection: RangeSelection | GridSelection;
+  _selection: BaseSelection;
   getNode: () => TextNode;
   is: (point: PointType) => boolean;
   isBefore: (point: PointType) => boolean;
@@ -85,7 +76,7 @@ export type TextPointType = {
 };
 
 export type ElementPointType = {
-  _selection: RangeSelection | GridSelection;
+  _selection: BaseSelection;
   getNode: () => ElementNode;
   is: (point: PointType) => boolean;
   isBefore: (point: PointType) => boolean;
@@ -97,18 +88,11 @@ export type ElementPointType = {
 
 export type PointType = TextPointType | ElementPointType;
 
-export type GridMapValueType = {
-  cell: DEPRECATED_GridCellNode;
-  startRow: number;
-  startColumn: number;
-};
-export type GridMapType = Array<Array<GridMapValueType>>;
-
 export class Point {
   key: NodeKey;
   offset: number;
   type: 'text' | 'element';
-  _selection: RangeSelection | GridSelection | null;
+  _selection: BaseSelection | null;
 
   constructor(key: NodeKey, offset: number, type: 'text' | 'element') {
     this._selection = null;
@@ -165,14 +149,14 @@ export class Point {
         $setCompositionKey(key);
       }
       if (selection !== null) {
-        selection._cachedNodes = null;
+        selection.setCachedNodes(null);
         selection.dirty = true;
       }
     }
   }
 }
 
-function $createPoint(
+export function $createPoint(
   key: NodeKey,
   offset: number,
   type: 'text' | 'element',
@@ -262,35 +246,62 @@ function $setPointValues(
 }
 
 export interface BaseSelection {
-  clone(): BaseSelection;
+  _cachedNodes: Array<LexicalNode> | null;
   dirty: boolean;
+
+  clone(): BaseSelection;
   extract(): Array<LexicalNode>;
   getNodes(): Array<LexicalNode>;
   getTextContent(): string;
+  insertText(text: string): void;
   insertRawText(text: string): void;
-  is(selection: null | RangeSelection | NodeSelection | GridSelection): boolean;
+  is(selection: null | BaseSelection): boolean;
+  insertNodes(nodes: Array<LexicalNode>): void;
+  getStartEndPoints(): null | [PointType, PointType];
+  isCollapsed(): boolean;
+  isBackward(): boolean;
+  getCachedNodes(): LexicalNode[] | null;
+  setCachedNodes(nodes: LexicalNode[] | null): void;
 }
 
 export class NodeSelection implements BaseSelection {
   _nodes: Set<NodeKey>;
+  _cachedNodes: Array<LexicalNode> | null;
   dirty: boolean;
-  _cachedNodes: null | Array<LexicalNode>;
 
   constructor(objects: Set<NodeKey>) {
-    this.dirty = false;
-    this._nodes = objects;
     this._cachedNodes = null;
+    this._nodes = objects;
+    this.dirty = false;
   }
 
-  is(
-    selection: null | RangeSelection | NodeSelection | GridSelection,
-  ): boolean {
+  getCachedNodes(): LexicalNode[] | null {
+    return this._cachedNodes;
+  }
+
+  setCachedNodes(nodes: LexicalNode[] | null): void {
+    this._cachedNodes = nodes;
+  }
+
+  is(selection: null | BaseSelection): boolean {
     if (!$isNodeSelection(selection)) {
       return false;
     }
     const a: Set<NodeKey> = this._nodes;
     const b: Set<NodeKey> = selection._nodes;
     return a.size === b.size && Array.from(a).every((key) => b.has(key));
+  }
+
+  isCollapsed(): boolean {
+    return false;
+  }
+
+  isBackward(): boolean {
+    return false;
+  }
+
+  getStartEndPoints(): null {
+    return null;
   }
 
   add(key: NodeKey): void {
@@ -331,7 +342,7 @@ export class NodeSelection implements BaseSelection {
     // Do nothing?
   }
 
-  insertNodes(nodes: Array<LexicalNode>, selectStart?: boolean): boolean {
+  insertNodes(nodes: Array<LexicalNode>) {
     const selectedNodes = this.getNodes();
     const selectedNodesLength = selectedNodes.length;
     const lastSelectedNode = selectedNodes[selectedNodesLength - 1];
@@ -343,13 +354,11 @@ export class NodeSelection implements BaseSelection {
       const index = lastSelectedNode.getIndexWithinParent() + 1;
       selectionAtEnd = lastSelectedNode.getParentOrThrow().select(index, index);
     }
-    selectionAtEnd.insertNodes(nodes, selectStart);
+    selectionAtEnd.insertNodes(nodes);
     // Remove selected nodes
     for (let i = 0; i < selectedNodesLength; i++) {
       selectedNodes[i].remove();
     }
-
-    return true;
   }
 
   getNodes(): Array<LexicalNode> {
@@ -385,276 +394,13 @@ export function $isRangeSelection(x: unknown): x is RangeSelection {
   return x instanceof RangeSelection;
 }
 
-export type GridSelectionShape = {
-  fromX: number;
-  fromY: number;
-  toX: number;
-  toY: number;
-};
-
-export class GridSelection implements BaseSelection {
-  gridKey: NodeKey;
-  anchor: PointType;
-  focus: PointType;
-  dirty: boolean;
-  _cachedNodes: Array<LexicalNode> | null;
-
-  constructor(gridKey: NodeKey, anchor: PointType, focus: PointType) {
-    this.gridKey = gridKey;
-    this.anchor = anchor;
-    this.focus = focus;
-    this.dirty = false;
-    this._cachedNodes = null;
-    anchor._selection = this;
-    focus._selection = this;
-  }
-
-  is(
-    selection: null | RangeSelection | NodeSelection | GridSelection,
-  ): boolean {
-    if (!DEPRECATED_$isGridSelection(selection)) {
-      return false;
-    }
-    return (
-      this.gridKey === selection.gridKey &&
-      this.anchor.is(selection.anchor) &&
-      this.focus.is(selection.focus)
-    );
-  }
-
-  set(gridKey: NodeKey, anchorCellKey: NodeKey, focusCellKey: NodeKey): void {
-    this.dirty = true;
-    this.gridKey = gridKey;
-    this.anchor.key = anchorCellKey;
-    this.focus.key = focusCellKey;
-    this._cachedNodes = null;
-  }
-
-  clone(): GridSelection {
-    return new GridSelection(this.gridKey, this.anchor, this.focus);
-  }
-
-  isCollapsed(): boolean {
-    return false;
-  }
-
-  isBackward(): boolean {
-    return this.focus.isBefore(this.anchor);
-  }
-
-  getCharacterOffsets(): [number, number] {
-    return getCharacterOffsets(this);
-  }
-
-  extract(): Array<LexicalNode> {
-    return this.getNodes();
-  }
-
-  insertRawText(text: string): void {
-    // Do nothing?
-  }
-
-  insertText(): void {
-    // Do nothing?
-  }
-
-  insertNodes(nodes: Array<LexicalNode>, selectStart?: boolean): boolean {
-    const focusNode = this.focus.getNode();
-    const selection = $normalizeSelection(
-      focusNode.select(0, focusNode.getChildrenSize()),
-    );
-    return selection.insertNodes(nodes, selectStart);
-  }
-
-  // TODO Deprecate this method. It's confusing when used with colspan|rowspan
-  getShape(): GridSelectionShape {
-    const anchorCellNode = $getNodeByKey(this.anchor.key);
-    invariant(anchorCellNode !== null, 'getNodes: expected to find AnchorNode');
-    const anchorCellNodeIndex = anchorCellNode.getIndexWithinParent();
-    const anchorCelRoweIndex = anchorCellNode
-      .getParentOrThrow()
-      .getIndexWithinParent();
-
-    const focusCellNode = $getNodeByKey(this.focus.key);
-    invariant(focusCellNode !== null, 'getNodes: expected to find FocusNode');
-    const focusCellNodeIndex = focusCellNode.getIndexWithinParent();
-    const focusCellRowIndex = focusCellNode
-      .getParentOrThrow()
-      .getIndexWithinParent();
-
-    const startX = Math.min(anchorCellNodeIndex, focusCellNodeIndex);
-    const stopX = Math.max(anchorCellNodeIndex, focusCellNodeIndex);
-
-    const startY = Math.min(anchorCelRoweIndex, focusCellRowIndex);
-    const stopY = Math.max(anchorCelRoweIndex, focusCellRowIndex);
-
-    return {
-      fromX: Math.min(startX, stopX),
-      fromY: Math.min(startY, stopY),
-      toX: Math.max(startX, stopX),
-      toY: Math.max(startY, stopY),
-    };
-  }
-
-  getNodes(): Array<LexicalNode> {
-    const cachedNodes = this._cachedNodes;
-    if (cachedNodes !== null) {
-      return cachedNodes;
-    }
-
-    const anchorNode = this.anchor.getNode();
-    const focusNode = this.focus.getNode();
-    const anchorCell = $findMatchingParent(
-      anchorNode,
-      DEPRECATED_$isGridCellNode,
-    );
-    // todo replace with triplet
-    const focusCell = $findMatchingParent(
-      focusNode,
-      DEPRECATED_$isGridCellNode,
-    );
-    invariant(
-      DEPRECATED_$isGridCellNode(anchorCell),
-      'Expected GridSelection anchor to be (or a child of) GridCellNode',
-    );
-    invariant(
-      DEPRECATED_$isGridCellNode(focusCell),
-      'Expected GridSelection focus to be (or a child of) GridCellNode',
-    );
-    const anchorRow = anchorCell.getParent();
-    invariant(
-      DEPRECATED_$isGridRowNode(anchorRow),
-      'Expected anchorCell to have a parent GridRowNode',
-    );
-    const gridNode = anchorRow.getParent();
-    invariant(
-      DEPRECATED_$isGridNode(gridNode),
-      'Expected tableNode to have a parent GridNode',
-    );
-    // TODO Mapping the whole Grid every time not efficient. We need to compute the entire state only
-    // once (on load) and iterate on it as updates occur. However, to do this we need to have the
-    // ability to store a state. Killing GridSelection and moving the logic to the plugin would make
-    // this possible.
-    const [map, cellAMap, cellBMap] = DEPRECATED_$computeGridMap(
-      gridNode,
-      anchorCell,
-      focusCell,
-    );
-
-    let minColumn = Math.min(cellAMap.startColumn, cellBMap.startColumn);
-    let minRow = Math.min(cellAMap.startRow, cellBMap.startRow);
-    let maxColumn = Math.max(
-      cellAMap.startColumn + cellAMap.cell.__colSpan - 1,
-      cellBMap.startColumn + cellBMap.cell.__colSpan - 1,
-    );
-    let maxRow = Math.max(
-      cellAMap.startRow + cellAMap.cell.__rowSpan - 1,
-      cellBMap.startRow + cellBMap.cell.__rowSpan - 1,
-    );
-    let exploredMinColumn = minColumn;
-    let exploredMinRow = minRow;
-    let exploredMaxColumn = minColumn;
-    let exploredMaxRow = minRow;
-    function expandBoundary(mapValue: GridMapValueType): void {
-      const {
-        cell,
-        startColumn: cellStartColumn,
-        startRow: cellStartRow,
-      } = mapValue;
-      minColumn = Math.min(minColumn, cellStartColumn);
-      minRow = Math.min(minRow, cellStartRow);
-      maxColumn = Math.max(maxColumn, cellStartColumn + cell.__colSpan - 1);
-      maxRow = Math.max(maxRow, cellStartRow + cell.__rowSpan - 1);
-    }
-    while (
-      minColumn < exploredMinColumn ||
-      minRow < exploredMinRow ||
-      maxColumn > exploredMaxColumn ||
-      maxRow > exploredMaxRow
-    ) {
-      if (minColumn < exploredMinColumn) {
-        // Expand on the left
-        const rowDiff = exploredMaxRow - exploredMinRow;
-        const previousColumn = exploredMinColumn - 1;
-        for (let i = 0; i <= rowDiff; i++) {
-          expandBoundary(map[exploredMinRow + i][previousColumn]);
-        }
-        exploredMinColumn = previousColumn;
-      }
-      if (minRow < exploredMinRow) {
-        // Expand on top
-        const columnDiff = exploredMaxColumn - exploredMinColumn;
-        const previousRow = exploredMinRow - 1;
-        for (let i = 0; i <= columnDiff; i++) {
-          expandBoundary(map[previousRow][exploredMinColumn + i]);
-        }
-        exploredMinRow = previousRow;
-      }
-      if (maxColumn > exploredMaxColumn) {
-        // Expand on the right
-        const rowDiff = exploredMaxRow - exploredMinRow;
-        const nextColumn = exploredMaxColumn + 1;
-        for (let i = 0; i <= rowDiff; i++) {
-          expandBoundary(map[exploredMinRow + i][nextColumn]);
-        }
-        exploredMaxColumn = nextColumn;
-      }
-      if (maxRow > exploredMaxRow) {
-        // Expand on the bottom
-        const columnDiff = exploredMaxColumn - exploredMinColumn;
-        const nextRow = exploredMaxRow + 1;
-        for (let i = 0; i <= columnDiff; i++) {
-          expandBoundary(map[nextRow][exploredMinColumn + i]);
-        }
-        exploredMaxRow = nextRow;
-      }
-    }
-
-    const nodes: Array<LexicalNode> = [gridNode];
-    let lastRow = null;
-    for (let i = minRow; i <= maxRow; i++) {
-      for (let j = minColumn; j <= maxColumn; j++) {
-        const {cell} = map[i][j];
-        const currentRow = cell.getParent();
-        invariant(
-          DEPRECATED_$isGridRowNode(currentRow),
-          'Expected GridCellNode parent to be a GridRowNode',
-        );
-        if (currentRow !== lastRow) {
-          nodes.push(currentRow);
-        }
-        nodes.push(cell, ...$getChildrenRecursively(cell));
-        lastRow = currentRow;
-      }
-    }
-
-    if (!isCurrentlyReadOnlyMode()) {
-      this._cachedNodes = nodes;
-    }
-    return nodes;
-  }
-
-  getTextContent(): string {
-    const nodes = this.getNodes();
-    let textContent = '';
-    for (let i = 0; i < nodes.length; i++) {
-      textContent += nodes[i].getTextContent();
-    }
-    return textContent;
-  }
-}
-
-export function DEPRECATED_$isGridSelection(x: unknown): x is GridSelection {
-  return x instanceof GridSelection;
-}
-
 export class RangeSelection implements BaseSelection {
-  anchor: PointType;
-  focus: PointType;
-  dirty: boolean;
   format: number;
   style: string;
-  _cachedNodes: null | Array<LexicalNode>;
+  anchor: PointType;
+  focus: PointType;
+  _cachedNodes: Array<LexicalNode> | null;
+  dirty: boolean;
 
   constructor(
     anchor: PointType,
@@ -664,17 +410,29 @@ export class RangeSelection implements BaseSelection {
   ) {
     this.anchor = anchor;
     this.focus = focus;
-    this.dirty = false;
-    this.format = format;
-    this.style = style;
-    this._cachedNodes = null;
     anchor._selection = this;
     focus._selection = this;
+    this._cachedNodes = null;
+    this.format = format;
+    this.style = style;
+    this.dirty = false;
   }
 
-  is(
-    selection: null | RangeSelection | NodeSelection | GridSelection,
-  ): boolean {
+  getCachedNodes(): LexicalNode[] | null {
+    return this._cachedNodes;
+  }
+
+  setCachedNodes(nodes: LexicalNode[] | null): void {
+    this._cachedNodes = nodes;
+  }
+
+  /**
+   * Used to check if the provided selections is equal to this one by value,
+   * inluding anchor, focus, format, and style properties.
+   * @param selection - the Selection to compare this one to.
+   * @returns true if the Selections are equal, false otherwise.
+   */
+  is(selection: null | BaseSelection): boolean {
     if (!$isRangeSelection(selection)) {
       return false;
     }
@@ -686,14 +444,22 @@ export class RangeSelection implements BaseSelection {
     );
   }
 
-  isBackward(): boolean {
-    return this.focus.isBefore(this.anchor);
-  }
-
+  /**
+   * Returns whether the Selection is "collapsed", meaning the anchor and focus are
+   * the same node and have the same offset.
+   *
+   * @returns true if the Selection is collapsed, false otherwise.
+   */
   isCollapsed(): boolean {
     return this.anchor.is(this.focus);
   }
 
+  /**
+   * Gets all the nodes in the Selection. Uses caching to make it generally suitable
+   * for use in hot paths.
+   *
+   * @returns an Array containing all the nodes in the Selection
+   */
   getNodes(): Array<LexicalNode> {
     const cachedNodes = this._cachedNodes;
     if (cachedNodes !== null) {
@@ -746,6 +512,14 @@ export class RangeSelection implements BaseSelection {
     return nodes;
   }
 
+  /**
+   * Sets this Selection to be of type "text" at the provided anchor and focus values.
+   *
+   * @param anchorNode - the anchor node to set on the Selection
+   * @param anchorOffset - the offset to set on the Selection
+   * @param focusNode - the focus node to set on the Selection
+   * @param focusOffset - the focus offset to set on the Selection
+   */
   setTextNodeRange(
     anchorNode: TextNode,
     anchorOffset: number,
@@ -758,6 +532,11 @@ export class RangeSelection implements BaseSelection {
     this.dirty = true;
   }
 
+  /**
+   * Gets the (plain) text content of all the nodes in the selection.
+   *
+   * @returns a string representing the text content of all the nodes in the Selection
+   */
   getTextContent(): string {
     const nodes = this.getNodes();
     if (nodes.length === 0) {
@@ -768,7 +547,7 @@ export class RangeSelection implements BaseSelection {
     const anchor = this.anchor;
     const focus = this.focus;
     const isBefore = anchor.isBefore(focus);
-    const [anchorOffset, focusOffset] = getCharacterOffsets(this);
+    const [anchorOffset, focusOffset] = $getCharacterOffsets(this);
     let textContent = '';
     let prevWasElement = true;
     for (let i = 0; i < nodes.length; i++) {
@@ -820,6 +599,12 @@ export class RangeSelection implements BaseSelection {
     return textContent;
   }
 
+  /**
+   * Attempts to map a DOM selection range onto this Lexical Selection,
+   * setting the anchor, focus, and type accordingly
+   *
+   * @param range a DOM Selection range conforming to the StaticRange interface.
+   */
   applyDOMRange(range: StaticRange): void {
     const editor = getActiveEditor();
     const currentEditorState = editor.getEditorState();
@@ -851,6 +636,11 @@ export class RangeSelection implements BaseSelection {
     this._cachedNodes = null;
   }
 
+  /**
+   * Creates a new RangeSelection, copying over all the property values from this one.
+   *
+   * @returns a new RangeSelection with the same property values as this one.
+   */
   clone(): RangeSelection {
     const anchor = this.anchor;
     const focus = this.focus;
@@ -863,48 +653,73 @@ export class RangeSelection implements BaseSelection {
     return selection;
   }
 
+  /**
+   * Toggles the provided format on all the TextNodes in the Selection.
+   *
+   * @param format a string TextFormatType to toggle on the TextNodes in the selection
+   */
   toggleFormat(format: TextFormatType): void {
     this.format = toggleTextFormatType(this.format, format, null);
     this.dirty = true;
   }
 
+  /**
+   * Sets the value of the style property on the Selection
+   *
+   * @param style - the style to set at the value of the style property.
+   */
   setStyle(style: string): void {
     this.style = style;
     this.dirty = true;
   }
 
+  /**
+   * Returns whether the provided TextFormatType is present on the Selection. This will be true if any node in the Selection
+   * has the specified format.
+   *
+   * @param type the TextFormatType to check for.
+   * @returns true if the provided format is currently toggled on on the Selection, false otherwise.
+   */
   hasFormat(type: TextFormatType): boolean {
     const formatFlag = TEXT_TYPE_TO_FORMAT[type];
     return (this.format & formatFlag) !== 0;
   }
 
+  /**
+   * Attempts to insert the provided text into the EditorState at the current Selection.
+   * converts tabs, newlines, and carriage returns into LexicalNodes.
+   *
+   * @param text the text to insert into the Selection
+   */
   insertRawText(text: string): void {
-    const parts = text.split(/\r?\n/);
-    if (parts.length === 1) {
-      this.insertText(text);
-    } else {
-      const nodes = [];
-      const length = parts.length;
-      for (let i = 0; i < length; i++) {
-        const part = parts[i];
-        if (part !== '') {
-          nodes.push($createTextNode(part));
-        }
-        if (i !== length - 1) {
-          nodes.push($createLineBreakNode());
-        }
+    const parts = text.split(/(\r?\n|\t)/);
+    const nodes = [];
+    const length = parts.length;
+    for (let i = 0; i < length; i++) {
+      const part = parts[i];
+      if (part === '\n' || part === '\r\n') {
+        nodes.push($createLineBreakNode());
+      } else if (part === '\t') {
+        nodes.push($createTabNode());
+      } else {
+        nodes.push($createTextNode(part));
       }
-      this.insertNodes(nodes);
     }
+    this.insertNodes(nodes);
   }
 
+  /**
+   * Attempts to insert the provided text into the EditorState at the current Selection as a new
+   * Lexical TextNode, according to a series of insertion heuristics based on the selection type and position.
+   *
+   * @param text the text to insert into the Selection
+   */
   insertText(text: string): void {
     const anchor = this.anchor;
     const focus = this.focus;
     const isBefore = this.isCollapsed() || anchor.isBefore(focus);
     const format = this.format;
     const style = this.style;
-
     if (isBefore && anchor.type === 'element') {
       $transferStartingElementPointToTextPoint(anchor, focus, format, style);
     } else if (!isBefore && focus.type === 'element') {
@@ -937,7 +752,11 @@ export class RangeSelection implements BaseSelection {
           firstNode.getNextSibling() === null))
     ) {
       let nextSibling = firstNode.getNextSibling<TextNode>();
-      if (!$isTextNode(nextSibling) || $isTokenOrSegmented(nextSibling)) {
+      if (
+        !$isTextNode(nextSibling) ||
+        !nextSibling.canInsertTextBefore() ||
+        $isTokenOrSegmented(nextSibling)
+      ) {
         nextSibling = $createTextNode();
         nextSibling.setFormat(format);
         if (!firstNodeParent.canInsertTextAfter()) {
@@ -1038,6 +857,15 @@ export class RangeSelection implements BaseSelection {
           }
           return;
         }
+      } else if ($isTabNode(firstNode)) {
+        // We don't need to check for delCount because there is only the entire selected node case
+        // that can hit here for content size 1 and with canInsertTextBeforeAfter false
+        const textNode = $createTextNode(text);
+        textNode.setFormat(format);
+        textNode.setStyle(style);
+        textNode.select();
+        firstNode.replace(textNode);
+        return;
       }
       const delCount = endOffset - startOffset;
 
@@ -1099,7 +927,10 @@ export class RangeSelection implements BaseSelection {
             lastNode.replace(textNode);
             lastNode = textNode;
           }
-          lastNode = (lastNode as TextNode).spliceText(0, endOffset, '');
+          // root node selections only select whole nodes, so no text splice is necessary
+          if (!$isRootNode(endPoint.getNode()) && endPoint.type === 'text') {
+            lastNode = (lastNode as TextNode).spliceText(0, endOffset, '');
+          }
           markedNodeKeysForKeep.add(lastNode.__key);
         } else {
           const lastNodeParent = lastNode.getParentOrThrow();
@@ -1214,10 +1045,19 @@ export class RangeSelection implements BaseSelection {
     }
   }
 
+  /**
+   * Removes the text in the Selection, adjusting the EditorState accordingly.
+   */
   removeText(): void {
     this.insertText('');
   }
 
+  /**
+   * Applies the provided format to the TextNodes in the Selection, splitting or
+   * merging nodes as necessary.
+   *
+   * @param formatType the format type to apply to the nodes in the Selection.
+   */
   formatText(formatType: TextFormatType): void {
     if (this.isCollapsed()) {
       this.toggleFormat(formatType);
@@ -1342,512 +1182,162 @@ export class RangeSelection implements BaseSelection {
     this.format = firstNextFormat | lastNextFormat;
   }
 
-  insertNodes(nodes: Array<LexicalNode>, selectStart?: boolean): boolean {
-    // If there is a range selected remove the text in it
-    if (!this.isCollapsed()) {
-      const selectionEnd = this.isBackward() ? this.anchor : this.focus;
-
-      const nextSibling = selectionEnd.getNode().getNextSibling();
-      const nextSiblingKey = nextSibling ? nextSibling.getKey() : null;
-
-      const prevSibling = selectionEnd.getNode().getPreviousSibling();
-      const prevSiblingKey = prevSibling ? prevSibling.getKey() : null;
-
-      this.removeText();
-
-      // If the selection has been moved to an adjacent inline element, create
-      // a temporary text node that we can insert the nodes after.
-      if (this.isCollapsed() && this.focus.type === 'element') {
-        let textNode;
-
-        if (this.focus.key === nextSiblingKey && this.focus.offset === 0) {
-          textNode = $createTextNode();
-          this.focus.getNode().insertBefore(textNode);
-        } else if (
-          this.focus.key === prevSiblingKey &&
-          this.focus.offset === this.focus.getNode().getChildrenSize()
-        ) {
-          textNode = $createTextNode();
-          this.focus.getNode().insertAfter(textNode);
-        }
-
-        if (textNode) {
-          this.focus.set(textNode.__key, 0, 'text');
-          this.anchor.set(textNode.__key, 0, 'text');
-        }
-      }
+  /**
+   * Attempts to "intelligently" insert an arbitrary list of Lexical nodes into the EditorState at the
+   * current Selection according to a set of heuristics that determine how surrounding nodes
+   * should be changed, replaced, or moved to accomodate the incoming ones.
+   *
+   * @param nodes - the nodes to insert
+   */
+  insertNodes(nodes: Array<LexicalNode>): void {
+    if (nodes.length === 0) {
+      return;
     }
-    const anchor = this.anchor;
-    const anchorOffset = anchor.offset;
-    const anchorNode = anchor.getNode();
-    let target: ElementNode | TextNode | DecoratorNode<unknown> | LexicalNode =
-      anchorNode;
-
-    if (anchor.type === 'element') {
-      const element = anchor.getNode();
-      const placementNode = element.getChildAtIndex<ElementNode>(
-        anchorOffset - 1,
+    if (this.anchor.key === 'root') {
+      this.insertParagraph();
+      const selection = $getSelection();
+      invariant(
+        $isRangeSelection(selection),
+        'Expected RangeSelection after insertParagraph',
       );
-      if (placementNode === null) {
-        target = element;
+      return selection.insertNodes(nodes);
+    }
+
+    const firstPoint = this.isBackward() ? this.focus : this.anchor;
+    const firstBlock = $getAncestor(firstPoint.getNode(), INTERNAL_$isBlock)!;
+
+    const last = nodes[nodes.length - 1]!;
+
+    // CASE 1: insert inside a code block
+    if ('__language' in firstBlock && $isElementNode(firstBlock)) {
+      if ('__language' in nodes[0]) {
+        this.insertText(nodes[0].getTextContent());
       } else {
-        target = placementNode;
-      }
-    }
-    const siblings = [];
-
-    // Get all remaining text node siblings in this element so we can
-    // append them after the last node we're inserting.
-    const nextSiblings = anchorNode.getNextSiblings();
-    const topLevelElement = $isRootOrShadowRoot(anchorNode)
-      ? null
-      : anchorNode.getTopLevelElementOrThrow();
-
-    if ($isTextNode(anchorNode)) {
-      const textContent = anchorNode.getTextContent();
-      const textContentLength = textContent.length;
-      if (anchorOffset === 0 && textContentLength !== 0) {
-        const prevSibling = anchorNode.getPreviousSibling();
-        if (prevSibling !== null) {
-          target = prevSibling;
-        } else {
-          target = anchorNode.getParentOrThrow();
-        }
-        siblings.push(anchorNode);
-      } else if (anchorOffset === textContentLength) {
-        target = anchorNode;
-      } else if (anchorNode.isToken()) {
-        // Do nothing if we're inside a token node
-        return false;
-      } else {
-        // If we started with a range selected grab the danglingText after the
-        // end of the selection and put it on our siblings array so we can
-        // append it after the last node we're inserting
-        let danglingText;
-        [target, danglingText] = anchorNode.splitText(anchorOffset);
-        siblings.push(danglingText);
-      }
-    }
-    const startingNode = target;
-
-    siblings.push(...nextSiblings);
-
-    const firstNode = nodes[0];
-    let didReplaceOrMerge = false;
-    let lastNode = null;
-
-    // Time to insert the nodes!
-    for (let i = 0; i < nodes.length; i++) {
-      const node = nodes[i];
-      if (
-        !$isRootOrShadowRoot(target) &&
-        !$isDecoratorNode(target) &&
-        $isElementNode(node) &&
-        !node.isInline()
-      ) {
-        // -----
-        // Heuristics for the replacement or merging of elements
-        // -----
-
-        // If we have an incoming element node as the first node, then we'll need
-        // see if we can merge any descendant leaf nodes into our existing target.
-        // We can do this by finding the first descendant in our node and then we can
-        // pluck it and its parent (siblings included) out and insert them directly
-        // into our target. We only do this for the first node, as we are only
-        // interested in merging with the anchor, which is our target.
-        //
-        // If we apply either the replacement or merging heuristics, we need to be
-        // careful that we're not trying to insert a non-element node into a root node,
-        // so we check if the target's parent after this logic is the root node and if
-        // so we trigger an invariant to ensure this problem is caught in development
-        // and fixed accordingly.
-
-        if (node.is(firstNode)) {
-          if (
-            $isElementNode(target) &&
-            target.isEmpty() &&
-            target.canReplaceWith(node)
-          ) {
-            target.replace(node);
-            target = node;
-            didReplaceOrMerge = true;
-            continue;
-          }
-          // We may have a node tree where there are many levels, for example with
-          // lists and tables. So let's find the first descendant to try and merge
-          // with. So if we have the target:
-          //
-          // Paragraph (1)
-          //   Text (2)
-          //
-          // and we are trying to insert:
-          //
-          // ListNode (3)
-          //   ListItemNode (4)
-          //     Text (5)
-          //   ListItemNode (6)
-          //
-          // The result would be:
-          //
-          // Paragraph (1)
-          //   Text (2)
-          //   Text (5)
-          //
-
-          const firstDescendant = node.getFirstDescendant();
-          if ($isLeafNode(firstDescendant)) {
-            let element = firstDescendant.getParentOrThrow();
-            while (element.isInline()) {
-              element = element.getParentOrThrow();
-            }
-            const children = element.getChildren();
-            const childrenLength = children.length;
-            if ($isElementNode(target)) {
-              let firstChild = target.getFirstChild();
-              for (let s = 0; s < childrenLength; s++) {
-                const child = children[s];
-                if (firstChild === null) {
-                  target.append(child);
-                } else {
-                  firstChild.insertAfter(child);
-                }
-                firstChild = child;
-              }
-            } else {
-              for (let s = childrenLength - 1; s >= 0; s--) {
-                target.insertAfter(children[s]);
-              }
-              target = target.getParentOrThrow();
-            }
-            lastNode = children[childrenLength - 1];
-            element.remove();
-            didReplaceOrMerge = true;
-            if (element.is(node)) {
-              continue;
-            }
-          }
-        }
-        if ($isTextNode(target)) {
-          if (topLevelElement === null) {
-            invariant(false, 'insertNode: topLevelElement is root node');
-          }
-          target = topLevelElement;
-        }
-      } else if (
-        didReplaceOrMerge &&
-        !$isElementNode(node) &&
-        !$isDecoratorNode(node) &&
-        $isRootOrShadowRoot(target.getParent<ElementNode>())
-      ) {
-        invariant(
-          false,
-          'insertNodes: cannot insert a non-element into a root node',
-        );
-      }
-      didReplaceOrMerge = false;
-      if ($isElementNode(target) && !target.isInline()) {
-        lastNode = node;
-        if ($isDecoratorNode(node) && !node.isInline()) {
-          target = target.insertAfter(node, false);
-        } else if (!$isElementNode(node)) {
-          const firstChild = target.getFirstChild();
-          if (firstChild !== null) {
-            firstChild.insertBefore(node);
-          } else {
-            target.append(node);
-          }
-          target = node;
-        } else {
-          if (!node.canBeEmpty() && node.isEmpty()) {
-            continue;
-          }
-          if ($isRootNode(target)) {
-            const placementNode = target.getChildAtIndex(anchorOffset);
-            if (placementNode !== null) {
-              placementNode.insertBefore(node);
-            } else {
-              target.append(node);
-            }
-            target = node;
-          } else if (node.isInline()) {
-            target.append(node);
-            target = node;
-          } else {
-            target = target.insertAfter(node, false);
-          }
-        }
-      } else if (
-        !$isElementNode(node) ||
-        ($isElementNode(node) && node.isInline()) ||
-        ($isDecoratorNode(target) && !target.isInline())
-      ) {
-        lastNode = node;
-        // when pasting top level node in the middle of paragraph
-        // we need to split paragraph instead of placing it inline
-        if (
-          $isRangeSelection(this) &&
-          $isDecoratorNode(node) &&
-          ($isElementNode(target) || $isTextNode(target)) &&
-          !node.isInline()
-        ) {
-          let splitNode: ElementNode;
-          let splitOffset: number;
-
-          if ($isTextNode(target)) {
-            splitNode = target.getParentOrThrow();
-            const [textNode] = target.splitText(anchorOffset);
-            splitOffset = textNode.getIndexWithinParent() + 1;
-          } else {
-            splitNode = target;
-            splitOffset = anchorOffset;
-          }
-          const [, rightTree] = $splitNode(splitNode, splitOffset);
-          target = rightTree.insertBefore(node);
-        } else {
-          target = target.insertAfter(node, false);
-        }
-      } else {
-        const nextTarget: ElementNode = target.getParentOrThrow();
-        // if we're inserting an Element after a LineBreak, we want to move the target to the parent
-        // and remove the LineBreak so we don't have empty space.
-        if ($isLineBreakNode(target)) {
-          target.remove();
-        }
-        target = nextTarget;
-        // Re-try again with the target being the parent
-        i--;
-        continue;
-      }
-    }
-
-    if (selectStart) {
-      // Handle moving selection to start for all nodes
-      if ($isTextNode(startingNode)) {
-        startingNode.select();
-      } else {
-        const prevSibling = target.getPreviousSibling();
-        if ($isTextNode(prevSibling)) {
-          prevSibling.select();
-        } else {
-          const index = target.getIndexWithinParent();
-          target.getParentOrThrow().select(index, index);
-        }
-      }
-    }
-
-    if ($isElementNode(target)) {
-      // If the last node to be inserted was a text node,
-      // then we should attempt to move selection to that.
-      const lastChild = $isTextNode(lastNode)
-        ? lastNode
-        : $isElementNode(lastNode) && lastNode.isInline()
-        ? lastNode.getLastDescendant()
-        : target.getLastDescendant();
-      if (!selectStart) {
-        // Handle moving selection to end for elements
-        if (lastChild === null) {
-          target.select();
-        } else if ($isTextNode(lastChild)) {
-          if (lastChild.getTextContent() === '') {
-            lastChild.selectPrevious();
-          } else {
-            lastChild.select();
-          }
-        } else {
-          lastChild.selectNext();
-        }
-      }
-      if (siblings.length !== 0) {
-        const originalTarget = target;
-        for (let i = siblings.length - 1; i >= 0; i--) {
-          const sibling = siblings[i];
-          const prevParent = sibling.getParentOrThrow();
-          if (
-            $isElementNode(target) &&
-            !$isBlockElementNode(sibling) &&
-            !(
-              $isDecoratorNode(sibling) &&
-              // Note: We are only looking for decorators that are inline and not isolated.
-              (!sibling.isInline() || sibling.isIsolated())
-            )
-          ) {
-            if (originalTarget === target) {
-              target.append(sibling);
-            } else {
-              target.insertBefore(sibling);
-            }
-            target = sibling;
-          } else if (!$isElementNode(target) && !$isBlockElementNode(sibling)) {
-            target.insertBefore(sibling);
-            target = sibling;
-          } else {
-            if ($isElementNode(sibling) && !sibling.canInsertAfter(target)) {
-              // @ts-ignore The clone method does exist on the constructor.
-              const prevParentClone = prevParent.constructor.clone(prevParent);
-              if (!$isElementNode(prevParentClone)) {
-                invariant(
-                  false,
-                  'insertNodes: cloned parent clone is not an element',
-                );
-              }
-              prevParentClone.append(sibling);
-              target.insertAfter(prevParentClone);
-            } else {
-              target.insertAfter(sibling);
-            }
-          }
-          // Check if the prev parent is empty, as it might need
-          // removing.
-          if (prevParent.isEmpty() && !prevParent.canBeEmpty()) {
-            prevParent.remove();
-          }
-        }
-      }
-    } else if (!selectStart) {
-      // Handle moving selection to end for other nodes
-      if ($isTextNode(target)) {
-        target.select();
-      } else {
-        const element = target.getParentOrThrow();
-        const index = target.getIndexWithinParent() + 1;
-        element.select(index, index);
-      }
-    }
-    return true;
-  }
-
-  insertParagraph(): void {
-    if (!this.isCollapsed()) {
-      this.removeText();
-    }
-    const anchor = this.anchor;
-    const anchorOffset = anchor.offset;
-    let currentElement;
-    let nodesToMove = [];
-    let siblingsToMove: Array<LexicalNode> = [];
-    if (anchor.type === 'text') {
-      const anchorNode = anchor.getNode();
-      nodesToMove = anchorNode.getNextSiblings().reverse();
-      currentElement = anchorNode.getParentOrThrow();
-      const isInline = currentElement.isInline();
-      const textContentLength = isInline
-        ? currentElement.getTextContentSize()
-        : anchorNode.getTextContentSize();
-      if (anchorOffset === 0) {
-        nodesToMove.push(anchorNode);
-      } else {
-        if (isInline) {
-          // For inline nodes, we want to move all the siblings to the new paragraph
-          // if selection is at the end, we just move the siblings. Otherwise, we also
-          // split the text node and add that and it's siblings below.
-          siblingsToMove = currentElement.getNextSiblings();
-        }
-        if (anchorOffset !== textContentLength) {
-          if (!isInline || anchorOffset !== anchorNode.getTextContentSize()) {
-            const [, splitNode] = anchorNode.splitText(anchorOffset);
-            nodesToMove.push(splitNode);
-          }
-        }
-      }
-    } else {
-      currentElement = anchor.getNode();
-      if ($isRootOrShadowRoot(currentElement)) {
-        const paragraph = $createParagraphNode();
-        const child = currentElement.getChildAtIndex(anchorOffset);
-        paragraph.select();
-        if (child !== null) {
-          child.insertBefore(paragraph, false);
-        } else {
-          currentElement.append(paragraph);
-        }
-        return;
-      }
-      nodesToMove = currentElement.getChildren().slice(anchorOffset).reverse();
-    }
-    const nodesToMoveLength = nodesToMove.length;
-    if (
-      anchorOffset === 0 &&
-      nodesToMoveLength > 0 &&
-      currentElement.isInline()
-    ) {
-      const parent = currentElement.getParentOrThrow();
-      const newElement = parent.insertNewAfter(this, false);
-      if ($isElementNode(newElement)) {
-        const children = parent.getChildren();
-        for (let i = 0; i < children.length; i++) {
-          newElement.append(children[i]);
-        }
+        const index = removeTextAndSplitBlock(this);
+        firstBlock.splice(index, 0, nodes);
+        last.selectEnd();
       }
       return;
     }
-    const newElement = currentElement.insertNewAfter(this, false);
-    if (newElement === null) {
-      // Handle as a line break insertion
-      this.insertLineBreak();
-    } else if ($isElementNode(newElement)) {
-      // If we're at the beginning of the current element, move the new element to be before the current element
-      const currentElementFirstChild = currentElement.getFirstChild();
-      const isBeginning =
-        anchorOffset === 0 &&
-        (currentElement.is(anchor.getNode()) ||
-          (currentElementFirstChild &&
-            currentElementFirstChild.is(anchor.getNode())));
-      if (isBeginning && nodesToMoveLength > 0) {
-        currentElement.insertBefore(newElement);
-        return;
-      }
-      let firstChild = null;
-      const siblingsToMoveLength = siblingsToMove.length;
-      const parent = newElement.getParentOrThrow();
-      // For inline elements, we append the siblings to the parent.
-      if (siblingsToMoveLength > 0) {
-        for (let i = 0; i < siblingsToMoveLength; i++) {
-          const siblingToMove = siblingsToMove[i];
-          parent.append(siblingToMove);
-        }
-      }
-      if (nodesToMoveLength !== 0) {
-        for (let i = 0; i < nodesToMoveLength; i++) {
-          const nodeToMove = nodesToMove[i];
-          if (firstChild === null) {
-            newElement.append(nodeToMove);
-          } else {
-            firstChild.insertBefore(nodeToMove);
-          }
-          firstChild = nodeToMove;
-        }
-      }
-      if (!newElement.canBeEmpty() && newElement.getChildrenSize() === 0) {
-        newElement.selectPrevious();
-        newElement.remove();
-      } else {
-        newElement.selectStart();
-      }
+
+    // CASE 2: All elements of the array are inline
+    const notInline = (node: LexicalNode) =>
+      ($isElementNode(node) || $isDecoratorNode(node)) && !node.isInline();
+
+    if (!nodes.some(notInline)) {
+      invariant(
+        $isElementNode(firstBlock),
+        "Expected 'firstBlock' to be an ElementNode",
+      );
+      const index = removeTextAndSplitBlock(this);
+      firstBlock.splice(index, 0, nodes);
+      last.selectEnd();
+      return;
+    }
+
+    // CASE 3: At least 1 element of the array is not inline
+    const blocksParent = $wrapInlineNodes(nodes);
+    const nodeToSelect = blocksParent.getLastDescendant()!;
+    const blocks = blocksParent.getChildren();
+    const isLI = (node: LexicalNode) =>
+      '__value' in node && '__checked' in node;
+    const isMergeable = (node: LexicalNode): node is ElementNode =>
+      $isElementNode(node) &&
+      INTERNAL_$isBlock(node) &&
+      !node.isEmpty() &&
+      $isElementNode(firstBlock) &&
+      (!firstBlock.isEmpty() || isLI(firstBlock));
+
+    const shouldInsert = !$isElementNode(firstBlock) || !firstBlock.isEmpty();
+    const insertedParagraph = shouldInsert ? this.insertParagraph() : null;
+    const lastToInsert = blocks[blocks.length - 1];
+    let firstToInsert = blocks[0];
+    if (isMergeable(firstToInsert)) {
+      invariant(
+        $isElementNode(firstBlock),
+        "Expected 'firstBlock' to be an ElementNode",
+      );
+      firstBlock.append(...firstToInsert.getChildren());
+      firstToInsert = blocks[1];
+    }
+    if (firstToInsert) {
+      insertRangeAfter(firstBlock, firstToInsert);
+    }
+    const lastInsertedBlock = $getAncestor(nodeToSelect, INTERNAL_$isBlock)!;
+
+    if (
+      insertedParagraph &&
+      $isElementNode(lastInsertedBlock) &&
+      (isLI(insertedParagraph) || INTERNAL_$isBlock(lastToInsert))
+    ) {
+      lastInsertedBlock.append(...insertedParagraph.getChildren());
+      insertedParagraph.remove();
+    }
+    if ($isElementNode(firstBlock) && firstBlock.isEmpty()) {
+      firstBlock.remove();
+    }
+
+    nodeToSelect.selectEnd();
+
+    // To understand this take a look at the test "can wrap post-linebreak nodes into new element"
+    const lastChild = $isElementNode(firstBlock)
+      ? firstBlock.getLastChild()
+      : null;
+    if ($isLineBreakNode(lastChild) && lastInsertedBlock !== firstBlock) {
+      lastChild.remove();
     }
   }
 
+  /**
+   * Inserts a new ParagraphNode into the EditorState at the current Selection
+   *
+   * @returns the newly inserted node.
+   */
+  insertParagraph(): ElementNode | null {
+    if (this.anchor.key === 'root') {
+      const paragraph = $createParagraphNode();
+      $getRoot().splice(this.anchor.offset, 0, [paragraph]);
+      paragraph.select();
+      return paragraph;
+    }
+    const index = removeTextAndSplitBlock(this);
+    const block = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
+    invariant($isElementNode(block), 'Expected ancestor to be an ElementNode');
+    const firstToAppend = block.getChildAtIndex(index);
+    const nodesToInsert = firstToAppend
+      ? [firstToAppend, ...firstToAppend.getNextSiblings()]
+      : [];
+    const newBlock = block.insertNewAfter(this, false) as ElementNode | null;
+    if (newBlock) {
+      newBlock.append(...nodesToInsert);
+      newBlock.selectStart();
+      return newBlock;
+    }
+    // if newBlock is null, it means that block is of type CodeNode.
+    return null;
+  }
+
+  /**
+   * Inserts a logical linebreak, which may be a new LineBreakNode or a new ParagraphNode, into the EditorState at the
+   * current Selection.
+   */
   insertLineBreak(selectStart?: boolean): void {
-    const lineBreakNode = $createLineBreakNode();
-    const anchor = this.anchor;
-    if (anchor.type === 'element') {
-      const element = anchor.getNode();
-      if ($isRootNode(element)) {
-        this.insertParagraph();
-      }
-    }
+    const lineBreak = $createLineBreakNode();
+    this.insertNodes([lineBreak]);
+    // this is used in MacOS with the command 'ctrl-O' (openLineBreak)
     if (selectStart) {
-      this.insertNodes([lineBreakNode], true);
-    } else {
-      if (this.insertNodes([lineBreakNode])) {
-        lineBreakNode.selectNext(0, 0);
-      }
+      const parent = lineBreak.getParentOrThrow();
+      const index = lineBreak.getIndexWithinParent();
+      parent.select(index, index);
     }
   }
 
-  getCharacterOffsets(): [number, number] {
-    return getCharacterOffsets(this);
-  }
-
+  /**
+   * Extracts the nodes in the Selection, splitting nodes where necessary
+   * to get offset-level precision.
+   *
+   * @returns The nodes in the Selection
+   */
   extract(): Array<LexicalNode> {
     const selectedNodes = this.getNodes();
     const selectedNodesLength = selectedNodes.length;
@@ -1856,7 +1346,7 @@ export class RangeSelection implements BaseSelection {
     const focus = this.focus;
     let firstNode = selectedNodes[0];
     let lastNode = selectedNodes[lastIndex];
-    const [anchorOffset, focusOffset] = getCharacterOffsets(this);
+    const [anchorOffset, focusOffset] = $getCharacterOffsets(this);
 
     if (selectedNodesLength === 0) {
       return [];
@@ -1897,6 +1387,15 @@ export class RangeSelection implements BaseSelection {
     return selectedNodes;
   }
 
+  /**
+   * Modifies the Selection according to the parameters and a set of heuristics that account for
+   * various node types. Can be used to safely move or extend selection by one logical "unit" without
+   * dealing explicitly with all the possible node types.
+   *
+   * @param alter the type of modification to perform
+   * @param isBackward whether or not selection is backwards
+   * @param granularity the granularity at which to apply the modification
+   */
   modify(
     alter: 'move' | 'extend',
     isBackward: boolean,
@@ -2039,7 +1538,14 @@ export class RangeSelection implements BaseSelection {
     }
   }
 
+  /**
+   * Performs one logical character deletion operation on the EditorState based on the current Selection.
+   * Handles different node types.
+   *
+   * @param isBackward whether or not the selection is backwards.
+   */
   deleteCharacter(isBackward: boolean): void {
+    const wasCollapsed = this.isCollapsed();
     if (this.isCollapsed()) {
       const anchor = this.anchor;
       const focus = this.focus;
@@ -2078,7 +1584,18 @@ export class RangeSelection implements BaseSelection {
           $setSelection(nodeSelection);
         } else {
           possibleNode.remove();
+          const editor = getActiveEditor();
+          editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
         }
+        return;
+      } else if (
+        !isBackward &&
+        $isElementNode(possibleNode) &&
+        $isElementNode(anchorNode) &&
+        anchorNode.isEmpty()
+      ) {
+        anchorNode.remove();
+        possibleNode.selectStart();
         return;
       }
       this.modify('extend', isBackward, 'character');
@@ -2122,7 +1639,6 @@ export class RangeSelection implements BaseSelection {
         }
       }
     }
-    const wasCollapsed = this.isCollapsed();
     this.removeText();
     if (
       isBackward &&
@@ -2142,6 +1658,12 @@ export class RangeSelection implements BaseSelection {
     }
   }
 
+  /**
+   * Performs one logical line deletion operation on the EditorState based on the current Selection.
+   * Handles different node types.
+   *
+   * @param isBackward whether or not the selection is backwards.
+   */
   deleteLine(isBackward: boolean): void {
     if (this.isCollapsed()) {
       if (this.anchor.type === 'text') {
@@ -2159,11 +1681,30 @@ export class RangeSelection implements BaseSelection {
     this.removeText();
   }
 
+  /**
+   * Performs one logical word deletion operation on the EditorState based on the current Selection.
+   * Handles different node types.
+   *
+   * @param isBackward whether or not the selection is backwards.
+   */
   deleteWord(isBackward: boolean): void {
     if (this.isCollapsed()) {
       this.modify('extend', isBackward, 'word');
     }
     this.removeText();
+  }
+
+  /**
+   * Returns whether the Selection is "backwards", meaning the focus
+   * logically precedes the anchor in the EditorState.
+   * @returns true if the Selection is backwards, false otherwise.
+   */
+  isBackward(): boolean {
+    return this.focus.isBefore(this.anchor);
+  }
+
+  getStartEndPoints(): null | [PointType, PointType] {
+    return [this.anchor, this.focus];
   }
 }
 
@@ -2183,11 +1724,14 @@ function getCharacterOffset(point: PointType): number {
     : 0;
 }
 
-function getCharacterOffsets(
-  selection: RangeSelection | GridSelection,
+export function $getCharacterOffsets(
+  selection: BaseSelection,
 ): [number, number] {
-  const anchor = selection.anchor;
-  const focus = selection.focus;
+  const anchorAndFocus = selection.getStartEndPoints();
+  if (anchorAndFocus === null) {
+    return [0, 0];
+  }
+  const [anchor, focus] = anchorAndFocus;
   if (
     anchor.type === 'element' &&
     focus.type === 'element' &&
@@ -2217,7 +1761,7 @@ function moveNativeSelection(
   direction: 'backward' | 'forward' | 'left' | 'right',
   granularity: 'character' | 'word' | 'lineboundary',
 ): void {
-  // @ts-expect-error Selection.modify() method applies a change to the current selection or cursor position,
+  // Selection.modify() method applies a change to the current selection or cursor position,
   // but is still non-standard in some browsers.
   domSelection.modify(alter, direction, granularity);
 }
@@ -2482,7 +2026,7 @@ function resolveSelectionPointOnBoundary(
 function normalizeSelectionPointsForBoundaries(
   anchor: PointType,
   focus: PointType,
-  lastSelection: null | RangeSelection | NodeSelection | GridSelection,
+  lastSelection: null | BaseSelection,
 ): void {
   if (anchor.type === 'text' && focus.type === 'text') {
     const isBackward = anchor.isBefore(focus);
@@ -2524,7 +2068,7 @@ function internalResolveSelectionPoints(
   focusDOM: null | Node,
   focusOffset: number,
   editor: LexicalEditor,
-  lastSelection: null | RangeSelection | NodeSelection | GridSelection,
+  lastSelection: null | BaseSelection,
 ): null | [PointType, PointType] {
   if (
     anchorDOM === null ||
@@ -2575,7 +2119,7 @@ function internalResolveSelectionPoints(
   return [resolvedAnchorPoint, resolvedFocusPoint];
 }
 
-function $isBlockElementNode(
+export function $isBlockElementNode(
   node: LexicalNode | null | undefined,
 ): node is ElementNode {
   return $isElementNode(node) && !node.isInline();
@@ -2615,33 +2159,29 @@ export function $createNodeSelection(): NodeSelection {
   return new NodeSelection(new Set());
 }
 
-export function DEPRECATED_$createGridSelection(): GridSelection {
-  const anchor = $createPoint('root', 0, 'element');
-  const focus = $createPoint('root', 0, 'element');
-  return new GridSelection('root', anchor, focus);
-}
-
 export function internalCreateSelection(
   editor: LexicalEditor,
-): null | RangeSelection | NodeSelection | GridSelection {
+): null | BaseSelection {
   const currentEditorState = editor.getEditorState();
   const lastSelection = currentEditorState._selection;
   const domSelection = getDOMSelection(editor._window);
 
-  if (
-    $isNodeSelection(lastSelection) ||
-    DEPRECATED_$isGridSelection(lastSelection)
-  ) {
-    return lastSelection.clone();
+  if ($isRangeSelection(lastSelection) || lastSelection == null) {
+    return internalCreateRangeSelection(
+      lastSelection,
+      domSelection,
+      editor,
+      null,
+    );
   }
-
-  return internalCreateRangeSelection(lastSelection, domSelection, editor);
+  return lastSelection.clone();
 }
 
 export function internalCreateRangeSelection(
-  lastSelection: null | RangeSelection | NodeSelection | GridSelection,
+  lastSelection: null | BaseSelection,
   domSelection: Selection | null,
   editor: LexicalEditor,
+  event: UIEvent | Event | null,
 ): null | RangeSelection {
   const windowObj = editor._window;
   if (windowObj === null) {
@@ -2661,11 +2201,11 @@ export function internalCreateRangeSelection(
   // reconciliation unless there are dirty nodes that need
   // reconciling.
 
-  const windowEvent = windowObj.event;
+  const windowEvent = event || windowObj.event;
   const eventType = windowEvent ? windowEvent.type : undefined;
   const isSelectionChange = eventType === 'selectionchange';
   const useDOMSelection =
-    !getIsProcesssingMutations() &&
+    !getIsProcessingMutations() &&
     (isSelectionChange ||
       eventType === 'beforeinput' ||
       eventType === 'compositionstart' ||
@@ -2717,20 +2257,12 @@ export function internalCreateRangeSelection(
   );
 }
 
-export function $getSelection():
-  | null
-  | RangeSelection
-  | NodeSelection
-  | GridSelection {
+export function $getSelection(): null | BaseSelection {
   const editorState = getActiveEditorState();
   return editorState._selection;
 }
 
-export function $getPreviousSelection():
-  | null
-  | RangeSelection
-  | NodeSelection
-  | GridSelection {
+export function $getPreviousSelection(): null | BaseSelection {
   const editor = getActiveEditor();
   return editor._editorState._selection;
 }
@@ -2940,8 +2472,8 @@ export function adjustPointOffsetForMergedSibling(
 }
 
 export function updateDOMSelection(
-  prevSelection: RangeSelection | NodeSelection | GridSelection | null,
-  nextSelection: RangeSelection | NodeSelection | GridSelection | null,
+  prevSelection: BaseSelection | null,
+  nextSelection: BaseSelection | null,
   editor: LexicalEditor,
   domSelection: Selection,
   tags: Set<string>,
@@ -3100,15 +2632,13 @@ export function updateDOMSelection(
   markSelectionChangeFromDOMUpdate();
 }
 
-export function $insertNodes(
-  nodes: Array<LexicalNode>,
-  selectStart?: boolean,
-): boolean {
-  let selection = $getSelection();
+export function $insertNodes(nodes: Array<LexicalNode>) {
+  let selection = $getSelection() || $getPreviousSelection();
+
   if (selection === null) {
     selection = $getRoot().selectEnd();
   }
-  return selection.insertNodes(nodes, selectStart);
+  selection.insertNodes(nodes);
 }
 
 export function $getTextContent(): string {
@@ -3119,104 +2649,101 @@ export function $getTextContent(): string {
   return selection.getTextContent();
 }
 
-export function DEPRECATED_$computeGridMap(
-  grid: DEPRECATED_GridNode,
-  cellA: DEPRECATED_GridCellNode,
-  cellB: DEPRECATED_GridCellNode,
-): [GridMapType, GridMapValueType, GridMapValueType] {
-  const tableMap: GridMapType = [];
-  let cellAValue: null | GridMapValueType = null;
-  let cellBValue: null | GridMapValueType = null;
-  function write(
-    startRow: number,
-    startColumn: number,
-    cell: DEPRECATED_GridCellNode,
-  ) {
-    const value = {
-      cell,
-      startColumn,
-      startRow,
-    };
-    const rowSpan = cell.__rowSpan;
-    const colSpan = cell.__colSpan;
-    for (let i = 0; i < rowSpan; i++) {
-      if (tableMap[startRow + i] === undefined) {
-        tableMap[startRow + i] = [];
-      }
-      for (let j = 0; j < colSpan; j++) {
-        tableMap[startRow + i][startColumn + j] = value;
-      }
-    }
-    if (cellA.is(cell)) {
-      cellAValue = value;
-    }
-    if (cellB.is(cell)) {
-      cellBValue = value;
-    }
-  }
-  function isEmpty(row: number, column: number) {
-    return tableMap[row] === undefined || tableMap[row][column] === undefined;
+function removeTextAndSplitBlock(selection: RangeSelection): number {
+  if (!selection.isCollapsed()) {
+    selection.removeText();
   }
 
-  const gridChildren = grid.getChildren();
-  for (let i = 0; i < gridChildren.length; i++) {
-    const row = gridChildren[i];
-    invariant(
-      DEPRECATED_$isGridRowNode(row),
-      'Expected GridNode children to be GridRowNode',
-    );
-    const rowChildren = row.getChildren();
-    let j = 0;
-    for (const cell of rowChildren) {
-      invariant(
-        DEPRECATED_$isGridCellNode(cell),
-        'Expected GridRowNode children to be GridCellNode',
-      );
-      while (!isEmpty(i, j)) {
-        j++;
-      }
-      write(i, j, cell);
-      j += cell.__colSpan;
-    }
+  const anchor = selection.anchor;
+  let node = anchor.getNode();
+  let offset = anchor.offset;
+
+  while (!INTERNAL_$isBlock(node)) {
+    [node, offset] = splitNodeAtPoint(node, offset);
   }
-  invariant(cellAValue !== null, 'Anchor not found in Grid');
-  invariant(cellBValue !== null, 'Focus not found in Grid');
-  return [tableMap, cellAValue, cellBValue];
+
+  return offset;
 }
 
-export function DEPRECATED_$getNodeTriplet(
-  source: PointType | LexicalNode | DEPRECATED_GridCellNode,
-): [DEPRECATED_GridCellNode, DEPRECATED_GridRowNode, DEPRECATED_GridNode] {
-  let cell: DEPRECATED_GridCellNode;
-  if (source instanceof DEPRECATED_GridCellNode) {
-    cell = source;
-  } else if (source instanceof LexicalNode) {
-    const cell_ = $findMatchingParent(source, DEPRECATED_$isGridCellNode);
-    invariant(
-      DEPRECATED_$isGridCellNode(cell_),
-      'Expected to find a parent GridCellNode',
-    );
-    cell = cell_;
-  } else {
-    const cell_ = $findMatchingParent(
-      source.getNode(),
-      DEPRECATED_$isGridCellNode,
-    );
-    invariant(
-      DEPRECATED_$isGridCellNode(cell_),
-      'Expected to find a parent GridCellNode',
-    );
-    cell = cell_;
+function splitNodeAtPoint(
+  node: LexicalNode,
+  offset: number,
+): [parent: ElementNode, offset: number] {
+  const parent = node.getParent();
+  if (!parent) {
+    const paragraph = $createParagraphNode();
+    $getRoot().append(paragraph);
+    paragraph.select();
+    return [$getRoot(), 0];
   }
-  const row = cell.getParent();
-  invariant(
-    DEPRECATED_$isGridRowNode(row),
-    'Expected GridCellNode to have a parent GridRowNode',
-  );
-  const grid = row.getParent();
-  invariant(
-    DEPRECATED_$isGridNode(grid),
-    'Expected GridRowNode to have a parent GridNode',
-  );
-  return [cell, row, grid];
+
+  if ($isTextNode(node)) {
+    const split = node.splitText(offset);
+    if (split.length === 0) {
+      return [parent, node.getIndexWithinParent()];
+    }
+    const x = offset === 0 ? 0 : 1;
+    const index = split[0].getIndexWithinParent() + x;
+
+    return [parent, index];
+  }
+
+  if (!$isElementNode(node) || offset === 0) {
+    return [parent, node.getIndexWithinParent()];
+  }
+
+  const firstToAppend = node.getChildAtIndex(offset);
+  if (firstToAppend) {
+    const insertPoint = new RangeSelection(
+      $createPoint(node.__key, offset, 'element'),
+      $createPoint(node.__key, offset, 'element'),
+      0,
+      '',
+    );
+    const newElement = node.insertNewAfter(insertPoint) as ElementNode | null;
+    if (newElement) {
+      newElement.append(firstToAppend, ...firstToAppend.getNextSiblings());
+    }
+  }
+  return [parent, node.getIndexWithinParent() + 1];
+}
+
+function $wrapInlineNodes(nodes: LexicalNode[]) {
+  // We temporarily insert the topLevelNodes into an arbitrary ElementNode,
+  // since insertAfter does not work on nodes that have no parent (TO-DO: fix that).
+  const virtualRoot = $createParagraphNode();
+
+  let currentBlock = null;
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+
+    const isLineBreakNode = $isLineBreakNode(node);
+
+    if (
+      isLineBreakNode ||
+      ($isDecoratorNode(node) && node.isInline()) ||
+      ($isElementNode(node) && node.isInline()) ||
+      $isTextNode(node) ||
+      node.isParentRequired()
+    ) {
+      if (currentBlock === null) {
+        currentBlock = node.createParentElementNode();
+        virtualRoot.append(currentBlock);
+        // In the case of LineBreakNode, we just need to
+        // add an empty ParagraphNode to the topLevelBlocks.
+        if (isLineBreakNode) {
+          continue;
+        }
+      }
+
+      if (currentBlock !== null) {
+        currentBlock.append(node);
+      }
+    } else {
+      virtualRoot.append(node);
+      currentBlock = null;
+    }
+  }
+
+  return virtualRoot;
 }

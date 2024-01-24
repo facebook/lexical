@@ -23,20 +23,22 @@ import {$createTableNodeWithDimensions} from '@lexical/table';
 import {
   $createLineBreakNode,
   $createParagraphNode,
+  $createRangeSelection,
   $createTextNode,
   $getRoot,
   $getSelection,
-  $isNodeSelection,
+  $isElementNode,
   $isRangeSelection,
+  $setSelection,
   ParagraphNode,
 } from 'lexical';
-import {$createRangeSelection, $setSelection} from 'lexical/src';
 import {
   $assertRangeSelection,
   $createTestDecoratorNode,
   $createTestElementNode,
   createTestEditor,
   initializeClipboard,
+  invariant,
   TestComposer,
 } from 'lexical/src/__tests__/utils';
 import * as React from 'react';
@@ -99,7 +101,7 @@ Range.prototype.getBoundingClientRect = function (): DOMRect {
 };
 
 describe('LexicalSelection tests', () => {
-  let container = null;
+  let container: HTMLElement | null = null;
 
   beforeEach(async () => {
     container = document.createElement('div');
@@ -109,7 +111,9 @@ describe('LexicalSelection tests', () => {
   });
 
   afterEach(() => {
-    document.body.removeChild(container);
+    if (container) {
+      document.body.removeChild(container);
+    }
     container = null;
   });
 
@@ -117,7 +121,7 @@ describe('LexicalSelection tests', () => {
 
   async function init() {
     function TestBase() {
-      function TestPlugin(): JSX.Element {
+      function TestPlugin() {
         [editor] = useLexicalComposerContext();
 
         return null;
@@ -144,7 +148,6 @@ describe('LexicalSelection tests', () => {
               },
               listitem: 'editor-listitem',
               paragraph: 'editor-paragraph',
-              placeholder: 'editor-placeholder',
               quote: 'editor-quote',
               text: {
                 bold: 'editor-text-bold',
@@ -1082,15 +1085,15 @@ describe('LexicalSelection tests', () => {
       },
       {
         expectedHTML:
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">AB\tEFG</span></p></div>',
+          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="ltr"><span data-lexical-text="true">ABD</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">EFG</span></p></div>',
         expectedSelection: {
-          anchorOffset: 2,
+          anchorOffset: 3,
           anchorPath: [0, 0, 0],
-          focusOffset: 2,
+          focusOffset: 3,
           focusPath: [0, 0, 0],
         },
         inputs: [
-          pastePlain('ABD	EFG'),
+          pastePlain('ABD\tEFG'),
           moveBackward(5),
           insertText('C'),
           moveBackward(1),
@@ -1687,7 +1690,7 @@ describe('LexicalSelection tests', () => {
 
                 const selection = $getSelection();
 
-                if ($isNodeSelection(selection)) {
+                if (!$isRangeSelection(selection)) {
                   return;
                 }
 
@@ -1745,7 +1748,7 @@ describe('LexicalSelection tests', () => {
 
           const selection = $getSelection();
 
-          if ($isNodeSelection(selection)) {
+          if (!$isRangeSelection(selection)) {
             return;
           }
 
@@ -1828,7 +1831,7 @@ describe('LexicalSelection tests', () => {
 
           const selection = $getSelection();
 
-          if ($isNodeSelection(selection)) {
+          if (!$isRangeSelection(selection)) {
             return;
           }
 
@@ -1857,7 +1860,7 @@ describe('LexicalSelection tests', () => {
 
         const selection = $getSelection();
 
-        if ($isNodeSelection(selection)) {
+        if (!$isRangeSelection(selection)) {
           return;
         }
 
@@ -1970,7 +1973,7 @@ describe('LexicalSelection tests', () => {
 
               const selection = $getSelection();
 
-              if ($isNodeSelection(selection)) {
+              if (!$isRangeSelection(selection)) {
                 return;
               }
 
@@ -2184,7 +2187,7 @@ describe('LexicalSelection tests', () => {
 
           const selection = $getSelection();
 
-          if ($isNodeSelection(selection)) {
+          if (!$isRangeSelection(selection)) {
             return;
           }
 
@@ -2329,12 +2332,12 @@ describe('LexicalSelection tests', () => {
         $setSelection(selection);
         setAnchorPoint({
           key: text1.__key,
-          offset: text1.length,
+          offset: text1.__text.length,
           type: 'text',
         });
         setFocusPoint({
           key: text1.__key,
-          offset: text1.length,
+          offset: text1.__text.length,
           type: 'text',
         });
 
@@ -2408,7 +2411,7 @@ describe('LexicalSelection tests', () => {
         });
         setFocusPoint({
           key: text2.__key,
-          offset: text1.length,
+          offset: text1.__text.length,
           type: 'text',
         });
 
@@ -2484,7 +2487,7 @@ describe('LexicalSelection tests', () => {
         });
         setFocusPoint({
           key: text2.__key,
-          offset: text1.length,
+          offset: text1.__text.length,
           type: 'text',
         });
 
@@ -2508,8 +2511,11 @@ describe('LexicalSelection tests', () => {
         const root = $getRoot();
         const table = $createTableNodeWithDimensions(1, 1);
         const row = table.getFirstChild();
+        invariant($isElementNode(row));
         const column = row.getFirstChild();
+        invariant($isElementNode(column));
         const paragraph = column.getFirstChild();
+        invariant($isElementNode(paragraph));
         if (paragraph.getFirstChild()) paragraph.getFirstChild().remove();
         root.append(table);
 
@@ -2547,8 +2553,11 @@ describe('LexicalSelection tests', () => {
         const root = $getRoot();
         const table = $createTableNodeWithDimensions(1, 1);
         const row = table.getFirstChild();
+        invariant($isElementNode(row));
         const column = row.getFirstChild();
+        invariant($isElementNode(column));
         const paragraph = column.getFirstChild();
+        invariant($isElementNode(paragraph));
         const text = $createTextNode('foo');
         root.append(table);
         paragraph.append(text);
@@ -2557,12 +2566,12 @@ describe('LexicalSelection tests', () => {
         $setSelection(selectionz);
         setAnchorPoint({
           key: text.__key,
-          offset: text.length,
+          offset: text.__text.length,
           type: 'text',
         });
         setFocusPoint({
           key: text.__key,
-          offset: text.length,
+          offset: text.__text.length,
           type: 'text',
         });
         // @ts-ignore
@@ -2598,6 +2607,7 @@ describe('LexicalSelection tests', () => {
 
         const table = $createTableNodeWithDimensions(1, 2);
         const row = table.getFirstChild();
+        invariant($isElementNode(row));
         const columns = row.getChildren();
         root.append(table);
 
@@ -2608,11 +2618,13 @@ describe('LexicalSelection tests', () => {
         const text4 = $createTextNode();
         paragraph1.append(text3);
         paragraph2.append(text4);
+        invariant($isElementNode(column1));
         column1.append(paragraph3, paragraph4);
 
         const column2 = columns[1];
         const paragraph5 = $createParagraphNode();
         const paragraph6 = $createParagraphNode();
+        invariant($isElementNode(column2));
         column2.append(paragraph5, paragraph6);
 
         const paragraph7 = $createParagraphNode();
@@ -2636,9 +2648,8 @@ describe('LexicalSelection tests', () => {
         $setBlocksType(selection, () => {
           return $createHeadingNode('h1');
         });
-
-        expect(JSON.stringify(testEditor._pendingEditorState.toJSON())).toBe(
-          '{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"","type":"text","version":1},{"detail":0,"format":0,"mode":"normal","style":"","text":"","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"},{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"","type":"text","version":1},{"detail":0,"format":0,"mode":"normal","style":"","text":"","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"},{"children":[{"children":[{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"},{"children":[],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"},{"children":[],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"}],"direction":null,"format":"","indent":0,"type":"tablecell","version":1,"colSpan":1,"rowSpan":1,"headerState":3},{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"},{"children":[],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"},{"children":[],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"}],"direction":null,"format":"","indent":0,"type":"tablecell","version":1,"colSpan":1,"rowSpan":1,"headerState":1}],"direction":null,"format":"","indent":0,"type":"tablerow","version":1}],"direction":null,"format":"","indent":0,"type":"table","version":1},{"children":[],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"}],"direction":null,"format":"","indent":0,"type":"root","version":1}}',
+        expect(JSON.stringify(testEditor._pendingEditorState?.toJSON())).toBe(
+          '{"root":{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"","type":"text","version":1},{"detail":0,"format":0,"mode":"normal","style":"","text":"","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"},{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"","type":"text","version":1},{"detail":0,"format":0,"mode":"normal","style":"","text":"","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"},{"children":[{"children":[{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"},{"children":[],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"},{"children":[],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"}],"direction":null,"format":"","indent":0,"type":"tablecell","version":1,"backgroundColor":null,"colSpan":1,"headerState":3,"rowSpan":1},{"children":[{"children":[{"detail":0,"format":0,"mode":"normal","style":"","text":"","type":"text","version":1}],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"},{"children":[],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"},{"children":[],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"}],"direction":null,"format":"","indent":0,"type":"tablecell","version":1,"backgroundColor":null,"colSpan":1,"headerState":1,"rowSpan":1}],"direction":null,"format":"","indent":0,"type":"tablerow","version":1}],"direction":null,"format":"","indent":0,"type":"table","version":1},{"children":[],"direction":null,"format":"","indent":0,"type":"heading","version":1,"tag":"h1"}],"direction":null,"format":"","indent":0,"type":"root","version":1}}',
         );
       });
     });
@@ -2683,6 +2694,7 @@ describe('LexicalSelection tests', () => {
 
         const rootChildren = root.getChildren();
         expect(rootChildren.length).toBe(1);
+        invariant($isElementNode(rootChildren[0]));
         expect(rootChildren[0].getType()).toBe('heading');
         expect(rootChildren[0].getChildrenKeys()).toEqual(
           paragraphChildrenKeys,

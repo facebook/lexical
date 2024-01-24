@@ -28,7 +28,13 @@ jobs:
           git config user.name "Lexical GitHub Actions Bot"
           git config user.email "<>"
       - run: npm install
-      - run: npm run increment-version -- --i $INCREMENT
+      - id: latest
+        uses: pozetroninc/github-action-get-latest-release@master
+        with:
+          owner: facebook
+          repo: lexical
+          excludes: draft
+      - run: LATEST_RELEASE=${{ steps.latest.outputs.release }} npm run increment-version -- --i $INCREMENT
         env:
           INCREMENT: ${{ inputs.increment }}
       - run: git push -u git@github.com:facebook/lexical.git --follow-tags

@@ -21,7 +21,7 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
-  $isNodeSelection,
+  $isRangeSelection,
 } from 'lexical';
 import * as React from 'react';
 import {createRoot} from 'react-dom/client';
@@ -172,7 +172,7 @@ describe('LexicalNodeHelpers tests', () => {
 
         const selection = $getSelection();
 
-        if ($isNodeSelection(selection)) {
+        if (!$isRangeSelection(selection)) {
           return;
         }
 

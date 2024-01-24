@@ -26,6 +26,8 @@ import {
   $getRoot,
   $getSelection,
   BLUR_COMMAND,
+  CAN_REDO_COMMAND,
+  CAN_UNDO_COMMAND,
   COMMAND_PRIORITY_EDITOR,
   FOCUS_COMMAND,
   REDO_COMMAND,
@@ -51,6 +53,7 @@ export function useYjsCollaboration(
   cursorsContainerRef?: CursorsContainerRef,
   initialEditorState?: InitialEditorStateType,
   excludedProperties?: ExcludedProperties,
+  awarenessData?: object,
 ): [JSX.Element, Binding] {
   const isReloadingDoc = useRef(false);
   const [doc, setDoc] = useState(docMap.get(id));
@@ -116,6 +119,7 @@ export function useYjsCollaboration(
       name,
       color,
       document.activeElement === editor.getRootElement(),
+      awarenessData || {},
     );
 
     const onProviderDocReload = (ydoc: Doc) => {
@@ -181,6 +185,7 @@ export function useYjsCollaboration(
     name,
     provider,
     shouldBootstrap,
+    awarenessData,
   ]);
   const cursorsContainer = useMemo(() => {
     const ref = (element: null | HTMLElement) => {
@@ -225,13 +230,14 @@ export function useYjsFocusTracking(
   provider: Provider,
   name: string,
   color: string,
+  awarenessData?: object,
 ) {
   useEffect(() => {
     return mergeRegister(
       editor.registerCommand(
         FOCUS_COMMAND,
         () => {
-          setLocalStateFocus(provider, name, color, true);
+          setLocalStateFocus(provider, name, color, true, awarenessData || {});
           return false;
         },
         COMMAND_PRIORITY_EDITOR,
@@ -239,13 +245,13 @@ export function useYjsFocusTracking(
       editor.registerCommand(
         BLUR_COMMAND,
         () => {
-          setLocalStateFocus(provider, name, color, false);
+          setLocalStateFocus(provider, name, color, false, awarenessData || {});
           return false;
         },
         COMMAND_PRIORITY_EDITOR,
       ),
     );
-  }, [color, editor, name, provider]);
+  }, [color, editor, name, provider, awarenessData]);
 }
 
 export function useYjsHistory(
@@ -288,6 +294,29 @@ export function useYjsHistory(
   const clearHistory = useCallback(() => {
     undoManager.clear();
   }, [undoManager]);
+
+  // Exposing undo and redo states
+  React.useEffect(() => {
+    const updateUndoRedoStates = () => {
+      editor.dispatchCommand(
+        CAN_UNDO_COMMAND,
+        undoManager.undoStack.length > 0,
+      );
+      editor.dispatchCommand(
+        CAN_REDO_COMMAND,
+        undoManager.redoStack.length > 0,
+      );
+    };
+    undoManager.on('stack-item-added', updateUndoRedoStates);
+    undoManager.on('stack-item-popped', updateUndoRedoStates);
+    undoManager.on('stack-cleared', updateUndoRedoStates);
+    return () => {
+      undoManager.off('stack-item-added', updateUndoRedoStates);
+      undoManager.off('stack-item-popped', updateUndoRedoStates);
+      undoManager.off('stack-cleared', updateUndoRedoStates);
+    };
+  }, [editor, undoManager]);
+
   return clearHistory;
 }
 

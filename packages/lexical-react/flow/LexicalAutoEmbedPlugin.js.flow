@@ -9,7 +9,7 @@
 
 import type {LexicalNode, MutationListener} from 'lexical';
 
-import {TypeaheadOption} from '@lexical/react/LexicalTypeaheadMenuPlugin';
+import {MenuOption} from '@lexical/react/LexicalTypeaheadMenuPlugin';
 import type {LexicalCommand, LexicalEditor, NodeKey, TextNode} from 'lexical';
 import * as React from 'react';
 import {createCommand} from 'lexical';
@@ -46,7 +46,7 @@ type LexicalAutoEmbedPluginProps<TEmbedConfig> = {
   menuRenderFn: MenuRenderFn<AutoEmbedOption>,
 };
 
-declare export class AutoEmbedOption extends TypeaheadOption {
+declare export class AutoEmbedOption extends MenuOption {
   title: string;
   icon: React.MixedElement;
   onSelect: (targetNode: LexicalNode | null) => void;

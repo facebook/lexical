@@ -103,7 +103,8 @@ test.describe('Identation', () => {
           <span data-lexical-text="true">code</span>
         </code>
         <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-        <table class="PlaygroundEditorTheme__table disable-selection">
+        <table
+          class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection">
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
@@ -183,7 +184,8 @@ test.describe('Identation', () => {
           style="padding-inline-start: calc(40px)">
           <br />
         </p>
-        <table class="PlaygroundEditorTheme__table disable-selection">
+        <table
+          class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection">
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
@@ -274,7 +276,8 @@ test.describe('Identation', () => {
           style="padding-inline-start: calc(80px)">
           <br />
         </p>
-        <table class="PlaygroundEditorTheme__table disable-selection">
+        <table
+          class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection">
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
@@ -359,7 +362,8 @@ test.describe('Identation', () => {
           style="padding-inline-start: calc(40px)">
           <br />
         </p>
-        <table class="PlaygroundEditorTheme__table disable-selection">
+        <table
+          class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection">
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
@@ -434,7 +438,8 @@ test.describe('Identation', () => {
           <span data-lexical-text="true">code</span>
         </code>
         <p class="PlaygroundEditorTheme__paragraph" style=""><br /></p>
-        <table class="PlaygroundEditorTheme__table disable-selection">
+        <table
+          class="PlaygroundEditorTheme__table PlaygroundEditorTheme__tableSelection">
           <tr>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"

@@ -16,6 +16,7 @@ const importPlugin = require('remark-import-partial');
 
 const TITLE = 'Lexical';
 const GITHUB_REPO_URL = 'https://github.com/facebook/lexical'; // TODO: Update when repo name updated
+const IOS_GITHUB_REPO_URL = 'https://github.com/facebook/lexical-ios';
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -62,6 +63,16 @@ const config = {
         watch: process.env.TYPEDOC_WATCH === 'true',
       },
     ],
+    async function tailwindcss() {
+      return {
+        configurePostCss(postcssOptions) {
+          postcssOptions.plugins.push(require('tailwindcss'));
+          postcssOptions.plugins.push(require('autoprefixer'));
+          return postcssOptions;
+        },
+        name: 'docusaurus-tailwindcss',
+      };
+    },
   ],
   presets: [
     [
@@ -77,6 +88,9 @@ const config = {
           path: 'docs',
           remarkPlugins: [importPlugin],
           sidebarPath: require.resolve('./sidebars.js'),
+        },
+        gtag: {
+          trackingID: 'G-7C6YYBYBBT',
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
@@ -181,16 +195,21 @@ const config = {
             sidebarId: 'api',
             type: 'docSidebar',
           },
-          {
-            label: 'Demos',
-            position: 'left',
-            sidebarId: 'demos',
-            type: 'docSidebar',
-          },
+
           {label: 'Community', position: 'left', to: '/community'},
+          {
+            href: 'https://facebook.github.io/lexical-ios/',
+            label: 'iOS',
+            position: 'left',
+          },
           {
             href: GITHUB_REPO_URL,
             label: 'GitHub',
+            position: 'right',
+          },
+          {
+            href: IOS_GITHUB_REPO_URL,
+            label: 'iOS GitHub',
             position: 'right',
           },
         ],

@@ -304,10 +304,6 @@ editor.registerUpdateListener(({editorState}) => {
 });
 ```
 
-### Creating custom Lexical nodes
-
-- [Creating custom decorator nodes](https://github.com/facebook/lexical/blob/main/examples/decorators.md)
-
 ## Contributing to Lexical
 
 1. Clone this repository
@@ -339,8 +335,10 @@ editor.registerUpdateListener(({editorState}) => {
 
 ## Documentation
 
-- [How Lexical was designed](/docs/design.md)
-- [Testing](/docs/testing.md)
+- [Getting started](https://lexical.dev/docs/intro)
+- [Concepts](https://lexical.dev/docs/concepts/editor-state)
+- [How Lexical was designed](https://lexical.dev/docs/design)
+- [Testing](https://lexical.dev/docs/testing)
 
 ## Browser Support
 

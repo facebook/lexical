@@ -338,11 +338,14 @@ export function registerMarkdownShortcuts(
     const type = transformer.type;
     if (type === 'element' || type === 'text-match') {
       const dependencies = transformer.dependencies;
-      if (!editor.hasNodes(dependencies)) {
-        invariant(
-          false,
-          'MarkdownShortcuts: missing dependency for transformer. Ensure node dependency is included in editor initial config.',
-        );
+      for (const node of dependencies) {
+        if (!editor.hasNode(node)) {
+          invariant(
+            false,
+            'MarkdownShortcuts: missing dependency %s for transformer. Ensure node dependency is included in editor initial config.',
+            node.getType(),
+          );
+        }
       }
     }
   }
@@ -387,6 +390,11 @@ export function registerMarkdownShortcuts(
         return;
       }
 
+      // If editor is still composing (i.e. backticks) we must wait before the user confirms the key
+      if (editor.isComposing()) {
+        return;
+      }
+
       const selection = editorState.read($getSelection);
       const prevSelection = prevEditorState.read($getSelection);
 
@@ -406,7 +414,7 @@ export function registerMarkdownShortcuts(
       if (
         !$isTextNode(anchorNode) ||
         !dirtyLeaves.has(anchorKey) ||
-        (anchorOffset !== 1 && anchorOffset !== prevSelection.anchor.offset + 1)
+        (anchorOffset !== 1 && anchorOffset > prevSelection.anchor.offset + 1)
       ) {
         return;
       }

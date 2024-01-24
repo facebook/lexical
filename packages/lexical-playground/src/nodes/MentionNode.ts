@@ -108,6 +108,14 @@ export class MentionNode extends TextNode {
   isTextEntity(): true {
     return true;
   }
+
+  canInsertTextBefore(): boolean {
+    return false;
+  }
+
+  canInsertTextAfter(): boolean {
+    return false;
+  }
 }
 
 export function $createMentionNode(mentionName: string): MentionNode {

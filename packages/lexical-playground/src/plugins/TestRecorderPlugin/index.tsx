@@ -6,12 +6,7 @@
  *
  */
 
-import type {
-  GridSelection,
-  LexicalEditor,
-  NodeSelection,
-  RangeSelection,
-} from 'lexical';
+import type {BaseSelection, LexicalEditor} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
@@ -159,9 +154,7 @@ function useTestRecorder(
   const [isRecording, setIsRecording] = useState(false);
   const [, setCurrentInnerHTML] = useState('');
   const [templatedTest, setTemplatedTest] = useState('');
-  const previousSelectionRef = useRef<
-    RangeSelection | GridSelection | NodeSelection | null
-  >(null);
+  const previousSelectionRef = useRef<BaseSelection | null>(null);
   const skipNextSelectionChangeRef = useRef(false);
   const preRef = useRef<HTMLPreElement>(null);
 

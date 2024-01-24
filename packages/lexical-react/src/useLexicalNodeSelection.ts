@@ -62,11 +62,12 @@ export function useLexicalNodeSelection(
           selection = $createNodeSelection();
           $setSelection(selection);
         }
-
-        if (selected) {
-          selection.add(key);
-        } else {
-          selection.delete(key);
+        if ($isNodeSelection(selection)) {
+          if (selected) {
+            selection.add(key);
+          } else {
+            selection.delete(key);
+          }
         }
       });
     },

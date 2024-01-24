@@ -14,6 +14,7 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {mergeRegister} from '@lexical/utils';
 import {
   $getSelection,
+  $isParagraphNode,
   $isRangeSelection,
   $isTextNode,
   COMMAND_PRIORITY_LOW,
@@ -72,12 +73,23 @@ function TextFormatFloatingToolbar({
       popupCharStylesEditorRef?.current &&
       (e.buttons === 1 || e.buttons === 3)
     ) {
-      popupCharStylesEditorRef.current.style.pointerEvents = 'none';
+      if (popupCharStylesEditorRef.current.style.pointerEvents !== 'none') {
+        const x = e.clientX;
+        const y = e.clientY;
+        const elementUnderMouse = document.elementFromPoint(x, y);
+
+        if (!popupCharStylesEditorRef.current.contains(elementUnderMouse)) {
+          // Mouse is not over the target element => not a normal click, but probably a drag
+          popupCharStylesEditorRef.current.style.pointerEvents = 'none';
+        }
+      }
     }
   }
   function mouseUpListener(e: MouseEvent) {
     if (popupCharStylesEditorRef?.current) {
-      popupCharStylesEditorRef.current.style.pointerEvents = 'auto';
+      if (popupCharStylesEditorRef.current.style.pointerEvents !== 'auto') {
+        popupCharStylesEditorRef.current.style.pointerEvents = 'auto';
+      }
     }
   }
 
@@ -113,9 +125,14 @@ function TextFormatFloatingToolbar({
     ) {
       const rangeRect = getDOMRangeRect(nativeSelection, rootElement);
 
-      setFloatingElemPosition(rangeRect, popupCharStylesEditorElem, anchorElem);
+      setFloatingElemPosition(
+        rangeRect,
+        popupCharStylesEditorElem,
+        anchorElem,
+        isLink,
+      );
     }
-  }, [editor, anchorElem]);
+  }, [editor, anchorElem, isLink]);
 
   useEffect(() => {
     const scrollerElem = anchorElem.parentElement;
@@ -166,6 +183,7 @@ function TextFormatFloatingToolbar({
       {editor.isEditable() && (
         <>
           <button
+            type="button"
             onClick={() => {
               editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold');
             }}
@@ -174,6 +192,7 @@ function TextFormatFloatingToolbar({
             <i className="format bold" />
           </button>
           <button
+            type="button"
             onClick={() => {
               editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic');
             }}
@@ -182,6 +201,7 @@ function TextFormatFloatingToolbar({
             <i className="format italic" />
           </button>
           <button
+            type="button"
             onClick={() => {
               editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'underline');
             }}
@@ -190,6 +210,7 @@ function TextFormatFloatingToolbar({
             <i className="format underline" />
           </button>
           <button
+            type="button"
             onClick={() => {
               editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'strikethrough');
             }}
@@ -198,6 +219,7 @@ function TextFormatFloatingToolbar({
             <i className="format strikethrough" />
           </button>
           <button
+            type="button"
             onClick={() => {
               editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'subscript');
             }}
@@ -207,6 +229,7 @@ function TextFormatFloatingToolbar({
             <i className="format subscript" />
           </button>
           <button
+            type="button"
             onClick={() => {
               editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'superscript');
             }}
@@ -216,6 +239,7 @@ function TextFormatFloatingToolbar({
             <i className="format superscript" />
           </button>
           <button
+            type="button"
             onClick={() => {
               editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'code');
             }}
@@ -224,6 +248,7 @@ function TextFormatFloatingToolbar({
             <i className="format code" />
           </button>
           <button
+            type="button"
             onClick={insertLink}
             className={'popup-item spaced ' + (isLink ? 'active' : '')}
             aria-label="Insert link">
@@ -232,6 +257,7 @@ function TextFormatFloatingToolbar({
         </>
       )}
       <button
+        type="button"
         onClick={insertComment}
         className={'popup-item spaced insert-comment'}
         aria-label="Insert comment">
@@ -302,7 +328,7 @@ function useFloatingTextFormatToolbar(
         !$isCodeHighlightNode(selection.anchor.getNode()) &&
         selection.getTextContent() !== ''
       ) {
-        setIsText($isTextNode(node));
+        setIsText($isTextNode(node) || $isParagraphNode(node));
       } else {
         setIsText(false);
       }
@@ -335,7 +361,7 @@ function useFloatingTextFormatToolbar(
     );
   }, [editor, updatePopup]);
 
-  if (!isText || isLink) {
+  if (!isText) {
     return null;
   }
 

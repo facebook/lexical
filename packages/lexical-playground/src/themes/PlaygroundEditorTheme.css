@@ -99,10 +99,9 @@
   margin: 0;
   margin-top: 8px;
   margin-bottom: 8px;
-  tab-size: 2;
-  /* white-space: pre; */
   overflow-x: auto;
   position: relative;
+  tab-size: 2;
 }
 .PlaygroundEditorTheme__code:before {
   content: attr(data-gutter);
@@ -120,23 +119,26 @@
 .PlaygroundEditorTheme__table {
   border-collapse: collapse;
   border-spacing: 0;
-  max-width: 100%;
   overflow-y: scroll;
+  overflow-x: scroll;
   table-layout: fixed;
-  width: calc(100% - 25px);
+  width: max-content;
   margin: 30px 0;
+}
+.PlaygroundEditorTheme__tableSelection *::selection {
+  background-color: transparent;
 }
 .PlaygroundEditorTheme__tableSelected {
   outline: 2px solid rgb(60, 132, 244);
 }
 .PlaygroundEditorTheme__tableCell {
   border: 1px solid #bbb;
+  width: 75px;
   min-width: 75px;
   vertical-align: top;
   text-align: start;
   padding: 6px 8px;
   position: relative;
-  cursor: default;
   outline: none;
 }
 .PlaygroundEditorTheme__tableCellSortedIndicator {
@@ -185,7 +187,7 @@
   width: 20px;
   background-color: #eee;
   height: 100%;
-  right: 0;
+  right: -25px;
   animation: table-controls 0.2s ease;
   border: 0;
   cursor: pointer;
@@ -427,4 +429,13 @@
 }
 .PlaygroundEditorTheme__embedBlockFocus {
   outline: 2px solid rgb(60, 132, 244);
+}
+.PlaygroundEditorTheme__layoutContainer {
+  display: grid;
+  gap: 10px;
+  margin: 10px 0;
+}
+.PlaygroundEditorTheme__layoutItem {
+  border: 1px dashed #ddd;
+  padding: 8px 16px;
 }

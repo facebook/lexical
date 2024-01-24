@@ -122,7 +122,7 @@ export default function ImageResizer({
 
   const setEndCursor = () => {
     if (editorRootElement !== null) {
-      editorRootElement.style.setProperty('cursor', 'default');
+      editorRootElement.style.setProperty('cursor', 'text');
     }
     if (document.body !== null) {
       document.body.style.setProperty('cursor', 'default');
@@ -146,6 +146,7 @@ export default function ImageResizer({
     const controlWrapper = controlWrapperRef.current;
 
     if (image !== null && controlWrapper !== null) {
+      event.preventDefault();
       const {width, height} = image.getBoundingClientRect();
       const positioning = positioningRef.current;
       positioning.startWidth = width;

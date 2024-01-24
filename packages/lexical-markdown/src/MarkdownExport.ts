@@ -165,7 +165,7 @@ function exportTextFormat(
   }
 
   // Replace trimmed version of textContent ensuring surrounding whitespace is not modified
-  return textContent.replace(frozenString, output);
+  return textContent.replace(frozenString, () => output);
 }
 
 // Get next or previous text sibling a text node, including cases

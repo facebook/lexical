@@ -16,7 +16,6 @@ import {
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$findMatchingParent, mergeRegister} from '@lexical/utils';
 import {
-  $createTextNode,
   $getSelection,
   $isRangeSelection,
   COMMAND_PRIORITY_CRITICAL,
@@ -197,9 +196,9 @@ function FloatingLinkEditor({
                 rel: parent.__rel,
                 target: parent.__target,
                 title: parent.__title,
-              }).append($createTextNode(parent.getURL()));
-              parent.getParent()?.append(linkNode);
-              parent.remove();
+              });
+              parent.select();
+              parent.replace(linkNode, true);
             }
           }
         });

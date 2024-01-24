@@ -8,12 +8,8 @@
 
 /* eslint-disable no-constant-condition */
 import type {EditorConfig, LexicalEditor} from './LexicalEditor';
-import type {
-  GridSelection,
-  NodeSelection,
-  RangeSelection,
-} from './LexicalSelection';
-import type {Klass} from 'lexical';
+import type {BaseSelection, RangeSelection} from './LexicalSelection';
+import type {Klass, KlassConstructor} from 'lexical';
 
 import invariant from 'shared/invariant';
 
@@ -26,6 +22,7 @@ import {
 } from '.';
 import {
   $getSelection,
+  $isNodeSelection,
   $isRangeSelection,
   $moveSelectionPointToEnd,
   $updateElementSelectionOnCreateDeleteNode,
@@ -92,6 +89,12 @@ export function removeNode(
       );
       selectionMoved = true;
     }
+  } else if (
+    $isNodeSelection(selection) &&
+    restoreSelection &&
+    nodeToRemove.isSelected()
+  ) {
+    nodeToRemove.selectPrevious();
   }
 
   if ($isRangeSelection(selection) && restoreSelection && !selectionMoved) {
@@ -118,13 +121,11 @@ export function removeNode(
 
 export type DOMConversion<T extends HTMLElement = HTMLElement> = {
   conversion: DOMConversionFn<T>;
-  priority: 0 | 1 | 2 | 3 | 4;
+  priority?: 0 | 1 | 2 | 3 | 4;
 };
 
 export type DOMConversionFn<T extends HTMLElement = HTMLElement> = (
   element: T,
-  parent?: Node,
-  preformatted?: boolean,
 ) => DOMConversionOutput | null;
 
 export type DOMChildConversion = (
@@ -141,22 +142,21 @@ type NodeName = string;
 export type DOMConversionOutput = {
   after?: (childLexicalNodes: Array<LexicalNode>) => Array<LexicalNode>;
   forChild?: DOMChildConversion;
-  node: LexicalNode | null;
-  preformatted?: boolean;
+  node: null | LexicalNode | Array<LexicalNode>;
 };
 
 export type DOMExportOutput = {
   after?: (
-    generatedElement: HTMLElement | null | undefined,
-  ) => HTMLElement | null | undefined;
-  element: HTMLElement | null;
+    generatedElement: HTMLElement | Text | null | undefined,
+  ) => HTMLElement | Text | null | undefined;
+  element: HTMLElement | Text | null;
 };
 
 export type NodeKey = string;
 
 export class LexicalNode {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [x: string]: any;
+  // Allow us to look up the type including static props
+  ['constructor']!: KlassConstructor<typeof LexicalNode>;
   /** @internal */
   __type: string;
   /** @internal */
@@ -202,8 +202,10 @@ export class LexicalNode {
     );
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  static importDOM?: () => DOMConversionMap<any> | null;
+
   constructor(key?: NodeKey) {
-    // @ts-expect-error
     this.__type = this.constructor.getType();
     this.__parent = null;
     this.__prev = null;
@@ -213,11 +215,7 @@ export class LexicalNode {
     if (__DEV__) {
       if (this.__type !== 'root') {
         errorOnReadOnly();
-        errorOnTypeKlassMismatch(
-          this.__type,
-          // @ts-expect-error
-          this.constructor,
-        );
+        errorOnTypeKlassMismatch(this.__type, this.constructor);
       }
     }
   }
@@ -228,6 +226,14 @@ export class LexicalNode {
    */
   getType(): string {
     return this.__type;
+  }
+
+  isInline(): boolean {
+    invariant(
+      false,
+      'LexicalNode: Node %s does not implement .isInline().',
+      this.constructor.name,
+    );
   }
 
   /**
@@ -259,9 +265,7 @@ export class LexicalNode {
    *
    * @param selection - The selection that we want to determine if the node is in.
    */
-  isSelected(
-    selection?: null | RangeSelection | NodeSelection | GridSelection,
-  ): boolean {
+  isSelected(selection?: null | BaseSelection): boolean {
     const targetSelection = selection || $getSelection();
     if (targetSelection == null) {
       return false;
@@ -343,11 +347,15 @@ export class LexicalNode {
    * non-root ancestor of this node, or null if none is found. See {@link lexical!$isRootOrShadowRoot}
    * for more information on which Elements comprise "roots".
    */
-  getTopLevelElement(): ElementNode | this | null {
+  getTopLevelElement(): ElementNode | null {
     let node: ElementNode | this | null = this;
     while (node !== null) {
-      const parent: ElementNode | this | null = node.getParent();
+      const parent: ElementNode | null = node.getParent();
       if ($isRootOrShadowRoot(parent)) {
+        invariant(
+          $isElementNode(node),
+          'Children of root nodes must be elements',
+        );
         return node;
       }
       node = parent;
@@ -360,7 +368,7 @@ export class LexicalNode {
    * non-root ancestor of this node, or throws if none is found. See {@link lexical!$isRootOrShadowRoot}
    * for more information on which Elements comprise "roots".
    */
-  getTopLevelElementOrThrow(): ElementNode | this {
+  getTopLevelElementOrThrow(): ElementNode {
     const parent = this.getTopLevelElement();
     if (parent === null) {
       invariant(
@@ -676,7 +684,7 @@ export class LexicalNode {
     const cloneNotNeeded = editor._cloneNotNeeded;
     const selection = $getSelection();
     if (selection !== null) {
-      selection._cachedNodes = null;
+      selection.setCachedNodes(null);
     }
     if (cloneNotNeeded.has(key)) {
       // Transforms clear the dirty node set on each iteration to keep track on newly dirty nodes
@@ -684,7 +692,6 @@ export class LexicalNode {
       return latestNode;
     }
     const constructor = latestNode.constructor;
-    // @ts-expect-error
     const mutableNode = constructor.clone(latestNode);
     mutableNode.__parent = parent;
     mutableNode.__next = latestNode.__next;
@@ -708,6 +715,7 @@ export class LexicalNode {
     // Update reference in node map
     nodeMap.set(key, mutableNode);
 
+    // @ts-expect-error
     return mutableNode;
   }
 
@@ -873,6 +881,10 @@ export class LexicalNode {
     writableReplaceWith.__parent = parentKey;
     writableParent.__size = size;
     if (includeChildren) {
+      invariant(
+        $isElementNode(this) && $isElementNode(writableReplaceWith),
+        'includeChildren should only be true for ElementNodes',
+      );
       this.getChildren().forEach((child: LexicalNode) => {
         writableReplaceWith.append(child);
       });
@@ -964,7 +976,7 @@ export class LexicalNode {
   /**
    * Inserts a node before this LexicalNode (as the previous sibling).
    *
-   * @param nodeToInsert - The node to insert after this one.
+   * @param nodeToInsert - The node to insert before this one.
    * @param restoreSelection - Whether or not to attempt to resolve the
    * selection to the appropriate place after the operation is complete.
    * */
@@ -1018,6 +1030,14 @@ export class LexicalNode {
    * */
   createParentElementNode(): ElementNode {
     return $createParagraphNode();
+  }
+
+  selectStart(): RangeSelection {
+    return this.selectPrevious();
+  }
+
+  selectEnd(): RangeSelection {
+    return this.selectNext(0, 0);
   }
 
   /**
@@ -1096,5 +1116,38 @@ function errorOnTypeKlassMismatch(
       klass.name,
       editorKlass.name,
     );
+  }
+}
+
+/**
+ * Insert a series of nodes after this LexicalNode (as next siblings)
+ *
+ * @param firstToInsert - The first node to insert after this one.
+ * @param lastToInsert - The last node to insert after this one. Must be a
+ * later sibling of FirstNode. If not provided, it will be its last sibling.
+ */
+export function insertRangeAfter(
+  node: LexicalNode,
+  firstToInsert: LexicalNode,
+  lastToInsert?: LexicalNode,
+) {
+  const lastToInsert2 =
+    lastToInsert || firstToInsert.getParentOrThrow().getLastChild()!;
+  let current = firstToInsert;
+  const nodesToInsert = [firstToInsert];
+  while (current !== lastToInsert2) {
+    if (!current.getNextSibling()) {
+      invariant(
+        false,
+        'insertRangeAfter: lastToInsert must be a later sibling of firstToInsert',
+      );
+    }
+    current = current.getNextSibling()!;
+    nodesToInsert.push(current);
+  }
+
+  let currentNode: LexicalNode = node;
+  for (const nodeToInsert of nodesToInsert) {
+    currentNode = currentNode.insertAfter(nodeToInsert);
   }
 }

@@ -1,5 +1,3 @@
-
-
 # Nodes
 
 ## Base Nodes
@@ -149,14 +147,14 @@ As mentioned above, Lexical exposes three base nodes that can be extended.
 Below is an example of how you might extend `ElementNode`:
 
 ```js
-import {ElementNode} from 'lexical';
+import {ElementNode, LexicalNode} from 'lexical';
 
 export class CustomParagraph extends ElementNode {
   static getType(): string {
     return 'custom-paragraph';
   }
 
-  static clone(node: ParagraphNode): ParagraphNode {
+  static clone(node: CustomParagraph): CustomParagraph {
     return new CustomParagraph(node.__key);
   }
 
@@ -179,11 +177,11 @@ your custom `ElementNode` so that others can easily consume and validate nodes
 are that of your custom node. Here's how you might do this for the above example:
 
 ```js
-export function $createCustomParagraphNode(): ParagraphNode {
+export function $createCustomParagraphNode(): CustomParagraph {
   return new CustomParagraph();
 }
 
-export function $isCustomParagraphNode(node: ?LexicalNode): boolean {
+export function $isCustomParagraphNode(node: LexicalNode | null | undefined): node is CustomParagraph  {
   return node instanceof CustomParagraph;
 }
 ```
@@ -230,7 +228,7 @@ export function $createColoredNode(text: string, color: string): ColoredNode {
   return new ColoredNode(text, color);
 }
 
-export function $isColoredNode(node: ?LexicalNode): boolean {
+export function $isColoredNode(node: LexicalNode | null | undefined): node is ColoredNode {
   return node instanceof ColoredNode;
 }
 ```
@@ -271,7 +269,13 @@ export function $createVideoNode(id: string): VideoNode {
   return new VideoNode(id);
 }
 
-export function $isVideoNode(node: ?LexicalNode): boolean {
+export function $isVideoNode(
+  node: LexicalNode | null | undefined,
+): node is VideoNode {
   return node instanceof VideoNode;
 }
 ```
+
+Using `useDecorators`, `PlainTextPlugin` and `RichTextPlugin` executes `React.createPortal(reactDecorator, element)` for each `DecoratorNode`,
+where the `reactDecorator` is what is returned by `DecoratorNode.prototype.decorate`,
+and the `element` is an `HTMLElement` returned by `DecoratorNode.prototype.createDOM`.

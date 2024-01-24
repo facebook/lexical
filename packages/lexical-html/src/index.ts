@@ -8,20 +8,19 @@
  */
 
 import type {
+  BaseSelection,
   DOMChildConversion,
   DOMConversion,
   DOMConversionFn,
-  GridSelection,
   LexicalEditor,
   LexicalNode,
-  NodeSelection,
-  RangeSelection,
 } from 'lexical';
 
 import {
   $cloneWithProperties,
   $sliceSelectedTextNodeContent,
 } from '@lexical/selection';
+import {isHTMLElement} from '@lexical/utils';
 import {$getRoot, $isElementNode, $isTextNode} from 'lexical';
 
 /**
@@ -33,15 +32,12 @@ export function $generateNodesFromDOM(
   editor: LexicalEditor,
   dom: Document,
 ): Array<LexicalNode> {
-  let lexicalNodes: Array<LexicalNode> = [];
   const elements = dom.body ? dom.body.childNodes : [];
-
+  let lexicalNodes: Array<LexicalNode> = [];
   for (let i = 0; i < elements.length; i++) {
     const element = elements[i];
-
     if (!IGNORE_TAGS.has(element.nodeName)) {
       const lexicalNode = $createNodesFromDOM(element, editor);
-
       if (lexicalNode !== null) {
         lexicalNodes = lexicalNodes.concat(lexicalNode);
       }
@@ -53,7 +49,7 @@ export function $generateNodesFromDOM(
 
 export function $generateHtmlFromNodes(
   editor: LexicalEditor,
-  selection?: RangeSelection | NodeSelection | GridSelection | null,
+  selection?: BaseSelection | null,
 ): string {
   if (typeof document === 'undefined' || typeof window === 'undefined') {
     throw new Error(
@@ -77,9 +73,10 @@ function $appendNodesToHTML(
   editor: LexicalEditor,
   currentNode: LexicalNode,
   parentElement: HTMLElement | DocumentFragment,
-  selection: RangeSelection | NodeSelection | GridSelection | null = null,
+  selection: BaseSelection | null = null,
 ): boolean {
-  let shouldInclude = selection != null ? currentNode.isSelected() : true;
+  let shouldInclude =
+    selection !== null ? currentNode.isSelected(selection) : true;
   const shouldExclude =
     $isElementNode(currentNode) && currentNode.excludeFromCopy('html');
   let target = currentNode;
@@ -87,13 +84,23 @@ function $appendNodesToHTML(
   if (selection !== null) {
     let clone = $cloneWithProperties<LexicalNode>(currentNode);
     clone =
-      $isTextNode(clone) && selection != null
+      $isTextNode(clone) && selection !== null
         ? $sliceSelectedTextNodeContent(selection, clone)
         : clone;
     target = clone;
   }
   const children = $isElementNode(target) ? target.getChildren() : [];
-  const {element, after} = target.exportDOM(editor);
+  const registeredNode = editor._nodes.get(target.getType());
+  let exportOutput;
+
+  // Use HTMLConfig overrides, if available.
+  if (registeredNode && registeredNode.exportDOM !== undefined) {
+    exportOutput = registeredNode.exportDOM(editor, target);
+  } else {
+    exportOutput = target.exportDOM(editor);
+  }
+
+  const {element, after} = exportOutput;
 
   if (!element) {
     return false;
@@ -121,7 +128,9 @@ function $appendNodesToHTML(
   }
 
   if (shouldInclude && !shouldExclude) {
-    element.append(fragment);
+    if (isHTMLElement(element)) {
+      element.append(fragment);
+    }
     parentElement.append(element);
 
     if (after) {
@@ -152,7 +161,7 @@ function getConversionFunction(
       if (
         domConversion !== null &&
         (currentConversion === null ||
-          currentConversion.priority < domConversion.priority)
+          (currentConversion.priority || 0) < (domConversion.priority || 0))
       ) {
         currentConversion = domConversion;
       }
@@ -169,7 +178,6 @@ function $createNodesFromDOM(
   editor: LexicalEditor,
   forChildMap: Map<string, DOMChildConversion> = new Map(),
   parentLexicalNode?: LexicalNode | null | undefined,
-  preformatted = false,
 ): Array<LexicalNode> {
   let lexicalNodes: Array<LexicalNode> = [];
 
@@ -180,13 +188,16 @@ function $createNodesFromDOM(
   let currentLexicalNode = null;
   const transformFunction = getConversionFunction(node, editor);
   const transformOutput = transformFunction
-    ? transformFunction(node as HTMLElement, undefined, preformatted)
+    ? transformFunction(node as HTMLElement)
     : null;
   let postTransform = null;
 
   if (transformOutput !== null) {
     postTransform = transformOutput.after;
-    currentLexicalNode = transformOutput.node;
+    const transformNodes = transformOutput.node;
+    currentLexicalNode = Array.isArray(transformNodes)
+      ? transformNodes[transformNodes.length - 1]
+      : transformNodes;
 
     if (currentLexicalNode !== null) {
       for (const [, forChildFunction] of forChildMap) {
@@ -201,7 +212,11 @@ function $createNodesFromDOM(
       }
 
       if (currentLexicalNode) {
-        lexicalNodes.push(currentLexicalNode);
+        lexicalNodes.push(
+          ...(Array.isArray(transformNodes)
+            ? transformNodes
+            : [currentLexicalNode]),
+        );
       }
     }
 
@@ -222,8 +237,6 @@ function $createNodesFromDOM(
         editor,
         new Map(forChildMap),
         currentLexicalNode,
-        preformatted ||
-          (transformOutput && transformOutput.preformatted) === true,
       ),
     );
   }

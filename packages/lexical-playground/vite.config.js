@@ -131,10 +131,13 @@ const moduleResolution = [
   'LexicalPlainTextPlugin',
   'LexicalRichTextPlugin',
   'LexicalClearEditorPlugin',
+  'LexicalClickableLinkPlugin',
   'LexicalCollaborationContext',
   'LexicalCollaborationPlugin',
   'LexicalHistoryPlugin',
   'LexicalTypeaheadMenuPlugin',
+  'LexicalNodeMenuPlugin',
+  'LexicalContextMenuPlugin',
   'LexicalTablePlugin',
   'LexicalLinkPlugin',
   'LexicalListPlugin',
@@ -146,6 +149,7 @@ const moduleResolution = [
   'LexicalOnChangePlugin',
   'LexicalNodeEventPlugin',
   'LexicalTabIndentationPlugin',
+  'LexicalEditorRefPlugin'
 ].forEach((module) => {
   let resolvedPath = path.resolve(`../lexical-react/src/${module}.ts`);
 
@@ -165,6 +169,9 @@ const moduleResolution = [
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  define: {
+    "process.env.IS_PREACT": process.env.IS_PREACT,
+  },
   plugins: [
     replaceCodePlugin({
       replacements: [

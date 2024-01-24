@@ -64,7 +64,7 @@
         "./packages/lexical-react/src/LexicalBlockWithAlignableContents.tsx"
       ],
       "@lexical/react/useLexicalIsTextContentEmpty": [
-        "./packages/lexical-reactsrc//useLexicalIsTextContentEmpty.ts"
+        "./packages/lexical-react/src/useLexicalIsTextContentEmpty.ts"
       ],
       "@lexical/react/useLexicalNodeSelection": [
         "./packages/lexical-react/src/useLexicalNodeSelection.ts"
@@ -86,6 +86,12 @@
       ],
       "@lexical/react/LexicalTypeaheadMenuPlugin": [
         "packages/lexical-react/src/LexicalTypeaheadMenuPlugin.tsx"
+      ],
+      "@lexical/react/LexicalNodeMenuPlugin": [
+        "packages/lexical-react/src/LexicalNodeMenuPlugin.tsx"
+      ],
+      "@lexical/react/LexicalContextMenuPlugin": [
+        "packages/lexical-react/src/LexicalContextMenuPlugin.tsx"
       ],
       "@lexical/react/LexicalHistoryPlugin": [
         "./packages/lexical-react/src/LexicalHistoryPlugin.ts"
@@ -120,6 +126,9 @@
       "@lexical/react/LexicalClearEditorPlugin": [
         "./packages/lexical-react/src/LexicalClearEditorPlugin.ts"
       ],
+      "@lexical/react/LexicalClickableLinkPlugin": [
+        "./packages/lexical-react/src/LexicalClickableLinkPlugin.tsx"
+      ],
       "@lexical/react/LexicalCollaborationContext": [
         "./packages/lexical-react/src/LexicalCollaborationContext.ts"
       ],
@@ -146,6 +155,9 @@
       ],
       "@lexical/react/LexicalTabIndentationPlugin": [
         "./packages/lexical-react/src/LexicalTabIndentationPlugin.tsx"
+      ],
+      "@lexical/react/LexicalEditorRefPlugin": [
+        "packages/lexical-react/src/LexicalEditorRefPlugin.tsx"
       ],
 
       "@lexical/dragon/LexicalDragon": ["./packages/lexical-dragon/src/"],
@@ -181,7 +193,7 @@
   },
   "include": ["./libdefs", "./packages"],
   "exclude": [
-    "**/__tests__/**",
+    "**/lexical-*/src/__tests__/**",
     "**/dist/**",
     "**/npm/**",
     "**/node_modules/**",

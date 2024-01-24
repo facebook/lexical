@@ -22,7 +22,7 @@ export type SerializedMarkNode = SerializedElementNode & {
 declare export class MarkNode extends ElementNode {
   __ids: Array<string>;
 
-  static clone(node: MarkNode): MarkNode;
+  static clone(node: this): MarkNode;
   constructor(ids: Array<string>, key?: NodeKey): void;
 
   hasID(id: string): boolean;
@@ -36,7 +36,7 @@ declare export class MarkNode extends ElementNode {
 
 declare export function $isMarkNode(
   node: ?LexicalNode,
-): boolean %checks(node instanceof MarkNode);
+): node is MarkNode;
 
 declare export function $createMarkNode(ids: Array<string>): MarkNode;
 

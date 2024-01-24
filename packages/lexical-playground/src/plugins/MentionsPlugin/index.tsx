@@ -9,8 +9,8 @@
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   LexicalTypeaheadMenuPlugin,
-  QueryMatch,
-  TypeaheadOption,
+  MenuOption,
+  MenuTextMatch,
   useBasicTypeaheadTriggerMatch,
 } from '@lexical/react/LexicalTypeaheadMenuPlugin';
 import {TextNode} from 'lexical';
@@ -28,10 +28,6 @@ const DocumentMentionsRegex = {
   NAME,
   PUNCTUATION,
 };
-
-const CapitalizedNameMentionsRegex = new RegExp(
-  '(^|[^#])((?:' + DocumentMentionsRegex.NAME + '{' + 1 + ',})$)',
-);
 
 const PUNC = DocumentMentionsRegex.PUNCTUATION;
 
@@ -534,32 +530,10 @@ function useMentionLookupService(mentionString: string | null) {
   return results;
 }
 
-function checkForCapitalizedNameMentions(
-  text: string,
-  minMatchLength: number,
-): QueryMatch | null {
-  const match = CapitalizedNameMentionsRegex.exec(text);
-  if (match !== null) {
-    // The strategy ignores leading whitespace but we need to know it's
-    // length to add it to the leadOffset
-    const maybeLeadingWhitespace = match[1];
-
-    const matchingString = match[2];
-    if (matchingString != null && matchingString.length >= minMatchLength) {
-      return {
-        leadOffset: match.index + maybeLeadingWhitespace.length,
-        matchingString,
-        replaceableString: matchingString,
-      };
-    }
-  }
-  return null;
-}
-
 function checkForAtSignMentions(
   text: string,
   minMatchLength: number,
-): QueryMatch | null {
+): MenuTextMatch | null {
   let match = AtSignMentionsRegex.exec(text);
 
   if (match === null) {
@@ -582,12 +556,11 @@ function checkForAtSignMentions(
   return null;
 }
 
-function getPossibleQueryMatch(text: string): QueryMatch | null {
-  const match = checkForAtSignMentions(text, 1);
-  return match === null ? checkForCapitalizedNameMentions(text, 3) : match;
+function getPossibleQueryMatch(text: string): MenuTextMatch | null {
+  return checkForAtSignMentions(text, 1);
 }
 
-class MentionTypeaheadOption extends TypeaheadOption {
+class MentionTypeaheadOption extends MenuOption {
   name: string;
   picture: JSX.Element;
 

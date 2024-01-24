@@ -187,7 +187,7 @@ export function $canShowPlaceholderCurry(
 export type EntityMatch = {end: number; start: number};
 
 /**
- * Returns a touple that can be rested (...) into mergeRegister to clean up
+ * Returns a tuple that can be rested (...) into mergeRegister to clean up
  * node transforms listeners that transforms text into another node, eg. a HashtagNode.
  * @example
  * ```ts
@@ -327,6 +327,7 @@ export function registerLexicalTextEntity<T extends TextNode>(
       }
 
       const replacementNode = createNode(nodeToReplace);
+      replacementNode.setFormat(nodeToReplace.getFormat());
       nodeToReplace.replace(replacementNode);
 
       if (currentNode == null) {

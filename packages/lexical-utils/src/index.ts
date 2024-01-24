@@ -10,16 +10,15 @@
 import {$cloneWithProperties} from '@lexical/selection';
 import {
   $createParagraphNode,
+  $getPreviousSelection,
   $getRoot,
   $getSelection,
   $isElementNode,
-  $isNodeSelection,
   $isRangeSelection,
   $isRootOrShadowRoot,
   $isTextNode,
   $setSelection,
   $splitNode,
-  DEPRECATED_$isGridSelection,
   EditorState,
   ElementNode,
   Klass,
@@ -28,7 +27,10 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
-export {$splitNode};
+export {default as markSelection} from './markSelection';
+export {default as mergeRegister} from './mergeRegister';
+export {default as positionNodeOnRange} from './positionNodeOnRange';
+export {$splitNode, isHTMLAnchorElement, isHTMLElement} from 'lexical';
 
 export type DFSNode = Readonly<{
   depth: number;
@@ -223,7 +225,7 @@ export function $getNearestNodeOfType<T extends ElementNode>(
 }
 
 /**
- *Returns the element node of the nearest ancestor, otherwise throws an error.
+ * Returns the element node of the nearest ancestor, otherwise throws an error.
  * @param startNode - The starting node of the search
  * @returns The ancestor node found
  */
@@ -234,7 +236,6 @@ export function $getNearestBlockElementAncestorOrThrow(
     startNode,
     (node) => $isElementNode(node) && !node.isInline(),
   );
-
   if (!$isElementNode(blockNode)) {
     invariant(
       false,
@@ -242,7 +243,6 @@ export function $getNearestBlockElementAncestorOrThrow(
       startNode.__key,
     );
   }
-
   return blockNode;
 }
 
@@ -261,10 +261,19 @@ export type DOMNodeToLexicalConversionMap = Record<
  * @param findFn - A testing function that returns true if the current node satisfies the testing parameters.
  * @returns A parent node that matches the findFn parameters, or null if one wasn't found.
  */
-export function $findMatchingParent(
+export const $findMatchingParent: {
+  <T extends LexicalNode>(
+    startingNode: LexicalNode,
+    findFn: (node: LexicalNode) => node is T,
+  ): T | null;
+  (
+    startingNode: LexicalNode,
+    findFn: (node: LexicalNode) => boolean,
+  ): LexicalNode | null;
+} = (
   startingNode: LexicalNode,
   findFn: (node: LexicalNode) => boolean,
-): LexicalNode | null {
+): LexicalNode | null => {
   let curr: ElementNode | LexicalNode | null = startingNode;
 
   while (curr !== $getRoot() && curr != null) {
@@ -276,37 +285,7 @@ export function $findMatchingParent(
   }
 
   return null;
-}
-
-type Func = () => void;
-
-/**
- * Returns a function that will execute all functions passed when called. It is generally used
- * to register multiple lexical listeners and then tear them down with a single function call, such
- * as React's useEffect hook.
- * @example
- * ```ts
- * useEffect(() => {
- *   return mergeRegister(
- *     editor.registerCommand(...registerCommand1 logic),
- *     editor.registerCommand(...registerCommand2 logic),
- *     editor.registerCommand(...registerCommand3 logic)
- *   )
- * }, [editor])
- * ```
- * In this case, useEffect is returning the function returned by mergeRegister as a cleanup
- * function to be executed after either the useEffect runs again (due to one of its dependencies
- * updating) or the compenent it resides in unmounts.
- * Note the functions don't neccesarily need to be in an array as all arguements
- * are considered to be the func argument and spread from there.
- * @param func - An array of functions meant to be executed by the returned function.
- * @returns the function which executes all the passed register command functions.
- */
-export function mergeRegister(...func: Array<Func>): () => void {
-  return () => {
-    func.forEach((f) => f());
-  };
-}
+};
 
 /**
  * Attempts to resolve nested element nodes of the same type into a single node of that type.
@@ -409,6 +388,7 @@ export function $restoreEditorState(
   for (const [key, node] of editorState._nodeMap) {
     const clone = $cloneWithProperties(node);
     if ($isTextNode(clone)) {
+      invariant($isTextNode(node), 'Expected node be a TextNode');
       clone.__text = node.__text;
     }
     nodeMap.set(key, clone);
@@ -432,7 +412,8 @@ export function $restoreEditorState(
  * @returns The node after its insertion
  */
 export function $insertNodeToNearestRoot<T extends LexicalNode>(node: T): T {
-  const selection = $getSelection();
+  const selection = $getSelection() || $getPreviousSelection();
+
   if ($isRangeSelection(selection)) {
     const {focus} = selection;
     const focusNode = focus.getNode();
@@ -465,7 +446,7 @@ export function $insertNodeToNearestRoot<T extends LexicalNode>(node: T): T {
       rightTree.selectStart();
     }
   } else {
-    if ($isNodeSelection(selection) || DEPRECATED_$isGridSelection(selection)) {
+    if (selection != null) {
       const nodes = selection.getNodes();
       nodes[nodes.length - 1].getTopLevelElementOrThrow().insertAfter(node);
     } else {
@@ -482,8 +463,8 @@ export function $insertNodeToNearestRoot<T extends LexicalNode>(node: T): T {
 /**
  * Wraps the node into another node created from a createElementNode function, eg. $createParagraphNode
  * @param node - Node to be wrapped.
- * @param createElementNode - Creates a new lexcial element to wrap the to-be-wrapped node and returns it.
- * @returns A new lexcial element with the previous node appended within (as a child, including its children).
+ * @param createElementNode - Creates a new lexical element to wrap the to-be-wrapped node and returns it.
+ * @returns A new lexical element with the previous node appended within (as a child, including its children).
  */
 export function $wrapNodeInElement(
   node: LexicalNode,
@@ -495,19 +476,53 @@ export function $wrapNodeInElement(
   return elementNode;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ObjectKlass<T> = new (...args: any[]) => T;
+
 /**
- * @param x - The element being tested
- * @returns Returns true if x is an HTML anchor tag, false otherwise
+ * @param object = The instance of the type
+ * @param objectClass = The class of the type
+ * @returns Whether the object is has the same Klass of the objectClass, ignoring the difference across window (e.g. different iframs)
  */
-export function isHTMLAnchorElement(x: Node): x is HTMLAnchorElement {
-  return isHTMLElement(x) && x.tagName === 'A';
+export function objectKlassEquals<T>(
+  object: unknown,
+  objectClass: ObjectKlass<T>,
+): boolean {
+  return object !== null
+    ? Object.getPrototypeOf(object).constructor.name === objectClass.name
+    : false;
 }
 
 /**
- * @param x - The element being testing
- * @returns Returns true if x is an HTML element, false otherwise.
+ * Filter the nodes
+ * @param nodes Array of nodes that needs to be filtered
+ * @param filterFn A filter function that returns node if the current node satisfies the condition otherwise null
+ * @returns Array of filtered nodes
  */
-export function isHTMLElement(x: Node | EventTarget): x is HTMLElement {
-  // @ts-ignore-next-line - strict check on nodeType here should filter out non-Element EventTarget implementors
-  return x.nodeType === 1;
+
+export function $filter<T>(
+  nodes: Array<LexicalNode>,
+  filterFn: (node: LexicalNode) => null | T,
+): Array<T> {
+  const result: T[] = [];
+  for (let i = 0; i < nodes.length; i++) {
+    const node = filterFn(nodes[i]);
+    if (node !== null) {
+      result.push(node);
+    }
+  }
+  return result;
+}
+/**
+ * Appends the node before the first child of the parent node
+ * @param parent A parent node
+ * @param node Node that needs to be appended
+ */
+export function $insertFirst(parent: ElementNode, node: LexicalNode): void {
+  const firstChild = parent.getFirstChild();
+  if (firstChild !== null) {
+    firstChild.insertBefore(node);
+  } else {
+    parent.append(node);
+  }
 }

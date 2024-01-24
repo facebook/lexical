@@ -17,12 +17,12 @@ import type {
   NodeMutation,
   RegisteredNode,
   RegisteredNodes,
+  Spread,
 } from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
 import type {LexicalNode, NodeKey, NodeMap} from './LexicalNode';
 import type {
-  GridSelection,
-  NodeSelection,
+  BaseSelection,
   PointType,
   RangeSelection,
 } from './LexicalSelection';
@@ -57,6 +57,7 @@ import {
 } from './LexicalConstants';
 import {LexicalEditor} from './LexicalEditor';
 import {flushRootMutations} from './LexicalMutations';
+import {$normalizeSelection} from './LexicalNormalization';
 import {
   errorOnInfiniteTransforms,
   errorOnReadOnly,
@@ -195,20 +196,19 @@ export function toggleTextFormatType(
   alignWithFormat: null | number,
 ): number {
   const activeFormat = TEXT_TYPE_TO_FORMAT[type];
-  const isStateFlagPresent = format & activeFormat;
-
   if (
-    isStateFlagPresent &&
-    (alignWithFormat === null || (alignWithFormat & activeFormat) === 0)
+    alignWithFormat !== null &&
+    (format & activeFormat) === (alignWithFormat & activeFormat)
   ) {
-    // Remove the state flag.
-    return format ^ activeFormat;
+    return format;
   }
-  if (alignWithFormat === null || alignWithFormat & activeFormat) {
-    // Add the state flag.
-    return format | activeFormat;
+  let newFormat = format ^ activeFormat;
+  if (type === 'subscript') {
+    newFormat &= ~TEXT_TYPE_TO_FORMAT.superscript;
+  } else if (type === 'superscript') {
+    newFormat &= ~TEXT_TYPE_TO_FORMAT.subscript;
   }
-  return format;
+  return newFormat;
 }
 
 export function $isLeafNode(
@@ -464,9 +464,7 @@ export function internalGetRoot(editorState: EditorState): RootNode {
   return editorState._nodeMap.get('root') as RootNode;
 }
 
-export function $setSelection(
-  selection: null | RangeSelection | NodeSelection | GridSelection,
-): void {
+export function $setSelection(selection: null | BaseSelection): void {
   errorOnReadOnly();
   const editorState = getActiveEditorState();
   if (selection !== null) {
@@ -479,7 +477,7 @@ export function $setSelection(
       }
     }
     selection.dirty = true;
-    selection._cachedNodes = null;
+    selection.setCachedNodes(null);
   }
   editorState._selection = selection;
 }
@@ -573,41 +571,6 @@ export function $updateSelectedTextFromDOM(
     let textContent = getAnchorTextFromDOM(anchorNode);
     const node = $getNearestNodeFromDOMNode(anchorNode);
     if (textContent !== null && $isTextNode(node)) {
-      if (node.canContainTabs()) {
-        const hasTabCharacter = textContent.includes('\t');
-
-        // At present, this condition is primarily used for code highlights when
-        // grouped together in lines (divs). If a code highlight includes a tab,
-        // the newly typed character may be missing from the DOM's textContent.
-
-        // Let's take an example. If a LinedCodeNode looked roughly like this:
-        // <code><div><codeHighlight /><codeHighlight /></div></code>,
-        // the following could occur when using tabs:
-
-        // a. /tconst --type--> 'd' at offset 1 --get--> /tconst
-        //    - Missing 'd'
-        // b. /tconst --type--> 'd' at offset 3 --get--> /tcondst
-        //    --type--> 'd' at offset 3 --get--> /tcondst
-        //    - Missing second 'd'
-
-        // In these cases, we can fix the problem by manually inserting the
-        // newly typed character where we know it should have been.
-
-        if (data && data.length > 0 && hasTabCharacter) {
-          const selectionOffset = data.length;
-          const insertionOffset = anchorOffset + selectionOffset - 1;
-          const beforeInsertion = textContent.slice(0, insertionOffset);
-          const afterInsertion = textContent.slice(
-            insertionOffset,
-            textContent.length,
-          );
-
-          textContent = `${beforeInsertion}${data}${afterInsertion}`;
-          anchorOffset += selectionOffset;
-          focusOffset += selectionOffset;
-        }
-      }
-
       // Data is intentionally truthy, as we check for boolean, null and empty string.
       if (textContent === COMPOSITION_SUFFIX && data) {
         const offset = data.length;
@@ -670,6 +633,7 @@ export function $updateTextNodeFromDOMContent(
       }
       const parent = node.getParent();
       const prevSelection = $getPreviousSelection();
+      const prevTextContentSize = node.getTextContentSize();
       const compositionKey = $getCompositionKey();
       const nodeKey = node.getKey();
 
@@ -678,13 +642,20 @@ export function $updateTextNodeFromDOMContent(
         (compositionKey !== null &&
           nodeKey === compositionKey &&
           !isComposing) ||
-        // Check if character was added at the start, and we need
-        // to clear this input from occurring as that action wasn't
-        // permitted.
-        (parent !== null &&
-          $isRangeSelection(prevSelection) &&
-          !parent.canInsertTextBefore() &&
-          prevSelection.anchor.offset === 0)
+        // Check if character was added at the start or boundaries when not insertable, and we need
+        // to clear this input from occurring as that action wasn't permitted.
+        ($isRangeSelection(prevSelection) &&
+          ((parent !== null &&
+            !parent.canInsertTextBefore() &&
+            prevSelection.anchor.offset === 0) ||
+            (prevSelection.anchor.key === textNode.__key &&
+              prevSelection.anchor.offset === 0 &&
+              !node.canInsertTextBefore() &&
+              !isComposing) ||
+            (prevSelection.focus.key === textNode.__key &&
+              prevSelection.focus.offset === prevTextContentSize &&
+              !node.canInsertTextAfter() &&
+              !isComposing)))
       ) {
         node.markDirty();
         return;
@@ -1039,10 +1010,24 @@ export function isSelectAll(
   return keyCode === 65 && controlOrMeta(metaKey, ctrlKey);
 }
 
+export function $selectAll(): void {
+  const root = $getRoot();
+  const selection = root.select(0, root.getChildrenSize());
+  $setSelection($normalizeSelection(selection));
+}
+
 export function getCachedClassNameArray(
   classNamesTheme: EditorThemeClasses,
   classNameThemeType: string,
 ): Array<string> {
+  if (classNamesTheme.__lexicalClassNameCache === undefined) {
+    classNamesTheme.__lexicalClassNameCache = {};
+  }
+  const classNamesCache = classNamesTheme.__lexicalClassNameCache;
+  const cachedClassNames = classNamesCache[classNameThemeType];
+  if (cachedClassNames !== undefined) {
+    return cachedClassNames;
+  }
   const classNames = classNamesTheme[classNameThemeType];
   // As we're using classList, we need
   // to handle className tokens that have spaces.
@@ -1051,7 +1036,7 @@ export function getCachedClassNameArray(
   // applied to classList.add()/remove().
   if (typeof classNames === 'string') {
     const classNamesArr = classNames.split(' ');
-    classNamesTheme[classNameThemeType] = classNamesArr;
+    classNamesCache[classNameThemeType] = classNamesArr;
     return classNamesArr;
   }
   return classNames;
@@ -1272,11 +1257,7 @@ export function $addUpdateTag(tag: string): void {
 
 export function $maybeMoveChildrenSelectionToParent(
   parentNode: LexicalNode,
-  offset = 0,
-): RangeSelection | NodeSelection | GridSelection | null {
-  if (offset !== 0) {
-    invariant(false, 'TODO');
-  }
+): BaseSelection | null {
   const selection = $getSelection();
   if (!$isRangeSelection(selection) || !$isElementNode(parentNode)) {
     return selection;
@@ -1340,14 +1321,23 @@ export function $getNearestRootOrShadowRoot(
   return parent;
 }
 
-export function $isRootOrShadowRoot(node: null | LexicalNode): boolean {
+const ShadowRootNodeBrand: unique symbol = Symbol.for(
+  '@lexical/ShadowRootNodeBrand',
+);
+type ShadowRootNode = Spread<
+  {isShadowRoot(): true; [ShadowRootNodeBrand]: never},
+  ElementNode
+>;
+export function $isRootOrShadowRoot(
+  node: null | LexicalNode,
+): node is RootNode | ShadowRootNode {
   return $isRootNode(node) || ($isElementNode(node) && node.isShadowRoot());
 }
 
 export function $copyNode<T extends LexicalNode>(node: T): T {
-  // @ts-ignore
   const copy = node.constructor.clone(node);
   $setNodeKey(copy, null);
+  // @ts-expect-error
   return copy;
 }
 
@@ -1355,7 +1345,7 @@ export function $applyNodeReplacement<N extends LexicalNode>(
   node: LexicalNode,
 ): N {
   const editor = getActiveEditor();
-  const nodeType = (node.constructor as Klass<LexicalNode>).getType();
+  const nodeType = node.constructor.getType();
   const registeredNode = editor._nodes.get(nodeType);
   if (registeredNode === undefined) {
     invariant(
@@ -1448,7 +1438,7 @@ export function removeDOMBlockCursorElement(
 export function updateDOMBlockCursorElement(
   editor: LexicalEditor,
   rootElement: HTMLElement,
-  nextSelection: null | RangeSelection | NodeSelection | GridSelection,
+  nextSelection: null | BaseSelection,
 ): void {
   let blockCursorElement = editor._blockCursorElement;
 
@@ -1523,9 +1513,9 @@ export function $splitNode(
     'Can not call $splitNode() on root element',
   );
 
-  const recurse = (
-    currentNode: LexicalNode,
-  ): [ElementNode, ElementNode, LexicalNode] => {
+  const recurse = <T extends LexicalNode>(
+    currentNode: T,
+  ): [ElementNode, ElementNode, T] => {
     const parent = currentNode.getParentOrThrow();
     const isParentRoot = $isRootOrShadowRoot(parent);
     // The node we start split from (leaf) is moved, but its recursive
@@ -1536,12 +1526,13 @@ export function $splitNode(
         : $copyNode(currentNode);
 
     if (isParentRoot) {
+      invariant(
+        $isElementNode(currentNode) && $isElementNode(nodeToMove),
+        'Children of a root must be ElementNode',
+      );
+
       currentNode.insertAfter(nodeToMove);
-      return [
-        currentNode as ElementNode,
-        nodeToMove as ElementNode,
-        nodeToMove,
-      ];
+      return [currentNode, nodeToMove, nodeToMove];
     } else {
       const [leftTree, rightTree, newParent] = recurse(parent);
       const nextSiblings = currentNode.getNextSiblings();
@@ -1573,21 +1564,54 @@ export function $findMatchingParent(
   return null;
 }
 
-export function $getChildrenRecursively(node: LexicalNode): Array<LexicalNode> {
-  const nodes = [];
-  const stack = [node];
-  while (stack.length > 0) {
-    const currentNode = stack.pop();
-    invariant(
-      currentNode !== undefined,
-      "Stack.length > 0; can't be undefined",
-    );
-    if ($isElementNode(currentNode)) {
-      stack.unshift(...currentNode.getChildren());
-    }
-    if (currentNode !== node) {
-      nodes.push(currentNode);
-    }
+/**
+ * @param x - The element being tested
+ * @returns Returns true if x is an HTML anchor tag, false otherwise
+ */
+export function isHTMLAnchorElement(x: Node): x is HTMLAnchorElement {
+  return isHTMLElement(x) && x.tagName === 'A';
+}
+
+/**
+ * @param x - The element being testing
+ * @returns Returns true if x is an HTML element, false otherwise.
+ */
+export function isHTMLElement(x: Node | EventTarget): x is HTMLElement {
+  // @ts-ignore-next-line - strict check on nodeType here should filter out non-Element EventTarget implementors
+  return x.nodeType === 1;
+}
+
+/**
+ * This function is for internal use of the library.
+ * Please do not use it as it may change in the future.
+ */
+export function INTERNAL_$isBlock(
+  node: LexicalNode,
+): node is ElementNode | DecoratorNode<unknown> {
+  if ($isDecoratorNode(node) && !node.isInline()) {
+    return true;
   }
-  return nodes;
+  if (!$isElementNode(node) || $isRootOrShadowRoot(node)) {
+    return false;
+  }
+
+  const firstChild = node.getFirstChild();
+  const isLeafElement =
+    firstChild === null ||
+    $isLineBreakNode(firstChild) ||
+    $isTextNode(firstChild) ||
+    firstChild.isInline();
+
+  return !node.isInline() && node.canBeEmpty() !== false && isLeafElement;
+}
+
+export function $getAncestor<NodeType extends LexicalNode = LexicalNode>(
+  node: LexicalNode,
+  predicate: (ancestor: LexicalNode) => ancestor is NodeType,
+) {
+  let parent = node;
+  while (parent !== null && parent.getParent() !== null && !predicate(parent)) {
+    parent = parent.getParentOrThrow();
+  }
+  return predicate(parent) ? parent : null;
 }

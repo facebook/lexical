@@ -173,7 +173,6 @@ export function $createCollabTextNode(
   type: string,
 ): CollabTextNode {
   const collabNode = new CollabTextNode(map, text, parent, type);
-  // @ts-expect-error: internal field
   map._collabNode = collabNode;
   return collabNode;
 }

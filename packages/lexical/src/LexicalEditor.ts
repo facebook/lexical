@@ -7,7 +7,12 @@
  */
 
 import type {EditorState, SerializedEditorState} from './LexicalEditorState';
-import type {DOMConversion, NodeKey} from './LexicalNode';
+import type {
+  DOMConversion,
+  DOMConversionMap,
+  DOMExportOutput,
+  NodeKey,
+} from './LexicalNode';
 
 import invariant from 'shared/invariant';
 
@@ -36,13 +41,22 @@ import {DecoratorNode} from './nodes/LexicalDecoratorNode';
 import {LineBreakNode} from './nodes/LexicalLineBreakNode';
 import {ParagraphNode} from './nodes/LexicalParagraphNode';
 import {RootNode} from './nodes/LexicalRootNode';
+import {TabNode} from './nodes/LexicalTabNode';
 
 export type Spread<T1, T2> = Omit<T2, keyof T1> & T1;
 
-export type Klass<T extends LexicalNode> = {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  new (...args: any[]): T;
-} & Omit<LexicalNode, 'constructor'>;
+// https://github.com/microsoft/TypeScript/issues/3841
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type KlassConstructor<Cls extends GenericConstructor<any>> =
+  GenericConstructor<InstanceType<Cls>> & {[k in keyof Cls]: Cls[k]};
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type GenericConstructor<T> = new (...args: any[]) => T;
+
+export type Klass<T extends LexicalNode> = InstanceType<
+  T['constructor']
+> extends T
+  ? T['constructor']
+  : GenericConstructor<T> & T['constructor'];
 
 export type EditorThemeClassName = string;
 
@@ -57,6 +71,7 @@ export type TextNodeThemeClasses = {
   superscript?: EditorThemeClassName;
   underline?: EditorThemeClassName;
   underlineStrikethrough?: EditorThemeClassName;
+  [key: string]: EditorThemeClassName | undefined;
 };
 
 export type EditorUpdateOptions = {
@@ -95,6 +110,7 @@ export type EditorThemeClasses = {
     ulDepth?: Array<EditorThemeClassName>;
     ol?: EditorThemeClassName;
     olDepth?: Array<EditorThemeClassName>;
+    checklist?: EditorThemeClassName;
     listitem?: EditorThemeClassName;
     listitemChecked?: EditorThemeClassName;
     listitemUnchecked?: EditorThemeClassName;
@@ -141,26 +157,33 @@ export type EditorConfig = {
   theme: EditorThemeClasses;
 };
 
+export type LexicalNodeReplacement = {
+  replace: Klass<LexicalNode>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  with: <T extends {new (...args: any): any}>(
+    node: InstanceType<T>,
+  ) => LexicalNode;
+  withKlass?: Klass<LexicalNode>;
+};
+
+export type HTMLConfig = {
+  export?: Map<
+    Klass<LexicalNode>,
+    (editor: LexicalEditor, target: LexicalNode) => DOMExportOutput
+  >;
+  import?: DOMConversionMap;
+};
+
 export type CreateEditorArgs = {
   disableEvents?: boolean;
   editorState?: EditorState;
   namespace?: string;
-  nodes?: ReadonlyArray<
-    | Klass<LexicalNode>
-    | {
-        replace: Klass<LexicalNode>;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        with: <T extends {new (...args: any): any}>(
-          node: InstanceType<T>,
-        ) => LexicalNode;
-
-        withKlass?: Klass<LexicalNode>;
-      }
-  >;
+  nodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>;
   onError?: ErrorHandler;
   parentEditor?: LexicalEditor;
   editable?: boolean;
   theme?: EditorThemeClasses;
+  html?: HTMLConfig;
 };
 
 export type RegisteredNodes = Map<string, RegisteredNode>;
@@ -170,6 +193,10 @@ export type RegisteredNode = {
   transforms: Set<Transform<LexicalNode>>;
   replace: null | ((node: LexicalNode) => LexicalNode);
   replaceWithKlass: null | Klass<LexicalNode>;
+  exportDOM?: (
+    editor: LexicalEditor,
+    targetNode: LexicalNode,
+  ) => DOMExportOutput;
 };
 
 export type Transform<T extends LexicalNode> = (node: T) => void;
@@ -204,7 +231,11 @@ export type TextContentListener = (text: string) => void;
 
 export type MutationListener = (
   nodes: Map<NodeKey, NodeMutation>,
-  payload: {updateTags: Set<string>; dirtyLeaves: Set<string>},
+  payload: {
+    updateTags: Set<string>;
+    dirtyLeaves: Set<string>;
+    prevEditorState: EditorState;
+  },
 ) => void;
 
 export type CommandListener<P> = (payload: P, editor: LexicalEditor) => boolean;
@@ -327,9 +358,24 @@ export function resetEditor(
   }
 }
 
-function initializeConversionCache(nodes: RegisteredNodes): DOMConversionCache {
+function initializeConversionCache(
+  nodes: RegisteredNodes,
+  additionalConversions?: DOMConversionMap,
+): DOMConversionCache {
   const conversionCache = new Map();
   const handledConversions = new Set();
+  const addConversionsToCache = (map: DOMConversionMap) => {
+    Object.keys(map).forEach((key) => {
+      let currentCache = conversionCache.get(key);
+
+      if (currentCache === undefined) {
+        currentCache = [];
+        conversionCache.set(key, currentCache);
+      }
+
+      currentCache.push(map[key]);
+    });
+  };
   nodes.forEach((node) => {
     const importDOM =
       node.klass.importDOM != null
@@ -344,18 +390,12 @@ function initializeConversionCache(nodes: RegisteredNodes): DOMConversionCache {
     const map = importDOM();
 
     if (map !== null) {
-      Object.keys(map).forEach((key) => {
-        let currentCache = conversionCache.get(key);
-
-        if (currentCache === undefined) {
-          currentCache = [];
-          conversionCache.set(key, currentCache);
-        }
-
-        currentCache.push(map[key]);
-      });
+      addConversionsToCache(map);
     }
   });
+  if (additionalConversions) {
+    addConversionsToCache(additionalConversions);
+  }
   return conversionCache;
 }
 
@@ -382,12 +422,13 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
     RootNode,
     TextNode,
     LineBreakNode,
+    TabNode,
     ParagraphNode,
     ...(config.nodes || []),
   ];
-  const onError = config.onError;
+  const {onError, html} = config;
   const isEditable = config.editable !== undefined ? config.editable : true;
-  let registeredNodes;
+  let registeredNodes: Map<string, RegisteredNode>;
 
   if (editorConfig === undefined && activeEditor !== null) {
     registeredNodes = activeEditor._nodes;
@@ -395,14 +436,14 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
     registeredNodes = new Map();
     for (let i = 0; i < nodes.length; i++) {
       let klass = nodes[i];
-      let replacementClass = null;
-      let replacementKlass = null;
+      let replace = null;
+      let replaceWithKlass = null;
 
       if (typeof klass !== 'function') {
         const options = klass;
         klass = options.replace;
-        replacementClass = options.with;
-        replacementKlass = options.withKlass ? options.withKlass : null;
+        replace = options.with;
+        replaceWithKlass = options.withKlass || null;
       }
       // Ensure custom nodes implement required methods.
       if (__DEV__) {
@@ -453,19 +494,19 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
       }
       const type = klass.getType();
       const transform = klass.transform();
-      const transforms = new Set();
+      const transforms = new Set<Transform<LexicalNode>>();
       if (transform !== null) {
         transforms.add(transform);
       }
       registeredNodes.set(type, {
+        exportDOM: html && html.export ? html.export.get(klass) : undefined,
         klass,
-        replace: replacementClass,
-        replaceWithKlass: replacementKlass,
+        replace,
+        replaceWithKlass,
         transforms,
       });
     }
   }
-
   const editor = new LexicalEditor(
     editorState,
     parentEditor,
@@ -476,7 +517,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
       theme,
     },
     onError ? onError : console.error,
-    initializeConversionCache(registeredNodes),
+    initializeConversionCache(registeredNodes, html ? html.import : undefined),
     isEditable,
   );
 
@@ -488,6 +529,8 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
   return editor;
 }
 export class LexicalEditor {
+  ['constructor']!: KlassConstructor<typeof LexicalEditor>;
+
   /** @internal */
   _headless: boolean;
   /** @internal */
@@ -846,21 +889,21 @@ export class LexicalEditor {
   }
 
   /**
+   * Used to assert that a certain node is registered, usually by plugins to ensure nodes that they
+   * depend on have been registered.
+   * @returns True if the editor has registered the provided node type, false otherwise.
+   */
+  hasNode<T extends Klass<LexicalNode>>(node: T): boolean {
+    return this._nodes.has(node.getType());
+  }
+
+  /**
    * Used to assert that certain nodes are registered, usually by plugins to ensure nodes that they
    * depend on have been registered.
    * @returns True if the editor has registered all of the provided node types, false otherwise.
    */
   hasNodes<T extends Klass<LexicalNode>>(nodes: Array<T>): boolean {
-    for (let i = 0; i < nodes.length; i++) {
-      const klass = nodes[i];
-      const type = klass.getType();
-
-      if (!this._nodes.has(type)) {
-        return false;
-      }
-    }
-
-    return true;
+    return nodes.every(this.hasNode.bind(this));
   }
 
   /**
@@ -949,6 +992,10 @@ export class LexicalEditor {
           nextRootElement.classList.add(...classNames);
         }
       } else {
+        // If content editable is unmounted we'll reset editor state back to original
+        // (or pending) editor state since there will be no reconciliation
+        this._editorState = pendingEditorState;
+        this._pendingEditorState = null;
         this._window = null;
       }
 

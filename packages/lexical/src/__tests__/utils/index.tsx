@@ -6,7 +6,31 @@
  *
  */
 
-import type {
+import {CodeHighlightNode, CodeNode} from '@lexical/code';
+import {HashtagNode} from '@lexical/hashtag';
+import {createHeadlessEditor} from '@lexical/headless';
+import {AutoLinkNode, LinkNode} from '@lexical/link';
+import {ListItemNode, ListNode} from '@lexical/list';
+import {OverflowNode} from '@lexical/overflow';
+import {
+  InitialConfigType,
+  LexicalComposer,
+} from '@lexical/react/src/LexicalComposer';
+import {
+  createLexicalComposerContext,
+  LexicalComposerContext,
+} from '@lexical/react/src/LexicalComposerContext';
+import {HeadingNode, QuoteNode} from '@lexical/rich-text';
+import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
+import {expect} from '@playwright/test';
+import {
+  $isRangeSelection,
+  createEditor,
+  DecoratorNode,
+  ElementNode,
+  TextNode,
+} from 'lexical';
+import {
   EditorState,
   EditorThemeClasses,
   Klass,
@@ -16,46 +40,58 @@ import type {
   SerializedElementNode,
   SerializedLexicalNode,
   SerializedTextNode,
-} from 'lexical';
-
-import {CodeHighlightNode, CodeNode} from '@lexical/code';
-import {HashtagNode} from '@lexical/hashtag';
-import {AutoLinkNode, LinkNode} from '@lexical/link';
-import {ListItemNode, ListNode} from '@lexical/list';
-import {OverflowNode} from '@lexical/overflow';
-import {LexicalComposer} from '@lexical/react/src/LexicalComposer';
-import {HeadingNode, QuoteNode} from '@lexical/rich-text';
-import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
-import {
-  $isRangeSelection,
-  createEditor,
-  DecoratorNode,
-  ElementNode,
-  TextNode,
-} from 'lexical';
+} from 'lexical/src';
+import {format} from 'prettier';
 import * as React from 'react';
 import {createRef} from 'react';
 import {createRoot} from 'react-dom/client';
 import * as ReactTestUtils from 'react-dom/test-utils';
 
+import {CreateEditorArgs, LexicalNodeReplacement} from '../../LexicalEditor';
 import {resetRandomKey} from '../../LexicalUtils';
 
 type TestEnv = {
-  container: HTMLDivElement | null;
-  editor: LexicalEditor | null;
-  outerHTML: string;
+  readonly container: HTMLDivElement;
+  readonly editor: LexicalEditor;
+  readonly outerHTML: string;
+  readonly innerHTML: string;
 };
 
 export function initializeUnitTest(
   runTests: (testEnv: TestEnv) => void,
-  editorConfig = {},
+  editorConfig: CreateEditorArgs = {namespace: 'test', theme: {}},
+  plugins?: React.ReactNode,
 ) {
-  const testEnv: TestEnv = {
-    container: null,
-    editor: null,
-
+  const testEnv = {
+    _container: null as HTMLDivElement | null,
+    _editor: null as LexicalEditor | null,
+    get container() {
+      if (!this._container) {
+        throw new Error('testEnv.container not initialized.');
+      }
+      return this._container;
+    },
+    set container(container) {
+      this._container = container;
+    },
+    get editor() {
+      if (!this._editor) {
+        throw new Error('testEnv.editor not initialized.');
+      }
+      return this._editor;
+    },
+    set editor(editor) {
+      this._editor = editor;
+    },
+    get innerHTML() {
+      return (this.container.firstChild as HTMLElement).innerHTML;
+    },
     get outerHTML() {
       return this.container.innerHTML;
+    },
+    reset() {
+      this._container = null;
+      this._editor = null;
     },
   };
 
@@ -66,7 +102,9 @@ export function initializeUnitTest(
     document.body.appendChild(testEnv.container);
     const ref = createRef<HTMLDivElement>();
 
-    const useLexicalEditor = (rootElementRef) => {
+    const useLexicalEditor = (
+      rootElementRef: React.RefObject<HTMLDivElement>,
+    ) => {
       const lexicalEditor = React.useMemo(() => {
         const lexical = createTestEditor(editorConfig);
         return lexical;
@@ -81,7 +119,16 @@ export function initializeUnitTest(
 
     const Editor = () => {
       testEnv.editor = useLexicalEditor(ref);
-      return <div ref={ref} contentEditable={true} />;
+      const context = createLexicalComposerContext(
+        null,
+        editorConfig?.theme ?? {},
+      );
+      return (
+        <LexicalComposerContext.Provider value={[testEnv.editor, context]}>
+          <div ref={ref} contentEditable={true} />
+          {plugins}
+        </LexicalComposerContext.Provider>
+      );
     };
 
     ReactTestUtils.act(() => {
@@ -91,7 +138,7 @@ export function initializeUnitTest(
 
   afterEach(() => {
     document.body.removeChild(testEnv.container);
-    testEnv.container = null;
+    testEnv.reset();
   });
 
   runTests(testEnv);
@@ -297,7 +344,7 @@ export class TestSegmentedNode extends TextNode {
   }
 }
 
-export function $createTestSegmentedNode(text): TestSegmentedNode {
+export function $createTestSegmentedNode(text: string): TestSegmentedNode {
   return new TestSegmentedNode(text).setMode('segmented');
 }
 
@@ -405,7 +452,7 @@ export class TestDecoratorNode extends DecoratorNode<JSX.Element> {
   }
 }
 
-function Decorator({text}): JSX.Element {
+function Decorator({text}: {text: string}): JSX.Element {
   return <span>{text}</span>;
 }
 
@@ -413,7 +460,7 @@ export function $createTestDecoratorNode(): TestDecoratorNode {
   return new TestDecoratorNode();
 }
 
-const DEFAULT_NODES = [
+const DEFAULT_NODES: NonNullable<InitialConfigType['nodes']> = [
   HeadingNode,
   ListNode,
   ListItemNode,
@@ -442,6 +489,9 @@ export function TestComposer({
     theme: {},
   },
   children,
+}: {
+  config?: Omit<InitialConfigType, 'onError' | 'namespace'>;
+  children: React.ComponentProps<typeof LexicalComposer>['children'];
 }) {
   const customNodes = config.nodes;
   return (
@@ -452,7 +502,7 @@ export function TestComposer({
         },
         ...config,
         namespace: '',
-        nodes: DEFAULT_NODES.concat(customNodes),
+        nodes: DEFAULT_NODES.concat(customNodes || []),
       }}>
       {children}
     </LexicalComposer>
@@ -465,16 +515,7 @@ export function createTestEditor(
     editorState?: EditorState;
     theme?: EditorThemeClasses;
     parentEditor?: LexicalEditor;
-    nodes?: ReadonlyArray<
-      | Klass<LexicalNode>
-      | {
-          replace: Klass<LexicalNode>;
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          with: <T extends {new (...args: any): any}>(
-            node: InstanceType<T>,
-          ) => LexicalNode;
-        }
-    >;
+    nodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>;
     onError?: (error: Error) => void;
     disableEvents?: boolean;
     readOnly?: boolean;
@@ -493,9 +534,255 @@ export function createTestEditor(
   return editor;
 }
 
-export function $assertRangeSelection(selection): RangeSelection {
+export function createTestHeadlessEditor(): LexicalEditor {
+  return createHeadlessEditor({
+    namespace: '',
+    onError: (error) => {
+      throw error;
+    },
+  });
+}
+
+export function $assertRangeSelection(selection: unknown): RangeSelection {
   if (!$isRangeSelection(selection)) {
     throw new Error(`Expected RangeSelection, got ${selection}`);
   }
   return selection;
+}
+
+export function invariant(cond?: boolean, message?: string): asserts cond {
+  if (cond) {
+    return;
+  }
+  throw new Error(`Invariant: ${message}`);
+}
+
+export class DataTransferMock implements DataTransfer {
+  _data: Map<string, string> = new Map();
+  get dropEffect(): DataTransfer['dropEffect'] {
+    throw new Error('Getter not implemented.');
+  }
+  get effectAllowed(): DataTransfer['effectAllowed'] {
+    throw new Error('Getter not implemented.');
+  }
+  get files(): FileList {
+    throw new Error('Getter not implemented.');
+  }
+  get items(): DataTransferItemList {
+    throw new Error('Getter not implemented.');
+  }
+  get types(): ReadonlyArray<string> {
+    return Array.from(this._data.keys());
+  }
+  clearData(dataType?: string): void {
+    //
+  }
+  getData(dataType: string): string {
+    return this._data.get(dataType) || '';
+  }
+  setData(dataType: string, data: string): void {
+    this._data.set(dataType, data);
+  }
+  setDragImage(image: Element, x: number, y: number): void {
+    //
+  }
+}
+
+export class EventMock implements Event {
+  get bubbles(): boolean {
+    throw new Error('Getter not implemented.');
+  }
+  get cancelBubble(): boolean {
+    throw new Error('Gettter not implemented.');
+  }
+  get cancelable(): boolean {
+    throw new Error('Gettter not implemented.');
+  }
+  get composed(): boolean {
+    throw new Error('Gettter not implemented.');
+  }
+  get currentTarget(): EventTarget | null {
+    throw new Error('Gettter not implemented.');
+  }
+  get defaultPrevented(): boolean {
+    throw new Error('Gettter not implemented.');
+  }
+  get eventPhase(): number {
+    throw new Error('Gettter not implemented.');
+  }
+  get isTrusted(): boolean {
+    throw new Error('Gettter not implemented.');
+  }
+  get returnValue(): boolean {
+    throw new Error('Gettter not implemented.');
+  }
+  get srcElement(): EventTarget | null {
+    throw new Error('Gettter not implemented.');
+  }
+  get target(): EventTarget | null {
+    throw new Error('Gettter not implemented.');
+  }
+  get timeStamp(): number {
+    throw new Error('Gettter not implemented.');
+  }
+  get type(): string {
+    throw new Error('Gettter not implemented.');
+  }
+  composedPath(): EventTarget[] {
+    throw new Error('Method not implemented.');
+  }
+  initEvent(
+    type: string,
+    bubbles?: boolean | undefined,
+    cancelable?: boolean | undefined,
+  ): void {
+    throw new Error('Method not implemented.');
+  }
+  stopImmediatePropagation(): void {
+    return;
+  }
+  stopPropagation(): void {
+    return;
+  }
+  NONE = 0 as const;
+  CAPTURING_PHASE = 1 as const;
+  AT_TARGET = 2 as const;
+  BUBBLING_PHASE = 3 as const;
+  preventDefault() {
+    return;
+  }
+}
+
+export class KeyboardEventMock extends EventMock implements KeyboardEvent {
+  altKey = false;
+  get charCode(): number {
+    throw new Error('Getter not implemented.');
+  }
+  get code(): string {
+    throw new Error('Getter not implemented.');
+  }
+  ctrlKey = false;
+  get isComposing(): boolean {
+    throw new Error('Getter not implemented.');
+  }
+  get key(): string {
+    throw new Error('Getter not implemented.');
+  }
+  get keyCode(): number {
+    throw new Error('Getter not implemented.');
+  }
+  get location(): number {
+    throw new Error('Getter not implemented.');
+  }
+  metaKey = false;
+  get repeat(): boolean {
+    throw new Error('Getter not implemented.');
+  }
+  shiftKey = false;
+  constructor(type: void | string) {
+    super();
+  }
+  getModifierState(keyArg: string): boolean {
+    throw new Error('Method not implemented.');
+  }
+  initKeyboardEvent(
+    typeArg: string,
+    bubblesArg?: boolean | undefined,
+    cancelableArg?: boolean | undefined,
+    viewArg?: Window | null | undefined,
+    keyArg?: string | undefined,
+    locationArg?: number | undefined,
+    ctrlKey?: boolean | undefined,
+    altKey?: boolean | undefined,
+    shiftKey?: boolean | undefined,
+    metaKey?: boolean | undefined,
+  ): void {
+    throw new Error('Method not implemented.');
+  }
+  DOM_KEY_LOCATION_STANDARD = 0 as const;
+  DOM_KEY_LOCATION_LEFT = 1 as const;
+  DOM_KEY_LOCATION_RIGHT = 2 as const;
+  DOM_KEY_LOCATION_NUMPAD = 3 as const;
+  get detail(): number {
+    throw new Error('Getter not implemented.');
+  }
+  get view(): Window | null {
+    throw new Error('Getter not implemented.');
+  }
+  get which(): number {
+    throw new Error('Getter not implemented.');
+  }
+  initUIEvent(
+    typeArg: string,
+    bubblesArg?: boolean | undefined,
+    cancelableArg?: boolean | undefined,
+    viewArg?: Window | null | undefined,
+    detailArg?: number | undefined,
+  ): void {
+    throw new Error('Method not implemented.');
+  }
+}
+
+export function tabKeyboardEvent() {
+  return new KeyboardEventMock('keydown');
+}
+
+export function shiftTabKeyboardEvent() {
+  const keyboardEvent = new KeyboardEventMock('keydown');
+  keyboardEvent.shiftKey = true;
+  return keyboardEvent;
+}
+
+export function generatePermutations<T>(
+  values: T[],
+  maxLength = values.length,
+): T[][] {
+  if (maxLength > values.length) {
+    throw new Error('maxLength over values.length');
+  }
+  const result: T[][] = [];
+  const current: T[] = [];
+  const seen = new Set();
+  (function permutationsImpl() {
+    if (current.length > maxLength) {
+      return;
+    }
+    result.push(current.slice());
+    for (let i = 0; i < values.length; i++) {
+      const key = values[i];
+      if (seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+      current.push(key);
+      permutationsImpl();
+      seen.delete(key);
+      current.pop();
+    }
+  })();
+  return result;
+}
+
+// This tag function is just used to trigger prettier auto-formatting.
+// (https://prettier.io/blog/2020/08/24/2.1.0.html#api)
+export function html(
+  partials: TemplateStringsArray,
+  ...params: string[]
+): string {
+  let output = '';
+  for (let i = 0; i < partials.length; i++) {
+    output += partials[i];
+    if (i < partials.length - 1) {
+      output += params[i];
+    }
+  }
+  return output;
+}
+
+export function expectHtmlToBeEqual(expected: string, actual: string): void {
+  expect(prettifyHtml(expected)).toBe(prettifyHtml(actual));
+}
+
+export function prettifyHtml(s: string): string {
+  return format(s.replace(/\n/g, ''), {parser: 'html'});
 }

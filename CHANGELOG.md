@@ -1,3 +1,419 @@
+## v0.12.6 (2024-01-08)
+
+- Fix floating link editor on inline image caption (#5460) wnhlee
+- Revert Inserting hyperlink through toolbar doesnt open floating editor in edit mode (#5456) Acy Watson
+- Fix TextNode#createDOM types allow editor parameter in subclasses (#5425) Georgii Dolzhykov
+- docs fix outdated importDOM types in docs (#5431) Georgii Dolzhykov
+- Bug Editing a link and changing selection shows wrong link value (#5352) Syed Umar Anis
+- fix Reset compositionKey when backspacing a selection on Android where anchor and focus keys are different (#5389) Aman Harwara
+- Bug Fix added a fix for discarding multiple color picker entries on drag (#5335) Bhavya Karia
+- Remove duplicated test codes (#5429) wnhlee
+- Inserting hyperlink through toolbar doesnt open floating editor in edit mode (#5372) Syed Umar Anis
+- fix adding missing argument for sliceSelectedTextContent (#5380) Nadine Nguyen
+- Fixed a small typo (#5427) frankdiw
+- Fix insertNodes when inserting into inline elements (#5394) Brian Birtles
+- Add link to state update blog (#5423) Acy Watson
+- canInsertTextAfter exception for composition (#5378) Gerard Rovira
+- Fix insert image to new inserted table row in playground report error (#5417) frankdiw
+-  Refactored findNearestListItemNode using findMatchingParent (#5419) Ajay Prakash PP
+- docs correct custom node examples (#5407) Naseem Ali
+- Fixed the error when CollapsibleTitleNode type enter key (#5416) frankdiw
+- dropdown text visibility problem fixed for medium and smaller screens (#5382) Recep ifti
+- Fix convertFromMarkdownString breakdown due to no parent (#5393) wnhlee
+- Fix bug on window.event conflict (#5391) Henry Boisgibault
+- Fix typo on test title (#5399) wnhlee
+- fix typo Contaner - Container (#5410) Philippe de Reynal
+- fix logical error in description of insertBefore parameter (#5400) spirobel
+- Featureexcalidraw resize (#5383) Recep ifti
+- Flow fix RangeSelection extends (#5377) Gerard Rovira
+- Fixed for #5162, The beginning of a TextNode with canInsertTextBefore false in  (#5363) matsuyama-k1
+- PR 4 remove GridSelection from lexical core (#5293) Illia Olenchenko
+- PR 3 Removed edge-cases of GridSelection (#5291) Illia Olenchenko
+- Clear link using key shortcut bug (#5354) Syed Umar Anis
+- refactor(playground) kill ts-ignore (#5342) Aron Griffis
+- Automatic release on merge (#5347) Acy Watson
+- Improve TypeScript types by removing k string any from LexicalNode (#5223) Bob Ippolito
+- Support other formats in Collapsible Title (#5328) Ivaylo Pavlov
+- docs added exportJSON function to the ExtendedTextNode plugin code (#5338) 
+- v0.12.5 (#5343) Acy Watson
+- Fix path alias typo (#5340) wnhlee
+- v0.12.5 Lexical GitHub Actions Bot
+
+## v0.12.5 (2023-12-06)
+
+- Make subscript and superscript text formats mutually exclusive (#5317) Gry Ogam
+- PR 2 5276 PointSelection instead of GridRangeSelections (#5281) Illia Olenchenko
+- keep selection style when clicking empty editor (#5292) kyoyoung keum
+- Fix insertNodes bugs (#5325) GermanJablo
+- PR 1 Swap instance selection for BaseSelection in most cases (#5280) Illia Olenchenko
+- selectEndstart as a method of LexicalNode instead of ElementNode (#5205) GermanJablo
+- Make insertRangeAfter private (#5323) Gerard Rovira
+- Improvements in insertNodes (#5201) GermanJablo
+- Export CommandListener Flow (#5315) Gerard Rovira
+- Add 2 missing flow exports (#5314) Gerard Rovira
+- URL sanitization ClickableLinkPlugin (#5302) Yeison Daza
+- fix backspace in Android not deleting first character (#5282) Kiran Dash
+- docs improve DecoratorNode docs (#5284) Miroslav Petrov
+- Fixing nested collapsible section chevron (#5300) Ebad
+- Support HTML export overrides from config for nested editors. (#5267) Acy Watson
+- Revert Fix Autolink plugin URL recognition failures (#5275) (#5295) Acy Watson
+- Fix Autolink plugin URL recognition failures (#5275) Chinmay Disale
+- Move to new Excalidraw APIs for 0.17 update (#5277) Ivaylo Pavlov
+- Fix Resolve Cannot read properties of undefined (reading trim) issue in getSelectionStyleValueForProperty (#5271) Yeison Daza
+- Fix The number in a numbered list gets duplicated (#5253) trinhvinhtruong96
+- Fix Apply background color to multiple selected cells (#5258) Joo Hee Paige Kim
+- packagelock (#5247) Gerard Rovira
+- v0.12.4 (#5246) Gerard Rovira
+- v0.12.4 Lexical GitHub Actions Bot
+
+## v0.12.4 (2023-11-17)
+
+- Fix @lexical/utils import (#5245) Gerard Rovira
+- v0.12.3 (#5244) Acy Watson
+
+## v0.12.3 (2023-11-17)
+
+- Its a journey (#5242) Acy Watson
+- Fixed column header on merged cells (#5230) Illia Olenchenko
+- Remove codeowners to prevent unnecessary pings (#5236) John Flockton
+- Fixed delete removing link node text when on linebreak (#5146) Steve Larson
+- Fix row deletion if previous row is empty (#5231) Illia Olenchenko
+- Remove unnecessary link from README.md (#5232) John Flockton
+- chore(deps-dev) bump tough-cookie from 4.1.2 to 4.1.3 (#5134) dependabotbot
+- chore(deps) bump sidewayformula from 3.0.0 to 3.0.1 (#5132) dependabotbot
+- chore(deps-dev) bump semver from 5.7.1 to 5.7.2 (#5131) dependabotbot
+- chore(deps) bump postcss from 8.4.27 to 8.4.31 (#5130) dependabotbot
+- chore(deps) bump http-cache-semantics from 4.1.0 to 4.1.1 (#5129) dependabotbot
+- chore(deps-dev) bump vite from 2.9.13 to 2.9.16 (#5133) dependabotbot
+- Fixes grid selection to be aware of nested tables (#5166) Illia Olenchenko
+- Bug Align list item do not change the export DOM (#5160) trinhvinhtruong96
+- Fix iconRTL for center alignment (#5227) Ivaylo Pavlov
+- refactor(playground) clean up settings (#5225) Aron Griffis
+- fix Make autolinks working for formatted text (#5214) Konstantin Kovalev
+- Fix touple typo to make it correctly tuple (#5229) Julian French
+- Fix lexical-link typo srelrel (#5221) Bob Ippolito
+- Fix alignment for links in Toolbar (#5209) Tahir Shakir
+- Update Modal.tsx (#5203) Bradley Dirheimer
+- fix Heading.insertNewAfter (#5198) GermanJablo
+- Link title is correctly applied through the command (#5191) Petyo Ivanov
+- Improved LexicalMenu positioning relative to text (#5187) Steve Larson
+- fixed issue 5181 where link address is not shown if comment is set in (#5188) Tong Xi
+- Fix at() transpilation (#5180) Gerard Rovira
+- Fix insertNodes when anchor point is blank TextNode (#5179) Gerard Rovira
+- Add playwright-report to gitignore (#5173) GermanJablo
+- Fix insertNodes after selection swap (#5175) Gerard Rovira
+- Range utils (#5153) Gerard Rovira
+- Fix insertNodes and insertParagraph (#5002) GermanJablo
+- Add Optional Chaining to isNodePre Method (#5157) Nick J Moss
+- Table resize handle getting stuck fix (#5169) Alex Reznik
+- Updated package-lock.json versions with npm audit fix. (#5125) Matthew Hutter
+- Fix formatting selected table cells (#5168) Tahir Shakir
+- Update index.tsx (#5165) Bradley Dirheimer
+- Add commandPriority option to LexicalMenu and dependent components (#5123) huw
+- chore(deps) bump babeltraverse from 7.18.6 to 7.23.2 (#5155) dependabotbot
+- Updated insertTableColumn with batching (#5145) Illia Olenchenko
+- Add Columns Layout to Typeahead menu (#5136) Ivaylo Pavlov
+- TableResizer cell calculation based on cellspans (#5141) Illia Olenchenko
+- Update anchor selection if split by patching style (#5087) Ruslan Piliuta
+- chore(deps) bump excalidrawexcalidraw from 0.14.2 to 0.15.3 (#5135) dependabotbot
+- Consolidate docs across the repo (#5121) Ivaylo Pavlov
+- Fix right click select images (#5056) Ben Carleton
+- fix fix android backspace bug (#5077) Cristopher Solis
+- fix(lexical-rich-text) correct comment typo (#5116) Xuan
+- docs fix typo in decorators.md (#5113) Can Rau
+- Fix insertNodes insert position at start of inline ElementNode (#5110) Gerard Rovira
+- Revert Fix transferStartingElementPointToTextPoint() #4756  (#5094) John Flockton
+- chore add typedefs for collab nodes and remove unused members (#5071) VelociRaptor
+- Fix tab replacement composition crash (#5066) Gerard Rovira
+- Fix getting style via getSelectionStyleValueForProperty when selection is collapsed (#5082) Ruslan Piliuta
+- Set up GA4 for website (#5078) Paul OShannessy
+- chore fix typo (#5074) Alessio Gravili
+- Fix integrity (#5068) Gerard Rovira
+- fix(playground-text-format-toolbar) dont hide toolbar if current node is a paragraph (#4850) Mathieu Mtral
+- Fix ToolbarPlugin paste error with start, end format (#5019) Hansu Kim
+- Fixfloating formatter #5021 (#5041) Shubham Jadhav
+- fix  Add column shortcut gets hidden when mouse leave the table #4857 (#5058) Sathish
+- Allow LexicalTypeaheadMenuPlugin to work when inside an iframe (#5044) Lester Tay
+- MaxLength handle empty ElementNode (#5029) Gerard Rovira
+- Playground embed twitter support x.com (#5060) su
+- Port List e2e test to unit tests (#5030) Acy Watson
+- Playground refactor component picker plugin (#4836) Georgii Dolzhykov
+- Transpile optional catch binding (#5048) Gerard Rovira
+- Nit Floating toolbar (#5038) Gerard Rovira
+- feat LexicalClickableLinkPlugin should support ctrl click mode #4565 (#4839) Sathish
+- fix(Playground) CMD K improvements (#5013) Rajat
+- chore fix typo in lexical-utils docs (#5022) Bruno Bonamin
+- Update setFloatingElemPositionForLinkEditor.ts (#5028) Bradley Dirheimer
+- Update setFloatingElemPosition.ts (#5027) Bradley Dirheimer
+- Fix pasting text that ends with an empty paragraph is ignored when the MaxLengthPlugin is enabled (#5020) Hansu Kim
+- Fix event handler removal in useDynamicPositioning, remove dupe code (#5024) Georgii Dolzhykov
+- fix LinkNode.importDOM should support all node content (#5010) Rajat
+- Allow overriding HTML serialization behavior from the editor config. (#4254) Acy Watson
+- Fix TextNode override in Serialization  Deserialization doc (#5006) Giacomo Randazzo
+- Fix getTableSelectionFromTableElement flow (#5005) Gerard Rovira
+- Add highlight to format types (#5001) Gerard Rovira
+- Add nodes replacement support for nested composer (#4992) Maksim Horbachevsky
+- Remove capital letter mentions (#4991) Acy Watson
+- Fix comment plugin selection rect top position (#4988) vonsa
+- fix(lexicalhtml) missing lexicalutils dependency (#4984) liuwei
+
+## v0.12.2 (2023-09-08)
+
+- Move isHTMLElement into core (#4977) Gerard Rovira
+- 0.12.1 (#4978) Acy Watson
+
+## v0.12.1 (2023-09-07)
+
+- Fix: font colors do not apply to text within table cells (#4934) Tahir Shakir
+- fix #4526 (#4910) xyyjk
+- fix: dispatching undo & redo states for collaboration; fixing up Point.getNode not a function (#4956) Nadine Nguyen
+- Retain TextNode whitespace on export (#4969) Gerard Rovira
+- Revert "Fix: fixes regex in YouTube AutoEmbedPlugin (#4916)" (#4966) Ivaylo Pavlov
+- Fix: fixes regex in YouTube AutoEmbedPlugin (#4916) Rajat
+- refactor: moved functions to `@lexical/utils` (#4923) Rajat
+- refactor: remove redundant styles from floating text format plugin (#4938) VelociRaptor
+- :bug: Fixed range selection splicing text (#4659) Steve Larson
+- Added extra Yjs information to collaboration docs (#4951) Steven Fabre
+- fix: disable spellcheck for code format (#4927) VelociRaptor
+- Add column layout plugin example (#4937) Maksim Horbachevsky
+- docs: fix example in getting-started/react (#4935) Mike
+- Fix: MaxLengthPlugin crashes when the limit is reached and enter is pressed (#4871) Hansu Kim
+- chore: prefer viewBox to width/height on SVG images (#4921) VelociRaptor
+- Adds ElementFormatDropdown to the Toolbar plugin (#4904) itaquito
+- Add iOS information to the website (#4899) amyworrall
+- fix: Only append fragment when element is HTMLElement (#4490) lsbyerley
+- Table unmerge (#4877) Peter Cook Bulukin
+- Revert "Updated link markdown regex (#4461)" (#4896) Gerard Rovira
+- Add missing flow def (#4889) Maksim Horbachevsky
+- Handle undefined rows and columns in table utils after cell merge (#4874) Peter Cook Bulukin
+- Updated link markdown regex (#4461) Ronald Langeveld
+- Fix: Pressing enter now doesnot delete ImageNode from the ListItemNode (#4866) Takumi Uchida
+
+## v0.12.0 (2023-08-09)
+
+### Breaking Changes
+
+#4818 moves "select all" behavior to the SELECT_ALL command, meaning anyone using setRootElement directly (i.e., not using PlainTextPlugin or RichTextPlugin or their underlying functions) would need to wire up command listeners for SELECT_ALL_COMMAND in order to preserve the default "select all" behavior after this version.
+
+- Extract "select all" behavior to new `SELECT_ALL_COMMAND` (#4818) Chris Montrois
+- Paste decorators before empty text nodes (#4672) Steve Larson
+- Added "Page Break" to Lexical Playground (#4842) Dias Kappassov
+- fix editor ref types and use EditorRefPlugin in the playground (#4852) Anton Kostiuchkov
+- Expand react docs (#4845) Acy Watson
+- Port lexical.dev to Tailwind (#4827) Awjin
+- Stop collapsing non-collapsible whitespace on paste (#4770) Brian Birtles
+- feat(playground): add support for collapsed margins in draggable block (#4823) Mathieu Métral
+- feat(playground): add support for drop block on empty area (#4811) Mathieu Métral
+- docs: remove placeholder property from exampleTheme (#4802) Karam Qaoud%
+
+## v0.11.3 (2023-07-18)
+
+- RFC Add prev editor state for mutation listener (#4796) Maksim Horbachevsky
+- Fix  Cant convert paragraph into a header if the first child of the paragraph is a LineBreakNode (#4776) Naveen
+- Add setStyle to Flow types (#4780) Acy Watson
+- Fix width reflow in columns when resizing tables (#4775) Karam Qaoud
+- package.lock (#4769) Gerard Rovira
+- Remove duplicate declaration (#4772) Roman Gafiatullin
+- fix Return LexicalEditorRefPlugin as valid JSX (#4771) Thomas Sauques
+- Update TS to 5.1.x (#4695) Georgii Dolzhykov
+
+## v0.11.2 (2023-07-11)
+
+- Update listeners.md (#4768) mohammadreza490
+- Reset editor state when setting null root (#4762) Maksim Horbachevsky
+- Flow key down command (#4766) Gerard Rovira
+- Fixes broken trunk (#4763) Maksim Horbachevsky
+- Fix $transferStartingElementPointToTextPoint() (#4756) amyworrall
+- Add video links to Getting Started docs (#4752) Acy Watson
+- Fix missing token type (#4751) Maksim Horbachevsky
+- Add selection adjustments for node removal (#4745) Maksim Horbachevsky
+- Allow preventing text drag (#4749) Maksim Horbachevsky
+- Add EditorRef plugin (#4747) Acy Watson
+- Fix flowtypes for cut/copy commands (#4746) Maksim Horbachevsky
+- Add RangeSelection docs (#4742) Acy Watson
+- Fix multi-line token parsing (#4741) Maksim Horbachevsky
+- Fix code block export (#4702) Maksim Horbachevsky
+- Remove instanceof checks in onPasteForPlainText (#4737) Acy Watson
+- Context Menu Options Added (#4713) Shubhankerism
+- Show excalidraw edit button (#4731) Ibrahim El-bastawisi
+- Fixed drop down buttons to prevent sumbit (#4727) Ou7law007
+- Improve md error message (#4710) Acy Watson
+- Fix: Use $createListItemNode within importJSON to override on deserialization (#4717) Kazu
+- Image resizer fix (#4722) Maksim Horbachevsky
+- Keeping local comments and sharedCommentsArray orders in sync (#4721) Ebad
+- Table selection keyboard controls (#4689) Maksim Horbachevsky
+- correction : line 47 - create -> update (#4704) Abhishek Kumar
+- Allow table selection when cells are already selected (#4699) Peter Cook Bulukin
+- Swap noopener for noreferrer (#4690) Adam Conrad
+- Additional fix for editor._window in lexical-clipboard (#4686) Xinzi Zhou
+- Preserving language and indentation of code block when serialized/deserialized (#4682) Ebad
+- Remove outdated examples (#4684) John Flockton
+- Remove delay from flakey E2E test (#4676) John Flockton
+- Fix dropdown menu position in playground when scroll (#4496) Xinyuan Wang
+- feat: playground inline image plugin (#4423) Anthony Bouch
+- Override selectall on RangeSelection (#4671) Gerard Rovira
+- Normalize select all on NodeSelection (#4664) Gerard Rovira
+- Add columns next to selection (#4663) Peter Cook Bulukin
+- Fix clipboard if content editable is in an iframe. (#4649) Xinzi Zhou
+- Fix reconciler recovery listeners (#4654) Maksim Horbachevsky
+- Check for specific excluded props (#4655) Maksim Horbachevsky
+- Fix ContentEditable Flow types (#4652) Gerard Rovira
+- Import alignment for Heading and Blockquote (#4625) Ivaylo Pavlov
+- Add missing ExportDOM to CodeNode (#4637) Ivaylo Pavlov
+- Add error formating params (#4629) Maksim Horbachevsky
+- Add clipboard documentation (#4631) Acy Watson
+- Add error formating params (#4627) Maksim Horbachevsky
+- Fix issue with syncing yjs changes to Lexical (#4621) Ebad
+- fix issue with dead keys (i.e. backticks) when converting markdown (#4620) Michel Bongard
+- Don't throw error on format element (#4611) John Flockton
+- fix: freeze get style object in DEV env to avoid mutations (#4616) Jatin Ranka
+- TextNode docs (#4606) Acy Watson
+- Fix iOS newline insertion (#4603) Maksim Horbachevsky
+- Add vercel analytics script (#4604) Acy Watson
+- mouseenter event typo fix (#4588) raghvendra
+- Update nodes.md (#4598) navanshu
+- Fix MenuTypeahead position (#4597) Aleksandr Kiliushin
+- Fix uuid bug in `AutocompleteNode.clone()` (#4592) Scott Driggers
+- use selection from state in insertNodeToNearestRoot and insertNodes (#4570) Calvin Leung
+- Allow native shift+arrow selection work over decorator nodes (#4584) John Flockton
+- Fix a11y for ContentEditable (#4580) Max Shypko
+- Another approach to fixing the className cache (#4582) Acy Watson
+- Better Error Message for exportJSON type (#4556) Hao Luo
+
+## 0.11.1 (2023-05-26)
+
+- Fire selection change on decorator delete (#4555) Acy Watson
+- Fix flow (#4549) Gerard Rovira
+- Add key to portal to avoid decorator component remounting (#4554) Maksim Horbachevsky
+- Mutations to respect canInsertBeforeAfter (#4553) Gerard Rovira
+- Arrow up selection fix #4536 (#4544) Maksim Horbachevsky
+- Max length recalculation. Fix #4542 (#4543) Maksim Horbachevsky
+- Fix update-changelog not finishing (#4537) Gerard Rovira
+
+## 0.11.0 (2023-05-23)
+
+- Tame wild white spaces (#4467) Gerard Rovira
+- Auto embed fix #4530 (#4535) Maksim Horbachevsky
+- Basic Context Menu (behind Switch) (#4285) Tyler Bainbridge
+- Allow importing width and height from table cell and DOM nodes (#4521) Kristian Ignatov
+- Add HTML deserialization recipe to docs (#4432) Ivaylo Pavlov
+- Fix clickable link plugin #4514 (#4519) Maksim Horbachevsky
+- Allow arbitrary awareness fields in Collaboration plugin (#4507) Attila
+- Make tabs flexible in code (#4520) Gerard Rovira
+- Fix GC memory leak (2) (#4513) Gerard Rovira
+- Adjust selection after triple click (#4512) Maksim Horbachevsky
+- Fix GC memory leak (#4510) Gerard Rovira
+- TypeAheadMenu and TableActionMenu rendered off screen fixed. (#4301) Shubhankerism
+- Fix Flow types (#4485) Gerard Rovira
+- Add texturi-list support in clipboard. (#4478) xinyuan0801
+- Sanitize url (#4483) Acy Watson
+- exportDOM methods for HeadingNode, QuoteNode (#4445) Ivaylo Pavlov
+- Tests for inserting text either side of an inline element (#4346) Jamie Birch
+- Improve rect deduplication (#4471) Acy Watson
+- Sanitize floatingLinkEditor (#4462) Acy Watson
+- Generalize Menu Logic (#4284) Tyler Bainbridge
+- Event delegation for NoteEventPlugin (#4424) Maksim Horbachevsky
+- Tab support (#4436) Gerard Rovira
+- Handle empty element deletion (#4380) Maksim Horbachevsky
+- Select all adjustments (#4425) Maksim Horbachevsky
+- Add documentation for TabIndentationPlugin (#4453) Filip Palmqvist
+- Disable flaky test (#4455) Gerard Rovira
+- fix attach event listeners to initial nodes (#4454) Ante Sepic
+- Revisit touch devices (#4441) Gerard Rovira
+- Allow to pass all possible attributes to a content editable div (#4450) Leks Kazimirchuk
+- Fix text click selection on touch devices #3098 (#4395) Ibrahim El-bastawisi
+- Updated Toolbar Plugin to Add keyboard shortcut for adding hyperlinks (#4413) AnuragBalhra
+- simplify logic for the fix Improve responsiveness of the floating text format toolbar buttons (#4431) Alessio Gravili
+- Remove unused styles (#4426) Georgii Dolzhykov
+- Fix HistoryPlugin selection out of sync (#4390) Gerard Rovira
+- Split test files and skip flaky tests in linux  collab (#4394) Acy Watson
+- Optional colrowSpan serialization (#4344) Gerard Rovira
+- Fix list merging (#4386) Acy Watson
+- Fix markdown list merging (#4387) Acy Watson
+- Use provided selection when serializing to HTML (#4392) Acy Watson
+- Flow table bg color types (#4400) Gerard Rovira
+- Add docs for list package (#4393) Acy Watson
+- Make DecoratorBlockNode.isInline return false (#4383) EgonBolton
+- Setting initial state of isSmallWidthViewport (#4398) Ebad
+- Improve responsiveness of the floating text format toolbar buttons (#4298) Brandon
+- Collapsible enhancements (#4257) Maksim Horbachevsky
+- Inherit format for text entity node (#4382) Maksim Horbachevsky
+- Fall back to url if parser fails (#4364) Acy Watson
+- Change MarkNodeclone node arg type to this (#4363) Giovanni Cappellotto
+- 0.10.0 (#4349) Acy Watson
+
+## 0.10.0 (2023-04-18)
+
+### Breaking Changes
+
+@lexical/link will now sanitize anchor tag hrefs before rendering them to the DOM. This provides a measure of protection against XSS attacks
+that rely on inlining javascript in that attribute. However, it means that links using less common protocols will now be sanitized (converted to about:blank),
+which will be a breaking change for any existing links.
+
+Like most other node-based logic in Lexical, the sanitization logic can be overriden by overriding LinkNode using the Node Overrides API and replacing it with a node that implements the sanitizeUrl method differently.
+
+**Fixes CVE-2023-30792**
+
+- Table feature: background color (#4345) Gerard Rovira
+- Add @react/LexicalClickableLinkPlugin (#4316) Gerard Rovira
+- TablePlugin feature: cell merge (#4343) Gerard Rovira
+- Ban javascript URLs in @lexical/link (#4342) Acy Watson
+- Table Cell Background Color (#4306) Gerard Rovira
+- ExportDOM in Debug Tree View (#4307) Ivaylo Pavlov
+
+## 0.9.2 (2023-04-14)
+
+- Update codes.json (#4320) Gerard Rovira
+- Missing table types (#4302) Gerard Rovira
+- Fix cursor changing to default when resizing image (#4317) (#4318) Mohit Singh Chauhan
+- Persist files and scene state in Excalidraw plugin (#4299) Ivaylo Pavlov
+- Fix crash on prettier formatting fail (#4310) Syed Umar Anis
+- YouTube embed: use more privacy-friendly youtube-nocookie.com instead of youtube.com (#4282) Alessio Gravili
+- Fix flowtypes for insertBefore/after (#4245) Maksim Horbachevsky
+- Fix excluded property imports (#4287) Acy Watson
+- Allow excluding specific properties from collab syncing via plugin (#4275) Acy Watson
+- Update tables.md (#4278) Gerard Rovira
+- Refactor Check for mention match function (#4277) Aleksandr Kiliushin
+- Replace canExtractContents with ShadowRoot check (#4276) Gerard Rovira
+- Ignore script nodes in HTML deserialization (#4249) Acy Watson
+- Fix Clear Formatting (Fixes #4188) (#4204) Ivaylo Pavlov
+- Add try catch around katex renderer (#4260) John Flockton
+- last table row delete throwing error (#4270) Aman Bansal
+- Upgrade Flow to 0.2 (#4264) Gerard Rovira
+- Cell merge backwards compatiblity 2 (#4268) Gerard Rovira
+- Cell merge backwards compatiblity (#4267) Gerard Rovira
+- fix get text selectRect error (#4263) yjh
+- Loosen node and version types (#4143) John Flockton
+- Bugfix: Comment popup closes when cursor hovers over table (#4228) Ben Carleton
+- isEditable is true on first render even if editor initiated with false (#4251) Aman Bansal
+- Fix TableCellNode import/exportJSON (#4259) Gerard Rovira
+- Flow: table missing methods (#4261) Gerard Rovira
+- Fix insertTableColumn when rowSpan > 1 (#4258) Gerard Rovira
+- Bugfix: Floating tool bar not responsive in tables (#4237) Ben Carleton
+- pasting text on input was creating a new paragraph node instead of ad… (#4246) Aman Bansal
+- Excalidraw Component fixes (#4252) Ivaylo Pavlov
+- Preserve content with merging cells (#4242) Gerard Rovira
+- Support select all for node selection (#4233) Maksim Horbachevsky
+- Fix TypeaheadMenuPlugin scrollIntoView to not rely on external class (#4238) Dragoș Străinu
+- Ignore __indent in list deserialization (#4241) Acy Watson
+- Revise Excalidraw dependency (#4234) Gerard Rovira
+- Table toolbar foundation (#4182) Gerard Rovira
+- Restore MD selection (#4232) Gerard Rovira
+- Fixed `aria-label` typo (#4229) Hao Luo
+- Export $hasUpdateTag (#4216) Alma Madsen
+- Fix incorrect placement of Auto Embed (#4192) wangqi
+- Fix bad selection shift at boundary (#4219) Gerard Rovira
+- Improve Documentation - multiple modules (#4166) Harry Sanders
+- Unmerge cell (#4212) Gerard Rovira
+- Only allow numbers in TablePlugin row / column number input (#4201) Alessio Gravili
+- Create fragment attached to the doc (#4186) Maksim Horbachevsky
+- Add a title to the link node to support titles in markdown (#4161) themagickoala
+- Fix table insertion (#4180) Gerard Rovira
+- added trash button to floatingLinkEditor plugin to toggle the link to… (#4209) Aman Bansal
+- Delete unused LinkPreview.css (#4200) Alessio Gravili
+- Use 'padding' shorthand CSS rule (#4198) Alessio Gravili
+- Add missing flow file (#4193) Maksim Horbachevsky
+
 ## v0.9.1 (2023-03-24)
 
 - Explicit E2E_BROWSER on E2E runs (#4179) Gerard Rovira

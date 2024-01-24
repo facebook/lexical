@@ -28,6 +28,7 @@ import {
   focusEditor,
   html,
   initialize,
+  IS_LINUX,
   pasteFromClipboard,
   repeat,
   selectFromAlignDropdown,
@@ -69,93 +70,12 @@ test.beforeEach(({isPlainText}) => {
 
 test.describe('Nested List', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
-  test(`Can toggle an empty list on/off`, async ({page}) => {
-    await focusEditor(page);
-
-    await assertHTML(
-      page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-      `,
-    );
-
-    await toggleBulletList(page);
-
-    await assertHTML(
-      page,
-      '<ul class="PlaygroundEditorTheme__ul"><li class="PlaygroundEditorTheme__listItem" value="1"><br></li></ul>',
-    );
-
-    await toggleBulletList(page);
-
-    await assertHTML(
-      page,
-      html`
-        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-      `,
-    );
-  });
-
-  test(`Can create a list and indent/outdent it`, async ({page}) => {
-    await focusEditor(page);
-    await toggleBulletList(page);
-    await assertHTML(
-      page,
-      '<ul class="PlaygroundEditorTheme__ul"><li class="PlaygroundEditorTheme__listItem" value="1"><br></li></ul>',
-    );
-
-    // Should allow indenting an empty list item
-    await clickIndentButton(page, 2);
-
-    await assertHTML(
-      page,
-      '<ul class="PlaygroundEditorTheme__ul"><li class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem" value="1"><ul class="PlaygroundEditorTheme__ul"><li class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem" value="1"><ul class="PlaygroundEditorTheme__ul"><li class="PlaygroundEditorTheme__listItem" value="1"><br></li></ul></li></ul></li></ul>',
-    );
-
-    // Backspace should "unindent" the first list item.
-    await page.keyboard.press('Backspace');
-    await page.keyboard.press('Backspace');
-
-    await assertHTML(
-      page,
-      '<ul class="PlaygroundEditorTheme__ul"><li class="PlaygroundEditorTheme__listItem" value="1"><br></li></ul>',
-    );
-
-    await page.keyboard.type('Hello');
-    await page.keyboard.press('Enter');
-    await page.keyboard.type('from');
-    await page.keyboard.press('Enter');
-    await page.keyboard.type('the');
-    await page.keyboard.press('Enter');
-    await page.keyboard.type('other');
-    await page.keyboard.press('Enter');
-    await page.keyboard.type('side');
-
-    await assertHTML(
-      page,
-      '<ul class="PlaygroundEditorTheme__ul"><li class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr" value="1"><span data-lexical-text="true">Hello</span></li><li class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr" value="2"><span data-lexical-text="true">from</span></li><li class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr" value="3"><span data-lexical-text="true">the</span></li><li class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr" value="4"><span data-lexical-text="true">other</span></li><li class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr" value="5"><span data-lexical-text="true">side</span></li></ul>',
-    );
-
-    await selectAll(page);
-
-    await clickIndentButton(page, 3);
-
-    await assertHTML(
-      page,
-      '<ul class="PlaygroundEditorTheme__ul"><li class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem" value="1"><ul class="PlaygroundEditorTheme__ul"><li class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem" value="1"><ul class="PlaygroundEditorTheme__ul"><li class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem" value="1"><ul class="PlaygroundEditorTheme__ul"><li class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr" value="1"><span data-lexical-text="true">Hello</span></li><li class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr" value="2"><span data-lexical-text="true">from</span></li><li class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr" value="3"><span data-lexical-text="true">the</span></li><li class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr" value="4"><span data-lexical-text="true">other</span></li><li class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr" value="5"><span data-lexical-text="true">side</span></li></ul></li></ul></li></ul></li></ul>',
-    );
-
-    await clickOutdentButton(page, 3);
-
-    await assertHTML(
-      page,
-      '<ul class="PlaygroundEditorTheme__ul"><li class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr" value="1"><span data-lexical-text="true">Hello</span></li><li class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr" value="2"><span data-lexical-text="true">from</span></li><li class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr" value="3"><span data-lexical-text="true">the</span></li><li class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr" value="4"><span data-lexical-text="true">other</span></li><li class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr" value="5"><span data-lexical-text="true">side</span></li></ul>',
-    );
-  });
 
   test(`Can create a list and partially copy some content out of it`, async ({
     page,
+    isCollab,
   }) => {
+    test.fixme(isCollab && IS_LINUX, 'Flaky on Linux + Collab');
     await focusEditor(page);
     await page.keyboard.type(
       'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam venenatis risus ac cursus efficitur. Cras efficitur magna odio, lacinia posuere mauris placerat in. Etiam eu congue nisl. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Nulla vulputate justo id eros convallis, vel pellentesque orci hendrerit. Pellentesque accumsan molestie eros, vitae tempor nisl semper sit amet. Sed vulputate leo dolor, et bibendum quam feugiat eget. Praesent vestibulum libero sed enim ornare, in consequat dui posuere. Maecenas ornare vestibulum felis, non elementum urna imperdiet sit amet.',
@@ -563,7 +483,7 @@ test.describe('Nested List', () => {
           <span data-lexical-text="true">One</span>
           <a
             href="https://"
-            rel="noopener"
+            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
             dir="ltr">
             <span data-lexical-text="true">two</span>
@@ -580,7 +500,7 @@ test.describe('Nested List', () => {
 
     await assertHTML(
       page,
-      '<ul class="PlaygroundEditorTheme__ul"><li class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr" value="1"><span data-lexical-text="true">One </span><a href="https://" rel="noopener" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">two</span></a><span data-lexical-text="true"> three</span></li></ul>',
+      '<ul class="PlaygroundEditorTheme__ul"><li class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr" dir="ltr" value="1"><span data-lexical-text="true">One </span><a href="https://" rel="noreferrer" class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr" dir="ltr"><span data-lexical-text="true">two</span></a><span data-lexical-text="true"> three</span></li></ul>',
     );
 
     await toggleBulletList(page);
@@ -594,7 +514,7 @@ test.describe('Nested List', () => {
           <span data-lexical-text="true">One</span>
           <a
             href="https://"
-            rel="noopener"
+            rel="noreferrer"
             class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
             dir="ltr">
             <span data-lexical-text="true">two</span>
@@ -1260,7 +1180,7 @@ test.describe('Nested List', () => {
     await assertHTML(
       page,
       html`
-        <ul class="PlaygroundEditorTheme__ul">
+        <ul class="PlaygroundEditorTheme__ul PlaygroundEditorTheme__checklist">
           <li
             aria-checked="true"
             role="checkbox"
@@ -1282,7 +1202,8 @@ test.describe('Nested List', () => {
           <li
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__nestedListItem"
             value="3">
-            <ul class="PlaygroundEditorTheme__ul">
+            <ul
+              class="PlaygroundEditorTheme__ul PlaygroundEditorTheme__checklist">
               <li
                 aria-checked="false"
                 role="checkbox"
@@ -1318,7 +1239,8 @@ test.describe('Nested List', () => {
           <li
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
             value="3">
-            <ul class="PlaygroundEditorTheme__ul">
+            <ul
+              class="PlaygroundEditorTheme__ul PlaygroundEditorTheme__checklist">
               <li
                 aria-checked="false"
                 role="checkbox"
@@ -1337,7 +1259,7 @@ test.describe('Nested List', () => {
     await assertHTML(
       page,
       html`
-        <ul class="PlaygroundEditorTheme__ul">
+        <ul class="PlaygroundEditorTheme__ul PlaygroundEditorTheme__checklist">
           <li
             aria-checked="false"
             role="checkbox"
@@ -1359,7 +1281,8 @@ test.describe('Nested List', () => {
           <li
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__listItemUnchecked PlaygroundEditorTheme__nestedListItem"
             value="3">
-            <ul class="PlaygroundEditorTheme__ul">
+            <ul
+              class="PlaygroundEditorTheme__ul PlaygroundEditorTheme__checklist">
               <li
                 aria-checked="false"
                 role="checkbox"

@@ -866,12 +866,12 @@ export async function applySelectionInputs(inputs, update, editor) {
 }
 
 export function setAnchorPoint(point) {
-  let selection = $getSelection();
+  const selection = $getSelection();
 
-  if (selection === null) {
+  if (!$isRangeSelection(selection)) {
     const dummyTextNode = $createTextNode();
     dummyTextNode.select();
-    selection = $getSelection();
+    return setAnchorPoint(point);
   }
 
   if ($isNodeSelection(selection)) {
@@ -885,12 +885,12 @@ export function setAnchorPoint(point) {
 }
 
 export function setFocusPoint(point) {
-  let selection = $getSelection();
+  const selection = $getSelection();
 
-  if (selection === null) {
+  if (!$isRangeSelection(selection)) {
     const dummyTextNode = $createTextNode();
     dummyTextNode.select();
-    selection = $getSelection();
+    return setFocusPoint(point);
   }
 
   if ($isNodeSelection(selection)) {

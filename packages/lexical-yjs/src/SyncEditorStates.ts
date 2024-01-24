@@ -87,6 +87,14 @@ export function syncYjsChangesToLexical(
 ): void {
   const editor = binding.editor;
   const currentEditorState = editor._editorState;
+
+  // This line precompute the delta before editor update. The reason is
+  // delta is computed when it is accessed. Note that this can only be
+  // safely computed during the event call. If it is accessed after event
+  // call it might result in unexpected behavior.
+  // https://github.com/yjs/yjs/blob/00ef472d68545cb260abd35c2de4b3b78719c9e4/src/utils/YEvent.js#L132
+  events.forEach((event) => event.delta);
+
   editor.update(
     () => {
       const pendingEditorState: EditorState | null = editor._pendingEditorState;
@@ -118,11 +126,14 @@ export function syncYjsChangesToLexical(
             );
             const [start, end] =
               prevOffsetView.getOffsetsFromSelection(prevSelection);
-            const nextSelection = nextOffsetView.createSelectionFromOffsets(
-              start,
-              end,
-              prevOffsetView,
-            );
+            const nextSelection =
+              start >= 0 && end >= 0
+                ? nextOffsetView.createSelectionFromOffsets(
+                    start,
+                    end,
+                    prevOffsetView,
+                  )
+                : null;
 
             if (nextSelection !== null) {
               $setSelection(nextSelection);

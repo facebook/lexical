@@ -17,6 +17,7 @@ import {
   focusEditor,
   html,
   initialize,
+  pressToggleBold,
   repeat,
   test,
   waitForSelector,
@@ -277,5 +278,28 @@ test.describe('Hashtags', () => {
       focusOffset: 0,
       focusPath: [0],
     });
+  });
+
+  test('Hashtag inherits format', async ({page, isPlainText}) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type('Hello ');
+    await pressToggleBold(page);
+    await page.keyboard.type('#world');
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Hello</span>
+          <strong
+            class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__hashtag"
+            data-lexical-text="true">
+            #world
+          </strong>
+        </p>
+      `,
+    );
   });
 });

@@ -21,7 +21,6 @@ import {
   $isDecoratorNode,
   $isNodeSelection,
   $isRangeSelection,
-  $setSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
   FORMAT_ELEMENT_COMMAND,
@@ -57,20 +56,15 @@ export function BlockWithAlignableContents({
     (event: KeyboardEvent) => {
       if (isSelected && $isNodeSelection($getSelection())) {
         event.preventDefault();
-        editor.update(() => {
-          const node = $getNodeByKey(nodeKey);
-          if (node === null) return;
-
-          $setSelection(node.selectPrevious());
-          if ($isDecoratorNode(node)) {
-            node.remove();
-          }
-        });
+        const node = $getNodeByKey(nodeKey);
+        if ($isDecoratorNode(node)) {
+          node.remove();
+        }
       }
 
       return false;
     },
-    [editor, isSelected, nodeKey],
+    [isSelected, nodeKey],
   );
 
   useEffect(() => {

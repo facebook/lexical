@@ -861,7 +861,7 @@ test.describe('Markdown', () => {
     await assertHTML(page, TYPED_MARKDOWN_HTML);
   });
 
-  test('itraword text format', async ({page}) => {
+  test('intraword text format', async ({page}) => {
     await focusEditor(page);
     await page.keyboard.type('he_llo_ world');
     await assertHTML(
@@ -950,6 +950,72 @@ test.describe('Markdown', () => {
                 draggable="false"
                 style="height: inherit; max-width: 800px; width: inherit" />
             </div>
+          </span>
+          <br />
+        </p>
+      `,
+    );
+  });
+
+  test('can import several text match transformers in a same line (#5385)', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type(
+      '```markdown [link](https://lexical.dev)[link](https://lexical.dev)![Yellow flower in tilt shift lens](' +
+        SAMPLE_IMAGE_URL +
+        ')just text in between$1$',
+    );
+    await click(page, '.action-button .markdown');
+    await waitForSelector(page, '.editor-image img');
+    await waitForSelector(page, '.editor-equation');
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://lexical.dev">
+            <span data-lexical-text="true">link</span>
+          </a>
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://lexical.dev">
+            <span data-lexical-text="true">link</span>
+          </a>
+          <span
+            class="editor-image"
+            contenteditable="false"
+            data-lexical-decorator="true">
+            <div draggable="false">
+              <img
+                src="${SAMPLE_IMAGE_URL}"
+                alt="Yellow flower in tilt shift lens"
+                draggable="false"
+                style="height: inherit; max-width: 800px; width: inherit" />
+            </div>
+          </span>
+          <span data-lexical-text="true">just text in between</span>
+          <span
+            class="editor-equation"
+            contenteditable="false"
+            data-lexical-decorator="true">
+            <img src="#" alt="" />
+            <span role="button" tabindex="-1">
+              <span class="katex">
+                <span class="katex-html" aria-hidden="true">
+                  <span class="base">
+                    <span class="strut" style="height: 0.6444em;"></span>
+                    <span class="mord">1</span>
+                  </span>
+                </span>
+              </span>
+            </span>
+            <img src="#" alt="" />
           </span>
           <br />
         </p>
@@ -1359,15 +1425,15 @@ const IMPORTED_MARKDOWN_HTML = html`
       class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"
       dir="ltr">
       <span data-lexical-text="true">Create a list with</span>
-      <code data-lexical-text="true">
+      <code spellcheck="false" data-lexical-text="true">
         <span class="PlaygroundEditorTheme__textCode">+</span>
       </code>
       <span data-lexical-text="true">,</span>
-      <code data-lexical-text="true">
+      <code spellcheck="false" data-lexical-text="true">
         <span class="PlaygroundEditorTheme__textCode">-</span>
       </code>
       <span data-lexical-text="true">, or</span>
-      <code data-lexical-text="true">
+      <code spellcheck="false" data-lexical-text="true">
         <span class="PlaygroundEditorTheme__textCode">*</span>
       </code>
     </li>
@@ -1409,7 +1475,7 @@ const IMPORTED_MARKDOWN_HTML = html`
       <span data-lexical-text="true">
         Oredered lists started with numbers as
       </span>
-      <code data-lexical-text="true">
+      <code spellcheck="false" data-lexical-text="true">
         <span class="PlaygroundEditorTheme__textCode">1.</span>
       </code>
     </li>
@@ -1443,11 +1509,11 @@ const IMPORTED_MARKDOWN_HTML = html`
     class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
     dir="ltr">
     <span data-lexical-text="true">Inline</span>
-    <code data-lexical-text="true">
+    <code spellcheck="false" data-lexical-text="true">
       <span class="PlaygroundEditorTheme__textCode">code</span>
     </code>
     <span data-lexical-text="true">format which also</span>
-    <code data-lexical-text="true">
+    <code spellcheck="false" data-lexical-text="true">
       <span class="PlaygroundEditorTheme__textCode">
         preserves **_~~any markdown-like~~_** text
       </span>

@@ -15,7 +15,6 @@ import {
   $isParagraphNode,
   $isRangeSelection,
   $isRootOrShadowRoot,
-  DEPRECATED_$isGridSelection,
   ElementNode,
   LexicalEditor,
   LexicalNode,
@@ -94,12 +93,14 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
   editor.update(() => {
     const selection = $getSelection();
 
-    if (
-      $isRangeSelection(selection) ||
-      DEPRECATED_$isGridSelection(selection)
-    ) {
+    if (selection !== null) {
       const nodes = selection.getNodes();
-      const anchor = selection.anchor;
+      const anchorAndFocus = selection.getStartEndPoints();
+      invariant(
+        anchorAndFocus !== null,
+        'insertList: anchor should be defined',
+      );
+      const [anchor] = anchorAndFocus;
       const anchorNode = anchor.getNode();
       const anchorNodeParent = anchorNode.getParent();
 
@@ -129,6 +130,7 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
           if (
             $isElementNode(node) &&
             node.isEmpty() &&
+            !$isListItemNode(node) &&
             !handled.has(node.getKey())
           ) {
             createListOrMerge(node, listType);
@@ -506,7 +508,7 @@ export function $handleListInsertParagraph(): boolean {
   // Only run this code on empty list items
   const anchor = selection.anchor.getNode();
 
-  if (!$isListItemNode(anchor) || anchor.getTextContent() !== '') {
+  if (!$isListItemNode(anchor) || anchor.getChildrenSize() !== 0) {
     return false;
   }
   const topListNode = $getTopListNode(anchor);

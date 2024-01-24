@@ -49,6 +49,7 @@ import {isNestedListNode} from './utils';
 
 export type SerializedListItemNode = Spread<
   {
+    type: 'listitem';
     checked: boolean | undefined;
     value: number;
   },

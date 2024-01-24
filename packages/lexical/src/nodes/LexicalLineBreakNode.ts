@@ -6,7 +6,7 @@
  *
  */
 
-import type {KlassConstructor} from '../LexicalEditor';
+import type {KlassConstructor, Spread} from '../LexicalEditor';
 import type {
   DOMConversionMap,
   DOMConversionOutput,
@@ -18,7 +18,10 @@ import {DOM_TEXT_TYPE} from '../LexicalConstants';
 import {LexicalNode} from '../LexicalNode';
 import {$applyNodeReplacement} from '../LexicalUtils';
 
-export type SerializedLineBreakNode = SerializedLexicalNode;
+export type SerializedLineBreakNode = Spread<
+  {type: 'linebreak'},
+  SerializedLexicalNode
+>;
 
 /** @noInheritDoc */
 export class LineBreakNode extends LexicalNode {

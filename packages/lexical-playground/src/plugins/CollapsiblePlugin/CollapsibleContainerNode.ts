@@ -21,6 +21,7 @@ import {
 
 type SerializedCollapsibleContainerNode = Spread<
   {
+    type: 'collapsible-container';
     open: boolean;
   },
   SerializedElementNode

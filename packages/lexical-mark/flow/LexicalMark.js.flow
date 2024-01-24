@@ -16,6 +16,7 @@ import type {
 import {ElementNode, LexicalNode} from 'lexical';
 
 export type SerializedMarkNode = SerializedElementNode & {
+  type: 'mark',
   ids: Array<string>,
 };
 

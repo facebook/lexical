@@ -26,6 +26,7 @@ const ExcalidrawComponent = React.lazy(() => import('./ExcalidrawComponent'));
 
 export type SerializedExcalidrawNode = Spread<
   {
+    type: 'excalidraw';
     data: string;
     width: number | 'inherit';
     height: number | 'inherit';

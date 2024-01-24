@@ -43,6 +43,7 @@ export type SerializedTableCellNode = Spread<
   {
     colSpan?: number;
     rowSpan?: number;
+    type: 'tablecell';
     headerState: TableCellHeaderState;
     width?: number;
     backgroundColor?: null | string;

@@ -58,6 +58,7 @@ function cloneOption(
 
 export type SerializedPollNode = Spread<
   {
+    type: 'poll';
     question: string;
     options: Options;
   },

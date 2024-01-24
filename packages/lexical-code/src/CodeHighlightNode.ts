@@ -50,6 +50,7 @@ export const DEFAULT_CODE_LANGUAGE = 'javascript';
 
 type SerializedCodeHighlightNode = Spread<
   {
+    type: 'code-highlight';
     highlightType: string | null | undefined;
   },
   SerializedTextNode

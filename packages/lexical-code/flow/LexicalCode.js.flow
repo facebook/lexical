@@ -109,6 +109,7 @@ declare export function normalizeCodeLang(lang: string): string;
 
 export type SerializedCodeNode = {
   ...SerializedElementNode,
+  type: 'code',
   language: string | null | void,
   ...
 };

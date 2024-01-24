@@ -55,6 +55,7 @@ function convertInlineImageElement(domNode: Node): null | DOMConversionOutput {
 
 export type SerializedInlineImageNode = Spread<
   {
+    type: 'inline-image';
     altText: string;
     caption: SerializedEditor;
     height?: number;

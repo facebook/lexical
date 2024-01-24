@@ -34,6 +34,7 @@ import {$getListDepth, wrapInListItem} from './utils';
 
 export type SerializedListNode = Spread<
   {
+    type: 'list';
     listType: ListType;
     start: number;
     tag: ListNodeTagType;

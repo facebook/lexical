@@ -618,7 +618,11 @@ declare export function $isTextNode(
  * LexicalTabNode
  */
 
-export type SerializedTabNode = SerializedTextNode;
+export type SerializedTabNode = {
+  ...SerializedTextNode,
+  type: 'tab',
+  ...
+};
 
 declare export function $createTabNode(): TabNode;
 
@@ -872,6 +876,7 @@ export type SerializedLexicalNode = {
 
 export type SerializedTextNode = {
   ...SerializedLexicalNode,
+  type: 'text',
   detail: number,
   format: number,
   mode: TextModeType,
@@ -891,11 +896,13 @@ export type SerializedElementNode = {
 
 export type SerializedParagraphNode = {
   ...SerializedElementNode,
+  type: 'paragraph',
   ...
 };
 
 export type SerializedLineBreakNode = {
   ...SerializedLexicalNode,
+  type: 'linebreak',
   ...
 };
 
@@ -906,6 +913,7 @@ export type SerializedDecoratorNode = {
 
 export type SerializedRootNode = {
   ...SerializedElementNode,
+  type: 'root',
   ...
 };
 

@@ -14,9 +14,13 @@ import {
   ElementNode,
   LexicalNode,
   SerializedElementNode,
+  Spread,
 } from 'lexical';
 
-type SerializedCollapsibleContentNode = SerializedElementNode;
+type SerializedCollapsibleContentNode = Spread<
+  {type: 'collapsible-content'},
+  SerializedElementNode
+>;
 
 export function convertCollapsibleContentElement(
   domNode: HTMLElement,

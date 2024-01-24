@@ -25,6 +25,7 @@ const EquationComponent = React.lazy(() => import('./EquationComponent'));
 
 export type SerializedEquationNode = Spread<
   {
+    type: 'equation';
     equation: string;
     inline: boolean;
   },

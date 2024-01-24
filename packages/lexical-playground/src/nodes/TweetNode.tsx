@@ -125,6 +125,7 @@ function TweetComponent({
 
 export type SerializedTweetNode = Spread<
   {
+    type: 'tweet';
     id: string;
   },
   SerializedDecoratorBlockNode
@@ -147,6 +148,7 @@ export class TweetNode extends DecoratorBlockNode {
     return node;
   }
 
+  // @ts-expect-error
   exportJSON(): SerializedTweetNode {
     return {
       ...super.exportJSON(),

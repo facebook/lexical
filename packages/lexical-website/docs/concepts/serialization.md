@@ -235,6 +235,7 @@ import type {Spread} from 'lexical';
 // over the base SerializedLexicalNode type.
 export type SerializedTextNode = Spread<
   {
+    type: 'text';
     detail: number;
     format: number;
     mode: TextModeType;
@@ -250,6 +251,7 @@ If we wanted to make changes to the above `TextNode`, we should be sure to not r
 ```js
 export type SerializedTextNodeV1 = Spread<
   {
+    type: 'text';
     detail: number;
     format: number;
     mode: TextModeType;
@@ -261,6 +263,7 @@ export type SerializedTextNodeV1 = Spread<
 
 export type SerializedTextNodeV2 = Spread<
   {
+    type: 'text';
     detail: number;
     format: number;
     mode: TextModeType;

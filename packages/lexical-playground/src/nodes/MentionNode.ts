@@ -22,6 +22,7 @@ import {
 
 export type SerializedMentionNode = Spread<
   {
+    type: 'mention';
     mentionName: string;
   },
   SerializedTextNode
@@ -68,6 +69,7 @@ export class MentionNode extends TextNode {
     this.__mention = mentionName;
   }
 
+  // @ts-expect-error
   exportJSON(): SerializedMentionNode {
     return {
       ...super.exportJSON(),

@@ -77,11 +77,13 @@ declare export var INSERT_CHECK_LIST_COMMAND: LexicalCommand<void>;
 declare export var REMOVE_LIST_COMMAND: LexicalCommand<void>;
 
 export type SerializedListItemNode = SerializedElementNode & {
+  type: 'list-item',
   checked: boolean | void,
   value: number,
 };
 
 export type SerializedListNode = SerializedElementNode & {
+  type: 'list',
   listType: ListType,
   start: number,
   tag: ListNodeTagType,

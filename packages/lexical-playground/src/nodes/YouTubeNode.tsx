@@ -61,6 +61,7 @@ function YouTubeComponent({
 
 export type SerializedYouTubeNode = Spread<
   {
+    type: 'youtube';
     videoID: string;
   },
   SerializedDecoratorBlockNode
@@ -94,6 +95,7 @@ export class YouTubeNode extends DecoratorBlockNode {
     return node;
   }
 
+  // @ts-expect-error
   exportJSON(): SerializedYouTubeNode {
     return {
       ...super.exportJSON(),

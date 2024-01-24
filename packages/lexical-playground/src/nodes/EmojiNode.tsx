@@ -18,6 +18,7 @@ import {$applyNodeReplacement, TextNode} from 'lexical';
 
 export type SerializedEmojiNode = Spread<
   {
+    type: 'emoji';
     className: string;
   },
   SerializedTextNode
@@ -73,6 +74,7 @@ export class EmojiNode extends TextNode {
     return node;
   }
 
+  // @ts-expect-error
   exportJSON(): SerializedEmojiNode {
     return {
       ...super.exportJSON(),

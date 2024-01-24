@@ -69,6 +69,7 @@ import {$createTabNode} from './LexicalTabNode';
 
 export type SerializedTextNode = Spread<
   {
+    type: 'text';
     detail: number;
     format: number;
     mode: TextModeType;

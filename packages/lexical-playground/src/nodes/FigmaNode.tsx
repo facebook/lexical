@@ -56,6 +56,7 @@ function FigmaComponent({
 
 export type SerializedFigmaNode = Spread<
   {
+    type: 'figma';
     documentID: string;
   },
   SerializedDecoratorBlockNode
@@ -78,6 +79,7 @@ export class FigmaNode extends DecoratorBlockNode {
     return node;
   }
 
+  // @ts-expect-error
   exportJSON(): SerializedFigmaNode {
     return {
       ...super.exportJSON(),

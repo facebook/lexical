@@ -6,7 +6,7 @@
  *
  */
 
-import type {EditorConfig, LexicalEditor} from '../LexicalEditor';
+import type {EditorConfig, LexicalEditor, Spread} from '../LexicalEditor';
 import type {
   DOMConversionMap,
   DOMConversionOutput,
@@ -27,7 +27,10 @@ import {
 import {ElementNode} from './LexicalElementNode';
 import {$isTextNode} from './LexicalTextNode';
 
-export type SerializedParagraphNode = SerializedElementNode;
+export type SerializedParagraphNode = Spread<
+  {type: 'paragraph'},
+  SerializedElementNode
+>;
 
 /** @noInheritDoc */
 export class ParagraphNode extends ElementNode {

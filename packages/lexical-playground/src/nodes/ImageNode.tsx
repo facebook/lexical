@@ -48,6 +48,7 @@ function convertImageElement(domNode: Node): null | DOMConversionOutput {
 
 export type SerializedImageNode = Spread<
   {
+    type: 'image';
     altText: string;
     caption: SerializedEditor;
     height?: number;

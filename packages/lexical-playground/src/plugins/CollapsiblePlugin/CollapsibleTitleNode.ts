@@ -18,12 +18,16 @@ import {
   LexicalNode,
   RangeSelection,
   SerializedElementNode,
+  Spread,
 } from 'lexical';
 
 import {$isCollapsibleContainerNode} from './CollapsibleContainerNode';
 import {$isCollapsibleContentNode} from './CollapsibleContentNode';
 
-type SerializedCollapsibleTitleNode = SerializedElementNode;
+type SerializedCollapsibleTitleNode = Spread<
+  {type: 'collapsible-title'},
+  SerializedElementNode
+>;
 
 export function convertSummaryElement(
   domNode: HTMLElement,

@@ -27,6 +27,7 @@ type StickyNoteColor = 'pink' | 'yellow';
 
 export type SerializedStickyNode = Spread<
   {
+    type: 'sticky';
     xOffset: number;
     yOffset: number;
     color: StickyNoteColor;

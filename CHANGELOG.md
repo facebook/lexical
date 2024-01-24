@@ -1,3 +1,38 @@
+## v0.13.0 (2024-01-24)
+
+- Rename LexicalTableSelection to LexicalTableObserver (#5533) Gerard Rovira
+- Move Grid to lexicaltable (#5532) Gerard Rovira
+- Remove Grid Nodes (#5531) Gerard Rovira
+- Move Grid to lexicaltable (#5528) Gerard Rovira
+- Fix and extend README.md documentation links (#5526) Leo
+- Combined selection format to ignore empty text nodes (#5521) Gerard Rovira
+- Clean up the never implemented Table menu in Toolbar (#5523) Ivaylo Pavlov
+- Fixed the toolbar style activation state is incorrect in certain cases (#5126) Warren19
+- Fix inserting redundant paragraph on enter in MarkNode (#5418) Drago Strinu
+- Bump Node in tests to 18.18.0 (#5513) Ivaylo Pavlov
+- Fix AutoLinkPlugin triggers endless transforms (#5404) wnhlee
+- Allow setting className for checklist in theme (#5445) Aman Harwara
+- fix set button typebutton in TableActionMenuPlugin (#5510) Anthony Bouch
+- PR-5 Remove references of PointSelection (#5334) Illia Olenchenko
+- Fix CI (#5511) Gerard Rovira
+- Fix inserting link open editor in edit mode (#5458) wnhlee
+- docs(serialization) add node helpers to ExtendedTextNode example (#5442) Can Rau
+- Fix exportTextFormat to keep dollar sign (#5379) wnhlee
+- Use correct prop type for children in LexicalComposer (#5503) Paul
+- Fix DecoratorNodes being treated as block elements (#5371) Steve Larson
+- Replace font size dropdown with font size entry component (#5451) Shubhanker Srivastava
+- Adding ability to mount LexicalMenus to arbitrary divs (#5481) Ebad
+- Fix escape down for collapsible section when collapsed (#5485) Ivaylo Pavlov
+- Fix columns layout update command (#5484) Ivaylo Pavlov
+- Fix small issue with DecoratorNode type guards (#5478) John Flockton
+- Fix multiline conversion to codeblock (#5472) Shubhanker Srivastava
+- Remove depecated usage of checks from Flow types (#5477) John Flockton
+- Update Flow version (#5471) John Flockton
+- Minor refactoring in LexicalLineBreakNode (#5455) Georgii Dolzhykov
+- Minor fix for release script (#5464) Acy Watson
+- v0.12.6 (#5463) Acy Watson
+- v0.12.6 Lexical GitHub Actions Bot
+
 ## v0.12.6 (2024-01-08)
 
 - Fix floating link editor on inline image caption (#5460) wnhlee

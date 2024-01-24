@@ -9,10 +9,10 @@
     "selection"
   ],
   "license": "MIT",
-  "version": "0.12.6",
+  "version": "0.13.0",
   "main": "LexicalSelection.js",
   "peerDependencies": {
-    "lexical": "0.12.6"
+    "lexical": "0.13.0"
   },
   "repository": {
     "type": "git",

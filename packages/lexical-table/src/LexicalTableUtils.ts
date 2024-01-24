@@ -226,6 +226,19 @@ export function $insertTableRow(
   return tableNode;
 }
 
+const getHeaderState = (
+  currentState: TableCellHeaderState,
+  possibleState: TableCellHeaderState,
+): TableCellHeaderState => {
+  if (
+    currentState === TableCellHeaderStates.BOTH ||
+    currentState === possibleState
+  ) {
+    return possibleState;
+  }
+  return TableCellHeaderStates.NO_STATUS;
+};
+
 export function $insertTableRow__EXPERIMENTAL(insertAfter = true): void {
   const selection = $getSelection();
   invariant(
@@ -248,11 +261,10 @@ export function $insertTableRow__EXPERIMENTAL(insertAfter = true): void {
         const currentCell = focusEndRowMap[i].cell as TableCellNode;
         const currentCellHeaderState = currentCell.__headerState;
 
-        const headerState =
-          currentCellHeaderState === TableCellHeaderStates.COLUMN ||
-          currentCellHeaderState === TableCellHeaderStates.BOTH
-            ? TableCellHeaderStates.COLUMN
-            : TableCellHeaderStates.NO_STATUS;
+        const headerState = getHeaderState(
+          currentCellHeaderState,
+          TableCellHeaderStates.COLUMN,
+        );
 
         newRow.append(
           $createTableCellNode(headerState).append($createParagraphNode()),
@@ -277,11 +289,10 @@ export function $insertTableRow__EXPERIMENTAL(insertAfter = true): void {
         const currentCell = focusStartRowMap[i].cell as TableCellNode;
         const currentCellHeaderState = currentCell.__headerState;
 
-        const headerState =
-          currentCellHeaderState === TableCellHeaderStates.COLUMN ||
-          currentCellHeaderState === TableCellHeaderStates.BOTH
-            ? TableCellHeaderStates.COLUMN
-            : TableCellHeaderStates.NO_STATUS;
+        const headerState = getHeaderState(
+          currentCellHeaderState,
+          TableCellHeaderStates.COLUMN,
+        );
 
         newRow.append(
           $createTableCellNode(headerState).append($createParagraphNode()),
@@ -414,11 +425,10 @@ export function $insertTableColumn__EXPERIMENTAL(insertAfter = true): void {
         .cell as TableCellNode
     ).__headerState;
 
-    const headerState =
-      currentCellHeaderState === TableCellHeaderStates.ROW ||
-      currentCellHeaderState === TableCellHeaderStates.BOTH
-        ? TableCellHeaderStates.ROW
-        : TableCellHeaderStates.NO_STATUS;
+    const headerState = getHeaderState(
+      currentCellHeaderState,
+      TableCellHeaderStates.ROW,
+    );
 
     if (insertAfterColumn < 0) {
       $insertFirst(

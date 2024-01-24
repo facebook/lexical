@@ -7,10 +7,16 @@
  */
 import './index.css';
 
-import {$isAutoLinkNode, $isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
+import {
+  $createLinkNode,
+  $isAutoLinkNode,
+  $isLinkNode,
+  TOGGLE_LINK_COMMAND,
+} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$findMatchingParent, mergeRegister} from '@lexical/utils';
 import {
+  $createTextNode,
   $getSelection,
   $isRangeSelection,
   BaseSelection,
@@ -188,6 +194,21 @@ function FloatingLinkEditor({
     if (lastSelection !== null) {
       if (linkUrl !== '') {
         editor.dispatchCommand(TOGGLE_LINK_COMMAND, sanitizeUrl(editedLinkUrl));
+        editor.update(() => {
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            const parent = getSelectedNode(selection).getParent();
+            if ($isAutoLinkNode(parent)) {
+              const linkNode = $createLinkNode(parent.getURL(), {
+                rel: parent.__rel,
+                target: parent.__target,
+                title: parent.__title,
+              }).append($createTextNode(parent.getURL()));
+              parent.getParent()?.append(linkNode);
+              parent.remove();
+            }
+          }
+        });
       }
       setEditedLinkUrl('https://');
       setIsLinkEditMode(false);

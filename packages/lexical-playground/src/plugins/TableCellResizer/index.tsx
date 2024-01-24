@@ -19,7 +19,7 @@ import {
   $isTableCellNode,
   $isTableRowNode,
   $isTableSelection,
-  getCellFromTarget,
+  getDOMCellFromTarget,
   TableCellNode,
 } from '@lexical/table';
 import {
@@ -108,7 +108,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
 
         if (targetRef.current !== target) {
           targetRef.current = target as HTMLElement;
-          const cell = getCellFromTarget(target as HTMLElement);
+          const cell = getDOMCellFromTarget(target as HTMLElement);
 
           if (cell && activeCell !== cell) {
             editor.update(() => {

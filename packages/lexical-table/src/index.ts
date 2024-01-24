@@ -45,7 +45,7 @@ export {
 export type {HTMLTableElementWithWithTableSelectionState} from './LexicalTableSelectionHelpers';
 export {
   applyTableHandlers,
-  getCellFromTarget,
+  getDOMCellFromTarget,
   getTableObserverFromTableElement,
 } from './LexicalTableSelectionHelpers';
 export {

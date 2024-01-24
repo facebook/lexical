@@ -88,7 +88,7 @@ export function applyTableHandlers(
         return;
       }
 
-      const anchorCell = getCellFromTarget(event.target as Node);
+      const anchorCell = getDOMCellFromTarget(event.target as Node);
       if (anchorCell !== null) {
         stopEvent(event);
         tableObserver.setAnchorCellForSelection(anchorCell);
@@ -100,7 +100,7 @@ export function applyTableHandlers(
       };
 
       const onMouseMove = (moveEvent: MouseEvent) => {
-        const focusCell = getCellFromTarget(moveEvent.target as Node);
+        const focusCell = getDOMCellFromTarget(moveEvent.target as Node);
         if (
           focusCell !== null &&
           (tableObserver.anchorX !== focusCell.x ||
@@ -456,7 +456,7 @@ export function applyTableHandlers(
       tableCellNode,
       tableObserver.table,
     );
-    return tableNode.getCellFromCordsOrThrow(
+    return tableNode.getDOMCellFromCordsOrThrow(
       currentCords.x,
       currentCords.y,
       tableObserver.table,
@@ -707,7 +707,7 @@ export function getTableObserverFromTableElement(
   return tableElement[LEXICAL_ELEMENT_KEY];
 }
 
-export function getCellFromTarget(node: Node): TableDOMCell | null {
+export function getDOMCellFromTarget(node: Node): TableDOMCell | null {
   let currentNode: ParentNode | Node | null = node;
 
   while (currentNode != null) {
@@ -744,16 +744,16 @@ export function doesTargetContainText(node: Node): boolean {
 }
 
 export function getTable(tableElement: HTMLElement): TableDOMTable {
-  const cells: TableDOMRows = [];
+  const domRows: TableDOMRows = [];
   const grid = {
-    cells,
     columns: 0,
+    domRows,
     rows: 0,
   };
   let currentNode = tableElement.firstChild;
   let x = 0;
   let y = 0;
-  cells.length = 0;
+  domRows.length = 0;
 
   while (currentNode != null) {
     const nodeMame = currentNode.nodeName;
@@ -771,9 +771,9 @@ export function getTable(tableElement: HTMLElement): TableDOMTable {
       // @ts-expect-error: internal field
       currentNode._cell = cell;
 
-      let row = cells[y];
+      let row = domRows[y];
       if (row === undefined) {
-        row = cells[y] = [];
+        row = domRows[y] = [];
       }
 
       row[x] = cell;
@@ -848,10 +848,10 @@ export function $forEachTableCell(
     },
   ) => void,
 ) {
-  const {cells} = grid;
+  const {domRows} = grid;
 
-  for (let y = 0; y < cells.length; y++) {
-    const row = cells[y];
+  for (let y = 0; y < domRows.length; y++) {
+    const row = domRows[y];
     if (!row) {
       continue;
     }
@@ -984,7 +984,7 @@ const adjustFocusNodeInDirection = (
     case 'forward':
       if (x !== (isForward ? tableObserver.table.columns - 1 : 0)) {
         tableObserver.setFocusCellForSelection(
-          tableNode.getCellFromCordsOrThrow(
+          tableNode.getDOMCellFromCordsOrThrow(
             x + (isForward ? 1 : -1),
             y,
             tableObserver.table,
@@ -996,7 +996,7 @@ const adjustFocusNodeInDirection = (
     case 'up':
       if (y !== 0) {
         tableObserver.setFocusCellForSelection(
-          tableNode.getCellFromCordsOrThrow(x, y - 1, tableObserver.table),
+          tableNode.getDOMCellFromCordsOrThrow(x, y - 1, tableObserver.table),
         );
 
         return true;
@@ -1006,7 +1006,7 @@ const adjustFocusNodeInDirection = (
     case 'down':
       if (y !== tableObserver.table.rows - 1) {
         tableObserver.setFocusCellForSelection(
-          tableNode.getCellFromCordsOrThrow(x, y + 1, tableObserver.table),
+          tableNode.getDOMCellFromCordsOrThrow(x, y + 1, tableObserver.table),
         );
 
         return true;
@@ -1188,7 +1188,7 @@ function $handleArrowKey(
       );
 
       if (event.shiftKey) {
-        const cell = tableNode.getCellFromCordsOrThrow(
+        const cell = tableNode.getDOMCellFromCordsOrThrow(
           cords.x,
           cords.y,
           tableObserver.table,
@@ -1234,7 +1234,7 @@ function $handleArrowKey(
 
     const grid = getTable(tableElement);
     const cordsAnchor = tableNode.getCordsFromCellNode(anchorCellNode, grid);
-    const anchorCell = tableNode.getCellFromCordsOrThrow(
+    const anchorCell = tableNode.getDOMCellFromCordsOrThrow(
       cordsAnchor.x,
       cordsAnchor.y,
       grid,

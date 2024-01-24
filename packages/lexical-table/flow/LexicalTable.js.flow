@@ -81,6 +81,13 @@ declare export function $isTableCellNode(
  * LexicalTableNode
  */
 
+export type TableMapValueType = {
+  cell: TableCellNode,
+  startRow: number,
+  startColumn: number,
+};
+export type TableMapType = Array<Array<TableMapValueType>>;
+
 declare export class TableNode extends TableNode {
   static getType(): string;
   static clone(node: TableNode): TableNode;
@@ -93,8 +100,8 @@ declare export class TableNode extends TableNode {
     tableCellNode: TableCellNode,
     table: TableDOMTable,
   ): {x: number, y: number};
-  getCellFromCords(x: number, y: number, table: TableDOMTable): ?Cell;
-  getCellFromCordsOrThrow(x: number, y: number, table: TableDOMTable): Cell;
+  getDOMCellFromCords(x: number, y: number, table: TableDOMTable): ?TableDOMCell;
+  getDOMCellFromCordsOrThrow(x: number, y: number, table: TableDOMTable): TableDOMCell;
   getCellNodeFromCords(x: number, y: number, table: TableDOMTable): ?TableCellNode;
   getCellNodeFromCordsOrThrow(x: number, y: number, table: TableDOMTable): TableCellNode;
   canSelectBefore(): true;
@@ -140,7 +147,7 @@ export type TableDOMCell = {
 export type TableDOMRows = Array<Array<TableDOMCell>>;
 
 export type TableDOMTable = {
-  cells: Cells,
+  cells: TableDOMRows,
   columns: number,
   rows: number,
 };
@@ -160,7 +167,7 @@ declare export function getTableObserverFromTableElement(
   tableElement: HTMLElement,
 ): null | TableObserver;
 
-declare export function getCellFromTarget(node: Node): Cell | null;
+declare export function getDOMCellFromTarget(node: Node): null | TableDOMCell;
 
 /**
  * LexicalTableUtils
@@ -268,8 +275,8 @@ declare export class TableObserver {
   removeListeners(): void;
   trackTable(): void;
   clearHighlight(): void;
-  setFocusCellForSelection(cell: Cell): void;
-  setAnchorCellForSelection(cell: Cell): void;
+  setFocusCellForSelection(cell: TableDOMCell): void;
+  setAnchorCellForSelection(cell: TableDOMCell): void;
   formatCells(type: TextFormatType): void;
   clearText(): void;
 }
@@ -313,52 +320,6 @@ declare export function $isTableSelection(
 ): x is TableSelection;
 
 declare export function $createTableSelection(): TableSelection;
-
-/**
- * TableNode
- */
-
-export type TableMapValueType = {
-  cell: TableCellNode,
-  startRow: number,
-  startColumn: number,
-};
-export type TableMapType = Array<Array<TableMapValueType>>;
-
-declare export class TableNode extends ElementNode {}
-
-declare export function $isTableNode(
-  node: ?LexicalNode,
-): node is TableNode;
-
-/**
- * TableRowNode
- */
-
-declare export class TableRowNode extends ElementNode {}
-
-declare export function $isTableRowNode(
-  node: ?LexicalNode,
-): node is TableRowNode;
-
-/**
- * TableCellNode
- */
-
-declare export class TableCellNode extends ElementNode {
-  __colSpan: number;
-  __rowSpan: number;
-
-  constructor(colSpan: number, key?: NodeKey): void;
-  getColSpan(): number;
-  setColSpan(colSpan: number): this;
-  getRowSpan(): number;
-  setRowSpan(rowSpan: number): this;
-}
-
-declare export function $isTableCellNode(
-  node: ?LexicalNode,
-): node is TableCellNode;
 
 /**
  * LexicalTableCommands

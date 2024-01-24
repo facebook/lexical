@@ -47,7 +47,7 @@ export type TableDOMCell = {
 export type TableDOMRows = Array<Array<TableDOMCell | undefined> | undefined>;
 
 export type TableDOMTable = {
-  cells: TableDOMRows;
+  domRows: TableDOMRows;
   columns: number;
   rows: number;
 };
@@ -82,8 +82,8 @@ export class TableObserver {
     this.tableNodeKey = tableNodeKey;
     this.editor = editor;
     this.table = {
-      cells: [],
       columns: 0,
+      domRows: [],
       rows: 0,
     };
     this.tableSelection = null;

@@ -14,7 +14,6 @@ import type {
   LexicalEditor,
   LexicalNode,
   NodeKey,
-  SerializedGridCellNode,
   Spread,
 } from 'lexical';
 
@@ -24,10 +23,10 @@ import {
   $createParagraphNode,
   $isElementNode,
   $isLineBreakNode,
-  DEPRECATED_GridCellNode,
 } from 'lexical';
 
 import {PIXEL_VALUE_REG_EXP} from './constants';
+import {GridCellNode, SerializedGridCellNode} from './LexicalGridCellNode';
 
 export const TableCellHeaderStates = {
   BOTH: 3,
@@ -49,7 +48,7 @@ export type SerializedTableCellNode = Spread<
 >;
 
 /** @noInheritDoc */
-export class TableCellNode extends DEPRECATED_GridCellNode {
+export class TableCellNode extends GridCellNode {
   /** @internal */
   __headerState: TableCellHeaderState;
   /** @internal */

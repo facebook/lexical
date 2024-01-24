@@ -22,9 +22,6 @@ import type {
 
 import {
   ElementNode,
-  deprecated_GridCellNode,
-  deprecated_GridRowNode,
-  deprecated_GridNode,
 } from 'lexical';
 
 /**
@@ -40,7 +37,7 @@ export const TableCellHeaderStates = {
 
 export type TableCellHeaderState = $Values<typeof TableCellHeaderStates>;
 
-declare export class TableCellNode extends deprecated_GridCellNode {
+declare export class TableCellNode extends GridCellNode {
   __headerState: TableCellHeaderState;
   __width?: number;
   __backgroundColor: null | string;
@@ -84,7 +81,7 @@ declare export function $isTableCellNode(
  * LexicalTableNode
  */
 
-declare export class TableNode extends deprecated_GridNode {
+declare export class TableNode extends GridNode {
   static getType(): string;
   static clone(node: TableNode): TableNode;
   constructor(grid: ?Grid, key?: NodeKey): void;
@@ -113,7 +110,7 @@ declare export function $isTableNode(
  * LexicalTableRowNode
  */
 
-declare export class TableRowNode extends deprecated_GridRowNode {
+declare export class TableRowNode extends GridRowNode {
   static getType(): string;
   static clone(node: TableRowNode): TableRowNode;
   constructor(height?: ?number, key?: NodeKey): void;
@@ -226,12 +223,33 @@ declare export function $deleteTableColumn(
 declare export function $insertTableRow__EXPERIMENTAL(
   insertAfter: boolean,
 ): void;
+
 declare export function $insertTableColumn__EXPERIMENTAL(
   insertAfter: boolean,
 ): void;
+
 declare export function $deleteTableRow__EXPERIMENTAL(): void;
+
 declare export function $deleteTableColumn__EXPERIMENTAL(): void;
+
 declare export function $unmergeCell(): void;
+
+declare export function $computeGridMap(
+  grid: GridNode,
+  cellA: GridCellNode,
+  cellB: GridCellNode,
+): [GridMapType, GridMapValueType, GridMapValueType];
+
+declare export function $getNodeTriplet(
+  source: PointType | LexicalNode | GridCellNode,
+): [GridCellNode, GridRowNode, GridNode];
+
+declare export function $getGridCellNodeRect(gridCellNode: GridCellNode): {
+  rowIndex: number;
+  columnIndex: number;
+  rowSpan: number;
+  colSpan: number;
+} | null;
 
 /**
  * LexicalTableSelection.js
@@ -303,3 +321,41 @@ declare export function $isGridSelection(
 ): x is GridSelection;
 
 declare export function $createGridSelection(): GridSelection;
+
+/**
+ * Grid
+ */
+
+export type GridMapValueType = {
+  cell: GridCellNode,
+  startRow: number,
+  startColumn: number,
+};
+export type GridMapType = Array<Array<GridMapValueType>>;
+
+declare export class GridNode extends ElementNode {}
+
+declare export function $isGridNode(
+  node: ?LexicalNode,
+): node is GridNode;
+
+declare export class GridRowNode extends ElementNode {}
+
+declare export function $isGridRowNode(
+  node: ?LexicalNode,
+): node is GridRowNode;
+
+declare export class GridCellNode extends ElementNode {
+  __colSpan: number;
+  __rowSpan: number;
+
+  constructor(colSpan: number, key?: NodeKey): void;
+  getColSpan(): number;
+  setColSpan(colSpan: number): this;
+  getRowSpan(): number;
+  setRowSpan(rowSpan: number): this;
+}
+
+declare export function $isGridCellNode(
+  node: ?LexicalNode,
+): node is GridCellNode;

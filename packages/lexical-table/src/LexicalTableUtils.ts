@@ -6,8 +6,12 @@
  *
  */
 
-import type {Grid} from './LexicalTableSelection';
-import type {DEPRECATED_GridRowNode, ElementNode} from 'lexical';
+import type {
+  Grid,
+  GridMapType,
+  GridMapValueType,
+} from './LexicalTableSelection';
+import type {ElementNode, PointType} from 'lexical';
 
 import {$findMatchingParent} from '@lexical/utils';
 import {
@@ -15,15 +19,14 @@ import {
   $createTextNode,
   $getSelection,
   $isRangeSelection,
-  DEPRECATED_$computeGridMap,
-  DEPRECATED_$getNodeTriplet,
-  DEPRECATED_$isGridRowNode,
-  DEPRECATED_GridCellNode,
   LexicalNode,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
 import {$isGridSelection, InsertTableCommandPayloadHeaders} from '.';
+import {$isGridCellNode, GridCellNode} from './LexicalGridCellNode';
+import {$isGridNode, GridNode} from './LexicalGridNode';
+import {$isGridRowNode, GridRowNode} from './LexicalGridRowNode';
 import {
   $createTableCellNode,
   $isTableCellNode,
@@ -234,12 +237,8 @@ export function $insertTableRow__EXPERIMENTAL(insertAfter = true): void {
     'Expected a RangeSelection or GridSelection',
   );
   const focus = selection.focus.getNode();
-  const [focusCell, , grid] = DEPRECATED_$getNodeTriplet(focus);
-  const [gridMap, focusCellMap] = DEPRECATED_$computeGridMap(
-    grid,
-    focusCell,
-    focusCell,
-  );
+  const [focusCell, , grid] = $getNodeTriplet(focus);
+  const [gridMap, focusCellMap] = $computeGridMap(grid, focusCell, focusCell);
   const columnCount = gridMap[0].length;
   const {startRow: focusStartRow} = focusCellMap;
   if (insertAfter) {
@@ -260,7 +259,7 @@ export function $insertTableRow__EXPERIMENTAL(insertAfter = true): void {
     }
     const focusEndRowNode = grid.getChildAtIndex(focusEndRow);
     invariant(
-      DEPRECATED_$isGridRowNode(focusEndRowNode),
+      $isGridRowNode(focusEndRowNode),
       'focusEndRow is not a GridRowNode',
     );
     focusEndRowNode.insertAfter(newRow);
@@ -281,7 +280,7 @@ export function $insertTableRow__EXPERIMENTAL(insertAfter = true): void {
     }
     const focusStartRowNode = grid.getChildAtIndex(focusStartRow);
     invariant(
-      DEPRECATED_$isGridRowNode(focusStartRowNode),
+      $isGridRowNode(focusStartRowNode),
       'focusEndRow is not a GridRowNode',
     );
     focusStartRowNode.insertBefore(newRow);
@@ -355,9 +354,9 @@ export function $insertTableColumn__EXPERIMENTAL(insertAfter = true): void {
   );
   const anchor = selection.anchor.getNode();
   const focus = selection.focus.getNode();
-  const [anchorCell] = DEPRECATED_$getNodeTriplet(anchor);
-  const [focusCell, , grid] = DEPRECATED_$getNodeTriplet(focus);
-  const [gridMap, focusCellMap, anchorCellMap] = DEPRECATED_$computeGridMap(
+  const [anchorCell] = $getNodeTriplet(anchor);
+  const [focusCell, , grid] = $getNodeTriplet(focus);
+  const [gridMap, focusCellMap, anchorCellMap] = $computeGridMap(
     grid,
     focusCell,
     anchorCell,
@@ -371,10 +370,10 @@ export function $insertTableColumn__EXPERIMENTAL(insertAfter = true): void {
     : startColumn - 1;
   const gridFirstChild = grid.getFirstChild();
   invariant(
-    DEPRECATED_$isGridRowNode(gridFirstChild),
+    $isGridRowNode(gridFirstChild),
     'Expected firstTable child to be a row',
   );
-  let firstInsertedCell: null | DEPRECATED_GridCellNode = null;
+  let firstInsertedCell: null | GridCellNode = null;
   function $createTableCellNodeForInsertTableColumn() {
     const cell = $createTableCellNode(TableCellHeaderStates.NO_STATUS).append(
       $createParagraphNode(),
@@ -384,12 +383,12 @@ export function $insertTableColumn__EXPERIMENTAL(insertAfter = true): void {
     }
     return cell;
   }
-  let loopRow: DEPRECATED_GridRowNode = gridFirstChild;
+  let loopRow: GridRowNode = gridFirstChild;
   rowLoop: for (let i = 0; i < rowCount; i++) {
     if (i !== 0) {
       const currentRow = loopRow.getNextSibling();
       invariant(
-        DEPRECATED_$isGridRowNode(currentRow),
+        $isGridRowNode(currentRow),
         'Expected row nextSibling to be a row',
       );
       loopRow = currentRow;
@@ -405,7 +404,7 @@ export function $insertTableColumn__EXPERIMENTAL(insertAfter = true): void {
       startRow: currentStartRow,
     } = rowMap[insertAfterColumn];
     if (currentStartColumn + currentCell.__colSpan - 1 <= insertAfterColumn) {
-      let insertAfterCell: DEPRECATED_GridCellNode = currentCell;
+      let insertAfterCell: GridCellNode = currentCell;
       let insertAfterCellRowStart = currentStartRow;
       let prevCellIndex = insertAfterColumn;
       while (insertAfterCellRowStart !== i && insertAfterCell.__rowSpan > 1) {
@@ -460,9 +459,9 @@ export function $deleteTableRow__EXPERIMENTAL(): void {
   );
   const anchor = selection.anchor.getNode();
   const focus = selection.focus.getNode();
-  const [anchorCell, , grid] = DEPRECATED_$getNodeTriplet(anchor);
-  const [focusCell] = DEPRECATED_$getNodeTriplet(focus);
-  const [gridMap, anchorCellMap, focusCellMap] = DEPRECATED_$computeGridMap(
+  const [anchorCell, , grid] = $getNodeTriplet(anchor);
+  const [focusCell] = $getNodeTriplet(focus);
+  const [gridMap, anchorCellMap, focusCellMap] = $computeGridMap(
     grid,
     anchorCell,
     focusCell,
@@ -477,9 +476,7 @@ export function $deleteTableRow__EXPERIMENTAL(): void {
   }
   const columnCount = gridMap[0].length;
   const nextRow = gridMap[focusEndRow + 1];
-  const nextRowNode: null | DEPRECATED_GridRowNode = grid.getChildAtIndex(
-    focusEndRow + 1,
-  );
+  const nextRowNode: null | GridRowNode = grid.getChildAtIndex(focusEndRow + 1);
   for (let row = focusEndRow; row >= anchorStartRow; row--) {
     for (let column = columnCount - 1; column >= 0; column--) {
       const {
@@ -512,7 +509,7 @@ export function $deleteTableRow__EXPERIMENTAL(): void {
     }
     const rowNode = grid.getChildAtIndex(row);
     invariant(
-      DEPRECATED_$isGridRowNode(rowNode),
+      $isGridRowNode(rowNode),
       'Expected GridNode childAtIndex(%s) to be RowNode',
       String(row),
     );
@@ -536,9 +533,9 @@ export function $deleteTableColumn__EXPERIMENTAL(): void {
   );
   const anchor = selection.anchor.getNode();
   const focus = selection.focus.getNode();
-  const [anchorCell, , grid] = DEPRECATED_$getNodeTriplet(anchor);
-  const [focusCell] = DEPRECATED_$getNodeTriplet(focus);
-  const [gridMap, anchorCellMap, focusCellMap] = DEPRECATED_$computeGridMap(
+  const [anchorCell, , grid] = $getNodeTriplet(anchor);
+  const [focusCell] = $getNodeTriplet(focus);
+  const [gridMap, anchorCellMap, focusCellMap] = $computeGridMap(
     grid,
     anchorCell,
     focusCell,
@@ -595,7 +592,7 @@ export function $deleteTableColumn__EXPERIMENTAL(): void {
   }
 }
 
-function $moveSelectionToCell(cell: DEPRECATED_GridCellNode): void {
+function $moveSelectionToCell(cell: GridCellNode): void {
   const firstDescendant = cell.getFirstDescendant();
   if (firstDescendant == null) {
     cell.selectStart();
@@ -620,7 +617,7 @@ export function $unmergeCell(): void {
     'Expected a RangeSelection or GridSelection',
   );
   const anchor = selection.anchor.getNode();
-  const [cell, row, grid] = DEPRECATED_$getNodeTriplet(anchor);
+  const [cell, row, grid] = $getNodeTriplet(anchor);
   const colSpan = cell.__colSpan;
   const rowSpan = cell.__rowSpan;
   if (colSpan > 1) {
@@ -630,7 +627,7 @@ export function $unmergeCell(): void {
     cell.setColSpan(1);
   }
   if (rowSpan > 1) {
-    const [map, cellMap] = DEPRECATED_$computeGridMap(grid, cell, cell);
+    const [map, cellMap] = $computeGridMap(grid, cell, cell);
     const {startColumn, startRow} = cellMap;
     let currentRowNode;
     for (let i = 1; i < rowSpan; i++) {
@@ -638,10 +635,10 @@ export function $unmergeCell(): void {
       const currentRowMap = map[currentRow];
       currentRowNode = (currentRowNode || row).getNextSibling();
       invariant(
-        DEPRECATED_$isGridRowNode(currentRowNode),
+        $isGridRowNode(currentRowNode),
         'Expected row next sibling to be a row',
       );
-      let insertAfterCell: null | DEPRECATED_GridCellNode = null;
+      let insertAfterCell: null | GridCellNode = null;
       for (let column = 0; column < startColumn; column++) {
         const currentCellMap = currentRowMap[column];
         const currentCell = currentCellMap.cell;
@@ -669,4 +666,149 @@ export function $unmergeCell(): void {
     }
     cell.setRowSpan(1);
   }
+}
+
+export function $computeGridMap(
+  grid: GridNode,
+  cellA: GridCellNode,
+  cellB: GridCellNode,
+): [GridMapType, GridMapValueType, GridMapValueType] {
+  const tableMap: GridMapType = [];
+  let cellAValue: null | GridMapValueType = null;
+  let cellBValue: null | GridMapValueType = null;
+  function write(startRow: number, startColumn: number, cell: GridCellNode) {
+    const value = {
+      cell,
+      startColumn,
+      startRow,
+    };
+    const rowSpan = cell.__rowSpan;
+    const colSpan = cell.__colSpan;
+    for (let i = 0; i < rowSpan; i++) {
+      if (tableMap[startRow + i] === undefined) {
+        tableMap[startRow + i] = [];
+      }
+      for (let j = 0; j < colSpan; j++) {
+        tableMap[startRow + i][startColumn + j] = value;
+      }
+    }
+    if (cellA.is(cell)) {
+      cellAValue = value;
+    }
+    if (cellB.is(cell)) {
+      cellBValue = value;
+    }
+  }
+  function isEmpty(row: number, column: number) {
+    return tableMap[row] === undefined || tableMap[row][column] === undefined;
+  }
+
+  const gridChildren = grid.getChildren();
+  for (let i = 0; i < gridChildren.length; i++) {
+    const row = gridChildren[i];
+    invariant(
+      $isGridRowNode(row),
+      'Expected GridNode children to be GridRowNode',
+    );
+    const rowChildren = row.getChildren();
+    let j = 0;
+    for (const cell of rowChildren) {
+      invariant(
+        $isGridCellNode(cell),
+        'Expected GridRowNode children to be GridCellNode',
+      );
+      while (!isEmpty(i, j)) {
+        j++;
+      }
+      write(i, j, cell);
+      j += cell.__colSpan;
+    }
+  }
+  invariant(cellAValue !== null, 'Anchor not found in Grid');
+  invariant(cellBValue !== null, 'Focus not found in Grid');
+  return [tableMap, cellAValue, cellBValue];
+}
+
+export function $getNodeTriplet(
+  source: PointType | LexicalNode | GridCellNode,
+): [GridCellNode, GridRowNode, GridNode] {
+  let cell: GridCellNode;
+  if (source instanceof GridCellNode) {
+    cell = source;
+  } else if ('__type' in source) {
+    const cell_ = $findMatchingParent(source, $isGridCellNode);
+    invariant($isGridCellNode(cell_), 'Expected to find a parent GridCellNode');
+    cell = cell_;
+  } else {
+    const cell_ = $findMatchingParent(source.getNode(), $isGridCellNode);
+    invariant($isGridCellNode(cell_), 'Expected to find a parent GridCellNode');
+    cell = cell_;
+  }
+  const row = cell.getParent();
+  invariant(
+    $isGridRowNode(row),
+    'Expected GridCellNode to have a parent GridRowNode',
+  );
+  const grid = row.getParent();
+  invariant(
+    $isGridNode(grid),
+    'Expected GridRowNode to have a parent GridNode',
+  );
+  return [cell, row, grid];
+}
+
+export function $getGridCellNodeRect(gridCellNode: GridCellNode): {
+  rowIndex: number;
+  columnIndex: number;
+  rowSpan: number;
+  colSpan: number;
+} | null {
+  const [CellNode, , gridNode] = $getNodeTriplet(gridCellNode);
+  const rows = gridNode.getChildren<GridRowNode>();
+  const rowCount = rows.length;
+  const columnCount = rows[0].getChildren().length;
+
+  // Create a matrix of the same size as the table to track the position of each cell
+  const cellMatrix = new Array(rowCount);
+  for (let i = 0; i < rowCount; i++) {
+    cellMatrix[i] = new Array(columnCount);
+  }
+
+  for (let rowIndex = 0; rowIndex < rowCount; rowIndex++) {
+    const row = rows[rowIndex];
+    const cells = row.getChildren<GridCellNode>();
+    let columnIndex = 0;
+
+    for (let cellIndex = 0; cellIndex < cells.length; cellIndex++) {
+      // Find the next available position in the matrix, skip the position of merged cells
+      while (cellMatrix[rowIndex][columnIndex]) {
+        columnIndex++;
+      }
+
+      const cell = cells[cellIndex];
+      const rowSpan = cell.__rowSpan || 1;
+      const colSpan = cell.__colSpan || 1;
+
+      // Put the cell into the corresponding position in the matrix
+      for (let i = 0; i < rowSpan; i++) {
+        for (let j = 0; j < colSpan; j++) {
+          cellMatrix[rowIndex + i][columnIndex + j] = cell;
+        }
+      }
+
+      // Return to the original index, row span and column span of the cell.
+      if (CellNode === cell) {
+        return {
+          colSpan,
+          columnIndex,
+          rowIndex,
+          rowSpan,
+        };
+      }
+
+      columnIndex += colSpan;
+    }
+  }
+
+  return null;
 }

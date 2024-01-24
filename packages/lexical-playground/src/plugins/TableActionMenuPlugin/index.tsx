@@ -6,28 +6,27 @@
  *
  */
 
-import type {
-  DEPRECATED_GridCellNode,
-  ElementNode,
-  LexicalEditor,
-} from 'lexical';
+import type {ElementNode, LexicalEditor} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import useLexicalEditable from '@lexical/react/useLexicalEditable';
 import {
   $deleteTableColumn__EXPERIMENTAL,
   $deleteTableRow__EXPERIMENTAL,
+  $getNodeTriplet,
   $getTableCellNodeFromLexicalNode,
   $getTableColumnIndexFromTableCellNode,
   $getTableNodeFromLexicalNodeOrThrow,
   $getTableRowIndexFromTableCellNode,
   $insertTableColumn__EXPERIMENTAL,
   $insertTableRow__EXPERIMENTAL,
+  $isGridCellNode,
   $isGridSelection,
   $isTableCellNode,
   $isTableRowNode,
   $unmergeCell,
   getTableSelectionFromTableElement,
+  GridCellNode,
   GridSelection,
   HTMLTableElementWithWithTableSelectionState,
   TableCellHeaderStates,
@@ -42,8 +41,6 @@ import {
   $isParagraphNode,
   $isRangeSelection,
   $isTextNode,
-  DEPRECATED_$getNodeTriplet,
-  DEPRECATED_$isGridCellNode,
 } from 'lexical';
 import * as React from 'react';
 import {ReactPortal, useCallback, useEffect, useRef, useState} from 'react';
@@ -115,11 +112,11 @@ function $canUnmerge(): boolean {
   ) {
     return false;
   }
-  const [cell] = DEPRECATED_$getNodeTriplet(selection.anchor);
+  const [cell] = $getNodeTriplet(selection.anchor);
   return cell.__colSpan > 1 || cell.__rowSpan > 1;
 }
 
-function $cellContainsEmptyParagraph(cell: DEPRECATED_GridCellNode): boolean {
+function $cellContainsEmptyParagraph(cell: GridCellNode): boolean {
   if (cell.getChildrenSize() !== 1) {
     return false;
   }
@@ -145,7 +142,7 @@ function currentCellBackgroundColor(editor: LexicalEditor): null | string {
   return editor.getEditorState().read(() => {
     const selection = $getSelection();
     if ($isRangeSelection(selection) || $isGridSelection(selection)) {
-      const [cell] = DEPRECATED_$getNodeTriplet(selection.anchor);
+      const [cell] = $getNodeTriplet(selection.anchor);
       if ($isTableCellNode(cell)) {
         return cell.getBackgroundColor();
       }
@@ -303,10 +300,10 @@ function TableActionMenu({
       if ($isGridSelection(selection)) {
         const {columns, rows} = computeSelectionCount(selection);
         const nodes = selection.getNodes();
-        let firstCell: null | DEPRECATED_GridCellNode = null;
+        let firstCell: null | GridCellNode = null;
         for (let i = 0; i < nodes.length; i++) {
           const node = nodes[i];
-          if (DEPRECATED_$isGridCellNode(node)) {
+          if ($isGridCellNode(node)) {
             if (firstCell === null) {
               node.setColSpan(columns).setRowSpan(rows);
               firstCell = node;
@@ -318,7 +315,7 @@ function TableActionMenu({
               ) {
                 firstChild.remove();
               }
-            } else if (DEPRECATED_$isGridCellNode(firstCell)) {
+            } else if ($isGridCellNode(firstCell)) {
               const isEmpty = $cellContainsEmptyParagraph(node);
               if (!isEmpty) {
                 firstCell.append(...node.getChildren());
@@ -469,7 +466,7 @@ function TableActionMenu({
       editor.update(() => {
         const selection = $getSelection();
         if ($isRangeSelection(selection) || $isGridSelection(selection)) {
-          const [cell] = DEPRECATED_$getNodeTriplet(selection.anchor);
+          const [cell] = $getNodeTriplet(selection.anchor);
           if ($isTableCellNode(cell)) {
             cell.setBackgroundColor(value);
           }

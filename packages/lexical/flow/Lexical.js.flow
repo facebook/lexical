@@ -535,20 +535,7 @@ declare export function $isRangeSelection(
 declare export function $getSelection(): null | BaseSelection;
 declare export function $getPreviousSelection(): null | BaseSelection;
 declare export function $insertNodes(nodes: Array<LexicalNode>): void;
-export type GridMapValueType = {
-  cell: deprecated_GridCellNode,
-  startRow: number,
-  startColumn: number,
-};
-export type GridMapType = Array<Array<GridMapValueType>>;
-declare export function DEPRECATED_$computeGridMap(
-  grid: deprecated_GridNode,
-  cellA: deprecated_GridCellNode,
-  cellB: deprecated_GridCellNode,
-): [GridMapType, GridMapValueType, GridMapValueType];
-declare export function DEPRECATED_$getNodeTriplet(
-  source: PointType | LexicalNode | deprecated_GridCellNode,
-): [deprecated_GridCellNode, deprecated_GridRowNode, deprecated_GridNode];
+
 
 /**
  * LexicalTextNode
@@ -805,33 +792,6 @@ declare export function $createParagraphNode(): ParagraphNode;
 declare export function $isParagraphNode(
   node: ?LexicalNode,
 ): node is ParagraphNode;
-
-declare export class deprecated_GridNode extends ElementNode {}
-
-declare export function DEPRECATED_$isGridNode(
-  node: ?LexicalNode,
-): node is deprecated_GridNode;
-
-declare export class deprecated_GridRowNode extends ElementNode {}
-
-declare export function DEPRECATED_$isGridRowNode(
-  node: ?LexicalNode,
-): node is deprecated_GridRowNode;
-
-declare export class deprecated_GridCellNode extends ElementNode {
-  __colSpan: number;
-  __rowSpan: number;
-
-  constructor(colSpan: number, key?: NodeKey): void;
-  getColSpan(): number;
-  setColSpan(colSpan: number): this;
-  getRowSpan(): number;
-  setRowSpan(rowSpan: number): this;
-}
-
-declare export function DEPRECATED_$isGridCellNode(
-  node: ?LexicalNode,
-): node is deprecated_GridCellNode;
 
 /**
  * LexicalUtils

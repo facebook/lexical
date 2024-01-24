@@ -7,16 +7,20 @@
  */
 
 import type {
+  GridCellNode,
   HTMLTableElementWithWithTableSelectionState,
   InsertTableCommandPayload,
   TableSelection,
 } from '@lexical/table';
-import type {DEPRECATED_GridCellNode, NodeKey} from 'lexical';
+import type {NodeKey} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
+  $computeGridMap,
   $createTableCellNode,
   $createTableNodeWithDimensions,
+  $getNodeTriplet,
+  $isGridRowNode,
   $isTableCellNode,
   $isTableNode,
   applyTableHandlers,
@@ -31,9 +35,6 @@ import {
   $isTextNode,
   $nodesOfType,
   COMMAND_PRIORITY_EDITOR,
-  DEPRECATED_$computeGridMap,
-  DEPRECATED_$getNodeTriplet,
-  DEPRECATED_$isGridRowNode,
 } from 'lexical';
 import {useEffect} from 'react';
 import invariant from 'shared/invariant';
@@ -150,14 +151,14 @@ export function TablePlugin({
       if (node.getColSpan() > 1 || node.getRowSpan() > 1) {
         // When we have rowSpan we have to map the entire Table to understand where the new Cells
         // fit best; let's analyze all Cells at once to save us from further transform iterations
-        const [, , gridNode] = DEPRECATED_$getNodeTriplet(node);
-        const [gridMap] = DEPRECATED_$computeGridMap(gridNode, node, node);
+        const [, , gridNode] = $getNodeTriplet(node);
+        const [gridMap] = $computeGridMap(gridNode, node, node);
         // TODO this function expects Tables to be normalized. Look into this once it exists
         const rowsCount = gridMap.length;
         const columnsCount = gridMap[0].length;
         let row = gridNode.getFirstChild();
         invariant(
-          DEPRECATED_$isGridRowNode(row),
+          $isGridRowNode(row),
           'Expected TableNode first child to be a RowNode',
         );
         const unmerged = [];
@@ -165,11 +166,11 @@ export function TablePlugin({
           if (i !== 0) {
             row = row.getNextSibling();
             invariant(
-              DEPRECATED_$isGridRowNode(row),
+              $isGridRowNode(row),
               'Expected TableNode first child to be a RowNode',
             );
           }
-          let lastRowCell: null | DEPRECATED_GridCellNode = null;
+          let lastRowCell: null | GridCellNode = null;
           for (let j = 0; j < columnsCount; j++) {
             const cellMap = gridMap[i][j];
             const cell = cellMap.cell;

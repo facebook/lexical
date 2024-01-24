@@ -359,16 +359,16 @@ declare export function $isGridCellNode(
  */
 
 export type InsertTableCommandPayloadHeaders =
-  | Readonly<{
+  | $ReadOnly<{
       rows: boolean;
       columns: boolean;
     }>
   | boolean;
 
-export type InsertTableCommandPayload = Readonly<{
+export type InsertTableCommandPayload = $ReadOnly<{
   columns: string;
   rows: string;
   includeHeaders?: InsertTableCommandPayloadHeaders;
 }>;
 
-export const INSERT_TABLE_COMMAND: LexicalCommand<InsertTableCommandPayload>;
+declare export var INSERT_TABLE_COMMAND: LexicalCommand<InsertTableCommandPayload>;

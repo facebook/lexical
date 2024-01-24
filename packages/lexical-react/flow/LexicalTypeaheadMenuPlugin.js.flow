@@ -47,6 +47,11 @@ export type MenuRenderFn<TOption> = (
   matchingString: string,
 ) => React.Portal | React.MixedElement | null;
 
+declare export function getScrollParent(
+  element: HTMLElement,
+  includeHidden: boolean,
+): HTMLElement | HTMLBodyElement;
+
 declare export function useBasicTypeaheadTriggerMatch(
   trigger: string,
   options: {minLength?: number, maxLength?: number},

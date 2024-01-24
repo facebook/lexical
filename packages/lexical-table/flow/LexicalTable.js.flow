@@ -37,7 +37,9 @@ export const TableCellHeaderStates = {
 
 export type TableCellHeaderState = $Values<typeof TableCellHeaderStates>;
 
-declare export class TableCellNode extends TableCellNode {
+declare export class TableCellNode extends ElementNode {
+  __colSpan: number;
+  __rowSpan: number;
   __headerState: TableCellHeaderState;
   __width?: number;
   __backgroundColor: null | string;
@@ -55,6 +57,10 @@ declare export class TableCellNode extends TableCellNode {
     selection: RangeSelection,
   ): null | ParagraphNode | TableCellNode;
   collapseAtStart(): true;
+  getColSpan(): number;
+  setColSpan(colSpan: number): this;
+  getRowSpan(): number;
+  setRowSpan(rowSpan: number): this;
   getTag(): string;
   setHeaderStyles(headerState: TableCellHeaderState): TableCellHeaderState;
   getHeaderStyles(): TableCellHeaderState;
@@ -88,7 +94,7 @@ export type TableMapValueType = {
 };
 export type TableMapType = Array<Array<TableMapValueType>>;
 
-declare export class TableNode extends TableNode {
+declare export class TableNode extends ElementNode {
   static getType(): string;
   static clone(node: TableNode): TableNode;
   constructor(key?: NodeKey): void;
@@ -115,7 +121,7 @@ declare export function $isTableNode(
  * LexicalTableRowNode
  */
 
-declare export class TableRowNode extends TableRowNode {
+declare export class TableRowNode extends ElementNode {
   static getType(): string;
   static clone(node: TableRowNode): TableRowNode;
   constructor(height?: ?number, key?: NodeKey): void;

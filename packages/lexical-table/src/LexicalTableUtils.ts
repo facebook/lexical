@@ -253,7 +253,6 @@ export function $insertTableRow__EXPERIMENTAL(insertAfter = true): void {
   if (insertAfter) {
     const focusEndRow = focusStartRow + focusCell.__rowSpan - 1;
     const focusEndRowMap = gridMap[focusEndRow];
-    const focusEndRowNode = grid.getChildAtIndex(focusEndRow);
     const newRow = $createTableRowNode();
     for (let i = 0; i < columnCount; i++) {
       const {cell, startRow} = focusEndRowMap[i];
@@ -273,7 +272,7 @@ export function $insertTableRow__EXPERIMENTAL(insertAfter = true): void {
         cell.setRowSpan(cell.__rowSpan + 1);
       }
     }
-
+    const focusEndRowNode = grid.getChildAtIndex(focusEndRow);
     invariant(
       $isTableRowNode(focusEndRowNode),
       'focusEndRow is not a TableRowNode',
@@ -281,7 +280,6 @@ export function $insertTableRow__EXPERIMENTAL(insertAfter = true): void {
     focusEndRowNode.insertAfter(newRow);
   } else {
     const focusStartRowMap = gridMap[focusStartRow];
-    const focusStartRowNode = grid.getChildAtIndex(focusStartRow);
     const newRow = $createTableRowNode();
     for (let i = 0; i < columnCount; i++) {
       const {cell, startRow} = focusStartRowMap[i];
@@ -301,7 +299,7 @@ export function $insertTableRow__EXPERIMENTAL(insertAfter = true): void {
         cell.setRowSpan(cell.__rowSpan + 1);
       }
     }
-
+    const focusStartRowNode = grid.getChildAtIndex(focusStartRow);
     invariant(
       $isTableRowNode(focusStartRowNode),
       'focusEndRow is not a TableRowNode',

@@ -259,6 +259,7 @@ declare export function $getTableCellNodeRect(tableCellNode: TableCellNode): {
 /**
  * LexicalTableObserver.js
  */
+
 declare export class TableObserver {
   currentX: number;
   currentY: number;

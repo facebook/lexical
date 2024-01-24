@@ -15,7 +15,7 @@ import type {NodeKey} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
-  $computeGridMap,
+  $computeTableMap,
   $createTableCellNode,
   $createTableNodeWithDimensions,
   $getNodeTriplet,
@@ -151,7 +151,7 @@ export function TablePlugin({
         // When we have rowSpan we have to map the entire Table to understand where the new Cells
         // fit best; let's analyze all Cells at once to save us from further transform iterations
         const [, , gridNode] = $getNodeTriplet(node);
-        const [gridMap] = $computeGridMap(gridNode, node, node);
+        const [gridMap] = $computeTableMap(gridNode, node, node);
         // TODO this function expects Tables to be normalized. Look into this once it exists
         const rowsCount = gridMap.length;
         const columnsCount = gridMap[0].length;

@@ -19,7 +19,7 @@ import type {
 import {$generateHtmlFromNodes} from '@lexical/html';
 import {$isLinkNode, LinkNode} from '@lexical/link';
 import {$isMarkNode} from '@lexical/mark';
-import {$isGridSelection, GridSelection} from '@lexical/table';
+import {$isTableSelection, TableSelection} from '@lexical/table';
 import {mergeRegister} from '@lexical/utils';
 import {
   $getRoot,
@@ -373,8 +373,8 @@ function printNodeSelection(selection: BaseSelection): string {
   return `: node\n  └ [${Array.from(selection._nodes).join(', ')}]`;
 }
 
-function printGridSelection(selection: GridSelection): string {
-  return `: grid\n  └ { grid: ${selection.gridKey}, anchorCell: ${selection.anchor.key}, focusCell: ${selection.focus.key} }`;
+function printTableSelection(selection: TableSelection): string {
+  return `: table\n  └ { table: ${selection.tableKey}, anchorCell: ${selection.anchor.key}, focusCell: ${selection.focus.key} }`;
 }
 
 function generateContent(
@@ -427,8 +427,8 @@ function generateContent(
       ? ': null'
       : $isRangeSelection(selection)
       ? printRangeSelection(selection)
-      : $isGridSelection(selection)
-      ? printGridSelection(selection)
+      : $isTableSelection(selection)
+      ? printTableSelection(selection)
       : printNodeSelection(selection);
   });
 

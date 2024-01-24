@@ -6,7 +6,7 @@
  *
  */
 
-import {$createGridSelection} from '@lexical/table';
+import {$createTableSelection} from '@lexical/table';
 import {
   type LexicalEditor,
   $createParagraphNode,
@@ -20,7 +20,7 @@ import {createRef, useEffect, useMemo} from 'react';
 import {createRoot} from 'react-dom/client';
 import * as ReactTestUtils from 'react-dom/test-utils';
 
-describe('grid selection', () => {
+describe('table selection', () => {
   let originalText;
   let parsedParagraph;
   let parsedRoot;
@@ -90,7 +90,7 @@ describe('grid selection', () => {
     await update(() => {
       const paragraph = $createParagraphNode();
       originalText = $createTextNode('Hello world');
-      const selection = $createGridSelection();
+      const selection = $createTableSelection();
       selection.set(
         originalText.getKey(),
         originalText.getKey(),

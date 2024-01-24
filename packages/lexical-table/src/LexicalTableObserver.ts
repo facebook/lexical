@@ -27,13 +27,13 @@ import {
 import {CAN_USE_DOM} from 'shared/canUseDOM';
 import invariant from 'shared/invariant';
 
-import {
-  type GridSelection,
-  $createGridSelection,
-  $isGridSelection,
-} from './LexicalGridSelection';
 import {$isTableCellNode} from './LexicalTableCellNode';
 import {$isTableNode} from './LexicalTableNode';
+import {
+  type TableSelection,
+  $createTableSelection,
+  $isTableSelection,
+} from './LexicalTableSelection';
 import {$updateDOMForSelection, getTable} from './LexicalTableSelectionHelpers';
 
 export type TableDOMCell = {
@@ -47,7 +47,7 @@ export type TableDOMCell = {
 export type TableDOMRows = Array<Array<TableDOMCell | undefined> | undefined>;
 
 export type TableDOMTable = {
-  cells: TableDOMRows;
+  domRows: TableDOMRows;
   columns: number;
   rows: number;
 };
@@ -69,7 +69,7 @@ export class TableObserver {
   anchorCellNodeKey: NodeKey | null;
   focusCellNodeKey: NodeKey | null;
   editor: LexicalEditor;
-  gridSelection: GridSelection | null;
+  tableSelection: TableSelection | null;
   hasHijackedSelectionStyles: boolean;
 
   constructor(editor: LexicalEditor, tableNodeKey: string) {
@@ -82,11 +82,11 @@ export class TableObserver {
     this.tableNodeKey = tableNodeKey;
     this.editor = editor;
     this.table = {
-      cells: [],
       columns: 0,
+      domRows: [],
       rows: 0,
     };
-    this.gridSelection = null;
+    this.tableSelection = null;
     this.anchorCellNodeKey = null;
     this.focusCellNodeKey = null;
     this.anchorCell = null;
@@ -156,7 +156,7 @@ export class TableObserver {
     this.anchorY = -1;
     this.focusX = -1;
     this.focusY = -1;
-    this.gridSelection = null;
+    this.tableSelection = null;
     this.anchorCellNodeKey = null;
     this.focusCellNodeKey = null;
     this.anchorCell = null;
@@ -217,18 +217,18 @@ export class TableObserver {
     });
   }
 
-  updateTableGridSelection(selection: GridSelection | null): void {
-    if (selection !== null && selection.gridKey === this.tableNodeKey) {
+  updateTableTableSelection(selection: TableSelection | null): void {
+    if (selection !== null && selection.tableKey === this.tableNodeKey) {
       const editor = this.editor;
-      this.gridSelection = selection;
+      this.tableSelection = selection;
       this.isHighlightingCells = true;
       this.disableHighlightStyle();
-      $updateDOMForSelection(editor, this.table, this.gridSelection);
+      $updateDOMForSelection(editor, this.table, this.tableSelection);
     } else if (selection == null) {
       this.clearHighlight();
     } else {
-      this.tableNodeKey = selection.gridKey;
-      this.updateTableGridSelection(selection);
+      this.tableNodeKey = selection.tableKey;
+      this.updateTableTableSelection(selection);
     }
   }
 
@@ -281,27 +281,27 @@ export class TableObserver {
         const focusTableCellNode = $getNearestNodeFromDOMNode(cell.elem);
 
         if (
-          this.gridSelection != null &&
+          this.tableSelection != null &&
           this.anchorCellNodeKey != null &&
           $isTableCellNode(focusTableCellNode)
         ) {
           const focusNodeKey = focusTableCellNode.getKey();
 
-          this.gridSelection =
-            this.gridSelection.clone() || $createGridSelection();
+          this.tableSelection =
+            this.tableSelection.clone() || $createTableSelection();
 
           this.focusCellNodeKey = focusNodeKey;
-          this.gridSelection.set(
+          this.tableSelection.set(
             this.tableNodeKey,
             this.anchorCellNodeKey,
             this.focusCellNodeKey,
           );
 
-          $setSelection(this.gridSelection);
+          $setSelection(this.tableSelection);
 
           editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
 
-          $updateDOMForSelection(editor, this.table, this.gridSelection);
+          $updateDOMForSelection(editor, this.table, this.tableSelection);
         }
       }
     });
@@ -318,10 +318,10 @@ export class TableObserver {
 
       if ($isTableCellNode(anchorTableCellNode)) {
         const anchorNodeKey = anchorTableCellNode.getKey();
-        this.gridSelection =
-          this.gridSelection != null
-            ? this.gridSelection.clone()
-            : $createGridSelection();
+        this.tableSelection =
+          this.tableSelection != null
+            ? this.tableSelection.clone()
+            : $createTableSelection();
         this.anchorCellNodeKey = anchorNodeKey;
       }
     });
@@ -331,7 +331,7 @@ export class TableObserver {
     this.editor.update(() => {
       const selection = $getSelection();
 
-      if (!$isGridSelection(selection)) {
+      if (!$isTableSelection(selection)) {
         invariant(false, 'Expected grid selection');
       }
 
@@ -365,7 +365,7 @@ export class TableObserver {
 
       const selection = $getSelection();
 
-      if (!$isGridSelection(selection)) {
+      if (!$isTableSelection(selection)) {
         invariant(false, 'Expected grid selection');
       }
 

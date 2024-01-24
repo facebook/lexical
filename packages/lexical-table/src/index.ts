@@ -7,8 +7,6 @@
  *
  */
 
-export type {GridSelection, GridSelectionShape} from './LexicalGridSelection';
-export {$createGridSelection, $isGridSelection} from './LexicalGridSelection';
 export type {SerializedTableCellNode} from './LexicalTableCellNode';
 export {
   $createTableCellNode,
@@ -36,21 +34,29 @@ export {
   $isTableRowNode,
   TableRowNode,
 } from './LexicalTableRowNode';
+export type {
+  TableSelection,
+  TableSelectionShape,
+} from './LexicalTableSelection';
+export {
+  $createTableSelection,
+  $isTableSelection,
+} from './LexicalTableSelection';
 export type {HTMLTableElementWithWithTableSelectionState} from './LexicalTableSelectionHelpers';
 export {
   applyTableHandlers,
-  getCellFromTarget,
+  getDOMCellFromTarget,
   getTableObserverFromTableElement,
 } from './LexicalTableSelectionHelpers';
 export {
-  $computeGridMap,
+  $computeTableMap,
   $createTableNodeWithDimensions,
   $deleteTableColumn,
   $deleteTableColumn__EXPERIMENTAL,
   $deleteTableRow__EXPERIMENTAL,
-  $getGridCellNodeRect,
   $getNodeTriplet,
   $getTableCellNodeFromLexicalNode,
+  $getTableCellNodeRect,
   $getTableColumnIndexFromTableCellNode,
   $getTableNodeFromLexicalNodeOrThrow,
   $getTableRowIndexFromTableCellNode,

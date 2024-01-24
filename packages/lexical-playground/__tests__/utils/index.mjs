@@ -216,15 +216,15 @@ async function retryAsync(page, fn, attempts) {
   }
 }
 
-export async function assertGridSelectionCoordinates(page, coordinates) {
+export async function assertTableSelectionCoordinates(page, coordinates) {
   const pageOrFrame = IS_COLLAB ? await page.frame('left') : page;
 
   const {_anchor, _focus} = await pageOrFrame.evaluate(() => {
     const editor = window.lexicalEditor;
     const editorState = editor.getEditorState();
     const selection = editorState._selection;
-    if (!selection.gridKey) {
-      throw new Error('Expected grid selection');
+    if (!selection.tableKey) {
+      throw new Error('Expected table selection');
     }
     const anchorElement = editor.getElementByKey(selection.anchor.key);
     const focusElement = editor.getElementByKey(selection.focus.key);

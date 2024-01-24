@@ -20,16 +20,16 @@ import {
   $getTableRowIndexFromTableCellNode,
   $insertTableColumn__EXPERIMENTAL,
   $insertTableRow__EXPERIMENTAL,
-  $isGridSelection,
   $isTableCellNode,
   $isTableRowNode,
+  $isTableSelection,
   $unmergeCell,
   getTableObserverFromTableElement,
-  GridSelection,
   HTMLTableElementWithWithTableSelectionState,
   TableCellHeaderStates,
   TableCellNode,
   TableRowNode,
+  TableSelection,
 } from '@lexical/table';
 import {
   $createParagraphNode,
@@ -48,7 +48,7 @@ import invariant from 'shared/invariant';
 import useModal from '../../hooks/useModal';
 import ColorPicker from '../../ui/ColorPicker';
 
-function computeSelectionCount(selection: GridSelection): {
+function computeSelectionCount(selection: TableSelection): {
   columns: number;
   rows: number;
 } {
@@ -61,7 +61,7 @@ function computeSelectionCount(selection: GridSelection): {
 
 // This is important when merging cells as there is no good way to re-merge weird shapes (a result
 // of selecting merged cells and non-merged)
-function isGridSelectionRectangular(selection: GridSelection): boolean {
+function isTableSelectionRectangular(selection: TableSelection): boolean {
   const nodes = selection.getNodes();
   const currentRows: Array<number> = [];
   let currentRow = null;
@@ -105,8 +105,8 @@ function $canUnmerge(): boolean {
   const selection = $getSelection();
   if (
     ($isRangeSelection(selection) && !selection.isCollapsed()) ||
-    ($isGridSelection(selection) && !selection.anchor.is(selection.focus)) ||
-    (!$isRangeSelection(selection) && !$isGridSelection(selection))
+    ($isTableSelection(selection) && !selection.anchor.is(selection.focus)) ||
+    (!$isRangeSelection(selection) && !$isTableSelection(selection))
   ) {
     return false;
   }
@@ -139,7 +139,7 @@ function $selectLastDescendant(node: ElementNode): void {
 function currentCellBackgroundColor(editor: LexicalEditor): null | string {
   return editor.getEditorState().read(() => {
     const selection = $getSelection();
-    if ($isRangeSelection(selection) || $isGridSelection(selection)) {
+    if ($isRangeSelection(selection) || $isTableSelection(selection)) {
       const [cell] = $getNodeTriplet(selection.anchor);
       if ($isTableCellNode(cell)) {
         return cell.getBackgroundColor();
@@ -200,11 +200,11 @@ function TableActionMenu({
     editor.getEditorState().read(() => {
       const selection = $getSelection();
       // Merge cells
-      if ($isGridSelection(selection)) {
+      if ($isTableSelection(selection)) {
         const currentSelectionCounts = computeSelectionCount(selection);
         updateSelectionCounts(computeSelectionCount(selection));
         setCanMergeCells(
-          isGridSelectionRectangular(selection) &&
+          isTableSelectionRectangular(selection) &&
             (currentSelectionCounts.columns > 1 ||
               currentSelectionCounts.rows > 1),
         );
@@ -295,7 +295,7 @@ function TableActionMenu({
   const mergeTableCellsAtSelection = () => {
     editor.update(() => {
       const selection = $getSelection();
-      if ($isGridSelection(selection)) {
+      if ($isTableSelection(selection)) {
         const {columns, rows} = computeSelectionCount(selection);
         const nodes = selection.getNodes();
         let firstCell: null | TableCellNode = null;
@@ -463,13 +463,13 @@ function TableActionMenu({
     (value: string) => {
       editor.update(() => {
         const selection = $getSelection();
-        if ($isRangeSelection(selection) || $isGridSelection(selection)) {
+        if ($isRangeSelection(selection) || $isTableSelection(selection)) {
           const [cell] = $getNodeTriplet(selection.anchor);
           if ($isTableCellNode(cell)) {
             cell.setBackgroundColor(value);
           }
 
-          if ($isGridSelection(selection)) {
+          if ($isTableSelection(selection)) {
             const nodes = selection.getNodes();
 
             for (let i = 0; i < nodes.length; i++) {

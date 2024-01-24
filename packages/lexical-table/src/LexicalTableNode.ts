@@ -126,12 +126,12 @@ export class TableNode extends ElementNode {
 
   getCordsFromCellNode(
     tableCellNode: TableCellNode,
-    grid: TableDOMTable,
+    table: TableDOMTable,
   ): {x: number; y: number} {
-    const {rows, cells} = grid;
+    const {rows, domRows} = table;
 
     for (let y = 0; y < rows; y++) {
-      const row = cells[y];
+      const row = domRows[y];
 
       if (row == null) {
         continue;
@@ -152,14 +152,14 @@ export class TableNode extends ElementNode {
     throw new Error('Cell not found in table.');
   }
 
-  getCellFromCords(
+  getDOMCellFromCords(
     x: number,
     y: number,
-    grid: TableDOMTable,
-  ): TableDOMCell | null {
-    const {cells} = grid;
+    table: TableDOMTable,
+  ): null | TableDOMCell {
+    const {domRows} = table;
 
-    const row = cells[y];
+    const row = domRows[y];
 
     if (row == null) {
       return null;
@@ -174,12 +174,12 @@ export class TableNode extends ElementNode {
     return cell;
   }
 
-  getCellFromCordsOrThrow(
+  getDOMCellFromCordsOrThrow(
     x: number,
     y: number,
-    grid: TableDOMTable,
+    table: TableDOMTable,
   ): TableDOMCell {
-    const cell = this.getCellFromCords(x, y, grid);
+    const cell = this.getDOMCellFromCords(x, y, table);
 
     if (!cell) {
       throw new Error('Cell not found at cords.');
@@ -191,9 +191,9 @@ export class TableNode extends ElementNode {
   getCellNodeFromCords(
     x: number,
     y: number,
-    grid: TableDOMTable,
-  ): TableCellNode | null {
-    const cell = this.getCellFromCords(x, y, grid);
+    table: TableDOMTable,
+  ): null | TableCellNode {
+    const cell = this.getDOMCellFromCords(x, y, table);
 
     if (cell == null) {
       return null;
@@ -211,9 +211,9 @@ export class TableNode extends ElementNode {
   getCellNodeFromCordsOrThrow(
     x: number,
     y: number,
-    grid: TableDOMTable,
+    table: TableDOMTable,
   ): TableCellNode {
-    const node = this.getCellNodeFromCords(x, y, grid);
+    const node = this.getCellNodeFromCords(x, y, table);
 
     if (!node) {
       throw new Error('Node at cords not TableCellNode.');

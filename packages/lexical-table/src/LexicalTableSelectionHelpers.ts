@@ -6,10 +6,10 @@
  *
  */
 
-import type {GridSelection} from './LexicalGridSelection';
 import type {TableCellNode} from './LexicalTableCellNode';
 import type {TableNode} from './LexicalTableNode';
 import type {TableDOMCell, TableDOMRows} from './LexicalTableObserver';
+import type {TableSelection} from './LexicalTableSelection';
 import type {
   BaseSelection,
   LexicalCommand,
@@ -50,11 +50,14 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
-import {$createGridSelection, $isGridSelection} from './LexicalGridSelection';
 import {$isTableCellNode} from './LexicalTableCellNode';
 import {$isTableNode} from './LexicalTableNode';
 import {TableDOMTable, TableObserver} from './LexicalTableObserver';
 import {$isTableRowNode} from './LexicalTableRowNode';
+import {
+  $createTableSelection,
+  $isTableSelection,
+} from './LexicalTableSelection';
 
 const LEXICAL_ELEMENT_KEY = '__lexicalTableSelection';
 
@@ -85,7 +88,7 @@ export function applyTableHandlers(
         return;
       }
 
-      const anchorCell = getCellFromTarget(event.target as Node);
+      const anchorCell = getDOMCellFromTarget(event.target as Node);
       if (anchorCell !== null) {
         stopEvent(event);
         tableObserver.setAnchorCellForSelection(anchorCell);
@@ -97,7 +100,7 @@ export function applyTableHandlers(
       };
 
       const onMouseMove = (moveEvent: MouseEvent) => {
-        const focusCell = getCellFromTarget(moveEvent.target as Node);
+        const focusCell = getDOMCellFromTarget(moveEvent.target as Node);
         if (
           focusCell !== null &&
           (tableObserver.anchorX !== focusCell.x ||
@@ -123,8 +126,8 @@ export function applyTableHandlers(
       const selection = $getSelection();
       const target = event.target as Node;
       if (
-        $isGridSelection(selection) &&
-        selection.gridKey === tableObserver.tableNodeKey &&
+        $isTableSelection(selection) &&
+        selection.tableKey === tableObserver.tableNodeKey &&
         rootElement.contains(target)
       ) {
         tableObserver.clearHighlight();
@@ -178,7 +181,7 @@ export function applyTableHandlers(
       KEY_ESCAPE_COMMAND,
       (event) => {
         const selection = $getSelection();
-        if ($isGridSelection(selection)) {
+        if ($isTableSelection(selection)) {
           const focusCellNode = $findMatchingParent(
             selection.focus.getNode(),
             $isTableCellNode,
@@ -203,7 +206,7 @@ export function applyTableHandlers(
       return false;
     }
 
-    if ($isGridSelection(selection)) {
+    if ($isTableSelection(selection)) {
       tableObserver.clearText();
 
       return true;
@@ -297,7 +300,7 @@ export function applyTableHandlers(
       return false;
     }
 
-    if ($isGridSelection(selection)) {
+    if ($isTableSelection(selection)) {
       event.preventDefault();
       event.stopPropagation();
       tableObserver.clearText();
@@ -343,7 +346,7 @@ export function applyTableHandlers(
           return false;
         }
 
-        if ($isGridSelection(selection)) {
+        if ($isTableSelection(selection)) {
           tableObserver.formatCells(payload);
 
           return true;
@@ -374,7 +377,7 @@ export function applyTableHandlers(
           return false;
         }
 
-        if ($isGridSelection(selection)) {
+        if ($isTableSelection(selection)) {
           tableObserver.clearHighlight();
 
           return false;
@@ -453,7 +456,7 @@ export function applyTableHandlers(
       tableCellNode,
       tableObserver.table,
     );
-    return tableNode.getCellFromCordsOrThrow(
+    return tableNode.getDOMCellFromCordsOrThrow(
       currentCords.x,
       currentCords.y,
       tableObserver.table,
@@ -466,7 +469,7 @@ export function applyTableHandlers(
       (selectionPayload) => {
         const {nodes, selection} = selectionPayload;
         const anchorAndFocus = selection.getStartEndPoints();
-        const isGridSelection = $isGridSelection(selection);
+        const isTableSelection = $isTableSelection(selection);
         const isRangeSelection = $isRangeSelection(selection);
         const isSelectionInsideOfGrid =
           (isRangeSelection &&
@@ -476,7 +479,7 @@ export function applyTableHandlers(
             $findMatchingParent(selection.focus.getNode(), (n) =>
               $isTableCellNode(n),
             ) !== null) ||
-          isGridSelection;
+          isTableSelection;
 
         if (
           nodes.length !== 1 ||
@@ -584,13 +587,13 @@ export function applyTableHandlers(
           newRowIdx++;
         }
         if (newAnchorCellKey && newFocusCellKey) {
-          const newGridSelection = $createGridSelection();
-          newGridSelection.set(
+          const newTableSelection = $createTableSelection();
+          newTableSelection.set(
             nodes[0].getKey(),
             newAnchorCellKey,
             newFocusCellKey,
           );
-          $setSelection(newGridSelection);
+          $setSelection(newTableSelection);
         }
         return true;
       },
@@ -648,21 +651,21 @@ export function applyTableHandlers(
         if (
           selection &&
           !selection.is(prevSelection) &&
-          ($isGridSelection(selection) || $isGridSelection(prevSelection)) &&
-          tableObserver.gridSelection &&
-          !tableObserver.gridSelection.is(prevSelection)
+          ($isTableSelection(selection) || $isTableSelection(prevSelection)) &&
+          tableObserver.tableSelection &&
+          !tableObserver.tableSelection.is(prevSelection)
         ) {
           if (
-            $isGridSelection(selection) &&
-            selection.gridKey === tableObserver.tableNodeKey
+            $isTableSelection(selection) &&
+            selection.tableKey === tableObserver.tableNodeKey
           ) {
-            tableObserver.updateTableGridSelection(selection);
+            tableObserver.updateTableTableSelection(selection);
           } else if (
-            !$isGridSelection(selection) &&
-            $isGridSelection(prevSelection) &&
-            prevSelection.gridKey === tableObserver.tableNodeKey
+            !$isTableSelection(selection) &&
+            $isTableSelection(prevSelection) &&
+            prevSelection.tableKey === tableObserver.tableNodeKey
           ) {
-            tableObserver.updateTableGridSelection(null);
+            tableObserver.updateTableTableSelection(null);
           }
           return false;
         }
@@ -704,7 +707,7 @@ export function getTableObserverFromTableElement(
   return tableElement[LEXICAL_ELEMENT_KEY];
 }
 
-export function getCellFromTarget(node: Node): TableDOMCell | null {
+export function getDOMCellFromTarget(node: Node): TableDOMCell | null {
   let currentNode: ParentNode | Node | null = node;
 
   while (currentNode != null) {
@@ -741,16 +744,16 @@ export function doesTargetContainText(node: Node): boolean {
 }
 
 export function getTable(tableElement: HTMLElement): TableDOMTable {
-  const cells: TableDOMRows = [];
+  const domRows: TableDOMRows = [];
   const grid = {
-    cells,
     columns: 0,
+    domRows,
     rows: 0,
   };
   let currentNode = tableElement.firstChild;
   let x = 0;
   let y = 0;
-  cells.length = 0;
+  domRows.length = 0;
 
   while (currentNode != null) {
     const nodeMame = currentNode.nodeName;
@@ -768,9 +771,9 @@ export function getTable(tableElement: HTMLElement): TableDOMTable {
       // @ts-expect-error: internal field
       currentNode._cell = cell;
 
-      let row = cells[y];
+      let row = domRows[y];
       if (row === undefined) {
-        row = cells[y] = [];
+        row = domRows[y] = [];
       }
 
       row[x] = cell;
@@ -815,7 +818,7 @@ export function getTable(tableElement: HTMLElement): TableDOMTable {
 export function $updateDOMForSelection(
   editor: LexicalEditor,
   table: TableDOMTable,
-  selection: GridSelection | RangeSelection | null,
+  selection: TableSelection | RangeSelection | null,
 ) {
   const selectedCellNodes = new Set(selection ? selection.getNodes() : []);
   $forEachTableCell(table, (cell, lexicalNode) => {
@@ -845,10 +848,10 @@ export function $forEachTableCell(
     },
   ) => void,
 ) {
-  const {cells} = grid;
+  const {domRows} = grid;
 
-  for (let y = 0; y < cells.length; y++) {
-    const row = cells[y];
+  for (let y = 0; y < domRows.length; y++) {
+    const row = domRows[y];
     if (!row) {
       continue;
     }
@@ -981,7 +984,7 @@ const adjustFocusNodeInDirection = (
     case 'forward':
       if (x !== (isForward ? tableObserver.table.columns - 1 : 0)) {
         tableObserver.setFocusCellForSelection(
-          tableNode.getCellFromCordsOrThrow(
+          tableNode.getDOMCellFromCordsOrThrow(
             x + (isForward ? 1 : -1),
             y,
             tableObserver.table,
@@ -993,7 +996,7 @@ const adjustFocusNodeInDirection = (
     case 'up':
       if (y !== 0) {
         tableObserver.setFocusCellForSelection(
-          tableNode.getCellFromCordsOrThrow(x, y - 1, tableObserver.table),
+          tableNode.getDOMCellFromCordsOrThrow(x, y - 1, tableObserver.table),
         );
 
         return true;
@@ -1003,7 +1006,7 @@ const adjustFocusNodeInDirection = (
     case 'down':
       if (y !== tableObserver.table.rows - 1) {
         tableObserver.setFocusCellForSelection(
-          tableNode.getCellFromCordsOrThrow(x, y + 1, tableObserver.table),
+          tableNode.getDOMCellFromCordsOrThrow(x, y + 1, tableObserver.table),
         );
 
         return true;
@@ -1019,7 +1022,7 @@ function $isSelectionInTable(
   selection: null | BaseSelection,
   tableNode: TableNode,
 ): boolean {
-  if ($isRangeSelection(selection) || $isGridSelection(selection)) {
+  if ($isRangeSelection(selection) || $isTableSelection(selection)) {
     const isAnchorInside = tableNode.isParentOf(selection.anchor.getNode());
     const isFocusInside = tableNode.isParentOf(selection.focus.getNode());
 
@@ -1185,7 +1188,7 @@ function $handleArrowKey(
       );
 
       if (event.shiftKey) {
-        const cell = tableNode.getCellFromCordsOrThrow(
+        const cell = tableNode.getDOMCellFromCordsOrThrow(
           cords.x,
           cords.y,
           tableObserver.table,
@@ -1204,7 +1207,7 @@ function $handleArrowKey(
 
       return true;
     }
-  } else if ($isGridSelection(selection)) {
+  } else if ($isTableSelection(selection)) {
     const {anchor, focus} = selection;
     const anchorCellNode = $findMatchingParent(
       anchor.getNode(),
@@ -1227,11 +1230,11 @@ function $handleArrowKey(
     ) {
       return false;
     }
-    tableObserver.updateTableGridSelection(selection);
+    tableObserver.updateTableTableSelection(selection);
 
     const grid = getTable(tableElement);
     const cordsAnchor = tableNode.getCordsFromCellNode(anchorCellNode, grid);
-    const anchorCell = tableNode.getCellFromCordsOrThrow(
+    const anchorCell = tableNode.getDOMCellFromCordsOrThrow(
       cordsAnchor.x,
       cordsAnchor.y,
       grid,

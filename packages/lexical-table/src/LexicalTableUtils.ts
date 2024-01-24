@@ -23,6 +23,7 @@ import {InsertTableCommandPayloadHeaders} from '.';
 import {
   $createTableCellNode,
   $isTableCellNode,
+  TableCellHeaderState,
   TableCellHeaderStates,
   TableCellNode,
 } from './LexicalTableCellNode';
@@ -239,20 +240,28 @@ export function $insertTableRow__EXPERIMENTAL(insertAfter = true): void {
   if (insertAfter) {
     const focusEndRow = focusStartRow + focusCell.__rowSpan - 1;
     const focusEndRowMap = gridMap[focusEndRow];
+    const focusEndRowNode = grid.getChildAtIndex(focusEndRow);
     const newRow = $createTableRowNode();
     for (let i = 0; i < columnCount; i++) {
       const {cell, startRow} = focusEndRowMap[i];
       if (startRow + cell.__rowSpan - 1 <= focusEndRow) {
+        const currentCell = focusEndRowMap[i].cell as TableCellNode;
+        const currentCellHeaderState = currentCell.__headerState;
+
+        const headerState =
+          currentCellHeaderState === TableCellHeaderStates.COLUMN ||
+          currentCellHeaderState === TableCellHeaderStates.BOTH
+            ? TableCellHeaderStates.COLUMN
+            : TableCellHeaderStates.NO_STATUS;
+
         newRow.append(
-          $createTableCellNode(TableCellHeaderStates.NO_STATUS).append(
-            $createParagraphNode(),
-          ),
+          $createTableCellNode(headerState).append($createParagraphNode()),
         );
       } else {
         cell.setRowSpan(cell.__rowSpan + 1);
       }
     }
-    const focusEndRowNode = grid.getChildAtIndex(focusEndRow);
+
     invariant(
       $isTableRowNode(focusEndRowNode),
       'focusEndRow is not a TableRowNode',
@@ -260,20 +269,28 @@ export function $insertTableRow__EXPERIMENTAL(insertAfter = true): void {
     focusEndRowNode.insertAfter(newRow);
   } else {
     const focusStartRowMap = gridMap[focusStartRow];
+    const focusStartRowNode = grid.getChildAtIndex(focusStartRow);
     const newRow = $createTableRowNode();
     for (let i = 0; i < columnCount; i++) {
       const {cell, startRow} = focusStartRowMap[i];
       if (startRow === focusStartRow) {
+        const currentCell = focusStartRowMap[i].cell as TableCellNode;
+        const currentCellHeaderState = currentCell.__headerState;
+
+        const headerState =
+          currentCellHeaderState === TableCellHeaderStates.COLUMN ||
+          currentCellHeaderState === TableCellHeaderStates.BOTH
+            ? TableCellHeaderStates.COLUMN
+            : TableCellHeaderStates.NO_STATUS;
+
         newRow.append(
-          $createTableCellNode(TableCellHeaderStates.NO_STATUS).append(
-            $createParagraphNode(),
-          ),
+          $createTableCellNode(headerState).append($createParagraphNode()),
         );
       } else {
         cell.setRowSpan(cell.__rowSpan + 1);
       }
     }
-    const focusStartRowNode = grid.getChildAtIndex(focusStartRow);
+
     invariant(
       $isTableRowNode(focusStartRowNode),
       'focusEndRow is not a TableRowNode',
@@ -369,8 +386,10 @@ export function $insertTableColumn__EXPERIMENTAL(insertAfter = true): void {
     'Expected firstTable child to be a row',
   );
   let firstInsertedCell: null | TableCellNode = null;
-  function $createTableCellNodeForInsertTableColumn() {
-    const cell = $createTableCellNode(TableCellHeaderStates.NO_STATUS).append(
+  function $createTableCellNodeForInsertTableColumn(
+    headerState: TableCellHeaderState = TableCellHeaderStates.NO_STATUS,
+  ) {
+    const cell = $createTableCellNode(headerState).append(
       $createParagraphNode(),
     );
     if (firstInsertedCell === null) {
@@ -389,8 +408,23 @@ export function $insertTableColumn__EXPERIMENTAL(insertAfter = true): void {
       loopRow = currentRow;
     }
     const rowMap = gridMap[i];
+
+    const currentCellHeaderState = (
+      rowMap[insertAfterColumn < 0 ? 0 : insertAfterColumn]
+        .cell as TableCellNode
+    ).__headerState;
+
+    const headerState =
+      currentCellHeaderState === TableCellHeaderStates.ROW ||
+      currentCellHeaderState === TableCellHeaderStates.BOTH
+        ? TableCellHeaderStates.ROW
+        : TableCellHeaderStates.NO_STATUS;
+
     if (insertAfterColumn < 0) {
-      $insertFirst(loopRow, $createTableCellNodeForInsertTableColumn());
+      $insertFirst(
+        loopRow,
+        $createTableCellNodeForInsertTableColumn(headerState),
+      );
       continue;
     }
     const {
@@ -409,11 +443,13 @@ export function $insertTableColumn__EXPERIMENTAL(insertAfter = true): void {
           insertAfterCell = cell_;
           insertAfterCellRowStart = startRow_;
         } else {
-          loopRow.append($createTableCellNodeForInsertTableColumn());
+          loopRow.append($createTableCellNodeForInsertTableColumn(headerState));
           continue rowLoop;
         }
       }
-      insertAfterCell.insertAfter($createTableCellNodeForInsertTableColumn());
+      insertAfterCell.insertAfter(
+        $createTableCellNodeForInsertTableColumn(headerState),
+      );
     } else {
       currentCell.setColSpan(currentCell.__colSpan + 1);
     }

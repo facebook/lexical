@@ -51,7 +51,10 @@ export function $generateHtmlFromNodes(
   editor: LexicalEditor,
   selection?: BaseSelection | null,
 ): string {
-  if (typeof document === 'undefined' || typeof window === 'undefined') {
+  if (
+    typeof document === 'undefined' ||
+    (typeof window === 'undefined' && typeof global.window === 'undefined')
+  ) {
     throw new Error(
       'To use $generateHtmlFromNodes in headless mode please initialize a headless browser implementation such as JSDom before calling this function.',
     );

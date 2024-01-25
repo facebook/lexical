@@ -203,7 +203,6 @@ function FloatingLinkEditor({
                 target: parent.__target,
                 title: parent.__title,
               });
-              parent.select();
               parent.replace(linkNode, true);
             }
           }

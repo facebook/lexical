@@ -138,6 +138,7 @@ export {
   $applyNodeReplacement,
   $copyNode,
   $getAdjacentNode,
+  $getEditor,
   $getNearestNodeFromDOMNode,
   $getNearestRootOrShadowRoot,
   $getNodeByKey,

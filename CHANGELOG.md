@@ -1,3 +1,16 @@
+## v0.13.1 (2024-01-27)
+
+- Update InlineImageNode.tsx (#5552) lvvl
+- docs correct react plugin name (#5554) sj
+- Check global.window on DOM availability check (#5547) wnhlee
+- Update CODEOWNERS (#5550) Gerard Rovira
+- feat Expose getActiveEditor and getActiveEditorState (#5409) yf-yang
+- Floating link editor for AutoLinkNode and conversion to LinkNode once modified. (#5536) Harry Sanders
+- Add rowcolumn with correct header styles (#5546) Shubhanker Srivastava
+- v0.13.0 (#5540) Gerard Rovira
+- Add missing flow types (#5542) Gerard Rovira
+- v0.13.0 Lexical GitHub Actions Bot
+
 ## v0.13.0 (2024-01-24)
 
 - Rename LexicalTableSelection to LexicalTableObserver (#5533) Gerard Rovira

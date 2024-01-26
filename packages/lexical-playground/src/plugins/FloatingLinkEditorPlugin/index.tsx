@@ -297,7 +297,6 @@ function useFloatingLinkEditorToolbar(
         const node = getSelectedNode(selection);
         const linkParent = $findMatchingParent(node, $isLinkNode);
         const autoLinkParent = $findMatchingParent(node, $isAutoLinkNode);
-
         if (linkParent !== null || autoLinkParent !== null) {
           const cachedNodes = selection.getCachedNodes();
           if (

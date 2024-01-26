@@ -78,10 +78,10 @@ export function createMarkdownImport(
     }
 
     // Removing empty paragraphs as md does not really
-    // allow empty lines and uses them as dilimiter
+    // allow empty lines and uses them as delimiter
     const children = root.getChildren();
     for (const child of children) {
-      if (isEmptyParagraph(child)) {
+      if (isEmptyParagraph(child) && root.getChildrenSize() > 1) {
         child.remove();
       }
     }

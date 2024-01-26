@@ -479,7 +479,6 @@ declare export class RangeSelection implements BaseSelection {
   insertNodes(nodes: Array<LexicalNode>): void;
   insertParagraph(): void;
   insertLineBreak(selectStart?: boolean): void;
-  getCharacterOffsets(): [number, number];
   extract(): Array<LexicalNode>;
   modify(
     alter: 'move' | 'extend',
@@ -535,6 +534,9 @@ declare export function $isRangeSelection(
 declare export function $getSelection(): null | BaseSelection;
 declare export function $getPreviousSelection(): null | BaseSelection;
 declare export function $insertNodes(nodes: Array<LexicalNode>): void;
+declare export function $getCharacterOffsets(
+  selection: BaseSelection,
+): [number, number];
 
 
 /**

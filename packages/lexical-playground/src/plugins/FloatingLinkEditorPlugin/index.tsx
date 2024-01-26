@@ -289,6 +289,7 @@ function useFloatingLinkEditorToolbar(
 ): JSX.Element | null {
   const [activeEditor, setActiveEditor] = useState(editor);
   const [isLink, setIsLink] = useState(false);
+  const [outOfBounds, setOutOfBounds] = useState(false);
 
   useEffect(() => {
     function updateToolbar() {
@@ -297,11 +298,14 @@ function useFloatingLinkEditorToolbar(
         const node = getSelectedNode(selection);
         const linkParent = $findMatchingParent(node, $isLinkNode);
         const autoLinkParent = $findMatchingParent(node, $isAutoLinkNode);
-        if (linkParent !== null || autoLinkParent !== null) {
-          setIsLink(true);
-        } else {
-          setIsLink(false);
-        }
+        if (!outOfBounds) {
+          if (linkParent !== null || autoLinkParent !== null) {
+            setIsLink(true);
+          } else {
+            setIsLink(false);
+            setOutOfBounds(true);
+          }
+        } else setIsLink(false);
       }
     }
     return mergeRegister(

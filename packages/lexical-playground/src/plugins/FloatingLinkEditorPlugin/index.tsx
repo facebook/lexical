@@ -306,14 +306,13 @@ function useFloatingLinkEditorToolbar(
         });
 
         const nonLinkNodes = selection.getNodes().find((selectedNode) => {
-          const parentOfALinkNode = linkNodes.find((linkNodeToFind) =>
-            linkNodeToFind?.getParent()?.is(selectedNode),
+          const parentOfALinkNode = linkNodes.find((linkNode) =>
+            linkNode?.getParent()?.is(selectedNode),
           );
           return (
             !$isLinkNode(selectedNode.getParent()) &&
             !$isAutoLinkNode(selectedNode.getParent()) &&
-            !parentOfALinkNode &&
-            !(selectedNode.getTextContent() === ' ')
+            !parentOfALinkNode
           );
         });
 

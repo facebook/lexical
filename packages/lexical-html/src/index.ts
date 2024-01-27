@@ -26,7 +26,7 @@ import {$getRoot, $isElementNode, $isTextNode} from 'lexical';
 /**
  * How you parse your html string to get a document is left up to you. In the browser you can use the native
  * DOMParser API to generate a document (see clipboard.ts), but to use in a headless environment you can use JSDom
- * or an equivilant library and pass in the document here.
+ * or an equivalent library and pass in the document here.
  */
 export function $generateNodesFromDOM(
   editor: LexicalEditor,

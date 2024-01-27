@@ -55,7 +55,7 @@ function onButtonClick(e: MouseEvent) {
 
 ## Theming
 
-Lists can be styled using the following properties in the EditorTheme passed to the editor in the initial config (the values are classses that will be applied in the denoted contexts):
+Lists can be styled using the following properties in the EditorTheme passed to the editor in the initial config (the values are classes that will be applied in the denoted contexts):
 
 ```ts
 {

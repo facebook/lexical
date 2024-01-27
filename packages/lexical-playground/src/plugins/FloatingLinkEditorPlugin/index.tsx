@@ -294,12 +294,29 @@ function useFloatingLinkEditorToolbar(
     function updateToolbar() {
       const selection = $getSelection();
       if ($isRangeSelection(selection)) {
+        const linkNodes = selection.getNodes().filter((selectedNode) => {
+          if (
+            $isLinkNode(selectedNode.getParent()) ||
+            $isAutoLinkNode(selectedNode.getParent()) ||
+            $isLinkNode(selectedNode) ||
+            $isAutoLinkNode(selectedNode)
+          ) {
+            return selectedNode;
+          }
+        });
+
         const nonLinkNodes = selection.getNodes().find((selectedNode) => {
+          const parentOfALinkNode = linkNodes.find((linkNodeToFind) =>
+            linkNodeToFind?.getParent()?.is(selectedNode),
+          );
           return (
             !$isLinkNode(selectedNode.getParent()) &&
-            !$isAutoLinkNode(selectedNode.getParent())
+            !$isAutoLinkNode(selectedNode.getParent()) &&
+            !parentOfALinkNode &&
+            !(selectedNode.getTextContent() === ' ')
           );
         });
+
         if (!nonLinkNodes) {
           setIsLink(true);
         } else setIsLink(false);

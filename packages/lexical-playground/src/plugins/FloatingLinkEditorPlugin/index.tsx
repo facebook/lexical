@@ -318,7 +318,9 @@ function useFloatingLinkEditorToolbar(
 
         if (!nonLinkNodes) {
           setIsLink(true);
-        } else setIsLink(false);
+        } else {
+          setIsLink(false);
+        }
       }
     }
     return mergeRegister(

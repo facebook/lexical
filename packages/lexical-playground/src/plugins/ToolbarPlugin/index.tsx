@@ -184,7 +184,7 @@ const ELEMENT_FORMAT_OPTIONS: {
   },
   right: {
     icon: 'right-align',
-    iconRTL: 'left-align',
+    iconRTL: 'right-align',
     name: 'Right Align',
   },
   start: {

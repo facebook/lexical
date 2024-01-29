@@ -301,6 +301,10 @@ function useFloatingLinkEditorToolbar(
           focusNode,
           $isAutoLinkNode,
         );
+        if (!(focusLinkNode || focusAutoLinkNode)) {
+          setIsLink(false);
+          return;
+        }
         const badNode = selection.getNodes().find((node) => {
           const linkNode = $findMatchingParent(node, $isLinkNode);
           const autoLinkNode = $findMatchingParent(node, $isAutoLinkNode);
@@ -314,7 +318,7 @@ function useFloatingLinkEditorToolbar(
             return node;
           }
         });
-        if ((focusLinkNode || focusAutoLinkNode) && !badNode) {
+        if (!badNode) {
           setIsLink(true);
         } else {
           setIsLink(false);

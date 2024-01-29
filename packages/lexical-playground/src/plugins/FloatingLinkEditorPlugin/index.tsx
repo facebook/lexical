@@ -17,6 +17,7 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$findMatchingParent, mergeRegister} from '@lexical/utils';
 import {
   $getSelection,
+  $isLineBreakNode,
   $isRangeSelection,
   BaseSelection,
   CLICK_COMMAND,
@@ -294,29 +295,26 @@ function useFloatingLinkEditorToolbar(
     function updateToolbar() {
       const selection = $getSelection();
       if ($isRangeSelection(selection)) {
-        const linkNodes = selection.getNodes().filter((selectedNode) => {
+        const focusNode = getSelectedNode(selection);
+        const focusLinkNode = $findMatchingParent(focusNode, $isLinkNode);
+        const focusAutoLinkNode = $findMatchingParent(
+          focusNode,
+          $isAutoLinkNode,
+        );
+        const badNode = selection.getNodes().find((node) => {
+          const linkNode = $findMatchingParent(node, $isLinkNode);
+          const autoLinkNode = $findMatchingParent(node, $isAutoLinkNode);
           if (
-            $isLinkNode(selectedNode.getParent()) ||
-            $isAutoLinkNode(selectedNode.getParent()) ||
-            $isLinkNode(selectedNode) ||
-            $isAutoLinkNode(selectedNode)
+            !linkNode?.is(focusLinkNode) &&
+            !autoLinkNode?.is(focusAutoLinkNode) &&
+            !linkNode &&
+            !autoLinkNode &&
+            !$isLineBreakNode(node)
           ) {
-            return selectedNode;
+            return node;
           }
         });
-
-        const nonLinkNodes = selection.getNodes().find((selectedNode) => {
-          const parentOfALinkNode = linkNodes.find((linkNode) =>
-            linkNode?.getParent()?.is(selectedNode),
-          );
-          return (
-            !$isLinkNode(selectedNode.getParent()) &&
-            !$isAutoLinkNode(selectedNode.getParent()) &&
-            !parentOfALinkNode
-          );
-        });
-
-        if (!nonLinkNodes) {
+        if ((focusLinkNode || focusAutoLinkNode) && !badNode) {
           setIsLink(true);
         } else {
           setIsLink(false);

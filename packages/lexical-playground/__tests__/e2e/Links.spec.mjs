@@ -1913,7 +1913,6 @@ test.describe('Links', () => {
     await selectAll(page);
 
     await click(page, '.link');
-    await click(page, '.link-confirm');
 
     await assertHTML(
       page,

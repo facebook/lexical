@@ -1771,8 +1771,8 @@ test.describe('Links', () => {
       await assertSelection(page, {
         anchorOffset: 5,
         anchorPath: [0, 1, 0, 0],
-        focusOffset: 6,
-        focusPath: [0, 0, 0],
+        focusOffset: 0,
+        focusPath: [0, 1],
       });
     } else {
       await assertSelection(page, {
@@ -1815,7 +1815,7 @@ test.describe('Links', () => {
         anchorOffset: 5,
         anchorPath: [0, 1, 0, 0],
         focusOffset: 0,
-        focusPath: [0, 1],
+        focusPath: [0, 1, 0, 0],
       });
     } else {
       await assertSelection(page, {
@@ -1913,7 +1913,6 @@ test.describe('Links', () => {
     await selectAll(page);
 
     await click(page, '.link');
-    await click(page, '.link-confirm');
 
     await assertHTML(
       page,

@@ -17,6 +17,7 @@ import {
   $isRangeSelection,
   $isRootOrShadowRoot,
   $isTextNode,
+  $nodesOfType,
   $setSelection,
   $splitNode,
   EditorState,
@@ -24,6 +25,7 @@ import {
   Klass,
   LexicalEditor,
   LexicalNode,
+  NodeKey,
 } from 'lexical';
 import invariant from 'shared/invariant';
 
@@ -525,4 +527,44 @@ export function $insertFirst(parent: ElementNode, node: LexicalNode): void {
   } else {
     parent.append(node);
   }
+}
+
+export function registerNodesOfTypeListener(
+  editor: LexicalEditor,
+  klass: Klass<LexicalNode>,
+  listener: (nodes: Set<NodeKey>) => void,
+  fireImmediately: void | boolean = false,
+): () => void {
+  let nodes = new Set<NodeKey>();
+  editor.getEditorState().read(() => {
+    const nodesArr = $nodesOfType(klass);
+    for (const node of nodesArr) {
+      nodes.add(node.getKey());
+    }
+  });
+  if (fireImmediately) {
+    listener(nodes);
+  }
+  return editor.registerMutationListener(klass, (mutations) => {
+    let newNodes = null;
+    for (const [key, mutation] of mutations) {
+      const created = mutation === 'created';
+      const destroyed = mutation === 'destroyed';
+      if (created || destroyed) {
+        if (newNodes === null) {
+          newNodes = new Set(nodes);
+        }
+        if (created) {
+          newNodes.add(key);
+        }
+        if (destroyed) {
+          newNodes.delete(key);
+        }
+      }
+    }
+    if (newNodes !== null) {
+      nodes = newNodes;
+      listener(nodes);
+    }
+  });
 }

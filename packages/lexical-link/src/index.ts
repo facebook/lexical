@@ -567,7 +567,6 @@ export function $onlyIncludesAParentLink(
     return false;
   }
   const nodes = firstNode.getNodesBetween(lastNode);
-  let matching = false;
   let matchedParent;
   for (const node of nodes) {
     if (!$isLeafNode(node) && !$isLinkNode(node) && !$isAutoLinkNode(node)) {
@@ -576,8 +575,7 @@ export function $onlyIncludesAParentLink(
     if ($isLinkNode(node) || $isAutoLinkNode(node)) {
       if (matchedParent) {
         if (!node.is(matchedParent)) {
-          matching = false;
-          break;
+          return false;
         } else {
           continue;
         }
@@ -587,17 +585,15 @@ export function $onlyIncludesAParentLink(
       }
     }
     const parent = getParentLink(node);
-    if (parent && !matchedParent) {
-      matching = true;
+    if (!parent) {
+      return false;
+    } else if (!matchedParent) {
       matchedParent = parent;
-    } else if (parent && parent.is(matchedParent)) {
-      continue;
-    } else {
-      matching = false;
-      break;
+    } else if (!parent.is(matchedParent)) {
+      return false;
     }
   }
-  return matching;
+  return true;
 }
 
 function getParentLink(node: LexicalNode) {

@@ -19,11 +19,16 @@ import type {
   SerializedElementNode,
 } from 'lexical';
 
-import {addClassNamesToElement, isHTMLAnchorElement} from '@lexical/utils';
+import {
+  $findMatchingParent,
+  addClassNamesToElement,
+  isHTMLAnchorElement,
+} from '@lexical/utils';
 import {
   $applyNodeReplacement,
   $getSelection,
   $isElementNode,
+  $isLeafNode,
   $isRangeSelection,
   createCommand,
   ElementNode,
@@ -534,4 +539,74 @@ function $getAncestor<NodeType extends LexicalNode = LexicalNode>(
     parent = parent.getParentOrThrow();
   }
   return predicate(parent) ? parent : null;
+}
+
+/**
+ * Checks selection to ensure only a single LinkNode or AutoLinkNode is being selected,
+ * selecting any Node that doesn't have a some Link as a parent will return false.
+ * @param selection - The current range selection.
+ * @returns - true if selection only contains a single LinkNode or AutoLinkNode, false otherwise.
+ */
+export function $onlyIncludesAParentLink(
+  selection: RangeSelection,
+): boolean | null {
+  const anchor = selection.anchor;
+  const focus = selection.focus;
+  const isBefore = anchor.isBefore(focus);
+  const firstPoint = isBefore ? anchor : focus;
+  const lastPoint = isBefore ? focus : anchor;
+  const firstNode = firstPoint.getNode();
+  const lastNode = lastPoint.getNode();
+  const firstLinkNode = getParentLink(firstNode);
+  const lastLinkNode = getParentLink(lastNode);
+  if (
+    !firstLinkNode ||
+    !lastLinkNode ||
+    (firstLinkNode && !firstLinkNode.is(lastLinkNode))
+  ) {
+    return false;
+  }
+  const nodes = firstNode.getNodesBetween(lastNode);
+  let matching = false;
+  let matchedParent;
+  for (const node of nodes) {
+    if (!$isLeafNode(node) && !$isLinkNode(node) && !$isAutoLinkNode(node)) {
+      continue;
+    }
+    if ($isLinkNode(node) || $isAutoLinkNode(node)) {
+      if (matchedParent) {
+        if (!node.is(matchedParent)) {
+          matching = false;
+          break;
+        } else {
+          continue;
+        }
+      } else {
+        matchedParent = node;
+        continue;
+      }
+    }
+    const parent = getParentLink(node);
+    if (parent && !matchedParent) {
+      matching = true;
+      matchedParent = parent;
+    } else if (parent && parent.is(matchedParent)) {
+      continue;
+    } else {
+      matching = false;
+      break;
+    }
+  }
+  return matching;
+}
+
+function getParentLink(node: LexicalNode) {
+  const linkTypes = [$isLinkNode, $isAutoLinkNode];
+  for (const linkType of linkTypes) {
+    const parent = $findMatchingParent(node, linkType);
+    if (parent !== null) {
+      return parent;
+    }
+  }
+  return null;
 }

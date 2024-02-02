@@ -245,7 +245,7 @@ declare export function $deleteTableColumn__EXPERIMENTAL(): void;
 
 declare export function $unmergeCell(): void;
 
-declare export function $computeGridMap(
+declare export function $computeTableMap(
   table: TableNode,
   cellA: TableCellNode,
   cellB: TableCellNode,

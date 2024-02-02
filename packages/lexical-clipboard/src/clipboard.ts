@@ -473,10 +473,10 @@ function $copyToClipboardEvent(
     plainString = selection.getTextContent();
   }
   if (htmlString !== null) {
-    clipboardData.setData('text/html', htmlString);
+    clipboardData.setData('text/html', '<p>hello	world</p>');
   }
   if (lexicalString !== null) {
-    clipboardData.setData('application/x-lexical-editor', lexicalString);
+    // clipboardData.setData('application/x-lexical-editor', lexicalString);
   }
   clipboardData.setData('text/plain', plainString);
   return true;

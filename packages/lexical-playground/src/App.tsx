@@ -126,8 +126,7 @@ function App(): JSX.Element {
     namespace: 'Playground',
     nodes: [...PlaygroundNodes],
     onError: (error: Error) => {
-      // throw error;
-      console.error(error);
+      throw error;
     },
     theme: PlaygroundEditorTheme,
   };

@@ -179,28 +179,76 @@ test.describe('Composition', () => {
       focusPath: [0, 0, 0],
     });
   });
-
+  /* eslint-disable sort-keys-fix/sort-keys-fix */
   test.describe('IME', () => {
     test('Can type Hiragana via IME', async ({page, browserName}) => {
       // We don't yet support FF.
-      test.skip(browserName === 'firefox');
-
+      test.skip(browserName !== 'chromium');
       await focusEditor(page);
       await enableCompositionKeyEvents(page);
 
-      await page.keyboard.imeSetComposition('ｓ', 1, 1);
-      await page.keyboard.imeSetComposition('す', 1, 1);
-      await page.keyboard.imeSetComposition('すｓ', 2, 2);
-      await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
-      await page.keyboard.imeSetComposition('すし', 2, 2);
-      await page.keyboard.insertText('すし');
-      await page.keyboard.type(' ');
-      await page.keyboard.imeSetComposition('m', 1, 1);
-      await page.keyboard.imeSetComposition('も', 1, 1);
-      await page.keyboard.imeSetComposition('もj', 2, 2);
-      await page.keyboard.imeSetComposition('もじ', 2, 2);
-      await page.keyboard.imeSetComposition('もじあ', 3, 3);
-      await page.keyboard.insertText('もじあ');
+      const client = await page.context().newCDPSession(page);
+      await page.locator('.ContentEditable__root').focus();
+
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'ｓ',
+      });
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'す',
+      });
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 2,
+        selectionEnd: 2,
+        text: 'すｓ',
+      });
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 3,
+        selectionEnd: 3,
+        text: 'すｓｈ',
+      });
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 2,
+        selectionEnd: 2,
+        text: 'すし',
+      });
+      await client.send('Input.insertText', {
+        text: 'すし',
+      });
+      await client.send('Input.insertText', {
+        text: ' ',
+      });
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'm',
+      });
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'も',
+      });
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 2,
+        selectionEnd: 2,
+        text: 'もj',
+      });
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 2,
+        selectionEnd: 2,
+        text: 'もじ',
+      });
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 3,
+        selectionEnd: 3,
+        text: 'もじあ',
+      });
+      await client.send('Input.insertText', {
+        text: 'もじあ',
+      });
 
       await assertHTML(
         page,
@@ -225,7 +273,7 @@ test.describe('Composition', () => {
       browserName,
     }) => {
       // We don't yet support FF.
-      test.skip(browserName === 'firefox');
+      test.skip(browserName !== 'chromium');
 
       await focusEditor(page);
       await enableCompositionKeyEvents(page);
@@ -240,19 +288,80 @@ test.describe('Composition', () => {
 
       await page.keyboard.press('ArrowLeft');
 
-      await page.keyboard.imeSetComposition('ｓ', 1, 1);
-      await page.keyboard.imeSetComposition('す', 1, 1);
-      await page.keyboard.imeSetComposition('すｓ', 2, 2);
-      await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
-      await page.keyboard.imeSetComposition('すし', 2, 2);
-      await page.keyboard.insertText('すし');
-      await page.keyboard.type(' ');
-      await page.keyboard.imeSetComposition('m', 1, 1);
-      await page.keyboard.imeSetComposition('も', 1, 1);
-      await page.keyboard.imeSetComposition('もj', 2, 2);
-      await page.keyboard.imeSetComposition('もじ', 2, 2);
-      await page.keyboard.imeSetComposition('もじあ', 3, 3);
-      await page.keyboard.insertText('もじあ');
+      await page.locator('.ContentEditable__root').focus();
+      const client = await page.context().newCDPSession(page);
+      // await page.keyboard.imeSetComposition('ｓ', 1, 1);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'ｓ',
+      });
+      // await page.keyboard.imeSetComposition('す', 1, 1);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'す',
+      });
+      // await page.keyboard.imeSetComposition('すｓ', 2, 2);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 2,
+        selectionEnd: 2,
+        text: 'すｓ',
+      });
+      // await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 3,
+        selectionEnd: 3,
+        text: 'すｓｈ',
+      });
+      // await page.keyboard.imeSetComposition('すし', 2, 2);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 2,
+        selectionEnd: 2,
+        text: 'すし',
+      });
+      // await page.keyboard.insertText('すし');
+      await client.send('Input.insertText', {
+        text: 'すし',
+      });
+      // await page.keyboard.type(' ');
+      await client.send('Input.insertText', {
+        text: ' ',
+      });
+      // await page.keyboard.imeSetComposition('m', 1, 1);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'm',
+      });
+      // await page.keyboard.imeSetComposition('も', 1, 1);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'も',
+      });
+      // await page.keyboard.imeSetComposition('もj', 2, 2);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 2,
+        selectionEnd: 2,
+        text: 'もj',
+      });
+      // await page.keyboard.imeSetComposition('もじ', 2, 2);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 2,
+        selectionEnd: 2,
+        text: 'もじ',
+      });
+      // await page.keyboard.imeSetComposition('もじあ', 3, 3);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 3,
+        selectionEnd: 3,
+        text: 'もじあ',
+      });
+      // await page.keyboard.insertText('もじあ');
+      await client.send('Input.insertText', {
+        text: 'もじあ',
+      });
 
       await assertHTML(
         page,
@@ -281,7 +390,7 @@ test.describe('Composition', () => {
       isPlainText,
     }) => {
       // We don't yet support FF.
-      test.skip(browserName === 'firefox' || isPlainText);
+      test.skip(browserName !== 'chromium' || isPlainText);
 
       await focusEditor(page);
       await enableCompositionKeyEvents(page);
@@ -292,12 +401,42 @@ test.describe('Composition', () => {
       await page.keyboard.press('b');
       await keyUpCtrlOrMeta(page);
 
-      await page.keyboard.imeSetComposition('ｓ', 1, 1);
-      await page.keyboard.imeSetComposition('す', 1, 1);
-      await page.keyboard.imeSetComposition('すｓ', 2, 2);
-      await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
-      await page.keyboard.imeSetComposition('すし', 2, 2);
-      await page.keyboard.insertText('すし');
+      await page.locator('.ContentEditable__root').focus();
+      const client = await page.context().newCDPSession(page);
+      // await page.keyboard.imeSetComposition('ｓ', 1, 1);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'ｓ',
+      });
+      // await page.keyboard.imeSetComposition('す', 1, 1);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'す',
+      });
+      // await page.keyboard.imeSetComposition('すｓ', 2, 2);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 2,
+        selectionEnd: 2,
+        text: 'すｓ',
+      });
+      // await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 3,
+        selectionEnd: 3,
+        text: 'すｓｈ',
+      });
+      // await page.keyboard.imeSetComposition('すし', 2, 2);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 2,
+        selectionEnd: 2,
+        text: 'すし',
+      });
+      // await page.keyboard.insertText('すし');
+      await client.send('Input.insertText', {
+        text: 'すし',
+      });
 
       await assertHTML(
         page,
@@ -326,7 +465,7 @@ test.describe('Composition', () => {
       page,
       browserName,
     }) => {
-      test.skip(browserName === 'firefox');
+      test.skip(browserName !== 'chromium');
       await focusEditor(page);
       await enableCompositionKeyEvents(page);
 
@@ -334,19 +473,77 @@ test.describe('Composition', () => {
 
       await page.keyboard.press('ArrowLeft');
 
-      await page.keyboard.imeSetComposition('ｓ', 1, 1);
-      await page.keyboard.imeSetComposition('す', 1, 1);
-      await page.keyboard.imeSetComposition('すｓ', 2, 2);
-      await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
-      await page.keyboard.imeSetComposition('すし', 2, 2);
-      await page.keyboard.insertText('すし');
+      await page.locator('.ContentEditable__root').focus();
+      const client = await page.context().newCDPSession(page);
+      // await page.keyboard.imeSetComposition('ｓ', 1, 1);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'ｓ',
+      });
+      // await page.keyboard.imeSetComposition('す', 1, 1);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'す',
+      });
+      // await page.keyboard.imeSetComposition('すｓ', 2, 2);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 2,
+        selectionEnd: 2,
+        text: 'すｓ',
+      });
+      // await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 3,
+        selectionEnd: 3,
+        text: 'すｓｈ',
+      });
+      // await page.keyboard.imeSetComposition('すし', 2, 2);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 2,
+        selectionEnd: 2,
+        text: 'すし',
+      });
+      // await page.keyboard.insertText('すし');
+      await client.send('Input.insertText', {
+        text: 'すし',
+      });
       await page.keyboard.type(' ');
-      await page.keyboard.imeSetComposition('m', 1, 1);
-      await page.keyboard.imeSetComposition('も', 1, 1);
-      await page.keyboard.imeSetComposition('もj', 2, 2);
-      await page.keyboard.imeSetComposition('もじ', 2, 2);
-      await page.keyboard.imeSetComposition('もじあ', 3, 3);
-      await page.keyboard.insertText('もじあ');
+      // await page.keyboard.imeSetComposition('m', 1, 1);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'm',
+      });
+      // await page.keyboard.imeSetComposition('も', 1, 1);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'も',
+      });
+      // await page.keyboard.imeSetComposition('もj', 2, 2);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 2,
+        selectionEnd: 2,
+        text: 'もj',
+      });
+      // await page.keyboard.imeSetComposition('もじ', 2, 2);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 2,
+        selectionEnd: 2,
+        text: 'もじ',
+      });
+      // await page.keyboard.imeSetComposition('もじあ', 3, 3);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 3,
+        selectionEnd: 3,
+        text: 'もじあ',
+      });
+      // await page.keyboard.insertText('もじあ');
+      await client.send('Input.insertText', {
+        text: 'もじあ',
+      });
 
       await assertHTML(
         page,
@@ -394,13 +591,48 @@ test.describe('Composition', () => {
         focusPath: [0, 0, 0, 0],
       });
 
-      await page.keyboard.imeSetComposition('ｓ', 1, 1);
-      await page.keyboard.imeSetComposition('す', 1, 1);
-      await page.keyboard.imeSetComposition('すｓ', 2, 2);
-      await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
-      await page.keyboard.imeSetComposition('すし', 2, 2);
-      await page.keyboard.imeSetComposition('す', 1, 1);
-      await page.keyboard.imeSetComposition('', 0, 0);
+      // await page.keyboard.imeSetComposition('ｓ', 1, 1);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'ｓ',
+      });
+      // await page.keyboard.imeSetComposition('す', 1, 1);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'す',
+      });
+      // await page.keyboard.imeSetComposition('すｓ', 2, 2);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 2,
+        selectionEnd: 2,
+        text: 'すｓ',
+      });
+      // await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 3,
+        selectionEnd: 3,
+        text: 'すｓｈ',
+      });
+      // await page.keyboard.imeSetComposition('すし', 2, 2);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 2,
+        selectionEnd: 2,
+        text: 'すし',
+      });
+      // await page.keyboard.imeSetComposition('す', 1, 1);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'す',
+      });
+      // await page.keyboard.imeSetComposition('', 0, 0);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 0,
+        selectionEnd: 0,
+        text: '',
+      });
       // Escape would fire here
       await page.keyboard.insertText('');
 
@@ -432,7 +664,7 @@ test.describe('Composition', () => {
       browserName,
     }) => {
       // We don't yet support FF.
-      test.skip(browserName === 'firefox');
+      test.skip(browserName !== 'chromium');
 
       await focusEditor(page);
       await enableCompositionKeyEvents(page);
@@ -443,19 +675,77 @@ test.describe('Composition', () => {
 
       await waitForSelector(page, '.mention');
 
-      await page.keyboard.imeSetComposition('ｓ', 1, 1);
-      await page.keyboard.imeSetComposition('す', 1, 1);
-      await page.keyboard.imeSetComposition('すｓ', 2, 2);
-      await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
-      await page.keyboard.imeSetComposition('すし', 2, 2);
-      await page.keyboard.insertText('すし');
+      await page.locator('.ContentEditable__root').focus();
+      const client = await page.context().newCDPSession(page);
+      // await page.keyboard.imeSetComposition('ｓ', 1, 1);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'ｓ',
+      });
+      // await page.keyboard.imeSetComposition('す', 1, 1);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'す',
+      });
+      // await page.keyboard.imeSetComposition('すｓ', 2, 2);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 2,
+        selectionEnd: 2,
+        text: 'すｓ',
+      });
+      // await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 3,
+        selectionEnd: 3,
+        text: 'すｓｈ',
+      });
+      // await page.keyboard.imeSetComposition('すし', 2, 2);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 2,
+        selectionEnd: 2,
+        text: 'すし',
+      });
+      // await page.keyboard.insertText('すし');
+      await client.send('Input.insertText', {
+        text: 'すし',
+      });
       await page.keyboard.type(' ');
-      await page.keyboard.imeSetComposition('m', 1, 1);
-      await page.keyboard.imeSetComposition('も', 1, 1);
-      await page.keyboard.imeSetComposition('もj', 2, 2);
-      await page.keyboard.imeSetComposition('もじ', 2, 2);
-      await page.keyboard.imeSetComposition('もじあ', 3, 3);
-      await page.keyboard.insertText('もじあ');
+      // await page.keyboard.imeSetComposition('m', 1, 1);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'm',
+      });
+      // await page.keyboard.imeSetComposition('も', 1, 1);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'も',
+      });
+      // await page.keyboard.imeSetComposition('もj', 2, 2);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 2,
+        selectionEnd: 2,
+        text: 'もj',
+      });
+      // await page.keyboard.imeSetComposition('もじ', 2, 2);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 2,
+        selectionEnd: 2,
+        text: 'もじ',
+      });
+      // await page.keyboard.imeSetComposition('もじあ', 3, 3);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 3,
+        selectionEnd: 3,
+        text: 'もじあ',
+      });
+      // await page.keyboard.insertText('もじあ');
+      await client.send('Input.insertText', {
+        text: 'もじあ',
+      });
 
       await assertHTML(
         page,
@@ -486,7 +776,7 @@ test.describe('Composition', () => {
       browserName,
     }) => {
       // We don't yet support FF.
-      test.skip(browserName === 'firefox');
+      test.skip(browserName !== 'chromium');
 
       await focusEditor(page);
       await enableCompositionKeyEvents(page);
@@ -499,19 +789,77 @@ test.describe('Composition', () => {
 
       await moveLeft(page, 9);
 
-      await page.keyboard.imeSetComposition('ｓ', 1, 1);
-      await page.keyboard.imeSetComposition('す', 1, 1);
-      await page.keyboard.imeSetComposition('すｓ', 2, 2);
-      await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
-      await page.keyboard.imeSetComposition('すし', 2, 2);
-      await page.keyboard.insertText('すし');
+      await page.locator('.ContentEditable__root').focus();
+      const client = await page.context().newCDPSession(page);
+      // await page.keyboard.imeSetComposition('ｓ', 1, 1);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'ｓ',
+      });
+      // await page.keyboard.imeSetComposition('す', 1, 1);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'す',
+      });
+      // await page.keyboard.imeSetComposition('すｓ', 2, 2);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 2,
+        selectionEnd: 2,
+        text: 'すｓ',
+      });
+      // await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 3,
+        selectionEnd: 3,
+        text: 'すｓｈ',
+      });
+      // await page.keyboard.imeSetComposition('すし', 2, 2);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 2,
+        selectionEnd: 2,
+        text: 'すし',
+      });
+      // await page.keyboard.insertText('すし');
+      await client.send('Input.insertText', {
+        text: 'すし',
+      });
       await page.keyboard.type(' ');
-      await page.keyboard.imeSetComposition('m', 1, 1);
-      await page.keyboard.imeSetComposition('も', 1, 1);
-      await page.keyboard.imeSetComposition('もj', 2, 2);
-      await page.keyboard.imeSetComposition('もじ', 2, 2);
-      await page.keyboard.imeSetComposition('もじあ', 3, 3);
-      await page.keyboard.insertText('もじあ');
+      // await page.keyboard.imeSetComposition('m', 1, 1);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'm',
+      });
+      // await page.keyboard.imeSetComposition('も', 1, 1);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'も',
+      });
+      // await page.keyboard.imeSetComposition('もj', 2, 2);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 2,
+        selectionEnd: 2,
+        text: 'もj',
+      });
+      // await page.keyboard.imeSetComposition('もじ', 2, 2);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 2,
+        selectionEnd: 2,
+        text: 'もじ',
+      });
+      // await page.keyboard.imeSetComposition('もじあ', 3, 3);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 3,
+        selectionEnd: 3,
+        text: 'もじあ',
+      });
+      // await page.keyboard.insertText('もじあ');
+      await client.send('Input.insertText', {
+        text: 'もじあ',
+      });
 
       if (browserName === 'webkit')
         await assertHTML(
@@ -553,7 +901,7 @@ test.describe('Composition', () => {
       isPlainText,
     }) => {
       // We don't yet support FF.
-      test.skip(browserName === 'firefox');
+      test.skip(browserName !== 'chromium');
 
       await focusEditor(page);
       await enableCompositionKeyEvents(page);
@@ -562,12 +910,42 @@ test.describe('Composition', () => {
       await waitForSelector(page, '#typeahead-menu ul li');
       await page.keyboard.press('Enter');
 
-      await page.keyboard.imeSetComposition('ｓ', 1, 1);
-      await page.keyboard.imeSetComposition('す', 1, 1);
-      await page.keyboard.imeSetComposition('すｓ', 2, 2);
-      await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
-      await page.keyboard.imeSetComposition('すし', 2, 2);
-      await page.keyboard.insertText('すし');
+      await page.locator('.ContentEditable__root').focus();
+      const client = await page.context().newCDPSession(page);
+      // await page.keyboard.imeSetComposition('ｓ', 1, 1);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'ｓ',
+      });
+      // await page.keyboard.imeSetComposition('す', 1, 1);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'す',
+      });
+      // await page.keyboard.imeSetComposition('すｓ', 2, 2);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 2,
+        selectionEnd: 2,
+        text: 'すｓ',
+      });
+      // await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 3,
+        selectionEnd: 3,
+        text: 'すｓｈ',
+      });
+      // await page.keyboard.imeSetComposition('すし', 2, 2);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 2,
+        selectionEnd: 2,
+        text: 'すし',
+      });
+      // await page.keyboard.insertText('すし');
+      await client.send('Input.insertText', {
+        text: 'すし',
+      });
 
       await assertHTML(
         page,
@@ -593,27 +971,85 @@ test.describe('Composition', () => {
       isCollab,
     }) => {
       // We don't yet support FF.
-      test.skip(browserName === 'firefox');
+      test.skip(browserName !== 'chromium');
 
       await focusEditor(page);
       await enableCompositionKeyEvents(page);
 
       await page.keyboard.type('#');
 
-      await page.keyboard.imeSetComposition('ｓ', 1, 1);
-      await page.keyboard.imeSetComposition('す', 1, 1);
-      await page.keyboard.imeSetComposition('すｓ', 2, 2);
-      await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
-      await page.keyboard.imeSetComposition('すし', 2, 2);
-      await page.keyboard.insertText('すし');
+      await page.locator('.ContentEditable__root').focus();
+      const client = await page.context().newCDPSession(page);
+      // await page.keyboard.imeSetComposition('ｓ', 1, 1);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'ｓ',
+      });
+      // await page.keyboard.imeSetComposition('す', 1, 1);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'す',
+      });
+      // await page.keyboard.imeSetComposition('すｓ', 2, 2);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 2,
+        selectionEnd: 2,
+        text: 'すｓ',
+      });
+      // await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 3,
+        selectionEnd: 3,
+        text: 'すｓｈ',
+      });
+      // await page.keyboard.imeSetComposition('すし', 2, 2);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 2,
+        selectionEnd: 2,
+        text: 'すし',
+      });
+      // await page.keyboard.insertText('すし');
+      await client.send('Input.insertText', {
+        text: 'すし',
+      });
 
       await page.keyboard.type(' ');
-      await page.keyboard.imeSetComposition('m', 1, 1);
-      await page.keyboard.imeSetComposition('も', 1, 1);
-      await page.keyboard.imeSetComposition('もj', 2, 2);
-      await page.keyboard.imeSetComposition('もじ', 2, 2);
-      await page.keyboard.imeSetComposition('もじあ', 3, 3);
-      await page.keyboard.insertText('もじあ');
+      // await page.keyboard.imeSetComposition('m', 1, 1);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'm',
+      });
+      // await page.keyboard.imeSetComposition('も', 1, 1);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'も',
+      });
+      // await page.keyboard.imeSetComposition('もj', 2, 2);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 2,
+        selectionEnd: 2,
+        text: 'もj',
+      });
+      // await page.keyboard.imeSetComposition('もじ', 2, 2);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 2,
+        selectionEnd: 2,
+        text: 'もじ',
+      });
+      // await page.keyboard.imeSetComposition('もじあ', 3, 3);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 3,
+        selectionEnd: 3,
+        text: 'もじあ',
+      });
+      // await page.keyboard.insertText('もじあ');
+      await client.send('Input.insertText', {
+        text: 'もじあ',
+      });
 
       await assertHTML(
         page,
@@ -639,12 +1075,40 @@ test.describe('Composition', () => {
 
       await moveToLineBeginning(page);
 
-      await page.keyboard.imeSetComposition('ｓ', 1, 1);
-      await page.keyboard.imeSetComposition('す', 1, 1);
-      await page.keyboard.imeSetComposition('すｓ', 2, 2);
-      await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
-      await page.keyboard.imeSetComposition('すし', 2, 2);
-      await page.keyboard.insertText('すし');
+      // await page.keyboard.imeSetComposition('ｓ', 1, 1);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'ｓ',
+      });
+      // await page.keyboard.imeSetComposition('す', 1, 1);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'す',
+      });
+      // await page.keyboard.imeSetComposition('すｓ', 2, 2);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 2,
+        selectionEnd: 2,
+        text: 'すｓ',
+      });
+      // await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 3,
+        selectionEnd: 3,
+        text: 'すｓｈ',
+      });
+      // await page.keyboard.imeSetComposition('すし', 2, 2);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 2,
+        selectionEnd: 2,
+        text: 'すし',
+      });
+      // await page.keyboard.insertText('すし');
+      await client.send('Input.insertText', {
+        text: 'すし',
+      });
 
       await assertHTML(
         page,
@@ -669,18 +1133,55 @@ test.describe('Composition', () => {
       browserName,
     }) => {
       // We don't yet support FF.
-      test.skip(browserName === 'firefox');
+      test.skip(browserName !== 'chromium');
 
       await focusEditor(page);
       await enableCompositionKeyEvents(page);
 
-      await page.keyboard.imeSetComposition('ｓ', 1, 1);
-      await page.keyboard.imeSetComposition('す', 1, 1);
-      await page.keyboard.imeSetComposition('すｓ', 2, 2);
-      await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
-      await page.keyboard.imeSetComposition('すし', 2, 2);
-      await page.keyboard.imeSetComposition('す', 1, 1);
-      await page.keyboard.imeSetComposition('', 0, 0);
+      await page.locator('.ContentEditable__root').focus();
+      const client = await page.context().newCDPSession(page);
+      // await page.keyboard.imeSetComposition('ｓ', 1, 1);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'ｓ',
+      });
+      // await page.keyboard.imeSetComposition('す', 1, 1);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'す',
+      });
+      // await page.keyboard.imeSetComposition('すｓ', 2, 2);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 2,
+        selectionEnd: 2,
+        text: 'すｓ',
+      });
+      // await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 3,
+        selectionEnd: 3,
+        text: 'すｓｈ',
+      });
+      // await page.keyboard.imeSetComposition('すし', 2, 2);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 2,
+        selectionEnd: 2,
+        text: 'すし',
+      });
+      // await page.keyboard.imeSetComposition('す', 1, 1);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'す',
+      });
+      // await page.keyboard.imeSetComposition('', 0, 0);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 0,
+        selectionEnd: 0,
+        text: '',
+      });
       // Escape would fire here
       await page.keyboard.insertText('');
 
@@ -700,13 +1201,48 @@ test.describe('Composition', () => {
       await page.keyboard.type(' ');
       await page.keyboard.press('ArrowLeft');
 
-      await page.keyboard.imeSetComposition('ｓ', 1, 1);
-      await page.keyboard.imeSetComposition('す', 1, 1);
-      await page.keyboard.imeSetComposition('すｓ', 2, 2);
-      await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
-      await page.keyboard.imeSetComposition('すし', 2, 2);
-      await page.keyboard.imeSetComposition('す', 1, 1);
-      await page.keyboard.imeSetComposition('', 0, 0);
+      // await page.keyboard.imeSetComposition('ｓ', 1, 1);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'ｓ',
+      });
+      // await page.keyboard.imeSetComposition('す', 1, 1);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'す',
+      });
+      // await page.keyboard.imeSetComposition('すｓ', 2, 2);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 2,
+        selectionEnd: 2,
+        text: 'すｓ',
+      });
+      // await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 3,
+        selectionEnd: 3,
+        text: 'すｓｈ',
+      });
+      // await page.keyboard.imeSetComposition('すし', 2, 2);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 2,
+        selectionEnd: 2,
+        text: 'すし',
+      });
+      // await page.keyboard.imeSetComposition('す', 1, 1);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 1,
+        selectionEnd: 1,
+        text: 'す',
+      });
+      // await page.keyboard.imeSetComposition('', 0, 0);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 0,
+        selectionEnd: 0,
+        text: '',
+      });
       // Escape would fire here
       await page.keyboard.insertText('');
 
@@ -731,18 +1267,45 @@ test.describe('Composition', () => {
       browserName,
       isPlainText,
     }) => {
-      test.skip(isPlainText);
       // We don't yet support FF.
-      test.skip(browserName === 'firefox');
+      test.skip(browserName !== 'chromium' || isPlainText);
 
       await focusEditor(page);
       await enableCompositionKeyEvents(page);
 
-      await page.keyboard.imeSetComposition('ｓ', 0, 1);
-      await page.keyboard.imeSetComposition('す', 0, 1);
-      await page.keyboard.imeSetComposition('すｓ', 0, 2);
-      await page.keyboard.imeSetComposition('すｓｈ', 0, 3);
-      await page.keyboard.imeSetComposition('すｓｈ', 0, 4);
+      await page.locator('.ContentEditable__root').focus();
+      const client = await page.context().newCDPSession(page);
+
+      // await page.keyboard.imeSetComposition('ｓ', 0, 1);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 0,
+        selectionEnd: 1,
+        text: 'ｓ',
+      });
+      // await page.keyboard.imeSetComposition('す', 0, 1);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 0,
+        selectionEnd: 1,
+        text: 'す',
+      });
+      // await page.keyboard.imeSetComposition('すｓ', 0, 2);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 0,
+        selectionEnd: 2,
+        text: 'すｓ',
+      });
+      // await page.keyboard.imeSetComposition('すｓｈ', 0, 3);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 0,
+        selectionEnd: 3,
+        text: 'すｓｈ',
+      });
+      // await page.keyboard.imeSetComposition('すｓｈ', 0, 4);
+      await client.send('Input.imeSetComposition', {
+        selectionStart: 0,
+        selectionEnd: 4,
+        text: 'すｓｈ',
+      });
 
       const isFloatingToolbarDisplayedWhenUseIME = await evaluate(page, () => {
         return !!document.querySelector('.floating-text-format-popup');
@@ -750,7 +1313,10 @@ test.describe('Composition', () => {
 
       expect(isFloatingToolbarDisplayedWhenUseIME).toEqual(false);
 
-      await page.keyboard.insertText('すｓｈ');
+      // await page.keyboard.insertText('すｓｈ');
+      await client.send('Input.insertText', {
+        text: 'すｓｈ',
+      });
       await selectCharacters(page, 'left', 3);
 
       const isFloatingToolbarDisplayed = await evaluate(page, () => {
@@ -760,4 +1326,5 @@ test.describe('Composition', () => {
       expect(isFloatingToolbarDisplayed).toEqual(true);
     });
   });
+  /* eslint-enable sort-keys-fix/sort-keys-fix */
 });

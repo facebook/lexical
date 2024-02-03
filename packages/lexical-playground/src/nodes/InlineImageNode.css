@@ -39,3 +39,56 @@
   display: inline-block;
   pointer-events: none;
 }
+
+.InlineImageNode_Checkbox:checked,
+.InlineImageNode_Checkbox:not(:checked) {
+  position: absolute;
+  left: -9999px;
+}
+
+.InlineImageNode_Checkbox:checked + label,
+.InlineImageNode_Checkbox:not(:checked) + label {
+  position: absolute;
+  padding-right: 55px;
+  cursor: pointer;
+  line-height: 20px;
+  display: inline-block;
+  color: #666;
+}
+
+.InlineImageNode_Checkbox:checked + label:before,
+.InlineImageNode_Checkbox:not(:checked) + label:before {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 18px;
+  height: 18px;
+  border: 1px solid #666;
+  background: #fff;
+}
+
+.InlineImageNode_Checkbox:checked + label:after,
+.InlineImageNode_Checkbox:not(:checked) + label:after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  background: #222222;
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  -webkit-transition: all 0.2s ease;
+  transition: all 0.2s ease;
+}
+
+.InlineImageNode_Checkbox:not(:checked) + label:after {
+  opacity: 0;
+  -webkit-transform: scale(0);
+  transform: scale(0);
+}
+
+.InlineImageNode_Checkbox:checked + label:after {
+  opacity: 1;
+  -webkit-transform: scale(1);
+  transform: scale(1);
+}

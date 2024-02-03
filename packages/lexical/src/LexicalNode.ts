@@ -614,7 +614,7 @@ export class LexicalNode {
       if (!visited.has(parent.__key)) {
         nodes.push(parent);
       }
-      if (parent === targetNode) {
+      if (parent === targetNode || $isRootNode(parent)) {
         break;
       }
       let parentSibling = null;

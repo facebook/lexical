@@ -59,6 +59,7 @@ export function BlockWithAlignableContents({
         const node = $getNodeByKey(nodeKey);
         if ($isDecoratorNode(node)) {
           node.remove();
+          return true;
         }
       }
 

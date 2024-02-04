@@ -152,6 +152,7 @@ export default function PollComponent({
         const node = $getNodeByKey(nodeKey);
         if ($isPollNode(node)) {
           node.remove();
+          return true;
         }
       }
       return false;

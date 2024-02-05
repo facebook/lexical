@@ -20,7 +20,7 @@ test.describe('Tab', () => {
   test(`can tab + IME`, async ({page, isPlainText, browserName}) => {
     test.skip(isPlainText || browserName === 'firefox');
 
-    await page.locator('.ContentEditable__root').focus();
+    // await page.locator('.ContentEditable__root').focus();
     const client = await page.context().newCDPSession(page);
     async function imeType() {
       // await page.keyboard.imeSetComposition('ｓ', 1, 1);

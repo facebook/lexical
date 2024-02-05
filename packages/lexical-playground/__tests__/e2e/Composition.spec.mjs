@@ -188,7 +188,7 @@ test.describe('Composition', () => {
       await enableCompositionKeyEvents(page);
 
       const client = await page.context().newCDPSession(page);
-      await page.locator('.ContentEditable__root').focus();
+      // await page.locator('.ContentEditable__root').focus();
 
       await client.send('Input.imeSetComposition', {
         selectionStart: 1,
@@ -288,7 +288,7 @@ test.describe('Composition', () => {
 
       await page.keyboard.press('ArrowLeft');
 
-      await page.locator('.ContentEditable__root').focus();
+      // await page.locator('.ContentEditable__root').focus();
       const client = await page.context().newCDPSession(page);
       // await page.keyboard.imeSetComposition('ｓ', 1, 1);
       await client.send('Input.imeSetComposition', {
@@ -401,7 +401,7 @@ test.describe('Composition', () => {
       await page.keyboard.press('b');
       await keyUpCtrlOrMeta(page);
 
-      await page.locator('.ContentEditable__root').focus();
+      // await page.locator('.ContentEditable__root').focus();
       const client = await page.context().newCDPSession(page);
       // await page.keyboard.imeSetComposition('ｓ', 1, 1);
       await client.send('Input.imeSetComposition', {
@@ -473,7 +473,7 @@ test.describe('Composition', () => {
 
       await page.keyboard.press('ArrowLeft');
 
-      await page.locator('.ContentEditable__root').focus();
+      // await page.locator('.ContentEditable__root').focus();
       const client = await page.context().newCDPSession(page);
       // await page.keyboard.imeSetComposition('ｓ', 1, 1);
       await client.send('Input.imeSetComposition', {
@@ -675,7 +675,7 @@ test.describe('Composition', () => {
 
       await waitForSelector(page, '.mention');
 
-      await page.locator('.ContentEditable__root').focus();
+      // await page.locator('.ContentEditable__root').focus();
       const client = await page.context().newCDPSession(page);
       // await page.keyboard.imeSetComposition('ｓ', 1, 1);
       await client.send('Input.imeSetComposition', {
@@ -789,7 +789,7 @@ test.describe('Composition', () => {
 
       await moveLeft(page, 9);
 
-      await page.locator('.ContentEditable__root').focus();
+      // await page.locator('.ContentEditable__root').focus();
       const client = await page.context().newCDPSession(page);
       // await page.keyboard.imeSetComposition('ｓ', 1, 1);
       await client.send('Input.imeSetComposition', {
@@ -910,7 +910,7 @@ test.describe('Composition', () => {
       await waitForSelector(page, '#typeahead-menu ul li');
       await page.keyboard.press('Enter');
 
-      await page.locator('.ContentEditable__root').focus();
+      // await page.locator('.ContentEditable__root').focus();
       const client = await page.context().newCDPSession(page);
       // await page.keyboard.imeSetComposition('ｓ', 1, 1);
       await client.send('Input.imeSetComposition', {
@@ -978,7 +978,7 @@ test.describe('Composition', () => {
 
       await page.keyboard.type('#');
 
-      await page.locator('.ContentEditable__root').focus();
+      // await page.locator('.ContentEditable__root').focus();
       const client = await page.context().newCDPSession(page);
       // await page.keyboard.imeSetComposition('ｓ', 1, 1);
       await client.send('Input.imeSetComposition', {
@@ -1138,7 +1138,7 @@ test.describe('Composition', () => {
       await focusEditor(page);
       await enableCompositionKeyEvents(page);
 
-      await page.locator('.ContentEditable__root').focus();
+      // await page.locator('.ContentEditable__root').focus();
       const client = await page.context().newCDPSession(page);
       // await page.keyboard.imeSetComposition('ｓ', 1, 1);
       await client.send('Input.imeSetComposition', {
@@ -1273,7 +1273,7 @@ test.describe('Composition', () => {
       await focusEditor(page);
       await enableCompositionKeyEvents(page);
 
-      await page.locator('.ContentEditable__root').focus();
+      // await page.locator('.ContentEditable__root').focus();
       const client = await page.context().newCDPSession(page);
 
       // await page.keyboard.imeSetComposition('ｓ', 0, 1);

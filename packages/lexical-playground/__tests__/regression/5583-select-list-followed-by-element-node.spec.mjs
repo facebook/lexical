@@ -9,7 +9,6 @@
 import {
   click,
   dragMouse,
-  focusEditor,
   mouseMoveToSelector,
   selectFromInsertDropdown,
   selectorBoundingBox,
@@ -39,7 +38,6 @@ test(`Element node in the middle of a bullet list and selecting doesn't crash`, 
     }
   });
 
-  await focusEditor(page);
   await toggleBulletList(page);
   await page.keyboard.type('one');
   await page.keyboard.press('Enter');

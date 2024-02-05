@@ -584,7 +584,7 @@ export class LexicalNode {
     const isBefore = this.isBefore(targetNode);
     const nodes = [];
     const visited = new Set();
-    let node: LexicalNode | this = this;
+    let node: LexicalNode | this | null = this;
     while (true) {
       if (node === null) {
         break;

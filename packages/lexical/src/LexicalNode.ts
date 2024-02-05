@@ -586,6 +586,9 @@ export class LexicalNode {
     const visited = new Set();
     let node: LexicalNode | this = this;
     while (true) {
+      // if (node === null) {
+      //   break;
+      // }
       const key = node.__key;
       if (!visited.has(key)) {
         visited.add(key);
@@ -614,7 +617,7 @@ export class LexicalNode {
       if (!visited.has(parent.__key)) {
         nodes.push(parent);
       }
-      if (parent === targetNode || $isRootNode(parent)) {
+      if (parent === targetNode) {
         break;
       }
       let parentSibling = null;
@@ -632,6 +635,9 @@ export class LexicalNode {
             nodes.push(ancestor);
           }
         }
+        // else {
+        //   break;
+        // }
       } while (parentSibling === null);
       node = parentSibling;
     }

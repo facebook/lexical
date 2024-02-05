@@ -22,7 +22,7 @@ async function toggleBulletList(page) {
   await click(page, '.dropdown .icon.bullet-list');
 }
 
-test(`Can create mutliple bullet lists and then toggle off the list.`, async ({
+test(`Element node in the middle of a bullet list and selecting doesn't crash`, async ({
   page,
   isPlainText,
 }) => {

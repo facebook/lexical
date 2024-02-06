@@ -183,5 +183,5 @@ Allows you to get a ref to the underlying editor instance outside of LexicalComp
 from a separate part of your application.
 ```jsx
   const editorRef = useRef(null);
-  <EditorRefPlugin editorRef={ref}>
+  <EditorRefPlugin editorRef={editorRef} />
 ```

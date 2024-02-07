@@ -385,8 +385,8 @@ export function registerMarkdownShortcuts(
 
   return editor.registerUpdateListener(
     ({tags, dirtyLeaves, editorState, prevEditorState}) => {
-      // Ignore updates from undo/redo (as changes already calculated)
-      if (tags.has('historic')) {
+      // Ignore updates from collaboration and undo/redo (as changes already calculated)
+      if (tags.has('collaboration') || tags.has('historic')) {
         return;
       }
 

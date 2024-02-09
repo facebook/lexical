@@ -51,7 +51,6 @@ import {
   $getNodeByKey,
   $getRoot,
   $getSelection,
-  $INTERNAL_isPointSelection,
   $isElementNode,
   $isRangeSelection,
   $isRootOrShadowRoot,
@@ -97,6 +96,7 @@ import InsertLayoutDialog from '../LayoutPlugin/InsertLayoutDialog';
 import {INSERT_PAGE_BREAK} from '../PageBreakPlugin';
 import {InsertPollDialog} from '../PollPlugin';
 import {InsertTableDialog} from '../TablePlugin';
+import FontSize from './fontSize';
 
 const blockTypeToBlockName = {
   bullet: 'Bulleted List',
@@ -213,9 +213,7 @@ function BlockFormatDropDown({
   const formatParagraph = () => {
     editor.update(() => {
       const selection = $getSelection();
-      if ($INTERNAL_isPointSelection(selection)) {
-        $setBlocksType(selection, () => $createParagraphNode());
-      }
+      $setBlocksType(selection, () => $createParagraphNode());
     });
   };
 
@@ -223,9 +221,7 @@ function BlockFormatDropDown({
     if (blockType !== headingSize) {
       editor.update(() => {
         const selection = $getSelection();
-        if ($INTERNAL_isPointSelection(selection)) {
-          $setBlocksType(selection, () => $createHeadingNode(headingSize));
-        }
+        $setBlocksType(selection, () => $createHeadingNode(headingSize));
       });
     }
   };
@@ -258,9 +254,7 @@ function BlockFormatDropDown({
     if (blockType !== 'quote') {
       editor.update(() => {
         const selection = $getSelection();
-        if ($INTERNAL_isPointSelection(selection)) {
-          $setBlocksType(selection, () => $createQuoteNode());
-        }
+        $setBlocksType(selection, () => $createQuoteNode());
       });
     }
   };
@@ -270,7 +264,7 @@ function BlockFormatDropDown({
       editor.update(() => {
         let selection = $getSelection();
 
-        if ($INTERNAL_isPointSelection(selection)) {
+        if (selection !== null) {
           if (selection.isCollapsed()) {
             $setBlocksType(selection, () => $createCodeNode());
           } else {
@@ -370,7 +364,7 @@ function FontDropDown({
     (option: string) => {
       editor.update(() => {
         const selection = $getSelection();
-        if ($INTERNAL_isPointSelection(selection)) {
+        if (selection !== null) {
           $patchStyleText(selection, {
             [style]: option,
           });
@@ -728,7 +722,7 @@ export default function ToolbarPlugin({
       activeEditor.update(
         () => {
           const selection = $getSelection();
-          if ($INTERNAL_isPointSelection(selection)) {
+          if (selection !== null) {
             $patchStyleText(selection, styles);
           }
         },
@@ -797,11 +791,13 @@ export default function ToolbarPlugin({
 
   const insertLink = useCallback(() => {
     if (!isLink) {
+      setIsLinkEditMode(true);
       editor.dispatchCommand(TOGGLE_LINK_COMMAND, sanitizeUrl('https://'));
     } else {
+      setIsLinkEditMode(false);
       editor.dispatchCommand(TOGGLE_LINK_COMMAND, null);
     }
-  }, [editor, isLink]);
+  }, [editor, isLink, setIsLinkEditMode]);
 
   const onCodeLanguageSelect = useCallback(
     (value: string) => {
@@ -883,11 +879,11 @@ export default function ToolbarPlugin({
             value={fontFamily}
             editor={editor}
           />
-          <FontDropDown
-            disabled={!isEditable}
-            style={'font-size'}
-            value={fontSize}
+          <Divider />
+          <FontSize
+            selectionFontSize={fontSize.slice(0, -2)}
             editor={editor}
+            disabled={!isEditable}
           />
           <Divider />
           <button
@@ -1019,25 +1015,6 @@ export default function ToolbarPlugin({
             </DropDownItem>
           </DropDown>
           <Divider />
-          {rootType === 'table' && (
-            <>
-              <DropDown
-                disabled={!isEditable}
-                buttonClassName="toolbar-item spaced"
-                buttonLabel="Table"
-                buttonAriaLabel="Open table toolkit"
-                buttonIconClassName="icon table secondary">
-                <DropDownItem
-                  onClick={() => {
-                    /**/
-                  }}
-                  className="item">
-                  <span className="text">TODO</span>
-                </DropDownItem>
-              </DropDown>
-              <Divider />
-            </>
-          )}
           <DropDown
             disabled={!isEditable}
             buttonClassName="toolbar-item spaced"

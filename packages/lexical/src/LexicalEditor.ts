@@ -110,6 +110,7 @@ export type EditorThemeClasses = {
     ulDepth?: Array<EditorThemeClassName>;
     ol?: EditorThemeClassName;
     olDepth?: Array<EditorThemeClassName>;
+    checklist?: EditorThemeClassName;
     listitem?: EditorThemeClassName;
     listitemChecked?: EditorThemeClassName;
     listitemUnchecked?: EditorThemeClassName;

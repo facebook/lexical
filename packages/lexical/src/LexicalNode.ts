@@ -22,7 +22,6 @@ import {
 } from '.';
 import {
   $getSelection,
-  $INTERNAL_isPointSelection,
   $isNodeSelection,
   $isRangeSelection,
   $moveSelectionPointToEnd,
@@ -585,8 +584,11 @@ export class LexicalNode {
     const isBefore = this.isBefore(targetNode);
     const nodes = [];
     const visited = new Set();
-    let node: LexicalNode | this = this;
+    let node: LexicalNode | this | null = this;
     while (true) {
+      if (node === null) {
+        break;
+      }
       const key = node.__key;
       if (!visited.has(key)) {
         visited.add(key);
@@ -595,7 +597,7 @@ export class LexicalNode {
       if (node === targetNode) {
         break;
       }
-      const child = $isElementNode(node)
+      const child: LexicalNode | null = $isElementNode(node)
         ? isBefore
           ? node.getFirstChild()
           : node.getLastChild()
@@ -604,14 +606,14 @@ export class LexicalNode {
         node = child;
         continue;
       }
-      const nextSibling = isBefore
+      const nextSibling: LexicalNode | null = isBefore
         ? node.getNextSibling()
         : node.getPreviousSibling();
       if (nextSibling !== null) {
         node = nextSibling;
         continue;
       }
-      const parent = node.getParentOrThrow();
+      const parent: LexicalNode | null = node.getParentOrThrow();
       if (!visited.has(parent.__key)) {
         nodes.push(parent);
       }
@@ -619,7 +621,7 @@ export class LexicalNode {
         break;
       }
       let parentSibling = null;
-      let ancestor: ElementNode | null = parent;
+      let ancestor: LexicalNode | null = parent;
       do {
         if (ancestor === null) {
           invariant(false, 'getNodesBetween: ancestor is null');
@@ -632,6 +634,8 @@ export class LexicalNode {
           if (parentSibling === null && !visited.has(ancestor.__key)) {
             nodes.push(ancestor);
           }
+        } else {
+          break;
         }
       } while (parentSibling === null);
       node = parentSibling;
@@ -684,7 +688,7 @@ export class LexicalNode {
     const parent = latestNode.__parent;
     const cloneNotNeeded = editor._cloneNotNeeded;
     const selection = $getSelection();
-    if ($INTERNAL_isPointSelection(selection)) {
+    if (selection !== null) {
       selection.setCachedNodes(null);
     }
     if (cloneNotNeeded.has(key)) {

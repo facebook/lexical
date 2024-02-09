@@ -306,7 +306,8 @@ import {
   DOMConversionOutput,
   NodeKey,
   TextNode,
-  SerializedTextNode
+  SerializedTextNode,
+  LexicalNode
 } from 'lexical';
 
 export class ExtendedTextNode extends TextNode {
@@ -371,6 +372,14 @@ export class ExtendedTextNode extends TextNode {
       version: 1,
     }
   }
+}
+
+export function $createExtendedTextNode(text: string): ExtendedTextNode {
+	return new ExtendedTextNode(text, className);
+}
+
+export function $isExtendedTextNode(node: LexicalNode | null | undefined): node is ExtendedTextNode {
+	return node instanceof ExtendedTextNode;
 }
 
 function patchStyleConversion(

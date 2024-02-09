@@ -349,14 +349,34 @@ function onSelectionChange(
           }
         }
       } else {
-        let combinedFormat = IS_ALL_FORMATTING;
-        let hasTextNodes = false;
-
+        const anchorKey = anchor.key;
+        const focus = selection.focus;
+        const focusKey = focus.key;
         const nodes = selection.getNodes();
         const nodesLength = nodes.length;
+        const isBackward = selection.isBackward();
+        const startOffset = isBackward ? focusOffset : anchorOffset;
+        const endOffset = isBackward ? anchorOffset : focusOffset;
+        const startKey = isBackward ? focusKey : anchorKey;
+        const endKey = isBackward ? anchorKey : focusKey;
+        let combinedFormat = IS_ALL_FORMATTING;
+        let hasTextNodes = false;
         for (let i = 0; i < nodesLength; i++) {
           const node = nodes[i];
-          if ($isTextNode(node)) {
+          const textContentSize = node.getTextContentSize();
+          if (
+            $isTextNode(node) &&
+            textContentSize !== 0 &&
+            // Exclude empty text nodes at boundaries resulting from user's selection
+            !(
+              (i === 0 &&
+                node.__key === startKey &&
+                startOffset === textContentSize) ||
+              (i === nodesLength - 1 &&
+                node.__key === endKey &&
+                endOffset === 0)
+            )
+          ) {
             // TODO: what about style?
             hasTextNodes = true;
             combinedFormat &= node.getFormat();

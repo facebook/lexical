@@ -26,7 +26,7 @@ import {$getRoot, $isElementNode, $isTextNode} from 'lexical';
 /**
  * How you parse your html string to get a document is left up to you. In the browser you can use the native
  * DOMParser API to generate a document (see clipboard.ts), but to use in a headless environment you can use JSDom
- * or an equivilant library and pass in the document here.
+ * or an equivalent library and pass in the document here.
  */
 export function $generateNodesFromDOM(
   editor: LexicalEditor,
@@ -51,7 +51,10 @@ export function $generateHtmlFromNodes(
   editor: LexicalEditor,
   selection?: BaseSelection | null,
 ): string {
-  if (typeof document === 'undefined' || typeof window === 'undefined') {
+  if (
+    typeof document === 'undefined' ||
+    (typeof window === 'undefined' && typeof global.window === 'undefined')
+  ) {
     throw new Error(
       'To use $generateHtmlFromNodes in headless mode please initialize a headless browser implementation such as JSDom before calling this function.',
     );
@@ -76,7 +79,7 @@ function $appendNodesToHTML(
   selection: BaseSelection | null = null,
 ): boolean {
   let shouldInclude =
-    selection != null ? currentNode.isSelected(selection) : true;
+    selection !== null ? currentNode.isSelected(selection) : true;
   const shouldExclude =
     $isElementNode(currentNode) && currentNode.excludeFromCopy('html');
   let target = currentNode;
@@ -84,7 +87,7 @@ function $appendNodesToHTML(
   if (selection !== null) {
     let clone = $cloneWithProperties<LexicalNode>(currentNode);
     clone =
-      $isTextNode(clone) && selection != null
+      $isTextNode(clone) && selection !== null
         ? $sliceSelectedTextNodeContent(selection, clone)
         : clone;
     target = clone;

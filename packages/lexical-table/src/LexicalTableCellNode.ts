@@ -14,7 +14,7 @@ import type {
   LexicalEditor,
   LexicalNode,
   NodeKey,
-  SerializedGridCellNode,
+  SerializedElementNode,
   Spread,
 } from 'lexical';
 
@@ -24,7 +24,7 @@ import {
   $createParagraphNode,
   $isElementNode,
   $isLineBreakNode,
-  DEPRECATED_GridCellNode,
+  ElementNode,
 } from 'lexical';
 
 import {PIXEL_VALUE_REG_EXP} from './constants';
@@ -41,15 +41,21 @@ export type TableCellHeaderState =
 
 export type SerializedTableCellNode = Spread<
   {
+    colSpan?: number;
+    rowSpan?: number;
     headerState: TableCellHeaderState;
     width?: number;
     backgroundColor?: null | string;
   },
-  SerializedGridCellNode
+  SerializedElementNode
 >;
 
 /** @noInheritDoc */
-export class TableCellNode extends DEPRECATED_GridCellNode {
+export class TableCellNode extends ElementNode {
+  /** @internal */
+  __colSpan: number;
+  /** @internal */
+  __rowSpan: number;
   /** @internal */
   __headerState: TableCellHeaderState;
   /** @internal */
@@ -105,7 +111,9 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
     width?: number,
     key?: NodeKey,
   ) {
-    super(colSpan, key);
+    super(key);
+    this.__colSpan = colSpan;
+    this.__rowSpan = 1;
     this.__headerState = headerState;
     this.__width = width;
     this.__backgroundColor = null;
@@ -176,10 +184,30 @@ export class TableCellNode extends DEPRECATED_GridCellNode {
     return {
       ...super.exportJSON(),
       backgroundColor: this.getBackgroundColor(),
+      colSpan: this.__colSpan,
       headerState: this.__headerState,
+      rowSpan: this.__rowSpan,
       type: 'tablecell',
       width: this.getWidth(),
     };
+  }
+
+  getColSpan(): number {
+    return this.__colSpan;
+  }
+
+  setColSpan(colSpan: number): this {
+    this.getWritable().__colSpan = colSpan;
+    return this;
+  }
+
+  getRowSpan(): number {
+    return this.__rowSpan;
+  }
+
+  setRowSpan(rowSpan: number): this {
+    this.getWritable().__rowSpan = rowSpan;
+    return this;
   }
 
   getTag(): string {

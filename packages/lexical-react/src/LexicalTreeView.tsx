@@ -10,7 +10,6 @@ import type {
   BaseSelection,
   EditorState,
   ElementNode,
-  INTERNAL_PointSelection,
   LexicalEditor,
   LexicalNode,
   RangeSelection,
@@ -20,7 +19,7 @@ import type {
 import {$generateHtmlFromNodes} from '@lexical/html';
 import {$isLinkNode, LinkNode} from '@lexical/link';
 import {$isMarkNode} from '@lexical/mark';
-import {$isGridSelection, GridSelection} from '@lexical/table';
+import {$isTableSelection, TableSelection} from '@lexical/table';
 import {mergeRegister} from '@lexical/utils';
 import {
   $getRoot,
@@ -374,8 +373,8 @@ function printNodeSelection(selection: BaseSelection): string {
   return `: node\n  └ [${Array.from(selection._nodes).join(', ')}]`;
 }
 
-function printGridSelection(selection: GridSelection): string {
-  return `: grid\n  └ { grid: ${selection.gridKey}, anchorCell: ${selection.anchor.key}, focusCell: ${selection.focus.key} }`;
+function printTableSelection(selection: TableSelection): string {
+  return `: table\n  └ { table: ${selection.tableKey}, anchorCell: ${selection.anchor.key}, focusCell: ${selection.focus.key} }`;
 }
 
 function generateContent(
@@ -428,8 +427,8 @@ function generateContent(
       ? ': null'
       : $isRangeSelection(selection)
       ? printRangeSelection(selection)
-      : $isGridSelection(selection)
-      ? printGridSelection(selection)
+      : $isTableSelection(selection)
+      ? printTableSelection(selection)
       : printNodeSelection(selection);
   });
 
@@ -724,10 +723,13 @@ function prettifyHTML(node: Element, level: number) {
 
 function $getSelectionStartEnd(
   node: LexicalNode,
-  selection: INTERNAL_PointSelection,
+  selection: BaseSelection,
 ): [number, number] {
-  const anchor = selection.anchor;
-  const focus = selection.focus;
+  const anchorAndFocus = selection.getStartEndPoints();
+  if ($isNodeSelection(selection) || anchorAndFocus === null) {
+    return [-1, -1];
+  }
+  const [anchor, focus] = anchorAndFocus;
   const textContent = node.getTextContent();
   const textLength = textContent.length;
 

@@ -335,8 +335,10 @@ editor.registerUpdateListener(({editorState}) => {
 
 ## Documentation
 
-- [How Lexical was designed](/docs/design.md)
-- [Testing](/docs/testing.md)
+- [Getting started](https://lexical.dev/docs/intro)
+- [Concepts](https://lexical.dev/docs/concepts/editor-state)
+- [How Lexical was designed](https://lexical.dev/docs/design)
+- [Testing](https://lexical.dev/docs/testing)
 
 ## Browser Support
 

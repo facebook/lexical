@@ -11,10 +11,10 @@ import type {Spread} from 'lexical';
 import {addClassNamesToElement} from '@lexical/utils';
 import {
   $applyNodeReplacement,
-  DEPRECATED_GridRowNode,
   DOMConversionMap,
   DOMConversionOutput,
   EditorConfig,
+  ElementNode,
   LexicalNode,
   NodeKey,
   SerializedElementNode,
@@ -30,7 +30,7 @@ export type SerializedTableRowNode = Spread<
 >;
 
 /** @noInheritDoc */
-export class TableRowNode extends DEPRECATED_GridRowNode {
+export class TableRowNode extends ElementNode {
   /** @internal */
   __height?: number;
 

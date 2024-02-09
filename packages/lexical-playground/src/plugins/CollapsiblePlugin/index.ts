@@ -112,11 +112,17 @@ export default function CollapsiblePlugin(): null {
             parent !== null &&
             parent.getLastChild<LexicalNode>() === container
           ) {
-            const lastDescendant = container.getLastDescendant<LexicalNode>();
+            const titleParagraph = container.getFirstDescendant<LexicalNode>();
+            const contentParagraph = container.getLastDescendant<LexicalNode>();
+
             if (
-              lastDescendant !== null &&
-              selection.anchor.key === lastDescendant.getKey() &&
-              selection.anchor.offset === lastDescendant.getTextContentSize()
+              (contentParagraph !== null &&
+                selection.anchor.key === contentParagraph.getKey() &&
+                selection.anchor.offset ===
+                  contentParagraph.getTextContentSize()) ||
+              (titleParagraph !== null &&
+                selection.anchor.key === titleParagraph.getKey() &&
+                selection.anchor.offset === titleParagraph.getTextContentSize())
             ) {
               container.insertAfter($createParagraphNode());
             }

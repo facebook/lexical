@@ -24,12 +24,6 @@ import {
   $isRootNode,
   $isTextNode,
   $setSelection,
-  DEPRECATED_$isGridCellNode,
-  DEPRECATED_$isGridNode,
-  DEPRECATED_$isGridRowNode,
-  DEPRECATED_GridCellNode,
-  DEPRECATED_GridNode,
-  DEPRECATED_GridRowNode,
   SELECTION_CHANGE_COMMAND,
   TextNode,
 } from '.';
@@ -46,7 +40,6 @@ import {
   isCurrentlyReadOnlyMode,
 } from './LexicalUpdates';
 import {
-  $findMatchingParent,
   $getAdjacentNode,
   $getAncestor,
   $getCompositionKey,
@@ -72,7 +65,7 @@ import {
 import {$createTabNode, $isTabNode} from './nodes/LexicalTabNode';
 
 export type TextPointType = {
-  _selection: INTERNAL_PointSelection;
+  _selection: BaseSelection;
   getNode: () => TextNode;
   is: (point: PointType) => boolean;
   isBefore: (point: PointType) => boolean;
@@ -83,7 +76,7 @@ export type TextPointType = {
 };
 
 export type ElementPointType = {
-  _selection: INTERNAL_PointSelection;
+  _selection: BaseSelection;
   getNode: () => ElementNode;
   is: (point: PointType) => boolean;
   isBefore: (point: PointType) => boolean;
@@ -95,18 +88,11 @@ export type ElementPointType = {
 
 export type PointType = TextPointType | ElementPointType;
 
-export type GridMapValueType = {
-  cell: DEPRECATED_GridCellNode;
-  startRow: number;
-  startColumn: number;
-};
-export type GridMapType = Array<Array<GridMapValueType>>;
-
 export class Point {
   key: NodeKey;
   offset: number;
   type: 'text' | 'element';
-  _selection: INTERNAL_PointSelection | null;
+  _selection: BaseSelection | null;
 
   constructor(key: NodeKey, offset: number, type: 'text' | 'element') {
     this._selection = null;
@@ -260,8 +246,10 @@ function $setPointValues(
 }
 
 export interface BaseSelection {
-  clone(): BaseSelection;
+  _cachedNodes: Array<LexicalNode> | null;
   dirty: boolean;
+
+  clone(): BaseSelection;
   extract(): Array<LexicalNode>;
   getNodes(): Array<LexicalNode>;
   getTextContent(): string;
@@ -269,92 +257,22 @@ export interface BaseSelection {
   insertRawText(text: string): void;
   is(selection: null | BaseSelection): boolean;
   insertNodes(nodes: Array<LexicalNode>): void;
-  getCachedNodes(): null | Array<LexicalNode>;
-  setCachedNodes(nodes: null | Array<LexicalNode>): void;
-}
-
-/**
- * This class is being used only for internal use case of migration GridSelection outside of core package.
- * DO NOT USE THIS CLASS DIRECTLY.
- */
-export abstract class INTERNAL_PointSelection implements BaseSelection {
-  anchor: PointType;
-  focus: PointType;
-  dirty: boolean;
-  _cachedNodes: Array<LexicalNode> | null;
-
-  constructor(anchor: PointType, focus: PointType) {
-    this.anchor = anchor;
-    this.focus = focus;
-    anchor._selection = this;
-    focus._selection = this;
-    this._cachedNodes = null;
-    this.dirty = false;
-  }
-  getCachedNodes(): LexicalNode[] | null {
-    return this._cachedNodes;
-  }
-
-  setCachedNodes(nodes: LexicalNode[] | null): void {
-    this._cachedNodes = nodes;
-  }
-
-  is(selection: null | BaseSelection): boolean {
-    if (!$INTERNAL_isPointSelection(selection)) {
-      return false;
-    }
-    return this.anchor.is(selection.anchor) && this.focus.is(selection.focus);
-  }
-
-  isCollapsed(): boolean {
-    return false;
-  }
-
-  extract(): Array<LexicalNode> {
-    return this.getNodes();
-  }
-
-  abstract clone(): INTERNAL_PointSelection;
-
-  abstract getNodes(): Array<LexicalNode>;
-
-  abstract getTextContent(): string;
-
-  abstract insertText(text: string): void;
-
-  abstract insertRawText(text: string): void;
-
-  abstract insertNodes(nodes: Array<LexicalNode>): void;
-
-  /**
-   * Returns whether the Selection is "backwards", meaning the focus
-   * logically precedes the anchor in the EditorState.
-   * @returns true if the Selection is backwards, false otherwise.
-   */
-  isBackward(): boolean {
-    return this.focus.isBefore(this.anchor);
-  }
-
-  /**
-   * Returns the character-based offsets of the Selection, accounting for non-text Points
-   * by using the children size or text content.
-   *
-   * @returns the character offsets for the Selection
-   */
-  getCharacterOffsets(): [number, number] {
-    return getCharacterOffsets(this);
-  }
+  getStartEndPoints(): null | [PointType, PointType];
+  isCollapsed(): boolean;
+  isBackward(): boolean;
+  getCachedNodes(): LexicalNode[] | null;
+  setCachedNodes(nodes: LexicalNode[] | null): void;
 }
 
 export class NodeSelection implements BaseSelection {
   _nodes: Set<NodeKey>;
+  _cachedNodes: Array<LexicalNode> | null;
   dirty: boolean;
-  _cachedNodes: null | Array<LexicalNode>;
 
   constructor(objects: Set<NodeKey>) {
-    this.dirty = false;
-    this._nodes = objects;
     this._cachedNodes = null;
+    this._nodes = objects;
+    this.dirty = false;
   }
 
   getCachedNodes(): LexicalNode[] | null {
@@ -372,6 +290,18 @@ export class NodeSelection implements BaseSelection {
     const a: Set<NodeKey> = this._nodes;
     const b: Set<NodeKey> = selection._nodes;
     return a.size === b.size && Array.from(a).every((key) => b.has(key));
+  }
+
+  isCollapsed(): boolean {
+    return false;
+  }
+
+  isBackward(): boolean {
+    return false;
+  }
+
+  getStartEndPoints(): null {
+    return null;
   }
 
   add(key: NodeKey): void {
@@ -464,73 +394,13 @@ export function $isRangeSelection(x: unknown): x is RangeSelection {
   return x instanceof RangeSelection;
 }
 
-export function $INTERNAL_isPointSelection(
-  x: unknown,
-): x is INTERNAL_PointSelection {
-  return x instanceof INTERNAL_PointSelection;
-}
-
-export function DEPRECATED_$getGridCellNodeRect(
-  GridCellNode: DEPRECATED_GridCellNode,
-): {
-  rowIndex: number;
-  columnIndex: number;
-  rowSpan: number;
-  colSpan: number;
-} | null {
-  const [CellNode, , GridNode] = DEPRECATED_$getNodeTriplet(GridCellNode);
-  const rows = GridNode.getChildren<DEPRECATED_GridRowNode>();
-  const rowCount = rows.length;
-  const columnCount = rows[0].getChildren().length;
-
-  // Create a matrix of the same size as the table to track the position of each cell
-  const cellMatrix = new Array(rowCount);
-  for (let i = 0; i < rowCount; i++) {
-    cellMatrix[i] = new Array(columnCount);
-  }
-
-  for (let rowIndex = 0; rowIndex < rowCount; rowIndex++) {
-    const row = rows[rowIndex];
-    const cells = row.getChildren<DEPRECATED_GridCellNode>();
-    let columnIndex = 0;
-
-    for (let cellIndex = 0; cellIndex < cells.length; cellIndex++) {
-      // Find the next available position in the matrix, skip the position of merged cells
-      while (cellMatrix[rowIndex][columnIndex]) {
-        columnIndex++;
-      }
-
-      const cell = cells[cellIndex];
-      const rowSpan = cell.__rowSpan || 1;
-      const colSpan = cell.__colSpan || 1;
-
-      // Put the cell into the corresponding position in the matrix
-      for (let i = 0; i < rowSpan; i++) {
-        for (let j = 0; j < colSpan; j++) {
-          cellMatrix[rowIndex + i][columnIndex + j] = cell;
-        }
-      }
-
-      // Return to the original index, row span and column span of the cell.
-      if (CellNode === cell) {
-        return {
-          colSpan,
-          columnIndex,
-          rowIndex,
-          rowSpan,
-        };
-      }
-
-      columnIndex += colSpan;
-    }
-  }
-
-  return null;
-}
-
-export class RangeSelection extends INTERNAL_PointSelection {
+export class RangeSelection implements BaseSelection {
   format: number;
   style: string;
+  anchor: PointType;
+  focus: PointType;
+  _cachedNodes: Array<LexicalNode> | null;
+  dirty: boolean;
 
   constructor(
     anchor: PointType,
@@ -538,9 +408,22 @@ export class RangeSelection extends INTERNAL_PointSelection {
     format: number,
     style: string,
   ) {
-    super(anchor, focus);
+    this.anchor = anchor;
+    this.focus = focus;
+    anchor._selection = this;
+    focus._selection = this;
+    this._cachedNodes = null;
     this.format = format;
     this.style = style;
+    this.dirty = false;
+  }
+
+  getCachedNodes(): LexicalNode[] | null {
+    return this._cachedNodes;
+  }
+
+  setCachedNodes(nodes: LexicalNode[] | null): void {
+    this._cachedNodes = nodes;
   }
 
   /**
@@ -664,7 +547,7 @@ export class RangeSelection extends INTERNAL_PointSelection {
     const anchor = this.anchor;
     const focus = this.focus;
     const isBefore = anchor.isBefore(focus);
-    const [anchorOffset, focusOffset] = getCharacterOffsets(this);
+    const [anchorOffset, focusOffset] = $getCharacterOffsets(this);
     let textContent = '';
     let prevWasElement = true;
     for (let i = 0; i < nodes.length; i++) {
@@ -1463,7 +1346,7 @@ export class RangeSelection extends INTERNAL_PointSelection {
     const focus = this.focus;
     let firstNode = selectedNodes[0];
     let lastNode = selectedNodes[lastIndex];
-    const [anchorOffset, focusOffset] = getCharacterOffsets(this);
+    const [anchorOffset, focusOffset] = $getCharacterOffsets(this);
 
     if (selectedNodesLength === 0) {
       return [];
@@ -1810,6 +1693,19 @@ export class RangeSelection extends INTERNAL_PointSelection {
     }
     this.removeText();
   }
+
+  /**
+   * Returns whether the Selection is "backwards", meaning the focus
+   * logically precedes the anchor in the EditorState.
+   * @returns true if the Selection is backwards, false otherwise.
+   */
+  isBackward(): boolean {
+    return this.focus.isBefore(this.anchor);
+  }
+
+  getStartEndPoints(): null | [PointType, PointType] {
+    return [this.anchor, this.focus];
+  }
 }
 
 export function $isNodeSelection(x: unknown): x is NodeSelection {
@@ -1828,11 +1724,14 @@ function getCharacterOffset(point: PointType): number {
     : 0;
 }
 
-function getCharacterOffsets(
-  selection: INTERNAL_PointSelection,
+export function $getCharacterOffsets(
+  selection: BaseSelection,
 ): [number, number] {
-  const anchor = selection.anchor;
-  const focus = selection.focus;
+  const anchorAndFocus = selection.getStartEndPoints();
+  if (anchorAndFocus === null) {
+    return [0, 0];
+  }
+  const [anchor, focus] = anchorAndFocus;
   if (
     anchor.type === 'element' &&
     focus.type === 'element' &&
@@ -2748,108 +2647,6 @@ export function $getTextContent(): string {
     return '';
   }
   return selection.getTextContent();
-}
-
-export function DEPRECATED_$computeGridMap(
-  grid: DEPRECATED_GridNode,
-  cellA: DEPRECATED_GridCellNode,
-  cellB: DEPRECATED_GridCellNode,
-): [GridMapType, GridMapValueType, GridMapValueType] {
-  const tableMap: GridMapType = [];
-  let cellAValue: null | GridMapValueType = null;
-  let cellBValue: null | GridMapValueType = null;
-  function write(
-    startRow: number,
-    startColumn: number,
-    cell: DEPRECATED_GridCellNode,
-  ) {
-    const value = {
-      cell,
-      startColumn,
-      startRow,
-    };
-    const rowSpan = cell.__rowSpan;
-    const colSpan = cell.__colSpan;
-    for (let i = 0; i < rowSpan; i++) {
-      if (tableMap[startRow + i] === undefined) {
-        tableMap[startRow + i] = [];
-      }
-      for (let j = 0; j < colSpan; j++) {
-        tableMap[startRow + i][startColumn + j] = value;
-      }
-    }
-    if (cellA.is(cell)) {
-      cellAValue = value;
-    }
-    if (cellB.is(cell)) {
-      cellBValue = value;
-    }
-  }
-  function isEmpty(row: number, column: number) {
-    return tableMap[row] === undefined || tableMap[row][column] === undefined;
-  }
-
-  const gridChildren = grid.getChildren();
-  for (let i = 0; i < gridChildren.length; i++) {
-    const row = gridChildren[i];
-    invariant(
-      DEPRECATED_$isGridRowNode(row),
-      'Expected GridNode children to be GridRowNode',
-    );
-    const rowChildren = row.getChildren();
-    let j = 0;
-    for (const cell of rowChildren) {
-      invariant(
-        DEPRECATED_$isGridCellNode(cell),
-        'Expected GridRowNode children to be GridCellNode',
-      );
-      while (!isEmpty(i, j)) {
-        j++;
-      }
-      write(i, j, cell);
-      j += cell.__colSpan;
-    }
-  }
-  invariant(cellAValue !== null, 'Anchor not found in Grid');
-  invariant(cellBValue !== null, 'Focus not found in Grid');
-  return [tableMap, cellAValue, cellBValue];
-}
-
-export function DEPRECATED_$getNodeTriplet(
-  source: PointType | LexicalNode | DEPRECATED_GridCellNode,
-): [DEPRECATED_GridCellNode, DEPRECATED_GridRowNode, DEPRECATED_GridNode] {
-  let cell: DEPRECATED_GridCellNode;
-  if (source instanceof DEPRECATED_GridCellNode) {
-    cell = source;
-  } else if (source instanceof LexicalNode) {
-    const cell_ = $findMatchingParent(source, DEPRECATED_$isGridCellNode);
-    invariant(
-      DEPRECATED_$isGridCellNode(cell_),
-      'Expected to find a parent GridCellNode',
-    );
-    cell = cell_;
-  } else {
-    const cell_ = $findMatchingParent(
-      source.getNode(),
-      DEPRECATED_$isGridCellNode,
-    );
-    invariant(
-      DEPRECATED_$isGridCellNode(cell_),
-      'Expected to find a parent GridCellNode',
-    );
-    cell = cell_;
-  }
-  const row = cell.getParent();
-  invariant(
-    DEPRECATED_$isGridRowNode(row),
-    'Expected GridCellNode to have a parent GridRowNode',
-  );
-  const grid = row.getParent();
-  invariant(
-    DEPRECATED_$isGridNode(grid),
-    'Expected GridRowNode to have a parent GridNode',
-  );
-  return [cell, row, grid];
 }
 
 function removeTextAndSplitBlock(selection: RangeSelection): number {

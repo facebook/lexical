@@ -52,7 +52,6 @@ import {
   $getRoot,
   $getSelection,
   $insertNodes,
-  $INTERNAL_isPointSelection,
   $isDecoratorNode,
   $isElementNode,
   $isNodeSelection,
@@ -439,7 +438,7 @@ function onPasteForRichText(
         event instanceof InputEvent || event instanceof KeyboardEvent
           ? null
           : event.clipboardData;
-      if (clipboardData != null && $INTERNAL_isPointSelection(selection)) {
+      if (clipboardData != null && selection !== null) {
         $insertDataTransferForRichText(clipboardData, selection, editor);
       }
     },
@@ -582,11 +581,11 @@ export function registerRichText(editor: LexicalEditor): () => void {
         const selection = $getSelection();
 
         if (typeof eventOrText === 'string') {
-          if ($INTERNAL_isPointSelection(selection)) {
+          if (selection !== null) {
             selection.insertText(eventOrText);
           }
         } else {
-          if (!$INTERNAL_isPointSelection(selection)) {
+          if (selection === null) {
             return false;
           }
 
@@ -1033,7 +1032,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
         }
 
         const selection = $getSelection();
-        if ($INTERNAL_isPointSelection(selection)) {
+        if (selection !== null) {
           onPasteForRichText(event, editor);
           return true;
         }

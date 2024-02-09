@@ -11,9 +11,9 @@ import type {
   LexicalEditor,
   LexicalNode,
   NodeKey,
+  BaseSelection,
   NodeSelection,
   Point,
-  INTERNAL_PointSelection,
   RangeSelection,
 } from 'lexical';
 declare export function $cloneWithProperties<T: LexicalNode>(node: T): T;
@@ -21,7 +21,7 @@ declare export function getStyleObjectFromCSS(css: string): {
   [string]: string,
 };
 declare export function $patchStyleText(
-  selection: INTERNAL_PointSelection,
+  selection: BaseSelection,
   patch: {
     [string]: string | null,
   },
@@ -45,7 +45,7 @@ declare export function $moveCharacter(
 ): void;
 declare export function $selectAll(selection: RangeSelection): void;
 declare export function $wrapNodes(
-  selection: INTERNAL_PointSelection,
+  selection: BaseSelection,
   createElement: () => ElementNode,
   wrappingElement?: ElementNode,
 ): void;

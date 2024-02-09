@@ -12,6 +12,7 @@ import type {
   DOMConversionOutput,
   DOMExportOutput,
   EditorConfig,
+  LexicalEditor,
   LexicalNode,
   NodeKey,
   ParagraphNode,
@@ -129,8 +130,9 @@ export class CodeNode extends ElementNode {
     return false;
   }
 
-  exportDOM(): DOMExportOutput {
+  exportDOM(editor: LexicalEditor): DOMExportOutput {
     const element = document.createElement('pre');
+    addClassNamesToElement(element, editor._config.theme.code);
     element.setAttribute('spellcheck', 'false');
     const language = this.getLanguage();
     if (language) {

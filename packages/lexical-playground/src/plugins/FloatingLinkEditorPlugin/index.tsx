@@ -7,11 +7,17 @@
  */
 import './index.css';
 
-import {$isAutoLinkNode, $isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
+import {
+  $createLinkNode,
+  $isAutoLinkNode,
+  $isLinkNode,
+  TOGGLE_LINK_COMMAND,
+} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$findMatchingParent, mergeRegister} from '@lexical/utils';
 import {
   $getSelection,
+  $isLineBreakNode,
   $isRangeSelection,
   BaseSelection,
   CLICK_COMMAND,
@@ -188,6 +194,20 @@ function FloatingLinkEditor({
     if (lastSelection !== null) {
       if (linkUrl !== '') {
         editor.dispatchCommand(TOGGLE_LINK_COMMAND, sanitizeUrl(editedLinkUrl));
+        editor.update(() => {
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            const parent = getSelectedNode(selection).getParent();
+            if ($isAutoLinkNode(parent)) {
+              const linkNode = $createLinkNode(parent.getURL(), {
+                rel: parent.__rel,
+                target: parent.__target,
+                title: parent.__title,
+              });
+              parent.replace(linkNode, true);
+            }
+          }
+        });
       }
       setEditedLinkUrl('https://');
       setIsLinkEditMode(false);
@@ -275,11 +295,30 @@ function useFloatingLinkEditorToolbar(
     function updateToolbar() {
       const selection = $getSelection();
       if ($isRangeSelection(selection)) {
-        const node = getSelectedNode(selection);
-        const linkParent = $findMatchingParent(node, $isLinkNode);
-        const autoLinkParent = $findMatchingParent(node, $isAutoLinkNode);
-        // We don't want this menu to open for auto links.
-        if (linkParent !== null && autoLinkParent === null) {
+        const focusNode = getSelectedNode(selection);
+        const focusLinkNode = $findMatchingParent(focusNode, $isLinkNode);
+        const focusAutoLinkNode = $findMatchingParent(
+          focusNode,
+          $isAutoLinkNode,
+        );
+        if (!(focusLinkNode || focusAutoLinkNode)) {
+          setIsLink(false);
+          return;
+        }
+        const badNode = selection.getNodes().find((node) => {
+          const linkNode = $findMatchingParent(node, $isLinkNode);
+          const autoLinkNode = $findMatchingParent(node, $isAutoLinkNode);
+          if (
+            !linkNode?.is(focusLinkNode) &&
+            !autoLinkNode?.is(focusAutoLinkNode) &&
+            !linkNode &&
+            !autoLinkNode &&
+            !$isLineBreakNode(node)
+          ) {
+            return node;
+          }
+        });
+        if (!badNode) {
           setIsLink(true);
         } else {
           setIsLink(false);

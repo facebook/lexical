@@ -247,7 +247,7 @@ function $appendNodesToJSON(
   targetArray: Array<BaseSerializedNode> = [],
 ): boolean {
   let shouldInclude =
-    selection != null ? currentNode.isSelected(selection) : true;
+    selection !== null ? currentNode.isSelected(selection) : true;
   const shouldExclude =
     $isElementNode(currentNode) && currentNode.excludeFromCopy('html');
   let target = currentNode;
@@ -255,7 +255,7 @@ function $appendNodesToJSON(
   if (selection !== null) {
     let clone = $cloneWithProperties<LexicalNode>(currentNode);
     clone =
-      $isTextNode(clone) && selection != null
+      $isTextNode(clone) && selection !== null
         ? $sliceSelectedTextNodeContent(selection, clone)
         : clone;
     target = clone;

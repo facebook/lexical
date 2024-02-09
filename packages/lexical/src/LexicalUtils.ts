@@ -1615,3 +1615,11 @@ export function $getAncestor<NodeType extends LexicalNode = LexicalNode>(
   }
   return predicate(parent) ? parent : null;
 }
+
+/**
+ * Utility function for accessing current active editor instance.
+ * @returns Current active editor
+ */
+export function $getEditor(): LexicalEditor {
+  return getActiveEditor();
+}

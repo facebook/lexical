@@ -92,7 +92,7 @@ save it in a database. We can do this via the an [update listener](https://lexic
 ```jsx
 // When the editor changes, you can get notified via the
 // OnChangePlugin!
-function OnChangePlugin({ onChange }) {
+function MyOnChangePlugin({ onChange }) {
   // Access the editor through the LexicalComposerContext
   const [editor] = useLexicalComposerContext();
   // Wrap our listener in useEffect to handle the teardown and avoid stale references.
@@ -103,20 +103,21 @@ function OnChangePlugin({ onChange }) {
       onChange(editorState);
     });
   }, [editor, onChange]);
-
+  return null;
 }
 ```
 
 Now, we can implement this in our editor and save the EditorState in a React state variable:
 
 ```jsx
-function OnChangePlugin({ onChange }) {
+function MyOnChangePlugin({ onChange }) {
   const [editor] = useLexicalComposerContext();
   useEffect(() => {
     return editor.registerUpdateListener(({editorState}) => {
       onChange(editorState);
     });
   }, [editor, onChange]);
+  return null;
 }
 
 function Editor() {
@@ -136,7 +137,7 @@ function Editor() {
       />
       <HistoryPlugin />
       <MyCustomAutoFocusPlugin />
-      <OnChangePlugin onChange={onChange}/>
+      <MyOnChangePlugin onChange={onChange}/>
     </LexicalComposer>
   );
 }
@@ -145,13 +146,14 @@ function Editor() {
 Ok, so now we're saving the EditorState object in a React state variable, but we can't save a JavaScript object to our database - so how do we persist the state so we can load it later? We need to serialize it to a storage format. For this purpose (among others) Lexical provides several serialization APIs that convert EditorState to a string that can be sent over the network and saved to a database. Building on our previous example, we can do that this way:
 
 ```jsx
-function OnChangePlugin({ onChange }) {
+function MyOnChangePlugin({ onChange }) {
   const [editor] = useLexicalComposerContext();
   useEffect(() => {
     return editor.registerUpdateListener(({editorState}) => {
       onChange(editorState);
     });
   }, [editor, onChange]);
+  return null;
 }
 
 function Editor() {
@@ -168,7 +170,7 @@ function Editor() {
   return (
     <LexicalComposer initialConfig={initialConfig}>
       {/*...*/}
-      <OnChangePlugin onChange={onChange}/>
+      <MyOnChangePlugin onChange={onChange}/>
     </LexicalComposer>
   );
 

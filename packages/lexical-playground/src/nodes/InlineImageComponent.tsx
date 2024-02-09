@@ -211,6 +211,7 @@ export default function InlineImageComponent({
         const node = $getNodeByKey(nodeKey);
         if ($isInlineImageNode(node)) {
           node.remove();
+          return true;
         }
       }
       return false;

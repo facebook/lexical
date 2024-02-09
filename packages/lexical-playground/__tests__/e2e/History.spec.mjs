@@ -562,6 +562,7 @@ test.describe('History', () => {
   });
 });
 
+/* eslint-disable sort-keys-fix/sort-keys-fix */
 test.describe('History - IME', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   test('Can undo composed Hirigana via IME after composition ends (#2479)', async ({
@@ -572,17 +573,46 @@ test.describe('History - IME', () => {
     legacyEvents,
   }) => {
     // We don't yet support FF.
-    test.skip(isCollab || isPlainText || browserName === 'firefox');
+    test.skip(isCollab || isPlainText || browserName !== 'chromium');
 
     await focusEditor(page);
     await enableCompositionKeyEvents(page);
 
-    await page.keyboard.imeSetComposition('ｓ', 1, 1);
-    await page.keyboard.imeSetComposition('す', 1, 1);
-    await page.keyboard.imeSetComposition('すｓ', 2, 2);
-    await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
-    await page.keyboard.imeSetComposition('すし', 2, 2);
-    await page.keyboard.insertText('すし');
+    const client = await page.context().newCDPSession(page);
+    // await page.keyboard.imeSetComposition('ｓ', 1, 1);
+    await client.send('Input.imeSetComposition', {
+      selectionStart: 1,
+      selectionEnd: 1,
+      text: 'ｓ',
+    });
+    // await page.keyboard.imeSetComposition('す', 1, 1);
+    await client.send('Input.imeSetComposition', {
+      selectionStart: 1,
+      selectionEnd: 1,
+      text: 'す',
+    });
+    // await page.keyboard.imeSetComposition('すｓ', 2, 2);
+    await client.send('Input.imeSetComposition', {
+      selectionStart: 2,
+      selectionEnd: 2,
+      text: 'すｓ',
+    });
+    // await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
+    await client.send('Input.imeSetComposition', {
+      selectionStart: 3,
+      selectionEnd: 3,
+      text: 'すｓｈ',
+    });
+    // await page.keyboard.imeSetComposition('すし', 2, 2);
+    await client.send('Input.imeSetComposition', {
+      selectionStart: 2,
+      selectionEnd: 2,
+      text: 'すし',
+    });
+    // await page.keyboard.insertText('すし');
+    await client.send('Input.insertText', {
+      text: 'すし',
+    });
 
     await sleep(1050); // default merge interval is 1000, add 50ms as overhead due to CI latency.
 
@@ -590,12 +620,40 @@ test.describe('History - IME', () => {
 
     await sleep(1050);
 
-    await page.keyboard.imeSetComposition('m', 1, 1);
-    await page.keyboard.imeSetComposition('も', 1, 1);
-    await page.keyboard.imeSetComposition('もj', 2, 2);
-    await page.keyboard.imeSetComposition('もじ', 2, 2);
-    await page.keyboard.imeSetComposition('もじあ', 3, 3);
-    await page.keyboard.insertText('もじあ');
+    // await page.keyboard.imeSetComposition('m', 1, 1);
+    await client.send('Input.imeSetComposition', {
+      selectionStart: 1,
+      selectionEnd: 1,
+      text: 'm',
+    });
+    // await page.keyboard.imeSetComposition('も', 1, 1);
+    await client.send('Input.imeSetComposition', {
+      selectionStart: 1,
+      selectionEnd: 1,
+      text: 'も',
+    });
+    // await page.keyboard.imeSetComposition('もj', 2, 2);
+    await client.send('Input.imeSetComposition', {
+      selectionStart: 2,
+      selectionEnd: 2,
+      text: 'もj',
+    });
+    // await page.keyboard.imeSetComposition('もじ', 2, 2);
+    await client.send('Input.imeSetComposition', {
+      selectionStart: 2,
+      selectionEnd: 2,
+      text: 'もじ',
+    });
+    // await page.keyboard.imeSetComposition('もじあ', 3, 3);
+    await client.send('Input.imeSetComposition', {
+      selectionStart: 3,
+      selectionEnd: 3,
+      text: 'もじあ',
+    });
+    // await page.keyboard.insertText('もじあ');
+    await client.send('Input.insertText', {
+      text: 'もじあ',
+    });
 
     await assertHTML(
       page,
@@ -734,3 +792,4 @@ test.describe('History - IME', () => {
     }
   });
 });
+/* eslint-enable sort-keys-fix/sort-keys-fix */

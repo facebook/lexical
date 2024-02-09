@@ -221,6 +221,7 @@ function setListThemeClassNames(
     const listClassName = listTheme[node.__tag];
     let nestedListClassName;
     const nestedListTheme = listTheme.nested;
+    const checklistClassName = listTheme.checklist;
 
     if (nestedListTheme !== undefined && nestedListTheme.list) {
       nestedListClassName = nestedListTheme.list;
@@ -228,6 +229,10 @@ function setListThemeClassNames(
 
     if (listClassName !== undefined) {
       classesToAdd.push(listClassName);
+    }
+
+    if (checklistClassName !== undefined && node.__listType === 'check') {
+      classesToAdd.push(checklistClassName);
     }
 
     if (listLevelClassName !== undefined) {

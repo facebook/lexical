@@ -27,6 +27,7 @@ import {
   SerializedElementNode,
   Spread,
 } from 'lexical';
+import invariant from 'shared/invariant';
 
 import {$createListItemNode, $isListItemNode, ListItemNode} from '.';
 import {updateChildrenListItemValue} from './formatList';
@@ -120,6 +121,13 @@ export class ListNode extends ElementNode {
     return false;
   }
 
+  static transform(): (node: LexicalNode) => void {
+    return (node: LexicalNode) => {
+      invariant($isListNode(node), 'node is not a ListNode');
+      updateChildrenListItemValue(node);
+    };
+  }
+
   static importDOM(): DOMConversionMap | null {
     return {
       ol: (node: Node) => ({
@@ -195,7 +203,6 @@ export class ListNode extends ElementNode {
         super.append(listItemNode);
       }
     }
-    updateChildrenListItemValue(this);
     return this;
   }
 

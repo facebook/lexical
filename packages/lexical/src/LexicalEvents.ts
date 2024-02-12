@@ -164,7 +164,7 @@ let lastKeyDownTimeStamp = 0;
 let lastKeyCode = 0;
 let lastBeforeInputInsertTextTimeStamp = 0;
 let unprocessedBeforeInputData: null | string = null;
-const rootElementsRegistered = new WeakMap();
+const rootElementsRegistered = new WeakMap<Document, number>();
 let isSelectionChangeFromDOMUpdate = false;
 let isSelectionChangeFromMouseDown = false;
 let isInsertLineBreak = false;
@@ -1183,11 +1183,11 @@ export function addRootElementEvents(
   // We only want to have a single global selectionchange event handler, shared
   // between all editor instances.
   const doc = rootElement.ownerDocument;
-  const refs = rootElementsRegistered.get(doc) ?? 0;
-  if (!refs) {
+  const documentRootElementsCount = rootElementsRegistered.get(doc);
+  if (documentRootElementsCount === undefined) {
     doc.addEventListener('selectionchange', onDocumentSelectionChange);
   }
-  rootElementsRegistered.set(doc, refs + 1);
+  rootElementsRegistered.set(doc, documentRootElementsCount || 0 + 1);
 
   // @ts-expect-error: internal field
   rootElement.__lexicalEditor = editor;
@@ -1288,14 +1288,16 @@ export function addRootElementEvents(
 
 export function removeRootElementEvents(rootElement: HTMLElement): void {
   const doc = rootElement.ownerDocument;
-  const refs = rootElementsRegistered.get(doc) ?? 0;
-  if (refs) {
-    // We only want to have a single global selectionchange event handler, shared
-    // between all editor instances.
-    rootElementsRegistered.set(doc, refs - 1);
-    if (refs === 1) {
-      doc.removeEventListener('selectionchange', onDocumentSelectionChange);
-    }
+  const documentRootElementsCount = rootElementsRegistered.get(doc);
+  invariant(
+    documentRootElementsCount !== undefined,
+    'Root element not registered',
+  );
+  // We only want to have a single global selectionchange event handler, shared
+  // between all editor instances.
+  rootElementsRegistered.set(doc, documentRootElementsCount - 1);
+  if (documentRootElementsCount === 1) {
+    doc.removeEventListener('selectionchange', onDocumentSelectionChange);
   }
 
   // @ts-expect-error: internal field

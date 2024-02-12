@@ -58,15 +58,16 @@ export function LinkPlugin({validateUrl}: Props): null {
               if (
                 !$isRangeSelection(selection) ||
                 selection.isCollapsed() ||
-                  !objectKlassEquals(event, ClipboardEvent)
+                !objectKlassEquals(event, ClipboardEvent)
               ) {
                 return false;
               }
-              const clipboardEvent = event as ClipboardEvent
-              if (clipboardEvent.clipboardData == null) {
+              const clipboardEvent = event as ClipboardEvent;
+              if (clipboardEvent.clipboardData === null) {
                 return false;
               }
-              const clipboardText = clipboardEvent.clipboardData.getData('text');
+              const clipboardText =
+                clipboardEvent.clipboardData.getData('text');
               if (!validateUrl(clipboardText)) {
                 return false;
               }

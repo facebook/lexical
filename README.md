@@ -380,6 +380,69 @@ Lexical engineers are checking this regularly.
 - `npm run test-e2e-webkit` runs only webkit e2e tests.
 - `npm run debug-test-e2e-webkit` runs only webkit e2e tests in head mode for debugging.
 
+# Local Development Setup
+
+Our monorepo utilizes Verdaccio, a lightweight private npm registry, to streamline local development and testing of our packages. Follow the steps below to set up your local development environment, increment package versions, prepare releases, and publish them to our Verdaccio server.
+
+## Prerequisites
+
+- **Node.js and npm**: Make sure you have Node.js and npm installed on your machine. You can download them from [nodejs.org](https://nodejs.org/).
+- **Verdaccio**: If you haven't already, install Verdaccio globally on your machine. You can install it via npm:
+
+  ```bash
+  npm install -g verdaccio
+  ```
+
+- **Running Verdaccio**: Before publishing packages, ensure Verdaccio is running locally:
+
+  ```bash
+  verdaccio
+  ```
+
+  This command starts the Verdaccio server on `http://localhost:4873` by default. Keep it running in a separate terminal window or background process.
+
+## Setup Steps
+
+1. **Clone the Repository**: If you haven't already, clone the monorepo to your local machine:
+
+   ```bash
+   git clone <repository-url>
+   cd <repository-directory>
+   ```
+
+2. **Install Dependencies**: Install the project dependencies by running:
+
+   ```bash
+   npm install
+   ```
+
+3. **Increment Package Version**: Increment the version of the package(s) you are working on. This step ensures your local changes are versioned correctly. You can increment the version as a patch, minor, or major update:
+
+   ```bash
+   npm run increment-version -- --i patch
+   ```
+
+   Replace `patch` with `minor` or `major` as needed.
+
+4. **Prepare for Release**: Run the build or any other preparatory tasks required before publishing:
+
+   ```bash
+   npm run prepare-release
+   ```
+
+5. **Publish to Verdaccio**: Publish your package(s) to the local Verdaccio server. This step simulates publishing to the npm registry without affecting the global package registry:
+
+   ```bash
+   node ./scripts/npm/release-local.js --non-interactive --channel dev
+   ```
+
+   The `--non-interactive` flag automates the process, bypassing any prompts that may require manual input. The `--channel dev` specifies that this release is for development purposes.
+
+## Next Steps
+
+After publishing to Verdaccio, you can install and test these packages in your local projects as if they were published to the npm registry. This approach allows you to validate your changes in a controlled environment before proceeding with a production release.
+
+
 ### License
 
 Lexical is [MIT licensed](https://github.com/facebook/lexical/blob/main/LICENSE).

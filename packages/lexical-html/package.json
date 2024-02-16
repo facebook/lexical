@@ -21,5 +21,6 @@
   "dependencies": {
     "@lexical/selection": "0.13.1",
     "@lexical/utils": "0.13.1"
-  }
+  },
+  "module": "LexicalHtml.esm.js"
 }

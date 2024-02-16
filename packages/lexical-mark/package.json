@@ -20,5 +20,6 @@
     "type": "git",
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/lexical-mark"
-  }
+  },
+  "module": "LexicalMark.esm.js"
 }

@@ -24,5 +24,6 @@
   },
   "devDependencies": {
     "@types/prismjs": "^1.26.0"
-  }
+  },
+  "module": "LexicalCode.esm.js"
 }

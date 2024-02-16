@@ -20,6 +20,7 @@ const json = require('@rollup/plugin-json');
 const extractErrorCodes = require('./error-codes/extract-errors');
 const alias = require('@rollup/plugin-alias');
 const compiler = require('@ampproject/rollup-plugin-closure-compiler');
+const terser = require('@rollup/plugin-terser');
 const {exec} = require('child-process-promise');
 
 const license = ` * Copyright (c) Meta Platforms, Inc. and affiliates.
@@ -147,7 +148,12 @@ Object.keys(wwwMappings).forEach((mapping) => {
   strictWWWMappings[`'${mapping}'`] = `'${wwwMappings[mapping]}'`;
 });
 
-async function build(name, inputFile, outputPath, outputFile, isProd) {
+function getExtension(format) {
+  return `${format === 'esm' ? '.esm' : ''}.js`;
+}
+
+async function build(name, inputFile, outputPath, outputFile, isProd, format) {
+  const extensions = ['.js', '.jsx', '.ts', '.tsx'];
   const inputOptions = {
     external(modulePath, src) {
       return externals.includes(modulePath);
@@ -161,6 +167,11 @@ async function build(name, inputFile, outputPath, outputFile, isProd) {
         console.error();
         console.error(warning.message || warning);
         console.error();
+      } else if (
+        warning.code === 'SOURCEMAP_ERROR' &&
+        warning.message.endsWith(`Can't resolve original location of error.`)
+      ) {
+        // Ignored
       } else if (typeof warning.code === 'string') {
         console.error(warning);
         // This is a warning coming from Rollup itself.
@@ -191,14 +202,14 @@ async function build(name, inputFile, outputPath, outputFile, isProd) {
         },
       },
       nodeResolve({
-        extensions: ['.js', '.jsx', '.ts', '.tsx'],
+        extensions,
       }),
       babel({
         babelHelpers: 'bundled',
         babelrc: false,
         configFile: false,
         exclude: '/**/node_modules/**',
-        extensions: ['.js', '.jsx', '.ts', '.tsx'],
+        extensions,
         plugins: [
           [
             require('./error-codes/transform-error-messages'),
@@ -237,7 +248,13 @@ async function build(name, inputFile, outputPath, outputFile, isProd) {
           isWWW && strictWWWMappings,
         ),
       ),
-      isProd && compiler(closureOptions),
+      // terser is used for esm builds because
+      // @ampproject/rollup-plugin-closure-compiler doesn't compile
+      // `export default function X()` correctly
+      isProd &&
+        (format === 'esm'
+          ? terser({ecma: 2019, module: true})
+          : compiler(closureOptions)),
       {
         renderChunk(source) {
           // Assets pipeline might use "export" word in the beginning of the line
@@ -257,12 +274,13 @@ async function build(name, inputFile, outputPath, outputFile, isProd) {
     exports: 'auto',
     externalLiveBindings: false,
     file: outputFile,
-    format: 'cjs', // change between es and cjs modules
+    format, // change between es and cjs modules
     freeze: false,
-    interop: false,
+    interop: format === 'esm' ? 'esModule' : false,
   };
   const result = await rollup.rollup(inputOptions);
-  await result.write(outputOptions);
+  const {output} = await result.write(outputOptions);
+  return output[0].exports;
 }
 
 function getComment() {
@@ -284,11 +302,12 @@ function getComment() {
   return lines.join('\n');
 }
 
-function getFileName(fileName, isProd) {
+function getFileName(fileName, isProd, format) {
+  const extension = getExtension(format);
   if (isWWW || isRelease) {
-    return `${fileName}.${isProd ? 'prod' : 'dev'}.js`;
+    return `${fileName}.${isProd ? 'prod' : 'dev'}${extension}`;
   }
-  return `${fileName}.js`;
+  return `${fileName}${extension}`;
 }
 
 const packages = [
@@ -593,16 +612,31 @@ async function moveTSDeclarationFilesIntoDist(packageName, outputPath) {
   await fs.copy(`./.ts-temp/${packageName}/src`, outputPath);
 }
 
-function buildForkModule(outputPath, outputFileName) {
-  const lines = [
-    getComment(),
-    `'use strict'`,
-    `const ${outputFileName} = process.env.NODE_ENV === 'development' ? require('./${outputFileName}.dev.js') : require('./${outputFileName}.prod.js')`,
-    `module.exports = ${outputFileName};`,
-  ];
+function buildForkModule(outputPath, outputFileName, format, exports) {
+  const lines = [getComment(), `'use strict'`];
+  const extension = getExtension(format);
+  const devFileName = `./${outputFileName}.dev${extension}`;
+  const prodFileName = `./${outputFileName}.prod${extension}`;
+  if (format === 'esm') {
+    lines.append(
+      `const mod = await import(process.env.NODE_ENV === 'development' ? '${devFileName}' : '${prodFileName}');`,
+    );
+    for (const name of exports) {
+      lines.append(
+        name === 'default'
+          ? `export default mod.default;`
+          : `export const ${name} = mod.${name};`,
+      );
+    }
+  } else {
+    lines.append(
+      `const ${outputFileName} = process.env.NODE_ENV === 'development' ? require('${devFileName}') : require('${prodFileName}')`,
+      `module.exports = ${outputFileName};`,
+    );
+  }
   const fileContent = lines.join('\n');
   fs.outputFileSync(
-    path.resolve(path.join(`${outputPath}${outputFileName}.js`)),
+    path.resolve(path.join(`${outputPath}${outputFileName}${extension}`)),
     fileContent,
   );
 }
@@ -616,32 +650,44 @@ async function buildAll() {
     const {name, sourcePath, outputPath, packageName, modules} = pkg;
 
     for (const module of modules) {
-      const {sourceFileName, outputFileName} = module;
-      let inputFile = path.resolve(path.join(`${sourcePath}${sourceFileName}`));
+      for (const format of ['cjs', 'esm']) {
+        const {sourceFileName, outputFileName} = module;
+        let inputFile = path.resolve(
+          path.join(`${sourcePath}${sourceFileName}`),
+        );
 
-      await build(
-        `${name}${module.name ? '-' + module.name : ''}`,
-        inputFile,
-        outputPath,
-        path.resolve(
-          path.join(
-            `${outputPath}${getFileName(outputFileName, isProduction)}`,
-          ),
-        ),
-        isProduction,
-      );
-
-      if (isRelease) {
         await build(
-          name,
+          `${name}${module.name ? '-' + module.name : ''}`,
           inputFile,
           outputPath,
           path.resolve(
-            path.join(`${outputPath}${getFileName(outputFileName, false)}`),
+            path.join(
+              `${outputPath}${getFileName(
+                outputFileName,
+                isProduction,
+                format,
+              )}`,
+            ),
           ),
-          false,
+          isProduction,
+          format,
         );
-        buildForkModule(outputPath, outputFileName);
+
+        if (isRelease) {
+          const exports = await build(
+            name,
+            inputFile,
+            outputPath,
+            path.resolve(
+              path.join(
+                `${outputPath}${getFileName(outputFileName, false, format)}`,
+              ),
+            ),
+            false,
+            format,
+          );
+          buildForkModule(outputPath, outputFileName, format, exports);
+        }
       }
     }
 

@@ -47,10 +47,32 @@ function updateVersion() {
     const packageJSON = fs.readJsonSync(`./packages/${pkg}/package.json`);
     packageJSON.version = version;
     updateDependencies(packageJSON, version);
+    updateModule(packageJSON, pkg);
     fs.writeJsonSync(`./packages/${pkg}/package.json`, packageJSON, {
       spaces: 2,
     });
   });
+}
+
+function withEsmExtension(fileName) {
+  return fileName.replace(/\.js$/, '.esm.js');
+}
+
+function updateModule(packageJSON, pkg) {
+  if (packageJSON.main) {
+    packageJSON.module = withEsmExtension(packageJSON.main);
+  } else if (fs.existsSync(`./packages/${pkg}/dist`)) {
+    const exports = {};
+    for (const file of fs.readdirSync(`./packages/${pkg}/dist`)) {
+      if (file.endsWith('.js')) {
+        exports[`./${file.replace(/\.js$/, '')}`] = {
+          import: `./${withEsmExtension(file)}`,
+          require: `./${file}`,
+        };
+      }
+    }
+    packageJSON.exports = exports;
+  }
 }
 
 function updateDependencies(packageJSON, version) {

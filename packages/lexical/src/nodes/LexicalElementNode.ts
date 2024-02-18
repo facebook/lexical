@@ -531,10 +531,6 @@ export class ElementNode extends LexicalNode {
   excludeFromCopy(destination?: 'clone' | 'html'): boolean {
     return false;
   }
-  // TODO 0.10 deprecate
-  canExtractContents(): boolean {
-    return true;
-  }
   canReplaceWith(replacement: LexicalNode): boolean {
     return true;
   }

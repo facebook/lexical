@@ -226,7 +226,7 @@ function getHashtagRegexString(): string {
 
   const hashtagAlpha = '[' + alpha + ']';
   const hashtagAlphanumeric = '[' + alphanumeric + ']';
-  const hashtagBoundary = '^|$|[^&/' + alphanumeric + ']';
+  const hashtagBoundary = '^|$|[^&/' + alphanumeric + hashChars + ']';
   const hashCharList = '[' + hashChars + ']';
 
   // A hashtag contains characters, numbers and underscores,

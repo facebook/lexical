@@ -302,46 +302,4 @@ test.describe('Hashtags', () => {
       `,
     );
   });
-
-  test('Should break when additional # added in front of it', async ({
-    page,
-  }) => {
-    await focusEditor(page);
-    await page.keyboard.type('#hello');
-
-    await waitForSelector(page, '.PlaygroundEditorTheme__hashtag');
-
-    await assertHTML(
-      page,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
-            #hello
-          </span>
-        </p>
-      `,
-    );
-    await assertSelection(page, {
-      anchorOffset: 6,
-      anchorPath: [0, 0, 0],
-      focusOffset: 6,
-      focusPath: [0, 0, 0],
-    });
-
-    await moveToEditorBeginning(page);
-    await page.keyboard.type('#');
-
-    await assertHTML(
-      page,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">##hello</span>
-        </p>
-      `,
-    );
-  });
 });

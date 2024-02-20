@@ -440,6 +440,8 @@ export function $patchStyleText(
       if (endOffset !== 0 || endType === 'element') {
         $patchStyle(lastNode as TextNode, patch);
       }
+
+      focus.set(lastNode.getKey(), endOffset, 'text');
     }
 
     // style all the text nodes in between

@@ -34,7 +34,6 @@ import {
   $moveCharacter,
   $shouldOverrideDefaultCharacterSelection,
 } from '@lexical/selection';
-import {$isTableSelection} from '@lexical/table';
 import {
   $findMatchingParent,
   $getNearestBlockElementAncestorOrThrow,
@@ -440,10 +439,7 @@ function onPasteForRichText(
         objectKlassEquals(event, KeyboardEvent)
           ? null
           : (event as ClipboardEvent).clipboardData;
-      if (
-        clipboardData != null &&
-        ($isRangeSelection(selection) || $isTableSelection(selection))
-      ) {
+      if (clipboardData != null && selection !== null) {
         $insertDataTransferForRichText(clipboardData, selection, editor);
       }
     },

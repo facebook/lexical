@@ -734,7 +734,6 @@ declare export class ElementNode extends LexicalNode {
   canIndent(): boolean;
   collapseAtStart(selection: RangeSelection): boolean;
   excludeFromCopy(destination: 'clone' | 'html'): boolean;
-  canExtractContents(): boolean;
   canReplaceWith(replacement: LexicalNode): boolean;
   canInsertAfter(node: LexicalNode): boolean;
   extractWithChild(

@@ -7,9 +7,9 @@
  */
 
 import {expect, test as base} from '@playwright/test';
+import {randomUUID} from 'node:crypto';
 import prettier from 'prettier';
 import {URLSearchParams} from 'url';
-import {v4 as uuidv4} from 'uuid';
 
 import {selectAll} from '../keyboardShortcuts/index.mjs';
 
@@ -67,7 +67,7 @@ export async function initialize({
   appSettings.disableBeforeInput = LEGACY_EVENTS;
   if (isCollab) {
     appSettings.isCollab = isCollab;
-    appSettings.collabId = uuidv4();
+    appSettings.collabId = randomUUID();
   }
   if (showNestedEditorTreeView === undefined) {
     appSettings.showNestedEditorTreeView = true;

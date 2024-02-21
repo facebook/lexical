@@ -9,9 +9,9 @@ import './index.css';
 
 import {
   $createLinkNode,
+  $getSelectedLinkNode,
   $isAutoLinkNode,
   $isLinkNode,
-  $onlyIncludesAParentLink,
   TOGGLE_LINK_COMMAND,
 } from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
@@ -63,10 +63,10 @@ function FloatingLinkEditor({
     const selection = $getSelection();
     if ($isRangeSelection(selection)) {
       const node = getSelectedNode(selection);
-      const linkParent = $findMatchingParent(node, $isLinkNode);
+      const linkNode = $getSelectedLinkNode(selection);
 
-      if (linkParent) {
-        setLinkUrl(linkParent.getURL());
+      if (linkNode) {
+        setLinkUrl(linkNode.getURL());
       } else if ($isLinkNode(node)) {
         setLinkUrl(node.getURL());
       } else {
@@ -295,7 +295,7 @@ function useFloatingLinkEditorToolbar(
     function updateToolbar() {
       const selection = $getSelection();
       if ($isRangeSelection(selection)) {
-        if ($onlyIncludesAParentLink(selection)) {
+        if ($getSelectedLinkNode(selection)) {
           setIsLink(true);
         } else {
           setIsLink(false);

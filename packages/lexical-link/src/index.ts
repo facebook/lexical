@@ -29,6 +29,7 @@ import {
   $getSelection,
   $isElementNode,
   $isLeafNode,
+  $isLineBreakNode,
   $isRangeSelection,
   createCommand,
   ElementNode,
@@ -542,14 +543,13 @@ function $getAncestor<NodeType extends LexicalNode = LexicalNode>(
 }
 
 /**
- * Checks selection to ensure only a single LinkNode or AutoLinkNode is being selected,
- * selecting any Node that doesn't have a some Link as a parent will return false.
+ * Checks selection to ensure only an AutoLinkNode or LinkNode is being selected and returns it.
  * @param selection - The current range selection.
- * @returns - true if selection only contains a single LinkNode or AutoLinkNode, false otherwise.
+ * @returns - the (Auto)LinkNode or null.
  */
-export function $onlyIncludesAParentLink(
+export function $getSelectedLinkNode(
   selection: RangeSelection,
-): boolean | null {
+): LinkNode | null {
   const anchor = selection.anchor;
   const focus = selection.focus;
   const isBefore = anchor.isBefore(focus);
@@ -557,45 +557,82 @@ export function $onlyIncludesAParentLink(
   const lastPoint = isBefore ? focus : anchor;
   const firstNode = firstPoint.getNode();
   const lastNode = lastPoint.getNode();
-  const firstLinkNode = getParentLink(firstNode);
-  const lastLinkNode = getParentLink(lastNode);
-  if (
-    !firstLinkNode ||
-    !lastLinkNode ||
-    (firstLinkNode && !firstLinkNode.is(lastLinkNode))
-  ) {
-    return false;
-  }
-  const nodes = firstNode.getNodesBetween(lastNode);
-  let matchedParent;
-  for (const node of nodes) {
-    if (!$isLeafNode(node) && !$isLinkNode(node) && !$isAutoLinkNode(node)) {
-      continue;
-    }
-    if ($isLinkNode(node) || $isAutoLinkNode(node)) {
-      if (matchedParent) {
-        if (!node.is(matchedParent)) {
-          return false;
+  let linkNode: LinkNode | null = null;
+  let node: LexicalNode | null = firstNode;
+  const visited = new Set<string>();
+  if (selection.isCollapsed() && getParentLink(firstNode) !== null) {
+    return getParentLink(firstNode);
+  } else if (!selection.isCollapsed()) {
+    do {
+      if ($isLeafNode(node) && !$isLineBreakNode(node)) {
+        const parentLink = getParentLink(node);
+        if (parentLink !== null) {
+          if (linkNode === null) {
+            linkNode = parentLink;
+          } else if (!parentLink.is(linkNode)) {
+            return null;
+          }
         } else {
-          continue;
+          return null;
         }
-      } else {
-        matchedParent = node;
+      }
+      if (node.is(lastNode) && visited.has(node.__key)) {
+        break;
+      }
+      const key = node.__key;
+      if (!visited.has(key)) {
+        visited.add(key);
+      }
+      const child: ElementNode | null = $isElementNode(node)
+        ? isBefore
+          ? node.getFirstChild()
+          : node.getLastChild()
+        : null;
+      if (child !== null) {
+        node = child;
         continue;
       }
-    }
-    const parent = getParentLink(node);
-    if (!parent) {
-      return false;
-    } else if (!matchedParent) {
-      matchedParent = parent;
-    } else if (!parent.is(matchedParent)) {
-      return false;
-    }
-  }
-  return true;
+      if (node.is(lastNode)) {
+        break;
+      }
+      const nextSibling: LexicalNode | null = isBefore
+        ? node.getNextSibling()
+        : node.getPreviousSibling();
+      if (nextSibling !== null) {
+        node = nextSibling;
+        continue;
+      }
+      const parent: ElementNode | null = node.getParent();
+      if (parent !== null && !visited.has(parent.__key)) {
+        node = parent;
+        continue;
+      }
+      if (parent !== null && parent.is(lastNode) && visited.has(parent.__key)) {
+        break;
+      }
+      let parentSibling = null;
+      let ancestor: ElementNode | null = parent;
+      do {
+        if (ancestor === null) {
+          break;
+        }
+        parentSibling = isBefore
+          ? ancestor.getNextSibling()
+          : ancestor.getPreviousSibling();
+        ancestor = ancestor.getParent();
+        if (ancestor !== null) {
+          if (parentSibling === null && !visited.has(ancestor.__key)) {
+            node = ancestor;
+            continue;
+          } else if (parentSibling !== null) {
+            node = parentSibling;
+          }
+        }
+      } while (parentSibling === null);
+    } while (node);
+    return linkNode;
+  } else return null;
 }
-
 function getParentLink(node: LexicalNode) {
   const linkTypes = [$isLinkNode, $isAutoLinkNode];
   for (const linkType of linkTypes) {

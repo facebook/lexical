@@ -1288,7 +1288,9 @@ export function $hasAncestor(
   return false;
 }
 
-export function getDefaultView(domElem: HTMLElement): Window | null {
+export function getDefaultView(
+  domElem: HTMLElement,
+): (Window & typeof globalThis) | null {
   const ownerDoc = domElem.ownerDocument;
   return (ownerDoc && ownerDoc.defaultView) || null;
 }

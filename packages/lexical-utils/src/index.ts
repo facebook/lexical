@@ -288,6 +288,21 @@ export const $findMatchingParent: {
 };
 
 /**
+ * get the window of current default view .
+ * @param editor - The lexical editor
+ * @returns window of current default view
+ */
+export function getWindow(
+  editor: LexicalEditor,
+): NonNullable<LexicalEditor['_window']> {
+  const windowObj = editor._window;
+  if (windowObj === null) {
+    invariant(false, 'window object not found');
+  }
+  return windowObj;
+}
+
+/**
  * Attempts to resolve nested element nodes of the same type into a single node of that type.
  * It is generally used for marks/commenting
  * @param editor - The lexical editor

@@ -20,7 +20,7 @@ import {$generateHtmlFromNodes} from '@lexical/html';
 import {$isLinkNode, LinkNode} from '@lexical/link';
 import {$isMarkNode} from '@lexical/mark';
 import {$isTableSelection, TableSelection} from '@lexical/table';
-import {mergeRegister} from '@lexical/utils';
+import {getWindow, mergeRegister} from '@lexical/utils';
 import {
   $getRoot,
   $getSelection,
@@ -439,7 +439,9 @@ function generateContent(
   if (commandsLog.length) {
     for (const {type, payload} of commandsLog) {
       res += `\n  └ { type: ${type}, payload: ${
-        payload instanceof Event ? payload.constructor.name : payload
+        payload instanceof getWindow(editor).Event
+          ? payload.constructor.name
+          : payload
       } }`;
     }
   } else {

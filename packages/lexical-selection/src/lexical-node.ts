@@ -414,8 +414,9 @@ export function $patchStyleText(
         // the entire first node isn't selected, so split it
         firstNode = firstNode.splitText(startOffset)[1];
         startOffset = 0;
-        anchor.set(firstNode.getKey(), startOffset, 'text');
       }
+
+      anchor.set(firstNode.getKey(), startOffset, 'text');
 
       $patchStyle(firstNode as TextNode, patch);
     }

@@ -32,6 +32,7 @@ import type {TextFormatType, TextNode} from './nodes/LexicalTextNode';
 import {CAN_USE_DOM} from 'shared/canUseDOM';
 import {IS_APPLE, IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from 'shared/environment';
 import invariant from 'shared/invariant';
+import normalizeClassNames from 'shared/normalizeClassNames';
 
 import {
   $createTextNode,
@@ -1035,7 +1036,7 @@ export function getCachedClassNameArray(
   // className tokens to an array that can be
   // applied to classList.add()/remove().
   if (typeof classNames === 'string') {
-    const classNamesArr = classNames.split(' ');
+    const classNamesArr = normalizeClassNames(classNames);
     classNamesCache[classNameThemeType] = classNamesArr;
     return classNamesArr;
   }
@@ -1404,7 +1405,7 @@ function createBlockCursorElement(editorConfig: EditorConfig): HTMLDivElement {
   let blockCursorTheme = theme.blockCursor;
   if (blockCursorTheme !== undefined) {
     if (typeof blockCursorTheme === 'string') {
-      const classNamesArr = blockCursorTheme.split(' ');
+      const classNamesArr = normalizeClassNames(blockCursorTheme);
       // @ts-expect-error: intentional
       blockCursorTheme = theme.blockCursor = classNamesArr;
     }

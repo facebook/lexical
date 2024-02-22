@@ -26,6 +26,7 @@ import {
   LexicalNode,
 } from 'lexical';
 import invariant from 'shared/invariant';
+import normalizeClassNames from 'shared/normalizeClassNames';
 
 export {default as markSelection} from './markSelection';
 export {default as mergeRegister} from './mergeRegister';
@@ -49,12 +50,10 @@ export function addClassNamesToElement(
   element: HTMLElement,
   ...classNames: Array<typeof undefined | boolean | null | string>
 ): void {
-  classNames.forEach((className) => {
-    if (typeof className === 'string') {
-      const classesToAdd = className.split(' ').filter((n) => n !== '');
-      element.classList.add(...classesToAdd);
-    }
-  });
+  const classesToAdd = normalizeClassNames(...classNames);
+  if (classesToAdd.length > 0) {
+    element.classList.add(...classesToAdd);
+  }
 }
 
 /**
@@ -69,11 +68,10 @@ export function removeClassNamesFromElement(
   element: HTMLElement,
   ...classNames: Array<typeof undefined | boolean | null | string>
 ): void {
-  classNames.forEach((className) => {
-    if (typeof className === 'string') {
-      element.classList.remove(...className.split(' '));
-    }
-  });
+  const classesToRemove = normalizeClassNames(...classNames);
+  if (classesToRemove.length > 0) {
+    element.classList.remove(...classesToRemove);
+  }
 }
 
 /**

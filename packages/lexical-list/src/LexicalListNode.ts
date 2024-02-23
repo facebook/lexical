@@ -28,6 +28,7 @@ import {
   Spread,
 } from 'lexical';
 import invariant from 'shared/invariant';
+import normalizeClassNames from 'shared/normalizeClassNames';
 
 import {$createListItemNode, $isListItemNode, ListItemNode} from '.';
 import {updateChildrenListItemValue} from './formatList';
@@ -243,8 +244,7 @@ function setListThemeClassNames(
     }
 
     if (listLevelClassName !== undefined) {
-      const listItemClasses = listLevelClassName.split(' ');
-      classesToAdd.push(...listItemClasses);
+      classesToAdd.push(...normalizeClassNames(listLevelClassName));
       for (let i = 0; i < listLevelsClassNames.length; i++) {
         if (i !== normalizedListDepth) {
           classesToRemove.push(node.__tag + i);
@@ -253,7 +253,7 @@ function setListThemeClassNames(
     }
 
     if (nestedListClassName !== undefined) {
-      const nestedListItemClasses = nestedListClassName.split(' ');
+      const nestedListItemClasses = normalizeClassNames(nestedListClassName);
 
       if (listDepth > 1) {
         classesToAdd.push(...nestedListItemClasses);

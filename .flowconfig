@@ -100,6 +100,7 @@ module.name_mapper='^@lexical/yjs$' -> '<PROJECT_ROOT>/packages/lexical-yjs/flow
 
 module.name_mapper='^shared/simpleDiffWithCursor' -> '<PROJECT_ROOT>/packages/shared/src/simpleDiffWithCursor.js'
 module.name_mapper='^shared/invariant' -> '<PROJECT_ROOT>/packages/shared/src/invariant.js'
+module.name_mapper='^shared/normalizeClassNames' -> '<PROJECT_ROOT>/packages/shared/src/normalizeClassNames.js'
 module.name_mapper='^shared/warnOnlyOnce' -> '<PROJECT_ROOT>/packages/shared/src/warnOnlyOnce.js'
 module.name_mapper='^shared/environment' -> '<PROJECT_ROOT>/packages/shared/src/environment.js'
 module.name_mapper='^shared/useLayoutEffect' -> '<PROJECT_ROOT>/packages/shared/src/useLayoutEffect.js'

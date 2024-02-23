@@ -186,6 +186,9 @@
         "packages/shared/src/simpleDiffWithCursor.ts"
       ],
       "shared/invariant": ["./packages/shared/src/invariant.ts"],
+      "shared/normalizeClassNames": [
+        "./packages/shared/src/normalizeClassNames.ts"
+      ],
       "shared/warnOnlyOnce": ["./packages/shared/src/warnOnlyOnce.ts"],
       "shared/environment": ["./packages/shared/src/environment.ts"],
       "shared/useLayoutEffect": ["./packages/shared/src/useLayoutEffect.ts"]

@@ -35,7 +35,6 @@ import * as React from 'react';
 import {Suspense, useCallback, useEffect, useRef, useState} from 'react';
 
 import useModal from '../hooks/useModal';
-import FloatingLinkEditorPlugin from '../plugins/FloatingLinkEditorPlugin/index';
 import FloatingTextFormatToolbarPlugin from '../plugins/FloatingTextFormatToolbarPlugin/index';
 import LinkPlugin from '../plugins/LinkPlugin';
 import Button from '../ui/Button';
@@ -212,6 +211,7 @@ export default function InlineImageComponent({
         const node = $getNodeByKey(nodeKey);
         if ($isInlineImageNode(node)) {
           node.remove();
+          return true;
         }
       }
       return false;
@@ -387,10 +387,6 @@ export default function InlineImageComponent({
             <LexicalNestedComposer initialEditor={caption}>
               <AutoFocusPlugin />
               <LinkPlugin />
-              <FloatingLinkEditorPlugin
-                isLinkEditMode={false}
-                setIsLinkEditMode={() => {}}
-              />
               <FloatingTextFormatToolbarPlugin />
               <RichTextPlugin
                 contentEditable={

@@ -32,6 +32,7 @@ test.describe('Regression test #1083', () => {
     await page.keyboard.type('Hello');
     await selectAll(page);
     await click(page, '.link');
+    await click(page, '.link-confirm');
 
     await moveToLineEnd(page);
     await page.keyboard.type('World');
@@ -77,6 +78,7 @@ test.describe('Regression test #1083', () => {
     await page.keyboard.type('Hello');
     await selectCharacters(page, 'left', 'Hello'.length);
     await click(page, '.link');
+    await click(page, '.link-confirm');
 
     await moveToLineEnd(page);
     await page.keyboard.type('World');

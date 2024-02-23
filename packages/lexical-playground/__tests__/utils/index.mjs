@@ -216,15 +216,15 @@ async function retryAsync(page, fn, attempts) {
   }
 }
 
-export async function assertGridSelectionCoordinates(page, coordinates) {
+export async function assertTableSelectionCoordinates(page, coordinates) {
   const pageOrFrame = IS_COLLAB ? await page.frame('left') : page;
 
   const {_anchor, _focus} = await pageOrFrame.evaluate(() => {
     const editor = window.lexicalEditor;
     const editorState = editor.getEditorState();
     const selection = editorState._selection;
-    if (!selection.gridKey) {
-      throw new Error('Expected grid selection');
+    if (!selection.tableKey) {
+      throw new Error('Expected table selection');
     }
     const anchorElement = editor.getElementByKey(selection.anchor.key);
     const focusElement = editor.getElementByKey(selection.focus.key);
@@ -481,12 +481,16 @@ export async function focusEditor(page, parentSelector = '.editor-shell') {
   if (IS_COLLAB) {
     await page.waitForSelector('iframe[name="left"]');
     const leftFrame = page.frame('left');
-    if ((await leftFrame.$$('.loading').length) !== 0) {
+    if ((await leftFrame.$$('.loading')).length !== 0) {
       await leftFrame.waitForSelector('.loading', {
         state: 'detached',
       });
-      await sleep(500);
     }
+    // This sleep used to be "conditional" based on a broken version of
+    // the above test (undefined !== 0 is always true). It turns out there
+    // were tests that needed this sleep even when the left frame was not
+    // in a loading state.
+    await sleep(500);
     await leftFrame.focus(selector);
   } else {
     await page.focus(selector);
@@ -537,23 +541,19 @@ export async function selectorBoundingBox(page, selector) {
 }
 
 export async function click(page, selector, options) {
-  if (IS_COLLAB) {
-    const leftFrame = await page.frame('left');
-    await leftFrame.waitForSelector(selector, options);
-    await leftFrame.click(selector, options);
-  } else {
-    await page.waitForSelector(selector, options);
-    await page.click(selector, options);
-  }
+  const frame = IS_COLLAB ? await page.frame('left') : page;
+  await frame.waitForSelector(selector, options);
+  await frame.click(selector, options);
 }
 
 export async function focus(page, selector, options) {
-  if (IS_COLLAB) {
-    const leftFrame = await page.frame('left');
-    await leftFrame.focus(selector, options);
-  } else {
-    await page.focus(selector, options);
-  }
+  const frame = IS_COLLAB ? await page.frame('left') : page;
+  await frame.focus(selector, options);
+}
+
+export async function fill(page, selector, value) {
+  const frame = IS_COLLAB ? await page.frame('left') : page;
+  await frame.locator(selector).fill(value);
 }
 
 export async function selectOption(page, selector, options) {

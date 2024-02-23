@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {Cell} from '@lexical/table';
+import type {TableDOMCell} from '@lexical/table';
 import type {LexicalEditor} from 'lexical';
 
 import './index.css';
@@ -18,13 +18,14 @@ import {
   $getTableRowIndexFromTableCellNode,
   $isTableCellNode,
   $isTableRowNode,
-  getCellFromTarget,
+  $isTableSelection,
+  getDOMCellFromTarget,
+  TableCellNode,
 } from '@lexical/table';
 import {
   $getNearestNodeFromDOMNode,
   $getSelection,
   COMMAND_PRIORITY_HIGH,
-  DEPRECATED_$isGridSelection,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import * as React from 'react';
@@ -58,7 +59,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
   const [mouseCurrentPos, updateMouseCurrentPos] =
     useState<MousePosition | null>(null);
 
-  const [activeCell, updateActiveCell] = useState<Cell | null>(null);
+  const [activeCell, updateActiveCell] = useState<TableDOMCell | null>(null);
   const [isSelectingGrid, updateIsSelectingGrid] = useState<boolean>(false);
   const [draggingDirection, updateDraggingDirection] =
     useState<MouseDraggingDirection | null>(null);
@@ -68,10 +69,10 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
       SELECTION_CHANGE_COMMAND,
       (payload) => {
         const selection = $getSelection();
-        const isGridSelection = DEPRECATED_$isGridSelection(selection);
+        const isTableSelection = $isTableSelection(selection);
 
-        if (isSelectingGrid !== isGridSelection) {
-          updateIsSelectingGrid(isGridSelection);
+        if (isSelectingGrid !== isTableSelection) {
+          updateIsSelectingGrid(isTableSelection);
         }
 
         return false;
@@ -107,7 +108,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
 
         if (targetRef.current !== target) {
           targetRef.current = target as HTMLElement;
-          const cell = getCellFromTarget(target as HTMLElement);
+          const cell = getDOMCellFromTarget(target as HTMLElement);
 
           if (cell && activeCell !== cell) {
             editor.update(() => {
@@ -206,11 +207,11 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
             throw new Error('Expected table row');
           }
 
-          const rowCells = tableRow.getChildren();
+          const rowCells = tableRow.getChildren<TableCellNode>();
           const rowCellsSpan = rowCells.map((cell) => cell.getColSpan());
 
           const aggregatedRowSpans = rowCellsSpan.reduce(
-            (rowSpans, cellSpan) => {
+            (rowSpans: number[], cellSpan) => {
               const previousCell = rowSpans[rowSpans.length - 1] ?? 0;
               rowSpans.push(previousCell + cellSpan);
               return rowSpans;
@@ -316,14 +317,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
 
         document.addEventListener('mouseup', mouseUpHandler(direction));
       },
-    [
-      activeCell,
-      draggingDirection,
-      resetState,
-      updateColumnWidth,
-      updateRowHeight,
-      mouseUpHandler,
-    ],
+    [activeCell, mouseUpHandler],
   );
 
   const getResizers = useCallback(() => {

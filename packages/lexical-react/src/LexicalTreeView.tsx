@@ -10,15 +10,16 @@ import type {
   BaseSelection,
   EditorState,
   ElementNode,
-  GridSelection,
   LexicalEditor,
   LexicalNode,
   RangeSelection,
+  TextNode,
 } from 'lexical';
 
 import {$generateHtmlFromNodes} from '@lexical/html';
 import {$isLinkNode, LinkNode} from '@lexical/link';
 import {$isMarkNode} from '@lexical/mark';
+import {$isTableSelection, TableSelection} from '@lexical/table';
 import {mergeRegister} from '@lexical/utils';
 import {
   $getRoot,
@@ -28,7 +29,6 @@ import {
   $isRangeSelection,
   $isTextNode,
   COMMAND_PRIORITY_HIGH,
-  DEPRECATED_$isGridSelection,
   LexicalCommand,
 } from 'lexical';
 import * as React from 'react';
@@ -373,8 +373,8 @@ function printNodeSelection(selection: BaseSelection): string {
   return `: node\n  └ [${Array.from(selection._nodes).join(', ')}]`;
 }
 
-function printGridSelection(selection: GridSelection): string {
-  return `: grid\n  └ { grid: ${selection.gridKey}, anchorCell: ${selection.anchor.key}, focusCell: ${selection.focus.key} }`;
+function printTableSelection(selection: TableSelection): string {
+  return `: table\n  └ { table: ${selection.tableKey}, anchorCell: ${selection.anchor.key}, focusCell: ${selection.focus.key} }`;
 }
 
 function generateContent(
@@ -427,8 +427,8 @@ function generateContent(
       ? ': null'
       : $isRangeSelection(selection)
       ? printRangeSelection(selection)
-      : DEPRECATED_$isGridSelection(selection)
-      ? printGridSelection(selection)
+      : $isTableSelection(selection)
+      ? printTableSelection(selection)
       : printNodeSelection(selection);
   });
 
@@ -519,30 +519,30 @@ function printNode(node: LexicalNode) {
 }
 
 const FORMAT_PREDICATES = [
-  (node: LexicalNode | RangeSelection) => node.hasFormat('bold') && 'Bold',
-  (node: LexicalNode | RangeSelection) => node.hasFormat('code') && 'Code',
-  (node: LexicalNode | RangeSelection) => node.hasFormat('italic') && 'Italic',
-  (node: LexicalNode | RangeSelection) =>
+  (node: TextNode | RangeSelection) => node.hasFormat('bold') && 'Bold',
+  (node: TextNode | RangeSelection) => node.hasFormat('code') && 'Code',
+  (node: TextNode | RangeSelection) => node.hasFormat('italic') && 'Italic',
+  (node: TextNode | RangeSelection) =>
     node.hasFormat('strikethrough') && 'Strikethrough',
-  (node: LexicalNode | RangeSelection) =>
+  (node: TextNode | RangeSelection) =>
     node.hasFormat('subscript') && 'Subscript',
-  (node: LexicalNode | RangeSelection) =>
+  (node: TextNode | RangeSelection) =>
     node.hasFormat('superscript') && 'Superscript',
-  (node: LexicalNode | RangeSelection) =>
+  (node: TextNode | RangeSelection) =>
     node.hasFormat('underline') && 'Underline',
 ];
 
 const DETAIL_PREDICATES = [
-  (node: LexicalNode) => node.isDirectionless() && 'Directionless',
-  (node: LexicalNode) => node.isUnmergeable() && 'Unmergeable',
+  (node: TextNode) => node.isDirectionless() && 'Directionless',
+  (node: TextNode) => node.isUnmergeable() && 'Unmergeable',
 ];
 
 const MODE_PREDICATES = [
-  (node: LexicalNode) => node.isToken() && 'Token',
-  (node: LexicalNode) => node.isSegmented() && 'Segmented',
+  (node: TextNode) => node.isToken() && 'Token',
+  (node: TextNode) => node.isSegmented() && 'Segmented',
 ];
 
-function printAllTextNodeProperties(node: LexicalNode) {
+function printAllTextNodeProperties(node: TextNode) {
   return [
     printFormatProperties(node),
     printDetailProperties(node),
@@ -562,7 +562,7 @@ function printAllLinkNodeProperties(node: LinkNode) {
     .join(', ');
 }
 
-function printDetailProperties(nodeOrSelection: LexicalNode) {
+function printDetailProperties(nodeOrSelection: TextNode) {
   let str = DETAIL_PREDICATES.map((predicate) => predicate(nodeOrSelection))
     .filter(Boolean)
     .join(', ')
@@ -575,7 +575,7 @@ function printDetailProperties(nodeOrSelection: LexicalNode) {
   return str;
 }
 
-function printModeProperties(nodeOrSelection: LexicalNode) {
+function printModeProperties(nodeOrSelection: TextNode) {
   let str = MODE_PREDICATES.map((predicate) => predicate(nodeOrSelection))
     .filter(Boolean)
     .join(', ')
@@ -588,7 +588,7 @@ function printModeProperties(nodeOrSelection: LexicalNode) {
   return str;
 }
 
-function printFormatProperties(nodeOrSelection: LexicalNode | RangeSelection) {
+function printFormatProperties(nodeOrSelection: TextNode | RangeSelection) {
   let str = FORMAT_PREDICATES.map((predicate) => predicate(nodeOrSelection))
     .filter(Boolean)
     .join(', ')
@@ -723,10 +723,13 @@ function prettifyHTML(node: Element, level: number) {
 
 function $getSelectionStartEnd(
   node: LexicalNode,
-  selection: RangeSelection | GridSelection,
+  selection: BaseSelection,
 ): [number, number] {
-  const anchor = selection.anchor;
-  const focus = selection.focus;
+  const anchorAndFocus = selection.getStartEndPoints();
+  if ($isNodeSelection(selection) || anchorAndFocus === null) {
+    return [-1, -1];
+  }
+  const [anchor, focus] = anchorAndFocus;
   const textContent = node.getTextContent();
   const textLength = textContent.length;
 

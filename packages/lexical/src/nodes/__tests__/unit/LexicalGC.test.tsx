@@ -11,12 +11,14 @@ import {
   $createTextNode,
   $getNodeByKey,
   $getRoot,
+  $isElementNode,
 } from 'lexical';
 
 import {
   $createTestElementNode,
   generatePermutations,
   initializeUnitTest,
+  invariant,
 } from '../../../__tests__/utils';
 
 describe('LexicalGC tests', () => {
@@ -66,7 +68,9 @@ describe('LexicalGC tests', () => {
         expect(editor.getEditorState()._nodeMap.size).toBe(5);
         await editor.update(() => {
           const root = $getRoot();
-          const subchild = root.getFirstChild().getChildAtIndex(i);
+          const firstChild = root.getFirstChild();
+          invariant($isElementNode(firstChild));
+          const subchild = firstChild.getChildAtIndex(i)!;
           expect(subchild.getTextContent()).toBe(['foo', 'bar', 'zzz'][i]);
           subchild.remove();
           root.clear();
@@ -103,7 +107,7 @@ describe('LexicalGC tests', () => {
         expect(editor.getEditorState()._nodeMap.size).toBe(7);
         await editor.update(() => {
           for (const key of removeKeys) {
-            const node = $getNodeByKey(String(key));
+            const node = $getNodeByKey(String(key))!;
             node.remove();
           }
           $getRoot().clear();

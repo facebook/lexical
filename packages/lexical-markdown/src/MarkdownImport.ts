@@ -16,7 +16,7 @@ import type {
 import type {LexicalNode, TextNode} from 'lexical';
 
 import {$createCodeNode} from '@lexical/code';
-import {$isListItemNode, $isListNode} from '@lexical/list';
+import {$isListItemNode, $isListNode, ListItemNode} from '@lexical/list';
 import {$isQuoteNode} from '@lexical/rich-text';
 import {$findMatchingParent} from '@lexical/utils';
 import {
@@ -78,10 +78,10 @@ export function createMarkdownImport(
     }
 
     // Removing empty paragraphs as md does not really
-    // allow empty lines and uses them as dilimiter
+    // allow empty lines and uses them as delimiter
     const children = root.getChildren();
     for (const child of children) {
-      if (isEmptyParagraph(child)) {
+      if (isEmptyParagraph(child) && root.getChildrenSize() > 1) {
         child.remove();
       }
     }
@@ -145,7 +145,7 @@ function importBlocks(
       $isQuoteNode(previousNode) ||
       $isListNode(previousNode)
     ) {
-      let targetNode: LexicalNode | null = previousNode;
+      let targetNode: typeof previousNode | ListItemNode | null = previousNode;
 
       if ($isListNode(previousNode)) {
         const lastDescendant = previousNode.getLastDescendant();
@@ -293,21 +293,16 @@ function importTextMatchTransformers(
 
       const startIndex = match.index || 0;
       const endIndex = startIndex + match[0].length;
-      let replaceNode, leftTextNode, rightTextNode;
+      let replaceNode, newTextNode;
 
       if (startIndex === 0) {
         [replaceNode, textNode] = textNode.splitText(endIndex);
       } else {
-        [leftTextNode, replaceNode, rightTextNode] = textNode.splitText(
-          startIndex,
-          endIndex,
-        );
+        [, replaceNode, newTextNode] = textNode.splitText(startIndex, endIndex);
       }
-      if (leftTextNode) {
-        importTextMatchTransformers(leftTextNode, textMatchTransformers);
-      }
-      if (rightTextNode) {
-        textNode = rightTextNode;
+
+      if (newTextNode) {
+        importTextMatchTransformers(newTextNode, textMatchTransformers);
       }
       transformer.replace(replaceNode, match);
       continue mainLoop;

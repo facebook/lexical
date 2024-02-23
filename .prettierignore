@@ -9,6 +9,7 @@ packages/playwright-core
 packages/**/vite.config.js
 packages/**/vite.prod.config.js
 **/*.md
+**/*.js.flow
 **/node_modules
 flow-typed
 .github/CODEOWNERS

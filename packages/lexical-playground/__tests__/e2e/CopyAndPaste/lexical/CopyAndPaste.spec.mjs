@@ -792,6 +792,7 @@ test.describe('CopyAndPaste', () => {
     await page.keyboard.type('Hello');
     await selectAll(page);
     await click(page, '.link');
+    await click(page, '.link-confirm');
     await page.keyboard.press('ArrowRight');
     await page.keyboard.press('Space');
     await page.keyboard.type('World');

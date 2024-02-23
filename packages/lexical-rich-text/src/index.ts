@@ -70,7 +70,6 @@ import {
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
-  DEPRECATED_$isGridSelection,
   DRAGOVER_COMMAND,
   DRAGSTART_COMMAND,
   DROP_COMMAND,
@@ -439,10 +438,7 @@ function onPasteForRichText(
         event instanceof InputEvent || event instanceof KeyboardEvent
           ? null
           : event.clipboardData;
-      if (
-        clipboardData != null &&
-        ($isRangeSelection(selection) || DEPRECATED_$isGridSelection(selection))
-      ) {
+      if (clipboardData != null && selection !== null) {
         $insertDataTransferForRichText(clipboardData, selection, editor);
       }
     },
@@ -585,16 +581,11 @@ export function registerRichText(editor: LexicalEditor): () => void {
         const selection = $getSelection();
 
         if (typeof eventOrText === 'string') {
-          if ($isRangeSelection(selection)) {
+          if (selection !== null) {
             selection.insertText(eventOrText);
-          } else if (DEPRECATED_$isGridSelection(selection)) {
-            // TODO: Insert into the first cell & clear selection.
           }
         } else {
-          if (
-            !$isRangeSelection(selection) &&
-            !DEPRECATED_$isGridSelection(selection)
-          ) {
+          if (selection === null) {
             return false;
           }
 
@@ -648,7 +639,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
         for (const node of nodes) {
           const element = $findMatchingParent(
             node,
-            (parentNode) =>
+            (parentNode): parentNode is ElementNode =>
               $isElementNode(parentNode) && !parentNode.isInline(),
           );
           if (element !== null) {
@@ -1041,10 +1032,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
         }
 
         const selection = $getSelection();
-        if (
-          $isRangeSelection(selection) ||
-          DEPRECATED_$isGridSelection(selection)
-        ) {
+        if (selection !== null) {
           onPasteForRichText(event, editor);
           return true;
         }

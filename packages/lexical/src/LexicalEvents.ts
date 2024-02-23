@@ -19,6 +19,7 @@ import {
   IS_IOS,
   IS_SAFARI,
 } from 'shared/environment';
+import invariant from 'shared/invariant';
 
 import {
   $getPreviousSelection,
@@ -323,6 +324,10 @@ function onSelectionChange(
         const [lastFormat, lastStyle, lastOffset, lastKey, timeStamp] =
           collapsedSelectionFormat;
 
+        const root = $getRoot();
+        const isRootTextContentEmpty =
+          editor.isComposing() === false && root.getTextContent() === '';
+
         if (
           currentTimeStamp < timeStamp + 200 &&
           anchor.offset === lastOffset &&
@@ -332,22 +337,46 @@ function onSelectionChange(
           selection.style = lastStyle;
         } else {
           if (anchor.type === 'text') {
+            invariant(
+              $isTextNode(anchorNode),
+              'Point.getNode() must return TextNode when type is text',
+            );
             selection.format = anchorNode.getFormat();
             selection.style = anchorNode.getStyle();
-          } else if (anchor.type === 'element') {
+          } else if (anchor.type === 'element' && !isRootTextContentEmpty) {
             selection.format = 0;
             selection.style = '';
           }
         }
       } else {
-        let combinedFormat = IS_ALL_FORMATTING;
-        let hasTextNodes = false;
-
+        const anchorKey = anchor.key;
+        const focus = selection.focus;
+        const focusKey = focus.key;
         const nodes = selection.getNodes();
         const nodesLength = nodes.length;
+        const isBackward = selection.isBackward();
+        const startOffset = isBackward ? focusOffset : anchorOffset;
+        const endOffset = isBackward ? anchorOffset : focusOffset;
+        const startKey = isBackward ? focusKey : anchorKey;
+        const endKey = isBackward ? anchorKey : focusKey;
+        let combinedFormat = IS_ALL_FORMATTING;
+        let hasTextNodes = false;
         for (let i = 0; i < nodesLength; i++) {
           const node = nodes[i];
-          if ($isTextNode(node)) {
+          const textContentSize = node.getTextContentSize();
+          if (
+            $isTextNode(node) &&
+            textContentSize !== 0 &&
+            // Exclude empty text nodes at boundaries resulting from user's selection
+            !(
+              (i === 0 &&
+                node.__key === startKey &&
+                startOffset === textContentSize) ||
+              (i === nodesLength - 1 &&
+                node.__key === endKey &&
+                endOffset === 0)
+            )
+          ) {
             // TODO: what about style?
             hasTextNodes = true;
             combinedFormat &= node.getFormat();
@@ -423,6 +452,7 @@ function onClick(event: PointerEvent, editor: LexicalEditor): void {
               lastSelection,
               domSelection,
               editor,
+              event,
             );
             $setSelection(newSelection);
           }
@@ -537,6 +567,10 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
             const anchorNode = selection.anchor.getNode();
             anchorNode.markDirty();
             selection.format = anchorNode.getFormat();
+            invariant(
+              $isTextNode(anchorNode),
+              'Anchor node must be a TextNode',
+            );
             selection.style = anchorNode.getStyle();
           }
           const selectedText = selection.anchor.getNode().getTextContent();
@@ -545,6 +579,7 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
             dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);
           }
         } else {
+          $setCompositionKey(null);
           event.preventDefault();
           dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);
         }
@@ -852,7 +887,7 @@ function onCompositionStart(
         anchor.type === 'element' ||
         !selection.isCollapsed() ||
         node.getFormat() !== selection.format ||
-        node.getStyle() !== selection.style
+        ($isTextNode(node) && node.getStyle() !== selection.style)
       ) {
         // We insert a zero width character, ready for the composition
         // to get inserted into the new node we create. If
@@ -1097,6 +1132,7 @@ function onDocumentSelectionChange(event: Event): void {
         lastSelection,
         domSelection,
         nextActiveEditor,
+        event,
       );
       $setSelection(newSelection);
     });

@@ -7,6 +7,13 @@ This package exports utility functions for converting `Lexical` -> `HTML` and `H
 
 ### Exporting
 ```js
+// In a headless mode, you need to initialize a headless browser implementation such as JSDom.
+const dom = new JSDOM();
+// @ts-expect-error
+global.window = dom.window;
+global.document = dom.window.document;
+// You may also need to polyfill DocumentFragment or navigator in certain cases.
+
 // When converting to HTML you can pass in a selection object to narrow it
 // down to a certain part of the editor's contents.
 const htmlString = $generateHtmlFromNodes(editor, selection | null);

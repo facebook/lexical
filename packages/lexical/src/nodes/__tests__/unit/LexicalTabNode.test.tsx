@@ -21,7 +21,9 @@ import {
   $getRoot,
   $getSelection,
   $insertNodes,
+  $isElementNode,
   $isRangeSelection,
+  $isTextNode,
   $setSelection,
   KEY_TAB_COMMAND,
 } from 'lexical';
@@ -115,7 +117,7 @@ describe('LexicalTabNode tests', () => {
       registerRichText(editor);
       registerTabIndentation(editor);
       await editor.update(() => {
-        const selection = $getSelection();
+        const selection = $getSelection()!;
         selection.insertText('foo');
         $getRoot().selectStart();
       });
@@ -135,6 +137,7 @@ describe('LexicalTabNode tests', () => {
       await editor.update(() => {
         const root = $getRoot();
         const paragraph = root.getFirstChild();
+        invariant($isElementNode(paragraph));
         const heading = $createHeadingNode('h1');
         const list = $createListNode('number');
         const listItem = $createListItemNode();
@@ -165,7 +168,7 @@ describe('LexicalTabNode tests', () => {
       registerRichText(editor);
       registerTabIndentation(editor);
       await editor.update(() => {
-        $getSelection().insertText('foo');
+        $getSelection()!.insertText('foo');
       });
       await editor.dispatchCommand(
         KEY_TAB_COMMAND,
@@ -181,8 +184,9 @@ describe('LexicalTabNode tests', () => {
       registerRichText(editor);
       registerTabIndentation(editor);
       await editor.update(() => {
-        $getSelection().insertText('foo');
+        $getSelection()!.insertText('foo');
         const textNode = $getRoot().getLastDescendant();
+        invariant($isTextNode(textNode));
         textNode.select(1, 1);
       });
       await editor.dispatchCommand(
@@ -199,8 +203,9 @@ describe('LexicalTabNode tests', () => {
       registerRichText(editor);
       registerTabIndentation(editor);
       await editor.update(() => {
-        $getSelection().insertText('foo');
+        $getSelection()!.insertText('foo');
         const textNode = $getRoot().getLastDescendant();
+        invariant($isTextNode(textNode));
         textNode.select(1, 2);
       });
       await editor.dispatchCommand(
@@ -217,13 +222,13 @@ describe('LexicalTabNode tests', () => {
       registerRichText(editor);
       registerTabIndentation(editor);
       await editor.update(() => {
-        $getSelection().insertRawText('hello\tworld');
+        $getSelection()!.insertRawText('hello\tworld');
         const root = $getRoot();
         const firstTextNode = root.getFirstDescendant();
         const lastTextNode = root.getLastDescendant();
         const selection = $createRangeSelection();
-        selection.anchor.set(firstTextNode.getKey(), 'hell'.length, 'text');
-        selection.focus.set(lastTextNode.getKey(), 'wo'.length, 'text');
+        selection.anchor.set(firstTextNode!.getKey(), 'hell'.length, 'text');
+        selection.focus.set(lastTextNode!.getKey(), 'wo'.length, 'text');
         $setSelection(selection);
       });
       await editor.dispatchCommand(
@@ -242,7 +247,7 @@ describe('LexicalTabNode tests', () => {
         const tab2 = $createTabNode();
         $insertNodes([tab1, tab2]);
         tab1.select(1, 1);
-        $getSelection().insertText('f');
+        $getSelection()!.insertText('f');
       });
       expect(testEnv.innerHTML).toBe(
         '<p dir="ltr"><span data-lexical-text="true">\t</span><span data-lexical-text="true">f</span><span data-lexical-text="true">\t</span></p>',

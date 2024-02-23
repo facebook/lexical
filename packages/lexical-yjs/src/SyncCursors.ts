@@ -19,6 +19,7 @@ import {
   $isRangeSelection,
   $isTextNode,
 } from 'lexical';
+import invariant from 'shared/invariant';
 import {
   compareRelativePositions,
   createAbsolutePositionFromRelativePosition,
@@ -80,6 +81,7 @@ function createRelativePosition(
     point.type === 'element'
   ) {
     const parent = point.getNode();
+    invariant($isElementNode(parent), 'Element point must be an element node');
     let accumulatedOffset = 0;
     let i = 0;
     let node = parent.getFirstChild();

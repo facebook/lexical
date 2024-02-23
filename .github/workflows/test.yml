@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [18.14.2]
+        node-version: [20.11.0]
     env:
       CI: true
       GITHUB_TOKEN: ${{ secrets.DANGER_GITHUB_API_TOKEN }}
@@ -51,7 +51,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [16.15.1]
+        node-version: [18.18.0]
     env:
       CI: true
     steps:
@@ -78,7 +78,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        node-version: [16.15.1]
+        node-version: [18.18.0]
         browser: ['chromium', 'firefox', 'webkit']
         editor-mode: ['rich-text', 'plain-text']
         events-mode: ['legacy-events', 'modern-events']
@@ -120,7 +120,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [16.15.1]
+        node-version: [18.18.0]
         browser: ['chromium', 'firefox']
         editor-mode: ['rich-text', 'plain-text']
         events-mode: ['legacy-events', 'modern-events']
@@ -166,7 +166,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        node-version: [16.15.1]
+        node-version: [18.18.0]
         browser: ['chromium', 'firefox']
         editor-mode: ['rich-text', 'plain-text']
         events-mode: ['legacy-events', 'modern-events']
@@ -207,7 +207,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        node-version: [16.15.1]
+        node-version: [18.18.0]
         browser: ['chromium', 'firefox', 'webkit']
     env:
       CI: true
@@ -245,7 +245,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [16.15.1]
+        node-version: [18.18.0]
         browser: ['chromium', 'firefox']
     env:
       CI: true
@@ -287,7 +287,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        node-version: [16.15.1]
+        node-version: [18.18.0]
         browser: ['chromium', 'firefox']
     env:
       CI: true
@@ -324,7 +324,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        node-version: [16.15.1]
+        node-version: [18.18.0]
         browser: ['chromium']
         editor-mode: ['rich-text', 'plain-text']
         events-mode: ['modern-events']
@@ -366,7 +366,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        node-version: [16.15.1]
+        node-version: [18.18.0]
         browser: ['chromium']
         editor-mode: ['rich-text']
         events-mode: ['modern-events']

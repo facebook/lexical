@@ -18,6 +18,7 @@ export type {
   EditorThemeClasses,
   HTMLConfig,
   Klass,
+  KlassConstructor,
   LexicalCommand,
   LexicalEditor,
   LexicalNodeReplacement,
@@ -42,12 +43,9 @@ export type {
 export type {
   BaseSelection,
   ElementPointType as ElementPoint,
-  GridMapType,
-  GridMapValueType,
-  GridSelection,
-  GridSelectionShape,
   NodeSelection,
   Point,
+  PointType,
   RangeSelection,
   TextPointType as TextPoint,
 } from './LexicalSelection';
@@ -55,7 +53,6 @@ export type {
   ElementFormatType,
   SerializedElementNode,
 } from './nodes/LexicalElementNode';
-export type {SerializedGridCellNode} from './nodes/LexicalGridCellNode';
 export type {SerializedRootNode} from './nodes/LexicalRootNode';
 export type {
   SerializedTextNode,
@@ -109,6 +106,7 @@ export {
   REMOVE_TEXT_COMMAND,
   SELECT_ALL_COMMAND,
   SELECTION_CHANGE_COMMAND,
+  SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
   UNDO_COMMAND,
 } from './LexicalCommands';
 export {
@@ -123,7 +121,9 @@ export type {EventHandler} from './LexicalEvents';
 export {$normalizeSelection as $normalizeSelection__EXPERIMENTAL} from './LexicalNormalization';
 export {
   $createNodeSelection,
+  $createPoint,
   $createRangeSelection,
+  $getCharacterOffsets,
   $getPreviousSelection,
   $getSelection,
   $getTextContent,
@@ -131,18 +131,14 @@ export {
   $isBlockElementNode,
   $isNodeSelection,
   $isRangeSelection,
-  DEPRECATED_$computeGridMap,
-  DEPRECATED_$createGridSelection,
-  DEPRECATED_$getGridCellNodeRect,
-  DEPRECATED_$getNodeTriplet,
-  DEPRECATED_$isGridSelection,
 } from './LexicalSelection';
-export {$parseSerializedNode} from './LexicalUpdates';
+export {$parseSerializedNode, isCurrentlyReadOnlyMode} from './LexicalUpdates';
 export {
   $addUpdateTag,
   $applyNodeReplacement,
   $copyNode,
   $getAdjacentNode,
+  $getEditor,
   $getNearestNodeFromDOMNode,
   $getNearestRootOrShadowRoot,
   $getNodeByKey,
@@ -165,18 +161,6 @@ export {
 } from './LexicalUtils';
 export {$isDecoratorNode, DecoratorNode} from './nodes/LexicalDecoratorNode';
 export {$isElementNode, ElementNode} from './nodes/LexicalElementNode';
-export {
-  DEPRECATED_$isGridCellNode,
-  DEPRECATED_GridCellNode,
-} from './nodes/LexicalGridCellNode';
-export {
-  DEPRECATED_$isGridNode,
-  DEPRECATED_GridNode,
-} from './nodes/LexicalGridNode';
-export {
-  DEPRECATED_$isGridRowNode,
-  DEPRECATED_GridRowNode,
-} from './nodes/LexicalGridRowNode';
 export type {SerializedLineBreakNode} from './nodes/LexicalLineBreakNode';
 export {
   $createLineBreakNode,

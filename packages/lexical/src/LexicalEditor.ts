@@ -45,10 +45,18 @@ import {TabNode} from './nodes/LexicalTabNode';
 
 export type Spread<T1, T2> = Omit<T2, keyof T1> & T1;
 
-export type Klass<T extends LexicalNode> = {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  new (...args: any[]): T;
-} & Omit<LexicalNode, 'constructor'>;
+// https://github.com/microsoft/TypeScript/issues/3841
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type KlassConstructor<Cls extends GenericConstructor<any>> =
+  GenericConstructor<InstanceType<Cls>> & {[k in keyof Cls]: Cls[k]};
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type GenericConstructor<T> = new (...args: any[]) => T;
+
+export type Klass<T extends LexicalNode> = InstanceType<
+  T['constructor']
+> extends T
+  ? T['constructor']
+  : GenericConstructor<T> & T['constructor'];
 
 export type EditorThemeClassName = string;
 
@@ -63,6 +71,7 @@ export type TextNodeThemeClasses = {
   superscript?: EditorThemeClassName;
   underline?: EditorThemeClassName;
   underlineStrikethrough?: EditorThemeClassName;
+  [key: string]: EditorThemeClassName | undefined;
 };
 
 export type EditorUpdateOptions = {
@@ -101,6 +110,7 @@ export type EditorThemeClasses = {
     ulDepth?: Array<EditorThemeClassName>;
     ol?: EditorThemeClassName;
     olDepth?: Array<EditorThemeClassName>;
+    checklist?: EditorThemeClassName;
     listitem?: EditorThemeClassName;
     listitemChecked?: EditorThemeClassName;
     listitemUnchecked?: EditorThemeClassName;
@@ -519,6 +529,8 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
   return editor;
 }
 export class LexicalEditor {
+  ['constructor']!: KlassConstructor<typeof LexicalEditor>;
+
   /** @internal */
   _headless: boolean;
   /** @internal */

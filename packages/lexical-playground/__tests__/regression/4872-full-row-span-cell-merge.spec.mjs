@@ -6,7 +6,7 @@
  *
  */
 import {
-  assertGridSelectionCoordinates,
+  assertTableSelectionCoordinates,
   click,
   focusEditor,
   initialize,
@@ -48,7 +48,7 @@ test.describe('Regression test #4872', () => {
       false,
     );
 
-    await assertGridSelectionCoordinates(page, {
+    await assertTableSelectionCoordinates(page, {
       anchor: {x: 1, y: 4},
       focus: {x: 2, y: 4},
     });

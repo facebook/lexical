@@ -64,7 +64,7 @@
         "./packages/lexical-react/src/LexicalBlockWithAlignableContents.tsx"
       ],
       "@lexical/react/useLexicalIsTextContentEmpty": [
-        "./packages/lexical-reactsrc//useLexicalIsTextContentEmpty.ts"
+        "./packages/lexical-react/src/useLexicalIsTextContentEmpty.ts"
       ],
       "@lexical/react/useLexicalNodeSelection": [
         "./packages/lexical-react/src/useLexicalNodeSelection.ts"
@@ -194,7 +194,7 @@
   },
   "include": ["./libdefs", "./packages"],
   "exclude": [
-    "**/__tests__/**",
+    "**/lexical-*/src/__tests__/**",
     "**/dist/**",
     "**/npm/**",
     "**/node_modules/**",

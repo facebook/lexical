@@ -7,9 +7,8 @@
  */
 
 import type {
-  DecoratorNode,
+  BaseSelection,
   ElementNode,
-  GridSelection,
   LexicalNode,
   NodeKey,
   Point,
@@ -32,6 +31,7 @@ import {
   $isTextNode,
   $setSelection,
 } from 'lexical';
+import invariant from 'shared/invariant';
 
 import {getStyleObjectFromCSS} from './utils';
 
@@ -41,10 +41,16 @@ import {getStyleObjectFromCSS} from './utils';
  * @param createElement - The function that creates the node. eg. $createParagraphNode.
  */
 export function $setBlocksType(
-  selection: RangeSelection | GridSelection,
+  selection: BaseSelection | null,
   createElement: () => ElementNode,
 ): void {
-  if (selection.anchor.key === 'root') {
+  if (selection === null) {
+    return;
+  }
+  const anchorAndFocus = selection.getStartEndPoints();
+  const anchor = anchorAndFocus ? anchorAndFocus[0] : null;
+
+  if (anchor !== null && anchor.key === 'root') {
     const element = createElement();
     const root = $getRoot();
     const firstChild = root.getFirstChild();
@@ -59,10 +65,8 @@ export function $setBlocksType(
   }
 
   const nodes = selection.getNodes();
-  const firstSelectedBlock = $getAncestor(
-    selection.anchor.getNode(),
-    INTERNAL_$isBlock,
-  );
+  const firstSelectedBlock =
+    anchor !== null ? $getAncestor(anchor.getNode(), INTERNAL_$isBlock) : false;
   if (firstSelectedBlock && nodes.indexOf(firstSelectedBlock) === -1) {
     nodes.push(firstSelectedBlock);
   }
@@ -73,6 +77,7 @@ export function $setBlocksType(
     if (!INTERNAL_$isBlock(node)) {
       continue;
     }
+    invariant($isElementNode(node), 'Expected block node to be an ElementNode');
 
     const targetElement = createElement();
     targetElement.setFormat(node.getFormatType());
@@ -108,19 +113,21 @@ function $removeParentEmptyElements(startingNode: ElementNode): void {
  * @param wrappingElement - An element to append the wrapped selection and its children to.
  */
 export function $wrapNodes(
-  selection: RangeSelection | GridSelection,
+  selection: BaseSelection,
   createElement: () => ElementNode,
   wrappingElement: null | ElementNode = null,
 ): void {
+  const anchorAndFocus = selection.getStartEndPoints();
+  const anchor = anchorAndFocus ? anchorAndFocus[0] : null;
   const nodes = selection.getNodes();
   const nodesLength = nodes.length;
-  const anchor = selection.anchor;
 
   if (
-    nodesLength === 0 ||
-    (nodesLength === 1 &&
-      anchor.type === 'element' &&
-      anchor.getNode().getChildrenSize() === 0)
+    anchor !== null &&
+    (nodesLength === 0 ||
+      (nodesLength === 1 &&
+        anchor.type === 'element' &&
+        anchor.getNode().getChildrenSize() === 0))
   ) {
     const target =
       anchor.type === 'text'
@@ -194,7 +201,7 @@ export function $wrapNodes(
  * @returns
  */
 export function $wrapNodesImpl(
-  selection: RangeSelection | GridSelection,
+  selection: BaseSelection,
   nodes: LexicalNode[],
   nodesLength: number,
   createElement: () => ElementNode,
@@ -286,6 +293,10 @@ export function $wrapNodesImpl(
         $removeParentEmptyElements(parent);
       }
     } else if (emptyElements.has(node.getKey())) {
+      invariant(
+        $isElementNode(node),
+        'Expected node in emptyElements to be an ElementNode',
+      );
       const targetElement = createElement();
       targetElement.setFormat(node.getFormatType());
       targetElement.setIndent(node.getIndent());
@@ -562,11 +573,9 @@ export function $getSelectionStyleValueForProperty(
  * This function is for internal use of the library.
  * Please do not use it as it may change in the future.
  */
-export function INTERNAL_$isBlock(
-  node: LexicalNode,
-): node is ElementNode | DecoratorNode<unknown> {
-  if ($isDecoratorNode(node) && !node.isInline()) {
-    return true;
+export function INTERNAL_$isBlock(node: LexicalNode): node is ElementNode {
+  if ($isDecoratorNode(node)) {
+    return false;
   }
   if (!$isElementNode(node) || $isRootOrShadowRoot(node)) {
     return false;

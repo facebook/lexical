@@ -9,6 +9,7 @@
 import {
   extendToNextWord,
   moveLeft,
+  moveRight,
   moveToEditorBeginning,
   moveToEditorEnd,
   moveToLineBeginning,
@@ -20,7 +21,6 @@ import {
   assertSelection,
   click,
   copyToClipboard,
-  focus,
   focusEditor,
   html,
   initialize,
@@ -41,7 +41,6 @@ test.describe('HTML Links CopyAndPaste', () => {
     };
 
     await pasteFromClipboard(page, clipboard);
-
     await assertHTML(
       page,
       html`
@@ -65,6 +64,7 @@ test.describe('HTML Links CopyAndPaste', () => {
 
     await selectAll(page);
 
+    // unlink
     await click(page, '.link');
 
     await assertHTML(
@@ -77,10 +77,8 @@ test.describe('HTML Links CopyAndPaste', () => {
     );
 
     await click(page, '.link');
-    await click(page, '.link-edit');
-    await focus(page, '.link-input');
     await page.keyboard.type('facebook.com');
-    await page.keyboard.press('Enter');
+    await click(page, '.link-confirm');
 
     await assertHTML(
       page,
@@ -255,6 +253,186 @@ test.describe('HTML Links CopyAndPaste', () => {
             <span data-lexical-text="true">Lexical</span>
           </a>
           <span data-lexical-text="true">in the wild</span>
+        </p>
+      `,
+    );
+  });
+
+  test('Paste text into a link', async ({page, isPlainText}) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+
+    await page.keyboard.type('Link text');
+    await selectAll(page);
+    await click(page, '.link');
+    await click(page, '.link-confirm');
+    await moveRight(page, 1);
+    await moveLeft(page, 4);
+
+    await pasteFromClipboard(page, {
+      'text/html': 'normal text',
+    });
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://"
+            rel="noreferrer">
+            <span data-lexical-text="true">Link</span>
+          </a>
+          <span data-lexical-text="true">normal text</span>
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://"
+            rel="noreferrer">
+            <span data-lexical-text="true">text</span>
+          </a>
+        </p>
+      `,
+    );
+  });
+
+  test('Paste formatted text into a link', async ({page, isPlainText}) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+
+    await page.keyboard.type('Link text');
+    await selectAll(page);
+    await click(page, '.link');
+    await click(page, '.link-confirm');
+    await moveRight(page, 1);
+    await moveLeft(page, 4);
+
+    await pasteFromClipboard(page, {
+      'text/html': '<b>bold</b> text',
+    });
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://"
+            rel="noreferrer">
+            <span data-lexical-text="true">Link</span>
+          </a>
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            bold
+          </strong>
+          <span data-lexical-text="true">text</span>
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://"
+            rel="noreferrer">
+            <span data-lexical-text="true">text</span>
+          </a>
+        </p>
+      `,
+    );
+  });
+
+  test('Paste a link into a link', async ({page, isPlainText}) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+
+    await page.keyboard.type('Link text');
+    await selectAll(page);
+    await click(page, '.link');
+    await click(page, '.link-confirm');
+    await moveRight(page, 1);
+    await moveLeft(page, 4);
+
+    await pasteFromClipboard(page, {
+      'text/html': 'text with <a href="https://lexical.dev">link</b>',
+    });
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://"
+            rel="noreferrer">
+            <span data-lexical-text="true">Link</span>
+          </a>
+          <span data-lexical-text="true">text with</span>
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://lexical.dev">
+            <span data-lexical-text="true">link</span>
+          </a>
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://"
+            rel="noreferrer">
+            <span data-lexical-text="true">text</span>
+          </a>
+        </p>
+      `,
+    );
+  });
+
+  test('Paste multiple blocks into a link', async ({page, isPlainText}) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+
+    await page.keyboard.type('Link text');
+    await selectAll(page);
+    await click(page, '.link');
+    await click(page, '.link-confirm');
+    await moveRight(page, 1);
+    await moveLeft(page, 4);
+
+    await pasteFromClipboard(page, {
+      'text/html': '<p>para 1</p><p>para 2</p>',
+    });
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://"
+            rel="noreferrer">
+            <span data-lexical-text="true">Link</span>
+          </a>
+          <span data-lexical-text="true">para 1</span>
+        </p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">para 2</span>
+          <a
+            class="PlaygroundEditorTheme__link PlaygroundEditorTheme__ltr"
+            dir="ltr"
+            href="https://"
+            rel="noreferrer">
+            <span data-lexical-text="true">text</span>
+          </a>
         </p>
       `,
     );

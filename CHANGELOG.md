@@ -1,3 +1,119 @@
+## v0.13.1 (2024-01-27)
+
+- Update InlineImageNode.tsx (#5552) lvvl
+- docs correct react plugin name (#5554) sj
+- Check global.window on DOM availability check (#5547) wnhlee
+- Update CODEOWNERS (#5550) Gerard Rovira
+- feat Expose getActiveEditor and getActiveEditorState (#5409) yf-yang
+- Floating link editor for AutoLinkNode and conversion to LinkNode once modified. (#5536) Harry Sanders
+- Add rowcolumn with correct header styles (#5546) Shubhanker Srivastava
+- v0.13.0 (#5540) Gerard Rovira
+- Add missing flow types (#5542) Gerard Rovira
+- v0.13.0 Lexical GitHub Actions Bot
+
+## v0.13.0 (2024-01-24)
+
+- Rename LexicalTableSelection to LexicalTableObserver (#5533) Gerard Rovira
+- Move Grid to lexicaltable (#5532) Gerard Rovira
+- Remove Grid Nodes (#5531) Gerard Rovira
+- Move Grid to lexicaltable (#5528) Gerard Rovira
+- Fix and extend README.md documentation links (#5526) Leo
+- Combined selection format to ignore empty text nodes (#5521) Gerard Rovira
+- Clean up the never implemented Table menu in Toolbar (#5523) Ivaylo Pavlov
+- Fixed the toolbar style activation state is incorrect in certain cases (#5126) Warren19
+- Fix inserting redundant paragraph on enter in MarkNode (#5418) Drago Strinu
+- Bump Node in tests to 18.18.0 (#5513) Ivaylo Pavlov
+- Fix AutoLinkPlugin triggers endless transforms (#5404) wnhlee
+- Allow setting className for checklist in theme (#5445) Aman Harwara
+- fix set button typebutton in TableActionMenuPlugin (#5510) Anthony Bouch
+- PR-5 Remove references of PointSelection (#5334) Illia Olenchenko
+- Fix CI (#5511) Gerard Rovira
+- Fix inserting link open editor in edit mode (#5458) wnhlee
+- docs(serialization) add node helpers to ExtendedTextNode example (#5442) Can Rau
+- Fix exportTextFormat to keep dollar sign (#5379) wnhlee
+- Use correct prop type for children in LexicalComposer (#5503) Paul
+- Fix DecoratorNodes being treated as block elements (#5371) Steve Larson
+- Replace font size dropdown with font size entry component (#5451) Shubhanker Srivastava
+- Adding ability to mount LexicalMenus to arbitrary divs (#5481) Ebad
+- Fix escape down for collapsible section when collapsed (#5485) Ivaylo Pavlov
+- Fix columns layout update command (#5484) Ivaylo Pavlov
+- Fix small issue with DecoratorNode type guards (#5478) John Flockton
+- Fix multiline conversion to codeblock (#5472) Shubhanker Srivastava
+- Remove depecated usage of checks from Flow types (#5477) John Flockton
+- Update Flow version (#5471) John Flockton
+- Minor refactoring in LexicalLineBreakNode (#5455) Georgii Dolzhykov
+- Minor fix for release script (#5464) Acy Watson
+- v0.12.6 (#5463) Acy Watson
+- v0.12.6 Lexical GitHub Actions Bot
+
+## v0.12.6 (2024-01-08)
+
+- Fix floating link editor on inline image caption (#5460) wnhlee
+- Revert Inserting hyperlink through toolbar doesnt open floating editor in edit mode (#5456) Acy Watson
+- Fix TextNode#createDOM types allow editor parameter in subclasses (#5425) Georgii Dolzhykov
+- docs fix outdated importDOM types in docs (#5431) Georgii Dolzhykov
+- Bug Editing a link and changing selection shows wrong link value (#5352) Syed Umar Anis
+- fix Reset compositionKey when backspacing a selection on Android where anchor and focus keys are different (#5389) Aman Harwara
+- Bug Fix added a fix for discarding multiple color picker entries on drag (#5335) Bhavya Karia
+- Remove duplicated test codes (#5429) wnhlee
+- Inserting hyperlink through toolbar doesnt open floating editor in edit mode (#5372) Syed Umar Anis
+- fix adding missing argument for sliceSelectedTextContent (#5380) Nadine Nguyen
+- Fixed a small typo (#5427) frankdiw
+- Fix insertNodes when inserting into inline elements (#5394) Brian Birtles
+- Add link to state update blog (#5423) Acy Watson
+- canInsertTextAfter exception for composition (#5378) Gerard Rovira
+- Fix insert image to new inserted table row in playground report error (#5417) frankdiw
+-  Refactored findNearestListItemNode using findMatchingParent (#5419) Ajay Prakash PP
+- docs correct custom node examples (#5407) Naseem Ali
+- Fixed the error when CollapsibleTitleNode type enter key (#5416) frankdiw
+- dropdown text visibility problem fixed for medium and smaller screens (#5382) Recep ifti
+- Fix convertFromMarkdownString breakdown due to no parent (#5393) wnhlee
+- Fix bug on window.event conflict (#5391) Henry Boisgibault
+- Fix typo on test title (#5399) wnhlee
+- fix typo Contaner - Container (#5410) Philippe de Reynal
+- fix logical error in description of insertBefore parameter (#5400) spirobel
+- Featureexcalidraw resize (#5383) Recep ifti
+- Flow fix RangeSelection extends (#5377) Gerard Rovira
+- Fixed for #5162, The beginning of a TextNode with canInsertTextBefore false in  (#5363) matsuyama-k1
+- PR 4 remove GridSelection from lexical core (#5293) Illia Olenchenko
+- PR 3 Removed edge-cases of GridSelection (#5291) Illia Olenchenko
+- Clear link using key shortcut bug (#5354) Syed Umar Anis
+- refactor(playground) kill ts-ignore (#5342) Aron Griffis
+- Automatic release on merge (#5347) Acy Watson
+- Improve TypeScript types by removing k string any from LexicalNode (#5223) Bob Ippolito
+- Support other formats in Collapsible Title (#5328) Ivaylo Pavlov
+- docs added exportJSON function to the ExtendedTextNode plugin code (#5338) 
+- v0.12.5 (#5343) Acy Watson
+- Fix path alias typo (#5340) wnhlee
+- v0.12.5 Lexical GitHub Actions Bot
+
+## v0.12.5 (2023-12-06)
+
+- Make subscript and superscript text formats mutually exclusive (#5317) Gry Ogam
+- PR 2 5276 PointSelection instead of GridRangeSelections (#5281) Illia Olenchenko
+- keep selection style when clicking empty editor (#5292) kyoyoung keum
+- Fix insertNodes bugs (#5325) GermanJablo
+- PR 1 Swap instance selection for BaseSelection in most cases (#5280) Illia Olenchenko
+- selectEndstart as a method of LexicalNode instead of ElementNode (#5205) GermanJablo
+- Make insertRangeAfter private (#5323) Gerard Rovira
+- Improvements in insertNodes (#5201) GermanJablo
+- Export CommandListener Flow (#5315) Gerard Rovira
+- Add 2 missing flow exports (#5314) Gerard Rovira
+- URL sanitization ClickableLinkPlugin (#5302) Yeison Daza
+- fix backspace in Android not deleting first character (#5282) Kiran Dash
+- docs improve DecoratorNode docs (#5284) Miroslav Petrov
+- Fixing nested collapsible section chevron (#5300) Ebad
+- Support HTML export overrides from config for nested editors. (#5267) Acy Watson
+- Revert Fix Autolink plugin URL recognition failures (#5275) (#5295) Acy Watson
+- Fix Autolink plugin URL recognition failures (#5275) Chinmay Disale
+- Move to new Excalidraw APIs for 0.17 update (#5277) Ivaylo Pavlov
+- Fix Resolve Cannot read properties of undefined (reading trim) issue in getSelectionStyleValueForProperty (#5271) Yeison Daza
+- Fix The number in a numbered list gets duplicated (#5253) trinhvinhtruong96
+- Fix Apply background color to multiple selected cells (#5258) Joo Hee Paige Kim
+- packagelock (#5247) Gerard Rovira
+- v0.12.4 (#5246) Gerard Rovira
+- v0.12.4 Lexical GitHub Actions Bot
+
 ## v0.12.4 (2023-11-17)
 
 - Fix @lexical/utils import (#5245) Gerard Rovira

@@ -616,10 +616,12 @@ export function applyTableHandlers(
           // as in that case we'll leave selection resolving to that table
           const anchorCellNode = $findCellNode(anchorNode);
           const focusCellNode = $findCellNode(focusNode);
-          const isAnchorInside =
-            anchorCellNode && tableNode.is($findTableNode(anchorCellNode));
-          const isFocusInside =
-            focusCellNode && tableNode.is($findTableNode(focusCellNode));
+          const isAnchorInside = !!(
+            anchorCellNode && tableNode.is($findTableNode(anchorCellNode))
+          );
+          const isFocusInside = !!(
+            focusCellNode && tableNode.is($findTableNode(focusCellNode))
+          );
           const isPartialyWithinTable = isAnchorInside !== isFocusInside;
           const isWithinTable = isAnchorInside && isFocusInside;
           const isBackward = selection.isBackward();

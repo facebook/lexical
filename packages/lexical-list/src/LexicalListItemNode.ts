@@ -40,12 +40,7 @@ import invariant from 'shared/invariant';
 import splitClasses from 'shared/splitClasses';
 
 import {$createListNode, $isListNode} from './';
-import {
-  $handleIndent,
-  $handleOutdent,
-  mergeLists,
-  updateChildrenListItemValue,
-} from './formatList';
+import {$handleIndent, $handleOutdent, mergeLists} from './formatList';
 import {isNestedListNode} from './utils';
 
 export type SerializedListItemNode = Spread<
@@ -106,10 +101,12 @@ export class ListItemNode extends ElementNode {
 
   static transform(): (node: LexicalNode) => void {
     return (node: LexicalNode) => {
+      invariant($isListItemNode(node), 'node is not a ListItemNode');
+      if (node.__checked == null) {
+        return;
+      }
       const parent = node.getParent();
       if ($isListNode(parent)) {
-        updateChildrenListItemValue(parent);
-        invariant($isListItemNode(node), 'node is not a ListItemNode');
         if (parent.getListType() !== 'check' && node.getChecked() != null) {
           node.setChecked(undefined);
         }
@@ -221,18 +218,11 @@ export class ListItemNode extends ElementNode {
       );
     }
 
-    const siblings = this.getNextSiblings();
-
     if ($isListItemNode(node)) {
-      const after = super.insertAfter(node, restoreSelection);
-      const afterListNode = node.getParentOrThrow();
-
-      if ($isListNode(afterListNode)) {
-        updateChildrenListItemValue(afterListNode);
-      }
-
-      return after;
+      return super.insertAfter(node, restoreSelection);
     }
+
+    const siblings = this.getNextSiblings();
 
     // Attempt to merge if the list is of the same type.
 
@@ -277,12 +267,6 @@ export class ListItemNode extends ElementNode {
     ) {
       mergeLists(prevSibling.getFirstChild(), nextSibling.getFirstChild());
       nextSibling.remove();
-    } else if (nextSibling) {
-      const parent = nextSibling.getParent();
-
-      if ($isListNode(parent)) {
-        updateChildrenListItemValue(parent);
-      }
     }
   }
 
@@ -397,19 +381,6 @@ export class ListItemNode extends ElementNode {
     }
 
     return this;
-  }
-
-  insertBefore(nodeToInsert: LexicalNode): LexicalNode {
-    if ($isListItemNode(nodeToInsert)) {
-      const parent = this.getParentOrThrow();
-
-      if ($isListNode(parent)) {
-        const siblings = this.getNextSiblings();
-        updateChildrenListItemValue(parent, siblings);
-      }
-    }
-
-    return super.insertBefore(nodeToInsert);
   }
 
   canInsertAfter(node: LexicalNode): boolean {

@@ -111,11 +111,6 @@ export class TableNode extends ElementNode {
     };
   }
 
-  // TODO 0.10 deprecate
-  canExtractContents(): false {
-    return false;
-  }
-
   canBeEmpty(): false {
     return false;
   }

@@ -632,7 +632,11 @@ export function registerRichText(editor: LexicalEditor): () => void {
       FORMAT_ELEMENT_COMMAND,
       (format) => {
         const selection = $getSelection();
-        if (!$isRangeSelection(selection) && !$isNodeSelection(selection)) {
+        const validSelection =
+          $isRangeSelection(selection) ||
+          $isNodeSelection(selection) ||
+          DEPRECATED_$isGridSelection(selection);
+        if (!validSelection) {
           return false;
         }
         const nodes = selection.getNodes();

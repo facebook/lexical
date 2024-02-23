@@ -28,6 +28,7 @@ import {
   LexicalNode,
 } from 'lexical';
 import invariant from 'shared/invariant';
+import splitClasses from 'shared/splitClasses';
 
 export {default as markSelection} from './markSelection';
 export {default as mergeRegister} from './mergeRegister';
@@ -76,20 +77,6 @@ export function removeClassNamesFromElement(
       element.classList.remove(...splitClasses(className));
     }
   });
-}
-
-/**
- * Takes a string of classNames and splits into an array of strings,
- * ignoring any empty strings.
- * eg. splitClasses('active small') will return ['active', 'small']
- * @param classNames - A string of class names
- * @returns An array of strings of class names
- */
-export function splitClasses(classNames: string): Array<string> {
-  if (typeof classNames === 'string') {
-    return classNames.split(/\s+/).filter((n) => n !== '');
-  }
-  return [];
 }
 
 /**

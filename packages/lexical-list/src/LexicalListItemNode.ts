@@ -26,7 +26,6 @@ import {
   addClassNamesToElement,
   isHTMLElement,
   removeClassNamesFromElement,
-  splitClasses,
 } from '@lexical/utils';
 import {
   $applyNodeReplacement,
@@ -38,6 +37,7 @@ import {
   LexicalEditor,
 } from 'lexical';
 import invariant from 'shared/invariant';
+import splitClasses from 'shared/splitClasses';
 
 import {$createListNode, $isListNode} from './';
 import {

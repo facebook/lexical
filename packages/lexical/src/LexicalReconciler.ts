@@ -15,8 +15,8 @@ import type {
 import type {NodeKey, NodeMap} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 
-import {splitClasses} from '@lexical/utils';
 import invariant from 'shared/invariant';
+import splitClasses from 'shared/splitClasses';
 
 import {
   $isDecoratorNode,

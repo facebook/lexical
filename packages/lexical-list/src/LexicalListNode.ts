@@ -10,7 +10,6 @@ import {
   addClassNamesToElement,
   isHTMLElement,
   removeClassNamesFromElement,
-  splitClasses,
 } from '@lexical/utils';
 import {
   $applyNodeReplacement,
@@ -28,6 +27,7 @@ import {
   SerializedElementNode,
   Spread,
 } from 'lexical';
+import splitClasses from 'shared/splitClasses';
 
 import {$createListItemNode, $isListItemNode, ListItemNode} from '.';
 import {updateChildrenListItemValue} from './formatList';

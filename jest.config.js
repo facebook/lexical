@@ -97,6 +97,8 @@ module.exports = {
         '^shared/invariant$': '<rootDir>/packages/shared/src/invariant.ts',
         '^shared/simpleDiffWithCursor$':
           '<rootDir>/packages/shared/src/simpleDiffWithCursor.ts',
+        '^shared/splitClasses$':
+          '<rootDir>/packages/shared/src/splitClasses.ts',
         '^shared/useLayoutEffect$':
           '<rootDir>/packages/shared/src/useLayoutEffect.ts',
         '^shared/warnOnlyOnce$':

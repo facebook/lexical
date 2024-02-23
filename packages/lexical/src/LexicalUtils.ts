@@ -28,10 +28,10 @@ import type {
 import type {RootNode} from './nodes/LexicalRootNode';
 import type {TextFormatType, TextNode} from './nodes/LexicalTextNode';
 
-import {splitClasses} from '@lexical/utils';
 import {CAN_USE_DOM} from 'shared/canUseDOM';
 import {IS_APPLE, IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from 'shared/environment';
 import invariant from 'shared/invariant';
+import splitClasses from 'shared/splitClasses';
 
 import {
   $createTextNode,

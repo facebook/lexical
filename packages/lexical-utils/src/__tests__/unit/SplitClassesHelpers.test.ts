@@ -6,7 +6,7 @@
  *
  */
 
-import {splitClasses} from '@lexical/utils';
+import splitClasses from 'shared/splitClasses';
 
 describe('SplitClassesHelpers tests', () => {
   test('should split space-separated classes', () => {

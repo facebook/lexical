@@ -34,6 +34,7 @@ import {
   $moveCharacter,
   $shouldOverrideDefaultCharacterSelection,
 } from '@lexical/selection';
+import {$isTableSelection} from '@lexical/table';
 import {
   $findMatchingParent,
   $getNearestBlockElementAncestorOrThrow,
@@ -635,7 +636,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
         const validSelection =
           $isRangeSelection(selection) ||
           $isNodeSelection(selection) ||
-          DEPRECATED_$isGridSelection(selection);
+          $isTableSelection(selection);
         if (!validSelection) {
           return false;
         }

@@ -12,6 +12,7 @@ import type {TableDOMCell, TableDOMRows} from './LexicalTableObserver';
 import type {TableSelection} from './LexicalTableSelection';
 import type {
   BaseSelection,
+  ElementFormatType,
   LexicalCommand,
   LexicalEditor,
   LexicalNode,
@@ -22,6 +23,7 @@ import type {
 import {$findMatchingParent} from '@lexical/utils';
 import {
   $createParagraphNode,
+  $createRangeSelection,
   $getNearestNodeFromDOMNode,
   $getPreviousSelection,
   $getSelection,
@@ -36,6 +38,7 @@ import {
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
   FOCUS_COMMAND,
+  FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
@@ -361,6 +364,33 @@ export function applyTableHandlers(
           }
         }
 
+        return false;
+      },
+      COMMAND_PRIORITY_CRITICAL,
+    ),
+  );
+
+  tableObserver.listenersToRemove.add(
+    editor.registerCommand<ElementFormatType>(
+      FORMAT_ELEMENT_COMMAND,
+      () => {
+        const currentSelection = $getSelection();
+        if (!$isTableSelection(currentSelection)) {
+          return false;
+        }
+        const {anchor: currentAnchor, focus: currentFocus} = currentSelection;
+        const formatSelection = $createRangeSelection();
+        formatSelection.anchor.set(
+          currentAnchor.key,
+          currentAnchor.offset,
+          currentAnchor.type,
+        );
+        formatSelection.focus.set(
+          currentFocus.key,
+          currentFocus.offset,
+          currentFocus.type,
+        );
+        $setSelection(formatSelection);
         return false;
       },
       COMMAND_PRIORITY_CRITICAL,

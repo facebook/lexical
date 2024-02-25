@@ -1582,7 +1582,9 @@ export class RangeSelection implements BaseSelection {
     if (this.isCollapsed()) {
       const anchor = this.anchor;
       let anchorNode: TextNode | ElementNode | null = anchor.getNode();
-      if (this.forwardDeletion(anchor, anchorNode, isBackward)) return;
+      if (this.forwardDeletion(anchor, anchorNode, isBackward)) {
+        return;
+      }
 
       // Handle the deletion around decorators.
       const focus = this.focus;

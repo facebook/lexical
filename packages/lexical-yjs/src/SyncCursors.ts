@@ -10,12 +10,11 @@ import type {Binding} from './Bindings';
 import type {BaseSelection, NodeKey, NodeMap, Point} from 'lexical';
 import type {AbsolutePosition, RelativePosition} from 'yjs';
 
-import {createDOMRange, createRectsFromDOMRange} from '@lexical/selection';
+import {createDOMRange} from '@lexical/selection';
 import {
   $getNodeByKey,
   $getSelection,
   $isElementNode,
-  $isLineBreakNode,
   $isRangeSelection,
   $isTextNode,
 } from 'lexical';
@@ -183,6 +182,120 @@ function createCursorSelection(
   };
 }
 
+export function getCaretPosition(element: HTMLElement, caretOffset: number) {
+  const textContent = element.textContent;
+  const isRtl = getComputedStyle(element).direction === 'rtl';
+
+  if (!textContent) {
+    const elementRect = element.getBoundingClientRect();
+    return new DOMRect(
+      isRtl ? elementRect.right : elementRect.left,
+      elementRect.top,
+      0,
+      elementRect.height,
+    );
+  }
+
+  const range = document.createRange();
+  range.setStart(element.firstChild!, caretOffset);
+  range.setEnd(element.firstChild!, caretOffset);
+
+  const rangeRect = range.getBoundingClientRect();
+
+  return new DOMRect(
+    isRtl ? rangeRect.right : rangeRect.left,
+    rangeRect.top,
+    0,
+    rangeRect.height,
+  );
+}
+
+export function getSelectionPosition(
+  element: HTMLElement,
+  offsetStart: number,
+  offsetEnd: number,
+  rootRect: DOMRect,
+) {
+  const fullText = element.textContent;
+  if (!fullText) {
+    return [];
+  }
+
+  const actualStartOffset = Math.min(offsetStart, offsetEnd);
+  const actualEndOffset = Math.max(offsetStart, offsetEnd);
+  const textSlice = fullText.slice(actualStartOffset, actualEndOffset);
+
+  const words = textSlice.split(' ');
+
+  const range = document.createRange();
+  const rects: DOMRect[] = [];
+  let lastRectTop: number | null = null;
+  let wordStart = actualStartOffset;
+
+  words.forEach((word) => {
+    range.setStart(element.firstChild!, wordStart);
+    range.setEnd(element.firstChild!, wordStart + word.length);
+
+    const rect = range.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) {
+      wordStart += word.length + 1;
+      return;
+    }
+
+    if (lastRectTop === rect.top) {
+      // Extend the current rect for RTL or LTR text
+      rects[rects.length - 1] = new DOMRect(
+        Math.min(rects[rects.length - 1].x, rect.x),
+        rect.y,
+        Math.max(rects[rects.length - 1].right, rect.right) -
+          Math.min(rects[rects.length - 1].x, rect.x),
+        rect.height,
+      );
+    } else {
+      // New line or first word
+      rects.push(new DOMRect(rect.x, rect.y, rect.width, rect.height));
+      lastRectTop = rect.top;
+    }
+
+    wordStart += word.length + 1; // Move to the start of the next word
+  });
+
+  return rects.map(
+    (r) =>
+      new DOMRect(r.x - rootRect.left, r.y - rootRect.top, r.width, r.height),
+  );
+}
+
+export function getElementsInRange(range: Range): HTMLElement[] {
+  const elements: HTMLElement[] = [];
+  const walker = document.createTreeWalker(
+    range.commonAncestorContainer,
+    NodeFilter.SHOW_ELEMENT,
+    {
+      acceptNode: function (node) {
+        if (range.intersectsNode(node)) {
+          return NodeFilter.FILTER_ACCEPT;
+        }
+
+        return NodeFilter.FILTER_REJECT;
+      },
+    },
+  );
+
+  let node = walker.nextNode() as HTMLElement;
+  while (node) {
+    const hastElements = node.children.length > 0;
+    if (hastElements) {
+      node = walker.nextNode() as HTMLElement;
+      continue;
+    }
+    elements.push(node as HTMLElement);
+    node = walker.nextNode() as HTMLElement;
+  }
+
+  return elements;
+}
+
 function updateCursor(
   binding: Binding,
   cursor: Cursor,
@@ -232,16 +345,19 @@ function updateCursor(
   }
   let selectionRects: Array<DOMRect>;
 
-  // In the case of a collapsed selection on a linebreak, we need
-  // to improvise as the browser will return nothing here as <br>
-  // apparantly take up no visual space :/
-  // This won't work in all cases, but it's better than just showing
-  // nothing all the time.
-  if (anchorNode === focusNode && $isLineBreakNode(anchorNode)) {
-    const brRect = (
-      editor.getElementByKey(anchorKey) as HTMLElement
-    ).getBoundingClientRect();
-    selectionRects = [brRect];
+  if (anchorNode === focusNode && anchor.offset === focus.offset) {
+    const caretRect = getCaretPosition(
+      editor.getElementByKey(anchorKey) as HTMLElement,
+      anchor.offset,
+    );
+    selectionRects = [caretRect];
+  } else if (anchorNode === focusNode) {
+    selectionRects = getSelectionPosition(
+      editor.getElementByKey(anchorKey) as HTMLElement,
+      anchor.offset,
+      focus.offset,
+      containerRect,
+    );
   } else {
     const range = createDOMRange(
       editor,
@@ -254,7 +370,50 @@ function updateCursor(
     if (range === null) {
       return;
     }
-    selectionRects = createRectsFromDOMRange(editor, range);
+    const elements = getElementsInRange(range);
+
+    const anchorElement = editor.getElementByKey(anchorKey);
+
+    if (!anchorElement) {
+      return;
+    }
+
+    // Calculating selection is forward or backward since it not saved on the selection
+    const isForwardSelection =
+      anchorElement.compareDocumentPosition(
+        editor.getElementByKey(focusKey)!,
+      ) === Node.DOCUMENT_POSITION_FOLLOWING;
+
+    // Running this calculation on all elements is expensive,
+    // we could do virtualization to only calculate the elements in view
+    // or cap the number of elements to calculate
+    selectionRects = elements.flatMap((element, index) => {
+      if (!element.textContent) {
+        return [];
+      }
+      const elementTextLength = element.textContent.length || 0;
+
+      if (elementTextLength === 0) {
+        return [];
+      }
+      let start = 0;
+      let end = 0;
+      if (index === 0) {
+        // First element
+        start = isForwardSelection ? anchor.offset : focus.offset;
+        end = elementTextLength;
+      } else if (index === elements.length - 1) {
+        // Last element
+        start = 0;
+        end = isForwardSelection ? focus.offset : anchor.offset;
+      } else {
+        // Middle elements
+        start = 0;
+        end = elementTextLength;
+      }
+
+      return getSelectionPosition(element, start, end, containerRect);
+    });
   }
 
   const selectionsLength = selections.length;

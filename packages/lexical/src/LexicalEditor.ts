@@ -94,6 +94,12 @@ export type EditorThemeClasses = {
   characterLimit?: EditorThemeClassName;
   code?: EditorThemeClassName;
   codeHighlight?: Record<string, EditorThemeClassName>;
+  collaboration?: {
+    caret?: EditorThemeClassName;
+    name?: EditorThemeClassName;
+    selectionContainer?: EditorThemeClassName;
+    selection?: EditorThemeClassName;
+  };
   hashtag?: EditorThemeClassName;
   heading?: {
     h1?: EditorThemeClassName;

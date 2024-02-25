@@ -46,6 +46,13 @@ const theme: EditorThemeClasses = {
     url: 'PlaygroundEditorTheme__tokenOperator',
     variable: 'PlaygroundEditorTheme__tokenVariable',
   },
+  collaboration: {
+    caret: 'PlaygroundEditorTheme__collaborationCaret',
+    name: 'PlaygroundEditorTheme__collaborationName',
+    selection: 'PlaygroundEditorTheme__collaborationSelection',
+    selectionContainer:
+      'PlaygroundEditorTheme__collaborationSelectionContainer',
+  },
   embedBlock: {
     base: 'PlaygroundEditorTheme__embedBlock',
     focus: 'PlaygroundEditorTheme__embedBlockFocus',

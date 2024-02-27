@@ -239,7 +239,6 @@ export function getSelectionPosition(
   element: HTMLElement,
   offsetStart: number,
   offsetEnd: number,
-  rootRect: DOMRect,
 ) {
   const fullText = element.textContent;
   if (!fullText) {
@@ -285,10 +284,7 @@ export function getSelectionPosition(
     wordStart += word.length + 1; // Move to the start of the next word
   });
 
-  return rects.map(
-    (r) =>
-      new DOMRect(r.x - rootRect.left, r.y - rootRect.top, r.width, r.height),
-  );
+  return rects;
 }
 
 export function getElementsInRange(range: Range): HTMLElement[] {
@@ -381,7 +377,6 @@ function updateCursor(
       editor.getElementByKey(anchorKey) as HTMLElement,
       anchor.offset,
       focus.offset,
-      containerRect,
     );
   } else {
     const range = createDOMRange(
@@ -437,7 +432,7 @@ function updateCursor(
         end = elementTextLength;
       }
 
-      return getSelectionPosition(element, start, end, containerRect);
+      return getSelectionPosition(element, start, end);
     });
   }
 

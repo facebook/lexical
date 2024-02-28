@@ -10,6 +10,11 @@ Lexical works by attaching itself to a `contentEditable` element and from there 
 things happen without needing to worry about specific edge-cases around the DOM. In fact, you rarely need to interact with the DOM at all in
 most cases (unless you build your own custom nodes).
 
+<figure class="text--center">
+  <img src="/img/docs/modular-design.drawio.svg" alt="Modular Design"/>
+  <figcaption>Modular architecture allows fine grained control over functionality</figcaption>
+</figure>
+
 The core package of Lexical is only 22kb in file size (min+gzip) and you only ever pay the cost for what you need. So Lexical can grow with
 your surface and the requirements. Furthermore, in frameworks that support lazy-loading, you can defer Lexical plugins until the user actually interacts with the editor itself – which can greatly help improve performance.
 

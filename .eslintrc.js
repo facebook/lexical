@@ -128,6 +128,7 @@ module.exports = {
 
     'brace-style': [ERROR, '1tbs'],
     'consistent-return': OFF,
+    curly: [ERROR, 'all'],
     'dot-location': [ERROR, 'property'],
     // We use console['error']() as a signal to not transform it:
     'dot-notation': [ERROR, {allowPattern: '^(error|warn)$'}],

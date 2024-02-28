@@ -84,6 +84,12 @@ editor.update(() => {
 });
 ```
 
+:::tip
+
+Remember that state updates are asynchronous, so executing `editor.getEditorState()` immediately afterwards might not return the expected content. To avoid it, [pass `discrete: true` in the `editor.update` method](https://dio.la/article/lexical-state-updates#discrete-updates).
+
+:::
+
 #### `LexicalNode.importDOM()`
 You can control how an `HTMLElement` is represented in `Lexical` by adding an `importDOM()` method to your `LexicalNode`.
 

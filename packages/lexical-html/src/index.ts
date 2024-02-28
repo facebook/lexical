@@ -138,7 +138,9 @@ function $appendNodesToHTML(
 
     if (after) {
       const newElement = after.call(target, element);
-      if (newElement) element.replaceWith(newElement);
+      if (newElement) {
+        element.replaceWith(newElement);
+      }
     }
   } else {
     parentElement.append(fragment);

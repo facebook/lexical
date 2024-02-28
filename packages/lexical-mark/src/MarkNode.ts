@@ -122,7 +122,9 @@ export class MarkNode extends ElementNode {
       self.__ids = ids;
       for (let i = 0; i < ids.length; i++) {
         // If we already have it, don't add again
-        if (id === ids[i]) return;
+        if (id === ids[i]) {
+          return;
+        }
       }
       ids.push(id);
     }

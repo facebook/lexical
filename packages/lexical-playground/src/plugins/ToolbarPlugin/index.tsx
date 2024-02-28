@@ -194,8 +194,11 @@ const ELEMENT_FORMAT_OPTIONS: {
 };
 
 function dropDownActiveClass(active: boolean) {
-  if (active) return 'active dropdown-item-active';
-  else return '';
+  if (active) {
+    return 'active dropdown-item-active';
+  } else {
+    return '';
+  }
 }
 
 function BlockFormatDropDown({
@@ -271,8 +274,9 @@ function BlockFormatDropDown({
             const codeNode = $createCodeNode();
             selection.insertNodes([codeNode]);
             selection = $getSelection();
-            if ($isRangeSelection(selection))
+            if ($isRangeSelection(selection)) {
               selection.insertRawText(textContent);
+            }
           }
         }
       });

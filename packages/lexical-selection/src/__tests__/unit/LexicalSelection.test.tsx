@@ -2516,7 +2516,9 @@ describe('LexicalSelection tests', () => {
         invariant($isElementNode(column));
         const paragraph = column.getFirstChild();
         invariant($isElementNode(paragraph));
-        if (paragraph.getFirstChild()) paragraph.getFirstChild().remove();
+        if (paragraph.getFirstChild()) {
+          paragraph.getFirstChild().remove();
+        }
         root.append(table);
 
         const selection = $createRangeSelection();

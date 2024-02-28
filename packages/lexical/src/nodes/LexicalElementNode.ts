@@ -149,7 +149,9 @@ export class ElementNode extends LexicalNode {
     let node = this.getFirstChild<T>();
     while ($isElementNode(node)) {
       const child = node.getFirstChild<T>();
-      if (child === null) break;
+      if (child === null) {
+        break;
+      }
       node = child;
     }
     return node;
@@ -158,7 +160,9 @@ export class ElementNode extends LexicalNode {
     let node = this.getLastChild<T>();
     while ($isElementNode(node)) {
       const child = node.getLastChild<T>();
-      if (child === null) break;
+      if (child === null) {
+        break;
+      }
       node = child;
     }
     return node;

@@ -23,7 +23,7 @@ const EXAMPLES = [
     ),
     id: 'example-feature-1',
     label: 'Simple Setup',
-    src: 'https://codesandbox.io/embed/lexical-plain-text-example-g932e?fontsize=12&hidenavigation=1&module=%2Fsrc%2FEditor.js&theme=dark',
+    src: 'https://stackblitz.com/github/StyleT/lexical/tree/feature/vanilla-js-docs-improvement/examples/vanilla-js?embed=1&file=src%2Fmain.ts&terminalHeight=0',
   },
   {
     content: (

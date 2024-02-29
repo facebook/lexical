@@ -853,7 +853,9 @@ export class LexicalNode {
   replace<N extends LexicalNode>(replaceWith: N, includeChildren?: boolean): N {
     errorOnReadOnly();
     let selection = $getSelection();
-    if (selection !== null) selection = selection.clone();
+    if (selection !== null) {
+      selection = selection.clone();
+    }
     errorOnInsertTextNodeOnRoot(this, replaceWith);
     const self = this.getLatest();
     const toReplaceKey = this.__key;

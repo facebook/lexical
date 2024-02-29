@@ -100,7 +100,9 @@ export default function ColorPicker({
   }, [selfColor, onChange]);
 
   useEffect(() => {
-    if (color === undefined) return;
+    if (color === undefined) {
+      return;
+    }
     const newColor = transformColor('hex', color);
     setSelfColor(newColor);
     setInputColor(newColor.hex);
@@ -184,7 +186,9 @@ function MoveWrapper({className, style, onChange, children}: MoveWrapperProps) {
   };
 
   const onMouseDown = (e: React.MouseEvent): void => {
-    if (e.button !== 0) return;
+    if (e.button !== 0) {
+      return;
+    }
 
     move(e);
 

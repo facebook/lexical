@@ -272,7 +272,9 @@ export class CodeNode extends ElementNode {
           let spaces = 0;
           const text = node.getTextContent();
           const textSize = node.getTextContentSize();
-          for (; spaces < textSize && text[spaces] === ' '; spaces++);
+          while (spaces < textSize && text[spaces] === ' ') {
+            spaces++;
+          }
           if (spaces !== 0) {
             insertNodes.push($createCodeHighlightNode(' '.repeat(spaces)));
           }

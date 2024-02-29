@@ -743,7 +743,9 @@ export default function CommentPlugin({
           comment,
           thread,
         );
-        if (!deletionInfo) return;
+        if (!deletionInfo) {
+          return;
+        }
         const {markedComment, index} = deletionInfo;
         commentStore.addComment(markedComment, thread, index);
       } else {

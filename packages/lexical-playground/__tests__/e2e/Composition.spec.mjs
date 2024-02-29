@@ -855,7 +855,7 @@ test.describe('Composition', () => {
         text: 'もじあ',
       });
 
-      if (browserName === 'webkit')
+      if (browserName === 'webkit') {
         await assertHTML(
           page,
           html`
@@ -868,8 +868,9 @@ test.describe('Composition', () => {
             </p>
           `,
         );
+      }
       /* eslint-disable no-irregular-whitespace */
-      if (browserName === 'chromium')
+      if (browserName === 'chromium') {
         await assertHTML(
           page,
           html`
@@ -880,6 +881,7 @@ test.describe('Composition', () => {
             </p>
           `,
         );
+      }
 
       await assertSelection(page, {
         anchorOffset: 12,

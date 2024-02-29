@@ -144,7 +144,9 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
   }, [activeCell, draggingDirection, editor, resetState]);
 
   const isHeightChanging = (direction: MouseDraggingDirection) => {
-    if (direction === 'bottom') return true;
+    if (direction === 'bottom') {
+      return true;
+    }
     return false;
   };
 

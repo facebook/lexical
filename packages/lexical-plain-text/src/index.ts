@@ -17,7 +17,7 @@ import {
   $moveCharacter,
   $shouldOverrideDefaultCharacterSelection,
 } from '@lexical/selection';
-import {mergeRegister} from '@lexical/utils';
+import {mergeRegister, objectKlassEquals} from '@lexical/utils';
 import {
   $getSelection,
   $isRangeSelection,
@@ -55,8 +55,9 @@ function onCopyForPlainText(
 ): void {
   editor.update(() => {
     if (event !== null) {
-      const clipboardData =
-        event instanceof KeyboardEvent ? null : event.clipboardData;
+      const clipboardData = objectKlassEquals(event, KeyboardEvent)
+        ? null
+        : (event as ClipboardEvent).clipboardData;
       const selection = $getSelection();
 
       if (selection !== null && clipboardData != null) {

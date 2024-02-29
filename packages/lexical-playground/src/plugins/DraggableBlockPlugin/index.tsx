@@ -307,7 +307,7 @@ function useDraggableBlockMenu(
       if (!isDraggingBlockRef.current) {
         return false;
       }
-      const [isFileTransfer] = eventFiles(event);
+      const [isFileTransfer] = eventFiles(event, editor);
       if (isFileTransfer) {
         return false;
       }
@@ -330,7 +330,7 @@ function useDraggableBlockMenu(
       if (!isDraggingBlockRef.current) {
         return false;
       }
-      const [isFileTransfer] = eventFiles(event);
+      const [isFileTransfer] = eventFiles(event, editor);
       if (isFileTransfer) {
         return false;
       }

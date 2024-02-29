@@ -584,7 +584,7 @@ export class LexicalEditor {
   /** @internal */
   _htmlConversions: DOMConversionCache;
   /** @internal */
-  _window: null | Window;
+  _window: null | (Window & typeof globalThis);
   /** @internal */
   _editable: boolean;
   /** @internal */

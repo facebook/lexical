@@ -2,6 +2,9 @@
 
 packages/**/dist/*.js
 packages/**/build/*.js
+packages/**/build/**/*.js
+packages/**/build/*.css
+packages/**/build/**/*.css
 packages/**/npm/**/*
 packages/**/config/*.js
 packages/playwright

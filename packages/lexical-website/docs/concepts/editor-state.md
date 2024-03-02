@@ -2,11 +2,52 @@
 
 # Editor State
 
-## Understanding the Editor State
+## Why is it necessary?
 
 With Lexical, the source of truth is not the DOM, but rather an underlying state model
-that Lexical maintains and associates with an editor instance. You can get the latest
-editor state from an editor by calling `editor.getEditorState()`.
+that Lexical maintains and associates with an editor instance.
+
+While HTML is great for storing rich text content it's often "way too flexible" when it comes to text editing.
+For example the following lines of content will produce equal outcome:
+
+```html
+<i><b>Lexical</b></i>
+<i><b>Lex<b><b>ical</b></i>
+<b><i>Lexical</i></b>
+```
+
+<details>
+  <summary>See rendered version!</summary>
+  <div>
+    <i><b>Lexical</b></i>
+    <i><b>Lex</b><b>ical</b></i>
+    <b><i>Lexical</i></b>
+  </div>
+</details>
+
+Of course, there are ways to normalize all these variants to a single canonical form, however this would require DOM manipulation and so re-rendering of the content. And to overcome this we can use Virtual DOM, or State.
+
+On top of that it allows to decouple content structure from content formatting. Let's look at this example stored in HTML:
+
+```html
+<p>Why did the JavaScript developer go to the bar? <b>Because he couldn't handle his <i>Promise</i>s</b></p>
+```
+
+<figure class="text--center">
+  <img src="/img/docs/state-formatting-html.drawio.svg" alt="Nested structure of the HTML state"/>
+  <figcaption>Nested structure of the HTML state because of the formatting</figcaption>
+</figure>
+
+In contrast, Lexical decouples structure from formatting by offsetting this information to attributes. This allows us to have canonical document structure regardless of the order in which different styles were applied.
+
+<figure class="text--center">
+  <img src="/img/docs/state-formatting-lexical.png" alt="Flat Lexical state"/>
+  <figcaption>Flat Lexical state structure</figcaption>
+</figure>
+
+## Understanding the Editor State
+
+You can get the latest editor state from an editor by calling `editor.getEditorState()`.
 
 Editor states have two phases:
 

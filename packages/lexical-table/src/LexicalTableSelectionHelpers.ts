@@ -23,7 +23,6 @@ import type {
 import {$findMatchingParent} from '@lexical/utils';
 import {
   $createParagraphNode,
-  $createRangeSelection,
   $getNearestNodeFromDOMNode,
   $getPreviousSelection,
   $getSelection,
@@ -61,6 +60,7 @@ import {
   $createTableSelection,
   $isTableSelection,
 } from './LexicalTableSelection';
+import {$computeTableMap} from './LexicalTableUtils';
 
 const LEXICAL_ELEMENT_KEY = '__lexicalTableSelection';
 
@@ -373,25 +373,51 @@ export function applyTableHandlers(
   tableObserver.listenersToRemove.add(
     editor.registerCommand<ElementFormatType>(
       FORMAT_ELEMENT_COMMAND,
-      () => {
-        const currentSelection = $getSelection();
-        if (!$isTableSelection(currentSelection)) {
+      (formatType) => {
+        const selection = $getSelection();
+        if (
+          !$isTableSelection(selection) ||
+          !$isSelectionInTable(selection, tableNode)
+        ) {
           return false;
         }
-        const {anchor: currentAnchor, focus: currentFocus} = currentSelection;
-        const formatSelection = $createRangeSelection();
-        formatSelection.anchor.set(
-          currentAnchor.key,
-          currentAnchor.offset,
-          currentAnchor.type,
+
+        const anchorNode = selection.anchor.getNode();
+        const focusNode = selection.focus.getNode();
+        if (!$isTableCellNode(anchorNode) || !$isTableCellNode(focusNode)) {
+          return false;
+        }
+
+        const [tableMap, anchorCell, focusCell] = $computeTableMap(
+          tableNode,
+          anchorNode,
+          focusNode,
         );
-        formatSelection.focus.set(
-          currentFocus.key,
-          currentFocus.offset,
-          currentFocus.type,
+        const maxRow = Math.max(anchorCell.startRow, focusCell.startRow);
+        const maxColumn = Math.max(
+          anchorCell.startColumn,
+          focusCell.startColumn,
         );
-        $setSelection(formatSelection);
-        return false;
+        const minRow = Math.min(anchorCell.startRow, focusCell.startRow);
+        const minColumn = Math.min(
+          anchorCell.startColumn,
+          focusCell.startColumn,
+        );
+        for (let i = minRow; i <= maxRow; i++) {
+          for (let j = minColumn; j <= maxColumn; j++) {
+            const cell = tableMap[i][j].cell;
+            cell.setFormat(formatType);
+
+            const cellChildren = cell.getChildren();
+            for (let k = 0; k < cellChildren.length; k++) {
+              const child = cellChildren[k];
+              if ($isElementNode(child) && !child.isInline()) {
+                child.setFormat(formatType);
+              }
+            }
+          }
+        }
+        return true;
       },
       COMMAND_PRIORITY_CRITICAL,
     ),

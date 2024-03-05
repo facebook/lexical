@@ -490,14 +490,21 @@ export function useMenuAnchorRef(
     const rootElement = editor.getRootElement();
     const containerDiv = anchorElementRef.current;
 
+    let parentPosition = {left: 0, top: 0};
+    if (parent) {
+      parentPosition = parent.getBoundingClientRect();
+    }
+
     const menuEle = containerDiv.firstChild as HTMLElement;
     if (rootElement !== null && resolution !== null) {
       const {left, top, width, height} = resolution.getRect();
       const anchorHeight = anchorElementRef.current.offsetHeight; // use to position under anchor
       containerDiv.style.top = `${
-        top + window.pageYOffset + anchorHeight + 3
+        top + window.pageYOffset + anchorHeight + 3 - parentPosition.top
       }px`;
-      containerDiv.style.left = `${left + window.pageXOffset}px`;
+      containerDiv.style.left = `${
+        left + window.pageXOffset - parentPosition.left
+      }px`;
       containerDiv.style.height = `${height}px`;
       containerDiv.style.width = `${width}px`;
       if (menuEle !== null) {
@@ -510,7 +517,10 @@ export function useMenuAnchorRef(
 
         if (left + menuWidth > rootElementRect.right) {
           containerDiv.style.left = `${
-            rootElementRect.right - menuWidth + window.pageXOffset
+            rootElementRect.right -
+            menuWidth +
+            window.pageXOffset -
+            parentPosition.left
           }px`;
         }
         if (
@@ -519,7 +529,7 @@ export function useMenuAnchorRef(
           top - rootElementRect.top > menuHeight
         ) {
           containerDiv.style.top = `${
-            top - menuHeight + window.pageYOffset - height
+            top - menuHeight + window.pageYOffset - height - parentPosition.top
           }px`;
         }
       }

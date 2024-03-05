@@ -38,7 +38,7 @@ const EXAMPLES = [
     ),
     id: 'example-feature-2',
     label: 'Powerful Features',
-    src: 'https://stackblitz.com/github/StyleT/lexical/tree/feature/react_rich_example/examples/react-rich?embed=1&file=src%2FApp.tsx&terminalHeight=0',
+    src: 'https://stackblitz.com/github/facebook/lexical/tree/main/examples/react-rich?embed=1&file=src%2FApp.tsx&terminalHeight=0',
   },
   {
     content: (

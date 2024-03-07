@@ -1537,6 +1537,39 @@ export class RangeSelection implements BaseSelection {
       }
     }
   }
+  /**
+   * Helper for handling forward character and word deletion that prevents element nodes
+   * like a table, columns layout being destroyed
+   *
+   * @param anchor the anchor
+   * @param anchorNode the anchor node in the selection
+   * @param isBackward whether or not selection is backwards
+   */
+  forwardDeletion(
+    anchor: PointType,
+    anchorNode: TextNode | ElementNode,
+    isBackward: boolean,
+  ): boolean {
+    if (
+      !isBackward &&
+      // Delete forward handle case
+      ((anchor.type === 'element' &&
+        $isElementNode(anchorNode) &&
+        anchor.offset === anchorNode.getChildrenSize()) ||
+        (anchor.type === 'text' &&
+          anchor.offset === anchorNode.getTextContentSize()))
+    ) {
+      const parent = anchorNode.getParent();
+      const nextSibling =
+        anchorNode.getNextSibling() ||
+        (parent === null ? null : parent.getNextSibling());
+
+      if ($isElementNode(nextSibling) && nextSibling.isShadowRoot()) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   /**
    * Performs one logical character deletion operation on the EditorState based on the current Selection.
@@ -1548,27 +1581,13 @@ export class RangeSelection implements BaseSelection {
     const wasCollapsed = this.isCollapsed();
     if (this.isCollapsed()) {
       const anchor = this.anchor;
-      const focus = this.focus;
       let anchorNode: TextNode | ElementNode | null = anchor.getNode();
-      if (
-        !isBackward &&
-        // Delete forward handle case
-        ((anchor.type === 'element' &&
-          $isElementNode(anchorNode) &&
-          anchor.offset === anchorNode.getChildrenSize()) ||
-          (anchor.type === 'text' &&
-            anchor.offset === anchorNode.getTextContentSize()))
-      ) {
-        const parent = anchorNode.getParent();
-        const nextSibling =
-          anchorNode.getNextSibling() ||
-          (parent === null ? null : parent.getNextSibling());
-
-        if ($isElementNode(nextSibling) && nextSibling.isShadowRoot()) {
-          return;
-        }
+      if (this.forwardDeletion(anchor, anchorNode, isBackward)) {
+        return;
       }
+
       // Handle the deletion around decorators.
+      const focus = this.focus;
       const possibleNode = $getAdjacentNode(focus, isBackward);
       if ($isDecoratorNode(possibleNode) && !possibleNode.isIsolated()) {
         // Make it possible to move selection from range selection to
@@ -1689,6 +1708,9 @@ export class RangeSelection implements BaseSelection {
    */
   deleteWord(isBackward: boolean): void {
     if (this.isCollapsed()) {
+      const anchor = this.anchor;
+      const anchorNode: TextNode | ElementNode | null = anchor.getNode();
+      if (this.forwardDeletion(anchor, anchorNode, isBackward)) return;
       this.modify('extend', isBackward, 'word');
     }
     this.removeText();

@@ -324,10 +324,6 @@ function onSelectionChange(
         const [lastFormat, lastStyle, lastOffset, lastKey, timeStamp] =
           collapsedSelectionFormat;
 
-        const root = $getRoot();
-        const isRootTextContentEmpty =
-          editor.isComposing() === false && root.getTextContent() === '';
-
         if (
           currentTimeStamp < timeStamp + 200 &&
           anchor.offset === lastOffset &&
@@ -343,9 +339,6 @@ function onSelectionChange(
             );
             selection.format = anchorNode.getFormat();
             selection.style = anchorNode.getStyle();
-          } else if (anchor.type === 'element' && !isRootTextContentEmpty) {
-            selection.format = 0;
-            selection.style = '';
           }
         }
       } else {

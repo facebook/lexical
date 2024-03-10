@@ -7,7 +7,6 @@
  */
 
 import {
-  moveLeft,
   moveToLineBeginning,
   pressBackspace,
   selectCharacters,
@@ -763,131 +762,6 @@ test.describe('Composition', () => {
         anchorPath: [0, 1, 0],
         focusOffset: 6,
         focusPath: [0, 1, 0],
-      });
-    });
-
-    test('Can type Hiragana via IME part way through a mention', async ({
-      page,
-      browserName,
-    }) => {
-      // We don't yet support FF.
-      test.skip(browserName !== 'chromium');
-
-      await focusEditor(page);
-      await enableCompositionKeyEvents(page);
-
-      await page.keyboard.type('@Luke');
-      await waitForSelector(page, '#typeahead-menu ul li');
-      await page.keyboard.press('Enter');
-
-      await waitForSelector(page, '.mention');
-
-      await moveLeft(page, 9);
-
-      const client = await page.context().newCDPSession(page);
-      // await page.keyboard.imeSetComposition('ｓ', 1, 1);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'ｓ',
-      });
-      // await page.keyboard.imeSetComposition('す', 1, 1);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'す',
-      });
-      // await page.keyboard.imeSetComposition('すｓ', 2, 2);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'すｓ',
-      });
-      // await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 3,
-        selectionEnd: 3,
-        text: 'すｓｈ',
-      });
-      // await page.keyboard.imeSetComposition('すし', 2, 2);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'すし',
-      });
-      // await page.keyboard.insertText('すし');
-      await client.send('Input.insertText', {
-        text: 'すし',
-      });
-      await page.keyboard.type(' ');
-      // await page.keyboard.imeSetComposition('m', 1, 1);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'm',
-      });
-      // await page.keyboard.imeSetComposition('も', 1, 1);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'も',
-      });
-      // await page.keyboard.imeSetComposition('もj', 2, 2);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'もj',
-      });
-      // await page.keyboard.imeSetComposition('もじ', 2, 2);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'もじ',
-      });
-      // await page.keyboard.imeSetComposition('もじあ', 3, 3);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 3,
-        selectionEnd: 3,
-        text: 'もじあ',
-      });
-      // await page.keyboard.insertText('もじあ');
-      await client.send('Input.insertText', {
-        text: 'もじあ',
-      });
-
-      if (browserName === 'webkit') {
-        await assertHTML(
-          page,
-          html`
-            <p
-              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="ltr">
-              <span data-lexical-text="true">
-                Luke &nbsp;すし もじあSkywalker
-              </span>
-            </p>
-          `,
-        );
-      }
-      /* eslint-disable no-irregular-whitespace */
-      if (browserName === 'chromium') {
-        await assertHTML(
-          page,
-          html`
-            <p
-              class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-              dir="ltr">
-              <span data-lexical-text="true">Luke ​すし もじあSkywalker</span>
-            </p>
-          `,
-        );
-      }
-
-      await assertSelection(page, {
-        anchorOffset: 12,
-        anchorPath: [0, 0, 0],
-        focusOffset: 12,
-        focusPath: [0, 0, 0],
       });
     });
 

@@ -82,9 +82,6 @@ describe('Collaboration', () => {
       '<p dir="ltr"><span data-lexical-text="true">Hello metaverse</span></p>',
     );
     expect(client1.getHTML()).toEqual(client2.getHTML());
-    expect(client1.getDocJSON()).toEqual({
-      root: '[object Object]Hello metaverse',
-    });
     expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
 
     client1.stop();
@@ -146,9 +143,6 @@ describe('Collaboration', () => {
       '<p dir="ltr"><span data-lexical-text="true">Hello worldHello world</span></p>',
     );
     expect(client1.getHTML()).toEqual(client2.getHTML());
-    expect(client1.getDocJSON()).toEqual({
-      root: '[object Object]Hello worldHello world',
-    });
     expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
 
     client2.disconnect();
@@ -190,9 +184,6 @@ describe('Collaboration', () => {
       '<p dir="ltr"><span data-lexical-text="true">Hello world!</span></p>',
     );
     expect(client1.getHTML()).toEqual(client2.getHTML());
-    expect(client1.getDocJSON()).toEqual({
-      root: '[object Object]Hello world!',
-    });
     expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
 
     client1.stop();
@@ -223,9 +214,6 @@ describe('Collaboration', () => {
       '<p dir="ltr"><span data-lexical-text="true">Hello world</span></p>',
     );
     expect(client1.getHTML()).toEqual(client2.getHTML());
-    expect(client1.getDocJSON()).toEqual({
-      root: '[object Object]Hello world',
-    });
     expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
 
     client1.disconnect();

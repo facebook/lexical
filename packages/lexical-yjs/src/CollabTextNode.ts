@@ -9,7 +9,6 @@
 import type {Binding} from '.';
 import type {CollabElementNode} from './CollabElementNode';
 import type {NodeKey, NodeMap, TextNode} from 'lexical';
-import type {Map as YMap} from 'yjs';
 
 import {
   $getNodeByKey,
@@ -19,6 +18,7 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 import simpleDiffWithCursor from 'shared/simpleDiffWithCursor';
+import {Map as YMap, Text as YText} from 'yjs';
 
 import {syncPropertiesFromLexical, syncPropertiesFromYjs} from './Utils';
 
@@ -40,27 +40,34 @@ function diffTextContentAndApplyDelta(
   }
 
   const diff = simpleDiffWithCursor(prevText, nextText, cursorOffset);
-  collabNode.spliceText(diff.index, diff.remove, diff.insert);
+  collabNode._text.delete(diff.index, diff.remove);
+  collabNode._text.insert(diff.index, diff.insert);
 }
 
 export class CollabTextNode {
   _map: YMap<unknown>;
+  _text: YText;
   _key: NodeKey;
   _parent: CollabElementNode;
-  _text: string;
   _type: string;
   _normalized: boolean;
 
   constructor(
     map: YMap<unknown>,
-    text: string,
+    text: string | undefined,
     parent: CollabElementNode,
     type: string,
   ) {
     this._key = '';
     this._map = map;
+    // When text is undefined, the node is synced from remote, so _map already contains _text
+    if (text === undefined) {
+      this._text = this._map.get('_text') as YText;
+    } else {
+      this._text = new YText(text);
+      this._map.set('_text', this._text);
+    }
     this._parent = parent;
-    this._text = text;
     this._type = type;
     this._normalized = false;
   }
@@ -79,8 +86,8 @@ export class CollabTextNode {
     return $isTextNode(node) ? node : null;
   }
 
-  getSharedType(): YMap<unknown> {
-    return this._map;
+  getCursorYjsType(): YText {
+    return this._text;
   }
 
   getType(): string {
@@ -91,27 +98,9 @@ export class CollabTextNode {
     return this._key;
   }
 
-  getSize(): number {
-    return this._text.length + (this._normalized ? 0 : 1);
-  }
-
   getOffset(): number {
     const collabElementNode = this._parent;
     return collabElementNode.getChildOffset(this);
-  }
-
-  spliceText(index: number, delCount: number, newText: string): void {
-    const collabElementNode = this._parent;
-    const xmlText = collabElementNode._xmlText;
-    const offset = this.getOffset() + 1 + index;
-
-    if (delCount !== 0) {
-      xmlText.delete(offset, delCount);
-    }
-
-    if (newText !== '') {
-      xmlText.insert(offset, newText);
-    }
   }
 
   syncPropertiesAndTextFromLexical(
@@ -135,7 +124,6 @@ export class CollabTextNode {
       if (prevText !== nextText) {
         const key = nextLexicalNode.__key;
         diffTextContentAndApplyDelta(this, key, prevText, nextText);
-        this._text = nextText;
       }
     }
   }
@@ -147,12 +135,21 @@ export class CollabTextNode {
     const lexicalNode = this.getNode();
     invariant(
       lexicalNode !== null,
-      'syncPropertiesAndTextFromYjs: cound not find decorator node',
+      'syncPropertiesAndTextFromYjs: could not find decorator node',
     );
 
     syncPropertiesFromYjs(binding, this._map, lexicalNode, keysChanged);
 
-    const collabText = this._text;
+    this.syncTextFromYjs();
+  }
+
+  syncTextFromYjs(): void {
+    const lexicalNode = this.getNode();
+    invariant(
+      lexicalNode !== null,
+      'syncTextFromYjs: could not find decorator node',
+    );
+    const collabText = this._text.toJSON();
 
     if (lexicalNode.__text !== collabText) {
       const writable = lexicalNode.getWritable();
@@ -168,11 +165,12 @@ export class CollabTextNode {
 
 export function $createCollabTextNode(
   map: YMap<unknown>,
-  text: string,
+  text: string | undefined,
   parent: CollabElementNode,
   type: string,
 ): CollabTextNode {
   const collabNode = new CollabTextNode(map, text, parent, type);
   map._collabNode = collabNode;
+  collabNode._text._collabNode = collabNode;
   return collabNode;
 }

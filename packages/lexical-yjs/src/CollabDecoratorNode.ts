@@ -43,8 +43,8 @@ export class CollabDecoratorNode {
     return $isDecoratorNode(node) ? node : null;
   }
 
-  getSharedType(): XmlElement {
-    return this._xmlElem;
+  getCursorYjsType(): never {
+    invariant(false, 'getCursorYjsType: not a valid cursor type');
   }
 
   getType(): string {
@@ -53,10 +53,6 @@ export class CollabDecoratorNode {
 
   getKey(): NodeKey {
     return this._key;
-  }
-
-  getSize(): number {
-    return 1;
   }
 
   getOffset(): number {

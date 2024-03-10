@@ -27,7 +27,7 @@ import {
   NodeKey,
 } from 'lexical';
 import invariant from 'shared/invariant';
-import {Doc, Map as YMap, XmlElement, XmlText} from 'yjs';
+import {Doc, Map as YMap, Text as YText, XmlElement, XmlText} from 'yjs';
 
 import {
   $createCollabDecoratorNode,
@@ -160,7 +160,7 @@ export function $createCollabNodeFromLexicalNode(
 }
 
 function getNodeTypeFromSharedType(
-  sharedType: XmlText | YMap<unknown> | XmlElement,
+  sharedType: XmlText | YMap<unknown> | XmlElement | YText,
 ): string {
   const type =
     sharedType instanceof YMap
@@ -172,7 +172,7 @@ function getNodeTypeFromSharedType(
 
 export function getOrInitCollabNodeFromSharedType(
   binding: Binding,
-  sharedType: XmlText | YMap<unknown> | XmlElement,
+  sharedType: XmlText | YMap<unknown> | XmlElement | YText,
   parent?: CollabElementNode,
 ):
   | CollabElementNode
@@ -207,7 +207,7 @@ export function getOrInitCollabNodeFromSharedType(
       if (type === 'linebreak') {
         return $createCollabLineBreakNode(sharedType, targetParent);
       }
-      return $createCollabTextNode(sharedType, '', targetParent, type);
+      return $createCollabTextNode(sharedType, undefined, targetParent, type);
     } else if (sharedType instanceof XmlElement) {
       return $createCollabDecoratorNode(sharedType, targetParent, type);
     }
@@ -359,83 +359,6 @@ export function syncPropertiesFromLexical(
       }
     }
   }
-}
-
-export function spliceString(
-  str: string,
-  index: number,
-  delCount: number,
-  newText: string,
-): string {
-  return str.slice(0, index) + newText + str.slice(index + delCount);
-}
-
-export function getPositionFromElementAndOffset(
-  node: CollabElementNode,
-  offset: number,
-  boundaryIsEdge: boolean,
-): {
-  length: number;
-  node:
-    | CollabElementNode
-    | CollabTextNode
-    | CollabDecoratorNode
-    | CollabLineBreakNode
-    | null;
-  nodeIndex: number;
-  offset: number;
-} {
-  let index = 0;
-  let i = 0;
-  const children = node._children;
-  const childrenLength = children.length;
-
-  for (; i < childrenLength; i++) {
-    const child = children[i];
-    const childOffset = index;
-    const size = child.getSize();
-    index += size;
-    const exceedsBoundary = boundaryIsEdge ? index >= offset : index > offset;
-
-    if (exceedsBoundary && child instanceof CollabTextNode) {
-      let textOffset = offset - childOffset - 1;
-
-      if (textOffset < 0) {
-        textOffset = 0;
-      }
-
-      const diffLength = index - offset;
-      return {
-        length: diffLength,
-        node: child,
-        nodeIndex: i,
-        offset: textOffset,
-      };
-    }
-
-    if (index > offset) {
-      return {
-        length: 0,
-        node: child,
-        nodeIndex: i,
-        offset: childOffset,
-      };
-    } else if (i === childrenLength - 1) {
-      return {
-        length: 0,
-        node: null,
-        nodeIndex: i + 1,
-        offset: childOffset + 1,
-      };
-    }
-  }
-
-  return {
-    length: 0,
-    node: null,
-    nodeIndex: 0,
-    offset: 0,
-  };
 }
 
 export function doesSelectionNeedRecovering(

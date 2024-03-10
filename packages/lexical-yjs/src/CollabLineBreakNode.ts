@@ -12,6 +12,7 @@ import type {LineBreakNode, NodeKey} from 'lexical';
 import type {Map as YMap} from 'yjs';
 
 import {$getNodeByKey, $isLineBreakNode} from 'lexical';
+import invariant from 'shared/invariant';
 
 export class CollabLineBreakNode {
   _map: YMap<unknown>;
@@ -35,16 +36,12 @@ export class CollabLineBreakNode {
     return this._key;
   }
 
-  getSharedType(): YMap<unknown> {
-    return this._map;
+  getCursorYjsType(): never {
+    invariant(false, 'getCursorYjsType: not a valid cursor type');
   }
 
   getType(): string {
     return this._type;
-  }
-
-  getSize(): number {
-    return 1;
   }
 
   getOffset(): number {

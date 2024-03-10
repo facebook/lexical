@@ -24,6 +24,11 @@ declare module 'yjs' {
 declare module 'yjs/dist/src/internals' {
   // @ts-ignore
   interface YMap {
-    _collabNode: CollabLineBreakNode | CollabTextNode;
+    _collabNode: CollabTextNode | CollabLineBreakNode;
+  }
+
+  interface YText {
+    // YXmlText extends YText, so CollabElementNode should be added here.
+    _collabNode: CollabTextNode | CollabElementNode;
   }
 }

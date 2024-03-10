@@ -68,76 +68,75 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
 
     if (selection !== null) {
       const nodes = selection.getNodes();
-      const anchorAndFocus = selection.getStartEndPoints();
-      invariant(
-        anchorAndFocus !== null,
-        'insertList: anchor should be defined',
-      );
-      const [anchor] = anchorAndFocus;
-      const anchorNode = anchor.getNode();
-      const anchorNodeParent = anchorNode.getParent();
+      if ($isRangeSelection(selection)) {
+        const anchorAndFocus = selection.getStartEndPoints();
+        invariant(
+          anchorAndFocus !== null,
+          'insertList: anchor should be defined',
+        );
+        const [anchor] = anchorAndFocus;
+        const anchorNode = anchor.getNode();
+        const anchorNodeParent = anchorNode.getParent();
 
-      if ($isSelectingEmptyListItem(anchorNode, nodes)) {
-        const list = $createListNode(listType);
+        if ($isSelectingEmptyListItem(anchorNode, nodes)) {
+          const list = $createListNode(listType);
 
-        if ($isRootOrShadowRoot(anchorNodeParent)) {
-          anchorNode.replace(list);
-          const listItem = $createListItemNode();
-          if ($isElementNode(anchorNode)) {
-            listItem.setFormat(anchorNode.getFormatType());
-            listItem.setIndent(anchorNode.getIndent());
+          if ($isRootOrShadowRoot(anchorNodeParent)) {
+            anchorNode.replace(list);
+            const listItem = $createListItemNode();
+            if ($isElementNode(anchorNode)) {
+              listItem.setFormat(anchorNode.getFormatType());
+              listItem.setIndent(anchorNode.getIndent());
+            }
+            list.append(listItem);
+          } else if ($isListItemNode(anchorNode)) {
+            const parent = anchorNode.getParentOrThrow();
+            append(list, parent.getChildren());
+            parent.replace(list);
           }
-          list.append(listItem);
-        } else if ($isListItemNode(anchorNode)) {
-          const parent = anchorNode.getParentOrThrow();
-          append(list, parent.getChildren());
-          parent.replace(list);
+
+          return;
+        }
+      }
+
+      const handled = new Set();
+      for (let i = 0; i < nodes.length; i++) {
+        const node = nodes[i];
+
+        if (
+          $isElementNode(node) &&
+          node.isEmpty() &&
+          !$isListItemNode(node) &&
+          !handled.has(node.getKey())
+        ) {
+          createListOrMerge(node, listType);
+          continue;
         }
 
-        return;
-      } else {
-        const handled = new Set();
-        for (let i = 0; i < nodes.length; i++) {
-          const node = nodes[i];
+        if ($isLeafNode(node)) {
+          let parent = node.getParent();
+          while (parent != null) {
+            const parentKey = parent.getKey();
 
-          if (
-            $isElementNode(node) &&
-            node.isEmpty() &&
-            !$isListItemNode(node) &&
-            !handled.has(node.getKey())
-          ) {
-            createListOrMerge(node, listType);
-            continue;
-          }
-
-          if ($isLeafNode(node)) {
-            let parent = node.getParent();
-            while (parent != null) {
-              const parentKey = parent.getKey();
-
-              if ($isListNode(parent)) {
-                if (!handled.has(parentKey)) {
-                  const newListNode = $createListNode(listType);
-                  append(newListNode, parent.getChildren());
-                  parent.replace(newListNode);
-                  handled.add(parentKey);
-                }
-
-                break;
-              } else {
-                const nextParent = parent.getParent();
-
-                if (
-                  $isRootOrShadowRoot(nextParent) &&
-                  !handled.has(parentKey)
-                ) {
-                  handled.add(parentKey);
-                  createListOrMerge(parent, listType);
-                  break;
-                }
-
-                parent = nextParent;
+            if ($isListNode(parent)) {
+              if (!handled.has(parentKey)) {
+                const newListNode = $createListNode(listType);
+                append(newListNode, parent.getChildren());
+                parent.replace(newListNode);
+                handled.add(parentKey);
               }
+
+              break;
+            } else {
+              const nextParent = parent.getParent();
+
+              if ($isRootOrShadowRoot(nextParent) && !handled.has(parentKey)) {
+                handled.add(parentKey);
+                createListOrMerge(parent, listType);
+                break;
+              }
+
+              parent = nextParent;
             }
           }
         }

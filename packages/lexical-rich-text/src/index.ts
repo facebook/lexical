@@ -38,7 +38,6 @@ import {
   $findMatchingParent,
   $getNearestBlockElementAncestorOrThrow,
   addClassNamesToElement,
-  getWindow,
   isHTMLElement,
   mergeRegister,
   objectKlassEquals,
@@ -436,8 +435,8 @@ function onPasteForRichText(
     () => {
       const selection = $getSelection();
       const clipboardData =
-        event instanceof getWindow(editor).InputEvent ||
-        event instanceof getWindow(editor).KeyboardEvent
+        objectKlassEquals(event, InputEvent) ||
+        objectKlassEquals(event, KeyboardEvent)
           ? null
           : event.clipboardData;
       if (clipboardData != null && selection !== null) {
@@ -473,12 +472,11 @@ async function onCutForRichText(
 // control this with the first boolean flag.
 export function eventFiles(
   event: DragEvent | PasteCommandType,
-  editor: LexicalEditor,
 ): [boolean, Array<File>, boolean] {
   let dataTransfer: null | DataTransfer = null;
-  if (event instanceof getWindow(editor).DragEvent) {
+  if (objectKlassEquals(event, DragEvent)) {
     dataTransfer = event.dataTransfer;
-  } else if (event instanceof getWindow(editor).ClipboardEvent) {
+  } else if (objectKlassEquals(event, ClipboardEvent)) {
     dataTransfer = event.clipboardData;
   }
 
@@ -917,7 +915,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     editor.registerCommand<DragEvent>(
       DROP_COMMAND,
       (event) => {
-        const [, files] = eventFiles(event, editor);
+        const [, files] = eventFiles(event);
         if (files.length > 0) {
           const x = event.clientX;
           const y = event.clientY;
@@ -958,7 +956,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     editor.registerCommand<DragEvent>(
       DRAGSTART_COMMAND,
       (event) => {
-        const [isFileTransfer] = eventFiles(event, editor);
+        const [isFileTransfer] = eventFiles(event);
         const selection = $getSelection();
         if (isFileTransfer && !$isRangeSelection(selection)) {
           return false;
@@ -970,7 +968,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     editor.registerCommand<DragEvent>(
       DRAGOVER_COMMAND,
       (event) => {
-        const [isFileTransfer] = eventFiles(event, editor);
+        const [isFileTransfer] = eventFiles(event);
         const selection = $getSelection();
         if (isFileTransfer && !$isRangeSelection(selection)) {
           return false;
@@ -1023,7 +1021,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     editor.registerCommand(
       PASTE_COMMAND,
       (event) => {
-        const [, files, hasTextContent] = eventFiles(event, editor);
+        const [, files, hasTextContent] = eventFiles(event);
         if (files.length > 0 && !hasTextContent) {
           editor.dispatchCommand(DRAG_DROP_PASTE, files);
           return true;

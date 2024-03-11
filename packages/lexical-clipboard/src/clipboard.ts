@@ -423,7 +423,7 @@ export async function copyToClipboard(
             window.clearTimeout(clipboardEventTimeout);
             clipboardEventTimeout = null;
           }
-          resolve($copyToClipboardEvent(editor, secondEvent as ClipboardEvent));
+          resolve($copyToClipboardEvent(editor, secondEvent));
         }
         // Block the entire copy flow while we wait for the next ClipboardEvent
         return true;

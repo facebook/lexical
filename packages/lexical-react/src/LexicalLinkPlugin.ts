@@ -8,7 +8,7 @@
 
 import {LinkNode, TOGGLE_LINK_COMMAND, toggleLink} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {getWindow, mergeRegister} from '@lexical/utils';
+import {mergeRegister, objectKlassEquals} from '@lexical/utils';
 import {
   $getSelection,
   $isElementNode,
@@ -58,7 +58,7 @@ export function LinkPlugin({validateUrl}: Props): null {
               if (
                 !$isRangeSelection(selection) ||
                 selection.isCollapsed() ||
-                !(event instanceof getWindow(editor).ClipboardEvent) ||
+                !objectKlassEquals(event, ClipboardEvent) ||
                 event.clipboardData == null
               ) {
                 return false;

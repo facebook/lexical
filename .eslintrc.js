@@ -84,6 +84,13 @@ module.exports = {
       },
     },
     {
+      // These aren't compiled, but they're written in module JS
+      files: ['packages/lexical-playground/esm/*.js'],
+      parserOptions: {
+        sourceType: 'module',
+      },
+    },
+    {
       files: [
         'packages/**/src/__tests__/**',
         'packages/lexical-playground/**',

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Lexical Basic - Vanilla JS with ESM" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="stylesheet" href="./styles.css" />
+    <title>Lexical Basic - Vanilla JS with ESM</title>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <h1>Lexical Basic - Vanilla JS with ESM</h1>
+    <div class="editor-wrapper">
+      <div id="lexical-editor" contenteditable></div>
+    </div>
+    <h4>Editor state:</h4>
+    <textarea id="lexical-state"></textarea>
+    <script type="importmap">
+      {
+        "imports": {
+          "lexical": "./dist/Lexical.esm.js",
+          "@lexical/clipboard": "./dist/LexicalClipboard.esm.js",
+          "@lexical/dragon": "./dist/LexicalDragon.esm.js",
+          "@lexical/history": "./dist/LexicalHistory.esm.js",
+          "@lexical/html": "./dist/LexicalHtml.esm.js",
+          "@lexical/rich-text": "./dist/LexicalRichText.esm.js",
+          "@lexical/selection": "./dist/LexicalSelection.esm.js",
+          "@lexical/utils": "./dist/LexicalUtils.esm.js"
+        }
+      }
+    </script>
+    <script type="module" src="./index.esm.js"></script>
+  </body>
+</html>

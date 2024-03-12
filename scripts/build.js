@@ -613,24 +613,25 @@ async function moveTSDeclarationFilesIntoDist(packageName, outputPath) {
 }
 
 function buildForkModule(outputPath, outputFileName, format, exports) {
-  const lines = [getComment(), `'use strict'`];
+  const lines = [getComment()];
   const extension = getExtension(format);
   const devFileName = `./${outputFileName}.dev${extension}`;
   const prodFileName = `./${outputFileName}.prod${extension}`;
   if (format === 'esm') {
-    lines.append(
-      `const mod = await import(process.env.NODE_ENV === 'development' ? '${devFileName}' : '${prodFileName}');`,
+    lines.push(
+      `const mod = process.env.NODE_ENV === 'development' ? await import('${devFileName}') : await import('${prodFileName}');`,
     );
     for (const name of exports) {
-      lines.append(
+      lines.push(
         name === 'default'
           ? `export default mod.default;`
           : `export const ${name} = mod.${name};`,
       );
     }
   } else {
-    lines.append(
-      `const ${outputFileName} = process.env.NODE_ENV === 'development' ? require('${devFileName}') : require('${prodFileName}')`,
+    lines.push(
+      `'use strict'`,
+      `const ${outputFileName} = process.env.NODE_ENV === 'development' ? require('${devFileName}') : require('${prodFileName}');`,
       `module.exports = ${outputFileName};`,
     );
   }

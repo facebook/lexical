@@ -44,7 +44,15 @@
       "import": "./LexicalAutoEmbedPlugin.esm.js",
       "require": "./LexicalAutoEmbedPlugin.js"
     },
+    "./LexicalAutoEmbedPlugin.js": {
+      "import": "./LexicalAutoEmbedPlugin.esm.js",
+      "require": "./LexicalAutoEmbedPlugin.js"
+    },
     "./LexicalAutoFocusPlugin": {
+      "import": "./LexicalAutoFocusPlugin.esm.js",
+      "require": "./LexicalAutoFocusPlugin.js"
+    },
+    "./LexicalAutoFocusPlugin.js": {
       "import": "./LexicalAutoFocusPlugin.esm.js",
       "require": "./LexicalAutoFocusPlugin.js"
     },
@@ -52,7 +60,15 @@
       "import": "./LexicalAutoLinkPlugin.esm.js",
       "require": "./LexicalAutoLinkPlugin.js"
     },
+    "./LexicalAutoLinkPlugin.js": {
+      "import": "./LexicalAutoLinkPlugin.esm.js",
+      "require": "./LexicalAutoLinkPlugin.js"
+    },
     "./LexicalBlockWithAlignableContents": {
+      "import": "./LexicalBlockWithAlignableContents.esm.js",
+      "require": "./LexicalBlockWithAlignableContents.js"
+    },
+    "./LexicalBlockWithAlignableContents.js": {
       "import": "./LexicalBlockWithAlignableContents.esm.js",
       "require": "./LexicalBlockWithAlignableContents.js"
     },
@@ -60,7 +76,15 @@
       "import": "./LexicalCharacterLimitPlugin.esm.js",
       "require": "./LexicalCharacterLimitPlugin.js"
     },
+    "./LexicalCharacterLimitPlugin.js": {
+      "import": "./LexicalCharacterLimitPlugin.esm.js",
+      "require": "./LexicalCharacterLimitPlugin.js"
+    },
     "./LexicalCheckListPlugin": {
+      "import": "./LexicalCheckListPlugin.esm.js",
+      "require": "./LexicalCheckListPlugin.js"
+    },
+    "./LexicalCheckListPlugin.js": {
       "import": "./LexicalCheckListPlugin.esm.js",
       "require": "./LexicalCheckListPlugin.js"
     },
@@ -68,7 +92,15 @@
       "import": "./LexicalClearEditorPlugin.esm.js",
       "require": "./LexicalClearEditorPlugin.js"
     },
+    "./LexicalClearEditorPlugin.js": {
+      "import": "./LexicalClearEditorPlugin.esm.js",
+      "require": "./LexicalClearEditorPlugin.js"
+    },
     "./LexicalClickableLinkPlugin": {
+      "import": "./LexicalClickableLinkPlugin.esm.js",
+      "require": "./LexicalClickableLinkPlugin.js"
+    },
+    "./LexicalClickableLinkPlugin.js": {
       "import": "./LexicalClickableLinkPlugin.esm.js",
       "require": "./LexicalClickableLinkPlugin.js"
     },
@@ -76,7 +108,15 @@
       "import": "./LexicalCollaborationContext.esm.js",
       "require": "./LexicalCollaborationContext.js"
     },
+    "./LexicalCollaborationContext.js": {
+      "import": "./LexicalCollaborationContext.esm.js",
+      "require": "./LexicalCollaborationContext.js"
+    },
     "./LexicalCollaborationPlugin": {
+      "import": "./LexicalCollaborationPlugin.esm.js",
+      "require": "./LexicalCollaborationPlugin.js"
+    },
+    "./LexicalCollaborationPlugin.js": {
       "import": "./LexicalCollaborationPlugin.esm.js",
       "require": "./LexicalCollaborationPlugin.js"
     },
@@ -84,7 +124,15 @@
       "import": "./LexicalComposer.esm.js",
       "require": "./LexicalComposer.js"
     },
+    "./LexicalComposer.js": {
+      "import": "./LexicalComposer.esm.js",
+      "require": "./LexicalComposer.js"
+    },
     "./LexicalComposerContext": {
+      "import": "./LexicalComposerContext.esm.js",
+      "require": "./LexicalComposerContext.js"
+    },
+    "./LexicalComposerContext.js": {
       "import": "./LexicalComposerContext.esm.js",
       "require": "./LexicalComposerContext.js"
     },
@@ -92,7 +140,15 @@
       "import": "./LexicalContentEditable.esm.js",
       "require": "./LexicalContentEditable.js"
     },
+    "./LexicalContentEditable.js": {
+      "import": "./LexicalContentEditable.esm.js",
+      "require": "./LexicalContentEditable.js"
+    },
     "./LexicalContextMenuPlugin": {
+      "import": "./LexicalContextMenuPlugin.esm.js",
+      "require": "./LexicalContextMenuPlugin.js"
+    },
+    "./LexicalContextMenuPlugin.js": {
       "import": "./LexicalContextMenuPlugin.esm.js",
       "require": "./LexicalContextMenuPlugin.js"
     },
@@ -100,7 +156,15 @@
       "import": "./LexicalDecoratorBlockNode.esm.js",
       "require": "./LexicalDecoratorBlockNode.js"
     },
+    "./LexicalDecoratorBlockNode.js": {
+      "import": "./LexicalDecoratorBlockNode.esm.js",
+      "require": "./LexicalDecoratorBlockNode.js"
+    },
     "./LexicalEditorRefPlugin": {
+      "import": "./LexicalEditorRefPlugin.esm.js",
+      "require": "./LexicalEditorRefPlugin.js"
+    },
+    "./LexicalEditorRefPlugin.js": {
       "import": "./LexicalEditorRefPlugin.esm.js",
       "require": "./LexicalEditorRefPlugin.js"
     },
@@ -108,7 +172,15 @@
       "import": "./LexicalErrorBoundary.esm.js",
       "require": "./LexicalErrorBoundary.js"
     },
+    "./LexicalErrorBoundary.js": {
+      "import": "./LexicalErrorBoundary.esm.js",
+      "require": "./LexicalErrorBoundary.js"
+    },
     "./LexicalHashtagPlugin": {
+      "import": "./LexicalHashtagPlugin.esm.js",
+      "require": "./LexicalHashtagPlugin.js"
+    },
+    "./LexicalHashtagPlugin.js": {
       "import": "./LexicalHashtagPlugin.esm.js",
       "require": "./LexicalHashtagPlugin.js"
     },
@@ -116,7 +188,15 @@
       "import": "./LexicalHistoryPlugin.esm.js",
       "require": "./LexicalHistoryPlugin.js"
     },
+    "./LexicalHistoryPlugin.js": {
+      "import": "./LexicalHistoryPlugin.esm.js",
+      "require": "./LexicalHistoryPlugin.js"
+    },
     "./LexicalHorizontalRuleNode": {
+      "import": "./LexicalHorizontalRuleNode.esm.js",
+      "require": "./LexicalHorizontalRuleNode.js"
+    },
+    "./LexicalHorizontalRuleNode.js": {
       "import": "./LexicalHorizontalRuleNode.esm.js",
       "require": "./LexicalHorizontalRuleNode.js"
     },
@@ -124,7 +204,15 @@
       "import": "./LexicalHorizontalRulePlugin.esm.js",
       "require": "./LexicalHorizontalRulePlugin.js"
     },
+    "./LexicalHorizontalRulePlugin.js": {
+      "import": "./LexicalHorizontalRulePlugin.esm.js",
+      "require": "./LexicalHorizontalRulePlugin.js"
+    },
     "./LexicalLinkPlugin": {
+      "import": "./LexicalLinkPlugin.esm.js",
+      "require": "./LexicalLinkPlugin.js"
+    },
+    "./LexicalLinkPlugin.js": {
       "import": "./LexicalLinkPlugin.esm.js",
       "require": "./LexicalLinkPlugin.js"
     },
@@ -132,7 +220,15 @@
       "import": "./LexicalListPlugin.esm.js",
       "require": "./LexicalListPlugin.js"
     },
+    "./LexicalListPlugin.js": {
+      "import": "./LexicalListPlugin.esm.js",
+      "require": "./LexicalListPlugin.js"
+    },
     "./LexicalMarkdownShortcutPlugin": {
+      "import": "./LexicalMarkdownShortcutPlugin.esm.js",
+      "require": "./LexicalMarkdownShortcutPlugin.js"
+    },
+    "./LexicalMarkdownShortcutPlugin.js": {
       "import": "./LexicalMarkdownShortcutPlugin.esm.js",
       "require": "./LexicalMarkdownShortcutPlugin.js"
     },
@@ -140,7 +236,15 @@
       "import": "./LexicalNestedComposer.esm.js",
       "require": "./LexicalNestedComposer.js"
     },
+    "./LexicalNestedComposer.js": {
+      "import": "./LexicalNestedComposer.esm.js",
+      "require": "./LexicalNestedComposer.js"
+    },
     "./LexicalNodeEventPlugin": {
+      "import": "./LexicalNodeEventPlugin.esm.js",
+      "require": "./LexicalNodeEventPlugin.js"
+    },
+    "./LexicalNodeEventPlugin.js": {
       "import": "./LexicalNodeEventPlugin.esm.js",
       "require": "./LexicalNodeEventPlugin.js"
     },
@@ -148,7 +252,15 @@
       "import": "./LexicalNodeMenuPlugin.esm.js",
       "require": "./LexicalNodeMenuPlugin.js"
     },
+    "./LexicalNodeMenuPlugin.js": {
+      "import": "./LexicalNodeMenuPlugin.esm.js",
+      "require": "./LexicalNodeMenuPlugin.js"
+    },
     "./LexicalOnChangePlugin": {
+      "import": "./LexicalOnChangePlugin.esm.js",
+      "require": "./LexicalOnChangePlugin.js"
+    },
+    "./LexicalOnChangePlugin.js": {
       "import": "./LexicalOnChangePlugin.esm.js",
       "require": "./LexicalOnChangePlugin.js"
     },
@@ -156,7 +268,15 @@
       "import": "./LexicalPlainTextPlugin.esm.js",
       "require": "./LexicalPlainTextPlugin.js"
     },
+    "./LexicalPlainTextPlugin.js": {
+      "import": "./LexicalPlainTextPlugin.esm.js",
+      "require": "./LexicalPlainTextPlugin.js"
+    },
     "./LexicalRichTextPlugin": {
+      "import": "./LexicalRichTextPlugin.esm.js",
+      "require": "./LexicalRichTextPlugin.js"
+    },
+    "./LexicalRichTextPlugin.js": {
       "import": "./LexicalRichTextPlugin.esm.js",
       "require": "./LexicalRichTextPlugin.js"
     },
@@ -164,7 +284,15 @@
       "import": "./LexicalTabIndentationPlugin.esm.js",
       "require": "./LexicalTabIndentationPlugin.js"
     },
+    "./LexicalTabIndentationPlugin.js": {
+      "import": "./LexicalTabIndentationPlugin.esm.js",
+      "require": "./LexicalTabIndentationPlugin.js"
+    },
     "./LexicalTableOfContents": {
+      "import": "./LexicalTableOfContents.esm.js",
+      "require": "./LexicalTableOfContents.js"
+    },
+    "./LexicalTableOfContents.js": {
       "import": "./LexicalTableOfContents.esm.js",
       "require": "./LexicalTableOfContents.js"
     },
@@ -172,7 +300,15 @@
       "import": "./LexicalTablePlugin.esm.js",
       "require": "./LexicalTablePlugin.js"
     },
+    "./LexicalTablePlugin.js": {
+      "import": "./LexicalTablePlugin.esm.js",
+      "require": "./LexicalTablePlugin.js"
+    },
     "./LexicalTreeView": {
+      "import": "./LexicalTreeView.esm.js",
+      "require": "./LexicalTreeView.js"
+    },
+    "./LexicalTreeView.js": {
       "import": "./LexicalTreeView.esm.js",
       "require": "./LexicalTreeView.js"
     },
@@ -180,7 +316,15 @@
       "import": "./LexicalTypeaheadMenuPlugin.esm.js",
       "require": "./LexicalTypeaheadMenuPlugin.js"
     },
+    "./LexicalTypeaheadMenuPlugin.js": {
+      "import": "./LexicalTypeaheadMenuPlugin.esm.js",
+      "require": "./LexicalTypeaheadMenuPlugin.js"
+    },
     "./useLexicalEditable": {
+      "import": "./useLexicalEditable.esm.js",
+      "require": "./useLexicalEditable.js"
+    },
+    "./useLexicalEditable.js": {
       "import": "./useLexicalEditable.esm.js",
       "require": "./useLexicalEditable.js"
     },
@@ -188,7 +332,15 @@
       "import": "./useLexicalIsTextContentEmpty.esm.js",
       "require": "./useLexicalIsTextContentEmpty.js"
     },
+    "./useLexicalIsTextContentEmpty.js": {
+      "import": "./useLexicalIsTextContentEmpty.esm.js",
+      "require": "./useLexicalIsTextContentEmpty.js"
+    },
     "./useLexicalNodeSelection": {
+      "import": "./useLexicalNodeSelection.esm.js",
+      "require": "./useLexicalNodeSelection.js"
+    },
+    "./useLexicalNodeSelection.js": {
       "import": "./useLexicalNodeSelection.esm.js",
       "require": "./useLexicalNodeSelection.js"
     },
@@ -196,7 +348,15 @@
       "import": "./useLexicalSubscription.esm.js",
       "require": "./useLexicalSubscription.js"
     },
+    "./useLexicalSubscription.js": {
+      "import": "./useLexicalSubscription.esm.js",
+      "require": "./useLexicalSubscription.js"
+    },
     "./useLexicalTextEntity": {
+      "import": "./useLexicalTextEntity.esm.js",
+      "require": "./useLexicalTextEntity.js"
+    },
+    "./useLexicalTextEntity.js": {
       "import": "./useLexicalTextEntity.esm.js",
       "require": "./useLexicalTextEntity.js"
     }

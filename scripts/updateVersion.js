@@ -64,8 +64,15 @@ function updateModule(packageJSON, pkg) {
   } else if (fs.existsSync(`./packages/${pkg}/dist`)) {
     const exports = {};
     for (const file of fs.readdirSync(`./packages/${pkg}/dist`)) {
-      if (file.endsWith('.js')) {
+      if (/^[^.]+\.js$/.test(file)) {
+        // support for import "@lexical/react/LexicalComposer"
         exports[`./${file.replace(/\.js$/, '')}`] = {
+          import: `./${withEsmExtension(file)}`,
+          require: `./${file}`,
+        };
+        // support for import "@lexical/react/LexicalComposer.js"
+        // @mdxeditor/editor uses this at least as of 2.13.1
+        exports[`./${file}`] = {
           import: `./${withEsmExtension(file)}`,
           require: `./${file}`,
         };

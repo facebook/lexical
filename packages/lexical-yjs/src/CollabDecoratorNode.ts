@@ -87,7 +87,7 @@ export class CollabDecoratorNode {
     const lexicalNode = this.getNode();
     invariant(
       lexicalNode !== null,
-      'syncPropertiesFromYjs: cound not find decorator node',
+      'syncPropertiesFromYjs: could not find decorator node',
     );
     const xmlElem = this._xmlElem;
     syncPropertiesFromYjs(binding, xmlElem, lexicalNode, keysChanged);

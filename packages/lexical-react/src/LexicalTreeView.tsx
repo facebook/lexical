@@ -369,7 +369,9 @@ function printRangeSelection(selection: RangeSelection): string {
 }
 
 function printNodeSelection(selection: BaseSelection): string {
-  if (!$isNodeSelection(selection)) return '';
+  if (!$isNodeSelection(selection)) {
+    return '';
+  }
   return `: node\n  └ [${Array.from(selection._nodes).join(', ')}]`;
 }
 

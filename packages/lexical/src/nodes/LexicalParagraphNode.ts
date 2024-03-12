@@ -71,7 +71,9 @@ export class ParagraphNode extends ElementNode {
     const {element} = super.exportDOM(editor);
 
     if (element && isHTMLElement(element)) {
-      if (this.isEmpty()) element.append(document.createElement('br'));
+      if (this.isEmpty()) {
+        element.append(document.createElement('br'));
+      }
 
       const formatType = this.getFormatType();
       element.style.textAlign = formatType;

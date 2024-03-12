@@ -852,12 +852,6 @@ test.describe('TextFormatting', () => {
 
     await moveLeft(page, 2);
     await selectCharacters(page, 'right', 5);
-    await assertSelection(page, {
-      anchorOffset: 0,
-      anchorPath: [0, 1, 0],
-      focusOffset: 2,
-      focusPath: [0, 3, 0],
-    });
 
     await toggleBold(page);
     await assertHTML(

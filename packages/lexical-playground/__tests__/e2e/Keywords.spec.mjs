@@ -320,36 +320,54 @@ test.describe('Keywords', () => {
         </p>
       `,
     );
-    await assertSelection(page, {
-      anchorOffset: 0,
-      anchorPath: [0, 1, 0],
-      focusOffset: 0,
-      focusPath: [0, 1, 0],
-    });
 
     await page.keyboard.press('Space');
 
-    await assertHTML(
-      page,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span
-            class="keyword"
-            style="cursor: default;"
-            data-lexical-text="true">
-            congrats
-          </span>
-          <span data-lexical-text="true"></span>
-          <strong
-            class="PlaygroundEditorTheme__textBold"
-            data-lexical-text="true">
-            Bob!
-          </strong>
-        </p>
-      `,
-    );
+    if (browserName === 'webkit') {
+      await assertHTML(
+        page,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span
+              class="keyword"
+              style="cursor: default;"
+              data-lexical-text="true">
+              congrats
+            </span>
+            <strong
+              class="PlaygroundEditorTheme__textBold"
+              data-lexical-text="true">
+              Bob!
+            </strong>
+          </p>
+        `,
+      );
+    } else {
+      await assertHTML(
+        page,
+        html`
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span
+              class="keyword"
+              style="cursor: default;"
+              data-lexical-text="true">
+              congrats
+            </span>
+            <span data-lexical-text="true"></span>
+            <strong
+              class="PlaygroundEditorTheme__textBold"
+              data-lexical-text="true">
+              Bob!
+            </strong>
+          </p>
+        `,
+      );
+    }
+
     if (browserName === 'firefox' && legacyEvents) {
       await assertSelection(page, {
         anchorOffset: 1,

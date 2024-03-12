@@ -24,7 +24,7 @@ import {PIXEL_VALUE_REG_EXP} from './constants';
 
 export type SerializedTableRowNode = Spread<
   {
-    height: number;
+    height?: number;
   },
   SerializedElementNode
 >;
@@ -60,9 +60,10 @@ export class TableRowNode extends ElementNode {
     this.__height = height;
   }
 
-  exportJSON(): SerializedElementNode {
+  exportJSON(): SerializedTableRowNode {
     return {
       ...super.exportJSON(),
+      ...(this.getHeight() && {height: this.getHeight()}),
       type: 'tablerow',
       version: 1,
     };
@@ -90,7 +91,7 @@ export class TableRowNode extends ElementNode {
     return this.__height;
   }
 
-  getHeight(): number | null | undefined {
+  getHeight(): number | undefined {
     return this.getLatest().__height;
   }
 

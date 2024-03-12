@@ -12,6 +12,7 @@ import type {TableDOMCell, TableDOMRows} from './LexicalTableObserver';
 import type {TableSelection} from './LexicalTableSelection';
 import type {
   BaseSelection,
+  ElementFormatType,
   LexicalCommand,
   LexicalEditor,
   LexicalNode,
@@ -36,6 +37,7 @@ import {
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
   FOCUS_COMMAND,
+  FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
@@ -58,6 +60,7 @@ import {
   $createTableSelection,
   $isTableSelection,
 } from './LexicalTableSelection';
+import {$computeTableMap} from './LexicalTableUtils';
 
 const LEXICAL_ELEMENT_KEY = '__lexicalTableSelection';
 
@@ -362,6 +365,59 @@ export function applyTableHandlers(
         }
 
         return false;
+      },
+      COMMAND_PRIORITY_CRITICAL,
+    ),
+  );
+
+  tableObserver.listenersToRemove.add(
+    editor.registerCommand<ElementFormatType>(
+      FORMAT_ELEMENT_COMMAND,
+      (formatType) => {
+        const selection = $getSelection();
+        if (
+          !$isTableSelection(selection) ||
+          !$isSelectionInTable(selection, tableNode)
+        ) {
+          return false;
+        }
+
+        const anchorNode = selection.anchor.getNode();
+        const focusNode = selection.focus.getNode();
+        if (!$isTableCellNode(anchorNode) || !$isTableCellNode(focusNode)) {
+          return false;
+        }
+
+        const [tableMap, anchorCell, focusCell] = $computeTableMap(
+          tableNode,
+          anchorNode,
+          focusNode,
+        );
+        const maxRow = Math.max(anchorCell.startRow, focusCell.startRow);
+        const maxColumn = Math.max(
+          anchorCell.startColumn,
+          focusCell.startColumn,
+        );
+        const minRow = Math.min(anchorCell.startRow, focusCell.startRow);
+        const minColumn = Math.min(
+          anchorCell.startColumn,
+          focusCell.startColumn,
+        );
+        for (let i = minRow; i <= maxRow; i++) {
+          for (let j = minColumn; j <= maxColumn; j++) {
+            const cell = tableMap[i][j].cell;
+            cell.setFormat(formatType);
+
+            const cellChildren = cell.getChildren();
+            for (let k = 0; k < cellChildren.length; k++) {
+              const child = cellChildren[k];
+              if ($isElementNode(child) && !child.isInline()) {
+                child.setFormat(formatType);
+              }
+            }
+          }
+        }
+        return true;
       },
       COMMAND_PRIORITY_CRITICAL,
     ),

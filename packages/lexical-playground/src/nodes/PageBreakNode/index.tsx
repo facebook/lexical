@@ -110,7 +110,9 @@ export class PageBreakNode extends DecoratorNode<JSX.Element> {
     return {
       figure: (domNode: HTMLElement) => {
         const tp = domNode.getAttribute('type');
-        if (tp !== this.getType()) return null;
+        if (tp !== this.getType()) {
+          return null;
+        }
 
         return {
           conversion: convertPageBreakElement,

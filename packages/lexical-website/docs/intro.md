@@ -10,6 +10,11 @@ Lexical works by attaching itself to a `contentEditable` element and from there 
 things happen without needing to worry about specific edge-cases around the DOM. In fact, you rarely need to interact with the DOM at all in
 most cases (unless you build your own custom nodes).
 
+<figure class="text--center">
+  <img src="/img/docs/modular-design.drawio.svg" alt="Modular Design"/>
+  <figcaption>Modular architecture allows fine grained control over functionality</figcaption>
+</figure>
+
 The core package of Lexical is only 22kb in file size (min+gzip) and you only ever pay the cost for what you need. So Lexical can grow with
 your surface and the requirements. Furthermore, in frameworks that support lazy-loading, you can defer Lexical plugins until the user actually interacts with the editor itself – which can greatly help improve performance.
 
@@ -27,12 +32,16 @@ with building native versions of Lexical for other platforms. At Meta, Lexical p
 
 ## Lexical's Design
 
+<figure class="text--center">
+  <img src="/img/docs/core-conceptual-view.drawio.svg" alt="Conceptual View"/>
+</figure>
+
 The core of Lexical is a dependency-free text editor framework that allows developers to build powerful, simple and complex,
 editor surfaces. Lexical has a few concepts that are worth exploring:
 
 ### Editor instances
 
-Editor instances are the core thing that wires everything together. You can attach a contenteditable DOM element to editor instances, and also
+Editor instances are the core thing that wires everything together. You can attach a `contenteditable` DOM element to editor instances, and also
 register listeners and commands. Most importantly, the editor allows for updates to its `EditorState`. You can create an editor instance
 using the `createEditor()` API, however you normally don't have to worry when using framework bindings such as `@lexical/react` as this
 is handled for you.
@@ -41,8 +50,8 @@ is handled for you.
 
 An Editor State is the underlying data model that represents what you want to show on the DOM. Editor States contain two parts:
 
-- a Lexical node tree
-- a Lexical selection object
+- a Lexical Node Tree
+- a Lexical Selection object
 
 Editor States are immutable once created, and in order to update one, you must do so via `editor.update(() => {...})`. However, you
 can also "hook" into an existing update using node transforms or command handlers – which are invoked as part of an existing update

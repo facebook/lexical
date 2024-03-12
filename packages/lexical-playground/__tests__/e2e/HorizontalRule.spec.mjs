@@ -122,21 +122,12 @@ test.describe('HorizontalRule', () => {
 
     await page.keyboard.press('ArrowLeft');
 
-    if (browserName === 'webkit') {
-      await assertSelection(page, {
-        anchorOffset: 9,
-        anchorPath: [0, 0, 0],
-        focusOffset: 9,
-        focusPath: [0, 0, 0],
-      });
-    } else {
-      await assertSelection(page, {
-        anchorOffset: 1,
-        anchorPath: [0],
-        focusOffset: 1,
-        focusPath: [0],
-      });
-    }
+    await assertSelection(page, {
+      anchorOffset: 1,
+      anchorPath: [0],
+      focusOffset: 1,
+      focusPath: [0],
+    });
 
     await pressBackspace(page, 10);
 
@@ -148,21 +139,12 @@ test.describe('HorizontalRule', () => {
       );
     }
 
-    if (browserName === 'webkit') {
-      await assertSelection(page, {
-        anchorOffset: 1,
-        anchorPath: [],
-        focusOffset: 1,
-        focusPath: [],
-      });
-    } else {
-      await assertSelection(page, {
-        anchorOffset: 0,
-        anchorPath: [],
-        focusOffset: 0,
-        focusPath: [],
-      });
-    }
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [],
+      focusOffset: 0,
+      focusPath: [],
+    });
   });
 
   test('Will add a horizontal rule at the end of a current TextNode and move selection to the new ParagraphNode.', async ({

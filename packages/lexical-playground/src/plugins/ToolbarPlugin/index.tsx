@@ -20,7 +20,6 @@ import {
   INSERT_ORDERED_LIST_COMMAND,
   INSERT_UNORDERED_LIST_COMMAND,
   ListNode,
-  REMOVE_LIST_COMMAND,
 } from '@lexical/list';
 import {INSERT_EMBED_COMMAND} from '@lexical/react/LexicalAutoEmbedPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
@@ -195,8 +194,11 @@ const ELEMENT_FORMAT_OPTIONS: {
 };
 
 function dropDownActiveClass(active: boolean) {
-  if (active) return 'active dropdown-item-active';
-  else return '';
+  if (active) {
+    return 'active dropdown-item-active';
+  } else {
+    return '';
+  }
 }
 
 function BlockFormatDropDown({
@@ -213,7 +215,9 @@ function BlockFormatDropDown({
   const formatParagraph = () => {
     editor.update(() => {
       const selection = $getSelection();
-      $setBlocksType(selection, () => $createParagraphNode());
+      if ($isRangeSelection(selection)) {
+        $setBlocksType(selection, () => $createParagraphNode());
+      }
     });
   };
 
@@ -230,7 +234,7 @@ function BlockFormatDropDown({
     if (blockType !== 'bullet') {
       editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined);
     } else {
-      editor.dispatchCommand(REMOVE_LIST_COMMAND, undefined);
+      formatParagraph();
     }
   };
 
@@ -238,7 +242,7 @@ function BlockFormatDropDown({
     if (blockType !== 'check') {
       editor.dispatchCommand(INSERT_CHECK_LIST_COMMAND, undefined);
     } else {
-      editor.dispatchCommand(REMOVE_LIST_COMMAND, undefined);
+      formatParagraph();
     }
   };
 
@@ -246,7 +250,7 @@ function BlockFormatDropDown({
     if (blockType !== 'number') {
       editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND, undefined);
     } else {
-      editor.dispatchCommand(REMOVE_LIST_COMMAND, undefined);
+      formatParagraph();
     }
   };
 
@@ -272,8 +276,9 @@ function BlockFormatDropDown({
             const codeNode = $createCodeNode();
             selection.insertNodes([codeNode]);
             selection = $getSelection();
-            if ($isRangeSelection(selection))
+            if ($isRangeSelection(selection)) {
               selection.insertRawText(textContent);
+            }
           }
         }
       });

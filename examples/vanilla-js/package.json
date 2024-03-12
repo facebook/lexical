@@ -1,0 +1,22 @@
+{
+  "name": "@lexical/vanilla-js-example",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "lexical": "0.13.1",
+    "@lexical/history": "0.13.1",
+    "@lexical/rich-text": "0.13.1",
+    "@lexical/utils": "0.13.1",
+    "@lexical/dragon": "0.13.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.2.2",
+    "vite": "^5.1.4"
+  }
+}

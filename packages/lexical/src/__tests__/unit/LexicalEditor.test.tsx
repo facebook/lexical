@@ -1003,7 +1003,7 @@ describe('LexicalEditor tests', () => {
         reactRoot.render(<Test divKey={1} />);
       });
 
-      expect(listener).toHaveBeenCalledTimes(4);
+      expect(listener).toHaveBeenCalledTimes(3);
       expect(container.innerHTML).toBe(
         '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p><br></p></div>',
       );

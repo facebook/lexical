@@ -8,54 +8,40 @@ sidebar_position: 2
 
 For a detailed walkthrough of setting up a basic editor with Lexical in React, check out these videos:
 
-[Getting Started with Lexical & React](https://www.youtube.com/watch?v=qIqxvk2qcmo)
+* [Getting Started with Lexical & React](https://www.youtube.com/watch?v=qIqxvk2qcmo)
+* [Themes, Nodes, and Rich Text](https://www.youtube.com/watch?v=pIBUFYd9zJY)
+* [Headings, Lists, Toolbar](https://www.youtube.com/watch?v=5sRh_WXw0WI)
+* [Creating Nodes and Plugins](https://www.youtube.com/watch?v=abZNazybzvs)
 
-[Themes, Nodes, and Rich Text](https://www.youtube.com/watch?v=pIBUFYd9zJY)
+Keep in mind that some of these videos may be partially outdated as we do not update them as often as textual documentation.
 
-[Headings, Lists, Toolbar](https://www.youtube.com/watch?v=5sRh_WXw0WI)
+## Creating Basic Rich Text Editor
 
-[Creating Nodes and Plugins](https://www.youtube.com/watch?v=abZNazybzvs)
+To simplify Lexical integration with React we provide the `@lexical/react` package that wraps Lexical APIs with React components so the editor itself as well as all the plugins now can be easily composed using JSX.
+Furthermore, you can lazy load plugins if desired, so you don't pay the cost for plugins until you actually use them.
 
-## Code Sample
-
-Install `lexical` and `@lexical/react`:
+To start, install `lexical` and `@lexical/react`:
 
 ```
 npm install --save lexical @lexical/react
 ```
 
-Below is an example of a basic plain text editor using `lexical` and `@lexical/react` ([try it yourself](https://codesandbox.io/s/lexical-plain-text-example-g932e)).
+Below is an example of a basic rich text editor using `lexical` and `@lexical/react`.
 
 ```jsx
 import {$getRoot, $getSelection} from 'lexical';
 import {useEffect} from 'react';
 
+import {AutoFocusPlugin} from '@lexical/react/LexicalAutoFocusPlugin';
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
-import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
+import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
-import {OnChangePlugin} from '@lexical/react/LexicalOnChangePlugin';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary';
 
 const theme = {
   // Theme styling goes here
   ...
-}
-
-// Lexical React plugins are React components, which makes them
-// highly composable. Furthermore, you can lazy load plugins if
-// desired, so you don't pay the cost for plugins until you
-// actually use them.
-function MyCustomAutoFocusPlugin() {
-  const [editor] = useLexicalComposerContext();
-
-  useEffect(() => {
-    // Focus the editor when the effect fires!
-    editor.focus();
-  }, [editor]);
-
-  return null;
 }
 
 // Catch any errors that occur during Lexical updates and log them
@@ -74,17 +60,35 @@ function Editor() {
 
   return (
     <LexicalComposer initialConfig={initialConfig}>
-      <PlainTextPlugin
+      <RichTextPlugin
         contentEditable={<ContentEditable />}
         placeholder={<div>Enter some text...</div>}
         ErrorBoundary={LexicalErrorBoundary}
       />
       <HistoryPlugin />
-      <MyCustomAutoFocusPlugin />
+      <AutoFocusPlugin />
     </LexicalComposer>
   );
 }
 ```
+
+## Adding UI to control text formatting
+
+Out of the box Lexical doesn't provide any type of UI as it's not a ready to use editor but rather a framework for creation of your own editor.
+Below you can find an example of the integration from the previous chapter that now features 2 new plugins:
+- `ToolbarPlugin` - renders UI to control text formatting
+- `TreeViewPlugin` - renders debug view below the editor so we can see its state in real time
+
+However no UI can be created w/o CSS and Lexical is not an exception here. Pay attention to `ExampleTheme.ts` and how it's used in this example, with corresponding styles defined in `styles.css`.
+
+<iframe width="100%" height="400" src="https://stackblitz.com/github/facebook/lexical/tree/main/examples/react-rich?embed=1&file=src%2FApp.tsx&terminalHeight=0"></iframe>
+
+
+## Saving Lexical State
+
+:::tip
+While we attempt to write our own plugin here for demonstration purposes, in real life projects it's better to opt for [LexicalOnchangePlugin](/docs/react/plugins#lexicalonchangeplugin).
+:::
 
 Now that we have a simple editor in React, the next thing we might want to do is access the content of the editor to, for instance,
 save it in a database. We can do this via the an [update listener](https://lexical.dev/docs/concepts/listeners#registerupdatelistener), which will execute every time the editor state changes and provide us with the latest state. In React, we typically use the plugin system to set up listeners like this, since it provides us easy access to the LexicalEditor instance via a React Context. So, let's write our own plugin that notifies us when the editor updates.
@@ -130,7 +134,7 @@ function Editor() {
 
   return (
     <LexicalComposer initialConfig={initialConfig}>
-      <PlainTextPlugin
+      <RichTextPlugin
         contentEditable={<ContentEditable />}
         placeholder={<div>Enter some text...</div>}
         ErrorBoundary={LexicalErrorBoundary}

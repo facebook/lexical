@@ -175,7 +175,9 @@ export class ListItemNode extends ElementNode {
     }
     this.setIndent(0);
     const list = this.getParentOrThrow();
-    if (!$isListNode(list)) return replaceWithNode;
+    if (!$isListNode(list)) {
+      return replaceWithNode;
+    }
     if (list.__first === this.getKey()) {
       list.insertBefore(replaceWithNode);
     } else if (list.__last === this.getKey()) {

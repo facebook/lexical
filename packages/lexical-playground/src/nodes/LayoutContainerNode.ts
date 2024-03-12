@@ -65,6 +65,10 @@ export class LayoutContainerNode extends ElementNode {
     return $createLayoutContainerNode(json.templateColumns);
   }
 
+  isShadowRoot(): boolean {
+    return true;
+  }
+
   canBeEmpty(): boolean {
     return false;
   }

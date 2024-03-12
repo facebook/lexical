@@ -19,7 +19,6 @@ import {
   assertSelection,
   clearEditor,
   click,
-  E2E_BROWSER,
   focusEditor,
   getHTML,
   html,
@@ -1047,25 +1046,12 @@ test.describe('Markdown', () => {
     );
     // Selection starts after newly created link element
 
-    if (E2E_BROWSER === 'webkit') {
-      // TODO: safari keeps dom selection on newly inserted link although Lexical's selection
-      // is correctly adjusted to start on [ world] text node. #updateDomSelection calls
-      // selection.setBaseAndExtent correctly, but safari does not seem to sync dom selection
-      // to newly passed values of anchor/focus/offset
-      await assertSelection(page, {
-        anchorOffset: 4,
-        anchorPath: [0, 1, 0, 0],
-        focusOffset: 4,
-        focusPath: [0, 1, 0, 0],
-      });
-    } else {
-      await assertSelection(page, {
-        anchorOffset: 0,
-        anchorPath: [0, 2, 0],
-        focusOffset: 0,
-        focusPath: [0, 2, 0],
-      });
-    }
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [0, 2, 0],
+      focusOffset: 0,
+      focusPath: [0, 2, 0],
+    });
   });
 });
 

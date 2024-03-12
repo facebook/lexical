@@ -316,6 +316,12 @@ export function convertTableCellNodeElement(
   }
 
   return {
+    after: (childLexicalNodes) => {
+      if (childLexicalNodes.length === 0) {
+        childLexicalNodes.push($createParagraphNode());
+      }
+      return childLexicalNodes;
+    },
     forChild: (lexicalNode, parentLexicalNode) => {
       if ($isTableCellNode(parentLexicalNode) && !$isElementNode(lexicalNode)) {
         const paragraphNode = $createParagraphNode();

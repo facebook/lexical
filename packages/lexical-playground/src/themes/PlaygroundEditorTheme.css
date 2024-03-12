@@ -282,36 +282,36 @@
 .PlaygroundEditorTheme__ol1 {
   padding: 0;
   margin: 0;
-  list-style-position: inside;
+  list-style-position: outside;
 }
 .PlaygroundEditorTheme__ol2 {
   padding: 0;
   margin: 0;
   list-style-type: upper-alpha;
-  list-style-position: inside;
+  list-style-position: outside;
 }
 .PlaygroundEditorTheme__ol3 {
   padding: 0;
   margin: 0;
   list-style-type: lower-alpha;
-  list-style-position: inside;
+  list-style-position: outside;
 }
 .PlaygroundEditorTheme__ol4 {
   padding: 0;
   margin: 0;
   list-style-type: upper-roman;
-  list-style-position: inside;
+  list-style-position: outside;
 }
 .PlaygroundEditorTheme__ol5 {
   padding: 0;
   margin: 0;
   list-style-type: lower-roman;
-  list-style-position: inside;
+  list-style-position: outside;
 }
 .PlaygroundEditorTheme__ul {
   padding: 0;
   margin: 0;
-  list-style-position: inside;
+  list-style-position: outside;
 }
 .PlaygroundEditorTheme__listItem {
   margin: 0 32px;

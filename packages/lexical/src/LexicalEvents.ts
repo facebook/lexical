@@ -286,6 +286,8 @@ function onSelectionChange(
     }
   }
 
+  const previousSelection = editor._editorState._selection;
+
   updateEditor(editor, () => {
     // Non-active editor don't need any extra logic for selection, it only needs update
     // to reconcile selection (set it to null) to ensure that only one editor has non-null selection.
@@ -336,16 +338,28 @@ function onSelectionChange(
           selection.format = lastFormat;
           selection.style = lastStyle;
         } else {
-          if (anchor.type === 'text') {
-            invariant(
-              $isTextNode(anchorNode),
-              'Point.getNode() must return TextNode when type is text',
-            );
-            selection.format = anchorNode.getFormat();
-            selection.style = anchorNode.getStyle();
-          } else if (anchor.type === 'element' && !isRootTextContentEmpty) {
-            selection.format = 0;
-            selection.style = '';
+          let same = false;
+          if ($isRangeSelection(previousSelection)) {
+            const focus = selection.focus;
+            same =
+              previousSelection.anchor.key === anchor.key &&
+              previousSelection.focus.key === focus.key &&
+              previousSelection.anchor.offset === selection.anchor.offset &&
+              previousSelection.focus.offset === selection.focus.offset;
+          }
+          if (same) {
+          } else {
+            if (anchor.type === 'text') {
+              invariant(
+                $isTextNode(anchorNode),
+                'Point.getNode() must return TextNode when type is text',
+              );
+              selection.format = anchorNode.getFormat();
+              selection.style = anchorNode.getStyle();
+            } else if (anchor.type === 'element') {
+              selection.format = 0;
+              selection.style = '';
+            }
           }
         }
       } else {

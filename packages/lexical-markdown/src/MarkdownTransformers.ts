@@ -98,9 +98,9 @@ const createBlockNode = (
 // TODO: should be an option
 const LIST_INDENT_SIZE = 4;
 
-function getIndent(match: string): number {
-  const tabs = match.match(/\t/g);
-  const spaces = match.match(/ /g);
+function getIndent(whitespaces: string): number {
+  const tabs = whitespaces.match(/\t/g);
+  const spaces = whitespaces.match(/ /g);
 
   let indent = 0;
 

@@ -32,6 +32,7 @@ import {
   repeat,
   SAMPLE_IMAGE_URL,
   selectorBoundingBox,
+  sleep,
   test,
   waitForSelector,
 } from '../utils/index.mjs';
@@ -1271,15 +1272,19 @@ test.describe('TextFormatting', () => {
     await focusEditor(page);
 
     await page.keyboard.type('lexical');
+    await page.keyboard.press('Enter');
 
     await toggleBold(page);
 
-    await moveToBoundaryPosition(
+    const boundingBox = await selectorBoundingBox(
       page,
-      await selectorBoundingBox(page, '[contenteditable="true"] span'),
-      'end',
+      '[contenteditable="true"] p:nth-child(2)',
     );
-    await mouseClick(page);
+    await moveToBoundaryPosition(page, boundingBox, 'end');
+    await repeat(2, async () => {
+      await mouseClick(page);
+      await sleep(200);
+    });
 
     await expect(leftFrame.locator('.toolbar-item[title^="Bold"]')).toHaveClass(
       /active/,

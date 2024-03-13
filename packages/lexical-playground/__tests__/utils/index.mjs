@@ -653,9 +653,31 @@ export async function insertImageCaption(page, caption) {
   await page.keyboard.type(caption);
 }
 
+export async function mouseClick(page) {
+  await page.mouse.down();
+  await page.mouse.up();
+}
+
 export async function mouseMoveToSelector(page, selector) {
   const {x, width, y, height} = await selectorBoundingBox(page, selector);
   await page.mouse.move(x + width / 2, y + height / 2);
+}
+
+export async function moveToBoundaryPosition(
+  page,
+  boundingBox,
+  position = 'middle',
+) {
+  let fromX = boundingBox.x;
+  let fromY = boundingBox.y;
+  if (position === 'middle') {
+    fromX += boundingBox.width / 2;
+    fromY += boundingBox.height / 2;
+  } else if (position === 'end') {
+    fromX += boundingBox.width;
+    fromY += boundingBox.height;
+  }
+  await page.mouse.move(fromX, fromY);
 }
 
 export async function dragMouse(
@@ -666,30 +688,10 @@ export async function dragMouse(
   positionEnd = 'middle',
   mouseUp = true,
 ) {
-  let fromX = fromBoundingBox.x;
-  let fromY = fromBoundingBox.y;
-  if (positionStart === 'middle') {
-    fromX += fromBoundingBox.width / 2;
-    fromY += fromBoundingBox.height / 2;
-  } else if (positionStart === 'end') {
-    fromX += fromBoundingBox.width;
-    fromY += fromBoundingBox.height;
-  }
-  await page.mouse.move(fromX, fromY);
+  await moveToBoundaryPosition(page, fromBoundingBox, positionStart);
   await page.mouse.down();
 
-  let toX = toBoundingBox.x;
-  let toY = toBoundingBox.y;
-  if (positionEnd === 'middle') {
-    toX += toBoundingBox.width / 2;
-    toY += toBoundingBox.height / 2;
-  } else if (positionEnd === 'end') {
-    toX += toBoundingBox.width;
-    toY += toBoundingBox.height;
-  }
-
-  await page.mouse.move(toX, toY);
-
+  await moveToBoundaryPosition(page, toBoundingBox, toBoundingBox);
   if (mouseUp) {
     await page.mouse.up();
   }

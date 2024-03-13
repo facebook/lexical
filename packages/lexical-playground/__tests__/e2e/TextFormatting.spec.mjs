@@ -27,7 +27,11 @@ import {
   html,
   initialize,
   insertSampleImage,
+  mouseClick,
+  moveToBoundaryPosition,
+  repeat,
   SAMPLE_IMAGE_URL,
+  selectorBoundingBox,
   test,
   waitForSelector,
 } from '../utils/index.mjs';
@@ -1224,15 +1228,61 @@ test.describe('TextFormatting', () => {
     await page.keyboard.press('Enter');
     await toggleUnderline(page);
     await page.keyboard.type('Second');
-    await page.pause();
 
     await moveLeft(page, 'Second'.length + 1);
-    await page.pause();
     await selectCharacters(page, 'right', 'Second'.length + 1);
-    await page.pause();
 
     await expect(
       leftFrame.locator('.toolbar-item[title^="Underline"]'),
     ).toHaveClass(/active/);
+  });
+
+  test('Format is preserved on new lines', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    let leftFrame = page;
+    if (isCollab) {
+      leftFrame = await page.frame('left');
+    }
+    await focusEditor(page);
+
+    await toggleBold(page);
+    await repeat(2, async () => {
+      await page.keyboard.press('Enter');
+    });
+    await expect(leftFrame.locator('.toolbar-item[title^="Bold"]')).toHaveClass(
+      /active/,
+    );
+  });
+
+  test('Format is preserved when same position click', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    let leftFrame = page;
+    if (isCollab) {
+      leftFrame = await page.frame('left');
+    }
+    await focusEditor(page);
+
+    await page.keyboard.type('lexical');
+
+    await toggleBold(page);
+
+    await moveToBoundaryPosition(
+      page,
+      await selectorBoundingBox(page, '[contenteditable="true"] span'),
+      'end',
+    );
+    await mouseClick(page);
+
+    await expect(leftFrame.locator('.toolbar-item[title^="Bold"]')).toHaveClass(
+      /active/,
+    );
   });
 });

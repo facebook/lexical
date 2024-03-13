@@ -17,8 +17,7 @@ import type {
   ElementFormatType,
   SerializedElementNode,
 } from './LexicalElementNode';
-
-import {$isRangeSelection, RangeSelection} from 'lexical';
+import type {RangeSelection} from 'lexical';
 
 import {
   $applyNodeReplacement,
@@ -114,10 +113,7 @@ export class ParagraphNode extends ElementNode {
 
   // Mutation
 
-  insertNewAfter(
-    selection: RangeSelection,
-    restoreSelection: boolean,
-  ): ParagraphNode {
+  insertNewAfter(_: RangeSelection, restoreSelection: boolean): ParagraphNode {
     const newElement = $createParagraphNode();
     const direction = this.getDirection();
     newElement.setDirection(direction);

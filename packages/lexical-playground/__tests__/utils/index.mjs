@@ -691,7 +691,7 @@ export async function dragMouse(
   await moveToBoundaryPosition(page, fromBoundingBox, positionStart);
   await page.mouse.down();
 
-  await moveToBoundaryPosition(page, toBoundingBox, toBoundingBox);
+  await moveToBoundaryPosition(page, toBoundingBox, positionEnd);
   if (mouseUp) {
     await page.mouse.up();
   }

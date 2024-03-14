@@ -10,6 +10,7 @@ import type {Binding} from './Bindings';
 import type {
   BaseSelection,
   EditorThemeClasses,
+  LexicalNode,
   NodeKey,
   NodeMap,
   Point,
@@ -24,6 +25,7 @@ import {
   $isRangeSelection,
   $isTextNode,
 } from 'lexical';
+import {IS_APPLE_WEBKIT} from 'shared/environment';
 import invariant from 'shared/invariant';
 import {
   compareRelativePositions,
@@ -207,7 +209,7 @@ function createCursorSelection(
   };
 }
 
-export function getCaretPosition(element: HTMLElement, caretOffset: number) {
+function getCaretPosition(element: HTMLElement, caretOffset: number) {
   const textContent = element.textContent;
   const isRtl = getComputedStyle(element).direction === 'rtl';
 
@@ -222,13 +224,13 @@ export function getCaretPosition(element: HTMLElement, caretOffset: number) {
   }
 
   const range = document.createRange();
-  range.setStart(element.firstChild!, caretOffset);
+  range.setStart(element.firstChild!, Math.max(0, caretOffset - 1));
   range.setEnd(element.firstChild!, caretOffset);
 
   const rangeRect = range.getBoundingClientRect();
 
   return new DOMRect(
-    isRtl ? rangeRect.right : rangeRect.left,
+    !isRtl ? rangeRect.right : rangeRect.left,
     rangeRect.top,
     0,
     rangeRect.height,
@@ -239,22 +241,30 @@ export function getSelectionPosition(
   element: HTMLElement,
   offsetStart: number,
   offsetEnd: number,
-) {
+): DOMRect[] {
   const fullText = element.textContent;
   if (!fullText) {
     return [];
   }
 
-  const actualStartOffset = Math.min(offsetStart, offsetEnd);
-  const actualEndOffset = Math.max(offsetStart, offsetEnd);
-  const textSlice = fullText.slice(actualStartOffset, actualEndOffset);
+  if (IS_APPLE_WEBKIT) {
+    const range = document.createRange();
+    range.setStart(element.firstChild!, offsetStart);
+    range.setEnd(element.firstChild!, offsetEnd);
+    const rects = Array.from(range.getClientRects());
+    return rects.map((rect) => {
+      return new DOMRect(rect.x, rect.y, rect.width, rect.height);
+    });
+  }
+
+  const textSlice = fullText.slice(offsetStart, offsetEnd);
 
   const words = textSlice.split(' ');
 
   const range = document.createRange();
   const rects: DOMRect[] = [];
   let lastRectTop: number | null = null;
-  let wordStart = actualStartOffset;
+  let wordStart = offsetStart;
 
   words.forEach((word) => {
     range.setStart(element.firstChild!, wordStart);
@@ -287,6 +297,117 @@ export function getSelectionPosition(
   return rects;
 }
 
+function isForwardSelection(
+  focus: {key: NodeKey; offset: number},
+  anchor: {key: NodeKey; offset: number},
+  focusElement: HTMLElement,
+  anchorElement: HTMLElement,
+): boolean {
+  // First, check if focus and anchor elements are the same
+  if (focus.key === anchor.key) {
+    // If they are the same, compare offsets directly
+    return focus.offset >= anchor.offset;
+  } else {
+    // If they are different, compare their positions in the DOM
+    const range = document.createRange();
+    range.setStart(focusElement, 0);
+    range.setEnd(anchorElement, 0);
+    const isForward = range.collapsed;
+    range.detach(); // Clean up the range object
+
+    return isForward;
+  }
+}
+
+function getSelectionRects(
+  binding: Binding,
+  elements: HTMLElement[],
+  focus: {key: NodeKey; offset: number},
+  focusNode: LexicalNode,
+  anchor: {key: NodeKey; offset: number},
+  anchorNode: LexicalNode,
+): DOMRect[] {
+  const focusElement = binding.editor.getElementByKey(focus.key);
+  const anchorElement = binding.editor.getElementByKey(anchor.key);
+  if (!focusElement || !anchorElement) {
+    return [];
+  }
+
+  const isForward = isForwardSelection(
+    focus,
+    anchor,
+    focusElement,
+    anchorElement,
+  );
+
+  // Whe selection start and end on line break node anchor and focus
+  // offset will be 0
+  const focusNodeIsNotText = !$isTextNode(focusNode);
+  const anchorNodeIsNotText = !$isTextNode(anchorNode);
+
+  if (elements.length === 1) {
+    const content = elements[0].textContent;
+
+    if (!content) {
+      return [];
+    }
+
+    // Single element
+    const start = isForward
+      ? anchorNodeIsNotText
+        ? 0
+        : anchor.offset
+      : focusNodeIsNotText
+      ? 0
+      : focus.offset;
+    const end = isForward
+      ? focusNodeIsNotText
+        ? content.length
+        : focus.offset
+      : anchorNodeIsNotText
+      ? content.length
+      : anchor.offset;
+
+    return getSelectionPosition(elements[0], start, end);
+  }
+
+  return elements.flatMap((element, index) => {
+    const content = element.textContent;
+    if (!content) {
+      return [];
+    }
+
+    let start = 0;
+    let end = 0;
+    if (index === 0) {
+      // First element
+      start = isForward
+        ? anchorNodeIsNotText
+          ? 0
+          : anchor.offset
+        : focusNodeIsNotText
+        ? 0
+        : focus.offset;
+      end = content.length;
+    } else if (index === elements.length - 1) {
+      // Last element
+      start = 0;
+      end = isForward
+        ? focusNodeIsNotText
+          ? content.length
+          : focus.offset
+        : anchorNodeIsNotText
+        ? content.length
+        : anchor.offset;
+    } else {
+      // Middle elements
+      start = 0;
+      end = content.length;
+    }
+
+    return getSelectionPosition(element as HTMLElement, start, end);
+  });
+}
 export function getElementsInRange(range: Range): HTMLElement[] {
   const elements: HTMLElement[] = [];
   const walker = document.createTreeWalker(
@@ -373,10 +494,13 @@ function updateCursor(
     );
     selectionRects = [caretRect];
   } else if (anchorNode === focusNode) {
-    selectionRects = getSelectionPosition(
-      editor.getElementByKey(anchorKey) as HTMLElement,
-      anchor.offset,
-      focus.offset,
+    selectionRects = getSelectionRects(
+      binding,
+      [editor.getElementByKey(anchorKey) as HTMLElement],
+      focus,
+      focusNode,
+      anchor,
+      anchorNode,
     );
   } else {
     const range = createDOMRange(
@@ -398,42 +522,14 @@ function updateCursor(
       return;
     }
 
-    // Calculating selection is forward or backward since it not saved on the selection
-    const isForwardSelection =
-      anchorElement.compareDocumentPosition(
-        editor.getElementByKey(focusKey)!,
-      ) === Node.DOCUMENT_POSITION_FOLLOWING;
-
-    // Running this calculation on all elements is expensive,
-    // we could do virtualization to only calculate the elements in view
-    // or cap the number of elements to calculate
-    selectionRects = elements.flatMap((element, index) => {
-      if (!element.textContent) {
-        return [];
-      }
-      const elementTextLength = element.textContent.length || 0;
-
-      if (elementTextLength === 0) {
-        return [];
-      }
-      let start = 0;
-      let end = 0;
-      if (index === 0) {
-        // First element
-        start = isForwardSelection ? anchor.offset : focus.offset;
-        end = elementTextLength;
-      } else if (index === elements.length - 1) {
-        // Last element
-        start = 0;
-        end = isForwardSelection ? focus.offset : anchor.offset;
-      } else {
-        // Middle elements
-        start = 0;
-        end = elementTextLength;
-      }
-
-      return getSelectionPosition(element, start, end);
-    });
+    selectionRects = getSelectionRects(
+      binding,
+      elements,
+      focus,
+      focusNode,
+      anchor,
+      anchorNode,
+    );
   }
 
   const selectionsLength = selections.length;

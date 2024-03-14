@@ -21,5 +21,6 @@
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/lexical-link"
   },
-  "module": "LexicalLink.esm.js"
+  "module": "LexicalLink.esm.js",
+  "sideEffects": false
 }

@@ -21,5 +21,6 @@
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/lexical-hashtag"
   },
-  "module": "LexicalHashtag.esm.js"
+  "module": "LexicalHashtag.esm.js",
+  "sideEffects": false
 }

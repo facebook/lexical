@@ -600,5 +600,6 @@
       },
       "require": "./useLexicalTextEntity.js"
     }
-  }
+  },
+  "sideEffects": false
 }

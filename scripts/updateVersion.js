@@ -59,6 +59,9 @@ function withEsmExtension(fileName) {
 }
 
 function updateModule(packageJSON, pkg) {
+  if (packageJSON.sideEffects === undefined) {
+    packageJSON.sideEffects = false;
+  }
   if (packageJSON.main) {
     packageJSON.module = withEsmExtension(packageJSON.main);
   } else if (fs.existsSync(`./packages/${pkg}/dist`)) {

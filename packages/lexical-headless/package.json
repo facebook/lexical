@@ -18,5 +18,6 @@
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/lexical-headless"
   },
-  "module": "LexicalHeadless.esm.js"
+  "module": "LexicalHeadless.esm.js",
+  "sideEffects": false
 }

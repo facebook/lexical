@@ -619,7 +619,9 @@ function buildForkModule(outputPath, outputFileName, format, exports) {
   const prodFileName = `./${outputFileName}.prod${extension}`;
   if (format === 'esm') {
     lines.push(
-      `const mod = process.env.NODE_ENV === 'development' ? await import('${devFileName}') : await import('${prodFileName}');`,
+      `import * as modDev from '${devFileName}';`,
+      `import * as modProd from '${prodFileName}';`,
+      `const mod = process.env.NODE_ENV === 'development' ? modDev : modProd;`,
     );
     for (const name of exports) {
       lines.push(

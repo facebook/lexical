@@ -113,8 +113,8 @@ const moduleResolution = [
     replacement: path.resolve('../shared/src'),
   },
   {
-    find: '@/components',
-    replacement: path.resolve('../../../components'),
+    find: '@/',
+    replacement: path.resolve('../../../'),
   }
 ];
 // Lexical React

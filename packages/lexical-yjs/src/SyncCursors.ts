@@ -170,26 +170,24 @@ function createCursorSelection(
 ): CursorSelection {
   const color = cursor.color;
   const caret = document.createElement('span');
+
+  caret.style.cssText = `position:absolute;top:0;bottom:0;right:-1px;width:1px;background-color:${color};z-index:10;--color:${color};`;
   if (
     editorThemeClasses.collaboration &&
     editorThemeClasses.collaboration.caret
   ) {
-    caret.style.cssText = `--color:${color};`;
     caret.classList.add(editorThemeClasses.collaboration.caret);
-  } else {
-    caret.style.cssText = `position:absolute;top:0;bottom:0;right:-1px;width:1px;background-color:${color};z-index:10;`;
   }
 
   const name = document.createElement('span');
   name.textContent = cursor.name;
+
+  name.style.cssText = `position:absolute;left:-2px;top:-16px;background-color:${color};color:#fff;line-height:12px;font-size:12px;padding:2px;font-family:Arial;font-weight:bold;white-space:nowrap;--color:${color};`;
   if (
     editorThemeClasses.collaboration &&
     editorThemeClasses.collaboration.name
   ) {
     name.classList.add(editorThemeClasses.collaboration.name);
-    name.style.cssText = `--color:${color};`;
-  } else {
-    name.style.cssText = `position:absolute;left:-2px;top:-16px;background-color:${color};color:#fff;line-height:12px;font-size:12px;padding:2px;font-family:Arial;font-weight:bold;white-space:nowrap;`;
   }
 
   caret.appendChild(name);
@@ -551,23 +549,18 @@ function updateCursor(
 
     const top = selectionRect.top - containerRect.top;
     const left = selectionRect.left - containerRect.left;
-    const style = `position:absolute;top:${top}px;left:${left}px;height:${selectionRect.height}px;width:${selectionRect.width}px;pointer-events:none;z-index:5;`;
+    const style = `position:absolute;top:${top}px;left:${left}px;height:${selectionRect.height}px;width:${selectionRect.width}px;pointer-events:none;z-index:5;--top:${top}px;--left:${left}px;--height:${selectionRect.height}px;--width:${selectionRect.width}px;--color:${color};`;
+    selection.style.cssText = style;
     if (theme.collaboration && theme.collaboration.selectionContainer) {
       selection.classList.add(theme.collaboration.selectionContainer);
-      selection.style.cssText = `--top:${top}px;--left:${left}px;--height:${selectionRect.height}px;--width:${selectionRect.width}px;--color:${color};`;
-    } else {
-      selection.style.cssText = style;
     }
 
+    const firstSelectionChild = selection.firstChild as HTMLSpanElement;
+    firstSelectionChild.style.cssText = `${style}left:0;top:0;background-color:${color};opacity:0.3;`;
     if (theme.collaboration && theme.collaboration.selection) {
-      (selection.firstChild as HTMLSpanElement).classList.add(
-        theme.collaboration.selection,
-      );
-    } else {
-      (
-        selection.firstChild as HTMLSpanElement
-      ).style.cssText = `${style}left:0;top:0;background-color:${color};opacity:0.3;`;
+      firstSelectionChild.classList.add(theme.collaboration.selection);
     }
+
     if (i === selectionRectsLength - 1) {
       if (caret.parentNode !== selection) {
         selection.appendChild(caret);

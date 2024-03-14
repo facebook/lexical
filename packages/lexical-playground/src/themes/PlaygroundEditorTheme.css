@@ -440,59 +440,20 @@
   padding: 8px 16px;
 }
 
-.PlaygroundEditorTheme__collaborationSelectionContainer {
-  position: absolute;
-  top: var(--top);
-  left: var(--left);
-  width: var(--width);
-  height: var(--height);
-  pointer-events: none;
-  z-index: 900;
-}
-
-.PlaygroundEditorTheme__collaborationSelection {
-  position: absolute;
-  width: var(--width);
-  height: var(--height);
-  top: 0;
-  left: 0;
-  background-color: var(--color);
-  opacity: 0.3;
-}
-.PlaygroundEditorTheme__collaborationCaret {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  right: 0;
-  width: 2px;
-  background-color: var(--color);
-  z-index: 10;
-}
-
 .PlaygroundEditorTheme__collaborationCaret[dir='rtl'] {
   left: 0;
   right: auto;
 }
 
 .PlaygroundEditorTheme__collaborationName {
-  position: absolute;
-  left: 0;
-  top: -16px;
-  background-color: var(--color);
-  color: #fff;
-  line-height: 12px;
-  font-size: 12px;
-  padding: 2px;
-  font-family: Arial;
-  font-weight: bold;
-  white-space: nowrap;
+  left: 0 !important;
   border-radius: 5px;
   border-bottom-left-radius: 0;
 }
 
 .PlaygroundEditorTheme__collaborationName[dir='rtl'] {
   right: 0;
-  left: auto;
+  left: auto !important;
   border-bottom-left-radius: 5px;
   border-bottom-right-radius: 0;
 }

@@ -49,9 +49,6 @@ const theme: EditorThemeClasses = {
   collaboration: {
     caret: 'PlaygroundEditorTheme__collaborationCaret',
     name: 'PlaygroundEditorTheme__collaborationName',
-    selection: 'PlaygroundEditorTheme__collaborationSelection',
-    selectionContainer:
-      'PlaygroundEditorTheme__collaborationSelectionContainer',
   },
   embedBlock: {
     base: 'PlaygroundEditorTheme__embedBlock',

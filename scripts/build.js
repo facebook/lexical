@@ -262,7 +262,8 @@ async function build(name, inputFile, outputPath, outputFile, isProd) {
     interop: false,
   };
   const result = await rollup.rollup(inputOptions);
-  await result.write(outputOptions);
+  const {output} = await result.write(outputOptions);
+  return output[0].exports;
 }
 
 function getComment() {
@@ -593,13 +594,19 @@ async function moveTSDeclarationFilesIntoDist(packageName, outputPath) {
   await fs.copy(`./.ts-temp/${packageName}/src`, outputPath);
 }
 
-function buildForkModule(outputPath, outputFileName) {
+function buildForkModule(outputPath, outputFileName, exports) {
   const lines = [
     getComment(),
     `'use strict'`,
     `const ${outputFileName} = process.env.NODE_ENV === 'development' ? require('./${outputFileName}.dev.js') : require('./${outputFileName}.prod.js')`,
-    `module.exports = ${outputFileName};`,
   ];
+  if (exports.includes('default')) {
+    lines.push(`module.exports = ${outputFileName};`);
+  } else {
+    for (const exportName of exports) {
+      lines.push(`exports.${exportName} = ${outputFileName}.${exportName};`);
+    }
+  }
   const fileContent = lines.join('\n');
   fs.outputFileSync(
     path.resolve(path.join(`${outputPath}${outputFileName}.js`)),
@@ -632,7 +639,7 @@ async function buildAll() {
       );
 
       if (isRelease) {
-        await build(
+        const exports = await build(
           name,
           inputFile,
           outputPath,
@@ -641,7 +648,7 @@ async function buildAll() {
           ),
           false,
         );
-        buildForkModule(outputPath, outputFileName);
+        buildForkModule(outputPath, outputFileName, exports);
       }
     }
 

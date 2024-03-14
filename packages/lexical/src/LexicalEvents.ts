@@ -1208,7 +1208,7 @@ export function addRootElementEvents(
               return;
             }
             stopLexicalPropagation(event);
-            if (editor.isEditable()) {
+            if (editor.isEditable() || eventName === 'click') {
               onEvent(event, editor);
             }
           }

@@ -1,5 +1,7 @@
 # `@lexical/history`
 
+[![See API Documentation](https://lexical.dev/img/see-api-documentation.svg)](https://lexical.dev/docs/api/modules/lexical_history)
+
 This package contains history helpers for Lexical.
 
 ### Methods

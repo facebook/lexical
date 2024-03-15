@@ -10,6 +10,7 @@
   "license": "MIT",
   "version": "0.14.1",
   "main": "LexicalHashtag.js",
+  "types": "index.d.ts",
   "peerDependencies": {
     "lexical": "0.14.1"
   },

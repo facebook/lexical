@@ -11,6 +11,7 @@
   "license": "MIT",
   "version": "0.14.2",
   "main": "LexicalClipboard.js",
+  "types": "index.d.ts",
   "peerDependencies": {
     "lexical": "0.14.2"
   },

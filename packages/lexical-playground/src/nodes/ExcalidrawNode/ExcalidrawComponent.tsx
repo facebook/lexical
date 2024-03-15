@@ -6,7 +6,7 @@
  *
  */
 
-import type {ExcalidrawElementFragment} from './ExcalidrawModal';
+import type {ExcalidrawInitialElements} from './ExcalidrawModal';
 import type {NodeKey} from 'lexical';
 
 import {AppState, BinaryFiles} from '@excalidraw/excalidraw/types/types';
@@ -125,7 +125,7 @@ export default function ExcalidrawComponent({
   }, [editor, nodeKey]);
 
   const setData = (
-    els: ReadonlyArray<ExcalidrawElementFragment>,
+    els: ExcalidrawInitialElements,
     aps: Partial<AppState>,
     fls: BinaryFiles,
   ) => {
@@ -135,7 +135,7 @@ export default function ExcalidrawComponent({
     return editor.update(() => {
       const node = $getNodeByKey(nodeKey);
       if ($isExcalidrawNode(node)) {
-        if (els.length > 0 || Object.keys(fls).length > 0) {
+        if ((els && els.length > 0) || Object.keys(fls).length > 0) {
           node.setData(
             JSON.stringify({
               appState: aps,

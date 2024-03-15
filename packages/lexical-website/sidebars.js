@@ -31,6 +31,7 @@ const sidebars = {
         'getting-started/react',
         'getting-started/theming',
         'getting-started/supported-browsers',
+        'getting-started/creating-plugin',
       ],
       label: 'Getting Started',
       type: 'category',

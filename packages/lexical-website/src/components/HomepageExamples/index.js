@@ -50,7 +50,7 @@ const EXAMPLES = [
     ),
     id: 'example-feature-3',
     label: 'Built to Extend',
-    src: 'https://codesandbox.io/embed/lexical-plain-text-example-forked-qdxhy?fontsize=12&hidenavigation=1&module=%2Fsrc%2FEmoticonPlugin.js&theme=dark&view=editor',
+    src: 'https://stackblitz.com/github/StyleT/lexical/tree/feature/vanilla-js-plugin-example/examples/vanilla-js-plugin?embed=1&file=src%2Femoji-plugin%2FEmojiPlugin.ts&terminalHeight=0',
   },
 ];
 

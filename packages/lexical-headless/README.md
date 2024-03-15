@@ -1,5 +1,7 @@
 # `@lexical/headless`
 
+[![See API Documentation](https://lexical.dev/img/see-api-documentation.svg)](https://lexical.dev/docs/api/modules/lexical_headless)
+
 This package allows you to interact with Lexical in a headless environment (one that does not rely on DOM, e.g. for Node.js environment), and use its
 main features like editor.update(), editor.registerNodeTransform(), editor.registerUpdateListener()
 to create, update or traverse state.
@@ -40,7 +42,7 @@ app.get('article/:id/markdown', await (req, res) => {
   });
 
   const articleEditorStateJSON = await loadArticleBody(req.query.id);
-  editor.setEditorState(editor.parseEditorState(articleEditorStateJSON));  
+  editor.setEditorState(editor.parseEditorState(articleEditorStateJSON));
 
   editor.update(() => {
     const markdown = $convertToMarkdownString(TRANSFORMERS);

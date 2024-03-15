@@ -1,5 +1,7 @@
 # `@lexical/html`
 
+[![See API Documentation](https://lexical.dev/img/see-api-documentation.svg)](https://lexical.dev/docs/api/modules/lexical_html)
+
 # HTML
 This package exports utility functions for converting `Lexical` -> `HTML` and `HTML` -> `Lexical`. These same functions are also used in the `lexical-clipboard` package for copy and paste.
 

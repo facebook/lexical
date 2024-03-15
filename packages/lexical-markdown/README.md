@@ -1,5 +1,7 @@
 # `@lexical/markdown`
 
+[![See API Documentation](https://lexical.dev/img/see-api-documentation.svg)](https://lexical.dev/docs/api/modules/lexical_markdown)
+
 This package contains markdown helpers for Lexical: import, export and shortcuts.
 
 ## Import and export

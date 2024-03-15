@@ -152,17 +152,17 @@ export default function ExcalidrawModal({
       const appState = excalidrawAPI?.getAppState();
       // We only need a subset of the state
       const partialState: Partial<AppState> = {
-        exportBackground: appState.exportBackground,
-        exportScale: appState.exportScale,
-        exportWithDarkMode: appState.theme === 'dark',
-        isBindingEnabled: appState.isBindingEnabled,
-        isLoading: appState.isLoading,
-        name: appState.name,
-        theme: appState.theme,
-        viewBackgroundColor: appState.viewBackgroundColor,
-        viewModeEnabled: appState.viewModeEnabled,
-        zenModeEnabled: appState.zenModeEnabled,
-        zoom: appState.zoom,
+        exportBackground: appState?.exportBackground,
+        exportScale: appState?.exportScale,
+        exportWithDarkMode: appState?.theme === 'dark',
+        isBindingEnabled: appState?.isBindingEnabled,
+        isLoading: appState?.isLoading,
+        name: appState?.name,
+        theme: appState?.theme,
+        viewBackgroundColor: appState?.viewBackgroundColor,
+        viewModeEnabled: appState?.viewModeEnabled,
+        zenModeEnabled: appState?.zenModeEnabled,
+        zoom: appState?.zoom,
       };
       onSave(elements, partialState, files);
     } else {
@@ -235,6 +235,7 @@ export default function ExcalidrawModal({
             excalidrawAPI={excalidrawAPIRefCallback}
             initialData={{
               appState: initialAppState || {isLoading: false},
+              // @ts-expect-error
               elements: initialElements,
               files: initialFiles,
             }}

@@ -19,11 +19,9 @@ declare module 'yjs' {
   interface XmlText {
     _collabNode: CollabElementNode;
   }
-}
 
-declare module 'yjs/dist/src/internals' {
-  // @ts-ignore
-  interface YMap {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  interface Map<MapType> {
     _collabNode: CollabLineBreakNode | CollabTextNode;
   }
 }

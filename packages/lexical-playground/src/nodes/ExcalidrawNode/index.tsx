@@ -22,13 +22,15 @@ import {DecoratorNode} from 'lexical';
 import * as React from 'react';
 import {Suspense} from 'react';
 
+type Dimension = number | 'inherit';
+
 const ExcalidrawComponent = React.lazy(() => import('./ExcalidrawComponent'));
 
 export type SerializedExcalidrawNode = Spread<
   {
     data: string;
-    width: number | 'inherit';
-    height: number | 'inherit';
+    width: Dimension;
+    height: Dimension;
   },
   SerializedLexicalNode
 >;
@@ -37,9 +39,19 @@ function convertExcalidrawElement(
   domNode: HTMLElement,
 ): DOMConversionOutput | null {
   const excalidrawData = domNode.getAttribute('data-lexical-excalidraw-json');
+  const styleAttributes = window.getComputedStyle(domNode);
+  const heightStr = styleAttributes.getPropertyValue('height');
+  const widthStr = styleAttributes.getPropertyValue('width');
+  const height =
+    !heightStr || heightStr === 'inherit' ? 'inherit' : parseInt(heightStr, 10);
+  const width =
+    !widthStr || widthStr === 'inherit' ? 'inherit' : parseInt(widthStr, 10);
+
   if (excalidrawData) {
     const node = $createExcalidrawNode();
     node.__data = excalidrawData;
+    node.__height = height;
+    node.__width = width;
     return {
       node,
     };
@@ -49,19 +61,28 @@ function convertExcalidrawElement(
 
 export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
   __data: string;
-  __width: number | 'inherit';
-  __height: number | 'inherit';
+  __width: Dimension;
+  __height: Dimension;
 
   static getType(): string {
     return 'excalidraw';
   }
 
   static clone(node: ExcalidrawNode): ExcalidrawNode {
-    return new ExcalidrawNode(node.__data, node.__key);
+    return new ExcalidrawNode(
+      node.__data,
+      node.__width,
+      node.__height,
+      node.__key,
+    );
   }
 
   static importJSON(serializedNode: SerializedExcalidrawNode): ExcalidrawNode {
-    return new ExcalidrawNode(serializedNode.data);
+    return new ExcalidrawNode(
+      serializedNode.data,
+      serializedNode.width,
+      serializedNode.height,
+    );
   }
 
   exportJSON(): SerializedExcalidrawNode {
@@ -74,11 +95,16 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
     };
   }
 
-  constructor(data = '[]', key?: NodeKey) {
+  constructor(
+    data = '[]',
+    width: Dimension = 'inherit',
+    height: Dimension = 'inherit',
+    key?: NodeKey,
+  ) {
     super(key);
     this.__data = data;
-    this.__width = 'inherit';
-    this.__height = 'inherit';
+    this.__width = width;
+    this.__height = height;
   }
 
   // View
@@ -143,12 +169,12 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
     self.__data = data;
   }
 
-  setWidth(width: number | 'inherit'): void {
+  setWidth(width: Dimension): void {
     const self = this.getWritable();
     self.__width = width;
   }
 
-  setHeight(height: number | 'inherit'): void {
+  setHeight(height: Dimension): void {
     const self = this.getWritable();
     self.__height = height;
   }

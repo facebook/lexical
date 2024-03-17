@@ -2186,4 +2186,30 @@ describe('LexicalEditor tests', () => {
     expect(textListener).toBeCalledWith('Hello\n\nworld');
     expect(updateListener.mock.lastCall[0].prevEditorState).toBe(editorState);
   });
+
+  it('should call importDOM methods only once', async () => {
+    jest.spyOn(ParagraphNode, 'importDOM');
+
+    class CustomParagraphNode extends ParagraphNode {
+      static getType() {
+        return 'custom-paragraph';
+      }
+
+      static clone(node: CustomParagraphNode) {
+        return new CustomParagraphNode(node.__key);
+      }
+
+      static importJSON() {
+        return new CustomParagraphNode();
+      }
+
+      exportJSON() {
+        return {...super.exportJSON(), type: 'custom-paragraph'};
+      }
+    }
+
+    createTestEditor({nodes: [CustomParagraphNode]});
+
+    expect(ParagraphNode.importDOM).toHaveBeenCalledTimes(1);
+  });
 });

@@ -377,17 +377,14 @@ function initializeConversionCache(
     });
   };
   nodes.forEach((node) => {
-    const importDOM =
-      node.klass.importDOM != null
-        ? node.klass.importDOM.bind(node.klass)
-        : null;
+    const importDOM = node.klass.importDOM;
 
     if (importDOM == null || handledConversions.has(importDOM)) {
       return;
     }
 
     handledConversions.add(importDOM);
-    const map = importDOM();
+    const map = importDOM.call(node.klass);
 
     if (map !== null) {
       addConversionsToCache(map);

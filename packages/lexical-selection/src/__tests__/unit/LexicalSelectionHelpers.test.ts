@@ -24,6 +24,7 @@ import {
   $isElementNode,
   $isParagraphNode,
   $isRangeSelection,
+  $isTextNode,
   $setSelection,
   RangeSelection,
   TextNode,
@@ -2769,6 +2770,139 @@ describe('$patchStyleText', () => {
     expect(element.innerHTML).toBe(
       '<p dir="ltr"><span data-lexical-text="true">a</span></p>' +
         '<p dir="ltr"><span style="text-emphasis: filled;" data-lexical-text="true">b</span></p>',
+    );
+  });
+
+  test('selection is not changed after patch a selection of multiple TextNode containing linebreak', async () => {
+    const editor = createTestEditor();
+    const element = document.createElement('div');
+    editor.setRootElement(element);
+
+    const paragraphText = 'lexical editor from meta team';
+
+    await editor.update(() => {
+      const root = $getRoot();
+
+      const paragraph = createParagraphWithNodes(editor, [
+        {
+          key: 'text',
+          mergeable: false,
+          text: paragraphText,
+        },
+      ]);
+
+      root.append(paragraph);
+
+      setAnchorPoint({
+        key: 'text',
+        offset: paragraphText.length - 15,
+        type: 'text',
+      });
+      setFocusPoint({
+        key: 'text',
+        offset: paragraphText.length - 15,
+        type: 'text',
+      });
+
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
+        return;
+      }
+      selection.insertLineBreak();
+
+      const textNodes = root.getAllTextNodes();
+      const firstLineTextNode = textNodes[0];
+      const secondLineTextNode = textNodes[1];
+
+      setFocusPoint({
+        key: secondLineTextNode.__key,
+        offset: secondLineTextNode.getTextContent().length,
+        type: 'text',
+      });
+      setAnchorPoint({
+        key: firstLineTextNode.__key,
+        offset: firstLineTextNode.getTextContent().length - 5,
+        type: 'text',
+      });
+
+      const selectionTextBeforePatch = selection.getTextContent();
+      $patchStyleText(selection, {color: 'blue'});
+      const selectionTextAfterPatch = selection.getTextContent();
+      expect(selectionTextBeforePatch).toEqual(selectionTextAfterPatch);
+    });
+
+    expect(element.innerHTML).toBe(
+      '<p dir="ltr"><span data-lexical-text="true">lexical e</span><span style="color: blue;" data-lexical-text="true">ditor</span><br><span style="color: blue;" data-lexical-text="true"> from meta team</span></p>',
+    );
+  });
+
+  test('selection is not changed after patch a selection of multiple TextNode on multiple paragraph', async () => {
+    const editor = createTestEditor();
+    const element = document.createElement('div');
+    editor.setRootElement(element);
+
+    const paragraph1Text = 'lexical editor ';
+    const paragraph2Text = 'meta team ';
+
+    await editor.update(() => {
+      const root = $getRoot();
+
+      const paragraph1 = createParagraphWithNodes(editor, [
+        {
+          key: 'init',
+          mergeable: false,
+          text: 'init text ',
+        },
+        {
+          key: 'bold',
+          mergeable: false,
+          text: 'bold ',
+        },
+        {
+          key: 'text1',
+          mergeable: false,
+          text: paragraph1Text,
+        },
+      ]);
+      const paragraph2 = createParagraphWithNodes(editor, [
+        {
+          key: 'text2',
+          mergeable: false,
+          text: paragraph2Text,
+        },
+      ]);
+
+      root.append(paragraph1);
+      root.append(paragraph2);
+
+      const bold = $getNodeByKey('bold');
+      if ($isTextNode(bold)) {
+        bold.setFormat('bold');
+      }
+
+      setAnchorPoint({
+        key: 'text1',
+        offset: 0,
+        type: 'text',
+      });
+      setFocusPoint({
+        key: 'text2',
+        offset: paragraph1Text.length,
+        type: 'text',
+      });
+
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
+        return;
+      }
+      const selectionTextBeforePatch = selection.getTextContent();
+      $patchStyleText(selection, {color: 'blue'});
+      const selectionTextAfterPatch = selection.getTextContent();
+      expect(selectionTextBeforePatch).toEqual(selectionTextAfterPatch);
+    });
+
+    expect(element.innerHTML).toBe(
+      '<p dir="ltr"><span data-lexical-text="true">init text </span><strong data-lexical-text="true">bold </strong><span style="color: blue;" data-lexical-text="true">lexical editor </span></p><p dir="ltr"><span style="color: blue;" data-lexical-text="true">meta team </span></p>',
     );
   });
 

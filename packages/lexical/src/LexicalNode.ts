@@ -154,7 +154,7 @@ export type DOMExportOutput = {
 
 export type NodeKey = string;
 
-export class LexicalNode implements Disposable {
+export class LexicalNode {
   // Allow us to look up the type including static props
   ['constructor']!: KlassConstructor<typeof LexicalNode>;
   /** @internal */
@@ -1101,11 +1101,12 @@ export class LexicalNode implements Disposable {
   }
 
   /**
-   * Cleanup method for the node. Called when the node is garbage collected by Lexical and
-   * detached from the EditorState.
+   * Cleanup method to release resources held by the node (event listeners, open files, etc).
+   * Called only when the node is being garbage collected by Lexical and detaching from the
+   * EditorState.
    *
    * */
-  [Symbol.dispose](): void {}
+  cleanUp(): void {}
 }
 
 function errorOnTypeKlassMismatch(

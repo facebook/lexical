@@ -112,7 +112,7 @@ export function $garbageCollectDetachedNodes(
   for (const nodeKey of nodeMapDelete) {
     const node = nodeMap.get(nodeKey);
     if (node !== undefined) {
-      node[Symbol.dispose]();
+      node.cleanUp();
     }
     nodeMap.delete(nodeKey);
   }
@@ -122,7 +122,7 @@ export function $garbageCollectDetachedNodes(
     if (node !== undefined && !node.isAttached()) {
       if (!prevNodeMap.has(nodeKey)) {
         dirtyLeaves.delete(nodeKey);
-        node[Symbol.dispose]();
+        node.cleanUp();
       }
       nodeMap.delete(nodeKey);
     }

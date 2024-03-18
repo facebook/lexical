@@ -13,6 +13,6 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
       - run: npm install
       - run: npm run prepare-release
-      - run: node ./scripts/npm/release.js --non-interactive --dry-run=${{ secrets.RELEASE_DRY_RUN }} --channel next
+      - run: node ./scripts/npm/release.js --non-interactive --dry-run=${{ secrets.RELEASE_DRY_RUN }} --channel='latest'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -1101,7 +1101,7 @@ export class LexicalNode {
   }
 
   /**
-   * Cleanup method to release resources held by the node (event listeners, open files, etc).
+   * Cleanup method to release resources held by the node (event listeners, etc).
    * Called only when the node is being garbage collected by Lexical and detaching from the
    * EditorState.
    *

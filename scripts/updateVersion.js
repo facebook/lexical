@@ -58,6 +58,18 @@ function withEsmExtension(fileName) {
   return fileName.replace(/\.js$/, '.esm.js');
 }
 
+function exportEntry(file) {
+  return {
+    import: {
+      types: `./${file.replace(/\.js$/, '.d.ts')}`,
+      // webpack requires default to be the last entry per #5731
+      // eslint-disable-next-line sort-keys-fix/sort-keys-fix
+      default: `./${withEsmExtension(file)}`,
+    },
+    require: `./${file}`,
+  };
+}
+
 function updateModule(packageJSON, pkg) {
   if (packageJSON.sideEffects === undefined) {
     packageJSON.sideEffects = false;
@@ -68,23 +80,12 @@ function updateModule(packageJSON, pkg) {
     const exports = {};
     for (const file of fs.readdirSync(`./packages/${pkg}/dist`)) {
       if (/^[^.]+\.js$/.test(file)) {
+        const entry = exportEntry(file);
         // support for import "@lexical/react/LexicalComposer"
-        exports[`./${file.replace(/\.js$/, '')}`] = {
-          import: {
-            default: `./${withEsmExtension(file)}`,
-            types: `./${file.replace(/\.js$/, '.d.ts')}`,
-          },
-          require: `./${file}`,
-        };
+        exports[`./${file.replace(/\.js$/, '')}`] = entry;
         // support for import "@lexical/react/LexicalComposer.js"
         // @mdxeditor/editor uses this at least as of 2.13.1
-        exports[`./${file}`] = {
-          import: {
-            default: `./${withEsmExtension(file)}`,
-            types: `./${file.replace(/\.js$/, '.d.ts')}`,
-          },
-          require: `./${file}`,
-        };
+        exports[`./${file}`] = entry;
       }
     }
     packageJSON.exports = exports;

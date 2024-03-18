@@ -1,3 +1,10 @@
+## v0.14.2 (2024-03-18)
+
+- Fix order of exports in lexical-react (#5732) Brian Birtles
+- Clean up CHANGELOG (#5730) Ivaylo Pavlov
+- v0.14.1 (#5729) Ivaylo Pavlov
+- v0.14.1 Lexical GitHub Actions Bot
+
 ## v0.14.1 (2024-03-18)
 
 - ESM build (#5618) Bob Ippolito

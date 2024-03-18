@@ -13,6 +13,7 @@ import path from 'path';
 import fs from 'fs';
 import {replaceCodePlugin} from 'vite-plugin-replace';
 import babel from '@rollup/plugin-babel';
+import copy from 'rollup-plugin-copy';
 
 const moduleResolution = [
   {
@@ -199,6 +200,24 @@ export default defineConfig({
       presets: ['@babel/preset-react'],
     }),
     react(),
+    copy({
+      hook: 'writeBundle',
+      verbose: true,
+      targets: [
+        {src: './esm/*', dest: './build/esm/'},
+        {src: ['./*.png', './*.ico'], dest: './build/'},
+        ...((() => {
+          const m = /<script type="importmap">([\s\S]+?)<\/script>/g.exec(fs.readFileSync('./esm/index.html', 'utf8'));
+          if (!m) {
+            throw new Error('Could not parse importmap from esm/index.html');
+          }
+          return Object.entries(JSON.parse(m[1]).imports).map(([k, v]) => ({
+            src: path.join(`../${k.replace(/^@/, '').replace(/\//g, '-')}`, v),
+            dest: './build/esm/dist/',
+          }));
+        })()),
+      ],
+    }),
   ],
   resolve: {
     alias: moduleResolution,

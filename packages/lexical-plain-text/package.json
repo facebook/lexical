@@ -19,5 +19,7 @@
     "type": "git",
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/lexical-plain-text"
-  }
+  },
+  "module": "LexicalPlainText.esm.js",
+  "sideEffects": false
 }

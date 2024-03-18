@@ -25,5 +25,7 @@
     "type": "git",
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/lexical-markdown"
-  }
+  },
+  "module": "LexicalMarkdown.esm.js",
+  "sideEffects": false
 }

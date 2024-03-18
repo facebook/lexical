@@ -18,5 +18,7 @@
     "type": "git",
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/lexical-dragon"
-  }
+  },
+  "module": "LexicalDragon.esm.js",
+  "sideEffects": false
 }

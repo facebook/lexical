@@ -18,5 +18,7 @@
     "type": "git",
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/lexical-text"
-  }
+  },
+  "module": "LexicalText.esm.js",
+  "sideEffects": false
 }

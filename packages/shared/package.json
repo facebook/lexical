@@ -16,5 +16,6 @@
     "type": "git",
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/shared"
-  }
+  },
+  "sideEffects": false
 }

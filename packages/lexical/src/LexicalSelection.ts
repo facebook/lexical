@@ -1019,6 +1019,8 @@ export class RangeSelection implements BaseSelection {
           text,
           true,
         );
+        firstNode.setFormat(format);
+        firstNode.setStyle(style);
         if (firstNode.getTextContent() === '') {
           firstNode.remove();
         } else if (firstNode.isComposing() && this.anchor.type === 'text') {

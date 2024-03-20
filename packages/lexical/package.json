@@ -16,6 +16,6 @@
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/lexical"
   },
-  "module": "Lexical.esm.js",
+  "module": "Lexical.mjs",
   "sideEffects": false
 }

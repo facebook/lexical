@@ -21,6 +21,6 @@
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/lexical-history"
   },
-  "module": "LexicalHistory.esm.js",
+  "module": "LexicalHistory.mjs",
   "sideEffects": false
 }

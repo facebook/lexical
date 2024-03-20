@@ -86,7 +86,7 @@ export function PrettierButton({lang, editor, getCodeDOMNode}: Props) {
         return;
       }
 
-      editor.update(() => {
+      editor.update(async () => {
         const codeNode = $getNearestNodeFromDOMNode(codeDOMNode);
 
         if ($isCodeNode(codeNode)) {
@@ -95,7 +95,7 @@ export function PrettierButton({lang, editor, getCodeDOMNode}: Props) {
           let parsed = '';
 
           try {
-            parsed = format(content, options);
+            parsed = await format(content, options);
           } catch (error: unknown) {
             setError(error);
           }

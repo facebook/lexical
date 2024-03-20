@@ -822,7 +822,7 @@ export class RangeSelection implements BaseSelection {
       }
     }
 
-    if (selectedNodesLength === 1) {
+    if (selectedNodesLength === 1 && anchor.key === focus.key) {
       if (firstNode.isToken()) {
         const textNode = $createTextNode(text);
         textNode.select();

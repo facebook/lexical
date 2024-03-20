@@ -582,14 +582,21 @@ test.describe('Selection', () => {
     await page.keyboard.press('ArrowLeft');
     await extendToNextWord(page);
     await page.keyboard.press('Backspace');
-    await assertHTML(page,html`
-    <p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr">
-      <span data-lexical-text="true">This is testing one</span>
-      <br>
-      <span data-lexical-text="true">This is testing </span><br>
-      <span data-lexical-text="true">This is testing three</span><br>
-      <br></p>
-    `);
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">This is testing one</span>
+          <br />
+          <span data-lexical-text="true">This is testing</span>
+          <br />
+          <span data-lexical-text="true">This is testing three</span>
+          <br />
+          <br />
+        </p>
+      `,
+    );
   });
-
 });

@@ -6,8 +6,9 @@
  *
  */
 
-import {wrapStore} from 'webext-zustand';
 import {create} from 'zustand';
+
+import {wrapStore} from './webext-zustand';
 
 interface ExtensionState {
   counter: number;

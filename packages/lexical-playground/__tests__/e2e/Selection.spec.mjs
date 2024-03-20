@@ -9,6 +9,7 @@
 import {
   deleteBackward,
   deleteForward,
+  extendToNextWord,
   moveLeft,
   moveRight,
   moveToEditorBeginning,
@@ -558,4 +559,37 @@ test.describe('Selection', () => {
       `,
     );
   });
+
+  test('can delete word at end of line in a multi paragraph with linebreak by backspace', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type('This is testing one');
+    // enter linebreak element
+    await pressShiftEnter(page);
+    await page.keyboard.type('This is testing two');
+    // enter linebreak element
+    await pressShiftEnter(page);
+    await page.keyboard.type('This is testing three');
+    // enter linebreak element
+    await pressShiftEnter(page);
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('ArrowLeft');
+    await extendToNextWord(page);
+    await page.keyboard.press('Backspace');
+    await assertHTML(page,html`
+    <p class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr" dir="ltr">
+      <span data-lexical-text="true">This is testing one</span>
+      <br>
+      <span data-lexical-text="true">This is testing </span><br>
+      <span data-lexical-text="true">This is testing three</span><br>
+      <br></p>
+    `);
+  });
+
 });

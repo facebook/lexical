@@ -55,7 +55,7 @@ function updateVersion() {
 }
 
 function withEsmExtension(fileName) {
-  return fileName.replace(/\.js$/, '.esm.js');
+  return fileName.replace(/\.js$/, '.mjs');
 }
 
 function exportEntry(file) {

@@ -5,9 +5,16 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import store from '../store';
+
 export default defineBackground(() => {
   // eslint-disable-next-line no-console
   console.log('Hello from Lexical DevTools extension content script.', {
     id: browser.runtime.id,
+  });
+
+  // listen state changes
+  store.subscribe((state) => {
+    // console.log(state);
   });
 });

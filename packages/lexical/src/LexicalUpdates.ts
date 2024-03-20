@@ -593,6 +593,8 @@ export function commitPendingUpdates(
     }
   }
 
+  if (tags.has('omit-listeners')) return;
+
   if (mutatedNodes !== null) {
     triggerMutationListeners(
       editor,

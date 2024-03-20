@@ -10,6 +10,7 @@ import type {EditorState, NodeKey} from 'lexical';
 
 import {$createOffsetView} from '@lexical/offset';
 import {
+  $addUpdateTag,
   $createParagraphNode,
   $getNodeByKey,
   $getRoot,
@@ -84,6 +85,7 @@ export function syncYjsChangesToLexical(
   provider: Provider,
   events: Array<YEvent<YText>>,
   isFromUndoManger: boolean,
+  isLoadingDoc: boolean,
 ): void {
   const editor = binding.editor;
   const currentEditorState = editor._editorState;
@@ -97,6 +99,7 @@ export function syncYjsChangesToLexical(
 
   editor.update(
     () => {
+      if (isLoadingDoc) $addUpdateTag('omit-listeners');
       const pendingEditorState: EditorState | null = editor._pendingEditorState;
 
       for (let i = 0; i < events.length; i++) {

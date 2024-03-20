@@ -9,7 +9,7 @@
 import type {RangeSelection, TextNode} from '.';
 import type {PointType} from './LexicalSelection';
 
-import {$isElementNode, $isLineBreakNode, $isTextNode} from '.';
+import {$isElementNode, $isTextNode} from '.';
 import {getActiveEditor} from './LexicalUpdates';
 
 function $canSimpleTextNodesBeMerged(
@@ -98,10 +98,7 @@ function $normalizePoint(point: PointType): void {
     const offset = point.offset;
     let nextNode;
     let nextOffsetAtEnd;
-    if ($isLineBreakNode(point.getNode().getChildAtIndex(offset))) {
-      nextNode = node.getChildAtIndex(offset - 1);
-      nextOffsetAtEnd = true;
-    } else if (offset === node.getChildrenSize()) {
+    if (offset === node.getChildrenSize()) {
       nextNode = node.getChildAtIndex(offset - 1);
       nextOffsetAtEnd = true;
     } else {

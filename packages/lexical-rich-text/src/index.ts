@@ -855,7 +855,6 @@ export function registerRichText(editor: LexicalEditor): () => void {
             return editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
           }
         }
-        $setSelection($normalizeSelection__EXPERIMENTAL(selection));
         return editor.dispatchCommand(DELETE_CHARACTER_COMMAND, true);
       },
       COMMAND_PRIORITY_EDITOR,

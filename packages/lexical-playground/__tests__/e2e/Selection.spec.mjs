@@ -564,7 +564,6 @@ test.describe('Selection', () => {
     page,
     isPlainText,
   }) => {
-    test.skip(isPlainText);
     await focusEditor(page);
     await page.keyboard.type('This is testing one');
     // enter linebreak element
@@ -577,9 +576,7 @@ test.describe('Selection', () => {
     await pressShiftEnter(page);
     await page.keyboard.press('ArrowLeft');
     await page.keyboard.press('ArrowUp');
-    await page.keyboard.press('ArrowLeft');
-    await page.keyboard.press('ArrowLeft');
-    await page.keyboard.press('ArrowLeft');
+    await moveLeft(page, 3);
     await extendToNextWord(page);
     await page.keyboard.press('Backspace');
     await assertHTML(

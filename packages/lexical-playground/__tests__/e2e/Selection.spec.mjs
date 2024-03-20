@@ -562,7 +562,6 @@ test.describe('Selection', () => {
 
   test('can delete word at end of line in a multi paragraph with linebreak by backspace', async ({
     page,
-    isPlainText,
   }) => {
     await focusEditor(page);
     await page.keyboard.type('This is testing one');

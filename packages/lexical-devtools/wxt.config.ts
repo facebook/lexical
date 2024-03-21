@@ -11,6 +11,7 @@ import {defineConfig} from 'wxt';
 
 // See https://wxt.dev/api/config.html
 export default defineConfig({
+  debug: !!process.env.DEBUG_WXT,
   manifest: (configEnv) => {
     const manifestConf = {
       icons: {
@@ -47,12 +48,12 @@ export default defineConfig({
       // We use this instead of chromiumProfile because of https://github.com/wxt-dev/wxt/issues/366
       `--user-data-dir=${path.join(__dirname, '.browser-profiles/chromium')}`,
       '--hide-crash-restore-bubble',
+      '--enable-extension-activity-logging',
     ],
     startUrls: [
       'https://playground.lexical.dev/',
       // Doesn't work due to https://github.com/mozilla/web-ext/pull/2774
       // 'chrome://inspect/#service-workers',
-      // 'chrome://serviceworker-internals/?devtools',
     ],
   },
   vite: () => ({

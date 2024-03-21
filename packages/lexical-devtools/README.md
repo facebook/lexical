@@ -12,6 +12,11 @@ $ npm run dev
 # In browser: Alt+R to force reload extension
 ```
 
+**Useful Hints:**
+- Extension activity log: [chrome://extensions/?activity=eddfjidloofnnmloonifcjkpmfmlblab](chrome://extensions/?activity=eddfjidloofnnmloonifcjkpmfmlblab)
+- Status of ServiceWorkers: [chrome://serviceworker-internals/?devtools](chrome://serviceworker-internals/?devtools)
+- WXT Framework debugging: `DEBUG_WXT=1 npm run dev`
+
 ## Design
 
 This extension follows typical [Browser DevTools architecture](https://developer.chrome.com/docs/extensions/how-to/devtools/extend-devtools) that includes sereral independent contexts that communicate via events or extension APIs.

@@ -13,8 +13,7 @@ export default defineBackground(() => {
     id: browser.runtime.id,
   });
 
-  // listen state changes
-  store.subscribe((state) => {
-    // console.log(state);
-  });
+  // Store initialization so other extension surfaces can use it
+  // as all changes go through background SW
+  store.subscribe((_state) => {});
 });

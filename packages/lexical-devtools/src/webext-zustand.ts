@@ -27,8 +27,14 @@ export const wrapStore = async <T>(store: StoreApi<T>) => {
     });
 
     return;
-  } else {
+  } else if (isPages()) {
     return handlePages(store, {
+      deserializer,
+      portName,
+      serializer,
+    });
+  } else {
+    return handleInjected(store, {
       deserializer,
       portName,
       serializer,
@@ -58,13 +64,26 @@ const handleBackground = <T>(
 
 const handlePages = async <T>(
   store: StoreApi<T>,
-  configuration?: PagesConfiguration,
+  configuration: Exclude<PagesConfiguration, undefined>,
 ) => {
+  const serializer = configuration.serializer ?? JSON.stringify;
+  const deserializer = configuration.deserializer ?? JSON.parse;
+
+  const inContentScript = isContentScript();
+  let stateTransferEl: HTMLScriptElement | null = null;
+
   const proxyStore = new ProxyStore(configuration);
   // wait to be ready
   await proxyStore.ready();
   // initial state
   store.setState(proxyStore.getState());
+  if (inContentScript) {
+    stateTransferEl = document.createElement('script');
+    stateTransferEl.setAttribute('id', configuration.portName ?? '');
+    stateTransferEl.setAttribute('type', 'application/json');
+    stateTransferEl.innerHTML = serializer(proxyStore.getState());
+    window.document.head.appendChild(stateTransferEl);
+  }
 
   const callback = (state: T, oldState: T) => {
     (proxyStore.dispatch({state}) as unknown as Promise<T>)
@@ -94,6 +113,15 @@ const handlePages = async <T>(
         }
         console.error('Error during store dispatch', err);
       });
+    if (inContentScript) {
+      // Propagate state to injected script
+      if (stateTransferEl != null) {
+        const newStateStr = serializer(proxyStore.getState());
+        if (newStateStr !== stateTransferEl.innerHTML) {
+          stateTransferEl.innerHTML = newStateStr;
+        }
+      }
+    }
   };
 
   let unsubscribe = store.subscribe(callback);
@@ -102,11 +130,84 @@ const handlePages = async <T>(
     // prevent retrigger
     unsubscribe();
     // update
-    store.setState(proxyStore.getState());
+    const state = proxyStore.getState();
+    store.setState(state);
     // resub
     unsubscribe = store.subscribe(callback);
+    if (inContentScript) {
+      // Propagate state to injected script
+      if (stateTransferEl != null) {
+        const newStateStr = serializer(proxyStore.getState());
+        if (newStateStr !== stateTransferEl.innerHTML) {
+          stateTransferEl.innerHTML = newStateStr;
+        }
+      }
+    }
+  });
+
+  if (stateTransferEl != null) {
+    const observer = new MutationObserver(() => {
+      // TODO: error handling
+      proxyStore.dispatch({state: deserializer(stateTransferEl.innerHTML)});
+    });
+    observer.observe(stateTransferEl, {
+      attributes: false,
+      characterData: false,
+      childList: true,
+      subtree: true,
+    });
+  }
+};
+
+const handleInjected = async <T>(
+  store: StoreApi<T>,
+  configuration: Exclude<PagesConfiguration, undefined>,
+) => {
+  const serializer = configuration.serializer ?? JSON.stringify;
+  const deserializer = configuration.deserializer ?? JSON.parse;
+
+  const stateTransferEl = document.getElementById(
+    configuration.portName ?? 'FIXME',
+  );
+  if (stateTransferEl == null) {
+    throw new Error("Can't find state stansfer element");
+  }
+
+  // initial state
+  store.setState(deserializer(stateTransferEl.innerHTML));
+
+  const callback = (state: T) => {
+    const newStateStr = serializer(state);
+    if (newStateStr !== stateTransferEl.innerHTML) {
+      stateTransferEl.innerHTML = newStateStr;
+    }
+  };
+  let unsubscribe = store.subscribe(callback);
+
+  const observer = new MutationObserver(() => {
+    const oldStateStr = serializer(store.getState());
+    if (oldStateStr === stateTransferEl.innerHTML) {
+      return;
+    }
+    // prevent retrigger
+    unsubscribe();
+    // update
+    store.setState(deserializer(stateTransferEl.innerHTML));
+    // resubscribe
+    unsubscribe = store.subscribe(callback);
+  });
+  observer.observe(stateTransferEl, {
+    attributes: false,
+    characterData: false,
+    childList: true,
+    subtree: true,
   });
 };
+
+const isPages = () => chrome.runtime !== undefined;
+const isContentScript = () =>
+  chrome.runtime !== undefined &&
+  window.location.protocol !== 'chrome-extension:';
 
 const isBackground = () => {
   const isCurrentPathname = (path?: string | null) =>
@@ -115,14 +216,18 @@ const isBackground = () => {
         window.location.pathname
       : false;
 
-  const manifest = browser.runtime.getManifest();
+  if (chrome.runtime === undefined) {
+    return false;
+  }
+
+  const manifest = chrome.runtime.getManifest();
 
   return (
     // eslint-disable-next-line no-restricted-globals
     !self.window ||
-    (browser.extension.getBackgroundPage &&
+    (chrome.extension.getBackgroundPage &&
       typeof window !== 'undefined' &&
-      browser.extension.getBackgroundPage() === window) ||
+      chrome.extension.getBackgroundPage() === window) ||
     (manifest &&
       // @ts-expect-error
       (isCurrentPathname(manifest.background_page) ||

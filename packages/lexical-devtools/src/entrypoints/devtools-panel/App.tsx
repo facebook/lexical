@@ -5,11 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import './App.css';
 
 import * as React from 'react';
 
-import lexicalLogo from '/lexical.svg';
+import lexicalLogo from '@/public/lexical.svg';
 
 import useStore from '../../store';
 

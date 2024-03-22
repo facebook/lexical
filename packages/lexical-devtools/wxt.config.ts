@@ -7,19 +7,27 @@
  */
 import react from '@vitejs/plugin-react';
 import * as path from 'path';
-import {defineConfig} from 'wxt';
+import {defineConfig, UserManifest} from 'wxt';
 
 // See https://wxt.dev/api/config.html
 export default defineConfig({
   debug: !!process.env.DEBUG_WXT,
   manifest: (configEnv) => {
-    const manifestConf = {
+    const manifestConf: UserManifest = {
       icons: {
         128: '/icon/128.png',
         16: '/icon/16.png',
         32: '/icon/32.png',
         48: '/icon/48.png',
       },
+      permissions: ['scripting', 'storage'],
+      web_accessible_resources: [
+        {
+          extension_ids: [],
+          matches: ['<all_urls>'],
+          resources: ['injected.js'],
+        },
+      ],
     };
 
     if (configEnv.mode === 'development') {
@@ -56,6 +64,7 @@ export default defineConfig({
       // 'chrome://inspect/#service-workers',
     ],
   },
+  srcDir: './src',
   vite: () => ({
     plugins: [react()],
   }),

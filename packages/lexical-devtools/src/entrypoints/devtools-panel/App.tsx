@@ -6,6 +6,7 @@
  *
  */
 
+import {useEffect} from 'react';
 import * as React from 'react';
 
 import lexicalLogo from '@/public/lexical.svg';
@@ -13,8 +14,23 @@ import lexicalLogo from '@/public/lexical.svg';
 import useStore from '../../store';
 
 function App() {
-  const counter = useStore((state) => state.counter);
-  const increase = useStore((state) => state.increase);
+  const tabID = browser.devtools.inspectedWindow.tabId;
+  const {
+    devtoolsPanelLoadedForTabID,
+    devtoolsPanelUnloadedForTabID,
+    counter,
+    increase,
+    lexicalState,
+  } = useStore();
+  const states = lexicalState[tabID] ?? {};
+
+  useEffect(() => {
+    devtoolsPanelLoadedForTabID(tabID);
+
+    return () => {
+      devtoolsPanelUnloadedForTabID(tabID);
+    };
+  }, [devtoolsPanelLoadedForTabID, devtoolsPanelUnloadedForTabID, tabID]);
 
   return (
     <>
@@ -29,6 +45,14 @@ function App() {
           Edit <code>src/App.tsx</code> and save to test HMR
         </p>
       </div>
+      {Object.entries(states).map(([key, state]) => (
+        <p key={key}>
+          <b>ID: {key}</b>
+          <br />
+          <textarea readOnly={true} value={JSON.stringify(state)} rows={3} />
+          <hr />
+        </p>
+      ))}
     </>
   );
 }

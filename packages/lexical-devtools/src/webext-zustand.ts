@@ -147,6 +147,10 @@ const handlePages = async <T>(
 
   if (stateTransferEl != null) {
     const observer = new MutationObserver(() => {
+      const oldStateStr = serializer(proxyStore.getState());
+      if (oldStateStr === stateTransferEl.innerHTML) {
+        return;
+      }
       // TODO: error handling
       proxyStore.dispatch({state: deserializer(stateTransferEl.innerHTML)});
     });
@@ -229,7 +233,6 @@ const isBackground = () => {
       typeof window !== 'undefined' &&
       chrome.extension.getBackgroundPage() === window) ||
     (manifest &&
-      // @ts-expect-error
       (isCurrentPathname(manifest.background_page) ||
         (manifest.background &&
           'page' in manifest.background &&

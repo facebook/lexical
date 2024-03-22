@@ -9,10 +9,14 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 
+import {storeReadyPromise} from '@/store.ts';
+
 import App from './App.tsx';
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
+storeReadyPromise.then(() =>
+  ReactDOM.createRoot(document.getElementById('root')!).render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>,
+  ),
 );

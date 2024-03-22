@@ -654,6 +654,10 @@ async function buildAll() {
 
     for (const module of modules) {
       for (const format of ['cjs', 'esm']) {
+        if (isWWW && format === 'esm') {
+          break;
+        }
+
         const {sourceFileName, outputFileName} = module;
         let inputFile = path.resolve(
           path.join(`${sourcePath}${sourceFileName}`),

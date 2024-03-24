@@ -21,6 +21,6 @@
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/lexical-mark"
   },
-  "module": "LexicalMark.esm.js",
+  "module": "LexicalMark.mjs",
   "sideEffects": false
 }

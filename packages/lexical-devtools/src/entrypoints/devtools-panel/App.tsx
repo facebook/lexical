@@ -13,8 +13,11 @@ import lexicalLogo from '@/public/lexical.svg';
 
 import useStore from '../../store';
 
-function App() {
-  const tabID = browser.devtools.inspectedWindow.tabId;
+interface Props {
+  tabID: number;
+}
+
+function App({tabID}: Props) {
   const {
     devtoolsPanelLoadedForTabID,
     devtoolsPanelUnloadedForTabID,

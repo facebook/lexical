@@ -9,14 +9,16 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 
-import {storeReadyPromise} from '@/store.ts';
-
+import store from '../../store.ts';
+import storeReadyPromise from '../../store-sync/content-script';
 import App from './App.tsx';
 
-storeReadyPromise.then(() =>
+const tabID = browser.devtools.inspectedWindow.tabId;
+
+storeReadyPromise(store).then(() =>
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
-      <App />
+      <App tabID={tabID} />
     </React.StrictMode>,
   ),
 );

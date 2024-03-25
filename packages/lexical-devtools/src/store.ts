@@ -11,8 +11,6 @@ import {uniq} from 'lodash';
 import {create} from 'zustand';
 import {subscribeWithSelector} from 'zustand/middleware';
 
-import {wrapStore} from './webext-zustand';
-
 export interface ExtensionState {
   devtoolsPanelLoadedForTabIDs: number[];
   devtoolsPanelLoadedForTabID: (id: number) => void;
@@ -54,7 +52,5 @@ export const useExtensionStore = create<ExtensionState>()(
       })),
   })),
 );
-
-export const storeReadyPromise = wrapStore(useExtensionStore);
 
 export default useExtensionStore;

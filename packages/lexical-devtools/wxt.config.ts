@@ -60,6 +60,7 @@ export default defineConfig({
     ],
     startUrls: [
       'https://playground.lexical.dev/',
+      'about:debugging#/runtime/this-firefox',
       // Doesn't work due to https://github.com/mozilla/web-ext/pull/2774
       // 'chrome://inspect/#service-workers',
     ],

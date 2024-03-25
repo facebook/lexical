@@ -20,7 +20,8 @@
     "webext-zustand": "0.2.0",
     "zustand": "^4.5.1",
     "lodash": "^4.17.21",
-    "lexical": "0.14.2"
+    "lexical": "0.14.2",
+    "webext-bridge": "~6.0.1"
   },
   "devDependencies": {
     "@types/react": "^18.2.46",

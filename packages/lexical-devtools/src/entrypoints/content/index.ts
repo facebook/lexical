@@ -6,31 +6,19 @@
  *
  */
 import {isEqual} from 'lodash';
+import {allowWindowMessaging, sendMessage} from 'webext-bridge/content-script';
 
-import {Events} from '@/events';
-
-import useExtensionStore, {storeReadyPromise} from '../../store';
+import useExtensionStore from '../../store';
+import storeReadyPromise from '../../store-sync/content-script';
 import injectScript from './injectScript';
 
 export default defineContentScript({
   main(ctx) {
-    resolveTabID()
-      .then((tabID) => {
-        return storeReadyPromise.then(() => {
-          document.addEventListener(
-            Events.LEXICAL_EXT_COMM_REQ,
-            function (evt) {
-              const request = evt.detail;
-              const response = {data: tabID, requestId: request.id};
-              document.dispatchEvent(
-                new CustomEvent(Events.LEXICAL_EXT_COMM_RES, {
-                  detail: response,
-                }),
-              );
-            },
-            false,
-          );
+    allowWindowMessaging('lexical-extension');
 
+    sendMessage('getTabID', null, 'background')
+      .then((tabID) => {
+        return storeReadyPromise(useExtensionStore).then(() => {
           const unsubscribeInjector = useExtensionStore.subscribe(
             (s) => s.devtoolsPanelLoadedForTabIDs,
             (devtoolsPanelLoadedForTabIDs) => {
@@ -57,7 +45,3 @@ export default defineContentScript({
   registration: 'manifest',
   runAt: 'document_start',
 });
-
-function resolveTabID(): Promise<number> {
-  return browser.runtime.sendMessage('CONTENT_SCRIPT_TAB_ID');
-}

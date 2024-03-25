@@ -10,10 +10,11 @@ import './style.css';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 
-import {storeReadyPromise} from '../../store';
+import store from '../../store.ts';
+import storeReadyPromise from '../../store-sync/popup';
 import App from './App.tsx';
 
-storeReadyPromise
+storeReadyPromise(store)
   .then(() =>
     ReactDOM.createRoot(document.getElementById('root')!).render(
       <React.StrictMode>

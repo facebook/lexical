@@ -5,36 +5,18 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {CONTENT_SCRIPT_TAB_ID} from '@/messages';
+import {onMessage} from 'webext-bridge/background';
 
 import store from '../store';
+import storeBackgroundWrapper from '../store-sync/background';
 
 export default defineBackground(() => {
-  // eslint-disable-next-line no-console
-  console.log('Hello from Lexical DevTools extension content script.', {
-    id: browser.runtime.id,
+  // Way for content script & injected scripts to get their tab ID
+  onMessage('getTabID', (message) => {
+    return message.sender.tabId;
   });
 
   // Store initialization so other extension surfaces can use it
   // as all changes go through background SW
-  store.subscribe((_state) => {});
-
-  browser.runtime.onMessage.addListener(
-    (
-      msg: CONTENT_SCRIPT_TAB_ID['message'],
-      sender,
-      sendResponse: CONTENT_SCRIPT_TAB_ID['sendResponse'],
-    ) => {
-      if (msg !== 'CONTENT_SCRIPT_TAB_ID') {
-        return;
-      }
-
-      const tabID = sender.tab?.id;
-      if (tabID !== undefined) {
-        return sendResponse(tabID);
-      } else {
-        console.error("Can't identify tab ID for sender:", sender);
-      }
-    },
-  );
+  storeBackgroundWrapper(store);
 });

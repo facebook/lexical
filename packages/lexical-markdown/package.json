@@ -26,6 +26,6 @@
     "url": "https://github.com/facebook/lexical",
     "directory": "packages/lexical-markdown"
   },
-  "module": "LexicalMarkdown.esm.js",
+  "module": "LexicalMarkdown.mjs",
   "sideEffects": false
 }

@@ -149,7 +149,7 @@ Object.keys(wwwMappings).forEach((mapping) => {
 });
 
 function getExtension(format) {
-  return `${format === 'esm' ? '.esm' : ''}.js`;
+  return `.${format === 'esm' ? 'm' : ''}js`;
 }
 
 async function build(name, inputFile, outputPath, outputFile, isProd, format) {

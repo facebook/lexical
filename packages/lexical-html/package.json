@@ -22,6 +22,6 @@
     "@lexical/selection": "0.14.2",
     "@lexical/utils": "0.14.2"
   },
-  "module": "LexicalHtml.esm.js",
+  "module": "LexicalHtml.mjs",
   "sideEffects": false
 }

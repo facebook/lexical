@@ -1647,7 +1647,7 @@ export class RangeSelection implements BaseSelection {
           }
         }
         $updateCaretSelectionForUnicodeCharacter(this, isBackward);
-      } else if (isBackward && anchor.offset === 0) {
+      } else if (anchor.offset === 0) {
         // Special handling around rich text nodes
         const element =
           anchor.type === 'element'

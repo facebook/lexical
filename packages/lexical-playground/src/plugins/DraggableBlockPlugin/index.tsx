@@ -9,7 +9,7 @@ import './index.css';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {eventFiles} from '@lexical/rich-text';
-import {mergeRegister} from '@lexical/utils';
+import {calculateZoomLevel, mergeRegister} from '@lexical/utils';
 import {
   $getNearestNodeFromDOMNode,
   $getNodeByKey,
@@ -110,9 +110,11 @@ function getBlockElement(
       ];
 
       if (firstNodeRect && lastNodeRect) {
-        if (event.y < firstNodeRect.top) {
+        const firstNodeZoom = firstNode ? calculateZoomLevel(firstNode) : 1;
+        const lastNodeZoom = lastNode ? calculateZoomLevel(lastNode) : 1;
+        if (event.y / firstNodeZoom < firstNodeRect.top) {
           blockElem = firstNode;
-        } else if (event.y > lastNodeRect.bottom) {
+        } else if (event.y / lastNodeZoom > lastNodeRect.bottom) {
           blockElem = lastNode;
         }
 
@@ -131,10 +133,10 @@ function getBlockElement(
       if (elem === null) {
         break;
       }
-      const point = new Point(event.x, event.y);
+      const zoom = calculateZoomLevel(elem);
+      const point = new Point(event.x / zoom, event.y / zoom);
       const domRect = Rect.fromDOM(elem);
       const {marginTop, marginBottom} = getCollapsedMargins(elem);
-
       const rect = domRect.generateNewRect({
         bottom: domRect.bottom + marginBottom,
         left: anchorElementRect.left,

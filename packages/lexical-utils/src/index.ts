@@ -524,3 +524,18 @@ export function $insertFirst(parent: ElementNode, node: LexicalNode): void {
     parent.append(node);
   }
 }
+
+/**
+ * Calculates the zoom level of an element as a result of using
+ * css zoom property.
+ * @param element
+ */
+export function calculateZoomLevel(element: Element): number {
+  let zoom = 1;
+  let elem: Element | null = element;
+  while (elem) {
+    zoom *= Number(window.getComputedStyle(elem).getPropertyValue('zoom'));
+    elem = elem.parentElement;
+  }
+  return zoom;
+}

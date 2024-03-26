@@ -222,6 +222,9 @@ export default defineConfig({
           'isElement',
           'isValidElementType',
           'ForwardRef'
+        ],
+        "../lexical-react/dist/LexicalHistoryPlugin.js": [
+          'createEmptyHistoryState'
         ]
       }
     })

@@ -38,7 +38,7 @@ import {
   $patchStyleText,
   $setBlocksType,
 } from '@lexical/selection';
-import {$isTableNode} from '@lexical/table';
+import {$isTableNode, $isTableSelection} from '@lexical/table';
 import {
   $findMatchingParent,
   $getNearestBlockElementAncestorOrThrow,
@@ -740,7 +740,7 @@ export default function ToolbarPlugin({
   const clearFormatting = useCallback(() => {
     activeEditor.update(() => {
       const selection = $getSelection();
-      if ($isRangeSelection(selection)) {
+      if ($isRangeSelection(selection) || $isTableSelection(selection)) {
         const anchor = selection.anchor;
         const focus = selection.focus;
         const nodes = selection.getNodes();

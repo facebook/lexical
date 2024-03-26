@@ -163,10 +163,19 @@ export function getNearestEditorFromDOMNode(
 }
 
 export function getTextDirection(text: string): 'ltr' | 'rtl' | null {
-  if (RTL_REGEX.test(text)) {
+  const stripEmojis = (str: string) =>
+    str
+      .replace(
+        /([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g,
+        '',
+      )
+      .replace(/\s+/g, ' ')
+      .trim();
+  const textWithoutEmojis = stripEmojis(text);
+  if (RTL_REGEX.test(textWithoutEmojis)) {
     return 'rtl';
   }
-  if (LTR_REGEX.test(text)) {
+  if (LTR_REGEX.test(textWithoutEmojis)) {
     return 'ltr';
   }
   return null;

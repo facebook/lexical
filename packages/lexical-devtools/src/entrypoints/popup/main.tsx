@@ -9,17 +9,21 @@ import './style.css';
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import {sendMessage} from 'webext-bridge/popup';
 
 import store from '../../store.ts';
 import storeReadyPromise from '../../store-sync/popup';
 import App from './App.tsx';
 
-storeReadyPromise(store)
-  .then(() =>
-    ReactDOM.createRoot(document.getElementById('root')!).render(
-      <React.StrictMode>
-        <App />
-      </React.StrictMode>,
+sendMessage('getTabID', null, 'background')
+  .then((tabID) =>
+    storeReadyPromise(store).then(() =>
+      ReactDOM.createRoot(document.getElementById('root')!).render(
+        <React.StrictMode>
+          <App tabID={tabID} />
+        </React.StrictMode>,
+      ),
     ),
   )
+
   .catch(console.error);

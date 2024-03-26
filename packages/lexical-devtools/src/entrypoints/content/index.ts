@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {isEqual} from 'lodash';
 import {allowWindowMessaging, sendMessage} from 'webext-bridge/content-script';
 
 import useExtensionStore from '../../store';
@@ -19,29 +18,12 @@ export default defineContentScript({
     sendMessage('getTabID', null, 'background')
       .then((tabID) => {
         return storeReadyPromise(useExtensionStore).then(() => {
-          const unsubscribeInjector = useExtensionStore.subscribe(
-            (s) => s.devtoolsPanelLoadedForTabIDs,
-            (devtoolsPanelLoadedForTabIDs) => {
-              if (devtoolsPanelLoadedForTabIDs.includes(tabID)) {
-                // for security reasons, content scripts cannot read Lexical's changes to the DOM
-                // in order to access the editorState, we inject this script directly into the page
-                // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Content_scripts#dom_access
-                injectScript('/injected.js');
-                try {
-                  unsubscribeInjector();
-                } catch {
-                  /* If executed immediately - unsubscribeInjector may not be set yet */
-                }
-              }
-            },
-            {equalityFn: isEqual, fireImmediately: true},
-          );
-          ctx.onInvalidated(unsubscribeInjector);
+          injectScript('/injected.js');
         });
       })
       .catch(console.error);
   },
   matches: ['<all_urls>'],
   registration: 'manifest',
-  runAt: 'document_start',
+  runAt: 'document_end',
 });

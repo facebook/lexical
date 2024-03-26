@@ -6,11 +6,13 @@
  *
  */
 
-import {useEffect} from 'react';
 import * as React from 'react';
+import {useState} from 'react';
+import {sendMessage} from 'webext-bridge/devtools';
 
 import lexicalLogo from '@/public/lexical.svg';
 
+import EditorsRefreshCTA from '../../components/EditorsRefreshCTA';
 import useStore from '../../store';
 
 interface Props {
@@ -18,22 +20,11 @@ interface Props {
 }
 
 function App({tabID}: Props) {
-  const {
-    devtoolsPanelLoadedForTabID,
-    devtoolsPanelUnloadedForTabID,
-    counter,
-    increase,
-    lexicalState,
-  } = useStore();
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const {lexicalState} = useStore();
   const states = lexicalState[tabID] ?? {};
-
-  useEffect(() => {
-    devtoolsPanelLoadedForTabID(tabID);
-
-    return () => {
-      devtoolsPanelUnloadedForTabID(tabID);
-    };
-  }, [devtoolsPanelLoadedForTabID, devtoolsPanelUnloadedForTabID, tabID]);
+  const lexicalCount = Object.keys(states ?? {}).length;
 
   return (
     <>
@@ -42,17 +33,36 @@ function App({tabID}: Props) {
           <img src={lexicalLogo} className="logo" alt="Lexical logo" />
         </a>
       </div>
+      {errorMessage !== '' ? (
+        <div className="card error">{errorMessage}</div>
+      ) : null}
       <div className="card">
-        <button onClick={() => increase(1)}>count is {counter}</button>
+        {states === undefined ? (
+          <span>Loading...</span>
+        ) : (
+          <span>
+            Found <b>{lexicalCount}</b> editor{lexicalCount > 1 ? 's' : ''} on
+            the page
+          </span>
+        )}
         <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
+          <EditorsRefreshCTA
+            tabID={tabID}
+            setErrorMessage={setErrorMessage}
+            sendMessage={sendMessage}
+          />
         </p>
       </div>
       {Object.entries(states).map(([key, state]) => (
         <p key={key}>
           <b>ID: {key}</b>
           <br />
-          <textarea readOnly={true} value={JSON.stringify(state)} rows={3} />
+          <textarea
+            readOnly={true}
+            value={JSON.stringify(state)}
+            rows={5}
+            cols={150}
+          />
           <hr />
         </p>
       ))}

@@ -12,8 +12,18 @@ import storeBackgroundWrapper from '../store-sync/background';
 
 export default defineBackground(() => {
   // Way for content script & injected scripts to get their tab ID
-  onMessage('getTabID', (message) => {
-    return message.sender.tabId;
+  onMessage('getTabID', async (message) => {
+    let tabID: number | undefined = message.sender.tabId;
+    if (message.sender.context === 'popup') {
+      tabID = (await browser.tabs.query({active: true, currentWindow: true}))[0]
+        .id;
+    }
+    if (tabID === undefined) {
+      throw new Error(
+        `Could not get tab ID for message: ${message.toString()}`,
+      );
+    }
+    return tabID;
   });
 
   // Store initialization so other extension surfaces can use it

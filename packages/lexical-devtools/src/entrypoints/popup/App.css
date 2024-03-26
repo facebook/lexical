@@ -1,13 +1,26 @@
+html,
+body {
+  min-width: 286px;
+  min-height: 33px;
+}
+
+body {
+  display: flex;
+  place-items: flex-start;
+}
+
 #root {
-  max-width: 1280px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  max-width: 740px;
   margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  padding: 1rem;
 }
 
 .logo {
-  height: 6em;
-  padding: 1.5em;
+  height: 2em;
+  /* padding: 1.5em; */
   will-change: filter;
   transition: filter 300ms;
 }
@@ -16,5 +29,5 @@
 }
 
 .card {
-  padding: 2em;
+  padding-top: 2em;
 }

@@ -1160,12 +1160,6 @@ function $handleArrowKey(
   }
 
   if ($isRangeSelection(selection) && selection.isCollapsed()) {
-    // Horizontal move between cels seem to work well without interruption
-    // so just exit early, and handle vertical moves
-    if (direction === 'backward' || direction === 'forward') {
-      return false;
-    }
-
     const {anchor, focus} = selection;
     const anchorCellNode = $findMatchingParent(
       anchor.getNode(),
@@ -1196,6 +1190,48 @@ function $handleArrowKey(
           tableObserver,
         );
       }
+    }
+
+    if (direction === 'backward' || direction === 'forward') {
+      // Hitting horizontal arrow keys on an empty first or last cell should move the selection out of the table.
+      if (anchor.type !== 'element') {
+        return false;
+      }
+
+      const [tableMap, cellValue] = $computeTableMap(
+        tableNode,
+        anchorCellNode,
+        anchorCellNode,
+      );
+      const firstCell = tableMap[0][0];
+      const lastCell = tableMap[tableMap.length - 1][tableMap[0].length - 1];
+      const {startColumn, startRow} = cellValue;
+
+      const isExiting =
+        direction === 'backward'
+          ? startColumn === firstCell.startColumn &&
+            startRow === firstCell.startRow
+          : startColumn === lastCell.startColumn &&
+            startRow === lastCell.startRow;
+      if (!isExiting) {
+        return false;
+      }
+
+      const nextNode =
+        direction === 'backward'
+          ? tableNode.getPreviousSibling()
+          : tableNode.getNextSibling();
+      if (!nextNode) {
+        return false;
+      }
+
+      stopEvent(event);
+      if (direction === 'backward') {
+        nextNode.selectEnd();
+      } else {
+        nextNode.selectStart();
+      }
+      return true;
     }
 
     const anchorCellDom = editor.getElementByKey(anchorCellNode.__key);

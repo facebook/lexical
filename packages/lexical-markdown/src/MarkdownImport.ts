@@ -117,14 +117,17 @@ function importBlocks(
   const textNode = $createTextNode(lineTextTrimmed);
   const elementNode = $createParagraphNode();
   elementNode.append(textNode);
+  if (lineText.endsWith('  ')) {
+    elementNode.append($createLineBreakNode());
+  }
   rootNode.append(elementNode);
 
   for (const {regExp, replace} of elementTransformers) {
     const match = lineText.match(regExp);
 
     if (match) {
-      textNode.setTextContent(lineText.slice(match[0].length));
-      replace(elementNode, [textNode], match, true);
+      textNode.setTextContent(lineText.slice(match[0].length).trimEnd());
+      replace(elementNode, elementNode.getChildren(), match, true);
       break;
     }
   }
@@ -157,10 +160,11 @@ function importBlocks(
       }
 
       if (targetNode != null && targetNode.getTextContentSize() > 0) {
-        targetNode.splice(targetNode.getChildrenSize(), 0, [
-          $createLineBreakNode(),
-          ...elementNode.getChildren(),
-        ]);
+        targetNode.splice(
+          targetNode.getChildrenSize(),
+          0,
+          elementNode.getChildren(),
+        );
         elementNode.remove();
       }
     }

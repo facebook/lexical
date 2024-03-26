@@ -110,7 +110,7 @@ function exportChildren(
     }
 
     if ($isLineBreakNode(child)) {
-      output.push('\n');
+      output.push('  \n');
     } else if ($isTextNode(child)) {
       output.push(
         exportTextFormat(child, child.getTextContent(), textTransformersIndex),

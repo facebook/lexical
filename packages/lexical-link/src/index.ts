@@ -19,11 +19,17 @@ import type {
   SerializedElementNode,
 } from 'lexical';
 
-import {addClassNamesToElement, isHTMLAnchorElement} from '@lexical/utils';
+import {
+  $findMatchingParent,
+  addClassNamesToElement,
+  isHTMLAnchorElement,
+} from '@lexical/utils';
 import {
   $applyNodeReplacement,
   $getSelection,
   $isElementNode,
+  $isLeafNode,
+  $isLineBreakNode,
   $isRangeSelection,
   createCommand,
   ElementNode,
@@ -534,4 +540,106 @@ function $getAncestor<NodeType extends LexicalNode = LexicalNode>(
     parent = parent.getParentOrThrow();
   }
   return predicate(parent) ? parent : null;
+}
+
+/**
+ * Checks selection to ensure only an AutoLinkNode or LinkNode is being selected and returns it.
+ * @param selection - The current range selection.
+ * @returns - the (Auto)LinkNode or null.
+ */
+export function $getSelectedLinkNode(
+  selection: RangeSelection,
+): LinkNode | null {
+  const anchor = selection.anchor;
+  const focus = selection.focus;
+  const isBefore = anchor.isBefore(focus);
+  const firstPoint = isBefore ? anchor : focus;
+  const lastPoint = isBefore ? focus : anchor;
+  const firstNode = firstPoint.getNode();
+  const lastNode = lastPoint.getNode();
+  let linkNode: LinkNode | null = null;
+  let node: LexicalNode | null = firstNode;
+  const visited = new Set<string>();
+  if (selection.isCollapsed() && getParentLink(firstNode) !== null) {
+    return getParentLink(firstNode);
+  } else if (!selection.isCollapsed()) {
+    do {
+      if ($isLeafNode(node) && !$isLineBreakNode(node)) {
+        const parentLink = getParentLink(node);
+        if (parentLink !== null) {
+          if (linkNode === null) {
+            linkNode = parentLink;
+          } else if (!parentLink.is(linkNode)) {
+            return null;
+          }
+        } else {
+          return null;
+        }
+      }
+      if (node.is(lastNode) && visited.has(node.__key)) {
+        break;
+      }
+      const key = node.__key;
+      if (!visited.has(key)) {
+        visited.add(key);
+      }
+      const child: ElementNode | null = $isElementNode(node)
+        ? isBefore
+          ? node.getFirstChild()
+          : node.getLastChild()
+        : null;
+      if (child !== null) {
+        node = child;
+        continue;
+      }
+      if (node.is(lastNode)) {
+        break;
+      }
+      const nextSibling: LexicalNode | null = isBefore
+        ? node.getNextSibling()
+        : node.getPreviousSibling();
+      if (nextSibling !== null) {
+        node = nextSibling;
+        continue;
+      }
+      const parent: ElementNode | null = node.getParent();
+      if (parent !== null && !visited.has(parent.__key)) {
+        node = parent;
+        continue;
+      }
+      if (parent !== null && parent.is(lastNode) && visited.has(parent.__key)) {
+        break;
+      }
+      let parentSibling = null;
+      let ancestor: ElementNode | null = parent;
+      do {
+        if (ancestor === null) {
+          break;
+        }
+        parentSibling = isBefore
+          ? ancestor.getNextSibling()
+          : ancestor.getPreviousSibling();
+        ancestor = ancestor.getParent();
+        if (ancestor !== null) {
+          if (parentSibling === null && !visited.has(ancestor.__key)) {
+            node = ancestor;
+            continue;
+          } else if (parentSibling !== null) {
+            node = parentSibling;
+          }
+        }
+      } while (parentSibling === null);
+    } while (node);
+    return linkNode;
+  } else return null;
+}
+function getParentLink(node: LexicalNode) {
+  const linkTypes = [$isLinkNode, $isAutoLinkNode];
+  for (const linkType of linkTypes) {
+    const parent = $findMatchingParent(node, linkType);
+    if (parent !== null) {
+      return parent;
+    }
+  }
+  return null;
 }

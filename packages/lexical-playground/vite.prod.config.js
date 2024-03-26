@@ -164,6 +164,9 @@ export default defineConfig({
   define: {
     "process.env.IS_PREACT": process.env.IS_PREACT,
   },
+  server: {
+    port: 3000,
+  },
   plugins: [
     replaceCodePlugin({
       replacements: [

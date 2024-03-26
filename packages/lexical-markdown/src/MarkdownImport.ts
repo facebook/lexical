@@ -183,10 +183,15 @@ function importCodeBlock(
 
       if (closeMatch) {
         const codeBlockNode = $createCodeNode(openMatch[1]);
-        const textNode = $createTextNode(
-          lines.slice(startLineIndex + 1, endLineIndex).join('\n'),
-        );
-        codeBlockNode.append(textNode);
+        const codeLines = lines.slice(startLineIndex + 1, endLineIndex);
+        const children: LexicalNode[] = [];
+        codeLines.forEach((line, i) => {
+          if (i !== 0) {
+            children.push($createLineBreakNode());
+          }
+          children.push($createTextNode(line));
+        });
+        codeBlockNode.append(...children);
         rootNode.append(codeBlockNode);
         return [codeBlockNode, endLineIndex];
       }

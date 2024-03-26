@@ -28,6 +28,7 @@ import {
   $getSelection,
   $isElementNode,
   $isRangeSelection,
+  $isRootNode,
   $isTextNode,
   $setSelection,
   COMMAND_PRIORITY_CRITICAL,
@@ -1156,6 +1157,46 @@ function $handleArrowKey(
   const selection = $getSelection();
 
   if (!$isSelectionInTable(selection, tableNode)) {
+    if (
+      direction === 'backward' &&
+      $isRangeSelection(selection) &&
+      selection.isCollapsed()
+    ) {
+      // Hitting arrow left at the start of a paragraph right under a table should move the selection
+      // to the last cell of the table.
+      const anchorType = selection.anchor.type;
+      if (
+        anchorType !== 'element' &&
+        !(anchorType === 'text' && selection.anchor.offset !== 0)
+      ) {
+        return false;
+      }
+
+      const anchorNode = selection.anchor.getNode();
+      if (!anchorNode) {
+        return false;
+      }
+
+      const topLevelNode = $findMatchingParent(anchorNode, (node) => {
+        return (
+          $isElementNode(node) &&
+          !!node.getParent() &&
+          $isRootNode(node.getParent())
+        );
+      });
+      if (!topLevelNode) {
+        return false;
+      }
+
+      const previousNode = topLevelNode.getPreviousSibling();
+      if (!previousNode || !$isTableNode(previousNode)) {
+        return false;
+      }
+
+      stopEvent(event);
+      tableNode.selectEnd();
+      return true;
+    }
     return false;
   }
 

@@ -6,6 +6,7 @@
  *
  */
 
+import {onMessage} from 'webext-bridge/window';
 import {StoreApi} from 'zustand';
 
 import {ExtensionState} from '../../store';
@@ -15,7 +16,19 @@ export default async function main(
   tabID: number,
   extensionStore: StoreApi<ExtensionState>,
 ) {
-  const {setStatesForTab} = extensionStore.getState();
+  onMessage('refreshLexicalEditorsForTabID', () => {
+    scanAndListenForEditors(tabID, extensionStore);
+    return null;
+  });
+  scanAndListenForEditors(tabID, extensionStore);
+}
+
+function scanAndListenForEditors(
+  tabID: number,
+  extensionStore: StoreApi<ExtensionState>,
+) {
+  const {setStatesForTab, lexicalState} = extensionStore.getState();
+  const states = lexicalState[tabID] ?? {};
 
   // TODO: refresh editors present of the page
   const lexicalNodes = Array.from(
@@ -29,7 +42,10 @@ export default async function main(
   );
 
   editors.forEach((editor) => {
-    // TODO: proper unsubscribe
+    if (states[editor._key] !== undefined) {
+      // already registered
+      return;
+    }
     editor.registerUpdateListener((event) => {
       const oldVal = extensionStore.getState().lexicalState[tabID];
       setStatesForTab(tabID, {

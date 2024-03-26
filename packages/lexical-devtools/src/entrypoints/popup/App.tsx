@@ -8,14 +8,24 @@
 import './App.css';
 
 import * as React from 'react';
+import {useState} from 'react';
+import {sendMessage} from 'webext-bridge/popup';
 
 import lexicalLogo from '@/public/lexical.svg';
 
+import EditorsRefreshCTA from '../../components/EditorsRefreshCTA';
 import useStore from '../../store';
 
-function App() {
-  const counter = useStore((state) => state.counter);
-  const increase = useStore((state) => state.increase);
+interface Props {
+  tabID: number;
+}
+
+function App({tabID}: Props) {
+  const {lexicalState} = useStore();
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const states = lexicalState[tabID];
+  const lexicalCount = Object.keys(states ?? {}).length;
 
   return (
     <>
@@ -24,10 +34,33 @@ function App() {
           <img src={lexicalLogo} className="logo" alt="Lexical logo" />
         </a>
       </div>
+      {errorMessage !== '' ? (
+        <div className="card error">{errorMessage}</div>
+      ) : null}
       <div className="card">
-        <button onClick={() => increase(1)}>count is {counter}</button>
+        {states === undefined ? (
+          <span>Loading...</span>
+        ) : (
+          <span>
+            Found <b>{lexicalCount}</b> editor{lexicalCount > 1 ? 's' : ''} on
+            the page
+            {lexicalCount > 0 ? (
+              <>
+                {' '}
+                &#x2705;
+                <br />
+                Open the developer tools, and "Lexical" tab will appear to the
+                right.
+              </>
+            ) : null}
+          </span>
+        )}
         <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
+          <EditorsRefreshCTA
+            tabID={tabID}
+            setErrorMessage={setErrorMessage}
+            sendMessage={sendMessage}
+          />
         </p>
       </div>
     </>

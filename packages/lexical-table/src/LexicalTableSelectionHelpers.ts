@@ -1532,6 +1532,13 @@ function $getTableEdgeCursorPosition(
     return undefined;
   }
 
+  const parentTable = $findMatchingParent(anchorCellNode, (n) =>
+    $isTableNode(n),
+  );
+  if (!$isTableNode(parentTable) || !parentTable.is(tableNode)) {
+    return undefined;
+  }
+
   const [tableMap, cellValue] = $computeTableMap(
     tableNode,
     anchorCellNode,

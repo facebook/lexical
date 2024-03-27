@@ -33,7 +33,12 @@ import {
   $createTableSelection,
   $isTableSelection,
 } from './LexicalTableSelection';
-import {$findTableNode, $updateDOMForSelection, getDOMSelection,getTable} from './LexicalTableSelectionHelpers';
+import {
+  $findTableNode,
+  $updateDOMForSelection,
+  getDOMSelection,
+  getTable,
+} from './LexicalTableSelectionHelpers';
 
 export type TableDOMCell = {
   elem: HTMLElement;

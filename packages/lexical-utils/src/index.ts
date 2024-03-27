@@ -530,12 +530,11 @@ export function $insertFirst(parent: ElementNode, node: LexicalNode): void {
  * css zoom property.
  * @param element
  */
-export function calculateZoomLevel(element: Element): number {
+export function calculateZoomLevel(element: Element | null): number {
   let zoom = 1;
-  let elem: Element | null = element;
-  while (elem) {
-    zoom *= Number(window.getComputedStyle(elem).getPropertyValue('zoom'));
-    elem = elem.parentElement;
+  while (element) {
+    zoom *= Number(window.getComputedStyle(element).getPropertyValue('zoom'));
+    element = element.parentElement;
   }
   return zoom;
 }

@@ -110,8 +110,8 @@ function getBlockElement(
       ];
 
       if (firstNodeRect && lastNodeRect) {
-        const firstNodeZoom = firstNode ? calculateZoomLevel(firstNode) : 1;
-        const lastNodeZoom = lastNode ? calculateZoomLevel(lastNode) : 1;
+        const firstNodeZoom = calculateZoomLevel(firstNode);
+        const lastNodeZoom = calculateZoomLevel(lastNode);
         if (event.y / firstNodeZoom < firstNodeRect.top) {
           blockElem = firstNode;
         } else if (event.y / lastNodeZoom > lastNodeRect.bottom) {
@@ -229,7 +229,6 @@ function setTargetLine(
     targetBlockElem.getBoundingClientRect();
   const {top: anchorTop, width: anchorWidth} =
     anchorElem.getBoundingClientRect();
-
   const {marginTop, marginBottom} = getCollapsedMargins(targetBlockElem);
   let lineTop = targetBlockElemTop;
   if (mouseY >= targetBlockElemTop) {
@@ -322,7 +321,12 @@ function useDraggableBlockMenu(
       if (targetBlockElem === null || targetLineElem === null) {
         return false;
       }
-      setTargetLine(targetLineElem, targetBlockElem, pageY, anchorElem);
+      setTargetLine(
+        targetLineElem,
+        targetBlockElem,
+        pageY / calculateZoomLevel(target),
+        anchorElem,
+      );
       // Prevent default event to be able to trigger onDrop events
       event.preventDefault();
       return true;
@@ -357,7 +361,7 @@ function useDraggableBlockMenu(
         return true;
       }
       const targetBlockElemTop = targetBlockElem.getBoundingClientRect().top;
-      if (pageY >= targetBlockElemTop) {
+      if (pageY / calculateZoomLevel(target) >= targetBlockElemTop) {
         targetNode.insertAfter(draggedNode);
       } else {
         targetNode.insertBefore(draggedNode);

@@ -738,20 +738,30 @@ export function applyTableHandlers(
             const isFocusOutside =
               focusNode && !tableNode.is($findTableNode(focusNode));
 
-            if (isFocusOutside && domSelection.rangeCount > 0) {
+            const anchorNode = $getNearestNodeFromDOMNode(
+              domSelection.anchorNode,
+            );
+            const isAnchorInside =
+              anchorNode && tableNode.is($findTableNode(anchorNode));
+
+            if (
+              isFocusOutside &&
+              isAnchorInside &&
+              domSelection.rangeCount > 0
+            ) {
               const newSelection = $createRangeSelectionFromDom(
                 domSelection,
                 editor,
               );
-              if (isFocusOutside && newSelection) {
+              if (newSelection) {
                 newSelection.anchor.set(
                   tableNode.getKey(),
                   selection.isBackward() ? tableNode.getChildrenSize() : 0,
                   'element',
                 );
+                domSelection.removeAllRanges();
+                $setSelection(newSelection);
               }
-              domSelection.removeAllRanges();
-              $setSelection(newSelection);
             }
           }
         }

@@ -9,7 +9,11 @@
 import type {TableCellNode} from './LexicalTableCellNode';
 import type {TableNode} from './LexicalTableNode';
 import type {TableDOMCell, TableDOMRows} from './LexicalTableObserver';
-import type {TableSelection} from './LexicalTableSelection';
+import type {
+  TableMapType,
+  TableMapValueType,
+  TableSelection,
+} from './LexicalTableSelection';
 import type {
   BaseSelection,
   ElementFormatType,
@@ -1306,8 +1310,81 @@ function $handleArrowKey(
     }
 
     if (direction === 'backward' || direction === 'forward') {
-      // Hitting horizontal arrow keys on an empty first or last cell should move the selection out of the table.
-      if (anchor.type !== 'element') {
+      const isExitingElementAnchor = (
+        type: string,
+        anchorNode: LexicalNode,
+      ) => {
+        return (
+          type === 'element' &&
+          (direction === 'backward'
+            ? anchorNode.getPreviousSibling() === null
+            : anchorNode.getNextSibling() === null)
+        );
+      };
+
+      const isExitingTextAnchor = (
+        type: string,
+        offset: number,
+        anchorNode: LexicalNode,
+      ) => {
+        const parentNode = $findMatchingParent(
+          anchorNode,
+          (n) => $isElementNode(n) && !n.isInline(),
+        );
+        if (!parentNode) {
+          return false;
+        }
+        const hasValidOffset =
+          direction === 'backward'
+            ? offset === 0
+            : offset === anchorNode.getTextContentSize();
+        return (
+          type === 'text' &&
+          hasValidOffset &&
+          (direction === 'backward'
+            ? parentNode.getPreviousSibling() === null
+            : parentNode.getNextSibling() === null)
+        );
+      };
+
+      const isExitingCell = (
+        tableMap: TableMapType,
+        cellValue: TableMapValueType,
+      ) => {
+        const firstCell = tableMap[0][0];
+        const lastCell = tableMap[tableMap.length - 1][tableMap[0].length - 1];
+        const {startColumn, startRow} = cellValue;
+        return direction === 'backward'
+          ? startColumn === firstCell.startColumn &&
+              startRow === firstCell.startRow
+          : startColumn === lastCell.startColumn &&
+              startRow === lastCell.startRow;
+      };
+
+      const getNextNode = (anchorNode: LexicalNode) => {
+        const parentNode = $findMatchingParent(
+          anchorNode,
+          (n) => $isElementNode(n) && !n.isInline(),
+        );
+        if (!parentNode) {
+          return undefined;
+        }
+        const anchorSibling =
+          direction === 'backward'
+            ? parentNode.getPreviousSibling()
+            : parentNode.getNextSibling();
+        return anchorSibling && $isTableNode(anchorSibling)
+          ? anchorSibling
+          : direction === 'backward'
+          ? tableNode.getPreviousSibling()
+          : tableNode.getNextSibling();
+      };
+
+      const anchorNode = anchor.getNode();
+      if (
+        !isExitingElementAnchor(anchor.type, anchorNode) &&
+        !isExitingTextAnchor(anchor.type, anchor.offset, anchorNode)
+      ) {
         return false;
       }
 
@@ -1316,25 +1393,12 @@ function $handleArrowKey(
         anchorCellNode,
         anchorCellNode,
       );
-      const firstCell = tableMap[0][0];
-      const lastCell = tableMap[tableMap.length - 1][tableMap[0].length - 1];
-      const {startColumn, startRow} = cellValue;
-
-      const isExiting =
-        direction === 'backward'
-          ? startColumn === firstCell.startColumn &&
-            startRow === firstCell.startRow
-          : startColumn === lastCell.startColumn &&
-            startRow === lastCell.startRow;
-      if (!isExiting) {
+      if (!isExitingCell(tableMap, cellValue)) {
         return false;
       }
 
-      const nextNode =
-        direction === 'backward'
-          ? tableNode.getPreviousSibling()
-          : tableNode.getNextSibling();
-      if (!nextNode) {
+      const nextNode = getNextNode(anchorNode);
+      if (!nextNode || $isTableNode(nextNode)) {
         return false;
       }
 

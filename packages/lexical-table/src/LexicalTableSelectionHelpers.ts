@@ -28,7 +28,6 @@ import {
   $getSelection,
   $isElementNode,
   $isRangeSelection,
-  $isRootNode,
   $isTextNode,
   $setSelection,
   COMMAND_PRIORITY_CRITICAL,
@@ -1243,39 +1242,31 @@ function $handleArrowKey(
       $isRangeSelection(selection) &&
       selection.isCollapsed()
     ) {
-      // Hitting arrow left at the start of a paragraph right under a table should move the selection
-      // to the last cell of the table.
       const anchorType = selection.anchor.type;
+      const anchorOffset = selection.anchor.offset;
       if (
         anchorType !== 'element' &&
-        !(anchorType === 'text' && selection.anchor.offset !== 0)
+        !(anchorType === 'text' && anchorOffset === 0)
       ) {
         return false;
       }
-
       const anchorNode = selection.anchor.getNode();
       if (!anchorNode) {
         return false;
       }
-
-      const topLevelNode = $findMatchingParent(anchorNode, (node) => {
-        return (
-          $isElementNode(node) &&
-          !!node.getParent() &&
-          $isRootNode(node.getParent())
-        );
-      });
-      if (!topLevelNode) {
+      const parentNode = $findMatchingParent(
+        anchorNode,
+        (n) => $isElementNode(n) && !n.isInline(),
+      );
+      if (!parentNode) {
         return false;
       }
-
-      const previousNode = topLevelNode.getPreviousSibling();
-      if (!previousNode || !$isTableNode(previousNode)) {
+      const siblingNode = parentNode.getPreviousSibling();
+      if (!siblingNode || !$isTableNode(siblingNode)) {
         return false;
       }
-
       stopEvent(event);
-      tableNode.selectEnd();
+      siblingNode.selectEnd();
       return true;
     }
     return false;

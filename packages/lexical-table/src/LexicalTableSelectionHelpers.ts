@@ -27,6 +27,7 @@ import type {
 import {$findMatchingParent} from '@lexical/utils';
 import {
   $createParagraphNode,
+  $createTextNode,
   $getNearestNodeFromDOMNode,
   $getPreviousSelection,
   $getSelection,
@@ -451,6 +452,27 @@ export function applyTableHandlers(
           if (!$isTableCellNode(tableCellNode)) {
             return false;
           }
+
+          if (typeof payload === 'string') {
+            const edgePosition = $getTableEdgeCursorPosition(
+              editor,
+              selection,
+              tableNode,
+            );
+            if (!edgePosition) {
+              return false;
+            }
+            // TODO: Add support for nested tables
+            let paragraphNode;
+            if (edgePosition === 'first') {
+              paragraphNode = $insertParagraphAtTableEdge(tableNode, 'before');
+            } else {
+              paragraphNode = $insertParagraphAtTableEdge(tableNode, 'after');
+            }
+            paragraphNode.append($createTextNode(payload));
+            paragraphNode.selectEnd();
+            return true;
+          }
         }
 
         return false;
@@ -755,21 +777,6 @@ export function applyTableHandlers(
     editor.registerCommand(
       INSERT_PARAGRAPH_COMMAND,
       () => {
-        const nativeSelection = window.getSelection();
-        if (nativeSelection === null) {
-          return false;
-        }
-        const nativeAnchorNode = nativeSelection.anchorNode;
-        if (nativeSelection.anchorNode === null) {
-          return false;
-        }
-        if (nativeAnchorNode !== editor.getRootElement()) {
-          return false;
-        }
-
-        // When the cursor is right after the table on the same line,
-        // there's no following node, the internal selection is within the last table cell
-        // while the native selection is at the root.
         const selection = $getSelection();
         if (
           !$isRangeSelection(selection) ||
@@ -778,54 +785,23 @@ export function applyTableHandlers(
         ) {
           return false;
         }
-
-        const anchorCellNode = $findMatchingParent(
-          selection.anchor.getNode(),
-          (n) => $isTableCellNode(n),
-        ) as TableCellNode | null;
-        if (!anchorCellNode) {
-          return false;
-        }
-
-        const [tableMap, cellValue] = $computeTableMap(
+        const edgePosition = $getTableEdgeCursorPosition(
+          editor,
+          selection,
           tableNode,
-          anchorCellNode,
-          anchorCellNode,
         );
-        const firstCell = tableMap[0][0];
-        const lastCell = tableMap[tableMap.length - 1][tableMap[0].length - 1];
-        const {startRow, startColumn} = cellValue;
-
-        const insertParagraphBefore = () => {
-          const newParagraphNode = $createParagraphNode();
-          tableNode.insertBefore(newParagraphNode);
-          newParagraphNode.selectStart();
-        };
-        const insertParagraphAfter = () => {
-          const newParagraphNode = $createParagraphNode();
-          tableNode.insertAfter(newParagraphNode);
-          newParagraphNode.selectStart();
-        };
-
-        if (
-          startRow === firstCell.startRow &&
-          startColumn === firstCell.startColumn
-        ) {
-          insertParagraphBefore();
-          return true;
-        } else if (
-          startRow === lastCell.startRow &&
-          startColumn === lastCell.startColumn
-        ) {
-          if (tableNode.getNextSibling()) {
-            tableNode.selectNext();
-          } else {
-            insertParagraphAfter();
-          }
-          return true;
-        } else {
+        if (!edgePosition) {
           return false;
         }
+        // TODO: Add support for nested tables
+        let paragraphNode;
+        if (edgePosition === 'first') {
+          paragraphNode = $insertParagraphAtTableEdge(tableNode, 'before');
+        } else {
+          paragraphNode = $insertParagraphAtTableEdge(tableNode, 'after');
+        }
+        paragraphNode.selectEnd();
+        return true;
       },
       COMMAND_PRIORITY_CRITICAL,
     ),
@@ -1537,4 +1513,57 @@ function stopEvent(event: Event) {
   event.preventDefault();
   event.stopImmediatePropagation();
   event.stopPropagation();
+}
+
+function $getTableEdgeCursorPosition(
+  editor: LexicalEditor,
+  selection: RangeSelection,
+  tableNode: TableNode,
+) {
+  const domSelection = window.getSelection();
+  if (!domSelection || domSelection.anchorNode !== editor.getRootElement()) {
+    return undefined;
+  }
+
+  const anchorCellNode = $findMatchingParent(selection.anchor.getNode(), (n) =>
+    $isTableCellNode(n),
+  ) as TableCellNode | null;
+  if (!anchorCellNode) {
+    return undefined;
+  }
+
+  const [tableMap, cellValue] = $computeTableMap(
+    tableNode,
+    anchorCellNode,
+    anchorCellNode,
+  );
+  const firstCell = tableMap[0][0];
+  const lastCell = tableMap[tableMap.length - 1][tableMap[0].length - 1];
+  const {startRow, startColumn} = cellValue;
+
+  const isAtFirstCell =
+    startRow === firstCell.startRow && startColumn === firstCell.startColumn;
+  const isAtLastCell =
+    startRow === lastCell.startRow && startColumn === lastCell.startColumn;
+
+  if (isAtFirstCell) {
+    return 'first';
+  } else if (isAtLastCell) {
+    return 'last';
+  } else {
+    return undefined;
+  }
+}
+
+function $insertParagraphAtTableEdge(
+  tableNode: TableNode,
+  location: 'before' | 'after',
+) {
+  const newParagraphNode = $createParagraphNode();
+  if (location === 'before') {
+    tableNode.insertBefore(newParagraphNode);
+  } else {
+    tableNode.insertAfter(newParagraphNode);
+  }
+  return newParagraphNode;
 }

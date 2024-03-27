@@ -494,9 +494,7 @@ export function useMenuAnchorRef(
     if (rootElement !== null && resolution !== null) {
       const {left, top, width, height} = resolution.getRect();
       const anchorHeight = anchorElementRef.current.offsetHeight; // use to position under anchor
-      containerDiv.style.top = `${
-        top + window.pageYOffset + anchorHeight + 3
-      }px`;
+      containerDiv.style.top = `${top + anchorHeight + 3}px`;
       containerDiv.style.left = `${left + window.pageXOffset}px`;
       containerDiv.style.height = `${height}px`;
       containerDiv.style.width = `${width}px`;
@@ -518,9 +516,7 @@ export function useMenuAnchorRef(
             top + menuHeight > rootElementRect.bottom) &&
           top - rootElementRect.top > menuHeight
         ) {
-          containerDiv.style.top = `${
-            top - menuHeight + window.pageYOffset - height
-          }px`;
+          containerDiv.style.top = `${top - menuHeight - height}px`;
         }
       }
 
@@ -532,7 +528,7 @@ export function useMenuAnchorRef(
         containerDiv.setAttribute('id', 'typeahead-menu');
         containerDiv.setAttribute('role', 'listbox');
         containerDiv.style.display = 'block';
-        containerDiv.style.position = 'absolute';
+        containerDiv.style.position = 'fixed';
         parent.append(containerDiv);
       }
       anchorElementRef.current = containerDiv;

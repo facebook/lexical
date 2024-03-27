@@ -112,6 +112,7 @@ export function setLocalStateFocus(
 }
 export {syncCursorPositions} from './SyncCursors';
 export {
+  type YjsCollaborationOptions,
   syncLexicalUpdateToYjs,
   syncYjsChangesToLexical,
 } from './SyncEditorStates';

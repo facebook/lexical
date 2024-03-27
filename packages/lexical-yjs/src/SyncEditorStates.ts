@@ -79,11 +79,22 @@ function syncEvent(binding: Binding, event: any): void {
   }
 }
 
+export interface YjsCollaborationOptions {
+  /**
+   * When we can't recover the selection from Yjs,
+   * - if true, we will set the selection to the end of the document.
+   * - otherwise, we will clear the selection.
+   * @default true
+   */
+  fallbackToSelection?: boolean;
+}
+
 export function syncYjsChangesToLexical(
   binding: Binding,
   provider: Provider,
   events: Array<YEvent<YText>>,
   isFromUndoManger: boolean,
+  {fallbackToSelection = true}: YjsCollaborationOptions = {},
 ): void {
   const editor = binding.editor;
   const currentEditorState = editor._editorState;
@@ -151,7 +162,11 @@ export function syncYjsChangesToLexical(
                 }
 
                 // Fallback
-                $getRoot().selectEnd();
+                if (fallbackToSelection) $getRoot().selectEnd();
+                else {
+                  // If we don't want to fallback to a selection, we need to clear the selection
+                  $setSelection(null);
+                }
               }
             }
           }

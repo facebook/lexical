@@ -2201,6 +2201,13 @@ export function internalCreateSelection(
   return lastSelection.clone();
 }
 
+export function $createRangeSelectionFromDom(
+  domSelection: Selection | null,
+  editor: LexicalEditor,
+): null | RangeSelection {
+  return internalCreateRangeSelection(null, domSelection, editor, null);
+}
+
 export function internalCreateRangeSelection(
   lastSelection: null | BaseSelection,
   domSelection: Selection | null,

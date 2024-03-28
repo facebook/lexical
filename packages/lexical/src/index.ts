@@ -123,6 +123,7 @@ export {
   $createNodeSelection,
   $createPoint,
   $createRangeSelection,
+  $createRangeSelectionFromDom,
   $getCharacterOffsets,
   $getPreviousSelection,
   $getSelection,

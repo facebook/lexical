@@ -88,6 +88,23 @@ export function applyTableHandlers(
 
   attachTableObserverToTableElement(tableElement, tableObserver);
 
+  const onMouseUp = () => {
+    editorWindow.removeEventListener('mouseup', onMouseUp);
+    editorWindow.removeEventListener('mousemove', onMouseMove);
+  };
+
+  const onMouseMove = (moveEvent: MouseEvent) => {
+    const focusCell = getDOMCellFromTarget(moveEvent.target as Node);
+    if (
+      focusCell !== null &&
+      (tableObserver.anchorX !== focusCell.x ||
+        tableObserver.anchorY !== focusCell.y)
+    ) {
+      moveEvent.preventDefault();
+      tableObserver.setFocusCellForSelection(focusCell);
+    }
+  };
+
   tableElement.addEventListener('mousedown', (event: MouseEvent) => {
     setTimeout(() => {
       if (event.button !== 0) {
@@ -103,23 +120,6 @@ export function applyTableHandlers(
         stopEvent(event);
         tableObserver.setAnchorCellForSelection(anchorCell);
       }
-
-      const onMouseUp = () => {
-        editorWindow.removeEventListener('mouseup', onMouseUp);
-        editorWindow.removeEventListener('mousemove', onMouseMove);
-      };
-
-      const onMouseMove = (moveEvent: MouseEvent) => {
-        const focusCell = getDOMCellFromTarget(moveEvent.target as Node);
-        if (
-          focusCell !== null &&
-          (tableObserver.anchorX !== focusCell.x ||
-            tableObserver.anchorY !== focusCell.y)
-        ) {
-          moveEvent.preventDefault();
-          tableObserver.setFocusCellForSelection(focusCell);
-        }
-      };
 
       editorWindow.addEventListener('mouseup', onMouseUp);
       editorWindow.addEventListener('mousemove', onMouseMove);
@@ -717,6 +717,8 @@ export function applyTableHandlers(
                 getObserverCellFromCellNode(focusCellNode),
                 true,
               );
+              editorWindow.addEventListener('mouseup', onMouseUp);
+              editorWindow.addEventListener('mousemove', onMouseMove);
             }
           }
         } else if (

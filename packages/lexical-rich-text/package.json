@@ -21,5 +21,15 @@
     "directory": "packages/lexical-rich-text"
   },
   "module": "LexicalRichText.mjs",
-  "sideEffects": false
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.ts",
+        "node": "./LexicalRichText.node.mjs",
+        "default": "./LexicalRichText.mjs"
+      },
+      "require": "./LexicalRichText.js"
+    }
+  }
 }

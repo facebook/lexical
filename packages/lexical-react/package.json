@@ -43,6 +43,7 @@
     "./LexicalAutoEmbedPlugin": {
       "import": {
         "types": "./LexicalAutoEmbedPlugin.d.ts",
+        "node": "./LexicalAutoEmbedPlugin.node.mjs",
         "default": "./LexicalAutoEmbedPlugin.mjs"
       },
       "require": "./LexicalAutoEmbedPlugin.js"
@@ -50,6 +51,7 @@
     "./LexicalAutoEmbedPlugin.js": {
       "import": {
         "types": "./LexicalAutoEmbedPlugin.d.ts",
+        "node": "./LexicalAutoEmbedPlugin.node.mjs",
         "default": "./LexicalAutoEmbedPlugin.mjs"
       },
       "require": "./LexicalAutoEmbedPlugin.js"
@@ -57,6 +59,7 @@
     "./LexicalAutoFocusPlugin": {
       "import": {
         "types": "./LexicalAutoFocusPlugin.d.ts",
+        "node": "./LexicalAutoFocusPlugin.node.mjs",
         "default": "./LexicalAutoFocusPlugin.mjs"
       },
       "require": "./LexicalAutoFocusPlugin.js"
@@ -64,6 +67,7 @@
     "./LexicalAutoFocusPlugin.js": {
       "import": {
         "types": "./LexicalAutoFocusPlugin.d.ts",
+        "node": "./LexicalAutoFocusPlugin.node.mjs",
         "default": "./LexicalAutoFocusPlugin.mjs"
       },
       "require": "./LexicalAutoFocusPlugin.js"
@@ -71,6 +75,7 @@
     "./LexicalAutoLinkPlugin": {
       "import": {
         "types": "./LexicalAutoLinkPlugin.d.ts",
+        "node": "./LexicalAutoLinkPlugin.node.mjs",
         "default": "./LexicalAutoLinkPlugin.mjs"
       },
       "require": "./LexicalAutoLinkPlugin.js"
@@ -78,6 +83,7 @@
     "./LexicalAutoLinkPlugin.js": {
       "import": {
         "types": "./LexicalAutoLinkPlugin.d.ts",
+        "node": "./LexicalAutoLinkPlugin.node.mjs",
         "default": "./LexicalAutoLinkPlugin.mjs"
       },
       "require": "./LexicalAutoLinkPlugin.js"
@@ -85,6 +91,7 @@
     "./LexicalBlockWithAlignableContents": {
       "import": {
         "types": "./LexicalBlockWithAlignableContents.d.ts",
+        "node": "./LexicalBlockWithAlignableContents.node.mjs",
         "default": "./LexicalBlockWithAlignableContents.mjs"
       },
       "require": "./LexicalBlockWithAlignableContents.js"
@@ -92,6 +99,7 @@
     "./LexicalBlockWithAlignableContents.js": {
       "import": {
         "types": "./LexicalBlockWithAlignableContents.d.ts",
+        "node": "./LexicalBlockWithAlignableContents.node.mjs",
         "default": "./LexicalBlockWithAlignableContents.mjs"
       },
       "require": "./LexicalBlockWithAlignableContents.js"
@@ -99,6 +107,7 @@
     "./LexicalCharacterLimitPlugin": {
       "import": {
         "types": "./LexicalCharacterLimitPlugin.d.ts",
+        "node": "./LexicalCharacterLimitPlugin.node.mjs",
         "default": "./LexicalCharacterLimitPlugin.mjs"
       },
       "require": "./LexicalCharacterLimitPlugin.js"
@@ -106,6 +115,7 @@
     "./LexicalCharacterLimitPlugin.js": {
       "import": {
         "types": "./LexicalCharacterLimitPlugin.d.ts",
+        "node": "./LexicalCharacterLimitPlugin.node.mjs",
         "default": "./LexicalCharacterLimitPlugin.mjs"
       },
       "require": "./LexicalCharacterLimitPlugin.js"
@@ -113,6 +123,7 @@
     "./LexicalCheckListPlugin": {
       "import": {
         "types": "./LexicalCheckListPlugin.d.ts",
+        "node": "./LexicalCheckListPlugin.node.mjs",
         "default": "./LexicalCheckListPlugin.mjs"
       },
       "require": "./LexicalCheckListPlugin.js"
@@ -120,6 +131,7 @@
     "./LexicalCheckListPlugin.js": {
       "import": {
         "types": "./LexicalCheckListPlugin.d.ts",
+        "node": "./LexicalCheckListPlugin.node.mjs",
         "default": "./LexicalCheckListPlugin.mjs"
       },
       "require": "./LexicalCheckListPlugin.js"
@@ -127,6 +139,7 @@
     "./LexicalClearEditorPlugin": {
       "import": {
         "types": "./LexicalClearEditorPlugin.d.ts",
+        "node": "./LexicalClearEditorPlugin.node.mjs",
         "default": "./LexicalClearEditorPlugin.mjs"
       },
       "require": "./LexicalClearEditorPlugin.js"
@@ -134,6 +147,7 @@
     "./LexicalClearEditorPlugin.js": {
       "import": {
         "types": "./LexicalClearEditorPlugin.d.ts",
+        "node": "./LexicalClearEditorPlugin.node.mjs",
         "default": "./LexicalClearEditorPlugin.mjs"
       },
       "require": "./LexicalClearEditorPlugin.js"
@@ -141,6 +155,7 @@
     "./LexicalClickableLinkPlugin": {
       "import": {
         "types": "./LexicalClickableLinkPlugin.d.ts",
+        "node": "./LexicalClickableLinkPlugin.node.mjs",
         "default": "./LexicalClickableLinkPlugin.mjs"
       },
       "require": "./LexicalClickableLinkPlugin.js"
@@ -148,6 +163,7 @@
     "./LexicalClickableLinkPlugin.js": {
       "import": {
         "types": "./LexicalClickableLinkPlugin.d.ts",
+        "node": "./LexicalClickableLinkPlugin.node.mjs",
         "default": "./LexicalClickableLinkPlugin.mjs"
       },
       "require": "./LexicalClickableLinkPlugin.js"
@@ -155,6 +171,7 @@
     "./LexicalCollaborationContext": {
       "import": {
         "types": "./LexicalCollaborationContext.d.ts",
+        "node": "./LexicalCollaborationContext.node.mjs",
         "default": "./LexicalCollaborationContext.mjs"
       },
       "require": "./LexicalCollaborationContext.js"
@@ -162,6 +179,7 @@
     "./LexicalCollaborationContext.js": {
       "import": {
         "types": "./LexicalCollaborationContext.d.ts",
+        "node": "./LexicalCollaborationContext.node.mjs",
         "default": "./LexicalCollaborationContext.mjs"
       },
       "require": "./LexicalCollaborationContext.js"
@@ -169,6 +187,7 @@
     "./LexicalCollaborationPlugin": {
       "import": {
         "types": "./LexicalCollaborationPlugin.d.ts",
+        "node": "./LexicalCollaborationPlugin.node.mjs",
         "default": "./LexicalCollaborationPlugin.mjs"
       },
       "require": "./LexicalCollaborationPlugin.js"
@@ -176,6 +195,7 @@
     "./LexicalCollaborationPlugin.js": {
       "import": {
         "types": "./LexicalCollaborationPlugin.d.ts",
+        "node": "./LexicalCollaborationPlugin.node.mjs",
         "default": "./LexicalCollaborationPlugin.mjs"
       },
       "require": "./LexicalCollaborationPlugin.js"
@@ -183,6 +203,7 @@
     "./LexicalComposer": {
       "import": {
         "types": "./LexicalComposer.d.ts",
+        "node": "./LexicalComposer.node.mjs",
         "default": "./LexicalComposer.mjs"
       },
       "require": "./LexicalComposer.js"
@@ -190,6 +211,7 @@
     "./LexicalComposer.js": {
       "import": {
         "types": "./LexicalComposer.d.ts",
+        "node": "./LexicalComposer.node.mjs",
         "default": "./LexicalComposer.mjs"
       },
       "require": "./LexicalComposer.js"
@@ -197,6 +219,7 @@
     "./LexicalComposerContext": {
       "import": {
         "types": "./LexicalComposerContext.d.ts",
+        "node": "./LexicalComposerContext.node.mjs",
         "default": "./LexicalComposerContext.mjs"
       },
       "require": "./LexicalComposerContext.js"
@@ -204,6 +227,7 @@
     "./LexicalComposerContext.js": {
       "import": {
         "types": "./LexicalComposerContext.d.ts",
+        "node": "./LexicalComposerContext.node.mjs",
         "default": "./LexicalComposerContext.mjs"
       },
       "require": "./LexicalComposerContext.js"
@@ -211,6 +235,7 @@
     "./LexicalContentEditable": {
       "import": {
         "types": "./LexicalContentEditable.d.ts",
+        "node": "./LexicalContentEditable.node.mjs",
         "default": "./LexicalContentEditable.mjs"
       },
       "require": "./LexicalContentEditable.js"
@@ -218,6 +243,7 @@
     "./LexicalContentEditable.js": {
       "import": {
         "types": "./LexicalContentEditable.d.ts",
+        "node": "./LexicalContentEditable.node.mjs",
         "default": "./LexicalContentEditable.mjs"
       },
       "require": "./LexicalContentEditable.js"
@@ -225,6 +251,7 @@
     "./LexicalContextMenuPlugin": {
       "import": {
         "types": "./LexicalContextMenuPlugin.d.ts",
+        "node": "./LexicalContextMenuPlugin.node.mjs",
         "default": "./LexicalContextMenuPlugin.mjs"
       },
       "require": "./LexicalContextMenuPlugin.js"
@@ -232,6 +259,7 @@
     "./LexicalContextMenuPlugin.js": {
       "import": {
         "types": "./LexicalContextMenuPlugin.d.ts",
+        "node": "./LexicalContextMenuPlugin.node.mjs",
         "default": "./LexicalContextMenuPlugin.mjs"
       },
       "require": "./LexicalContextMenuPlugin.js"
@@ -239,6 +267,7 @@
     "./LexicalDecoratorBlockNode": {
       "import": {
         "types": "./LexicalDecoratorBlockNode.d.ts",
+        "node": "./LexicalDecoratorBlockNode.node.mjs",
         "default": "./LexicalDecoratorBlockNode.mjs"
       },
       "require": "./LexicalDecoratorBlockNode.js"
@@ -246,6 +275,7 @@
     "./LexicalDecoratorBlockNode.js": {
       "import": {
         "types": "./LexicalDecoratorBlockNode.d.ts",
+        "node": "./LexicalDecoratorBlockNode.node.mjs",
         "default": "./LexicalDecoratorBlockNode.mjs"
       },
       "require": "./LexicalDecoratorBlockNode.js"
@@ -253,6 +283,7 @@
     "./LexicalEditorRefPlugin": {
       "import": {
         "types": "./LexicalEditorRefPlugin.d.ts",
+        "node": "./LexicalEditorRefPlugin.node.mjs",
         "default": "./LexicalEditorRefPlugin.mjs"
       },
       "require": "./LexicalEditorRefPlugin.js"
@@ -260,6 +291,7 @@
     "./LexicalEditorRefPlugin.js": {
       "import": {
         "types": "./LexicalEditorRefPlugin.d.ts",
+        "node": "./LexicalEditorRefPlugin.node.mjs",
         "default": "./LexicalEditorRefPlugin.mjs"
       },
       "require": "./LexicalEditorRefPlugin.js"
@@ -267,6 +299,7 @@
     "./LexicalErrorBoundary": {
       "import": {
         "types": "./LexicalErrorBoundary.d.ts",
+        "node": "./LexicalErrorBoundary.node.mjs",
         "default": "./LexicalErrorBoundary.mjs"
       },
       "require": "./LexicalErrorBoundary.js"
@@ -274,6 +307,7 @@
     "./LexicalErrorBoundary.js": {
       "import": {
         "types": "./LexicalErrorBoundary.d.ts",
+        "node": "./LexicalErrorBoundary.node.mjs",
         "default": "./LexicalErrorBoundary.mjs"
       },
       "require": "./LexicalErrorBoundary.js"
@@ -281,6 +315,7 @@
     "./LexicalHashtagPlugin": {
       "import": {
         "types": "./LexicalHashtagPlugin.d.ts",
+        "node": "./LexicalHashtagPlugin.node.mjs",
         "default": "./LexicalHashtagPlugin.mjs"
       },
       "require": "./LexicalHashtagPlugin.js"
@@ -288,6 +323,7 @@
     "./LexicalHashtagPlugin.js": {
       "import": {
         "types": "./LexicalHashtagPlugin.d.ts",
+        "node": "./LexicalHashtagPlugin.node.mjs",
         "default": "./LexicalHashtagPlugin.mjs"
       },
       "require": "./LexicalHashtagPlugin.js"
@@ -295,6 +331,7 @@
     "./LexicalHistoryPlugin": {
       "import": {
         "types": "./LexicalHistoryPlugin.d.ts",
+        "node": "./LexicalHistoryPlugin.node.mjs",
         "default": "./LexicalHistoryPlugin.mjs"
       },
       "require": "./LexicalHistoryPlugin.js"
@@ -302,6 +339,7 @@
     "./LexicalHistoryPlugin.js": {
       "import": {
         "types": "./LexicalHistoryPlugin.d.ts",
+        "node": "./LexicalHistoryPlugin.node.mjs",
         "default": "./LexicalHistoryPlugin.mjs"
       },
       "require": "./LexicalHistoryPlugin.js"
@@ -309,6 +347,7 @@
     "./LexicalHorizontalRuleNode": {
       "import": {
         "types": "./LexicalHorizontalRuleNode.d.ts",
+        "node": "./LexicalHorizontalRuleNode.node.mjs",
         "default": "./LexicalHorizontalRuleNode.mjs"
       },
       "require": "./LexicalHorizontalRuleNode.js"
@@ -316,6 +355,7 @@
     "./LexicalHorizontalRuleNode.js": {
       "import": {
         "types": "./LexicalHorizontalRuleNode.d.ts",
+        "node": "./LexicalHorizontalRuleNode.node.mjs",
         "default": "./LexicalHorizontalRuleNode.mjs"
       },
       "require": "./LexicalHorizontalRuleNode.js"
@@ -323,6 +363,7 @@
     "./LexicalHorizontalRulePlugin": {
       "import": {
         "types": "./LexicalHorizontalRulePlugin.d.ts",
+        "node": "./LexicalHorizontalRulePlugin.node.mjs",
         "default": "./LexicalHorizontalRulePlugin.mjs"
       },
       "require": "./LexicalHorizontalRulePlugin.js"
@@ -330,6 +371,7 @@
     "./LexicalHorizontalRulePlugin.js": {
       "import": {
         "types": "./LexicalHorizontalRulePlugin.d.ts",
+        "node": "./LexicalHorizontalRulePlugin.node.mjs",
         "default": "./LexicalHorizontalRulePlugin.mjs"
       },
       "require": "./LexicalHorizontalRulePlugin.js"
@@ -337,6 +379,7 @@
     "./LexicalLinkPlugin": {
       "import": {
         "types": "./LexicalLinkPlugin.d.ts",
+        "node": "./LexicalLinkPlugin.node.mjs",
         "default": "./LexicalLinkPlugin.mjs"
       },
       "require": "./LexicalLinkPlugin.js"
@@ -344,6 +387,7 @@
     "./LexicalLinkPlugin.js": {
       "import": {
         "types": "./LexicalLinkPlugin.d.ts",
+        "node": "./LexicalLinkPlugin.node.mjs",
         "default": "./LexicalLinkPlugin.mjs"
       },
       "require": "./LexicalLinkPlugin.js"
@@ -351,6 +395,7 @@
     "./LexicalListPlugin": {
       "import": {
         "types": "./LexicalListPlugin.d.ts",
+        "node": "./LexicalListPlugin.node.mjs",
         "default": "./LexicalListPlugin.mjs"
       },
       "require": "./LexicalListPlugin.js"
@@ -358,6 +403,7 @@
     "./LexicalListPlugin.js": {
       "import": {
         "types": "./LexicalListPlugin.d.ts",
+        "node": "./LexicalListPlugin.node.mjs",
         "default": "./LexicalListPlugin.mjs"
       },
       "require": "./LexicalListPlugin.js"
@@ -365,6 +411,7 @@
     "./LexicalMarkdownShortcutPlugin": {
       "import": {
         "types": "./LexicalMarkdownShortcutPlugin.d.ts",
+        "node": "./LexicalMarkdownShortcutPlugin.node.mjs",
         "default": "./LexicalMarkdownShortcutPlugin.mjs"
       },
       "require": "./LexicalMarkdownShortcutPlugin.js"
@@ -372,6 +419,7 @@
     "./LexicalMarkdownShortcutPlugin.js": {
       "import": {
         "types": "./LexicalMarkdownShortcutPlugin.d.ts",
+        "node": "./LexicalMarkdownShortcutPlugin.node.mjs",
         "default": "./LexicalMarkdownShortcutPlugin.mjs"
       },
       "require": "./LexicalMarkdownShortcutPlugin.js"
@@ -379,6 +427,7 @@
     "./LexicalNestedComposer": {
       "import": {
         "types": "./LexicalNestedComposer.d.ts",
+        "node": "./LexicalNestedComposer.node.mjs",
         "default": "./LexicalNestedComposer.mjs"
       },
       "require": "./LexicalNestedComposer.js"
@@ -386,6 +435,7 @@
     "./LexicalNestedComposer.js": {
       "import": {
         "types": "./LexicalNestedComposer.d.ts",
+        "node": "./LexicalNestedComposer.node.mjs",
         "default": "./LexicalNestedComposer.mjs"
       },
       "require": "./LexicalNestedComposer.js"
@@ -393,6 +443,7 @@
     "./LexicalNodeEventPlugin": {
       "import": {
         "types": "./LexicalNodeEventPlugin.d.ts",
+        "node": "./LexicalNodeEventPlugin.node.mjs",
         "default": "./LexicalNodeEventPlugin.mjs"
       },
       "require": "./LexicalNodeEventPlugin.js"
@@ -400,6 +451,7 @@
     "./LexicalNodeEventPlugin.js": {
       "import": {
         "types": "./LexicalNodeEventPlugin.d.ts",
+        "node": "./LexicalNodeEventPlugin.node.mjs",
         "default": "./LexicalNodeEventPlugin.mjs"
       },
       "require": "./LexicalNodeEventPlugin.js"
@@ -407,6 +459,7 @@
     "./LexicalNodeMenuPlugin": {
       "import": {
         "types": "./LexicalNodeMenuPlugin.d.ts",
+        "node": "./LexicalNodeMenuPlugin.node.mjs",
         "default": "./LexicalNodeMenuPlugin.mjs"
       },
       "require": "./LexicalNodeMenuPlugin.js"
@@ -414,6 +467,7 @@
     "./LexicalNodeMenuPlugin.js": {
       "import": {
         "types": "./LexicalNodeMenuPlugin.d.ts",
+        "node": "./LexicalNodeMenuPlugin.node.mjs",
         "default": "./LexicalNodeMenuPlugin.mjs"
       },
       "require": "./LexicalNodeMenuPlugin.js"
@@ -421,6 +475,7 @@
     "./LexicalOnChangePlugin": {
       "import": {
         "types": "./LexicalOnChangePlugin.d.ts",
+        "node": "./LexicalOnChangePlugin.node.mjs",
         "default": "./LexicalOnChangePlugin.mjs"
       },
       "require": "./LexicalOnChangePlugin.js"
@@ -428,6 +483,7 @@
     "./LexicalOnChangePlugin.js": {
       "import": {
         "types": "./LexicalOnChangePlugin.d.ts",
+        "node": "./LexicalOnChangePlugin.node.mjs",
         "default": "./LexicalOnChangePlugin.mjs"
       },
       "require": "./LexicalOnChangePlugin.js"
@@ -435,6 +491,7 @@
     "./LexicalPlainTextPlugin": {
       "import": {
         "types": "./LexicalPlainTextPlugin.d.ts",
+        "node": "./LexicalPlainTextPlugin.node.mjs",
         "default": "./LexicalPlainTextPlugin.mjs"
       },
       "require": "./LexicalPlainTextPlugin.js"
@@ -442,6 +499,7 @@
     "./LexicalPlainTextPlugin.js": {
       "import": {
         "types": "./LexicalPlainTextPlugin.d.ts",
+        "node": "./LexicalPlainTextPlugin.node.mjs",
         "default": "./LexicalPlainTextPlugin.mjs"
       },
       "require": "./LexicalPlainTextPlugin.js"
@@ -449,6 +507,7 @@
     "./LexicalRichTextPlugin": {
       "import": {
         "types": "./LexicalRichTextPlugin.d.ts",
+        "node": "./LexicalRichTextPlugin.node.mjs",
         "default": "./LexicalRichTextPlugin.mjs"
       },
       "require": "./LexicalRichTextPlugin.js"
@@ -456,6 +515,7 @@
     "./LexicalRichTextPlugin.js": {
       "import": {
         "types": "./LexicalRichTextPlugin.d.ts",
+        "node": "./LexicalRichTextPlugin.node.mjs",
         "default": "./LexicalRichTextPlugin.mjs"
       },
       "require": "./LexicalRichTextPlugin.js"
@@ -463,6 +523,7 @@
     "./LexicalTabIndentationPlugin": {
       "import": {
         "types": "./LexicalTabIndentationPlugin.d.ts",
+        "node": "./LexicalTabIndentationPlugin.node.mjs",
         "default": "./LexicalTabIndentationPlugin.mjs"
       },
       "require": "./LexicalTabIndentationPlugin.js"
@@ -470,6 +531,7 @@
     "./LexicalTabIndentationPlugin.js": {
       "import": {
         "types": "./LexicalTabIndentationPlugin.d.ts",
+        "node": "./LexicalTabIndentationPlugin.node.mjs",
         "default": "./LexicalTabIndentationPlugin.mjs"
       },
       "require": "./LexicalTabIndentationPlugin.js"
@@ -477,6 +539,7 @@
     "./LexicalTableOfContents": {
       "import": {
         "types": "./LexicalTableOfContents.d.ts",
+        "node": "./LexicalTableOfContents.node.mjs",
         "default": "./LexicalTableOfContents.mjs"
       },
       "require": "./LexicalTableOfContents.js"
@@ -484,6 +547,7 @@
     "./LexicalTableOfContents.js": {
       "import": {
         "types": "./LexicalTableOfContents.d.ts",
+        "node": "./LexicalTableOfContents.node.mjs",
         "default": "./LexicalTableOfContents.mjs"
       },
       "require": "./LexicalTableOfContents.js"
@@ -491,6 +555,7 @@
     "./LexicalTablePlugin": {
       "import": {
         "types": "./LexicalTablePlugin.d.ts",
+        "node": "./LexicalTablePlugin.node.mjs",
         "default": "./LexicalTablePlugin.mjs"
       },
       "require": "./LexicalTablePlugin.js"
@@ -498,6 +563,7 @@
     "./LexicalTablePlugin.js": {
       "import": {
         "types": "./LexicalTablePlugin.d.ts",
+        "node": "./LexicalTablePlugin.node.mjs",
         "default": "./LexicalTablePlugin.mjs"
       },
       "require": "./LexicalTablePlugin.js"
@@ -505,6 +571,7 @@
     "./LexicalTreeView": {
       "import": {
         "types": "./LexicalTreeView.d.ts",
+        "node": "./LexicalTreeView.node.mjs",
         "default": "./LexicalTreeView.mjs"
       },
       "require": "./LexicalTreeView.js"
@@ -512,6 +579,7 @@
     "./LexicalTreeView.js": {
       "import": {
         "types": "./LexicalTreeView.d.ts",
+        "node": "./LexicalTreeView.node.mjs",
         "default": "./LexicalTreeView.mjs"
       },
       "require": "./LexicalTreeView.js"
@@ -519,6 +587,7 @@
     "./LexicalTypeaheadMenuPlugin": {
       "import": {
         "types": "./LexicalTypeaheadMenuPlugin.d.ts",
+        "node": "./LexicalTypeaheadMenuPlugin.node.mjs",
         "default": "./LexicalTypeaheadMenuPlugin.mjs"
       },
       "require": "./LexicalTypeaheadMenuPlugin.js"
@@ -526,6 +595,7 @@
     "./LexicalTypeaheadMenuPlugin.js": {
       "import": {
         "types": "./LexicalTypeaheadMenuPlugin.d.ts",
+        "node": "./LexicalTypeaheadMenuPlugin.node.mjs",
         "default": "./LexicalTypeaheadMenuPlugin.mjs"
       },
       "require": "./LexicalTypeaheadMenuPlugin.js"
@@ -533,6 +603,7 @@
     "./useLexicalEditable": {
       "import": {
         "types": "./useLexicalEditable.d.ts",
+        "node": "./useLexicalEditable.node.mjs",
         "default": "./useLexicalEditable.mjs"
       },
       "require": "./useLexicalEditable.js"
@@ -540,6 +611,7 @@
     "./useLexicalEditable.js": {
       "import": {
         "types": "./useLexicalEditable.d.ts",
+        "node": "./useLexicalEditable.node.mjs",
         "default": "./useLexicalEditable.mjs"
       },
       "require": "./useLexicalEditable.js"
@@ -547,6 +619,7 @@
     "./useLexicalIsTextContentEmpty": {
       "import": {
         "types": "./useLexicalIsTextContentEmpty.d.ts",
+        "node": "./useLexicalIsTextContentEmpty.node.mjs",
         "default": "./useLexicalIsTextContentEmpty.mjs"
       },
       "require": "./useLexicalIsTextContentEmpty.js"
@@ -554,6 +627,7 @@
     "./useLexicalIsTextContentEmpty.js": {
       "import": {
         "types": "./useLexicalIsTextContentEmpty.d.ts",
+        "node": "./useLexicalIsTextContentEmpty.node.mjs",
         "default": "./useLexicalIsTextContentEmpty.mjs"
       },
       "require": "./useLexicalIsTextContentEmpty.js"
@@ -561,6 +635,7 @@
     "./useLexicalNodeSelection": {
       "import": {
         "types": "./useLexicalNodeSelection.d.ts",
+        "node": "./useLexicalNodeSelection.node.mjs",
         "default": "./useLexicalNodeSelection.mjs"
       },
       "require": "./useLexicalNodeSelection.js"
@@ -568,6 +643,7 @@
     "./useLexicalNodeSelection.js": {
       "import": {
         "types": "./useLexicalNodeSelection.d.ts",
+        "node": "./useLexicalNodeSelection.node.mjs",
         "default": "./useLexicalNodeSelection.mjs"
       },
       "require": "./useLexicalNodeSelection.js"
@@ -575,6 +651,7 @@
     "./useLexicalSubscription": {
       "import": {
         "types": "./useLexicalSubscription.d.ts",
+        "node": "./useLexicalSubscription.node.mjs",
         "default": "./useLexicalSubscription.mjs"
       },
       "require": "./useLexicalSubscription.js"
@@ -582,6 +659,7 @@
     "./useLexicalSubscription.js": {
       "import": {
         "types": "./useLexicalSubscription.d.ts",
+        "node": "./useLexicalSubscription.node.mjs",
         "default": "./useLexicalSubscription.mjs"
       },
       "require": "./useLexicalSubscription.js"
@@ -589,6 +667,7 @@
     "./useLexicalTextEntity": {
       "import": {
         "types": "./useLexicalTextEntity.d.ts",
+        "node": "./useLexicalTextEntity.node.mjs",
         "default": "./useLexicalTextEntity.mjs"
       },
       "require": "./useLexicalTextEntity.js"
@@ -596,6 +675,7 @@
     "./useLexicalTextEntity.js": {
       "import": {
         "types": "./useLexicalTextEntity.d.ts",
+        "node": "./useLexicalTextEntity.node.mjs",
         "default": "./useLexicalTextEntity.mjs"
       },
       "require": "./useLexicalTextEntity.js"

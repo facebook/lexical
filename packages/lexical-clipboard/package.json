@@ -26,5 +26,15 @@
     "directory": "packages/lexical-clipboard"
   },
   "module": "LexicalClipboard.mjs",
-  "sideEffects": false
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.ts",
+        "node": "./LexicalClipboard.node.mjs",
+        "default": "./LexicalClipboard.mjs"
+      },
+      "require": "./LexicalClipboard.js"
+    }
+  }
 }

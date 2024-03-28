@@ -44,6 +44,10 @@ export type HistoryState = {
   redoStack: Array<HistoryStateEntry>;
   undoStack: Array<HistoryStateEntry>;
 };
+export type HistoryOptions = {
+  delay: number;
+  discardHistory: boolean;
+};
 
 type IntentionallyMarkedAsDirtyElement = boolean;
 
@@ -220,7 +224,7 @@ function isTextNodeUnchanged(
 
 function createMergeActionGetter(
   editor: LexicalEditor,
-  delay: number,
+  options: HistoryOptions,
 ): (
   prevEditorState: null | EditorState,
   nextEditorState: EditorState,
@@ -244,7 +248,7 @@ function createMergeActionGetter(
 
     // If applying changes from history stack there's no need
     // to run history logic again, as history entries already calculated
-    if (tags.has('historic')) {
+    if (options.discardHistory || tags.has('historic')) {
       prevChangeType = OTHER;
       prevChangeTime = changeTime;
       return DISCARD_HISTORY_CANDIDATE;
@@ -288,7 +292,7 @@ function createMergeActionGetter(
         shouldPushHistory === false &&
         changeType !== OTHER &&
         changeType === prevChangeType &&
-        changeTime < prevChangeTime + delay &&
+        changeTime < prevChangeTime + options.delay &&
         isSameEditor
       ) {
         return HISTORY_MERGE;
@@ -389,9 +393,9 @@ function clearHistory(historyState: HistoryState) {
 export function registerHistory(
   editor: LexicalEditor,
   historyState: HistoryState,
-  delay: number,
+  options: HistoryOptions,
 ): () => void {
-  const getMergeAction = createMergeActionGetter(editor, delay);
+  const getMergeAction = createMergeActionGetter(editor, options);
 
   const applyChange = ({
     editorState,

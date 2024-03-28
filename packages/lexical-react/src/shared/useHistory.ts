@@ -6,7 +6,7 @@
  *
  */
 
-import type {HistoryState} from '@lexical/history';
+import type {HistoryOptions, HistoryState} from '@lexical/history';
 import type {LexicalEditor} from 'lexical';
 
 import {createEmptyHistoryState, registerHistory} from '@lexical/history';
@@ -15,7 +15,10 @@ import {useEffect, useMemo} from 'react';
 export function useHistory(
   editor: LexicalEditor,
   externalHistoryState?: HistoryState,
-  delay = 1000,
+  options: HistoryOptions = {
+    delay: 1000,
+    discardHistory: false,
+  },
 ): void {
   const historyState: HistoryState = useMemo(
     () => externalHistoryState || createEmptyHistoryState(),
@@ -23,6 +26,6 @@ export function useHistory(
   );
 
   useEffect(() => {
-    return registerHistory(editor, historyState, delay);
-  }, [delay, editor, historyState]);
+    return registerHistory(editor, historyState, options);
+  }, [editor, options, historyState]);
 }

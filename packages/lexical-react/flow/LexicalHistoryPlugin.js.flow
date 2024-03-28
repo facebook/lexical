@@ -21,8 +21,14 @@ export type HistoryState = {
   undoStack: Array<HistoryStateEntry>,
 };
 
+export type HistoryOptions = {
+  delay: number
+  discardHistory: boolean
+}
+
 declare export function HistoryPlugin({
   externalHistoryState?: HistoryState,
+  options?: HistoryOptions
 }): React$Node;
 
 declare export function createEmptyHistoryState(): HistoryState;

@@ -23,5 +23,15 @@
     "@lexical/utils": "0.14.2"
   },
   "module": "LexicalHtml.mjs",
-  "sideEffects": false
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.ts",
+        "node": "./LexicalHtml.node.mjs",
+        "default": "./LexicalHtml.mjs"
+      },
+      "require": "./LexicalHtml.js"
+    }
+  }
 }

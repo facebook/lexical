@@ -24,5 +24,15 @@
     "directory": "packages/lexical-utils"
   },
   "module": "LexicalUtils.mjs",
-  "sideEffects": false
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.ts",
+        "node": "./LexicalUtils.node.mjs",
+        "default": "./LexicalUtils.mjs"
+      },
+      "require": "./LexicalUtils.js"
+    }
+  }
 }

@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "vite --host",
     "build-dev": "vite build",
-    "build-prod": "vite build --config vite.prod.config.js",
+    "build-prod": "vite build --config vite.prod.config.ts",
     "build-vercel": "(cd ../../ && node ./scripts/build.js --prod) && npm run build-prod",
     "preview": "vite preview"
   },

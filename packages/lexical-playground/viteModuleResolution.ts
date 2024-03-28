@@ -6,14 +6,8 @@
  *
  */
 
-import {defineConfig} from 'vite';
-import react from '@vitejs/plugin-react';
-import {resolve} from 'path';
-import path from 'path';
-import fs from 'fs';
-import {replaceCodePlugin} from 'vite-plugin-replace';
-import babel from '@rollup/plugin-babel';
-import copy from 'rollup-plugin-copy';
+import * as fs from 'fs';
+import * as path from 'path';
 
 const moduleResolution = [
   {
@@ -144,13 +138,13 @@ const moduleResolution = [
   'LexicalListPlugin',
   'LexicalCheckListPlugin',
   'LexicalAutoFocusPlugin',
-  "LexicalTableOfContents",
+  'LexicalTableOfContents',
   'LexicalAutoLinkPlugin',
   'LexicalAutoEmbedPlugin',
   'LexicalOnChangePlugin',
   'LexicalNodeEventPlugin',
   'LexicalTabIndentationPlugin',
-  'LexicalEditorRefPlugin'
+  'LexicalEditorRefPlugin',
 ].forEach((module) => {
   let resolvedPath = path.resolve(`../lexical-react/src/${module}.ts`);
 
@@ -168,67 +162,4 @@ const moduleResolution = [
   }
 });
 
-// https://vitejs.dev/config/
-export default defineConfig({
-  define: {
-    "process.env.IS_PREACT": process.env.IS_PREACT,
-  },
-  plugins: [
-    replaceCodePlugin({
-      replacements: [
-        {
-          from: /__DEV__/g,
-          to: 'true',
-        },
-      ],
-    }),
-    babel({
-      babelHelpers: 'bundled',
-      babelrc: false,
-      configFile: false,
-      exclude: '/**/node_modules/**',
-      extensions: ['jsx', 'js', 'ts', 'tsx', 'mjs'],
-      plugins: [
-        '@babel/plugin-transform-flow-strip-types',
-        [
-          require('../../scripts/error-codes/transform-error-messages'),
-          {
-            noMinify: true,
-          },
-        ],
-      ],
-      presets: ['@babel/preset-react'],
-    }),
-    react(),
-    copy({
-      hook: 'writeBundle',
-      verbose: true,
-      targets: [
-        {src: './esm/*', dest: './build/esm/'},
-        {src: ['./*.png', './*.ico'], dest: './build/'},
-        ...((() => {
-          const m = /<script type="importmap">([\s\S]+?)<\/script>/g.exec(fs.readFileSync('./esm/index.html', 'utf8'));
-          if (!m) {
-            throw new Error('Could not parse importmap from esm/index.html');
-          }
-          return Object.entries(JSON.parse(m[1]).imports).map(([k, v]) => ({
-            src: path.join(`../${k.replace(/^@/, '').replace(/\//g, '-')}`, v),
-            dest: './build/esm/dist/',
-          }));
-        })()),
-      ],
-    }),
-  ],
-  resolve: {
-    alias: moduleResolution,
-  },
-  build: {
-    outDir: 'build',
-    rollupOptions: {
-      input: {
-        main: new URL('./index.html', import.meta.url).pathname,
-        split: new URL('./split/index.html', import.meta.url).pathname,
-      },
-    },
-  },
-});
+export default moduleResolution;

@@ -14,7 +14,7 @@ Registers necessary listeners to manage undo/redo history stack and related edit
 function registerHistory(
   editor: LexicalEditor,
   externalHistoryState: HistoryState,
-  delay: number,
+  options: HistoryOptions,
 ): () => void
 ```
 

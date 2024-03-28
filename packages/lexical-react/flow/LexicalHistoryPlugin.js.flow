@@ -26,6 +26,11 @@ export type HistoryOptions = {
   discardHistory: boolean
 }
 
+export type HistoryOptions = {
+  delay: number;
+  discardHistory: boolean;
+};
+
 declare export function HistoryPlugin({
   externalHistoryState?: HistoryState,
   options?: HistoryOptions

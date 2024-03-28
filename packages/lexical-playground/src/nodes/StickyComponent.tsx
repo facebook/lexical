@@ -17,6 +17,7 @@ import LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {LexicalNestedComposer} from '@lexical/react/LexicalNestedComposer';
 import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
+import {calculateZoomLevel} from '@lexical/utils';
 import {$getNodeByKey} from 'lexical';
 import * as React from 'react';
 import {useEffect, useRef} from 'react';
@@ -146,13 +147,16 @@ export default function StickyComponent({
     const stickyContainer = stickyContainerRef.current;
     const positioning = positioningRef.current;
     const rootElementRect = positioning.rootElementRect;
+    const zoom = calculateZoomLevel(stickyContainer);
     if (
       stickyContainer !== null &&
       positioning.isDragging &&
       rootElementRect !== null
     ) {
-      positioning.x = event.pageX - positioning.offsetX - rootElementRect.left;
-      positioning.y = event.pageY - positioning.offsetY - rootElementRect.top;
+      positioning.x =
+        event.pageX / zoom - positioning.offsetX - rootElementRect.left;
+      positioning.y =
+        event.pageY / zoom - positioning.offsetY - rootElementRect.top;
       positionSticky(stickyContainer, positioning);
     }
   };
@@ -212,8 +216,9 @@ export default function StickyComponent({
           const positioning = positioningRef.current;
           if (stickContainer !== null) {
             const {top, left} = stickContainer.getBoundingClientRect();
-            positioning.offsetX = event.clientX - left;
-            positioning.offsetY = event.clientY - top;
+            const zoom = calculateZoomLevel(stickContainer);
+            positioning.offsetX = event.clientX / zoom - left;
+            positioning.offsetY = event.clientY / zoom - top;
             positioning.isDragging = true;
             stickContainer.classList.add('dragging');
             document.addEventListener('pointermove', handlePointerMove);

@@ -191,7 +191,16 @@
       ],
       "shared/warnOnlyOnce": ["./packages/shared/src/warnOnlyOnce.ts"],
       "shared/environment": ["./packages/shared/src/environment.ts"],
-      "shared/useLayoutEffect": ["./packages/shared/src/useLayoutEffect.ts"]
+      "shared/useLayoutEffect": ["./packages/shared/src/useLayoutEffect.ts"],
+
+      "lexical/src": ["./packages/lexical/src/"],
+      "lexical/src/__tests__/utils": [
+        "./packages/lexical/src/__tests__/utils/index.tsx"
+      ],
+      "@lexical/selection/src/__tests__/utils": [
+        "./packages/lexical-selection/src/__tests__/utils/index.ts"
+      ],
+      "@lexical/yjs/src/index": ["./packages/lexical-yjs/src/index.ts"]
     }
   },
   "include": ["./libdefs", "./packages"],

@@ -12,12 +12,16 @@ import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
-import {$createQuoteNode} from '@lexical/rich-text/src';
-import {$setBlocksType} from '@lexical/selection/src';
+import {$createQuoteNode} from '@lexical/rich-text';
+import {$setBlocksType} from '@lexical/selection';
 import {
   $createNodeSelection,
+  $createParagraphNode,
   $createRangeSelection,
+  $createTextNode,
+  $getRoot,
   $isNodeSelection,
+  $setSelection,
   CAN_REDO_COMMAND,
   CAN_UNDO_COMMAND,
   CLEAR_HISTORY_COMMAND,
@@ -29,9 +33,6 @@ import {
   UNDO_COMMAND,
 } from 'lexical/src';
 import {createTestEditor, TestComposer} from 'lexical/src/__tests__/utils';
-import {$getRoot, $setSelection} from 'lexical/src/LexicalUtils';
-import {$createParagraphNode} from 'lexical/src/nodes/LexicalParagraphNode';
-import {$createTextNode} from 'lexical/src/nodes/LexicalTextNode';
 import React from 'react';
 import {createRoot} from 'react-dom/client';
 import * as ReactTestUtils from 'react-dom/test-utils';

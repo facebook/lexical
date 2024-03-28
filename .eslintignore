@@ -10,3 +10,4 @@
 **/vite.config.js
 **/vite.prod.config.js
 **/node_modules
+.ts-temp

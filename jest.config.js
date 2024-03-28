@@ -95,11 +95,20 @@ module.exports = {
           '<rootDir>/packages/lexical-rich-text/src/index.ts',
         '^@lexical/selection$':
           '<rootDir>/packages/lexical-selection/src/index.ts',
+        '^@lexical/selection/src/__tests__/utils$':
+          '<rootDir>/packages/lexical-selection/src/__tests__/utils/index.ts',
         '^@lexical/table$': '<rootDir>/packages/lexical-table/src/index.ts',
         '^@lexical/text$': '<rootDir>/packages/lexical-text/src/index.ts',
         '^@lexical/utils$': '<rootDir>/packages/lexical-utils/src/index.ts',
         '^@lexical/yjs$': '<rootDir>/packages/lexical-yjs/src/index.ts',
+        '^@lexical/yjs/src/index$':
+          '<rootDir>/packages/lexical-yjs/src/index.ts',
         '^lexical$': '<rootDir>/packages/lexical/src/index.ts',
+        '^lexical/src/([^/]+)$': '<rootDir>/packages/lexical/src/$1.ts',
+        '^lexical/src/__tests__/utils$':
+          '<rootDir>/packages/lexical/src/__tests__/utils/index.tsx',
+        '^lexical/src/nodes/([^/]+)$':
+          '<rootDir>/packages/lexical/src/nodes/$1.ts',
         '^shared/canUseDOM$': '<rootDir>/packages/shared/src/canUseDOM.ts',
         '^shared/caretFromPoint$':
           '<rootDir>/packages/shared/src/caretFromPoint.ts',

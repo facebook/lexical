@@ -28,6 +28,7 @@ import {$findMatchingParent} from '@lexical/utils';
 import {
   $createParagraphNode,
   $createTextNode,
+  $createRangeSelectionFromDom,
   $getNearestNodeFromDOMNode,
   $getPreviousSelection,
   $getSelection,
@@ -56,6 +57,7 @@ import {
   SELECTION_CHANGE_COMMAND,
   SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
 } from 'lexical';
+import {CAN_USE_DOM} from 'shared/canUseDOM';
 import invariant from 'shared/invariant';
 
 import {$isTableCellNode} from './LexicalTableCellNode';
@@ -69,6 +71,11 @@ import {
 import {$computeTableMap} from './LexicalTableUtils';
 
 const LEXICAL_ELEMENT_KEY = '__lexicalTableSelection';
+
+export const getDOMSelection = (
+  targetWindow: Window | null,
+): Selection | null =>
+  CAN_USE_DOM ? (targetWindow || window).getSelection() : null;
 
 export function applyTableHandlers(
   tableNode: TableNode,
@@ -711,11 +718,19 @@ export function applyTableHandlers(
 
           if (isPartialyWithinTable) {
             const newSelection = selection.clone();
-            newSelection.focus.set(
-              tableNode.getKey(),
-              isBackward ? 0 : tableNode.getChildrenSize(),
-              'element',
-            );
+            if (isFocusInside) {
+              newSelection.focus.set(
+                tableNode.getKey(),
+                isBackward ? 0 : tableNode.getChildrenSize(),
+                'element',
+              );
+            } else {
+              newSelection.anchor.set(
+                tableNode.getKey(),
+                isBackward ? tableNode.getChildrenSize() : 0,
+                'element',
+              );
+            }
             $setSelection(newSelection);
             $addHighlightStyleToTable(editor, tableObserver);
           } else if (isWithinTable) {
@@ -729,6 +744,51 @@ export function applyTableHandlers(
                 getObserverCellFromCellNode(focusCellNode),
                 true,
               );
+            }
+          }
+        } else if (
+          selection &&
+          $isTableSelection(selection) &&
+          selection.is(prevSelection) &&
+          selection.tableKey === tableNode.getKey()
+        ) {
+          // if selection goes outside of the table we need to change it to Range selection
+          const domSelection = getDOMSelection(editor._window);
+          if (
+            domSelection &&
+            domSelection.anchorNode &&
+            domSelection.focusNode
+          ) {
+            const focusNode = $getNearestNodeFromDOMNode(
+              domSelection.focusNode,
+            );
+            const isFocusOutside =
+              focusNode && !tableNode.is($findTableNode(focusNode));
+
+            const anchorNode = $getNearestNodeFromDOMNode(
+              domSelection.anchorNode,
+            );
+            const isAnchorInside =
+              anchorNode && tableNode.is($findTableNode(anchorNode));
+
+            if (
+              isFocusOutside &&
+              isAnchorInside &&
+              domSelection.rangeCount > 0
+            ) {
+              const newSelection = $createRangeSelectionFromDom(
+                domSelection,
+                editor,
+              );
+              if (newSelection) {
+                newSelection.anchor.set(
+                  tableNode.getKey(),
+                  selection.isBackward() ? tableNode.getChildrenSize() : 0,
+                  'element',
+                );
+                domSelection.removeAllRanges();
+                $setSelection(newSelection);
+              }
             }
           }
         }
@@ -1202,7 +1262,7 @@ function $findCellNode(node: LexicalNode): null | TableCellNode {
   return $isTableCellNode(cellNode) ? cellNode : null;
 }
 
-function $findTableNode(node: LexicalNode): null | TableNode {
+export function $findTableNode(node: LexicalNode): null | TableNode {
   const tableNode = $findMatchingParent(node, $isTableNode);
   return $isTableNode(tableNode) ? tableNode : null;
 }

@@ -8,6 +8,7 @@
 import type {MenuRenderFn, MenuResolution} from './shared/LexicalMenu';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {calculateZoomLevel} from '@lexical/utils';
 import {
   COMMAND_PRIORITY_LOW,
   CommandListenerPriority,
@@ -96,11 +97,12 @@ export function LexicalContextMenuPlugin<TOption extends MenuOption>({
   const handleContextMenu = useCallback(
     (event: MouseEvent) => {
       event.preventDefault();
+      const zoom = calculateZoomLevel(event.target as Element);
       openNodeMenu({
         getRect: () =>
           new DOMRect(
-            event.clientX,
-            event.clientY,
+            event.clientX / zoom,
+            event.clientY / zoom,
             PRE_PORTAL_DIV_SIZE,
             PRE_PORTAL_DIV_SIZE,
           ),

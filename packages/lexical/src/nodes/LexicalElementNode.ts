@@ -16,7 +16,7 @@ import type {KlassConstructor, Spread} from 'lexical';
 
 import invariant from 'shared/invariant';
 
-import {$isTextNode, TextNode} from '../';
+import {$isTextNode, TextNode} from '../index';
 import {
   DOUBLE_LINE_BREAK,
   ELEMENT_FORMAT_TO_TYPE,

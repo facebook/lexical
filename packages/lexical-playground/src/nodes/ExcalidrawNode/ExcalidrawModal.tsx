@@ -13,6 +13,7 @@ import {
   AppState,
   BinaryFiles,
   ExcalidrawImperativeAPI,
+  ExcalidrawInitialDataState,
 } from '@excalidraw/excalidraw/types/types';
 import * as React from 'react';
 import {ReactPortal, useEffect, useLayoutEffect, useRef, useState} from 'react';
@@ -21,16 +22,14 @@ import {createPortal} from 'react-dom';
 import Button from '../../ui/Button';
 import Modal from '../../ui/Modal';
 
-export type ExcalidrawElementFragment = {
-  isDeleted?: boolean;
-};
+export type ExcalidrawInitialElements = ExcalidrawInitialDataState['elements'];
 
 type Props = {
   closeOnClickOutside?: boolean;
   /**
    * The initial set of elements to draw into the scene
    */
-  initialElements: ReadonlyArray<ExcalidrawElementFragment>;
+  initialElements: ExcalidrawInitialElements;
   /**
    * The initial set of elements to draw into the scene
    */
@@ -55,7 +54,7 @@ type Props = {
    * Callback when the save button is clicked
    */
   onSave: (
-    elements: ReadonlyArray<ExcalidrawElementFragment>,
+    elements: ExcalidrawInitialElements,
     appState: Partial<AppState>,
     files: BinaryFiles,
   ) => void;
@@ -90,7 +89,7 @@ export default function ExcalidrawModal({
   const [excalidrawAPI, excalidrawAPIRefCallback] = useCallbackRefState();
   const [discardModalOpen, setDiscardModalOpen] = useState(false);
   const [elements, setElements] =
-    useState<ReadonlyArray<ExcalidrawElementFragment>>(initialElements);
+    useState<ExcalidrawInitialElements>(initialElements);
   const [files, setFiles] = useState<BinaryFiles>(initialFiles);
 
   useEffect(() => {
@@ -148,21 +147,21 @@ export default function ExcalidrawModal({
   }, [elements, files, onDelete]);
 
   const save = () => {
-    if (elements.filter((el) => !el.isDeleted).length > 0) {
+    if (elements && elements.filter((el) => !el.isDeleted).length > 0) {
       const appState = excalidrawAPI?.getAppState();
       // We only need a subset of the state
       const partialState: Partial<AppState> = {
-        exportBackground: appState.exportBackground,
-        exportScale: appState.exportScale,
-        exportWithDarkMode: appState.theme === 'dark',
-        isBindingEnabled: appState.isBindingEnabled,
-        isLoading: appState.isLoading,
-        name: appState.name,
-        theme: appState.theme,
-        viewBackgroundColor: appState.viewBackgroundColor,
-        viewModeEnabled: appState.viewModeEnabled,
-        zenModeEnabled: appState.zenModeEnabled,
-        zoom: appState.zoom,
+        exportBackground: appState?.exportBackground,
+        exportScale: appState?.exportScale,
+        exportWithDarkMode: appState?.theme === 'dark',
+        isBindingEnabled: appState?.isBindingEnabled,
+        isLoading: appState?.isLoading,
+        name: appState?.name,
+        theme: appState?.theme,
+        viewBackgroundColor: appState?.viewBackgroundColor,
+        viewModeEnabled: appState?.viewModeEnabled,
+        zenModeEnabled: appState?.zenModeEnabled,
+        zoom: appState?.zoom,
       };
       onSave(elements, partialState, files);
     } else {
@@ -172,7 +171,7 @@ export default function ExcalidrawModal({
   };
 
   const discard = () => {
-    if (elements.filter((el) => !el.isDeleted).length === 0) {
+    if (elements && elements.filter((el) => !el.isDeleted).length === 0) {
       // delete node if the scene is clear
       onDelete();
     } else {
@@ -214,7 +213,7 @@ export default function ExcalidrawModal({
   }
 
   const onChange = (
-    els: ReadonlyArray<ExcalidrawElementFragment>,
+    els: ExcalidrawInitialElements,
     _: AppState,
     fls: BinaryFiles,
   ) => {

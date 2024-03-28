@@ -4,7 +4,7 @@
     "lib": ["esnext", "dom", "dom.iterable"],
     "module": "esnext",
     "jsx": "react-jsx",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "downlevelIteration": true,
     "noEmit": true,
     "strict": true,

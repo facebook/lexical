@@ -8,7 +8,7 @@
 
 import type {Binding} from '.';
 import type {ElementNode, NodeKey, NodeMap} from 'lexical';
-import type {AbstractType, XmlElement, XmlText} from 'yjs';
+import type {AbstractType, Map as YMap, XmlElement, XmlText} from 'yjs';
 
 import {
   $getNodeByKey,
@@ -17,7 +17,6 @@ import {
   $isTextNode,
 } from 'lexical';
 import invariant from 'shared/invariant';
-import {YMap} from 'yjs/dist/src/internals';
 
 import {CollabDecoratorNode} from './CollabDecoratorNode';
 import {CollabLineBreakNode} from './CollabLineBreakNode';

@@ -9,6 +9,7 @@
   "license": "MIT",
   "version": "0.14.2",
   "main": "LexicalRichText.js",
+  "types": "index.d.ts",
   "peerDependencies": {
     "lexical": "0.14.2",
     "@lexical/selection": "0.14.2",

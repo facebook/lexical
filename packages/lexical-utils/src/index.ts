@@ -25,7 +25,7 @@ import {
   LexicalEditor,
   LexicalNode,
 } from 'lexical';
-import { IS_FIREFOX } from 'shared/environment';
+import {IS_FIREFOX} from 'shared/environment';
 import invariant from 'shared/invariant';
 import normalizeClassNames from 'shared/normalizeClassNames';
 

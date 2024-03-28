@@ -13,6 +13,7 @@ import path from 'path';
 import fs from 'fs';
 import {replaceCodePlugin} from 'vite-plugin-replace';
 import babel from '@rollup/plugin-babel';
+import commonjs from '@rollup/plugin-commonjs';
 import copy from 'rollup-plugin-copy';
 
 const moduleResolution = [
@@ -164,6 +165,9 @@ export default defineConfig({
   define: {
     "process.env.IS_PREACT": process.env.IS_PREACT,
   },
+  server: {
+    port: 3000,
+  },
   plugins: [
     replaceCodePlugin({
       replacements: [
@@ -201,6 +205,29 @@ export default defineConfig({
         })()),
       ],
     }),
+    commonjs({
+      include: '../../node_modules/**',
+      // left-hand side can be an absolute path, a path
+      // relative to the current directory, or the name
+      // of a module in node_modules
+      namedExports: {
+        '../../node_modules/react/index.js': [
+          'cloneElement',
+          'createContext',
+          'Component',
+          'createElement'
+        ],
+        '../../node_modules/react-dom/index.js': ['render', 'hydrate'],
+        '../../node_modules/react-is/index.js': [
+          'isElement',
+          'isValidElementType',
+          'ForwardRef'
+        ],
+        "../lexical-react/dist/LexicalHistoryPlugin.js": [
+          'createEmptyHistoryState'
+        ]
+      }
+    })
   ],
   resolve: {
     alias: moduleResolution,

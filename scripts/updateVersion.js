@@ -58,15 +58,22 @@ function withEsmExtension(fileName) {
   return fileName.replace(/\.js$/, '.mjs');
 }
 
-function exportEntry(file) {
+function withNodeEsmExtension(fileName) {
+  return fileName.replace(/\.js$/, '.node.mjs');
+}
+
+function exportEntry(file, types) {
+  // Bundlers such as webpack require 'types' to be first and 'default' to be
+  // last per #5731. Keys are in descending priority order.
   return {
+    /* eslint-disable sort-keys-fix/sort-keys-fix */
     import: {
-      types: `./${file.replace(/\.js$/, '.d.ts')}`,
-      // webpack requires default to be the last entry per #5731
-      // eslint-disable-next-line sort-keys-fix/sort-keys-fix
+      types: `./${types}`,
+      node: `./${withNodeEsmExtension(file)}`,
       default: `./${withEsmExtension(file)}`,
     },
-    require: `./${file}`,
+    require: {types: `./${types}`, default: `./${file}`},
+    /* eslint-enable sort-keys-fix/sort-keys-fix */
   };
 }
 
@@ -76,11 +83,14 @@ function updateModule(packageJSON, pkg) {
   }
   if (packageJSON.main) {
     packageJSON.module = withEsmExtension(packageJSON.main);
+    packageJSON.exports = {
+      '.': exportEntry(packageJSON.main, packageJSON.types || 'index.d.ts'),
+    };
   } else if (fs.existsSync(`./packages/${pkg}/dist`)) {
     const exports = {};
     for (const file of fs.readdirSync(`./packages/${pkg}/dist`)) {
       if (/^[^.]+\.js$/.test(file)) {
-        const entry = exportEntry(file);
+        const entry = exportEntry(file, file.replace(/\.js$/, '.d.ts'));
         // support for import "@lexical/react/LexicalComposer"
         exports[`./${file.replace(/\.js$/, '')}`] = entry;
         // support for import "@lexical/react/LexicalComposer.js"

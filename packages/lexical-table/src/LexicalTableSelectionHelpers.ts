@@ -1286,105 +1286,20 @@ function $handleArrowKey(
     }
 
     if (direction === 'backward' || direction === 'forward') {
-      const isExitingElementAnchor = (
-        type: string,
-        anchorNode: LexicalNode,
-      ) => {
-        return (
-          type === 'element' &&
-          (direction === 'backward'
-            ? anchorNode.getPreviousSibling() === null
-            : anchorNode.getNextSibling() === null)
-        );
-      };
-
-      const isExitingTextAnchor = (
-        type: string,
-        offset: number,
-        anchorNode: LexicalNode,
-      ) => {
-        const parentNode = $findMatchingParent(
-          anchorNode,
-          (n) => $isElementNode(n) && !n.isInline(),
-        );
-        if (!parentNode) {
-          return false;
-        }
-        const hasValidOffset =
-          direction === 'backward'
-            ? offset === 0
-            : offset === anchorNode.getTextContentSize();
-        return (
-          type === 'text' &&
-          hasValidOffset &&
-          (direction === 'backward'
-            ? parentNode.getPreviousSibling() === null
-            : parentNode.getNextSibling() === null)
-        );
-      };
-
-      const isExitingCell = (
-        tableMap: TableMapType,
-        cellValue: TableMapValueType,
-      ) => {
-        const firstCell = tableMap[0][0];
-        const lastCell = tableMap[tableMap.length - 1][tableMap[0].length - 1];
-        const {startColumn, startRow} = cellValue;
-        return direction === 'backward'
-          ? startColumn === firstCell.startColumn &&
-              startRow === firstCell.startRow
-          : startColumn === lastCell.startColumn &&
-              startRow === lastCell.startRow;
-      };
-
-      const getNextNode = (anchorNode: LexicalNode) => {
-        const parentNode = $findMatchingParent(
-          anchorNode,
-          (n) => $isElementNode(n) && !n.isInline(),
-        );
-        if (!parentNode) {
-          return undefined;
-        }
-        const anchorSibling =
-          direction === 'backward'
-            ? parentNode.getPreviousSibling()
-            : parentNode.getNextSibling();
-        return anchorSibling && $isTableNode(anchorSibling)
-          ? anchorSibling
-          : direction === 'backward'
-          ? tableNode.getPreviousSibling()
-          : tableNode.getNextSibling();
-      };
-
+      const anchorType = anchor.type;
+      const anchorOffset = anchor.offset;
       const anchorNode = anchor.getNode();
+      if (!anchorNode) {
+        return false;
+      }
+
       if (
-        !isExitingElementAnchor(anchor.type, anchorNode) &&
-        !isExitingTextAnchor(anchor.type, anchor.offset, anchorNode)
+        isExitingTableAnchor(anchorType, anchorOffset, anchorNode, direction)
       ) {
-        return false;
+        return $handleTableExit(event, anchorNode, tableNode, direction);
       }
 
-      const [tableMap, cellValue] = $computeTableMap(
-        tableNode,
-        anchorCellNode,
-        anchorCellNode,
-      );
-      if (!isExitingCell(tableMap, cellValue)) {
-        return false;
-      }
-
-      const nextNode = getNextNode(anchorNode);
-      if (!nextNode || $isTableNode(nextNode)) {
-        return false;
-      }
-
-      stopEvent(event);
-      if (direction === 'backward') {
-        nextNode.selectEnd();
-      } else {
-        nextNode.selectStart();
-      }
-      return true;
+      return false;
     }
 
     const anchorCellDom = editor.getElementByKey(anchorCellNode.__key);
@@ -1513,6 +1428,126 @@ function stopEvent(event: Event) {
   event.preventDefault();
   event.stopImmediatePropagation();
   event.stopPropagation();
+}
+
+function isExitingTableAnchor(
+  type: string,
+  offset: number,
+  anchorNode: LexicalNode,
+  direction: 'backward' | 'forward',
+) {
+  return (
+    isExitingTableElementAnchor(type, anchorNode, direction) ||
+    isExitingTableTextAnchor(type, offset, anchorNode, direction)
+  );
+}
+
+function isExitingTableElementAnchor(
+  type: string,
+  anchorNode: LexicalNode,
+  direction: 'backward' | 'forward',
+) {
+  return (
+    type === 'element' &&
+    (direction === 'backward'
+      ? anchorNode.getPreviousSibling() === null
+      : anchorNode.getNextSibling() === null)
+  );
+}
+
+function isExitingTableTextAnchor(
+  type: string,
+  offset: number,
+  anchorNode: LexicalNode,
+  direction: 'backward' | 'forward',
+) {
+  const parentNode = $findMatchingParent(
+    anchorNode,
+    (n) => $isElementNode(n) && !n.isInline(),
+  );
+  if (!parentNode) {
+    return false;
+  }
+  const hasValidOffset =
+    direction === 'backward'
+      ? offset === 0
+      : offset === anchorNode.getTextContentSize();
+  return (
+    type === 'text' &&
+    hasValidOffset &&
+    (direction === 'backward'
+      ? parentNode.getPreviousSibling() === null
+      : parentNode.getNextSibling() === null)
+  );
+}
+
+function $handleTableExit(
+  event: KeyboardEvent,
+  anchorNode: LexicalNode,
+  tableNode: TableNode,
+  direction: 'backward' | 'forward',
+) {
+  const anchorCellNode = $findMatchingParent(anchorNode, $isTableCellNode);
+  if (!$isTableCellNode(anchorCellNode)) {
+    return false;
+  }
+  const [tableMap, cellValue] = $computeTableMap(
+    tableNode,
+    anchorCellNode,
+    anchorCellNode,
+  );
+  if (!isExitingCell(tableMap, cellValue, direction)) {
+    return false;
+  }
+
+  const toNode = getExitingToNode(anchorNode, direction, tableNode);
+  if (!toNode || $isTableNode(toNode)) {
+    return false;
+  }
+
+  stopEvent(event);
+  if (direction === 'backward') {
+    toNode.selectEnd();
+  } else {
+    toNode.selectStart();
+  }
+  return true;
+}
+
+function isExitingCell(
+  tableMap: TableMapType,
+  cellValue: TableMapValueType,
+  direction: 'backward' | 'forward',
+) {
+  const firstCell = tableMap[0][0];
+  const lastCell = tableMap[tableMap.length - 1][tableMap[0].length - 1];
+  const {startColumn, startRow} = cellValue;
+  return direction === 'backward'
+    ? startColumn === firstCell.startColumn && startRow === firstCell.startRow
+    : startColumn === lastCell.startColumn && startRow === lastCell.startRow;
+}
+
+function getExitingToNode(
+  anchorNode: LexicalNode,
+  direction: 'backward' | 'forward',
+  tableNode: TableNode,
+) {
+  const parentNode = $findMatchingParent(
+    anchorNode,
+    (n) => $isElementNode(n) && !n.isInline(),
+  );
+  if (!parentNode) {
+    return undefined;
+  }
+  const anchorSibling =
+    direction === 'backward'
+      ? parentNode.getPreviousSibling()
+      : parentNode.getNextSibling();
+  return anchorSibling && $isTableNode(anchorSibling)
+    ? anchorSibling
+    : direction === 'backward'
+    ? tableNode.getPreviousSibling()
+    : tableNode.getNextSibling();
 }
 
 function $getTableEdgeCursorPosition(

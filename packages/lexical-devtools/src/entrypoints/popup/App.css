@@ -1,0 +1,33 @@
+html,
+body {
+  min-width: 286px;
+  min-height: 33px;
+}
+
+body {
+  display: flex;
+  place-items: flex-start;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  max-width: 740px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.logo {
+  height: 2em;
+  /* padding: 1.5em; */
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+.card {
+  padding-top: 2em;
+}

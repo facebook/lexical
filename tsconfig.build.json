@@ -10,7 +10,8 @@
     "**/__tests__/**",
     "node_modules/**/*",
     "packages/lexical-playground/**/*",
-    "packages/playwright-core/**/*"
+    "packages/playwright-core/**/*",
+    "packages/lexical-devtools/**"
   ],
   "extends": "./tsconfig.json"
 }

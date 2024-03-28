@@ -28,5 +28,18 @@
     "directory": "packages/lexical-markdown"
   },
   "module": "LexicalMarkdown.mjs",
-  "sideEffects": false
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.ts",
+        "node": "./LexicalMarkdown.node.mjs",
+        "default": "./LexicalMarkdown.mjs"
+      },
+      "require": {
+        "types": "./index.d.ts",
+        "default": "./LexicalMarkdown.js"
+      }
+    }
+  }
 }

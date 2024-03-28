@@ -20,5 +20,18 @@
     "directory": "packages/lexical-headless"
   },
   "module": "LexicalHeadless.mjs",
-  "sideEffects": false
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.ts",
+        "node": "./LexicalHeadless.node.mjs",
+        "default": "./LexicalHeadless.mjs"
+      },
+      "require": {
+        "types": "./index.d.ts",
+        "default": "./LexicalHeadless.js"
+      }
+    }
+  }
 }

@@ -20,5 +20,18 @@
     "directory": "packages/lexical-offset"
   },
   "module": "LexicalOffset.mjs",
-  "sideEffects": false
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.ts",
+        "node": "./LexicalOffset.node.mjs",
+        "default": "./LexicalOffset.mjs"
+      },
+      "require": {
+        "types": "./index.d.ts",
+        "default": "./LexicalOffset.js"
+      }
+    }
+  }
 }

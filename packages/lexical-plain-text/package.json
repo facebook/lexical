@@ -22,5 +22,18 @@
     "directory": "packages/lexical-plain-text"
   },
   "module": "LexicalPlainText.mjs",
-  "sideEffects": false
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.ts",
+        "node": "./LexicalPlainText.node.mjs",
+        "default": "./LexicalPlainText.mjs"
+      },
+      "require": {
+        "types": "./index.d.ts",
+        "default": "./LexicalPlainText.js"
+      }
+    }
+  }
 }

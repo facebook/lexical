@@ -23,5 +23,18 @@
     "directory": "packages/lexical-table"
   },
   "module": "LexicalTable.mjs",
-  "sideEffects": false
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.ts",
+        "node": "./LexicalTable.node.mjs",
+        "default": "./LexicalTable.mjs"
+      },
+      "require": {
+        "types": "./index.d.ts",
+        "default": "./LexicalTable.js"
+      }
+    }
+  }
 }

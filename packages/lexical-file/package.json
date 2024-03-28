@@ -22,5 +22,18 @@
     "directory": "packages/lexical-file"
   },
   "module": "LexicalFile.mjs",
-  "sideEffects": false
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.ts",
+        "node": "./LexicalFile.node.mjs",
+        "default": "./LexicalFile.mjs"
+      },
+      "require": {
+        "types": "./index.d.ts",
+        "default": "./LexicalFile.js"
+      }
+    }
+  }
 }

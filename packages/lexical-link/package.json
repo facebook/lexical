@@ -23,5 +23,18 @@
     "directory": "packages/lexical-link"
   },
   "module": "LexicalLink.mjs",
-  "sideEffects": false
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.ts",
+        "node": "./LexicalLink.node.mjs",
+        "default": "./LexicalLink.mjs"
+      },
+      "require": {
+        "types": "./index.d.ts",
+        "default": "./LexicalLink.js"
+      }
+    }
+  }
 }

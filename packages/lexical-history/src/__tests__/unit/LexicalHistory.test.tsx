@@ -272,7 +272,10 @@ describe('LexicalHistory tests', () => {
   test('undoStack selection points to the same editor', async () => {
     const editor_ = createTestEditor({namespace: 'parent'});
     const sharedHistory = createEmptyHistoryState();
-    registerHistory(editor_, sharedHistory, 1000);
+    registerHistory(editor_, sharedHistory, {
+      delay: 1000,
+      discardHistory: false,
+    });
     await editor_.update(() => {
       const root = $getRoot();
       const paragraph = $createParagraphNode();
@@ -299,7 +302,10 @@ describe('LexicalHistory tests', () => {
       },
     );
     nestedEditor._parentEditor = editor_;
-    registerHistory(nestedEditor, sharedHistory, 1000);
+    registerHistory(nestedEditor, sharedHistory, {
+      delay: 1000,
+      discardHistory: false,
+    });
 
     await nestedEditor.update(() => {
       const root = $getRoot();

@@ -18,9 +18,13 @@ export type HistoryState = {
   redoStack: Array<HistoryStateEntry>,
   undoStack: Array<HistoryStateEntry>,
 };
+export type HistoryOptions = {
+  delay: number;
+  discardHistory: boolean;
+};
 declare export function registerHistory(
   editor: LexicalEditor,
   historyState: HistoryState,
-  delay: number,
+  options: HistoryOptions,
 ): () => void;
 declare export function createEmptyHistoryState(): HistoryState;

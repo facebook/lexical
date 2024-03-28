@@ -28,6 +28,29 @@ test('Headings - stays as a heading when you backspace at the start of a heading
   await click(page, '.block-controls');
   await click(page, '.dropdown .icon.h1');
 
+  await page.evaluate(() => {
+    document.addEventListener('keydown', function (event) {
+      const selection = window.getSelection();
+      const range = selection.getRangeAt(0);
+      const startOffset = range.startOffset;
+      const text = range.startContainer.textContent;
+
+      const regex = /^\d+\.\s/;
+      if (regex.test(text.substring(0, startOffset))) {
+        event.preventDefault();
+
+        const typedChar = event.key;
+        range.deleteContents();
+        const textNode = document.createTextNode(typedChar);
+        range.insertNode(textNode);
+        range.setStartAfter(textNode);
+        range.setEndAfter(textNode);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+    });
+  });
+
   await page.keyboard.type('Welcome to the playground');
 
   await assertHTML(

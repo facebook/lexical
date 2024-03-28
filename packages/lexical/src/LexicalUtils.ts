@@ -713,13 +713,15 @@ export function $shouldInsertTextAfterOrBeforeTextNode(
   if (offset === 0) {
     return (
       !node.canInsertTextBefore() ||
-      !parent.canInsertTextBefore() ||
+      (!parent.canInsertTextBefore() && !node.isComposing()) ||
       isToken ||
       $previousSiblingDoesNotAcceptText(node)
     );
   } else if (offset === node.getTextContentSize()) {
     return (
-      !node.canInsertTextAfter() || !parent.canInsertTextAfter() || isToken
+      !node.canInsertTextAfter() ||
+      (!parent.canInsertTextAfter() && !node.isComposing()) ||
+      isToken
     );
   } else {
     return false;

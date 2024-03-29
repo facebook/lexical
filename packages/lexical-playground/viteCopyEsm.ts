@@ -27,7 +27,7 @@ export default function viteCopyEsm() {
       {dest: './build/esm/', src: './esm/*'},
       {dest: './build/', src: ['./*.png', './*.ico']},
       ...parseImportMapImportEntries().map(([mod, fn]) => ({
-        dest: path.join('./build/esm/dist', fn),
+        dest: './build/esm/dist/',
         src: path.join(
           `../${mod.replace(/^@/, '').replace(/\//g, '-')}`,
           // Fork modules are only produced by build-release, which is not run

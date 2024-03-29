@@ -1090,6 +1090,7 @@ export class TextNode extends LexicalNode {
 function convertSpanElement(domNode: Node): DOMConversionOutput {
   // domNode is a <span> since we matched it by nodeName
   const span = domNode as HTMLSpanElement;
+  const color = span.style.color;
   // Google Docs uses span tags + font-weight for bold text
   const hasBoldFontWeight = span.style.fontWeight === '700';
   // Google Docs uses span tags + text-decoration: line-through for strikethrough text
@@ -1106,6 +1107,9 @@ function convertSpanElement(domNode: Node): DOMConversionOutput {
     forChild: (lexicalNode) => {
       if (!$isTextNode(lexicalNode)) {
         return lexicalNode;
+      }
+      if (color){
+        lexicalNode.setStyle(lexicalNode.getStyle() + `color: ${color};`);
       }
       if (hasBoldFontWeight) {
         lexicalNode.toggleFormat('bold');

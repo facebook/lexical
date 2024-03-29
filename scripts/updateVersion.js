@@ -9,6 +9,7 @@
 'use strict';
 
 const fs = require('fs-extra');
+const glob = require('glob');
 
 const packages = {
   '@lexical/clipboard': 'lexical-clipboard',
@@ -49,6 +50,15 @@ function updateVersion() {
     updateDependencies(packageJSON, version);
     updateModule(packageJSON, pkg);
     fs.writeJsonSync(`./packages/${pkg}/package.json`, packageJSON, {
+      spaces: 2,
+    });
+  });
+  // update dependencies in the examples
+  glob.sync('./examples/*/package.json').forEach((fn) => {
+    const packageJSON = fs.readJsonSync(fn);
+    packageJSON.version = version;
+    updateDependencies(packageJSON, version);
+    fs.writeJsonSync(fn, packageJSON, {
       spaces: 2,
     });
   });

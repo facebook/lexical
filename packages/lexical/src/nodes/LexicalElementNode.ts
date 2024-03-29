@@ -550,9 +550,6 @@ export class ElementNode extends LexicalNode {
   isShadowRoot(): boolean {
     return false;
   }
-  canMergeWith(node: ElementNode): boolean {
-    return false;
-  }
   extractWithChild(
     child: LexicalNode,
     selection: BaseSelection | null,

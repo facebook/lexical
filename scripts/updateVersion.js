@@ -112,22 +112,34 @@ function updateModule(packageJSON, pkg) {
   }
 }
 
+function sortDependencies(packageJSON, key, deps) {
+  const entries = Object.entries(deps);
+  if (entries.length === 0) {
+    delete packageJSON[key];
+  } else {
+    packageJSON[key] = Object.fromEntries(
+      entries.sort((a, b) => a[0].localeCompare(b[0])),
+    );
+  }
+}
+
 function updateDependencies(packageJSON, version) {
-  const {dependencies, peerDependencies} = packageJSON;
-  if (dependencies !== undefined) {
-    Object.keys(dependencies).forEach((dep) => {
-      if (packages[dep] !== undefined) {
-        dependencies[dep] = version;
-      }
-    });
-  }
-  if (peerDependencies !== undefined) {
-    Object.keys(peerDependencies).forEach((peerDep) => {
-      if (packages[peerDep] !== undefined) {
-        peerDependencies[peerDep] = version;
-      }
-    });
-  }
+  const {dependencies = {}, peerDependencies = {}} = packageJSON;
+  Object.keys(dependencies).forEach((dep) => {
+    if (packages[dep] !== undefined) {
+      dependencies[dep] = version;
+    }
+  });
+  // Move peerDependencies on lexical monorepo packages to dependencies
+  // per #5783
+  Object.keys(peerDependencies).forEach((peerDep) => {
+    if (packages[peerDep] !== undefined) {
+      delete peerDependencies[peerDep];
+      dependencies[peerDep] = version;
+    }
+  });
+  sortDependencies(packageJSON, 'dependencies', dependencies);
+  sortDependencies(packageJSON, 'peerDependencies', peerDependencies);
 }
 
 updateVersion();

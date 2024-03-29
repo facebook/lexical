@@ -128,4 +128,4 @@ editor.registerUpdateListener(({editorState}) => {
 
 Here we have simplest Lexical setup in rich text configuration (`@lexical/rich-text`) with history (`@lexical/history`) and accessibility (`@lexical/dragon`) features enabled.
 
-<iframe width="100%" height="400" src="https://stackblitz.com/github/facebook/lexical/tree/main/examples/vanilla-js?embed=1&file=src%2Fmain.ts&terminalHeight=0"></iframe>
+<iframe width="100%" height="400" src="https://stackblitz.com/github/facebook/lexical/tree/main/examples/vanilla-js?embed=1&file=src%2Fmain.ts&terminalHeight=0&ctl=1"></iframe>

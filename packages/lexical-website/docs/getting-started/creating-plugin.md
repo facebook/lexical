@@ -183,4 +183,4 @@ mergeRegister(
 );
 ```
 
-<iframe width="100%" height="400" src="https://stackblitz.com/github/StyleT/lexical/tree/feature/vanilla-js-plugin-example/examples/vanilla-js-plugin?embed=1&file=src%2Femoji-plugin%2FEmojiPlugin.ts&terminalHeight=1&ctl=1"></iframe>
+<iframe width="100%" height="400" src="https://stackblitz.com/github/facebook/lexical/tree/main/examples/vanilla-js-plugin?embed=1&file=src%2Femoji-plugin%2FEmojiPlugin.ts&terminalHeight=1&ctl=1"></iframe>

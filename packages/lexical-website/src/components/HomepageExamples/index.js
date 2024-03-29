@@ -23,7 +23,7 @@ const EXAMPLES = [
     ),
     id: 'example-feature-1',
     label: 'Simple Setup',
-    src: 'https://stackblitz.com/github/facebook/lexical/tree/main/examples/vanilla-js?embed=1&file=src%2Fmain.ts&terminalHeight=0',
+    src: 'https://stackblitz.com/github/facebook/lexical/tree/main/examples/vanilla-js?embed=1&file=src%2Fmain.ts&terminalHeight=0&ctl=1',
   },
   {
     content: (
@@ -38,7 +38,7 @@ const EXAMPLES = [
     ),
     id: 'example-feature-2',
     label: 'Powerful Features',
-    src: 'https://stackblitz.com/github/facebook/lexical/tree/main/examples/react-rich?embed=1&file=src%2FApp.tsx&terminalHeight=0',
+    src: 'https://stackblitz.com/github/facebook/lexical/tree/main/examples/react-rich?embed=1&file=src%2FApp.tsx&terminalHeight=0&ctl=1',
   },
   {
     content: (
@@ -50,7 +50,7 @@ const EXAMPLES = [
     ),
     id: 'example-feature-3',
     label: 'Built to Extend',
-    src: 'https://stackblitz.com/github/StyleT/lexical/tree/feature/vanilla-js-plugin-example/examples/vanilla-js-plugin?embed=1&file=src%2Femoji-plugin%2FEmojiPlugin.ts&terminalHeight=0',
+    src: 'https://stackblitz.com/github/facebook/lexical/tree/main/examples/vanilla-js-plugin?embed=1&file=src%2Femoji-plugin%2FEmojiPlugin.ts&terminalHeight=0&ctl=1',
   },
 ];
 

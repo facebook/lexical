@@ -385,14 +385,6 @@ export class ListItemNode extends ElementNode {
     return this;
   }
 
-  canInsertAfter(node: LexicalNode): boolean {
-    return $isListItemNode(node);
-  }
-
-  canReplaceWith(replacement: LexicalNode): boolean {
-    return $isListItemNode(replacement);
-  }
-
   canMergeWith(node: LexicalNode): boolean {
     return $isParagraphNode(node) || $isListItemNode(node);
   }

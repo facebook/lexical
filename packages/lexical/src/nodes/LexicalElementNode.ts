@@ -525,12 +525,6 @@ export class ElementNode extends LexicalNode {
   excludeFromCopy(destination?: 'clone' | 'html'): boolean {
     return false;
   }
-  canReplaceWith(replacement: LexicalNode): boolean {
-    return true;
-  }
-  canInsertAfter(node: LexicalNode): boolean {
-    return true;
-  }
   canBeEmpty(): boolean {
     return true;
   }

@@ -12,14 +12,12 @@
   "version": "0.14.2",
   "main": "LexicalClipboard.js",
   "types": "index.d.ts",
-  "peerDependencies": {
-    "lexical": "0.14.2"
-  },
   "dependencies": {
-    "@lexical/utils": "0.14.2",
+    "@lexical/html": "0.14.2",
     "@lexical/list": "0.14.2",
     "@lexical/selection": "0.14.2",
-    "@lexical/html": "0.14.2"
+    "@lexical/utils": "0.14.2",
+    "lexical": "0.14.2"
   },
   "repository": {
     "type": "git",

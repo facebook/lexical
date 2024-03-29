@@ -11,11 +11,9 @@
   "version": "0.14.2",
   "main": "LexicalCode.js",
   "types": "index.d.ts",
-  "peerDependencies": {
-    "lexical": "0.14.2"
-  },
   "dependencies": {
     "@lexical/utils": "0.14.2",
+    "lexical": "0.14.2",
     "prismjs": "^1.27.0"
   },
   "repository": {

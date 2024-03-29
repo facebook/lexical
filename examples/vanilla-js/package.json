@@ -9,11 +9,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "lexical": "0.14.2",
+    "@lexical/dragon": "0.14.2",
     "@lexical/history": "0.14.2",
     "@lexical/rich-text": "0.14.2",
     "@lexical/utils": "0.14.2",
-    "@lexical/dragon": "0.14.2"
+    "lexical": "0.14.2"
   },
   "devDependencies": {
     "typescript": "^5.2.2",

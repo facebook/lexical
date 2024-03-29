@@ -13,9 +13,6 @@
   "version": "0.14.2",
   "main": "LexicalFile.js",
   "types": "index.d.ts",
-  "peerDependencies": {
-    "lexical": "0.14.2"
-  },
   "repository": {
     "type": "git",
     "url": "https://github.com/facebook/lexical",
@@ -35,5 +32,8 @@
         "default": "./LexicalFile.js"
       }
     }
+  },
+  "dependencies": {
+    "lexical": "0.14.2"
   }
 }

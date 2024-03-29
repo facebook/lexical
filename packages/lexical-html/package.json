@@ -11,9 +11,6 @@
   "version": "0.14.2",
   "main": "LexicalHtml.js",
   "types": "index.d.ts",
-  "peerDependencies": {
-    "lexical": "0.14.2"
-  },
   "repository": {
     "type": "git",
     "url": "https://github.com/facebook/lexical",
@@ -21,7 +18,8 @@
   },
   "dependencies": {
     "@lexical/selection": "0.14.2",
-    "@lexical/utils": "0.14.2"
+    "@lexical/utils": "0.14.2",
+    "lexical": "0.14.2"
   },
   "module": "LexicalHtml.mjs",
   "sideEffects": false,

@@ -11,13 +11,11 @@
   "version": "0.14.2",
   "main": "LexicalUtils.js",
   "types": "index.d.ts",
-  "peerDependencies": {
-    "lexical": "0.14.2"
-  },
   "dependencies": {
     "@lexical/list": "0.14.2",
+    "@lexical/selection": "0.14.2",
     "@lexical/table": "0.14.2",
-    "@lexical/selection": "0.14.2"
+    "lexical": "0.14.2"
   },
   "repository": {
     "type": "git",

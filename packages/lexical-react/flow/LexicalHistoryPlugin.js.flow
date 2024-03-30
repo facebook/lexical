@@ -22,18 +22,13 @@ export type HistoryState = {
 };
 
 export type HistoryOptions = {
-  delay: number
-  discardHistory: boolean
-}
-
-export type HistoryOptions = {
-  delay: number
-  discardHistory: boolean
-}
+  delay: number,
+  discardHistory: boolean,
+};
 
 declare export function HistoryPlugin({
   externalHistoryState?: HistoryState,
-  options?: HistoryOptions
+  options?: HistoryOptions,
 }): React$Node;
 
 declare export function createEmptyHistoryState(): HistoryState;

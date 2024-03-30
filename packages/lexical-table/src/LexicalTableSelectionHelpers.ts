@@ -27,8 +27,8 @@ import type {
 import {$findMatchingParent} from '@lexical/utils';
 import {
   $createParagraphNode,
-  $createTextNode,
   $createRangeSelectionFromDom,
+  $createTextNode,
   $getNearestNodeFromDOMNode,
   $getPreviousSelection,
   $getSelection,

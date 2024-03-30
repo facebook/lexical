@@ -66,17 +66,6 @@ async function fillTablePartiallyWithText(page) {
   await page.keyboard.press('c');
 }
 
-async function focusCollabEditor(page) {
-  await focusEditor(page);
-  // In collaboration mode, the editor starts off empty without a default paragraph.
-  // This will disrupt selection paths when a table is inserted via the select dropdown.
-  // To handle this, we simulate typing 'a' and then deleting it.
-  // This will add the paragraph that guarantees the selection paths are the same
-  // as in the non-collab mode.
-  await page.keyboard.type('a');
-  await page.keyboard.press('Backspace');
-}
-
 test.describe('Tables', () => {
   test(`Can a table be inserted from the toolbar`, async ({
     page,
@@ -169,11 +158,7 @@ test.describe('Tables', () => {
       await initialize({isCollab, page});
       test.skip(isPlainText);
 
-      if (isCollab) {
-        await focusCollabEditor(page);
-      } else {
-        await focusEditor(page);
-      }
+      await focusEditor(page);
       await insertTable(page, 2, 2);
 
       await assertSelection(page, {
@@ -217,11 +202,7 @@ test.describe('Tables', () => {
       await initialize({isCollab, page});
       test.skip(isPlainText);
 
-      if (isCollab) {
-        await focusCollabEditor(page);
-      } else {
-        await focusEditor(page);
-      }
+      await focusEditor(page);
       await insertTable(page, 2, 2);
 
       await moveRight(page, 3);
@@ -266,11 +247,7 @@ test.describe('Tables', () => {
       await initialize({isCollab, page});
       test.skip(isPlainText);
 
-      if (isCollab) {
-        await focusCollabEditor(page);
-      } else {
-        await focusEditor(page);
-      }
+      await focusEditor(page);
       await insertTable(page, 2, 2);
       await insertTable(page, 2, 2);
 
@@ -298,11 +275,7 @@ test.describe('Tables', () => {
       await initialize({isCollab, page});
       test.skip(isPlainText);
 
-      if (isCollab) {
-        await focusCollabEditor(page);
-      } else {
-        await focusEditor(page);
-      }
+      await focusEditor(page);
       await insertTable(page, 2, 2);
       await insertTable(page, 2, 2);
 
@@ -335,11 +308,7 @@ test.describe('Tables', () => {
     // Table edge cursor doesn't show up in Firefox.
     test.fixme(browserName === 'firefox');
 
-    if (isCollab) {
-      await focusCollabEditor(page);
-    } else {
-      await focusEditor(page);
-    }
+    await focusEditor(page);
     await insertTable(page, 2, 2);
 
     await moveDown(page, 2);
@@ -380,7 +349,7 @@ test.describe('Tables', () => {
           </tr>
         </table>
       `,
-      '',
+      undefined,
       {ignoreClasses: true},
     );
 
@@ -426,7 +395,7 @@ test.describe('Tables', () => {
         </table>
         <p><br /></p>
       `,
-      '',
+      undefined,
       {ignoreClasses: true},
     );
   });
@@ -444,11 +413,7 @@ test.describe('Tables', () => {
     // After typing, the dom selection gets set back to the internal previous selection during the update.
     test.fixme(LEGACY_EVENTS);
 
-    if (isCollab) {
-      await focusCollabEditor(page);
-    } else {
-      await focusEditor(page);
-    }
+    await focusEditor(page);
     await insertTable(page, 2, 2);
 
     await moveDown(page, 2);
@@ -487,7 +452,7 @@ test.describe('Tables', () => {
         </table>
         <p dir="ltr"><span data-lexical-text="true">a</span></p>
       `,
-      '',
+      undefined,
       {ignoreClasses: true},
     );
   });
@@ -500,11 +465,7 @@ test.describe('Tables', () => {
     await initialize({isCollab, page});
     test.skip(isPlainText);
 
-    if (isCollab) {
-      await focusCollabEditor(page);
-    } else {
-      await focusEditor(page);
-    }
+    await focusEditor(page);
     await insertTable(page, 2, 2);
 
     await moveDown(page, 2);

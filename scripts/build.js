@@ -89,6 +89,13 @@ const lexicalReactModuleExternals = lexicalReactModules.map((module) => {
   return external;
 });
 
+function resolveExternalEsm(id) {
+  if (/^prismjs\/components\/prism-/.test(id)) {
+    return `${id}.js`;
+  }
+  return id;
+}
+
 const externals = [
   'lexical',
   'prismjs/components/prism-core',
@@ -277,6 +284,7 @@ async function build(name, inputFile, outputPath, outputFile, isProd, format) {
     format, // change between es and cjs modules
     freeze: false,
     interop: format === 'esm' ? 'esModule' : false,
+    paths: format === 'esm' ? resolveExternalEsm : undefined,
   };
   const result = await rollup.rollup(inputOptions);
   const {output} = await result.write(outputOptions);

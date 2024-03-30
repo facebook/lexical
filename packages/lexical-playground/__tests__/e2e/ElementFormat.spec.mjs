@@ -20,7 +20,7 @@ import {
 test.describe('Element format', () => {
   test.beforeEach(({isCollab, isPlainText, page}) => {
     test.skip(isPlainText);
-    initialize({isCollab, page});
+    return initialize({isCollab, page});
   });
 
   test('Can indent/align paragraph when caret is within link', async ({

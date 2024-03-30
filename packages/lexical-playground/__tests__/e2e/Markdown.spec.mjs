@@ -377,7 +377,7 @@ async function assertMarkdownImportExport(
 test.describe('Markdown', () => {
   test.beforeEach(({isCollab, isPlainText, page}) => {
     test.skip(isPlainText);
-    initialize({isCollab, page});
+    return initialize({isCollab, page});
   });
 
   const BASE_BLOCK_SHORTCUTS = [

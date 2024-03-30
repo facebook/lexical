@@ -29,7 +29,7 @@ import {
 test.describe('Clear All Formatting', () => {
   test.beforeEach(({isPlainText, isCollab, page}) => {
     test.skip(isPlainText);
-    initialize({isCollab, page});
+    return initialize({isCollab, page});
   });
   test(`Can clear BIU formatting`, async ({page}) => {
     await focusEditor(page);

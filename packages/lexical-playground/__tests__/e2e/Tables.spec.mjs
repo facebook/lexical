@@ -7,6 +7,7 @@
  */
 
 import {
+  deleteBackward,
   moveDown,
   moveLeft,
   moveRight,
@@ -31,6 +32,7 @@ import {
   insertTableColumnBefore,
   insertTableRowBelow,
   IS_COLLAB,
+  LEGACY_EVENTS,
   mergeTableCells,
   pasteFromClipboard,
   SAMPLE_IMAGE_URL,
@@ -62,6 +64,17 @@ async function fillTablePartiallyWithText(page) {
   await page.keyboard.press('f');
   await page.keyboard.press('ArrowUp');
   await page.keyboard.press('c');
+}
+
+async function focusCollabEditor(page) {
+  await focusEditor(page);
+  // In collaboration mode, the editor starts off empty without a default paragraph.
+  // This will disrupt selection paths when a table is inserted via the select dropdown.
+  // To handle this, we simulate typing 'a' and then deleting it.
+  // This will add the paragraph that guarantees the selection paths are the same
+  // as in the non-collab mode.
+  await page.keyboard.type('a');
+  await page.keyboard.press('Backspace');
 }
 
 test.describe('Tables', () => {
@@ -156,8 +169,13 @@ test.describe('Tables', () => {
       await initialize({isCollab, page});
       test.skip(isPlainText);
 
-      await focusEditor(page);
+      if (isCollab) {
+        await focusCollabEditor(page);
+      } else {
+        await focusEditor(page);
+      }
       await insertTable(page, 2, 2);
+
       await assertSelection(page, {
         anchorOffset: 0,
         anchorPath: [1, 0, 0, 0],
@@ -165,7 +183,7 @@ test.describe('Tables', () => {
         focusPath: [1, 0, 0, 0],
       });
 
-      await page.keyboard.press('ArrowLeft');
+      await moveLeft(page, 1);
       await assertSelection(page, {
         anchorOffset: 0,
         anchorPath: [0],
@@ -173,7 +191,7 @@ test.describe('Tables', () => {
         focusPath: [0],
       });
 
-      await page.keyboard.press('ArrowRight');
+      await moveRight(page, 1);
       await page.keyboard.type('ab');
       await assertSelection(page, {
         anchorOffset: 2,
@@ -182,14 +200,12 @@ test.describe('Tables', () => {
         focusPath: [1, 0, 0, 0, 0, 0],
       });
 
-      await page.keyboard.press('ArrowLeft');
-      await page.keyboard.press('ArrowLeft');
-      await page.keyboard.press('ArrowLeft');
+      await moveRight(page, 3);
       await assertSelection(page, {
         anchorOffset: 0,
-        anchorPath: [0],
+        anchorPath: [1, 1, 1, 0],
         focusOffset: 0,
-        focusPath: [0],
+        focusPath: [1, 1, 1, 0],
       });
     });
 
@@ -201,12 +217,14 @@ test.describe('Tables', () => {
       await initialize({isCollab, page});
       test.skip(isPlainText);
 
-      await focusEditor(page);
+      if (isCollab) {
+        await focusCollabEditor(page);
+      } else {
+        await focusEditor(page);
+      }
       await insertTable(page, 2, 2);
 
-      await page.keyboard.press('ArrowRight');
-      await page.keyboard.press('ArrowRight');
-      await page.keyboard.press('ArrowRight');
+      await moveRight(page, 3);
       await assertSelection(page, {
         anchorOffset: 0,
         anchorPath: [1, 1, 1, 0],
@@ -214,7 +232,7 @@ test.describe('Tables', () => {
         focusPath: [1, 1, 1, 0],
       });
 
-      await page.keyboard.press('ArrowRight');
+      await moveRight(page, 1);
       await assertSelection(page, {
         anchorOffset: 0,
         anchorPath: [2],
@@ -222,7 +240,7 @@ test.describe('Tables', () => {
         focusPath: [2],
       });
 
-      await page.keyboard.press('ArrowLeft');
+      await moveLeft(page, 1);
       await page.keyboard.type('ab');
       await assertSelection(page, {
         anchorOffset: 2,
@@ -231,9 +249,7 @@ test.describe('Tables', () => {
         focusPath: [1, 1, 1, 0, 0, 0],
       });
 
-      await page.keyboard.press('ArrowRight');
-      await page.keyboard.press('ArrowRight');
-      await page.keyboard.press('ArrowRight');
+      await moveRight(page, 3);
       await assertSelection(page, {
         anchorOffset: 0,
         anchorPath: [2],
@@ -250,7 +266,11 @@ test.describe('Tables', () => {
       await initialize({isCollab, page});
       test.skip(isPlainText);
 
-      await focusEditor(page);
+      if (isCollab) {
+        await focusCollabEditor(page);
+      } else {
+        await focusEditor(page);
+      }
       await insertTable(page, 2, 2);
       await insertTable(page, 2, 2);
 
@@ -261,7 +281,7 @@ test.describe('Tables', () => {
         focusPath: [1, 0, 0, 1, 0, 0, 0],
       });
 
-      await page.keyboard.press('ArrowLeft');
+      await moveLeft(page, 1);
       await assertSelection(page, {
         anchorOffset: 0,
         anchorPath: [1, 0, 0, 0],
@@ -278,13 +298,15 @@ test.describe('Tables', () => {
       await initialize({isCollab, page});
       test.skip(isPlainText);
 
-      await focusEditor(page);
+      if (isCollab) {
+        await focusCollabEditor(page);
+      } else {
+        await focusEditor(page);
+      }
       await insertTable(page, 2, 2);
       await insertTable(page, 2, 2);
 
-      await page.keyboard.press('ArrowRight');
-      await page.keyboard.press('ArrowRight');
-      await page.keyboard.press('ArrowRight');
+      await moveRight(page, 3);
       await assertSelection(page, {
         anchorOffset: 0,
         anchorPath: [1, 0, 0, 1, 1, 1, 0],
@@ -292,7 +314,7 @@ test.describe('Tables', () => {
         focusPath: [1, 0, 0, 1, 1, 1, 0],
       });
 
-      await page.keyboard.press('ArrowRight');
+      await moveRight(page, 1);
       await assertSelection(page, {
         anchorOffset: 0,
         anchorPath: [1, 0, 0, 2],
@@ -306,24 +328,72 @@ test.describe('Tables', () => {
     page,
     isPlainText,
     isCollab,
+    browserName,
   }) => {
     await initialize({isCollab, page});
     test.skip(isPlainText);
+    // Table edge cursor doesn't show up in Firefox.
+    test.fixme(browserName === 'firefox');
 
-    await focusEditor(page);
+    if (isCollab) {
+      await focusCollabEditor(page);
+    } else {
+      await focusEditor(page);
+    }
     await insertTable(page, 2, 2);
 
-    await page.keyboard.press('ArrowDown');
-    await page.keyboard.press('ArrowDown');
-    await page.keyboard.press('Backspace');
+    await moveDown(page, 2);
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [2],
+      focusOffset: 0,
+      focusPath: [2],
+    });
+
+    await deleteBackward(page);
     await assertSelection(page, {
       anchorOffset: 0,
       anchorPath: [1, 1, 1, 0],
       focusOffset: 0,
       focusPath: [1, 1, 1, 0],
     });
+    await assertHTML(
+      page,
+      html`
+        <p><br /></p>
+        <table>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+        </table>
+      `,
+      '',
+      {ignoreClasses: true},
+    );
 
-    await page.keyboard.press('ArrowRight');
+    await moveRight(page, 1);
+    // The native window selection should be on the root, whereas
+    // the editor selection should be on the last cell of the table.
+    await assertSelection(page, {
+      anchorOffset: 2,
+      anchorPath: [],
+      focusOffset: 2,
+      focusPath: [],
+    });
+
     await page.keyboard.press('Enter');
     await assertSelection(page, {
       anchorOffset: 0,
@@ -331,6 +401,7 @@ test.describe('Tables', () => {
       focusOffset: 0,
       focusPath: [2],
     });
+
     await assertHTML(
       page,
       html`
@@ -355,7 +426,7 @@ test.describe('Tables', () => {
         </table>
         <p><br /></p>
       `,
-      undefined,
+      '',
       {ignoreClasses: true},
     );
   });
@@ -364,18 +435,26 @@ test.describe('Tables', () => {
     page,
     isPlainText,
     isCollab,
+    browserName,
   }) => {
     await initialize({isCollab, page});
     test.skip(isPlainText);
+    // Table edge cursor doesn't show up in Firefox.
+    test.fixme(browserName === 'firefox');
+    // After typing, the dom selection gets set back to the internal previous selection during the update.
+    test.fixme(LEGACY_EVENTS);
 
-    await focusEditor(page);
+    if (isCollab) {
+      await focusCollabEditor(page);
+    } else {
+      await focusEditor(page);
+    }
     await insertTable(page, 2, 2);
 
-    await page.keyboard.press('ArrowDown');
-    await page.keyboard.press('ArrowDown');
-    await page.keyboard.press('Backspace');
+    await moveDown(page, 2);
+    await deleteBackward(page);
 
-    await page.keyboard.press('ArrowRight');
+    await moveRight(page, 1);
     await page.keyboard.type('a');
     await assertSelection(page, {
       anchorOffset: 1,
@@ -408,7 +487,7 @@ test.describe('Tables', () => {
         </table>
         <p dir="ltr"><span data-lexical-text="true">a</span></p>
       `,
-      undefined,
+      '',
       {ignoreClasses: true},
     );
   });
@@ -421,10 +500,14 @@ test.describe('Tables', () => {
     await initialize({isCollab, page});
     test.skip(isPlainText);
 
-    await focusEditor(page);
+    if (isCollab) {
+      await focusCollabEditor(page);
+    } else {
+      await focusEditor(page);
+    }
     await insertTable(page, 2, 2);
-    await page.keyboard.press('ArrowDown');
-    await page.keyboard.press('ArrowDown');
+
+    await moveDown(page, 2);
     await assertSelection(page, {
       anchorOffset: 0,
       anchorPath: [2],
@@ -432,7 +515,7 @@ test.describe('Tables', () => {
       focusPath: [2],
     });
 
-    await page.keyboard.press('ArrowLeft');
+    await moveLeft(page, 1);
     await assertSelection(page, {
       anchorOffset: 0,
       anchorPath: [1, 1, 1, 0],

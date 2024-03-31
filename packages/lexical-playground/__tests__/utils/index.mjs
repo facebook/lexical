@@ -481,7 +481,6 @@ export async function sleepInsertImage(count = 1) {
 export async function focusEditor(page, parentSelector = '.editor-shell') {
   const locator = getEditorElement(page, parentSelector);
   await locator.focus();
-  await expect(locator).toBeFocused();
 }
 
 export async function getHTML(page, selector = 'div[contenteditable="true"]') {

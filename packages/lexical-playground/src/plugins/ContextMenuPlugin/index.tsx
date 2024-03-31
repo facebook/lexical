@@ -6,6 +6,7 @@
  *
  */
 
+import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   LexicalContextMenuPlugin,
@@ -13,13 +14,14 @@ import {
 } from '@lexical/react/LexicalContextMenuPlugin';
 import {
   type LexicalNode,
+  $getNearestNodeFromDOMNode,
   $getSelection,
   $isRangeSelection,
   COPY_COMMAND,
   CUT_COMMAND,
   PASTE_COMMAND,
 } from 'lexical';
-import {useCallback, useMemo} from 'react';
+import {useCallback} from 'react';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 
@@ -103,87 +105,85 @@ export class ContextMenuOption extends MenuOption {
 export default function ContextMenuPlugin(): JSX.Element {
   const [editor] = useLexicalComposerContext();
 
-  const options = useMemo(() => {
-    return [
-      new ContextMenuOption(`Copy`, {
-        onSelect: (_node) => {
-          editor.dispatchCommand(COPY_COMMAND, null);
-        },
-      }),
-      new ContextMenuOption(`Cut`, {
-        onSelect: (_node) => {
-          editor.dispatchCommand(CUT_COMMAND, null);
-        },
-      }),
-      new ContextMenuOption(`Paste`, {
-        onSelect: (_node) => {
-          navigator.clipboard.read().then(async (...args) => {
-            const data = new DataTransfer();
+  const defaultOptions = [
+    new ContextMenuOption(`Copy`, {
+      onSelect: (_node) => {
+        editor.dispatchCommand(COPY_COMMAND, null);
+      },
+    }),
+    new ContextMenuOption(`Cut`, {
+      onSelect: (_node) => {
+        editor.dispatchCommand(CUT_COMMAND, null);
+      },
+    }),
+    new ContextMenuOption(`Paste`, {
+      onSelect: (_node) => {
+        navigator.clipboard.read().then(async (...args) => {
+          const data = new DataTransfer();
 
-            const items = await navigator.clipboard.read();
-            const item = items[0];
+          const items = await navigator.clipboard.read();
+          const item = items[0];
 
-            const permission = await navigator.permissions.query({
-              // @ts-expect-error These types are incorrect.
-              name: 'clipboard-read',
-            });
-            if (permission.state === 'denied') {
-              alert('Not allowed to paste from clipboard.');
-              return;
-            }
-
-            for (const type of item.types) {
-              const dataString = await (await item.getType(type)).text();
-              data.setData(type, dataString);
-            }
-
-            const event = new ClipboardEvent('paste', {
-              clipboardData: data,
-            });
-
-            editor.dispatchCommand(PASTE_COMMAND, event);
+          const permission = await navigator.permissions.query({
+            // @ts-expect-error These types are incorrect.
+            name: 'clipboard-read',
           });
-        },
-      }),
-      new ContextMenuOption(`Paste as Plain Text`, {
-        onSelect: (_node) => {
-          navigator.clipboard.read().then(async (...args) => {
-            const permission = await navigator.permissions.query({
-              // @ts-expect-error These types are incorrect.
-              name: 'clipboard-read',
-            });
-
-            if (permission.state === 'denied') {
-              alert('Not allowed to paste from clipboard.');
-              return;
-            }
-
-            const data = new DataTransfer();
-            const items = await navigator.clipboard.readText();
-            data.setData('text/plain', items);
-
-            const event = new ClipboardEvent('paste', {
-              clipboardData: data,
-            });
-            editor.dispatchCommand(PASTE_COMMAND, event);
-          });
-        },
-      }),
-      new ContextMenuOption(`Delete Node`, {
-        onSelect: (_node) => {
-          const selection = $getSelection();
-          if ($isRangeSelection(selection)) {
-            const currentNode = selection.anchor.getNode();
-            const ancestorNodeWithRootAsParent = currentNode
-              .getParents()
-              .at(-2);
-
-            ancestorNodeWithRootAsParent?.remove();
+          if (permission.state === 'denied') {
+            alert('Not allowed to paste from clipboard.');
+            return;
           }
-        },
-      }),
-    ];
-  }, [editor]);
+
+          for (const type of item.types) {
+            const dataString = await (await item.getType(type)).text();
+            data.setData(type, dataString);
+          }
+
+          const event = new ClipboardEvent('paste', {
+            clipboardData: data,
+          });
+
+          editor.dispatchCommand(PASTE_COMMAND, event);
+        });
+      },
+    }),
+    new ContextMenuOption(`Paste as Plain Text`, {
+      onSelect: (_node) => {
+        navigator.clipboard.read().then(async (...args) => {
+          const permission = await navigator.permissions.query({
+            // @ts-expect-error These types are incorrect.
+            name: 'clipboard-read',
+          });
+
+          if (permission.state === 'denied') {
+            alert('Not allowed to paste from clipboard.');
+            return;
+          }
+
+          const data = new DataTransfer();
+          const items = await navigator.clipboard.readText();
+          data.setData('text/plain', items);
+
+          const event = new ClipboardEvent('paste', {
+            clipboardData: data,
+          });
+          editor.dispatchCommand(PASTE_COMMAND, event);
+        });
+      },
+    }),
+    new ContextMenuOption(`Delete Node`, {
+      onSelect: (_node) => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          const currentNode = selection.anchor.getNode();
+          const ancestorNodeWithRootAsParent = currentNode.getParents().at(-2);
+
+          ancestorNodeWithRootAsParent?.remove();
+        }
+      },
+    }),
+  ];
+
+  const [options, setOptions] = React.useState(defaultOptions);
 
   const onSelectOption = useCallback(
     (
@@ -199,10 +199,32 @@ export default function ContextMenuPlugin(): JSX.Element {
     [editor],
   );
 
+  const onWillOpen = (event: MouseEvent) => {
+    let newOptions = defaultOptions;
+    editor.update(() => {
+      const node = $getNearestNodeFromDOMNode(event.target as Element);
+      if (node) {
+        const parent = node.getParent();
+        if ($isLinkNode(parent)) {
+          newOptions = [
+            new ContextMenuOption(`Remove Link`, {
+              onSelect: (_node) => {
+                editor.dispatchCommand(TOGGLE_LINK_COMMAND, null);
+              },
+            }),
+            ...defaultOptions,
+          ];
+        }
+      }
+    });
+    setOptions(newOptions);
+  };
+
   return (
     <LexicalContextMenuPlugin
       options={options}
       onSelectOption={onSelectOption}
+      onWillOpen={onWillOpen}
       menuRenderFn={(
         anchorElementRef,
         {

@@ -494,9 +494,7 @@ export function useMenuAnchorRef(
     if (rootElement !== null && resolution !== null) {
       const {left, top, width, height} = resolution.getRect();
       const anchorHeight = anchorElementRef.current.offsetHeight; // use to position under anchor
-      containerDiv.style.top = `${
-        top + window.pageYOffset + anchorHeight + 3
-      }px`;
+      containerDiv.style.top = `${top + anchorHeight + 3}px`;
       containerDiv.style.left = `${left + window.pageXOffset}px`;
       containerDiv.style.height = `${height}px`;
       containerDiv.style.width = `${width}px`;

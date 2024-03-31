@@ -466,19 +466,12 @@ export function applyTableHandlers(
               selection,
               tableNode,
             );
-            if (!edgePosition) {
-              return false;
+            if (edgePosition) {
+              $insertParagraphAtTableEdge(edgePosition, tableNode, [
+                $createTextNode(payload),
+              ]);
+              return true;
             }
-            // TODO: Add support for nested tables
-            let paragraphNode;
-            if (edgePosition === 'first') {
-              paragraphNode = $insertParagraphAtTableEdge(tableNode, 'before');
-            } else {
-              paragraphNode = $insertParagraphAtTableEdge(tableNode, 'after');
-            }
-            paragraphNode.append($createTextNode(payload));
-            paragraphNode.selectEnd();
-            return true;
           }
         }
 
@@ -850,18 +843,11 @@ export function applyTableHandlers(
           selection,
           tableNode,
         );
-        if (!edgePosition) {
-          return false;
+        if (edgePosition) {
+          $insertParagraphAtTableEdge(edgePosition, tableNode);
+          return true;
         }
-        // TODO: Add support for nested tables
-        let paragraphNode;
-        if (edgePosition === 'first') {
-          paragraphNode = $insertParagraphAtTableEdge(tableNode, 'before');
-        } else {
-          paragraphNode = $insertParagraphAtTableEdge(tableNode, 'after');
-        }
-        paragraphNode.selectEnd();
-        return true;
+        return false;
       },
       COMMAND_PRIORITY_CRITICAL,
     ),
@@ -1610,11 +1596,27 @@ function getExitingToNode(
     : tableNode.getNextSibling();
 }
 
+function $insertParagraphAtTableEdge(
+  edgePosition: 'first' | 'last',
+  tableNode: TableNode,
+  children?: LexicalNode[],
+) {
+  const paragraphNode = $createParagraphNode();
+  if (edgePosition === 'first') {
+    tableNode.insertBefore(paragraphNode);
+  } else {
+    tableNode.insertAfter(paragraphNode);
+  }
+  paragraphNode.append(...(children || []));
+  paragraphNode.selectEnd();
+}
+
 function $getTableEdgeCursorPosition(
   editor: LexicalEditor,
   selection: RangeSelection,
   tableNode: TableNode,
 ) {
+  // TODO: Add support for nested tables
   const domSelection = window.getSelection();
   if (!domSelection || domSelection.anchorNode !== editor.getRootElement()) {
     return undefined;
@@ -1655,17 +1657,4 @@ function $getTableEdgeCursorPosition(
   } else {
     return undefined;
   }
-}
-
-function $insertParagraphAtTableEdge(
-  tableNode: TableNode,
-  location: 'before' | 'after',
-) {
-  const newParagraphNode = $createParagraphNode();
-  if (location === 'before') {
-    tableNode.insertBefore(newParagraphNode);
-  } else {
-    tableNode.insertAfter(newParagraphNode);
-  }
-  return newParagraphNode;
 }

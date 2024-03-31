@@ -21,7 +21,7 @@ import {
   CUT_COMMAND,
   PASTE_COMMAND,
 } from 'lexical';
-import {useCallback} from 'react';
+import {useCallback, useMemo} from 'react';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 
@@ -105,83 +105,87 @@ export class ContextMenuOption extends MenuOption {
 export default function ContextMenuPlugin(): JSX.Element {
   const [editor] = useLexicalComposerContext();
 
-  const defaultOptions = [
-    new ContextMenuOption(`Copy`, {
-      onSelect: (_node) => {
-        editor.dispatchCommand(COPY_COMMAND, null);
-      },
-    }),
-    new ContextMenuOption(`Cut`, {
-      onSelect: (_node) => {
-        editor.dispatchCommand(CUT_COMMAND, null);
-      },
-    }),
-    new ContextMenuOption(`Paste`, {
-      onSelect: (_node) => {
-        navigator.clipboard.read().then(async (...args) => {
-          const data = new DataTransfer();
+  const defaultOptions = useMemo(() => {
+    return [
+      new ContextMenuOption(`Copy`, {
+        onSelect: (_node) => {
+          editor.dispatchCommand(COPY_COMMAND, null);
+        },
+      }),
+      new ContextMenuOption(`Cut`, {
+        onSelect: (_node) => {
+          editor.dispatchCommand(CUT_COMMAND, null);
+        },
+      }),
+      new ContextMenuOption(`Paste`, {
+        onSelect: (_node) => {
+          navigator.clipboard.read().then(async (...args) => {
+            const data = new DataTransfer();
 
-          const items = await navigator.clipboard.read();
-          const item = items[0];
+            const items = await navigator.clipboard.read();
+            const item = items[0];
 
-          const permission = await navigator.permissions.query({
-            // @ts-expect-error These types are incorrect.
-            name: 'clipboard-read',
+            const permission = await navigator.permissions.query({
+              // @ts-expect-error These types are incorrect.
+              name: 'clipboard-read',
+            });
+            if (permission.state === 'denied') {
+              alert('Not allowed to paste from clipboard.');
+              return;
+            }
+
+            for (const type of item.types) {
+              const dataString = await (await item.getType(type)).text();
+              data.setData(type, dataString);
+            }
+
+            const event = new ClipboardEvent('paste', {
+              clipboardData: data,
+            });
+
+            editor.dispatchCommand(PASTE_COMMAND, event);
           });
-          if (permission.state === 'denied') {
-            alert('Not allowed to paste from clipboard.');
-            return;
+        },
+      }),
+      new ContextMenuOption(`Paste as Plain Text`, {
+        onSelect: (_node) => {
+          navigator.clipboard.read().then(async (...args) => {
+            const permission = await navigator.permissions.query({
+              // @ts-expect-error These types are incorrect.
+              name: 'clipboard-read',
+            });
+
+            if (permission.state === 'denied') {
+              alert('Not allowed to paste from clipboard.');
+              return;
+            }
+
+            const data = new DataTransfer();
+            const items = await navigator.clipboard.readText();
+            data.setData('text/plain', items);
+
+            const event = new ClipboardEvent('paste', {
+              clipboardData: data,
+            });
+            editor.dispatchCommand(PASTE_COMMAND, event);
+          });
+        },
+      }),
+      new ContextMenuOption(`Delete Node`, {
+        onSelect: (_node) => {
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            const currentNode = selection.anchor.getNode();
+            const ancestorNodeWithRootAsParent = currentNode
+              .getParents()
+              .at(-2);
+
+            ancestorNodeWithRootAsParent?.remove();
           }
-
-          for (const type of item.types) {
-            const dataString = await (await item.getType(type)).text();
-            data.setData(type, dataString);
-          }
-
-          const event = new ClipboardEvent('paste', {
-            clipboardData: data,
-          });
-
-          editor.dispatchCommand(PASTE_COMMAND, event);
-        });
-      },
-    }),
-    new ContextMenuOption(`Paste as Plain Text`, {
-      onSelect: (_node) => {
-        navigator.clipboard.read().then(async (...args) => {
-          const permission = await navigator.permissions.query({
-            // @ts-expect-error These types are incorrect.
-            name: 'clipboard-read',
-          });
-
-          if (permission.state === 'denied') {
-            alert('Not allowed to paste from clipboard.');
-            return;
-          }
-
-          const data = new DataTransfer();
-          const items = await navigator.clipboard.readText();
-          data.setData('text/plain', items);
-
-          const event = new ClipboardEvent('paste', {
-            clipboardData: data,
-          });
-          editor.dispatchCommand(PASTE_COMMAND, event);
-        });
-      },
-    }),
-    new ContextMenuOption(`Delete Node`, {
-      onSelect: (_node) => {
-        const selection = $getSelection();
-        if ($isRangeSelection(selection)) {
-          const currentNode = selection.anchor.getNode();
-          const ancestorNodeWithRootAsParent = currentNode.getParents().at(-2);
-
-          ancestorNodeWithRootAsParent?.remove();
-        }
-      },
-    }),
-  ];
+        },
+      }),
+    ];
+  }, [editor]);
 
   const [options, setOptions] = React.useState(defaultOptions);
 

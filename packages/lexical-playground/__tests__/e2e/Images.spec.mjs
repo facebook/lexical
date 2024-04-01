@@ -748,17 +748,20 @@ test.describe('Images', () => {
     isCollab,
   }) => {
     test.skip(isPlainText);
-    test.skip(isCollab);
-
+    // test.skip(isCollab);
+    let leftFrame = page;
+    if (isCollab) {
+      leftFrame = await page.frame('left');
+    }
     await focusEditor(page);
 
     await page.keyboard.type('HelloWorld');
     await insertSampleImage(page);
     await click(page, '.editor-image img');
 
-    await page.locator('.editor-image img').hover();
+    await leftFrame.locator('.editor-image img').hover();
     await page.mouse.down();
-    await page.locator('.PlaygroundEditorTheme__paragraph').hover();
+    await leftFrame.locator('.PlaygroundEditorTheme__paragraph').hover();
     await page.mouse.up();
     await waitForSelector(page, '.editor-image img');
     await assertHTML(

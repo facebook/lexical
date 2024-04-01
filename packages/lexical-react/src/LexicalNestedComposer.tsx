@@ -20,6 +20,7 @@ import {
   LexicalNode,
   LexicalNodeReplacement,
 } from 'lexical';
+import {Transform} from 'packages/lexical/src/LexicalEditor';
 import * as React from 'react';
 import {ReactNode, useContext, useEffect, useMemo, useRef} from 'react';
 import invariant from 'shared/invariant';
@@ -67,12 +68,18 @@ export function LexicalNestedComposer({
           parentEditor._nodes,
         ));
         for (const [type, entry] of parentNodes) {
+          const transform = entry.klass.transform();
+          const transforms = new Set<Transform<LexicalNode>>();
+          if (transform !== null) {
+            transforms.add(transform);
+          }
+
           initialEditor._nodes.set(type, {
             exportDOM: entry.exportDOM,
             klass: entry.klass,
             replace: entry.replace,
             replaceWithKlass: entry.replaceWithKlass,
-            transforms: new Set(),
+            transforms: transforms,
           });
         }
       } else {
@@ -87,12 +94,19 @@ export function LexicalNestedComposer({
             replaceWithKlass = options.withKlass || null;
           }
           const registeredKlass = initialEditor._nodes.get(klass.getType());
+
+          const transform = klass.transform();
+          const transforms = new Set<Transform<LexicalNode>>();
+          if (transform !== null) {
+            transforms.add(transform);
+          }
+
           initialEditor._nodes.set(klass.getType(), {
             exportDOM: registeredKlass ? registeredKlass.exportDOM : undefined,
             klass,
             replace,
             replaceWithKlass,
-            transforms: new Set(),
+            transforms: transforms,
           });
         }
       }

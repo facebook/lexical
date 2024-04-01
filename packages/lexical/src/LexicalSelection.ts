@@ -222,16 +222,16 @@ function $transferStartingElementPointToTextPoint(
     : textNode;
   textNode.setFormat(format);
   textNode.setStyle(style);
-  if (element.getKey() === start.key) {
+  if (placementNode === null) {
+    element.append(target);
+  } else if (placementNode.getKey() === start.key) {
+    placementNode.insertBefore(target);
+  } else if (element.getKey() === start.key) {
     element.insertBefore(
       $isRootNode(element.getParent())
         ? $createParagraphNode().append(textNode)
         : textNode,
     );
-  } else if (placementNode === null) {
-    element.append(target);
-  } else {
-    placementNode.insertBefore(target);
   }
   // Transfer the element point to a text point.
   if (start.is(end)) {

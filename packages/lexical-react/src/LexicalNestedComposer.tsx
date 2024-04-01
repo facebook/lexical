@@ -20,10 +20,19 @@ import {
   LexicalNode,
   LexicalNodeReplacement,
 } from 'lexical';
-import {Transform} from 'packages/lexical/src/LexicalEditor';
+import {KlassConstructor, Transform} from 'packages/lexical/src/LexicalEditor';
 import * as React from 'react';
 import {ReactNode, useContext, useEffect, useMemo, useRef} from 'react';
 import invariant from 'shared/invariant';
+
+function getTransformSetFromKlass(
+  klass: KlassConstructor<typeof LexicalNode>,
+): Set<Transform<LexicalNode>> {
+  const transform = klass.transform();
+  return transform !== null
+    ? new Set<Transform<LexicalNode>>([transform])
+    : new Set<Transform<LexicalNode>>();
+}
 
 export function LexicalNestedComposer({
   initialEditor,
@@ -68,18 +77,12 @@ export function LexicalNestedComposer({
           parentEditor._nodes,
         ));
         for (const [type, entry] of parentNodes) {
-          const transform = entry.klass.transform();
-          const transforms = new Set<Transform<LexicalNode>>();
-          if (transform !== null) {
-            transforms.add(transform);
-          }
-
           initialEditor._nodes.set(type, {
             exportDOM: entry.exportDOM,
             klass: entry.klass,
             replace: entry.replace,
             replaceWithKlass: entry.replaceWithKlass,
-            transforms: transforms,
+            transforms: getTransformSetFromKlass(entry.klass),
           });
         }
       } else {
@@ -95,18 +98,12 @@ export function LexicalNestedComposer({
           }
           const registeredKlass = initialEditor._nodes.get(klass.getType());
 
-          const transform = klass.transform();
-          const transforms = new Set<Transform<LexicalNode>>();
-          if (transform !== null) {
-            transforms.add(transform);
-          }
-
           initialEditor._nodes.set(klass.getType(), {
             exportDOM: registeredKlass ? registeredKlass.exportDOM : undefined,
             klass,
             replace,
             replaceWithKlass,
-            transforms: transforms,
+            transforms: getTransformSetFromKlass(klass),
           });
         }
       }

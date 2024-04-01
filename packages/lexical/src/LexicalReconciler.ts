@@ -502,8 +502,8 @@ function reconcileChildren(
         nextElement,
         prevChildren,
         nextChildren,
-        prevChildren.length,
-        nextChildren.length,
+        prevChildrenSize,
+        nextChildrenSize,
         dom,
       );
     }

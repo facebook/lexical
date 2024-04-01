@@ -748,8 +748,7 @@ test.describe('Images', () => {
     isCollab,
   }) => {
     test.skip(isPlainText);
-    test.skip(browserName === 'firefox' && isCollab);
-    test.skip(browserName === 'firefox' && IS_WINDOWS);
+    test.skip(isCollab);
 
     await focusEditor(page);
 

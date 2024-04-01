@@ -215,7 +215,7 @@ function $transferStartingElementPointToTextPoint(
   style: string,
 ): void {
   const element = start.getNode();
-  const placementNode = element.getChildAtIndex(start.offset);
+  let placementNode = element.getChildAtIndex(start.offset);
   const textNode = $createTextNode();
   const target = $isRootNode(element)
     ? $createParagraphNode().append(textNode)
@@ -224,8 +224,21 @@ function $transferStartingElementPointToTextPoint(
   textNode.setStyle(style);
   if (placementNode === null) {
     element.append(target);
-  } else {
+  } else if (start.key === placementNode.getKey()) {
     placementNode.insertBefore(target);
+  } else {
+    while (placementNode !== null && placementNode.getKey() !== start.key) {
+      placementNode = placementNode.getParent();
+    }
+    if (placementNode === null) {
+      element.append(target);
+    } else {
+      if ($isRootNode(placementNode.getParent())) {
+        placementNode.insertBefore($createParagraphNode().append(textNode));
+      } else {
+        placementNode.insertBefore(target);
+      }
+    }
   }
   // Transfer the element point to a text point.
   if (start.is(end)) {
@@ -1039,7 +1052,7 @@ export class RangeSelection implements BaseSelection {
         const selectedNode = selectedNodes[i];
         const key = selectedNode.__key;
         if (!markedNodeKeysForKeep.has(key)) {
-          selectedNode.remove();
+          selectedNode.remove(false);
         }
       }
     }

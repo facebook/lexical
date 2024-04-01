@@ -22,7 +22,7 @@ import {
   LexicalEditor,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
-import {useCallback, useEffect, useRef, useState} from 'react';
+import {Dispatch, useCallback, useEffect, useRef, useState} from 'react';
 import * as React from 'react';
 import {createPortal} from 'react-dom';
 
@@ -42,6 +42,7 @@ function TextFormatFloatingToolbar({
   isStrikethrough,
   isSubscript,
   isSuperscript,
+  setIsLinkEditMode,
 }: {
   editor: LexicalEditor;
   anchorElem: HTMLElement;
@@ -53,16 +54,19 @@ function TextFormatFloatingToolbar({
   isSubscript: boolean;
   isSuperscript: boolean;
   isUnderline: boolean;
+  setIsLinkEditMode: Dispatch<boolean>;
 }): JSX.Element {
   const popupCharStylesEditorRef = useRef<HTMLDivElement | null>(null);
 
   const insertLink = useCallback(() => {
     if (!isLink) {
+      setIsLinkEditMode(true);
       editor.dispatchCommand(TOGGLE_LINK_COMMAND, 'https://');
     } else {
+      setIsLinkEditMode(false);
       editor.dispatchCommand(TOGGLE_LINK_COMMAND, null);
     }
-  }, [editor, isLink]);
+  }, [editor, isLink, setIsLinkEditMode]);
 
   const insertComment = () => {
     editor.dispatchCommand(INSERT_INLINE_COMMAND, undefined);
@@ -270,6 +274,7 @@ function TextFormatFloatingToolbar({
 function useFloatingTextFormatToolbar(
   editor: LexicalEditor,
   anchorElem: HTMLElement,
+  setIsLinkEditMode: Dispatch<boolean>,
 ): JSX.Element | null {
   const [isText, setIsText] = useState(false);
   const [isLink, setIsLink] = useState(false);
@@ -377,6 +382,7 @@ function useFloatingTextFormatToolbar(
       isSuperscript={isSuperscript}
       isUnderline={isUnderline}
       isCode={isCode}
+      setIsLinkEditMode={setIsLinkEditMode}
     />,
     anchorElem,
   );
@@ -384,9 +390,11 @@ function useFloatingTextFormatToolbar(
 
 export default function FloatingTextFormatToolbarPlugin({
   anchorElem = document.body,
+  setIsLinkEditMode,
 }: {
   anchorElem?: HTMLElement;
+  setIsLinkEditMode: Dispatch<boolean>;
 }): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
-  return useFloatingTextFormatToolbar(editor, anchorElem);
+  return useFloatingTextFormatToolbar(editor, anchorElem, setIsLinkEditMode);
 }

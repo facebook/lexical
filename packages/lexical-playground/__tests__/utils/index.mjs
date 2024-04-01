@@ -96,11 +96,24 @@ export async function initialize({
   await exposeLexicalEditor(page);
 }
 
+/**
+ * @param {import('@playwright/test').Page} page
+ */
 async function exposeLexicalEditor(page) {
-  let leftFrame = page;
   if (IS_COLLAB) {
-    leftFrame = await page.frame('left');
+    await Promise.all(
+      ['left', 'right'].map(async (name) => {
+        const frameLocator = page.frameLocator(`[name="${name}"]`);
+        await expect(
+          frameLocator.locator('.action-button.connect'),
+        ).toHaveAttribute('title', /Disconnect/);
+        await expect(
+          frameLocator.locator('[data-lexical-editor="true"] p'),
+        ).toBeVisible();
+      }),
+    );
   }
+  const leftFrame = getPageOrFrame(page);
   await leftFrame.waitForSelector('.tree-view-output pre');
   await leftFrame.evaluate(() => {
     window.lexicalEditor = document.querySelector(
@@ -140,25 +153,39 @@ export async function clickSelectors(page, selectors) {
     await click(page, selectors[i]);
   }
 }
-
+/**
+ * @param {import('@playwright/test').Page | import('@playwright/test').Frame} pageOrFrame
+ */
 async function assertHTMLOnPageOrFrame(
   pageOrFrame,
   expectedHtml,
   ignoreClasses,
   ignoreInlineStyles,
+  frameName,
 ) {
-  const actualHtml = await pageOrFrame.innerHTML('div[contenteditable="true"]');
-  const actual = prettifyHTML(actualHtml.replace(/\n/gm, ''), {
-    ignoreClasses,
-    ignoreInlineStyles,
-  });
   const expected = prettifyHTML(expectedHtml.replace(/\n/gm, ''), {
     ignoreClasses,
     ignoreInlineStyles,
   });
-  expect(actual).toEqual(expected);
+  return await expect(async () => {
+    const actualHtml = await pageOrFrame
+      .locator('div[contenteditable="true"]')
+      .first()
+      .innerHTML();
+    const actual = prettifyHTML(actualHtml.replace(/\n/gm, ''), {
+      ignoreClasses,
+      ignoreInlineStyles,
+    });
+    expect(
+      actual,
+      `innerHTML of contenteditable in ${frameName} did not match`,
+    ).toEqual(expected);
+  }).toPass({intervals: [100, 250, 500], timeout: 5000});
 }
 
+/**
+ * @param {import('@playwright/test').Page} page
+ */
 export async function assertHTML(
   page,
   expectedHtml,
@@ -166,26 +193,21 @@ export async function assertHTML(
   {ignoreClasses = false, ignoreInlineStyles = false} = {},
 ) {
   if (IS_COLLAB) {
-    const withRetry = async (fn) => await retryAsync(page, fn, 5);
     await Promise.all([
-      withRetry(async () => {
-        const leftFrame = await page.frame('left');
-        return assertHTMLOnPageOrFrame(
-          leftFrame,
-          expectedHtml,
-          ignoreClasses,
-          ignoreInlineStyles,
-        );
-      }),
-      withRetry(async () => {
-        const rightFrame = await page.frame('right');
-        return assertHTMLOnPageOrFrame(
-          rightFrame,
-          expectedHtmlFrameRight,
-          ignoreClasses,
-          ignoreInlineStyles,
-        );
-      }),
+      assertHTMLOnPageOrFrame(
+        page.frame('left'),
+        expectedHtml,
+        ignoreClasses,
+        ignoreInlineStyles,
+        'left frame',
+      ),
+      assertHTMLOnPageOrFrame(
+        page.frame('right'),
+        expectedHtmlFrameRight,
+        ignoreClasses,
+        ignoreInlineStyles,
+        'right frame',
+      ),
     ]);
   } else {
     await assertHTMLOnPageOrFrame(
@@ -193,31 +215,20 @@ export async function assertHTML(
       expectedHtml,
       ignoreClasses,
       ignoreInlineStyles,
+      'page',
     );
   }
 }
 
-async function retryAsync(page, fn, attempts) {
-  while (attempts > 0) {
-    let failed = false;
-    try {
-      await fn();
-    } catch (e) {
-      if (attempts === 1) {
-        throw e;
-      }
-      failed = true;
-    }
-    if (!failed) {
-      break;
-    }
-    attempts--;
-    await sleep(500);
-  }
+/**
+ * @param {import('@playwright/test').Page} page
+ */
+export function getPageOrFrame(page) {
+  return IS_COLLAB ? page.frame('left') : page;
 }
 
 export async function assertTableSelectionCoordinates(page, coordinates) {
-  const pageOrFrame = IS_COLLAB ? await page.frame('left') : page;
+  const pageOrFrame = getPageOrFrame(page);
 
   const {_anchor, _focus} = await pageOrFrame.evaluate(() => {
     const editor = window.lexicalEditor;
@@ -308,12 +319,7 @@ async function assertSelectionOnPageOrFrame(page, expected) {
 }
 
 export async function assertSelection(page, expected) {
-  if (IS_COLLAB) {
-    const frame = await page.frame('left');
-    await assertSelectionOnPageOrFrame(frame, expected);
-  } else {
-    await assertSelectionOnPageOrFrame(page, expected);
-  }
+  await assertSelectionOnPageOrFrame(getPageOrFrame(page), expected);
 }
 
 export async function isMac(page) {
@@ -383,16 +389,11 @@ async function copyToClipboardPageOrFrame(pageOrFrame) {
 }
 
 export async function copyToClipboard(page) {
-  if (IS_COLLAB) {
-    const leftFrame = await page.frame('left');
-    return await copyToClipboardPageOrFrame(leftFrame);
-  } else {
-    return await copyToClipboardPageOrFrame(page);
-  }
+  return await copyToClipboardPageOrFrame(getPageOrFrame(page));
 }
 
 async function pasteFromClipboardPageOrFrame(pageOrFrame, clipboardData) {
-  const canUseBeforeInput = supportsBeforeInput(pageOrFrame);
+  const canUseBeforeInput = await supportsBeforeInput(pageOrFrame);
   await pageOrFrame.evaluate(
     async ({
       clipboardData: _clipboardData,
@@ -458,13 +459,11 @@ async function pasteFromClipboardPageOrFrame(pageOrFrame, clipboardData) {
   );
 }
 
+/**
+ * @param {import('@playwright/test').Page} page
+ */
 export async function pasteFromClipboard(page, clipboardData) {
-  if (IS_COLLAB) {
-    const leftFrame = await page.frame('left');
-    await pasteFromClipboardPageOrFrame(leftFrame, clipboardData);
-  } else {
-    await pasteFromClipboardPageOrFrame(page, clipboardData);
-  }
+  await pasteFromClipboardPageOrFrame(getPageOrFrame(page), clipboardData);
 }
 
 export async function sleep(delay) {
@@ -476,111 +475,59 @@ export async function sleepInsertImage(count = 1) {
   return await sleep(1000 * count);
 }
 
+/**
+ * @param {import('@playwright/test').Page} page
+ */
 export async function focusEditor(page, parentSelector = '.editor-shell') {
-  const selector = `${parentSelector} div[contenteditable="true"]`;
-  if (IS_COLLAB) {
-    await page.waitForSelector('iframe[name="left"]');
-    const leftFrame = page.frame('left');
-    if ((await leftFrame.$$('.loading')).length !== 0) {
-      await leftFrame.waitForSelector('.loading', {
-        state: 'detached',
-      });
-    }
-    // This sleep used to be "conditional" based on a broken version of
-    // the above test (undefined !== 0 is always true). It turns out there
-    // were tests that needed this sleep even when the left frame was not
-    // in a loading state.
-    await sleep(500);
-    await leftFrame.focus(selector);
-  } else {
-    await page.focus(selector);
-  }
+  const locator = getEditorElement(page, parentSelector);
+  await locator.focus();
 }
 
 export async function getHTML(page, selector = 'div[contenteditable="true"]') {
-  const pageOrFrame = IS_COLLAB ? await page.frame('left') : page;
-  const element = await pageOrFrame.locator(selector);
-  return element.innerHTML();
+  return await locate(page, selector).innerHTML();
 }
 
-export async function getEditorElement(page, parentSelector = '.editor-shell') {
+export function getEditorElement(page, parentSelector = '.editor-shell') {
   const selector = `${parentSelector} div[contenteditable="true"]`;
-
-  if (IS_COLLAB) {
-    const leftFrame = await page.frame('left');
-    return leftFrame.locator(selector);
-  } else {
-    return page.locator(selector);
-  }
+  return locate(page, selector).first();
 }
 
 export async function waitForSelector(page, selector, options) {
-  if (IS_COLLAB) {
-    const leftFrame = await page.frame('left');
-    await leftFrame.waitForSelector(selector, options);
-  } else {
-    await page.waitForSelector(selector, options);
-  }
+  await getPageOrFrame(page).waitForSelector(selector, options);
 }
 
-export async function locate(page, selector) {
-  let leftFrame = page;
-  if (IS_COLLAB) {
-    leftFrame = await page.frame('left');
-  }
-  return await leftFrame.locator(selector);
+export function locate(page, selector) {
+  return getPageOrFrame(page).locator(selector);
 }
 
 export async function selectorBoundingBox(page, selector) {
-  let leftFrame = page;
-  if (IS_COLLAB) {
-    leftFrame = await page.frame('left');
-  }
-  const node = await leftFrame.locator(selector);
-  return await node.boundingBox();
+  return await locate(page, selector).boundingBox();
 }
 
 export async function click(page, selector, options) {
-  const frame = IS_COLLAB ? await page.frame('left') : page;
+  const frame = getPageOrFrame(page);
   await frame.waitForSelector(selector, options);
   await frame.click(selector, options);
 }
 
 export async function focus(page, selector, options) {
-  const frame = IS_COLLAB ? await page.frame('left') : page;
-  await frame.focus(selector, options);
+  await locate(page, selector).focus(options);
 }
 
 export async function fill(page, selector, value) {
-  const frame = IS_COLLAB ? await page.frame('left') : page;
-  await frame.locator(selector).fill(value);
+  await locate(page, selector).fill(value);
 }
 
 export async function selectOption(page, selector, options) {
-  if (IS_COLLAB) {
-    const leftFrame = await page.frame('left');
-    await leftFrame.selectOption(selector, options);
-  } else {
-    await page.selectOption(selector, options);
-  }
+  await getPageOrFrame(page).selectOption(selector, options);
 }
 
 export async function textContent(page, selector, options) {
-  if (IS_COLLAB) {
-    const leftFrame = await page.frame('left');
-    return await leftFrame.textContent(selector, options);
-  } else {
-    return await page.textContent(selector, options);
-  }
+  return await getPageOrFrame(page).textContent(selector, options);
 }
 
 export async function evaluate(page, fn, args) {
-  if (IS_COLLAB) {
-    const leftFrame = await page.frame('left');
-    return await leftFrame.evaluate(fn, args);
-  } else {
-    return await page.evaluate(fn, args);
-  }
+  return await getPageOrFrame(page).evaluate(fn, args);
 }
 
 export async function clearEditor(page) {
@@ -616,7 +563,7 @@ export async function insertUploadImage(page, files, altText) {
   await selectFromInsertDropdown(page, '.image');
   await click(page, 'button[data-test-id="image-modal-option-file"]');
 
-  const frame = IS_COLLAB ? await page.frame('left') : page;
+  const frame = getPageOrFrame(page);
   await frame.setInputFiles(
     'input[data-test-id="image-modal-file-upload"]',
     files,
@@ -794,10 +741,7 @@ export async function selectFromTableDropdown(page, selector) {
 }
 
 export async function insertTable(page, rows = 2, columns = 3) {
-  let leftFrame = page;
-  if (IS_COLLAB) {
-    leftFrame = await page.frame('left');
-  }
+  const leftFrame = getPageOrFrame(page);
   await selectFromInsertDropdown(page, '.item .table');
   if (rows !== null) {
     await leftFrame
@@ -826,10 +770,9 @@ export async function selectCellsFromTableCords(
   isFirstHeader = false,
   isSecondHeader = false,
 ) {
-  let leftFrame = page;
+  const leftFrame = getPageOrFrame(page);
   if (IS_COLLAB) {
     await focusEditor(page);
-    leftFrame = await page.frame('left');
   }
 
   const firstRowFirstColumnCell = await leftFrame.locator(
@@ -909,7 +852,7 @@ export async function setBackgroundColor(page) {
 }
 
 export async function enableCompositionKeyEvents(page) {
-  const targetPage = IS_COLLAB ? await page.frame('left') : page;
+  const targetPage = getPageOrFrame(page);
   await targetPage.evaluate(() => {
     window.addEventListener(
       'compositionstart',

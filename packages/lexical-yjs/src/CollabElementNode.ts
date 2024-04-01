@@ -28,9 +28,7 @@ import {
   createChildrenArray,
   createLexicalNodeFromCollabNode,
   getOrInitCollabNodeFromSharedType,
-  getPositionFromElementAndOffset,
   removeFromParent,
-  spliceString,
   syncPropertiesFromLexical,
   syncPropertiesFromYjs,
 } from './Utils';
@@ -75,7 +73,7 @@ export class CollabElementNode {
     return $isElementNode(node) ? node : null;
   }
 
-  getSharedType(): XmlText {
+  getCursorYjsType(): XmlText {
     return this._xmlText;
   }
 
@@ -89,10 +87,6 @@ export class CollabElementNode {
 
   isEmpty(): boolean {
     return this._children.length === 0;
-  }
-
-  getSize(): number {
-    return 1;
   }
 
   getOffset(): number {
@@ -139,88 +133,16 @@ export class CollabElementNode {
       if (delta.retain != null) {
         currIndex += delta.retain;
       } else if (typeof deleteDelta === 'number') {
-        let deletionSize = deleteDelta;
-
-        while (deletionSize > 0) {
-          const {node, nodeIndex, offset, length} =
-            getPositionFromElementAndOffset(this, currIndex, false);
-
-          if (
-            node instanceof CollabElementNode ||
-            node instanceof CollabLineBreakNode ||
-            node instanceof CollabDecoratorNode
-          ) {
-            children.splice(nodeIndex, 1);
-            deletionSize -= 1;
-          } else if (node instanceof CollabTextNode) {
-            const delCount = Math.min(deletionSize, length);
-            const prevCollabNode =
-              nodeIndex !== 0 ? children[nodeIndex - 1] : null;
-            const nodeSize = node.getSize();
-
-            if (
-              offset === 0 &&
-              delCount === 1 &&
-              nodeIndex > 0 &&
-              prevCollabNode instanceof CollabTextNode &&
-              length === nodeSize &&
-              // If the node has no keys, it's been deleted
-              Array.from(node._map.keys()).length === 0
-            ) {
-              // Merge the text node with previous.
-              prevCollabNode._text += node._text;
-              children.splice(nodeIndex, 1);
-            } else if (offset === 0 && delCount === nodeSize) {
-              // The entire thing needs removing
-              children.splice(nodeIndex, 1);
-            } else {
-              node._text = spliceString(node._text, offset, delCount, '');
-            }
-
-            deletionSize -= delCount;
-          } else {
-            // Can occur due to the deletion from the dangling text heuristic below.
-            break;
-          }
-        }
+        children.splice(currIndex, deleteDelta);
       } else if (insertDelta != null) {
-        if (typeof insertDelta === 'string') {
-          const {node, offset} = getPositionFromElementAndOffset(
-            this,
-            currIndex,
-            true,
-          );
-
-          if (node instanceof CollabTextNode) {
-            node._text = spliceString(node._text, offset, 0, insertDelta);
-          } else {
-            // TODO: maybe we can improve this by keeping around a redundant
-            // text node map, rather than removing all the text nodes, so there
-            // never can be dangling text.
-
-            // We have a conflict where there was likely a CollabTextNode and
-            // an Lexical TextNode too, but they were removed in a merge. So
-            // let's just ignore the text and trigger a removal for it from our
-            // shared type.
-            this._xmlText.delete(offset, insertDelta.length);
-          }
-
-          currIndex += insertDelta.length;
-        } else {
-          const sharedType = insertDelta;
-          const {nodeIndex} = getPositionFromElementAndOffset(
-            this,
-            currIndex,
-            false,
-          );
-          const collabNode = getOrInitCollabNodeFromSharedType(
-            binding,
-            sharedType as XmlText | YMap<unknown> | XmlElement,
-            this,
-          );
-          children.splice(nodeIndex, 0, collabNode);
-          currIndex += 1;
-        }
+        const sharedType = insertDelta;
+        const collabNode = getOrInitCollabNodeFromSharedType(
+          binding,
+          sharedType as XmlText | YMap<unknown> | XmlElement,
+          this,
+        );
+        children.splice(currIndex, 0, collabNode);
+        currIndex += 1;
       } else {
         throw new Error('Unexpected delta format');
       }
@@ -533,21 +455,12 @@ export class CollabElementNode {
       | CollabLineBreakNode,
   ): void {
     const xmlText = this._xmlText;
-    const children = this._children;
-    const lastChild = children[children.length - 1];
-    const offset =
-      lastChild !== undefined ? lastChild.getOffset() + lastChild.getSize() : 0;
+    const offset = this._children.length;
 
     if (collabNode instanceof CollabElementNode) {
       xmlText.insertEmbed(offset, collabNode._xmlText);
     } else if (collabNode instanceof CollabTextNode) {
-      const map = collabNode._map;
-
-      if (map.parent === null) {
-        xmlText.insertEmbed(offset, map);
-      }
-
-      xmlText.insert(offset + 1, collabNode._text);
+      xmlText.insertEmbed(offset, collabNode._map);
     } else if (collabNode instanceof CollabLineBreakNode) {
       xmlText.insertEmbed(offset, collabNode._map);
     } else if (collabNode instanceof CollabDecoratorNode) {
@@ -568,50 +481,22 @@ export class CollabElementNode {
       | CollabLineBreakNode,
   ): void {
     const children = this._children;
-    const child = children[index];
-
-    if (child === undefined) {
-      invariant(
-        collabNode !== undefined,
-        'splice: could not find collab element node',
-      );
-      this.append(collabNode);
-      return;
-    }
-
-    const offset = child.getOffset();
-    invariant(offset !== -1, 'splice: expected offset to be greater than zero');
 
     const xmlText = this._xmlText;
-
-    if (delCount !== 0) {
-      // What if we delete many nodes, don't we need to get all their
-      // sizes?
-      xmlText.delete(offset, child.getSize());
-    }
+    xmlText.delete(index, delCount);
 
     if (collabNode instanceof CollabElementNode) {
-      xmlText.insertEmbed(offset, collabNode._xmlText);
+      xmlText.insertEmbed(index, collabNode._xmlText);
     } else if (collabNode instanceof CollabTextNode) {
-      const map = collabNode._map;
-
-      if (map.parent === null) {
-        xmlText.insertEmbed(offset, map);
-      }
-
-      xmlText.insert(offset + 1, collabNode._text);
+      xmlText.insertEmbed(index, collabNode._map);
     } else if (collabNode instanceof CollabLineBreakNode) {
-      xmlText.insertEmbed(offset, collabNode._map);
+      xmlText.insertEmbed(index, collabNode._map);
     } else if (collabNode instanceof CollabDecoratorNode) {
-      xmlText.insertEmbed(offset, collabNode._xmlElem);
+      xmlText.insertEmbed(index, collabNode._xmlElem);
     }
 
-    if (delCount !== 0) {
-      const childrenToDelete = children.slice(index, index + delCount);
-
-      for (let i = 0; i < childrenToDelete.length; i++) {
-        childrenToDelete[i].destroy(binding);
-      }
+    for (const childToDelete of children.slice(index, index + delCount)) {
+      childToDelete.destroy(binding);
     }
 
     if (collabNode !== undefined) {
@@ -628,28 +513,14 @@ export class CollabElementNode {
       | CollabDecoratorNode
       | CollabLineBreakNode,
   ): number {
-    let offset = 0;
-    const children = this._children;
-
-    for (let i = 0; i < children.length; i++) {
-      const child = children[i];
-
-      if (child === collabNode) {
-        return offset;
-      }
-
-      offset += child.getSize();
-    }
-
-    return -1;
+    return this._children.findIndex((child) => child === collabNode);
   }
 
   destroy(binding: Binding): void {
     const collabNodeMap = binding.collabNodeMap;
-    const children = this._children;
 
-    for (let i = 0; i < children.length; i++) {
-      children[i].destroy(binding);
+    for (const child of this._children) {
+      child.destroy(binding);
     }
 
     collabNodeMap.delete(this._key);

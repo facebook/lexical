@@ -19,7 +19,6 @@ import {
   $isRangeSelection,
   $isTextNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
 import {
   compareRelativePositions,
   createAbsolutePositionFromRelativePosition,
@@ -27,11 +26,8 @@ import {
 } from 'yjs';
 
 import {Provider} from '.';
-import {CollabDecoratorNode} from './CollabDecoratorNode';
 import {CollabElementNode} from './CollabElementNode';
-import {CollabLineBreakNode} from './CollabLineBreakNode';
 import {CollabTextNode} from './CollabTextNode';
-import {getPositionFromElementAndOffset} from './Utils';
 
 export type CursorSelection = {
   anchor: {
@@ -64,39 +60,10 @@ function createRelativePosition(
     return null;
   }
 
-  let offset = point.offset;
-  let sharedType = collabNode.getSharedType();
+  const offset = point.offset;
+  const cursorYjsType = collabNode.getCursorYjsType();
 
-  if (collabNode instanceof CollabTextNode) {
-    sharedType = collabNode._parent._xmlText;
-    const currentOffset = collabNode.getOffset();
-
-    if (currentOffset === -1) {
-      return null;
-    }
-
-    offset = currentOffset + 1 + offset;
-  } else if (
-    collabNode instanceof CollabElementNode &&
-    point.type === 'element'
-  ) {
-    const parent = point.getNode();
-    invariant($isElementNode(parent), 'Element point must be an element node');
-    let accumulatedOffset = 0;
-    let i = 0;
-    let node = parent.getFirstChild();
-    while (node !== null && i++ < offset) {
-      if ($isTextNode(node)) {
-        accumulatedOffset += node.getTextContentSize() + 1;
-      } else {
-        accumulatedOffset++;
-      }
-      node = node.getNextSibling();
-    }
-    offset = accumulatedOffset;
-  }
-
-  return createRelativePositionFromTypeIndex(sharedType, offset);
+  return createRelativePositionFromTypeIndex(cursorYjsType, offset);
 }
 
 function createAbsolutePosition(
@@ -361,36 +328,20 @@ function setPoint(point: Point, key: NodeKey, offset: number): void {
 
 function getCollabNodeAndOffset(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  sharedType: any,
+  cursorYjsType: any,
   offset: number,
-): [
-  (
-    | null
-    | CollabDecoratorNode
-    | CollabElementNode
-    | CollabTextNode
-    | CollabLineBreakNode
-  ),
-  number,
-] {
-  const collabNode = sharedType._collabNode;
+): [null | CollabElementNode | CollabTextNode, number] {
+  const collabNode = cursorYjsType._collabNode;
 
   if (collabNode === undefined) {
     return [null, 0];
   }
 
-  if (collabNode instanceof CollabElementNode) {
-    const {node, offset: collabNodeOffset} = getPositionFromElementAndOffset(
-      collabNode,
-      offset,
-      true,
-    );
-
-    if (node === null) {
-      return [collabNode, 0];
-    } else {
-      return [node, collabNodeOffset];
-    }
+  if (
+    collabNode instanceof CollabElementNode ||
+    collabNode instanceof CollabTextNode
+  ) {
+    return [collabNode, offset];
   }
 
   return [null, 0];

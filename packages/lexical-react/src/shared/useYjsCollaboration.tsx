@@ -134,7 +134,7 @@ export function useYjsCollaboration(
     provider.on('sync', onSync);
     awareness.on('update', onAwarenessUpdate);
     // This updates the local editor state when we recieve updates from other clients
-    root.getSharedType().observeDeep(onYjsTreeChanges);
+    root._xmlText.observeDeep(onYjsTreeChanges);
     const removeListener = editor.registerUpdateListener(
       ({
         prevEditorState,
@@ -169,7 +169,7 @@ export function useYjsCollaboration(
       provider.off('status', onStatus);
       provider.off('reload', onProviderDocReload);
       awareness.off('update', onAwarenessUpdate);
-      root.getSharedType().unobserveDeep(onYjsTreeChanges);
+      root._xmlText.unobserveDeep(onYjsTreeChanges);
       docMap.delete(id);
       removeListener();
     };
@@ -259,7 +259,7 @@ export function useYjsHistory(
   binding: Binding,
 ): () => void {
   const undoManager = useMemo(
-    () => createUndoManager(binding, binding.root.getSharedType()),
+    () => createUndoManager(binding, binding.root._xmlText),
     [binding],
   );
 

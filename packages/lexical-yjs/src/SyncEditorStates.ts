@@ -54,15 +54,16 @@ function syncEvent(binding: Binding, event: any): void {
       collabNode.applyChildrenYjsDelta(binding, delta);
       collabNode.syncChildrenFromYjs(binding);
     }
-  } else if (
-    collabNode instanceof CollabTextNode &&
-    event instanceof YMapEvent
-  ) {
-    const {keysChanged} = event;
+  } else if (collabNode instanceof CollabTextNode) {
+    if (event instanceof YMapEvent) {
+      const {keysChanged} = event;
 
-    // Update
-    if (keysChanged.size > 0) {
-      collabNode.syncPropertiesAndTextFromYjs(binding, keysChanged);
+      // Update
+      if (keysChanged.size > 0) {
+        collabNode.syncPropertiesAndTextFromYjs(binding, keysChanged);
+      }
+    } else {
+      collabNode.syncTextFromYjs();
     }
   } else if (
     collabNode instanceof CollabDecoratorNode &&
@@ -201,7 +202,6 @@ function handleNormalizationMergeConflicts(
         }
 
         const parent = collabNode._parent;
-        collabNode._normalized = true;
 
         parent._xmlText.delete(offset, 1);
 
@@ -216,7 +216,9 @@ function handleNormalizationMergeConflicts(
   for (let i = 0; i < mergedNodes.length; i++) {
     const [collabNode, text] = mergedNodes[i];
     if (collabNode instanceof CollabTextNode && typeof text === 'string') {
-      collabNode._text = text;
+      const yText = collabNode._text;
+      yText.delete(0, yText.length);
+      yText.insert(0, text);
     }
   }
 }

@@ -49,6 +49,8 @@ module.exports = {
 
         '^@lexical/react/LexicalAutoEmbedPlugin$':
           '<rootDir>/packages/lexical-react/src/LexicalAutoEmbedPlugin.tsx',
+        '^@lexical/react/LexicalAutoFocusPlugin$':
+          '<rootDir>/packages/lexical-react/src/LexicalAutoFocusPlugin.ts',
         '^@lexical/react/LexicalAutoLinkPlugin$':
           '<rootDir>/packages/lexical-react/src/LexicalAutoLinkPlugin.ts',
         '^@lexical/react/LexicalCheckListPlugin$':
@@ -57,21 +59,28 @@ module.exports = {
           '<rootDir>/packages/lexical-react/src/LexicalCollaborationContext.ts',
         '^@lexical/react/LexicalCollaborationPlugin$':
           '<rootDir>/packages/lexical-react/src/LexicalCollaborationPlugin.ts',
+        '^@lexical/react/LexicalComposer$':
+          '<rootDir>/packages/lexical-react/src/LexicalComposer.tsx',
         '^@lexical/react/LexicalComposerContext$':
           '<rootDir>/packages/lexical-react/src/LexicalComposerContext.ts',
         '^@lexical/react/LexicalContentEditable$':
           '<rootDir>/packages/lexical-react/src/LexicalContentEditable.tsx',
+        '^@lexical/react/LexicalErrorBoundary$':
+          '<rootDir>/packages/lexical-react/src/LexicalErrorBoundary.tsx',
+        '^@lexical/react/LexicalHistoryPlugin$':
+          '<rootDir>/packages/lexical-react/src/LexicalHistoryPlugin.ts',
         '^@lexical/react/LexicalLinkPlugin$':
           '<rootDir>/packages/lexical-react/src/LexicalLinkPlugin.ts',
         '^@lexical/react/LexicalListPlugin$':
           '<rootDir>/packages/lexical-react/src/LexicalListPlugin.ts',
         '^@lexical/react/LexicalPlainTextPlugin$':
           '<rootDir>/packages/lexical-react/src/LexicalPlainTextPlugin.ts',
+        '^@lexical/react/LexicalRichTextPlugin$':
+          '<rootDir>/packages/lexical-react/src/LexicalRichTextPlugin.tsx',
         '^@lexical/react/LexicalTabIndentationPlugin$':
           '<rootDir>/packages/lexical-react/src/LexicalTabIndentationPlugin.tsx',
         '^@lexical/react/LexicalTablePlugin$':
           '<rootDir>/packages/lexical-react/src/LexicalTablePlugin.ts',
-        '^@lexical/react/src/(.*)$': '<rootDir>/packages/lexical-react/src/$1',
         '^@lexical/react/useLexicalCanShowPlaceholder$':
           '<rootDir>/packages/lexical-react/src/useLexicalCanShowPlaceholder.ts',
         '^@lexical/react/useLexicalDecorators$':
@@ -86,11 +95,20 @@ module.exports = {
           '<rootDir>/packages/lexical-rich-text/src/index.ts',
         '^@lexical/selection$':
           '<rootDir>/packages/lexical-selection/src/index.ts',
+        '^@lexical/selection/src/__tests__/utils$':
+          '<rootDir>/packages/lexical-selection/src/__tests__/utils/index.ts',
         '^@lexical/table$': '<rootDir>/packages/lexical-table/src/index.ts',
         '^@lexical/text$': '<rootDir>/packages/lexical-text/src/index.ts',
         '^@lexical/utils$': '<rootDir>/packages/lexical-utils/src/index.ts',
         '^@lexical/yjs$': '<rootDir>/packages/lexical-yjs/src/index.ts',
+        '^@lexical/yjs/src/index$':
+          '<rootDir>/packages/lexical-yjs/src/index.ts',
         '^lexical$': '<rootDir>/packages/lexical/src/index.ts',
+        '^lexical/src/([^/]+)$': '<rootDir>/packages/lexical/src/$1.ts',
+        '^lexical/src/__tests__/utils$':
+          '<rootDir>/packages/lexical/src/__tests__/utils/index.tsx',
+        '^lexical/src/nodes/([^/]+)$':
+          '<rootDir>/packages/lexical/src/nodes/$1.ts',
         '^shared/canUseDOM$': '<rootDir>/packages/shared/src/canUseDOM.ts',
         '^shared/caretFromPoint$':
           '<rootDir>/packages/shared/src/caretFromPoint.ts',

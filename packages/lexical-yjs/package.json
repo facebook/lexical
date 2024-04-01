@@ -13,11 +13,12 @@
   "license": "MIT",
   "version": "0.14.2",
   "main": "LexicalYjs.js",
+  "types": "index.d.ts",
   "dependencies": {
-    "@lexical/offset": "0.14.2"
+    "@lexical/offset": "0.14.2",
+    "lexical": "0.14.2"
   },
   "peerDependencies": {
-    "lexical": "0.14.2",
     "yjs": ">=13.5.22"
   },
   "repository": {
@@ -26,5 +27,18 @@
     "directory": "packages/lexical-yjs"
   },
   "module": "LexicalYjs.mjs",
-  "sideEffects": false
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.ts",
+        "node": "./LexicalYjs.node.mjs",
+        "default": "./LexicalYjs.mjs"
+      },
+      "require": {
+        "types": "./index.d.ts",
+        "default": "./LexicalYjs.js"
+      }
+    }
+  }
 }

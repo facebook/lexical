@@ -89,6 +89,13 @@ const lexicalReactModuleExternals = lexicalReactModules.map((module) => {
   return external;
 });
 
+function resolveExternalEsm(id) {
+  if (/^prismjs\/components\/prism-/.test(id)) {
+    return `${id}.js`;
+  }
+  return id;
+}
+
 const externals = [
   'lexical',
   'prismjs/components/prism-core',
@@ -277,6 +284,7 @@ async function build(name, inputFile, outputPath, outputFile, isProd, format) {
     format, // change between es and cjs modules
     freeze: false,
     interop: format === 'esm' ? 'esModule' : false,
+    paths: format === 'esm' ? resolveExternalEsm : undefined,
   };
   const result = await rollup.rollup(inputOptions);
   const {output} = await result.write(outputOptions);
@@ -612,17 +620,29 @@ async function moveTSDeclarationFilesIntoDist(packageName, outputPath) {
   await fs.copy(`./.ts-temp/${packageName}/src`, outputPath);
 }
 
-function buildForkModule(outputPath, outputFileName, format, exports) {
+function forkModuleContent(
+  {devFileName, exports, outputFileName, prodFileName},
+  target,
+) {
   const lines = [getComment()];
-  const extension = getExtension(format);
-  const devFileName = `./${outputFileName}.dev${extension}`;
-  const prodFileName = `./${outputFileName}.prod${extension}`;
-  if (format === 'esm') {
+  if (target === 'cjs') {
     lines.push(
-      `import * as modDev from '${devFileName}';`,
-      `import * as modProd from '${prodFileName}';`,
-      `const mod = process.env.NODE_ENV === 'development' ? modDev : modProd;`,
+      `'use strict'`,
+      `const ${outputFileName} = process.env.NODE_ENV === 'development' ? require('${devFileName}') : require('${prodFileName}');`,
+      `module.exports = ${outputFileName};`,
     );
+  } else {
+    if (target === 'esm') {
+      lines.push(
+        `import * as modDev from '${devFileName}';`,
+        `import * as modProd from '${prodFileName}';`,
+        `const mod = process.env.NODE_ENV === 'development' ? modDev : modProd;`,
+      );
+    } else if (target === 'node') {
+      lines.push(
+        `const mod = await (process.env.NODE_ENV === 'development' ? import('${devFileName}') : import('${prodFileName}'));`,
+      );
+    }
     for (const name of exports) {
       lines.push(
         name === 'default'
@@ -630,18 +650,27 @@ function buildForkModule(outputPath, outputFileName, format, exports) {
           : `export const ${name} = mod.${name};`,
       );
     }
-  } else {
-    lines.push(
-      `'use strict'`,
-      `const ${outputFileName} = process.env.NODE_ENV === 'development' ? require('${devFileName}') : require('${prodFileName}');`,
-      `module.exports = ${outputFileName};`,
-    );
   }
-  const fileContent = lines.join('\n');
+  return lines.join('\n');
+}
+
+function buildForkModules(outputPath, outputFileName, format, exports) {
+  const extension = getExtension(format);
+  const devFileName = `./${outputFileName}.dev${extension}`;
+  const prodFileName = `./${outputFileName}.prod${extension}`;
+  const opts = {devFileName, exports, outputFileName, prodFileName};
   fs.outputFileSync(
     path.resolve(path.join(`${outputPath}${outputFileName}${extension}`)),
-    fileContent,
+    forkModuleContent(opts, format),
   );
+  if (format === 'esm') {
+    fs.outputFileSync(
+      path.resolve(
+        path.join(`${outputPath}${outputFileName}.node${extension}`),
+      ),
+      forkModuleContent(opts, 'node'),
+    );
+  }
 }
 
 async function buildAll() {
@@ -693,7 +722,7 @@ async function buildAll() {
             false,
             format,
           );
-          buildForkModule(outputPath, outputFileName, format, exports);
+          buildForkModules(outputPath, outputFileName, format, exports);
         }
       }
     }

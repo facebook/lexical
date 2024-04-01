@@ -10,11 +10,10 @@
   "license": "MIT",
   "version": "0.14.2",
   "main": "LexicalLink.js",
-  "peerDependencies": {
-    "lexical": "0.14.2"
-  },
+  "types": "index.d.ts",
   "dependencies": {
-    "@lexical/utils": "0.14.2"
+    "@lexical/utils": "0.14.2",
+    "lexical": "0.14.2"
   },
   "repository": {
     "type": "git",
@@ -22,5 +21,18 @@
     "directory": "packages/lexical-link"
   },
   "module": "LexicalLink.mjs",
-  "sideEffects": false
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.ts",
+        "node": "./LexicalLink.node.mjs",
+        "default": "./LexicalLink.mjs"
+      },
+      "require": {
+        "types": "./index.d.ts",
+        "default": "./LexicalLink.js"
+      }
+    }
+  }
 }

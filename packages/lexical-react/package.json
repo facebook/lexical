@@ -27,10 +27,10 @@
     "@lexical/text": "0.14.2",
     "@lexical/utils": "0.14.2",
     "@lexical/yjs": "0.14.2",
+    "lexical": "0.14.2",
     "react-error-boundary": "^3.1.4"
   },
   "peerDependencies": {
-    "lexical": "0.14.2",
     "react": ">=17.x",
     "react-dom": ">=17.x"
   },
@@ -43,562 +43,882 @@
     "./LexicalAutoEmbedPlugin": {
       "import": {
         "types": "./LexicalAutoEmbedPlugin.d.ts",
+        "node": "./LexicalAutoEmbedPlugin.node.mjs",
         "default": "./LexicalAutoEmbedPlugin.mjs"
       },
-      "require": "./LexicalAutoEmbedPlugin.js"
+      "require": {
+        "types": "./LexicalAutoEmbedPlugin.d.ts",
+        "default": "./LexicalAutoEmbedPlugin.js"
+      }
     },
     "./LexicalAutoEmbedPlugin.js": {
       "import": {
         "types": "./LexicalAutoEmbedPlugin.d.ts",
+        "node": "./LexicalAutoEmbedPlugin.node.mjs",
         "default": "./LexicalAutoEmbedPlugin.mjs"
       },
-      "require": "./LexicalAutoEmbedPlugin.js"
+      "require": {
+        "types": "./LexicalAutoEmbedPlugin.d.ts",
+        "default": "./LexicalAutoEmbedPlugin.js"
+      }
     },
     "./LexicalAutoFocusPlugin": {
       "import": {
         "types": "./LexicalAutoFocusPlugin.d.ts",
+        "node": "./LexicalAutoFocusPlugin.node.mjs",
         "default": "./LexicalAutoFocusPlugin.mjs"
       },
-      "require": "./LexicalAutoFocusPlugin.js"
+      "require": {
+        "types": "./LexicalAutoFocusPlugin.d.ts",
+        "default": "./LexicalAutoFocusPlugin.js"
+      }
     },
     "./LexicalAutoFocusPlugin.js": {
       "import": {
         "types": "./LexicalAutoFocusPlugin.d.ts",
+        "node": "./LexicalAutoFocusPlugin.node.mjs",
         "default": "./LexicalAutoFocusPlugin.mjs"
       },
-      "require": "./LexicalAutoFocusPlugin.js"
+      "require": {
+        "types": "./LexicalAutoFocusPlugin.d.ts",
+        "default": "./LexicalAutoFocusPlugin.js"
+      }
     },
     "./LexicalAutoLinkPlugin": {
       "import": {
         "types": "./LexicalAutoLinkPlugin.d.ts",
+        "node": "./LexicalAutoLinkPlugin.node.mjs",
         "default": "./LexicalAutoLinkPlugin.mjs"
       },
-      "require": "./LexicalAutoLinkPlugin.js"
+      "require": {
+        "types": "./LexicalAutoLinkPlugin.d.ts",
+        "default": "./LexicalAutoLinkPlugin.js"
+      }
     },
     "./LexicalAutoLinkPlugin.js": {
       "import": {
         "types": "./LexicalAutoLinkPlugin.d.ts",
+        "node": "./LexicalAutoLinkPlugin.node.mjs",
         "default": "./LexicalAutoLinkPlugin.mjs"
       },
-      "require": "./LexicalAutoLinkPlugin.js"
+      "require": {
+        "types": "./LexicalAutoLinkPlugin.d.ts",
+        "default": "./LexicalAutoLinkPlugin.js"
+      }
     },
     "./LexicalBlockWithAlignableContents": {
       "import": {
         "types": "./LexicalBlockWithAlignableContents.d.ts",
+        "node": "./LexicalBlockWithAlignableContents.node.mjs",
         "default": "./LexicalBlockWithAlignableContents.mjs"
       },
-      "require": "./LexicalBlockWithAlignableContents.js"
+      "require": {
+        "types": "./LexicalBlockWithAlignableContents.d.ts",
+        "default": "./LexicalBlockWithAlignableContents.js"
+      }
     },
     "./LexicalBlockWithAlignableContents.js": {
       "import": {
         "types": "./LexicalBlockWithAlignableContents.d.ts",
+        "node": "./LexicalBlockWithAlignableContents.node.mjs",
         "default": "./LexicalBlockWithAlignableContents.mjs"
       },
-      "require": "./LexicalBlockWithAlignableContents.js"
+      "require": {
+        "types": "./LexicalBlockWithAlignableContents.d.ts",
+        "default": "./LexicalBlockWithAlignableContents.js"
+      }
     },
     "./LexicalCharacterLimitPlugin": {
       "import": {
         "types": "./LexicalCharacterLimitPlugin.d.ts",
+        "node": "./LexicalCharacterLimitPlugin.node.mjs",
         "default": "./LexicalCharacterLimitPlugin.mjs"
       },
-      "require": "./LexicalCharacterLimitPlugin.js"
+      "require": {
+        "types": "./LexicalCharacterLimitPlugin.d.ts",
+        "default": "./LexicalCharacterLimitPlugin.js"
+      }
     },
     "./LexicalCharacterLimitPlugin.js": {
       "import": {
         "types": "./LexicalCharacterLimitPlugin.d.ts",
+        "node": "./LexicalCharacterLimitPlugin.node.mjs",
         "default": "./LexicalCharacterLimitPlugin.mjs"
       },
-      "require": "./LexicalCharacterLimitPlugin.js"
+      "require": {
+        "types": "./LexicalCharacterLimitPlugin.d.ts",
+        "default": "./LexicalCharacterLimitPlugin.js"
+      }
     },
     "./LexicalCheckListPlugin": {
       "import": {
         "types": "./LexicalCheckListPlugin.d.ts",
+        "node": "./LexicalCheckListPlugin.node.mjs",
         "default": "./LexicalCheckListPlugin.mjs"
       },
-      "require": "./LexicalCheckListPlugin.js"
+      "require": {
+        "types": "./LexicalCheckListPlugin.d.ts",
+        "default": "./LexicalCheckListPlugin.js"
+      }
     },
     "./LexicalCheckListPlugin.js": {
       "import": {
         "types": "./LexicalCheckListPlugin.d.ts",
+        "node": "./LexicalCheckListPlugin.node.mjs",
         "default": "./LexicalCheckListPlugin.mjs"
       },
-      "require": "./LexicalCheckListPlugin.js"
+      "require": {
+        "types": "./LexicalCheckListPlugin.d.ts",
+        "default": "./LexicalCheckListPlugin.js"
+      }
     },
     "./LexicalClearEditorPlugin": {
       "import": {
         "types": "./LexicalClearEditorPlugin.d.ts",
+        "node": "./LexicalClearEditorPlugin.node.mjs",
         "default": "./LexicalClearEditorPlugin.mjs"
       },
-      "require": "./LexicalClearEditorPlugin.js"
+      "require": {
+        "types": "./LexicalClearEditorPlugin.d.ts",
+        "default": "./LexicalClearEditorPlugin.js"
+      }
     },
     "./LexicalClearEditorPlugin.js": {
       "import": {
         "types": "./LexicalClearEditorPlugin.d.ts",
+        "node": "./LexicalClearEditorPlugin.node.mjs",
         "default": "./LexicalClearEditorPlugin.mjs"
       },
-      "require": "./LexicalClearEditorPlugin.js"
+      "require": {
+        "types": "./LexicalClearEditorPlugin.d.ts",
+        "default": "./LexicalClearEditorPlugin.js"
+      }
     },
     "./LexicalClickableLinkPlugin": {
       "import": {
         "types": "./LexicalClickableLinkPlugin.d.ts",
+        "node": "./LexicalClickableLinkPlugin.node.mjs",
         "default": "./LexicalClickableLinkPlugin.mjs"
       },
-      "require": "./LexicalClickableLinkPlugin.js"
+      "require": {
+        "types": "./LexicalClickableLinkPlugin.d.ts",
+        "default": "./LexicalClickableLinkPlugin.js"
+      }
     },
     "./LexicalClickableLinkPlugin.js": {
       "import": {
         "types": "./LexicalClickableLinkPlugin.d.ts",
+        "node": "./LexicalClickableLinkPlugin.node.mjs",
         "default": "./LexicalClickableLinkPlugin.mjs"
       },
-      "require": "./LexicalClickableLinkPlugin.js"
+      "require": {
+        "types": "./LexicalClickableLinkPlugin.d.ts",
+        "default": "./LexicalClickableLinkPlugin.js"
+      }
     },
     "./LexicalCollaborationContext": {
       "import": {
         "types": "./LexicalCollaborationContext.d.ts",
+        "node": "./LexicalCollaborationContext.node.mjs",
         "default": "./LexicalCollaborationContext.mjs"
       },
-      "require": "./LexicalCollaborationContext.js"
+      "require": {
+        "types": "./LexicalCollaborationContext.d.ts",
+        "default": "./LexicalCollaborationContext.js"
+      }
     },
     "./LexicalCollaborationContext.js": {
       "import": {
         "types": "./LexicalCollaborationContext.d.ts",
+        "node": "./LexicalCollaborationContext.node.mjs",
         "default": "./LexicalCollaborationContext.mjs"
       },
-      "require": "./LexicalCollaborationContext.js"
+      "require": {
+        "types": "./LexicalCollaborationContext.d.ts",
+        "default": "./LexicalCollaborationContext.js"
+      }
     },
     "./LexicalCollaborationPlugin": {
       "import": {
         "types": "./LexicalCollaborationPlugin.d.ts",
+        "node": "./LexicalCollaborationPlugin.node.mjs",
         "default": "./LexicalCollaborationPlugin.mjs"
       },
-      "require": "./LexicalCollaborationPlugin.js"
+      "require": {
+        "types": "./LexicalCollaborationPlugin.d.ts",
+        "default": "./LexicalCollaborationPlugin.js"
+      }
     },
     "./LexicalCollaborationPlugin.js": {
       "import": {
         "types": "./LexicalCollaborationPlugin.d.ts",
+        "node": "./LexicalCollaborationPlugin.node.mjs",
         "default": "./LexicalCollaborationPlugin.mjs"
       },
-      "require": "./LexicalCollaborationPlugin.js"
+      "require": {
+        "types": "./LexicalCollaborationPlugin.d.ts",
+        "default": "./LexicalCollaborationPlugin.js"
+      }
     },
     "./LexicalComposer": {
       "import": {
         "types": "./LexicalComposer.d.ts",
+        "node": "./LexicalComposer.node.mjs",
         "default": "./LexicalComposer.mjs"
       },
-      "require": "./LexicalComposer.js"
+      "require": {
+        "types": "./LexicalComposer.d.ts",
+        "default": "./LexicalComposer.js"
+      }
     },
     "./LexicalComposer.js": {
       "import": {
         "types": "./LexicalComposer.d.ts",
+        "node": "./LexicalComposer.node.mjs",
         "default": "./LexicalComposer.mjs"
       },
-      "require": "./LexicalComposer.js"
+      "require": {
+        "types": "./LexicalComposer.d.ts",
+        "default": "./LexicalComposer.js"
+      }
     },
     "./LexicalComposerContext": {
       "import": {
         "types": "./LexicalComposerContext.d.ts",
+        "node": "./LexicalComposerContext.node.mjs",
         "default": "./LexicalComposerContext.mjs"
       },
-      "require": "./LexicalComposerContext.js"
+      "require": {
+        "types": "./LexicalComposerContext.d.ts",
+        "default": "./LexicalComposerContext.js"
+      }
     },
     "./LexicalComposerContext.js": {
       "import": {
         "types": "./LexicalComposerContext.d.ts",
+        "node": "./LexicalComposerContext.node.mjs",
         "default": "./LexicalComposerContext.mjs"
       },
-      "require": "./LexicalComposerContext.js"
+      "require": {
+        "types": "./LexicalComposerContext.d.ts",
+        "default": "./LexicalComposerContext.js"
+      }
     },
     "./LexicalContentEditable": {
       "import": {
         "types": "./LexicalContentEditable.d.ts",
+        "node": "./LexicalContentEditable.node.mjs",
         "default": "./LexicalContentEditable.mjs"
       },
-      "require": "./LexicalContentEditable.js"
+      "require": {
+        "types": "./LexicalContentEditable.d.ts",
+        "default": "./LexicalContentEditable.js"
+      }
     },
     "./LexicalContentEditable.js": {
       "import": {
         "types": "./LexicalContentEditable.d.ts",
+        "node": "./LexicalContentEditable.node.mjs",
         "default": "./LexicalContentEditable.mjs"
       },
-      "require": "./LexicalContentEditable.js"
+      "require": {
+        "types": "./LexicalContentEditable.d.ts",
+        "default": "./LexicalContentEditable.js"
+      }
     },
     "./LexicalContextMenuPlugin": {
       "import": {
         "types": "./LexicalContextMenuPlugin.d.ts",
+        "node": "./LexicalContextMenuPlugin.node.mjs",
         "default": "./LexicalContextMenuPlugin.mjs"
       },
-      "require": "./LexicalContextMenuPlugin.js"
+      "require": {
+        "types": "./LexicalContextMenuPlugin.d.ts",
+        "default": "./LexicalContextMenuPlugin.js"
+      }
     },
     "./LexicalContextMenuPlugin.js": {
       "import": {
         "types": "./LexicalContextMenuPlugin.d.ts",
+        "node": "./LexicalContextMenuPlugin.node.mjs",
         "default": "./LexicalContextMenuPlugin.mjs"
       },
-      "require": "./LexicalContextMenuPlugin.js"
+      "require": {
+        "types": "./LexicalContextMenuPlugin.d.ts",
+        "default": "./LexicalContextMenuPlugin.js"
+      }
     },
     "./LexicalDecoratorBlockNode": {
       "import": {
         "types": "./LexicalDecoratorBlockNode.d.ts",
+        "node": "./LexicalDecoratorBlockNode.node.mjs",
         "default": "./LexicalDecoratorBlockNode.mjs"
       },
-      "require": "./LexicalDecoratorBlockNode.js"
+      "require": {
+        "types": "./LexicalDecoratorBlockNode.d.ts",
+        "default": "./LexicalDecoratorBlockNode.js"
+      }
     },
     "./LexicalDecoratorBlockNode.js": {
       "import": {
         "types": "./LexicalDecoratorBlockNode.d.ts",
+        "node": "./LexicalDecoratorBlockNode.node.mjs",
         "default": "./LexicalDecoratorBlockNode.mjs"
       },
-      "require": "./LexicalDecoratorBlockNode.js"
+      "require": {
+        "types": "./LexicalDecoratorBlockNode.d.ts",
+        "default": "./LexicalDecoratorBlockNode.js"
+      }
     },
     "./LexicalEditorRefPlugin": {
       "import": {
         "types": "./LexicalEditorRefPlugin.d.ts",
+        "node": "./LexicalEditorRefPlugin.node.mjs",
         "default": "./LexicalEditorRefPlugin.mjs"
       },
-      "require": "./LexicalEditorRefPlugin.js"
+      "require": {
+        "types": "./LexicalEditorRefPlugin.d.ts",
+        "default": "./LexicalEditorRefPlugin.js"
+      }
     },
     "./LexicalEditorRefPlugin.js": {
       "import": {
         "types": "./LexicalEditorRefPlugin.d.ts",
+        "node": "./LexicalEditorRefPlugin.node.mjs",
         "default": "./LexicalEditorRefPlugin.mjs"
       },
-      "require": "./LexicalEditorRefPlugin.js"
+      "require": {
+        "types": "./LexicalEditorRefPlugin.d.ts",
+        "default": "./LexicalEditorRefPlugin.js"
+      }
     },
     "./LexicalErrorBoundary": {
       "import": {
         "types": "./LexicalErrorBoundary.d.ts",
+        "node": "./LexicalErrorBoundary.node.mjs",
         "default": "./LexicalErrorBoundary.mjs"
       },
-      "require": "./LexicalErrorBoundary.js"
+      "require": {
+        "types": "./LexicalErrorBoundary.d.ts",
+        "default": "./LexicalErrorBoundary.js"
+      }
     },
     "./LexicalErrorBoundary.js": {
       "import": {
         "types": "./LexicalErrorBoundary.d.ts",
+        "node": "./LexicalErrorBoundary.node.mjs",
         "default": "./LexicalErrorBoundary.mjs"
       },
-      "require": "./LexicalErrorBoundary.js"
+      "require": {
+        "types": "./LexicalErrorBoundary.d.ts",
+        "default": "./LexicalErrorBoundary.js"
+      }
     },
     "./LexicalHashtagPlugin": {
       "import": {
         "types": "./LexicalHashtagPlugin.d.ts",
+        "node": "./LexicalHashtagPlugin.node.mjs",
         "default": "./LexicalHashtagPlugin.mjs"
       },
-      "require": "./LexicalHashtagPlugin.js"
+      "require": {
+        "types": "./LexicalHashtagPlugin.d.ts",
+        "default": "./LexicalHashtagPlugin.js"
+      }
     },
     "./LexicalHashtagPlugin.js": {
       "import": {
         "types": "./LexicalHashtagPlugin.d.ts",
+        "node": "./LexicalHashtagPlugin.node.mjs",
         "default": "./LexicalHashtagPlugin.mjs"
       },
-      "require": "./LexicalHashtagPlugin.js"
+      "require": {
+        "types": "./LexicalHashtagPlugin.d.ts",
+        "default": "./LexicalHashtagPlugin.js"
+      }
     },
     "./LexicalHistoryPlugin": {
       "import": {
         "types": "./LexicalHistoryPlugin.d.ts",
+        "node": "./LexicalHistoryPlugin.node.mjs",
         "default": "./LexicalHistoryPlugin.mjs"
       },
-      "require": "./LexicalHistoryPlugin.js"
+      "require": {
+        "types": "./LexicalHistoryPlugin.d.ts",
+        "default": "./LexicalHistoryPlugin.js"
+      }
     },
     "./LexicalHistoryPlugin.js": {
       "import": {
         "types": "./LexicalHistoryPlugin.d.ts",
+        "node": "./LexicalHistoryPlugin.node.mjs",
         "default": "./LexicalHistoryPlugin.mjs"
       },
-      "require": "./LexicalHistoryPlugin.js"
+      "require": {
+        "types": "./LexicalHistoryPlugin.d.ts",
+        "default": "./LexicalHistoryPlugin.js"
+      }
     },
     "./LexicalHorizontalRuleNode": {
       "import": {
         "types": "./LexicalHorizontalRuleNode.d.ts",
+        "node": "./LexicalHorizontalRuleNode.node.mjs",
         "default": "./LexicalHorizontalRuleNode.mjs"
       },
-      "require": "./LexicalHorizontalRuleNode.js"
+      "require": {
+        "types": "./LexicalHorizontalRuleNode.d.ts",
+        "default": "./LexicalHorizontalRuleNode.js"
+      }
     },
     "./LexicalHorizontalRuleNode.js": {
       "import": {
         "types": "./LexicalHorizontalRuleNode.d.ts",
+        "node": "./LexicalHorizontalRuleNode.node.mjs",
         "default": "./LexicalHorizontalRuleNode.mjs"
       },
-      "require": "./LexicalHorizontalRuleNode.js"
+      "require": {
+        "types": "./LexicalHorizontalRuleNode.d.ts",
+        "default": "./LexicalHorizontalRuleNode.js"
+      }
     },
     "./LexicalHorizontalRulePlugin": {
       "import": {
         "types": "./LexicalHorizontalRulePlugin.d.ts",
+        "node": "./LexicalHorizontalRulePlugin.node.mjs",
         "default": "./LexicalHorizontalRulePlugin.mjs"
       },
-      "require": "./LexicalHorizontalRulePlugin.js"
+      "require": {
+        "types": "./LexicalHorizontalRulePlugin.d.ts",
+        "default": "./LexicalHorizontalRulePlugin.js"
+      }
     },
     "./LexicalHorizontalRulePlugin.js": {
       "import": {
         "types": "./LexicalHorizontalRulePlugin.d.ts",
+        "node": "./LexicalHorizontalRulePlugin.node.mjs",
         "default": "./LexicalHorizontalRulePlugin.mjs"
       },
-      "require": "./LexicalHorizontalRulePlugin.js"
+      "require": {
+        "types": "./LexicalHorizontalRulePlugin.d.ts",
+        "default": "./LexicalHorizontalRulePlugin.js"
+      }
     },
     "./LexicalLinkPlugin": {
       "import": {
         "types": "./LexicalLinkPlugin.d.ts",
+        "node": "./LexicalLinkPlugin.node.mjs",
         "default": "./LexicalLinkPlugin.mjs"
       },
-      "require": "./LexicalLinkPlugin.js"
+      "require": {
+        "types": "./LexicalLinkPlugin.d.ts",
+        "default": "./LexicalLinkPlugin.js"
+      }
     },
     "./LexicalLinkPlugin.js": {
       "import": {
         "types": "./LexicalLinkPlugin.d.ts",
+        "node": "./LexicalLinkPlugin.node.mjs",
         "default": "./LexicalLinkPlugin.mjs"
       },
-      "require": "./LexicalLinkPlugin.js"
+      "require": {
+        "types": "./LexicalLinkPlugin.d.ts",
+        "default": "./LexicalLinkPlugin.js"
+      }
     },
     "./LexicalListPlugin": {
       "import": {
         "types": "./LexicalListPlugin.d.ts",
+        "node": "./LexicalListPlugin.node.mjs",
         "default": "./LexicalListPlugin.mjs"
       },
-      "require": "./LexicalListPlugin.js"
+      "require": {
+        "types": "./LexicalListPlugin.d.ts",
+        "default": "./LexicalListPlugin.js"
+      }
     },
     "./LexicalListPlugin.js": {
       "import": {
         "types": "./LexicalListPlugin.d.ts",
+        "node": "./LexicalListPlugin.node.mjs",
         "default": "./LexicalListPlugin.mjs"
       },
-      "require": "./LexicalListPlugin.js"
+      "require": {
+        "types": "./LexicalListPlugin.d.ts",
+        "default": "./LexicalListPlugin.js"
+      }
     },
     "./LexicalMarkdownShortcutPlugin": {
       "import": {
         "types": "./LexicalMarkdownShortcutPlugin.d.ts",
+        "node": "./LexicalMarkdownShortcutPlugin.node.mjs",
         "default": "./LexicalMarkdownShortcutPlugin.mjs"
       },
-      "require": "./LexicalMarkdownShortcutPlugin.js"
+      "require": {
+        "types": "./LexicalMarkdownShortcutPlugin.d.ts",
+        "default": "./LexicalMarkdownShortcutPlugin.js"
+      }
     },
     "./LexicalMarkdownShortcutPlugin.js": {
       "import": {
         "types": "./LexicalMarkdownShortcutPlugin.d.ts",
+        "node": "./LexicalMarkdownShortcutPlugin.node.mjs",
         "default": "./LexicalMarkdownShortcutPlugin.mjs"
       },
-      "require": "./LexicalMarkdownShortcutPlugin.js"
+      "require": {
+        "types": "./LexicalMarkdownShortcutPlugin.d.ts",
+        "default": "./LexicalMarkdownShortcutPlugin.js"
+      }
     },
     "./LexicalNestedComposer": {
       "import": {
         "types": "./LexicalNestedComposer.d.ts",
+        "node": "./LexicalNestedComposer.node.mjs",
         "default": "./LexicalNestedComposer.mjs"
       },
-      "require": "./LexicalNestedComposer.js"
+      "require": {
+        "types": "./LexicalNestedComposer.d.ts",
+        "default": "./LexicalNestedComposer.js"
+      }
     },
     "./LexicalNestedComposer.js": {
       "import": {
         "types": "./LexicalNestedComposer.d.ts",
+        "node": "./LexicalNestedComposer.node.mjs",
         "default": "./LexicalNestedComposer.mjs"
       },
-      "require": "./LexicalNestedComposer.js"
+      "require": {
+        "types": "./LexicalNestedComposer.d.ts",
+        "default": "./LexicalNestedComposer.js"
+      }
     },
     "./LexicalNodeEventPlugin": {
       "import": {
         "types": "./LexicalNodeEventPlugin.d.ts",
+        "node": "./LexicalNodeEventPlugin.node.mjs",
         "default": "./LexicalNodeEventPlugin.mjs"
       },
-      "require": "./LexicalNodeEventPlugin.js"
+      "require": {
+        "types": "./LexicalNodeEventPlugin.d.ts",
+        "default": "./LexicalNodeEventPlugin.js"
+      }
     },
     "./LexicalNodeEventPlugin.js": {
       "import": {
         "types": "./LexicalNodeEventPlugin.d.ts",
+        "node": "./LexicalNodeEventPlugin.node.mjs",
         "default": "./LexicalNodeEventPlugin.mjs"
       },
-      "require": "./LexicalNodeEventPlugin.js"
+      "require": {
+        "types": "./LexicalNodeEventPlugin.d.ts",
+        "default": "./LexicalNodeEventPlugin.js"
+      }
     },
     "./LexicalNodeMenuPlugin": {
       "import": {
         "types": "./LexicalNodeMenuPlugin.d.ts",
+        "node": "./LexicalNodeMenuPlugin.node.mjs",
         "default": "./LexicalNodeMenuPlugin.mjs"
       },
-      "require": "./LexicalNodeMenuPlugin.js"
+      "require": {
+        "types": "./LexicalNodeMenuPlugin.d.ts",
+        "default": "./LexicalNodeMenuPlugin.js"
+      }
     },
     "./LexicalNodeMenuPlugin.js": {
       "import": {
         "types": "./LexicalNodeMenuPlugin.d.ts",
+        "node": "./LexicalNodeMenuPlugin.node.mjs",
         "default": "./LexicalNodeMenuPlugin.mjs"
       },
-      "require": "./LexicalNodeMenuPlugin.js"
+      "require": {
+        "types": "./LexicalNodeMenuPlugin.d.ts",
+        "default": "./LexicalNodeMenuPlugin.js"
+      }
     },
     "./LexicalOnChangePlugin": {
       "import": {
         "types": "./LexicalOnChangePlugin.d.ts",
+        "node": "./LexicalOnChangePlugin.node.mjs",
         "default": "./LexicalOnChangePlugin.mjs"
       },
-      "require": "./LexicalOnChangePlugin.js"
+      "require": {
+        "types": "./LexicalOnChangePlugin.d.ts",
+        "default": "./LexicalOnChangePlugin.js"
+      }
     },
     "./LexicalOnChangePlugin.js": {
       "import": {
         "types": "./LexicalOnChangePlugin.d.ts",
+        "node": "./LexicalOnChangePlugin.node.mjs",
         "default": "./LexicalOnChangePlugin.mjs"
       },
-      "require": "./LexicalOnChangePlugin.js"
+      "require": {
+        "types": "./LexicalOnChangePlugin.d.ts",
+        "default": "./LexicalOnChangePlugin.js"
+      }
     },
     "./LexicalPlainTextPlugin": {
       "import": {
         "types": "./LexicalPlainTextPlugin.d.ts",
+        "node": "./LexicalPlainTextPlugin.node.mjs",
         "default": "./LexicalPlainTextPlugin.mjs"
       },
-      "require": "./LexicalPlainTextPlugin.js"
+      "require": {
+        "types": "./LexicalPlainTextPlugin.d.ts",
+        "default": "./LexicalPlainTextPlugin.js"
+      }
     },
     "./LexicalPlainTextPlugin.js": {
       "import": {
         "types": "./LexicalPlainTextPlugin.d.ts",
+        "node": "./LexicalPlainTextPlugin.node.mjs",
         "default": "./LexicalPlainTextPlugin.mjs"
       },
-      "require": "./LexicalPlainTextPlugin.js"
+      "require": {
+        "types": "./LexicalPlainTextPlugin.d.ts",
+        "default": "./LexicalPlainTextPlugin.js"
+      }
     },
     "./LexicalRichTextPlugin": {
       "import": {
         "types": "./LexicalRichTextPlugin.d.ts",
+        "node": "./LexicalRichTextPlugin.node.mjs",
         "default": "./LexicalRichTextPlugin.mjs"
       },
-      "require": "./LexicalRichTextPlugin.js"
+      "require": {
+        "types": "./LexicalRichTextPlugin.d.ts",
+        "default": "./LexicalRichTextPlugin.js"
+      }
     },
     "./LexicalRichTextPlugin.js": {
       "import": {
         "types": "./LexicalRichTextPlugin.d.ts",
+        "node": "./LexicalRichTextPlugin.node.mjs",
         "default": "./LexicalRichTextPlugin.mjs"
       },
-      "require": "./LexicalRichTextPlugin.js"
+      "require": {
+        "types": "./LexicalRichTextPlugin.d.ts",
+        "default": "./LexicalRichTextPlugin.js"
+      }
     },
     "./LexicalTabIndentationPlugin": {
       "import": {
         "types": "./LexicalTabIndentationPlugin.d.ts",
+        "node": "./LexicalTabIndentationPlugin.node.mjs",
         "default": "./LexicalTabIndentationPlugin.mjs"
       },
-      "require": "./LexicalTabIndentationPlugin.js"
+      "require": {
+        "types": "./LexicalTabIndentationPlugin.d.ts",
+        "default": "./LexicalTabIndentationPlugin.js"
+      }
     },
     "./LexicalTabIndentationPlugin.js": {
       "import": {
         "types": "./LexicalTabIndentationPlugin.d.ts",
+        "node": "./LexicalTabIndentationPlugin.node.mjs",
         "default": "./LexicalTabIndentationPlugin.mjs"
       },
-      "require": "./LexicalTabIndentationPlugin.js"
+      "require": {
+        "types": "./LexicalTabIndentationPlugin.d.ts",
+        "default": "./LexicalTabIndentationPlugin.js"
+      }
     },
     "./LexicalTableOfContents": {
       "import": {
         "types": "./LexicalTableOfContents.d.ts",
+        "node": "./LexicalTableOfContents.node.mjs",
         "default": "./LexicalTableOfContents.mjs"
       },
-      "require": "./LexicalTableOfContents.js"
+      "require": {
+        "types": "./LexicalTableOfContents.d.ts",
+        "default": "./LexicalTableOfContents.js"
+      }
     },
     "./LexicalTableOfContents.js": {
       "import": {
         "types": "./LexicalTableOfContents.d.ts",
+        "node": "./LexicalTableOfContents.node.mjs",
         "default": "./LexicalTableOfContents.mjs"
       },
-      "require": "./LexicalTableOfContents.js"
+      "require": {
+        "types": "./LexicalTableOfContents.d.ts",
+        "default": "./LexicalTableOfContents.js"
+      }
     },
     "./LexicalTablePlugin": {
       "import": {
         "types": "./LexicalTablePlugin.d.ts",
+        "node": "./LexicalTablePlugin.node.mjs",
         "default": "./LexicalTablePlugin.mjs"
       },
-      "require": "./LexicalTablePlugin.js"
+      "require": {
+        "types": "./LexicalTablePlugin.d.ts",
+        "default": "./LexicalTablePlugin.js"
+      }
     },
     "./LexicalTablePlugin.js": {
       "import": {
         "types": "./LexicalTablePlugin.d.ts",
+        "node": "./LexicalTablePlugin.node.mjs",
         "default": "./LexicalTablePlugin.mjs"
       },
-      "require": "./LexicalTablePlugin.js"
+      "require": {
+        "types": "./LexicalTablePlugin.d.ts",
+        "default": "./LexicalTablePlugin.js"
+      }
     },
     "./LexicalTreeView": {
       "import": {
         "types": "./LexicalTreeView.d.ts",
+        "node": "./LexicalTreeView.node.mjs",
         "default": "./LexicalTreeView.mjs"
       },
-      "require": "./LexicalTreeView.js"
+      "require": {
+        "types": "./LexicalTreeView.d.ts",
+        "default": "./LexicalTreeView.js"
+      }
     },
     "./LexicalTreeView.js": {
       "import": {
         "types": "./LexicalTreeView.d.ts",
+        "node": "./LexicalTreeView.node.mjs",
         "default": "./LexicalTreeView.mjs"
       },
-      "require": "./LexicalTreeView.js"
+      "require": {
+        "types": "./LexicalTreeView.d.ts",
+        "default": "./LexicalTreeView.js"
+      }
     },
     "./LexicalTypeaheadMenuPlugin": {
       "import": {
         "types": "./LexicalTypeaheadMenuPlugin.d.ts",
+        "node": "./LexicalTypeaheadMenuPlugin.node.mjs",
         "default": "./LexicalTypeaheadMenuPlugin.mjs"
       },
-      "require": "./LexicalTypeaheadMenuPlugin.js"
+      "require": {
+        "types": "./LexicalTypeaheadMenuPlugin.d.ts",
+        "default": "./LexicalTypeaheadMenuPlugin.js"
+      }
     },
     "./LexicalTypeaheadMenuPlugin.js": {
       "import": {
         "types": "./LexicalTypeaheadMenuPlugin.d.ts",
+        "node": "./LexicalTypeaheadMenuPlugin.node.mjs",
         "default": "./LexicalTypeaheadMenuPlugin.mjs"
       },
-      "require": "./LexicalTypeaheadMenuPlugin.js"
+      "require": {
+        "types": "./LexicalTypeaheadMenuPlugin.d.ts",
+        "default": "./LexicalTypeaheadMenuPlugin.js"
+      }
     },
     "./useLexicalEditable": {
       "import": {
         "types": "./useLexicalEditable.d.ts",
+        "node": "./useLexicalEditable.node.mjs",
         "default": "./useLexicalEditable.mjs"
       },
-      "require": "./useLexicalEditable.js"
+      "require": {
+        "types": "./useLexicalEditable.d.ts",
+        "default": "./useLexicalEditable.js"
+      }
     },
     "./useLexicalEditable.js": {
       "import": {
         "types": "./useLexicalEditable.d.ts",
+        "node": "./useLexicalEditable.node.mjs",
         "default": "./useLexicalEditable.mjs"
       },
-      "require": "./useLexicalEditable.js"
+      "require": {
+        "types": "./useLexicalEditable.d.ts",
+        "default": "./useLexicalEditable.js"
+      }
     },
     "./useLexicalIsTextContentEmpty": {
       "import": {
         "types": "./useLexicalIsTextContentEmpty.d.ts",
+        "node": "./useLexicalIsTextContentEmpty.node.mjs",
         "default": "./useLexicalIsTextContentEmpty.mjs"
       },
-      "require": "./useLexicalIsTextContentEmpty.js"
+      "require": {
+        "types": "./useLexicalIsTextContentEmpty.d.ts",
+        "default": "./useLexicalIsTextContentEmpty.js"
+      }
     },
     "./useLexicalIsTextContentEmpty.js": {
       "import": {
         "types": "./useLexicalIsTextContentEmpty.d.ts",
+        "node": "./useLexicalIsTextContentEmpty.node.mjs",
         "default": "./useLexicalIsTextContentEmpty.mjs"
       },
-      "require": "./useLexicalIsTextContentEmpty.js"
+      "require": {
+        "types": "./useLexicalIsTextContentEmpty.d.ts",
+        "default": "./useLexicalIsTextContentEmpty.js"
+      }
     },
     "./useLexicalNodeSelection": {
       "import": {
         "types": "./useLexicalNodeSelection.d.ts",
+        "node": "./useLexicalNodeSelection.node.mjs",
         "default": "./useLexicalNodeSelection.mjs"
       },
-      "require": "./useLexicalNodeSelection.js"
+      "require": {
+        "types": "./useLexicalNodeSelection.d.ts",
+        "default": "./useLexicalNodeSelection.js"
+      }
     },
     "./useLexicalNodeSelection.js": {
       "import": {
         "types": "./useLexicalNodeSelection.d.ts",
+        "node": "./useLexicalNodeSelection.node.mjs",
         "default": "./useLexicalNodeSelection.mjs"
       },
-      "require": "./useLexicalNodeSelection.js"
+      "require": {
+        "types": "./useLexicalNodeSelection.d.ts",
+        "default": "./useLexicalNodeSelection.js"
+      }
     },
     "./useLexicalSubscription": {
       "import": {
         "types": "./useLexicalSubscription.d.ts",
+        "node": "./useLexicalSubscription.node.mjs",
         "default": "./useLexicalSubscription.mjs"
       },
-      "require": "./useLexicalSubscription.js"
+      "require": {
+        "types": "./useLexicalSubscription.d.ts",
+        "default": "./useLexicalSubscription.js"
+      }
     },
     "./useLexicalSubscription.js": {
       "import": {
         "types": "./useLexicalSubscription.d.ts",
+        "node": "./useLexicalSubscription.node.mjs",
         "default": "./useLexicalSubscription.mjs"
       },
-      "require": "./useLexicalSubscription.js"
+      "require": {
+        "types": "./useLexicalSubscription.d.ts",
+        "default": "./useLexicalSubscription.js"
+      }
     },
     "./useLexicalTextEntity": {
       "import": {
         "types": "./useLexicalTextEntity.d.ts",
+        "node": "./useLexicalTextEntity.node.mjs",
         "default": "./useLexicalTextEntity.mjs"
       },
-      "require": "./useLexicalTextEntity.js"
+      "require": {
+        "types": "./useLexicalTextEntity.d.ts",
+        "default": "./useLexicalTextEntity.js"
+      }
     },
     "./useLexicalTextEntity.js": {
       "import": {
         "types": "./useLexicalTextEntity.d.ts",
+        "node": "./useLexicalTextEntity.node.mjs",
         "default": "./useLexicalTextEntity.mjs"
       },
-      "require": "./useLexicalTextEntity.js"
+      "require": {
+        "types": "./useLexicalTextEntity.d.ts",
+        "default": "./useLexicalTextEntity.js"
+      }
     }
   },
   "sideEffects": false

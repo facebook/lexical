@@ -10,13 +10,12 @@
   "license": "MIT",
   "version": "0.14.2",
   "main": "LexicalUtils.js",
-  "peerDependencies": {
-    "lexical": "0.14.2"
-  },
+  "types": "index.d.ts",
   "dependencies": {
     "@lexical/list": "0.14.2",
+    "@lexical/selection": "0.14.2",
     "@lexical/table": "0.14.2",
-    "@lexical/selection": "0.14.2"
+    "lexical": "0.14.2"
   },
   "repository": {
     "type": "git",
@@ -24,5 +23,18 @@
     "directory": "packages/lexical-utils"
   },
   "module": "LexicalUtils.mjs",
-  "sideEffects": false
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.ts",
+        "node": "./LexicalUtils.node.mjs",
+        "default": "./LexicalUtils.mjs"
+      },
+      "require": {
+        "types": "./index.d.ts",
+        "default": "./LexicalUtils.js"
+      }
+    }
+  }
 }

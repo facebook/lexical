@@ -748,7 +748,6 @@ test.describe('Images', () => {
     isCollab,
   }) => {
     test.skip(isPlainText);
-    // test.skip(isCollab);
     let leftFrame = page;
     if (isCollab) {
       leftFrame = await page.frame('left');

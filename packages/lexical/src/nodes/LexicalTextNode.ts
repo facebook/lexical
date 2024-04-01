@@ -1108,7 +1108,7 @@ function convertSpanElement(domNode: Node): DOMConversionOutput {
       if (!$isTextNode(lexicalNode)) {
         return lexicalNode;
       }
-      if (color){
+      if (color) {
         lexicalNode.setStyle(lexicalNode.getStyle() + `color: ${color};`);
       }
       if (hasBoldFontWeight) {
@@ -1141,10 +1141,14 @@ function convertBringAttentionToElement(domNode: Node): DOMConversionOutput {
   const b = domNode as HTMLElement;
   // Google Docs wraps all copied HTML in a <b> with font-weight normal
   const hasNormalFontWeight = b.style.fontWeight === 'normal';
+  const color = b.style.color;
   return {
     forChild: (lexicalNode) => {
       if ($isTextNode(lexicalNode) && !hasNormalFontWeight) {
         lexicalNode.toggleFormat('bold');
+      }
+      if ($isTextNode(lexicalNode) && color) {
+        lexicalNode.setStyle(lexicalNode.getStyle() + `color: ${color};`);
       }
 
       return lexicalNode;
@@ -1320,10 +1324,16 @@ function convertTextFormatElement(domNode: Node): DOMConversionOutput {
   if (format === undefined) {
     return {node: null};
   }
+  const color = (domNode as HTMLElement).style
+    ? (domNode as HTMLElement).style.color
+    : '';
   return {
     forChild: (lexicalNode) => {
       if ($isTextNode(lexicalNode) && !lexicalNode.hasFormat(format)) {
         lexicalNode.toggleFormat(format);
+      }
+      if ($isTextNode(lexicalNode) && color) {
+        lexicalNode.setStyle(lexicalNode.getStyle() + `color: ${color};`);
       }
 
       return lexicalNode;

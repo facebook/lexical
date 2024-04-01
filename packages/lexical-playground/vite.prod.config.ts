@@ -11,6 +11,7 @@ import react from '@vitejs/plugin-react';
 import {defineConfig} from 'vite';
 import {replaceCodePlugin} from 'vite-plugin-replace';
 
+import viteCopyEsm from './viteCopyEsm';
 import moduleResolution from './viteModuleResolution';
 
 // https://vitejs.dev/config/
@@ -53,6 +54,7 @@ export default defineConfig({
       presets: ['@babel/preset-react'],
     }),
     react(),
+    viteCopyEsm(),
   ],
   resolve: {
     alias: moduleResolution,

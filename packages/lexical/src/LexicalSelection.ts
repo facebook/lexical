@@ -224,7 +224,7 @@ function $transferStartingElementPointToTextPoint(
   textNode.setStyle(style);
   if (placementNode === null) {
     element.append(target);
-  } else if (placementNode.getKey() === start.key) {
+  } else if (placementNode.getKey() === start.key || $isRootNode(element)) {
     placementNode.insertBefore(target);
   } else if (element.getKey() === start.key) {
     element.insertBefore(

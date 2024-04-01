@@ -215,30 +215,23 @@ function $transferStartingElementPointToTextPoint(
   style: string,
 ): void {
   const element = start.getNode();
-  let placementNode = element.getChildAtIndex(start.offset);
+  const placementNode = element.getChildAtIndex(start.offset);
   const textNode = $createTextNode();
   const target = $isRootNode(element)
     ? $createParagraphNode().append(textNode)
     : textNode;
   textNode.setFormat(format);
   textNode.setStyle(style);
-  if (placementNode === null) {
+  if (element.getKey() === start.key) {
+    element.insertBefore(
+      $isRootNode(element.getParent())
+        ? $createParagraphNode().append(textNode)
+        : textNode,
+    );
+  } else if (placementNode === null) {
     element.append(target);
-  } else if (start.key === placementNode.getKey()) {
-    placementNode.insertBefore(target);
   } else {
-    while (placementNode !== null && placementNode.getKey() !== start.key) {
-      placementNode = placementNode.getParent();
-    }
-    if (placementNode === null) {
-      element.append(target);
-    } else {
-      if ($isRootNode(placementNode.getParent())) {
-        placementNode.insertBefore($createParagraphNode().append(textNode));
-      } else {
-        placementNode.insertBefore(target);
-      }
-    }
+    placementNode.insertBefore(target);
   }
   // Transfer the element point to a text point.
   if (start.is(end)) {

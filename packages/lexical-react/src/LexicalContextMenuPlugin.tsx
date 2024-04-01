@@ -99,7 +99,7 @@ export function LexicalContextMenuPlugin<TOption extends MenuOption>({
   const handleContextMenu = useCallback(
     (event: MouseEvent) => {
       event.preventDefault();
-      if (onWillOpen) {
+      if (onWillOpen != null) {
         onWillOpen(event);
       }
       const zoom = calculateZoomLevel(event.target as Element);

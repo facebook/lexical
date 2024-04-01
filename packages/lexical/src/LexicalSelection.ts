@@ -1045,7 +1045,7 @@ export class RangeSelection implements BaseSelection {
         const selectedNode = selectedNodes[i];
         const key = selectedNode.__key;
         if (!markedNodeKeysForKeep.has(key)) {
-          selectedNode.remove(false);
+          selectedNode.remove();
         }
       }
     }

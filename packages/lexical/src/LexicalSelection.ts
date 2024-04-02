@@ -224,14 +224,14 @@ function $transferStartingElementPointToTextPoint(
   textNode.setStyle(style);
   if (placementNode === null) {
     element.append(target);
-  } else if (placementNode.getKey() === start.key || $isRootNode(element)) {
-    placementNode.insertBefore(target);
-  } else if (element.getKey() === start.key) {
+  } else if (element.getKey() === start.key && element.getType() === 'table') {
     element.insertBefore(
       $isRootNode(element.getParent())
         ? $createParagraphNode().append(textNode)
         : textNode,
     );
+  } else {
+    placementNode.insertBefore(target);
   }
   // Transfer the element point to a text point.
   if (start.is(end)) {

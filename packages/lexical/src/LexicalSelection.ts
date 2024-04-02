@@ -224,12 +224,6 @@ function $transferStartingElementPointToTextPoint(
   textNode.setStyle(style);
   if (placementNode === null) {
     element.append(target);
-  } else if (element.getKey() === start.key && element.getType() === 'table') {
-    element.insertBefore(
-      $isRootNode(element.getParent())
-        ? $createParagraphNode().append(textNode)
-        : textNode,
-    );
   } else {
     placementNode.insertBefore(target);
   }

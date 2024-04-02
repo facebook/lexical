@@ -30,11 +30,7 @@ function scanAndListenForEditors(
   const {setStatesForTab, lexicalState} = extensionStore.getState();
   const states = lexicalState[tabID] ?? {};
 
-  // TODO: refresh editors present of the page
-  const lexicalNodes = Array.from(
-    document.querySelectorAll('div[data-lexical-editor]').values(),
-  ) as LexicalHTMLElement[];
-  const editors = lexicalNodes.map((node) => node.__lexicalEditor);
+  const editors = queryLexicalNodes().map((node) => node.__lexicalEditor);
 
   setStatesForTab(
     tabID,
@@ -54,4 +50,16 @@ function scanAndListenForEditors(
       });
     });
   });
+}
+
+function queryLexicalNodes(): LexicalHTMLElement[] {
+  return Array.from(
+    document.querySelectorAll('div[data-lexical-editor]'),
+  ).filter(isLexicalNode);
+}
+
+function isLexicalNode(
+  node: LexicalHTMLElement | Element,
+): node is LexicalHTMLElement {
+  return (node as LexicalHTMLElement).__lexicalEditor !== undefined;
 }

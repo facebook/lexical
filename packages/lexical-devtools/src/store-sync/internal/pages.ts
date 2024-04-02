@@ -24,9 +24,7 @@ export default async function storeReadyPromiseBase<T>(
   const callback = (state: T, oldState: T) => {
     (proxyStore.dispatch({state}) as unknown as Promise<T>)
       .then((syncedState) => {
-        if (syncedState) {
-          // success
-        } else {
+        if (!syncedState) {
           // error (edge case)
           // prevent infinite loop
           unsubscribe();

@@ -4,6 +4,7 @@ packages/**/dist/**
 packages/**/build/**
 packages/**/npm/**
 packages/**/config/**
+packages/**/.wxt/**
 packages/playwright
 packages/playwright-core
 packages/**/vite.config.js

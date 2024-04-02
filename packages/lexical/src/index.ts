@@ -26,6 +26,7 @@ export type {
   NodeMutation,
   SerializedEditor,
   Spread,
+  Transform,
 } from './LexicalEditor';
 export type {EditorState, SerializedEditorState} from './LexicalEditorState';
 export type {

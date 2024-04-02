@@ -7,6 +7,7 @@
  */
 
 import type {LexicalComposerContextType} from '@lexical/react/LexicalComposerContext';
+import type {KlassConstructor, Transform} from 'lexical';
 
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {
@@ -23,6 +24,15 @@ import {
 import * as React from 'react';
 import {ReactNode, useContext, useEffect, useMemo, useRef} from 'react';
 import invariant from 'shared/invariant';
+
+function getTransformSetFromKlass(
+  klass: KlassConstructor<typeof LexicalNode>,
+): Set<Transform<LexicalNode>> {
+  const transform = klass.transform();
+  return transform !== null
+    ? new Set<Transform<LexicalNode>>([transform])
+    : new Set<Transform<LexicalNode>>();
+}
 
 export function LexicalNestedComposer({
   initialEditor,
@@ -72,7 +82,7 @@ export function LexicalNestedComposer({
             klass: entry.klass,
             replace: entry.replace,
             replaceWithKlass: entry.replaceWithKlass,
-            transforms: new Set(),
+            transforms: getTransformSetFromKlass(entry.klass),
           });
         }
       } else {
@@ -87,12 +97,13 @@ export function LexicalNestedComposer({
             replaceWithKlass = options.withKlass || null;
           }
           const registeredKlass = initialEditor._nodes.get(klass.getType());
+
           initialEditor._nodes.set(klass.getType(), {
             exportDOM: registeredKlass ? registeredKlass.exportDOM : undefined,
             klass,
             replace,
             replaceWithKlass,
-            transforms: new Set(),
+            transforms: getTransformSetFromKlass(klass),
           });
         }
       }

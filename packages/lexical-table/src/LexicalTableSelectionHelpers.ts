@@ -90,7 +90,7 @@ export function applyTableHandlers(
 
   const createMouseHandlers = () => {
     const onMouseUp = () => {
-      tableObserver.inSelectionProgress = false;
+      tableObserver.isSelecting = false;
       editorWindow.removeEventListener('mouseup', onMouseUp);
       editorWindow.removeEventListener('mousemove', onMouseMove);
     };
@@ -126,7 +126,7 @@ export function applyTableHandlers(
       }
 
       const {onMouseUp, onMouseMove} = createMouseHandlers();
-      tableObserver.inSelectionProgress = true;
+      tableObserver.isSelecting = true;
       editorWindow.addEventListener('mouseup', onMouseUp);
       editorWindow.addEventListener('mousemove', onMouseMove);
     }, 0);
@@ -723,10 +723,10 @@ export function applyTableHandlers(
                 getObserverCellFromCellNode(focusCellNode),
                 true,
               );
-              if (!tableObserver.inSelectionProgress) {
+              if (!tableObserver.isSelecting) {
                 setTimeout(() => {
                   const {onMouseUp, onMouseMove} = createMouseHandlers();
-                  tableObserver.inSelectionProgress = true;
+                  tableObserver.isSelecting = true;
                   editorWindow.addEventListener('mouseup', onMouseUp);
                   editorWindow.addEventListener('mousemove', onMouseMove);
                 }, 0);

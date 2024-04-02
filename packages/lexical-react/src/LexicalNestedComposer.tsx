@@ -7,6 +7,7 @@
  */
 
 import type {LexicalComposerContextType} from '@lexical/react/LexicalComposerContext';
+import type {KlassConstructor, Transform} from 'lexical';
 
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {
@@ -20,7 +21,6 @@ import {
   LexicalNode,
   LexicalNodeReplacement,
 } from 'lexical';
-import {KlassConstructor, Transform} from 'packages/lexical/src/LexicalEditor';
 import * as React from 'react';
 import {ReactNode, useContext, useEffect, useMemo, useRef} from 'react';
 import invariant from 'shared/invariant';

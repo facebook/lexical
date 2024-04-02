@@ -381,7 +381,7 @@ export class ExtendedTextNode extends TextNode {
 }
 
 export function $createExtendedTextNode(text: string): ExtendedTextNode {
-	return new ExtendedTextNode(text, className);
+	return new ExtendedTextNode(text);
 }
 
 export function $isExtendedTextNode(node: LexicalNode | null | undefined): node is ExtendedTextNode {

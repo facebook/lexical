@@ -72,6 +72,7 @@ export class TableObserver {
   editor: LexicalEditor;
   tableSelection: TableSelection | null;
   hasHijackedSelectionStyles: boolean;
+  inSelectionProgress: boolean;
 
   constructor(editor: LexicalEditor, tableNodeKey: string) {
     this.isHighlightingCells = false;
@@ -94,6 +95,7 @@ export class TableObserver {
     this.focusCell = null;
     this.hasHijackedSelectionStyles = false;
     this.trackTable();
+    this.inSelectionProgress = false;
   }
 
   getTable(): TableDOMTable {

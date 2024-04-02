@@ -7,6 +7,7 @@
  */
 
 import {
+  deleteBackward,
   moveDown,
   moveLeft,
   moveRight,
@@ -31,6 +32,7 @@ import {
   insertTableColumnBefore,
   insertTableRowBelow,
   IS_COLLAB,
+  LEGACY_EVENTS,
   mergeTableCells,
   pasteFromClipboard,
   SAMPLE_IMAGE_URL,
@@ -145,6 +147,342 @@ test.describe('Tables', () => {
       undefined,
       {ignoreClasses: true},
     );
+  });
+
+  test.describe(`Can exit tables with the horizontal arrow keys`, () => {
+    test(`Can exit the first cell of a non-nested table`, async ({
+      page,
+      isPlainText,
+      isCollab,
+    }) => {
+      await initialize({isCollab, page});
+      test.skip(isPlainText);
+
+      await focusEditor(page);
+      await insertTable(page, 2, 2);
+
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [1, 0, 0, 0],
+        focusOffset: 0,
+        focusPath: [1, 0, 0, 0],
+      });
+
+      await moveLeft(page, 1);
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [0],
+        focusOffset: 0,
+        focusPath: [0],
+      });
+
+      await moveRight(page, 1);
+      await page.keyboard.type('ab');
+      await assertSelection(page, {
+        anchorOffset: 2,
+        anchorPath: [1, 0, 0, 0, 0, 0],
+        focusOffset: 2,
+        focusPath: [1, 0, 0, 0, 0, 0],
+      });
+
+      await moveRight(page, 3);
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [1, 1, 1, 0],
+        focusOffset: 0,
+        focusPath: [1, 1, 1, 0],
+      });
+    });
+
+    test(`Can exit the last cell of a non-nested table`, async ({
+      page,
+      isPlainText,
+      isCollab,
+    }) => {
+      await initialize({isCollab, page});
+      test.skip(isPlainText);
+
+      await focusEditor(page);
+      await insertTable(page, 2, 2);
+
+      await moveRight(page, 3);
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [1, 1, 1, 0],
+        focusOffset: 0,
+        focusPath: [1, 1, 1, 0],
+      });
+
+      await moveRight(page, 1);
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [2],
+        focusOffset: 0,
+        focusPath: [2],
+      });
+
+      await moveLeft(page, 1);
+      await page.keyboard.type('ab');
+      await assertSelection(page, {
+        anchorOffset: 2,
+        anchorPath: [1, 1, 1, 0, 0, 0],
+        focusOffset: 2,
+        focusPath: [1, 1, 1, 0, 0, 0],
+      });
+
+      await moveRight(page, 3);
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [2],
+        focusOffset: 0,
+        focusPath: [2],
+      });
+    });
+
+    test(`Can exit the first cell of a nested table into the parent table cell`, async ({
+      page,
+      isPlainText,
+      isCollab,
+    }) => {
+      await initialize({isCollab, page});
+      test.skip(isPlainText);
+
+      await focusEditor(page);
+      await insertTable(page, 2, 2);
+      await insertTable(page, 2, 2);
+
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [1, 0, 0, 1, 0, 0, 0],
+        focusOffset: 0,
+        focusPath: [1, 0, 0, 1, 0, 0, 0],
+      });
+
+      await moveLeft(page, 1);
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [1, 0, 0, 0],
+        focusOffset: 0,
+        focusPath: [1, 0, 0, 0],
+      });
+    });
+
+    test(`Can exit the last cell of a nested table into the parent table cell`, async ({
+      page,
+      isPlainText,
+      isCollab,
+    }) => {
+      await initialize({isCollab, page});
+      test.skip(isPlainText);
+
+      await focusEditor(page);
+      await insertTable(page, 2, 2);
+      await insertTable(page, 2, 2);
+
+      await moveRight(page, 3);
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [1, 0, 0, 1, 1, 1, 0],
+        focusOffset: 0,
+        focusPath: [1, 0, 0, 1, 1, 1, 0],
+      });
+
+      await moveRight(page, 1);
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [1, 0, 0, 2],
+        focusOffset: 0,
+        focusPath: [1, 0, 0, 2],
+      });
+    });
+  });
+
+  test(`Can insert a paragraph after a table, that is the last node, with the "Enter" key`, async ({
+    page,
+    isPlainText,
+    isCollab,
+    browserName,
+  }) => {
+    await initialize({isCollab, page});
+    test.skip(isPlainText);
+    // Table edge cursor doesn't show up in Firefox.
+    test.fixme(browserName === 'firefox');
+
+    await focusEditor(page);
+    await insertTable(page, 2, 2);
+
+    await moveDown(page, 2);
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [2],
+      focusOffset: 0,
+      focusPath: [2],
+    });
+
+    await deleteBackward(page);
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [1, 1, 1, 0],
+      focusOffset: 0,
+      focusPath: [1, 1, 1, 0],
+    });
+    await assertHTML(
+      page,
+      html`
+        <p><br /></p>
+        <table>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+        </table>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+
+    await moveRight(page, 1);
+    // The native window selection should be on the root, whereas
+    // the editor selection should be on the last cell of the table.
+    await assertSelection(page, {
+      anchorOffset: 2,
+      anchorPath: [],
+      focusOffset: 2,
+      focusPath: [],
+    });
+
+    await page.keyboard.press('Enter');
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [2],
+      focusOffset: 0,
+      focusPath: [2],
+    });
+
+    await assertHTML(
+      page,
+      html`
+        <p><br /></p>
+        <table>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p><br /></p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  test(`Can type text after a table that is the last node`, async ({
+    page,
+    isPlainText,
+    isCollab,
+    browserName,
+  }) => {
+    await initialize({isCollab, page});
+    test.skip(isPlainText);
+    // Table edge cursor doesn't show up in Firefox.
+    test.fixme(browserName === 'firefox');
+    // After typing, the dom selection gets set back to the internal previous selection during the update.
+    test.fixme(LEGACY_EVENTS);
+
+    await focusEditor(page);
+    await insertTable(page, 2, 2);
+
+    await moveDown(page, 2);
+    await deleteBackward(page);
+
+    await moveRight(page, 1);
+    await page.keyboard.type('a');
+    await assertSelection(page, {
+      anchorOffset: 1,
+      anchorPath: [2, 0, 0],
+      focusOffset: 1,
+      focusPath: [2, 0, 0],
+    });
+
+    await assertHTML(
+      page,
+      html`
+        <p><br /></p>
+        <table>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <th>
+              <p><br /></p>
+            </th>
+          </tr>
+          <tr>
+            <th>
+              <p><br /></p>
+            </th>
+            <td>
+              <p><br /></p>
+            </td>
+          </tr>
+        </table>
+        <p dir="ltr"><span data-lexical-text="true">a</span></p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
+
+  test(`Can enter a table from a paragraph underneath via the left arrow key`, async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    await initialize({isCollab, page});
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+    await insertTable(page, 2, 2);
+
+    await moveDown(page, 2);
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [2],
+      focusOffset: 0,
+      focusPath: [2],
+    });
+
+    await moveLeft(page, 1);
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [1, 1, 1, 0],
+      focusOffset: 0,
+      focusPath: [1, 1, 1, 0],
+    });
   });
 
   test(`Can navigate table with keyboard`, async ({

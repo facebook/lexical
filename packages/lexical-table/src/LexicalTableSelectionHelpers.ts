@@ -9,7 +9,11 @@
 import type {TableCellNode} from './LexicalTableCellNode';
 import type {TableNode} from './LexicalTableNode';
 import type {TableDOMCell, TableDOMRows} from './LexicalTableObserver';
-import type {TableSelection} from './LexicalTableSelection';
+import type {
+  TableMapType,
+  TableMapValueType,
+  TableSelection,
+} from './LexicalTableSelection';
 import type {
   BaseSelection,
   ElementFormatType,
@@ -24,6 +28,7 @@ import {$findMatchingParent} from '@lexical/utils';
 import {
   $createParagraphNode,
   $createRangeSelectionFromDom,
+  $createTextNode,
   $getNearestNodeFromDOMNode,
   $getPreviousSelection,
   $getSelection,
@@ -40,6 +45,7 @@ import {
   FOCUS_COMMAND,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
+  INSERT_PARAGRAPH_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
@@ -453,6 +459,20 @@ export function applyTableHandlers(
           if (!$isTableCellNode(tableCellNode)) {
             return false;
           }
+
+          if (typeof payload === 'string') {
+            const edgePosition = $getTableEdgeCursorPosition(
+              editor,
+              selection,
+              tableNode,
+            );
+            if (edgePosition) {
+              $insertParagraphAtTableEdge(edgePosition, tableNode, [
+                $createTextNode(payload),
+              ]);
+              return true;
+            }
+          }
         }
 
         return false;
@@ -804,6 +824,33 @@ export function applyTableHandlers(
           $addHighlightStyleToTable(editor, tableObserver);
         }
 
+        return false;
+      },
+      COMMAND_PRIORITY_CRITICAL,
+    ),
+  );
+
+  tableObserver.listenersToRemove.add(
+    editor.registerCommand(
+      INSERT_PARAGRAPH_COMMAND,
+      () => {
+        const selection = $getSelection();
+        if (
+          !$isRangeSelection(selection) ||
+          !selection.isCollapsed() ||
+          !$isSelectionInTable(selection, tableNode)
+        ) {
+          return false;
+        }
+        const edgePosition = $getTableEdgeCursorPosition(
+          editor,
+          selection,
+          tableNode,
+        );
+        if (edgePosition) {
+          $insertParagraphAtTableEdge(edgePosition, tableNode);
+          return true;
+        }
         return false;
       },
       COMMAND_PRIORITY_CRITICAL,
@@ -1220,16 +1267,42 @@ function $handleArrowKey(
   const selection = $getSelection();
 
   if (!$isSelectionInTable(selection, tableNode)) {
+    if (
+      direction === 'backward' &&
+      $isRangeSelection(selection) &&
+      selection.isCollapsed()
+    ) {
+      const anchorType = selection.anchor.type;
+      const anchorOffset = selection.anchor.offset;
+      if (
+        anchorType !== 'element' &&
+        !(anchorType === 'text' && anchorOffset === 0)
+      ) {
+        return false;
+      }
+      const anchorNode = selection.anchor.getNode();
+      if (!anchorNode) {
+        return false;
+      }
+      const parentNode = $findMatchingParent(
+        anchorNode,
+        (n) => $isElementNode(n) && !n.isInline(),
+      );
+      if (!parentNode) {
+        return false;
+      }
+      const siblingNode = parentNode.getPreviousSibling();
+      if (!siblingNode || !$isTableNode(siblingNode)) {
+        return false;
+      }
+      stopEvent(event);
+      siblingNode.selectEnd();
+      return true;
+    }
     return false;
   }
 
   if ($isRangeSelection(selection) && selection.isCollapsed()) {
-    // Horizontal move between cels seem to work well without interruption
-    // so just exit early, and handle vertical moves
-    if (direction === 'backward' || direction === 'forward') {
-      return false;
-    }
-
     const {anchor, focus} = selection;
     const anchorCellNode = $findMatchingParent(
       anchor.getNode(),
@@ -1260,6 +1333,23 @@ function $handleArrowKey(
           tableObserver,
         );
       }
+    }
+
+    if (direction === 'backward' || direction === 'forward') {
+      const anchorType = anchor.type;
+      const anchorOffset = anchor.offset;
+      const anchorNode = anchor.getNode();
+      if (!anchorNode) {
+        return false;
+      }
+
+      if (
+        isExitingTableAnchor(anchorType, anchorOffset, anchorNode, direction)
+      ) {
+        return $handleTableExit(event, anchorNode, tableNode, direction);
+      }
+
+      return false;
     }
 
     const anchorCellDom = editor.getElementByKey(anchorCellNode.__key);
@@ -1388,4 +1478,187 @@ function stopEvent(event: Event) {
   event.preventDefault();
   event.stopImmediatePropagation();
   event.stopPropagation();
+}
+
+function isExitingTableAnchor(
+  type: string,
+  offset: number,
+  anchorNode: LexicalNode,
+  direction: 'backward' | 'forward',
+) {
+  return (
+    isExitingTableElementAnchor(type, anchorNode, direction) ||
+    isExitingTableTextAnchor(type, offset, anchorNode, direction)
+  );
+}
+
+function isExitingTableElementAnchor(
+  type: string,
+  anchorNode: LexicalNode,
+  direction: 'backward' | 'forward',
+) {
+  return (
+    type === 'element' &&
+    (direction === 'backward'
+      ? anchorNode.getPreviousSibling() === null
+      : anchorNode.getNextSibling() === null)
+  );
+}
+
+function isExitingTableTextAnchor(
+  type: string,
+  offset: number,
+  anchorNode: LexicalNode,
+  direction: 'backward' | 'forward',
+) {
+  const parentNode = $findMatchingParent(
+    anchorNode,
+    (n) => $isElementNode(n) && !n.isInline(),
+  );
+  if (!parentNode) {
+    return false;
+  }
+  const hasValidOffset =
+    direction === 'backward'
+      ? offset === 0
+      : offset === anchorNode.getTextContentSize();
+  return (
+    type === 'text' &&
+    hasValidOffset &&
+    (direction === 'backward'
+      ? parentNode.getPreviousSibling() === null
+      : parentNode.getNextSibling() === null)
+  );
+}
+
+function $handleTableExit(
+  event: KeyboardEvent,
+  anchorNode: LexicalNode,
+  tableNode: TableNode,
+  direction: 'backward' | 'forward',
+) {
+  const anchorCellNode = $findMatchingParent(anchorNode, $isTableCellNode);
+  if (!$isTableCellNode(anchorCellNode)) {
+    return false;
+  }
+  const [tableMap, cellValue] = $computeTableMap(
+    tableNode,
+    anchorCellNode,
+    anchorCellNode,
+  );
+  if (!isExitingCell(tableMap, cellValue, direction)) {
+    return false;
+  }
+
+  const toNode = getExitingToNode(anchorNode, direction, tableNode);
+  if (!toNode || $isTableNode(toNode)) {
+    return false;
+  }
+
+  stopEvent(event);
+  if (direction === 'backward') {
+    toNode.selectEnd();
+  } else {
+    toNode.selectStart();
+  }
+  return true;
+}
+
+function isExitingCell(
+  tableMap: TableMapType,
+  cellValue: TableMapValueType,
+  direction: 'backward' | 'forward',
+) {
+  const firstCell = tableMap[0][0];
+  const lastCell = tableMap[tableMap.length - 1][tableMap[0].length - 1];
+  const {startColumn, startRow} = cellValue;
+  return direction === 'backward'
+    ? startColumn === firstCell.startColumn && startRow === firstCell.startRow
+    : startColumn === lastCell.startColumn && startRow === lastCell.startRow;
+}
+
+function getExitingToNode(
+  anchorNode: LexicalNode,
+  direction: 'backward' | 'forward',
+  tableNode: TableNode,
+) {
+  const parentNode = $findMatchingParent(
+    anchorNode,
+    (n) => $isElementNode(n) && !n.isInline(),
+  );
+  if (!parentNode) {
+    return undefined;
+  }
+  const anchorSibling =
+    direction === 'backward'
+      ? parentNode.getPreviousSibling()
+      : parentNode.getNextSibling();
+  return anchorSibling && $isTableNode(anchorSibling)
+    ? anchorSibling
+    : direction === 'backward'
+    ? tableNode.getPreviousSibling()
+    : tableNode.getNextSibling();
+}
+
+function $insertParagraphAtTableEdge(
+  edgePosition: 'first' | 'last',
+  tableNode: TableNode,
+  children?: LexicalNode[],
+) {
+  const paragraphNode = $createParagraphNode();
+  if (edgePosition === 'first') {
+    tableNode.insertBefore(paragraphNode);
+  } else {
+    tableNode.insertAfter(paragraphNode);
+  }
+  paragraphNode.append(...(children || []));
+  paragraphNode.selectEnd();
+}
+
+function $getTableEdgeCursorPosition(
+  editor: LexicalEditor,
+  selection: RangeSelection,
+  tableNode: TableNode,
+) {
+  // TODO: Add support for nested tables
+  const domSelection = window.getSelection();
+  if (!domSelection || domSelection.anchorNode !== editor.getRootElement()) {
+    return undefined;
+  }
+
+  const anchorCellNode = $findMatchingParent(selection.anchor.getNode(), (n) =>
+    $isTableCellNode(n),
+  ) as TableCellNode | null;
+  if (!anchorCellNode) {
+    return undefined;
+  }
+
+  const parentTable = $findMatchingParent(anchorCellNode, (n) =>
+    $isTableNode(n),
+  );
+  if (!$isTableNode(parentTable) || !parentTable.is(tableNode)) {
+    return undefined;
+  }
+
+  const [tableMap, cellValue] = $computeTableMap(
+    tableNode,
+    anchorCellNode,
+    anchorCellNode,
+  );
+  const firstCell = tableMap[0][0];
+  const lastCell = tableMap[tableMap.length - 1][tableMap[0].length - 1];
+  const {startRow, startColumn} = cellValue;
+
+  const isAtFirstCell =
+    startRow === firstCell.startRow && startColumn === firstCell.startColumn;
+  const isAtLastCell =
+    startRow === lastCell.startRow && startColumn === lastCell.startColumn;
+
+  if (isAtFirstCell) {
+    return 'first';
+  } else if (isAtLastCell) {
+    return 'last';
+  } else {
+    return undefined;
+  }
 }

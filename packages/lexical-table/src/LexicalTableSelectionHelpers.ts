@@ -693,14 +693,18 @@ export function applyTableHandlers(
             const newSelection = selection.clone();
             if (isFocusInside) {
               newSelection.focus.set(
-                tableNode.getKey(),
-                isBackward ? 0 : tableNode.getChildrenSize(),
+                tableNode.getParentOrThrow().getKey(),
+                isBackward
+                  ? tableNode.getIndexWithinParent()
+                  : tableNode.getIndexWithinParent() + 1,
                 'element',
               );
             } else {
               newSelection.anchor.set(
-                tableNode.getKey(),
-                isBackward ? tableNode.getChildrenSize() : 0,
+                tableNode.getParentOrThrow().getKey(),
+                isBackward
+                  ? tableNode.getIndexWithinParent() + 1
+                  : tableNode.getIndexWithinParent(),
                 'element',
               );
             }

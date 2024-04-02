@@ -31,7 +31,7 @@ import invariant from 'shared/invariant';
 import normalizeClassNames from 'shared/normalizeClassNames';
 
 import {$createListItemNode, $isListItemNode, ListItemNode} from '.';
-import {updateChildrenListItemValue} from './formatList';
+import {mergeLists, updateChildrenListItemValue} from './formatList';
 import {$getListDepth, wrapInListItem} from './utils';
 
 export type SerializedListNode = Spread<
@@ -125,6 +125,10 @@ export class ListNode extends ElementNode {
   static transform(): (node: LexicalNode) => void {
     return (node: LexicalNode) => {
       invariant($isListNode(node), 'node is not a ListNode');
+      const nextSibling = node.getNextSibling();
+      if ($isListNode(nextSibling)) {
+        mergeLists(node, nextSibling);
+      }
       updateChildrenListItemValue(node);
     };
   }

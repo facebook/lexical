@@ -9,7 +9,8 @@
     "**/dist/**",
     "**/npm/**",
     "**/node_modules/**",
-    "./packages/playwright-core/**"
+    "./packages/playwright-core/**",
+    "./packages/lexical-devtools/**"
   ],
   "extends": "./tsconfig.json"
 }

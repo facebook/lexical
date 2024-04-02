@@ -1,0 +1,17 @@
+{
+  "extends": "./.wxt/tsconfig.json",
+  "lib": ["dom", "dom.iterable"],
+  "include": ["./.wxt/wxt.d.ts", "./**/*", "../../libdefs"],
+  "compilerOptions": {
+    "target": "ES2019",
+    "allowImportingTsExtensions": true,
+    "jsx": "react-jsx",
+    "paths": {
+      "lexical": ["../lexical/src/"],
+      "shared/canUseDOM": ["../shared/src/canUseDOM.ts"],
+      "shared/normalizeClassNames": ["../shared/src/normalizeClassNames.ts"],
+      "shared/invariant": ["../shared/src/invariant.ts"],
+      "shared/environment": ["../shared/src/environment.ts"]
+    }
+  }
+}

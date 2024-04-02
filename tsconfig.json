@@ -209,7 +209,8 @@
     "**/dist/**",
     "**/npm/**",
     "**/node_modules/**",
-    "./packages/playwright-core/**"
+    "./packages/playwright-core/**",
+    "./packages/lexical-devtools/**"
   ],
   "typedocOptions": {
     "logLevel": "Verbose"

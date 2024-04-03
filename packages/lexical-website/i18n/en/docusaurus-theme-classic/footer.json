@@ -42,9 +42,5 @@
   "link.item.label.Terms": {
     "message": "Terms",
     "description": "The label of footer link with label=Terms linking to https://opensource.facebook.com/legal/terms/"
-  },
-  "copyright": {
-    "message": "Copyright © 2022 Meta Platforms, Inc. Built with Docusaurus.",
-    "description": "The footer copyright"
   }
 }

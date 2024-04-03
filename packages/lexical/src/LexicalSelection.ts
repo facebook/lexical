@@ -220,7 +220,7 @@ function $transferStartingElementPointToTextPoint(
   const target = $isRootNode(element)
     ? $createParagraphNode().append(textNode)
     : textNode;
-  textNode.setFormat(format);
+  textNode.setFormat(format === 0 ? element.getTextFormat() : format);
   textNode.setStyle(style);
   if (placementNode === null) {
     element.append(target);
@@ -832,12 +832,8 @@ export class RangeSelection implements BaseSelection {
       const firstNodeFormat = firstNode.getFormat();
       const firstNodeStyle = firstNode.getStyle();
 
-      if (
-        startOffset === endOffset &&
-        (firstNodeFormat !== format || firstNodeStyle !== style)
-      ) {
+      if (startOffset === endOffset && firstNodeStyle !== style) {
         if (firstNode.getTextContent() === '') {
-          firstNode.setFormat(format);
           firstNode.setStyle(style);
         } else {
           const textNode = $createTextNode(text);

@@ -17,7 +17,8 @@ import type {
   ElementFormatType,
   SerializedElementNode,
 } from './LexicalElementNode';
-import type {RangeSelection} from 'lexical';
+
+import {type RangeSelection} from 'lexical';
 
 import {
   $applyNodeReplacement,
@@ -113,8 +114,20 @@ export class ParagraphNode extends ElementNode {
 
   // Mutation
 
-  insertNewAfter(_: RangeSelection, restoreSelection: boolean): ParagraphNode {
+  insertNewAfter(
+    rangeSelection: RangeSelection,
+    restoreSelection: boolean,
+  ): ParagraphNode {
     const newElement = $createParagraphNode();
+    // const selection = getActiveEditor()._editorState._selection;
+    const isBackward = rangeSelection.isBackward();
+    const endPoint = isBackward ? rangeSelection.anchor : rangeSelection.focus;
+    const lastNode = endPoint.getNode();
+    if ($isParagraphNode(lastNode)) {
+      newElement.setTextFormat(lastNode.getTextFormat());
+    } else {
+      newElement.setTextFormat(rangeSelection.format);
+    }
     const direction = this.getDirection();
     newElement.setDirection(direction);
     this.insertAfter(newElement, restoreSelection);

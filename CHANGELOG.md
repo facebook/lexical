@@ -1,3 +1,38 @@
+## v0.14.3 (2024-04-03)
+
+- fix removed overwrite of copyright (#5811) Sven ani
+- remove duplicate list merging (#5810) Sherry
+- fix Table selection stuck (#5807) Alex Reznik
+- #4618 combine list if next sibling is list node (#5803) Sherry
+- docs clarify readupdate language in intro, readme  editor state (#5809) Bob Ippolito
+- chore Removed invalid GH action config (#5808) Vlad Fedosov
+- feat(lexicaldevtools) Added basic extension scaffolding (#5747) Vlad Fedosov
+- Improve table selection and navigation (#5767) Serey Roth
+- Fix typo in docs (#5805) John Flockton
+- fix avoid auto-embed menu overflowing off right side of page (#5804) wangqi
+- Fix #5543 insertText() was inserting Text as child of table node instead of root before tablerow resulting in table node not getting deleted (#5799) Sahejkm
+- Editable immediately when adding link from Floating toolbar (#5801) Ivaylo Pavlov
+- Quick fix for #5754 Numbered list does not increment in ImageNode caption #5754 (#5798) Sherry
+- Node fork modules  moduleResolution bundler (#5774) Bob Ippolito
+- Node-aware Context Menu Items (#5791) Ivaylo Pavlov
+- Fix #5720 update the resolvedOffset correctly on image selection and drag (#5795) Sahejkm
+- fix Address more flaky collab tests (#5788) Bob Ippolito
+- fix Update iframes to prevent focus stealing (#5784) Bob Ippolito
+- fix restore playground esm build (#5781) Bob Ippolito
+- fix Double input of text when composing at TextNode boundaries (#5762) matsuyama-k1
+- lexicalplayground Moved Vite config to TS and removed code duplication (#5744) Vlad Fedosov
+- Fix selection started from inside of the table (#5766) Alex Reznik
+- Respect CSS zoom (#5772) Ebad
+- Revert fixed #5233 firefox related issue for backspace deletion  wh (#5776) Gerard Rovira
+- Fix clear formatting in table (#5765) Alex Reznik
+- Generate default entry in package.json exports last  use .mjs for esm modules (#5737) Bob Ippolito
+- Update build script to exclude WWW from ESM modules (#5753) John Flockton
+- chore(lexicaltext) Split into several files for better readability and to simplify further expansion (#5718) Vlad Fedosov
+- fixed #5233 firefox related issue for backspace deletion  where focus offset is of type element instead of text (#5734) Sahejkm
+- Update the publish script channel (#5736) Ivaylo Pavlov
+- v0.14.2 (#5735) Ivaylo Pavlov
+- v0.14.2 Lexical GitHub Actions Bot
+
 ## v0.14.2 (2024-03-18)
 
 - Fix order of exports in lexical-react (#5732) Brian Birtles

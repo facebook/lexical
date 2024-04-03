@@ -94,6 +94,27 @@ export function applyTableHandlers(
 
   attachTableObserverToTableElement(tableElement, tableObserver);
 
+  const createMouseHandlers = () => {
+    const onMouseUp = () => {
+      tableObserver.isSelecting = false;
+      editorWindow.removeEventListener('mouseup', onMouseUp);
+      editorWindow.removeEventListener('mousemove', onMouseMove);
+    };
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      const focusCell = getDOMCellFromTarget(moveEvent.target as Node);
+      if (
+        focusCell !== null &&
+        (tableObserver.anchorX !== focusCell.x ||
+          tableObserver.anchorY !== focusCell.y)
+      ) {
+        moveEvent.preventDefault();
+        tableObserver.setFocusCellForSelection(focusCell);
+      }
+    };
+    return {onMouseMove: onMouseMove, onMouseUp: onMouseUp};
+  };
+
   tableElement.addEventListener('mousedown', (event: MouseEvent) => {
     setTimeout(() => {
       if (event.button !== 0) {
@@ -110,23 +131,8 @@ export function applyTableHandlers(
         tableObserver.setAnchorCellForSelection(anchorCell);
       }
 
-      const onMouseUp = () => {
-        editorWindow.removeEventListener('mouseup', onMouseUp);
-        editorWindow.removeEventListener('mousemove', onMouseMove);
-      };
-
-      const onMouseMove = (moveEvent: MouseEvent) => {
-        const focusCell = getDOMCellFromTarget(moveEvent.target as Node);
-        if (
-          focusCell !== null &&
-          (tableObserver.anchorX !== focusCell.x ||
-            tableObserver.anchorY !== focusCell.y)
-        ) {
-          moveEvent.preventDefault();
-          tableObserver.setFocusCellForSelection(focusCell);
-        }
-      };
-
+      const {onMouseUp, onMouseMove} = createMouseHandlers();
+      tableObserver.isSelecting = true;
       editorWindow.addEventListener('mouseup', onMouseUp);
       editorWindow.addEventListener('mousemove', onMouseMove);
     }, 0);
@@ -741,6 +747,14 @@ export function applyTableHandlers(
                 getObserverCellFromCellNode(focusCellNode),
                 true,
               );
+              if (!tableObserver.isSelecting) {
+                setTimeout(() => {
+                  const {onMouseUp, onMouseMove} = createMouseHandlers();
+                  tableObserver.isSelecting = true;
+                  editorWindow.addEventListener('mouseup', onMouseUp);
+                  editorWindow.addEventListener('mousemove', onMouseMove);
+                }, 0);
+              }
             }
           }
         } else if (

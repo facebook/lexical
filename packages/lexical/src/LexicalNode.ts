@@ -16,6 +16,7 @@ import invariant from 'shared/invariant';
 import {
   $createParagraphNode,
   $isElementNode,
+  $isParagraphNode,
   $isRootNode,
   $isTextNode,
   ElementNode,
@@ -702,6 +703,9 @@ export class LexicalNode {
     mutableNode.__next = latestNode.__next;
     mutableNode.__prev = latestNode.__prev;
     if ($isElementNode(latestNode) && $isElementNode(mutableNode)) {
+      if ($isParagraphNode(latestNode) && $isParagraphNode(mutableNode)) {
+        mutableNode.__textFormat = latestNode.__textFormat;
+      }
       mutableNode.__first = latestNode.__first;
       mutableNode.__last = latestNode.__last;
       mutableNode.__size = latestNode.__size;

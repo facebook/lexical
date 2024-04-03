@@ -150,7 +150,6 @@ export class ParagraphNode extends ElementNode {
     restoreSelection: boolean,
   ): ParagraphNode {
     const newElement = $createParagraphNode();
-    // const selection = getActiveEditor()._editorState._selection;
     const isBackward = rangeSelection.isBackward();
     const endPoint = isBackward ? rangeSelection.anchor : rangeSelection.focus;
     const lastNode = endPoint.getNode();

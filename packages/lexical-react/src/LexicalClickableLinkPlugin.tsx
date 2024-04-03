@@ -34,13 +34,20 @@ function findMatchingDOM<T extends Node>(
 
 export default function LexicalClickableLinkPlugin({
   newTab = true,
+  disabled = false,
 }: {
   newTab?: boolean;
+  disabled?: boolean;
 }): null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
     const onClick = (event: MouseEvent) => {
+      if (disabled) {
+        event.preventDefault();
+        return;
+      }
+
       const target = event.target;
       if (!(target instanceof Node)) {
         return;
@@ -99,7 +106,7 @@ export default function LexicalClickableLinkPlugin({
     };
 
     const onMouseUp = (event: MouseEvent) => {
-      if (event.button === 1 && editor.isEditable()) {
+      if (!disabled && event.button === 1) {
         onClick(event);
       }
     };
@@ -114,7 +121,7 @@ export default function LexicalClickableLinkPlugin({
         rootElement.addEventListener('mouseup', onMouseUp);
       }
     });
-  }, [editor, newTab]);
+  }, [editor, newTab, disabled]);
 
   return null;
 }

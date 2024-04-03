@@ -191,7 +191,7 @@ export default function Editor(): JSX.Element {
             <TwitterPlugin />
             <YouTubePlugin />
             <FigmaPlugin />
-            {!isEditable && <LexicalClickableLinkPlugin />}
+            <LexicalClickableLinkPlugin disabled={isEditable} />
             <HorizontalRulePlugin />
             <EquationsPlugin />
             <ExcalidrawPlugin />

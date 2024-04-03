@@ -7,7 +7,7 @@
     "plain-text"
   ],
   "license": "MIT",
-  "version": "0.14.2",
+  "version": "0.14.3",
   "main": "LexicalPlainText.js",
   "types": "index.d.ts",
   "repository": {
@@ -31,9 +31,9 @@
     }
   },
   "dependencies": {
-    "@lexical/clipboard": "0.14.2",
-    "@lexical/selection": "0.14.2",
-    "@lexical/utils": "0.14.2",
-    "lexical": "0.14.2"
+    "@lexical/clipboard": "0.14.3",
+    "@lexical/selection": "0.14.3",
+    "@lexical/utils": "0.14.3",
+    "lexical": "0.14.3"
   }
 }

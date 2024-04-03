@@ -21,6 +21,7 @@ import {
   $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
+  $isParagraphNode,
   $isRootNode,
   $isTextNode,
   $setSelection,
@@ -220,7 +221,10 @@ function $transferStartingElementPointToTextPoint(
   const target = $isRootNode(element)
     ? $createParagraphNode().append(textNode)
     : textNode;
-  textNode.setFormat(format === 0 ? element.getTextFormat() : format);
+  const isParapgraphNode = $isParagraphNode(element);
+  textNode.setFormat(
+    format === 0 && isParapgraphNode ? element.getTextFormat() : format,
+  );
   textNode.setStyle(style);
   if (placementNode === null) {
     element.append(target);

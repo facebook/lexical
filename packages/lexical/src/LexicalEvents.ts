@@ -286,8 +286,6 @@ function onSelectionChange(
     }
   }
 
-  const previousSelection = editor._editorState._selection;
-
   updateEditor(editor, () => {
     // Non-active editor don't need any extra logic for selection, it only needs update
     // to reconcile selection (set it to null) to ensure that only one editor has non-null selection.
@@ -306,7 +304,6 @@ function onSelectionChange(
     if ($isRangeSelection(selection)) {
       const anchor = selection.anchor;
       const anchorNode = anchor.getNode();
-      const focus = selection.focus;
 
       if (selection.isCollapsed()) {
         // Badly interpreted range selection when collapsed - #1482
@@ -327,6 +324,10 @@ function onSelectionChange(
         const [lastFormat, lastStyle, lastOffset, lastKey, timeStamp] =
           collapsedSelectionFormat;
 
+        const root = $getRoot();
+        const isRootTextContentEmpty =
+          editor.isComposing() === false && root.getTextContent() === '';
+
         if (
           currentTimeStamp < timeStamp + 200 &&
           anchor.offset === lastOffset &&
@@ -334,19 +335,7 @@ function onSelectionChange(
         ) {
           selection.format = lastFormat;
           selection.style = lastStyle;
-        } else if (
-          $isRangeSelection(previousSelection) &&
-          // Preserve format when selection was moved programatically or when selection change
-          // fires but selection remains the same. We do 1) to guarantee that user's action always
-          // take place until intentionally dimissed and 2) to avoid same position click from
-          // dropping it.
-          !(
-            previousSelection.anchor.key === anchor.key &&
-            previousSelection.focus.key === focus.key &&
-            previousSelection.anchor.offset === selection.anchor.offset &&
-            previousSelection.focus.offset === selection.focus.offset
-          )
-        ) {
+        } else {
           if (anchor.type === 'text') {
             invariant(
               $isTextNode(anchorNode),
@@ -354,13 +343,14 @@ function onSelectionChange(
             );
             selection.format = anchorNode.getFormat();
             selection.style = anchorNode.getStyle();
-          } else if (anchor.type === 'element') {
+          } else if (anchor.type === 'element' && !isRootTextContentEmpty) {
             selection.format = 0;
             selection.style = '';
           }
         }
       } else {
         const anchorKey = anchor.key;
+        const focus = selection.focus;
         const focusKey = focus.key;
         const nodes = selection.getNodes();
         const nodesLength = nodes.length;

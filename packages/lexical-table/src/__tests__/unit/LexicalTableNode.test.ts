@@ -82,5 +82,25 @@ describe('LexicalTableNode tests', () => {
         `<table><tr><td><p dir="ltr"><span data-lexical-text="true">Hello there</span></p></td><td><p dir="ltr"><span data-lexical-text="true">General Kenobi!</span></p></td></tr><tr><td><p dir="ltr"><span data-lexical-text="true">Lexical is nice</span></p></td>${emptyCell}</tr></table>`,
       );
     });
+
+    test('Copy partial table from an external source', async () => {
+      const {editor} = testEnv;
+
+      const dataTransfer = new DataTransferMock();
+      dataTransfer.setData(
+        'text/html',
+        '<html><body><!--StartFragment--><table class="ws-table-all" id="customers"><tbody><tr><td>11</td></tr><tr><td>21</td><td>22</td><td>23</td></tr><tr><td>31</td><td>32</td></tr></tbody></table><!--EndFragment--></body></html>',
+      );
+      await editor.update(() => {
+        const selection = $getSelection();
+        invariant($isRangeSelection(selection), 'isRangeSelection(selection)');
+        $insertDataTransferForRichText(dataTransfer, selection, editor);
+      });
+      // Make sure extra empy cells are inserted
+      const emptyCell = '<td><p><br></p></td>';
+      expect(testEnv.innerHTML).toBe(
+        `<table><tr><td><p><span data-lexical-text="true">11</span></p></td>${emptyCell}${emptyCell}</tr><tr><td><p><span data-lexical-text="true">21</span></p></td><td><p><span data-lexical-text="true">22</span></p></td><td><p><span data-lexical-text="true">23</span></p></td></tr><tr><td><p><span data-lexical-text="true">31</span></p></td><td><p><span data-lexical-text="true">32</span></p></td>${emptyCell}</tr></table>`,
+      );
+    });
   });
 });

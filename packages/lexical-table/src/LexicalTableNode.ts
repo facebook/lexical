@@ -6,7 +6,6 @@
  *
  */
 
-import type {TableCellNode} from './LexicalTableCellNode';
 import type {
   DOMConversionMap,
   DOMConversionOutput,
@@ -21,11 +20,16 @@ import type {
 import {addClassNamesToElement, isHTMLElement} from '@lexical/utils';
 import {
   $applyNodeReplacement,
+  $createParagraphNode,
   $getNearestNodeFromDOMNode,
   ElementNode,
 } from 'lexical';
 
-import {$isTableCellNode} from './LexicalTableCellNode';
+import {
+  $createTableCellNode,
+  $isTableCellNode,
+  TableCellNode,
+} from './LexicalTableCellNode';
 import {TableDOMCell, TableDOMTable} from './LexicalTableObserver';
 import {$isTableRowNode, TableRowNode} from './LexicalTableRowNode';
 import {getTable} from './LexicalTableSelectionHelpers';
@@ -242,7 +246,32 @@ export function $getElementForTableNode(
 }
 
 export function convertTableElement(_domNode: Node): DOMConversionOutput {
-  return {node: $createTableNode()};
+  return {
+    after: (childLexicalNodes) => {
+      const maxRowLength: number = (childLexicalNodes as TableRowNode[]).reduce(
+        (currentMax: number, rowNode) => {
+          if (rowNode.__size > currentMax) {
+            return rowNode.__size;
+          } else {
+            return currentMax;
+          }
+        },
+        0,
+      );
+
+      childLexicalNodes.forEach((rowNode) => {
+        if ($isTableRowNode(rowNode)) {
+          for (let i = rowNode.__size; i < maxRowLength; ++i) {
+            const cellNode = $createTableCellNode(0);
+            cellNode.append($createParagraphNode());
+            rowNode.append(cellNode);
+          }
+        }
+      });
+      return childLexicalNodes;
+    },
+    node: $createTableNode(),
+  };
 }
 
 export function $createTableNode(): TableNode {

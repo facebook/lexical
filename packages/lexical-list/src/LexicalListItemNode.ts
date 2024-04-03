@@ -226,22 +226,6 @@ export class ListItemNode extends ElementNode {
 
     const siblings = this.getNextSiblings();
 
-    // Attempt to merge if the list is of the same type.
-
-    if ($isListNode(node)) {
-      let child = node;
-      const children = node.getChildren<ListNode>();
-
-      for (let i = children.length - 1; i >= 0; i--) {
-        child = children[i];
-
-        this.insertAfter(child, restoreSelection);
-      }
-
-      return child;
-    }
-
-    // Otherwise, split the list
     // Split the lists and insert the node in between them
     listNode.insertAfter(node, restoreSelection);
 

@@ -11,6 +11,7 @@ import {
   $getNodeByKey,
   $getPreviousSelection,
   $isElementNode,
+  $isParagraphNode,
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
@@ -18,6 +19,7 @@ import {
   ElementNode,
   LexicalEditor,
   LexicalNode,
+  ParagraphNode,
   Point,
   RangeSelection,
   TextNode,
@@ -55,6 +57,14 @@ function $updateTextNodeProperties<T extends TextNode>(
   return target;
 }
 
+function $updateParagraphNodeProperties<T extends ParagraphNode>(
+  target: T,
+  source: ParagraphNode,
+): T {
+  target.__textFormat = source.__textFormat;
+  return target;
+}
+
 /**
  * Returns a copy of a node, but generates a new key for the copy.
  * @param node - The node to be cloned.
@@ -76,6 +86,9 @@ export function $cloneWithProperties<T extends LexicalNode>(node: T): T {
     return $updateTextNodeProperties(clone, node);
   }
 
+  if ($isParagraphNode(node) && $isParagraphNode(clone)) {
+    return $updateParagraphNodeProperties(clone, node);
+  }
   return clone;
 }
 

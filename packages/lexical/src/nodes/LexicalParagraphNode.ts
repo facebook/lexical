@@ -6,12 +6,17 @@
  *
  */
 
-import type {EditorConfig, LexicalEditor} from '../LexicalEditor';
+import type {
+  EditorConfig,
+  KlassConstructor,
+  LexicalEditor,
+} from '../LexicalEditor';
 import type {
   DOMConversionMap,
   DOMConversionOutput,
   DOMExportOutput,
   LexicalNode,
+  NodeKey,
 } from '../LexicalNode';
 import type {
   ElementFormatType,
@@ -20,20 +25,46 @@ import type {
 
 import {type RangeSelection} from 'lexical';
 
+import {TEXT_TYPE_TO_FORMAT} from '../LexicalConstants';
 import {
   $applyNodeReplacement,
   getCachedClassNameArray,
   isHTMLElement,
 } from '../LexicalUtils';
 import {ElementNode} from './LexicalElementNode';
-import {$isTextNode} from './LexicalTextNode';
+import {$isTextNode, TextFormatType} from './LexicalTextNode';
 
 export type SerializedParagraphNode = SerializedElementNode;
 
 /** @noInheritDoc */
 export class ParagraphNode extends ElementNode {
+  ['constructor']!: KlassConstructor<typeof ParagraphNode>;
+  /** @internal */
+  __textFormat: number;
+
+  constructor(key?: NodeKey) {
+    super(key);
+    this.__textFormat = 0;
+  }
+
   static getType(): string {
     return 'paragraph';
+  }
+
+  getTextFormat(): number {
+    const self = this.getLatest();
+    return self.__textFormat;
+  }
+
+  setTextFormat(type: number): this {
+    const self = this.getWritable();
+    self.__textFormat = type;
+    return self;
+  }
+
+  hasTextFormat(type: TextFormatType): boolean {
+    const formatFlag = TEXT_TYPE_TO_FORMAT[type];
+    return (this.getTextFormat() & formatFlag) !== 0;
   }
 
   static clone(node: ParagraphNode): ParagraphNode {

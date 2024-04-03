@@ -72,8 +72,6 @@ export class ElementNode extends LexicalNode {
   __indent: number;
   /** @internal */
   __dir: 'ltr' | 'rtl' | null;
-  /** @internal */
-  __textFormat: number;
 
   constructor(key?: NodeKey) {
     super(key);
@@ -83,7 +81,6 @@ export class ElementNode extends LexicalNode {
     this.__format = 0;
     this.__indent = 0;
     this.__dir = null;
-    this.__textFormat = 0;
   }
 
   getFormat(): number {
@@ -97,10 +94,6 @@ export class ElementNode extends LexicalNode {
   getIndent(): number {
     const self = this.getLatest();
     return self.__indent;
-  }
-  getTextFormat(): number {
-    const self = this.getLatest();
-    return self.__textFormat;
   }
   getChildren<T extends LexicalNode>(): Array<T> {
     const children: Array<T> = [];
@@ -364,11 +357,6 @@ export class ElementNode extends LexicalNode {
     const self = this.getWritable();
     self.__format = type !== '' ? ELEMENT_TYPE_TO_FORMAT[type] : 0;
     return this;
-  }
-  setTextFormat(type: number): this {
-    const self = this.getWritable();
-    self.__textFormat = type;
-    return self;
   }
   setIndent(indentLevel: number): this {
     const self = this.getWritable();

@@ -525,6 +525,14 @@ export class ElementNode extends LexicalNode {
   excludeFromCopy(destination?: 'clone' | 'html'): boolean {
     return false;
   }
+  /** @deprecated @internal */
+  canReplaceWith(replacement: LexicalNode): boolean {
+    return true;
+  }
+  /** @deprecated @internal */
+  canInsertAfter(node: LexicalNode): boolean {
+    return true;
+  }
   canBeEmpty(): boolean {
     return true;
   }
@@ -542,6 +550,10 @@ export class ElementNode extends LexicalNode {
   // beyond this point. For example, node.getTopLevelElement(), when performed inside a TableCellNode
   // will return the immediate first child underneath TableCellNode instead of RootNode.
   isShadowRoot(): boolean {
+    return false;
+  }
+  /** @deprecated @internal */
+  canMergeWith(node: ElementNode): boolean {
     return false;
   }
   extractWithChild(

@@ -1244,6 +1244,7 @@ line after
     1. And can be nested
     and multiline as well
 
+.
 31. Have any starting number
 ### Inline code
 Inline \`code\` format which also \`preserves **_~~any markdown-like~~_** text\` within
@@ -1480,6 +1481,9 @@ const IMPORTED_MARKDOWN_HTML = html`
       </ol>
     </li>
   </ol>
+  <p class="PlaygroundEditorTheme__paragraph">
+    <span data-lexical-text="true">.</span>
+  </p>
   <ol start="31" class="PlaygroundEditorTheme__ol1">
     <li
       value="31"

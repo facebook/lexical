@@ -308,6 +308,21 @@ export function updateChildrenListItemValue(list: ListNode): void {
 }
 
 /**
+ * Merge the next sibling list if same type.
+ * <ul> will merge with <ul>, but NOT <ul> with <ol>.
+ * @param list - The list whose next sibling should be potentially merged
+ */
+export function mergeNextSiblingListIfSameType(list: ListNode): void {
+  const nextSibling = list.getNextSibling();
+  if (
+    $isListNode(nextSibling) &&
+    list.getListType() === nextSibling.getListType()
+  ) {
+    mergeLists(list, nextSibling);
+  }
+}
+
+/**
  * Adds an empty ListNode/ListItemNode chain at listItemNode, so as to
  * create an indent effect. Won't indent ListItemNodes that have a ListNode as
  * a child, but does merge sibling ListItemNodes if one has a nested ListNode.

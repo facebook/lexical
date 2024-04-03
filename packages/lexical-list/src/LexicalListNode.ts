@@ -31,7 +31,10 @@ import invariant from 'shared/invariant';
 import normalizeClassNames from 'shared/normalizeClassNames';
 
 import {$createListItemNode, $isListItemNode, ListItemNode} from '.';
-import {updateChildrenListItemValue} from './formatList';
+import {
+  mergeNextSiblingListIfSameType,
+  updateChildrenListItemValue,
+} from './formatList';
 import {$getListDepth, wrapInListItem} from './utils';
 
 export type SerializedListNode = Spread<
@@ -125,6 +128,7 @@ export class ListNode extends ElementNode {
   static transform(): (node: LexicalNode) => void {
     return (node: LexicalNode) => {
       invariant($isListNode(node), 'node is not a ListNode');
+      mergeNextSiblingListIfSameType(node);
       updateChildrenListItemValue(node);
     };
   }

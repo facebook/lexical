@@ -121,14 +121,15 @@ The most common way to update the editor is to use `editor.update()`. Calling th
 requires a function to be passed in that will provide access to mutate the underlying
 editor state. When starting a fresh update, the current editor state is cloned and
 used as the starting point. From a technical perspective, this means that Lexical leverages a technique
-called double-buffering during updates. There's an editor state to represent what is current on
-the screen, and another work-in-progress editor state that represents future changes.
+called double-buffering during updates. There's the "current" frozen editor state to represent what was
+most recently reconciled to the DOM, and another work-in-progress "pending" editor state that represents
+future changes for the next reconciliation.
 
-Creating an update is typically an async process that allows Lexical to batch multiple updates together in
-a single update – improving performance. When Lexical is ready to commit the update to
-the DOM, the underlying mutations and changes in the update will form a new immutable
-editor state. Calling `editor.getEditorState()` will then return the latest editor state
-based on the changes from the update.
+Reconciling an update is typically an async process that allows Lexical to batch multiple synchronous
+updates of the editor state together in a single update to the DOM – improving performance. When
+Lexical is ready to commit the update to the DOM, the underlying mutations and changes in the update
+batch will form a new immutable editor state. Calling `editor.getEditorState()` will then return the
+latest editor state based on the changes from the update.
 
 Here's an example of how you can update an editor instance:
 
@@ -185,6 +186,45 @@ editor.registerUpdateListener(({editorState}) => {
     // the $ prefixed helper functions.
   });
 });
+```
+
+## When are Listeners, Transforms, and Commands called?
+
+There are several types of callbacks that can be registered with the editor that are related to
+updates of the Editor State.
+
+| Callback Type | When It's Called |
+| -- | -- |
+| Update Listener | After reconciliation |
+| Mutation Listener | After reconciliation |
+| Node Transform | During `editor.update()`, after the callback finishes, if any instances of the node type they are registered for were updated |
+| Command | As soon as the command is dispatched to the editor (called from an implicit `editor.update()`) |
+
+## Synchronous reconciliation with discrete updates
+
+While commit scheduling and batching are normally what we want, they can sometimes get in the way.
+
+Consider this example: you're trying to manipulate an editor state in a server context and then persist it in a database.
+
+```js
+editor.update(() => {
+  // manipulate the state...
+});
+
+saveToDatabase(editor.getEditorState().toJSON());
+```
+
+This code will not work as expected, because the `saveToDatabase` call will happen before the state has been committed.
+The state that will be saved will be the same one that existed before the update.
+
+Fortunately, the `discrete` option for `LexicalEditor.update` forces an update to be immediately committed.
+
+```js
+editor.update(() => {
+  // manipulate the state...
+}, {discrete: true});
+
+saveToDatabase(editor.getEditorState().toJSON());
 ```
 
 ### Cloning state

@@ -17,9 +17,10 @@
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "@eduardoac-skimlinks/webext-redux": "3.0.1-release-candidate",
-    "zustand": "^4.5.1",
-    "webext-bridge": "~6.0.1"
+    "@webext-pegasus/transport": "^0.0.1",
+    "@webext-pegasus/rpc": "^0.0.1",
+    "@webext-pegasus/store-zustand": "^0.0.1",
+    "zustand": "^4.5.1"
   },
   "devDependencies": {
     "@types/react": "^18.2.46",

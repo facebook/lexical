@@ -6,21 +6,30 @@
  *
  */
 
+import type {IInjectedPegasusService} from '../entrypoints/injected/InjectedPegasusService';
+
+import {getRPCService} from '@webext-pegasus/rpc';
 import * as React from 'react';
 import {useState} from 'react';
 
 interface Props {
   tabID: number;
   setErrorMessage: (value: string) => void;
-  sendMessage: (message: string, t: null, target: string) => Promise<unknown>;
 }
 
-function EditorsRefreshCTA({tabID, setErrorMessage, sendMessage}: Props) {
+function EditorsRefreshCTA({tabID, setErrorMessage}: Props) {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleRefreshClick = () => {
     setIsRefreshing(true);
-    sendMessage('refreshLexicalEditorsForTabID', null, `window@${tabID}`)
+
+    const injectedPegasusService = getRPCService<IInjectedPegasusService>(
+      'InjectedPegasusService',
+      {context: 'window', tabId: tabID},
+    );
+
+    injectedPegasusService
+      .refreshLexicalEditorsForTabID()
       .catch((err) => {
         setErrorMessage(err.message);
         console.error(err);

@@ -126,7 +126,6 @@ module.exports = {
   rules: {
     'accessor-pairs': OFF,
 
-    'brace-style': [ERROR, '1tbs'],
     'consistent-return': OFF,
     curly: [ERROR, 'all'],
     'dot-location': [ERROR, 'property'],

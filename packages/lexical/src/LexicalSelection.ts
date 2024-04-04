@@ -223,7 +223,9 @@ function $transferStartingElementPointToTextPoint(
     : textNode;
   const isParapgraphNode = $isParagraphNode(element);
   textNode.setFormat(
-    format === 0 && isParapgraphNode ? element.getTextFormat() : format,
+    format === 0 && isParapgraphNode && element.getChildren().length === 0
+      ? element.getTextFormat()
+      : format,
   );
   textNode.setStyle(style);
   if (placementNode === null) {

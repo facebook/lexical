@@ -60,6 +60,7 @@ import {
   KEY_TAB_COMMAND,
   MOVE_TO_END,
   MOVE_TO_START,
+  ParagraphNode,
   PASTE_COMMAND,
   REDO_COMMAND,
   REMOVE_TEXT_COMMAND,
@@ -285,7 +286,6 @@ function onSelectionChange(
       return;
     }
   }
-
   updateEditor(editor, () => {
     // Non-active editor don't need any extra logic for selection, it only needs update
     // to reconcile selection (set it to null) to ensure that only one editor has non-null selection.
@@ -304,6 +304,7 @@ function onSelectionChange(
     if ($isRangeSelection(selection)) {
       const anchor = selection.anchor;
       const anchorNode = anchor.getNode();
+      const focus = selection.focus;
 
       if (selection.isCollapsed()) {
         // Badly interpreted range selection when collapsed - #1482
@@ -344,13 +345,20 @@ function onSelectionChange(
             selection.format = anchorNode.getFormat();
             selection.style = anchorNode.getStyle();
           } else if (anchor.type === 'element' && !isRootTextContentEmpty) {
-            selection.format = 0;
+            const lastNode = anchor.getNode();
+            if (
+              lastNode instanceof ParagraphNode &&
+              lastNode.getChildrenSize() === 0
+            ) {
+              selection.format = lastNode.getTextFormat();
+            } else {
+              selection.format = 0;
+            }
             selection.style = '';
           }
         }
       } else {
         const anchorKey = anchor.key;
-        const focus = selection.focus;
         const focusKey = focus.key;
         const nodes = selection.getNodes();
         const nodesLength = nodes.length;

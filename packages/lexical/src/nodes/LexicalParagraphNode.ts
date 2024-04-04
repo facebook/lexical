@@ -31,7 +31,7 @@ import {
   getCachedClassNameArray,
   isHTMLElement,
 } from '../LexicalUtils';
-import {$isElementNode, ElementNode} from './LexicalElementNode';
+import {ElementNode} from './LexicalElementNode';
 import {$isTextNode, TextFormatType} from './LexicalTextNode';
 
 export type SerializedParagraphNode = SerializedElementNode;
@@ -151,36 +151,12 @@ export class ParagraphNode extends ElementNode {
   ): ParagraphNode {
     const newElement = $createParagraphNode();
     if (rangeSelection != null) {
-      const isBackward = rangeSelection.isBackward();
-      const endPoint = isBackward
-        ? rangeSelection.anchor
-        : rangeSelection.focus;
-      const lastNode = endPoint.getNode();
-      const lastParagraphNode = $isElementNode(lastNode)
-        ? this.$getParagaphNodeFromLastSelection(lastNode)
-        : null;
-      if (lastParagraphNode != null) {
-        newElement.setTextFormat(lastParagraphNode.getTextFormat());
-      } else {
-        newElement.setTextFormat(rangeSelection.format);
-      }
+      newElement.setTextFormat(rangeSelection.format);
     }
     const direction = this.getDirection();
     newElement.setDirection(direction);
     this.insertAfter(newElement, restoreSelection);
     return newElement;
-  }
-
-  $getParagaphNodeFromLastSelection(
-    lastNode: ElementNode | null,
-  ): ParagraphNode | null {
-    if (lastNode === null) {
-      return null;
-    }
-    if ($isParagraphNode(lastNode)) {
-      return lastNode;
-    }
-    return this.$getParagaphNodeFromLastSelection(lastNode.getParent());
   }
 
   collapseAtStart(): boolean {

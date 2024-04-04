@@ -10,7 +10,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 
 import store from '../../store.ts';
-import storeReadyPromise from '../../store-sync/content-script';
+import storeReadyPromise from '../../store-sync/devtools';
 import App from './App.tsx';
 
 const tabID = browser.devtools.inspectedWindow.tabId;

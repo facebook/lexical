@@ -8,7 +8,7 @@
 
 import type {LexicalEditor} from 'lexical';
 
-import {COMMAND_PRIORITY_HIGH, LexicalCommand} from 'lexical';
+import {COMMAND_PRIORITY_CRITICAL, LexicalCommand} from 'lexical';
 import {useEffect, useMemo, useState} from 'react';
 
 export type LexicalCommandLog = ReadonlyArray<
@@ -44,7 +44,7 @@ export function registerLexicalCommandLogger(
 
           return false;
         },
-        COMMAND_PRIORITY_HIGH,
+        COMMAND_PRIORITY_CRITICAL,
       ),
     );
   }

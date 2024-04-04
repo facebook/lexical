@@ -836,7 +836,10 @@ export class RangeSelection implements BaseSelection {
       const firstNodeFormat = firstNode.getFormat();
       const firstNodeStyle = firstNode.getStyle();
 
-      if (startOffset === endOffset && firstNodeStyle !== style) {
+      if (
+        startOffset === endOffset &&
+        (firstNodeFormat !== format || firstNodeStyle !== style)
+      ) {
         if (firstNode.getTextContent() === '') {
           firstNode.setStyle(style);
         } else {

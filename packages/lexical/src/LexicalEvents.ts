@@ -304,7 +304,6 @@ function onSelectionChange(
     if ($isRangeSelection(selection)) {
       const anchor = selection.anchor;
       const anchorNode = anchor.getNode();
-      const focus = selection.focus;
 
       if (selection.isCollapsed()) {
         // Badly interpreted range selection when collapsed - #1482
@@ -359,6 +358,7 @@ function onSelectionChange(
         }
       } else {
         const anchorKey = anchor.key;
+        const focus = selection.focus;
         const focusKey = focus.key;
         const nodes = selection.getNodes();
         const nodesLength = nodes.length;

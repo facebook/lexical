@@ -150,9 +150,7 @@ export class ParagraphNode extends ElementNode {
     restoreSelection: boolean,
   ): ParagraphNode {
     const newElement = $createParagraphNode();
-    if (rangeSelection != null) {
-      newElement.setTextFormat(rangeSelection.format);
-    }
+    newElement.setTextFormat(rangeSelection.format);
     const direction = this.getDirection();
     newElement.setDirection(direction);
     this.insertAfter(newElement, restoreSelection);

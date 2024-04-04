@@ -863,8 +863,12 @@ export function registerRichText(editor: LexicalEditor): () => void {
 
         // Exception handling for iOS native behavior instead of Lexical's behavior when using Korean on iOS devices.
         // On other devices, if you backspace during composing, you get a keyCode of 229 (composing state), but on iOS, the behavior is different: it outputs a keyCode of 8 and appends the remnants of the composing character to the previous character.
-        if (event.keyCode === 8 && navigator.language === 'ko-KR' && /iPad|iPhone|iPod/.test(navigator.userAgent)) {
-          return false
+         if (
+          event.keyCode === 8 &&
+          navigator.language === 'ko-KR' &&
+          /iPad|iPhone|iPod/.test(navigator.userAgent)
+        ) {
+          return false;
         }
         
         event.preventDefault();

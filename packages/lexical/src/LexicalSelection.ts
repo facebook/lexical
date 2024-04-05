@@ -838,6 +838,7 @@ export class RangeSelection implements BaseSelection {
       ) {
         if (firstNode.getTextContent() === '') {
           firstNode.setStyle(style);
+          firstNode.setFormat(format);
         } else {
           const textNode = $createTextNode(text);
           textNode.setFormat(format);

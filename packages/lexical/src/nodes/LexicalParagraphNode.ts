@@ -10,6 +10,7 @@ import type {
   EditorConfig,
   KlassConstructor,
   LexicalEditor,
+  Spread,
 } from '../LexicalEditor';
 import type {
   DOMConversionMap,
@@ -22,8 +23,7 @@ import type {
   ElementFormatType,
   SerializedElementNode,
 } from './LexicalElementNode';
-
-import {type RangeSelection} from 'lexical';
+import type {RangeSelection} from 'lexical';
 
 import {TEXT_TYPE_TO_FORMAT} from '../LexicalConstants';
 import {
@@ -34,7 +34,12 @@ import {
 import {ElementNode} from './LexicalElementNode';
 import {$isTextNode, TextFormatType} from './LexicalTextNode';
 
-export type SerializedParagraphNode = SerializedElementNode;
+export type SerializedParagraphNode = Spread<
+  {
+    textFormat: number;
+  },
+  SerializedElementNode
+>;
 
 /** @noInheritDoc */
 export class ParagraphNode extends ElementNode {
@@ -132,12 +137,14 @@ export class ParagraphNode extends ElementNode {
     node.setFormat(serializedNode.format);
     node.setIndent(serializedNode.indent);
     node.setDirection(serializedNode.direction);
+    node.setTextFormat(serializedNode.textFormat);
     return node;
   }
 
-  exportJSON(): SerializedElementNode {
+  exportJSON(): SerializedParagraphNode {
     return {
       ...super.exportJSON(),
+      textFormat: this.getTextFormat(),
       type: 'paragraph',
       version: 1,
     };

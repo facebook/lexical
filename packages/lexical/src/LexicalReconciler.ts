@@ -23,10 +23,9 @@ import {
   $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
-  // $isParagraphNode,
+  $isParagraphNode,
   $isRootNode,
   $isTextNode,
-  // TextNode,
 } from '.';
 import {
   DOUBLE_LINE_BREAK,
@@ -51,7 +50,7 @@ type IntentionallyMarkedAsDirtyElement = boolean;
 
 let subTreeTextContent = '';
 let subTreeDirectionedTextContent = '';
-// let subTreeDirectionedTextFormat: number | null = null;
+let subTreeDirectionedTextFormat: number | null = null;
 let editorTextContent = '';
 let activeEditorConfig: EditorConfig;
 let activeEditor: LexicalEditor;
@@ -288,14 +287,14 @@ function createChildren(
 
   for (; startIndex <= endIndex; ++startIndex) {
     createNode(children[startIndex], dom, insertDOM);
-    // const node = activeNextNodeMap.get(children[startIndex]);
-    // if (
-    //   node !== null &&
-    //   subTreeDirectionedTextFormat === null &&
-    //   $isTextNode(node)
-    // ) {
-    //   subTreeDirectionedTextFormat = node.getFormat();
-    // }
+    const node = activeNextNodeMap.get(children[startIndex]);
+    if (
+      node !== null &&
+      subTreeDirectionedTextFormat === null &&
+      $isTextNode(node)
+    ) {
+      subTreeDirectionedTextFormat = node.getFormat();
+    }
   }
   if ($textContentRequiresDoubleLinebreakAtEnd(element)) {
     subTreeTextContent += DOUBLE_LINE_BREAK;
@@ -350,6 +349,20 @@ function reconcileElementTerminatingLineBreak(
     // @ts-expect-error: internal field
     dom.__lexicalLineBreak = element;
     dom.appendChild(element);
+  }
+}
+
+function reconcileParagraphFormat(element: ElementNode): void {
+  if (
+    $isParagraphNode(element) &&
+    subTreeDirectionedTextFormat != null &&
+    subTreeDirectionedTextFormat !== element.__textFormat
+  ) {
+    element.setTextFormat(subTreeDirectionedTextFormat);
+    if (!activeEditorStateReadOnly) {
+      const writableNode = element.getWritable();
+      writableNode.__textFormat = subTreeDirectionedTextFormat;
+    }
   }
 }
 
@@ -433,13 +446,12 @@ function reconcileChildrenWithDirection(
 ): void {
   const previousSubTreeDirectionTextContent = subTreeDirectionedTextContent;
   subTreeDirectionedTextContent = '';
-  // subTreeDirectionedTextFormat = null;
+  subTreeDirectionedTextFormat = null;
   reconcileChildren(prevElement, nextElement, dom);
   reconcileBlockDirection(nextElement, dom);
+  reconcileParagraphFormat(nextElement);
   subTreeDirectionedTextContent = previousSubTreeDirectionTextContent;
-  // if ($isParagraphNode(nextElement) && subTreeDirectionedTextFormat != null) {
-  //   nextElement.setTextFormat(subTreeDirectionedTextFormat);
-  // }
+  subTreeDirectionedTextFormat = null;
 }
 
 function createChildrenArray(
@@ -480,14 +492,10 @@ function reconcileChildren(
       dom.replaceChild(replacementDOM, lastDOM);
       destroyNode(prevFirstChildKey, null);
     }
-    // if (
-    //   subTreeDirectionedTextFormat === null &&
-    //   $isTextNode(activeNextNodeMap.get(nextFrstChildKey))
-    // ) {
-    //   subTreeDirectionedTextFormat = (
-    //     activeNextNodeMap.get(nextFrstChildKey) as TextNode
-    //   ).getFormat();
-    // }
+    const nextChildNode = activeNextNodeMap.get(nextFrstChildKey);
+    if (subTreeDirectionedTextFormat === null && $isTextNode(nextChildNode)) {
+      subTreeDirectionedTextFormat = nextChildNode.getFormat();
+    }
   } else {
     const prevChildren = createChildrenArray(prevElement, activePrevNodeMap);
     const nextChildren = createChildrenArray(nextElement, activeNextNodeMap);
@@ -773,6 +781,15 @@ function reconcileNodeChildren(
         prevIndex++;
         nextIndex++;
       }
+    }
+
+    const node = activeNextNodeMap.get(nextKey);
+    if (
+      node !== null &&
+      subTreeDirectionedTextFormat === null &&
+      $isTextNode(node)
+    ) {
+      subTreeDirectionedTextFormat = node.getFormat();
     }
   }
 

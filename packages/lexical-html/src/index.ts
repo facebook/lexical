@@ -26,6 +26,7 @@ import {
   $getRoot,
   $isBlockElementNode,
   $isElementNode,
+  $isParagraphNode,
   $isTextNode,
 } from 'lexical';
 
@@ -268,7 +269,8 @@ function $createNodesFromDOM(
   } else {
     if ($isElementNode(currentLexicalNode)) {
       // nightmare starts here, apply to para only? this unnesting of block nodes will break list nodes.
-      if ($isBlockElementNode(currentLexicalNode)) {
+      // For now just unnesting block nodes in para nodes.
+      if ($isParagraphNode(currentLexicalNode)) {
         const childLexicalNodes2: Array<LexicalNode> = [];
         let childLexicalNodes3: Array<LexicalNode> = [];
         // grp and normalise the kids, wrap leaf nodes in paragraphs (or newlines?)

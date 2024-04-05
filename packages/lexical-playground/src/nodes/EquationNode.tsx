@@ -17,7 +17,12 @@ import type {
 } from 'lexical';
 
 import katex from 'katex';
-import {$applyNodeReplacement, DecoratorNode, DOMExportOutput} from 'lexical';
+import {
+  $applyNodeReplacement,
+  $createParagraphNode,
+  DecoratorNode,
+  DOMExportOutput,
+} from 'lexical';
 import * as React from 'react';
 import {Suspense} from 'react';
 
@@ -43,7 +48,9 @@ function convertEquationElement(
     return {node};
   }
 
-  return null;
+  return {
+    node: $createParagraphNode(),
+  };
 }
 
 export class EquationNode extends DecoratorNode<JSX.Element> {
@@ -109,7 +116,10 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
     return {
       div: (domNode: HTMLElement) => {
         if (!domNode.hasAttribute('data-lexical-equation')) {
-          return null;
+          return {
+            conversion: () => ({node: $createParagraphNode()}),
+            priority: 0,
+          };
         }
         return {
           conversion: convertEquationElement,

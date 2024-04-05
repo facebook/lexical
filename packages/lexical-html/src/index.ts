@@ -174,6 +174,11 @@ function getConversionFunction(
         (currentConversion === null ||
           (currentConversion.priority || 0) < (domConversion.priority || 0))
       ) {
+        // [issue?] this means only one conversion function gets to run.
+        // If there are multiple nodes initialised with mapping to same html node, only the highest pri function gets ran.
+        // why this may be a problem: eg. div has multiple conversion mappings. div could map to a code node, tweet node, etc.
+        // If both code node and tweet node initialised, because only code node conversion fn is chosen,
+        // the tweet node conversion fn will never get to run on divs
         currentConversion = domConversion;
       }
     }

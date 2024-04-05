@@ -18,7 +18,7 @@ import type {
 } from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
-import {ElementNode} from 'lexical';
+import {$createParagraphNode, ElementNode} from 'lexical';
 
 export type SerializedLayoutContainerNode = Spread<
   {
@@ -84,7 +84,10 @@ export class LayoutContainerNode extends ElementNode {
     return {
       div: (domNode: HTMLElement) => {
         if (!domNode.hasAttribute('data-lexical-layout-container')) {
-          return null;
+          return {
+            conversion: () => ({node: $createParagraphNode()}),
+            priority: 0,
+          };
         }
         return {
           conversion: convertLayoutContainerElement,

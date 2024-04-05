@@ -64,7 +64,7 @@ export class ParagraphNode extends ElementNode {
         conversion: (e) => {
           return convertParagraphElement(e);
         },
-        priority: 4,
+        priority: 0,
       }),
       p: (node: Node) => ({
         conversion: convertParagraphElement,

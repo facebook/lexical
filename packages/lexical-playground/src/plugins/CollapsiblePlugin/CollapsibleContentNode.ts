@@ -7,6 +7,7 @@
  */
 
 import {
+  $createParagraphNode,
   DOMConversionMap,
   DOMConversionOutput,
   DOMExportOutput,
@@ -50,7 +51,10 @@ export class CollapsibleContentNode extends ElementNode {
     return {
       div: (domNode: HTMLElement) => {
         if (!domNode.hasAttribute('data-lexical-collapsible-content')) {
-          return null;
+          return {
+            conversion: () => ({node: $createParagraphNode()}),
+            priority: 0,
+          };
         }
         return {
           conversion: convertCollapsibleContentElement,

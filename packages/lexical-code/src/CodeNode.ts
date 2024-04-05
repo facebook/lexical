@@ -343,7 +343,7 @@ function convertDivElement(domNode: Node): DOMConversionOutput {
   const isCode = isCodeElement(div);
   if (!isCode && !isCodeChildElement(div)) {
     return {
-      node: null,
+      node: $createParagraphNode(),
     };
   }
   return {

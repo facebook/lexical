@@ -26,7 +26,7 @@ import {
   $isParagraphNode,
   $isRootNode,
   $isTextNode,
-  ParagraphNode,
+  TextNode,
 } from '.';
 import {
   DOUBLE_LINE_BREAK,
@@ -51,6 +51,7 @@ type IntentionallyMarkedAsDirtyElement = boolean;
 
 let subTreeTextContent = '';
 let subTreeDirectionedTextContent = '';
+let subTreeDirectionedTextFormat: number | null = null;
 let editorTextContent = '';
 let activeEditorConfig: EditorConfig;
 let activeEditor: LexicalEditor;
@@ -287,6 +288,14 @@ function createChildren(
 
   for (; startIndex <= endIndex; ++startIndex) {
     createNode(children[startIndex], dom, insertDOM);
+    const node = activeNextNodeMap.get(children[startIndex]);
+    if (
+      node !== null &&
+      subTreeDirectionedTextFormat === null &&
+      $isTextNode(node)
+    ) {
+      subTreeDirectionedTextFormat = node.getFormat();
+    }
   }
   if ($textContentRequiresDoubleLinebreakAtEnd(element)) {
     subTreeTextContent += DOUBLE_LINE_BREAK;
@@ -417,17 +426,6 @@ function reconcileBlockDirection(element: ElementNode, dom: HTMLElement): void {
   }
 }
 
-function reconcileParagraphFormat(nextElement: ParagraphNode): void {
-  let startIndex = 0;
-  for (; startIndex <= nextElement.getChildrenSize() - 1; ++startIndex) {
-    const child = nextElement.getChildAtIndex(0);
-    if ($isTextNode(child)) {
-      nextElement.setTextFormat(child.getFormat());
-      break;
-    }
-  }
-}
-
 function reconcileChildrenWithDirection(
   prevElement: ElementNode,
   nextElement: ElementNode,
@@ -435,9 +433,13 @@ function reconcileChildrenWithDirection(
 ): void {
   const previousSubTreeDirectionTextContent = subTreeDirectionedTextContent;
   subTreeDirectionedTextContent = '';
+  subTreeDirectionedTextFormat = null;
   reconcileChildren(prevElement, nextElement, dom);
   reconcileBlockDirection(nextElement, dom);
   subTreeDirectionedTextContent = previousSubTreeDirectionTextContent;
+  if ($isParagraphNode(nextElement) && subTreeDirectionedTextFormat != null) {
+    nextElement.setTextFormat(subTreeDirectionedTextFormat);
+  }
 }
 
 function createChildrenArray(
@@ -477,6 +479,14 @@ function reconcileChildren(
       const replacementDOM = createNode(nextFrstChildKey, null, null);
       dom.replaceChild(replacementDOM, lastDOM);
       destroyNode(prevFirstChildKey, null);
+    }
+    if (
+      subTreeDirectionedTextFormat === null &&
+      $isTextNode(activeNextNodeMap.get(nextFrstChildKey))
+    ) {
+      subTreeDirectionedTextFormat = (
+        activeNextNodeMap.get(nextFrstChildKey) as TextNode
+      ).getFormat();
     }
   } else {
     const prevChildren = createChildrenArray(prevElement, activePrevNodeMap);
@@ -623,9 +633,6 @@ function reconcileNode(
     }
     if (isDirty) {
       reconcileChildrenWithDirection(prevNode, nextNode, dom);
-      if ($isParagraphNode(nextNode)) {
-        reconcileParagraphFormat(nextNode);
-      }
       if (!$isRootNode(nextNode) && !nextNode.isInline()) {
         reconcileElementTerminatingLineBreak(prevNode, nextNode, dom);
       }

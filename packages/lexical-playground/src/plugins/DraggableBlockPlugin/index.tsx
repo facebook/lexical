@@ -231,7 +231,8 @@ function setTargetLine(
     anchorElem.getBoundingClientRect();
   const {marginTop, marginBottom} = getCollapsedMargins(targetBlockElem);
   let lineTop = targetBlockElemTop;
-  if (mouseY >= targetBlockElemTop) {
+  const scrollAjustedBlockElmTop = targetBlockElemTop + window.scrollY;
+  if (mouseY >= scrollAjustedBlockElmTop) {
     lineTop += targetBlockElemHeight + marginBottom / 2;
   } else {
     lineTop -= marginTop / 2;

@@ -6,7 +6,6 @@
  *
  */
 
-/* eslint-disable  simple-import-sort/imports */
 import type {
   EditorConfig,
   EditorThemeClasses,
@@ -17,23 +16,6 @@ import type {
   Spread,
   TabNode,
 } from 'lexical';
-
-import * as Prism from 'prismjs';
-
-import 'prismjs/components/prism-c';
-import 'prismjs/components/prism-clike';
-import 'prismjs/components/prism-cpp';
-import 'prismjs/components/prism-css';
-import 'prismjs/components/prism-java';
-import 'prismjs/components/prism-javascript';
-import 'prismjs/components/prism-markdown';
-import 'prismjs/components/prism-markup';
-import 'prismjs/components/prism-objectivec';
-import 'prismjs/components/prism-python';
-import 'prismjs/components/prism-rust';
-import 'prismjs/components/prism-sql';
-import 'prismjs/components/prism-swift';
-import 'prismjs/components/prism-typescript';
 
 import {
   addClassNamesToElement,
@@ -46,6 +28,7 @@ import {
   TextNode,
 } from 'lexical';
 
+import {Prism} from './CodeHighlighterPrism';
 import {$createCodeNode} from './CodeNode';
 
 export const DEFAULT_CODE_LANGUAGE = 'javascript';

@@ -23,8 +23,10 @@ import {
   $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
+  $isParagraphNode,
   $isRootNode,
   $isTextNode,
+  ParagraphNode,
 } from '.';
 import {
   DOUBLE_LINE_BREAK,
@@ -415,6 +417,16 @@ function reconcileBlockDirection(element: ElementNode, dom: HTMLElement): void {
   }
 }
 
+function reconcileParagraphFormat(nextElement: ParagraphNode): void {
+  let startIndex = 0;
+  for (; startIndex <= nextElement.getChildrenSize() - 1; ++startIndex) {
+    const child = nextElement.getChildAtIndex(0);
+    if ($isTextNode(child)) {
+      nextElement.setTextFormat(child.getFormat());
+    }
+  }
+}
+
 function reconcileChildrenWithDirection(
   prevElement: ElementNode,
   nextElement: ElementNode,
@@ -610,7 +622,9 @@ function reconcileNode(
     }
     if (isDirty) {
       reconcileChildrenWithDirection(prevNode, nextNode, dom);
-
+      if ($isParagraphNode(nextNode)) {
+        reconcileParagraphFormat(nextNode);
+      }
       if (!$isRootNode(nextNode) && !nextNode.isInline()) {
         reconcileElementTerminatingLineBreak(prevNode, nextNode, dom);
       }

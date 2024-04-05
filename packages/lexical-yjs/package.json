@@ -32,6 +32,7 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
+        "webpack": "./LexicalYjs.mjs",
         "node": "./LexicalYjs.node.mjs",
         "default": "./LexicalYjs.mjs"
       },

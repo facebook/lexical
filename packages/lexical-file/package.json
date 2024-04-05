@@ -24,6 +24,7 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
+        "webpack": "./LexicalFile.mjs",
         "node": "./LexicalFile.node.mjs",
         "default": "./LexicalFile.mjs"
       },

@@ -21,6 +21,7 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
+        "webpack": "./LexicalPlainText.mjs",
         "node": "./LexicalPlainText.node.mjs",
         "default": "./LexicalPlainText.mjs"
       },

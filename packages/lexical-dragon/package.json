@@ -23,6 +23,7 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
+        "webpack": "./LexicalDragon.mjs",
         "node": "./LexicalDragon.node.mjs",
         "default": "./LexicalDragon.mjs"
       },

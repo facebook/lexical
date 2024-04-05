@@ -22,6 +22,7 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
+        "webpack": "./LexicalHeadless.mjs",
         "node": "./LexicalHeadless.node.mjs",
         "default": "./LexicalHeadless.mjs"
       },

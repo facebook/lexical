@@ -31,6 +31,7 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
+        "webpack": "./LexicalMarkdown.mjs",
         "node": "./LexicalMarkdown.node.mjs",
         "default": "./LexicalMarkdown.mjs"
       },

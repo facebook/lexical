@@ -2149,7 +2149,7 @@ function internalResolveSelectionPoints(
 
 export function $isBlockElementNode(
   node: LexicalNode | null | undefined,
-): node is ElementNode {
+): boolean {
   return $isElementNode(node) && !node.isInline();
 }
 

@@ -21,7 +21,13 @@ import {
   $sliceSelectedTextNodeContent,
 } from '@lexical/selection';
 import {isHTMLElement} from '@lexical/utils';
-import {$getRoot, $isElementNode, $isTextNode} from 'lexical';
+import {
+  $createParagraphNode,
+  $getRoot,
+  $isBlockElementNode,
+  $isElementNode,
+  $isTextNode,
+} from 'lexical';
 
 /**
  * How you parse your html string to get a document is left up to you. In the browser you can use the native
@@ -190,7 +196,7 @@ function $createNodesFromDOM(
     return lexicalNodes;
   }
 
-  let currentLexicalNode = null;
+  let currentLexicalNode: LexicalNode | null | undefined = null;
   const transformFunction = getConversionFunction(node, editor);
   const transformOutput = transformFunction
     ? transformFunction(node as HTMLElement)
@@ -233,7 +239,7 @@ function $createNodesFromDOM(
   // If the DOM node doesn't have a transformer, we don't know what
   // to do with it but we still need to process any childNodes.
   const children = node.childNodes;
-  let childLexicalNodes = [];
+  let childLexicalNodes: Array<LexicalNode> = [];
 
   for (let i = 0; i < children.length; i++) {
     childLexicalNodes.push(
@@ -256,6 +262,36 @@ function $createNodesFromDOM(
     lexicalNodes = lexicalNodes.concat(childLexicalNodes);
   } else {
     if ($isElementNode(currentLexicalNode)) {
+      // nightmare starts here, apply to para only? this unnesting of block nodes will break list nodes.
+      if ($isBlockElementNode(currentLexicalNode)) {
+        const childLexicalNodes2: Array<LexicalNode> = [];
+        let childLexicalNodes3: Array<LexicalNode> = [];
+        // grp and normalise the kids, wrap leaf nodes in paragraphs (or newlines?)
+        childLexicalNodes.forEach(function (c, i) {
+          if ($isBlockElementNode(c)) {
+            childLexicalNodes2.push(c);
+          } else {
+            // wrap contiguous block of inline nodes in a paragraph (or another block node eqv? for now just para)
+            childLexicalNodes3.push(c);
+            if (
+              // end the group
+              // last node
+              i === childLexicalNodes.length - 1 ||
+              // second last node
+              (i < childLexicalNodes.length - 1 &&
+                $isBlockElementNode(childLexicalNodes[i + 1]))
+            ) {
+              // prolly need to change paraNode to something more generic instead of always being a paragraph, maybe match whatever the current block node is?
+              const paraNode = $createParagraphNode();
+              paraNode.append(...childLexicalNodes3);
+              childLexicalNodes2.push(paraNode);
+              childLexicalNodes3 = [];
+            }
+          }
+        });
+        // this is returned to parent to process and append as child nodes
+        return childLexicalNodes2;
+      }
       // If the current node is a ElementNode after conversion,
       // we can append all the children to it.
       currentLexicalNode.append(...childLexicalNodes);

@@ -121,6 +121,7 @@ export function removeNode(
 
 export type DOMConversion<T extends HTMLElement = HTMLElement> = {
   conversion: DOMConversionFn<T>;
+  // Bigger number has higher priority over smaller number
   priority?: 0 | 1 | 2 | 3 | 4;
 };
 

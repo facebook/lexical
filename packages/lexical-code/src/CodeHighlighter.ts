@@ -16,6 +16,8 @@ import type {
   RangeSelection,
 } from 'lexical';
 
+import './CodeHighlighterPrism';
+
 import {mergeRegister} from '@lexical/utils';
 import {
   $createLineBreakNode,
@@ -42,7 +44,6 @@ import {
 } from 'lexical';
 import invariant from 'shared/invariant';
 
-import {Prism, reifyPrismLanguages} from './CodeHighlighterPrism';
 import {
   $createCodeHighlightNode,
   $isCodeHighlightNode,
@@ -68,9 +69,10 @@ export interface Tokenizer {
 export const PrismTokenizer: Tokenizer = {
   defaultLanguage: DEFAULT_CODE_LANGUAGE,
   tokenize(code: string, language?: string): (string | Token)[] {
-    return Prism.tokenize(
+    return window.Prism.tokenize(
       code,
-      Prism.languages[language || ''] || Prism.languages[this.defaultLanguage],
+      window.Prism.languages[language || ''] ||
+        window.Prism.languages[this.defaultLanguage],
     );
   },
 };
@@ -805,7 +807,6 @@ export function registerCodeHighlighting(
   editor: LexicalEditor,
   tokenizer?: Tokenizer,
 ): () => void {
-  reifyPrismLanguages();
   if (!editor.hasNodes([CodeNode, CodeHighlightNode])) {
     throw new Error(
       'CodeHighlightPlugin: CodeNode or CodeHighlightNode not registered on editor',

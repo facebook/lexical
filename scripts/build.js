@@ -287,7 +287,8 @@ async function build(name, inputFile, outputPath, outputFile, isProd, format) {
         },
       },
     ],
-    treeshake: 'smallest',
+    // This ensures PrismJS imports get included in the bundle
+    treeshake: name !== 'Lexical Code' ? 'smallest' : false,
   };
   const outputOptions = {
     esModule: false,

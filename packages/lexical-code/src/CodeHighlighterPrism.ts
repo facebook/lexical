@@ -7,21 +7,19 @@
  */
 
 // eslint-disable-next-line simple-import-sort/imports
-require('prismjs');
+import 'prismjs';
 
-require('prismjs/components/prism-clike');
-require('prismjs/components/prism-javascript');
-require('prismjs/components/prism-markup');
-require('prismjs/components/prism-markdown');
-require('prismjs/components/prism-c');
-require('prismjs/components/prism-css');
-require('prismjs/components/prism-objectivec');
-require('prismjs/components/prism-sql');
-require('prismjs/components/prism-python');
-require('prismjs/components/prism-rust');
-require('prismjs/components/prism-swift');
-require('prismjs/components/prism-typescript');
-require('prismjs/components/prism-java');
-require('prismjs/components/prism-cpp');
-
-export const Prism = global.Prism;
+import 'prismjs/components/prism-clike';
+import 'prismjs/components/prism-javascript';
+import 'prismjs/components/prism-markup';
+import 'prismjs/components/prism-markdown';
+import 'prismjs/components/prism-c';
+import 'prismjs/components/prism-css';
+import 'prismjs/components/prism-objectivec';
+import 'prismjs/components/prism-sql';
+import 'prismjs/components/prism-python';
+import 'prismjs/components/prism-rust';
+import 'prismjs/components/prism-swift';
+import 'prismjs/components/prism-typescript';
+import 'prismjs/components/prism-java';
+import 'prismjs/components/prism-cpp';

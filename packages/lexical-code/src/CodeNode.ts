@@ -22,6 +22,8 @@ import type {
   TabNode,
 } from 'lexical';
 
+import './CodeHighlighterPrism';
+
 import {addClassNamesToElement, isHTMLElement} from '@lexical/utils';
 import {
   $applyNodeReplacement,
@@ -33,7 +35,6 @@ import {
   ElementNode,
 } from 'lexical';
 
-import {Prism} from './CodeHighlighterPrism';
 import {
   $createCodeHighlightNode,
   $isCodeHighlightNode,
@@ -51,7 +52,7 @@ const mapToPrismLanguage = (
   language: string | null | undefined,
 ): string | null | undefined => {
   // eslint-disable-next-line no-prototype-builtins
-  return language != null && Prism.languages.hasOwnProperty(language)
+  return language != null && window.Prism.languages.hasOwnProperty(language)
     ? language
     : undefined;
 };

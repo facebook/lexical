@@ -16,12 +16,14 @@ import type {
   LexicalNode,
 } from 'lexical';
 
+import {$isListItemNode} from '@lexical/list';
 import {
   $cloneWithProperties,
   $sliceSelectedTextNodeContent,
 } from '@lexical/selection';
 import {isHTMLElement} from '@lexical/utils';
 import {
+  $createLineBreakNode,
   $createParagraphNode,
   $getRoot,
   $isBlockElementNode,
@@ -296,6 +298,19 @@ function $createNodesFromDOM(
             }
           }
         });
+        if (parentLexicalNode != null && $isListItemNode(parentLexicalNode)) {
+          const childLexicalNodesli: Array<LexicalNode> = [];
+          // replace para with line breaks
+          childLexicalNodes2.forEach(function (c, i) {
+            if ($isParagraphNode(c)) {
+              childLexicalNodesli.push(...c.getChildren());
+              childLexicalNodesli.push($createLineBreakNode());
+            } else {
+              childLexicalNodesli.push(c);
+            }
+          });
+          return childLexicalNodesli;
+        }
         // this is returned to parent to process and append as child nodes
         return childLexicalNodes2;
       }

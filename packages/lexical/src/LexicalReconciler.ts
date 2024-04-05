@@ -423,6 +423,7 @@ function reconcileParagraphFormat(nextElement: ParagraphNode): void {
     const child = nextElement.getChildAtIndex(0);
     if ($isTextNode(child)) {
       nextElement.setTextFormat(child.getFormat());
+      break;
     }
   }
 }

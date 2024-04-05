@@ -33,6 +33,18 @@ export {default as markSelection} from './markSelection';
 export {default as mergeRegister} from './mergeRegister';
 export {default as positionNodeOnRange} from './positionNodeOnRange';
 export {$splitNode, isHTMLAnchorElement, isHTMLElement} from 'lexical';
+export {CAN_USE_DOM} from 'shared/canUseDOM';
+export {
+  CAN_USE_BEFORE_INPUT,
+  IS_ANDROID,
+  IS_ANDROID_CHROME,
+  IS_APPLE,
+  IS_APPLE_WEBKIT,
+  IS_CHROME,
+  IS_FIREFOX,
+  IS_IOS,
+  IS_SAFARI,
+} from 'shared/environment';
 
 export type DFSNode = Readonly<{
   depth: number;

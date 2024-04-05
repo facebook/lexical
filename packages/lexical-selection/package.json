@@ -23,6 +23,7 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
+        "webpack": "./LexicalSelection.mjs",
         "node": "./LexicalSelection.node.mjs",
         "default": "./LexicalSelection.mjs"
       },

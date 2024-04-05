@@ -30,6 +30,7 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
+        "webpack": "./LexicalClipboard.mjs",
         "node": "./LexicalClipboard.node.mjs",
         "default": "./LexicalClipboard.mjs"
       },

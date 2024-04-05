@@ -26,6 +26,7 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
+        "webpack": "./LexicalHashtag.mjs",
         "node": "./LexicalHashtag.node.mjs",
         "default": "./LexicalHashtag.mjs"
       },

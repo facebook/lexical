@@ -26,6 +26,7 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
+        "webpack": "./LexicalHistory.mjs",
         "node": "./LexicalHistory.node.mjs",
         "default": "./LexicalHistory.mjs"
       },

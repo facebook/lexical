@@ -22,6 +22,7 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
+        "webpack": "./LexicalOffset.mjs",
         "node": "./LexicalOffset.node.mjs",
         "default": "./LexicalOffset.mjs"
       },

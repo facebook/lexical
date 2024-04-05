@@ -21,6 +21,7 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
+        "webpack": "./LexicalRichText.mjs",
         "node": "./LexicalRichText.node.mjs",
         "default": "./LexicalRichText.mjs"
       },

@@ -30,6 +30,7 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
+        "webpack": "./LexicalCode.mjs",
         "node": "./LexicalCode.node.mjs",
         "default": "./LexicalCode.mjs"
       },

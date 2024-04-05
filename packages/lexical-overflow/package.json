@@ -22,6 +22,7 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
+        "webpack": "./LexicalOverflow.mjs",
         "node": "./LexicalOverflow.node.mjs",
         "default": "./LexicalOverflow.mjs"
       },

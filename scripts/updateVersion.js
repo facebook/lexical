@@ -79,6 +79,7 @@ function exportEntry(file, types) {
     /* eslint-disable sort-keys-fix/sort-keys-fix */
     import: {
       types: `./${types}`,
+      webpack: `./${withEsmExtension(file)}`,
       node: `./${withNodeEsmExtension(file)}`,
       default: `./${withEsmExtension(file)}`,
     },

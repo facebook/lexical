@@ -43,7 +43,10 @@ declare export class ListItemNode extends ElementNode {
   append(...nodes: LexicalNode[]): this;
   replace<N: LexicalNode>(replaceWithNode: N): N;
   insertAfter(node: LexicalNode, restoreSelection?: boolean): LexicalNode;
-  insertNewAfter(): ListItemNode | ParagraphNode;
+  insertNewAfter(
+    selection: RangeSelection,
+    restoreSelection?: boolean,
+  ): ListItemNode | ParagraphNode;
   collapseAtStart(selection: RangeSelection): true;
   getIndent(): number;
   setIndent(indent: number): this;

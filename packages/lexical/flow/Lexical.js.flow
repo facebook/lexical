@@ -782,7 +782,10 @@ declare export class ParagraphNode extends ElementNode {
   constructor(key?: NodeKey): void;
   createDOM(config: EditorConfig): HTMLElement;
   updateDOM(prevNode: ParagraphNode, dom: HTMLElement): boolean;
-  insertNewAfter(): ParagraphNode;
+  insertNewAfter(
+    selection: RangeSelection,
+    restoreSelection?: boolean,
+  ): ParagraphNode;
   collapseAtStart(): boolean;
   static importJSON(
     serializedParagraphNode: SerializedParagraphNode,

@@ -10,22 +10,21 @@ import type {Binding} from './Bindings';
 import type {
   BaseSelection,
   EditorThemeClasses,
-  LexicalNode,
   NodeKey,
   NodeMap,
   Point,
 } from 'lexical';
 import type {AbsolutePosition, RelativePosition} from 'yjs';
 
-import {createDOMRange} from '@lexical/selection';
+import {createDOMRange, createRectsFromDOMRange} from '@lexical/selection';
 import {
   $getNodeByKey,
   $getSelection,
   $isElementNode,
+  $isLineBreakNode,
   $isRangeSelection,
   $isTextNode,
 } from 'lexical';
-import {IS_APPLE_WEBKIT} from 'shared/environment';
 import invariant from 'shared/invariant';
 import {
   compareRelativePositions,
@@ -207,235 +206,6 @@ function createCursorSelection(
   };
 }
 
-function getCaretPosition(element: HTMLElement, caretOffset: number) {
-  const textContent = element.textContent;
-  const isRtl = getComputedStyle(element).direction === 'rtl';
-
-  if (!textContent) {
-    const elementRect = element.getBoundingClientRect();
-    return new DOMRect(
-      isRtl ? elementRect.right : elementRect.left,
-      elementRect.top,
-      0,
-      elementRect.height,
-    );
-  }
-
-  const range = document.createRange();
-  range.setStart(element.firstChild!, Math.max(0, caretOffset - 1));
-  range.setEnd(element.firstChild!, caretOffset);
-
-  const rangeRect = range.getBoundingClientRect();
-
-  return new DOMRect(
-    !isRtl ? rangeRect.right : rangeRect.left,
-    rangeRect.top,
-    0,
-    rangeRect.height,
-  );
-}
-
-export function getSelectionPosition(
-  element: HTMLElement,
-  offsetStart: number,
-  offsetEnd: number,
-): DOMRect[] {
-  const fullText = element.textContent;
-  if (!fullText) {
-    return [];
-  }
-
-  if (IS_APPLE_WEBKIT) {
-    const range = document.createRange();
-    range.setStart(element.firstChild!, offsetStart);
-    range.setEnd(element.firstChild!, offsetEnd);
-    const rects = Array.from(range.getClientRects());
-    return rects.map((rect) => {
-      return new DOMRect(rect.x, rect.y, rect.width, rect.height);
-    });
-  }
-
-  const textSlice = fullText.slice(offsetStart, offsetEnd);
-
-  const words = textSlice.split(' ');
-
-  const range = document.createRange();
-  const rects: DOMRect[] = [];
-  let lastRectTop: number | null = null;
-  let wordStart = offsetStart;
-
-  words.forEach((word) => {
-    range.setStart(element.firstChild!, wordStart);
-    range.setEnd(element.firstChild!, wordStart + word.length);
-
-    const rect = range.getBoundingClientRect();
-    if (rect.width === 0 || rect.height === 0) {
-      wordStart += word.length + 1;
-      return;
-    }
-
-    if (lastRectTop === rect.top) {
-      // Extend the current rect for RTL or LTR text
-      rects[rects.length - 1] = new DOMRect(
-        Math.min(rects[rects.length - 1].x, rect.x),
-        rect.y,
-        Math.max(rects[rects.length - 1].right, rect.right) -
-          Math.min(rects[rects.length - 1].x, rect.x),
-        rect.height,
-      );
-    } else {
-      // New line or first word
-      rects.push(new DOMRect(rect.x, rect.y, rect.width, rect.height));
-      lastRectTop = rect.top;
-    }
-
-    wordStart += word.length + 1; // Move to the start of the next word
-  });
-
-  return rects;
-}
-
-function isForwardSelection(
-  focus: {key: NodeKey; offset: number},
-  anchor: {key: NodeKey; offset: number},
-  focusElement: HTMLElement,
-  anchorElement: HTMLElement,
-): boolean {
-  // First, check if focus and anchor elements are the same
-  if (focus.key === anchor.key) {
-    // If they are the same, compare offsets directly
-    return focus.offset >= anchor.offset;
-  } else {
-    // If they are different, compare their positions in the DOM
-    const range = document.createRange();
-    range.setStart(focusElement, 0);
-    range.setEnd(anchorElement, 0);
-    const isForward = range.collapsed;
-    range.detach(); // Clean up the range object
-
-    return isForward;
-  }
-}
-
-function getSelectionRects(
-  binding: Binding,
-  elements: HTMLElement[],
-  focus: {key: NodeKey; offset: number},
-  focusNode: LexicalNode,
-  anchor: {key: NodeKey; offset: number},
-  anchorNode: LexicalNode,
-): DOMRect[] {
-  const focusElement = binding.editor.getElementByKey(focus.key);
-  const anchorElement = binding.editor.getElementByKey(anchor.key);
-  if (!focusElement || !anchorElement) {
-    return [];
-  }
-
-  const isForward = isForwardSelection(
-    focus,
-    anchor,
-    focusElement,
-    anchorElement,
-  );
-
-  // Whe selection start and end on line break node anchor and focus
-  // offset will be 0
-  const focusNodeIsNotText = !$isTextNode(focusNode);
-  const anchorNodeIsNotText = !$isTextNode(anchorNode);
-
-  if (elements.length === 1) {
-    const content = elements[0].textContent;
-
-    if (!content) {
-      return [];
-    }
-
-    // Single element
-    const start = isForward
-      ? anchorNodeIsNotText
-        ? 0
-        : anchor.offset
-      : focusNodeIsNotText
-      ? 0
-      : focus.offset;
-    const end = isForward
-      ? focusNodeIsNotText
-        ? content.length
-        : focus.offset
-      : anchorNodeIsNotText
-      ? content.length
-      : anchor.offset;
-
-    return getSelectionPosition(elements[0], start, end);
-  }
-
-  return elements.flatMap((element, index) => {
-    const content = element.textContent;
-    if (!content) {
-      return [];
-    }
-
-    let start = 0;
-    let end = 0;
-    if (index === 0) {
-      // First element
-      start = isForward
-        ? anchorNodeIsNotText
-          ? 0
-          : anchor.offset
-        : focusNodeIsNotText
-        ? 0
-        : focus.offset;
-      end = content.length;
-    } else if (index === elements.length - 1) {
-      // Last element
-      start = 0;
-      end = isForward
-        ? focusNodeIsNotText
-          ? content.length
-          : focus.offset
-        : anchorNodeIsNotText
-        ? content.length
-        : anchor.offset;
-    } else {
-      // Middle elements
-      start = 0;
-      end = content.length;
-    }
-
-    return getSelectionPosition(element as HTMLElement, start, end);
-  });
-}
-export function getElementsInRange(range: Range): HTMLElement[] {
-  const elements: HTMLElement[] = [];
-  const walker = document.createTreeWalker(
-    range.commonAncestorContainer,
-    NodeFilter.SHOW_ELEMENT,
-    {
-      acceptNode: function (node) {
-        if (range.intersectsNode(node)) {
-          return NodeFilter.FILTER_ACCEPT;
-        }
-
-        return NodeFilter.FILTER_REJECT;
-      },
-    },
-  );
-
-  let node = walker.nextNode() as HTMLElement;
-  while (node) {
-    const hastElements = node.children.length > 0;
-    if (hastElements) {
-      node = walker.nextNode() as HTMLElement;
-      continue;
-    }
-    elements.push(node as HTMLElement);
-    node = walker.nextNode() as HTMLElement;
-  }
-
-  return elements;
-}
-
 function updateCursor(
   binding: Binding,
   cursor: Cursor,
@@ -485,21 +255,16 @@ function updateCursor(
   }
   let selectionRects: Array<DOMRect>;
 
-  if (anchorNode === focusNode && anchor.offset === focus.offset) {
-    const caretRect = getCaretPosition(
-      editor.getElementByKey(anchorKey) as HTMLElement,
-      anchor.offset,
-    );
-    selectionRects = [caretRect];
-  } else if (anchorNode === focusNode) {
-    selectionRects = getSelectionRects(
-      binding,
-      [editor.getElementByKey(anchorKey) as HTMLElement],
-      focus,
-      focusNode,
-      anchor,
-      anchorNode,
-    );
+  // In the case of a collapsed selection on a linebreak, we need
+  // to improvise as the browser will return nothing here as <br>
+  // apparantly take up no visual space :/
+  // This won't work in all cases, but it's better than just showing
+  // nothing all the time.
+  if (anchorNode === focusNode && $isLineBreakNode(anchorNode)) {
+    const brRect = (
+      editor.getElementByKey(anchorKey) as HTMLElement
+    ).getBoundingClientRect();
+    selectionRects = [brRect];
   } else {
     const range = createDOMRange(
       editor,
@@ -512,22 +277,7 @@ function updateCursor(
     if (range === null) {
       return;
     }
-    const elements = getElementsInRange(range);
-
-    const anchorElement = editor.getElementByKey(anchorKey);
-
-    if (!anchorElement) {
-      return;
-    }
-
-    selectionRects = getSelectionRects(
-      binding,
-      elements,
-      focus,
-      focusNode,
-      anchor,
-      anchorNode,
-    );
+    selectionRects = createRectsFromDOMRange(editor, range);
   }
 
   const selectionsLength = selections.length;

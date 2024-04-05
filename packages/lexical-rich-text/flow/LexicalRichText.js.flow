@@ -15,6 +15,7 @@ import type {
   ParagraphNode,
   LexicalEditor,
   LexicalCommand,
+  RangeSelection,
 } from 'lexical';
 import {ElementNode} from 'lexical';
 

@@ -361,7 +361,8 @@ function useDraggableBlockMenu(
         return true;
       }
       const targetBlockElemTop = targetBlockElem.getBoundingClientRect().top;
-      if (pageY / calculateZoomLevel(target) >= targetBlockElemTop) {
+      const adjsutedTop = targetBlockElemTop + window.scrollY;
+      if (pageY / calculateZoomLevel(target) >= adjsutedTop) {
         targetNode.insertAfter(draggedNode);
       } else {
         targetNode.insertBefore(draggedNode);

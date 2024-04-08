@@ -16,6 +16,7 @@ import {
   moveToPrevWord,
   pressShiftEnter,
   selectAll,
+  selectPrevWord,
 } from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
@@ -675,6 +676,41 @@ test.describe('Selection', () => {
             data-lexical-text="true">
             Line2
           </strong>
+        </p>
+      `,
+    );
+  });
+
+  test('formatting is persisted after deleting all nodes from the paragraph node', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await pressToggleBold(page);
+    await page.keyboard.type('Line1');
+    await page.keyboard.press('Enter');
+    await pressToggleBold(page);
+    await page.keyboard.type('Line2');
+    await selectPrevWord(page);
+    await page.keyboard.press('Backspace');
+    await page.keyboard.type('Line3');
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            Line1
+          </strong>
+        </p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">Line3</span>
         </p>
       `,
     );

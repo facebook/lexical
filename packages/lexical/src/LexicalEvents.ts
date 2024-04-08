@@ -1307,10 +1307,11 @@ export function removeRootElementEvents(rootElement: HTMLElement): void {
     documentRootElementsCount !== undefined,
     'Root element not registered',
   );
+
   // We only want to have a single global selectionchange event handler, shared
   // between all editor instances.
   rootElementsRegistered.set(doc, documentRootElementsCount - 1);
-  if (rootElementsRegistered.get(doc) === 1) {
+  if (rootElementsRegistered.get(doc) === 0) {
     doc.removeEventListener('selectionchange', onDocumentSelectionChange);
   }
 

@@ -50,7 +50,7 @@ type IntentionallyMarkedAsDirtyElement = boolean;
 
 let subTreeTextContent = '';
 let subTreeDirectionedTextContent = '';
-let subTreeDirectionedTextFormat: number | null = null;
+let subTreeTextFormat: number | null = null;
 let editorTextContent = '';
 let activeEditorConfig: EditorConfig;
 let activeEditor: LexicalEditor;
@@ -288,12 +288,8 @@ function createChildren(
   for (; startIndex <= endIndex; ++startIndex) {
     createNode(children[startIndex], dom, insertDOM);
     const node = activeNextNodeMap.get(children[startIndex]);
-    if (
-      node !== null &&
-      subTreeDirectionedTextFormat === null &&
-      $isTextNode(node)
-    ) {
-      subTreeDirectionedTextFormat = node.getFormat();
+    if (node !== null && subTreeTextFormat === null && $isTextNode(node)) {
+      subTreeTextFormat = node.getFormat();
     }
   }
   if ($textContentRequiresDoubleLinebreakAtEnd(element)) {
@@ -355,13 +351,13 @@ function reconcileElementTerminatingLineBreak(
 function reconcileParagraphFormat(element: ElementNode): void {
   if (
     $isParagraphNode(element) &&
-    subTreeDirectionedTextFormat != null &&
-    subTreeDirectionedTextFormat !== element.__textFormat
+    subTreeTextFormat != null &&
+    subTreeTextFormat !== element.__textFormat
   ) {
-    element.setTextFormat(subTreeDirectionedTextFormat);
+    element.setTextFormat(subTreeTextFormat);
     if (!activeEditorStateReadOnly) {
       const writableNode = element.getWritable();
-      writableNode.__textFormat = subTreeDirectionedTextFormat;
+      writableNode.__textFormat = subTreeTextFormat;
     }
   }
 }
@@ -446,12 +442,12 @@ function reconcileChildrenWithDirection(
 ): void {
   const previousSubTreeDirectionTextContent = subTreeDirectionedTextContent;
   subTreeDirectionedTextContent = '';
-  subTreeDirectionedTextFormat = null;
+  subTreeTextFormat = null;
   reconcileChildren(prevElement, nextElement, dom);
   reconcileBlockDirection(nextElement, dom);
   reconcileParagraphFormat(nextElement);
   subTreeDirectionedTextContent = previousSubTreeDirectionTextContent;
-  subTreeDirectionedTextFormat = null;
+  subTreeTextFormat = null;
 }
 
 function createChildrenArray(
@@ -493,8 +489,8 @@ function reconcileChildren(
       destroyNode(prevFirstChildKey, null);
     }
     const nextChildNode = activeNextNodeMap.get(nextFrstChildKey);
-    if (subTreeDirectionedTextFormat === null && $isTextNode(nextChildNode)) {
-      subTreeDirectionedTextFormat = nextChildNode.getFormat();
+    if (subTreeTextFormat === null && $isTextNode(nextChildNode)) {
+      subTreeTextFormat = nextChildNode.getFormat();
     }
   } else {
     const prevChildren = createChildrenArray(prevElement, activePrevNodeMap);
@@ -784,12 +780,8 @@ function reconcileNodeChildren(
     }
 
     const node = activeNextNodeMap.get(nextKey);
-    if (
-      node !== null &&
-      subTreeDirectionedTextFormat === null &&
-      $isTextNode(node)
-    ) {
-      subTreeDirectionedTextFormat = node.getFormat();
+    if (node !== null && subTreeTextFormat === null && $isTextNode(node)) {
+      subTreeTextFormat = node.getFormat();
     }
   }
 

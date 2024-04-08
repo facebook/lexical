@@ -355,10 +355,6 @@ function reconcileParagraphFormat(element: ElementNode): void {
     subTreeTextFormat !== element.__textFormat
   ) {
     element.setTextFormat(subTreeTextFormat);
-    if (!activeEditorStateReadOnly) {
-      const writableNode = element.getWritable();
-      writableNode.__textFormat = subTreeTextFormat;
-    }
   }
 }
 

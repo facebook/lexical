@@ -141,6 +141,7 @@ describe('table selection', () => {
       __parent: 'root',
       __prev: null,
       __size: 1,
+      __textFormat: 0,
       __type: 'paragraph',
     });
     expect(parsedText).toEqual({

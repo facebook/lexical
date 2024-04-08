@@ -70,6 +70,14 @@ export async function moveToPrevWord(page) {
   await keyUpCtrlOrAlt(page);
 }
 
+export async function selectPrevWord(page) {
+  await keyDownCtrlOrAlt(page);
+  await page.keyboard.down('Shift');
+  await page.keyboard.press('ArrowLeft');
+  await keyUpCtrlOrAlt(page);
+  await page.keyboard.up('Shift');
+}
+
 export async function moveToNextWord(page) {
   await keyDownCtrlOrAlt(page);
   await page.keyboard.press('ArrowRight');

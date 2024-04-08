@@ -1039,6 +1039,7 @@ describe('LexicalEditor tests', () => {
           __parent: 'root',
           __prev: null,
           __size: 0,
+          __textFormat: 0,
           __type: 'paragraph',
         });
       });
@@ -1122,6 +1123,7 @@ describe('LexicalEditor tests', () => {
           __parent: 'root',
           __prev: null,
           __size: 1,
+          __textFormat: 0,
           __type: 'paragraph',
         });
         expect(parsedText).toEqual({
@@ -1200,6 +1202,7 @@ describe('LexicalEditor tests', () => {
           __parent: 'root',
           __prev: null,
           __size: 1,
+          __textFormat: 0,
           __type: 'paragraph',
         });
         expect(parsedText).toEqual({

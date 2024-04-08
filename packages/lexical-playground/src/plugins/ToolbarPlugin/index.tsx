@@ -761,6 +761,18 @@ export default function ToolbarPlugin({
             if (idx === nodes.length - 1) {
               textNode = textNode.splitText(focus.offset)[0] || textNode;
             }
+            /**
+             * If the selected text has one format applied
+             * selecting a portion of the text, could
+             * clear the format to the wrong portion of the text.
+             *
+             * The cleared text is based on the length of the selected text.
+             */
+            // We need this in case the selected text only has one format
+            const extractedTextNode = selection.extract()[0];
+            if (nodes.length === 1 && $isTextNode(extractedTextNode)) {
+              textNode = extractedTextNode;
+            }
 
             if (textNode.__style !== '') {
               textNode.setStyle('');

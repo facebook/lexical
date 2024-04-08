@@ -583,7 +583,11 @@ test.describe('Selection', () => {
     );
   });
 
-  test('Can persist the text format from the paragraph', async ({page}) => {
+  test('Can persist the text format from the paragraph', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
     await focusEditor(page);
     await pressToggleBold(page);
     await page.keyboard.type('Line1');

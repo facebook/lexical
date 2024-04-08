@@ -715,7 +715,12 @@ export function $unmergeCell(): void {
   }
 }
 
-function writeTableMapCell(startRow: number, startColumn: number, cell: TableCellNode, tableMap: TableMapType) {
+function writeTableMapCell(
+  startRow: number,
+  startColumn: number,
+  cell: TableCellNode,
+  tableMap: TableMapType,
+) {
   const value = {
     cell,
     startColumn,
@@ -745,7 +750,11 @@ export function $computeTableMap(
   const tableMap: TableMapType = [];
   let cellAValue: null | TableMapValueType = null;
   let cellBValue: null | TableMapValueType = null;
-  function updateCellValues(startRow: number, startColumn: number, cell: TableCellNode) {
+  function updateCellValues(
+    startRow: number,
+    startColumn: number,
+    cell: TableCellNode,
+  ) {
     if (cellA.is(cell)) {
       cellAValue = {
         cell,
@@ -789,9 +798,7 @@ export function $computeTableMap(
   return [tableMap, cellAValue, cellBValue];
 }
 
-export function $computeTableMapForRows(
-  rows: TableRowNode[],
-): TableMapType {
+export function $computeTableMapForRows(rows: TableRowNode[]): TableMapType {
   const tableMap: TableMapType = [];
 
   for (let i = 0; i < rows.length; i++) {

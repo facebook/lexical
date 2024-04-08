@@ -17,7 +17,11 @@ import type {
   SerializedElementNode,
 } from 'lexical';
 
-import { $insertFirst, addClassNamesToElement, isHTMLElement } from '@lexical/utils';
+import {
+  $insertFirst,
+  addClassNamesToElement,
+  isHTMLElement,
+} from '@lexical/utils';
 import {
   $applyNodeReplacement,
   $createParagraphNode,
@@ -33,7 +37,7 @@ import {
 import {TableDOMCell, TableDOMTable} from './LexicalTableObserver';
 import {$isTableRowNode, TableRowNode} from './LexicalTableRowNode';
 import {getTable} from './LexicalTableSelectionHelpers';
-import { $computeTableMapForRows, $getNodeTriplet } from './LexicalTableUtils';
+import {$computeTableMapForRows, $getNodeTriplet} from './LexicalTableUtils';
 
 export type SerializedTableNode = SerializedElementNode;
 
@@ -249,7 +253,9 @@ export function $getElementForTableNode(
 export function convertTableElement(_domNode: Node): DOMConversionOutput {
   return {
     after: (childLexicalNodes) => {
-      const gridMap = $computeTableMapForRows(childLexicalNodes as TableRowNode[]);
+      const gridMap = $computeTableMapForRows(
+        childLexicalNodes as TableRowNode[],
+      );
       const maxRowLength = gridMap.reduce((curLength, row) => {
         return Math.max(curLength, row.length);
       }, 0);

@@ -1198,7 +1198,10 @@ export function addRootElementEvents(
   // between all editor instances.
   const doc = rootElement.ownerDocument;
   const documentRootElementsCount = rootElementsRegistered.get(doc);
-  if (documentRootElementsCount === undefined) {
+  if (
+    documentRootElementsCount === undefined ||
+    documentRootElementsCount < 1
+  ) {
     doc.addEventListener('selectionchange', onDocumentSelectionChange);
   }
   rootElementsRegistered.set(doc, documentRootElementsCount || 0 + 1);

@@ -17,7 +17,7 @@ import type {
   SerializedElementNode,
 } from 'lexical';
 
-import {addClassNamesToElement, isHTMLElement} from '@lexical/utils';
+import { $insertFirst, addClassNamesToElement, isHTMLElement } from '@lexical/utils';
 import {
   $applyNodeReplacement,
   $createParagraphNode,
@@ -33,6 +33,7 @@ import {
 import {TableDOMCell, TableDOMTable} from './LexicalTableObserver';
 import {$isTableRowNode, TableRowNode} from './LexicalTableRowNode';
 import {getTable} from './LexicalTableSelectionHelpers';
+import { $computeTableMapForRows, $getNodeTriplet } from './LexicalTableUtils';
 
 export type SerializedTableNode = SerializedElementNode;
 
@@ -248,26 +249,28 @@ export function $getElementForTableNode(
 export function convertTableElement(_domNode: Node): DOMConversionOutput {
   return {
     after: (childLexicalNodes) => {
-      const maxRowLength: number = (childLexicalNodes as TableRowNode[]).reduce(
-        (currentMax: number, rowNode) => {
-          if (rowNode.__size > currentMax) {
-            return rowNode.__size;
-          } else {
-            return currentMax;
-          }
-        },
-        0,
-      );
+      const gridMap = $computeTableMapForRows(childLexicalNodes as TableRowNode[]);
+      const maxRowLength = gridMap.reduce((curLength, row) => {
+        return Math.max(curLength, row.length);
+      }, 0);
 
-      childLexicalNodes.forEach((rowNode) => {
-        if ($isTableRowNode(rowNode)) {
-          for (let i = rowNode.__size; i < maxRowLength; ++i) {
-            const cellNode = $createTableCellNode(0);
-            cellNode.append($createParagraphNode());
-            rowNode.append(cellNode);
+      for (let i = 0; i < gridMap.length; ++i) {
+        const rowLength = gridMap[i].length;
+        if (rowLength == maxRowLength) {
+          continue;
+        }
+        const lastCellMap = gridMap[i][rowLength - 1];
+        const lastRowCell = lastCellMap.cell;
+        for (let j = rowLength; j < maxRowLength; ++j) {
+          const newCell = $createTableCellNode(0);
+          newCell.append($createParagraphNode());
+          if (lastRowCell !== null) {
+            lastRowCell.insertAfter(newCell);
+          } else {
+            $insertFirst(lastRowCell, newCell);
           }
         }
-      });
+      }
       return childLexicalNodes;
     },
     node: $createTableNode(),

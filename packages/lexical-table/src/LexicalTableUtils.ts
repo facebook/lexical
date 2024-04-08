@@ -715,6 +715,28 @@ export function $unmergeCell(): void {
   }
 }
 
+function writeTableMapCell(startRow: number, startColumn: number, cell: TableCellNode, tableMap: TableMapType) {
+  const value = {
+    cell,
+    startColumn,
+    startRow,
+  };
+  const rowSpan = cell.__rowSpan;
+  const colSpan = cell.__colSpan;
+  for (let i = 0; i < rowSpan; i++) {
+    if (tableMap[startRow + i] === undefined) {
+      tableMap[startRow + i] = [];
+    }
+    for (let j = 0; j < colSpan; j++) {
+      tableMap[startRow + i][startColumn + j] = value;
+    }
+  }
+}
+
+function isCellInMap(row: number, column: number, tableMap: TableMapType) {
+  return tableMap[row] === undefined || tableMap[row][column] === undefined;
+}
+
 export function $computeTableMap(
   grid: TableNode,
   cellA: TableCellNode,
@@ -723,31 +745,21 @@ export function $computeTableMap(
   const tableMap: TableMapType = [];
   let cellAValue: null | TableMapValueType = null;
   let cellBValue: null | TableMapValueType = null;
-  function write(startRow: number, startColumn: number, cell: TableCellNode) {
-    const value = {
-      cell,
-      startColumn,
-      startRow,
-    };
-    const rowSpan = cell.__rowSpan;
-    const colSpan = cell.__colSpan;
-    for (let i = 0; i < rowSpan; i++) {
-      if (tableMap[startRow + i] === undefined) {
-        tableMap[startRow + i] = [];
-      }
-      for (let j = 0; j < colSpan; j++) {
-        tableMap[startRow + i][startColumn + j] = value;
-      }
-    }
+  function updateCellValues(startRow: number, startColumn: number, cell: TableCellNode) {
     if (cellA.is(cell)) {
-      cellAValue = value;
+      cellAValue = {
+        cell,
+        startColumn,
+        startRow,
+      };
     }
     if (cellB.is(cell)) {
-      cellBValue = value;
+      cellBValue = {
+        cell,
+        startColumn,
+        startRow,
+      };
     }
-  }
-  function isEmpty(row: number, column: number) {
-    return tableMap[row] === undefined || tableMap[row][column] === undefined;
   }
 
   const gridChildren = grid.getChildren();
@@ -764,16 +776,41 @@ export function $computeTableMap(
         $isTableCellNode(cell),
         'Expected TableRowNode children to be TableCellNode',
       );
-      while (!isEmpty(i, j)) {
+      while (!isCellInMap(i, j, tableMap)) {
         j++;
       }
-      write(i, j, cell);
+      writeTableMapCell(i, j, cell, tableMap);
+      updateCellValues(i, j, cell);
       j += cell.__colSpan;
     }
   }
   invariant(cellAValue !== null, 'Anchor not found in Grid');
   invariant(cellBValue !== null, 'Focus not found in Grid');
   return [tableMap, cellAValue, cellBValue];
+}
+
+export function $computeTableMapForRows(
+  rows: TableRowNode[],
+): TableMapType {
+  const tableMap: TableMapType = [];
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const rowChildren = row.getChildren();
+    let j = 0;
+    for (const cell of rowChildren) {
+      invariant(
+        $isTableCellNode(cell),
+        'Expected TableRowNode children to be TableCellNode',
+      );
+      while (!isCellInMap(i, j, tableMap)) {
+        j++;
+      }
+      writeTableMapCell(i, j, cell, tableMap);
+      j += cell.__colSpan;
+    }
+  }
+  return tableMap;
 }
 
 export function $getNodeTriplet(

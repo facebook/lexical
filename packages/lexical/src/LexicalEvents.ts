@@ -1198,7 +1198,10 @@ export function addRootElementEvents(
   // between all editor instances.
   const doc = rootElement.ownerDocument;
   const documentRootElementsCount = rootElementsRegistered.get(doc);
-  if (documentRootElementsCount === undefined) {
+  if (
+    documentRootElementsCount === undefined ||
+    documentRootElementsCount < 1
+  ) {
     doc.addEventListener('selectionchange', onDocumentSelectionChange);
   }
   rootElementsRegistered.set(doc, documentRootElementsCount || 0 + 1);
@@ -1307,10 +1310,11 @@ export function removeRootElementEvents(rootElement: HTMLElement): void {
     documentRootElementsCount !== undefined,
     'Root element not registered',
   );
+
   // We only want to have a single global selectionchange event handler, shared
   // between all editor instances.
   rootElementsRegistered.set(doc, documentRootElementsCount - 1);
-  if (rootElementsRegistered.get(doc) === 1) {
+  if (rootElementsRegistered.get(doc) === 0) {
     doc.removeEventListener('selectionchange', onDocumentSelectionChange);
   }
 

@@ -68,7 +68,6 @@ import {
   OUTDENT_CONTENT_COMMAND,
   REDO_COMMAND,
   SELECTION_CHANGE_COMMAND,
-  TextNode,
   UNDO_COMMAND,
 } from 'lexical';
 import {Dispatch, useCallback, useEffect, useState} from 'react';
@@ -769,8 +768,10 @@ export default function ToolbarPlugin({
              *
              * The cleared text is based on the length of the selected text.
              */
-            if (nodes.length === 1) {
-              textNode = selection.extract()[0] as TextNode;
+            // We need this in case the selected text only has one format
+            const extractedTextNode = selection.extract()[0];
+            if (nodes.length === 1 && $isTextNode(extractedTextNode)) {
+              textNode = extractedTextNode;
             }
 
             if (textNode.__style !== '') {

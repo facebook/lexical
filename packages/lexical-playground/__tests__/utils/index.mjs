@@ -879,7 +879,7 @@ export async function pressToggleBold(page) {
 
 export async function pressToggleItalic(page) {
   await keyDownCtrlOrMeta(page);
-  await page.keyboard.press('b');
+  await page.keyboard.press('i');
   await keyUpCtrlOrMeta(page);
 }
 

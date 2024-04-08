@@ -761,6 +761,16 @@ export default function ToolbarPlugin({
             if (idx === nodes.length - 1) {
               textNode = textNode.splitText(focus.offset)[0] || textNode;
             }
+            /**
+             * If the selected text has one format applied
+             * selecting a portion of the text, could
+             * clear the format to the wrong portion of the text.
+             *
+             * The cleared text is based on the length of the selected text.
+             */
+            if (nodes.length === 1) {
+              textNode = selection.extract()[0] as TextNode;
+            }
 
             if (textNode.__style !== '') {
               textNode.setStyle('');

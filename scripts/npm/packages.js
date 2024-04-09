@@ -12,6 +12,7 @@
 
 const LEXICAL_PKG = 'lexical';
 const DEFAULT_PKGS = [
+  'lexical-devtools-core',
   'lexical-react',
   'lexical-yjs',
   'lexical-list',

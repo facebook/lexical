@@ -165,6 +165,7 @@
       "@lexical/history/LexicalHistory": ["./packages/lexical-history/src/"],
       "@lexical/link/LexicalLink": ["./packages/lexical-link/src/"],
       "@lexical/markdown/LexicalMarkdown": ["./packages/lexical-markdown/src/"],
+      "@lexical/markdown/": ["./packages/lexical-markdown/src/"],
       "@lexical/headless/LexicalHeadless": ["./packages/lexical-markdown/src/"],
       "@lexical/offset/LexicalOffset": ["./packages/lexical-offset/src/"],
       "@lexical/overflow/LexicalOverflow": ["./packages/lexical-overflow/src/"],

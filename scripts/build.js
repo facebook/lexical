@@ -49,6 +49,7 @@ const closureOptions = {
 const wwwMappings = {
   '@lexical/clipboard': 'LexicalClipboard',
   '@lexical/code': 'LexicalCode',
+  '@lexical/devtools-core': 'LexicalDevtoolsCore',
   '@lexical/dragon': 'LexicalDragon',
   '@lexical/file': 'LexicalFile',
   '@lexical/hashtag': 'LexicalHashtag',
@@ -131,6 +132,7 @@ const externals = [
   '@lexical/table',
   '@lexical/file',
   '@lexical/clipboard',
+  '@lexical/devtools-core',
   '@lexical/hashtag',
   '@lexical/headless',
   '@lexical/html',

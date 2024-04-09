@@ -6,21 +6,28 @@
  *
  */
 
-import type {
-  BaseSelection,
-  DOMChildConversion,
-  DOMConversion,
-  DOMConversionFn,
-  LexicalEditor,
-  LexicalNode,
-} from 'lexical';
-
 import {
   $cloneWithProperties,
   $sliceSelectedTextNodeContent,
 } from '@lexical/selection';
 import {isHTMLElement} from '@lexical/utils';
-import {$getRoot, $isElementNode, $isTextNode} from 'lexical';
+import {
+  $createLineBreakNode,
+  $createParagraphNode,
+  $getRoot,
+  $isBlockElementNode,
+  $isElementNode,
+  $isRootOrShadowRoot,
+  $isTextNode,
+  BaseSelection,
+  DOMChildConversion,
+  DOMConversion,
+  DOMConversionFn,
+  EditorConfig,
+ElementNode,
+  LexicalEditor,
+  LexicalNode,
+} from 'lexical';
 
 /**
  * How you parse your html string to get a document is left up to you. In the browser you can use the native
@@ -33,15 +40,22 @@ export function $generateNodesFromDOM(
 ): Array<LexicalNode> {
   const elements = dom.body ? dom.body.childNodes : [];
   let lexicalNodes: Array<LexicalNode> = [];
+  const allArtificialNodes: Array<ArtificialNode> = [];
   for (let i = 0; i < elements.length; i++) {
     const element = elements[i];
     if (!IGNORE_TAGS.has(element.nodeName)) {
-      const lexicalNode = $createNodesFromDOM(element, editor);
+      const lexicalNode = $createNodesFromDOM(
+        element,
+        editor,
+        allArtificialNodes,
+        false,
+      );
       if (lexicalNode !== null) {
         lexicalNodes = lexicalNodes.concat(lexicalNode);
       }
     }
   }
+  unwrapArtificalNodes(allArtificialNodes);
 
   return lexicalNodes;
 }
@@ -180,6 +194,8 @@ const IGNORE_TAGS = new Set(['STYLE', 'SCRIPT']);
 function $createNodesFromDOM(
   node: Node,
   editor: LexicalEditor,
+  allArtificialNodes: Array<ArtificialNode>,
+  hasBlockAncesterLexicalNode: boolean,
   forChildMap: Map<string, DOMChildConversion> = new Map(),
   parentLexicalNode?: LexicalNode | null | undefined,
 ): Array<LexicalNode> {
@@ -239,6 +255,10 @@ function $createNodesFromDOM(
       ...$createNodesFromDOM(
         children[i],
         editor,
+        allArtificialNodes,
+        currentLexicalNode != null && $isRootOrShadowRoot(currentLexicalNode)
+          ? false
+          : currentLexicalNode != null || hasBlockAncesterLexicalNode,
         new Map(forChildMap),
         currentLexicalNode,
       ),
@@ -247,6 +267,19 @@ function $createNodesFromDOM(
 
   if (postTransform != null) {
     childLexicalNodes = postTransform(childLexicalNodes);
+  }
+
+  if (!hasBlockAncesterLexicalNode) {
+    childLexicalNodes = wrapContinuousInlines(
+      childLexicalNodes,
+      $createParagraphNode,
+    );
+  } else {
+    childLexicalNodes = wrapContinuousInlines(childLexicalNodes, () => {
+      const artificialNode = new ArtificialNode();
+      allArtificialNodes.push(artificialNode);
+      return artificialNode;
+    });
   }
 
   if (currentLexicalNode == null) {
@@ -262,4 +295,60 @@ function $createNodesFromDOM(
   }
 
   return lexicalNodes;
+}
+
+function wrapContinuousInlines(
+  nodes: Array<LexicalNode>,
+  createWrapperFn: () => ElementNode,
+): Array<LexicalNode> {
+  const out: Array<LexicalNode> = [];
+  let continuousInlines: Array<LexicalNode> = [];
+  // wrap contiguous inline child nodes in para
+  nodes.forEach(function (node, i) {
+    if ($isBlockElementNode(node)) {
+      out.push(node);
+    } else {
+      continuousInlines.push(node);
+      if (
+        i === nodes.length - 1 ||
+        (i < nodes.length - 1 && $isBlockElementNode(nodes[i + 1]))
+      ) {
+        const wrapper = createWrapperFn();
+        wrapper.append(...continuousInlines);
+        out.push(wrapper);
+        continuousInlines = [];
+      }
+    }
+  });
+  return out;
+}
+
+function unwrapArtificalNodes(allArtificialNodes: Array<ArtificialNode>) {
+  allArtificialNodes.forEach(function (node, i) {
+    if (node.getNextSibling() instanceof ArtificialNode) {
+      node.insertAfter($createLineBreakNode());
+    }
+  });
+  allArtificialNodes.forEach(function (node, i) {
+    // unwrap children of Artificial Node and attach to parent at Artificial Node's position
+    const parent = node.getParent();
+    if (parent != null) {
+      const index = parent.getChildren().indexOf(node);
+      if (index != null) {
+        parent.splice(index, 1, node.getChildren());
+      }
+    }
+  });
+}
+
+export class ArtificialNode extends ElementNode {
+  static getType(): string {
+    return 'artificial';
+  }
+
+  createDOM(config: EditorConfig): HTMLElement {
+    // this isnt supposed to be used and is not used anywhere but defining it to appease the API
+    const dom = document.createElement('div');
+    return dom;
+  }
 }

@@ -64,12 +64,23 @@ function updateVersion() {
   });
 }
 
+function withExtension(fileName, ext) {
+  return fileName.replace(/(\.m?js)$/, ext);
+}
+
 function withEsmExtension(fileName) {
-  return fileName.replace(/\.js$/, '.mjs');
+  return withExtension(fileName, '.mjs');
 }
 
 function withNodeEsmExtension(fileName) {
-  return fileName.replace(/\.js$/, '.node.mjs');
+  return withExtension(fileName, '.node.mjs');
+}
+
+function withEnvironments(fileName) {
+  return {
+    development: withExtension(fileName, '.dev$1'),
+    production: withExtension(fileName, '.prod$1'),
+  };
 }
 
 function exportEntry(file, types) {
@@ -79,11 +90,15 @@ function exportEntry(file, types) {
     /* eslint-disable sort-keys-fix/sort-keys-fix */
     import: {
       types: `./${types}`,
-      webpack: `./${withEsmExtension(file)}`,
+      ...withEnvironments(`./${withEsmExtension(file)}`),
       node: `./${withNodeEsmExtension(file)}`,
       default: `./${withEsmExtension(file)}`,
     },
-    require: {types: `./${types}`, default: `./${file}`},
+    require: {
+      types: `./${types}`,
+      ...withEnvironments(`./${file}`),
+      default: `./${file}`,
+    },
     /* eslint-enable sort-keys-fix/sort-keys-fix */
   };
 }

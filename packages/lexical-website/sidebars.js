@@ -57,7 +57,6 @@ const sidebars = {
         'packages/lexical',
         'packages/lexical-clipboard',
         'packages/lexical-code',
-        'packages/lexical-devtools-core',
         'packages/lexical-dragon',
         'packages/lexical-file',
         'packages/lexical-hashtag',

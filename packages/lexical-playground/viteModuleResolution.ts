@@ -99,10 +99,6 @@ const moduleResolution = [
     replacement: path.resolve('../lexical-yjs/src/index.ts'),
   },
   {
-    find: '@lexical/devtools-core',
-    replacement: path.resolve('../lexical-devtools-core/src/index.ts'),
-  },
-  {
     find: 'shared',
     replacement: path.resolve('../shared/src'),
   },

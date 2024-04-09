@@ -6,9 +6,6 @@
  *
  */
 
-import './App.css';
-
-import {TreeView} from '@lexical/devtools-core';
 import * as React from 'react';
 import {useState} from 'react';
 import {sendMessage} from 'webext-bridge/devtools';
@@ -33,12 +30,7 @@ function App({tabID}: Props) {
     <>
       <div>
         <a href="https://lexical.dev" target="_blank">
-          <img
-            src={lexicalLogo}
-            className="logo"
-            width={150}
-            alt="Lexical logo"
-          />
+          <img src={lexicalLogo} className="logo" alt="Lexical logo" />
         </a>
       </div>
       {errorMessage !== '' ? (
@@ -50,7 +42,7 @@ function App({tabID}: Props) {
         ) : (
           <span>
             Found <b>{lexicalCount}</b> editor{lexicalCount > 1 ? 's' : ''} on
-            the page.
+            the page
           </span>
         )}
         <p>
@@ -62,41 +54,17 @@ function App({tabID}: Props) {
         </p>
       </div>
       {Object.entries(states).map(([key, state]) => (
-        <div key={key}>
+        <p key={key}>
           <b>ID: {key}</b>
           <br />
-          <TreeView
-            viewClassName="tree-view-output"
-            treeTypeButtonClassName="debug-treetype-button"
-            timeTravelPanelClassName="debug-timetravel-panel"
-            timeTravelButtonClassName="debug-timetravel-button"
-            timeTravelPanelSliderClassName="debug-timetravel-panel-slider"
-            timeTravelPanelButtonClassName="debug-timetravel-panel-button"
-            setEditorReadOnly={(isReadonly) =>
-              sendMessage(
-                'setEditorReadOnly',
-                {isReadonly, key},
-                `window@${tabID}`,
-              ).catch((e) => setErrorMessage(e.stack))
-            }
-            editorState={state}
-            setEditorState={(editorState) =>
-              sendMessage(
-                'setEditorState',
-                {key, state: editorState},
-                `window@${tabID}`,
-              ).catch((e) => setErrorMessage(e.stack))
-            }
-            generateContent={(exportDOM) =>
-              sendMessage(
-                'generateTreeViewContent',
-                {exportDOM, key},
-                `window@${tabID}`,
-              )
-            }
+          <textarea
+            readOnly={true}
+            value={JSON.stringify(state)}
+            rows={5}
+            cols={150}
           />
           <hr />
-        </div>
+        </p>
       ))}
     </>
   );

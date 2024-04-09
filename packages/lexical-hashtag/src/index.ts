@@ -1,4 +1,3 @@
-/** @module @lexical/hashtag */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *

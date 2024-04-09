@@ -1,4 +1,3 @@
-/** @module @lexical/table */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *

@@ -1,4 +1,3 @@
-/** @module @lexical/markdown */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *

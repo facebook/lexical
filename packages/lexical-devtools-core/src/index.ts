@@ -1,4 +1,3 @@
-/** @module @lexical/devtools-core */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *

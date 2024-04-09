@@ -11,3 +11,5 @@
 **/vite.prod.config.js
 **/node_modules
 .ts-temp
+**/.docusaurus
+/playwright-report

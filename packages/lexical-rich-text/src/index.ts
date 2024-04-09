@@ -1,4 +1,3 @@
-/** @module @lexical/rich-text */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *

@@ -670,7 +670,7 @@ export class TextNode extends LexicalNode {
    * Sets the node detail to the provided TextDetailType or 32-bit integer. Note that the TextDetailType
    * version of the argument can only specify one detail value and doing so will remove all other detail values that
    * may be applied to the node. For toggling behavior, consider using {@link TextNode.toggleDirectionless}
-   * or {@link TextNode.togglerUnmergeable}
+   * or {@link TextNode.toggleUnmergeable}
    *
    * @param detail - TextDetailType or 32-bit integer representing the node detail.
    *

@@ -6,60 +6,60 @@
  *
  */
 
+import type {LexicalEditor} from 'lexical';
+
+import {generateContent, LexicalCommandLog} from '@lexical/devtools-core';
 import {onMessage} from 'webext-bridge/window';
 import {StoreApi} from 'zustand';
 
+import {readEditorState} from '../../lexicalForExtension';
+import {deserializeEditorState} from '../../serializeEditorState';
 import {ExtensionState} from '../../store';
-import {LexicalHTMLElement} from '../../types';
+import scanAndListenForEditors from './scanAndListenForEditors';
+import {
+  queryLexicalEditorByKey,
+  queryLexicalNodeByKey,
+} from './utils/queryLexicalByKey';
+
+const commandLog = new WeakMap<LexicalEditor, LexicalCommandLog>();
 
 export default async function main(
   tabID: number,
   extensionStore: StoreApi<ExtensionState>,
 ) {
-  onMessage('refreshLexicalEditorsForTabID', () => {
-    scanAndListenForEditors(tabID, extensionStore);
-    return null;
-  });
-  scanAndListenForEditors(tabID, extensionStore);
-}
-
-function scanAndListenForEditors(
-  tabID: number,
-  extensionStore: StoreApi<ExtensionState>,
-) {
-  const {setStatesForTab, lexicalState} = extensionStore.getState();
-  const states = lexicalState[tabID] ?? {};
-
-  const editors = queryLexicalNodes().map((node) => node.__lexicalEditor);
-
-  setStatesForTab(
-    tabID,
-    Object.fromEntries(editors.map((e) => [e._key, e.getEditorState()])),
+  onMessage('refreshLexicalEditorsForTabID', () =>
+    scanAndListenForEditors(tabID, extensionStore, commandLog),
   );
-
-  editors.forEach((editor) => {
-    if (states[editor._key] !== undefined) {
-      // already registered
-      return;
+  onMessage('generateTreeViewContent', (message) => {
+    const editor = queryLexicalEditorByKey(message.data.key);
+    if (editor == null) {
+      throw new Error(`Can't find editor with key: ${message.data.key}`);
     }
-    editor.registerUpdateListener((event) => {
-      const oldVal = extensionStore.getState().lexicalState[tabID];
-      setStatesForTab(tabID, {
-        ...oldVal,
-        [editor._key]: event.editorState,
-      });
-    });
+
+    return readEditorState(editor, editor.getEditorState(), () =>
+      generateContent(
+        editor,
+        commandLog.get(editor) ?? [],
+        message.data.exportDOM,
+      ),
+    );
   });
-}
+  onMessage('setEditorState', (message) => {
+    const editor = queryLexicalEditorByKey(message.data.key);
+    if (editor == null) {
+      throw new Error(`Can't find editor with key: ${message.data.key}`);
+    }
 
-function queryLexicalNodes(): LexicalHTMLElement[] {
-  return Array.from(
-    document.querySelectorAll('div[data-lexical-editor]'),
-  ).filter(isLexicalNode);
-}
+    editor.setEditorState(deserializeEditorState(message.data.state));
+  });
+  onMessage('setEditorReadOnly', (message) => {
+    const editorNode = queryLexicalNodeByKey(message.data.key);
+    if (editorNode == null) {
+      throw new Error(`Can't find editor with key: ${message.data.key}`);
+    }
 
-function isLexicalNode(
-  node: LexicalHTMLElement | Element,
-): node is LexicalHTMLElement {
-  return (node as LexicalHTMLElement).__lexicalEditor !== undefined;
+    editorNode.contentEditable = message.data.isReadonly ? 'false' : 'true';
+  });
+
+  scanAndListenForEditors(tabID, extensionStore, commandLog);
 }

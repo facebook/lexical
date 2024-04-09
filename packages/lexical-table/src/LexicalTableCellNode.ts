@@ -316,13 +316,12 @@ export function convertTableCellNodeElement(
     tableCellNode.__backgroundColor = backgroundColor;
   }
 
+  const style = domNode_.style;
   const hasBoldFontWeight =
-    domNode_.style.fontWeight === '700' || domNode_.style.fontWeight === 'bold';
-  const hasLinethroughTextDecoration =
-    domNode_.style.textDecoration === 'line-through';
-  const hasItalicFontStyle = domNode_.style.fontStyle === 'italic';
-  const hasUnderlineTextDecoration =
-    domNode_.style.textDecoration === 'underline';
+    style.fontWeight === '700' || style.fontWeight === 'bold';
+  const hasLinethroughTextDecoration = style.textDecoration === 'line-through';
+  const hasItalicFontStyle = style.fontStyle === 'italic';
+  const hasUnderlineTextDecoration = style.textDecoration === 'underline';
 
   return {
     after: (childLexicalNodes) => {

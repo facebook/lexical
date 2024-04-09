@@ -24,7 +24,7 @@ import {
   DOMConversion,
   DOMConversionFn,
   EditorConfig,
-ElementNode,
+  ElementNode,
   LexicalEditor,
   LexicalNode,
 } from 'lexical';

@@ -38,7 +38,6 @@ const config = {
           '../lexical/src/index.ts',
           '../lexical-clipboard/src/index.ts',
           '../lexical-code/src/index.ts',
-          '../lexical-devtools-core/src/index.ts',
           '../lexical-dragon/src/index.ts',
           '../lexical-file/src/index.ts',
           '../lexical-hashtag/src/index.ts',

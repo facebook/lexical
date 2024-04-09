@@ -5,19 +5,21 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {allowWindowMessaging} from 'webext-bridge/content-script';
+import {allowWindowMessaging, sendMessage} from 'webext-bridge/content-script';
 
 import useExtensionStore from '../../store';
 import storeReadyPromise from '../../store-sync/content-script';
 import injectScript from './injectScript';
 
 export default defineContentScript({
-  main(_ctx) {
+  main(ctx) {
     allowWindowMessaging('lexical-extension');
 
-    storeReadyPromise(useExtensionStore)
-      .then(() => {
-        injectScript('/injected.js');
+    sendMessage('getTabID', null, 'background')
+      .then((tabID) => {
+        return storeReadyPromise(useExtensionStore).then(() => {
+          injectScript('/injected.js');
+        });
       })
       .catch(console.error);
   },

@@ -26,12 +26,15 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
-        "webpack": "./LexicalMark.mjs",
+        "development": "./LexicalMark.dev.mjs",
+        "production": "./LexicalMark.prod.mjs",
         "node": "./LexicalMark.node.mjs",
         "default": "./LexicalMark.mjs"
       },
       "require": {
         "types": "./index.d.ts",
+        "development": "./LexicalMark.dev.js",
+        "production": "./LexicalMark.prod.js",
         "default": "./LexicalMark.js"
       }
     }

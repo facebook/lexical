@@ -22,12 +22,15 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
-        "webpack": "./LexicalHeadless.mjs",
+        "development": "./LexicalHeadless.dev.mjs",
+        "production": "./LexicalHeadless.prod.mjs",
         "node": "./LexicalHeadless.node.mjs",
         "default": "./LexicalHeadless.mjs"
       },
       "require": {
         "types": "./index.d.ts",
+        "development": "./LexicalHeadless.dev.js",
+        "production": "./LexicalHeadless.prod.js",
         "default": "./LexicalHeadless.js"
       }
     }

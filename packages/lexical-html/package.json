@@ -27,12 +27,15 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
-        "webpack": "./LexicalHtml.mjs",
+        "development": "./LexicalHtml.dev.mjs",
+        "production": "./LexicalHtml.prod.mjs",
         "node": "./LexicalHtml.node.mjs",
         "default": "./LexicalHtml.mjs"
       },
       "require": {
         "types": "./index.d.ts",
+        "development": "./LexicalHtml.dev.js",
+        "production": "./LexicalHtml.prod.js",
         "default": "./LexicalHtml.js"
       }
     }

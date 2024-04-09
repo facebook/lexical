@@ -26,12 +26,15 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
-        "webpack": "./LexicalLink.mjs",
+        "development": "./LexicalLink.dev.mjs",
+        "production": "./LexicalLink.prod.mjs",
         "node": "./LexicalLink.node.mjs",
         "default": "./LexicalLink.mjs"
       },
       "require": {
         "types": "./index.d.ts",
+        "development": "./LexicalLink.dev.js",
+        "production": "./LexicalLink.prod.js",
         "default": "./LexicalLink.js"
       }
     }

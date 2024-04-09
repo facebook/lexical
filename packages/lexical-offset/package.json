@@ -22,12 +22,15 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
-        "webpack": "./LexicalOffset.mjs",
+        "development": "./LexicalOffset.dev.mjs",
+        "production": "./LexicalOffset.prod.mjs",
         "node": "./LexicalOffset.node.mjs",
         "default": "./LexicalOffset.mjs"
       },
       "require": {
         "types": "./index.d.ts",
+        "development": "./LexicalOffset.dev.js",
+        "production": "./LexicalOffset.prod.js",
         "default": "./LexicalOffset.js"
       }
     }

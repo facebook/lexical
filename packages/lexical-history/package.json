@@ -26,12 +26,15 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
-        "webpack": "./LexicalHistory.mjs",
+        "development": "./LexicalHistory.dev.mjs",
+        "production": "./LexicalHistory.prod.mjs",
         "node": "./LexicalHistory.node.mjs",
         "default": "./LexicalHistory.mjs"
       },
       "require": {
         "types": "./index.d.ts",
+        "development": "./LexicalHistory.dev.js",
+        "production": "./LexicalHistory.prod.js",
         "default": "./LexicalHistory.js"
       }
     }

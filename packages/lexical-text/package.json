@@ -23,12 +23,15 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
-        "webpack": "./LexicalText.mjs",
+        "development": "./LexicalText.dev.mjs",
+        "production": "./LexicalText.prod.mjs",
         "node": "./LexicalText.node.mjs",
         "default": "./LexicalText.mjs"
       },
       "require": {
         "types": "./index.d.ts",
+        "development": "./LexicalText.dev.js",
+        "production": "./LexicalText.prod.js",
         "default": "./LexicalText.js"
       }
     }

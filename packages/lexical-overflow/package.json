@@ -22,12 +22,15 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
-        "webpack": "./LexicalOverflow.mjs",
+        "development": "./LexicalOverflow.dev.mjs",
+        "production": "./LexicalOverflow.prod.mjs",
         "node": "./LexicalOverflow.node.mjs",
         "default": "./LexicalOverflow.mjs"
       },
       "require": {
         "types": "./index.d.ts",
+        "development": "./LexicalOverflow.dev.js",
+        "production": "./LexicalOverflow.prod.js",
         "default": "./LexicalOverflow.js"
       }
     }

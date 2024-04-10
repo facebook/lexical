@@ -50,6 +50,7 @@ export {
 } from './LexicalTableSelectionHelpers';
 export {
   $computeTableMap,
+  $computeTableMapSkipCellCheck,
   $createTableNodeWithDimensions,
   $deleteTableColumn,
   $deleteTableColumn__EXPERIMENTAL,

@@ -714,12 +714,32 @@ export function $unmergeCell(): void {
     cell.setRowSpan(1);
   }
 }
+export function $computeTableMapSkipCellCheck(grid: TableNode) {
+  const cell = new TableCellNode();
+  const [tableMap] = $computeTableMapHelper(grid, cell, cell);
+  return tableMap;
+}
 
 export function $computeTableMap(
   grid: TableNode,
   cellA: TableCellNode,
   cellB: TableCellNode,
 ): [TableMapType, TableMapValueType, TableMapValueType] {
+  const [tableMap, cellAValue, cellBValue] = $computeTableMapHelper(
+    grid,
+    cellA,
+    cellB,
+  );
+  invariant(cellAValue !== null, 'Anchor not found in Grid');
+  invariant(cellBValue !== null, 'Focus not found in Grid');
+  return [tableMap, cellAValue, cellBValue];
+}
+
+function $computeTableMapHelper(
+  grid: TableNode,
+  cellA: TableCellNode,
+  cellB: TableCellNode,
+): [TableMapType, TableMapValueType | null, TableMapValueType | null] {
   const tableMap: TableMapType = [];
   let cellAValue: null | TableMapValueType = null;
   let cellBValue: null | TableMapValueType = null;
@@ -771,8 +791,6 @@ export function $computeTableMap(
       j += cell.__colSpan;
     }
   }
-  invariant(cellAValue !== null, 'Anchor not found in Grid');
-  invariant(cellBValue !== null, 'Focus not found in Grid');
   return [tableMap, cellAValue, cellBValue];
 }
 

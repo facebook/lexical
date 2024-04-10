@@ -13,12 +13,11 @@ import type {
 } from '@lexical/table';
 import type {NodeKey} from 'lexical';
 
-import {mergeRegister} from '@lexical/utils';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $computeTableMap,
-  $createTableCellNode,
   $computeTableMapSkipCellCheck,
+  $createTableCellNode,
   $createTableNodeWithDimensions,
   $getNodeTriplet,
   $isTableCellNode,
@@ -30,7 +29,11 @@ import {
   TableNode,
   TableRowNode,
 } from '@lexical/table';
-import {$insertFirst, $insertNodeToNearestRoot} from '@lexical/utils';
+import {
+  $insertFirst,
+  $insertNodeToNearestRoot,
+  mergeRegister,
+} from '@lexical/utils';
 import {
   $createParagraphNode,
   $getNodeByKey,

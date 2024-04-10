@@ -60,6 +60,7 @@ glob('packages/**/flow/*.flow', options, function (error1, files) {
         .replace(/from '@lexical\/selection\'/g, "from 'LexicalSelection'")
         .replace(/from '@lexical\/table\'/g, "from 'LexicalTable'")
         .replace(/from '@lexical\/text\'/g, "from 'LexicalText'")
+        .replace(/from '@lexical\/utils\'/g, "from 'LexicalUtils'")
         .replace(/from '@lexical\/yjs\'/g, "from 'LexicalYjs'")
         .replace(
           /from 'lexical\/CodeHighlightNode'/g,

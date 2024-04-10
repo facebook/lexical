@@ -150,7 +150,6 @@ const externals = [
   '@lexical/overflow',
   '@lexical/link',
   '@lexical/markdown',
-  '@lexical/devtools-core',
   'react-dom',
   'react',
   'yjs',

@@ -5,9 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import babel from '@rollup/plugin-babel';
 import react from '@vitejs/plugin-react';
 import * as path from 'path';
 import {defineConfig, UserManifest} from 'wxt';
+
+import moduleResolution from '../shared/viteModuleResolution';
 
 // See https://wxt.dev/api/config.html
 export default defineConfig({
@@ -66,7 +69,43 @@ export default defineConfig({
     ],
   },
   srcDir: './src',
-  vite: () => ({
-    plugins: [react()],
+  vite: (configEnv) => ({
+    define: {
+      __DEV__: configEnv.mode === 'development',
+    },
+    plugins: [
+      babel({
+        babelHelpers: 'bundled',
+        babelrc: false,
+        configFile: false,
+        exclude: '/**/node_modules/**',
+        extensions: ['jsx', 'js', 'ts', 'tsx', 'mjs'],
+        plugins: [
+          '@babel/plugin-transform-flow-strip-types',
+          [
+            require('../../scripts/error-codes/transform-error-messages'),
+            {
+              noMinify: true,
+            },
+          ],
+        ],
+        presets: ['@babel/preset-react'],
+      }),
+      react(),
+    ],
+    resolve: {
+      alias: [
+        // See lexicalForExtension.ts for more details
+        {
+          find: /lexical$/,
+          replacement: path.resolve('./src/lexicalForExtension.ts'),
+        },
+        {
+          find: 'lexicalOriginal',
+          replacement: path.resolve('../lexical/src/index.ts'),
+        },
+        ...moduleResolution,
+      ],
+    },
   }),
 });

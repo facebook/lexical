@@ -29,6 +29,8 @@ module.exports = {
         '^@lexical/clipboard$':
           '<rootDir>/packages/lexical-clipboard/src/index.ts',
         '^@lexical/code$': '<rootDir>/packages/lexical-code/src/index.ts',
+        '^@lexical/devtools-core$':
+          '<rootDir>/packages/lexical-devools-core/src/index.ts',
         '^@lexical/dragon$': '<rootDir>/packages/lexical-dragon/src/index.ts',
         '^@lexical/file$': '<rootDir>/packages/lexical-file/src/index.ts',
         '^@lexical/hashtag$': '<rootDir>/packages/lexical-hashtag/src/index.ts',

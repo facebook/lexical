@@ -148,6 +148,7 @@ const externals = [
   '@lexical/overflow',
   '@lexical/link',
   '@lexical/markdown',
+  '@lexical/devtools-core',
   'react-dom',
   'react',
   'yjs',
@@ -488,6 +489,18 @@ const packages = [
     outputPath: './packages/lexical-dragon/dist/',
     packageName: 'lexical-dragon',
     sourcePath: './packages/lexical-dragon/src/',
+  },
+  {
+    modules: [
+      {
+        outputFileName: 'LexicalDevtoolsCore',
+        sourceFileName: 'index.ts',
+      },
+    ],
+    name: 'Lexical Devtools Core',
+    outputPath: './packages/lexical-devtools-core/dist/',
+    packageName: 'lexical-devtools-core',
+    sourcePath: './packages/lexical-devtools-core/src/',
   },
   {
     modules: [

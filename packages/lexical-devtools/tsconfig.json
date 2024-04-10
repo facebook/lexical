@@ -8,6 +8,8 @@
     "jsx": "react-jsx",
     "paths": {
       "lexical": ["../lexical/src/"],
+      "lexicalOriginal": ["../lexical/src/"],
+      "@lexical/devtools-core": ["../lexical-devtools-core/src/"],
       "shared/canUseDOM": ["../shared/src/canUseDOM.ts"],
       "shared/normalizeClassNames": ["../shared/src/normalizeClassNames.ts"],
       "shared/invariant": ["../shared/src/invariant.ts"],

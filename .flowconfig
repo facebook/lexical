@@ -21,6 +21,7 @@ exact_by_default=true
 module.name_mapper='^lexical$' -> '<PROJECT_ROOT>/packages/lexical/flow/Lexical.js.flow'
 
 module.name_mapper='^@lexical/clipboard' -> '<PROJECT_ROOT>/packages/lexical-clipboard/flow/LexicalClipboard.js.flow'
+module.name_mapper='^@lexical/devtools-core' -> '<PROJECT_ROOT>/packages/devtools-core/flow/LexicalDevToolsCore.js.flow'
 module.name_mapper='^@lexical/list' -> '<PROJECT_ROOT>/packages/lexical-list/flow/LexicalList.js.flow'
 module.name_mapper='^@lexical/table' -> '<PROJECT_ROOT>/packages/lexical-table/flow/LexicalTable.js.flow'
 module.name_mapper='^@lexical/file' -> '<PROJECT_ROOT>/packages/lexical-file/flow/LexicalFile.js.flow'

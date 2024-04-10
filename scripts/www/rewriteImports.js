@@ -40,6 +40,10 @@ glob('packages/**/flow/*.flow', options, function (error1, files) {
         .replace(/from '@lexical\/react\/Lexical/g, "from 'Lexical")
         .replace(/from '@lexical\/utils\/'/g, "from 'LexicalUtils")
         .replace(/from '@lexical\/clipboard\'/g, "from 'LexicalClipboard'")
+        .replace(
+          /from '@lexical\/devtools-core\'/g,
+          "from 'LexicalDevToolsCore'",
+        )
         .replace(/from '@lexical\/code\'/g, "from 'LexicalCode'")
         .replace(/from '@lexical\/dragon\'/g, "from 'LexicalDragon'")
         .replace(/from '@lexical\/file\'/g, "from 'LexicalFile'")
@@ -56,7 +60,6 @@ glob('packages/**/flow/*.flow', options, function (error1, files) {
         .replace(/from '@lexical\/selection\'/g, "from 'LexicalSelection'")
         .replace(/from '@lexical\/table\'/g, "from 'LexicalTable'")
         .replace(/from '@lexical\/text\'/g, "from 'LexicalText'")
-        .replace(/from '@lexical\/utils\'/g, "from 'LexicalUtils'")
         .replace(/from '@lexical\/yjs\'/g, "from 'LexicalYjs'")
         .replace(
           /from 'lexical\/CodeHighlightNode'/g,

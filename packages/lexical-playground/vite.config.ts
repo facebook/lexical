@@ -11,8 +11,8 @@ import react from '@vitejs/plugin-react';
 import {defineConfig} from 'vite';
 import {replaceCodePlugin} from 'vite-plugin-replace';
 
+import moduleResolution from '../shared/viteModuleResolution';
 import viteCopyEsm from './viteCopyEsm';
-import moduleResolution from './viteModuleResolution';
 
 // https://vitejs.dev/config/
 export default defineConfig({

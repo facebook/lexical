@@ -40,6 +40,10 @@ glob('packages/**/flow/*.flow', options, function (error1, files) {
         .replace(/from '@lexical\/react\/Lexical/g, "from 'Lexical")
         .replace(/from '@lexical\/utils\/'/g, "from 'LexicalUtils")
         .replace(/from '@lexical\/clipboard\'/g, "from 'LexicalClipboard'")
+        .replace(
+          /from '@lexical\/devtools-core\'/g,
+          "from 'LexicalDevToolsCore'",
+        )
         .replace(/from '@lexical\/code\'/g, "from 'LexicalCode'")
         .replace(/from '@lexical\/dragon\'/g, "from 'LexicalDragon'")
         .replace(/from '@lexical\/file\'/g, "from 'LexicalFile'")

@@ -35,6 +35,7 @@
       "@lexical/overflow": ["./packages/lexical-overflow/src/"],
       "@lexical/markdown": ["./packages/lexical-markdown/src/"],
       "@lexical/mark": ["./packages/lexical-mark/src/"],
+      "@lexical/devtools-core": ["./packages/lexical-devtools-core/src/"],
 
       "@lexical/react/LexicalComposer": [
         "./packages/lexical-react/src/LexicalComposer.tsx"

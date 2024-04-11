@@ -38,6 +38,7 @@ import {
   getDOMSelection,
   markAllNodesAsDirty,
 } from './LexicalUtils';
+import {ArtificialNode} from './nodes/ArtificialNode';
 import {DecoratorNode} from './nodes/LexicalDecoratorNode';
 import {LineBreakNode} from './nodes/LexicalLineBreakNode';
 import {ParagraphNode} from './nodes/LexicalParagraphNode';
@@ -421,6 +422,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
     TextNode,
     LineBreakNode,
     TabNode,
+    ArtificialNode,
     ParagraphNode,
     ArtificialNode,
     ...(config.nodes || []),

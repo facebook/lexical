@@ -10,6 +10,7 @@ import {$createLinkNode} from '@lexical/link';
 import {$createListItemNode, $createListNode} from '@lexical/list';
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
 import {$createHeadingNode, $createQuoteNode} from '@lexical/rich-text';
+import {TableCellNode} from '@lexical/table';
 import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
 import * as React from 'react';
 
@@ -20,6 +21,7 @@ import {SharedHistoryContext} from './context/SharedHistoryContext';
 import Editor from './Editor';
 import logo from './images/logo.svg';
 import PlaygroundNodes from './nodes/PlaygroundNodes';
+import {CustomTableCellNode} from './nodes/TableCellNode';
 import DocsPlugin from './plugins/DocsPlugin';
 import PasteLogPlugin from './plugins/PasteLogPlugin';
 import {TableContext} from './plugins/TablePlugin';
@@ -124,7 +126,21 @@ function App(): JSX.Element {
       ? undefined
       : prepopulatedRichText,
     namespace: 'Playground',
-    nodes: [...PlaygroundNodes],
+    nodes: [
+      CustomTableCellNode,
+      {
+        replace: TableCellNode,
+        with: (node: TableCellNode) => {
+          return new CustomTableCellNode(
+            node.__headerState,
+            node.__colSpan,
+            node.__width,
+            node.__key,
+          );
+        },
+      },
+      ...PlaygroundNodes,
+    ],
     onError: (error: Error) => {
       throw error;
     },

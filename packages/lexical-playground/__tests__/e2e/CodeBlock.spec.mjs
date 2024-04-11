@@ -1033,7 +1033,12 @@ test.describe('CodeBlock', () => {
         <td
           class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__ltr"
           dir="ltr">
-          <span data-lexical-text="true">sdvd sdfvsfs</span>
+          <span data-lexical-text="true">sdvd</span>
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            sdfvsfs
+          </strong>
         </td>
       </tr>
     </table>

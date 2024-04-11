@@ -5,16 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
+// @ts-check
 'use strict';
 
 const fs = require('fs-extra');
 const path = require('node:path');
-const {packagesManager} = require('./shared/packagesManager');
 
-fs.removeSync(path.resolve(`./.ts-temp`));
-packagesManager
-  .getPublicPackages()
-  .forEach((pkg) =>
-    ['dist', 'npm'].forEach((subdir) => fs.removeSync(pkg.resolve(subdir))),
-  );
+module.exports = function readMonorepoPackageJson() {
+  return fs.readJsonSync(path.resolve(__dirname, '../../package.json'));
+};

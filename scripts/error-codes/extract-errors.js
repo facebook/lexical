@@ -9,7 +9,7 @@
 'use strict';
 
 const parser = require('@babel/parser');
-const fs = require('fs');
+const fs = require('fs-extra');
 const path = require('path');
 const traverse = require('@babel/traverse').default;
 const evalToString = require('./evalToString');
@@ -42,14 +42,11 @@ module.exports = function (opts) {
   const errorMapFilePath = opts.errorMapFilePath;
   let existingErrorMap;
   try {
-    // Using `fs.readFileSync` instead of `require` here, because `require()`
+    // Using `fs.readJsonSync` instead of `require` here, because `require()`
     // calls are cached, and the cache map is not properly invalidated after
     // file changes.
-    existingErrorMap = JSON.parse(
-      fs.readFileSync(
-        path.join(__dirname, path.basename(errorMapFilePath)),
-        'utf8',
-      ),
+    existingErrorMap = fs.readJsonSync(
+      path.join(__dirname, path.basename(errorMapFilePath)),
     );
   } catch (e) {
     existingErrorMap = {};
@@ -95,11 +92,9 @@ module.exports = function (opts) {
   }
 
   function flush(cb) {
-    fs.writeFileSync(
-      errorMapFilePath,
-      JSON.stringify(invertObject(existingErrorMap), null, 2) + '\n',
-      'utf-8',
-    );
+    fs.writeJsonSync(errorMapFilePath, invertObject(existingErrorMap), {
+      spaces: 2,
+    });
   }
 
   return function extractErrors(source) {

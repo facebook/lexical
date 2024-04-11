@@ -15,7 +15,7 @@ import {
   INDENT_CONTENT_COMMAND,
   LexicalEditor,
   OUTDENT_CONTENT_COMMAND,
-} from 'lexical/src';
+} from 'lexical';
 import {
   expectHtmlToBeEqual,
   html,

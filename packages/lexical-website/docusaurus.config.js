@@ -10,11 +10,12 @@
 // @ts-check
 // Note: type annotations allow type checking and IDEs autocompletion
 
-const fs = require('fs-extra');
 const {github: lightCodeTheme, dracula: darkCodeTheme} =
   require('prism-react-renderer').themes;
 const importPlugin = require('remark-import-partial');
 const slugifyPlugin = require('./src/plugins/lexical-remark-slugify-anchors');
+const {packagesManager} = require('../../scripts/shared/packagesManager');
+const path = require('node:path');
 
 const TITLE = 'Lexical';
 const GITHUB_REPO_URL = 'https://github.com/facebook/lexical'; // TODO: Update when repo name updated
@@ -27,25 +28,6 @@ function sourceLinkOptions() {
     gitRevision: 'main',
     sourceLinkTemplate,
   };
-}
-
-function lexicalReactEntryPoints() {
-  return Object.keys(
-    fs.readJsonSync('../lexical-react/package.json').exports,
-  ).flatMap((k) => {
-    const m = /\.\/([^.]+)$/.exec(k);
-    if (!m) {
-      return [];
-    }
-    const prefix = `../lexical-react/src/${m[1]}`;
-    for (const ext of ['.tsx', '.ts']) {
-      const fn = `${prefix}${ext}`;
-      if (fs.existsSync(fn)) {
-        return [fn];
-      }
-    }
-    throw Error(`No entry point found for ${prefix}`);
-  });
 }
 
 /** @type {import('@docusaurus/types').Config} */
@@ -67,32 +49,18 @@ const config = {
       'docusaurus-plugin-typedoc',
       {
         ...sourceLinkOptions(),
-        entryPoints: [
-          '../lexical/src/index.ts',
-          '../lexical-clipboard/src/index.ts',
-          '../lexical-code/src/index.ts',
-          '../lexical-devtools-core/src/index.ts',
-          '../lexical-dragon/src/index.ts',
-          '../lexical-file/src/index.ts',
-          '../lexical-hashtag/src/index.ts',
-          '../lexical-headless/src/index.ts',
-          '../lexical-history/src/index.ts',
-          '../lexical-html/src/index.ts',
-          '../lexical-link/src/index.ts',
-          '../lexical-list/src/index.ts',
-          '../lexical-mark/src/index.ts',
-          '../lexical-markdown/src/index.ts',
-          '../lexical-offset/src/index.ts',
-          '../lexical-overflow/src/index.ts',
-          '../lexical-plain-text/src/index.ts',
-          ...lexicalReactEntryPoints(),
-          '../lexical-rich-text/src/index.ts',
-          '../lexical-selection/src/index.ts',
-          '../lexical-table/src/index.ts',
-          '../lexical-text/src/index.ts',
-          '../lexical-utils/src/index.ts',
-          '../lexical-yjs/src/index.ts',
-        ],
+        entryPoints: packagesManager
+          .getPublicPackages()
+          .flatMap((pkg) =>
+            pkg
+              .getExportedNpmModuleEntries()
+              .map((entry) => [
+                path.relative(
+                  __dirname,
+                  pkg.resolve('src', entry.sourceFileName),
+                ),
+              ]),
+          ),
         excludeInternal: true,
         plugin: [
           './src/plugins/lexical-typedoc-plugin-no-inherit',

@@ -6,7 +6,7 @@
  *
  */
 
-import {UserState} from '@lexical/yjs/src/index';
+import {UserState} from '@lexical/yjs';
 import {LexicalEditor} from 'lexical';
 import * as React from 'react';
 import {createRoot, Root} from 'react-dom/client';

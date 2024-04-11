@@ -8,16 +8,16 @@
     "utils"
   ],
   "license": "MIT",
-  "version": "0.14.2",
+  "version": "0.14.3",
   "main": "LexicalDevtoolsCore.js",
   "types": "index.d.ts",
   "dependencies": {
-    "lexical": "0.14.2",
-    "@lexical/utils": "0.14.2",
-    "@lexical/table": "0.14.2",
-    "@lexical/html": "0.14.2",
-    "@lexical/mark": "0.14.2",
-    "@lexical/link": "0.14.2"
+    "@lexical/html": "0.14.3",
+    "@lexical/link": "0.14.3",
+    "@lexical/mark": "0.14.3",
+    "@lexical/table": "0.14.3",
+    "@lexical/utils": "0.14.3",
+    "lexical": "0.14.3"
   },
   "peerDependencies": {
     "react": ">=17.x",
@@ -34,11 +34,15 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
+        "development": "./LexicalDevtoolsCore.dev.mjs",
+        "production": "./LexicalDevtoolsCore.prod.mjs",
         "node": "./LexicalDevtoolsCore.node.mjs",
         "default": "./LexicalDevtoolsCore.mjs"
       },
       "require": {
         "types": "./index.d.ts",
+        "development": "./LexicalDevtoolsCore.dev.js",
+        "production": "./LexicalDevtoolsCore.prod.js",
         "default": "./LexicalDevtoolsCore.js"
       }
     }

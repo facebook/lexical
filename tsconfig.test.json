@@ -6,6 +6,7 @@
   },
   "include": ["./libdefs", "./packages"],
   "exclude": [
+    "./libdefs/*.js",
     "**/dist/**",
     "**/npm/**",
     "**/node_modules/**",

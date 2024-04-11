@@ -12,7 +12,7 @@
 
 const readline = require('readline');
 const {exec} = require('child-process-promise');
-const {LEXICAL_PKG, DEFAULT_PKGS} = require('./packages');
+const {packagesManager} = require('../shared/packagesManager');
 const argv = require('minimist')(process.argv.slice(2));
 
 const nonInteractive = argv['non-interactive'];
@@ -25,23 +25,22 @@ if (!validChannels.has(channel)) {
 }
 
 async function publish() {
-  const pkgs = [LEXICAL_PKG, ...DEFAULT_PKGS];
+  const pkgs = packagesManager.getPublicPackages();
   if (!nonInteractive) {
     console.info(
       `You're about to publish:
-    ${pkgs.join('\n')}
+    ${pkgs.map((pkg) => pkg.getNpmName()).join('\n')}
 
     Type "publish" to confirm.`,
     );
     await waitForInput();
   }
 
-  for (let i = 0; i < pkgs.length; i++) {
-    const pkg = pkgs[i];
-    console.info(`Publishing ${pkg}...`);
+  for (const pkg of pkgs) {
+    console.info(`Publishing ${pkg.getNpmName()}...`);
     if (dryRun === undefined || dryRun === 0) {
       await exec(
-        `cd ./packages/${pkg}/npm && npm publish --access public --tag ${channel}`,
+        `cd ./packages/${pkg.getDirectoryName()}/npm && npm publish --access public --tag ${channel}`,
       );
       console.info(`Done!`);
     } else {

@@ -4,6 +4,7 @@
 **/config/**
 **/build/**
 **/npm/**
+!scripts/npm/**
 **/*.js.flow
 **/*.d.ts
 **/playwright*/**

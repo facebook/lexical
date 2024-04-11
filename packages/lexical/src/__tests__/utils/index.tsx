@@ -27,12 +27,9 @@ import {
   $isRangeSelection,
   createEditor,
   DecoratorNode,
-  ElementNode,
-  TextNode,
-} from 'lexical';
-import {
   EditorState,
   EditorThemeClasses,
+  ElementNode,
   Klass,
   LexicalEditor,
   LexicalNode,
@@ -40,7 +37,8 @@ import {
   SerializedElementNode,
   SerializedLexicalNode,
   SerializedTextNode,
-} from 'lexical/src';
+  TextNode,
+} from 'lexical';
 import {format} from 'prettier';
 import * as React from 'react';
 import {createRef} from 'react';

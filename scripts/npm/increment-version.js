@@ -12,6 +12,7 @@
 
 const {exec} = require('child-process-promise');
 const argv = require('minimist')(process.argv.slice(2));
+
 const increment = argv.i;
 const validIncrements = new Set(['minor', 'patch', 'prerelease']);
 if (!validIncrements.has(increment)) {
@@ -19,11 +20,11 @@ if (!validIncrements.has(increment)) {
   process.exit(1);
 }
 
-async function incrementVersion(increment) {
+async function incrementVersion() {
   const preId = increment === 'prerelease' ? '--preid next' : '';
   const workspaces = '';
   const command = `npm --no-git-tag-version version ${increment} --include-workspace-root true ${preId} ${workspaces}`;
   await exec(command);
 }
 
-incrementVersion(increment);
+incrementVersion();

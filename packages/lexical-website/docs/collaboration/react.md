@@ -11,7 +11,7 @@ import {$getRoot, $createParagraphNode, $createTextNode} from 'lexical';
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
-import {CollaborationPlugin} from "@lexical/react/LexicalCollaborationPlugin";
+import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
 import * as Y from 'yjs';
 import {WebsocketProvider} from 'y-websocket';
 

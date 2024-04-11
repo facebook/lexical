@@ -6,6 +6,15 @@
  *
  */
 
+import type {
+  BaseSelection,
+  DOMChildConversion,
+  DOMConversion,
+  DOMConversionFn,
+  LexicalEditor,
+  LexicalNode,
+} from 'lexical';
+
 import {
   $cloneWithProperties,
   $sliceSelectedTextNodeContent,
@@ -20,13 +29,7 @@ import {
   $isRootOrShadowRoot,
   $isTextNode,
   ArtificialNode,
-  BaseSelection,
-  DOMChildConversion,
-  DOMConversion,
-  DOMConversionFn,
   ElementNode,
-  LexicalEditor,
-  LexicalNode,
 } from 'lexical';
 
 /**
@@ -340,15 +343,3 @@ function unwrapArtificalNodes(allArtificialNodes: Array<ArtificialNode>) {
     }
   });
 }
-
-// export class ArtificialNode extends ElementNode {
-//   static getType(): string {
-//     return 'artificial';
-//   }
-
-//   createDOM(config: EditorConfig): HTMLElement {
-//     // this isnt supposed to be used and is not used anywhere but defining it to appease the API
-//     const dom = document.createElement('div');
-//     return dom;
-//   }
-// }

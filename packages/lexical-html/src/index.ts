@@ -19,11 +19,11 @@ import {
   $isElementNode,
   $isRootOrShadowRoot,
   $isTextNode,
+  ArtificialNode,
   BaseSelection,
   DOMChildConversion,
   DOMConversion,
   DOMConversionFn,
-  EditorConfig,
   ElementNode,
   LexicalEditor,
   LexicalNode,
@@ -341,14 +341,14 @@ function unwrapArtificalNodes(allArtificialNodes: Array<ArtificialNode>) {
   });
 }
 
-export class ArtificialNode extends ElementNode {
-  static getType(): string {
-    return 'artificial';
-  }
+// export class ArtificialNode extends ElementNode {
+//   static getType(): string {
+//     return 'artificial';
+//   }
 
-  createDOM(config: EditorConfig): HTMLElement {
-    // this isnt supposed to be used and is not used anywhere but defining it to appease the API
-    const dom = document.createElement('div');
-    return dom;
-  }
-}
+//   createDOM(config: EditorConfig): HTMLElement {
+//     // this isnt supposed to be used and is not used anywhere but defining it to appease the API
+//     const dom = document.createElement('div');
+//     return dom;
+//   }
+// }

@@ -14,7 +14,6 @@ import type {
   NodeKey,
 } from './LexicalNode';
 
-import {ArtificialNode} from '@lexical/html';
 import invariant from 'shared/invariant';
 
 import {$getRoot, $getSelection, TextNode} from '.';

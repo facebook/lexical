@@ -421,7 +421,6 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
     TextNode,
     LineBreakNode,
     TabNode,
-    ArtificialNode,
     ParagraphNode,
     ArtificialNode,
     ...(config.nodes || []),

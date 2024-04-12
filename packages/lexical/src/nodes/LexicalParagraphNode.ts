@@ -160,6 +160,7 @@ export class ParagraphNode extends ElementNode {
     newElement.setTextFormat(rangeSelection.format);
     const direction = this.getDirection();
     newElement.setDirection(direction);
+    newElement.setFormat(this.getFormatType());
     this.insertAfter(newElement, restoreSelection);
     return newElement;
   }

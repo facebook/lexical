@@ -331,7 +331,10 @@ export function convertTableCellNodeElement(
       return childLexicalNodes;
     },
     forChild: (lexicalNode, parentLexicalNode) => {
-      if ($isTableCellNode(parentLexicalNode) && !$isElementNode(lexicalNode)) {
+      if (
+        ($isTableCellNode(parentLexicalNode) || parentLexicalNode == null) &&
+        !$isElementNode(lexicalNode)
+      ) {
         const paragraphNode = $createParagraphNode();
         if (
           $isLineBreakNode(lexicalNode) &&

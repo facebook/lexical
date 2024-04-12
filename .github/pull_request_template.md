@@ -1,6 +1,6 @@
 ## Description
 
-*Describe the changes in this diff*
+*Describe the changes in this pull request*
 
 Closes #<issue>
 

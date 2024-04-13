@@ -36,8 +36,8 @@ export default function useReport(): (
 ) => ReturnType<typeof setTimeout> {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cleanup = useCallback(() => {
-    if (timer !== null) {
-      clearTimeout(timer.current as ReturnType<typeof setTimeout>);
+    if (timer.current !== null) {
+      clearTimeout(timer.current);
     }
 
     if (document.body) {
@@ -54,7 +54,9 @@ export default function useReport(): (
       // eslint-disable-next-line no-console
       console.log(content);
       const element = getElement();
-      clearTimeout(timer.current as ReturnType<typeof setTimeout>);
+      if (timer.current !== null) {
+        clearTimeout(timer.current);
+      }
       element.innerHTML = content;
       timer.current = setTimeout(cleanup, 1000);
       return timer.current;

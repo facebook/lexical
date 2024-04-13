@@ -38,6 +38,7 @@ export default function useReport(): (
   const cleanup = useCallback(() => {
     if (timer.current !== null) {
       clearTimeout(timer.current);
+      timer.current = null;
     }
 
     if (document.body) {

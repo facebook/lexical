@@ -24,6 +24,12 @@ function indent(tagName: HeadingTagType) {
     return 'heading2';
   } else if (tagName === 'h3') {
     return 'heading3';
+  } else if (tagName === 'h4') {
+    return 'heading4';
+  } else if (tagName === 'h5') {
+    return 'heading5';
+  } else if (tagName === 'h6') {
+    return 'heading6';
   }
 }
 

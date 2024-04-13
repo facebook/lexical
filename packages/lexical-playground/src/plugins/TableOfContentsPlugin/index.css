@@ -1,9 +1,17 @@
-.table-of-contents .heading2 {
+.table-of-contents .heading3 {
   margin-left: 10px;
 }
 
-.table-of-contents .heading3 {
+.table-of-contents .heading4 {
   margin-left: 20px;
+}
+
+.table-of-contents .heading5 {
+  margin-left: 30px;
+}
+
+.table-of-contents .heading6 {
+  margin-left: 40px;
 }
 
 .selected-heading {

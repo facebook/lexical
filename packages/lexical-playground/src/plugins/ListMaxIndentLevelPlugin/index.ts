@@ -6,7 +6,7 @@
  *
  */
 
-import type {RangeSelection} from 'lexical';
+import type {ElementNode, RangeSelection} from 'lexical';
 
 import {$getListDepth, $isListItemNode, $isListNode} from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
@@ -15,14 +15,9 @@ import {
   $isElementNode,
   $isRangeSelection,
   COMMAND_PRIORITY_CRITICAL,
-  ElementNode,
   INDENT_CONTENT_COMMAND,
 } from 'lexical';
 import {useEffect} from 'react';
-
-type Props = Readonly<{
-  maxDepth: number | null | undefined;
-}>;
 
 function getElementNodesInSelection(
   selection: RangeSelection,
@@ -41,7 +36,7 @@ function getElementNodesInSelection(
   );
 }
 
-function isIndentPermitted(maxDepth: number): boolean {
+function shouldPreventIndent(maxDepth: number): boolean {
   const selection = $getSelection();
 
   if (!$isRangeSelection(selection)) {
@@ -69,16 +64,20 @@ function isIndentPermitted(maxDepth: number): boolean {
     }
   }
 
-  return totalDepth <= maxDepth;
+  return totalDepth > maxDepth;
 }
 
-export default function ListMaxIndentLevelPlugin({maxDepth}: Props): null {
+export default function ListMaxIndentLevelPlugin({
+  maxDepth = 7,
+}: {
+  maxDepth?: number;
+}): null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
     return editor.registerCommand(
       INDENT_CONTENT_COMMAND,
-      () => !isIndentPermitted(maxDepth ?? 7),
+      () => shouldPreventIndent(maxDepth),
       COMMAND_PRIORITY_CRITICAL,
     );
   }, [editor, maxDepth]);

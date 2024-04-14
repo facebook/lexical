@@ -77,13 +77,6 @@ module.exports = {
       },
     },
     {
-      // don't lint headers in entrypoint files so we can add TypeDoc module comments
-      files: ['packages/**/src/index.ts'],
-      rules: {
-        'header/header': OFF,
-      },
-    },
-    {
       // These aren't compiled, but they're written in module JS
       files: ['packages/lexical-playground/esm/*.mjs'],
       parserOptions: {

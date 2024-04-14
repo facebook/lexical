@@ -1,4 +1,3 @@
-/** @module @lexical/clipboard */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *

@@ -16,3 +16,5 @@ packages/**/vite.prod.config.js
 flow-typed
 .github/CODEOWNERS
 .prettierignore
+**/.docusaurus
+/playwright-report

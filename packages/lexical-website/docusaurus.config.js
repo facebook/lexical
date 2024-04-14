@@ -10,13 +10,43 @@
 // @ts-check
 // Note: type annotations allow type checking and IDEs autocompletion
 
+const fs = require('fs-extra');
 const {github: lightCodeTheme, dracula: darkCodeTheme} =
   require('prism-react-renderer').themes;
 const importPlugin = require('remark-import-partial');
+const slugifyPlugin = require('./src/plugins/lexical-remark-slugify-anchors');
 
 const TITLE = 'Lexical';
 const GITHUB_REPO_URL = 'https://github.com/facebook/lexical'; // TODO: Update when repo name updated
 const IOS_GITHUB_REPO_URL = 'https://github.com/facebook/lexical-ios';
+
+function sourceLinkOptions() {
+  const sourceLinkTemplate = `${GITHUB_REPO_URL}/tree/{gitRevision}/{path}#L{line}`;
+  return {
+    disableGit: true,
+    gitRevision: 'main',
+    sourceLinkTemplate,
+  };
+}
+
+function lexicalReactEntryPoints() {
+  return Object.keys(
+    fs.readJsonSync('../lexical-react/package.json').exports,
+  ).flatMap((k) => {
+    const m = /\.\/([^.]+)$/.exec(k);
+    if (!m) {
+      return [];
+    }
+    const prefix = `../lexical-react/src/${m[1]}`;
+    for (const ext of ['.tsx', '.ts']) {
+      const fn = `${prefix}${ext}`;
+      if (fs.existsSync(fn)) {
+        return [fn];
+      }
+    }
+    throw Error(`No entry point found for ${prefix}`);
+  });
+}
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -26,14 +56,17 @@ const config = {
 
   markdown: {format: 'md'},
 
-  onBrokenLinks: 'warn',
-  onBrokenMarkdownLinks: 'warn',
+  onBrokenAnchors: 'throw',
+  // These are false positives when linking from API docs
+  onBrokenLinks: 'ignore',
+  onBrokenMarkdownLinks: 'throw',
   organizationName: 'facebook',
   plugins: [
     './plugins/webpack-buffer',
     [
       'docusaurus-plugin-typedoc',
       {
+        ...sourceLinkOptions(),
         entryPoints: [
           '../lexical/src/index.ts',
           '../lexical-clipboard/src/index.ts',
@@ -51,6 +84,9 @@ const config = {
           '../lexical-markdown/src/index.ts',
           '../lexical-offset/src/index.ts',
           '../lexical-overflow/src/index.ts',
+          '../lexical-plain-text/src/index.ts',
+          ...lexicalReactEntryPoints(),
+          '../lexical-rich-text/src/index.ts',
           '../lexical-selection/src/index.ts',
           '../lexical-table/src/index.ts',
           '../lexical-text/src/index.ts',
@@ -58,7 +94,10 @@ const config = {
           '../lexical-yjs/src/index.ts',
         ],
         excludeInternal: true,
-        plugin: ['./src/plugins/lexical-typedoc-plugin-no-inherit'],
+        plugin: [
+          './src/plugins/lexical-typedoc-plugin-no-inherit',
+          './src/plugins/lexical-typedoc-plugin-module-name',
+        ],
         sidebar: {
           position: 5,
         },
@@ -87,9 +126,9 @@ const config = {
           showReadingTime: true, // TODO: Update when directory finalized
         },
         docs: {
+          beforeDefaultRemarkPlugins: [importPlugin, slugifyPlugin],
           editUrl: `${GITHUB_REPO_URL}/tree/main/packages/lexical-website/`,
           path: 'docs',
-          remarkPlugins: [importPlugin],
           sidebarPath: require.resolve('./sidebars.js'),
         },
         gtag: {

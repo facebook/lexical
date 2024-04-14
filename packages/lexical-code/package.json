@@ -30,12 +30,15 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
-        "webpack": "./LexicalCode.mjs",
+        "development": "./LexicalCode.dev.mjs",
+        "production": "./LexicalCode.prod.mjs",
         "node": "./LexicalCode.node.mjs",
         "default": "./LexicalCode.mjs"
       },
       "require": {
         "types": "./index.d.ts",
+        "development": "./LexicalCode.dev.js",
+        "production": "./LexicalCode.prod.js",
         "default": "./LexicalCode.js"
       }
     }

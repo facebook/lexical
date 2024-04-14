@@ -24,12 +24,15 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
-        "webpack": "./LexicalFile.mjs",
+        "development": "./LexicalFile.dev.mjs",
+        "production": "./LexicalFile.prod.mjs",
         "node": "./LexicalFile.node.mjs",
         "default": "./LexicalFile.mjs"
       },
       "require": {
         "types": "./index.d.ts",
+        "development": "./LexicalFile.dev.js",
+        "production": "./LexicalFile.prod.js",
         "default": "./LexicalFile.js"
       }
     }

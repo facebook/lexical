@@ -21,12 +21,15 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
-        "webpack": "./LexicalRichText.mjs",
+        "development": "./LexicalRichText.dev.mjs",
+        "production": "./LexicalRichText.prod.mjs",
         "node": "./LexicalRichText.node.mjs",
         "default": "./LexicalRichText.mjs"
       },
       "require": {
         "types": "./index.d.ts",
+        "development": "./LexicalRichText.dev.js",
+        "production": "./LexicalRichText.prod.js",
         "default": "./LexicalRichText.js"
       }
     }

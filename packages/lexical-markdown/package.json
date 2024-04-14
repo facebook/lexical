@@ -31,12 +31,15 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
-        "webpack": "./LexicalMarkdown.mjs",
+        "development": "./LexicalMarkdown.dev.mjs",
+        "production": "./LexicalMarkdown.prod.mjs",
         "node": "./LexicalMarkdown.node.mjs",
         "default": "./LexicalMarkdown.mjs"
       },
       "require": {
         "types": "./index.d.ts",
+        "development": "./LexicalMarkdown.dev.js",
+        "production": "./LexicalMarkdown.prod.js",
         "default": "./LexicalMarkdown.js"
       }
     }

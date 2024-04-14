@@ -30,12 +30,15 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
-        "webpack": "./LexicalClipboard.mjs",
+        "development": "./LexicalClipboard.dev.mjs",
+        "production": "./LexicalClipboard.prod.mjs",
         "node": "./LexicalClipboard.node.mjs",
         "default": "./LexicalClipboard.mjs"
       },
       "require": {
         "types": "./index.d.ts",
+        "development": "./LexicalClipboard.dev.js",
+        "production": "./LexicalClipboard.prod.js",
         "default": "./LexicalClipboard.js"
       }
     }

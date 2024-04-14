@@ -40,20 +40,25 @@ not ready for consumption, it should probably still be set to
 | Usage | Convention |
 | -- | -- |
 | Directory name | `packages/lexical-package-name` |
-| Entrypoint | `packages/lexical-package-name/index.ts` |
-| Flow types | `packages/lexical-package/flow/LexicalPackage.js.flow` |
+| Entrypoint | `packages/lexical-package-name/src/index.{ts,tsx}` |
+| Flow types | `packages/lexical-package/flow/LexicalPackageName.js.flow` |
 | package.json name | `@lexical/package-name` |
+| Documentation | `packages/lexical-package-name/README.md` |
+| Unit Tests | `packages/lexical-package-name/src/__tests__/unit/LexicalPackageName.test.{ts,tsx}` |
+| dist (gitignore'd build product) | `packages/lexical-package-name/dist` |
+| npm (gitignore'd prerelease product) | `packages/lexical-package-name/npm` |
+| www entrypoint? | `packages/lexical-package-name/LexicalPackageName.js` |
 
 ### Multiple module export (@lexical/react)
 
 Instead of having a single module, some packages may have many modules
 (currently only `@lexical/react`) that are each exported separately.
-In that scenario, there should be no `index.ts` file and every module
+In that scenario, there should be no `index.ts` entrypoint file and every module
 at the top-level should be an entrypoint. All entrypoints should be a
 TypeScript file, not a subdirectory containing an index.ts file.
 
-The [update-packages](#npm-run-update-packages) script will ensure that the exports match the files
-on disk.
+The [update-packages](#npm-run-update-packages) script will ensure that the
+exports match the files on disk.
 
 ## Scripts for development
 

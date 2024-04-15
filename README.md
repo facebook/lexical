@@ -170,7 +170,7 @@ For those familiar with React Hooks, you can think of these $functions as having
 
 Node Transforms and Command Listeners are called with an implicit `editor.update(() => {...})` context.
 
-It is permitted to do nest updates within reads and updates, but an update may not be nested in a read.
+It is permitted to do nested updates within reads and updates, but an update may not be nested in a read.
 For example, `editor.update(() => editor.update(() => {...}))` is allowed.
 
 All Lexical Nodes are dependent on the associated Editor State. With few exceptions, you should only call methods

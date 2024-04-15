@@ -276,7 +276,6 @@ export class CodeNode extends ElementNode {
       const x = anchor.offset === 0 ? 0 : 1;
       const index = split.getIndexWithinParent() + x;
       const codeNode = firstSelectionNode.getParentOrThrow();
-      // problem here
       const nodesToInsert = [$createLineBreakNode(), ...insertNodes];
       codeNode.splice(index, 0, nodesToInsert);
       const last = insertNodes[insertNodes.length - 1];

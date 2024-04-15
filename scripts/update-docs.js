@@ -27,14 +27,15 @@ sidebar_label: '${npmName}'
   );
 }
 
-function readmeTemplate(npmName) {
+function readmeTemplate(npmName, directoryName, description) {
+  const apiModuleName = directoryName.replace(/-/g, '_');
   return (
     `
     # \`${npmName}\`
 
-[![See API Documentation](https://lexical.dev/img/see-api-documentation.svg)](https://lexical.dev/docs/api/modules/lexical_devtools_core)
+[![See API Documentation](https://lexical.dev/img/see-api-documentation.svg)](https://lexical.dev/docs/api/modules/${apiModuleName})
 
-TODO: This package needs a description!
+${description}
 `.trim() + '\n'
   );
 }
@@ -42,16 +43,25 @@ TODO: This package needs a description!
 function updateDocs() {
   packagesManager.getPublicPackages().forEach((pkg) => {
     const npmName = pkg.getNpmName();
+    const directoryName = pkg.getDirectoryName();
     const root = pkg.resolve('..', '..');
     const readmePath = pkg.resolve('README.md');
     const sidebarPath = webPkg.resolve(
       'docs',
       'packages',
-      `${pkg.getDirectoryName()}.md`,
+      `${directoryName}.md`,
     );
     if (!fs.existsSync(readmePath)) {
       console.log(`Creating ${path.relative(root, readmePath)}`);
-      fs.writeFileSync(readmePath, readmeTemplate(npmName));
+      fs.writeFileSync(
+        readmePath,
+        readmeTemplate(
+          npmName,
+          directoryName,
+          pkg.packageJson.description ||
+            'TODO: This package needs a description!',
+        ),
+      );
     }
     if (!fs.existsSync(sidebarPath)) {
       console.log(`Creating ${path.relative(root, sidebarPath)}`);

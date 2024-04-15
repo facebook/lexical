@@ -170,7 +170,7 @@ export class CodeNode extends ElementNode {
 
         if (isGitHubCodeCell(td)) {
           return {
-            conversion: convertTableCellElement,
+            conversion: convertCodeNoop,
             priority: 3,
           };
         }
@@ -276,6 +276,7 @@ export class CodeNode extends ElementNode {
       const x = anchor.offset === 0 ? 0 : 1;
       const index = split.getIndexWithinParent() + x;
       const codeNode = firstSelectionNode.getParentOrThrow();
+      // problem here
       const nodesToInsert = [$createLineBreakNode(), ...insertNodes];
       codeNode.splice(index, 0, nodesToInsert);
       const last = insertNodes[insertNodes.length - 1];
@@ -348,13 +349,6 @@ function convertDivElement(domNode: Node): DOMConversionOutput {
     };
   }
   return {
-    after: (childLexicalNodes) => {
-      const domParent = domNode.parentNode;
-      if (domParent != null && domNode !== domParent.lastChild) {
-        childLexicalNodes.push($createLineBreakNode());
-      }
-      return childLexicalNodes;
-    },
     node: isCode ? $createCodeNode() : null,
   };
 }
@@ -365,22 +359,6 @@ function convertTableElement(): DOMConversionOutput {
 
 function convertCodeNoop(): DOMConversionOutput {
   return {node: null};
-}
-
-function convertTableCellElement(domNode: Node): DOMConversionOutput {
-  // domNode is a <td> since we matched it by nodeName
-  const cell = domNode as HTMLTableCellElement;
-
-  return {
-    after: (childLexicalNodes) => {
-      if (cell.parentNode && cell.parentNode.nextSibling) {
-        // Append newline between code lines
-        childLexicalNodes.push($createLineBreakNode());
-      }
-      return childLexicalNodes;
-    },
-    node: null,
-  };
 }
 
 function isCodeElement(div: HTMLElement): boolean {

@@ -19,7 +19,7 @@ import {
   $cloneWithProperties,
   $sliceSelectedTextNodeContent,
 } from '@lexical/selection';
-import {isHTMLElement} from '@lexical/utils';
+import {isHTMLElement, isInlineDomNode} from '@lexical/utils';
 import {
   $createLineBreakNode,
   $createParagraphNode,
@@ -30,7 +30,6 @@ import {
   $isTextNode,
   ArtificialNode,
   ElementNode,
-  isInlineDomNode,
 } from 'lexical';
 
 /**

@@ -159,6 +159,7 @@ export {
   getNearestEditorFromDOMNode,
   isHTMLAnchorElement,
   isHTMLElement,
+  isInlineDomNode,
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
 } from './LexicalUtils';
@@ -180,9 +181,4 @@ export {
 export {$isRootNode, RootNode} from './nodes/LexicalRootNode';
 export type {SerializedTabNode} from './nodes/LexicalTabNode';
 export {$createTabNode, $isTabNode, TabNode} from './nodes/LexicalTabNode';
-export {
-  $createTextNode,
-  $isTextNode,
-  isInlineDomNode,
-  TextNode,
-} from './nodes/LexicalTextNode';
+export {$createTextNode, $isTextNode, TextNode} from './nodes/LexicalTextNode';

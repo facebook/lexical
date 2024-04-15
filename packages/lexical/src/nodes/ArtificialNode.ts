@@ -7,7 +7,7 @@
  */
 import type {EditorConfig} from 'lexical';
 
-import {ElementNode} from 'lexical';
+import {ElementNode} from './LexicalElementNode';
 
 export class ArtificialNode extends ElementNode {
   static getType(): string {

@@ -1591,7 +1591,7 @@ export function isHTMLElement(x: Node | EventTarget): x is HTMLElement {
  */
 export function isInlineDomNode(node: Node) {
   const inlineNodes = new RegExp(
-    /^(a|abbr|acronym|b|cite|code|del|em|i|ins|kbd|label|output|q|ruby|s|samp|span|strong|sub|sup|time|u|tt|var)$/,
+    /^(a|abbr|acronym|b|cite|code|del|em|i|ins|kbd|label|output|q|ruby|s|samp|span|strong|sub|sup|time|u|tt|var|#text)$/,
     'i',
   );
   return node.nodeName.match(inlineNodes) !== null;

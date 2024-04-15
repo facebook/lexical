@@ -252,15 +252,20 @@ function $createNodesFromDOM(
   const children = node.childNodes;
   let childLexicalNodes = [];
 
+  const hasBlockAncesterLexicalNodeForChildren =
+    currentLexicalNode != null && $isRootOrShadowRoot(currentLexicalNode)
+      ? false
+      : (currentLexicalNode != null &&
+          $isBlockElementNode(currentLexicalNode)) ||
+        hasBlockAncesterLexicalNode;
+
   for (let i = 0; i < children.length; i++) {
     childLexicalNodes.push(
       ...$createNodesFromDOM(
         children[i],
         editor,
         allArtificialNodes,
-        currentLexicalNode != null && $isRootOrShadowRoot(currentLexicalNode)
-          ? false
-          : currentLexicalNode != null || hasBlockAncesterLexicalNode,
+        hasBlockAncesterLexicalNodeForChildren,
         new Map(forChildMap),
         currentLexicalNode,
       ),
@@ -272,7 +277,7 @@ function $createNodesFromDOM(
   }
 
   if (!isInlineDomNode(node)) {
-    if (!hasBlockAncesterLexicalNode) {
+    if (!hasBlockAncesterLexicalNodeForChildren) {
       childLexicalNodes = wrapContinuousInlines(
         node,
         childLexicalNodes,

@@ -57,6 +57,7 @@
   color: black;
   font-weight: bold;
   cursor: pointer;
+  text-transform: uppercase;
 }
 
 .headings {
@@ -71,6 +72,7 @@
   overflow-y: auto;
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */
+  text-transform: uppercase;
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */

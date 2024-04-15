@@ -1027,7 +1027,15 @@ test.describe('CodeBlock', () => {
           <p
             class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
             dir="ltr">
+<<<<<<< HEAD
             <span data-lexical-text="true">XDS_RICH_TEXT_AREA</span>
+=======
+            <span
+              class="PlaygroundEditorTheme__textStrikethrough"
+              data-lexical-text="true">
+              XDS_RICH_TEXT_AREA
+            </span>
+>>>>>>> 1eab8e74 (update gsheet test with headless html)
           </p>
         </td>
         <td class="PlaygroundEditorTheme__tableCell">

@@ -1261,6 +1261,10 @@ function convertTextDOMNode(domNode: Node): DOMConversionOutput {
   return {node: $createTextNode(textContent)};
 }
 
+export function isInlineDomNode(node: Node) {
+  return node.nodeName.match(inlineParents) !== null;
+}
+
 const inlineParents = new RegExp(
   /^(a|abbr|acronym|b|cite|code|del|em|i|ins|kbd|label|output|q|ruby|s|samp|span|strong|sub|sup|time|u|tt|var)$/,
   'i',

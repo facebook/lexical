@@ -30,6 +30,7 @@ import {
   $isTextNode,
   ArtificialNode,
   ElementNode,
+  isInlineDomNode,
 } from 'lexical';
 
 /**
@@ -178,7 +179,6 @@ function getConversionFunction(
   if (cachedConversions !== undefined) {
     for (const cachedConversion of cachedConversions) {
       const domConversion = cachedConversion(domNode);
-
       if (
         domConversion !== null &&
         (currentConversion === null ||
@@ -272,17 +272,20 @@ function $createNodesFromDOM(
     childLexicalNodes = postTransform(childLexicalNodes);
   }
 
-  if (!hasBlockAncesterLexicalNode) {
-    childLexicalNodes = wrapContinuousInlines(
-      childLexicalNodes,
-      $createParagraphNode,
-    );
-  } else {
-    childLexicalNodes = wrapContinuousInlines(childLexicalNodes, () => {
-      const artificialNode = new ArtificialNode();
-      allArtificialNodes.push(artificialNode);
-      return artificialNode;
-    });
+  if (!isInlineDomNode(node)) {
+    if (!hasBlockAncesterLexicalNode) {
+      childLexicalNodes = wrapContinuousInlines(
+        node,
+        childLexicalNodes,
+        $createParagraphNode,
+      );
+    } else {
+      childLexicalNodes = wrapContinuousInlines(node, childLexicalNodes, () => {
+        const artificialNode = new ArtificialNode();
+        allArtificialNodes.push(artificialNode);
+        return artificialNode;
+      });
+    }
   }
 
   if (currentLexicalNode == null) {
@@ -301,6 +304,7 @@ function $createNodesFromDOM(
 }
 
 function wrapContinuousInlines(
+  domNode: Node,
   nodes: Array<LexicalNode>,
   createWrapperFn: () => ElementNode,
 ): Array<LexicalNode> {

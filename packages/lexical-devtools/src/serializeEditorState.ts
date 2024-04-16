@@ -6,7 +6,9 @@
  *
  */
 
-import {EditorState} from 'lexical';
+import type {EditorState} from 'lexical';
+
+import {SerializedRawEditorState} from './types';
 
 // Because we want to restore state to it's original form as it comes back from the store we need to keep original references
 // this is a temporary solution that shall be replaced with a deserialization from serialized form
@@ -27,7 +29,9 @@ const serializePoint = (point: object) => {
   return newPoint;
 };
 
-export function deserializeEditorState(editorState: EditorState): EditorState {
+export function deserializeEditorState(
+  editorState: SerializedRawEditorState,
+): EditorState {
   if (
     'deserealizationID' in editorState &&
     typeof editorState.deserealizationID === 'number'
@@ -47,7 +51,9 @@ export function deserializeEditorState(editorState: EditorState): EditorState {
 
 // The existing editorState.toJSON() does not contain lexicalKeys, and selection info
 // therefore, we have a custom serializeEditorState helper
-export function serializeEditorState(editorState: EditorState) {
+export function serializeEditorState(
+  editorState: EditorState,
+): SerializedRawEditorState {
   const nodeMap = Object.fromEntries(editorState._nodeMap); // convert from Map structure to JSON-friendly object
 
   const selection = editorState._selection

@@ -9,19 +9,18 @@ import './App.css';
 
 import * as React from 'react';
 import {useState} from 'react';
-import {sendMessage} from 'webext-bridge/popup';
 
 import lexicalLogo from '@/public/lexical.svg';
 
 import EditorsRefreshCTA from '../../components/EditorsRefreshCTA';
-import useStore from '../../store';
+import {useExtensionStore} from '../../store';
 
 interface Props {
   tabID: number;
 }
 
 function App({tabID}: Props) {
-  const {lexicalState} = useStore();
+  const {lexicalState} = useExtensionStore();
   const [errorMessage, setErrorMessage] = useState('');
 
   const states = lexicalState[tabID];
@@ -56,11 +55,7 @@ function App({tabID}: Props) {
           </span>
         )}
         <p>
-          <EditorsRefreshCTA
-            tabID={tabID}
-            setErrorMessage={setErrorMessage}
-            sendMessage={sendMessage}
-          />
+          <EditorsRefreshCTA tabID={tabID} setErrorMessage={setErrorMessage} />
         </p>
       </div>
     </>

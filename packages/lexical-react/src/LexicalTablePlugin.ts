@@ -96,6 +96,7 @@ export function TablePlugin({
           const lastCellMap = gridMap[i][rowLength - 1];
           const lastRowCell = lastCellMap.cell;
           for (let j = rowLength; j < maxRowLength; ++j) {
+            // TODO: inherit header state from another header or body
             const newCell = $createTableCellNode(0);
             newCell.append($createParagraphNode());
             if (lastRowCell !== null) {

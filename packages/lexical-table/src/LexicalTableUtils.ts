@@ -715,8 +715,7 @@ export function $unmergeCell(): void {
   }
 }
 export function $computeTableMapSkipCellCheck(grid: TableNode) {
-  const cell = new TableCellNode();
-  const [tableMap] = $computeTableMapHelper(grid, cell, cell);
+  const [tableMap] = $computeTableMapHelper(grid, null, null);
   return tableMap;
 }
 
@@ -737,8 +736,8 @@ export function $computeTableMap(
 
 function $computeTableMapHelper(
   grid: TableNode,
-  cellA: TableCellNode,
-  cellB: TableCellNode,
+  cellA: null | TableCellNode,
+  cellB: null | TableCellNode,
 ): [TableMapType, TableMapValueType | null, TableMapValueType | null] {
   const tableMap: TableMapType = [];
   let cellAValue: null | TableMapValueType = null;
@@ -759,10 +758,10 @@ function $computeTableMapHelper(
         tableMap[startRow + i][startColumn + j] = value;
       }
     }
-    if (cellA.is(cell)) {
+    if (cellA !== null && cellA.is(cell)) {
       cellAValue = value;
     }
-    if (cellB.is(cell)) {
+    if (cellB !== null && cellB.is(cell)) {
       cellBValue = value;
     }
   }

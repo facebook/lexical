@@ -282,22 +282,6 @@ export function applyTableHandlers(
         // TODO: Fix Delete Line in Table Cells.
         return true;
       }
-
-      if (
-        command === DELETE_CHARACTER_COMMAND ||
-        command === DELETE_WORD_COMMAND
-      ) {
-        if (selection.isCollapsed() && selection.anchor.offset === 0) {
-          if (nearestElementNode !== topLevelCellElementNode) {
-            const children = nearestElementNode.getChildren();
-            const newParagraphNode = $createParagraphNode();
-            children.forEach((child) => newParagraphNode.append(child));
-            nearestElementNode.replace(newParagraphNode);
-            nearestElementNode.getWritable().__parent = tableCellNode.getKey();
-            return true;
-          }
-        }
-      }
     }
 
     return false;

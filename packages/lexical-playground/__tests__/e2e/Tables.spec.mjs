@@ -26,6 +26,7 @@ import {
   focusEditor,
   html,
   initialize,
+  insertCollapsible,
   insertHorizontalRule,
   insertSampleImage,
   insertTable,
@@ -1289,6 +1290,95 @@ test.describe('Tables', () => {
                 dir="ltr">
                 <span data-lexical-text="true">cell one</span>
               </p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+          </tr>
+        </table>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+  });
+
+  test('Can remove new lines in a collapsible section inside of a table', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    await initialize({isCollab, page});
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    await insertTable(page, 1, 2);
+    await insertCollapsible(page);
+
+    await page.keyboard.type('123');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.type('123');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <table class="PlaygroundEditorTheme__table">
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              <details class="Collapsible__container" open="">
+                <summary class="Collapsible__title">
+                  <p class="PlaygroundEditorTheme__paragraph">
+                    <span data-lexical-text="true">123</span>
+                  </p>
+                </summary>
+                <div class="Collapsible__content">
+                  <p class="PlaygroundEditorTheme__paragraph">
+                    <span data-lexical-text="true">123</span>
+                  </p>
+                  <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+                  <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+                  <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+                </div>
+              </details>
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+          </tr>
+        </table>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+
+    await pressBackspace(page, 10);
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <table class="PlaygroundEditorTheme__table">
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              <details class="Collapsible__container" open="">
+                <summary class="Collapsible__title">
+                  <p class="PlaygroundEditorTheme__paragraph">
+                    <span data-lexical-text="true">123</span>
+                  </p>
+                </summary>
+                <div class="Collapsible__content">
+                  <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+                </div>
+              </details>
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">

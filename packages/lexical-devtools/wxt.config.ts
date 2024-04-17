@@ -23,7 +23,7 @@ export default defineConfig({
         32: '/icon/32.png',
         48: '/icon/48.png',
       },
-      permissions: ['scripting', 'storage', 'devtools_page'],
+      permissions: ['scripting', 'storage'],
       web_accessible_resources: [
         {
           extension_ids: [],

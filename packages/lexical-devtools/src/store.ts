@@ -6,23 +6,32 @@
  *
  */
 
-import type {EditorState} from 'lexical';
-
+import {
+  initPegasusZustandStoreBackend,
+  pegasusZustandStoreReady,
+} from '@webext-pegasus/store-zustand';
 import {create} from 'zustand';
 import {subscribeWithSelector} from 'zustand/middleware';
 
+import {SerializedRawEditorState} from './types';
+
 export interface ExtensionState {
-  lexicalState: {[tabID: number]: {[editorKey: string]: EditorState}};
+  lexicalState: {
+    [tabID: number]: {[editorKey: string]: SerializedRawEditorState};
+  };
   setStatesForTab: (
     id: number,
-    states: {[editorKey: string]: EditorState},
+    states: {[editorKey: string]: SerializedRawEditorState},
   ) => void;
 }
 
 export const useExtensionStore = create<ExtensionState>()(
   subscribeWithSelector((set) => ({
     lexicalState: {},
-    setStatesForTab: (id: number, states: {[editorKey: string]: EditorState}) =>
+    setStatesForTab: (
+      id: number,
+      states: {[editorKey: string]: SerializedRawEditorState},
+    ) =>
       set((state) => ({
         lexicalState: {
           ...state.lexicalState,
@@ -32,4 +41,9 @@ export const useExtensionStore = create<ExtensionState>()(
   })),
 );
 
-export default useExtensionStore;
+const STORE_NAME = 'ExtensionStore';
+
+export const initExtensionStoreBackend = () =>
+  initPegasusZustandStoreBackend(STORE_NAME, useExtensionStore);
+export const extensionStoreReady = () =>
+  pegasusZustandStoreReady(STORE_NAME, useExtensionStore);

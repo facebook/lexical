@@ -6,17 +6,21 @@
  *
  */
 
+import type {IInjectedPegasusService} from '../injected/InjectedPegasusService';
+import type {EditorState} from 'lexical';
+
 import './App.css';
 
 import {TreeView} from '@lexical/devtools-core';
+import {getRPCService} from '@webext-pegasus/rpc';
 import * as React from 'react';
-import {useState} from 'react';
-import {sendMessage} from 'webext-bridge/devtools';
+import {useMemo, useState} from 'react';
 
 import lexicalLogo from '@/public/lexical.svg';
 
 import EditorsRefreshCTA from '../../components/EditorsRefreshCTA';
-import useStore from '../../store';
+import {useExtensionStore} from '../../store';
+import {SerializedRawEditorState} from '../../types';
 
 interface Props {
   tabID: number;
@@ -25,9 +29,18 @@ interface Props {
 function App({tabID}: Props) {
   const [errorMessage, setErrorMessage] = useState('');
 
-  const {lexicalState} = useStore();
+  const {lexicalState} = useExtensionStore();
   const states = lexicalState[tabID] ?? {};
   const lexicalCount = Object.keys(states ?? {}).length;
+
+  const injectedPegasusService = useMemo(
+    () =>
+      getRPCService<IInjectedPegasusService>('InjectedPegasusService', {
+        context: 'window',
+        tabId: tabID,
+      }),
+    [tabID],
+  );
 
   return (
     <>
@@ -54,11 +67,7 @@ function App({tabID}: Props) {
           </span>
         )}
         <p>
-          <EditorsRefreshCTA
-            tabID={tabID}
-            setErrorMessage={setErrorMessage}
-            sendMessage={sendMessage}
-          />
+          <EditorsRefreshCTA tabID={tabID} setErrorMessage={setErrorMessage} />
         </p>
       </div>
       {Object.entries(states).map(([key, state]) => (
@@ -73,26 +82,18 @@ function App({tabID}: Props) {
             timeTravelPanelSliderClassName="debug-timetravel-panel-slider"
             timeTravelPanelButtonClassName="debug-timetravel-panel-button"
             setEditorReadOnly={(isReadonly) =>
-              sendMessage(
-                'setEditorReadOnly',
-                {isReadonly, key},
-                `window@${tabID}`,
-              ).catch((e) => setErrorMessage(e.stack))
+              injectedPegasusService
+                .setEditorReadOnly(key, isReadonly)
+                .catch((e) => setErrorMessage(e.stack))
             }
-            editorState={state}
+            editorState={state as EditorState}
             setEditorState={(editorState) =>
-              sendMessage(
-                'setEditorState',
-                {key, state: editorState},
-                `window@${tabID}`,
-              ).catch((e) => setErrorMessage(e.stack))
+              injectedPegasusService
+                .setEditorState(key, editorState as SerializedRawEditorState)
+                .catch((e) => setErrorMessage(e.stack))
             }
             generateContent={(exportDOM) =>
-              sendMessage(
-                'generateTreeViewContent',
-                {exportDOM, key},
-                `window@${tabID}`,
-              )
+              injectedPegasusService.generateTreeViewContent(key, exportDOM)
             }
           />
           <hr />

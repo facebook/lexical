@@ -1,3 +1,46 @@
+## v0.14.5 (2024-04-16)
+
+- update lock file (#5904) Acy Watson
+- fix(lexicalreact) lexicalreact 0.14.4 brings in lexicaldevtools-core dependency without declaring it (#5902) Vlad Fedosov
+- v0.14.4 (#5900) Acy Watson
+- v0.14.4 Lexical GitHub Actions Bot
+
+## v0.14.4 (2024-04-16)
+
+- chore(lexicalplayground) Remove unnecessary type assertions from useReport.ts (#5884) wnhlee
+- fix(lexical) avoid implicit any type by explicitly setting variable type (#5889) Xuan
+- fix(lexical-reactLexicalClearEditorPlugin) Fix #3456 stale selection state after clear format (#5896) Sahejkm
+- feat(lexicaldevtools) Extracted storemessaging implementation to the separate packages (#5894) Vlad Fedosov
+- Remove a special case in table deleteTextHandler (#5891) Alex Reznik
+- Bump publish scripts to v4 (#5817) Ivaylo Pavlov
+- docs Fix broken style for node overrides example on docs (#5890) wnhlee
+- chore Fix nested typo in README (#5892) Zach Heckert
+- docs fix typedoc links and add missing packages (#5850) Bob Ippolito
+- feat use devprod conditions instead of webpack in exports (#5858) Bob Ippolito
+- fix(playground) wrong logic for FloatingLinkEditorPlugin bad node (#5814) Aron Griffis
+- fix #4468 Preserv elemement text align format on new paragraph creation (#5878) Sahejkm
+- fix test failing after rebase on bug fix for multiple text nodes styles in a cell node (#5872) Sahejkm
+- Fix #5663 styling from td not persisted on copy paste (#5855) Sahejkm
+- Replace async arrow with function (#5870) Gerard Rovira
+- TextNode support font-weight bold (#5852) Gerard Rovira
+- Add missing rewrite of utils import (#5866) John Flockton
+- Revert Revert feat(lexicaldevtools) Added TreeView rendering instead of a simple textarea (#5864) John Flockton
+- Revert feat(lexicaldevtools) Added TreeView rendering instead of a simple textarea (#5861) John Flockton
+- Fix bug with typeahead positioning (#5859) John Flockton
+- feat(lexicaldevtools) Added TreeView rendering instead of a simple textarea (#5830) Vlad Fedosov
+- fix Clear Formatting (#5849) Manuel Ojeda
+- Fix issue with removeing selectionchange correctly (#5848) John Flockton
+- Fix #5620 Persist format at paragraph level for new line (#5822) Sahejkm
+- Use updated docRoot count in removeRootElementEvents (#5847) John Flockton
+- chore upgrade to docusaurus 3 (#5838) Bob Ippolito
+- Use unnamed ESM imports for Prism modules (#5828) John Flockton
+- fix webpack needs its own export condition (#5833) Bob Ippolito
+-  Add missing flow type parameters for insertNewAfter (#5832) Sahejkm
+- feat export IS and CAN environment constants from lexicalutils (#5831) Bob Ippolito
+- Fix failing WWW build (#5826) John Flockton
+- v0.14.3 (#5816) Ivaylo Pavlov
+- v0.14.3 Lexical GitHub Actions Bot
+
 ## v0.14.3 (2024-04-03)
 
 - fix removed overwrite of copyright (#5811) Sven ani

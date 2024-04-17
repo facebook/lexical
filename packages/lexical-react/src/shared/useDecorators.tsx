@@ -6,7 +6,7 @@
  *
  */
 
-import type {LexicalEditor} from 'lexical';
+import type {LexicalEditor, NodeKey} from 'lexical';
 
 import {Suspense, useEffect, useMemo, useState} from 'react';
 import * as React from 'react';
@@ -26,7 +26,7 @@ export function useDecorators(
   editor: LexicalEditor,
   ErrorBoundary: ErrorBoundaryType,
 ): Array<JSX.Element> {
-  const [decorators, setDecorators] = useState<Record<string, JSX.Element>>(
+  const [decorators, setDecorators] = useState<Record<NodeKey, JSX.Element>>(
     () => editor.getDecorators<JSX.Element>(),
   );
 

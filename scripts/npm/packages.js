@@ -34,6 +34,7 @@ const DEFAULT_PKGS = [
   'lexical-text',
   'lexical-markdown',
   'lexical-mark',
+  'lexical-devtools-core',
 ];
 const SHARED_PKG = 'shared';
 

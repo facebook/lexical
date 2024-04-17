@@ -14,6 +14,8 @@ const glob = require('glob');
 const packages = {
   '@lexical/clipboard': 'lexical-clipboard',
   '@lexical/code': 'lexical-code',
+  '@lexical/devtools': 'lexical-devtools',
+  '@lexical/devtools-core': 'lexical-devtools-core',
   '@lexical/dragon': 'lexical-dragon',
   '@lexical/file': 'lexical-file',
   '@lexical/hashtag': 'lexical-hashtag',

@@ -2,7 +2,7 @@
   "name": "@lexical/devtools",
   "description": "Lexical DevTools browser extension",
   "private": true,
-  "version": "0.14.4",
+  "version": "0.14.5",
   "type": "module",
   "scripts": {
     "dev": "wxt",
@@ -27,8 +27,8 @@
     "@types/react-dom": "^18.2.18",
     "@vitejs/plugin-react": "^4.2.1",
     "typescript": "^5.3.3",
-    "lexical": "0.14.4",
-    "@lexical/devtools-core": "0.14.4",
+    "lexical": "0.14.5",
+    "@lexical/devtools-core": "0.14.5",
     "wxt": "^0.17.0",
     "vite": "^5.2.2",
     "@rollup/plugin-babel": "^6.0.4"

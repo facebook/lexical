@@ -9,7 +9,7 @@
     "text"
   ],
   "license": "MIT",
-  "version": "0.14.4",
+  "version": "0.14.5",
   "main": "LexicalText.js",
   "types": "index.d.ts",
   "repository": {
@@ -37,6 +37,6 @@
     }
   },
   "dependencies": {
-    "lexical": "0.14.4"
+    "lexical": "0.14.5"
   }
 }

@@ -2,7 +2,7 @@
   "name": "@lexical/devtools",
   "description": "Lexical DevTools browser extension",
   "private": true,
-  "version": "0.14.4",
+  "version": "0.14.5",
   "type": "module",
   "scripts": {
     "dev": "wxt",

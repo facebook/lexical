@@ -218,10 +218,21 @@ function sortDependencies(packageJSON, key, deps) {
  * @param {string} version
  */
 function updateDependencies(packageJSON, version) {
-  const {dependencies = {}, peerDependencies = {}} = packageJSON;
+  const {
+    dependencies = {},
+    peerDependencies = {},
+    devDependencies = {},
+  } = packageJSON;
   Object.keys(dependencies).forEach((dep) => {
     if (packages[dep] !== undefined) {
       dependencies[dep] = version;
+    }
+  });
+  // We need to update the dev dependencies of the devtools package since it includes lexical
+  // dev-tools-core.
+  Object.keys(devDependencies).forEach((devDep) => {
+    if (packages[devDep] !== undefined) {
+      devDependencies[devDep] = version;
     }
   });
   // Move peerDependencies on lexical monorepo packages to dependencies

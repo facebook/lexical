@@ -714,17 +714,13 @@ export function $unmergeCell(): void {
     cell.setRowSpan(1);
   }
 }
-export function $computeTableMapSkipCellCheck(grid: TableNode) {
-  const [tableMap] = $computeTableMapHelper(grid, null, null);
-  return tableMap;
-}
 
 export function $computeTableMap(
   grid: TableNode,
   cellA: TableCellNode,
   cellB: TableCellNode,
 ): [TableMapType, TableMapValueType, TableMapValueType] {
-  const [tableMap, cellAValue, cellBValue] = $computeTableMapHelper(
+  const [tableMap, cellAValue, cellBValue] = $computeTableMapSkipCellCheck(
     grid,
     cellA,
     cellB,
@@ -734,7 +730,7 @@ export function $computeTableMap(
   return [tableMap, cellAValue, cellBValue];
 }
 
-function $computeTableMapHelper(
+export function $computeTableMapSkipCellCheck(
   grid: TableNode,
   cellA: null | TableCellNode,
   cellB: null | TableCellNode,

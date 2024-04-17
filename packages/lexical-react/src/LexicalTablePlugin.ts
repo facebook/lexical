@@ -84,7 +84,7 @@ export function TablePlugin({
         COMMAND_PRIORITY_EDITOR,
       ),
       editor.registerNodeTransform(TableNode, (node) => {
-        const gridMap = $computeTableMapSkipCellCheck(node);
+        const [gridMap] = $computeTableMapSkipCellCheck(node, null, null);
         const maxRowLength = gridMap.reduce((curLength, row) => {
           return Math.max(curLength, row.length);
         }, 0);

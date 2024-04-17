@@ -1209,7 +1209,7 @@ export class RangeSelection implements BaseSelection {
     const last = nodes[nodes.length - 1]!;
 
     // CASE 1: insert inside a code block
-    if ('__language' in firstBlock && $isElementNode(firstBlock)) {
+    if ($isElementNode(firstBlock) && '__language' in firstBlock) {
       if ('__language' in nodes[0]) {
         this.insertText(nodes[0].getTextContent());
       } else {

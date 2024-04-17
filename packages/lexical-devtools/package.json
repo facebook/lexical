@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "wxt",
     "dev:firefox": "wxt -b firefox",
+    "dev:edge": "wxt -b edge",
     "build": "wxt build",
     "build:firefox": "wxt build -b firefox",
     "zip": "wxt zip",
@@ -15,9 +16,9 @@
     "postinstall": "wxt prepare"
   },
   "dependencies": {
-    "@webext-pegasus/rpc": "^0.0.1",
-    "@webext-pegasus/store-zustand": "^0.0.1",
-    "@webext-pegasus/transport": "^0.0.1",
+    "@webext-pegasus/rpc": "^0.0.4",
+    "@webext-pegasus/store-zustand": "^0.0.4",
+    "@webext-pegasus/transport": "^0.0.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "zustand": "^4.5.1"

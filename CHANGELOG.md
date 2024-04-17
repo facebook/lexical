@@ -1,3 +1,8 @@
+## v0.14.5 (2024-04-16)
+
+- v0.14.4 (#5900) Acy Watson
+- v0.14.4 Lexical GitHub Actions Bot
+
 ## v0.14.4 (2024-04-16)
 
 - chore(lexicalplayground) Remove unnecessary type assertions from useReport.ts (#5884) wnhlee

@@ -720,6 +720,21 @@ export function $computeTableMap(
   cellA: TableCellNode,
   cellB: TableCellNode,
 ): [TableMapType, TableMapValueType, TableMapValueType] {
+  const [tableMap, cellAValue, cellBValue] = $computeTableMapSkipCellCheck(
+    grid,
+    cellA,
+    cellB,
+  );
+  invariant(cellAValue !== null, 'Anchor not found in Grid');
+  invariant(cellBValue !== null, 'Focus not found in Grid');
+  return [tableMap, cellAValue, cellBValue];
+}
+
+export function $computeTableMapSkipCellCheck(
+  grid: TableNode,
+  cellA: null | TableCellNode,
+  cellB: null | TableCellNode,
+): [TableMapType, TableMapValueType | null, TableMapValueType | null] {
   const tableMap: TableMapType = [];
   let cellAValue: null | TableMapValueType = null;
   let cellBValue: null | TableMapValueType = null;
@@ -739,10 +754,10 @@ export function $computeTableMap(
         tableMap[startRow + i][startColumn + j] = value;
       }
     }
-    if (cellA.is(cell)) {
+    if (cellA !== null && cellA.is(cell)) {
       cellAValue = value;
     }
-    if (cellB.is(cell)) {
+    if (cellB !== null && cellB.is(cell)) {
       cellBValue = value;
     }
   }
@@ -771,8 +786,6 @@ export function $computeTableMap(
       j += cell.__colSpan;
     }
   }
-  invariant(cellAValue !== null, 'Anchor not found in Grid');
-  invariant(cellBValue !== null, 'Focus not found in Grid');
   return [tableMap, cellAValue, cellBValue];
 }
 

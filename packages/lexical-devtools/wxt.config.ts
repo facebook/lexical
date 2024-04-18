@@ -16,13 +16,20 @@ import moduleResolution from '../shared/viteModuleResolution';
 export default defineConfig({
   debug: !!process.env.DEBUG_WXT,
   manifest: (configEnv) => {
+    const browserName =
+      configEnv.browser.charAt(0).toUpperCase() + configEnv.browser.slice(1);
+
     const manifestConf: UserManifest = {
+      author: 'Lexical',
+      description: `Adds Lexical debugging tools to the ${browserName} Developer Tools.`,
+      homepage_url: 'https://lexical.dev/',
       icons: {
         128: '/icon/128.png',
         16: '/icon/16.png',
         32: '/icon/32.png',
         48: '/icon/48.png',
       },
+      name: 'Lexical Developer Tools',
       permissions: ['scripting', 'storage'],
       web_accessible_resources: [
         {
@@ -111,4 +118,7 @@ export default defineConfig({
       ],
     },
   }),
+  zip: {
+    sourcesRoot: path.resolve('../..'),
+  },
 });

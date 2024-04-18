@@ -509,7 +509,14 @@ function handleIndentAndOutdent(
     if (alreadyHandled.has(key)) {
       continue;
     }
-    const parentBlock = $getNearestBlockElementAncestorOrThrow(node);
+    const parentBlock = $findMatchingParent(
+      node,
+      (parentNode): parentNode is ElementNode =>
+        $isElementNode(parentNode) && !parentNode.isInline(),
+    );
+    if (parentBlock === null) {
+      continue;
+    }
     const parentKey = parentBlock.getKey();
     if (parentBlock.canIndent() && !alreadyHandled.has(parentKey)) {
       alreadyHandled.add(parentKey);

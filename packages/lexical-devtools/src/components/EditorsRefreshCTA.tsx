@@ -8,6 +8,7 @@
 
 import type {IInjectedPegasusService} from '../entrypoints/injected/InjectedPegasusService';
 
+import {Button} from '@chakra-ui/react';
 import {getRPCService} from '@webext-pegasus/rpc';
 import * as React from 'react';
 import {useState} from 'react';
@@ -38,9 +39,13 @@ function EditorsRefreshCTA({tabID, setErrorMessage}: Props) {
   };
 
   return (
-    <button onClick={handleRefreshClick} disabled={isRefreshing}>
+    <Button
+      colorScheme="gray"
+      size="xs"
+      onClick={handleRefreshClick}
+      disabled={isRefreshing}>
       {isRefreshing ? 'Refreshing...' : 'Refresh'}
-    </button>
+    </Button>
   );
 }
 

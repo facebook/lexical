@@ -60,6 +60,123 @@ TypeScript file, not a subdirectory containing an index.ts file.
 The [update-packages](#npm-run-update-packages) script will ensure that the
 exports match the files on disk.
 
+## Creating a new package
+
+The first step in creating a new package is to create the workspace, there
+is a [npm-init](https://docs.npmjs.com/cli/v10/commands/npm-init) template
+that will fill in some of the defaults for you based on conventions.
+
+The example we will use is the steps that were used to create the
+`lexical-eslint-plugin`, which will be published to npm as
+`@lexical/eslint-plugin`.
+
+### Create the workspace
+
+```
+npm init -w packages/lexical-eslint-plugin
+```
+
+This only automates the first step, creating a single file:
+
+<details><summary>
+
+`packages/lexical-eslint-plugin/package.json`
+</summary>
+
+```json
+{
+  "name": "@lexical/eslint-plugin",
+  "description": "",
+  "keywords": [
+    "lexical",
+    "editor"
+  ],
+  "version": "0.14.3",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/facebook/lexical.git",
+    "directory": "packages/lexical-eslint-plugin"
+  },
+  "main": "LexicalEslintPlugin.js",
+  "types": "index.d.ts",
+  "bugs": {
+    "url": "https://github.com/facebook/lexical/issues"
+  },
+  "homepage": "https://github.com/facebook/lexical#readme"
+}
+```
+</details>
+
+Some next steps for this package.json before moving on:
+
+- Update the description
+- Add appropriate keywords
+
+### Create the initial source file
+
+```
+mkdir -p packages/lexical-eslint-plugin/src
+code packages/lexical-eslint-plugin/src/index.ts
+```
+
+Here are some minimal examples of those files that you might start out with.
+I've elided the license header, the eslint header/header fixer will help you
+with that!
+
+<details><summary>
+
+`packages/lexical-eslint-plugin/src/index.ts`
+</summary>
+
+```typescript
+import {name, version} from '../package.json';
+
+const plugin = {
+  meta: {name, version},
+  rules: {},
+};
+
+export default plugin;
+```
+</details>
+
+### Run update-packages to generate boilerplate docs & config
+
+```
+npm run update-packages
+```
+
+This will set up the tsconfig, flow, etc. configuration to recognize your
+new module. It will also create an initial README.md using only the
+description from the package.json.
+
+
+### Create an initial unit test
+
+```
+mkdir -p packages/lexical-eslint-plugin/src/__tests__/unit
+code packages/lexical-eslint-plugin/src/__tests__/unit/LexicalEslintPlugin.test.ts
+```
+
+
+<details><summary>
+
+`packages/lexical-eslint-plugin/src/__tests__/unit/LexicalEslintPlugin.test.ts`
+</summary>
+
+```typescript
+import plugin from '@lexical/eslint-plugin';
+
+describe('LexicalEslintPlugin', () => {
+  it('exports a plugin with meta and rules', () => {
+    expect(Object.keys(plugin).sort()).toMatchObject(['meta', 'rules']);
+  });
+});
+```
+</details>
+
+
 ## Scripts for development
 
 ### npm run update-packages

@@ -13,8 +13,24 @@ const path = require('node:path');
 const {packagesManager} = require('./shared/packagesManager');
 const npmToWwwName = require('./www/npmToWwwName');
 
+const headerTemplate = fs.readFileSync(
+  path.resolve(__dirname, 'www', 'headerTemplate.js'),
+  'utf8',
+);
+
 const BLOCK_REGEX =
   /^([\s\S]+?\n;; \[generated-start update-flowconfig\]\n)([\s\S]*?)(;; \[generated-end update-flowconfig\][\s\S]+)$/;
+
+function flowTemplate(wwwName) {
+  return (
+    headerTemplate.replace(/^( *\/)$/, '* @flow strict\n$1') +
+    `
+/**
+ * ${wwwName}
+ */` +
+    '\n'
+  );
+}
 
 /**
  * @param {string} configContents
@@ -60,7 +76,17 @@ function updateFlowconfig(flowconfigPath = './.flowconfig') {
       }
     } else {
       for (const name of pkg.getExportedNpmModuleNames()) {
-        emit(name, resolveRelative('flow', `${npmToWwwName(name)}.js.flow`));
+        const wwwName = npmToWwwName(name);
+        const flowFile = `${wwwName}.js.flow`;
+        const resolvedFlowFile = resolveRelative('flow', flowFile);
+        emit(name, resolveRelative('flow', flowFile));
+        const flowFilePath = pkg.resolve('flow', flowFile);
+        if (!fs.existsSync(flowFilePath)) {
+          console.log(
+            `Creating boilerplate ${resolvedFlowFile.replace(/^[^/]+\//, '')}`,
+          );
+          fs.writeFileSync(flowFilePath, flowTemplate(wwwName));
+        }
       }
     }
   }

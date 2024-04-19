@@ -17,7 +17,6 @@ import type {
 import type {
   BaseSelection,
   ElementFormatType,
-  ElementNode,
   LexicalCommand,
   LexicalEditor,
   LexicalNode,
@@ -675,17 +674,6 @@ export function applyTableHandlers(
     ),
   );
 
-  function getChildNodeOnOffset(
-    parentNode: ElementNode,
-    index: number,
-  ): [string, number] {
-    const node = parentNode.getChildAtIndex(index);
-    if (node === null) {
-      return [parentNode.getKey(), index];
-    }
-    return [node.getKey(), 0];
-  }
-
   tableObserver.listenersToRemove.add(
     editor.registerCommand(
       SELECTION_CHANGE_COMMAND,
@@ -714,16 +702,11 @@ export function applyTableHandlers(
           if (isPartialyWithinTable) {
             const newSelection = selection.clone();
             if (isFocusInside) {
-              const [newFocusKey, newFocusOffset] = isBackward
-                ? [
-                    tableNode.getParentOrThrow().getKey(),
-                    tableNode.getIndexWithinParent(),
-                  ]
-                : getChildNodeOnOffset(
-                    tableNode.getParentOrThrow(),
-                    tableNode.getIndexWithinParent() + 1,
-                  );
-              newSelection.focus.set(newFocusKey, newFocusOffset, 'element');
+              newSelection.focus.set(
+                tableNode.getParentOrThrow().getKey(),
+                tableNode.getIndexWithinParent(),
+                'element',
+              );
             } else {
               newSelection.anchor.set(
                 tableNode.getParentOrThrow().getKey(),

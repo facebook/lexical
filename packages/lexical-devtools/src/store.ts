@@ -19,15 +19,27 @@ export interface ExtensionState {
   lexicalState: {
     [tabID: number]: {[editorKey: string]: SerializedRawEditorState};
   };
+  selectedEditorKey: {
+    [tabID: number]: string | null;
+  };
   setStatesForTab: (
     id: number,
     states: {[editorKey: string]: SerializedRawEditorState},
   ) => void;
+  setSelectedEditorKey: (tabID: number, editorKey: string | null) => void;
 }
 
 export const useExtensionStore = create<ExtensionState>()(
   subscribeWithSelector((set) => ({
     lexicalState: {},
+    selectedEditorKey: {},
+    setSelectedEditorKey: (tabID: number, editorKey: string | null) =>
+      set((state) => ({
+        selectedEditorKey: {
+          ...state.selectedEditorKey,
+          [tabID]: editorKey,
+        },
+      })),
     setStatesForTab: (
       id: number,
       states: {[editorKey: string]: SerializedRawEditorState},

@@ -53,6 +53,9 @@ export default defineConfig({
     return manifestConf;
   },
   runner: {
+    binaries: {
+      edge: '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
+    },
     chromiumArgs: [
       '--auto-open-devtools-for-tabs',
       // Open chrome://version to validate it works

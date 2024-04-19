@@ -102,6 +102,7 @@ export function applyTableHandlers(
     };
 
     const onMouseMove = (moveEvent: MouseEvent) => {
+      // delaying mousemove handler to allow selectionchange handler from LexicalEvents.ts to be executed first
       setTimeout(() => {
         const focusCell = getDOMCellFromTarget(moveEvent.target as Node);
         if (

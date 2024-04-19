@@ -102,15 +102,18 @@ export function applyTableHandlers(
     };
 
     const onMouseMove = (moveEvent: MouseEvent) => {
-      const focusCell = getDOMCellFromTarget(moveEvent.target as Node);
-      if (
-        focusCell !== null &&
-        (tableObserver.anchorX !== focusCell.x ||
-          tableObserver.anchorY !== focusCell.y)
-      ) {
-        moveEvent.preventDefault();
-        tableObserver.setFocusCellForSelection(focusCell);
-      }
+      // delaying mousemove handler to allow selectionchange handler from LexicalEvents.ts to be executed first
+      setTimeout(() => {
+        const focusCell = getDOMCellFromTarget(moveEvent.target as Node);
+        if (
+          focusCell !== null &&
+          (tableObserver.anchorX !== focusCell.x ||
+            tableObserver.anchorY !== focusCell.y)
+        ) {
+          moveEvent.preventDefault();
+          tableObserver.setFocusCellForSelection(focusCell);
+        }
+      }, 0);
     };
     return {onMouseMove: onMouseMove, onMouseUp: onMouseUp};
   };

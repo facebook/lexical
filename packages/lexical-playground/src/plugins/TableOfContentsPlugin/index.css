@@ -23,7 +23,7 @@
   content: ' ';
   position: absolute;
   display: inline-block;
-  left: -30px;
+  left: -20px;
   top: 4px;
   z-index: 10;
   height: 4px;
@@ -37,6 +37,11 @@
   cursor: pointer;
   line-height: 20px;
   font-size: 16px;
+}
+
+.normal-heading.normal-heading-h1 {
+  font-weight: bold;
+  margin: 1rem 0;
 }
 
 .table-of-contents {
@@ -54,10 +59,8 @@
 }
 
 .first-heading {
-  color: black;
   font-weight: bold;
-  cursor: pointer;
-  text-transform: uppercase;
+  margin-bottom: 1rem;
 }
 
 .headings {
@@ -92,6 +95,6 @@
 }
 
 .normal-heading-wrapper {
-  margin-left: 32px;
+  margin-left: 22px;
   position: relative;
 }

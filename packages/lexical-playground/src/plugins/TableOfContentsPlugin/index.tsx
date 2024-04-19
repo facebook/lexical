@@ -158,7 +158,6 @@ function TableOfContentsList({
                     ? text.substring(0, 20) + '...'
                     : text}
                 </div>
-                <br />
               </div>
             );
           } else {
@@ -177,6 +176,7 @@ function TableOfContentsList({
                     className={`normal-heading ${
                       selectedKey === key ? 'selected-heading' : ''
                     }
+                    ${tag === 'h1' ? 'normal-heading-h1' : ''}
                     `}>
                     {('' + text).length > 27
                       ? text.substring(0, 27) + '...'

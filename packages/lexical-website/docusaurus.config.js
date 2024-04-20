@@ -48,6 +48,186 @@ function lexicalReactEntryPoints() {
   });
 }
 
+/**
+ * @typedef {import('@docusaurus/plugin-content-docs').PluginOptions['sidebarItemsGenerator']} SidebarItemsGenerator
+ * @typedef {Awaited<ReturnType<SidebarItemsGenerator>>[number]} NormalizedSidebarItem
+ */
+/** @type Record<string, string | undefined> */
+const docLabels = {
+  'api/index': 'Readme',
+  'api/modules': 'Table of Contents',
+};
+
+/** @param {string} lowercaseLabel */
+function categoryOrder(lowercaseLabel) {
+  switch (lowercaseLabel) {
+    case 'Modules':
+      return 0;
+    case 'Classes':
+      return 1;
+    case 'Interfaces':
+      return 2;
+    default:
+      return Infinity;
+  }
+}
+
+/**
+ * @param {string} label
+ */
+function capitalizeLabel(label) {
+  // modules, classes, interfaces -> Modules, Classes, Interfaces
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+/**
+ * @param {NormalizedSidebarItem} a
+ * @param {NormalizedSidebarItem} b
+ */
+function sidebarSort(a, b) {
+  // Categories always come last and have their own defined sort order
+  // Otherwise leave the sort as-is
+  if (a.type === 'category' && b.type === 'category') {
+    return categoryOrder(a.label) - categoryOrder(b.label);
+  } else if (a.type === 'category') {
+    return 1;
+  } else if (b.type === 'category') {
+    return -1;
+  } else {
+    return 0;
+  }
+}
+
+/**
+ * Map an 'api/modules/...' id back to the original module name without
+ * loading the markdown and parsing the frontmatter.
+ *
+ * @param {string} id
+ */
+function idToModuleName(id) {
+  return id
+    .replace(/^api\/modules\//, '')
+    .replace(/^lexical_react_/, '@lexical/react/')
+    .replace(/^lexical_/, '@lexical/')
+    .replace(/_/g, '-');
+}
+
+/**
+ * Map an 'api/{category}/{fileId}.ClassName' to the class or interface name.
+ * These are already capitalized and always preceded by a '.'.
+ *
+ * @param {string} id
+ */
+function classOrInterfaceIdToLabel(id) {
+  return id.replace(/^[^.]+./, '');
+}
+
+/**
+ * @type {SidebarItemsGenerator}
+ */
+const sidebarItemsGenerator = async ({
+  defaultSidebarItemsGenerator,
+  ...args
+}) => {
+  const items = await defaultSidebarItemsGenerator(args);
+  if (args.item.dirName === 'api') {
+    return items
+      .map((sidebarItem) => {
+        if (sidebarItem.type === 'doc' && sidebarItem.id in docLabels) {
+          return {...sidebarItem, label: docLabels[sidebarItem.id]};
+        } else if (sidebarItem.type !== 'category') {
+          return sidebarItem;
+        }
+        /** @type {NormalizedSidebarItem[]} */
+        const groupedItems = [];
+        for (const item of sidebarItem.items) {
+          if (item.type === 'doc' && item.id.startsWith('api/modules/')) {
+            // autoConfiguration is disabled because the frontmatter
+            // sidebar_label otherwise takes precedence over anything we do
+            // here, and the default labels come from the page titles which
+            // are parsed at a later stage of the pipeline.
+            const label = idToModuleName(item.id);
+            const m = /^(@lexical\/[^/]+)\/(.*)$/.exec(label);
+            if (m) {
+              const lastItem = groupedItems[groupedItems.length - 1];
+              const groupedItem = {...item, label: m[2]};
+              if (
+                (lastItem && lastItem.type === 'category') ||
+                lastItem.label === m[1]
+              ) {
+                lastItem.items.push(groupedItem);
+              } else {
+                groupedItems.push({
+                  items: [groupedItem],
+                  label: m[1],
+                  type: 'category',
+                });
+              }
+              continue;
+            }
+            groupedItems.push({...item, label});
+          } else if (item.type === 'doc') {
+            groupedItems.push({
+              ...item,
+              label: classOrInterfaceIdToLabel(item.id),
+            });
+          } else {
+            groupedItems.push(item);
+          }
+        }
+        return {
+          ...sidebarItem,
+          items: groupedItems,
+          label: capitalizeLabel(sidebarItem.label),
+        };
+      })
+      .sort(sidebarSort);
+  }
+  return items;
+};
+
+/** @type {Partial<import('docusaurus-plugin-typedoc/dist/types').PluginOptions>} */
+const docusaurusPluginTypedocConfig = {
+  ...sourceLinkOptions(),
+  entryPoints: [
+    '../lexical/src/index.ts',
+    '../lexical-clipboard/src/index.ts',
+    '../lexical-code/src/index.ts',
+    '../lexical-devtools-core/src/index.ts',
+    '../lexical-dragon/src/index.ts',
+    '../lexical-file/src/index.ts',
+    '../lexical-hashtag/src/index.ts',
+    '../lexical-headless/src/index.ts',
+    '../lexical-history/src/index.ts',
+    '../lexical-html/src/index.ts',
+    '../lexical-link/src/index.ts',
+    '../lexical-list/src/index.ts',
+    '../lexical-mark/src/index.ts',
+    '../lexical-markdown/src/index.ts',
+    '../lexical-offset/src/index.ts',
+    '../lexical-overflow/src/index.ts',
+    '../lexical-plain-text/src/index.ts',
+    ...lexicalReactEntryPoints(),
+    '../lexical-rich-text/src/index.ts',
+    '../lexical-selection/src/index.ts',
+    '../lexical-table/src/index.ts',
+    '../lexical-text/src/index.ts',
+    '../lexical-utils/src/index.ts',
+    '../lexical-yjs/src/index.ts',
+  ],
+  excludeInternal: true,
+  plugin: [
+    './src/plugins/lexical-typedoc-plugin-no-inherit',
+    './src/plugins/lexical-typedoc-plugin-module-name',
+  ],
+  sidebar: {
+    autoConfiguration: false,
+    position: 5,
+  },
+  tsconfig: '../../tsconfig.json',
+  watch: process.env.TYPEDOC_WATCH === 'true',
+};
+
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   baseUrl: '/',
@@ -63,48 +243,7 @@ const config = {
   organizationName: 'facebook',
   plugins: [
     './plugins/webpack-buffer',
-    [
-      'docusaurus-plugin-typedoc',
-      {
-        ...sourceLinkOptions(),
-        entryPoints: [
-          '../lexical/src/index.ts',
-          '../lexical-clipboard/src/index.ts',
-          '../lexical-code/src/index.ts',
-          '../lexical-devtools-core/src/index.ts',
-          '../lexical-dragon/src/index.ts',
-          '../lexical-file/src/index.ts',
-          '../lexical-hashtag/src/index.ts',
-          '../lexical-headless/src/index.ts',
-          '../lexical-history/src/index.ts',
-          '../lexical-html/src/index.ts',
-          '../lexical-link/src/index.ts',
-          '../lexical-list/src/index.ts',
-          '../lexical-mark/src/index.ts',
-          '../lexical-markdown/src/index.ts',
-          '../lexical-offset/src/index.ts',
-          '../lexical-overflow/src/index.ts',
-          '../lexical-plain-text/src/index.ts',
-          ...lexicalReactEntryPoints(),
-          '../lexical-rich-text/src/index.ts',
-          '../lexical-selection/src/index.ts',
-          '../lexical-table/src/index.ts',
-          '../lexical-text/src/index.ts',
-          '../lexical-utils/src/index.ts',
-          '../lexical-yjs/src/index.ts',
-        ],
-        excludeInternal: true,
-        plugin: [
-          './src/plugins/lexical-typedoc-plugin-no-inherit',
-          './src/plugins/lexical-typedoc-plugin-module-name',
-        ],
-        sidebar: {
-          position: 5,
-        },
-        tsconfig: '../../tsconfig.json',
-        watch: process.env.TYPEDOC_WATCH === 'true',
-      },
-    ],
+    ['docusaurus-plugin-typedoc', docusaurusPluginTypedocConfig],
     async function tailwindcss() {
       return {
         configurePostCss(postcssOptions) {
@@ -129,6 +268,7 @@ const config = {
           beforeDefaultRemarkPlugins: [importPlugin, slugifyPlugin],
           editUrl: `${GITHUB_REPO_URL}/tree/main/packages/lexical-website/`,
           path: 'docs',
+          sidebarItemsGenerator,
           sidebarPath: require.resolve('./sidebars.js'),
         },
         gtag: {

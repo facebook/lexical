@@ -30,10 +30,10 @@ declare export function $getListDepth(listNode: ListNode): number;
 declare export function $handleListInsertParagraph(): boolean;
 declare export function $isListItemNode(
   node: ?LexicalNode,
-): boolean %checks(node instanceof ListItemNode);
+): node is ListItemNode;
 declare export function $isListNode(
   node: ?LexicalNode,
-): boolean %checks(node instanceof ListNode);
+): node is ListNode;
 declare export function indentList(): void;
 declare export function insertList(
   editor: LexicalEditor,

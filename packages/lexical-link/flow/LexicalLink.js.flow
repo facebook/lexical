@@ -59,7 +59,7 @@ declare export function $createLinkNode(
 ): LinkNode;
 declare export function $isLinkNode(
   node: ?LexicalNode,
-): boolean %checks(node instanceof LinkNode);
+): node is LinkNode;
 declare export class AutoLinkNode extends LinkNode {
   static getType(): string;
   // $FlowFixMe clone method inheritance
@@ -75,7 +75,7 @@ declare export function $createAutoLinkNode(
 ): AutoLinkNode;
 declare export function $isAutoLinkNode(
   node: ?LexicalNode,
-): boolean %checks(node instanceof AutoLinkNode);
+): node is AutoLinkNode;
 
 declare export var TOGGLE_LINK_COMMAND: LexicalCommand<
   string | {url: string, ...LinkAttributes} | null,

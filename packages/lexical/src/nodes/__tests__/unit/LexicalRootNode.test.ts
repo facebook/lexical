@@ -14,6 +14,7 @@ import {
   $isRangeSelection,
   $isRootNode,
   ElementNode,
+  RootNode,
   TextNode,
 } from 'lexical';
 
@@ -27,7 +28,7 @@ import {$createRootNode} from '../../LexicalRootNode';
 
 describe('LexicalRootNode tests', () => {
   initializeUnitTest((testEnv) => {
-    let rootNode;
+    let rootNode: RootNode;
 
     function expectRootTextContentToBe(text: string): void {
       const {editor} = testEnv;
@@ -85,17 +86,19 @@ describe('LexicalRootNode tests', () => {
     });
 
     test('RootNode.clone()', async () => {
-      const rootNodeClone = rootNode.constructor.clone();
+      const rootNodeClone = (rootNode.constructor as typeof RootNode).clone();
 
       expect(rootNodeClone).not.toBe(rootNode);
       expect(rootNodeClone).toStrictEqual(rootNode);
     });
 
     test('RootNode.createDOM()', async () => {
+      // @ts-expect-error
       expect(() => rootNode.createDOM()).toThrow();
     });
 
     test('RootNode.updateDOM()', async () => {
+      // @ts-expect-error
       expect(rootNode.updateDOM()).toBe(false);
     });
 
@@ -168,7 +171,7 @@ describe('LexicalRootNode tests', () => {
 
       await editor.update(() => {
         const root = $getRoot();
-        root.getFirstChild().remove();
+        root.getFirstChild()!.remove();
       });
 
       await editor.update(() => {
@@ -194,7 +197,7 @@ describe('LexicalRootNode tests', () => {
       expectRootTextContentToBe('');
 
       await editor.update(() => {
-        const firstParagraph = $getRoot().getFirstChild<ElementNode>();
+        const firstParagraph = $getRoot().getFirstChild<ElementNode>()!;
 
         firstParagraph.append($createTextNode('first line'));
       });
@@ -208,7 +211,7 @@ describe('LexicalRootNode tests', () => {
       expectRootTextContentToBe('first line\n\n');
 
       await editor.update(() => {
-        const secondParagraph = $getRoot().getLastChild<ElementNode>();
+        const secondParagraph = $getRoot().getLastChild<ElementNode>()!;
 
         secondParagraph.append($createTextNode('second line'));
       });
@@ -222,15 +225,15 @@ describe('LexicalRootNode tests', () => {
       expectRootTextContentToBe('first line\n\nsecond line\n\n');
 
       await editor.update(() => {
-        const thirdParagraph = $getRoot().getLastChild<ElementNode>();
+        const thirdParagraph = $getRoot().getLastChild<ElementNode>()!;
         thirdParagraph.append($createTextNode('third line'));
       });
 
       expectRootTextContentToBe('first line\n\nsecond line\n\nthird line');
 
       await editor.update(() => {
-        const secondParagraph = $getRoot().getChildAtIndex<ElementNode>(1);
-        const secondParagraphText = secondParagraph.getFirstChild<TextNode>();
+        const secondParagraph = $getRoot().getChildAtIndex<ElementNode>(1)!;
+        const secondParagraphText = secondParagraph.getFirstChild<TextNode>()!;
         secondParagraphText.setTextContent('second line!');
       });
 

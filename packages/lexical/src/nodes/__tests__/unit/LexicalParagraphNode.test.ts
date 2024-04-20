@@ -9,8 +9,10 @@
 import {
   $createParagraphNode,
   $getRoot,
+  $getSelection,
   $isParagraphNode,
   ParagraphNode,
+  RangeSelection,
 } from 'lexical';
 
 import {initializeUnitTest} from '../../../__tests__/utils';
@@ -98,7 +100,7 @@ describe('LexicalParagraphNode tests', () => {
 
     test('ParagraphNode.insertNewAfter()', async () => {
       const {editor} = testEnv;
-      let paragraphNode;
+      let paragraphNode: ParagraphNode;
 
       await editor.update(() => {
         const root = $getRoot();
@@ -111,7 +113,10 @@ describe('LexicalParagraphNode tests', () => {
       );
 
       await editor.update(() => {
-        const result = paragraphNode.insertNewAfter();
+        const result = paragraphNode.insertNewAfter(
+          $getSelection() as RangeSelection,
+          false,
+        );
 
         expect(result).toBeInstanceOf(ParagraphNode);
         expect(result.getDirection()).toEqual(paragraphNode.getDirection());

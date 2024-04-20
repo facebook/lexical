@@ -6,7 +6,12 @@
  *
  */
 
-import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  RangeSelection,
+} from 'lexical';
 
 import {$normalizeSelection} from '../../LexicalNormalization';
 import {
@@ -19,8 +24,9 @@ describe('LexicalNormalization tests', () => {
   initializeUnitTest((testEnv) => {
     describe('$normalizeSelection', () => {
       for (const reversed of [false, true]) {
-        const getAnchor = (x) => (reversed ? x.focus : x.anchor);
-        const getFocus = (x) => (reversed ? x.anchor : x.focus);
+        const getAnchor = (x: RangeSelection) =>
+          reversed ? x.focus : x.anchor;
+        const getFocus = (x: RangeSelection) => (reversed ? x.anchor : x.focus);
         const reversedStr = reversed ? ' (reversed)' : '';
 
         test(`paragraph to text nodes${reversedStr}`, async () => {

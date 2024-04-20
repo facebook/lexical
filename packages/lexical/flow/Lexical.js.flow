@@ -409,7 +409,7 @@ export type NodeMap = Map<NodeKey, LexicalNode>;
 
 declare export function $isBlockElementNode(
   node: ?LexicalNode,
-): boolean %checks(node instanceof ElementNode);
+): node is ElementNode;
 
 export interface BaseSelection {
   clone(): BaseSelection;
@@ -444,7 +444,7 @@ declare export class INTERNAL_PointSelection implements BaseSelection {
 
 declare export function $INTERNAL_isPointSelection(
   x: ?mixed,
-): boolean %checks(x instanceof INTERNAL_PointSelection);
+): x is INTERNAL_PointSelection;
 
 declare export class NodeSelection implements BaseSelection {
   _nodes: Set<NodeKey>;
@@ -468,7 +468,7 @@ declare export class NodeSelection implements BaseSelection {
 
 declare export function $isNodeSelection(
   x: ?mixed,
-): boolean %checks(x instanceof NodeSelection);
+): x is NodeSelection;
 
 declare export class RangeSelection extends INTERNAL_PointSelection {
   anchor: PointType;
@@ -552,7 +552,7 @@ declare export function $createRangeSelection(): RangeSelection;
 declare export function $createNodeSelection(): NodeSelection;
 declare export function $isRangeSelection(
   x: ?mixed,
-): boolean %checks(x instanceof RangeSelection);
+): x is RangeSelection;
 declare export function $getSelection(): null | BaseSelection;
 declare export function $getPreviousSelection(): null | BaseSelection;
 declare export function $insertNodes(nodes: Array<LexicalNode>): void;
@@ -644,7 +644,7 @@ declare export class TextNode extends LexicalNode {
 declare export function $createTextNode(text?: string): TextNode;
 declare export function $isTextNode(
   node: ?LexicalNode,
-): boolean %checks(node instanceof TextNode);
+): node is TextNode;
 
 /**
  * LexicalTabNode
@@ -656,7 +656,7 @@ declare export function $createTabNode(): TabNode;
 
 declare export function $isTabNode(
   node: LexicalNode | null | void,
-): boolean %checks(node instanceof TabNode);
+): node is TabNode;
 
 declare export class TabNode extends TextNode {
   static getType(): string;
@@ -686,7 +686,7 @@ declare export class LineBreakNode extends LexicalNode {
 declare export function $createLineBreakNode(): LineBreakNode;
 declare export function $isLineBreakNode(
   node: ?LexicalNode,
-): boolean %checks(node instanceof LineBreakNode);
+): node is LineBreakNode;
 
 /**
  * LexicalRootNode
@@ -709,7 +709,7 @@ declare export class RootNode extends ElementNode {
 }
 declare export function $isRootNode(
   node: ?LexicalNode,
-): boolean %checks(node instanceof RootNode);
+): node is RootNode;
 
 /**
  * LexicalElementNode
@@ -789,7 +789,7 @@ declare export class ElementNode extends LexicalNode {
 }
 declare export function $isElementNode(
   node: ?LexicalNode,
-): boolean %checks(node instanceof ElementNode);
+): node is ElementNode;
 
 /**
  * LexicalDecoratorNode
@@ -802,9 +802,9 @@ declare export class DecoratorNode<X> extends LexicalNode {
   isInline(): boolean;
   isKeyboardSelectable(): boolean;
 }
-declare export function $isDecoratorNode(
+declare export function $isDecoratorNode<T = mixed>(
   node: ?LexicalNode,
-): boolean %checks(node instanceof DecoratorNode);
+): node is DecoratorNode<T>;
 
 /**
  * LexicalParagraphNode
@@ -825,19 +825,19 @@ declare export class ParagraphNode extends ElementNode {
 declare export function $createParagraphNode(): ParagraphNode;
 declare export function $isParagraphNode(
   node: ?LexicalNode,
-): boolean %checks(node instanceof ParagraphNode);
+): node is ParagraphNode;
 
 declare export class deprecated_GridNode extends ElementNode {}
 
 declare export function DEPRECATED_$isGridNode(
   node: ?LexicalNode,
-): boolean %checks(node instanceof deprecated_GridNode);
+): node is deprecated_GridNode;
 
 declare export class deprecated_GridRowNode extends ElementNode {}
 
 declare export function DEPRECATED_$isGridRowNode(
   node: ?LexicalNode,
-): boolean %checks(node instanceof deprecated_GridRowNode);
+): node is deprecated_GridRowNode;
 
 declare export class deprecated_GridCellNode extends ElementNode {
   __colSpan: number;
@@ -852,7 +852,7 @@ declare export class deprecated_GridCellNode extends ElementNode {
 
 declare export function DEPRECATED_$isGridCellNode(
   node: ?LexicalNode,
-): boolean %checks(node instanceof deprecated_GridCellNode);
+): node is deprecated_GridCellNode;
 
 /**
  * LexicalUtils
@@ -865,11 +865,9 @@ declare export function $getNearestNodeFromDOMNode(
 ): LexicalNode | null;
 declare export function $getNodeByKey<N: LexicalNode>(key: NodeKey): N | null;
 declare export function $getRoot(): RootNode;
-declare export function $isLeafNode(
+declare export function $isLeafNode<T = mixed>(
   node: ?LexicalNode,
-): boolean %checks(node instanceof TextNode ||
-  node instanceof LineBreakNode ||
-  node instanceof DecoratorNode);
+): node is TextNode | LineBreakNode |  DecoratorNode<T>;
 declare export function $setCompositionKey(
   compositionKey: null | NodeKey,
 ): void;
@@ -880,16 +878,15 @@ declare export function $getAdjacentNode(
   isBackward: boolean,
 ): null | LexicalNode;
 declare export function generateRandomKey(): string;
-declare export function $isInlineElementOrDecoratorNode(
+declare export function $isInlineElementOrDecoratorNode<T = mixed>(
   node: LexicalNode,
-): boolean %checks(node instanceof ElementNode ||
-  node instanceof DecoratorNode);
+): node is ElementNode|  DecoratorNode<T>;
 declare export function $getNearestRootOrShadowRoot(
   node: LexicalNode,
 ): RootNode | ElementNode;
 declare export function $isRootOrShadowRoot(
   node: ?LexicalNode,
-): boolean %checks(node instanceof RootNode || node instanceof ElementNode);
+): node is RootNode | ElementNode;
 declare export function $hasAncestor(
   child: LexicalNode,
   targetNode: LexicalNode,

@@ -47,6 +47,12 @@ module.exports = {
     },
     {
       ...common,
+      displayName: 'integration',
+      globalSetup: './scripts/__tests__/integration/setup.js',
+      testMatch: ['**/scripts/__tests__/integration/**/*.test.js'],
+    },
+    {
+      ...common,
       displayName: 'e2e',
       testMatch: [
         '**/__tests__/e2e/**/*.js',

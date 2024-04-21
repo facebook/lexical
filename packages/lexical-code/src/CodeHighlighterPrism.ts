@@ -23,3 +23,9 @@ import 'prismjs/components/prism-swift';
 import 'prismjs/components/prism-typescript';
 import 'prismjs/components/prism-java';
 import 'prismjs/components/prism-cpp';
+
+declare global {
+  interface Window {
+    Prism: typeof import('prismjs');
+  }
+}

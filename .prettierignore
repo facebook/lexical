@@ -1,9 +1,9 @@
 # NOTE: In general this should be kept in sync with .eslintignore
 
-packages/**/dist/**
-packages/**/build/**
-packages/**/npm/**
-packages/**/config/**
+**/dist/**
+**/build/**
+**/npm/**
+**/config/**
 packages/**/.wxt/**
 packages/playwright
 packages/playwright-core

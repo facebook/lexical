@@ -1263,6 +1263,13 @@ function $handleArrowKey(
   tableNode: TableNode,
   tableObserver: TableObserver,
 ): boolean {
+  if (
+    (direction === 'up' || direction === 'down') &&
+    isTypeaheadMenuInView(editor)
+  ) {
+    return false;
+  }
+
   const selection = $getSelection();
 
   if (!$isSelectionInTable(selection, tableNode)) {
@@ -1477,6 +1484,19 @@ function stopEvent(event: Event) {
   event.preventDefault();
   event.stopImmediatePropagation();
   event.stopPropagation();
+}
+
+function isTypeaheadMenuInView(editor: LexicalEditor) {
+  // There is no inbuilt way to check if the component picker is in view
+  // but we can check if the root DOM element has the aria-controls attribute "typeahead-menu".
+  const root = editor.getRootElement();
+  if (!root) {
+    return false;
+  }
+  return (
+    root.hasAttribute('aria-controls') &&
+    root.getAttribute('aria-controls') === 'typeahead-menu'
+  );
 }
 
 function isExitingTableAnchor(

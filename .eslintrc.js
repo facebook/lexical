@@ -51,6 +51,8 @@ module.exports = {
       // node scripts should be console logging so don't lint against that
       files: ['scripts/**/*.js'],
       rules: {
+        // https://github.com/Stuk/eslint-plugin-header/issues/39
+        'header/header': OFF,
         'no-console': OFF,
       },
     },

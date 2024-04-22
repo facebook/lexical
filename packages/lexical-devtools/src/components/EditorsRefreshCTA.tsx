@@ -30,7 +30,7 @@ function EditorsRefreshCTA({tabID, setErrorMessage}: Props) {
     );
 
     injectedPegasusService
-      .refreshLexicalEditorsForTabID()
+      .refreshLexicalEditors()
       .catch((err) => {
         setErrorMessage(err.message);
         console.error(err);

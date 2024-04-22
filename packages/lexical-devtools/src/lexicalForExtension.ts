@@ -59,17 +59,25 @@ export function $getSelection(): null | lexical.BaseSelection {
 export function $isElementNode(
   node: lexical.LexicalNode | null | undefined,
 ): node is lexical.ElementNode {
-  const editor = getActiveEditor();
-  const ElementNode = Object.getPrototypeOf(
-    editor._nodes.get('paragraph')!.klass,
-  );
+  if (node == null) {
+    return false;
+  }
 
-  return node instanceof ElementNode;
+  const editor = getActiveEditor();
+  const ParagraphNode = editor._nodes.get('paragraph')!.klass;
+  const ElementNode = Object.getPrototypeOf(ParagraphNode.prototype);
+
+  // eslint-disable-next-line no-prototype-builtins
+  return ElementNode.isPrototypeOf(node);
 }
 
 export function $isTextNode(
   node: lexical.LexicalNode | null | undefined,
 ): node is lexical.TextNode {
+  if (node == null) {
+    return false;
+  }
+
   const editor = getActiveEditor();
   const TextNode = editor._nodes.get('text')!.klass;
 

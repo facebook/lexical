@@ -28,7 +28,7 @@ const HR: ElementTransformer = {
     const line = $createHorizontalRuleNode();
 
     // TODO: Get rid of isImport flag
-    if (isImport || parentNode.getNextSibling() != null) {
+    if (isImport || parentNode.getNextSibling() !== null) {
       parentNode.replace(line);
     } else {
       parentNode.insertBefore(line);

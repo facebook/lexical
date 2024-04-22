@@ -203,10 +203,10 @@ export function useDynamicPositioning(
 ) {
   const [editor] = useLexicalComposerContext();
   useEffect(() => {
-    if (targetElement != null && resolution != null) {
+    if (targetElement !== null && resolution !== null) {
       const rootElement = editor.getRootElement();
       const rootScrollParent =
-        rootElement != null
+        rootElement !== null
           ? getScrollParent(rootElement, false)
           : document.body;
       let ticking = false;
@@ -228,7 +228,7 @@ export function useDynamicPositioning(
         );
         if (isInView !== previousIsInView) {
           previousIsInView = isInView;
-          if (onVisibilityChange != null) {
+          if (onVisibilityChange !== undefined) {
             onVisibilityChange(isInView);
           }
         }
@@ -292,7 +292,7 @@ export function LexicalMenu<TOption extends MenuOption>({
     (selectedEntry: TOption) => {
       editor.update(() => {
         const textNodeContainingQuery =
-          resolution.match != null && shouldSplitNodeWithQuery
+          resolution.match !== undefined && shouldSplitNodeWithQuery
             ? $splitNodeContainingQuery(resolution.match)
             : null;
 
@@ -343,7 +343,7 @@ export function LexicalMenu<TOption extends MenuOption>({
       editor.registerCommand(
         SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND,
         ({option}) => {
-          if (option.ref && option.ref.current != null) {
+          if (option.ref && option.ref.current !== null) {
             scrollIntoViewIfNeeded(option.ref.current);
             return true;
           }
@@ -366,7 +366,7 @@ export function LexicalMenu<TOption extends MenuOption>({
               selectedIndex !== options.length - 1 ? selectedIndex + 1 : 0;
             updateSelectedIndex(newSelectedIndex);
             const option = options[newSelectedIndex];
-            if (option.ref != null && option.ref.current) {
+            if (option.ref !== undefined && option.ref.current) {
               editor.dispatchCommand(
                 SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND,
                 {
@@ -391,7 +391,7 @@ export function LexicalMenu<TOption extends MenuOption>({
               selectedIndex !== 0 ? selectedIndex - 1 : options.length - 1;
             updateSelectedIndex(newSelectedIndex);
             const option = options[newSelectedIndex];
-            if (option.ref != null && option.ref.current) {
+            if (option.ref !== undefined && option.ref.current) {
               scrollIntoViewIfNeeded(option.ref.current);
             }
             event.preventDefault();
@@ -419,7 +419,7 @@ export function LexicalMenu<TOption extends MenuOption>({
           if (
             options === null ||
             selectedIndex === null ||
-            options[selectedIndex] == null
+            options[selectedIndex] === undefined
           ) {
             return false;
           }
@@ -436,7 +436,7 @@ export function LexicalMenu<TOption extends MenuOption>({
           if (
             options === null ||
             selectedIndex === null ||
-            options[selectedIndex] == null
+            options[selectedIndex] === undefined
           ) {
             return false;
           }
@@ -525,7 +525,7 @@ export function useMenuAnchorRef(
       }
 
       if (!containerDiv.isConnected) {
-        if (className != null) {
+        if (className !== undefined) {
           containerDiv.className = className;
         }
         containerDiv.setAttribute('aria-label', 'Typeahead menu');

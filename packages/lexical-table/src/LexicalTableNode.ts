@@ -128,7 +128,7 @@ export class TableNode extends ElementNode {
     for (let y = 0; y < rows; y++) {
       const row = domRows[y];
 
-      if (row == null) {
+      if (row === undefined) {
         continue;
       }
 
@@ -158,13 +158,13 @@ export class TableNode extends ElementNode {
 
     const row = domRows[y];
 
-    if (row == null) {
+    if (row === undefined) {
       return null;
     }
 
     const cell = row[x];
 
-    if (cell == null) {
+    if (cell === undefined) {
       return null;
     }
 
@@ -192,7 +192,7 @@ export class TableNode extends ElementNode {
   ): null | TableCellNode {
     const cell = this.getDOMCellFromCords(x, y, table);
 
-    if (cell == null) {
+    if (cell === null) {
       return null;
     }
 
@@ -234,7 +234,7 @@ export function $getElementForTableNode(
 ): TableDOMTable {
   const tableElement = editor.getElementByKey(tableNode.getKey());
 
-  if (tableElement == null) {
+  if (tableElement === null) {
     throw new Error('Table Element Not Found');
   }
 

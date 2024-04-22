@@ -122,7 +122,7 @@ export function isSelectionCapturedInDecoratorInput(anchorDOM: Node): boolean {
       nodeName === 'TEXTAREA' ||
       (activeElement.contentEditable === 'true' &&
         // @ts-ignore iternal field
-        activeElement.__lexicalEditor == null))
+        activeElement.__lexicalEditor === undefined))
   );
 }
 
@@ -151,10 +151,10 @@ export function getNearestEditorFromDOMNode(
   node: Node | null,
 ): LexicalEditor | null {
   let currentNode = node;
-  while (currentNode != null) {
+  while (currentNode !== null) {
     // @ts-expect-error: internal field
-    const editor: LexicalEditor = currentNode.__lexicalEditor;
-    if (editor != null) {
+    const editor: LexicalEditor | undefined = currentNode.__lexicalEditor;
+    if (editor !== undefined) {
       return editor;
     }
     currentNode = getParentElement(currentNode);
@@ -182,7 +182,7 @@ function isDOMNodeLexicalTextNode(node: Node): node is Text {
 
 export function getDOMTextNode(element: Node | null): Text | null {
   let node = element;
-  while (node != null) {
+  while (node !== null) {
     if (isDOMNodeLexicalTextNode(node)) {
       return node;
     }
@@ -222,7 +222,7 @@ export function $setNodeKey(
   node: LexicalNode,
   existingKey: NodeKey | null | undefined,
 ): void {
-  if (existingKey != null) {
+  if (existingKey !== null && existingKey !== undefined) {
     node.__key = existingKey;
     return;
   }
@@ -408,7 +408,7 @@ export function $getNearestNodeFromDOMNode(
   editorState?: EditorState,
 ): LexicalNode | null {
   let dom: Node | null = startingDOM;
-  while (dom != null) {
+  while (dom !== null) {
     const node = getNodeFromDOMNode(dom, editorState);
     if (node !== null) {
       return node;
@@ -515,7 +515,7 @@ function getNodeKeyFromDOM(
   editor: LexicalEditor,
 ): NodeKey | null {
   let node: Node | null = dom;
-  while (node != null) {
+  while (node !== null) {
     // @ts-ignore We intentionally add this to the Node.
     const key: NodeKey = node[`__lexicalKey_${editor._key}`];
     if (key !== undefined) {
@@ -1022,7 +1022,7 @@ export function $selectAll(): void {
 export function getCachedClassNameArray(
   classNamesTheme: EditorThemeClasses,
   classNameThemeType: string,
-): Array<string> {
+): Array<string> | undefined {
   if (classNamesTheme.__lexicalClassNameCache === undefined) {
     classNamesTheme.__lexicalClassNameCache = {};
   }
@@ -1499,7 +1499,7 @@ export function updateDOMBlockCursorElement(
 }
 
 export function getDOMSelection(targetWindow: null | Window): null | Selection {
-  return !CAN_USE_DOM ? null : (targetWindow || window).getSelection();
+  return CAN_USE_DOM ? (targetWindow || window).getSelection() : null;
 }
 
 export function $splitNode(
@@ -1507,7 +1507,7 @@ export function $splitNode(
   offset: number,
 ): [ElementNode | null, ElementNode] {
   let startNode = node.getChildAtIndex(offset);
-  if (startNode == null) {
+  if (startNode === null) {
     startNode = node;
   }
 
@@ -1556,7 +1556,7 @@ export function $findMatchingParent(
 ): LexicalNode | null {
   let curr: ElementNode | LexicalNode | null = startingNode;
 
-  while (curr !== $getRoot() && curr != null) {
+  while (curr !== $getRoot() && curr !== null) {
     if (findFn(curr)) {
       return curr;
     }

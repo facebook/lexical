@@ -51,8 +51,9 @@ export type SerializedCodeNode = Spread<
 const mapToPrismLanguage = (
   language: string | null | undefined,
 ): string | null | undefined => {
-  // eslint-disable-next-line no-prototype-builtins
-  return language != null && window.Prism.languages.hasOwnProperty(language)
+  return language !== null &&
+    language !== undefined &&
+    Object.hasOwn(window.Prism.languages, language)
     ? language
     : undefined;
 };
@@ -134,7 +135,7 @@ export class CodeNode extends ElementNode {
       // inline format handled by TextNode otherwise.
       code: (node: Node) => {
         const isMultiLine =
-          node.textContent != null &&
+          node.textContent !== null &&
           (/\r?\n/.test(node.textContent) || hasChildDOMNodeTag(node, 'BR'));
 
         return isMultiLine
@@ -350,7 +351,7 @@ function convertDivElement(domNode: Node): DOMConversionOutput {
   return {
     after: (childLexicalNodes) => {
       const domParent = domNode.parentNode;
-      if (domParent != null && domNode !== domParent.lastChild) {
+      if (domParent !== null && domNode !== domParent.lastChild) {
         childLexicalNodes.push($createLineBreakNode());
       }
       return childLexicalNodes;

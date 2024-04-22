@@ -268,7 +268,7 @@ export class LexicalNode {
    */
   isSelected(selection?: null | BaseSelection): boolean {
     const targetSelection = selection || $getSelection();
-    if (targetSelection == null) {
+    if (targetSelection === null) {
       return false;
     }
 
@@ -509,7 +509,7 @@ export class LexicalNode {
    * @param object - the node to perform the equality comparison on.
    */
   is(object: LexicalNode | null | undefined): boolean {
-    if (object == null) {
+    if (object === null || object === undefined) {
       return false;
     }
     return this.__key === object.__key;

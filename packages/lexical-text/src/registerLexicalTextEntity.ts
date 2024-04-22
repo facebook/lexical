@@ -63,8 +63,8 @@ export function registerLexicalTextEntity<T extends TextNode>(
 
     const prevSibling = node.getPreviousSibling();
     let text = node.getTextContent();
-    let currentNode = node;
-    let match;
+    let currentNode: TextNode | undefined = node;
+    let match: EntityMatch | null = null;
 
     if ($isTextNode(prevSibling)) {
       const previousText = prevSibling.getTextContent();
@@ -146,7 +146,7 @@ export function registerLexicalTextEntity<T extends TextNode>(
         continue;
       }
 
-      let nodeToReplace;
+      let nodeToReplace: TextNode;
 
       if (match.start === 0) {
         [nodeToReplace, currentNode] = currentNode.splitText(match.end);
@@ -161,7 +161,7 @@ export function registerLexicalTextEntity<T extends TextNode>(
       replacementNode.setFormat(nodeToReplace.getFormat());
       nodeToReplace.replace(replacementNode);
 
-      if (currentNode == null) {
+      if (currentNode === undefined) {
         return;
       }
     }

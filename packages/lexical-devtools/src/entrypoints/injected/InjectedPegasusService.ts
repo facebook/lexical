@@ -50,7 +50,7 @@ export class InjectedPegasusService
     isReadonly: boolean,
   ): void {
     const editorNode = queryLexicalNodeByKey(editorKey);
-    if (editorNode == null) {
+    if (editorNode === undefined) {
       throw new Error(`Can't find editor with key: ${editorKey}`);
     }
 
@@ -63,7 +63,7 @@ export class InjectedPegasusService
     exportDOM: boolean,
   ): string {
     const editor = queryLexicalEditorByKey(editorKey);
-    if (editor == null) {
+    if (editor === undefined) {
       throw new Error(`Can't find editor with key: ${editorKey}`);
     }
 
@@ -78,7 +78,7 @@ export class InjectedPegasusService
     editorState: SerializedRawEditorState,
   ): void {
     const editor = queryLexicalEditorByKey(editorKey);
-    if (editor == null) {
+    if (editor === undefined) {
       throw new Error(`Can't find editor with key: ${editorKey}`);
     }
 

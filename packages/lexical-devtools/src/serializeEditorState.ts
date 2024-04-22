@@ -37,7 +37,7 @@ export function deserializeEditorState(
     typeof editorState.deserealizationID === 'number'
   ) {
     const state = deserealizationMap.get(editorState.deserealizationID);
-    if (state == null) {
+    if (state === undefined) {
       throw new Error(
         `Can't find deserealization ref for state with id ${editorState.deserealizationID}`,
       );
@@ -64,7 +64,7 @@ export function serializeEditorState(
     selection &&
     'anchor' in selection &&
     typeof selection.anchor === 'object' &&
-    selection.anchor != null
+    selection.anchor !== null
   ) {
     // remove _selection.anchor._selection property if present in RangeSelection or GridSelection
     // otherwise, the recursive structure makes the selection object unserializable
@@ -74,7 +74,7 @@ export function serializeEditorState(
     selection &&
     'focus' in selection &&
     typeof selection.focus === 'object' &&
-    selection.focus != null
+    selection.focus !== null
   ) {
     // remove _selection.anchor._selection property if present in RangeSelection or GridSelection
     // otherwise, the recursive structure makes the selection object unserializable

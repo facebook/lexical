@@ -220,9 +220,9 @@ function TableActionMenu({
     const rootElement = editor.getRootElement();
 
     if (
-      menuButtonElement != null &&
-      dropDownElement != null &&
-      rootElement != null
+      menuButtonElement !== null &&
+      dropDownElement !== null &&
+      rootElement !== null
     ) {
       const rootEleRect = rootElement.getBoundingClientRect();
       const menuButtonRect = menuButtonElement.getBoundingClientRect();
@@ -252,8 +252,8 @@ function TableActionMenu({
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
-        dropDownRef.current != null &&
-        contextRef.current != null &&
+        dropDownRef.current !== null &&
+        contextRef.current !== null &&
         !dropDownRef.current.contains(event.target as Node) &&
         !contextRef.current.contains(event.target as Node)
       ) {
@@ -661,7 +661,7 @@ function TableCellActionMenuContainer({
     const nativeSelection = window.getSelection();
     const activeElement = document.activeElement;
 
-    if (selection == null || menu == null) {
+    if (selection === null || menu === null) {
       setTableMenuCellNode(null);
       return;
     }
@@ -678,7 +678,7 @@ function TableCellActionMenuContainer({
         selection.anchor.getNode(),
       );
 
-      if (tableCellNodeFromSelection == null) {
+      if (tableCellNodeFromSelection === null) {
         setTableMenuCellNode(null);
         return;
       }
@@ -687,7 +687,7 @@ function TableCellActionMenuContainer({
         tableCellNodeFromSelection.getKey(),
       );
 
-      if (tableCellParentNodeDOM == null) {
+      if (tableCellParentNodeDOM === null) {
         setTableMenuCellNode(null);
         return;
       }
@@ -709,10 +709,10 @@ function TableCellActionMenuContainer({
   useEffect(() => {
     const menuButtonDOM = menuButtonRef.current as HTMLButtonElement | null;
 
-    if (menuButtonDOM != null && tableCellNode != null) {
+    if (menuButtonDOM !== null && tableCellNode !== null) {
       const tableCellNodeDOM = editor.getElementByKey(tableCellNode.getKey());
 
-      if (tableCellNodeDOM != null) {
+      if (tableCellNodeDOM !== null) {
         const tableCellRect = tableCellNodeDOM.getBoundingClientRect();
         const menuRect = menuButtonDOM.getBoundingClientRect();
         const anchorRect = anchorElem.getBoundingClientRect();
@@ -742,7 +742,7 @@ function TableCellActionMenuContainer({
 
   return (
     <div className="table-cell-action-button-container" ref={menuButtonRef}>
-      {tableCellNode != null && (
+      {tableCellNode !== null && (
         <>
           <button
             type="button"

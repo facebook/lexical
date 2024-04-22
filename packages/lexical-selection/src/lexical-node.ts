@@ -227,7 +227,7 @@ export function trimTextContentFromAnchor(
       const parent = currentNode.getParent();
       currentNode.remove();
       if (
-        parent != null &&
+        parent !== null &&
         parent.getChildrenSize() === 0 &&
         !$isRootNode(parent)
       ) {

@@ -52,11 +52,11 @@ export function useCollaborationContext(
 ): CollaborationContextType {
   const collabContext = useContext(CollaborationContext);
 
-  if (username != null) {
+  if (username !== undefined) {
     collabContext.name = username;
   }
 
-  if (color != null) {
+  if (color !== undefined) {
     collabContext.color = color;
   }
 

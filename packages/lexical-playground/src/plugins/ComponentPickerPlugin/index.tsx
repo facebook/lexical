@@ -114,10 +114,6 @@ function ComponentPickerMenuItem({
 function getDynamicOptions(editor: LexicalEditor, queryString: string) {
   const options: Array<ComponentPickerOption> = [];
 
-  if (queryString == null) {
-    return options;
-  }
-
   const tableMatch = queryString.match(/^([1-9]\d?)(?:x([1-9]\d?)?)?$/);
 
   if (tableMatch !== null) {

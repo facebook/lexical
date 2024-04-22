@@ -50,7 +50,7 @@ export function LexicalNestedComposer({
   const wasCollabPreviouslyReadyRef = useRef(false);
   const parentContext = useContext(LexicalComposerContext);
 
-  if (parentContext == null) {
+  if (parentContext === null || parentContext === undefined) {
     invariant(false, 'Unexpected parent context null on a nested composer');
   }
 

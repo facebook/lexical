@@ -73,7 +73,7 @@ import Placeholder from './ui/Placeholder';
 
 const skipCollaborationInit =
   // @ts-expect-error
-  window.parent != null && window.parent.frames.right === window;
+  window.parent !== null && window.parent.frames.right === window;
 
 export default function Editor(): JSX.Element {
   const {historyState} = useSharedHistoryContext();

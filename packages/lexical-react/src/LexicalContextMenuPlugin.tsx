@@ -81,7 +81,7 @@ export function LexicalContextMenuPlugin<TOption extends MenuOption>({
 
   const closeNodeMenu = useCallback(() => {
     setResolution(null);
-    if (onClose != null && resolution !== null) {
+    if (onClose !== undefined && resolution !== null) {
       onClose();
     }
   }, [onClose, resolution]);
@@ -89,7 +89,7 @@ export function LexicalContextMenuPlugin<TOption extends MenuOption>({
   const openNodeMenu = useCallback(
     (res: MenuResolution) => {
       setResolution(res);
-      if (onOpen != null && resolution === null) {
+      if (onOpen !== undefined && resolution === null) {
         onOpen(res);
       }
     },
@@ -99,7 +99,7 @@ export function LexicalContextMenuPlugin<TOption extends MenuOption>({
   const handleContextMenu = useCallback(
     (event: MouseEvent) => {
       event.preventDefault();
-      if (onWillOpen != null) {
+      if (onWillOpen !== undefined) {
         onWillOpen(event);
       }
       const zoom = calculateZoomLevel(event.target as Element);
@@ -120,8 +120,8 @@ export function LexicalContextMenuPlugin<TOption extends MenuOption>({
     (event: MouseEvent) => {
       if (
         resolution !== null &&
-        menuRef.current != null &&
-        event.target != null &&
+        menuRef.current !== null &&
+        event.target !== null &&
         !menuRef.current.contains(event.target as Node)
       ) {
         closeNodeMenu();

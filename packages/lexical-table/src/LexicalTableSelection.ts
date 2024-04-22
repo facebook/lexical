@@ -213,13 +213,13 @@ export class TableSelection implements BaseSelection {
       if (!tableNode.isParentOf(focusCell)) {
         // focus is on higher Grid level than anchor
         const gridParent = tableNode.getParent();
-        invariant(gridParent != null, 'Expected gridParent to have a parent');
+        invariant(gridParent !== null, 'Expected gridParent to have a parent');
         this.set(this.tableKey, gridParent.getKey(), focusCell.getKey());
       } else {
         // anchor is on higher Grid level than focus
         const focusCellParent = focusCellGrid.getParent();
         invariant(
-          focusCellParent != null,
+          focusCellParent !== null,
           'Expected focusCellParent to have a parent',
         );
         this.set(this.tableKey, focusCell.getKey(), focusCellParent.getKey());

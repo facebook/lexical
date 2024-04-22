@@ -372,7 +372,7 @@ function getDragSelection(event: DragEvent): Range | null | undefined {
   let range;
   const target = event.target as null | Element | Document;
   const targetWindow =
-    target == null
+    target === null
       ? null
       : target.nodeType === 9
       ? (target as Document).defaultView

@@ -68,7 +68,7 @@ export function LexicalNodeMenuPlugin<TOption extends MenuOption>({
 
   const closeNodeMenu = useCallback(() => {
     setResolution(null);
-    if (onClose != null && resolution !== null) {
+    if (onClose !== undefined && resolution !== null) {
       onClose();
     }
   }, [onClose, resolution]);
@@ -76,7 +76,7 @@ export function LexicalNodeMenuPlugin<TOption extends MenuOption>({
   const openNodeMenu = useCallback(
     (res: MenuResolution) => {
       setResolution(res);
-      if (onOpen != null && resolution === null) {
+      if (onOpen !== undefined && resolution === null) {
         onOpen(res);
       }
     },
@@ -88,8 +88,8 @@ export function LexicalNodeMenuPlugin<TOption extends MenuOption>({
       editor.update(() => {
         const node = $getNodeByKey(nodeKey);
         const domElement = editor.getElementByKey(nodeKey);
-        if (node != null && domElement != null) {
-          if (resolution == null) {
+        if (node !== null && domElement !== null) {
+          if (resolution === null) {
             startTransition(() =>
               openNodeMenu({
                 getRect: () => domElement.getBoundingClientRect(),
@@ -98,7 +98,7 @@ export function LexicalNodeMenuPlugin<TOption extends MenuOption>({
           }
         }
       });
-    } else if (nodeKey == null && resolution != null) {
+    } else if (nodeKey === null && resolution !== null) {
       closeNodeMenu();
     }
   }, [closeNodeMenu, editor, nodeKey, openNodeMenu, resolution]);
@@ -108,7 +108,7 @@ export function LexicalNodeMenuPlugin<TOption extends MenuOption>({
   }, [positionOrCloseMenu, nodeKey]);
 
   useEffect(() => {
-    if (nodeKey != null) {
+    if (nodeKey !== null) {
       return editor.registerUpdateListener(({dirtyElements}) => {
         if (dirtyElements.get(nodeKey)) {
           positionOrCloseMenu();

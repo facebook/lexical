@@ -231,13 +231,13 @@ function createNode(
   }
 
   if (parentDOM !== null) {
-    if (insertDOM != null) {
+    if (insertDOM !== null) {
       parentDOM.insertBefore(dom, insertDOM);
     } else {
       // @ts-expect-error: internal field
       const possibleLineBreak = parentDOM.__lexicalLineBreak;
 
-      if (possibleLineBreak != null) {
+      if (possibleLineBreak !== undefined) {
         parentDOM.insertBefore(dom, possibleLineBreak);
       } else {
         parentDOM.appendChild(dom);
@@ -333,7 +333,7 @@ function reconcileElementTerminatingLineBreak(
       // @ts-expect-error: internal field
       const element = dom.__lexicalLineBreak;
 
-      if (element != null) {
+      if (element !== undefined) {
         dom.removeChild(element);
       }
 
@@ -351,7 +351,7 @@ function reconcileElementTerminatingLineBreak(
 function reconcileParagraphFormat(element: ElementNode): void {
   if (
     $isParagraphNode(element) &&
-    subTreeTextFormat != null &&
+    subTreeTextFormat !== null &&
     subTreeTextFormat !== element.__textFormat
   ) {
     element.setTextFormat(subTreeTextFormat);
@@ -507,7 +507,7 @@ function reconcileChildren(
       if (prevChildrenSize !== 0) {
         // @ts-expect-error: internal field
         const lexicalLineBreak = dom.__lexicalLineBreak;
-        const canUseFastPath = lexicalLineBreak == null;
+        const canUseFastPath = lexicalLineBreak === undefined;
         destroyChildren(
           prevChildren,
           0,
@@ -761,7 +761,7 @@ function reconcileNodeChildren(
         if (childDOM === siblingDOM) {
           siblingDOM = getNextSibling(reconcileNode(nextKey, dom));
         } else {
-          if (siblingDOM != null) {
+          if (siblingDOM !== null) {
             dom.insertBefore(childDOM, siblingDOM);
           } else {
             dom.appendChild(childDOM);

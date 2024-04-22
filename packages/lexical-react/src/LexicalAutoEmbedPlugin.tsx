@@ -116,7 +116,7 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
               embedConfig.parseUrl(linkNode.__url),
             );
 
-            if (urlMatch != null) {
+            if (urlMatch !== null) {
               setActiveEmbedConfig(embedConfig);
               setNodeKey(linkNode.getKey());
             }
@@ -170,7 +170,7 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
 
   const embedLinkViaActiveEmbedConfig = useCallback(
     async function () {
-      if (activeEmbedConfig != null && nodeKey != null) {
+      if (activeEmbedConfig !== null && nodeKey !== null) {
         const linkNode = editor.getEditorState().read(() => {
           const node = $getNodeByKey(nodeKey);
           if ($isLinkNode(node)) {
@@ -183,7 +183,7 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
           const result = await Promise.resolve(
             activeEmbedConfig.parseUrl(linkNode.__url),
           );
-          if (result != null) {
+          if (result !== null) {
             editor.update(() => {
               if (!$getSelection()) {
                 linkNode.selectEnd();
@@ -201,7 +201,7 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
   );
 
   const options = useMemo(() => {
-    return activeEmbedConfig != null && nodeKey != null
+    return activeEmbedConfig !== null && nodeKey !== null
       ? getMenuOptions(activeEmbedConfig, embedLinkViaActiveEmbedConfig, reset)
       : [];
   }, [
@@ -226,7 +226,7 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
     [editor],
   );
 
-  return nodeKey != null ? (
+  return nodeKey !== null ? (
     <LexicalNodeMenuPlugin<AutoEmbedOption>
       nodeKey={nodeKey}
       onClose={reset}

@@ -59,7 +59,7 @@ function onCopyForPlainText(
         : (event as ClipboardEvent).clipboardData;
       const selection = $getSelection();
 
-      if (selection !== null && clipboardData != null) {
+      if (selection !== null && clipboardData !== null) {
         event.preventDefault();
         const htmlString = $getHtmlContent(editor);
 
@@ -82,7 +82,7 @@ function onPasteForPlainText(
     () => {
       const selection = $getSelection();
       const {clipboardData} = event as ClipboardEvent;
-      if (clipboardData != null && $isRangeSelection(selection)) {
+      if (clipboardData !== null && $isRangeSelection(selection)) {
         $insertDataTransferForPlainText(clipboardData, selection);
       }
     },
@@ -164,7 +164,7 @@ export function registerPlainText(editor: LexicalEditor): () => void {
         } else {
           const dataTransfer = eventOrText.dataTransfer;
 
-          if (dataTransfer != null) {
+          if (dataTransfer !== null) {
             $insertDataTransferForPlainText(dataTransfer, selection);
           } else {
             const data = eventOrText.data;

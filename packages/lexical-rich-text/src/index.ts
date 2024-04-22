@@ -442,7 +442,7 @@ function onPasteForRichText(
         objectKlassEquals(event, KeyboardEvent)
           ? null
           : (event as ClipboardEvent).clipboardData;
-      if (clipboardData != null && selection !== null) {
+      if (clipboardData !== null && selection !== null) {
         $insertDataTransferForRichText(clipboardData, selection, editor);
       }
     },
@@ -601,7 +601,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
           }
 
           const dataTransfer = eventOrText.dataTransfer;
-          if (dataTransfer != null) {
+          if (dataTransfer !== null) {
             $insertDataTransferForRichText(dataTransfer, selection, editor);
           } else if ($isRangeSelection(selection)) {
             const data = eventOrText.data;

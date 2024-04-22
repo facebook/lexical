@@ -102,12 +102,15 @@ export class ListItemNode extends ElementNode {
   static transform(): (node: LexicalNode) => void {
     return (node: LexicalNode) => {
       invariant($isListItemNode(node), 'node is not a ListItemNode');
-      if (node.__checked == null) {
+      if (node.__checked === undefined) {
         return;
       }
       const parent = node.getParent();
       if ($isListNode(parent)) {
-        if (parent.getListType() !== 'check' && node.getChecked() != null) {
+        if (
+          parent.getListType() !== 'check' &&
+          node.getChecked() !== undefined
+        ) {
           node.setChecked(undefined);
         }
       }
@@ -261,7 +264,7 @@ export class ListItemNode extends ElementNode {
     restoreSelection = true,
   ): ListItemNode | ParagraphNode {
     const newElement = $createListItemNode(
-      this.__checked == null ? undefined : false,
+      this.__checked === undefined ? undefined : false,
     );
     this.insertAfter(newElement, restoreSelection);
 

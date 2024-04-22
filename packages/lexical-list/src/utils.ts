@@ -28,7 +28,7 @@ export function $getListDepth(listNode: ListNode): number {
   let depth = 1;
   let parent = listNode.getParent();
 
-  while (parent != null) {
+  while (parent !== null) {
     if ($isListItemNode(parent)) {
       const parentList = parent.getParent();
 
@@ -176,13 +176,13 @@ export function $removeHighestEmptyListParent(
   let emptyListPtr = sublist;
 
   while (
-    emptyListPtr.getNextSibling() == null &&
-    emptyListPtr.getPreviousSibling() == null
+    emptyListPtr.getNextSibling() === null &&
+    emptyListPtr.getPreviousSibling() === null
   ) {
     const parent = emptyListPtr.getParent<ListItemNode | ListNode>();
 
     if (
-      parent == null ||
+      parent === null ||
       !($isListItemNode(emptyListPtr) || $isListNode(emptyListPtr))
     ) {
       break;

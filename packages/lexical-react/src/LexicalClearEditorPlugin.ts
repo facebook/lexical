@@ -29,7 +29,7 @@ export function ClearEditorPlugin({onClear}: Props): JSX.Element | null {
       CLEAR_EDITOR_COMMAND,
       (payload) => {
         editor.update(() => {
-          if (onClear == null) {
+          if (onClear === undefined) {
             const root = $getRoot();
             const selection = $getSelection();
             const paragraph = $createParagraphNode();

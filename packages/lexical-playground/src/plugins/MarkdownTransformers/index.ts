@@ -60,7 +60,7 @@ export const HR: ElementTransformer = {
     const line = $createHorizontalRuleNode();
 
     // TODO: Get rid of isImport flag
-    if (isImport || parentNode.getNextSibling() != null) {
+    if (isImport || parentNode.getNextSibling() !== null) {
       parentNode.replace(line);
     } else {
       parentNode.insertBefore(line);
@@ -221,7 +221,7 @@ export const TABLE: ElementTransformer = {
 
     const matchCells = mapToTableCells(match[0]);
 
-    if (matchCells == null) {
+    if (matchCells === null) {
       return;
     }
 
@@ -246,7 +246,7 @@ export const TABLE: ElementTransformer = {
 
       const cells = mapToTableCells(firstChild.getTextContent());
 
-      if (cells == null) {
+      if (cells === null) {
         break;
       }
 

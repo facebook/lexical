@@ -65,7 +65,7 @@ export const YoutubeEmbedConfig: PlaygroundEmbedConfig = {
 
     const id = match ? (match?.[2].length === 11 ? match[2] : null) : null;
 
-    if (id != null) {
+    if (id !== null) {
       return {
         id,
         url,
@@ -102,7 +102,7 @@ export const TwitterEmbedConfig: PlaygroundEmbedConfig = {
         text,
       );
 
-    if (match != null) {
+    if (match !== null) {
       return {
         id: match[5],
         url: match[1],
@@ -135,7 +135,7 @@ export const FigmaEmbedConfig: PlaygroundEmbedConfig = {
         text,
       );
 
-    if (match != null) {
+    if (match !== null) {
       return {
         id: match[3],
         url: match[0],
@@ -241,13 +241,13 @@ export function AutoEmbedDialog({
     () =>
       debounce((inputText: string) => {
         const urlMatch = URL_MATCHER.exec(inputText);
-        if (embedConfig != null && inputText != null && urlMatch != null) {
+        if (urlMatch !== null) {
           Promise.resolve(embedConfig.parseUrl(inputText)).then(
             (parseResult) => {
               setEmbedResult(parseResult);
             },
           );
-        } else if (embedResult != null) {
+        } else if (embedResult !== null) {
           setEmbedResult(null);
         }
       }, 200),
@@ -255,7 +255,7 @@ export function AutoEmbedDialog({
   );
 
   const onClick = () => {
-    if (embedResult != null) {
+    if (embedResult !== null) {
       embedConfig.insertNode(editor, embedResult);
       onClose();
     }

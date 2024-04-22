@@ -878,7 +878,7 @@ export function getTableObserverFromTableElement(
 export function getDOMCellFromTarget(node: Node): TableDOMCell | null {
   let currentNode: ParentNode | Node | null = node;
 
-  while (currentNode != null) {
+  while (currentNode !== null) {
     const nodeName = currentNode.nodeName;
 
     if (nodeName === 'TD' || nodeName === 'TH') {
@@ -923,7 +923,7 @@ export function getTable(tableElement: HTMLElement): TableDOMTable {
   let y = 0;
   domRows.length = 0;
 
-  while (currentNode != null) {
+  while (currentNode !== null) {
     const nodeMame = currentNode.nodeName;
 
     if (nodeMame === 'TD' || nodeMame === 'TH') {
@@ -948,7 +948,7 @@ export function getTable(tableElement: HTMLElement): TableDOMTable {
     } else {
       const child = currentNode.firstChild;
 
-      if (child != null) {
+      if (child !== null) {
         currentNode = child;
         continue;
       }
@@ -956,7 +956,7 @@ export function getTable(tableElement: HTMLElement): TableDOMTable {
 
     const sibling = currentNode.nextSibling;
 
-    if (sibling != null) {
+    if (sibling !== null) {
       x++;
       currentNode = sibling;
       continue;
@@ -964,10 +964,10 @@ export function getTable(tableElement: HTMLElement): TableDOMTable {
 
     const parent = currentNode.parentNode;
 
-    if (parent != null) {
+    if (parent !== null) {
       const parentSibling = parent.nextSibling;
 
-      if (parentSibling == null) {
+      if (parentSibling === null) {
         break;
       }
 
@@ -1325,11 +1325,11 @@ function $handleArrowKey(
       return false;
     }
     const anchorCellTable = $findTableNode(anchorCellNode);
-    if (anchorCellTable !== tableNode && anchorCellTable != null) {
+    if (anchorCellTable !== tableNode && anchorCellTable !== null) {
       const anchorCellTableElement = editor.getElementByKey(
         anchorCellTable.getKey(),
       );
-      if (anchorCellTableElement != null) {
+      if (anchorCellTableElement !== null) {
         tableObserver.table = getTable(anchorCellTableElement);
         return $handleArrowKey(
           editor,
@@ -1360,7 +1360,7 @@ function $handleArrowKey(
 
     const anchorCellDom = editor.getElementByKey(anchorCellNode.__key);
     const anchorDOM = editor.getElementByKey(anchor.key);
-    if (anchorDOM == null || anchorCellDom == null) {
+    if (anchorDOM === null || anchorCellDom === null) {
       return false;
     }
 
@@ -1381,13 +1381,13 @@ function $handleArrowKey(
       direction === 'up'
         ? anchorCellNode.getFirstChild()
         : anchorCellNode.getLastChild();
-    if (edgeChild == null) {
+    if (edgeChild === null) {
       return false;
     }
 
     const edgeChildDOM = editor.getElementByKey(edgeChild.__key);
 
-    if (edgeChildDOM == null) {
+    if (edgeChildDOM === null) {
       return false;
     }
 
@@ -1444,7 +1444,7 @@ function $handleArrowKey(
       !$isTableCellNode(anchorCellNode) ||
       !$isTableCellNode(focusCellNode) ||
       !$isTableNode(tableNodeFromSelection) ||
-      tableElement == null
+      tableElement === null
     ) {
       return false;
     }

@@ -379,7 +379,7 @@ function initializeConversionCache(
   nodes.forEach((node) => {
     const importDOM = node.klass.importDOM;
 
-    if (importDOM == null || handledConversions.has(importDOM)) {
+    if (importDOM === undefined || handledConversions.has(importDOM)) {
       return;
     }
 
@@ -448,41 +448,31 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
         if (name !== 'RootNode') {
           const proto = klass.prototype;
           ['getType', 'clone'].forEach((method) => {
-            // eslint-disable-next-line no-prototype-builtins
-            if (!klass.hasOwnProperty(method)) {
+            if (!Object.hasOwn(klass, method)) {
               console.warn(`${name} must implement static "${method}" method`);
             }
           });
           if (
-            // eslint-disable-next-line no-prototype-builtins
-            !klass.hasOwnProperty('importDOM') &&
-            // eslint-disable-next-line no-prototype-builtins
-            klass.hasOwnProperty('exportDOM')
+            !Object.hasOwn(klass, 'importDOM') &&
+            Object.hasOwn(klass, 'exportDOM')
           ) {
             console.warn(
               `${name} should implement "importDOM" if using a custom "exportDOM" method to ensure HTML serialization (important for copy & paste) works as expected`,
             );
           }
           if (proto instanceof DecoratorNode) {
-            // eslint-disable-next-line no-prototype-builtins
-            if (!proto.hasOwnProperty('decorate')) {
+            if (!Object.hasOwn(proto, 'decorate')) {
               console.warn(
                 `${proto.constructor.name} must implement "decorate" method`,
               );
             }
           }
-          if (
-            // eslint-disable-next-line no-prototype-builtins
-            !klass.hasOwnProperty('importJSON')
-          ) {
+          if (!Object.hasOwn(klass, 'importJSON')) {
             console.warn(
               `${name} should implement "importJSON" method to ensure JSON and default HTML serialization works as expected`,
             );
           }
-          if (
-            // eslint-disable-next-line no-prototype-builtins
-            !proto.hasOwnProperty('exportJSON')
-          ) {
+          if (!Object.hasOwn(proto, 'exportJSON')) {
             console.warn(
               `${name} should implement "exportJSON" method to ensure JSON and default HTML serialization works as expected`,
             );
@@ -655,7 +645,7 @@ export class LexicalEditor {
    * through an IME, or 3P extension, for example. Returns false otherwise.
    */
   isComposing(): boolean {
-    return this._compositionKey != null;
+    return this._compositionKey !== null;
   }
   /**
    * Registers a listener for Editor update event. Will trigger the provided callback
@@ -869,7 +859,7 @@ export class LexicalEditor {
     const registeredNodes = [registeredNode];
 
     const replaceWithKlass = registeredNode.replaceWithKlass;
-    if (replaceWithKlass != null) {
+    if (replaceWithKlass !== null) {
       const registeredReplaceWithNode = this.registerNodeTransformToKlass(
         replaceWithKlass,
         listener as Transform<LexicalNode>,
@@ -961,7 +951,7 @@ export class LexicalEditor {
         if (!this._config.disableEvents) {
           removeRootElementEvents(prevRootElement);
         }
-        if (classNames != null) {
+        if (classNames !== undefined) {
           prevRootElement.classList.remove(...classNames);
         }
       }
@@ -985,7 +975,7 @@ export class LexicalEditor {
         if (!this._config.disableEvents) {
           addRootElementEvents(nextRootElement, this);
         }
-        if (classNames != null) {
+        if (classNames !== undefined) {
           nextRootElement.classList.add(...classNames);
         }
       } else {
@@ -1036,7 +1026,7 @@ export class LexicalEditor {
     const tag = options !== undefined ? options.tag : null;
 
     if (pendingEditorState !== null && !pendingEditorState.isEmpty()) {
-      if (tag != null) {
+      if (tag !== null && tag !== undefined) {
         tags.add(tag);
       }
 
@@ -1048,7 +1038,7 @@ export class LexicalEditor {
     this._dirtyElements.set('root', false);
     this._compositionKey = null;
 
-    if (tag != null) {
+    if (tag !== null && tag !== undefined) {
       tags.add(tag);
     }
 

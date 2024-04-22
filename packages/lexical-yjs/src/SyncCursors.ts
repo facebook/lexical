@@ -113,11 +113,15 @@ function shouldUpdatePosition(
   currentPos: RelativePosition | null | undefined,
   pos: RelativePosition | null | undefined,
 ): boolean {
-  if (currentPos == null) {
-    if (pos != null) {
+  if (currentPos === null || currentPos === undefined) {
+    if (pos !== null && pos !== undefined) {
       return true;
     }
-  } else if (pos == null || !compareRelativePositions(currentPos, pos)) {
+  } else if (
+    pos === null ||
+    pos === undefined ||
+    !compareRelativePositions(currentPos, pos)
+  ) {
     return true;
   }
 
@@ -227,7 +231,7 @@ function updateCursor(
   const anchorNode = nodeMap.get(anchorKey);
   const focusNode = nodeMap.get(focusKey);
 
-  if (anchorNode == null || focusNode == null) {
+  if (anchorNode === undefined || focusNode === undefined) {
     return;
   }
   let selectionRects: Array<DOMRect>;

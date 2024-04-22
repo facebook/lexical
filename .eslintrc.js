@@ -133,7 +133,7 @@ module.exports = {
     'dot-notation': [ERROR, {allowPattern: '^(error|warn)$'}],
 
     'eol-last': ERROR,
-    eqeqeq: [ERROR, 'allow-null'],
+    eqeqeq: [ERROR, 'always'],
     // Prettier forces semicolons in a few places
     'flowtype/object-type-delimiter': OFF,
 

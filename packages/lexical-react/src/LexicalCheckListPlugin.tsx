@@ -68,10 +68,10 @@ export function CheckListPlugin(): null {
         (event) => {
           const activeItem = getActiveCheckListItem();
 
-          if (activeItem != null) {
+          if (activeItem !== null) {
             const rootElement = editor.getRootElement();
 
-            if (rootElement != null) {
+            if (rootElement !== null) {
               rootElement.focus();
             }
 
@@ -87,7 +87,7 @@ export function CheckListPlugin(): null {
         (event) => {
           const activeItem = getActiveCheckListItem();
 
-          if (activeItem != null && editor.isEditable()) {
+          if (activeItem !== null && editor.isEditable()) {
             editor.update(() => {
               const listItemNode = $getNearestNodeFromDOMNode(activeItem);
 
@@ -129,7 +129,10 @@ export function CheckListPlugin(): null {
                   ) {
                     const domNode = editor.getElementByKey(elementNode.__key);
 
-                    if (domNode != null && document.activeElement !== domNode) {
+                    if (
+                      domNode !== null &&
+                      document.activeElement !== domNode
+                    ) {
                       domNode.focus();
                       event.preventDefault();
                       return true;
@@ -172,7 +175,7 @@ function handleCheckItemEvent(event: PointerEvent, callback: () => void) {
   const firstChild = target.firstChild;
 
   if (
-    firstChild != null &&
+    firstChild !== null &&
     isHTMLElement(firstChild) &&
     (firstChild.tagName === 'UL' || firstChild.tagName === 'OL')
   ) {
@@ -202,7 +205,7 @@ function handleClick(event: Event) {
     const domNode = event.target as HTMLElement;
     const editor = findEditor(domNode);
 
-    if (editor != null && editor.isEditable()) {
+    if (editor !== null && editor.isEditable()) {
       editor.update(() => {
         if (event.target) {
           const node = $getNearestNodeFromDOMNode(domNode);
@@ -231,7 +234,12 @@ function findEditor(target: Node) {
     // @ts-ignore internal field
     if (node.__lexicalEditor) {
       // @ts-ignore internal field
-      return node.__lexicalEditor;
+      const editor: LexicalEditor | undefined = node.__lexicalEditor;
+      if (editor === undefined) {
+        return null;
+      }
+
+      return editor;
     }
 
     node = node.parentNode;
@@ -241,11 +249,11 @@ function findEditor(target: Node) {
 }
 
 function getActiveCheckListItem(): HTMLElement | null {
-  const activeElement = document.activeElement as HTMLElement;
+  const activeElement = document.activeElement as HTMLElement | null;
 
-  return activeElement != null &&
+  return activeElement !== null &&
     activeElement.tagName === 'LI' &&
-    activeElement.parentNode != null &&
+    activeElement.parentNode !== null &&
     // @ts-ignore internal field
     activeElement.parentNode.__lexicalListType === 'check'
     ? activeElement
@@ -260,11 +268,11 @@ function findCheckListItemSibling(
   let parent: ListItemNode | null = node;
 
   // Going up in a tree to get non-null sibling
-  while (sibling == null && $isListItemNode(parent)) {
+  while (sibling === null && $isListItemNode(parent)) {
     // Get li -> parent ul/ol -> parent li
     parent = parent.getParentOrThrow().getParent();
 
-    if (parent != null) {
+    if (parent !== null) {
       sibling = backward
         ? parent.getPreviousSibling()
         : parent.getNextSibling();
@@ -294,7 +302,7 @@ function handleArrownUpOrDown(
 ) {
   const activeItem = getActiveCheckListItem();
 
-  if (activeItem != null) {
+  if (activeItem !== null) {
     editor.update(() => {
       const listItem = $getNearestNodeFromDOMNode(activeItem);
 
@@ -304,11 +312,11 @@ function handleArrownUpOrDown(
 
       const nextListItem = findCheckListItemSibling(listItem, backward);
 
-      if (nextListItem != null) {
+      if (nextListItem !== null) {
         nextListItem.selectStart();
         const dom = editor.getElementByKey(nextListItem.__key);
 
-        if (dom != null) {
+        if (dom !== null) {
           event.preventDefault();
           setTimeout(() => {
             dom.focus();

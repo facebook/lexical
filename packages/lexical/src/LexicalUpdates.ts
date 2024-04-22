@@ -820,8 +820,8 @@ function beginUpdate(
   options?: EditorUpdateOptions,
 ): void {
   const updateTags = editor._updateTags;
-  let onUpdate;
-  let tag;
+  let onUpdate: (() => void) | undefined;
+  let tag: string | undefined;
   let skipTransforms = false;
   let discrete = false;
 
@@ -829,7 +829,7 @@ function beginUpdate(
     onUpdate = options.onUpdate;
     tag = options.tag;
 
-    if (tag != null) {
+    if (tag !== undefined) {
       updateTags.add(tag);
     }
 

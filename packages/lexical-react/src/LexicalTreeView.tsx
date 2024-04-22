@@ -68,7 +68,7 @@ export function TreeView({
 
   const handleEditorReadOnly = (isReadonly: boolean) => {
     const rootElement = editor.getRootElement();
-    if (rootElement == null) {
+    if (rootElement === null) {
       return;
     }
 

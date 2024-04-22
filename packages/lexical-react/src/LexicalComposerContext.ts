@@ -32,16 +32,16 @@ export function createLexicalComposerContext(
 ): LexicalComposerContextType {
   let parentContext: LexicalComposerContextType | null = null;
 
-  if (parent != null) {
+  if (parent !== null && parent !== undefined) {
     parentContext = parent[1];
   }
 
   function getTheme() {
-    if (theme != null) {
+    if (theme !== null && theme !== undefined) {
       return theme;
     }
 
-    return parentContext != null ? parentContext.getTheme() : null;
+    return parentContext !== null ? parentContext.getTheme() : null;
   }
 
   return {
@@ -52,7 +52,7 @@ export function createLexicalComposerContext(
 export function useLexicalComposerContext(): LexicalComposerContextWithEditor {
   const composerContext = useContext(LexicalComposerContext);
 
-  if (composerContext == null) {
+  if (composerContext === null || composerContext === undefined) {
     invariant(
       false,
       'LexicalComposerContext.useLexicalComposerContext: cannot find a LexicalComposerContext',

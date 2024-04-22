@@ -49,7 +49,7 @@ const getDOMSelection = (targetWindow: Window | null): Selection | null =>
 export function $getHtmlContent(editor: LexicalEditor): string {
   const selection = $getSelection();
 
-  if (selection == null) {
+  if (selection === null) {
     invariant(false, 'Expected valid LexicalSelection');
   }
 
@@ -76,7 +76,7 @@ export function $getHtmlContent(editor: LexicalEditor): string {
 export function $getLexicalContent(editor: LexicalEditor): null | string {
   const selection = $getSelection();
 
-  if (selection == null) {
+  if (selection === null) {
     invariant(false, 'Expected valid LexicalSelection');
   }
 
@@ -106,9 +106,7 @@ export function $insertDataTransferForPlainText(
   const text =
     dataTransfer.getData('text/plain') || dataTransfer.getData('text/uri-list');
 
-  if (text != null) {
-    selection.insertRawText(text);
-  }
+  selection.insertRawText(text);
 }
 
 /**
@@ -159,25 +157,24 @@ export function $insertDataTransferForRichText(
   // Webkit-specific: Supports read 'text/uri-list' in clipboard.
   const text =
     dataTransfer.getData('text/plain') || dataTransfer.getData('text/uri-list');
-  if (text != null) {
-    if ($isRangeSelection(selection)) {
-      const parts = text.split(/(\r?\n|\t)/);
-      if (parts[parts.length - 1] === '') {
-        parts.pop();
-      }
-      for (let i = 0; i < parts.length; i++) {
-        const part = parts[i];
-        if (part === '\n' || part === '\r\n') {
-          selection.insertParagraph();
-        } else if (part === '\t') {
-          selection.insertNodes([$createTabNode()]);
-        } else {
-          selection.insertText(part);
-        }
-      }
-    } else {
-      selection.insertRawText(text);
+
+  if ($isRangeSelection(selection)) {
+    const parts = text.split(/(\r?\n|\t)/);
+    if (parts[parts.length - 1] === '') {
+      parts.pop();
     }
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      if (part === '\n' || part === '\r\n') {
+        selection.insertParagraph();
+      } else if (part === '\t') {
+        selection.insertNodes([$createTabNode()]);
+      } else {
+        selection.insertText(part);
+      }
+    }
+  } else {
+    selection.insertRawText(text);
   }
 }
 
@@ -399,7 +396,7 @@ export async function copyToClipboard(
 
   const rootElement = editor.getRootElement();
   const windowDocument =
-    editor._window == null ? window.document : editor._window.document;
+    editor._window === null ? window.document : editor._window.document;
   const domSelection = getDOMSelection(editor._window);
   if (rootElement === null || domSelection === null) {
     return false;

@@ -224,7 +224,7 @@ function $createNodesFromDOM(
       }
     }
 
-    if (transformOutput.forChild != null) {
+    if (transformOutput.forChild !== undefined) {
       forChildMap.set(node.nodeName, transformOutput.forChild);
     }
   }
@@ -245,11 +245,11 @@ function $createNodesFromDOM(
     );
   }
 
-  if (postTransform != null) {
+  if (postTransform !== null && postTransform !== undefined) {
     childLexicalNodes = postTransform(childLexicalNodes);
   }
 
-  if (currentLexicalNode == null) {
+  if (currentLexicalNode === null || currentLexicalNode === undefined) {
     // If it hasn't been converted to a LexicalNode, we hoist its children
     // up to the same level as it.
     lexicalNodes = lexicalNodes.concat(childLexicalNodes);

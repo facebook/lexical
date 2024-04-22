@@ -221,7 +221,7 @@ function setTextContent(
   const suffix = isComposing ? COMPOSITION_SUFFIX : '';
   const text: string = nextText + suffix;
 
-  if (firstChild == null) {
+  if (firstChild === null) {
     dom.textContent = text;
   } else {
     const nodeValue = firstChild.nodeValue;
@@ -494,7 +494,7 @@ export class TextNode extends LexicalNode {
     if (prevOuterTag === nextOuterTag && prevInnerTag !== nextInnerTag) {
       // should always be an element
       const prevInnerDOM: HTMLElement = dom.firstChild as HTMLElement;
-      if (prevInnerDOM == null) {
+      if (prevInnerDOM === null || prevInnerDOM === undefined) {
         invariant(false, 'updateDOM: prevInnerDOM is null or undefined');
       }
       const nextInnerDOM = document.createElement(nextInnerTag);
@@ -513,7 +513,7 @@ export class TextNode extends LexicalNode {
     if (nextOuterTag !== null) {
       if (prevOuterTag !== null) {
         innerDOM = dom.firstChild as HTMLElement;
-        if (innerDOM == null) {
+        if (innerDOM === null || innerDOM === undefined) {
           invariant(false, 'updateDOM: innerDOM is null or undefined');
         }
       }

@@ -695,7 +695,7 @@ function handleShiftLines(
     start = getFirstCodeNodeOfLine(focusNode);
     end = getLastCodeNodeOfLine(anchorNode);
   }
-  if (start == null || end == null) {
+  if (start === null || end === null) {
     return false;
   }
 
@@ -726,7 +726,7 @@ function handleShiftLines(
   const sibling = arrowIsUp
     ? linebreak.getPreviousSibling()
     : linebreak.getNextSibling();
-  if (sibling == null) {
+  if (sibling === null) {
     return true;
   }
 
@@ -739,7 +739,7 @@ function handleShiftLines(
         : getLastCodeNodeOfLine(sibling)
       : null;
   let insertionPoint =
-    maybeInsertionPoint != null ? maybeInsertionPoint : sibling;
+    maybeInsertionPoint !== null ? maybeInsertionPoint : sibling;
   linebreak.remove();
   range.forEach((node) => node.remove());
   if (type === KEY_ARROW_UP_COMMAND) {
@@ -813,7 +813,7 @@ export function registerCodeHighlighting(
     );
   }
 
-  if (tokenizer == null) {
+  if (tokenizer === undefined) {
     tokenizer = PrismTokenizer;
   }
 

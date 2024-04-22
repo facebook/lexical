@@ -641,13 +641,13 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
       } else if (data === DOUBLE_LINE_BREAK) {
         event.preventDefault();
         dispatchCommand(editor, INSERT_PARAGRAPH_COMMAND, undefined);
-      } else if (data == null && event.dataTransfer) {
+      } else if (data === null && event.dataTransfer) {
         // Gets around a Safari text replacement bug.
         const text = event.dataTransfer.getData('text/plain');
         event.preventDefault();
         selection.insertRawText(text);
       } else if (
-        data != null &&
+        data !== null &&
         $shouldPreventDefaultAndInsertText(
           selection,
           targetRange,
@@ -803,7 +803,7 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
     const targetRange = getTargetRange(event);
 
     if (
-      data != null &&
+      data !== null &&
       $isRangeSelection(selection) &&
       $shouldPreventDefaultAndInsertText(
         selection,
@@ -928,7 +928,7 @@ function onCompositionEndImpl(editor: LexicalEditor, data?: string): void {
   $setCompositionKey(null);
 
   // Handle termination of composition.
-  if (compositionKey !== null && data != null) {
+  if (compositionKey !== null && data !== undefined) {
     // Composition can sometimes move to an adjacent DOM node when backspacing.
     // So check for the empty case.
     if (data === '') {
@@ -1118,7 +1118,7 @@ const activeNestedEditorsMap: Map<string, LexicalEditor> = new Map();
 function onDocumentSelectionChange(event: Event): void {
   const target = event.target as null | Element | Document;
   const targetWindow =
-    target == null
+    target === null
       ? null
       : target.nodeType === 9
       ? (target as Document).defaultView

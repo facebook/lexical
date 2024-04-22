@@ -77,13 +77,15 @@ function runElementTransformers(
 function runTextMatchTransformers(
   anchorNode: TextNode,
   anchorOffset: number,
-  transformersByTrigger: Readonly<Record<string, Array<TextMatchTransformer>>>,
+  transformersByTrigger: Readonly<
+    Partial<Record<string, Array<TextMatchTransformer>>>
+  >,
 ): boolean {
   let textContent = anchorNode.getTextContent();
   const lastChar = textContent[anchorOffset - 1];
   const transformers = transformersByTrigger[lastChar];
 
-  if (transformers == null) {
+  if (transformers === undefined) {
     return false;
   }
 

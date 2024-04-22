@@ -99,14 +99,12 @@ export default function EmojiPickerPlugin() {
 
   const emojiOptions = useMemo(
     () =>
-      emojis != null
-        ? emojis.map(
-            ({emoji, aliases, tags}) =>
-              new EmojiOption(aliases[0], emoji, {
-                keywords: [...aliases, ...tags],
-              }),
-          )
-        : [],
+      emojis.map(
+        ({emoji, aliases, tags}) =>
+          new EmojiOption(aliases[0], emoji, {
+            keywords: [...aliases, ...tags],
+          }),
+      ),
     [emojis],
   );
 
@@ -117,13 +115,11 @@ export default function EmojiPickerPlugin() {
   const options: Array<EmojiOption> = useMemo(() => {
     return emojiOptions
       .filter((option: EmojiOption) => {
-        return queryString != null
+        return queryString !== null
           ? new RegExp(queryString, 'gi').exec(option.title) ||
-            option.keywords != null
-            ? option.keywords.some((keyword: string) =>
+              option.keywords.some((keyword: string) =>
                 new RegExp(queryString, 'gi').exec(keyword),
               )
-            : false
           : emojiOptions;
       })
       .slice(0, MAX_EMOJI_SUGGESTION_COUNT);
@@ -138,7 +134,7 @@ export default function EmojiPickerPlugin() {
       editor.update(() => {
         const selection = $getSelection();
 
-        if (!$isRangeSelection(selection) || selectedOption == null) {
+        if (!$isRangeSelection(selection)) {
           return;
         }
 
@@ -164,7 +160,7 @@ export default function EmojiPickerPlugin() {
         anchorElementRef,
         {selectedIndex, selectOptionAndCleanUp, setHighlightedIndex},
       ) => {
-        if (anchorElementRef.current == null || options.length === 0) {
+        if (anchorElementRef.current === null || options.length === 0) {
           return null;
         }
 

@@ -235,7 +235,7 @@ export function $getNearestNodeOfType<T extends ElementNode>(
 ): T | null {
   let parent: ElementNode | LexicalNode | null = node;
 
-  while (parent != null) {
+  while (parent !== null) {
     if (parent instanceof klass) {
       return parent as T;
     }
@@ -298,7 +298,7 @@ export const $findMatchingParent: {
 ): LexicalNode | null => {
   let curr: ElementNode | LexicalNode | null = startingNode;
 
-  while (curr !== $getRoot() && curr != null) {
+  while (curr !== $getRoot() && curr !== null) {
     if (findFn(curr)) {
       return curr;
     }
@@ -443,7 +443,7 @@ export function $insertNodeToNearestRoot<T extends LexicalNode>(node: T): T {
 
     if ($isRootOrShadowRoot(focusNode)) {
       const focusChild = focusNode.getChildAtIndex(focusOffset);
-      if (focusChild == null) {
+      if (focusChild === null) {
         focusNode.append(node);
       } else {
         focusChild.insertBefore(node);
@@ -468,7 +468,7 @@ export function $insertNodeToNearestRoot<T extends LexicalNode>(node: T): T {
       rightTree.selectStart();
     }
   } else {
-    if (selection != null) {
+    if (selection !== null) {
       const nodes = selection.getNodes();
       nodes[nodes.length - 1].getTopLevelElementOrThrow().insertAfter(node);
     } else {

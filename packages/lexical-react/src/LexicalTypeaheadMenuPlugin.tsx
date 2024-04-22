@@ -60,7 +60,7 @@ function tryToPositionRange(
   const startOffset = leadOffset;
   const endOffset = domSelection.anchorOffset;
 
-  if (anchorNode == null || endOffset == null) {
+  if (anchorNode === null) {
     return false;
   }
 
@@ -229,7 +229,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
 
   const closeTypeahead = useCallback(() => {
     setResolution(null);
-    if (onClose != null && resolution !== null) {
+    if (onClose !== undefined && resolution !== null) {
       onClose();
     }
   }, [onClose, resolution]);
@@ -237,7 +237,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
   const openTypeahead = useCallback(
     (res: MenuResolution) => {
       setResolution(res);
-      if (onOpen != null && resolution === null) {
+      if (onOpen !== undefined && resolution === null) {
         onOpen(res);
       }
     },

@@ -508,7 +508,7 @@ function useMentionLookupService(mentionString: string | null) {
   useEffect(() => {
     const cachedResults = mentionsCache.get(mentionString);
 
-    if (mentionString == null) {
+    if (mentionString === null) {
       setResults([]);
       return;
     }

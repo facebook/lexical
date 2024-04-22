@@ -14,7 +14,7 @@ import {CSS_TO_STYLES} from './constants';
 function getDOMTextNode(element: Node | null): Text | null {
   let node = element;
 
-  while (node != null) {
+  while (node !== null) {
     if (node.nodeType === Node.TEXT_NODE) {
       return node as Text;
     }
@@ -28,7 +28,7 @@ function getDOMTextNode(element: Node | null): Text | null {
 function getDOMIndexWithinParent(node: ChildNode): [ParentNode, number] {
   const parent = node.parentNode;
 
-  if (parent == null) {
+  if (parent === null) {
     throw new Error('Should never happen');
   }
 
@@ -88,7 +88,7 @@ export function createDOMRange(
 
   if (
     anchorDOM === focusDOM &&
-    firstChild != null &&
+    firstChild !== null &&
     firstChild.nodeName === 'BR' &&
     anchorOffset === 0 &&
     focusOffset === 0

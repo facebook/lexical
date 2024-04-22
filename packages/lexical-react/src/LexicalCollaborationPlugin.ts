@@ -61,7 +61,7 @@ export function CollaborationPlugin({
     return () => {
       // Reseting flag only when unmount top level editor collab plugin. Nested
       // editors (e.g. image caption) should unmount without affecting it
-      if (editor._parentEditor == null) {
+      if (editor._parentEditor === null) {
         collabContext.isCollabActive = false;
       }
     };

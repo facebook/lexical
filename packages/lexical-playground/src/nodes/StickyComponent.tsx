@@ -205,7 +205,7 @@ export default function StickyComponent({
         onPointerDown={(event) => {
           const stickyContainer = stickyContainerRef.current;
           if (
-            stickyContainer == null ||
+            stickyContainer === null ||
             event.button === 2 ||
             event.target !== stickyContainer.firstChild
           ) {

@@ -641,7 +641,7 @@ export function $deleteTableColumn__EXPERIMENTAL(): void {
 
 function $moveSelectionToCell(cell: TableCellNode): void {
   const firstDescendant = cell.getFirstDescendant();
-  if (firstDescendant == null) {
+  if (firstDescendant === null) {
     cell.selectStart();
   } else {
     firstDescendant.getParentOrThrow().selectStart();

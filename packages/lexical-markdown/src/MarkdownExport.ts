@@ -47,7 +47,7 @@ export function createMarkdownExport(
         byType.textMatch,
       );
 
-      if (result != null) {
+      if (result !== null) {
         output.push(result);
       }
     }
@@ -67,7 +67,7 @@ function exportTopLevelElements(
       exportChildren(_node, textTransformersIndex, textMatchTransformers),
     );
 
-    if (result != null) {
+    if (result !== null) {
       return result;
     }
   }
@@ -103,7 +103,7 @@ function exportChildren(
           exportTextFormat(textNode, textContent, textTransformersIndex),
       );
 
-      if (result != null) {
+      if (result !== null) {
         output.push(result);
         continue mainLoop;
       }

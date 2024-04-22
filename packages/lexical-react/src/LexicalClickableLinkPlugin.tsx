@@ -23,7 +23,7 @@ function findMatchingDOM<T extends Node>(
   predicate: (node: Node) => node is T,
 ): T | null {
   let node: Node | null = startNode;
-  while (node != null) {
+  while (node !== null) {
     if (predicate(node)) {
       return node;
     }

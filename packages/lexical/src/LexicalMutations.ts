@@ -173,7 +173,7 @@ export function $flushMutations(
             const parentDOM = addedDOM.parentNode;
 
             if (
-              parentDOM != null &&
+              parentDOM !== null &&
               addedDOM !== blockCursorElement &&
               node === null &&
               (addedDOM.nodeName !== 'BR' ||
@@ -240,7 +240,8 @@ export function $flushMutations(
                 continue;
               }
 
-              if (currentDOM == null) {
+              // TODO: undefined or null ?
+              if (currentDOM === null || currentDOM === undefined) {
                 targetDOM.appendChild(correctDOM);
                 currentDOM = correctDOM;
               } else if (currentDOM !== correctDOM) {
@@ -274,7 +275,7 @@ export function $flushMutations(
             const parentDOM = addedDOM.parentNode;
 
             if (
-              parentDOM != null &&
+              parentDOM !== null &&
               addedDOM.nodeName === 'BR' &&
               !isManagedLineBreak(addedDOM, target, editor)
             ) {

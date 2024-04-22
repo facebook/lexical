@@ -117,11 +117,11 @@ export class Point {
 
     if ($isElementNode(aNode)) {
       const aNodeDescendant = aNode.getDescendantByIndex<ElementNode>(aOffset);
-      aNode = aNodeDescendant != null ? aNodeDescendant : aNode;
+      aNode = aNodeDescendant !== null ? aNodeDescendant : aNode;
     }
     if ($isElementNode(bNode)) {
       const bNodeDescendant = bNode.getDescendantByIndex<ElementNode>(bOffset);
-      bNode = bNodeDescendant != null ? bNodeDescendant : bNode;
+      bNode = bNodeDescendant !== null ? bNodeDescendant : bNode;
     }
     if (aNode === bNode) {
       return aOffset < bOffset;
@@ -478,7 +478,8 @@ export class RangeSelection implements BaseSelection {
     if ($isElementNode(firstNode)) {
       const firstNodeDescendant =
         firstNode.getDescendantByIndex<ElementNode>(startOffset);
-      firstNode = firstNodeDescendant != null ? firstNodeDescendant : firstNode;
+      firstNode =
+        firstNodeDescendant !== null ? firstNodeDescendant : firstNode;
     }
     if ($isElementNode(lastNode)) {
       let lastNodeDescendant =
@@ -492,7 +493,7 @@ export class RangeSelection implements BaseSelection {
       ) {
         lastNodeDescendant = lastNodeDescendant.getPreviousSibling();
       }
-      lastNode = lastNodeDescendant != null ? lastNodeDescendant : lastNode;
+      lastNode = lastNodeDescendant !== null ? lastNodeDescendant : lastNode;
     }
 
     let nodes: Array<LexicalNode>;
@@ -1095,15 +1096,12 @@ export class RangeSelection implements BaseSelection {
     // In case selection started at the end of text node use next text node
     if (
       startPoint.type === 'text' &&
-      startOffset === firstNode.getTextContentSize()
+      startOffset === firstNode.getTextContentSize() &&
+      selectedTextNodesLength > 1
     ) {
       firstIndex = 1;
       firstNode = selectedTextNodes[1];
       startOffset = 0;
-    }
-
-    if (firstNode == null) {
-      return;
     }
 
     const firstNextFormat = firstNode.getFormatFlags(formatType, null);
@@ -1358,7 +1356,7 @@ export class RangeSelection implements BaseSelection {
           anchorOffset > focusOffset ? anchorOffset : focusOffset;
         const splitNodes = firstNode.splitText(startOffset, endOffset);
         const node = startOffset === 0 ? splitNodes[0] : splitNodes[1];
-        return node != null ? [node] : [];
+        return node !== undefined ? [node] : [];
       }
       return [firstNode];
     }
@@ -1888,7 +1886,7 @@ function internalResolveSelectionPoint(
   editor: LexicalEditor,
 ): null | PointType {
   let resolvedOffset = offset;
-  let resolvedNode: TextNode | LexicalNode | null;
+  let resolvedNode: TextNode | LexicalNode | null = null;
   // If we have selection on an element, we will
   // need to figure out (using the offset) what text
   // node should be selected.
@@ -1915,7 +1913,10 @@ function internalResolveSelectionPoint(
     } else if (editor._blockCursorElement !== null) {
       resolvedOffset--;
     }
-    resolvedNode = getNodeFromDOM(childDOM);
+
+    if (childDOM) {
+      resolvedNode = getNodeFromDOM(childDOM);
+    }
 
     if ($isTextNode(resolvedNode)) {
       resolvedOffset = getTextNodeOffset(resolvedNode, moveSelectionToEnd);
@@ -2105,6 +2106,7 @@ function internalResolveSelectionPoints(
   ) {
     return null;
   }
+
   const resolvedAnchorPoint = internalResolveSelectionPoint(
     anchorDOM,
     anchorOffset,
@@ -2194,7 +2196,7 @@ export function internalCreateSelection(
   const lastSelection = currentEditorState._selection;
   const domSelection = getDOMSelection(editor._window);
 
-  if ($isRangeSelection(lastSelection) || lastSelection == null) {
+  if ($isRangeSelection(lastSelection) || lastSelection === null) {
     return internalCreateRangeSelection(
       lastSelection,
       domSelection,

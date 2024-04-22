@@ -115,7 +115,7 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
 
         if ($isLeafNode(node)) {
           let parent = node.getParent();
-          while (parent != null) {
+          while (parent !== null) {
             const parentKey = parent.getKey();
 
             if ($isListNode(parent)) {
@@ -242,7 +242,7 @@ export function removeList(editor: LexicalEditor): void {
           if ($isLeafNode(node)) {
             const listItemNode = $getNearestNodeOfType(node, ListItemNode);
 
-            if (listItemNode != null) {
+            if (listItemNode !== null) {
               listNodes.add($getTopListNode(listItemNode));
             }
           }
@@ -297,7 +297,7 @@ export function updateChildrenListItemValue(list: ListNode): void {
       if (child.getValue() !== value) {
         child.setValue(value);
       }
-      if (isNotChecklist && child.getChecked() != null) {
+      if (isNotChecklist && child.getChecked() !== undefined) {
         child.setChecked(undefined);
       }
       if (!$isListNode(child.getFirstChild())) {

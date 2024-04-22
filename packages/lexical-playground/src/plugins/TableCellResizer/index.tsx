@@ -130,7 +130,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
               tableRectRef.current = tableElement.getBoundingClientRect();
               updateActiveCell(cell);
             });
-          } else if (cell == null) {
+          } else if (cell === null) {
             resetState();
           }
         }
@@ -390,7 +390,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
 
   return (
     <div ref={resizerRef}>
-      {activeCell != null && !isSelectingGrid && (
+      {activeCell !== null && !isSelectingGrid && (
         <>
           <div
             className="TableCellResizer__resizer TableCellResizer__ui"

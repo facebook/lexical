@@ -167,10 +167,10 @@ function useTestRecorder(
     const browserSelection = window.getSelection();
 
     if (
-      rootElement == null ||
-      browserSelection == null ||
-      browserSelection.anchorNode == null ||
-      browserSelection.focusNode == null ||
+      rootElement === null ||
+      browserSelection === null ||
+      browserSelection.anchorNode === null ||
+      browserSelection.focusNode === null ||
       !rootElement.contains(browserSelection.anchorNode) ||
       !rootElement.contains(browserSelection.focusNode)
     ) {
@@ -322,8 +322,8 @@ ${steps.map(formatStep).join(`\n`)}
             const browserSelection = window.getSelection();
             if (
               browserSelection &&
-              (browserSelection.anchorNode == null ||
-                browserSelection.focusNode == null)
+              (browserSelection.anchorNode === null ||
+                browserSelection.focusNode === null)
             ) {
               return;
             }
@@ -379,8 +379,8 @@ ${steps.map(formatStep).join(`\n`)}
     const browserSelection = window.getSelection();
     if (
       browserSelection === null ||
-      browserSelection.anchorNode == null ||
-      browserSelection.focusNode == null
+      browserSelection.anchorNode === null ||
+      browserSelection.focusNode === null
     ) {
       return;
     }

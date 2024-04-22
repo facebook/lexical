@@ -227,7 +227,7 @@ export class TableObserver {
       this.isHighlightingCells = true;
       this.disableHighlightStyle();
       $updateDOMForSelection(editor, this.table, this.tableSelection);
-    } else if (selection == null) {
+    } else if (selection === null) {
       this.clearHighlight();
     } else {
       this.tableNodeKey = selection.tableKey;
@@ -284,8 +284,8 @@ export class TableObserver {
         const focusTableCellNode = $getNearestNodeFromDOMNode(cell.elem);
 
         if (
-          this.tableSelection != null &&
-          this.anchorCellNodeKey != null &&
+          this.tableSelection !== null &&
+          this.anchorCellNodeKey !== null &&
           $isTableCellNode(focusTableCellNode) &&
           tableNode.is($findTableNode(focusTableCellNode))
         ) {
@@ -323,7 +323,7 @@ export class TableObserver {
       if ($isTableCellNode(anchorTableCellNode)) {
         const anchorNodeKey = anchorTableCellNode.getKey();
         this.tableSelection =
-          this.tableSelection != null
+          this.tableSelection !== null
             ? this.tableSelection.clone()
             : $createTableSelection();
         this.anchorCellNodeKey = anchorNodeKey;

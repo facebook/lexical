@@ -340,7 +340,7 @@ function printFormatProperties(nodeOrSelection: TextNode | RangeSelection) {
 function printTargetProperties(node: LinkNode) {
   let str = node.getTarget();
   // TODO Fix nullish on LinkNode
-  if (str != null) {
+  if (str !== null) {
     str = 'target: ' + str;
   }
   return str;
@@ -349,7 +349,7 @@ function printTargetProperties(node: LinkNode) {
 function printRelProperties(node: LinkNode) {
   let str = node.getRel();
   // TODO Fix nullish on LinkNode
-  if (str != null) {
+  if (str !== null) {
     str = 'rel: ' + str;
   }
   return str;
@@ -358,7 +358,7 @@ function printRelProperties(node: LinkNode) {
 function printTitleProperties(node: LinkNode) {
   let str = node.getTitle();
   // TODO Fix nullish on LinkNode
-  if (str != null) {
+  if (str !== null) {
     str = 'title: ' + str;
   }
   return str;

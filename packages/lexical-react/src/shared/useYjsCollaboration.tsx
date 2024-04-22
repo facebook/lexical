@@ -388,18 +388,10 @@ function clearEditorSkipCollab(editor: LexicalEditor, binding: Binding) {
     },
   );
 
-  if (binding.cursors == null) {
-    return;
-  }
-
   const cursors = binding.cursors;
-
-  if (cursors == null) {
-    return;
-  }
   const cursorsContainer = binding.cursorsContainer;
 
-  if (cursorsContainer == null) {
+  if (cursorsContainer === null) {
     return;
   }
 
@@ -410,7 +402,7 @@ function clearEditorSkipCollab(editor: LexicalEditor, binding: Binding) {
     const cursor = cursorsArr[i];
     const selection = cursor.selection;
 
-    if (selection && selection.selections != null) {
+    if (selection) {
       const selections = selection.selections;
 
       for (let j = 0; j < selections.length; j++) {

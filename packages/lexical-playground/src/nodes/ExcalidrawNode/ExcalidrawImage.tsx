@@ -64,7 +64,7 @@ const removeStyleFromSvg_HACK = (svg: SVGElement) => {
   // Generated SVG is getting double-sized by height and width attributes
   // We want to match the real size of the SVG element
   const viewBox = svg.getAttribute('viewBox');
-  if (viewBox != null) {
+  if (viewBox !== null) {
     const viewBoxDimensions = viewBox.split(' ');
     svg.setAttribute('width', viewBoxDimensions[2]);
     svg.setAttribute('height', viewBoxDimensions[3]);

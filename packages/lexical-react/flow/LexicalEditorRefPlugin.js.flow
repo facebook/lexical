@@ -7,6 +7,10 @@
  * @flow strict
  */
 
+import type {LexicalEditor} from 'lexical';
+import type {TRefFor} from 'CoreTypes.flow';
+
+
 type Props = $ReadOnly<{
   editorRef: TRefFor<LexicalEditor>,
 }>;

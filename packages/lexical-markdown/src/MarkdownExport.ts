@@ -12,7 +12,7 @@ import type {
   TextMatchTransformer,
   Transformer,
 } from '@lexical/markdown';
-import type {ElementNode, LexicalNode, TextFormatType, TextNode} from 'lexical';
+import type {ElementNode, LexicalNode, TextNode} from 'lexical';
 
 import {
   $getRoot,
@@ -22,6 +22,7 @@ import {
   $isTextNode,
 } from 'lexical';
 
+import {TEXT_TYPE_TO_FORMAT} from '../../lexical/src/LexicalConstants';
 import {transformersByType} from './utils';
 
 export function createMarkdownExport(
@@ -139,28 +140,36 @@ function exportTextFormat(
   const frozenString = textContent.trim();
   let output = frozenString;
 
-  const applied = new Set();
-
+  // Prevent adding opening / closing tag if prev/next sibling has exactly the
+  // same set of formats applied, ignoring those which lack transformers.
+  let formatMask = 0;
   for (const transformer of textTransformers) {
     const format = transformer.format[0];
+    formatMask |= TEXT_TYPE_TO_FORMAT[format];
+  }
+  const prevNode = getTextSibling(node, true);
+  const nextNode = getTextSibling(node, false);
+  const prevFormat = prevNode ? prevNode.getFormat() & formatMask : 0;
+  const thisFormat = node.getFormat() & formatMask;
+  const nextFormat = nextNode ? nextNode.getFormat() & formatMask : 0;
+
+  let applied = 0;
+  for (const transformer of textTransformers) {
+    const format = transformer.format[0];
+    const num = TEXT_TYPE_TO_FORMAT[format];
     const tag = transformer.tag;
 
-    if (hasFormat(node, format) && !applied.has(format)) {
-      // Multiple tags might be used for the same format (*, _)
-      applied.add(format);
-      // Prevent adding opening tag is already opened by the previous sibling
-      const previousNode = getTextSibling(node, true);
-
-      if (!hasFormat(previousNode, format)) {
+    // If this format applies to this node & hasn't yet been applied...
+    if (thisFormat & num && !(applied & num)) {
+      // If there's no previous sibling, or the format changed, add opening tags.
+      if (!prevNode || prevFormat !== thisFormat) {
         output = tag + output;
       }
-
-      // Prevent adding closing tag if next sibling will do it
-      const nextNode = getTextSibling(node, false);
-
-      if (!hasFormat(nextNode, format)) {
+      // If there's no next sibling, or the format changed, add closing tags.
+      if (!nextNode || nextFormat !== thisFormat) {
         output += tag;
       }
+      applied |= num;
     }
   }
 
@@ -212,11 +221,4 @@ function getTextSibling(node: TextNode, backward: boolean): TextNode | null {
   }
 
   return null;
-}
-
-function hasFormat(
-  node: LexicalNode | null | undefined,
-  format: TextFormatType,
-): boolean {
-  return $isTextNode(node) && node.hasFormat(format);
 }

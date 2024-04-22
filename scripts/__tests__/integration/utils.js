@@ -13,6 +13,9 @@ const {packagesManager} = require('../../shared/packagesManager');
 const fs = require('fs-extra');
 const path = require('node:path');
 
+const monorepoVersion = require('../../shared/readMonorepoPackageJson')()
+  .version;
+
 const LONG_TIMEOUT = 240 * 1000;
 
 /**
@@ -120,10 +123,15 @@ function describeExample(packageJsonPath, bodyFun = undefined) {
     test('install & build succeeded', () => {
       expect(true).toBe(true);
     });
-    test('installed lexical', () => {
+    test(`installed lexical ${monorepoVersion}`, () => {
       expect(
         fs.existsSync(path.join(exampleDir, 'node_modules', 'lexical')),
       ).toBe(true);
+      expect(
+        fs.readJsonSync(
+          path.join(exampleDir, 'node_modules', 'lexical', 'package.json'),
+        ),
+      ).toMatchObject({version: monorepoVersion});
     });
     if (packageJson.scripts.test) {
       test(

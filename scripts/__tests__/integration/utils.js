@@ -63,31 +63,24 @@ exports.expectSuccessfulExec = expectSuccessfulExec;
  * @property {Record<string, any>} packageJson
  */
 
-/** @param {ctx} ExampleContext */
+/**
+ * @param {ctx} ExampleContext
+ * @returns {Promise<Map<string, PackageMetadata>>} The installed monorepo dependency map
+ */
 async function buildExample({packageJson, exampleDir}) {
-  const lexicalPackages = new Map(
-    packagesManager.getPublicPackages().map((pkg) => [pkg.getNpmName(), pkg]),
-  );
   let hasPlaywright = false;
-  const installDeps = [
-    'dependencies',
-    'devDependencies',
-    'peerDependencies',
-  ].flatMap((depType) => {
-    const deps = packageJson[depType] || {};
-    hasPlaywright ||= '@playwright/test' in deps;
-    return Object.keys(deps).flatMap((k) => {
-      const pkg = lexicalPackages.get(k);
-      return pkg
-        ? [
-            path.resolve(
-              'npm',
-              `${pkg.getDirectoryName()}-${pkg.packageJson.version}.tgz`,
-            ),
-          ]
-        : [];
-    });
-  });
+  const depsMap = packagesManager.computedMonorepoDependencyMap(
+    ['dependencies', 'devDependencies', 'peerDependencies'].flatMap(
+      (depType) => {
+        const deps = packageJson[depType] || {};
+        hasPlaywright ||= '@playwright/test' in deps;
+        return Object.keys(deps);
+      },
+    ),
+  );
+  const installDeps = [...depsMap.values()].map((pkg) =>
+    path.resolve('npm', `${pkg.getDirectoryName()}-${monorepoVersion}.tgz`),
+  );
   if (installDeps.length === 0) {
     throw new Error(`No lexical dependencies detected: ${exampleDir}`);
   }
@@ -105,6 +98,7 @@ async function buildExample({packageJson, exampleDir}) {
       await exec('npx playwright install');
     }
   });
+  return depsMap;
 }
 
 /**
@@ -119,19 +113,30 @@ function describeExample(packageJsonPath, bodyFun = undefined) {
   /** @type {ExampleContext} */
   const ctx = {exampleDir, packageJson, packageJsonPath};
   describe(exampleDir, () => {
-    beforeAll(async () => buildExample(ctx), LONG_TIMEOUT);
+    /** @type {PackageMetadata[]} */
+    const deps = [];
+    beforeAll(async () => {
+      deps.push(...(await buildExample(ctx)).values());
+    }, LONG_TIMEOUT);
     test('install & build succeeded', () => {
       expect(true).toBe(true);
     });
     test(`installed lexical ${monorepoVersion}`, () => {
-      expect(
-        fs.existsSync(path.join(exampleDir, 'node_modules', 'lexical')),
-      ).toBe(true);
-      expect(
-        fs.readJsonSync(
-          path.join(exampleDir, 'node_modules', 'lexical', 'package.json'),
-        ),
-      ).toMatchObject({version: monorepoVersion});
+      const packageNames = deps.map((pkg) => pkg.getNpmName());
+      expect(packageNames).toContain('lexical');
+      for (const pkg of deps) {
+        const installedPath = path.join(
+          exampleDir,
+          'node_modules',
+          pkg.getNpmName(),
+        );
+        expect({[installedPath]: fs.existsSync(installedPath)}).toEqual({
+          [installedPath]: true,
+        });
+        expect(
+          fs.readJsonSync(path.join(installedPath, 'package.json')),
+        ).toMatchObject({name: pkg.getNpmName(), version: monorepoVersion});
+      }
     });
     if (packageJson.scripts.test) {
       test(

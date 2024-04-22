@@ -27,6 +27,10 @@ function packageSort(a, b) {
 class PackagesManager {
   /** @type {Array<PackageMetadata>} */
   packages;
+  /** @type {Map<string, PackageMetadata>} */
+  packagesByNpmName = new Map();
+  /** @type {Map<string, PackageMetadata>} */
+  packagesByDirectoryName = new Map();
 
   /**
    * @param {Array<string>} packagePaths
@@ -35,6 +39,10 @@ class PackagesManager {
     this.packages = packagePaths
       .map((packagePath) => new PackageMetadata(packagePath))
       .sort(packageSort);
+    for (const pkg of this.packages) {
+      this.packagesByNpmName.set(pkg.getNpmName(), pkg);
+      this.packagesByDirectoryName.set(pkg.getDirectoryName(), pkg);
+    }
   }
 
   /**
@@ -43,9 +51,7 @@ class PackagesManager {
    * @returns {PackageMetadata}
    */
   getPackageByNpmName(name) {
-    const pkg = this.packages.find(
-      (candidate) => candidate.getNpmName() === name,
-    );
+    const pkg = this.packagesByNpmName.get(name);
     if (!pkg) {
       throw new Error(`Missing package with npm name '${name}'`);
     }
@@ -58,9 +64,7 @@ class PackagesManager {
    * @returns {PackageMetadata}
    */
   getPackageByDirectoryName(name) {
-    const pkg = this.packages.find(
-      (candidate) => candidate.getDirectoryName() === name,
-    );
+    const pkg = this.packagesByDirectoryName.get(name);
     if (!pkg) {
       throw new Error(`Missing package with directory name '${name}'`);
     }
@@ -84,6 +88,38 @@ class PackagesManager {
    */
   getPublicPackages() {
     return this.packages.filter((pkg) => !pkg.isPrivate());
+  }
+
+  /**
+   * Given an array of npm dependencies (may include non-Lexical names),
+   * return all required transitive monorepo dependencies to have those
+   * packages (in a topologically ordered Map).
+   *
+   * @param {Array<string>} npmDependencies
+   * @returns {Map<string, PackageMetadata>}
+   */
+  computedMonorepoDependencyMap(npmDependencies) {
+    /** @type {Map<string, PackageMetadata>} */
+    const depsMap = new Map();
+    const visited = new Set();
+    /** @param {string[]} deps */
+    const traverse = (deps) => {
+      for (const dep of deps) {
+        if (visited.has(dep)) {
+          continue;
+        }
+        visited.add(dep);
+        if (!depsMap.has(dep)) {
+          const pkg = this.packagesByNpmName.get(dep);
+          if (pkg) {
+            traverse(Object.keys(pkg.packageJson.dependencies || {}));
+            depsMap.set(dep, pkg);
+          }
+        }
+      }
+    };
+    traverse(npmDependencies);
+    return depsMap;
   }
 }
 

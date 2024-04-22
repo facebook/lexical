@@ -707,9 +707,7 @@ export function applyTableHandlers(
             if (isFocusInside) {
               newSelection.focus.set(
                 tableNode.getParentOrThrow().getKey(),
-                isBackward
-                  ? tableNode.getIndexWithinParent()
-                  : tableNode.getIndexWithinParent() + 1,
+                tableNode.getIndexWithinParent(),
                 'element',
               );
             } else {

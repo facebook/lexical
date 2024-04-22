@@ -1940,13 +1940,13 @@ function internalResolveSelectionPoint(
             : child.getFirstDescendant();
           if (descendant === null) {
             resolvedElement = child;
-            resolvedOffset = 0;
           } else {
             child = descendant;
             resolvedElement = $isElementNode(child)
               ? child
               : child.getParentOrThrow();
           }
+          resolvedOffset = 0;
         }
         if ($isTextNode(child)) {
           resolvedNode = child;

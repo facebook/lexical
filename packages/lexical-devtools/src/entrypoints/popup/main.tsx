@@ -9,6 +9,7 @@ import type {ITabIDService} from '../background/getTabIDService';
 
 import './style.css';
 
+import {ChakraProvider} from '@chakra-ui/react';
 import {getRPCService} from '@webext-pegasus/rpc';
 import {initPegasusTransport} from '@webext-pegasus/transport/popup';
 import React from 'react';
@@ -24,7 +25,9 @@ getRPCService<ITabIDService>('getTabID', 'background')()
     extensionStoreReady().then(() =>
       ReactDOM.createRoot(document.getElementById('root')!).render(
         <React.StrictMode>
-          <App tabID={tabID} />
+          <ChakraProvider>
+            <App tabID={tabID} />
+          </ChakraProvider>
         </React.StrictMode>,
       ),
     ),

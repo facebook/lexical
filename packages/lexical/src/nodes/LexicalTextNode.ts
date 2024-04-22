@@ -1092,14 +1092,15 @@ function convertSpanElement(domNode: Node): DOMConversionOutput {
   const span = domNode as HTMLSpanElement;
   const style = span.style;
   const fontWeight = style.fontWeight;
+  const textDecoration = style.textDecoration.split(' ');
   // Google Docs uses span tags + font-weight for bold text
   const hasBoldFontWeight = fontWeight === '700' || fontWeight === 'bold';
   // Google Docs uses span tags + text-decoration: line-through for strikethrough text
-  const hasLinethroughTextDecoration = style.textDecoration === 'line-through';
+  const hasLinethroughTextDecoration = textDecoration.includes('line-through');
   // Google Docs uses span tags + font-style for italic text
   const hasItalicFontStyle = style.fontStyle === 'italic';
   // Google Docs uses span tags + text-decoration: underline for underline text
-  const hasUnderlineTextDecoration = style.textDecoration === 'underline';
+  const hasUnderlineTextDecoration = textDecoration.includes('underline');
   // Google Docs uses span tags + vertical-align to specify subscript and superscript
   const verticalAlign = style.verticalAlign;
 

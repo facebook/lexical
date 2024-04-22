@@ -317,11 +317,12 @@ export function convertTableCellNodeElement(
   }
 
   const style = domNode_.style;
+  const textDecoration = style.textDecoration.split(' ');
   const hasBoldFontWeight =
     style.fontWeight === '700' || style.fontWeight === 'bold';
-  const hasLinethroughTextDecoration = style.textDecoration === 'line-through';
+  const hasLinethroughTextDecoration = textDecoration.includes('line-through');
   const hasItalicFontStyle = style.fontStyle === 'italic';
-  const hasUnderlineTextDecoration = style.textDecoration === 'underline';
+  const hasUnderlineTextDecoration = textDecoration.includes('underline');
 
   return {
     after: (childLexicalNodes) => {

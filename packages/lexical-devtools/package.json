@@ -22,9 +22,13 @@
     "postinstall": "wxt prepare"
   },
   "dependencies": {
+    "@chakra-ui/react": "^2.8.2",
+    "@emotion/react": "^11.11.4",
+    "@emotion/styled": "^11.11.5",
     "@webext-pegasus/rpc": "^0.0.4",
     "@webext-pegasus/store-zustand": "^0.0.4",
     "@webext-pegasus/transport": "^0.0.4",
+    "framer-motion": "^11.1.5",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "zustand": "^4.5.1"

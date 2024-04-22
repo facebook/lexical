@@ -11,6 +11,18 @@ import type {EditorState} from 'lexical';
 
 import './App.css';
 
+import {
+  Accordion,
+  AccordionButton,
+  AccordionIcon,
+  AccordionItem,
+  AccordionPanel,
+  Alert,
+  AlertIcon,
+  Box,
+  Flex,
+  Spacer,
+} from '@chakra-ui/react';
 import {TreeView} from '@lexical/devtools-core';
 import {getRPCService} from '@webext-pegasus/rpc';
 import * as React from 'react';
@@ -44,61 +56,90 @@ function App({tabID}: Props) {
 
   return (
     <>
-      <div>
-        <a href="https://lexical.dev" target="_blank">
-          <img
-            src={lexicalLogo}
-            className="logo"
-            width={150}
-            alt="Lexical logo"
-          />
-        </a>
-      </div>
+      <Flex>
+        <Box p="2">
+          <a href="https://lexical.dev" target="_blank">
+            <img
+              src={lexicalLogo}
+              className="logo"
+              width={178}
+              height={40}
+              alt="Lexical logo"
+            />
+          </a>
+        </Box>
+        <Spacer />
+        <Box p="4">
+          {states === undefined ? (
+            <span>Loading...</span>
+          ) : (
+            <span>
+              Found <b>{lexicalCount}</b> editor
+              {lexicalCount > 1 || lexicalCount === 0 ? 's' : ''} on the page.
+            </span>
+          )}
+        </Box>
+        <Box p="4">
+          <EditorsRefreshCTA tabID={tabID} setErrorMessage={setErrorMessage} />
+        </Box>
+      </Flex>
       {errorMessage !== '' ? (
         <div className="card error">{errorMessage}</div>
       ) : null}
-      <div className="card">
-        {states === undefined ? (
-          <span>Loading...</span>
+
+      <Box mt={5}>
+        {lexicalCount > 0 ? (
+          <Accordion defaultIndex={[0]} allowMultiple={true}>
+            {Object.entries(states).map(([key, state]) => (
+              <AccordionItem key={key}>
+                <h2>
+                  <AccordionButton>
+                    <Box as="span" flex="1" textAlign="left">
+                      ID: {key}
+                    </Box>
+                    <AccordionIcon />
+                  </AccordionButton>
+                </h2>
+                <AccordionPanel pb={4}>
+                  <TreeView
+                    viewClassName="tree-view-output"
+                    treeTypeButtonClassName="debug-treetype-button"
+                    timeTravelPanelClassName="debug-timetravel-panel"
+                    timeTravelButtonClassName="debug-timetravel-button"
+                    timeTravelPanelSliderClassName="debug-timetravel-panel-slider"
+                    timeTravelPanelButtonClassName="debug-timetravel-panel-button"
+                    setEditorReadOnly={(isReadonly) =>
+                      injectedPegasusService
+                        .setEditorReadOnly(key, isReadonly)
+                        .catch((e) => setErrorMessage(e.stack))
+                    }
+                    editorState={state as EditorState}
+                    setEditorState={(editorState) =>
+                      injectedPegasusService
+                        .setEditorState(
+                          key,
+                          editorState as SerializedRawEditorState,
+                        )
+                        .catch((e) => setErrorMessage(e.stack))
+                    }
+                    generateContent={(exportDOM) =>
+                      injectedPegasusService.generateTreeViewContent(
+                        key,
+                        exportDOM,
+                      )
+                    }
+                  />
+                </AccordionPanel>
+              </AccordionItem>
+            ))}
+          </Accordion>
         ) : (
-          <span>
-            Found <b>{lexicalCount}</b> editor{lexicalCount > 1 ? 's' : ''} on
-            the page.
-          </span>
+          <Alert status="info">
+            <AlertIcon />
+            No Lexical editor found on the page.
+          </Alert>
         )}
-        <p>
-          <EditorsRefreshCTA tabID={tabID} setErrorMessage={setErrorMessage} />
-        </p>
-      </div>
-      {Object.entries(states).map(([key, state]) => (
-        <div key={key}>
-          <b>ID: {key}</b>
-          <br />
-          <TreeView
-            viewClassName="tree-view-output"
-            treeTypeButtonClassName="debug-treetype-button"
-            timeTravelPanelClassName="debug-timetravel-panel"
-            timeTravelButtonClassName="debug-timetravel-button"
-            timeTravelPanelSliderClassName="debug-timetravel-panel-slider"
-            timeTravelPanelButtonClassName="debug-timetravel-panel-button"
-            setEditorReadOnly={(isReadonly) =>
-              injectedPegasusService
-                .setEditorReadOnly(key, isReadonly)
-                .catch((e) => setErrorMessage(e.stack))
-            }
-            editorState={state as EditorState}
-            setEditorState={(editorState) =>
-              injectedPegasusService
-                .setEditorState(key, editorState as SerializedRawEditorState)
-                .catch((e) => setErrorMessage(e.stack))
-            }
-            generateContent={(exportDOM) =>
-              injectedPegasusService.generateTreeViewContent(key, exportDOM)
-            }
-          />
-          <hr />
-        </div>
-      ))}
+      </Box>
     </>
   );
 }

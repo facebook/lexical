@@ -25,8 +25,7 @@ describe('prepare-release tests', () => {
         expect(fs.existsSync(tgzPath)).toBe(true));
     });
   }
-  test('builds', async () => {});
 });
-glob
-  .sync('examples/*/package.json')
-  .forEach((exampleJsonPath) => describeExample(exampleJsonPath, () => {}));
+['examples', 'scripts/__tests__/integration/fixtures']
+  .flatMap((packagesDir) => glob.sync(`${packagesDir}/*/package.json`))
+  .forEach((exampleJsonPath) => describeExample(exampleJsonPath));

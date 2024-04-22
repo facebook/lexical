@@ -3,6 +3,7 @@
 **/dist/**
 **/build/**
 **/npm/**
+**/__tests__/integration/fixtures/**
 **/config/**
 packages/**/.wxt/**
 packages/playwright

@@ -13,26 +13,45 @@ const {packagesManager} = require('../../shared/packagesManager');
 const fs = require('fs-extra');
 const path = require('node:path');
 
-const LONG_TIMEOUT = 60 * 1000;
+const LONG_TIMEOUT = 240 * 1000;
 
 /**
- * exec the command in a child process from the given directory.
- *
+ * @function
+ * @template T
  * @param {string} dir
- * @param  {Parameters<typeof exec>} args
- * @returns {Promise<string>}
+ * @param {() => Promise<T> | T} cb
+ * @returns {Promise<T>}
  */
-async function dirExec(dir, ...args) {
+async function withCwd(dir, cb) {
   const cwd = process.cwd();
   try {
     process.chdir(dir);
-    return await exec(...args);
+    return await cb();
   } finally {
     process.chdir(cwd);
   }
 }
+exports.withCwd = withCwd;
 
-exports.dirExec = dirExec;
+/**
+ * @param {string} cmd
+ * @returns {Promise<string>}
+ */
+function expectSuccessfulExec(cmd) {
+  // playwright detects jest, so we clear this env var while running subcommands
+  const env = Object.fromEntries(
+    Object.entries(process.env).filter(([k]) => k !== 'JEST_WORKER_ID'),
+  );
+  return exec(cmd, {capture: ['stdout', 'stderr'], env}).catch((err) => {
+    expect(
+      Object.fromEntries(
+        ['code', 'stdout', 'stderr'].map((prop) => [prop, err[prop]]),
+      ),
+    ).toBe(null);
+    throw err;
+  });
+}
+exports.expectSuccessfulExec = expectSuccessfulExec;
 
 /**
  * @typedef {Object} ExampleContext
@@ -46,12 +65,14 @@ async function buildExample({packageJson, exampleDir}) {
   const lexicalPackages = new Map(
     packagesManager.getPublicPackages().map((pkg) => [pkg.getNpmName(), pkg]),
   );
+  let hasPlaywright = false;
   const installDeps = [
     'dependencies',
     'devDependencies',
     'peerDependencies',
   ].flatMap((depType) => {
     const deps = packageJson[depType] || {};
+    hasPlaywright ||= '@playwright/test' in deps;
     return Object.keys(deps).flatMap((k) => {
       const pkg = lexicalPackages.get(k);
       return pkg
@@ -70,22 +91,26 @@ async function buildExample({packageJson, exampleDir}) {
   ['node_modules', 'dist', 'build'].forEach((cleanDir) =>
     fs.removeSync(path.resolve(exampleDir, cleanDir)),
   );
-  await dirExec(
-    exampleDir,
-    `npm install --no-save --no-package-lock ${installDeps
-      .map((fn) => `'${fn}'`)
-      .join(' ')}`,
-  );
-  await dirExec(exampleDir, `npm run build`);
+  await withCwd(exampleDir, async () => {
+    await exec(
+      `npm install --no-save --no-package-lock ${installDeps
+        .map((fn) => `'${fn}'`)
+        .join(' ')}`,
+    );
+    await exec('npm run build');
+    if (hasPlaywright) {
+      await exec('npx playwright install');
+    }
+  });
 }
 
 /**
  * Build the example project with prerelease lexical artifacts
  *
  * @param {string} packgeJsonPath
- * @param {(ctx: ExampleContext) => void} bodyFun
+ * @param {undefined | (ctx: ExampleContext) => void} [bodyFun=undefined]
  */
-function describeExample(packageJsonPath, bodyFun) {
+function describeExample(packageJsonPath, bodyFun = undefined) {
   const packageJson = fs.readJsonSync(packageJsonPath);
   const exampleDir = path.dirname(packageJsonPath);
   /** @type {ExampleContext} */
@@ -104,12 +129,14 @@ function describeExample(packageJsonPath, bodyFun) {
       test(
         'tests pass',
         async () => {
-          expect(await dirExec(exampleDir, 'npm run build')).not.toBe(null);
+          await withCwd(exampleDir, () => expectSuccessfulExec('npm run test'));
         },
         LONG_TIMEOUT,
       );
     }
-    bodyFun(ctx);
+    if (bodyFun) {
+      bodyFun(ctx);
+    }
   });
 }
 

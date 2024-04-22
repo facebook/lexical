@@ -66,6 +66,7 @@ const wwwMappings = {
   'prismjs/components/prism-markdown': 'prism-markdown',
   'prismjs/components/prism-markup': 'prism-markup',
   'prismjs/components/prism-objectivec': 'prism-objectivec',
+  'prismjs/components/prism-powershell': 'prism-powershell',
   'prismjs/components/prism-python': 'prism-python',
   'prismjs/components/prism-rust': 'prism-rust',
   'prismjs/components/prism-sql': 'prism-sql',

@@ -117,7 +117,6 @@ suppress_type=$FlowExpectedError
 
 [libs]
 ./libdefs/yjs.js
-./libdefs/CoreTypes.flow
 ./scripts/flow/environment.js
 ./flow-typed/yjs.js
 ./flow-typed/prism.js

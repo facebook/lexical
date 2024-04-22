@@ -91,8 +91,8 @@ async function buildExample({packageJson, exampleDir}) {
   if (installDeps.length === 0) {
     throw new Error(`No lexical dependencies detected: ${exampleDir}`);
   }
-  ['node_modules', 'dist', 'build'].forEach((cleanDir) =>
-    fs.removeSync(path.resolve(exampleDir, cleanDir)),
+  ['node_modules', 'dist', 'build', '.next', '.svelte-kit'].forEach(
+    (cleanDir) => fs.removeSync(path.resolve(exampleDir, cleanDir)),
   );
   await withCwd(exampleDir, async () => {
     await exec(

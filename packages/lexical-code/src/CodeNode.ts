@@ -53,7 +53,8 @@ const mapToPrismLanguage = (
 ): string | null | undefined => {
   return language !== null &&
     language !== undefined &&
-    Object.hasOwn(window.Prism.languages, language)
+    // eslint-disable-next-line no-prototype-builtins
+    window.Prism.languages.hasOwnProperty(language)
     ? language
     : undefined;
 };

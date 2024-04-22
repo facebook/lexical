@@ -448,31 +448,37 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
         if (name !== 'RootNode') {
           const proto = klass.prototype;
           ['getType', 'clone'].forEach((method) => {
-            if (!Object.hasOwn(klass, method)) {
+            // eslint-disable-next-line no-prototype-builtins
+            if (!klass.hasOwnProperty(method)) {
               console.warn(`${name} must implement static "${method}" method`);
             }
           });
           if (
-            !Object.hasOwn(klass, 'importDOM') &&
-            Object.hasOwn(klass, 'exportDOM')
+            // eslint-disable-next-line no-prototype-builtins
+            !klass.hasOwnProperty('importDOM') &&
+            // eslint-disable-next-line no-prototype-builtins
+            klass.hasOwnProperty('exportDOM')
           ) {
             console.warn(
               `${name} should implement "importDOM" if using a custom "exportDOM" method to ensure HTML serialization (important for copy & paste) works as expected`,
             );
           }
           if (proto instanceof DecoratorNode) {
-            if (!Object.hasOwn(proto, 'decorate')) {
+            // eslint-disable-next-line no-prototype-builtins
+            if (!proto.hasOwnProperty('decorate')) {
               console.warn(
                 `${proto.constructor.name} must implement "decorate" method`,
               );
             }
           }
-          if (!Object.hasOwn(klass, 'importJSON')) {
+          // eslint-disable-next-line no-prototype-builtins
+          if (!klass.hasOwnProperty('importJSON')) {
             console.warn(
               `${name} should implement "importJSON" method to ensure JSON and default HTML serialization works as expected`,
             );
           }
-          if (!Object.hasOwn(proto, 'exportJSON')) {
+          // eslint-disable-next-line no-prototype-builtins
+          if (!proto.hasOwnProperty('exportJSON')) {
             console.warn(
               `${name} should implement "exportJSON" method to ensure JSON and default HTML serialization works as expected`,
             );

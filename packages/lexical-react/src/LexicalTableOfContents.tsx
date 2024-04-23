@@ -10,6 +10,7 @@ import type {LexicalEditor, NodeKey, NodeMutation} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$isHeadingNode, HeadingNode, HeadingTagType} from '@lexical/rich-text';
+import {$dfs, DFSNode} from '@lexical/utils';
 import {$getNodeByKey, $getRoot, TextNode} from 'lexical';
 import {useEffect, useState} from 'react';
 
@@ -23,39 +24,14 @@ function toEntry(heading: HeadingNode): TableOfContentsEntry {
   return [heading.getKey(), heading.getTextContent(), heading.getTag()];
 }
 
-function $insertHeadingIntoTableOfContents(
-  prevHeading: HeadingNode | null,
-  newHeading: HeadingNode | null,
-  currentTableOfContents: Array<TableOfContentsEntry>,
+function $newTableOfContents(
+  headings: Array<HeadingNode>,
 ): Array<TableOfContentsEntry> {
-  if (newHeading === null) {
-    return currentTableOfContents;
-  }
-  const newEntry: TableOfContentsEntry = toEntry(newHeading);
-  let newTableOfContents: Array<TableOfContentsEntry> = [];
-  if (prevHeading === null) {
-    newTableOfContents = [newEntry, ...currentTableOfContents];
-  } else {
-    for (let i = 0; i < currentTableOfContents.length; i++) {
-      const key = currentTableOfContents[i][0];
-      newTableOfContents.push(currentTableOfContents[i]);
-      if (key === prevHeading.getKey() && key !== newHeading.getKey()) {
-        newTableOfContents.push(newEntry);
-      }
-    }
-  }
-  return newTableOfContents;
-}
+  const newTableOfContents: Array<TableOfContentsEntry> = [];
 
-function $deleteHeadingFromTableOfContents(
-  key: NodeKey,
-  currentTableOfContents: Array<TableOfContentsEntry>,
-): Array<TableOfContentsEntry> {
-  const newTableOfContents = [];
-  for (const heading of currentTableOfContents) {
-    if (heading[0] !== key) {
-      newTableOfContents.push(heading);
-    }
+  for (const heading of headings) {
+    const newEntry: TableOfContentsEntry = toEntry(heading);
+    newTableOfContents.push(newEntry);
   }
   return newTableOfContents;
 }
@@ -72,34 +48,6 @@ function $updateHeadingInTableOfContents(
       newTableOfContents.push(oldHeading);
     }
   }
-  return newTableOfContents;
-}
-
-/**
- * Returns the updated table of contents, placing the given `heading` before the given `prevHeading`. If `prevHeading`
- * is undefined, `heading` is placed at the start of table of contents
- */
-function $updateHeadingPosition(
-  prevHeading: HeadingNode | null,
-  heading: HeadingNode,
-  currentTableOfContents: Array<TableOfContentsEntry>,
-): Array<TableOfContentsEntry> {
-  const newTableOfContents: Array<TableOfContentsEntry> = [];
-  const newEntry: TableOfContentsEntry = toEntry(heading);
-
-  if (!prevHeading) {
-    newTableOfContents.push(newEntry);
-  }
-  for (const oldHeading of currentTableOfContents) {
-    if (oldHeading[0] === heading.getKey()) {
-      continue;
-    }
-    newTableOfContents.push(oldHeading);
-    if (prevHeading && oldHeading[0] === prevHeading.getKey()) {
-      newTableOfContents.push(newEntry);
-    }
-  }
-
   return newTableOfContents;
 }
 
@@ -138,42 +86,15 @@ export default function LexicalTableOfContentsPlugin({
     // Listen to updates to heading mutations and update state
     const removeHeaderMutationListener = editor.registerMutationListener(
       HeadingNode,
-      (mutatedNodes: Map<string, NodeMutation>) => {
+      (_: Map<string, NodeMutation>) => {
         editor.getEditorState().read(() => {
-          for (const [nodeKey, mutation] of mutatedNodes) {
-            if (mutation === 'created') {
-              const newHeading = $getNodeByKey<HeadingNode>(nodeKey);
-              if (newHeading !== null) {
-                let prevHeading = newHeading.getPreviousSibling();
-                while (prevHeading !== null && !$isHeadingNode(prevHeading)) {
-                  prevHeading = prevHeading.getPreviousSibling();
-                }
-                currentTableOfContents = $insertHeadingIntoTableOfContents(
-                  prevHeading,
-                  newHeading,
-                  currentTableOfContents,
-                );
-              }
-            } else if (mutation === 'destroyed') {
-              currentTableOfContents = $deleteHeadingFromTableOfContents(
-                nodeKey,
-                currentTableOfContents,
-              );
-            } else if (mutation === 'updated') {
-              const newHeading = $getNodeByKey<HeadingNode>(nodeKey);
-              if (newHeading !== null) {
-                let prevHeading = newHeading.getPreviousSibling();
-                while (prevHeading !== null && !$isHeadingNode(prevHeading)) {
-                  prevHeading = prevHeading.getPreviousSibling();
-                }
-                currentTableOfContents = $updateHeadingPosition(
-                  prevHeading,
-                  newHeading,
-                  currentTableOfContents,
-                );
-              }
-            }
-          }
+          const dfsNodes = $dfs().filter((dfsNode: DFSNode) =>
+            $isHeadingNode(dfsNode.node),
+          );
+          const headingNodes = dfsNodes.map(
+            (dfsNode) => dfsNode.node as HeadingNode,
+          );
+          currentTableOfContents = $newTableOfContents(headingNodes);
           setTableOfContents(currentTableOfContents);
         });
       },

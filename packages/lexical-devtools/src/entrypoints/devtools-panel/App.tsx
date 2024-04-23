@@ -85,7 +85,7 @@ function App({tabID}: Props) {
         ) : (
           <Alert status="info">
             <AlertIcon />
-            No Lexical editor found on the page.
+            No Lexical editors found on the page.
           </Alert>
         )}
       </Box>

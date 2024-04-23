@@ -6,24 +6,19 @@
  *
  */
 
-import type {IInjectedPegasusService} from '../entrypoints/injected/InjectedPegasusService';
-
-import {Button} from '@chakra-ui/react';
+import {IconButton, Image} from '@chakra-ui/react';
 import {getRPCService} from '@webext-pegasus/rpc';
 import * as React from 'react';
-import {useState} from 'react';
+
+import {IInjectedPegasusService} from '../../injected/InjectedPegasusService';
 
 interface Props {
   tabID: number;
   setErrorMessage: (value: string) => void;
 }
 
-function EditorsRefreshCTA({tabID, setErrorMessage}: Props) {
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
-  const handleRefreshClick = () => {
-    setIsRefreshing(true);
-
+export function EditorInspectorButton({tabID, setErrorMessage}: Props) {
+  const handleClick = () => {
     const injectedPegasusService = getRPCService<IInjectedPegasusService>(
       'InjectedPegasusService',
       {context: 'window', tabId: tabID},
@@ -31,22 +26,21 @@ function EditorsRefreshCTA({tabID, setErrorMessage}: Props) {
 
     injectedPegasusService
       .refreshLexicalEditors()
+      .then(() => injectedPegasusService.toggleEditorPicker())
       .catch((err) => {
         setErrorMessage(err.message);
         console.error(err);
-      })
-      .finally(() => setIsRefreshing(false));
+      });
   };
 
   return (
-    <Button
+    <IconButton
+      aria-label="dsds"
       colorScheme="gray"
+      variant="ghost"
       size="xs"
-      onClick={handleRefreshClick}
-      disabled={isRefreshing}>
-      {isRefreshing ? 'Refreshing...' : 'Refresh'}
-    </Button>
+      onClick={handleClick}
+      icon={<Image w={5} src="/inspect.svg" />}
+    />
   );
 }
-
-export default EditorsRefreshCTA;

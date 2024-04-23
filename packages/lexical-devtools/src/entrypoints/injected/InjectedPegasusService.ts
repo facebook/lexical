@@ -11,15 +11,19 @@ import {IPegasusRPCService, PegasusRPCMessage} from '@webext-pegasus/rpc';
 import {LexicalEditor} from 'lexical';
 import {StoreApi} from 'zustand';
 
+import {ElementPicker} from '../../element-picker';
 import {readEditorState} from '../../lexicalForExtension';
 import {deserializeEditorState} from '../../serializeEditorState';
 import {ExtensionState} from '../../store';
 import {SerializedRawEditorState} from '../../types';
+import {isLexicalNode} from '../../utils/isLexicalNode';
 import scanAndListenForEditors from './scanAndListenForEditors';
 import {
   queryLexicalEditorByKey,
   queryLexicalNodeByKey,
 } from './utils/queryLexicalByKey';
+
+const ELEMENT_PICKER_STYLE = {borderColor: '#0000ff'};
 
 export type IInjectedPegasusService = InstanceType<
   typeof InjectedPegasusService
@@ -28,13 +32,15 @@ export type IInjectedPegasusService = InstanceType<
 export class InjectedPegasusService
   implements IPegasusRPCService<InjectedPegasusService>
 {
+  private pickerActive: ElementPicker | null = null;
+
   constructor(
     private readonly tabID: number,
     private readonly extensionStore: StoreApi<ExtensionState>,
     private readonly commandLog: WeakMap<LexicalEditor, LexicalCommandLog>,
   ) {}
 
-  refreshLexicalEditorsForTabID() {
+  refreshLexicalEditors() {
     scanAndListenForEditors(this.tabID, this.extensionStore, this.commandLog);
   }
 
@@ -77,5 +83,41 @@ export class InjectedPegasusService
     }
 
     editor.setEditorState(deserializeEditorState(editorState));
+  }
+
+  toggleEditorPicker(): void {
+    if (this.pickerActive != null) {
+      this.pickerActive?.stop();
+      this.pickerActive = null;
+
+      return;
+    }
+
+    this.pickerActive = new ElementPicker({style: ELEMENT_PICKER_STYLE});
+    this.pickerActive.start({
+      elementFilter: (el) => {
+        let parent: HTMLElement | null = el;
+        while (parent != null && parent.tagName !== 'BODY') {
+          if ('__lexicalEditor' in parent) {
+            return parent;
+          }
+          parent = parent.parentElement;
+        }
+
+        return false;
+      },
+
+      onClick: (el) => {
+        this.pickerActive?.stop();
+        this.pickerActive = null;
+        if (isLexicalNode(el)) {
+          this.extensionStore
+            .getState()
+            .setSelectedEditorKey(this.tabID, el.__lexicalEditor.getKey());
+        } else {
+          console.warn('Selected Element is not a Lexical node');
+        }
+      },
+    });
   }
 }

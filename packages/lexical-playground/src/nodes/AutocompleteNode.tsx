@@ -13,9 +13,9 @@ import type {
   SerializedLexicalNode,
   Spread,
 } from 'lexical';
+import type {EditorThemeClassName} from 'packages/lexical/src/LexicalEditor';
 
 import {DecoratorNode} from 'lexical';
-import {EditorThemeClassName} from 'packages/lexical/src/LexicalEditor';
 import * as React from 'react';
 
 import {useSharedAutocompleteContext} from '../context/SharedAutocompleteContext';

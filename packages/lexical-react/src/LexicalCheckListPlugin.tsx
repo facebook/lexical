@@ -232,13 +232,9 @@ function findEditor(target: Node) {
 
   while (node) {
     // @ts-ignore internal field
-    if (node.__lexicalEditor) {
-      // @ts-ignore internal field
-      const editor: LexicalEditor | undefined | null = node.__lexicalEditor;
-      if (editor === undefined || editor === null) {
-        return null;
-      }
+    const editor: LexicalEditor | undefined | null = node.__lexicalEditor;
 
+    if (editor !== undefined && editor !== null) {
       return editor;
     }
 

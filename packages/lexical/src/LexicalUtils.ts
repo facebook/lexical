@@ -122,7 +122,9 @@ export function isSelectionCapturedInDecoratorInput(anchorDOM: Node): boolean {
       nodeName === 'TEXTAREA' ||
       (activeElement.contentEditable === 'true' &&
         // @ts-ignore iternal field
-        activeElement.__lexicalEditor === undefined))
+        (activeElement.__lexicalEditor === undefined ||
+          // @ts-ignore iternal field
+          activeElement.__lexicalEditor === null)))
   );
 }
 
@@ -152,9 +154,10 @@ export function getNearestEditorFromDOMNode(
 ): LexicalEditor | null {
   let currentNode = node;
   while (currentNode !== null) {
-    // @ts-expect-error: internal field
-    const editor: LexicalEditor | undefined = currentNode.__lexicalEditor;
-    if (editor !== undefined) {
+    const editor: LexicalEditor | undefined | null =
+      // @ts-expect-error: internal field
+      currentNode.__lexicalEditor;
+    if (editor !== undefined && editor !== null) {
       return editor;
     }
     currentNode = getParentElement(currentNode);

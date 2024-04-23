@@ -237,7 +237,7 @@ function createNode(
       // @ts-expect-error: internal field
       const possibleLineBreak = parentDOM.__lexicalLineBreak;
 
-      if (possibleLineBreak !== undefined) {
+      if (possibleLineBreak !== undefined && possibleLineBreak !== null) {
         parentDOM.insertBefore(dom, possibleLineBreak);
       } else {
         parentDOM.appendChild(dom);

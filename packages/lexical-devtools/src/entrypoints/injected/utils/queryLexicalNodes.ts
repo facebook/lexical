@@ -6,15 +6,10 @@
  *
  */
 import {LexicalHTMLElement} from '../../../types';
+import {isLexicalNode} from '../../../utils/isLexicalNode';
 
 export default function queryLexicalNodes(): LexicalHTMLElement[] {
   return Array.from(
     document.querySelectorAll('div[data-lexical-editor]'),
   ).filter(isLexicalNode);
-}
-
-function isLexicalNode(
-  node: LexicalHTMLElement | Element,
-): node is LexicalHTMLElement {
-  return (node as LexicalHTMLElement).__lexicalEditor !== undefined;
 }

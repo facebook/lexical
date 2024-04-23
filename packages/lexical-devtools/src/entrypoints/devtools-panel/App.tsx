@@ -6,33 +6,25 @@
  *
  */
 
-import type {IInjectedPegasusService} from '../injected/InjectedPegasusService';
-import type {EditorState} from 'lexical';
-
 import './App.css';
 
 import {
-  Accordion,
-  AccordionButton,
-  AccordionIcon,
-  AccordionItem,
-  AccordionPanel,
   Alert,
   AlertIcon,
   Box,
+  ButtonGroup,
   Flex,
   Spacer,
 } from '@chakra-ui/react';
-import {TreeView} from '@lexical/devtools-core';
-import {getRPCService} from '@webext-pegasus/rpc';
 import * as React from 'react';
-import {useMemo, useState} from 'react';
+import {useState} from 'react';
 
 import lexicalLogo from '@/public/lexical.svg';
 
 import EditorsRefreshCTA from '../../components/EditorsRefreshCTA';
 import {useExtensionStore} from '../../store';
-import {SerializedRawEditorState} from '../../types';
+import {EditorInspectorButton} from './components/EditorInspectorButton';
+import {EditorsList} from './components/EditorsList';
 
 interface Props {
   tabID: number;
@@ -45,18 +37,32 @@ function App({tabID}: Props) {
   const states = lexicalState[tabID] ?? {};
   const lexicalCount = Object.keys(states ?? {}).length;
 
-  const injectedPegasusService = useMemo(
-    () =>
-      getRPCService<IInjectedPegasusService>('InjectedPegasusService', {
-        context: 'window',
-        tabId: tabID,
-      }),
-    [tabID],
-  );
-
   return (
     <>
       <Flex>
+        <Box p="4">
+          <ButtonGroup variant="outline" spacing="2">
+            <EditorInspectorButton
+              tabID={tabID}
+              setErrorMessage={setErrorMessage}
+            />
+            <EditorsRefreshCTA
+              tabID={tabID}
+              setErrorMessage={setErrorMessage}
+            />
+          </ButtonGroup>
+        </Box>
+        <Box p="4" alignContent="center">
+          {states === undefined ? (
+            <span>Loading...</span>
+          ) : (
+            <span>
+              Found <b>{lexicalCount}</b> editor
+              {lexicalCount > 1 || lexicalCount === 0 ? 's' : ''} on the page.
+            </span>
+          )}
+        </Box>
+        <Spacer />
         <Box p="2">
           <a href="https://lexical.dev" target="_blank">
             <img
@@ -68,20 +74,6 @@ function App({tabID}: Props) {
             />
           </a>
         </Box>
-        <Spacer />
-        <Box p="4">
-          {states === undefined ? (
-            <span>Loading...</span>
-          ) : (
-            <span>
-              Found <b>{lexicalCount}</b> editor
-              {lexicalCount > 1 || lexicalCount === 0 ? 's' : ''} on the page.
-            </span>
-          )}
-        </Box>
-        <Box p="4">
-          <EditorsRefreshCTA tabID={tabID} setErrorMessage={setErrorMessage} />
-        </Box>
       </Flex>
       {errorMessage !== '' ? (
         <div className="card error">{errorMessage}</div>
@@ -89,50 +81,7 @@ function App({tabID}: Props) {
 
       <Box mt={5}>
         {lexicalCount > 0 ? (
-          <Accordion defaultIndex={[0]} allowMultiple={true}>
-            {Object.entries(states).map(([key, state]) => (
-              <AccordionItem key={key}>
-                <h2>
-                  <AccordionButton>
-                    <Box as="span" flex="1" textAlign="left">
-                      ID: {key}
-                    </Box>
-                    <AccordionIcon />
-                  </AccordionButton>
-                </h2>
-                <AccordionPanel pb={4}>
-                  <TreeView
-                    viewClassName="tree-view-output"
-                    treeTypeButtonClassName="debug-treetype-button"
-                    timeTravelPanelClassName="debug-timetravel-panel"
-                    timeTravelButtonClassName="debug-timetravel-button"
-                    timeTravelPanelSliderClassName="debug-timetravel-panel-slider"
-                    timeTravelPanelButtonClassName="debug-timetravel-panel-button"
-                    setEditorReadOnly={(isReadonly) =>
-                      injectedPegasusService
-                        .setEditorReadOnly(key, isReadonly)
-                        .catch((e) => setErrorMessage(e.stack))
-                    }
-                    editorState={state as EditorState}
-                    setEditorState={(editorState) =>
-                      injectedPegasusService
-                        .setEditorState(
-                          key,
-                          editorState as SerializedRawEditorState,
-                        )
-                        .catch((e) => setErrorMessage(e.stack))
-                    }
-                    generateContent={(exportDOM) =>
-                      injectedPegasusService.generateTreeViewContent(
-                        key,
-                        exportDOM,
-                      )
-                    }
-                  />
-                </AccordionPanel>
-              </AccordionItem>
-            ))}
-          </Accordion>
+          <EditorsList tabID={tabID} setErrorMessage={setErrorMessage} />
         ) : (
           <Alert status="info">
             <AlertIcon />

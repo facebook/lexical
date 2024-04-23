@@ -12,6 +12,7 @@ const fs = require('fs-extra');
 const glob = require('glob');
 const path = require('node:path');
 const {packagesManager} = require('../../shared/packagesManager');
+const npmToWwwName = require('../../www/npmToWwwName');
 
 const monorepoPackageJson = require('../../shared/readMonorepoPackageJson')();
 
@@ -19,7 +20,7 @@ const publicNpmNames = new Set(
   packagesManager.getPublicPackages().map((pkg) => pkg.getNpmName()),
 );
 
-describe('public package.json audits (`npm run update-version` to fix most issues)', () => {
+describe('public package.json audits (`npm run update-packages` to fix most issues)', () => {
   packagesManager.getPublicPackages().forEach((pkg) => {
     const npmName = pkg.getNpmName();
     const packageJson = pkg.packageJson;
@@ -91,7 +92,7 @@ describe('public package.json audits (`npm run update-version` to fix most issue
   });
 });
 
-describe('documentation audits (`npm run update-docs` to fix most issues)', () => {
+describe('documentation audits (`npm run update-packages` to fix most issues)', () => {
   const webPkg = packagesManager.getPackageByDirectoryName('lexical-website');
   packagesManager.getPublicPackages().forEach((pkg) => {
     const npmName = pkg.getNpmName();
@@ -112,6 +113,24 @@ describe('documentation audits (`npm run update-docs` to fix most issues)', () =
           }
         });
       });
+    });
+  });
+});
+
+describe('www public package audits (`npm run update-packages` to fix most issues)', () => {
+  packagesManager.getPublicPackages().forEach((pkg) => {
+    const npmName = pkg.getNpmName();
+    const wwwEntrypoint = `${npmToWwwName(npmName)}.js`;
+    describe(npmName, () => {
+      it('has *.flow types', () => {
+        expect(glob.sync(pkg.resolve('flow', '*.flow'))).not.toEqual([]);
+      });
+      // Only worry about the entrypoint stub if it has a single module export
+      if (pkg.getExportedNpmModuleNames().every((name) => name === npmName)) {
+        it(`has a packages/${pkg.getDirectoryName()}/${wwwEntrypoint}`, () => {
+          expect(fs.existsSync(pkg.resolve(wwwEntrypoint))).toBe(true);
+        });
+      }
     });
   });
 });

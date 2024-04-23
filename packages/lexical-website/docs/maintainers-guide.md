@@ -47,7 +47,7 @@ not ready for consumption, it should probably still be set to
 | Unit Tests | `packages/lexical-package-name/src/__tests__/unit/LexicalPackageName.test.{ts,tsx}` |
 | dist (gitignore'd build product) | `packages/lexical-package-name/dist` |
 | npm (gitignore'd prerelease product) | `packages/lexical-package-name/npm` |
-| www entrypoint? | `packages/lexical-package-name/LexicalPackageName.js` |
+| www entrypoint | `packages/lexical-package-name/LexicalPackageName.js` |
 
 ### Multiple module export (@lexical/react)
 
@@ -181,10 +181,11 @@ describe('LexicalEslintPlugin', () => {
 
 ### npm run update-packages
 
-This script runs: update-version, update-tsconfig, update-flowconfig, and
-update-docs. This is safe to do at any time and will ensure that package.json
-files are all at the correct versions, paths are set up correctly for module
-resolution of all public exports, and that various defaults are filled in.
+This script runs: update-version, update-tsconfig, update-flowconfig,
+update-docs, and update-www-stubs. This is safe to do at any time and will
+ensure that package.json files are all at the correct versions, paths are
+set up correctly for module resolution of all public exports, and that
+various defaults are filled in.
 
 These scripts can be run individually, but unless you're working on one
 of these scripts you might as well run them all.

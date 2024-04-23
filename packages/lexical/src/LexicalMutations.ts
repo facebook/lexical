@@ -240,7 +240,6 @@ export function $flushMutations(
                 continue;
               }
 
-              // TODO: undefined or null ?
               if (currentDOM === null || currentDOM === undefined) {
                 targetDOM.appendChild(correctDOM);
                 currentDOM = correctDOM;

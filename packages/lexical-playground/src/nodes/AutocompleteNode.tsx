@@ -6,14 +6,15 @@
  *
  */
 
-import type {LexicalEditor, Spread} from 'lexical';
-
-import {
-  DecoratorNode,
+import type {
   EditorConfig,
+  LexicalEditor,
   NodeKey,
   SerializedLexicalNode,
+  Spread,
 } from 'lexical';
+
+import {DecoratorNode} from 'lexical';
 import {EditorThemeClassName} from 'packages/lexical/src/LexicalEditor';
 import * as React from 'react';
 
@@ -91,7 +92,7 @@ export class AutocompleteNode extends DecoratorNode<JSX.Element | null> {
     if (this.__uuid !== UUID) {
       return null;
     }
-    return <AutocompleteComponent className={config.theme.autoComplete} />;
+    return <AutocompleteComponent className={config.theme.autocomplete} />;
   }
 }
 

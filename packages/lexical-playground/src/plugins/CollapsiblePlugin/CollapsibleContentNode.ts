@@ -62,6 +62,7 @@ export class CollapsibleContentNode extends ElementNode {
 
   exportDOM(): DOMExportOutput {
     const element = document.createElement('div');
+    element.classList.add('Collapsible__content');
     element.setAttribute('data-lexical-collapsible-content', 'true');
     return {element};
   }

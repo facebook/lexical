@@ -11,7 +11,6 @@ import {
   $isElementNode,
   DOMConversionMap,
   DOMConversionOutput,
-  DOMExportOutput,
   EditorConfig,
   ElementNode,
   LexicalEditor,
@@ -68,11 +67,6 @@ export class CollapsibleTitleNode extends ElementNode {
     serializedNode: SerializedCollapsibleTitleNode,
   ): CollapsibleTitleNode {
     return $createCollapsibleTitleNode();
-  }
-
-  exportDOM(): DOMExportOutput {
-    const element = document.createElement('summary');
-    return {element};
   }
 
   exportJSON(): SerializedCollapsibleTitleNode {

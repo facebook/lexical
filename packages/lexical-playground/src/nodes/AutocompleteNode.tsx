@@ -102,7 +102,7 @@ export function $createAutocompleteNode(uuid: string): AutocompleteNode {
 function AutocompleteComponent({
   className,
 }: {
-  className?: EditorThemeClassName;
+  className: EditorThemeClassName;
 }): JSX.Element {
   const [suggestion] = useSharedAutocompleteContext();
   const userAgentData = window.navigator.userAgentData;

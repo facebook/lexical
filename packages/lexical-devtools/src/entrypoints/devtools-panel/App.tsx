@@ -34,10 +34,16 @@ function App({tabID}: Props) {
   const [errorMessage, setErrorMessage] = useState('');
 
   const {lexicalState} = useExtensionStore();
-  const states = lexicalState[tabID] ?? {};
+  const states = lexicalState[tabID];
   const lexicalCount = Object.keys(states ?? {}).length;
 
-  return (
+  return lexicalState[tabID] === null ? (
+    <Alert status="warning">
+      <AlertIcon />
+      This is a restricted browser page. Lexical DevTools cannot access this
+      page.
+    </Alert>
+  ) : (
     <>
       <Flex>
         <Box p="4">

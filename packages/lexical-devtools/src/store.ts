@@ -17,11 +17,12 @@ import {SerializedRawEditorState} from './types';
 
 export interface ExtensionState {
   lexicalState: {
-    [tabID: number]: {[editorKey: string]: SerializedRawEditorState};
+    [tabID: number]: {[editorKey: string]: SerializedRawEditorState} | null;
   };
   selectedEditorKey: {
     [tabID: number]: string | null;
   };
+  markTabAsRestricted: (tabID: number) => void;
   setStatesForTab: (
     id: number,
     states: {[editorKey: string]: SerializedRawEditorState},
@@ -32,6 +33,13 @@ export interface ExtensionState {
 export const useExtensionStore = create<ExtensionState>()(
   subscribeWithSelector((set) => ({
     lexicalState: {},
+    markTabAsRestricted: (tabID: number) =>
+      set((state) => ({
+        lexicalState: {
+          ...state.lexicalState,
+          [tabID]: null,
+        },
+      })),
     selectedEditorKey: {},
     setSelectedEditorKey: (tabID: number, editorKey: string | null) =>
       set((state) => ({

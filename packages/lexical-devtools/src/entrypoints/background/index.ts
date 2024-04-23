@@ -9,7 +9,11 @@
 import {registerRPCService} from '@webext-pegasus/rpc';
 import {initPegasusTransport} from '@webext-pegasus/transport/background';
 
-import {initExtensionStoreBackend} from '../../store.ts';
+import {
+  initExtensionStoreBackend,
+  useExtensionStore as extensionStore,
+} from '../../store.ts';
+import ActionIconWatchdog from './ActionIconWatchdog.ts';
 import {getTabIDService} from './getTabIDService';
 
 export default defineBackground(() => {
@@ -20,4 +24,6 @@ export default defineBackground(() => {
   // Store initialization so other extension surfaces can use it
   // as all changes go through background SW
   initExtensionStoreBackend();
+
+  ActionIconWatchdog.start(extensionStore).catch(console.error);
 });

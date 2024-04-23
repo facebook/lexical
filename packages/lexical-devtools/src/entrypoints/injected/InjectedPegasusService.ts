@@ -40,7 +40,7 @@ export class InjectedPegasusService
     private readonly commandLog: WeakMap<LexicalEditor, LexicalCommandLog>,
   ) {}
 
-  refreshLexicalEditorsForTabID() {
+  refreshLexicalEditors() {
     scanAndListenForEditors(this.tabID, this.extensionStore, this.commandLog);
   }
 

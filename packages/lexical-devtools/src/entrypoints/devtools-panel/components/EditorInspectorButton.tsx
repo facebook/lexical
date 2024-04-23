@@ -24,10 +24,13 @@ export function EditorInspectorButton({tabID, setErrorMessage}: Props) {
       {context: 'window', tabId: tabID},
     );
 
-    injectedPegasusService.toggleEditorPicker().catch((err) => {
-      setErrorMessage(err.message);
-      console.error(err);
-    });
+    injectedPegasusService
+      .refreshLexicalEditors()
+      .then(() => injectedPegasusService.toggleEditorPicker())
+      .catch((err) => {
+        setErrorMessage(err.message);
+        console.error(err);
+      });
   };
 
   return (

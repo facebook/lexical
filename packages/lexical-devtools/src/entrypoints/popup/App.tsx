@@ -7,10 +7,9 @@
  */
 import './App.css';
 
+import {Box, Flex} from '@chakra-ui/react';
 import * as React from 'react';
 import {useState} from 'react';
-
-import lexicalLogo from '@/public/lexical.svg';
 
 import EditorsRefreshCTA from '../../components/EditorsRefreshCTA';
 import {useExtensionStore} from '../../store';
@@ -27,38 +26,46 @@ function App({tabID}: Props) {
   const lexicalCount = Object.keys(states ?? {}).length;
 
   return (
-    <>
-      <div>
-        <a href="https://lexical.dev" target="_blank">
-          <img src={lexicalLogo} className="logo" alt="Lexical logo" />
-        </a>
-      </div>
+    <Flex direction="column">
       {errorMessage !== '' ? (
-        <div className="card error">{errorMessage}</div>
+        <Box className="error" mb={2} color="red">
+          {errorMessage}
+        </Box>
       ) : null}
-      <div className="card">
-        {states === undefined ? (
+      <Box>
+        {states === null ? (
+          <span>
+            This is a restricted browser page. Lexical DevTools cannot access
+            this page.
+          </span>
+        ) : states === undefined ? (
           <span>Loading...</span>
         ) : (
-          <span>
-            Found <b>{lexicalCount}</b> editor{lexicalCount > 1 ? 's' : ''} on
-            the page
-            {lexicalCount > 0 ? (
-              <>
-                {' '}
-                &#x2705;
-                <br />
-                Open the developer tools, and "Lexical" tab will appear to the
-                right.
-              </>
-            ) : null}
-          </span>
+          <>
+            <Box>
+              Found <b>{lexicalCount}</b> editor
+              {lexicalCount > 1 || lexicalCount === 0 ? 's' : ''} on the page
+              {lexicalCount > 0 ? (
+                <>
+                  {' '}
+                  &#x2705;
+                  <br />
+                  Open the developer tools, and "Lexical" tab will appear to the
+                  right.
+                </>
+              ) : null}
+            </Box>
+
+            <Box mt={1}>
+              <EditorsRefreshCTA
+                tabID={tabID}
+                setErrorMessage={setErrorMessage}
+              />
+            </Box>
+          </>
         )}
-        <p>
-          <EditorsRefreshCTA tabID={tabID} setErrorMessage={setErrorMessage} />
-        </p>
-      </div>
-    </>
+      </Box>
+    </Flex>
   );
 }
 

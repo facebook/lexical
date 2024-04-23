@@ -86,12 +86,10 @@ export class RootNode extends ElementNode {
   append(...nodesToAppend: LexicalNode[]): this {
     for (let i = 0; i < nodesToAppend.length; i++) {
       const node = nodesToAppend[i];
-      if (!$isElementNode(node) && !$isDecoratorNode(node)) {
-        invariant(
-          false,
-          'rootNode.append: Only element or decorator nodes can be appended to the root node',
-        );
-      }
+      invariant(
+        $isElementNode(node) || $isDecoratorNode(node),
+        'rootNode.append: Only element or decorator nodes can be appended to the root node',
+      );
     }
     return super.append(...nodesToAppend);
   }

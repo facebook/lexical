@@ -24,10 +24,10 @@ const emojiReplacementMap = emojis.reduce<Map<string, string>>((acc, row) => {
   }
   acc.set(`:${row.short_name}:`, row.unified);
 
-  if (row.text != null) {
+  if (row.text !== null) {
     acc.set(row.text, row.unified);
   }
-  if (row.texts != null) {
+  if (row.texts !== null) {
     row.texts.forEach((text) => acc.set(text, row.unified));
   }
 

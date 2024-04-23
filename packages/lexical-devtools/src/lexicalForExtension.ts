@@ -79,13 +79,13 @@ export function $isTextNode(
 export function $isRangeSelection(x: unknown): x is lexical.RangeSelection {
   // Duck typing :P (and not instanceof RangeSelection) because extension operates
   // from different JS bundle and has no reference to the RangeSelection used on the page
-  return x != null && typeof x === 'object' && 'applyDOMRange' in x;
+  return x !== null && typeof x === 'object' && 'applyDOMRange' in x;
 }
 
 export function $isNodeSelection(x: unknown): x is lexical.NodeSelection {
   // Duck typing :P (and not instanceof NodeSelection) because extension operates
   // from different JS bundle and has no reference to the NodeSelection used on the page
-  return x != null && typeof x === 'object' && '_nodes' in x;
+  return x !== null && typeof x === 'object' && '_nodes' in x;
 }
 
 export function readEditorState<V>(

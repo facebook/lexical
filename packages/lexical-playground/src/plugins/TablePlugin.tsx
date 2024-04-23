@@ -157,9 +157,10 @@ export function TablePlugin({
   const cellContext = useContext(CellContext);
 
   useEffect(() => {
-    if (!editor.hasNodes([TableNode])) {
-      invariant(false, 'TablePlugin: TableNode is not registered on editor');
-    }
+    invariant(
+      editor.hasNodes([TableNode]),
+      'TablePlugin: TableNode is not registered on editor',
+    );
 
     cellContext.set(cellEditorConfig, children);
 

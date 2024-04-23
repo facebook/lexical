@@ -58,24 +58,20 @@ function exportNodeToJSON<SerializedNode extends SerializedLexicalNode>(
   const serializedNode = node.exportJSON();
   const nodeClass = node.constructor;
 
-  if (serializedNode.type !== nodeClass.getType()) {
-    invariant(
-      false,
-      'LexicalNode: Node %s does not match the serialized type. Check if .exportJSON() is implemented and it is returning the correct type.',
-      nodeClass.name,
-    );
-  }
+  invariant(
+    serializedNode.type === nodeClass.getType(),
+    'LexicalNode: Node %s does not match the serialized type. Check if .exportJSON() is implemented and it is returning the correct type.',
+    nodeClass.name,
+  );
 
   if ($isElementNode(node)) {
     const serializedChildren = (serializedNode as SerializedElementNode)
       .children;
-    if (!Array.isArray(serializedChildren)) {
-      invariant(
-        false,
-        'LexicalNode: Node %s is an element but .exportJSON() does not have a children array.',
-        nodeClass.name,
-      );
-    }
+    invariant(
+      Array.isArray(serializedChildren),
+      'LexicalNode: Node %s is an element but .exportJSON() does not have a children array.',
+      nodeClass.name,
+    );
 
     const children = node.getChildren();
 

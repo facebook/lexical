@@ -311,13 +311,11 @@ function $parseSerializedNodeImpl<
 
   const nodeClass = registeredNode.klass;
 
-  if (serializedNode.type !== nodeClass.getType()) {
-    invariant(
-      false,
-      'LexicalNode: Node %s does not implement .importJSON().',
-      nodeClass.name,
-    );
-  }
+  invariant(
+    serializedNode.type === nodeClass.getType(),
+    'LexicalNode: Node %s does not implement .importJSON().',
+    nodeClass.name,
+  );
 
   const node = nodeClass.importJSON(serializedNode);
   const children = serializedNode.children;

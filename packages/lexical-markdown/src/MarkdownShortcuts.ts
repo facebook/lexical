@@ -341,13 +341,11 @@ export function registerMarkdownShortcuts(
     if (type === 'element' || type === 'text-match') {
       const dependencies = transformer.dependencies;
       for (const node of dependencies) {
-        if (!editor.hasNode(node)) {
-          invariant(
-            false,
-            'MarkdownShortcuts: missing dependency %s for transformer. Ensure node dependency is included in editor initial config.',
-            node.getType(),
-          );
-        }
+        invariant(
+          editor.hasNode(node),
+          'MarkdownShortcuts: missing dependency %s for transformer. Ensure node dependency is included in editor initial config.',
+          node.getType(),
+        );
       }
     }
   }

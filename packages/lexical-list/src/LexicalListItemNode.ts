@@ -216,12 +216,10 @@ export class ListItemNode extends ElementNode {
   insertAfter(node: LexicalNode, restoreSelection = true): LexicalNode {
     const listNode = this.getParentOrThrow();
 
-    if (!$isListNode(listNode)) {
-      invariant(
-        false,
-        'insertAfter: list node is not parent of list item node',
-      );
-    }
+    invariant(
+      $isListNode(listNode),
+      'insertAfter: list node is not parent of list item node',
+    );
 
     if ($isListItemNode(node)) {
       return super.insertAfter(node, restoreSelection);

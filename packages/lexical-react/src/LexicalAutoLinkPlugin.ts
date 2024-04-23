@@ -423,12 +423,10 @@ function useAutoLink(
   onChange?: ChangeHandler,
 ): void {
   useEffect(() => {
-    if (!editor.hasNodes([AutoLinkNode])) {
-      invariant(
-        false,
-        'LexicalAutoLinkPlugin: AutoLinkNode not registered on editor',
-      );
-    }
+    invariant(
+      editor.hasNodes([AutoLinkNode]),
+      'LexicalAutoLinkPlugin: AutoLinkNode not registered on editor',
+    );
 
     const onChangeWrapped = (url: string | null, prevUrl: string | null) => {
       if (onChange) {

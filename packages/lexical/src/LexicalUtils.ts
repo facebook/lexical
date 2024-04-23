@@ -1359,12 +1359,10 @@ export function $applyNodeReplacement<N extends LexicalNode>(
   const replaceFunc = registeredNode.replace;
   if (replaceFunc !== null) {
     const replacementNode = replaceFunc(node) as N;
-    if (!(replacementNode instanceof node.constructor)) {
-      invariant(
-        false,
-        '$initializeNode failed. Ensure replacement node is a subclass of the original node.',
-      );
-    }
+    invariant(
+      replacementNode instanceof node.constructor,
+      '$initializeNode failed. Ensure replacement node is a subclass of the original node.',
+    );
     return replacementNode;
   }
   return node as N;
@@ -1511,10 +1509,9 @@ export function $splitNode(
     startNode = node;
   }
 
-  invariant(
-    !$isRootOrShadowRoot(node),
-    'Can not call $splitNode() on root element',
-  );
+  if ($isRootOrShadowRoot(node)) {
+    invariant(false, 'Can not call $splitNode() on root element');
+  }
 
   const recurse = <T extends LexicalNode>(
     currentNode: T,

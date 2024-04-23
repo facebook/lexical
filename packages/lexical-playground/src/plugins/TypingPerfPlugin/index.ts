@@ -39,7 +39,7 @@ export default function TypingPerfPlugin(): JSX.Element | null {
     let invalidatingEvent = false;
 
     const measureEventEnd = function logKeyPress() {
-      if (keyPressTimerId != null) {
+      if (keyPressTimerId !== null) {
         if (invalidatingEvent) {
           invalidatingEvent = false;
         } else {
@@ -52,7 +52,7 @@ export default function TypingPerfPlugin(): JSX.Element | null {
     };
 
     const measureEventStart = function measureEvent() {
-      if (timerId != null) {
+      if (timerId !== null) {
         clearTimeout(timerId);
         timerId = null;
       }

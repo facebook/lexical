@@ -194,10 +194,9 @@ export function getEndOfCodeInLine(
   anchor: CodeHighlightNode | TabNode,
 ): CodeHighlightNode | TabNode {
   const lastNode = getLastCodeNodeOfLine(anchor);
-  invariant(
-    !$isLineBreakNode(lastNode),
-    'Unexpected lineBreakNode in getEndOfCodeInLine',
-  );
+  if ($isLineBreakNode(lastNode)) {
+    invariant(false, 'Unexpected lineBreakNode in getEndOfCodeInLine');
+  }
   return lastNode;
 }
 

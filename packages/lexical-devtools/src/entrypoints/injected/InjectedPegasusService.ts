@@ -86,7 +86,7 @@ export class InjectedPegasusService
   }
 
   toggleEditorPicker(): void {
-    if (this.pickerActive != null) {
+    if (this.pickerActive !== null) {
       this.pickerActive?.stop();
       this.pickerActive = null;
 
@@ -97,7 +97,7 @@ export class InjectedPegasusService
     this.pickerActive.start({
       elementFilter: (el) => {
         let parent: HTMLElement | null = el;
-        while (parent != null && parent.tagName !== 'BODY') {
+        while (parent !== null && parent.tagName !== 'BODY') {
           if ('__lexicalEditor' in parent) {
             return parent;
           }

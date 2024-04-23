@@ -54,9 +54,10 @@ export function $getListDepth(listNode: ListNode): number {
 export function $getTopListNode(listItem: LexicalNode): ListNode {
   let list = listItem.getParent<ListNode>();
 
-  if (!$isListNode(list)) {
-    invariant(false, 'A ListItemNode must have a ListNode for a parent.');
-  }
+  invariant(
+    $isListNode(list),
+    'A ListItemNode must have a ListNode for a parent.',
+  );
 
   let parent: ListNode | null = list;
 

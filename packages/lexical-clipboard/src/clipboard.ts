@@ -214,24 +214,20 @@ function exportNodeToJSON<T extends LexicalNode>(node: T): BaseSerializedNode {
   const serializedNode = node.exportJSON();
   const nodeClass = node.constructor;
 
-  if (serializedNode.type !== nodeClass.getType()) {
-    invariant(
-      false,
-      'LexicalNode: Node %s does not implement .exportJSON().',
-      nodeClass.name,
-    );
-  }
+  invariant(
+    serializedNode.type === nodeClass.getType(),
+    'LexicalNode: Node %s does not implement .exportJSON().',
+    nodeClass.name,
+  );
 
   if ($isElementNode(node)) {
     const serializedChildren = (serializedNode as SerializedElementNode)
       .children;
-    if (!Array.isArray(serializedChildren)) {
-      invariant(
-        false,
-        'LexicalNode: Node %s is an element but .exportJSON() does not have a children array.',
-        nodeClass.name,
-      );
-    }
+    invariant(
+      Array.isArray(serializedChildren),
+      'LexicalNode: Node %s is an element but .exportJSON() does not have a children array.',
+      nodeClass.name,
+    );
   }
 
   return serializedNode;

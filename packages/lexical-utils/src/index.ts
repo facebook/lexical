@@ -258,13 +258,11 @@ export function $getNearestBlockElementAncestorOrThrow(
     startNode,
     (node) => $isElementNode(node) && !node.isInline(),
   );
-  if (!$isElementNode(blockNode)) {
-    invariant(
-      false,
-      'Expected node %s to have closest block element node.',
-      startNode.__key,
-    );
-  }
+  invariant(
+    $isElementNode(blockNode),
+    'Expected node %s to have closest block element node.',
+    startNode.__key,
+  );
   return blockNode;
 }
 

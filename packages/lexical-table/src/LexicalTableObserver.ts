@@ -335,9 +335,7 @@ export class TableObserver {
     this.editor.update(() => {
       const selection = $getSelection();
 
-      if (!$isTableSelection(selection)) {
-        invariant(false, 'Expected grid selection');
-      }
+      invariant($isTableSelection(selection), 'Expected grid selection');
 
       const formatSelection = $createRangeSelection();
 
@@ -369,9 +367,7 @@ export class TableObserver {
 
       const selection = $getSelection();
 
-      if (!$isTableSelection(selection)) {
-        invariant(false, 'Expected grid selection');
-      }
+      invariant($isTableSelection(selection), 'Expected grid selection');
 
       const selectedNodes = selection.getNodes().filter($isTableCellNode);
 

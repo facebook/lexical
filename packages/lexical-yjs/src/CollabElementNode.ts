@@ -135,7 +135,7 @@ export class CollabElementNode {
       const insertDelta = delta.insert;
       const deleteDelta = delta.delete;
 
-      if (delta.retain != null) {
+      if (delta.retain !== undefined) {
         currIndex += delta.retain;
       } else if (typeof deleteDelta === 'number') {
         let deletionSize = deleteDelta;
@@ -182,7 +182,7 @@ export class CollabElementNode {
             break;
           }
         }
-      } else if (insertDelta != null) {
+      } else if (insertDelta !== undefined) {
         if (typeof insertDelta === 'string') {
           const {node, offset} = getPositionFromElementAndOffset(
             this,
@@ -274,9 +274,9 @@ export class CollabElementNode {
             childCollabNode.syncPropertiesAndTextFromYjs(binding, null);
           } else if (childCollabNode instanceof CollabDecoratorNode) {
             childCollabNode.syncPropertiesFromYjs(binding, null);
-          } else if (!(childCollabNode instanceof CollabLineBreakNode)) {
+          } else {
             invariant(
-              false,
+              childCollabNode instanceof CollabLineBreakNode,
               'syncChildrenFromYjs: expected text, element, decorator, or linebreak collab node',
             );
           }

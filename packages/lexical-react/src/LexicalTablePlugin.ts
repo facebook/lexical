@@ -56,12 +56,10 @@ export function TablePlugin({
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
-    if (!editor.hasNodes([TableNode, TableCellNode, TableRowNode])) {
-      invariant(
-        false,
-        'TablePlugin: TableNode, TableCellNode or TableRowNode not registered on editor',
-      );
-    }
+    invariant(
+      editor.hasNodes([TableNode, TableCellNode, TableRowNode]),
+      'TablePlugin: TableNode, TableCellNode or TableRowNode not registered on editor',
+    );
 
     return mergeRegister(
       editor.registerCommand<InsertTableCommandPayload>(

@@ -44,12 +44,10 @@ export function useCharacterLimit(
   } = optional;
 
   useEffect(() => {
-    if (!editor.hasNodes([OverflowNode])) {
-      invariant(
-        false,
-        'useCharacterLimit: OverflowNode not registered on editor',
-      );
-    }
+    invariant(
+      editor.hasNodes([OverflowNode]),
+      'useCharacterLimit: OverflowNode not registered on editor',
+    );
   }, [editor]);
 
   useEffect(() => {

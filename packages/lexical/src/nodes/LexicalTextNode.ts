@@ -1027,12 +1027,10 @@ export class TextNode extends LexicalNode {
    */
   mergeWithSibling(target: TextNode): TextNode {
     const isBefore = target === this.getPreviousSibling();
-    if (!isBefore && target !== this.getNextSibling()) {
-      invariant(
-        false,
-        'mergeWithSibling: sibling must be a previous or next sibling',
-      );
-    }
+    invariant(
+      isBefore || target === this.getNextSibling(),
+      'mergeWithSibling: sibling must be a previous or next sibling',
+    );
     const key = this.__key;
     const targetKey = target.__key;
     const text = this.__text;
@@ -1185,10 +1183,10 @@ export function findParentPreDOMNode(node: Node) {
 function convertTextDOMNode(domNode: Node): DOMConversionOutput {
   const domNode_ = domNode as Text;
   const parentDom = domNode.parentElement;
-  invariant(
-    parentDom !== null,
-    'Expected parentElement of Text not to be null',
-  );
+
+  if (parentDom === null) {
+    invariant(false, 'Expected parentElement of Text not to be null');
+  }
   let textContent = domNode_.textContent || '';
   // No collapse and preserve segment break for pre, pre-wrap and pre-line
   if (findParentPreDOMNode(domNode_) !== null) {

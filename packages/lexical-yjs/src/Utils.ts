@@ -78,7 +78,7 @@ function isExcludedProperty(
 
   const nodeKlass = node.constructor;
   const excludedProperties = binding.excludedProperties.get(nodeKlass);
-  return excludedProperties != null && excludedProperties.has(name);
+  return excludedProperties !== undefined && excludedProperties.has(name);
 }
 
 export function getIndexOfYjsNode(
@@ -166,7 +166,12 @@ function getNodeTypeFromSharedType(
     sharedType instanceof YMap
       ? sharedType.get('__type')
       : sharedType.getAttribute('__type');
-  invariant(type != null, 'Expected shared type to include type attribute');
+
+  invariant(
+    typeof type === 'string',
+    'Expected shared type to include type attribute',
+  );
+
   return type;
 }
 

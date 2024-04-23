@@ -11,6 +11,7 @@ import type {EditorThemeClasses} from 'lexical';
 import './PlaygroundEditorTheme.css';
 
 const theme: EditorThemeClasses = {
+  autoComplete: 'PlaygroundEditorTheme__autoComplete',
   blockCursor: 'PlaygroundEditorTheme__blockCursor',
   characterLimit: 'PlaygroundEditorTheme__characterLimit',
   code: 'PlaygroundEditorTheme__code',

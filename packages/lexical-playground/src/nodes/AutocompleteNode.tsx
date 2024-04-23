@@ -6,7 +6,7 @@
  *
  */
 
-import type {Spread} from 'lexical';
+import type {LexicalEditor, Spread} from 'lexical';
 
 import {
   DecoratorNode,
@@ -14,6 +14,7 @@ import {
   NodeKey,
   SerializedLexicalNode,
 } from 'lexical';
+import {EditorThemeClassName} from 'packages/lexical/src/LexicalEditor';
 import * as React from 'react';
 
 import {useSharedAutocompleteContext} from '../context/SharedAutocompleteContext';
@@ -79,11 +80,11 @@ export class AutocompleteNode extends DecoratorNode<JSX.Element | null> {
     return document.createElement('span');
   }
 
-  decorate(): JSX.Element | null {
+  decorate(_editor: LexicalEditor, config: EditorConfig): JSX.Element | null {
     if (this.__uuid !== UUID) {
       return null;
     }
-    return <AutocompleteComponent />;
+    return <AutocompleteComponent className={config.theme.autoComplete} />;
   }
 }
 
@@ -91,16 +92,19 @@ export function $createAutocompleteNode(uuid: string): AutocompleteNode {
   return new AutocompleteNode(uuid);
 }
 
-function AutocompleteComponent(): JSX.Element {
+function AutocompleteComponent({
+  className,
+}: {
+  className?: EditorThemeClassName;
+}): JSX.Element {
   const [suggestion] = useSharedAutocompleteContext();
   const userAgentData = window.navigator.userAgentData;
   const isMobile =
     userAgentData !== undefined
       ? userAgentData.mobile
       : window.innerWidth <= 800 && window.innerHeight <= 600;
-  // TODO Move to theme
   return (
-    <span style={{color: '#ccc'}} spellCheck="false">
+    <span className={className} spellCheck="false">
       {suggestion} {isMobile ? '(SWIPE \u2B95)' : '(TAB)'}
     </span>
   );

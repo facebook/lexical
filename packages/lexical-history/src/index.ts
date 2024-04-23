@@ -446,7 +446,7 @@ export function registerHistory(
     };
   };
 
-  const unregisterCommandListener = mergeRegister(
+  const unregister = mergeRegister(
     editor.registerCommand(
       UNDO_COMMAND,
       () => {
@@ -484,12 +484,7 @@ export function registerHistory(
     editor.registerUpdateListener(applyChange),
   );
 
-  const unregisterUpdateListener = editor.registerUpdateListener(applyChange);
-
-  return () => {
-    unregisterCommandListener();
-    unregisterUpdateListener();
-  };
+  return unregister;
 }
 
 /**

@@ -278,7 +278,7 @@ function createChildren(
   element: ElementNode,
   _startIndex: number,
   endIndex: number,
-  dom: null | HTMLElement,
+  dom: HTMLElement,
   insertDOM: null | HTMLElement,
 ): void {
   const previousSubTreeTextContent = subTreeTextContent;

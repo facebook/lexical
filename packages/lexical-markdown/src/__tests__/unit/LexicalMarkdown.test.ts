@@ -176,6 +176,18 @@ describe('Markdown', () => {
       md: '```\nCode\n```',
     },
     {
+      // Import only: prefix tabs will be removed for export
+      html: '<pre spellcheck="false"><span style="white-space: pre-wrap;">Code</span></pre>',
+      md: '\t```\nCode\n```',
+      skipExport: true,
+    },
+    {
+      // Import only: prefix spaces will be removed for export
+      html: '<pre spellcheck="false"><span style="white-space: pre-wrap;">Code</span></pre>',
+      md: '   ```\nCode\n```',
+      skipExport: true,
+    },
+    {
       // Import only: extra empty lines will be removed for export
       html: '<p><span style="white-space: pre-wrap;">Hello</span></p><p><span style="white-space: pre-wrap;">world</span></p>',
       md: ['Hello', '', '', '', 'world'].join('\n'),

@@ -34,7 +34,7 @@ import {IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from 'shared/environment';
 import {PUNCTUATION_OR_SPACE, transformersByType} from './utils';
 
 const MARKDOWN_EMPTY_LINE_REG_EXP = /^\s{0,3}$/;
-const CODE_BLOCK_REG_EXP = /^```(\w{1,10})?\s?$/;
+const CODE_BLOCK_REG_EXP = /^[ \t]*```(\w{1,10})?\s?$/;
 type TextFormatTransformersIndex = Readonly<{
   fullMatchRegExpByTag: Readonly<Record<string, RegExp>>;
   openTagsRegExp: RegExp;

@@ -1193,6 +1193,7 @@ export class RangeSelection implements BaseSelection {
     if (nodes.length === 0) {
       return;
     }
+    debugger;
     if (this.anchor.key === 'root') {
       this.insertParagraph();
       const selection = $getSelection();
@@ -2681,11 +2682,17 @@ export function $getTextContent(): string {
 }
 
 function removeTextAndSplitBlock(selection: RangeSelection): number {
+  debugger;
   if (!selection.isCollapsed()) {
     selection.removeText();
   }
+  const selection_ = $getSelection();
+  invariant(
+    $isRangeSelection(selection_),
+    'Unexpected dirty selection to be null',
+  );
 
-  const anchor = selection.anchor;
+  const anchor = selection_.anchor;
   let node = anchor.getNode();
   let offset = anchor.offset;
 
@@ -2700,6 +2707,7 @@ function splitNodeAtPoint(
   node: LexicalNode,
   offset: number,
 ): [parent: ElementNode, offset: number] {
+  debugger;
   const parent = node.getParent();
   if (!parent) {
     const paragraph = $createParagraphNode();

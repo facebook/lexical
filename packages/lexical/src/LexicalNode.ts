@@ -855,6 +855,7 @@ export class LexicalNode {
    * @param includeChildren - Whether or not to transfer the children of this node to the replacing node.
    * */
   replace<N extends LexicalNode>(replaceWith: N, includeChildren?: boolean): N {
+    debugger;
     errorOnReadOnly();
     let selection = $getSelection();
     if (selection !== null) {

@@ -15,6 +15,7 @@ import invariant from 'shared/invariant';
 
 import {
   $createParagraphNode,
+  $isDecoratorNode,
   $isElementNode,
   $isParagraphNode,
   $isRootNode,
@@ -281,14 +282,41 @@ export class LexicalNode {
     }
     // For inline images inside of element nodes.
     // Without this change the image will be selected if the cursor is before or after it.
-    if (
+    const isElementRangeSelection =
       $isRangeSelection(targetSelection) &&
       targetSelection.anchor.type === 'element' &&
-      targetSelection.focus.type === 'element' &&
-      targetSelection.anchor.key === targetSelection.focus.key &&
-      targetSelection.anchor.offset === targetSelection.focus.offset
-    ) {
-      return false;
+      targetSelection.focus.type === 'element';
+
+    if (isElementRangeSelection) {
+      if (targetSelection.isCollapsed()) {
+        return false;
+      }
+
+      const parentNode = this.getParent();
+      if ($isDecoratorNode(this) && this.isInline() && parentNode) {
+        const {anchor, focus} = targetSelection;
+
+        if (anchor.isBefore(focus)) {
+          const anchorNode = anchor.getNode() as ElementNode;
+          const isAnchorPointToLast =
+            anchor.offset === anchorNode.getChildrenSize();
+          const isAnchorNodeIsParent = anchorNode.is(parentNode);
+          const isLastChild = anchorNode.getLastChildOrThrow().is(this);
+
+          if (isAnchorPointToLast && isAnchorNodeIsParent && isLastChild) {
+            return false;
+          }
+        } else {
+          const focusNode = focus.getNode() as ElementNode;
+          const isFocusPointToLast =
+            focus.offset === focusNode.getChildrenSize();
+          const isFocusNodeIsParent = focusNode.is(parentNode);
+          const isLastChild = focusNode.getLastChildOrThrow().is(this);
+          if (isFocusPointToLast && isFocusNodeIsParent && isLastChild) {
+            return false;
+          }
+        }
+      }
     }
     return isSelected;
   }

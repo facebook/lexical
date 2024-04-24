@@ -8,7 +8,7 @@
 
 'use strict';
 
-const tsconfig = require('./tsconfig.test.paths.json');
+const tsconfig = require('./tsconfig.json');
 
 const common = {
   modulePathIgnorePatterns: ['/npm'],

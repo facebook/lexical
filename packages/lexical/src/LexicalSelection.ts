@@ -1193,7 +1193,6 @@ export class RangeSelection implements BaseSelection {
     if (nodes.length === 0) {
       return;
     }
-    debugger;
     if (this.anchor.key === 'root') {
       this.insertParagraph();
       const selection = $getSelection();

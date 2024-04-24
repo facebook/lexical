@@ -32,10 +32,8 @@ async function updateTsconfig({
   prettierConfig,
   test,
 }) {
-  const prevTsconfigContents = fs.existsSync(jsonFileName)
-    ? fs.readFileSync(jsonFileName, 'utf8')
-    : null;
-  const tsconfig = prevTsconfigContents ? JSON.parse(prevTsconfigContents) : {};
+  const prevTsconfigContents = fs.readFileSync(jsonFileName, 'utf8');
+  const tsconfig = JSON.parse(prevTsconfigContents);
   const publicPaths = [];
   const privatePaths = [];
   const testPaths = [];
@@ -76,7 +74,6 @@ async function updateTsconfig({
     ...privatePaths,
     ...testPaths,
   ]);
-  tsconfig.compilerOptions ||= {};
   tsconfig.compilerOptions.paths = paths;
   // This is async in future versions of prettier
   const nextTsconfigContents = await prettier.format(JSON.stringify(tsconfig), {
@@ -92,19 +89,19 @@ async function updateAllTsconfig() {
   const prettierConfig = (await prettier.resolveConfig('./')) || {};
   await updateTsconfig({
     extraPaths: [],
-    jsonFileName: './tsconfig.test.paths.json',
+    jsonFileName: './tsconfig.json',
     prettierConfig,
     test: true,
   });
   await updateTsconfig({
     extraPaths: [],
-    jsonFileName: './tsconfig.build.paths.json',
+    jsonFileName: './tsconfig.build.json',
     prettierConfig,
     test: false,
   });
   await updateTsconfig({
     extraPaths: [['lexicalOriginal', ['../lexical/src/']]],
-    jsonFileName: './packages/lexical-devtools/tsconfig.paths.json',
+    jsonFileName: './packages/lexical-devtools/tsconfig.json',
     prettierConfig,
     test: false,
   });

@@ -1,5 +1,4 @@
 {
-  "extends": "./tsconfig.json",
   "compilerOptions": {
     "allowJs": true,
     "esModuleInterop": true,
@@ -13,5 +12,6 @@
     "**/node_modules/**",
     "./packages/playwright-core/**",
     "./packages/lexical-devtools/**"
-  ]
+  ],
+  "extends": "./tsconfig.json"
 }

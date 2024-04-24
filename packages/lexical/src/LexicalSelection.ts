@@ -2681,7 +2681,6 @@ export function $getTextContent(): string {
 }
 
 function removeTextAndSplitBlock(selection: RangeSelection): number {
-  debugger;
   if (!selection.isCollapsed()) {
     selection.removeText();
   }
@@ -2706,7 +2705,6 @@ function splitNodeAtPoint(
   node: LexicalNode,
   offset: number,
 ): [parent: ElementNode, offset: number] {
-  debugger;
   const parent = node.getParent();
   if (!parent) {
     const paragraph = $createParagraphNode();

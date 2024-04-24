@@ -182,7 +182,7 @@ describe('LexicalEslintPlugin', () => {
 ### npm run update-packages
 
 This script runs: update-version, update-tsconfig, update-flowconfig,
-update-docs, and update-www-stubs. This is safe to do at any time and will
+create-docs, and create-www-stubs. This is safe to do at any time and will
 ensure that package.json files are all at the correct versions, paths are
 set up correctly for module resolution of all public exports, and that
 various defaults are filled in.

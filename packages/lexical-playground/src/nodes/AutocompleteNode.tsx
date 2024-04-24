@@ -6,14 +6,16 @@
  *
  */
 
-import type {Spread} from 'lexical';
-
-import {
-  DecoratorNode,
+import type {
   EditorConfig,
+  EditorThemeClassName,
+  LexicalEditor,
   NodeKey,
   SerializedLexicalNode,
+  Spread,
 } from 'lexical';
+
+import {DecoratorNode} from 'lexical';
 import * as React from 'react';
 
 import {useSharedAutocompleteContext} from '../context/SharedAutocompleteContext';
@@ -35,7 +37,14 @@ export type SerializedAutocompleteNode = Spread<
 >;
 
 export class AutocompleteNode extends DecoratorNode<JSX.Element | null> {
-  // TODO add comment
+  /**
+   * A unique uuid is generated for each session and assigned to the instance.
+   * This helps to:
+   * - Ensures max one Autocomplete node per session.
+   * - Ensure that when collaboration is enabled, this node is not shown in
+   *   other sessions.
+   * See https://github.com/facebook/lexical/blob/master/packages/lexical-playground/src/plugins/AutocompletePlugin/index.tsx#L39
+   */
   __uuid: string;
 
   static clone(node: AutocompleteNode): AutocompleteNode {
@@ -79,11 +88,11 @@ export class AutocompleteNode extends DecoratorNode<JSX.Element | null> {
     return document.createElement('span');
   }
 
-  decorate(): JSX.Element | null {
+  decorate(editor: LexicalEditor, config: EditorConfig): JSX.Element | null {
     if (this.__uuid !== UUID) {
       return null;
     }
-    return <AutocompleteComponent />;
+    return <AutocompleteComponent className={config.theme.autocomplete} />;
   }
 }
 
@@ -91,16 +100,19 @@ export function $createAutocompleteNode(uuid: string): AutocompleteNode {
   return new AutocompleteNode(uuid);
 }
 
-function AutocompleteComponent(): JSX.Element {
+function AutocompleteComponent({
+  className,
+}: {
+  className: EditorThemeClassName;
+}): JSX.Element {
   const [suggestion] = useSharedAutocompleteContext();
   const userAgentData = window.navigator.userAgentData;
   const isMobile =
     userAgentData !== undefined
       ? userAgentData.mobile
       : window.innerWidth <= 800 && window.innerHeight <= 600;
-  // TODO Move to theme
   return (
-    <span style={{color: '#ccc'}} spellCheck="false">
+    <span className={className} spellCheck="false">
       {suggestion} {isMobile ? '(SWIPE \u2B95)' : '(TAB)'}
     </span>
   );

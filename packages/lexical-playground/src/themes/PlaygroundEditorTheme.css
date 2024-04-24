@@ -439,3 +439,6 @@
   border: 1px dashed #ddd;
   padding: 8px 16px;
 }
+.PlaygroundEditorTheme__autocomplete {
+  color: #ccc;
+}

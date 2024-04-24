@@ -166,13 +166,16 @@ export function $insertDataTransferForRichText(
         parts.pop();
       }
       for (let i = 0; i < parts.length; i++) {
-        const part = parts[i];
-        if (part === '\n' || part === '\r\n') {
-          selection.insertParagraph();
-        } else if (part === '\t') {
-          selection.insertNodes([$createTabNode()]);
-        } else {
-          selection.insertText(part);
+        const currentSelection = $getSelection();
+        if ($isRangeSelection(currentSelection)) {
+          const part = parts[i];
+          if (part === '\n' || part === '\r\n') {
+            currentSelection.insertParagraph();
+          } else if (part === '\t') {
+            currentSelection.insertNodes([$createTabNode()]);
+          } else {
+            currentSelection.insertText(part);
+          }
         }
       }
     } else {

@@ -2681,10 +2681,17 @@ export function $getTextContent(): string {
 }
 
 function removeTextAndSplitBlock(selection: RangeSelection): number {
+  let selection_ = selection;
   if (!selection.isCollapsed()) {
-    selection.removeText();
+    selection_.removeText();
   }
-  const selection_ = $getSelection();
+  // A new selection can originate as a result of node replacement, in which case is registered via
+  // $setSelection
+  const newSelection = $getSelection();
+  if ($isRangeSelection(newSelection)) {
+    selection_ = newSelection;
+  }
+
   invariant(
     $isRangeSelection(selection_),
     'Unexpected dirty selection to be null',

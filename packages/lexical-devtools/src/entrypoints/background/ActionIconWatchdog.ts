@@ -82,7 +82,8 @@ export default class ActionIconWatchdog {
 
   private isRestrictedBrowserPage(url: string | undefined) {
     return (
-      !url || ['chrome:', 'about:', 'file:'].includes(new URL(url).protocol)
+      !url ||
+      ['chrome:', 'about:', 'file:', 'edge:'].includes(new URL(url).protocol)
     );
   }
 

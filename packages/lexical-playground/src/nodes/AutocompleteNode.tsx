@@ -8,12 +8,12 @@
 
 import type {
   EditorConfig,
+  EditorThemeClassName,
   LexicalEditor,
   NodeKey,
   SerializedLexicalNode,
   Spread,
 } from 'lexical';
-import type {EditorThemeClassName} from 'packages/lexical/src/LexicalEditor';
 
 import {DecoratorNode} from 'lexical';
 import * as React from 'react';

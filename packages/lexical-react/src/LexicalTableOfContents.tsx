@@ -10,7 +10,7 @@ import type {LexicalEditor, NodeKey, NodeMutation} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$isHeadingNode, HeadingNode, HeadingTagType} from '@lexical/rich-text';
-import {$dfs, DFSNode} from '@lexical/utils';
+import {$dfs} from '@lexical/utils';
 import {$getNodeByKey, $getRoot, TextNode} from 'lexical';
 import {useEffect, useState} from 'react';
 
@@ -88,11 +88,9 @@ export default function LexicalTableOfContentsPlugin({
       HeadingNode,
       (_: Map<string, NodeMutation>) => {
         editor.getEditorState().read(() => {
-          const dfsNodes = $dfs().filter((dfsNode: DFSNode) =>
-            $isHeadingNode(dfsNode.node),
-          );
-          const headingNodes = dfsNodes.map(
-            (dfsNode) => dfsNode.node as HeadingNode,
+          const headingNodes: HeadingNode[] = $dfs().reduce(
+            (acc, {node}) => ($isHeadingNode(node) ? [...acc, node] : acc),
+            [] as HeadingNode[],
           );
           currentTableOfContents = $newTableOfContents(headingNodes);
           setTableOfContents(currentTableOfContents);

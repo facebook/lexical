@@ -1926,10 +1926,6 @@ function internalResolveSelectionPoint(
         return null;
       }
       if ($isElementNode(resolvedElement)) {
-        resolvedOffset = Math.min(
-          resolvedElement.getChildrenSize(),
-          resolvedOffset,
-        );
         let child = resolvedElement.getChildAtIndex(resolvedOffset);
         if (
           $isElementNode(child) &&

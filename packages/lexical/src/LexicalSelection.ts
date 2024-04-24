@@ -2684,8 +2684,13 @@ function removeTextAndSplitBlock(selection: RangeSelection): number {
   if (!selection.isCollapsed()) {
     selection.removeText();
   }
+  const selection_ = $getSelection();
+  invariant(
+    $isRangeSelection(selection_),
+    'Unexpected dirty selection to be null',
+  );
 
-  const anchor = selection.anchor;
+  const anchor = selection_.anchor;
   let node = anchor.getNode();
   let offset = anchor.offset;
 

@@ -117,26 +117,30 @@ test.describe('HTML Tables CopyAndPaste', () => {
             <td class="PlaygroundEditorTheme__tableCell">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                dir="ltr">
+                dir="ltr"
+                style="text-align: left;">
                 <span data-lexical-text="true">a</span>
               </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                dir="ltr">
+                dir="ltr"
+                style="text-align: left;">
                 <span data-lexical-text="true">b</span>
               </p>
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                dir="ltr">
+                dir="ltr"
+                style="text-align: left;">
                 <span data-lexical-text="true">b</span>
               </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                dir="ltr">
+                dir="ltr"
+                style="text-align: left;">
                 <span data-lexical-text="true">c</span>
               </p>
             </td>
@@ -145,21 +149,24 @@ test.describe('HTML Tables CopyAndPaste', () => {
             <td class="PlaygroundEditorTheme__tableCell">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                dir="ltr">
+                dir="ltr"
+                style="text-align: left;">
                 <span data-lexical-text="true">d</span>
               </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                dir="ltr">
+                dir="ltr"
+                style="text-align: left;">
                 <span data-lexical-text="true">e</span>
               </p>
             </td>
             <td class="PlaygroundEditorTheme__tableCell">
               <p
                 class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-                dir="ltr">
+                dir="ltr"
+                style="text-align: left;">
                 <span data-lexical-text="true">f</span>
               </p>
             </td>

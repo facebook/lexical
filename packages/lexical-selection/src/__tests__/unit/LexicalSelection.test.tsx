@@ -1121,6 +1121,30 @@ describe('LexicalSelection tests', () => {
     });
   });
 
+  test('insert text one selected node element selection', async () => {
+    await ReactTestUtils.act(async () => {
+      await editor.update(() => {
+        const root = $getRoot();
+
+        const paragraph = root.getFirstChild<ParagraphNode>();
+
+        const elementNode = $createTestElementNode();
+        const text = $createTextNode('foo');
+
+        paragraph.append(elementNode);
+        elementNode.append(text);
+
+        const selection = $createRangeSelection();
+        selection.anchor.set(text.__key, 0, 'text');
+        selection.focus.set(paragraph.__key, 1, 'element');
+
+        selection.insertText('');
+
+        expect(root.getTextContent()).toBe('');
+      });
+    });
+  });
+
   test('getNodes resolves nested block nodes', async () => {
     await ReactTestUtils.act(async () => {
       await editor.update(() => {

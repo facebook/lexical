@@ -6,14 +6,25 @@
  *
  */
 
+import './App.css';
+
+import {
+  Alert,
+  AlertIcon,
+  Box,
+  ButtonGroup,
+  Flex,
+  Spacer,
+} from '@chakra-ui/react';
 import * as React from 'react';
 import {useState} from 'react';
-import {sendMessage} from 'webext-bridge/devtools';
 
 import lexicalLogo from '@/public/lexical.svg';
 
 import EditorsRefreshCTA from '../../components/EditorsRefreshCTA';
-import useStore from '../../store';
+import {useExtensionStore} from '../../store';
+import {EditorInspectorButton} from './components/EditorInspectorButton';
+import {EditorsList} from './components/EditorsList';
 
 interface Props {
   tabID: number;
@@ -22,50 +33,68 @@ interface Props {
 function App({tabID}: Props) {
   const [errorMessage, setErrorMessage] = useState('');
 
-  const {lexicalState} = useStore();
-  const states = lexicalState[tabID] ?? {};
+  const {lexicalState} = useExtensionStore();
+  const states = lexicalState[tabID];
   const lexicalCount = Object.keys(states ?? {}).length;
 
-  return (
+  return lexicalState[tabID] === null ? (
+    <Alert status="warning">
+      <AlertIcon />
+      This is a restricted browser page. Lexical DevTools cannot access this
+      page.
+    </Alert>
+  ) : (
     <>
-      <div>
-        <a href="https://lexical.dev" target="_blank">
-          <img src={lexicalLogo} className="logo" alt="Lexical logo" />
-        </a>
-      </div>
+      <Flex>
+        <Box p="4">
+          <ButtonGroup variant="outline" spacing="2">
+            <EditorInspectorButton
+              tabID={tabID}
+              setErrorMessage={setErrorMessage}
+            />
+            <EditorsRefreshCTA
+              tabID={tabID}
+              setErrorMessage={setErrorMessage}
+            />
+          </ButtonGroup>
+        </Box>
+        <Box p="4" alignContent="center">
+          {states === undefined ? (
+            <span>Loading...</span>
+          ) : (
+            <span>
+              Found <b>{lexicalCount}</b> editor
+              {lexicalCount > 1 || lexicalCount === 0 ? 's' : ''} on the page.
+            </span>
+          )}
+        </Box>
+        <Spacer />
+        <Box p="2">
+          <a href="https://lexical.dev" target="_blank">
+            <img
+              src={lexicalLogo}
+              className="logo"
+              width={178}
+              height={40}
+              alt="Lexical logo"
+            />
+          </a>
+        </Box>
+      </Flex>
       {errorMessage !== '' ? (
         <div className="card error">{errorMessage}</div>
       ) : null}
-      <div className="card">
-        {states === undefined ? (
-          <span>Loading...</span>
+
+      <Box mt={5}>
+        {lexicalCount > 0 ? (
+          <EditorsList tabID={tabID} setErrorMessage={setErrorMessage} />
         ) : (
-          <span>
-            Found <b>{lexicalCount}</b> editor{lexicalCount > 1 ? 's' : ''} on
-            the page
-          </span>
+          <Alert status="info">
+            <AlertIcon />
+            No Lexical editors found on the page.
+          </Alert>
         )}
-        <p>
-          <EditorsRefreshCTA
-            tabID={tabID}
-            setErrorMessage={setErrorMessage}
-            sendMessage={sendMessage}
-          />
-        </p>
-      </div>
-      {Object.entries(states).map(([key, state]) => (
-        <p key={key}>
-          <b>ID: {key}</b>
-          <br />
-          <textarea
-            readOnly={true}
-            value={JSON.stringify(state)}
-            rows={5}
-            cols={150}
-          />
-          <hr />
-        </p>
-      ))}
+      </Box>
     </>
   );
 }

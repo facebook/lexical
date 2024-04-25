@@ -717,20 +717,26 @@ export class RangeSelection implements BaseSelection {
   insertText(text: string): void {
     const anchor = this.anchor;
     const focus = this.focus;
-    const isBefore = this.isCollapsed() || anchor.isBefore(focus);
     const format = this.format;
     const style = this.style;
-    if (isBefore && anchor.type === 'element') {
-      $transferStartingElementPointToTextPoint(anchor, focus, format, style);
-    } else if (!isBefore && focus.type === 'element') {
-      $transferStartingElementPointToTextPoint(focus, anchor, format, style);
+    let firstPoint = anchor;
+    let endPoint = focus;
+    if (!this.isCollapsed() && focus.isBefore(anchor)) {
+      firstPoint = focus;
+      endPoint = anchor;
     }
+    if (firstPoint.type === 'element') {
+      $transferStartingElementPointToTextPoint(
+        firstPoint,
+        endPoint,
+        format,
+        style,
+      );
+    }
+    const startOffset = firstPoint.offset;
+    let endOffset = endPoint.offset;
     const selectedNodes = this.getNodes();
     const selectedNodesLength = selectedNodes.length;
-    const firstPoint = isBefore ? anchor : focus;
-    const endPoint = isBefore ? focus : anchor;
-    const startOffset = firstPoint.offset;
-    const endOffset = endPoint.offset;
     let firstNode: TextNode = selectedNodes[0] as TextNode;
 
     if (!$isTextNode(firstNode)) {
@@ -741,6 +747,11 @@ export class RangeSelection implements BaseSelection {
     const firstNodeParent = firstNode.getParentOrThrow();
     const lastIndex = selectedNodesLength - 1;
     let lastNode = selectedNodes[lastIndex];
+
+    if (selectedNodesLength === 1 && endPoint.type === 'element') {
+      endOffset = firstNodeTextLength;
+      endPoint.set(firstPoint.key, endOffset, 'text');
+    }
 
     if (
       this.isCollapsed() &&
@@ -1940,13 +1951,13 @@ function internalResolveSelectionPoint(
             : child.getFirstDescendant();
           if (descendant === null) {
             resolvedElement = child;
-            resolvedOffset = 0;
           } else {
             child = descendant;
             resolvedElement = $isElementNode(child)
               ? child
               : child.getParentOrThrow();
           }
+          resolvedOffset = 0;
         }
         if ($isTextNode(child)) {
           resolvedNode = child;
@@ -2685,11 +2696,23 @@ export function $getTextContent(): string {
 }
 
 function removeTextAndSplitBlock(selection: RangeSelection): number {
+  let selection_ = selection;
   if (!selection.isCollapsed()) {
-    selection.removeText();
+    selection_.removeText();
+  }
+  // A new selection can originate as a result of node replacement, in which case is registered via
+  // $setSelection
+  const newSelection = $getSelection();
+  if ($isRangeSelection(newSelection)) {
+    selection_ = newSelection;
   }
 
-  const anchor = selection.anchor;
+  invariant(
+    $isRangeSelection(selection_),
+    'Unexpected dirty selection to be null',
+  );
+
+  const anchor = selection_.anchor;
   let node = anchor.getNode();
   let offset = anchor.offset;
 

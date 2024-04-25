@@ -159,5 +159,8 @@
   "157": "Expected tableNode to have a parent TableNode",
   "158": "Expected gridParent to have a parent",
   "159": "Expected focusCellParent to have a parent",
-  "160": "Expected TableCellNode parent to be a TableRowNode"
+  "160": "Expected TableCellNode parent to be a TableRowNode",
+  "161": "Unexpected dirty selection to be null",
+  "162": "Root element not registered",
+  "163": "node is not a ListNode"
 }

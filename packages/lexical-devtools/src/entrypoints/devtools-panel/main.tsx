@@ -6,19 +6,23 @@
  *
  */
 
+import {ChakraProvider} from '@chakra-ui/react';
+import {initPegasusTransport} from '@webext-pegasus/transport/devtools';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 
-import store from '../../store.ts';
-import storeReadyPromise from '../../store-sync/content-script';
+import {extensionStoreReady} from '../../store.ts';
 import App from './App.tsx';
 
 const tabID = browser.devtools.inspectedWindow.tabId;
+initPegasusTransport();
 
-storeReadyPromise(store).then(() =>
+extensionStoreReady().then(() =>
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
-      <App tabID={tabID} />
+      <ChakraProvider>
+        <App tabID={tabID} />
+      </ChakraProvider>
     </React.StrictMode>,
   ),
 );

@@ -102,15 +102,18 @@ export function applyTableHandlers(
     };
 
     const onMouseMove = (moveEvent: MouseEvent) => {
-      const focusCell = getDOMCellFromTarget(moveEvent.target as Node);
-      if (
-        focusCell !== null &&
-        (tableObserver.anchorX !== focusCell.x ||
-          tableObserver.anchorY !== focusCell.y)
-      ) {
-        moveEvent.preventDefault();
-        tableObserver.setFocusCellForSelection(focusCell);
-      }
+      // delaying mousemove handler to allow selectionchange handler from LexicalEvents.ts to be executed first
+      setTimeout(() => {
+        const focusCell = getDOMCellFromTarget(moveEvent.target as Node);
+        if (
+          focusCell !== null &&
+          (tableObserver.anchorX !== focusCell.x ||
+            tableObserver.anchorY !== focusCell.y)
+        ) {
+          moveEvent.preventDefault();
+          tableObserver.setFocusCellForSelection(focusCell);
+        }
+      }, 0);
     };
     return {onMouseMove: onMouseMove, onMouseUp: onMouseUp};
   };
@@ -281,22 +284,6 @@ export function applyTableHandlers(
       ) {
         // TODO: Fix Delete Line in Table Cells.
         return true;
-      }
-
-      if (
-        command === DELETE_CHARACTER_COMMAND ||
-        command === DELETE_WORD_COMMAND
-      ) {
-        if (selection.isCollapsed() && selection.anchor.offset === 0) {
-          if (nearestElementNode !== topLevelCellElementNode) {
-            const children = nearestElementNode.getChildren();
-            const newParagraphNode = $createParagraphNode();
-            children.forEach((child) => newParagraphNode.append(child));
-            nearestElementNode.replace(newParagraphNode);
-            nearestElementNode.getWritable().__parent = tableCellNode.getKey();
-            return true;
-          }
-        }
       }
     }
 
@@ -720,9 +707,7 @@ export function applyTableHandlers(
             if (isFocusInside) {
               newSelection.focus.set(
                 tableNode.getParentOrThrow().getKey(),
-                isBackward
-                  ? tableNode.getIndexWithinParent()
-                  : tableNode.getIndexWithinParent() + 1,
+                tableNode.getIndexWithinParent(),
                 'element',
               );
             } else {
@@ -1278,6 +1263,13 @@ function $handleArrowKey(
   tableNode: TableNode,
   tableObserver: TableObserver,
 ): boolean {
+  if (
+    (direction === 'up' || direction === 'down') &&
+    isTypeaheadMenuInView(editor)
+  ) {
+    return false;
+  }
+
   const selection = $getSelection();
 
   if (!$isSelectionInTable(selection, tableNode)) {
@@ -1492,6 +1484,19 @@ function stopEvent(event: Event) {
   event.preventDefault();
   event.stopImmediatePropagation();
   event.stopPropagation();
+}
+
+function isTypeaheadMenuInView(editor: LexicalEditor) {
+  // There is no inbuilt way to check if the component picker is in view
+  // but we can check if the root DOM element has the aria-controls attribute "typeahead-menu".
+  const root = editor.getRootElement();
+  if (!root) {
+    return false;
+  }
+  return (
+    root.hasAttribute('aria-controls') &&
+    root.getAttribute('aria-controls') === 'typeahead-menu'
+  );
 }
 
 function isExitingTableAnchor(

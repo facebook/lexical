@@ -433,8 +433,8 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
     registeredNodes = new Map();
     for (let i = 0; i < nodes.length; i++) {
       let klass = nodes[i];
-      let replace = null;
-      let replaceWithKlass = null;
+      let replace: RegisteredNode['replace'] = null;
+      let replaceWithKlass: RegisteredNode['replaceWithKlass'] = null;
 
       if (typeof klass !== 'function') {
         const options = klass;

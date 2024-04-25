@@ -12,6 +12,7 @@ import {
   moveLeft,
   moveRight,
   moveToEditorBeginning,
+  moveUp,
   pressBackspace,
   selectAll,
 } from '../keyboardShortcuts/index.mjs';
@@ -26,6 +27,7 @@ import {
   focusEditor,
   html,
   initialize,
+  insertCollapsible,
   insertHorizontalRule,
   insertSampleImage,
   insertTable,
@@ -43,6 +45,7 @@ import {
   test,
   toggleColumnHeader,
   unmergeTableCell,
+  waitForSelector,
 } from '../utils/index.mjs';
 
 async function fillTablePartiallyWithText(page) {
@@ -485,52 +488,171 @@ test.describe('Tables', () => {
     });
   });
 
-  test(`Can navigate table with keyboard`, async ({
-    page,
-    isPlainText,
-    isCollab,
-  }) => {
-    await initialize({isCollab, page});
-    test.skip(isPlainText);
-
-    await focusEditor(page);
-    await insertTable(page, 2, 3);
-
-    await fillTablePartiallyWithText(page);
-
-    await assertHTML(
+  test.describe(`Can navigate table with keyboard`, () => {
+    test(`Can navigate cells horizontally`, async ({
       page,
-      html`
-        <p><br /></p>
-        <table>
-          <tr>
-            <th>
-              <p dir="ltr"><span data-lexical-text="true">a</span></p>
-            </th>
-            <th>
-              <p dir="ltr"><span data-lexical-text="true">bb</span></p>
-            </th>
-            <th>
-              <p dir="ltr"><span data-lexical-text="true">cc</span></p>
-            </th>
-          </tr>
-          <tr>
-            <th>
-              <p dir="ltr"><span data-lexical-text="true">d</span></p>
-            </th>
-            <td>
-              <p dir="ltr"><span data-lexical-text="true">e</span></p>
-            </td>
-            <td>
-              <p dir="ltr"><span data-lexical-text="true">f</span></p>
-            </td>
-          </tr>
-        </table>
-        <p><br /></p>
-      `,
-      undefined,
-      {ignoreClasses: true},
-    );
+      isPlainText,
+      isCollab,
+    }) => {
+      await initialize({isCollab, page});
+      test.skip(isPlainText);
+
+      await focusEditor(page);
+      await insertTable(page, 2, 2);
+
+      await assertHTML(
+        page,
+        html`
+          <p><br /></p>
+          <table>
+            <tr>
+              <th>
+                <p><br /></p>
+              </th>
+              <th>
+                <p><br /></p>
+              </th>
+            </tr>
+            <tr>
+              <th>
+                <p><br /></p>
+              </th>
+              <td>
+                <p><br /></p>
+              </td>
+            </tr>
+          </table>
+          <p><br /></p>
+        `,
+        undefined,
+        {ignoreClasses: true},
+      );
+
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [1, 0, 0, 0],
+        focusOffset: 0,
+        focusPath: [1, 0, 0, 0],
+      });
+
+      await moveRight(page, 1);
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [1, 0, 1, 0],
+        focusOffset: 0,
+        focusPath: [1, 0, 1, 0],
+      });
+
+      await moveRight(page, 1);
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [1, 1, 0, 0],
+        focusOffset: 0,
+        focusPath: [1, 1, 0, 0],
+      });
+
+      await moveRight(page, 1);
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [1, 1, 1, 0],
+        focusOffset: 0,
+        focusPath: [1, 1, 1, 0],
+      });
+
+      await moveLeft(page, 1);
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [1, 1, 0, 0],
+        focusOffset: 0,
+        focusPath: [1, 1, 0, 0],
+      });
+
+      await moveLeft(page, 1);
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [1, 0, 1, 0],
+        focusOffset: 0,
+        focusPath: [1, 0, 1, 0],
+      });
+
+      await moveLeft(page, 1);
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [1, 0, 0, 0],
+        focusOffset: 0,
+        focusPath: [1, 0, 0, 0],
+      });
+    });
+
+    test(`Can navigate cells vertically`, async ({
+      page,
+      isPlainText,
+      isCollab,
+    }) => {
+      await initialize({isCollab, page});
+      test.skip(isPlainText);
+
+      await focusEditor(page);
+      await insertTable(page, 2, 2);
+
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [1, 0, 0, 0],
+        focusOffset: 0,
+        focusPath: [1, 0, 0, 0],
+      });
+
+      await moveDown(page, 1);
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [1, 1, 0, 0],
+        focusOffset: 0,
+        focusPath: [1, 1, 0, 0],
+      });
+
+      await moveUp(page, 1);
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [1, 0, 0, 0],
+        focusOffset: 0,
+        focusPath: [1, 0, 0, 0],
+      });
+    });
+
+    test('Should not navigate cells when typeahead menu is open and focused', async ({
+      page,
+      isCollab,
+      isPlainText,
+    }) => {
+      await initialize({isCollab, page});
+      test.skip(isPlainText);
+
+      await focusEditor(page);
+      await insertTable(page, 2, 2);
+
+      await page.keyboard.type('@A');
+      await assertSelection(page, {
+        anchorOffset: 2,
+        anchorPath: [1, 0, 0, 0, 0, 0],
+        focusOffset: 2,
+        focusPath: [1, 0, 0, 0, 0, 0],
+      });
+
+      await waitForSelector(page, `#typeahead-menu ul li:first-child.selected`);
+
+      await moveDown(page, 1);
+      await assertSelection(page, {
+        anchorOffset: 2,
+        anchorPath: [1, 0, 0, 0, 0, 0],
+        focusOffset: 2,
+        focusPath: [1, 0, 0, 0, 0, 0],
+      });
+
+      await waitForSelector(
+        page,
+        '#typeahead-menu ul li:nth-child(2).selected',
+      );
+    });
   });
 
   test(`Can select cells using Table selection`, async ({
@@ -1289,6 +1411,95 @@ test.describe('Tables', () => {
                 dir="ltr">
                 <span data-lexical-text="true">cell one</span>
               </p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+          </tr>
+        </table>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+  });
+
+  test('Can remove new lines in a collapsible section inside of a table', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    await initialize({isCollab, page});
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    await insertTable(page, 1, 2);
+    await insertCollapsible(page);
+
+    await page.keyboard.type('123');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.type('123');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <table class="PlaygroundEditorTheme__table">
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              <details class="Collapsible__container" open="">
+                <summary class="Collapsible__title">
+                  <p class="PlaygroundEditorTheme__paragraph">
+                    <span data-lexical-text="true">123</span>
+                  </p>
+                </summary>
+                <div class="Collapsible__content">
+                  <p class="PlaygroundEditorTheme__paragraph">
+                    <span data-lexical-text="true">123</span>
+                  </p>
+                  <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+                  <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+                  <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+                </div>
+              </details>
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+            </th>
+          </tr>
+        </table>
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+
+    await pressBackspace(page, 10);
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+        <table class="PlaygroundEditorTheme__table">
+          <tr>
+            <th
+              class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              <details class="Collapsible__container" open="">
+                <summary class="Collapsible__title">
+                  <p class="PlaygroundEditorTheme__paragraph">
+                    <span data-lexical-text="true">123</span>
+                  </p>
+                </summary>
+                <div class="Collapsible__content">
+                  <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+                </div>
+              </details>
+              <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">

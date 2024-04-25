@@ -1,4 +1,3 @@
-/** @module @lexical/headless */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *

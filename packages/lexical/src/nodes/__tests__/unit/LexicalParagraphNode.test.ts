@@ -9,7 +9,6 @@
 import {
   $createParagraphNode,
   $getRoot,
-  $getSelection,
   $isParagraphNode,
   ParagraphNode,
   RangeSelection,
@@ -53,6 +52,7 @@ describe('LexicalParagraphNode tests', () => {
           direction: null,
           format: '',
           indent: 0,
+          textFormat: 0,
           type: 'paragraph',
           version: 1,
         });
@@ -113,17 +113,17 @@ describe('LexicalParagraphNode tests', () => {
       );
 
       await editor.update(() => {
+        const selection = paragraphNode.select();
         const result = paragraphNode.insertNewAfter(
-          $getSelection() as RangeSelection,
+          selection as RangeSelection,
           false,
         );
-
         expect(result).toBeInstanceOf(ParagraphNode);
         expect(result.getDirection()).toEqual(paragraphNode.getDirection());
+        expect(testEnv.outerHTML).toBe(
+          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p><br></p></div>',
+        );
       });
-      expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p><br></p><p><br></p></div>',
-      );
     });
 
     test('$createParagraphNode()', async () => {

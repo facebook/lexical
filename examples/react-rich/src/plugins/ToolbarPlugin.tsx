@@ -37,7 +37,7 @@ export default function ToolbarPlugin() {
   const [isUnderline, setIsUnderline] = useState(false);
   const [isStrikethrough, setIsStrikethrough] = useState(false);
 
-  const updateToolbar = useCallback(() => {
+  const $updateToolbar = useCallback(() => {
     const selection = $getSelection();
     if ($isRangeSelection(selection)) {
       // Update text format
@@ -52,13 +52,13 @@ export default function ToolbarPlugin() {
     return mergeRegister(
       editor.registerUpdateListener(({editorState}) => {
         editorState.read(() => {
-          updateToolbar();
+          $updateToolbar();
         });
       }),
       editor.registerCommand(
         SELECTION_CHANGE_COMMAND,
         (_payload, newEditor) => {
-          updateToolbar();
+          $updateToolbar();
           return false;
         },
         LowPriority,
@@ -80,7 +80,7 @@ export default function ToolbarPlugin() {
         LowPriority,
       ),
     );
-  }, [editor, updateToolbar]);
+  }, [editor, $updateToolbar]);
 
   return (
     <div className="toolbar" ref={toolbarRef}>

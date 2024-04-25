@@ -1,4 +1,3 @@
-/** @module @lexical/utils */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -25,7 +24,20 @@ import {
   LexicalEditor,
   LexicalNode,
 } from 'lexical';
-import {IS_FIREFOX} from 'shared/environment';
+// This underscore postfixing is used as a hotfix so we do not
+// export shared types from this module #5918
+import {CAN_USE_DOM as CAN_USE_DOM_} from 'shared/canUseDOM';
+import {
+  CAN_USE_BEFORE_INPUT as CAN_USE_BEFORE_INPUT_,
+  IS_ANDROID as IS_ANDROID_,
+  IS_ANDROID_CHROME as IS_ANDROID_CHROME_,
+  IS_APPLE as IS_APPLE_,
+  IS_APPLE_WEBKIT as IS_APPLE_WEBKIT_,
+  IS_CHROME as IS_CHROME_,
+  IS_FIREFOX as IS_FIREFOX_,
+  IS_IOS as IS_IOS_,
+  IS_SAFARI as IS_SAFARI_,
+} from 'shared/environment';
 import invariant from 'shared/invariant';
 import normalizeClassNames from 'shared/normalizeClassNames';
 
@@ -33,18 +45,17 @@ export {default as markSelection} from './markSelection';
 export {default as mergeRegister} from './mergeRegister';
 export {default as positionNodeOnRange} from './positionNodeOnRange';
 export {$splitNode, isHTMLAnchorElement, isHTMLElement} from 'lexical';
-export {CAN_USE_DOM} from 'shared/canUseDOM';
-export {
-  CAN_USE_BEFORE_INPUT,
-  IS_ANDROID,
-  IS_ANDROID_CHROME,
-  IS_APPLE,
-  IS_APPLE_WEBKIT,
-  IS_CHROME,
-  IS_FIREFOX,
-  IS_IOS,
-  IS_SAFARI,
-} from 'shared/environment';
+// Hotfix to export these with inlined types #5918
+export const CAN_USE_BEFORE_INPUT: boolean = CAN_USE_BEFORE_INPUT_;
+export const CAN_USE_DOM: boolean = CAN_USE_DOM_;
+export const IS_ANDROID: boolean = IS_ANDROID_;
+export const IS_ANDROID_CHROME: boolean = IS_ANDROID_CHROME_;
+export const IS_APPLE: boolean = IS_APPLE_;
+export const IS_APPLE_WEBKIT: boolean = IS_APPLE_WEBKIT_;
+export const IS_CHROME: boolean = IS_CHROME_;
+export const IS_FIREFOX: boolean = IS_FIREFOX_;
+export const IS_IOS: boolean = IS_IOS_;
+export const IS_SAFARI: boolean = IS_SAFARI_;
 
 export type DFSNode = Readonly<{
   depth: number;

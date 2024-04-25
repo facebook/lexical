@@ -49,6 +49,7 @@ const closureOptions = {
 const wwwMappings = {
   '@lexical/clipboard': 'LexicalClipboard',
   '@lexical/code': 'LexicalCode',
+  '@lexical/devtools-core': 'LexicalDevtoolsCore',
   '@lexical/dragon': 'LexicalDragon',
   '@lexical/file': 'LexicalFile',
   '@lexical/hashtag': 'LexicalHashtag',
@@ -79,6 +80,7 @@ const wwwMappings = {
   'prismjs/components/prism-markdown': 'prism-markdown',
   'prismjs/components/prism-markup': 'prism-markup',
   'prismjs/components/prism-objectivec': 'prism-objectivec',
+  'prismjs/components/prism-powershell': 'prism-powershell',
   'prismjs/components/prism-python': 'prism-python',
   'prismjs/components/prism-rust': 'prism-rust',
   'prismjs/components/prism-sql': 'prism-sql',
@@ -121,6 +123,7 @@ const externals = [
   'prismjs/components/prism-css',
   'prismjs/components/prism-objectivec',
   'prismjs/components/prism-sql',
+  'prismjs/components/prism-powershell',
   'prismjs/components/prism-python',
   'prismjs/components/prism-rust',
   'prismjs/components/prism-swift',
@@ -131,6 +134,7 @@ const externals = [
   '@lexical/table',
   '@lexical/file',
   '@lexical/clipboard',
+  '@lexical/devtools-core',
   '@lexical/hashtag',
   '@lexical/headless',
   '@lexical/html',
@@ -488,6 +492,18 @@ const packages = [
     outputPath: './packages/lexical-dragon/dist/',
     packageName: 'lexical-dragon',
     sourcePath: './packages/lexical-dragon/src/',
+  },
+  {
+    modules: [
+      {
+        outputFileName: 'LexicalDevtoolsCore',
+        sourceFileName: 'index.ts',
+      },
+    ],
+    name: 'Lexical Devtools Core',
+    outputPath: './packages/lexical-devtools-core/dist/',
+    packageName: 'lexical-devtools-core',
+    sourcePath: './packages/lexical-devtools-core/src/',
   },
   {
     modules: [

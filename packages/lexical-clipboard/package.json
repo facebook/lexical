@@ -9,15 +9,15 @@
     "paste"
   ],
   "license": "MIT",
-  "version": "0.14.3",
+  "version": "0.14.5",
   "main": "LexicalClipboard.js",
   "types": "index.d.ts",
   "dependencies": {
-    "@lexical/html": "0.14.3",
-    "@lexical/list": "0.14.3",
-    "@lexical/selection": "0.14.3",
-    "@lexical/utils": "0.14.3",
-    "lexical": "0.14.3"
+    "@lexical/html": "0.14.5",
+    "@lexical/list": "0.14.5",
+    "@lexical/selection": "0.14.5",
+    "@lexical/utils": "0.14.5",
+    "lexical": "0.14.5"
   },
   "repository": {
     "type": "git",
@@ -30,12 +30,15 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
-        "webpack": "./LexicalClipboard.mjs",
+        "development": "./LexicalClipboard.dev.mjs",
+        "production": "./LexicalClipboard.prod.mjs",
         "node": "./LexicalClipboard.node.mjs",
         "default": "./LexicalClipboard.mjs"
       },
       "require": {
         "types": "./index.d.ts",
+        "development": "./LexicalClipboard.dev.js",
+        "production": "./LexicalClipboard.prod.js",
         "default": "./LexicalClipboard.js"
       }
     }

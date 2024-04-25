@@ -7,7 +7,7 @@
     "plain-text"
   ],
   "license": "MIT",
-  "version": "0.14.3",
+  "version": "0.14.5",
   "main": "LexicalPlainText.js",
   "types": "index.d.ts",
   "repository": {
@@ -21,20 +21,23 @@
     ".": {
       "import": {
         "types": "./index.d.ts",
-        "webpack": "./LexicalPlainText.mjs",
+        "development": "./LexicalPlainText.dev.mjs",
+        "production": "./LexicalPlainText.prod.mjs",
         "node": "./LexicalPlainText.node.mjs",
         "default": "./LexicalPlainText.mjs"
       },
       "require": {
         "types": "./index.d.ts",
+        "development": "./LexicalPlainText.dev.js",
+        "production": "./LexicalPlainText.prod.js",
         "default": "./LexicalPlainText.js"
       }
     }
   },
   "dependencies": {
-    "@lexical/clipboard": "0.14.3",
-    "@lexical/selection": "0.14.3",
-    "@lexical/utils": "0.14.3",
-    "lexical": "0.14.3"
+    "@lexical/clipboard": "0.14.5",
+    "@lexical/selection": "0.14.5",
+    "@lexical/utils": "0.14.5",
+    "lexical": "0.14.5"
   }
 }

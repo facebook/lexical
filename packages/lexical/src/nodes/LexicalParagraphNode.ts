@@ -6,12 +6,18 @@
  *
  */
 
-import type {EditorConfig, LexicalEditor} from '../LexicalEditor';
+import type {
+  EditorConfig,
+  KlassConstructor,
+  LexicalEditor,
+  Spread,
+} from '../LexicalEditor';
 import type {
   DOMConversionMap,
   DOMConversionOutput,
   DOMExportOutput,
   LexicalNode,
+  NodeKey,
 } from '../LexicalNode';
 import type {
   ElementFormatType,
@@ -19,20 +25,51 @@ import type {
 } from './LexicalElementNode';
 import type {RangeSelection} from 'lexical';
 
+import {TEXT_TYPE_TO_FORMAT} from '../LexicalConstants';
 import {
   $applyNodeReplacement,
   getCachedClassNameArray,
   isHTMLElement,
 } from '../LexicalUtils';
 import {ElementNode} from './LexicalElementNode';
-import {$isTextNode} from './LexicalTextNode';
+import {$isTextNode, TextFormatType} from './LexicalTextNode';
 
-export type SerializedParagraphNode = SerializedElementNode;
+export type SerializedParagraphNode = Spread<
+  {
+    textFormat: number;
+  },
+  SerializedElementNode
+>;
 
 /** @noInheritDoc */
 export class ParagraphNode extends ElementNode {
+  ['constructor']!: KlassConstructor<typeof ParagraphNode>;
+  /** @internal */
+  __textFormat: number;
+
+  constructor(key?: NodeKey) {
+    super(key);
+    this.__textFormat = 0;
+  }
+
   static getType(): string {
     return 'paragraph';
+  }
+
+  getTextFormat(): number {
+    const self = this.getLatest();
+    return self.__textFormat;
+  }
+
+  setTextFormat(type: number): this {
+    const self = this.getWritable();
+    self.__textFormat = type;
+    return self;
+  }
+
+  hasTextFormat(type: TextFormatType): boolean {
+    const formatFlag = TEXT_TYPE_TO_FORMAT[type];
+    return (this.getTextFormat() & formatFlag) !== 0;
   }
 
   static clone(node: ParagraphNode): ParagraphNode {
@@ -100,12 +137,14 @@ export class ParagraphNode extends ElementNode {
     node.setFormat(serializedNode.format);
     node.setIndent(serializedNode.indent);
     node.setDirection(serializedNode.direction);
+    node.setTextFormat(serializedNode.textFormat);
     return node;
   }
 
-  exportJSON(): SerializedElementNode {
+  exportJSON(): SerializedParagraphNode {
     return {
       ...super.exportJSON(),
+      textFormat: this.getTextFormat(),
       type: 'paragraph',
       version: 1,
     };
@@ -113,10 +152,15 @@ export class ParagraphNode extends ElementNode {
 
   // Mutation
 
-  insertNewAfter(_: RangeSelection, restoreSelection: boolean): ParagraphNode {
+  insertNewAfter(
+    rangeSelection: RangeSelection,
+    restoreSelection: boolean,
+  ): ParagraphNode {
     const newElement = $createParagraphNode();
+    newElement.setTextFormat(rangeSelection.format);
     const direction = this.getDirection();
     newElement.setDirection(direction);
+    newElement.setFormat(this.getFormatType());
     this.insertAfter(newElement, restoreSelection);
     return newElement;
   }

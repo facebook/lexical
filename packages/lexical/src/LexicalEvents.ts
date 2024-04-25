@@ -60,6 +60,7 @@ import {
   KEY_TAB_COMMAND,
   MOVE_TO_END,
   MOVE_TO_START,
+  ParagraphNode,
   PASTE_COMMAND,
   REDO_COMMAND,
   REMOVE_TEXT_COMMAND,
@@ -285,7 +286,6 @@ function onSelectionChange(
       return;
     }
   }
-
   updateEditor(editor, () => {
     // Non-active editor don't need any extra logic for selection, it only needs update
     // to reconcile selection (set it to null) to ensure that only one editor has non-null selection.
@@ -344,7 +344,15 @@ function onSelectionChange(
             selection.format = anchorNode.getFormat();
             selection.style = anchorNode.getStyle();
           } else if (anchor.type === 'element' && !isRootTextContentEmpty) {
-            selection.format = 0;
+            const lastNode = anchor.getNode();
+            if (
+              lastNode instanceof ParagraphNode &&
+              lastNode.getChildrenSize() === 0
+            ) {
+              selection.format = lastNode.getTextFormat();
+            } else {
+              selection.format = 0;
+            }
             selection.style = '';
           }
         }
@@ -818,7 +826,13 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
       if (domSelection === null) {
         return;
       }
-      const offset = anchor.offset;
+      const isBackward = selection.isBackward();
+      const startOffset = isBackward
+        ? selection.anchor.offset
+        : selection.focus.offset;
+      const endOffset = isBackward
+        ? selection.focus.offset
+        : selection.anchor.offset;
       // If the content is the same as inserted, then don't dispatch an insertion.
       // Given onInput doesn't take the current selection (it uses the previous)
       // we can compare that against what the DOM currently says.
@@ -827,9 +841,9 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
         selection.isCollapsed() ||
         !$isTextNode(anchorNode) ||
         domSelection.anchorNode === null ||
-        anchorNode.getTextContent().slice(0, offset) +
+        anchorNode.getTextContent().slice(0, startOffset) +
           data +
-          anchorNode.getTextContent().slice(offset + selection.focus.offset) !==
+          anchorNode.getTextContent().slice(startOffset + endOffset) !==
           getAnchorTextFromDOM(domSelection.anchorNode)
       ) {
         dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, data);
@@ -1190,7 +1204,10 @@ export function addRootElementEvents(
   // between all editor instances.
   const doc = rootElement.ownerDocument;
   const documentRootElementsCount = rootElementsRegistered.get(doc);
-  if (documentRootElementsCount === undefined) {
+  if (
+    documentRootElementsCount === undefined ||
+    documentRootElementsCount < 1
+  ) {
     doc.addEventListener('selectionchange', onDocumentSelectionChange);
   }
   rootElementsRegistered.set(doc, documentRootElementsCount || 0 + 1);
@@ -1299,10 +1316,11 @@ export function removeRootElementEvents(rootElement: HTMLElement): void {
     documentRootElementsCount !== undefined,
     'Root element not registered',
   );
+
   // We only want to have a single global selectionchange event handler, shared
   // between all editor instances.
   rootElementsRegistered.set(doc, documentRootElementsCount - 1);
-  if (documentRootElementsCount === 1) {
+  if (rootElementsRegistered.get(doc) === 0) {
     doc.removeEventListener('selectionchange', onDocumentSelectionChange);
   }
 

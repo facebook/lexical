@@ -11,6 +11,7 @@ import {
   $createParagraphNode,
   $getRoot,
   $getSelection,
+  $isRangeSelection,
   CLEAR_EDITOR_COMMAND,
   COMMAND_PRIORITY_EDITOR,
 } from 'lexical';
@@ -37,6 +38,9 @@ export function ClearEditorPlugin({onClear}: Props): JSX.Element | null {
 
             if (selection !== null) {
               paragraph.select();
+            }
+            if ($isRangeSelection(selection)) {
+              selection.format = 0;
             }
           } else {
             onClear();

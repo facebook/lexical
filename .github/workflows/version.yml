@@ -15,14 +15,13 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ssh-key: ${{ secrets.SSH_KEY }}
           fetch-depth: 0
       # Setup .npmrc file to publish to npm
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
-          node-version: '16.x'
           registry-url: 'https://registry.npmjs.org'
       - run: |
           git config user.name "Lexical GitHub Actions Bot"
@@ -37,4 +36,5 @@ jobs:
       - run: LATEST_RELEASE=${{ steps.latest.outputs.release }} npm run increment-version -- --i $INCREMENT
         env:
           INCREMENT: ${{ inputs.increment }}
+      - run: npm install
       - run: git push -u git@github.com:facebook/lexical.git --follow-tags

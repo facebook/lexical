@@ -1,4 +1,3 @@
-/** @module lexical */
 /**
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -15,7 +14,9 @@ export type {
   CreateEditorArgs,
   EditableListener,
   EditorConfig,
+  EditorSetOptions,
   EditorThemeClasses,
+  EditorThemeClassName,
   HTMLConfig,
   Klass,
   KlassConstructor,

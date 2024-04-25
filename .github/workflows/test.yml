@@ -73,6 +73,33 @@ jobs:
         run: npm ci
       - run: npm run test-unit
 
+  integration:
+    if: github.repository_owner == 'facebook'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.18.0]
+    env:
+      CI: true
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+      - run: npm i -g npm@8
+      - uses: actions/cache@v3
+        id: cache
+        with:
+          path: |
+            node_modules
+            ~/.cache/ms-playwright
+          key: ${{ runner.os }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: npm ci
+      - run: npm run test-integration
+
   e2e-mac:
     if: github.repository_owner == 'facebook'
     runs-on: macos-latest

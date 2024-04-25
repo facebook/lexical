@@ -19,7 +19,6 @@ import {
   UNDO_COMMAND,
 } from 'lexical';
 import {useCallback, useEffect, useRef, useState} from 'react';
-import * as React from 'react';
 
 const LowPriority = 1;
 
@@ -57,7 +56,7 @@ export default function ToolbarPlugin() {
       }),
       editor.registerCommand(
         SELECTION_CHANGE_COMMAND,
-        (_payload, newEditor) => {
+        (_payload, _newEditor) => {
           $updateToolbar();
           return false;
         },

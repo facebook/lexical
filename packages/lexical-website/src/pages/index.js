@@ -14,7 +14,6 @@ import HomepageExamples from '@site/src/components/HomepageExamples';
 import HomepageFeatures from '@site/src/components/HomepageFeatures';
 import Layout from '@theme/Layout';
 import {inject} from '@vercel/analytics';
-import React from 'react';
 
 // activate analytics
 inject();

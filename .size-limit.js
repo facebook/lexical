@@ -32,24 +32,15 @@ const fs = require('fs-extra');
  * Currently this alias map points at the cjs version of the build product,
  * as that is what was measured previously in #3600.
  */
+const {packagesManager} = require('./scripts/shared/packagesManager');
 const alias = Object.fromEntries(
-  glob('./packages/*/package.json', {sync: true}).flatMap((fn) => {
-    const pkg = fs.readJsonSync(fn);
-    if (!pkg.private) {
-      return Object.entries(pkg.exports).flatMap(([k, v]) => {
-        if (k.endsWith('.js')) {
-          return [];
-        }
-        return [
-          [
-            `${pkg.name}${k.replace(/^\.(\/$)?/, '')}`,
-            path.resolve(path.dirname(fn), 'dist', v.require.default),
-          ],
-        ];
-      });
-    }
-    return [];
-  }),
+  packagesManager
+    .getPublicPackages()
+    .flatMap((pkg) =>
+      pkg
+        .getNormalizedNpmModuleExportEntries()
+        .map(([k, v]) => [k, pkg.resolve('dist', v.require.default)]),
+    ),
 );
 
 const extendConfig = {resolve: {alias}};

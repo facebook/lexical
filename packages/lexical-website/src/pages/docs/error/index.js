@@ -9,7 +9,7 @@
 import BrowserOnly from '@docusaurus/BrowserOnly';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
-import React, {useMemo} from 'react';
+import {useMemo} from 'react';
 
 import codes from '../../../../../../scripts/error-codes/codes.json';
 

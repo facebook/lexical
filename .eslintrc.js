@@ -51,6 +51,8 @@ module.exports = {
       // node scripts should be console logging so don't lint against that
       files: ['scripts/**/*.js'],
       rules: {
+        // https://github.com/Stuk/eslint-plugin-header/issues/39
+        'header/header': OFF,
         'no-console': OFF,
       },
     },
@@ -213,7 +215,8 @@ module.exports = {
 
     'react/jsx-tag-spacing': ERROR,
 
-    'react/jsx-uses-react': ERROR,
+    // This hasn't been necessary since React 17
+    'react/jsx-uses-react': OFF,
 
     // We don't care to do this
     'react/jsx-wrap-multilines': [
@@ -223,8 +226,8 @@ module.exports = {
 
     'react/no-is-mounted': OFF,
 
-    // This isn't useful in our test code
-    'react/react-in-jsx-scope': ERROR,
+    // This hasn't been necessary since React 17
+    'react/react-in-jsx-scope': OFF,
 
     'react/self-closing-comp': ERROR,
 

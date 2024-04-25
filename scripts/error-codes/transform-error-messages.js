@@ -8,7 +8,7 @@
 
 'use strict';
 
-const fs = require('fs');
+const fs = require('fs-extra');
 const evalToString = require('./evalToString');
 const invertObject = require('./invertObject');
 const helperModuleImports = require('@babel/helper-module-imports');
@@ -82,9 +82,7 @@ module.exports = function (babel) {
           }
 
           // Avoid caching because we write it as we go.
-          const existingErrorMap = JSON.parse(
-            fs.readFileSync(__dirname + '/codes.json', 'utf-8'),
-          );
+          const existingErrorMap = fs.readJsonSync(__dirname + '/codes.json');
           const errorMap = invertObject(existingErrorMap);
 
           let prodErrorId = errorMap[errorMsgLiteral];

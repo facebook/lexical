@@ -8,7 +8,7 @@
 
 import Link from '@docusaurus/Link';
 import * as Tabs from '@radix-ui/react-tabs';
-import React, {useState} from 'react';
+import {useState} from 'react';
 
 const EXAMPLES = [
   {

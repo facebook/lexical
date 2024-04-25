@@ -367,6 +367,7 @@ editor.registerUpdateListener(({editorState}) => {
 - [Concepts](https://lexical.dev/docs/concepts/editor-state)
 - [How Lexical was designed](https://lexical.dev/docs/design)
 - [Testing](https://lexical.dev/docs/testing)
+- [Maintainers' Guide](https://lexical.dev/docs/maintainers-guide)
 
 ## Browser Support
 

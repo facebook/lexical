@@ -1,0 +1,24 @@
+---
+import Layout from '../layouts/Layout.astro';
+import App from '../components/App.tsx';
+import '../components/styles.css';
+---
+
+<Layout title="Astro React.js Rich Text Lexical Example">
+	<main>
+		<h1>Astro React.js Rich Text Lexical Example</h1>
+		<App client:load />
+	</main>
+</Layout>
+
+<style>
+	main {
+		margin: auto;
+		padding: 1rem;
+		width: 800px;
+		max-width: calc(100% - 2rem);
+		color: white;
+		font-size: 20px;
+		line-height: 1.6;
+	}
+</style>

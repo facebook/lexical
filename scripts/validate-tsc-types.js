@@ -28,7 +28,7 @@ const diagnosticsHost = {
  * `process.exit(1)` on failure.
  */
 function validateTscTypes() {
-  const dtsFilesPattern = './.ts-temp/{lexical,lexical-*}/**/*.d.ts';
+  const dtsFilesPattern = './.ts-temp/packages/{lexical,lexical-*}/**/*.d.ts';
   const dtsFiles = glob.sync(dtsFilesPattern);
   if (dtsFiles.length === 0) {
     console.error(
@@ -52,7 +52,7 @@ function validateTscTypes() {
       const specifier = /** @type {import('typescript').StringLiteral} */ (
         node
       );
-      if (/^shared(\/|$)/.test(specifier.text)) {
+      if (/^(shared|scripts)(\/|$)/.test(specifier.text)) {
         const start = specifier.getStart(ast);
         diagnostics.push({
           category: ts.DiagnosticCategory.Error,

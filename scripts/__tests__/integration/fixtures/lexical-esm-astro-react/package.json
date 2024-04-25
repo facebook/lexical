@@ -1,0 +1,29 @@
+{
+  "name": "lexical-esm-astro-react",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro check && astro build",
+    "preview": "astro preview",
+    "astro": "astro",	
+    "test": "playwright test"
+  },
+  "dependencies": {
+    "@astrojs/check": "^0.5.9",
+    "@astrojs/react": "^3.1.0",
+    "@lexical/react": "^0.14.3",
+    "@lexical/utils": "^0.14.3",
+    "@types/react": "^18.2.66",
+    "@types/react-dom": "^18.2.22",
+    "astro": "^4.5.4",
+    "lexical": "^0.14.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "typescript": "^5.4.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.43.1"
+  }
+}

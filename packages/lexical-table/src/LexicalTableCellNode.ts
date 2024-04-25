@@ -11,6 +11,7 @@ import type {
   DOMConversionOutput,
   DOMExportOutput,
   EditorConfig,
+  ElementFormatType,
   LexicalEditor,
   LexicalNode,
   NodeKey,
@@ -22,6 +23,7 @@ import {addClassNamesToElement} from '@lexical/utils';
 import {
   $applyNodeReplacement,
   $createParagraphNode,
+  $isBlockElementNode,
   $isElementNode,
   $isLineBreakNode,
   $isTextNode,
@@ -323,17 +325,39 @@ export function convertTableCellNodeElement(
   const hasLinethroughTextDecoration = textDecoration.includes('line-through');
   const hasItalicFontStyle = style.fontStyle === 'italic';
   const hasUnderlineTextDecoration = textDecoration.includes('underline');
-
+  const textAlign = style.textAlign;
   return {
     after: (childLexicalNodes) => {
+      const children = [];
+      let paragraphNode = $createParagraphNode().setFormat(
+        textAlign as ElementFormatType,
+      );
       if (childLexicalNodes.length === 0) {
-        childLexicalNodes.push($createParagraphNode());
+        children.push(paragraphNode);
       }
-      return childLexicalNodes;
+
+      childLexicalNodes.forEach((node) => {
+        if ($isBlockElementNode(node)) {
+          if (paragraphNode.getChildrenSize() !== 0) {
+            children.push(paragraphNode);
+            paragraphNode = $createParagraphNode().setFormat(
+              textAlign as ElementFormatType,
+            );
+          }
+          children.push(node);
+        } else {
+          paragraphNode.append(node);
+        }
+      });
+      if (paragraphNode.getChildrenSize() !== 0) {
+        children.push(paragraphNode);
+      }
+      return children;
     },
     forChild: (lexicalNode, parentLexicalNode) => {
       if ($isTableCellNode(parentLexicalNode) && !$isElementNode(lexicalNode)) {
         const paragraphNode = $createParagraphNode();
+        paragraphNode.setFormat(textAlign as ElementFormatType);
         if (
           $isLineBreakNode(lexicalNode) &&
           lexicalNode.getTextContent() === '\n'

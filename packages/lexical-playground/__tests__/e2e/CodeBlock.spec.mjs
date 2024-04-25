@@ -1006,7 +1006,7 @@ test.describe('CodeBlock', () => {
           </p>
         </td>
         <td class="PlaygroundEditorTheme__tableCell">
-          <p class="PlaygroundEditorTheme__paragraph">
+          <p class="PlaygroundEditorTheme__paragraph" style="text-align: right">
             <span
               class="PlaygroundEditorTheme__textUnderline"
               data-lexical-text="true">
@@ -1030,15 +1030,17 @@ test.describe('CodeBlock', () => {
             <span data-lexical-text="true">XDS_RICH_TEXT_AREA</span>
           </p>
         </td>
-        <td
-          class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">sdvd</span>
-          <strong
-            class="PlaygroundEditorTheme__textBold"
-            data-lexical-text="true">
-            sdfvsfs
-          </strong>
+        <td class="PlaygroundEditorTheme__tableCell">
+          <p
+            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+            dir="ltr">
+            <span data-lexical-text="true">sdvd</span>
+            <strong
+              class="PlaygroundEditorTheme__textBold"
+              data-lexical-text="true">
+              sdfvsfs
+            </strong>
+          </p>
         </td>
       </tr>
     </table>

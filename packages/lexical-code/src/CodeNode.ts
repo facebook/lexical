@@ -168,13 +168,7 @@ export class CodeNode extends ElementNode {
         const td = node as HTMLTableCellElement;
         const table: HTMLTableElement | null = td.closest('table');
 
-        if (isGitHubCodeCell(td)) {
-          return {
-            conversion: convertCodeNoop,
-            priority: 3,
-          };
-        }
-        if (table && isGitHubCodeTable(table)) {
+        if (isGitHubCodeCell(td) || (table && isGitHubCodeTable(table))) {
           // Return a no-op if it's a table cell in a code table, but not a code line.
           // Otherwise it'll fall back to the T
           return {

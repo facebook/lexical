@@ -197,7 +197,7 @@ function $createNodesFromDOM(
   node: Node,
   editor: LexicalEditor,
   allArtificialNodes: Array<ArtificialNode>,
-  hasBlockAncesterLexicalNode: boolean,
+  hasBlockAncestorLexicalNode: boolean,
   forChildMap: Map<string, DOMChildConversion> = new Map(),
   parentLexicalNode?: LexicalNode | null | undefined,
 ): Array<LexicalNode> {
@@ -252,12 +252,12 @@ function $createNodesFromDOM(
   const children = node.childNodes;
   let childLexicalNodes = [];
 
-  const hasBlockAncesterLexicalNodeForChildren =
+  const hasBlockAncestorLexicalNodeForChildren =
     currentLexicalNode != null && $isRootOrShadowRoot(currentLexicalNode)
       ? false
       : (currentLexicalNode != null &&
           $isBlockElementNode(currentLexicalNode)) ||
-        hasBlockAncesterLexicalNode;
+        hasBlockAncestorLexicalNode;
 
   for (let i = 0; i < children.length; i++) {
     childLexicalNodes.push(
@@ -265,7 +265,7 @@ function $createNodesFromDOM(
         children[i],
         editor,
         allArtificialNodes,
-        hasBlockAncesterLexicalNodeForChildren,
+        hasBlockAncestorLexicalNodeForChildren,
         new Map(forChildMap),
         currentLexicalNode,
       ),
@@ -277,7 +277,7 @@ function $createNodesFromDOM(
   }
 
   if (!isInlineDomNode(node)) {
-    if (!hasBlockAncesterLexicalNodeForChildren) {
+    if (!hasBlockAncestorLexicalNodeForChildren) {
       childLexicalNodes = wrapContinuousInlines(
         node,
         childLexicalNodes,
@@ -315,7 +315,8 @@ function wrapContinuousInlines(
   const out: Array<LexicalNode> = [];
   let continuousInlines: Array<LexicalNode> = [];
   // wrap contiguous inline child nodes in para
-  nodes.forEach(function (node, i) {
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
     if ($isBlockElementNode(node)) {
       out.push(node);
     } else {
@@ -330,17 +331,17 @@ function wrapContinuousInlines(
         continuousInlines = [];
       }
     }
-  });
+  }
   return out;
 }
 
 function unwrapArtificalNodes(allArtificialNodes: Array<ArtificialNode>) {
-  allArtificialNodes.forEach(function (node, i) {
+  for (const node of allArtificialNodes) {
     if (node.getNextSibling() instanceof ArtificialNode) {
       node.insertAfter($createLineBreakNode());
     }
-  });
-  allArtificialNodes.forEach(function (node, i) {
+  }
+  for (const node of allArtificialNodes) {
     // unwrap children of Artificial Node and attach to parent at Artificial Node's position
     const parent = node.getParent();
     if (parent != null) {
@@ -349,5 +350,5 @@ function unwrapArtificalNodes(allArtificialNodes: Array<ArtificialNode>) {
         parent.splice(index, 1, node.getChildren());
       }
     }
-  });
+  }
 }

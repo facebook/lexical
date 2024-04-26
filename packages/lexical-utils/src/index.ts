@@ -222,6 +222,29 @@ function $getDepth(node: LexicalNode): number {
   return depth;
 }
 
+export function $getPreviousNode(
+  startingNode: LexicalNode,
+): LexicalNode | null {
+  let node: LexicalNode | null = startingNode;
+
+  if ($isElementNode(node) && node.getChildrenSize() > 0) {
+    node = node.getLastChild();
+  } else {
+    let sibling = null;
+
+    while (sibling === null && node !== null) {
+      sibling = node.getPreviousSibling();
+
+      if (sibling === null) {
+        node = node.getParent();
+      } else {
+        node = sibling;
+      }
+    }
+  }
+  return node;
+}
+
 /**
  * Takes a node and traverses up its ancestors (toward the root node)
  * in order to find a specific type of node.

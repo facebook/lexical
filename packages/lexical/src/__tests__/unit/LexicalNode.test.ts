@@ -10,6 +10,7 @@ import {
   $getRoot,
   $getSelection,
   $isRangeSelection,
+  DecoratorNode,
   ParagraphNode,
   TextNode,
 } from 'lexical';
@@ -44,6 +45,40 @@ class TestNode extends LexicalNode {
 
   exportJSON() {
     return {type: 'test', version: 1};
+  }
+}
+
+class InlineDecoratorNode extends DecoratorNode<string> {
+  static getType(): string {
+    return 'inline-decorator';
+  }
+
+  static clone(): InlineDecoratorNode {
+    return new InlineDecoratorNode();
+  }
+
+  static importJSON() {
+    return new InlineDecoratorNode();
+  }
+
+  exportJSON() {
+    return {type: 'inline-decorator', version: 1};
+  }
+
+  createDOM(): HTMLElement {
+    return document.createElement('span');
+  }
+
+  isInline(): true {
+    return true;
+  }
+
+  isParentRequired(): true {
+    return true;
+  }
+
+  decorate() {
+    return 'inline-decorator';
   }
 }
 
@@ -251,6 +286,57 @@ describe('LexicalNode tests', () => {
         });
 
         await Promise.resolve().then();
+      });
+
+      test('LexicalNode.isSelected(): with inline decorator node', async () => {
+        const {editor} = testEnv;
+        let paragraphNode1: ParagraphNode;
+        let paragraphNode2: ParagraphNode;
+        let inlineDecoratorNode1: InlineDecoratorNode;
+
+        editor.update(() => {
+          paragraphNode1 = $createParagraphNode();
+          paragraphNode2 = $createParagraphNode();
+          inlineDecoratorNode1 = new InlineDecoratorNode();
+          paragraphNode1.append(inlineDecoratorNode1);
+          paragraphNode2.append(new InlineDecoratorNode());
+          $getRoot().append(paragraphNode1, paragraphNode2);
+          paragraphNode1.selectEnd();
+          const selection = $getSelection();
+
+          if ($isRangeSelection(selection)) {
+            expect(selection.anchor.getNode().is(paragraphNode1)).toBe(true);
+          }
+        });
+
+        editor.update(() => {
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            expect(selection.anchor.key).toBe(paragraphNode1.getKey());
+
+            selection.focus.set(paragraphNode2.getKey(), 1, 'element');
+          }
+        });
+
+        await Promise.resolve().then();
+
+        editor.getEditorState().read(() => {
+          expect(inlineDecoratorNode1.isSelected()).toBe(false);
+        });
+
+        editor.update(() => {
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            selection.anchor.set(paragraphNode2.getKey(), 0, 'element');
+            selection.focus.set(paragraphNode1.getKey(), 1, 'element');
+          }
+        });
+
+        await Promise.resolve().then();
+
+        editor.getEditorState().read(() => {
+          expect(inlineDecoratorNode1.isSelected()).toBe(false);
+        });
       });
 
       test('LexicalNode.getKey()', async () => {
@@ -1193,7 +1279,7 @@ describe('LexicalNode tests', () => {
     },
     {
       namespace: '',
-      nodes: [LexicalNode, TestNode],
+      nodes: [LexicalNode, TestNode, InlineDecoratorNode],
       theme: {},
     },
   );

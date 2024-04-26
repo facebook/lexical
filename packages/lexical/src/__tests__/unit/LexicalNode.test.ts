@@ -292,14 +292,13 @@ describe('LexicalNode tests', () => {
         const {editor} = testEnv;
         let paragraphNode1: ParagraphNode;
         let paragraphNode2: ParagraphNode;
-        let inlineDecoratorNode1: InlineDecoratorNode;
+        let inlineDecoratorNode: InlineDecoratorNode;
 
         editor.update(() => {
           paragraphNode1 = $createParagraphNode();
           paragraphNode2 = $createParagraphNode();
-          inlineDecoratorNode1 = new InlineDecoratorNode();
-          paragraphNode1.append(inlineDecoratorNode1);
-          paragraphNode2.append(new InlineDecoratorNode());
+          inlineDecoratorNode = new InlineDecoratorNode();
+          paragraphNode1.append(inlineDecoratorNode);
           $getRoot().append(paragraphNode1, paragraphNode2);
           paragraphNode1.selectEnd();
           const selection = $getSelection();
@@ -321,7 +320,7 @@ describe('LexicalNode tests', () => {
         await Promise.resolve().then();
 
         editor.getEditorState().read(() => {
-          expect(inlineDecoratorNode1.isSelected()).toBe(false);
+          expect(inlineDecoratorNode.isSelected()).toBe(false);
         });
 
         editor.update(() => {
@@ -335,7 +334,7 @@ describe('LexicalNode tests', () => {
         await Promise.resolve().then();
 
         editor.getEditorState().read(() => {
-          expect(inlineDecoratorNode1.isSelected()).toBe(false);
+          expect(inlineDecoratorNode.isSelected()).toBe(false);
         });
       });
 

@@ -7,6 +7,7 @@
  */
 import babel from '@rollup/plugin-babel';
 import react from '@vitejs/plugin-react';
+import fs from 'fs';
 import * as path from 'path';
 import {defineConfig, UserManifest} from 'wxt';
 
@@ -18,6 +19,14 @@ export default defineConfig({
   manifest: (configEnv) => {
     const browserName =
       configEnv.browser.charAt(0).toUpperCase() + configEnv.browser.slice(1);
+
+    let buildVersion = 0; // For dev purposes
+    if (process.env.BUILD_VERSION) {
+      buildVersion = parseInt(process.env.BUILD_VERSION, 10);
+    }
+    if (isNaN(buildVersion)) {
+      throw new Error('BUILD_VERSION must be a number');
+    }
 
     const manifestConf: UserManifest = {
       author: 'Lexical',
@@ -31,6 +40,10 @@ export default defineConfig({
       },
       name: 'Lexical Developer Tools',
       permissions: ['scripting', 'storage', 'tabs'],
+      version:
+        JSON.parse(
+          fs.readFileSync(path.resolve(__dirname, 'package.json')).toString(),
+        ).version + `.${buildVersion}`,
       web_accessible_resources: [
         {
           extension_ids: [],

@@ -12,21 +12,6 @@ const fs = require('fs-extra');
 const path = require('node:path');
 const {packagesManager} = require('./shared/packagesManager');
 
-const webPkg = packagesManager.getPackageByDirectoryName('lexical-website');
-
-function sidebarTemplate(npmName, readmePath) {
-  return (
-    `
----
-title: ''
-sidebar_label: '${npmName}'
----
-
-{@import ${readmePath}}
-`.trim() + '\n'
-  );
-}
-
 function readmeTemplate(npmName, directoryName, description) {
   const apiModuleName = directoryName.replace(/-/g, '_');
   return (
@@ -40,17 +25,12 @@ ${description}
   );
 }
 
-function updateDocs() {
+function createDocs() {
   packagesManager.getPublicPackages().forEach((pkg) => {
     const npmName = pkg.getNpmName();
     const directoryName = pkg.getDirectoryName();
     const root = pkg.resolve('..', '..');
     const readmePath = pkg.resolve('README.md');
-    const sidebarPath = webPkg.resolve(
-      'docs',
-      'packages',
-      `${directoryName}.md`,
-    );
     if (!fs.existsSync(readmePath)) {
       console.log(`Creating ${path.relative(root, readmePath)}`);
       fs.writeFileSync(
@@ -63,17 +43,7 @@ function updateDocs() {
         ),
       );
     }
-    if (!fs.existsSync(sidebarPath)) {
-      console.log(`Creating ${path.relative(root, sidebarPath)}`);
-      fs.writeFileSync(
-        sidebarPath,
-        sidebarTemplate(
-          npmName,
-          path.relative(path.dirname(sidebarPath), readmePath),
-        ),
-      );
-    }
   });
 }
 
-updateDocs();
+createDocs();

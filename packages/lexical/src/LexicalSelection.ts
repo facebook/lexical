@@ -1912,6 +1912,7 @@ function internalResolveSelectionPoint(
     // We use the anchor to find which child node to select
     const childNodes = dom.childNodes;
     const childNodesLength = childNodes.length;
+    const blockCursorElement = editor._blockCursorElement;
     // If the anchor is the same as length, then this means we
     // need to select the very last text node.
     if (resolvedOffset === childNodesLength) {
@@ -1920,11 +1921,20 @@ function internalResolveSelectionPoint(
     }
     let childDOM = childNodes[resolvedOffset];
     let hasBlockCursor = false;
-    if (childDOM === editor._blockCursorElement) {
+    if (childDOM === blockCursorElement) {
       childDOM = childNodes[resolvedOffset + 1];
       hasBlockCursor = true;
-    } else if (editor._blockCursorElement !== null) {
-      resolvedOffset--;
+    } else if (blockCursorElement !== null) {
+      const blockCursorElementParent = blockCursorElement.parentNode;
+      if (dom === blockCursorElementParent) {
+        const blockCursorOffset = Array.prototype.indexOf.call(
+          blockCursorElementParent.children,
+          editor._blockCursorElement,
+        );
+        if (offset > blockCursorOffset) {
+          resolvedOffset--;
+        }
+      }
     }
     resolvedNode = getNodeFromDOM(childDOM);
 
@@ -1941,9 +1951,6 @@ function internalResolveSelectionPoint(
           resolvedElement.getChildrenSize(),
           resolvedOffset,
         );
-        if (resolvedOffset === -1) {
-          resolvedOffset = resolvedElement.getChildrenSize();
-        }
         let child = resolvedElement.getChildAtIndex(resolvedOffset);
         if (
           $isElementNode(child) &&

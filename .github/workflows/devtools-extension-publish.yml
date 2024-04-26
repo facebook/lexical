@@ -22,7 +22,7 @@ jobs:
           path: |
             node_modules
             ~/.cache/ms-playwright
-          key: ${{ runner.os }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
+          key: ${{ runner.os }}-${{ runner.arch }}v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
 
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'

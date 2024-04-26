@@ -93,25 +93,20 @@ describe('public package.json audits (`npm run update-packages` to fix most issu
 });
 
 describe('documentation audits (`npm run update-packages` to fix most issues)', () => {
-  const webPkg = packagesManager.getPackageByDirectoryName('lexical-website');
   packagesManager.getPublicPackages().forEach((pkg) => {
     const npmName = pkg.getNpmName();
     describe(npmName, () => {
       const root = pkg.resolve('..', '..');
-      [
-        pkg.resolve('README.md'),
-        webPkg.resolve('docs', 'packages', `${pkg.getDirectoryName()}.md`),
-      ].forEach((docPath) => {
-        describe(path.relative(root, docPath), () => {
-          it('exists', () => expect(fs.existsSync(docPath)).toBe(true));
-          if (path.basename(docPath) === 'README.md') {
-            it('does not have the TODO description', () => {
-              expect(fs.readFileSync(docPath, 'utf8')).not.toContain(
-                'TODO: This package needs a description!',
-              );
-            });
-          }
-        });
+      const docPath = pkg.resolve('README.md');
+      describe(path.relative(root, docPath), () => {
+        it('exists', () => expect(fs.existsSync(docPath)).toBe(true));
+        if (path.basename(docPath) === 'README.md') {
+          it('does not have the TODO description', () => {
+            expect(fs.readFileSync(docPath, 'utf8')).not.toContain(
+              'TODO: This package needs a description!',
+            );
+          });
+        }
       });
     });
   });

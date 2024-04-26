@@ -9,7 +9,8 @@ import type {EditorConfig} from 'lexical';
 
 import {ElementNode} from './LexicalElementNode';
 
-export class ArtificialNode extends ElementNode {
+// TODO: Cleanup ArtificialNode__DO_NOT_USE #5966
+export class ArtificialNode__DO_NOT_USE extends ElementNode {
   static getType(): string {
     return 'artificial';
   }

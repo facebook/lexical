@@ -28,7 +28,7 @@ import {
   $isElementNode,
   $isRootOrShadowRoot,
   $isTextNode,
-  ArtificialNode,
+  ArtificialNode__DO_NOT_USE,
   ElementNode,
 } from 'lexical';
 
@@ -43,7 +43,7 @@ export function $generateNodesFromDOM(
 ): Array<LexicalNode> {
   const elements = dom.body ? dom.body.childNodes : [];
   let lexicalNodes: Array<LexicalNode> = [];
-  const allArtificialNodes: Array<ArtificialNode> = [];
+  const allArtificialNodes: Array<ArtificialNode__DO_NOT_USE> = [];
   for (let i = 0; i < elements.length; i++) {
     const element = elements[i];
     if (!IGNORE_TAGS.has(element.nodeName)) {
@@ -196,7 +196,7 @@ const IGNORE_TAGS = new Set(['STYLE', 'SCRIPT']);
 function $createNodesFromDOM(
   node: Node,
   editor: LexicalEditor,
-  allArtificialNodes: Array<ArtificialNode>,
+  allArtificialNodes: Array<ArtificialNode__DO_NOT_USE>,
   hasBlockAncestorLexicalNode: boolean,
   forChildMap: Map<string, DOMChildConversion> = new Map(),
   parentLexicalNode?: LexicalNode | null | undefined,
@@ -285,7 +285,7 @@ function $createNodesFromDOM(
       );
     } else {
       childLexicalNodes = wrapContinuousInlines(node, childLexicalNodes, () => {
-        const artificialNode = new ArtificialNode();
+        const artificialNode = new ArtificialNode__DO_NOT_USE();
         allArtificialNodes.push(artificialNode);
         return artificialNode;
       });
@@ -335,9 +335,11 @@ function wrapContinuousInlines(
   return out;
 }
 
-function unwrapArtificalNodes(allArtificialNodes: Array<ArtificialNode>) {
+function unwrapArtificalNodes(
+  allArtificialNodes: Array<ArtificialNode__DO_NOT_USE>,
+) {
   for (const node of allArtificialNodes) {
-    if (node.getNextSibling() instanceof ArtificialNode) {
+    if (node.getNextSibling() instanceof ArtificialNode__DO_NOT_USE) {
       node.insertAfter($createLineBreakNode());
     }
   }

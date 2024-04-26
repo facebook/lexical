@@ -30,7 +30,7 @@ export default defineConfig({
         48: '/icon/48.png',
       },
       name: 'Lexical Developer Tools',
-      permissions: ['scripting', 'storage'],
+      permissions: ['scripting', 'storage', 'tabs'],
       web_accessible_resources: [
         {
           extension_ids: [],

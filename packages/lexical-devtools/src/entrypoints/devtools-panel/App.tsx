@@ -15,6 +15,7 @@ import {
   ButtonGroup,
   Flex,
   Spacer,
+  Text,
 } from '@chakra-ui/react';
 import * as React from 'react';
 import {useState} from 'react';
@@ -45,8 +46,18 @@ function App({tabID}: Props) {
     </Alert>
   ) : (
     <>
-      <Flex>
-        <Box p="4">
+      <Flex
+        as="header"
+        position="fixed"
+        top="0"
+        height="50px"
+        backgroundColor="rgba(255,
+ 255, 255, 0.97)"
+        backdropFilter="saturate(180%) blur(5px)"
+        w="100%"
+        boxShadow="md"
+        zIndex={99}>
+        <Box paddingX="2" alignContent="center">
           <ButtonGroup variant="outline" spacing="2">
             <EditorInspectorButton
               tabID={tabID}
@@ -58,42 +69,44 @@ function App({tabID}: Props) {
             />
           </ButtonGroup>
         </Box>
-        <Box p="4" alignContent="center">
+        <Box pl="4" alignContent="center">
           {states === undefined ? (
-            <span>Loading...</span>
+            <Text fontSize="xs">Loading...</Text>
           ) : (
-            <span>
+            <Text fontSize="xs">
               Found <b>{lexicalCount}</b> editor
               {lexicalCount > 1 || lexicalCount === 0 ? 's' : ''} on the page.
-            </span>
+            </Text>
           )}
         </Box>
         <Spacer />
-        <Box p="2">
+        <Box px="2" alignContent="center">
           <a href="https://lexical.dev" target="_blank">
             <img
               src={lexicalLogo}
               className="logo"
-              width={178}
-              height={40}
+              width={134}
+              height={30}
               alt="Lexical logo"
             />
           </a>
         </Box>
       </Flex>
-      {errorMessage !== '' ? (
-        <div className="card error">{errorMessage}</div>
-      ) : null}
+      <Box as="main" mt="50px">
+        {errorMessage !== '' ? (
+          <div className="card error">{errorMessage}</div>
+        ) : null}
 
-      <Box mt={5}>
-        {lexicalCount > 0 ? (
-          <EditorsList tabID={tabID} setErrorMessage={setErrorMessage} />
-        ) : (
-          <Alert status="info">
-            <AlertIcon />
-            No Lexical editors found on the page.
-          </Alert>
-        )}
+        <Box pt={5}>
+          {lexicalCount > 0 ? (
+            <EditorsList tabID={tabID} setErrorMessage={setErrorMessage} />
+          ) : (
+            <Alert status="info">
+              <AlertIcon />
+              No Lexical editors found on the page.
+            </Alert>
+          )}
+        </Box>
       </Box>
     </>
   );

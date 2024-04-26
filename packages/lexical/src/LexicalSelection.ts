@@ -1941,6 +1941,9 @@ function internalResolveSelectionPoint(
           resolvedElement.getChildrenSize(),
           resolvedOffset,
         );
+        if (resolvedOffset === -1) {
+          resolvedOffset = resolvedElement.getChildrenSize();
+        }
         let child = resolvedElement.getChildAtIndex(resolvedOffset);
         if (
           $isElementNode(child) &&

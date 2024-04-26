@@ -343,14 +343,12 @@ function unwrapArtificalNodes(
       node.insertAfter($createLineBreakNode());
     }
   }
+  // Replace artificial node with it's children
   for (const node of allArtificialNodes) {
-    // unwrap children of Artificial Node and attach to parent at Artificial Node's position
-    const parent = node.getParent();
-    if (parent != null) {
-      const index = parent.getChildren().indexOf(node);
-      if (index != null) {
-        parent.splice(index, 1, node.getChildren());
-      }
+    const children = node.getChildren();
+    for (const child of children) {
+      node.insertBefore(child);
     }
+    node.remove();
   }
 }

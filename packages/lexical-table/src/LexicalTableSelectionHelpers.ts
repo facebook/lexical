@@ -77,6 +77,10 @@ export const getDOMSelection = (
 ): Selection | null =>
   CAN_USE_DOM ? (targetWindow || window).getSelection() : null;
 
+const isMouseDownOnEvent = (event: MouseEvent) => {
+  return (event.buttons & 1) === 1;
+};
+
 export function applyTableHandlers(
   tableNode: TableNode,
   tableElement: HTMLTableElementWithWithTableSelectionState,
@@ -104,6 +108,12 @@ export function applyTableHandlers(
     const onMouseMove = (moveEvent: MouseEvent) => {
       // delaying mousemove handler to allow selectionchange handler from LexicalEvents.ts to be executed first
       setTimeout(() => {
+        if (!isMouseDownOnEvent(moveEvent) && tableObserver.isSelecting) {
+          tableObserver.isSelecting = false;
+          editorWindow.removeEventListener('mouseup', onMouseUp);
+          editorWindow.removeEventListener('mousemove', onMouseMove);
+          return;
+        }
         const focusCell = getDOMCellFromTarget(moveEvent.target as Node);
         if (
           focusCell !== null &&

@@ -10,7 +10,11 @@ import type {Doc} from 'yjs';
 
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {ExcludedProperties, Provider} from '@lexical/yjs';
+import {
+  ExcludedProperties,
+  Provider,
+  YjsCollaborationOptions,
+} from '@lexical/yjs';
 import {useEffect, useMemo} from 'react';
 
 import {InitialEditorStateType} from './LexicalComposer';
@@ -36,6 +40,7 @@ type Props = {
   excludedProperties?: ExcludedProperties;
   // `awarenessData` parameter allows arbitrary data to be added to the awareness.
   awarenessData?: object;
+  options?: YjsCollaborationOptions;
 };
 
 export function CollaborationPlugin({
@@ -48,6 +53,7 @@ export function CollaborationPlugin({
   initialEditorState,
   excludedProperties,
   awarenessData,
+  options,
 }: Props): JSX.Element {
   const collabContext = useCollaborationContext(username, cursorColor);
 
@@ -84,6 +90,7 @@ export function CollaborationPlugin({
     initialEditorState,
     excludedProperties,
     awarenessData,
+    options,
   );
 
   collabContext.clientID = binding.clientID;

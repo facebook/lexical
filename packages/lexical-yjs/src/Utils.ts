@@ -9,6 +9,7 @@
 import type {Binding, YjsNode} from '.';
 import type {
   DecoratorNode,
+  EditorState,
   ElementNode,
   LexicalNode,
   NodeMap,
@@ -18,9 +19,11 @@ import type {
 
 import {
   $getNodeByKey,
+  $getRoot,
   $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
+  $isParagraphNode,
   $isRootNode,
   $isTextNode,
   createEditor,
@@ -541,3 +544,61 @@ export function removeFromParent(node: LexicalNode): void {
     writableNode.__parent = null;
   }
 }
+
+export function $moveSelectionToPreviousParagraph(
+  anchorKey: string,
+  currentEditorState: EditorState,
+) {
+  const currentParagraphKeys = $getRoot().getChildrenKeys();
+  const selectedNode = currentEditorState._nodeMap.get(anchorKey);
+  if (!selectedNode) {
+    $getRoot().selectStart();
+    return;
+  }
+
+  // retrieve the parent paragraph node for the currently selected node
+  const targetParagraphNode = $findParentParagraphNode(
+    selectedNode,
+    currentEditorState,
+  );
+
+  if (!targetParagraphNode) {
+    $getRoot().selectStart();
+    return;
+  }
+
+  const prevParagraphNodeKey = targetParagraphNode.__prev;
+
+  // If collaborator deleted paragraphs including first paragraph
+  if (!prevParagraphNodeKey) {
+    $getRoot().selectStart();
+    return;
+  }
+
+  const prevNode = $getNodeByKey(prevParagraphNodeKey);
+  if (prevParagraphNodeKey in currentParagraphKeys && prevNode) {
+    prevNode.selectEnd();
+    return;
+  } else {
+    // If the previous paragraph is also deleted by collaborator, select the next previous one
+    $moveSelectionToPreviousParagraph(prevParagraphNodeKey, currentEditorState);
+  }
+}
+
+const $findParentParagraphNode = (
+  node: LexicalNode,
+  currentEditorState: EditorState,
+) => {
+  if ($isParagraphNode(node) || !node.__parent) {
+    return node;
+  }
+  const parentNode = currentEditorState._nodeMap.get(node.__parent);
+  if (!parentNode) {
+    return node;
+  }
+  if ($isParagraphNode(parentNode)) {
+    return parentNode;
+  } else {
+    $findParentParagraphNode(parentNode, currentEditorState);
+  }
+};

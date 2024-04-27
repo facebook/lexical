@@ -148,11 +148,10 @@ export function syncYjsChangesToLexical(
               syncLocalCursorPosition(binding, provider);
 
               if (doesSelectionNeedRecovering(selection)) {
-
                 // If the selected paragraph is deleted by collaborator, move the selection to the previous paragraph.
-                const anchorKey = selection.anchor.key;
+                const anchorNodeKey = selection.anchor.key;
                 $moveSelectionToPreviousParagraph(
-                  anchorKey,
+                  anchorNodeKey,
                   currentEditorState,
                 );
               }

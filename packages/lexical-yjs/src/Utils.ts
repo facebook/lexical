@@ -546,11 +546,11 @@ export function removeFromParent(node: LexicalNode): void {
 }
 
 export function $moveSelectionToPreviousParagraph(
-  anchorKey: string,
+  anchorNodeKey: string,
   currentEditorState: EditorState,
 ) {
   const currentParagraphKeys = $getRoot().getChildrenKeys();
-  const selectedNode = currentEditorState._nodeMap.get(anchorKey);
+  const selectedNode = currentEditorState._nodeMap.get(anchorNodeKey);
   if (!selectedNode) {
     $getRoot().selectStart();
     return;

@@ -148,15 +148,6 @@ export function syncYjsChangesToLexical(
               syncLocalCursorPosition(binding, provider);
 
               if (doesSelectionNeedRecovering(selection)) {
-                const root = $getRoot();
-
-                // If there was a collision on the top level paragraph
-                // we need to re-add a paragraph
-                if (root.getChildrenSize() === 0) {
-                  root.append($createParagraphNode());
-                  $getRoot().selectStart();
-                  return;
-                }
 
                 // If the selected paragraph is deleted by collaborator, move the selection to the previous paragraph.
                 const anchorKey = selection.anchor.key;

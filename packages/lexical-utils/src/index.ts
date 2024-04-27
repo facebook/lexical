@@ -177,7 +177,8 @@ export function $dfs(
   const nodes = [];
   const start = (startingNode || $getRoot()).getLatest();
   const end =
-    endingNode || ($isElementNode(start) ? start.getLastDescendant() : start);
+    endingNode ||
+    ($isElementNode(start) ? start.getLastDescendant() || start : start);
   let node: LexicalNode | null = start;
   let depth = $getDepth(node);
 

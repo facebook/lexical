@@ -203,5 +203,34 @@ describe('LexicalNodeHelpers tests', () => {
         ]);
       });
     });
+
+    test('DFS of empty ParagraphNode returns only itself', async () => {
+      const editor: LexicalEditor = testEnv.editor;
+
+      let paragraphKey;
+
+      await editor.update(() => {
+        const root = $getRoot();
+
+        const paragraph = $createParagraphNode();
+        const paragraph2 = $createParagraphNode();
+        const text = $createTextNode('test');
+
+        paragraphKey = paragraph.getKey();
+
+        paragraph2.append(text);
+        root.append(paragraph, paragraph2);
+      });
+      await editor.update(() => {
+        const paragraph = $getNodeByKey(paragraphKey);
+
+        expect($dfs(paragraph)).toEqual([
+          {
+            depth: 1,
+            node: paragraph.getLatest(),
+          },
+        ]);
+      });
+    });
   });
 });

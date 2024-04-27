@@ -2,6 +2,12 @@ name: Publish DevTools extension to stores
 
 on:
   workflow_dispatch:
+    inputs:
+      build_version:
+        description: 'Build version'
+        required: true
+        default: '0'
+        type: number
 
 jobs:
   release:
@@ -17,15 +23,16 @@ jobs:
           cache: 'npm'
 
       - uses: actions/cache@v3
-        id: cache
+        id: devtools-cache
         with:
           path: |
             node_modules
+            packages/lexical-devtools/.wxt
             ~/.cache/ms-playwright
           key: ${{ runner.os }}-${{ runner.arch }}v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
+        if: steps.devtools-cache.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: Zip & submit to stores
@@ -38,3 +45,4 @@ jobs:
           FIREFOX_EXTENSION_ID: ${{ secrets.EXTENSION_FIREFOX_EXTENSION_ID }}
           FIREFOX_JWT_ISSUER: ${{ secrets.EXTENSION_FIREFOX_JWT_ISSUER }}
           FIREFOX_JWT_SECRET: ${{ secrets.EXTENSION_FIREFOX_JWT_SECRET }}
+          BUILD_VERSION: ${{ inputs.build_version }}

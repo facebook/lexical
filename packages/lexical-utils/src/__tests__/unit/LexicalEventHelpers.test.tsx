@@ -22,6 +22,7 @@ import {
   pasteHTML,
 } from '@lexical/selection/src/__tests__/utils';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
+import {LexicalEditor} from 'lexical';
 import {initializeClipboard, TestComposer} from 'lexical/src/__tests__/utils';
 import * as React from 'react';
 import {createRoot} from 'react-dom/client';
@@ -73,7 +74,7 @@ Range.prototype.getBoundingClientRect = function (): DOMRect {
 };
 
 describe('LexicalEventHelpers', () => {
-  let container = null;
+  let container: HTMLDivElement | null = null;
 
   beforeEach(async () => {
     container = document.createElement('div');
@@ -82,15 +83,15 @@ describe('LexicalEventHelpers', () => {
   });
 
   afterEach(() => {
-    document.body.removeChild(container);
+    document.body.removeChild(container!);
     container = null;
   });
 
-  let editor = null;
+  let editor: LexicalEditor | null = null;
 
   async function init() {
     function TestBase() {
-      function TestPlugin(): JSX.Element {
+      function TestPlugin(): null {
         [editor] = useLexicalComposerContext();
 
         return null;
@@ -147,8 +148,8 @@ describe('LexicalEventHelpers', () => {
           }}>
           <RichTextPlugin
             contentEditable={
-              // eslint-disable-next-line jsx-a11y/aria-role
-              <ContentEditable role={null} spellCheck={null} />
+              // eslint-disable-next-line jsx-a11y/aria-role, @typescript-eslint/no-explicit-any
+              <ContentEditable role={null as any} spellCheck={null as any} />
             }
             placeholder={null}
             ErrorBoundary={LexicalErrorBoundary}
@@ -160,20 +161,20 @@ describe('LexicalEventHelpers', () => {
     }
 
     ReactTestUtils.act(() => {
-      createRoot(container).render(<TestBase />);
+      createRoot(container!).render(<TestBase />);
     });
   }
 
-  async function update(fn) {
+  async function update(fn: () => void) {
     await ReactTestUtils.act(async () => {
-      await editor.update(fn);
+      await editor!.update(fn);
     });
 
     return Promise.resolve().then();
   }
 
   test('Expect initial output to be a block with no text', () => {
-    expect(container.innerHTML).toBe(
+    expect(container!.innerHTML).toBe(
       '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p class="editor-paragraph"><br></p></div>',
     );
   });
@@ -345,10 +346,10 @@ describe('LexicalEventHelpers', () => {
         const name = testUnit.name || 'Test case';
 
         test(name + ` (#${i + 1})`, async () => {
-          await applySelectionInputs(testUnit.inputs, update, editor);
+          await applySelectionInputs(testUnit.inputs, update, editor!);
 
           // Validate HTML matches
-          expect(container.innerHTML).toBe(testUnit.expectedHTML);
+          expect(container!.innerHTML).toBe(testUnit.expectedHTML);
         });
       });
     });
@@ -401,10 +402,10 @@ describe('LexicalEventHelpers', () => {
         const name = testUnit.name || 'Test case';
 
         test(name + ` (#${i + 1})`, async () => {
-          await applySelectionInputs(testUnit.inputs, update, editor);
+          await applySelectionInputs(testUnit.inputs, update, editor!);
 
           // Validate HTML matches
-          expect(container.innerHTML).toBe(testUnit.expectedHTML);
+          expect(container!.innerHTML).toBe(testUnit.expectedHTML);
         });
       });
     });
@@ -674,12 +675,14 @@ describe('LexicalEventHelpers', () => {
         const name = testUnit.name || 'Test case';
 
         // eslint-disable-next-line no-only-tests/no-only-tests, dot-notation
-        const test_ = testUnit['only'] ? test.only : test;
+        const test_ = 'only' in testUnit && testUnit['only'] ? test.only : test;
         test_(name + ` (#${i + 1})`, async () => {
-          await applySelectionInputs(testUnit.inputs, update, editor);
+          await applySelectionInputs(testUnit.inputs, update, editor!);
 
           // Validate HTML matches
-          expect(container.firstChild.innerHTML).toBe(testUnit.expectedHTML);
+          expect((container!.firstChild as HTMLElement).innerHTML).toBe(
+            testUnit.expectedHTML,
+          );
         });
       });
     });

@@ -34,12 +34,12 @@ import {
 } from 'lexical/src';
 import {createTestEditor, TestComposer} from 'lexical/src/__tests__/utils';
 import React from 'react';
-import {createRoot} from 'react-dom/client';
+import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'react-dom/test-utils';
 
 describe('LexicalHistory tests', () => {
   let container: HTMLDivElement | null = null;
-  let reactRoot;
+  let reactRoot: Root;
 
   beforeEach(() => {
     container = document.createElement('div');

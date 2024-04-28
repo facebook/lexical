@@ -25,6 +25,9 @@ import {
   $isParagraphNode,
   $isRangeSelection,
   $setSelection,
+  ElementNode,
+  LexicalEditor,
+  ParagraphNode,
   RangeSelection,
   TextNode,
 } from 'lexical';
@@ -59,9 +62,12 @@ Range.prototype.getBoundingClientRect = function (): DOMRect {
   };
 };
 
-function createParagraphWithNodes(editor, nodes) {
+function createParagraphWithNodes(
+  editor: LexicalEditor,
+  nodes: {text: string; key: string; mergeable?: boolean}[],
+) {
   const paragraph = $createParagraphNode();
-  const nodeMap = editor._pendingEditorState._nodeMap;
+  const nodeMap = editor._pendingEditorState!._nodeMap;
 
   for (let i = 0; i < nodes.length; i++) {
     const {text, key, mergeable} = nodes[i];
@@ -81,7 +87,9 @@ function createParagraphWithNodes(editor, nodes) {
 describe('LexicalSelectionHelpers tests', () => {
   describe('Collapsed', () => {
     test('Can handle a text point', () => {
-      const setupTestCase = (cb) => {
+      const setupTestCase = (
+        cb: (selection: RangeSelection, node: ElementNode) => void,
+      ) => {
         const editor = createTestEditor();
 
         editor.update(() => {
@@ -119,7 +127,7 @@ describe('LexicalSelectionHelpers tests', () => {
             type: 'text',
           });
           const selection = $getSelection();
-          cb(selection, element);
+          cb(selection as RangeSelection, element);
         });
       };
 
@@ -137,7 +145,7 @@ describe('LexicalSelectionHelpers tests', () => {
       setupTestCase((selection, state) => {
         selection.insertText('Test');
 
-        expect($getNodeByKey('a').getTextContent()).toBe('Testa');
+        expect($getNodeByKey('a')!.getTextContent()).toBe('Testa');
 
         expect(selection.anchor).toEqual(
           expect.objectContaining({
@@ -162,7 +170,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
         expect(selection.anchor).toEqual(
           expect.objectContaining({
-            key: element.getFirstChild().getKey(),
+            key: element.getFirstChild()!.getKey(),
             offset: 3,
             type: 'text',
           }),
@@ -170,7 +178,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
         expect(selection.focus).toEqual(
           expect.objectContaining({
-            key: element.getFirstChild().getKey(),
+            key: element.getFirstChild()!.getKey(),
             offset: 3,
             type: 'text',
           }),
@@ -224,11 +232,11 @@ describe('LexicalSelectionHelpers tests', () => {
         selection.formatText('bold');
         selection.insertText('Test');
 
-        expect(element.getFirstChild().getTextContent()).toBe('Test');
+        expect(element.getFirstChild()!.getTextContent()).toBe('Test');
 
         expect(selection.anchor).toEqual(
           expect.objectContaining({
-            key: element.getFirstChild().getKey(),
+            key: element.getFirstChild()!.getKey(),
             offset: 4,
             type: 'text',
           }),
@@ -236,15 +244,15 @@ describe('LexicalSelectionHelpers tests', () => {
 
         expect(selection.focus).toEqual(
           expect.objectContaining({
-            key: element.getFirstChild().getKey(),
+            key: element.getFirstChild()!.getKey(),
             offset: 4,
             type: 'text',
           }),
         );
 
-        expect(element.getFirstChild().getNextSibling().getTextContent()).toBe(
-          'a',
-        );
+        expect(
+          element.getFirstChild()!.getNextSibling()!.getTextContent(),
+        ).toBe('a');
       });
 
       // Extract selection
@@ -414,7 +422,7 @@ describe('LexicalSelectionHelpers tests', () => {
       const editor = createTestEditor();
 
       const domElement = document.createElement('div');
-      let element;
+      let element: ParagraphNode;
 
       editor.setRootElement(domElement);
 
@@ -690,7 +698,9 @@ describe('LexicalSelectionHelpers tests', () => {
     });
 
     test('Can handle an element point on empty element', () => {
-      const setupTestCase = (cb) => {
+      const setupTestCase = (
+        cb: (selection: RangeSelection, el: ElementNode) => void,
+      ) => {
         const editor = createTestEditor();
 
         editor.update(() => {
@@ -712,7 +722,7 @@ describe('LexicalSelectionHelpers tests', () => {
             type: 'element',
           });
           const selection = $getSelection();
-          cb(selection, element);
+          cb(selection as RangeSelection, element);
         });
       };
 
@@ -729,7 +739,7 @@ describe('LexicalSelectionHelpers tests', () => {
       // insertText
       setupTestCase((selection, element) => {
         selection.insertText('Test');
-        const firstChild = element.getFirstChild();
+        const firstChild = element.getFirstChild()!;
 
         expect(firstChild.getTextContent()).toBe('Test');
 
@@ -753,7 +763,7 @@ describe('LexicalSelectionHelpers tests', () => {
       // insertParagraph
       setupTestCase((selection, element) => {
         selection.insertParagraph();
-        const nextElement = element.getNextSibling();
+        const nextElement = element.getNextSibling()!;
 
         expect(selection.anchor).toEqual(
           expect.objectContaining({
@@ -797,7 +807,7 @@ describe('LexicalSelectionHelpers tests', () => {
       setupTestCase((selection, element) => {
         selection.formatText('bold');
         selection.insertText('Test');
-        const firstChild = element.getFirstChild();
+        const firstChild = element.getFirstChild()!;
 
         expect(firstChild.getTextContent()).toBe('Test');
 
@@ -825,7 +835,9 @@ describe('LexicalSelectionHelpers tests', () => {
     });
 
     test('Can handle a start element point', () => {
-      const setupTestCase = (cb) => {
+      const setupTestCase = (
+        cb: (selection: RangeSelection, el: ElementNode) => void,
+      ) => {
         const editor = createTestEditor();
 
         editor.update(() => {
@@ -863,7 +875,7 @@ describe('LexicalSelectionHelpers tests', () => {
             type: 'element',
           });
           const selection = $getSelection();
-          cb(selection, element);
+          cb(selection as RangeSelection, element);
         });
       };
 
@@ -880,7 +892,7 @@ describe('LexicalSelectionHelpers tests', () => {
       // insertText
       setupTestCase((selection, element) => {
         selection.insertText('Test');
-        const firstChild = element.getFirstChild();
+        const firstChild = element.getFirstChild()!;
 
         expect(firstChild.getTextContent()).toBe('Test');
 
@@ -948,7 +960,7 @@ describe('LexicalSelectionHelpers tests', () => {
         selection.formatText('bold');
         selection.insertText('Test');
 
-        const firstChild = element.getFirstChild();
+        const firstChild = element.getFirstChild()!;
 
         expect(firstChild.getTextContent()).toBe('Test');
 
@@ -976,7 +988,9 @@ describe('LexicalSelectionHelpers tests', () => {
     });
 
     test('Can handle an end element point', () => {
-      const setupTestCase = (cb) => {
+      const setupTestCase = (
+        cb: (selection: RangeSelection, el: ElementNode) => void,
+      ) => {
         const editor = createTestEditor();
 
         editor.update(() => {
@@ -1014,7 +1028,7 @@ describe('LexicalSelectionHelpers tests', () => {
             type: 'element',
           });
           const selection = $getSelection();
-          cb(selection, element);
+          cb(selection as RangeSelection, element);
         });
       };
 
@@ -1031,7 +1045,7 @@ describe('LexicalSelectionHelpers tests', () => {
       // insertText
       setupTestCase((selection, element) => {
         selection.insertText('Test');
-        const lastChild = element.getLastChild();
+        const lastChild = element.getLastChild()!;
 
         expect(lastChild.getTextContent()).toBe('Test');
 
@@ -1055,7 +1069,7 @@ describe('LexicalSelectionHelpers tests', () => {
       // insertParagraph
       setupTestCase((selection, element) => {
         selection.insertParagraph();
-        const nextSibling = element.getNextSibling();
+        const nextSibling = element.getNextSibling()!;
 
         expect(selection.anchor).toEqual(
           expect.objectContaining({
@@ -1099,7 +1113,7 @@ describe('LexicalSelectionHelpers tests', () => {
       setupTestCase((selection, element) => {
         selection.formatText('bold');
         selection.insertText('Test');
-        const lastChild = element.getLastChild();
+        const lastChild = element.getLastChild()!;
 
         expect(lastChild.getTextContent()).toBe('Test');
 
@@ -1271,7 +1285,9 @@ describe('LexicalSelectionHelpers tests', () => {
 
   describe('Simple range', () => {
     test('Can handle multiple text points', () => {
-      const setupTestCase = (cb) => {
+      const setupTestCase = (
+        cb: (selection: RangeSelection, el: ElementNode) => void,
+      ) => {
         const editor = createTestEditor();
 
         editor.update(() => {
@@ -1333,7 +1349,7 @@ describe('LexicalSelectionHelpers tests', () => {
       setupTestCase((selection, state) => {
         selection.insertText('Test');
 
-        expect($getNodeByKey('a').getTextContent()).toBe('Test');
+        expect($getNodeByKey('a')!.getTextContent()).toBe('Test');
 
         expect(selection.anchor).toEqual(
           expect.objectContaining({
@@ -1358,7 +1374,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
         expect(selection.anchor).toEqual(
           expect.objectContaining({
-            key: element.getFirstChild().getKey(),
+            key: element.getFirstChild()!.getKey(),
             offset: 3,
             type: 'text',
           }),
@@ -1366,7 +1382,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
         expect(selection.focus).toEqual(
           expect.objectContaining({
-            key: element.getFirstChild().getKey(),
+            key: element.getFirstChild()!.getKey(),
             offset: 3,
             type: 'text',
           }),
@@ -1420,11 +1436,11 @@ describe('LexicalSelectionHelpers tests', () => {
         selection.formatText('bold');
         selection.insertText('Test');
 
-        expect(element.getFirstChild().getTextContent()).toBe('Test');
+        expect(element.getFirstChild()!.getTextContent()).toBe('Test');
 
         expect(selection.anchor).toEqual(
           expect.objectContaining({
-            key: element.getFirstChild().getKey(),
+            key: element.getFirstChild()!.getKey(),
             offset: 4,
             type: 'text',
           }),
@@ -1432,7 +1448,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
         expect(selection.focus).toEqual(
           expect.objectContaining({
-            key: element.getFirstChild().getKey(),
+            key: element.getFirstChild()!.getKey(),
             offset: 4,
             type: 'text',
           }),
@@ -1446,7 +1462,9 @@ describe('LexicalSelectionHelpers tests', () => {
     });
 
     test('Can handle multiple element points', () => {
-      const setupTestCase = (cb) => {
+      const setupTestCase = (
+        cb: (selection: RangeSelection, el: ElementNode) => void,
+      ) => {
         const editor = createTestEditor();
 
         editor.update(() => {
@@ -1504,7 +1522,7 @@ describe('LexicalSelectionHelpers tests', () => {
       // insertText
       setupTestCase((selection, element) => {
         selection.insertText('Test');
-        const firstChild = element.getFirstChild();
+        const firstChild = element.getFirstChild()!;
 
         expect(firstChild.getTextContent()).toBe('Test');
 
@@ -1571,7 +1589,7 @@ describe('LexicalSelectionHelpers tests', () => {
       setupTestCase((selection, element) => {
         selection.formatText('bold');
         selection.insertText('Test');
-        const firstChild = element.getFirstChild();
+        const firstChild = element.getFirstChild()!;
 
         expect(firstChild.getTextContent()).toBe('Test');
 
@@ -1601,7 +1619,9 @@ describe('LexicalSelectionHelpers tests', () => {
     });
 
     test('Can handle a mix of text and element points', () => {
-      const setupTestCase = (cb) => {
+      const setupTestCase = (
+        cb: (selection: RangeSelection, el: ElementNode) => void,
+      ) => {
         const editor = createTestEditor();
 
         editor.update(() => {
@@ -1668,7 +1688,7 @@ describe('LexicalSelectionHelpers tests', () => {
       // insertText
       setupTestCase((selection, element) => {
         selection.insertText('Test');
-        const firstChild = element.getFirstChild();
+        const firstChild = element.getFirstChild()!;
 
         expect(firstChild.getTextContent()).toBe('Test');
 
@@ -1692,7 +1712,7 @@ describe('LexicalSelectionHelpers tests', () => {
       // insertParagraph
       setupTestCase((selection, element) => {
         selection.insertParagraph();
-        const nextElement = element.getNextSibling();
+        const nextElement = element.getNextSibling()!;
 
         expect(selection.anchor).toEqual(
           expect.objectContaining({
@@ -1736,7 +1756,7 @@ describe('LexicalSelectionHelpers tests', () => {
       setupTestCase((selection, element) => {
         selection.formatText('bold');
         selection.insertText('Test');
-        const firstChild = element.getFirstChild();
+        const firstChild = element.getFirstChild()!;
 
         expect(firstChild.getTextContent()).toBe('Test');
 
@@ -2121,7 +2141,7 @@ describe('LexicalSelectionHelpers tests', () => {
           expect(selection.anchor).toEqual(
             expect.objectContaining({
               key: paragraph
-                .getChildAtIndex(paragraph.getChildrenSize() - 2)
+                .getChildAtIndex(paragraph.getChildrenSize() - 2)!
                 .getKey(),
               offset: 1,
               type: 'text',
@@ -2131,7 +2151,7 @@ describe('LexicalSelectionHelpers tests', () => {
           expect(selection.focus).toEqual(
             expect.objectContaining({
               key: paragraph
-                .getChildAtIndex(paragraph.getChildrenSize() - 2)
+                .getChildAtIndex(paragraph.getChildrenSize() - 2)!
                 .getKey(),
               offset: 1,
               type: 'text',
@@ -2547,7 +2567,7 @@ describe('extract', () => {
       const selection = $getSelection();
       expect($isRangeSelection(selection)).toBeTruthy();
 
-      expect(selection.extract()).toEqual([text]);
+      expect(selection!.extract()).toEqual([text]);
     });
   });
 });
@@ -2605,7 +2625,7 @@ describe('insertNodes', () => {
     });
     await editor.update(() => {
       const selection = $createRangeSelection();
-      const text = $getRoot().getLastDescendant();
+      const text = $getRoot().getLastDescendant()!;
       selection.anchor.set(text.getKey(), 0, 'text');
       selection.focus.set(text.getKey(), 0, 'text');
 
@@ -2629,7 +2649,7 @@ describe('insertNodes', () => {
         $createParagraphNode().append(emptyTextNode, $createTextNode('text')),
       );
       emptyTextNode.select(0, 0);
-      const selection = $getSelection();
+      const selection = $getSelection()!;
       expect($isRangeSelection(selection)).toBeTruthy();
       selection.insertNodes([$createTextNode('foo')]);
 
@@ -2692,7 +2712,7 @@ describe('$patchStyleText', () => {
       const link = $createLinkNode('https://');
       link.append($createTextNode('link'));
 
-      const a = $getNodeByKey('a');
+      const a = $getNodeByKey('a')!;
       a.insertAfter(link);
 
       setAnchorPoint({
@@ -2793,7 +2813,7 @@ describe('$patchStyleText', () => {
       const link = $createLinkNode('https://');
       link.append($createTextNode('link'));
 
-      const a = $getNodeByKey('a');
+      const a = $getNodeByKey('a')!;
       a.insertAfter(link);
 
       setAnchorPoint({
@@ -2846,7 +2866,7 @@ describe('$patchStyleText', () => {
       const link = $createLinkNode('https://');
       link.append($createTextNode('link'));
 
-      const a = $getNodeByKey('a');
+      const a = $getNodeByKey('a')!;
       a.insertAfter(link);
 
       // Select from the end of the link _element_

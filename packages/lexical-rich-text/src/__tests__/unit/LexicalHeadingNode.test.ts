@@ -11,7 +11,13 @@ import {
   $isHeadingNode,
   HeadingNode,
 } from '@lexical/rich-text';
-import {$createTextNode, $getRoot, $getSelection, ParagraphNode} from 'lexical';
+import {
+  $createTextNode,
+  $getRoot,
+  $getSelection,
+  ParagraphNode,
+  RangeSelection,
+} from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 
 const editorConfig = Object.freeze({
@@ -81,7 +87,7 @@ describe('LexicalHeadingNode tests', () => {
 
     test('HeadingNode.insertNewAfter()', async () => {
       const {editor} = testEnv;
-      let headingNode;
+      let headingNode: HeadingNode;
       await editor.update(() => {
         const root = $getRoot();
         headingNode = new HeadingNode('h1');
@@ -91,7 +97,7 @@ describe('LexicalHeadingNode tests', () => {
         '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><h1><br></h1></div>',
       );
       await editor.update(() => {
-        const selection = $getSelection();
+        const selection = $getSelection() as RangeSelection;
         const result = headingNode.insertNewAfter(selection);
         expect(result).toBeInstanceOf(ParagraphNode);
         expect(result.getDirection()).toEqual(headingNode.getDirection());
@@ -122,7 +128,7 @@ describe('LexicalHeadingNode tests', () => {
 
     test('creates a h2 with text and can insert a new paragraph after', async () => {
       const {editor} = testEnv;
-      let headingNode;
+      let headingNode: HeadingNode;
       const text = 'hello world';
       await editor.update(() => {
         const root = $getRoot();

@@ -16,7 +16,7 @@
  *
  */
 
-import type {RangeSelection} from 'lexical';
+import type {EditorState, LexicalEditor, RangeSelection} from 'lexical';
 
 import {$generateHtmlFromNodes} from '@lexical/html';
 import {JSDOM} from 'jsdom';
@@ -33,14 +33,17 @@ import {
 import {createHeadlessEditor} from '../..';
 
 describe('LexicalHeadlessEditor', () => {
-  let editor;
+  let editor: LexicalEditor;
 
-  async function update(updateFn) {
+  async function update(updateFn: () => void) {
     editor.update(updateFn);
     await Promise.resolve();
   }
 
-  function assertEditorState(editorState, nodes) {
+  function assertEditorState(
+    editorState: EditorState,
+    nodes: Record<string, unknown>[],
+  ) {
     const nodesFromState = Array.from(editorState._nodeMap.values());
     expect(nodesFromState).toEqual(
       nodes.map((node) => expect.objectContaining(node)),

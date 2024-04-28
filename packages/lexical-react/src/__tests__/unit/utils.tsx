@@ -6,9 +6,10 @@
  *
  */
 
-import {UserState} from '@lexical/yjs';
+import {Provider, UserState} from '@lexical/yjs';
 import {LexicalEditor} from 'lexical';
 import * as React from 'react';
+import {Container} from 'react-dom';
 import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'react-dom/test-utils';
 import * as Y from 'yjs';
@@ -21,7 +22,17 @@ import {ContentEditable} from '../../LexicalContentEditable';
 import LexicalErrorBoundary from '../../LexicalErrorBoundary';
 import {RichTextPlugin} from '../../LexicalRichTextPlugin';
 
-function Editor({doc, provider, setEditor, awarenessData}) {
+function Editor({
+  doc,
+  provider,
+  setEditor,
+  awarenessData,
+}: {
+  doc: Y.Doc;
+  provider: Provider;
+  setEditor: (editor: LexicalEditor) => void;
+  awarenessData?: object | undefined;
+}) {
   const context = useCollaborationContext();
 
   const [editor] = useLexicalComposerContext();
@@ -49,20 +60,20 @@ function Editor({doc, provider, setEditor, awarenessData}) {
   );
 }
 
-class Client {
+export class Client implements Provider {
   _id: string;
-  _reactRoot: Root;
-  _container: HTMLDivElement;
-  _editor: LexicalEditor;
+  _reactRoot: Root | null = null;
+  _container: HTMLDivElement | null = null;
+  _editor: LexicalEditor | null = null;
   _connection: {
-    _clients: Client[];
+    _clients: Map<string, Client>;
   };
-  _connected: boolean;
-  _doc: Y.Doc;
-  _awarenessState: unknown;
+  _connected: boolean = false;
+  _doc: Y.Doc = new Y.Doc();
 
-  _listeners: Map<string, Set<(data: unknown) => void>>;
-  _updates: Uint8Array[];
+  _listeners = new Map<string, Set<(data: unknown) => void>>();
+  _updates: Uint8Array[] = [];
+  _awarenessState: UserState | null = null;
   awareness: {
     getLocalState: () => UserState | null;
     getStates: () => Map<number, UserState>;
@@ -71,54 +82,37 @@ class Client {
     setLocalState: (state: UserState) => void;
   };
 
-  constructor(id, connection) {
+  constructor(id: Client['_id'], connection: Client['_connection']) {
     this._id = id;
-    this._reactRoot = null;
-    this._container = null;
     this._connection = connection;
-    this._connected = false;
-    this._doc = new Y.Doc();
-    this._awarenessState = {};
     this._onUpdate = this._onUpdate.bind(this);
 
     this._doc.on('update', this._onUpdate);
 
-    this._listeners = new Map();
-    this._updates = [];
-    this._editor = null;
-
     this.awareness = {
-      getLocalState() {
-        return this._awarenessState;
-      },
-
-      getStates() {
-        const states: Map<number, UserState> = new Map();
-        states[0] = this._awarenessState as UserState;
-        return states;
-      },
-
-      off() {
+      getLocalState: () => this._awarenessState,
+      getStates: () => new Map([[0, this._awarenessState!]]),
+      off: () => {
         // TODO
       },
 
-      on() {
+      on: () => {
         // TODO
       },
 
-      setLocalState(state) {
+      setLocalState: (state) => {
         this._awarenessState = state;
       },
     };
   }
 
-  _onUpdate(update, origin, transaction) {
+  _onUpdate(update: Uint8Array, origin: unknown, transaction: unknown) {
     if (origin !== this._connection && this._connected) {
       this._broadcastUpdate(update);
     }
   }
 
-  _broadcastUpdate(update) {
+  _broadcastUpdate(update: Uint8Array) {
     this._connection._clients.forEach((client) => {
       if (client !== this) {
         if (client._connected) {
@@ -154,7 +148,7 @@ class Client {
     this._connected = false;
   }
 
-  start(rootContainer, awarenessData?) {
+  start(rootContainer: Container, awarenessData?: object) {
     const container = document.createElement('div');
     const reactRoot = createRoot(container);
     this._container = container;
@@ -185,15 +179,16 @@ class Client {
 
   stop() {
     ReactTestUtils.act(() => {
-      this._reactRoot.render(null);
+      this._reactRoot!.render(null);
     });
 
-    this._container.parentNode.removeChild(this._container);
+    this.getContainer().parentNode!.removeChild(this.getContainer());
 
     this._container = null;
   }
 
-  on(type, callback) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  on(type: string, callback: (arg: any) => void) {
     let listenerSet = this._listeners.get(type);
 
     if (listenerSet === undefined) {
@@ -205,7 +200,8 @@ class Client {
     listenerSet.add(callback);
   }
 
-  off(type, callback) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  off(type: string, callback: (arg: any) => void) {
     const listenerSet = this._listeners.get(type);
 
     if (listenerSet !== undefined) {
@@ -213,7 +209,7 @@ class Client {
     }
   }
 
-  _dispatch(type, data) {
+  _dispatch(type: string, data: unknown) {
     const listenerSet = this._listeners.get(type);
 
     if (listenerSet !== undefined) {
@@ -222,7 +218,7 @@ class Client {
   }
 
   getHTML() {
-    return (this._container.firstChild as HTMLElement).innerHTML;
+    return (this.getContainer().firstChild as HTMLElement).innerHTML;
   }
 
   getDocJSON() {
@@ -230,36 +226,32 @@ class Client {
   }
 
   getEditorState() {
-    return this._editor.getEditorState();
+    return this.getEditor().getEditorState();
   }
 
   getEditor() {
-    return this._editor;
+    return this._editor!;
   }
 
   getContainer() {
-    return this._container;
+    return this._container!;
   }
 
   async focus() {
-    this._container.focus();
+    this.getContainer().focus();
 
     await Promise.resolve().then();
   }
 
-  update(cb) {
-    this._editor.update(cb);
+  update(cb: () => void) {
+    this.getEditor().update(cb);
   }
 }
 
 class TestConnection {
-  _clients: Map<string, Client>;
+  _clients = new Map<string, Client>();
 
-  constructor() {
-    this._clients = new Map();
-  }
-
-  createClient(id) {
+  createClient(id: string) {
     const client = new Client(id, this);
 
     this._clients.set(id, client);
@@ -272,7 +264,7 @@ export function createTestConnection() {
   return new TestConnection();
 }
 
-export async function waitForReact(cb) {
+export async function waitForReact(cb: () => void) {
   await ReactTestUtils.act(async () => {
     cb();
     await Promise.resolve().then();

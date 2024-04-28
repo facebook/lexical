@@ -1029,7 +1029,7 @@ export class LexicalEditor {
     key: NodeKey,
     nextNestedRootElement: null | HTMLElement,
   ): void {
-    const prevNestedRootElement = this._keyToDOMMap.get(key) ?? null;
+    const prevNestedRootElement = this._keyToDOMMap.get(key) || null;
     if (nextNestedRootElement !== prevNestedRootElement) {
       if (nextNestedRootElement !== null) {
         const style = nextNestedRootElement.style;

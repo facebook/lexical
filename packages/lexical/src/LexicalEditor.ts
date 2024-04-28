@@ -46,7 +46,10 @@ import {EXPERIMENTAL_DecoratorElementNode} from './nodes/LexicalDecoratorElement
 import {ArtificialNode__DO_NOT_USE} from './nodes/ArtificialNode';
 import {DecoratorNode} from './nodes/LexicalDecoratorNode';
 import {LineBreakNode} from './nodes/LexicalLineBreakNode';
-import {EXPERIMENTAL_NestedRootNode} from './nodes/LexicalNestedRootNode';
+import {
+  $isNestedRootNode,
+  EXPERIMENTAL_NestedRootNode,
+} from './nodes/LexicalNestedRootNode';
 import {ParagraphNode} from './nodes/LexicalParagraphNode';
 import {RootNode} from './nodes/LexicalRootNode';
 import {TabNode} from './nodes/LexicalTabNode';
@@ -1029,6 +1032,10 @@ export class LexicalEditor {
     key: NodeKey,
     nextNestedRootElement: null | HTMLElement,
   ): void {
+    invariant(
+      $isNestedRootNode(this._editorState._nodeMap.get(key)),
+      'Cannot set nested root element for non-nested root node.',
+    );
     const prevNestedRootElement = this._keyToDOMMap.get(key) || null;
     if (nextNestedRootElement !== prevNestedRootElement) {
       if (nextNestedRootElement !== null) {

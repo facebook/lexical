@@ -12,7 +12,6 @@ import type {SerializedElementNode} from './LexicalElementNode';
 import invariant from 'shared/invariant';
 
 import {KlassConstructor} from '../LexicalEditor';
-import {getActiveEditor} from '../LexicalUpdates';
 import {$applyNodeReplacement} from '../LexicalUtils';
 import {RootNodeBase} from './LexicalRootNodeBase';
 
@@ -30,13 +29,6 @@ export class EXPERIMENTAL_NestedRootNode extends RootNodeBase {
 
   static clone(node: EXPERIMENTAL_NestedRootNode): EXPERIMENTAL_NestedRootNode {
     return new EXPERIMENTAL_NestedRootNode(node.__key);
-  }
-
-  get onRef(): (nestedRootElement: null | HTMLElement) => void {
-    const editor = getActiveEditor();
-    return (nestedRootElement) => {
-      editor.setNestedRootElement(this.__key, nestedRootElement);
-    };
   }
 
   insertBefore(nodeToInsert: EXPERIMENTAL_NestedRootNode): LexicalNode {

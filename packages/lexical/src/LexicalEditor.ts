@@ -1032,13 +1032,14 @@ export class LexicalEditor {
     key: NodeKey,
     nextNestedRootElement: null | HTMLElement,
   ): void {
-    invariant(
-      $isNestedRootNode(this._editorState._nodeMap.get(key)),
-      'Cannot set nested root element for non-nested root node.',
-    );
     const prevNestedRootElement = this._keyToDOMMap.get(key) || null;
     if (nextNestedRootElement !== prevNestedRootElement) {
       if (nextNestedRootElement !== null) {
+        invariant(
+          $isNestedRootNode(this._editorState._nodeMap.get(key)),
+          'Cannot set nested root element for non-nested root node.',
+        );
+
         const style = nextNestedRootElement.style;
         style.userSelect = 'text';
         style.whiteSpace = 'pre-wrap';

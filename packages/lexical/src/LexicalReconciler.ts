@@ -85,17 +85,7 @@ function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
     activeEditor._keyToDOMMap.delete(key);
   }
 
-  if ($isDecoratorElementNode(node)) {
-    for (const child of node.getChildren()) {
-      const childKey = child.getKey();
-
-      // child's dom is handled by external frameworks (frameworks that uses the decorators)
-      // we want to make sure activeEditor._keyToDOMMap release them
-      if (activeEditor._keyToDOMMap.has(childKey)) {
-        destroyNode(childKey, null);
-      }
-    }
-  } else if ($isElementNode(node)) {
+  if ($isDecoratorElementNode(node) || $isElementNode(node)) {
     const children = createChildrenArray(node, activePrevNodeMap);
     destroyChildren(children, 0, children.length - 1, null);
   }
@@ -208,9 +198,8 @@ function createNode(
       reconcileDecorator(key, decorator);
     }
 
-    for (const child of node.getChildren()) {
-      const childKey = child.getKey();
-
+    const children = createChildrenArray(node, activeNextNodeMap);
+    for (const childKey of children) {
       // child's dom is handled by external frameworks (frameworks that uses the decorators)
       // proceed to nested child creation
       // normally, this should not happen (until decorators are mounted by external frameworks,
@@ -663,9 +652,8 @@ function reconcileNode(
       }
     }
 
-    for (const child of nextNode.getChildren()) {
-      const childKey = child.getKey();
-
+    const children = createChildrenArray(nextNode, activeNextNodeMap);
+    for (const childKey of children) {
       // child's dom is handled by external frameworks (frameworks that uses the decorators)
       // proceed to nested child reconciliation
       if (activeEditor._keyToDOMMap.has(childKey)) {

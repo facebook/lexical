@@ -14,15 +14,14 @@ import invariant from 'shared/invariant';
 import {NO_DIRTY_NODES} from '../LexicalConstants';
 import {getActiveEditor, isCurrentlyReadOnlyMode} from '../LexicalUpdates';
 import {$getRoot} from '../LexicalUtils';
-import {$isDecoratorNode} from './LexicalDecoratorNode';
-import {$isElementNode, ElementNode} from './LexicalElementNode';
+import {RootNodeBase} from './LexicalRootNodeBase';
 
 export type SerializedRootNode<
   T extends SerializedLexicalNode = SerializedLexicalNode,
 > = SerializedElementNode<T>;
 
 /** @noInheritDoc */
-export class RootNode extends ElementNode {
+export class RootNode extends RootNodeBase {
   /** @internal */
   __cachedText: null | string;
 
@@ -76,25 +75,7 @@ export class RootNode extends ElementNode {
   }
 
   // View
-
-  updateDOM(prevNode: RootNode, dom: HTMLElement): false {
-    return false;
-  }
-
   // Mutate
-
-  append(...nodesToAppend: LexicalNode[]): this {
-    for (let i = 0; i < nodesToAppend.length; i++) {
-      const node = nodesToAppend[i];
-      if (!$isElementNode(node) && !$isDecoratorNode(node)) {
-        invariant(
-          false,
-          'rootNode.append: Only element or decorator nodes can be appended to the root node',
-        );
-      }
-    }
-    return super.append(...nodesToAppend);
-  }
 
   static importJSON(serializedNode: SerializedRootNode): RootNode {
     // We don't create a root, and instead use the existing root.
@@ -114,10 +95,6 @@ export class RootNode extends ElementNode {
       type: 'root',
       version: 1,
     };
-  }
-
-  collapseAtStart(): true {
-    return true;
   }
 }
 

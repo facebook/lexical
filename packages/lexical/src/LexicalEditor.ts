@@ -16,9 +16,13 @@ import type {
 
 import invariant from 'shared/invariant';
 
-import {$getRoot, $getSelection, TextNode} from '.';
-import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
-import {createEmptyEditorState} from './LexicalEditorState';
+import {$getRoot, $getSelection, $isElementNode, TextNode} from '.';
+import {
+  FULL_RECONCILE,
+  HAS_DIRTY_NODES,
+  NO_DIRTY_NODES,
+} from './LexicalConstants';
+import {cloneEditorState, createEmptyEditorState} from './LexicalEditorState';
 import {addRootElementEvents, removeRootElementEvents} from './LexicalEvents';
 import {flushRootMutations, initMutationObserver} from './LexicalMutations';
 import {LexicalNode} from './LexicalNode';
@@ -30,6 +34,7 @@ import {
   updateEditor,
 } from './LexicalUpdates';
 import {
+  $getNodeByKeyOrThrow,
   createUID,
   dispatchCommand,
   getCachedClassNameArray,
@@ -37,9 +42,11 @@ import {
   getDOMSelection,
   markAllNodesAsDirty,
 } from './LexicalUtils';
+import {EXPERIMENTAL_DecoratorElementNode} from './nodes/LexicalDecoratorElementNode';
 import {ArtificialNode__DO_NOT_USE} from './nodes/ArtificialNode';
 import {DecoratorNode} from './nodes/LexicalDecoratorNode';
 import {LineBreakNode} from './nodes/LexicalLineBreakNode';
+import {EXPERIMENTAL_NestedRootNode} from './nodes/LexicalNestedRootNode';
 import {ParagraphNode} from './nodes/LexicalParagraphNode';
 import {RootNode} from './nodes/LexicalRootNode';
 import {TabNode} from './nodes/LexicalTabNode';
@@ -340,6 +347,7 @@ export function resetEditor(
   editor._updateTags = new Set();
   editor._updates = [];
   editor._blockCursorElement = null;
+  editor._pendingNestedRootNodeKeys.clear();
 
   const observer = editor._observer;
 
@@ -418,6 +426,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
   const initialEditorState = config.editorState;
   const nodes = [
     RootNode,
+    EXPERIMENTAL_NestedRootNode,
     TextNode,
     LineBreakNode,
     TabNode,
@@ -465,7 +474,10 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
               `${name} should implement "importDOM" if using a custom "exportDOM" method to ensure HTML serialization (important for copy & paste) works as expected`,
             );
           }
-          if (proto instanceof DecoratorNode) {
+          if (
+            proto instanceof DecoratorNode ||
+            proto instanceof EXPERIMENTAL_DecoratorElementNode
+          ) {
             // eslint-disable-next-line no-prototype-builtins
             if (!proto.hasOwnProperty('decorate')) {
               console.warn(
@@ -588,6 +600,8 @@ export class LexicalEditor {
   _editable: boolean;
   /** @internal */
   _blockCursorElement: null | HTMLDivElement;
+  /** @internal */
+  _pendingNestedRootNodeKeys: Set<NodeKey>;
 
   /** @internal */
   constructor(
@@ -602,6 +616,9 @@ export class LexicalEditor {
     this._parentEditor = parentEditor;
     // The root element associated with this editor
     this._rootElement = null;
+    // Nested root nodes to be reconciled
+    // Each node should be treated as FULL_RECONCILE
+    this._pendingNestedRootNodeKeys = new Set();
     // The current editor state
     this._editorState = editorState;
     // Handling of drafts and updates
@@ -635,6 +652,8 @@ export class LexicalEditor {
     this._dirtyType = NO_DIRTY_NODES;
     this._cloneNotNeeded = new Set();
     this._dirtyLeaves = new Set();
+    // If value is true, the element itself is modified
+    // If value is false, the element contains dirty children but it is not modified.
     this._dirtyElements = new Map();
     this._normalizedNodes = new Set();
     this._updateTags = new Set();
@@ -954,8 +973,12 @@ export class LexicalEditor {
 
     if (nextRootElement !== prevRootElement) {
       const classNames = getCachedClassNameArray(this._config.theme, 'root');
+      // Save latest editor state
       const pendingEditorState = this._pendingEditorState || this._editorState;
       this._rootElement = nextRootElement;
+      // Create a new editor state with root node only
+      // The latest editor state would be used as pending editorState
+      // Therefore, all the nodes will be created during reconciliation
       resetEditor(this, prevRootElement, nextRootElement, pendingEditorState);
 
       if (prevRootElement !== null) {
@@ -1000,6 +1023,97 @@ export class LexicalEditor {
 
       triggerListeners('root', this, false, nextRootElement, prevRootElement);
     }
+  }
+
+  setNestedRootElement(
+    key: NodeKey,
+    nextNestedRootElement: null | HTMLElement,
+  ): void {
+    const prevNestedRootElement = this._keyToDOMMap.get(key) ?? null;
+    if (nextNestedRootElement !== prevNestedRootElement) {
+      if (nextNestedRootElement !== null) {
+        const style = nextNestedRootElement.style;
+        style.userSelect = 'text';
+        style.whiteSpace = 'pre-wrap';
+        style.wordBreak = 'break-word';
+        this._keyToDOMMap.set(key, nextNestedRootElement);
+      } else {
+        this._keyToDOMMap.delete(key);
+      }
+
+      this._pendingNestedRootNodeKeys.add(key);
+
+      // Defer to next microtask, so multiple simultaneous root element update
+      // can trigger only one reconciliation.
+      queueMicrotask(() => {
+        this.processNestedRootKeys();
+      });
+    }
+  }
+
+  processNestedRootKeys(): void {
+    if (this._pendingNestedRootNodeKeys.size === 0) {
+      return;
+    }
+
+    // Save latest editor state
+    if (this._pendingEditorState === null) {
+      this._pendingEditorState = this._editorState;
+    }
+    // Clone current editorState and we'll remove updated nested root's children
+    const editorState = (this._editorState = cloneEditorState(
+      this._editorState,
+    ));
+
+    const pendingNestedRootNodeKeys = this._pendingNestedRootNodeKeys;
+    const keyToDOMMap = this._keyToDOMMap;
+
+    const invalidNodeKeys = editorState.read(() => {
+      const nestedNodeKeys: NodeKey[] = [];
+      for (const nestedRootNodeKey of pendingNestedRootNodeKeys) {
+        const nestedRootNode = $getNodeByKeyOrThrow(
+          nestedRootNodeKey,
+        ) as EXPERIMENTAL_NestedRootNode;
+
+        // OPTIMIZE: refactor data structure so we can directly call someMap.clear() instead of looping
+        // bfs
+        const queue = nestedRootNode.getChildren();
+        while (queue.length > 0) {
+          const node = queue.shift()!;
+          // children nodes become invalid
+          nestedNodeKeys.push(node.__key);
+          // if the node is also a nested root node, avoid processing it multiple times
+          pendingNestedRootNodeKeys.delete(node.__key);
+          // children elements also become invalid
+          keyToDOMMap.delete(node.__key);
+          if ($isElementNode(node)) {
+            queue.push(...node.getChildren());
+          }
+        }
+      }
+      return nestedNodeKeys;
+    });
+
+    // make a copy of nested root nodes if they still exist
+    for (const nestedRootNodeKey of pendingNestedRootNodeKeys) {
+      const nestedRootNode = editorState._nodeMap.get(nestedRootNodeKey);
+      if (nestedRootNode) {
+        editorState._nodeMap.set(
+          nestedRootNodeKey,
+          nestedRootNode.constructor.clone(nestedRootNode),
+        );
+      }
+    }
+
+    for (const key of invalidNodeKeys) {
+      editorState._nodeMap.delete(key);
+    }
+
+    this._dirtyType = HAS_DIRTY_NODES;
+
+    // OPTIMIZE: If all the new root elements are null, we can skip this procedure and
+    // directly replace this._editorState with pending one.
+    commitPendingUpdates(this);
   }
 
   /**

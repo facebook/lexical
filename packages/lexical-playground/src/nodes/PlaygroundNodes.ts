@@ -6,8 +6,6 @@
  *
  */
 
-import type {Klass, LexicalNode} from 'lexical';
-
 import {CodeHighlightNode, CodeNode} from '@lexical/code';
 import {HashtagNode} from '@lexical/hashtag';
 import {AutoLinkNode, LinkNode} from '@lexical/link';
@@ -17,11 +15,13 @@ import {OverflowNode} from '@lexical/overflow';
 import {HorizontalRuleNode} from '@lexical/react/LexicalHorizontalRuleNode';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
+import {type Klass, type LexicalNode} from 'lexical';
 
 import {CollapsibleContainerNode} from '../plugins/CollapsiblePlugin/CollapsibleContainerNode';
 import {CollapsibleContentNode} from '../plugins/CollapsiblePlugin/CollapsibleContentNode';
 import {CollapsibleTitleNode} from '../plugins/CollapsiblePlugin/CollapsibleTitleNode';
 import {AutocompleteNode} from './AutocompleteNode';
+import {CardNode} from './CardNode';
 import {EmojiNode} from './EmojiNode';
 import {EquationNode} from './EquationNode';
 import {ExcalidrawNode} from './ExcalidrawNode';
@@ -73,6 +73,7 @@ const PlaygroundNodes: Array<Klass<LexicalNode>> = [
   PageBreakNode,
   LayoutContainerNode,
   LayoutItemNode,
+  CardNode,
 ];
 
 export default PlaygroundNodes;

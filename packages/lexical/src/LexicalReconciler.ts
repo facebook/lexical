@@ -20,9 +20,11 @@ import invariant from 'shared/invariant';
 import normalizeClassNames from 'shared/normalizeClassNames';
 
 import {
+  $isDecoratorElementNode,
   $isDecoratorNode,
   $isElementNode,
   $isLineBreakNode,
+  $isNestedRootNode,
   $isParagraphNode,
   $isRootNode,
   $isTextNode,
@@ -64,6 +66,7 @@ let activeDirtyLeaves: Set<NodeKey>;
 let activePrevNodeMap: NodeMap;
 let activeNextNodeMap: NodeMap;
 let activePrevKeyToDOMMap: Map<NodeKey, HTMLElement>;
+let pendingNestedRootNodeKeys: Set<NodeKey>;
 let mutatedNodes: MutatedNodes;
 
 function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
@@ -82,7 +85,17 @@ function destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
     activeEditor._keyToDOMMap.delete(key);
   }
 
-  if ($isElementNode(node)) {
+  if ($isDecoratorElementNode(node)) {
+    for (const child of node.getChildren()) {
+      const childKey = child.getKey();
+
+      // child's dom is handled by external frameworks (frameworks that uses the decorators)
+      // we want to make sure activeEditor._keyToDOMMap release them
+      if (activeEditor._keyToDOMMap.has(childKey)) {
+        destroyNode(childKey, null);
+      }
+    }
+  } else if ($isElementNode(node)) {
     const children = createChildrenArray(node, activePrevNodeMap);
     destroyChildren(children, 0, children.length - 1, null);
   }
@@ -184,9 +197,29 @@ function createNode(
     dom.setAttribute('data-lexical-text', 'true');
   } else if ($isDecoratorNode(node)) {
     dom.setAttribute('data-lexical-decorator', 'true');
+  } else if ($isDecoratorElementNode(node)) {
+    dom.setAttribute('data-lexical-decorator-element', 'true');
   }
 
-  if ($isElementNode(node)) {
+  if ($isDecoratorElementNode(node)) {
+    const decorator = node.decorate(activeEditor, activeEditorConfig);
+
+    if (decorator !== null) {
+      reconcileDecorator(key, decorator);
+    }
+
+    for (const child of node.getChildren()) {
+      const childKey = child.getKey();
+
+      // child's dom is handled by external frameworks (frameworks that uses the decorators)
+      // proceed to nested child creation
+      // normally, this should not happen (until decorators are mounted by external frameworks,
+      // asynchronously), but it's a safety net
+      if (activeEditor._keyToDOMMap.has(childKey)) {
+        createNode(childKey, null, null);
+      }
+    }
+  } else if ($isElementNode(node)) {
     const indent = node.__indent;
     const childrenSize = node.__size;
 
@@ -475,16 +508,16 @@ function reconcileChildren(
 
   if (prevChildrenSize === 1 && nextChildrenSize === 1) {
     const prevFirstChildKey = prevElement.__first as NodeKey;
-    const nextFrstChildKey = nextElement.__first as NodeKey;
-    if (prevFirstChildKey === nextFrstChildKey) {
+    const nextFirstChildKey = nextElement.__first as NodeKey;
+    if (prevFirstChildKey === nextFirstChildKey) {
       reconcileNode(prevFirstChildKey, dom);
     } else {
       const lastDOM = getPrevElementByKeyOrThrow(prevFirstChildKey);
-      const replacementDOM = createNode(nextFrstChildKey, null, null);
+      const replacementDOM = createNode(nextFirstChildKey, null, null);
       dom.replaceChild(replacementDOM, lastDOM);
       destroyNode(prevFirstChildKey, null);
     }
-    const nextChildNode = activeNextNodeMap.get(nextFrstChildKey);
+    const nextChildNode = activeNextNodeMap.get(nextFirstChildKey);
     if (subTreeTextFormat === null && $isTextNode(nextChildNode)) {
       subTreeTextFormat = nextChildNode.getFormat();
     }
@@ -545,6 +578,8 @@ function reconcileNode(
   key: NodeKey,
   parentDOM: HTMLElement | null,
 ): HTMLElement {
+  pendingNestedRootNodeKeys.delete(key);
+
   const prevNode = activePrevNodeMap.get(key);
   let nextNode = activeNextNodeMap.get(key);
 
@@ -618,7 +653,26 @@ function reconcileNode(
     return replacementDOM;
   }
 
-  if ($isElementNode(prevNode) && $isElementNode(nextNode)) {
+  if ($isDecoratorElementNode(prevNode) && $isDecoratorElementNode(nextNode)) {
+    if (activeDirtyElements.get(key)) {
+      // only update the decorators if the node itself is modified
+      const decorator = nextNode.decorate(activeEditor, activeEditorConfig);
+
+      if (decorator !== null) {
+        reconcileDecorator(key, decorator);
+      }
+    }
+
+    for (const child of nextNode.getChildren()) {
+      const childKey = child.getKey();
+
+      // child's dom is handled by external frameworks (frameworks that uses the decorators)
+      // proceed to nested child reconciliation
+      if (activeEditor._keyToDOMMap.has(childKey)) {
+        reconcileNode(childKey, null);
+      }
+    }
+  } else if ($isElementNode(prevNode) && $isElementNode(nextNode)) {
     // Reconcile element children
     const nextIndent = nextNode.__indent;
 
@@ -633,7 +687,11 @@ function reconcileNode(
     }
     if (isDirty) {
       reconcileChildrenWithDirection(prevNode, nextNode, dom);
-      if (!$isRootNode(nextNode) && !nextNode.isInline()) {
+      if (
+        !$isRootNode(nextNode) &&
+        !$isNestedRootNode(nextNode) &&
+        !nextNode.isInline()
+      ) {
         reconcileElementTerminatingLineBreak(prevNode, nextNode, dom);
       }
     }
@@ -830,11 +888,24 @@ export function reconcileRoot(
   activeNextNodeMap = nextEditorState._nodeMap;
   activeEditorStateReadOnly = nextEditorState._readOnly;
   activePrevKeyToDOMMap = new Map(editor._keyToDOMMap);
+  pendingNestedRootNodeKeys = editor._pendingNestedRootNodeKeys;
   // We keep track of mutated nodes so we can trigger mutation
   // listeners later in the update cycle.
   const currentMutatedNodes = new Map();
   mutatedNodes = currentMutatedNodes;
   reconcileNode('root', null);
+
+  // When dealing with pending nested roots, all of their children are marked as dirty
+  treatAllNodesAsDirty = true;
+  while (pendingNestedRootNodeKeys.size > 0) {
+    const nestedRootNodeKey = pendingNestedRootNodeKeys.values().next().value;
+    if (activeEditor._keyToDOMMap.has(nestedRootNodeKey)) {
+      reconcileNode(nestedRootNodeKey, null);
+    } else {
+      pendingNestedRootNodeKeys.delete(nestedRootNodeKey);
+    }
+  }
+
   // We don't want a bunch of void checks throughout the scope
   // so instead we make it seem that these values are always set.
   // We also want to make sure we clear them down, otherwise we
@@ -855,6 +926,9 @@ export function reconcileRoot(
   activeEditorConfig = undefined;
   // @ts-ignore
   activePrevKeyToDOMMap = undefined;
+  pendingNestedRootNodeKeys.clear();
+  // @ts-ignore
+  pendingNestedRootNodeKeys = undefined;
   // @ts-ignore
   mutatedNodes = undefined;
 

@@ -481,11 +481,15 @@ test.describe('HTML CopyAndPaste', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
-          <span data-lexical-text="true">a b&nbsp;c d&nbsp;e</span>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">a b c d e</span>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
-          <span data-lexical-text="true">f&nbsp;g h</span>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">f g h</span>
         </p>
       `,
     );

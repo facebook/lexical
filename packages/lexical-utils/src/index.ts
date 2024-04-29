@@ -46,6 +46,7 @@ export {default as mergeRegister} from './mergeRegister';
 export {default as positionNodeOnRange} from './positionNodeOnRange';
 export {
   $splitNode,
+  isBlockDomNode,
   isHTMLAnchorElement,
   isHTMLElement,
   isInlineDomNode,

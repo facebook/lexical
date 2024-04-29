@@ -19,7 +19,7 @@ import {
   $cloneWithProperties,
   $sliceSelectedTextNodeContent,
 } from '@lexical/selection';
-import {isHTMLElement, isInlineDomNode} from '@lexical/utils';
+import {isBlockDomNode, isHTMLElement} from '@lexical/utils';
 import {
   $createLineBreakNode,
   $createParagraphNode,
@@ -276,7 +276,7 @@ function $createNodesFromDOM(
     childLexicalNodes = postTransform(childLexicalNodes);
   }
 
-  if (!isInlineDomNode(node)) {
+  if (isBlockDomNode(node)) {
     if (!hasBlockAncestorLexicalNodeForChildren) {
       childLexicalNodes = wrapContinuousInlines(
         node,

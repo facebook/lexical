@@ -1598,6 +1598,19 @@ export function isInlineDomNode(node: Node) {
 }
 
 /**
+ *
+ * @param node - the Dom Node to check
+ * @returns if the Dom Node is a block node
+ */
+export function isBlockDomNode(node: Node) {
+  const blockNodes = new RegExp(
+    /^(address|article|aside|blockquote|canvas|dd|div|dl|dt|fieldset|figcaption|figure|footer|form|h1|h2|h3|h4|h5|h6|header|hr|li|main|nav|noscript|ol|p|pre|section|table|tfoot|ul|video)$/,
+    'i',
+  );
+  return node.nodeName.match(blockNodes) !== null;
+}
+
+/**
  * This function is for internal use of the library.
  * Please do not use it as it may change in the future.
  */

@@ -157,6 +157,7 @@ export {
   $setSelection,
   $splitNode,
   getNearestEditorFromDOMNode,
+  isBlockDomNode,
   isHTMLAnchorElement,
   isHTMLElement,
   isInlineDomNode,

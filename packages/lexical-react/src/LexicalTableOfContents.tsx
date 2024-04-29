@@ -6,12 +6,10 @@
  *
  */
 
-import type {LexicalEditor, NodeKey, NodeMutation} from 'lexical';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$isHeadingNode, HeadingNode, HeadingTagType} from '@lexical/rich-text';
 import {$getPreviousNode} from '@lexical/utils';
-import {$getNodeByKey, $getRoot, TextNode} from 'lexical';
+import {$getNodeByKey, $getRoot, $isElementNode, ElementNode, LexicalEditor, NodeKey, NodeMutation,TextNode} from 'lexical';
 import {useEffect, useState} from 'react';
 
 export type TableOfContentsEntry = [
@@ -118,6 +116,14 @@ function $updateHeadingPosition(
   return newTableOfContents;
 }
 
+function getPreviousHeading(node: HeadingNode): HeadingNode | null {
+  let prevHeading = $getPreviousNode(node);
+  while (prevHeading !== null && !$isHeadingNode(prevHeading)) {
+    prevHeading = $getPreviousNode(prevHeading);
+  }
+  return prevHeading;
+}
+
 type Props = {
   children: (
     values: Array<TableOfContentsEntry>,
@@ -150,6 +156,37 @@ export default function LexicalTableOfContentsPlugin({
       setTableOfContents(currentTableOfContents);
     });
 
+    const removeRootUpdateListener = editor.registerUpdateListener(
+      ({editorState, dirtyElements}) => {
+        editorState.read(() => {
+          const updateChildHeadings = (node: ElementNode) => {
+            for (const child of node.getChildren()) {
+              if ($isHeadingNode(child)) {
+                const prevHeading = getPreviousHeading(child);
+                currentTableOfContents = $updateHeadingPosition(
+                  prevHeading,
+                  child,
+                  currentTableOfContents,
+                );
+                setTableOfContents(currentTableOfContents);
+              } else if ($isElementNode(child)) {
+                updateChildHeadings(child);
+              }
+            }
+          };
+
+          // If a node is changes, all child heading positions need to be updated
+          $getRoot()
+            .getChildren()
+            .forEach((node) => {
+              if ($isElementNode(node) && dirtyElements.get(node.__key)) {
+                updateChildHeadings(node);
+              }
+            });
+        });
+      },
+    );
+
     // Listen to updates to heading mutations and update state
     const removeHeaderMutationListener = editor.registerMutationListener(
       HeadingNode,
@@ -159,10 +196,7 @@ export default function LexicalTableOfContentsPlugin({
             if (mutation === 'created') {
               const newHeading = $getNodeByKey<HeadingNode>(nodeKey);
               if (newHeading !== null) {
-                let prevHeading = $getPreviousNode(newHeading);
-                while (prevHeading !== null && !$isHeadingNode(prevHeading)) {
-                  prevHeading = $getPreviousNode(prevHeading);
-                }
+                const prevHeading = getPreviousHeading(newHeading);
                 currentTableOfContents = $insertHeadingIntoTableOfContents(
                   prevHeading,
                   newHeading,
@@ -177,10 +211,7 @@ export default function LexicalTableOfContentsPlugin({
             } else if (mutation === 'updated') {
               const newHeading = $getNodeByKey<HeadingNode>(nodeKey);
               if (newHeading !== null) {
-                let prevHeading = $getPreviousNode(newHeading);
-                while (prevHeading !== null && !$isHeadingNode(prevHeading)) {
-                  prevHeading = $getPreviousNode(prevHeading);
-                }
+                const prevHeading = getPreviousHeading(newHeading);
                 currentTableOfContents = $updateHeadingPosition(
                   prevHeading,
                   newHeading,
@@ -221,6 +252,7 @@ export default function LexicalTableOfContentsPlugin({
     return () => {
       removeHeaderMutationListener();
       removeTextNodeMutationListener();
+      removeRootUpdateListener();
     };
   }, [editor]);
 

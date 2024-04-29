@@ -154,30 +154,34 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
         throw new Error('TableCellResizer: Expected active cell.');
       }
 
-      editor.update(() => {
-        const tableCellNode = $getNearestNodeFromDOMNode(activeCell.elem);
-        if (!$isTableCellNode(tableCellNode)) {
-          throw new Error('TableCellResizer: Table cell node not found.');
-        }
+      editor.update(
+        () => {
+          const tableCellNode = $getNearestNodeFromDOMNode(activeCell.elem);
+          if (!$isTableCellNode(tableCellNode)) {
+            throw new Error('TableCellResizer: Table cell node not found.');
+          }
 
-        const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
+          const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
 
-        const tableRowIndex = $getTableRowIndexFromTableCellNode(tableCellNode);
+          const tableRowIndex =
+            $getTableRowIndexFromTableCellNode(tableCellNode);
 
-        const tableRows = tableNode.getChildren();
+          const tableRows = tableNode.getChildren();
 
-        if (tableRowIndex >= tableRows.length || tableRowIndex < 0) {
-          throw new Error('Expected table cell to be inside of table row.');
-        }
+          if (tableRowIndex >= tableRows.length || tableRowIndex < 0) {
+            throw new Error('Expected table cell to be inside of table row.');
+          }
 
-        const tableRow = tableRows[tableRowIndex];
+          const tableRow = tableRows[tableRowIndex];
 
-        if (!$isTableRowNode(tableRow)) {
-          throw new Error('Expected table row');
-        }
+          if (!$isTableRowNode(tableRow)) {
+            throw new Error('Expected table row');
+          }
 
-        tableRow.setHeight(newHeight);
-      });
+          tableRow.setHeight(newHeight);
+        },
+        {tag: 'skip-scroll-into-view'},
+      );
     },
     [activeCell, editor],
   );

@@ -1929,7 +1929,7 @@ function internalResolveSelectionPoint(
       if (dom === blockCursorElementParent) {
         const blockCursorOffset = Array.prototype.indexOf.call(
           blockCursorElementParent.children,
-          editor._blockCursorElement,
+          blockCursorElement,
         );
         if (offset > blockCursorOffset) {
           resolvedOffset--;

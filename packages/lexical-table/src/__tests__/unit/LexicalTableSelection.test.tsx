@@ -19,7 +19,6 @@ import {
   TextNode,
 } from 'lexical';
 import {createTestEditor} from 'lexical/src/__tests__/utils';
-import * as React from 'react';
 import {createRef, useEffect, useMemo} from 'react';
 import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'react-dom/test-utils';

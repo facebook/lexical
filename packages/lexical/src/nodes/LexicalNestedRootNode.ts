@@ -44,7 +44,7 @@ export class EXPERIMENTAL_NestedRootNode extends RootNodeBase {
       $isNestedRootNode(nodeToInsert),
       'insertAfter: only nested root nodes can be inserted',
     );
-    return super.insertBefore(nodeToInsert);
+    return super.insertAfter(nodeToInsert);
   }
 
   // View

@@ -9,7 +9,16 @@
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$isHeadingNode, HeadingNode, HeadingTagType} from '@lexical/rich-text';
 import {$getPreviousNode} from '@lexical/utils';
-import {$getNodeByKey, $getRoot, $isElementNode, ElementNode, LexicalEditor, NodeKey, NodeMutation,TextNode} from 'lexical';
+import {
+  $getNodeByKey,
+  $getRoot,
+  $isElementNode,
+  ElementNode,
+  LexicalEditor,
+  NodeKey,
+  NodeMutation,
+  TextNode,
+} from 'lexical';
 import {useEffect, useState} from 'react';
 
 export type TableOfContentsEntry = [

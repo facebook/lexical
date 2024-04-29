@@ -8,7 +8,7 @@
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$isHeadingNode, HeadingNode, HeadingTagType} from '@lexical/rich-text';
-import {$getPreviousNode} from '@lexical/utils';
+import {$getNextRightPreorderNode} from '@lexical/utils';
 import {
   $getNodeByKey,
   $getRoot,
@@ -126,9 +126,9 @@ function $updateHeadingPosition(
 }
 
 function getPreviousHeading(node: HeadingNode): HeadingNode | null {
-  let prevHeading = $getPreviousNode(node);
+  let prevHeading = $getNextRightPreorderNode(node);
   while (prevHeading !== null && !$isHeadingNode(prevHeading)) {
-    prevHeading = $getPreviousNode(prevHeading);
+    prevHeading = $getNextRightPreorderNode(prevHeading);
   }
   return prevHeading;
 }

@@ -222,7 +222,15 @@ function $getDepth(node: LexicalNode): number {
   return depth;
 }
 
-export function $getPreviousNode(
+/**
+ * Performs a right-to-left preorder tree traversal.
+ * From the starting node it goes to the rightmost child, than backtracks to paret and finds new rightmost path.
+ * It will return the next node in traversal sequence after the startingNode.
+ * The traversal is similar to $dfs functions above, but the nodes are visited right-to-left, not left-to-right.
+ * @param startingNode - The node to start the search.
+ * @returns The next node in pre-order right to left traversal sequence or `null`, if the node does not exist
+ */
+export function $getNextRightPreorderNode(
   startingNode: LexicalNode,
 ): LexicalNode | null {
   let node: LexicalNode | null = startingNode;

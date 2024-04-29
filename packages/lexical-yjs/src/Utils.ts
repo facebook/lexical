@@ -557,27 +557,28 @@ export function $moveSelectionToPreviousParagraph(
   }
 
   // retrieve the parent paragraph node for the currently selected node
-  const targetParagraphNode = $findParentParagraphNode(
+  const selectedParagraphNode = $findParentParagraphNode(
     selectedNode,
     currentEditorState,
   );
 
-  if (!targetParagraphNode) {
+  if (!selectedParagraphNode) {
     $getRoot().selectStart();
     return;
   }
 
-  const prevParagraphNodeKey = targetParagraphNode.__prev;
+  const prevParagraphNodeKey = selectedParagraphNode.__prev;
 
   // If collaborator deleted paragraphs including first paragraph
+  // or RootNode accidently set to the selectedParagraphNode
   if (!prevParagraphNodeKey) {
     $getRoot().selectStart();
     return;
   }
 
-  const prevNode = $getNodeByKey(prevParagraphNodeKey);
-  if (prevParagraphNodeKey in currentParagraphKeys && prevNode) {
-    prevNode.selectEnd();
+  const prevParagraphNode = $getNodeByKey(prevParagraphNodeKey);
+  if (prevParagraphNodeKey in currentParagraphKeys && prevParagraphNode) {
+    prevParagraphNode.selectEnd();
     return;
   } else {
     // If the previous paragraph is also deleted by collaborator, select the next previous one

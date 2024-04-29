@@ -1045,11 +1045,17 @@ export class LexicalEditor {
         style.whiteSpace = 'pre-wrap';
         style.wordBreak = 'break-word';
         this._keyToDOMMap.set(key, nextNestedRootElement);
+        this._pendingNestedRootNodeKeys.add(key);
       } else {
         this._keyToDOMMap.delete(key);
+        // There are two cases that nextNestedRootElement is null:
+        // 1. The nested root node is removed from Lexical
+        // 2. The nested root node remains unchanged, but the HTML Element no longer exists
+        // Only in the second case, we need to further process Lexical node children.
+        if (this._editorState._nodeMap.get(key)) {
+          this._pendingNestedRootNodeKeys.add(key);
+        }
       }
-
-      this._pendingNestedRootNodeKeys.add(key);
 
       // Defer to next microtask, so multiple simultaneous root element update
       // can trigger only one reconciliation.

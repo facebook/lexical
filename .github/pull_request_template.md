@@ -1,9 +1,9 @@
 <!-- 
 Title format should be:
-[PR Type][Affected Packages] title
+[Affected Packages] PR Type: title
 
 Example:
-[Feature][lexical-playground] Add more emojis 
+[lexical-playground][lexical-link] Feature: Add more emojis 
 
 Choose from the following PR Types:
 Breaking change / Refactor / Feature / Bug Fix / Documentation Update / Chore

@@ -55,6 +55,10 @@ async function transformFlowFileContents(source) {
             / \* @flow strict/g,
             ' * @flow strict\n * @generated\n * @oncall lexical_web_text_editor',
           );
+          // Let the transform know we actually did something.
+          // Could not figure out the right way to update the
+          // docblock without an in-place update
+          context.addLeadingComments(node, '');
         }
       },
     }),

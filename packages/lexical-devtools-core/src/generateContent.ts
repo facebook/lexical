@@ -88,6 +88,7 @@ export function generateContent(
   editor: LexicalEditor,
   commandsLog: ReadonlyArray<LexicalCommand<unknown> & {payload: unknown}>,
   exportDOM: boolean,
+  obfuscateText: boolean = false,
 ): string {
   const editorState = editor.getEditorState();
   const editorConfig = editor._config;
@@ -118,7 +119,10 @@ export function generateContent(
 
       res += `${isSelected ? SYMBOLS.selectedLine : ' '} ${indent.join(
         ' ',
-      )} ${nodeKeyDisplay} ${typeDisplay} ${idsDisplay} ${printNode(node)}\n`;
+      )} ${nodeKeyDisplay} ${typeDisplay} ${idsDisplay} ${printNode(
+        node,
+        obfuscateText,
+      )}\n`;
 
       res += printSelectedCharsLine({
         indent,
@@ -230,18 +234,23 @@ function visitTree(
   });
 }
 
-function normalize(text: string) {
-  return Object.entries(NON_SINGLE_WIDTH_CHARS_REPLACEMENT).reduce(
+function normalize(text: string, obfuscateText: boolean = false) {
+  const textToPrint = Object.entries(NON_SINGLE_WIDTH_CHARS_REPLACEMENT).reduce(
     (acc, [key, value]) => acc.replace(new RegExp(key, 'g'), String(value)),
     text,
   );
+  if (obfuscateText) {
+    return textToPrint.replace(/[^\s]/g, '*');
+  }
+  return textToPrint;
 }
 
 // TODO Pass via props to allow customizability
-function printNode(node: LexicalNode) {
+function printNode(node: LexicalNode, obfuscateText: boolean = false) {
   if ($isTextNode(node)) {
     const text = node.getTextContent();
-    const title = text.length === 0 ? '(empty)' : `"${normalize(text)}"`;
+    const title =
+      text.length === 0 ? '(empty)' : `"${normalize(text, obfuscateText)}"`;
     const properties = printAllTextNodeProperties(node);
     return [title, properties.length !== 0 ? `{ ${properties} }` : null]
       .filter(Boolean)
@@ -249,7 +258,8 @@ function printNode(node: LexicalNode) {
       .trim();
   } else if ($isLinkNode(node)) {
     const link = node.getURL();
-    const title = link.length === 0 ? '(empty)' : `"${normalize(link)}"`;
+    const title =
+      link.length === 0 ? '(empty)' : `"${normalize(link, obfuscateText)}"`;
     const properties = printAllLinkNodeProperties(node);
     return [title, properties.length !== 0 ? `{ ${properties} }` : null]
       .filter(Boolean)

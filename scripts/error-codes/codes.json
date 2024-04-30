@@ -14,7 +14,7 @@
   "12": "Expected table cell",
   "13": "Cannot use method in read-only mode.",
   "14": "One or more transforms are endlessly triggering additional transforms. May have encountered infinite recursion caused by transforms that have their preconditions too lose and/or conflict with each other.",
-  "15": "Unable to find an active editor state. State helpers or node methods can only be used synchronously during the callback of editor.update() or editorState.read().",
+  "15": "Unable to find an active editor state. State helpers or node methods can only be used synchronously during the callback of editor.update() or editorState.read(). This issue can also occur if you have mismatching or more than once copy of lexical in the same app.",
   "16": "Unable to find an active editor. This method can only be used synchronously during the callback of editor.update().",
   "17": "parseEditorState: type \"%s\" + not found",
   "18": "LexicalNode: Node %s does not implement .importJSON().",

@@ -51,14 +51,16 @@ async function transformFlowFileContents(source) {
           node.docblock.comment &&
           node.docblock.comment.value.includes('@flow strict')
         ) {
+          // This is mutated in-place because I couldn't find a mutation that
+          // did not fail for replacing the Program node.
           node.docblock.comment.value = node.docblock.comment.value.replace(
             / \* @flow strict/g,
             ' * @flow strict\n * @generated\n * @oncall lexical_web_text_editor',
           );
-          // Let the transform know we actually did something.
-          // Could not figure out the right way to update the
-          // docblock without an in-place update
-          context.addLeadingComments(node, '');
+          // We need the mutations array to be non-empty, so remove something
+          // that is not there. The AST traversals use object identity in a
+          // Set so we don't have to worry about some other line changing.
+          context.removeComments(t.LineComment({value: ''}));
         }
       },
     }),

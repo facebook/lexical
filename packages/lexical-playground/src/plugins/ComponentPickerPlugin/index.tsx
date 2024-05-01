@@ -31,7 +31,7 @@ import {
 import { useCallback, useMemo, useState, useContext } from 'react';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import { TurboFrameEmbedConfigs, createEmbedRecordAndInsertTurboFrameNode } from '@/components/editor/plugins/TurboFramePlugin';
+import { TurboFrameEmbedConfig, createEmbedRecordAndInsertTurboFrameNode } from '@/components/editor/plugins/TurboFramePlugin';
 import { EditorContext } from '@/components/editor/editor-component';
 
 class ComponentPickerOption extends MenuOption {
@@ -129,7 +129,7 @@ function getDynamicOptions(editor: LexicalEditor, queryString: string) {
   return options;
 }
 
-function getBaseOptions(editor: LexicalEditor, embedScopingPath: string) {
+function getBaseOptions(editor: LexicalEditor, embedScopingPath: string, turboFrameEmbedConfigs: TurboFrameEmbedConfig[]) {
   return [
     new ComponentPickerOption('Paragraph', {
       icon: <i className="icon paragraph" />,
@@ -191,10 +191,10 @@ function getBaseOptions(editor: LexicalEditor, embedScopingPath: string) {
       onSelect: () =>
         editor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND, undefined),
     }),
-    ...TurboFrameEmbedConfigs.map(
+    ...turboFrameEmbedConfigs.map(
       (turboFrameEmbedConfig) =>
         new ComponentPickerOption(`${turboFrameEmbedConfig.contentName}`, {
-          icon: turboFrameEmbedConfig.icon,
+          icon: <i className={`icon ${turboFrameEmbedConfig.icon}`} />,
           keywords: [...turboFrameEmbedConfig.keywords, 'embed'],
           onSelect: () => createEmbedRecordAndInsertTurboFrameNode(editor, embedScopingPath, turboFrameEmbedConfig),
         }),
@@ -207,14 +207,14 @@ export default function ComponentPickerMenuPlugin(): JSX.Element {
   // const [modal, showModal] = useModal();
   const [queryString, setQueryString] = useState<string | null>(null);
   const embedScopingPath = useContext(EditorContext).embedScopingPath;
-
+  const turboFrameEmbedConfigs = useContext(EditorContext).embedConfigs;
 
   const checkForTriggerMatch = useBasicTypeaheadTriggerMatch('/', {
     minLength: 0,
   });
 
   const options = useMemo(() => {
-    const baseOptions = getBaseOptions(editor, embedScopingPath);
+    const baseOptions = getBaseOptions(editor, embedScopingPath, turboFrameEmbedConfigs);
 
     if (!queryString) {
       return baseOptions;

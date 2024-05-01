@@ -1210,7 +1210,7 @@ export function addRootElementEvents(
   ) {
     doc.addEventListener('selectionchange', onDocumentSelectionChange);
   }
-  rootElementsRegistered.set(doc, documentRootElementsCount || 0 + 1);
+  rootElementsRegistered.set(doc, (documentRootElementsCount || 0) + 1);
 
   // @ts-expect-error: internal field
   rootElement.__lexicalEditor = editor;

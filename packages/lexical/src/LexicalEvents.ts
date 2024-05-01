@@ -1322,7 +1322,7 @@ export function removeRootElementEvents(rootElement: HTMLElement): void {
   const newCount = documentRootElementsCount - 1;
   invariant(newCount >= 0, 'Root element count less than 0');
   rootElementsRegistered.set(doc, newCount);
-  if (rootElementsRegistered.get(doc) === 0) {
+  if (newCount === 0) {
     doc.removeEventListener('selectionchange', onDocumentSelectionChange);
   }
 

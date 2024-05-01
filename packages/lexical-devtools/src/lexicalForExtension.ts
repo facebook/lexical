@@ -28,7 +28,7 @@ function getActiveEditorState(): lexical.EditorState {
       'Unable to find an active editor state. ' +
         'State helpers or node methods can only be used ' +
         'synchronously during the callback of ' +
-        'editor.update() or editorState.read().' +
+        'editor.update() or editorState.read(). ' +
         'This issue can also occur if you have a mismatching ' +
         'or more than one copy of lexical in the same app.',
     );
@@ -43,7 +43,7 @@ function getActiveEditor(): lexical.LexicalEditor {
       'Unable to find an active editor state. ' +
         'State helpers or node methods can only be used ' +
         'synchronously during the callback of ' +
-        'editor.update() or editorState.read().' +
+        'editor.update() or editorState.read(). ' +
         'This issue can also occur if you have a mismatching ' +
         'or more than one copy of lexical in the same app.',
     );

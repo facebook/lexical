@@ -77,11 +77,13 @@ async function rewriteImports() {
     for (const flowFile of glob.sync(pkg.resolve('flow', '*.flow'))) {
       const data = fs.readFileSync(flowFile, 'utf8');
       const result = await transformFlowFileContents(data);
-      fs.writeFileSync(
-        pkg.resolve('dist', path.basename(flowFile)),
-        result,
-        'utf8',
-      );
+      if (result.length > 0) {
+        fs.writeFileSync(
+          pkg.resolve('dist', path.basename(flowFile)),
+          result,
+          'utf8',
+        );
+      }
     }
   }
 }

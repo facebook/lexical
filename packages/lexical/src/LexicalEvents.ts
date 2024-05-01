@@ -1212,7 +1212,10 @@ export function addRootElementEvents(
   }
   rootElementsRegistered.set(
     doc,
-    Math.max(documentRootElementsCount ?? 0, 0) + 1,
+    Math.max(
+      documentRootElementsCount !== undefined ? documentRootElementsCount : 0,
+      0,
+    ) + 1,
   );
 
   // @ts-expect-error: internal field

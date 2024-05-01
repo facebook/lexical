@@ -2215,4 +2215,20 @@ describe('LexicalEditor tests', () => {
 
     expect(ParagraphNode.importDOM).toHaveBeenCalledTimes(1);
   });
+
+  it('root element count is always positive', () => {
+    const newEditor1 = createTestEditor();
+    const newEditor2 = createTestEditor();
+
+    const container1 = document.createElement('div');
+    const container2 = document.createElement('div');
+
+    newEditor1.setRootElement(container1);
+    newEditor1.setRootElement(null);
+
+    newEditor1.setRootElement(container1);
+    newEditor2.setRootElement(container2);
+    newEditor1.setRootElement(null);
+    newEditor2.setRootElement(null);
+  });
 });

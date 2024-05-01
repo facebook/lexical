@@ -56,6 +56,7 @@ export function useYjsCollaboration(
   awarenessData?: object,
 ): [JSX.Element, Binding] {
   const isReloadingDoc = useRef(false);
+  const isLoadingDoc = useRef(true);
   const [doc, setDoc] = useState(docMap.get(id));
 
   const binding = useMemo(
@@ -110,7 +111,14 @@ export function useYjsCollaboration(
       const origin = transaction.origin;
       if (origin !== binding) {
         const isFromUndoManger = origin instanceof UndoManager;
-        syncYjsChangesToLexical(binding, provider, events, isFromUndoManger);
+        syncYjsChangesToLexical(
+          binding,
+          provider,
+          events,
+          isFromUndoManger,
+          isLoadingDoc.current,
+        );
+        isLoadingDoc.current = false;
       }
     };
 

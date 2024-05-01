@@ -177,9 +177,10 @@ async function build(name, inputFile, outputPath, outputFile, isProd, format) {
       }),
       // Extract error codes from invariant() messages into a file.
       {
-        transform(source) {
-          // eslint-disable-next-line no-unused-expressions
-          extractCodes && findAndRecordErrorCodes(source);
+        transform(source, id) {
+          if (extractCodes && id.match(/\.(js|jsx|ts|tsx|mts|mjs|cjs|cts)$/)) {
+            findAndRecordErrorCodes(source);
+          }
           return source;
         },
       },

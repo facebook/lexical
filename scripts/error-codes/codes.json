@@ -162,5 +162,6 @@
   "160": "Expected TableCellNode parent to be a TableRowNode",
   "161": "Unexpected dirty selection to be null",
   "162": "Root element not registered",
-  "163": "node is not a ListNode"
+  "163": "node is not a ListNode",
+  "164": "Root element count less than 0"
 }

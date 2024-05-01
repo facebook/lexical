@@ -1213,8 +1213,8 @@ export function addRootElementEvents(
   rootElementsRegistered.set(
     doc,
     Math.max(
-      documentRootElementsCount !== undefined ? documentRootElementsCount : 0,
-      0,
+      documentRootElementsCount !== undefined ? documentRootElementsCount : 1,
+      1,
     ) + 1,
   );
 

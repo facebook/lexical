@@ -1210,7 +1210,10 @@ export function addRootElementEvents(
   ) {
     doc.addEventListener('selectionchange', onDocumentSelectionChange);
   }
-  rootElementsRegistered.set(doc, documentRootElementsCount || 0 + 1);
+  rootElementsRegistered.set(
+    doc,
+    Math.max(documentRootElementsCount ?? 0, 0) + 1,
+  );
 
   // @ts-expect-error: internal field
   rootElement.__lexicalEditor = editor;
@@ -1319,7 +1322,7 @@ export function removeRootElementEvents(rootElement: HTMLElement): void {
 
   // We only want to have a single global selectionchange event handler, shared
   // between all editor instances.
-  rootElementsRegistered.set(doc, documentRootElementsCount - 1);
+  rootElementsRegistered.set(doc, Math.max(documentRootElementsCount - 1, 0));
   if (rootElementsRegistered.get(doc) === 0) {
     doc.removeEventListener('selectionchange', onDocumentSelectionChange);
   }

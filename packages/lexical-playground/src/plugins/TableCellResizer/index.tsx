@@ -333,23 +333,27 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
       const {height, width, top, left} =
         activeCell.elem.getBoundingClientRect();
       const zoom = calculateZoomLevel(activeCell.elem);
-
+      const zoneWidth = 10; // Pixel width of the zone where you can drag the edge
       const styles = {
         bottom: {
           backgroundColor: 'none',
           cursor: 'row-resize',
-          height: '10px',
-          left: `${window.pageXOffset + left}px`,
-          top: `${window.pageYOffset + top + height}px`,
-          width: `${width}px`,
+          height: `${zoom * zoneWidth}px`,
+          left: `${window.pageXOffset + zoom * left}px`,
+          top: `${
+            window.pageYOffset + zoom * (top + height) - (zoom * zoneWidth) / 2
+          }px`,
+          width: `${zoom * width}px`,
         },
         right: {
           backgroundColor: 'none',
           cursor: 'col-resize',
-          height: `${height}px`,
-          left: `${window.pageXOffset + left + width}px`,
-          top: `${window.pageYOffset + top}px`,
-          width: '10px',
+          height: `${zoom * height}px`,
+          left: `${
+            window.pageXOffset + zoom * (left + width) - (zoom * zoneWidth) / 2
+          }px`,
+          top: `${window.pageYOffset + zoom * top}px`,
+          width: `${zoom * zoneWidth}px`,
         },
       };
 
@@ -358,22 +362,22 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
       if (draggingDirection && mouseCurrentPos && tableRect) {
         if (isHeightChanging(draggingDirection)) {
           styles[draggingDirection].left = `${
-            window.pageXOffset + tableRect.left
+            window.pageXOffset + zoom * tableRect.left
           }px`;
           styles[draggingDirection].top = `${
-            window.pageYOffset + mouseCurrentPos.y / zoom
+            window.pageYOffset + mouseCurrentPos.y
           }px`;
           styles[draggingDirection].height = '3px';
-          styles[draggingDirection].width = `${tableRect.width}px`;
+          styles[draggingDirection].width = `${zoom * tableRect.width}px`;
         } else {
           styles[draggingDirection].top = `${
-            window.pageYOffset + tableRect.top
+            window.pageYOffset + zoom * tableRect.top
           }px`;
           styles[draggingDirection].left = `${
-            window.pageXOffset + mouseCurrentPos.x / zoom
+            window.pageXOffset + mouseCurrentPos.x
           }px`;
           styles[draggingDirection].width = '3px';
-          styles[draggingDirection].height = `${tableRect.height}px`;
+          styles[draggingDirection].height = `${zoom * tableRect.height}px`;
         }
 
         styles[draggingDirection].backgroundColor = '#adf';

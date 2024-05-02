@@ -2053,6 +2053,44 @@ describe('LexicalEditor tests', () => {
       expect(onError).not.toHaveBeenCalled();
     });
 
+    it('should fail if node keys are re-used', async () => {
+      const onError = jest.fn();
+
+      const newEditor = createTestEditor({
+        nodes: [
+          TestTextNode,
+          {
+            replace: TextNode,
+            // @ts-ignore
+            with: (node: TextNode) =>
+              new TestTextNode(node.getTextContent(), node.getKey()),
+          },
+        ],
+        onError: onError,
+        theme: {
+          text: {
+            bold: 'editor-text-bold',
+            italic: 'editor-text-italic',
+            underline: 'editor-text-underline',
+          },
+        },
+      });
+
+      newEditor.setRootElement(container);
+
+      await newEditor.update(() => {
+        // this will throw
+        $createTextNode('123');
+        expect(false).toBe('unreachable');
+      });
+
+      expect(onError).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: expect.stringMatching(/TestTextNode.*re-use key.*TextNode/),
+        }),
+      );
+    });
+
     it('node transform to the nodes specified by "replace" should not be applied to the nodes specified by "with" when "withKlass" is not specified', async () => {
       const onError = jest.fn();
 

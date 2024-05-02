@@ -64,6 +64,7 @@ import {
   errorOnReadOnly,
   getActiveEditor,
   getActiveEditorState,
+  internalGetActiveEditorState,
   isCurrentlyReadOnlyMode,
   triggerCommandListeners,
   updateEditor,
@@ -223,6 +224,9 @@ export function $setNodeKey(
   existingKey: NodeKey | null | undefined,
 ): void {
   if (existingKey != null) {
+    if (__DEV__) {
+      errorOnNodeKeyConstructorMismatch(node, existingKey);
+    }
     node.__key = existingKey;
     return;
   }
@@ -241,6 +245,35 @@ export function $setNodeKey(
   editor._cloneNotNeeded.add(key);
   editor._dirtyType = HAS_DIRTY_NODES;
   node.__key = key;
+}
+
+function errorOnNodeKeyConstructorMismatch(
+  node: LexicalNode,
+  existingKey: NodeKey,
+) {
+  const editorState = internalGetActiveEditorState();
+  if (!editorState) {
+    // tests expect to be able to do this kind of clone without an active editor state
+    return;
+  }
+  const existingNode = editorState._nodeMap.get(existingKey);
+  if (existingNode && existingNode.constructor !== node.constructor) {
+    // Lifted condition to if statement because the inverted logic is a bit confusing
+    if (node.constructor.name !== existingNode.constructor.name) {
+      invariant(
+        false,
+        'Lexical node with constructor %s attempted to re-use key from node in active editor state with constructor %s. Keys must not be re-used when the type is changed.',
+        node.constructor.name,
+        existingNode.constructor.name,
+      );
+    } else {
+      invariant(
+        false,
+        'Lexical node with constructor %s attempted to re-use key from node in active editor state with different constructor with the same name (possibly due to invalid Hot Module Replacement). Keys must not be re-used when the type is changed.',
+        node.constructor.name,
+      );
+    }
+  }
 }
 
 type IntentionallyMarkedAsDirtyElement = boolean;

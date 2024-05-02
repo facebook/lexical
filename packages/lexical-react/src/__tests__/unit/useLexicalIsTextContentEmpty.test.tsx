@@ -11,17 +11,19 @@ import {
   $createTextNode,
   $getRoot,
   createEditor,
+  LexicalEditor,
   ParagraphNode,
 } from 'lexical';
 import * as React from 'react';
-import {createRoot} from 'react-dom/client';
+import {createRef} from 'react';
+import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'react-dom/test-utils';
 
 import {useLexicalIsTextContentEmpty} from '../../useLexicalIsTextContentEmpty';
 
 describe('useLexicalIsTextContentEmpty', () => {
-  let container = null;
-  let reactRoot;
+  let container: HTMLDivElement | null = null;
+  let reactRoot: Root;
 
   beforeEach(() => {
     container = document.createElement('div');
@@ -30,13 +32,13 @@ describe('useLexicalIsTextContentEmpty', () => {
   });
 
   afterEach(() => {
-    document.body.removeChild(container);
+    document.body.removeChild(container!);
     container = null;
 
     jest.restoreAllMocks();
   });
 
-  function useLexicalEditor(rootElementRef) {
+  function useLexicalEditor(rootElementRef: React.RefObject<HTMLDivElement>) {
     const editor = React.useMemo(
       () =>
         createEditor({
@@ -58,8 +60,8 @@ describe('useLexicalIsTextContentEmpty', () => {
   }
 
   test('hook works', async () => {
-    const ref = React.createRef<HTMLDivElement>();
-    let editor;
+    const ref = createRef<HTMLDivElement>();
+    let editor: LexicalEditor;
     let hasText = false;
 
     function TestBase() {

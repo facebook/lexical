@@ -22,8 +22,10 @@ import {
   $getRoot,
   $getSelection,
   $isRangeSelection,
+  LexicalEditor,
 } from 'lexical';
-import {createRoot} from 'react-dom/client';
+import * as React from 'react';
+import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'react-dom/test-utils';
 
 import {LexicalComposer} from '../../LexicalComposer';
@@ -48,8 +50,8 @@ const RICH_TEXT_NODES = [
 ];
 
 describe('LexicalNodeHelpers tests', () => {
-  let container = null;
-  let reactRoot;
+  let container: HTMLDivElement | null = null;
+  let reactRoot: Root;
 
   beforeEach(() => {
     container = document.createElement('div');
@@ -58,7 +60,7 @@ describe('LexicalNodeHelpers tests', () => {
   });
 
   afterEach(() => {
-    document.body.removeChild(container);
+    document.body.removeChild(container!);
     container = null;
 
     jest.restoreAllMocks();
@@ -113,7 +115,7 @@ describe('LexicalNodeHelpers tests', () => {
         reactRoot.render(<App />);
       });
 
-      const text = editor.getEditorState().read($rootTextContent);
+      const text = editor!.getEditorState().read($rootTextContent);
       expect(text).toBe('foo');
     });
   }
@@ -164,9 +166,9 @@ describe('LexicalNodeHelpers tests', () => {
         reactRoot.render(<App />);
       });
 
-      await editor.focus();
+      await editor!.focus();
 
-      await editor.getEditorState().read(() => {
+      await editor!.getEditorState().read(() => {
         expect($rootTextContent()).toBe('foo');
 
         const selection = $getSelection();
@@ -183,7 +185,7 @@ describe('LexicalNodeHelpers tests', () => {
 
   for (const plugin of ['PlainTextPlugin', 'RichTextPlugin']) {
     it(`${plugin} can hide placeholder when non-editable`, async () => {
-      let editor;
+      let editor: LexicalEditor;
 
       function GrabEditor() {
         [editor] = useLexicalComposerContext();
@@ -232,7 +234,7 @@ describe('LexicalNodeHelpers tests', () => {
       });
 
       function placeholderText() {
-        const placeholderContainer = container.querySelector('.placeholder');
+        const placeholderContainer = container!.querySelector('.placeholder');
         return placeholderContainer && placeholderContainer.textContent;
       }
 

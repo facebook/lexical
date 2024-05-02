@@ -1,0 +1,42 @@
+{
+  "name": "@lexical/spin",
+  "description": "This package contains the functionality for Lexical Spin.",
+  "keywords": [
+    "lexical",
+    "editor",
+    "rich-text",
+    "Spin"
+  ],
+  "license": "MIT",
+  "version": "1.0.0",
+  "main": "LexicalSpin.js",
+  "types": "index.d.ts",
+  "dependencies": {
+    "@lexical/utils": "0.14.5",
+    "lexical": "0.14.5"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/facebook/lexical",
+    "directory": "packages/lexical-spin"
+  },
+  "module": "LexicalSpin.mjs",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.ts",
+        "development": "./LexicalSpin.dev.mjs",
+        "production": "./LexicalSpin.prod.mjs",
+        "node": "./LexicalSpin.node.mjs",
+        "default": "./LexicalSpin.mjs"
+      },
+      "require": {
+        "types": "./index.d.ts",
+        "development": "./LexicalSpin.dev.js",
+        "production": "./LexicalSpin.prod.js",
+        "default": "./LexicalSpin.js"
+      }
+    }
+  }
+}

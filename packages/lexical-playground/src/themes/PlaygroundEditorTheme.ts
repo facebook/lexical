@@ -89,6 +89,7 @@ const theme: EditorThemeClasses = {
   paragraph: 'PlaygroundEditorTheme__paragraph',
   quote: 'PlaygroundEditorTheme__quote',
   rtl: 'PlaygroundEditorTheme__rtl',
+  spin: 'PlaygroundEditorTheme__spin',
   table: 'PlaygroundEditorTheme__table',
   tableAddColumns: 'PlaygroundEditorTheme__tableAddColumns',
   tableAddRows: 'PlaygroundEditorTheme__tableAddRows',

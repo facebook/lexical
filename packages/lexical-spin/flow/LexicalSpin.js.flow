@@ -1,0 +1,33 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict
+ */
+
+import type {
+  EditorConfig,
+  LexicalNode,
+  NodeKey,
+  SerializedTextNode,
+} from 'lexical';
+
+import {TextNode} from 'lexical';
+
+declare export class SpinNode extends TextNode {
+  static getType(): string;
+  // $FlowFixMe
+  static clone(node: SpinNode): SpinNode;
+  static importJSON(serializedNode: SerializedTextNode): SpinNode;
+  constructor(text: string, key?: NodeKey): void;
+  createDOM(config: EditorConfig): HTMLElement;
+  canInsertTextBefore(): boolean;
+  isTextEntity(): true;
+  exportJSON(): SerializedTextNode;
+}
+declare export function $createSpinNode(text?: string): SpinNode;
+declare export function $isSpinNode(
+  node: ?LexicalNode,
+): node is SpinNode;

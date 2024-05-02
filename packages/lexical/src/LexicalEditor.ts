@@ -95,6 +95,7 @@ export type EditorThemeClasses = {
   code?: EditorThemeClassName;
   codeHighlight?: Record<string, EditorThemeClassName>;
   hashtag?: EditorThemeClassName;
+  spin?: EditorThemeClassName;
   heading?: {
     h1?: EditorThemeClassName;
     h2?: EditorThemeClassName;

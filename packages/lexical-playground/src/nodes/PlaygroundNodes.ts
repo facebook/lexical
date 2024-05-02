@@ -18,6 +18,7 @@ import {HorizontalRuleNode} from '@lexical/react/LexicalHorizontalRuleNode';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
 
+import {SpinNode} from '../../../lexical-spin/src';
 import {CollapsibleContainerNode} from '../plugins/CollapsiblePlugin/CollapsibleContainerNode';
 import {CollapsibleContentNode} from '../plugins/CollapsiblePlugin/CollapsibleContentNode';
 import {CollapsibleTitleNode} from '../plugins/CollapsiblePlugin/CollapsibleTitleNode';
@@ -48,6 +49,7 @@ const PlaygroundNodes: Array<Klass<LexicalNode>> = [
   TableCellNode,
   TableRowNode,
   HashtagNode,
+  SpinNode,
   CodeHighlightNode,
   AutoLinkNode,
   LinkNode,

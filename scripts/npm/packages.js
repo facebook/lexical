@@ -19,6 +19,7 @@ const DEFAULT_PKGS = [
   'lexical-file',
   'lexical-clipboard',
   'lexical-hashtag',
+  'lexical-spin',
   'lexical-headless',
   'lexical-html',
   'lexical-history',

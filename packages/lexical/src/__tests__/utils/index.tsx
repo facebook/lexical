@@ -39,6 +39,7 @@ import {
   SerializedTextNode,
   TextNode,
 } from 'lexical';
+import {SpinNode} from 'packages/lexical-spin/src';
 import {format} from 'prettier';
 import * as React from 'react';
 import {createRef} from 'react';
@@ -468,6 +469,7 @@ const DEFAULT_NODES: NonNullable<InitialConfigType['nodes']> = [
   TableCellNode,
   TableRowNode,
   HashtagNode,
+  SpinNode,
   CodeHighlightNode,
   AutoLinkNode,
   LinkNode,

@@ -132,29 +132,6 @@ export default function FontSize({
     [editor],
   );
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    const inputValueNumber = Number(inputValue);
-
-    if (['e', 'E', '+', '-'].includes(e.key) || isNaN(inputValueNumber)) {
-      e.preventDefault();
-      setInputValue('');
-      return;
-    }
-
-    if (e.key === 'Enter') {
-      e.preventDefault();
-
-      let updatedFontSize = inputValueNumber;
-      if (inputValueNumber > MAX_ALLOWED_FONT_SIZE) {
-        updatedFontSize = MAX_ALLOWED_FONT_SIZE;
-      } else if (inputValueNumber < MIN_ALLOWED_FONT_SIZE) {
-        updatedFontSize = MIN_ALLOWED_FONT_SIZE;
-      }
-      setInputValue(String(updatedFontSize));
-      updateFontSizeInSelection(String(updatedFontSize) + 'px', null);
-    }
-  };
-
   const handleButtonClick = (updateType: updateFontSizeType) => {
     if (inputValue !== '') {
       const nextFontSize = calculateNextFontSize(
@@ -165,6 +142,18 @@ export default function FontSize({
     } else {
       updateFontSizeInSelection(null, updateType);
     }
+  };
+
+  const handleBlurEvent = () => {
+    const inputValueNumber = Number(inputValue);
+    let updatedFontSize = inputValueNumber;
+    if (inputValueNumber > MAX_ALLOWED_FONT_SIZE) {
+      updatedFontSize = MAX_ALLOWED_FONT_SIZE;
+    } else if (inputValueNumber < MIN_ALLOWED_FONT_SIZE) {
+      updatedFontSize = MIN_ALLOWED_FONT_SIZE;
+    }
+    setInputValue(String(updatedFontSize));
+    updateFontSizeInSelection(String(updatedFontSize) + 'px', null);
   };
 
   React.useEffect(() => {
@@ -193,7 +182,7 @@ export default function FontSize({
         min={MIN_ALLOWED_FONT_SIZE}
         max={MAX_ALLOWED_FONT_SIZE}
         onChange={(e) => setInputValue(e.target.value)}
-        onKeyDown={handleKeyPress}
+        onBlur={handleBlurEvent}
       />
 
       <button

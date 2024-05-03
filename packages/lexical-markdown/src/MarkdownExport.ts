@@ -60,7 +60,7 @@ export function createMarkdownExport(
       }
     }
     // Ensure consecutive groups of texts are atleast \n\n apart while each empty paragraph render as a newline.
-    // Eg. ["hello", "", "", "hi", "\nworld"] -> ["hello\n\n\nhi\n\nworld"]
+    // Eg. ["hello", "", "", "hi", "\nworld"] -> "hello\n\n\nhi\n\nworld"
     return output.join('\n');
   };
 }

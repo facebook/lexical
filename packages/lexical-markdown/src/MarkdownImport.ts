@@ -86,9 +86,9 @@ export function createMarkdownImport(
     const children = root.getChildren();
     for (const child of children) {
       if (
+        !shouldIncludeBlankLines &&
         isEmptyParagraph(child) &&
-        root.getChildrenSize() > 1 &&
-        !shouldIncludeBlankLines
+        root.getChildrenSize() > 1
       ) {
         child.remove();
       }

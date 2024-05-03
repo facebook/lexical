@@ -7,11 +7,11 @@
  */
 
 import {
-  type EditorState,
-  type LexicalEditor,
   $getSelection,
   $isRangeSelection,
+  type EditorState,
   ElementNode,
+  type LexicalEditor,
   TextNode,
 } from 'lexical';
 import invariant from 'shared/invariant';

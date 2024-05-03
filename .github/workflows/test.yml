@@ -26,19 +26,19 @@ jobs:
       CI: true
       GITHUB_TOKEN: ${{ secrets.DANGER_GITHUB_API_TOKEN }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm i -g npm@8
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         id: cache
         with:
           path: |
             node_modules
             ~/.cache/ms-playwright
-          key: ${{ runner.os }}-${{ runner.arch }}v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
+          key: ${{ runner.os }}-${{ runner.arch }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
@@ -55,19 +55,19 @@ jobs:
     env:
       CI: true
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm i -g npm@8
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         id: cache
         with:
           path: |
             node_modules
             ~/.cache/ms-playwright
-          key: ${{ runner.os }}-${{ runner.arch }}v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
+          key: ${{ runner.os }}-${{ runner.arch }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
@@ -82,19 +82,19 @@ jobs:
     env:
       CI: true
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm i -g npm@8
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         id: cache
         with:
           path: |
             node_modules
             ~/.cache/ms-playwright
-          key: ${{ runner.os }}-${{ runner.arch }}v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
+          key: ${{ runner.os }}-${{ runner.arch }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
@@ -114,20 +114,20 @@ jobs:
       E2E_EDITOR_MODE: ${{ matrix.editor-mode }}
       E2E_EVENTS_MODE: ${{ matrix.events-mode }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm i -g npm@8
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         id: cache
         with:
           path: |
             node_modules
             packages/playwright-core/node_modules
             ~/Library/Caches/ms-playwright
-          key: ${{ runner.os }}-${{ runner.arch }}v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
+          key: ${{ runner.os }}-${{ runner.arch }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
@@ -156,9 +156,9 @@ jobs:
       E2E_EDITOR_MODE: ${{ matrix.editor-mode }}
       E2E_EVENTS_MODE: ${{ matrix.events-mode }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
       - name: install required packages
@@ -166,14 +166,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install xvfb
       - run: npm i -g npm@8
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         id: cache
         with:
           path: |
             node_modules
             packages/playwright-core/node_modules
             ~/.cache/ms-playwright
-          key: ${{ runner.os }}-${{ runner.arch }}v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
+          key: ${{ runner.os }}-${{ runner.arch }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
@@ -202,19 +202,19 @@ jobs:
       E2E_EDITOR_MODE: ${{ matrix.editor-mode }}
       E2E_EVENTS_MODE: ${{ matrix.events-mode }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm i -g npm@8
-      # - uses: actions/cache@v3
+      # - uses: actions/cache@v4
       #   id: cache
       #   with:
       #     path: |
       #       node_modules
       #       C:\Users\runneradmin\AppData\Local\ms-playwright
-      #     key: ${{ runner.os }}-${{ runner.arch }}v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
+      #     key: ${{ runner.os }}-${{ runner.arch }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
       # - name: Install dependencies
       #   if: steps.cache.outputs.cache-hit != 'true'
       - run: npm ci
@@ -239,20 +239,20 @@ jobs:
     env:
       CI: true
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm i -g npm@8
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         id: cache
         with:
           path: |
             node_modules
             packages/playwright-core/node_modules
             ~/Library/Caches/ms-playwright
-          key: ${{ runner.os }}-${{ runner.arch }}v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
+          key: ${{ runner.os }}-${{ runner.arch }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
@@ -277,9 +277,9 @@ jobs:
     env:
       CI: true
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm i -g npm@8
@@ -287,14 +287,14 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install xvfb
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         id: cache
         with:
           path: |
             node_modules
             packages/playwright-core/node_modules
             ~/.cache/ms-playwright
-          key: ${{ runner.os }}-${{ runner.arch }}v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
+          key: ${{ runner.os }}-${{ runner.arch }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
@@ -319,19 +319,19 @@ jobs:
     env:
       CI: true
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm i -g npm@8
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         id: cache
         with:
           path: |
             node_modules
             C:\Users\runneradmin\AppData\Local\ms-playwright
-          key: ${{ runner.os }}-${{ runner.arch }}v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
+          key: ${{ runner.os }}-${{ runner.arch }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         #   if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
@@ -360,20 +360,20 @@ jobs:
       E2E_EDITOR_MODE: ${{ matrix.editor-mode }}
       E2E_EVENTS_MODE: ${{ matrix.events-mode }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm i -g npm@8
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         id: cache
         with:
           path: |
             node_modules
             packages/playwright-core/node_modules
             ~/Library/Caches/ms-playwright
-          key: ${{ runner.os }}-${{ runner.arch }}v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
+          key: ${{ runner.os }}-${{ runner.arch }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
@@ -402,20 +402,20 @@ jobs:
       E2E_EDITOR_MODE: ${{ matrix.editor-mode }}
       E2E_EVENTS_MODE: ${{ matrix.events-mode }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm i -g npm@8
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         id: cache
         with:
           path: |
             node_modules
             packages/playwright-core/node_modules
             ~/Library/Caches/ms-playwright
-          key: ${{ runner.os }}-${{ runner.arch }}v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
+          key: ${{ runner.os }}-${{ runner.arch }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci

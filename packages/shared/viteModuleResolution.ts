@@ -11,7 +11,11 @@ import type {
   PackageMetadata,
 } from '../../scripts/shared/PackageMetadata';
 
-import {packagesManager} from '../../scripts/shared/packagesManager';
+import {createRequire} from 'node:module';
+
+const require = createRequire(import.meta.url);
+const {packagesManager} =
+  require('../../scripts/shared/packagesManager') as typeof import('../../scripts/shared/packagesManager');
 
 function toAlias(pkg: PackageMetadata, entry: ModuleExportEntry) {
   return {

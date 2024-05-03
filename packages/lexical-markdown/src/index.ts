@@ -84,8 +84,9 @@ function $convertFromMarkdownString(
 function $convertToMarkdownString(
   transformers: Array<Transformer> = TRANSFORMERS,
   node?: ElementNode,
+  isNewlineDelimited: boolean = true,
 ): string {
-  const exportMarkdown = createMarkdownExport(transformers);
+  const exportMarkdown = createMarkdownExport(transformers, isNewlineDelimited);
   return exportMarkdown(node);
 }
 

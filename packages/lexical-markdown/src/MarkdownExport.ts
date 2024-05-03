@@ -26,6 +26,7 @@ import {isEmptyParagraph, transformersByType} from './utils';
 
 export function createMarkdownExport(
   transformers: Array<Transformer>,
+  isNewlineDelimited: boolean = true,
 ): (node?: ElementNode) => string {
   const byType = transformersByType(transformers);
 
@@ -51,7 +52,8 @@ export function createMarkdownExport(
       if (result != null) {
         output.push(
           // seperate consecutive group of texts with a line break: eg. ["hello", "world"] -> ["hello", "/nworld"]
-          i > 0 &&
+          isNewlineDelimited &&
+            i > 0 &&
             !isEmptyParagraph(child) &&
             !isEmptyParagraph(children[i - 1])
             ? '\n'.concat(result)

@@ -177,7 +177,11 @@ export default function ActionsPlugin({
           true, // include blank lines
         );
       } else {
-        const markdown = $convertToMarkdownString(PLAYGROUND_TRANSFORMERS);
+        const markdown = $convertToMarkdownString(
+          PLAYGROUND_TRANSFORMERS,
+          undefined, //node
+          false, // isNewlineDelimited
+        );
         root
           .clear()
           .append(

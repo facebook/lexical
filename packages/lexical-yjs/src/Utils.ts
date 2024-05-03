@@ -17,6 +17,7 @@ import type {
   TextNode,
 } from 'lexical';
 
+import {$findMatchingParent} from '@lexical/utils';
 import {
   $getNodeByKey,
   $getRoot,
@@ -550,16 +551,16 @@ export function $moveSelectionToPreviousParagraph(
   currentEditorState: EditorState,
 ) {
   const currentParagraphKeys = $getRoot().getChildrenKeys();
-  const selectedNode = currentEditorState._nodeMap.get(anchorNodeKey);
-  if (!selectedNode) {
+  const currentSelectedNode = currentEditorState._nodeMap.get(anchorNodeKey);
+  if (!currentSelectedNode) {
     $getRoot().selectStart();
     return;
   }
 
   // retrieve the parent paragraph node for the currently selected node
-  const selectedParagraphNode = $findParentParagraphNode(
-    selectedNode,
-    currentEditorState,
+  const selectedParagraphNode = $findMatchingParent(
+    currentSelectedNode,
+    (node) => $isParagraphNode(node),
   );
 
   if (!selectedParagraphNode) {
@@ -567,17 +568,26 @@ export function $moveSelectionToPreviousParagraph(
     return;
   }
 
-  const prevParagraphNodeKey = selectedParagraphNode.__prev;
+  const currentSelectedParagraphNode = currentEditorState._nodeMap.get(
+    selectedParagraphNode.__key,
+  );
+
+  // retrieve previous node key
+  const prevParagraphNodeKey =
+    currentSelectedParagraphNode && currentSelectedParagraphNode.__prev;
 
   // If collaborator deleted paragraphs including first paragraph
-  // or RootNode accidently set to the selectedParagraphNode
+  // or if the selected paragraph is accidentally set as the root node
   if (!prevParagraphNodeKey) {
     $getRoot().selectStart();
     return;
   }
 
   const prevParagraphNode = $getNodeByKey(prevParagraphNodeKey);
-  if (prevParagraphNodeKey in currentParagraphKeys && prevParagraphNode) {
+  if (
+    currentParagraphKeys.includes(prevParagraphNodeKey) &&
+    prevParagraphNode
+  ) {
     prevParagraphNode.selectEnd();
     return;
   } else {
@@ -585,21 +595,3 @@ export function $moveSelectionToPreviousParagraph(
     $moveSelectionToPreviousParagraph(prevParagraphNodeKey, currentEditorState);
   }
 }
-
-const $findParentParagraphNode = (
-  node: LexicalNode,
-  currentEditorState: EditorState,
-) => {
-  if ($isParagraphNode(node) || !node.__parent) {
-    return node;
-  }
-  const parentNode = currentEditorState._nodeMap.get(node.__parent);
-  if (!parentNode) {
-    return node;
-  }
-  if ($isParagraphNode(parentNode)) {
-    return parentNode;
-  } else {
-    $findParentParagraphNode(parentNode, currentEditorState);
-  }
-};

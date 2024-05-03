@@ -15,6 +15,7 @@ import * as path from 'node:path';
 import {defineConfig} from 'vite';
 import {replaceCodePlugin} from 'vite-plugin-replace';
 
+import {NpmModuleExportEntry} from '../../scripts/shared/PackageMetadata';
 import viteCopyEsm from './viteCopyEsm';
 
 const require = createRequire(import.meta.url);
@@ -23,26 +24,29 @@ const {packagesManager} =
 
 const moduleResolution = [
   ...packagesManager.getPublicPackages().flatMap((pkg) =>
-    pkg.getNormalizedNpmModuleExportEntries().map(([find, exports]) => {
-      // Prefer the development esm version because we want nice errors and
-      // introspection on the playground!
-      const replacements = (['development', 'default'] as const).map((k) =>
-        pkg.resolve('dist', exports.import[k]),
-      );
-      const replacement = replacements.find((fn) => fs.existsSync(fn));
-      if (!replacement) {
-        throw new Error(
-          `ERROR: Missing ./${path.relative(
-            '../..',
-            replacements[1],
-          )}. Did you run \`npm run build\` in the monorepo first?`,
+    pkg
+      .getNormalizedNpmModuleExportEntries()
+      .map((entry: NpmModuleExportEntry) => {
+        const [name, moduleExports] = entry;
+        // Prefer the development esm version because we want nice errors and
+        // introspection on the playground!
+        const replacements = (['development', 'default'] as const).map((k) =>
+          pkg.resolve('dist', moduleExports.import[k]),
         );
-      }
-      return {
-        find,
-        replacement,
-      };
-    }),
+        const replacement = replacements.find((fn) => fs.existsSync(fn));
+        if (!replacement) {
+          throw new Error(
+            `ERROR: Missing ./${path.relative(
+              '../..',
+              replacements[1],
+            )}. Did you run \`npm run build\` in the monorepo first?`,
+          );
+        }
+        return {
+          find: name,
+          replacement,
+        };
+      }),
   ),
   ...[packagesManager.getPackageByDirectoryName('shared')].flatMap((pkg) =>
     pkg.getPrivateModuleEntries().map(({name, sourceFileName}) => ({

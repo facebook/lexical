@@ -107,7 +107,7 @@ describe('LexicalEslintPlugin', () => {
     );
   });
 });
-['rules-of-lexical'].forEach((ruleName) => {
+(['rules-of-lexical'] as const).forEach((ruleName) => {
   const namedRules = [
     fmt`const ${NAME} = () => $getRoot();`,
     fmt`const ${NAME} = () => { return $getRoot(); }`,

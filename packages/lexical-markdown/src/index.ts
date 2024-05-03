@@ -72,9 +72,12 @@ function $convertFromMarkdownString(
   markdown: string,
   transformers: Array<Transformer> = TRANSFORMERS,
   node?: ElementNode,
-  includeBlankLines = false,
+  shouldIncludeBlankLines = false,
 ): void {
-  const importMarkdown = createMarkdownImport(transformers, includeBlankLines);
+  const importMarkdown = createMarkdownImport(
+    transformers,
+    shouldIncludeBlankLines,
+  );
   return importMarkdown(markdown, node);
 }
 

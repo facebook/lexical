@@ -13,7 +13,7 @@ import type {
   TextMatchTransformer,
   Transformer,
 } from '@lexical/markdown';
-import type {LexicalNode, TextNode} from 'lexical';
+import type {TextNode} from 'lexical';
 
 import {$createCodeNode} from '@lexical/code';
 import {$isListItemNode, $isListNode, ListItemNode} from '@lexical/list';
@@ -26,14 +26,16 @@ import {
   $getRoot,
   $getSelection,
   $isParagraphNode,
-  $isTextNode,
   ElementNode,
 } from 'lexical';
 import {IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from 'shared/environment';
 
-import {PUNCTUATION_OR_SPACE, transformersByType} from './utils';
+import {
+  isEmptyParagraph,
+  PUNCTUATION_OR_SPACE,
+  transformersByType,
+} from './utils';
 
-const MARKDOWN_EMPTY_LINE_REG_EXP = /^\s{0,3}$/;
 const CODE_BLOCK_REG_EXP = /^[ \t]*```(\w{1,10})?\s?$/;
 type TextFormatTransformersIndex = Readonly<{
   fullMatchRegExpByTag: Readonly<Record<string, RegExp>>;
@@ -43,7 +45,7 @@ type TextFormatTransformersIndex = Readonly<{
 
 export function createMarkdownImport(
   transformers: Array<Transformer>,
-  includeBlankLines = false,
+  shouldIncludeBlankLines = false,
 ): (markdownString: string, node?: ElementNode) => void {
   const byType = transformersByType(transformers);
   const textFormatTransformersIndex = createTextFormatTransformersIndex(
@@ -86,7 +88,7 @@ export function createMarkdownImport(
       if (
         isEmptyParagraph(child) &&
         root.getChildrenSize() > 1 &&
-        !includeBlankLines
+        !shouldIncludeBlankLines
       ) {
         child.remove();
       }
@@ -96,20 +98,6 @@ export function createMarkdownImport(
       root.selectEnd();
     }
   };
-}
-
-function isEmptyParagraph(node: LexicalNode): boolean {
-  if (!$isParagraphNode(node)) {
-    return false;
-  }
-
-  const firstChild = node.getFirstChild();
-  return (
-    firstChild == null ||
-    (node.getChildrenSize() === 1 &&
-      $isTextNode(firstChild) &&
-      MARKDOWN_EMPTY_LINE_REG_EXP.test(firstChild.getTextContent()))
-  );
 }
 
 function $importBlocks(

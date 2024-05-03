@@ -28,6 +28,7 @@ describe('Markdown', () => {
     md: string;
     skipExport?: true;
     skipImport?: true;
+    shouldIncludeBlankLines?: true;
   }>;
 
   const URL = 'https://lexical.dev';
@@ -148,6 +149,11 @@ describe('Markdown', () => {
       md: '*Hello **world**!*',
     },
     {
+      html: '<h1><span style="white-space: pre-wrap;">Hello</span></h1><p><br></p><p><br></p><p><br></p><p><b><strong style="white-space: pre-wrap;">world</strong></b><span style="white-space: pre-wrap;">!</span></p>',
+      md: '# Hello\n\n\n\n**world**!',
+      shouldIncludeBlankLines: true,
+    },
+    {
       // Import only: export will use * instead of _ due to registered transformers order
       html: '<p><i><em style="white-space: pre-wrap;">Hello</em></i><span style="white-space: pre-wrap;"> world</span></p>',
       md: '_Hello_ world',
@@ -205,12 +211,6 @@ describe('Markdown', () => {
       md: `Hello [world](${URL})! Hello $world$! [Hello](${URL}) world! Hello $world$!`,
       skipExport: true,
     },
-    {
-      // Export only: import will use $...$ to transform <span /> to <mark /> due to HIGHLIGHT_TEXT_MATCH_IMPORT
-      html: "<p><span style='white-space: pre-wrap;'>$$H$&e$`l$'l$o$</span></p>",
-      md: "$$H$&e$`l$'l$o$",
-      skipImport: true,
-    },
   ];
 
   const HIGHLIGHT_TEXT_MATCH_IMPORT: TextMatchTransformer = {
@@ -221,7 +221,12 @@ describe('Markdown', () => {
     },
   };
 
-  for (const {html, md, skipImport} of IMPORT_AND_EXPORT) {
+  for (const {
+    html,
+    md,
+    skipImport,
+    shouldIncludeBlankLines,
+  } of IMPORT_AND_EXPORT) {
     if (skipImport) {
       continue;
     }
@@ -240,10 +245,12 @@ describe('Markdown', () => {
 
       editor.update(
         () =>
-          $convertFromMarkdownString(md, [
-            ...TRANSFORMERS,
-            HIGHLIGHT_TEXT_MATCH_IMPORT,
-          ]),
+          $convertFromMarkdownString(
+            md,
+            [...TRANSFORMERS, HIGHLIGHT_TEXT_MATCH_IMPORT],
+            undefined,
+            shouldIncludeBlankLines,
+          ),
         {
           discrete: true,
         },

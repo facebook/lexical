@@ -15,7 +15,11 @@ import * as path from 'node:path';
 import {defineConfig} from 'vite';
 import {replaceCodePlugin} from 'vite-plugin-replace';
 
-import {NpmModuleExportEntry} from '../../scripts/shared/PackageMetadata';
+import {
+  type ModuleExportEntry,
+  type NpmModuleExportEntry,
+  type PackageMetadata,
+} from '../../scripts/shared/PackageMetadata';
 import viteCopyEsm from './viteCopyEsm';
 
 const require = createRequire(import.meta.url);
@@ -48,11 +52,14 @@ const moduleResolution = [
         };
       }),
   ),
-  ...[packagesManager.getPackageByDirectoryName('shared')].flatMap((pkg) =>
-    pkg.getPrivateModuleEntries().map(({name, sourceFileName}) => ({
-      find: name,
-      replacement: pkg.resolve('src', sourceFileName),
-    })),
+  ...[packagesManager.getPackageByDirectoryName('shared')].flatMap(
+    (pkg: PackageMetadata) =>
+      pkg.getPrivateModuleEntries().map((entry: ModuleExportEntry) => {
+        return {
+          find: entry.name,
+          replacement: pkg.resolve('src', entry.sourceFileName),
+        };
+      }),
   ),
 ];
 

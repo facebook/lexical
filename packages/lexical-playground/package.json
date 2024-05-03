@@ -7,7 +7,7 @@
     "dev": "vite --host",
     "build-dev": "vite build",
     "build-prod": "vite build --config vite.prod.config.ts",
-    "build-vercel": "(cd ../../ && node ./scripts/build.js --prod) && npm run build-prod",
+    "build-vercel": "(cd ../../ && node ./scripts/build.js) && npm run build-dev",
     "preview": "vite preview"
   },
   "dependencies": {

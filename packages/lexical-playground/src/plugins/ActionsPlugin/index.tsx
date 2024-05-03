@@ -173,6 +173,7 @@ export default function ActionsPlugin({
           firstChild.getTextContent(),
           PLAYGROUND_TRANSFORMERS,
           undefined, // node
+          // TODO: make a playground setting for this in lexical-playground/src/Settings.tsx
           true, // include blank lines
         );
       } else {

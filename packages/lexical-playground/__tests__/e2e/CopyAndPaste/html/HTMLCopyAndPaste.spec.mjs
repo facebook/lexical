@@ -275,4 +275,229 @@ test.describe('HTML CopyAndPaste', () => {
       `,
     );
   });
+
+  test('Copy + paste single div', async ({page, isPlainText}) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    const clipboard = {
+      'text/html': `
+    123
+    <div>
+      456
+    </div>`,
+    };
+
+    await pasteFromClipboard(page, clipboard);
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span data-lexical-text="true">123</span>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span data-lexical-text="true">456</span>
+        </p>
+      `,
+    );
+    await assertSelection(page, {
+      anchorOffset: 3,
+      anchorPath: [1, 0, 0],
+      focusOffset: 3,
+      focusPath: [1, 0, 0],
+    });
+  });
+
+  test('Copy + paste nested divs', async ({page, isPlainText}) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    const clipboard = {
+      'text/html': html`
+        <div>
+          a
+          <div>
+            b b
+            <div>
+              c
+              <div>
+                <div></div>
+                z
+              </div>
+            </div>
+            d e
+          </div>
+          fg
+        </div>
+      `,
+    };
+
+    await pasteFromClipboard(page, clipboard);
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph  PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">a</span>
+        </p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">b b</span>
+        </p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">c</span>
+        </p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">z</span>
+        </p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">d e</span>
+        </p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">fg</span>
+        </p>
+      `,
+    );
+    await assertSelection(page, {
+      anchorOffset: 2,
+      anchorPath: [5, 0, 0],
+      focusOffset: 2,
+      focusPath: [5, 0, 0],
+    });
+  });
+
+  test('Copy + paste nested div in a span', async ({page, isPlainText}) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    const clipboard = {
+      'text/html': html`
+        <span>
+          123
+          <div>456</div>
+        </span>
+      `,
+    };
+
+    await pasteFromClipboard(page, clipboard);
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span data-lexical-text="true">123</span>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span data-lexical-text="true">456</span>
+        </p>
+      `,
+    );
+    await assertSelection(page, {
+      anchorOffset: 3,
+      anchorPath: [1, 0, 0],
+      focusOffset: 3,
+      focusPath: [1, 0, 0],
+    });
+  });
+
+  test('Copy + paste nested span in a div', async ({page, isPlainText}) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    const clipboard = {
+      'text/html': html`
+        <div>
+          <span>
+            123
+            <div>456</div>
+          </span>
+        </div>
+      `,
+    };
+
+    await pasteFromClipboard(page, clipboard);
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span data-lexical-text="true">123</span>
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph">
+          <span data-lexical-text="true">456</span>
+        </p>
+      `,
+    );
+    await assertSelection(page, {
+      anchorOffset: 3,
+      anchorPath: [1, 0, 0],
+      focusOffset: 3,
+      focusPath: [1, 0, 0],
+    });
+  });
+
+  test('Copy + paste multiple nested spans and divs', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    const clipboard = {
+      'text/html': html`
+        <div>
+          a b
+          <span>
+            c d
+            <span>e</span>
+          </span>
+          <div>
+            f
+            <span>g h</span>
+          </div>
+        </div>
+      `,
+    };
+
+    await pasteFromClipboard(page, clipboard);
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">a b c d e</span>
+        </p>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">f g h</span>
+        </p>
+      `,
+    );
+    await assertSelection(page, {
+      anchorOffset: 5,
+      anchorPath: [1, 0, 0],
+      focusOffset: 5,
+      focusPath: [1, 0, 0],
+    });
+  });
 });

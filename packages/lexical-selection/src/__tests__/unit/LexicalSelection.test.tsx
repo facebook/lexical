@@ -30,7 +30,13 @@ import {
   $isElementNode,
   $isRangeSelection,
   $setSelection,
+  DecoratorNode,
+  ElementNode,
+  LexicalEditor,
+  LexicalNode,
   ParagraphNode,
+  PointType,
+  TextNode,
 } from 'lexical';
 import {
   $assertRangeSelection,
@@ -41,7 +47,6 @@ import {
   invariant,
   TestComposer,
 } from 'lexical/src/__tests__/utils';
-import * as React from 'react';
 import {createRoot} from 'react-dom/client';
 import * as ReactTestUtils from 'react-dom/test-utils';
 
@@ -72,6 +77,13 @@ import {
   setNativeSelectionWithPaths,
   undo,
 } from '../utils';
+
+interface ExpectedSelection {
+  anchorPath: number[];
+  anchorOffset: number;
+  focusPath: number[];
+  focusOffset: number;
+}
 
 initializeClipboard();
 
@@ -117,7 +129,7 @@ describe('LexicalSelection tests', () => {
     container = null;
   });
 
-  let editor = null;
+  let editor: LexicalEditor | null = null;
 
   async function init() {
     function TestBase() {
@@ -163,8 +175,8 @@ describe('LexicalSelection tests', () => {
           }}>
           <RichTextPlugin
             contentEditable={
-              // eslint-disable-next-line jsx-a11y/aria-role
-              <ContentEditable role={null} spellCheck={null} />
+              // eslint-disable-next-line jsx-a11y/aria-role, @typescript-eslint/no-explicit-any
+              <ContentEditable role={null as any} spellCheck={null as any} />
             }
             placeholder={null}
             ErrorBoundary={LexicalErrorBoundary}
@@ -176,32 +188,41 @@ describe('LexicalSelection tests', () => {
     }
 
     ReactTestUtils.act(() => {
-      createRoot(container).render(<TestBase />);
+      createRoot(container!).render(<TestBase />);
     });
 
-    editor.getRootElement().focus();
+    editor!.getRootElement()!.focus();
 
     await Promise.resolve().then();
     // Focus first element
-    setNativeSelectionWithPaths(editor.getRootElement(), [0, 0], 0, [0, 0], 0);
+    setNativeSelectionWithPaths(
+      editor!.getRootElement()!,
+      [0, 0],
+      0,
+      [0, 0],
+      0,
+    );
   }
 
-  async function update(fn) {
+  async function update(fn: () => void) {
     await ReactTestUtils.act(async () => {
-      await editor.update(fn);
+      await editor!.update(fn);
     });
 
     return Promise.resolve().then();
   }
 
   test('Expect initial output to be a block with no text.', () => {
-    expect(container.innerHTML).toBe(
+    expect(container!.innerHTML).toBe(
       '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p class="editor-paragraph"><br></p></div>',
     );
   });
 
-  function assertSelection(rootElement, expectedSelection) {
-    const actualSelection = window.getSelection();
+  function assertSelection(
+    rootElement: HTMLElement,
+    expectedSelection: ExpectedSelection,
+  ) {
+    const actualSelection = window.getSelection()!;
 
     expect(actualSelection.anchorNode).toBe(
       getNodeFromPath(expectedSelection.anchorPath, rootElement),
@@ -1108,13 +1129,13 @@ describe('LexicalSelection tests', () => {
     const name = testUnit.name || 'Test case';
 
     test(name + ` (#${i + 1})`, async () => {
-      await applySelectionInputs(testUnit.inputs, update, editor);
+      await applySelectionInputs(testUnit.inputs, update, editor!);
 
       // Validate HTML matches
-      expect(container.innerHTML).toBe(testUnit.expectedHTML);
+      expect(container!.innerHTML).toBe(testUnit.expectedHTML);
 
       // Validate selection matches
-      const rootElement = editor.getRootElement();
+      const rootElement = editor!.getRootElement()!;
       const expectedSelection = testUnit.expectedSelection;
 
       assertSelection(rootElement, expectedSelection);
@@ -1123,10 +1144,10 @@ describe('LexicalSelection tests', () => {
 
   test('insert text one selected node element selection', async () => {
     await ReactTestUtils.act(async () => {
-      await editor.update(() => {
+      await editor!.update(() => {
         const root = $getRoot();
 
-        const paragraph = root.getFirstChild<ParagraphNode>();
+        const paragraph = root.getFirstChild<ParagraphNode>()!;
 
         const elementNode = $createTestElementNode();
         const text = $createTextNode('foo');
@@ -1147,10 +1168,10 @@ describe('LexicalSelection tests', () => {
 
   test('getNodes resolves nested block nodes', async () => {
     await ReactTestUtils.act(async () => {
-      await editor.update(() => {
+      await editor!.update(() => {
         const root = $getRoot();
 
-        const paragraph = root.getFirstChild<ParagraphNode>();
+        const paragraph = root.getFirstChild<ParagraphNode>()!;
 
         const elementNode = $createTestElementNode();
         const text = $createTextNode();
@@ -1158,7 +1179,7 @@ describe('LexicalSelection tests', () => {
         paragraph.append(elementNode);
         elementNode.append(text);
 
-        const selectedNodes = $getSelection().getNodes();
+        const selectedNodes = $getSelection()!.getNodes();
 
         expect(selectedNodes.length).toBe(1);
         expect(selectedNodes[0].getKey()).toBe(text.getKey());
@@ -1167,7 +1188,23 @@ describe('LexicalSelection tests', () => {
   });
 
   describe('Block selection moves when new nodes are inserted', () => {
-    [
+    const baseCases: {
+      name: string;
+      anchorOffset: number;
+      focusOffset: number;
+      fn: (
+        paragraph: ElementNode,
+        text: TextNode,
+      ) => {
+        expectedAnchor: LexicalNode;
+        expectedAnchorOffset: number;
+        expectedFocus: LexicalNode;
+        expectedFocusOffset: number;
+      };
+      fnBefore?: (paragraph: ElementNode, text: TextNode) => void;
+      invertSelection?: true;
+      only?: true;
+    }[] = [
       // Collapsed selection on end; add/remove/replace beginning
       {
         anchorOffset: 2,
@@ -1314,8 +1351,8 @@ describe('LexicalSelection tests', () => {
       {
         anchorOffset: 0,
         fn: (paragraph, originalText1) => {
-          const originalText2 = originalText1.getPreviousSibling();
-          const lastChild = paragraph.getLastChild();
+          const originalText2 = originalText1.getPreviousSibling()!;
+          const lastChild = paragraph.getLastChild()!;
           const newText = $createTextNode('2');
           lastChild.insertBefore(newText);
 
@@ -1336,7 +1373,7 @@ describe('LexicalSelection tests', () => {
       {
         anchorOffset: 0,
         fn: (paragraph, text) => {
-          const lastChild = paragraph.getLastChild();
+          const lastChild = paragraph.getLastChild()!;
           const newText = $createTextNode('2');
           lastChild.insertAfter(newText);
 
@@ -1353,7 +1390,7 @@ describe('LexicalSelection tests', () => {
       {
         anchorOffset: 0,
         fn: (paragraph, originalText1) => {
-          const originalText2 = originalText1.getPreviousSibling();
+          const originalText2 = originalText1.getPreviousSibling()!;
           const [, text] = originalText1.splitText(1);
 
           return {
@@ -1373,7 +1410,7 @@ describe('LexicalSelection tests', () => {
       {
         anchorOffset: 0,
         fn: (paragraph, text) => {
-          const lastChild = paragraph.getLastChild();
+          const lastChild = paragraph.getLastChild()!;
           lastChild.remove();
 
           return {
@@ -1390,7 +1427,7 @@ describe('LexicalSelection tests', () => {
         anchorOffset: 0,
         fn: (paragraph, text) => {
           const newText = $createTextNode('replacement');
-          const lastChild = paragraph.getLastChild();
+          const lastChild = paragraph.getLastChild()!;
           lastChild.replace(newText);
 
           return {
@@ -1407,7 +1444,7 @@ describe('LexicalSelection tests', () => {
       {
         anchorOffset: 0,
         fn: (paragraph, text) => {
-          const lastChild = paragraph.getLastChild();
+          const lastChild = paragraph.getLastChild()!;
           const newText = $createTextNode('2');
           lastChild.insertBefore(newText);
 
@@ -1440,7 +1477,7 @@ describe('LexicalSelection tests', () => {
       {
         anchorOffset: 0,
         fn: (paragraph, originalText1) => {
-          const originalText2 = originalText1.getPreviousSibling();
+          const originalText2 = originalText1.getPreviousSibling()!;
           const [, text] = originalText1.splitText(1);
 
           return {
@@ -1460,7 +1497,7 @@ describe('LexicalSelection tests', () => {
       {
         anchorOffset: 1,
         fn: (paragraph, originalText1) => {
-          const lastChild = paragraph.getLastChild();
+          const lastChild = paragraph.getLastChild()!;
           lastChild.remove();
 
           return {
@@ -1481,7 +1518,7 @@ describe('LexicalSelection tests', () => {
         anchorOffset: 1,
         fn: (paragraph, originalText1) => {
           const newText = $createTextNode('replacement');
-          const lastChild = paragraph.getLastChild();
+          const lastChild = paragraph.getLastChild()!;
           lastChild.replace(newText);
 
           return {
@@ -1502,8 +1539,8 @@ describe('LexicalSelection tests', () => {
       {
         anchorOffset: 0,
         fn: (paragraph, originalText1) => {
-          const originalText2 = originalText1.getPreviousSibling();
-          const lastChild = paragraph.getLastChild();
+          const originalText2 = originalText1.getPreviousSibling()!;
+          const lastChild = paragraph.getLastChild()!;
           const newText = $createTextNode('2');
           lastChild.insertBefore(newText);
 
@@ -1524,7 +1561,7 @@ describe('LexicalSelection tests', () => {
       {
         anchorOffset: 0,
         fn: (paragraph, originalText1) => {
-          const originalText2 = originalText1.getPreviousSibling();
+          const originalText2 = originalText1.getPreviousSibling()!;
           const newText = $createTextNode('2');
           originalText1.insertAfter(newText);
 
@@ -1545,7 +1582,7 @@ describe('LexicalSelection tests', () => {
       {
         anchorOffset: 0,
         fn: (paragraph, originalText1) => {
-          const originalText2 = originalText1.getPreviousSibling();
+          const originalText2 = originalText1.getPreviousSibling()!;
           originalText1.splitText(1);
 
           return {
@@ -1565,7 +1602,7 @@ describe('LexicalSelection tests', () => {
       {
         anchorOffset: 0,
         fn: (paragraph, originalText1) => {
-          const originalText2 = originalText1.getPreviousSibling();
+          const originalText2 = originalText1.getPreviousSibling()!;
           originalText1.remove();
 
           return {
@@ -1606,7 +1643,7 @@ describe('LexicalSelection tests', () => {
       {
         anchorOffset: 3,
         fn: (paragraph, originalText1) => {
-          const originalText2 = paragraph.getLastChild();
+          const originalText2 = paragraph.getLastChild()!;
           const newText = $createTextNode('new');
           originalText1.insertBefore(newText);
 
@@ -1627,7 +1664,7 @@ describe('LexicalSelection tests', () => {
       {
         anchorOffset: 0,
         fn: (paragraph, originalText1) => {
-          const originalText2 = paragraph.getLastChild();
+          const originalText2 = paragraph.getLastChild()!;
           const newText = $createTextNode('new');
           originalText1.insertBefore(newText);
 
@@ -1648,7 +1685,7 @@ describe('LexicalSelection tests', () => {
       {
         anchorOffset: 1,
         fn: (paragraph, originalText1) => {
-          originalText1.getNextSibling().remove();
+          originalText1.getNextSibling()!.remove();
 
           return {
             expectedAnchor: originalText1,
@@ -1663,7 +1700,7 @@ describe('LexicalSelection tests', () => {
       {
         anchorOffset: 0,
         fn: (paragraph, originalText1) => {
-          originalText1.getNextSibling().remove();
+          originalText1.getNextSibling()!.remove();
 
           return {
             expectedAnchor: originalText1,
@@ -1675,8 +1712,9 @@ describe('LexicalSelection tests', () => {
         focusOffset: 1,
         name: 'remove - Remove with non-collapsed selection at offset',
       },
-    ]
-      .reduce((testSuite, testCase) => {
+    ];
+    baseCases
+      .flatMap((testCase) => {
         // Test inverse selection
         const inverse = {
           ...testCase,
@@ -1685,9 +1723,8 @@ describe('LexicalSelection tests', () => {
           invertSelection: true,
           name: testCase.name + ' (inverse selection)',
         };
-
-        return testSuite.concat(testCase, inverse);
-      }, [])
+        return [testCase, inverse];
+      })
       .forEach(
         ({
           name,
@@ -1704,10 +1741,10 @@ describe('LexicalSelection tests', () => {
           const test_ = only === true ? test.only : test;
           test_(name, async () => {
             await ReactTestUtils.act(async () => {
-              await editor.update(() => {
+              await editor!.update(() => {
                 const root = $getRoot();
 
-                const paragraph = root.getFirstChild<ParagraphNode>();
+                const paragraph = root.getFirstChild<ParagraphNode>()!;
                 const textNode = $createTextNode('foo');
                 // Note: line break can't be selected by the DOM
                 const linebreak = $createLineBreakNode();
@@ -1756,7 +1793,7 @@ describe('LexicalSelection tests', () => {
   describe('Selection correctly resolves to a sibling ElementNode when a node is removed', () => {
     test('', async () => {
       await ReactTestUtils.act(async () => {
-        await editor.update(() => {
+        await editor!.update(() => {
           const root = $getRoot();
 
           const listNode = $createListNode('bullet');
@@ -1786,8 +1823,8 @@ describe('LexicalSelection tests', () => {
   describe('Selection correctly resolves to a sibling ElementNode when a selected node child is removed', () => {
     test('', async () => {
       await ReactTestUtils.act(async () => {
-        let paragraphNodeKey;
-        await editor.update(() => {
+        let paragraphNodeKey: string;
+        await editor!.update(() => {
           const root = $getRoot();
 
           const paragraphNode = $createParagraphNode();
@@ -1809,7 +1846,7 @@ describe('LexicalSelection tests', () => {
 
           listNode.remove();
         });
-        await editor.getEditorState().read(() => {
+        await editor!.getEditorState().read(() => {
           const selection = $assertRangeSelection($getSelection());
           expect(selection.anchor.key).toBe(paragraphNodeKey);
           expect(selection.focus.key).toBe(paragraphNodeKey);
@@ -1821,7 +1858,7 @@ describe('LexicalSelection tests', () => {
   describe('Selection correctly resolves to a sibling ElementNode that has multiple children with the correct offset when a node is removed', () => {
     test('', async () => {
       await ReactTestUtils.act(async () => {
-        await editor.update(() => {
+        await editor!.update(() => {
           // Arrange
           // Root
           //  |- Paragraph
@@ -1872,10 +1909,10 @@ describe('LexicalSelection tests', () => {
 
   test('isBackward', async () => {
     await ReactTestUtils.act(async () => {
-      await editor.update(() => {
+      await editor!.update(() => {
         const root = $getRoot();
 
-        const paragraph = root.getFirstChild<ParagraphNode>();
+        const paragraph = root.getFirstChild<ParagraphNode>()!;
         const paragraphKey = paragraph.getKey();
         const textNode = $createTextNode('foo');
         const textNodeKey = textNode.getKey();
@@ -1915,7 +1952,18 @@ describe('LexicalSelection tests', () => {
   });
 
   describe('Decorator text content for selection', () => {
-    [
+    const baseCases: {
+      name: string;
+      fn: (opts: {
+        textNode1: TextNode;
+        textNode2: TextNode;
+        decorator: DecoratorNode<unknown>;
+        paragraph: ParagraphNode;
+        anchor: PointType;
+        focus: PointType;
+      }) => string;
+      invertSelection?: true;
+    }[] = [
       {
         fn: ({textNode1, anchor, focus}) => {
           anchor.set(textNode1.getKey(), 1, 'text');
@@ -1972,23 +2020,24 @@ describe('LexicalSelection tests', () => {
         },
         name: 'Included if decorator is selected as the only node',
       },
-    ]
-      .reduce((testSuite, testCase) => {
+    ];
+    baseCases
+      .flatMap((testCase) => {
         const inverse = {
           ...testCase,
           invertSelection: true,
           name: testCase.name + ' (inverse selection)',
         };
 
-        return testSuite.concat(testCase, inverse);
-      }, [])
+        return [testCase, inverse];
+      })
       .forEach(({name, fn, invertSelection}) => {
         it(name, async () => {
           await ReactTestUtils.act(async () => {
-            await editor.update(() => {
+            await editor!.update(() => {
               const root = $getRoot();
 
-              const paragraph = root.getFirstChild<ParagraphNode>();
+              const paragraph = root.getFirstChild<ParagraphNode>()!;
               const textNode1 = $createTextNode('1');
               const textNode2 = $createTextNode('2');
               const decorator = $createTestDecoratorNode();
@@ -2114,7 +2163,7 @@ describe('LexicalSelection tests', () => {
     it('adjust offset for inline elements text formatting', async () => {
       init();
 
-      await editor.update(() => {
+      await editor!.update(() => {
         const root = $getRoot();
 
         const text1 = $createTextNode('--');
@@ -2155,7 +2204,11 @@ describe('LexicalSelection tests', () => {
   });
 
   describe('Node.replace', () => {
-    let text1, text2, text3, paragraph, testEditor;
+    let text1: TextNode,
+      text2: TextNode,
+      text3: TextNode,
+      paragraph: ParagraphNode,
+      testEditor: LexicalEditor;
 
     beforeEach(async () => {
       testEditor = createTestEditor();
@@ -2482,7 +2535,7 @@ describe('LexicalSelection tests', () => {
         expect(rootChildren[0].__type).toBe('heading');
         expect(rootChildren[1].__type).toBe('heading');
         expect(rootChildren.length).toBe(2);
-        const sel = $getSelection();
+        const sel = $getSelection()!;
         expect(sel.getNodes().length).toBe(2);
       });
     });
@@ -2541,7 +2594,7 @@ describe('LexicalSelection tests', () => {
         const paragraph = column.getFirstChild();
         invariant($isElementNode(paragraph));
         if (paragraph.getFirstChild()) {
-          paragraph.getFirstChild().remove();
+          paragraph.getFirstChild()!.remove();
         }
         root.append(table);
 

@@ -211,7 +211,6 @@
   "include": ["./libdefs", "./packages"],
   "exclude": [
     "./libdefs/*.js",
-    "**/lexical-*/src/__tests__/**",
     "**/dist/**",
     "**/npm/**",
     "**/node_modules/**",

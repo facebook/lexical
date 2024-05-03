@@ -168,13 +168,7 @@ export class CodeNode extends ElementNode {
         const td = node as HTMLTableCellElement;
         const table: HTMLTableElement | null = td.closest('table');
 
-        if (isGitHubCodeCell(td)) {
-          return {
-            conversion: convertTableCellElement,
-            priority: 3,
-          };
-        }
-        if (table && isGitHubCodeTable(table)) {
+        if (isGitHubCodeCell(td) || (table && isGitHubCodeTable(table))) {
           // Return a no-op if it's a table cell in a code table, but not a code line.
           // Otherwise it'll fall back to the T
           return {
@@ -348,13 +342,6 @@ function convertDivElement(domNode: Node): DOMConversionOutput {
     };
   }
   return {
-    after: (childLexicalNodes) => {
-      const domParent = domNode.parentNode;
-      if (domParent != null && domNode !== domParent.lastChild) {
-        childLexicalNodes.push($createLineBreakNode());
-      }
-      return childLexicalNodes;
-    },
     node: isCode ? $createCodeNode() : null,
   };
 }
@@ -365,22 +352,6 @@ function convertTableElement(): DOMConversionOutput {
 
 function convertCodeNoop(): DOMConversionOutput {
   return {node: null};
-}
-
-function convertTableCellElement(domNode: Node): DOMConversionOutput {
-  // domNode is a <td> since we matched it by nodeName
-  const cell = domNode as HTMLTableCellElement;
-
-  return {
-    after: (childLexicalNodes) => {
-      if (cell.parentNode && cell.parentNode.nextSibling) {
-        // Append newline between code lines
-        childLexicalNodes.push($createLineBreakNode());
-      }
-      return childLexicalNodes;
-    },
-    node: null,
-  };
 }
 
 function isCodeElement(div: HTMLElement): boolean {

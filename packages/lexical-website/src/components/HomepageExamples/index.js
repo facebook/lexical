@@ -79,7 +79,7 @@ export default function HomepageExamples() {
         </ul>
       </Tabs.List>
 
-      {EXAMPLES.map(({id, content, src}) => (
+      {EXAMPLES.map(({id, content, src, label}) => (
         <Tabs.Content asChild={true} value={id} key={id}>
           <div className="grid gap-6 lg:grid-cols-[1fr_2fr]">
             <div className="flex flex-col gap-6">
@@ -98,8 +98,8 @@ export default function HomepageExamples() {
               <iframe
                 className="h-[500px] w-full overflow-hidden"
                 src={src}
-                title="lexical-plain-text-example"
-                sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+                title={label}
+                sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-scripts"
               />
             </div>
           </div>

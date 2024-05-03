@@ -54,7 +54,7 @@ describe('LexicalNodeHelpers tests', () => {
             paragraph.append(overflowRight);
           });
 
-          return [overflowLeftKey, overflowRightKey];
+          return [overflowLeftKey!, overflowRightKey!];
         }
 
         it('merges an empty overflow node (left overflow selected)', async () => {
@@ -63,8 +63,9 @@ describe('LexicalNodeHelpers tests', () => {
             await initializeEditorWithLeftRightOverflowNodes();
 
           await editor.update(() => {
-            const overflowLeft = $getNodeByKey<OverflowNode>(overflowLeftKey);
-            const overflowRight = $getNodeByKey<OverflowNode>(overflowRightKey);
+            const overflowLeft = $getNodeByKey<OverflowNode>(overflowLeftKey)!;
+            const overflowRight =
+              $getNodeByKey<OverflowNode>(overflowRightKey)!;
 
             const text1 = $createTextNode('1');
             const text2 = $createTextNode('2');
@@ -77,8 +78,9 @@ describe('LexicalNodeHelpers tests', () => {
           });
 
           await editor.update(() => {
-            const paragraph = $getRoot().getFirstChild<ParagraphNode>();
-            const overflowRight = $getNodeByKey<OverflowNode>(overflowRightKey);
+            const paragraph = $getRoot().getFirstChild<ParagraphNode>()!;
+            const overflowRight =
+              $getNodeByKey<OverflowNode>(overflowRightKey)!;
 
             mergePrevious(overflowRight);
 
@@ -110,8 +112,9 @@ describe('LexicalNodeHelpers tests', () => {
           let text1Key: NodeKey;
 
           await editor.update(() => {
-            const overflowLeft = $getNodeByKey<OverflowNode>(overflowLeftKey);
-            const overflowRight = $getNodeByKey<OverflowNode>(overflowRightKey);
+            const overflowLeft = $getNodeByKey<OverflowNode>(overflowLeftKey)!;
+            const overflowRight =
+              $getNodeByKey<OverflowNode>(overflowRightKey)!;
 
             const text1 = $createTextNode('1');
             const text2 = $createTextNode('2');
@@ -133,9 +136,10 @@ describe('LexicalNodeHelpers tests', () => {
           });
 
           await editor.update(() => {
-            const paragraph = $getRoot().getFirstChild<ParagraphNode>();
+            const paragraph = $getRoot().getFirstChild<ParagraphNode>()!;
 
-            const overflowRight = $getNodeByKey<OverflowNode>(overflowRightKey);
+            const overflowRight =
+              $getNodeByKey<OverflowNode>(overflowRightKey)!;
 
             mergePrevious(overflowRight);
 
@@ -168,8 +172,9 @@ describe('LexicalNodeHelpers tests', () => {
           let text3Key: NodeKey;
 
           await editor.update(() => {
-            const overflowLeft = $getNodeByKey<OverflowNode>(overflowLeftKey);
-            const overflowRight = $getNodeByKey<OverflowNode>(overflowRightKey);
+            const overflowLeft = $getNodeByKey<OverflowNode>(overflowLeftKey)!;
+            const overflowRight =
+              $getNodeByKey<OverflowNode>(overflowRightKey)!;
 
             const text1 = $createTextNode('1');
             const text2 = $createTextNode('2');
@@ -202,8 +207,9 @@ describe('LexicalNodeHelpers tests', () => {
           });
 
           await editor.update(() => {
-            const paragraph = $getRoot().getFirstChild<ParagraphNode>();
-            const overflowRight = $getNodeByKey<OverflowNode>(overflowRightKey);
+            const paragraph = $getRoot().getFirstChild<ParagraphNode>()!;
+            const overflowRight =
+              $getNodeByKey<OverflowNode>(overflowRightKey)!;
 
             mergePrevious(overflowRight);
 

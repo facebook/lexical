@@ -37,6 +37,55 @@ If you've used React Hooks before, you can think of `$` functions as being somet
 
 Internally, we've found this scales really well and developers get to grips with it in almost no time at all.
 
+## When does reconciliation happen?
+
+Reconciliation is scheduled with
+[queueMicrotask](https://developer.mozilla.org/en-US/docs/Web/API/queueMicrotask),
+which means that it will happen very soon, but asynchronously. This is similar
+to something like `setTimeout(reconcile, 0)` with a bit more immediacy or
+`Promise.resolve().then(reconcile)` with less overhead. This is done so
+that all of the updates that occur as a result of a single logical event will
+be batched into one reconciliation.
+
+You can force a reconciliation to take place synchronously with the discrete
+option to `editor.update` (demonstrated below).
+
+## Why do tests use `await editor.update(…)`
+
+You may notice that many tests look like this:
+
+```js
+await editor.update(updateA);
+await editor.update(updateB);
+```
+
+An astute observer would notice that this seems very strange, since
+`editor.update()` returns `void` and not `Promise<void>`. However,
+it does happen to work as you would want it to because
+the implementation of Promise uses the same microtask queue.
+
+It's not recommended to rely on this in browser code as it could depend on
+implementation details of the compilers, bundlers, and VM. It's best to stick
+to using the `discrete` or the `onUpdate` callback options to be sure that
+the reconciliation has taken place.
+
+Ignoring any other microtasks that were scheduled elsewhere,
+it is roughly equivalent to this synchronous code:
+
+```js
+editor.update(updateA, {discrete: true});
+editor.update(updateB, {discrete: true});
+```
+
+At a high level, very roughly, the order of operations looks like this:
+
+1. `editor.update()` is called
+2. `updateA()` is called and updates the editor state
+3. `editor.update()` schedules a reconciliation microtask and returns
+4. `await` schedules a resume microtask and yields control to the task executor
+5. the reconciliation microtask runs, reconciling the editor state with the DOM
+6. the resume microtask runs
+
 ## How do I listen for user text insertions?
 
 Listening to text insertion events is problematic with content editables in general. It's a common source of bugs due to how

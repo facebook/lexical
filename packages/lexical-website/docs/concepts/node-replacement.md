@@ -28,5 +28,5 @@ Once this is done, Lexical will replace all ParagraphNode instances with CustomP
      style="width:100%; height:700px; border:0; border-radius:4px; overflow:hidden;"
      title="lexical-collapsible-container-plugin-example"
      allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
-     sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+     sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-scripts"
 ></iframe>

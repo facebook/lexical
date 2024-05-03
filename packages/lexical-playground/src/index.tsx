@@ -6,13 +6,15 @@
  *
  */
 
-import './setupEnv';
 import './index.css';
 
 import * as React from 'react';
 import {createRoot} from 'react-dom/client';
 
 import App from './App';
+import setupEnv from './setupEnv';
+
+setupEnv();
 
 // Handle runtime errors
 const showErrorOverlay = (err: Event) => {

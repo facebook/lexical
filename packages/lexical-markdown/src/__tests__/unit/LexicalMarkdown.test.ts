@@ -29,6 +29,7 @@ describe('Markdown', () => {
     skipExport?: true;
     skipImport?: true;
     shouldIncludeBlankLines?: true;
+    isNewlineDelimited?: false;
   }>;
 
   const URL = 'https://lexical.dev';
@@ -150,6 +151,7 @@ describe('Markdown', () => {
     },
     {
       html: '<h1><span style="white-space: pre-wrap;">Hello</span></h1><p><br></p><p><br></p><p><br></p><p><b><strong style="white-space: pre-wrap;">world</strong></b><span style="white-space: pre-wrap;">!</span></p>',
+      isNewlineDelimited: false,
       md: '# Hello\n\n\n\n**world**!',
       shouldIncludeBlankLines: true,
     },
@@ -268,7 +270,7 @@ describe('Markdown', () => {
     });
   }
 
-  for (const {html, md, skipExport} of IMPORT_AND_EXPORT) {
+  for (const {html, md, skipExport, isNewlineDelimited} of IMPORT_AND_EXPORT) {
     if (skipExport) {
       continue;
     }
@@ -301,7 +303,13 @@ describe('Markdown', () => {
       expect(
         editor
           .getEditorState()
-          .read(() => $convertToMarkdownString(TRANSFORMERS)),
+          .read(() =>
+            $convertToMarkdownString(
+              TRANSFORMERS,
+              undefined,
+              isNewlineDelimited,
+            ),
+          ),
       ).toBe(md);
     });
   }

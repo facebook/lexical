@@ -168,10 +168,9 @@ export default function FontSize({
   };
 
   const handleBlurEvent = () => {
-    const inputValueNumber = Number(selectionFontSize);
-    const prevFontSize = inputValueNumber;
-    setInputValue(String(prevFontSize));
-    updateFontSizeInSelection(String(prevFontSize) + 'px', null);
+    if (inputValue !== selectionFontSize) {
+      setInputValue(selectionFontSize);
+    }
   };
 
   React.useEffect(() => {

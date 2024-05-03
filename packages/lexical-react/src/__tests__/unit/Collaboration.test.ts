@@ -336,26 +336,26 @@ describe('Collaboration', () => {
       client1.update(() => {
         const root = $getRoot();
 
-        const paragraph1 = root.getFirstChild<ParagraphNode>() as ParagraphNode;
+        const paragraph0 = root.getFirstChild<ParagraphNode>() as ParagraphNode;
+        paragraph0.append($createTextNode('line0'));
+
+        const paragraph1 = $createParagraphNode();
         paragraph1.append($createTextNode('line1'));
 
         const paragraph2 = $createParagraphNode();
         paragraph2.append($createTextNode('line2'));
 
-        const paragraph3 = $createParagraphNode();
-        paragraph3.append($createTextNode('line3'));
-
         // paragraph4 is empty.
+        const paragraph3 = $createParagraphNode();
+        paragraph3.append($createTextNode(''));
+
         const paragraph4 = $createParagraphNode();
-        paragraph4.append($createTextNode(''));
+        paragraph4.append($createTextNode('line4'));
 
-        const paragraph5 = $createParagraphNode();
-        paragraph5.append($createTextNode('line5'));
-
-        root.append(paragraph1, paragraph2, paragraph3, paragraph4, paragraph5);
+        root.append(paragraph0, paragraph1, paragraph2, paragraph3, paragraph4);
 
         // select empty paragraph
-        paragraph4.selectEnd();
+        paragraph3.selectEnd();
       });
     });
 
@@ -364,12 +364,12 @@ describe('Collaboration', () => {
         const root = $getRoot();
 
         const paragraphs = root.getChildren();
+        const paragraph2 = paragraphs[2];
         const paragraph3 = paragraphs[3];
-        const paragraph4 = paragraphs[4];
 
         // remove the empty paragraph and the previous paragraph of it
+        paragraph2.remove();
         paragraph3.remove();
-        paragraph4.remove();
       });
     });
 

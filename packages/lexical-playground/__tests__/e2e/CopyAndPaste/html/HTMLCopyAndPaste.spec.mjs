@@ -208,8 +208,14 @@ test.describe('HTML CopyAndPaste', () => {
       await assertHTML(
         page,
         html`
-          <hr class="" contenteditable="false" data-lexical-decorator="true" />
-          <hr class="" contenteditable="false" data-lexical-decorator="true" />
+          <hr
+            class="PlaygroundEditorTheme__hr"
+            contenteditable="false"
+            data-lexical-decorator="true" />
+          <hr
+            class="PlaygroundEditorTheme__hr"
+            contenteditable="false"
+            data-lexical-decorator="true" />
           <div
             class="PlaygroundEditorTheme__blockCursor"
             contenteditable="false"
@@ -228,13 +234,19 @@ test.describe('HTML CopyAndPaste', () => {
     await assertHTML(
       page,
       html`
-        <hr class="" contenteditable="false" data-lexical-decorator="true" />
+        <hr
+          class="PlaygroundEditorTheme__hr"
+          contenteditable="false"
+          data-lexical-decorator="true" />
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr">
           <span data-lexical-text="true">Text between HRs</span>
         </p>
-        <hr class="" contenteditable="false" data-lexical-decorator="true" />
+        <hr
+          class="PlaygroundEditorTheme__hr"
+          contenteditable="false"
+          data-lexical-decorator="true" />
       `,
     );
     await assertSelection(page, {
@@ -266,7 +278,10 @@ test.describe('HTML CopyAndPaste', () => {
           dir="ltr">
           <span data-lexical-text="true">Hello</span>
         </p>
-        <hr class="" contenteditable="false" data-lexical-decorator="true" />
+        <hr
+          class="PlaygroundEditorTheme__hr"
+          contenteditable="false"
+          data-lexical-decorator="true" />
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
           dir="ltr">

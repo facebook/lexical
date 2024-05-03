@@ -37,6 +37,7 @@
     "yjs": ">=13.5.42"
   },
   "devDependencies": {
+    "@rollup/plugin-commonjs": "^25.0.7",
     "@types/lodash-es": "^4.14.182",
     "@vitejs/plugin-react": "^4.2.1",
     "rollup-plugin-copy": "^3.5.0",

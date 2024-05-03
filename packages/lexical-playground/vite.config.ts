@@ -7,6 +7,7 @@
  */
 
 import babel from '@rollup/plugin-babel';
+import commonjs from '@rollup/plugin-commonjs';
 import react from '@vitejs/plugin-react';
 import {createRequire} from 'node:module';
 import {defineConfig} from 'vite';
@@ -25,6 +26,16 @@ export default defineConfig({
       input: {
         main: new URL('./index.html', import.meta.url).pathname,
         split: new URL('./split/index.html', import.meta.url).pathname,
+      },
+      onwarn(warning, warn) {
+        if (
+          warning.code === 'EVAL' &&
+          warning.id &&
+          /[\\/]node_modules[\\/]@excalidraw\/excalidraw[\\/]/.test(warning.id)
+        ) {
+          return;
+        }
+        warn(warning);
       },
     },
   },
@@ -59,6 +70,7 @@ export default defineConfig({
     }),
     react(),
     viteCopyEsm(),
+    commonjs(),
   ],
   resolve: {
     alias: moduleResolution,

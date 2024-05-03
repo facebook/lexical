@@ -44,7 +44,13 @@ import normalizeClassNames from 'shared/normalizeClassNames';
 export {default as markSelection} from './markSelection';
 export {default as mergeRegister} from './mergeRegister';
 export {default as positionNodeOnRange} from './positionNodeOnRange';
-export {$splitNode, isHTMLAnchorElement, isHTMLElement} from 'lexical';
+export {
+  $splitNode,
+  isBlockDomNode,
+  isHTMLAnchorElement,
+  isHTMLElement,
+  isInlineDomNode,
+} from 'lexical';
 // Hotfix to export these with inlined types #5918
 export const CAN_USE_BEFORE_INPUT: boolean = CAN_USE_BEFORE_INPUT_;
 export const CAN_USE_DOM: boolean = CAN_USE_DOM_;

@@ -62,6 +62,7 @@ import {
   getCachedClassNameArray,
   internalMarkSiblingsAsDirty,
   isHTMLElement,
+  isInlineDomNode,
   toggleTextFormatType,
 } from '../LexicalUtils';
 import {$createLineBreakNode} from './LexicalLineBreakNode';
@@ -1261,11 +1262,6 @@ function convertTextDOMNode(domNode: Node): DOMConversionOutput {
   return {node: $createTextNode(textContent)};
 }
 
-const inlineParents = new RegExp(
-  /^(a|abbr|acronym|b|cite|code|del|em|i|ins|kbd|label|output|q|ruby|s|samp|span|strong|sub|sup|time|u|tt|var)$/,
-  'i',
-);
-
 function findTextInLine(text: Text, forward: boolean): null | Text {
   let node: Node = text;
   // eslint-disable-next-line no-constant-condition
@@ -1284,7 +1280,7 @@ function findTextInLine(text: Text, forward: boolean): null | Text {
     if (node.nodeType === DOM_ELEMENT_TYPE) {
       const display = (node as HTMLElement).style.display;
       if (
-        (display === '' && node.nodeName.match(inlineParents) === null) ||
+        (display === '' && !isInlineDomNode(node)) ||
         (display !== '' && !display.startsWith('inline'))
       ) {
         return null;

@@ -103,6 +103,7 @@ export type EditorThemeClasses = {
     h5?: EditorThemeClassName;
     h6?: EditorThemeClassName;
   };
+  hr?: EditorThemeClassName;
   image?: EditorThemeClassName;
   link?: EditorThemeClassName;
   list?: {

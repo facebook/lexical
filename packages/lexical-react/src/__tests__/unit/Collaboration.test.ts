@@ -6,7 +6,14 @@
  *
  */
 
-import {$createTextNode, $getRoot, ParagraphNode, TextNode} from 'lexical';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  $getSelection,
+  ParagraphNode,
+  TextNode,
+} from 'lexical';
 
 import {createTestConnection, waitForReact} from './utils';
 
@@ -308,6 +315,74 @@ describe('Collaboration', () => {
     expect(client2.awareness.getLocalState().awarenessData).toEqual(
       awarenessData2,
     );
+
+    client1.stop();
+    client2.stop();
+  });
+
+  it('Cursor shifts to previous paragraph when other client delete focusing paragraph', async () => {
+    const connector = createTestConnection();
+
+    const client1 = connector.createClient('1');
+    const client2 = connector.createClient('2');
+
+    client1.start(container);
+    client2.start(container);
+
+    await expectCorrectInitialContent(client1, client2);
+
+    // create 5 paragraphs
+    await waitForReact(() => {
+      client1.update(() => {
+        const root = $getRoot();
+
+        const paragraph1 = root.getFirstChild<ParagraphNode>() as ParagraphNode;
+        paragraph1.append($createTextNode('line1'));
+
+        const paragraph2 = $createParagraphNode();
+        paragraph2.append($createTextNode('line2'));
+
+        const paragraph3 = $createParagraphNode();
+        paragraph3.append($createTextNode('line3'));
+
+        // paragraph4 is empty.
+        const paragraph4 = $createParagraphNode();
+        paragraph4.append($createTextNode(''));
+
+        const paragraph5 = $createParagraphNode();
+        paragraph5.append($createTextNode('line5'));
+
+        root.append(paragraph1, paragraph2, paragraph3, paragraph4, paragraph5);
+
+        // select empty paragraph
+        paragraph4.selectEnd();
+      });
+    });
+
+    await waitForReact(() => {
+      client2.update(() => {
+        const root = $getRoot();
+
+        const paragraphs = root.getChildren();
+        const paragraph3 = paragraphs[3];
+        const paragraph4 = paragraphs[4];
+
+        // remove the empty paragraph and the previous paragraph of it
+        paragraph3.remove();
+        paragraph4.remove();
+      });
+    });
+
+    let selctedParagraphText = '';
+    await waitForReact(() => {
+      client1.getEditorState().read(() => {
+        const selection = $getSelection();
+        selctedParagraphText = selection?.getNodes()[0].getTextContent();
+      });
+    });
+
+    // selection should move to previous paragraph of deleted focusing paragraphs
+    expect(selctedParagraphText).toEqual('line1');
 
     client1.stop();
     client2.stop();

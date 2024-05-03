@@ -172,6 +172,8 @@ export default function ActionsPlugin({
         $convertFromMarkdownString(
           firstChild.getTextContent(),
           PLAYGROUND_TRANSFORMERS,
+          undefined, // node
+          true, // include blank lines
         );
       } else {
         const markdown = $convertToMarkdownString(PLAYGROUND_TRANSFORMERS);

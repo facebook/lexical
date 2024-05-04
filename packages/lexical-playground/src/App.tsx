@@ -19,7 +19,7 @@ import {SharedAutocompleteContext} from './context/SharedAutocompleteContext';
 import {SharedHistoryContext} from './context/SharedHistoryContext';
 import Editor from './Editor';
 import logo from './images/logo.svg';
-import PlaygroundNodes from './nodes/PlaygroundNodes';
+import {NODES} from './nodes/PlaygroundNodes';
 import DocsPlugin from './plugins/DocsPlugin';
 import PasteLogPlugin from './plugins/PasteLogPlugin';
 import {TableContext} from './plugins/TablePlugin';
@@ -27,6 +27,7 @@ import TestRecorderPlugin from './plugins/TestRecorderPlugin';
 import TypingPerfPlugin from './plugins/TypingPerfPlugin';
 import Settings from './Settings';
 import PlaygroundEditorTheme from './themes/PlaygroundEditorTheme';
+import onError from './utils/onError';
 
 console.warn(
   'If you are profiling the playground app, please ensure you turn off the debug view. You can disable it by pressing on the settings control in the bottom-left of your screen and toggling the debug view setting.',
@@ -124,10 +125,8 @@ function App(): JSX.Element {
       ? undefined
       : prepopulatedRichText,
     namespace: 'Playground',
-    nodes: [...PlaygroundNodes],
-    onError: (error: Error) => {
-      throw error;
-    },
+    nodes: [...NODES],
+    onError,
     theme: PlaygroundEditorTheme,
   };
 
@@ -148,7 +147,6 @@ function App(): JSX.Element {
             {isDevPlayground ? <DocsPlugin /> : null}
             {isDevPlayground ? <PasteLogPlugin /> : null}
             {isDevPlayground ? <TestRecorderPlugin /> : null}
-
             {measureTypingPerf ? <TypingPerfPlugin /> : null}
           </SharedAutocompleteContext>
         </TableContext>

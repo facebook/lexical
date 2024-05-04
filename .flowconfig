@@ -39,6 +39,7 @@ module.name_mapper='^@lexical/plain-text$' -> '<PROJECT_ROOT>/packages/lexical-p
 module.name_mapper='^@lexical/react/LexicalAutoEmbedPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalAutoEmbedPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalAutoFocusPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalAutoFocusPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalAutoLinkPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalAutoLinkPlugin.js.flow'
+module.name_mapper='^@lexical/react/LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL.js.flow'
 module.name_mapper='^@lexical/react/LexicalBlockWithAlignableContents$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalBlockWithAlignableContents.js.flow'
 module.name_mapper='^@lexical/react/LexicalCharacterLimitPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalCharacterLimitPlugin.js.flow'
 module.name_mapper='^@lexical/react/LexicalCheckListPlugin$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalCheckListPlugin.js.flow'

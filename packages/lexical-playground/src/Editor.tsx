@@ -7,6 +7,7 @@
  */
 
 import {AutoFocusPlugin} from '@lexical/react/LexicalAutoFocusPlugin';
+import {LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL} from '@lexical/react/LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL';
 import {CharacterLimitPlugin} from '@lexical/react/LexicalCharacterLimitPlugin';
 import {CheckListPlugin} from '@lexical/react/LexicalCheckListPlugin';
 import {ClearEditorPlugin} from '@lexical/react/LexicalClearEditorPlugin';
@@ -29,6 +30,7 @@ import {CAN_USE_DOM} from 'shared/canUseDOM';
 import {createWebsocketProvider} from './collaboration';
 import {useSettings} from './context/SettingsContext';
 import {useSharedHistoryContext} from './context/SharedHistoryContext';
+import {BLOCK_NODES} from './nodes/PlaygroundNodes';
 import ActionsPlugin from './plugins/ActionsPlugin';
 import AutocompletePlugin from './plugins/AutocompletePlugin';
 import AutoEmbedPlugin from './plugins/AutoEmbedPlugin';
@@ -70,6 +72,7 @@ import TwitterPlugin from './plugins/TwitterPlugin';
 import YouTubePlugin from './plugins/YouTubePlugin';
 import ContentEditable from './ui/ContentEditable';
 import Placeholder from './ui/Placeholder';
+import onError from './utils/onError';
 
 const skipCollaborationInit =
   // @ts-expect-error
@@ -142,7 +145,6 @@ export default function Editor(): JSX.Element {
         <ComponentPickerPlugin />
         <EmojiPickerPlugin />
         <AutoEmbedPlugin />
-
         <MentionsPlugin />
         <EmojisPlugin />
         <HashtagPlugin />
@@ -151,6 +153,10 @@ export default function Editor(): JSX.Element {
         <AutoLinkPlugin />
         <CommentPlugin
           providerFactory={isCollab ? createWebsocketProvider : undefined}
+        />
+        <LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL
+          blockNodes={BLOCK_NODES}
+          onError={onError}
         />
         {isRichText ? (
           <>

@@ -35,6 +35,9 @@
       "@lexical/react/LexicalAutoLinkPlugin": [
         "../lexical-react/src/LexicalAutoLinkPlugin.ts"
       ],
+      "@lexical/react/LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL": [
+        "../lexical-react/src/LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL.tsx"
+      ],
       "@lexical/react/LexicalBlockWithAlignableContents": [
         "../lexical-react/src/LexicalBlockWithAlignableContents.tsx"
       ],

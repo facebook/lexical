@@ -1,0 +1,29 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict
+ */
+
+import type {ElementNode, DecoratorNode} from 'lexical';
+import {LexicalEditor} from 'lexical';
+import * as React from 'react';
+
+export type BlockNode<T> = ElementNode | DecoratorNode<T>;
+export type BlockNodeKlass<T> = Class<BlockNode<T>>;
+
+declare export function LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL(props: {
+  onError?: (message: string) => void;
+  onInfo?: (message: string) => void;
+  blockNodes: Array<Class<React.Node>>;
+}): React$Node;
+
+declare export function registerBlockNodeNormalizerPlugin__EXPERIMENTAL<T>(
+  editor: LexicalEditor,
+  nodes: Array<Class<T>>, {
+    onError?: (message: string) => void;
+    onInfo?: (message: string) => void;
+  },
+): () => void;

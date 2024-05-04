@@ -69,7 +69,15 @@ export class OverflowNode extends ElementNode {
     return parent.insertNewAfter(selection, restoreSelection);
   }
 
-  excludeFromCopy(): boolean {
+  canBeEmpty(): false {
+    return false;
+  }
+
+  isInline(): true {
+    return true;
+  }
+
+  excludeFromCopy(): true {
     return true;
   }
 }

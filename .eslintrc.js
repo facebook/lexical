@@ -37,7 +37,7 @@ module.exports = {
         'packages/*/__tests__/**/*.?(m)js',
         'packages/*/src/**/*.jsx',
       ],
-      parser: 'babel-eslint',
+      parser: '@babel/eslint-parser',
       parserOptions: {
         allowImportExportEverywhere: true,
         sourceType: 'module',
@@ -112,7 +112,7 @@ module.exports = {
     },
   ],
 
-  parser: 'babel-eslint',
+  parser: '@babel/eslint-parser',
 
   parserOptions: {
     ecmaFeatures: {
@@ -153,9 +153,9 @@ module.exports = {
     'eol-last': ERROR,
     eqeqeq: [ERROR, 'allow-null'],
     // Prettier forces semicolons in a few places
-    'flowtype/object-type-delimiter': OFF,
+    'ft-flow/object-type-delimiter': OFF,
 
-    'flowtype/sort-keys': ERROR,
+    'ft-flow/sort-keys': ERROR,
 
     'header/header': [2, 'scripts/www/headerTemplate.js'],
 

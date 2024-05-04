@@ -222,7 +222,7 @@ describe('LexicalNodeHelpers tests', () => {
         root.append(paragraph, paragraph2);
       });
       await editor.update(() => {
-        const paragraph = $getNodeByKey(paragraphKey);
+        const paragraph = $getNodeByKey(paragraphKey)!;
 
         expect($dfs(paragraph ?? undefined)).toEqual([
           {

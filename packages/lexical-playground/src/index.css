@@ -536,6 +536,10 @@ i.export {
   background-image: url(images/icons/download.svg);
 }
 
+i.share {
+  background-image: url(images/icons/send.svg);
+}
+
 i.diagram-2 {
   background-image: url(images/icons/diagram-2.svg);
 }

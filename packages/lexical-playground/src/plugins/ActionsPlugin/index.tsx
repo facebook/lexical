@@ -9,7 +9,13 @@
 import type {LexicalEditor} from 'lexical';
 
 import {$createCodeNode, $isCodeNode} from '@lexical/code';
-import {exportFile, importFile} from '@lexical/file';
+import {
+  editorStateFromSerializedDocument,
+  exportFile,
+  importFile,
+  SerializedDocument,
+  serializedDocumentFromEditorState,
+} from '@lexical/file';
 import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
@@ -23,6 +29,7 @@ import {
   $getRoot,
   $isParagraphNode,
   CLEAR_EDITOR_COMMAND,
+  CLEAR_HISTORY_COMMAND,
   COMMAND_PRIORITY_EDITOR,
 } from 'lexical';
 import * as React from 'react';
@@ -74,6 +81,80 @@ async function validateEditorState(editor: LexicalEditor): Promise<void> {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function* generateReader<T = any>(
+  reader: ReadableStreamDefaultReader<T>,
+) {
+  let done = false;
+  while (!done) {
+    const res = await reader.read();
+    const {value} = res;
+    if (value !== undefined) {
+      yield value;
+    }
+    done = res.done;
+  }
+}
+
+async function readBytestoString(
+  reader: ReadableStreamDefaultReader,
+): Promise<string> {
+  const output = [];
+  const chunkSize = 0x8000;
+  for await (const value of generateReader(reader)) {
+    for (let i = 0; i < value.length; i += chunkSize) {
+      output.push(String.fromCharCode(...value.subarray(i, i + chunkSize)));
+    }
+  }
+  return output.join('');
+}
+
+async function docToHash(doc: SerializedDocument): Promise<string> {
+  const cs = new CompressionStream('gzip');
+  const writer = cs.writable.getWriter();
+  const [, output] = await Promise.all([
+    writer
+      .write(new TextEncoder().encode(JSON.stringify(doc)))
+      .then(() => writer.close()),
+    readBytestoString(cs.readable.getReader()),
+  ]);
+  return `#doc=${btoa(output)
+    .replace(/\//g, '_')
+    .replace(/\+/g, '-')
+    .replace(/=+$/, '')}`;
+}
+
+async function docFromHash(hash: string): Promise<SerializedDocument | null> {
+  const m = /^#doc=(.*)$/.exec(hash);
+  if (!m) {
+    return null;
+  }
+  const ds = new DecompressionStream('gzip');
+  const writer = ds.writable.getWriter();
+  const b64 = atob(m[1].replace(/_/g, '/').replace(/-/g, '+'));
+  const array = new Uint8Array(b64.length);
+  for (let i = 0; i < b64.length; i++) {
+    array[i] = b64.charCodeAt(i);
+  }
+  const closed = writer.write(array.buffer).then(() => writer.close());
+  const output = [];
+  for await (const chunk of generateReader(
+    ds.readable.pipeThrough(new TextDecoderStream()).getReader(),
+  )) {
+    output.push(chunk);
+  }
+  await closed;
+  return JSON.parse(output.join(''));
+}
+
+async function shareDoc(doc: SerializedDocument): Promise<void> {
+  const url = new URL(window.location.toString());
+  url.hash = await docToHash(doc);
+  const newUrl = url.toString();
+  window.history.replaceState({}, '', newUrl);
+  await window.navigator.clipboard.writeText(newUrl);
+}
+
 export default function ActionsPlugin({
   isRichText,
 }: {
@@ -86,7 +167,14 @@ export default function ActionsPlugin({
   const [isEditorEmpty, setIsEditorEmpty] = useState(true);
   const [modal, showModal] = useModal();
   const {isCollabActive} = useCollaborationContext();
-
+  useEffect(() => {
+    docFromHash(window.location.hash).then((doc) => {
+      if (doc) {
+        editor.setEditorState(editorStateFromSerializedDocument(editor, doc));
+        editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined);
+      }
+    });
+  }, [editor]);
   useEffect(() => {
     return mergeRegister(
       editor.registerEditableListener((editable) => {
@@ -194,6 +282,24 @@ export default function ActionsPlugin({
         title="Export"
         aria-label="Export editor state to JSON">
         <i className="export" />
+      </button>
+      <button
+        className="action-button share"
+        onClick={() =>
+          shareDoc(
+            serializedDocumentFromEditorState(editor.getEditorState(), {
+              source: 'Playground',
+            }),
+          ).then(() => {
+            showModal('URL copied to clipboard', (onClose) => {
+              setTimeout(onClose, 1000);
+              return <>URL copied</>;
+            });
+          })
+        }
+        title="Share"
+        aria-label="Share Playground link to current editor state">
+        <i className="share" />
       </button>
       <button
         className="action-button clear"

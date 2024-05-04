@@ -18,8 +18,6 @@ import {
   TableRowNode,
 } from '@lexical/table';
 import {
-  type LexicalEditor,
-  type LexicalNode,
   $createLineBreakNode,
   $createNodeSelection,
   $createParagraphNode,
@@ -35,6 +33,8 @@ import {
   createCommand,
   EditorState,
   ElementNode,
+  type LexicalEditor,
+  type LexicalNode,
   ParagraphNode,
   RootNode,
   TextNode,

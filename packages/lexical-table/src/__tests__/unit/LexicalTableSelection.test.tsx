@@ -8,12 +8,12 @@
 
 import {$createTableSelection} from '@lexical/table';
 import {
-  type LexicalEditor,
   $createParagraphNode,
   $createTextNode,
   $getRoot,
   $setSelection,
   EditorState,
+  type LexicalEditor,
   ParagraphNode,
   RootNode,
   TextNode,

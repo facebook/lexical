@@ -7,6 +7,7 @@
  */
 
 import babel from '@rollup/plugin-babel';
+import commonjs from '@rollup/plugin-commonjs';
 import react from '@vitejs/plugin-react';
 import {defineConfig} from 'vite';
 import {replaceCodePlugin} from 'vite-plugin-replace';
@@ -17,7 +18,6 @@ import viteCopyEsm from './viteCopyEsm';
 // https://vitejs.dev/config/
 export default defineConfig({
   build: {
-    commonjsOptions: {include: []},
     minify: 'terser',
     outDir: 'build',
     rollupOptions: {
@@ -25,11 +25,22 @@ export default defineConfig({
         main: new URL('./index.html', import.meta.url).pathname,
         split: new URL('./split/index.html', import.meta.url).pathname,
       },
+      onwarn(warning, warn) {
+        if (
+          warning.code === 'EVAL' &&
+          warning.id &&
+          /[\\/]node_modules[\\/]@excalidraw\/excalidraw[\\/]/.test(warning.id)
+        ) {
+          return;
+        }
+        warn(warning);
+      },
     },
     terserOptions: {
       compress: {
         toplevel: true,
       },
+      keep_classnames: true,
     },
   },
   define: {
@@ -40,7 +51,7 @@ export default defineConfig({
       replacements: [
         {
           from: /__DEV__/g,
-          to: 'true',
+          to: 'false',
         },
       ],
     }),
@@ -55,8 +66,9 @@ export default defineConfig({
     }),
     react(),
     viteCopyEsm(),
+    commonjs(),
   ],
   resolve: {
-    alias: moduleResolution,
+    alias: moduleResolution('production'),
   },
 });

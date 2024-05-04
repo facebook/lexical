@@ -6,8 +6,6 @@
  *
  */
 
-
-
 import type {
   DecoratorNode,
   ElementNode,
@@ -44,15 +42,15 @@ const emptyFunction = () => {};
  *
  * @param blockNodes array of blockNode (aka elementNode.isInline() === false)
  * @param onError won't be fixed
- * @param onInfo
+ * @param onWarn
  */
 export function LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL({
   blockNodes,
   onError,
-  onInfo,
+  onWarn,
 }: {
   onError?: (message: string) => void;
-  onInfo?: (message: string) => void;
+  onWarn?: (message: string) => void;
   blockNodes: Array<BlockNodeKlass<JSX.Element>>;
 }): null {
   const [editor] = useLexicalComposerContext();
@@ -60,9 +58,9 @@ export function LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL({
   useEffect(() => {
     return registerBlockNodeNormalizerPlugin__EXPERIMENTAL(editor, blockNodes, {
       onError,
-      onInfo,
+      onWarn,
     });
-  }, [editor, blockNodes, onError, onInfo]);
+  }, [editor, blockNodes, onError, onWarn]);
 
   return null;
 }
@@ -72,10 +70,10 @@ export function registerBlockNodeNormalizerPlugin__EXPERIMENTAL<T>(
   nodes: Array<BlockNodeKlass<T>>,
   optional: {
     onError?: (message: string) => void;
-    onInfo?: (message: string) => void;
+    onWarn?: (message: string) => void;
   } = {},
 ): () => void {
-  const {onError = emptyFunction, onInfo = emptyFunction} = optional;
+  const {onError = emptyFunction, onWarn = emptyFunction} = optional;
   let lastPasteCommand = 0;
 
   const nodeTransform = (node: BlockNode<T>) => {
@@ -106,7 +104,7 @@ export function registerBlockNodeNormalizerPlugin__EXPERIMENTAL<T>(
     // Log structural issues only once, and then separate events if it's
     // related to copy-pasting
     const isPasting = lastPasteCommand + 250 > Date.now();
-    onInfo(
+    onWarn(
       `Found top level node ${node.getKey()} ${
         node.constructor.name
       } inside ${parent.getKey()} ${parent.constructor.name}${

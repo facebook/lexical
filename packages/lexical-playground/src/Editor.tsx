@@ -73,6 +73,7 @@ import YouTubePlugin from './plugins/YouTubePlugin';
 import ContentEditable from './ui/ContentEditable';
 import Placeholder from './ui/Placeholder';
 import onError from './utils/onError';
+import onWarn from './utils/onWarn';
 
 const skipCollaborationInit =
   // @ts-expect-error
@@ -157,6 +158,7 @@ export default function Editor(): JSX.Element {
         <LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL
           blockNodes={BLOCK_NODES}
           onError={onError}
+          onWarn={onWarn}
         />
         {isRichText ? (
           <>

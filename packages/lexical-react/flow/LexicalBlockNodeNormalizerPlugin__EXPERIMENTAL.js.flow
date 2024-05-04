@@ -16,7 +16,7 @@ export type BlockNodeKlass<T> = Class<BlockNode<T>>;
 
 declare export function LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL(props: {
   onError?: (message: string) => void;
-  onInfo?: (message: string) => void;
+  onWarn?: (message: string) => void;
   blockNodes: Array<Class<React.Node>>;
 }): React$Node;
 
@@ -24,6 +24,6 @@ declare export function registerBlockNodeNormalizerPlugin__EXPERIMENTAL<T>(
   editor: LexicalEditor,
   nodes: Array<Class<T>>, {
     onError?: (message: string) => void;
-    onInfo?: (message: string) => void;
+    onWarn?: (message: string) => void;
   },
 ): () => void;

@@ -6,12 +6,11 @@
  *
  */
 
-import {$selectAll} from 'lexical';
-
 import {
   deleteNextWord,
   moveLeft,
   moveToEditorBeginning,
+  selectAll,
 } from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
@@ -952,7 +951,7 @@ test.describe('Mentions', () => {
 
     await waitForSelector(page, '.mention');
 
-    $selectAll();
+    await selectAll(page);
 
     await pasteFromClipboard(page, {
       'text/html':

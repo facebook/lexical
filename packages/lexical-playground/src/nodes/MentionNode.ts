@@ -6,9 +6,8 @@
  *
  */
 
-import type {Spread} from 'lexical';
-
 import {
+  $applyNodeReplacement,
   type DOMConversionMap,
   type DOMConversionOutput,
   type DOMExportOutput,
@@ -16,7 +15,7 @@ import {
   type LexicalNode,
   type NodeKey,
   type SerializedTextNode,
-  $applyNodeReplacement,
+  type Spread,
   TextNode,
 } from 'lexical';
 

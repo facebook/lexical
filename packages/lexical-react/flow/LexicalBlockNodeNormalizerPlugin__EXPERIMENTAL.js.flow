@@ -13,17 +13,19 @@ import * as React from 'react';
 
 export type BlockNode<T> = ElementNode | DecoratorNode<T>;
 export type BlockNodeKlass<T> = Class<BlockNode<T>>;
+export type OnNormalizeFn<T> = (
+  node: BlockNode<T>,
+  previousParent: ElementNode,
+  event?: 'paste',
+) => void;
 
 declare export function LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL(props: {
-  onError?: (message: string) => void;
-  onWarn?: (message: string) => void;
   blockNodes: Array<Class<React.Node>>;
+  $onNormalize?: OnNormalizeFn<React.Node>;
 }): React$Node;
 
 declare export function registerBlockNodeNormalizerPlugin__EXPERIMENTAL<T>(
   editor: LexicalEditor,
-  nodes: Array<Class<T>>, {
-    onError?: (message: string) => void;
-    onWarn?: (message: string) => void;
-  },
+  nodes: Array<Class<T>>,
+  $onNormalize?: OnNormalizeFn<React.Node>
 ): () => void;

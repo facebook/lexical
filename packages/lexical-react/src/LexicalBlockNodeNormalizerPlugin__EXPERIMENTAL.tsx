@@ -27,9 +27,15 @@ import {
   PASTE_COMMAND,
 } from 'lexical';
 import {useEffect} from 'react';
+import invariant from 'shared/invariant';
 
 export type BlockNode<T> = ElementNode | DecoratorNode<T>;
 export type BlockNodeKlass<T> = Klass<BlockNode<T>>;
+export type OnNormalizeFn<T> = (
+  node: BlockNode<T>,
+  previousParent: ElementNode,
+  event?: 'paste',
+) => void;
 
 const emptyFunction = () => {};
 
@@ -46,21 +52,20 @@ const emptyFunction = () => {};
  */
 export function LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL({
   blockNodes,
-  onError,
-  onWarn,
+  $onNormalize,
 }: {
-  onError?: (message: string) => void;
-  onWarn?: (message: string) => void;
   blockNodes: Array<BlockNodeKlass<JSX.Element>>;
+  $onNormalize?: OnNormalizeFn<JSX.Element>;
 }): null {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
-    return registerBlockNodeNormalizerPlugin__EXPERIMENTAL(editor, blockNodes, {
-      onError,
-      onWarn,
-    });
-  }, [editor, blockNodes, onError, onWarn]);
+    return registerBlockNodeNormalizerPlugin__EXPERIMENTAL(
+      editor,
+      blockNodes,
+      $onNormalize,
+    );
+  }, [editor, blockNodes, $onNormalize]);
 
   return null;
 }
@@ -68,30 +73,22 @@ export function LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL({
 export function registerBlockNodeNormalizerPlugin__EXPERIMENTAL<T>(
   editor: LexicalEditor,
   nodes: Array<BlockNodeKlass<T>>,
-  optional: {
-    onError?: (message: string) => void;
-    onWarn?: (message: string) => void;
-  } = {},
+  $onNormalize?: OnNormalizeFn<T>,
 ): () => void {
-  const {onError = emptyFunction, onWarn = emptyFunction} = optional;
   let lastPasteCommand = 0;
 
   const nodeTransform = (node: BlockNode<T>) => {
     const parent = node.getParent<ElementNode>();
-
     if (parent === null || $isRootOrShadowRoot(parent)) {
       return;
     }
 
-    if (node.isInline()) {
-      // TODO throw an invariant (check internal)
-      onError(
-        `Node ${node.getKey()} ${
-          node.constructor.name
-        } is not a top level node (isInline() === true). Revise the BlockNodeNormalizer configuration`,
-      );
-      return;
-    }
+    invariant(
+      !node.isInline(),
+      'Node %s %s is not a top level node (isInline() === true). Revise the BlockNodeNormalizerPlugin configuration',
+      node.getKey(),
+      node.constructor.name,
+    );
 
     // Valid list nesting
     if (
@@ -101,16 +98,7 @@ export function registerBlockNodeNormalizerPlugin__EXPERIMENTAL<T>(
       return;
     }
 
-    // Log structural issues only once, and then separate events if it's
-    // related to copy-pasting
-    const isPasting = lastPasteCommand + 250 > Date.now();
-    onWarn(
-      `Found top level node ${node.getKey()} ${
-        node.constructor.name
-      } inside ${parent.getKey()} ${parent.constructor.name}${
-        isPasting ? ' (paste event)' : ''
-      }`,
-    );
+    const event = lastPasteCommand + 250 > Date.now() ? 'paste' : undefined;
 
     // For unexpected nesting within list items flatten its content by appending
     // all children of current node. It's different from other element nodes,
@@ -125,6 +113,9 @@ export function registerBlockNodeNormalizerPlugin__EXPERIMENTAL<T>(
         node.remove();
       }
 
+      if ($onNormalize != null) {
+        $onNormalize(node, parent, event);
+      }
       return;
     }
 
@@ -163,11 +154,14 @@ export function registerBlockNodeNormalizerPlugin__EXPERIMENTAL<T>(
     }
 
     parent.remove();
+    if ($onNormalize != null) {
+      $onNormalize(node, parent, event);
+    }
   };
 
   let unregisterListeners = emptyFunction;
   function registerListeners() {
-    unregisterListeners = mergeRegister(
+    return mergeRegister(
       editor.registerCommand(
         PASTE_COMMAND,
         () => {
@@ -182,16 +176,15 @@ export function registerBlockNodeNormalizerPlugin__EXPERIMENTAL<T>(
     );
   }
   if (editor.isEditable()) {
-    registerListeners();
+    unregisterListeners = registerListeners();
   }
 
   return mergeRegister(
     editor.registerEditableListener((editable) => {
+      unregisterListeners();
+      unregisterListeners = emptyFunction;
       if (editable) {
-        registerListeners();
-      } else {
-        unregisterListeners();
-        unregisterListeners = emptyFunction;
+        unregisterListeners = registerListeners();
       }
     }),
     unregisterListeners,

@@ -7,7 +7,10 @@
  */
 
 import {AutoFocusPlugin} from '@lexical/react/LexicalAutoFocusPlugin';
-import {LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL} from '@lexical/react/LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL';
+import {
+  BlockNode,
+  LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL,
+} from '@lexical/react/LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL';
 import {CharacterLimitPlugin} from '@lexical/react/LexicalCharacterLimitPlugin';
 import {CheckListPlugin} from '@lexical/react/LexicalCheckListPlugin';
 import {ClearEditorPlugin} from '@lexical/react/LexicalClearEditorPlugin';
@@ -23,8 +26,9 @@ import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {TabIndentationPlugin} from '@lexical/react/LexicalTabIndentationPlugin';
 import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
 import useLexicalEditable from '@lexical/react/useLexicalEditable';
+import {ElementNode} from 'lexical';
 import * as React from 'react';
-import {useEffect, useState} from 'react';
+import {useCallback, useEffect, useState} from 'react';
 import {CAN_USE_DOM} from 'shared/canUseDOM';
 
 import {createWebsocketProvider} from './collaboration';
@@ -72,7 +76,6 @@ import TwitterPlugin from './plugins/TwitterPlugin';
 import YouTubePlugin from './plugins/YouTubePlugin';
 import ContentEditable from './ui/ContentEditable';
 import Placeholder from './ui/Placeholder';
-import onError from './utils/onError';
 import onWarn from './utils/onWarn';
 
 const skipCollaborationInit =
@@ -157,8 +160,22 @@ export default function Editor(): JSX.Element {
         />
         <LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL
           blockNodes={BLOCK_NODES}
-          onError={onError}
-          onWarn={onWarn}
+          $onNormalize={useCallback(
+            (
+              node: BlockNode<JSX.Element>,
+              parent: ElementNode,
+              event?: 'paste',
+            ) => {
+              onWarn(
+                `Found top level node ${node.getKey()} ${
+                  node.constructor.name
+                } inside ${parent.getKey()} ${parent.constructor.name}${
+                  event != null ? ` (${event})` : ''
+                }`,
+              );
+            },
+            [],
+          )}
         />
         {isRichText ? (
           <>

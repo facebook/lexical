@@ -6,8 +6,6 @@
  *
  */
 
-
-
 import type {LexicalEditor, SerializedLexicalNode} from 'lexical';
 
 import {createHeadlessEditor} from '@lexical/headless';
@@ -88,22 +86,14 @@ describe('NestingEnforcementPlugin', () => {
         throw error;
       },
     });
-    registerBlockNodeNormalizerPlugin__EXPERIMENTAL(
-      editor,
-      [
-        HeadingNode,
-        QuoteNode,
-        ListNode,
-        ListItemNode,
-        BlockDecorator,
-        ParagraphNode,
-      ],
-      {
-        onError: (errorMessage) => {
-          throw new Error(errorMessage);
-        },
-      },
-    );
+    registerBlockNodeNormalizerPlugin__EXPERIMENTAL(editor, [
+      HeadingNode,
+      QuoteNode,
+      ListNode,
+      ListItemNode,
+      BlockDecorator,
+      ParagraphNode,
+    ]);
   });
 
   test('p > h1 > text unwraps into h1 > text', () => {

@@ -6,6 +6,8 @@
  *
  */
 
+import {$selectAll} from 'lexical';
+
 import {
   deleteNextWord,
   moveLeft,
@@ -18,6 +20,7 @@ import {
   html,
   initialize,
   IS_WINDOWS,
+  pasteFromClipboard,
   test,
   waitForSelector,
 } from '../utils/index.mjs';
@@ -928,6 +931,57 @@ test.describe('Mentions', () => {
       anchorPath: [0, 0, 0],
       focusOffset: 0,
       focusPath: [0, 0, 0],
+    });
+  });
+
+  test(`Pasting over a mention does not lead to crash`, async ({page}) => {
+    await focusEditor(page);
+    await page.keyboard.type('@Luke');
+    await assertSelection(page, {
+      anchorOffset: 5,
+      anchorPath: [0, 0, 0],
+      focusOffset: 5,
+      focusPath: [0, 0, 0],
+    });
+
+    await waitForSelector(
+      page,
+      '#typeahead-menu ul li:has-text("Luke Skywalker")',
+    );
+    await page.keyboard.press('Enter');
+
+    await waitForSelector(page, '.mention');
+
+    $selectAll();
+
+    await pasteFromClipboard(page, {
+      'text/html':
+        '<meta charset="utf-8"><span data-lexical-mention="true">Luke Skywalker</span>',
+    });
+
+    await page.keyboard.type(' foo bar');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span
+            class="mention"
+            style="background-color: rgba(24, 119, 232, 0.2);"
+            data-lexical-text="true">
+            Luke Skywalker
+          </span>
+          <span data-lexical-text="true">foo bar</span>
+        </p>
+      `,
+    );
+    await assertSelection(page, {
+      anchorOffset: 8,
+      anchorPath: [0, 1, 0],
+      focusOffset: 8,
+      focusPath: [0, 1, 0],
     });
   });
 });

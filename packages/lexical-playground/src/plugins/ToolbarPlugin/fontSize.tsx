@@ -199,7 +199,7 @@ export default function FontSize({
         min={MIN_ALLOWED_FONT_SIZE}
         max={MAX_ALLOWED_FONT_SIZE}
         onChange={(e) => setInputValue(e.target.value)}
-        onBlurCapture={handleBlurEvent}
+        onBlur={handleBlurEvent}
         onKeyDown={handleKeyPress}
       />
 

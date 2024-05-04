@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --host",
+    "dev": "vite --host --port 3000",
     "build-dev": "vite build",
     "build-prod": "vite build --config vite.prod.config.ts",
     "build-vercel": "(cd ../../ && node ./scripts/build.js) && npm run build-dev",

@@ -119,8 +119,6 @@ export function $removeNode(
     parent.selectEnd();
   }
 }
-/** @deprecated renamed to $removeNode by @lexical/eslint-plugin rules-of-lexical */
-export const removeNode = $removeNode;
 
 export type DOMConversion<T extends HTMLElement = HTMLElement> = {
   conversion: DOMConversionFn<T>;

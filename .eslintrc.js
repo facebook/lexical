@@ -82,6 +82,7 @@ module.exports = {
               // @lexical/yjs
               'createBinding',
             ],
+            isLexicalProvider: ['updateEditor'],
             isSafeDollarFunction: '$createRootNode',
           }),
         ],

@@ -51,6 +51,8 @@ import {createRoot} from 'react-dom/client';
 import * as ReactTestUtils from 'react-dom/test-utils';
 
 import {
+  $setAnchorPoint,
+  $setFocusPoint,
   applySelectionInputs,
   convertToSegmentedNode,
   convertToTokenNode,
@@ -72,8 +74,6 @@ import {
   pastePlain,
   printWhitespace,
   redo,
-  setAnchorPoint,
-  setFocusPoint,
   setNativeSelectionWithPaths,
   undo,
 } from '../utils';
@@ -2086,13 +2086,13 @@ describe('LexicalSelection tests', () => {
         paragraph.append(text, text2, text3);
         root.append(paragraph);
 
-        setAnchorPoint({
+        $setAnchorPoint({
           key: text3.getKey(),
           offset: 0,
           type: 'text',
         });
 
-        setFocusPoint({
+        $setFocusPoint({
           key: text3.getKey(),
           offset: 0,
           type: 'text',
@@ -2134,13 +2134,13 @@ describe('LexicalSelection tests', () => {
         paragraph.append(text, text2, text3, text4);
         root.append(paragraph);
 
-        setAnchorPoint({
+        $setAnchorPoint({
           key: text3.getKey(),
           offset: 0,
           type: 'text',
         });
 
-        setFocusPoint({
+        $setFocusPoint({
           key: text3.getKey(),
           offset: 0,
           type: 'text',
@@ -2178,13 +2178,13 @@ describe('LexicalSelection tests', () => {
           ),
         );
 
-        setAnchorPoint({
+        $setAnchorPoint({
           key: text1.getKey(),
           offset: 2,
           type: 'text',
         });
 
-        setFocusPoint({
+        $setFocusPoint({
           key: text3.getKey(),
           offset: 0,
           type: 'text',
@@ -2297,13 +2297,13 @@ describe('LexicalSelection tests', () => {
         const selection = $createRangeSelection();
         $setSelection(selection);
         selection.insertParagraph();
-        setAnchorPoint({
+        $setAnchorPoint({
           key: textNode.getKey(),
           offset: 0,
           type: 'text',
         });
 
-        setFocusPoint({
+        $setFocusPoint({
           key: textNode.getKey(),
           offset: 10,
           type: 'text',
@@ -2353,13 +2353,13 @@ describe('LexicalSelection tests', () => {
         const selection = $createRangeSelection();
         $setSelection(selection);
         selection.insertParagraph();
-        setAnchorPoint({
+        $setAnchorPoint({
           key: textNode.getKey(),
           offset: 0,
           type: 'text',
         });
 
-        setFocusPoint({
+        $setFocusPoint({
           key: textNode.getKey(),
           offset: 10,
           type: 'text',
@@ -2407,12 +2407,12 @@ describe('LexicalSelection tests', () => {
 
         const selection = $createRangeSelection();
         $setSelection(selection);
-        setAnchorPoint({
+        $setAnchorPoint({
           key: text1.__key,
           offset: text1.__text.length,
           type: 'text',
         });
-        setFocusPoint({
+        $setFocusPoint({
           key: text1.__key,
           offset: text1.__text.length,
           type: 'text',
@@ -2442,12 +2442,12 @@ describe('LexicalSelection tests', () => {
 
         const selection = $createRangeSelection();
         $setSelection(selection);
-        setAnchorPoint({
+        $setAnchorPoint({
           key: 'root',
           offset: 0,
           type: 'element',
         });
-        setFocusPoint({
+        $setFocusPoint({
           key: 'root',
           offset: 0,
           type: 'element',
@@ -2481,12 +2481,12 @@ describe('LexicalSelection tests', () => {
 
         const selection = $createRangeSelection();
         $setSelection(selection);
-        setAnchorPoint({
+        $setAnchorPoint({
           key: text1.__key,
           offset: 0,
           type: 'text',
         });
-        setFocusPoint({
+        $setFocusPoint({
           key: text2.__key,
           offset: text1.__text.length,
           type: 'text',
@@ -2516,12 +2516,12 @@ describe('LexicalSelection tests', () => {
 
         const selection = $createRangeSelection();
         $setSelection(selection);
-        setAnchorPoint({
+        $setAnchorPoint({
           key: paragraph1.__key,
           offset: 0,
           type: 'element',
         });
-        setFocusPoint({
+        $setFocusPoint({
           key: paragraph2.__key,
           offset: 0,
           type: 'element',
@@ -2557,12 +2557,12 @@ describe('LexicalSelection tests', () => {
 
         const selection = $createRangeSelection();
         $setSelection(selection);
-        setAnchorPoint({
+        $setAnchorPoint({
           key: text1.__key,
           offset: 0,
           type: 'text',
         });
-        setFocusPoint({
+        $setFocusPoint({
           key: text2.__key,
           offset: text1.__text.length,
           type: 'text',
@@ -2600,12 +2600,12 @@ describe('LexicalSelection tests', () => {
 
         const selection = $createRangeSelection();
         $setSelection(selection);
-        setAnchorPoint({
+        $setAnchorPoint({
           key: paragraph.__key,
           offset: 0,
           type: 'element',
         });
-        setFocusPoint({
+        $setFocusPoint({
           key: paragraph.__key,
           offset: 0,
           type: 'element',
@@ -2643,12 +2643,12 @@ describe('LexicalSelection tests', () => {
 
         const selectionz = $createRangeSelection();
         $setSelection(selectionz);
-        setAnchorPoint({
+        $setAnchorPoint({
           key: text.__key,
           offset: text.__text.length,
           type: 'text',
         });
-        setFocusPoint({
+        $setFocusPoint({
           key: text.__key,
           offset: text.__text.length,
           type: 'text',
@@ -2711,12 +2711,12 @@ describe('LexicalSelection tests', () => {
 
         const selectionz = $createRangeSelection();
         $setSelection(selectionz);
-        setAnchorPoint({
+        $setAnchorPoint({
           key: paragraph1.__key,
           offset: 0,
           type: 'element',
         });
-        setFocusPoint({
+        $setFocusPoint({
           key: paragraph7.__key,
           offset: 0,
           type: 'element',
@@ -2756,12 +2756,12 @@ describe('LexicalSelection tests', () => {
         const paragraphChildrenKeys = [...paragraph.getChildrenKeys()];
         const selection = $createRangeSelection();
         $setSelection(selection);
-        setAnchorPoint({
+        $setAnchorPoint({
           key: text1.getKey(),
           offset: 1,
           type: 'text',
         });
-        setFocusPoint({
+        $setFocusPoint({
           key: text3.getKey(),
           offset: 1,
           type: 'text',
@@ -2802,12 +2802,12 @@ describe('LexicalSelection tests', () => {
 
         const selection = $createRangeSelection();
         $setSelection(selection);
-        setAnchorPoint({
+        $setAnchorPoint({
           key: text1.getKey(),
           offset: 1,
           type: 'text',
         });
-        setFocusPoint({
+        $setFocusPoint({
           key: text1_1.getKey(),
           offset: 1,
           type: 'text',
@@ -2841,12 +2841,12 @@ describe('LexicalSelection tests', () => {
 
         const selection = $createRangeSelection();
         $setSelection(selection);
-        setAnchorPoint({
+        $setAnchorPoint({
           key: text1_1.getKey(),
           offset: 1,
           type: 'text',
         });
-        setFocusPoint({
+        $setFocusPoint({
           key: text1_1.getKey(),
           offset: 1,
           type: 'text',

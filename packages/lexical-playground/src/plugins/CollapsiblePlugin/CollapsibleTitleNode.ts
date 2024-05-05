@@ -32,8 +32,6 @@ export function $convertSummaryElement(
     node,
   };
 }
-/** @deprecated renamed to $convertSummaryElement by @lexical/eslint-plugin rules-of-lexical */
-export const convertSummaryElement = $convertSummaryElement;
 
 export class CollapsibleTitleNode extends ElementNode {
   static getType(): string {

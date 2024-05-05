@@ -22,6 +22,7 @@ jobs:
       # Setup .npmrc file to publish to npm
       - uses: actions/setup-node@v4
         with:
+          node-version: 20.x
           registry-url: 'https://registry.npmjs.org'
       - run: |
           git config user.name "Lexical GitHub Actions Bot"

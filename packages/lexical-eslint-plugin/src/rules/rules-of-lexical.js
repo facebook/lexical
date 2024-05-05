@@ -222,7 +222,7 @@ function getExportDeclaration(variable) {
  * @param {Record<'caller'|'suggestName', string>} data
  */
 function renameExportText({caller, suggestName}) {
-  return `\n/** @deprecated renamed to ${suggestName} by @lexical/eslint-plugin rules-of-lexical */\nexport const ${caller} = ${suggestName};`;
+  return `\n/** @deprecated renamed to {@link ${suggestName}} by @lexical/eslint-plugin rules-of-lexical */\nexport const ${caller} = ${suggestName};`;
 }
 
 /**

@@ -38,7 +38,7 @@ export {
   $sliceSelectedTextNodeContent,
   $trimTextContentFromAnchor,
 };
-/** @deprecated renamed to $trimTextContentFromAnchor by @lexical/eslint-plugin rules-of-lexical */
+/** @deprecated renamed to {@link $trimTextContentFromAnchor} by @lexical/eslint-plugin rules-of-lexical */
 export const trimTextContentFromAnchor = $trimTextContentFromAnchor;
 
 export {

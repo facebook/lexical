@@ -78,5 +78,5 @@ declare export function $trimTextContentFromAnchor(
   delCount: number,
 ): void;
 
-/** @deprecated renamed to $trimTextContentFromAnchor by @lexical/eslint-plugin rules-of-lexical */
+/** @deprecated renamed to {@link $trimTextContentFromAnchor} by @lexical/eslint-plugin rules-of-lexical */
 declare export const trimTextContentFromAnchor: typeof $trimTextContentFromAnchor;

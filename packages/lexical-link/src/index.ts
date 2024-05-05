@@ -523,7 +523,7 @@ export function $toggleLink(
     });
   }
 }
-/** @deprecated renamed to $toggleLink by @lexical/eslint-plugin rules-of-lexical */
+/** @deprecated renamed to {@link $toggleLink} by @lexical/eslint-plugin rules-of-lexical */
 export const toggleLink = $toggleLink;
 
 function $getAncestor<NodeType extends LexicalNode = LexicalNode>(

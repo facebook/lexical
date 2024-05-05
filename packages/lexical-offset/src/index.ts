@@ -554,7 +554,7 @@ export function $createChildrenArray(
   }
   return children;
 }
-/** @deprecated renamed to $createChildrenArray by @lexical/eslint-plugin rules-of-lexical */
+/** @deprecated renamed to {@link $createChildrenArray} by @lexical/eslint-plugin rules-of-lexical */
 export const createChildrenArray = $createChildrenArray;
 
 export function $createOffsetView(

@@ -23,7 +23,7 @@ import {addRootElementEvents, removeRootElementEvents} from './LexicalEvents';
 import {$flushRootMutations, initMutationObserver} from './LexicalMutations';
 import {LexicalNode} from './LexicalNode';
 import {
-  commitPendingUpdates,
+  $commitPendingUpdates,
   internalGetActiveEditor,
   parseEditorState,
   triggerListeners,
@@ -981,7 +981,7 @@ export class LexicalEditor {
 
         this._updateTags.add('history-merge');
 
-        commitPendingUpdates(this);
+        $commitPendingUpdates(this);
 
         // TODO: remove this flag once we no longer use UEv2 internally
         if (!this._config.disableEvents) {
@@ -1042,7 +1042,7 @@ export class LexicalEditor {
         tags.add(tag);
       }
 
-      commitPendingUpdates(this);
+      $commitPendingUpdates(this);
     }
 
     this._pendingEditorState = editorState;
@@ -1054,7 +1054,7 @@ export class LexicalEditor {
       tags.add(tag);
     }
 
-    commitPendingUpdates(this);
+    $commitPendingUpdates(this);
   }
 
   /**

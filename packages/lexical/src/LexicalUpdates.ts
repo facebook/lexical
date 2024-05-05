@@ -640,8 +640,6 @@ export function $commitPendingUpdates(
   triggerDeferredUpdateCallbacks(editor, deferred);
   $triggerEnqueuedUpdates(editor);
 }
-/** @deprecated renamed to $commitPendingUpdates by @lexical/eslint-plugin rules-of-lexical */
-export const commitPendingUpdates = $commitPendingUpdates;
 
 function triggerTextContentListeners(
   editor: LexicalEditor,

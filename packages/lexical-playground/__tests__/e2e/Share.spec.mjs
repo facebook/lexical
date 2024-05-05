@@ -16,13 +16,21 @@ import {
   test,
 } from '../utils/index.mjs';
 
+test.use({
+  launchOptions: {
+    firefoxUserPrefs: {
+      'dom.events.asyncClipboard.readText': true,
+      'dom.events.testing.asyncClipboard': true,
+    },
+  },
+});
 test.describe('Share', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   test('is disabled in collab', async ({page, isCollab}) => {
     test.skip(!isCollab);
     expect(page.locator('.action-button.share')).toBeDisabled();
   });
-  test('can share the editor state', async ({page, isCollab}) => {
+  test('can share the editor state', async ({page, isCollab, browserName}) => {
     test.skip(isCollab);
     await focusEditor(page);
 
@@ -36,17 +44,24 @@ test.describe('Share', () => {
     await page.keyboard.type('foo');
     await assertHTML(page, fooHTML);
 
-    await page
-      .context()
-      .grantPermissions(['clipboard-read', 'clipboard-write']);
+    if (browserName === 'chromium') {
+      await page
+        .context()
+        .grantPermissions(['clipboard-read', 'clipboard-write']);
+    }
     expect(page.url()).not.toMatch(/#doc=/);
     await click(page, '.action-button.share');
     await page.getByRole('alert').getByText('URL copied to clipboard');
     const fooUrl = page.url();
     expect(fooUrl).toMatch(/#doc=/);
-    expect(await page.evaluate('navigator.clipboard.readText()')).toEqual(
-      fooUrl,
-    );
+    if (browserName !== 'webkit') {
+      expect(await page.evaluate('navigator.clipboard.readText()')).toEqual(
+        fooUrl,
+      );
+    }
+    if (browserName === 'chromium') {
+      await page.context().clearPermissions();
+    }
     await focusEditor(page);
     await page.keyboard.type('bar');
     await assertHTML(

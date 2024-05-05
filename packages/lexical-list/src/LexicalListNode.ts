@@ -35,7 +35,7 @@ import {
   mergeNextSiblingListIfSameType,
   updateChildrenListItemValue,
 } from './formatList';
-import {$getListDepth, wrapInListItem} from './utils';
+import {$getListDepth, $wrapInListItem} from './utils';
 
 export type SerializedListNode = Spread<
   {
@@ -281,7 +281,7 @@ function $setListThemeClassNames(
  * ensuring that they are all ListItemNodes and contain either a single nested ListNode
  * or some other inline content.
  */
-function normalizeChildren(nodes: Array<LexicalNode>): Array<ListItemNode> {
+function $normalizeChildren(nodes: Array<LexicalNode>): Array<ListItemNode> {
   const normalizedListItems: Array<ListItemNode> = [];
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
@@ -291,12 +291,12 @@ function normalizeChildren(nodes: Array<LexicalNode>): Array<ListItemNode> {
       if (children.length > 1) {
         children.forEach((child) => {
           if ($isListNode(child)) {
-            normalizedListItems.push(wrapInListItem(child));
+            normalizedListItems.push($wrapInListItem(child));
           }
         });
       }
     } else {
-      normalizedListItems.push(wrapInListItem(node));
+      normalizedListItems.push($wrapInListItem(node));
     }
   }
   return normalizedListItems;
@@ -321,7 +321,7 @@ function $convertListNode(domNode: Node): DOMConversionOutput {
   }
 
   return {
-    after: normalizeChildren,
+    after: $normalizeChildren,
     node,
   };
 }

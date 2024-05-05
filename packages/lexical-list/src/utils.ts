@@ -203,5 +203,3 @@ export function $wrapInListItem(node: LexicalNode): ListItemNode {
   const listItemWrapper = $createListItemNode();
   return listItemWrapper.append(node);
 }
-/** @deprecated renamed to $wrapInListItem by @lexical/eslint-plugin rules-of-lexical */
-export const wrapInListItem = $wrapInListItem;

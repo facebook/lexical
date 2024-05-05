@@ -82,9 +82,32 @@ jobs:
       matrix:
         os: ['macos-latest', 'ubuntu-latest', 'windows-latest']
         node-version: [18.18.0]
-        browser: ['chromium', 'firefox', 'webkit']
+        browser: ['chromium', 'firefox']
         editor-mode: ['rich-text', 'plain-text']
         events-mode: ['legacy-events', 'modern-events']
+    uses: ./.github/workflows/e2e-test.yml
+    with:
+      os: ${{ matrix.os }}
+      node-version: ${{ matrix.node-version }}
+      browser: ${{ matrix.browser }}
+      editor-mode: ${{ matrix.editor-mode }}
+      events-mode: ${{ matrix.events-mode }}
+
+  e2e-webkit:
+    if: github.repository_owner == 'facebook'
+    strategy:
+      matrix:
+        os: ['macos-latest']
+        node-version: [18.18.0]
+        browser: ['webkit']
+        editor-mode: ['rich-text', 'plain-text', 'rich-text-with-collab']
+        events-mode: ['legacy-events', 'modern-events']
+        exclude:
+          - os: macos-latest
+            node-version: 18.18.0
+            browser: webkit
+            editor-mode: rich-text-with-collab
+            events-mode: legacy-events
     uses: ./.github/workflows/e2e-test.yml
     with:
       os: ${{ matrix.os }}
@@ -99,7 +122,7 @@ jobs:
       matrix:
         os: ['macos-latest', 'ubuntu-latest', 'windows-latest']
         node-version: [18.18.0]
-        browser: ['chromium', 'firefox', 'webkit']
+        browser: ['chromium', 'firefox']
         editor-mode: ['rich-text-with-collab']
         events-mode: ['modern-events']
     uses: ./.github/workflows/e2e-test.yml

@@ -11,9 +11,9 @@ on:
       prod: {required: false, type: boolean}
 
 jobs:
-  e2e:
+  e2e-tests:
     runs-on: ${{ inputs.os }}
-    if: inputs.browser != 'webkit' || inputs.os == 'macos-latest'
+    if: (inputs.browser != 'webkit' || inputs.os == 'macos-latest') && (inputs.editor-mode != 'rich-text-with-collab' || inputs.events-mode != 'legacy-events')
     env:
       CI: true
       E2E_EDITOR_MODE: ${{ inputs.editor-mode }}

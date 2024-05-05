@@ -36,7 +36,7 @@ import {
 } from './LexicalGC';
 import {initMutationObserver} from './LexicalMutations';
 import {$normalizeTextNode} from './LexicalNormalization';
-import {reconcileRoot} from './LexicalReconciler';
+import {$reconcileRoot} from './LexicalReconciler';
 import {
   $isNodeSelection,
   $isRangeSelection,
@@ -474,7 +474,7 @@ export function $commitPendingUpdates(
       const dirtyLeaves = editor._dirtyLeaves;
       observer.disconnect();
 
-      mutatedNodes = reconcileRoot(
+      mutatedNodes = $reconcileRoot(
         currentEditorState,
         pendingEditorState,
         editor,

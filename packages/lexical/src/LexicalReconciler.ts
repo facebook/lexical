@@ -860,8 +860,6 @@ export function $reconcileRoot(
 
   return currentMutatedNodes;
 }
-/** @deprecated renamed to $reconcileRoot by @lexical/eslint-plugin rules-of-lexical */
-export const reconcileRoot = $reconcileRoot;
 
 export function storeDOMWithKey(
   key: NodeKey,

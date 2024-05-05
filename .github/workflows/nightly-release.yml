@@ -1,7 +1,8 @@
 name: Nightly Release Branch
 on:
   # remove the [] when this is turned on
-  schedule: []
+  schedule:
+    []
     # Run daily at 2:30am UTC
     # - cron: '30 2 * * 1-5'
 jobs:

@@ -85,55 +85,13 @@ jobs:
         browser: ['chromium', 'firefox', 'webkit']
         editor-mode: ['rich-text', 'plain-text']
         events-mode: ['legacy-events', 'modern-events']
-        exclude:
-          - browser: webkit
-            os: ubuntu-latest
-          - browser: windows-latest
-            os: ubuntu-latest
-    runs-on: ${{ matrix.os }}
-    env:
-      CI: true
-      E2E_EDITOR_MODE: ${{ matrix.editor-mode }}
-      E2E_EVENTS_MODE: ${{ matrix.events-mode }}
-      cache_playwright_path: ${{ matrix.os == 'macos-latest' && '~/Library/Caches/ms-playwright' || matrix.os == 'windows-latest' && 'C:\Users\runneradmin\AppData\Local\ms-playwright' || '~/.cache/ms-playwright'}}
-      test_results_path: ${{ matrix.os == 'windows-latest' && '~/.npm/_logs/' || 'test-results/' }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: npm
-      - name: Install required ubuntu-latest packages
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          sudo apt-get install xvfb
-      - name: Install dependencies
-        run: npm ci
-      - name: Restore playwright from cache
-        uses: actions/cache/restore@v4
-        id: playwright-cache
-        with:
-          path: ${{ env.cache_playwright_path }}
-          key: playwright-${{ matrix.node-version }}-${{ runner.os }}-${{ runner.arch }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
-      - name: Install playwright
-        run: npx playwright install
-      - name: Save playwright to cache
-        uses: actions/cache/save@v4
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        with:
-          path: ${{ env.cache_playwright_path }}
-          key: ${{ steps.playwright-cache.outputs.cache-primary-key }}
-      - name: Run tests
-        run: npm run test-e2e-ci-${{ matrix.browser }}
-      - name: Upload Artifacts
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: Test Results
-          path: ${{ env.test_results_path }}
-          retention-days: 7
+    uses: ./.github/workflows/e2e-test.yml
+    with:
+      os: ${{ matrix.os }}
+      node-version: ${{ matrix.node-version }}
+      browser: ${{ matrix.browser }}
+      editor-mode: ${{ matrix.editor-mode }}
+      events-mode: ${{ matrix.events-mode }}
 
   e2e-collab:
     if: github.repository_owner == 'facebook'
@@ -144,55 +102,13 @@ jobs:
         browser: ['chromium', 'firefox', 'webkit']
         editor-mode: ['rich-text-with-collab']
         events-mode: ['modern-events']
-        exclude:
-          - browser: webkit
-            os: ubuntu-latest
-          - browser: windows-latest
-            os: ubuntu-latest
-    runs-on: ${{ matrix.os }}
-    env:
-      CI: true
-      E2E_EDITOR_MODE: ${{ matrix.editor-mode }}
-      E2E_EVENTS_MODE: ${{ matrix.events-mode }}
-      cache_playwright_path: ${{ matrix.os == 'macos-latest' && '~/Library/Caches/ms-playwright' || matrix.os == 'windows-latest' && 'C:\Users\runneradmin\AppData\Local\ms-playwright' || '~/.cache/ms-playwright'}}
-      test_results_path: ${{ matrix.os == 'windows-latest' && '~/.npm/_logs/' || 'test-results/' }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: npm
-      - name: Install required ubuntu-latest packages
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          sudo apt-get install xvfb
-      - name: Install dependencies
-        run: npm ci
-      - name: Restore playwright from cache
-        uses: actions/cache/restore@v4
-        id: playwright-cache
-        with:
-          path: ${{ env.cache_playwright_path }}
-          key: playwright-${{ matrix.node-version }}-${{ runner.os }}-${{ runner.arch }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
-      - name: Install playwright
-        run: npx playwright install
-      - name: Save playwright to cache
-        uses: actions/cache/save@v4
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        with:
-          path: ${{ env.cache_playwright_path }}
-          key: ${{ steps.playwright-cache.outputs.cache-primary-key }}
-      - name: Run tests
-        run: npm run test-e2e-collab-ci-${{ matrix.browser }}
-      - name: Upload Artifacts
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: Test Results
-          path: ${{ env.test_results_path }}
-          retention-days: 7
+    uses: ./.github/workflows/e2e-test.yml
+    with:
+      os: ${{ matrix.os }}
+      node-version: ${{ matrix.node-version }}
+      browser: ${{ matrix.browser }}
+      editor-mode: ${{ matrix.editor-mode }}
+      events-mode: ${{ matrix.events-mode }}
 
   e2e-prod:
     if: github.repository_owner == 'facebook'
@@ -203,42 +119,11 @@ jobs:
         browser: ['chromium']
         editor-mode: ['rich-text', 'plain-text', 'rich-text-with-collab']
         events-mode: ['modern-events']
-    runs-on: ${{ matrix.os }}
-    env:
-      CI: true
-      E2E_EDITOR_MODE: ${{ matrix.editor-mode }}
-      E2E_EVENTS_MODE: ${{ matrix.events-mode }}
-      cache_playwright_path: ${{ matrix.os == 'macos-latest' && '~/Library/Caches/ms-playwright' || matrix.os == 'windows-latest' && 'C:\Users\runneradmin\AppData\Local\ms-playwright' || '~/.cache/ms-playwright'}}
-      test_results_path: ${{ matrix.os == 'windows-latest' && '~/.npm/_logs/' || 'test-results/' }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: npm
-      - name: Install dependencies
-        run: npm ci
-      - name: Restore playwright from cache
-        uses: actions/cache/restore@v4
-        id: playwright-cache
-        with:
-          path: ${{ env.cache_playwright_path }}
-          key: playwright-${{ matrix.node-version }}-${{ runner.os }}-${{ runner.arch }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
-      - name: Install playwright
-        run: npx playwright install
-      - name: Save playwright to cache
-        uses: actions/cache/save@v4
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        with:
-          path: ${{ env.cache_playwright_path }}
-          key: ${{ steps.playwright-cache.outputs.cache-primary-key }}
-      - name: Run tests
-        run: npm run test-e2e-${{ matrix.editor-mode == 'rich-text-with-collab' && 'collab-prod' || 'prod' }}-ci-${{ matrix.browser }}
-      - name: Upload Artifacts
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: Test Results
-          path: ${{ env.test_results_path }}
-          retention-days: 7
+    uses: ./.github/workflows/e2e-test.yml
+    with:
+      os: ${{ matrix.os }}
+      node-version: ${{ matrix.node-version }}
+      browser: ${{ matrix.browser }}
+      editor-mode: ${{ matrix.editor-mode }}
+      events-mode: ${{ matrix.events-mode }}
+    

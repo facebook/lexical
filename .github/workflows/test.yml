@@ -85,7 +85,6 @@ jobs:
         browser: ['chromium', 'firefox']
         editor-mode: ['rich-text', 'plain-text']
         events-mode: ['legacy-events', 'modern-events']
-        test-prefix: ['test-e2e']
         include:
           - os: macos-latest
             browser: webkit
@@ -125,7 +124,7 @@ jobs:
           path: ${{ env.cache_playwright_path }}
           key: ${{ steps.playwright-cache.outputs.cache-primary-key }}
       - name: Run tests
-        run: npm run ${{ matrix.test-prefix }}-${{ matrix.editor-mode == 'rich-text-with-collab' && 'collab-' || '' }}ci-${{ matrix.browser }}
+        run: npm run test-e2e-ci-${{ matrix.browser }}
       - name: Upload Artifacts
         if: failure()
         uses: actions/upload-artifact@v4
@@ -143,7 +142,6 @@ jobs:
         browser: ['chromium', 'firefox']
         editor-mode: ['rich-text-with-collab']
         events-mode: ['modern-events']
-        test-prefix: ['test-e2e']
         include:
           - os: macos-latest
             browser: webkit
@@ -183,7 +181,7 @@ jobs:
           path: ${{ env.cache_playwright_path }}
           key: ${{ steps.playwright-cache.outputs.cache-primary-key }}
       - name: Run tests
-        run: npm run ${{ matrix.test-prefix }}-${{ matrix.editor-mode == 'rich-text-with-collab' && 'collab-' || '' }}ci-${{ matrix.browser }}
+        run: npm run test-e2e-collab-ci-${{ matrix.browser }}
       - name: Upload Artifacts
         if: failure()
         uses: actions/upload-artifact@v4
@@ -201,7 +199,6 @@ jobs:
         browser: ['chromium']
         editor-mode: ['rich-text', 'plain-text', 'rich-text-with-collab']
         events-mode: ['modern-events']
-        test-prefix: ['test-e2e-prod']
         include:
           - os: macos-latest
             browser: webkit
@@ -236,7 +233,7 @@ jobs:
           path: ${{ env.cache_playwright_path }}
           key: ${{ steps.playwright-cache.outputs.cache-primary-key }}
       - name: Run tests
-        run: npm run ${{ matrix.test-prefix }}-${{ matrix.editor-mode == 'rich-text-with-collab' && 'collab-' || '' }}ci-${{ matrix.browser }}
+        run: npm run test-e2e-${{ matrix.editor-mode == 'rich-text-with-collab' && 'collab-prod' || 'prod' }}-ci-${{ matrix.browser }}
       - name: Upload Artifacts
         if: failure()
         uses: actions/upload-artifact@v4

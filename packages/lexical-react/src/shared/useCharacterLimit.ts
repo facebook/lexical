@@ -224,7 +224,7 @@ function $wrapOverflowedNodes(offset: number): void {
 
 function $wrapNode(node: LexicalNode): OverflowNode {
   const overflowNode = $createOverflowNode();
-  node.insertBefore(overflowNode);
+  node.replace(overflowNode);
   overflowNode.append(node);
   return overflowNode;
 }

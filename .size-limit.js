@@ -8,14 +8,13 @@
 'use strict';
 
 /**
- * We use this file to configure the size-lmit tool, rather than their simpler
+ * We use this file to configure the size-limit tool, rather than their simpler
  * yaml package.json configuration, because we need to override the resolution
  * of modules to ensure we are pulling in monorepo build products as
  * dependencies rather than trying to use something stale from node_modules.
  */
 const glob = require('glob');
 const path = require('node:path');
-const fs = require('fs-extra');
 
 /**
  * Build a alias map so that we can be sure that we are resolving monorepo

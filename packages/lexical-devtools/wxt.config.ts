@@ -127,7 +127,7 @@ export default defineConfig({
           find: 'lexicalOriginal',
           replacement: path.resolve('../lexical/src/index.ts'),
         },
-        ...moduleResolution('preview'),
+        ...moduleResolution('source'),
       ],
     },
   }),

@@ -26,9 +26,6 @@ export function $convertCollapsibleContentElement(
     node,
   };
 }
-/** @deprecated renamed to $convertCollapsibleContentElement by @lexical/eslint-plugin rules-of-lexical */
-export const convertCollapsibleContentElement =
-  $convertCollapsibleContentElement;
 
 export class CollapsibleContentNode extends ElementNode {
   static getType(): string {

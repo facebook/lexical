@@ -2197,8 +2197,6 @@ export function $internalMakeRangeSelection(
   editorState._selection = selection;
   return selection;
 }
-/** @deprecated renamed to $internalMakeRangeSelection by @lexical/eslint-plugin rules-of-lexical */
-export const internalMakeRangeSelection = $internalMakeRangeSelection;
 
 export function $createRangeSelection(): RangeSelection {
   const anchor = $createPoint('root', 0, 'element');

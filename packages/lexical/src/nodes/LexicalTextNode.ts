@@ -49,10 +49,10 @@ import {
 import {LexicalNode} from '../LexicalNode';
 import {
   $getSelection,
+  $internalMakeRangeSelection,
   $isRangeSelection,
   $updateElementSelectionOnCreateDeleteNode,
   adjustPointOffsetForMergedSibling,
-  internalMakeRangeSelection,
 } from '../LexicalSelection';
 import {errorOnReadOnly} from '../LexicalUpdates';
 import {
@@ -795,7 +795,7 @@ export class TextNode extends LexicalNode {
       focusOffset = 0;
     }
     if (!$isRangeSelection(selection)) {
-      return internalMakeRangeSelection(
+      return $internalMakeRangeSelection(
         key,
         anchorOffset,
         key,

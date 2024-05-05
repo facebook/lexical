@@ -35,8 +35,6 @@ export function $convertDetailsElement(
     node,
   };
 }
-/** @deprecated renamed to $convertDetailsElement by @lexical/eslint-plugin rules-of-lexical */
-export const convertDetailsElement = $convertDetailsElement;
 
 export class CollapsibleContainerNode extends ElementNode {
   __open: boolean;

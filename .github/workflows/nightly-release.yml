@@ -1,7 +1,7 @@
 name: Nightly Release Branch
 on:
-  # remove the [] when this is turned on
-  []
+  # remove the workflow_dispatch when this is turned on
+  workflow_dispatch
   # Run daily at 2:30am UTC
   # schedule:
   #  - cron: '30 2 * * 1-5'

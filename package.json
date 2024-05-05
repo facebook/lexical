@@ -117,6 +117,7 @@
     "@babel/preset-flow": "^7.24.1",
     "@babel/preset-react": "^7.24.1",
     "@babel/preset-typescript": "^7.24.1",
+    "@lexical/eslint-plugin": "file:./packages/lexical-eslint-plugin",
     "@playwright/test": "^1.41.2",
     "@rollup/plugin-alias": "^5.1.0",
     "@rollup/plugin-babel": "^6.0.4",

@@ -24,6 +24,7 @@ module.name_mapper='^@lexical/clipboard$' -> '<PROJECT_ROOT>/packages/lexical-cl
 module.name_mapper='^@lexical/code$' -> '<PROJECT_ROOT>/packages/lexical-code/flow/LexicalCode.js.flow'
 module.name_mapper='^@lexical/devtools-core$' -> '<PROJECT_ROOT>/packages/lexical-devtools-core/flow/LexicalDevtoolsCore.js.flow'
 module.name_mapper='^@lexical/dragon$' -> '<PROJECT_ROOT>/packages/lexical-dragon/flow/LexicalDragon.js.flow'
+module.name_mapper='^@lexical/eslint-plugin$' -> '<PROJECT_ROOT>/packages/lexical-eslint-plugin/flow/LexicalEslintPlugin.js.flow'
 module.name_mapper='^@lexical/file$' -> '<PROJECT_ROOT>/packages/lexical-file/flow/LexicalFile.js.flow'
 module.name_mapper='^@lexical/hashtag$' -> '<PROJECT_ROOT>/packages/lexical-hashtag/flow/LexicalHashtag.js.flow'
 module.name_mapper='^@lexical/headless$' -> '<PROJECT_ROOT>/packages/lexical-headless/flow/LexicalHeadless.js.flow'

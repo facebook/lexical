@@ -1273,7 +1273,7 @@ describe('LexicalEditor tests', () => {
     }
 
     it('moves node to different tree branches', async () => {
-      function createElementNodeWithText(text: string) {
+      function $createElementNodeWithText(text: string) {
         const elementNode = $createTestElementNode();
         const textNode = $createTextNode(text);
         elementNode.append(textNode);
@@ -1291,11 +1291,11 @@ describe('LexicalEditor tests', () => {
         const paragraph = $getRoot().getFirstChild() as ParagraphNode;
         paragraphNodeKey = paragraph.getKey();
 
-        const [elementNode1, textNode1] = createElementNodeWithText('A');
+        const [elementNode1, textNode1] = $createElementNodeWithText('A');
         elementNode1Key = elementNode1.getKey();
         textNode1Key = textNode1.getKey();
 
-        const [elementNode2, textNode2] = createElementNodeWithText('B');
+        const [elementNode2, textNode2] = $createElementNodeWithText('B');
         elementNode2Key = elementNode2.getKey();
         textNode2Key = textNode2.getKey();
 
@@ -1328,7 +1328,7 @@ describe('LexicalEditor tests', () => {
     });
 
     it('moves node to different tree branches (inverse)', async () => {
-      function createElementNodeWithText(text: string) {
+      function $createElementNodeWithText(text: string) {
         const elementNode = $createTestElementNode();
         const textNode = $createTextNode(text);
         elementNode.append(textNode);
@@ -1342,10 +1342,10 @@ describe('LexicalEditor tests', () => {
       await update(() => {
         const paragraph = $getRoot().getFirstChild() as ParagraphNode;
 
-        const elementNode1 = createElementNodeWithText('A');
+        const elementNode1 = $createElementNodeWithText('A');
         elementNode1Key = elementNode1.getKey();
 
-        const elementNode2 = createElementNodeWithText('B');
+        const elementNode2 = $createElementNodeWithText('B');
         elementNode2Key = elementNode2.getKey();
 
         paragraph.append(elementNode1, elementNode2);
@@ -1363,7 +1363,7 @@ describe('LexicalEditor tests', () => {
     });
 
     it('moves node to different tree branches (node appended twice in two different branches)', async () => {
-      function createElementNodeWithText(text: string) {
+      function $createElementNodeWithText(text: string) {
         const elementNode = $createTestElementNode();
         const textNode = $createTextNode(text);
         elementNode.append(textNode);
@@ -1378,13 +1378,13 @@ describe('LexicalEditor tests', () => {
       await update(() => {
         const paragraph = $getRoot().getFirstChild() as ParagraphNode;
 
-        const elementNode1 = createElementNodeWithText('A');
+        const elementNode1 = $createElementNodeWithText('A');
         elementNode1Key = elementNode1.getKey();
 
-        const elementNode2 = createElementNodeWithText('B');
+        const elementNode2 = $createElementNodeWithText('B');
         elementNode2Key = elementNode2.getKey();
 
-        const elementNode3 = createElementNodeWithText('C');
+        const elementNode3 = $createElementNodeWithText('C');
         elementNode3Key = elementNode3.getKey();
 
         paragraph.append(elementNode1, elementNode2, elementNode3);

@@ -89,21 +89,14 @@ jobs:
         include:
           - os: macos-latest
             browser: webkit
-          - os: macos-latest
-            playwright-cache: |
-              ~/Library/Caches/ms-playwright
-            test-results: |
-              test-results/
+            playwright-cache: '~/Library/Caches/ms-playwright'
+            test-results: 'test-results/'
           - os: windows-latest
-            playwright-cache: |
-              C:\Users\runneradmin\AppData\Local\ms-playwright
-            test-results: |
-              ~/.npm/_logs/
+            playwright-cache: 'C:\Users\runneradmin\AppData\Local\ms-playwright'
+            test-results: '~/.npm/_logs/'
           - os: ubuntu-latest
-            playwright-cache: |
-              ~/.cache/ms-playwright
-            test-results: |
-              test-results/
+            playwright-cache: '~/.cache/ms-playwright'
+            test-results: 'test-results/'
     runs-on: ${{ matrix.os }}
     env:
       CI: true
@@ -160,22 +153,14 @@ jobs:
         include:
           - os: macos-latest
             browser: webkit
-          - os: macos-latest
-            playwright-cache: |
-              ~/Library/Caches/ms-playwright
-            test-results: |
-              test-results/
-            browser: webkit
+            playwright-cache: '~/Library/Caches/ms-playwright'
+            test-results: 'test-results/'
           - os: windows-latest
-            playwright-cache: |
-              C:\Users\runneradmin\AppData\Local\ms-playwright
-            test-results: |
-              ~/.npm/_logs/
+            playwright-cache: 'C:\Users\runneradmin\AppData\Local\ms-playwright'
+            test-results: '~/.npm/_logs/'
           - os: ubuntu-latest
-            playwright-cache: |
-              ~/.cache/ms-playwright
-            test-results: |
-              test-results/
+            playwright-cache: '~/.cache/ms-playwright'
+            test-results: 'test-results/'
     runs-on: ${{ matrix.os }}
     env:
       CI: true
@@ -231,11 +216,9 @@ jobs:
         test-prefix: ['test-e2e-prod']
         include:
           - os: macos-latest
-            playwright-cache: |
-              ~/Library/Caches/ms-playwright
-            test-results: |
-              test-results/
             browser: webkit
+            playwright-cache: '~/Library/Caches/ms-playwright'
+            test-results: 'test-results/'
     runs-on: ${{ matrix.os }}
     env:
       CI: true

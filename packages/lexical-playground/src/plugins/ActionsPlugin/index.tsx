@@ -32,12 +32,12 @@ import {
   CLEAR_HISTORY_COMMAND,
   COMMAND_PRIORITY_EDITOR,
 } from 'lexical';
-import * as React from 'react';
 import {useCallback, useEffect, useState} from 'react';
 
 import useFlashMessage from '../../hooks/useFlashMessage';
 import useModal from '../../hooks/useModal';
 import Button from '../../ui/Button';
+import {docFromHash, docToHash} from '../../utils/docSerialization';
 import {PLAYGROUND_TRANSFORMERS} from '../MarkdownTransformers';
 import {
   SPEECH_TO_TEXT_COMMAND,
@@ -80,72 +80,6 @@ async function validateEditorState(editor: LexicalEditor): Promise<void> {
       'Editor state validation failed! Server did not accept changes.',
     );
   }
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function* generateReader<T = any>(
-  reader: ReadableStreamDefaultReader<T>,
-) {
-  let done = false;
-  while (!done) {
-    const res = await reader.read();
-    const {value} = res;
-    if (value !== undefined) {
-      yield value;
-    }
-    done = res.done;
-  }
-}
-
-async function readBytestoString(
-  reader: ReadableStreamDefaultReader,
-): Promise<string> {
-  const output = [];
-  const chunkSize = 0x8000;
-  for await (const value of generateReader(reader)) {
-    for (let i = 0; i < value.length; i += chunkSize) {
-      output.push(String.fromCharCode(...value.subarray(i, i + chunkSize)));
-    }
-  }
-  return output.join('');
-}
-
-async function docToHash(doc: SerializedDocument): Promise<string> {
-  const cs = new CompressionStream('gzip');
-  const writer = cs.writable.getWriter();
-  const [, output] = await Promise.all([
-    writer
-      .write(new TextEncoder().encode(JSON.stringify(doc)))
-      .then(() => writer.close()),
-    readBytestoString(cs.readable.getReader()),
-  ]);
-  return `#doc=${btoa(output)
-    .replace(/\//g, '_')
-    .replace(/\+/g, '-')
-    .replace(/=+$/, '')}`;
-}
-
-async function docFromHash(hash: string): Promise<SerializedDocument | null> {
-  const m = /^#doc=(.*)$/.exec(hash);
-  if (!m) {
-    return null;
-  }
-  const ds = new DecompressionStream('gzip');
-  const writer = ds.writable.getWriter();
-  const b64 = atob(m[1].replace(/_/g, '/').replace(/-/g, '+'));
-  const array = new Uint8Array(b64.length);
-  for (let i = 0; i < b64.length; i++) {
-    array[i] = b64.charCodeAt(i);
-  }
-  const closed = writer.write(array.buffer).then(() => writer.close());
-  const output = [];
-  for await (const chunk of generateReader(
-    ds.readable.pipeThrough(new TextDecoderStream()).getReader(),
-  )) {
-    output.push(chunk);
-  }
-  await closed;
-  return JSON.parse(output.join(''));
 }
 
 async function shareDoc(doc: SerializedDocument): Promise<void> {

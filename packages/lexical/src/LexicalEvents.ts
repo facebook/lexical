@@ -75,7 +75,10 @@ import {
   DOUBLE_LINE_BREAK,
   IS_ALL_FORMATTING,
 } from './LexicalConstants';
-import {internalCreateRangeSelection, RangeSelection} from './LexicalSelection';
+import {
+  $internalCreateRangeSelection,
+  RangeSelection,
+} from './LexicalSelection';
 import {getActiveEditor, updateEditor} from './LexicalUpdates';
 import {
   $flushMutations,
@@ -456,7 +459,7 @@ function onClick(event: PointerEvent, editor: LexicalEditor): void {
           // When we click on an empty paragraph node or the end of a paragraph that ends
           // with an image/poll, the nodeType will be ELEMENT_NODE
           if (nodeType === DOM_ELEMENT_TYPE || nodeType === DOM_TEXT_TYPE) {
-            const newSelection = internalCreateRangeSelection(
+            const newSelection = $internalCreateRangeSelection(
               lastSelection,
               domSelection,
               editor,
@@ -1148,7 +1151,7 @@ function onDocumentSelectionChange(event: Event): void {
       if (nodeType !== DOM_ELEMENT_TYPE && nodeType !== DOM_TEXT_TYPE) {
         return;
       }
-      const newSelection = internalCreateRangeSelection(
+      const newSelection = $internalCreateRangeSelection(
         lastSelection,
         domSelection,
         nextActiveEditor,

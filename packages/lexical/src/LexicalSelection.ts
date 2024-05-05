@@ -2312,8 +2312,6 @@ export function $internalCreateRangeSelection(
     !$isRangeSelection(lastSelection) ? '' : lastSelection.style,
   );
 }
-/** @deprecated renamed to $internalCreateRangeSelection by @lexical/eslint-plugin rules-of-lexical */
-export const internalCreateRangeSelection = $internalCreateRangeSelection;
 
 export function $getSelection(): null | BaseSelection {
   const editorState = getActiveEditorState();

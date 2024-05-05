@@ -3,12 +3,12 @@ name: Lexical e2e Tests
 on:
   workflow_call:
     inputs:
-      os: { required: true, type: string }
-      node-version: { required: true, type: string }
-      browser: { required: true, type: string }
-      editor-mode: { required: true, type: string }
-      events-mode: { required: true, type: string }
-      prod: { required: false, type: boolean }
+      os: {required: true, type: string}
+      node-version: {required: true, type: string}
+      browser: {required: true, type: string}
+      editor-mode: {required: true, type: string}
+      events-mode: {required: true, type: string}
+      prod: {required: false, type: boolean}
 
 jobs:
   e2e:

@@ -126,4 +126,3 @@ jobs:
       browser: ${{ matrix.browser }}
       editor-mode: ${{ matrix.editor-mode }}
       events-mode: ${{ matrix.events-mode }}
-    

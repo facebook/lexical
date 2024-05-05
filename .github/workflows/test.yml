@@ -85,12 +85,12 @@ jobs:
         browser: ['chromium', 'firefox']
         editor-mode: ['rich-text', 'plain-text']
         events-mode: ['legacy-events', 'modern-events']
-        prod-prefix: ['']
+        test-prefix: ['test-e2e-']
         include:
           - browser: chromium
             events-mode: modern-events
             os: macos-latest
-            prod-prefix: prod-
+            test-prefix: test-e2e-prod
           - events-mode: modern-events
             editor-mode: rich-text-with-collab
           - os: macos-latest
@@ -143,8 +143,7 @@ jobs:
           path: ${{ matrix.playwright-cache }}
           key: ${{ steps.playwright-cache.outputs.cache-primary-key }}
       - name: Run tests
-        run: npm run test-e2e-${{ matrix.prod-prefix }}${{ matrix.editor-mode == 'rich-text-with-collab' && 'collab-' || '' }}ci-${{ matrix.browser }}
-        if: matrix.editor-mode != 'rich-text-with-collab'
+        run: npm run ${{ matrix.test-prefix }}${{ matrix.editor-mode == 'rich-text-with-collab' && 'collab-' || '' }}ci-${{ matrix.browser }}
       - name: Upload Artifacts
         if: failure()
         uses: actions/upload-artifact@v4

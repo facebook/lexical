@@ -2225,8 +2225,6 @@ export function $internalCreateSelection(
   }
   return lastSelection.clone();
 }
-/** @deprecated renamed to $internalCreateSelection by @lexical/eslint-plugin rules-of-lexical */
-export const internalCreateSelection = $internalCreateSelection;
 
 export function $createRangeSelectionFromDom(
   domSelection: Selection | null,

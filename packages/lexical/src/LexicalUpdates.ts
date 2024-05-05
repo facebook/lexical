@@ -38,10 +38,10 @@ import {initMutationObserver} from './LexicalMutations';
 import {$normalizeTextNode} from './LexicalNormalization';
 import {$reconcileRoot} from './LexicalReconciler';
 import {
+  $internalCreateSelection,
   $isNodeSelection,
   $isRangeSelection,
   applySelectionTransforms,
-  internalCreateSelection,
   updateDOMSelection,
 } from './LexicalSelection';
 import {
@@ -871,7 +871,7 @@ function $beginUpdate(
           pendingEditorState._selection = currentEditorState._selection.clone();
         }
       } else {
-        pendingEditorState._selection = internalCreateSelection(editor);
+        pendingEditorState._selection = $internalCreateSelection(editor);
       }
     }
 

@@ -264,6 +264,7 @@ function internalMarkParentElementsAsDirty(
   }
 }
 
+// TODO #6031 this function or their callers have to adjust selection (i.e. insertBefore)
 export function removeFromParent(node: LexicalNode): void {
   const oldParent = node.getParent();
   if (oldParent !== null) {

@@ -82,12 +82,14 @@ jobs:
       matrix:
         os: ['macos-latest', 'ubuntu-latest', 'windows-latest']
         node-version: [18.18.0]
-        browser: ['chromium', 'firefox']
+        browser: ['chromium', 'firefox', 'webkit']
         editor-mode: ['rich-text', 'plain-text']
         events-mode: ['legacy-events', 'modern-events']
-        include:
-          - os: macos-latest
-            browser: webkit
+        exclude:
+          - browser: webkit
+            os: ubuntu-latest
+          - browser: windows-latest
+            os: ubuntu-latest
     runs-on: ${{ matrix.os }}
     env:
       CI: true
@@ -139,12 +141,14 @@ jobs:
       matrix:
         os: ['macos-latest', 'ubuntu-latest', 'windows-latest']
         node-version: [18.18.0]
-        browser: ['chromium', 'firefox']
+        browser: ['chromium', 'firefox', 'webkit']
         editor-mode: ['rich-text-with-collab']
         events-mode: ['modern-events']
-        include:
-          - os: macos-latest
-            browser: webkit
+        exclude:
+          - browser: webkit
+            os: ubuntu-latest
+          - browser: windows-latest
+            os: ubuntu-latest
     runs-on: ${{ matrix.os }}
     env:
       CI: true

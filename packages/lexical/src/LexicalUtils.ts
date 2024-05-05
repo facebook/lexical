@@ -502,8 +502,6 @@ export function $getNodeFromDOM(dom: Node): null | LexicalNode {
   }
   return $getNodeByKey(nodeKey);
 }
-/** @deprecated renamed to $getNodeFromDOM by @lexical/eslint-plugin rules-of-lexical */
-export const getNodeFromDOM = $getNodeFromDOM;
 
 export function getTextNodeOffset(
   node: TextNode,

@@ -45,6 +45,7 @@ import {
   $getCompositionKey,
   $getNearestRootOrShadowRoot,
   $getNodeByKey,
+  $getNodeFromDOM,
   $getRoot,
   $hasAncestor,
   $isTokenOrSegmented,
@@ -53,7 +54,6 @@ import {
   getDOMSelection,
   getDOMTextNode,
   getElementByKeyOrThrow,
-  getNodeFromDOM,
   getTextNodeOffset,
   INTERNAL_$isBlock,
   isSelectionCapturedInDecoratorInput,
@@ -1936,12 +1936,12 @@ function $internalResolveSelectionPoint(
         }
       }
     }
-    resolvedNode = getNodeFromDOM(childDOM);
+    resolvedNode = $getNodeFromDOM(childDOM);
 
     if ($isTextNode(resolvedNode)) {
       resolvedOffset = getTextNodeOffset(resolvedNode, moveSelectionToEnd);
     } else {
-      let resolvedElement = getNodeFromDOM(dom);
+      let resolvedElement = $getNodeFromDOM(dom);
       // Ensure resolvedElement is actually a element.
       if (resolvedElement === null) {
         return null;
@@ -1987,7 +1987,7 @@ function $internalResolveSelectionPoint(
         if (
           offset === 0 &&
           $isDecoratorNode(resolvedElement) &&
-          getNodeFromDOM(dom) === resolvedElement
+          $getNodeFromDOM(dom) === resolvedElement
         ) {
           resolvedOffset = index;
         } else {
@@ -2001,7 +2001,7 @@ function $internalResolveSelectionPoint(
     }
   } else {
     // TextNode or null
-    resolvedNode = getNodeFromDOM(dom);
+    resolvedNode = $getNodeFromDOM(dom);
   }
   if (!$isTextNode(resolvedNode)) {
     return null;
@@ -2148,8 +2148,8 @@ function $internalResolveSelectionPoints(
     resolvedAnchorPoint.type === 'element' &&
     resolvedFocusPoint.type === 'element'
   ) {
-    const anchorNode = getNodeFromDOM(anchorDOM);
-    const focusNode = getNodeFromDOM(focusDOM);
+    const anchorNode = $getNodeFromDOM(anchorDOM);
+    const focusNode = $getNodeFromDOM(focusDOM);
     // Ensure if we're selecting the content of a decorator that we
     // return null for this point, as it's not in the controlled scope
     // of Lexical.

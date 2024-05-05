@@ -89,19 +89,13 @@ jobs:
         include:
           - os: macos-latest
             browser: webkit
-            playwright-cache: '~/Library/Caches/ms-playwright'
-            test-results: 'test-results/'
-          - os: windows-latest
-            playwright-cache: 'C:\Users\runneradmin\AppData\Local\ms-playwright'
-            test-results: '~/.npm/_logs/'
-          - os: ubuntu-latest
-            playwright-cache: '~/.cache/ms-playwright'
-            test-results: 'test-results/'
     runs-on: ${{ matrix.os }}
     env:
       CI: true
       E2E_EDITOR_MODE: ${{ matrix.editor-mode }}
       E2E_EVENTS_MODE: ${{ matrix.events-mode }}
+      cache_playwright_path: ${{ matrix.os == 'macos-latest' && '~/Library/Caches/ms-playwright' || matrix.os == 'windows-latest' && 'C:\Users\runneradmin\AppData\Local\ms-playwright' || '~/.cache/ms-playwright'}}
+      test_results_path: ${{ matrix.os == 'windows-latest' && '~/.npm/_logs/' || 'test-results/' }}
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
@@ -120,7 +114,7 @@ jobs:
         uses: actions/cache/restore@v4
         id: playwright-cache
         with:
-          path: ${{ matrix.playwright-cache }}
+          path: ${{ env.cache_playwright_path }}
           key: playwright-${{ matrix.node-version }}-${{ runner.os }}-${{ runner.arch }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
       - name: Install playwright
         run: npx playwright install
@@ -128,7 +122,7 @@ jobs:
         uses: actions/cache/save@v4
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         with:
-          path: ${{ matrix.playwright-cache }}
+          path: ${{ env.cache_playwright_path }}
           key: ${{ steps.playwright-cache.outputs.cache-primary-key }}
       - name: Run tests
         run: npm run ${{ matrix.test-prefix }}${{ matrix.editor-mode == 'rich-text-with-collab' && 'collab-' || '' }}ci-${{ matrix.browser }}
@@ -137,7 +131,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Test Results
-          path: ${{ matrix.test-results }}
+          path: ${{ env.test_results_path }}
           retention-days: 7
 
   e2e-collab:
@@ -153,19 +147,13 @@ jobs:
         include:
           - os: macos-latest
             browser: webkit
-            playwright-cache: '~/Library/Caches/ms-playwright'
-            test-results: 'test-results/'
-          - os: windows-latest
-            playwright-cache: 'C:\Users\runneradmin\AppData\Local\ms-playwright'
-            test-results: '~/.npm/_logs/'
-          - os: ubuntu-latest
-            playwright-cache: '~/.cache/ms-playwright'
-            test-results: 'test-results/'
     runs-on: ${{ matrix.os }}
     env:
       CI: true
       E2E_EDITOR_MODE: ${{ matrix.editor-mode }}
       E2E_EVENTS_MODE: ${{ matrix.events-mode }}
+      cache_playwright_path: ${{ matrix.os == 'macos-latest' && '~/Library/Caches/ms-playwright' || matrix.os == 'windows-latest' && 'C:\Users\runneradmin\AppData\Local\ms-playwright' || '~/.cache/ms-playwright'}}
+      test_results_path: ${{ matrix.os == 'windows-latest' && '~/.npm/_logs/' || 'test-results/' }}
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
@@ -184,7 +172,7 @@ jobs:
         uses: actions/cache/restore@v4
         id: playwright-cache
         with:
-          path: ${{ matrix.playwright-cache }}
+          path: ${{ env.cache_playwright_path }}
           key: playwright-${{ matrix.node-version }}-${{ runner.os }}-${{ runner.arch }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
       - name: Install playwright
         run: npx playwright install
@@ -192,7 +180,7 @@ jobs:
         uses: actions/cache/save@v4
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         with:
-          path: ${{ matrix.playwright-cache }}
+          path: ${{ env.cache_playwright_path }}
           key: ${{ steps.playwright-cache.outputs.cache-primary-key }}
       - name: Run tests
         run: npm run ${{ matrix.test-prefix }}${{ matrix.editor-mode == 'rich-text-with-collab' && 'collab-' || '' }}ci-${{ matrix.browser }}
@@ -201,7 +189,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Test Results
-          path: ${{ matrix.test-results }}
+          path: ${{ env.cache_playwright_path }}
           retention-days: 7
 
   e2e-prod:
@@ -217,13 +205,13 @@ jobs:
         include:
           - os: macos-latest
             browser: webkit
-            playwright-cache: '~/Library/Caches/ms-playwright'
-            test-results: 'test-results/'
     runs-on: ${{ matrix.os }}
     env:
       CI: true
       E2E_EDITOR_MODE: ${{ matrix.editor-mode }}
       E2E_EVENTS_MODE: ${{ matrix.events-mode }}
+      cache_playwright_path: ${{ matrix.os == 'macos-latest' && '~/Library/Caches/ms-playwright' || matrix.os == 'windows-latest' && 'C:\Users\runneradmin\AppData\Local\ms-playwright' || '~/.cache/ms-playwright'}}
+      test_results_path: ${{ matrix.os == 'windows-latest' && '~/.npm/_logs/' || 'test-results/' }}
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
@@ -237,7 +225,7 @@ jobs:
         uses: actions/cache/restore@v4
         id: playwright-cache
         with:
-          path: ${{ matrix.playwright-cache }}
+          path: ${{ env.cache_playwright_path }}
           key: playwright-${{ matrix.node-version }}-${{ runner.os }}-${{ runner.arch }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
       - name: Install playwright
         run: npx playwright install
@@ -245,7 +233,7 @@ jobs:
         uses: actions/cache/save@v4
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         with:
-          path: ${{ matrix.playwright-cache }}
+          path: ${{ env.cache_playwright_path }}
           key: ${{ steps.playwright-cache.outputs.cache-primary-key }}
       - name: Run tests
         run: npm run ${{ matrix.test-prefix }}${{ matrix.editor-mode == 'rich-text-with-collab' && 'collab-' || '' }}ci-${{ matrix.browser }}
@@ -254,5 +242,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Test Results
-          path: ${{ matrix.test-results }}
+          path: ${{ env.test_results_path }}
           retention-days: 7

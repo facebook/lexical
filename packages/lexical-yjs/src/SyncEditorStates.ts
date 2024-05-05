@@ -29,16 +29,16 @@ import {
   syncLocalCursorPosition,
 } from './SyncCursors';
 import {
+  $getOrInitCollabNodeFromSharedType,
   $moveSelectionToPreviousNode,
   doesSelectionNeedRecovering,
-  getOrInitCollabNodeFromSharedType,
   syncWithTransaction,
 } from './Utils';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function syncEvent(binding: Binding, event: any): void {
+function $syncEvent(binding: Binding, event: any): void {
   const {target} = event;
-  const collabNode = getOrInitCollabNodeFromSharedType(binding, target);
+  const collabNode = $getOrInitCollabNodeFromSharedType(binding, target);
 
   if (collabNode instanceof CollabElementNode && event instanceof YTextEvent) {
     // @ts-expect-error We need to access the private property of the class
@@ -98,7 +98,7 @@ export function syncYjsChangesToLexical(
     () => {
       for (let i = 0; i < events.length; i++) {
         const event = events[i];
-        syncEvent(binding, event);
+        $syncEvent(binding, event);
       }
       // If there was a collision on the top level paragraph
       // we need to re-add a paragraph

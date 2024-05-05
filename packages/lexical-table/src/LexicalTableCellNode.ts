@@ -362,8 +362,6 @@ export function $convertTableCellNodeElement(
     node: tableCellNode,
   };
 }
-/** @deprecated renamed to $convertTableCellNodeElement by @lexical/eslint-plugin rules-of-lexical */
-export const convertTableCellNodeElement = $convertTableCellNodeElement;
 
 export function $createTableCellNode(
   headerState: TableCellHeaderState,

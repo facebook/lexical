@@ -118,8 +118,6 @@ export function $convertTableRowElement(domNode: Node): DOMConversionOutput {
 
   return {node: $createTableRowNode(height)};
 }
-/** @deprecated renamed to $convertTableRowElement by @lexical/eslint-plugin rules-of-lexical */
-export const convertTableRowElement = $convertTableRowElement;
 
 export function $createTableRowNode(height?: number): TableRowNode {
   return $applyNodeReplacement(new TableRowNode(height));

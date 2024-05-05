@@ -244,8 +244,6 @@ export function $getElementForTableNode(
 export function $convertTableElement(_domNode: Node): DOMConversionOutput {
   return {node: $createTableNode()};
 }
-/** @deprecated renamed to $convertTableElement by @lexical/eslint-plugin rules-of-lexical */
-export const convertTableElement = $convertTableElement;
 
 export function $createTableNode(): TableNode {
   return $applyNodeReplacement(new TableNode());

@@ -24,9 +24,9 @@ import {CollabDecoratorNode} from './CollabDecoratorNode';
 import {CollabElementNode} from './CollabElementNode';
 import {CollabTextNode} from './CollabTextNode';
 import {
+  $syncLocalCursorPosition,
   syncCursorPositions,
   syncLexicalSelectionToYjs,
-  syncLocalCursorPosition,
 } from './SyncCursors';
 import {
   $getOrInitCollabNodeFromSharedType,
@@ -113,7 +113,7 @@ export function syncYjsChangesToLexical(
           const prevSelection = currentEditorState._selection;
 
           if ($isRangeSelection(prevSelection)) {
-            syncLocalCursorPosition(binding, provider);
+            $syncLocalCursorPosition(binding, provider);
             if (doesSelectionNeedRecovering(selection)) {
               // If the selected node is deleted, move the selection to the previous or parent node.
               const anchorNodeKey = selection.anchor.key;
@@ -128,7 +128,7 @@ export function syncYjsChangesToLexical(
             $getSelection(),
           );
         } else {
-          syncLocalCursorPosition(binding, provider);
+          $syncLocalCursorPosition(binding, provider);
         }
       }
     },

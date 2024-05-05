@@ -341,8 +341,6 @@ export function $syncLocalCursorPosition(
     }
   }
 }
-/** @deprecated renamed to $syncLocalCursorPosition by @lexical/eslint-plugin rules-of-lexical */
-export const syncLocalCursorPosition = $syncLocalCursorPosition;
 
 function $setPoint(point: Point, key: NodeKey, offset: number): void {
   if (point.key !== key || point.offset !== offset) {

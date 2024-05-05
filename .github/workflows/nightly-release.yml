@@ -1,10 +1,10 @@
 name: Nightly Release Branch
 on:
   # remove the [] when this is turned on
-  schedule:
-    []
-    # Run daily at 2:30am UTC
-    # - cron: '30 2 * * 1-5'
+  []
+  # Run daily at 2:30am UTC
+  # schedule:
+  #  - cron: '30 2 * * 1-5'
 jobs:
   release:
     # prevents this action from running on forks

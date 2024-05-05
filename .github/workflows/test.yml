@@ -85,7 +85,7 @@ jobs:
         browser: ['chromium', 'firefox']
         editor-mode: ['rich-text', 'plain-text']
         events-mode: ['legacy-events', 'modern-events']
-        test-prefix: ['test-e2e-']
+        test-prefix: ['test-e2e']
         include:
           - os: macos-latest
             browser: webkit
@@ -125,7 +125,7 @@ jobs:
           path: ${{ env.cache_playwright_path }}
           key: ${{ steps.playwright-cache.outputs.cache-primary-key }}
       - name: Run tests
-        run: npm run ${{ matrix.test-prefix }}${{ matrix.editor-mode == 'rich-text-with-collab' && 'collab-' || '' }}ci-${{ matrix.browser }}
+        run: npm run ${{ matrix.test-prefix }}-${{ matrix.editor-mode == 'rich-text-with-collab' && 'collab-' || '' }}ci-${{ matrix.browser }}
       - name: Upload Artifacts
         if: failure()
         uses: actions/upload-artifact@v4
@@ -143,7 +143,7 @@ jobs:
         browser: ['chromium', 'firefox']
         editor-mode: ['rich-text-with-collab']
         events-mode: ['modern-events']
-        test-prefix: ['test-e2e-']
+        test-prefix: ['test-e2e']
         include:
           - os: macos-latest
             browser: webkit
@@ -183,13 +183,13 @@ jobs:
           path: ${{ env.cache_playwright_path }}
           key: ${{ steps.playwright-cache.outputs.cache-primary-key }}
       - name: Run tests
-        run: npm run ${{ matrix.test-prefix }}${{ matrix.editor-mode == 'rich-text-with-collab' && 'collab-' || '' }}ci-${{ matrix.browser }}
+        run: npm run ${{ matrix.test-prefix }}-${{ matrix.editor-mode == 'rich-text-with-collab' && 'collab-' || '' }}ci-${{ matrix.browser }}
       - name: Upload Artifacts
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: Test Results
-          path: ${{ env.cache_playwright_path }}
+          path: ${{ env.test_results_path }}
           retention-days: 7
 
   e2e-prod:
@@ -236,7 +236,7 @@ jobs:
           path: ${{ env.cache_playwright_path }}
           key: ${{ steps.playwright-cache.outputs.cache-primary-key }}
       - name: Run tests
-        run: npm run ${{ matrix.test-prefix }}${{ matrix.editor-mode == 'rich-text-with-collab' && 'collab-' || '' }}ci-${{ matrix.browser }}
+        run: npm run ${{ matrix.test-prefix }}-${{ matrix.editor-mode == 'rich-text-with-collab' && 'collab-' || '' }}ci-${{ matrix.browser }}
       - name: Upload Artifacts
         if: failure()
         uses: actions/upload-artifact@v4

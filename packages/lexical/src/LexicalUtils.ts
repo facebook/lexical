@@ -403,8 +403,6 @@ export function $getNodeFromDOMNode(
   }
   return null;
 }
-/** @deprecated renamed to $getNodeFromDOMNode by @lexical/eslint-plugin rules-of-lexical */
-export const getNodeFromDOMNode = $getNodeFromDOMNode;
 
 export function $getNearestNodeFromDOMNode(
   startingDOM: Node,

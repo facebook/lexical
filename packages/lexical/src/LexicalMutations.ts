@@ -24,9 +24,9 @@ import {DOM_TEXT_TYPE} from './LexicalConstants';
 import {updateEditor} from './LexicalUpdates';
 import {
   $getNearestNodeFromDOMNode,
+  $getNodeFromDOMNode,
   $updateTextNodeFromDOMContent,
   getDOMSelection,
-  getNodeFromDOMNode,
   getWindow,
   internalGetRoot,
   isFirefoxClipboardEvents,
@@ -169,7 +169,7 @@ export function $flushMutations(
 
           for (let s = 0; s < addedDOMs.length; s++) {
             const addedDOM = addedDOMs[s];
-            const node = getNodeFromDOMNode(addedDOM);
+            const node = $getNodeFromDOMNode(addedDOM);
             const parentDOM = addedDOM.parentNode;
 
             if (

@@ -2657,6 +2657,9 @@ export function updateDOMSelection(
     // If we encounter an error, continue. This can sometimes
     // occur with FF and there's no good reason as to why it
     // should happen.
+    if (__DEV__) {
+      console.warn(error);
+    }
   }
   if (
     !tags.has('skip-scroll-into-view') &&

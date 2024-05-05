@@ -2015,6 +2015,51 @@ describe('LexicalEditor tests', () => {
     expect(editor._pendingEditorState).toBe(null);
   });
 
+  it('reconciles linebreak on element', async () => {
+    init();
+    let endTextKey;
+    let linebreakKey;
+    await editor.update(() => {
+      const inlineElementNode = $createTestInlineElementNode();
+      const endText = $createTextNode('foo');
+      const linebreak = $createLineBreakNode();
+      endTextKey = endText.__key;
+      linebreakKey = linebreak.__key;
+      inlineElementNode.append(endText, linebreak);
+      $getRoot().append(
+        $createParagraphNode().append(
+          $createTextNode('Hello'),
+          inlineElementNode,
+        ),
+      );
+      linebreak.selectEnd();
+    });
+
+    expect(container.firstElementChild?.innerHTML).toBe(
+      '<p dir="ltr"><span data-lexical-text="true">Hello</span><a dir="ltr"><span data-lexical-text="true">foo</span><br><br></a></p>',
+    );
+
+    await editor.update(() => {
+      const endText = $getNodeByKey(endTextKey);
+      endText.insertAfter($createTextNode('bar').toggleUnmergeable());
+      endText.selectEnd();
+    });
+
+    expect(container.firstElementChild?.innerHTML).toBe(
+      '<p dir="ltr"><span data-lexical-text="true">Hello</span><a dir="ltr"><span data-lexical-text="true">foo</span><span data-lexical-text="true">bar</span><br><br></a></p>',
+    );
+
+    await editor.update(() => {
+      const linebreak = $getNodeByKey(linebreakKey);
+      linebreak.insertAfter($createTextNode('xyz').toggleUnmergeable());
+      linebreak.selectEnd();
+    });
+
+    expect(container.firstElementChild?.innerHTML).toBe(
+      '<p dir="ltr"><span data-lexical-text="true">Hello</span><a dir="ltr"><span data-lexical-text="true">foo</span><span data-lexical-text="true">bar</span><br><span data-lexical-text="true">xyz</span></a></p>',
+    );
+  });
+
   describe('node replacement', () => {
     it('should work correctly', async () => {
       const onError = jest.fn();

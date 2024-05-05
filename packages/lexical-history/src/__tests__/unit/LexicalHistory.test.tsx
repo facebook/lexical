@@ -128,8 +128,8 @@ describe('LexicalHistory tests', () => {
     await ReactTestUtils.act(async () => {
       await editor.update(() => {
         const root = $getRoot();
-        const paragraph1 = $createParagraphNode_('AAA');
-        const paragraph2 = $createParagraphNode_('BBB');
+        const paragraph1 = $createParagraphNodeWithText('AAA');
+        const paragraph2 = $createParagraphNodeWithText('BBB');
 
         // The editor has one child that is an empty
         // paragraph Node.
@@ -223,7 +223,7 @@ describe('LexicalHistory tests', () => {
     await ReactTestUtils.act(async () => {
       await editor.update(() => {
         const root = $getRoot();
-        const paragraph = $createParagraphNode_('foo');
+        const paragraph = $createParagraphNodeWithText('foo');
         root.append(paragraph);
       });
     });
@@ -261,7 +261,7 @@ describe('LexicalHistory tests', () => {
     await ReactTestUtils.act(async () => {
       await editor.update(() => {
         const root = $getRoot();
-        const paragraph = $createParagraphNode_('foo');
+        const paragraph = $createParagraphNodeWithText('foo');
         root.append(paragraph);
       });
     });
@@ -315,7 +315,7 @@ describe('LexicalHistory tests', () => {
   });
 });
 
-const $createParagraphNode_ = (text: string) => {
+const $createParagraphNodeWithText = (text: string) => {
   const paragraph = $createParagraphNode();
   const textNode = $createTextNode(text);
 

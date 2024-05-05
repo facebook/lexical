@@ -34,6 +34,7 @@ import {
 } from 'lexical';
 import {useCallback, useEffect, useState} from 'react';
 
+import {INITIAL_SETTINGS} from '../../appSettings';
 import useFlashMessage from '../../hooks/useFlashMessage';
 import useModal from '../../hooks/useModal';
 import Button from '../../ui/Button';
@@ -104,6 +105,9 @@ export default function ActionsPlugin({
   const showFlashMessage = useFlashMessage();
   const {isCollabActive} = useCollaborationContext();
   useEffect(() => {
+    if (INITIAL_SETTINGS.isCollab) {
+      return;
+    }
     docFromHash(window.location.hash).then((doc) => {
       if (doc && doc.source === 'Playground') {
         editor.setEditorState(editorStateFromSerializedDocument(editor, doc));
@@ -221,6 +225,7 @@ export default function ActionsPlugin({
       </button>
       <button
         className="action-button share"
+        disabled={isCollabActive}
         onClick={() =>
           shareDoc(
             serializedDocumentFromEditorState(editor.getEditorState(), {

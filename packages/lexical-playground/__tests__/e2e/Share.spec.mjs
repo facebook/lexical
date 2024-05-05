@@ -18,7 +18,12 @@ import {
 
 test.describe('Share', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
-  test(`can share the editor state`, async ({page}) => {
+  test('is disabled in collab', async ({page, isCollab}) => {
+    test.skip(!isCollab);
+    expect(page.locator('.action-button.share')).toBeDisabled();
+  });
+  test('can share the editor state', async ({page, isCollab}) => {
+    test.skip(isCollab);
     await focusEditor(page);
 
     const fooHTML = html`

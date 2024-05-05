@@ -14,6 +14,7 @@ import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
 import * as React from 'react';
 
 import {isDevPlayground} from './appSettings';
+import {FlashMessageContext} from './context/FlashMessageContext';
 import {SettingsContext, useSettings} from './context/SettingsContext';
 import {SharedAutocompleteContext} from './context/SharedAutocompleteContext';
 import {SharedHistoryContext} from './context/SharedHistoryContext';
@@ -160,7 +161,9 @@ function App(): JSX.Element {
 export default function PlaygroundApp(): JSX.Element {
   return (
     <SettingsContext>
-      <App />
+      <FlashMessageContext>
+        <App />
+      </FlashMessageContext>
       <a
         href="https://github.com/facebook/lexical/tree/main/packages/lexical-playground"
         className="github-corner"

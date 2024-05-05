@@ -35,6 +35,7 @@ import {
 import * as React from 'react';
 import {useCallback, useEffect, useState} from 'react';
 
+import useFlashMessage from '../../hooks/useFlashMessage';
 import useModal from '../../hooks/useModal';
 import Button from '../../ui/Button';
 import {PLAYGROUND_TRANSFORMERS} from '../MarkdownTransformers';
@@ -166,10 +167,11 @@ export default function ActionsPlugin({
   const [connected, setConnected] = useState(false);
   const [isEditorEmpty, setIsEditorEmpty] = useState(true);
   const [modal, showModal] = useModal();
+  const showFlashMessage = useFlashMessage();
   const {isCollabActive} = useCollaborationContext();
   useEffect(() => {
     docFromHash(window.location.hash).then((doc) => {
-      if (doc) {
+      if (doc && doc.source === 'Playground') {
         editor.setEditorState(editorStateFromSerializedDocument(editor, doc));
         editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined);
       }
@@ -290,12 +292,10 @@ export default function ActionsPlugin({
             serializedDocumentFromEditorState(editor.getEditorState(), {
               source: 'Playground',
             }),
-          ).then(() => {
-            showModal('URL copied to clipboard', (onClose) => {
-              setTimeout(onClose, 1000);
-              return <>URL copied</>;
-            });
-          })
+          ).then(
+            () => showFlashMessage('URL copied to clipboard'),
+            () => showFlashMessage('URL could not be copied to clipboard'),
+          )
         }
         title="Share"
         aria-label="Share Playground link to current editor state">

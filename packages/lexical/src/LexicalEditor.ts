@@ -20,7 +20,7 @@ import {$getRoot, $getSelection, TextNode} from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
 import {createEmptyEditorState} from './LexicalEditorState';
 import {addRootElementEvents, removeRootElementEvents} from './LexicalEvents';
-import {flushRootMutations, initMutationObserver} from './LexicalMutations';
+import {$flushRootMutations, initMutationObserver} from './LexicalMutations';
 import {LexicalNode} from './LexicalNode';
 import {
   commitPendingUpdates,
@@ -1032,7 +1032,7 @@ export class LexicalEditor {
       );
     }
 
-    flushRootMutations(this);
+    $flushRootMutations(this);
     const pendingEditorState = this._pendingEditorState;
     const tags = this._updateTags;
     const tag = options !== undefined ? options.tag : null;

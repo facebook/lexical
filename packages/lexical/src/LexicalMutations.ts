@@ -311,8 +311,6 @@ export function $flushRootMutations(editor: LexicalEditor): void {
     $flushMutations(editor, mutations, observer);
   }
 }
-/** @deprecated renamed to $flushRootMutations by @lexical/eslint-plugin rules-of-lexical */
-export const flushRootMutations = $flushRootMutations;
 
 export function initMutationObserver(editor: LexicalEditor): void {
   initTextEntryListener(editor);

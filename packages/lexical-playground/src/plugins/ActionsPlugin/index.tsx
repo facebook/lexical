@@ -225,7 +225,7 @@ export default function ActionsPlugin({
       </button>
       <button
         className="action-button share"
-        disabled={isCollabActive}
+        disabled={isCollabActive || INITIAL_SETTINGS.isCollab}
         onClick={() =>
           shareDoc(
             serializedDocumentFromEditorState(editor.getEditorState(), {

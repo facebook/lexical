@@ -156,8 +156,6 @@ export function $findNearestListItemNode(
   );
   return matchingParent as ListItemNode | null;
 }
-/** @deprecated renamed to $findNearestListItemNode by @lexical/eslint-plugin rules-of-lexical */
-export const findNearestListItemNode = $findNearestListItemNode;
 
 /**
  * Takes a deeply nested ListNode or ListItemNode and traverses up the branch to delete the first

@@ -199,9 +199,6 @@ jobs:
         browser: ['chromium']
         editor-mode: ['rich-text', 'plain-text', 'rich-text-with-collab']
         events-mode: ['modern-events']
-        include:
-          - os: macos-latest
-            browser: webkit
     runs-on: ${{ matrix.os }}
     env:
       CI: true

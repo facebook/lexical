@@ -289,8 +289,6 @@ export function $trimTextContentFromAnchor(
     }
   }
 }
-/** @deprecated renamed to $trimTextContentFromAnchor by @lexical/eslint-plugin rules-of-lexical */
-export const trimTextContentFromAnchor = $trimTextContentFromAnchor;
 
 /**
  * Gets the TextNode's style object and adds the styles to the CSS.

@@ -547,7 +547,7 @@ export function $createChildrenArray(
     const node =
       nodeMap === null ? $getNodeByKey(nodeKey) : nodeMap.get(nodeKey);
     if (node === null || node === undefined) {
-      invariant(false, 'createChildrenArray: node does not exist in nodeMap');
+      invariant(false, '$createChildrenArray: node does not exist in nodeMap');
     }
     children.push(nodeKey);
     nodeKey = node.__next;

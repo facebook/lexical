@@ -12,7 +12,6 @@ import type {
   EditorState,
   ElementNode,
   LexicalNode,
-  NodeMap,
   RangeSelection,
   TextNode,
 } from 'lexical';
@@ -217,9 +216,6 @@ export function $getOrInitCollabNodeFromSharedType(
 
   return collabNode;
 }
-/** @deprecated renamed to $getOrInitCollabNodeFromSharedType by @lexical/eslint-plugin rules-of-lexical */
-export const getOrInitCollabNodeFromSharedType =
-  $getOrInitCollabNodeFromSharedType;
 
 export function createLexicalNodeFromCollabNode(
   binding: Binding,
@@ -477,26 +473,6 @@ export function doesSelectionNeedRecovering(
 export function syncWithTransaction(binding: Binding, fn: () => void): void {
   binding.doc.transact(fn, binding);
 }
-
-export function $createChildrenArray(
-  element: ElementNode,
-  nodeMap: null | NodeMap,
-): Array<NodeKey> {
-  const children = [];
-  let nodeKey = element.__first;
-  while (nodeKey !== null) {
-    const node =
-      nodeMap === null ? $getNodeByKey(nodeKey) : nodeMap.get(nodeKey);
-    if (node === null || node === undefined) {
-      invariant(false, 'createChildrenArray: node does not exist in nodeMap');
-    }
-    children.push(nodeKey);
-    nodeKey = node.__next;
-  }
-  return children;
-}
-/** @deprecated renamed to $createChildrenArray by @lexical/eslint-plugin rules-of-lexical */
-export const createChildrenArray = $createChildrenArray;
 
 export function removeFromParent(node: LexicalNode): void {
   const oldParent = node.getParent();

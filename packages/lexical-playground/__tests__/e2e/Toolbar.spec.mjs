@@ -40,6 +40,28 @@ test.describe('Toolbar', () => {
 
     // Add caption
     await insertSampleImage(page);
+    // Catch flakiness earlier
+    await assertHTML(
+      page,
+      html`
+        <p>
+          <span contenteditable="false" data-lexical-decorator="true">
+            <div draggable="false">
+              <img
+                alt="Yellow flower in tilt shift lens"
+                draggable="false"
+                src="${SAMPLE_IMAGE_URL}" />
+            </div>
+          </span>
+          <br />
+        </p>
+      `,
+      undefined,
+      {
+        ignoreClasses: true,
+        ignoreInlineStyles: true,
+      },
+    );
     await click(page, '.editor-image img');
     await click(page, '.image-caption-button');
     await focus(page, '.ImageNode__contentEditable');

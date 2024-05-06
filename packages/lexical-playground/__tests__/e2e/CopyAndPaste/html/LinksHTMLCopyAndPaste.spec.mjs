@@ -21,9 +21,11 @@ import {
   assertSelection,
   click,
   copyToClipboard,
+  expect,
   focusEditor,
   html,
   initialize,
+  locate,
   pasteFromClipboard,
   test,
 } from '../../../utils/index.mjs';
@@ -77,6 +79,7 @@ test.describe('HTML Links CopyAndPaste', () => {
     );
 
     await click(page, '.link');
+    await expect(locate(page, '.link-input')).toBeFocused();
     await page.keyboard.type('facebook.com');
     await click(page, '.link-confirm');
 

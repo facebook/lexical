@@ -12,31 +12,26 @@
  */
 
 import type {
-    LexicalEditor
+    LexicalEditor,
+    LexicalCommand
 } from 'lexical';
 
-import {
-  LexicalCommand,
-} from 'lexical';
-
-export type LexicalCommandLog = ReadonlyArray<
-  LexicalCommand<any> & {payload: any}
->;
+export type LexicalCommandLog = $ReadOnlyArray<LexicalCommand<mixed> | {payload: mixed}>;
 
 declare export function generateContent(
-  editor: LexicalEditor,
-  commandsLog: ReadonlyArray<LexicalCommand<any> & {payload: any}>,
-  exportDOM: boolean,
-  obfuscateText?: boolean,
+editor: LexicalEditor,
+commandsLog: $ReadOnlyArray<LexicalCommandLog>,
+exportDOM: boolean,
+obfuscateText?: boolean,
 ): string;
 
 declare export function registerLexicalCommandLogger(
-  editor: LexicalEditor,
-  setLoggedCommands: (
-    v: (oldValue: LexicalCommandLog) => LexicalCommandLog,
-  ) => void,
+editor: LexicalEditor,
+setLoggedCommands: (
+  v: (oldValue: LexicalCommandLog) => LexicalCommandLog,
+) => void,
 ): () => void;
 
 declare export function useLexicalCommandsLog(
-  editor: LexicalEditor,
+editor: LexicalEditor,
 ): LexicalCommandLog;

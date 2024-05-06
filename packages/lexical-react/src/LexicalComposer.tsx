@@ -6,7 +6,10 @@
  *
  */
 
-import type {LexicalComposerContextType} from '@lexical/react/LexicalComposerContext';
+import type {
+  LexicalComposerContextType,
+  LexicalComposerContextWithEditor,
+} from '@lexical/react/LexicalComposerContext';
 
 import {
   createLexicalComposerContext,
@@ -25,7 +28,7 @@ import {
   LexicalNode,
   LexicalNodeReplacement,
 } from 'lexical';
-import {useMemo} from 'react';
+import {useRef, useState} from 'react';
 import * as React from 'react';
 import {CAN_USE_DOM} from 'shared/canUseDOM';
 import useLayoutEffect from 'shared/useLayoutEffect';
@@ -54,55 +57,48 @@ type Props = React.PropsWithChildren<{
 }>;
 
 export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
-  const composerContext: [LexicalEditor, LexicalComposerContextType] = useMemo(
-    () => {
-      const {
-        theme,
-        namespace,
-        editor__DEPRECATED: initialEditor,
-        nodes,
-        onError,
-        editorState: initialEditorState,
+  const initialConfigRef = useRef(initialConfig);
+  const composerContext = useState<LexicalComposerContextWithEditor>(() => {
+    const {
+      theme,
+      namespace,
+      editable,
+      editor__DEPRECATED: initialEditor,
+      nodes,
+      onError,
+      editorState: initialEditorState,
+      html,
+    } = initialConfigRef.current;
+
+    const context: LexicalComposerContextType = createLexicalComposerContext(
+      null,
+      theme,
+    );
+
+    let editor = initialEditor || null;
+
+    if (editor === null) {
+      const newEditor = createEditor({
+        editable,
         html,
-      } = initialConfig;
-
-      const context: LexicalComposerContextType = createLexicalComposerContext(
-        null,
+        namespace,
+        nodes,
+        onError: (error) => onError(error, newEditor),
         theme,
-      );
+      });
+      initializeEditor(newEditor, initialEditorState);
 
-      let editor = initialEditor || null;
+      editor = newEditor;
+    }
 
-      if (editor === null) {
-        const newEditor = createEditor({
-          editable: initialConfig.editable,
-          html,
-          namespace,
-          nodes,
-          onError: (error) => onError(error, newEditor),
-          theme,
-        });
-        initializeEditor(newEditor, initialEditorState);
-
-        editor = newEditor;
-      }
-
-      return [editor, context];
-    },
-
-    // We only do this for init
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
-  );
+    return [editor, context];
+  })[0];
 
   useLayoutEffect(() => {
-    const isEditable = initialConfig.editable;
+    const isEditable = initialConfigRef.current.editable;
     const [editor] = composerContext;
     editor.setEditable(isEditable !== undefined ? isEditable : true);
-
-    // We only do this for init
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [composerContext]);
 
   return (
     <LexicalComposerContext.Provider value={composerContext}>

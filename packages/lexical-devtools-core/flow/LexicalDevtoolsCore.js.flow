@@ -10,3 +10,28 @@
 /**
  * LexicalDevtoolsCore
  */
+
+import type {
+    LexicalEditor,
+    LexicalCommand
+} from 'lexical';
+
+export type LexicalCommandLog = $ReadOnlyArray<LexicalCommand<mixed> | {payload: mixed}>;
+
+declare export function generateContent(
+editor: LexicalEditor,
+commandsLog: $ReadOnlyArray<LexicalCommandLog>,
+exportDOM: boolean,
+obfuscateText?: boolean,
+): string;
+
+declare export function registerLexicalCommandLogger(
+editor: LexicalEditor,
+setLoggedCommands: (
+  v: (oldValue: LexicalCommandLog) => LexicalCommandLog,
+) => void,
+): () => void;
+
+declare export function useLexicalCommandsLog(
+editor: LexicalEditor,
+): LexicalCommandLog;

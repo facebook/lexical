@@ -30,8 +30,8 @@
     "lexical": "0.14.5",
     "lodash-es": "^4.17.21",
     "prettier": "^2.3.2",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "react": "19.0.0-beta-b498834eab-20240506",
+    "react-dom": "19.0.0-beta-b498834eab-20240506",
     "react-error-boundary": "^3.1.4",
     "y-websocket": "^1.5.4",
     "yjs": ">=13.5.42"
@@ -43,6 +43,10 @@
     "rollup-plugin-copy": "^3.5.0",
     "vite": "^5.2.11",
     "vite-plugin-replace": "^0.1.1"
+  },
+  "overrides": {
+    "react": "19.0.0-beta-b498834eab-20240506",
+    "react-dom": "19.0.0-beta-b498834eab-20240506"
   },
   "sideEffects": false
 }

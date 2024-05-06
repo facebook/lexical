@@ -7,13 +7,14 @@
  */
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {LexicalEditor} from 'lexical';
 import * as React from 'react';
 import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'react-dom/test-utils';
 
 import {LexicalComposer} from '../../LexicalComposer';
 
-describe('LexicalNodeHelpers tests', () => {
+describe('LexicalComposer tests', () => {
   let container: HTMLDivElement | null = null;
   let reactRoot: Root;
 
@@ -57,6 +58,44 @@ describe('LexicalNodeHelpers tests', () => {
 
     await ReactTestUtils.act(async () => {
       reactRoot.render(<App />);
+    });
+  });
+
+  describe('LexicalComposerContext editor identity', () => {
+    (
+      [
+        {name: 'StrictMode', size: 2},
+        {name: 'Fragment', size: 1},
+      ] as const
+    ).forEach(({name, size}) => {
+      const Wrapper = React[name];
+      const editors = new Set<LexicalEditor>();
+      function App() {
+        return (
+          <LexicalComposer
+            initialConfig={{
+              editorState(editor) {
+                editors.add(editor);
+              },
+              namespace: '',
+              nodes: [],
+              onError: () => {
+                throw Error();
+              },
+            }}
+          />
+        );
+      }
+      it(`renders ${size} editors under ${name}`, async () => {
+        await ReactTestUtils.act(async () => {
+          reactRoot.render(
+            <Wrapper>
+              <App />
+            </Wrapper>,
+          );
+        });
+        expect(editors.size).toBe(size);
+      });
     });
   });
 });

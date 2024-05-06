@@ -157,14 +157,11 @@ export {
   $setSelection,
   $splitNode,
   getNearestEditorFromDOMNode,
-  isBlockDomNode,
   isHTMLAnchorElement,
   isHTMLElement,
-  isInlineDomNode,
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
 } from './LexicalUtils';
-export {ArtificialNode__DO_NOT_USE} from './nodes/ArtificialNode';
 export {$isDecoratorNode, DecoratorNode} from './nodes/LexicalDecoratorNode';
 export {$isElementNode, ElementNode} from './nodes/LexicalElementNode';
 export type {SerializedLineBreakNode} from './nodes/LexicalLineBreakNode';

@@ -44,13 +44,7 @@ import normalizeClassNames from 'shared/normalizeClassNames';
 export {default as markSelection} from './markSelection';
 export {default as mergeRegister} from './mergeRegister';
 export {default as positionNodeOnRange} from './positionNodeOnRange';
-export {
-  $splitNode,
-  isBlockDomNode,
-  isHTMLAnchorElement,
-  isHTMLElement,
-  isInlineDomNode,
-} from 'lexical';
+export {$splitNode, isHTMLAnchorElement, isHTMLElement} from 'lexical';
 // Hotfix to export these with inlined types #5918
 export const CAN_USE_BEFORE_INPUT: boolean = CAN_USE_BEFORE_INPUT_;
 export const CAN_USE_DOM: boolean = CAN_USE_DOM_;
@@ -394,7 +388,7 @@ export function registerNestedElementResolver<N extends ElementNode>(
     return null;
   };
 
-  const $elementNodeTransform = (node: N) => {
+  const elementNodeTransform = (node: N) => {
     const match = $findMatch(node);
 
     if (match !== null) {
@@ -428,7 +422,7 @@ export function registerNestedElementResolver<N extends ElementNode>(
     }
   };
 
-  return editor.registerNodeTransform(targetNode, $elementNodeTransform);
+  return editor.registerNodeTransform(targetNode, elementNodeTransform);
 }
 
 /**

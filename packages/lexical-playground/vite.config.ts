@@ -7,76 +7,57 @@
  */
 
 import babel from '@rollup/plugin-babel';
-import commonjs from '@rollup/plugin-commonjs';
 import react from '@vitejs/plugin-react';
-import {createRequire} from 'node:module';
 import {defineConfig} from 'vite';
 import {replaceCodePlugin} from 'vite-plugin-replace';
 
 import moduleResolution from '../shared/viteModuleResolution';
 import viteCopyEsm from './viteCopyEsm';
 
-const require = createRequire(import.meta.url);
-
 // https://vitejs.dev/config/
-export default defineConfig(({command}) => {
-  return {
-    build: {
-      outDir: 'build',
-      rollupOptions: {
-        input: {
-          main: new URL('./index.html', import.meta.url).pathname,
-          split: new URL('./split/index.html', import.meta.url).pathname,
-        },
-        onwarn(warning, warn) {
-          if (
-            warning.code === 'EVAL' &&
-            warning.id &&
-            /[\\/]node_modules[\\/]@excalidraw\/excalidraw[\\/]/.test(
-              warning.id,
-            )
-          ) {
-            return;
-          }
-          warn(warning);
-        },
+export default defineConfig({
+  build: {
+    outDir: 'build',
+    rollupOptions: {
+      input: {
+        main: new URL('./index.html', import.meta.url).pathname,
+        split: new URL('./split/index.html', import.meta.url).pathname,
       },
     },
-    define: {
-      'process.env.IS_PREACT': process.env.IS_PREACT,
-    },
-    plugins: [
-      replaceCodePlugin({
-        replacements: [
+  },
+  define: {
+    'process.env.IS_PREACT': process.env.IS_PREACT,
+  },
+  plugins: [
+    replaceCodePlugin({
+      replacements: [
+        {
+          from: /__DEV__/g,
+          to: 'true',
+        },
+      ],
+    }),
+    babel({
+      babelHelpers: 'bundled',
+      babelrc: false,
+      configFile: false,
+      exclude: '/**/node_modules/**',
+      extensions: ['jsx', 'js', 'ts', 'tsx', 'mjs'],
+      plugins: [
+        '@babel/plugin-transform-flow-strip-types',
+        [
+          require('../../scripts/error-codes/transform-error-messages'),
           {
-            from: /__DEV__/g,
-            to: 'true',
+            noMinify: true,
           },
         ],
-      }),
-      babel({
-        babelHelpers: 'bundled',
-        babelrc: false,
-        configFile: false,
-        exclude: '/**/node_modules/**',
-        extensions: ['jsx', 'js', 'ts', 'tsx', 'mjs'],
-        plugins: [
-          '@babel/plugin-transform-flow-strip-types',
-          [
-            require('../../scripts/error-codes/transform-error-messages'),
-            {
-              noMinify: true,
-            },
-          ],
-        ],
-        presets: ['@babel/preset-react'],
-      }),
-      react(),
-      viteCopyEsm(),
-      commonjs(),
-    ],
-    resolve: {
-      alias: moduleResolution(command === 'serve' ? 'source' : 'development'),
-    },
-  };
+      ],
+      presets: ['@babel/preset-react'],
+    }),
+    react(),
+    viteCopyEsm(),
+  ],
+  resolve: {
+    alias: moduleResolution,
+  },
 });

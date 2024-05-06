@@ -264,7 +264,6 @@ function internalMarkParentElementsAsDirty(
   }
 }
 
-// TODO #6031 this function or their callers have to adjust selection (i.e. insertBefore)
 export function removeFromParent(node: LexicalNode): void {
   const oldParent = node.getParent();
   if (oldParent !== null) {
@@ -391,7 +390,7 @@ export function $getNodeByKey<T extends LexicalNode>(
   return node;
 }
 
-export function $getNodeFromDOMNode(
+export function getNodeFromDOMNode(
   dom: Node,
   editorState?: EditorState,
 ): LexicalNode | null {
@@ -403,8 +402,6 @@ export function $getNodeFromDOMNode(
   }
   return null;
 }
-/** @deprecated renamed to $getNodeFromDOMNode by @lexical/eslint-plugin rules-of-lexical */
-export const getNodeFromDOMNode = $getNodeFromDOMNode;
 
 export function $getNearestNodeFromDOMNode(
   startingDOM: Node,
@@ -412,7 +409,7 @@ export function $getNearestNodeFromDOMNode(
 ): LexicalNode | null {
   let dom: Node | null = startingDOM;
   while (dom != null) {
-    const node = $getNodeFromDOMNode(dom, editorState);
+    const node = getNodeFromDOMNode(dom, editorState);
     if (node !== null) {
       return node;
     }
@@ -492,7 +489,7 @@ export function $flushMutations(): void {
   flushRootMutations(editor);
 }
 
-export function $getNodeFromDOM(dom: Node): null | LexicalNode {
+export function getNodeFromDOM(dom: Node): null | LexicalNode {
   const editor = getActiveEditor();
   const nodeKey = getNodeKeyFromDOM(dom, editor);
   if (nodeKey === null) {
@@ -504,8 +501,6 @@ export function $getNodeFromDOM(dom: Node): null | LexicalNode {
   }
   return $getNodeByKey(nodeKey);
 }
-/** @deprecated renamed to $getNodeFromDOM by @lexical/eslint-plugin rules-of-lexical */
-export const getNodeFromDOM = $getNodeFromDOM;
 
 export function getTextNodeOffset(
   node: TextNode,
@@ -1587,32 +1582,6 @@ export function isHTMLAnchorElement(x: Node): x is HTMLAnchorElement {
 export function isHTMLElement(x: Node | EventTarget): x is HTMLElement {
   // @ts-ignore-next-line - strict check on nodeType here should filter out non-Element EventTarget implementors
   return x.nodeType === 1;
-}
-
-/**
- *
- * @param node - the Dom Node to check
- * @returns if the Dom Node is an inline node
- */
-export function isInlineDomNode(node: Node) {
-  const inlineNodes = new RegExp(
-    /^(a|abbr|acronym|b|cite|code|del|em|i|ins|kbd|label|output|q|ruby|s|samp|span|strong|sub|sup|time|u|tt|var|#text)$/,
-    'i',
-  );
-  return node.nodeName.match(inlineNodes) !== null;
-}
-
-/**
- *
- * @param node - the Dom Node to check
- * @returns if the Dom Node is a block node
- */
-export function isBlockDomNode(node: Node) {
-  const blockNodes = new RegExp(
-    /^(address|article|aside|blockquote|canvas|dd|div|dl|dt|fieldset|figcaption|figure|footer|form|h1|h2|h3|h4|h5|h6|header|hr|li|main|nav|noscript|ol|p|pre|section|table|td|tfoot|ul|video)$/,
-    'i',
-  );
-  return node.nodeName.match(blockNodes) !== null;
 }
 
 /**

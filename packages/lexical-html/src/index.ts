@@ -19,18 +19,8 @@ import {
   $cloneWithProperties,
   $sliceSelectedTextNodeContent,
 } from '@lexical/selection';
-import {isBlockDomNode, isHTMLElement} from '@lexical/utils';
-import {
-  $createLineBreakNode,
-  $createParagraphNode,
-  $getRoot,
-  $isBlockElementNode,
-  $isElementNode,
-  $isRootOrShadowRoot,
-  $isTextNode,
-  ArtificialNode__DO_NOT_USE,
-  ElementNode,
-} from 'lexical';
+import {isHTMLElement} from '@lexical/utils';
+import {$getRoot, $isElementNode, $isTextNode} from 'lexical';
 
 /**
  * How you parse your html string to get a document is left up to you. In the browser you can use the native
@@ -43,22 +33,15 @@ export function $generateNodesFromDOM(
 ): Array<LexicalNode> {
   const elements = dom.body ? dom.body.childNodes : [];
   let lexicalNodes: Array<LexicalNode> = [];
-  const allArtificialNodes: Array<ArtificialNode__DO_NOT_USE> = [];
   for (let i = 0; i < elements.length; i++) {
     const element = elements[i];
     if (!IGNORE_TAGS.has(element.nodeName)) {
-      const lexicalNode = $createNodesFromDOM(
-        element,
-        editor,
-        allArtificialNodes,
-        false,
-      );
+      const lexicalNode = $createNodesFromDOM(element, editor);
       if (lexicalNode !== null) {
         lexicalNodes = lexicalNodes.concat(lexicalNode);
       }
     }
   }
-  $unwrapArtificalNodes(allArtificialNodes);
 
   return lexicalNodes;
 }
@@ -178,6 +161,7 @@ function getConversionFunction(
   if (cachedConversions !== undefined) {
     for (const cachedConversion of cachedConversions) {
       const domConversion = cachedConversion(domNode);
+
       if (
         domConversion !== null &&
         (currentConversion === null ||
@@ -196,8 +180,6 @@ const IGNORE_TAGS = new Set(['STYLE', 'SCRIPT']);
 function $createNodesFromDOM(
   node: Node,
   editor: LexicalEditor,
-  allArtificialNodes: Array<ArtificialNode__DO_NOT_USE>,
-  hasBlockAncestorLexicalNode: boolean,
   forChildMap: Map<string, DOMChildConversion> = new Map(),
   parentLexicalNode?: LexicalNode | null | undefined,
 ): Array<LexicalNode> {
@@ -252,20 +234,11 @@ function $createNodesFromDOM(
   const children = node.childNodes;
   let childLexicalNodes = [];
 
-  const hasBlockAncestorLexicalNodeForChildren =
-    currentLexicalNode != null && $isRootOrShadowRoot(currentLexicalNode)
-      ? false
-      : (currentLexicalNode != null &&
-          $isBlockElementNode(currentLexicalNode)) ||
-        hasBlockAncestorLexicalNode;
-
   for (let i = 0; i < children.length; i++) {
     childLexicalNodes.push(
       ...$createNodesFromDOM(
         children[i],
         editor,
-        allArtificialNodes,
-        hasBlockAncestorLexicalNodeForChildren,
         new Map(forChildMap),
         currentLexicalNode,
       ),
@@ -274,22 +247,6 @@ function $createNodesFromDOM(
 
   if (postTransform != null) {
     childLexicalNodes = postTransform(childLexicalNodes);
-  }
-
-  if (isBlockDomNode(node)) {
-    if (!hasBlockAncestorLexicalNodeForChildren) {
-      childLexicalNodes = wrapContinuousInlines(
-        node,
-        childLexicalNodes,
-        $createParagraphNode,
-      );
-    } else {
-      childLexicalNodes = wrapContinuousInlines(node, childLexicalNodes, () => {
-        const artificialNode = new ArtificialNode__DO_NOT_USE();
-        allArtificialNodes.push(artificialNode);
-        return artificialNode;
-      });
-    }
   }
 
   if (currentLexicalNode == null) {
@@ -305,50 +262,4 @@ function $createNodesFromDOM(
   }
 
   return lexicalNodes;
-}
-
-function wrapContinuousInlines(
-  domNode: Node,
-  nodes: Array<LexicalNode>,
-  createWrapperFn: () => ElementNode,
-): Array<LexicalNode> {
-  const out: Array<LexicalNode> = [];
-  let continuousInlines: Array<LexicalNode> = [];
-  // wrap contiguous inline child nodes in para
-  for (let i = 0; i < nodes.length; i++) {
-    const node = nodes[i];
-    if ($isBlockElementNode(node)) {
-      out.push(node);
-    } else {
-      continuousInlines.push(node);
-      if (
-        i === nodes.length - 1 ||
-        (i < nodes.length - 1 && $isBlockElementNode(nodes[i + 1]))
-      ) {
-        const wrapper = createWrapperFn();
-        wrapper.append(...continuousInlines);
-        out.push(wrapper);
-        continuousInlines = [];
-      }
-    }
-  }
-  return out;
-}
-
-function $unwrapArtificalNodes(
-  allArtificialNodes: Array<ArtificialNode__DO_NOT_USE>,
-) {
-  for (const node of allArtificialNodes) {
-    if (node.getNextSibling() instanceof ArtificialNode__DO_NOT_USE) {
-      node.insertAfter($createLineBreakNode());
-    }
-  }
-  // Replace artificial node with it's children
-  for (const node of allArtificialNodes) {
-    const children = node.getChildren();
-    for (const child of children) {
-      node.insertBefore(child);
-    }
-    node.remove();
-  }
 }

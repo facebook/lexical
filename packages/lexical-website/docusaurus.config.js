@@ -189,7 +189,7 @@ const docusaurusPluginTypedocConfig = {
     autoConfiguration: false,
     position: 5,
   },
-  tsconfig: '../../tsconfig.build.json',
+  tsconfig: '../../tsconfig.json',
   watch: process.env.TYPEDOC_WATCH === 'true',
 };
 

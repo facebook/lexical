@@ -207,7 +207,7 @@ describe('LexicalNodeHelpers tests', () => {
     test('DFS of empty ParagraphNode returns only itself', async () => {
       const editor: LexicalEditor = testEnv.editor;
 
-      let paragraphKey: string;
+      let paragraphKey;
 
       await editor.update(() => {
         const root = $getRoot();
@@ -222,12 +222,12 @@ describe('LexicalNodeHelpers tests', () => {
         root.append(paragraph, paragraph2);
       });
       await editor.update(() => {
-        const paragraph = $getNodeByKey(paragraphKey)!;
+        const paragraph = $getNodeByKey(paragraphKey);
 
-        expect($dfs(paragraph ?? undefined)).toEqual([
+        expect($dfs(paragraph)).toEqual([
           {
             depth: 1,
-            node: paragraph?.getLatest(),
+            node: paragraph.getLatest(),
           },
         ]);
       });

@@ -11,7 +11,6 @@
 const restrictedGlobals = require('confusing-browser-globals');
 
 const OFF = 0;
-const WARN = 1;
 const ERROR = 2;
 
 module.exports = {
@@ -37,7 +36,7 @@ module.exports = {
         'packages/*/__tests__/**/*.?(m)js',
         'packages/*/src/**/*.jsx',
       ],
-      parser: '@babel/eslint-parser',
+      parser: 'babel-eslint',
       parserOptions: {
         allowImportExportEverywhere: true,
         sourceType: 'module',
@@ -65,7 +64,6 @@ module.exports = {
         'eslint:recommended',
         'plugin:@typescript-eslint/eslint-recommended',
         'plugin:@typescript-eslint/recommended',
-        'plugin:@lexical/all',
       ],
       files: ['**/*.ts', '**/*.tsx'],
       parser: '@typescript-eslint/parser',
@@ -74,17 +72,6 @@ module.exports = {
       },
       plugins: ['react', '@typescript-eslint', 'header'],
       rules: {
-        '@lexical/rules-of-lexical': [
-          WARN,
-          /** @type import('./packages/lexical-eslint-plugin/src').RulesOfLexicalOptions */ ({
-            isDollarFunction: ['^INTERNAL_\\$'],
-            isIgnoredFunction: [
-              // @lexical/yjs
-              'createBinding',
-            ],
-            isSafeDollarFunction: '$createRootNode',
-          }),
-        ],
         '@typescript-eslint/ban-ts-comment': OFF,
         '@typescript-eslint/no-this-alias': OFF,
         '@typescript-eslint/no-unused-vars': [ERROR, {args: 'none'}],
@@ -92,10 +79,8 @@ module.exports = {
       },
     },
     {
-      files: [
-        // These aren't compiled, but they're written in module JS
-        'packages/lexical-playground/esm/*.mjs',
-      ],
+      // These aren't compiled, but they're written in module JS
+      files: ['packages/lexical-playground/esm/*.mjs'],
       parserOptions: {
         sourceType: 'module',
       },
@@ -112,7 +97,7 @@ module.exports = {
     },
   ],
 
-  parser: '@babel/eslint-parser',
+  parser: 'babel-eslint',
 
   parserOptions: {
     ecmaFeatures: {
@@ -134,7 +119,6 @@ module.exports = {
     'react',
     'no-only-tests',
     'lexical',
-    '@lexical',
   ],
 
   // Stop ESLint from looking for a configuration file in parent folders
@@ -153,9 +137,9 @@ module.exports = {
     'eol-last': ERROR,
     eqeqeq: [ERROR, 'allow-null'],
     // Prettier forces semicolons in a few places
-    'ft-flow/object-type-delimiter': OFF,
+    'flowtype/object-type-delimiter': OFF,
 
-    'ft-flow/sort-keys': ERROR,
+    'flowtype/sort-keys': ERROR,
 
     'header/header': [2, 'scripts/www/headerTemplate.js'],
 

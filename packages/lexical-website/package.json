@@ -14,9 +14,9 @@
     "write-heading-ids": "docusaurus write-heading-ids"
   },
   "dependencies": {
-    "@docusaurus/core": "^3.3.2",
-    "@docusaurus/preset-classic": "^3.3.2",
-    "@docusaurus/theme-search-algolia": "^3.3.2",
+    "@docusaurus/core": "^3.2.1",
+    "@docusaurus/preset-classic": "^3.2.1",
+    "@docusaurus/theme-search-algolia": "^3.2.1",
     "@mdx-js/react": "^3.0.1",
     "@radix-ui/react-tabs": "^1.0.4",
     "@vercel/analytics": "^1.0.1",

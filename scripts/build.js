@@ -258,7 +258,7 @@ async function build(name, inputFile, outputPath, outputFile, isProd, format) {
     file: outputFile,
     format, // change between es and cjs modules
     freeze: false,
-    interop: format === 'esm' ? 'esModule' : undefined,
+    interop: format === 'esm' ? 'esModule' : false,
     paths: format === 'esm' ? resolveExternalEsm : undefined,
   };
   const result = await rollup.rollup(inputOptions);

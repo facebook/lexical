@@ -13,6 +13,9 @@
         "./packages/lexical-devtools-core/src/index.ts"
       ],
       "@lexical/dragon": ["./packages/lexical-dragon/src/index.ts"],
+      "@lexical/eslint-plugin": [
+        "./packages/lexical-eslint-plugin/src/index.ts"
+      ],
       "@lexical/file": ["./packages/lexical-file/src/index.ts"],
       "@lexical/hashtag": ["./packages/lexical-hashtag/src/index.ts"],
       "@lexical/headless": ["./packages/lexical-headless/src/index.ts"],

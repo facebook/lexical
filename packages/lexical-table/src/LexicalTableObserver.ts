@@ -29,9 +29,9 @@ import invariant from 'shared/invariant';
 import {$isTableCellNode} from './LexicalTableCellNode';
 import {$isTableNode} from './LexicalTableNode';
 import {
-  type TableSelection,
   $createTableSelection,
   $isTableSelection,
+  type TableSelection,
 } from './LexicalTableSelection';
 import {
   $findTableNode,

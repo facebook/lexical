@@ -7,7 +7,12 @@
  */
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {LexicalEditor} from 'lexical';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  LexicalEditor,
+} from 'lexical';
 import * as React from 'react';
 import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'react-dom/test-utils';
@@ -76,6 +81,11 @@ describe('LexicalComposer tests', () => {
             initialConfig={{
               editorState(editor) {
                 editors.add(editor);
+                editor.update(() => {
+                  const p = $createParagraphNode();
+                  p.append($createTextNode('initial state'));
+                  $getRoot().append(p);
+                });
               },
               namespace: '',
               nodes: [],
@@ -95,6 +105,12 @@ describe('LexicalComposer tests', () => {
           );
         });
         expect(editors.size).toBe(size);
+        [...editors].forEach((editor, i) => {
+          expect([
+            i,
+            editor.getEditorState().read(() => $getRoot().getTextContent()),
+          ]).toEqual([i, 'initial state']);
+        });
       });
     });
   });

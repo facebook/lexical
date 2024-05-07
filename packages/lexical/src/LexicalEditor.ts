@@ -447,7 +447,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
       // Ensure custom nodes implement required methods.
       if (__DEV__) {
         const name = klass.name;
-        if (name !== 'RootNode') {
+        if (name !== 'RootNode' && name !== 'ArtificialNode__DO_NOT_USE') {
           const proto = klass.prototype;
           ['getType', 'clone'].forEach((method) => {
             // eslint-disable-next-line no-prototype-builtins

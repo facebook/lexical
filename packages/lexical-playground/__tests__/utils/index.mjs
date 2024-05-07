@@ -635,6 +635,8 @@ export async function dragMouse(
     toY += toBoundingBox.height;
   }
 
+  //simulate more than 1 mouse move event to replicate human dragging
+  await page.mouse.move((fromX + toX) / 2, (fromY + toY) / 2);
   await page.mouse.move(toX, toY);
 
   if (mouseUp) {

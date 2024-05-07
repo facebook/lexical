@@ -1,95 +1,17 @@
-name: Lexical Tests
+name: Lexical e2e tests
 
 on:
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - 'packages/lexical-website/**'
-  pull_request:
-    types: [opened, synchronize, reopened]
-    paths-ignore:
-      - 'packages/lexical-website/**'
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  workflow_call:
 
 jobs:
-  integrity:
-    if: github.repository_owner == 'facebook'
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [20.11.0]
-    env:
-      CI: true
-      GITHUB_TOKEN: ${{ secrets.DANGER_GITHUB_API_TOKEN }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: npm
-      - name: Install dependencies
-        run: npm ci
-      - run: npm run ci-check
-      - run: npm run build
-      - run: npm run build-www
-
-  unit:
-    if: github.repository_owner == 'facebook'
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [18.18.0]
-        react-override: ['', 'beta']
-    env:
-      CI: true
-    steps:
-      - uses: actions/checkout@v4
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: npm
-      - name: Install dependencies
-        run: npm ci
-      - name: Override React ${{ matrix.react-override }}
-        if: matrix.react-override != ''
-        # This should be safe since we are caching ~/.npm and not node_modules
-        run: npm i --no-save react@${{ matrix.react-override }} react-dom@${{ matrix.react-override }}
-      - run: npm run test-unit
-
-  integration:
-    if: github.repository_owner == 'facebook'
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [18.18.0]
-    env:
-      CI: true
-    steps:
-      - uses: actions/checkout@v4
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: npm
-      - name: Install dependencies
-        run: npm ci
-      - run: npm run test-integration
-
-  e2e-mac:
-    if: github.repository_owner == 'facebook'
+  mac:
     strategy:
       matrix:
         node-version: [18.18.0]
         browser: ['chromium', 'firefox', 'webkit']
         editor-mode: ['rich-text', 'plain-text']
         events-mode: ['legacy-events', 'modern-events']
-    uses: ./.github/workflows/e2e-test.yml
+    uses: ./.github/workflows/call-e2e-test.yml
     with:
       os: 'macos-latest'
       node-version: ${{ matrix.node-version }}
@@ -97,15 +19,14 @@ jobs:
       editor-mode: ${{ matrix.editor-mode }}
       events-mode: ${{ matrix.events-mode }}
 
-  e2e-linux:
-    if: github.repository_owner == 'facebook'
+  linux:
     strategy:
       matrix:
         node-version: [18.18.0]
         browser: ['chromium', 'firefox']
         editor-mode: ['rich-text', 'plain-text']
         events-mode: ['legacy-events', 'modern-events']
-    uses: ./.github/workflows/e2e-test.yml
+    uses: ./.github/workflows/call-e2e-test.yml
     with:
       os: 'ubuntu-latest'
       node-version: ${{ matrix.node-version }}
@@ -113,15 +34,14 @@ jobs:
       editor-mode: ${{ matrix.editor-mode }}
       events-mode: ${{ matrix.events-mode }}
 
-  e2e-windows:
-    if: github.repository_owner == 'facebook'
+  windows:
     strategy:
       matrix:
         node-version: [18.18.0]
         browser: ['chromium', 'firefox']
         editor-mode: ['rich-text', 'plain-text']
         events-mode: ['legacy-events', 'modern-events']
-    uses: ./.github/workflows/e2e-test.yml
+    uses: ./.github/workflows/call-e2e-test.yml
     with:
       os: 'windows-latest'
       node-version: ${{ matrix.node-version }}
@@ -129,13 +49,12 @@ jobs:
       editor-mode: ${{ matrix.editor-mode }}
       events-mode: ${{ matrix.events-mode }}
 
-  e2e-collab-mac:
-    if: github.repository_owner == 'facebook'
+  collab-mac:
     strategy:
       matrix:
         node-version: [18.18.0]
         browser: ['chromium', 'firefox', 'webkit']
-    uses: ./.github/workflows/e2e-test.yml
+    uses: ./.github/workflows/call-e2e-test.yml
     with:
       os: 'macos-latest'
       node-version: ${{ matrix.node-version }}
@@ -143,13 +62,12 @@ jobs:
       editor-mode: 'rich-text-with-collab'
       events-mode: 'modern-events'
 
-  e2e-collab-linux:
-    if: github.repository_owner == 'facebook'
+  collab-linux:
     strategy:
       matrix:
         node-version: [18.18.0]
         browser: ['chromium', 'firefox']
-    uses: ./.github/workflows/e2e-test.yml
+    uses: ./.github/workflows/call-e2e-test.yml
     with:
       os: 'ubuntu-latest'
       node-version: ${{ matrix.node-version }}
@@ -157,13 +75,12 @@ jobs:
       editor-mode: 'rich-text-with-collab'
       events-mode: 'modern-events'
 
-  e2e-collab-windows:
-    if: github.repository_owner == 'facebook'
+  collab-windows:
     strategy:
       matrix:
         node-version: [18.18.0]
         browser: ['chromium', 'firefox']
-    uses: ./.github/workflows/e2e-test.yml
+    uses: ./.github/workflows/call-e2e-test.yml
     with:
       os: 'windows-latest'
       node-version: ${{ matrix.node-version }}
@@ -171,8 +88,7 @@ jobs:
       editor-mode: 'rich-text-with-collab'
       events-mode: 'modern-events'
 
-  e2e-prod:
-    if: github.repository_owner == 'facebook'
+  prod:
     strategy:
       matrix:
         os: ['macos-latest']
@@ -180,7 +96,7 @@ jobs:
         browser: ['chromium']
         editor-mode: ['rich-text']
         events-mode: ['modern-events']
-    uses: ./.github/workflows/e2e-test.yml
+    uses: ./.github/workflows/call-e2e-test.yml
     with:
       prod: true
       os: ${{ matrix.os }}
@@ -189,8 +105,7 @@ jobs:
       editor-mode: ${{ matrix.editor-mode }}
       events-mode: ${{ matrix.events-mode }}
 
-  e2e-collab-prod:
-    if: github.repository_owner == 'facebook'
+  collab-prod:
     strategy:
       matrix:
         os: ['macos-latest']
@@ -198,7 +113,7 @@ jobs:
         browser: ['chromium']
         editor-mode: ['rich-text-with-collab']
         events-mode: ['modern-events']
-    uses: ./.github/workflows/e2e-test.yml
+    uses: ./.github/workflows/call-e2e-test.yml
     with:
       prod: true
       os: ${{ matrix.os }}
@@ -206,3 +121,18 @@ jobs:
       browser: ${{ matrix.browser }}
       editor-mode: ${{ matrix.editor-mode }}
       events-mode: ${{ matrix.events-mode }}
+
+  react-beta:
+    strategy:
+      matrix:
+        editor-mode: ['rich-text', 'rich-text-with-collab']
+        prod: [false, true]
+    uses: ./.github/workflows/call-e2e-test.yml
+    with:
+      os: 'macos-latest'
+      browser: 'chromium'
+      node-version: 18.18.0
+      events-mode: 'modern-events'
+      editor-mode: ${{ matrix.editor-mode }}
+      prod: ${{ matrix.prod }}
+      react-override: beta

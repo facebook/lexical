@@ -9,6 +9,7 @@ on:
       editor-mode: {required: true, type: string}
       events-mode: {required: true, type: string}
       prod: {required: false, type: boolean}
+      react-override: {required: false, type: string}
 
 jobs:
   e2e-test:
@@ -18,6 +19,7 @@ jobs:
       CI: true
       E2E_EDITOR_MODE: ${{ inputs.editor-mode }}
       E2E_EVENTS_MODE: ${{ inputs.events-mode }}
+      REACT_OVERRIDE: ${{ inputs.react-override }}
       cache_playwright_path: ${{ inputs.os == 'macos-latest' && '~/Library/Caches/ms-playwright' || inputs.os == 'windows-latest' && 'C:\Users\runneradmin\AppData\Local\ms-playwright' || '~/.cache/ms-playwright' }}
       test_results_path: ${{ inputs.os == 'windows-latest' && '~/.npm/_logs/' || 'test-results/' }}
       test_script: test-e2e-${{ inputs.editor-mode == 'rich-text-with-collab' && 'collab-' || '' }}${{ inputs.prod && 'prod-' || '' }}ci-${{ inputs.browser }}
@@ -35,6 +37,12 @@ jobs:
           sudo apt-get install xvfb
       - name: Install dependencies
         run: npm ci
+      - name: Override React ${{ inputs.react-override }}
+        if: inputs.react-override != ''
+        # This should be safe since we are caching ~/.npm and not node_modules
+        run: |
+          npm i --no-save react@${{ inputs.react-override }} react-dom@${{ inputs.react-override }}
+          grep version node_modules/{react,react-dom}/package.json
       - name: Restore playwright from cache
         uses: actions/cache/restore@v4
         id: playwright-cache
@@ -55,6 +63,6 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: Test Results ${{ inputs.os }}-${{ inputs.browser }}-${{ inputs.editor-mode }}-${{ inputs.events-mode }}-${{ inputs.prod && 'prod' || 'dev' }}-${{ inputs.node-version }}
+          name: Test Results ${{ inputs.os }}-${{ inputs.browser }}-${{ inputs.editor-mode }}-${{ inputs.events-mode }}-${{ inputs.prod && 'prod' || 'dev' }}-${{ inputs.node-version }}-${{ inputs.react-override }}
           path: ${{ env.test_results_path }}
           retention-days: 7

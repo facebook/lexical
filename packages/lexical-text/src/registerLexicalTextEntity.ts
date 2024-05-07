@@ -101,7 +101,7 @@ export function registerLexicalTextEntity<T extends TextNode>(
     }
 
     // eslint-disable-next-line no-constant-condition
-    let charLengthsToSkip = 0;
+    let prevMatchLengthToSkip = 0;
     // eslint-disable-next-line no-constant-condition
     while (true) {
       match = getMatch(text);
@@ -145,7 +145,7 @@ export function registerLexicalTextEntity<T extends TextNode>(
         $isTextNode(prevSibling) &&
         prevSibling.isTextEntity()
       ) {
-        charLengthsToSkip = match.end;
+        prevMatchLengthToSkip = match.end;
         continue;
       }
 
@@ -154,8 +154,8 @@ export function registerLexicalTextEntity<T extends TextNode>(
         [nodeToReplace, currentNode] = currentNode.splitText(match.end);
       } else {
         [, nodeToReplace, currentNode] = currentNode.splitText(
-          match.start + charLengthsToSkip,
-          match.end + charLengthsToSkip,
+          match.start + prevMatchLengthToSkip,
+          match.end + prevMatchLengthToSkip,
         );
       }
       const replacementNode = createNode(nodeToReplace);

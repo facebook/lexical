@@ -345,4 +345,42 @@ test.describe('Hashtags', () => {
       `,
     );
   });
+
+  test('Should not break while skipping invalid hashtags #5703', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type('#hello');
+
+    await page.keyboard.press('Space');
+
+    await page.keyboard.type('#world');
+    await page.keyboard.type('#invalid');
+
+    await page.keyboard.press('Space');
+    await page.keyboard.type('#next');
+
+    await waitForSelector(page, '.PlaygroundEditorTheme__hashtag');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
+            #hello
+          </span>
+          <span data-lexical-text="true"></span>
+          <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
+            #world
+          </span>
+          <span data-lexical-text="true">#invalid</span>
+          <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
+            #next
+          </span>
+        </p>
+      `,
+    );
+  });
 });

@@ -145,7 +145,7 @@ export function registerLexicalTextEntity<T extends TextNode>(
         $isTextNode(prevSibling) &&
         prevSibling.isTextEntity()
       ) {
-        charLengthsToSkip = text.length;
+        charLengthsToSkip = match.end;
         continue;
       }
 
@@ -154,11 +154,8 @@ export function registerLexicalTextEntity<T extends TextNode>(
         [nodeToReplace, currentNode] = currentNode.splitText(match.end);
       } else {
         [, nodeToReplace, currentNode] = currentNode.splitText(
-          match.start +
-            (charLengthsToSkip === 0
-              ? 0
-              : currentNode.getTextContentSize() - charLengthsToSkip),
-          match.end,
+          match.start + charLengthsToSkip,
+          match.end + charLengthsToSkip,
         );
       }
       const replacementNode = createNode(nodeToReplace);

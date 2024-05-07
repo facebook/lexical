@@ -150,24 +150,20 @@ export function registerLexicalTextEntity<T extends TextNode>(
       }
 
       let nodeToReplace;
-      if ($isTextNode(currentNode)) {
-        if (match.start === 0) {
-          [nodeToReplace, currentNode] = currentNode.splitText(match.end);
-        } else {
-          [, nodeToReplace, currentNode] = currentNode.splitText(
-            match.start +
-              (charLengthsToSkip === 0
-                ? 0
-                : currentNode.getTextContentSize() - charLengthsToSkip),
-            match.end,
-          );
-        }
-        if ($isTextNode(nodeToReplace)) {
-          const replacementNode = createNode(nodeToReplace);
-          replacementNode.setFormat(nodeToReplace.getFormat());
-          nodeToReplace.replace(replacementNode);
-        }
+      if (match.start === 0) {
+        [nodeToReplace, currentNode] = currentNode.splitText(match.end);
+      } else {
+        [, nodeToReplace, currentNode] = currentNode.splitText(
+          match.start +
+            (charLengthsToSkip === 0
+              ? 0
+              : currentNode.getTextContentSize() - charLengthsToSkip),
+          match.end,
+        );
       }
+      const replacementNode = createNode(nodeToReplace);
+      replacementNode.setFormat(nodeToReplace.getFormat());
+      nodeToReplace.replace(replacementNode);
 
       if (currentNode == null) {
         return;

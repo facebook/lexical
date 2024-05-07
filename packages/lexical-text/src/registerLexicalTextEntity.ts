@@ -46,7 +46,7 @@ export function registerLexicalTextEntity<T extends TextNode>(
     return node instanceof targetNode;
   };
 
-  const replaceWithSimpleText = (node: TextNode): void => {
+  const $replaceWithSimpleText = (node: TextNode): void => {
     const textNode = $createTextNode(node.getTextContent());
     textNode.setFormat(node.getFormat());
     node.replace(textNode);
@@ -56,7 +56,7 @@ export function registerLexicalTextEntity<T extends TextNode>(
     return node.getLatest().__mode;
   };
 
-  const textNodeTransform = (node: TextNode) => {
+  const $textNodeTransform = (node: TextNode) => {
     if (!node.isSimpleText()) {
       return;
     }
@@ -73,7 +73,7 @@ export function registerLexicalTextEntity<T extends TextNode>(
 
       if (isTargetNode(prevSibling)) {
         if (prevMatch === null || getMode(prevSibling) !== 0) {
-          replaceWithSimpleText(prevSibling);
+          $replaceWithSimpleText(prevSibling);
 
           return;
         } else {
@@ -101,6 +101,8 @@ export function registerLexicalTextEntity<T extends TextNode>(
     }
 
     // eslint-disable-next-line no-constant-condition
+    let prevMatchLengthToSkip = 0;
+    // eslint-disable-next-line no-constant-condition
     while (true) {
       match = getMatch(text);
       let nextText = match === null ? '' : text.slice(match.end);
@@ -116,7 +118,7 @@ export function registerLexicalTextEntity<T extends TextNode>(
 
           if (nextMatch === null) {
             if (isTargetNode(nextSibling)) {
-              replaceWithSimpleText(nextSibling);
+              $replaceWithSimpleText(nextSibling);
             } else {
               nextSibling.markDirty();
             }
@@ -143,20 +145,19 @@ export function registerLexicalTextEntity<T extends TextNode>(
         $isTextNode(prevSibling) &&
         prevSibling.isTextEntity()
       ) {
+        prevMatchLengthToSkip += match.end;
         continue;
       }
 
       let nodeToReplace;
-
       if (match.start === 0) {
         [nodeToReplace, currentNode] = currentNode.splitText(match.end);
       } else {
         [, nodeToReplace, currentNode] = currentNode.splitText(
-          match.start,
-          match.end,
+          match.start + prevMatchLengthToSkip,
+          match.end + prevMatchLengthToSkip,
         );
       }
-
       const replacementNode = createNode(nodeToReplace);
       replacementNode.setFormat(nodeToReplace.getFormat());
       nodeToReplace.replace(replacementNode);
@@ -167,12 +168,12 @@ export function registerLexicalTextEntity<T extends TextNode>(
     }
   };
 
-  const reverseNodeTransform = (node: T) => {
+  const $reverseNodeTransform = (node: T) => {
     const text = node.getTextContent();
     const match = getMatch(text);
 
     if (match === null || match.start !== 0) {
-      replaceWithSimpleText(node);
+      $replaceWithSimpleText(node);
 
       return;
     }
@@ -187,29 +188,29 @@ export function registerLexicalTextEntity<T extends TextNode>(
     const prevSibling = node.getPreviousSibling();
 
     if ($isTextNode(prevSibling) && prevSibling.isTextEntity()) {
-      replaceWithSimpleText(prevSibling);
-      replaceWithSimpleText(node);
+      $replaceWithSimpleText(prevSibling);
+      $replaceWithSimpleText(node);
     }
 
     const nextSibling = node.getNextSibling();
 
     if ($isTextNode(nextSibling) && nextSibling.isTextEntity()) {
-      replaceWithSimpleText(nextSibling);
+      $replaceWithSimpleText(nextSibling);
 
       // This may have already been converted in the previous block
       if (isTargetNode(node)) {
-        replaceWithSimpleText(node);
+        $replaceWithSimpleText(node);
       }
     }
   };
 
   const removePlainTextTransform = editor.registerNodeTransform(
     TextNode,
-    textNodeTransform,
+    $textNodeTransform,
   );
   const removeReverseNodeTransform = editor.registerNodeTransform<T>(
     targetNode,
-    reverseNodeTransform,
+    $reverseNodeTransform,
   );
 
   return [removePlainTextTransform, removeReverseNodeTransform];

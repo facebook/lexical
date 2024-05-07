@@ -145,7 +145,7 @@ export function registerLexicalTextEntity<T extends TextNode>(
         $isTextNode(prevSibling) &&
         prevSibling.isTextEntity()
       ) {
-        prevMatchLengthToSkip = match.end;
+        prevMatchLengthToSkip += match.end;
         continue;
       }
 

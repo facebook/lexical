@@ -14,25 +14,15 @@ jobs:
     if: github.repository_owner == 'facebook'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Configure Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 20.x
           cache: 'npm'
 
-      - uses: actions/cache@v3
-        id: devtools-cache
-        with:
-          path: |
-            node_modules
-            packages/lexical-devtools/.wxt
-            ~/.cache/ms-playwright
-          key: ${{ runner.os }}-${{ runner.arch }}v${{ secrets.CACHE_VERSION }}-${{ hashFiles('package-lock.json') }}
-
       - name: Install dependencies
-        if: steps.devtools-cache.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: Zip & submit to stores

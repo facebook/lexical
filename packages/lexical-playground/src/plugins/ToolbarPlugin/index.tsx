@@ -620,9 +620,6 @@ export default function ToolbarPlugin({
         }
       }
       // Handle buttons
-      setFontSize(
-        $getSelectionStyleValueForProperty(selection, 'font-size', '15px'),
-      );
       setFontColor(
         $getSelectionStyleValueForProperty(selection, 'color', '#000'),
       );
@@ -652,6 +649,11 @@ export default function ToolbarPlugin({
           : $isElementNode(node)
           ? node.getFormatType()
           : parent?.getFormatType() || 'left',
+      );
+    }
+    if ($isRangeSelection(selection) || $isTableSelection(selection)) {
+      setFontSize(
+        $getSelectionStyleValueForProperty(selection, 'font-size', '15px'),
       );
     }
   }, [activeEditor]);

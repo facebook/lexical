@@ -22,6 +22,8 @@ describe(`React expectations (${React.version}) REACT_OVERRIDE=${REACT_OVERRIDE}
     document.body.appendChild(container);
   });
   // This checks our assumption that we are testing against the correct version of React
+  // The inverse is not checked so the test doesn't fail when our dependencies
+  // are upgraded.
   if (REACT_OVERRIDE) {
     test(`Expecting React >= 19`, () => {
       expect(IS_REACT_19).toBe(true);

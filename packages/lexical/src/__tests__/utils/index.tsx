@@ -43,7 +43,7 @@ import {format} from 'prettier';
 import * as React from 'react';
 import {createRef} from 'react';
 import {createRoot} from 'react-dom/client';
-import * as ReactTestUtils from 'react-dom/test-utils';
+import * as ReactTestUtils from 'shared/react-test-utils';
 
 import {CreateEditorArgs, LexicalNodeReplacement} from '../../LexicalEditor';
 import {resetRandomKey} from '../../LexicalUtils';

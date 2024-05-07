@@ -169,6 +169,7 @@
       "shared/normalizeClassNames": [
         "./packages/shared/src/normalizeClassNames.ts"
       ],
+      "shared/react-test-utils": ["./packages/shared/src/react-test-utils.ts"],
       "shared/simpleDiffWithCursor": [
         "./packages/shared/src/simpleDiffWithCursor.ts"
       ],

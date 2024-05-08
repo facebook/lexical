@@ -30,7 +30,6 @@ declare export class QuoteNode extends ElementNode {
     selection: RangeSelection,
     restoreSelection?: boolean,
   ): ParagraphNode;
-  collapseAtStart(): true;
 }
 declare export function $createQuoteNode(): QuoteNode;
 declare export function $isQuoteNode(
@@ -50,7 +49,6 @@ declare export class HeadingNode extends ElementNode {
     selection: RangeSelection,
     restoreSelection?: boolean,
   ): ParagraphNode;
-  collapseAtStart(): true;
 }
 declare export function $createHeadingNode(
   headingTag: HeadingTagType,

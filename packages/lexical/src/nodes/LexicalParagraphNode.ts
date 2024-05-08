@@ -32,7 +32,7 @@ import {
   isHTMLElement,
 } from '../LexicalUtils';
 import {ElementNode} from './LexicalElementNode';
-import {$isTextNode, TextFormatType} from './LexicalTextNode';
+import {TextFormatType} from './LexicalTextNode';
 
 export type SerializedParagraphNode = Spread<
   {
@@ -98,7 +98,7 @@ export class ParagraphNode extends ElementNode {
   static importDOM(): DOMConversionMap | null {
     return {
       p: (node: Node) => ({
-        conversion: convertParagraphElement,
+        conversion: $convertParagraphElement,
         priority: 0,
       }),
     };
@@ -164,33 +164,9 @@ export class ParagraphNode extends ElementNode {
     this.insertAfter(newElement, restoreSelection);
     return newElement;
   }
-
-  collapseAtStart(): boolean {
-    const children = this.getChildren();
-    // If we have an empty (trimmed) first paragraph and try and remove it,
-    // delete the paragraph as long as we have another sibling to go to
-    if (
-      children.length === 0 ||
-      ($isTextNode(children[0]) && children[0].getTextContent().trim() === '')
-    ) {
-      const nextSibling = this.getNextSibling();
-      if (nextSibling !== null) {
-        this.selectNext();
-        this.remove();
-        return true;
-      }
-      const prevSibling = this.getPreviousSibling();
-      if (prevSibling !== null) {
-        this.selectPrevious();
-        this.remove();
-        return true;
-      }
-    }
-    return false;
-  }
 }
 
-function convertParagraphElement(element: HTMLElement): DOMConversionOutput {
+function $convertParagraphElement(element: HTMLElement): DOMConversionOutput {
   const node = $createParagraphNode();
   if (element.style) {
     node.setFormat(element.style.textAlign as ElementFormatType);

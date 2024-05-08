@@ -786,7 +786,6 @@ declare export class ParagraphNode extends ElementNode {
     selection: RangeSelection,
     restoreSelection?: boolean,
   ): ParagraphNode;
-  collapseAtStart(): boolean;
   static importJSON(
     serializedParagraphNode: SerializedParagraphNode,
   ): ParagraphNode;

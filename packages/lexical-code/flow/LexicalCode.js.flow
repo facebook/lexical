@@ -130,7 +130,6 @@ declare export class CodeNode extends ElementNode {
     selection: RangeSelection,
     restoreSelection?: boolean,
   ): null | ParagraphNode | CodeHighlightNode | TabNode;
-  collapseAtStart(): true;
   setLanguage(language: string): void;
   getLanguage(): string | void;
 }

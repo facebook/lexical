@@ -85,11 +85,11 @@ export class TableCellNode extends ElementNode {
   static importDOM(): DOMConversionMap | null {
     return {
       td: (node: Node) => ({
-        conversion: convertTableCellNodeElement,
+        conversion: $convertTableCellNodeElement,
         priority: 0,
       }),
       th: (node: Node) => ({
-        conversion: convertTableCellNodeElement,
+        conversion: $convertTableCellNodeElement,
         priority: 0,
       }),
     };
@@ -279,10 +279,6 @@ export class TableCellNode extends ElementNode {
     return true;
   }
 
-  collapseAtStart(): true {
-    return true;
-  }
-
   canBeEmpty(): false {
     return false;
   }
@@ -292,7 +288,7 @@ export class TableCellNode extends ElementNode {
   }
 }
 
-export function convertTableCellNodeElement(
+export function $convertTableCellNodeElement(
   domNode: Node,
 ): DOMConversionOutput {
   const domNode_ = domNode as HTMLTableCellElement;
@@ -387,6 +383,8 @@ export function convertTableCellNodeElement(
     node: tableCellNode,
   };
 }
+/** @deprecated renamed to $convertTableCellNodeElement by @lexical/eslint-plugin rules-of-lexical */
+export const convertTableCellNodeElement = $convertTableCellNodeElement;
 
 export function $createTableCellNode(
   headerState: TableCellHeaderState,

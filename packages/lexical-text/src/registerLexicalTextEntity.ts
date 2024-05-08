@@ -151,6 +151,11 @@ export function registerLexicalTextEntity<T extends TextNode>(
           match.end + prevMatchLengthToSkip,
         );
       }
+
+      if (nodeToReplace == null) {
+        return;
+      }
+
       const replacementNode = createNode(nodeToReplace);
       replacementNode.setFormat(nodeToReplace.getFormat());
       nodeToReplace.replace(replacementNode);

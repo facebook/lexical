@@ -620,6 +620,7 @@ export async function dragMouse(
   positionStart = 'middle',
   positionEnd = 'middle',
   mouseUp = true,
+  slow = false,
 ) {
   let fromX = fromBoundingBox.x;
   let fromY = fromBoundingBox.y;
@@ -641,6 +642,11 @@ export async function dragMouse(
   } else if (positionEnd === 'end') {
     toX += toBoundingBox.width;
     toY += toBoundingBox.height;
+  }
+
+  if (slow) {
+    //simulate more than 1 mouse move event to replicate human slow dragging
+    await page.mouse.move((fromX + toX) / 2, (fromY + toY) / 2);
   }
 
   await page.mouse.move(toX, toY);
@@ -801,6 +807,10 @@ export async function selectCellsFromTableCords(
     page,
     await firstRowFirstColumnCell.boundingBox(),
     await secondRowSecondCell.boundingBox(),
+    'middle',
+    'middle',
+    true,
+    true,
   );
 }
 

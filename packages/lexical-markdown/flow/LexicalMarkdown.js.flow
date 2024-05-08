@@ -68,12 +68,14 @@ declare export function registerMarkdownShortcuts(
 declare export function $convertFromMarkdownString(
   markdown: string,
   transformers?: Array<Transformer>,
+  node?: ElementNode,
 ): void;
 
 // TODO:
 // transformers should be required argument, breaking change
 declare export function $convertToMarkdownString(
   transformers?: Array<Transformer>,
+  node?: ElementNode,
 ): string;
 
 declare export var BOLD_ITALIC_STAR: TextFormatTransformer;

@@ -14,6 +14,7 @@ import {
 import {
   assertHTML,
   assertSelection,
+  click,
   focusEditor,
   html,
   initialize,
@@ -442,7 +443,7 @@ test.describe('Hashtags', () => {
     );
   });
 
-  test('Should not break with multiple matches', async ({
+  test('Should not break when pasting multiple matches', async ({
     page,
     isPlainText,
   }) => {
@@ -450,10 +451,8 @@ test.describe('Hashtags', () => {
 
     await focusEditor(page);
 
-    const clipboard = {'text/html': '#hello#world#more#next#matches'};
+    const clipboard = {'text/html': '#hello#world'};
     await pasteFromClipboard(page, clipboard);
-
-    await waitForSelector(page, '.PlaygroundEditorTheme__hashtag');
 
     await assertHTML(
       page,
@@ -464,7 +463,39 @@ test.describe('Hashtags', () => {
           <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
             #hello
           </span>
-          <span data-lexical-text="true">#world#more#next#matches</span>
+          <span data-lexical-text="true">#world</span>
+        </p>
+      `,
+    );
+  });
+
+  test('Should not break while importing and exporting multiple matches', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type('```markdown #hello#invalid #a #b');
+
+    await click(page, '.action-button .markdown');
+    await click(page, '.action-button .markdown');
+    await click(page, '.action-button .markdown');
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
+            #hello
+          </span>
+          <span data-lexical-text="true">#invalid</span>
+          <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
+            #a
+          </span>
+          <span data-lexical-text="true"></span>
+          <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
+            #b
+          </span>
         </p>
       `,
     );

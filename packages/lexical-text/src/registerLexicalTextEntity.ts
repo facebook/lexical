@@ -100,7 +100,6 @@ export function registerLexicalTextEntity<T extends TextNode>(
       }
     }
 
-    // eslint-disable-next-line no-constant-condition
     let prevMatchLengthToSkip = 0;
     // eslint-disable-next-line no-constant-condition
     while (true) {
@@ -127,12 +126,6 @@ export function registerLexicalTextEntity<T extends TextNode>(
           } else if (nextMatch.start !== 0) {
             return;
           }
-        }
-      } else {
-        const nextMatch = getMatch(nextText);
-
-        if (nextMatch !== null && nextMatch.start === 0) {
-          return;
         }
       }
 

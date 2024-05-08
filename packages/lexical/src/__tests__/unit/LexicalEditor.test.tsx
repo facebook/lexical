@@ -913,6 +913,14 @@ describe('LexicalEditor tests', () => {
       return decoratedPortals;
     }
 
+    afterEach(async () => {
+      // Clean up so we are not calling setState outside of act
+      await ReactTestUtils.act(async () => {
+        reactRoot.render(null);
+        await Promise.resolve().then();
+      });
+    });
+
     it('Should correctly render React component into Lexical node #1', async () => {
       const listener = jest.fn();
 
@@ -987,20 +995,21 @@ describe('LexicalEditor tests', () => {
         );
       }
 
-      ReactTestUtils.act(() => {
+      await ReactTestUtils.act(async () => {
         reactRoot.render(<Test divKey={0} />);
+        // Wait for update to complete
+        await Promise.resolve().then();
       });
-
-      // Wait for update to complete
-      await Promise.resolve().then();
 
       expect(listener).toHaveBeenCalledTimes(1);
       expect(container.innerHTML).toBe(
         '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p><br></p></div>',
       );
 
-      ReactTestUtils.act(() => {
+      await ReactTestUtils.act(async () => {
         reactRoot.render(<Test divKey={1} />);
+        // Wait for update to complete
+        await Promise.resolve().then();
       });
 
       expect(listener).toHaveBeenCalledTimes(3);

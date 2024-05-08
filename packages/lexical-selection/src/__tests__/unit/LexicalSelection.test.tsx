@@ -698,7 +698,6 @@ describe('LexicalSelection tests', () => {
         insertParagraph(),
         moveNativeSelection([1, 0, 0], 2, [1, 0, 0], 3),
         formatBold(),
-        // insertText('A')
       ],
       name: 'Format token node if it is the single one selected',
     },

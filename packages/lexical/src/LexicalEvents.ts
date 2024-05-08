@@ -996,96 +996,96 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
     return;
   }
 
-  const {keyCode, shiftKey, ctrlKey, metaKey, altKey} = event;
+  const {code, shiftKey, ctrlKey, metaKey, altKey} = event;
 
   if (dispatchCommand(editor, KEY_DOWN_COMMAND, event)) {
     return;
   }
 
-  if (isMoveForward(keyCode, ctrlKey, altKey, metaKey)) {
+  if (isMoveForward(code, ctrlKey, altKey, metaKey)) {
     dispatchCommand(editor, KEY_ARROW_RIGHT_COMMAND, event);
-  } else if (isMoveToEnd(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
+  } else if (isMoveToEnd(code, ctrlKey, shiftKey, altKey, metaKey)) {
     dispatchCommand(editor, MOVE_TO_END, event);
-  } else if (isMoveBackward(keyCode, ctrlKey, altKey, metaKey)) {
+  } else if (isMoveBackward(code, ctrlKey, altKey, metaKey)) {
     dispatchCommand(editor, KEY_ARROW_LEFT_COMMAND, event);
-  } else if (isMoveToStart(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
+  } else if (isMoveToStart(code, ctrlKey, shiftKey, altKey, metaKey)) {
     dispatchCommand(editor, MOVE_TO_START, event);
-  } else if (isMoveUp(keyCode, ctrlKey, metaKey)) {
+  } else if (isMoveUp(code, ctrlKey, metaKey)) {
     dispatchCommand(editor, KEY_ARROW_UP_COMMAND, event);
-  } else if (isMoveDown(keyCode, ctrlKey, metaKey)) {
+  } else if (isMoveDown(code, ctrlKey, metaKey)) {
     dispatchCommand(editor, KEY_ARROW_DOWN_COMMAND, event);
-  } else if (isLineBreak(keyCode, shiftKey)) {
+  } else if (isLineBreak(code, shiftKey)) {
     isInsertLineBreak = true;
     dispatchCommand(editor, KEY_ENTER_COMMAND, event);
-  } else if (isSpace(keyCode)) {
+  } else if (isSpace(code)) {
     dispatchCommand(editor, KEY_SPACE_COMMAND, event);
-  } else if (isOpenLineBreak(keyCode, ctrlKey)) {
+  } else if (isOpenLineBreak(code, ctrlKey)) {
     event.preventDefault();
     isInsertLineBreak = true;
     dispatchCommand(editor, INSERT_LINE_BREAK_COMMAND, true);
-  } else if (isParagraph(keyCode, shiftKey)) {
+  } else if (isParagraph(code, shiftKey)) {
     isInsertLineBreak = false;
     dispatchCommand(editor, KEY_ENTER_COMMAND, event);
-  } else if (isDeleteBackward(keyCode, altKey, metaKey, ctrlKey)) {
-    if (isBackspace(keyCode)) {
+  } else if (isDeleteBackward(code, altKey, metaKey, ctrlKey)) {
+    if (isBackspace(code)) {
       dispatchCommand(editor, KEY_BACKSPACE_COMMAND, event);
     } else {
       event.preventDefault();
       dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);
     }
-  } else if (isEscape(keyCode)) {
+  } else if (isEscape(code)) {
     dispatchCommand(editor, KEY_ESCAPE_COMMAND, event);
-  } else if (isDeleteForward(keyCode, ctrlKey, shiftKey, altKey, metaKey)) {
-    if (isDelete(keyCode)) {
+  } else if (isDeleteForward(code, ctrlKey, shiftKey, altKey, metaKey)) {
+    if (isDelete(code)) {
       dispatchCommand(editor, KEY_DELETE_COMMAND, event);
     } else {
       event.preventDefault();
       dispatchCommand(editor, DELETE_CHARACTER_COMMAND, false);
     }
-  } else if (isDeleteWordBackward(keyCode, altKey, ctrlKey)) {
+  } else if (isDeleteWordBackward(code, altKey, ctrlKey)) {
     event.preventDefault();
     dispatchCommand(editor, DELETE_WORD_COMMAND, true);
-  } else if (isDeleteWordForward(keyCode, altKey, ctrlKey)) {
+  } else if (isDeleteWordForward(code, altKey, ctrlKey)) {
     event.preventDefault();
     dispatchCommand(editor, DELETE_WORD_COMMAND, false);
-  } else if (isDeleteLineBackward(keyCode, metaKey)) {
+  } else if (isDeleteLineBackward(code, metaKey)) {
     event.preventDefault();
     dispatchCommand(editor, DELETE_LINE_COMMAND, true);
-  } else if (isDeleteLineForward(keyCode, metaKey)) {
+  } else if (isDeleteLineForward(code, metaKey)) {
     event.preventDefault();
     dispatchCommand(editor, DELETE_LINE_COMMAND, false);
-  } else if (isBold(keyCode, altKey, metaKey, ctrlKey)) {
+  } else if (isBold(code, altKey, metaKey, ctrlKey)) {
     event.preventDefault();
     dispatchCommand(editor, FORMAT_TEXT_COMMAND, 'bold');
-  } else if (isUnderline(keyCode, altKey, metaKey, ctrlKey)) {
+  } else if (isUnderline(code, altKey, metaKey, ctrlKey)) {
     event.preventDefault();
     dispatchCommand(editor, FORMAT_TEXT_COMMAND, 'underline');
-  } else if (isItalic(keyCode, altKey, metaKey, ctrlKey)) {
+  } else if (isItalic(code, altKey, metaKey, ctrlKey)) {
     event.preventDefault();
     dispatchCommand(editor, FORMAT_TEXT_COMMAND, 'italic');
-  } else if (isTab(keyCode, altKey, ctrlKey, metaKey)) {
+  } else if (isTab(code, altKey, ctrlKey, metaKey)) {
     dispatchCommand(editor, KEY_TAB_COMMAND, event);
-  } else if (isUndo(keyCode, shiftKey, metaKey, ctrlKey)) {
+  } else if (isUndo(code, shiftKey, metaKey, ctrlKey)) {
     event.preventDefault();
     dispatchCommand(editor, UNDO_COMMAND, undefined);
-  } else if (isRedo(keyCode, shiftKey, metaKey, ctrlKey)) {
+  } else if (isRedo(code, shiftKey, metaKey, ctrlKey)) {
     event.preventDefault();
     dispatchCommand(editor, REDO_COMMAND, undefined);
   } else {
     const prevSelection = editor._editorState._selection;
     if ($isNodeSelection(prevSelection)) {
-      if (isCopy(keyCode, shiftKey, metaKey, ctrlKey)) {
+      if (isCopy(code, shiftKey, metaKey, ctrlKey)) {
         event.preventDefault();
         dispatchCommand(editor, COPY_COMMAND, event);
-      } else if (isCut(keyCode, shiftKey, metaKey, ctrlKey)) {
+      } else if (isCut(code, shiftKey, metaKey, ctrlKey)) {
         event.preventDefault();
         dispatchCommand(editor, CUT_COMMAND, event);
-      } else if (isSelectAll(keyCode, metaKey, ctrlKey)) {
+      } else if (isSelectAll(code, metaKey, ctrlKey)) {
         event.preventDefault();
         dispatchCommand(editor, SELECT_ALL_COMMAND, event);
       }
       // FF does it well (no need to override behavior)
-    } else if (!IS_FIREFOX && isSelectAll(keyCode, metaKey, ctrlKey)) {
+    } else if (!IS_FIREFOX && isSelectAll(code, metaKey, ctrlKey)) {
       event.preventDefault();
       dispatchCommand(editor, SELECT_ALL_COMMAND, event);
     }

@@ -11,6 +11,7 @@ import type {
   DOMChildConversion,
   DOMConversion,
   DOMConversionFn,
+  ElementFormatType,
   LexicalEditor,
   LexicalNode,
 } from 'lexical';
@@ -58,7 +59,7 @@ export function $generateNodesFromDOM(
       }
     }
   }
-  unwrapArtificalNodes(allArtificialNodes);
+  $unwrapArtificalNodes(allArtificialNodes);
 
   return lexicalNodes;
 }
@@ -312,12 +313,15 @@ function wrapContinuousInlines(
   nodes: Array<LexicalNode>,
   createWrapperFn: () => ElementNode,
 ): Array<LexicalNode> {
+  const textAlign = (domNode as HTMLElement).style
+    .textAlign as ElementFormatType;
   const out: Array<LexicalNode> = [];
   let continuousInlines: Array<LexicalNode> = [];
   // wrap contiguous inline child nodes in para
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
     if ($isBlockElementNode(node)) {
+      node.setFormat(textAlign);
       out.push(node);
     } else {
       continuousInlines.push(node);
@@ -326,6 +330,7 @@ function wrapContinuousInlines(
         (i < nodes.length - 1 && $isBlockElementNode(nodes[i + 1]))
       ) {
         const wrapper = createWrapperFn();
+        wrapper.setFormat(textAlign);
         wrapper.append(...continuousInlines);
         out.push(wrapper);
         continuousInlines = [];
@@ -335,7 +340,7 @@ function wrapContinuousInlines(
   return out;
 }
 
-function unwrapArtificalNodes(
+function $unwrapArtificalNodes(
   allArtificialNodes: Array<ArtificialNode__DO_NOT_USE>,
 ) {
   for (const node of allArtificialNodes) {

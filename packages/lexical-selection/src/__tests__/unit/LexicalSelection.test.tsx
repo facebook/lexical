@@ -623,6 +623,113 @@ describe('LexicalSelection tests', () => {
       ],
       name: 'Format selection that starts on element and ends on text and retain selection',
     },
+
+    {
+      expectedHTML:
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">' +
+        '<p class="editor-paragraph"><br></p>' +
+        '<p class="editor-paragraph" dir="ltr">' +
+        '<strong class="editor-text-bold" data-lexical-text="true">Hello</strong><strong class="editor-text-bold" data-lexical-text="true"> world</strong>' +
+        '</p>' +
+        '<p class="editor-paragraph"><br></p>' +
+        '</div>',
+      expectedSelection: {
+        anchorOffset: 2,
+        anchorPath: [1, 0, 0],
+        focusOffset: 0,
+        focusPath: [2],
+      },
+      inputs: [
+        insertParagraph(),
+        insertTokenNode('Hello'),
+        insertText(' world'),
+        insertParagraph(),
+        moveNativeSelection([1, 0, 0], 2, [2], 0),
+        formatBold(),
+      ],
+      name: 'Format selection that starts on middle of token node should format complete node',
+    },
+
+    {
+      expectedHTML:
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">' +
+        '<p class="editor-paragraph"><br></p>' +
+        '<p class="editor-paragraph" dir="ltr">' +
+        '<strong class="editor-text-bold" data-lexical-text="true">Hello </strong><strong class="editor-text-bold" data-lexical-text="true">world</strong>' +
+        '</p>' +
+        '<p class="editor-paragraph"><br></p>' +
+        '</div>',
+      expectedSelection: {
+        anchorOffset: 0,
+        anchorPath: [0],
+        focusOffset: 2,
+        focusPath: [1, 1, 0],
+      },
+      inputs: [
+        insertParagraph(),
+        insertText('Hello '),
+        insertTokenNode('world'),
+        insertParagraph(),
+        moveNativeSelection([0], 0, [1, 1, 0], 2),
+        formatBold(),
+      ],
+      name: 'Format selection that ends on middle of token node should format complete node',
+    },
+
+    {
+      expectedHTML:
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">' +
+        '<p class="editor-paragraph"><br></p>' +
+        '<p class="editor-paragraph" dir="ltr">' +
+        '<strong class="editor-text-bold" data-lexical-text="true">Hello</strong><span data-lexical-text="true"> world</span>' +
+        '</p>' +
+        '<p class="editor-paragraph"><br></p>' +
+        '</div>',
+      expectedSelection: {
+        anchorOffset: 2,
+        anchorPath: [1, 0, 0],
+        focusOffset: 3,
+        focusPath: [1, 0, 0],
+      },
+      inputs: [
+        insertParagraph(),
+        insertTokenNode('Hello'),
+        insertText(' world'),
+        insertParagraph(),
+        moveNativeSelection([1, 0, 0], 2, [1, 0, 0], 3),
+        formatBold(),
+        // insertText('A')
+      ],
+      name: 'Format token node if it is the single one selected',
+    },
+
+    {
+      expectedHTML:
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">' +
+        '<p class="editor-paragraph"><br></p>' +
+        '<p class="editor-paragraph" dir="ltr">' +
+        '<strong class="editor-text-bold" data-lexical-text="true">Hello </strong><strong class="editor-text-bold" data-lexical-text="true">beautiful</strong><strong class="editor-text-bold" data-lexical-text="true"> world</strong>' +
+        '</p>' +
+        '<p class="editor-paragraph"><br></p>' +
+        '</div>',
+      expectedSelection: {
+        anchorOffset: 0,
+        anchorPath: [0],
+        focusOffset: 0,
+        focusPath: [2],
+      },
+      inputs: [
+        insertParagraph(),
+        insertText('Hello '),
+        insertTokenNode('beautiful'),
+        insertText(' world'),
+        insertParagraph(),
+        moveNativeSelection([0], 0, [2], 0),
+        formatBold(),
+      ],
+      name: 'Format selection that contains a token node in the middle should format the token node',
+    },
+
     // Tests need fixing:
     // ...GRAPHEME_SCENARIOS.flatMap(({description, grapheme}) => [
     //   {

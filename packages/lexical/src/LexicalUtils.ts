@@ -391,7 +391,7 @@ export function $getNodeByKey<T extends LexicalNode>(
   return node;
 }
 
-export function $getNodeFromDOMNode(
+export function getNodeFromDOMNode(
   dom: Node,
   editorState?: EditorState,
 ): LexicalNode | null {
@@ -403,8 +403,6 @@ export function $getNodeFromDOMNode(
   }
   return null;
 }
-/** @deprecated renamed to $getNodeFromDOMNode by @lexical/eslint-plugin rules-of-lexical */
-export const getNodeFromDOMNode = $getNodeFromDOMNode;
 
 export function $getNearestNodeFromDOMNode(
   startingDOM: Node,
@@ -412,7 +410,7 @@ export function $getNearestNodeFromDOMNode(
 ): LexicalNode | null {
   let dom: Node | null = startingDOM;
   while (dom != null) {
-    const node = $getNodeFromDOMNode(dom, editorState);
+    const node = getNodeFromDOMNode(dom, editorState);
     if (node !== null) {
       return node;
     }
@@ -492,7 +490,7 @@ export function $flushMutations(): void {
   flushRootMutations(editor);
 }
 
-export function $getNodeFromDOM(dom: Node): null | LexicalNode {
+export function getNodeFromDOM(dom: Node): null | LexicalNode {
   const editor = getActiveEditor();
   const nodeKey = getNodeKeyFromDOM(dom, editor);
   if (nodeKey === null) {
@@ -504,8 +502,6 @@ export function $getNodeFromDOM(dom: Node): null | LexicalNode {
   }
   return $getNodeByKey(nodeKey);
 }
-/** @deprecated renamed to $getNodeFromDOM by @lexical/eslint-plugin rules-of-lexical */
-export const getNodeFromDOM = $getNodeFromDOM;
 
 export function getTextNodeOffset(
   node: TextNode,
@@ -734,82 +730,88 @@ export function $shouldInsertTextAfterOrBeforeTextNode(
 }
 
 export function isTab(
-  code: string,
+  keyCode: number,
   altKey: boolean,
   ctrlKey: boolean,
   metaKey: boolean,
 ): boolean {
-  return code === 'Tab' && !altKey && !ctrlKey && !metaKey;
+  return keyCode === 9 && !altKey && !ctrlKey && !metaKey;
 }
 
 export function isBold(
-  code: string,
+  keyCode: number,
   altKey: boolean,
   metaKey: boolean,
   ctrlKey: boolean,
 ): boolean {
-  return code === 'KeyB' && !altKey && controlOrMeta(metaKey, ctrlKey);
+  return keyCode === 66 && !altKey && controlOrMeta(metaKey, ctrlKey);
 }
 
 export function isItalic(
-  code: string,
+  keyCode: number,
   altKey: boolean,
   metaKey: boolean,
   ctrlKey: boolean,
 ): boolean {
-  return code === 'KeyI' && !altKey && controlOrMeta(metaKey, ctrlKey);
+  return keyCode === 73 && !altKey && controlOrMeta(metaKey, ctrlKey);
 }
 
 export function isUnderline(
-  code: string,
+  keyCode: number,
   altKey: boolean,
   metaKey: boolean,
   ctrlKey: boolean,
 ): boolean {
-  return code === 'KeyU' && !altKey && controlOrMeta(metaKey, ctrlKey);
+  return keyCode === 85 && !altKey && controlOrMeta(metaKey, ctrlKey);
 }
 
-export function isParagraph(code: string, shiftKey: boolean): boolean {
-  return isReturn(code) && !shiftKey;
+export function isParagraph(keyCode: number, shiftKey: boolean): boolean {
+  return isReturn(keyCode) && !shiftKey;
 }
 
-export function isLineBreak(code: string, shiftKey: boolean): boolean {
-  return isReturn(code) && shiftKey;
+export function isLineBreak(keyCode: number, shiftKey: boolean): boolean {
+  return isReturn(keyCode) && shiftKey;
 }
 
 // Inserts a new line after the selection
 
-export function isOpenLineBreak(code: string, ctrlKey: boolean): boolean {
+export function isOpenLineBreak(keyCode: number, ctrlKey: boolean): boolean {
   // 79 = KeyO
-  return IS_APPLE && ctrlKey && code === 'KeyO';
+  return IS_APPLE && ctrlKey && keyCode === 79;
 }
 
 export function isDeleteWordBackward(
-  code: string,
+  keyCode: number,
   altKey: boolean,
   ctrlKey: boolean,
 ): boolean {
-  return isBackspace(code) && (IS_APPLE ? altKey : ctrlKey);
+  return isBackspace(keyCode) && (IS_APPLE ? altKey : ctrlKey);
 }
 
 export function isDeleteWordForward(
-  code: string,
+  keyCode: number,
   altKey: boolean,
   ctrlKey: boolean,
 ): boolean {
-  return isDelete(code) && (IS_APPLE ? altKey : ctrlKey);
+  return isDelete(keyCode) && (IS_APPLE ? altKey : ctrlKey);
 }
 
-export function isDeleteLineBackward(code: string, metaKey: boolean): boolean {
-  return IS_APPLE && metaKey && isBackspace(code);
+export function isDeleteLineBackward(
+  keyCode: number,
+  metaKey: boolean,
+): boolean {
+  return IS_APPLE && metaKey && isBackspace(keyCode);
 }
 
-export function isDeleteLineForward(code: string, metaKey: boolean): boolean {
-  return IS_APPLE && metaKey && isDelete(code);
+export function isDeleteLineForward(
+  keyCode: number,
+  metaKey: boolean,
+): boolean {
+  return IS_APPLE && metaKey && isDelete(keyCode);
 }
 
 export function isDeleteBackward(
-  code: string,
+  keyCode: number,
   altKey: boolean,
   metaKey: boolean,
   ctrlKey: boolean,
@@ -818,16 +820,16 @@ export function isDeleteBackward(
     if (altKey || metaKey) {
       return false;
     }
-    return isBackspace(code) || (code === 'KeyH' && ctrlKey);
+    return isBackspace(keyCode) || (keyCode === 72 && ctrlKey);
   }
   if (ctrlKey || altKey || metaKey) {
     return false;
   }
-  return isBackspace(code);
+  return isBackspace(keyCode);
 }
 
 export function isDeleteForward(
-  code: string,
+  keyCode: number,
   ctrlKey: boolean,
   shiftKey: boolean,
   altKey: boolean,
@@ -837,39 +839,37 @@ export function isDeleteForward(
     if (shiftKey || altKey || metaKey) {
       return false;
     }
-    return isDelete(code) || (code === 'KeyD' && ctrlKey);
+    return isDelete(keyCode) || (keyCode === 68 && ctrlKey);
   }
   if (ctrlKey || altKey || metaKey) {
     return false;
   }
-  return isDelete(code);
+  return isDelete(keyCode);
 }
 
 export function isUndo(
-  code: string,
+  keyCode: number,
   shiftKey: boolean,
   metaKey: boolean,
   ctrlKey: boolean,
 ): boolean {
-  return code === 'KeyZ' && !shiftKey && controlOrMeta(metaKey, ctrlKey);
+  return keyCode === 90 && !shiftKey && controlOrMeta(metaKey, ctrlKey);
 }
 
 export function isRedo(
-  code: string,
+  keyCode: number,
   shiftKey: boolean,
   metaKey: boolean,
   ctrlKey: boolean,
 ): boolean {
   if (IS_APPLE) {
-    return code === 'KeyZ' && metaKey && shiftKey;
+    return keyCode === 90 && metaKey && shiftKey;
   }
-  return (
-    (code === 'KeyY' && ctrlKey) || (code === 'KeyZ' && ctrlKey && shiftKey)
-  );
+  return (keyCode === 89 && ctrlKey) || (keyCode === 90 && ctrlKey && shiftKey);
 }
 
 export function isCopy(
-  code: string,
+  keyCode: number,
   shiftKey: boolean,
   metaKey: boolean,
   ctrlKey: boolean,
@@ -877,7 +877,7 @@ export function isCopy(
   if (shiftKey) {
     return false;
   }
-  if (code === 'KeyC') {
+  if (keyCode === 67) {
     return IS_APPLE ? metaKey : ctrlKey;
   }
 
@@ -885,7 +885,7 @@ export function isCopy(
 }
 
 export function isCut(
-  code: string,
+  keyCode: number,
   shiftKey: boolean,
   metaKey: boolean,
   ctrlKey: boolean,
@@ -893,81 +893,81 @@ export function isCut(
   if (shiftKey) {
     return false;
   }
-  if (code === 'KeyX') {
+  if (keyCode === 88) {
     return IS_APPLE ? metaKey : ctrlKey;
   }
 
   return false;
 }
 
-function isArrowLeft(code: string): boolean {
-  return code === 'ArrowLeft';
+function isArrowLeft(keyCode: number): boolean {
+  return keyCode === 37;
 }
 
-function isArrowRight(code: string): boolean {
-  return code === 'ArrowRight';
+function isArrowRight(keyCode: number): boolean {
+  return keyCode === 39;
 }
 
-function isArrowUp(code: string): boolean {
-  return code === 'ArrowUp';
+function isArrowUp(keyCode: number): boolean {
+  return keyCode === 38;
 }
 
-function isArrowDown(code: string): boolean {
-  return code === 'ArrowDown';
+function isArrowDown(keyCode: number): boolean {
+  return keyCode === 40;
 }
 
 export function isMoveBackward(
-  code: string,
+  keyCode: number,
   ctrlKey: boolean,
   altKey: boolean,
   metaKey: boolean,
 ): boolean {
-  return isArrowLeft(code) && !ctrlKey && !metaKey && !altKey;
+  return isArrowLeft(keyCode) && !ctrlKey && !metaKey && !altKey;
 }
 
 export function isMoveToStart(
-  code: string,
+  keyCode: number,
   ctrlKey: boolean,
   shiftKey: boolean,
   altKey: boolean,
   metaKey: boolean,
 ): boolean {
-  return isArrowLeft(code) && !altKey && !shiftKey && (ctrlKey || metaKey);
+  return isArrowLeft(keyCode) && !altKey && !shiftKey && (ctrlKey || metaKey);
 }
 
 export function isMoveForward(
-  code: string,
+  keyCode: number,
   ctrlKey: boolean,
   altKey: boolean,
   metaKey: boolean,
 ): boolean {
-  return isArrowRight(code) && !ctrlKey && !metaKey && !altKey;
+  return isArrowRight(keyCode) && !ctrlKey && !metaKey && !altKey;
 }
 
 export function isMoveToEnd(
-  code: string,
+  keyCode: number,
   ctrlKey: boolean,
   shiftKey: boolean,
   altKey: boolean,
   metaKey: boolean,
 ): boolean {
-  return isArrowRight(code) && !altKey && !shiftKey && (ctrlKey || metaKey);
+  return isArrowRight(keyCode) && !altKey && !shiftKey && (ctrlKey || metaKey);
 }
 
 export function isMoveUp(
-  code: string,
+  keyCode: number,
   ctrlKey: boolean,
   metaKey: boolean,
 ): boolean {
-  return isArrowUp(code) && !ctrlKey && !metaKey;
+  return isArrowUp(keyCode) && !ctrlKey && !metaKey;
 }
 
 export function isMoveDown(
-  code: string,
+  keyCode: number,
   ctrlKey: boolean,
   metaKey: boolean,
 ): boolean {
-  return isArrowDown(code) && !ctrlKey && !metaKey;
+  return isArrowDown(keyCode) && !ctrlKey && !metaKey;
 }
 
 export function isModifier(
@@ -979,8 +979,8 @@ export function isModifier(
   return ctrlKey || shiftKey || altKey || metaKey;
 }
 
-export function isSpace(code: string): boolean {
-  return code === 'Space';
+export function isSpace(keyCode: number): boolean {
+  return keyCode === 32;
 }
 
 export function controlOrMeta(metaKey: boolean, ctrlKey: boolean): boolean {
@@ -990,28 +990,28 @@ export function controlOrMeta(metaKey: boolean, ctrlKey: boolean): boolean {
   return ctrlKey;
 }
 
-export function isReturn(code: string): boolean {
-  return code === 'Enter';
+export function isReturn(keyCode: number): boolean {
+  return keyCode === 13;
 }
 
-export function isBackspace(code: string): boolean {
-  return code === 'Backspace';
+export function isBackspace(keyCode: number): boolean {
+  return keyCode === 8;
 }
 
-export function isEscape(code: string): boolean {
-  return code === 'Escape';
+export function isEscape(keyCode: number): boolean {
+  return keyCode === 27;
 }
 
-export function isDelete(code: string): boolean {
-  return code === 'Delete';
+export function isDelete(keyCode: number): boolean {
+  return keyCode === 46;
 }
 
 export function isSelectAll(
-  code: string,
+  keyCode: number,
   metaKey: boolean,
   ctrlKey: boolean,
 ): boolean {
-  return code === 'KeyA' && controlOrMeta(metaKey, ctrlKey);
+  return keyCode === 65 && controlOrMeta(metaKey, ctrlKey);
 }
 
 export function $selectAll(): void {

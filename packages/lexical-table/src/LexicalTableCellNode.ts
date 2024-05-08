@@ -11,7 +11,6 @@ import type {
   DOMConversionOutput,
   DOMExportOutput,
   EditorConfig,
-  ElementFormatType,
   LexicalEditor,
   LexicalNode,
   NodeKey,
@@ -23,7 +22,6 @@ import {addClassNamesToElement} from '@lexical/utils';
 import {
   $applyNodeReplacement,
   $createParagraphNode,
-  $isBlockElementNode,
   $isElementNode,
   $isLineBreakNode,
   $isTextNode,
@@ -85,11 +83,11 @@ export class TableCellNode extends ElementNode {
   static importDOM(): DOMConversionMap | null {
     return {
       td: (node: Node) => ({
-        conversion: convertTableCellNodeElement,
+        conversion: $convertTableCellNodeElement,
         priority: 0,
       }),
       th: (node: Node) => ({
-        conversion: convertTableCellNodeElement,
+        conversion: $convertTableCellNodeElement,
         priority: 0,
       }),
     };
@@ -292,7 +290,7 @@ export class TableCellNode extends ElementNode {
   }
 }
 
-export function convertTableCellNodeElement(
+export function $convertTableCellNodeElement(
   domNode: Node,
 ): DOMConversionOutput {
   const domNode_ = domNode as HTMLTableCellElement;
@@ -325,39 +323,16 @@ export function convertTableCellNodeElement(
   const hasLinethroughTextDecoration = textDecoration.includes('line-through');
   const hasItalicFontStyle = style.fontStyle === 'italic';
   const hasUnderlineTextDecoration = textDecoration.includes('underline');
-  const textAlign = style.textAlign;
   return {
     after: (childLexicalNodes) => {
-      const children = [];
-      let paragraphNode = $createParagraphNode().setFormat(
-        textAlign as ElementFormatType,
-      );
       if (childLexicalNodes.length === 0) {
-        children.push(paragraphNode);
+        childLexicalNodes.push($createParagraphNode());
       }
-
-      childLexicalNodes.forEach((node) => {
-        if ($isBlockElementNode(node)) {
-          if (paragraphNode.getChildrenSize() !== 0) {
-            children.push(paragraphNode);
-            paragraphNode = $createParagraphNode().setFormat(
-              textAlign as ElementFormatType,
-            );
-          }
-          children.push(node);
-        } else {
-          paragraphNode.append(node);
-        }
-      });
-      if (paragraphNode.getChildrenSize() !== 0) {
-        children.push(paragraphNode);
-      }
-      return children;
+      return childLexicalNodes;
     },
     forChild: (lexicalNode, parentLexicalNode) => {
       if ($isTableCellNode(parentLexicalNode) && !$isElementNode(lexicalNode)) {
         const paragraphNode = $createParagraphNode();
-        paragraphNode.setFormat(textAlign as ElementFormatType);
         if (
           $isLineBreakNode(lexicalNode) &&
           lexicalNode.getTextContent() === '\n'
@@ -387,6 +362,8 @@ export function convertTableCellNodeElement(
     node: tableCellNode,
   };
 }
+/** @deprecated renamed to $convertTableCellNodeElement by @lexical/eslint-plugin rules-of-lexical */
+export const convertTableCellNodeElement = $convertTableCellNodeElement;
 
 export function $createTableCellNode(
   headerState: TableCellHeaderState,

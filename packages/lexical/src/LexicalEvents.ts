@@ -162,7 +162,7 @@ if (CAN_USE_BEFORE_INPUT) {
 }
 
 let lastKeyDownTimeStamp = 0;
-let lastKeyCode = 0;
+let lastKeyCode: null | string = null;
 let lastBeforeInputInsertTextTimeStamp = 0;
 let unprocessedBeforeInputData: null | string = null;
 const rootElementsRegistered = new WeakMap<Document, number>();
@@ -513,7 +513,7 @@ function $canRemoveText(
 
 function isPossiblyAndroidKeyPress(timeStamp: number): boolean {
   return (
-    lastKeyCode === 229 &&
+    lastKeyCode === 'Delete' &&
     timeStamp < lastKeyDownTimeStamp + ANDROID_COMPOSITION_LATENCY
   );
 }
@@ -817,7 +817,7 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
       // to ensure to disable composition before dispatching the
       // insertText command for when changing the sequence for FF.
       if (isFirefoxEndingComposition) {
-        onCompositionEndImpl(editor, data);
+        $onCompositionEndImpl(editor, data);
         isFirefoxEndingComposition = false;
       }
       const anchor = selection.anchor;
@@ -873,7 +873,7 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
 
       // onInput always fires after onCompositionEnd for FF.
       if (isFirefoxEndingComposition) {
-        onCompositionEndImpl(editor, data || undefined);
+        $onCompositionEndImpl(editor, data || undefined);
         isFirefoxEndingComposition = false;
       }
     }
@@ -923,7 +923,7 @@ function onCompositionStart(
   });
 }
 
-function onCompositionEndImpl(editor: LexicalEditor, data?: string): void {
+function $onCompositionEndImpl(editor: LexicalEditor, data?: string): void {
   const compositionKey = editor._compositionKey;
   $setCompositionKey(null);
 
@@ -984,14 +984,14 @@ function onCompositionEnd(
     isFirefoxEndingComposition = true;
   } else {
     updateEditor(editor, () => {
-      onCompositionEndImpl(editor, event.data);
+      $onCompositionEndImpl(editor, event.data);
     });
   }
 }
 
 function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
   lastKeyDownTimeStamp = event.timeStamp;
-  lastKeyCode = event.keyCode;
+  lastKeyCode = event.code;
   if (editor.isComposing()) {
     return;
   }

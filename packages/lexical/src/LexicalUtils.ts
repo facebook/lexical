@@ -846,24 +846,26 @@ export function isDeleteForward(
 }
 
 export function isUndo(
-  keyCode: number,
+  code: string,
   shiftKey: boolean,
   metaKey: boolean,
   ctrlKey: boolean,
 ): boolean {
-  return keyCode === 90 && !shiftKey && controlOrMeta(metaKey, ctrlKey);
+  return code === 'KeyZ' && !shiftKey && controlOrMeta(metaKey, ctrlKey);
 }
 
 export function isRedo(
-  keyCode: number,
+  code: string,
   shiftKey: boolean,
   metaKey: boolean,
   ctrlKey: boolean,
 ): boolean {
   if (IS_APPLE) {
-    return keyCode === 90 && metaKey && shiftKey;
+    return code === 'KeyZ' && metaKey && shiftKey;
   }
-  return (keyCode === 89 && ctrlKey) || (keyCode === 90 && ctrlKey && shiftKey);
+  return (
+    (code === 'KeyY' && ctrlKey) || (code === 'KeyZ' && ctrlKey && shiftKey)
+  );
 }
 
 export function isCopy(

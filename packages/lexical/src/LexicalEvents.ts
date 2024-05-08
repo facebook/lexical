@@ -996,7 +996,7 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
     return;
   }
 
-  const {code, keyCode, shiftKey, ctrlKey, metaKey, altKey} = event;
+  const {code, shiftKey, ctrlKey, metaKey, altKey} = event;
 
   if (dispatchCommand(editor, KEY_DOWN_COMMAND, event)) {
     return;
@@ -1065,10 +1065,10 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
     dispatchCommand(editor, FORMAT_TEXT_COMMAND, 'italic');
   } else if (isTab(code, altKey, ctrlKey, metaKey)) {
     dispatchCommand(editor, KEY_TAB_COMMAND, event);
-  } else if (isUndo(keyCode, shiftKey, metaKey, ctrlKey)) {
+  } else if (isUndo(code, shiftKey, metaKey, ctrlKey)) {
     event.preventDefault();
     dispatchCommand(editor, UNDO_COMMAND, undefined);
-  } else if (isRedo(keyCode, shiftKey, metaKey, ctrlKey)) {
+  } else if (isRedo(code, shiftKey, metaKey, ctrlKey)) {
     event.preventDefault();
     dispatchCommand(editor, REDO_COMMAND, undefined);
   } else {

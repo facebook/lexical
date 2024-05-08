@@ -781,8 +781,8 @@ export async function applySelectionInputs(
               new KeyboardEvent('keydown', {
                 bubbles: true,
                 cancelable: true,
+                code: 'KeyZ',
                 ctrlKey: true,
-                key: 'z',
                 keyCode: 90,
               }),
             );
@@ -794,8 +794,8 @@ export async function applySelectionInputs(
               new KeyboardEvent('keydown', {
                 bubbles: true,
                 cancelable: true,
+                code: 'KeyZ',
                 ctrlKey: true,
-                key: 'z',
                 keyCode: 90,
                 shiftKey: true,
               }),
@@ -877,7 +877,7 @@ export async function applySelectionInputs(
   }
 }
 
-export function setAnchorPoint(
+export function $setAnchorPoint(
   point: Pick<PointType, 'type' | 'offset' | 'key'>,
 ) {
   const selection = $getSelection();
@@ -885,7 +885,7 @@ export function setAnchorPoint(
   if (!$isRangeSelection(selection)) {
     const dummyTextNode = $createTextNode();
     dummyTextNode.select();
-    return setAnchorPoint(point);
+    return $setAnchorPoint(point);
   }
 
   if ($isNodeSelection(selection)) {
@@ -897,8 +897,10 @@ export function setAnchorPoint(
   anchor.offset = point.offset;
   anchor.key = point.key;
 }
+/** @deprecated renamed to $setAnchorPoint by @lexical/eslint-plugin rules-of-lexical */
+export const setAnchorPoint = $setAnchorPoint;
 
-export function setFocusPoint(
+export function $setFocusPoint(
   point: Pick<PointType, 'type' | 'offset' | 'key'>,
 ) {
   const selection = $getSelection();
@@ -906,7 +908,7 @@ export function setFocusPoint(
   if (!$isRangeSelection(selection)) {
     const dummyTextNode = $createTextNode();
     dummyTextNode.select();
-    return setFocusPoint(point);
+    return $setFocusPoint(point);
   }
 
   if ($isNodeSelection(selection)) {
@@ -918,3 +920,5 @@ export function setFocusPoint(
   focus.offset = point.offset;
   focus.key = point.key;
 }
+/** @deprecated renamed to $setFocusPoint by @lexical/eslint-plugin rules-of-lexical */
+export const setFocusPoint = $setFocusPoint;

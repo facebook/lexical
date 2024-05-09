@@ -158,6 +158,7 @@ export function registerLexicalTextEntity<T extends TextNode>(
       if (currentNode == null) {
         return;
       }
+      prevMatchLengthToSkip = 0;
       prevSibling = replacementNode;
     }
   };

@@ -61,7 +61,7 @@ export function registerLexicalTextEntity<T extends TextNode>(
       return;
     }
 
-    const prevSibling = node.getPreviousSibling();
+    let prevSibling = node.getPreviousSibling();
     let text = node.getTextContent();
     let currentNode = node;
     let match;
@@ -131,7 +131,7 @@ export function registerLexicalTextEntity<T extends TextNode>(
       } else {
         const nextMatch = getMatch(nextText);
 
-        if (nextMatch !== null && nextMatch.start === 0) {
+        if (nextMatch !== null && nextMatch.start === 0 && match === null) {
           return;
         }
       }
@@ -165,6 +165,7 @@ export function registerLexicalTextEntity<T extends TextNode>(
       if (currentNode == null) {
         return;
       }
+      prevSibling = replacementNode;
     }
   };
 

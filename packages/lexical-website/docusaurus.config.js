@@ -183,6 +183,7 @@ const docusaurusPluginTypedocConfig = {
   plugin: [
     './src/plugins/lexical-typedoc-plugin-no-inherit',
     './src/plugins/lexical-typedoc-plugin-module-name',
+    'typedoc-plugin-rename-defaults',
   ],
   sidebar: {
     autoConfiguration: false,

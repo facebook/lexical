@@ -106,6 +106,8 @@ describe('LexicalComposer tests', () => {
         });
         expect(editors.size).toBe(size);
         [...editors].forEach((editor, i) => {
+          // This confirms that editorState() was only called once per editor,
+          // otherwise you could see 'initial stateinitial state'.
           expect([
             i,
             editor.getEditorState().read(() => $getRoot().getTextContent()),

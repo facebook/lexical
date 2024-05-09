@@ -13,7 +13,7 @@ import type {
   MutationListeners,
   RegisteredNodes,
 } from './LexicalEditor';
-import type {NodeKey, NodeMap} from './LexicalNode';
+import type {LexicalNode, NodeKey, NodeMap} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 
 import invariant from 'shared/invariant';
@@ -237,7 +237,10 @@ function createNode(
       // @ts-expect-error: internal field
       const possibleLineBreak = parentDOM.__lexicalLineBreak;
 
-      if (possibleLineBreak != null) {
+      if (
+        possibleLineBreak != null &&
+        possibleLineBreak.parentNode === parentDOM
+      ) {
         parentDOM.insertBefore(dom, possibleLineBreak);
       } else {
         parentDOM.appendChild(dom);
@@ -300,12 +303,29 @@ function createChildren(
   subTreeTextContent = previousSubTreeTextContent + subTreeTextContent;
 }
 
-function isLastChildLineBreakOrDecorator(
-  childKey: NodeKey,
+function getLastDescendant(
+  node: ElementNode,
   nodeMap: NodeMap,
-): boolean {
-  const node = nodeMap.get(childKey);
-  return $isLineBreakNode(node) || ($isDecoratorNode(node) && node.isInline());
+): null | LexicalNode {
+  let lastKey = node.__last as NodeKey;
+  let lastNode = nodeMap.get(lastKey);
+  while ($isElementNode(lastNode)) {
+    const childKey = lastNode.__last as NodeKey;
+    if (childKey === null) {
+      break;
+    }
+    lastKey = childKey;
+    lastNode = nodeMap.get(childKey);
+  }
+  return lastNode || null;
+}
+
+function $isLineBreakOrInlineDecorator(node: LexicalNode): boolean {
+  return (
+    $isLineBreakNode(node) ||
+    $isLineBreakNode(node) ||
+    ($isDecoratorNode(node) && node.isInline())
+  );
 }
 
 // If we end an element with a LineBreakNode, then we need to add an additional <br>
@@ -314,37 +334,47 @@ function reconcileElementTerminatingLineBreak(
   nextElement: ElementNode,
   dom: HTMLElement,
 ): void {
+  let prevDescendant;
   const prevLineBreak =
     prevElement !== null &&
     (prevElement.__size === 0 ||
-      isLastChildLineBreakOrDecorator(
-        prevElement.__last as NodeKey,
-        activePrevNodeMap,
-      ));
+      ((prevDescendant = getLastDescendant(prevElement, activePrevNodeMap)) &&
+        $isLineBreakOrInlineDecorator(prevDescendant)));
+  let nextDescendant: null | LexicalNode = null;
   const nextLineBreak =
     nextElement.__size === 0 ||
-    isLastChildLineBreakOrDecorator(
-      nextElement.__last as NodeKey,
-      activeNextNodeMap,
-    );
+    ((nextDescendant = getLastDescendant(nextElement, activeNextNodeMap)) &&
+      $isLineBreakOrInlineDecorator(nextDescendant));
 
-  if (prevLineBreak) {
-    if (!nextLineBreak) {
-      // @ts-expect-error: internal field
-      const element = dom.__lexicalLineBreak;
-
-      if (element != null) {
-        dom.removeChild(element);
-      }
-
-      // @ts-expect-error: internal field
-      dom.__lexicalLineBreak = null;
-    }
-  } else if (nextLineBreak) {
-    const element = document.createElement('br');
+  if (prevLineBreak && !nextLineBreak) {
     // @ts-expect-error: internal field
-    dom.__lexicalLineBreak = element;
-    dom.appendChild(element);
+    const element: void | HTMLBRElement = dom.__lexicalLineBreak;
+
+    if (element != null) {
+      // dom.removeChild(element);
+      (element as HTMLBRElement).remove();
+    }
+
+    // @ts-expect-error: internal field
+    dom.__lexicalLineBreak = null;
+  } else if (nextLineBreak) {
+    // debugger;
+    const targetDom =
+      nextDescendant !== null
+        ? getElementByKeyOrThrow(
+            activeEditor,
+            nextDescendant.__parent as NodeKey,
+          )
+        : dom;
+    // @ts-expect-error: internal field
+    const lexicalLineBreakDom: void | HTMLBRElement = dom.__lexicalLineBreak;
+    if (!prevLineBreak || lexicalLineBreakDom !== targetDom) {
+      const element = lexicalLineBreakDom || document.createElement('br');
+      // @ts-expect-error: internal field
+      dom.__lexicalLineBreak = element;
+      //
+      targetDom.appendChild(element);
+    }
   }
 }
 
@@ -475,16 +505,16 @@ function reconcileChildren(
 
   if (prevChildrenSize === 1 && nextChildrenSize === 1) {
     const prevFirstChildKey = prevElement.__first as NodeKey;
-    const nextFrstChildKey = nextElement.__first as NodeKey;
-    if (prevFirstChildKey === nextFrstChildKey) {
+    const nextFirstChildKey = nextElement.__first as NodeKey;
+    if (prevFirstChildKey === nextFirstChildKey) {
       reconcileNode(prevFirstChildKey, dom);
     } else {
       const lastDOM = getPrevElementByKeyOrThrow(prevFirstChildKey);
-      const replacementDOM = createNode(nextFrstChildKey, null, null);
+      const replacementDOM = createNode(nextFirstChildKey, null, null);
       dom.replaceChild(replacementDOM, lastDOM);
       destroyNode(prevFirstChildKey, null);
     }
-    const nextChildNode = activeNextNodeMap.get(nextFrstChildKey);
+    const nextChildNode = activeNextNodeMap.get(nextFirstChildKey);
     if (subTreeTextFormat === null && $isTextNode(nextChildNode)) {
       subTreeTextFormat = nextChildNode.getFormat();
     }

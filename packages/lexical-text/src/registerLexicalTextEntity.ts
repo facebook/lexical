@@ -100,7 +100,6 @@ export function registerLexicalTextEntity<T extends TextNode>(
       }
     }
 
-    // eslint-disable-next-line no-constant-condition
     let prevMatchLengthToSkip = 0;
     // eslint-disable-next-line no-constant-condition
     while (true) {

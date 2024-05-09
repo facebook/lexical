@@ -115,7 +115,7 @@ export function syncYjsChangesToLexical(
           if ($isRangeSelection(prevSelection)) {
             syncLocalCursorPosition(binding, provider);
             if (doesSelectionNeedRecovering(selection)) {
-              // If the selected node is deleted , move the selection to the previous or parent node.
+              // If the selected node is deleted, move the selection to the previous or parent node.
               const anchorNodeKey = selection.anchor.key;
               $moveSelectionToPreviousNode(anchorNodeKey, currentEditorState);
             }

@@ -97,6 +97,7 @@ test.describe('Collaboration', () => {
       focusPath: [1],
     });
 
+    await sleep(1050);
     await toggleCheckList(page);
     await page.keyboard.type('a');
     await page.keyboard.press('Enter');
@@ -180,6 +181,7 @@ test.describe('Collaboration', () => {
       focusPath: [0, 0, 0],
     });
 
+    await sleep(1050);
     await page.keyboard.press('ArrowDown');
     await page.keyboard.type('Some bold text');
 

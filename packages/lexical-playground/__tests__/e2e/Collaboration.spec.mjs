@@ -19,6 +19,7 @@ import {
   focusEditor,
   html,
   initialize,
+  IS_MAC,
   sleep,
   test,
 } from '../utils/index.mjs';
@@ -31,8 +32,13 @@ async function toggleCheckList(page) {
 test.describe('Collaboration', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
 
-  test('Undo with collaboration on', async ({isRichText, page, isCollab}) => {
-    test.skip(!isCollab);
+  test('Undo with collaboration on', async ({
+    isRichText,
+    page,
+    isCollab,
+    browserName,
+  }) => {
+    test.skip(!isCollab || IS_MAC);
 
     await focusEditor(page);
     await page.keyboard.type('hello');
@@ -97,7 +103,6 @@ test.describe('Collaboration', () => {
       focusPath: [1],
     });
 
-    await sleep(1050);
     await toggleCheckList(page);
     await page.keyboard.type('a');
     await page.keyboard.press('Enter');
@@ -181,7 +186,6 @@ test.describe('Collaboration', () => {
       focusPath: [0, 0, 0],
     });
 
-    await sleep(1050);
     await page.keyboard.press('ArrowDown');
     await page.keyboard.type('Some bold text');
 

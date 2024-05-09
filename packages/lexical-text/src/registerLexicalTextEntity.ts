@@ -131,7 +131,7 @@ export function registerLexicalTextEntity<T extends TextNode>(
       } else {
         const nextMatch = getMatch(nextText);
 
-        if (nextMatch !== null && nextMatch.start === 0 && match === null) {
+        if (match === null && nextMatch !== null && nextMatch.start === 0) {
           return;
         }
       }

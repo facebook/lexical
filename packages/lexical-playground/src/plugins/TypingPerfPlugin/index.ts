@@ -83,9 +83,9 @@ export default function TypingPerfPlugin(): JSX.Element | null {
     };
 
     const keyDownHandler = function keyDownHandler(event: KeyboardEvent) {
-      const keyCode = event.keyCode;
+      const keyCode = event.code;
 
-      if (keyCode === 8 || keyCode === 13) {
+      if (keyCode === 'Backspace' || keyCode === 'Enter') {
         measureEventStart();
       }
     };

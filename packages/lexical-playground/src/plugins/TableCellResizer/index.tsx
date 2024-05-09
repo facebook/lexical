@@ -333,23 +333,23 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
       const {height, width, top, left} =
         activeCell.elem.getBoundingClientRect();
       const zoom = calculateZoomLevel(activeCell.elem);
-
+      const zoneWidth = 10; // Pixel width of the zone where you can drag the edge
       const styles = {
         bottom: {
           backgroundColor: 'none',
           cursor: 'row-resize',
-          height: '10px',
+          height: `${zoneWidth}px`,
           left: `${window.pageXOffset + left}px`,
-          top: `${window.pageYOffset + top + height}px`,
+          top: `${window.pageYOffset + top + height - zoneWidth / 2}px`,
           width: `${width}px`,
         },
         right: {
           backgroundColor: 'none',
           cursor: 'col-resize',
           height: `${height}px`,
-          left: `${window.pageXOffset + left + width}px`,
+          left: `${window.pageXOffset + left + width - zoneWidth / 2}px`,
           top: `${window.pageYOffset + top}px`,
-          width: '10px',
+          width: `${zoneWidth}px`,
         },
       };
 

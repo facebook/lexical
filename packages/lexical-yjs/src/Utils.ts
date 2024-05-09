@@ -218,7 +218,8 @@ export function $getOrInitCollabNodeFromSharedType(
   return collabNode;
 }
 /** @deprecated renamed to $getOrInitCollabNodeFromSharedType by @lexical/eslint-plugin rules-of-lexical */
-export const getOrInitCollabNodeFromSharedType = $getOrInitCollabNodeFromSharedType;
+export const getOrInitCollabNodeFromSharedType =
+  $getOrInitCollabNodeFromSharedType;
 
 export function createLexicalNodeFromCollabNode(
   binding: Binding,

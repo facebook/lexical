@@ -331,4 +331,55 @@ test.describe('Auto Links', () => {
       {ignoreClasses: true},
     );
   });
+
+  test('Can convert url-like text with styles into links', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+
+    //increase font size
+    await click(page, '.font-increment');
+    await click(page, '.font-increment');
+
+    await page.keyboard.type('Hellohttp://example.com and more');
+
+    await assertHTML(
+      page,
+      html`
+        <p dir="ltr">
+          <span style="font-size: 19px;" data-lexical-text="true">
+            Hellohttp://example.com and more
+          </span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+
+    // Add space before link text
+    await moveToLineBeginning(page);
+    await moveRight(page, 5);
+    await page.keyboard.type(' ');
+
+    await assertHTML(
+      page,
+      html`
+        <p dir="ltr">
+          <span style="font-size: 19px;" data-lexical-text="true">Hello</span>
+          <a href="http://example.com" dir="ltr">
+            <span style="font-size: 19px;" data-lexical-text="true">
+              http://example.com
+            </span>
+          </a>
+          <span style="font-size: 19px;" data-lexical-text="true">
+            and more
+          </span>
+        </p>
+      `,
+      undefined,
+      {ignoreClasses: true},
+    );
+  });
 });

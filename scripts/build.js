@@ -17,7 +17,6 @@ const nodeResolve = require('@rollup/plugin-node-resolve').default;
 const commonjs = require('@rollup/plugin-commonjs');
 const replace = require('@rollup/plugin-replace');
 const json = require('@rollup/plugin-json');
-const extractErrorCodes = require('./error-codes/extract-errors');
 const alias = require('@rollup/plugin-alias');
 const compiler = require('@ampproject/rollup-plugin-closure-compiler');
 const terser = require('@rollup/plugin-terser');
@@ -103,12 +102,6 @@ const externals = [
   'y-websocket',
 ].sort();
 
-const errorCodeOpts = {
-  errorMapFilePath: 'scripts/error-codes/codes.json',
-};
-
-const findAndRecordErrorCodes = extractErrorCodes(errorCodeOpts);
-
 const strictWWWMappings = {};
 
 // Add quotes around mappings to make them more strict.
@@ -175,14 +168,6 @@ async function build(name, inputFile, outputPath, outputFile, isProd, format) {
           {find: 'shared', replacement: path.resolve('packages/shared/src')},
         ],
       }),
-      // Extract error codes from invariant() messages into a file.
-      {
-        transform(source) {
-          // eslint-disable-next-line no-unused-expressions
-          extractCodes && findAndRecordErrorCodes(source);
-          return source;
-        },
-      },
       nodeResolve({
         extensions,
       }),
@@ -195,7 +180,7 @@ async function build(name, inputFile, outputPath, outputFile, isProd, format) {
         plugins: [
           [
             require('./error-codes/transform-error-messages'),
-            {noMinify: !isProd},
+            {extractCodes, noMinify: !isProd},
           ],
           '@babel/plugin-transform-optional-catch-binding',
         ],

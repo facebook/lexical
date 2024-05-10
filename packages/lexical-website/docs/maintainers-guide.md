@@ -196,6 +196,10 @@ This runs all of the pre-release steps and will let you inspect the artifacts
 that would be uploaded to npm. Each public package will have a npm directory, e.g.
 `packages/lexical/npm` that contains those artifacts.
 
+This will also update scripts/error-codes/codes.json, the mapping of
+production error codes to error messages. It's imperative to commit the result
+of this before tagging a release.
+
 ### npm run ci-check
 
 Check flow, TypeScript, prettier and eslint for issues. A good command to run
@@ -224,14 +228,37 @@ Run eslint
 
 ## Scripts for release managers
 
-### npm run increment-version
-
-Increment the monorepo version. Make sure to run `npm run update-packages`
-after this.
-
 ### npm run extract-codes
 
-Extract error codes for the production build. Essential to run before a release.
+This will run a build that also extracts the generated error codes.json file.
+
+This should be done, at minimum, before each release, but not in any PR as
+it would cause conflicts between serial numbers.
+
+It's safe and probably advisable to do this more often, possibly any time a
+branch is merged to main.
+
+The codes.json file is also updated any time a release build is generated
+as a failsafe to ensure that these codes are up to date in a release.
+This command runs a development build to extract the codes which is much
+faster as it is not doing any optimization/minification steps.
+
+### npm run increment-version
+
+Increment the monorepo version. The `-i` argument must be one of
+`minor` | `patch` | `prerelease`.
+
+The postversion script will:
+- Create a local `${npm_package_version}__release` branch
+- `npm run update-version` to update example and sub-package monorepo dependencies
+- `npm install` to update the package-lock.json
+- `npm run update-packages` to update other generated config
+- `npm run extract-codes` to extract the error codes
+- `npm run update-changelog` to update the changelog (if it's not a prerelease)
+- Create a version commit and tag from the branch
+
+This is typically executed through the `version.yml` GitHub Workflow which
+will also push the tag.
 
 ### npm run changelog
 

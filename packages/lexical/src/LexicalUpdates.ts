@@ -433,7 +433,7 @@ function handleDEVOnlyPendingUpdateGuarantees(
   };
 }
 
-export function commitPendingUpdates(
+export function $commitPendingUpdates(
   editor: LexicalEditor,
   recoveryEditorState?: EditorState,
 ): void {
@@ -494,7 +494,7 @@ export function commitPendingUpdates(
         initMutationObserver(editor);
         editor._dirtyType = FULL_RECONCILE;
         isAttemptingToRecoverFromReconcilerError = true;
-        commitPendingUpdates(editor, currentEditorState);
+        $commitPendingUpdates(editor, currentEditorState);
         isAttemptingToRecoverFromReconcilerError = false;
       } else {
         // To avoid a possible situation of infinite loops, lets throw
@@ -638,8 +638,10 @@ export function commitPendingUpdates(
     tags,
   });
   triggerDeferredUpdateCallbacks(editor, deferred);
-  triggerEnqueuedUpdates(editor);
+  $triggerEnqueuedUpdates(editor);
 }
+/** @deprecated renamed to $commitPendingUpdates by @lexical/eslint-plugin rules-of-lexical */
+export const commitPendingUpdates = $commitPendingUpdates;
 
 function triggerTextContentListeners(
   editor: LexicalEditor,
@@ -665,14 +667,16 @@ function triggerMutationListeners(
   const listenersLength = listeners.length;
 
   for (let i = 0; i < listenersLength; i++) {
-    const [listener, klass] = listeners[i];
-    const mutatedNodesByType = mutatedNodes.get(klass);
-    if (mutatedNodesByType !== undefined) {
-      listener(mutatedNodesByType, {
-        dirtyLeaves,
-        prevEditorState,
-        updateTags,
-      });
+    const [listener, klasses] = listeners[i];
+    for (let j = 0; j < klasses.length; j++) {
+      const mutatedNodesByType = mutatedNodes.get(klasses[j]);
+      if (mutatedNodesByType !== undefined) {
+        listener(mutatedNodesByType, {
+          dirtyLeaves,
+          prevEditorState,
+          updateTags,
+        });
+      }
     }
   }
 }
@@ -740,14 +744,14 @@ export function triggerCommandListeners<
   return false;
 }
 
-function triggerEnqueuedUpdates(editor: LexicalEditor): void {
+function $triggerEnqueuedUpdates(editor: LexicalEditor): void {
   const queuedUpdates = editor._updates;
 
   if (queuedUpdates.length !== 0) {
     const queuedUpdate = queuedUpdates.shift();
     if (queuedUpdate) {
       const [updateFn, options] = queuedUpdate;
-      beginUpdate(editor, updateFn, options);
+      $beginUpdate(editor, updateFn, options);
     }
   }
 }
@@ -814,7 +818,7 @@ function processNestedUpdates(
   return skipTransforms;
 }
 
-function beginUpdate(
+function $beginUpdate(
   editor: LexicalEditor,
   updateFn: () => void,
   options?: EditorUpdateOptions,
@@ -939,7 +943,7 @@ function beginUpdate(
 
     editor._dirtyElements.clear();
 
-    commitPendingUpdates(editor);
+    $commitPendingUpdates(editor);
     return;
   } finally {
     activeEditorState = previousActiveEditorState;
@@ -956,10 +960,10 @@ function beginUpdate(
   if (shouldUpdate) {
     if (pendingEditorState._flushSync) {
       pendingEditorState._flushSync = false;
-      commitPendingUpdates(editor);
+      $commitPendingUpdates(editor);
     } else if (editorStateWasCloned) {
       scheduleMicroTask(() => {
-        commitPendingUpdates(editor);
+        $commitPendingUpdates(editor);
       });
     }
   } else {
@@ -973,7 +977,7 @@ function beginUpdate(
   }
 }
 
-export function updateEditor(
+export function $updateEditor(
   editor: LexicalEditor,
   updateFn: () => void,
   options?: EditorUpdateOptions,
@@ -981,6 +985,8 @@ export function updateEditor(
   if (editor._updating) {
     editor._updates.push([updateFn, options]);
   } else {
-    beginUpdate(editor, updateFn, options);
+    $beginUpdate(editor, updateFn, options);
   }
 }
+/** @deprecated renamed to $updateEditor by @lexical/eslint-plugin rules-of-lexical */
+export const updateEditor = $updateEditor;

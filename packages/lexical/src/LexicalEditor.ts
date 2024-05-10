@@ -204,7 +204,10 @@ export type Transform<T extends LexicalNode> = (node: T) => void;
 
 export type ErrorHandler = (error: Error) => void;
 
-export type MutationListeners = Map<MutationListener, Klass<LexicalNode>>;
+export type MutationListeners = Map<
+  MutationListener,
+  ReadonlyArray<Klass<LexicalNode>>
+>;
 
 export type MutatedNodes = Map<Klass<LexicalNode>, Map<NodeKey, NodeMutation>>;
 
@@ -823,9 +826,27 @@ export class LexicalEditor {
         klass.name,
       );
     }
+    const replaceWithKlass = registeredNode.replaceWithKlass;
+    const registeredNodes = [registeredNode];
+    if (replaceWithKlass != null) {
+      const replaceWithNode = this._nodes.get(replaceWithKlass.getType());
+      if (replaceWithNode === undefined) {
+        invariant(
+          false,
+          'Node %s has not been registered. Ensure node has been passed to createEditor.',
+          replaceWithKlass.name,
+        );
+      }
+
+      registeredNodes.push(replaceWithNode);
+    }
 
     const mutations = this._listeners.mutation;
-    mutations.set(listener, klass);
+    mutations.set(
+      listener,
+      registeredNodes.map((node) => node.klass),
+    );
+
     return () => {
       mutations.delete(listener);
     };

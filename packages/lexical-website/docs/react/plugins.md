@@ -85,7 +85,7 @@ React wrapper for `@lexical/history` that adds support for history stack managem
 
 ### `LexicalLinkPlugin`
 
-React wrapper for `@lexical/link` that adds support for links, including `toggleLink` command support that toggles link for selected text
+React wrapper for `@lexical/link` that adds support for links, including `$toggleLink` command support that toggles link for selected text
 
 ```jsx
 <LinkPlugin />

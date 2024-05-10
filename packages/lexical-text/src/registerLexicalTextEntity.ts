@@ -155,7 +155,7 @@ export function registerLexicalTextEntity<T extends TextNode>(
 
       invariant(
         nodeToReplace !== undefined,
-        'nodeToReplace should not be undefined.',
+        'nodeToReplace should not be undefined. You may want to check splitOffsets passed to the splitText.',
       );
 
       const replacementNode = createNode(nodeToReplace);

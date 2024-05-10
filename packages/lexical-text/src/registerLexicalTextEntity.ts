@@ -14,6 +14,7 @@ import {
   LexicalNode,
   TextNode,
 } from 'lexical';
+import invariant from 'shared/invariant';
 
 export type EntityMatch = {end: number; start: number};
 
@@ -152,9 +153,10 @@ export function registerLexicalTextEntity<T extends TextNode>(
         );
       }
 
-      if (nodeToReplace == null) {
-        return;
-      }
+      invariant(
+        nodeToReplace !== undefined,
+        'nodeToReplace should not be undefined.',
+      );
 
       const replacementNode = createNode(nodeToReplace);
       replacementNode.setFormat(nodeToReplace.getFormat());

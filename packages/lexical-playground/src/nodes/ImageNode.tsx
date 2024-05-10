@@ -37,7 +37,7 @@ export interface ImagePayload {
   captionsEnabled?: boolean;
 }
 
-function convertImageElement(domNode: Node): null | DOMConversionOutput {
+function $convertImageElement(domNode: Node): null | DOMConversionOutput {
   const img = domNode as HTMLImageElement;
   if (img.src.startsWith('file:///')) {
     return null;
@@ -120,7 +120,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
   static importDOM(): DOMConversionMap | null {
     return {
       img: (node: Node) => ({
-        conversion: convertImageElement,
+        conversion: $convertImageElement,
         priority: 0,
       }),
     };

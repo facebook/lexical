@@ -544,7 +544,7 @@ export class TextNode extends LexicalNode {
   static importDOM(): DOMConversionMap | null {
     return {
       '#text': () => ({
-        conversion: convertTextDOMNode,
+        conversion: $convertTextDOMNode,
         priority: 0,
       }),
       b: () => ({
@@ -1183,7 +1183,7 @@ export function findParentPreDOMNode(node: Node) {
   return resultNode;
 }
 
-function convertTextDOMNode(domNode: Node): DOMConversionOutput {
+function $convertTextDOMNode(domNode: Node): DOMConversionOutput {
   const domNode_ = domNode as Text;
   const parentDom = domNode.parentElement;
   invariant(

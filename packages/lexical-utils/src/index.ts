@@ -394,7 +394,7 @@ export function registerNestedElementResolver<N extends ElementNode>(
     return null;
   };
 
-  const elementNodeTransform = (node: N) => {
+  const $elementNodeTransform = (node: N) => {
     const match = $findMatch(node);
 
     if (match !== null) {
@@ -428,7 +428,7 @@ export function registerNestedElementResolver<N extends ElementNode>(
     }
   };
 
-  return editor.registerNodeTransform(targetNode, elementNodeTransform);
+  return editor.registerNodeTransform(targetNode, $elementNodeTransform);
 }
 
 /**

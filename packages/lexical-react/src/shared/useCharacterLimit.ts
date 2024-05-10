@@ -216,7 +216,7 @@ function $wrapOverflowedNodes(offset: number): void {
           $setSelection(previousSelection);
         }
 
-        mergePrevious(overflowNode);
+        $mergePrevious(overflowNode);
       }
     }
   }
@@ -241,7 +241,7 @@ function $unwrapNode(node: OverflowNode): LexicalNode | null {
   return childrenLength > 0 ? children[childrenLength - 1] : null;
 }
 
-export function mergePrevious(overflowNode: OverflowNode): void {
+export function $mergePrevious(overflowNode: OverflowNode): void {
   const previousNode = overflowNode.getPreviousSibling();
 
   if (!$isOverflowNode(previousNode)) {
@@ -291,3 +291,5 @@ export function mergePrevious(overflowNode: OverflowNode): void {
 
   previousNode.remove();
 }
+/** @deprecated renamed to $mergePrevious by @lexical/eslint-plugin rules-of-lexical */
+export const mergePrevious = $mergePrevious;

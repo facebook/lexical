@@ -609,7 +609,7 @@ export class RangeSelection implements BaseSelection {
     const editor = getActiveEditor();
     const currentEditorState = editor.getEditorState();
     const lastSelection = currentEditorState._selection;
-    const resolvedSelectionPoints = internalResolveSelectionPoints(
+    const resolvedSelectionPoints = $internalResolveSelectionPoints(
       range.startContainer,
       range.startOffset,
       range.endContainer,
@@ -827,7 +827,7 @@ export class RangeSelection implements BaseSelection {
             !lastNodeParent.canInsertTextAfter()))
       ) {
         this.insertText('');
-        normalizeSelectionPointsForBoundaries(this.anchor, this.focus, null);
+        $normalizeSelectionPointsForBoundaries(this.anchor, this.focus, null);
         this.insertText(text);
         return;
       }
@@ -1224,7 +1224,7 @@ export class RangeSelection implements BaseSelection {
       if ('__language' in nodes[0]) {
         this.insertText(nodes[0].getTextContent());
       } else {
-        const index = removeTextAndSplitBlock(this);
+        const index = $removeTextAndSplitBlock(this);
         firstBlock.splice(index, 0, nodes);
         last.selectEnd();
       }
@@ -1240,7 +1240,7 @@ export class RangeSelection implements BaseSelection {
         $isElementNode(firstBlock),
         "Expected 'firstBlock' to be an ElementNode",
       );
-      const index = removeTextAndSplitBlock(this);
+      const index = $removeTextAndSplitBlock(this);
       firstBlock.splice(index, 0, nodes);
       last.selectEnd();
       return;
@@ -1311,7 +1311,7 @@ export class RangeSelection implements BaseSelection {
       paragraph.select();
       return paragraph;
     }
-    const index = removeTextAndSplitBlock(this);
+    const index = $removeTextAndSplitBlock(this);
     const block = $getAncestor(this.anchor.getNode(), INTERNAL_$isBlock)!;
     invariant($isElementNode(block), 'Expected ancestor to be an ElementNode');
     const firstToAppend = block.getChildAtIndex(index);
@@ -1892,7 +1892,7 @@ function shouldResolveAncestor(
   );
 }
 
-function internalResolveSelectionPoint(
+function $internalResolveSelectionPoint(
   dom: Node,
   offset: number,
   lastPoint: null | PointType,
@@ -2072,7 +2072,7 @@ function resolveSelectionPointOnBoundary(
   }
 }
 
-function normalizeSelectionPointsForBoundaries(
+function $normalizeSelectionPointsForBoundaries(
   anchor: PointType,
   focus: PointType,
   lastSelection: null | BaseSelection,
@@ -2111,7 +2111,7 @@ function normalizeSelectionPointsForBoundaries(
   }
 }
 
-function internalResolveSelectionPoints(
+function $internalResolveSelectionPoints(
   anchorDOM: null | Node,
   anchorOffset: number,
   focusDOM: null | Node,
@@ -2126,7 +2126,7 @@ function internalResolveSelectionPoints(
   ) {
     return null;
   }
-  const resolvedAnchorPoint = internalResolveSelectionPoint(
+  const resolvedAnchorPoint = $internalResolveSelectionPoint(
     anchorDOM,
     anchorOffset,
     $isRangeSelection(lastSelection) ? lastSelection.anchor : null,
@@ -2135,7 +2135,7 @@ function internalResolveSelectionPoints(
   if (resolvedAnchorPoint === null) {
     return null;
   }
-  const resolvedFocusPoint = internalResolveSelectionPoint(
+  const resolvedFocusPoint = $internalResolveSelectionPoint(
     focusDOM,
     focusOffset,
     $isRangeSelection(lastSelection) ? lastSelection.focus : null,
@@ -2159,7 +2159,7 @@ function internalResolveSelectionPoints(
   }
 
   // Handle normalization of selection when it is at the boundaries.
-  normalizeSelectionPointsForBoundaries(
+  $normalizeSelectionPointsForBoundaries(
     resolvedAnchorPoint,
     resolvedFocusPoint,
     lastSelection,
@@ -2178,7 +2178,7 @@ export function $isBlockElementNode(
 // selection is null, i.e. forcing selection on the editor
 // when it current exists outside the editor.
 
-export function internalMakeRangeSelection(
+export function $internalMakeRangeSelection(
   anchorKey: NodeKey,
   anchorOffset: number,
   focusKey: NodeKey,
@@ -2197,6 +2197,8 @@ export function internalMakeRangeSelection(
   editorState._selection = selection;
   return selection;
 }
+/** @deprecated renamed to $internalMakeRangeSelection by @lexical/eslint-plugin rules-of-lexical */
+export const internalMakeRangeSelection = $internalMakeRangeSelection;
 
 export function $createRangeSelection(): RangeSelection {
   const anchor = $createPoint('root', 0, 'element');
@@ -2208,7 +2210,7 @@ export function $createNodeSelection(): NodeSelection {
   return new NodeSelection(new Set());
 }
 
-export function internalCreateSelection(
+export function $internalCreateSelection(
   editor: LexicalEditor,
 ): null | BaseSelection {
   const currentEditorState = editor.getEditorState();
@@ -2216,7 +2218,7 @@ export function internalCreateSelection(
   const domSelection = getDOMSelection(editor._window);
 
   if ($isRangeSelection(lastSelection) || lastSelection == null) {
-    return internalCreateRangeSelection(
+    return $internalCreateRangeSelection(
       lastSelection,
       domSelection,
       editor,
@@ -2225,15 +2227,17 @@ export function internalCreateSelection(
   }
   return lastSelection.clone();
 }
+/** @deprecated renamed to $internalCreateSelection by @lexical/eslint-plugin rules-of-lexical */
+export const internalCreateSelection = $internalCreateSelection;
 
 export function $createRangeSelectionFromDom(
   domSelection: Selection | null,
   editor: LexicalEditor,
 ): null | RangeSelection {
-  return internalCreateRangeSelection(null, domSelection, editor, null);
+  return $internalCreateRangeSelection(null, domSelection, editor, null);
 }
 
-export function internalCreateRangeSelection(
+export function $internalCreateRangeSelection(
   lastSelection: null | BaseSelection,
   domSelection: Selection | null,
   editor: LexicalEditor,
@@ -2293,7 +2297,7 @@ export function internalCreateRangeSelection(
   }
   // Let's resolve the text nodes from the offsets and DOM nodes we have from
   // native selection.
-  const resolvedSelectionPoints = internalResolveSelectionPoints(
+  const resolvedSelectionPoints = $internalResolveSelectionPoints(
     anchorDOM,
     anchorOffset,
     focusDOM,
@@ -2312,6 +2316,8 @@ export function internalCreateRangeSelection(
     !$isRangeSelection(lastSelection) ? '' : lastSelection.style,
   );
 }
+/** @deprecated renamed to $internalCreateRangeSelection by @lexical/eslint-plugin rules-of-lexical */
+export const internalCreateRangeSelection = $internalCreateRangeSelection;
 
 export function $getSelection(): null | BaseSelection {
   const editorState = getActiveEditorState();
@@ -2708,7 +2714,7 @@ export function $getTextContent(): string {
   return selection.getTextContent();
 }
 
-function removeTextAndSplitBlock(selection: RangeSelection): number {
+function $removeTextAndSplitBlock(selection: RangeSelection): number {
   let selection_ = selection;
   if (!selection.isCollapsed()) {
     selection_.removeText();
@@ -2730,13 +2736,13 @@ function removeTextAndSplitBlock(selection: RangeSelection): number {
   let offset = anchor.offset;
 
   while (!INTERNAL_$isBlock(node)) {
-    [node, offset] = splitNodeAtPoint(node, offset);
+    [node, offset] = $splitNodeAtPoint(node, offset);
   }
 
   return offset;
 }
 
-function splitNodeAtPoint(
+function $splitNodeAtPoint(
   node: LexicalNode,
   offset: number,
 ): [parent: ElementNode, offset: number] {

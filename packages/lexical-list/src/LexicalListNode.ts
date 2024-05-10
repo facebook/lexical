@@ -106,7 +106,7 @@ export class ListNode extends ElementNode {
     }
     // @ts-expect-error Internal field.
     dom.__lexicalListType = this.__listType;
-    setListThemeClassNames(dom, config.theme, this);
+    $setListThemeClassNames(dom, config.theme, this);
 
     return dom;
   }
@@ -120,7 +120,7 @@ export class ListNode extends ElementNode {
       return true;
     }
 
-    setListThemeClassNames(dom, config.theme, this);
+    $setListThemeClassNames(dom, config.theme, this);
 
     return false;
   }
@@ -136,11 +136,11 @@ export class ListNode extends ElementNode {
   static importDOM(): DOMConversionMap | null {
     return {
       ol: (node: Node) => ({
-        conversion: convertListNode,
+        conversion: $convertListNode,
         priority: 0,
       }),
       ul: (node: Node) => ({
-        conversion: convertListNode,
+        conversion: $convertListNode,
         priority: 0,
       }),
     };
@@ -216,7 +216,7 @@ export class ListNode extends ElementNode {
   }
 }
 
-function setListThemeClassNames(
+function $setListThemeClassNames(
   dom: HTMLElement,
   editorThemeClasses: EditorThemeClasses,
   node: ListNode,
@@ -302,7 +302,7 @@ function normalizeChildren(nodes: Array<LexicalNode>): Array<ListItemNode> {
   return normalizedListItems;
 }
 
-function convertListNode(domNode: Node): DOMConversionOutput {
+function $convertListNode(domNode: Node): DOMConversionOutput {
   const nodeName = domNode.nodeName.toLowerCase();
   let node = null;
   if (nodeName === 'ol') {

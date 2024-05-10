@@ -18,7 +18,7 @@ import {
 
 type SerializedCollapsibleContentNode = SerializedElementNode;
 
-export function convertCollapsibleContentElement(
+export function $convertCollapsibleContentElement(
   domNode: HTMLElement,
 ): DOMConversionOutput | null {
   const node = $createCollapsibleContentNode();
@@ -26,6 +26,9 @@ export function convertCollapsibleContentElement(
     node,
   };
 }
+/** @deprecated renamed to $convertCollapsibleContentElement by @lexical/eslint-plugin rules-of-lexical */
+export const convertCollapsibleContentElement =
+  $convertCollapsibleContentElement;
 
 export class CollapsibleContentNode extends ElementNode {
   static getType(): string {
@@ -53,7 +56,7 @@ export class CollapsibleContentNode extends ElementNode {
           return null;
         }
         return {
-          conversion: convertCollapsibleContentElement,
+          conversion: $convertCollapsibleContentElement,
           priority: 2,
         };
       },

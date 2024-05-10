@@ -125,7 +125,7 @@ function $updateHeadingPosition(
   return newTableOfContents;
 }
 
-function getPreviousHeading(node: HeadingNode): HeadingNode | null {
+function $getPreviousHeading(node: HeadingNode): HeadingNode | null {
   let prevHeading = $getNextRightPreorderNode(node);
   while (prevHeading !== null && !$isHeadingNode(prevHeading)) {
     prevHeading = $getNextRightPreorderNode(prevHeading);
@@ -171,7 +171,7 @@ export default function LexicalTableOfContentsPlugin({
           const updateChildHeadings = (node: ElementNode) => {
             for (const child of node.getChildren()) {
               if ($isHeadingNode(child)) {
-                const prevHeading = getPreviousHeading(child);
+                const prevHeading = $getPreviousHeading(child);
                 currentTableOfContents = $updateHeadingPosition(
                   prevHeading,
                   child,
@@ -205,7 +205,7 @@ export default function LexicalTableOfContentsPlugin({
             if (mutation === 'created') {
               const newHeading = $getNodeByKey<HeadingNode>(nodeKey);
               if (newHeading !== null) {
-                const prevHeading = getPreviousHeading(newHeading);
+                const prevHeading = $getPreviousHeading(newHeading);
                 currentTableOfContents = $insertHeadingIntoTableOfContents(
                   prevHeading,
                   newHeading,
@@ -220,7 +220,7 @@ export default function LexicalTableOfContentsPlugin({
             } else if (mutation === 'updated') {
               const newHeading = $getNodeByKey<HeadingNode>(nodeKey);
               if (newHeading !== null) {
-                const prevHeading = getPreviousHeading(newHeading);
+                const prevHeading = $getPreviousHeading(newHeading);
                 currentTableOfContents = $updateHeadingPosition(
                   prevHeading,
                   newHeading,

@@ -109,7 +109,7 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
           !$isListItemNode(node) &&
           !handled.has(node.getKey())
         ) {
-          createListOrMerge(node, listType);
+          $createListOrMerge(node, listType);
           continue;
         }
 
@@ -132,7 +132,7 @@ export function insertList(editor: LexicalEditor, listType: ListType): void {
 
               if ($isRootOrShadowRoot(nextParent) && !handled.has(parentKey)) {
                 handled.add(parentKey);
-                createListOrMerge(parent, listType);
+                $createListOrMerge(parent, listType);
                 break;
               }
 
@@ -149,7 +149,7 @@ function append(node: ElementNode, nodesToAppend: Array<LexicalNode>) {
   node.splice(node.getChildrenSize(), 0, nodesToAppend);
 }
 
-function createListOrMerge(node: ElementNode, listType: ListType): ListNode {
+function $createListOrMerge(node: ElementNode, listType: ListType): ListNode {
   if ($isListNode(node)) {
     return node;
   }

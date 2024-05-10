@@ -41,7 +41,7 @@ type TweetComponentProps = Readonly<{
   tweetID: string;
 }>;
 
-function convertTweetElement(
+function $convertTweetElement(
   domNode: HTMLDivElement,
 ): DOMConversionOutput | null {
   const id = domNode.getAttribute('data-lexical-tweet-id');
@@ -163,7 +163,7 @@ export class TweetNode extends DecoratorBlockNode {
           return null;
         }
         return {
-          conversion: convertTweetElement,
+          conversion: $convertTweetElement,
           priority: 2,
         };
       },

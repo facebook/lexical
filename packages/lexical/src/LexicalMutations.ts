@@ -71,7 +71,7 @@ function getLastSelection(editor: LexicalEditor): null | BaseSelection {
   });
 }
 
-function handleTextMutation(
+function $handleTextMutation(
   target: Text,
   node: TextNode,
   editor: LexicalEditor,
@@ -153,7 +153,7 @@ export function $flushMutations(
             $isTextNode(targetNode) &&
             shouldUpdateTextNodeFromMutation(selection, targetDOM, targetNode)
           ) {
-            handleTextMutation(
+            $handleTextMutation(
               // nodeType === DOM_TEXT_TYPE is a Text DOM node
               targetDOM as Text,
               targetNode,
@@ -303,7 +303,7 @@ export function $flushMutations(
   }
 }
 
-export function flushRootMutations(editor: LexicalEditor): void {
+export function $flushRootMutations(editor: LexicalEditor): void {
   const observer = editor._observer;
 
   if (observer !== null) {
@@ -311,6 +311,8 @@ export function flushRootMutations(editor: LexicalEditor): void {
     $flushMutations(editor, mutations, observer);
   }
 }
+/** @deprecated renamed to $flushRootMutations by @lexical/eslint-plugin rules-of-lexical */
+export const flushRootMutations = $flushRootMutations;
 
 export function initMutationObserver(editor: LexicalEditor): void {
   initTextEntryListener(editor);

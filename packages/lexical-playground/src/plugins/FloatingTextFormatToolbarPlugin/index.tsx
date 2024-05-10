@@ -109,7 +109,7 @@ function TextFormatFloatingToolbar({
     }
   }, [popupCharStylesEditorRef]);
 
-  const updateTextFormatFloatingToolbar = useCallback(() => {
+  const $updateTextFormatFloatingToolbar = useCallback(() => {
     const selection = $getSelection();
 
     const popupCharStylesEditorElem = popupCharStylesEditorRef.current;
@@ -143,7 +143,7 @@ function TextFormatFloatingToolbar({
 
     const update = () => {
       editor.getEditorState().read(() => {
-        updateTextFormatFloatingToolbar();
+        $updateTextFormatFloatingToolbar();
       });
     };
 
@@ -158,29 +158,29 @@ function TextFormatFloatingToolbar({
         scrollerElem.removeEventListener('scroll', update);
       }
     };
-  }, [editor, updateTextFormatFloatingToolbar, anchorElem]);
+  }, [editor, $updateTextFormatFloatingToolbar, anchorElem]);
 
   useEffect(() => {
     editor.getEditorState().read(() => {
-      updateTextFormatFloatingToolbar();
+      $updateTextFormatFloatingToolbar();
     });
     return mergeRegister(
       editor.registerUpdateListener(({editorState}) => {
         editorState.read(() => {
-          updateTextFormatFloatingToolbar();
+          $updateTextFormatFloatingToolbar();
         });
       }),
 
       editor.registerCommand(
         SELECTION_CHANGE_COMMAND,
         () => {
-          updateTextFormatFloatingToolbar();
+          $updateTextFormatFloatingToolbar();
           return false;
         },
         COMMAND_PRIORITY_LOW,
       ),
     );
-  }, [editor, updateTextFormatFloatingToolbar]);
+  }, [editor, $updateTextFormatFloatingToolbar]);
 
   return (
     <div ref={popupCharStylesEditorRef} className="floating-text-format-popup">

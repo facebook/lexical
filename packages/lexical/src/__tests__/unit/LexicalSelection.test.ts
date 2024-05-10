@@ -71,7 +71,7 @@ describe('LexicalSelection tests', () => {
         return {container, editor};
       };
 
-      const insertTextOrNodes = (
+      const $insertTextOrNodes = (
         selection: RangeSelection,
         method: 'insertText' | 'insertNodes',
       ) => {
@@ -109,7 +109,7 @@ describe('LexicalSelection tests', () => {
               // For review: is there a way to select "outside" of the link
               // node?
               const selection = linkNode.select(0, 0);
-              insertTextOrNodes(selection, method);
+              $insertTextOrNodes(selection, method);
             });
 
             expect(container.innerHTML).toBe(
@@ -150,7 +150,7 @@ describe('LexicalSelection tests', () => {
               // Place the cursor between the link and the first text node by
               // selecting the end of the text node
               const selection = textNode.select(1, 1);
-              insertTextOrNodes(selection, method);
+              $insertTextOrNodes(selection, method);
             });
 
             expect(container.innerHTML).toBe(
@@ -190,7 +190,7 @@ describe('LexicalSelection tests', () => {
               // Place the cursor before the link element by selecting the end
               // of the text node
               const selection = textNode.select(1, 1);
-              insertTextOrNodes(selection, method);
+              $insertTextOrNodes(selection, method);
             });
 
             expect(container.innerHTML).toBe(
@@ -232,7 +232,7 @@ describe('LexicalSelection tests', () => {
               // Place the cursor between the link and the last text node by
               // selecting the start of the text node
               const selection = textNode.select(0, 0);
-              insertTextOrNodes(selection, method);
+              $insertTextOrNodes(selection, method);
             });
 
             expect(container.innerHTML).toBe(
@@ -273,7 +273,7 @@ describe('LexicalSelection tests', () => {
               // Place the cursor between the link and the last text node by
               // selecting the start of the text node
               const selection = textNode.select(0, 0);
-              insertTextOrNodes(selection, method);
+              $insertTextOrNodes(selection, method);
             });
 
             expect(container.innerHTML).toBe(
@@ -315,7 +315,7 @@ describe('LexicalSelection tests', () => {
               // For review: not sure if there's a better way to select
               // "outside" of the link element.
               const selection = linkNode.select(1, 1);
-              insertTextOrNodes(selection, method);
+              $insertTextOrNodes(selection, method);
             });
 
             expect(container.innerHTML).toBe(

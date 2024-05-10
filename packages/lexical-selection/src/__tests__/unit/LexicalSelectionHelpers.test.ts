@@ -62,7 +62,7 @@ Range.prototype.getBoundingClientRect = function (): DOMRect {
   };
 };
 
-function createParagraphWithNodes(
+function $createParagraphWithNodes(
   editor: LexicalEditor,
   nodes: {text: string; key: string; mergeable?: boolean}[],
 ) {
@@ -95,7 +95,7 @@ describe('LexicalSelectionHelpers tests', () => {
         editor.update(() => {
           const root = $getRoot();
 
-          const element = createParagraphWithNodes(editor, [
+          const element = $createParagraphWithNodes(editor, [
             {
               key: 'a',
               mergeable: false,
@@ -272,7 +272,7 @@ describe('LexicalSelectionHelpers tests', () => {
       editor.update(() => {
         const root = $getRoot();
 
-        element = createParagraphWithNodes(editor, [
+        element = $createParagraphWithNodes(editor, [
           {
             key: 'a',
             mergeable: true,
@@ -353,7 +353,7 @@ describe('LexicalSelectionHelpers tests', () => {
       editor.update(() => {
         const root = $getRoot();
 
-        element = createParagraphWithNodes(editor, [
+        element = $createParagraphWithNodes(editor, [
           {
             key: 'a',
             mergeable: true,
@@ -429,7 +429,7 @@ describe('LexicalSelectionHelpers tests', () => {
       editor.update(() => {
         const root = $getRoot();
 
-        element = createParagraphWithNodes(editor, [
+        element = $createParagraphWithNodes(editor, [
           {
             key: 'a',
             mergeable: true,
@@ -490,7 +490,7 @@ describe('LexicalSelectionHelpers tests', () => {
       editor.update(() => {
         const root = $getRoot();
 
-        element = createParagraphWithNodes(editor, [
+        element = $createParagraphWithNodes(editor, [
           {
             key: 'a',
             mergeable: true,
@@ -556,7 +556,7 @@ describe('LexicalSelectionHelpers tests', () => {
       editor.update(() => {
         const root = $getRoot();
 
-        element = createParagraphWithNodes(editor, [
+        element = $createParagraphWithNodes(editor, [
           {
             key: 'a',
             mergeable: true,
@@ -632,7 +632,7 @@ describe('LexicalSelectionHelpers tests', () => {
       editor.update(() => {
         const root = $getRoot();
 
-        element = createParagraphWithNodes(editor, [
+        element = $createParagraphWithNodes(editor, [
           {
             key: 'a',
             mergeable: true,
@@ -706,7 +706,7 @@ describe('LexicalSelectionHelpers tests', () => {
         editor.update(() => {
           const root = $getRoot();
 
-          const element = createParagraphWithNodes(editor, []);
+          const element = $createParagraphWithNodes(editor, []);
 
           root.append(element);
 
@@ -843,7 +843,7 @@ describe('LexicalSelectionHelpers tests', () => {
         editor.update(() => {
           const root = $getRoot();
 
-          const element = createParagraphWithNodes(editor, [
+          const element = $createParagraphWithNodes(editor, [
             {
               key: 'a',
               mergeable: false,
@@ -996,7 +996,7 @@ describe('LexicalSelectionHelpers tests', () => {
         editor.update(() => {
           const root = $getRoot();
 
-          const element = createParagraphWithNodes(editor, [
+          const element = $createParagraphWithNodes(editor, [
             {
               key: 'a',
               mergeable: false,
@@ -1151,7 +1151,7 @@ describe('LexicalSelectionHelpers tests', () => {
       editor.update(() => {
         const root = $getRoot();
 
-        element = createParagraphWithNodes(editor, [
+        element = $createParagraphWithNodes(editor, [
           {
             key: 'a',
             mergeable: true,
@@ -1222,7 +1222,7 @@ describe('LexicalSelectionHelpers tests', () => {
       editor.update(() => {
         const root = $getRoot();
 
-        element = createParagraphWithNodes(editor, [
+        element = $createParagraphWithNodes(editor, [
           {
             key: 'a',
             mergeable: true,
@@ -1293,7 +1293,7 @@ describe('LexicalSelectionHelpers tests', () => {
         editor.update(() => {
           const root = $getRoot();
 
-          const element = createParagraphWithNodes(editor, [
+          const element = $createParagraphWithNodes(editor, [
             {
               key: 'a',
               mergeable: false,
@@ -1470,7 +1470,7 @@ describe('LexicalSelectionHelpers tests', () => {
         editor.update(() => {
           const root = $getRoot();
 
-          const element = createParagraphWithNodes(editor, [
+          const element = $createParagraphWithNodes(editor, [
             {
               key: 'a',
               mergeable: false,
@@ -1627,7 +1627,7 @@ describe('LexicalSelectionHelpers tests', () => {
         editor.update(() => {
           const root = $getRoot();
 
-          const element = createParagraphWithNodes(editor, [
+          const element = $createParagraphWithNodes(editor, [
             {
               key: 'a',
               mergeable: false,
@@ -2694,7 +2694,7 @@ describe('$patchStyleText', () => {
     await editor.update(() => {
       const root = $getRoot();
 
-      const paragraph = createParagraphWithNodes(editor, [
+      const paragraph = $createParagraphWithNodes(editor, [
         {
           key: 'a',
           mergeable: false,
@@ -2750,14 +2750,14 @@ describe('$patchStyleText', () => {
     await editor.update(() => {
       const root = $getRoot();
 
-      const paragraph1 = createParagraphWithNodes(editor, [
+      const paragraph1 = $createParagraphWithNodes(editor, [
         {
           key: 'a',
           mergeable: false,
           text: 'a',
         },
       ]);
-      const paragraph2 = createParagraphWithNodes(editor, [
+      const paragraph2 = $createParagraphWithNodes(editor, [
         {
           key: 'b',
           mergeable: false,
@@ -2800,7 +2800,7 @@ describe('$patchStyleText', () => {
     await editor.update(() => {
       const root = $getRoot();
 
-      const paragraph = createParagraphWithNodes(editor, [
+      const paragraph = $createParagraphWithNodes(editor, [
         {
           key: 'a',
           mergeable: false,
@@ -2853,7 +2853,7 @@ describe('$patchStyleText', () => {
     await editor.update(() => {
       const root = $getRoot();
 
-      const paragraph = createParagraphWithNodes(editor, [
+      const paragraph = $createParagraphWithNodes(editor, [
         {
           key: 'a',
           mergeable: false,

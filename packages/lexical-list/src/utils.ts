@@ -148,7 +148,7 @@ export function isNestedListNode(
  * @param node - Node to start the search.
  * @returns The first ListItemNode found, or null if none exist.
  */
-export function findNearestListItemNode(
+export function $findNearestListItemNode(
   node: LexicalNode,
 ): ListItemNode | null {
   const matchingParent = $findMatchingParent(node, (parent) =>
@@ -156,6 +156,8 @@ export function findNearestListItemNode(
   );
   return matchingParent as ListItemNode | null;
 }
+/** @deprecated renamed to $findNearestListItemNode by @lexical/eslint-plugin rules-of-lexical */
+export const findNearestListItemNode = $findNearestListItemNode;
 
 /**
  * Takes a deeply nested ListNode or ListItemNode and traverses up the branch to delete the first
@@ -199,7 +201,9 @@ export function $removeHighestEmptyListParent(
  * @param node - The node to be wrapped into a ListItemNode
  * @returns The ListItemNode which the passed node is wrapped in.
  */
-export function wrapInListItem(node: LexicalNode): ListItemNode {
+export function $wrapInListItem(node: LexicalNode): ListItemNode {
   const listItemWrapper = $createListItemNode();
   return listItemWrapper.append(node);
 }
+/** @deprecated renamed to $wrapInListItem by @lexical/eslint-plugin rules-of-lexical */
+export const wrapInListItem = $wrapInListItem;

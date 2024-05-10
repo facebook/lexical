@@ -139,17 +139,17 @@ export class CodeNode extends ElementNode {
 
         return isMultiLine
           ? {
-              conversion: convertPreElement,
+              conversion: $convertPreElement,
               priority: 1,
             }
           : null;
       },
       div: (node: Node) => ({
-        conversion: convertDivElement,
+        conversion: $convertDivElement,
         priority: 1,
       }),
       pre: (node: Node) => ({
-        conversion: convertPreElement,
+        conversion: $convertPreElement,
         priority: 0,
       }),
       table: (node: Node) => {
@@ -157,7 +157,7 @@ export class CodeNode extends ElementNode {
         // domNode is a <table> since we matched it by nodeName
         if (isGitHubCodeTable(table as HTMLTableElement)) {
           return {
-            conversion: convertTableElement,
+            conversion: $convertTableElement,
             priority: 3,
           };
         }
@@ -324,7 +324,7 @@ export function $isCodeNode(
   return node instanceof CodeNode;
 }
 
-function convertPreElement(domNode: Node): DOMConversionOutput {
+function $convertPreElement(domNode: Node): DOMConversionOutput {
   let language;
   if (isHTMLElement(domNode)) {
     language = domNode.getAttribute(LANGUAGE_DATA_ATTRIBUTE);
@@ -332,7 +332,7 @@ function convertPreElement(domNode: Node): DOMConversionOutput {
   return {node: $createCodeNode(language)};
 }
 
-function convertDivElement(domNode: Node): DOMConversionOutput {
+function $convertDivElement(domNode: Node): DOMConversionOutput {
   // domNode is a <div> since we matched it by nodeName
   const div = domNode as HTMLDivElement;
   const isCode = isCodeElement(div);
@@ -346,7 +346,7 @@ function convertDivElement(domNode: Node): DOMConversionOutput {
   };
 }
 
-function convertTableElement(): DOMConversionOutput {
+function $convertTableElement(): DOMConversionOutput {
   return {node: $createCodeNode()};
 }
 

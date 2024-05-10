@@ -26,7 +26,7 @@ type SerializedCollapsibleContainerNode = Spread<
   SerializedElementNode
 >;
 
-export function convertDetailsElement(
+export function $convertDetailsElement(
   domNode: HTMLDetailsElement,
 ): DOMConversionOutput | null {
   const isOpen = domNode.open !== undefined ? domNode.open : true;
@@ -35,6 +35,8 @@ export function convertDetailsElement(
     node,
   };
 }
+/** @deprecated renamed to $convertDetailsElement by @lexical/eslint-plugin rules-of-lexical */
+export const convertDetailsElement = $convertDetailsElement;
 
 export class CollapsibleContainerNode extends ElementNode {
   __open: boolean;
@@ -80,7 +82,7 @@ export class CollapsibleContainerNode extends ElementNode {
     return {
       details: (domNode: HTMLDetailsElement) => {
         return {
-          conversion: convertDetailsElement,
+          conversion: $convertDetailsElement,
           priority: 1,
         };
       },

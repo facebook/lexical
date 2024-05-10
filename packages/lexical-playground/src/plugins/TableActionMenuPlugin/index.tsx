@@ -655,7 +655,7 @@ function TableCellActionMenuContainer({
 
   const [colorPickerModal, showColorPickerModal] = useModal();
 
-  const moveMenu = useCallback(() => {
+  const $moveMenu = useCallback(() => {
     const menu = menuButtonRef.current;
     const selection = $getSelection();
     const nativeSelection = window.getSelection();
@@ -701,7 +701,7 @@ function TableCellActionMenuContainer({
   useEffect(() => {
     return editor.registerUpdateListener(() => {
       editor.getEditorState().read(() => {
-        moveMenu();
+        $moveMenu();
       });
     });
   });

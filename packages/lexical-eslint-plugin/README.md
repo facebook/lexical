@@ -189,7 +189,7 @@ references to that name is limited to the module's scope.
 export function $exportedInvalidFunction() {
   return $getRoot();
 }
-/** @deprecated renamed to $exportedInvalidFunction by @lexical/eslint-plugin rules-of-lexical */
+/** @deprecated renamed to {@link $exportedInvalidFunction} by @lexical/eslint-plugin rules-of-lexical */
 export const exportedInvalidFunction = $exportedInvalidFunction;
 ```
 

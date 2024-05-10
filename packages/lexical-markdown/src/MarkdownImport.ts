@@ -61,14 +61,14 @@ export function createMarkdownImport(
       // is ignored for further processing
       // TODO:
       // Abstract it to be dynamic as other transformers (add multiline match option)
-      const [codeBlockNode, shiftedIndex] = importCodeBlock(lines, i, root);
+      const [codeBlockNode, shiftedIndex] = $importCodeBlock(lines, i, root);
 
       if (codeBlockNode != null) {
         i = shiftedIndex;
         continue;
       }
 
-      importBlocks(
+      $importBlocks(
         lineText,
         root,
         byType.element,
@@ -106,7 +106,7 @@ function isEmptyParagraph(node: LexicalNode): boolean {
   );
 }
 
-function importBlocks(
+function $importBlocks(
   lineText: string,
   rootNode: ElementNode,
   elementTransformers: Array<ElementTransformer>,
@@ -167,7 +167,7 @@ function importBlocks(
   }
 }
 
-function importCodeBlock(
+function $importCodeBlock(
   lines: Array<string>,
   startLineIndex: number,
   rootNode: ElementNode,

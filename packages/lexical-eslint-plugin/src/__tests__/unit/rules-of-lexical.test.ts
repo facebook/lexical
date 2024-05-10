@@ -24,7 +24,7 @@ const NAME_UNDERSCORE = (name: string) =>
   !/^\$/.test(name) || /_$/.test(name) ? name : name + '_';
 const REEXPORT = (name: string) =>
   /^\$/.test(name)
-    ? `\n/** @deprecated renamed to ${name} by @lexical/eslint-plugin rules-of-lexical */\nexport const ${name.replace(
+    ? `\n/** @deprecated renamed to {@link ${name}} by @lexical/eslint-plugin rules-of-lexical */\nexport const ${name.replace(
         /^\$/,
         '',
       )} = ${name};\n`

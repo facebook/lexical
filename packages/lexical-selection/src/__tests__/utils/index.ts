@@ -897,8 +897,6 @@ export function $setAnchorPoint(
   anchor.offset = point.offset;
   anchor.key = point.key;
 }
-/** @deprecated renamed to $setAnchorPoint by @lexical/eslint-plugin rules-of-lexical */
-export const setAnchorPoint = $setAnchorPoint;
 
 export function $setFocusPoint(
   point: Pick<PointType, 'type' | 'offset' | 'key'>,
@@ -920,5 +918,3 @@ export function $setFocusPoint(
   focus.offset = point.offset;
   focus.key = point.key;
 }
-/** @deprecated renamed to $setFocusPoint by @lexical/eslint-plugin rules-of-lexical */
-export const setFocusPoint = $setFocusPoint;

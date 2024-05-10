@@ -124,7 +124,7 @@ export function generateContent(
         obfuscateText,
       )}\n`;
 
-      res += printSelectedCharsLine({
+      res += $printSelectedCharsLine({
         indent,
         isSelected,
         node,
@@ -374,7 +374,7 @@ function printTitleProperties(node: LinkNode) {
   return str;
 }
 
-function printSelectedCharsLine({
+function $printSelectedCharsLine({
   indent,
   isSelected,
   node,

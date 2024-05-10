@@ -148,7 +148,7 @@ export function isNestedListNode(
  * @param node - Node to start the search.
  * @returns The first ListItemNode found, or null if none exist.
  */
-export function findNearestListItemNode(
+export function $findNearestListItemNode(
   node: LexicalNode,
 ): ListItemNode | null {
   const matchingParent = $findMatchingParent(node, (parent) =>
@@ -199,7 +199,7 @@ export function $removeHighestEmptyListParent(
  * @param node - The node to be wrapped into a ListItemNode
  * @returns The ListItemNode which the passed node is wrapped in.
  */
-export function wrapInListItem(node: LexicalNode): ListItemNode {
+export function $wrapInListItem(node: LexicalNode): ListItemNode {
   const listItemWrapper = $createListItemNode();
   return listItemWrapper.append(node);
 }

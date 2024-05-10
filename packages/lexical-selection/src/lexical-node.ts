@@ -171,7 +171,7 @@ export function $isAtNodeEnd(point: Point): boolean {
  * @param anchor - The anchor of the current selection, where the selection should be pointing.
  * @param delCount - The amount of characters to delete. Useful as a dynamic variable eg. textContentSize - maxLength;
  */
-export function trimTextContentFromAnchor(
+export function $trimTextContentFromAnchor(
   editor: LexicalEditor,
   anchor: Point,
   delCount: number,

@@ -80,7 +80,9 @@ declare export function $isAutoLinkNode(
 declare export var TOGGLE_LINK_COMMAND: LexicalCommand<
   string | {url: string, ...LinkAttributes} | null,
 >;
-declare export function toggleLink(
+declare export function $toggleLink(
   url: null | string,
   attributes: LinkAttributes,
 ): void;
+/** @deprecated renamed to {@link $toggleLink} by @lexical/eslint-plugin rules-of-lexical */
+declare const toggleLink: typeof $toggleLink;

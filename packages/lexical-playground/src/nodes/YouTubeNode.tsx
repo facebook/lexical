@@ -66,7 +66,7 @@ export type SerializedYouTubeNode = Spread<
   SerializedDecoratorBlockNode
 >;
 
-function convertYoutubeElement(
+function $convertYoutubeElement(
   domNode: HTMLElement,
 ): null | DOMConversionOutput {
   const videoID = domNode.getAttribute('data-lexical-youtube');
@@ -134,7 +134,7 @@ export class YouTubeNode extends DecoratorBlockNode {
           return null;
         }
         return {
-          conversion: convertYoutubeElement,
+          conversion: $convertYoutubeElement,
           priority: 1,
         };
       },

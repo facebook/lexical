@@ -295,7 +295,7 @@ function updateCursor(
   }
 }
 
-export function syncLocalCursorPosition(
+export function $syncLocalCursorPosition(
   binding: Binding,
   provider: Provider,
 ): void {
@@ -335,14 +335,14 @@ export function syncLocalCursorPosition(
         const anchor = selection.anchor;
         const focus = selection.focus;
 
-        setPoint(anchor, anchorKey, anchorOffset);
-        setPoint(focus, focusKey, focusOffset);
+        $setPoint(anchor, anchorKey, anchorOffset);
+        $setPoint(focus, focusKey, focusOffset);
       }
     }
   }
 }
 
-function setPoint(point: Point, key: NodeKey, offset: number): void {
+function $setPoint(point: Point, key: NodeKey, offset: number): void {
   if (point.key !== key || point.offset !== offset) {
     let anchorNode = $getNodeByKey(key);
     if (

@@ -202,7 +202,7 @@ export default function InlineImageComponent({
   const [selection, setSelection] = useState<BaseSelection | null>(null);
   const activeEditorRef = useRef<LexicalEditor | null>(null);
 
-  const onDelete = useCallback(
+  const $onDelete = useCallback(
     (payload: KeyboardEvent) => {
       if (isSelected && $isNodeSelection($getSelection())) {
         const event: KeyboardEvent = payload;
@@ -218,7 +218,7 @@ export default function InlineImageComponent({
     [isSelected, nodeKey],
   );
 
-  const onEnter = useCallback(
+  const $onEnter = useCallback(
     (event: KeyboardEvent) => {
       const latestSelection = $getSelection();
       const buttonElem = buttonRef.current;
@@ -247,7 +247,7 @@ export default function InlineImageComponent({
     [caption, isSelected, showCaption],
   );
 
-  const onEscape = useCallback(
+  const $onEscape = useCallback(
     (event: KeyboardEvent) => {
       if (
         activeEditorRef.current === caption ||
@@ -317,18 +317,18 @@ export default function InlineImageComponent({
       ),
       editor.registerCommand(
         KEY_DELETE_COMMAND,
-        onDelete,
+        $onDelete,
         COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(
         KEY_BACKSPACE_COMMAND,
-        onDelete,
+        $onDelete,
         COMMAND_PRIORITY_LOW,
       ),
-      editor.registerCommand(KEY_ENTER_COMMAND, onEnter, COMMAND_PRIORITY_LOW),
+      editor.registerCommand(KEY_ENTER_COMMAND, $onEnter, COMMAND_PRIORITY_LOW),
       editor.registerCommand(
         KEY_ESCAPE_COMMAND,
-        onEscape,
+        $onEscape,
         COMMAND_PRIORITY_LOW,
       ),
     );
@@ -341,9 +341,9 @@ export default function InlineImageComponent({
     editor,
     isSelected,
     nodeKey,
-    onDelete,
-    onEnter,
-    onEscape,
+    $onDelete,
+    $onEnter,
+    $onEscape,
     setSelected,
   ]);
 

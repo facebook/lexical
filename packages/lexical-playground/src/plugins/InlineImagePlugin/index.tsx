@@ -186,21 +186,21 @@ export default function InlineImagePlugin(): JSX.Element | null {
       editor.registerCommand<DragEvent>(
         DRAGSTART_COMMAND,
         (event) => {
-          return onDragStart(event);
+          return $onDragStart(event);
         },
         COMMAND_PRIORITY_HIGH,
       ),
       editor.registerCommand<DragEvent>(
         DRAGOVER_COMMAND,
         (event) => {
-          return onDragover(event);
+          return $onDragover(event);
         },
         COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand<DragEvent>(
         DROP_COMMAND,
         (event) => {
-          return onDrop(event, editor);
+          return $onDrop(event, editor);
         },
         COMMAND_PRIORITY_HIGH,
       ),
@@ -215,8 +215,8 @@ const TRANSPARENT_IMAGE =
 const img = document.createElement('img');
 img.src = TRANSPARENT_IMAGE;
 
-function onDragStart(event: DragEvent): boolean {
-  const node = getImageNodeInSelection();
+function $onDragStart(event: DragEvent): boolean {
+  const node = $getImageNodeInSelection();
   if (!node) {
     return false;
   }
@@ -245,8 +245,8 @@ function onDragStart(event: DragEvent): boolean {
   return true;
 }
 
-function onDragover(event: DragEvent): boolean {
-  const node = getImageNodeInSelection();
+function $onDragover(event: DragEvent): boolean {
+  const node = $getImageNodeInSelection();
   if (!node) {
     return false;
   }
@@ -256,8 +256,8 @@ function onDragover(event: DragEvent): boolean {
   return true;
 }
 
-function onDrop(event: DragEvent, editor: LexicalEditor): boolean {
-  const node = getImageNodeInSelection();
+function $onDrop(event: DragEvent, editor: LexicalEditor): boolean {
+  const node = $getImageNodeInSelection();
   if (!node) {
     return false;
   }
@@ -279,7 +279,7 @@ function onDrop(event: DragEvent, editor: LexicalEditor): boolean {
   return true;
 }
 
-function getImageNodeInSelection(): InlineImageNode | null {
+function $getImageNodeInSelection(): InlineImageNode | null {
   const selection = $getSelection();
   if (!$isNodeSelection(selection)) {
     return null;

@@ -117,7 +117,7 @@ export class ListItemNode extends ElementNode {
   static importDOM(): DOMConversionMap | null {
     return {
       li: (node: Node) => ({
-        conversion: convertListItemElement,
+        conversion: $convertListItemElement,
         priority: 0,
       }),
     };
@@ -491,7 +491,7 @@ function updateListItemChecked(
   }
 }
 
-function convertListItemElement(domNode: Node): DOMConversionOutput {
+function $convertListItemElement(domNode: Node): DOMConversionOutput {
   const checked =
     isHTMLElement(domNode) && domNode.getAttribute('aria-checked') === 'true';
   return {node: $createListItemNode(checked)};

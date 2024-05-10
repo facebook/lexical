@@ -22,7 +22,7 @@ import simpleDiffWithCursor from 'shared/simpleDiffWithCursor';
 
 import {syncPropertiesFromLexical, syncPropertiesFromYjs} from './Utils';
 
-function diffTextContentAndApplyDelta(
+function $diffTextContentAndApplyDelta(
   collabNode: CollabTextNode,
   key: NodeKey,
   prevText: string,
@@ -134,7 +134,7 @@ export class CollabTextNode {
 
       if (prevText !== nextText) {
         const key = nextLexicalNode.__key;
-        diffTextContentAndApplyDelta(this, key, prevText, nextText);
+        $diffTextContentAndApplyDelta(this, key, prevText, nextText);
         this._text = nextText;
       }
     }

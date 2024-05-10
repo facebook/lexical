@@ -7,7 +7,7 @@
  */
 import {$createParagraphNode, $createTextNode, $getRoot} from 'lexical';
 
-export default function prepopulatedRichText() {
+export default function $prepopulatedRichText() {
   const root = $getRoot();
   if (root.getFirstChild() !== null) {
     return;

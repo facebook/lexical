@@ -18,7 +18,7 @@ import {
 
 type SerializedCollapsibleContentNode = SerializedElementNode;
 
-export function convertCollapsibleContentElement(
+export function $convertCollapsibleContentElement(
   domNode: HTMLElement,
 ): DOMConversionOutput | null {
   const node = $createCollapsibleContentNode();
@@ -53,7 +53,7 @@ export class CollapsibleContentNode extends ElementNode {
           return null;
         }
         return {
-          conversion: convertCollapsibleContentElement,
+          conversion: $convertCollapsibleContentElement,
           priority: 2,
         };
       },

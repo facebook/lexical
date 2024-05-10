@@ -44,7 +44,7 @@ export interface UpdateInlineImagePayload {
   position?: Position;
 }
 
-function convertInlineImageElement(domNode: Node): null | DOMConversionOutput {
+function $convertInlineImageElement(domNode: Node): null | DOMConversionOutput {
   if (domNode instanceof HTMLImageElement) {
     const {alt: altText, src, width, height} = domNode;
     const node = $createInlineImageNode({altText, height, src, width});
@@ -116,7 +116,7 @@ export class InlineImageNode extends DecoratorNode<JSX.Element> {
   static importDOM(): DOMConversionMap | null {
     return {
       img: (node: Node) => ({
-        conversion: convertInlineImageElement,
+        conversion: $convertInlineImageElement,
         priority: 0,
       }),
     };

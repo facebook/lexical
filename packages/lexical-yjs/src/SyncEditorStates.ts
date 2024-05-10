@@ -24,21 +24,21 @@ import {CollabDecoratorNode} from './CollabDecoratorNode';
 import {CollabElementNode} from './CollabElementNode';
 import {CollabTextNode} from './CollabTextNode';
 import {
+  $syncLocalCursorPosition,
   syncCursorPositions,
   syncLexicalSelectionToYjs,
-  syncLocalCursorPosition,
 } from './SyncCursors';
 import {
+  $getOrInitCollabNodeFromSharedType,
   $moveSelectionToPreviousNode,
   doesSelectionNeedRecovering,
-  getOrInitCollabNodeFromSharedType,
   syncWithTransaction,
 } from './Utils';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function syncEvent(binding: Binding, event: any): void {
+function $syncEvent(binding: Binding, event: any): void {
   const {target} = event;
-  const collabNode = getOrInitCollabNodeFromSharedType(binding, target);
+  const collabNode = $getOrInitCollabNodeFromSharedType(binding, target);
 
   if (collabNode instanceof CollabElementNode && event instanceof YTextEvent) {
     // @ts-expect-error We need to access the private property of the class
@@ -98,7 +98,7 @@ export function syncYjsChangesToLexical(
     () => {
       for (let i = 0; i < events.length; i++) {
         const event = events[i];
-        syncEvent(binding, event);
+        $syncEvent(binding, event);
       }
       // If there was a collision on the top level paragraph
       // we need to re-add a paragraph
@@ -113,7 +113,7 @@ export function syncYjsChangesToLexical(
           const prevSelection = currentEditorState._selection;
 
           if ($isRangeSelection(prevSelection)) {
-            syncLocalCursorPosition(binding, provider);
+            $syncLocalCursorPosition(binding, provider);
             if (doesSelectionNeedRecovering(selection)) {
               // If the selected node is deleted, move the selection to the previous or parent node.
               const anchorNodeKey = selection.anchor.key;
@@ -128,7 +128,7 @@ export function syncYjsChangesToLexical(
             $getSelection(),
           );
         } else {
-          syncLocalCursorPosition(binding, provider);
+          $syncLocalCursorPosition(binding, provider);
         }
       }
     },

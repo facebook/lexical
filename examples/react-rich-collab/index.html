@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>React.js Collaborative Lexical Example</title>
+  </head>
+  <body>
+    <h1 align="center" style="margin: 0; font-size: 1.3em">
+      React.js Collaborative Lexical Example (see iframes below)
+    </h1>
+    <iframe
+      width="50%"
+      name="left"
+      src="/app"
+      style="
+        border: 2px dashed black;
+        width: calc(50% - 4px);
+        position: fixed;
+        top: 40px;
+        left: 0;
+        height: calc(100% - 44px);
+      "></iframe>
+    <iframe
+      width="50%"
+      name="right"
+      src="/app"
+      style="
+        border: 2px dashed black;
+        width: calc(50% - 4px);
+        position: fixed;
+        top: 40px;
+        left: calc(50% + 1px);
+        height: calc(100% - 44px);
+      "></iframe>
+  </body>
+</html>

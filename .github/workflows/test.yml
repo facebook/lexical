@@ -7,6 +7,8 @@ on:
     paths-ignore:
       - 'packages/lexical-website/**'
   pull_request:
+    branches:
+      - main
     types: [opened, synchronize, reopened]
     paths-ignore:
       - 'packages/lexical-website/**'

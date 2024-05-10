@@ -164,6 +164,10 @@ export {
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
 } from './LexicalUtils';
+export {
+  $isDecoratorElementNode,
+  EXPERIMENTAL_DecoratorElementNode,
+} from './nodes/LexicalDecoratorElementNode';
 export {ArtificialNode__DO_NOT_USE} from './nodes/ArtificialNode';
 export {$isDecoratorNode, DecoratorNode} from './nodes/LexicalDecoratorNode';
 export {$isElementNode, ElementNode} from './nodes/LexicalElementNode';
@@ -173,6 +177,11 @@ export {
   $isLineBreakNode,
   LineBreakNode,
 } from './nodes/LexicalLineBreakNode';
+export {
+  $createNestedRootNode,
+  $isNestedRootNode,
+  EXPERIMENTAL_NestedRootNode,
+} from './nodes/LexicalNestedRootNode';
 export type {SerializedParagraphNode} from './nodes/LexicalParagraphNode';
 export {
   $createParagraphNode,

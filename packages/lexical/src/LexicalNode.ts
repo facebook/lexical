@@ -214,7 +214,7 @@ export class LexicalNode {
     $setNodeKey(this, key);
 
     if (__DEV__) {
-      if (this.__type !== 'root') {
+      if (!['root', 'nestedroot'].includes(this.__type)) {
         errorOnReadOnly();
         errorOnTypeKlassMismatch(this.__type, this.constructor);
       }

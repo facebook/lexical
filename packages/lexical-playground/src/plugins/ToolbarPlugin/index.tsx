@@ -43,6 +43,7 @@ import {
   $findMatchingParent,
   $getNearestBlockElementAncestorOrThrow,
   $getNearestNodeOfType,
+  $insertNodeToNearestRoot,
   mergeRegister,
 } from '@lexical/utils';
 import {
@@ -76,6 +77,8 @@ import {IS_APPLE} from 'shared/environment';
 
 import useModal from '../../hooks/useModal';
 import catTypingGif from '../../images/cat-typing.gif';
+import {$createCardNode} from '../../nodes/CardNode';
+import {$createReactListNode} from '../../nodes/ReactListNode';
 import {$createStickyNode} from '../../nodes/StickyNode';
 import DropDown, {DropDownItem} from '../../ui/DropDown';
 import DropdownColorPicker from '../../ui/DropdownColorPicker';
@@ -1041,6 +1044,26 @@ export default function ToolbarPlugin({
             buttonLabel="Insert"
             buttonAriaLabel="Insert specialized editor node"
             buttonIconClassName="icon plus">
+            <DropDownItem
+              onClick={() => {
+                activeEditor.update(() => {
+                  const reactListNode = $createReactListNode();
+                  $insertNodeToNearestRoot(reactListNode);
+                });
+              }}
+              className="item">
+              <span className="text">React List Node</span>
+            </DropDownItem>
+            <DropDownItem
+              onClick={() => {
+                activeEditor.update(() => {
+                  const cardNode = $createCardNode();
+                  $insertNodeToNearestRoot(cardNode);
+                });
+              }}
+              className="item">
+              <span className="text">Card Node</span>
+            </DropDownItem>
             <DropDownItem
               onClick={() => {
                 activeEditor.dispatchCommand(

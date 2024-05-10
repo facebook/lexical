@@ -14,6 +14,7 @@ import {IS_FIREFOX} from 'shared/environment';
 
 import {
   $getSelection,
+  $isDecoratorElementNode,
   $isDecoratorNode,
   $isElementNode,
   $isRangeSelection,
@@ -140,7 +141,8 @@ export function $flushMutations(
 
         if (
           (targetNode === null && targetDOM !== rootElement) ||
-          $isDecoratorNode(targetNode)
+          $isDecoratorNode(targetNode) ||
+          $isDecoratorElementNode(targetNode)
         ) {
           continue;
         }

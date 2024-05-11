@@ -169,22 +169,22 @@ Adds markdown shortcut support: headings, lists, code blocks, quotes, links and 
 <MarkdownShortcutPlugin />
 ```
 
-### `LexicalTableOfContents`
+### `LexicalTableOfContentsPlugin`
 
 This plugin allows you to render a table of contents for a page from the headings from the editor. It listens to any deletions or modifications to those headings and updates the table of contents. Additionally, it's able to track any newly added headings and inserts them in the table of contents once they are created. This plugin also supports lazy loading - so you can defer adding the plugin until when the user needs it.
 
-In order to use `LexicalTableOfContents`, you need to pass a callback function in its children. This callback function gives you access to the up-to-date data of the table of contents. You can access this data through a single parameter for the callback which comes in the form of an array of arrays `[[headingKey, headingTextContent, headingTag], [], [], ...]`
+In order to use `TableOfContentsPlugin`, you need to pass a callback function in its children. This callback function gives you access to the up-to-date data of the table of contents. You can access this data through a single parameter for the callback which comes in the form of an array of arrays `[[headingKey, headingTextContent, headingTag], [], [], ...]`
 
 `headingKey`: Unique key that identifies the heading.
 `headingTextContent`: A string of the exact text of the heading.
 `headingTag`: A string that reads either 'h1', 'h2', or 'h3'.
 
 ```jsx
-<LexicalTableOfContents>
+<TableOfContentsPlugin>
   {(tableOfContentsArray) => {
     return <MyCustomTableOfContentsPlugin tableOfContents={tableOfContentsArray} />;
   }}
-</LexicalTableOfContents>
+</TableOfContentsPlugin>
 ```
 
 ### `LexicalEditorRefPlugin`

@@ -215,14 +215,12 @@ function setElementIndent(
   indent: number,
   indentClassName?: string,
 ): void {
-  if (typeof indentClassName === 'string') {
-    const elementHasClassName = dom.classList.contains(indentClassName);
+  if (indent < 1) {
+    return;
+  }
 
-    if (indent > 0 && !elementHasClassName) {
-      dom.classList.add(indentClassName);
-    } else if (indent < 1 && elementHasClassName) {
-      dom.classList.remove(indentClassName);
-    }
+  if (typeof indentClassName === 'string') {
+    dom.classList.add(indentClassName);
   }
 
   const indentationBaseValue =
@@ -234,6 +232,6 @@ function setElementIndent(
     // padding-inline-start is not widely supported in email HTML, but
     // Lexical Reconciler uses padding-inline-start. Using text-indent instead.
     'text-indent',
-    indent === 0 ? '' : `calc(${indent} * ${indentationBaseValue})`,
+    `calc(${indent} * ${indentationBaseValue})`,
   );
 }

@@ -1,3 +1,89 @@
+## v0.15.0 (2024-05-11)
+
+- feat(examplesreact-rich-collab) Added collaboration focused example (#6043) Vlad Fedosov
+- build Refactor move error-codes generation to existing babel plugin (#6005) Bob Ippolito
+-  Chore Fix all new lint warnings, plus manual exports clean-up (#5979) Bob Ippolito
+- lexical-yjs Bug fix Fix cursor position after undo in collab mode (#6070) Katsiaryna
+- lexical-text Bug Fix for handling multiple matches on hashtags (#6056) wnhlee
+- Fix #6051 Deprecate keycode to code (#6054) Sahejkm
+- Revert importDOM changes from #5951 (#6060) Shubhanker Srivastava
+- LeixcalHashtag  Fix prevSibling not getting updated after replacement of match as followup #6053 (#6067) Sahejkm
+- lexical-react Fix autolink styles on creation (#6069) Shubhanker Srivastava
+- Lexical Update outdated flow file for LexicalMarkdown (#6057) Sahejkm
+- Revert #6053 first till proper fix is shipped in #6056 (#6058) Sahejkm
+- lexical-tablelexical-playground Bug Fix Table selection stuck  (#6049) Alex Reznik
+- fix(lexicaltext) for handling hashtag following multiple invalid matches (#6053) wnhlee
+- fix(lexicaldevtools) Fixed NPM buildzip command for Chrome and added builddev steps for Safari (#6052) Vlad Fedosov
+- Fix #5703 Infinite loop on hashtag transform (#6045) Sahejkm
+- tables Fix font size update in table selection (#6046) Shubhanker Srivastava
+- feat(lexicalplaintext) Add escape key handler (#5991) Jeffrey Lu
+- Add flow declarations in LexicalDevtoolsCore.js.flow (#6037) Sahejkm
+- build Bug Fix ensure unique artifact name for e2e tests (#6035) Bob Ippolito
+- Dev warning for failed DOM selection (#6033) Gerard Rovira
+- CharacterLimit prefer replace over insertBefore (#6032) Gerard Rovira
+- feat(lexicaleslint-plugin) new package with eslint rules for lexical (#5908) Bob Ippolito
+- CI Refactor clean up github workflows for cache correctness (#6029) Bob Ippolito
+- playground Bug Fix change default dev port to 3000 (#6026) Bob Ippolito
+- build Chore Upgrade rollup and vite to latest versions (#6018) Bob Ippolito
+- lexical-utils ci fix typing to fix integrity test (#6019) Sherry
+- lexical-html Feature Support copy pasting block and inline nodes properly (#5857) Sherry
+- chore allow tsc to typecheck tests, fix type issues in those tests (#5982) Bob Ippolito
+- lexical-website Bug Fix add allow-popups-to-escape-sandbox to iframe sandbox flags (#5988) Bob Ippolito
+- lexicalwebsite Documentation Added FAQ page around Lexical collaborative mode (#5993) Vlad Fedosov
+- Fix #5976 Passing an empty ParagraphNode to dfs incorrectly returns content from subsequent paragraphs (#5977) matsuyama-k1
+- fix(build) clean up of build-www rewriteImports (follow-up to #5995) (#5999) Bob Ippolito
+- Root element count invariant  test (#6003) Gerard Rovira
+- Fix add root element count (#6002) Gerard Rovira
+- Fix table of contents for headings in tables and collapsible sections (#5946) Katsiaryna
+- add flow for devtools (#5998) Acy Watson
+- add flow annotations (#5997) Acy Watson
+- fix(build) fix build-www rewriteImports to always rewrite flow modules (#5995) Bob Ippolito
+- TreeView Minor enhancement Add option to obfuscate text in the TreeView plugin (#5990) Sahejkm
+- fix(lexicalplayground) We now skip auto-scrolling on table resize (#5986) Katsiaryna
+- Fix #5738 wrong selection on mouse click (#5969) Sahejkm
+- refactor cleanup unused react imports in tests files (#5983) Sherry
+- Documentation add PR template (#5851) Sherry
+- fix(lexicaldevtools) Fixed publish pipeline (#5973) Vlad Fedosov
+- fix(lexicaldevtools) Fixed permissions for Edge and improved devtools tab layout (#5972) Vlad Fedosov
+- fix(lexicalreactLexicalMenu) Fix check for menu cannot fit on top (#5743) Jingkang Zhang
+- feat(lexicalwebsite) Packages documentation automatic generation (#5965) Bob Ippolito
+- Fixed the issue of playground crashing when the selected node contain (#5960) Tengfei
+- fix use runner.arch in cache keys for github workflows (#5971) Bob Ippolito
+- Refactor build scripts and npm package process (#5876) Bob Ippolito
+- Refactor table resizer rendering logic (#5957) Alex Reznik
+- Fix TableCell child nodes on paste (#5951) Shubhanker Srivastava
+- Fix insertText with element selection (#5959) Gerard Rovira
+- Revert Revert Fix #5720 update the resolvedOffset correctly on imag   e selection and drag (#5952) (#5955) Gerard Rovira
+- Fix failing insertNodes when selection is null (#5956) Gerard Rovira
+- Fix insertText outdated selection after node replacement (#5954) Gerard Rovira
+- Revert Fix #5720 update the resolvedOffset correctly on image selection and drag (#5952) John Flockton
+- Autocomplete Move styling to theme (#5944) Ajay Prakash PP
+- fix(lexicaldevtools) Fix of the edge cases with restricted pages in EdgeFF (#5945) Vlad Fedosov
+- playground Collapsible Section Fixes (#5935) Ivaylo Pavlov
+- fix(lexicalmarkdown) markdown import code block with prefix (#5780) Samuel Richard Magny
+- add flow types for LexicalEditorRefPlugin (#5939) Acy Watson
+- chore(lexicalhistory) Remove redundant register call (#5932) wnhlee
+- fix(lexicaldevtools) Misc fixes before first public release (#5942) Vlad Fedosov
+- feat(lexicaldevtools) Added interactive editor picker (#5926) Vlad Fedosov
+- Preserve selection in tables with open typeahead menu (#5820) Serey Roth
+- Fix selecting table selects an image after (#5917) Katsiaryna
+- Add support for PowerShell Syntax Highlighting (#5909) Hansel
+- fix build-release regression introduced in #5920 (#5936) Bob Ippolito
+- Maintain text decoration styles on paste (#5938) Shubhanker Srivastava
+- Fix bug with block decorator nodes erroring on indent (#5923) John Flockton
+- feat(lexicaldevtools) Added styling to devtools panel (#5925) (#5929) Vlad Fedosov
+-  docs generate packages sidebar from filesystem  group lexicalreact (#5931) Bob Ippolito
+- fix(lexicalutils) fix #5918 by re-exporting shared constants with explicit types (#5920) Bob Ippolito
+- feat(lexicaldevtools) Publish pipeline added (#5924) Vlad Fedosov
+- Add setTimeout for mousemove handler (#5919) Alex Reznik
+- feat(lexicaldevtools) Added Edge support (#5915) Vlad Fedosov
+- fix(lexical) Fix inserting text from Grammarly when full node is selected with forward selection (#5856) Ruslan Piliuta
+- Minor refactor on ListMaxIndentLevelPlugin (#5886) wnhlee
+- Add  prefix to updateToolbar on react-rich example (#5887) wnhlee
+- Fix copying html table with unequal number of cells in a row (#5824) Katsiaryna
+- v0.14.5 (#5907) Acy Watson
+- v0.14.5 Lexical GitHub Actions Bot
+
 ## v0.14.5 (2024-04-16)
 
 - update lock file (#5904) Acy Watson

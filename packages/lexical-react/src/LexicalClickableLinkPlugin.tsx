@@ -124,4 +124,5 @@ export function ClickableLinkPlugin({
 }
 
 /** @deprecated use the named export {@link ClickableLinkPlugin} */
+// eslint-disable-next-line no-restricted-exports
 export default ClickableLinkPlugin;

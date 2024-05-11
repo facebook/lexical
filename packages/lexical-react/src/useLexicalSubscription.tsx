@@ -48,4 +48,5 @@ export function useLexicalSubscription<T>(
 }
 
 /** @deprecated use the named export {@link useLexicalSubscription} */
+// eslint-disable-next-line no-restricted-exports
 export default useLexicalSubscription;

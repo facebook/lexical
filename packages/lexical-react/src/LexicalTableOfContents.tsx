@@ -267,4 +267,5 @@ export function LexicalTableOfContents({children}: Props): JSX.Element {
 }
 
 /** @deprecated use the named export {@link LexicalTableOfContents} */
+// eslint-disable-next-line no-restricted-exports
 export default LexicalTableOfContents;

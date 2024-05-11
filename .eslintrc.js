@@ -111,6 +111,28 @@ module.exports = {
         'lexical/no-optional-chaining': OFF,
       },
     },
+    {
+      files: [
+        'packages/*/src/index.ts',
+        'packages/*/src/index.tsx',
+        'packages/lexical-react/src/*.ts',
+        'packages/lexical-react/src/*.tsx',
+      ],
+      rules: {
+        'no-restricted-exports': [
+          'error',
+          {
+            restrictDefaultExports: {
+              defaultFrom: true,
+              direct: true,
+              named: true,
+              namedFrom: true,
+              namespaceFrom: true,
+            },
+          },
+        ],
+      },
+    },
   ],
 
   parser: '@babel/eslint-parser',

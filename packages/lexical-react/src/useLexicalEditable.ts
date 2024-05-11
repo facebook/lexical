@@ -25,4 +25,5 @@ export function useLexicalEditable(): boolean {
 }
 
 /** @deprecated use the named export {@link useLexicalEditable} */
+// eslint-disable-next-line no-restricted-exports
 export default useLexicalEditable;

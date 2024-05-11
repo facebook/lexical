@@ -238,7 +238,7 @@ async function build(name, inputFile, outputPath, outputFile, isProd, format) {
   };
   const outputOptions = {
     esModule: false,
-    exports: 'auto',
+    exports: 'named',
     externalLiveBindings: false,
     file: outputFile,
     format, // change between es and cjs modules

@@ -7,8 +7,8 @@
 
 When hooks are used correctly, there are no known issues with React StrictMode
 and Lexical. The first thing you should do is go through React's documentation
-to make sure that your use of `useEffect` or other hooks is generally correct.
-This is a great place to start:
+to make sure that your usage of `useEffect` and other hooks follow React's
+conventions and guidelines. This is a great place to start:
 [My Effect runs twice when the component mounts](https://react.dev/reference/react/useEffect#my-effect-runs-twice-when-the-component-mounts)
 
 Some Lexical-specific concerns (which are consequences of React's
@@ -60,3 +60,14 @@ The most common root causes of this issue are:
   next.js, etc.), so the syntax of that workaround is quite dependent on
   precisely which tools (and even versions of those tools) that your project
   is using.
+
+## Other complications when using dev mode with fast refresh (aka hot module replacement)
+
+Depending on precisely how the fast refresh implementation you're
+using works, you may need to mark the files that create your editor or the
+implementation of your LexicalNode subclasses as needing a full refresh.
+When things seem broken in dev mode after changing a file, try refreshing the
+page first. If that fixes the problem, then mark the file you're working on as
+needing a full refresh. For example
+[Next.js fast refresh](https://nextjs.org/docs/architecture/fast-refresh#tips)
+has a `// @refresh reset` comment that can be used.

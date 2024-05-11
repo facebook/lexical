@@ -1260,6 +1260,17 @@ function findTextInLine(text: Text, forward: boolean): null | Text {
   }
 }
 
+const nodeNameToTextFormat: Record<string, TextFormatType> = {
+  code: 'code',
+  em: 'italic',
+  i: 'italic',
+  s: 'strikethrough',
+  strong: 'bold',
+  sub: 'subscript',
+  sup: 'superscript',
+  u: 'underline',
+};
+
 function convertTextFormatElement(domNode: Node): DOMConversionOutput {
   const format = nodeNameToTextFormat[domNode.nodeName.toLowerCase()];
   if (format === undefined) {
@@ -1280,17 +1291,6 @@ export function $isTextNode(
 ): node is TextNode {
   return node instanceof TextNode;
 }
-
-const nodeNameToTextFormat: Record<string, TextFormatType> = {
-  code: 'code',
-  em: 'italic',
-  i: 'italic',
-  s: 'strikethrough',
-  strong: 'bold',
-  sub: 'subscript',
-  sup: 'superscript',
-  u: 'underline',
-};
 
 function applyTextFormatFromStyle(
   style: CSSStyleDeclaration,

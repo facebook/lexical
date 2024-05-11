@@ -75,6 +75,11 @@ describe('LexicalComposer tests', () => {
     ).forEach(({name, size}) => {
       const Wrapper = React[name];
       const editors = new Set<LexicalEditor>();
+      const pluginEditors = new Set<LexicalEditor>();
+      function Plugin() {
+        pluginEditors.add(useLexicalComposerContext()[0]);
+        return null;
+      }
       function App() {
         return (
           <LexicalComposer
@@ -92,8 +97,9 @@ describe('LexicalComposer tests', () => {
               onError: () => {
                 throw Error();
               },
-            }}
-          />
+            }}>
+            <Plugin />
+          </LexicalComposer>
         );
       }
       it(`renders ${size} editors under ${name}`, async () => {
@@ -104,6 +110,8 @@ describe('LexicalComposer tests', () => {
             </Wrapper>,
           );
         });
+        // 2 editors may be created since useMemo is still called twice,
+        // but only one result is used!
         expect(editors.size).toBe(size);
         [...editors].forEach((editor, i) => {
           // This confirms that editorState() was only called once per editor,
@@ -113,6 +121,8 @@ describe('LexicalComposer tests', () => {
             editor.getEditorState().read(() => $getRoot().getTextContent()),
           ]).toEqual([i, 'initial state']);
         });
+        // Only one context is created in both cases though!
+        expect(pluginEditors.size).toBe(1);
       });
     });
   });

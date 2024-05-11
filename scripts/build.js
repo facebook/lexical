@@ -191,7 +191,7 @@ async function build(name, inputFile, outputPath, outputFile, isProd, format) {
               tsconfig: path.resolve('./tsconfig.build.json'),
             },
           ],
-          '@babel/preset-react',
+          ['@babel/preset-react', {runtime: 'automatic'}],
         ],
       }),
       {

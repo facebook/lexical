@@ -1313,22 +1313,25 @@ function applyTextFormatFromStyle(
     if (!$isTextNode(lexicalNode)) {
       return lexicalNode;
     }
-    if (hasBoldFontWeight) {
+    if (hasBoldFontWeight && !lexicalNode.hasFormat('bold')) {
       lexicalNode.toggleFormat('bold');
     }
-    if (hasLinethroughTextDecoration) {
+    if (
+      hasLinethroughTextDecoration &&
+      !lexicalNode.hasFormat('strikethrough')
+    ) {
       lexicalNode.toggleFormat('strikethrough');
     }
-    if (hasItalicFontStyle) {
+    if (hasItalicFontStyle && !lexicalNode.hasFormat('italic')) {
       lexicalNode.toggleFormat('italic');
     }
-    if (hasUnderlineTextDecoration) {
+    if (hasUnderlineTextDecoration && !lexicalNode.hasFormat('underline')) {
       lexicalNode.toggleFormat('underline');
     }
-    if (verticalAlign === 'sub') {
+    if (verticalAlign === 'sub' && !lexicalNode.hasFormat('subscript')) {
       lexicalNode.toggleFormat('subscript');
     }
-    if (verticalAlign === 'super') {
+    if (verticalAlign === 'super' && !lexicalNode.hasFormat('superscript')) {
       lexicalNode.toggleFormat('superscript');
     }
 

@@ -120,11 +120,7 @@ export class ParagraphNode extends ElementNode {
         element.dir = direction;
       }
       const indent = this.getIndent();
-      if (indent > 0) {
-        // padding-inline-start is not widely supported in email HTML, but
-        // Lexical Reconciler uses padding-inline-start. Using text-indent instead.
-        element.style.textIndent = `${indent * 20}px`;
-      }
+      setElementIndent(element, indent, editor._config.theme.indent);
     }
 
     return {
@@ -210,4 +206,34 @@ export function $isParagraphNode(
   node: LexicalNode | null | undefined,
 ): node is ParagraphNode {
   return node instanceof ParagraphNode;
+}
+
+const DEFAULT_INDENT_VALUE = '40px';
+
+function setElementIndent(
+  dom: HTMLElement,
+  indent: number,
+  indentClassName?: string,
+): void {
+  if (typeof indentClassName === 'string') {
+    const elementHasClassName = dom.classList.contains(indentClassName);
+
+    if (indent > 0 && !elementHasClassName) {
+      dom.classList.add(indentClassName);
+    } else if (indent < 1 && elementHasClassName) {
+      dom.classList.remove(indentClassName);
+    }
+  }
+
+  const indentationBaseValue =
+    global.window
+      .getComputedStyle(dom)
+      .getPropertyValue('--lexical-indent-base-value') || DEFAULT_INDENT_VALUE;
+
+  dom.style.setProperty(
+    // padding-inline-start is not widely supported in email HTML, but
+    // Lexical Reconciler uses padding-inline-start. Using text-indent instead.
+    'text-indent',
+    indent === 0 ? '' : `calc(${indent} * ${indentationBaseValue})`,
+  );
 }

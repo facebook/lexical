@@ -833,8 +833,24 @@ export class LexicalEditor {
       );
     }
 
+    let klassToMutate = klass;
+    const replaceKlass = registeredNode.replaceWithKlass;
+    if (replaceKlass) {
+      klassToMutate = replaceKlass;
+      const registeredReplaceNode = this._nodes.get(replaceKlass.getType());
+
+      if (registeredReplaceNode === undefined) {
+        invariant(
+          false,
+          'Node %s has not been registered. Ensure node has been passed to createEditor.',
+          replaceKlass.name,
+        );
+      }
+    }
+
     const mutations = this._listeners.mutation;
-    mutations.set(listener, klass);
+    mutations.set(listener, klassToMutate);
+
     return () => {
       mutations.delete(listener);
     };

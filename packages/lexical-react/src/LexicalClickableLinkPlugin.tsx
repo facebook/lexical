@@ -32,7 +32,7 @@ function findMatchingDOM<T extends Node>(
   return null;
 }
 
-export default function LexicalClickableLinkPlugin({
+export function ClickableLinkPlugin({
   newTab = true,
   disabled = false,
 }: {
@@ -122,3 +122,6 @@ export default function LexicalClickableLinkPlugin({
 
   return null;
 }
+
+/** @deprecated use the named export {@link ClickableLinkPlugin} */
+export default ClickableLinkPlugin;

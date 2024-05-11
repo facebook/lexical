@@ -140,9 +140,7 @@ type Props = {
   ) => JSX.Element;
 };
 
-export default function LexicalTableOfContentsPlugin({
-  children,
-}: Props): JSX.Element {
+export function LexicalTableOfContents({children}: Props): JSX.Element {
   const [tableOfContents, setTableOfContents] = useState<
     Array<TableOfContentsEntry>
   >([]);
@@ -267,3 +265,6 @@ export default function LexicalTableOfContentsPlugin({
 
   return children(tableOfContents, editor);
 }
+
+/** @deprecated use the named export {@link LexicalTableOfContents} */
+export default LexicalTableOfContents;

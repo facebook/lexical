@@ -1,0 +1,28 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ *
+ */
+
+.FlashMessage__overlay {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  pointer-events: none;
+  top: 0px;
+  bottom: 0px;
+  left: 0px;
+  right: 0px;
+}
+.FlashMessage__alert {
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 20px;
+  font-size: 1.5rem;
+  border-radius: 1em;
+  padding: 0.5em 1.5em;
+}

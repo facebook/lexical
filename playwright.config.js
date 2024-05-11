@@ -32,6 +32,7 @@ const config = {
     },
   ],
   retries: IS_CI ? 4 : 1,
+  testIgnore: /\/__tests__\/unit\//,
   timeout: 150000,
   use: {
     navigationTimeout: 30000,

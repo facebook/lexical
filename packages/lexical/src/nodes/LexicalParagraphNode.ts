@@ -190,7 +190,9 @@ function $convertParagraphElement(element: HTMLElement): DOMConversionOutput {
   const node = $createParagraphNode();
   if (element.style) {
     node.setFormat(element.style.textAlign as ElementFormatType);
-    const indent = parseInt(element.style.textIndent, 10) / 20;
+
+    //  TODO: leverage theme indent class or default 40 ?
+    const indent = parseInt(element.style.textIndent, 10) / 40;
     if (indent > 0) {
       node.setIndent(indent);
     }
@@ -224,7 +226,7 @@ function setElementIndent(
   }
 
   const indentationBaseValue =
-    global.window
+    window
       .getComputedStyle(dom)
       .getPropertyValue('--lexical-indent-base-value') || DEFAULT_INDENT_VALUE;
 
@@ -232,6 +234,6 @@ function setElementIndent(
     // padding-inline-start is not widely supported in email HTML, but
     // Lexical Reconciler uses padding-inline-start. Using text-indent instead.
     'text-indent',
-    `calc(${indent} * ${indentationBaseValue})`,
+    `${indent * parseInt(indentationBaseValue, 10)}px`,
   );
 }

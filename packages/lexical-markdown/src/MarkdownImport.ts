@@ -16,8 +16,8 @@ import type {
 import type {LexicalNode, TextNode} from 'lexical';
 
 import {$createCodeNode} from '@lexical/code';
-import {$isListItemNode, $isListNode, ListItemNode} from '@lexical/list';
 import {$createLinkNode} from '@lexical/link';
+import {$isListItemNode, $isListNode, ListItemNode} from '@lexical/list';
 import {LINK} from '@lexical/markdown';
 import {$isQuoteNode} from '@lexical/rich-text';
 import {$findMatchingParent} from '@lexical/utils';
@@ -131,7 +131,7 @@ function $importBlocks(
     }
   }
 
-  importTextFormatTransformers(
+  $importTextFormatTransformers(
     textNode,
     textFormatTransformersIndex,
     textMatchTransformers,
@@ -205,7 +205,7 @@ function $importCodeBlock(
 // E.g. for "*Hello **world**!*" string it will create text node with
 // "Hello **world**!" content and italic format and run recursively over
 // its content to transform "**world**" part
-function importTextFormatTransformers(
+function $importTextFormatTransformers(
   textNode: TextNode,
   textFormatTransformersIndex: TextFormatTransformersIndex,
   textMatchTransformers: Array<TextMatchTransformer>,
@@ -224,7 +224,7 @@ function importTextFormatTransformers(
       const linkTextNode = $createTextNode(linkText);
       linkNode.append(linkTextNode);
       textNode.replace(linkNode);
-      importTextFormatTransformers(
+      $importTextFormatTransformers(
         linkTextNode,
         textFormatTransformersIndex,
         textMatchTransformers,
@@ -235,7 +235,7 @@ function importTextFormatTransformers(
         linkMatch.index + linkMatch[0].length,
       );
       for (const node of nodes) {
-        importTextFormatTransformers(
+        $importTextFormatTransformers(
           node,
           textFormatTransformersIndex,
           textMatchTransformers,
@@ -288,7 +288,7 @@ function importTextFormatTransformers(
 
   // Recursively run over inner text if it's not inline code
   if (!currentNode.hasFormat('code')) {
-    importTextFormatTransformers(
+    $importTextFormatTransformers(
       currentNode,
       textFormatTransformersIndex,
       textMatchTransformers,
@@ -297,7 +297,7 @@ function importTextFormatTransformers(
 
   // Run over leading/remaining text if any
   if (leadingNode) {
-    importTextFormatTransformers(
+    $importTextFormatTransformers(
       leadingNode,
       textFormatTransformersIndex,
       textMatchTransformers,
@@ -305,7 +305,7 @@ function importTextFormatTransformers(
   }
 
   if (remainderNode) {
-    importTextFormatTransformers(
+    $importTextFormatTransformers(
       remainderNode,
       textFormatTransformersIndex,
       textMatchTransformers,

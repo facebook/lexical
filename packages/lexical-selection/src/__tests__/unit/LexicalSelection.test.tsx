@@ -36,6 +36,7 @@ import {
   LexicalNode,
   ParagraphNode,
   PointType,
+  type RangeSelection,
   TextNode,
 } from 'lexical';
 import {
@@ -2654,7 +2655,6 @@ describe('LexicalSelection tests', () => {
           offset: text.__text.length,
           type: 'text',
         });
-        // @ts-ignore
         const selection = $getSelection() as RangeSelection;
 
         const columnChildrenPrev = column.getChildren();
@@ -2722,7 +2722,6 @@ describe('LexicalSelection tests', () => {
           offset: 0,
           type: 'element',
         });
-        // @ts-ignore
         const selection = $getSelection() as RangeSelection;
 
         $setBlocksType(selection, () => {

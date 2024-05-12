@@ -524,7 +524,6 @@ export function createTestEditor(
       throw e;
     },
     ...config,
-    // @ts-ignore
     nodes: DEFAULT_NODES.concat(customNodes),
   });
   return editor;

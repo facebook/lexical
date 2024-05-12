@@ -32,7 +32,6 @@ type Segment = {
   segment: string;
 };
 
-// @ts-ignore
 if (!Selection.prototype.modify) {
   const wordBreakPolyfillRegex =
     /[\s.,\\/#!$%^&*;:{}=\-`~()\uD800-\uDBFF\uDC00-\uDFFF\u3000-\u303F]/u;
@@ -87,7 +86,6 @@ if (!Selection.prototype.modify) {
     return segments;
   };
 
-  // @ts-ignore
   Selection.prototype.modify = function (alter, direction, granularity) {
     // This is not a thorough implementation, it was more to get tests working
     // given the refactor to use this selection method.

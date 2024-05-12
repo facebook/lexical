@@ -58,7 +58,6 @@ describe('@lexical/list tests', () => {
     }
 
     return (
-      //@ts-ignore-next-line
       <TestComposer config={{nodes: [ListNode, ListItemNode], theme: {}}}>
         <RichTextPlugin
           contentEditable={<ContentEditable />}

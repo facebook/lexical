@@ -101,7 +101,6 @@ function findOffset(
   maxCharacters: number,
   strlen: (input: string) => number,
 ): number {
-  // @ts-ignore This is due to be added in a later version of TS
   const Segmenter = Intl.Segmenter;
   let offsetUtf16 = 0;
   let offset = 0;

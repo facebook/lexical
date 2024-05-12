@@ -550,7 +550,7 @@ test.describe('Selection', () => {
           <span data-lexical-text="true">Some text</span>
         </h1>
         <hr
-          class="selected"
+          class="PlaygroundEditorTheme__hr selected"
           contenteditable="false"
           data-lexical-decorator="true" />
         <h1

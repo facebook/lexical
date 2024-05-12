@@ -122,7 +122,7 @@ export function isSelectionCapturedInDecoratorInput(anchorDOM: Node): boolean {
     (nodeName === 'INPUT' ||
       nodeName === 'TEXTAREA' ||
       (activeElement.contentEditable === 'true' &&
-        // @ts-ignore iternal field
+        // @ts-ignore internal field
         activeElement.__lexicalEditor == null))
   );
 }

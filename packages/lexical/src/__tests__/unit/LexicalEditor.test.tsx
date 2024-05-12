@@ -60,10 +60,6 @@ import {
   TestComposer,
   TestTextNode,
 } from '../utils';
-// No idea why we suddenly need to do this, but it fixes the tests
-// with latest experimental React version.
-// @ts-ignore
-global.IS_REACT_ACT_ENVIRONMENT = true;
 
 describe('LexicalEditor tests', () => {
   let container: HTMLElement;

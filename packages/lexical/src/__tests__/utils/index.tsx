@@ -201,13 +201,11 @@ export class TestTextNode extends TextNode {
   }
 
   static clone(node: TestTextNode): TestTextNode {
-    // @ts-ignore
     return new TestTextNode(node.__text, node.__key);
   }
 
   static importJSON(serializedNode: SerializedTestTextNode): TestTextNode {
-    // @ts-ignore
-    return new TestTextNode(serializedNode.__text);
+    return new TestTextNode(serializedNode.text);
   }
 
   exportJSON(): SerializedTestTextNode {

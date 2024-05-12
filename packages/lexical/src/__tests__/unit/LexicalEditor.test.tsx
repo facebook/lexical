@@ -2029,7 +2029,6 @@ describe('LexicalEditor tests', () => {
           TestTextNode,
           {
             replace: TextNode,
-            // @ts-ignore
             with: (node: TextNode) => new TestTextNode(node.getTextContent()),
           },
         ],
@@ -2066,7 +2065,6 @@ describe('LexicalEditor tests', () => {
           TestTextNode,
           {
             replace: TextNode,
-            // @ts-ignore
             with: (node: TextNode) =>
               new TestTextNode(node.getTextContent(), node.getKey()),
           },
@@ -2104,7 +2102,6 @@ describe('LexicalEditor tests', () => {
           TestTextNode,
           {
             replace: TextNode,
-            // @ts-ignore
             with: (node: TextNode) => new TestTextNode(node.getTextContent()),
           },
         ],
@@ -2152,9 +2149,7 @@ describe('LexicalEditor tests', () => {
           TestTextNode,
           {
             replace: TextNode,
-            // @ts-ignore
             with: (node: TextNode) => new TestTextNode(node.getTextContent()),
-
             withKlass: TestTextNode,
           },
         ],

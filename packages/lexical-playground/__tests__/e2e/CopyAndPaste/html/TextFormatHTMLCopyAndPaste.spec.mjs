@@ -146,4 +146,65 @@ test.describe('HTML CopyAndPaste', () => {
       `,
     );
   });
+
+  test('Copy + paste multiple text format', async ({page, isPlainText}) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    const clipboard = {
+      'text/html': html`
+        <strong
+          style="font-weight: 700; font-style: italic; text-decoration: underline; color: rgb(0, 0, 0); font-size: 15px; text-align: left; text-indent: 0px; background-color: rgb(255, 255, 255);">
+          Hello
+        </strong>
+        <sub
+          style="color: rgb(0, 0, 0); font-style: normal; font-weight: 400; text-align: left; text-indent: 0px; background-color: rgb(255, 255, 255);">
+          <strong
+            style="font-weight: 700; font-style: italic; text-decoration: line-through; font-size: 0.8em; vertical-align: sub !important;">
+            World
+          </strong>
+        </sub>
+        <sup
+          style="color: rgb(0, 0, 0); font-style: normal; font-weight: 400; text-align: left; text-indent: 0px; background-color: rgb(255, 255, 255);">
+          <strong
+            style="font-weight: 700; font-style: italic; text-decoration: underline line-through; font-size: 0.8em; vertical-align: super;">
+            Lexical
+          </strong>
+        </sup>
+      `,
+    };
+
+    await pasteFromClipboard(page, clipboard);
+
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <strong
+            class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__textUnderline"
+            data-lexical-text="true">
+            Hello
+          </strong>
+          <sub data-lexical-text="true">
+            <strong
+              class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__textStrikethrough PlaygroundEditorTheme__textSubscript">
+              World
+            </strong>
+          </sub>
+          <sup data-lexical-text="true">
+            <strong
+              class="PlaygroundEditorTheme__textUnderlineStrikethrough PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic PlaygroundEditorTheme__textSuperscript">
+              Lexical
+            </strong>
+          </sup>
+        </p>
+      `,
+    );
+  });
+
+  // TODO: Enhance TextNode.importDOM() to support additional styles such as font size and color.
+  test('Copy + paste text with font size and color', () => test.fixme());
 });

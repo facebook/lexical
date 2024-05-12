@@ -444,9 +444,19 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
         replace = options.with;
         replaceWithKlass = options.withKlass || null;
       }
-      // Ensure custom nodes implement required methods.
+      // Ensure custom nodes implement required methods and replaceWithKlass is instance of base klass.
       if (__DEV__) {
         const name = klass.name;
+
+        if (replaceWithKlass) {
+          invariant(
+            replaceWithKlass.prototype instanceof klass,
+            "%s doesn't extend the %s",
+            replaceWithKlass.name,
+            name,
+          );
+        }
+
         if (name !== 'RootNode') {
           const proto = klass.prototype;
           ['getType', 'clone'].forEach((method) => {

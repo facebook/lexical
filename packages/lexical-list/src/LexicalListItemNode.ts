@@ -6,7 +6,7 @@
  *
  */
 
-import type {ListNode} from './';
+import type {ListNode, ListType} from './';
 import type {
   BaseSelection,
   DOMConversionMap,
@@ -321,11 +321,12 @@ export class ListItemNode extends ElementNode {
   getChecked(): boolean | undefined {
     const self = this.getLatest();
 
+    let listType: ListType | undefined;
+
     const parent = this.getParent();
-    if (!$isListNode(parent)) {
-      invariant(false, 'getChecked: list node is not parent of list item node');
+    if ($isListNode(parent)) {
+      listType = parent.getListType();
     }
-    const listType = parent.getListType();
 
     return listType === 'check' ? Boolean(self.__checked) : undefined;
   }

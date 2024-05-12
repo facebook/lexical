@@ -403,8 +403,6 @@ export function $getNodeFromDOMNode(
   }
   return null;
 }
-/** @deprecated renamed to $getNodeFromDOMNode by @lexical/eslint-plugin rules-of-lexical */
-export const getNodeFromDOMNode = $getNodeFromDOMNode;
 
 export function $getNearestNodeFromDOMNode(
   startingDOM: Node,
@@ -504,8 +502,6 @@ export function $getNodeFromDOM(dom: Node): null | LexicalNode {
   }
   return $getNodeByKey(nodeKey);
 }
-/** @deprecated renamed to $getNodeFromDOM by @lexical/eslint-plugin rules-of-lexical */
-export const getNodeFromDOM = $getNodeFromDOM;
 
 export function getTextNodeOffset(
   node: TextNode,

@@ -291,5 +291,3 @@ export function $mergePrevious(overflowNode: OverflowNode): void {
 
   previousNode.remove();
 }
-/** @deprecated renamed to $mergePrevious by @lexical/eslint-plugin rules-of-lexical */
-export const mergePrevious = $mergePrevious;

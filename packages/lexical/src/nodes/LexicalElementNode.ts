@@ -25,8 +25,8 @@ import {
 import {LexicalNode} from '../LexicalNode';
 import {
   $getSelection,
+  $internalMakeRangeSelection,
   $isRangeSelection,
-  internalMakeRangeSelection,
   moveSelectionPointToSibling,
 } from '../LexicalSelection';
 import {errorOnReadOnly, getActiveEditor} from '../LexicalUpdates';
@@ -316,7 +316,7 @@ export class ElementNode extends LexicalNode {
     }
     const key = this.__key;
     if (!$isRangeSelection(selection)) {
-      return internalMakeRangeSelection(
+      return $internalMakeRangeSelection(
         key,
         anchorOffset,
         key,

@@ -75,7 +75,10 @@ import {
   DOUBLE_LINE_BREAK,
   IS_ALL_FORMATTING,
 } from './LexicalConstants';
-import {internalCreateRangeSelection, RangeSelection} from './LexicalSelection';
+import {
+  $internalCreateRangeSelection,
+  RangeSelection,
+} from './LexicalSelection';
 import {getActiveEditor, updateEditor} from './LexicalUpdates';
 import {
   $flushMutations,
@@ -456,7 +459,7 @@ function onClick(event: PointerEvent, editor: LexicalEditor): void {
           // When we click on an empty paragraph node or the end of a paragraph that ends
           // with an image/poll, the nodeType will be ELEMENT_NODE
           if (nodeType === DOM_ELEMENT_TYPE || nodeType === DOM_TEXT_TYPE) {
-            const newSelection = internalCreateRangeSelection(
+            const newSelection = $internalCreateRangeSelection(
               lastSelection,
               domSelection,
               editor,
@@ -817,7 +820,7 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
       // to ensure to disable composition before dispatching the
       // insertText command for when changing the sequence for FF.
       if (isFirefoxEndingComposition) {
-        onCompositionEndImpl(editor, data);
+        $onCompositionEndImpl(editor, data);
         isFirefoxEndingComposition = false;
       }
       const anchor = selection.anchor;
@@ -873,7 +876,7 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
 
       // onInput always fires after onCompositionEnd for FF.
       if (isFirefoxEndingComposition) {
-        onCompositionEndImpl(editor, data || undefined);
+        $onCompositionEndImpl(editor, data || undefined);
         isFirefoxEndingComposition = false;
       }
     }
@@ -923,7 +926,7 @@ function onCompositionStart(
   });
 }
 
-function onCompositionEndImpl(editor: LexicalEditor, data?: string): void {
+function $onCompositionEndImpl(editor: LexicalEditor, data?: string): void {
   const compositionKey = editor._compositionKey;
   $setCompositionKey(null);
 
@@ -984,7 +987,7 @@ function onCompositionEnd(
     isFirefoxEndingComposition = true;
   } else {
     updateEditor(editor, () => {
-      onCompositionEndImpl(editor, event.data);
+      $onCompositionEndImpl(editor, event.data);
     });
   }
 }
@@ -1148,7 +1151,7 @@ function onDocumentSelectionChange(event: Event): void {
       if (nodeType !== DOM_ELEMENT_TYPE && nodeType !== DOM_TEXT_TYPE) {
         return;
       }
-      const newSelection = internalCreateRangeSelection(
+      const newSelection = $internalCreateRangeSelection(
         lastSelection,
         domSelection,
         nextActiveEditor,

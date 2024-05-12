@@ -150,6 +150,8 @@ test.describe('HTML CopyAndPaste', () => {
   test('Copy + paste multiple text format', async ({page, isPlainText}) => {
     test.skip(isPlainText);
 
+    await focusEditor(page);
+
     const clipboard = {
       'text/html': html`
         <strong

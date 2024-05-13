@@ -125,8 +125,10 @@ jobs:
   react-beta:
     strategy:
       matrix:
-        editor-mode: ['rich-text', 'rich-text-with-collab']
-        prod: [false, true]
+        # Currently using a single combination for every-patch e2e tests of
+        # react beta to reduce cost impact
+        editor-mode: ['rich-text']
+        prod: [false]
     uses: ./.github/workflows/call-e2e-test.yml
     with:
       os: 'macos-latest'

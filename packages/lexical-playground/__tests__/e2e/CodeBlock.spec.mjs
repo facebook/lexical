@@ -876,6 +876,7 @@ test.describe('CodeBlock', () => {
     await assertHTML(page, bcaHTML);
   });
 
+
   test('When pressing CMD/Ctrl + Left, CMD/Ctrl + Right, the cursor should go to the start of the code', async ({
     page,
     isPlainText,

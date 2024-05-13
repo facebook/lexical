@@ -82,5 +82,23 @@ describe('LexicalTableNode tests', () => {
         `<table><tr><td><p dir="ltr"><span data-lexical-text="true">Hello there</span></p></td><td><p dir="ltr"><span data-lexical-text="true">General Kenobi!</span></p></td></tr><tr><td><p dir="ltr"><span data-lexical-text="true">Lexical is nice</span></p></td>${emptyCell}</tr></table>`,
       );
     });
+
+    test('Copy table from an external source like gdoc with formatting', async () => {
+      const {editor} = testEnv;
+
+      const dataTransfer = new DataTransferMock();
+      dataTransfer.setData(
+        'text/html',
+        '<google-sheets-html-origin><style type="text/css"><!--td {border: 1px solid #cccccc;}br {mso-data-placement:same-cell;}--></style><table xmlns="http://www.w3.org/1999/xhtml" cellspacing="0" cellpadding="0" dir="ltr" border="1" style="table-layout:fixed;font-size:10pt;font-family:Arial;width:0px;border-collapse:collapse;border:none" data-sheets-root="1"><colgroup><col width="100"/><col width="189"/><col width="171"/></colgroup><tbody><tr style="height:21px;"><td style="overflow:hidden;padding:2px 3px 2px 3px;vertical-align:bottom;font-weight:bold;" data-sheets-value="{&quot;1&quot;:2,&quot;2&quot;:&quot;Surface&quot;}">Surface</td><td style="overflow:hidden;padding:2px 3px 2px 3px;vertical-align:bottom;font-style:italic;" data-sheets-value="{&quot;1&quot;:2,&quot;2&quot;:&quot;MWP_WORK_LS_COMPOSER&quot;}">MWP_WORK_LS_COMPOSER</td><td style="overflow:hidden;padding:2px 3px 2px 3px;vertical-align:bottom;text-decoration:underline;text-align:right;" data-sheets-value="{&quot;1&quot;:3,&quot;3&quot;:77349}">77349</td></tr><tr style="height:21px;"><td style="overflow:hidden;padding:2px 3px 2px 3px;vertical-align:bottom;" data-sheets-value="{&quot;1&quot;:2,&quot;2&quot;:&quot;Lexical&quot;}">Lexical</td><td style="overflow:hidden;padding:2px 3px 2px 3px;vertical-align:bottom;text-decoration:line-through;" data-sheets-value="{&quot;1&quot;:2,&quot;2&quot;:&quot;XDS_RICH_TEXT_AREA&quot;}">XDS_RICH_TEXT_AREA</td><td style="overflow:hidden;padding:2px 3px 2px 3px;vertical-align:bottom;" data-sheets-value="{&quot;1&quot;:2,&quot;2&quot;:&quot;sdvd sdfvsfs&quot;}" data-sheets-textstyleruns="{&quot;1&quot;:0}{&quot;1&quot;:5,&quot;2&quot;:{&quot;5&quot;:1}}"><span style="font-size:10pt;font-family:Arial;font-style:normal;">sdvd </span><span style="font-size:10pt;font-family:Arial;font-weight:bold;font-style:normal;">sdfvsfs</span></td></tr></tbody></table>',
+      );
+      await editor.update(() => {
+        const selection = $getSelection();
+        invariant($isRangeSelection(selection), 'isRangeSelection(selection)');
+        $insertDataTransferForRichText(dataTransfer, selection, editor);
+      });
+      expect(testEnv.innerHTML).toBe(
+        `<table><tr style="height: 21px;"><td><p dir="ltr"><strong data-lexical-text="true">Surface</strong></p></td><td><p dir="ltr"><em data-lexical-text="true">MWP_WORK_LS_COMPOSER</em></p></td><td><p style="text-align: right;"><span data-lexical-text="true">77349</span></p></td></tr><tr style="height: 21px;"><td><p dir="ltr"><span data-lexical-text="true">Lexical</span></p></td><td><p dir="ltr"><span data-lexical-text="true">XDS_RICH_TEXT_AREA</span></p></td><td><p dir="ltr"><span data-lexical-text="true">sdvd </span><strong data-lexical-text="true">sdfvsfs</strong></p></td></tr></table>`,
+      );
+    });
   });
 });

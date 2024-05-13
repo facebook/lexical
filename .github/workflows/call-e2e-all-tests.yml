@@ -135,4 +135,4 @@ jobs:
       events-mode: 'modern-events'
       editor-mode: ${{ matrix.editor-mode }}
       prod: ${{ matrix.prod }}
-      react-override: beta
+      override-react-version: beta

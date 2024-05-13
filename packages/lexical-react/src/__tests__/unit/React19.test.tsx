@@ -11,9 +11,9 @@ import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'shared/react-test-utils';
 
 const IS_REACT_19 = parseInt(React.version.split('.')[0], 10) >= 19;
-const REACT_OVERRIDE = process.env.REACT_OVERRIDE ?? '';
+const OVERRIDE_REACT_VERSION = process.env.OVERRIDE_REACT_VERSION ?? '';
 
-describe(`React expectations (${React.version}) REACT_OVERRIDE=${REACT_OVERRIDE}`, () => {
+describe(`React expectations (${React.version}) OVERRIDE_REACT_VERSION=${OVERRIDE_REACT_VERSION}`, () => {
   let container: HTMLDivElement;
   let reactRoot: Root;
   beforeEach(() => {
@@ -24,7 +24,7 @@ describe(`React expectations (${React.version}) REACT_OVERRIDE=${REACT_OVERRIDE}
   // This checks our assumption that we are testing against the correct version of React
   // The inverse is not checked so the test doesn't fail when our dependencies
   // are upgraded.
-  if (REACT_OVERRIDE) {
+  if (OVERRIDE_REACT_VERSION) {
     test(`Expecting React >= 19`, () => {
       expect(IS_REACT_19).toBe(true);
     });

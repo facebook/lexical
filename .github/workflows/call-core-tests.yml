@@ -30,7 +30,7 @@ jobs:
     strategy:
       matrix:
         node-version: [18.18.0]
-        react-override: ['', 'beta']
+        override-react-version: ['', 'beta']
     env:
       CI: true
     steps:
@@ -42,10 +42,10 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Override React ${{ matrix.react-override }}
-        if: matrix.react-override != ''
+      - name: Install React ${{ matrix.override-react-version }}
+        if: matrix.override-react-version != ''
         # This should be safe since we are caching ~/.npm and not node_modules
-        run: npm i --no-save react@${{ matrix.react-override }} react-dom@${{ matrix.react-override }}
+        run: npm i --no-save react@${{ matrix.override-react-version }} react-dom@${{ matrix.override-react-version }}
       - run: npm run test-unit
 
   integration:

@@ -89,6 +89,13 @@ describe('CodeBlock tests', () => {
         // semantically it should be wrapped in a pre
         pastedHTML: `<meta charset='utf-8'><code>1<br>2</code>`,
       },
+      {
+        expectedHTML: `<p dir=\"ltr\"><strong data-lexical-text=\"true\">Hello </strong><sub data-lexical-text=\"true\"><strong>World </strong></sub><sup data-lexical-text=\"true\"><strong>Lexical</strong></sup></p>`,
+        name: 'Multiple text formats',
+        // TODO This is not correct. This resembles how Lexical exports code right now but
+        // semantically it should be wrapped in a pre
+        pastedHTML: `<strong style="font-weight: 700; font-style: italic; text-decoration: underline; color: rgb(0, 0, 0); font-size: 15px; text-align: left; text-indent: 0px; background-color: rgb(255, 255, 255);">Hello </strong><sub style="color: rgb(0, 0, 0); font-style: normal; font-weight: 400; text-align: left; text-indent: 0px; background-color: rgb(255, 255, 255);"><strong style="font-weight: 700; font-style: italic; text-decoration: line-through; font-size: 0.8em; vertical-align: sub !important;">World </strong></sub><sup style="color: rgb(0, 0, 0); font-style: normal; font-weight: 400; text-align: left; text-indent: 0px; background-color: rgb(255, 255, 255);"><strong style="font-weight: 700; font-style: italic; text-decoration: underline line-through; font-size: 0.8em; vertical-align: super;">Lexical</strong></sup>`,
+      },
     ];
 
     CODE_PASTING_TESTS.forEach((testCase, i) => {

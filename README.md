@@ -334,18 +334,7 @@ editor.registerUpdateListener(({editorState}) => {
 
 ## Contributing to Lexical
 
-1. Clone this repository
-
-2. Install dependencies
-
-   - `npm install`
-
-3. Start local server and run tests
-   - `npm run start`
-   - `npm run test-e2e-chromium` to run only chromium e2e tests
-     - The server needs to be running for the e2e tests
-
-`npm run start` will start both the dev server and collab server. If you don't need collab, use `npm run dev` to start just the dev server.
+Please read the [CONTRIBUTING.md](https://github.com/facebook/lexical/blob/main/CONTRIBUTING.md).
 
 ### Optional but recommended, use VSCode for development
 

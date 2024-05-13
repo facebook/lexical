@@ -1,0 +1,24 @@
+name: Lexical Tests
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'packages/lexical-website/**'
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths-ignore:
+      - 'packages/lexical-website/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  core-tests:
+    uses: ./.github/workflows/call-core-tests.yml
+
+  e2e-tests:
+    if: github.repository_owner == 'facebook'
+    uses: ./.github/workflows/call-e2e-canary-tests.yml

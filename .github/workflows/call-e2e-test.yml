@@ -1,4 +1,4 @@
-name: Lexical e2e Tests
+name: Lexical e2e test runner
 
 on:
   workflow_call:
@@ -11,7 +11,7 @@ on:
       prod: {required: false, type: boolean}
 
 jobs:
-  e2e-tests:
+  e2e-test:
     runs-on: ${{ inputs.os }}
     if: (inputs.browser != 'webkit' || inputs.os == 'macos-latest') && (inputs.editor-mode != 'rich-text-with-collab' || inputs.events-mode != 'legacy-events')
     env:

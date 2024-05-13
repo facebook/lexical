@@ -7,7 +7,6 @@
  */
 import {
   assertHTML,
-  clearEditor,
   focusEditor,
   html,
   initialize,
@@ -68,81 +67,6 @@ test.describe('HTML CopyAndPaste', () => {
         <p class="PlaygroundEditorTheme__paragraph">
           <br />
         </p>
-      `,
-    );
-  });
-
-  test('Copy + paste text with subscript and superscript', async ({
-    page,
-    isPlainText,
-  }) => {
-    test.skip(isPlainText);
-    await focusEditor(page);
-    const clipboardData = {
-      'text/html':
-        '<b style="font-weight:normal;" id="docs-internal-guid-374b5f9d-7fff-9120-bcb0-1f5c1b6d59fa"><span style="font-size:11pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;"><span style="font-size:0.6em;vertical-align:sub;">subscript</span></span><span style="font-size:11pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;"> and </span><span style="font-size:11pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;"><span style="font-size:0.6em;vertical-align:super;">superscript</span></span></b>',
-    };
-    await pasteFromClipboard(page, clipboardData);
-    await assertHTML(
-      page,
-      html`
-        <p
-          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <sub data-lexical-text="true">
-            <span class="PlaygroundEditorTheme__textSubscript">subscript</span>
-          </sub>
-          <span data-lexical-text="true">and</span>
-          <sup data-lexical-text="true">
-            <span class="PlaygroundEditorTheme__textSuperscript">
-              superscript
-            </span>
-          </sup>
-        </p>
-      `,
-    );
-  });
-
-  test('Copy + paste a Title from Google Docs', async ({page, isPlainText}) => {
-    test.skip(isPlainText);
-
-    await focusEditor(page);
-
-    const clipboard = {
-      'text/html': `<meta charset='utf-8'><meta charset="utf-8"><b style="font-weight:normal;" id="docs-internal-guid-whatever"><span style="font-size:26pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">My document</span></b>`,
-    };
-
-    await pasteFromClipboard(page, clipboard);
-
-    await assertHTML(
-      page,
-      html`
-        <h1
-          class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">My document</span>
-        </h1>
-      `,
-    );
-
-    await clearEditor(page);
-    await focusEditor(page);
-
-    // These can sometimes be put onto the clipboard wrapped in a paragraph element
-    clipboard[
-      'text/html'
-    ] = `<meta charset='utf-8'><meta charset="utf-8"><b style="font-weight:normal;" id="docs-internal-guid-wjatever"><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:3pt;"><span style="font-size:26pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">My document</span></p></b>`;
-
-    await pasteFromClipboard(page, clipboard);
-
-    await assertHTML(
-      page,
-      html`
-        <h1
-          class="PlaygroundEditorTheme__h1 PlaygroundEditorTheme__ltr"
-          dir="ltr">
-          <span data-lexical-text="true">My document</span>
-        </h1>
       `,
     );
   });

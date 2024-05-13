@@ -92,9 +92,22 @@ describe('CodeBlock tests', () => {
       {
         expectedHTML: `<p dir=\"ltr\"><strong data-lexical-text=\"true\">Hello </strong><sub data-lexical-text=\"true\"><strong>World </strong></sub><sup data-lexical-text=\"true\"><strong>Lexical</strong></sup></p>`,
         name: 'Multiple text formats',
-        // TODO This is not correct. This resembles how Lexical exports code right now but
-        // semantically it should be wrapped in a pre
         pastedHTML: `<strong style="font-weight: 700; font-style: italic; text-decoration: underline; color: rgb(0, 0, 0); font-size: 15px; text-align: left; text-indent: 0px; background-color: rgb(255, 255, 255);">Hello </strong><sub style="color: rgb(0, 0, 0); font-style: normal; font-weight: 400; text-align: left; text-indent: 0px; background-color: rgb(255, 255, 255);"><strong style="font-weight: 700; font-style: italic; text-decoration: line-through; font-size: 0.8em; vertical-align: sub !important;">World </strong></sub><sup style="color: rgb(0, 0, 0); font-style: normal; font-weight: 400; text-align: left; text-indent: 0px; background-color: rgb(255, 255, 255);"><strong style="font-weight: 700; font-style: italic; text-decoration: underline line-through; font-size: 0.8em; vertical-align: super;">Lexical</strong></sup>`,
+      },
+      {
+        expectedHTML: `<h1 dir=\"ltr\"><span data-lexical-text=\"true\">My document</span></h1>`,
+        name: 'Title from Google Docs',
+        pastedHTML: `<meta charset='utf-8'><meta charset="utf-8"><b style="font-weight:normal;" id="docs-internal-guid-whatever"><span style="font-size:26pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">My document</span></b>`,
+      },
+      {
+        expectedHTML: `<h1 dir=\"ltr\"><span data-lexical-text=\"true\">My document</span></h1>`,
+        name: 'Title from Google Docs Wrapped in Paragraph',
+        pastedHTML: `<meta charset='utf-8'><meta charset="utf-8"><b style="font-weight:normal;" id="docs-internal-guid-wjatever"><p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:3pt;"><span style="font-size:26pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">My document</span></p></b>`,
+      },
+      {
+        expectedHTML: `<p dir=\"ltr\"><sub data-lexical-text=\"true\"><span>subscript</span></sub><span data-lexical-text=\"true\"> and </span><sup data-lexical-text=\"true\"><span>superscript</span></sup></p>`,
+        name: 'Subscript and Superscript',
+        pastedHTML: `<b style="font-weight:normal;" id="docs-internal-guid-374b5f9d-7fff-9120-bcb0-1f5c1b6d59fa"><span style="font-size:11pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;"><span style="font-size:0.6em;vertical-align:sub;">subscript</span></span><span style="font-size:11pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;"> and </span><span style="font-size:11pt;font-family:Arial;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;"><span style="font-size:0.6em;vertical-align:super;">superscript</span></span></b>`,
       },
     ];
 

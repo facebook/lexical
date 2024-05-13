@@ -18,17 +18,11 @@ interface Props {
 }
 
 export function EditorInspectorButton({tabID, setErrorMessage}: Props) {
-  const [isActive, setIsActive] = React.useState(false);
-
   const handleClick = () => {
     const injectedPegasusService = getRPCService<IInjectedPegasusService>(
       'InjectedPegasusService',
       {context: 'window', tabId: tabID},
     );
-
-    if (!isActive) {
-      setIsActive(true);
-    }
 
     injectedPegasusService
       .refreshLexicalEditors()
@@ -36,8 +30,7 @@ export function EditorInspectorButton({tabID, setErrorMessage}: Props) {
       .catch((err) => {
         setErrorMessage(err.message);
         console.error(err);
-      })
-      .finally(() => setIsActive(false));
+      });
   };
 
   return (
@@ -48,8 +41,6 @@ export function EditorInspectorButton({tabID, setErrorMessage}: Props) {
       size="xs"
       onClick={handleClick}
       icon={<Image w={5} src="/inspect.svg" />}
-      isActive={isActive}
-      _active={{bg: 'blue.100'}}
     />
   );
 }

@@ -85,42 +85,39 @@ export class InjectedPegasusService
     editor.setEditorState(deserializeEditorState(editorState));
   }
 
-  toggleEditorPicker(): Promise<void> {
-    return new Promise((resolve) => {
-      if (this.pickerActive != null) {
+  toggleEditorPicker(): void {
+    if (this.pickerActive != null) {
+      this.pickerActive?.stop();
+      this.pickerActive = null;
+
+      return;
+    }
+
+    this.pickerActive = new ElementPicker({style: ELEMENT_PICKER_STYLE});
+    this.pickerActive.start({
+      elementFilter: (el) => {
+        let parent: HTMLElement | null = el;
+        while (parent != null && parent.tagName !== 'BODY') {
+          if ('__lexicalEditor' in parent) {
+            return parent;
+          }
+          parent = parent.parentElement;
+        }
+
+        return false;
+      },
+
+      onClick: (el) => {
         this.pickerActive?.stop();
         this.pickerActive = null;
-
-        return resolve();
-      }
-
-      this.pickerActive = new ElementPicker({style: ELEMENT_PICKER_STYLE});
-      this.pickerActive.start({
-        elementFilter: (el) => {
-          let parent: HTMLElement | null = el;
-          while (parent != null && parent.tagName !== 'BODY') {
-            if ('__lexicalEditor' in parent) {
-              return parent;
-            }
-            parent = parent.parentElement;
-          }
-
-          return false;
-        },
-
-        onClick: (el) => {
-          this.pickerActive?.stop();
-          this.pickerActive = null;
-          if (isLexicalNode(el)) {
-            this.extensionStore
-              .getState()
-              .setSelectedEditorKey(this.tabID, el.__lexicalEditor.getKey());
-          } else {
-            console.warn('Selected Element is not a Lexical node');
-          }
-          resolve();
-        },
-      });
+        if (isLexicalNode(el)) {
+          this.extensionStore
+            .getState()
+            .setSelectedEditorKey(this.tabID, el.__lexicalEditor.getKey());
+        } else {
+          console.warn('Selected Element is not a Lexical node');
+        }
+      },
     });
   }
 }

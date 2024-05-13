@@ -106,13 +106,6 @@ describe('CodeBlock tests', () => {
           $insertDataTransferForRichText(dataTransfer, selection, editor);
         });
         expect(testEnv.innerHTML).toBe(testCase.expectedHTML);
-        //   test.skip(isPlainText);
-
-        //   await focusEditor(page);
-        //   await pasteFromClipboard(page, {
-        //     'text/html': testCase.pastedHTML,
-        //   });
-        //   await assertHTML(page, testCase.expectedHTML);
       });
     });
   });

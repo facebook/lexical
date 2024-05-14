@@ -21,6 +21,7 @@ import './CodeHighlighterPrism';
 import {mergeRegister} from '@lexical/utils';
 import {
   $createLineBreakNode,
+  $createParagraphNode,
   $createTabNode,
   $createTextNode,
   $getNodeByKey,
@@ -28,6 +29,7 @@ import {
   $insertNodes,
   $isLineBreakNode,
   $isRangeSelection,
+  $isRootNode,
   $isTabNode,
   $isTextNode,
   COMMAND_PRIORITY_LOW,
@@ -666,7 +668,16 @@ function $handleShiftLines(
       ) {
         const codeNodeSibling = codeNode.getPreviousSibling();
         if (codeNodeSibling === null) {
-          codeNode.selectPrevious();
+          const parent = codeNode.getParent();
+          if ($isRootNode(parent)) {
+            // No previous siblings and the parent node is RootNode,
+            // adding an empty paragraph and select it.
+            const emptyP = $createParagraphNode();
+            codeNode.insertBefore(emptyP);
+            emptyP.select();
+          } else {
+            codeNode.selectPrevious();
+          }
           event.preventDefault();
           return true;
         }

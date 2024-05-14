@@ -17,14 +17,12 @@ import App from './App.tsx';
 const tabID = browser.devtools.inspectedWindow.tabId;
 initPegasusTransport();
 
-extensionStoreReady()
-  .then((store) => store.getState().initTab(tabID))
-  .then(() =>
-    ReactDOM.createRoot(document.getElementById('root')!).render(
-      <React.StrictMode>
-        <ChakraProvider>
-          <App tabID={tabID} />
-        </ChakraProvider>
-      </React.StrictMode>,
-    ),
-  );
+extensionStoreReady().then(() =>
+  ReactDOM.createRoot(document.getElementById('root')!).render(
+    <React.StrictMode>
+      <ChakraProvider>
+        <App tabID={tabID} />
+      </ChakraProvider>
+    </React.StrictMode>,
+  ),
+);

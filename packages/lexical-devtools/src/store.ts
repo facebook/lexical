@@ -25,7 +25,6 @@ export interface ExtensionState {
   isSelecting: {
     [tabID: number]: boolean;
   };
-  initTab: (tabID: number) => void;
   markTabAsRestricted: (tabID: number) => void;
   setStatesForTab: (
     id: number,
@@ -37,21 +36,6 @@ export interface ExtensionState {
 
 export const useExtensionStore = create<ExtensionState>()(
   subscribeWithSelector((set) => ({
-    initTab: (tabID: number) =>
-      set((state) => ({
-        isSelecting: {
-          ...state.isSelecting,
-          [tabID]: false,
-        },
-        lexicalState: {
-          ...state.lexicalState,
-          [tabID]: null,
-        },
-        selectedEditorKey: {
-          ...state.selectedEditorKey,
-          [tabID]: null,
-        },
-      })),
     isSelecting: {},
     lexicalState: {},
     markTabAsRestricted: (tabID: number) =>

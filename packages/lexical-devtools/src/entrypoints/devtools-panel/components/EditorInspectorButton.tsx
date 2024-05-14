@@ -20,7 +20,7 @@ interface Props {
 
 export function EditorInspectorButton({tabID, setErrorMessage}: Props) {
   const {isSelecting} = useExtensionStore();
-  const isActive = isSelecting[tabID] ?? false;
+  const isActive = isSelecting[tabID];
 
   const handleClick = () => {
     const injectedPegasusService = getRPCService<IInjectedPegasusService>(

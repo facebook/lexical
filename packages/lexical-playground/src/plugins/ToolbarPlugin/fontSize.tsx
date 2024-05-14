@@ -141,7 +141,7 @@ export default function FontSize({
       return;
     }
 
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' || e.key === 'Tab' || e.key === 'Escape') {
       e.preventDefault();
 
       let updatedFontSize = inputValueNumber;

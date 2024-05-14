@@ -28,10 +28,13 @@ export interface ExtensionState {
     states: {[editorKey: string]: SerializedRawEditorState},
   ) => void;
   setSelectedEditorKey: (tabID: number, editorKey: string | null) => void;
+  isSelecting: boolean;
+  setIsSelecting: (isSelecting: boolean) => void;
 }
 
 export const useExtensionStore = create<ExtensionState>()(
   subscribeWithSelector((set) => ({
+    isSelecting: false,
     lexicalState: {},
     markTabAsRestricted: (tabID: number) =>
       set((state) => ({
@@ -41,6 +44,10 @@ export const useExtensionStore = create<ExtensionState>()(
         },
       })),
     selectedEditorKey: {},
+    setIsSelecting: (isSelecting: boolean) =>
+      set(() => ({
+        isSelecting,
+      })),
     setSelectedEditorKey: (tabID: number, editorKey: string | null) =>
       set((state) => ({
         selectedEditorKey: {

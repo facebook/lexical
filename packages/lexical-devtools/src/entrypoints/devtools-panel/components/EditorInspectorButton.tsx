@@ -20,6 +20,7 @@ interface Props {
 
 export function EditorInspectorButton({tabID, setErrorMessage}: Props) {
   const {isSelecting} = useExtensionStore();
+  const isActive = isSelecting[tabID];
 
   const handleClick = () => {
     const injectedPegasusService = getRPCService<IInjectedPegasusService>(
@@ -44,7 +45,7 @@ export function EditorInspectorButton({tabID, setErrorMessage}: Props) {
       size="xs"
       onClick={handleClick}
       icon={<Image w={5} src="/inspect.svg" />}
-      isActive={isSelecting}
+      isActive={isActive}
       _active={{bg: 'blue.100'}}
     />
   );

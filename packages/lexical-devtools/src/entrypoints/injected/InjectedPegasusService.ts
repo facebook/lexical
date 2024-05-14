@@ -94,7 +94,7 @@ export class InjectedPegasusService
   }
 
   private activatePicker(): void {
-    this.extensionStore.getState().setIsSelecting(true);
+    this.extensionStore.getState().setIsSelecting(this.tabID, true);
 
     this.pickerActive = new ElementPicker({style: ELEMENT_PICKER_STYLE});
     this.pickerActive.start({
@@ -126,6 +126,6 @@ export class InjectedPegasusService
   private deactivatePicker(): void {
     this.pickerActive?.stop();
     this.pickerActive = null;
-    this.extensionStore.getState().setIsSelecting(false);
+    this.extensionStore.getState().setIsSelecting(this.tabID, false);
   }
 }

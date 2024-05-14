@@ -22,19 +22,21 @@ export interface ExtensionState {
   selectedEditorKey: {
     [tabID: number]: string | null;
   };
+  isSelecting: {
+    [tabID: number]: boolean;
+  };
   markTabAsRestricted: (tabID: number) => void;
   setStatesForTab: (
     id: number,
     states: {[editorKey: string]: SerializedRawEditorState},
   ) => void;
   setSelectedEditorKey: (tabID: number, editorKey: string | null) => void;
-  isSelecting: boolean;
-  setIsSelecting: (isSelecting: boolean) => void;
+  setIsSelecting: (tadID: number, isSelecting: boolean) => void;
 }
 
 export const useExtensionStore = create<ExtensionState>()(
   subscribeWithSelector((set) => ({
-    isSelecting: false,
+    isSelecting: {},
     lexicalState: {},
     markTabAsRestricted: (tabID: number) =>
       set((state) => ({
@@ -44,9 +46,12 @@ export const useExtensionStore = create<ExtensionState>()(
         },
       })),
     selectedEditorKey: {},
-    setIsSelecting: (isSelecting: boolean) =>
-      set(() => ({
-        isSelecting,
+    setIsSelecting: (tabID: number, isSelecting: boolean) =>
+      set((state) => ({
+        isSelecting: {
+          ...state.isSelecting,
+          [tabID]: isSelecting,
+        },
       })),
     setSelectedEditorKey: (tabID: number, editorKey: string | null) =>
       set((state) => ({

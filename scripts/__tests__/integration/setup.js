@@ -37,7 +37,7 @@ module.exports = async function (globalConfig, projectConfig) {
     const cwd = process.cwd();
     try {
       process.chdir(pkg.resolve('npm'));
-      await exec(`npm pack --pack-destination '${packDest}'`);
+      await exec(`npm pack --pack-destination ${packDest}`);
     } finally {
       process.chdir(cwd);
     }

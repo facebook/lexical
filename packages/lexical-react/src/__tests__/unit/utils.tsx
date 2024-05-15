@@ -8,7 +8,6 @@
 
 import {UserState} from '@lexical/yjs';
 import {LexicalEditor} from 'lexical';
-import * as React from 'react';
 import {createRoot, Root} from 'react-dom/client';
 import * as ReactTestUtils from 'react-dom/test-utils';
 import * as Y from 'yjs';
@@ -49,10 +48,10 @@ function Editor({doc, provider, setEditor, awarenessData}) {
   );
 }
 
-class Client {
+export class Client {
   _id: string;
-  _reactRoot: Root;
-  _container: HTMLDivElement;
+  _reactRoot: Root | null;
+  _container: HTMLDivElement | null;
   _editor: LexicalEditor;
   _connection: {
     _clients: Client[];

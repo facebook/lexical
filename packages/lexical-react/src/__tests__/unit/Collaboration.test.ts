@@ -6,6 +6,7 @@
  *
  */
 
+import {UserState} from '@lexical/yjs';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -15,10 +16,10 @@ import {
   TextNode,
 } from 'lexical';
 
-import {createTestConnection, waitForReact} from './utils';
+import {Client, createTestConnection, waitForReact} from './utils';
 
 describe('Collaboration', () => {
-  let container = null;
+  let container: null | HTMLDivElement = null;
 
   beforeEach(() => {
     container = document.createElement('div');
@@ -26,11 +27,13 @@ describe('Collaboration', () => {
   });
 
   afterEach(() => {
-    document.body.removeChild(container);
-    container = null;
+    if (container) {
+      document.body.removeChild(container);
+      container = null;
+    }
   });
 
-  async function expectCorrectInitialContent(client1, client2) {
+  async function expectCorrectInitialContent(client1: Client, client2: Client) {
     // Should be empty, as client has not yet updated
     expect(client1.getHTML()).toEqual('');
     expect(client1.getHTML()).toEqual(client2.getHTML());
@@ -59,7 +62,7 @@ describe('Collaboration', () => {
       client1.update(() => {
         const root = $getRoot();
 
-        const paragraph = root.getFirstChild<ParagraphNode>();
+        const paragraph = root.getFirstChild<ParagraphNode>() as ParagraphNode;
 
         const text = $createTextNode('Hello world');
 
@@ -78,8 +81,8 @@ describe('Collaboration', () => {
       client2.update(() => {
         const root = $getRoot();
 
-        const paragraph = root.getFirstChild<ParagraphNode>();
-        const text = paragraph.getFirstChild<TextNode>();
+        const paragraph = root.getFirstChild<ParagraphNode>() as ParagraphNode;
+        const text = paragraph.getFirstChild<TextNode>() as TextNode;
 
         text.spliceText(6, 5, 'metaverse');
       });
@@ -116,7 +119,7 @@ describe('Collaboration', () => {
       client1.update(() => {
         const root = $getRoot();
 
-        const paragraph = root.getFirstChild<ParagraphNode>();
+        const paragraph = root.getFirstChild<ParagraphNode>() as ParagraphNode;
         const text = $createTextNode('Hello world');
 
         paragraph.append(text);
@@ -132,7 +135,7 @@ describe('Collaboration', () => {
       client2.update(() => {
         const root = $getRoot();
 
-        const paragraph = root.getFirstChild<ParagraphNode>();
+        const paragraph = root.getFirstChild<ParagraphNode>() as ParagraphNode;
         const text = $createTextNode('Hello world');
 
         paragraph.append(text);
@@ -164,8 +167,8 @@ describe('Collaboration', () => {
       client1.update(() => {
         const root = $getRoot();
 
-        const paragraph = root.getFirstChild<ParagraphNode>();
-        const text = paragraph.getFirstChild<TextNode>();
+        const paragraph = root.getFirstChild<ParagraphNode>() as ParagraphNode;
+        const text = paragraph.getFirstChild<TextNode>() as TextNode;
 
         text.spliceText(11, 11, '');
       });
@@ -182,8 +185,8 @@ describe('Collaboration', () => {
       client2.update(() => {
         const root = $getRoot();
 
-        const paragraph = root.getFirstChild<ParagraphNode>();
-        const text = paragraph.getFirstChild<TextNode>();
+        const paragraph = root.getFirstChild<ParagraphNode>() as ParagraphNode;
+        const text = paragraph.getFirstChild<TextNode>() as TextNode;
 
         text.spliceText(11, 11, '!');
       });
@@ -220,7 +223,7 @@ describe('Collaboration', () => {
       client1.update(() => {
         const root = $getRoot();
 
-        const paragraph = root.getFirstChild<ParagraphNode>();
+        const paragraph = root.getFirstChild<ParagraphNode>() as ParagraphNode;
         const text = $createTextNode('Hello world');
         paragraph.append(text);
       });
@@ -242,8 +245,9 @@ describe('Collaboration', () => {
       client1.update(() => {
         const root = $getRoot();
 
-        const paragraph = root.getFirstChild<ParagraphNode>();
-        paragraph.getFirstChild().remove();
+        const paragraph = root.getFirstChild<ParagraphNode>() as ParagraphNode;
+        const paragraphChild = paragraph.getFirstChild() as TextNode;
+        paragraphChild.remove();
       });
     });
 
@@ -257,9 +261,10 @@ describe('Collaboration', () => {
       client2.update(() => {
         const root = $getRoot();
 
-        const paragraph = root.getFirstChild<ParagraphNode>();
+        const paragraph = root.getFirstChild<ParagraphNode>() as ParagraphNode;
 
-        paragraph.getFirstChild<TextNode>().spliceText(11, 0, 'Hello world');
+        const paragraphChild = paragraph.getFirstChild<TextNode>() as TextNode;
+        paragraphChild.spliceText(11, 0, 'Hello world');
       });
     });
 
@@ -308,13 +313,12 @@ describe('Collaboration', () => {
     client2.start(container, awarenessData2);
 
     await expectCorrectInitialContent(client1, client2);
-
-    expect(client1.awareness.getLocalState().awarenessData).toEqual(
-      awarenessData1,
-    );
-    expect(client2.awareness.getLocalState().awarenessData).toEqual(
-      awarenessData2,
-    );
+    const awarenessStateClient1 =
+      client1.awareness.getLocalState() as UserState;
+    expect(awarenessStateClient1.awarenessData).toEqual(awarenessData1);
+    const awarenessStateClient2 =
+      client2.awareness.getLocalState() as UserState;
+    expect(awarenessStateClient2.awarenessData).toEqual(awarenessData2);
 
     client1.stop();
     client2.stop();
@@ -377,7 +381,9 @@ describe('Collaboration', () => {
     await waitForReact(() => {
       client1.getEditorState().read(() => {
         const selection = $getSelection();
-        selctedParagraphText = selection?.getNodes()[0].getTextContent();
+        if (selection) {
+          selctedParagraphText = selection.getNodes()[0].getTextContent();
+        }
       });
     });
 

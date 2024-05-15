@@ -768,7 +768,7 @@ export function isTab(
   ctrlKey: boolean,
   metaKey: boolean,
 ): boolean {
-  return key === '9' && !altKey && !ctrlKey && !metaKey;
+  return key === 'Tab' && !altKey && !ctrlKey && !metaKey;
 }
 
 export function isBold(

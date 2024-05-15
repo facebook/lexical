@@ -20,4 +20,8 @@ export class ArtificialNode__DO_NOT_USE extends ElementNode {
     const dom = document.createElement('div');
     return dom;
   }
+
+  exportJSON() {
+    return super.exportJSON();
+  }
 }

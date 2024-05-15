@@ -777,7 +777,9 @@ export function isBold(
   metaKey: boolean,
   ctrlKey: boolean,
 ): boolean {
-  return key === 'B' && !altKey && controlOrMeta(metaKey, ctrlKey);
+  return (
+    key.toLowerCase() === 'b' && !altKey && controlOrMeta(metaKey, ctrlKey)
+  );
 }
 
 export function isItalic(
@@ -786,7 +788,9 @@ export function isItalic(
   metaKey: boolean,
   ctrlKey: boolean,
 ): boolean {
-  return key === 'I' && !altKey && controlOrMeta(metaKey, ctrlKey);
+  return (
+    key.toLowerCase() === 'i' && !altKey && controlOrMeta(metaKey, ctrlKey)
+  );
 }
 
 export function isUnderline(
@@ -810,7 +814,7 @@ export function isLineBreak(key: string, shiftKey: boolean): boolean {
 
 export function isOpenLineBreak(key: string, ctrlKey: boolean): boolean {
   // 79 = KeyO
-  return IS_APPLE && ctrlKey && key === 'O';
+  return IS_APPLE && ctrlKey && key.toLowerCase() === 'o';
 }
 
 export function isDeleteWordBackward(
@@ -904,7 +908,7 @@ export function isCopy(
   if (shiftKey) {
     return false;
   }
-  if (key === 'C') {
+  if (key.toLowerCase() === 'c') {
     return IS_APPLE ? metaKey : ctrlKey;
   }
 
@@ -920,7 +924,7 @@ export function isCut(
   if (shiftKey) {
     return false;
   }
-  if (key === 'X') {
+  if (key.toLowerCase() === 'x') {
     return IS_APPLE ? metaKey : ctrlKey;
   }
 

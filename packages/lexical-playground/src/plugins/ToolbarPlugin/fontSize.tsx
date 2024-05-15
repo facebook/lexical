@@ -167,6 +167,12 @@ export default function FontSize({
     }
   };
 
+  const handleBlurEvent = () => {
+    if (inputValue !== selectionFontSize) {
+      setInputValue(selectionFontSize);
+    }
+  };
+
   React.useEffect(() => {
     setInputValue(selectionFontSize);
   }, [selectionFontSize]);
@@ -193,6 +199,7 @@ export default function FontSize({
         min={MIN_ALLOWED_FONT_SIZE}
         max={MAX_ALLOWED_FONT_SIZE}
         onChange={(e) => setInputValue(e.target.value)}
+        onBlur={handleBlurEvent}
         onKeyDown={handleKeyPress}
       />
 

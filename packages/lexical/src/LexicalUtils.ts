@@ -851,7 +851,7 @@ export function isDeleteBackward(
     if (altKey || metaKey) {
       return false;
     }
-    return isBackspace(key) || (key === 'H' && ctrlKey);
+    return isBackspace(key) || (key.toLowerCase() === 'h' && ctrlKey);
   }
   if (ctrlKey || altKey || metaKey) {
     return false;
@@ -870,7 +870,7 @@ export function isDeleteForward(
     if (shiftKey || altKey || metaKey) {
       return false;
     }
-    return isDelete(key) || (key === 'D' && ctrlKey);
+    return isDelete(key) || (key.toLowerCase() === 'd' && ctrlKey);
   }
   if (ctrlKey || altKey || metaKey) {
     return false;
@@ -884,7 +884,9 @@ export function isUndo(
   metaKey: boolean,
   ctrlKey: boolean,
 ): boolean {
-  return key === 'Z' && !shiftKey && controlOrMeta(metaKey, ctrlKey);
+  return (
+    key.toLowerCase() === 'z' && !shiftKey && controlOrMeta(metaKey, ctrlKey)
+  );
 }
 
 export function isRedo(
@@ -894,9 +896,12 @@ export function isRedo(
   ctrlKey: boolean,
 ): boolean {
   if (IS_APPLE) {
-    return key === 'Z' && metaKey && shiftKey;
+    return key.toLowerCase() === 'z' && metaKey && shiftKey;
   }
-  return (key === 'Y' && ctrlKey) || (key === 'Z' && ctrlKey && shiftKey);
+  return (
+    (key.toLowerCase() === 'y' && ctrlKey) ||
+    (key.toLowerCase() === 'z' && ctrlKey && shiftKey)
+  );
 }
 
 export function isCopy(
@@ -1042,7 +1047,7 @@ export function isSelectAll(
   metaKey: boolean,
   ctrlKey: boolean,
 ): boolean {
-  return key === 'A' && controlOrMeta(metaKey, ctrlKey);
+  return key.toLowerCase() === 'a' && controlOrMeta(metaKey, ctrlKey);
 }
 
 export function $selectAll(): void {

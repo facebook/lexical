@@ -1,6 +1,7 @@
 name: Lexical Tests (Extended)
 
 on:
+  merge_group:
   pull_request:
     types: [labeled, synchronize]
     paths-ignore:
@@ -12,5 +13,5 @@ concurrency:
 
 jobs:
   e2e-tests:
-    if: github.repository_owner == 'facebook' && contains(github.event.pull_request.labels.*.name, 'extended-tests')
+    if: (github.repository_owner == 'facebook' && contains(github.event.pull_request.labels.*.name, 'extended-tests')) || github.event_name == 'merge_group'
     uses: ./.github/workflows/call-e2e-all-tests.yml

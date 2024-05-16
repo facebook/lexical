@@ -14,9 +14,11 @@ import {AutoLinkNode, LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
 import {MarkNode} from '@lexical/mark';
 import {OverflowNode} from '@lexical/overflow';
+import {BlockNodeKlass} from '@lexical/react/LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL';
 import {HorizontalRuleNode} from '@lexical/react/LexicalHorizontalRuleNode';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
+import {DecoratorNode, ElementNode} from 'lexical';
 
 import {CollapsibleContainerNode} from '../plugins/CollapsiblePlugin/CollapsibleContainerNode';
 import {CollapsibleContentNode} from '../plugins/CollapsiblePlugin/CollapsibleContentNode';
@@ -38,7 +40,7 @@ import {StickyNode} from './StickyNode';
 import {TweetNode} from './TweetNode';
 import {YouTubeNode} from './YouTubeNode';
 
-const PlaygroundNodes: Array<Klass<LexicalNode>> = [
+export const NODES: Array<Klass<LexicalNode>> = [
   HeadingNode,
   ListNode,
   ListItemNode,
@@ -75,4 +77,17 @@ const PlaygroundNodes: Array<Klass<LexicalNode>> = [
   LayoutItemNode,
 ];
 
-export default PlaygroundNodes;
+export const BLOCK_NODES: Array<BlockNodeKlass<JSX.Element>> = [];
+// The below snippet assumes that for every node, node.isInline() is hardcoded to either true or
+// false, Lexical's recommendation.
+for (const Node of NODES) {
+  if (
+    (Node === ElementNode ||
+      Node.prototype instanceof ElementNode ||
+      Node === DecoratorNode ||
+      Node.prototype instanceof DecoratorNode) &&
+    !Node.prototype.isInline()
+  ) {
+    BLOCK_NODES.push(Node as BlockNodeKlass<JSX.Element>);
+  }
+}

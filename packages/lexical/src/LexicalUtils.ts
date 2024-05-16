@@ -70,9 +70,7 @@ import {
   updateEditor,
 } from './LexicalUpdates';
 
-export const emptyFunction = () => {
-  return;
-};
+export const emptyFunction = () => {};
 
 let keyCounter = 1;
 

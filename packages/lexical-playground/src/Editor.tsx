@@ -7,6 +7,10 @@
  */
 
 import {AutoFocusPlugin} from '@lexical/react/LexicalAutoFocusPlugin';
+import {
+  BlockNode,
+  LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL,
+} from '@lexical/react/LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL';
 import {CharacterLimitPlugin} from '@lexical/react/LexicalCharacterLimitPlugin';
 import {CheckListPlugin} from '@lexical/react/LexicalCheckListPlugin';
 import {ClearEditorPlugin} from '@lexical/react/LexicalClearEditorPlugin';
@@ -22,13 +26,15 @@ import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {TabIndentationPlugin} from '@lexical/react/LexicalTabIndentationPlugin';
 import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
 import useLexicalEditable from '@lexical/react/useLexicalEditable';
+import {ElementNode} from 'lexical';
 import * as React from 'react';
-import {useEffect, useState} from 'react';
+import {useCallback, useEffect, useState} from 'react';
 import {CAN_USE_DOM} from 'shared/canUseDOM';
 
 import {createWebsocketProvider} from './collaboration';
 import {useSettings} from './context/SettingsContext';
 import {useSharedHistoryContext} from './context/SharedHistoryContext';
+import {BLOCK_NODES} from './nodes/PlaygroundNodes';
 import ActionsPlugin from './plugins/ActionsPlugin';
 import AutocompletePlugin from './plugins/AutocompletePlugin';
 import AutoEmbedPlugin from './plugins/AutoEmbedPlugin';
@@ -70,6 +76,7 @@ import TwitterPlugin from './plugins/TwitterPlugin';
 import YouTubePlugin from './plugins/YouTubePlugin';
 import ContentEditable from './ui/ContentEditable';
 import Placeholder from './ui/Placeholder';
+import onWarn from './utils/onWarn';
 
 const skipCollaborationInit =
   // @ts-expect-error
@@ -142,7 +149,6 @@ export default function Editor(): JSX.Element {
         <ComponentPickerPlugin />
         <EmojiPickerPlugin />
         <AutoEmbedPlugin />
-
         <MentionsPlugin />
         <EmojisPlugin />
         <HashtagPlugin />
@@ -151,6 +157,25 @@ export default function Editor(): JSX.Element {
         <AutoLinkPlugin />
         <CommentPlugin
           providerFactory={isCollab ? createWebsocketProvider : undefined}
+        />
+        <LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL
+          blockNodes={BLOCK_NODES}
+          $onNormalize={useCallback(
+            (
+              node: BlockNode<JSX.Element>,
+              parent: ElementNode,
+              event?: 'paste',
+            ) => {
+              onWarn(
+                `Found top level node ${node.getKey()} ${
+                  node.constructor.name
+                } inside ${parent.getKey()} ${parent.constructor.name}${
+                  event != null ? ` (${event})` : ''
+                }`,
+              );
+            },
+            [],
+          )}
         />
         {isRichText ? (
           <>

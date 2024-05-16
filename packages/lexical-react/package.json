@@ -131,6 +131,36 @@
         "default": "./LexicalAutoLinkPlugin.js"
       }
     },
+    "./LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL": {
+      "import": {
+        "types": "./LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL.d.ts",
+        "development": "./LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL.dev.mjs",
+        "production": "./LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL.prod.mjs",
+        "node": "./LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL.node.mjs",
+        "default": "./LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL.mjs"
+      },
+      "require": {
+        "types": "./LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL.d.ts",
+        "development": "./LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL.dev.js",
+        "production": "./LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL.prod.js",
+        "default": "./LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL.js"
+      }
+    },
+    "./LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL.js": {
+      "import": {
+        "types": "./LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL.d.ts",
+        "development": "./LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL.dev.mjs",
+        "production": "./LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL.prod.mjs",
+        "node": "./LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL.node.mjs",
+        "default": "./LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL.mjs"
+      },
+      "require": {
+        "types": "./LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL.d.ts",
+        "development": "./LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL.dev.js",
+        "production": "./LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL.prod.js",
+        "default": "./LexicalBlockNodeNormalizerPlugin__EXPERIMENTAL.js"
+      }
+    },
     "./LexicalBlockWithAlignableContents": {
       "import": {
         "types": "./LexicalBlockWithAlignableContents.d.ts",

@@ -1,4 +1,4 @@
-name: Add Label to run extended tests on approve
+name: Extended tests on approve
 
 on:
   pull_request_review:

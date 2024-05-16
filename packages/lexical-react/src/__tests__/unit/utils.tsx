@@ -19,7 +19,7 @@ import {CollaborationPlugin} from '../../LexicalCollaborationPlugin';
 import {LexicalComposer} from '../../LexicalComposer';
 import {useLexicalComposerContext} from '../../LexicalComposerContext';
 import {ContentEditable} from '../../LexicalContentEditable';
-import LexicalErrorBoundary from '../../LexicalErrorBoundary';
+import {LexicalErrorBoundary} from '../../LexicalErrorBoundary';
 import {RichTextPlugin} from '../../LexicalRichTextPlugin';
 
 function Editor({

@@ -9,7 +9,7 @@
 
 import type {EditorState, LexicalEditor} from 'lexical';
 
-import typeof LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary';
+import {typeof LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 
 import * as React from 'react';
 

@@ -23,7 +23,7 @@ const BLOCK_REGEX =
 
 function flowTemplate(wwwName) {
   return (
-    headerTemplate.replace(/^( *\/)$/, '* @flow strict\n$1') +
+    headerTemplate.replace(/^( \*\/)$/m, '* @flow strict\n$1') +
     `
 /**
  * ${wwwName}

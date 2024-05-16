@@ -132,6 +132,9 @@
       "@lexical/react/LexicalTableOfContents": [
         "./packages/lexical-react/src/LexicalTableOfContents.tsx"
       ],
+      "@lexical/react/LexicalTableOfContentsPlugin": [
+        "./packages/lexical-react/src/LexicalTableOfContentsPlugin.tsx"
+      ],
       "@lexical/react/LexicalTablePlugin": [
         "./packages/lexical-react/src/LexicalTablePlugin.ts"
       ],

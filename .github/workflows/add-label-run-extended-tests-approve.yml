@@ -1,0 +1,24 @@
+name: Add Label to run extended tests on approve
+
+on:
+  pull_request_review:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  label_pull_requests:
+    if: github.event.review.state == 'approved' && !contains( github.event.pull_request.labels.*.name, 'extended-tests')
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - run: gh pr edit "$NUMBER" --add-label "extended-tests"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          NUMBER: ${{ github.event.pull_request.number }}
+  e2e-tests:
+    needs: label_pull_requests
+    uses: ./.github/workflows/call-e2e-all-tests.yml

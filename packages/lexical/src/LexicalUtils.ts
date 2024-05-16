@@ -799,7 +799,9 @@ export function isUnderline(
   metaKey: boolean,
   ctrlKey: boolean,
 ): boolean {
-  return key === 'U' && !altKey && controlOrMeta(metaKey, ctrlKey);
+  return (
+    key.toLowerCase() === 'u' && !altKey && controlOrMeta(metaKey, ctrlKey)
+  );
 }
 
 export function isParagraph(key: string, shiftKey: boolean): boolean {

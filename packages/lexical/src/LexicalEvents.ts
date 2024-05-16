@@ -516,7 +516,7 @@ function $canRemoveText(
 
 function isPossiblyAndroidKeyPress(timeStamp: number): boolean {
   return (
-    lastKeyCode === 'PageUp' &&
+    lastKeyCode === 'Dead' &&
     timeStamp < lastKeyDownTimeStamp + ANDROID_COMPOSITION_LATENCY
   );
 }

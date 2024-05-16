@@ -9,7 +9,7 @@ concurrency:
 
 jobs:
   label_issues:
-    if: github.event.review.state == 'commented'
+    if: github.event.review.state == 'commented' && !contains( github.event.pull_request.labels.*.name, '$LABELS')
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write

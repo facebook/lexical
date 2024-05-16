@@ -782,7 +782,7 @@ export async function applySelectionInputs(
                 bubbles: true,
                 cancelable: true,
                 ctrlKey: true,
-                key: 'Z',
+                key: 'z',
                 keyCode: 90,
               }),
             );
@@ -795,7 +795,7 @@ export async function applySelectionInputs(
                 bubbles: true,
                 cancelable: true,
                 ctrlKey: true,
-                key: 'Z',
+                key: 'z',
                 keyCode: 90,
                 shiftKey: true,
               }),

@@ -1142,7 +1142,6 @@ test.describe('TextFormatting', () => {
               <div draggable="false">
                 <img
                   alt="Yellow flower in tilt shift lens"
-                  class="focused"
                   draggable="false"
                   src="${SAMPLE_IMAGE_URL}"
                   style="height: inherit; max-width: 500px; width: inherit" />

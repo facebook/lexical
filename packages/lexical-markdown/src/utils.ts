@@ -18,11 +18,11 @@ import {$isCodeNode} from '@lexical/code';
 import {$isListItemNode, $isListNode} from '@lexical/list';
 import {$isHeadingNode, $isQuoteNode} from '@lexical/rich-text';
 import {
+  $isParagraphNode,
+  $isTextNode,
   type ElementNode,
   type LexicalNode,
   type TextFormatType,
-  $isParagraphNode,
-  $isTextNode,
 } from 'lexical';
 
 type MarkdownFormatKind =

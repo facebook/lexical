@@ -82,7 +82,7 @@ export function createMarkdownImport(
 
     // By default, removing empty paragraphs as md does not really
     // allow empty lines and uses them as delimiter.
-    // If you need empty lines set shouldIncludeBankLines = true.
+    // If you need empty lines set shouldPreserveNewLines = true.
     const children = root.getChildren();
     for (const child of children) {
       if (

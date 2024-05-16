@@ -1,6 +1,7 @@
 name: Lexical Tests (Extended)
 
 on:
+  workflow_call:
   pull_request:
     types: [labeled]
     paths-ignore:

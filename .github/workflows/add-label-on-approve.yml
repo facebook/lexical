@@ -9,14 +9,13 @@ concurrency:
 
 jobs:
   label_issues:
-    if: github.event.review.state == 'commented' && !contains( github.event.pull_request.labels.*.name, '$LABELS')
+    if: github.event.review.state == 'commented' && !contains( github.event.pull_request.labels.*.name, 'extended-tests')
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
     steps:
-      - run: gh pr edit "$NUMBER" --add-label "$LABELS"
+      - run: gh pr edit "$NUMBER" --add-label "extended-tests"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
           NUMBER: ${{ github.event.pull_request.number }}
-          LABELS: extended-tests

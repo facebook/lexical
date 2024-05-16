@@ -14,4 +14,5 @@
 import * as plugin from './LexicalEslintPlugin.js';
 
 export type {RulesOfLexicalOptions} from './rules/rules-of-lexical.js';
+// eslint-disable-next-line no-restricted-exports
 export default plugin;

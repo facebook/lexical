@@ -9,7 +9,7 @@
 import type {LexicalSubscription} from './useLexicalSubscription';
 import type {LexicalEditor} from 'lexical';
 
-import useLexicalSubscription from './useLexicalSubscription';
+import {useLexicalSubscription} from './useLexicalSubscription';
 
 function subscription(editor: LexicalEditor): LexicalSubscription<boolean> {
   return {
@@ -20,6 +20,10 @@ function subscription(editor: LexicalEditor): LexicalSubscription<boolean> {
   };
 }
 
-export default function useLexicalEditable(): boolean {
+export function useLexicalEditable(): boolean {
   return useLexicalSubscription(subscription);
 }
+
+/** @deprecated use the named export {@link useLexicalEditable} */
+// eslint-disable-next-line no-restricted-exports
+export default useLexicalEditable;

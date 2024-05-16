@@ -43,7 +43,7 @@ $ HOST=localhost PORT=1234 YPERSISTENCE=./yjs-wss-db npx y-websocket
 import {$getRoot, $createParagraphNode, $createTextNode} from 'lexical';
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
-import LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary';
+import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
 import * as Y from 'yjs';

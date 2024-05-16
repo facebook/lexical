@@ -1001,6 +1001,36 @@
         "default": "./LexicalTableOfContents.js"
       }
     },
+    "./LexicalTableOfContentsPlugin": {
+      "import": {
+        "types": "./LexicalTableOfContentsPlugin.d.ts",
+        "development": "./LexicalTableOfContentsPlugin.dev.mjs",
+        "production": "./LexicalTableOfContentsPlugin.prod.mjs",
+        "node": "./LexicalTableOfContentsPlugin.node.mjs",
+        "default": "./LexicalTableOfContentsPlugin.mjs"
+      },
+      "require": {
+        "types": "./LexicalTableOfContentsPlugin.d.ts",
+        "development": "./LexicalTableOfContentsPlugin.dev.js",
+        "production": "./LexicalTableOfContentsPlugin.prod.js",
+        "default": "./LexicalTableOfContentsPlugin.js"
+      }
+    },
+    "./LexicalTableOfContentsPlugin.js": {
+      "import": {
+        "types": "./LexicalTableOfContentsPlugin.d.ts",
+        "development": "./LexicalTableOfContentsPlugin.dev.mjs",
+        "production": "./LexicalTableOfContentsPlugin.prod.mjs",
+        "node": "./LexicalTableOfContentsPlugin.node.mjs",
+        "default": "./LexicalTableOfContentsPlugin.mjs"
+      },
+      "require": {
+        "types": "./LexicalTableOfContentsPlugin.d.ts",
+        "development": "./LexicalTableOfContentsPlugin.dev.js",
+        "production": "./LexicalTableOfContentsPlugin.prod.js",
+        "default": "./LexicalTableOfContentsPlugin.js"
+      }
+    },
     "./LexicalTablePlugin": {
       "import": {
         "types": "./LexicalTablePlugin.d.ts",

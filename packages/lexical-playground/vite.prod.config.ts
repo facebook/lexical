@@ -62,7 +62,7 @@ export default defineConfig({
       exclude: '/**/node_modules/**',
       extensions: ['jsx', 'js', 'ts', 'tsx', 'mjs'],
       plugins: ['@babel/plugin-transform-flow-strip-types'],
-      presets: ['@babel/preset-react'],
+      presets: [['@babel/preset-react', {runtime: 'automatic'}]],
     }),
     react(),
     viteCopyEsm(),

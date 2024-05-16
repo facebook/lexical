@@ -16,6 +16,6 @@ jobs:
     steps:
       - run: gh pr edit "$NUMBER" --add-label "$LABELS"
         env:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NUMBER: ${{ github.event.pull_request.number }}
           LABELS: extended-tests

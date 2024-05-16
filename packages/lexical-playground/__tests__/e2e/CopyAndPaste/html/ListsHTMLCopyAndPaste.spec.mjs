@@ -391,7 +391,10 @@ test.describe('HTML Lists CopyAndPaste', () => {
             <span data-lexical-text="true">one</span>
           </li>
         </ul>
-        <hr class="" contenteditable="false" data-lexical-decorator="true" />
+        <hr
+          class="PlaygroundEditorTheme__hr"
+          contenteditable="false"
+          data-lexical-decorator="true" />
         <ul class="PlaygroundEditorTheme__ul">
           <li
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__ltr"

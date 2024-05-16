@@ -45,7 +45,7 @@ type TextFormatTransformersIndex = Readonly<{
 
 export function createMarkdownImport(
   transformers: Array<Transformer>,
-  shouldIncludeBlankLines = false,
+  shouldPreserveNewLines = false,
 ): (markdownString: string, node?: ElementNode) => void {
   const byType = transformersByType(transformers);
   const textFormatTransformersIndex = createTextFormatTransformersIndex(
@@ -86,7 +86,7 @@ export function createMarkdownImport(
     const children = root.getChildren();
     for (const child of children) {
       if (
-        !shouldIncludeBlankLines &&
+        !shouldPreserveNewLines &&
         isEmptyParagraph(child) &&
         root.getChildrenSize() > 1
       ) {

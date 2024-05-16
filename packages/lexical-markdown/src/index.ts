@@ -72,11 +72,11 @@ function $convertFromMarkdownString(
   markdown: string,
   transformers: Array<Transformer> = TRANSFORMERS,
   node?: ElementNode,
-  shouldIncludeBlankLines = false,
+  shouldPreserveNewLines = false,
 ): void {
   const importMarkdown = createMarkdownImport(
     transformers,
-    shouldIncludeBlankLines,
+    shouldPreserveNewLines,
   );
   return importMarkdown(markdown, node);
 }
@@ -84,9 +84,12 @@ function $convertFromMarkdownString(
 function $convertToMarkdownString(
   transformers: Array<Transformer> = TRANSFORMERS,
   node?: ElementNode,
-  isNewlineDelimited: boolean = true,
+  shouldPreserveNewLines: boolean = false,
 ): string {
-  const exportMarkdown = createMarkdownExport(transformers, isNewlineDelimited);
+  const exportMarkdown = createMarkdownExport(
+    transformers,
+    shouldPreserveNewLines,
+  );
   return exportMarkdown(node);
 }
 

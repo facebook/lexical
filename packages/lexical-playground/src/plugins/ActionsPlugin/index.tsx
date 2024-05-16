@@ -174,13 +174,13 @@ export default function ActionsPlugin({
           PLAYGROUND_TRANSFORMERS,
           undefined, // node
           // TODO: make a playground setting for this in lexical-playground/src/Settings.tsx
-          true, // include blank lines
+          true, // shouldPreserveNewLines
         );
       } else {
         const markdown = $convertToMarkdownString(
           PLAYGROUND_TRANSFORMERS,
           undefined, //node
-          false, // isNewlineDelimited
+          true, // shouldPreserveNewLines
         );
         root
           .clear()

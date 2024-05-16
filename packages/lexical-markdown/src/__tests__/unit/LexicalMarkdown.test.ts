@@ -28,8 +28,7 @@ describe('Markdown', () => {
     md: string;
     skipExport?: true;
     skipImport?: true;
-    shouldIncludeBlankLines?: true;
-    isNewlineDelimited?: false;
+    shouldPreserveNewLines?: true;
   }>;
 
   const URL = 'https://lexical.dev';
@@ -152,13 +151,12 @@ describe('Markdown', () => {
     {
       html: '<h1><span style="white-space: pre-wrap;">Hello</span></h1><p><br></p><p><br></p><p><br></p><p><b><strong style="white-space: pre-wrap;">world</strong></b><span style="white-space: pre-wrap;">!</span></p>',
       md: '# Hello\n\n\n\n**world**!',
-      shouldIncludeBlankLines: true,
+      shouldPreserveNewLines: true,
     },
     {
       html: '<h1><span style="white-space: pre-wrap;">Hello</span></h1><p><span style="white-space: pre-wrap;">hi</span></p><p><br></p><p><b><strong style="white-space: pre-wrap;">world</strong></b></p><p><br></p><p><span style="white-space: pre-wrap;">hi</span></p><blockquote><span style="white-space: pre-wrap;">hello</span><br><span style="white-space: pre-wrap;">hello</span></blockquote><p><br></p><h1><span style="white-space: pre-wrap;">hi</span></h1><p><br></p><p><span style="white-space: pre-wrap;">hi</span></p>',
-      isNewlineDelimited: false,
       md: '# Hello\nhi\n\n**world**\n\nhi\n> hello\n> hello\n\n# hi\n\nhi',
-      shouldIncludeBlankLines: true,
+      shouldPreserveNewLines: true,
     },
     {
       // Import only: export will use * instead of _ due to registered transformers order
@@ -238,7 +236,7 @@ describe('Markdown', () => {
     html,
     md,
     skipImport,
-    shouldIncludeBlankLines,
+    shouldPreserveNewLines,
   } of IMPORT_AND_EXPORT) {
     if (skipImport) {
       continue;
@@ -262,7 +260,7 @@ describe('Markdown', () => {
             md,
             [...TRANSFORMERS, HIGHLIGHT_TEXT_MATCH_IMPORT],
             undefined,
-            shouldIncludeBlankLines,
+            shouldPreserveNewLines,
           ),
         {
           discrete: true,
@@ -275,7 +273,12 @@ describe('Markdown', () => {
     });
   }
 
-  for (const {html, md, skipExport, isNewlineDelimited} of IMPORT_AND_EXPORT) {
+  for (const {
+    html,
+    md,
+    skipExport,
+    shouldPreserveNewLines,
+  } of IMPORT_AND_EXPORT) {
     if (skipExport) {
       continue;
     }
@@ -312,7 +315,7 @@ describe('Markdown', () => {
             $convertToMarkdownString(
               TRANSFORMERS,
               undefined,
-              isNewlineDelimited,
+              shouldPreserveNewLines,
             ),
           ),
       ).toBe(md);

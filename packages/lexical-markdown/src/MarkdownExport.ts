@@ -26,9 +26,10 @@ import {isEmptyParagraph, transformersByType} from './utils';
 
 export function createMarkdownExport(
   transformers: Array<Transformer>,
-  isNewlineDelimited: boolean = true,
+  shouldPreserveNewLines: boolean = false,
 ): (node?: ElementNode) => string {
   const byType = transformersByType(transformers);
+  const isNewlineDelimited = !shouldPreserveNewLines;
 
   // Export only uses text formats that are responsible for single format
   // e.g. it will filter out *** (bold, italic) and instead use separate ** and *

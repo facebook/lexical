@@ -9,7 +9,7 @@ concurrency:
 
 jobs:
   label_issues:
-    if: github.event.review.state == 'approved'
+    if: github.event.review.state == 'commented'
     runs-on: ubuntu-latest
     permissions:
       issues: write

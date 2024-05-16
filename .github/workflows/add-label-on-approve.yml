@@ -8,7 +8,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  label_issues:
+  label_approved_pr:
     if: github.event.review.state == 'commented' && !contains( github.event.pull_request.labels.*.name, 'extended-tests')
     runs-on: ubuntu-latest
     permissions:
@@ -20,5 +20,5 @@ jobs:
           GH_REPO: ${{ github.repository }}
           NUMBER: ${{ github.event.pull_request.number }}
   e2e-tests:
-    needs: label_issues
+    needs: label_approved_pr
     uses: ./.github/workflows/call-e2e-all-tests.yml

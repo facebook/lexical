@@ -19,3 +19,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
           NUMBER: ${{ github.event.pull_request.number }}
+  extended-tests:
+    needs: label_issues
+    uses: ./.github/workflows/tests-extended.yml

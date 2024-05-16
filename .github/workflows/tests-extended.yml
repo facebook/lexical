@@ -13,5 +13,5 @@ concurrency:
 
 jobs:
   e2e-tests:
-    if: contains(github.event.pull_request.labels.*.name, 'extended-tests')
+    if: github.repository_owner == 'facebook' && contains(github.event.pull_request.labels.*.name, 'extended-tests')
     uses: ./.github/workflows/call-e2e-all-tests.yml

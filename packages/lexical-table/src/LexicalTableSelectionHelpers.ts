@@ -32,6 +32,7 @@ import {
   $getNearestNodeFromDOMNode,
   $getPreviousSelection,
   $getSelection,
+  $isDecoratorNode,
   $isElementNode,
   $isRangeSelection,
   $isTextNode,
@@ -1356,6 +1357,11 @@ function $handleArrowKey(
       const anchorOffset = anchor.offset;
       const anchorNode = anchor.getNode();
       if (!anchorNode) {
+        return false;
+      }
+
+      const selectedNodes = selection.getNodes();
+      if (selectedNodes.length === 1 && $isDecoratorNode(selectedNodes[0])) {
         return false;
       }
 

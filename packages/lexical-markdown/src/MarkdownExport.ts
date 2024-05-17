@@ -128,7 +128,7 @@ function exportChildren(
         exportTextFormat(child, child.getTextContent(), textTransformersIndex),
       );
     } else if ($isElementNode(child)) {
-      // empty para returns ""
+      // empty paragraph returns ""
       output.push(
         exportChildren(child, textTransformersIndex, textMatchTransformers),
       );

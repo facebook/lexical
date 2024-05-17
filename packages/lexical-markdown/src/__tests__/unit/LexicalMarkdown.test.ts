@@ -28,6 +28,7 @@ describe('Markdown', () => {
     md: string;
     skipExport?: true;
     skipImport?: true;
+    shouldPreserveNewLines?: true;
   }>;
 
   const URL = 'https://lexical.dev';
@@ -148,6 +149,16 @@ describe('Markdown', () => {
       md: '*Hello **world**!*',
     },
     {
+      html: '<h1><span style="white-space: pre-wrap;">Hello</span></h1><p><br></p><p><br></p><p><br></p><p><b><strong style="white-space: pre-wrap;">world</strong></b><span style="white-space: pre-wrap;">!</span></p>',
+      md: '# Hello\n\n\n\n**world**!',
+      shouldPreserveNewLines: true,
+    },
+    {
+      html: '<h1><span style="white-space: pre-wrap;">Hello</span></h1><p><span style="white-space: pre-wrap;">hi</span></p><p><br></p><p><b><strong style="white-space: pre-wrap;">world</strong></b></p><p><br></p><p><span style="white-space: pre-wrap;">hi</span></p><blockquote><span style="white-space: pre-wrap;">hello</span><br><span style="white-space: pre-wrap;">hello</span></blockquote><p><br></p><h1><span style="white-space: pre-wrap;">hi</span></h1><p><br></p><p><span style="white-space: pre-wrap;">hi</span></p>',
+      md: '# Hello\nhi\n\n**world**\n\nhi\n> hello\n> hello\n\n# hi\n\nhi',
+      shouldPreserveNewLines: true,
+    },
+    {
       // Import only: export will use * instead of _ due to registered transformers order
       html: '<p><i><em style="white-space: pre-wrap;">Hello</em></i><span style="white-space: pre-wrap;"> world</span></p>',
       md: '_Hello_ world',
@@ -221,7 +232,12 @@ describe('Markdown', () => {
     },
   };
 
-  for (const {html, md, skipImport} of IMPORT_AND_EXPORT) {
+  for (const {
+    html,
+    md,
+    skipImport,
+    shouldPreserveNewLines,
+  } of IMPORT_AND_EXPORT) {
     if (skipImport) {
       continue;
     }
@@ -240,10 +256,12 @@ describe('Markdown', () => {
 
       editor.update(
         () =>
-          $convertFromMarkdownString(md, [
-            ...TRANSFORMERS,
-            HIGHLIGHT_TEXT_MATCH_IMPORT,
-          ]),
+          $convertFromMarkdownString(
+            md,
+            [...TRANSFORMERS, HIGHLIGHT_TEXT_MATCH_IMPORT],
+            undefined,
+            shouldPreserveNewLines,
+          ),
         {
           discrete: true,
         },
@@ -255,7 +273,12 @@ describe('Markdown', () => {
     });
   }
 
-  for (const {html, md, skipExport} of IMPORT_AND_EXPORT) {
+  for (const {
+    html,
+    md,
+    skipExport,
+    shouldPreserveNewLines,
+  } of IMPORT_AND_EXPORT) {
     if (skipExport) {
       continue;
     }
@@ -288,7 +311,13 @@ describe('Markdown', () => {
       expect(
         editor
           .getEditorState()
-          .read(() => $convertToMarkdownString(TRANSFORMERS)),
+          .read(() =>
+            $convertToMarkdownString(
+              TRANSFORMERS,
+              undefined,
+              shouldPreserveNewLines,
+            ),
+          ),
       ).toBe(md);
     });
   }

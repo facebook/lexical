@@ -93,8 +93,10 @@ async function shareDoc(doc: SerializedDocument): Promise<void> {
 
 export default function ActionsPlugin({
   isRichText,
+  shouldPreserveNewLinesInMarkdown,
 }: {
   isRichText: boolean;
+  shouldPreserveNewLinesInMarkdown: boolean;
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
   const [isEditable, setIsEditable] = useState(() => editor.isEditable());
@@ -172,9 +174,15 @@ export default function ActionsPlugin({
         $convertFromMarkdownString(
           firstChild.getTextContent(),
           PLAYGROUND_TRANSFORMERS,
+          undefined, // node
+          shouldPreserveNewLinesInMarkdown,
         );
       } else {
-        const markdown = $convertToMarkdownString(PLAYGROUND_TRANSFORMERS);
+        const markdown = $convertToMarkdownString(
+          PLAYGROUND_TRANSFORMERS,
+          undefined, //node
+          shouldPreserveNewLinesInMarkdown,
+        );
         root
           .clear()
           .append(
@@ -183,7 +191,7 @@ export default function ActionsPlugin({
       }
       root.selectEnd();
     });
-  }, [editor]);
+  }, [editor, shouldPreserveNewLinesInMarkdown]);
 
   return (
     <div className="actions">

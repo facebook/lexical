@@ -446,8 +446,16 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
       }
       // Ensure custom nodes implement required methods.
       if (__DEV__) {
+        // ArtificialNode__DO_NOT_USE can get renamed, so we use the type
+        const nodeType =
+          Object.prototype.hasOwnProperty.call(klass, 'getType') &&
+          klass.getType();
         const name = klass.name;
-        if (name !== 'RootNode' && name !== 'ArtificialNode__DO_NOT_USE') {
+        if (
+          name !== 'RootNode' &&
+          nodeType !== 'root' &&
+          nodeType !== 'artificial'
+        ) {
           const proto = klass.prototype;
           ['getType', 'clone'].forEach((method) => {
             // eslint-disable-next-line no-prototype-builtins

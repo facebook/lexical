@@ -22,3 +22,14 @@ jobs:
   e2e-tests:
     if: github.repository_owner == 'facebook'
     uses: ./.github/workflows/call-e2e-canary-tests.yml
+
+  react-beta-REMOVE-THIS-BEFORE-MERGE:
+    uses: ./.github/workflows/call-e2e-test.yml
+    with:
+      os: 'macos-latest'
+      browser: 'chromium'
+      node-version: 18.18.0
+      events-mode: 'modern-events'
+      editor-mode: 'rich-text'
+      prod: false
+      override-react-version: beta

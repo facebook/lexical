@@ -129,8 +129,6 @@ jobs:
         # react beta to reduce cost impact
         editor-mode: ['rich-text']
         prod: [false]
-    # TODO: https://github.com/facebook/lexical/issues/6126
-    if: false
     uses: ./.github/workflows/call-e2e-test.yml
     with:
       os: 'macos-latest'

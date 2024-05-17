@@ -779,8 +779,8 @@ export async function applySelectionInputs(
               new KeyboardEvent('keydown', {
                 bubbles: true,
                 cancelable: true,
-                code: 'KeyZ',
                 ctrlKey: true,
+                key: 'z',
                 keyCode: 90,
               }),
             );
@@ -792,8 +792,8 @@ export async function applySelectionInputs(
               new KeyboardEvent('keydown', {
                 bubbles: true,
                 cancelable: true,
-                code: 'KeyZ',
                 ctrlKey: true,
+                key: 'z',
                 keyCode: 90,
                 shiftKey: true,
               }),

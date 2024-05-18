@@ -72,7 +72,6 @@ const wwwMappings = {
   'prismjs/components/prism-swift': 'prism-swift',
   'prismjs/components/prism-typescript': 'prism-typescript',
   'react-dom': 'ReactDOMComet',
-  'react/jsx-runtime': 'jsx-runtime',
 };
 
 /**
@@ -193,7 +192,7 @@ async function build(name, inputFile, outputPath, outputFile, isProd, format) {
               tsconfig: path.resolve('./tsconfig.build.json'),
             },
           ],
-          ['@babel/preset-react', {runtime: 'automatic'}],
+          ['@babel/preset-react', {runtime: isWWW ? 'classic' : 'automatic'}],
         ],
       }),
       {

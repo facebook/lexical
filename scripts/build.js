@@ -72,6 +72,7 @@ const wwwMappings = {
   'prismjs/components/prism-swift': 'prism-swift',
   'prismjs/components/prism-typescript': 'prism-typescript',
   'react-dom': 'ReactDOMComet',
+  'react/jsx-runtime': 'jsx-runtime',
 };
 
 /**

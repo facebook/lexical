@@ -118,7 +118,11 @@ export class TableObserver {
           const target = record.target;
           const nodeName = target.nodeName;
 
-          if (nodeName === 'TABLE' || nodeName === 'TR') {
+          if (
+            nodeName === 'TABLE' ||
+            nodeName === 'TBODY' ||
+            nodeName === 'TR'
+          ) {
             gridNeedsRedraw = true;
             break;
           }

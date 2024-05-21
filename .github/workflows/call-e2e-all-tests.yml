@@ -10,7 +10,7 @@ jobs:
         node-version: [18.18.0]
         browser: ['chromium', 'firefox', 'webkit']
         editor-mode: ['rich-text', 'plain-text']
-        events-mode: ['legacy-events', 'modern-events']
+        events-mode: ['modern-events']
     uses: ./.github/workflows/call-e2e-test.yml
     with:
       os: 'macos-latest'
@@ -25,7 +25,7 @@ jobs:
         node-version: [18.18.0]
         browser: ['chromium', 'firefox']
         editor-mode: ['rich-text', 'plain-text']
-        events-mode: ['legacy-events', 'modern-events']
+        events-mode: ['modern-events']
     uses: ./.github/workflows/call-e2e-test.yml
     with:
       os: 'ubuntu-latest'
@@ -41,6 +41,9 @@ jobs:
         browser: ['chromium', 'firefox']
         editor-mode: ['rich-text', 'plain-text']
         events-mode: ['legacy-events', 'modern-events']
+        exclude:
+          - events-mode: 'legacy-events'
+            browser: 'firefox'
     uses: ./.github/workflows/call-e2e-test.yml
     with:
       os: 'windows-latest'

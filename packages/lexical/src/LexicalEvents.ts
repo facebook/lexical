@@ -1005,6 +1005,10 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
     return;
   }
 
+  if (key == null) {
+    return;
+  }
+
   if (isMoveForward(key, ctrlKey, altKey, metaKey)) {
     dispatchCommand(editor, KEY_ARROW_RIGHT_COMMAND, event);
   } else if (isMoveToEnd(key, ctrlKey, shiftKey, altKey, metaKey)) {

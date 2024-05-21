@@ -121,6 +121,10 @@ export function internalGetActiveEditor(): LexicalEditor | null {
   return activeEditor;
 }
 
+export function internalGetActiveEditorState(): EditorState | null {
+  return activeEditorState;
+}
+
 export function $applyTransforms(
   editor: LexicalEditor,
   node: LexicalNode,

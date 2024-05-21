@@ -150,7 +150,7 @@ test.describe('Markdown', () => {
     },
     {
       expectation:
-        '<hr class="" data-lexical-decorator="true" contenteditable="false" /><p class="PlaygroundEditorTheme__paragraph"><br></p>',
+        '<hr class="PlaygroundEditorTheme__hr" data-lexical-decorator="true" contenteditable="false" /><p class="PlaygroundEditorTheme__paragraph"><br></p>',
       importExpectation: '',
       isBlockTest: true,
       markdownImport: '',
@@ -159,7 +159,7 @@ test.describe('Markdown', () => {
     },
     {
       expectation:
-        '<hr class="" data-lexical-decorator="true" contenteditable="false" /><p class="PlaygroundEditorTheme__paragraph"><br></p>',
+        '<hr class="PlaygroundEditorTheme__hr" data-lexical-decorator="true" contenteditable="false" /><p class="PlaygroundEditorTheme__paragraph"><br></p>',
       importExpectation: '',
       isBlockTest: true,
       markdownImport: '',
@@ -493,14 +493,20 @@ test.describe('Markdown', () => {
     },
     {
       html: html`
-        <hr class="" contenteditable="false" data-lexical-decorator="true" />
+        <hr
+          class="PlaygroundEditorTheme__hr"
+          contenteditable="false"
+          data-lexical-decorator="true" />
         <p><br /></p>
       `,
       text: '--- ',
     },
     {
       html: html`
-        <hr class="" contenteditable="false" data-lexical-decorator="true" />
+        <hr
+          class="PlaygroundEditorTheme__hr"
+          contenteditable="false"
+          data-lexical-decorator="true" />
         <p><br /></p>
       `,
       text: '*** ',
@@ -1171,7 +1177,10 @@ const TYPED_MARKDOWN_HTML = html`
     dir="ltr">
     <span data-lexical-text="true">Quote</span>
   </blockquote>
-  <hr class="" contenteditable="false" data-lexical-decorator="true" />
+  <hr
+    class="PlaygroundEditorTheme__hr"
+    contenteditable="false"
+    data-lexical-decorator="true" />
   <ul class="PlaygroundEditorTheme__ul">
     <li
       value="1"
@@ -1385,7 +1394,10 @@ const IMPORTED_MARKDOWN_HTML = html`
   <h3 class="PlaygroundEditorTheme__h3 PlaygroundEditorTheme__ltr" dir="ltr">
     <span data-lexical-text="true">Horizontal Rules</span>
   </h3>
-  <hr class="" contenteditable="false" data-lexical-decorator="true" />
+  <hr
+    class="PlaygroundEditorTheme__hr"
+    contenteditable="false"
+    data-lexical-decorator="true" />
   <h3 class="PlaygroundEditorTheme__h3 PlaygroundEditorTheme__ltr" dir="ltr">
     <span data-lexical-text="true">Blockquotes</span>
   </h3>

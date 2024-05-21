@@ -442,3 +442,20 @@
 .PlaygroundEditorTheme__autocomplete {
   color: #ccc;
 }
+.PlaygroundEditorTheme__hr {
+  padding: 2px 2px;
+  border: none;
+  margin: 1em 0;
+  cursor: pointer;
+}
+.PlaygroundEditorTheme__hr:after {
+  content: '';
+  display: block;
+  height: 2px;
+  background-color: #ccc;
+  line-height: 2px;
+}
+.PlaygroundEditorTheme__hr.selected {
+  outline: 2px solid rgb(60, 132, 244);
+  user-select: none;
+}

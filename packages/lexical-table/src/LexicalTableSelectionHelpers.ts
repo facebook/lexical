@@ -32,6 +32,7 @@ import {
   $getNearestNodeFromDOMNode,
   $getPreviousSelection,
   $getSelection,
+  $isDecoratorNode,
   $isElementNode,
   $isRangeSelection,
   $isTextNode,
@@ -1359,6 +1360,11 @@ function $handleArrowKey(
         return false;
       }
 
+      const selectedNodes = selection.getNodes();
+      if (selectedNodes.length === 1 && $isDecoratorNode(selectedNodes[0])) {
+        return false;
+      }
+
       if (
         isExitingTableAnchor(anchorType, anchorOffset, anchorNode, direction)
       ) {
@@ -1649,9 +1655,19 @@ function $getTableEdgeCursorPosition(
   selection: RangeSelection,
   tableNode: TableNode,
 ) {
+  const tableNodeParent = tableNode.getParent();
+  if (!tableNodeParent) {
+    return undefined;
+  }
+
+  const tableNodeParentDOM = editor.getElementByKey(tableNodeParent.getKey());
+  if (!tableNodeParentDOM) {
+    return undefined;
+  }
+
   // TODO: Add support for nested tables
   const domSelection = window.getSelection();
-  if (!domSelection || domSelection.anchorNode !== editor.getRootElement()) {
+  if (!domSelection || domSelection.anchorNode !== tableNodeParentDOM) {
     return undefined;
   }
 

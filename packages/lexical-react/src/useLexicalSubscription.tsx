@@ -20,7 +20,7 @@ export type LexicalSubscription<T> = {
 /**
  * Shortcut to Lexical subscriptions when values are used for render.
  */
-export default function useLexicalSubscription<T>(
+export function useLexicalSubscription<T>(
   subscription: (editor: LexicalEditor) => LexicalSubscription<T>,
 ): T {
   const [editor] = useLexicalComposerContext();
@@ -46,3 +46,7 @@ export default function useLexicalSubscription<T>(
 
   return value;
 }
+
+/** @deprecated use the named export {@link useLexicalSubscription} */
+// eslint-disable-next-line no-restricted-exports
+export default useLexicalSubscription;

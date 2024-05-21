@@ -10,6 +10,7 @@ import {IconButton, Image} from '@chakra-ui/react';
 import {getRPCService} from '@webext-pegasus/rpc';
 import * as React from 'react';
 
+import {useExtensionStore} from '../../../store';
 import {IInjectedPegasusService} from '../../injected/InjectedPegasusService';
 
 interface Props {
@@ -18,6 +19,9 @@ interface Props {
 }
 
 export function EditorInspectorButton({tabID, setErrorMessage}: Props) {
+  const {isSelecting} = useExtensionStore();
+  const isActive = isSelecting[tabID] ?? false;
+
   const handleClick = () => {
     const injectedPegasusService = getRPCService<IInjectedPegasusService>(
       'InjectedPegasusService',
@@ -41,6 +45,8 @@ export function EditorInspectorButton({tabID, setErrorMessage}: Props) {
       size="xs"
       onClick={handleClick}
       icon={<Image w={5} src="/inspect.svg" />}
+      isActive={isActive}
+      _active={{bg: 'blue.100'}}
     />
   );
 }

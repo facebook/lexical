@@ -92,8 +92,6 @@ async function expectTransform(opts) {
       const {code} = babel.transform(fmt`${opts.codeBefore}`, {
         plugins: [[transformErrorMessages, {errorCodesPath, ...opts.opts}]],
       });
-      const afterCode = fmt`${code}`;
-      console.log({afterCode, code});
       expect(fmt`${code}`).toEqual(fmt`${opts.codeExpect}`);
     },
   );

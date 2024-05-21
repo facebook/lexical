@@ -6,11 +6,61 @@
  *
  */
 
-import type {EditorState, LexicalEditor} from 'lexical';
+import type {EditorState, LexicalEditor, SerializedEditorState} from 'lexical';
 
 import {CLEAR_HISTORY_COMMAND} from 'lexical';
 
 import {version} from '../package.json';
+
+export interface SerializedDocument {
+  /** The serialized editorState produced by editorState.toJSON() */
+  editorState: SerializedEditorState;
+  /** The time this document was created in epoch milliseconds (Date.now()) */
+  lastSaved: number;
+  /** The source of the document, defaults to Lexical */
+  source: string | 'Lexical';
+  /** The version of Lexical that produced this document */
+  version: string;
+}
+
+/**
+ * Generates a SerializedDocument from the given EditorState
+ * @param editorState - the EditorState to serialize
+ * @param config - An object that optionally contains source and lastSaved.
+ * source defaults to Lexical and lastSaved defaults to the current time in
+ * epoch milliseconds.
+ */
+export function serializedDocumentFromEditorState(
+  editorState: EditorState,
+  config: Readonly<{
+    source?: string;
+    lastSaved?: number;
+  }> = Object.freeze({}),
+): SerializedDocument {
+  return {
+    editorState: editorState.toJSON(),
+    lastSaved: config.lastSaved || Date.now(),
+    source: config.source || 'Lexical',
+    version,
+  };
+}
+
+/**
+ * Parse an EditorState from the given editor and document
+ *
+ * @param editor - The lexical editor
+ * @param maybeStringifiedDocument - The contents of a .lexical file (as a JSON string, or already parsed)
+ */
+export function editorStateFromSerializedDocument(
+  editor: LexicalEditor,
+  maybeStringifiedDocument: SerializedDocument | string,
+): EditorState {
+  const json =
+    typeof maybeStringifiedDocument === 'string'
+      ? JSON.parse(maybeStringifiedDocument)
+      : maybeStringifiedDocument;
+  return editor.parseEditorState(json.editorState);
+}
 
 /**
  * Takes a file and inputs its content into the editor state as an input field.
@@ -18,11 +68,7 @@ import {version} from '../package.json';
  */
 export function importFile(editor: LexicalEditor) {
   readTextFileFromSystem((text) => {
-    const json = JSON.parse(text);
-    const editorState = editor.parseEditorState(
-      JSON.stringify(json.editorState),
-    );
-    editor.setEditorState(editorState);
+    editor.setEditorState(editorStateFromSerializedDocument(editor, text));
     editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined);
   });
 }
@@ -50,18 +96,11 @@ function readTextFileFromSystem(callback: (text: string) => void) {
   input.click();
 }
 
-type DocumentJSON = {
-  editorState: EditorState;
-  lastSaved: number;
-  source: string | 'Lexical';
-  version: typeof version;
-};
-
 /**
  * Generates a .lexical file to be downloaded by the browser containing the current editor state.
  * @param editor - The lexical editor.
  * @param config - An object that optionally contains fileName and source. fileName defaults to
- * the current date (as a string) and source defaults to lexical.
+ * the current date (as a string) and source defaults to Lexical.
  */
 export function exportFile(
   editor: LexicalEditor,
@@ -71,19 +110,19 @@ export function exportFile(
   }> = Object.freeze({}),
 ) {
   const now = new Date();
-  const editorState = editor.getEditorState();
-  const documentJSON: DocumentJSON = {
-    editorState: editorState,
-    lastSaved: now.getTime(),
-    source: config.source || 'Lexical',
-    version,
-  };
+  const serializedDocument = serializedDocumentFromEditorState(
+    editor.getEditorState(),
+    {
+      ...config,
+      lastSaved: now.getTime(),
+    },
+  );
   const fileName = config.fileName || now.toISOString();
-  exportBlob(documentJSON, `${fileName}.lexical`);
+  exportBlob(serializedDocument, `${fileName}.lexical`);
 }
 
 // Adapted from https://stackoverflow.com/a/19328891/2013580
-function exportBlob(data: DocumentJSON, fileName: string) {
+function exportBlob(data: SerializedDocument, fileName: string) {
   const a = document.createElement('a');
   const body = document.body;
 

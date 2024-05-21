@@ -19,7 +19,7 @@ import {AutoFocusPlugin} from '@lexical/react/LexicalAutoFocusPlugin';
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary';
+import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {HashtagPlugin} from '@lexical/react/LexicalHashtagPlugin';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {LexicalNestedComposer} from '@lexical/react/LexicalNestedComposer';
@@ -48,6 +48,7 @@ import {Suspense, useCallback, useEffect, useRef, useState} from 'react';
 import {createWebsocketProvider} from '../collaboration';
 import {useSettings} from '../context/SettingsContext';
 import {useSharedHistoryContext} from '../context/SharedHistoryContext';
+import brokenImage from '../images/image-broken.svg';
 import EmojisPlugin from '../plugins/EmojisPlugin';
 import KeywordsPlugin from '../plugins/KeywordsPlugin';
 import LinkPlugin from '../plugins/LinkPlugin';
@@ -72,6 +73,9 @@ function useSuspenseImage(src: string) {
         imageCache.add(src);
         resolve(null);
       };
+      img.onerror = () => {
+        imageCache.add(src);
+      };
     });
   }
 }
@@ -84,6 +88,7 @@ function LazyImage({
   width,
   height,
   maxWidth,
+  onError,
 }: {
   altText: string;
   className: string | null;
@@ -92,6 +97,7 @@ function LazyImage({
   maxWidth: number;
   src: string;
   width: 'inherit' | number;
+  onError: () => void;
 }): JSX.Element {
   useSuspenseImage(src);
   return (
@@ -104,6 +110,21 @@ function LazyImage({
         height,
         maxWidth,
         width,
+      }}
+      onError={onError}
+      draggable="false"
+    />
+  );
+}
+
+function BrokenImage(): JSX.Element {
+  return (
+    <img
+      src={brokenImage}
+      style={{
+        height: 200,
+        opacity: 0.2,
+        width: 200,
       }}
       draggable="false"
     />
@@ -142,6 +163,7 @@ export default function ImageComponent({
   const [editor] = useLexicalComposerContext();
   const [selection, setSelection] = useState<BaseSelection | null>(null);
   const activeEditorRef = useRef<LexicalEditor | null>(null);
+  const [isLoadError, setIsLoadError] = useState<boolean>(false);
 
   const $onDelete = useCallback(
     (payload: KeyboardEvent) => {
@@ -371,20 +393,26 @@ export default function ImageComponent({
     <Suspense fallback={null}>
       <>
         <div draggable={draggable}>
-          <LazyImage
-            className={
-              isFocused
-                ? `focused ${$isNodeSelection(selection) ? 'draggable' : ''}`
-                : null
-            }
-            src={src}
-            altText={altText}
-            imageRef={imageRef}
-            width={width}
-            height={height}
-            maxWidth={maxWidth}
-          />
+          {isLoadError ? (
+            <BrokenImage />
+          ) : (
+            <LazyImage
+              className={
+                isFocused
+                  ? `focused ${$isNodeSelection(selection) ? 'draggable' : ''}`
+                  : null
+              }
+              src={src}
+              altText={altText}
+              imageRef={imageRef}
+              width={width}
+              height={height}
+              maxWidth={maxWidth}
+              onError={() => setIsLoadError(true)}
+            />
+          )}
         </div>
+
         {showCaption && (
           <div className="image-caption-container">
             <LexicalNestedComposer initialEditor={caption}>
@@ -428,7 +456,7 @@ export default function ImageComponent({
             maxWidth={maxWidth}
             onResizeStart={onResizeStart}
             onResizeEnd={onResizeEnd}
-            captionsEnabled={captionsEnabled}
+            captionsEnabled={!isLoadError && captionsEnabled}
           />
         )}
       </>

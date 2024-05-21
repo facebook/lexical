@@ -104,6 +104,7 @@ export type EditorThemeClasses = {
     h5?: EditorThemeClassName;
     h6?: EditorThemeClassName;
   };
+  hr?: EditorThemeClassName;
   image?: EditorThemeClassName;
   link?: EditorThemeClassName;
   list?: {
@@ -457,7 +458,8 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
           );
         }
 
-        if (name !== 'RootNode') {
+        if (name !== 'RootNode' && name !== 'ArtificialNode__DO_NOT_USE') {
+
           const proto = klass.prototype;
           ['getType', 'clone'].forEach((method) => {
             // eslint-disable-next-line no-prototype-builtins

@@ -94,13 +94,11 @@ function resolveExternalEsm(id) {
  * party dependencies or peerDependencies that we do not want to include
  * in the bundles.
  */
-const externals = [
-  ...Object.entries(wwwMappings).flat(),
-  'react-dom',
-  'react',
-  'yjs',
-  'y-websocket',
-].sort();
+const monorepoExternalsSet = new Set(Object.entries(wwwMappings).flat());
+const thirdPartyExternals = ['react', 'react-dom', 'yjs', 'y-websocket'];
+const thirdPartyExternalsRegExp = new RegExp(
+  `^(${thirdPartyExternals.join('|')})(\\/|$)`,
+);
 
 const strictWWWMappings = {};
 
@@ -131,7 +129,10 @@ async function build(name, inputFile, outputPath, outputFile, isProd, format) {
   const extensions = ['.js', '.jsx', '.ts', '.tsx'];
   const inputOptions = {
     external(modulePath, src) {
-      return externals.includes(modulePath);
+      return (
+        monorepoExternalsSet.has(modulePath) ||
+        thirdPartyExternalsRegExp.test(modulePath)
+      );
     },
     input: inputFile,
     onwarn(warning) {
@@ -191,7 +192,7 @@ async function build(name, inputFile, outputPath, outputFile, isProd, format) {
               tsconfig: path.resolve('./tsconfig.build.json'),
             },
           ],
-          '@babel/preset-react',
+          ['@babel/preset-react', {runtime: isWWW ? 'classic' : 'automatic'}],
         ],
       }),
       {
@@ -238,7 +239,7 @@ async function build(name, inputFile, outputPath, outputFile, isProd, format) {
   };
   const outputOptions = {
     esModule: false,
-    exports: 'auto',
+    exports: 'named',
     externalLiveBindings: false,
     file: outputFile,
     format, // change between es and cjs modules

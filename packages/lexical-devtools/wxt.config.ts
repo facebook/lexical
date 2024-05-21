@@ -39,7 +39,7 @@ export default defineConfig({
         48: '/icon/48.png',
       },
       name: 'Lexical Developer Tools',
-      permissions: ['scripting', 'storage', 'tabs'],
+      permissions: ['tabs'],
       version:
         JSON.parse(
           fs.readFileSync(path.resolve(__dirname, 'package.json')).toString(),
@@ -112,7 +112,7 @@ export default defineConfig({
             },
           ],
         ],
-        presets: ['@babel/preset-react'],
+        presets: [['@babel/preset-react', {runtime: 'automatic'}]],
       }),
       react(),
     ],

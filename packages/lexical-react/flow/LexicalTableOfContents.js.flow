@@ -7,11 +7,7 @@
  * @flow strict
  */
 
-import type {HeadingTagType} from '@lexical/rich-text';
-import type {NodeKey} from 'lexical';
+import {TableOfContentsPlugin} from '@lexical/react/LexicalTableOfContentsPlugin';
 
-declare export default function LexicalTableOfContentsPlugin({
-  children: (
-    tableOfContents: Array<[NodeKey, string, HeadingTagType]>,
-  ) => React$Node,
-}): React$Node;
+/** @deprecated use the named export {@link LexicalTableOfContentsPlugin} */
+declare export default typeof TableOfContentsPlugin;

@@ -369,10 +369,12 @@ export class ListItemNode extends ElementNode {
     return this;
   }
 
+  /** @deprecated @internal */
   canInsertAfter(node: LexicalNode): boolean {
     return $isListItemNode(node);
   }
 
+  /** @deprecated @internal */
   canReplaceWith(replacement: LexicalNode): boolean {
     return $isListItemNode(replacement);
   }

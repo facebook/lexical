@@ -772,44 +772,35 @@ export function isTab(
 }
 
 export function isBold(
-  key: string | null,
+  key: string,
   altKey: boolean,
   metaKey: boolean,
   ctrlKey: boolean,
 ): boolean {
   return (
-    key != null &&
-    key.toLowerCase() === 'b' &&
-    !altKey &&
-    controlOrMeta(metaKey, ctrlKey)
+    key.toLowerCase() === 'b' && !altKey && controlOrMeta(metaKey, ctrlKey)
   );
 }
 
 export function isItalic(
-  key: string | null,
+  key: string,
   altKey: boolean,
   metaKey: boolean,
   ctrlKey: boolean,
 ): boolean {
   return (
-    key != null &&
-    key.toLowerCase() === 'i' &&
-    !altKey &&
-    controlOrMeta(metaKey, ctrlKey)
+    key.toLowerCase() === 'i' && !altKey && controlOrMeta(metaKey, ctrlKey)
   );
 }
 
 export function isUnderline(
-  key: string | null,
+  key: string,
   altKey: boolean,
   metaKey: boolean,
   ctrlKey: boolean,
 ): boolean {
   return (
-    key != null &&
-    key.toLowerCase() === 'u' &&
-    !altKey &&
-    controlOrMeta(metaKey, ctrlKey)
+    key.toLowerCase() === 'u' && !altKey && controlOrMeta(metaKey, ctrlKey)
   );
 }
 
@@ -823,9 +814,9 @@ export function isLineBreak(key: string, shiftKey: boolean): boolean {
 
 // Inserts a new line after the selection
 
-export function isOpenLineBreak(key: string | null, ctrlKey: boolean): boolean {
+export function isOpenLineBreak(key: string, ctrlKey: boolean): boolean {
   // 79 = KeyO
-  return IS_APPLE && ctrlKey && key != null && key.toLowerCase() === 'o';
+  return IS_APPLE && ctrlKey && key.toLowerCase() === 'o';
 }
 
 export function isDeleteWordBackward(
@@ -853,7 +844,7 @@ export function isDeleteLineForward(key: string, metaKey: boolean): boolean {
 }
 
 export function isDeleteBackward(
-  key: string | null,
+  key: string,
   altKey: boolean,
   metaKey: boolean,
   ctrlKey: boolean,
@@ -862,9 +853,7 @@ export function isDeleteBackward(
     if (altKey || metaKey) {
       return false;
     }
-    return (
-      isBackspace(key) || (key != null && key.toLowerCase() === 'h' && ctrlKey)
-    );
+    return isBackspace(key) || (key.toLowerCase() === 'h' && ctrlKey);
   }
   if (ctrlKey || altKey || metaKey) {
     return false;
@@ -873,7 +862,7 @@ export function isDeleteBackward(
 }
 
 export function isDeleteForward(
-  key: string | null,
+  key: string,
   ctrlKey: boolean,
   shiftKey: boolean,
   altKey: boolean,
@@ -883,9 +872,7 @@ export function isDeleteForward(
     if (shiftKey || altKey || metaKey) {
       return false;
     }
-    return (
-      isDelete(key) || (key != null && key.toLowerCase() === 'd' && ctrlKey)
-    );
+    return isDelete(key) || (key.toLowerCase() === 'd' && ctrlKey);
   }
   if (ctrlKey || altKey || metaKey) {
     return false;
@@ -894,37 +881,33 @@ export function isDeleteForward(
 }
 
 export function isUndo(
-  key: string | null,
+  key: string,
   shiftKey: boolean,
   metaKey: boolean,
   ctrlKey: boolean,
 ): boolean {
   return (
-    key != null &&
-    key.toLowerCase() === 'z' &&
-    !shiftKey &&
-    controlOrMeta(metaKey, ctrlKey)
+    key.toLowerCase() === 'z' && !shiftKey && controlOrMeta(metaKey, ctrlKey)
   );
 }
 
 export function isRedo(
-  key: string | null,
+  key: string,
   shiftKey: boolean,
   metaKey: boolean,
   ctrlKey: boolean,
 ): boolean {
   if (IS_APPLE) {
-    return key != null && key.toLowerCase() === 'z' && metaKey && shiftKey;
+    return key.toLowerCase() === 'z' && metaKey && shiftKey;
   }
   return (
-    key != null &&
-    ((key.toLowerCase() === 'y' && ctrlKey) ||
-      (key.toLowerCase() === 'z' && ctrlKey && shiftKey))
+    (key.toLowerCase() === 'y' && ctrlKey) ||
+    (key.toLowerCase() === 'z' && ctrlKey && shiftKey)
   );
 }
 
 export function isCopy(
-  key: string | null,
+  key: string,
   shiftKey: boolean,
   metaKey: boolean,
   ctrlKey: boolean,
@@ -932,7 +915,7 @@ export function isCopy(
   if (shiftKey) {
     return false;
   }
-  if (key != null && key.toLowerCase() === 'c') {
+  if (key.toLowerCase() === 'c') {
     return IS_APPLE ? metaKey : ctrlKey;
   }
 
@@ -940,7 +923,7 @@ export function isCopy(
 }
 
 export function isCut(
-  key: string | null,
+  key: string,
   shiftKey: boolean,
   metaKey: boolean,
   ctrlKey: boolean,
@@ -948,7 +931,7 @@ export function isCut(
   if (shiftKey) {
     return false;
   }
-  if (key != null && key.toLowerCase() === 'x') {
+  if (key.toLowerCase() === 'x') {
     return IS_APPLE ? metaKey : ctrlKey;
   }
 
@@ -1049,7 +1032,7 @@ export function isReturn(key: string): boolean {
   return key === 'Enter';
 }
 
-export function isBackspace(key: string | null): boolean {
+export function isBackspace(key: string): boolean {
   return key === 'Backspace';
 }
 
@@ -1057,18 +1040,16 @@ export function isEscape(key: string): boolean {
   return key === 'Escape';
 }
 
-export function isDelete(key: string | null): boolean {
-  return key != null && key === 'Delete';
+export function isDelete(key: string): boolean {
+  return key === 'Delete';
 }
 
 export function isSelectAll(
-  key: string | null,
+  key: string,
   metaKey: boolean,
   ctrlKey: boolean,
 ): boolean {
-  return (
-    key != null && key.toLowerCase() === 'a' && controlOrMeta(metaKey, ctrlKey)
-  );
+  return key.toLowerCase() === 'a' && controlOrMeta(metaKey, ctrlKey);
 }
 
 export function $selectAll(): void {

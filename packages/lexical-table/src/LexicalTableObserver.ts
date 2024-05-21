@@ -121,6 +121,7 @@ export class TableObserver {
           if (
             nodeName === 'TABLE' ||
             nodeName === 'TBODY' ||
+            nodeName === 'THEAD' ||
             nodeName === 'TR'
           ) {
             gridNeedsRedraw = true;

@@ -36,6 +36,7 @@ import {
   LexicalNode,
   ParagraphNode,
   PointType,
+  type RangeSelection,
   TextNode,
 } from 'lexical';
 import {
@@ -47,8 +48,8 @@ import {
   invariant,
   TestComposer,
 } from 'lexical/src/__tests__/utils';
-import {createRoot} from 'react-dom/client';
-import * as ReactTestUtils from 'react-dom/test-utils';
+import {createRoot, Root} from 'react-dom/client';
+import * as ReactTestUtils from 'shared/react-test-utils';
 
 import {
   $setAnchorPoint,
@@ -113,23 +114,26 @@ Range.prototype.getBoundingClientRect = function (): DOMRect {
 };
 
 describe('LexicalSelection tests', () => {
-  let container: HTMLElement | null = null;
+  let container: HTMLElement;
+  let reactRoot: Root;
+  let editor: LexicalEditor | null = null;
 
   beforeEach(async () => {
     container = document.createElement('div');
     document.body.appendChild(container);
-
+    reactRoot = createRoot(container);
     await init();
   });
 
-  afterEach(() => {
-    if (container) {
-      document.body.removeChild(container);
-    }
-    container = null;
+  afterEach(async () => {
+    // Ensure we are clearing out any React state and running effects with
+    // act
+    await ReactTestUtils.act(async () => {
+      reactRoot.unmount();
+      await Promise.resolve().then();
+    });
+    document.body.removeChild(container);
   });
-
-  let editor: LexicalEditor | null = null;
 
   async function init() {
     function TestBase() {
@@ -187,10 +191,10 @@ describe('LexicalSelection tests', () => {
       );
     }
 
-    ReactTestUtils.act(() => {
-      createRoot(container!).render(<TestBase />);
+    await ReactTestUtils.act(async () => {
+      reactRoot.render(<TestBase />);
+      await Promise.resolve().then();
     });
-
     editor!.getRootElement()!.focus();
 
     await Promise.resolve().then();
@@ -208,8 +212,6 @@ describe('LexicalSelection tests', () => {
     await ReactTestUtils.act(async () => {
       await editor!.update(fn);
     });
-
-    return Promise.resolve().then();
   }
 
   test('Expect initial output to be a block with no text.', () => {
@@ -1132,7 +1134,7 @@ describe('LexicalSelection tests', () => {
       await applySelectionInputs(testUnit.inputs, update, editor!);
 
       // Validate HTML matches
-      expect(container!.innerHTML).toBe(testUnit.expectedHTML);
+      expect(container.innerHTML).toBe(testUnit.expectedHTML);
 
       // Validate selection matches
       const rootElement = editor!.getRootElement()!;
@@ -2653,7 +2655,6 @@ describe('LexicalSelection tests', () => {
           offset: text.__text.length,
           type: 'text',
         });
-        // @ts-ignore
         const selection = $getSelection() as RangeSelection;
 
         const columnChildrenPrev = column.getChildren();
@@ -2721,7 +2722,6 @@ describe('LexicalSelection tests', () => {
           offset: 0,
           type: 'element',
         });
-        // @ts-ignore
         const selection = $getSelection() as RangeSelection;
 
         $setBlocksType(selection, () => {

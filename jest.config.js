@@ -33,6 +33,7 @@ module.exports = {
       ...common,
       displayName: 'unit',
       globals: {
+        // https://react.dev/blog/2022/03/08/react-18-upgrade-guide#configuring-your-testing-environment
         IS_REACT_ACT_ENVIRONMENT: true,
         __DEV__: true,
       },

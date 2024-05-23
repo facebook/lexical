@@ -8,7 +8,7 @@
 import type {Tabs} from 'wxt/browser';
 import type {StoreApi} from 'zustand';
 
-import {IS_FIREFOX} from 'shared/environment';
+import {IS_FIREFOX, IS_SAFARI} from 'shared/environment';
 
 import {ExtensionState} from '../../store';
 
@@ -39,7 +39,8 @@ export default class ActionIconWatchdog {
     lexicalBuildType: 'restricted' | 'enabled',
     tabId: number,
   ) {
-    const action = IS_FIREFOX ? browser.browserAction : browser.action;
+    const action =
+      IS_FIREFOX || IS_SAFARI ? browser.browserAction : browser.action;
 
     await action.setIcon({
       path: {

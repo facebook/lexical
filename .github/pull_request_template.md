@@ -16,7 +16,7 @@ Breaking change / Refactor / Feature / Bug Fix / Documentation Update / Chore
 -->
 *Describe the changes in this pull request*
 
-**Closes:** #<!-- issue number -->
+Closes #<!-- issue number -->
 
 ## Test plan
 

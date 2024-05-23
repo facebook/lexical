@@ -11,7 +11,7 @@ import {LexicalEditor} from 'lexical';
 import * as React from 'react';
 import {Container} from 'react-dom';
 import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'react-dom/test-utils';
+import * as ReactTestUtils from 'shared/react-test-utils';
 import * as Y from 'yjs';
 
 import {useCollaborationContext} from '../../LexicalCollaborationContext';

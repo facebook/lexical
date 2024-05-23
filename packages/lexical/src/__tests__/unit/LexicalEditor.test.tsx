@@ -50,7 +50,7 @@ import {
 } from 'react';
 import {createPortal} from 'react-dom';
 import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'react-dom/test-utils';
+import * as ReactTestUtils from 'shared/react-test-utils';
 
 import {
   $createTestDecoratorNode,
@@ -60,10 +60,6 @@ import {
   TestComposer,
   TestTextNode,
 } from '../utils';
-// No idea why we suddenly need to do this, but it fixes the tests
-// with latest experimental React version.
-// @ts-ignore
-global.IS_REACT_ACT_ENVIRONMENT = true;
 
 describe('LexicalEditor tests', () => {
   let container: HTMLElement;
@@ -913,6 +909,14 @@ describe('LexicalEditor tests', () => {
       return decoratedPortals;
     }
 
+    afterEach(async () => {
+      // Clean up so we are not calling setState outside of act
+      await ReactTestUtils.act(async () => {
+        reactRoot.render(null);
+        await Promise.resolve().then();
+      });
+    });
+
     it('Should correctly render React component into Lexical node #1', async () => {
       const listener = jest.fn();
 
@@ -987,20 +991,21 @@ describe('LexicalEditor tests', () => {
         );
       }
 
-      ReactTestUtils.act(() => {
+      await ReactTestUtils.act(async () => {
         reactRoot.render(<Test divKey={0} />);
+        // Wait for update to complete
+        await Promise.resolve().then();
       });
-
-      // Wait for update to complete
-      await Promise.resolve().then();
 
       expect(listener).toHaveBeenCalledTimes(1);
       expect(container.innerHTML).toBe(
         '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p><br></p></div>',
       );
 
-      ReactTestUtils.act(() => {
+      await ReactTestUtils.act(async () => {
         reactRoot.render(<Test divKey={1} />);
+        // Wait for update to complete
+        await Promise.resolve().then();
       });
 
       expect(listener).toHaveBeenCalledTimes(3);
@@ -2024,7 +2029,6 @@ describe('LexicalEditor tests', () => {
           TestTextNode,
           {
             replace: TextNode,
-            // @ts-ignore
             with: (node: TextNode) => new TestTextNode(node.getTextContent()),
           },
         ],
@@ -2061,7 +2065,6 @@ describe('LexicalEditor tests', () => {
           TestTextNode,
           {
             replace: TextNode,
-            // @ts-ignore
             with: (node: TextNode) =>
               new TestTextNode(node.getTextContent(), node.getKey()),
           },
@@ -2099,7 +2102,6 @@ describe('LexicalEditor tests', () => {
           TestTextNode,
           {
             replace: TextNode,
-            // @ts-ignore
             with: (node: TextNode) => new TestTextNode(node.getTextContent()),
           },
         ],
@@ -2147,9 +2149,7 @@ describe('LexicalEditor tests', () => {
           TestTextNode,
           {
             replace: TextNode,
-            // @ts-ignore
             with: (node: TextNode) => new TestTextNode(node.getTextContent()),
-
             withKlass: TestTextNode,
           },
         ],

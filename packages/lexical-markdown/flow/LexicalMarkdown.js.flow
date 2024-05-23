@@ -69,6 +69,7 @@ declare export function $convertFromMarkdownString(
   markdown: string,
   transformers?: Array<Transformer>,
   node?: ElementNode,
+  shouldPreserveNewLines?: boolean,
 ): void;
 
 // TODO:
@@ -76,6 +77,7 @@ declare export function $convertFromMarkdownString(
 declare export function $convertToMarkdownString(
   transformers?: Array<Transformer>,
   node?: ElementNode,
+  shouldPreserveNewLines?: boolean,
 ): string;
 
 declare export var BOLD_ITALIC_STAR: TextFormatTransformer;

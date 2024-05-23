@@ -3,10 +3,6 @@ name: After Approval
 on:
   pull_request_review:
     types: [submitted]
-  pull_request_target:
-    types: [review_requested, opened, reopened, synchronize]
-    branches:
-      - 'main'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -21,7 +17,7 @@ jobs:
     steps:
       - name: Add label for extended tests
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.ADD_LABEL_PAT}}
           GH_REPO: ${{ github.repository }}
           NUMBER: ${{ github.event.pull_request.number }}
         run: |

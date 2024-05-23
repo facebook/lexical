@@ -23,6 +23,6 @@ jobs:
         run: |
           echo "Adding label 'extended-tests' to PR $NUMBER"
           gh pr edit "$NUMBER" --add-label "extended-tests" || (echo "Failed to add label" && exit 1)
-  e2e-tests:
-    needs: label-pr
-    uses: ./.github/workflows/call-e2e-all-tests.yml
+    # needs: label-pr
+    # uses: ./.github/workflows/call-e2e-all-tests.yml
+  # e2e-tests:

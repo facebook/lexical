@@ -69,7 +69,6 @@ import TreeViewPlugin from './plugins/TreeViewPlugin';
 import TwitterPlugin from './plugins/TwitterPlugin';
 import YouTubePlugin from './plugins/YouTubePlugin';
 import ContentEditable from './ui/ContentEditable';
-import Placeholder from './ui/Placeholder';
 
 const skipCollaborationInit =
   // @ts-expect-error
@@ -94,12 +93,11 @@ export default function Editor(): JSX.Element {
     },
   } = useSettings();
   const isEditable = useLexicalEditable();
-  const text = isCollab
+  const placeholder = isCollab
     ? 'Enter some collaborative rich text...'
     : isRichText
     ? 'Enter some rich text...'
     : 'Enter some plain text...';
-  const placeholder = <Placeholder>{text}</Placeholder>;
   const [floatingAnchorElem, setFloatingAnchorElem] =
     useState<HTMLDivElement | null>(null);
   const [isSmallWidthViewport, setIsSmallWidthViewport] =
@@ -168,11 +166,10 @@ export default function Editor(): JSX.Element {
               contentEditable={
                 <div className="editor-scroller">
                   <div className="editor" ref={onRef}>
-                    <ContentEditable />
+                    <ContentEditable placeholder={placeholder} />
                   </div>
                 </div>
               }
-              placeholder={placeholder}
               ErrorBoundary={LexicalErrorBoundary}
             />
             <MarkdownShortcutPlugin />
@@ -224,8 +221,7 @@ export default function Editor(): JSX.Element {
         ) : (
           <>
             <PlainTextPlugin
-              contentEditable={<ContentEditable />}
-              placeholder={placeholder}
+              contentEditable={<ContentEditable placeholder={placeholder} />}
               ErrorBoundary={LexicalErrorBoundary}
             />
             <HistoryPlugin externalHistoryState={historyState} />

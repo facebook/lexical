@@ -16,11 +16,12 @@ import {useRichTextSetup} from './shared/useRichTextSetup';
 
 export function RichTextPlugin({
   contentEditable,
-  placeholder,
+  // TODO Remove. This property is now part of ContentEditable
+  placeholder = null,
   ErrorBoundary,
 }: {
   contentEditable: JSX.Element;
-  placeholder:
+  placeholder?:
     | ((isEditable: boolean) => null | JSX.Element)
     | null
     | JSX.Element;
@@ -39,6 +40,7 @@ export function RichTextPlugin({
   );
 }
 
+// TODO remove
 function Placeholder({
   content,
 }: {

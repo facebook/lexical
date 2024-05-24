@@ -9,7 +9,13 @@
 
 import * as React from 'react';
 
-export type Props = $ReadOnly<{
+export type Props = ({} | $ReadOnly<{
+  'aria-placeholder': string;
+  placeholder:
+    | ((isEditable: boolean) => null | React$Node)
+    | null
+    | React$Node;
+}>) & $ReadOnly<{
   ...Partial<HTMLDivElement>,
   ariaActiveDescendant?: string,
   ariaAutoComplete?: string,

@@ -3,7 +3,7 @@
 </h1>
 
 <p align="center">
-  <img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/facebook/lexical/test.yml"/>
+  <img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/facebook/lexical/tests.yml"/>
   <a href="https://www.npmjs.com/package/lexical">
     <img alt="Visit the NPM page" src="https://img.shields.io/npm/v/lexical"/>
   </a>

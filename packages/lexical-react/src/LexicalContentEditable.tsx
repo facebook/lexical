@@ -55,9 +55,15 @@ function Placeholder({
     return null;
   }
 
+  let placeholder = null;
   if (typeof content === 'function') {
-    return content(editable);
-  } else {
-    return content;
+    placeholder = content(editable);
+  } else if (content !== null) {
+    placeholder = content;
   }
+
+  if (placeholder === null) {
+    return null;
+  }
+  return <div aria-hidden={true}>{placeholder}</div>;
 }

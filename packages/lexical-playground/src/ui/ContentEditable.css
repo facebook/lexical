@@ -29,15 +29,15 @@
   position: absolute;
   text-overflow: ellipsis;
   top: 8px;
-  left: 8px;
-  right: 8px;
+  left: 28px;
+  right: 28px;
   user-select: none;
   white-space: nowrap;
   display: inline-block;
   pointer-events: none;
 }
 @media (max-width: 1025px) {
-  .Placeholder__root {
+  .ContentEditable__placeholder {
     left: 8px;
     right: 8px;
   }

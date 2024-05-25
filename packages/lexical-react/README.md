@@ -25,7 +25,7 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 
 const theme = {
   // Theme styling goes here
-  ...
+  //...
 }
 
 // When the editor changes, you can get notified via the

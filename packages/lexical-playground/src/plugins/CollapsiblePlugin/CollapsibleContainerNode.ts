@@ -67,7 +67,10 @@ export class CollapsibleContainerNode extends ElementNode {
     const currentOpen = this.__open;
     if (prevNode.__open !== currentOpen) {
       const contentDom = dom.children[1];
-      invariant(isHTMLElement(contentDom), 'something');
+      invariant(
+        isHTMLElement(contentDom),
+        'Expected contentDom to be an HTMLElement',
+      );
       if (currentOpen) {
         contentDom.style.removeProperty('display');
       } else {

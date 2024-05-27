@@ -72,9 +72,10 @@ export class CollapsibleContainerNode extends ElementNode {
         'Expected contentDom to be an HTMLElement',
       );
       if (currentOpen) {
-        contentDom.style.removeProperty('display');
+        contentDom.hidden = false;
       } else {
-        contentDom.style.display = 'none';
+        // @ts-expect-error
+        contentDom.hidden = 'until-found';
       }
     }
 

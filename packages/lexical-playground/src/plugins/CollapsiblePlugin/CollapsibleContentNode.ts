@@ -50,9 +50,23 @@ export class CollapsibleContentNode extends ElementNode {
         'Expected parent node to be a CollapsibleContainerNode',
       );
       if (!containerNode.__open) {
-        dom.style.display = 'none';
+        // @ts-expect-error
+        dom.hidden = 'until-found';
       }
     });
+    // @ts-expect-error
+    dom.onbeforematch = () => {
+      editor.update(() => {
+        const containerNode = this.getParentOrThrow().getLatest();
+        invariant(
+          $isCollapsibleContainerNode(containerNode),
+          'Expected parent node to be a CollapsibleContainerNode',
+        );
+        if (!containerNode.__open) {
+          containerNode.toggleOpen();
+        }
+      });
+    };
     return dom;
   }
 

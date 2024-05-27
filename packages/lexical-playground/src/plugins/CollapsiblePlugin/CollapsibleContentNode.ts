@@ -20,6 +20,7 @@ import {IS_CHROME} from 'shared/environment';
 import invariant from 'shared/invariant';
 
 import {$isCollapsibleContainerNode} from './CollapsibleContainerNode';
+import {domOnBeforeMatch, setDomHiddenUntilFound} from './CollapsibleUtils';
 
 type SerializedCollapsibleContentNode = SerializedElementNode;
 
@@ -52,12 +53,10 @@ export class CollapsibleContentNode extends ElementNode {
           'Expected parent node to be a CollapsibleContainerNode',
         );
         if (!containerNode.__open) {
-          // @ts-expect-error
-          dom.hidden = 'until-found';
+          setDomHiddenUntilFound(dom);
         }
       });
-      // @ts-expect-error
-      dom.onbeforematch = () => {
+      domOnBeforeMatch(dom, () => {
         editor.update(() => {
           const containerNode = this.getParentOrThrow().getLatest();
           invariant(
@@ -68,7 +67,7 @@ export class CollapsibleContentNode extends ElementNode {
             containerNode.toggleOpen();
           }
         });
-      };
+      });
     }
     return dom;
   }

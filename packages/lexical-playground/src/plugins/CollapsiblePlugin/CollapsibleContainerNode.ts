@@ -22,6 +22,8 @@ import {
 import {IS_CHROME} from 'shared/environment';
 import invariant from 'shared/invariant';
 
+import {setDomHiddenUntilFound} from './CollapsibleUtils';
+
 type SerializedCollapsibleContainerNode = Spread<
   {
     open: boolean;
@@ -92,8 +94,7 @@ export class CollapsibleContainerNode extends ElementNode {
         if (currentOpen) {
           contentDom.hidden = false;
         } else {
-          // @ts-expect-error
-          contentDom.hidden = 'until-found';
+          setDomHiddenUntilFound(contentDom);
         }
       } else {
         dom.open = this.__open;

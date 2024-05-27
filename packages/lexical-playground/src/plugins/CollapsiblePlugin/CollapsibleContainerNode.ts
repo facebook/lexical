@@ -19,6 +19,7 @@ import {
   SerializedElementNode,
   Spread,
 } from 'lexical';
+import {IS_CHROME} from 'shared/environment';
 import invariant from 'shared/invariant';
 
 type SerializedCollapsibleContainerNode = Spread<
@@ -55,8 +56,23 @@ export class CollapsibleContainerNode extends ElementNode {
   }
 
   createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement {
-    const dom = document.createElement('div');
+    // details is not well supported in Chrome #5582
+    let dom: HTMLElement;
+    if (IS_CHROME) {
+      dom = document.createElement('div');
+    } else {
+      const detailsDom = document.createElement('details');
+      detailsDom.open = this.__open;
+      detailsDom.addEventListener('toggle', () => {
+        const open = editor.getEditorState().read(() => this.getOpen());
+        if (open !== detailsDom.open) {
+          editor.update(() => this.toggleOpen());
+        }
+      });
+      dom = detailsDom;
+    }
     dom.classList.add('Collapsible__container');
+
     return dom;
   }
 
@@ -66,16 +82,21 @@ export class CollapsibleContainerNode extends ElementNode {
   ): boolean {
     const currentOpen = this.__open;
     if (prevNode.__open !== currentOpen) {
-      const contentDom = dom.children[1];
-      invariant(
-        isHTMLElement(contentDom),
-        'Expected contentDom to be an HTMLElement',
-      );
-      if (currentOpen) {
-        contentDom.hidden = false;
+      // details is not well supported in Chrome #5582
+      if (IS_CHROME) {
+        const contentDom = dom.children[1];
+        invariant(
+          isHTMLElement(contentDom),
+          'Expected contentDom to be an HTMLElement',
+        );
+        if (currentOpen) {
+          contentDom.hidden = false;
+        } else {
+          // @ts-expect-error
+          contentDom.hidden = 'until-found';
+        }
       } else {
-        // @ts-expect-error
-        contentDom.hidden = 'until-found';
+        dom.open = this.__open;
       }
     }
 

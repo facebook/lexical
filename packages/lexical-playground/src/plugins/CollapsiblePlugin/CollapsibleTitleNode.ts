@@ -51,7 +51,7 @@ export class CollapsibleTitleNode extends ElementNode {
         const collapsibleContainer = this.getLatest().getParentOrThrow();
         invariant(
           $isCollapsibleContainerNode(collapsibleContainer),
-          'something',
+          'Expected parent node to be a CollapsibleContainerNode',
         );
         collapsibleContainer.toggleOpen();
       });

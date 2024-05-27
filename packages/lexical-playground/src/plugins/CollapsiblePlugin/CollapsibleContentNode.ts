@@ -16,8 +16,9 @@ import {
   LexicalNode,
   SerializedElementNode,
 } from 'lexical';
+import invariant from 'shared/invariant';
 
-import {CollapsibleContainerNode} from './CollapsibleContainerNode';
+import {$isCollapsibleContainerNode} from './CollapsibleContainerNode';
 
 type SerializedCollapsibleContentNode = SerializedElementNode;
 
@@ -43,7 +44,11 @@ export class CollapsibleContentNode extends ElementNode {
     const dom = document.createElement('div');
     dom.classList.add('Collapsible__content');
     editor.getEditorState().read(() => {
-      const containerNode = this.getParentOrThrow<CollapsibleContainerNode>();
+      const containerNode = this.getParentOrThrow();
+      invariant(
+        $isCollapsibleContainerNode(containerNode),
+        'Expected parent node to be a CollapsibleContainerNode',
+      );
       if (!containerNode.__open) {
         dom.style.display = 'none';
       }

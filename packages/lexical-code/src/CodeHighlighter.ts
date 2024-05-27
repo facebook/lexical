@@ -225,8 +225,12 @@ function updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
   }
   const children = node.getChildren();
   const childrenLength = children.length;
-  // @ts-ignore: internal field
-  if (childrenLength === codeElement.__cachedChildrenLength) {
+
+  if (
+    // @ts-ignore: internal field
+    childrenLength === codeElement.__cachedChildrenLength &&
+    !isLinesOfCodeRecalculationNeeded(codeElement)
+  ) {
     // Avoid updating the attribute if the children length hasn't changed.
     return;
   }
@@ -239,7 +243,53 @@ function updateCodeGutter(node: CodeNode, editor: LexicalEditor): void {
       gutter += '\n' + ++count;
     }
   }
+
+  // the above logic for calculating lines of code works fine if the
+  // code container has `whitespace: nowrap`, so no need to recalculate it
+  if (codeElement.style.whiteSpace !== 'nowrap') {
+    requestAnimationFrame(() => {
+      reCalculateLinesOfCodeForCodeBlock(codeElement, count);
+    });
+  }
+  const codeElementHeight = parseInt(getComputedStyle(codeElement).height, 10);
+  codeElement.setAttribute('data-previous-height', `${codeElementHeight || 0}`);
   codeElement.setAttribute('data-gutter', gutter);
+}
+
+function reCalculateLinesOfCodeForCodeBlock(
+  codeElement: HTMLElement,
+  currentTotalLineCount: number,
+) {
+  const codeElementHeight = parseInt(getComputedStyle(codeElement).height, 10);
+  const beforePsuedoElementHeight = parseInt(
+    getComputedStyle(codeElement, ':before').height,
+    10,
+  );
+  const heightPerLine = beforePsuedoElementHeight / currentTotalLineCount;
+  const totalLineNumbers = Math.round(codeElementHeight / heightPerLine);
+  let gutter = '1';
+  for (let count = 1; count < totalLineNumbers; ) {
+    gutter += '\n' + ++count;
+  }
+  codeElement.setAttribute('data-gutter', gutter);
+}
+
+function isLinesOfCodeRecalculationNeeded(codeElement: HTMLElement): boolean {
+  if (codeElement.style.whiteSpace === 'nowrap') {
+    return false;
+  }
+  const codeElementCurrentHeight = parseInt(
+    getComputedStyle(codeElement).height,
+    10,
+  );
+  const codeElementPreviousHeight = parseInt(
+    codeElement.getAttribute('data-previous-height') || '0',
+    10,
+  );
+  if (codeElementPreviousHeight !== codeElementCurrentHeight) {
+    return true;
+  }
+  return false;
 }
 
 // Using `skipTransforms` to prevent extra transforms since reformatting the code

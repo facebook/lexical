@@ -12,12 +12,14 @@ import {
   DOMExportOutput,
   EditorConfig,
   ElementNode,
+  isHTMLElement,
   LexicalEditor,
   LexicalNode,
   NodeKey,
   SerializedElementNode,
   Spread,
 } from 'lexical';
+import invariant from 'shared/invariant';
 
 type SerializedCollapsibleContainerNode = Spread<
   {
@@ -53,15 +55,8 @@ export class CollapsibleContainerNode extends ElementNode {
   }
 
   createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement {
-    const dom = document.createElement('details');
+    const dom = document.createElement('div');
     dom.classList.add('Collapsible__container');
-    dom.open = this.__open;
-    dom.addEventListener('toggle', () => {
-      const open = editor.getEditorState().read(() => this.getOpen());
-      if (open !== dom.open) {
-        editor.update(() => this.toggleOpen());
-      }
-    });
     return dom;
   }
 
@@ -69,8 +64,15 @@ export class CollapsibleContainerNode extends ElementNode {
     prevNode: CollapsibleContainerNode,
     dom: HTMLDetailsElement,
   ): boolean {
-    if (prevNode.__open !== this.__open) {
-      dom.open = this.__open;
+    const currentOpen = this.__open;
+    if (prevNode.__open !== currentOpen) {
+      const contentDom = dom.children[1];
+      invariant(isHTMLElement(contentDom), 'something');
+      if (currentOpen) {
+        contentDom.style.removeProperty('display');
+      } else {
+        contentDom.style.display = 'none';
+      }
     }
 
     return false;
@@ -95,7 +97,7 @@ export class CollapsibleContainerNode extends ElementNode {
   }
 
   exportDOM(): DOMExportOutput {
-    const element = document.createElement('details');
+    const element = document.createElement('div');
     element.classList.add('Collapsible__container');
     element.setAttribute('open', this.__open.toString());
     return {element};

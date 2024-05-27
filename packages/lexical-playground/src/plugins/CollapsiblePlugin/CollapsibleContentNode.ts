@@ -12,9 +12,12 @@ import {
   DOMExportOutput,
   EditorConfig,
   ElementNode,
+  LexicalEditor,
   LexicalNode,
   SerializedElementNode,
 } from 'lexical';
+
+import {CollapsibleContainerNode} from './CollapsibleContainerNode';
 
 type SerializedCollapsibleContentNode = SerializedElementNode;
 
@@ -36,9 +39,15 @@ export class CollapsibleContentNode extends ElementNode {
     return new CollapsibleContentNode(node.__key);
   }
 
-  createDOM(config: EditorConfig): HTMLElement {
+  createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement {
     const dom = document.createElement('div');
     dom.classList.add('Collapsible__content');
+    editor.getEditorState().read(() => {
+      const containerNode = this.getParentOrThrow<CollapsibleContainerNode>();
+      if (!containerNode.__open) {
+        dom.style.display = 'none';
+      }
+    });
     return dom;
   }
 

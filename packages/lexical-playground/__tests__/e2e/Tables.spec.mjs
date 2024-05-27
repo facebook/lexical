@@ -1452,7 +1452,7 @@ test.describe('Tables', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-              <details class="Collapsible__container" open="">
+              <div class="Collapsible__container">
                 <summary class="Collapsible__title">
                   <p class="PlaygroundEditorTheme__paragraph">
                     <span data-lexical-text="true">123</span>
@@ -1466,7 +1466,7 @@ test.describe('Tables', () => {
                   <p class="PlaygroundEditorTheme__paragraph"><br /></p>
                   <p class="PlaygroundEditorTheme__paragraph"><br /></p>
                 </div>
-              </details>
+              </div>
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </th>
             <th
@@ -1489,7 +1489,7 @@ test.describe('Tables', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-              <details class="Collapsible__container" open="">
+              <div class="Collapsible__container">
                 <summary class="Collapsible__title">
                   <p class="PlaygroundEditorTheme__paragraph">
                     <span data-lexical-text="true">123</span>
@@ -1498,7 +1498,7 @@ test.describe('Tables', () => {
                 <div class="Collapsible__content">
                   <p class="PlaygroundEditorTheme__paragraph"><br /></p>
                 </div>
-              </details>
+              </div>
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </th>
             <th

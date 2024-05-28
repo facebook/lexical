@@ -40,10 +40,11 @@ export interface ImagePayload {
 function $convertImageElement(domNode: Node): null | DOMConversionOutput {
   const img = domNode as HTMLImageElement;
   if (
-    img.src.startsWith('file:///') || //img.parentElement != null &&
-    //img.parentElement.tagName === 'li' &&
-    //img.previousSibling === null &&
-    img.src.startsWith('data:image/png;')
+    img.src.startsWith('file:///') ||
+    (img.parentElement != null &&
+      img.parentElement.tagName === 'LI' &&
+      img.previousSibling === null &&
+      img.src.startsWith('data:image/png;base64,iVBOR'))
   ) {
     return null;
   }

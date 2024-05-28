@@ -13,13 +13,12 @@ import './index.css';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {
-  $getTableColumnIndexFromTableCellNode,
+  $computeTableMapSkipCellCheck,
   $getTableNodeFromLexicalNodeOrThrow,
   $getTableRowIndexFromTableCellNode,
   $isTableCellNode,
   $isTableRowNode,
   getDOMCellFromTarget,
-  TableCellNode,
 } from '@lexical/table';
 import {calculateZoomLevel} from '@lexical/utils';
 import {$getNearestNodeFromDOMNode} from 'lexical';
@@ -187,7 +186,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
   );
 
   const updateColumnWidth = useCallback(
-    (newWidth: number) => {
+    (widthChange: number) => {
       if (!activeCell) {
         throw new Error('TableCellResizer: Expected active cell.');
       }
@@ -199,48 +198,41 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
           }
 
           const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
+          const [tableMap] = $computeTableMapSkipCellCheck(
+            tableNode,
+            null,
+            null,
+          );
+          //console.log(tableMap);
 
-          const tableColumnIndex =
-            $getTableColumnIndexFromTableCellNode(tableCellNode);
-
-          const tableRows = tableNode.getChildren();
-
-          for (let r = 0; r < tableRows.length; r++) {
-            const tableRow = tableRows[r];
-
-            if (!$isTableRowNode(tableRow)) {
-              throw new Error('Expected table row');
+          let columnIndex = -1;
+          for (let row = 0; row < tableMap.length; row++) {
+            for (let column = 0; column < tableMap[row].length; column++) {
+              if (tableMap[row][column].cell === tableCellNode) {
+                columnIndex = column;
+              }
             }
+          }
 
-            const rowCells = tableRow.getChildren<TableCellNode>();
-            const rowCellsSpan = rowCells.map((cell) => cell.getColSpan());
+          //console.log(columnIndex);
 
-            const aggregatedRowSpans = rowCellsSpan.reduce(
-              (rowSpans: number[], cellSpan) => {
-                const previousCell = rowSpans[rowSpans.length - 1] ?? 0;
-                rowSpans.push(previousCell + cellSpan);
-                return rowSpans;
-              },
-              [],
-            );
-            const rowColumnIndexWithSpan = aggregatedRowSpans.findIndex(
-              (cellSpan: number) => cellSpan > tableColumnIndex,
-            );
-
+          for (let row = 0; row < tableMap.length; row++) {
+            const cell = tableMap[row][columnIndex];
             if (
-              rowColumnIndexWithSpan >= rowCells.length ||
-              rowColumnIndexWithSpan < 0
+              cell.startRow === row &&
+              (columnIndex === tableMap[row].length - 1 ||
+                tableMap[row][columnIndex].cell !==
+                  tableMap[row][columnIndex + 1].cell)
             ) {
-              throw new Error('Expected table cell to be inside of table row.');
+              //console.log(cell.cell.getWidth(), widthChange);
+              const newWidth = Math.max(
+                (cell.cell.getWidth() || 0) + widthChange,
+                MIN_COLUMN_WIDTH,
+              );
+              cell.cell.setWidth(newWidth);
+              //console.log(cell.cell.getTextContent());
+              // TODO: correctly set width
             }
-
-            const tableCell = rowCells[rowColumnIndexWithSpan];
-
-            if (!$isTableCellNode(tableCell)) {
-              throw new Error('Expected table cell');
-            }
-
-            tableCell.setWidth(newWidth);
           }
         },
         {tag: 'skip-scroll-into-view'},
@@ -280,21 +272,15 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
               ),
             );
           } else {
-            const computedStyle = getComputedStyle(activeCell.elem);
+            /*const computedStyle = getComputedStyle(activeCell.elem);
             let width = activeCell.elem.clientWidth; // width with padding
             width -=
               parseFloat(computedStyle.paddingLeft) +
               parseFloat(computedStyle.paddingRight);
-            const widthChange = Math.abs(event.clientX - x) / zoom;
+            */
+            const widthChange = (event.clientX - x) / zoom;
 
-            const isShrinking = direction === 'right' && x > event.clientX;
-
-            updateColumnWidth(
-              Math.max(
-                isShrinking ? width - widthChange : widthChange + width,
-                MIN_COLUMN_WIDTH,
-              ),
-            );
+            updateColumnWidth(widthChange);
           }
 
           resetState();

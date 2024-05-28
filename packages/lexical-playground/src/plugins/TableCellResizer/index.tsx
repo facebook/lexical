@@ -5,7 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {TableDOMCell} from '@lexical/table';
+import type {
+  TableCellNode,
+  TableDOMCell,
+  TableMapType,
+  TableMapValueType,
+} from '@lexical/table';
 import type {LexicalEditor} from 'lexical';
 
 import './index.css';
@@ -185,6 +190,40 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
     [activeCell, editor],
   );
 
+  const getCellNodeWidth = (
+    cell: TableCellNode,
+    activeEditor: LexicalEditor,
+  ): number | undefined => {
+    const width = cell.getWidth();
+    if (width) {
+      return width;
+    }
+
+    const domCellNode = activeEditor.getElementByKey(cell.getKey());
+    if (!domCellNode) {
+      return undefined;
+    }
+    const computedStyle = getComputedStyle(domCellNode);
+    return (
+      domCellNode.clientWidth -
+      parseFloat(computedStyle.paddingLeft) -
+      parseFloat(computedStyle.paddingRight)
+    );
+  };
+
+  const getCellColumnIndex = (
+    tableCellNode: TableCellNode,
+    tableMap: TableMapType,
+  ) => {
+    for (let row = 0; row < tableMap.length; row++) {
+      for (let column = 0; column < tableMap[row].length; column++) {
+        if (tableMap[row][column].cell === tableCellNode) {
+          return column;
+        }
+      }
+    }
+  };
+
   const updateColumnWidth = useCallback(
     (widthChange: number) => {
       if (!activeCell) {
@@ -203,35 +242,25 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
             null,
             null,
           );
-          //console.log(tableMap);
-
-          let columnIndex = -1;
-          for (let row = 0; row < tableMap.length; row++) {
-            for (let column = 0; column < tableMap[row].length; column++) {
-              if (tableMap[row][column].cell === tableCellNode) {
-                columnIndex = column;
-              }
-            }
+          const columnIndex = getCellColumnIndex(tableCellNode, tableMap);
+          if (columnIndex === undefined) {
+            throw new Error('TableCellResizer: Table column not found.');
           }
 
-          //console.log(columnIndex);
-
           for (let row = 0; row < tableMap.length; row++) {
-            const cell = tableMap[row][columnIndex];
+            const cell: TableMapValueType = tableMap[row][columnIndex];
             if (
               cell.startRow === row &&
               (columnIndex === tableMap[row].length - 1 ||
                 tableMap[row][columnIndex].cell !==
                   tableMap[row][columnIndex + 1].cell)
             ) {
-              //console.log(cell.cell.getWidth(), widthChange);
-              const newWidth = Math.max(
-                (cell.cell.getWidth() || 0) + widthChange,
-                MIN_COLUMN_WIDTH,
-              );
+              const width = getCellNodeWidth(cell.cell, editor);
+              if (!width) {
+                continue;
+              }
+              const newWidth = Math.max(width + widthChange, MIN_COLUMN_WIDTH);
               cell.cell.setWidth(newWidth);
-              //console.log(cell.cell.getTextContent());
-              // TODO: correctly set width
             }
           }
         },
@@ -272,14 +301,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
               ),
             );
           } else {
-            /*const computedStyle = getComputedStyle(activeCell.elem);
-            let width = activeCell.elem.clientWidth; // width with padding
-            width -=
-              parseFloat(computedStyle.paddingLeft) +
-              parseFloat(computedStyle.paddingRight);
-            */
             const widthChange = (event.clientX - x) / zoom;
-
             updateColumnWidth(widthChange);
           }
 

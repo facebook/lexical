@@ -1446,7 +1446,7 @@ test.describe('Tables', () => {
 
     const collapsibleOpeningTag =
       browserName === 'chromium'
-        ? '<div class="Collapsible__container">'
+        ? '<div class="Collapsible__container" open>'
         : '<details class="Collapsible__container" open="">';
     const collapsibleClosingTag =
       browserName === 'chromium' ? '</div>' : '</details>';

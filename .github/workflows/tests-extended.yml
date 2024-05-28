@@ -12,9 +12,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # e2e-tests:
-  # if: github.repository_owner == 'facebook' && contains(github.event.pull_request.labels.*.name, 'extended-tests')
-  # uses: ./.github/workflows/call-e2e-all-tests.yml
+  e2e-tests:
+    if: github.repository_owner == 'facebook' && contains(github.event.pull_request.labels.*.name, 'extended-tests')
+    uses: ./.github/workflows/call-e2e-all-tests.yml
 
   integration-tests:
     if: github.repository_owner == 'facebook' && contains(github.event.pull_request.labels.*.name, 'extended-tests')

@@ -12,7 +12,7 @@ import {COMMAND_PRIORITY_CRITICAL, LexicalCommand} from 'lexical';
 import {useEffect, useMemo, useState} from 'react';
 
 export type LexicalCommandLog = ReadonlyArray<
-  LexicalCommand<unknown> & {payload: unknown}
+  {index: number} & LexicalCommand<unknown> & {payload: unknown}
 >;
 
 export function registerLexicalCommandLogger(

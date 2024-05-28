@@ -22,15 +22,17 @@ export function registerLexicalCommandLogger(
   ) => void,
 ): () => void {
   const unregisterCommandListeners = new Set<() => void>();
-
+  let i = 0;
   for (const [command] of editor._commands) {
     unregisterCommandListeners.add(
       editor.registerCommand(
         command,
         (payload) => {
           setLoggedCommands((state) => {
+            i += 1;
             const newState = [...state];
             newState.push({
+              index: i,
               payload,
               type: command.type ? command.type : 'UNKNOWN',
             });

@@ -17,7 +17,9 @@ import type {
   LexicalNode,
 } from 'lexical';
 
-export type LexicalCommandLog = $ReadOnlyArray<LexicalCommand<mixed> | {payload: mixed}>;
+export type LexicalCommandLog = $ReadOnlyArray<
+  {index: number} | LexicalCommand<mixed> | {payload: mixed}
+ >;
 export type CustomPrintNode = (node: LexicalNode, obfuscateText?: boolean) => string;
 
 declare export function generateContent(

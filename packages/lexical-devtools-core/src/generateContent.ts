@@ -255,12 +255,14 @@ function printNode(
   customPrintNode?: CustomPrintNode,
   obfuscateText: boolean = false,
 ) {
-  const customPrint = customPrintNode
+  const customPrint: string | undefined = customPrintNode
     ? customPrintNode(node, obfuscateText)
     : undefined;
-  if (customPrint) {
+  if (customPrint !== undefined && customPrint.length > 0) {
     return customPrint;
-  } else if ($isTextNode(node)) {
+  }
+
+  if ($isTextNode(node)) {
     const text = node.getTextContent();
     const title =
       text.length === 0 ? '(empty)' : `"${normalize(text, obfuscateText)}"`;

@@ -62,6 +62,7 @@ export class CollapsibleContainerNode extends ElementNode {
     let dom: HTMLElement;
     if (IS_CHROME) {
       dom = document.createElement('div');
+      dom.setAttribute('open', '');
     } else {
       const detailsDom = document.createElement('details');
       detailsDom.open = this.__open;
@@ -92,8 +93,10 @@ export class CollapsibleContainerNode extends ElementNode {
           'Expected contentDom to be an HTMLElement',
         );
         if (currentOpen) {
+          dom.setAttribute('open', '');
           contentDom.hidden = false;
         } else {
+          dom.removeAttribute('open');
           setDomHiddenUntilFound(contentDom);
         }
       } else {

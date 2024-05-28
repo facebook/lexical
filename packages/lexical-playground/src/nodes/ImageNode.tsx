@@ -39,7 +39,12 @@ export interface ImagePayload {
 
 function $convertImageElement(domNode: Node): null | DOMConversionOutput {
   const img = domNode as HTMLImageElement;
-  if (img.src.startsWith('file:///')) {
+  if (
+    img.src.startsWith('file:///') || //img.parentElement != null &&
+    //img.parentElement.tagName === 'li' &&
+    //img.previousSibling === null &&
+    img.src.startsWith('data:image/png;')
+  ) {
     return null;
   }
   const {alt: altText, src, width, height} = img;
@@ -121,7 +126,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     return {
       img: (node: Node) => ({
         conversion: $convertImageElement,
-        priority: 0,
+        priority: 4,
       }),
     };
   }

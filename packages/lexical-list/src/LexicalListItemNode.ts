@@ -118,7 +118,7 @@ export class ListItemNode extends ElementNode {
     return {
       li: (node: Node) => ({
         conversion: $convertListItemElement,
-        priority: 0,
+        priority: 4,
       }),
     };
   }
@@ -495,7 +495,12 @@ function updateListItemChecked(
 
 function $convertListItemElement(domNode: Node): DOMConversionOutput {
   const checked =
-    isHTMLElement(domNode) && domNode.getAttribute('aria-checked') === 'true';
+    isHTMLElement(domNode) &&
+    (domNode.getAttribute('aria-checked') === 'true'
+      ? true
+      : domNode.getAttribute('aria-checked') === 'false'
+      ? false
+      : undefined);
   return {node: $createListItemNode(checked)};
 }
 

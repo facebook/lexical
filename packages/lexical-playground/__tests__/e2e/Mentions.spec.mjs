@@ -9,6 +9,7 @@
 import {
   deleteNextWord,
   moveLeft,
+  moveRight,
   moveToEditorBeginning,
   selectAll,
 } from '../keyboardShortcuts/index.mjs';
@@ -957,6 +958,8 @@ test.describe('Mentions', () => {
       'text/html':
         '<meta charset="utf-8"><span data-lexical-mention="true">Luke Skywalker</span>',
     });
+
+    await moveRight(page, 2);
 
     await page.keyboard.type(' foo bar');
 

@@ -12,7 +12,7 @@
 
 const {spawn} = require('child-process-promise');
 
-const {npm_package_version, CHANNEL, GIT_REPO} = process.env;
+const {npm_package_version, CHANNEL, GIT_REPO, GITHUB_OUTPUT} = process.env;
 
 // Previously this script was defined directly in package.json as the
 // following (in one line):
@@ -80,6 +80,12 @@ async function main() {
     GIT_REPO,
     ...refs.map((ref) => `+${ref}`),
   ]);
+  if (GITHUB_OUTPUT) {
+    commands.push(
+      `echo "version=${npm_package_version}" >> '${GITHUB_OUTPUT}'`,
+    );
+    commands.push(`echo "tag-ref=${refs[0]}" >> '${GITHUB_OUTPUT}'`);
+  }
   for (const command of commands) {
     const commandArr = Array.isArray(command)
       ? command

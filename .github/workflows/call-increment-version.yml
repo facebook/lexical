@@ -17,9 +17,24 @@ on:
     secrets:
       SSH_KEY:
         required: true
+    outputs:
+      version:
+        description: 'The new package.json version, e.g. "0.16.0"'
+        value: ${{ jobs.release.outputs.version }}
+      tag-ref:
+        description: 'The fully qualified ref for the tag, e.g. "refs/tags/v0.16.0"'
+        value: ${{ jobs.release.outputs.tag-ref }}
+      latest-release:
+        description: 'The latest release (per GitHub releases) prior to this increment, e.g. "v0.15.0"'
+        value: ${{ jobs.release.outputs.latest-release }}
+
 jobs:
   release:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.increment-version.outputs.version }}
+      tag-ref: ${{ steps.increment-version.outputs.tag-ref }}
+      latest-release: ${{ steps.latest.outputs.release }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -40,7 +55,8 @@ jobs:
           owner: facebook
           repo: lexical
           excludes: draft
-      - run: npm run increment-version
+      - id: increment-version
+        run: npm run increment-version
         env:
           # These are passed in the environment as they are used by
           # the postversion script

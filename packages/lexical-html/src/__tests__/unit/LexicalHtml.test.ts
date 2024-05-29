@@ -11,7 +11,7 @@ import type {RangeSelection} from 'lexical';
 
 import {CodeNode} from '@lexical/code';
 import {createHeadlessEditor} from '@lexical/headless';
-import {$generateHtmlFromNodes} from '@lexical/html';
+import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import {LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
@@ -150,6 +150,36 @@ describe('HTML', () => {
 
     expect(html).toBe(
       '<p><span style="white-space: pre-wrap;">Hello</span></p><p><span style="white-space: pre-wrap;">World</span></p>',
+    );
+  });
+
+  test(`If alignment (i.e. format) is set on the paragraph, it should take precedence over its parent block format property`, () => {
+    const editor = createHeadlessEditor();
+    const parser = new DOMParser();
+    const rightAlignedParagraphInDiv =
+      '<div><p style="text-align: right;">Hello world!</p></div>';
+
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const dom = parser.parseFromString(
+          rightAlignedParagraphInDiv,
+          'text/html',
+        );
+        const nodes = $generateNodesFromDOM(editor, dom);
+        root.append(...nodes);
+      },
+      {discrete: true},
+    );
+
+    let html = '';
+
+    editor.update(() => {
+      html = $generateHtmlFromNodes(editor);
+    });
+
+    expect(html).toBe(
+      '<p style="text-align: right;"><span style="white-space: pre-wrap;">Hello world!</span></p>',
     );
   });
 });

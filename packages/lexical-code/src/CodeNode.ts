@@ -324,11 +324,8 @@ export function $isCodeNode(
   return node instanceof CodeNode;
 }
 
-function $convertPreElement(domNode: Node): DOMConversionOutput {
-  let language;
-  if (isHTMLElement(domNode)) {
-    language = domNode.getAttribute(LANGUAGE_DATA_ATTRIBUTE);
-  }
+function $convertPreElement(domNode: HTMLElement): DOMConversionOutput {
+  const language = domNode.getAttribute(LANGUAGE_DATA_ATTRIBUTE);
   return {node: $createCodeNode(language)};
 }
 

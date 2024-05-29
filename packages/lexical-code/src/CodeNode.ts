@@ -144,11 +144,11 @@ export class CodeNode extends ElementNode {
             }
           : null;
       },
-      div: (node: Node) => ({
+      div: () => ({
         conversion: $convertDivElement,
         priority: 1,
       }),
-      pre: (node: Node) => ({
+      pre: () => ({
         conversion: $convertPreElement,
         priority: 0,
       }),

@@ -37,5 +37,4 @@ jobs:
       - run: LATEST_RELEASE=${{ steps.latest.outputs.release }} npm run increment-version -- --i $INCREMENT
         env:
           INCREMENT: ${{ inputs.increment }}
-      - run: npm install
-      - run: git push -u git@github.com:facebook/lexical.git --follow-tags
+          CHANNEL: ${{ inputs.increment == 'prerelease' && 'next' || 'latest' }}

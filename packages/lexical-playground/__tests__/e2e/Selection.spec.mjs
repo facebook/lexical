@@ -217,6 +217,52 @@ test.describe('Selection', () => {
     );
   });
 
+  test('can delete line which ends with element with CMD+delete', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText || !IS_MAC);
+    await focusEditor(page);
+    await page.keyboard.type('One');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Two');
+    // sample image
+    await pasteFromClipboard(page, {
+      'text/html': `
+          <span class="editor-image" data-lexical-decorator="true" contenteditable="false">
+            <div draggable="false">
+              <img src="/assets/yellow-flower-vav9Hsve.jpg" alt="Yellow flower in tilt shift lens" draggable="false" style="height: inherit; max-width: 500px; width: inherit;">
+            </div>
+          </span>
+        `,
+    });
+
+    const deleteLine = async () => {
+      await keyDownCtrlOrMeta(page);
+      await page.keyboard.press('Backspace');
+      await keyUpCtrlOrMeta(page);
+    };
+
+    await deleteLine();
+    await assertHTML(
+      page,
+      html`
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__ltr"
+          dir="ltr">
+          <span data-lexical-text="true">One</span>
+        </p>
+      `,
+    );
+    await deleteLine();
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+      `,
+    );
+  });
+
   test('Can insert inline element within text and put selection after it', async ({
     page,
     isPlainText,

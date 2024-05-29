@@ -37,15 +37,18 @@ export interface ImagePayload {
   captionsEnabled?: boolean;
 }
 
+function isGoogleDocCheckboxImg(img: HTMLImageElement): boolean {
+  return (
+    img.parentElement != null &&
+    img.parentElement.tagName === 'LI' &&
+    img.previousSibling === null &&
+    img.src.startsWith('data:image/png;base64,iVBOR')
+  );
+}
+
 function $convertImageElement(domNode: Node): null | DOMConversionOutput {
   const img = domNode as HTMLImageElement;
-  if (
-    img.src.startsWith('file:///') ||
-    (img.parentElement != null &&
-      img.parentElement.tagName === 'LI' &&
-      img.previousSibling === null &&
-      img.src.startsWith('data:image/png;base64,iVBOR'))
-  ) {
+  if (img.src.startsWith('file:///') || isGoogleDocCheckboxImg(img)) {
     return null;
   }
   const {alt: altText, src, width, height} = img;
@@ -127,7 +130,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     return {
       img: (node: Node) => ({
         conversion: $convertImageElement,
-        priority: 4,
+        priority: 0,
       }),
     };
   }

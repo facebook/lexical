@@ -1,0 +1,26 @@
+name: After Dismiss
+
+on:
+  pull_request_review:
+    types: [dismissed]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  label-pr:
+    if: github.event.review.state != 'approved' && contains(github.event.pull_request.labels.*.name, 'extended-tests')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Remove label to run extended tests
+        env:
+          GH_TOKEN: ${{ secrets.LEXICAL_BOT_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          echo "Adding label 'extended-tests' to PR $NUMBER"
+          gh pr edit "$NUMBER" --remove-label "extended-tests" || (echo "Failed to remove label" && exit 1)

@@ -1427,6 +1427,7 @@ test.describe('Tables', () => {
     page,
     isPlainText,
     isCollab,
+    browserName,
   }) => {
     await initialize({isCollab, page});
     test.skip(isPlainText);
@@ -1443,6 +1444,13 @@ test.describe('Tables', () => {
     await page.keyboard.press('Enter');
     await page.keyboard.press('Enter');
 
+    const collapsibleOpeningTag =
+      browserName === 'chromium'
+        ? '<div class="Collapsible__container" open="">'
+        : '<details class="Collapsible__container" open="">';
+    const collapsibleClosingTag =
+      browserName === 'chromium' ? '</div>' : '</details>';
+
     await assertHTML(
       page,
       html`
@@ -1452,21 +1460,21 @@ test.describe('Tables', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-              <details class="Collapsible__container" open="">
-                <summary class="Collapsible__title">
-                  <p class="PlaygroundEditorTheme__paragraph">
-                    <span data-lexical-text="true">123</span>
-                  </p>
-                </summary>
-                <div class="Collapsible__content">
-                  <p class="PlaygroundEditorTheme__paragraph">
-                    <span data-lexical-text="true">123</span>
-                  </p>
-                  <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-                  <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-                  <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-                </div>
-              </details>
+              ${collapsibleOpeningTag}
+              <summary class="Collapsible__title">
+                <p class="PlaygroundEditorTheme__paragraph">
+                  <span data-lexical-text="true">123</span>
+                </p>
+              </summary>
+              <div class="Collapsible__content">
+                <p class="PlaygroundEditorTheme__paragraph">
+                  <span data-lexical-text="true">123</span>
+                </p>
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </div>
+              ${collapsibleClosingTag}
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </th>
             <th
@@ -1489,16 +1497,16 @@ test.describe('Tables', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader">
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-              <details class="Collapsible__container" open="">
-                <summary class="Collapsible__title">
-                  <p class="PlaygroundEditorTheme__paragraph">
-                    <span data-lexical-text="true">123</span>
-                  </p>
-                </summary>
-                <div class="Collapsible__content">
-                  <p class="PlaygroundEditorTheme__paragraph"><br /></p>
-                </div>
-              </details>
+              ${collapsibleOpeningTag}
+              <summary class="Collapsible__title">
+                <p class="PlaygroundEditorTheme__paragraph">
+                  <span data-lexical-text="true">123</span>
+                </p>
+              </summary>
+              <div class="Collapsible__content">
+                <p class="PlaygroundEditorTheme__paragraph"><br /></p>
+              </div>
+              ${collapsibleClosingTag}
               <p class="PlaygroundEditorTheme__paragraph"><br /></p>
             </th>
             <th

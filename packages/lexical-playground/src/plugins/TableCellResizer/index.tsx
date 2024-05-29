@@ -153,7 +153,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
   };
 
   const updateRowHeight = useCallback(
-    (newHeight: number) => {
+    (heightChange: number) => {
       if (!activeCell) {
         throw new Error('TableCellResizer: Expected active cell.');
       }
@@ -182,6 +182,17 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
             throw new Error('Expected table row');
           }
 
+          let height = tableRow.getHeight();
+          if (!height) {
+            const rowCells = tableRow.getChildren<TableCellNode>();
+            height = Math.min(
+              ...rowCells.map(
+                (cell) => getCellNodeHeight(cell, editor) ?? Infinity,
+              ),
+            );
+          }
+
+          const newHeight = Math.max(height + heightChange, MIN_ROW_HEIGHT);
           tableRow.setHeight(newHeight);
         },
         {tag: 'skip-scroll-into-view'},
@@ -209,6 +220,14 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
       parseFloat(computedStyle.paddingLeft) -
       parseFloat(computedStyle.paddingRight)
     );
+  };
+
+  const getCellNodeHeight = (
+    cell: TableCellNode,
+    activeEditor: LexicalEditor,
+  ): number | undefined => {
+    const domCellNode = activeEditor.getElementByKey(cell.getKey());
+    return domCellNode?.clientHeight;
   };
 
   const getCellColumnIndex = (
@@ -289,17 +308,8 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
           const zoom = calculateZoomLevel(event.target as Element);
 
           if (isHeightChanging(direction)) {
-            const height = activeCell.elem.getBoundingClientRect().height;
-            const heightChange = Math.abs(event.clientY - y) / zoom;
-
-            const isShrinking = direction === 'bottom' && y > event.clientY;
-
-            updateRowHeight(
-              Math.max(
-                isShrinking ? height - heightChange : heightChange + height,
-                MIN_ROW_HEIGHT,
-              ),
-            );
+            const heightChange = (event.clientY - y) / zoom;
+            updateRowHeight(heightChange);
           } else {
             const widthChange = (event.clientX - x) / zoom;
             updateColumnWidth(widthChange);

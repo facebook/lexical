@@ -10,7 +10,7 @@ concurrency:
 
 jobs:
   label-pr:
-    if: github.event.review.state == 'approved' && !contains(github.event.pull_request.labels.*.name, 'extended-tests')
+    if: github.event.review.state == 'commented' && !contains(github.event.pull_request.labels.*.name, 'extended-tests')
     runs-on: ubuntu-latest
     permissions:
       contents: read

@@ -28,8 +28,9 @@ import {
   $isParagraphNode,
   $isRangeSelection,
   $isTextNode,
-  LexicalCommand,
 } from 'lexical';
+
+import {LexicalCommandLog} from './useLexicalCommandsLog';
 
 const NON_SINGLE_WIDTH_CHARS_REPLACEMENT: Readonly<Record<string, string>> =
   Object.freeze({
@@ -86,7 +87,7 @@ const MODE_PREDICATES = [
 
 export function generateContent(
   editor: LexicalEditor,
-  commandsLog: ReadonlyArray<LexicalCommand<unknown> & {payload: unknown}>,
+  commandsLog: LexicalCommandLog,
   exportDOM: boolean,
   obfuscateText: boolean = false,
 ): string {
@@ -148,8 +149,8 @@ export function generateContent(
   res += '\n\n commands:';
 
   if (commandsLog.length) {
-    for (const {type, payload} of commandsLog) {
-      res += `\n  └ { type: ${type}, payload: ${
+    for (const {index, type, payload} of commandsLog) {
+      res += `\n  └ ${index}. { type: ${type}, payload: ${
         payload instanceof Event ? payload.constructor.name : payload
       } }`;
     }

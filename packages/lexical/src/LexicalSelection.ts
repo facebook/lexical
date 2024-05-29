@@ -1700,9 +1700,15 @@ export class RangeSelection implements BaseSelection {
    */
   deleteLine(isBackward: boolean): void {
     if (this.isCollapsed()) {
-      if (this.anchor.type === 'text') {
-        this.modify('extend', isBackward, 'lineboundary');
+      // Since `domSelection.modify('extend', ..., 'lineboundary')` works well for text selections
+      // but doesn't properly handle selections which end on elements, a space character is added
+      // for such selections transforming their anchor's type to 'text'
+      const anchorIsElement = this.anchor.type === 'element';
+      if (anchorIsElement) {
+        this.insertText(' ');
       }
+
+      this.modify('extend', isBackward, 'lineboundary');
 
       // If selection is extended to cover text edge then extend it one character more
       // to delete its parent element. Otherwise text content will be deleted but empty
@@ -1710,6 +1716,12 @@ export class RangeSelection implements BaseSelection {
       const endPoint = isBackward ? this.focus : this.anchor;
       if (endPoint.offset === 0) {
         this.modify('extend', isBackward, 'character');
+      }
+
+      // Adjusts selection to include an extra character added for element anchors to remove it
+      if (anchorIsElement) {
+        const startPoint = isBackward ? this.anchor : this.focus;
+        startPoint.set(startPoint.key, startPoint.offset + 1, startPoint.type);
       }
     }
     this.removeText();

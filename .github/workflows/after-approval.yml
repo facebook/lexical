@@ -18,7 +18,7 @@ jobs:
     steps:
       - name: Add label for extended tests
         env:
-          GH_TOKEN: ${{ secrets.ADD_LABEL_PAT }}
+          GH_TOKEN: ${{ secrets.LEXICAL_BOT_TOKEN }}
           GH_REPO: ${{ github.repository }}
           NUMBER: ${{ github.event.pull_request.number }}
         run: |

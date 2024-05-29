@@ -9,18 +9,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  label-pr:
+  e2e-tests-after-approval:
     if: github.event.review.state == 'approved' && !contains(github.event.pull_request.labels.*.name, 'extended-tests')
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
-    steps:
-      - name: Add label for extended tests
-        env:
-          GH_TOKEN: ${{ secrets.LEXICAL_BOT_TOKEN }}
-          GH_REPO: ${{ github.repository }}
-          NUMBER: ${{ github.event.pull_request.number }}
-        run: |
-          echo "Adding label 'extended-tests' to PR $NUMBER"
-          gh pr edit "$NUMBER" --add-label "extended-tests" || (echo "Failed to add label" && exit 1)
+    uses: ./.github/workflows/call-e2e-all-tests.yml
+
+  integration-tests-after-approval:
+    if: github.event.review.state == 'approved' && !contains(github.event.pull_request.labels.*.name, 'extended-tests')
+    uses: ./.github/workflows/call-integration-tests.yml

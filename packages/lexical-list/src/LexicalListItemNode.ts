@@ -116,10 +116,6 @@ export class ListItemNode extends ElementNode {
 
   static importDOM(): DOMConversionMap | null {
     return {
-      input: (node: Node) => ({
-        conversion: $convertCheckboxInput,
-        priority: 0,
-      }),
       li: (node: Node) => ({
         conversion: $convertListItemElement,
         priority: 0,
@@ -498,20 +494,29 @@ function updateListItemChecked(
 }
 
 function $convertListItemElement(domNode: Node): DOMConversionOutput {
-  const checked =
-    isHTMLElement(domNode) &&
-    (domNode.getAttribute('aria-checked') === 'true'
-      ? true
-      : domNode.getAttribute('aria-checked') === 'false'
-      ? false
-      : undefined);
-  return {node: $createListItemNode(checked)};
-}
-
-function $convertCheckboxInput(domNode: Node): DOMConversionOutput {
   if (!isHTMLElement(domNode)) {
     return {node: null};
   }
+
+  const isGitHubCheckList = domNode.classList.contains('task-list-item');
+  if (isGitHubCheckList) {
+    for (const child of domNode.children) {
+      if (child.tagName === 'INPUT') {
+        return $convertCheckboxInput(child);
+      }
+    }
+  }
+
+  const checked =
+    domNode.getAttribute('aria-checked') === 'true'
+      ? true
+      : domNode.getAttribute('aria-checked') === 'false'
+      ? false
+      : undefined;
+  return {node: $createListItemNode(checked)};
+}
+
+function $convertCheckboxInput(domNode: Element): DOMConversionOutput {
   const isCheckboxInput = domNode.getAttribute('type') === 'checkbox';
   if (!isCheckboxInput) {
     return {node: null};

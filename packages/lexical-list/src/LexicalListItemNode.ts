@@ -118,7 +118,7 @@ export class ListItemNode extends ElementNode {
     return {
       li: (node: Node) => ({
         conversion: $convertListItemElement,
-        priority: 4,
+        priority: 0,
       }),
     };
   }

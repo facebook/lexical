@@ -45,5 +45,5 @@ jobs:
             owner: context.repo.owner,
             repo: context.repo.repo,
             issue_number: issue_number,
-            body: 'Thank you for the PR!'
+            labels: ['extended-tests'],
             });
